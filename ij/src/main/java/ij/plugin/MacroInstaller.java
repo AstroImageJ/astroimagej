@@ -5,8 +5,6 @@ import java.awt.event.*;
 import ij.*;
 import ij.gui.*;
 import ij.macro.*;
-import ij.text.*;
-import ij.util.Tools;
 import ij.io.*;
 import ij.macro.MacroConstants;
 import ij.plugin.frame.*;
@@ -162,7 +160,7 @@ public class MacroInstaller implements PlugIn, MacroConstants, ActionListener {
 			macroNames[0] = anonymousName;
 			nMacros = 1;
 		}
-		String word = nMacros==1?" macro":" macros";
+		String word = nMacros==1?" macro": "macros";
 		if (isPluginsMacrosMenu)
 			IJ.showStatus(nMacros + word + " installed");
 	}

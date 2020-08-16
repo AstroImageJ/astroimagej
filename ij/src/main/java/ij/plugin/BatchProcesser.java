@@ -2,7 +2,6 @@ package ij.plugin;
 import ij.*;
 import ij.process.*;
 import ij.gui.*;
-import ij.util.Tools;
 import ij.io.OpenDialog;
 import ij.macro.Interpreter;
 import java.awt.*;
@@ -305,7 +304,7 @@ import java.util.Vector;
 		Class c = ij!=null?ij.getClass():(new ImageStack()).getClass();
 		String macro = null;
         try {
-			InputStream is = c .getResourceAsStream("/macros/"+name);
+			InputStream is = c .getResourceAsStream("/macros/" +name);
 			if (is==null) return null;
             InputStreamReader isr = new InputStreamReader(is);
             StringBuffer sb = new StringBuffer();

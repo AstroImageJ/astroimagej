@@ -6,9 +6,8 @@ package AIJ.Merged;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
-public class AppTest {
+public class AijMergedTest {
     @Test public void testAppHasAGreeting() {
-        App classUnderTest = new App();
-        assertNotNull("app should have a greeting", classUnderTest.getGreeting());
+        AijMerged classUnderTest = new AijMerged();
     }
 }

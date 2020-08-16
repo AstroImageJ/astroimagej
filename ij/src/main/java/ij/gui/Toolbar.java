@@ -8,7 +8,6 @@ import ij.*;
 import ij.plugin.frame.Recorder; 
 import ij.plugin.frame.Editor; 
 import ij.plugin.MacroInstaller;
-import ij.plugin.RectToolOptions;
 import ij.plugin.tool.PlugInTool;
 import ij.plugin.tool.MacroToolRunner;
 import ij.macro.Program;
@@ -1236,7 +1235,7 @@ public class Toolbar extends Canvas implements MouseListener, MouseMotionListene
 					"toolset to view its source code.\n"+
 					" \n"+
 					"More macro toolsets are available at\n"+
-					"  <"+IJ.URL+"/macros/toolsets/>\n"+
+					"  <"+IJ.URL+ "/macros/toolsets/>\n" +
 					" \n"+
 					"Plugin tools can be downloaded from\n"+
 					"the Tools section of the Plugins page at\n"+
@@ -1247,7 +1246,7 @@ public class Toolbar extends Canvas implements MouseListener, MouseMotionListene
                 // load from ij.jar
                 MacroInstaller mi = new MacroInstaller();
                 label = label.substring(0, label.length()-1) + ".txt";
-                path = "/macros/"+label;
+                path = "/macros/" +label;
 				if (IJ.shiftKeyDown()) {
 					String macros = mi.openFromIJJar(path);
                     Editor ed = new Editor();

@@ -5,13 +5,8 @@ package AIJ.Merged;
 
 import ij.ImageJ;
 
-public class App {
-    public String getGreeting() {
-        return "Hello world.";
-    }
-
+public class AijMerged {
     public static void main(String[] args) {
-        System.out.println(new App().getGreeting());
         ImageJ.main(args);
     }
 }

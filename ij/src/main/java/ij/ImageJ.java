@@ -7,14 +7,11 @@ import java.io.*;
 import java.net.*;
 import java.awt.image.*;
 import ij.gui.*;
-import ij.process.*;
-import ij.io.*;
 import ij.plugin.*;
 import ij.plugin.filter.*;
 import ij.plugin.frame.*;
 import ij.text.*;
 import ij.macro.Interpreter;
-import ij.io.Opener;
 import ij.util.*;
 import javax.swing.ImageIcon;
 
@@ -200,7 +197,7 @@ public class ImageJ extends Frame implements ActionListener,
 		} 
 		if (applet==null)
 			IJ.runPlugIn("ij.plugin.DragAndDrop", "");
-		String str = m.getMacroCount()==1?" macro":" macros";
+		String str = m.getMacroCount()==1?" macro": "macros";
 		IJ.showStatus(version()+ m.getPluginCount() + " commands; " + m.getMacroCount() + str);
 		//if (applet==null && !embedded && Prefs.runSocketListener)
 		//	new SocketListener();

@@ -1,16 +1,14 @@
 package ij;
 import ij.process.*;
 import ij.util.*;
-import ij.gui.ImageWindow;
 import ij.plugin.MacroInstaller;
-import ij.gui.Toolbar;
+
 import java.awt.*;
 import java.awt.image.*;
 import java.awt.event.*;
 import java.util.*;
 import java.io.*;
 import java.applet.Applet;
-import java.awt.event.*;
 import java.util.zip.*;
 
 /**
@@ -219,7 +217,7 @@ public class Menus {
 		help.addSeparator();
 		addPlugInItem(help, "Dev. Resources...", "ij.plugin.BrowserLauncher(\""+IJ.URL+"/developer/index.html\")", 0, false);
 		addPlugInItem(help, "Plugins...", "ij.plugin.BrowserLauncher(\""+IJ.URL+"/plugins\")", 0, false);
-		addPlugInItem(help, "Macros...", "ij.plugin.BrowserLauncher(\""+IJ.URL+"/macros/\")", 0, false);
+		addPlugInItem(help, "Macros...", "ij.plugin.BrowserLauncher(\""+IJ.URL+ "/macros/\")", 0, false);
 		addPlugInItem(help, "Macro Functions...", "ij.plugin.BrowserLauncher(\""+IJ.URL+"/developer/macro/functions.html\")", 0, false);
 		help.addSeparator();
 		addPlugInItem(help, "Update AstroImageJ...", "AstroImageJ_Updater", 0, false);
@@ -852,7 +850,7 @@ public class Menus {
 			pluginsPath = pluginsDir+Prefs.separator+"plugins"+Prefs.separator;
 			if (property!=null&&!(new File(pluginsPath)).isDirectory())
 				pluginsPath = pluginsDir + Prefs.separator;
-			macrosPath = pluginsDir+Prefs.separator+"macros"+Prefs.separator;
+			macrosPath = pluginsDir+Prefs.separator+ "macros" +Prefs.separator;
 		}
 		File f = macrosPath!=null?new File(macrosPath):null;
 		if (f!=null && !f.isDirectory())
@@ -1499,6 +1497,6 @@ public class Menus {
 		if (err!=null) IJ.error(err);
 		IJ.setClassLoader(null);
 		IJ.runPlugIn("ij.plugin.ClassChecker", "");
-		IJ.showStatus("Menus updated: "+m.nPlugins + " commands, " + m.nMacros + " macros");
+		IJ.showStatus("Menus updated: "+m.nPlugins + " commands, " + m.nMacros + "macros");
 	}
 }

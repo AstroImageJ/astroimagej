@@ -1,12 +1,11 @@
 package ij.plugin;
 import ij.*;
-import ij.process.*;
 import ij.gui.*;
 import ij.io.*;
 import ij.plugin.frame.*;
 import ij.text.TextWindow;
 import ij.macro.Interpreter;
-import ij.plugin.Compiler;
+
 import java.awt.Window;
 import java.io.File;
 import java.applet.Applet;

@@ -1,5 +1,4 @@
 package ij.plugin;
-import java.awt.*;
 import ij.*;
 import ij.gui.*;
 import ij.plugin.frame.Editor;
@@ -80,7 +79,7 @@ public class NewPlugin implements PlugIn {
 		String text = "";
 		ed = new Editor(rows, columns, 0, options);
 		if (type==MACRO_TOOL)
-			text = Tools.openFromIJJarAsString("/macros/"+name);
+			text = Tools.openFromIJJarAsString("/macros/" +name);
 		if ((type==MACRO||type==MACRO_TOOL) && !name.endsWith(".txt"))
 			name = SaveDialog.setExtension(name, ".txt");
 		else if (type==JAVASCRIPT && !name.endsWith(".js")) {

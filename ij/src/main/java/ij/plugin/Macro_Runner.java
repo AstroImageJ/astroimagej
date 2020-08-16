@@ -2,8 +2,6 @@ package ij.plugin;
 import ij.*;
 import ij.io.*;
 import ij.macro.*;
-import ij.text.*;
-import ij.util.*;
 import ij.plugin.frame.*;
 import java.io.*;
 import java.lang.reflect.*;
@@ -157,7 +155,7 @@ public class Macro_Runner implements PlugIn {
 		name = name.substring(7);
 		String macro = null;
         try {
-			InputStream is = c .getResourceAsStream("/macros/"+name+".txt");
+			InputStream is = c .getResourceAsStream("/macros/" +name+".txt");
 			//IJ.log(is+"  "+("/macros/"+name+".txt"));
 			if (is==null)
 				return runMacroFile(name, arg);

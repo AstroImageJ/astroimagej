@@ -1,0 +1,634 @@
+//  The purpose of this AstroImageJ (AIJ) macro is to produce a  plot of dmag vs.
+//  unbinned RMS from an AIJ Measurements file.
+//
+//  Comments or questions may be directed to the macro's author:
+//  Dennis Conti, email: dennis@astrodennis.com
+//
+//  REVISION 2.3
+var REVISION = "2.3";
+//  Revision Notes:
+//       2.3 Add option for user to enable logfile; modify user dialogue for opening measurements file
+//       2.2 Add ability of user to optionally plot X-axis as log10(dmag); scale placement of top
+//           legend for better placement
+//       2.1 Add ability of user to specify a radius around target star for stars to be plotted
+//       2.0 Deleted zoom instructions; put filename at top of plot; set debugMode=0
+//       1.1 Add zoom instructions at top of plot
+//       1.0 Initial Version
+//
+//                                     SET DEBUG MODE
+//   0 = Logfile only contains status messages
+//   1 = Debug values are used for all entries and Logfile contains detailed, intermittent information
+//   2 = Same as 1, but Logfile also contains parsed strings
+//   Initialize to 0
+var debugMode = 0;
+//  
+//                                   DEFINE GLOBAL VARIABLES
+//
+// Define special characters as global variables
+var TAB = "\t";
+var COMMA = ",";
+var CR=fromCharCode(13)
+var LF=fromCharCode(10);
+// Since functions only return a data value, globalValue is
+// a global variable that can convey character strings from
+// functions. Also define success as a global value.
+var globalValue="";
+var success=false;
+//
+//                                    DEFINE FUNCTIONS
+//
+//  This function will output a message to the logfile if the
+//  debugLevel passed to it is greater than or equal to the
+//  debugMode that is set for this macro run
+//
+function debugPrint (message,debugLevel) {
+    n=d2s(debugLevel,0);
+    if (debugLevel <= debugMode) {print (message);};
+    return(true);
+};
+
+//
+//  This function posts an error message in the log window,
+//  closes and deletes the open outputFile, and then exits.
+//
+function errorHandling (message) {
+    print(message);
+    exit();
+};
+
+// This function validates that a string for a specified parameter
+//  is less than or equal to a certain length.  If the length of the string
+//  is valid, the function returns true; otherwise, the function produces
+//  an error message and the macro is terminated.
+//
+function checkStringLength (parameter,string,length) {
+    lenString=lengthOf(string);
+    if (lenString<length+1) {
+        return(true);
+        } else {
+        errorHandling ("**** ERROR: "+ parameter + " with a value of" + "'" + string + "'" + "is longer than allowed");
+        }
+};
+
+// This function validates that a number for a specified parameter
+//  is within a certain lower and upper range.  If the number
+//  is valid, the function returns true; otherwise, the function produces
+//  an error message and the macro is terminated.
+//
+function checkRange (parameter,number,lower,upper) {
+    if ((number>lower||number==lower) && (number<upper||number==upper)) {
+        return(true);
+        } else {
+       errorHandling ("**** ERROR: "+ parameter + " with a value of" + number + "is out of allowable range");
+     };
+};
+
+//
+//
+//  This function returns the modulus of a number for a given divisor
+//
+function modulus (value,divisor) {
+     success = value/divisor - floor(value/divisor);
+     return(success);
+};
+
+//
+//  This function finds the position of a substring in a string
+//   where items in the string are separated by
+//   a delimiter.  If flag is true, then there is a non-empty
+//   first position. If the substring is not found, then
+//   success is returned as false and position=0.
+//
+function findPositionInHeader (string,substr,delimiter,flag) {
+//  Find the beginning character position of a substring
+//  in a string
+    indexOfSubString=indexOf(string,substr);
+    lastDelim=1;
+    stringLength=lengthOf(string);
+//  Set initial position
+    if (flag) {
+        position=0;
+         } else {
+        position=1;
+    }
+//  Loop through all instances of the delimiter in the string
+//  until the one immediately after the substring is found
+    for (i = 1; i<stringLength; i++) {
+         nextDelim=indexOf(string,delimiter,lastDelim);
+         if (nextDelim+1==indexOfSubString) {
+             position=i+1;
+             success=true;
+             return(position);
+         };
+         lastDelim=nextDelim+1;
+     }
+    success=false;
+    return(0);
+};
+
+//
+//  This function finds the value at a certain position in a string
+//   where the values are separated by a delimiter. This function
+//   can be used in conjuntion with the above findPosition function
+//   to having found the correct position of the value being searched for.
+//   The value is stored in the global variable globalValue. The function
+//   returns false if this is the last value found in the string.
+//
+function findValue (string,position,Delimiter) {
+    nextDelim=-1;
+    for (i = 0; i<position; i++) {
+         lastDelim=nextDelim+1; 
+         nextDelim=indexOf(string,Delimiter,lastDelim);
+//  Check if this is the last item in the string
+         if (nextDelim==-1) {
+              globalValue=substring(string,lastDelim,lengthOf(string));
+              return(false);
+         }
+    }
+   globalValue=substring(string,lastDelim,nextDelim);
+   return(true);
+};
+
+//
+//  This function gets the value in a row of the user's data,
+//   which value is associated with a particular parameter
+//   (i.e., substring) in a header row. The position of the
+//   parameter in the header row is first found, then the the corresponding
+//   value in that position in the data row is found and returned. If column
+//   flag (colflag) is true, then there is a label in col. 1
+//   of the header row, otherwise there is not. If the parameter
+//   is not found in the header, then success is returned as false.
+//
+function getData (searchString,headerString,rowString,delimiter,colflag) {
+    position=findPositionInHeader(headerString,searchString,delimiter,colflag);
+//  if the parameter was not found, then success is false and this is
+//  returned by this function also as false.
+    if (success) {success=findValue(rowString,position,delimiter);};
+    return(success);
+};
+
+//
+//   This function displays a string of a certain length as a user dialogue.
+//   If debugMode is non-zero, a default value is displayed.
+//
+function userString (string,default,length) {
+     Dialog.addString(string,default,length);
+};
+
+//
+//  This function gets a user string in globalValue from the dialogue, and
+//  checks if it is empty and the error message is NOT empty. If the latter
+//  conditions are true, then an error message is printed and
+//  the macro is terminated. Otherwise, a message is printed to the
+//  log and a check is made of the string's length.
+//
+function getUserString (errorMessage,printMessage,length) {
+     globalValue = Dialog.getString();
+     if (globalValue == "" && errorMessage !="") {
+         errorHandling("*** ERROR: " + errorMessage)};
+     message = printMessage + globalValue;
+     successPrint = debugPrint (message,1);
+     checkStringLength (printMessage,globalValue,length);
+};
+
+//
+//
+// The following are the valid lengths of user entries.
+//  These are later used to perform range checks.
+lenMeasurementTable = 3000;
+lenTargetStar = 4;
+lenScale = 6;
+lenRadius = 6;
+singleQuote = fromCharCode(39);
+doubleQuote = fromCharCode(34);
+newlineChar = fromCharCode(10);
+//
+//--------------------------- First, get current date and time
+//
+getDateAndTime(year,month,dayOfWeek,dayOfMonth,hour,minute,second,msec);
+//  Convert year, month, day, month, hour, and second to strings
+yearString=d2s(year,0);
+monthString=d2s(month+1,0);
+// if month+1 is less than 10, append 0 as prefix - note month=0 is January
+if (month+1<10) {
+    monthString="0"+d2s(month+1,0);
+    } else {
+    monthString=d2s(month+1,0);
+};
+// if day is less than 10, append 0 as prefix
+if (dayOfMonth<10) {
+    dayString="0"+d2s(dayOfMonth,0);
+    } else {
+    dayString=d2s(dayOfMonth,0);
+ };
+hourString=d2s(hour,0);
+minuteString=d2s(minute,0);
+secondString=d2s(second,0);
+datetime=yearString + "-" + monthString + "-" + dayString;
+//
+//
+//                               BEGIN USER DIALOGUES
+//
+//------------------------------ Create the first page of dialogues
+//
+Dialog.create("TFOP SG1 dmag vs. RMS Plot Generator");
+
+Dialog.addMessage("This macro creates a plot of dmag vs. (unbinned) RMS for all stars in the user's AIJ measurement table");
+Dialog.addMessage(" ");
+//
+//  Request name of target star that is in the measurement table header (e.g., T1)
+string ="AIJ name of target star (e.g., T1)      ";
+userString(string,"T1",lenTargetStar);
+//
+//  Ask if the user would like the Y axis to be log10 RMS
+message = "Select this box if you would like the vertical axis to be log10 of the RMS (ppt) vs. RMS (ppt)";
+Dialog.addCheckbox(message,false);
+//
+//  Ask for an optional plot radius
+Dialog.addMessage("For the plot of stars within a specific radius of the target, enter the pixel scale and radius below." + newlineChar + "If blank, all stars will be plotted.");
+userString("           Pixel scale (arc-seconds/pixel) ","",lenScale);
+userString("            Radius around target (arc-min.)","",lenRadius);
+//
+//  Ask if the user would like to enable log file diagnostics
+message = "Select this box if you would like to turn on logfile diagnostics";
+Dialog.addMessage("");
+Dialog.addCheckbox(message,false);
+//
+//  Ask user to open measurement file
+Dialog.addMessage("")'
+Dialog.addMessage("After clicking OK, you will be asked to select the measurement file from which the report will be generated.");
+//
+Dialog.show();
+//
+//------------------------------ Get the dialogue entries
+//
+//
+//  Get AIJ name of target star
+getUserString ("No name of target star entered","Target star: ",lenTargetStar);
+TARGET = globalValue;
+//   Initialize various variables used later that are based on TARGET name
+targetXFITString = "X(FITS)_" + TARGET;
+targetYFITString = "Y(FITS)_" + TARGET;
+
+//
+//  Get choice of log10 plot option for RMS
+logPlot = Dialog.getCheckbox();
+//
+//  Get pixel scale and radius for plot, if plot is for select stars.
+//  First get pixel scale
+SCALE = Dialog.getString();
+message = "**** ERROR: too many characters (>6) in pixel scale";
+checkStringLength (message,SCALE,lenScale);
+nScale = parseFloat(SCALE);
+//  Next, get radius
+RADIUS = Dialog.getString();
+message = "**** ERROR: too many characters (>6) in radius";
+checkStringLength (message,RADIUS,lenRadius);
+nRadius = parseFloat(RADIUS);
+// Check if a pixel scale was entered so was a radius, and vice versa
+if (SCALE != "" && RADIUS == "") {errorHandling ("**** ERROR: A pixel scale was entered but not a radius");};
+if (SCALE == "" && RADIUS != "") {errorHandling ("**** ERROR: A radius was entered but not a pixel scale");};
+// Set flag indicating if a specific radius was entered
+radiusPlot = false;
+if (RADIUS != "") {radiusPlot = true;};
+nRadius = parseFloat(RADIUS);
+distanceLimit = nRadius*60 / nScale;
+//
+//  Get choice of debug mode and, if enabled, print out diagnostics accumualted so far
+debugChoice = Dialog.getCheckbox();
+if (debugChoice) {
+   debugMode=1;
+//  Clear the  user's AIJ log window
+   print("\\Clear");
+   message = "XFITS, YFITS Strings=" + targetXFITString + " and " + targetYFITString;
+   successPrint = debugPrint(message,1);
+   message = "Scale: " + SCALE + " Radius: " + RADIUS;
+   successPrint = debugPrint(message,1);
+};
+//
+// Set firstMeasTableColFlag to false indicating that the first column of the measurement
+// table header does not contains a label
+firstMeasTableColFlag = false;
+successPrint = debugPrint("First measurement table col. flag: " + firstMeasTableColFlag,1);
+//
+//  Open the user-specified measurement file and then put the file into an array by rows
+//
+filepath = File.openDialog("Select AIJ Measurements Table");
+measurementFile = File.openAsString(filepath);
+measurementFileName = File.nameWithoutExtension;
+//
+//  Determine delimiter (tab or comma) used in the
+//  input measurement table and set inputFileDelimiter
+//  to this.
+//
+fullFileName = File.name;
+indexOfperiod = lastIndexOf(fullFileName,".");
+extension = substring(fullFileName,indexOfperiod+1);
+message = "Extension= " + extension;
+debugPrint(message,1);
+if (extension == "tbl" || extension == "txt" || extension == "xls") {
+    inputFileDelimiter = TAB;
+    } else {
+           if (extension == "csv") {
+               inputFileDelimiter = COMMA;
+               } else {errorHandling("*** ERROR: file extension is not .tbl, .txt, .xls, or .csv");};
+           };
+//  Split the measurement file into an array
+fileArray=split(measurementFile,"\n");
+nRows=lengthOf(fileArray);
+//  Calculate number of observations
+nObservations = nRows - 1;
+//  Check if size of measurment table is less than 3,000 rows
+if (nRows > lenMeasurementTable) {
+     errorHandling("*** ERROR: Measurement table exceeds 3,000 rows")};
+//  Get header row
+header=fileArray[0];
+//
+//
+//  Print out measurment file labels to the log
+successPrint = debugPrint("",1);
+successPrint = debugPrint("Length of header=" + lengthOf(header),1);
+successPrint = debugPrint("Labels in measurement file header are:",1);
+xfitsListIndex = 0;
+//
+//  If the first col. of the header does not contain a label,
+//  then set iStart =2
+if (firstMeasTableColFlag) {
+     iStart = 1;} else {iStart = 2;};
+//
+//  Cycle through header parameters and store star IDs in xfitsList
+//  if they have an X(FITS) value.
+//  First initialize xfitsList array
+//
+message = "iStart=" + d2s(iStart,0);
+debugPrint(message,1);
+i=1;
+success=findValue(header,i,inputFileDelimiter);
+message = "i="+ i + " extension=" + extension + " inputFileDelimiter=" + inputFileDelimiter + " globalValue=" + globalValue;
+debugPrint(message,1);
+i=2;
+success=findValue(header,i,inputFileDelimiter);
+message = "i="+ i + " extension=" + extension + " inputFileDelimiter=" + inputFileDelimiter + " globalValue=" + globalValue;
+debugPrint(message,1);
+//
+xfitsList=newArray(300);
+success=true;
+for (i=iStart; i<lengthOf(header)&&success;i++) {
+     success=findValue(header,i,inputFileDelimiter);
+     if (success) {
+        successPrint = debugPrint(globalValue,1);
+//  Check if found a target or comp XFITS() coordinate;
+//  find X(FITS)_XXX headers - note, need to eliminate X(FITS) header
+        if (substring(globalValue,0,2) == "X(" && lengthOf(globalValue) > 7) {
+           if (substring(globalValue,0,5) == "X(FIT") {
+              starID = substring(globalValue,8);
+              successPrint = debugPrint("starID: " + starID,1);
+              xfitsList[xfitsListIndex] = starID;
+              xfitsListIndex = xfitsListIndex + 1;
+            };
+         };
+     };
+};
+//
+//
+//---------------------Create the various STAR lists and initialize STARrelfluxavg, STARrms, and STARtempbin values to 0
+//  Setup various STAR arrays
+STARlistIndex = 0;
+STARlist = newArray(300);
+STARdmag = newArray(300);
+STARrms = newArray(300);
+STARrelfluxavg = newArray(300);
+STARtempbin = newArray(300);
+Array.fill(STARrms,0.0);
+Array.fill(STARrelfluxavg,0.0);
+Array.fill(STARtempbin,0.0);
+//  Note: nBins is forced to 1; however, future versions may want to make binning an option
+binning = 1;
+//  Compute number of bins
+nBins = floor(nObservations/binning);
+successPrint = debugPrint("Number of bins: " + nBins,1);
+//
+//
+//  Cycle through all rows in the measurement table. For the first data row, see
+//  what target ("Tx") or comp stars ("Cx") are within the above distance limit
+//  from the target. For all rows, and for the stars within the required radius,
+//  sum their relative flux values
+//
+for (i=1; i<nObservations+1; i++) {
+     rowString = fileArray[i];
+//  If the first data row:
+//     1.  Get the Source-Sky value of the target for later use in computing the dmag's
+//     2.  See what target and comp stars are within the required distance and then
+//         store their column indices in array STARlist.
+    if (i == 1) {
+//  Get XFITS, YFITS values for the target star 
+          success=getData(targetXFITString,header,rowString,inputFileDelimiter,firstMeasTableColFlag);
+          if (!success) {errorHandling ("***ERROR: No X(FITS) value for target star");}; 
+          xfitsTARGET = parseFloat(globalValue);
+          success=getData(targetYFITString,header,rowString,inputFileDelimiter,firstMeasTableColFlag);
+          if (!success) {errorHandling ("***ERROR: No Y(FITS) value for target star");}; 
+          yfitsTARGET = parseFloat(globalValue);
+          successPrint = debugPrint ("xfitsTARGET=" + xfitsTARGET,1);
+          successPrint = debugPrint ("yfitsTARGET=" + yfitsTARGET,1);
+//  Get the Source-Sky value of the target for later use in computing the dmag's of the STAR's
+          targetSourceSkyString = "Source-Sky_" + TARGET;
+          success=getData(targetSourceSkyString,header,rowString,inputFileDelimiter,firstMeasTableColFlag);
+          fluxTarget = parseFloat(globalValue);
+          message = targetSourceSkyString + "=" + globalValue;
+          successPrint = debugPrint(message,1);
+//  If radiusPlot is true, cycle through the stars in xfitsList to see which ones are within
+//  the distanceLimit of the target star
+          for (j = 0; j<xfitsListIndex; j++) {
+//  Get the X(FITS) and Y(FITS) location of star
+               starID = xfitsList[j];
+               successPrint = debugPrint("check: " + starID,1);
+               starXFITSString = "X(FITS)_" + starID;
+               starYFITSString = "Y(FITS)_" + starID;
+               success=getData(starXFITSString,header,rowString,inputFileDelimiter,firstMeasTableColFlag);
+               xfitSTAR = parseFloat(globalValue);
+               success=getData(starYFITSString,header,rowString,inputFileDelimiter,firstMeasTableColFlag);
+               yfitSTAR = parseFloat(globalValue);
+               valdist = (xfitsTARGET-xfitSTAR)*(xfitsTARGET-xfitSTAR) + (yfitsTARGET-yfitSTAR)*(yfitsTARGET-yfitSTAR);
+               distanceToTarget = sqrt(valdist);
+               successPrint = debugPrint("xfitsTARGET=" + xfitsTARGET + "   xfitSTAR=" + xfitSTAR + "   yfitsTARGET=" + yfitsTARGET + "  yfitSTAR=" +yfitSTAR,1);
+               successPrint = debugPrint("distanceToTarget = " + distanceToTarget,1);
+//  If the star is within the prescribed distance from the target and radiusPlot is true,
+//  or if radiusPlot is false, include the star in the STARlist array
+               if ((distanceToTarget <= distanceLimit && radiusPlot) || !radiusPlot) {
+                   STARlist[STARlistIndex] = starID;
+                   successPrint = debugPrint("STARlist value= " + STARlist[STARlistIndex],1);
+//  Get the rel_flux of the first row of the STAR
+                   SourceSkyString = "Source-Sky_" + starID;
+                   success=getData(SourceSkyString,header,rowString,inputFileDelimiter,firstMeasTableColFlag);
+                   fluxStar = parseFloat(globalValue);
+//  Compute the dmag of the star relative to the target
+//  Use natural log (base e) to compute log10(n), since log10(n) = log(n)/log(10)
+                   STARdmag[STARlistIndex] = -2.5 * log(fluxStar/fluxTarget)/log(10);
+                   dmag = d2s(STARdmag[STARlistIndex],2);
+                   successPrint = debugPrint("Dmag for " + starID + "=" + dmag,1);
+                   STARlistIndex = STARlistIndex + 1;
+               };
+           };
+         };
+//  Depending upon binning, include this row in the following computations:
+//  for each STAR in the STARlist, compute the average of its rel_flux for later use in computing its RMS.
+//  Based on the value of binning, either include this in the running sum for the bin, or do the
+//  computation of the average
+    successPrint = debugPrint(" ",1);
+    successPrint = debugPrint("*****************  Computation of running average rel_flux ****************",1);
+    for (k=0; k<STARlistIndex; k++) {
+        RelFluxString = "rel_flux_" + STARlist[k];
+        success=getData(RelFluxString,header,rowString,inputFileDelimiter,firstMeasTableColFlag);
+        relflux = parseFloat(globalValue);
+        message = "Row " + i + ": " + RelFluxString + "=" +  globalValue;
+        successPrint = debugPrint(message,1);
+//  Compute a running average of the STAR's relative flux
+        if (modulus(i,binning) == 0) {
+//  Add to relflux any previous values that are part of this bin
+            relflux = (relflux + STARtempbin[k])/binning;
+            successPrint = debugPrint("Binned relflux= " + relflux,1);
+            STARrelfluxavg[k] = STARrelfluxavg[k] + relflux/nBins;
+            successPrint = debugPrint("RelFluxavg for " + STARlist[k] + "=" + STARrelfluxavg[k],1);
+//  Reinitialize STARtempbin values to 0
+            STARtempbin[k] = 0;
+        } else {
+//  If not yet ready to compute average, temporarily store relflux in STARtempbin array for this STAR
+                STARtempbin[k] = STARtempbin[k] + relflux;
+                successPrint = debugPrint("Temp bin= " + STARtempbin[k],1);
+                };
+     };
+};
+//
+//  For each row in the measurement table compute the running average of the Source_Radius,
+//  and then for each STAR in the STARlist, compute the sum of the squares of the difference between
+//  the STAR's normalized rel_flux - namely, (1- rel_flux/average rel_flux).
+//  First, reset values of STARtempbin array to 0.0
+successPrint = debugPrint(" ",1);
+successPrint = debugPrint("*****************  Computation of sum of squares of differences ****************",1);
+Array.fill(STARtempbin,0.0);
+for (i=1; i<nObservations+1; i++) {
+    successPrint = debugPrint(" ",1);
+    iString = d2s(i,0);
+    successPrint = debugPrint("For Row " + iString + ":",1);
+//  Get this row of the measurement table
+    rowString = fileArray[i];
+//  Get the Source_Radius and add it to the running count
+    success=getData("Source_Radius",header,rowString,inputFileDelimiter,firstMeasTableColFlag);
+    if (!success) {errorHandling ("***ERROR: No Source_Radius value for the observation");};
+//  Cycle through all of the STAR's in the list
+    for (k=0; k<STARlistIndex; k++) {
+         successPrint = debugPrint(" ",1);
+//  Get rel_flux of the STAR
+         RelFluxString = "rel_flux_" + STARlist[k];
+         success=getData(RelFluxString,header,rowString,inputFileDelimiter,firstMeasTableColFlag);
+         relflux = parseFloat(globalValue);
+         relfluxString = d2s(relflux,6);
+         successPrint = debugPrint("relflux for: " + STARlist[k] + "=" + relflux,1);
+         if (modulus(i,binning) == 0) {
+//  Add to relflux any previous values that are part of this bin
+             relflux = (relflux + STARtempbin[k])/binning;
+             relfluxString = d2s(relflux,6);
+             successPrint = debugPrint("relflux for: " + STARlist[k] + "=" + relfluxString,1);
+             successPrint = debugPrint("STARrelfluxavg=" + STARrelfluxavg[k],1);
+             STARavg = STARrelfluxavg[k];
+             normalizedValue = relflux/STARavg;
+             STARrms[k] = STARrms[k] + (1-normalizedValue)*(1-normalizedValue);
+             successPrint = debugPrint("Normalized value= " + normalizedValue + " STARrms=" + STARrms[k],1);
+             STARtempbin[k] = 0;
+         } else {
+//  If not yet ready to compute rms, temporarily store relflux in STARbin array for this STAR
+                STARtempbin[k] = STARtempbin[k] + relflux;
+                };
+    };
+};
+//  Finally, compute the RMS as the sqrt of the above values/number of observations
+successPrint = debugPrint(" ",1);
+successPrint = debugPrint("*****************  Final RMS Values ****************",1);
+for (k =0; k<STARlistIndex; k++) {
+    STARrms[k] = sqrt(STARrms[k]/nBins);
+    rms = d2s(STARrms[k],5);       
+    successPrint = debugPrint("STARrms for " + STARlist[k] + "=" + rms,1);
+};
+
+//
+//  Create the Plot (X=dmag, Y=RMS) or (X=dmag, Y=log10 RMS)
+//
+nStars= STARlistIndex;
+dmagMIN =  100;
+dmagMAX = -100;
+//  Set rmsMIN and rmsMAX correctly based on logPlot
+if (logPlot) {
+    rmsMIN =  5;
+    rmsMAX = -5;
+    } else {
+           rmsMIN = 100000;
+           rmsMAX = -100000;
+           };
+//  Convert rms values to ppt
+//  If user has selected log plot option, convert STARrms's to log10 basis
+for (i=0;i<nStars;i++) {
+        STARrms[i] = STARrms[i] * 1000;
+        message = "Star: " + i + " STARrms: " + STARrms[i];
+        success = debugPrint(message,1);
+        if (logPlot) {
+//  Use natural log (base e) to compute log10(n), since log10(n) = log(n)/log(10)
+            STARrms[i] = log(STARrms[i])/log(10);
+            message = "Star: " + i + " STARrms: " + STARrms[i];
+            success = debugPrint(message,1);
+            };
+};
+//
+//  Find the min. and max. X and Y values
+for (i=0;i<nStars; i++) {
+    if (STARdmag[i] <= dmagMIN) {dmagMIN = STARdmag[i];};
+    if (STARdmag[i] >  dmagMAX) {dmagMAX = STARdmag[i];};
+    if (STARrms[i] <= rmsMIN) {rmsMIN = STARrms[i];};
+    if (STARrms[i] >  rmsMAX) {rmsMAX = STARrms[i];};
+};
+// Adjust min and max values for better readability of the plot depending on type of plot
+dmagMAX = dmagMAX + 0.5;
+dmagMIN = dmagMIN - 0.5;
+if (logPlot) {
+    rmsMAX = rmsMAX + 0.2;
+    rmsMIN = rmsMIN - 0.2;
+    } else {
+      rmsMAX = rmsMAX + 50;
+      rmsMIN = rmsMIN - 10;
+      };
+message = "dmagMIN= " + dmagMIN + " dmagMAX= " + dmagMAX + " rmsMIN= " + rmsMIN + " rmsMAX= " + rmsMAX;
+successPrint = debugPrint(message,1);
+//  Create appropriate axis labels based on logPlot
+if (logPlot) {
+    Plot.create("dmag vs. (unbinned) RMS","dmag","log10 of RMS (ppt)");
+    } else {Plot.create("dmag vs. (unbinned) RMS","dmag","RMS (ppt)");};
+Plot.setFrameSize(900, 600);
+Plot.setLimits(dmagMIN,dmagMAX,rmsMIN,rmsMAX);
+//  Put file name at a position 30% from the upper left corner; include radius search if there was one
+if (radiusPlot) {
+   Plot.addText(fullFileName,0.3,-0.05);
+   message = "                              Radius (arc-min): " + RADIUS;
+   Plot.addText(message,0.3,-0.006);
+   } else {
+           Plot.addText(fullFileName,0.3,-0.02);
+          };
+//  Put into xValues and yValues the STARdmag and STARrms values up to the
+//  number of stars
+xValues = newArray(nStars);
+yValues = newArray(nStars);
+for (i=0;i<nStars;i++) {
+    xValues[i] = STARdmag[i];
+    yValues[i] = STARrms[i];
+    };
+Plot.add("x",xValues,yValues);
+//  Plot star labels at the correct locations on the plot
+Plot.setJustification("center");
+for (i=0;i<nStars;i++) {
+    X = (xValues[i]-dmagMIN)/(dmagMAX-dmagMIN);
+    Y = (rmsMAX - yValues[i])/(rmsMAX-rmsMIN);
+    message = "STARlist[i]: " + STARlist[i] + " X: " + d2s(X,1) + " Y: " + d2s(Y,1);
+    successPrint = debugPrint(message,1);
+    Plot.addText(STARlist[i],X,Y);
+    };
+Plot.show;
+//save("plot.png");
+exit();

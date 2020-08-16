@@ -1,0 +1,78 @@
+// These macros apply atan, square, square root and inverse log functions
+// to the current image. The processing speed in microseconds per pixel
+// is displayed in the status bar. Press 'z' (Edit>Undo) to undo.
+
+  macro "Atan" {
+      setupUndo;
+      start = getTime();
+      w = getWidth(); h = getHeight();
+      for (y=0; y<h; y++) {
+          for (x=0; x<w; x++)
+              setPixel(x, y, atan(getPixel(x, y)));   
+          if (y%20==0) showProgress(y, h);
+      }
+      showTime(start)
+ }
+
+   macro "Sqr" {
+      setupUndo;
+      start = getTime();
+      w = getWidth(); h = getHeight();
+      for (y=0; y<h; y++) {
+          for (x=0; x<w; x++)
+              setPixel(x, y, sqr(getPixel(x, y)));   
+          if (y%20==0) showProgress(y, h);
+      }
+      showTime(start)
+   }
+
+   macro "Faster Sqr" {
+      setupUndo;
+      start = getTime();
+      w = getWidth(); h = getHeight();
+      for (y=0; y<h; y++) {
+          for (x=0; x<w; x++) {
+              v = getPixel(x, y);
+              setPixel(x, y, v*v); 
+      }  
+          if (y%20==0) showProgress(y, h);
+      }
+     showTime(start)
+  }
+
+  macro "Sqrt" {
+      setupUndo;
+      start = getTime();
+      w = getWidth(); h = getHeight();
+      for (y=0; y<h; y++) {
+          for (x=0; x<w; x++)
+              setPixel(x, y, sqrt(getPixel(x, y)));   
+          if (y%20==0) showProgress(y, h);
+      }
+      showTime(start)
+  }
+
+  macro "Inverse Log" {
+      setupUndo;
+      E = 2.7182818284590452354;
+      start = getTime();
+      w = getWidth(); h = getHeight();
+      for (y=0; y<h; y++) {
+          for (x=0; x<w; x++)
+              setPixel(x, y, pow(E, getPixel(x, y)));   
+          if (y%20==0) showProgress(y, h);
+      }
+      showTime(start)
+  }
+
+ function showTime(start) {
+      resetMinAndMax;
+      showStatus(d2s((getTime()-start)*1000/(w*h), 2)+" usec/pixel");
+  }
+
+  function sqr(x) {
+      return x*x;
+  }
+
+
+

@@ -1,0 +1,651 @@
+//  The purpose of this AstroImageJ (AIJ) macro is to produce a correctly formatted output file that can be
+//  input to the AAVSO Exoplanet Database. The output file format (also called a "report") follows the
+//  specification described in the Documentation tab of the following AAVSO website:
+//  https://aavso.org/apps/exosite/. In addition, a user guide to this macro can be found at:
+//  http://astrodennis.com/AAVSOreport.pdf
+//
+//  The input to this macro can be an AIJ Measurements file, as well as any other tab or comma separated
+//  file that conforms to the input requirements specified in the above referenced user guide.  AIJ's log
+//  window will show the progress of the macro, as well as any error messages
+//
+//  REVISION 7.1
+var REVISION = "7.1";
+//
+//  Release Notes:
+//  7.1 Minor changes to macro functions to be compatible with NEB analysis macro ones; changed
+//      straight print to logfile to debugPrint function; changed method for asking user to select
+//      measurement file; added CR to File.append messages to take care of extra LF issue; 
+//  7.0 Included ; inside } for DiffLabel test; put in a test to make sure that the chosen DiffLabel and
+//      DiffErrorLabel are in the measurement table
+//
+//                                     SET DEBUG MODE
+//   0 = Logfile only contains status messages
+//   1 = Debug values are used for all entries and Logfile contains detailed, intermittent information  
+var debugMode = 0;                   
+//
+//                                   DEFINE GLOBAL VARIABLES
+//
+// Define special characters as global variables
+var TAB = "\t";
+var COMMA = ",";
+var CR=fromCharCode(13)
+var LF=fromCharCode(10);
+
+// Define the output file  and path name as a global variable
+var outputFile="";
+var pathOutputFile="";
+
+// Since functions only return a data value, globalValue is
+// a global variable that can convey character strings from
+// functions
+var globalValue="";
+var success = false;
+//
+//                                    DEFINE FUNCTIONS
+//
+//
+//  This function will output a message to the logfile if the
+//  debugLevel passed to it is greater than or equal to the
+//  debugMode that is set for this macro run
+//
+function debugPrint (message,debugLevel) {
+    n=d2s(debugLevel,0);
+    if (debugLevel <= debugMode) {print (message);};
+    return(true);
+};
+
+//  This function posts an error message in a dialog window,
+//  closes and deletes the open outputFile, and then exits
+//
+function errorHandling (message) {
+    Dialog.create("");
+    Dialog.addMessage(message);
+    Dialog.show();
+//  if the output file was opened, then close and delete it
+    if (outputFile!="") {
+        File.close(outputFile);
+        success=File.delete (pathOutputFile);
+        if (success) {
+            print ("Temporary output file successfully deleted");
+        };
+    }
+    exit();
+}
+
+// This function validates that a string for a specified parameter
+//  is less than or equal to a certain length.  If the length of the string
+//  is valid, the function returns true; otherwise, the function produces
+//  an error message and the macro is terminated.
+//
+function checkStringLength (parameter,string,length) {
+    lenString=lengthOf(string);
+    if (lenString<length+1) {
+        return(true);
+        } else {
+        errorHandling ("**** ERROR: "+ parameter + " with a value of" + "'" + string + "'" + "is longer than allowded");
+        }
+};
+
+// This function validates that a number for a specified parameter
+//  is within a certain lower and upper range.  If the number
+//  is valid, the function returns true; otherwise, the function produces
+//  an error message and the macro is terminated.
+//
+function checkRange (parameter,number,lower,upper) {
+    if ((number>lower||number==lower) && (number<upper||number==upper)) {
+        return(true);
+        } else {
+       errorHandling ("**** ERROR: "+ parameter + " with a value of" + number + "is out of allowable range");
+     };
+}
+
+//  This function finds the position of a substring in a string
+//   where items in the string are separated by
+//   a delimiter.  If flag is true, then there is a non-empty
+//   first position. If the substring is not found, then
+//   the macro is terminated with an error message.
+//   If flag is true, then there is a label in the first column.
+//
+function findPositionInHeader (string,substr,delimiter,flag) {
+//  Find the beginning character position of a substring
+//  in a string
+    indexOfSubString=indexOf(string,substr);
+    lastDelim=1;
+    stringLength=lengthOf(string);
+//  Set initial position
+    if (flag) {
+        position=0;
+         } else {
+        position=1;
+    }
+//  Loop through all instances of the delimiter in the string
+//  until the one immediately after the substring is found
+    for (i = 1; i<stringLength; i++) {
+         nextDelim=indexOf(string,delimiter,lastDelim);
+         if (nextDelim+1==indexOfSubString) {
+             position=i+1;
+             success = true;
+             return(position);
+         };
+         lastDelim=nextDelim+1;
+     }
+    success = false;
+    errorHandling ("****ERROR: Label " + "'" + substr + "'" + " not found");
+    return (0);
+}
+
+//  This function finds the value at a certain position in a string
+//   where the values are separated by a delimiter. This function
+//   relies on the above findPosition function to having found the correct
+//   position of the value being searched for. The value is stored in
+//   the global variable globalValue. The function returns false if this
+//   is the last value found in the string
+//
+function findValue (string,position,Delimiter) {
+    nextDelim=-1;
+    for (i = 0; i<position; i++) {
+         lastDelim=nextDelim+1; 
+         nextDelim=indexOf(string,Delimiter,lastDelim);
+//  Check if this is the last item in the string
+         if (nextDelim==-1) {
+              globalValue=substring(string,lastDelim,lengthOf(string));
+              return(false);
+         }
+    }
+   globalValue=substring(string,lastDelim,nextDelim);
+   return(true)
+}
+
+//  This function gets the value in a row of the user's data,
+//   which value is associated with a particular parameter
+//   (i.e., substring) in a header row. The position of the
+//   parameter in the header row is first found, then the the corresponding
+//   value in that position in the data row is found and returned. If column
+//   flag (colflag) is true, then there is a label in col. 1
+//   of the header row, otherwise there is not. If the parameter
+//   is not found in the header, then success is returned as false.
+//
+function getData (searchString,headerString,rowString,delimiter,colflag) {
+    position=findPositionInHeader(headerString,searchString,delimiter,colflag);
+//  if the parameter was not found, then success is false and this is
+//  returned by this function also as false.
+    success=findValue(rowString,position,delimiter);
+    return(success);
+}
+//
+// The following are the valid lengths of user entries.
+//  These are later used to perform range checks.
+lenObscode=5;
+lenSoftwareName=255;
+lenStarName=100;
+lenRA=8;
+lenDEC=8;
+lenExoplanetName=100;
+lenExposureTime=7;
+lenDetrendParameterList=100;
+lenSecObscodes=60;
+lenPriors=250;
+lenResults=250;
+lenNotes=1000;
+lenDate=15;
+lenDifference=15;
+lenError=15;
+lenDetrend=12;
+//
+//                               BEGIN USER DIALOGUES
+//
+//****************** CREATE THE FIRST PAGE OF USER DIALOGUES
+//
+Dialog.create("Create AAVSO Exoplanet Report");
+Dialog.addMessage("Macro Revision: " + REVISION);
+
+Dialog.addMessage("***Help for use of this macro can be found at http://astrodennis.com/AIJMacroHelp.pdf");
+
+Dialog.addMessage("***Report file format specifications can be found at: https://www.aavso.org/aavso-exoplanet-report-file-format")
+
+Dialog.addMessage("* Indicates a required parameter");
+
+//  Clear the user's AIJ log window
+print("\\Clear");
+//
+// Fix TYPE and SOFTWARE values
+TYPE="EXOPLANET";
+SOFTWARE="AstroImageJ";
+//
+//  Fix the delimiter to be used in the data rows of the report
+DELIM=COMMA;
+//
+//  Request the Primary AAVSO observer code
+//
+Dialog.addString("Primary Observer AAVSO Code","",lenObscode);
+//
+//  Request the type of date used
+DateTypes=newArray("BJD_TDB","JD_UTC","HJD_UTC");
+Dialog.addChoice("Date Type*",DateTypes);
+Dialog.addString("Enter label for the Date Type (leave blank if same as Date Type choice)","",15);
+//
+//  Request the type of camera used
+ObsTypes=newArray("CCD","DSLR");
+Dialog.addChoice("Select Camera Used (select CCD for CMOS cameras)*",ObsTypes);
+//
+//  Request the star name
+Dialog.addString("Enter Host Star Name*","",20);
+//
+//  Request the exoplanet name
+Dialog.addMessage("");
+Dialog.addString("Enter Exoplanet Name (leave blank if same as Host Star Name","",20);
+//
+//  Request the binning used
+BinningChoices=newArray("1x1","2x2","3x3","4x4");
+Dialog.addChoice("Select binning used*",BinningChoices);
+//
+//  Request the exoposure time used
+Dialog.addString("Enter exposure Time (sec)*","",lenExposureTime);
+//
+//  Request the filter used - must be a valid AAVSO-known filter
+FilterChoices=newArray(
+  "CV : Clear or No filter",
+  "CBB: Clear Blue Blocking (sometimes referred to as 'Exoplanet' filter)",
+   "U   : Johnson U",
+   "B : Johnson B",
+   "V  : Johnson V",
+   "R  : Cousins R",
+   "I  : Cousins I",
+   "J  : NIR 1.2 micron",
+   "H  : NIR 1.6 micron",
+   "K  : NIR 2.2 micron",
+   "SZ : Sloan z",
+   "SU : Sloan u",
+   "SG : Sloan g",
+   "SR : Sloan r",
+   "SI : Sloan i",
+   "TG : Green Filter (or Tri-color green). This is commonly the 'green-channel' in a DSLR or color CCD camera.",
+   "TB : Blue Filter (or Tri-color blue). This is commonly the 'blue-channel' in a DSLR or color CCD camera.",
+   "TR : Red Filter (or Tri-color red). This is commonly the 'red-channel' in a DSLR or color CCD camera.",
+   "STU: Stromgren u",
+   "STV: Stromgren v",
+   "STB: Stromgren b",
+   "STY: Stromgren y",
+   "MA : Optec Wing A",
+   "MB : Optec Wing B",
+   "MI : Optec Wing C",
+   "ZS : PanSTARRS z-short (APASS)",
+   "Y  : PanSTARRS y (APASS)",
+   "HA : H-alpha",
+   "HAC: H-alpha continuum",
+   "O  : Other filter not listed above, must describe in Notes"
+);
+Dialog.addChoice("Select filter Used*",FilterChoices);
+//
+//  Request the type of differential measurement data used and the labels used
+MeasurementChoices=newArray("Relative Normalized Flux","Differential Magnitude");
+Dialog.addChoice("Select type of measurement data*",MeasurementChoices);
+Dialog.addMessage("Enter the labels for the measurement data and error, if different from the default values associated with the above choice (see above link to AIJ Macro Help):");
+US=fromCharCode(95);
+Dialog.addString("Measurement data label, if different from the default","",15);
+Dialog.addString("Measurement error label if different from the default","",15);
+Dialog.show();
+
+//
+//*****************  GET THE FIRST PAGE OF USE INPUTS
+//
+
+debugPrint("#TYPE=" + TYPE,1);
+
+debugPrint("#SOFTWARE=" + SOFTWARE,1);
+
+debugPrint("#DELIM=" + DELIM,1);
+//
+//  Get the primary observer code
+OBSCODE=Dialog.getString();
+if (OBSCODE=="") {
+     errorHandling("*** ERROR: No Obscode was entered");
+};
+debugPrint("#OBSCODE=" + OBSCODE,1);
+checkStringLength("OBSCODE",OBSCODE,lenObscode);
+//
+//  Get the type of date used
+DATE_TYPE=Dialog.getChoice();
+debugPrint("#DATE_TYPE=" + DATE_TYPE,1);
+// Get label for date type; if the user does not specify one, then the string choice for Date Type will be used.
+DateLabel=Dialog.getString();
+if (DateLabel=="") {
+    DateLabel=DATE_TYPE;
+};
+//
+//  Get the type of camera used
+OBSTYPE=Dialog.getChoice();
+debugPrint("#OBSTYPE=" + OBSTYPE,1);
+//
+//  Get the star name
+STAR_NAME=Dialog.getString();
+if (STAR_NAME=="") {
+     errorHandling("*** ERROR: No host star name was entered");
+};
+debugPrint("#STAR_NAME=" + STAR_NAME,1);
+checkStringLength("Host Star Name",STAR_NAME,lenStarName);
+//
+//  Get the exoplanet name - if blank, use the star name
+EXOPLANET_NAME=Dialog.getString();
+if (EXOPLANET_NAME=="") {
+     EXOPLANET_NAME = STAR_NAME;
+};
+debugPrint("#EXOPLANET_NAME=" + EXOPLANET_NAME,1);
+checkStringLength("Exoplanet name",EXOPLANET_NAME,lenExoplanetName);
+//
+//  Get the binning used
+BINNING=Dialog.getChoice();
+debugPrint("#BINNING=" + BINNING,1);
+//
+//  Get the exposure time used and check its validity
+EXPOSURE_TIME=Dialog.getString();
+debugPrint("#EXPOSURE_TIME=" + EXPOSURE_TIME,1);
+if (EXPOSURE_TIME=="") {
+     errorHandling("*** ERROR: No exposure time was entered");
+};
+// Convert EXPOSURE_TIME to a number
+expTime=parseFloat(EXPOSURE_TIME);
+// Check if entry is a not a number or is zero
+if (isNaN(expTime) || expTime==0) {
+    errorHandling("*** ERROR: Invalid exposure time");
+};
+// Check if EXPOSURE_TIME is in a valid range;
+checkRange("Exposure Time",expTime,0,600);
+//
+//  Get the filter used
+filter_type=Dialog.getChoice();
+FILTER=substring(filter_type,0,3);
+debugPrint("#FILTER=" + FILTER,1);
+//
+//  Get the type of diff. measurement data used
+MEASUREMENT_TYPE=Dialog.getChoice();
+// Check if a measurement type was selected
+if (MEASUREMENT_TYPE=="") {
+    errorHandling ("*** ERROR: A measurement type was not selected");
+};
+// Convert selection to measurement type code
+if (MEASUREMENT_TYPE=="Relative Normalized Flux") {
+    mType="Rnflux";
+    } else {mType="Dmag";
+      };
+debugPrint("#MEASUREMENT_TYPE=" + mType,1);
+//
+// Get labels for the difference measurement and the difference error
+DiffLabel=Dialog.getString();
+if (DiffLabel=="") {
+     if (mType=="Rnflux") {
+        DiffLabel="rel_flux_T1_n";
+        } else {DiffLabel="rel_flux_T1(mag)";};
+};
+DiffErrorLabel=Dialog.getString();
+if (DiffErrorLabel=="") {
+     if (mType=="Rnflux") {
+        DiffErrorLabel="rel_flux_err_T1_n";
+        } else {DiffErrorLabel="rel_flux_err_T1(mag)";};
+};
+
+//
+//****************** CREATE THE SECOND PAGE OF USER DIALOGUES
+//
+
+Dialog.create("");
+//
+//  Request information on any detrend parameters used
+Dialog.addMessage("");
+Dialog.addString("Enter a comma separated list of any detrend parameters used - note, these are case sensitive","",lenDetrendParameterList);
+Dialog.addMessage("Enter labels used for the following detrend parameters:");
+Dialog.addMessage("(Note: you may leave the label blank if the label is the same as the corresponding name in the above list of detrend parameter)");
+Dialog.addString("Detrend-1 parameter","",15);
+Dialog.addString("Detrend-2 parameter","",15);
+Dialog.addString("Detrend-3 parameter","",15);
+Dialog.addString("Detrend-4 parameter","",15);
+
+Dialog.addMessage("OTHER OPTIONAL PARAMETERS:");
+//
+//  Request information on other optional parameters
+Dialog.addString("Secondary Observers - comma separated list of AAVSO observer codes","",20);
+Dialog.addString("Priors - comma separated list of prior names and values","",100);
+Dialog.addString("Results - comma separated list of result names and values","",100);
+Dialog.addString("Notes - observing conditions, known systematics, etc.","",100);
+//
+//  Request the delimiter in the Measurements table
+DelimChoices=newArray("Tab","Comma");
+Dialog.addChoice("Delimiter in Measurements Table (for AIJ files: Tab for *.tbl,*.txt,and *.xls files; Comma for *.csv files)",DelimChoices);
+Dialog.addCheckbox("Check here if the first column of the measurements table header contains a label.  Note: This should normally remain unchecked for AIJ tables",false);
+Dialog.addMessage("Next, after clicking OK, select the measurement file from which the report will be generated.");
+//
+Dialog.show();
+//
+//
+//*****************  GET THE SECOND PAGE OF USE INPUTS
+//
+//  Get detrend parameter descripton list
+DETREND_PARAMETERS=Dialog.getString();
+debugPrint("#DETREND_PARAMETERS=" + DETREND_PARAMETERS,1);
+checkStringLength("Detrend Parameters",DETREND_PARAMETERS,lenDetrendParameterList);
+//
+//  Get user-specified labels for detrend parameters.  If
+//  there is no user-specified label for a detrend parameter n,
+//  but the user had included it the earlier comma-separated
+//  list of detrend parameters (i.e., DETREND_PARAMETERS),
+//  then use the item in the comma-separated list as the label
+//
+//  First, parse DETREND_PARAMETERS, if it is not empty,
+//  and pull out each detrend parameter into an array.
+//
+detrendParameter=newArray("","","","");
+if (DETREND_PARAMETERS != "") {
+    success=true;
+//  Loop as long as there are more detrend parameters, up to 4
+    for (i=0; i<4 && success; i++) {
+//  result is returned in globalValue
+        success=findValue(DETREND_PARAMETERS,i+1,COMMA);
+       detrendParameter[i]=globalValue;
+    };
+};
+detrendLabel=newArray("","","","");
+//  Check for the following cases involving each item in the
+//  Detrend Parameter List and corresponding user-entered
+//  values for a Detrend Label:
+//                                   (1)                    (2)                         (3)
+//             If Parameter List item is:   and Detrend Label is:   then:
+//                           Empty                          Not-empty                 error
+//                           Not-empty                      Empty                     use (1)
+//                           Not-empty                      Not-empty                 use (2)
+//                           Empty                          Empty                     do nothing
+for (i=0; i<4; i++) {
+    detrendLabel[i]=Dialog.getString();
+    case1=(detrendParameter[i] == "") &&  (detrendLabel[i] != "");
+    case2=(detrendParameter[i] != "")  &&  (detrendLabel[i] == "");
+    case3=(detrendParameter[i] != "")  &&  (detrendLabel[i] != "");
+    case4=(detrendParameter[i] == "") &&  (detrendLabel[i] == "");
+//  Test each case; for case3 and case4, detrendLabel[i] will equal
+//   what was entered, if anything, or empty if there was no user entry
+    if (case1) {
+        errorHandling ("**** ERROR: Detrend Parameter-" + d2s(i) + " is empty, yet a Detrend Label was specified");
+        } else  {
+                    if (case2) {
+                       detrendLabel[i]=detrendParameter[i];
+                    }
+            }
+};  
+//
+//  Get any secondary observer codes
+SECONDARY_OBSCODES=Dialog.getString();
+debugPrint("#SECONDARY_OBSCODES=" + SECONDARY_OBSCODES,1);
+checkStringLength("Secondary Obscodes",SECONDARY_OBSCODES,lenSecObscodes);
+//
+//  Get any information on priors
+PRIORS=Dialog.getString();
+debugPrint("#PRIORS=" + PRIORS,1);
+//
+//  Get any information on results
+RESULTS=Dialog.getString();
+debugPrint("#RESULTS=" + RESULTS,1);
+checkStringLength("Results",RESULTS,lenResults);
+//
+//  Get any notes
+NOTES=Dialog.getString();
+debugPrint("#NOTES=" + NOTES,1);
+checkStringLength("Notes",NOTES,lenNotes);
+//
+//  Get the user-specified delimiter (tab or comma) used in the
+//  input measurement table and set inputFileDelim
+//  to this.
+//
+DelimiterChoice=Dialog.getChoice();
+if (DelimiterChoice=="Tab") {
+    inputFileDelimiter=TAB;
+    } else {
+    inputFileDelimiter=COMMA;
+};
+//
+// Get flag indicating if first column of measurement table header contains a label
+//      False=no label, True=label
+firstMeasTableColFlag=Dialog.getCheckbox();      
+//
+//
+//---------------BEGIN OUTPUTING REPORT KEYWORDS AND DATA ROWS TO OUPUT FILE
+//
+//  Open a user-specified measurement file
+//
+filepath = File.openDialog("Select Measurements Table");
+measurementFile=File.openAsString(filepath);
+//  Put the file into an array by rows
+fileArray=split(measurementFile,"\n");
+header=fileArray[0];
+//
+//  Print out measurment file labels to the log
+debugPrint("",1);
+debugPrint("Labels in measurement file header are:",1);
+success=true;
+for (i=1; i<lengthOf(header)&&success;i++) {
+     success=findValue(header,i,inputFileDelimiter);
+     debugPrint(globalValue,1);
+};
+debugPrint("",1);
+nRows=lengthOf(fileArray)-1;
+//
+//  Check that the DiffLabel and DiffErrorLabel parameters chosen by the user
+//  are in the measurement table
+//
+    position=findPositionInHeader(header,DiffLabel,inputFileDelimiter,firstMeasTableColFlag);
+    position=findPositionInHeader(header,DiffErrorLabel,inputFileDelimiter,firstMeasTableColFlag);
+//
+//
+//  Create output file
+//
+//  First, get directory of the user's measurement file
+fileDir= File.directory;
+message = "Output file to be stored in: " + fileDir;
+debugPrint(message,1);
+
+//  Get current date and time
+//
+getDateAndTime(year,month,dayOfWeek,dayOfMonth,hour,minute,second,msec);
+//  Convert year, month, day, month, hour, and second to strings
+yearString=d2s(year,0);
+monthString=d2s(month+1,0);
+// if month+1 is less than 10, append 0 as prefix - note month=0 is January
+if (month+1<10) {
+    monthString="0"+d2s(month+1,0);
+    } else {
+    monthString=d2s(month+1,0);
+};
+// if day is less than 10, append 0 as prefix
+if (dayOfMonth<10) {
+    dayString="0"+d2s(dayOfMonth,0);
+    } else {
+    dayString=d2s(dayOfMonth,0);
+ };
+hourString=d2s(hour,0);
+minuteString=d2s(minute,0);
+secondString=d2s(second,0);
+datetime=yearString + "-" + monthString + "-" + dayString + "-" + hourString + "h" + minuteString + "m" + secondString + "s";
+//  Create the full output file name
+//
+pathOutputFile=fileDir + "AAVSO_Report_"  + OBSCODE + "_" + DATE_TYPE + "_" + mType + "_" + datetime + ".txt";
+//
+//  Open the output file as a new file
+//
+outputFile=File.open(pathOutputFile);
+//
+//  Add to file each report header keyword and user value
+//
+File.append("#TYPE=" + TYPE + CR,pathOutputFile);
+File.append("#OBSCODE=" + OBSCODE + CR,pathOutputFile);
+File.append("#SOFTWARE=" + SOFTWARE + CR,pathOutputFile);
+File.append("#DELIM=" + DELIM + CR,pathOutputFile);
+File.append("#DATE_TYPE=" + DATE_TYPE + CR,pathOutputFile);
+File.append("#OBSTYPE=" + OBSTYPE + CR,pathOutputFile);
+File.append("#STAR_NAME=" + STAR_NAME + CR,pathOutputFile);
+File.append("#EXOPLANET_NAME=" + EXOPLANET_NAME + CR,pathOutputFile);
+File.append("#BINNING=" + BINNING + CR,pathOutputFile);;
+File.append("#EXPOSURE_TIME=" + EXPOSURE_TIME + CR,pathOutputFile);
+File.append("#FILTER=" + FILTER + CR,pathOutputFile);
+File.append("#DETREND_PARAMETERS=" + DETREND_PARAMETERS + CR,pathOutputFile);
+File.append("#MEASUREMENT_TYPE=" + mType + CR,pathOutputFile);
+File.append("#SECONDARY_OBSCODES=" + SECONDARY_OBSCODES + CR,pathOutputFile);
+checkStringLength("Priors",PRIORS,lenPriors);
+File.append("#PRIORS=" + PRIORS + CR,pathOutputFile);;
+File.append("#RESULTS=" + RESULTS + CR,pathOutputFile);
+File.append("#NOTES=" + NOTES + CR,pathOutputFile);
+//
+//  Put an empty line between the # keywords above and the rows of data
+File.append(" " + CR,pathOutputFile);
+debugPrint(" ",1);
+//
+//  Get the value in the user's file associated with each of the user-specified labels for:
+//   1.  Date/Time
+//   2.  Relative flux difference or differential magnitude
+//   3.  Error associated with above.
+//   4.  Values for each of the detrend parameters
+//  Assume that such labels and values are separated by the 
+//  user-specified delimiter inputFileDelimiter
+//
+//  Cycle through each of the data rows in the user's file for the above values
+for (k=1; k<nRows+1; k++) {
+     rowString=fileArray[k];
+     success=getData(DateLabel,header,rowString,inputFileDelimiter,firstMeasTableColFlag);
+     date_time=d2s(globalValue,5);
+
+     success=getData(DiffLabel,header,rowString,inputFileDelimiter,firstMeasTableColFlag);
+     diff = d2s(globalValue,6);
+
+     success=getData(DiffErrorLabel,header,rowString,inputFileDelimiter,firstMeasTableColFlag);
+     diff_error = d2s(globalValue,6);
+  
+     detrendValue=newArray("","","","");
+     delimValue=newArray("","","","");
+     success=true;
+     for (i=0; i<4&&success; i++) {
+         if (detrendLabel[i]!="") {
+             success=getData(detrendLabel[i],header,rowString,inputFileDelimiter,firstMeasTableColFlag);
+             detrendValue[i] = d2s(globalValue,6);
+             delimValue[i] = DELIM;
+         } else {
+            success=false;
+         };
+     };
+//
+//  Print to the log window and output file the appropriate data rows, where each item is separated by DELIM and the row ends with a CR
+//
+    rowData=date_time + DELIM + diff + DELIM + diff_error + delimValue[0] + detrendValue[0] + delimValue[1] +  detrendValue[1] + delimValue[2] +  detrendValue[2] + delimValue[3] + detrendValue[3];
+    debugPrint(rowData,1);
+    File.append(rowData + CR,pathOutputFile);
+};
+//
+//  Print success message to dialogue
+Dialog.create("");
+debugPrint("",1);
+debugPrint("AAVSO Report Successfully Created",1);
+message = "Filename= " + pathOutputFile;
+debugPrint(message,1);
+Dialog.addMessage("AAVSO Report Successfully Created");
+Dialog.addMessage("Filename= " + pathOutputFile);
+Dialog.show();
+//
+//  Close the output file
+File.close(outputFile);
+
+exit();

@@ -1,0 +1,3 @@
+rootProject.name = 'AIJ-Merged'
+include 'ij'
+include 'astronomy_'

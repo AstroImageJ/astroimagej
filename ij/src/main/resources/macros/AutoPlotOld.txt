@@ -1,0 +1,199 @@
+scienceimage = getTitle();
+call("ij.Prefs.set", "multiaperture.finished","false");
+run("Process Images", " subtract bias=bias.fits remove-dark-current dark=dark.fits divide flat=flat.fits");
+
+
+xlabel="J.D.-2400000";
+ylabel="ratio1";
+errlabel="ratio1_error";
+
+showErrors=call("ij.Prefs.get", "plot.showErrors","false");
+if (showErrors=="true") showErrors = 1;
+else showErrors = 0;
+
+lines=call("ij.Prefs.get", "plot.lines", "false");
+if (lines=="true") lines = 1;
+else lines = 0;
+
+markerIndex=call("ij.Prefs.get", "plot.markerIndex",3);
+
+mmag=call("ij.Prefs.get", "plot.mmag","true");
+if (mmag=="true") mmag = 1;
+else mmag = 0;
+
+
+xTics=call("ij.Prefs.get", "plot.xTics", "true");
+if (xTics=="true") xTics = 1;
+else xTics = 0;
+
+
+yTics=call("ij.Prefs.get", "plot.yTics", "true");
+if (yTics=="true") yTics= 1;
+else yTics= 0;
+
+xGrid=call("ij.Prefs.get", "plot.xGrid", "false");
+if (xGrid=="true") xGrid = 1;
+else xGrid = 0;
+
+yGrid=call("ij.Prefs.get", "plot.yGrid", "true");
+if (yGrid =="true") yGrid = 1;
+else yGrid = 0;
+
+xNumbers=call("ij.Prefs.get", "plot.xNumbers", "true");
+if (xNumbers=="true") xNumbers = 1;
+else xNumbers = 0;
+
+yNumbers=call("ij.Prefs.get", "plot.yNumbers", "true");
+if (yNumbers=="true") yNumbers = 1;
+else yNumbers = 0;
+
+autoScaleX=call("ij.Prefs.get", "plot.autoScaleX","false");
+if (autoScaleX=="true") autoScaleX = 1;
+else autoScaleX = 0;
+
+autoScaleY=call("ij.Prefs.get", "plot.autoScaleY","false");
+if (autoScaleY=="true") autoScaleY = 1;
+else autoScaleY = 0;
+
+xMin=call("ij.Prefs.get", "plot.xMin", 55000);
+xMax=call("ij.Prefs.get", "plot.xMax", 57000);
+yMin=call("ij.Prefs.get", "plot.yMin", -20);
+yMax=call("ij.Prefs.get", "plot.yMax", 10);
+
+plotSizeX=call("ij.Prefs.get", "plot.plotSizeX", 600);
+plotSizeY=call("ij.Prefs.get", "plot.plotSizeY", 350);
+
+imageDisplayTime=call("ij.Prefs.get", "plot.imagedisplaytime", 1);
+minContrast=call("ij.Prefs.get", "plot.mincontrast", 0);  
+maxContrast=call("ij.Prefs.get", "plot.maxcontrast", 1000);
+
+setMinAndMax(minContrast, maxContrast);
+
+markers = newArray("box","circle","cross","dot","none","triangle","X");
+
+if (!isOpen("Plot of Measurements")) {
+
+	//ask for option settings if no plot screen is open
+
+	Dialog.create("Auto Plot Options:");
+            Dialog.addNumber ("X plot size",plotSizeX,0,4,"pixels");
+            Dialog.addNumber ("Y plot size",plotSizeY,0,4,"pixels");
+	Dialog.addNumber ("Minimum contrast level",minContrast,0,5,"");
+	Dialog.addNumber ("Maximum contrast level",maxContrast,0,5,"");
+	Dialog.addNumber ("Image Display Time",imageDisplayTime,0,4,"seconds");
+	 
+            Dialog.addCheckbox ("Plot Y-data in relative mmag",mmag);
+	Dialog.addCheckbox ("Show Y-errors",showErrors);
+ 	Dialog.addChoice ("Marker", markers, markers[markerIndex]);
+
+            Dialog.addCheckbox ("Connect markers with lines",lines);
+            Dialog.addCheckbox ("X tick marks",xTics);
+            Dialog.addCheckbox ("Y tick marks",yTics);
+            Dialog.addCheckbox ("X grid lines",xGrid);
+            Dialog.addCheckbox ("Y grid lines",yGrid);
+            Dialog.addCheckbox ("X numbers",xNumbers);
+            Dialog.addCheckbox ("Y numbers",yNumbers);
+
+	Dialog.addMessage("");
+	Dialog.addCheckbox ("X automatic scaling",autoScaleX);
+	Dialog.addNumber ("Minimum X-value",xMin,2,8,"");
+	Dialog.addNumber ("Maximum X-value",xMax,2,8,"");
+            Dialog.addCheckbox ("Y automatic scaling",autoScaleY);
+	Dialog.addNumber ("Minimum Y-value",yMin,2,8,"");
+	Dialog.addNumber ("Maximum Y-value",yMax,2,8,"");
+	Dialog.show();
+
+	//read in user selections
+
+	plotSizeX=Dialog.getNumber();
+	plotSizeY=Dialog.getNumber();
+	minContrast=Dialog.getNumber();
+	maxContrast=Dialog.getNumber();
+	imageDisplayTime=Dialog.getNumber();
+            mmag=Dialog.getCheckbox ();
+	showErrors=Dialog.getCheckbox ();
+ 	markerIndex=Dialog.getChoice ();
+            lines=Dialog.getCheckbox ();
+            xTics=Dialog.getCheckbox ();
+            yTics=Dialog.getCheckbox ();
+            xGrid=Dialog.getCheckbox ();
+            yGrid=Dialog.getCheckbox ();
+            xNumbers=Dialog.getCheckbox ();
+            yNumbers=Dialog.getCheckbox ();
+	autoScaleX=Dialog.getCheckbox ();
+	xMin=Dialog.getNumber ();
+	xMax=Dialog.getNumber ();
+            autoScaleY=Dialog.getCheckbox ();
+	yMin=Dialog.getNumber ();
+	yMax=Dialog.getNumber ();
+ 	call("ij.Prefs.set", "plot.mincontrast", minContrast);  
+	call("ij.Prefs.set", "plot.maxcontrast", maxContrast);
+	call("ij.Prefs.set", "plot.imagedisplaytime", imageDisplayTime);
+	}
+else {
+	markerIndex=markers[markerIndex];
+	}
+
+if (mmag == 1) mmag = " plot_y-data_in_relative_mmag ";
+else mmag = "";
+if (showErrors == 1) showErrors= " show_y-errors ";
+else showErrors= "";
+if (lines == 1) lines = " connect ";
+else lines = "";
+if (xTics == 1) xTics= " x_tick_marks ";
+else xTics= "";
+if (yTics == 1) yTics= " y_tick_marks ";
+else yTics= "";
+if (xGrid == 1) xGrid= " x_grid_lines ";
+else xGrid= "";
+if (yGrid == 1) yGrid= " y_grid_lines ";
+else yGrid= "";
+if (xNumbers == 1) xNumbers= "  x_numbers ";
+else xNumbers= "";
+if (yNumbers == 1) yNumbers= "  y_numbers ";
+else yNumbers= "";
+if (autoScaleX == 1) autoScaleX= " x_automatic_scaling ";
+else autoScaleX= "";
+if (autoScaleY == 1) autoScaleY= " y_automatic_scaling";
+else autoScaleY= "";
+
+imageDisplayTime *= 1000;
+
+
+if (isOpen("Plot of Measurements")) {
+	automode = "true";
+	call("ij.Prefs.set", "multiaperture.automode",automode);
+	run("MultiAperture ");
+	automode = "false";
+	call("ij.Prefs.set", "multiaperture.automode",automode);
+	
+} else {
+	automode = "false";
+	call("ij.Prefs.set", "multiaperture.automode",automode);
+	run("MultiAperture ");
+	finished=call("ij.Prefs.get", "multiaperture.finished","false");
+	while (finished == "false") {
+		finished=call("ij.Prefs.get", "multiaperture.finished","false");		
+		wait(10);
+	}
+
+}
+	
+
+wait(imageDisplayTime);
+
+selectWindow(scienceimage);
+activeimage = getTitle();
+if ((activeimage == scienceimage) && (imageDisplayTime !=0)) {
+	close();
+	}
+if (isOpen("Plot of Measurements")) {
+	selectWindow("Plot of Measurements");
+	close();
+	}
+
+
+run("Plot Table Columns", "table=Measurements x-data="+xlabel+"  y-data="+ylabel+mmag+showErrors+" y-error="+errlabel+" marker="+markerIndex+" x_plot_size="+plotSizeX+" y_plot_size="+plotSizeY+lines+xTics+yTics+xGrid+yGrid+xNumbers+yNumbers+autoScaleX+" minimum_x-value="+xMin+" maximum_x-value="+xMax+autoScaleY+" minimum_y-value="+yMin+" maximum_y-value="+yMax);
+
+
+

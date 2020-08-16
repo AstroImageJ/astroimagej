@@ -1,0 +1,11 @@
+plugins {
+    id 'java'        
+    id 'application' 
+}
+
+dependencies {
+	//compile project(':astronomy_')
+    implementation 'gov.nasa.gsfc.heasarc:nom-tam-fits:1.15.2'
+}
+
+mainClassName = 'ij.ImageJ'

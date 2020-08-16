@@ -1,0 +1,2826 @@
+//  The purpose of this AstroImageJ (AIJ) macro is to produce one or more of the following
+//  three products that support the analysis of NEBs:
+//  1.  The NEB Search Table. The macro will also compute the standard deviation in X and Y of image
+//      shift for a given observation session. 
+//  2.  A  plot of the relative, normalized flux of stars within a user-defined radius of a target,
+//      overlayed with a plot of a transit showing the depth required for the star to cause the predicted
+//      depth of the target. Optionally, plot the rel_flux data in the measurement table with suffixes:
+//      _d,_dn, _fn,_df, _dfn
+//  3.  a  plot of dmag vs. unbinned kBegin
+//  The macro uses an AIJ measurement file, and optionally a plate-solved image to calculate the
+//  pixel scale, as well as the PA's (for the NEB Search Table).
+//
+//  Comments or questions may be directed to the macro's author:
+//  Dennis Conti, email: dennis@astrodennis.com
+//
+//  REVISION 2.23
+var REVISION = "2.23";
+//
+//  The following are diagnostic flags
+var STARtoDiagnose = "";
+var FORCEbinning = 0;
+//
+//  Revision Notes:
+//       2.23 Change language on user input forum regarding cadence to read:
+//            "Bin data to this cadence (seconds)"
+//       2.22 Increased max. length of a FITS header to 50,000 characters
+//       2.21 Add a space after "px" in subtitle of plots.
+//
+//            Make dmag vs. RMS plot screen larger
+//
+//	      Add a beep at the end of the analysis run.
+
+//       2.20 Add "Likely Cleared" and "Cleared boundary lines to the dmag vs. RMS plots.
+//
+//            If the NEB plot option is selected and therefore nearest neighbors are determined
+//            for each star, turn a star's name and plot point "red" on the dmag vs. RMS plot if
+//            the star's nearest neighbor is within 3 times the radius of the aperture.
+//
+//            Change the option to create debug messages in the log file to an option that allows
+//            the user to turn on/off the informational messages at the end of the analysis run.
+
+//       2.19 Include check for Option 1 when testing if rms limit value was included as a user input
+//       2.18 Change Option 2 to allow for two selections: Display plots and/or Save plots
+//            Add an option to limit the number of nearest neighbor searches;
+//            use a default of 500 for this number
+//       2.17 Change the algorithm for determining nearest neighbor to star S[k]. The new algorithm is:
+//             1.  Let mStars = the lesser of the user-defined neighborhood limit value
+//                 (i.e., neighborLimitValue) and the number of stars in the initial radius
+//                 of interest (i.e., STARlistIndex). (Note, mStars was already computed above
+//                 before the current For loop since this remains the same for all stars).
+//             2.  The range of i for stars S[i] to be checked as nearest neighbor to S[k] is then determined
+//                 as follows (for simplicity, let m=mStars and r=STARlistIndex):
+//             a.  If m is an even number:
+//                         Condition                      Start of i       End of i
+//                   k-m/2 >= 0 and k+m/2 < r               k-m/2           k+m/2
+//                   k-m/2  < 0 and k+m/2 < r                 0              m
+//                   k-m/2 >= 0 and k+m/2 >=r               r-m-1           r-1
+//                   k-m/2  < 0 and k+m/2 >=r             This condition is not possible since m will be
+//                                                        forced to be < r
+//             b.  If m is an odd number: 
+//                         Condition                      Start of i       End of i
+//                   k-(m+1)/2 >= 0 and k+(m-1)/2 < r      k-(m+1)/2      k+(m-1)/2
+//                   k-(m+1)/2  < 0 and k+(m-1)/2 < r         0              m
+//                   k-(m+1)/2 >= 0 and k+(m-1)/2 >=r       r-m-1           r-1
+//                   k-(m+1)/2  < 0 and k+(m-1)/2 >=r     This condition is not possible since m will be
+//                                                        forced to be <r 
+//
+//            Add the average aperture value in pixels and arc-seconds to the plot subtitles.
+//       2.16 Add Option 5 to plot any columns with any of the following suffixes: _d,_dn, _fn,
+//	      _df, _dfn, in addition to the originally plotted rel_flux column. 
+//            To support the above new options, create as functions what was originally inline code
+//            that was originally designed to:
+//            a.   compute the binned data for rel_flux data.
+//            b.   compute the normalized relative flux.
+//            c.   compute the RMS
+//            d.   perform the sigma "cleaning"
+//            e.   plot data, including the box transit overlay
+//            f.   save plot data
+//            The TESS dmag correction is no longer applied to the plot of the target star.
+//            Allow user to limit the number of stars for which a nearest neighbor
+//            search will be done.
+//            Add user preferences feature.
+//       2.15 Add: if distance of star to nearest aperture is <10", color it red; correct
+//            overlapping "Dist. to nearest aperture.." in the case of dispostion being
+//            "Not cleared flux too low"
+//       2.14 Modified NEB plot legends as follows:
+//            1. If distance of star to target is <10", color it red.
+//            2. Change "Distance to nearest star..." legend to read "Dist. to nearest aperture"
+//            3. Center title and subtitle
+//            4. Reorder sutbitle to be: Star, dmag, Required depth, RMS
+//       2.13 Add to NEB plots:
+//            1. Distance in arc-seconds from star to target;
+//            2. Distance in are-seconds form star to nearest neighbor;
+//            3. PA of star relative to target.
+//       2.12 Automatically close the progress text window when 100% progress is reached:
+//            a run("Close") command is added at Checkpoint 12 to do this.
+//       2.11 Add a dummy plot(show) for the case of SaveOnlyPlots, otherwise a recently
+//            open image would be what gets saved in the NEBcheck subfolder
+//       2.10 Modify how progress is show - use a text window instead of the logfile 
+//       2.00 When the normalization is redone after the RMSlimit test (see feature added in 1.20),
+//            include only OOT data when computing the new average
+//       1.22 Add a time measurement mode in order to estimate the typical % completion at certain
+//            key checkpoints; add a progress chart in the logfile and the AIJ toolbar that shows
+//            % progress based on the aforementioned measurements taken. Current progess bar checkpoints
+//            based on sample measurements taken:
+//                    Checkpoint 1: show + 10% progress - show refined progress based on 0.0001/star found
+//                    Checkpoint 2: show + 20% progress - show refined progress based on 0.0001/xfitsListIndex
+//                    Checkpoint 3: show + 50% progress - show refined progress based on 0.20/(nObservations*STARlistIndex)
+//                    Checkpoint 4  show + 90% progress - show refined progress based on 0.40/(STARlistIndex*nObservations)
+//                    Checkpoint 6: show +100% progress - show refined progress based on 0.10/(STARlistIndex*nObservations)
+//       1.21 Add user option to not show NEB overlay plots, but just have them stored in a subdirectory
+//       1.20 Redo normalization after the RMSlimit test
+//       1.19 Add a note in the user dialogue regarding the case where the "day" rolls over between the
+//            beginning of the user data and the predicted ingress time
+//       1.18 Fix issue with measurement tables having zero's for BJD_TDB times
+//       1.17 Fix test for case where relative, normalized flux is greater than rmsLimitValue times
+//            the RMS of the star (instead of adding 99999 to normalized flux, just store 99999 into
+//            normalized flux array)
+//       1.16 For a disposition of "***Not Cleared - flux too low," set depth to 1 and change color
+//            of transit line to red on the transit overaly plots, and set the NEBdepth and
+//            NEBdepth/RMS columns in the NEB table to N/A. Also, exclude stars with such a
+//            disposition on the dmag vs. RMS plot.
+//       1.15 Replace underscores with dashes in files that this macro creates
+//       1.14 Increase allowable length for ingress and egress times; add note to add a 1 if
+//            egress rolls into another day; deleted unused length variables
+//       1.13 Fix double-spacing problem in .txt files by taking out the separate File.append(CR..) line
+//            and including a CR at the end of the previous line's string
+//       1.12 Include a check that the *.fit file (if optionally included) has the correct WCS keywords;
+//            fixed a problem with rollover of days;
+//            change name of dmag vs. RMS plot so that if a user saves it, that the name will be dmag_vs_RMS;
+//            change the name of the subfolder for the overlay plots to be the name of the measurement file with
+//            "_NEBcheck" appended to it
+//       1.11 Minor spacing corrections to NEB table row elements
+//       1.10 Modify placement of subtitle for the overaly plots (Option 2), as well as forcing a minimum
+//           space at the top of each plot so that the disposition is always visible; also in the subtitle,
+//           delete "Uncorr." from the dmag value. For the NEB table report, allow for a larger NEBdepth/RMS
+//           value so that the disposition is in-line with the other dispositions
+//       1.9 Include a -0.5 correction to dmag (dmagBuffer) when creating NEBdepth for the
+//           NEB table (user Option 1) and for the overlay plots (user Option 2); include the
+//           correction factor in an additional item in the NEB table preamble; deleted "(Unbinned)"
+//           from title of dmag vs. RMS plots since the data could possibly be binned based on the cadence
+//       1.8 Change the "Source-Sky per aperture pixel count" threshold test to <2 instead of <10;
+//           enable "save plots to subfolder option" as the default; for an observation with a
+//           negative Source-Sky value, set the dmag for the observation to 15; make a slight modification
+//           to the note at the end of the dialogue page; added explanations of the two "Not Cleared" dispositions
+//           at the bottom of the NEB table.
+//       1.7 Combine dialogue messages to user at the end of each option into one message; establish a
+//           a new disposition (Not cleared - flux too low) in the case where the (weighted) average Source-Sky pixel
+//           count is < 10; change default radius search to 2.5 arc-minutes; moved selection of plots for
+//           Option 2 under Option 2; change the way dmag is calculated - use the weighted mean across all
+//           observations.
+//       1.6 Add code to optionally store the individual NEB depth plots to a subdirectory as .png files
+//       1.5 Make corrections for begin and end times for observations out of chronological order;
+//           redo logic on determining if a day has rolled over
+//       1.4 Add dmag to subtitle; have model depth change color based on disposition instead
+//           of data points; change the formula for the NEB pred. depth; misc. other cosmetic changes
+//       1.3 Took care of cases where observations are not in chronoloical order
+//       1.2 Have Options 1-3 default to true; fix time plot when binning; misc. cosmetic changes
+//       1.1 Rearrange user inputs for the various options
+//       1.0 Initial Version
+//
+//                                     SET DEBUG MODE
+//   0 = Logfile only contains status messages
+//   1 = Debug values are used for all entries and Logfile contains detailed, intermittent information
+//   2 = Print measurement file header keywords to logfile
+var debugMode = 0;
+//
+//                                SET TIME MEASUREMENT MODE
+//   0 = make no measuements
+//   1 = take a measurement of the current time and print it to the logfile
+var measMode = 0;
+// 
+//                                   DEFINE GLOBAL VARIABLES
+//
+// Define special characters as global variables
+var TAB = "\t";
+var COMMA = ",";
+var CR=fromCharCode(13)
+var LF=fromCharCode(10);
+var doubleQuote=fromCharCode(34);
+//
+// Define the output file  and path name as a global variable
+var outputFile="";
+var pathOutputFile="";
+//
+// Since functions only return a data value, globalValue is
+// a global variable that can convey character strings from
+// functions. Also define success  and useBJD as global values.
+var globalValue="";
+var success=false;
+var useBJD = true;
+//
+//  Define other global variables
+var xfitsTARGET = 0;
+var yfitsTARGET = 0;
+var prevTimeMeas = getTime();
+var title = "[Progress]";
+//]
+//  Define variables used for progress bar
+var bar = "|";
+var totalBars = 200;
+var cumProgress = 0.0;
+//
+//  Define globals used in the binRelFluxData function
+//  Create arrays for temporarily holding cumulative binned data
+var STARtempBinFlux = newArray(3000);
+var STARtempBinErr = newArray(3000);
+//
+//   Define globals used in the normalizeRelFluxData function
+var STARweightedFluxAvg = newArray(1000);
+var ingressTime;
+var egressTime;
+var overlapCase;
+//
+//   Define globals used in the sigmaCleaning function
+var rmsLimitValue;
+//
+//   Setup various STAR arrays
+var STARlist = newArray(1000);
+var STARdist = newArray(1000);
+var STARpa = newArray(1000);
+//   Setup various other variables
+var STARlistIndex;
+var nObservations;
+var header;
+var inputFileDelimiter;
+var firstMeasTableColFlag;
+var binning;
+var nBins;
+//
+//  Define globals used in the plotData function
+var timeName;
+var beginTimeLeft;
+var widthPlot;
+var heightPlot;
+var fullFileName;
+var charWidth;
+var xMIN;
+var xMAX;
+var yMIN;
+var yMAX;
+var averageAPERTURE;
+var averageAPERTUREarcseconds;
+//
+//  Define globals used in savePlot function
+var saveOnlyPlots;
+var firstPlot;
+var savePlots;
+var subDirectoryPath;
+var measurementFileName;
+var pathOutputFile;
+//
+//Define globals used in plotNeighbor function
+var subTitle1;
+var locString1;
+var distLoc;
+var minDistanceAreSeconds;
+var nearestNeighbor;
+var subTitle2;
+var locString2;
+//
+//  Define globals used in plotPAandOverlay function
+var usePlateSolvedImage;
+var neighborLimitValue;
+var overlayStartTime;
+var overlayEndTIme;
+//
+//
+//******************************* BEGIN FUNCTION DEFINITIONS ********************
+//
+//*************** FUNCTION: debugPrint
+//
+//  This function will output a message to the logfile if the
+//  debugLevel passed to it is less than or equal to the
+//  debugMode that is set for this macro run
+//
+function debugPrint (message,debugLevel) {
+    n=d2s(debugLevel,0);
+    if (debugLevel <= debugMode) {print (message);};
+    return(true);
+};
+//
+//*************** FUNCTION: errorHandling
+//
+//  This function posts an error message in a dialog window and exits the macro
+//
+function errorHandling (message) {
+//  Print success message to dialogue
+    Dialog.create("");
+    Dialog.addMessage(message);
+    Dialog.show();
+    exit();
+};
+//
+//*************** FUNCTION: checkStringLength
+//
+// This function validates that a string for a specified parameter
+//  is less than or equal to a certain length.  If the length of the string
+//  is valid, the function returns true; otherwise, the function produces
+//  an error message and the macro is terminated.
+//
+function checkStringLength (parameter,string,length) {
+    lenString=lengthOf(string);
+    if (lenString<length+1) {
+        return(true);
+        } else {
+        errorHandling ("**** ERROR: "+ parameter + " with a value of" + "'" + string + "'" + "is longer than allowed");
+        }
+};
+//
+//*************** FUNCTION: checkRange
+//
+// This function validates that a number for a specified parameter
+//  is within a certain lower and upper range.  If the number
+//  is valid, the function returns true; otherwise, the function produces
+//  an error message and the macro is terminated.
+//
+function checkRange (parameter,number,lower,upper) {
+    if ((number>lower||number==lower) && (number<upper||number==upper)) {
+        return(true);
+        } else {
+       errorHandling ("**** ERROR: "+ parameter + " with a value of" + number + "is out of allowable range");
+     };
+};
+//
+//*************** FUNCTION: rightJustify
+//
+//  This function creates, from a floating point value,
+//  a right-justified character string
+//  with a user-specified number of decimal digits
+//
+function rightJustify (value,digits) {
+//  Convert value to a string and then back again in case the number of "digits" rounds it up
+//  to another power of 10
+     stringValue = d2s(value,digits);
+     decimalValue = parseFloat(stringValue);
+//  For values < 10, set numberDigits=1, otherwise find appropriate number of digits
+     numberDigits = 1;
+     while (decimalValue >= pow(10,numberDigits) ) {
+         numberDigits = numberDigits + 1;
+         };
+//  If negative, account for minus sign
+     if (decimalValue < 0) {numberDigits = numberDigits + 1;};
+     message = "Value: " + decimalValue  +"   numberDigits: " + d2s(numberDigits,0);
+     debugPrint(message,1);
+//  Determine number of leading spaces are needed (up to 7)
+     numberSpaces = 7-numberDigits;
+     if (numberSpaces <= 0 ) {numberSpaces = 0;};
+//  Add appropriate number of spaces to output string
+     string = d2s(value,digits);
+     for (i=1; i<numberSpaces; i++) {
+         string = " " + string;
+     };
+     globalValue = string;
+};
+//
+//*************** FUNCTION: modulus
+//
+//  This function returns the modulus of a number for a given divisor
+//
+function modulus (value,divisor) {
+     success = value/divisor - floor(value/divisor);
+     return(success);
+};
+//
+//*************** FUNCTION: findPositionInHeader
+//
+//  This function finds the position of a substring in a string
+//   where items in the string are separated by
+//   a delimiter.  If flag is true, then there is a non-empty
+//   first position. If the substring is not found, then
+//   success is returned as false and position=0.
+//
+function findPositionInHeader (string,substr,delimiter,flag) {
+//  Find the beginning character position of a substring
+//  in a string
+    indexOfSubString=indexOf(string,substr);
+    lastDelim=1;
+    stringLength=lengthOf(string);
+//  Set initial position
+    if (flag) {
+        position=0;
+         } else {
+        position=1;
+    };
+//  Loop through all instances of the delimiter in the string
+//  until the one immediately after the substring is found
+    for (i = 1; i<stringLength; i++) {
+         nextDelim=indexOf(string,delimiter,lastDelim);
+         if (nextDelim+1==indexOfSubString) {
+             position=i+1;
+             success=true;
+             return(position);
+         };
+         lastDelim=nextDelim+1;
+     };
+//  If have reached the end of the string and have not found the
+//  substring, then see if the substring is one with the delimiter
+//  as it's last letter. If so, then see if the substring without
+//  the delimiter matches the last part of the string
+    if (endsWith(substr,delimiter)) {
+       position = lengthOf(string) - lengthOf(substr) + 1;
+       message = "position: "+ position;
+       successPrint = debugPrint (message,1);
+       lastPartofString = substring(string,position);
+       message = "lastPartofString: " + lastPartofString;
+       successPrint = debugPrint (message,1);
+       substringWithoutDelim = substring(substr,0,lengthOf(substr)-1);
+       message = "substringWithoutDelim: " + substringWithoutDelim;
+       successPrint = debugPrint (message,1);
+       if (lastPartofString == substringWithoutDelim) {
+           message = "true";
+           successPrint = debugPrint (message,1);
+           success = true;
+           return(position);
+       };
+    };
+    success=false;
+    return(0);
+};
+//
+//*************** FUNCTION: findValue
+//
+//  This function finds the value at a certain position in a string
+//   where the values are separated by a delimiter. This function
+//   can be used in conjuntion with the above findPosition function
+//   to having found the correct position of the value being searched for.
+//   The value is stored in the global variable globalValue. The function
+//   returns false if this is the last value found in the string.
+//
+function findValue (string,position,Delimiter) {
+    nextDelim=-1;
+    for (i = 0; i<position; i++) {
+         lastDelim=nextDelim+1; 
+         nextDelim=indexOf(string,Delimiter,lastDelim);
+//  Check if this is the last item in the string
+         if (nextDelim==-1) {
+              globalValue=substring(string,lastDelim,lengthOf(string));
+              return(false);
+         }
+    }
+   globalValue=substring(string,lastDelim,nextDelim);
+   return(true);
+};
+//
+//*************** FUNCTION: getData
+//
+//  This function gets the value in a row of the user's data,
+//   which value is associated with a particular parameter
+//   (i.e., substring) in a header row. The position of the
+//   parameter in the header row is first found, then the the corresponding
+//   value in that position in the data row is found and returned. If column
+//   flag (colflag) is true, then there is a label in col. 1
+//   of the header row, otherwise there is not. If the parameter
+//   is not found in the header, then success is returned as false.
+//
+function getData (searchString,headerString,rowString,delimiter,colflag) {
+    position=findPositionInHeader(headerString,searchString,delimiter,colflag);
+//  if the parameter was not found, then success is false and this is
+//  returned by this function also as false.
+    if (success) {success=findValue(rowString,position,delimiter);};
+    return(success);
+};
+//
+//*************** FUNCTION: userString
+//
+//   This function displays a string of a certain length as a user dialogue.
+//   If debugMode is non-zero, a default value is displayed.
+//
+function userString (string,default,length) {
+     Dialog.addString(string,default,length);
+};
+//
+//*************** FUNCTION: getUserString
+//
+//  This function gets a user string in globalValue from the dialogue, and
+//  checks if it is empty and the error message is NOT empty. If the latter
+//  conditions are true, then an error message is printed and
+//  the macro is terminated. Otherwise, a message is printed to the
+//  log and a check is made of the string's length.
+//
+function getUserString (errorMessage,printMessage,length) {
+     globalValue = Dialog.getString();
+     if (globalValue == "" && errorMessage !="") {
+         errorHandling("*** ERROR: " + errorMessage)};
+     message = printMessage + globalValue;
+     successPrint = debugPrint (message,1);
+     checkStringLength (printMessage,globalValue,length);
+};
+//
+//*************** FUNCTION: getObsTime
+//
+//  This function returns the current observation time
+//
+function getObsTime (header,rowString,inputFileDelimiter,firstMeasTableColFlag) {
+     if (useBJD) {
+        success = getData("BJD_TDB",header,rowString,inputFileDelimiter,firstMeasTableColFlag);
+        } else {
+               success = getData("JD_UTC",header,rowString,inputFileDelimiter,firstMeasTableColFlag);
+               };
+     observationTime = parseFloat(globalValue);
+     return(observationTime);
+};
+//
+//*************** FUNCTION: getYANGLE
+//
+//  This function computes the Y angle, namely the angle from Y through the target star
+//  to the star in question, going in the direction from the Y+ axis in the direction
+//  opposite to where the X+ axis is
+//
+function getYANGLE (X,Y) {
+//  Case 1:  X < xfitsTARGET  and Y > yfitsTARGET
+if (X <= xfitsTARGET && Y > yfitsTARGET) {
+    Yangle = atan( (xfitsTARGET -X)/ (Y - yfitsTARGET)) * 180/PI;
+    message = "Case 1:" + "X= " + d2s(X,5) + " Y= " + d2s(Y,5) + " Yangle= " + d2s(Yangle,5);
+    debugPrint (message,1);
+};
+//  Case 2:  X < xfitsTARGET  and Y < yfitsTARGET
+if (X <= xfitsTARGET && Y <= yfitsTARGET) {
+    Yangle = 90 + atan( (yfitsTARGET -Y)/ (xfitsTARGET -X)) * 180/PI;
+    message = "Case 2:" + "X= " + d2s(X,5) + " Y= " + d2s(Y,5) + " Yangle= " + d2s(Yangle,5);
+    debugPrint (message,1);
+};
+//  Case 3:  X > xfitsTARGET  and Y < yfitsTARGET
+if (X > xfitsTARGET && Y < yfitsTARGET) {
+    Yangle = 270 - atan( (yfitsTARGET -Y)/ (X - xfitsTARGET)) * 180/PI;
+    message = "Case 3:" + "X= " + d2s(X,5) + " Y= " + d2s(Y,5) + " Yangle= " + d2s(Yangle,5);
+    debugPrint (message,1);
+};
+//  Case 4:  X > xfitsTARGET  and Y > yfitsTARGET
+if (X > xfitsTARGET && Y > yfitsTARGET) {
+    Yangle = 270 + atan( (Y - yfitsTARGET)/ (X - xfitsTARGET)) * 180/PI;
+    message = "Case 4:" + "X= " + d2s(X,5) + " Y= " + d2s(Y,5) + " Yangle= " + d2s(Yangle,5);
+    debugPrint (message,1);
+};
+//  Case 5:  X = xfitsTARGET  and Y > yfitsTARGET
+if (X == xfitsTARGET && Y > yfitsTARGET) {
+    Yangle = 0;
+    message = "Case 5:" + "X= " + d2s(X,5) + " Y= " + d2s(Y,5) + " Yangle= " + d2s(Yangle,5);
+    debugPrint (message,1);
+};
+//  Case 6:  X = xfitsTARGET  and Y < yfitsTARGET
+if (X == xfitsTARGET && Y < yfitsTARGET) {
+    Yangle = 180;
+    message = "Case 6:" + "X= " + d2s(X,5) + " Y= " + d2s(Y,5) + " Yangle= " + d2s(Yangle,5);
+    debugPrint (message,1);
+};
+//  Case 7:  X < xfitsTARGET  and Y = yfitsTARGET
+if (X < xfitsTARGET && Y == yfitsTARGET) {
+    Yangle = 90;
+    message = "Case 7:" + "X= " + d2s(X,5) + " Y= " + d2s(Y,5) + " Yangle= " + d2s(Yangle,5);
+    debugPrint (message,1);
+};
+//  Case 8:  X > xfitsTARGET  and Y = yfitsTARGET
+if (X > xfitsTARGET && Y == yfitsTARGET) {
+    Yangle = 270;
+    message = "Case 8:" + "X= " + d2s(X,5) + " Y= " + d2s(Y,5) + " Yangle= " + d2s(Yangle,5);
+    debugPrint (message,1);
+};
+//  Case 9:  X = xfitsTARGET  and Y = yfitsTARGET
+if (X == xfitsTARGET && Y == yfitsTARGET) {
+    Yangle = 0;
+    message = "Case 9:" + "X= " + d2s(X,5) + " Y= " + d2s(Y,5) + " Yangle= " + d2s(Yangle,5);
+    debugPrint (message,1);
+};
+return(Yangle);
+};
+//
+//*************** FUNCTION: getFITstring
+//
+//  This function will find the (string) value associated with a keyword in a FIT header
+//
+function getFITstring(FITfile,keyword) {
+   i = indexOf(FITfile,keyword);
+// Check if WCS keyword is present
+   if (i == -1) {errorHandling("**** ERROR: The WCS keyword " + keyword + " was not found in the *.fit file");};
+   len = lengthOf(keyword);
+   j = indexOf(FITfile,"=",i+len);
+   k = indexOf(FITfile,"/",j+1);
+   globalValue=substring(FITfile,j+1,k-1);
+};
+//
+//*************** FUNCTION: timeCheckpoint
+//
+//  This function will print to the logfile the current time (in ms), as well as the delta time (in sec.'s)
+//  since the last time time measurement. Also printed are the factor(s) (up to two) that affect these times,
+//  along with the number of items in each factor
+//
+function timeCheckpoint (checkPoint,factor1,factor2,nFactor1,nFactor2) {
+    currentTimeMeas = getTime();
+    deltaTimeMeas = (currentTimeMeas - prevTimeMeas)/1000;
+    print ("For Checkpoint: ",checkPoint,"  Delta from previous time measure: ",deltaTimeMeas," Factor 1: ",factor1,"  Factor2:",factor2, "(",nFactor1,",",nFactor2,")");
+    prevTimeMeas = currentTimeMeas;
+};
+//
+//*************** FUNCTION: progress
+//
+//  This function displays a progress in a text box showing a certain
+//  percentage complete; it also attemps to update the IJ progress bar,
+//  although this is currently problematic when the macro is incorporated
+//  in the AIJ menu
+//
+function progress (percent) {
+    if (percent>1.0) {percent  = 0.99;};
+    showProgress(percent);
+    percentProgress = round(percent * 100);
+    print(title,"\\Update:" + percentProgress + "%\n" + progressBar(percentProgress,100));
+    success = true;
+    return(success);    
+};
+//
+//*************** FUNCTION: progressBar
+//
+//  This function returns an updated progress bar
+//
+function progressBar(p1,p2) {
+//  Set n to the number of progress ticks; thus, one tick = n/100 %  progress
+     n = 50;
+     bar1 = "--------------------------------------------------";
+     bar2 = "**************************************************";
+     index = round(n*(p1/p2));
+     if (index < 1) {index =1;};
+     if (index > n-1) {index = n-1;};
+     return substring (bar2,0,index) + substring(bar1,index+1,n);
+};
+//
+//*************** FUNCTION: binRelFluxData
+//
+//  This function creates arrays of binned data for input arrays containing
+//  relative flux values and their corresponding errors. Since this allows for
+//  different types of relative flux with or without different suffixes (e.g.,
+//  _d,_dn, _fn, _df, _dfn), the suffix substring is an input parameter for
+//  the relative flux). Also, the arrays containing the binned data are parameters as well.
+//  In addition, a parameter indicates if all stars in STARlist are to be used (param=true)
+//  or if a specific star is to be used (param=false). If the former, then the last parameter
+//  indicates that the first star in the list is to be used (i.e., param=0).
+//  If the latter, then the last parameter indicates the index of the star that is to be used.
+//  
+function binRelFluxData (Suffix, binnedRelFluxArray, binnedRelFluxErrArray, allStarFlag, kBegin) {
+//
+//
+Array.fill(STARtempBinFlux,0.0);
+Array.fill(STARtempBinErr,0.0);
+//  When loop below is completed, binCount will be the total number of bins
+//  for all stars, and nBins will be the number of bins for each star
+binCount = 0;
+//
+//  Determine the upper limit of stars to be used based on the kBegin input parameter
+if (allStarFlag) {kEnd = STARlistIndex;} else {kEnd = kBegin +1;};
+message = "kBegin= " + kBegin + "kEnd=" + kEnd;
+successPrint = debugPrint(message,1);
+for (k = kBegin; k < kEnd; k++) {
+    successPrint = debugPrint(" ",1);
+    message = "For star " + STARlist[k] + ":";
+    successPrint = debugPrint(message,1);
+//  Keep track of number of bins and number of entries computed so far for
+//  the current bin
+    nBins = 0;
+    nBinEntries = 0;
+    message = "nObservations= " + nObservations;
+    successPrint = debugPrint(message,1);
+    for (i=1; i<nObservations+1; i++) {
+//  Get index into measurement table for measurements increasing in chronological order
+        index = indexArray[i-1];
+        rowString = fileArray[index];
+        RelFluxString = "rel_flux_" + STARlist[k] + Suffix;
+        success = getData(RelFluxString,header,rowString,inputFileDelimiter,firstMeasTableColFlag);
+        relflux = parseFloat(globalValue);
+        RelFluxErrString = "rel_flux_err_" + STARlist[k] + Suffix;
+        success = getData(RelFluxErrString,header,rowString,inputFileDelimiter,firstMeasTableColFlag);
+        relfluxerr = parseFloat(globalValue);
+        message = "   rel_flux: " + d2s(relflux,6) + " rel_flux_err: " + d2s(relfluxerr,6);
+        if (STARtoDiagnose == "" || STARtoDiagnose == STARlist[k]) {debugLev=1;} else {debugLev=0;};
+        successPrint = debugPrint(message,debugLev);
+        if (modulus(i,binning) == 0) {
+//  Add binned rel_flux and rel_flux_err values into their respective arrays
+           binnedRelFluxArray[binCount] = (relflux + STARtempBinFlux[k])/binning;
+           binnedRelFluxErrArray[binCount] = sqrt(relfluxerr*relfluxerr + STARtempBinErr[k])/binning;
+           message = "   binned rel_flux: " + d2s(binnedRelFluxArray[binCount],6) + " binned rel_flux_err: " + d2s(binnedRelFluxErrArray[binCount],6);
+           if (STARtoDiagnose == "" || STARtoDiagnose == STARlist[k]) {debugLev=1;} else {debugLev=0;};
+           successPrint = debugPrint(message,debugLev);
+           binCount = binCount +1;
+           nBins = nBins + 1;
+//  Reinitialize temporary binning array values to 0.0
+           STARtempBinFlux[k] = 0.0;
+           STARtempBinErr[k] = 0.0;
+//  Reset number of entries computed so far for the current bin
+           nBinEntries = 0;     
+           } else {STARtempBinFlux[k] = STARtempBinFlux[k] + relflux;
+                   STARtempBinErr[k] = STARtempBinErr[k] + relfluxerr*relfluxerr;
+//  Track current number of bin entries
+                  nBinEntries = nBinEntries + 1;
+                  };
+//### Show Additional Progress at the rate of 0.10 per STARlistIndex per nObservation,
+//    but only for the case of all stars being computed
+           if (allStarFlag) {
+              cumProgress = cumProgress + 0.10/(STARlistIndex * nObservations);
+              progress (cumProgress);
+           };
+     };
+//  If there are still some unbinned remaining observations, compute their binned value and add them
+//  to their respective arrays
+    if (nBinEntries != 0) {
+//  Add binned rel_flux and rel_flux_err values into their respective arrays
+        binnedRelFluxArray[binCount] = STARtempBinFlux[k]/nBinEntries;
+        binnedRelFluxErrArray[binCount] = sqrt(STARtempBinErr[k])/nBinEntries;
+        message = " For the remaining " + d2s(nBinEntries,0) + " bin entries: binned rel_flux= " + d2s(binnedRelFluxArray[binCount],6) + " binned rel_flux_err= " + d2s(binnedRelFluxErrArray[binCount],6);
+        if (STARtoDiagnose == "" || STARtoDiagnose == STARlist[k]) {debugLev=1;} else {debugLev=0;};
+        successPrint = debugPrint(message,debugLev);
+        binCount = binCount + 1;
+        nBins = nBins + 1;
+        };
+};
+//
+message = "Total binCount= " + binCount + "Number of bins for each star: " + nBins;
+successPrint = debugPrint(message,1);
+};
+//
+//*************** FUNCTION: normalizeRelFluxData
+//
+//  This function computes the normalized relative flux for each star in STARlist from the binned
+//  relative flux data and the binned relative flux error data, unless the allStarFlat=false, in
+//  which case a single star will be used, whose index in STARlist, is the last parameter.
+//  The output is the normalized relative flux, as well as the average normalized relative flux.
+//  Note, if this is for all stars, then the avgNormFluxArray is used to store the average normalized
+//  flux for each star. If this is only for a single star, then avgNormFluxArray[0] contains its
+//  running average.
+//  The function first computes the weighted averages for the binned rel_flux for the star(s).
+//
+function normalizeRelFluxData (Suffix, binnedRelFluxArray, binnedRelFluxErrArray, normalizedFluxArray, avgNormFluxArray, allStarFlag, kBegin) { 
+//
+//********* First compute the weighted average for the relative flux
+//  The weighted average for rel_flux is computed below and will be used for later use in computing
+//  the normalized relative flux.
+//  Include only OOT data in computing the average, unless the observation
+//  is completely outside or completely inside the predicted transit in which case all data is used.
+//
+successPrint = debugPrint(" ",1);
+successPrint = debugPrint("*****************  Computation of running weighted averages ****************",1);
+//
+//  Determine the upper limit of stars to be used based on the kBegin input parameter
+if (allStarFlag) {kEnd = STARlistIndex;} else {kEnd = kBegin +1;};
+//
+for (k = kBegin; k < kEnd; k++) {
+    numeratorSum = 0.0;
+    denominatorSum = 0.0;
+//  Determine the appropriate beginning and end index of the binned data array based on whether
+//  all stars are to be used, or a single specific star
+    if (allStarFlag) {
+        iBegin = k*nBins;
+        iEnd = (k+1)*nBins;
+        } else {iBegin = 0;
+                iEnd = nBins;
+               };
+    iTime = 0;
+//  Cycle through all binned observations and, for those to be included, calculate the
+//  the running sum of invVar = 1/relfluxerr^2, where relfluxerr = the rel_flux error for the star for the
+//  observation, as well as the running sum of the rel_flux * invVar. The weighted, normalized average
+//  is then the latter divided by the former
+//
+    for (i = iBegin; i < iEnd; i++) {
+//  If the observation is OOT, include it in running average. However, if the observation
+//  is completely within the predicted transit, include it as well
+        obsTime = binnedObsTimes[iTime];
+        iTime = iTime + 1;
+        if (obsTime<ingressTime || obsTime>egressTime || !overlapCase) {
+           obsTimeString = d2s(obsTime,15);
+           message = "Observation time: " + obsTimeString;
+           if (STARtoDiagnose == "" || STARtoDiagnose == STARlist[k]) {debugLev=1;} else {debugLev=0;};
+           successPrint = debugPrint(message,debugLev);
+//  Get star's rel_flux
+           RelFluxString = "rel_flux_" + STARlist[k] + Suffix;
+           relflux = binnedRelFluxArray[i];
+           message = "For bin " + i + ": " + RelFluxString + "=" +  d2s(relflux,6);
+//  Get star's rel_flux_err
+           RelFluxErrString = "rel_flux_err_" + STARlist[k] + Suffix;
+           relfluxerr = binnedRelFluxErrArray[i];
+           message = message + "  " + RelFluxErrString + "=" +  d2s(relfluxerr,6);
+           if (STARtoDiagnose == "" || STARtoDiagnose == STARlist[k]) {debugLev=1;} else {debugLev=0;};
+           successPrint = debugPrint(message,debugLev);
+//
+//  Compute a running sum of invVar and rel_flux * invVar
+           invVar = 1/(relfluxerr*relfluxerr);
+           denominatorSum = denominatorSum + invVar;
+           relfluxTimesinvVar = relflux * invVar;
+           numeratorSum = numeratorSum + relfluxTimesinvVar;
+           message = "invVar= " + invVar + " denominatorSum=" + denominatorSum + " relflux times invVar=" + relfluxTimesinvVar + " numeratorSum=" + numeratorSum;
+           if (STARtoDiagnose == "" || STARtoDiagnose == STARlist[k]) {debugLev=1;} else {debugLev=0;};
+           successPrint = debugPrint(message,debugLev);
+           };
+    };
+//  Compute the weighted average for each star
+    STARweightedFluxAvg[k] = numeratorSum / denominatorSum;
+    message = "Normalized weighted avg for " + STARlist[k] + "=" + STARweightedFluxAvg[k];
+    if (STARtoDiagnose == "" || STARtoDiagnose == STARlist[k]) {debugLev=1;} else {debugLev=0;};
+    successPrint = debugPrint(message,debugLev);
+    successPrint = debugPrint(" ",1);
+};
+//
+//### Time Checkpoint 8
+if (measMode == 1) {timeCheckpoint(8,"selected stars","bins",STARlistIndex,nBins);};
+//
+//********* Now, compute the normalized relative flux
+//
+//  For each star in STARlist, cycle through each row in the measurement table
+//  and compute its relative, normalized flux. Also, compute a running average
+//  for later use in computing the RMS. Since the macros don't support two-
+//  dimensional arrays, store in normalizedFlux the values for the observations
+//  for all stars. The beginning of each list for star with index k is indexed
+//  into normalizedFlux by k*nBins. STARlistIndex = number of stars in
+//  STARlist. When done, nValues will equal the number of normalized flux values.
+//
+nValues = 0;
+for (k = kBegin; k < kEnd; k++) {
+    runningAverage = 0.0;
+//  Determine the appropriate beginning and end index of the binned data array based on whether
+//  all stars are to be used, or a single specific star
+    if (allStarFlag) {
+        iBegin = k*nBins;
+        iEnd = (k+1)*nBins;
+        } else {iBegin = 0;
+                iEnd = nBins;
+               };
+    message = "For star " + STARlist[k] + ":";
+    if (STARtoDiagnose == "" || STARtoDiagnose == STARlist[k]) {debugLev=1;} else {debugLev=0;};
+    successPrint = debugPrint(message,debugLev);
+    for (i=iBegin; i<iEnd;i++) {
+        successPrint = debugPrint(" ",1);
+        iString = d2s(i,0);
+        message = "For observation " + iString + ":";
+        if (STARtoDiagnose == "" || STARtoDiagnose == STARlist[k]) {debugLev=1;} else {debugLev=0;};
+        successPrint = debugPrint(message,debugLev);
+//  Get the rel_flux of the star
+        relflux = binnedRelFluxArray[i];
+        relfluxString = d2s(relflux,6);
+        message = "relflux for: " + STARlist[k] + "=" + relfluxString;
+        if (STARtoDiagnose == "" || STARtoDiagnose == STARlist[k]) {debugLev=1;} else {debugLev=0;};
+        successPrint = debugPrint(message,debugLev);
+//  Compute normalized flux
+        normalizedFluxArray[nValues] = relflux/STARweightedFluxAvg[k];
+//  Compute running average
+        runningAverage = runningAverage + normalizedFluxArray[nValues]/nBins;
+        message = "For bin " + i + " Normalized flux= " + d2s(normalizedFluxArray[nValues],6) + " running average= " + d2s(runningAverage,6);
+        if (STARtoDiagnose == "" || STARtoDiagnose == STARlist[k]) {debugLev=1;} else {debugLev=0;};
+        successPrint = debugPrint(message,debugLev);
+        nValues = nValues + 1;
+    };
+//
+//  Store the average normalized flux for each star in the avgNormFlux array
+    avgNormFluxArray[k] = runningAverage;
+    message = "Average normalized flux for " + STARlist[k] + "=" + runningAverage;
+    if (STARtoDiagnose == "" || STARtoDiagnose == STARlist[k]) {debugLev=1;} else {debugLev=0;};
+    successPrint = debugPrint(message,debugLev);
+    successPrint = debugPrint(" ",1);
+};
+};
+//
+//*************** FUNCTION: computeRMS
+//
+//   This function computes the RMS for each star in STARlist and stores the results
+//   in the STARrms array
+//
+function computeRMS (STARrmsArray, avgNormFluxArray, normalizedFluxArray, allStarFlag, kBegin) {
+//
+//  Determine the upper limit of stars to be used based on the kBegin input parameter
+if (allStarFlag) {kEnd = STARlistIndex;} else {kEnd = kBegin +1;};
+//
+for (k = kBegin; k < kEnd; k++) {
+//  Determine the appropriate beginning and end index of the binned data array based on whether
+//  all stars are to be used, or a single specific star
+    if (allStarFlag) {
+        iBegin = k*nBins;
+        iEnd = (k+1)*nBins;
+        } else {iBegin = 0;
+                iEnd = nBins;
+               };
+    varSum = 0.0;
+    success = debugPrint("rms computation for star:" + STARlist[k],1);
+    for (i=iBegin; i<iEnd; i++) {
+      variance = (avgNormFluxArray[k]-normalizedFluxArray[i]) * (avgNormFluxArray[k]-normalizedFluxArray[i]);
+      varSum = varSum + variance;
+         };
+    STARrmsArray[k] = sqrt(varSum/nBins);
+    message = " rms: " + STARrmsArray[k];
+    success = debugPrint (message,1);
+};
+};
+//
+//*************** FUNCTION:  sigmaCleaning
+//
+//   This function puts 99999 into any normalized relative flux values that are
+//   greater than the rmsLimitValue times the rms of that star. Also, for each star,
+//   it keeps a count of how many good observations there were. It then recomputes
+//   the normalized flux values after "cleaning."
+//
+function sigmaCleaning (STARcountArray, STARnormCountArray, avgNormFluxArray,
+STARrmsArray, normalizedFluxArray, allStarFlag, kBegin) {
+//  Reset STARrms and avgNormFlux array values to 0.0
+Array.fill(STARcountArray,0.0);
+Array.fill(avgNormFluxArray,0.0);
+//
+//  Determine the upper limit of stars to be used based on the kBegin input parameter
+if (allStarFlag) {kEnd = STARlistIndex;} else {kEnd = kBegin +1;};
+//
+for (k = kBegin; k < kEnd; k++) {
+//  Determine the appropriate beginning and end index of the binned data array based on whether
+//  all stars are to be used, or a single specific star
+    if (allStarFlag) {
+        iBegin = k*nBins;
+        iEnd = (k+1)*nBins;
+        } else {iBegin = 0;
+                iEnd = nBins;
+               };
+    message = "For star: " + STARlist[k] + "STARrmsArray[k]: " + STARrmsArray[k]+ " rmsLimit*STARrms= " + d2s(rmsLimitValue*STARrmsArray[k],4);
+    success = debugPrint(message,1);
+    iTime = 0;
+    for (i=iBegin; i<iEnd; i++) {
+//  Get the current observation time for later checking below to see if observation is OOT
+//  and should be included in the running average
+        obsTime = binnedObsTimes[iTime];
+        iTime = iTime + 1;
+//  Put 99999 into the normalized flux (for later identification) if it is greater than
+//  rmsLimitValue times the rms for this star; otherwise just increment count for number of
+//  included observations for this star
+        if (abs(1-normalizedFluxArray[i]) > rmsLimitValue * STARrmsArray[k]) {
+             message = "For Star " + STARlist[k] + " Exclude normalized flux of observation " + d2s(i-iBegin+1,0) + " normalizedFlux= " + normalizedFluxArray[i];
+             success = debugPrint(message,1);
+             normalizedFluxArray[i] = 99999;
+             } else { 
+                     message = "For Star " + STARlist[k] + " Include normalized flux of observation " + d2s(i-iBegin+1,0) + " normalizedFlux= " + normalizedFluxArray[i];
+                    success = debugPrint(message,1);
+                    STARcountArray[k] = STARcountArray[k] + 1;
+//  If the observation is OOT, include it in running average. However, if the observation
+//  is completely within the predicted transit, include it as well.
+//  Increment count for number of included observations and sum (included) values
+//  of normalized flux for later use in recomputing the normalized flux
+                    if (obsTime<ingressTime || obsTime>egressTime || !overlapCase) {
+                        STARnormCountArray[k] = STARnormCountArray[k] + 1;
+                        avgNormFluxArray[k] = avgNormFluxArray[k] + normalizedFluxArray[i];
+                       };
+                    };
+    };
+};
+//
+//### Time Checkpoint 10
+if (measMode == 1) {timeCheckpoint(10,"selected stars","bins",STARlistIndex,nBins);};
+//
+//****************** Recompute normalized flux values after above "cleaning"
+//
+//  First, compute average normalized flux of each star; use STARcount for each
+//  instead of nBins since some values may have been excluded in above "clearning"
+for (k = kBegin; k < kEnd; k++) {
+//  For this star, first compute the average
+    avgNormFluxArray[k] = avgNormFluxArray[k] / STARnormCountArray[k];
+//  Now reccompute the normalized flux of each star
+//  Determine the appropriate beginning and end index of the binned data array based on whether
+//  all stars are to be used, or a single specific star
+    if (allStarFlag) {
+        iBegin = k*nBins;
+        iEnd = (k+1)*nBins;
+        } else {iBegin = 0;
+                iEnd = nBins;
+               };
+    message = "For star: " + STARlist[k];
+    success = debugPrint(message,1);
+    varSum = 0.0;
+    for (i=iBegin; i<iEnd; i++) {
+//  Compute the new normalized flux values, except for values that
+//  were previously "cleaned"
+        if (normalizedFluxArray[i] != 99999) {
+            normalizedFluxArray[i] = normalizedFluxArray[i] / avgNormFluxArray[k];
+//  Compute the variance^2 and variance sum for later use in computing the new RMS
+            variance = (1-normalizedFluxArray[i]) * (1-normalizedFluxArray[i]);
+            varSum = varSum + variance;
+            };
+    };
+//  Recompute the star's RMS
+    STARrmsArray[k] = sqrt(varSum/STARcountArray[k]);
+    message = " New rms: " + STARrmsArray[k];
+    if (STARtoDiagnose == "" || STARtoDiagnose == STARlist[k]) {debugLev=1;} else {debugLev=0;};
+    successPrint = debugPrint(message,debugLev);
+};
+};
+//
+//*************** FUNCTION:  plotData
+//
+//  This function plots the x and y values of the various relative flux forms
+//
+function plotData (plotTitle, yAxisTitle, iBeginValue, iEndValue, xValuesArray, yValuesArray, rmsValue, normalizedFluxArray, k, starSuffix, flag) {
+//  Create the plot and define its size
+    Plot.create(plotTitle,timeName + " - " + d2s(beginTimeLeft,0),yAxisTitle);
+    Plot.setFrameSize(widthPlot,heightPlot);
+//
+// Load time and flux values for the k'th star into X and Y values
+// and keep track of min and max flux; first initialize some variables used below
+    jIndex = 0;
+    fluxMIN = 2.0;
+    fluxMAX = 0;
+    for (i=iBeginValue;i<iEndValue;i++) {
+//  Include the normalized flux value if it was previously determined to
+//  be within RMS criteria, as well as the corresponding observation time
+        if (normalizedFluxArray[i] != 99999) {
+           xValuesArray[jIndex] = binnedObsTimes[i-iBeginValue];
+           message = "xValue calculated for: " + d2s(xValuesArray[jIndex],6) + " observation time";
+           success = debugPrint(message,1);
+           yValuesArray[jIndex] = normalizedFluxArray[i];
+           jIndex = jIndex + 1;
+           if (normalizedFluxArray[i] <= fluxMIN) {fluxMIN = normalizedFluxArray[i];};
+           if (normalizedFluxArray[i] >  fluxMAX) {fluxMAX = normalizedFluxArray[i];};
+           };
+        
+    };
+    message = "timeMIN= " + timeMIN + " timeMAX= " + timeMAX + " fluxMIN= " + fluxMIN + " fluxMAX= " + fluxMAX;
+    successPrint = debugPrint(message,1);
+//
+// Use as minimum Y 10% of the minimum of (flux minimum or 1-transit depth) below 1.0;
+// and use as maximum Y additional 25% of fluxMAX beyond 1.0 
+       if (fluxMIN < predDepth) {
+           yMIN = fluxMIN -(1-fluxMIN)*0.1;
+           } else { yMIN = predDepth - (1-predDepth)*0.1;};
+       yMAX = fluxMAX+ (fluxMAX-1)*0.25;
+// Now adjust yMAX further to account for the location of the Disposition notation
+       yMAX = yMAX + (yMAX-yMIN)*dispLoc;
+    Plot.setLimits(xMIN,xMAX,yMIN,yMAX);
+//
+//  Center and display file name
+    lenString = lengthOf(fullFileName);
+    locString = ((charWidth - lenString)/2 )/ charWidth;
+    Plot.addText(fullFileName,locString,-0.05);
+//
+//  Plot subtitle
+//  If star disposition is ***Not Cleared-flux too low***, put N/A as required depth in the subtitle, otherwise
+//  use the STARpredDepth value
+    if (STARdisp[k] == "***Not Cleared-flux too low***") {
+        depthString = "N/A";
+        } else {
+               depthString = d2s(STARpredDepth[k],1) + " ppt";
+               };
+    subTitleString = "Star: " + STARlist[k] + 	starSuffix + "      dmag: " + d2s(STARdmag[k],1) +  "      Required depth: " + depthString + "      RMS: " + d2s(rmsValue*1000,1) + " ppt" + "      ap= " + averageAPERTURE + "px (" + averageAPERTUREarcseconds + doubleQuote + ")";  
+    lenString = lengthOf(subTitleString);
+    locString = ((charWidth - lenString)/2 )/ charWidth;
+//  Offset an additional 8 characters
+    offset = 8/128;
+    Plot.addText(subTitleString,locString + offset,-0.006);
+//
+//  Plot data points in black for the undetrended case, otherwise for detrend cases use blue
+    if (flag) {pointColor = "black";} else {pointColor = "blue";};
+    Plot.setColor(pointColor);
+    Plot.add("circles",xValuesArray,yValuesArray);
+//  Set back to default color, black
+    Plot.setColor("black");
+};
+//
+//*************** FUNCTION:  savePlot
+//
+//  This function uses Plot.update() if save only plots was selected. In this case, the plots will be
+//  made, but will replace each other, and will finally be replaced with a message indicating
+//  where the plots can be found. Use Plot.show if save only plots is false or this is the first
+//  plot in all cases
+//
+function savePlot (starName, plotFilenameSuffix) {
+    if (!saveOnlyPlots || firstPlot) {
+       Plot.show();
+       firstPlot = false;
+       } else {Plot.update();};
+//  If plots are to be saved, create the full output file name of the plot file;
+//  include the measurement file name as the prefix
+    if (savePlots || saveOnlyPlots) {
+       pathOutputFile=subDirectoryPath + measurementFileName + "_" + starName + plotFilenameSuffix;
+       save(pathOutputFile);
+        };
+//
+};
+//
+//*************** FUNCTION:  plotNeighbor
+//
+//  This function displays next neighbor information on the plot
+//
+    function plotNeighbor() {
+//
+//  Display distance information at distLoc below the legend.
+//  If distance to target is <10", show it in red, else keep showing it in the (current) black setting.
+//  Do the same if the distance to nearest neighbor is <10".
+//
+//  See if distance to target is < 10"
+    if (STARdist[k] < 10) {
+//  Display first part of subtitle in red
+       Plot.setColor("red");
+       Plot.addText(subTitle1,locString1,distLoc);
+//  Reset color back to black
+       Plot.setColor("black");
+       } else {
+              Plot.addText(subTitle1,locString1,distLoc);
+              };
+//
+//  See if distance to nearest neighbor is <10" (if there is a nearest neighbor)
+    if (minDistanceArcSeconds < 10.0 && nearestNeighbor != "None") {
+//  Display second part of subtitle in red
+       Plot.setColor("red");
+       Plot.addText(subTitle2,locString2,distLoc);
+//  Reset color back to black
+       Plot.setColor("black");
+       } else {
+              Plot.addText(subTitle2,locString2,distLoc);
+              };
+};
+//
+//*************** FUNCTION:  plotPAandOverlay
+//
+//  This function displays the PA and the predicted transit box overlay
+//
+function plotPAandOverlay (k) {
+//
+//  If PA is available, display it, else display "N/A"
+    if (usePlateSolvedImage) {
+       paString = d2s(STARpa[k],1) + " deg.";
+       } else {
+              paString = "N/A";
+              };
+    subTitle3 = "PA of star: " + paString;
+//  Set location of PA and disposition strings
+    locString3 = 0.70;
+    locString4 = locString2;
+//
+//  Display third part of subtitle in black
+    Plot.addText(subTitle3,locString3,distLoc);
+//
+//  Display disposition information
+    subTitleString = "Disposition: " + STARdisp[k];
+    Plot.addText(subTitleString,locString4,dispLoc);
+//
+//  Plot overlay of predicted depth
+    Plot.setLineWidth(2);
+// Use color corresponding to the star disposition for the data points
+    if (STARdisp[k] == "***Not Cleared***") {
+       nDisp = 0;
+       } else {if (STARdisp[k] == "Cleared-too faint") {
+                  nDisp = 1;
+                  } else {if (STARdisp[k] == "Cleared") {
+                             nDisp = 2;
+                             } else {if (STARdisp[k] == "Likely cleared") {
+                                         nDisp = 3;
+                                         } else {nDisp = 4;};
+                                    };
+                         };
+               };
+//
+    Plot.setColor(colorChoice[nDisp]);
+//  Draw pre-ingress line; if star disposition is
+//  ***Not Cleared-flux too low***, just draw a straight line across
+//  at a Y value of 1.0
+    if (STARdisp[k] == "***Not Cleared-flux too low***") {
+       Plot.drawLine(overlayStartTime,1.0,overlayEndTime,1.0);
+       } else {
+              Plot.drawLine(overlayStartTime,1.0,ingressTime,1.0);
+//  Draw in-transit predicted light curve
+              Plot.drawLine(ingressTime,1.0,ingressTime,predDepth);
+              Plot.drawLine(ingressTime,predDepth,egressTime,predDepth);
+              Plot.drawLine(egressTime,predDepth,egressTime,1.0);
+//  Draw post-egress line
+              Plot.drawLine(egressTime,1.0,overlayEndTime,1.0);
+              };
+//  Draw pred. ingress and egress legends
+    Plot.setColor("blue");
+    ingressTextX = (ingressTime-xMIN)/(xMAX-xMIN)-0.02;
+    if (STARdisp[k] == "***Not Cleared-flux too low***") {
+       ingressTextY = (yMAX-1.0)/(yMAX-yMIN)+0.03;
+       } else {
+              ingressTextY = (yMAX-predDepth)/(yMAX-yMIN)+0.03;
+              }
+    Plot.addText(" Pred.",ingressTextX,ingressTextY);
+    Plot.addText("Ingress",ingressTextX,ingressTextY+0.02);
+    egressTextX = (egressTime-xMIN)/(xMAX-xMIN)-0.02;
+    egressTextY = ingressTextY;
+    Plot.addText(" Pred.",egressTextX,egressTextY);
+    Plot.addText("Egress",egressTextX,egressTextY+0.02);
+};
+//
+//
+//******************************* END FUNCTION DEFINITIONS ********************
+//
+//  The following are the valid lengths of user entries.
+//  These are later used to perform range checks.
+lenMeasurementTable = 3000;
+lenTargetStar = 4;
+lenRadius = 6;
+lenCadence = 3;
+lenScale = 6;
+lenIngressTime = 10;
+lenEgressTime = 10;
+lenTargetDepth = 6;
+lenRMSLimit = 3;
+lenNeighborLimit = 4;
+
+// The following are special character codes used
+singleQuote = fromCharCode(39);
+doubleQuote = fromCharCode(34);
+newlineChar = fromCharCode(10);
+
+//  The following is the TESS bandwidth correction factor
+dmagBuffer = -0.5;
+
+//
+//
+//****************** GET CURRENT DATE AND TIME FOR POSSIBLE FUTURE USE
+//
+getDateAndTime(year,month,dayOfWeek,dayOfMonth,hour,minute,second,msec);
+//  Convert year, month, day, month, hour, and second to strings
+yearString=d2s(year,0);
+monthString=d2s(month+1,0);
+// if month+1 is less than 10, append 0 as prefix - note month=0 is January
+if (month+1<10) {
+    monthString="0"+d2s(month+1,0);
+    } else {
+    monthString=d2s(month+1,0);
+};
+// if day is less than 10, append 0 as prefix
+if (dayOfMonth<10) {
+    dayString="0"+d2s(dayOfMonth,0);
+    } else {
+    dayString=d2s(dayOfMonth,0);
+ };
+hourString=d2s(hour,0);
+minuteString=d2s(minute,0);
+secondString=d2s(second,0);
+datetime=yearString + "-" + monthString + "-" + dayString;
+//
+debugModeString = d2s(debugMode,0);
+successPrint = debugPrint("Debug Mode="+ debugModeString,1);
+//
+//                               BEGIN USER DIALOGUES
+//
+//****************** CREATE THE FIRST PAGE OF USER DIALOGUES
+//
+Dialog.create("TFOP SG1 NEB Analysis Macro");
+
+Dialog.addMessage("                                                      NEB Analysis Macro");
+//
+//  Option 1:
+//  Get Option 1 preference, if one exists, otherwise nebTableOption will be returned by ij.Prefs.get as true
+nebTableOption = call("ij.Prefs.get","nebcheck.nebTableOption",true);
+Dialog.addCheckbox("Option 1: A table showing which nearby stars are cleared as potential NEBs.",nebTableOption);
+//
+//  Option 2:
+Dialog.addMessage("    Option 2: For each star in the radius of interest, select plot option(s):");
+//
+displayPlots = call("ij.Prefs.get","nebcheck.displayPlots",true);
+Dialog.addCheckbox("                         - display plots of the star's flux, including an overlay of NEB-required depth",displayPlots);
+//
+savePlots = call("ij.Prefs.get","nebcheck.savePlots",true);
+Dialog.addCheckbox("                         - save plots in a subfolder",savePlots);
+//
+limitNeighborSearch = call("ij.Prefs.get","nebcheck.limitNeighborSearch",false);
+Dialog.addCheckbox("Limit the number of nearest neighor searches in the plots:",limitNeighborSearch);
+//  Limit on the number of stars for which the nearest neighbor is computed
+Neighborlimit = call("ij.Prefs.get","nebcheck.Neighborlimit","500");
+userString("                  - limit on the number of neighbors to be searched", Neighborlimit,lenNeighborLimit);
+//
+//  Option 3:
+dmagRMSOption = call("ij.Prefs.get","nebcheck.dmagRMSOption",true);
+Dialog.addCheckbox("Option 3: A plot of Delta magnitude vs. RMS for all stars within a user-defined radius of a target star.",dmagRMSOption);
+//
+//  Option 4:
+logPlot = call("ij.Prefs.get","nebcheck.logPlot",false);
+Dialog.addCheckbox("Option 4: Same as Option 3, but plot log10 of RMS vs. simply RMS.",logPlot);
+//
+//  Option 5:
+nebDetrendPlotOption = call("ij.Prefs.get","nebcheck.nebDetrendPlotOption",true);
+Dialog.addCheckbox("Option 5: Include plots of rel_flux_T/Cxx data columns that have suffixes with _d,_dn, _fn, or _df, _dfn",nebDetrendPlotOption);
+Dialog.addMessage("NOTE: for Option 5, the AIJ Multi-plot Y values for Bin Size, Scale, and Shift should be set to 1, 1, and 0 respectively");
+Dialog.addMessage("");
+//
+//  Request name of target star that is in the measurement table header (e.g., T1)
+TARGET = call("ij.Prefs.get","nebcheck.TARGET","T1");
+string ="AIJ name of target star (e.g., T1)";
+userString(string,TARGET,lenTargetStar);
+//
+//  Ask for radius of interest
+RADIUS = call("ij.Prefs.get","nebcheck.RADIUS","2.5");
+userString("Radius of interest around target (arc-min.)",RADIUS,lenRadius);
+//
+//  Request cadence
+CADENCE = call("ij.Prefs.get","nebcheck.CADENCE","180");
+userString("Bin data to this cadence (seconds)",CADENCE,lenCadence);
+//
+//  Request user's preference for inputting pixel scale, or using a user-provided
+//  plate-solved image to later calculate the PA's for the stars within the above
+//  radius, as well as the pixel scale
+usePlateSolvedImage = call("ij.Prefs.get","nebcheck.usePlateSolvedImage",false);
+Dialog.addCheckbox("Use plate-solved image to get pixel scale and, for Option 1, PA's",usePlateSolvedImage);
+SCALE = call("ij.Prefs.get","nebcheck.SCALE","");
+Dialog.addString("If above is not selected, then enter the pixel scale (arc-sec/pixel)",SCALE,lenScale);
+//
+//  Request the predicted ingress time
+INGRESS = call("ij.Prefs.get","nebcheck.INGRESS","");
+string ="Predicted ingress time (see Note 1 below)";
+userString(string,INGRESS,lenIngressTime);
+//
+//  Request the predicted egress time
+EGRESS = call("ij.Prefs.get","nebcheck.EGRESS","");
+string = "Predicted egress time (see Note 2 below)";
+userString(string,EGRESS,lenEgressTime);
+//
+//  For Options 1 and 2, request the predicted depth of the target
+DEPTH = call("ij.Prefs.get","nebcheck.DEPTH","");
+string ="For Options 1 and 2: predicted depth of target star (ppt)";
+userString(string,DEPTH,lenTargetDepth);
+//
+//  For Option 2, get multiple of RMS used to eliminate outliers
+RMSlimit = call("ij.Prefs.get","nebcheck.RMSlimit","5");
+userString("For Option 2: multiple of RMS used to eliminate outliers from plots",RMSlimit,lenRMSLimit);
+//
+//  Ask if the user would like to enable informational messages at the end of the run
+message = "Select this box if you would like informational messages at the end of the run";
+Dialog.addMessage("");
+debugChoice = call("ij.Prefs.get","nebcheck.infChoice",true);
+Dialog.addCheckbox(message,debugChoice);
+Dialog.addMessage("Note 1: use decimal part only; however, add 1 if day rolls over from beginning of data");
+Dialog.addMessage("Note 2: use decimal part only; however, add 1 if day rolls over from ingress time");
+//
+//  Ask user to open measurement file
+Dialog.addMessage("");
+Dialog.addMessage("After clicking OK, you will be asked to select the measurement file from which the table and/or plot(s) will be generated.");
+//
+Dialog.show();
+//
+//*****************  GET THE FIRST PAGE OF USER INPUTS
+//
+//  For Option 1:
+nebTableOption = Dialog.getCheckbox();
+call("ij.Prefs.set","nebcheck.nebTableOption",nebTableOption);
+
+//  For Option 2:
+//  Get choice of whether to display Option 2 plots
+displayPlots = Dialog.getCheckbox();
+call("ij.Prefs.set","nebcheck.displayPlots",displayPlots);
+//
+//  Get choice of whether to save Option 2 plots to a subdirectory
+savePlots = Dialog.getCheckbox();
+call("ij.Prefs.set","nebcheck.savePlots",savePlots);
+//  If either display or save plots was selected, set nebPlotOption to true
+if (displayPlots || savePlots) {nebPlotOption=true;} else {nebPlotOption=false;};
+//  if save plots option, but not display plots option, set saveOnlyPlots to true
+if (!displayPlots && savePlots) {saveOnlyPlots=true;} else {saveOnlyPlots=false;};
+//
+//  See if neighbor searches are to be limited, and if so, get the user-specified value for the limit
+limitNeighborSearch = Dialog.getCheckbox();
+call("ij.Prefs.set","nebcheck.limitNeighborSearch",limitNeighborSearch);
+//  Display an error message if limit neighbor search was selected but neither display plots nor
+//  save plots was checked
+if (limitNeighborSearch && !displayPlots && !savePlots) {
+     errorHandling("**** ERROR: Limit neighbor search was selected, but neither the display option nor save option for the plots was selected");};
+//
+//  Get user-specified limit on nearest neighbor search; if user did not require a limit
+//  set the limit to 100,000 - this will later be changed to be equal to the number of stars
+//  detected in the radius of interest
+Neighborlimit = Dialog.getString();
+call("ij.Prefs.set","nebcheck.Neighborlimit",Neighborlimit);
+if (limitNeighborSearch) {
+       neighborLimitValue = parseFloat(Neighborlimit);
+       } else {neighborLimitValue = 100000;}; 
+//
+//  For Option 3:
+dmagRMSOption = Dialog.getCheckbox();
+call("ij.Prefs.set","nebcheck.dmagRMSOption",dmagRMSOption);
+//
+//  For Option 4:
+//  Get choice of log10 plot option for RMS
+logPlot = Dialog.getCheckbox();
+call("ij.Prefs.set","nebcheck.logPlot",logPlot);
+//  If the logPlot option chosen, also set dmagRMSOption to true
+if (logPlot) {dmagRMSOption=true;};
+//
+//  For Option 5:
+//  Get choice of whether user requests plot of detrended columns
+nebDetrendPlotOption = Dialog.getCheckbox();
+call("ij.Prefs.set","nebcheck.nebDetrendPlotOption",nebDetrendPlotOption);
+//  If the detrend plot option is selected, make sure that Option 2 was also selected
+if (nebDetrendPlotOption && !nebPlotOption) {errorHandling("**** ERROR: Option 5 was selected, but Option 2 needs to be selected as well");};
+
+//
+//  Make sure at least one option was selected
+if (!nebTableOption && !nebPlotOption && !dmagRMSOption && !logPlot) {errorHandling("**** ERROR: No option was selected");};
+//
+//  Get AIJ name of target star
+getUserString ("No name of target star entered","Target star: ",lenTargetStar);
+TARGET = globalValue;
+call("ij.Prefs.set","nebcheck.TARGET",TARGET);
+//   Initialize various variables used later that are based on TARGET name
+targetXFITString = "X(FITS)_" + TARGET;
+targetYFITString = "Y(FITS)_" + TARGET;
+//
+//  Get radius of interest
+getUserString ("No radius of interest entered","Radius of interest: ",lenRadius);
+RADIUS = globalValue;
+call("ij.Prefs.set","nebcheck.RADIUS",RADIUS);
+nRadius = parseFloat(RADIUS);
+//
+//  Get Cadence choice
+getUserString("No RMS binning cadence entered","RMS binning cadence:",lenCadence);
+CADENCE = globalValue;
+call("ij.Prefs.set","nebcheck.CADENCE",CADENCE);
+requestedCadence = parseFloat(CADENCE);
+//
+//  Get choice of use of plate-solved image or not
+usePlateSolvedImage = Dialog.getCheckbox();
+call("ij.Prefs.set","nebcheck.usePlateSolvedImage",usePlateSolvedImage);
+SCALE = Dialog.getString();
+call("ij.Prefs.set","nebcheck.SCALE",SCALE);
+if (usePlateSolvedImage && SCALE!="") {errorHandling("**** ERROR: Use of plate-solved image selected, but a non-zero pixel scale also entered.");};
+if (!usePlateSolvedImage && SCALE=="") {errorHandling("**** ERROR: No pixel scale was entered.");};
+//  If use of plate-solved image was not seleted, convert pixel scale to a number
+if (!usePlateSolvedImage) {nScale=parseFloat(SCALE);};
+//
+//  Get predicted ingress time
+getUserString("No predicted ingress time entered","Pred. ingress time:",lenIngressTime);
+INGRESS = globalValue;
+call("ij.Prefs.set","nebcheck.INGRESS",INGRESS);
+ingressTime = parseFloat(INGRESS);
+//
+//  Get predicted egress time
+getUserString("No predicted egress time entered","Pred. egress time:",lenEgressTime);
+EGRESS = globalValue;
+call("ij.Prefs.set","nebcheck.EGRESS",EGRESS);
+egressTime = parseFloat(EGRESS);
+//  Check that ingressTime is less than egressTime
+if (ingressTime >= egressTime) {errorHandling("****ERROR - ingress time is greater than or equal to egress time");};
+//
+//  For Options 1 and 2, get predicted target depth
+DEPTH = Dialog.getString();
+call("ij.Prefs.set","nebcheck.DEPTH",DEPTH);
+if ((nebTableOption || nebPlotOption) && DEPTH=="") {errorHandling("**** ERROR: Option 1 or 2 was selected, but no predicted target depth was entered");};
+predTargetDepth = parseFloat(DEPTH);
+//
+//  Get multiple of rms used to eliminate outliers
+RMSlimit = Dialog.getString();
+call("ij.Prefs.set","nebcheck.RMSlimit",RMSlimit);
+if ((nebTableOption || nebPlotOption || dmagRMSOption) && RMSlimit == "") {errorHandling("**** ERROR: Option 1, 2, 3, or 4 was selected, but no multiple of RMS was entered");};
+if ((nebTableOption || nebPlotOption || dmagRMSOption) && RMSlimit != "") {rmsLimitValue = parseFloat(RMSlimit);};
+//
+//  Get choice of whether informational messages are to be displayed
+infChoice = Dialog.getCheckbox();
+call("ij.Prefs.set","nebcheck.infChoice",infChoice);
+//
+//
+//****************** GET MEASUREMENT TABLE
+//
+// Set firstMeasTableColFlag to false indicating that the first column of the measurement
+// table header does not contains a label
+firstMeasTableColFlag = false;
+successPrint = debugPrint("First measurement table col. flag: " + firstMeasTableColFlag,1);
+//
+//  Open the user-specified measurement file and then put the file into an array by rows
+//
+filepath = File.openDialog("Select AIJ Measurements Table");
+measurementFile = File.openAsString(filepath);
+measurementFileName = File.nameWithoutExtension;
+fileSeparator = File.separator;
+successPrint = debugPrint("Successfully retrieved measurement file" + measurementFileName + " with a file separator of: " + fileSeparator,1);
+//
+//  Get directory of the user's measurement file
+fileDir= File.directory;
+success = debugPrint("Output file for any NEB table to be stored in: ",fileDir);
+//
+//  Determine delimiter (tab or comma) used in the
+//  input measurement table and set inputFileDelimiter
+//  to this.
+//
+fullFileName = File.name;
+indexOfperiod = lastIndexOf(fullFileName,".");
+extension = substring(fullFileName,indexOfperiod+1);
+message = "Extension= " + extension;
+debugPrint(message,1);
+if (extension == "tbl" || extension == "txt" || extension == "xls") {
+    inputFileDelimiter = TAB;
+    } else {
+           if (extension == "csv") {
+               inputFileDelimiter = COMMA;
+               } else {errorHandling("*** ERROR: file extension is not .tbl, .txt, .xls, or .csv");};
+           };
+
+//  Define the number of optional cases for plotting
+nCases = 5;
+case = newArray(nCases);
+//  Add the delimiter to cases 0 and 3 to distinguish them
+//  from cases 1 and 4 respectively when the file header
+//  is being searched, for example, for rel_flux_T2_d.
+//  Note, however, that consideration should be given if
+//  case 0 or case 3 is at the end of the file header. See
+//  the findPositionInHeader function how this is handled.
+case[0] = "d" + inputFileDelimiter;
+case[1] = "dn";
+case[2] = "fn";
+case[3] = "df" + inputFileDelimiter;
+case[4] = "dfn";
+
+//  Split the measurement file into an array
+fileArray=split(measurementFile,"\n");
+nRows=lengthOf(fileArray);
+//  Calculate number of observations
+nObservations = nRows - 1;
+success = debugPrint("No. of observations: " + d2s(nObservations,0),1); 
+//  Check if size of measurment table is less than 3,000 rows
+if (nRows > lenMeasurementTable) {
+     errorHandling("*** ERROR: Measurement table exceeds 3,000 rows")};
+//  Get header row
+header=fileArray[0];
+//
+//
+//  If the first col. of the header does not contain a label,
+//  then set iStart =2
+if (firstMeasTableColFlag) {
+     iStart = 1;} else {iStart = 2;};
+//
+//
+//****************** OPTIONALLY, CREATE THE DIALOGUE PAGE THAT REQUESTS THE PLATE-SOLVED IMAGE
+//                   AND THEN EXTRACT THE PERTINENT DATA FROM THE *.FIT FILE
+//
+if (usePlateSolvedImage) {
+    Dialog.create("");
+    Dialog.addMessage("After clicking OK, you will be asked to select a plate-solved file associated with this observation.");
+    Dialog.show();
+//
+//  Get the user's plate-solved file and extract the necessary WCS keyword values
+//
+//  Read plate-solved file
+//
+    filepath = File.openDialog("Select Plate Solved File");
+    fitFile=File.openAsRawString(filepath,50000);
+    debugPrint("Successfully retrieved plate-solved file",1);
+//
+//   Find value for WCS parameter CD1_1
+    getFITstring (fitFile,"CD1_1");
+    CD11string = globalValue;
+    CD11 = parseFloat(CD11string);
+    message = "CD1_1=" + CD11string;
+    debugPrint(message,1);
+//
+//   Find value for WCS parameter CD1_2
+    getFITstring (fitFile,"CD1_2");
+    CD12string = globalValue;
+    CD12 = parseFloat(CD12string);
+    message = "CD1_2=" + CD12string;
+    debugPrint(message,1);
+//
+//   Find value for WCS parameter CD2_1
+    getFITstring (fitFile,"CD2_1");
+    CD21string = globalValue;
+    CD21 = parseFloat(CD21string);
+    message = "CD2_1=" + CD21string;
+    debugPrint(message,1);
+//
+//   Find value for WCS parameter CD2_2
+    getFITstring (fitFile,"CD2_2");
+    CD22string = globalValue;
+    CD22 = parseFloat(CD22string);
+    message = "CD2_2=" + CD22string;
+    debugPrint(message,1);
+//
+//  Compute orientation
+    det = CD11*CD22 - CD12*CD21;
+    if (det >= 0) {parity=1.0;} else {parity =-1.0;};
+    T = parity * CD11 + CD22;
+    A = parity * CD21 - CD12;
+//   Orientation = 0 to 180 deg for Y axis clockwise from North, and
+//   0 to -180 deg for Y axis counter-clockwise from North
+    orient = -atan2(A,T) *180 / PI;
+    message = "Orientation= " + d2s(orient,5) +" degrees";
+    debugPrint(message,1);
+//  Convert orientation angle to rotation angle (i.e., 0 to 360 deg)
+    if (orient > 0) {rotation = orient;} else {rotation = 360 + orient;};
+    message = "Rotation = " + d2s(rotation,5);
+    debugPrint(message,1);
+//
+//  Compute scale and convert to arc-seconds
+    nScale = sqrt(CD11*CD11 + CD12*CD12) * 3600;
+    SCALE = d2s(nScale,5);
+    message = "Scale= " + SCALE;
+    debugPrint(message,1);
+//
+//  Determine orientation of Y/X axis to N/E. The orientation is determined
+//  by different combinations of CD1_1, CD1_2, CD2_1, and CD2_2. The sign
+//  of these CD values determine different orientations of RA and DEC to
+//  different orientations of X and Y, as follows:
+//   +CD1_1  X values increase as East values increase
+//   -CD1_1: X values decrease as East values increase
+//   +CD1_2: Y values increase as East values increase
+//   -CD1_2: Y values decrease as East values increase
+//   +CD2_1  X values increase as North values increase
+//   -CD2_1: X values decrease as North values increase
+//   +CD2_2: Y values increase as North values increase
+//   -CD2_2: Y values decrease as North values increase
+//  The following are the two orientations to be considered:
+//       Orientation 1:             Orientation 2:
+//        N          Y         N                 Y
+//        |          |         |                 |
+//        |          |         |                 |
+//        +-----E    +-----X   +-----E     E-----+
+//
+//   The following CD combination are indicative of either Orientation 1 or 2, where 0
+//  indicates a "-" sign and 1 indicates a "+" sign. Each combination can thus be represented
+//  by a unique 4-bit number, i.e., by a number from 0-15:
+//     For Orientation 1:
+//       CD1_1    CD1_2    C2_1    CD2_2  Unique Number Representation
+//         1        1        0       1                13
+//         0        1        0       0                 4
+//         0        0        1       0                 2 
+//         1        0        1       1                11
+//     For Orientation 2:
+//         0        1        1       1                 7
+//         1        1        1       0                14
+//         1        0        0       0                 8
+//         0        0        0       1                 1
+//  Determination orientation number of image
+//  First determine sign of CD values
+    if (CD11 > 0) {signCD11=1;} else {signCD11 = 0;};
+    if (CD12 > 0) {signCD12=1;} else {signCD12 = 0;};
+    if (CD21 > 0) {signCD21=1;} else {signCD21 = 0;};
+    if (CD22 > 0) {signCD22=1;} else {signCD22 = 0;};
+    orientationNumberOfImage = signCD11*pow(2,3) + signCD12*pow(2,2) + signCD21*pow(2,1) + signCD22*pow(2,0);
+    message = "Orientation number of Image: " + d2s(orientationNumberOfImage,5);
+    debugPrint(message,1);
+//  Determine from above table, orientation type (i.e., 1 or 2)
+    n = orientationNumberOfImage;
+    if (n==13 || n==4 || n==2 || n==11) {
+        orientationType = 1;
+        } else {
+               if (n==7 || n==14 || n==8 || n==1) {
+                   orientationType = 2;
+                   } else {
+                          print("****** ERROR: Invalid orientation");
+                          exit();
+                          };
+               };
+    message = "Orientation type: " + d2s(orientationType,0);
+    debugPrint(message,1);
+};
+//
+//************ BEGIN PROCESSING OF MEASUREMENT TABLE DATA
+//
+//
+//  Create progress bar title
+//  To overcome potential issue with showProgress, which updates the status bar on the AIJ main toolbar,
+//  issue the first showProgress, delay 500ms, and issue the second one
+showProgress(0.001);
+wait(500);
+showProgress(0.002);
+//  Initiate text window with progress bar
+cumProgress = 0.0;
+run("Text Window...", "name=" + title + " width=71 height=3 monospaced");
+progress(cumProgress);
+//
+//************ Get a list of all stars in the measurement table
+//
+//  Cycle through header parameters and store star IDs in xfitsList
+//  if they have an X(FITS) value.
+//  First initialize xfitsList array
+//
+xfitsList=newArray(1000);
+xfitsListIndex = 0;
+success=true;
+successPrint = debugPrint(" ",1);
+successPrint = debugPrint("The following are the measurement table header keywords",2);
+for (i=iStart; i<lengthOf(header)&&success;i++) {
+     success=findValue(header,i,inputFileDelimiter);
+     if (success) {
+        successPrint = debugPrint(globalValue,2);
+//  Check if found a target or comp XFITS() coordinate;
+//  find X(FITS)_XXX headers - note, need to eliminate X(FITS) header
+        if (substring(globalValue,0,2) == "X(" && lengthOf(globalValue) > 7) {
+           if (substring(globalValue,0,5) == "X(FIT") {
+              starID = substring(globalValue,8);
+              successPrint = debugPrint("starID: " + starID,1);
+              xfitsList[xfitsListIndex] = starID;
+              xfitsListIndex = xfitsListIndex + 1;
+//  Update progress at the rate of 0.0001 per star found; maximum would be
+//  0.0001*1000 stars = .10
+              cumProgress = cumProgress + 0.0001;
+              progress(cumProgress);
+//  Check if have found over 1,000 stars
+              if (xfitsListIndex == 1000) {errorHandling("**** ERROR: number of stars is greater than 1000");};
+            };
+         };
+     };
+
+};
+//### Time Checkpoint 1
+if (measMode == 1) {timeCheckpoint(1,"header","",lengthOf(header),1);};
+//  Force cumulative progress to be 10% at this point
+cumProgress = 0.10;
+progress(cumProgress);
+successPrint = debugPrint(" ",1);
+//
+//
+//
+//
+//****************** CYCLE THROUGH ALL STARS TO SEE WHICH ONES ARE
+//                   WITHIN THE PRESCRIBED DISTANCE OF THE TARGET STAR,
+//                   AND FOR THOSE THAT ARE,(OPTIONALLY) COMPUTE THEIR PA
+//
+//
+//  Get XFITS, YFITS values for the target star 
+STARlistIndex = 0;
+//  Compute radius of interest in pixels
+distanceLimit = nRadius*60 / nScale;
+rowString = fileArray[1];
+success=getData(targetXFITString,header,rowString,inputFileDelimiter,firstMeasTableColFlag);
+if (!success) {errorHandling ("***ERROR: No X(FITS) value for target star");}; 
+xfitsTARGET = parseFloat(globalValue);
+success=getData(targetYFITString,header,rowString,inputFileDelimiter,firstMeasTableColFlag);
+if (!success) {errorHandling ("***ERROR: No Y(FITS) value for target star");}; 
+yfitsTARGET = parseFloat(globalValue);
+successPrint = debugPrint ("xfitsTARGET=" + xfitsTARGET,1);
+successPrint = debugPrint ("yfitsTARGET=" + yfitsTARGET,1);
+//  Cycle through the stars in xfitsList to see which ones are within
+//  the distanceLimit of the target star
+for (j = 0; j<xfitsListIndex; j++) {
+//   Show additional progress at the rate of 0.0001 per star 
+     cumProgress = cumProgress + 0.0001/xfitsListIndex;
+     progress (cumProgress);
+//  Get the X(FITS) and Y(FITS) location of star
+     starID = xfitsList[j];
+     successPrint = debugPrint("check: " + starID,1);
+     starXFITSString = "X(FITS)_" + starID;
+     starYFITSString = "Y(FITS)_" + starID;
+     success=getData(starXFITSString,header,rowString,inputFileDelimiter,firstMeasTableColFlag);
+     xfitSTAR = parseFloat(globalValue);
+     success=getData(starYFITSString,header,rowString,inputFileDelimiter,firstMeasTableColFlag);
+     yfitSTAR = parseFloat(globalValue);
+     valdist = (xfitsTARGET-xfitSTAR)*(xfitsTARGET-xfitSTAR) + (yfitsTARGET-yfitSTAR)*(yfitsTARGET-yfitSTAR);
+     distanceToTarget = sqrt(valdist);
+     successPrint = debugPrint("xfitsTARGET=" + xfitsTARGET + "   xfitSTAR=" + xfitSTAR + "   yfitsTARGET=" + yfitsTARGET + "  yfitSTAR=" +yfitSTAR,1);
+     successPrint = debugPrint("distanceToTarget (pixels) = " + distanceToTarget,1);
+//  If the star is within the prescribed distance from the target, include the star in the STARlist array
+     if (distanceToTarget <= distanceLimit) {
+         STARlist[STARlistIndex] = starID;
+         successPrint = debugPrint("Include: " + STARlist[STARlistIndex] + " at a distance of " + d2s(distanceToTarget/nScale,2) + " arc-seconds",1);
+         STARdist[STARlistIndex] = distanceToTarget * nScale;
+         successPrint = debugPrint("STARlist value= " + STARlist[STARlistIndex] + "STARdist value= " + STARdist[STARlistIndex],1);
+//
+// Compute PA if user selected use of a plate-solved image
+         if (usePlateSolvedImage) {
+// Compute Y angle
+            Yangle = getYANGLE (xfitSTAR,yfitSTAR);
+            message = "xfitSTAR= " + d2s(xfitSTAR,5) + " yfitSTAR= " + d2s(yfitSTAR,5) + "Yangle= " + d2s(Yangle,5);
+            debugPrint(message,1);
+//
+// Based on the Orientation, and Yangle and rotation values, compute the Position Angle (PA)
+//
+// Orientation 1:
+            if (orientationType == 1) {
+               if (Yangle >= rotation) {
+                   PA = 360 - Yangle + rotation;} else {PA = rotation - Yangle;};
+                   };
+//  Orientation 2:
+            if (orientationType ==2) {
+               if (Yangle+rotation <= 360) {
+                   PA = Yangle + rotation;} else {PA = rotation + Yangle -360;};
+                   };
+//   Store PA for this star in the STARpa array
+            message = "PA: " + d2s(PA,1);
+            debugPrint(message,1);
+            STARpa[STARlistIndex] = PA;
+        };
+         STARlistIndex = STARlistIndex + 1;
+      };
+};
+//
+//  Time Checkpoint 2
+if (measMode == 1) {timeCheckpoint(2,"total stars","",xfitsListIndex,1);};
+//  Force cumulative progress to be 20% at this point
+cumProgress = 0.20;
+progress (cumProgress);
+//
+//
+//
+//****************** CYCLE THROUGH ALL OBSERVATIONS TO:
+//                   1. COMPUTE AVERAGE SOURCE-SKY
+//                   2. COMPUTE AVERAGE DMAG
+//                   3. COMPUTE AVERAGE APERTURE SIZE
+//                   4. STORE THE OBSERVATION TIMES
+//
+//  For the observation times, first determine if BJD_TDB is in the measurement table.
+//  If not, use JD_UTC. Then, for each observation, compute the right side of each observation
+//  time and store it in obsTimesRight array; check if need to add 1 if the day rolls over.
+//  Also, store the beginTime, endTime, and their right sides for later use in determining
+//  the overlap case
+//
+rowString = fileArray[1];
+success = getData("BJD_TDB",header,rowString,inputFileDelimiter,firstMeasTableColFlag);
+//  Set useBJD to true if BJD_TDB is used and there is BJD_TDB data, otherwise set useBJD to false
+//  if JD_UTC is used and there is JD_UTC data
+timeValue = parseFloat(globalValue);
+if (success && timeValue>0) {
+   useBJD = true;
+   } else {
+          success = getData("JD_UTC",header,rowString,inputFileDelimiter,firstMeasTableColFlag);
+          timeValue = parseFloat(globalValue);
+          if (!success || timeValue <=0) (errorHandling("**** ERROR - neither BJD_TDB or JD_UTC times were in measurement file.");
+          useBJD = false;
+          };
+success = debugPrint("useBJD = " + useBJD,1);
+//
+//  Create an array of observation times to be later sorted
+obsTimesArray = newArray(nObservations);
+obsTimesRight = newArray(nObservations);
+//  Create average arrays for Source-Sky and Dmag
+STARsourceAvg = newArray(1000);
+STARdmagAvg = newArray(1000);
+//  Initialize averages
+Array.fill(STARsourceAvg,0.0);
+Array.fill(STARdmagAvg,0.0);
+averageAPERTURE = 0.0;
+for (i=1; i<nObservations+1; i++) {
+    rowString = fileArray[i];
+//  Get the Source_Radius and add it to the running count of averageAperture
+    success=getData("Source_Radius",header,rowString,inputFileDelimiter,firstMeasTableColFlag);
+    if (!success) {errorHandling ("***ERROR: No Source_Radius value for the observation");};
+    averageAPERTURE = averageAPERTURE + parseFloat(globalValue);
+//  Get the Source-Sky (i.e., flux) value of the target for later use in computing the average Source-Sky
+//  and Dmag's of each star
+    targetSourceSkyString = "Source-Sky_" + TARGET;
+    success=getData(targetSourceSkyString,header,rowString,inputFileDelimiter,firstMeasTableColFlag);
+    fluxTarget = parseFloat(globalValue);
+    message = "For Observation: " + i + "Target Source-Sky= " + targetSourceSkyString + "=" + globalValue;
+    successPrint = debugPrint(message,1);
+//  Cycle through all stars in STARlist and compute their running average for Source-Sky and Dmag
+    for (k=0;k<STARlistIndex;k++) {
+//  Get the Source-Sky value of the star for the current observation
+         starID = STARlist[k];
+         SourceSkyString = "Source-Sky_" + starID;
+         success=getData(SourceSkyString,header,rowString,inputFileDelimiter,firstMeasTableColFlag);
+         fluxStar = parseFloat(globalValue);
+//  Compute the running average for Source-Sky
+         STARsourceAvg[k] = STARsourceAvg[k] + fluxStar/nObservations;
+//  If Source-Sky is negative, set dmag=15
+         if (fluxStar < 0) {
+            dmag = 15;
+            } else {
+//  Else, compute the dmag of the star relative to the target
+//  Use natural log (base e) - but, log10(n) = log(n)/log(10)
+                   dmag = -2.5 * log(fluxStar/fluxTarget)/log(10);
+                   };
+//  Compute the running average for Dmag
+         STARdmagAvg[k] = STARdmagAvg[k] + dmag/nObservations;
+         dmagString = d2s(dmag,2);
+         successPrint = debugPrint("Dmag for " + starID + "=" + dmagString,1);
+//  Show Additional Progress at the rate of 0.20/(nObservations * STARlistIndex)
+         cumProgress = cumProgress + 0.20/(nObservations * STARlistIndex);
+         progress (cumProgress);
+    };
+//
+//  Get time of observation and store it in obsTimesArray for later use
+    obsTimesArray[i-1] = getObsTime(header,rowString,inputFileDelimiter,firstMeasTableColFlag);
+};
+//
+//### Time Checkpoint 3
+if (measMode == 1) {timeCheckpoint(3,"observation","selected stars",nObservations,STARlistIndex;};
+//  Force progress to be 50%
+cumProgress = 0.50;
+progress (cumProgress);
+//
+//
+//  Finish computing the average aperture and convert to arc-seconds
+averageAPERTURE = averageAPERTURE / nObservations;
+averageAPERTUREarcseconds = averageAPERTURE * nScale;
+//  Area of average aperture
+apertureArea = PI*averageAPERTURE*averageAPERTURE;
+successPrint = debugPrint(" ",1);
+message = "Average Aperture (pixels): " + d2s(averageAPERTURE,1) + " Average Aperture (arc-seconds): " + d2s(averageAPERTUREarcseconds,1) + " Aperture area: " + d2s(apertureArea,4);
+successPrint = debugPrint(message,1);
+//
+//
+//******************  COMPUTE THE WEIGHTED AVERAGES FOR SOURCE-SKY AND DMAG
+//
+//  Create arrays for Source-Sky and Dmag
+STARSourceSky = newArray(3000);
+STARdmag = newArray(3000);
+//  For each star, cycle through all the observations
+for (k=0;k<STARlistIndex;k++) {
+    avgSource = STARsourceAvg[k];
+    avgDmag = STARdmagAvg[k];
+    message = "For Star: " + STARlist[k] + " average Source-sky= " + d2s(avgSource,2) + " average dmag= " + d2s(avgDmag,2);
+    success = debugPrint(message,1);
+//  Zero-out running amounts
+    sourceDenominator = 0.0;
+    sourceNumerator = 0.0;
+    dmagDenominator = 0.0;
+    dmagNumerator = 0.0;
+    for (i=1;i<nObservations+1;i++) {
+        rowString = fileArray[i];
+//  Get the Source-Sky value of the star for the current observation and
+//  compute the current sourceWeight value
+        starID = STARlist[k];
+        SourceSkyString = "Source-Sky_" + starID;
+        success=getData(SourceSkyString,header,rowString,inputFileDelimiter,firstMeasTableColFlag);
+        fluxStar = parseFloat(globalValue);
+//  If fluxStar = avgSource, bypass including this measurement in the weighted avaerage
+        if (fluxStar != avgSource) {
+           sigmaSquared = (fluxStar - avgSource) * (fluxStar - avgSource);
+//  Compute running sum of 1/sigmaSquared;
+           sourceDenominator = sourceDenominator + 1/sigmaSquared;
+//  Compute running sum of Source-Sky/sigmaSquared for Source-Sky
+           sourceNumerator = sourceNumerator + fluxStar/sigmaSquared;
+           };
+//  Get the Source-Sky value of the target star and compute the
+//  current dmag and then the current sourceDmag value
+        targetSourceSkyString = "Source-Sky_" + TARGET;
+        success=getData(targetSourceSkyString,header,rowString,inputFileDelimiter,firstMeasTableColFlag);
+        fluxTarget = parseFloat(globalValue);
+//  If Source-Sky is negative, set dmag=15
+        if (fluxStar < 0) {
+           dmag = 15;
+           } else {
+                  dmag = -2.5 * log(fluxStar/fluxTarget)/log(10);
+                  };
+//  If dmag = avgDmag, bypass including this measurement in the weighted average
+        if (dmag != avgDmag) {
+           sigmaSquared = (dmag - avgDmag) * (dmag - avgDmag);
+//  Compute running sum of 1/sigmaSquared for dmag
+           dmagDenominator = dmagDenominator + 1/sigmaSquared;
+//  Compute running sum of dmag/sigmaSquared for dmag
+           dmagNumerator = dmagNumerator + dmag/sigmaSquared; 
+        };
+//  Show Additional Progress at the rate of 0.40/(STARlistIndex * nObservations)
+         cumProgress = cumProgress + 0.4/(STARlistIndex * nObservations);
+         progress (cumProgress);
+    };
+//  Compute the Source-Sky and Dmag weighted averages
+//  In the case where all the Source-Sky's were all the same (although unlikely),
+//  set STARSourceSky = fluxStar, i.e., the last measure in the table;
+//  otherwise compute the weighted average as normal
+    if (sourceNumerator == 0.0) {
+       STARSourceSky[k] = fluxStar;
+       } else {STARSourceSky[k] = sourceNumerator/sourceDenominator;};
+//  In the case where all dmag's were the same (which would occur with the TARGET),
+//  set STARdmag = dmag, i.e., the last computation of dmag (note, for the TARGET,
+//  this should be 0.0); otherwise compute the weighted average as normal
+    if (dmagNumerator == 0.0) {
+        STARdmag[k] = dmag;
+        } else {STARdmag[k] = dmagNumerator/dmagDenominator;};
+};
+//
+//### Time Checkpoint 4
+if (measMode == 1) {timeCheckpoint(4,"selected stars","observations",STARlistIndex,nObservations);};
+//  Force progress to be 90%
+cumProgress = 0.90;
+progress (cumProgress);
+//
+//
+//******************  SORT THE OBSERVATION TIMES AND GET THE BEGINNING AND END TIMES
+//
+Array.sort(obsTimesArray);
+//  Compute the right side of each observation time and store them in obsTimesRight array. Check if day
+//  rolls over, and if so, add 1
+prevObsTimeLeft = 0.0;
+newDay = false;
+for (i=0; i<nObservations; i++) {
+    obsTime = obsTimesArray[i];
+//  Get left and right side of the decimal point
+    obsTimeLeft = floor(obsTime);
+    obsTimeRight = obsTime - obsTimeLeft;
+//  Add 1.0 if the day had rolled over
+    message = "Observation: " + i + " obsTimeLeft: " + obsTimeLeft + " prevObsTimeLeft: " + prevObsTimeLeft + " obsTimeRight: " + obsTimeRight;
+    success = debugPrint(message,1);
+    if (obsTimeLeft == prevObsTimeLeft + 1 || newDay) {newDay = true; obsTimeRight = obsTimeRight +1;};
+    message = " obsTimeRight: " + obsTimeRight;
+    success = debugPrint(message,1);
+    prevObsTimeLeft = obsTimeLeft;
+//  Store obsTimeRight in obsTimesRight array
+    obsTimesRight[i] = obsTimeRight;
+};
+//
+//### Time Checkpoint 5
+if (measMode == 1) {timeCheckpoint(5,"observations","",nObservations,1);};
+//
+beginTime = obsTimesArray[0];
+beginTimeRight = obsTimesRight[0];
+//  Compute beginTimeLeft for later use in the X-axis legend of the Option 2 plots
+beginTimeLeft = floor(beginTime);
+message = "Begin time: " + beginTime + "  Begin time right: " + d2s(beginTimeRight,12);
+success = debugPrint(message,1);
+endTime = obsTimesArray[nObservations-1];
+endTimeRight = obsTimesRight[nObservations-1];
+message = "End time: " + endTime + "  End time right: " + d2s(endTimeRight,12);
+success = debugPrint(message,1);
+//  Compute total observation time
+observationDuration = (endTime - beginTime)*24*60;
+message = "Duration of observation (minutes): " + d2s(observationDuration,2);
+success = debugPrint(message,1);
+//
+//
+//****************** DETERMINE OVERLAP CASE FOR ALL OPTIONS
+//
+overlapCase = true;
+//  If the observation is entirely within the predicted transit duration
+//  and therefore there is no OOT observation data, set overlapCase to false
+if ( (beginTimeRight<ingressTime && endTimeRight<ingressTime) || (beginTimeRight>egressTime && endTimeRight>egressTime)
+  || (beginTimeRight>ingressTime && endTimeRight<egressTime) )
+     {overlapCase = false;};
+success = debugPrint("overlapCase= " + overlapCase,1);
+//
+//
+//****************** COMPUTE BINNING VALUE FOR ALL OPTIONS
+//
+//  Compute average cadence in the observation (in seconds)
+averageExpPlusDelay = observationDuration*60/(nObservations);
+binning = floor(requestedCadence/averageExpPlusDelay);
+if (binning < 1) {binning = 1;};
+if (FORCEbinning > 0) {binning = FORCEbinning;};
+message = "Avg. exposure plus delay (sec): " + d2s(averageExpPlusDelay,2) + "   binning: " + d2s(binning,0);
+debugPrint(message,1);
+//
+//
+//****************** CREATE AN INDEX ARRAY THAT POINTS TO THE MEASUREMENT TABLE RECORDS
+//                   IN CHRONOLOGICAL ORDER
+//
+indexArray = newArray(nObservations);
+for (i=1;i<nObservations+1;i++) {
+};
+// For each time value in obsTimesArray, find the corresponding row in the measurement
+// table and store the measurement table row number into the indexArray
+for (j=0;j<nObservations;j++) {
+    for (i=1;i<nObservations+1;i++) {
+        rowString = fileArray[i];
+        obsTime = getObsTime(header,rowString,inputFileDelimiter,firstMeasTableColFlag);
+        if (obsTimesArray[j] == obsTime) {
+           indexArray[j] = i;
+//  End i Loop
+           i = nObservations;
+           }; 
+        };
+};
+if (debugMode == 1) {
+   print("Mapping:");
+   for (i=1;i<nObservations+1;i++) {
+       index = indexArray[i-1];
+       print("index: ",index);
+       rowString = fileArray[index];
+       DateString = "BJD_TDB";
+       success = getData(DateString,header,rowString,inputFileDelimiter,firstMeasTableColFlag);
+       print("i: ",i," index: ",index," date: ",globalValue);
+   };
+};
+//
+//****************** CREATE ARRAYS OF BINNED REL_FLUX DATA FOR
+//                   ALL STARS THAT ARE IN STARlist FOR LATER USE
+//
+//  Create arrays for holding binned rel_flux data for all stars in STARlist for future use
+binnedRelFlux = newArray(nObservations*STARlistIndex);
+binnedRelFluxErr = newArray(nObservations*STARlistIndex);
+//  Store in above arrays the binned data for rel_flux values for all stars in STARlist
+binRelFluxData ("", binnedRelFlux, binnedRelFluxErr, true, 0);
+//
+//
+//### Time Checkpoint 6
+if (measMode == 1) {timeCheckpoint(6,"selected stars","observations",STARlistIndex,nObservations);};
+//  Force progress to be 100%
+  cumProgress = 1.0;
+  progress (cumProgress);
+//
+//
+//****************** CALCULATE BINNED TIME STAMPS
+//
+STARtempBinnedTime = 0.0;
+binnedObsTimes = newArray(nObservations);
+successPrint = debugPrint(" ",1);
+binTimeCount = 0;
+for (i=1; i<nObservations+1; i++) {
+    if (modulus(i,binning) == 0) {
+//  Add binned observation time into the binnedTime array
+        binnedObsTimes[binTimeCount] = (obsTimesRight[i-1] + STARtempBinnedTime)/binning;
+        message = "For observation: " + i + " binned observ. time= " + d2s(binnedObsTimes[binTimeCount],7);
+        successPrint = debugPrint(message,1);
+        binTimeCount = binTimeCount + 1;
+        nBinEntries = 0;
+        STARtempBinnedTime = 0.0;
+        } else {
+               STARtempBinnedTime = STARtempBinnedTime + obsTimesRight[i-1];
+               nBinEntries = nBinEntries + 1;
+               };
+};
+//
+//### Time Checkpoint 7
+if (measMode == 1) {timeCheckpoint(7,"observations","",nObservations,1);};
+//
+//  If there are still some unbinned remaining observations, compute their binned time
+//  value and add them to the binnedObsTimes arrays
+    if (nBinEntries != 0) {
+        binnedObsTimes[binTimeCount] = STARtempBinnedTime/nBinEntries;
+        message = " For the remaining " + d2s(nBinEntries,0) + " bin entries: binmed time " + d2s(binnedObsTimes[binTimeCount],7);
+        successPrint = debugPrint(message,1);
+        binTimeCount = binTimeCount + 1;
+        };
+//
+//
+//***************** COMPUTE THE NORMALIZED RELATIVE FLUX FOR EACH STAR IN STARlist
+//
+normalizedFlux = newArray(nBins*STARlistIndex);
+avgNormFlux = newArray(STARlistIndex);
+normalizeRelFluxData ("", binnedRelFlux, binnedRelFluxErr, normalizedFlux, avgNormFlux, true, 0);
+//
+//### Time Checkpoint 9
+if (measMode == 1) {timeCheckpoint(9,"selected stars","bins",STARlistIndex,nBins);};
+//
+//
+//***************** COMPUTE THE RMS FOR EACH STAR IN STARlist AND STORE IT IN THE STARrms ARRAY
+//
+STARrms = newArray(STARlistIndex);
+computeRMS (STARrms, avgNormFlux, normalizedFlux, true, 0);
+//
+//
+//***************** SIGMA "CLEAN" THE NORMALIZED FLUX VALUES AND RECOMPUTE THEM
+//
+STARcount = newArray(STARlistIndex);
+STARnormCount = newArray(STARlistIndex);
+sigmaCleaning (STARcount, STARnormCount, avgNormFlux, STARrms, normalizedFlux, true, 0);
+//### Time Checkpoint 11
+if (measMode == 1) {timeCheckpoint(11,"selected stars","bins",STARlistIndex,nBins);};
+//
+//
+//
+//****************** EXECUTE THE OPTIONS IN THIS ORDER: OPTION 2 & 5 PLOTS, OPTION 3 PLOT, OPTION 1
+//
+//
+//                   FIRST, EXECUTE THIS CODE FOR ALL OPTIONS
+message = "STARlistindex: " + d2s(STARlistIndex,1);
+debugPrint(message,1);
+STARpredDepth = newArray(STARlistIndex);
+STARdisp = newArray(STARlistIndex);
+//  Get the first row of observations for later use in getting
+//  each star's Source-Sky count
+index = indexArray[0];
+rowString = fileArray[index];
+for (k=0; k<STARlistIndex; k++) {
+//  Compute depth needed for this NEB to mimic the target depth, but
+//  first apply the dmagBuffer value to the star's dmag, except in the case of the target
+     if (STARlist[k] != TARGET) {
+         corrDmag = STARdmag[k] + dmagBuffer;
+         } else {corrDmag = STARdmag[k];};
+     X = pow(10,-corrDmag/2.50);
+     NEBdepthPPT = predTargetDepth / X;
+//   Store predicted for future use in Options 1 and 2
+     STARpredDepth[k] = NEBdepthPPT;
+//  Convert RMS to ppt and compute NEBdepthRMS
+     NEBrmsPPT = STARrms[k]*1000;
+     NEBdepthRMS = NEBdepthPPT / NEBrmsPPT;
+//  Determine if star's Source-Sky count per pixel within the average aperature area
+//  is less than 10; if so, the disposition should be ***Not Cleared-flux too low***
+//  Get the weighted average Source-Sky count
+    sourceSkyValue = STARSourceSky[k];
+//  Determine notation indicating disposition and store disposition in STARdisp array
+    STARdisp[k] = "***Not Cleared***";
+     if (sourceSkyValue/apertureArea < 2) {
+        STARdisp[k] = "***Not Cleared-flux too low***";
+       } else {
+               if (NEBdepthPPT >= 1000) {
+                  STARdisp[k] = "Cleared-too faint";
+                  } else {
+                         if (NEBdepthRMS >= 5) {
+                            STARdisp[k] = "Cleared";
+                            } else {
+                                   if (NEBdepthRMS <5 && NEBdepthRMS >= 3) {
+                                      STARdisp[k] = "Likely cleared";
+                                      };
+                                   };
+                         };
+               };
+};
+//
+//### Time Checkpoint 12
+if (measMode == 1) {timeCheckpoint(12,"selected stars","",STARlistIndex,1);};
+//Close the progress text window
+  run("Close");
+//
+//
+//****************** CODE FOR OPTIONS 2 and 5
+//
+if (nebPlotOption) {
+//
+//  Option 2 will plot the normalized relative flux of each star that was previously computed from its 
+//  rel_flux_T/Cnn values, along with an overlay of the (previously predicted) depth of the star required to mimic 
+//  the target transit depth.  Such a plot will also include the RMS of the normalized flux, the distance of the 
+//  star to the target, the distance to the nearest aperture, the PA of the star relative to the target, and the  
+//  disposition of the star. 
+//
+//  If Option 5 is selected, for each star, one or more plots will be included of the following data for the star,
+//  if columns for such data exist in the measurement table:
+//      Case 0: rel_flux_T/Cnn_d
+//	Case 1: rel_flux_T/Cnn_dn
+//	Case 3: rel_flux_T/Cnn_fn
+//	Case 3: rel_flux_T/Cnn_df
+//	Case 4: rel_flux_T/Cnn_dfn
+//  The _d and _df cases would first need to be OOT normalized. These and the others would then also
+//  be subject to the required macro binning and outlier "cleaning."
+//
+//  The sequence of steps for this Option are:
+//  1.  Create the subdirectory for the plots.
+//  2.  Initialize various variables used for the plots.
+//  3.  For each star, plot the normalized relative flux for the star that was computed earlier,
+//	and which was appropriately binned and had outliers "cleaned."
+//  4.  If Option 5 is enabled for additional plots, check for the existence, in order, of each of the
+//	above five (5) cases.
+//      a.  For Cases 0 and 3:
+//	    normalize the data as was done with the rel_flux_T/Cnn case. Also apply the appropriate
+//	    macro binning and outlier cleaning.
+//      b.  For Cases 2, 3, and 5. Apply the appropriate macro binning and outlier cleaning.
+//      
+//
+//  Create subdirectory name for plots that are to be saved as .png files
+//
+  subDirectoryPath = fileDir + measurementFileName + "_NEBcheck" + fileSeparator;
+  File.makeDirectory(subDirectoryPath);
+//
+//  Initialize variables used for all the plots
+//
+//  Start overlay 1 hour before ingress time and continue to 1 hour after egress time
+  overlayStartTime = ingressTime - 1/24;
+  overlayEndTime = egressTime + 1/24;
+//  Set timeMIN to earlier of overlayStartTime or beginTimeRight
+  if (overlayStartTime < beginTimeRight) {timeMIN = overlayStartTime;} else {timeMIN = beginTimeRight;};
+//  Set timeMAX to later of overlayEndtime or endTimeRight
+  if (overlayEndTime > endTimeRight) {timeMAX = overlayEndTime;} else {timeMAX = endTimeRight;};
+//
+// Adjust min and max X values with 1% of X-range for better readability of the plot
+    xMAX = timeMAX + 0.01*(timeMAX-timeMIN);
+    xMIN = timeMIN - 0.01*(timeMAX-timeMIN);
+//
+// First Create color array and corresponding disposition cases
+  colorChoice = newArray(5);
+// Not cleared:
+  colorChoice[0] = "red";
+// Cleared - too faint:;
+  colorChoice[1] = "black";
+// Cleared:
+  colorChoice[2] = "green";
+// Likely cleared:
+  colorChoice[3] = "orange";
+// Not cleared - flux too low:
+  colorChoice[4] = "red";
+//
+//  Define location of distance information
+    distLoc = 0.03;
+//  Define location of disposition notation
+    dispLoc = 0.055;
+//  Define width and height of plot
+    widthPlot = 900;
+    heightPlot = 600;
+//  Define no. of characters that fit in above width and no. of plot units per character
+    charWidth = 128;
+    plotUnitsPerChar = widthPlot / charWidth;
+//
+// Create the the correct time name for the x-axis legend
+    if (useBJD) {timeName = "BJD_TDB";} else {timeName = "JD_UTC";};
+//
+firstPlot = true;
+// Get first row of data for later use in computing distances from each star
+rowString = fileArray[1];
+//
+//  Set mStars to be the lesser of the user-defined neighborhood limit value
+//      (i.e., neighborLimitValue) and the number of stars in the initial radius
+//      of interest-1 (i.e., STARlistIndex-1). This will be used later to define the
+//      range of stars to be checked for nearest neighbor
+    if (neighborLimitValue > STARlistIndex-1) {
+       mStars = STARlistIndex-1;
+       } else { mStars = neighborLimitValue;};
+//
+//************************** Begin plot process
+//
+// Cycle through each star to create the appropriate plots
+//
+// First create an array to later store true or false depending on whether the
+// nearest neighbor was <3 times the aperture radisu
+  neighborCheck = newArray(STARlistIndex);
+//
+  for (k=STARlistIndex-1;k>=0; k--) {
+//
+//******** First, plot the previously computed normalized relative flux values for this star
+//******** along with an overlay of the (previously predicted) depth of the star required to mimic 
+//******** the target transit depth.  Include the RMS of the normalized flux, the distance of the 
+//******** star to the target, the distance to the nearest aperture, the PA of the star relative
+//******** to the target, and the disposition of the star.
+//
+//  Retrieve previously computed predicted depth for this star; however,
+//  set predDepth to 0 if star disposition is ***Not Cleared-flux too low***
+    if (STARdisp[k] == "***Not Cleared-flux too low***") {
+        predDepth = 0;
+        } else {predDepth = 1 - STARpredDepth[k]/1000;};
+//
+//  Plot x and y points for normalized relative flux (rel_flux_T/Cxx) values
+//  First identify the begin and end of the data to be plotted
+    iBegin = k*nBins;
+    iEnd = (k+1)*nBins;
+//  Create arrays for X and Y values to be plotted; use the values in STARcount for their size
+    arraySize = STARcount[k];
+    xValues = newArray(arraySize);
+    yValues = newArray(arraySize);
+//  Plot the normalized relative flux data; also indicate this by setting flag to true
+    flag = true;
+    suffix = "";
+    plotData ("Overlay of Required NEB Depth","normalized relative flux",iBegin,iEnd, xValues, yValues, STARrms[k], normalizedFlux, k, suffix, flag );
+//
+//  Determine the distance to the nearest neighbor of the current star S[k} as follows:
+//  1.  Let mStars = the lesser of the user-defined neighborhood limit value
+//      (i.e., neighborLimitValue) and the number of stars in the initial radius
+//      of interest (i.e., STARlistIndex). (Note, mStars was already computed above
+//      before the current For loop since this remains the same for all stars).
+//  2.  The range of i for stars S[i] to be checked as nearest neighbor to S[k] is then determined
+//      as follows (for simplicity, let m=mStars and r=STARlistIndex):
+//      a.  If m is an even number:
+//                  Condition                      Start of i       End of i
+//            k-m/2 >= 0 and k+m/2 < r               k-m/2           k+m/2
+//            k-m/2  < 0 and k+m/2 < r                 0              m
+//            k-m/2 >= 0 and k+m/2 >=r               r-m-1           r-1
+//            k-m/2  < 0 and k+m/2 >=r             This condition is not possible since m was
+//                                                 forced to be < r
+//
+//      b.  If m is an odd number: 
+//                  Condition                      Start of i       End of i
+//            k-(m+1)/2 >= 0 and k+(m-1)/2 < r      k-(m+1)/2      k+(m-1)/2
+//            k-(m+1)/2  < 0 and k+(m-1)/2 < r         0              m
+//            k-(m+1)/2 >= 0 and k+(m-1)/2 >=r       r-m-1           r-1
+//            k-(m+1)/2  < 0 and k+(m-1)/2 >=r     This condition is not possible since m was
+//                                                 forced to be < r
+//
+    m = mStars;
+    r = STARlistIndex;
+//  Compute the two different increments employed in the above forumation based on whether
+//  m is even or odd
+    if (modulus(m,2) == 0) {
+//  if m is even
+       incr1 = m/2; incr2 = m/2;
+//  else m is odd
+       } else {incr1 = (m+1)/2; incr2 = (m-1)/2;};
+    if (k-incr1>=0 && k+incr2<r) {
+       indexBegin = k-incr1;
+       indexEnd = k+incr2;
+       } else {if (k-incr1<0 && k+incr2<r) {
+                   indexBegin = 0;
+                   indexEnd =m;
+                   } else {
+                          indexBegin = r-m-1; 
+                          indexEnd = r-1;
+                          };
+               };
+//
+//  First get X,Y coordinates of star
+      starID = STARlist[k];
+      starXFITSString = "X(FITS)_" + starID;
+      starYFITSString = "Y(FITS)_" + starID;
+      success=getData(starXFITSString,header,rowString,inputFileDelimiter,firstMeasTableColFlag);
+      xfitSTAR = parseFloat(globalValue);
+      success=getData(starYFITSString,header,rowString,inputFileDelimiter,firstMeasTableColFlag);
+      yfitSTAR = parseFloat(globalValue);
+//  Find the neighbor nearest to this star beginning with indexBegin to indexEnd
+      minDistance = 100000;
+      nearestNeighbor = "None";
+      for (i = indexBegin; i<indexEnd+1; i++) {
+          neighborID = STARlist[i];
+//  Bypass the star itself
+          if (starID != neighborID) {
+//  Get coordinates of the next neighbor being checked
+                neighborXFITSString = "X(FITS)_" + neighborID;
+                neighborYFITSString = "Y(FITS)_" + neighborID;
+                success=getData(neighborXFITSString,header,rowString,inputFileDelimiter,firstMeasTableColFlag);
+                xfitsNeighbor = parseFloat(globalValue);
+                success=getData(neighborYFITSString,header,rowString,inputFileDelimiter,firstMeasTableColFlag);
+                yfitsNeighbor = parseFloat(globalValue);
+//  Compute distance from star to this neighbor
+                valdist = (xfitsNeighbor-xfitSTAR)*(xfitsNeighbor-xfitSTAR) + (yfitsNeighbor-yfitSTAR)*(yfitsNeighbor-yfitSTAR);
+                distanceToNeighbor = sqrt(valdist);
+//   See if this distance is the new minimum
+                if (distanceToNeighbor < minDistance) {
+                    minDistance = distanceToNeighbor;
+                    nearestNeighbor = neighborID;
+                    };
+           };
+//  End loop through neighbor checks
+     };
+     if (nearestNeighbor == "None") {
+         minDistanceArcSeconds = 0;
+         minDistanceString = "N/A";
+         } else { 
+                 minDistanceArcSeconds = minDistance * nScale;
+                 minDistanceString = d2s(minDistanceArcSeconds,0) + " arc-sec";
+                };
+//
+      distString = d2s(STARdist[k],0);
+      subTitle1 = "Dist. to target: " + distString + " arc-sec";
+      locString1 = 0.20;
+      subTitle2 = "Dist. to nearest aperture (" + nearestNeighbor + "): " + minDistanceString;
+      locString2 = 0.40;
+//
+//  Display neighbor information on plot
+      plotNeighbor();
+      plotPAandOverlay (k);
+//
+//  If the nearest neighbor is <3*aperture radius, set neighborCheck[k] to true, otherwise false.
+//  neighborCheck will later be used when plotting the dmag vs. RMS plot to determine if this star
+//  should be plotted "red." Exclude stars where no nearest neighbor was found.
+//
+      apertureRadiusArcSeconds = averageAPERTURE*nScale;
+      if (minDistanceArcSeconds <= 3*apertureRadiusArcSeconds && minDistanceString != "N/A") {
+            neighborCheck[k]=true;} else { neighborCheck[k]=false;};
+//
+//    Save the plot for the normal relative flux case
+      savePlot (STARlist[k], "-NEBdepth-plot.png");
+//
+//
+//******** Next, if Option 5 is selected, run through each Case 0-4 below to see what other
+//******** optional plots are needed
+//      Case 0: rel_flux_T/Cnn_d
+//	Case 1: rel_flux_T/Cnn_dn
+//	Case 2: rel_flux_T/Cnn_fn
+//	Case 3: rel_flux_T/Cnn_df
+//	Case 4: rel_flux_T/Cnn_dfn
+//
+    if (nebDetrendPlotOption) {
+//
+      for (iCase = 0; iCase < nCases; iCase++) {
+        suffix = case[iCase];
+//  Check if this suffix is in the measurement table for the current star 
+        RelFluxString = "rel_flux_" + STARlist[k] + "_" + suffix;
+        RelFluxErrString = "rel_flux_err_" + STARlist[k] + "_" + suffix;
+//  check if both rel_flux_Sxx_suffix and rel_flux_err_Sxx_suffix are present for this star Sxx
+        position1 = findPositionInHeader (header, RelFluxString, inputFileDelimiter, firstMeasTableColFlag);
+        success1 = success;
+        position2 = findPositionInHeader (header, RelFluxErrString, inputFileDelimiter, firstMeasTableColFlag);
+        success2 = success;
+        if (success1 && !success2) {
+             errorHandling ("**** ERROR: rel_flux_Sxx_" + suffix + " is present but rel_flux_err_Sxx_" + suffix + " is not ");};
+        if (success1 && success2) {
+//  If both rel_flux_Sxx_suffix and rel_flux_err_Sxx_suffix are present, proceed to process the data
+//  First, create output arrays for the binned data for all cases
+               binnedRelFlux_d = newArray (nObservations);
+               binnedRelFluxErr_d = newArray (nObservations);
+//  For all cases, store binned data in binnedRelFlux_d and binnedRelFluxErr_d arrays
+               binRelFluxData ("_"+suffix, binnedRelFlux_d, binnedRelFluxErr_d, false, k);
+//
+//  Create the output array for the normalized flux data, as well as an array for storing
+//  the average normalized flux for this star (note: although only the k'th element of the
+//  avgNormFlux_d array is used, having it compatible with the full array used earlier for the
+//  normal relative flux case makes the coding easier and more understandable. This is also true
+//  for the subsequent STARrms_d, STARcount_d, and STARnorm_d arrays.)
+               normalizedFlux_d = newArray (nBins);
+               avgNormFlux_d = newArray(STARlistIndex);
+               if (iCase==0 || iCase ==3) {
+//  For the "d" and "df" cases, compute and store the normalized data in the normalizedFlux_d array
+//  and the average normalized flux in the avgNormFlux_d array
+                        normalizeRelFluxData ("_"+suffix, binnedRelFlux_d, binnedRelFluxErr_d,
+                                              normalizedFlux_d, avgNormFlux_d, false, k);
+                   } else {
+//  For the othere cases, store the binned, already-normalized data in the normazliedFlux_d array
+//  and compute the average normalized flux and store it in the avgNormFlux_d array
+                             avgNormFlux_d[k] = 0;
+                             for (i=0; i<nBins; i++) {
+                                 normalizedFlux_d[i] = binnedRelFlux_d[i];
+                                 avgNormFlux_d[k] = avgNormFlux_d[k] + normalizedFlux_d[i];
+                             };
+                             avgNormFlux_d[k] = avgNormFlux_d[k]/nBins;
+                          };
+//  For all cases, compute the RMS
+               STARrms_d = newArray(STARlistIndex);
+               computeRMS (STARrms_d, avgNormFlux_d, normalizedFlux_d, false, k);;
+//  For all cases, perform sigma cleaning
+               STARcount_d = newArray(STARlistIndex);
+               STARnorm_d = newArray(STARlistIndex);
+               sigmaCleaning (STARcount_d, STARnorm_d, avgNormFlux_d, STARrms_d, normalizedFlux_d, false, k);
+//  For all cases, plot the data
+               iBegin = 0;
+               iEnd = nBins;
+               xValues = newArray (STARcount_d[k]);
+               yValues = newArray (STARcount_d[k]);
+               plotData ("Detrend Plot", "normalized relative flux_"+suffix, iBegin, iEnd, xValues, yValues, STARrms_d[k], normalizedFlux_d, k, "_" + suffix, false);
+//  Plot next neighbor information
+               plotNeighbor();
+//  Plot PA information and predicted transit box overlay
+               plotPAandOverlay(k);
+//
+//  Save the plot for this case
+//  If suffix ends with the delimiter, take out the delimiter
+               fileSuffix = suffix;
+               if (endsWith(suffix,inputFileDelimiter)) {
+                  fileSuffix = substring(suffix,0,lengthOf(suffix)-1);
+               };
+               savePlot (STARlist[k], "-NEBdepth-plot-" + fileSuffix+ ".png");
+               };
+        };
+     };
+  };
+  if (saveOnlyPlots) {
+   close();
+   };
+};
+//
+//
+//****************** CODE FOR OPTIONS 3 AND 4
+//
+//
+//  Create the Delta Magnitude vs. RMS Plot 
+//  (X=dmag, Y=RMS) or (X=dmag, Y=log10 RMS)
+//
+if (dmagRMSOption) {
+//
+    nStars= STARlistIndex;
+    dmagMIN =  100;
+    dmagMAX = -100;
+//  Set rmsMIN and rmsMAX correctly based on logPlot
+    if (logPlot) {
+        rmsMIN =  5;
+        rmsMAX = -5;
+        } else {
+               rmsMIN = 100000;
+               rmsMAX = -100000;
+               };
+//  Convert rms values to ppt
+//  If user has selected log plot option, convert STARrms's to log10 basis;
+//  either way, store RMS value to be plotted in STARrmsPlot array
+    STARrmsPlot = newArray(STARlistIndex);
+    for (i=0;i<nStars;i++) {
+            STARrmsPlot[i] = STARrms[i] * 1000;
+            message = "Star: " + i + " STARrms: " + STARrmsPlot[i];
+            success = debugPrint(message,1);
+            if (logPlot) {
+//  Use natural log (base e) to compute log10(n), since log10(n) = log(n)/log(10)
+                STARrmsPlot[i] = log(STARrmsPlot[i])/log(10);
+                message = "Star: " + i + " STARrms: " + STARrmsPlot[i];
+                success = debugPrint(message,1);
+                };
+    };
+//
+//  Find the min. and max. X and Y values
+    for (i=0;i<nStars; i++) {
+//  Exclude stars with a disposition of ***Not Cleared-flux too low***"
+        if (STARdisp[i] != "***Not Cleared-flux too low***") {
+            if (STARdmag[i] <= dmagMIN) {dmagMIN = STARdmag[i];};
+            if (STARdmag[i] >  dmagMAX) {dmagMAX = STARdmag[i];};
+            if (STARrmsPlot[i] <= rmsMIN) {rmsMIN = STARrmsPlot[i];};
+            if (STARrmsPlot[i] >  rmsMAX) {rmsMAX = STARrmsPlot[i];};
+            };
+    };
+// Adjust min and max values for better readability of the plot depending on type of plot
+    if (logPlot) {
+        rmsMAX = rmsMAX + 0.2;
+        rmsMIN = rmsMIN - 0.2;
+        } else {
+          rmsMAX = rmsMAX + 50;
+          rmsMIN = rmsMIN - 10;
+          };
+    dmagMIN = dmagMIN - 0.5;
+    dmagMAX = dmagMAX + 0.5;
+    message = "dmagMIN= " + dmagMIN + " dmagMAX= " + dmagMAX + " rmsMIN= " + rmsMIN + " rmsMAX= " + rmsMAX;
+    successPrint = debugPrint(message,1);
+//  Create appropriate axis labels based on logPlot
+    if (logPlot) {
+        Plot.create("dmag_vs_RMS","dmag","log10 of RMS (ppt)");
+        } else {Plot.create("dmag_vs_RMS","dmag","RMS (ppt)");};
+    Plot.setFrameSize(widthPlot,heightPlot);
+    Plot.setLimits(dmagMIN,dmagMAX,rmsMIN,rmsMAX);
+//  Put file name at a position 6% from the upper left corner; include radius search if there was one
+//  Force use of radius plot option
+    radiusPlot = true;
+    if (radiusPlot) {
+       Plot.addText(fullFileName,0.25,-0.04);
+       message = "Radius (arc-min): " + RADIUS;
+       Plot.addText(message,0.4,-0.004);
+       } else {
+               Plot.addText(fullFileName,0.25,-0.04);
+              };
+//  Include legends for "Likely Cleared" and "Cleared" boundaries
+    Plot.setColor("magenta");
+    Plot.addText("Likely Cleared Boundary",0.05,-0.004);
+    Plot.setColor("green");
+    Plot.addText("Cleared Boundary",0.7,-0.004);
+    Plot.setColor("black");
+//
+//  Plot "Likely Cleared" and "Cleared" boundary lines
+    nPoints = 500;
+    xClearValues = newArray(nPoints);
+    yPrelimValues = newArray(nPoints);
+    yClearValues = newArray(nPoints);
+    incr = dmagMAX/nPoints;
+//  Perform two plots: "Likely Cleared" with a factor of 3 and yellow points;
+//  and "Cleared" with a factor of 5 and green points. First create the
+//  x values and preliminary y values
+    for (i=0; i<nPoints; i++) {
+         xClearValues[i] = incr * i;
+//  Compute required NEB depth for a dmag of xValues[i] after subtracting
+//  TESS correction factor
+         corrDmag = xClearValues[i] + dmagBuffer;
+         X = pow(10,-corrDmag/2.50);
+         NEBdepthPPT = predTargetDepth / X;
+         yPrelimValues[i] = NEBdepthPPT;
+         };
+//  Plot both the "Likely Cleared" and "Cleared" boundary lines
+    for (j=0;j<2; j++) {
+       if (j==0) {
+              Plot.setColor("magenta"); factor = 3;
+              } else {Plot.setColor("green"); factor = 5;};
+       for (i=0; i<nPoints; i++) {
+         yClearValues[i] = yPrelimValues[i]/factor;
+         };
+       Plot.add(",",xClearValues,yClearValues);
+      };
+      Plot.setColor("black");
+//
+//  Plot star labels at the correct locations on the plot
+    Plot.setJustification("center");
+    for (i=0;i<nStars;i++) {
+//  Exclude stars with a disposition of ***Not Cleared-flux too low***"
+        if (STARdisp[i] != "***Not Cleared-flux too low***") {
+            X = (STARdmag[i]-dmagMIN)/(dmagMAX-dmagMIN);
+            Y = (rmsMAX - STARrmsPlot[i])/(rmsMAX-rmsMIN);
+            message = "STARlist[i]: " + STARlist[i] + " X: " + d2s(X,1) + " Y: " + d2s(Y,1);
+            successPrint = debugPrint(message,1);
+//  If a NEB plot was done earlier and the distance to the nearest neighbor was found
+//  to be < 3 times the aperture radius (i.e., neighborCheck = true), 
+//  then show the star name in red, otherwise black
+            Plot.setColor("black");
+            if (nebPlotOption) {
+                if (neighborCheck[i]) {Plot.setColor("red");};
+                };
+            Plot.addText(STARlist[i],X,Y);
+            Plot.addText("x",X,Y+0.02);
+            Plot.setColor("black");
+            };
+        };
+    Plot.show;
+//
+//  Create the full output file name of the plot file;
+//  include the measurement file name as the prefix
+//
+    pathOutputFile=fileDir + measurementFileName + "_dmagRMS-plot.png";
+    save(pathOutputFile);
+};
+
+//
+//
+//****************** CODE FOR OPTION 1
+//
+if (nebTableOption){
+//  Create the full output file name of the NEB Search Table file;
+//  include the measurement file name as the prefix
+  pathOutputFile=fileDir + measurementFileName + "_NEB-table" + ".txt";
+//
+//  Open the output file as a new file
+//
+  outputFile=File.open(pathOutputFile);
+//
+//  Create report title with date created and subject information
+  File.append("                       TFOP NEB Search Table for:" + CR,pathOutputFile);
+  File.append(CR,pathOutputFile);
+  File.append("           " + fullFileName + CR,pathOutputFile);
+  File.append(CR,pathOutputFile);
+  File.append("                 Created by AIJ macro Revision " + REVISION + CR,pathOutputFile);
+  File.append("                          on " + datetime + CR,pathOutputFile);
+  File.append("          ------------------------------------------------" + CR,pathOutputFile);
+  scaleString = d2s(nScale,2);
+  File.append("                    Pixel Scale (arc-seconds/pixel): " + scaleString + CR,pathOutputFile);
+  File.append("                    Predicted ingress time: " + INGRESS + CR,pathOutputFile);
+  File.append("                    Predicted egress time:  " + EGRESS + CR,pathOutputFile);
+  File.append("                    Target predicted depth: " + DEPTH + CR,pathOutputFile);
+  File.append("                    Target Star: " + TARGET + CR,pathOutputFile);
+  File.append("                    Search Radius: " + RADIUS + CR,pathOutputFile);
+  obsDurString = d2s(observationDuration,1);
+  File.append("                    Duration of Observation (min.): " + obsDurString + CR,pathOutputFile);
+  numObsString = d2s(nObservations,0);
+  File.append("                    Number of Images: " + numObsString + CR,pathOutputFile);
+  expString = d2s(averageExpPlusDelay,1);
+  File.append("                    Average Exposure Plus Delay Time (sec.): " + expString + CR,pathOutputFile);
+  cadenceString = d2s(requestedCadence,1);
+  File.append("                    Cadence Requested When Calculating RMS (sec.): " + cadenceString + CR,pathOutputFile);
+  binningString = d2s(binning,0);
+  File.append("                    Binning Used When Calculating RMS: " + binningString + CR,pathOutputFile);
+  apertureString = d2s(averageAPERTURE,1) + " (pixels); " + d2s(averageAPERTUREarcseconds,1) + " (arc-seconds)";
+  File.append("                    Average Aperture Radius: " + apertureString + CR,pathOutputFile);
+  File.append("                    Dmag correction factor to account for difference with TESS band:" + d2s(dmagBuffer,1) + CR,pathOutputFile);
+  File.append(CR,pathOutputFile);
+  tableHeader ="      Separation             Uncorr.";
+  File.append(tableHeader + CR,pathOutputFile);
+  tableHeader1 = "Star  from target  PA (deg.)  dmag   RMS(ppt)  NEBdepth(ppt)  NEBdepth/RMS    Disposition";
+  File.append(tableHeader1 + CR,pathOutputFile);
+  debugPrint(tableHeader,1);
+  debugPrint(tableHeader1,1);
+//
+//  Cycle through all stars in STARlist
+  for (i=0; i<STARlistIndex; i++) {
+//  Create NEB table entries for all stars except the target star
+      if (STARlist[i] != TARGET) {
+//  Get dmag value
+         STARdmagValue = STARdmag[i];
+//  Get minute part and seconds part of distance
+         minutePart = floor(STARdist[i]/60);
+         secondsPart = round(STARdist[i] - floor(STARdist[i]/60)*60);
+//  If the seconds part = 60, make it 0 and add one to minute part
+         if (secondsPart == 60) {secondsPart = 0; minutePart = minutePart + 1;};
+         distanceMinutePart = d2s(minutePart,0);
+         distanceSecondsPart = d2s(secondsPart,0);
+//  If the seonds part is <10, add a "0" prefix to its character string equivalent
+         if (secondsPart < 10) {distanceSecondsPart = "0" + distanceSecondsPart;};
+         successPrint = debugPrint("For " + STARlist[i] + ": minute part=" + distanceMinutePart + " second part=" + distanceSecondsPart,1);
+         separation = distanceMinutePart + singleQuote + distanceSecondsPart + doubleQuote;
+         STARpaValue = STARpa[i];
+//  If the name of the NEB is two characters, append a space to the front so its row lines up
+//  with NEBs of three characters
+         lenSTARlist = lengthOf(STARlist[i]);
+         if (lenSTARlist == 2) {STARlist[i] = " " + STARlist[i];};
+//  Convert STARpaValue, STARdmag, NEBrmsPPT, NEBdepthPPT to character strings
+//  and then right justify them
+         if (usePlateSolvedImage) {
+             rightJustify(STARpaValue,0);
+             STARpastring = globalValue;
+             } else {
+                     STARpastring ="  NA";
+                     };
+         rightJustify(STARdmagValue,3);
+         STARdmagstring = globalValue;
+         NEBdepthPPT = STARpredDepth[i];
+//  Convert RMS to ppt and compute NEBdepthRMS
+         NEBrmsPPT = STARrms[i]*1000;
+         NEBdepthRMS = NEBdepthPPT / NEBrmsPPT;
+         rightJustify(NEBrmsPPT,2);
+         NEBrmsPPTstring = globalValue;
+         rightJustify(NEBdepthPPT,1);
+         NEBdepthPPTstring = globalValue;
+         rightJustify(NEBdepthRMS,1);
+         NEBdepthRMSstring = globalValue;
+         notation = STARdisp[i];
+//  If star disposition is ***Not Cleared-flux too low***", set NEBdepthPPTstring and NEBdepthRMSstring to N/A
+         if (notation == "***Not Cleared-flux too low***") {
+             NEBdepthPPTstring = "     N/A";
+             NEBdepthRMSstring = "     N/A";
+             };
+         tableRow = STARlist[i] + "      " + separation + "     " + STARpastring + " " + STARdmagstring + " " + NEBrmsPPTstring + "       " + NEBdepthPPTstring + "  " + NEBdepthRMSstring + "      " + notation;
+        File.append(tableRow + CR,pathOutputFile);
+        debugPrint (tableRow,1);
+   };
+  };
+//
+//  Output explanation of various dispositions
+  File.append(CR,pathOutputFile);
+  File.append("Possible dispositions of the star being the source of the target predicted depth:" + CR,pathOutputFile);
+  File.append("   Likely cleared (NEBdepth/RMS is between 3 and 5)" + CR,pathOutputFile);
+  File.append("   Cleared (NEBdepth/RMS is >= 5)" + CR,pathOutputFile);
+  File.append("   Cleared-too faint (NEBdepth >= 1000ppt)" + CR,pathOutputFile);
+  File.append("   ***Not Cleared-flux too low*** (weighted average of Source-Sky counts per aperture pixel < 2)" + CR,pathOutputFile);
+  File.append("   ***Not Cleared*** (none of the above conditions are met)" + CR,pathOutputFile);
+  File.append(CR,pathOutputFile);
+//
+//   Create rest of output file, namely the image shift calculations
+//
+//  Deterimine image shift statistics
+//
+//  Get the value in the user's file associated with each of the user-specified labels for:
+//   1.  X(FITS)_TARGET
+//   2.  Y(FITS)_TARGET
+//  Assume that such labels and values are separated by the 
+//  user-specified delimiter inputFileDelimiter
+//
+//  Cycle through each of the data rows in the user's file for the above values
+//  Sum X(FITS)'s and Y(FITS)'s
+  XFITS = newArray(nObservations);
+  YFITS = newArray(nObservations);
+  for (i=1; i<nObservations+1; i++) {
+     rowString=fileArray[i];
+     success=getData("X(FITS)_" + TARGET,header,rowString,inputFileDelimiter,firstMeasTableColFlag);
+     XFITS[i-1] = globalValue;
+//
+     success=getData("Y(FITS)_" + TARGET,header,rowString,inputFileDelimiter,firstMeasTableColFlag);
+     YFITS[i-1] = globalValue;
+  };
+  Array.getStatistics(XFITS,minXFITS,maxXFITS,meanXFITS,stdDevXFITS);
+  successPrint = debugPrint("min X(FITS)= " + minXFITS + " " + "max X(FITS)= " + maxXFITS + " " + "stdev X(FITS)=" +   stdDevXFITS,1);
+  Array.getStatistics(YFITS,minYFITS,maxYFITS,meanYFITS,stdDevYFITS);
+  successPrint = debugPrint("min Y(FITS)= " + minYFITS + " " + "max Y(FITS)= " + maxYFITS + " " + "stdev Y(FITS)=" +   stdDevYFITS,1);
+//  Convert stdev's in pixels to arc-seconds based on SCALE;
+  stdevX = nScale * stdDevXFITS;
+  stdevY = nScale * stdDevYFITS;
+  maxDevInX = maxXFITS-minXFITS;
+  maxDevInY = maxYFITS-minYFITS;
+//
+//  Output image shift information
+  shiftMessage1 = "Image shift statistics:";
+  shiftMessage2 = "             stdev.(arc-seconds): " + stdevX + " in X and " + stdevY + " in Y";
+  shiftMessage3 = "             max. deviation (pixels): " + maxDevInX + " in X and " + maxDevInY + " in Y";
+//  nCount=nCount+1; sCount=d2s(nCount,0) + ".  ";
+  File.append(shiftMessage1 + CR,pathOutputFile);
+  File.append(shiftMessage2 + CR,pathOutputFile);
+  File.append(shiftMessage3,pathOutputFile);
+//
+//  Close the output file
+  File.close(outputFile);
+};
+//
+beep();
+//  If user opted for it, display appropriate dialogue message informing
+//  user of location of saved files
+  if (infChoice) {
+       Dialog.create("");
+       if (nebTableOption && !dmagRMSOption) {
+          Dialog.addMessage("The NEB Search Table can be found in:");
+          Dialog.addMessage(fileDir);
+          Dialog.addMessage("");
+          };
+       if (dmagRMSOption && !nebTableOption) {
+          Dialog.addMessage("The Dmag vs. RMS plot can be found in:");
+          Dialog.addMessage(fileDir);
+          Dialog.addMessage("");
+          };
+       if (nebTableOption && dmagRMSOption) {
+          Dialog.addMessage("The NEB Search Table and Dmag vs. RMS plot can be found in:");
+          Dialog.addMessage(fileDir);
+          Dialog.addMessage("");
+          };
+       if (nebPlotOption && (savePlots || saveOnlyPlots) ) {
+           Dialog.addMessage("The NEB predicted depth plots can be found in the following subdirectory:");
+           Dialog.addMessage(subDirectoryPath);
+           Dialog.addMessage("");
+           };
+       if (nebTableOption || dmagRMSOption || (nebPlotOption && (savePlots || saveOnlyPlots)) ) {
+          Dialog.addMessage("                            NEB analysis completed!");
+          } else {Dialog.addMessage("NEB analysis completed!");};
+       Dialog.show();
+     };
+//
+exit();

@@ -1,0 +1,46 @@
+plugins {
+    // Apply the java plugin to add support for Java
+    id 'java'
+
+    // Apply the application plugin to add support for building a CLI application.
+    id 'application'
+}
+
+// See https://guides.gradle.org/creating-multi-project-builds/
+
+allprojects {
+    repositories {
+        jcenter() 
+    }
+	group 'edu.louisville.astro.software'
+}
+
+repositories {
+}
+
+subprojects {
+    version = '5.0.0-SNAPSHOT'
+}
+
+dependencies {
+    // This dependency is used by the application.
+    implementation 'com.google.guava:guava:29.0-jre'
+    compile project(':ij')
+    compile project(':astronomy_')
+
+    // Use JUnit test framework
+    testImplementation 'junit:junit:4.13'
+}
+
+application {
+    // Define the main class for the application.
+    mainClassName = 'AIJ.Merged.App'
+}
+
+distZip {
+	
+}
+
+distTar {
+	
+}

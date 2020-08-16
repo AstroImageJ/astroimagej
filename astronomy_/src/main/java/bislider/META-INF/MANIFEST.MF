@@ -1,0 +1,19 @@
+Manifest-Version: 1.0
+Ant-Version: Apache Ant 1.6.5
+Created-By: 1.5.0_07-83 ("Apple Computer, Inc.")
+Main-Class: com.visutools.nav.bislider.Test
+Class-Path: lib/MRJPlugin.jar lib/resources.jar lib/swing-layout-1.0.1
+ .jar MRJPlugin.jar resources.jar swing-layout-1.0.1.jar
+
+Name: com.visutools.nav.bislider
+Specification-Title: bislider: Range Slider with segments, colorizatio
+ n and enhanced precision
+Specification-Version: 1.4.1
+Specification-Vendor: Frederic Vernier
+Implementation-Title: com.visutools.nav.bislider
+Implementation-Version: build0000482 built on 17-December-2006
+Implementation-Vendor: vernier
+
+Name: com/visutools/nav/bislider/BiSlider.class
+Java-Bean: True
+

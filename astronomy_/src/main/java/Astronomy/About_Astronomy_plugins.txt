@@ -1,0 +1,9 @@
+// About_Astronomy_plugins.txt
+
+Dialog.create("About Astronomy plugins");
+Dialog.addMessage("Goettingen ImageJ Astronomy Plugins");
+Dialog.addMessage("Version 2009-AUG-12");
+Dialog.addMessage("Frederic V. Hessman");
+Dialog.addMessage("Institut fuer Astrophysik");
+Dialog.addMessage("Georg-August-Universitaet Goettingen");
+Dialog.show();

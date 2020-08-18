@@ -1,0 +1,81 @@
+// Create_Master_Bias_Image.txt
+//
+// FVH (2010-05-10)
+
+getDateAndTime(year,month,dow,day,h,m,s,msec);
+t = ""+year+"-"+month+"-"+day+"T"+h+":"+m+":"+s;
+
+function abort (str) {
+	print (str);
+	call("ij.Prefs.set","ccd.status",false);
+	exit (str);
+}
+
+// MAKE SURE A STACK IS THE TOP IMAGE
+
+ns = nSlices();
+if (ns <= 1) abort("ERROR: CreateBiasImage only works with a stack!");
+
+// START LOGGING
+
+print("\n-------------------- "+t+" --------------------");
+print("Create Master Bias Image:");
+
+// GET PREFERENCES
+
+biasimage = "BIAS";
+print("     * getting preferences ...");
+biasimage = call("ij.Prefs.get","ccd.biasimage",biasimage);
+title = getTitle();
+if (title == biasimage) biasimage = biasimage+".fits";
+
+// FIRST DO DIALOG
+
+print("     * getting user input...");
+Dialog.create("Create Master Bias Image");
+Dialog.addMessage("Create bias image using the stack \""+title+"\"");
+Dialog.addString("Bias image to be created : ",biasimage,20);
+Dialog.show();
+biasimage = Dialog.getString();
+if (lengthOf(biasimage) <= 0) {
+        showMessage("You must give the output bias image a name!");
+        abort("ERROR: no name for bias image!");
+}
+
+// LIST IMAGES IN STACK AND MEASURE THE MEAN AND MEDIAN VALUES
+
+run("Set Measurements...","slice mean median display redirect=None decimal=2");
+print("     * using "+ns+" bias images from the stack \""+title+"\"");
+for (i=1; i <= ns; i++) {
+	setSlice(i);
+	run("Measure");
+	print("            "+getInfo("slice.label"));
+}
+last = getInfo("slice.label");
+setSlice(1);
+label = getInfo("slice.label");
+
+// COMPUTE MEDIAN
+
+print("     * computing median bias image called \""+biasimage+"\" ...");
+run("Z Project...", "projection=Median");
+run("Enhance Contrast", "saturated=0.5");
+rename(biasimage);
+
+// COPY FITS HEADER
+
+print("     * copying representative FITS header ...");
+run("Copy FITS Header", "from=["+title+"] to=["+biasimage+"] history=[Copied FITS header from "+label+"]");
+run("Write FITS Header", "image=["+biasimage+"] type=HISTORY comment=[Median of "+ns+" bias images : "+label+" to "+last+"]");
+
+// SAVE PREFERENCES
+
+print("     * saving preferences ...");
+call ("ij.Prefs.set","ccd.biasimage",biasimage);
+print("FINISHED!");
+print("-------------------------------------------------------------\n");
+
+selectWindow("Log");
+beep();
+call ("ij.Prefs.set","ccd.status",true);
+

@@ -1,0 +1,149 @@
+// Create_Master_Flatfield_Image.txt
+//
+// FVH (2010-03-18)
+
+getDateAndTime(year,month,dow,day,h,m,s,msec);
+t = ""+year+"-"+month+"-"+day+"T"+h+":"+m+":"+s;
+
+function abort (str) {
+	print (str);
+	call("ij.Prefs.set","ccd.status",false);
+	exit (str);
+}
+
+// ----- IS THERE A STACK READY?
+
+ns = nSlices();
+if (ns <= 1) abort ("Create Master Flatfield Image only works with a stack!");
+title = getTitle();
+
+// ----- START LOGGING
+
+print("\n-------------------- "+t+" --------------------");
+print("Create Master Flatfield Image :");
+
+// ----- GET PREFERENCES
+
+print("     * getting preferences ...");
+overcorr = call("ij.Prefs.get","ccd.overcorr",false);
+overscan = call("ij.Prefs.get","ccd.overscan"," ");
+biasimage = call("ij.Prefs.get","ccd.biasimage","BIAS.fits");
+biascorr = call("ij.Prefs.get","ccd.biascorr",false);
+darkimage = call("ij.Prefs.get","ccd.darkimage","DARK.fits");
+darkcorr = call("ij.Prefs.get","ccd.darkcorr",false);
+flatimage = call("ij.Prefs.get","ccd.flatimage","FLATFIELD.fits");
+expcorr = call("ij.Prefs.get","ccd.expcorr",false);
+
+// ----- DIALOG
+
+print("     * getting user input ...");
+Dialog.create("Create Master Flatfield Image");
+Dialog.addMessage("Create flatfield image using the stack ["+title+"]");
+Dialog.addCheckbox("Subtract overscan bias from region",overcorr);
+Dialog.addString("row1,row2,col1,col2",overscan,20);
+Dialog.addCheckbox("Bias correction",biascorr);
+Dialog.addString("Bias image : ",biasimage,20);
+Dialog.addCheckbox("Apply dark-current correction",darkcorr);
+Dialog.addString("Dark-current image : ",darkimage,20);
+Dialog.addCheckbox("Correct for different exposure times: ",expcorr);
+Dialog.addMessage(" ");
+Dialog.addString("Flatfield image to be created : ",flatimage,20);
+Dialog.show();
+
+overcorr = Dialog.getCheckbox();
+overscan = Dialog.getString();
+biascorr = Dialog.getCheckbox();
+biasimage = Dialog.getString();
+if (biascorr && lengthOf(biasimage) > 0 && !isOpen(biasimage)) {
+	showMessage("The bias image \""+biasimage+"\" is not open.\nCheck for a missing/superfluous file extension.");
+	abort ("ERROR: bias image \""+biasimage+"\" not open!");
+}
+darkcorr = Dialog.getCheckbox();
+darkimage = Dialog.getString();
+if (darkcorr && lengthOf(darkimage) > 0 && !isOpen(darkimage)) {
+	showMessage("The dark image \""+darkimage+"\" is not open.\nCheck for a missing/superfluous file extension.");
+	abort ("ERROR: dark image \""+darkimage+"\" not open!");
+}
+expcorr = Dialog.getCheckbox();
+flatimage = Dialog.getString();
+if (title == flatimage) {
+	showMessage("You must give the flatfield image a name different from the input stack!");
+	abort ("ERROR: no unique name for flatfield image!");
+}
+
+setSlice(ns);
+labeln = getInfo("slice.label");
+setSlice(1);
+label1 = getInfo("slice.label");
+
+// ----- LIST IMAGES
+
+print("     * using "+ns+" flatfield images from the stack \""+title+"\"");
+for (i=1; i <= ns; i++) {
+	setSlice(i);
+	print("               "+getInfo("slice.label"));
+}
+print("     \""+flatimage+"\" = median(normalized(\""+title+"\":*)-\""+biasimage+"\"-\""+darkimage+"\"))");
+
+// ----- APPLY STANDARD CALIBRATIONS
+
+cmd = "image=["+title+"] ";
+if (overcorr) cmd = cmd+"overscan within=["+overscan+"] ";
+if (biascorr) cmd = cmd+"subtract bias=["+biasimage+"] ";
+if (darkcorr) cmd = cmd+"remove dark=["+darkimage+"] ";
+if (expcorr)  cmd = cmd+"correct "; 
+print("     * Process_Images: "+cmd);
+run("Process Images",cmd);
+title = "Processed "+title;
+rename(title);
+
+// ----- NORMALIZE TO SAME LEVEL USING MEDIAN
+
+print("     * normalizing to same median level...");
+run("Normalize Stack","normalize=Median normalize =1");
+run("Enhance Contrast", "saturated=0.5");
+title = "Normalized "+title;
+rename(title);
+
+// ----- GET MEDIAN OF STACK
+
+print("     * creating median image \""+flatimage+"\" ...");
+run("Z Project...", "projection=Median");
+run("Enhance Contrast", "saturated=0.5");
+rename(flatimage);
+
+// ----- COPY FITS HEADER
+
+print("     * copying representative FITS header ...");
+run("Copy FITS Header", "from=["+title+"] to=["+flatimage+"] history=[Copied FITS header from "+label1+"]");
+run("Write FITS Header", "image=["+flatimage+"] type=[HISTORY] comment=[Created Master Flatfield Image "+flatimage+" using "+label1+" to "+labeln+"]");
+
+// ----- SAVING PREFERENCES
+
+print("     * saving preferences ...");
+if (overcorr) {
+	call ("ij.Prefs.set","ccd.overcorr",true);
+	call ("ij.Prefs.set","ccd.overscan",overscan);
+}
+if (biascorr)
+	call ("ij.Prefs.set","ccd.biascorr",true);
+else
+	call ("ij.Prefs.set","ccd.biascorr",false);
+call ("ij.Prefs.set","ccd.biasimage",biasimage);
+if (darkcorr)
+	call ("ij.Prefs.set","ccd.darkcorr",true);
+else
+	call ("ij.Prefs.set","ccd.darkcorr",false);
+call ("ij.Prefs.set","ccd.darkimage",darkimage);
+call ("ij.Prefs.set","ccd.flatimage",flatimage);
+if (expcorr)
+	call ("ij.Prefs.set","ccd.expcorr",true);
+else
+	call ("ij.Prefs.set","ccd.expcorr",false);
+
+print("FINISHED!");
+print("------------------------------------------------------------\n");
+
+selectWindow("Log");
+beep();
+call ("ij.Prefs.set","ccd.status",true);

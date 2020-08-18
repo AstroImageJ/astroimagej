@@ -6,13 +6,11 @@ import ij.gui.*;
 import ij.text.*;
 import ij.util.*;
 import ij.measure.ResultsTable;
-import ij.plugin.*;
 import ij.plugin.PlugIn;
 import ij.Prefs;
 import ij.process.*;
 import ij.io.*;
-import ij.measure.CurveFitter;
-import flanagan.analysis.*; 
+import flanagan.analysis.*;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
@@ -25,8 +23,6 @@ import java.util.*;
 import java.io.*;
 import java.awt.event.*;
 
-import java.lang.Math.*;
-import java.math.BigDecimal;
 import java.text.*;
 
 // astroj ------
@@ -34,12 +30,6 @@ import astroj.*;
 import flanagan.math.MinimizationFunction;
 import flanagan.math.Minimization;
 import java.awt.image.BufferedImage;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import javax.imageio.IIOImage;
-import javax.imageio.ImageIO;
-import javax.imageio.ImageWriteParam;
-import javax.imageio.stream.FileImageOutputStream;
 import javax.swing.border.Border;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
@@ -6908,31 +6898,31 @@ static void initializeVariables()
                 "purple",
                 "teal"
                 };
-        fitFrameIcon = createImageIcon("astroj/images/detrend_fit_transit.png", "Fit exoplanet transit to all data");
+        fitFrameIcon = createImageIcon("resources/images/detrend_fit_transit.png", "Fit exoplanet transit to all data");
         normiconlist = new ImageIcon[]
                 {
-                createImageIcon("astroj/images/norm_off.png", "Do not use normalization"),                                // 0
-                createImageIcon("astroj/images/norm_left.png", "Normalize based on data left of vertical marker 1"),      // 1
-                createImageIcon("astroj/images/norm_right.png", "Normalize based on data right of vertical marker 2"),    // 2
-                createImageIcon("astroj/images/norm_outside.png", "Normalize based on data outside of vertical markers"), // 3
-                createImageIcon("astroj/images/norm_inside.png", "Normalize based on data inside of vertical markers"),   // 4
-                createImageIcon("astroj/images/norm_left2.png", "Normalize based on data left of vertical marker 2"),     // 5
-                createImageIcon("astroj/images/norm_right2.png", "Normalize based on data right of vertical marker 1"),   // 6
-                createImageIcon("astroj/images/norm_all.png", "Normalize based on all data"),                             // 7
+                createImageIcon("resources/images/norm_off.png", "Do not use normalization"),                                // 0
+                createImageIcon("resources/images/norm_left.png", "Normalize based on data left of vertical marker 1"),      // 1
+                createImageIcon("resources/images/norm_right.png", "Normalize based on data right of vertical marker 2"),    // 2
+                createImageIcon("resources/images/norm_outside.png", "Normalize based on data outside of vertical markers"), // 3
+                createImageIcon("resources/images/norm_inside.png", "Normalize based on data inside of vertical markers"),   // 4
+                createImageIcon("resources/images/norm_left2.png", "Normalize based on data left of vertical marker 2"),     // 5
+                createImageIcon("resources/images/norm_right2.png", "Normalize based on data right of vertical marker 1"),   // 6
+                createImageIcon("resources/images/norm_all.png", "Normalize based on all data"),                             // 7
                 };
         
         detrendiconlist = new ImageIcon[]
                 {
-                createImageIcon("astroj/images/norm_off.png", "Do not use detrending"),                                 // 0
-                createImageIcon("astroj/images/norm_user.png", "User defined detrending constant"),                     // 1
-                createImageIcon("astroj/images/detrend_left.png", "Detrend based on data left of vertical marker 1"),      // 2
-                createImageIcon("astroj/images/detrend_right.png", "Detrend based on data right of vertical marker 2"),    // 3
-                createImageIcon("astroj/images/detrend_outside.png", "Detrend based on data outside of vertical markers"), // 4
-                createImageIcon("astroj/images/detrend_inside.png", "Detrend based on data inside of vertical markers"),   // 5
-                createImageIcon("astroj/images/detrend_left2.png", "Detrend based on data left of vertical marker 2"),     // 6
-                createImageIcon("astroj/images/detrend_right2.png", "Detrend based on data right of vertical marker 1"),   // 7
-                createImageIcon("astroj/images/detrend_all.png", "Detrend based on all data"),                             // 8
-                createImageIcon("astroj/images/detrend_fit_transit.png", "Fit exoplanet transit to all data"),                 // 9
+                createImageIcon("resources/images/norm_off.png", "Do not use detrending"),                                 // 0
+                createImageIcon("resources/images/norm_user.png", "User defined detrending constant"),                     // 1
+                createImageIcon("resources/images/detrend_left.png", "Detrend based on data left of vertical marker 1"),      // 2
+                createImageIcon("resources/images/detrend_right.png", "Detrend based on data right of vertical marker 2"),    // 3
+                createImageIcon("resources/images/detrend_outside.png", "Detrend based on data outside of vertical markers"), // 4
+                createImageIcon("resources/images/detrend_inside.png", "Detrend based on data inside of vertical markers"),   // 5
+                createImageIcon("resources/images/detrend_left2.png", "Detrend based on data left of vertical marker 2"),     // 6
+                createImageIcon("resources/images/detrend_right2.png", "Detrend based on data right of vertical marker 1"),   // 7
+                createImageIcon("resources/images/detrend_all.png", "Detrend based on all data"),                             // 8
+                createImageIcon("resources/images/detrend_fit_transit.png", "Fit exoplanet transit to all data"),                 // 9
                 };        
 
         operators = new String[]
@@ -7979,7 +7969,7 @@ static void initializeVariables()
 // DISPLAY MAIN PANEL
                 panelsUpdating = true;
                 mainFrame = new JFrame ("Multi-plot Main");
-                plotIcon = createImageIcon("astroj/images/plot.png", "Plot Icon");
+                plotIcon = createImageIcon("resources/images/plot.png", "Plot Icon");
                 mainFrame.setIconImage(plotIcon.getImage());
                 mainFrame.setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
                 mainFrame.addWindowListener(new WindowAdapter(){
@@ -8805,7 +8795,7 @@ static void initializeVariables()
                 
                 vmarker1titlepanel.add(Box.createHorizontalStrut(5));
                 
-                editTextIcon = createImageIcon("astroj/images/edittext.png", "Edit vertical marker text");
+                editTextIcon = createImageIcon("resources/images/edittext.png", "Edit vertical marker text");
                 vmarker1edittextButton = new JButton(editTextIcon);
                 vmarker1edittextButton.setToolTipText("Edit vertical marker text");
                 vmarker1edittextButton.setMargin(new Insets(0,0,0,0));
@@ -9131,7 +9121,7 @@ static void initializeVariables()
                 detrendmarkercopypanel.setBorder(BorderFactory.createLineBorder(Color.lightGray,1));
                     
                 
-                copyVMarkersInvertedIcon = createImageIcon("astroj/images/copymarkersinverted.png", "Copy Detrend Markers Icon");
+                copyVMarkersInvertedIcon = createImageIcon("resources/images/copymarkersinverted.png", "Copy Detrend Markers Icon");
                 JButton copyDetrendButton = new JButton(copyVMarkersInvertedIcon);
                 copyDetrendButton.setMargin(new Insets(0,0,0,0));
                 copyDetrendButton.setToolTipText("Copy values from 'Fit and Normalize Region Selection' Left and Right Markers to V. Markers 1 and 2");
@@ -9666,7 +9656,7 @@ static void initializeVariables()
                                                 legendLeft = false;
                                                 legendRight = true;
                                                 updatePlot(updateNoFits());}});
-                                configureIcon = createImageIcon("astroj/images/configure.png", "Configure legend options");
+                                configureIcon = createImageIcon("resources/images/configure.png", "Configure legend options");
                                 
                                 legendconfigureButton = new JButton(configureIcon);
                                 legendconfigureButton.setToolTipText("Configure legend options");
@@ -10281,7 +10271,7 @@ static void initializeVariables()
                         useFirstX = false;
                         updatePlot(updateAllFits());}});
 
-                ImageIcon grabautoIcon = createImageIcon("astroj/images/grabautoscale.png", "Transfer autoscale values to custom scale values");
+                ImageIcon grabautoIcon = createImageIcon("resources/images/grabautoscale.png", "Transfer autoscale values to custom scale values");
 
                 JPanel grabautoxpanel = new JPanel (new SpringLayout());
                 grabautoxbutton = new JButton(grabautoIcon);
@@ -10421,7 +10411,7 @@ static void initializeVariables()
                 SpringUtil.makeCompactGrid (xmultiplierpanel, 1,2, 2,2,2,0);
                 xscalingpanel.add (xmultiplierpanel);
 
-                ImageIcon grabfirstxIcon = createImageIcon("astroj/images/grabautoscale.png", "Transfer autoscale values to custom scale values");
+                ImageIcon grabfirstxIcon = createImageIcon("resources/images/grabautoscale.png", "Transfer autoscale values to custom scale values");
                 JPanel grabfirstxpanel = new JPanel (new SpringLayout());
                 JButton grabfirstxbutton = new JButton(grabfirstxIcon);
                 grabfirstxbutton.setMargin(new Insets(0,0,0,0));
@@ -11597,7 +11587,7 @@ static void initializeVariables()
                 dmarkercopytitle.setTitleJustification(TitledBorder.CENTER);
                 dmarkercopypanel.setBorder(dmarkercopytitle);    
                 
-                copyVMarkersIcon = createImageIcon("astroj/images/copymarkers.png", "Copy V. Markers Icon");
+                copyVMarkersIcon = createImageIcon("resources/images/copymarkers.png", "Copy V. Markers Icon");
                 JButton copyButton = new JButton(copyVMarkersIcon);
                 copyButton.setMargin(new Insets(0,0,0,0));
                 copyButton.setToolTipText("Copy values from V. Markers 1 and 2 to Left and Right markers");
@@ -12089,7 +12079,7 @@ static void initializeVariables()
                 ycolumnlabelgroup.add(Box.createHorizontalStrut(5));
 //                legendslabelgroup.add(Box.createGlue());
                 
-                helpIcon = createImageIcon("astroj/images/help.png", "Multi-plot Help");
+                helpIcon = createImageIcon("resources/images/help.png", "Multi-plot Help");
                 JButton ycolumnlabelconfigureButton = new JButton(helpIcon);
                 ycolumnlabelconfigureButton.setFont(b11);
                 ycolumnlabelconfigureButton.setForeground(Color.DARK_GRAY);
@@ -12164,8 +12154,8 @@ static void initializeVariables()
                 binslabel.setHorizontalAlignment(JLabel.CENTER);
                 binslabel.setToolTipText("Plot binned data using the number of samples/bin indicated");
                 mainsubpanelgroup.add (binslabel);                
-                forceIcon = createImageIcon("astroj/images/grab.png", "Transfer 'Page Rel' settings to absolute settings");
-                insertColumnIcon = createImageIcon("astroj/images/insertcolumn.png", "Save curve as new table column");
+                forceIcon = createImageIcon("resources/images/grab.png", "Transfer 'Page Rel' settings to absolute settings");
+                insertColumnIcon = createImageIcon("resources/images/insertcolumn.png", "Save curve as new table column");
                 }
 
 
@@ -13376,9 +13366,9 @@ static void initializeVariables()
 //                legendslabelgroup.add(Box.createGlue());
                 morelegendradiopanelgroup[c].add(Box.createHorizontalStrut(1));
                 morelegendradiopanelgroup[c].setBorder(BorderFactory.createLineBorder(Color.lightGray));
-                ImageIcon noneLegendIcon = createImageIcon("astroj/images/nonelegend.png", "Disable legend for this data set");
-                ImageIcon columnLegendIcon = createImageIcon("astroj/images/columnlegend.png", "Use the column name as the legend for this data set");
-                ImageIcon customLegendIcon = createImageIcon("astroj/images/customlegend.png", "Use a custom legend for this data set");
+                ImageIcon noneLegendIcon = createImageIcon("resources/images/nonelegend.png", "Disable legend for this data set");
+                ImageIcon columnLegendIcon = createImageIcon("resources/images/columnlegend.png", "Use the column name as the legend for this data set");
+                ImageIcon customLegendIcon = createImageIcon("resources/images/customlegend.png", "Use a custom legend for this data set");
                 legendnoneButton[c] = new JRadioButton(noneLegendIcon);
                 legendnoneButton[c].setMaximumSize(new Dimension(25,20));
                 if (!useLegend[c] && !useColumnName[c])

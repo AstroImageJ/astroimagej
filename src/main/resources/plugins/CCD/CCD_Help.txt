@@ -1,0 +1,132 @@
+// CCD_Help.txt
+//
+// FVH (2010-03-18)
+// Changes: ccd.ron in counts but aperture.ccdnoise in e- !!!
+
+// MENU OPTIONS
+
+menunix = " ";
+menubias = "Create Master Bias Image";
+menudark = "Create Master Dark Image";
+menuflat = "Create Master Flatfield Image";
+menuproc = "Process Images";
+menugain = "gain Calculation";
+menuron  = "RON Calculation";
+menuexp  = "Exposure correction";
+
+// GET PREFERENCES
+
+gain = call("ij.Prefs.get","aperture.ccdgain","1.0");
+ron = call("ij.Prefs.get","aperture.ccdnoise","0.0");
+dark = call("ij.Prefs.get","aperture.ccddark","0.0");
+
+biasimage = call("ij.Prefs.get","ccd.biasimage","BIAS");
+darkimage = call("ij.Prefs.get","ccd.darkimage","DARK");
+flatimage = call("ij.Prefs.get","ccd.flatimage","FLATFIELD");
+roncts = call("ij.Prefs.get","ccd.ron","0.0");
+
+biascorr = call("ij.Prefs.get","ccd.biascorr",false);
+darkcorr = call("ij.Prefs.get","ccd.darkcorr",false);
+flatcorr = call("ij.Prefs.get","ccd.flatcorr",false);
+expcorr = call("ij.Prefs.get","ccd.expcorr",false);
+
+// ASK FOR TOPIC
+
+Dialog.create("CCD Help Menu");
+Dialog.addMessage("The CCD macros/plugins are for calibrating and processing raw CCD images.");
+Dialog.addMessage("Each requires the previous input of specific image/stack data.");
+Dialog.addMessage("Current Aperture preferences :");
+Dialog.addString("          gain [e-/count] : ",gain);
+Dialog.addString("          read-out noise [e-] : ",ron);
+Dialog.addString("          dark level [e-] : ",dark);
+Dialog.addMessage("Current CCD preferences :");
+Dialog.addString("          bias image : ",biasimage,20);
+Dialog.addString("          dark-current image : ",darkimage,20);
+Dialog.addString("          flatfield image : ",flatimage,20);
+Dialog.addString("          raw read-out noise [counts] : ",roncts);
+Dialog.addMessage("Current Reduction preferences : correct for...");
+Dialog.addCheckbox("          _bias",biascorr);
+Dialog.addCheckbox("          _dark current",darkcorr);
+Dialog.addCheckbox("          _flatfield(s)",flatcorr);
+Dialog.addCheckbox("          _using exposure time",expcorr);
+Dialog.addMessage("Select one of the topics below for more information.");
+choices = newArray(8);
+choices[0] = menunix;
+choices[1] = menubias;
+choices[2] = menudark;
+choices[3] = menuflat;
+choices[4] = menuexp;
+choices[5] = menuproc;
+choices[6] = menugain;
+choices[7] = menuron;
+
+Dialog.addChoice("     Help topic",choices,choices[0]);
+Dialog.show();
+
+// SAVE USER INPUT
+
+gain = Dialog.getString();
+ron = Dialog.getString();
+dark = Dialog.getString();
+
+biasimage = Dialog.getString();
+darkimage = Dialog.getString();
+flatimage = Dialog.getString();
+roncts = Dialog.getString();
+
+biascorr = Dialog.getCheckbox();
+darkcorr = Dialog.getCheckbox();
+flatcorr = Dialog.getCheckbox();
+expcorr = Dialog.getCheckbox();
+call("ij.Prefs.set","ccd.biasimage",biasimage);
+call("ij.Prefs.set","ccd.flatimage",flatimage);
+call("ij.Prefs.set","ccd.darkimage",darkimage);
+call("ij.Prefs.set","ccd.ron",roncts);
+
+call("ij.Prefs.set","ccd.biascorr",biascorr);
+call("ij.Prefs.set","ccd.darkcorr",darkcorr);
+call("ij.Prefs.set","ccd.flatcorr",flatcorr);
+call("ij.Prefs.set","ccd.expcorr",expcorr);
+
+call("ij.Prefs.set","aperture.ccdron",ron);
+call("ij.Prefs.set","aperture.ccdgain",gain);
+call("ij.Prefs.set","aperture.ccddark",dark);
+
+// TOPIC TEXT
+
+topic = Dialog.getChoice();
+answer = "";
+if        (topic == menugain) {
+	answer = answer+"INPUT:\n          stack of very similar exposed raw images, minus bias and dark\n";
+	answer = answer+"OUTPUT:\n          mean gain\n";
+	answer = answer+"DESCRIPTION:\n          compares mean level with noise to estimate gain";
+} else if (topic == menuron)  {
+	answer = answer+"INPUT:\n          stack of raw bias images\n";
+	answer = answer+"OUTPUT:\n          image of RON values, mean RON\n";
+	answer = answer+"DESCRIPTION:\n          computes standard deviation of bias images";
+} else if (topic == menubias) {
+	answer = answer+"INPUT:\n          stack of raw bias images\n";
+	answer = answer+"OUTPUT:\n          median bias image\n";
+	answer = answer+"DESCRIPTION:\n          uses median to remove cosmic rays";
+} else if (topic == menudark) {
+	answer = answer+"INPUT:\n          stack of raw dark images\n          optional bias image to be subtracted\n";
+	answer = answer+"OUTPUT:\n          median dark image\n";
+	answer = answer+"DESCRIPTION:\n          uses median to remove cosmic rays; does not adjust effective exposure time";
+} else if (topic == menuflat) {
+	answer = answer+"INPUT:\n          stack of raw dome/twilight/sky images\n          optional bias/dark images to be subtracted\n";
+	answer = answer+"OUTPUT:\n          median flatfield image, normalized to 1\n";
+	answer = answer+"DESCRIPTION:\n          uses median to remove cosmic rays, stars; does not remove gradients";
+} else if (topic == menuproc) {
+	answer = answer+"INPUT:\n          raw image\n          optional bias/dark/flat images for calibration\n";
+	answer = answer+"OUTPUT:\n          calibrated images\n";
+	answer = answer+"DESCRIPTION:\n          only works on an image";
+}
+
+// SHOW HELP
+
+if (answer != "") {
+	print("CCD Help for "+topic+"\n"+answer);
+	Dialog.create(topic);
+	Dialog.addMessage(answer);
+	Dialog.show();
+}

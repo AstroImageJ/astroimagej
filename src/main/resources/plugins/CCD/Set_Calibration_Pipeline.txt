@@ -1,0 +1,215 @@
+// Set_Calibration_Pipeline.txt
+//
+// ImageJ astronomical image calibration pipeline macro; uses Astronomy plugin package
+//
+// F. Hessman, 2010-MAY-09, Georg-August-Universitaet, Goettingen
+
+requires("1.34m");
+getDateAndTime(year,month,dow,day,h,m,s,msec);
+t = ""+year+"-"+month+"-"+day+"T"+h+":"+m+":"+s;
+print("\n-------------------- "+t+" --------------------");
+print ("Set Calibration Pipeline:");
+
+biasfits = false;
+darkfits = false;
+flatfits = false;
+objfits = false;
+
+biaskey = "OBSTYPE";
+darkkey = "OBSTYPE";
+flatkey = "OBSTYPE";
+objkey  = "OBSTYPE";
+
+biasval = "bias";
+darkval = "dark";
+flatval = "flat";
+objval = "object";
+
+biasstr = false;
+darkstr = false;
+flatstr = false;
+objstr  = false;
+
+biasword = "BIAS";
+darkword = "DARK";
+flatword = "FLAT";
+objword  = "OBJ";
+
+flatlevel = false;
+flatlimit = 15000;
+
+// ----- GET PREFERENCES
+
+print("     * Getting CCD preferences ...");
+
+biasfits = call("ij.Prefs.get","ccd.biasfits",biasfits);
+darkfits = call("ij.Prefs.get","ccd.darkfits",darkfits);
+flatfits = call("ij.Prefs.get","ccd.flatfits",flatfits);
+objfits = call("ij.Prefs.get","ccd.objfits",objfits);
+
+biaskey = call("ij.Prefs.get","ccd.biaskey",biaskey);
+darkkey = call("ij.Prefs.get","ccd.darkkey",flatkey);
+flatkey = call("ij.Prefs.get","ccd.flatkey",flatkey);
+objkey = call("ij.Prefs.get","ccd.objkey",objkey);
+
+biasval = call("ij.Prefs.get","ccd.biasval",biasval);
+darkval = call("ij.Prefs.get","ccd.darkval",darkval);
+flatval = call("ij.Prefs.get","ccd.flatval",flatval);
+objval = call("ij.Prefs.get","ccd.objval",objval);
+
+biasstr = call("ij.Prefs.get","ccd.biasstr",biasstr);
+darkstr = call("ij.Prefs.get","ccd.darkstr",darkstr);
+flatstr = call("ij.Prefs.get","ccd.flatstr",flatstr);
+objstr = call("ij.Prefs.get","ccd.objstr",objstr);
+
+biasword = call("ij.Prefs.get","ccd.biasword","BIAS");
+darkword = call("ij.Prefs.get","ccd.darkword","DARK");
+flatword = call("ij.Prefs.get","ccd.flatword","FLAT");
+objword = call("ij.Prefs.get","ccd.objword","OBJECT");
+
+biasimage = call("ij.Prefs.get","ccd.biasimage","BIAS.fits");
+darkimage = call("ij.Prefs.get","ccd.darkimage","DARK.fits");
+// flatimage = call("ij.Prefs.get","ccd.flatimage","FLATFIELD.fits");
+
+flatlevel = call("ij.Prefs.get","ccd.flatlevel",flatlevel);
+flatlimit = call("ij.Prefs.get","ccd.flatlimit",flatlimit);
+
+//  ----- ASK FOR PIPELINE INFO
+
+Dialog.create("Set Calibation Pipeline");
+Dialog.addMessage("Make sure you have set the other CCD parameters with \"CCD Help\"");
+
+Dialog.addMessage("1. IDENTIFY BIAS IMAGES VIA ...");
+Dialog.addCheckbox("BiasIdentify (by FITS header)",biasfits);
+Dialog.addString("BiasKeyword :",biaskey);
+Dialog.addString("BiasValue (of keyword) :",biasval);
+Dialog.addCheckbox("BiasName (identify by filename fragment)",biasstr);
+Dialog.addString("BiasWord (filename fragment) :",biasword);
+
+Dialog.addMessage("2. IDENTIFY DARK IMAGES VIA ...");
+Dialog.addCheckbox("DarkIdentify (by FITS header)",darkfits);
+Dialog.addString("DarkKeyword :",darkkey);
+Dialog.addString("DarkValue (of keyword) :",darkval);
+Dialog.addCheckbox("DarkName (idendify by filename fragment)",darkstr);
+Dialog.addString("DarkWord (filename fragment) :",darkword);
+
+Dialog.addMessage("3. IDENTIFY FLATFIELD IMAGES VIA ...");
+Dialog.addCheckbox("FlatIdentify (by FITS header)",flatfits);
+Dialog.addString("FlatKeyword :",flatkey);
+Dialog.addString("FlatValue (of keyword) :",flatval);
+Dialog.addCheckbox("FlatName (identify by filename fragment)",flatstr);
+Dialog.addString("FlatWord (filename fragment)",flatword);
+Dialog.addCheckbox("FlatLevel (identify by high level)",flatlevel);
+Dialog.addString("FlatLimit (mean level for flatfields) :",flatlimit);
+
+Dialog.addMessage("4. IDENTIFY OBJECT IMAGES VIA ...");
+Dialog.addCheckbox("ObjectIdentify (by FITS header)",objfits);
+Dialog.addString("ObjectKeyword :",objkey);
+Dialog.addString("ObjectValue (of keyword) :",objval);
+Dialog.addCheckbox("ObjectName (identify by filename fragment)",objstr);
+Dialog.addString("ObjWord (image filename fragment)",objword);
+
+Dialog.show();
+
+biasfits = Dialog.getCheckbox();
+biaskey = Dialog.getString();
+biasval = Dialog.getString();
+biasstr = Dialog.getCheckbox();
+biasword = Dialog.getString();
+
+darkfits = Dialog.getCheckbox();
+darkkey = Dialog.getString();
+darkval = Dialog.getString();
+darkstr = Dialog.getCheckbox();
+darkword = Dialog.getString();
+
+flatfits = Dialog.getCheckbox();
+flatkey = Dialog.getString();
+flatval = Dialog.getString();
+flatstr = Dialog.getCheckbox();
+flatword = Dialog.getString();
+flatlevel = Dialog.getCheckbox();
+flatlimit = Dialog.getString();
+
+objfits = Dialog.getCheckbox();
+objkey = Dialog.getString();
+objval = Dialog.getString();
+objstr = Dialog.getCheckbox();
+objword = Dialog.getString();
+
+print ("     * Selections:");
+print ("            bias  : "+biasfits+","+biaskey+","+biasval+","+biasstr+","+biasword);
+print ("            dark  : "+darkfits+","+darkkey+","+darkval+","+darkstr+","+darkword);
+print ("            flat  : "+flatfits+","+flatkey+","+flatval+","+flatstr+","+flatword+","+flatlevel+","+flatlimit);
+print ("            object: "+objfits+","+objkey+","+objval+","+objstr+","+objword);
+
+// ----- MAKE SURE ALL INFO IS KNOWN
+
+if (biasfits && (biaskey == "" || biasval == "")) {
+	print ("ABORT: cannot use FITS bias identification without key and value!");
+	exit ("ABORT: cannot use FITS bias identification without key and value!");
+}
+if (biasstr && biasword == "") {
+	print ("ABORT: cannot use bias filename identification without pattern!");
+	exit ("ABORT: cannot use bias filename identification without pattern!");
+}
+if (darkfits && (darkkey == "" || darkval == "")) {
+	print ("ABORT: cannot use FITS dark identification without key and value!");
+	exit ("ABORT: cannot use FITS dark identification without key and value!");
+}
+if (darkstr && darkword == "") {
+	print ("ABORT: cannot use dark filename identification without pattern!");
+	exit ("ABORT: cannot use dark filename identification without pattern!");
+}
+if (flatfits && (flatkey == "" || flatval == "")) {
+	print ("ABORT: cannot use FITS flatfiled identification without key and value!");
+	exit ("ABORT: cannot use FITS flatfield identification without key and value!");
+}
+if (flatstr && flatword == "") {
+	print ("ABORT: cannot use flatfield filename identification without pattern!");
+	exit ("ABORT: cannot use flatfield filename identification without pattern!");
+}
+if (objfits && (objkey == "" || objval == "")) {
+	print ("ABORT: cannot use FITS object identification without key and value!");
+	exit ("ABORT: cannot use FITS object identification without key and value!");
+}
+if (objstr && objword == "") {
+	print ("ABORT: cannot use object filename identification without pattern!");
+	exit ("ABORT: cannot use object filename identification without pattern!");
+}
+
+// ----- SAVE PREFERENCES
+
+call("ij.Prefs.set","ccd.biasfits",biasfits);
+call("ij.Prefs.set","ccd.darkfits",darkfits);
+call("ij.Prefs.set","ccd.flatfits",flatfits);
+call("ij.Prefs.set","ccd.objfits",objfits);
+
+call("ij.Prefs.set","ccd.biaskey",biaskey);
+call("ij.Prefs.set","ccd.darkkey",flatkey);
+call("ij.Prefs.set","ccd.flatkey",flatkey);
+call("ij.Prefs.set","ccd.objkey",objkey);
+
+call("ij.Prefs.set","ccd.biasval",biasval);
+call("ij.Prefs.set","ccd.darkval",darkval);
+call("ij.Prefs.set","ccd.flatval",flatval);
+call("ij.Prefs.set","ccd.objval",objval);
+
+call("ij.Prefs.set","ccd.biasstr",biasstr);
+call("ij.Prefs.set","ccd.darkstr",darkstr);
+call("ij.Prefs.set","ccd.flatstr",flatstr);
+call("ij.Prefs.set","ccd.objstr",objstr);
+
+call("ij.Prefs.set","ccd.biasword",biasword);
+call("ij.Prefs.set","ccd.darkword",darkword);
+call("ij.Prefs.set","ccd.flatword",flatword);
+call("ij.Prefs.set","ccd.objword",objword);
+
+call("ij.Prefs.set","ccd.flatlevel",flatlevel);
+call("ij.Prefs.set","ccd.flatlimit",flatlimit);
+
+
+// ----- FINIS
+
+print ("\n--------------- End of Calibration Pipeline Setup  ---------------\n");
+

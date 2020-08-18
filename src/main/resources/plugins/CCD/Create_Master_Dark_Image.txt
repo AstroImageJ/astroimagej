@@ -1,0 +1,177 @@
+// Create_Master_Dark_Image.txt
+//
+// FVH (2010-05-10)
+
+getDateAndTime(year,month,dow,day,h,m,s,msec);
+t = ""+year+"-"+month+"-"+day+"T"+h+":"+m+":"+s;
+
+function abort (str) {
+	print (str);
+	call("ij.Prefs.set","ccd.status",false);
+	exit (str);
+}
+
+biascorr = false;
+
+// ----- IS THERE A STACK READY?
+
+ns = nSlices();
+if (ns <= 1) abort ("Create Master Dark Image only words with a stack of raw dark images!");
+title = getTitle();
+
+// ----- START THE LOG
+
+print("\n-------------------- "+t+" --------------------");
+print("Create Master Dark Image :");
+print("     * getting preferences...");
+biasimage = call("ij.Prefs.get","ccd.biasimage","BIAS");
+darkimage = call("ij.Prefs.get","ccd.darkimage","DARK");
+expcorr = call("ij.Prefs.get","ccd.expcorr",true);
+
+// ----- CHECK FOR CONSISTENT EXPOSURE TIMES
+
+same = true;	// TRUE IF ALL EXPTIME'S THE SAME
+times = newArray(ns);
+t = -1.0;
+print("     * checking for exposure times...");
+for (i=1; i <= ns; i++) {
+	setSlice(i);
+
+	// IF NO EXPTIME, THEN NO CORRECTION IS POSSIBLE
+
+	exptime=call("astroj.FitsJ.getCardValueFromImage","EXPTIME",title);
+	if (exptime == "0") {
+		t = -1.0;
+		same = false;
+		break;
+	}
+	times[i-1] = exptime;
+	if (i == 1)
+		t = times[i-1];
+
+	// IF TIMES NOT CONSISTENT, NORMALIZATION NEEDED
+
+	else if (t != times[i-1]) {
+		same = false;
+	}
+}
+if (same == false) print("     * CAUTION: all exposure times are not equal; the median is OK only if the bias is subtracted!");
+
+// ----- FIRST DO DIALOG
+
+calcdark = false;
+
+print("     * getting user input...");
+Dialog.create("Create Master Dark Image");
+Dialog.addMessage("Create dark image using the stack \""+title+"\"");
+Dialog.addString("Bias image (blank means none) : ",biasimage,20);
+Dialog.addString("Dark image to be created : ",darkimage,20);
+if (t > 0.0)
+	Dialog.addCheckbox("Normalize to unit exposure time",expcorr)
+else	{
+	print("     * No normalization to unit exposure time possible!");
+	Dialog.addMessage("No normalization to unit exposure time possible!");
+}
+Dialog.addCheckbox("Calculate and save mean dark-current [counts]",calcdark)
+
+Dialog.show();
+biasimage = Dialog.getString();
+if (lengthOf(biasimage) > 0 && !isOpen(biasimage)) {
+	if (isOpen(biasimage+".fits")) {
+		biasimage = biasimage+".fits";
+	} else if (isOpen(biasimage+".fit")) {
+		biasimage = biasimage+".fit";
+	} else if (isOpen(biasimage+".fts")) {
+		biasimage = biasimage+".fts";
+	} else {
+		showMessage("The bias image \""+biasimage+"\" is not open.\nCheck for a missing/superfluous file extension.");
+		abort ("ERROR: cannot fine bias image \""+biasimage+"\"!");
+	}
+	print("          (using \""+biasimage+"\"...)");
+}
+darkimage = Dialog.getString();
+if (lengthOf(darkimage) <= 0) {
+	showMessage("You must give the output dark image a name!");
+	abort ("ERROR: no name for dark image!");
+}
+if (title == darkimage) {
+	showMessage("The new dark image must have a different name than the stack from which it is made!");
+	abort ("ERROR: non-unique name for dark image : "+darkimage+" = "+title);
+}
+if (t > 0.0) expcorr = Dialog.getCheckbox();
+calcdark = Dialog.getCheckbox();
+	
+// ----- GET FITS HEADERS
+
+labeln = getInfo("slice.label");
+setSlice(1);
+label1 = getInfo("slice.label");
+
+// ----- REMOVE BIAS
+
+run("32-bit");
+if (lengthOf(biasimage) > 0) {
+	print("     * subtracting \""+biasimage+"\" ...");
+	imageCalculator("Subtract stack",title,biasimage);
+	title = title+"-"+biasimage;
+	rename(title);
+}
+
+// ----- MEASURE ALL IMAGES IN DARK STACK, DIVIDE BY SLICE'S EXPOSURE TIME IF DESIRED
+
+print("     * using "+ns+" dark images from the stack \""+title+"\"");
+if (expcorr) print("         ... and normalizing to unit exposure time.");
+run("Set Measurements...","slice mean median display redirect=None decimal=2");
+dark = 0.0;
+for (i=1; i <= ns; i++) {
+	setSlice(i);
+	if (expcorr) run("Divide...","slice value="+times[i-1]);
+	getRawStatistics(mean,median);
+	if (expcorr) {
+		print("               "+getInfo("slice.label")+"/"+times[i-1]+", median="+median);
+	} else {
+		print("               "+getInfo("slice.label")+", median="+median);
+	}
+	dark += median*times[i-1];
+}
+if (expcorr) {
+	title = title+" divided by EXPTIME";
+	rename(title);
+}
+dark /= ns;
+setSlice(1);
+print("     * \""+darkimage+"\" = median(\""+title+"\")");
+
+print("     * creating median dark image \""+darkimage+"\" ...");
+run("Z Project...", "projection=Median");
+run("Enhance Contrast", "saturated=0.5");
+rename(darkimage);
+
+if (calcdark) print("     * Saving median dark-current level as Aperture preference : "+dark);
+
+// ----- COPY FITS HEADER, DOCUMENT WHAT WAS DONE
+
+run("Copy FITS Header", "from=["+title+"] to=["+darkimage+"] history=[Copied FITS header from "+label1+"]");
+run("Write FITS Header", "image=["+darkimage+"] type=HISTORY comment=[Median of "+ns+" dark images : "+label1+" to "+labeln+"]");
+if (lengthOf(biasimage) > 0) {
+	run("Write FITS Header", "image=["+darkimage+"] type=[HISTORY] comment=[Subtracted bias image from stack: "+biasimage+"]");
+}
+if (expcorr) {
+	print("     * writing unit exposure time to FITS header ...");
+	run("Write FITS Header","image=["+darkimage+"] key=[EXPTIME] value=[1.0] type=[real number] comment=[Normalized to unit exposure time]");
+	run("Write FITS Header", "image=["+darkimage+"] type=[HISTORY] comment=[Normalized to unit exposure time (see EXPTIME).]");
+}
+  
+// ----- SAVE PREFERENCES
+
+print("     * saving preferences ...");
+call ("ij.Prefs.set","ccd.biasimage",biasimage);
+call ("ij.Prefs.set","ccd.darkimage",darkimage);
+call ("ij.Prefs.set","ccd.expcorr",expcorr);
+if (calcdark) call ("ij.Prefs.set","aperture.ccddark",dark);
+print("FINISHED!");
+print("-----------------------------------------------------------\n");
+
+selectWindow("Log");
+beep();
+call("ij.Prefs.set","ccd.status",true);

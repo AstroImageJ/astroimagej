@@ -1,0 +1,129 @@
+// Remove_Overscan_Bias.txt
+//
+// FVH (2008-12-17)
+
+getDateAndTime(year,month,dow,day,h,m,s,msec);
+t = ""+year+"-"+month+"-"+day+"T"+h+":"+m+":"+s;
+
+// IS THERE A STACK/IMAGE READY?
+
+ni = nImages();
+if (ni == 0) exit("Please input an image or stack to be processed!");
+
+// ----- START LOGGING
+
+print("\n-------------------- "+t+" --------------------");
+print("Remove Overscan Bias :");
+
+ns = nSlices();
+title = getTitle();
+run("32-bit");
+setTool(0);
+
+x1 = -1;
+x2 = -1;
+y1 = -1;
+y2 = -1;
+
+w = getWidth();
+h = getHeight();
+
+// ----- GET PREFERENCES
+
+print("     * getting preferences ...");
+overcorr = call("ij.Prefs.get","ccd.overcorr","false");
+overscan = call("ij.Prefs.get","ccd.overscan","-1,-1,-1,-1");	// Java notation: 0 <= pix < N !!
+log(overscan);
+i1 = indexOf(overscan,",");
+i2 = indexOf(overscan,",",i1+1);
+x1 = substring(overscan,0,i1);
+x2 = substring(overscan,i1+1,i2);
+i1 = i2;
+i2 = indexOf(overscan,",",i1+1);
+y1 = substring(overscan,i1+1,i2);
+y2 = substring(overscan,i2+1);
+
+// DIALOG
+
+print("     * user dialogue ...");
+Dialog.create("Remove Overscan Bias");
+Dialog.addMessage("Measures and removes overscan bias level in "+title);
+Dialog.addNumber("From column",x1);
+Dialog.addNumber("to column",x2);
+Dialog.addNumber("From row",y1);
+Dialog.addNumber("to row",y2);
+s1 = 1;
+s2 = ns;
+if (ns > 1) {
+	Dialog.addNumber("From slice",s1);
+	Dialog.addNumber("to slice",s2);
+}
+Dialog.addMessage("Note:");
+Dialog.addMessage("     0 (left) <= x < "+w+" (right)");
+Dialog.addMessage("     0 (top) <= y < "+h+" (bottom)");
+if (ns > 1) Dialog.addMessage("     1 <= slice <= "+ns);
+Dialog.show();
+x1 = Dialog.getNumber();
+x2 = Dialog.getNumber();
+y1 = Dialog.getNumber();
+y2 = Dialog.getNumber();
+if (ns > 1) {
+	s1 = Dialog.getNumber();
+	s2 = Dialog.getNumber();
+}
+
+if (x1 <  0 || x2 < 0 || y1 < 0 || y2 < 0) {
+	exit("Pixel range below bounds!");
+}
+if (x1 >= w || x2 >= w || y1 >= h || y2 >= h) {
+	exit("Pixel range above bounds!");
+}
+if (x1 > x2) {
+	x = x1;
+	x1 = x2;
+	x2 = x;
+}
+if (y1 > y2) {
+	y = y1;
+	y1 = y2;
+	y2 = y;
+}
+if (s1 <  1 || s2 < 1 || s1 > ns || s2 > ns) {
+	exit("Slice range out of bounds!");
+}
+if (s1 > s2) {
+	s = s1;
+	s1 = s2;
+	s2 = s;
+}
+
+// START LOG
+
+print("     * removing overscan bias from area "+x1+" <= col <= "+x2+", "+y1+" <= row <= "+y2);
+if (ns > 1) print("        ..."+s1+" <= slice <= "+s2);
+
+// MEASURE & PROCESS
+
+run("Set Measurements...", "  mean standard modal min bounding median slice display redirect=None decimal=2");
+for (i=1; i <= ns; i++) {
+	setSlice(i);
+
+	makeRectangle(x1,y1,x2-x1+1,y2-y1+1);
+	run("Measure");
+	n = nResults();
+	median = getResult("Median",n-1);
+
+	makeRectangle(-1,-1,-1,-1);
+	print("       "+i+": subtracting "+median);
+	run("Subtract...","value="+median);
+	makeRectangle(x1,y1,x2-x1+1,y2-y1+1);
+}
+run("Enhance Contrast", "saturated=0.5");
+
+// SAVE PREFERENCES
+
+print("     * saving preferences ...");
+call("ij.Prefs.set","ccd.overcorr",overcorr);
+call("ij.Prefs.set","ccd.overscan",""+x1+","+x2+","+y1+","+y2);
+
+print("FINISHED!");

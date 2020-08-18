@@ -1,0 +1,39 @@
+// RON_Calculation.txt
+//
+// FVH (2010-03-18)
+
+getDateAndTime(year,month,dow,day,h,m,s,msec);
+t = ""+year+"-"+month+"-"+day+"T"+h+":"+m+":"+s;
+
+// IS THERE A STACK READY?
+
+ns = nSlices();
+if (ns <= 1) exit("RON Calculation only works with a stack of bias images!");
+title = getTitle();
+
+print("\n-------------------- "+t+" --------------------");
+print("RON Calculation:");
+
+// PROCESS
+
+print("     * using "+ns+" bias images from the stack \""+title+"\"");
+for (i=1; i <= ns; i++) {
+	setSlice(i);
+	print("               "+getInfo("slice.label"));
+}
+
+print("     * \"RON\" = standard deviation ...");
+run("Z Project...","projection=[Standard Deviation]");
+rename("RON");
+
+print("     * measuring mean read-out noise ...");
+run("Set Measurements..."," mean standard modal min max display redirect=None decimal=4");
+run("Measure");
+
+ron = getResult("Mean");
+print("       ... RON = "+ron+" counts");
+
+print("     * saving result in CCD preferences ...");
+call("ij.Prefs.set","ccd.ron",""+ron);
+
+print("FINISHED!");

@@ -1,6 +1,5 @@
 package Astronomy;// MultiAperture_.java
 
-import Astronomy.Aperture_;
 import ij.*;
 import ij.gui.*;
 import ij.measure.*;
@@ -3387,7 +3386,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     
     protected void showHelpPanel()
         {
-        MAIcon = this instanceof Stack_Aligner ? createImageIcon("astroj/images/align.png", "Stack Aligner Icon") : createImageIcon("astroj/images/multiaperture.png", "Multi-Aperture Icon");
+        MAIcon = this instanceof Stack_Aligner ? createImageIcon("resources/images/align.png", "Stack Aligner Icon") : createImageIcon("resources/images/multiaperture.png", "Multi-Aperture Icon");
         helpFrame = new JFrame (this instanceof Stack_Aligner ? "Stack Aligner Help" : "Multi-Aperture Help");
         helpFrame.setIconImage(MAIcon.getImage());
         helpPanel = new JPanel (new SpringLayout());

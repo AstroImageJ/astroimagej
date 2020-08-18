@@ -1,0 +1,90 @@
+// gain_Calculation.txt
+//
+// FVH (2008-12-01)
+
+exit("The gain Calculation macro is still under developement - please be patient!");
+
+getDateAndTime(year,month,dow,day,h,m,s,msec);
+t = ""+year+"-"+month+"-"+day+"T"+h+":"+m+":"+s;
+
+// IS THERE A STACK READY?
+
+ns = nSlices();
+if (ns <= 1) exit("Calculate gain only works with a stack!");
+title = getTitle();
+
+// START LOG
+
+print("\n-------------------- "+t+" --------------------");
+print("gian Calculation:");
+print("     * getting preferences...");
+bias = call("ij.Prefs.get","ccd.bias","BIAS");
+sron = call("ij.Prefs.get","ccd.ron","0.0");
+
+// USER DIALOG
+
+Dialog.create("Calculate gain");
+Dialog.addString("bias image to subtract : ",bias);
+Dialog.addString("RON contribution to subtract :",sron);
+Dialog.show();
+bias = Dialog.getString();
+sron = Dialog.getString();
+if (lengthOf(bias) > 0 && !isOpen(bias)) {
+	print("ERROR: cannot find bias image \""+bias+"\"");
+	exit("Cannot find bias image \""+bias+"\"\nCheck for a missing/superfluous file extension.");
+}
+ron = parseFloat(sron);
+if (isNaN(ron)) {
+	print("ERROR: cannot parse RON = \""+sron+"\"!");
+	exit("Cannot parse RON = \""+sron+"\"!");
+}
+ronsqr = ron*ron;
+
+// PROCESS
+
+print("     * using stack of "+ns+" bias images called \""+title+"\" ...");
+stackID = getImageID();
+for (i=1; i <= ns; i++) {
+	setSlice(i);
+	print("               "+getInfo("slice.label"));
+}
+
+if (lengthOf(bias) > 0) {
+	run("32-bit");
+	print("     * subtracting bias image \""+bias+"\" ...");
+	run("Image Calculator...", "image1="+title+" operation=Subtract image2="+bias+" stack");
+}
+
+print("     * \"AVG\" = average intensity ...");
+run("Z Project...","projection=[Average Intensity]");
+rename("AVG");
+
+selectImage(stackID);
+print("     * \"VAR\" = square of standard deviation ...");
+run("Z Project...","projection=[Standard Deviation]");
+run("Square");
+rename("VAR");
+
+print("     * subtracting square of RON="+ron+" from the variance image ...");
+run("Subtract...", "value="+ronsqr);
+
+print("     * \"AVGtimesVAR\" = average*variance ...");
+run("Image Calculator...","image1=AVG operation=Multiply image2=VAR create 32-bit");
+rename("AVGtimesVAR");
+run("Set Measurements..."," mean standard modal min max display redirect=None decimal=4");
+run("Measure");
+avgvar = getResult("Mean");
+
+print("     * \"VARtimesVAR\" = variance*variance ...");
+run("Image Calculator...","image1=VAR operation=Multiply image2=VAR create 32-bit");
+rename("VARtimesVAR");
+run("Measure");
+varvar = getResult("Mean");
+
+gain = avgvar/varvar;
+print ("       gain = "+gain);
+
+print("     * saving preferences ...");
+call("ij.Prefs.set","ccd.gain",gain);
+
+print("FINISHED!");

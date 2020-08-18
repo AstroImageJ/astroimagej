@@ -1,0 +1,639 @@
+// Calibration_Pipeline.txt
+//
+// ImageJ astronomical image calibration pipeline macro; uses Astronomy plugin package
+//
+// F. Hessman, 2010-MAY-11, Georg-August-Universitaet, Goettingen
+
+requires("1.34m");
+getDateAndTime(year,month,dow,day,h,m,s,msec);
+t = ""+year+"-"+month+"-"+day+"T"+h+":"+m+":"+s;
+print("\n-------------------- "+t+" --------------------");
+print ("Calibration Pipeline:");
+
+nbias = false;
+ndark = false;
+nflat = false;
+nobj = false;
+nother = false;
+
+filterlist = newArray(12);
+nfilters = false;
+oldfilters = "";
+
+// ----- HELP FUNCTIONS
+
+function abort (str) {
+	call("ij.Prefs.set","ccd.status",false);
+	print (str);
+	exit (str);
+}
+function isFITS(filename) {
+	if (endsWith(filename,".fits.gz")) return 1;
+	if (endsWith(filename,".fits")) return 1;
+	if (endsWith(filename,".FITS.gz")) return 1;
+	if (endsWith(filename,".FITS")) return 1;
+	if (endsWith(filename,".fit")) return 1;
+	if (endsWith(filename,".fts")) return 1;
+	if (endsWith(filename,".FIT")) return 1;
+	if (endsWith(filename,".FTS")) return 1;
+	if (endsWith(filename,".fit.gz")) return 1;
+	if (endsWith(filename,".fts.gz")) return 1;
+	if (endsWith(filename,".FIT.gz")) return 1;
+	if (endsWith(filename,".FTS.gz")) return 1;
+	return 0;
+}
+function unFITS(filename) {
+	if (endsWith(filename,".fits.gz")) return replace(filename,".fits.gz","");
+	if (endsWith(filename,".fits")) return replace(filename,".fits","");
+	if (endsWith(filename,".FITS.gz")) return replace(filename,".FITS.gz","");
+	if (endsWith(filename,".FITS")) return replace(filename,".FITS","");
+	if (endsWith(filename,".fit")) return replace(filename,".fit","");
+	if (endsWith(filename,".fts")) return replace(filename,".fts","");
+	if (endsWith(filename,".FIT")) return replace(filename,".FIT","");
+	if (endsWith(filename,".FTS")) return replace(filename,".FTS","");
+	if (endsWith(filename,".fit.gz")) return replace(filename,".fit.gz","");
+	if (endsWith(filename,".fts.gz")) return replace(filename,".fts.gz","");
+	if (endsWith(filename,".FIT.gz")) return replace(filename,".FIT.gz","");
+	if (endsWith(filename,".FTS.gz")) return replace(filename,".FTS.gz","");
+	return filename;
+}
+function trim(str) {
+	if (str == 0) return "";
+	l =lengthOf(str);
+	if (l == 0) return "";
+	k1=0;
+	k2=lengthOf(str)-1;
+	sub = substring(str,k1,k1+1);
+	while (sub == "\"" || sub == "'" || sub == " ") {
+		k1++;
+		sub = substring(str,k1,k1+1);
+	}
+	sub = substring(str,k2,k2+1);
+	while (sub == "\"" || sub == "'" || sub == " ") {
+		k2--;
+		sub = substring(str,k2,k2+1);
+	}
+	return substring(str,k1,k2+1);
+}
+function noteFilter (f,flist,nf) {
+	jj = -1;
+	for (j=0; j < nf; j++) {
+		if (f == flist[j]) jj=j;
+	}
+	if (jj== -1) {
+		flist[nf]=f;
+		nf++;
+		// print ("           (Adding filter #"+nf+" ["+f+"])");
+	}
+	return nf;
+}
+
+
+// ----- GET PREFERENCES
+
+biascorr = false;
+darkcorr = false;
+flatcorr = false;
+objcorr = false;
+
+biasfits = false;
+darkfits = false;
+flatfits = false;
+objfits = false;
+
+biaskey = "OBSTYPE";
+darkkey = "OBSTYPE";
+flatkey = "OBSTYPE";
+objkey  = "OBSTYPE";
+
+biasval = "bias";
+darkval = "dark";
+flatval = "flat";
+objval = "object";
+
+biasstr = false;
+darkstr = false;
+flatstr = false;
+objstr  = false;
+
+biasword = "BIAS";
+darkword = "DARK";
+flatword = "FLAT";
+objword  = "OBJ";
+
+flatlevel = false;
+flatlimit = 15000;
+
+suffix = "_P.fits";
+
+print("     * Getting CCD and pipeline preferences ...");
+
+biasfits = call("ij.Prefs.get","ccd.biasfits",biasfits);
+darkfits = call("ij.Prefs.get","ccd.darkfits",flatfits);
+flatfits = call("ij.Prefs.get","ccd.flatfits",flatfits);
+objfits = call("ij.Prefs.get","ccd.objfits",objfits);
+
+biaskey = call("ij.Prefs.get","ccd.biaskey",biaskey);
+darkkey = call("ij.Prefs.get","ccd.darkkey",flatkey);
+flatkey = call("ij.Prefs.get","ccd.flatkey",flatkey);
+objkey = call("ij.Prefs.get","ccd.objkey",objkey);
+
+biasval = call("ij.Prefs.get","ccd.biasval",biasval);
+darkval = call("ij.Prefs.get","ccd.darkval",darkval);
+flatval = call("ij.Prefs.get","ccd.flatval",flatval);
+objval = call("ij.Prefs.get","ccd.objval",objval);
+
+biasstr = call("ij.Prefs.get","ccd.biasstr",biasstr);
+darkstr = call("ij.Prefs.get","ccd.darkstr",darkstr);
+flatstr = call("ij.Prefs.get","ccd.flatstr",flatstr);
+objstr = call("ij.Prefs.get","ccd.objstr",objstr);
+
+biasword = call("ij.Prefs.get","ccd.biasword","BIAS");
+darkword = call("ij.Prefs.get","ccd.darkword","DARK");
+flatword = call("ij.Prefs.get","ccd.flatword","FLAT");
+objword = call("ij.Prefs.get","ccd.objword","OBJECT");
+
+flatlevel = call("ij.Prefs.get","ccd.flatlevel",flatlevel);
+flatlimit = call("ij.Prefs.get","ccd.flatlimit",flatlimit);
+
+biasimage = call("ij.Prefs.get","ccd.biasimage","BIAS.fits");
+darkimage = call("ij.Prefs.get","ccd.darkimage","DARK.fits");
+// flatimage = call("ij.Prefs.get","ccd.flatimage","FLATFIELD.fits");
+
+biascorr = call("ij.Prefs.get","ccd.biascorr",biascorr);
+darkcorr = call("ij.Prefs.get","ccd.darkcorr",darkcorr);
+flatcorr = call("ij.Prefs.get","ccd.flatcorr",flatcorr);
+objcorr = call("ij.Prefs.get","ccd.objcorr",objcorr);
+
+suffix = call("ij.Prefs.get","ccd.suffix",suffix);
+oldfilters = call ("ij.Prefs.get","ccd.filters",oldfilters);
+
+print ("     * Selections:");
+print ("            bias  : "+biasfits+","+biaskey+","+biasval+","+biasstr+","+biasword);
+print ("            dark  : "+darkfits+","+darkkey+","+darkval+","+darkstr+","+darkword);
+print ("            flat  : "+flatfits+","+flatkey+","+flatval+","+flatstr+","+flatword+","+flatlevel
++","+flatlimit);
+print ("            object: "+objfits+","+objkey+","+objval+","+objstr+","+objword);
+
+
+// ----- MAKE SURE ALL NECESSARY INFO IS KNOWN
+
+if (biasfits && (biaskey == "" || biasval == "")) {
+	abort ("ABORT: cannot use FITS bias identification without key and value!");
+}
+if (biasstr && biasword == "") {
+	abort ("ABORT: cannot use bias filename identification without pattern!");
+}
+if (darkfits && (darkkey == "" || darkval == "")) {
+	abort ("ABORT: cannot use FITS dark identification without key and value!");
+}
+if (darkstr && darkword == "") {
+	abort ("ABORT: cannot use dark filename identification without pattern!");
+}
+if (flatfits && (flatkey == "" || flatval == "")) {
+	abort ("ABORT: cannot use FITS flatfiled identification without key and value!");
+}
+if (flatstr && flatword == "") {
+	abort ("ABORT: cannot use flatfield filename identification without pattern!");
+}
+if (objfits && (objkey == "" || objval == "")) {
+	abort ("ABORT: cannot use FITS object identification without key and value!");
+}
+if (objstr && objword == "") {
+	abort ("ABORT: cannot use object filename identification without pattern!");
+}
+
+
+// ----- GET DIRECTORY CONTAINING IMAGES
+
+Dialog.create("Calibation Pipeline");
+Dialog.addMessage("Select a typical image in a directory containing all of your raw images.");
+Dialog.show();
+
+path = File.openDialog("Select a file in the directory containing your images.");
+dir = File.getParent(path)+File.separator;
+list = getFileList(dir);
+print("     * "+dir+" contains "+list.length+" files.");
+
+calibDir = dir+"calib"+File.separator;
+biasDir = dir+"rawbiases"+File.separator;
+darkDir = dir+"rawdarks"+File.separator;
+rawDir = dir+"rawobjects"+File.separator;
+
+// ----- FIND FITS IMAGES
+
+nfits = 0;
+for (i=0; i<list.length; i++) {
+	if (isFITS(list[i])) nfits++;
+}
+imagelist = newArray(nfits);
+n=0;
+for (i=0; i<list.length; i++) {
+	if (isFITS(list[i])) {
+		imagelist[n]=list[i];
+		n++;
+	}
+}
+print ("            ... of which "+nfits+" are FITS files");
+
+
+// ----- IDENTIFY IMAGE TYPES
+
+print ("     * Identifying images:");
+setBatchMode(true);
+typelist = newArray(nfits);
+
+for (n=0; n<nfits; n++) {
+	open(dir+imagelist[n]);
+	typelist[n] = "unknown/ignored";
+	ok = false;
+	// print (imagelist[n]);
+
+	// IDENTIFY IMAGES
+
+	biasok = false;
+	if (biasfits) {		// LOOK FOR BIAS FITS KEYWORD
+		c = trim(call("astroj.FitsJ.getCardValueFromImage",biaskey,""));
+		if (c == biasval) biasok = true;
+		// print ("biasfits: "+biasok);
+	}
+	if (!ok && biasstr) {	// LOOK FOR BIAS FILENAME
+		i = indexOf(imagelist[n],biasword);
+		if (i >= 0)
+			biasok = true;
+		else
+			biasok = false;
+		// print ("biasstr: "+biasok);
+	}
+	if (biasok) {
+		typelist[n] = "bias";
+		ok = true;
+		nbias++;
+		// print ("biasok");
+	}
+
+	darkok = false;
+	if (!ok && darkfits) {	// LOOK FOR FITS DARK KEYWORD
+		c = trim(call("astroj.FitsJ.getCardValueFromImage",darkkey,""));
+		if (c == darkval) darkok = true;
+		// print ("darkfits: "+darkok);
+	}
+	if (!ok && darkstr) {	// LOOK FOR DARK FILENAME
+		i = indexOf(imagelist[n],darkword);
+		if (i >= 0)
+			darkok = true;
+		else
+			darkok = false;
+		// print ("darkstr: "+darkok);
+	}
+	if (darkok) {
+		typelist[n] = "dark";
+		ok = true;
+		ndark++;
+		// print ("darkok");
+	}
+
+	flatok = false;
+	if (!ok && flatfits) {	// LOOK FOR FITS FLAT KEYWORD
+		c = trim(call("astroj.FitsJ.getCardValueFromImage",flatkey,""));
+		if (c == flatval) flatok = true;
+		// print ("flatfits: "+flatok);
+	}
+	if (!ok && flatstr) {	// LOOK FOR FLAT FILENAME
+		i = indexOf(imagelist[n],flatword);
+		if (i >= 0)
+			flatok = true;
+		else
+			flatok = false;
+		// print ("flatstr: "+flatok);
+	}
+	if (!ok && flatlevel) {			// LOOK FOR FLAT LEVELS
+		getRawStatistics(count,mean,min,max,std);
+		if (mean >= flatlimit)
+			flatok = true;
+		else
+			flatok = false;
+		// print ("flatlevel: "+flatok);
+	}
+	if (flatok) {
+		f = trim(call("astroj.FitsJ.getCardValueFromImage","FILTER",""));
+		filter = replace(f," ","_");
+		if (filter == "") {
+			typelist[n] = "flat";
+		} else {
+			nfilters = noteFilter(filter,filterlist,nfilters);
+			typelist[n] = "flat-"+filter;
+		}
+		nflat++;
+		ok = true;
+		// print ("flatok");
+	}
+
+	objok = false;
+	if (!ok && objfits) {	// LOOK AT LEAST FOR FITS OBJECT KEYWORD
+		c = trim(call("astroj.FitsJ.getCardValueFromImage",objkey,""));
+		if (c == objval) objok = true;
+		// print ("objfits: "+objok);
+	}
+	if (!ok && objstr) {	// LOOK JUST FOR OBJECT FILENAME
+		i = indexOf(imagelist[n],objword);
+		if (i >= 0)
+			objok = true;
+		else
+			objok = false;
+		// print ("objstr: "+objok);
+	}
+	if (objok) {
+		f = trim(call("astroj.FitsJ.getCardValueFromImage","FILTER",""));
+		filter = replace(f," ","_");
+		if (filter == "") {
+			typelist[n] = "object";
+		} else {
+			nfilters = noteFilter(filter,filterlist,nfilters);
+			typelist[n] = "object-"+filter;
+		}
+		ok = true;
+		nobj++;
+		// print ("objok");
+	}
+
+	if (!ok) nother++;
+
+	print ("           #"+(n+1)+" : "+imagelist[n]+" is of type \""+typelist[n]+"\"");
+	close();
+}
+setBatchMode(false);
+
+filter = "";
+if (nfilters > 0) {
+	for (l=0; l < nfilters-1; l++) {
+		if (l > 0) filter += ", ";
+		filter += filterlist[l];
+	}
+	print ("     * The following filters were found : "+filter);
+	oldfilters = filter;
+} else {
+	print ("     * No filters were found");
+}
+
+print ("     * N(bias)="+nbias+", N(dark)="+ndark+", N(flat)="+nflat+", N(other)="+nother);
+
+
+//  ----- ASK FOR PIPELINE INSTRUCTIONS
+
+Dialog.create("Calibation Pipeline");
+
+dobias=false;
+dodark=false;
+doflat=false;
+doobj=false;
+if (nbias > 0) dobias=true;
+if (ndark > 0) dodark=true;
+if (nflat > 0) doflat=true;
+if (nobj > 0) doobj=true;
+
+Dialog.addCheckbox("Create master bias image from "+nbias+" images",dobias);
+Dialog.addCheckbox("Create master dark image from "+ndark+" images",dodark);
+Dialog.addCheckbox("Create master flatfield image(s) from "+nflat+" images",doflat);
+Dialog.addCheckbox("Calibrate "+nobj+" object images",doobj);
+Dialog.addString("Suffix for calibrated object images: ",suffix);
+Dialog.addString("Filters found/to process: ",oldfilters,30);
+
+Dialog.show();
+
+dobias = Dialog.getCheckbox();
+dodark = Dialog.getCheckbox();
+doflat = Dialog.getCheckbox();
+doobj = Dialog.getCheckbox();
+suffix = Dialog.getString();
+oldfilters = Dialog.getString();
+if (!dobias && !dodark && !doflat && !doobj) {
+	abort ("ABORT: Nothing to do.....!");
+}
+
+print ("     * Pipeline selections:");
+print ("            bias  : "+biascorr+","+biasfits+","+biaskey+","+biasval+","+biasstr+","+biasword);
+print ("            dark  : "+darkcorr+","+darkfits+","+darkkey+","+darkval+","+darkstr+","+darkword);
+print ("            flat  : "+flatcorr+","+flatfits+","+flatkey+","+flatval+","+flatstr+","+flatword+","+flatlevel+","+flatlimit);
+print ("            object: "+objfits+","+objkey+","+objval+","+objstr+","+objword);
+print ("            filters: "+oldfilters);
+
+// ----- RESTORE OLD FILTER LIST?
+
+if (nfilters == 0) {
+	filterlist = split(oldfilters,",");
+	nfilters = lengthOf(filterlist);
+}
+
+
+// ----- CREATE CALIBRATION DIRECTORY
+
+if (! File.exists(calibDir)) {
+	print ("     * Creating calib directory "+calibDir);
+	i = File.makeDirectory(calibDir);
+} else {
+	print ("     * Calibration image directory : "+calibDir);
+}
+
+
+// ----- CREATE BIAS IMAGE  
+
+if (dobias) {
+	if (File.exists(biasDir)) {
+		print("     * Biases directory : "+biasDir);
+	} else {
+		print ("     * Creating bias directory "+biasDir);
+		File.makeDirectory(biasDir);
+	}
+	if (nbias > 0) {
+		for (n=0; n < nfits; n++) {
+			if (typelist[n] == 'bias') {
+				if (! File.rename(dir+imagelist[n],biasDir+imagelist[n])) {
+					abort ("ABORT: Cannot move bias image "+imagelist[n]);
+				}
+			}
+		}
+	}
+	run ("Image Sequence...","open="+biasDir);
+	selectWindow ("rawbiases");
+	print ("     * Invoking master bias creation macro...");
+	run ("Create Master Bias Image");
+	status = call ("ij.Prefs.get","ccd.status",true);
+	if (status == false) abort("Calibration Pipeline: Create Master Bias Image aborted!");
+	run ("Enhance Contrast","saturated=0.2");
+	biasimage = call("ij.Prefs.get","ccd.biasimage",biasimage);
+	print ("     * Saving master bias image to "+calibDir+biasimage);
+	saveAs ("FITS", calibDir+biasimage);
+	selectWindow("rawbiases");
+	close();
+	print ("\n");
+}
+
+// CHECK WHETHER BIAS IMAGE NOW AVAILABLE
+if (biascorr) {
+	if (! isOpen(biasimage)) {
+		open (calibDir+biasimage);
+		if (! isOpen(biasimage)) {
+			abort ("Cannot open bias image "+biasimage);
+		}
+	}
+}
+
+
+// ----- CREATE DARK IMAGE
+
+if (dodark) {
+	if (File.exists(darkDir)) {
+		print("     * Darks directory : "+darkDir);
+	} else {
+		print ("     * Creating darks directory "+darkDir);
+		File.makeDirectory(darkDir);
+	}
+	if (ndark > 0) {
+		for (n=0; n < nfits; n++) {
+			if (typelist[n] == 'dark') {
+				if (! File.rename(dir+imagelist[n],darkDir+imagelist[n])) {
+					abort ("ABORT: Cannot move dark image "+imagelist[n]); 
+				}
+			}
+		}
+	}
+	run ("Image Sequence...","open="+darkDir);
+	selectWindow ("rawdarks");
+	print ("     * Invoking master dark creation macro...");
+	run ("Create Master Dark Image");
+	status = call ("ij.Prefs.get","ccd.status",true);
+	if (status == false) abort("Calibration Pipeline: Create Master Dark Image aborted!");
+	run ("Enhance Contrast","saturated=0.2");
+	darkimage = call("ij.Prefs.get","ccd.darkimage",darkimage);
+	print ("     * Saving master dark image to "+calibDir+darkimage);
+	saveAs ("FITS", calibDir+darkimage);
+	selectWindow("rawdarks-"+biasimage);
+	close();
+	print ("\n");
+}
+
+// CHECK WHETHER DARK IMAGE NOW AVAILABLE
+if (darkcorr) {
+	if (! isOpen(darkimage)) {
+		open (calibDir+darkimage);
+		if (! isOpen(darkimage)) {
+			abort ("Cannot open dark image "+darkimage);
+		}
+	}
+}
+
+
+// ----- CREATE FLATS
+
+if (doflat) {
+	if (nfilters == 0) {	// LOOK FOR FLATFIELD DIRECTORIES
+		list = getFileList(dir);
+	}
+	for (k=0; k < nfilters; k++) {
+		filter = filterlist[k];
+		flatimage = "flat-"+filter+".fits";
+		print ("     * Creating flatfield image "+flatimage);
+		call ("ij.Prefs.set","ccd.flatimage",flatimage);
+
+		flatDir = dir+"rawflat-"+filter+File.separator;
+		if (File.exists(flatDir)) {
+			print("          Flatfield directory : "+flatDir);
+		} else {
+			print ("          Creating flatfield directory "+flatDir);
+			File.makeDirectory(flatDir);
+		}
+		f = "flat-"+filter;
+		if (nflat > 0) {
+			for (n=0; n < nfits; n++) {
+				if (typelist[n] == f) {
+					if (! File.rename(dir+imagelist[n],flatDir+imagelist[n])) {
+						abort ("ABORT: Cannot move flatfield image "+imagelist[n]);
+					}
+					print ("          Moving "+imagelist[n]+" to "+flatDir);
+				}
+			}
+		}
+		run ("Image Sequence...","open=["+flatDir+"]");
+		selectWindow ("rawflat-"+filter);
+		print ("          Invoking master flatfield creation macro...");
+		run ("Create Master Flatfield Image");
+		status = call ("ij.Prefs.get","ccd.status",true);
+		if (status == false) abort("Calibration Pipeline: Create Master Flatfield Image aborted!");
+		run ("Enhance Contrast","saturated=0.2");
+		flatimage = call("ij.Prefs.get","ccd.flatimage",flatimage);
+		print ("          Saving master flatfield image for filter "+filter+" to "+flatDir+flatimage);
+		saveAs ("FITS", calibDir+flatimage);
+		print ("\n");
+		selectWindow ("Normalized Processed rawflat-"+filter);
+		close();
+	}
+}
+
+
+// ----- OBJECT REDUCTION
+
+if (doobj) {
+	if (File.exists(rawDir)) {
+		print("     * Directory for uncalibrated object images : "+rawDir);
+	} else {
+		print ("     * Creating directory for uncalibrated object images : "+rawDir);
+		File.makeDirectory(rawDir);
+	}
+
+	for (n=0; n < nfits; n++) {
+		// CHECK WHETHER IMAGE IS AN OBJECT
+		type = substring(typelist[n],0,3);
+		if (type == 'obj') {
+			// GET FILTER
+			filter = substring(typelist[n],7);
+			// CHECK FOR FLATFIELD WITH THIS FILTER
+			if (flatcorr) {
+				flatimage = "flat-"+filter+".fits";
+				if (! isOpen(flatimage)) {
+					flatDir = dir+"rawflat-"+filter+File.separator;
+					open (flatDir+flatimage);
+					if (! isOpen(flatimage)) {
+						abort ("Cannot open flatfield image "+flatimage);
+					}
+				}
+				call ("ij.Prefs.set","ccd.flatimage",flatimage);
+			}
+			// CHECK FOR REDUCED OBJECT DIRECTORY
+			objDir = dir+typelist[n]+File.separator;
+			if (!File.exists(objDir)) {
+				print ("     * Creating object directory "+objDir);
+				File.makeDirectory(objDir);
+			}
+			// OPEN AND PROCESS IMAGE
+			print ("     * Processing "+imagelist[n]);
+			open (dir+imagelist[n]);
+			run ("Enhance Contrast","saturated=0.2");
+			cmd = " name=["+imagelist[n]+"] image=["+imagelist[n]+"] ";
+			if (biascorr) cmd += "subtract bias=["+biasimage+"] ";
+			if (darkcorr) cmd += "remove   dark=["+darkimage+"] ";
+			if (flatcorr) cmd += "divide   flat=["+flatimage+"] ";
+			// print ("        "+cmd);
+			run ("Process Images",cmd);
+			status = call ("ij.Prefs.get","ccd.status",true);
+			if (status == false) abort("Calibration Pipeline: Create Master Flatfield Image aborted!");
+			run ("Enhance Contrast","saturated=0.2");
+			name = unFITS(imagelist[n]);
+			print ("        Saving calibrated image to "+objDir+name+suffix);
+			saveAs ("FITS", objDir+name+suffix);
+			if (! File.rename(dir+imagelist[n],rawDir+imagelist[n])) {
+				abort ("ABORT: Cannot move uncalibrated image "+imagelist[n]);
+			}
+			selectWindow (name+suffix);
+			close();
+		}
+	}
+}
+
+
+// ----- FINIS
+
+beep();
+print ("\n--------------- End of Calibration Pipeline  ---------------\n");
+call("ij.Prefs.set","ccd.status",true);
+

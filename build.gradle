@@ -35,7 +35,7 @@ dependencies {
 mainClassName = 'AIJ.Merged.App'
 
 application {
-
+    setMainClassName(mainClassName)
 }
 
 jar {
@@ -44,10 +44,35 @@ jar {
     }
 }
 
+task createPlugins {
+    def plugins = file("$buildDir/plugins")
+    outputs.dir plugins
+    doLast {
+        plugins.mkdirs()
+        new File(plugins, 'readme.md').write("test")
+    }
+}
+
+distributions {
+    main {
+        contents {
+            from(createPlugins) {
+                into 'plugins'
+            }
+            // Copy astronomy_.jar to correct place in distribution
+            from(file("${project(':astronomy_').buildDir}/libs/astronomy_-${project(':astronomy_').version}.jar")) {
+                rename {String name -> return 'astronomy_.jar'}
+                into 'plugins'
+            }
+        }
+    }
+}
+
 distZip {
 	
 }
 
 distTar {
-	
+	//TODO impl based on zip version
+    enabled = false //Disable temp.
 }

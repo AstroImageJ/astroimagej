@@ -25,8 +25,8 @@ subprojects {
 dependencies {
     // This dependency is used by the application.
     implementation 'com.google.guava:guava:29.0-jre'
-    compile project(':ij')
-    compile project(':astronomy_')
+    implementation project(':ij')
+    implementation project(':astronomy_')
 
     // Use JUnit test framework
     testImplementation 'junit:junit:4.13'

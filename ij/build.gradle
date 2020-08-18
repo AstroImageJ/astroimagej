@@ -9,3 +9,9 @@ dependencies {
 }
 
 mainClassName = 'ij.ImageJ'
+
+jar {
+    manifest {
+        attributes("Main-Class": mainClassName)
+    }
+}

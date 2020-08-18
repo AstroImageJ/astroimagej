@@ -2290,7 +2290,7 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
         fitsHeaderToolButton.addActionListener (this);
         fitsToolPanel.add(fitsHeaderToolButton);
 
-        ImageIcon displayCCIcon = createImageIcon("resources/images/coordinate_converter.png", "Display coordinate converter window");
+        ImageIcon displayCCIcon = createImageIcon("images/coordinate_converter.png", "Display coordinate converter window");
         displayCCButton = new JButton(displayCCIcon);
         displayCCButton.setPreferredSize(iconButtonSize);
 		displayCCButton.addActionListener (this);
@@ -2692,9 +2692,9 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
         JPanel controlPanel = new JPanel();
         controlPanel.setLayout(new BoxLayout(controlPanel,BoxLayout.X_AXIS));
 
-        ImageIcon setApertureIcon = createImageIcon("resources/images/setaperture.png", "Set aperture options");
-        ImageIcon changeAperturesIcon = createImageIcon("resources/images/changeapertures.png", "Change multi-aperture settings the next time it runs");
-        ImageIcon clearTableIcon = createImageIcon("resources/images/cleartable.png", "Clear measurements table data");
+        ImageIcon setApertureIcon = createImageIcon("images/setaperture.png", "Set aperture options");
+        ImageIcon changeAperturesIcon = createImageIcon("images/changeapertures.png", "Change multi-aperture settings the next time it runs");
+        ImageIcon clearTableIcon = createImageIcon("images/cleartable.png", "Clear measurements table data");
 
         JPanel pollingPanel = new JPanel();//new SpringLayout());
         pollingPanel.setLayout(new BoxLayout(pollingPanel,BoxLayout.X_AXIS));

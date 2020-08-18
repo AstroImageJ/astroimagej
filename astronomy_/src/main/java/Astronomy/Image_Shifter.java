@@ -5,7 +5,6 @@ import ij.gui.*;
 import ij.plugin.filter.PlugInFilter;
 import ij.process.*;
 
-import Jama.Jama.*;
 import astroj.*;
 
 /**

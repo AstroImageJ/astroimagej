@@ -8,8 +8,6 @@ import ij.process.*;
 
 import astroj.*;
 
-import Jama.Jama.*;
-
 
 /**
  * Uses the JAMA matrix package: see http://math.nist.gov/javanumerics/jama/.

@@ -2,8 +2,7 @@
 
 package astroj;
 
-import Jama.Jama.*;
-import ij.*;
+import Jama.*;
 
 /**
  * Accepts data which can be used to define a plane in (x,y,z) space and fits the coefficients coefs[], where

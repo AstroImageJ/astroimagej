@@ -1,6 +1,6 @@
-package Jama.Jama;
+package Jama;
 
-import Jama.Jama.util.Maths;
+import Jama.util.Maths;
 
 import java.text.NumberFormat;
 import java.text.DecimalFormat;

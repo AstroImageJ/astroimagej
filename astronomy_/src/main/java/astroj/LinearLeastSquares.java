@@ -5,7 +5,7 @@ package astroj;
 import java.io.*;
 import java.text.*;
 import java.util.*;
-import Jama.Jama.*;
+import Jama.*;
 
 /**
  * Solves general linear least-square problems using singular value decomposition.

@@ -1,7 +1,7 @@
 package Astronomy;// Align_Image.java
 
-import Jama.Jama.LUDecomposition;
-import Jama.Jama.Matrix;
+import Jama.LUDecomposition;
+import Jama.Matrix;
 import ij.*;
 import ij.gui.*;
 import ij.measure.Calibration;
@@ -10,7 +10,6 @@ import ij.process.*;
 
 import java.util.*;
 
-import Jama.Jama.*;
 import astroj.*;
 
 /**

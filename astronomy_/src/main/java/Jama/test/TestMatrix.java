@@ -1,7 +1,6 @@
-package Jama.Jama.test;
-import Jama.Jama.*;
+package Jama.test;
+import Jama.*;
 import java.io.*;
-import java.util.zip.GZIPInputStream;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.Locale;

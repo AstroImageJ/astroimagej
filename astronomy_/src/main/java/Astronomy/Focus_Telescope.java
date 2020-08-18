@@ -1,22 +1,16 @@
 package Astronomy;// Focus_Telescope.java
 
-import Jama.Jama.Matrix;
+import Jama.Matrix;
 import ij.*;
 import ij.gui.*;
 import ij.measure.ResultsTable;
 import ij.plugin.*;
-import ij.process.*;
-import ij.text.*;
-import ij.WindowManager;
 
 import java.awt.*;
 import java.awt.event.*;
-import java.io.*;
-import java.util.*;
 import javax.swing.*;
 import javax.swing.border.*;
 
-import Jama.Jama.*;
 import astroj.*;
 
 /**

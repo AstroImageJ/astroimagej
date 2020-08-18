@@ -345,7 +345,7 @@ public class MacroInstaller implements PlugIn, MacroConstants, ActionListener {
 	 public String openFromIJJar(String path) {
 		String text = null;
 		  try {
-			InputStream is = this.getClass().getResourceAsStream(path);
+			InputStream is = this.getClass().getClassLoader().getResourceAsStream(path);
 			//IJ.log(is+"	"+path);
 			if (is==null) return null;
 				InputStreamReader isr = new InputStreamReader(is);

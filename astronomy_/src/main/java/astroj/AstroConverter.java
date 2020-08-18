@@ -3705,7 +3705,7 @@ double[] processCoordinatePair(JTextField textFieldA, int decimalPlacesA, int ba
 
     /** Returns an ImageIcon, or null if the path was invalid. */
     protected ImageIcon createImageIcon(String path, String description) {
-        java.net.URL imgURL = getClass().getResource(path);
+        java.net.URL imgURL = getClass().getClassLoader().getResource(path);
         if (imgURL != null) {
             return new ImageIcon(imgURL, description);
         } else {
@@ -4135,7 +4135,7 @@ void getInternalObservatories(String filename)
         BufferedReader in = null;
         String line = "";
             try{
-            InputStream fn = getClass().getResourceAsStream("observatories.txt");     //get file from inside jar
+            InputStream fn = getClass().getClassLoader().getResourceAsStream("observatories.txt");     //get file from inside jar
             if (fn != null)
                 {
                 in = new BufferedReader(new InputStreamReader(fn));
@@ -4151,7 +4151,7 @@ void getInternalObservatories(String filename)
                         if (!dir.exists()) dir.mkdir(); // create .astrocc directory
                         }
 
-                    fn = getClass().getResourceAsStream("observatories.txt");
+                    fn = getClass().getClassLoader().getResourceAsStream("observatories.txt");
                     in = new BufferedReader(new InputStreamReader(fn));
 
                     FileWriter fw = new FileWriter(filename);

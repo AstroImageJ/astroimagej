@@ -106,7 +106,7 @@ public class HelpPanel extends JFrame implements ActionListener, DocumentListene
         initComponents();
 
         textArea.setEditable(false);
-        java.net.URL helpURL = getClass().getResource(filename);
+        java.net.URL helpURL = getClass().getClassLoader().getResource(filename);
         if (helpURL != null) {
             try {
                 textArea.setPage(helpURL);
@@ -280,7 +280,7 @@ public class HelpPanel extends JFrame implements ActionListener, DocumentListene
 
     /** Returns an ImageIcon, or null if the path was invalid. */
     protected ImageIcon createImageIcon(String path, String description) {
-        java.net.URL imgURL = getClass().getResource(path);
+        java.net.URL imgURL = getClass().getClassLoader().getResource(path);
         if (imgURL != null) {
             return new ImageIcon(imgURL, description);
         } else {

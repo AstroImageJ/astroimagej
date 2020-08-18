@@ -2029,7 +2029,7 @@ double[] processCoordinatePair(JTextField textFieldA, int decimalPlacesA, int ba
     /** Returns an ImageIcon, or null if the path was invalid. */
     protected ImageIcon createImageIcon(String path, String description) 
         {
-        java.net.URL imgURL = getClass().getResource(path);
+        java.net.URL imgURL = getClass().getClassLoader().getResource(path);
         if (imgURL != null) 
             {
             return new ImageIcon(imgURL, description);

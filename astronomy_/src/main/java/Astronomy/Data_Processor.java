@@ -446,12 +446,12 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
 
 
 
-        ImageIcon fileOpenIcon = createImageIcon("astroj/images/fileopenblue.png", "File Open");
-        ImageIcon folderOpenIcon = createImageIcon("astroj/images/folderopenblue.png", "Folder Open");
-        ImageIcon windowIcon = createImageIcon("astroj/images/dp.png", "Window Icon");
-        ImageIcon fitsHeaderToolIcon = createImageIcon("astroj/images/fitsheadertool.png", "FITS Header Tool Icon");
-        astrometrySetupIcon = createImageIcon("astroj/images/astrometry.png", "Astrometry Setup Icon");
-        astrometryActiveIcon = createImageIcon("astroj/images/astrometryselected.png", "Astrometry Active Icon");
+        ImageIcon fileOpenIcon = createImageIcon("images/fileopenblue.png", "File Open");
+        ImageIcon folderOpenIcon = createImageIcon("images/folderopenblue.png", "Folder Open");
+        ImageIcon windowIcon = createImageIcon("images/dp.png", "Window Icon");
+        ImageIcon fitsHeaderToolIcon = createImageIcon("images/fitsheadertool.png", "FITS Header Tool Icon");
+        astrometrySetupIcon = createImageIcon("images/astrometry.png", "Astrometry Setup Icon");
+        astrometryActiveIcon = createImageIcon("images/astrometryselected.png", "Astrometry Active Icon");
 
         fitsHeaderFrame = new JFrame ("General FITS Header Settings");
         fitsHeaderFrame.setIconImage(fitsHeaderToolIcon.getImage());
@@ -2290,7 +2290,7 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
         fitsHeaderToolButton.addActionListener (this);
         fitsToolPanel.add(fitsHeaderToolButton);
 
-        ImageIcon displayCCIcon = createImageIcon("astroj/images/coordinate_converter.png", "Display coordinate converter window");
+        ImageIcon displayCCIcon = createImageIcon("resources/images/coordinate_converter.png", "Display coordinate converter window");
         displayCCButton = new JButton(displayCCIcon);
         displayCCButton.setPreferredSize(iconButtonSize);
 		displayCCButton.addActionListener (this);
@@ -2692,9 +2692,9 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
         JPanel controlPanel = new JPanel();
         controlPanel.setLayout(new BoxLayout(controlPanel,BoxLayout.X_AXIS));
 
-        ImageIcon setApertureIcon = createImageIcon("astroj/images/setaperture.png", "Set aperture options");
-        ImageIcon changeAperturesIcon = createImageIcon("astroj/images/changeapertures.png", "Change multi-aperture settings the next time it runs");
-        ImageIcon clearTableIcon = createImageIcon("astroj/images/cleartable.png", "Clear measurements table data");
+        ImageIcon setApertureIcon = createImageIcon("resources/images/setaperture.png", "Set aperture options");
+        ImageIcon changeAperturesIcon = createImageIcon("resources/images/changeapertures.png", "Change multi-aperture settings the next time it runs");
+        ImageIcon clearTableIcon = createImageIcon("resources/images/cleartable.png", "Clear measurements table data");
 
         JPanel pollingPanel = new JPanel();//new SpringLayout());
         pollingPanel.setLayout(new BoxLayout(pollingPanel,BoxLayout.X_AXIS));
@@ -4096,7 +4096,7 @@ class thisDocumentListener implements DocumentListener
 
 /** Returns an ImageIcon, or null if the path was invalid. */
 protected ImageIcon createImageIcon(String path, String description) {
-    java.net.URL imgURL = getClass().getResource(path);
+    java.net.URL imgURL = getClass().getClassLoader().getResource(path);
     if (imgURL != null) {
         return new ImageIcon(imgURL, description);
     } else {

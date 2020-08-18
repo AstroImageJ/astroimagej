@@ -42,6 +42,7 @@ jar {
     manifest {
         attributes("Main-Class": mainClassName)
     }
+    exclude("resources/outer/**") //prevent outer files being shipped twice
 }
 
 task createPlugins {
@@ -63,6 +64,22 @@ distributions {
             from(file("${project(':astronomy_').buildDir}/libs/astronomy_-${project(':astronomy_').version}.jar")) {
                 rename {String name -> return 'astronomy_.jar'}
                 into 'plugins'
+            }
+
+            // Copy other plugins
+            from(file("${buildDir}/resources/main/plugins")) {
+                into 'plugins'
+            }
+
+            // Copy root files
+            from(file("${buildDir}/resources/main/outer")) {
+                into ''
+            }
+
+            // Copy ij.jar to correct place in distribution
+            from(file("${project(':ij').buildDir}/libs/ij-${project(':ij').version}.jar")) {
+                rename {String name -> return 'ij.jar'}
+                into ''
             }
         }
     }

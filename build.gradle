@@ -32,9 +32,16 @@ dependencies {
     testImplementation 'junit:junit:4.13'
 }
 
+mainClassName = 'AIJ.Merged.App'
+
 application {
-    // Define the main class for the application.
-    mainClassName = 'AIJ.Merged.App'
+
+}
+
+jar {
+    manifest {
+        attributes("Main-Class": mainClassName)
+    }
 }
 
 distZip {

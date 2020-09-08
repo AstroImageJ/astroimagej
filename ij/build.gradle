@@ -1,17 +1,25 @@
 plugins {
     id 'java'        
-    id 'application' 
+    id 'application'
 }
 
 dependencies {
-	//compile project(':astronomy_')
     implementation 'gov.nasa.gsfc.heasarc:nom-tam-fits:1.15.2'
 }
 
 mainClassName = 'ij.ImageJ'
 
 jar {
+    FileTree m = fileTree("${rootProject.projectDir}/src/main/resources/plugins/")
+    Collection n = m.include("**/*.jar").grep()
+
     manifest {
         attributes("Main-Class": mainClassName)
+        attributes("Class-Path": "plugins/ ${n.collect {'plugins/' + ((File)it).getName()}.join(' ')}")
+    }
+
+    // Ship nom.tam.fits
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
 }

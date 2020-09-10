@@ -1,0 +1,169 @@
+// "StartupMacros"
+// The macros and macro tools in this file ("StartupMacros.txt") are 
+// automatically installed in the Plugins>Macros submenu and
+//  in the tool bar when ImageJ starts up.
+
+//  About the drawing tools.
+//
+//  This is a set of drawing tools similar to the pencil, paintbrush, 
+//  eraser and flood fill (paint bucket) tools in NIH Image. The 
+//  pencil and paintbrush draw in the current foreground color 
+//  and the eraser draws in the current background color. The
+//  flood fill tool fills the selected area using the foreground color.
+//  Hold down the alt key to have the pencil and paintbrush draw 
+//  using the background color or to have the flood fill tool fill 
+//  using the background color. Set the foreground and background 
+//  colors by double-clicking on the flood fill tool or on the eye  
+//  dropper tool.  Double-click on the pencil, paintbrush or eraser 
+//  tool  to set the drawing width for that tool.
+//
+// Icons contributed by Tony Collins.
+
+   // Global variables
+   var pencilWidth=1,  eraserWidth=10, leftClick=16, alt=8;
+   var brushWidth = 10; //call("ij.Prefs.get", "startup.brush", "10");
+   var floodType =  "8-connected"; //call("ij.Prefs.get", "startup.flood", "8-connected");
+
+   // The macro named "AutoRun" runs when ImageJ starts.
+   // macro "AutoRun" {print("AutoRun");}
+
+   // The macro named "AutoRunAndHide" runs when ImageJ starts
+   // and the file containing it is not displayed when ImageJ opens it.
+   // macro "AutoRunAndHide" {}
+
+   macro "AutoRun"
+      {
+      wait(10);
+      setTool(10);
+ //     wait(10);
+      run("Astronomy Listener");
+      }
+
+
+  //macro "Unused Tool -" {}
+
+  var pmCmds = newMenu("Popup Menu",
+       newArray("Help...", "Rename...", "Duplicate...", "Original Scale", 
+       "Paste Control...", "-", "Record...", "Capture Screen ", "Monitor Memory...", 
+       "List Commands...", "Control Panel...", "Startup Macros...", "Search..."));
+
+  macro "Popup Menu" {
+      cmd = getArgument();
+      if (cmd=="Help...")
+           showMessage("About Popup Menu",
+               "To customize this menu, edit the line that starts with\n\"var pmCmds\" in ImageJ/macros/StartupMacros.txt.");
+      else
+          run(cmd);
+  }
+
+ // macro "Abort Macro or Plugin (or press Esc key) Action Tool - CbooP51b1f5fbbf5f1b15510T5c10X" {
+ //     setKeyDown("Esc");
+ // }
+ 
+
+// Runs when the "Astronomy Tool" icon is clicked.
+
+macro 'Astronomy_Tool Tool- C000F00ffCf77o3422Cfffo9922CfffD55D27D78D2aD52D6dD93D85D4cDa3Db5Dc8DabDdd' {
+//macro 'Astronomy_Tool Tool- Cccfo22bbC88fo4477C44fo5544Cf00L707fL07f7' {
+	run ("Astronomy Tool");
+}
+// macro 'Astrometry Tool Options...' {
+// 	run ("Set World Coordinates");
+// }
+
+
+// Runs when the "Aperture Photometry Tool" icon is clicked.
+
+var rStar = 15;
+var rSky  = 20;
+
+macro 'Aperture Photometry Tool - Cf00O00ffCccfo22bbC88fo4477C44fo5544' {
+	getCursorLoc (x,y,z,flags);
+	makeOval (x-rSky, y-rSky, rSky*2, rSky*2);
+	makeOval (x-rStar, y-rStar, rStar*2, rStar*2);
+	run ("Aperture ");
+}
+macro 'Aperture Photometry Tool Options...' {
+	run ("Set Aperture");
+}
+
+// Runs when the "Multiple-Aperture Tool" icon is clicked.
+// 
+ macro 'Multiple Aperture Action Tool - Cf00O0099O8899Cccfo2255oaa55C00fo3333obb33' {
+ 	run ("MultiAperture ");
+}
+// macro 'Multiple Aperture Tool Options...' {
+// 	run ("MultiAperture ");
+// }
+
+// Runs when the "Clear Overlay Tool" icon is clicked.
+
+macro 'Clear Overlay Action Tool - Cda1L0b75L2c86L4d97L6ea8L8fb9L74b3Lc7b3Cf00L75b7C431Lc3e0DbeDefDed' {
+//	getCursorLoc (x,y,z,flags);
+//	makeOval (x-3,y-3,7,7);
+	run ("Clear Overlay","nix");
+}
+// macro 'Clear Overlay Tool Options...' {
+// 	getCursorLoc (x,y,z,flags);
+// 	makeOval (x-3,y-3,7,7);
+// 	run ("Clear Overlay","nix");
+// }
+
+// Runs when the "Multi-Plot Tool" icon is clicked.
+
+macro 'MultiPlot Action Tool - C000D00D01D02D03D04D05D06D07D08D09D0aD0bD0cD0dD0eD0fD10D17D1fD20D2fD30D37D3fD40D47D4fD50D57D5fD60D62D67D6fD70D71D72D73D74D75D79D7aD7bD7cD7dD7eD7fD80D82D87D8fD90D97D9fDa0Da7DafDb0Db7DbfDc0DcfDd0Dd6Dd7Dd8DdfDe0De7DefDf0Df1Df2Df3Df4Df5Df6Df7Df8Df9DfaDfbDfcDfdDfeDffCfffD11D12D13D14D15D16D1aD1bD1cD1dD1eD21D22D23D24D29D2aD2bD2cD2dD2eD31D32D33D38D39D3aD3bD3cD3dD3eD41D42D46D48D49D4aD4bD4cD4dD4eD51D52D53D56D58D59D5aD5bD5cD5dD5eD61D63D64D68D69D6aD6bD6cD6dD6eD81D83D84D85D86D8bD8cD8dD8eD91D92D93D94D95D96D98D99D9cD9dD9eDa1Da2Da3Da4Da5Da6Da8Da9DacDadDaeDb1Db2Db3Db4Db5Db6DbbDbcDbdDbeDc1Dc2Dc3Dc4Dc5Dc6DcaDcbDccDcdDceDd1Dd2Dd3Dd4Dd5Dd9DdaDdbDdcDddDdeDe1De2De3De4De5De6De8De9DeaDebDecDedDeeCf00D18D19D26D27D28D34D35D43D44D54D55D65D66D77D78D89D9aDaaDabDb9Dc8Cd33D76Cf55DbaCe44D8aCf66D45Cd34Dc7Cf66D36Dc9Ce45D88Cf66D25Ce55D9bCe55Db8' {
+
+	run("MultiPlot ");
+}
+
+// Runs when the "Read MeasurementTable" icon is clicked.
+
+macro 'Read MeasurementTable Action Tool - C037B00R00ffL01f1L02f2L303fL707fLb0bf' {
+
+	run("Read MeasurementTable");
+}
+
+macro "CCD Data Processor Action Tool - C03cT0e14DCf00T9e14P" {
+	run("Data Processor");
+}
+
+
+macro "Coordinate Converter Action Tool - C989Db6C878D95CdcdDa6C556D83CcbcD84C212De3C667Dc6C656Dd5C111De2C112Dd1C334Dd2C444D91C223De4C112Db7C556Da1C000D86C000Da9C111D7eC111De5C88aD5fC222D8cC889D6eC88aD6dC668D88C445D6fC667D7dC99aD7bC334D9aC99aD7cC778D8bC99aD89C555Da8C667D96C111D38C445D28CbbcD8aC889D37C667D18C555D55C667D27C99aD99C667D47CaabD97C889D46C333D09C333D76C222D57C889D66CddeD98CbbcD56C556D08C001D19CaaaD65CcccDa7CddeD75C667D74CaaaD85C112Dd6C555Dc1C566D92C454D94C092Db4Dc3C070Da4C192Da3Db2C464D93C041Db3C172Db5C676Db1C282C474Dc5C343Da5C151Dc4C493C454Dd4C474Dd3C464Dc2C463Da2"{
+run("Coordinate Converter");
+}
+
+
+//macro "Adjust Brightness and Contrast Action Tool - //C037D04D05D06D07D08D09D0aD0bD0cD14D18D1cD24D28D2cD34D38D3cD45D46D47D49D4aD4bD6bD6cD76D77D78D79D7aD84D85Da6Da7Da8Da9DaaDb5//DbbDc4DccDd4DdcDe5DebDf6Dfa" {
+//	run("Coordinate Converter");
+//}
+// macro "Adjust Brightness and Contrast Tool Options..." {
+// 	run("Brightness/Contrast...");
+// }
+
+
+
+
+
+
+  macro "Set Drawing Color..."{ 
+      run("Color Picker..."); 
+  }
+
+  macro "-" {} //menu divider
+
+  macro "About Startup Macros..." {
+      path = getDirectory("macros")+"/About Startup Macros";
+      if (!File.exists(path))
+          exit("\"About Startup Macros\" not found in ImageJ/macros/.");
+      open(path);
+  }
+
+  macro "Save As JPEG... [j]" {
+     quality = call("ij.plugin.JpegWriter.getQuality");
+     quality = getNumber("JPEG quality (0-100):", quality);
+     run("Input/Output...", "jpeg="+quality);
+     saveAs("Jpeg");
+  }
+
+
+

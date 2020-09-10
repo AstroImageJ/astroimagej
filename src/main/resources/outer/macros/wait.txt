@@ -1,0 +1,2 @@
+// Waits 5 seconds
+wait(5000);

@@ -1,0 +1,125 @@
+// Transit_Simulation_Filter.txt		(2011-AUG-03)
+
+// Creates a stack containing a movie of an exoplanet transit event given a background image.
+// Version 2011-AUG-03 (FVH)
+
+width = getWidth();
+if (width <= 0) {
+	exit("Don't have a star image as a background!");
+}
+height = getHeight();
+bits = bitDepth();
+original = getImageID();
+
+rplanet = 10;
+aplanet = 2.0;
+
+phase1 = -0.05;
+phase2 = 0.05;
+nphases = 100;
+inclination = 88.0;
+
+// PREFERENCES
+
+inclination = call("ij.Prefs.get","transit.inclination",inclination);
+rplanet = call("ij.Prefs.get","transit.size",rplanet);
+phase1 = call("ij.Prefs.get","transit.phase1",phase1);
+phase2 = call("ij.Prefs.get","transit.phase2",phase2);
+nphases = call("ij.Prefs.get","transit.nphases",nphases);
+
+// INPUT DIALOGUE
+
+Dialog.create("Exoplanet Transit Simulator Filter");
+
+Dialog.addMessage("ORBITAL PARAMETERS:");
+Dialog.addNumber("Inclination [deg] =",inclination);
+Dialog.addNumber("Separation [units of image width]  =",aplanet);
+
+Dialog.addMessage("PLANET PARAMETERS:");
+Dialog.addNumber("Radius of planet [pixels] =",rplanet);
+
+Dialog.addMessage("SIMULATION PARAMETERS:");
+Dialog.addNumber("Starting Phase [0..1] =",phase1);
+Dialog.addNumber("Ending Phase [0..1] =",phase2);
+Dialog.addNumber("Number of phases =",nphases);
+
+Dialog.show();
+
+inclination = Dialog.getNumber();
+aplanet = Dialog.getNumber()*width;
+rplanet = Dialog.getNumber();
+phase1 = Dialog.getNumber();
+phase2 = Dialog.getNumber();
+nphases = Dialog.getNumber();
+
+cosi = cos(PI*inclination/180.0);
+sini = sin(PI*inclination/180.0);
+
+// CREATE STACK
+newImage("Transit Simulation Filter","8-bit",width,height,nphases);
+simulation = getImageID();
+
+// FILL WITH IMAGES
+selectImage(original);
+getStatistics(area,mean);
+fmean = area*mean;
+run("Select All");
+run("Copy");
+
+// POSITION OF IMAGE CENTER
+xc = width/2;
+yc = height/2;
+
+// RECT OF PLANET
+wp = 2*rplanet;
+hp = wp;
+
+// FOR ALL PHASES...
+run("Clear Results");
+run("Set Measurements...","decimal=4");
+
+phase = phase1;
+dphase = (phase2-phase1)/(nphases-1);
+
+selectImage(simulation);
+for (n=1; n <= nphases; n++) {
+	setSlice(n);
+	run("Paste");
+
+	// CALCULATE POSITION OF PLANET
+	dxp = aplanet*sin(2.0*PI*phase);
+	dyp =  aplanet*cos(2.0*PI*phase)*cosi;
+	xp = xc+dxp-rplanet;
+	yp = yc+dyp-rplanet;
+
+	// DRAW PLANET
+	if (dyp > 0.0) { // IN FRONT
+		setColor(0.0);
+		fillOval(xp,yp,wp,hp);
+	} 
+
+	// CALCULATE LIGHTCURVE CONTRIBUTION
+	getStatistics(area,mean);
+	ftot = area*mean;
+	setResult("Label",n-1,""+n);
+	setResult("Phase",n-1,phase);
+	setResult("Brightness",n-1,ftot/fmean);
+
+	phase = phase+dphase;
+	}
+run("Select None");
+
+updateResults();
+run("Plot Table Columns", "table=[Results] x-data=[Phase] y-data=[Brightness] marker=box "+
+	"x_automatic_scaling "+"y_automatic_scaling");
+updateDisplay();
+
+// PREFERENCES
+
+call("ij.Prefs.set","transit.inclination",inclination);
+call("ij.Prefs.set","transit.size",rplanet);
+call("ij.Prefs.set","transit.aplanet",aplanet/width);
+call("ij.Prefs.set","transit.phase1",phase1);
+call("ij.Prefs.set","transit.phase2",phase2);
+call("ij.Prefs.set","transit.nphases",nphases);
+

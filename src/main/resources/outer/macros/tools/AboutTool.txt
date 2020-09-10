@@ -10,5 +10,5 @@
   // when user clicks on the "?" tool bar icon.
   macro "About Tool Action Tool - C059T3e16?" {
       requires("1.37t");
-      run("About AstroImageJ...");
+      run("About ImageJ...");
   }

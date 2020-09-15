@@ -60,7 +60,6 @@ public class IJ {
 		isMac = !isWin && osname.startsWith("Mac");
 		isLinux = osname.startsWith("Linux");
 		String[] parsed = System.getProperty("java.specification.version").split("\\.");
-		//TODO FIX whatever java version checking mess this is - why is it passing for so many versions?!
 		//TODO FIX naming - Java doesn't follow the 1.x scheme on most JVM's now
 		isJava2 = Integer.parseInt(parsed[parsed.length > 1 ? 1 : 0]) > 1;
 		isJava14 = Integer.parseInt(parsed[parsed.length > 1 ? 1 : 0])>3;

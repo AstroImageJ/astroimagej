@@ -7,6 +7,15 @@ dependencies {
     implementation 'gov.nasa.gsfc.heasarc:nom-tam-fits:1.15.2'
 }
 
+compileJava {
+    // Set language level and binary level to 8 (binary only when building with a JDK 9+)
+    // Ensures newer language features aren't used
+    options.release.set(8)
+
+    // AIJ is large, so this caches compiling results and only recompiles changed files
+    options.incremental = true
+}
+
 mainClassName = 'ij.ImageJ'
 
 jar {

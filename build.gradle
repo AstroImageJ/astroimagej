@@ -88,8 +88,3 @@ distributions {
 distZip {
 	
 }
-
-distTar {
-	//TODO impl based on zip version
-    enabled = false //Disable temp.
-}

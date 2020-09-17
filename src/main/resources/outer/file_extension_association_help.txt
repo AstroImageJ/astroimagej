@@ -1,0 +1,20 @@
+In some cases Windows will not allow file extensions to be associated with AstroImageJ.exe. File extension associations allow the user to double-click on an image file to open it in AstroImageJ. If you are experiencing this problem, use a program such as "Default Programs Editor.exe" utility at http://defaultprogramseditor.com to make the file extension associations.
+
+Step-by-step instructions for using "Default Programs Editor.exe".
+------------------------------------------------------------------
+1) double click on "Default Programs Editor.exe" to open it.
+2) click "File Type Settings"
+3) click "Context Menu"
+4) in the search box type the file type you want to associate with AstroImageJ (.fits for example)
+(by now you would have likely tried to associate the file type using built in windows tools, so it should be available in the list. If not, you may need to try using the windows tool first and assign the file type to any available program.)
+5) click "Next"
+6) click "Edit Selected Command..."
+7) click "Browse" and navigate to AstroImageJ.exe in your installation directory
+8) select AstroImageJ.exe and click "Open"
+9) click "Next"
+10) click "Save Context Menu"
+11) click "OK" 
+12) click "Close"
+
+Between steps (9) and (10), you may delete other previously associated programs from the list or add alternate programs for the specified file type.
+

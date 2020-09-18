@@ -87,6 +87,8 @@ distributions {
 
 // Task to copy built jars into a certain folder, for use with testing
 task copyBuiltJars(dependsOn: build, type: Copy) {
+    group 'AstroImageJ Developement'
+
     // Copy astronomy_.jar
     from(file("${project(':Astronomy_').buildDir}/libs/astronomy_-${project(':Astronomy_').version}.jar")) {
         rename {String name -> return 'Astronomy_.jar'}
@@ -109,7 +111,6 @@ task unzip(dependsOn: distZip, type: Copy) {
 // Generates a working install directory of AIJ and launches it - make sure to not att it to git!
 task aijRun(dependsOn: unzip, type: JavaExec) {
     group 'AstroImageJ Developement'
-
 
     workingDir(file("${projectDir}/AIJ-Merged/"))
 

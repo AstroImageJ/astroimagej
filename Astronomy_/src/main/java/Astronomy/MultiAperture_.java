@@ -973,7 +973,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 }
             else
                 {
-                IJ.runPlugIn("MultiPlot_",tableName);
+                IJ.runPlugIn("Astronomy.MultiPlot_",tableName);
                 if (MultiPlot_.mainFrame!=null && MultiPlot_.getTable()!=null)
                     {
                     MultiPlot_.setTable(table, false);
@@ -2819,7 +2819,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     }
                 else
                     {
-                    IJ.runPlugIn("MultiPlot_",tableName);
+                    IJ.runPlugIn("Astronomy.MultiPlot_",tableName);
                     if (MultiPlot_.mainFrame!=null && MultiPlot_.getTable()!=null)
                         {
 //                        IJ.log("setTable first time");

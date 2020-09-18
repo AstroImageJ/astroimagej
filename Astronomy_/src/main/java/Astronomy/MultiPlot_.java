@@ -16908,7 +16908,7 @@ static void initializeVariables()
         /** Returns an ImageIcon, or null if the path was invalid. */
         static protected ImageIcon createImageIcon(String path, String description) {
             MultiPlot_ m = new MultiPlot_();
-            java.net.URL imgURL = m.getClass().getResource(path);
+            java.net.URL imgURL = m.getClass().getClassLoader().getResource(path);
             if (imgURL != null) {
                 return new ImageIcon(imgURL, description);
             } else {

@@ -34,17 +34,11 @@ package astroj;
 import java.awt.*;
 import java.awt.Color;
 import java.awt.event.*;
-import java.io.*;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import javax.swing.*;
 import javax.swing.text.*;
 import javax.swing.event.*;
 
-import javax.swing.text.html.HTMLEditorKit;
-import javax.swing.text.html.HTMLDocument;
-import ij.*;
 import static ij.IJ.showMessage;
 
 /*
@@ -145,7 +139,7 @@ public class HelpPanel extends JFrame implements ActionListener, DocumentListene
         textArea = new JEditorPane();
         status = new JLabel();
         jLabel1 = new JLabel();
-        ImageIcon dialogFrameIcon = createImageIcon("images/help.png", "Help_Icon");
+        ImageIcon dialogFrameIcon = createImageIcon("astroj/images/help.png", "Help_Icon");
 
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         setTitle(callingProgramID+" Help");

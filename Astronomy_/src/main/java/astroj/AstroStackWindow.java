@@ -6615,12 +6615,12 @@ void setupListeners() {
                                     else if((e.isShiftDown() || currentToolId == apertureToolId) && !shiftClickDisabled)
                                         {
 //                                        imp.setRoi(new OvalRoi((int)(imageX-radius+0.5), (int)(imageY-radius+0.5), (int)(radius*2.0), (int)(radius*2.0)));
-                                        IJ.runPlugIn(imp, "Aperture_", "");
+                                        IJ.runPlugIn(imp, "Astronomy.Aperture_", "");
                                         validate();
                                         }
                                     else if (e.isAltDown() && !shiftClickDisabled)
                                         {
-                                        IJ.runPlugIn(imp, "Seeing_Profile", "alt-click");
+                                        IJ.runPlugIn(imp, "Astronomy.Seeing_Profile", "alt-click");
                                         }
                                     else if (!shiftClickDisabled)
                                         {

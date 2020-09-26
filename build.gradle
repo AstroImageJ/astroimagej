@@ -143,8 +143,12 @@ task aijRun(dependsOn: sync, type: JavaExec) {
 
 }
 
-distZip {
+linuxDistZip {
+    enabled = false
+}
 
+windowsDistTar {
+    enabled = false
 }
 
 distTar {

@@ -13,9 +13,9 @@ plugins {
 
 allprojects {
     repositories {
-        jcenter() 
+        jcenter()
     }
-	group 'edu.louisville.astro.software'
+    group 'edu.louisville.astro.software'
 }
 
 repositories {
@@ -59,7 +59,7 @@ task createPlugins {
 
 def downloadJREs = project.download {
     String[] platforms = ["macosx", "linux", "win"]
-    for(String sys : platforms) {
+    for (String sys : platforms) {
         src createURL(sys)
         overwrite false
         dest new File(buildDir, "jres")
@@ -69,7 +69,7 @@ def downloadJREs = project.download {
 def jreBaseName = "zulu8.48.0.53-ca-jre8.0.265"
 
 String createURL(String sys) {
-    return "https://cdn.azul.com/zulu/bin/zulu8.48.0.53-ca-jre8.0.265-"+sys+"_x64.zip"
+    return "https://cdn.azul.com/zulu/bin/zulu8.48.0.53-ca-jre8.0.265-" + sys + "_x64.zip"
 }
 
 def commonDist = project.copySpec {
@@ -78,7 +78,7 @@ def commonDist = project.copySpec {
     }
     // Copy astronomy_.jar to correct place in distribution
     from(file("${project(':Astronomy_').buildDir}/libs/astronomy_-${project(':Astronomy_').version}.jar")) {
-        rename {String name -> return 'Astronomy_.jar'}
+        rename { String name -> return 'Astronomy_.jar' }
         into 'plugins'
     }
 
@@ -92,7 +92,7 @@ def commonDist = project.copySpec {
 
     // Copy ij.jar to correct place in distribution
     from(file("${project(':ij').buildDir}/libs/ij-${project(':ij').version}.jar")) {
-        rename {String name -> return 'ij.jar'}
+        rename { String name -> return 'ij.jar' }
         into ''
     }
 }
@@ -100,7 +100,7 @@ def commonDist = project.copySpec {
 distributions {
     main {
         contents {
-            exclude {it}
+            exclude { it }
         }
     }
     windows {
@@ -158,12 +158,12 @@ task copyBuiltJars(dependsOn: build, type: Copy) {
 
     // Copy astronomy_.jar
     from(file("${project(':Astronomy_').buildDir}/libs/astronomy_-${project(':Astronomy_').version}.jar")) {
-        rename {String name -> return 'Astronomy_.jar'}
+        rename { String name -> return 'Astronomy_.jar' }
         into ''
     }
     // Copy ij.jar
     from(file("${project(':ij').buildDir}/libs/ij-${project(':ij').version}.jar")) {
-        rename {String name -> return 'ij.jar'}
+        rename { String name -> return 'ij.jar' }
         into ''
     }
     into "${projectDir}/out"
@@ -180,7 +180,7 @@ task aijRun(dependsOn: sync, type: JavaExec) {
 
     workingDir(file("${projectDir}/AIJ-Run/"))
 
-    main="-jar"
+    main = "-jar"
     args "${projectDir}/AIJ-Run/ij.jar"
 
 }

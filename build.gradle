@@ -4,6 +4,9 @@ plugins {
 
     // Apply the application plugin to add support for building a CLI application.
     id 'application'
+
+    // Plugin to download files
+    id "de.undercouch.download" version "4.1.1"
 }
 
 // See https://guides.gradle.org/creating-multi-project-builds/
@@ -54,6 +57,21 @@ task createPlugins {
     }
 }
 
+def downloadJREs = project.download {
+    String[] platforms = ["macosx", "linux", "win"]
+    for(String sys : platforms) {
+        src createURL(sys)
+        overwrite false
+        dest new File(buildDir, "jres")
+    }
+}
+
+def jreBaseName = "zulu8.48.0.53-ca-jre8.0.265"
+
+String createURL(String sys) {
+    return "https://cdn.azul.com/zulu/bin/zulu8.48.0.53-ca-jre8.0.265-"+sys+"_x64.zip"
+}
+
 def commonDist = project.copySpec {
     from(createPlugins) {
         into 'plugins'
@@ -92,6 +110,16 @@ distributions {
             from(file("${projectDir}/packageFiles/windows")) {
                 into ''
             }
+
+            // Copy JRE
+            from(zipTree(file("${buildDir}/jres/${jreBaseName}-win_x64.zip"))) {
+                into ''
+            }
+            // Rename folder to jre
+            it.filesMatching("**/${jreBaseName}-win_x64/**/*") {
+                it.path = it.path.replace("${jreBaseName}-win_x64", "jre")
+            }
+            includeEmptyDirs = false // remove old jre folder
         }
     }
 
@@ -102,6 +130,20 @@ distributions {
             from(file("${projectDir}/packageFiles/linux")) {
                 into ''
             }
+
+            from(zipTree(file("${buildDir}/jres/${jreBaseName}-linux_x64.zip"))) {
+                into 'jre'
+            }
+
+            // Copy JRE
+            from(zipTree(file("${buildDir}/jres/${jreBaseName}-linux_x64.zip"))) {
+                into ''
+            }
+            // Rename folder to jre
+            it.filesMatching("**/${jreBaseName}-linux_x64/**/*") {
+                it.path = it.path.replace("${jreBaseName}-linux_x64", "jre")
+            }
+            includeEmptyDirs = false // remove old jre folder
         }
     }
 

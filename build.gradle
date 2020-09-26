@@ -127,20 +127,19 @@ task copyBuiltJars(dependsOn: build, type: Copy) {
     into "${projectDir}/out"
 }
 
-// TODO better method than getting the distribution and unzipping it
-task unzip(dependsOn: distZip, type: Copy) {
-    from zipTree(file("${buildDir}/distributions/AIJ-Merged.zip"))
-    into projectDir
+task sync(type: Sync) {
+    with commonDist
+    destinationDir(file("${projectDir}/AIJ-Run"))
 }
 
 // Generates a working install directory of AIJ and launches it - make sure to not att it to git!
-task aijRun(dependsOn: unzip, type: JavaExec) {
+task aijRun(dependsOn: sync, type: JavaExec) {
     group 'AstroImageJ Developement'
 
-    workingDir(file("${projectDir}/AIJ-Merged/"))
+    workingDir(file("${projectDir}/AIJ-Run/"))
 
     main="-jar"
-    args "${projectDir}/AIJ-Merged/ij.jar"
+    args "${projectDir}/AIJ-Run/ij.jar"
 
 }
 

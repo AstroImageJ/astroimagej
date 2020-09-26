@@ -54,35 +54,60 @@ task createPlugins {
     }
 }
 
+def commonDist = project.copySpec {
+    from(createPlugins) {
+        into 'plugins'
+    }
+    // Copy astronomy_.jar to correct place in distribution
+    from(file("${project(':Astronomy_').buildDir}/libs/astronomy_-${project(':Astronomy_').version}.jar")) {
+        rename {String name -> return 'Astronomy_.jar'}
+        into 'plugins'
+    }
+
+    from("${projectDir}/packageFiles/common") {
+        into ''
+    }
+
+    into('plugins') {
+        from(file("${projectDir}/packageFiles/plugins"))
+    }
+
+    // Copy ij.jar to correct place in distribution
+    from(file("${project(':ij').buildDir}/libs/ij-${project(':ij').version}.jar")) {
+        rename {String name -> return 'ij.jar'}
+        into ''
+    }
+}
+
 distributions {
     main {
         contents {
-            from(createPlugins) {
-                into 'plugins'
-            }
-            // Copy astronomy_.jar to correct place in distribution
-            from(file("${project(':Astronomy_').buildDir}/libs/astronomy_-${project(':Astronomy_').version}.jar")) {
-                rename {String name -> return 'Astronomy_.jar'}
-                into 'plugins'
-            }
-
-            // Copy other plugins
-            from(file("${buildDir}/resources/main/plugins")) {
-                into 'plugins'
-            }
-
+            exclude {it}
+        }
+    }
+    windows {
+        contents {
+            with commonDist
             // Copy root files
-            from(file("${buildDir}/resources/main/outer")) {
-                into ''
-            }
-
-            // Copy ij.jar to correct place in distribution
-            from(file("${project(':ij').buildDir}/libs/ij-${project(':ij').version}.jar")) {
-                rename {String name -> return 'ij.jar'}
+            from(file("${projectDir}/packageFiles/windows")) {
                 into ''
             }
         }
     }
+
+    linux {
+        contents {
+            with commonDist
+            // Copy root files
+            from(file("${projectDir}/packageFiles/linux")) {
+                into ''
+            }
+        }
+    }
+
+    /*macos { TODO implement, needs some special packaging
+
+    }*/
 }
 
 // Task to copy built jars into a certain folder, for use with testing
@@ -120,7 +145,7 @@ task aijRun(dependsOn: unzip, type: JavaExec) {
 }
 
 distZip {
-	
+
 }
 
 distTar {

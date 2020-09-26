@@ -57,19 +57,19 @@ task createPlugins {
     }
 }
 
+def jreBaseName = "zulu8.48.0.53-ca-jre8.0.265"
+
 def downloadJREs = project.download {
     String[] platforms = ["macosx", "linux", "win"]
     for (String sys : platforms) {
-        src createURL(sys)
+        src createURL(jreBaseName, sys)
         overwrite false
         dest new File(buildDir, "jres")
     }
 }
 
-def jreBaseName = "zulu8.48.0.53-ca-jre8.0.265"
-
-String createURL(String sys) {
-    return "https://cdn.azul.com/zulu/bin/zulu8.48.0.53-ca-jre8.0.265-" + sys + "_x64.zip"
+String createURL(String base, String sys) {
+    return "https://cdn.azul.com/zulu/bin/" + base + "-" + sys + "_x64.zip"
 }
 
 def commonDist = project.copySpec {

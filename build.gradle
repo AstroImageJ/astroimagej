@@ -189,6 +189,10 @@ linuxDistZip {
     enabled = false
 }
 
+linuxDistTar {
+    compression = Compression.GZIP
+}
+
 windowsDistTar {
     enabled = false
 }

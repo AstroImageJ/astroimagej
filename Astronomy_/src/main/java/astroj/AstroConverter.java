@@ -21,7 +21,6 @@ import java.io.*;
 import ij.gui.*;
 import ij.util.*;
 
-import astroj.browserlauncher.edu.stanford.ejalbert.BrowserLauncher;
 import util.BrowserOpener;
 
 

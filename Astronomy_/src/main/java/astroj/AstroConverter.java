@@ -22,8 +22,7 @@ import ij.gui.*;
 import ij.util.*;
 
 import astroj.browserlauncher.edu.stanford.ejalbert.BrowserLauncher;
-
-
+import util.BrowserOpener;
 
 
 /**
@@ -3876,7 +3875,6 @@ double[] processCoordinatePair(JTextField textFieldA, int decimalPlacesA, int ba
         {
         try {
 
-            BrowserLauncher launcher = new BrowserLauncher();
 //            java.awt.Desktop desktop = java.awt.Desktop.getDesktop();
             String raText = URLEncoder.encode(raJ2000TextField.getText().replace(":", " ").trim(),"UTF-8");
             String decText = URLEncoder.encode(decJ2000TextField.getText().replace(":", " ").trim(),"UTF-8");
@@ -3888,7 +3886,7 @@ double[] processCoordinatePair(JTextField textFieldA, int decimalPlacesA, int ba
                 uri = new java.net.URI("http://www.sky-map.org/?ra="+raText+"&de="+decText+"&zoom=8&show_box=1&show_grid=1&show_constellation_lines=1&show_constellation_boundaries=1&show_const_names=0&show_galaxies=1&img_source=DSS2");
 
 //            desktop.browse( uri );
-            launcher.openURLinBrowser(uri.toString());
+            BrowserOpener.openURL(uri.toString());
             }
         catch ( Exception e )
             {
@@ -3923,10 +3921,7 @@ double[] processCoordinatePair(JTextField textFieldA, int decimalPlacesA, int ba
             else
                 simbad = new URI("http://simbad.u-strasbg.fr/simbad/"+queryType+object);
 
-//            java.awt.Desktop desktop = java.awt.Desktop.getDesktop();
-            BrowserLauncher launcher = new BrowserLauncher();
-//            desktop.browse( simbad );
-            launcher.openURLinBrowser(simbad.toString());
+            BrowserOpener.openURL(simbad.toString());
             }
         catch ( Exception e )
             {

@@ -169,7 +169,7 @@ task copyBuiltJars(dependsOn: build, type: Copy) {
     into "${projectDir}/out"
 }
 
-task sync(type: Sync) {
+task sync(dependsOn: jar, type: Sync) {
     with commonDist
     destinationDir(file("${projectDir}/AIJ-Run"))
 }

@@ -8158,14 +8158,14 @@ static void initializeVariables()
                 createNEBReportMenuItem.setToolTipText("<html>"+"Create NEB search reports and plots.<br>");
                 createNEBReportMenuItem.addActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
-                            ij.plugin.Macro_Runner.runMacroFromJar("NEBSearchMacro.txt",""); }});
+                            ij.plugin.Macro_Runner.runMacroFromJar(getClass().getClassLoader(), "Astronomy/NEBSearchMacro.txt",""); }});
                 filemenu.add(createNEBReportMenuItem); 
                 
                 JMenuItem createAAVSOReportMenuItem = new JMenuItem("Create AAVSO Exoplanet Database formatted data...");
                 createAAVSOReportMenuItem.setToolTipText("<html>"+"Create AAVSO formatted data for submission to the AAVSO Exoplanet Database.</html>");
                 createAAVSOReportMenuItem.addActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
-                            ij.plugin.Macro_Runner.runMacroFromJar("AAVSO_Exoplanet_Format.txt",""); }});
+                            ij.plugin.Macro_Runner.runMacroFromJar(getClass().getClassLoader(), "Astronomy/AAVSO_Exoplanet_Format.txt",""); }});
                 filemenu.add(createAAVSOReportMenuItem); 
                 
 //                JMenuItem createDmagVsRMSPlotMenuItem = new JMenuItem("Create Delta-magnitude vs. RMS plot...");

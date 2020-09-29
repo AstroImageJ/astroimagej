@@ -936,7 +936,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                 MenuItem createNEBReportMenuItem = new MenuItem("Create NEB search reports and plots...");
                 createNEBReportMenuItem.addActionListener(new ActionListener() {
                     public void actionPerformed(ActionEvent e) {
-                            Macro_Runner.runMacroFromJar("NEBSearchMacro.txt",""); }});
+                            Macro_Runner.runMacroFromJar(getClass().getClassLoader(), "Astronomy/NEBSearchMacro.txt",""); }});
                 fileMenu.add(createNEBReportMenuItem); 
                 
 //                MenuItem createDmagVsRMSPlotMenuItem = new MenuItem("Create Delta-magnitude vs. RMS plot...");

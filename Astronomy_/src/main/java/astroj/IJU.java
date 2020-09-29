@@ -34,6 +34,8 @@ import javax.imageio.ImageIO;
 import javax.imageio.ImageWriteParam;
 import javax.imageio.stream.FileImageOutputStream;
 import flanagan.interpolation.*;
+import util.BrowserOpener;
+
 import java.net.URI;
 import java.net.URLEncoder;
 
@@ -820,8 +822,7 @@ public class IJU
             else
                 simbad = new URI("http://simbad.u-strasbg.fr/simbad/"+queryType+object);
 
-            astroj.browserlauncher.edu.stanford.ejalbert.BrowserLauncher launcher = new astroj.browserlauncher.edu.stanford.ejalbert.BrowserLauncher();
-            launcher.openURLinBrowser(simbad.toString());
+            BrowserOpener.openURL(simbad.toString());
             }
         catch ( Exception e )
             {

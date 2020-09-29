@@ -35,19 +35,6 @@ dependencies {
     testImplementation 'junit:junit:4.13'
 }
 
-mainClassName = 'AIJ.Merged.App'
-
-application {
-    setMainClassName(mainClassName)
-}
-
-jar {
-    manifest {
-        attributes("Main-Class": mainClassName)
-    }
-    exclude("resources/outer/**") //prevent outer files being shipped twice
-}
-
 task createPlugins {
     def plugins = file("$buildDir/plugins")
     outputs.dir plugins

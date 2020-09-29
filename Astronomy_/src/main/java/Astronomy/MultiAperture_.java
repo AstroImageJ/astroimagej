@@ -3372,7 +3372,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 {
                 public void run()
                     {
-                    IJ.runPlugIn("Set_Aperture", "from_MA");
+                    IJ.runPlugIn("Astronomy.Set_Aperture", "from_MA");
                     }
                 };
             t2.start();            

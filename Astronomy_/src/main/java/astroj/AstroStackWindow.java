@@ -4167,12 +4167,12 @@ protected ImageIcon createImageIcon(String path, String description) {
                 else if(b == buttonMultiAperture)
                     {
                     reenterAstronomyTool();
-                    IJ.runPlugIn("MultiAperture_", "");
+                    IJ.runPlugIn("Astronomy.MultiAperture_", "");
                     }
                 else if(b == buttonAlign)
                     {
                     reenterAstronomyTool();
-                    IJ.runPlugIn("Stack_Aligner", "");
+                    IJ.runPlugIn("Astronomy.Stack_Aligner", "");
                     if (imp.getType()==ImagePlus.COLOR_RGB) setAutoLevels(null);
                     }
                 else if(b == buttonAstrometry)

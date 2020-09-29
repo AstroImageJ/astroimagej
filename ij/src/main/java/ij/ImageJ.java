@@ -245,9 +245,9 @@ public class ImageJ extends Frame implements ActionListener,
 	}
 	
     void setIcon() throws Exception {
-		URL url = this.getClass().getClassLoader().getResource("/astronomy_icon.png");
+		URL url = this.getClass().getClassLoader().getResource("astronomy_icon.png");
 		if (url==null) return;
-		Image img = createImage((ImageProducer)url.getContent());
+		Image img = new ImageIcon(url).getImage();
 		if (img!=null) setIconImage(img);
 	}
 	

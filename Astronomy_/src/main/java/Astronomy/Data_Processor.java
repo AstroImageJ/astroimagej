@@ -3691,7 +3691,7 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
 			}
         else if(source == setApertureButton)
             {
-            IJ.runPlugIn("Set_Aperture", "");
+            IJ.runPlugIn("Astronomy.Set_Aperture", "");
             }
         else if(source == changeAperturesButton)
             {

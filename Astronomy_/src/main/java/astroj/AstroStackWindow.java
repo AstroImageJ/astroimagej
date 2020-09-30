@@ -3496,7 +3496,7 @@ protected ImageIcon createImageIcon(String path, String description) {
                     }
                 else if (b==openMeasurementsTableMenuItem)
                     {
-                    IJ.runPlugIn("Read_MeasurementTable","");
+                    IJ.runPlugIn("Astronomy.Read_MeasurementTable","");
                     }
                 else if (b==openAperturesMenuItem)
                     {
@@ -3659,7 +3659,7 @@ protected ImageIcon createImageIcon(String path, String description) {
 
                 else if(b == clearOverlayMenuItem)
                     {
-                    IJ.runPlugIn("Clear_Overlay", "");
+                    IJ.runPlugIn("Astronomy.Clear_Overlay", "");
                     }
 
                // Others are checkboxMenuItems
@@ -3747,7 +3747,7 @@ protected ImageIcon createImageIcon(String path, String description) {
 
                 else if(b == apertureSettingsMenuItem)
                     {
-                    IJ.runPlugIn("Set_Aperture", "");
+                    IJ.runPlugIn("Astronomy.Set_Aperture", "");
                     }
                 else if(b == measurementSettingsMenuItem)
                     {
@@ -3759,7 +3759,7 @@ protected ImageIcon createImageIcon(String path, String description) {
                     }
                 else if(b == copyFitsHeaderMenuItem)
                     {
-                    IJ.runPlugIn("Copy_FITS_Header", imp.getTitle());
+                    IJ.runPlugIn("Astronomy.Copy_FITS_Header", imp.getTitle());
                     }
                 else if(b == stackSorterMenuItem)
                     {
@@ -3771,7 +3771,7 @@ protected ImageIcon createImageIcon(String path, String description) {
 
                 else if(b == dataReducerMenuItem)
                     {
-                    IJ.runPlugIn("Data_Processor", "");
+                    IJ.runPlugIn("Astronomy.Data_Processor", "");
                     }
                 else if(b == combineStackImagesMenuItem)
                     {
@@ -3785,7 +3785,7 @@ protected ImageIcon createImageIcon(String path, String description) {
                     }
                 else if(b == copyFitsHeaderProcessMenuItem)
                     {
-                    IJ.runPlugIn("Copy_FITS_Header", imp.getTitle());
+                    IJ.runPlugIn("Astronomy.Copy_FITS_Header", imp.getTitle());
                     }
                 else if(b == removeOutliersMenuItem)
                     {
@@ -3805,18 +3805,18 @@ protected ImageIcon createImageIcon(String path, String description) {
                 else if(b == normalizeStackMenuItem)
                     {
                     if (imp.getType()==ImagePlus.COLOR_RGB) imp.getProcessor().reset();
-                    IJ.runPlugIn("Normalize_Stack", "");
+                    IJ.runPlugIn("Astronomy.Normalize_Stack", "");
                     }
                 else if(b == alignStackMenuItem)
                     {
                     if (imp.getType()==ImagePlus.COLOR_RGB) imp.getProcessor().reset();
-                    IJ.runPlugIn("Stack_Aligner", "");
+                    IJ.runPlugIn("Astronomy.Stack_Aligner", "");
                     if (imp.getType()==ImagePlus.COLOR_RGB) setAutoLevels(null);
                     }
                 else if(b == imageStabilizerMenuItem)
                     {
                     if (imp.getType()==ImagePlus.COLOR_RGB) imp.getProcessor().reset();
-                    IJ.runPlugIn("Image_Stabilizer_AIJ", "");
+                    IJ.runPlugIn("Astronomy.Image_Stabilizer_AIJ", "");
                     if (imp.getType()==ImagePlus.COLOR_RGB) setAutoLevels(null);
                     }
                 else if(b == imageStabilizerApplyMenuItem)
@@ -3827,7 +3827,7 @@ protected ImageIcon createImageIcon(String path, String description) {
                 else if(b == shiftImageMenuItem)
                     {
                     if (imp.getType()==ImagePlus.COLOR_RGB) imp.getProcessor().reset();
-                    IJ.runPlugIn("Image_Shifter", "");
+                    IJ.runPlugIn("Astronomy.Image_Shifter", "");
                     if (imp.getType()==ImagePlus.COLOR_RGB) setAutoLevels(null);
                     }
                 else if(b == selectBestFramesMenuItem)
@@ -3838,9 +3838,9 @@ protected ImageIcon createImageIcon(String path, String description) {
                         public void run()
                             {
                             if (imp.getType()==ImagePlus.COLOR_RGB)
-                                IJ.runPlugIn("Find_Focused_Slices_RGB", "");
+                                IJ.runPlugIn("Astronomy.Find_Focused_Slices_RGB", "");
                             else
-                                IJ.runPlugIn("Find_Focused_Slices_", "");
+                                IJ.runPlugIn("Astronomy.Find_Focused_Slices_", "");
                             }
                         };
                     t.start();
@@ -3877,7 +3877,7 @@ protected ImageIcon createImageIcon(String path, String description) {
                 else if(b == RGBComposerMenuItem)
                     {
                     if (imp.getType()==ImagePlus.COLOR_RGB) imp.getProcessor().reset();
-                    IJ.runPlugIn("RGB_Composer_AIJ", "");
+                    IJ.runPlugIn("Astronomy.RGB_Composer_AIJ", "");
                     }
                 
                 else if(b == splitChannelsMenuItem)
@@ -3898,7 +3898,7 @@ protected ImageIcon createImageIcon(String path, String description) {
                 else if(b == debayerMenuItem)
                     {
                     if (imp.getType()==ImagePlus.COLOR_RGB) imp.getProcessor().reset();
-                    IJ.runPlugIn("Debayer_Image_FITS", "");
+                    IJ.runPlugIn("Astronomy.Debayer_Image_FITS", "");
                     }   
                 else if(b == makeCompositeMenuItem)
                     {
@@ -3917,11 +3917,11 @@ protected ImageIcon createImageIcon(String path, String description) {
 
                 else if(b == multiApertureMenuItem)
                     {
-                    IJ.runPlugIn("MultiAperture_", "");
+                    IJ.runPlugIn("Astronomy.MultiAperture_", "");
                     }
                 else if(b == multiPlotMenuItem)
                     {
-                    IJ.runPlugIn("MultiPlot_", "");
+                    IJ.runPlugIn("Astronomy.MultiPlot_", "");
                     }
                 else if(b == measurementMenuItem)
                     {
@@ -3929,7 +3929,7 @@ protected ImageIcon createImageIcon(String path, String description) {
                     }
                 else if(b == seeingProfileMenuItem)
                     {
-                    IJ.runPlugIn("Seeing_Profile", "");
+                    IJ.runPlugIn("Astronomy.Seeing_Profile", "");
                     }
                 else if(b == staticProfilerMenuItem)
                     {
@@ -3941,11 +3941,11 @@ protected ImageIcon createImageIcon(String path, String description) {
                     }
                 else if(b == contourLinesMenuItem)
                     {
-                    IJ.runPlugIn("ContourLines_", "imp");
+                    IJ.runPlugIn("Astronomy.ContourLines_", "imp");
                     }
                 else if(b == contourPlottersMenuItem)
                     {
-                    IJ.runPlugIn("ContourPlotter_", "imp");
+                    IJ.runPlugIn("Astronomy.ContourPlotter_", "imp");
                     }
                 else if(b == azimuthalAverageMenuItem)
                     {
@@ -4059,7 +4059,7 @@ protected ImageIcon createImageIcon(String path, String description) {
 //-----BUTTONS---------------------------------------------------------------------
                 else if(b == buttonBroom)
                     {
-                    IJ.runPlugIn("Clear_Overlay", "");
+                    IJ.runPlugIn("Astronomy.Clear_Overlay", "");
                     OverlayCanvas ocanvas = OverlayCanvas.getOverlayCanvas (imp);
                     ocanvas.clearRois();
                     imp.updateAndDraw();
@@ -4138,7 +4138,7 @@ protected ImageIcon createImageIcon(String path, String description) {
                     }
                 else if(b == buttonSetAperture)
                     {
-                    IJ.runPlugIn("Set_Aperture", "");
+                    IJ.runPlugIn("Astronomy.Set_Aperture", "");
                     }
                 else if(b == buttonDeleteSlice)
                     {

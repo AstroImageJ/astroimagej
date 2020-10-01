@@ -55,6 +55,12 @@ def downloadJREs = project.download {
     }
 }
 
+def downloadPackr = project.download {
+    src "https://github.com/libgdx/packr/releases/download/packr-2.7.0/packr-all-2.7.0.jar"
+    overwrite false
+    dest new File(buildDir, "packr.jar")
+}
+
 String createURL(String base, String sys) {
     return "https://cdn.azul.com/zulu/bin/" + base + "-" + sys + "_x64.zip"
 }
@@ -133,10 +139,6 @@ distributions {
             includeEmptyDirs = false // remove old jre folder
         }
     }
-
-    /*macos { TODO implement, needs some special packaging
-
-    }*/
 }
 
 // Task to copy built jars into a certain folder, for use with testing
@@ -170,6 +172,49 @@ task aijRun(dependsOn: sync, type: JavaExec) {
     main = "-jar"
     args "${projectDir}/AIJ-Run/ij.jar"
 
+}
+
+task common(dependsOn: build, type: Sync) {
+    with commonDist
+    destinationDir(file("${buildDir}/common"))
+}
+
+task cleanIJ(dependsOn: common) {
+    doLast {
+        ant.move file: "${buildDir}/common/ij.jar",
+                todir: "${buildDir}/image/"
+    }
+}
+
+task makeMac(dependsOn: cleanIJ, type: JavaExec) {
+    group 'AstroImageJ Developement'
+
+    workingDir(file("${buildDir}"))
+
+    main = "-jar";
+    args = ["packr.jar",
+            "--platform", "mac",
+            "--jdk", "${buildDir}/jres/${jreBaseName}-macosx_x64.zip",
+            "--executable", "AstroImageJ",
+            "--resources", "${buildDir}/common/*",
+            "--classpath", "${buildDir}/image/ij.jar",
+            "--mainclass", "ij.ImageJ",
+            "--vmargs", "Xmx1G",
+            "--output", "${buildDir}/distributions/AstroImageJ.app",
+            "--icon", "${projectDir}/packageFiles/mac/astronomy_icon.icns",
+            "--bundle", "AstroImageJ"
+    ]
+}
+
+task makeDistributions(dependsOn: makeMac, type: Zip) {
+    group 'AstroImageJ Developement'
+
+    archiveFileName = 'AstroimageJ-mac.zip'
+    destinationDirectory = file("${buildDir}/distributions/")
+
+    from("${buildDir}/distributions/AstroImageJ.app") {
+        into 'AstroImageJ.app'
+    }
 }
 
 linuxDistZip {

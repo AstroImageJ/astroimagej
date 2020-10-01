@@ -518,7 +518,7 @@ public class TextPanel extends Panel implements AdjustmentListener,
 		}
 		tc.repaint();
 		selLine=r;
-        IJ.runPlugIn("UpdateAstroWindows", "");
+        IJ.runPlugIn("Astronomy.UpdateAstroWindows", "");
 	}
 
 	void extendSelection(int x,int y) {
@@ -539,7 +539,7 @@ public class TextPanel extends Panel implements AdjustmentListener,
 		}
 		tc.repaint();
 		selLine=r;
-        IJ.runPlugIn("UpdateAstroWindows", "");
+        IJ.runPlugIn("Astronomy.UpdateAstroWindows", "");
 	}
 
     /** Converts a y coordinate in pixels into a row index. */

@@ -180,7 +180,7 @@ public class Opener {
 					IJ.runPlugIn("ObjectJ_", path);
 					break;
 				case TABLE:  // ImageJ Results table
-					IJ.runPlugIn("Read_MeasurementTable",path);
+					IJ.runPlugIn("Astronomy.Read_MeasurementTable",path);
 					break;
 				case UNKNOWN:
 					String msg =

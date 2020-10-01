@@ -1,7 +1,7 @@
 //  The purpose of this AstroImageJ (AIJ) macro is to produce one or more of the following
 //  three products that support the analysis of NEBs:
 //  1.  The NEB Search Table. The macro will also compute the standard deviation in X and Y of image
-//      shift for a given observation session. 
+//      shift for a given observation session.
 //  2.  A  plot of the relative, normalized flux of stars within a user-defined radius of a target,
 //      overlayed with a plot of a transit showing the depth required for the star to cause the predicted
 //      depth of the target. Optionally, plot the rel_flux data in the measurement table with suffixes:
@@ -13,15 +13,17 @@
 //  Comments or questions may be directed to the macro's author:
 //  Dennis Conti, email: dennis@astrodennis.com
 //
-//  REVISION 2.24
-var REVISION = "2.24";
+//  REVISION 2.25
+var REVISION = "2.25";
 //
 //  The following are diagnostic flags
 var STARtoDiagnose = "";
 var FORCEbinning = 0;
 //
 //  Revision Notes:
-//       2.24 Get ingress and egress from values last set in the V.Markers in the user's Multi-plot Main 
+//       2.25 Round the predicted ingress and egress values obtained from Multi-plotMain to 8 decimal digits.
+//            In the description of Option 5, put "or" after "df"
+//       2.24 Get ingress and egress from values last set in the V.Markers in the user's Multi-plot Main
 //       2.23 Change language on user input forum regarding cadence to read:
 //            "Bin data to this cadence (seconds)"
 //       2.22 Increased max. length of a FITS header to 50,000 characters
@@ -58,17 +60,17 @@ var FORCEbinning = 0;
 //                   k-m/2 >= 0 and k+m/2 >=r               r-m-1           r-1
 //                   k-m/2  < 0 and k+m/2 >=r             This condition is not possible since m will be
 //                                                        forced to be < r
-//             b.  If m is an odd number: 
+//             b.  If m is an odd number:
 //                         Condition                      Start of i       End of i
 //                   k-(m+1)/2 >= 0 and k+(m-1)/2 < r      k-(m+1)/2      k+(m-1)/2
 //                   k-(m+1)/2  < 0 and k+(m-1)/2 < r         0              m
 //                   k-(m+1)/2 >= 0 and k+(m-1)/2 >=r       r-m-1           r-1
 //                   k-(m+1)/2  < 0 and k+(m-1)/2 >=r     This condition is not possible since m will be
-//                                                        forced to be <r 
+//                                                        forced to be <r
 //
 //            Add the average aperture value in pixels and arc-seconds to the plot subtitles.
 //       2.16 Add Option 5 to plot any columns with any of the following suffixes: _d,_dn, _fn,
-//	      _df, _dfn, in addition to the originally plotted rel_flux column. 
+//	      _df, _dfn, in addition to the originally plotted rel_flux column.
 //            To support the above new options, create as functions what was originally inline code
 //            that was originally designed to:
 //            a.   compute the binned data for rel_flux data.
@@ -97,7 +99,7 @@ var FORCEbinning = 0;
 //            a run("Close") command is added at Checkpoint 12 to do this.
 //       2.11 Add a dummy plot(show) for the case of SaveOnlyPlots, otherwise a recently
 //            open image would be what gets saved in the NEBcheck subfolder
-//       2.10 Modify how progress is show - use a text window instead of the logfile 
+//       2.10 Modify how progress is show - use a text window instead of the logfile
 //       2.00 When the normalization is redone after the RMSlimit test (see feature added in 1.20),
 //            include only OOT data when computing the new average
 //       1.22 Add a time measurement mode in order to estimate the typical % completion at certain
@@ -170,7 +172,7 @@ var debugMode = 0;
 //   0 = make no measuements
 //   1 = take a measurement of the current time and print it to the logfile
 var measMode = 0;
-// 
+//
 //                                   DEFINE GLOBAL VARIABLES
 //
 // Define special characters as global variables
@@ -432,7 +434,7 @@ function findPositionInHeader (string,substr,delimiter,flag) {
 function findValue (string,position,Delimiter) {
     nextDelim=-1;
     for (i = 0; i<position; i++) {
-         lastDelim=nextDelim+1; 
+         lastDelim=nextDelim+1;
          nextDelim=indexOf(string,Delimiter,lastDelim);
 //  Check if this is the last item in the string
          if (nextDelim==-1) {
@@ -607,7 +609,7 @@ function progress (percent) {
     percentProgress = round(percent * 100);
     print(title,"\\Update:" + percentProgress + "%\n" + progressBar(percentProgress,100));
     success = true;
-    return(success);    
+    return(success);
 };
 //
 //*************** FUNCTION: progressBar
@@ -636,7 +638,7 @@ function progressBar(p1,p2) {
 //  or if a specific star is to be used (param=false). If the former, then the last parameter
 //  indicates that the first star in the list is to be used (i.e., param=0).
 //  If the latter, then the last parameter indicates the index of the star that is to be used.
-//  
+//
 function binRelFluxData (Suffix, binnedRelFluxArray, binnedRelFluxErrArray, allStarFlag, kBegin) {
 //
 //
@@ -686,7 +688,7 @@ for (k = kBegin; k < kEnd; k++) {
            STARtempBinFlux[k] = 0.0;
            STARtempBinErr[k] = 0.0;
 //  Reset number of entries computed so far for the current bin
-           nBinEntries = 0;     
+           nBinEntries = 0;
            } else {STARtempBinFlux[k] = STARtempBinFlux[k] + relflux;
                    STARtempBinErr[k] = STARtempBinErr[k] + relfluxerr*relfluxerr;
 //  Track current number of bin entries
@@ -728,7 +730,7 @@ successPrint = debugPrint(message,1);
 //  running average.
 //  The function first computes the weighted averages for the binned rel_flux for the star(s).
 //
-function normalizeRelFluxData (Suffix, binnedRelFluxArray, binnedRelFluxErrArray, normalizedFluxArray, avgNormFluxArray, allStarFlag, kBegin) { 
+function normalizeRelFluxData (Suffix, binnedRelFluxArray, binnedRelFluxErrArray, normalizedFluxArray, avgNormFluxArray, allStarFlag, kBegin) {
 //
 //********* First compute the weighted average for the relative flux
 //  The weighted average for rel_flux is computed below and will be used for later use in computing
@@ -927,7 +929,7 @@ for (k = kBegin; k < kEnd; k++) {
              message = "For Star " + STARlist[k] + " Exclude normalized flux of observation " + d2s(i-iBegin+1,0) + " normalizedFlux= " + normalizedFluxArray[i];
              success = debugPrint(message,1);
              normalizedFluxArray[i] = 99999;
-             } else { 
+             } else {
                      message = "For Star " + STARlist[k] + " Include normalized flux of observation " + d2s(i-iBegin+1,0) + " normalizedFlux= " + normalizedFluxArray[i];
                     success = debugPrint(message,1);
                     STARcountArray[k] = STARcountArray[k] + 1;
@@ -1009,13 +1011,13 @@ function plotData (plotTitle, yAxisTitle, iBeginValue, iEndValue, xValuesArray, 
            if (normalizedFluxArray[i] <= fluxMIN) {fluxMIN = normalizedFluxArray[i];};
            if (normalizedFluxArray[i] >  fluxMAX) {fluxMAX = normalizedFluxArray[i];};
            };
-        
+
     };
     message = "timeMIN= " + timeMIN + " timeMAX= " + timeMAX + " fluxMIN= " + fluxMIN + " fluxMAX= " + fluxMAX;
     successPrint = debugPrint(message,1);
 //
 // Use as minimum Y 10% of the minimum of (flux minimum or 1-transit depth) below 1.0;
-// and use as maximum Y additional 25% of fluxMAX beyond 1.0 
+// and use as maximum Y additional 25% of fluxMAX beyond 1.0
        if (fluxMIN < predDepth) {
            yMIN = fluxMIN -(1-fluxMIN)*0.1;
            } else { yMIN = predDepth - (1-predDepth)*0.1;};
@@ -1037,7 +1039,7 @@ function plotData (plotTitle, yAxisTitle, iBeginValue, iEndValue, xValuesArray, 
         } else {
                depthString = d2s(STARpredDepth[k],1) + " ppt";
                };
-    subTitleString = "Star: " + STARlist[k] + 	starSuffix + "      dmag: " + d2s(STARdmag[k],1) +  "      Required depth: " + depthString + "      RMS: " + d2s(rmsValue*1000,1) + " ppt" + "      ap= " + averageAPERTURE + "px (" + averageAPERTUREarcseconds + doubleQuote + ")";  
+    subTitleString = "Star: " + STARlist[k] + 	starSuffix + "      dmag: " + d2s(STARdmag[k],1) +  "      Required depth: " + depthString + "      RMS: " + d2s(rmsValue*1000,1) + " ppt" + "      ap= " + averageAPERTURE + "px (" + averageAPERTUREarcseconds + doubleQuote + ")";
     lenString = lengthOf(subTitleString);
     locString = ((charWidth - lenString)/2 )/ charWidth;
 //  Offset an additional 8 characters
@@ -1267,7 +1269,7 @@ Dialog.addCheckbox("Option 4: Same as Option 3, but plot log10 of RMS vs. simply
 //
 //  Option 5:
 nebDetrendPlotOption = call("ij.Prefs.get","nebcheck.nebDetrendPlotOption",true);
-Dialog.addCheckbox("Option 5: Include plots of rel_flux_T/Cxx data columns that have suffixes with _d,_dn, _fn, or _df, _dfn",nebDetrendPlotOption);
+Dialog.addCheckbox("Option 5: Include plots of rel_flux_T/Cxx data columns that have suffixes with _d,_dn, _fn, _df, or _dfn",nebDetrendPlotOption);
 Dialog.addMessage("NOTE: for Option 5, the AIJ Multi-plot Y values for Bin Size, Scale, and Shift should be set to 1, 1, and 0 respectively");
 Dialog.addMessage("");
 //
@@ -1294,11 +1296,19 @@ Dialog.addString("If above is not selected, then enter the pixel scale (arc-sec/
 //
 //  Get the default ingress time from the last VMarker1 entry on the Multi-plot Main panel
 INGRESS = call("ij.Prefs.get","plot.vMarker1Value","");
+//  Round this value to 8 decimal digits before displaying it
+ingressTime = parseFloat(INGRESS);
+ingressTime = (ingressTime*100000000+0.5)/100000000;
+INGRESS = d2s(ingressTime,8);
 string ="Predicted ingress time (see Note 1 below)";
 userString(string,INGRESS,lenIngressTime);
 //
 //  Get the default egress time from the last VMarker2 entry on the Multi-plot Main panel
 EGRESS = call("ij.Prefs.get","plot.vMarker2Value","");
+//  Round this value to 8 decimal digits before displaying it
+egressTime = parseFloat(EGRESS);
+egressTime = (egressTime*100000000+0.5)/100000000;
+EGRESS = d2s(egressTime,8);
 string = "Predicted egress time (see Note 2 below)";
 userString(string,EGRESS,lenEgressTime);
 //
@@ -1359,7 +1369,7 @@ Neighborlimit = Dialog.getString();
 call("ij.Prefs.set","nebcheck.Neighborlimit",Neighborlimit);
 if (limitNeighborSearch) {
        neighborLimitValue = parseFloat(Neighborlimit);
-       } else {neighborLimitValue = 100000;}; 
+       } else {neighborLimitValue = 100000;};
 //
 //  For Option 3:
 dmagRMSOption = Dialog.getCheckbox();
@@ -1498,7 +1508,7 @@ fileArray=split(measurementFile,"\n");
 nRows=lengthOf(fileArray);
 //  Calculate number of observations
 nObservations = nRows - 1;
-success = debugPrint("No. of observations: " + d2s(nObservations,0),1); 
+success = debugPrint("No. of observations: " + d2s(nObservations,0),1);
 //  Check if size of measurment table is less than 3,000 rows
 if (nRows > lenMeasurementTable) {
      errorHandling("*** ERROR: Measurement table exceeds 3,000 rows")};
@@ -1603,7 +1613,7 @@ if (usePlateSolvedImage) {
 //       CD1_1    CD1_2    C2_1    CD2_2  Unique Number Representation
 //         1        1        0       1                13
 //         0        1        0       0                 4
-//         0        0        1       0                 2 
+//         0        0        1       0                 2
 //         1        0        1       1                11
 //     For Orientation 2:
 //         0        1        1       1                 7
@@ -1698,23 +1708,23 @@ successPrint = debugPrint(" ",1);
 //                   AND FOR THOSE THAT ARE,(OPTIONALLY) COMPUTE THEIR PA
 //
 //
-//  Get XFITS, YFITS values for the target star 
+//  Get XFITS, YFITS values for the target star
 STARlistIndex = 0;
 //  Compute radius of interest in pixels
 distanceLimit = nRadius*60 / nScale;
 rowString = fileArray[1];
 success=getData(targetXFITString,header,rowString,inputFileDelimiter,firstMeasTableColFlag);
-if (!success) {errorHandling ("***ERROR: No X(FITS) value for target star");}; 
+if (!success) {errorHandling ("***ERROR: No X(FITS) value for target star");};
 xfitsTARGET = parseFloat(globalValue);
 success=getData(targetYFITString,header,rowString,inputFileDelimiter,firstMeasTableColFlag);
-if (!success) {errorHandling ("***ERROR: No Y(FITS) value for target star");}; 
+if (!success) {errorHandling ("***ERROR: No Y(FITS) value for target star");};
 yfitsTARGET = parseFloat(globalValue);
 successPrint = debugPrint ("xfitsTARGET=" + xfitsTARGET,1);
 successPrint = debugPrint ("yfitsTARGET=" + yfitsTARGET,1);
 //  Cycle through the stars in xfitsList to see which ones are within
 //  the distanceLimit of the target star
 for (j = 0; j<xfitsListIndex; j++) {
-//   Show additional progress at the rate of 0.0001 per star 
+//   Show additional progress at the rate of 0.0001 per star
      cumProgress = cumProgress + 0.0001/xfitsListIndex;
      progress (cumProgress);
 //  Get the X(FITS) and Y(FITS) location of star
@@ -1919,7 +1929,7 @@ for (k=0;k<STARlistIndex;k++) {
 //  Compute running sum of 1/sigmaSquared for dmag
            dmagDenominator = dmagDenominator + 1/sigmaSquared;
 //  Compute running sum of dmag/sigmaSquared for dmag
-           dmagNumerator = dmagNumerator + dmag/sigmaSquared; 
+           dmagNumerator = dmagNumerator + dmag/sigmaSquared;
         };
 //  Show Additional Progress at the rate of 0.40/(STARlistIndex * nObservations)
          cumProgress = cumProgress + 0.4/(STARlistIndex * nObservations);
@@ -2027,7 +2037,7 @@ for (j=0;j<nObservations;j++) {
            indexArray[j] = i;
 //  End i Loop
            i = nObservations;
-           }; 
+           };
         };
 };
 if (debugMode == 1) {
@@ -2177,11 +2187,11 @@ if (measMode == 1) {timeCheckpoint(12,"selected stars","",STARlistIndex,1);};
 //
 if (nebPlotOption) {
 //
-//  Option 2 will plot the normalized relative flux of each star that was previously computed from its 
-//  rel_flux_T/Cnn values, along with an overlay of the (previously predicted) depth of the star required to mimic 
-//  the target transit depth.  Such a plot will also include the RMS of the normalized flux, the distance of the 
-//  star to the target, the distance to the nearest aperture, the PA of the star relative to the target, and the  
-//  disposition of the star. 
+//  Option 2 will plot the normalized relative flux of each star that was previously computed from its
+//  rel_flux_T/Cnn values, along with an overlay of the (previously predicted) depth of the star required to mimic
+//  the target transit depth.  Such a plot will also include the RMS of the normalized flux, the distance of the
+//  star to the target, the distance to the nearest aperture, the PA of the star relative to the target, and the
+//  disposition of the star.
 //
 //  If Option 5 is selected, for each star, one or more plots will be included of the following data for the star,
 //  if columns for such data exist in the measurement table:
@@ -2204,7 +2214,7 @@ if (nebPlotOption) {
 //	    normalize the data as was done with the rel_flux_T/Cnn case. Also apply the appropriate
 //	    macro binning and outlier cleaning.
 //      b.  For Cases 2, 3, and 5. Apply the appropriate macro binning and outlier cleaning.
-//      
+//
 //
 //  Create subdirectory name for plots that are to be saved as .png files
 //
@@ -2275,8 +2285,8 @@ rowString = fileArray[1];
   for (k=STARlistIndex-1;k>=0; k--) {
 //
 //******** First, plot the previously computed normalized relative flux values for this star
-//******** along with an overlay of the (previously predicted) depth of the star required to mimic 
-//******** the target transit depth.  Include the RMS of the normalized flux, the distance of the 
+//******** along with an overlay of the (previously predicted) depth of the star required to mimic
+//******** the target transit depth.  Include the RMS of the normalized flux, the distance of the
 //******** star to the target, the distance to the nearest aperture, the PA of the star relative
 //******** to the target, and the disposition of the star.
 //
@@ -2314,7 +2324,7 @@ rowString = fileArray[1];
 //            k-m/2  < 0 and k+m/2 >=r             This condition is not possible since m was
 //                                                 forced to be < r
 //
-//      b.  If m is an odd number: 
+//      b.  If m is an odd number:
 //                  Condition                      Start of i       End of i
 //            k-(m+1)/2 >= 0 and k+(m-1)/2 < r      k-(m+1)/2      k+(m-1)/2
 //            k-(m+1)/2  < 0 and k+(m-1)/2 < r         0              m
@@ -2338,7 +2348,7 @@ rowString = fileArray[1];
                    indexBegin = 0;
                    indexEnd =m;
                    } else {
-                          indexBegin = r-m-1; 
+                          indexBegin = r-m-1;
                           indexEnd = r-1;
                           };
                };
@@ -2379,7 +2389,7 @@ rowString = fileArray[1];
      if (nearestNeighbor == "None") {
          minDistanceArcSeconds = 0;
          minDistanceString = "N/A";
-         } else { 
+         } else {
                  minDistanceArcSeconds = minDistance * nScale;
                  minDistanceString = d2s(minDistanceArcSeconds,0) + " arc-sec";
                 };
@@ -2418,7 +2428,7 @@ rowString = fileArray[1];
 //
       for (iCase = 0; iCase < nCases; iCase++) {
         suffix = case[iCase];
-//  Check if this suffix is in the measurement table for the current star 
+//  Check if this suffix is in the measurement table for the current star
         RelFluxString = "rel_flux_" + STARlist[k] + "_" + suffix;
         RelFluxErrString = "rel_flux_err_" + STARlist[k] + "_" + suffix;
 //  check if both rel_flux_Sxx_suffix and rel_flux_err_Sxx_suffix are present for this star Sxx
@@ -2496,7 +2506,7 @@ rowString = fileArray[1];
 //****************** CODE FOR OPTIONS 3 AND 4
 //
 //
-//  Create the Delta Magnitude vs. RMS Plot 
+//  Create the Delta Magnitude vs. RMS Plot
 //  (X=dmag, Y=RMS) or (X=dmag, Y=log10 RMS)
 //
 if (dmagRMSOption) {
@@ -2613,7 +2623,7 @@ if (dmagRMSOption) {
             message = "STARlist[i]: " + STARlist[i] + " X: " + d2s(X,1) + " Y: " + d2s(Y,1);
             successPrint = debugPrint(message,1);
 //  If a NEB plot was done earlier and the distance to the nearest neighbor was found
-//  to be < 3 times the aperture radius (i.e., neighborCheck = true), 
+//  to be < 3 times the aperture radius (i.e., neighborCheck = true),
 //  then show the star name in red, otherwise black
             Plot.setColor("black");
             if (nebPlotOption) {
@@ -2753,7 +2763,7 @@ if (nebTableOption){
 //  Get the value in the user's file associated with each of the user-specified labels for:
 //   1.  X(FITS)_TARGET
 //   2.  Y(FITS)_TARGET
-//  Assume that such labels and values are separated by the 
+//  Assume that such labels and values are separated by the
 //  user-specified delimiter inputFileDelimiter
 //
 //  Cycle through each of the data rows in the user's file for the above values

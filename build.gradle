@@ -90,6 +90,11 @@ def commonDist = project.copySpec {
     }
 }
 
+def macCommonFile = project.copySpec {
+    with commonDist
+    into 'Contents/Resources'
+}
+
 distributions {
     main {
         contents {
@@ -139,6 +144,27 @@ distributions {
             includeEmptyDirs = false // remove old jre folder
         }
     }
+    mac {
+        contents {
+            into 'AstroImageJ.app'
+            with macCommonFile
+            from(zipTree(file("${buildDir}/jres/${jreBaseName}-macosx_x64.zip"))) {
+                into 'Contents/Resources/jre'
+            }
+            from(file("${projectDir}/packageFiles/mac/outer")) {
+                into 'Contents'
+            }
+            from(file("${projectDir}/packageFiles/mac/icons.icns")) {
+                into 'Contents/Resources'
+            }
+            // Rename folder to jre
+            it.filesMatching("**/${jreBaseName}-macosx_x64/**/*") {
+                it.path = it.path.replace("${jreBaseName}-macosx_x64", "")
+            }
+            includeEmptyDirs = false // remove old jre folder
+
+        }
+    }
 }
 
 // Task to copy built jars into a certain folder, for use with testing
@@ -174,49 +200,6 @@ task aijRun(dependsOn: sync, type: JavaExec) {
 
 }
 
-task common(dependsOn: build, type: Sync) {
-    with commonDist
-    destinationDir(file("${buildDir}/common"))
-}
-
-task cleanIJ(dependsOn: common) {
-    doLast {
-        ant.move file: "${buildDir}/common/ij.jar",
-                todir: "${buildDir}/image/"
-    }
-}
-
-task makeMac(dependsOn: cleanIJ, type: JavaExec) {
-    group 'AstroImageJ Developement'
-
-    workingDir(file("${buildDir}"))
-
-    main = "-jar";
-    args = ["packr.jar",
-            "--platform", "mac",
-            "--jdk", "${buildDir}/jres/${jreBaseName}-macosx_x64.zip",
-            "--executable", "AstroImageJ",
-            "--resources", "${buildDir}/common/*",
-            "--classpath", "${buildDir}/image/ij.jar",
-            "--mainclass", "ij.ImageJ",
-            "--vmargs", "Xmx1G",
-            "--output", "${buildDir}/distributions/AstroImageJ.app",
-            "--icon", "${projectDir}/packageFiles/mac/astronomy_icon.icns",
-            "--bundle", "AstroImageJ"
-    ]
-}
-
-task makeDistributions(dependsOn: makeMac, type: Zip) {
-    group 'AstroImageJ Developement'
-
-    archiveFileName = 'AstroimageJ-mac.zip'
-    destinationDirectory = file("${buildDir}/distributions/")
-
-    from("${buildDir}/distributions/AstroImageJ.app") {
-        into 'AstroImageJ.app'
-    }
-}
-
 linuxDistZip {
     enabled = false
 }
@@ -230,5 +213,9 @@ windowsDistTar {
 }
 
 distTar {
+    enabled = false
+}
+
+macDistTar {
     enabled = false
 }

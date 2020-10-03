@@ -3806,6 +3806,7 @@ double[] processCoordinatePair(JTextField textFieldA, int decimalPlacesA, int ba
 
             while ((inputLine = in.readLine()) != null)
                 {
+                inputLine = inputLine.replaceAll("null", "");
                 //IJ.log(inputLine);
                 if (inputLine.startsWith("!!"))
                     {

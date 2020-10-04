@@ -4200,11 +4200,11 @@ protected ImageIcon createImageIcon(String path, String description) {
                 else if (b==buttonClearMeasurements)
                     {
                     try{
-                        Class MP = Class.forName("MultiPlot_");
+                        Class MP = Class.forName("Astronomy.MultiPlot_");
                         Method updatePlot = MP.getMethod("clearPlot");
                         updatePlot.invoke(null, (Object[])null);
                         
-                        Class MA = Class.forName("MultiAperture_");
+                        Class MA = Class.forName("Astronomy.MultiAperture_");
                         Method clearTable = MA.getMethod("clearTable");
                         clearTable.invoke(null, (Object[])null);
 
@@ -5131,7 +5131,7 @@ void saveImageDisplay(String format, boolean saveAll)
     if (saveAll && (savePlot || saveConfig || saveTable))
         {
         try{
-            Class MP = Class.forName("MultiPlot_");
+            Class MP = Class.forName("Astronomy.MultiPlot_");
             Method saveDataImageConfig = MP.getMethod("saveDataImageConfig", boolean.class, boolean.class, boolean.class,
                                                        boolean.class, String.class, String.class, String.class, String.class);
             saveDataImageConfig.invoke(null, savePlot, saveConfig, saveTable, true, format, outBase+plotSuffix+"."+format, outBase+configSuffix+".plotcfg",

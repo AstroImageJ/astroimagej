@@ -206,7 +206,7 @@ public class Set_Aperture implements PlugIn
                 {
                 public void run()
                     {
-                    IJ.runPlugIn("MultiAperture_", "");
+                    IJ.runPlugIn("Astronomy.MultiAperture_", "");
                     }
                 };
             t2.start();         

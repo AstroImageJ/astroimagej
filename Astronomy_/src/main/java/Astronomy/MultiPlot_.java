@@ -265,6 +265,7 @@ public class MultiPlot_ implements PlugIn, KeyListener
         static boolean saveAllPNG;
         static boolean unscale;
         static boolean unshift;
+        static boolean autoAstroDataUpdate;
         static String imageSuffix;
         static String aperSuffix;
         static String logSuffix, fitPanelSuffix, fitPanelTextSuffix, dataSubsetSuffix;
@@ -334,7 +335,7 @@ public class MultiPlot_ implements PlugIn, KeyListener
         static String dec2000Name, ra2000Name, gjdName, hjdName, hjdCorrName, hourAngleName, zenithDistanceName;
         
         
-        static JCheckBox airmassCB, altitudeCB, azimuthCB, bjdCB, bjdCorrCB, decNowCB, raNowCB;
+        static JCheckBox airmassCB, altitudeCB, azimuthCB, bjdCB, bjdCorrCB, decNowCB, raNowCB, autoAstroDataUpdateCB;
         static JCheckBox dec2000CB, ra2000CB, gjdCB, hjdCB, hjdCorrCB, hourAngleCB, zenithDistanceCB;
                 
         static JTextField airmassField, altitudeField, azimuthField, bjdField, bjdCorrField, decNowField, raNowField;        
@@ -558,7 +559,6 @@ public class MultiPlot_ implements PlugIn, KeyListener
         static JCheckBox showMFMarkersCB, showDMarkersCB, useDMarker1CB, useDMarker4CB;
 
         static JButton moreybutton, closebutton, grabautoxbutton, grabautoybutton, updateplotbutton, addastrodatabutton, refStarButton, OKbutton;
-
         static String tableName;
         static String[] columns, unfilteredColumns, oldUnfilteredColumns;
         static String[] columnswd, columnsDetrend;
@@ -1016,6 +1016,10 @@ public class MultiPlot_ implements PlugIn, KeyListener
                 {
                 updateColumnLists();
                 Prefs.set("plot2.tableName",tableName);
+                if (table != null && !tableName.equals("No Table Selected") && autoAstroDataUpdate && addAstroDataFrameWasShowing && OKbutton != null)
+                    {
+                        OKbutton.doClick();
+                    }
                 finishSetup(forceUpdate);
                 }
             }
@@ -1295,7 +1299,7 @@ static public void updateColumnLists()
 	/**
 	 * Starts timer which handles simultaneous updatePlot requests.
 	 */
-	static protected void startDelayedUpdateTimer (final boolean[] updateFit)
+	static protected void startDelayedUpdateTimer (final boolean[] updateFit, final boolean skipAutoAstroDataUpdate)
         {
 		try	{
             if (delayedUpdateTimer != null) 
@@ -1312,7 +1316,7 @@ static public void updateColumnLists()
                 {
                 public void run()
                     {
-                    updatePlot(updateFit);
+                    updatePlot(updateFit, skipAutoAstroDataUpdate);
                     }
                 
                 };
@@ -1327,8 +1331,12 @@ static public void updateColumnLists()
 
 
 //------------------------UPDATEPLOT()---------------------------------------
-    
         static public void updatePlot(boolean[] updateFit)
+            {
+            updatePlot(updateFit, false);
+            }
+
+        static public void updatePlot(boolean[] updateFit, boolean skipAutoAstroDataUpdate)
                 {
 //                IJ.log("table "+(table == null?"==":"!=")+" null");
 //                IJ.log("table "+(table != null && table.isLocked()?"is locked":"is unlocked"));
@@ -1337,10 +1345,16 @@ static public void updateColumnLists()
                 if ((table != null && table.isLocked()) || !updatePlotEnabled || updatePlotRunning)
                     {
 //                    IJ.log("starting delayed updatePlot() timer");
-                    startDelayedUpdateTimer(updateFit);
+                    startDelayedUpdateTimer(updateFit, skipAutoAstroDataUpdate);
                     return;
                     }
                 updatePlotRunning = true;
+
+                if (table != null && !tableName.equals("No Table Selected") && !skipAutoAstroDataUpdate && autoAstroDataUpdate && addAstroDataFrameWasShowing && OKbutton != null)
+                    {
+                    OKbutton.doClick();
+                    }
+
                 checkAndLockTable();
 //                table = MeasurementTable.getTable (tableName);
 //                tpanel = MeasurementTable.getTextPanel(MeasurementTable.longerName(tableName));
@@ -5231,7 +5245,19 @@ static public void updateColumnLists()
         
         JPanel OKCancelPanel = new JPanel (new SpringLayout());
         JLabel buttonIndentLabel = new JLabel("");
-        OKCancelPanel.add (buttonIndentLabel);        
+        OKCancelPanel.add (buttonIndentLabel);
+
+        autoAstroDataUpdateCB = new JCheckBox("Auto", autoAstroDataUpdate);
+        autoAstroDataUpdateCB.setToolTipText("Automatically update table when plot is updated and this panel is open.");
+        autoAstroDataUpdateCB.addItemListener(new ItemListener(){
+            public void itemStateChanged(ItemEvent e) {
+                if (e.getStateChange() == ItemEvent.DESELECTED)
+                    autoAstroDataUpdate = false;
+                else if (e.getStateChange() == ItemEvent.SELECTED)
+                    autoAstroDataUpdate = true;
+                Prefs.set("plot2.autoAstroDataUpdate", autoAstroDataUpdate);
+            }});
+        OKCancelPanel.add (autoAstroDataUpdateCB);
         
         OKbutton = new JButton("Update Table");
         OKbutton.addActionListener(new ActionListener() {
@@ -5380,7 +5406,7 @@ static public void updateColumnLists()
                 
                     
                 table.show();
-                updatePlot(updateAllFits());
+                updatePlot(updateAllFits(), true);
                 Thread t2 = new Thread()
                     {
                     public void run()
@@ -5402,7 +5428,7 @@ static public void updateColumnLists()
        
         OKCancelPanel.add(OKbutton);
         
-        JButton cancelbutton = new JButton("   Close    ");
+        JButton cancelbutton = new JButton(" Close ");
         cancelbutton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e)
                 {
@@ -6710,6 +6736,7 @@ static void initializeVariables()
         saveAllPNG = true;    
         unscale = true;
         unshift = true;
+        autoAstroDataUpdate = true;
         imageSuffix = "_field";
         aperSuffix = "_measurements";
         logSuffix = "_calibration"; 
@@ -20063,6 +20090,7 @@ static void saveLogToFile(String path)
                 hjdCorrName = Prefs.get("plot2.hjdCorrName", hjdCorrName);
                 hourAngleName = Prefs.get("plot2.hourAngleName", hourAngleName);
                 zenithDistanceName = Prefs.get("plot2.zenithDistanceName", zenithDistanceName);
+                autoAstroDataUpdate = Prefs.get("plot2.autoAstroDataUpdate", autoAstroDataUpdate);
                 
                 useGJD  = Prefs.get("plot2.useGJD", useGJD);
                 useHJD  = Prefs.get("plot2.useHJD", useHJD);
@@ -20386,6 +20414,7 @@ static void saveLogToFile(String path)
                 Prefs.set("plot2.unscale", unscale);
                 Prefs.set("plot2.unshift", unshift);
                 Prefs.set("plot2.useTableRaDec", useTableRaDec);
+                Prefs.set("plot2.autoAstroDataUpdate", autoAstroDataUpdate);
                 }
         
         

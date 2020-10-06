@@ -1,5 +1,7 @@
 package astroj;
 
+import Astronomy.MultiAperture_;
+import Astronomy.MultiPlot_;
 import ij.*;
 import ij.io.*;
 import ij.io.OpenDialog;
@@ -4199,20 +4201,13 @@ protected ImageIcon createImageIcon(String path, String description) {
                           
                 else if (b==buttonClearMeasurements)
                     {
-                    try{
-                        Class MP = Class.forName("Astronomy.MultiPlot_");
-                        Method updatePlot = MP.getMethod("clearPlot");
-                        updatePlot.invoke(null, (Object[])null);
-                        
-                        Class MA = Class.forName("Astronomy.MultiAperture_");
-                        Method clearTable = MA.getMethod("clearTable");
-                        clearTable.invoke(null, (Object[])null);
+                        MultiPlot_.clearPlot();
+
+                        MultiAperture_.clearTable();
 
 //                                Class MP = Class.forName("MultiPlot_");
 //                                Method setTable = MP.getMethod("setTable", MeasurementTable.class, boolean.class);
 //                                setTable.invoke(null, table, false);
-                        }
-                    catch (Throwable exception) {}
                     }
                 else if (b==buttonFlipX)
                     {
@@ -5130,17 +5125,8 @@ void saveImageDisplay(String format, boolean saveAll)
 
     if (saveAll && (savePlot || saveConfig || saveTable))
         {
-        try{
-            Class MP = Class.forName("Astronomy.MultiPlot_");
-            Method saveDataImageConfig = MP.getMethod("saveDataImageConfig", boolean.class, boolean.class, boolean.class,
-                                                       boolean.class, String.class, String.class, String.class, String.class);
-            saveDataImageConfig.invoke(null, savePlot, saveConfig, saveTable, true, format, outBase+plotSuffix+"."+format, outBase+configSuffix+".plotcfg",
-                                                   outBase+dataSuffix+Prefs.get("options.ext", ".xls"));
-            }
-        catch(ClassNotFoundException e) {IJ.error("Multiplot is not running. Could not save plot image, plot config, or data table.");}
-        catch(NoSuchMethodException e) {IJ.error("Exception: java method MultiPlot_.saveDataImageConfig() not found");}
-        catch(IllegalAccessException e) {IJ.error("Exception: illegal access to java method MultiPlot_.saveDataImageConfig()");}
-        catch(InvocationTargetException e) {IJ.error("Exception: java method MultiPlot_.saveDataImageConfig() could not be invoked");}
+            MultiPlot_.saveDataImageConfig(savePlot, saveConfig, saveTable, true, format, outBase+plotSuffix+"."+format, outBase+configSuffix+".plotcfg",
+                    outBase+dataSuffix+Prefs.get("options.ext", ".xls"));
         }
     if (saveAll && saveApertures)
         {

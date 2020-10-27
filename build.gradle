@@ -143,7 +143,7 @@ task sync(dependsOn: jar, type: Sync) {
     destinationDir(file("${projectDir}/AIJ-Run"))
 }
 
-// Generates a working install directory of AIJ and launches it - make sure to not att it to git!
+// Generates a working install directory of AIJ and launches it - make sure to not add it to git!
 task aijRun(dependsOn: sync, type: JavaExec) {
     group 'AstroImageJ Developement'
 

@@ -164,7 +164,7 @@ javapackager {
     additionalResources = file("${buildDir}/commonFiles/").listFiles()
     runnableJar = file("${buildDir}/commonFiles/ij.jar")
     assetsDir = file("${projectDir}/packageFiles/assets")
-    name='AstroImageJ'
+    name = 'AstroImageJ'
     winConfig.setWrapJar(false) // Don't merge the ij.jar into the exe file
     vmArgs = ['-Xmx640m']
     version = 'dev' // Dummy version to keep it from saying "unspecified"
@@ -182,6 +182,10 @@ task packageAijForMac(type: PackageTask, dependsOn: [build, unZipJresTask, commo
     createZipball = true
     jrePath = file("${buildDir}/jres/${jreBaseName}-macosx_x64/zulu-8.jre/")
     outputs.upToDateWhen { false } // Forces it to always run
+
+    doLast {
+        modifyTextFileInZip("${buildDir}/distributions/AstroImageJ-dev-mac.zip")
+    }
 }
 task packageAijForWindows(type: PackageTask, dependsOn: [build, unZipJresTask, commonFiles]) {
     group 'AstroImageJ Developement'
@@ -194,9 +198,6 @@ task packageAij(dependsOn: [ 'packageAijForLinux', 'packageAijForMac', 'packageA
     group 'AstroImageJ Developement'
 
     outputs.upToDateWhen { false }
-    doLast {
-        modifyTextFileInZip("${buildDir}/distributions/AstroImageJ-dev-mac.zip")
-    }
 }
 
 // Taken from a StackOverflow answer by Alex Lipov, https://stackoverflow.com/a/43836969, license: CC BY-SA 3.0

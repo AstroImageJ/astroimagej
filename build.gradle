@@ -1,16 +1,15 @@
 import io.github.fvarrui.javapackager.gradle.PackageTask
 
-import java.nio.file.FileSystem
-import java.nio.file.FileSystems
-import java.nio.file.Files
-import java.nio.file.Paths
-
 buildscript {
     repositories {
+        //mavenLocal()
+        maven {
+            url 'gradlePlugins' //TODO switch back to standard java packager once it has the mac noRelocate feature
+        }
         mavenCentral()
     }
     dependencies {
-        classpath 'io.github.fvarrui:javapackager:1.3.0'
+        classpath 'io.github.fvarrui:javapackager:1.3.1-SNAPSHOT'
     }
 }
 
@@ -165,6 +164,7 @@ javapackager {
     assetsDir = file("${projectDir}/packageFiles/assets")
     name = 'AstroImageJ'
     winConfig.setWrapJar(false) // Don't merge the ij.jar into the exe file
+    macConfig.setRelocateJar(false) // Don't place ij.jar in Java/ folder
     vmArgs = ['-Xmx640m']
     version = 'dev' // Dummy version to keep it from saying "unspecified"
 
@@ -186,10 +186,6 @@ task packageAijForMac(type: PackageTask, dependsOn: [build, unZipJresTask, commo
     createZipball = true
     jrePath = file("${buildDir}/jres/${jreBaseName}-macosx_x64/zulu-8.jre/")
     outputs.upToDateWhen { false } // Forces it to always run
-
-    doLast {
-        modifyTextFileInZip("${buildDir}/distributions/AstroImageJ-dev-mac.zip")
-    }
 }
 task packageAijForWindows(type: PackageTask, dependsOn: [build, unZipJresTask, commonFiles]) {
     group 'AstroImageJ Developement'
@@ -202,48 +198,4 @@ task packageAij(dependsOn: [ 'packageAijForLinux', 'packageAijForMac', 'packageA
     group 'AstroImageJ Developement'
 
     outputs.upToDateWhen { false }
-}
-
-// Taken from a StackOverflow answer by Alex Lipov, https://stackoverflow.com/a/43836969, license: CC BY-SA 3.0
-// Modified for use in Gradle for AstroImageJ by Kevin E.
-static void modifyTextFileInZip(String zipPath) {
-    java.nio.file.Path zipFilePath = Paths.get(zipPath) as java.nio.file.Path
-    try {
-        FileSystem fs = FileSystems.newFileSystem(zipFilePath) as FileSystem
-        java.nio.file.Path source = fs.getPath("AstroImageJ.app/Contents/Info.plist")
-        java.nio.file.Path temp = fs.getPath("AstroImageJ.app/Contents/Info_temp.plist")
-        if (Files.exists(temp)) {
-            throw new IOException("temp file exists, generate another name")
-        }
-        Files.move(source, temp)
-        streamCopy(temp, source)
-        Files.delete(temp)
-        fs.close()
-    } catch (Exception e) {
-        System.out.println(e)
-        e.printStackTrace()
-    }
-}
-
-// Taken from a StackOverflow answer by Alex Lipov, https://stackoverflow.com/a/43836969, license: CC BY-SA 3.0
-// Modified for use in Gradle for AstroImageJ by Kevin E.
-static void streamCopy(java.nio.file.Path src, java.nio.file.Path dst) throws IOException {
-    try {
-        BufferedReader br = new BufferedReader(
-                new InputStreamReader(Files.newInputStream(src)));
-        BufferedWriter bw = new BufferedWriter(
-                new OutputStreamWriter(Files.newOutputStream(dst)))
-
-        String line
-        while ((line = br.readLine()) != null) {
-            line = line.replace("Java/ij.jar", "ij.jar")
-            bw.write(line)
-            bw.newLine()
-        }
-        bw.close()
-        br.close()
-    } catch (Exception e) {
-        System.out.println(e)
-        e.printStackTrace()
-    }
 }

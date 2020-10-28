@@ -4,7 +4,7 @@ buildscript {
     repositories {
         //mavenLocal()
         maven {
-            url 'gradlePlugins' //TODO switch back to standard java packager once it has the mac noRelocate feature
+            url 'gradlePlugins' //TODO switch back to standard java packager for 1.4.1+ once it is on maven
         }
         mavenCentral()
     }
@@ -65,7 +65,7 @@ def downloadJREs = project.download {
     for (String sys : platforms) {
         src createURL(jreBaseName, sys)
         overwrite false
-        dest new File(buildDir, "jres")
+        dest new File(projectDir, "jres")
     }
 }
 
@@ -112,7 +112,7 @@ def unZipJres = project.copySpec {
 
 task unZipJresTask(type: Copy) {
     with unZipJres
-    into "${buildDir}/jres"
+    into "${projectDir}/jres"
 }
 
 task commonFiles(type: Copy) {
@@ -177,21 +177,21 @@ task packageAijForLinux(type: PackageTask, dependsOn: [build, unZipJresTask, com
     group 'AstroImageJ Developement'
     platform = io.github.fvarrui.javapackager.model.Platform.linux
     createTarball = true
-    jrePath = file("${buildDir}/jres/${jreBaseName}-linux_x64")
+    jrePath = file("${projectDir}/jres/${jreBaseName}-linux_x64")
     outputs.upToDateWhen { false } // Forces it to always run
 }
 task packageAijForMac(type: PackageTask, dependsOn: [build, unZipJresTask, commonFiles]) {
     group 'AstroImageJ Developement'
     platform = io.github.fvarrui.javapackager.model.Platform.mac
     createZipball = true
-    jrePath = file("${buildDir}/jres/${jreBaseName}-macosx_x64/zulu-8.jre/")
+    jrePath = file("${projectDir}/jres/${jreBaseName}-macosx_x64/zulu-8.jre/")
     outputs.upToDateWhen { false } // Forces it to always run
 }
 task packageAijForWindows(type: PackageTask, dependsOn: [build, unZipJresTask, commonFiles]) {
     group 'AstroImageJ Developement'
     platform = io.github.fvarrui.javapackager.model.Platform.windows
     createZipball = true
-    jrePath = file("${buildDir}/jres/${jreBaseName}-win_x64")
+    jrePath = file("${projectDir}/jres/${jreBaseName}-win_x64")
     outputs.upToDateWhen { false } // Forces it to always run
 }
 task packageAij(dependsOn: [ 'packageAijForLinux', 'packageAijForMac', 'packageAijForWindows' ]) {

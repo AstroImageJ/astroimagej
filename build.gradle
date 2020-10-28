@@ -166,7 +166,7 @@ javapackager {
     winConfig.setWrapJar(false) // Don't merge the ij.jar into the exe file
     macConfig.setRelocateJar(false) // Don't place ij.jar in Java/ folder
     vmArgs = ['-Xmx640m']
-    version = 'dev' // Dummy version to keep it from saying "unspecified"
+    version = 'dev-x86' // Dummy version to keep it from saying "unspecified"
 
     // Set to true to enable installer generation. Needs to be on the target OS and needs special tooling
     // See https://github.com/fvarrui/JavaPackager#generated-artifacts

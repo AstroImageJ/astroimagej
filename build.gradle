@@ -99,13 +99,13 @@ def commonDist = project.copySpec {
 }
 
 def unZipJres = project.copySpec {
-    from(zipTree(file("${buildDir}/jres/${jreBaseName}-macosx_x64.zip"))) {
+    from(zipTree(file("${projectDir}/jres/${jreBaseName}-macosx_x64.zip"))) {
         into ''
     }
-    from(zipTree(file("${buildDir}/jres/${jreBaseName}-linux_x64.zip"))) {
+    from(zipTree(file("${projectDir}/jres/${jreBaseName}-linux_x64.zip"))) {
         into ''
     }
-    from(zipTree(file("${buildDir}/jres/${jreBaseName}-win_x64.zip"))) {
+    from(zipTree(file("${projectDir}/jres/${jreBaseName}-win_x64.zip"))) {
         into ''
     }
 }

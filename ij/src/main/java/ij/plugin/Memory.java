@@ -101,10 +101,14 @@ public class Memory implements PlugIn {
             {
 			if (IJ.is64Bit())
                 {
-                if (majorVersion>3)
-                    {
+                if (majorVersion==4)
+				    {
                     max = getMemorySetting("Contents/Info.plist");
                     }
+                else if (majorVersion>4)
+					{
+					max = getMemorySetting("../../Contents/Info.plist");
+					}
                 else
                     {
                     max = getMemorySetting("AstroImageJ64.app/Contents/Info.plist");

@@ -58,7 +58,9 @@ public class Astronomy_Tool implements PlugIn //, ImageListener
                     resizeNoResize = NORESIZE;
             AstroCanvas ac = new AstroCanvas(imp);
             AstroStackWindow astroWindow = new AstroStackWindow(imp, ac, NEW, resizeNoResize);
-            }
+            } else {
+            IJ.error("No images are open!");
+        }
         }
     }
 

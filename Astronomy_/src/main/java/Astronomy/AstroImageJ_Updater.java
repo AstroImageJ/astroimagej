@@ -86,7 +86,7 @@ public class AstroImageJ_Updater implements PlugIn {
 			return;
 		}
         
-		url = getClass().getResource("/AstroImageJ_Updater.class");
+		url = getClass().getResource("/Astronomy/AstroImageJ_Updater.class");
 		String Astronomy_jar = url == null ? null : url.toString().replaceAll("%20", " ");
 		if (Astronomy_jar==null || !Astronomy_jar.startsWith("jar:file:")) {
 			error("Could not determine location of Astronomy_.jar");

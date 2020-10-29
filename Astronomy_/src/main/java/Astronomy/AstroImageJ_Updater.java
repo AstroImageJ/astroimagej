@@ -81,9 +81,13 @@ public class AstroImageJ_Updater implements PlugIn {
 			return;
 		}
 		if (!file1.canWrite()) {
-			String msg = "No write access: "+file1.getPath();
-			error(msg);
-			return;
+			try {
+				file1.setWritable(true, true);
+			} catch (SecurityException e) {
+				String msg = "No write access: "+file1.getPath();
+				error(msg);
+				return;
+			}
 		}
         
 		url = getClass().getResource("/Astronomy/AstroImageJ_Updater.class");
@@ -101,9 +105,13 @@ public class AstroImageJ_Updater implements PlugIn {
 			return;
 		}
 		if (!file2.canWrite()) {
-			String msg = "No write access: "+file2.getPath();
-			error(msg);
-			return;
+			try {
+				file2.setWritable(true, true);
+			} catch (SecurityException e) {
+				String msg = "No write access: "+file2.getPath();
+				error(msg);
+				return;
+			}
 		}        
         
 //		url = getClass().getResource(file.getParent().replace('\\', '/') +"/macros/StartupMacros.txt");
@@ -122,9 +130,13 @@ public class AstroImageJ_Updater implements PlugIn {
 			return;
 		}
 		if (!file3.canWrite()) {
-			String msg = "No write access: "+file3.getPath();
-			error(msg);
-			return;
+			try {
+				file3.setWritable(true, true);
+			} catch (SecurityException e) {
+				String msg = "No write access: "+file3.getPath();
+				error(msg);
+				return;
+			}
 		}    
         
         File file4=null;
@@ -222,9 +234,13 @@ public class AstroImageJ_Updater implements PlugIn {
                 System.exit(0);
                 }        
             if (!file4.canWrite()) {
-                IJ.showStatus("AIJ version number not updated in Info.plist. No write access.");
-                error("AIJ version number not updated in Info.plist. No write access: "+file4.getPath());
-                System.exit(0);
+				try {
+					file4.setWritable(true, true);
+				} catch (SecurityException e) {
+					IJ.showStatus("AIJ version number not updated in Info.plist. No write access.");
+					error("AIJ version number not updated in Info.plist. No write access: "+file4.getPath());
+					System.exit(0);
+				}
                 }       
             IJ.showStatus("Updating Info.plist");
             Scanner inFile=null;

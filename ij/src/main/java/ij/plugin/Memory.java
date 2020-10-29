@@ -159,6 +159,16 @@ public class Memory implements PlugIn {
 			fileMissing = true;
 			return 0L;
 		}
+
+		// Ensure that the file is writable
+		if (!f.canWrite()) {
+			try {
+				f.setWritable(true, true);
+			} catch (SecurityException e) {
+				IJ.log("Could not make " + f.toString() + " writable due to permissions.");
+			}
+		}
+
 		long max = 0L;
 		try {
 			int size = (int)f.length();

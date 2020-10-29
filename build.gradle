@@ -193,8 +193,12 @@ task packageAijForWindows(type: PackageTask, dependsOn: [build, unZipJresTask, c
     createZipball = true
     jrePath = file("${projectDir}/jres/${jreBaseName}-win_x64")
     outputs.upToDateWhen { false } // Forces it to always run
+
+    vmArgs = [] // Set to nothing so that the ini file will take over
+    additionalResources = file("${buildDir}/commonFiles/").listFiles() +
+            (file("${projectDir}/packageFiles/assets/windows/AstroImageJ.l4j.ini"))
 }
-task packageAij(dependsOn: [ 'packageAijForLinux', 'packageAijForMac', 'packageAijForWindows' ]) {
+task packageAij(dependsOn: [ packageAijForLinux, packageAijForMac, packageAijForWindows ]) {
     group 'AstroImageJ Developement'
 
     outputs.upToDateWhen { false }

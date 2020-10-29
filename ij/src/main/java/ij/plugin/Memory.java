@@ -87,8 +87,11 @@ public class Memory implements PlugIn {
 			return;
 		}
 		String hint = "";
+		String[] versionPieces = IJ.getAstroVersion().split("\\.");
+		int majorVersion = Integer.parseInt(versionPieces[0]);
 		if (IJ.isWindows() && max2>640 && max2>max)
-			hint = "\nDelete the \"AstroImageJ.cfg\" file, located in the AstroImageJ folder,\nif AstroImageJ fails to start.";
+			hint = String.format("\nDelete the \"%s\" file, located in the AstroImageJ folder,\nif AstroImageJ fails to start.",
+					majorVersion > 4 ? "AstroImageJ.l4j.ini" : "AstroImageJ.cfg");
 		IJ.showMessage("Memory", "The new " + max2 +"MB limit will take effect after AstroImageJ is restarted."+hint);		
 	}
 	
@@ -121,7 +124,11 @@ public class Memory implements PlugIn {
             }
         else
             {
-			max = getMemorySetting("AstroImageJ.cfg");
+            	if (IJ.isWindows() && majorVersion > 4) {
+					max = getMemorySetting("AstroImageJ.l4j.ini");
+				} else {
+					max = getMemorySetting("AstroImageJ.cfg");
+				}
             }
 		return max;
 	}

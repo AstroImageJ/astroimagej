@@ -45,11 +45,11 @@ public class Astronomy_Tool implements PlugIn //, ImageListener
             openFrame = WindowManager.getFrame(s);
             imp = WindowManager.getImage(s);
             }
-        
-        if (openFrame instanceof ij.gui.PlotWindow || imp.getTitle().startsWith("About") || imp.getTitle().startsWith("Profile of") || imp.getTitle().startsWith("Seeing Profile")) return;
 
         if (imp != null)
             {
+                if (openFrame instanceof ij.gui.PlotWindow || imp.getTitle().startsWith("About") ||
+                        imp.getTitle().startsWith("Profile of") || imp.getTitle().startsWith("Seeing Profile")) return;
                  
             Class<?> imageWindowClass = openFrame.getClass();
             if (imageWindowClass.getName() != "astroj.AstroStackWindow")

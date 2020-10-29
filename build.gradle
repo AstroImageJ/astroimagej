@@ -58,10 +58,10 @@ task createPlugins {
     }
 }
 
-def jreBaseName = "zulu8.48.0.53-ca-jre8.0.265"
+def jreBaseName = "zulu15.28.13-ca-jre15.0.1"
 
 def downloadJREs = project.download {
-    String[] platforms = ["macosx", "linux", "win"]
+    String[] platforms = ["macosx_x64.zip", "linux_x64.tar.gz", "win_x64.zip"]
     for (String sys : platforms) {
         src createURL(jreBaseName, sys)
         overwrite false
@@ -70,7 +70,7 @@ def downloadJREs = project.download {
 }
 
 String createURL(String base, String sys) {
-    return "https://cdn.azul.com/zulu/bin/" + base + "-" + sys + "_x64.zip"
+    return "https://cdn.azul.com/zulu/bin/" + base + "-" + sys
 }
 
 def commonDist = project.copySpec {
@@ -102,7 +102,7 @@ def unZipJres = project.copySpec {
     from(zipTree(file("${projectDir}/jres/${jreBaseName}-macosx_x64.zip"))) {
         into ''
     }
-    from(zipTree(file("${projectDir}/jres/${jreBaseName}-linux_x64.zip"))) {
+    from(tarTree(file("${projectDir}/jres/${jreBaseName}-linux_x64.tar.gz"))) {
         into ''
     }
     from(zipTree(file("${projectDir}/jres/${jreBaseName}-win_x64.zip"))) {
@@ -184,7 +184,7 @@ task packageAijForMac(type: PackageTask, dependsOn: [build, unZipJresTask, commo
     group 'AstroImageJ Developement'
     platform = io.github.fvarrui.javapackager.model.Platform.mac
     createZipball = true
-    jrePath = file("${projectDir}/jres/${jreBaseName}-macosx_x64/zulu-8.jre/")
+    jrePath = file("${projectDir}/jres/${jreBaseName}-macosx_x64/zulu-15.jre/")
     outputs.upToDateWhen { false } // Forces it to always run
 }
 task packageAijForWindows(type: PackageTask, dependsOn: [build, unZipJresTask, commonFiles]) {

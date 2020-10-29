@@ -196,14 +196,14 @@ task packageAijForWindows(type: PackageTask, dependsOn: [build, unZipJresTask, c
 
     vmArgs = [] // Set to nothing so that the ini file will take over
     additionalResources = file("${buildDir}/commonFiles/").listFiles() +
-            (file("${projectDir}/packageFiles/assets/windows/AstroImageJ.l4j.ini"))
+            file("${projectDir}/packageFiles/assets/windows/AstroImageJ.l4j.ini")
 }
 task packageAij(dependsOn: [ packageAijForLinux, packageAijForMac, packageAijForWindows ]) {
     group 'AstroImageJ Developement'
 
     outputs.upToDateWhen { false }
 
-    doLast {
+    doLast { // Cleanup loose files (DMG creation fails since it finds one in assets)
         project.delete(files("${buildDir}/distributions/assets"))
         project.delete(files("${buildDir}/distributions/AstroImageJ"))
     }

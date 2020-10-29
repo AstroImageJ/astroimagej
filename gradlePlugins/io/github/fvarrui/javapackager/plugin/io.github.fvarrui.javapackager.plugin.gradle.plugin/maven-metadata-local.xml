@@ -3,10 +3,11 @@
   <groupId>io.github.fvarrui.javapackager.plugin</groupId>
   <artifactId>io.github.fvarrui.javapackager.plugin.gradle.plugin</artifactId>
   <versioning>
-    <latest>1.3.1-SNAPSHOT</latest>
+    <latest>1.4.0-SNAPSHOT</latest>
     <versions>
       <version>1.3.1-SNAPSHOT</version>
+      <version>1.4.0-SNAPSHOT</version>
     </versions>
-    <lastUpdated>20201027200432</lastUpdated>
+    <lastUpdated>20201029180729</lastUpdated>
   </versioning>
 </metadata>

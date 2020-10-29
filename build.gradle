@@ -202,4 +202,9 @@ task packageAij(dependsOn: [ packageAijForLinux, packageAijForMac, packageAijFor
     group 'AstroImageJ Developement'
 
     outputs.upToDateWhen { false }
+
+    doLast {
+        project.delete(files("${buildDir}/distributions/assets"))
+        project.delete(files("${buildDir}/distributions/AstroImageJ"))
+    }
 }

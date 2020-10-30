@@ -204,7 +204,7 @@ task packageAij(dependsOn: [ packageAijForLinux, packageAijForMac, packageAijFor
     outputs.upToDateWhen { false }
 
     doLast { // Cleanup loose files (DMG creation fails since it finds one in assets)
-        project.delete(files("${buildDir}/distributions/assets"))
-        project.delete(files("${buildDir}/distributions/AstroImageJ"))
+        //project.delete(files("${buildDir}/distributions/assets"))
+        //project.delete(files("${buildDir}/distributions/AstroImageJ"))
     }
 }

@@ -171,7 +171,7 @@ javapackager {
     // Set to true to enable installer generation. Needs to be on the target OS and needs special tooling
     // See https://github.com/fvarrui/JavaPackager#generated-artifacts
     // In future installer/package signing will be added. TODO sign the packages
-    generateInstaller = false
+    generateInstaller = true
 }
 task packageAijForLinux(type: PackageTask, dependsOn: [build, unZipJresTask, commonFiles]) {
     group 'AstroImageJ Developement'

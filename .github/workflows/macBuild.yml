@@ -29,7 +29,7 @@ jobs:
     - name: Build AIJ
       run: ./gradlew build
     - name: Package AIJ
-      run: ./gradlew packageAijForMac
+      #run: ./gradlew packageAijForMac
     - uses: actions/upload-artifact@v2
       with:
         name: Package

@@ -22,7 +22,13 @@ jobs:
         java-version: 15
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
-    - name: Build with Gradle
+    - name: Unzip JREs
+      run: ./gradlew unZipJresTask
+    - name: Make Common Files
+      run: ./gradlew commonFiles
+    - name: Build AIJ
+      run: ./gradlew build
+    - name: Package AIJ
       run: ./gradlew packageAijForMac
     - uses: actions/upload-artifact@v2
       with:

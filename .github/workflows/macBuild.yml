@@ -28,7 +28,7 @@ jobs:
       run: ./gradlew commonFiles
     - name: Build AIJ
       run: ./gradlew build
-    - name: Package AIJ
+    #- name: Package AIJ
       #run: ./gradlew packageAijForMac
     - uses: actions/upload-artifact@v2
       with:

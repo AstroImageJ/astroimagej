@@ -19,7 +19,8 @@ public class ArrowTool extends PlugInTool {
 		int handle = roi!=null?roi.isHandle(ox, oy):-1;
 		if (!(roi!=null && (roi instanceof Arrow) && (handle>=0||roi.contains(ox,oy)))) {
 			arrow = new Arrow(sx, sy, imp);
-			imp.setRoi(arrow, false);
+			if (imp.okToDeleteRoi())
+				imp.setRoi(arrow, false);
 			e.consume();
 		}
 	}
@@ -56,7 +57,7 @@ public class ArrowTool extends PlugInTool {
 	}
 
 	public String getToolIcon() {
-		return "C037L1ee1L65e1La9e1L65a9C123L8586L9497La4a7Lb3b6Lc3c4";
+		return "C037L0ff0L74f0Lb8f0L74b8";
 	}
 
 	public String getToolName() {

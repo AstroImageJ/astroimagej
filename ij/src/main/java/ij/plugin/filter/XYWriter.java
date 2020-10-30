@@ -22,11 +22,7 @@ public class XYWriter implements PlugInFilter {
 	}
 
 	public void run(ImageProcessor ip) {
-		try {
-			saveXYCoordinates(imp);
-		} catch (IllegalArgumentException e) {
-			IJ.error("XYWriter", e.getMessage());
-		}
+		saveXYCoordinates(imp);
 	}
 
 	public void saveXYCoordinates(ImagePlus imp) {
@@ -40,12 +36,10 @@ public class XYWriter implements PlugInFilter {
 		String directory = sd.getDirectory();
 		PrintWriter pw = null;
 		try {
-			FileOutputStream fos = new FileOutputStream(directory+name);
-			BufferedOutputStream bos = new BufferedOutputStream(fos);
-			pw = new PrintWriter(bos);
+			pw = new PrintWriter(new BufferedOutputStream(new FileOutputStream(directory+name)));
 		}
 		catch (IOException e) {
-			IJ.error("XYWriter", ""+e);
+			IJ.error("XYWriter", "Unable to save coordinates:\n   "+e.getMessage());
 			return;
 		}
 		

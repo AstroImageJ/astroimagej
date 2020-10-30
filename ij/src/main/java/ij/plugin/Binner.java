@@ -44,7 +44,7 @@ public class Binner implements PlugIn {
 		ColorModel cm=imp.createLut().getColorModel();
 		ImageStack stack=imp.getStack();
 		ImageStack stack2 = new ImageStack (w, h, cm);
-		int d = stack.getSize();
+		int d = stack.size();
 		if (method==SUM) {
 			int bitDepth = imp.getBitDepth();
 			if (bitDepth==8)
@@ -65,7 +65,7 @@ public class Binner implements PlugIn {
 		}
 		if (zshrink>1 && !imp.isHyperStack())
 			stack2 = shrinkZ(stack2, zshrink);
-		ImagePlus imp2 = (ImagePlus)imp.clone();
+		ImagePlus imp2 = imp.createImagePlus();
 		imp2.setStack("Reduced "+imp.getShortTitle(), stack2);
 		Calibration cal2 = imp2.getCalibration();
 		if (cal2.scaled()) {
@@ -86,7 +86,7 @@ public class Binner implements PlugIn {
 	private ImageStack shrinkZ(ImageStack stack, int zshrink) {
 		int w = stack.getWidth();
 		int h = stack.getHeight();
-		int d = stack.getSize();
+		int d = stack.size();
 		int d2 = d/zshrink;
 		ImageStack stack2 = new ImageStack (w, h, stack.getColorModel());
 		for (int z=1; z<=d2; z++)
@@ -129,9 +129,9 @@ public class Binner implements PlugIn {
 					ImageProcessor ip = stack.getProcessor(imp.getStackIndex(c, z, t));
 						tstack.addSlice(stack.getSliceLabel(i), ip);
 				}
-				//IJ.log("1: "+c+"  "+t+" "+tstack.getSize()+"  "+slices);
+				//IJ.log("1: "+c+"  "+t+" "+tstack.size()+"  "+slices);
 				tstack = shrinkZ(tstack, zshrink);
-				for (int i=1; i<=tstack.getSize(); i++)
+				for (int i=1; i<=tstack.size(); i++)
 					stack2.addSlice(tstack.getSliceLabel(i), tstack.getProcessor(i));
 			}
 		}
@@ -211,7 +211,7 @@ public class Binner implements PlugIn {
 			}
 			pixels[mj] = 0;
 		}
-		float max = 0f;
+		float max = -Float.MAX_VALUE;
 		for (int j=0; j<shrinksize; j++) {
 			if (pixels[j]>max)
 				max = pixels[j];
@@ -233,7 +233,7 @@ public class Binner implements PlugIn {
 	}
 
 	private float getMax(ImageProcessor ip, int x, int y) {
-		float max = 0f;
+		float max = -Float.MAX_VALUE;
 		float pixel;
 		for (int y2=0; y2<yshrink; y2++) {
 			for (int x2=0;  x2<xshrink; x2++) {
@@ -270,7 +270,7 @@ public class Binner implements PlugIn {
 		gd.addChoice ("Bin Method: ", methods, methods[method]);
 		if (imp.getStackSize()==1) {
 			gd.setInsets(5, 0, 0);
-			gd.addMessage("This command supports Undo");
+			gd.addMessage("This command supports Undo", null, Color.darkGray);
 		}
 		gd.showDialog();
 		if (gd.wasCanceled()) 

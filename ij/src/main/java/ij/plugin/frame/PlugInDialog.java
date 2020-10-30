@@ -1,23 +1,25 @@
 package ij.plugin.frame;
 import java.awt.*;
 import java.awt.event.*;
+import ij.gui.ImageWindow;
 import ij.*;
 import ij.plugin.*;
 
 /**  This is a non-modal dialog that plugins can extend. */
 public class PlugInDialog extends Dialog implements PlugIn, WindowListener, FocusListener {
 
-	String title;
-	
 	public PlugInDialog(String title) {
-		super(IJ.isJava16()?null:new Frame(), title);
+		super(IJ.isMacOSX()?IJ.getInstance():null,title);
 		enableEvents(AWTEvent.WINDOW_EVENT_MASK);
-		this.title = title;
 		ImageJ ij = IJ.getInstance();
+		if (IJ.isMacOSX() && ij!=null) {
+			ij.toFront(); // needed for keyboard shortcuts to work
+			IJ.wait(250);
+		}
 		addWindowListener(this);
  		addFocusListener(this);
 		if (IJ.isLinux()) setBackground(ImageJ.backgroundColor);
-		if (ij!=null && !IJ.isMacOSX() && IJ.isJava16()) {
+		if (ij!=null && !IJ.isMacOSX()) {
 			Image img = ij.getIconImage();
 			if (img!=null)
 				try {setIconImage(img);} catch (Exception e) {}
@@ -42,16 +44,11 @@ public class PlugInDialog extends Dialog implements PlugIn, WindowListener, Focu
 		WindowManager.removeWindow(this);
     }
 
-    public void windowActivated(WindowEvent e) {
-		//if (IJ.isMacintosh() && IJ.getInstance()!=null) {
-		//	IJ.wait(10); // may be needed for Java 1.4 on OS X
-		//	setMenuBar(Menus.getMenuBar());
-		//}
+	public void windowActivated(WindowEvent e) {
 		WindowManager.setWindow(this);
 	}
 
 	public void focusGained(FocusEvent e) {
-		//IJ.log("PlugInFrame: focusGained");
 		WindowManager.setWindow(this);
 	}
 

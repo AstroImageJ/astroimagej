@@ -17,10 +17,15 @@ import java.util.*;
 public class Slicer implements PlugIn, TextListener, ItemListener {
 
 	private static final String[] starts = {"Top", "Left", "Bottom", "Right"};
-	private static String startAt = starts[0];
-	private static boolean rotate;
-	private static boolean flip;
-	private static int sliceCount = 1;
+	private static String startAtS = starts[0];
+	private static boolean rotateS;
+	private static boolean flipS;
+	private static int sliceCountS = 1;
+	
+	private String startAt = starts[0];
+	private boolean rotate;
+	private boolean flip;
+	private int sliceCount = 1;
 	private boolean nointerpolate = Prefs.avoidResliceInterpolation;
 	private double inputZSpacing = 1.0;
 	private double outputZSpacing = 1.0;
@@ -31,6 +36,7 @@ public class Slicer implements PlugIn, TextListener, ItemListener {
 	private Label message;
 	private ImagePlus imp;
 	private double gx1, gy1, gx2, gy2, gLength;
+	private Color lineColor = new Color(1f, 1f, 0f, 0.4f);
 
 	// Variables used by getIrregularProfile and doIrregularSetup
 	private int n;
@@ -169,10 +175,8 @@ public class Slicer implements PlugIn, TextListener, ItemListener {
 		int channels = imp.getNChannels();
 		int slices = imp.getNSlices();
 		int frames = imp.getNFrames();
-		if (slices==1) {
-			IJ.error("Reslice...", "Cannot reslice z=1 hyperstacks");
-			return null;
-		}
+		if (slices==1)
+			return resliceTimeLapseHyperstack(imp);
 		int c1 = imp.getChannel();
 		int z1 = imp.getSlice();
 		int t1 = imp.getFrame();
@@ -213,6 +217,47 @@ public class Slicer implements PlugIn, TextListener, ItemListener {
 		return imp2;
 	}
 
+	ImagePlus resliceTimeLapseHyperstack(ImagePlus imp) {
+		int channels = imp.getNChannels();
+		int frames = imp.getNFrames();
+		int c1 = imp.getChannel();
+		int t1 = imp.getFrame();
+		int width = imp.getWidth();
+		int height = imp.getHeight();
+		ImagePlus imp2 = null;
+		ImageStack stack2 = null;
+		Roi roi = imp.getRoi();
+		int z = 1;
+		for (int c=1; c<=channels; c++) {
+			ImageStack tmp1Stack = new ImageStack(width, height);
+			for (int t=1; t<=frames; t++) {
+				imp.setPositionWithoutUpdate(c, z, t);
+				tmp1Stack.addSlice(null, imp.getProcessor());
+			}
+			ImagePlus tmp1 = new ImagePlus("tmp", tmp1Stack);
+			tmp1.setCalibration(imp.getCalibration());
+			tmp1.setRoi(roi);
+			ImagePlus tmp2 = reslice(tmp1);
+			int frames2 = tmp2.getStackSize();
+			if (imp2==null) {
+				imp2 = tmp2.createHyperStack("Reslice of "+imp.getTitle(), channels, 1, frames2, tmp2.getBitDepth());
+				stack2 = imp2.getStack();
+			}
+			ImageStack tmp2Stack = tmp2.getStack();
+			for (int t=1; t<=frames2; t++) {
+				imp.setPositionWithoutUpdate(c, z, t);
+				int n2 = imp2.getStackIndex(c, z, t);
+				stack2.setPixels(tmp2Stack.getPixels(z), n2);
+			}
+		}
+		imp.setPosition(c1, 1, t1);
+		if (channels>1 && imp.isComposite()) {
+			imp2 = new CompositeImage(imp2, ((CompositeImage)imp).getMode());
+			((CompositeImage)imp2).copyLuts(imp);
+		}
+		return imp2;
+	}
+
 	boolean showDialog(ImagePlus imp) {
 		Calibration cal = imp.getCalibration();
 		if (cal.pixelDepth<0.0)
@@ -226,12 +271,18 @@ public class Slicer implements PlugIn, TextListener, ItemListener {
 		boolean line = roi!=null && roi.getType()==Roi.LINE;
 		if (line) saveLineInfo(roi);
 		String macroOptions = Macro.getOptions();
-		if (macroOptions!=null) {
+		boolean macroRunning = macroOptions!=null;
+		if (macroRunning) {
 			if (macroOptions.indexOf("input=")!=-1)
 				macroOptions = macroOptions.replaceAll("slice=", "slice_count=");
 			macroOptions = macroOptions.replaceAll("slice=", "output=");
 			Macro.setOptions(macroOptions);
 			nointerpolate = false;
+		} else {
+			startAt = startAtS;
+			rotate = rotateS;
+			flip = flipS;
+			sliceCount = sliceCountS;
 		}
 		GenericDialog gd = new GenericDialog("Reslice");
 		gd.addNumericField("Output spacing ("+units+"):", outputSpacing, 3);
@@ -251,20 +302,18 @@ public class Slicer implements PlugIn, TextListener, ItemListener {
 		gd.setInsets(5, 0, 0);
 		gd.addMessage("Output size: "+getSize(cal.pixelDepth,outputSpacing,outputSlices)+"				");
 		fields = gd.getNumericFields();
-		if (!IJ.macroRunning()) {
+		if (!macroRunning) {
 			for (int i=0; i<fields.size(); i++)
 				((TextField)fields.elementAt(i)).addTextListener(this);
 		}
 		checkboxes = gd.getCheckboxes();
-		if (!IJ.macroRunning())
+		if (!macroRunning)
 			((Checkbox)checkboxes.elementAt(2)).addItemListener(this);
 		message = (Label)gd.getMessage();
-        gd.addHelp(IJ.URL+"/docs/menus/image.html#reslice");
+		gd.addHelp(IJ.URL+"/docs/menus/image.html#reslice");
 		gd.showDialog();
 		if (gd.wasCanceled())
 			return false;
-		//inputZSpacing = gd.getNextNumber();
-		//if (cal.pixelDepth==0.0) cal.pixelDepth = 1.0;
 		outputZSpacing = gd.getNextNumber()/cal.pixelWidth;
 		if (line) {
 			outputSlices = (int)gd.getNextNumber();
@@ -275,8 +324,13 @@ public class Slicer implements PlugIn, TextListener, ItemListener {
 		flip = gd.getNextBoolean();
 		rotate = gd.getNextBoolean();
 		nointerpolate = gd.getNextBoolean();
-		if (!IJ.isMacro())
+		if (!macroRunning) {
 			Prefs.avoidResliceInterpolation = nointerpolate;
+			startAtS = startAt;
+			rotateS = rotate;
+			flipS = flip;
+			sliceCountS = sliceCount;
+		}
 		return true;
 	}
 	
@@ -375,21 +429,29 @@ public class Slicer implements PlugIn, TextListener, ItemListener {
 		 ImageStack stack2 = null;
 		 boolean isStack = imp.getStackSize()>1;
 		 IJ.resetEscape();
+		 boolean macro = IJ.isMacro();
 		 for (int i=0; i<outputSlices; i++)	{
-				if (virtualStack)
-					status = outputSlices>1?(i+1)+"/"+outputSlices+", ":"";
-				ImageProcessor ip = getSlice(imp, x1, y1, x2, y2, status);
-				//IJ.log(i+" "+x1+" "+y1+" "+x2+" "+y2+"   "+ip);
-				if (isStack) drawLine(x1, y1, x2, y2, imp);
-				if (stack2==null) {
-					stack2 = createOutputStack(imp, ip);
-					if (stack2==null || stack2.getSize()<outputSlices) return null; // out of memory
-				}
-				stack2.setPixels(ip.getPixels(), i+1);
-				x1+=xInc; x2+=xInc; y1+=yInc; y2+=yInc;
-				if (IJ.escapePressed())
-					{IJ.beep(); imp.draw(); return null;}
+			if (virtualStack)
+				status = outputSlices>1?(i+1)+"/"+outputSlices+", ":"";
+			ImageProcessor ip = getSlice(imp, x1, y1, x2, y2, status);
+			if (macro)
+				IJ.showProgress(i,outputSlices-1);
+			else
+				drawLine(x1, y1, x2, y2, imp);
+			if (stack2==null) {
+				stack2 = createOutputStack(imp, ip);
+				if (stack2==null || stack2.getSize()<outputSlices) return null; // out of memory
+			}
+			stack2.setPixels(ip.getPixels(), i+1);
+			x1+=xInc; x2+=xInc; y1+=yInc; y2+=yInc;
+			if (IJ.escapePressed()) {
+				IJ.beep();
+				imp.draw();
+				IJ.showProgress(1.0);
+				return null;
+			}
 		 }
+		 if (macro) IJ.showProgress(1.0);
 		 return new ImagePlus("Reslice of "+imp.getShortTitle(), stack2);
 	}
 
@@ -413,12 +475,10 @@ public class Slicer implements PlugIn, TextListener, ItemListener {
 		 Roi roi = imp.getRoi();
 		 int roiType = roi!=null?roi.getType():0;
 		 ImageStack stack = imp.getStack();
-		 int stackSize = stack.getSize();
+		 int stackSize = stack.size();
 		 ImageProcessor ip,ip2=null;
 		 float[] line = null;
 		 boolean ortho = (int)x1==x1&&(int)y1==y1&&x1==x2||y1==y2;
-		//boolean vertical = x1==x2 && (roi==null||roiType==Roi.RECTANGLE);
-		//if (rotate) vertical = !vertical;
 		 for (int i=0; i<stackSize; i++) {
 				ip = stack.getProcessor(flip?stackSize-i:i+1);
 				if (roiType==Roi.POLYLINE || roiType==Roi.FREELINE)
@@ -454,7 +514,7 @@ public class Slicer implements PlugIn, TextListener, ItemListener {
 					ip.putPixel(x++, y, Float.floatToIntBits(data[i]));
 		 } else {
 				for (int i=0; i<length; i++)
-					ip.putPixelValue(x++, y, data[i]);
+					ip.setf(x++, y, data[i]);
 		 }
 	}
 
@@ -464,7 +524,7 @@ public class Slicer implements PlugIn, TextListener, ItemListener {
 					ip.putPixel(x, y++, Float.floatToIntBits(data[i]));
 		 } else {
 				for (int i=0; i<length; i++)
-					ip.putPixelValue(x, y++, data[i]);
+					ip.setf(x, y++, data[i]);
 		 }
 	}
 
@@ -487,8 +547,6 @@ public class Slicer implements PlugIn, TextListener, ItemListener {
 				double ry = ybase+y[i]+start*yinc;
 				double len2 = len - start;
 				int n2 = (int)len2;
-				//double d=0;;
-				//IJ.write("new segment: "+IJ.d2s(xinc)+" "+IJ.d2s(yinc)+" "+IJ.d2s(len)+" "+IJ.d2s(len2)+" "+IJ.d2s(n2)+" "+IJ.d2s(leftOver));
 				for (int j=0; j<=n2; j++) {
 					index = (int)distance+j;
 					if (index<values.length) {
@@ -571,35 +629,34 @@ public class Slicer implements PlugIn, TextListener, ItemListener {
 		 }
 		 return data;
 	}
-
+	
 	private float[] getOrthoLine(ImageProcessor ip, int x1, int y1, int x2, int y2, float[] data) {
-		 int dx = x2-x1;
-		 int dy = y2-y1;
-		 int n = Math.max(Math.abs(dx), Math.abs(dy));
-		 if (data==null) data = new float[n];
-		 int xinc = dx/n;
-		 int yinc = dy/n;
-		 int rx = x1;
-		 int ry = y1;
-		 for (int i=0; i<n; i++) {
-		 		if (notFloat)
-					data[i] = (float)ip.getPixel(rx, ry);
-				else if (rgb) {
-					int rgbPixel = ((ColorProcessor)ip).getPixel(rx, ry);
-					data[i] = Float.intBitsToFloat(rgbPixel&0xffffff);
-				} else
-					data[i] = (float)ip.getPixelValue(rx, ry);
-				rx += xinc;
-				ry += yinc;
-		 }
-		 return data;
+		int dx = x2-x1;
+		int dy = y2-y1;
+		int n = Math.max(Math.abs(dx), Math.abs(dy));
+		if (data==null)
+			data = new float[n];
+		int xinc = dx/n;
+		int yinc = dy/n;
+		for (int i=0; i<n; i++) {
+			if (rgb) {
+				int rgbPixel = ((ColorProcessor)ip).getPixel(x1, y1);
+				data[i] = Float.intBitsToFloat(rgbPixel&0xffffff);
+			} else
+				data[i] = ip.getf(x1,y1);
+			x1 += xinc;
+			y1 += yinc;
+		}
+		return data;
 	}
 
 	void drawLine(double x1, double y1, double x2, double y2, ImagePlus imp) {
 		 ImageCanvas ic = imp.getCanvas();
-		 if (ic==null) return;
+		 if (ic==null)
+		 	return;
 		 Graphics g = ic.getGraphics();
-		 g.setColor(new Color(1f, 1f, 0f, 0.4f));
+		 ((Graphics2D)g).setRenderingHint(RenderingHints.KEY_ANTIALIASING,  RenderingHints.VALUE_ANTIALIAS_ON);
+		 g.setColor(lineColor);
 		 g.drawLine(ic.screenX((int)(x1+0.5)), ic.screenY((int)(y1+0.5)), ic.screenX((int)(x2+0.5)), ic.screenY((int)(y2+0.5)));
 	}
 

@@ -20,6 +20,7 @@ public class CanvasResizer implements PlugIn {
 		ImagePlus imp = IJ.getImage();
 		wOld = imp.getWidth();
 		hOld = imp.getHeight();
+		if (!imp.okToDeleteRoi()) return;
 
 		ImageStack stackOld = imp.getStack();
 		if ((stackOld != null) && (stackOld.getSize() > 1))
@@ -82,6 +83,9 @@ public class CanvasResizer implements PlugIn {
 		} else {
 			if (!IJ.macroRunning())
 				Undo.setup(Undo.COMPOUND_FILTER, imp);
+			ImageWindow win = imp.getWindow();
+			if (win!=null && (win instanceof PlotWindow))
+				((PlotWindow)win).getPlot().setFrozen(true);
 			ImageProcessor newIP = expandImage(imp.getProcessor(), wNew, hNew, xOff, yOff);
 			imp.setProcessor(null, newIP);
 			if (!IJ.macroRunning())

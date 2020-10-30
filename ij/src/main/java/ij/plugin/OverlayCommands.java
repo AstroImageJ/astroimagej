@@ -3,19 +3,24 @@ import ij.*;
 import ij.process.*;
 import ij.gui.*;
 import ij.plugin.frame.RoiManager;
+import ij.plugin.frame.Recorder;
 import ij.macro.Interpreter;
 import ij.io.RoiDecoder;
 import ij.plugin.filter.PlugInFilter;
+import ij.measure.ResultsTable;
 import java.awt.*;
+import java.util.ArrayList;
+import java.awt.geom.Rectangle2D;
 
 /** This plugin implements the commands in the Image/Overlay menu. */
 public class OverlayCommands implements PlugIn {
 	private static int opacity = 100;
 	private static Roi defaultRoi;
+	private static boolean zeroTransparent;
 	
 	static {
 		defaultRoi = new Roi(0, 0, 1, 1);
-		defaultRoi.setStrokeColor(Roi.getColor());
+		defaultRoi.setPosition(1); // set stacks positions by default
 	}
 
 	public void run(String arg) {
@@ -37,6 +42,8 @@ public class OverlayCommands implements PlugIn {
 			fromRoiManager();
 		else if (arg.equals("to"))
 			toRoiManager();
+		else if (arg.equals("list"))
+			list();
 		else if (arg.equals("options"))
 			options();
 	}
@@ -56,7 +63,8 @@ public class OverlayCommands implements PlugIn {
 			gd.addCheckbox("Remove existing overlay", false);
 			gd.showDialog();
 			if (gd.wasCanceled()) return;
-			if (gd.getNextBoolean()) imp.setOverlay(null);
+			if (gd.getNextBoolean())
+				imp.setOverlay(null);
 			return;
  		}
 		if (roi==null) {
@@ -73,39 +81,27 @@ public class OverlayCommands implements PlugIn {
 			if (roi.getFillColor()==null)
 				roi.setFillColor(defaultRoi.getFillColor());
 		}
-		boolean setPos = defaultRoi.getPosition()!=0;
-		if (setPos && imp.getStackSize()>1) {
-			if (imp.isHyperStack()||imp.isComposite()) {
-				if (imp.getNSlices()>1)
-					roi.setPosition(0, imp.getSlice(), 0);
-				else if (imp.getNFrames()>1)
-					roi.setPosition(0, 0, imp.getFrame());
-			} else
-				roi.setPosition(imp.getCurrentSlice());
-		}
-		int width = Line.getWidth();
-		Rectangle bounds = roi.getBounds();
-		boolean tooWide = width>Math.max(bounds.width, bounds.height)/3.0;
-		if (roi.getStroke()==null && width>1 && !tooWide)
-			roi.setStrokeWidth(Line.getWidth());
-		//if (roi.getStrokeColor()==null)
-		//	roi.setStrokeColor(Toolbar.getForegroundColor());
+		setPosition(imp, roi);
 		boolean points = roi instanceof PointRoi && ((PolygonRoi)roi).getNCoordinates()>1;
-		//if (points) roi.setStrokeColor(Color.red);
 		if (IJ.altKeyDown() || (IJ.macroRunning() && Macro.getOptions()!=null)) {
 			RoiProperties rp = new RoiProperties("Add to Overlay", roi);
 			if (!rp.showDialog()) return;
+			defaultRoi.setStrokeColor(roi.getStrokeColor());
+			defaultRoi.setStrokeWidth(roi.getStrokeWidth());
+			defaultRoi.setFillColor(roi.getFillColor());
 		}
 		String name = roi.getName();
 		boolean newOverlay = name!=null && name.equals("new-overlay");
+		Roi roiClone = (Roi)roi.clone();
+		if (roi.getStrokeColor()==null)
+			roi.setStrokeColor(Roi.getColor());
 		if (overlay==null || newOverlay)
 			overlay = OverlayLabels.createOverlay();
 		overlay.add(roi);
-		if (!roi.isDrawingTool())
-			defaultRoi = (Roi)roi.clone();
-		defaultRoi.setPosition(setPos?1:0);
 		imp.setOverlay(overlay);
-		if (points || (roi instanceof ImageRoi) || (roi instanceof Arrow)) imp.deleteRoi();
+		boolean brushRoi = roi.getType()==Roi.COMPOSITE && Toolbar.getToolId()==Toolbar.OVAL && Toolbar.getBrushSize()>0;
+		if (points || (roi instanceof ImageRoi) || (roi instanceof Arrow&&!Prefs.keepArrowSelections) || brushRoi)
+			imp.deleteRoi();
 		Undo.setup(Undo.OVERLAY_ADDITION, imp);
 	}
 	
@@ -137,6 +133,10 @@ public class OverlayCommands implements PlugIn {
 			index = 1;
 
 		String title = createImageRoi?"Create Image ROI":"Add Image...";
+		if (IJ.isMacro()) {
+			opacity = 100;
+			zeroTransparent = false;
+		}
 		GenericDialog gd = new GenericDialog(title);
 		if (createImageRoi)
 			gd.addChoice("Image:", titles, titles[index]);
@@ -146,7 +146,7 @@ public class OverlayCommands implements PlugIn {
 			gd.addNumericField("Y location:", y, 0);
 		}
 		gd.addNumericField("Opacity (0-100%):", opacity, 0);
-		//gd.addCheckbox("Create image selection", createImageRoi);
+		gd.addCheckbox("Zero transparent", zeroTransparent);
 		gd.showDialog();
 		if (gd.wasCanceled())
 			return;
@@ -156,7 +156,7 @@ public class OverlayCommands implements PlugIn {
 			y = (int)gd.getNextNumber();
 		}
 		opacity = (int)gd.getNextNumber();
-		//createImageRoi = gd.getNextBoolean();
+		zeroTransparent = gd.getNextBoolean();
 		ImagePlus overlay = WindowManager.getImage(wList[index]);
 		if (wList.length==2) {
 			ImagePlus i1 = WindowManager.getImage(wList[0]);
@@ -180,15 +180,39 @@ public class OverlayCommands implements PlugIn {
 		}	
 		roi = new ImageRoi(x, y, overlay.getProcessor());
 		roi.setName(overlay.getShortTitle());
-		if (opacity!=100) ((ImageRoi)roi).setOpacity(opacity/100.0);
+		if (opacity!=100)
+			((ImageRoi)roi).setOpacity(opacity/100.0);
+		((ImageRoi)roi).setZeroTransparent(zeroTransparent);
 		if (createImageRoi)
 			imp.setRoi(roi);
 		else {
+			setPosition(imp, roi);
 			Overlay overlayList = imp.getOverlay();
-			if (overlayList==null) overlayList = new Overlay();
+			if (overlayList==null)
+				overlayList = new Overlay();
 			overlayList.add(roi);
 			imp.setOverlay(overlayList);
 			Undo.setup(Undo.OVERLAY_ADDITION, imp);
+		}
+	}
+	
+	private void setPosition(ImagePlus imp, Roi roi) {
+		int stackSize = imp.getStackSize();
+		if (roi.hasHyperStackPosition() && imp.isHyperStack())
+			return;
+		if (roi.getPosition()>0 && stackSize>1)
+			return;
+		boolean setPos = defaultRoi.getPosition()!=0;
+		if (setPos && stackSize>1) {
+			if (imp.isHyperStack()||imp.isComposite()) {
+				boolean compositeMode = imp.isComposite() && ((CompositeImage)imp).getMode()==IJ.COMPOSITE;
+				int channel = !compositeMode||imp.getNChannels()==stackSize?imp.getChannel():0;
+				if (imp.getNSlices()>1)
+					roi.setPosition(channel, imp.getSlice(), 0);
+				else if (imp.getNFrames()>1)
+					roi.setPosition(channel, 0, imp.getFrame());
+			} else
+				roi.setPosition(imp.getCurrentSlice());
 		}
 	}
 
@@ -223,65 +247,42 @@ public class OverlayCommands implements PlugIn {
 
 	void flatten() {
 		ImagePlus imp = IJ.getImage();
-		int flags = imp.isComposite()?0:IJ.setupDialog(imp, 0);
+		Overlay overlay = imp.getOverlay();
+		Overlay roiManagerOverlay = null;
+		ImageCanvas ic = imp.getCanvas();
+		if (ic!=null)
+			roiManagerOverlay = ic.getShowAllList();
+		if (imp.getBitDepth()==24 && overlay==null && imp.getRoi()==null && roiManagerOverlay==null && !imp.isComposite() && !IJ.macroRunning()) {
+			IJ.error("Flatten", "Overlay or selection required to flatten RGB image");
+			return;
+		}
+		int flags = IJ.setupDialog(imp, 0);
 		if (flags==PlugInFilter.DONE)
 			return;
-		else if (flags==PlugInFilter.DOES_STACKS)
+		else if (flags==PlugInFilter.DOES_STACKS) {
+			//Added by Marcel Boeglin 2014.01.24
+			if (overlay==null && roiManagerOverlay==null && !imp.isComposite()) {
+				IJ.error("Flatten", "Overlay or multi-channel image required");
+				return;
+			}
 			flattenStack(imp);
-		else {
+			if (Recorder.record)
+				Recorder.recordCall("imp.flattenStack();");
+		} else {
 			ImagePlus imp2 = imp.flatten();
 			imp2.setTitle(WindowManager.getUniqueName(imp.getTitle()));
 			imp2.show();
-		}
-	}
-	
-	void flattenStack(ImagePlus imp) {
-		Overlay overlay = imp.getOverlay();
-		boolean roiManagerOverlay = false;
-		boolean roiManagerShowAllMode = false;
-		if (overlay==null) {
-			ImageCanvas ic = imp.getCanvas();
-			if (ic!=null) {
-				overlay = ic.getShowAllList();
-				if (overlay!=null) {
-					roiManagerOverlay = true;
-					roiManagerShowAllMode = !Prefs.showAllSliceOnly;
-				}
-			}
-		}
-		if (overlay==null || !IJ.isJava16() || imp.getBitDepth()!=24) {
-			IJ.error("Flatten Stack", "A stack in RGB format, an overlay and\nJava 1.6 are required to flatten a stack.");
-			return;
-		}
-		ImageStack stack = imp.getStack();
-		int stackSize = stack.getSize();
-		for (int img=1; img<=stack.getSize(); img++) {
-			ImageProcessor ip = stack.getProcessor(img);
-			ImagePlus imp2 = new ImagePlus("temp", ip);
-			Overlay overlay2 = overlay.duplicate();
-			for (int i=overlay2.size()-1; i>=0; i--) {
-				Roi roi = overlay2.get(i);
-				int position = roi.getPosition();
-				if (position==0 || position==img || roiManagerShowAllMode)
-					roi.setPosition(0);
-				else
-					roi.setPosition(stackSize+1);
-			}
-			if (overlay2.size()>0) {
-				imp2.setOverlay(overlay2);
-				ImagePlus imp3 = imp2.flatten();
-				stack.setPixels(imp3.getProcessor().getPixels(),img);
-			}
-		}
-		imp.setStack(stack);
-		imp.setOverlay(null);
-		if (roiManagerOverlay) {
-			RoiManager rm = RoiManager.getInstance();
-			if (rm!=null)
-				rm.runCommand("show none");
+			if (Recorder.record) // Added by Marcel Boeglin 2014.01.12
+				Recorder.recordCall("imp2 = imp.flatten();");
 		}
 	}
 
+
+	//Marcel Boeglin 2014.01.25
+	void flattenStack(ImagePlus imp) {
+		imp.flattenStack();
+	}
+	
 	void fromRoiManager() {
 		ImagePlus imp = IJ.getImage();
 		RoiManager rm = RoiManager.getInstance2();
@@ -297,7 +298,7 @@ public class OverlayCommands implements PlugIn {
 		rm.moveRoisToOverlay(imp);
 		imp.deleteRoi();
 	}
-	
+
 	void toRoiManager() {
 		ImagePlus imp = IJ.getImage();
 		Overlay overlay = imp.getOverlay();
@@ -305,28 +306,12 @@ public class OverlayCommands implements PlugIn {
 			IJ.error("Overlay required");
 			return;
 		}
-		RoiManager rm = RoiManager.getInstance();
-		if (rm==null) {
-			if (Macro.getOptions()!=null && Interpreter.isBatchMode())
-				rm = Interpreter.getBatchModeRoiManager();
-			if (rm==null) {
-				Frame frame = WindowManager.getFrame("ROI Manager");
-				if (frame==null)
-					IJ.run("ROI Manager...");
-				frame = WindowManager.getFrame("ROI Manager");
-				if (frame==null || !(frame instanceof RoiManager))
-					return;
-				rm = (RoiManager)frame;
-			}
-		}
+		RoiManager rm = RoiManager.getInstance2();
+		if (rm==null)
+			rm = new RoiManager();
 		if (overlay.size()>=4 && overlay.get(3).getPosition()!=0)
 			Prefs.showAllSliceOnly = true;
-		rm.runCommand("reset");
-		rm.setEditMode(imp, false);
-		for (int i=0; i<overlay.size(); i++)
-			rm.add(imp, overlay.get(i), i);
-		rm.setEditMode(imp, true);
-		rm.runCommand("show all");
+		rm.setOverlay(overlay);
 		imp.setOverlay(null);
 	}
 	
@@ -354,19 +339,65 @@ public class OverlayCommands implements PlugIn {
 			if (roi.getFillColor()==null)
 				roi.setFillColor(defaultRoi.getFillColor());
 		}
-		int width = Line.getWidth();
-		Rectangle bounds = roi.getBounds();
-		boolean tooWide = width>Math.max(bounds.width, bounds.height)/3.0;
-		if (roi.getStroke()==null && width>1 && !tooWide)
-			roi.setStrokeWidth(Line.getWidth());
-		if (roi.getStrokeColor()==null)
-			roi.setStrokeColor(Roi.getColor());
 		boolean points = roi instanceof PointRoi && ((PolygonRoi)roi).getNCoordinates()>1;
 		if (points) roi.setStrokeColor(Color.red);
 		roi.setPosition(defaultRoi.getPosition());
 		RoiProperties rp = new RoiProperties("Overlay Options", roi);
 		if (!rp.showDialog()) return;
 		defaultRoi = roi;
+	}
+	
+	void list() {
+		ImagePlus imp = IJ.getImage();
+		Overlay overlay = imp.getOverlay();
+		if (overlay!=null)
+			listRois(overlay.toArray());
+	}
+	
+	public static void listRois(Roi[] rois) {
+		ResultsTable rt = new ResultsTable();
+		for (int i=0; i<rois.length; i++) {
+			if (rois[i]==null)
+				continue;
+			Rectangle r = rois[i].getBounds();
+			String color = Colors.colorToString(rois[i].getStrokeColor());
+			String fill = Colors.colorToString(rois[i].getFillColor());
+			double strokeWidth = rois[i].getStrokeWidth();
+			int digits = strokeWidth==(int)strokeWidth?0:1;
+			String sWidth = IJ.d2s(strokeWidth,digits);
+			String group = ""+rois[i].getGroup();
+			if (group.equals("0"))
+				group = "none";
+			int position = rois[i].getPosition();
+			int c = rois[i].getCPosition();
+			int z = rois[i].getZPosition();
+			int t = rois[i].getTPosition();
+			rt.setValue("Index", i, i);
+			rt.setValue("Name", i, rois[i].getName());
+			rt.setValue("Type", i, rois[i].getTypeAsString());
+			rt.setValue("Group", i, group);
+			if (rois[i] instanceof PointRoi) {
+				Rectangle2D.Double bounds = rois[i].getFloatBounds();
+				rt.setValue("X", i, (int)Math.round(bounds.x));
+				rt.setValue("Y", i, (int)Math.round(bounds.y));
+			} else {
+				rt.setValue("X", i, r.x);
+				rt.setValue("Y", i, r.y);
+			}
+			rt.setValue("Width", i, r.width);		
+			rt.setValue("Height", i, r.height);		
+			rt.setValue("Points", i, rois[i].size());
+			rt.setValue("Color", i, color);		
+			rt.setValue("Fill", i, fill);		
+			rt.setValue("LWidth", i, sWidth);		
+			rt.setValue("Pos", i, position);	
+			rt.setValue("C", i, c);	
+			rt.setValue("Z", i, z);	
+			rt.setValue("T", i, t);	
+		}
+		ImagePlus imp = WindowManager.getCurrentImage();
+		String title = imp!=null?" of "+imp.getTitle():"";
+		rt.show("Overlay Elements"+title);//Marcel Boeglin 2019.10.07
 	}
 	
 }

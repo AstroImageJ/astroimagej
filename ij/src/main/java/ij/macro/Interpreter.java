@@ -12,10 +12,10 @@ import java.util.*;
 import java.awt.event.KeyEvent;
 import java.io.PrintWriter;
 
+
 /** This is the recursive descent parser/interpreter for the ImageJ macro language. */
 public class Interpreter implements MacroConstants {
 
-	public static final int NONE=0, STEP=1, TRACE=2, FAST_TRACE=3, RUN=4, RUN_TO_CARET=5;  // debugging modes
 	static final int STACK_SIZE=1000;
 	static final int MAX_ARGS=20;
 
@@ -37,10 +37,11 @@ public class Interpreter implements MacroConstants {
 	int topOfGlobals = -1;
 	int startOfLocals = 0;
 
-	static Interpreter instance, previousInstance;
+	static volatile Interpreter instance, previousInstance;
 	public static boolean batchMode;
 	static Vector imageTable; // images opened in batch mode
-	boolean done;
+	static Vector imageActivations; // images ordered by activation time
+	volatile boolean done;
 	Program pgm;
 	Functions func;
 	boolean inFunction;
@@ -52,13 +53,30 @@ public class Interpreter implements MacroConstants {
 	double[] rgbWeights;
 	boolean inPrint;
 	static String additionalFunctions;
-	Editor editor;
-	int debugMode = NONE;
+	Debugger debugger;
+	int debugMode = Debugger.NOT_DEBUGGING;
 	boolean showDebugFunctions;
 	static boolean showVariables;
 	boolean wasError;
 	ImagePlus batchMacroImage;
-
+	boolean inLoop;
+	int loopDepth;
+	static boolean tempShowMode;
+	boolean waitingForUser;
+	int selectCount;
+	
+	static TextWindow arrayWindow;
+	int inspectStkIndex = -1;
+	int inspectSymIndex = -1;
+	boolean evaluating;
+	ResultsTable applyMacroTable;
+	int errorCount;
+	volatile boolean ignoreErrors;
+	String errorMessage;
+	String evalOutput;
+	int[] callStack;
+	int callDepth = 0;
+	
 	/** Interprets the specified string. */
 	public void run(String macro) {
 		if (additionalFunctions!=null) {
@@ -67,13 +85,14 @@ public class Interpreter implements MacroConstants {
 			else
 				macro = macro + additionalFunctions;
 		}
+		IJ.resetEscape();
 		Tokenizer tok = new Tokenizer();
 		Program pgm = tok.tokenize(macro);
 		if (pgm.hasVars && pgm.hasFunctions)
 			saveGlobals2(pgm);
 		run(pgm);
 	}
-
+	
 	/** Runs the specified macro, passing it a string 
 		argument and returning a string value. */
 	public String run(String macro, String arg) {
@@ -87,20 +106,57 @@ public class Interpreter implements MacroConstants {
 		return returnValue;
 	}
 	
+	/** Evaluates 'code' and returns the output, or any error, as a String.
+	 * @see ij.Macro#eval
+	*/
+	public String eval(String code) {
+		Interpreter saveInstance = instance;
+		if (pgm!=null)
+			reuseSymbolTable();
+		Tokenizer tok = new Tokenizer();
+		Program pgm = tok.tokenize(code);
+		if (pgm.hasVars && pgm.hasFunctions)
+			saveGlobals2(pgm);
+		evaluating = true;
+		evalOutput = null;
+		ignoreErrors = true;
+		calledMacro = true;
+		run(pgm);
+		instance = saveInstance;
+		if (errorMessage!=null)
+			return errorMessage;
+		else
+			return evalOutput;
+	}
+	
+	private void reuseSymbolTable() {
+		if (pgm==null)
+			return;
+		Symbol[] table1 = pgm.getSymbolTable();
+		Symbol[] table2 = new Symbol[pgm.stLoc+1];
+		for (int i=0; i<=pgm.stLoc; i++)
+			table2[i] = table1[i];
+		Program.systemTable = table2;
+	}
+	
 	/** Interprets the specified tokenized macro file starting at location 0. */
 	public void run(Program pgm) {
 		this.pgm = pgm;
 		pc = -1;
+		callDepth = 0;
 		instance = this;
 		if (!calledMacro) {
 			batchMode = false;
-			imageTable = null;
+			imageTable = imageActivations = null;
 		}
 		pushGlobals();
 		if (func==null)
 			func = new Functions(this, pgm);
+		else
+			func.pgm = pgm;
 		func.plot = null;
-		//IJ.showStatus("interpreting");
+		done = false;
+		errorMessage = null;
 		doStatements();
 		finishUp();
 	}
@@ -121,7 +177,6 @@ public class Interpreter implements MacroConstants {
 		pc = macroLoc-1;
 		previousInstance = instance;
 		instance = this;
-		//IJ.showStatus("interpreting");
 		pushGlobals();
 		if (func==null)
 			func = new Functions(this, pgm);
@@ -148,7 +203,9 @@ public class Interpreter implements MacroConstants {
 
 	/** Saves global variables. */
 	public void saveGlobals(Program pgm) {
+		Interpreter saveInstance = instance;
 		saveGlobals2(pgm);
+		instance = saveInstance; 
 	}
 	
 	void saveGlobals2(Program pgm) {
@@ -209,8 +266,10 @@ public class Interpreter implements MacroConstants {
 
 	final void doStatement() {
 		getToken();
-		if (debugMode!=NONE && editor!=null && !done && token!=';' && token!=FUNCTION)
-			editor.debug(this, debugMode);
+		if (debugMode!=Debugger.NOT_DEBUGGING && debugger!=null && !done && token!=';' && token!=FUNCTION) {
+			debugger.debug(this, debugMode);
+			if (done) return;
+		}
 		switch (token) {
 			case VAR:
 				doVar();
@@ -224,8 +283,17 @@ public class Interpreter implements MacroConstants {
 			case RETURN:
 				doReturn();
 				break;
+			case BREAK:
+				if (inLoop) throw new MacroException(BREAK);
+				break;
+			case CONTINUE:
+				if (inLoop) throw new MacroException(CONTINUE);
+				break;
 			case WORD:
-				doAssignment();
+				if (pgm.code[pc+1]=='.')
+					doStringFunction();
+				else
+					doAssignment();
 				break;
 			case IF:
 				doIf();
@@ -258,18 +326,23 @@ public class Interpreter implements MacroConstants {
 			case NUMERIC_FUNCTION:
 			case STRING_FUNCTION:
 			case STRING_CONSTANT:
+			case VARIABLE_FUNCTION:
 			case '(': 
 				putTokenBack();
 				inPrint = true;
 				String s = getString();
 				inPrint = false;
 				if (s!=null && s.length()>0 && !s.equals("NaN") && !s.equals("[aborted]"))
-					IJ.log(s);
+					log(s);
 				return;
 			case ARRAY_FUNCTION: func.getArrayFunction(pgm.table[tokenAddress].type); break;
 			case EOF: break;
 			default:
-				error("Statement cannot begin with '"+pgm.decodeToken(token, tokenAddress)+"'");
+				if (evaluating && token==PI) {
+					putTokenBack();
+					log(""+getExpression());
+				} else
+					error("Statement cannot begin with '"+pgm.decodeToken(token, tokenAddress)+"'");
 		}
 		if (!looseSyntax) {
 			getToken();
@@ -277,8 +350,41 @@ public class Interpreter implements MacroConstants {
 				error("';' expected");
 		}
 	}
-
+	
+	private void doStringFunction() {
+		boolean stringFunction = (pgm.code[pc+2]&0xff)==136;
+		putTokenBack();
+		String s = stringFunction?getString():""+getExpression();
+		if (s.endsWith(".0"))
+			s = s.substring(0,s.length()-2);
+		IJ.log(s);
+	}
+	
+	void log(String s) {
+		if (evaluating)
+			evalOutput = s;
+		else
+			IJ.log(s);
+	}
+	
+	//For showing call stack in macro errors
+	private void growCallStack(int grow) {
+		if(callStack == null){
+			callStack = new int[10];
+			callDepth = 0;
+		}
+		if (callDepth <0 ||  callDepth > 8)
+			return;
+		if (grow == 1){
+			int line = pgm.lineNumbers[pc];
+			callStack[callDepth++] = line;
+		}
+		if (grow == -1 && callDepth > 0)
+			callDepth--;
+	}
+	
 	Variable runUserFunction() {
+		growCallStack(1);
 		int newPC = (int)tokenValue;
 		int saveStartOfLocals = startOfLocals;
 		startOfLocals = topOfStack+1;
@@ -300,6 +406,7 @@ public class Interpreter implements MacroConstants {
 		inFunction = saveInFunction;
 		pc = savePC;
 		trimStack(saveTOS, saveStartOfLocals);
+		growCallStack(-1);
 		return value;
 	}
 
@@ -330,7 +437,7 @@ public class Interpreter implements MacroConstants {
 						args[count] = v2;
 					} else
 						args[count] = new Variable(0, getExpression(), null);	
-				} else if (next==WORD && (nextPlus==',' || nextPlus==')')) {
+				} else if (next==WORD && (nextPlus==','||nextPlus==')')) {
 					value = 0.0;
 					Variable[] array = null;
 					int arraySize = 0;
@@ -360,6 +467,26 @@ public class Interpreter implements MacroConstants {
 						pc = savePC;
 						args[count] = new Variable(0, getExpression(), null);
 					}
+				} else if (next==WORD && nextPlus=='.' ) { // s.length, s.substring(), etc.
+					boolean stringFunction = (pgm.code[pc+3]&0xff)==136;
+					if (stringFunction)
+						args[count] = new Variable(0, 0.0, func.getString(), null);
+					else
+						args[count] = new Variable(0, getExpression(), null);
+				} else if (nextPlus=='+' && next==WORD) {
+					int savePC = pc;
+					getToken();
+					Variable v = lookupVariable();
+					boolean isString = v!=null && v.getType()==Variable.STRING;
+					pc = savePC;
+					if (isString)
+						args[count] = new Variable(0, 0.0, getString());
+					else
+						args[count] = new Variable(0, getExpression(), null);
+				} else if (next==ARRAY_FUNCTION) {
+					getToken();
+					Variable[] array = func.getArrayFunction(pgm.table[tokenAddress].type);
+					args[count] = new Variable(0, 0, null, array);
 				} else
 					args[count] = new Variable(0, getExpression(), null);
 				count++;
@@ -403,7 +530,12 @@ public class Interpreter implements MacroConstants {
 		String str = null;
 		Variable[] array = null;
 		int arraySize = 0;
-		getToken();
+		getToken();		
+		if (token=='(') {
+			int next = pgm.code[pc+1];
+			if ((next&TOK_MASK)==STRING_CONSTANT || (next&TOK_MASK)==STRING_FUNCTION || isString(pc+1))
+				error("String enclosed in parens");
+		}		
 		if (token!=';') {
 			boolean isString = token==STRING_CONSTANT || token==STRING_FUNCTION;
 			boolean isArrayFunction = token==ARRAY_FUNCTION;
@@ -413,7 +545,8 @@ public class Interpreter implements MacroConstants {
 					array = v.getArray();
 					if (array!=null) arraySize=v.getArraySize();
 					isString = v.getString()!=null;
-				}
+				} else if (v!=null && nextToken()=='+')
+					isString = v.getType()==Variable.STRING;
 			}
 			putTokenBack();
 			if (isString)
@@ -457,6 +590,8 @@ public class Interpreter implements MacroConstants {
 	void doFor() {
 		boolean saveLooseSyntax = looseSyntax;
 		looseSyntax = false;
+		loopDepth++;
+		inLoop = true;
 		getToken();
 		if (token!='(')
 			error("'(' expected");
@@ -468,7 +603,6 @@ public class Interpreter implements MacroConstants {
 			   getAssignmentExpression();
 			getToken();
 		} while (token==',');
-		//IJ.log("token: "+pgm.decodeToken(token,tokenAddress));
 		if (token!=';')
 			error("';' expected");
 		int condPC = pc;
@@ -495,9 +629,17 @@ public class Interpreter implements MacroConstants {
 			   }
 			}
 			startPC = pc;
-			if (cond==1)
-				doStatement();
-			else {
+			if (cond==1) {
+				try {
+					doStatement();
+				} catch(MacroException e) {
+					if (e.getType()==BREAK) {
+						pc = startPC;
+						skipStatement();
+						break;
+					}
+				}
+			} else {
 				skipStatement();
 				break;
 			}
@@ -510,20 +652,37 @@ public class Interpreter implements MacroConstants {
 			pc = condPC;
 		}
 		looseSyntax = saveLooseSyntax;
+		loopDepth--;
+		if (loopDepth==0)
+			inLoop = false;
 	}
 
 	void doWhile() {
 		looseSyntax = false;
+		loopDepth++;
+		inLoop = true;
 		int savePC = pc;
 		boolean isTrue;
 		do {
 			pc = savePC;
 			isTrue = getBoolean();
-			if (isTrue)
-				doStatement();
-			else
+			if (isTrue) {
+				try {
+					doStatement();
+				} catch(MacroException e) {
+					if (e.getType()==BREAK) {
+						pc = savePC;
+						getBoolean();
+						skipStatement();
+						break;
+					}
+				}
+			} else
 				skipStatement();
 		} while (isTrue && !done);
+		loopDepth--;
+		if (loopDepth==0)
+			inLoop = false;
 	}
 
 	void doDo() {
@@ -557,11 +716,13 @@ public class Interpreter implements MacroConstants {
 	}
 
 	final void skipStatement() {
+		if (done)
+			return;
 		getToken();
 		switch (token) {
 			case PREDEFINED_FUNCTION: case USER_FUNCTION: case VAR:
-			case WORD: case '(': case PLUS_PLUS: case RETURN:
-			case NUMERIC_FUNCTION: case STRING_FUNCTION:
+			case WORD: case '(': case PLUS_PLUS: case RETURN: case ARRAY_FUNCTION:
+			case NUMERIC_FUNCTION: case STRING_FUNCTION: case VARIABLE_FUNCTION:
 				skipSimpleStatement();
 				break;
 			case IF:
@@ -586,7 +747,7 @@ public class Interpreter implements MacroConstants {
 				getToken(); // skip 'while'
 				skipParens();
 				break;
-			case ';':
+			case BREAK: case CONTINUE: case ';':
 				break;
 			case '{':
 				putTokenBack();
@@ -673,7 +834,8 @@ public class Interpreter implements MacroConstants {
 			case STRING_FUNCTION: doNumericStringAssignment(); break;
 			default:
 				putTokenBack();
-				getAssignmentExpression();
+				double value = getAssignmentExpression();
+				if (evaluating) log(""+value);
 		}
 	}
 
@@ -707,6 +869,18 @@ public class Interpreter implements MacroConstants {
 			return Variable.ARRAY;
 		if (tok==USER_FUNCTION)
 			return USER_FUNCTION;
+		if (tok==VARIABLE_FUNCTION) {
+			int address = rightSideToken>>TOK_SHIFT;
+			int type = pgm.table[address].type;
+			if (type==TABLE || type==ROI  || type==ROI_MANAGER2 || type==PROPERTY) {
+				if (isString(pc+2))
+					return Variable.STRING;
+				int token2 = pgm.code[pc+4];
+				String name = pgm.table[token2>>TOK_SHIFT].str;
+				if (name.equals("getColumn"))
+					return Variable.ARRAY;
+			}
+		}
 		if (tok!=WORD)
 			return Variable.VALUE;
 		Variable v = lookupVariable(rightSideToken>>TOK_SHIFT);
@@ -769,7 +943,6 @@ public class Interpreter implements MacroConstants {
 			if (!func.expandableArrays)
 				error("Index ("+index+") out of range");
 			Variable[] array2 = new Variable[index+array.length/2+1];
-			//IJ.log(array.length+" "+array2.length);
 			boolean strings = array.length>0 && array[0].getString()!=null;
 			for (int i=0; i<array2.length; i++) {
 				if (i<array.length)
@@ -899,6 +1072,13 @@ public class Interpreter implements MacroConstants {
 		else if (token==WORD) {
 			Variable v2 = lookupVariable();
 			v.setArray(v2.getArray());
+			v.setArraySize(v2.getArraySize());
+		} else if (token==VARIABLE_FUNCTION) {
+			Variable v2 = func.getVariableFunction(pgm.table[tokenAddress].type);
+			Variable[] array = v2.getArray();
+			if (array==null)
+				error("Array expected");			
+			v.setArray(array);
 		} else
 			error("Array expected");
 	}
@@ -954,7 +1134,7 @@ public class Interpreter implements MacroConstants {
 		String s1 = null;
 		int next = pgm.code[pc+1];
 		int tok = next&TOK_MASK;
-		if (tok==STRING_CONSTANT || tok==STRING_FUNCTION || isString(next))
+		if (tok==STRING_CONSTANT || tok==STRING_FUNCTION || isString(pc+1))
 			s1 = getString();
 		else
 			v1 = getExpression();
@@ -985,17 +1165,35 @@ public class Interpreter implements MacroConstants {
 					v1 = v1<=v2?1.0:0.0;
 					break;
 			}
-		} else if (s1!=null)
-			v1 = Tools.parseDouble(s1, 0.0);
+		} else if (s1!=null) {
+			if (s1.equals("true"))
+				v1 = 1.0;
+			else if (s1.equals("false"))
+				v1 = 0.0;
+			else
+				v1 = Tools.parseDouble(s1, Double.NaN);
+		}
 		return v1;
 	}
 
-	// returns true if the specified token is a string variable
-	boolean isString(int token) {
-		if ((token&TOK_MASK)!=WORD) return false;
-		Variable v = lookupVariable(token>>TOK_SHIFT);
+	// Returns true if the token at the specified location is a string
+	boolean isString(int pcLoc) {
+		int tok = pgm.code[pcLoc];
+		if ((tok&0xff)==VARIABLE_FUNCTION) {
+			int address = tok>>TOK_SHIFT;
+			int type = pgm.table[address].type;
+			if (type==TABLE || type==ROI || type==PROPERTY || type==ROI_MANAGER2) {
+				int token2 = pgm.code[pcLoc+2];
+				String name = pgm.table[token2>>TOK_SHIFT].str;
+				if (Functions.isStringFunction(name,type))
+					return true; 
+			}
+		}
+		if ((tok&TOK_MASK)!=WORD)
+			return false;
+		Variable v = lookupVariable(tok>>TOK_SHIFT);
 		if (v==null) return false;
-		if (pgm.code[pc+2]=='[') {
+		if (pgm.code[pcLoc+1]=='[') {
 			Variable[] array = v.getArray();
 			if (array!=null && array.length>0)
 				return array[0].getType()==Variable.STRING;
@@ -1036,14 +1234,13 @@ public class Interpreter implements MacroConstants {
 		||tokPlus2==MINUS_EQUAL||tokPlus2==MUL_EQUAL||tokPlus2==DIV_EQUAL)) {
 			getToken();
 			Variable v = lookupLocalVariable(tokenAddress);
-			if (v==null)
-				v = push(tokenAddress, 0.0, null, this);
+			int saveAddress = tokenAddress;
 			getToken();
 			double value = 0.0;
 			if (token=='=')
 				value = getAssignmentExpression();
 			else {
-				value = v.getValue();
+				value = v!=null?v.getValue():0.0;
 				switch (token) {
 					case PLUS_EQUAL: value += getAssignmentExpression(); break;
 					case MINUS_EQUAL: value -= getAssignmentExpression(); break;
@@ -1051,6 +1248,8 @@ public class Interpreter implements MacroConstants {
 					case DIV_EQUAL: value /= getAssignmentExpression(); break;
 				}
 			}
+			if (v==null)
+				v = push(saveAddress, 0.0, null, this);
 			v.setValue(value);
 			return value;
 		} else
@@ -1059,7 +1258,7 @@ public class Interpreter implements MacroConstants {
 
 	final void checkBoolean(double value) {
 		if (!(value==0.0 || value==1.0))
-			error("Boolean expression expected");
+			error("Boolean expression expected: "+value);
 	}
 
 	void doVar() {
@@ -1112,6 +1311,10 @@ public class Interpreter implements MacroConstants {
 	}
 
 	void error (String message) {
+		errorMessage = message;
+		if (ignoreErrors)
+			return;
+		errorCount++;
 		boolean showMessage = !done;
 		String[] variables = showMessage?getVariables():null;
 		token = EOF;
@@ -1119,30 +1322,64 @@ public class Interpreter implements MacroConstants {
 		IJ.showStatus("");
 		IJ.showProgress(0, 0);
 		batchMode = false;
-		imageTable = null;
+		imageTable = imageActivations = null;
 		WindowManager.setTempCurrentImage(null);
 		wasError = true;
-		instance = null;
-		if (showMessage) {
+		if (!evaluating)
+			instance = null;
+		if (showMessage && message!=null) {
 			String line = getErrorLine();
 			done = true;
 			if (line.length()>120)
-				line = line.substring(0,119)+"...";
-			showError("Macro Error", message+" in line "+lineNumber+".\n \n"+line, variables);
+				line = line.substring(0,119)+"...";			
+			Frame f = WindowManager.getFrame("Debug");			
+			TextPanel panel = null;
+			if (showVariables && f!=null && (f instanceof TextWindow)) { //clear previous content
+				TextWindow debugWindow = (TextWindow) f;
+				if (debugWindow != null) {
+					panel = debugWindow.getTextPanel();
+					panel.clear();
+				}	
+			}
+			String calledFrom = "";
+			if (callDepth > 0 && callStack != null) {
+				for (int jj = callDepth - 1; jj >= 0; jj--) {
+					int theline = callStack[jj];
+					calledFrom += "\t\t(called from line " + theline +")\n";
+				}
+			}
+			showError("Macro Error", message+" in line "+lineNumber +"\n" + calledFrom +" \n"+line, variables);
+			f = WindowManager.getFrame("Debug");
+			if (showVariables && f!=null && (f instanceof TextWindow)) {
+				TextWindow debugWindow = (TextWindow)f;
+				debugWindow.append("\n---\t\t---\nError:\t\t" + message + " in line "+lineNumber + ":");
+				debugWindow.append(calledFrom + "\t\t");	
+				debugWindow.append("\t\t"+line);
+			}			
 			throw new RuntimeException(Macro.MACRO_CANCELED);
 		}
 		done = true;
+		if (errorCount>10) 
+			throw new RuntimeException(Macro.MACRO_CANCELED);
 	}
-	
+		
 	void showError(String title, String msg, String[] variables) {
+		boolean noImages = msg.startsWith("There are no images open");
+		if (noImages)
+			title = "No Image";
+		Macro.setOptions(null);
 		GenericDialog gd = new GenericDialog(title);
 		gd.setInsets(6,5,0);
 		gd.addMessage(msg);
 		gd.setInsets(15,30,5);
-		gd.addCheckbox("Show \"Debug\" Window", showVariables);
+		if (!noImages)
+			gd.addCheckbox("Show \"Debug\" Window", showVariables);
 		gd.hideCancelButton();
 		gd.showDialog();
-		showVariables = gd.getNextBoolean();
+		if (!noImages)
+			showVariables = gd.getNextBoolean();
+		else
+			showVariables = false;
 		if (!gd.wasCanceled() && showVariables)
 			updateDebugWindow(variables, null);
 	}
@@ -1156,7 +1393,7 @@ public class Interpreter implements MacroConstants {
 			}
 		}
 		if (debugWindow==null)
-			debugWindow = new TextWindow("Debug", "Name\tValue", "", 300, 400);
+			debugWindow = new TextWindow("Debug", "Name\t*\tValue", "", 300, 400);
 		TextPanel panel = debugWindow.getTextPanel();
 		int n = variables.length;
 		if (n==0) {
@@ -1164,19 +1401,36 @@ public class Interpreter implements MacroConstants {
 			return debugWindow;
 		}
 		int lines = panel.getLineCount();
+		String[] markedVariables = markChanges(variables);
 		for (int i=0; i<lines; i++) {
 			if (i<n)
-				panel.setLine(i, variables[i]);
+				panel.setLine(i, markedVariables[i]);
 			else
 				panel.setLine(i, "");
 		}
 		for (int i=lines; i<n; i++)
-			debugWindow.append(variables[i]);
+			debugWindow.append(markedVariables[i]);
 		return debugWindow;
 	}
 
+	private static String[] prevVars; //previous variables for comparison
 
-	String getErrorLine() {//n__
+	private String[] markChanges(String[] newVars) {//add asterisk if variable has changed
+		int len = newVars.length;
+		String[] copyOfNew = new String[len];
+		String[] hilitedVars = new String[len];
+		for (int jj = 0; jj < len; jj++) {
+			copyOfNew[jj] = newVars[jj];
+			String marker = "\t*\t";//changed
+			if (prevVars != null && jj < prevVars.length && jj < len && prevVars[jj].equals(newVars[jj]))
+				marker = "\t\t";//unchanged
+			hilitedVars[jj] = newVars[jj].replaceFirst("\t", marker);
+		}
+		prevVars = copyOfNew;
+		return hilitedVars;
+	}
+
+	String getErrorLine() {
 		int savePC = pc;
 		lineNumber = pgm.lineNumbers[pc];
 		while (pc>=0 && lineNumber==pgm.lineNumbers[pc])
@@ -1205,12 +1459,13 @@ public class Interpreter implements MacroConstants {
 				putTokenBack();
 				break;
 			}
-		};
+		}
 		return str;
 	}
 
 	final String getStringTerm() {
 		String str;
+		Variable v;
 		getToken();
 		switch (token) {
 		case STRING_CONSTANT:
@@ -1219,8 +1474,24 @@ public class Interpreter implements MacroConstants {
 		case STRING_FUNCTION:
 			str = func.getStringFunction(pgm.table[tokenAddress].type);
 			break;
+		case VARIABLE_FUNCTION:		
+			if (!isString(pc)) {
+				putTokenBack();
+				str = toString(getStringExpression());
+				break;
+			}
+			v = func.getVariableFunction(pgm.table[tokenAddress].type);
+			str = v.getString();
+			if (str==null) {
+				double value = v.getValue();
+				if ((int)value==value)
+					str = IJ.d2s(value,0);
+				else
+					str = ""+value;
+			}
+			break;
 		case USER_FUNCTION:
-			Variable v = runUserFunction();
+			v = runUserFunction();
 			if (v==null)
 				error("No return value");
 			str = v.getString();
@@ -1248,6 +1519,8 @@ public class Interpreter implements MacroConstants {
 		if ((int)x==x)
 			return IJ.d2s(x,0);
 		else {
+			if (evaluating)
+				return ""+x;
 			String str = IJ.d2s(x, 4, 9);
 			while(str.endsWith("0") && str.contains(".") && !str.contains("E"))
 				str = str.substring(0, str.length()-1);
@@ -1308,6 +1581,9 @@ public class Interpreter implements MacroConstants {
 			case NUMBER:
 				value = tokenValue;
 				break;
+			case STRING_CONSTANT:
+				value = Tools.parseDouble(tokenString,Double.NaN);
+				break;
 			case NUMERIC_FUNCTION:
 				value = func.getFunctionValue(pgm.table[tokenAddress].type);
 				break;
@@ -1318,6 +1594,15 @@ public class Interpreter implements MacroConstants {
 					value = Double.NaN;
 				else if (Double.isNaN(value))
 					error("Numeric value expected");
+				break;				
+			case VARIABLE_FUNCTION:
+				v = func.getVariableFunction(pgm.table[tokenAddress].type);
+				if (v==null)
+					error("No return value");
+				if (v.getString()!=null)
+						error("Numeric return value expected");
+				else
+					value = v.getValue();
 				break;
 			case USER_FUNCTION:
 				v = runUserFunction();
@@ -1345,10 +1630,18 @@ public class Interpreter implements MacroConstants {
 					v = getArrayElement(v);
 					value = v.getValue();
 					next = nextToken();
+					if (next=='.') {
+						value = runNumericFunction(v);
+						next = nextToken();
+					}
 				} else if (next=='.') {
-					value = getArrayLength(v);
+					value = runNumericFunction(v);
 					next = nextToken();
 				} else {
+					if (v.getArray()!=null) {
+						getToken();
+						error("'[' or '.' expected");
+					}
 					if (prefixValue!=0 && !checkingType) {
 						v.setValue(v.getValue()+prefixValue);
 						prefixValue = 0;
@@ -1400,19 +1693,44 @@ public class Interpreter implements MacroConstants {
 		Variable[] array = v.getArray();
 		if (array==null)
 			error("Array expected");
-		if (index<0 || index>=array.length)
-			error("Index ("+index+") out of 0-"+(array.length-1)+" range");
+		if (index<0 || index>=array.length) {
+			if (array.length==0)
+				error("Empty array");
+			else
+				error("Index ("+index+") out of 0-"+(array.length-1)+" range");
+		}
 		return array[index];
 	}
 	
-	final double getArrayLength(Variable v) {
+	final double runNumericFunction(Variable v) {
 		getToken(); // '.'
 		getToken();
-		if (!(token==WORD && tokenString.equals("length")))
-			error("'length' expected");
-		if (v.getArray()==null)
-			error("Array expected");
-		return v.getArraySize();
+		if (token==WORD && v.getArray()!=null && tokenString.equals("length"))
+			return v.getArraySize();			
+		String str = v.getString();
+		if (str==null)
+			error("Array or string expected");	
+		double value = Double.NaN;		
+		if (token==WORD) {
+			if (tokenString.equals("length")) {
+				getParens();
+				value = str.length();
+			} else if (tokenString.equals("contains"))
+				value = str.contains(func.getStringArg())?1:0;
+			else if (tokenString.equals("charAt"))
+				value = str.charAt((int)func.getArg());
+		} else if (token==NUMERIC_FUNCTION) {
+			int type = pgm.table[tokenAddress].type;
+			switch (type) {
+				case INDEX_OF: value = func.indexOf(str); break;
+				case LAST_INDEX_OF: value = str.lastIndexOf(func.getStringArg()); break;
+				case STARTS_WITH: value = str.startsWith(func.getStringArg())?1:0; break;
+				case ENDS_WITH: value = str.endsWith(func.getStringArg())?1:0; break;
+				case MATCHES: value = func.matches(str); break;
+			}
+		} else
+			error("Numeric function expected");
+		return value;
 	}
 	
 	final double getStringExpression() {
@@ -1448,7 +1766,7 @@ public class Interpreter implements MacroConstants {
 
 	/** Searches the local and global sections of the stack for.
 		the specified variable. Returns null if it is not found. */
-		final Variable lookupLocalVariable(int symTabAddress) {
+	final Variable lookupLocalVariable(int symTabAddress) {
 		//IJ.log("lookupLocalVariable: "+topOfStack+" "+startOfLocals+" "+topOfGlobals);
 		Variable v = null;
 		for (int i=topOfStack; i>=startOfLocals; i--) {
@@ -1521,7 +1839,6 @@ public class Interpreter implements MacroConstants {
 			stack[i] = null;
 		topOfStack = previousTOS;
 	    startOfLocals = previousStartOfLocals;
-	    //IJ.log("trimStack: "+topOfStack);
 	}
 	
 	/** Searches the entire stack for the variable associated with the 
@@ -1535,7 +1852,6 @@ public class Interpreter implements MacroConstants {
 		boolean found = false;
 		for (int i=topOfStack; i>=0; i--) {
 			v = stack[i];
-			//IJ.log(I+"  "+v+"  "+v.symTabIndex+"  "+tokenAddress);
 			if (v.symTabIndex==tokenAddress) {
 				found = true;
 				break;
@@ -1567,13 +1883,22 @@ public class Interpreter implements MacroConstants {
 					if (index<0 || index>=array.length)
 						error("Index ("+index+") out of 0-"+(array.length-1)+" range");
 					str = array[index].getString();
-					if (str==null) {
-						pc = savePC-1;
-						getToken();
+					int next2 = nextToken();			
+					if (str!=null) {
+						if (next2=='.')
+							str = runStringFunction(str);
+					} else {
+						if (next2==')' || next2==';')
+							str = toString(array[index].getValue());
+						else {
+							pc = savePC-1;
+							getToken();
+						}
 					}
-				} else if (next=='.')
-						str = null;
-				else {
+				} else if (next=='.') {
+					if (v.getString()!=null)
+						str = runStringFunction(v.getString());
+				} else {
 					if (v.getArray()!=null)
 						{getToken(); error("'[' or '.' expected");}
 					str = v.getString();
@@ -1583,6 +1908,52 @@ public class Interpreter implements MacroConstants {
 		}
 		if (!found)
 			undefined();
+		return str;
+	}
+	
+	private String runStringFunction(String str) {
+		getToken(); // '.'
+		getToken();
+		if (token==WORD) {
+			if (tokenString.equals("length")) {
+				getParens();
+				str = ""+str.length();
+			} else if (tokenString.equals("contains")) {
+				str = ""+str.contains(func.getStringArg());
+			} else if (tokenString.equals("trim")) {
+				getParens();
+				str = str.trim();
+			} else if (tokenString.equals("charAt")) {
+				str = ""+str.charAt((int)func.getArg());
+			} else if (tokenString.equals("replaceAll")) {
+				str = func.replace(str);
+			} else
+				str = null;
+		} else if (token==NUMERIC_FUNCTION) {
+			int type = pgm.table[tokenAddress].type;
+			switch (type) {
+				case INDEX_OF: str = ""+func.indexOf(str); break;
+				case LAST_INDEX_OF: str = ""+str.lastIndexOf(func.getStringArg()); break;
+				case STARTS_WITH: str = ""+str.startsWith(func.getStringArg()); break;
+				case ENDS_WITH: str = ""+str.endsWith(func.getStringArg()); break;
+				case MATCHES: str = ""+func.matches(str); break;
+				default:
+					str = null;
+			}
+		} else if (token==STRING_FUNCTION) {
+			int type = pgm.table[tokenAddress].type;
+			switch (type) {
+				case SUBSTRING: str = func.substring(str); break;
+				case TO_LOWER_CASE: getParens(); str = str.toLowerCase(Locale.US); break;
+				case TO_UPPER_CASE: getParens(); str = str.toUpperCase(Locale.US); break;
+				case REPLACE: str = func.replace(str); break;
+				default:
+					str = null;
+			}
+		} else
+			str = null;
+		if (str==null)
+			error("String function expected");
 		return str;
 	}
 
@@ -1626,9 +1997,13 @@ public class Interpreter implements MacroConstants {
 	void dumpStack() {
 		IJ.log("");
 		IJ.log("Stack");
-		if (stack!=null)
-			for (int i=topOfStack; i>=0; i--)
-				IJ.log(i+" "+pgm.table[stack[i].symTabIndex].str+" "+stack[i]);
+		if (stack!=null) {
+			for (int i=topOfStack; i>=0; i--) {
+				Variable v = stack[i];
+				Symbol symbol = v!=null?pgm.table[v.symTabIndex]:null;
+				IJ.log(i+" "+(symbol!=null?symbol.str:"null")+" "+v);
+			}
+		}
 	}
 	
 	void finishUp() {
@@ -1637,9 +2012,10 @@ public class Interpreter implements MacroConstants {
 		func.updateDisplay();
 		instance = null;
 		if (!calledMacro || batchMacro) {
-			if (batchMode) showingProgress = true;
+			if (batchMode)
+				showingProgress = true;
 			batchMode = false;
-			imageTable = null;
+			imageTable = imageActivations = null;
 			WindowManager.setTempCurrentImage(null);
 		}
 		if (func.plot!=null) {
@@ -1655,16 +2031,26 @@ public class Interpreter implements MacroConstants {
 		}
 		if (rgbWeights!=null)
 			ColorProcessor.setWeightingFactors(rgbWeights[0], rgbWeights[1], rgbWeights[2]);
-		if (func.writer!=null) func.writer.close();
+		if (func.writer!=null)
+			func.writer.close();
 		func.roiManager = null;
 		if (func.resultsPending) {
 			ResultsTable rt = ResultsTable.getResultsTable();
-			if (rt!=null && rt.getCounter()>0) rt.show("Results");
+			if (rt!=null && rt.size()>0)
+				rt.show("Results");
+		}
+		if (func.unUpdatedTable!=null)
+			func.unUpdatedTable.show(func.unUpdatedTable.getTitle());
+		if (IJ.isMacOSX() && selectCount>0 && debugger==null) {
+			Frame frame = WindowManager.getFrontWindow();
+			if (frame!=null && (frame instanceof ImageWindow))
+				ImageWindow.setImageJMenuBar((ImageWindow)frame);
 		}
 	}
 	
 	/** Aborts currently running macro. */
 	public static void abort() {
+		//IJ.log("abort: "+(instance!=null?""+instance.hashCode():"null"));
 		if (instance!=null)
 			instance.abortMacro();
 	}
@@ -1688,13 +2074,52 @@ public class Interpreter implements MacroConstants {
 	public void abortMacro() {
 		if (!calledMacro || batchMacro) {
 			batchMode = false;
-			imageTable = null;
+			imageTable = imageActivations = null;
 		}
-		done = true;
 		if (func!=null && !(macroName!=null&&macroName.indexOf(" Tool")!=-1))
 			func.abortDialog();
 		IJ.showStatus("Macro aborted");
+		shutdown();
+		//IJ.log("abortMacro1: "+done+" "+(instance!=null?""+instance.hashCode():"null"));
+		long t0 = System.currentTimeMillis();
+		while ((System.currentTimeMillis()-t0)<2000 && instance!=null)
+			IJ.wait(5);
+		if (instance!=null) {
+			abortAllMacroThreads();
+			setInstance(null);
+		}
 	}
+	
+	public void abort(String message) {
+		errorMessage = message;
+		if (ignoreErrors) {
+			done = true;
+			finishUp();
+		} else {
+			error(message);
+		}
+	}
+	
+	private synchronized void shutdown() {
+		ignoreErrors = true;
+		for (int i=0; i<10; i++)
+			done = true;
+	}
+		
+	private void abortAllMacroThreads() {
+		try {
+			ThreadGroup group = Thread.currentThread().getThreadGroup(); 
+			int activeCount = group.activeCount(); 
+			Thread[] threads = new Thread[activeCount]; 
+			group.enumerate(threads); 
+			for (int i = 0; i < activeCount; i++) { 
+				String name = threads[i].getName(); 
+				if (name!=null && name.endsWith("Macro$"))
+					threads[i].stop(); 
+			}
+		} catch (Throwable e) {
+		}
+	} 
 
 	public static Interpreter getInstance() {
 		return instance;
@@ -1704,42 +2129,51 @@ public class Interpreter implements MacroConstants {
 		instance = i;
 	}
 
-	//public boolean  inLoop() {
-	//	return !looseSyntax;
-	//}
-
 	static void setBatchMode(boolean b) {
 		batchMode = b;
-		if (b==false) imageTable = null;
+		if (b==false)
+			imageTable = imageActivations = null;
 	}
 
 	public static boolean isBatchMode() {
-		return batchMode;
+		return batchMode && !tempShowMode;
 	}
 	
 	public static void addBatchModeImage(ImagePlus imp) {
 		if (!batchMode || imp==null) return;
 		if (imageTable==null)
 			imageTable = new Vector();
-		//IJ.log("add: "+imp+"  "+imageTable.size());
-		imageTable.addElement(imp);
+		imageTable.add(imp);
+		activateImage(imp);
 	}
 
 	public static void removeBatchModeImage(ImagePlus imp) {
 		if (imageTable!=null && imp!=null) {
 			int index = imageTable.indexOf(imp);
-			if (index!=-1)
-				imageTable.removeElementAt(index);
+			if (index!=-1) {
+				imageTable.remove(index);
+				imageActivations.remove(imp);
+				WindowManager.setTempCurrentImage(getLastBatchModeImage());
+			}
 		}
 	}
 	
+	public static void activateImage(ImagePlus imp) {
+		if (imageTable!=null && imp!=null) {
+			if (imageActivations==null)
+				imageActivations = new Vector();
+			imageActivations.remove(imp);
+			imageActivations.add(imp);
+		}
+	}
+
 	public static int[] getBatchModeImageIDs() {
 		if (!batchMode || imageTable==null)
 			return new int[0];
 		int n = imageTable.size();
 		int[] imageIDs = new int[n];
 		for (int i=0; i<n; i++) {
-			ImagePlus imp = (ImagePlus)imageTable.elementAt(i);
+			ImagePlus imp = (ImagePlus)imageTable.get(i);
 			imageIDs[i] = imp.getID();
 		}
 		return imageIDs;
@@ -1766,9 +2200,17 @@ public class Interpreter implements MacroConstants {
 	public static ImagePlus getLastBatchModeImage() { 
 		if (!batchMode || imageTable==null)
 			return null; 
-		int size = imageTable.size(); 
-		if (size==0) return null; 
-		return (ImagePlus)imageTable.elementAt(size-1); 
+		ImagePlus imp2 = null;
+		try {
+			int size = imageTable.size(); 
+			if (size==0)
+				return null;
+			if (imageActivations!=null && imageActivations.size()>0)
+				imp2 =  (ImagePlus)imageActivations.get(imageActivations.size()-1);
+			if (imp2==null)
+				imp2 = (ImagePlus)imageTable.get(size-1);
+		} catch(Exception e) { }
+		return imp2;
 	} 
  
  	/** The specified string, if not null, is added to strings passed to the run() method. */
@@ -1783,7 +2225,7 @@ public class Interpreter implements MacroConstants {
 	/** Returns the batch mode RoiManager instance. */
 	public static RoiManager getBatchModeRoiManager() {
 		Interpreter interp = getInstance();
-		if (interp!=null && isBatchMode() && RoiManager.getInstance()==null) {
+		if (interp!=null && isBatchMode() && RoiManager.getRawInstance()==null) {
 			if (interp.func.roiManager==null)
 				interp.func.roiManager = new RoiManager(true);
 			return interp.func.roiManager;
@@ -1797,24 +2239,28 @@ public class Interpreter implements MacroConstants {
 		return interp!=null && isBatchMode() && interp.func.roiManager!=null;
 	}
 	
-	public void setEditor(Editor ed) {
-		if (ed!=null&&editor==null)
-			ed.fixLineEndings();
-		editor = ed;
-		if (ed!=null)
-			debugMode = STEP;
+	public void setDebugger(Debugger debugger) {
+		this.debugger = debugger;
+		if (debugger!=null)
+			debugMode = Debugger.STEP;
 		else
-			debugMode = NONE;
+			debugMode = Debugger.NOT_DEBUGGING;
 	}
 	
+	// Returns the Debugger (editor), if any, associated with this macro. */
+	public Debugger getDebugger() {
+		return debugger;
+	}
+
 	public void setDebugMode(int mode) {
 		debugMode = mode;
 	}
 	
-	public int getLineNumber() {//n__
+	public int getLineNumber() {
         return pgm.lineNumbers[pc];
     }
 
+	/** Returns the names of all variables and functions with human-readable annotations */
 	public String[] getVariables() {
 		int nImages = WindowManager.getImageCount();
 		if (nImages>0) showDebugFunctions = true;
@@ -1826,8 +2272,8 @@ public class Interpreter implements MacroConstants {
 				ImagePlus imp = WindowManager.getCurrentImage();
 				if (imp!=null) title = imp.getTitle();
 			}
-			if (debugMode==STEP) System.gc();
-			variables[0] = "FreeMemory()\t" + IJ.freeMemory();
+			if (debugMode==Debugger.STEP) System.gc();
+			variables[0] = "Memory\t" + IJ.freeMemory();
 			variables[1] = "nImages()\t" + nImages;
 			variables[2] = "getTitle()\t" + (title!=null?"\""+title+"\"":"");
 		}
@@ -1842,14 +2288,17 @@ public class Interpreter implements MacroConstants {
 		return variables;
 	}
 	
+	/** Returns the names of all variables, without any annotation */
+	public String[] getVariableNames() {
+		String[] variables = new String[topOfStack+1];
+		for (int i=0; i<=topOfStack; i++)
+			variables[i] = pgm.table[stack[i].symTabIndex].str;
+		return variables;
+	}
+
 	// Returns 'true' if this macro has finished or if it was aborted. */
 	public boolean done() {
 		return done;
-	}
-
-	// Returns the Editor, if any, associated with this macro. */
-	public Editor getEditor() {
-		return editor;
 	}
 
 	// Returns 'true' if this macro generated an error and was aborted. */
@@ -1863,6 +2312,17 @@ public class Interpreter implements MacroConstants {
 			index = stack[i].symTabIndex;
 			if (pgm.table[index].str.equals(name)) {
 				stack[i].setValue(value);
+				break;
+			}
+		}
+	}
+	
+	public void setVariable(String name, String str) {
+		int index;
+		for (int i=0; i<=topOfStack; i++) {
+			index = stack[i].symTabIndex;
+			if (pgm.table[index].str.equals(name)) {
+				stack[i].setString(str);
 				break;
 			}
 		}
@@ -1906,7 +2366,130 @@ public class Interpreter implements MacroConstants {
 		}
 		return s;
 	}
+	
+	 /**
+	 * Shows array elements after clicking an array variable in Debug
+	 * window
+	 * N. Vischer 
+	 *
+	 * @param row Debug window row of variable to be shown
+	 */
+	public void showArrayInspector(int row) {
+		if (stack==null)
+			return;
+		int nFunctions = showDebugFunctions?3:0;
+		int stkPos = row - nFunctions;
+		if (stack.length>stkPos && stkPos>=0) {
+			Variable var = stack[stkPos];
+			if (var==null)
+				return;
+			if (var.getType()!=Variable.ARRAY && arrayWindow!=null)
+				arrayWindow.setVisible(false);
+			if (var.getType()==Variable.ARRAY) {
+				String headings = "Index\t*\tValue";
+				if (arrayWindow==null)
+					arrayWindow = new TextWindow("Array", "", "", 170, 300);
+				arrayWindow.setVisible(true);
+ 				int symIndex = var.symTabIndex;
+				String arrName = pgm.table[symIndex].str;
+				inspectStkIndex = stkPos;
+				inspectSymIndex = symIndex;
+				TextPanel txtPanel = arrayWindow.getTextPanel();
+				String oldText = txtPanel.getText();// possible NullPointer at ij.text.TextPanel.getText(TextPanel.java:875) vData == null
+				String[] oldLines = oldText.split("\n");
+				txtPanel.clear();
+				txtPanel.setColumnHeadings(headings);
+				Variable[] elements = var.getArray();
+				String title = arrName + "[" + elements.length + "]";
+				arrayWindow.setTitle(title);
+				arrayWindow.rename(title);
+				String newText = "";
+				String valueStr = "";
+				for (int jj=0; jj<elements.length; jj++) {
+					Variable element = elements[jj];
+					if (element.getType()==Variable.STRING) {
+						valueStr = elements[jj].getString();
+						valueStr = valueStr.replaceAll("\n", "\\\\n");
+						valueStr = "\"" + valueStr + "\""; //show it's a string
+					} else if (element.getType()==Variable.VALUE) {
+						double v = elements[jj].getValue();
+						if ((int)v==v)
+							valueStr = IJ.d2s(v, 0);
+						else
+							valueStr = ResultsTable.d2s(v, 4);
+					}
+						String flag = " ";
+						if (oldLines.length > jj + 1){
+							String [] parts = oldLines[jj+1].split("\t");
+							String oldValue = parts[2];
+							if (!valueStr.equals(oldValue))
+									flag ="*";
+						}
+					String ss = ("" + jj + "\t" + flag +"\t" + valueStr) + "\n";
+					newText += ss;
+				}
+				txtPanel.append(newText);
+				txtPanel.scrollToTop();
+				if (debugger!=null && (debugger instanceof Window))
+					((Window)debugger).toFront();
+				// scroll position should not change during single-stepping
+			}
+		}
+	}
 
+	/**
+	 * Updates Array inspector if variable exists, otherwise closes
+	 * ArrayInspector
+	 */
+	public void updateArrayInspector() {
+		boolean varExists = false;
+		if (arrayWindow!=null && arrayWindow.isVisible()) {
+ 			for (int stkIndex=0; stkIndex<=topOfStack; stkIndex++) {
+				Variable var = stack[stkIndex];
+				int symIndex = var.symTabIndex;
+				if (inspectStkIndex==stkIndex && inspectSymIndex==symIndex && var.getType()==Variable.ARRAY) {
+					varExists = true;
+					break;
+				}
+			}
+			if (varExists)
+				showArrayInspector(inspectStkIndex+(showDebugFunctions?3:0));
+			else{
+				arrayWindow.setVisible(false);
+				arrayWindow.getTextPanel().clear();
+			}
+		}
+	}
+	
+	static void setTempShowMode(boolean mode) {
+		tempShowMode = mode;
+	}
+	
+	private static Interpreter lastInterp;
+	
+	public static boolean nonBatchMacroRunning() {
+		Interpreter interp = getInstance();
+		if (interp==null)
+			return false;
+		int count =  interp.selectCount;
+		if (interp==lastInterp)
+			interp.selectCount++;
+		lastInterp = interp;
+		return !interp.waitingForUser && interp.debugger==null && count>0 && !isBatchMode();
+	}
+	
+	public void setApplyMacroTable(ResultsTable rt) {
+		applyMacroTable = rt;
+	}
+	
+	public void setIgnoreErrors(boolean ignoreErrors) {
+		this.ignoreErrors = ignoreErrors;
+	}
+	
+	public String getErrorMessage() {
+		return errorMessage;
+	}
+			
 } // class Interpreter
 
 

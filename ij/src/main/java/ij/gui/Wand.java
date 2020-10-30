@@ -1,6 +1,7 @@
 package ij.gui;
 import ij.*;
 import ij.process.*;
+import ij.plugin.WandToolOptions;
 import java.awt.*;
 
 /** This class implements ImageJ's wand (tracing) tool.
@@ -42,9 +43,9 @@ public class Wand {
     private float[] fpixels;
     private int width, height;
     private float lowerThreshold, upperThreshold;
-    private int xmin;                   //of selection created
-    private boolean exactPixelValue;    //For color, match RGB, not gray value
-    private static boolean allPoints;
+    private int xmin;                   // of selection created
+    private boolean exactPixelValue;    // For color, match RGB, not gray value
+    private static boolean allPoints;  // output contains intermediate points
 
 
     /** Constructs a Wand object from an ImageProcessor. */
@@ -118,6 +119,7 @@ public class Wand {
     public void autoOutline(int startX, int startY, double tolerance, int mode) {
         if (startX<0 || startX>=width || startY<0 || startY>=height) return;
         if (fpixels!=null && Float.isNaN(getPixel(startX, startY))) return;
+        WandToolOptions.setStart(startX, startY);
         exactPixelValue = tolerance==0;
         boolean thresholdMode = (mode & THRESHOLDED_MODE) != 0;
         boolean legacyMode = (mode & LEGACY_MODE) != 0 && tolerance == 0;
@@ -258,7 +260,7 @@ public class Wand {
             }
             direction = newDirection;
         } while (x!=startX || y!=startY || (direction&3)!=startDirection);
-        if (allPoints || xpoints[0]!=x)            // if the start point = end point is a corner: add to list
+        if (xpoints[0]!=x && !allPoints)            // if the start point = end point is a corner: add to list
             addPoint(x, y);
         return (direction <= 0);        // if we have done a clockwise loop, inside pixels are enclosed
     }
@@ -338,12 +340,14 @@ public class Wand {
         return ((double)insideCount)/area<0.25;
     }
 
+    /** Set 'true' and output will contain intermediate points for straight lines longer than one pixel. */
     public static void setAllPoints(boolean b) {
         allPoints = b;
     }
 
-    public static boolean allPoints() {
-        return allPoints;
-    }
+	/** Returns 'true' if output contains intermediate points for straight lines longer than one pixel. */
+	public static boolean allPoints() {
+		return allPoints;
+	}
 
 }

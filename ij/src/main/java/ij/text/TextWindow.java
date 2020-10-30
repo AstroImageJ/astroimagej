@@ -1,13 +1,14 @@
 package ij.text;
-
-import java.awt.*;
-import java.io.*;
-import java.awt.event.*;
 import ij.*;
 import ij.io.*;
 import ij.gui.*;
 import ij.plugin.filter.Analyzer;
 import ij.macro.Interpreter;
+import ij.measure.ResultsTable;
+import java.awt.*;
+import java.io.*;
+import java.awt.event.*;
+import java.util.ArrayList;
 
 /** Uses a TextPanel to displays text in a window.
 	@see TextPanel
@@ -28,36 +29,57 @@ public class TextWindow extends Frame implements ActionListener, FocusListener, 
 	int[] sizes = {9, 10, 11, 12, 13, 14, 16, 18, 20, 24, 36, 48, 60, 72};
 	int fontSize = (int)Prefs.get(FONT_SIZE, 5);
 	MenuBar mb;
+	private static Font font;
  
 	/**
-	Opens a new single-column text window.
-	@param title	the title of the window
-	@param str		the text initially displayed in the window
-	@param width	the width of the window in pixels
-	@param height	the height of the window in pixels
+	* Opens a new single-column text window.
+	* @param title	the title of the window
+	* @param text		the text initially displayed in the window
+	* @param width	the width of the window in pixels
+	* @param height	the height of the window in pixels
 	*/
-	public TextWindow(String title, String data, int width, int height) {
-		this(title, "", data, width, height);
+	public TextWindow(String title, String text, int width, int height) {
+		this(title, "", text, width, height);
 	}
 
 	/**
-	Opens a new multi-column text window.
-	@param title	the title of the window
-	@param headings	the tab-delimited column headings
-	@param data		the text initially displayed in the window
-	@param width	the width of the window in pixels
-	@param height	the height of the window in pixels
+	* Opens a new multi-column text window.
+	* @param title	title of the window
+	* @param headings	the tab-delimited column headings
+	* @param text		text initially displayed in the window
+	* @param width	width of the window in pixels
+	* @param height	height of the window in pixels
 	*/
-	public TextWindow(String title, String headings, String data, int width, int height) {
+	public TextWindow(String title, String headings, String text, int width, int height) {
 		super(title);
+		textPanel = new TextPanel(title);
+		textPanel.setColumnHeadings(headings);
+		if (text!=null && !text.equals(""))
+			textPanel.append(text);
+		create(title, textPanel, width, height);
+	}
+
+	/**
+	* Opens a new multi-column text window.
+	* @param title	title of the window
+	* @param headings	tab-delimited column headings
+	* @param text		ArrayList containing the text to be displayed in the window
+	* @param width	width of the window in pixels
+	* @param height	height of the window in pixels
+	*/
+	public TextWindow(String title, String headings, ArrayList text, int width, int height) {
+		super(title);
+		textPanel = new TextPanel(title);
+		textPanel.setColumnHeadings(headings);
+		if (text!=null)
+			textPanel.append(text);
+		create(title, textPanel, width, height);
+	}
+
+	private void create(String title, TextPanel textPanel, int width, int height) {
 		enableEvents(AWTEvent.WINDOW_EVENT_MASK);
 		if (IJ.isLinux()) setBackground(ImageJ.backgroundColor);
-		textPanel = new TextPanel(title);
-		textPanel.setTitle(title);
 		add("Center", textPanel);
-		textPanel.setColumnHeadings(headings);
-		if (data!=null && !data.equals(""))
-			textPanel.append(data);
 		addKeyListener(textPanel);
 		ImageJ ij = IJ.getInstance();
 		if (ij!=null) {
@@ -72,7 +94,6 @@ public class TextWindow extends Frame implements ActionListener, FocusListener, 
  		addMenuBar();
 		setFont();
 		WindowManager.addWindow(this);
-		
 		Point loc=null;
 		int w=0, h=0;
 		if (title.contains("Results") || title.contains("Measure")) {
@@ -93,17 +114,18 @@ public class TextWindow extends Frame implements ActionListener, FocusListener, 
 			setLocation(loc);
 		} else {
 			setSize(width, height);
-			GUI.center(this);
+			if (!IJ.debugMode)
+				GUI.centerOnImageJScreen(this);
 		}
 		show();
+		WindowManager.setWindow(this);
 	}
 
 	/**
-	Opens a new text window containing the contents
-	of a text file.
-	@param path		the path to the text file
-	@param width	the width of the window in pixels
-	@param height	the height of the window in pixels
+	* Opens a new text window containing the contents of a text file.
+	* @param path		the path to the text file
+	* @param width	the width of the window in pixels
+	* @param height	the height of the window in pixels
 	*/
 	public TextWindow(String path, int width, int height) {
 		super("");
@@ -115,6 +137,7 @@ public class TextWindow extends Frame implements ActionListener, FocusListener, 
 			WindowManager.addWindow(this);
 			setSize(width, height);
 			show();
+			WindowManager.setWindow(this);
 		} else
 			dispose();
 	}
@@ -131,13 +154,18 @@ public class TextWindow extends Frame implements ActionListener, FocusListener, 
 		}
 		m.addActionListener(this);
 		mb.add(m);
+		textPanel.fileMenu = m;
 		m = new Menu("Edit");
 		m.add(new MenuItem("Cut", new MenuShortcut(KeyEvent.VK_X)));
 		m.add(new MenuItem("Copy", new MenuShortcut(KeyEvent.VK_C)));
 		m.add(new MenuItem("Clear"));
 		m.add(new MenuItem("Select All", new MenuShortcut(KeyEvent.VK_A)));
+		m.addSeparator();
+		m.add(new MenuItem("Find...", new MenuShortcut(KeyEvent.VK_F)));
+		m.add(new MenuItem("Find Next", new MenuShortcut(KeyEvent.VK_G)));
 		m.addActionListener(this);
 		mb.add(m);
+		textPanel.editMenu = m;
 		m = new Menu("Font");
 		m.add(new MenuItem("Make Text Smaller"));
 		m.add(new MenuItem("Make Text Larger"));
@@ -150,10 +178,12 @@ public class TextWindow extends Frame implements ActionListener, FocusListener, 
 		mb.add(m);
 		if (getTitle().contains("Results") || getTitle().contains("Measure")) {
 			if (getTitle().contains("Measure")) m = new Menu("Options"); else m = new Menu("Results");
-			if (getTitle().contains("Results")) m.add(new MenuItem("Clear Results"));
-			if (getTitle().contains("Results")) m.add(new MenuItem("Summarize"));
-			if (getTitle().contains("Results")) m.add(new MenuItem("Distribution..."));
-			if (getTitle().contains("Results")) m.add(new MenuItem("Set Measurements..."));
+			if (getTitle().contains("Measure")) m.add(new MenuItem("Clear Results"));
+			if (getTitle().contains("Measure")) m.add(new MenuItem("Summarize"));
+			if (getTitle().contains("Measure")) m.add(new MenuItem("Distribution..."));
+			if (getTitle().contains("Measure")) m.add(new MenuItem("Set Measurements..."));
+			m.add(new MenuItem("Sort..."));
+			m.add(new MenuItem("Plot..."));
 			m.add(new MenuItem("Options..."));
 			m.addActionListener(this);
 			mb.add(m);
@@ -162,7 +192,7 @@ public class TextWindow extends Frame implements ActionListener, FocusListener, 
 	}
 
 	/**
-	Adds one or lines of text to the window.
+	Adds one or more lines of text to the window.
 	@param text		The text to be appended. Multiple
 					lines should be separated by \n.
 	*/
@@ -171,7 +201,10 @@ public class TextWindow extends Frame implements ActionListener, FocusListener, 
 	}
 	
 	void setFont() {
-        textPanel.setFont(new Font("SanSerif", Font.PLAIN, sizes[fontSize]), antialiased.getState());
+		if (font!=null)
+       		textPanel.setFont(font, antialiased.getState());
+       	else
+       		textPanel.setFont(new Font("SanSerif", Font.PLAIN, sizes[fontSize]), antialiased.getState());
 	}
 	
 	boolean openFile(String path) {
@@ -202,6 +235,12 @@ public class TextWindow extends Frame implements ActionListener, FocusListener, 
 	public TextPanel getTextPanel() {
 		return textPanel;
 	}
+	
+	/** Returns the ResultsTable associated with this TextWindow, or null. */
+	public ResultsTable getResultsTable() {
+		return textPanel!=null?textPanel.getResultsTable():null;
+	}
+
 
 	/** Appends the text in the specified file to the end of this TextWindow. */
 	public void load(BufferedReader in) throws IOException {
@@ -230,7 +269,7 @@ public class TextWindow extends Frame implements ActionListener, FocusListener, 
 		int id = e.getID();
 		if (id==WindowEvent.WINDOW_CLOSING)
 			close();	
-		else if (id==WindowEvent.WINDOW_ACTIVATED)
+		else if (id==WindowEvent.WINDOW_ACTIVATED && !"Log".equals(getTitle()))
 			WindowManager.setWindow(this);
 	}
 
@@ -258,7 +297,7 @@ public class TextWindow extends Frame implements ActionListener, FocusListener, 
 			Dimension d = getSize();
 			Prefs.set(LOG_WIDTH_KEY, d.width);
 			Prefs.set(LOG_HEIGHT_KEY, d.height);
-			IJ.debugMode = false;
+			IJ.setDebugMode(false);
 			IJ.log("\\Closed");
 			IJ.notifyEventListeners(IJEventListener.LOG_WINDOW_CLOSED);
 		} else if (getTitle().equals("Debug")) {
@@ -307,7 +346,12 @@ public class TextWindow extends Frame implements ActionListener, FocusListener, 
                 fontSize = 0;
         }
         IJ.showStatus(sizes[fontSize]+" point");
+        font = null;
         setFont();
+    }
+    
+    public static void setFont(String name, int style, int size) {
+    	font = new Font(name,style,size);
     }
 
 	void saveSettings() {
@@ -317,7 +361,6 @@ public class TextWindow extends Frame implements ActionListener, FocusListener, 
 	}
 	
 	public void focusGained(FocusEvent e) {
-		WindowManager.setWindow(this);
 	}
 
 	public void focusLost(FocusEvent e) {}

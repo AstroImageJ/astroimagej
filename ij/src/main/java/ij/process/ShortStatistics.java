@@ -1,5 +1,6 @@
 package ij.process;
 import ij.measure.Calibration;
+import java.awt.Rectangle;
 
 /** 16-bit image statistics, including histogram. */
 public class ShortStatistics extends ImageStatistics {
@@ -21,12 +22,22 @@ public class ShortStatistics extends ImageStatistics {
 		nBins = 256;
 		double minT = ip.getMinThreshold();
 		int minThreshold,maxThreshold;
-		if ((mOptions&LIMIT)==0 || minT==ImageProcessor.NO_THRESHOLD)
-			{minThreshold=0; maxThreshold=65535;}
-		else
-			{minThreshold=(int)minT; maxThreshold=(int)ip.getMaxThreshold();}
-		int[] hist = ip.getHistogram(); // 65536 bin histogram
-		histogram16 =hist;
+		boolean limitToThreshold = (mOptions&LIMIT)!=0;
+		if (!limitToThreshold || minT==ImageProcessor.NO_THRESHOLD) {
+			minThreshold=0;
+			maxThreshold=65535;
+		} else {
+			minThreshold=(int)minT;
+			maxThreshold=(int)ip.getMaxThreshold();
+		}
+		if (limitToThreshold)
+			saveThreshold(minThreshold, maxThreshold, cal);
+		Rectangle r = ip.getRoi();
+		boolean smallRoi = r.width*r.height<250000;		
+		int[] hist = smallRoi&&(ip instanceof ShortProcessor)?((ShortProcessor)ip).getHistogram2():ip.getHistogram();
+		if (maxThreshold>hist.length-1)
+			maxThreshold = hist.length-1;
+		histogram16 = hist;
 		float[] cTable = cal!=null?cal.getCTable():null;
 		getRawMinAndMax(hist, minThreshold, maxThreshold);
 		histMin = min;
@@ -42,16 +53,22 @@ public class ShortStatistics extends ImageStatistics {
 			calculateMoments(ip, minThreshold, maxThreshold, cTable);
 		if ((mOptions&MIN_MAX)!=0 && cTable!=null)
 			getCalibratedMinAndMax(hist, (int)min, (int)max, cTable);
-		if ((mOptions&MEDIAN)!=0)
-			calculateMedian(hist, minThreshold, maxThreshold, cal);
+		if ((mOptions&MEDIAN)!=0) {
+			if (pixelCount>0)
+				calculateMedian(hist, minThreshold, maxThreshold, cal);
+			else
+				median = Double.NaN;
+		}
 		if ((mOptions&AREA_FRACTION)!=0)
 			calculateAreaFraction(ip, hist);
 	}
 
 	void getRawMinAndMax(int[] hist, int minThreshold, int maxThreshold) {
 		int min = minThreshold;
-		while ((hist[min]==0) && (min<65535))
-			min++;
+		if (min<hist.length) {
+			while ((hist[min]==0) && (min<hist.length-1))
+				min++;
+		}
 		this.min = min;
 		int max = maxThreshold;
 		while ((hist[max]==0) && (max>0))
@@ -114,9 +131,7 @@ public class ShortStatistics extends ImageStatistics {
                 mode = i;
             }
         }
-		//ij.IJ.write("mode2: "+mode+" "+dmode+" "+maxCount);
 	}
-
 
 	void getCentroid(ImageProcessor ip, int minThreshold, int maxThreshold) {
 		short[] pixels = (short[])ip.getPixels();

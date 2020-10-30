@@ -7,13 +7,17 @@ import java.awt.image.*;
 
 /** This plugin implements the Image/Color/Merge Channels command. */
 public class RGBStackMerge implements PlugIn {
-
+	private static String none = "*None*";
+	private static int maxChannels = 7;
+	private static String[] colors = {"red", "green", "blue", "gray", "cyan", "magenta", "yellow"};
 	private static boolean staticCreateComposite = true;
 	private static boolean staticKeep;
 	private static boolean staticIgnoreLuts;
 	private ImagePlus imp;
 	private byte[] blank;
 	private boolean ignoreLuts;
+	private boolean autoFillDisabled;
+	private String firstChannelName;
  
 	public void run(String arg) {
 		imp = WindowManager.getCurrentImage();
@@ -38,17 +42,16 @@ public class RGBStackMerge implements PlugIn {
 			ImagePlus imp = WindowManager.getImage(wList[i]);
 			titles[i] = imp!=null?imp.getTitle():"";
 		}
-		String none = "*None*";
 		titles[wList.length] = none;
+		String[] names = getInitialNames(titles);
 		boolean createComposite = staticCreateComposite;
 		boolean keep = staticKeep;
 		ignoreLuts = staticIgnoreLuts;
-		if (IJ.isMacro())
+		
+		String options = Macro.getOptions();
+		boolean macro = IJ.macroRunning() && options!=null;
+		if (macro) {
 			createComposite = keep = ignoreLuts = false;
-		boolean macro = IJ.macroRunning();
-
-		String options = IJ.isMacro()?Macro.getOptions():null;
-		if (options!=null) {
 			options = options.replaceAll("red=", "c1=");
 			options = options.replaceAll("green=", "c2=");
 			options = options.replaceAll("blue=", "c3=");
@@ -57,20 +60,13 @@ public class RGBStackMerge implements PlugIn {
 		}
 
 		GenericDialog gd = new GenericDialog("Merge Channels");
-		String title = titles.length>0&&!macro?titles[0]:none;
-		gd.addChoice("C1 (red):", titles, title);
-		title = titles.length>1&&!macro?titles[1]:none;
-		gd.addChoice("C2 (green):", titles, title);
-		title = titles.length>2&&!macro?titles[2]:none;
-		gd.addChoice("C3 (blue):", titles, title);
-		title = titles.length>3&&!macro?titles[3]:none;
-		gd.addChoice("C4 (gray):", titles, title);
-		title = titles.length>4&&!macro?titles[4]:none;
-		gd.addChoice("C5 (cyan):", titles, title);
-		title = titles.length>5&&!macro?titles[5]:none;
-		gd.addChoice("C6 (magenta):", titles, title);
-		title = titles.length>6&&!macro?titles[6]:none;
-		gd.addChoice("C7 (yellow):", titles, title);
+		gd.addChoice("C1 (red):", titles, macro?none:names[0]);
+		gd.addChoice("C2 (green):", titles, macro?none:names[1]);
+		gd.addChoice("C3 (blue):", titles, macro?none:names[2]);
+		gd.addChoice("C4 (gray):", titles, macro?none:names[3]);
+		gd.addChoice("C5 (cyan):", titles, macro?none:names[4]);
+		gd.addChoice("C6 (magenta):", titles, macro?none:names[5]);
+		gd.addChoice("C7 (yellow):", titles, macro?none:names[6]);
 
 		gd.addCheckbox("Create composite", createComposite);
 		gd.addCheckbox("Keep source images", keep);
@@ -78,7 +74,6 @@ public class RGBStackMerge implements PlugIn {
 		gd.showDialog();
 		if (gd.wasCanceled())
 			return;
-		int maxChannels = 7;
 		int[] index = new int[maxChannels];
 		for (int i=0; i<maxChannels; i++) {
 			index[i] = gd.getNextChoiceIndex();
@@ -86,7 +81,7 @@ public class RGBStackMerge implements PlugIn {
 		createComposite = gd.getNextBoolean();
 		keep = gd.getNextBoolean();
 		ignoreLuts = gd.getNextBoolean();
-		if (!IJ.isMacro()) {
+		if (!macro) {
 			staticCreateComposite = createComposite;
 			staticKeep = keep;
 			staticIgnoreLuts = ignoreLuts;
@@ -129,8 +124,8 @@ public class RGBStackMerge implements PlugIn {
 			if (img.isHyperStack()) {
 				if (img.isComposite()) {
 					CompositeImage ci = (CompositeImage)img;
-					if (ci.getMode()!=CompositeImage.COMPOSITE) {
-						ci.setMode(CompositeImage.COMPOSITE);
+					if (ci.getMode()!=IJ.COMPOSITE) {
+						ci.setMode(IJ.COMPOSITE);
 						img.updateAndDraw();
 						if (!IJ.isMacro()) IJ.run("Channels Tool...");
 						return;
@@ -154,12 +149,6 @@ public class RGBStackMerge implements PlugIn {
 				error("The source images or stacks must have the same width and height.");
 				return;
 			}
-			//if (createComposite) {
-			//	for (int j=0; j<4; j++) {
-			//		if (j!=i && images[j]!=null && img==images[j])
-			//			createComposite = false;
-			//	}
-			//}
 			if (createComposite && img.getBitDepth()!=bitDepth) {
 				error("The source images must have the same bit depth.");
 				return;
@@ -169,29 +158,39 @@ public class RGBStackMerge implements PlugIn {
 		ImageStack[] stacks = new ImageStack[maxChannels];
 		for (int i=0; i<maxChannels; i++)
 			stacks[i] = images[i]!=null?images[i].getStack():null;
-		String macroOptions = Macro.getOptions();
 		ImagePlus imp2;
-		boolean fourChannelRGB = false;
+		boolean fourOrMoreChannelRGB = false;
 		for (int i=3; i<maxChannels; i++) {
-			if (!createComposite && stacks[i]!=null)
-				fourChannelRGB = true;
-		}
-		if (fourChannelRGB)
-			createComposite = true;
-		for (int i=3; i<maxChannels; i++) {
-			if (stacks[i]!=null)
+			if (stacks[i]!=null) {
+				if (!createComposite)	
+					fourOrMoreChannelRGB=true;
 				createComposite = true;
+			}
 		}
+		if (fourOrMoreChannelRGB)
+			createComposite = true;
+		boolean isRGB = false;
+		int extraIChannels = 0;
 		for (int i=0; i<maxChannels; i++) {
-			if (images[i]!=null && images[i].getBitDepth()==24)
-				createComposite = false;
+			if (images[i]!=null) {
+				if (i>2)
+					extraIChannels++;
+				if (images[i].getBitDepth()==24)
+					isRGB = true;
+			}
 		}
-		if (createComposite || mergeHyperstacks) {
+		if (isRGB && extraIChannels>0) {
+			imp2 = mergeUsingRGBProjection(images, createComposite);
+		} else if ((createComposite&&!isRGB) || mergeHyperstacks) {
 			imp2 = mergeHyperstacks(images, keep);
 			if (imp2==null) return;
 		} else {
 			ImageStack rgb = mergeStacks(width, height, stackSize, stacks[0], stacks[1], stacks[2], keep);
 			imp2 = new ImagePlus("RGB", rgb);
+			if (createComposite) {
+				imp2 = CompositeConverter.makeComposite(imp2);
+				imp2.setTitle("Composite");
+			}
 		}
 		for (int i=0; i<images.length; i++) {
 			if (images[i]!=null) {
@@ -199,6 +198,13 @@ public class RGBStackMerge implements PlugIn {
 				break;
 			}
 		}
+		if (fourOrMoreChannelRGB) {
+			if (imp2.getNSlices()==1&&imp2.getNFrames()==1) {
+				imp2 = imp2.flatten();
+				imp2.setTitle("RGB");
+			}
+		}
+		imp2.show();
 		if (!keep) {
 			for (int i=0; i<maxChannels; i++) {
 				if (images[i]!=null) {
@@ -206,20 +212,53 @@ public class RGBStackMerge implements PlugIn {
 					images[i].close();
 				}
 			}
+			if (imp2.getWindow()!=null)
+				IJ.selectWindow(imp2.getID());
 		}
-		if (fourChannelRGB) {
-			if (imp2.getStackSize()==1) {
-				imp2 = imp2.flatten();
-				imp2.setTitle("RGB");
-			} else {
-				imp2.setTitle("RGB");
-				IJ.run(imp2, "RGB Color", "slices");
-			}
-		}
-		imp2.show();
 	 }
 	 
-	
+	 private String[] getInitialNames(String[] titles) {
+	 	String[] names = new String[maxChannels];
+	 	for (int i=0; i<maxChannels; i++)
+	 		names[i] = getName(i+1, titles);
+	 	return names;
+	 }
+	 
+	 private String getName(int channel, String[] titles) {
+	 	if (autoFillDisabled)
+	 		return none;
+	 	String str = "C"+channel;
+	 	String name = null;
+		for (int i=titles.length-1; i>=0; i--) {
+			if (titles!=null && titles[i].startsWith(str) && (firstChannelName==null||titles[i].contains(firstChannelName))) {
+				name = titles[i];
+	 			if (channel==1) {
+	 				if (name==null || name.length()<3)
+	 					return none;
+	 				firstChannelName = name.substring(3);
+	 			}
+				break;
+			}
+		}
+	 	if (name==null) {
+			for (int i=titles.length-1; i>=0; i--) {
+				int index = titles[i].indexOf(colors[channel-1]);
+				if (titles!=null && index!=-1 && (firstChannelName==null||titles[i].contains(firstChannelName))) {
+					name = titles[i];
+	 				if (channel==1 && index>0) 
+	 					firstChannelName = name.substring(0, index-1);
+					break;
+				}
+			}
+		}
+	 	if (channel==1 && name==null)
+	 		autoFillDisabled = true;
+	 	if (name!=null)
+	 		return name;
+	 	else
+	 		return none;
+	 }
+	 	
 	public ImagePlus mergeHyperstacks(ImagePlus[] images, boolean keep) {
 		int n = images.length;
 		int channels = 0;
@@ -276,7 +315,7 @@ public class RGBStackMerge implements PlugIn {
 			title = frames>1?"Merged":"Composite";
 		ImagePlus imp2 = new ImagePlus(title, stack2);
 		imp2.setDimensions(channels, slices, frames);
-		imp2 = new CompositeImage(imp2, CompositeImage.COMPOSITE);
+		imp2 = new CompositeImage(imp2, IJ.COMPOSITE);
 		boolean allGrayLuts = true;
 		for (int c=0; c<channels; c++) {
 			if (images[c].getProcessor().isColorLut()) {
@@ -343,15 +382,15 @@ public class RGBStackMerge implements PlugIn {
 				if (invertedGreen) greenPixels = invert(greenPixels);
 				if (invertedBlue) bluePixels = invert(bluePixels);
 				cp.setRGB(redPixels, greenPixels, bluePixels);
-			if (keep) {
-				slice++;
-			} else {
-				if (red!=null) red.deleteSlice(1);
-				if (green!=null &&green!=red) green.deleteSlice(1);
-				if (blue!=null&&blue!=red && blue!=green) blue.deleteSlice(1);
-			}
-			rgb.addSlice(null, cp);
-			if ((i%inc) == 0) IJ.showProgress((double)i/d);
+				if (keep)
+					slice++;
+				else {
+					if (red!=null) red.deleteSlice(1);
+					if (green!=null &&green!=red) green.deleteSlice(1);
+					if (blue!=null&&blue!=red && blue!=green) blue.deleteSlice(1);
+				}
+				rgb.addSlice(null, cp);
+				if ((i%inc) == 0) IJ.showProgress((double)i/d);
 			}
 		IJ.showProgress(1.0);
 		} catch(OutOfMemoryError o) {
@@ -361,7 +400,26 @@ public class RGBStackMerge implements PlugIn {
 		return rgb;
 	}
 	
-	 byte[] getPixels(ImageStack stack, int slice, int color) {
+	private ImagePlus mergeUsingRGBProjection(ImagePlus[] images, boolean createComposite) {
+		ImageStack stack = new ImageStack(imp.getWidth(),imp.getHeight());
+		for (int i=0; i<images.length; i++) {
+			if (images[i]!=null)
+				stack.addSlice(images[i].getProcessor());
+		}
+		ImagePlus imp2 = new ImagePlus("temp", stack);
+		ZProjector zp = new ZProjector(imp2);
+		zp.setMethod(ZProjector.MAX_METHOD);
+		zp.doRGBProjection();
+		imp2 = zp.getProjection();
+		if (createComposite) {
+			imp2 = CompositeConverter.makeComposite(imp2);
+			imp2.setTitle("Composite");
+		} else
+			imp2.setTitle("RGB");
+		return imp2;
+	}
+
+	byte[] getPixels(ImageStack stack, int slice, int color) {
 		 if (stack==null)
 			return blank;
 		Object pixels = stack.getPixels(slice);
@@ -374,20 +432,9 @@ public class RGBStackMerge implements PlugIn {
 				return (byte[])ip.getPixels();
 			}
 		} else { //RGB
-			byte[] r,g,b;
-			int size = stack.getWidth()*stack.getHeight();
-			r = new byte[size];
-			g = new byte[size];
-			b = new byte[size];
 			ColorProcessor cp = (ColorProcessor)stack.getProcessor(slice);
-			cp.getRGB(r, g, b);
-			switch (color) {
-				case 0: return r;
-				case 1: return g;
-				case 2: return b;
-			}
+			return ((ColorProcessor)cp).getChannel(color+1);
 		}
-		return null;
 	}
 
 	byte[] invert(byte[] pixels) {

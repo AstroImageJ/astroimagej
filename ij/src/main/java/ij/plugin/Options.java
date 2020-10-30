@@ -4,7 +4,8 @@ import ij.gui.*;
 import ij.process.*;
 import ij.io.*;
 import ij.plugin.filter.*;
-import ij.plugin.frame.LineWidthAdjuster;
+import ij.plugin.frame.*;
+import ij.measure.ResultsTable;
 import java.awt.*;
 
 /** This plugin implements most of the commands
@@ -12,6 +13,8 @@ import java.awt.*;
 public class Options implements PlugIn {
 
  	public void run(String arg) {
+		if (arg.equals("fresh-start"))
+			{freshStart(); return;}
 		if (arg.equals("misc"))
 			{miscOptions(); return;}
 		else if (arg.equals("line"))
@@ -29,7 +32,7 @@ public class Options implements PlugIn {
 	// Miscellaneous Options
 	void miscOptions() {
 		String key = IJ.isMacintosh()?"command":"control";
-		GenericDialog gd = new GenericDialog("Miscellaneous Options", IJ.getInstance());
+		GenericDialog gd = new GenericDialog("Miscellaneous Options");
 		gd.addStringField("Divide by zero value:", ""+FloatBlitter.divideByZeroValue, 10);
 		gd.addCheckbox("Use pointer cursor", Prefs.usePointerCursor);
 		gd.addCheckbox("Hide \"Process Stack?\" dialog", IJ.hideProcessStackDialog);
@@ -37,6 +40,13 @@ public class Options implements PlugIn {
 		gd.addCheckbox("Move isolated plugins to Misc. menu", Prefs.moveToMisc);
 		if (!IJ.isMacOSX())
 			gd.addCheckbox("Run single instance listener", Prefs.runSocketListener);
+		gd.addCheckbox("Enhanced line tool", Prefs.enhancedLineTool);
+		gd.addCheckbox("Reverse CZT order of \">\" and \"<\"", Prefs.reverseNextPreviousOrder);
+		if (IJ.isMacOSX())
+			gd.addCheckbox("Don't set Mac menu bar", !Prefs.setIJMenuBar);
+		if (IJ.isLinux())
+			gd.addCheckbox("Save window locations", !Prefs.doNotSaveWindowLocations);
+		gd.addCheckbox("Non-blocking filter dialogs", Prefs.nonBlockingFilterDialogs);
 		gd.addCheckbox("Debug mode", IJ.debugMode);
 		gd.addHelp(IJ.URL+"/docs/menus/edit.html#misc");
 		gd.showDialog();
@@ -65,7 +75,14 @@ public class Options implements PlugIn {
 		Prefs.moveToMisc = gd.getNextBoolean();
 		if (!IJ.isMacOSX())
 			Prefs.runSocketListener = gd.getNextBoolean();
-		IJ.debugMode = gd.getNextBoolean();
+		Prefs.enhancedLineTool = gd.getNextBoolean();
+		Prefs.reverseNextPreviousOrder = gd.getNextBoolean();
+		if (IJ.isMacOSX())
+			Prefs.setIJMenuBar = !gd.getNextBoolean();
+		if (IJ.isLinux())
+			Prefs.doNotSaveWindowLocations = !gd.getNextBoolean();
+		Prefs.nonBlockingFilterDialogs = gd.getNextBoolean();
+		IJ.setDebugMode(gd.getNextBoolean());
 	}
 
 	void lineWidth() {
@@ -87,11 +104,12 @@ public class Options implements PlugIn {
 		GenericDialog gd = new GenericDialog("I/O Options");
 		gd.addNumericField("JPEG quality (0-100):", FileSaver.getJpegQuality(), 0, 3, "");
 		gd.addNumericField("GIF and PNG transparent index:", Prefs.getTransparentIndex(), 0, 3, "");
-		gd.addStringField("File extension for tables (.txt, .xls or .csv):", Prefs.get("options.ext", ".txt"), 4);
+		gd.addStringField("File extension for tables (.csv, .tsv or .txt):", Prefs.defaultResultsExtension(), 4);
 		gd.addCheckbox("Use JFileChooser to open/save", Prefs.useJFileChooser);
 		if (!IJ.isMacOSX())
 			gd.addCheckbox("Use_file chooser to import sequences", Prefs.useFileChooser);
 		gd.addCheckbox("Save TIFF and raw in Intel byte order", Prefs.intelByteOrder);
+		gd.addCheckbox("Skip dialog when opening .raw files", Prefs.skipRawDialog);
 		
 		gd.setInsets(15, 20, 0);
 		gd.addMessage("Results Table Options");
@@ -117,13 +135,18 @@ public class Options implements PlugIn {
 		if (!extension.startsWith("."))
 			extension = "." + extension;
 		Prefs.set("options.ext", extension);
+		boolean useJFileChooser2 = Prefs.useJFileChooser;
 		Prefs.useJFileChooser = gd.getNextBoolean();
+		if (Prefs.useJFileChooser!=useJFileChooser2)
+			Prefs.jFileChooserSettingChanged = true;
 		if (!IJ.isMacOSX())
 			Prefs.useFileChooser = gd.getNextBoolean();
 		Prefs.intelByteOrder = gd.getNextBoolean();
+		Prefs.skipRawDialog = gd.getNextBoolean();
 		Prefs.copyColumnHeaders = gd.getNextBoolean();
 		Prefs.noRowNumbers = !gd.getNextBoolean();
 		Prefs.dontSaveHeaders = !gd.getNextBoolean();
+		ResultsTable.getResultsTable().saveColumnHeaders(!Prefs.dontSaveHeaders);
 		Prefs.dontSaveRowNumbers = !gd.getNextBoolean();
 		return;
 	}
@@ -134,8 +157,8 @@ public class Options implements PlugIn {
 		boolean weighted = !(weights[0]==1d/3d && weights[1]==1d/3d && weights[2]==1d/3d);
 		//boolean weighted = !(Math.abs(weights[0]-1d/3d)<0.0001 && Math.abs(weights[1]-1d/3d)<0.0001 && Math.abs(weights[2]-1d/3d)<0.0001);
 		GenericDialog gd = new GenericDialog("Conversion Options");
-		gd.addCheckbox("Scale When Converting", ImageConverter.getDoScaling());
-		String prompt = "Weighted RGB Conversions";
+		gd.addCheckbox("Scale when converting", ImageConverter.getDoScaling());
+		String prompt = "Weighted RGB conversions";
 		if (weighted)
 			prompt += " (" + IJ.d2s(weights[0]) + "," + IJ.d2s(weights[1]) + ","+ IJ.d2s(weights[2]) + ")";
 		gd.addCheckbox(prompt, weighted);
@@ -159,7 +182,7 @@ public class Options implements PlugIn {
 	void dicom() {
 		GenericDialog gd = new GenericDialog("DICOM Options");
 		gd.addCheckbox("Open as 32-bit float", Prefs.openDicomsAsFloat);
-		//gd.addCheckbox("Calculate voxel depth", Prefs.calculateDicomVoxelDepth);
+		gd.addCheckbox("Ignore Rescale Slope", Prefs.ignoreRescaleSlope);
 		gd.addMessage("Orthogonal Views");
 		gd.setInsets(5, 40, 0);
 		gd.addCheckbox("Rotate YZ", Prefs.rotateYZ);
@@ -169,11 +192,44 @@ public class Options implements PlugIn {
 		if (gd.wasCanceled())
 			return;
 		Prefs.openDicomsAsFloat = gd.getNextBoolean();
-		//Prefs.calculateDicomVoxelDepth = gd.getNextBoolean();
+		Prefs.ignoreRescaleSlope = gd.getNextBoolean();
 		Prefs.rotateYZ = gd.getNextBoolean();
 		Prefs.flipXZ = gd.getNextBoolean();
 	}
-	
+		
+	/** Close all images, empty ROI Manager, clear the
+		 Results table, clears the Log window and sets
+		 "Black background" 'true'.
+	*/
+	private void freshStart() {
+		String options = Macro.getOptions();
+		boolean keepImages = false;
+		boolean keepResults = false;
+		boolean keepRois = false;
+		if (options!=null) {
+			options = options.toLowerCase();
+			keepImages = options.contains("images");			
+			keepResults = options.contains("results");			
+			keepRois = options.contains("rois");
+		}
+		if (!keepImages) {
+			if (!Commands.closeAll())
+				return;
+		}
+		if (!keepResults) {
+			if (!Analyzer.resetCounter())
+				return;
+		}
+		if (!keepRois) {
+			RoiManager rm = RoiManager.getInstance();
+			if (rm!=null)
+				rm.reset();
+		}
+		if (WindowManager.getWindow("Log")!=null)
+   			IJ.log("\\Clear");
+		Prefs.blackBackground = true;
+	}
+
 	// Delete preferences file when ImageJ quits
 	private void reset() {
 		if (IJ.showMessageWithCancel("Reset Preferences", "Preferences will be reset when ImageJ restarts."))

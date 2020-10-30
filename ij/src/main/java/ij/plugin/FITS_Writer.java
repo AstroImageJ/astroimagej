@@ -14,17 +14,17 @@ import ij.measure.*;
  * <br>Version 2010-11-23 : corrects 16-bit writing, adds BZERO & BSCALE updates (K.A. Collins, Univ. Louisville).
  * <br>Version 2008-09-07 : preserves non-minimal FITS header if already present (F.V. Hessman, Univ. Goettingen).
  * <br>Version 2008-12-15 : fixed END card recognition bug (F.V. Hessman, Univ. Goettingen).
+ * <br>Version 2019-11-03 : various updates  (K.A. Collins, CfA-Harvard and Smithsonian).
  */
 public class FITS_Writer implements PlugIn {
 
-    int numCards = 0;
-    Calibration cal;
-    boolean unsigned16 = false;
-    double bZero = 0.0;
-    double bScale = 1.0;
+    private int numCards = 0;
+    private Calibration cal;
+    private boolean unsigned16 = false;
+    private double bZero = 0.0;
+    private double bScale = 1.0;
             
-	public void run(String path) 
-        {
+	public void run(String path) {
 		ImagePlus imp = IJ.getImage();
 		ImageProcessor ip = imp.getProcessor();
 		int numImages = imp.getImageStackSize();
@@ -41,83 +41,53 @@ public class FITS_Writer implements PlugIn {
 			path = sd.getDirectory()+sd.getFileName();
 		}
 
-		// GET FILE
-//		File f = new File(path);
-//		String directory = f.getParent()+File.separator;
-//		String name = f.getName();
-//		if (f.exists()) 
-//            {
-//            f.delete();
-//            
-//            }
-//        int iter = 0;
-//        while (f.exists())
-//            {
-//            iter++;
-//            IJ.wait(100);
-//            //IJ.log("Waiting on file delete");
-//            if (iter > 50)
-//                {
-//                IJ.error("Could not delete existing fits file.");
-//                return;
-//                }
-//            }
-        
+		/*// GET FILE
+		File f = new File(path);
+		String directory = f.getParent()+File.separator;
+		String name = f.getName();
+		if (f.exists()) f.delete();*/
 		int numBytes = 0;
         
         cal = imp.getCalibration();
         unsigned16 = (bitDepth==16 && cal.getFunction()==Calibration.NONE && cal.getCoefficients()==null);
 
 		// GET IMAGE
-		if (bitDepth==8)
-            {
+		if (bitDepth==8) {
             numBytes = 1;
-            if (cal.getFunction()!=Calibration.NONE && cal.getCoefficients()!=null)
-                {
+            if (cal.getFunction()!=Calibration.NONE && cal.getCoefficients()!=null) {
                 bZero = cal.getCoefficients()[0];
                 if (cal.getCoefficients()[1] != 0) bScale = cal.getCoefficients()[1];
-                }
             }
-//			ip = ip.convertToShort(false);
-//		else if (imp.getCalibration().isSigned16Bit())
-////        else if (bitDepth==16 && cal.getFunction()==cal.STRAIGHT_LINE && cal.getCoefficients()!=null)  
-//			ip = ip.convertToFloat();
-        else if (ip instanceof ShortProcessor)
-            {
+        } else if (ip instanceof ShortProcessor) {
 			numBytes = 2;
-            if (unsigned16)
-                {
+            if (unsigned16) {
                 bZero = 32768.0;
                 bScale = 1.0;
-                }
-            else
-                {
+            } else {
                 if (cal.getCoefficients()[1] != 0) bScale = cal.getCoefficients()[1];
                 bZero = cal.getCoefficients()[0] + (32768.0*bScale);
-                }
             }
-		else if (ip instanceof FloatProcessor)
-            {
+        } else if (ip instanceof FloatProcessor) {
 			numBytes = 4;  //float processor does not support calibration - data values are shifted and scaled in FITS_Reader
             bZero = 0.0;   //float values are written back out without shifting
             bScale = 1.0;  //and without scaling
-            }
+        }
 
 		int fillerLength = 2880 - ( (numBytes * imp.getWidth() * imp.getHeight()) % 2880 );
-        if (fillerLength == 2880) fillerLength = 0;
+
 		// WRITE FITS HEADER
 		String[] hdr = getHeader(imp);
 //		if (hdr == null)
 //			createHeader(path, ip, numBytes);
 //		else
-        clearFile(path);
+		clearFile(path);
         createHeader(hdr, path, ip, numBytes);
 
 		// WRITE DATA
 		writeData(path, ip);
 		char[] endFiller = new char[fillerLength];
 		appendFile(endFiller, path);
-        }
+    }
 
 //	/**
 //	 * Creates a FITS header for an image which doesn't have one already.
@@ -170,6 +140,7 @@ public class FITS_Writer implements PlugIn {
         appendFile(line, path);
         numCards++;
     }
+    
 	/**
 	 * Converts a String to a char[]
 	 */
@@ -188,22 +159,7 @@ public class FITS_Writer implements PlugIn {
 			FileWriter output = new FileWriter(path, true);
 			output.write(line);
 			output.close();
-		}
-		catch (IOException e) {
-			IJ.showStatus("Error writing file!");
-			return;
-		}
-	}
-    
-    /**
-	 * Restarts file at 'path' to beginning of file
-	 */
-	void clearFile(String path) {
-		try {
-			FileWriter output = new FileWriter(path, false);
-			output.close();
-		}
-		catch (IOException e) {
+		} catch (IOException e) {
 			IJ.showStatus("Error writing file!");
 			return;
 		}
@@ -223,30 +179,23 @@ public class FITS_Writer implements PlugIn {
                     for (int j = i*w; j < w*(i+1); j++)
                         dos.writeByte(pixels[j]);
 				dos.close();
-                }
-			catch (IOException e) 
-                {
+            } catch (IOException e) {
 				IJ.showStatus("Error writing file!");
 				return;
-                }    
-            }
-        else if (ip instanceof ShortProcessor) 
-            {
+            }    
+        } else if (ip instanceof ShortProcessor) {
 			short[] pixels = (short[])ip.getPixels();
-			try {
+			try {   
 				DataOutputStream dos = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(path,true)));
                 for (int i = h - 1; i >= 0; i-- )
                     for (int j = i*w; j < w*(i+1); j++)
                         dos.writeShort(pixels[j]^0x8000);
 				dos.close();
-                }
-			catch (IOException e) {
+            } catch (IOException e) {
 				IJ.showStatus("Error writing file!");
 				return;
-                }
             }
-		else if (ip instanceof FloatProcessor) 
-            {
+		} else if (ip instanceof FloatProcessor) {
 			float[] pixels = (float[])ip.getPixels();
 			try {   
 				DataOutputStream dos = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(path,true)));
@@ -254,8 +203,7 @@ public class FITS_Writer implements PlugIn {
                     for (int j = i*w; j < w*(i+1); j++)
 					dos.writeFloat(pixels[j]);
 				dos.close();
-                }
-			catch (IOException e) {
+            } catch (IOException e) {
 				IJ.showStatus("Error writing file!");
 				return;
                 }					   
@@ -285,13 +233,12 @@ public class FITS_Writer implements PlugIn {
 			int slice = img.getCurrentSlice();
 			ImageStack stack = img.getStack();
 			content = stack.getSliceLabel(slice);
-            if (content == null)
-                {
+            if (content == null) {
                 Properties props = img.getProperties();
                 if (props == null)
                     return null;
-                content = (String)props.getProperty ("Info");  
-                }
+                content = props.getProperty ("Info");
+            }
         }
 		if (content == null)
 			return null;
@@ -339,8 +286,7 @@ public class FITS_Writer implements PlugIn {
 	/**
 	 * Copies the image header contained in the image's Info property.
 	 */
-	void createHeader(String[] hdr, String path, ImageProcessor ip, int numBytes) 
-        {
+	void createHeader(String[] hdr, String path, ImageProcessor ip, int numBytes) {
 		String bitperpix = "";
         int imw=ip.getWidth();
         int imh=ip.getHeight();
@@ -371,18 +317,15 @@ public class FITS_Writer implements PlugIn {
  		appendFile(writeCard("NAXIS", "                   2", "number of data axes"), path);
 		appendFile(writeCard("NAXIS1", wbuf + imw, "length of data axis 1"), path);
  		appendFile(writeCard("NAXIS2", hbuf + imh, "length of data axis 2"), path);
-        if (bZero != 0 || bScale != 1.0)
-            {
+        if (bZero != 0 || bScale != 1.0) {
             appendFile(writeCard("BZERO", ""+bZero, "data range offset"), path);
             appendFile(writeCard("BSCALE", ""+bScale, "scaling factor"), path);
-            }
+        }
 
-        if (hdr != null)
-            {
+        if (hdr != null) {
             // APPEND THE REST OF THE HEADER IF ONE EXISTS
             char[] card;
-            for (int i=0; i < hdr.length; i++) 
-                {
+            for (int i=0; i < hdr.length; i++) {
                 String s = hdr[i];
                 card = eighty(s);
                 if (!s.startsWith("SIMPLE") &&
@@ -391,16 +334,14 @@ public class FITS_Writer implements PlugIn {
                     !s.startsWith("BZERO") &&
                     !s.startsWith("BSCALE") &&
                     !s.startsWith("END")   &&
-                    s.trim().length() > 1) 
-                        {
+                    s.trim().length() > 1) {
                         writeCard(card, path);
-                        }
+                    }
                 }
             }
 
         // FINISH OFF THE HEADER
         int fillerSize = 2880 - ((numCards*80+3) % 2880);
-        if (fillerSize == 2880) fillerSize = 0;
         char[] end = new char[3];
         end[0] = 'E'; end[1] = 'N'; end[2] = 'D';
         char[] filler = new char[fillerSize];
@@ -408,7 +349,22 @@ public class FITS_Writer implements PlugIn {
             filler[i] = ' ';
         appendFile(end, path);
         appendFile(filler, path);
-        }
+	}
+
+	/**
+	 * Restarts file at 'path' to beginning of file
+	 */
+	void clearFile(String path) {
+		try {
+			FileWriter output = new FileWriter(path, false);
+			output.close();
+		}
+		catch (IOException e) {
+			IJ.showStatus("Error writing file!");
+			return;
+		}
+	}
+
+
 
     }
-

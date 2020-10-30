@@ -19,7 +19,7 @@ public class MacroRunner implements Runnable {
 	private String argument;
 	private Editor editor;
 
-	/** Create a MacrRunner. */
+	/** Create a MacroRunner. */
 	public MacroRunner() {
 	}
 
@@ -37,8 +37,7 @@ public class MacroRunner implements Runnable {
 		thread.start();
 	}
 
-	/** Create a new object that interprets macro source in a 
-		separate thread, and also passing a string argument. */
+	/** Interprets macro source in a separate thread, passing a string argument. */
 	public MacroRunner(String macro, String argument) {
 		this.macro = macro;
 		this.argument = argument;
@@ -47,7 +46,7 @@ public class MacroRunner implements Runnable {
 		thread.start();
 	}
 
-	/** Create a new object that interprets a macro file using a separate thread. */
+	/** Interprets a macro file in a separate thread. */
 	public MacroRunner(File file) {
 		int size = (int)file.length();
 		if (size<=0)
@@ -74,12 +73,12 @@ public class MacroRunner implements Runnable {
 		thread.start();
 	}
 
-	/** Create a new object that runs a tokenized macro in a separate thread. */
+	/** Runs a tokenized macro in a separate thread. */
 	public MacroRunner(Program pgm, int address, String name) {
 		this(pgm, address, name, (String)null);
 	}
 
-	/** Create a new object that runs a tokenized macro in a separate thread,
+	/** Runs a tokenized macro in a separate thread,
 		passing a string argument. */
 	public MacroRunner(Program pgm, int address, String name, String argument) {
 		this.pgm = pgm;
@@ -91,7 +90,7 @@ public class MacroRunner implements Runnable {
 		thread.start();
 	}
 
-	/** Create a new object that runs a tokenized macro in debug mode if 'editor' is not null. */
+	/** Runs a tokenized macro in debug mode if 'editor' is not null. */
 	public MacroRunner(Program pgm, int address, String name, Editor editor) {
 		this.pgm = pgm;
 		this.address = address;
@@ -116,15 +115,25 @@ public class MacroRunner implements Runnable {
 		}
 	}
 	
+	/** Runs a tokenized macro on the current thread. */
+	public void run(Program pgm, int address, String name) {
+		this.pgm = pgm;
+		this.address = address;
+		this.name = name;
+		this.argument = null;
+		run();
+	}
+
 	public Thread getThread() {
 		return thread;
 	}
 
+	/** Used to run the macro code in 'macro' on a separate thread. */
 	public void run() {
 		Interpreter interp = new Interpreter();
 		interp.argument = argument;
 		if (editor!=null)
-			interp.setEditor(editor);
+			interp.setDebugger(editor);
 		try {
 			if (pgm==null)
 				interp.run(macro);
@@ -147,11 +156,17 @@ public class MacroRunner implements Runnable {
 			IJ.showStatus("");
 			IJ.showProgress(1.0);
 			ImagePlus imp = WindowManager.getCurrentImage();
-			if (imp!=null) imp.unlock();
+			if (imp!=null)
+				imp.unlock();
 			String msg = e.getMessage();
-			if (e instanceof RuntimeException && msg!=null && e.getMessage().equals(Macro.MACRO_CANCELED))
+			if (e instanceof RuntimeException && msg!=null && e.getMessage().equals(Macro.MACRO_CANCELED)) {
+				interp.error(null);
 				return;
+			}
 			IJ.handleException(e);
+		} finally {
+			if (thread!=null)
+				WindowManager.setTempCurrentImage(null);
 		}
 	}
 

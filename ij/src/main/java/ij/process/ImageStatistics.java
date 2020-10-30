@@ -5,11 +5,19 @@ import java.awt.*;
 /** Statistics, including the histogram, of an image or selection. */
 public class ImageStatistics implements Measurements {
 
+	/** Use the hIstogram() method to get the histogram as a double  array. */
 	public int[] histogram;
+	
+	/** Int pixel count (limited to 2^31-1) */
 	public int pixelCount;
-	public long longPixelCount;
-	public int mode;
+	/** Long pixel count */
+	public long longPixelCount;	
+	
+	/** Mode */
 	public double dmode;
+	/** Mode of 256 bin histogram (counts limited to 2^31-1) */	
+	public int mode;
+		
 	public double area;
 	public double min;
 	public double max;
@@ -31,14 +39,19 @@ public class ImageStatistics implements Measurements {
 	public double minor;
 	/** Angle in degrees of fitted ellipse */
 	public double angle;
-	/** 65536 element histogram (16-bit images only) */
+	/** Bin width 1 histogram of 16-bit images */
 	public int[] histogram16;
 	/** Long histogram; use getHIstogram() to retrieve. */
 	protected long[] longHistogram;
 	public double areaFraction;
 	/** Used internally by AnalyzeParticles */
 	public int xstart, ystart;
-	
+	/** Used by HistogramWindow */
+	public boolean stackStatistics;
+	/** Minimum threshold when "Limit to threshold" enabled */
+	public double lowerThreshold = Double.NaN;	
+	/** Maximum threshold when "Limit to threshold" enabled */
+	public double upperThreshold = Double.NaN;	
 	public double histMin;
 	public double histMax;
 	public int histYMax;
@@ -54,6 +67,28 @@ public class ImageStatistics implements Measurements {
 	EllipseFitter ef;
 
 	
+	/** Calculates and returns uncalibrated (raw) statistics for the
+	 * specified image, including histogram, area, mean, min and
+	 * max, standard deviation and mode.  Use ImageProcessor.setRoi(x,y,width,height)
+	 * to limit statistics to a rectangular area and ImageProcessor.setRoi(Roi)
+	 * to limit to a non-rectangular area.
+	 * @see ij.process.ImageProcessor#setRoi(int,int,int,int)
+	 * @see ij.process.ImageProcessor#setRoi(Roi)
+	 * @see ij.process.ImageProcessor#getStats
+	*/
+	public static ImageStatistics getStatistics(ImageProcessor ip) {
+		return getStatistics(ip, AREA+MEAN+STD_DEV+MODE+MIN_MAX+RECT, null);
+	}
+
+	/** Calculates and returns statistics for the specified
+	 * image using the specified measurent options
+	 * and calibration. Use ImageProcessor.setRoi(x,y,width,height)
+	 * to limit statistics to a rectangular area and ImageProcessor.setRoi(Roi)
+	 * to limit to a non-rectangular area.
+	 * @see ij.process.ImageProcessor#setRoi(int,int,int,int)
+	 * @see ij.process.ImageProcessor#setRoi(Roi)
+	 * @see ij.measure.Measurements
+	*/
 	public static ImageStatistics getStatistics(ImageProcessor ip, int mOptions, Calibration cal) {
 		Object pixels = ip.getPixels();
 		if (pixels instanceof byte[])
@@ -225,6 +260,10 @@ public class ImageStatistics implements Measurements {
 	
 	void calculateMedian(int[] hist, int first, int last, Calibration cal) {
 		//ij.IJ.log("calculateMedian: "+first+"  "+last+"  "+hist.length+"  "+pixelCount);
+		if (pixelCount==0 || first<0 || last>hist.length) {
+			median = Double.NaN;
+			return;
+		}
 		double sum = 0;
 		int i = first-1;
 		double halfCount = pixelCount/2.0;
@@ -237,8 +276,8 @@ public class ImageStatistics implements Measurements {
 	void calculateAreaFraction(ImageProcessor ip, int[] hist) {
 		int sum = 0;
 		int total = 0;
-		int t1 = (int)ip.getMinThreshold();
-		int t2 = (int)ip.getMaxThreshold();
+		int t1 = (int)Math.round(ip.getMinThreshold());
+		int t2 = (int)Math.round(ip.getMaxThreshold());
 		if (t1==ImageProcessor.NO_THRESHOLD) {
 			for (int i=0; i<hist.length; i++)
 				total += hist[i];
@@ -253,9 +292,9 @@ public class ImageStatistics implements Measurements {
 		areaFraction = sum*100.0/total;
 	}
 	
-	/** Returns the histogram as an array of longs. */
-	public long[] getHistogram() {
-		long[] hist = new long[histogram.length];
+	/** Returns the histogram as an array of doubles. */
+	public double[] histogram() {
+		double[] hist = new double[histogram.length];
 		for (int i=0; i<hist.length; i++) {
 			if (longHistogram!=null)
 				hist[i] = longHistogram[i];
@@ -264,9 +303,27 @@ public class ImageStatistics implements Measurements {
 		}
 		return hist;
 	}
+
+	/** Returns the histogram as an array of longs. */
+	public long[] getHistogram() {
+		double[] hist = histogram();
+		long[] hist2 = new long[hist.length];
+		for (int i=0; i<hist.length; i++)
+			hist2[i] = (long)hist[i];
+		return hist2;
+	}
 	
 	public String toString() {
 		return "stats[count="+pixelCount+", mean="+mean+", min="+min+", max="+max+"]";
+	}
+	
+	protected void saveThreshold(double minThreshold, double maxThreshold, Calibration cal) {
+		if (cal!=null) {
+			minThreshold = cal.getCValue(minThreshold);
+			maxThreshold = cal.getCValue(maxThreshold);
+		}
+		lowerThreshold = minThreshold;
+		upperThreshold = maxThreshold;
 	}
 
 }

@@ -1,12 +1,3 @@
-/*
- This plugin saves grayscale images in PGM (portable graymap) format 
- and RGB images in PPM (portable pixmap) format. These formats, 
- along with PBM (portable bitmap), are collectively known as the 
- PNM format. More information can be found at 
- "http://en.wikipedia.org/wiki/Portable_Pixmap_file_format".
- 
- @author Johannes Schindelin
- */
 package ij.plugin;
 import ij.*;
 import ij.process.*;
@@ -17,6 +8,15 @@ import java.io.*;
 import java.util.*;
 import java.awt.image.*;
 
+/*
+ This plugin saves grayscale images in PGM (portable graymap) format 
+ and RGB images in PPM (portable pixmap) format. These formats, 
+ along with PBM (portable bitmap), are collectively known as the 
+ PNM format. More information can be found at 
+ "http://en.wikipedia.org/wiki/Portable_Pixmap_file_format".
+ 
+ @author Johannes Schindelin
+ */
 public class PNM_Writer implements PlugIn {
 
 	public void run(String path) {
@@ -31,42 +31,40 @@ public class PNM_Writer implements PlugIn {
 				ip = ip.duplicate();
 				ip.invert();
 			}
-			ip = ip.convertToByte(true);
+			if (img.getBitDepth()!=16)
+				ip = ip.convertToByte(true);
 			isGray = true;
 			extension = ".pgm";
 		}
 		String title=img.getTitle();
 		int length=title.length();
-		for(int i=2;i<5;i++)
-			if(length>i+1 && title.charAt(length-i)=='.') {
+		for (int i=2;i<5;i++)
+			if (length>i+1 && title.charAt(length-i)=='.') {
 				title=title.substring(0,length-i);
 				break;
 			}
-
 		if (path==null || path.equals("")) {
 			SaveDialog od = new SaveDialog("PNM Writer", title, extension);
 			String dir=od.getDirectory();
 			String name=od.getFileName();
-			if(name==null)
+			if (name==null)
 				return;
 			path = dir + name;
 		}
-
+		IJ.showStatus("Writing PNM "+path+"...");
+		if (img.getBitDepth()==16) {
+			save16BitImage(ip, path);
+			return;
+		}
 		try {
-			IJ.showStatus("Writing PNM "+path+"...");
-			OutputStream fileOutput =
-				new FileOutputStream(path);
-			DataOutputStream output =
-				new DataOutputStream(fileOutput);
-
+			OutputStream fileOutput = new FileOutputStream(path);
+			DataOutputStream output = new DataOutputStream(fileOutput);
 			int w = img.getWidth(), h = img.getHeight();
 			output.writeBytes((isGray ? "P5" : "P6")
 					+ "\n# Written by ImageJ PNM Writer\n"
 					+ w + " " + h + "\n255\n");
 			if (isGray)
-				output.write(
-					(byte[])ip.getPixels(),
-					0, w * h);
+				output.write((byte[])ip.getPixels(), 0, w*h);
 			else {
 				byte[] pixels = new byte[w * h * 3];
 				ColorProcessor proc =
@@ -83,11 +81,26 @@ public class PNM_Writer implements PlugIn {
 					}
 				output.write(pixels, 0, pixels.length);
 			}
-			output.flush();
+			output.close();
 		} catch(IOException e) {
 			IJ.handleException(e);
 		}
 		IJ.showStatus("");
+	}
+	
+	private void save16BitImage(ImageProcessor ip, String path) {
+		ip.resetMinAndMax();
+		int max = (int)ip.getMax();
+		if (max<256) max=256;
+		try {
+			DataOutputStream output = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(path)));
+			output.writeBytes("P5\n# Written by ImageJ PNM Writer\n" + ip.getWidth() + " " + ip.getHeight() + "\n"+max+"\n");
+			for (int i=0; i<ip.getPixelCount(); i++)
+				output.writeShort(ip.get(i));
+			output.close();
+		} catch(IOException e) {
+			IJ.handleException(e);
+		}
 	}
 
 };

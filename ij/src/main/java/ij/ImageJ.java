@@ -1,20 +1,22 @@
 package ij;
-
+import ij.gui.*;
+import ij.process.*;
+import ij.io.*;
+import ij.plugin.*;
+import ij.plugin.filter.*;
+import ij.plugin.frame.*;
+import ij.text.*;
+import ij.macro.Interpreter;
+import ij.io.Opener;
+import ij.util.*;
 import java.awt.*;
 import java.util.*;
 import java.awt.event.*;
 import java.io.*;
 import java.net.*;
 import java.awt.image.*;
-import ij.gui.*;
-import ij.plugin.*;
-import ij.plugin.filter.*;
-import ij.plugin.frame.*;
-import ij.text.*;
-import ij.macro.Interpreter;
-import ij.util.*;
 import javax.swing.ImageIcon;
-
+import javax.swing.JLabel;
 
 /**
 This frame is the main ImageJ class.
@@ -31,26 +33,20 @@ The following command line options are recognized by ImageJ:
      Opens a file
      Example 1: blobs.tif
      Example 2: /Users/wayne/images/blobs.tif
-     Example3: e81*.tif
-
-  -ijpath path
-     Specifies the path to the directory containing the plugins directory
-     Example: -ijpath /Applications/ImageJ
-
-  -port<n>
-     Specifies the port ImageJ uses to determine if another instance is running
-     Example 1: -port1 (use default port address + 1)
-     Example 2: -port2 (use default port address + 2)
-     Example 3: -port0 (don't check for another instance)
+     Example 3: e81*.tif
 
   -macro path [arg]
-     Runs a macro or script, passing it an optional argument,
-     which can be retieved using getArgument()
+     Runs a macro or script (JavaScript, BeanShell or Python), passing an
+     optional string argument, which the macro or script can be retrieve
+     using the getArgument() function. The macro or script is assumed to 
+     be in the ImageJ/macros folder if 'path' is not a full directory path.
      Example 1: -macro analyze.ijm
-     Example 2: -macro analyze /Users/wayne/images/stack1
+     Example 2: -macro script.js /Users/wayne/images/stack1
+     Example 2: -macro script.py '1.2 2.4 3.8'
 
   -batch path [arg]
-    Runs a macro or script in batch (no GUI) mode, passing it an optional argument.
+    Runs a macro or script (JavaScript, BeanShell or Python) in
+    batch (no GUI) mode, passing an optional argument.
     ImageJ exits when the macro finishes.
 
   -eval "macro code"
@@ -62,18 +58,28 @@ The following command line options are recognized by ImageJ:
      Runs an ImageJ menu command
      Example: -run "About ImageJ..."
      
+  -ijpath path
+     Specifies the path to the directory containing the plugins directory
+     Example: -ijpath /Applications/ImageJ
+
+  -port<n>
+     Specifies the port ImageJ uses to determine if another instance is running
+     Example 1: -port1 (use default port address + 1)
+     Example 2: -port2 (use default port address + 2)
+     Example 3: -port0 (don't check for another instance)
+
   -debug
      Runs ImageJ in debug mode
 </pre>
-@author Wayne Rasband (wsr@nih.gov)
+@author Wayne Rasband (rasband@gmail.com)
 */
 public class ImageJ extends Frame implements ActionListener, 
 	MouseListener, KeyListener, WindowListener, ItemListener, Runnable {
 
 	/** Plugins should call IJ.getVersion() or IJ.getFullVersion() to get the version string. */
-	public static final String VERSION = "1.47i";
-	public static final String BUILD = ""; 
-	public static Color backgroundColor = new Color(220,220,220); //224,226,235
+	public static final String VERSION = "1.53f";
+	public static final String BUILD = "51";
+	public static Color backgroundColor = new Color(237,237,237);
 	/** SansSerif, 12-point, plain font. */
 	public static final Font SansSerif12 = new Font("SansSerif", Font.PLAIN, 12);
 	/** Address of socket where Image accepts commands */
@@ -81,13 +87,16 @@ public class ImageJ extends Frame implements ActionListener,
     public static final String ASTROVERSION = "5.0.0.0";
 	
 	/** Run as normal application. */
-	public static final int STANDALONE=0;
+	public static final int STANDALONE = 0;
 	
 	/** Run embedded in another application. */
-	public static final int EMBEDDED=1;
+	public static final int EMBEDDED = 1;
 	
 	/** Run embedded and invisible in another application. */
-	public static final int NO_SHOW=2;
+	public static final int NO_SHOW = 2;
+	
+	/** Run ImageJ in debug mode. */
+	public static final int DEBUG = 256;
 
 	private static final String IJ_X="ij.x",IJ_Y="ij.y";
 	private static int port = DEFAULT_PORT;
@@ -96,18 +105,20 @@ public class ImageJ extends Frame implements ActionListener,
 	private Toolbar toolbar;
 	private Panel statusBar;
 	private ProgressBar progressBar;
-	private Label statusLine;
+	private JLabel statusLine;
 	private boolean firstTime = true;
 	private java.applet.Applet applet; // null if not running as an applet
 	private Vector classes = new Vector();
 	private boolean exitWhenQuitting;
 	private boolean quitting;
+	private boolean quitMacro;
 	private long keyPressedTime, actionPerformedTime;
 	private String lastKeyCommand;
 	private boolean embedded;
 	private boolean windowClosed;
 	private static String commandName;
-	
+	private static boolean batchMode;
+		
 	boolean hotkey;
 	
 	/** Creates a new ImageJ frame that runs as an application. */
@@ -130,57 +141,73 @@ public class ImageJ extends Frame implements ActionListener,
 		(non-standalone) version of ImageJ. */
 	public ImageJ(java.applet.Applet applet, int mode) {
 		super("AstroImageJ");
+		if ((mode&DEBUG)!=0)
+			IJ.setDebugMode(true);
+		mode = mode & 255;
+		if (IJ.debugMode) IJ.log("ImageJ starting in debug mode: "+mode);
 		embedded = applet==null && (mode==EMBEDDED||mode==NO_SHOW);
 		this.applet = applet;
 		String err1 = Prefs.load(this, applet);
-		if (IJ.isLinux()) {
-			backgroundColor = new Color(240,240,240);
-			setBackground(backgroundColor);
-		}
+		setBackground(backgroundColor);
 		Menus m = new Menus(this, applet);
 		String err2 = m.addMenuBar();
 		m.installPopupMenu(this);
-		setLayout(new GridLayout(2, 1));
+		setLayout(new BorderLayout());
 		
 		// Tool bar
 		toolbar = new Toolbar();
 		toolbar.addKeyListener(this);
-		add(toolbar);
+		add("Center", toolbar);
 
 		// Status bar
 		statusBar = new Panel();
 		statusBar.setLayout(new BorderLayout());
 		statusBar.setForeground(Color.black);
 		statusBar.setBackground(backgroundColor);
-		statusLine = new Label();
-		statusLine.setFont(SansSerif12);
+		statusLine = new JLabel();
+		double scale = Prefs.getGuiScale();
+		statusLine.setFont(new Font("SansSerif", Font.PLAIN, (int)(13*scale)));
 		statusLine.addKeyListener(this);
 		statusLine.addMouseListener(this);
 		statusBar.add("Center", statusLine);
-		progressBar = new ProgressBar(120, 20);
+		progressBar = new ProgressBar((int)(ProgressBar.WIDTH*scale), (int)(ProgressBar.HEIGHT*scale));
 		progressBar.addKeyListener(this);
 		progressBar.addMouseListener(this);
 		statusBar.add("East", progressBar);
-		statusBar.setSize(toolbar.getPreferredSize());
-		add(statusBar);
+		add("South", statusBar);
 
 		IJ.init(this, applet);
- 		addKeyListener(this);
- 		addWindowListener(this);
+		addKeyListener(this);
+		addWindowListener(this);
 		setFocusTraversalKeysEnabled(false);
+		m.installStartupMacroSet(); //add custom tools
  		
 		Point loc = getPreferredLocation();
 		Dimension tbSize = toolbar.getPreferredSize();
-		int ijWidth = tbSize.width+10;
-		int ijHeight = 100;
-		setCursor(java.awt.Cursor.getDefaultCursor()); // work-around for JDK 1.1.8 bug
+		setCursor(Cursor.getDefaultCursor()); // work-around for JDK 1.1.8 bug
 		if (mode!=NO_SHOW) {
 			if (IJ.isWindows()) try {setIcon();} catch(Exception e) {}
-			setBounds(loc.x, loc.y, ijWidth, ijHeight); // needed for pack to work
-			setLocation(loc.x, loc.y);
+			setResizable(false);
+			setAlwaysOnTop(Prefs.alwaysOnTop);
 			pack();
-			setResizable(!(IJ.isMacintosh() || IJ.isWindows())); // make resizable on Linux
-			show();
+			setLocation(loc.x, loc.y);
+			setVisible(true);
+			Dimension size = getSize();
+			if (size!=null) {
+				if (IJ.debugMode) IJ.log("size: "+size);
+				if (IJ.isWindows() && (size.height>108||IJ.javaVersion()>=10)) {
+					// workaround for IJ window layout and FileDialog freeze problems with Windows 10 Creators Update
+					IJ.wait(10);
+					pack();
+					if (IJ.debugMode) IJ.log("pack()");
+					if (!Prefs.jFileChooserSettingChanged)
+						Prefs.useJFileChooser = true;
+				} else if (IJ.isMacOSX()) {
+					Rectangle maxBounds = GUI.getMaxWindowBounds(this);
+					if (loc.x+size.width>maxBounds.x+maxBounds.width)
+						setLocation(loc.x, loc.y);
+				}
+			}
 		}
 		if (err1!=null)
 			IJ.error(err1);
@@ -188,27 +215,24 @@ public class ImageJ extends Frame implements ActionListener,
 			IJ.error(err2);
 			IJ.runPlugIn("ij.plugin.ClassChecker", "");
 		}
-		m.installStartupMacroSet();
 		if (IJ.isMacintosh()&&applet==null) { 
-			Object qh = null; 
-			qh = IJ.runPlugIn("MacAdapter", ""); 
-			if (qh==null) 
-				IJ.runPlugIn("QuitHandler", ""); 
+			try {
+				IJ.runPlugIn("ij.plugin.MacAdapter", ""); 
+			} catch(Throwable e) {}
 		} 
 		if (applet==null)
 			IJ.runPlugIn("ij.plugin.DragAndDrop", "");
-		String str = m.getMacroCount()==1?" macro": "macros";
-		IJ.showStatus(version()+ m.getPluginCount() + " commands; " + m.getMacroCount() + str);
-		//if (applet==null && !embedded && Prefs.runSocketListener)
-		//	new SocketListener();
+		String str = m.getMacroCount()==1?" macro":" macros";
 		configureProxy();
 		if (applet==null)
 			loadCursors();
+		(new ij.macro.StartupRunner()).run(batchMode); // run RunAtStartup and AutoRun macros
+		IJ.showStatus(version()+ m.getPluginCount() + " commands; " + m.getMacroCount() + str);
  	}
  	
  	private void loadCursors() {
 		Toolkit toolkit = Toolkit.getDefaultToolkit();
-		String path = Prefs.getHomeDir()+File.separator+"images/crosshair-cursor.gif";
+		String path = Prefs.getImageJDir()+"/astronomy_icon.gif";
 		File f = new File(path);
 		if (!f.exists())
 			return;
@@ -220,9 +244,8 @@ public class ImageJ extends Frame implements ActionListener,
 		int width = icon.getIconWidth();
 		int height = icon.getIconHeight();
 		Point hotSpot = new Point(width/2, height/2);
-		java.awt.Cursor crosshairCursor = toolkit.createCustomCursor(image, hotSpot, "crosshair-cursor.gif");
+		Cursor crosshairCursor = toolkit.createCustomCursor(image, hotSpot, "crosshair-cursor.gif");
 		ImageCanvas.setCursor(crosshairCursor, 0);
-		//IJ.log(width+" "+height+" "+toolkit.getBestCursorSize(width,height));
 	}
     	
 	void configureProxy() {
@@ -240,24 +263,26 @@ public class ImageJ extends Frame implements ActionListener,
 			props.put("proxySet", "true");
 			props.put("http.proxyHost", server);
 			props.put("http.proxyPort", ""+port);
+			props.put("https.proxyHost", server);
+			props.put("https.proxyPort", ""+port);
 		}
 		//new ProxySettings().logProperties();
 	}
 	
     void setIcon() throws Exception {
-		URL url = this.getClass().getClassLoader().getResource("astronomy_icon.png");
+		URL url = this.getClass().getResource("/microscope.gif");
 		if (url==null) return;
-		Image img = new ImageIcon(url).getImage();
+		Image img = createImage((ImageProducer)url.getContent());
 		if (img!=null) setIconImage(img);
 	}
 	
 	public Point getPreferredLocation() {
-		if (!IJ.isJava14()) return new Point(0, 0);
-		GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-		Rectangle maxBounds = ge.getMaximumWindowBounds();
-		int ijX = Prefs.getInt(IJ_X, 10);
-		int ijY = Prefs.getInt(IJ_Y, 10);
-		if (Prefs.isLocationOnScreen(new Point(ijX, ijY)))
+		int ijX = Prefs.getInt(IJ_X,10);
+		int ijY = Prefs.getInt(IJ_Y,10);
+		Rectangle maxBounds = GUI.getMaxWindowBounds();
+		//System.out.println("getPreferredLoc1: "+ijX+" "+ijY+" "+maxBounds);
+		if (ijX>=maxBounds.x && ijY>=maxBounds.y && ijX<(maxBounds.x+maxBounds.width-75)
+		&& ijY<(maxBounds.y+maxBounds.height-75))
 			return new Point(ijX, ijY);
 		Dimension tbsize = toolbar.getPreferredSize();
 		int ijWidth = tbsize.width+10;
@@ -309,6 +334,11 @@ public class ImageJ extends Frame implements ActionListener,
 		if ((e.getSource() instanceof MenuItem)) {
 			MenuItem item = (MenuItem)e.getSource();
 			String cmd = e.getActionCommand();
+			Frame frame = WindowManager.getFrontWindow();
+			if (frame!=null && (frame instanceof Fitter)) {
+				((Fitter)frame).actionPerformed(e);
+				return;
+			}
 			commandName = cmd;
 			ImagePlus imp = null;
 			if (item.getParent()==Menus.getOpenRecentMenu()) {
@@ -320,7 +350,6 @@ public class ImageJ extends Frame implements ActionListener,
 					imp = ((ImageCanvas)parent).getImage();
 			}
 			int flags = e.getModifiers();
-			//IJ.log(""+KeyEvent.getKeyModifiersText(flags));
 			hotkey = false;
 			actionPerformedTime = System.currentTimeMillis();
 			long ellapsedTime = actionPerformedTime-keyPressedTime;
@@ -341,7 +370,9 @@ public class ImageJ extends Frame implements ActionListener,
 		MenuItem item = (MenuItem)e.getSource();
 		MenuComponent parent = (MenuComponent)item.getParent();
 		String cmd = e.getItem().toString();
-		if ((Menu)parent==Menus.window)
+		if ("Autorun Examples".equals(cmd)) // Examples>Autorun Examples
+			Prefs.autoRunExamples = e.getStateChange()==1;
+		else if ((Menu)parent==Menus.window)
 			WindowManager.activateWindow(cmd, item);
 		else
 			doCommand(cmd);
@@ -356,6 +387,10 @@ public class ImageJ extends Frame implements ActionListener,
 			IJ.log("Windows: "+WindowManager.getWindowCount());
 	}
 	
+	public String getInfo() {
+		return version()+System.getProperty("os.name")+" "+System.getProperty("os.version")+"; "+IJ.freeMemory();
+	}
+
 	private String version() {
 		return "ImageJ "+VERSION+BUILD + "; "+"Java "+System.getProperty("java.version")+(IJ.is64Bit()?" [64-bit]; ":" [32-bit]; ");
 	}
@@ -366,7 +401,6 @@ public class ImageJ extends Frame implements ActionListener,
 	public void mouseEntered(MouseEvent e) {}
 
  	public void keyPressed(KeyEvent e) {
- 		//if (e.isConsumed()) return;
 		int keyCode = e.getKeyCode();
 		IJ.setKeyDown(keyCode);
 		hotkey = false;
@@ -381,14 +415,22 @@ public class ImageJ extends Frame implements ActionListener,
 		boolean control = (flags & KeyEvent.CTRL_MASK) != 0;
 		boolean alt = (flags & KeyEvent.ALT_MASK) != 0;
 		boolean meta = (flags & KeyEvent.META_MASK) != 0;
+		if (keyCode==KeyEvent.VK_H && meta && IJ.isMacOSX())
+			return; // Allow macOS to run ImageJ>Hide ImageJ command
 		String cmd = null;
 		ImagePlus imp = WindowManager.getCurrentImage();
 		boolean isStack = (imp!=null) && (imp.getStackSize()>1);
 		
-		if (imp!=null && !control && ((keyChar>=32 && keyChar<=255) || keyChar=='\b' || keyChar=='\n')) {
+		if (imp!=null && !meta && ((keyChar>=32 && keyChar<=255) || keyChar=='\b' || keyChar=='\n')) {
 			Roi roi = imp.getRoi();
-			if (roi instanceof TextRoi) {
-				if ((flags & KeyEvent.META_MASK)!=0 && IJ.isMacOSX()) return;
+			if (roi!=null && roi instanceof TextRoi) {
+				if (imp.getOverlay()!=null && (control || alt || meta)
+				&& (keyCode==KeyEvent.VK_BACK_SPACE || keyCode==KeyEvent.VK_DELETE)) {
+					if (deleteOverlayRoi(imp))
+							return;
+				}
+				if ((flags & KeyEvent.META_MASK)!=0 && IJ.isMacOSX())
+					return;
 				if (alt) {
 					switch (keyChar) {
 						case 'u': case 'm': keyChar = IJ.micronSymbol; break;
@@ -410,7 +452,6 @@ public class ImageJ extends Frame implements ActionListener,
 				else
 					cmd = (String)macroShortcuts.get(new Integer(keyCode));
 				if (cmd!=null) {
-					//MacroInstaller.runMacroCommand(cmd);
 					commandName = cmd;
 					MacroInstaller.runMacroShortcut(cmd);
 					return;
@@ -418,9 +459,15 @@ public class ImageJ extends Frame implements ActionListener,
 			}
 		}
 
-		if ((!Prefs.requireControlKey || control || meta) && keyChar!='+') {
+		if (keyCode==KeyEvent.VK_SEPARATOR)
+			keyCode = KeyEvent.VK_DECIMAL;
+		boolean functionKey = keyCode>=KeyEvent.VK_F1 && keyCode<=KeyEvent.VK_F12;
+		boolean numPad = keyCode==KeyEvent.VK_DIVIDE || keyCode==KeyEvent.VK_MULTIPLY
+			|| keyCode==KeyEvent.VK_DECIMAL
+			|| (keyCode>=KeyEvent.VK_NUMPAD0 && keyCode<=KeyEvent.VK_NUMPAD9);			
+		if ((!Prefs.requireControlKey||control||meta||functionKey||numPad) && keyChar!='+') {
 			Hashtable shortcuts = Menus.getShortcuts();
-			if (shift)
+			if (shift && !functionKey)
 				cmd = (String)shortcuts.get(new Integer(keyCode+200));
 			else
 				cmd = (String)shortcuts.get(new Integer(keyCode));
@@ -428,8 +475,8 @@ public class ImageJ extends Frame implements ActionListener,
 		
 		if (cmd==null) {
 			switch (keyChar) {
-				case '<': case ',': cmd="Previous Slice [<]"; break;
-				case '>': case '.': case ';': cmd="Next Slice [>]"; break;
+				case '<': case ',': if (isStack) cmd="Previous Slice [<]"; break;
+				case '>': case '.': case ';': if (isStack) cmd="Next Slice [>]"; break;
 				case '+': case '=': cmd=""; break;
 				case '-': cmd=""; break;
 				case '/': cmd="Reslice [/]..."; break;
@@ -438,27 +485,37 @@ public class ImageJ extends Frame implements ActionListener,
 		}
 
 		if (cmd==null) {
-			switch(keyCode) {
+			switch (keyCode) {
 				//case KeyEvent.VK_TAB: WindowManager.putBehind(); return;
-				case KeyEvent.VK_BACK_SPACE: // delete
-					if (deleteOverlayRoi(imp))
-						return;
-					cmd="Clear";
-					hotkey=true;
-					break; 
+				case KeyEvent.VK_BACK_SPACE: case KeyEvent.VK_DELETE:
+					if (!(shift||control||alt||meta)) {
+						if (deleteOverlayRoi(imp))
+							return;
+						if (imp!=null&&imp.getOverlay()!=null&&imp==GelAnalyzer.getGelImage())
+							return;
+						cmd="Clear";
+						hotkey=true;
+					}
+					break;
 				//case KeyEvent.VK_BACK_SLASH: cmd=IJ.altKeyDown()?"Animation Options...":"Start Animation"; break;
 				case KeyEvent.VK_EQUALS: cmd=""; break;
 				case KeyEvent.VK_MINUS: cmd=""; break;
 				case KeyEvent.VK_SLASH: case 0xbf: cmd="Reslice [/]..."; break;
-				case KeyEvent.VK_COMMA: case 0xbc: cmd="Previous Slice [<]"; break;
-				case KeyEvent.VK_PERIOD: case 0xbe: cmd="Next Slice [>]"; break;
+				case KeyEvent.VK_COMMA: case 0xbc: if (isStack) cmd="Previous Slice [<]"; break;
+				case KeyEvent.VK_PERIOD: case 0xbe: if (isStack) cmd="Next Slice [>]"; break;
 				case KeyEvent.VK_LEFT: case KeyEvent.VK_RIGHT: case KeyEvent.VK_UP: case KeyEvent.VK_DOWN: // arrow keys
 					if (imp==null) return;
 					Roi roi = imp.getRoi();
-					if (IJ.shiftKeyDown()&&imp==Orthogonal_Views.getImage())
+					if (shift&&imp==Orthogonal_Views.getImage())
 						return;
-					boolean stackKey = imp.getStackSize()>1 && (roi==null||IJ.shiftKeyDown());
-					boolean zoomKey = roi==null || IJ.shiftKeyDown() || IJ.controlKeyDown();
+					if (IJ.isMacOSX() && IJ.isJava18()) {
+						RoiManager rm = RoiManager.getInstance();
+						boolean rmActive = rm!=null && rm==WindowManager.getActiveWindow();
+						if (rmActive && (keyCode==KeyEvent.VK_DOWN||keyCode==KeyEvent.VK_UP))
+						  rm.repaint();
+					}
+					boolean stackKey = imp.getStackSize()>1 && (roi==null||shift);
+					boolean zoomKey = roi==null || shift || control;
 					if (stackKey && keyCode==KeyEvent.VK_RIGHT)
 							cmd="Next Slice [>]";
 					else if (stackKey && keyCode==KeyEvent.VK_LEFT)
@@ -468,7 +525,7 @@ public class ImageJ extends Frame implements ActionListener,
 					else if (zoomKey && keyCode==KeyEvent.VK_UP && !ignoreArrowKeys(imp) && Toolbar.getToolId()<Toolbar.SPARE6)
 							cmd="";
 					else if (roi!=null) {
-						if ((flags & KeyEvent.ALT_MASK) != 0)
+						if ((flags & KeyEvent.ALT_MASK)!=0 || (flags & KeyEvent.CTRL_MASK)!=0)
 							roi.nudgeCorner(keyCode);
 						else
 							roi.nudge(keyCode);
@@ -485,7 +542,7 @@ public class ImageJ extends Frame implements ActionListener,
 		
 		if (cmd!=null && !cmd.equals("")) {
 			commandName = cmd;
-			if (cmd.equals("Fill")||cmd.equals("Draw"))
+			if (!control && !meta && (cmd.equals("Fill")||cmd.equals("Draw")))
 				hotkey = true;
 			if (cmd.charAt(0)==MacroInstaller.commandPrefix)
 				MacroInstaller.runMacroShortcut(cmd);
@@ -525,7 +582,7 @@ public class ImageJ extends Frame implements ActionListener,
 	
 	private boolean ignoreArrowKeys(ImagePlus imp) {
 		Frame frame = WindowManager.getFrontWindow();
-		String title = frame.getTitle();
+		String title = frame!=null?frame.getTitle():null;
 		if (title!=null && title.equals("ROI Manager"))
 			return true;
 		// Control Panel?
@@ -554,30 +611,46 @@ public class ImageJ extends Frame implements ActionListener,
 	public void keyReleased(KeyEvent e) {
 		IJ.setKeyUp(e.getKeyCode());
 	}
-		
+			
+	/** called when escape pressed */
 	void abortPluginOrMacro(ImagePlus imp) {
 		if (imp!=null) {
 			ImageWindow win = imp.getWindow();
 			if (win!=null) {
-				win.running = false;
-				win.running2 = false;
+				Roi roi = imp.getRoi();
+				if (roi!=null && roi.getState()!=Roi.NORMAL) {
+					roi.abortModification(imp);
+					return;
+				} else {
+					win.running = false;
+					win.running2 = false;
+				}
 			}
 		}
 		Macro.abort();
 		Interpreter.abort();
-		if (Interpreter.getInstance()!=null) IJ.beep();
+		if (Interpreter.getInstance()!=null)
+			IJ.beep();
 	}
 
 	public void windowClosing(WindowEvent e) {
-		//doCommand("Quit");
-		quit();
-		windowClosed = true;
+		if (Executer.getListenerCount()>0)
+			doCommand("Quit");
+		else {
+			quit();
+			windowClosed = true;
+		}
 	}
 
 	public void windowActivated(WindowEvent e) {
 		if (IJ.isMacintosh() && !quitting) {
 			IJ.wait(10); // may be needed for Java 1.4 on OS X
-			setMenuBar(Menus.getMenuBar());
+			MenuBar mb = Menus.getMenuBar();
+			if (mb!=null && mb!=getMenuBar()) {
+				setMenuBar(mb);
+				Menus.setMenuBarCount++;
+				if (IJ.debugMode) IJ.log("setMenuBar: "+Menus.setMenuBarCount);
+			}
 		}
 	}
 	
@@ -596,6 +669,7 @@ public class ImageJ extends Frame implements ActionListener,
 
 	/** Called by ImageJ when the user selects Quit. */
 	public void quit() {
+		quitMacro = IJ.macroRunning();
 		Thread thread = new Thread(this, "Quit");
 		thread.setPriority(Thread.NORM_PRIORITY);
 		thread.start();
@@ -607,54 +681,52 @@ public class ImageJ extends Frame implements ActionListener,
 		return quitting;
 	}
 	
+	/** Returns true if ImageJ is quitting as a result of a run("Quit") macro call. */
+	public boolean quittingViaMacro() {
+		return quitting && quitMacro;
+	}
+
 	/** Called once when ImageJ quits. */
 	public void savePreferences(Properties prefs) {
 		Point loc = getLocation();
 		prefs.put(IJ_X, Integer.toString(loc.x));
 		prefs.put(IJ_Y, Integer.toString(loc.y));
-		//prefs.put(IJ_WIDTH, Integer.toString(size.width));
-		//prefs.put(IJ_HEIGHT, Integer.toString(size.height));
 	}
 
 	public static void main(String args[]) {
-		String[] parsed = System.getProperty("java.specification.version").split("\\.");
-		if (Integer.parseInt(parsed[parsed.length > 1 ? 1 : 0]) < 5) {
-			javax.swing.JOptionPane.showMessageDialog(null,"ImageJ "+VERSION+" requires Java 1.5 or later.");
-			System.exit(0);
-		}
-		//IJ.debugMode = true;
 		boolean noGUI = false;
 		int mode = STANDALONE;
 		arguments = args;
-		//System.setProperty("file.encoding", "UTF-8");
 		int nArgs = args!=null?args.length:0;
 		boolean commandLine = false;
 		for (int i=0; i<nArgs; i++) {
 			String arg = args[i];
 			if (arg==null) continue;
-			//IJ.log(i+"  "+arg);
-			if (args[i].startsWith("-")) {
-				if (args[i].startsWith("-batch"))
-					noGUI = true;
-				else if (args[i].startsWith("-debug"))
-					IJ.debugMode = true;
-				else if (args[i].startsWith("-ijpath") && i+1<nArgs) {
-					Prefs.setHomeDir(args[i+1]);
-					commandLine = true;
-					args[i+1] = null;
-				} else if (args[i].startsWith("-port")) {
-					int delta = (int)Tools.parseDouble(args[i].substring(5, args[i].length()), 0.0);
-					commandLine = true;
-					if (delta==0)
-						mode = EMBEDDED;
-					else if (delta>0 && DEFAULT_PORT+delta<65536)
-						port = DEFAULT_PORT+delta;
-				}
+			if (arg.startsWith("-batch")) {
+				noGUI = true;
+				batchMode = true;
+			} else if (arg.startsWith("-macro") || arg.endsWith(".ijm") || arg.endsWith(".txt"))
+				batchMode = true;
+			else if (arg.startsWith("-debug"))
+				IJ.setDebugMode(true);
+			else if (arg.startsWith("-ijpath") && i+1<nArgs) {
+				if (IJ.debugMode) IJ.log("-ijpath: "+args[i+1]);
+				Prefs.setHomeDir(args[i+1]);
+				commandLine = true;
+				args[i+1] = null;
+			} else if (arg.startsWith("-port")) {
+				int delta = (int)Tools.parseDouble(arg.substring(5, arg.length()), 0.0);
+				commandLine = true;
+				if (delta==0)
+					mode = EMBEDDED;
+				else if (delta>0 && DEFAULT_PORT+delta<65536)
+					port = DEFAULT_PORT+delta;
 			} 
 		}
   		// If existing ImageJ instance, pass arguments to it and quit.
   		boolean passArgs = mode==STANDALONE && !noGUI;
-		if (IJ.isMacOSX() && !commandLine) passArgs = false;
+		if (IJ.isMacOSX() && !commandLine)
+			passArgs = false;
 		if (passArgs && isRunning(args)) 
   			return;
  		ImageJ ij = IJ.getInstance();    	
@@ -756,53 +828,52 @@ public class ImageJ extends Frame implements ActionListener,
 			quitting = false;
 			return;
 		}
-		//IJ.log("savePreferences");
 		if (applet==null) {
 			saveWindowLocations();
-            Frame[] dp = Frame.getFrames();
-            for (int i=0; i<dp.length;i++)
-                {
-                if (dp[i].getTitle().equals("CCD Data Processor") ||
-                    dp[i].getTitle().equals("Multi-plot Main") ||
-                    dp[i].getTitle().equals("Coordinate Converter") ||
-                    dp[i].getClass().getName().contains("AstroStackWindow"))
-                    {
-                    WindowEvent wev = new WindowEvent(dp[i], WindowEvent.WINDOW_CLOSING);
-                    Toolkit.getDefaultToolkit().getSystemEventQueue().postEvent(wev);
-                    IJ.wait(100);
-                    }
-                }
+			Prefs.set(ImageWindow.LOC_KEY,null); // don't save image window location
+			Frame[] dp = Frame.getFrames();
+			for (int i=0; i<dp.length;i++) {
+				if (dp[i].getTitle().equals("CCD Data Processor") ||
+						dp[i].getTitle().equals("Multi-plot Main") ||
+						dp[i].getTitle().equals("Coordinate Converter") ||
+						dp[i].getClass().getName().contains("AstroStackWindow")) {
+					WindowEvent wev = new WindowEvent(dp[i], WindowEvent.WINDOW_CLOSING);
+					Toolkit.getDefaultToolkit().getSystemEventQueue().postEvent(wev);
+					IJ.wait(100);
+				}
+			}
 			Prefs.savePreferences();
 		}
 		IJ.cleanup();
-		//setVisible(false);
-		//IJ.log("dispose");
 		dispose();
 		if (exitWhenQuitting)
 			System.exit(0);
 	}
 	
 	void saveWindowLocations() {
-		Frame frame = WindowManager.getFrame("B&C");
-		if (frame!=null)
-			Prefs.saveLocation(ContrastAdjuster.LOC_KEY, frame.getLocation());
-		frame = WindowManager.getFrame("Threshold");
-		if (frame!=null)
-			Prefs.saveLocation(ThresholdAdjuster.LOC_KEY, frame.getLocation());
-		frame = WindowManager.getFrame("Results");
-		if (frame!=null) {
-			Prefs.saveLocation(TextWindow.LOC_KEY, frame.getLocation());
-			Dimension d = frame.getSize();
+		Window win = WindowManager.getWindow("B&C");
+		if (win!=null)
+			Prefs.saveLocation(ContrastAdjuster.LOC_KEY, win.getLocation());
+		win = WindowManager.getWindow("Threshold");
+		if (win!=null)
+			Prefs.saveLocation(ThresholdAdjuster.LOC_KEY, win.getLocation());
+		win = WindowManager.getWindow("Results");
+		if (win!=null) {
+			Prefs.saveLocation(TextWindow.LOC_KEY, win.getLocation());
+			Dimension d = win.getSize();
 			Prefs.set(TextWindow.WIDTH_KEY, d.width);
 			Prefs.set(TextWindow.HEIGHT_KEY, d.height);
 		}
-		frame = WindowManager.getFrame("Log");
-		if (frame!=null) {
-			Prefs.saveLocation(TextWindow.LOG_LOC_KEY, frame.getLocation());
-			Dimension d = frame.getSize();
+		win = WindowManager.getWindow("Log");
+		if (win!=null) {
+			Prefs.saveLocation(TextWindow.LOG_LOC_KEY, win.getLocation());
+			Dimension d = win.getSize();
 			Prefs.set(TextWindow.LOG_WIDTH_KEY, d.width);
 			Prefs.set(TextWindow.LOG_HEIGHT_KEY, d.height);
 		}
+		win = WindowManager.getWindow("ROI Manager");
+		if (win!=null)
+			Prefs.saveLocation(RoiManager.LOC_KEY, win.getLocation());
 	}
 	
 	public static String getCommandName() {
@@ -811,6 +882,14 @@ public class ImageJ extends Frame implements ActionListener,
 	
 	public static void setCommandName(String name) {
 		commandName = name;
+	}
+	
+	public void resize() {
+		double scale = Prefs.getGuiScale();
+		toolbar.init();
+		statusLine.setFont(new Font("SansSerif", Font.PLAIN, (int)(13*scale)));
+		progressBar.init((int)(ProgressBar.WIDTH*scale), (int)(ProgressBar.HEIGHT*scale));
+		pack();
 	}
 
 }

@@ -3,26 +3,24 @@ import ij.*;
 import ij.gui.*;
 import ij.process.*;
 import ij.plugin.frame.*;
-import ij.plugin.DICOM;
-import ij.plugin.AVI_Reader;
-import ij.plugin.SimpleCommands;
-import ij.plugin.HyperStackConverter;
+import ij.plugin.*;
 import ij.text.TextWindow;
 import ij.util.Java2;
 import ij.measure.ResultsTable;
 import ij.macro.Interpreter;
+import ij.util.Tools;
 import java.awt.*;
 import java.awt.image.*;
 import java.io.*;
 import java.net.URL;
 import java.net.*;
-import java.util.Hashtable;
+import java.util.*;
 import java.util.zip.*;
-import java.util.Locale;
 import javax.swing.*;
 import javax.swing.filechooser.*;
 import java.awt.event.KeyEvent;
 import javax.imageio.ImageIO;
+import java.lang.reflect.Method;
 
 /** Opens tiff (and tiff stacks), dicom, fits, pgm, jpeg, bmp or
 	gif images, and look-up tables, using a file open dialog or a path.
@@ -31,11 +29,11 @@ public class Opener {
 
 	public static final int UNKNOWN=0,TIFF=1,DICOM=2,FITS=3,PGM=4,JPEG=5,
 		GIF=6,LUT=7,BMP=8,ZIP=9,JAVA_OR_TEXT=10,ROI=11,TEXT=12,PNG=13,
-		TIFF_AND_DICOM=14,CUSTOM=15, AVI=16, OJJ=17, TABLE=18; // don't forget to also update 'types'
+		TIFF_AND_DICOM=14,CUSTOM=15, AVI=16, OJJ=17, TABLE=18, RAW=19; // don't forget to also update 'types'
 	public static final String[] types = {"unknown","tif","dcm","fits","pgm",
-		"jpg","gif","lut","bmp","zip","java/txt","roi","txt","png","t&d","custom","ojj","table"};
+		"jpg","gif","lut","bmp","zip","java/txt","roi","txt","png","t&d","custom","ojj","table","raw"};
 	private static String defaultDirectory = null;
-	private static int fileType;
+	private int fileType;
 	private boolean error;
 	private boolean isRGB48;
 	private boolean silentMode;
@@ -53,11 +51,17 @@ public class Opener {
 	public Opener() {
 	}
 
-	/** Displays a file open dialog box and then opens the tiff, dicom, 
-		fits, pgm, jpeg, bmp, gif, lut, roi, or text file selected by 
-		the user. Displays an error message if the selected file is not
-		in one of the supported formats. This is the method that
-		ImageJ's File/Open command uses to open files. */
+	/**
+	 * Displays a file open dialog box and then opens the tiff, dicom, 
+	 * fits, pgm, jpeg, bmp, gif, lut, roi, or text file selected by 
+	 * the user. Displays an error message if the selected file is not
+	 * in a supported format. This is the method that
+	 * ImageJ's File/Open command uses to open files.
+	 * @see ij.IJ#open()
+	 * @see ij.IJ#open(String)
+	 * @see ij.IJ#openImage()
+	 * @see ij.IJ#openImage(String)
+	*/
 	public void open() {
 		OpenDialog od = new OpenDialog("Open", "");
 		String directory = od.getDirectory();
@@ -70,53 +74,13 @@ public class Opener {
 		}
 	}
 
-	/** Displays a JFileChooser and then opens the tiff, dicom, 
-		fits, pgm, jpeg, bmp, gif, lut, roi, or text files selected by 
-		the user. Displays error messages if one or more of the selected 
-		files is not in one of the supported formats. This is the method
-		that ImageJ's File/Open command uses to open files if
-		"Open/Save Using JFileChooser" is checked in EditOptions/Misc. */
-	public void openMultiple() {
-		Java2.setSystemLookAndFeel();
-		// run JFileChooser in a separate thread to avoid possible thread deadlocks
-		try {
-			EventQueue.invokeAndWait(new Runnable() {
-				public void run() {
-					JFileChooser fc = new JFileChooser();
-					fc.setMultiSelectionEnabled(true);
-					File dir = null;
-					String sdir = OpenDialog.getDefaultDirectory();
-					if (sdir!=null)
-						dir = new File(sdir);
-					if (dir!=null)
-						fc.setCurrentDirectory(dir);
-					int returnVal = fc.showOpenDialog(IJ.getInstance());
-					if (returnVal!=JFileChooser.APPROVE_OPTION)
-						return;
-					omFiles = fc.getSelectedFiles();
-					if (omFiles.length==0) { // getSelectedFiles does not work on some JVMs
-						omFiles = new File[1];
-						omFiles[0] = fc.getSelectedFile();
-					}
-					omDirectory = fc.getCurrentDirectory().getPath()+File.separator;
-				}
-			});
-		} catch (Exception e) {}
-		if (omDirectory==null) return;
-		OpenDialog.setDefaultDirectory(omDirectory);
-		for (int i=0; i<omFiles.length; i++) {
-			String path = omDirectory + omFiles[i].getName();
-			open(path);
-			if (i==0 && Recorder.record)
-				Recorder.recordPath("open", path);
-			if (i==0 && !error)
-				Menus.addOpenRecentItem(path);
-		}
-	}
-
-	/** Opens and displays a tiff, dicom, fits, pgm, jpeg, bmp, gif, lut, 
-		roi, or text file. Displays an error message if the specified file
-		is not in one of the supported formats. */
+	/**
+	 * Opens and displays the specified tiff, dicom, fits, pgm, jpeg, 
+	 * bmp, gif, lut, roi, or text file. Displays an error message if 
+	 * the file is not in a supported format.
+	 * @see ij.IJ#open(String)
+	 * @see ij.IJ#openImage(String)
+	*/
 	public void open(String path) {
 		boolean isURL = path.indexOf("://")>0;
 		if (isURL && isText(path)) {
@@ -127,7 +91,7 @@ public class Opener {
 				(new PluginInstaller()).install(path);
 				return;
 		}
-		boolean fullPath = path.startsWith("/") || path.startsWith("\\") || path.indexOf(":\\")==1 || isURL;
+		boolean fullPath = path.startsWith("/") || path.startsWith("\\") || path.indexOf(":\\")==1 || path.indexOf(":/")==1 || isURL;
 		if (!fullPath) {
 			String defaultDir = OpenDialog.getDefaultDirectory();
 			if (defaultDir!=null)
@@ -135,9 +99,14 @@ public class Opener {
 			else
 				path = (new File(path)).getAbsolutePath();
 		}
-		if (!silentMode) IJ.showStatus("Opening: " + path);
+		if (!silentMode)
+			IJ.showStatus("Opening: " + path);
 		long start = System.currentTimeMillis();
-		ImagePlus imp = openImage(path);
+		ImagePlus imp = null;
+		if (path.endsWith(".txt"))
+			this.fileType = JAVA_OR_TEXT;
+		else
+			imp = openImage(path);
 		if (imp==null && isURL)
 			return;
 		if (imp!=null) {
@@ -147,7 +116,7 @@ public class Opener {
 			else
 				imp.show(getLoadRate(start,imp));
 		} else {
-			switch (fileType) {
+			switch (this.fileType) {
 				case LUT:
 					imp = (ImagePlus)IJ.runPlugIn("ij.plugin.LutLoader", path);
 					if (imp.getWidth()!=0)
@@ -179,8 +148,11 @@ public class Opener {
 				case OJJ:  // ObjectJ project
 					IJ.runPlugIn("ObjectJ_", path);
 					break;
-				case TABLE:  // ImageJ Results table
+				case TABLE:
 					IJ.runPlugIn("Astronomy.Read_MeasurementTable",path);
+					break;
+				case RAW:
+					IJ.runPlugIn("ij.plugin.Raw", path);
 					break;
 				case UNKNOWN:
 					String msg =
@@ -206,6 +178,86 @@ public class Opener {
 		}
 	}
 	
+	/** Displays a JFileChooser and then opens the tiff, dicom, 
+		fits, pgm, jpeg, bmp, gif, lut, roi, or text files selected by 
+		the user. Displays error messages if one or more of the selected 
+		files is not in one of the supported formats. This is the method
+		that ImageJ's File/Open command uses to open files if
+		"Open/Save Using JFileChooser" is checked in EditOptions/Misc. */
+	public void openMultiple() {
+		Java2.setSystemLookAndFeel();
+		// run JFileChooser in a separate thread to avoid possible thread deadlocks
+		try {
+			EventQueue.invokeAndWait(new Runnable() {
+				public void run() {
+					JFileChooser fc = new JFileChooser();
+					fc.setMultiSelectionEnabled(true);
+					File dir = null;
+					String sdir = OpenDialog.getDefaultDirectory();
+					if (sdir!=null)
+						dir = new File(sdir);
+					if (dir!=null)
+						fc.setCurrentDirectory(dir);
+					if (IJ.debugMode) IJ.log("Opener.openMultiple: "+sdir+" "+dir);
+					int returnVal = fc.showOpenDialog(IJ.getInstance());
+					if (returnVal!=JFileChooser.APPROVE_OPTION)
+						return;
+					omFiles = fc.getSelectedFiles();
+					if (omFiles.length==0) { // getSelectedFiles does not work on some JVMs
+						omFiles = new File[1];
+						omFiles[0] = fc.getSelectedFile();
+					}
+					omDirectory = fc.getCurrentDirectory().getPath()+File.separator;
+				}
+			});
+		} catch (Exception e) {}
+		if (omDirectory==null) return;
+		OpenDialog.setDefaultDirectory(omDirectory);
+		for (int i=0; i<omFiles.length; i++) {
+			String path = omDirectory + omFiles[i].getName();
+			open(path);
+			if (i==0 && Recorder.record)
+				Recorder.recordPath("open", path);
+			if (i==0 && !error)
+				Menus.addOpenRecentItem(path);
+		}
+	}
+	
+	/**
+	 * Opens, but does not display, the specified image file
+	 * and returns an ImagePlus object object if successful,
+	 * or returns null if the file is not in a supported format
+	 * or is not found. Displays a file open dialog if 'path'
+	 * is null or an empty string.
+	 * @see ij.IJ#openImage(String)
+	 * @see ij.IJ#openImage()
+	*/
+	public ImagePlus openImage(String path) {
+		if (path==null || path.equals(""))
+			path = getPath();
+		if (path==null) return null;
+		ImagePlus img = null;
+		if (path.indexOf("://")>0)
+			img = openURL(path);
+		else
+			img = openImage(getDir(path), getName(path));
+		return img;
+	}
+	
+	/**
+	 * Open the nth image of the specified tiff stack.
+	 * @see ij.IJ#openImage(String,int)
+	*/
+	public ImagePlus openImage(String path, int n) {
+		if (path==null || path.equals(""))
+			path = getPath();
+		if (path==null) return null;
+		int type = getFileType(path);
+		if (type!=TIFF)
+			throw new IllegalArgumentException("Opener: TIFF file required");
+		return openTiff(path, n);
+	}
+
 	public static String getLoadRate(double time, ImagePlus imp) {
 		time = (System.currentTimeMillis()-time)/1000.0;
 		double mb = imp.getWidth()*imp.getHeight()*imp.getStackSize();
@@ -223,7 +275,7 @@ public class Opener {
 	private boolean isText(String path) {
 		if (path.endsWith(".txt") || path.endsWith(".ijm") || path.endsWith(".java")
 		|| path.endsWith(".js") || path.endsWith(".html") || path.endsWith(".htm")
-		|| path.endsWith("/"))
+		|| path.endsWith(".bsh") || path.endsWith(".py") || path.endsWith("/"))
 			return true;
 		int lastSlash = path.lastIndexOf("/");
 		if (lastSlash==-1) lastSlash = 0;
@@ -236,43 +288,37 @@ public class Opener {
 	
 	/** Opens the specified file and adds it to the File/Open Recent menu.
 		Returns true if the file was opened successfully.  */
-	public	boolean openAndAddToRecent(String path) {
+	public boolean openAndAddToRecent(String path) {
 		open(path);
 		if (!error)
 			Menus.addOpenRecentItem(path);
 		return error;
 	}
 
-	/** Attempts to open the specified file as a tiff, bmp, dicom, fits,
-		pgm, gif or jpeg image. Returns an ImagePlus object if successful.
-		Modified by Gregory Jefferis to call HandleExtraFileTypes plugin if 
-		the file type is unrecognised. */
+	/**
+	 * Attempts to open the specified file as a tiff, bmp, dicom, fits,
+	 * pgm, gif or jpeg image. Returns an ImagePlus object if successful.
+	 * Modified by Gregory Jefferis to call HandleExtraFileTypes plugin if 
+	 * the file type is unrecognised.
+	 * @see ij.IJ#openImage(String)
+	*/
 	public ImagePlus openImage(String directory, String name) {
 		ImagePlus imp;
 		FileOpener.setSilentMode(silentMode);
 		if (directory.length()>0 && !(directory.endsWith("/")||directory.endsWith("\\")))
 			directory += Prefs.separator;
+		OpenDialog.setLastDirectory(directory);
+		OpenDialog.setLastName(name);
 		String path = directory+name;
-		fileType = getFileType(path);
-		if (IJ.debugMode)
-			IJ.log("openImage: \""+types[fileType]+"\", "+path);
-		switch (fileType) {
+		this.fileType = getFileType(path);
+		if (IJ.debugMode) IJ.log("openImage: \""+types[this.fileType]+"\", "+path);
+		switch (this.fileType) {
 			case TIFF:
 				imp = openTiff(directory, name);
 				return imp;
-			case DICOM:
+			case DICOM: case TIFF_AND_DICOM:
 				imp = (ImagePlus)IJ.runPlugIn("ij.plugin.DICOM", path);
 				if (imp.getWidth()!=0) return imp; else return null;
-			case TIFF_AND_DICOM:
-				// "hybrid" files created by GE-Senographe 2000 D */
-				imp = openTiff(directory,name);
-				ImagePlus imp2 = (ImagePlus)IJ.runPlugIn("ij.plugin.DICOM", path);
-				if (imp!=null && imp2!=null)	 {		
-					imp.setProperty("Info",imp2.getProperty("Info"));
-					imp.setCalibration(imp2.getCalibration());
-				}
-				if (imp==null) imp=imp2;
-				return imp;
 			case FITS:
 				imp = (ImagePlus)IJ.runPlugIn("ij.plugin.FITS_Reader", path);
 				if (imp.getWidth()!=0) return imp; else return null;
@@ -280,12 +326,15 @@ public class Opener {
 				imp = (ImagePlus)IJ.runPlugIn("ij.plugin.PGM_Reader", path);
 				if (imp.getWidth()!=0) {
 					if (imp.getStackSize()==3 && imp.getBitDepth()==16)
-						imp = new CompositeImage(imp, CompositeImage.COMPOSITE);
+						imp = new CompositeImage(imp, IJ.COMPOSITE);
 					return imp;
 				} else
 					return null;
-			case JPEG: case GIF:
+			case JPEG:
 				imp = openJpegOrGif(directory, name);
+				if (imp!=null&&imp.getWidth()!=0) return imp; else return null;
+			case GIF:
+				imp = (ImagePlus)IJ.runPlugIn("ij.plugin.GIF_Reader", path);
 				if (imp!=null&&imp.getWidth()!=0) return imp; else return null;
 			case PNG: 
 				imp = openUsingImageIO(directory+name);
@@ -296,49 +345,37 @@ public class Opener {
 			case ZIP:
 				return openZip(path);
 			case AVI:
-				AVI_Reader reader = (AVI_Reader)IJ.runPlugIn("ij.plugin.AVI_Reader", path);
+				AVI_Reader reader = new AVI_Reader();
+				reader.setVirtual(true);
+				reader.displayDialog(!IJ.macroRunning());
+				reader.run(path);
 				return reader.getImagePlus();
+			case JAVA_OR_TEXT:
+				if (name.endsWith(".txt"))
+					return openTextImage(directory,name);
+				else
+					return null;
 			case UNKNOWN: case TEXT:
-				// Call HandleExtraFileTypes plugin to see if it can handle unknown format
-				int[] wrap = new int[] {fileType};
-				imp = openWithHandleExtraFileTypes(path, wrap);
-				if (imp!=null && imp.getNChannels()>1)
-					imp = new CompositeImage(imp, CompositeImage.COLOR);
-				fileType = wrap[0];
-				if (imp==null && fileType==UNKNOWN && IJ.getInstance()==null)
-					IJ.error("Unsupported format or not found");
-				return imp;
+				return openUsingHandleExtraFileTypes(path);
 			default:
 				return null;
 		}
 	}
 	
-	/** Attempts to open the specified file as a tiff, bmp, dicom, fits,
-		pgm, gif or jpeg. Displays a file open dialog if 'path' is null or
-		an empty string. Returns an ImagePlus object if successful. */
-	public ImagePlus openImage(String path) {
-		if (path==null || path.equals(""))
-			path = getPath();
-		if (path==null) return null;
-		ImagePlus img = null;
-		if (path.indexOf("://")>0)
-			img = openURL(path);
-		else
-			img = openImage(getDir(path), getName(path));
-		return img;
+	// Call HandleExtraFileTypes plugin to see if it can handle unknown formats
+	// or files in TIFF format that the built in reader is unable to open.
+	private ImagePlus openUsingHandleExtraFileTypes(String path) {
+		File f = new File(path);
+		if (!f.exists())
+			return null;
+		int[] wrap = new int[] {this.fileType};
+		ImagePlus imp = openWithHandleExtraFileTypes(path, wrap);
+		if (imp!=null && imp.getNChannels()>1)
+			imp = new CompositeImage(imp, IJ.COLOR);
+		this.fileType = wrap[0];
+		return imp;
 	}
 	
-	/** Open the nth image of the specified tiff stack. */
-	public ImagePlus openImage(String path, int n) {
-		if (path==null || path.equals(""))
-			path = getPath();
-		if (path==null) return null;
-		int type = getFileType(path);
-		if (type!=TIFF)
-			throw new IllegalArgumentException("TIFF file require");
-		return openTiff(path, n);
-	}
-
 	String getPath() {
 		OpenDialog od = new OpenDialog("Open", "");
 		String dir = od.getDirectory();
@@ -349,11 +386,27 @@ public class Opener {
 			return dir+name;
 	}
 
-	/** Attempts to open the specified url as a tiff, zip compressed tiff, 
-		dicom, gif or jpeg. Tiff file names must end in ".tif", ZIP file names 
-		must end in ".zip" and dicom file names must end in ".dcm". Returns an 
-		ImagePlus object if successful. */
+	/** Opens the specified text file as a float image. */
+	public ImagePlus openTextImage(String dir, String name) {
+		String path = dir+name;
+		TextReader tr = new TextReader();
+		ImageProcessor ip = tr.open(path);
+		return ip!=null?new ImagePlus(name,ip):null;
+	}
+
+	/**
+	 * Attempts to open the specified url as a tiff, zip compressed tiff, 
+	 * dicom, gif or jpeg. Tiff file names must end in ".tif", ZIP file names 
+	 * must end in ".zip" and dicom file names must end in ".dcm". Returns an 
+	 * ImagePlus object if successful.
+	 * @see ij.IJ#openImage(String)
+	*/
 	public ImagePlus openURL(String url) {
+		url = updateUrl(url);
+		if (IJ.debugMode) IJ.log("OpenURL: "+url);
+		ImagePlus imp = openCachedImage(url);
+		if (imp!=null)
+			return imp;
 		try {
 			String name = "";
 			int index = url.lastIndexOf('/');
@@ -368,7 +421,6 @@ public class Opener {
 			URL u = new URL(url);
 			IJ.showStatus(""+url);
 			String lurl = url.toLowerCase(Locale.US);
-			ImagePlus imp = null;
 			if (lurl.endsWith(".tif")) {
 				this.url = url;
 				imp = openTiff(u.openStream(), name);
@@ -397,16 +449,50 @@ public class Opener {
 			String msg = e.getMessage();
 			if (msg==null || msg.equals(""))
 				msg = "" + e;
+			msg += "\n"+url;
 			IJ.error("Open URL", msg);
 			return null;
 		} 
 	}
 	
+	/** Can't open imagej.nih.gov URLs due to encryption so redirect to imagej.net mirror. */
+	public static String updateUrl(String url) {
+		if (url==null || !url.contains("nih.gov"))
+			return url;
+		if (IJ.isJava18())
+			url = url.replace("http:", "https:");
+		else {
+			url = url.replace("imagej.nih.gov/ij", "imagej.net");
+			url = url.replace("rsb.info.nih.gov/ij", "imagej.net");
+			url = url.replace("rsbweb.nih.gov/ij", "imagej.net");
+		}
+		return url;
+	}
+	
+	private ImagePlus openCachedImage(String url) {
+		if (url==null || !url.contains("/images"))
+			return null;
+		String ijDir = IJ.getDirectory("imagej");
+		if (ijDir==null)
+			return null;
+		int slash = url.lastIndexOf('/');
+		File file = new File(ijDir + "samples", url.substring(slash+1));
+		if (!file.exists())
+			return null;
+		if (url.endsWith(".gif"))  // ij.plugin.GIF_Reader does not correctly handle inverting LUTs
+			return openJpegOrGif(file.getParent()+File.separator, file.getName());
+		return IJ.openImage(file.getPath());
+	}
+
 	/** Used by open() and IJ.open() to open text URLs. */
 	void openTextURL(String url) {
 		if (url.endsWith(".pdf")||url.endsWith(".zip"))
 			return;
 		String text = IJ.openUrlAsString(url);
+		if (text!=null && text.startsWith("<Error: ")) {
+			IJ.error("Open Text URL", text);
+			return;
+		}
 		String name = url.substring(7);
 		int index = name.lastIndexOf("/");
 		int len = name.length();
@@ -422,11 +508,11 @@ public class Opener {
 	}
 
 	
-	public ImagePlus openWithHandleExtraFileTypes(String path, int[] fileType) {
+	public ImagePlus openWithHandleExtraFileTypes(String path, int[] fileTypes) {
 		ImagePlus imp = null;
 		if (path.endsWith(".db")) {
 			// skip hidden Thumbs.db files on Windows
-			fileType[0] = CUSTOM;
+			fileTypes[0] = CUSTOM;
 			return null;
 		}
 		imp = (ImagePlus)IJ.runPlugIn("HandleExtraFileTypes", path);
@@ -441,11 +527,11 @@ public class Opener {
 			imp.setFileInfo(fi);
 		}
 		if (imp.getWidth()>0 && imp.getHeight()>0) {
-			fileType[0] = CUSTOM;
+			fileTypes[0] = CUSTOM;
 			return imp;
 		} else {
 			if (imp.getWidth()==-1)
-				fileType[0] = CUSTOM; // plugin opened image so don't display error
+				fileTypes[0] = CUSTOM; // plugin opened image so don't display error
 			return null;
 		}
 	}
@@ -456,7 +542,10 @@ public class Opener {
 		InputStream in = uc.getInputStream();
 		ZipInputStream zis = new ZipInputStream(in);
 		ZipEntry entry = zis.getNextEntry();
-		if (entry==null) return null;
+		if (entry==null) {
+			zis.close();
+			return null;
+		}
 		String name = entry.getName();
 		if (!(name.endsWith(".tif")||name.endsWith(".dcm")))
 			throw new IOException("This ZIP archive does not appear to contain a .tif or .dcm file\n"+name);
@@ -488,9 +577,11 @@ public class Opener {
 				}
 				byte[] bytes = out.toByteArray();
 				out.close();
-				DICOM dcm = new DICOM(new ByteArrayInputStream(bytes));
+				InputStream is = new ByteArrayInputStream(bytes);
+				DICOM dcm = new DICOM(is);
 				dcm.run(name);
 				imp2 = dcm;
+				is.close();
 			}
 			zis.closeEntry();
 			if (imp2==null) continue;
@@ -525,12 +616,16 @@ public class Opener {
 	}
 
 	ImagePlus openPngUsingURL(String title, URL url) {
-		if (url==null) return null;
+		if (url==null)
+			return null;
 		Image img = null;
 		try {
-			img = ImageIO.read(url);
+			InputStream in = url.openStream();
+			img = ImageIO.read(in);
+		} catch (FileNotFoundException e) {
+			IJ.error("Open PNG Using URL", ""+e);
 		} catch (IOException e) {
-			IJ.log(""+e);
+			IJ.handleException(e);
 		}
 		if (img!=null) {
 			ImagePlus imp = new ImagePlus(title, img);
@@ -545,8 +640,8 @@ public class Opener {
 		if (img!=null) {
 			try {
 				imp = new ImagePlus(name, img);
-			} catch (IllegalStateException e) {
-				IJ.error("Opener", e.getMessage()+"\n(Note: IJ cannot open CMYK JPEGs)\n \n"+dir+name);
+			} catch (Exception e) {
+				IJ.error("Opener", e.getMessage()+"\n(Note: ImageJ cannot open CMYK JPEGs)\n \n"+dir+name);
 				return null; // error loading image
 			}				
 			if (imp.getType()==ImagePlus.COLOR_RGB)
@@ -569,7 +664,8 @@ public class Opener {
 		} catch (Exception e) {
 			IJ.error("Open Using ImageIO", ""+e);
 		} 
-		if (img==null) return null;
+		if (img==null)
+			return null;
 		if (img.getColorModel().hasAlpha()) {
 			int width = img.getWidth();
 			int height = img.getHeight();
@@ -584,15 +680,17 @@ public class Opener {
 		FileInfo fi = new FileInfo();
 		fi.fileFormat = fi.IMAGEIO;
 		fi.fileName = f.getName();
-		fi.directory = f.getParent()+File.separator;
+		String parent = f.getParent();
+		if (parent!=null)
+			fi.directory = parent + File.separator;
 		imp.setFileInfo(fi);
 		return imp;
 	}
 
-	/** If the specified image is grayscale, convert it to 8-bits. */
+	/** Converts the specified RGB image to 8-bits if the 3 channels are identical. */
 	public static void convertGrayJpegTo8Bits(ImagePlus imp) {
 		ImageProcessor ip = imp.getProcessor();
-		if (ip.isGrayscale()) {
+		if (ip.getBitDepth()==24 && ip.isGrayscale()) {
 			IJ.showStatus("Converting to 8-bit grayscale");
 			new ImageConverter(imp).convertToGray8();
 		}
@@ -626,7 +724,7 @@ public class Opener {
 			return null;
 		FileInfo fi = info[0];
 		if (fi.nImages>1)
-			return new FileOpener(fi).open(false); // open contiguous images as stack
+			return new FileOpener(fi).openImage(); // open contiguous images as stack
 		else {
 			ColorModel cm = createColorModel(fi);
 			ImageStack stack = new ImageStack(fi.width, fi.height, cm);
@@ -656,11 +754,10 @@ public class Opener {
 						IJ.showProgress(1.0);
 						return null;
 					}
-					if (info[i].compression>=FileInfo.LZW) {
-						fi.stripOffsets = info[i].stripOffsets;
-						fi.stripLengths = info[i].stripLengths;
-					}
-					if (info[i].samplesPerPixel>1 && !(info[i].getBytesPerPixel()==3||info[i].getBytesPerPixel()==6)) {
+					fi.stripOffsets = info[i].stripOffsets;
+					fi.stripLengths = info[i].stripLengths;
+					int bpp = info[i].getBytesPerPixel();
+					if (info[i].samplesPerPixel>1 && !(bpp==3||bpp==4||bpp==6)) {
 						nChannels = fi.samplesPerPixel;
 						channels = new Object[nChannels];
 						for (int c=0; c<nChannels; c++) {
@@ -705,7 +802,7 @@ public class Opener {
 				stack.deleteLastSlice();
 			}
 			IJ.showProgress(1.0);
-			if (stack.getSize()==0)
+			if (stack.size()==0)
 				return null;
 			if (fi.fileType==FileInfo.GRAY16_UNSIGNED||fi.fileType==FileInfo.GRAY12_UNSIGNED
 			||fi.fileType==FileInfo.GRAY32_FLOAT||fi.fileType==FileInfo.RGB48) {
@@ -722,10 +819,10 @@ public class Opener {
 				imp.setProperty("Info", fi.info);
 			if (fi.description!=null && fi.description.contains("order=zct"))
 				new HyperStackConverter().shuffle(imp, HyperStackConverter.ZCT);
-			int stackSize = stack.getSize();
+			int stackSize = stack.size();
 			if (nChannels>1 && (stackSize%nChannels)==0) {
 				imp.setDimensions(nChannels, stackSize/nChannels, 1);
-				imp = new CompositeImage(imp, CompositeImage.COMPOSITE);
+				imp = new CompositeImage(imp, IJ.COMPOSITE);
 				imp.setOpenAsHyperStack(true);
 			} else if (imp.getNChannels()>1)
 				imp = makeComposite(imp, fi);
@@ -740,12 +837,12 @@ public class Opener {
 		TiffDecoder td = new TiffDecoder(directory, name);
 		if (IJ.debugMode) td.enableDebugging();
 		FileInfo[] info=null;
-		try {info = td.getTiffInfo();}
-		catch (IOException e) {
-			String msg = e.getMessage();
-			if (msg==null||msg.equals("")) msg = ""+e;
-			IJ.error("TiffDecoder", msg);
-			return null;
+		try {
+			info = td.getTiffInfo();
+		} catch (IOException e) {
+			this.fileType = TIFF;
+			directory = IJ.addSeparator(directory);
+			return openUsingHandleExtraFileTypes(directory+name);
 		}
 		if (info==null)
 			return null;
@@ -757,11 +854,12 @@ public class Opener {
 		TiffDecoder td = new TiffDecoder(getDir(path), getName(path));
 		if (IJ.debugMode) td.enableDebugging();
 		FileInfo[] info=null;
-		try {info = td.getTiffInfo();}
-		catch (IOException e) {
+		try {
+			info = td.getTiffInfo();
+		} catch (IOException e) {
 			String msg = e.getMessage();
 			if (msg==null||msg.equals("")) msg = ""+e;
-			IJ.error("TiffDecoder", msg);
+			IJ.error("Open TIFF", msg);
 			return null;
 		}
 		if (info==null) return null;
@@ -770,7 +868,7 @@ public class Opener {
 			if (n<1 || n>fi.nImages)
 				throw new IllegalArgumentException("N out of 1-"+fi.nImages+" range");
 			long size = fi.width*fi.height*fi.getBytesPerPixel();
-			fi.longOffset = fi.getOffset() + (n-1)*(size+fi.gapBetweenImages);
+			fi.longOffset = fi.getOffset() + (n-1)*(size+fi.getGap());
 			fi.offset = 0;
 			fi.nImages = 1;
 		} else {
@@ -782,7 +880,19 @@ public class Opener {
 			fi.stripLengths = info[n-1].stripLengths; 
 		}
 		FileOpener fo = new FileOpener(fi);
-		return fo.open(false);
+		return fo.openImage();
+	}
+
+	/** Returns the FileInfo of the specified TIFF file. */
+	public static FileInfo[] getTiffFileInfo(String path) {
+		Opener o = new Opener();
+		TiffDecoder td = new TiffDecoder(o.getDir(path), o.getName(path));
+		if (IJ.debugMode) td.enableDebugging();
+		try {
+			return td.getTiffInfo();
+		} catch (IOException e) {
+			return null;
+		}
 	}
 
 	/** Attempts to open the specified inputStream as a
@@ -794,10 +904,10 @@ public class Opener {
 			if (IJ.debugMode) td.enableDebugging();
 			info = td.getTiffInfo();
 		} catch (FileNotFoundException e) {
-			IJ.error("TiffDecoder", "File not found: "+e.getMessage());
+			IJ.error("Open TIFF", "File not found: "+e.getMessage());
 			return null;
 		} catch (Exception e) {
-			IJ.error("TiffDecoder", ""+e);
+			IJ.error("Open TIFF", ""+e);
 			return null;
 		}
 		if (url!=null && info!=null && info.length==1 && info[0].inputStream!=null) {
@@ -807,7 +917,7 @@ public class Opener {
 			try {
 				info[0].inputStream = new URL(url).openStream();
 			} catch (Exception e) {
-				IJ.error("TiffDecoder", ""+e);
+				IJ.error("Open TIFF", ""+e);
 				return null;
 			}
 		}
@@ -820,9 +930,11 @@ public class Opener {
 		ImagePlus imp = null;
 		try {
 			ZipInputStream zis = new ZipInputStream(new FileInputStream(path));
-			if (zis==null) return null;
 			ZipEntry entry = zis.getNextEntry();
-			if (entry==null) return null;
+			if (entry==null) {
+				zis.close();
+				return null;
+			}
 			String name = entry.getName();
 			if (name.endsWith(".roi")) {
 				zis.close();
@@ -840,22 +952,31 @@ public class Opener {
 				dcm.run(name);
 				imp = dcm;
 			} else if (name.endsWith(".fts") || name.endsWith(".fits") || name.endsWith(".fit") || name.endsWith("fts.fz") || name.endsWith(".fits.fz") || name.endsWith(".fit.fz")) {
-                imp = (ImagePlus)IJ.runPlugIn("ij.plugin.FITS_Reader", path+'\\'+name.replace('/', '\\'));
-				if (imp.getWidth()!=0) return imp; else return null;                
+				imp = (ImagePlus)IJ.runPlugIn("ij.plugin.FITS_Reader", path+'\\'+name.replace('/', '\\'));
+				if (imp.getWidth()!=0) return imp; else return null;
 			} else {
 				zis.close();
-				IJ.error("This ZIP archive does not appear to contain a \nTIFF (\".tif\") or DICOM (\".dcm\") or FITS file, or ROIs (\".roi\").");
+				String msg = "This ZIP archive does not appear to contain a \nTIFF (\".tif\") or DICOM (\".dcm\") or FITS file, or ROIs (\".roi\").\n\t"+path;
+				if (silentMode)
+					IJ.log(msg);
+				else
+					IJ.error("Opener", msg);
 				return null;
 			}
+			zis.close();
 		} catch (Exception e) {
-			IJ.error("ZipDecoder", ""+e);
+			IJ.error("Opener", ""+e);
 			return null;
 		}
 		File f = new File(path);
 		FileInfo fi = imp.getOriginalFileInfo();
-		fi.fileFormat = FileInfo.ZIP_ARCHIVE;
-		fi.fileName = f.getName();
-		fi.directory = f.getParent()+File.separator;
+		if (fi!=null) {
+			fi.fileFormat = FileInfo.ZIP_ARCHIVE;
+			fi.fileName = f.getName();
+			String parent = f.getParent();
+			if (parent!=null)
+				fi.directory = parent+File.separator;
+		}
 		return imp;
 	}
 	
@@ -872,7 +993,7 @@ public class Opener {
 			return null;
 		}
 		FileOpener opener = new FileOpener(info[0]);
-		ImagePlus imp = opener.open(false);
+		ImagePlus imp = opener.openImage();
 		if (imp==null)
 			return null;
 		imp.setTitle(info[0].fileName);
@@ -884,12 +1005,12 @@ public class Opener {
 		int c = imp.getNChannels();
 		boolean composite = c>1 && fi.description!=null && fi.description.indexOf("mode=")!=-1;
 		if (c>1 && (imp.getOpenAsHyperStack()||composite) && !imp.isComposite() && imp.getType()!=ImagePlus.COLOR_RGB) {
-			int mode = CompositeImage.COLOR;
+			int mode = IJ.COLOR;
 			if (fi.description!=null) {
 				if (fi.description.indexOf("mode=composite")!=-1)
-					mode = CompositeImage.COMPOSITE;
+					mode = IJ.COMPOSITE;
 				else if (fi.description.indexOf("mode=gray")!=-1)
-					mode = CompositeImage.GRAYSCALE;
+					mode = IJ.GRAYSCALE;
 			}
 			imp = new CompositeImage(imp, mode);
 		}
@@ -929,13 +1050,32 @@ public class Opener {
 				return imp;
 		}
 		FileOpener fo = new FileOpener(info[0]);
-		imp = fo.open(false);
-		if (imp==null) return null;
+		imp = fo.openImage();
+		if (imp==null)
+			return null;
 		int[] offsets = info[0].stripOffsets;
 		if (offsets!=null&&offsets.length>1 && offsets[offsets.length-1]<offsets[0])
 			ij.IJ.run(imp, "Flip Vertically", "stack");
 		imp = makeComposite(imp, info[0]);
-		return imp;
+		if (imp.getBitDepth()==32 && imp.getTitle().startsWith("FFT of"))
+			return openFFT(imp);
+		else
+			return imp;
+	}
+	
+	private ImagePlus openFFT(ImagePlus imp) {
+		ImageProcessor ip = imp.getProcessor();
+		FHT fht = new FHT(ip, true);
+		ImageProcessor ps = fht.getPowerSpectrum();
+		ImagePlus imp2 = new ImagePlus(imp.getTitle(), ps);
+		imp2.setProperty("FHT", fht);
+		imp2.setProperty("Info", imp.getInfoProperty());
+		fht.originalWidth = (int)imp2.getNumericProperty("width");
+		fht.originalHeight = (int)imp2.getNumericProperty("height");
+		fht.originalBitDepth = (int)imp2.getNumericProperty("bitdepth");
+		fht.originalColorModel = ip.getColorModel();
+		imp2.setCalibration(imp.getCalibration());
+		return imp2;
 	}
 	
 	/** Attempts to open the specified ROI, returning null if unsuccessful. */
@@ -950,16 +1090,76 @@ public class Opener {
 		return roi;
 	}
 	
+	/** Opens an image file using the Bio-Formats plugin. */
+	public static ImagePlus openUsingBioFormats(String path) {
+		String className = "loci.plugins.BF";
+		String methodName = "openImagePlus";
+		try {
+			Class c = IJ.getClassLoader().loadClass(className);
+			if (c==null)
+				return null;
+			Class[] argClasses = new Class[1];
+			argClasses[0] = methodName.getClass();
+			Method m = c.getMethod(methodName, argClasses);
+			Object[] args = new Object[1];
+			args[0] = path;
+			Object obj = m.invoke(null, args);
+			ImagePlus[] images = obj!=null?(ImagePlus[])obj:null;
+			if (images==null || images.length==0)
+				return null;
+			ImagePlus imp = images[0];
+			if (imp.getStackSize()==3 && imp.getNChannels()==3 && imp.getBitDepth()==8)
+				imp = imp.flatten();
+			return imp;
+		} catch(Exception e) {
+		}
+		return null;
+	}
+
+	/** Opens a lookup table (LUT) and returns it as a LUT object, or returns null if there is an error.
+	 * @see ij.ImagePlus#setLut
+	*/
+	public static LUT openLut(String filePathOrUrl) {
+		return LutLoader.openLut(filePathOrUrl);
+	}
+
 	/** Opens a tab or comma delimited text file in the Results window. */
 	public static void openResultsTable(String path) {
 		try {
 			ResultsTable rt = ResultsTable.open(path);
-			if (rt!=null) rt.show("Results");
+			rt.showRowNumbers(true);
+			if (rt!=null)
+				rt.show("Results");
 		} catch(IOException e) {
 			IJ.error("Open Results", e.getMessage());
 		}
 	}
 	
+	/** Opens a tab or comma delimited text file. */
+	public static void openTable(String path) {
+		String name = "";
+		if (path==null || path.equals("")) {
+			OpenDialog od = new OpenDialog("Open Table...");
+			String dir = od.getDirectory();
+			name = od.getFileName();
+			if (name==null)
+				return;
+			else
+				path = dir+name;
+		} else {
+			name = (new Opener()).getName(path);
+			if (name.startsWith("Results."))
+				name = "Results";
+		}
+		try {
+			ResultsTable rt = ResultsTable.open(path);
+			if (rt!=null)
+				rt.show(name);
+		} catch(IOException e) {
+			IJ.error("Open Table", e.getMessage());
+		}
+	}
+
 	public static String getFileFormat(String path) {
 		if (!((new File(path)).exists()))
 			return("not found");
@@ -1040,11 +1240,13 @@ public class Opener {
 			return ZIP;
 
 		// FITS ("SIMP")
-		if ((b0==83 && b1==73 && b2==77 && b3==80) || name.endsWith(".fts.gz") || name.endsWith(".fits.gz") || name.endsWith(".fit.gz") || name.endsWith(".fts.fz") || name.endsWith(".fits.fz") || name.endsWith(".fit.fz"))
+		if ((b0==83 && b1==73 && b2==77 && b3==80) || name.endsWith(".fts.gz") || name.endsWith(".fits.gz") ||
+				name.endsWith(".fit.gz") || name.endsWith(".fts.fz") || name.endsWith(".fits.fz") || name.endsWith(".fit.fz"))
 			return FITS;
 			
 		// Java source file, text file or macro
-		if (name.endsWith(".java") || name.endsWith(".txt") || name.endsWith(".ijm") || name.endsWith(".js") || name.endsWith(".bsh") || name.endsWith(".html"))
+		if (name.endsWith(".java") || name.endsWith(".txt") || name.endsWith(".ijm") || name.endsWith(".js")
+			|| name.endsWith(".bsh") || name.endsWith(".py") || name.endsWith(".html"))
 			return JAVA_OR_TEXT;
 
 		// ImageJ, NIH Image, Scion Image for Windows ROI
@@ -1056,7 +1258,8 @@ public class Opener {
 			return OJJ;
 
 		// Results table (tab-delimited or comma-separated tabular text)
-		if (name.endsWith(".xls") || name.endsWith(".csv") || name.endsWith(".dat") || name.endsWith(".tbl") || name.endsWith(".prn") || name.endsWith(".spc")) 
+		if (name.endsWith(".xls") || name.endsWith(".csv") || name.endsWith(".dat") || name.endsWith(".tbl") ||
+				name.endsWith(".prn") || name.endsWith(".spc"))
 			return TABLE;
 
 		// AVI
@@ -1079,12 +1282,16 @@ public class Opener {
 		if ((b0==66 && b1==77)||name.endsWith(".dib"))
 			return BMP;
 				
+		// RAW
+		if (name.endsWith(".raw") && !Prefs.skipRawDialog)
+			return RAW;
+
 		return UNKNOWN;
 	}
 
 	/** Returns an IndexColorModel for the image specified by this FileInfo. */
 	ColorModel createColorModel(FileInfo fi) {
-		if (fi.fileType==FileInfo.COLOR8 && fi.lutSize>0)
+		if (fi.lutSize>0)
 			return new IndexColorModel(8, fi.lutSize, fi.reds, fi.greens, fi.blues);
 		else
 			return LookUpTable.createGrayscaleColorModel(fi.whiteIsZero);
@@ -1097,12 +1304,12 @@ public class Opener {
 		else if (fi.url!=null && !fi.url.equals(""))
 			return new URL(fi.url+fi.fileName).openStream();
 		else {
-			File f = new File(fi.directory + fi.fileName);
+			File f = new File(fi.getFilePath());
 			if (f==null || f.isDirectory())
 				return null;
 			else {
 				InputStream is = new FileInputStream(f);
-				if (fi.compression>=FileInfo.LZW)
+				if (fi.compression>=FileInfo.LZW || (fi.stripOffsets!=null&&fi.stripOffsets.length>1))
 					is = new RandomAccessStream(is);
 				return is;
 			}
@@ -1113,7 +1320,7 @@ public class Opener {
 			isRGB48 = false;
 			int stackSize = imp.getStackSize();
 			imp.setDimensions(3, stackSize/3, 1);
-			imp = new CompositeImage(imp, CompositeImage.COMPOSITE);
+			imp = new CompositeImage(imp, IJ.COMPOSITE);
 			imp.show();
 	}
 	
@@ -1132,5 +1339,5 @@ public class Opener {
 	public static boolean getOpenUsingPlugins() {
 		return openUsingPlugins;
 	}
-	
+		
 }

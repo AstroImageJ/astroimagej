@@ -32,8 +32,10 @@ public class ContrastEnhancer implements PlugIn, Measurements {
 			equalize(imp);
 		else
 			stretchHistogram(imp, saturated);
-		if (normalize)
-			imp.getProcessor().resetMinAndMax();
+		if (normalize) {
+			ImageProcessor ip = imp.getProcessor();
+			ip.setMinAndMax(0,ip.getBitDepth()==32?1.0:ip.maxValue());
+		}
 		imp.updateAndDraw();
 	}
 
@@ -83,8 +85,6 @@ public class ContrastEnhancer implements PlugIn, Measurements {
 		if (saturated>100.0) saturated = 100;
 		if (processStack && !equalize)
 			normalize = true;
-		//if (normalize)
-		//	useStackHistogram = false;
 		gEqualize=equalize; gNormalize=normalize;
 		return true;
 	}
@@ -123,7 +123,6 @@ public class ContrastEnhancer implements PlugIn, Measurements {
 	public void stretchHistogram(ImageProcessor ip, double saturated, ImageStatistics stats) {
 		int[] a = getMinAndMax(ip, saturated, stats);
 		int hmin=a[0], hmax=a[1];
-		//IJ.log(hmin+" "+hmax+" "+threshold);
 		if (hmax>hmin) {
 			double min = stats.histMin+hmin*stats.binSize;
 			double max = stats.histMin+hmax*stats.binSize;
@@ -223,8 +222,6 @@ public class ContrastEnhancer implements PlugIn, Measurements {
 			{max2 = 65535; range=65536;}
 		else if (ip instanceof FloatProcessor)
 			normalizeFloat(ip, min, max);
-		
-		//double scale = range/max-min);
 		int[] lut = new int[range];
 		for (int i=0; i<range; i++) {
 			if (i<=min)
@@ -293,8 +290,8 @@ public class ContrastEnhancer implements PlugIn, Measurements {
 		}
 		if (imp.getBitDepth()==16 && processStack && imp.getStackSize()>1) {
 			ImageStack stack = imp.getStack();
-			ImageProcessor ip = stack.getProcessor(stack.getSize()/2);
-			ImageStatistics stats = ip.getStatistics();
+			ImageProcessor ip = stack.getProcessor(stack.size()/2);
+			ImageStatistics stats = ip.getStats();
 			imp.getProcessor().setMinAndMax(stats.min, stats.max);
 		} else
 			imp.getProcessor().resetMinAndMax();
@@ -348,4 +345,16 @@ public class ContrastEnhancer implements PlugIn, Measurements {
 		return Math.sqrt((double)(h));
 	}
 	
+	public void setNormalize(boolean normalize) {
+		this.normalize = normalize;
+	}
+	
+	public void setProcessStack(boolean processStack) {
+		this.processStack = processStack;
+	}
+
+	public void setUseStackHistogram(boolean useStackHistogram) {
+		this.useStackHistogram = useStackHistogram;
+	}
+
 }

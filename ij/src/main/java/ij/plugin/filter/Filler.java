@@ -21,6 +21,11 @@ public class Filler implements PlugInFilter, Measurements {
 		if (imp!=null)
 			roi = imp.getRoi();			
 		isTextRoi = roi!=null && (roi instanceof TextRoi);
+	 	if (isTextRoi && (arg.equals("draw") || arg.equals("fill")) && ((TextRoi)roi).getAngle()!=0.0) {
+	 		String s = IJ.isMacOSX()?"command+b":"ctrl+b";
+	 		IJ.error("Draw rotated text by pressing "+s+" (Image>Overlay>Add Selection).");
+	 		return DONE;
+		}
 		IJ.register(Filler.class);
 		int baseCapabilities = DOES_ALL+ROI_REQUIRED;
 	 	if (arg.equals("clear")) {
@@ -90,14 +95,18 @@ public class Filler implements PlugInFilter, Measurements {
 	* replaced by ImageProcessor.fill(Roi)
 	*/
 	public void fill(ImageProcessor ip) {
-		ip.setColor(Toolbar.getForegroundColor());
+		if (!IJ.isMacro() || !ip.fillValueSet())
+			ip.setColor(Toolbar.getForegroundColor());
 		if (isLineSelection()) {
-			if (isStraightLine() && roi.getStrokeWidth()>1 && !(roi instanceof Arrow))
-				ip.fillPolygon(roi.getPolygon());
-			else
+			if (isStraightLine() && roi.getStrokeWidth()>1 && !(roi instanceof Arrow)) {
+				Roi roi2=Roi.convertLineToArea(roi);
+				ip.setRoi(roi2);
+				ip.fill(roi2.getMask());
+				ip.setRoi(roi);
+			} else
 				roi.drawPixels(ip);
 		} else
-	 		ip.fill(); // fill with foreground color
+			ip.fill(); // fill with foreground color
 	}
 	 			 		
 	/**
@@ -112,6 +121,10 @@ public class Filler implements PlugInFilter, Measurements {
  	}
 
 	public void label(ImageProcessor ip) {
+		if (!IJ.isMacro()) {
+			IJ.error("Label", "To label a selection, enable \"Add to overlay\" in Analyze>\nSet Measurements and press 'm' (Analyze>Measure).");
+			return;
+		}
 		if (Analyzer.getCounter()==0) {
 			IJ.error("Label", "Measurement counter is zero");
 			return;
@@ -137,7 +150,7 @@ public class Filler implements PlugInFilter, Measurements {
 
 	void drawParticleLabels(ImageProcessor ip) {
 		ResultsTable rt = ResultsTable.getResultsTable();
-		int count = rt.getCounter();
+		int count = rt.size();
 		int first = Analyzer.firstParticle;
 		int last = Analyzer.lastParticle;
 		if (count==0 || first>=count || last>=count)

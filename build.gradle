@@ -175,6 +175,7 @@ javapackager {
 }
 task packageAijForLinux(type: PackageTask, dependsOn: [build, unZipJresTask, commonFiles]) {
     group 'AstroImageJ Developement'
+    mustRunAfter commonFiles
     platform = io.github.fvarrui.javapackager.model.Platform.linux
     createTarball = true
     jrePath = file("${projectDir}/jres/${jreBaseName}-linux_x64")
@@ -182,6 +183,7 @@ task packageAijForLinux(type: PackageTask, dependsOn: [build, unZipJresTask, com
 }
 task packageAijForMac(type: PackageTask, dependsOn: [build, unZipJresTask, commonFiles]) {
     group 'AstroImageJ Developement'
+    mustRunAfter commonFiles
     platform = io.github.fvarrui.javapackager.model.Platform.mac
     createZipball = true
     jrePath = file("${projectDir}/jres/${jreBaseName}-macosx_x64/zulu-15.jre/")
@@ -189,14 +191,20 @@ task packageAijForMac(type: PackageTask, dependsOn: [build, unZipJresTask, commo
 }
 task packageAijForWindows(type: PackageTask, dependsOn: [build, unZipJresTask, commonFiles]) {
     group 'AstroImageJ Developement'
+    mustRunAfter commonFiles
     platform = io.github.fvarrui.javapackager.model.Platform.windows
     createZipball = true
     jrePath = file("${projectDir}/jres/${jreBaseName}-win_x64")
     outputs.upToDateWhen { false } // Forces it to always run
 
     vmArgs = [] // Set to nothing so that the ini file will take over
-    additionalResources = file("${buildDir}/commonFiles/").listFiles() +
-            file("${projectDir}/packageFiles/assets/windows/AstroImageJ.l4j.ini")
+
+    // build/commonFiles must exist or gradle will fail all tasks.
+    // Wrap in the null check to ensure that it doesn't fail
+    if (file("${buildDir}/commonFiles/").listFiles() != null) {
+        additionalResources = file("${buildDir}/commonFiles/").listFiles() +
+                file("${projectDir}/packageFiles/assets/windows/AstroImageJ.l4j.ini")
+    }
 }
 task packageAij(dependsOn: [ packageAijForLinux, packageAijForMac, packageAijForWindows ]) {
     group 'AstroImageJ Developement'

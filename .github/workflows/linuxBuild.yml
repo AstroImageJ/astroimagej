@@ -33,4 +33,4 @@ jobs:
     - uses: actions/upload-artifact@v2
       with:
         name: Portable
-        path: build/distributions/
+        path: build/distributions/AstroImageJ-dev-x86-linux.tar.gz #TODO once installer generation is added, gen and upload installers

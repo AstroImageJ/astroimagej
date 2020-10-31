@@ -34,3 +34,11 @@ jobs:
       with:
         name: App Version
         path: build/distributions/AstroImageJ-dev-x86-mac.zip
+    - uses: actions/upload-artifact@v2
+      with:
+        name: Dmg Version
+        path: build/distributions/AstroImageJ_dev-x86.dmg
+    - uses: actions/upload-artifact@v2
+      with:
+        name: Pkg Version
+        path: build/distributions/AstroImageJ_dev-x86.pkg

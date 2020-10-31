@@ -32,7 +32,7 @@ import java.awt.image.*;
 		text[11] = "AstroImageJ is Licensed under GPL 3.0";
 		ImageProcessor ip = null;
 		ImageJ ij = IJ.getInstance();
-		URL url = ij .getClass() .getResource("/about.jpg");
+		URL url = ij.getClass().getClassLoader().getResource("about.jpg");
 		if (url!=null) {
 			Image img = null;
 			try {img = ij.createImage((ImageProducer)url.getContent());}

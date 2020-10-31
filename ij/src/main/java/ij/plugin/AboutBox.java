@@ -28,7 +28,7 @@ import java.awt.image.*;
         text[9] = "University of Louisville";
 		ImageProcessor ip = null;
 		ImageJ ij = IJ.getInstance();
-		URL url = ij .getClass() .getResource("/about.jpg");
+		URL url = ij.getClass().getClassLoader().getResource("about.jpg");
 		if (url!=null) {
 			Image img = null;
 			try {img = ij.createImage((ImageProducer)url.getContent());}

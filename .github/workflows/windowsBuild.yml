@@ -20,8 +20,8 @@ jobs:
       uses: actions/setup-java@v1
       with:
         java-version: 15
-    - name: Install WiX Toolset
-      run: choco install wixtoolset
+    #- name: Install WiX Toolset
+      #run: choco install wixtoolset
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
     - name: Make Common Files
@@ -38,6 +38,6 @@ jobs:
         path: build/distributions/AstroImageJ_dev-x86.exe
     - uses: actions/upload-artifact@v2
       with:
-        name: All #Portable
-        path: build/distributions
-        #path: build/distributions/AstroImageJ-dev-x86-windows.zip
+        name: Portable
+        #path: build/distributions
+        path: build/distributions/AstroImageJ-dev-x86-windows.zip

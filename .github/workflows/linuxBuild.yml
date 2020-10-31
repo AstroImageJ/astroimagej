@@ -29,7 +29,7 @@ jobs:
     - name: Build AIJ
       run: ./gradlew build
     - name: Package AIJ
-      run: ./gradlew packageAijForWindows
+      run: ./gradlew packageAijForLinux
     - uses: actions/upload-artifact@v2
       with:
         name: Portable

@@ -165,6 +165,8 @@ javapackager {
     name = 'AstroImageJ'
     winConfig.setWrapJar(false) // Don't merge the ij.jar into the exe file
     macConfig.setRelocateJar(false) // Don't place ij.jar in Java/ folder
+    winConfig.setDisableDirPage(false) // Let users set install location
+    organizationName = "AstroImageJ"
     vmArgs = ['-Xmx3000m', '-Xms256m']
     version = 'dev-x86' // Dummy version to keep it from saying "unspecified"
 

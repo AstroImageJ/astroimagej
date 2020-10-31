@@ -32,5 +32,5 @@ jobs:
       run: ./gradlew packageAijForMac
     - uses: actions/upload-artifact@v2
       with:
-        #name: Package
-        path: build/distributions
+        name: Packages
+        path: build/distributions/

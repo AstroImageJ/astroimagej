@@ -38,5 +38,6 @@ jobs:
         path: build/distributions/AstroImageJ_dev-x86.exe
     - uses: actions/upload-artifact@v2
       with:
-        name: Portable
-        path: build/distributions/AstroImageJ-dev-x86-windows.zip
+        name: All #Portable
+        path: build/distributions
+        #path: build/distributions/AstroImageJ-dev-x86-windows.zip

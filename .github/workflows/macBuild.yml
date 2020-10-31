@@ -32,5 +32,5 @@ jobs:
       run: ./gradlew packageAijForMac
     - uses: actions/upload-artifact@v2
       with:
-        name: Packages
-        path: build/distributions/
+        name: App Version
+        path: build/distributions/AstroImageJ-dev-x86-mac.zip

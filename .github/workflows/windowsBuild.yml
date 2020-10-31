@@ -32,5 +32,9 @@ jobs:
       run: ./gradlew packageAijForWindows
     - uses: actions/upload-artifact@v2
       with:
-        name: Packages
-        path: build/distributions/
+        name: Installer
+        path: build/distributions/AstroImageJ_dev-x86.exe
+    - uses: actions/upload-artifact@v2
+      with:
+        name: Portable
+        path: build/distributions/AstroImageJ-dev-x86-windows.zip

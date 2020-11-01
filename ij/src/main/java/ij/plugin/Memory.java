@@ -76,7 +76,7 @@ public class Memory implements PlugIn {
 			}
 		}
 
-		if (IJ.isMacOSX()) {
+		if (IJ.isMacOSX() && !f.canWrite()) {
 			try {
 				Process process = Runtime.getRuntime().exec(new String[]{"chmod", "+xrw", f.getAbsolutePath()});
 				process.waitFor();

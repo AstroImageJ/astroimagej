@@ -117,6 +117,7 @@ task unZipJresTask(type: Copy) {
 
 task commonFiles(type: Copy) {
     with commonDist
+    fileMode 754
     into "${buildDir}/commonFiles"
 }
 

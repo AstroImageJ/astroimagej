@@ -78,7 +78,7 @@ public class Memory implements PlugIn {
 		} catch (IOException e) {
 			String error = e.getMessage();
 			if (error==null || error.equals("")) error = ""+e;
-			String name = IJ.isMacOSX()?"Info.plist":"AstroImageJ.cfg";
+			String name = "AstroImageJ.l4j.ini";
 			String msg = 
 				   "Unable to update the file \"" + name + "\".\n"
 				+ " \n"
@@ -100,36 +100,13 @@ public class Memory implements PlugIn {
 		long max = 0L;
         String[] versionPieces = IJ.getAstroVersion().split("\\.");
         int majorVersion = Integer.parseInt(versionPieces[0]);
-		if (IJ.isMacOSX()) 
-            {
-			if (IJ.is64Bit())
-                {
-                if (majorVersion==4)
-				    {
-                    max = getMemorySetting("Contents/Info.plist");
-                    }
-                else if (majorVersion>4)
-					{
-					max = getMemorySetting("../../Contents/Info.plist");
-					}
-                else
-                    {
-                    max = getMemorySetting("AstroImageJ64.app/Contents/Info.plist");
-                    }
-                }
-			if (max==0L) 
-                {
-				max = getMemorySetting("AstroImageJ.app/Contents/Info.plist");
-                }
-            }
-        else
-            {
-            	if (IJ.isWindows() && majorVersion > 4) {
-					max = getMemorySetting("AstroImageJ.l4j.ini");
-				} else {
-					max = getMemorySetting("AstroImageJ.cfg");
-				}
-            }
+
+        // As of 5.0.0.0, AIJ uses a unified file for memory settings
+		if (IJ.isMacOSX()) {
+			max = getMemorySetting("../../Contents/Resources/AstroImageJ.l4j.ini");
+		} else {
+			max = getMemorySetting("AstroImageJ.l4j.ini");
+		}
 		return max;
 	}
 
@@ -144,7 +121,7 @@ public class Memory implements PlugIn {
 			if (IJ.isMacOSX())
 				msg += "The AstroImageJ application (AstroImageJ.app) was not found.\n \n";
 			else if (IJ.isWindows())
-				msg += "AstroImageJ.cfg not found.\n \n";
+				msg += "AstroImageJ.l4j.ini not found.\n \n";
 			fileMissing = false;
 		}
 		if (max>0)

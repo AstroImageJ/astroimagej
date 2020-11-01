@@ -167,7 +167,7 @@ javapackager {
     macConfig.setRelocateJar(false) // Don't place ij.jar in Java/ folder
     winConfig.setDisableDirPage(false) // Let users set install location
     organizationName = "AstroImageJ"
-    vmArgs = ['-Xmx3000m', '-Xms256m']
+    vmArgs = [] //['-Xmx3000m', '-Xms256m'] // Launch parameters are set in AstroImageJ.l4j.ini
     version = 'dev-x86' // Dummy version to keep it from saying "unspecified"
 
     // Set to true to enable installer generation. Needs to be on the target OS and needs special tooling

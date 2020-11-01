@@ -98,15 +98,9 @@ public class Memory implements PlugIn {
 	public long getMemorySetting() {
 		if (IJ.getApplet()!=null) return 0L;
 		long max = 0L;
-        String[] versionPieces = IJ.getAstroVersion().split("\\.");
-        int majorVersion = Integer.parseInt(versionPieces[0]);
 
         // As of 5.0.0.0, AIJ uses a unified file for memory settings
-		if (IJ.isMacOSX()) {
-			max = getMemorySetting("../../Contents/Resources/AstroImageJ.l4j.ini");
-		} else {
-			max = getMemorySetting("AstroImageJ.l4j.ini");
-		}
+		max = getMemorySetting("AstroImageJ.l4j.ini");
 		return max;
 	}
 

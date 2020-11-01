@@ -44,7 +44,7 @@ import java.awt.image.*;
 		}
 		if (ip==null) 
 			ip =  new ColorProcessor(55,45);
-		ip = ip.resize(ip.getWidth()*11, ip.getHeight()*11);
+		ip = ip.resize(ip.getWidth()*6, ip.getHeight()*6);
 		ImagePlus imp = new ImagePlus("About AstroImageJ", ip);
 		int width = imp.getWidth();
 		Overlay overlay = new Overlay();

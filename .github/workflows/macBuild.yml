@@ -24,6 +24,8 @@ jobs:
       run: chmod +x gradlew
     - name: Make Common Files
       run: ./gradlew commonFiles
+    - name: Make ini writable I hope
+      run: chmod u=rwx build/commonFiles/AstroImageJ.l4j.ini
     - name: Unzip JREs
       run: ./gradlew unZipJresTask
     - name: Build AIJ

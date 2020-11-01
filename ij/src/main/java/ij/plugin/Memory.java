@@ -66,6 +66,25 @@ public class Memory implements PlugIn {
 			+ OSXInfo));
 				return;
 		}
+
+		// Ensure that the file is writable
+		if (!f.canWrite()) {
+			try {
+				f.setWritable(true, true);
+			} catch (SecurityException e) {
+				IJ.log("Could not make " + f.toString() + " writable due to permissions.");
+			}
+		}
+
+		if (IJ.isMacOSX()) {
+			try {
+				Process process = Runtime.getRuntime().exec(new String[]{"chmod", "+xrw", f.getAbsolutePath()});
+				process.waitFor();
+			} catch (InterruptedException | IOException e) {
+				IJ.error(e.getMessage());
+			}
+		}
+
 		try {
 			String s2 = s.substring(index2);
 			if (s2.startsWith("g"))
@@ -129,15 +148,6 @@ public class Memory implements PlugIn {
 		if (!f.exists()) {
 			fileMissing = true;
 			return 0L;
-		}
-
-		// Ensure that the file is writable
-		if (!f.canWrite()) {
-			try {
-				f.setWritable(true, true);
-			} catch (SecurityException e) {
-				IJ.log("Could not make " + f.toString() + " writable due to permissions.");
-			}
 		}
 
 		long max = 0L;

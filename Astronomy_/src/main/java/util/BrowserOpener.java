@@ -2,8 +2,15 @@ package util;
 
 import ij.IJ;
 
+import java.awt.*;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.security.PrivilegedActionException;
+import java.util.Iterator;
 
 /**
  * Class to facilitate in the opening of webpages in the system's default browser.
@@ -17,8 +24,17 @@ public class BrowserOpener {
     }
 
     public static void openURL(String url) throws IOException {
-        Runtime rt = Runtime.getRuntime();
         String[] command;
+        if (Desktop.isDesktopSupported()) {
+            try {
+                Desktop.getDesktop().browse(new URI(url));
+                return;
+            } catch (URISyntaxException e) {
+                e.printStackTrace();
+            }
+        }
+
+        // If AWT fails, try other methods
         if (IJ.isWindows()) {
             command = new String[]{"rundll32", "url.dll,FileProtocolHandler", url};
         } else if (IJ.isMacOSX()) {
@@ -30,7 +46,23 @@ public class BrowserOpener {
             command = new String[]{"start", "url"}; // final option at opening the link
         }
 
-        rt.exec(command);
+        Process process = AccessController.doPrivileged((PrivilegedAction<Process>) () -> {
+            try {
+                return Runtime.getRuntime().exec(command);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            return null;
+        });
+
+        if (process == null) {
+            throw new IOException("Failed to open URL via BrowserOpener");
+        }
+
+        process.getInputStream().close();
+        process.getErrorStream().close();
+        process.getOutputStream().close();
+
 
     }
 

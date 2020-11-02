@@ -1,4 +1,5 @@
 import io.github.fvarrui.javapackager.gradle.PackageTask
+import org.apache.tools.ant.taskdefs.condition.Os
 
 buildscript {
     repositories {
@@ -118,6 +119,13 @@ task unZipJresTask(type: Copy) {
 task commonFiles(type: Copy) {
     with commonDist
     into "${buildDir}/commonFiles"
+    doLast {
+        if (Os.isFamily(Os.FAMILY_MAC)) {
+            project.exec {
+                commandLine('chmod',  'a=rw', "${buildDir}/commonFiles/AstroImageJ.l4j.ini")
+            }
+        }
+    }
 }
 
 // Task to copy built jars into a certain folder, for use with testing
@@ -166,6 +174,8 @@ javapackager {
     winConfig.setWrapJar(false) // Don't merge the ij.jar into the exe file
     macConfig.setRelocateJar(false) // Don't place ij.jar in Java/ folder
     winConfig.setDisableDirPage(false) // Let users set install location
+    macConfig.setGeneratePkg(false) // Don't generate pkg as it's installation cannot update memory settings
+
     organizationName = "AstroImageJ"
     vmArgs = [] //['-Xmx3000m', '-Xms256m'] // Launch parameters are set in AstroImageJ.l4j.ini
     version = 'dev-x86' // Dummy version to keep it from saying "unspecified"

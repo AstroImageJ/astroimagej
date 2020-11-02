@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+	<dict>
+		<key>CFBundleGetInfoString</key>
+		<string>${info.displayName} ${info.version}</string>
+		<key>CFBundleDevelopmentRegion</key>
+		<string>English</string>
+		<key>CFBundleExecutable</key>
+		<string>${info.executable.name}</string>
+		<key>CFBundleIconFile</key>
+		<string>${info.name}.icns</string>
+		<key>CFBundleIdentifier</key>
+		<string>${info.mainClass}</string>
+		<key>CFBundleDisplayName</key>
+		<string>${info.displayName}</string>
+		<key>CFBundleInfoDictionaryVersion</key>
+		<string>6.0</string>
+		<key>CFBundleName</key>
+		<string>${info.displayName}</string>
+		<key>CFBundlePackageType</key>
+		<string>APPL</string>
+		<key>CFBundleShortVersionString</key>
+		<string>${info.version}</string>
+		<key>CFBundleSignature</key>
+		<string>????</string>
+		<key>CFBundleVersion</key>
+		<string>${info.version}</string>
+		<key>NSHumanReadableCopyright</key>
+		<string>${info.organizationName}</string>
+		<key>NSHighResolutionCapable</key>
+		<true />
+		<key>NSSupportsAutomaticGraphicsSwitching</key>
+		<true />
+		<key>AdministratorRequired</key>
+#if ($info.administratorRequired)		
+		<true />
+#else
+		<false />
+#end
+		<key>JVMClassPath</key>
+#if ($info.macConfig.relocateJar)			
+		<string>Java/${info.jarFile.name}</string>
+#else
+		<string>${info.jarFile.name}</string>
+#end
+		<key>JVMMainClassName</key>
+		<string>${info.mainClass}</string>
+#if (!$info.vmArgs.empty)			
+		<key>JVMDefaultOptions</key>
+		<array>
+#foreach ($vmArg in $info.vmArgs)
+			<string>$vmArg</string>
+#end			
+		</array>
+#end
+		<key>LSEnvironment</key>
+		<dict>
+#if ($info.bundleJre)
+			<key>JAVA_HOME</key>
+			<string>Contents/PlugIns/${info.jreDirectoryName}/Contents/Home</string>
+#end
+#if($info.envPath)
+			<key>PATH</key>
+			<string>${info.envPath}</string>
+#end
+		</dict>
+		<key>NSAppleEventsUsageDescription</key>
+		<string>There was an error while launching the application. Please
+			click OK to display a dialog with more information or cancel and view
+			the syslog for details.</string>
+	</dict>
+</plist>

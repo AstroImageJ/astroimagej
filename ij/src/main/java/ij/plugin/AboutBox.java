@@ -25,7 +25,7 @@ import java.awt.image.*;
 		text[4] = "Java "+System.getProperty("java.version")+(IJ.is64Bit()?" (64-bit)":" (32-bit)");
 		text[5] = IJ.freeMemory();
 		text[6] = "ImageJ is in the public domain";
-		text[7] = "AstroImageJ is in the public domain";
+		text[7] = "════════════════════════════════";
 		text[8] = "AstroImageJ "+IJ.getAstroVersion();
 		text[9] = "Karen Collins, John Kielkopf";
 		text[10] = "University of Louisville";

@@ -944,7 +944,7 @@ public class AstroCanvas extends OverlayCanvas {
                                 //see http://stackoverflow.com/questions/14569475/java-rotated-text-has-reversed-characters-sequence
                 {
                 FontRenderContext frc = new FontRenderContext(((Graphics2D)g).getTransform(), true, true);
-                ((Graphics2D)g).drawGlyphVector(p16.createGlyphVector(frc, label), (startX+endX-labelWidth+10)/2, Y - 4);
+                ((Graphics2D)g).drawGlyphVector(p16.createGlyphVector(frc, label), (startX+endX-labelWidth+10)/2f, Y - 4);
                 }
             else
                 {

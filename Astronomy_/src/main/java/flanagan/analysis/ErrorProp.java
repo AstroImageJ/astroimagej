@@ -822,8 +822,8 @@ public class ErrorProp{
         public static ErrorProp nthRoot(ErrorProp a, int n){
                 if(n==0)throw new ArithmeticException("Division by zero (n = 0 - infinite root) attempted in ErrorProp.nthRoot");
                 ErrorProp b = new ErrorProp();
-                b.value = Math.pow(a.value, 1/n);
-                b.error = Math.abs(a.error*Math.pow(a.value, 1/n-1)/((double)n));
+                b.value = Math.pow(a.value, 1f/n);
+                b.error = Math.abs(a.error*Math.pow(a.value, 1f/n-1)/((double)n));
                 return b;
         }
 

@@ -316,9 +316,9 @@ public class Test {
         //double BarHeight = Math.abs(Math.cos(Math.PI*(Rect2.x+Rect2.width/2) / BiSlider6.getWidth()));
         //BarHeight = (double)(Rect2.x+Rect2.width/2) / BiSlider6.getWidth();
         //BarHeight = Math.random();
-        float X = ((float)Rect2.x-BiSlider6.getWidth()/2)/BiSlider6.getWidth()*6;
+        float X = ((float)Rect2.x-BiSlider6.getWidth()/2f)/BiSlider6.getWidth()*6;
         double BarHeight = 1-Math.exp((-1*X*X)/2);
-        X = ((float)(Rect2.x-Rect2.width)-BiSlider6.getWidth()/2)/BiSlider6.getWidth()*6;
+        X = ((float)(Rect2.x-Rect2.width)-BiSlider6.getWidth()/2f)/BiSlider6.getWidth()*6;
         double BarHeight2 = 1-Math.exp((-1*X*X)/2);
 
         if (ContentPainterEvent_Arg.getColor()!=null) {

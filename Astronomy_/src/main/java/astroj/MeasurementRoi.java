@@ -413,7 +413,7 @@ public class MeasurementRoi extends Roi
             else if (sDM && (wDM + 2*alen >= lineLength - 1)) yShift -= (int)awid - (sFR?((int)awid<h?(int)awid:h):0);
             else if (sPA && showCircle && r>awid && (wPA+w1>=lineLength-1)) yShift -= r - (sFR&&sDM?(r<h+h?r:h+h):0) - (!(sFR&&sDM)&&(sFR||sDM)?(r<h?r:h):0);
             else if (sPA && (wPA + 2*alen >= lineLength - 1)) yShift -=(int)awid - (sFR&&sDM?((int)awid<h+h?(int)awid:h+h):0) - (!(sFR&&sDM)&&(sFR||sDM)?((int)awid<h?(int)awid:h):0);
-            else if (sLen && showCircle && w1/2>awid && (wLength+w1>=lineLength-1)) yShift -= r - (sFR&&sDM&&sPA?(r<h+h+h?r:h+h+h):0) - 
+            else if (sLen && showCircle && (int)(w1/2f)>awid && (wLength+w1>=lineLength-1)) yShift -= r - (sFR&&sDM&&sPA?(r<h+h+h?r:h+h+h):0) -
                                                                                              (!(sFR&&sDM&&sPA)&&((sFR&&sDM)||(sDM&&sPA)||(sPA&&sFR))?(r<h+h?r:h+h):0) -
                                                                                              (((sFR && !sDM && !sPA) || (!sFR && sDM && !sPA) || (!sFR && !sDM && sPA))?(r<h?r:h):0);
             else if (sLen && (wLength + 2*alen >= lineLength - 1)) yShift -=(int)awid - (sFR&&sDM&&sPA?((int)awid<h+h+h?(int)awid:h+h+h):0) - 

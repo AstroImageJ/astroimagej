@@ -4612,7 +4612,7 @@ static public void updateColumnLists()
         if (legendRight)
             xShift += w;
         else if (!legendLeft)
-            xShift += w/2;      
+            xShift += w/2f;
         plot.setColor (color);
         if (marker == ij.gui.Plot.DOT)
             {

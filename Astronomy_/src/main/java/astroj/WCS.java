@@ -302,7 +302,7 @@ public class WCS
 
         for (int k=1; k <= NAXIS; k++)
             {
-            CRPIX[k-1] = NAXES[k-1]/2;
+            CRPIX[k-1] = NAXES[k-1]/2f;
             icard = FitsJ.findCardWithKey ("CDELT"+k+prefix, hdr);
             if (icard > 0)
                 {
@@ -834,7 +834,7 @@ public class WCS
             
             if (zenithal)
                 {
-                double[] cxy = {NAXES[0]/2, NAXES[1]/2};
+                double[] cxy = {NAXES[0]/2f, NAXES[1]/2f};
                 double[] cradec = pixels2wcs(cxy);
                 double[] exy = wcs2pixels(new double[] {cradec[0]+cxy[0]*xScale, cradec[1]});
                 double[] nxy = wcs2pixels(new double[] {cradec[0], cradec[1]+cxy[1]*yScale});                

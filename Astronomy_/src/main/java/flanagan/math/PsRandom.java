@@ -1134,7 +1134,7 @@ public class PsRandom implements Serializable{
         // Set initial range for search
         double centre = 0.0D;
         double range = 100.0D;
-        if(nu>2)range = nu/(nu-2);
+        if(nu>2) range = nu/(nu-2f);
 
         // lower bound
         double lowerBound = centre - 5.0D*range;
@@ -1203,7 +1203,7 @@ public class PsRandom implements Serializable{
         // Set initial range for search
         double centre = 0.0D;
         double range = 100.0D;
-        if(nu>2)range = nu/(nu-2);
+        if(nu>2)range = nu/(nu-2f);
 
         // required tolerance
         double tolerance = 1e-10;
@@ -1732,7 +1732,7 @@ public class PsRandom implements Serializable{
 
             // upper bound
             double upperBound = 10.0D;
-            if(nu2>4)upperBound = 5.0D*Math.sqrt(2*nu2*nu2*(nu1+nu2-2)/(nu1*(nu2-2)*(nu2-2)*(nu2-4)));
+            if(nu2>4)upperBound = 5.0D*Math.sqrt(2f*nu2*nu2*(nu1+nu2-2)/(nu1*(nu2-2)*(nu2-2)*(nu2-4)));
 
 
             // Create instance of RealRoot

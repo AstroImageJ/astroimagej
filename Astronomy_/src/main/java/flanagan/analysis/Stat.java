@@ -11312,7 +11312,7 @@ public class Stat extends ArrayMaths{
         // Returns the Student's t standard deviation,  df = degrees of freedom
         public static double studentTstandDev(int df){
             double standDev = Double.POSITIVE_INFINITY;
-            if(df>2)standDev = Math.sqrt(df/(1 - df));
+            if(df>2)standDev = Math.sqrt(df/(1f - df));
             return standDev;
         }
 

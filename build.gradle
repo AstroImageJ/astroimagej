@@ -4,13 +4,13 @@ import org.apache.tools.ant.taskdefs.condition.Os
 buildscript {
     repositories {
         //mavenLocal()
-        maven {
-            url 'gradlePlugins' //TODO switch back to standard java packager for 1.4.1+ once it is on maven
-        }
+        /*maven {
+            url 'gradlePlugins'
+        }*/
         mavenCentral()
     }
     dependencies {
-        classpath 'io.github.fvarrui:javapackager:1.4.0-SNAPSHOT'
+        classpath 'io.github.fvarrui:javapackager:1.4.0'
     }
 }
 
@@ -175,6 +175,7 @@ javapackager {
     macConfig.setRelocateJar(false) // Don't place ij.jar in Java/ folder
     winConfig.setDisableDirPage(false) // Let users set install location
     macConfig.setGeneratePkg(false) // Don't generate pkg as it's installation cannot update memory settings
+    macConfig.setEntitlements(project.file('packageFiles/aij_entitlements.txt'))
 
     organizationName = "AstroImageJ"
     vmArgs = [] //['-Xmx3000m', '-Xms256m'] // Launch parameters are set in AstroImageJ.l4j.ini
@@ -191,7 +192,6 @@ task packageAijForLinux(type: PackageTask, dependsOn: [build, unZipJresTask, com
     platform = io.github.fvarrui.javapackager.model.Platform.linux
     createTarball = true
     jrePath = file("${projectDir}/jres/${jreBaseName}-linux_x64")
-    outputs.upToDateWhen { false } // Forces it to always run
 }
 task packageAijForMac(type: PackageTask, dependsOn: [build, unZipJresTask, commonFiles]) {
     group 'AstroImageJ Developement'
@@ -199,7 +199,6 @@ task packageAijForMac(type: PackageTask, dependsOn: [build, unZipJresTask, commo
     platform = io.github.fvarrui.javapackager.model.Platform.mac
     createZipball = true
     jrePath = file("${projectDir}/jres/${jreBaseName}-macosx_x64/zulu-15.jre/")
-    outputs.upToDateWhen { false } // Forces it to always run
 }
 task packageAijForWindows(type: PackageTask, dependsOn: [build, unZipJresTask, commonFiles]) {
     group 'AstroImageJ Developement'
@@ -207,7 +206,6 @@ task packageAijForWindows(type: PackageTask, dependsOn: [build, unZipJresTask, c
     platform = io.github.fvarrui.javapackager.model.Platform.windows
     createZipball = true
     jrePath = file("${projectDir}/jres/${jreBaseName}-win_x64")
-    outputs.upToDateWhen { false } // Forces it to always run
 
     vmArgs = [] // Set to nothing so that the ini file will take over
 

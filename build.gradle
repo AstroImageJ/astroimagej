@@ -176,6 +176,7 @@ javapackager {
     winConfig.setDisableDirPage(false) // Let users set install location
     macConfig.setGeneratePkg(false) // Don't generate pkg as it's installation cannot update memory settings
     macConfig.setEntitlements(project.file('packageFiles/aij_entitlements.txt'))
+    macConfig.setAppId("AstroImageJ")
 
     organizationName = "AstroImageJ"
     vmArgs = [] //['-Xmx3000m', '-Xms256m'] // Launch parameters are set in AstroImageJ.l4j.ini

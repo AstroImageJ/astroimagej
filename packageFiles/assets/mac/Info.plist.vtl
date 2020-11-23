@@ -11,7 +11,7 @@
 		<key>CFBundleIconFile</key>
 		<string>${info.name}.icns</string>
 		<key>CFBundleIdentifier</key>
-		<string>${info.mainClass}</string>
+		<string>${info.macConfig.appId}</string>
 		<key>CFBundleDisplayName</key>
 		<string>${info.displayName}</string>
 		<key>CFBundleInfoDictionaryVersion</key>
@@ -33,27 +33,38 @@
 		<key>NSSupportsAutomaticGraphicsSwitching</key>
 		<true />
 		<key>AdministratorRequired</key>
-#if ($info.administratorRequired)		
+#if ($info.administratorRequired)
 		<true />
 #else
 		<false />
 #end
-		<key>JVMClassPath</key>
-#if ($info.macConfig.relocateJar)			
-		<string>Java/${info.jarFile.name}</string>
-#else
-		<string>${info.jarFile.name}</string>
+		<key>JavaX</key>
+		<dict>
+			<key>MainClass</key>
+			<string>${info.mainClass}</string>
+#if (!$info.bundleJre && $info.jreMinVersion)
+			<key>JVMVersion</key>
+			<string>${info.jreMinVersion}+</string>
 #end
-		<key>JVMMainClassName</key>
-		<string>${info.mainClass}</string>
-#if (!$info.vmArgs.empty)			
-		<key>JVMDefaultOptions</key>
-		<array>
+			<key>ClassPath</key>
+			<array>
+#foreach ($classpath in $info.classpaths)
+				<string>$classpath</string>
+#end
+			</array>
+#if (!$info.vmArgs.empty)
+			<key>VMOptions</key>
+			<array>
 #foreach ($vmArg in $info.vmArgs)
-			<string>$vmArg</string>
-#end			
-		</array>
+				<string>$vmArg</string>
 #end
+			</array>
+#end
+#if ($info.useResourcesAsWorkingDir)
+			<key>WorkingDirectory</key>
+			<string>$APP_PACKAGE/Contents/Resources</string>
+#end
+		</dict>
 		<key>LSEnvironment</key>
 		<dict>
 #if ($info.bundleJre)

@@ -1,11 +1,14 @@
 package ij.plugin.filter;
 import ij.*;
-import ij.gui.DialogListener;
-import ij.gui.GenericDialog;
+import ij.gui.*;
 import ij.process.*;
+import ij.util.ThreadUtil;
 
 import java.awt.AWTEvent;
 import java.awt.Rectangle;
+import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /** This plug-in filter uses convolution with a Gaussian function for smoothing.
  * 'Radius' means the radius of decay to exp(-0.5) ~ 61%, i.e. the standard
@@ -27,24 +30,28 @@ import java.awt.Rectangle;
  * Version 03-Jun-2007 M. Schmid with preview, progressBar stack-aware,
  * snapshot via snapshot flag; restricted range for resetOutOfRoi
  * 
- * 20-Feb-2010 S. Saalfeld inner multi-threading
+ * 20-Feb-2010 S. Saalfeld inner multi-threading, modified 29-Aug-2019 M. Schmid
  *
  */
 
 public class GaussianBlur implements ExtendedPlugInFilter, DialogListener {
 
+    /** for remembering till the next invocation */
+    private static double sigmaS = 2.0;
+    private static boolean sigmaScaledS = false;
     /** the standard deviation of the Gaussian*/
-    private static double sigma = 2.0;
+    private double sigma = sigmaS;
     /** whether sigma is given in units corresponding to the pixel scale (not pixels)*/
-    private static boolean sigmaScaled = false;
+    private boolean sigmaScaled = sigmaScaledS;
     /** The flags specifying the capabilities and needs */
     private int flags = DOES_ALL|SUPPORTS_MASKING|KEEP_PREVIEW;
     private ImagePlus imp;              // The ImagePlus of the setup call, needed to get the spatial calibration
     private boolean hasScale = false;   // whether the image has an x&y scale
-    private int nPasses = 1;            // The number of passes (filter directions * color channels * stack slices)
+    private int nPasses = 2;            // The number of passes (filter directions * color channels * stack slices)
     private int nChannels = 1;        // The number of color channels
     private int pass;                        // Current pass
     private boolean noProgress;      // Do not show progress bar
+    private boolean calledAsPlugin;
     
     /** Method to return types supported
      * @param arg unused
@@ -65,16 +72,18 @@ public class GaussianBlur implements ExtendedPlugInFilter, DialogListener {
     /** Ask the user for the parameters
      */
     public int showDialog(ImagePlus imp, String command, PlugInFilterRunner pfr) {
+        calledAsPlugin = true;;
         String options = Macro.getOptions();
         boolean oldMacro = false;
         nChannels = imp.getProcessor().getNChannels();
+        setNPasses(1);
         if  (options!=null) {
             if (options.indexOf("radius=") >= 0) {  // ensure compatibility with old macros
                 oldMacro = true;                    // specifying "radius=", not "sigma=
                 Macro.setOptions(options.replaceAll("radius=", "sigma="));
             }
         }
-        GenericDialog gd = new GenericDialog(command);
+		GenericDialog gd = NonBlockingGenericDialog.newDialog(command, imp);
         sigma = Math.abs(sigma);
         gd.addNumericField("Sigma (Radius):", sigma, 2);
         if (imp.getCalibration()!=null && !imp.getCalibration().getUnits().equals("pixels")) {
@@ -86,6 +95,10 @@ public class GaussianBlur implements ExtendedPlugInFilter, DialogListener {
         gd.addDialogListener(this);
         gd.showDialog();                    // input by the user (or macro) happens here
         if (gd.wasCanceled()) return DONE;
+        if (options==null) {                // interactive use: remember values as default for the next invocation
+            sigmaS = sigma;
+            sigmaScaledS = sigmaScaled;
+        }
         if (oldMacro) sigma /= 2.5;         // for old macros, "radius" was 2.5 sigma
         IJ.register(this.getClass());       // protect static class variables (parameters) from garbage collection
         return IJ.setupDialog(imp, flags);  // ask whether to process all slices of stack (if a stack)
@@ -142,15 +155,28 @@ public class GaussianBlur implements ExtendedPlugInFilter, DialogListener {
         return true;
     }
 
-    /** Gaussian Filtering of an ImageProcessor. If filtering is not applied to the
-     *  full image height, the ImageProcessor must have a valid snapshot.
+	/** Gaussian Filtering of an ImageProcessor
+	* @param ip       The ImageProcessor to be filtered.
+	* @param sigma   Standard deviation of the Gaussian (pixels)
+	*
+	* @see ij.process.ImageProcessor#blurGaussian(double)
+	*/
+	public void blurGaussian(ImageProcessor ip, double sigma) {
+		double accuracy = (ip instanceof ByteProcessor||ip instanceof ColorProcessor)?0.002:0.0002;
+		blurGaussian(ip, sigma, sigma, accuracy);
+	}
+
+    /** Gaussian Filtering of an ImageProcessor
      * @param ip       The ImageProcessor to be filtered.
      * @param sigmaX   Standard deviation of the Gaussian in x direction (pixels)
      * @param sigmaY   Standard deviation of the Gaussian in y direction (pixels)
      * @param accuracy Accuracy of kernel, should not be above 0.02. Better (lower)
-     *                 accuracy needs slightly more computing time.
+     *    accuracy needs slightly more computing time.
      */
     public void blurGaussian(ImageProcessor ip, double sigmaX, double sigmaY, double accuracy) {
+        boolean hasRoi = ip.getRoi().height!=ip.getHeight() && sigmaX>0 && sigmaY>0;
+        if (hasRoi && !calledAsPlugin)
+        	ip.snapshot();
         if (nPasses<=1)
             nPasses = ip.getNChannels() * (sigmaX>0 && sigmaY>0 ? 2 : 1);
         FloatProcessor fp = null;
@@ -161,7 +187,7 @@ public class GaussianBlur implements ExtendedPlugInFilter, DialogListener {
             if (Thread.currentThread().isInterrupted()) return;
             ip.setPixels(i, fp);
         }
-        if (ip.getRoi().height!=ip.getHeight() && sigmaX>0 && sigmaY>0)
+        if (hasRoi)
             resetOutOfRoi(ip, (int)Math.ceil(5*sigmaY)); // reset out-of-Rectangle pixels above and below roi
         return;
     }
@@ -185,7 +211,7 @@ public class GaussianBlur implements ExtendedPlugInFilter, DialogListener {
         return;
     }
 
-    /** Blur an image in one direction (x or y) by a Gaussian.
+    /** Blur an image in one direction (x or y) by a Gaussian, using multiple threads on multiprocessor machines
      * @param ip        The Image with the original data where also the result will be stored
      * @param sigma     Standard deviation of the Gaussian
      * @param accuracy  Accuracy of kernel, should not be > 0.02
@@ -215,12 +241,7 @@ public class GaussianBlur implements ExtendedPlugInFilter, DialogListener {
         else lineTo = lineToA;
         final int writeFrom = xDirection? roi.x : roi.y;    //first point of a line that needs to be written
         final int writeTo = xDirection ? roi.x+roi.width : roi.y+roi.height;
-        pass++;
-        if (pass>nPasses) pass =1;
         
-        final int numThreads = Math.min(Prefs.getThreads(), lineTo-lineFrom);
-        final Thread[] lineThreads = new Thread[numThreads];
-
         /* large radius (sigma): scale down, then convolve, then scale up */
         final boolean doDownscaling = sigma > 2*MIN_DOWNSCALED_SIGMA + 0.5;
         final int reduceBy = doDownscaling ?                //downscale by this factor
@@ -248,63 +269,53 @@ public class GaussianBlur implements ExtendedPlugInFilter, DialogListener {
         //IJ.log("reduce="+reduceBy+", newLength="+newLength+", unscaled0="+unscaled0+", sigmaG="+(float)sigmaGauss+", kRadius="+gaussKernel[0].length);
         final float[] downscaleKernel = doDownscaling ? makeDownscaleKernel(reduceBy) : null;
         final float[] upscaleKernel = doDownscaling ? makeUpscaleKernel(reduceBy) : null;
+
+        int numThreads1 = Math.min(Prefs.getThreads(), lineTo-lineFrom);
+        int numThreads2 = (int)((lineTo - lineFrom)*(long)(writeTo - writeFrom)*gaussKernel[0].length/
+                (doDownscaling ? 8000 : 16000)) + 1; //use fewer threads if a small task
+        final int numThreads = Math.min(numThreads1, numThreads2);
+        final Callable[] callables = new Callable[numThreads];
+        final AtomicInteger nextLine = new AtomicInteger(lineFrom);
+        final AtomicLong lastShowProgressTime = new AtomicLong(System.currentTimeMillis());
            
-        for ( int t = 0; t < numThreads; ++t ) {
-            final int ti = t;
+        for ( int t = 0; t < numThreads; t++ ) {
             final float[] cache1 = new float[newLength];  //holds data before convolution (after downscaling, if any)
             final float[] cache2 = doDownscaling ? new float[newLength] : null;  //holds data after convolution
             
-            final Thread thread = new Thread(
-                    new Runnable() {
-                        final public void run() { /*try{*/
-                            long lastTime = System.currentTimeMillis();
-                            boolean canShowProgress = Thread.currentThread() == lineThreads[0];
-                            int pixel0 = (lineFrom+ti)*lineInc;
-                            for (int line=lineFrom + ti; line<lineTo; line += numThreads, pixel0+=numThreads*lineInc) {
-                                long time = System.currentTimeMillis();
-                                if (time - lastTime >110) {
-                                    if (canShowProgress)
-                                        showProgress((double)(line-lineFrom)/(lineTo-lineFrom));
-                                    if (Thread.currentThread().isInterrupted()) return; // interruption for new parameters during preview?
-                                    lastTime = time;
-                                }
-                                if (doDownscaling) {
-                                    downscaleLine(pixels, cache1, downscaleKernel, reduceBy, pixel0, unscaled0, length, pointInc, newLength);
-                                    convolveLine(cache1, cache2, gaussKernel, 0, newLength, 1, newLength-1, 0, 1);
-                                    upscaleLine(cache2, pixels, upscaleKernel, reduceBy, pixel0, unscaled0, writeFrom, writeTo, pointInc);
-                                } else {
-                                    int p = pixel0 + readFrom*pointInc;
-                                    for (int i=readFrom; i<readTo; i++ ,p+=pointInc)
-                                        cache1[i] = pixels[p];
-                                    convolveLine(cache1, pixels, gaussKernel, readFrom, readTo, writeFrom, writeTo, pixel0, pointInc);
-                                }
-                                    
+            callables[t] = new Callable() {
+                final public Void call() { /*try{*/
+                    while (!Thread.currentThread().isInterrupted()) {
+                        int line = nextLine.getAndIncrement();
+                        if (line >= lineTo) break;
+                        int pixel0 = line*lineInc;
+                        if ((line&0x1f)==0) { //every 32 lines, check whether progress bar should be updated
+                            long time = System.currentTimeMillis();
+                            if (time - lastShowProgressTime.get() >110) {
+                                lastShowProgressTime.set(time);
+                                showProgress((double)(line-lineFrom)/(lineTo-lineFrom));
                             }
-                        } /*catch(Exception ex) {IJ.handleException(ex);} }*/
-                    },
-                    "GaussianBlur-"+t);
-            
-            thread.setPriority( Thread.currentThread().getPriority() );
-            lineThreads[ ti ] = thread;
-            thread.start();
+                        }
+                        if (doDownscaling) {
+                            downscaleLine(pixels, cache1, downscaleKernel, reduceBy, pixel0, unscaled0, length, pointInc, newLength);
+                            convolveLine(cache1, cache2, gaussKernel, 0, newLength, 1, newLength-1, 0, 1);
+                            upscaleLine(cache2, pixels, upscaleKernel, reduceBy, pixel0, unscaled0, writeFrom, writeTo, pointInc);
+                        } else {
+                            int p = pixel0 + readFrom*pointInc;
+                            for (int i=readFrom; i<readTo; i++ ,p+=pointInc)
+                                cache1[i] = pixels[p];
+                            convolveLine(cache1, pixels, gaussKernel, readFrom, readTo, writeFrom, writeTo, pixel0, pointInc);
+                        }
+                            
+                    }
+                    return null;
+                } /*catch(Exception ex) {IJ.handleException(ex);} }*/
+            };
         }
-        try {
-            for ( final Thread thread : lineThreads )
-                if ( thread != null ) thread.join();
-        }
-        catch ( InterruptedException e ) {
-            for ( final Thread thread : lineThreads )
-                thread.interrupt();
-            try {
-                for ( final Thread thread : lineThreads )
-                    thread.join();
-            }
-            catch ( InterruptedException f ) {}
-            Thread.currentThread().interrupt();
-        }
+        ThreadUtil.startAndJoin(callables);
             
         showProgress(1.0);
-        return;
+        pass++;
+        if (pass > nPasses) pass = 1;
     }
 
     /** Scale a line (row or column of a FloatProcessor or part thereof)
@@ -562,32 +573,32 @@ public class GaussianBlur implements ExtendedPlugInFilter, DialogListener {
         return kernel;
     }
 
-    /** Set the processed pixels above and below the roi rectangle back to their
-     * previous value (i.e., snapshot buffer). This is necessary since ImageJ
-     * only restores out-of-roi pixels inside the enclosing rectangle of the roi
-     * (If the roi is non-rectangular and the SUPPORTS_MASKING flag is set).
-     * @param ip The image to be processed
-     * @param radius The range above and below the roi that should be processed
-     */    
-    public static void resetOutOfRoi(ImageProcessor ip, int radius) {
-        Rectangle roi = ip.getRoi();
-        int width = ip.getWidth();
-        int height = ip.getHeight();
-        Object pixels = ip.getPixels();
-        Object snapshot = ip.getSnapshotPixels();
-        int y0 = roi.y-radius;              // the first line that should be reset
-        if (y0<0) y0 = 0;
-        for (int y=y0,p=width*y+roi.x; y<roi.y; y++,p+=width)
-            System.arraycopy(snapshot, p, pixels, p, roi.width);
-        int yEnd = roi.y+roi.height+radius; // the last line + 1 that should be reset
-        if (yEnd > height) yEnd = height;
-        for (int y=roi.y+roi.height,p=width*y+roi.x; y<yEnd; y++,p+=width)
-            System.arraycopy(snapshot, p, pixels, p, roi.width);
-    }
+	/** Set the processed pixels above and below the roi rectangle back to their
+	* previous value (i.e., snapshot buffer). This is necessary since ImageJ
+	* only restores out-of-roi pixels inside the enclosing rectangle of the roi
+	* (If the roi is non-rectangular and the SUPPORTS_MASKING flag is set).
+	* @param ip The image to be processed
+	* @param radius The range above and below the roi that should be processed
+	*/    
+	public static void resetOutOfRoi(ImageProcessor ip, int radius) {
+		Rectangle roi = ip.getRoi();
+		int width = ip.getWidth();
+		int height = ip.getHeight();
+		Object pixels = ip.getPixels();
+		Object snapshot = ip.getSnapshotPixels();
+		int y0 = roi.y-radius;    // the first line that should be reset
+		if (y0<0) y0 = 0;
+		for (int y=y0,p=width*y+roi.x; y<roi.y; y++,p+=width)
+			System.arraycopy(snapshot, p, pixels, p, roi.width);
+		int yEnd = roi.y+roi.height+radius; // the last line + 1 that should be reset
+		if (yEnd>height) yEnd = height;
+		for (int y=roi.y+roi.height,p=width*y+roi.x; y<yEnd; y++,p+=width)
+			System.arraycopy(snapshot, p, pixels, p, roi.width);
+	}
     
     private void showProgress(double percent) {
     	if (noProgress) return;
-        percent = (double)(pass-1)/nPasses + percent/nPasses;
+        percent = (pass + percent)/nPasses;
         IJ.showProgress(percent);
     }
     

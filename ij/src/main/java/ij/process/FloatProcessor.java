@@ -14,6 +14,7 @@ public class FloatProcessor extends ImageProcessor {
 	private float[] snapshotPixels = null;
 	private float fillColor =  Float.MAX_VALUE;
 	private boolean fixedScale = false;
+	private float bgValue;
 
 	/** Creates a new FloatProcessor using the specified pixel array. */
 	public FloatProcessor(int width, int height, float[] pixels) {
@@ -76,6 +77,7 @@ public class FloatProcessor extends ImageProcessor {
 				pixels[i++] = (float)array[x][y];
 			}
 		}
+		resetRoi();
 	}
 
 	/**
@@ -103,18 +105,18 @@ public class FloatProcessor extends ImageProcessor {
 			}
 		}
 		minMaxSet = true;
-		showProgress(1.0);
 	}
 
-	/**
-	Sets the min and max variables that control how real
-	pixel values are mapped to 0-255 screen values. Use
-	resetMinAndMax() to enable auto-scaling;
-	@see ij.plugin.frame.ContrastAdjuster 
+	/** Sets the min and max variables that control how real
+	 * pixel values are mapped to 0-255 screen values. Use
+	 * resetMinAndMax() to enable auto-scaling;
+	 * @see ij.plugin.frame.ContrastAdjuster 
 	*/
 	public void setMinAndMax(double minimum, double maximum) {
-		if (minimum==0.0 && maximum==0.0)
-			{resetMinAndMax(); return;}
+		if (minimum==0.0 && maximum==0.0) {
+			resetMinAndMax();
+			return;
+		}
 		min = (float)minimum;
 		max = (float)maximum;
 		fixedScale = true;
@@ -146,43 +148,58 @@ public class FloatProcessor extends ImageProcessor {
 	/** Create an 8-bit AWT image by scaling pixels in the range min-max to 0-255. */
 	public Image createImage() {
 		boolean firstTime = pixels8==null;
+		boolean thresholding = minThreshold!=NO_THRESHOLD && lutUpdateMode<NO_LUT_UPDATE;
+		//ij.IJ.log("createImage: "+firstTime+"  "+lutAnimation+"  "+thresholding);
 		if (firstTime || !lutAnimation)
-			create8BitImage();
+			create8BitImage(thresholding&&lutUpdateMode==RED_LUT);
 		if (cm==null)
 			makeDefaultColorModel();
-		if (ij.IJ.isJava16())
-			return createBufferedImage();
-		if (source==null) {
-			source = new MemoryImageSource(width, height, cm, pixels8, 0, width);
-			source.setAnimated(true);
-			source.setFullBufferUpdates(true);
-			img = Toolkit.getDefaultToolkit().createImage(source);
-		} else if (newPixels) {
-			source.newPixels(pixels8, cm, 0, width);
-			newPixels = false;
-		} else
-			source.newPixels();
-		lutAnimation = false;
-		return img;
+		if (thresholding) {
+			int size = width*height;
+			double value;
+			if (lutUpdateMode==BLACK_AND_WHITE_LUT) {
+				for (int i=0; i<size; i++) {
+					value = pixels[i];
+					if (value>=minThreshold && value<=maxThreshold)
+						pixels8[i] = (byte)255;
+					else
+						pixels8[i] = (byte)0;
+				}
+			} else { // threshold red
+				for (int i=0; i<size; i++) {
+					value = pixels[i];
+					if (value>=minThreshold && value<=maxThreshold)
+						pixels8[i] = (byte)255;
+				}
+			}
+		}
+		return createBufferedImage();
 	}
-	
-	// scale from float to 8-bits
-	protected byte[] create8BitImage() {
+		
+	// creates 8-bit image by linearly scaling from float to 8-bits
+	private byte[] create8BitImage(boolean thresholding) {
 		int size = width*height;
 		if (pixels8==null)
 			pixels8 = new byte[size];
-		float value;
+		double value;
 		int ivalue;
-		float min2=(float)getMin(), max2=(float)getMax();
-		float scale = 255f/(max2-min2);
+		double min2 = getMin();
+		double max2 = getMax();
+		double scale = 255.0/(max2-min2);
+		int maxValue = thresholding?254:255;
 		for (int i=0; i<size; i++) {
 			value = pixels[i]-min2;
-			if (value<0f) value = 0f;
-			ivalue = (int)((value*scale)+0.5f);
-			if (ivalue>255) ivalue = 255;
+			if (value<0.0) value=0.0;
+			ivalue = (int)(value*scale+0.5);
+			if (ivalue>maxValue) ivalue = maxValue;
 			pixels8[i] = (byte)ivalue;
 		}
 		return pixels8;
+	}
+	
+	@Override
+	byte[] create8BitImage() {
+		return create8BitImage(false);
 	}
 		
 	Image createBufferedImage() {
@@ -370,7 +387,7 @@ public class FloatProcessor extends ImageProcessor {
 		if (x>=0 && x<width && y>=0 && y<height)
 			return pixels[y*width + x];
 		else
-			return 0f;
+			return Float.NaN;
 	}
 
 	/** Draws a pixel in the current foreground color. */
@@ -435,6 +452,9 @@ public class FloatProcessor extends ImageProcessor {
 					case FILL:
 						v2 = fillColor;
 						break;
+					case SET:
+						v2 = c;
+						break;
 					case ADD:
 						v2 = v1 + c;
 						break;
@@ -448,10 +468,7 @@ public class FloatProcessor extends ImageProcessor {
 							v2 = (float)Math.exp(c*Math.log(v1));
 						break;
 					case LOG:
-						if (v1<=0f)
-							v2 = 0f;
-						else
-							v2 = (float)Math.log(v1);
+						v2 = (float)Math.log(v1);
 						break;
 					case EXP:
 						v2 = (float)Math.exp(v1);
@@ -488,9 +505,15 @@ public class FloatProcessor extends ImageProcessor {
 		}
 	}
 
-	public void invert() {process(INVERT, 0.0);}
+	/** Each pixel in the image is inverted using p=max-(p-min), where 'min'
+		and 'max' are the display range limits set using setMinAndMax(). */
+	public void invert() {
+		process(INVERT, 0.0);
+	}
+	
 	public void add(int value) {process(ADD, value);}
 	public void add(double value) {process(ADD, value);}
+	public void set(double value) {process(SET, value);}
 	public void multiply(double value) {process(MULT, value);}
 	public void and(int value) {}
 	public void or(int value) {}
@@ -558,8 +581,6 @@ public class FloatProcessor extends ImageProcessor {
 			if (scale==0) scale = 1f;
 			scale = 1f/scale; //multiplication factor (multiply is faster than divide)
 		}
-		int inc = roiHeight/25;
-		if (inc<1) inc = 1;
 		
 		float[] pixels2 = (float[])getPixelsCopy();
 		//float[] pixels2 = (float[])getPixelsCopy();
@@ -622,10 +643,7 @@ public class FloatProcessor extends ImageProcessor {
 				}
 				break;
 			}
-			if (y%inc==0)
-				showProgress((double)(y-roiY)/roiHeight);
 		}
-		showProgress(1.0);
 	}
 
 	/** Rotates the image or ROI 'angle' degrees clockwise.
@@ -658,7 +676,6 @@ public class FloatProcessor extends ImageProcessor {
 					ys = x*sa + tmp4;
 					pixels[index++] = (float)getBicubicInterpolatedPixel(xs, ys, ip2);
 				}
-				if (y%30==0) showProgress((double)(y-roiY)/roiHeight);
 			}
 		} else {
 			double dwidth=width,dheight=height;
@@ -686,13 +703,10 @@ public class FloatProcessor extends ImageProcessor {
 							pixels[index++] = pixels2[width*iys+ixs];
 						}
 					} else
-						pixels[index++] = 0;
+						pixels[index++] = bgValue;
 				}
-				if (y%30==0)
-				showProgress((double)(y-roiY)/roiHeight);
 			}
 		}
-		showProgress(1.0);
 	}
 
 	public void flipVertical() {
@@ -709,12 +723,16 @@ public class FloatProcessor extends ImageProcessor {
 		}
 	}
 	
-	public void noise(double range) {
-		Random rnd=new Random();
+	public void noise(double standardDeviation) {
+		if (rnd==null)
+			rnd = new Random();
+		if (!Double.isNaN(seed))
+			rnd.setSeed((int) seed);
+		seed = Double.NaN;
 		for (int y=roiY; y<(roiY+roiHeight); y++) {
 			int i = y * width + roiX;
 			for (int x=roiX; x<(roiX+roiWidth); x++) {
-				float RandomBrightness = (float)(rnd.nextGaussian()*range);
+				float RandomBrightness = (float)(rnd.nextGaussian()*standardDeviation);
 				pixels[i] = pixels[i] + RandomBrightness;
 				i++;
 			}
@@ -735,7 +753,7 @@ public class FloatProcessor extends ImageProcessor {
 	}
 	
 	/** Returns a duplicate of this image. */ 
-	public synchronized ImageProcessor duplicate() { 
+	public ImageProcessor duplicate() {
 		ImageProcessor ip2 = createProcessor(width, height); 
 		float[] pixels2 = (float[])ip2.getPixels(); 
 		System.arraycopy(pixels, 0, pixels2, 0, width*height); 
@@ -781,7 +799,6 @@ public class FloatProcessor extends ImageProcessor {
 					xs = (x-xCenter)/xScale + xCenter;
 					pixels[index1++] = (float)getBicubicInterpolatedPixel(xs, ys, ip2);
 				}
-				if (y%30==0) showProgress((double)(y-ymin)/height);
 			}
 		} else {
 			double xlimit = width-1.0, xlimit2 = width-1.001;
@@ -807,10 +824,8 @@ public class FloatProcessor extends ImageProcessor {
 							pixels[index1++] = pixels2[index2+xsi];
 					}
 				}
-				if (y%30==0) showProgress((double)(y-ymin)/height);
 			}
 		}
-		showProgress(1.0);
 	}
 
 	/** Uses bilinear interpolation to find the pixel value at real coordinates (x,y). */
@@ -865,6 +880,10 @@ public class FloatProcessor extends ImageProcessor {
 
 	/** Creates a new FloatProcessor containing a scaled copy of this image or selection. */
 	public ImageProcessor resize(int dstWidth, int dstHeight) {
+		if (roiWidth==dstWidth && roiHeight==dstHeight)
+			return crop();
+		if ((width==1||height==1) && interpolationMethod!=NONE)
+			return resizeLinearly(dstWidth, dstHeight);
 		double srcCenterX = roiX + roiWidth/2.0;
 		double srcCenterY = roiY + roiHeight/2.0;
 		double dstCenterX = dstWidth/2.0;
@@ -872,27 +891,29 @@ public class FloatProcessor extends ImageProcessor {
 		double xScale = (double)dstWidth/roiWidth;
 		double yScale = (double)dstHeight/roiHeight;
 		if (interpolationMethod!=NONE) {
-			dstCenterX += xScale/2.0;
-			dstCenterY += yScale/2.0;
+			if (dstWidth!=width) dstCenterX+=xScale/4.0;
+			if (dstHeight!=height) dstCenterY+=yScale/4.0;
 		}
+		int inc = getProgressIncrement(dstWidth,dstHeight);
 		ImageProcessor ip2 = createProcessor(dstWidth, dstHeight);
 		float[] pixels2 = (float[])ip2.getPixels();
 		double xs, ys;
 		if (interpolationMethod==BICUBIC) {
 			for (int y=0; y<=dstHeight-1; y++) {
+				if (inc>0&&y%inc==0) showProgress((double)y/dstHeight);
 				ys = (y-dstCenterY)/yScale + srcCenterY;
 				int index = y*dstWidth;
 				for (int x=0; x<=dstWidth-1; x++) {
 					xs = (x-dstCenterX)/xScale + srcCenterX;
 					pixels2[index++] = (float)getBicubicInterpolatedPixel(xs, ys, this);
 				}
-				if (y%30==0) showProgress((double)y/dstHeight);
 			}
 		} else {
 			double xlimit = width-1.0, xlimit2 = width-1.001;
 			double ylimit = height-1.0, ylimit2 = height-1.001;
 			int index1, index2;
 			for (int y=0; y<=dstHeight-1; y++) {
+				if (inc>0&&y%inc==0) showProgress((double)y/dstHeight);
 				ys = (y-dstCenterY)/yScale + srcCenterY;
 				if (interpolationMethod==BILINEAR) {
 					if (ys<0.0) ys = 0.0;
@@ -909,19 +930,22 @@ public class FloatProcessor extends ImageProcessor {
 					} else
 						pixels2[index2++] = pixels[index1+(int)xs];
 				}
-				if (y%30==0) showProgress((double)y/dstHeight);
 			}
 		}
-		showProgress(1.0);
+		if (inc>0) showProgress(1.0);
 		return ip2;
 	}
 	
-	FloatProcessor downsize(int dstWidth, int dstHeight) {
+	FloatProcessor downsize(int dstWidth, int dstHeight, String msg) {
 		FloatProcessor ip2 = this;
+		if (msg!=null)
+			ij.IJ.showStatus("downsizing in x"+msg);
 		if (dstWidth<roiWidth) {	  //downsizing in x
 			ip2 = ip2.downsize1D(dstWidth, roiHeight, true);
 			ip2.setRoi(0, 0, dstWidth, roiHeight);	//prepare roi for resizing in y
 		}
+		if (msg!=null)
+			ij.IJ.showStatus("downsizing in y"+msg);
 		if (dstHeight<roiHeight)	  //downsizing in y
 			ip2 = ip2.downsize1D(ip2.getRoi().width, dstHeight, false);
 		if (ip2.getWidth()!=dstWidth || ip2.getHeight()!=dstHeight)
@@ -988,29 +1012,58 @@ public class FloatProcessor extends ImageProcessor {
 			fillColor = 0f;
 		else
 			fillColor = (float)(getMin() + (getMax()-getMin())*(bestIndex/255.0));
+		fillValueSet = true;
 	}
 	
 	/** Sets the default fill/draw value. */
 	public void setValue(double value) {
 		fillColor = (float)value;
+		fillValueSet = true;
+	}
+	
+	/** Returns the foreground fill/draw value. */
+	public double getForegroundValue() {
+		return fillColor;
 	}
 
-	/** Does nothing. The rotate() and scale() methods always zero fill. */
 	public void setBackgroundValue(double value) {
+		bgValue = (float)value;
 	}
 
-	/** Always returns 0. */
 	public double getBackgroundValue() {
-		return 0.0;
+		return bgValue;
 	}
 
+	public void setLutAnimation(boolean lutAnimation) {
+		this.lutAnimation = false;
+	}
+	
 	public void setThreshold(double minThreshold, double maxThreshold, int lutUpdate) {
-		if (minThreshold==NO_THRESHOLD)
-			{resetThreshold(); return;}
+		if (minThreshold==NO_THRESHOLD) {
+			resetThreshold();
+			return;
+		}
 		if (getMax()>getMin()) {
-			double minT = Math.round(((minThreshold-getMin())/(getMax()-getMin()))*255.0);
-			double maxT = Math.round(((maxThreshold-getMin())/(getMax()-getMin()))*255.0);
-			super.setThreshold(minT, maxT, lutUpdate); // update LUT
+			if (lutUpdate==OVER_UNDER_LUT) {
+				double minT = ((minThreshold-getMin())/(getMax()-getMin())*255.0);
+				double maxT = ((maxThreshold-getMin())/(getMax()-getMin())*255.0);
+				super.setThreshold(minT, maxT, lutUpdate); // update LUT
+			} else {
+				lutUpdateMode = lutUpdate;
+				if (rLUT1==null) {
+					if (cm==null)
+						makeDefaultColorModel();
+					baseCM = cm;
+					IndexColorModel m = (IndexColorModel)cm;
+					rLUT1 = new byte[256]; gLUT1 = new byte[256]; bLUT1 = new byte[256];
+					m.getReds(rLUT1); m.getGreens(gLUT1); m.getBlues(bLUT1);
+					rLUT2 = new byte[256]; gLUT2 = new byte[256]; bLUT2 = new byte[256];
+				}
+				if (lutUpdateMode==RED_LUT)
+					cm = getThresholdColorModel();
+				else
+					cm = getDefaultColorModel();
+			}
 		} else
 			super.resetThreshold();
 		this.minThreshold = minThreshold;
@@ -1023,14 +1076,17 @@ public class FloatProcessor extends ImageProcessor {
 		new ij.plugin.filter.Convolver().convolve(this, kernel, kernelWidth, kernelHeight);
 	}
 
+	/** Returns a 256 bin histogram of the current ROI or of the entire image if there is no ROI. */
+	public int[] getHistogram() {
+		return getStatistics().histogram;
+	}
+
 	/** Not implemented. */
 	public void threshold(int level) {}
 	/** Not implemented. */
 	public void autoThreshold() {}
 	/** Not implemented. */
 	public void medianFilter() {}
-	/** Not implemented. */
-	public int[] getHistogram() {return null;}
 	/** Not implemented. */
 	public void erode() {}
 	/** Not implemented. */
@@ -1068,6 +1124,21 @@ public class FloatProcessor extends ImageProcessor {
 	
 	public int getBitDepth() {
 		return 32;
+	}
+	
+	/** Returns a binary mask, or null if a threshold is not set. */
+	public ByteProcessor createMask() {
+		if (getMinThreshold()==NO_THRESHOLD)
+			return null;
+		float minThreshold = (float)getMinThreshold();
+		float maxThreshold = (float)getMaxThreshold();
+		ByteProcessor mask = new ByteProcessor(width, height);
+		byte[] mpixels = (byte[])mask.getPixels();
+		for (int i=0; i<pixels.length; i++) {
+			if (pixels[i]>=minThreshold && pixels[i]<=maxThreshold)
+				mpixels[i] = (byte)255;
+		}
+		return mask;
 	}
 
 }

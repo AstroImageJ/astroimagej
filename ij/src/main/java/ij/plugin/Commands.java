@@ -1,11 +1,12 @@
 package ij.plugin;
 import ij.*;
+import ij.process.*;
 import ij.gui.*;
 import ij.io.*;
 import ij.plugin.frame.*;
 import ij.text.TextWindow;
 import ij.macro.Interpreter;
-
+import ij.plugin.Compiler;
 import java.awt.Window;
 import java.io.File;
 import java.applet.Applet;
@@ -16,7 +17,7 @@ public class Commands implements PlugIn {
 	public void run(String cmd) {
 		if (cmd.equals("new")) {
 			if (IJ.altKeyDown())
-				IJ.runPlugIn("ij.plugin.HyperStackConverter", "new");
+				IJ.runPlugIn("ij.plugin.HyperStackMaker", "");
 			else
 				new NewImage();
 		} else if (cmd.equals("open")) {
@@ -80,7 +81,7 @@ public class Commands implements PlugIn {
 		Window win = WindowManager.getActiveWindow();
 		if (win==null || (Interpreter.isBatchMode() && win instanceof ImageWindow))
 			closeImage(imp);
-		else if (win instanceof PlugInFrame)
+		else if (win instanceof PlugInFrame && !"Commands".equals(((PlugInFrame)win).getTitle()))
 			((PlugInFrame)win).close();
 		else if (win instanceof PlugInDialog)
 			((PlugInDialog)win).close();
@@ -90,7 +91,8 @@ public class Commands implements PlugIn {
 			closeImage(imp);
 	}
 
-	void closeAll() {
+	/** Closes all image windows, or returns 'false' if the user cancels the unsaved changes dialog box. */
+	public static boolean closeAll() {
     	int[] list = WindowManager.getIDList();
     	if (list!=null) {
     		int imagesWithChanges = 0;
@@ -104,16 +106,18 @@ public class Commands implements PlugIn {
 				String pronoun = null;
 				if (imagesWithChanges==1) {
 					msg = "There is one image";
-					pronoun = "it";
+					pronoun = "It";
 				} else {
 					msg = "There are "+imagesWithChanges+" images";
-					pronoun = "they";
+					pronoun = "They";
 				}
-				gd.addMessage(msg+" with unsaved changes. If you\nclick \"OK\" "+pronoun
-					+" will be closed without being saved.");
+				gd.addMessage(msg+" with unsaved changes. "+pronoun
+					+" will\nbe closed without being saved if you click \"OK\".");
 				gd.showDialog();
-				if (gd.wasCanceled()) return;
+				if (gd.wasCanceled())	
+					return false;
 			}
+			Prefs.closingAll = true;
 			for (int i=0; i<list.length; i++) {
 				ImagePlus imp = WindowManager.getImage(list[i]);
 				if (imp!=null) {
@@ -121,12 +125,9 @@ public class Commands implements PlugIn {
 					imp.close();
 				}
 			}
+			Prefs.closingAll = false;
     	}
-    	//Frame[] windows = WindowManager.getNonImageWindows();
-    	//for (int i=0; i<windows.length; i++) {
-    	//	if ((windows[i] instanceof PlugInFrame) && !(windows[i] instanceof Editor))
-    	//		((PlugInFrame)windows[i]).close();
-    	//}
+    	return true;
 	}
 
 	void closeImage(ImagePlus imp) {
@@ -147,11 +148,19 @@ public class Commands implements PlugIn {
 	// Plugins>Macros>Open Startup Macros command
 	void openStartupMacros() {
 		Applet applet = IJ.getApplet();
-		if (applet!=null) {
+		if (applet!=null)
 			IJ.run("URL...", "url="+IJ.URL+"/applet/StartupMacros.txt");
-		} else {
-			String path = IJ.getDirectory("macros")+"/StartupMacros.txt";
+		else {
+			String path = IJ.getDirectory("macros")+"StartupMacros.txt";
 			File f = new File(path);
+			if (!f.exists()) {
+				path = IJ.getDirectory("macros")+"StartupMacros.ijm";
+				f = new File(path);
+			}
+			if (!f.exists()) {
+				path = IJ.getDirectory("macros")+"StartupMacros.fiji.ijm";
+				f = new File(path);
+			}
 			if (!f.exists())
 				IJ.error("\"StartupMacros.txt\" not found in ImageJ/macros/");
 			else

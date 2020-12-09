@@ -3,6 +3,7 @@ import ij.*;
 import ij.process.*;
 import ij.gui.*;
 import ij.io.FileInfo;
+import java.awt.Color;
 
 /**
  * This plugin implements the Image/Stacks/Tools/Make Substack command.
@@ -78,15 +79,14 @@ public class SubstackMaker implements PlugIn {
 					if (ch==',') {count += 1;}
 				}
 				int[] numList = new int[count];
-				for(int i=0; i<count; i++) {
+				for (int i=0; i<count; i++) {
 					int idx2 = userInput.indexOf(",");
-					if(idx2>0) {
+					if (idx2>0) {
 						String num = userInput.substring(0,idx2);
 						Integer obj = new Integer(num);
 						numList[i] = obj.intValue();
 						userInput = userInput.substring(idx2+1);
-					}
-					else{
+					} else {
 						String num = userInput;
 						Integer obj = new Integer(num);
 						numList[i] = obj.intValue();
@@ -101,9 +101,14 @@ public class SubstackMaker implements PlugIn {
 	}
 	
 	String showDialog() {
+		String options = Macro.getOptions();
+		if (options!=null && !options.contains("slices=")) {
+			Macro.setOptions(options.replace("channels=", "slices="));
+			Macro.setOptions(options.replace("frames=", "slices="));
+		}
 		GenericDialog gd = new GenericDialog("Substack Maker");
 		gd.setInsets(10,45,0);
-		gd.addMessage("Enter a range (e.g. 2-14), a range with increment\n(e.g. 1-100-2) or a list (e.g. 7,9,25,27)");
+		gd.addMessage("Enter a range (e.g. 2-14), a range with increment\n(e.g. 1-100-2) or a list (e.g. 7,9,25,27)", null, Color.darkGray);
 		gd.addStringField("Slices:", "", 40);
 		gd.addCheckbox("Delete slices from original stack", delete);
 		gd.showDialog();
@@ -119,6 +124,9 @@ public class SubstackMaker implements PlugIn {
 	ImagePlus stackList(ImagePlus imp, int count, int[] numList, String stackTitle) throws Exception {
 		ImageStack stack = imp.getStack();
 		ImageStack stack2 = null;
+		boolean virtualStack = stack.isVirtual();
+		double min = imp.getDisplayRangeMin();
+		double max = imp.getDisplayRangeMax();
 		Roi roi = imp.getRoi();
 		for (int i=0, j=0; i<count; i++) {
 			int currSlice = numList[i]-j;
@@ -138,10 +146,13 @@ public class SubstackMaker implements PlugIn {
 			// next three lines for updating the scroll bar
 			ImageWindow win = imp.getWindow();
 			StackWindow swin = (StackWindow) win;
-			swin.updateSliceSelector();
+			if (swin!=null)
+				swin.updateSliceSelector();
 		}
 		ImagePlus impSubstack = imp.createImagePlus();
 		impSubstack.setStack(stackTitle, stack2);
+		if (virtualStack)
+			impSubstack.setDisplayRange(min, max);
 		return impSubstack;
 	}
 	
@@ -149,9 +160,13 @@ public class SubstackMaker implements PlugIn {
 	ImagePlus stackRange(ImagePlus imp, int first, int last, int inc, String title) throws Exception {
 		ImageStack stack = imp.getStack();
 		ImageStack stack2 = null;
+		boolean virtualStack = stack.isVirtual();
+		double min = imp.getDisplayRangeMin();
+		double max = imp.getDisplayRangeMax();
 		Roi roi = imp.getRoi();
+		boolean showProgress = stack.size()>400 || stack.isVirtual();
 		for (int i= first, j=0; i<= last; i+=inc) {
-			//IJ.log(first+" "+last+" "+inc+" "+i);
+			if (showProgress) IJ.showProgress(i,last);
 			int currSlice = i-j;
 			ImageProcessor ip2 = stack.getProcessor(currSlice);
 			ip2.setRoi(roi);
@@ -169,11 +184,14 @@ public class SubstackMaker implements PlugIn {
 			// next three lines for updating the scroll bar
 			ImageWindow win = imp.getWindow();
 			StackWindow swin = (StackWindow) win;
-			swin.updateSliceSelector();
+			if (swin!=null)
+				swin.updateSliceSelector();
 		}
 		ImagePlus substack = imp.createImagePlus();
 		substack.setStack(title, stack2);
 		substack.setCalibration(imp.getCalibration());
+		if (virtualStack)
+			substack.setDisplayRange(min, max);
 		return substack;
 	}
 }

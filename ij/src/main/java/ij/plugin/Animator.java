@@ -3,6 +3,7 @@ import ij.*;
 import ij.gui.*;
 import ij.process.*;
 import ij.measure.Calibration;
+import java.awt.Point;
 
 /** This plugin animates stacks. */
 public class Animator implements PlugIn {
@@ -19,14 +20,14 @@ public class Animator implements PlugIn {
 		to stop any animation and display the next or previous frame. 
 	*/
 	public void run(String arg) {
-		imp = WindowManager.getCurrentImage();
-		if (imp==null)
-			{IJ.noImage(); return;}
-    	nSlices = imp.getStackSize();
+		imp = IJ.getImage();
+		nSlices = imp.getStackSize();
 		if (nSlices<2)
 			{IJ.error("Stack required."); return;}
+		if (imp.isLocked())
+			{IJ.beep(); IJ.showStatus("Image is locked: \""+imp.getTitle()+"\""); return;}
 		ImageWindow win = imp.getWindow();
-		if (win==null || !(win instanceof StackWindow)) {
+		if ((win==null || !(win instanceof StackWindow)) && !arg.equals("options")) {
 			if (arg.equals("next"))
 				imp.setSlice(imp.getCurrentSlice()+1);
 			else if (arg.equals("previous"))
@@ -49,20 +50,27 @@ public class Animator implements PlugIn {
 			return;
 		}
 
-		if (swin.getAnimate()) // "stop", "next" and "previous" all stop animation
-			stopAnimation();
+		//if (swin.getAnimate()) // "stop", "next" and "previous" all stop animation
+		//	stopAnimation();
 
 		if (arg.equals("stop")) {
+			stopAnimation();
 			return;
 		}
 			
 		if (arg.equals("next")) {
-			nextSlice();
+			if (Prefs.reverseNextPreviousOrder)
+				changeSlice(1);
+			else
+				nextSlice();
 			return;
 		}
 		
 		if (arg.equals("previous")) {
-			previousSlice();
+			if (Prefs.reverseNextPreviousOrder)
+				changeSlice(-1);
+			else
+				previousSlice();
 			return;
 		}
 		
@@ -75,7 +83,6 @@ public class Animator implements PlugIn {
 	void stopAnimation() {
 		swin.setAnimate(false);
 		IJ.wait(500+(int)(1000.0/animationRate));
-		imp.unlock(); 
 	}
 
 	void startAnimation() {
@@ -84,7 +91,6 @@ public class Animator implements PlugIn {
 			{first=1; last=nSlices;}
 		if (swin.getAnimate())
 			{stopAnimation(); return;}
-		imp.unlock(); // so users can adjust brightness/contrast/threshold
 		swin.setAnimate(true);
 		long time, nextTime=System.currentTimeMillis();
 		Thread.currentThread().setPriority(Thread.MIN_PRIORITY);
@@ -92,8 +98,10 @@ public class Animator implements PlugIn {
 		Calibration cal = imp.getCalibration();
 		if (cal.fps!=0.0)
 			animationRate = cal.fps;
-		if (animationRate<0.1)
+		if (animationRate<0.1) {
 			animationRate = 1.0;
+			cal.fps = animationRate;
+		}
 		int frames = imp.getNFrames();
 		int slices = imp.getNSlices();
 		
@@ -122,7 +130,9 @@ public class Animator implements PlugIn {
 						sliceIncrement = 1;
 					}
 				}
+				if (imp.isLocked()) return;
 				imp.setPosition(imp.getChannel(), imp.getSlice(), frame);
+				imp.updateStatusbarValue();
 			}
 			return;
 		}
@@ -152,7 +162,9 @@ public class Animator implements PlugIn {
 						sliceIncrement = 1;
 					}
 				}
+				if (imp.isLocked()) return;
 				imp.setPosition(imp.getChannel(), slice, imp.getFrame());
+				imp.updateStatusbarValue();
 			}
 			return;
 		}
@@ -168,12 +180,15 @@ public class Animator implements PlugIn {
 				fps=count;
 				count=0;
 			}
-			IJ.showStatus((int)(fps+0.5) + " fps");
+			ImageCanvas ic = imp.getCanvas();
+			boolean showFrameRate = !(ic!=null?ic.cursorOverImage():false);
+			if (showFrameRate)
+				IJ.showStatus((int)(fps+0.5) + " fps");
 			if (time<nextTime)
 				IJ.wait((int)(nextTime-time));
 			else
 				Thread.yield();
-			nextTime += (long)(1000.0/animationRate);
+			nextTime += (long)Math.round(1000.0/animationRate);
 			slice += sliceIncrement;
 			if (slice<first) {
 				slice = first+1;
@@ -188,9 +203,11 @@ public class Animator implements PlugIn {
 					sliceIncrement = 1;
 				}
 			}
+			if (imp.isLocked()) return;
 			swin.showSlice(slice);
+			if (!showFrameRate)
+				imp.updateStatusbarValue();
 		}
-		
 	}
 
 	void doOptions() {
@@ -205,7 +222,7 @@ public class Animator implements PlugIn {
 			else if (slices>1)
 				lastFrame=slices;
 		}
-		boolean start = !swin.getAnimate();
+		boolean start = swin!=null && !swin.getAnimate();
 		Calibration cal = imp.getCalibration();
 		if (cal.fps!=0.0)
 			animationRate = cal.fps;
@@ -241,13 +258,11 @@ public class Animator implements PlugIn {
 		animationRate = speed;
 		if (animationRate!=0.0)
 			cal.fps = animationRate;
-		if (start && !swin.getAnimate())
+		if (start && swin!=null && !swin.getAnimate())
 			startAnimation();
 	}
 	
 	void nextSlice() {
-		if (!imp.lock())
-			return;
 		boolean hyperstack = imp.isDisplayedHyperStack();
 		int channels = imp.getNChannels();
 		int slices = imp.getNSlices();
@@ -274,13 +289,9 @@ public class Animator implements PlugIn {
 			swin.showSlice(slice);
 		}
 		imp.updateStatusbarValue();
-		imp.unlock();
-	}
-	
+	}	
 	
 	void previousSlice() {
-		if (!imp.lock())
-			return;
 		boolean hyperstack = imp.isDisplayedHyperStack();
 		int channels = imp.getNChannels();
 		int slices = imp.getNSlices();
@@ -307,7 +318,43 @@ public class Animator implements PlugIn {
 			swin.showSlice(slice);
 		}
 		imp.updateStatusbarValue();
-		imp.unlock();
+	}
+
+	void changeSlice(int pn) {
+		boolean hyperstack = imp.isDisplayedHyperStack();
+		int channels = imp.getNChannels();
+		int slices = imp.getNSlices();
+		int frames = imp.getNFrames();
+		if (swin.getAnimate() && (channels*slices*frames==Math.max(channels,Math.max(slices,frames))) )
+			{stopAnimation(); return;} //if only one dimension, stop animating
+		if(hyperstack){
+			int c=imp.getChannel(); int z=imp.getSlice(); int t=imp.getFrame();
+			if (frames>1 && !((slices>1||channels>1)&&(IJ.controlKeyDown()||IJ.spaceBarDown()||IJ.altKeyDown()) || swin.getAnimate())){
+				t += pn;
+				if (t>frames) t = frames;
+				if (t<1) t = 1;
+			} else if (slices>1 && !(channels>1&& (IJ.altKeyDown() || IJ.spaceBarDown()) || ((swin.getAnimate()|| IJ.controlKeyDown()) && frames==1)) ) {
+				z += pn;
+				if (z>slices) z = slices;
+				if (z<1) z = 1;
+			} else if (channels>1) {
+				c += pn;
+				if (c>channels) c = channels;
+				if (c<1) c = 1;
+			}
+			swin.setPosition(c, z, t);
+		} else {
+			if (IJ.altKeyDown())
+				slice+=(pn*10);
+			else
+				slice+=pn;
+			if (slice>nSlices)
+				slice = nSlices;
+			if (slice<1)
+				slice = 1;
+			swin.showSlice(slice);
+		}
+		imp.updateStatusbarValue();
 	}
 
 	void setSlice() {
@@ -329,4 +376,3 @@ public class Animator implements PlugIn {
 	}
 
 }
-

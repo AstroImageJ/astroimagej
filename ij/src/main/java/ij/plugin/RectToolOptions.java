@@ -39,10 +39,10 @@ public class RectToolOptions implements PlugIn, DialogListener {
 		String strokec = Colors.colorToString(strokeColor);
 		String fillc = Colors.colorToString(fillColor);
 
-		gd = new NonBlockingGenericDialog("Rounded Rectangle Tool");
+		gd = NonBlockingGenericDialog.newDialog("Rounded Rectangle Tool");
 		gd.addSlider("Stroke width:", 1, 25, (int)strokeWidth);
 		gd.addSlider("Corner diameter:", 0, 200, cornerDiameter);
-		gd.addStringField("Stroke color: ", strokec);
+		gd.addStringField("Color: ", strokec);
 		gd.addStringField("Fill color: ", fillc);
 		gd.addDialogListener(this);
 		gd.showDialog();

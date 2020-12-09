@@ -28,6 +28,7 @@ public class Channels extends PlugInDialog implements PlugIn, ItemListener, Acti
 			instance.toFront();
 			return;
 		}
+		ImageJ ij = IJ.getInstance();
 		WindowManager.addWindow(this);
 		instance = this;
 		GridBagLayout gridbag = new GridBagLayout();
@@ -48,6 +49,7 @@ public class Channels extends PlugInDialog implements PlugIn, ItemListener, Acti
 			choice.addItem(modes[i]);
 		choice.select(0);
 		choice.addItemListener(this);
+		choice.addKeyListener(ij);
 		add(choice, c);
 
 		CompositeImage ci = getImage();
@@ -61,6 +63,7 @@ public class Channels extends PlugInDialog implements PlugIn, ItemListener, Acti
 			c.gridy = y++;
 			add(checkbox[i], c);
 			checkbox[i].addItemListener(this);
+			checkbox[i].addKeyListener(ij);
 		}
 
 		c.insets = new Insets(0, 15, 10, 15);
@@ -68,19 +71,22 @@ public class Channels extends PlugInDialog implements PlugIn, ItemListener, Acti
 		c.gridy = y++;
 		moreButton = new Button(moreLabel);
 		moreButton.addActionListener(this);
+		moreButton.addKeyListener(ij);
 		add(moreButton, c);
 		update();
 
 		pm=new PopupMenu();
+		GUI.scalePopupMenu(pm);
 		for (int i=0; i<menuItems.length; i++)
 			addPopupItem(menuItems[i]);
 		add(pm);
 
-		addKeyListener(IJ.getInstance());  // ImageJ handles keyboard shortcuts
+		addKeyListener(ij);  // ImageJ handles keyboard shortcuts
 		setResizable(false);
+		GUI.scale(this);
 		pack();
 		if (location==null) {
-			GUI.center(this);
+			GUI.centerOnImageJScreen(this);
 			location = getLocation();
 		} else
 			setLocation(location);
@@ -105,9 +111,9 @@ public class Channels extends PlugInDialog implements PlugIn, ItemListener, Acti
 			checkbox[i].setState(active[i]);
 		int index = 0;
 		switch (ci.getMode()) {
-			case CompositeImage.COMPOSITE: index=0; break;
-			case CompositeImage.COLOR: index=1; break;
-			case CompositeImage.GRAYSCALE: index=2; break;
+			case IJ.COMPOSITE: index=0; break;
+			case IJ.COLOR: index=1; break;
+			case IJ.GRAYSCALE: index=2; break;
 		}
 		choice.select(index);
 	}
@@ -157,37 +163,53 @@ public class Channels extends PlugInDialog implements PlugIn, ItemListener, Acti
 		if (source==choice) {
 			int index = ((Choice)source).getSelectedIndex();
 			switch (index) {
-				case 0: ci.setMode(CompositeImage.COMPOSITE); break;
-				case 1: ci.setMode(CompositeImage.COLOR); break;
-				case 2: ci.setMode(CompositeImage.GRAYSCALE); break;
+				case 0: ci.setMode(IJ.COMPOSITE); break;
+				case 1: ci.setMode(IJ.COLOR); break;
+				case 2: ci.setMode(IJ.GRAYSCALE); break;
 			}
 			ci.updateAndDraw();
 			if (Recorder.record) {
 				String mode = null;
-				switch (index) {
-					case 0: mode="composite"; break;
-					case 1: mode="color"; break;
-					case 2: mode="grayscale"; break;
+				if (Recorder.scriptMode()) {
+					switch (index) {
+						case 0: mode="IJ.COMPOSITE"; break;
+						case 1: mode="IJ.COLOR"; break;
+						case 2: mode="IJ.GRAYSCALE"; break;
+					}
+					Recorder.recordCall("imp.setDisplayMode("+mode+");");
+				} else {
+					switch (index) {
+						case 0: mode="composite"; break;
+						case 1: mode="color"; break;
+						case 2: mode="grayscale"; break;
+					}
+					Recorder.record("Stack.setDisplayMode", mode);
 				}
-				Recorder.record("Stack.setDisplayMode", mode);
 			}
 		} else if (source instanceof Checkbox) {
 			for (int i=0; i<checkbox.length; i++) {
 				Checkbox cb = (Checkbox)source;
 				if (cb==checkbox[i]) {
-					if (ci.getMode()==CompositeImage.COMPOSITE) {
+					if (ci.getMode()==IJ.COMPOSITE) {
 						boolean[] active = ci.getActiveChannels();
 						active[i] = cb.getState();
 						if (Recorder.record) {
 							String str = "";
 							for (int c=0; c<ci.getNChannels(); c++)
 								str += active[c]?"1":"0";
-							Recorder.record("Stack.setActiveChannels", str);
+							if (Recorder.scriptMode())
+								Recorder.recordCall("imp.setActiveChannels(\""+str+"\");");
+							else
+								Recorder.record("Stack.setActiveChannels", str);
 						}
 					} else {
 						imp.setPosition(i+1, imp.getSlice(), imp.getFrame());
-						if (Recorder.record)
-							Recorder.record("Stack.setChannel", i+1);
+						if (Recorder.record) {
+							if (Recorder.scriptMode())
+								Recorder.recordCall("imp.setC("+(i+1)+");");
+							else
+								Recorder.record("Stack.setChannel", i+1);
+						}
 					}
 					ci.updateAndDraw();
 					return;

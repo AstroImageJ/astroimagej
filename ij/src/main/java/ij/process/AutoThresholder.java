@@ -2,8 +2,8 @@ package ij.process;
 import ij.IJ;
 import java.util.Arrays;
 
-/** Autothresholding methods from the Auto_Threshold plugin (http://pacific.mpi-cbg.de/wiki/index.php/Auto_Threshold)
-    by G.Landini at bham dot ac dot uk. */
+/** Autothresholding methods (limited to 256 bin histograms) from the Auto_Threshold plugin 
+    (http://fiji.sc/Auto_Threshold) by G.Landini at bham dot ac dot uk). */
 public class AutoThresholder {
 	private static String[] mStrings;
 			
@@ -37,7 +37,13 @@ public class AutoThresholder {
 		return mStrings;
 	}
 	
+	/** Calculates and returns a threshold using the specified
+		method and 256 bin histogram. */
 	public int getThreshold(Method method, int[] histogram) {
+		if (histogram==null)
+			throw new IllegalArgumentException("Histogram is null");
+		if (histogram.length!=256)
+			throw new IllegalArgumentException("Histogram length not 256");
 		int threshold = 0;
 		switch (method) {
 			case Default: threshold =  defaultIsoData(histogram); break;
@@ -173,7 +179,7 @@ public class AutoThresholder {
 		return b;
 	}
 
-	int Intermodes(int [] data ) {
+	int Intermodes(int[] data ) {
 		// J. M. S. Prewitt and M. L. Mendelsohn, "The analysis of cell images," in
 		// Annals of the New York Academy of Sciences, vol. 128, pp. 1035-1053, 1966.
 		// ported to ImageJ plugin by G.Landini from Antti Niemisto's Matlab code (GPL)
@@ -187,36 +193,47 @@ public class AutoThresholder {
 		// Threshold t is (j+k)/2.
 		// Images with histograms having extremely unequal peaks or a broad and
 		// flat valleys are unsuitable for this method.
-		double [] iHisto = new double [256];
-		int iter =0;
+		
+		int minbin=-1, maxbin=-1;
+		for (int i=0; i<data.length; i++)
+			if (data[i]>0) maxbin = i;
+		for (int i=data.length-1; i>=0; i--)
+			if (data[i]>0) minbin = i;
+		int length = (maxbin-minbin)+1;
+		double [] hist = new double[length];
+		for (int i=minbin; i<=maxbin; i++)
+			hist[i-minbin] = data[i];
+			
+		int iter = 0;
 		int threshold=-1;
-		for (int i=0; i<256; i++)
-			iHisto[i]=(double) data[i];
-
-		while (!bimodalTest(iHisto) ) {
+		while (!bimodalTest(hist) ) {
 			 //smooth with a 3 point running mean filter
-			for (int i=1; i<255; i++)
-				iHisto[i]= (iHisto[i-1] + iHisto[i] + iHisto[i+1])/3;
-			iHisto[0] = (iHisto[0]+iHisto[1])/3; //0 outside
-			iHisto[255] = (iHisto[254]+iHisto[255])/3; //0 outside
+			double previous=0, current=0, next=hist[0];
+			for (int i=0; i<length-1; i++) {
+				previous = current;
+				current = next;
+				next = hist[i + 1];
+				hist[i] = (previous+current+next)/3;
+			}
+			hist[length-1] = (current+next)/3;
 			iter++;
 			if (iter>10000) {
 				threshold = -1;
-				IJ.log("Intermodes: threshold not found after 10000 iterations.");
+				IJ.log("Intermodes Threshold not found after 10000 iterations.");
 				return threshold;
 			}
 		}
 
 		// The threshold is the mean between the two peaks.
 		int tt=0;
-		for (int i=1; i<255; i++) {
-			if (iHisto[i-1] < iHisto[i] && iHisto[i+1] < iHisto[i]){
+		for (int i=1; i<length - 1; i++) {
+			if (hist[i-1] < hist[i] && hist[i+1] < hist[i]){
 				tt += i;
 				//IJ.log("mode:" +i);
 			}
 		}
 		threshold = (int) Math.floor(tt/2.0);
-		return threshold;
+		return threshold+minbin;
 	}
 
 	int IsoData(int[] data ) {
@@ -528,25 +545,25 @@ public class AutoThresholder {
 	}
 
 	int MinErrorI(int [] data ) {
-		  // Kittler and J. Illingworth, "Minimum error thresholding," Pattern Recognition, vol. 19, pp. 41-47, 1986.
-		 // C. A. Glasbey, "An analysis of histogram-based thresholding algorithms," CVGIP: Graphical Models and Image Processing, vol. 55, pp. 532-537, 1993.
+		// Kittler and J. Illingworth, "Minimum error thresholding," Pattern Recognition, vol. 19, pp. 41-47, 1986.
+		// C. A. Glasbey, "An analysis of histogram-based thresholding algorithms," CVGIP: Graphical Models and Image Processing, vol. 55, pp. 532-537, 1993.
 		// Ported to ImageJ plugin by G.Landini from Antti Niemisto's Matlab code (GPL)
 		// Original Matlab code Copyright (C) 2004 Antti Niemisto
 		// See http://www.cs.tut.fi/~ant/histthresh/ for an excellent slide presentation
 		// and the original Matlab code.
 
-		int threshold =  Mean(data); //Initial estimate for the threshold is found with the MEAN algorithm.
+		int threshold = Mean(data); //Initial estimate for the threshold is found with the MEAN algorithm.
 		int Tprev =-2;
 		double mu, nu, p, q, sigma2, tau2, w0, w1, w2, sqterm, temp;
 		//int counter=1;
 		while (threshold!=Tprev){
 			//Calculate some statistics.
 			mu = B(data, threshold)/A(data, threshold);
-			nu = (B(data, 255)-B(data, threshold))/(A(data, 255)-A(data, threshold));
-			p = A(data, threshold)/A(data, 255);
-			q = (A(data, 255)-A(data, threshold)) / A(data, 255);
+			nu = (B(data, data.length - 1)-B(data, threshold))/(A(data, data.length - 1)-A(data, threshold));
+			p = A(data, threshold)/A(data, data.length - 1);
+			q = (A(data, data.length - 1)-A(data, threshold)) / A(data, data.length - 1);
 			sigma2 = C(data, threshold)/A(data, threshold)-(mu*mu);
-			tau2 = (C(data, 255)-C(data, threshold)) / (A(data, 255)-A(data, threshold)) - (nu*nu);
+			tau2 = (C(data, data.length - 1)-C(data, threshold)) / (A(data, data.length - 1)-A(data, threshold)) - (nu*nu);
 
 			//The terms of the quadratic equation to be solved.
 			w0 = 1.0/sigma2-1.0/tau2;
@@ -564,32 +581,32 @@ public class AutoThresholder {
 			Tprev = threshold;
 			temp = (w1+Math.sqrt(sqterm))/w0;
 
-			if ( Double.isNaN(temp)) {
-				IJ.log ("MinError(I): NaN, not converging.");
+			if (Double.isNaN(temp))
 				threshold = Tprev;
-			}
 			else
 				threshold =(int) Math.floor(temp);
-			//IJ.log("Iter: "+ counter+++"  t:"+threshold);
 		}
 		return threshold;
 	}
 
-	double A(int [] y, int j) {
+	private double A(int[] y, int j) {
+		if (j>=y.length) j=y.length-1;
 		double x = 0;
 		for (int i=0;i<=j;i++)
 			x+=y[i];
 		return x;
 	}
 
-	double B(int [] y, int j) {
+	private double B(int[] y, int j) {
+		if (j>=y.length) j=y.length-1;
 		double x = 0;
 		for (int i=0;i<=j;i++)
 			x+=i*y[i];
 		return x;
 	}
 
-	double C(int [] y, int j) {
+	private double C(int[] y, int j) {
+		if (j>=y.length) j=y.length-1;
 		double x = 0;
 		for (int i=0;i<=j;i++)
 			x+=i*i*y[i];
@@ -612,11 +629,9 @@ public class AutoThresholder {
 		int iter =0;
 		int threshold = -1;
 		double [] iHisto = new double [256];
-
 		for (int i=0; i<256; i++)
 			iHisto[i]=(double) data[i];
-
-		double [] tHisto = iHisto;
+		double [] tHisto = new double[iHisto.length] ;
 
 		while (!bimodalTest(iHisto) ) {
 			 //smooth with a 3 point running mean filter
@@ -624,7 +639,7 @@ public class AutoThresholder {
 				tHisto[i]= (iHisto[i-1] + iHisto[i] +iHisto[i+1])/3;
 			tHisto[0] = (iHisto[0]+iHisto[1])/3; //0 outside
 			tHisto[255] = (iHisto[254]+iHisto[255])/3; //0 outside
-			iHisto = tHisto;
+			System.arraycopy(tHisto, 0, iHisto, 0, iHisto.length) ;
 			iter++;
 			if (iter>10000) {
 				threshold = -1;
@@ -634,9 +649,10 @@ public class AutoThresholder {
 		}
 		// The threshold is the minimum between the two peaks.
 		for (int i=1; i<255; i++) {
-			//IJ.log(" "+i+"  "+iHisto[i]);
-			if (iHisto[i-1] > iHisto[i] && iHisto[i+1] >= iHisto[i])
+			if (iHisto[i-1] > iHisto[i] && iHisto[i+1] >= iHisto[i]) {
 				threshold = i;
+				break;
+			}
 		}
 		return threshold;
 	}

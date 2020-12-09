@@ -543,7 +543,7 @@ public class AstroCanvas extends OverlayCanvas {
                         OverlayCanvas oc = getOverlayCanvas(imp);
                         if (oc.numberOfRois() > 0) drawOverlayCanvas(g);
                         transEnabled = false;
-                        if (overlay!=null) ((ImageCanvas)this).drawOverlay(overlay, g);
+                        //if (overlay!=null) ((ImageCanvas)this).drawOverlay(overlay, g);
                         if (showAllOverlay!=null) ((ImageCanvas)this).drawOverlay(showAllOverlay, g);
                         if (roi!=null) drawRoi(roi, g);
                         transEnabled = true;
@@ -630,7 +630,7 @@ public class AstroCanvas extends OverlayCanvas {
             OverlayCanvas oc = getOverlayCanvas(imp);
             if (oc.numberOfRois() > 0) drawOverlayCanvas(offScreenGraphics);
             transEnabled = false;
-			if (overlay!=null) ((ImageCanvas)this).drawOverlay(overlay, offScreenGraphics);
+			//if (overlay!=null) ((ImageCanvas)this).drawOverlay(overlay, offScreenGraphics);
 			if (showAllOverlay!=null) ((ImageCanvas)this).drawOverlay(showAllOverlay, offScreenGraphics);
 			if (roi!=null) drawRoi(roi, offScreenGraphics);
             transEnabled = true;
@@ -683,7 +683,7 @@ public class AstroCanvas extends OverlayCanvas {
         OverlayCanvas oc = getOverlayCanvas(imp);
         if (oc.numberOfRois() > 0) drawOverlayCanvas(imageGraphics);
         transEnabled = false;
-        if (overlay!=null) ((ImageCanvas)this).drawOverlay(overlay, imageGraphics);
+        //if (overlay!=null) ((ImageCanvas)this).drawOverlay(overlay, imageGraphics);
         if (showAllOverlay!=null) ((ImageCanvas)this).drawOverlay(showAllOverlay, imageGraphics);
         if (roi!=null) drawRoi(roi, imageGraphics);
         transEnabled = true;

@@ -11,6 +11,7 @@ import ij.plugin.JpegWriter;
 import ij.plugin.Orthogonal_Views;
 import ij.gui.*;
 import ij.measure.Measurements;
+import ij.util.Tools;
 import javax.imageio.*;
 
 /** Saves images in tiff, gif, jpeg, raw, zip and text format. */
@@ -18,6 +19,7 @@ public class FileSaver {
 
 	public static final int DEFAULT_JPEG_QUALITY = 85;
 	private static int jpegQuality;
+	private static int bsize = 32768; // 32K default buffer size
 	
     static {setJpegQuality(ij.Prefs.getInt(ij.Prefs.JPEG, DEFAULT_JPEG_QUALITY));}
 
@@ -78,8 +80,9 @@ public class FileSaver {
 		return path;
 	}
 	
-	/** Save the image or stack in TIFF format using a save file
-		dialog. Returns false if the user selects cancel. */
+	/** Saves the image or stack in TIFF format using a save file
+		dialog. Returns false if the user selects cancel. Equivalent to 
+		IJ.saveAsTiff(imp,""), which is more convenient. */
 	public boolean saveAsTiff() {
 		String path = getPath("TIFF", ".tif");
 		if (path==null)
@@ -90,31 +93,57 @@ public class FileSaver {
 			return saveAsTiff(path);
 	}
 	
-	/** Save the image in TIFF format using the specified path. */
+	/** Saves the image in TIFF format using the specified path. Equivalent to
+		 IJ.saveAsTiff(imp,path), which is more convenient. */
 	public boolean saveAsTiff(String path) {
-		fi.nImages = 1;
-		Object info = imp.getProperty("Info");
-		if (info!=null && (info instanceof String))
-			fi.info = (String)info;
+		if (fi.nImages>1)
+			return saveAsTiffStack(path);
+		if (imp.getProperty("FHT")!=null && path.contains("FFT of "))
+			setupFFTSave();
+		fi.info = imp.getInfoProperty();
 		Object label = imp.getProperty("Label");
 		if (label!=null && (label instanceof String)) {
 			fi.sliceLabels = new String[1];
 			fi.sliceLabels[0] = (String)label;
 		}
 		fi.description = getDescriptionString();
+		if (imp.getProperty(Plot.PROPERTY_KEY) != null) {
+			Plot plot = (Plot)(imp.getProperty(Plot.PROPERTY_KEY));
+			fi.plot = plot.toByteArray();
+		}
 		fi.roi = RoiEncoder.saveAsByteArray(imp.getRoi());
 		fi.overlay = getOverlay(imp);
+		fi.properties = imp.getPropertiesAsArray();
+		DataOutputStream out = null;
 		try {
 			TiffEncoder file = new TiffEncoder(fi);
-			DataOutputStream out = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(path)));
+			out = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(path),bsize));
 			file.write(out);
 			out.close();
 		} catch (IOException e) {
-			showErrorMessage(e);
+			showErrorMessage("saveAsTiff", path, e);
 			return false;
+		} finally {
+			if (out!=null)
+				try {out.close();} catch (IOException e) {}
 		}
 		updateImp(fi, FileInfo.TIFF);
 		return true;
+	}
+	
+	private void setupFFTSave() {
+		Object obj = imp.getProperty("FHT");
+		if (obj==null) return;
+		FHT fht = (obj instanceof FHT)?(FHT)obj:null;
+		if (fht==null) return;
+		if (fht.originalColorModel!=null && fht.originalBitDepth!=24)
+			fht.setColorModel(fht.originalColorModel);
+		ImagePlus imp2 = new ImagePlus(imp.getTitle(), fht);
+		imp2.setProperty("Info", imp.getProperty("Info"));
+		imp2.setProperties(imp.getPropertiesAsArray());
+		imp2.setCalibration(imp.getCalibration());
+		imp = imp2;
+		fi = imp.getFileInfo();
 	}
 	
 	public static byte[][] getOverlay(ImagePlus imp) {
@@ -128,7 +157,8 @@ public class FileSaver {
 			if (overlay==null) return null;
 		}
 		int n = overlay.size();
-		if (n==0) return null;
+		if (n==0)
+			return null;
 		if (Orthogonal_Views.isOrthoViewsImage(imp))
 			return null;
 		byte[][] array = new byte[n][];
@@ -141,27 +171,27 @@ public class FileSaver {
 		return array;
 	}
 
-	/** Save the stack as a multi-image TIFF using the specified path. */
+	/** Saves the stack as a multi-image TIFF using the specified path.
+		 Equivalent to IJ.saveAsTiff(imp,path), which is more convenient. */
 	public boolean saveAsTiffStack(String path) {
-		if (fi.nImages==1)
-			{IJ.error("This is not a stack"); return false;}
+		if (fi.nImages==1) {
+			error("This is not a stack");
+			return false;
+		}
 		boolean virtualStack = imp.getStack().isVirtual();
 		if (virtualStack)
 			fi.virtualStack = (VirtualStack)imp.getStack();
-		Object info = imp.getProperty("Info");
-		if (info!=null && (info instanceof String))
-			fi.info = (String)info;
+		fi.info = imp.getInfoProperty();
 		fi.description = getDescriptionString();
 		if (virtualStack) {
-			FileInfo fi = imp.getOriginalFileInfo();
-			if (path!=null && path.equals(fi.directory+fi.fileName)) {
-				IJ.error("TIFF virtual stacks cannot be saved in place.");
+			FileInfo ofi = imp.getOriginalFileInfo();
+			if (path!=null && ofi!=null && path.equals(ofi.directory+ofi.fileName)) {
+				error("TIFF virtual stacks cannot be saved in place.");
 				return false;
 			}
 			String[] labels = null;
 			ImageStack vs = imp.getStack();
 			for (int i=1; i<=vs.getSize(); i++) {
-				ImageProcessor ip = vs.getProcessor(i);
 				String label = vs.getSliceLabel(i);
 				if (i==1 && label==null)
 					break;
@@ -169,21 +199,25 @@ public class FileSaver {
 					labels = new String[vs.getSize()];
 				labels[i-1] = label;
 			}
-			this.fi.sliceLabels = labels;
+			fi.sliceLabels = labels;
 		} else
 			fi.sliceLabels = imp.getStack().getSliceLabels();
 		fi.roi = RoiEncoder.saveAsByteArray(imp.getRoi());
 		fi.overlay = getOverlay(imp);
+		fi.properties = imp.getPropertiesAsArray();
 		if (imp.isComposite()) saveDisplayRangesAndLuts(imp, fi);
+		DataOutputStream out = null;
 		try {
 			TiffEncoder file = new TiffEncoder(fi);
-			DataOutputStream out = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(path)));
+			out = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(path),bsize));
 			file.write(out);
 			out.close();
-		}
-		catch (IOException e) {
-			showErrorMessage(e);
+		} catch (IOException e) {
+			showErrorMessage("saveAsTiffStack", path, e);
 			return false;
+		} finally {
+			if (out!=null)
+				try {out.close();} catch (IOException e) {}
 		}
 		updateImp(fi, FileInfo.TIFF);
 		return true;
@@ -194,13 +228,15 @@ public class FileSaver {
 	public byte[] serialize() {
 		if (imp.getStack().isVirtual())
 			return null;
-		Object info = imp.getProperty("Info");
-		if (info!=null && (info instanceof String))
-			fi.info = (String)info;
+		fi.info = imp.getInfoProperty();
 		saveName = true;
 		fi.description = getDescriptionString();
 		saveName = false;
 		fi.sliceLabels = imp.getStack().getSliceLabels();
+		if (imp.getProperty(Plot.PROPERTY_KEY) != null) {
+			Plot plot = (Plot)(imp.getProperty(Plot.PROPERTY_KEY));
+			fi.plot = plot.toByteArray();
+		}
 		fi.roi = RoiEncoder.saveAsByteArray(imp.getRoi());
 		fi.overlay = getOverlay(imp);
 		if (imp.isComposite()) saveDisplayRangesAndLuts(imp, fi);
@@ -212,6 +248,9 @@ public class FileSaver {
 			out.close();
 		} catch (IOException e) {
 			return null;
+		} finally {
+			if (out!=null)
+				try {out.close();} catch (IOException e) {}
 		}
 		return out.toByteArray();
 	}
@@ -249,7 +288,8 @@ public class FileSaver {
 	
 	/** Save the image or stack in TIFF/ZIP format using the specified path. */
 	public boolean saveAsZip(String path) {
-		//fi.nImages = 1;
+		if (imp.getProperty("FHT")!=null && path.contains("FFT of "))
+			setupFFTSave();
 		if (!path.endsWith(".zip"))
 			path = path+".zip";
 		if (name==null)
@@ -259,37 +299,42 @@ public class FileSaver {
 		if (!name.endsWith(".tif"))
 			name = name+".tif";
 		fi.description = getDescriptionString();
-		Object info = imp.getProperty("Info");
-		if (info!=null && (info instanceof String))
-			fi.info = (String)info;
+		fi.info = imp.getInfoProperty();
+		fi.properties = imp.getPropertiesAsArray();
+		if (imp.getProperty(Plot.PROPERTY_KEY) != null) {
+			Plot plot = (Plot)(imp.getProperty(Plot.PROPERTY_KEY));
+			fi.plot = plot.toByteArray();
+		}
 		fi.roi = RoiEncoder.saveAsByteArray(imp.getRoi());
 		fi.overlay = getOverlay(imp);
 		fi.sliceLabels = imp.getStack().getSliceLabels();
 		if (imp.isComposite()) saveDisplayRangesAndLuts(imp, fi);
 		if (fi.nImages>1 && imp.getStack().isVirtual())
 			fi.virtualStack = (VirtualStack)imp.getStack();
+		DataOutputStream out = null;
 		try {
 			ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(path));
-			DataOutputStream out = new DataOutputStream(new BufferedOutputStream(zos));
+			out = new DataOutputStream(new BufferedOutputStream(zos,bsize));
         	zos.putNextEntry(new ZipEntry(name));
 			TiffEncoder te = new TiffEncoder(fi);
 			te.write(out);
 			out.close();
 		}
 		catch (IOException e) {
-			showErrorMessage(e);
+			showErrorMessage("saveAsZip", path, e);
 			return false;
+		} finally {
+			if (out!=null)
+				try {out.close();} catch (IOException e) {}
 		}
 		updateImp(fi, FileInfo.TIFF);
 		return true;
 	}
 
 	public static boolean okForGif(ImagePlus imp) {
-		int type = imp.getType();
-		if (type==ImagePlus.COLOR_RGB) {
-			IJ.error("To save as Gif, the image must be converted to \"8-bit Color\".");
+		if (imp.getType()==ImagePlus.COLOR_RGB)
 			return false;
-		} else
+		else
 			return true;
 	}
 
@@ -297,8 +342,6 @@ public class FileSaver {
 		dialog. Returns false if the user selects cancel
 		or the image is not 8-bits. */
 	public boolean saveAsGif() {
-		if (!okForGif(imp))
-			return false;
 		String path = getPath("GIF", ".gif");
 		if (path==null)
 			return false;
@@ -309,7 +352,6 @@ public class FileSaver {
 	/** Save the image in Gif format using the specified path. Returns
 		false if the image is not 8-bits or there is an I/O error. */
 	public boolean saveAsGif(String path) {
-		if (!okForGif(imp)) return false;
 		IJ.runPlugIn(imp, "ij.plugin.GifWriter", path);
 		updateImp(fi, FileInfo.GIF_OR_JPG);
 		return true;
@@ -442,13 +484,13 @@ public class FileSaver {
 	}
 	
 	/** Save the image as raw data using the specified path. */
-	/** Save the image as raw data using the specified path. */
 	public boolean saveAsRaw(String path) {
 		fi.nImages = 1;
 		fi.intelByteOrder = Prefs.intelByteOrder;
 		boolean signed16Bit = false;
 		short[] pixels = null;
 		int n = 0;
+		OutputStream out = null;
 		try {
 			signed16Bit = imp.getCalibration().isSigned16Bit();
 			if (signed16Bit) {
@@ -458,13 +500,16 @@ public class FileSaver {
 					pixels[i] = (short)(pixels[i]-32768);
 			}
 			ImageWriter file = new ImageWriter(fi);
-			OutputStream out = new BufferedOutputStream(new FileOutputStream(path));
+			out = new BufferedOutputStream(new FileOutputStream(path),bsize);
 			file.write(out);
 			out.close();
 		}
 		catch (IOException e) {
-			showErrorMessage(e);
+			showErrorMessage("saveAsRaw", path, e);
 			return false;
+		} finally {
+			if (out!=null)
+				try {out.close();} catch (IOException e) {}
 		}
 		if (signed16Bit) {
 			for (int i=0; i<n; i++)
@@ -477,7 +522,7 @@ public class FileSaver {
 	/** Save the stack as raw data using the specified path. */
 	public boolean saveAsRawStack(String path) {
 		if (fi.nImages==1)
-			{IJ.write("This is not a stack"); return false;}
+			{IJ.log("This is not a stack"); return false;}
 		fi.intelByteOrder = Prefs.intelByteOrder;
 		boolean signed16Bit = false;
 		Object[] stack = null;
@@ -487,6 +532,7 @@ public class FileSaver {
 			fi.virtualStack = (VirtualStack)imp.getStack();
 			if (imp.getProperty("AnalyzeFormat")!=null) fi.fileName="FlipTheseImages";
 		}
+		OutputStream out = null;
 		try {
 			signed16Bit = imp.getCalibration().isSigned16Bit();
 			if (signed16Bit && !virtualStack) {
@@ -499,13 +545,15 @@ public class FileSaver {
 				}
 			}
 			ImageWriter file = new ImageWriter(fi);
-			OutputStream out = new BufferedOutputStream(new FileOutputStream(path));
+			out = new BufferedOutputStream(new FileOutputStream(path),bsize);
 			file.write(out);
 			out.close();
-		}
-		catch (IOException e) {
-			showErrorMessage(e);
+		} catch (IOException e) {
+			showErrorMessage("saveAsRawStack", path, e);
 			return false;
+		} finally {
+			if (out!=null)
+				try {out.close();} catch (IOException e) {}
 		}
 		if (signed16Bit) {
 			for (int slice=0; slice<fi.nImages; slice++) {
@@ -529,6 +577,7 @@ public class FileSaver {
 	
 	/** Save the image as tab-delimited text using the specified path. */
 	public boolean saveAsText(String path) {
+		DataOutputStream out = null;
 		try {
 			Calibration cal = imp.getCalibration();
 			int precision = Analyzer.getPrecision();
@@ -537,13 +586,15 @@ public class FileSaver {
 			if (scientificNotation)
 				precision = -precision;
 			TextEncoder file = new TextEncoder(imp.getProcessor(), cal, precision);
-			DataOutputStream out = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(path)));
+			out = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(path)));
 			file.write(out);
 			out.close();
-		}
-		catch (IOException e) {
-			showErrorMessage(e);
+		} catch (IOException e) {
+			showErrorMessage("saveAsText", path, e);
 			return false;
+		} finally {
+			if (out!=null)
+				try {out.close();} catch (IOException e) {}
 		}
 		return true;
 	}
@@ -552,7 +603,7 @@ public class FileSaver {
 		dialog. Returns false if the user selects cancel. */
 	public boolean saveAsLut() {
 		if (imp.getType()==ImagePlus.COLOR_RGB) {
-			IJ.error("RGB Images do not have a LUT.");
+			error("RGB Images do not have a LUT.");
 			return false;
 		}
 		String path = getPath("LUT", ".lut");
@@ -566,11 +617,11 @@ public class FileSaver {
 		LookUpTable lut = imp.createLut();
 		int mapSize = lut.getMapSize();
 		if (mapSize==0) {
-			IJ.error("RGB Images do not have a LUT.");
+			error("RGB Images do not have a LUT.");
 			return false;
 		}
 		if (mapSize<256) {
-			IJ.error("Cannot save LUTs with less than 256 entries.");
+			error("Cannot save LUTs with less than 256 entries.");
 			return false;
 		}
 		byte[] reds = lut.getReds(); 
@@ -587,15 +638,19 @@ public class FileSaver {
 		fi.height = 1;
 		fi.pixels = pixels;
 
+		OutputStream out = null;
 		try {
 			ImageWriter file = new ImageWriter(fi);
-			OutputStream out = new FileOutputStream(path);
+			out = new FileOutputStream(path);
 			file.write(out);
 			out.close();
 		}
 		catch (IOException e) {
-			showErrorMessage(e);
+			showErrorMessage("saveAsLut", path, e);
 			return false;
+		} finally {
+			if (out!=null)
+				try {out.close();} catch (IOException e) {}
 		}
 		return true;
 	}
@@ -635,11 +690,17 @@ public class FileSaver {
 		}
 	}
 
-	void showErrorMessage(IOException e) {
+	private void showErrorMessage(String title, String path, IOException e) {
 		String msg = e.getMessage();
 		if (msg.length()>100)
 			msg = msg.substring(0, 100);
-		IJ.error("FileSaver", "An error occured writing the file.\n \n" + msg);
+		msg = "File saving error (IOException):\n   \"" + msg + "\"";
+		IJ.error("FileSaver."+title, msg+" \n   "+path);
+		IJ.showProgress(1.0);
+	}
+	
+	private void error(String msg) {
+		IJ.error("FileSaver", msg);
 	}
 
 	/** Returns a string containing information about the specified  image. */
@@ -664,18 +725,21 @@ public class FileSaver {
 			sb.append("mode="+mode+"\n");
 		}
 		if (fi.unit!=null)
-			sb.append("unit="+(fi.unit.equals("\u00B5m")?"um":fi.unit)+"\n");
-		if (fi.valueUnit!=null && fi.calibrationFunction!=Calibration.CUSTOM) {
-			sb.append("cf="+fi.calibrationFunction+"\n");
-			if (fi.coefficients!=null) {
-				for (int i=0; i<fi.coefficients.length; i++)
-					sb.append("c"+i+"="+fi.coefficients[i]+"\n");
+			appendEscapedLine(sb, "unit="+fi.unit);
+		int bitDepth = imp.getBitDepth();
+		if (fi.valueUnit!=null && (fi.calibrationFunction!=Calibration.CUSTOM||bitDepth==32)) {
+			if (bitDepth!=32) {
+				sb.append("cf="+fi.calibrationFunction+"\n");
+				if (fi.coefficients!=null) {
+					for (int i=0; i<fi.coefficients.length; i++)
+						sb.append("c"+i+"="+fi.coefficients[i]+"\n");
+				}
 			}
-			sb.append("vunit="+fi.valueUnit+"\n");
-			if (cal.zeroClip()) sb.append("zeroclip=true\n");
+			appendEscapedLine(sb, "vunit="+fi.valueUnit);
+			if (cal.zeroClip() && bitDepth!=32)
+				sb.append("zeroclip=true\n");
 		}
-		
-		// get stack z-spacing and fps
+		// get stack z-spacing, more units and fps
 		if (cal.frameInterval!=0.0) {
 			if ((int)cal.frameInterval==cal.frameInterval)
 				sb.append("finterval="+(int)cal.frameInterval+"\n");
@@ -683,9 +747,13 @@ public class FileSaver {
 				sb.append("finterval="+cal.frameInterval+"\n");
 		}
 		if (!cal.getTimeUnit().equals("sec"))
-			sb.append("tunit="+cal.getTimeUnit()+"\n");
+			appendEscapedLine(sb, "tunit="+cal.getTimeUnit());
+		if (!cal.getYUnit().equals(cal.getUnit()))
+			appendEscapedLine(sb, "yunit="+cal.getYUnit());
+		if (!cal.getZUnit().equals(cal.getUnit()))
+			appendEscapedLine(sb, "zunit="+cal.getZUnit());
 		if (fi.nImages>1) {
-			if (fi.pixelDepth!=0.0 && fi.pixelDepth!=1.0)
+			if (fi.pixelDepth!=1.0)
 				sb.append("spacing="+fi.pixelDepth+"\n");
 			if (cal.fps!=0.0) {
 				if ((int)cal.fps==cal.fps)
@@ -695,7 +763,7 @@ public class FileSaver {
 			}
 			sb.append("loop="+(cal.loop?"true":"false")+"\n");
 		}
-		
+
 		// get min and max display values
 		ImageProcessor ip = imp.getProcessor();
 		double min = ip.getMin();
@@ -715,13 +783,37 @@ public class FileSaver {
 		if (cal.zOrigin!=0.0)
 			sb.append("zorigin="+cal.zOrigin+"\n");
 		if (cal.info!=null && cal.info.length()<=64 && cal.info.indexOf('=')==-1 && cal.info.indexOf('\n')==-1)
-			sb.append("info="+cal.info+"\n");
+			appendEscapedLine(sb, "info="+cal.info);
+			
+		// get invertY flag
+		if (cal.getInvertY())
+			sb.append("inverty=true\n");
+
 		if (saveName)
-			sb.append("name="+imp.getTitle()+"\n");
+			appendEscapedLine(sb, "name="+imp.getTitle());
+			
+		if (imp.getType()==ImagePlus.COLOR_256)
+			sb.append("8bitcolor=true\n");
+
 		sb.append((char)0);
 		return new String(sb);
 	}
-	
+
+	// Append a string to a StringBuffer with escaped special characters as needed for java.util.Properties,
+	// and add a linefeed character
+	void appendEscapedLine(StringBuffer sb, String str) {
+		for (int i=0; i<str.length(); i++) {
+			char c = str.charAt(i);
+			if (c>=0x20 && c<0x7f && c!='\\')
+				sb.append(c);
+			else if (c<=0xffff) {   //(supplementary unicode characters >0xffff unsupported)
+				sb.append("\\u");
+				sb.append(Tools.int2hex(c, 4));
+			}
+		}
+		sb.append('\n');
+	}
+
 	/** Specifies the image quality (0-100). 0 is poorest image quality,
 		highest compression, and 100 is best image quality, lowest compression. */
     public static void setJpegQuality(int quality) {
@@ -734,6 +826,11 @@ public class FileSaver {
     public static int getJpegQuality() {
         return jpegQuality;
     }
-
+    
+    /** Sets the BufferedOutputStream buffer size in bytes (default is 32K). */
+    public static void setBufferSize(int bufferSize) {
+        bsize = bufferSize;
+        if (bsize<2048) bsize = 2048;
+    }
 
 }

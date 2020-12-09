@@ -6,7 +6,7 @@ import ij.io.*;
 import java.io.*;
 import java.awt.Frame;
 
-/** Writes measurements to a csv or tab-delimited text file. */
+/** Saves a table as a csv or tab-delimited text file. */
 public class MeasurementsWriter implements PlugIn {
 
 	public void run(String path) {
@@ -15,7 +15,7 @@ public class MeasurementsWriter implements PlugIn {
 	
 	public boolean save(String path) {
 		Frame frame = WindowManager.getFrontWindow();
-		if (frame!=null && (frame instanceof TextWindow)) {
+		if (frame!=null && (frame instanceof TextWindow) && !"Log".equals(frame.getTitle())) {
 			TextWindow tw = (TextWindow)frame;
 			return tw.getTextPanel().saveAs(path);
 		} else if (IJ.isResultsWindow()) {
@@ -26,7 +26,7 @@ public class MeasurementsWriter implements PlugIn {
 			}
 		} else {
 			ResultsTable rt = ResultsTable.getResultsTable();
-			if (rt==null || rt.getCounter()==0) {
+			if (rt==null || rt.size()==0) {
 				frame = WindowManager.getFrame("Results");
 				if (frame==null || !(frame instanceof TextWindow))
 					return false;
@@ -36,16 +36,12 @@ public class MeasurementsWriter implements PlugIn {
 				}
 			}
 			if (path.equals("")) {
-				SaveDialog sd = new SaveDialog("Save as Text", "Results", Prefs.get("options.ext", ".xls"));
+				SaveDialog sd = new SaveDialog("Save as Text", "Results", Prefs.defaultResultsExtension());
 				String file = sd.getFileName();
 				if (file == null) return false;
 				path = sd.getDirectory() + file;
 			}
-			try {
-				rt.saveAs(path);
-			} catch (IOException e) {
-				IJ.error(""+e);
-			}
+			return rt.save(path);
 		}
 		return true;
 	}

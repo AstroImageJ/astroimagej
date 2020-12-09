@@ -1,17 +1,23 @@
 package ij.process;
+import ij.IJ;
 import ij.plugin.Colors;
 import java.awt.image.*;
 import java.awt.Color;
 
-	/* This is an indexed color model that allows an
+	/** This is an indexed color model that allows an
 		lower and upper bound to be specified. */
     public class LUT extends IndexColorModel implements Cloneable {
-        public double min, max;
+		public static final String nameKey = "CurrentLUT";
+		public double min, max;
+		private IndexColorModel cm;
 	
+    /** Constructs a LUT from red, green and blue byte arrays, which must have a length of 256. */
     public LUT(byte r[], byte g[], byte b[]) {
     	this(8, 256, r, g, b);
 	}
 	
+    /** Constructs a LUT from red, green and blue byte arrays, where 'bits' 
+    	must be 8 and 'size' must be less than or equal to 256. */
     public LUT(int bits, int size, byte r[], byte g[], byte b[]) {
     	super(bits, size, r, g, b);
 	}
@@ -33,7 +39,17 @@ import java.awt.Color;
 	static byte[] getBlues(IndexColorModel cm) {
 		byte[] blues=new byte[256]; cm.getBlues(blues); return blues;
 	}
-	
+
+	public IndexColorModel getColorModel() {
+		if (cm==null) {
+			byte[] reds=new byte[256]; getReds(reds);
+			byte[] greens=new byte[256]; getGreens(greens);
+			byte[] blues=new byte[256]; getBlues(blues);
+			cm = new IndexColorModel(8, getMapSize(), reds, greens, blues);
+		}
+		return cm;
+	}
+		
 	public byte[] getBytes() {
 		int size = getMapSize();
 		if (size!=256) return null;
@@ -89,7 +105,7 @@ import java.awt.Color;
 	
 	public  String toString() {
 		return "rgb[0]="+Colors.colorToString(new Color(getRGB(0)))+", rgb[255]="
-			+Colors.colorToString(new Color(getRGB(255)))+", min="+(int)min+", max="+(int)max;
+			+Colors.colorToString(new Color(getRGB(255)))+", min="+IJ.d2s(min,4)+", max="+IJ.d2s(max,4);
 	}
 
 }

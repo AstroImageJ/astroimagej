@@ -3,8 +3,10 @@ import ij.*;
 import ij.gui.*;
 import ij.macro.*;
 import ij.util.Tools;
+import ij.util.IJMath;
 import java.util.Arrays;
 import java.util.Hashtable;
+import java.awt.Color;
 
 /** Curve fitting class based on the Simplex method in the Minimizer class
  *
@@ -33,27 +35,35 @@ import java.util.Hashtable;
  *				by the simplex Minimizer and improves convergence.	These parameters can be an offset and
  *				either a linear slope or a factor that the full function is multiplied with.
  *	2012-10-07: added GAUSSIAN_NOOFFSET fit type
- *	2012-11-20: Bugfix: exception on Gaussian&Rodbard with initial params, bad initial params for Gaussian 
+ *	2012-11-20: Bugfix: exception on Gaussian&Rodbard with initial params, bad initial params for Gaussian
+ *  2013-09-24: Added "Exponential Recovery (no offset)" and "Chapman-Richards" (3-parameter;
+ *              used e.g. to describe forest growth) fit types.
+ *  2013-10-11: bugfixes, added setStatusAndEsc to show iterations and enable abort by ESC
+ *  2015-03-26: bugfix, did not use linear regression for RODBARD
+ *  2016-11-28: added static getNumParams methods
+ *  2018-03-23: fixes NullPointerException for custom fit without initialParamVariations
+ *  2018-07-19: added error function erf (=integral over Gaussian)
  */
 
-public class CurveFitter implements UserFunction {
+public class CurveFitter implements UserFunction{
 	/** Constants for the built-in fit functions */
 	public static final int STRAIGHT_LINE=0, POLY2=1, POLY3=2, POLY4=3,
 	EXPONENTIAL=4, POWER=5, LOG=6, RODBARD=7, GAMMA_VARIATE=8, LOG2=9,
 	RODBARD2=10, EXP_WITH_OFFSET=11, GAUSSIAN=12, EXP_RECOVERY=13,
 	INV_RODBARD=14, EXP_REGRESSION=15, POWER_REGRESSION=16,
 	POLY5=17, POLY6=18, POLY7=19, POLY8=20,
-	GAUSSIAN_NOOFFSET=21;
+	GAUSSIAN_NOOFFSET=21, EXP_RECOVERY_NOOFFSET=22, CHAPMAN=23, ERF=24;
 
 	/** Nicer sequence of the built-in function types */
 	public static final int[] sortedTypes = { STRAIGHT_LINE, POLY2, POLY3, POLY4,
 			POLY5, POLY6, POLY7, POLY8,
 			POWER, POWER_REGRESSION,
-			EXPONENTIAL, EXP_REGRESSION, EXP_WITH_OFFSET, EXP_RECOVERY,
+			EXPONENTIAL, EXP_REGRESSION, EXP_WITH_OFFSET,
+			EXP_RECOVERY, EXP_RECOVERY_NOOFFSET,
 			LOG, LOG2,
+			GAUSSIAN, GAUSSIAN_NOOFFSET, ERF,
 			RODBARD, RODBARD2, INV_RODBARD,
-			GAUSSIAN, GAUSSIAN_NOOFFSET,
-			GAMMA_VARIATE
+			GAMMA_VARIATE,CHAPMAN
 	};
 
 	/** Names of the built-in fit functions */
@@ -63,25 +73,47 @@ public class CurveFitter implements UserFunction {
 	"Exponential with Offset","Gaussian", "Exponential Recovery",
 	"Inverse Rodbard", "Exponential (linear regression)", "Power (linear regression)",
 	"5th Degree Polynomial","6th Degree Polynomial","7th Degree Polynomial","8th Degree Polynomial",
-	"Gaussian (no offset)"
+	"Gaussian (no offset)", "Exponential Recovery (no offset)",
+	"Chapman-Richards", "Error Function"
 	}; // fList, doFit(), getNumParams() and makeInitialParamsAndVariations() must also be updated
 
-	/** Equations of the built-in fit functions */	
+	/** Equations of the built-in fit functions */
 	public static final String[] fList = {
 	"y = a+bx","y = a+bx+cx^2",									//STRAIGHT_LINE,POLY2
 	"y = a+bx+cx^2+dx^3","y = a+bx+cx^2+dx^3+ex^4",
 	"y = a*exp(bx)","y = a*x^b", "y = a*ln(bx)",				//EXPONENTIAL,POWER,LOG
 	"y = d+(a-d)/(1+(x/c)^b)", "y = b*(x-a)^c*exp(-(x-a)/d)",	//RODBARD,GAMMA_VARIATE
-	"y = a+b*ln(x-c)", "x = d+(a-d)/(1+(y/c)^b)",				//LOG2,RODBARD2
+	"y = a+b*ln(x-c)", "x = d+(a-d)/(1+(y/c)^b) [y = c*((x-a)/(d-x))^(1/b)]",  //LOG2,RODBARD2
 	"y = a*exp(-bx) + c", "y = a + (b-a)*exp(-(x-c)*(x-c)/(2*d*d))", //EXP_WITH_OFFSET,GAUSSIAN
 	"y = a*(1-exp(-b*x)) + c", "y = c*((x-a)/(d-x))^(1/b)",		//EXP_RECOVERY, INV_RODBARD
 	"y = a*exp(bx)", "y = a*x^b",								//EXP_REGRESSION, POWER_REGRESSION
 	"y = a+bx+cx^2+dx^3+ex^4+fx^5", "y = a+bx+cx^2+dx^3+ex^4+fx^5+gx^6",
 	"y = a+bx+cx^2+dx^3+ex^4+fx^5+gx^6+hx^7", "y = a+bx+cx^2+dx^3+ex^4+fx^5+gx^6+hx^7+ix^8",
-	"y = a*exp(-(x-b)*(x-b)/(2*c*c)))",							//GAUSSIAN_NOOFFSET
+	"y = a*exp(-(x-b)*(x-b)/(2*c*c)))",						//GAUSSIAN_NOOFFSET
+	"y = a*(1-exp(-b*x))",										//EXP_RECOVERY_NOOFFSET
+	"y = a*(1-exp(-b*x))^c",									//CHAPMAN
+	"y = a+b*erf((x-c)/d)"										//ERF; note that the c parameter is sqrt2 times the Gaussian
+	};
+	
+	/** ImageJ Macro language code for the built-in functions */
+	public static final String[] fMacro = {
+	"y = a+x*b","y = a+x*(b+x*c)",								//STRAIGHT_LINE,POLY2
+	"y = a+x*(b+x*(c+x*d))","y = a+x*(b+x*(c+x*(d+x*e)))",
+	"y = a*Math.exp(b*x)","y = a*Math.pow(x,b)", "y = a*Math.log(b*x)", //EXPONENTIAL,POWER,LOG
+	"y = d+(a-d)/(1+Math.pow(x/c,b))", "y = b*Math.pow(x-a,c)*Math.exp(-(x-a)/d)",	//RODBARD,GAMMA_VARIATE
+	"y = a+b*Math.log(x-c)", "y = c*Math.pow((x-a)/(d-x),1/b)",  	 //LOG2,RODBARD2
+	"y = a*Math.exp(-b*x)+c", "y = a+(b-a)*Math.exp(-(x-c)*(x-c)/(2*d*d))", //EXP_WITH_OFFSET,GAUSSIAN
+	"y = a*(1-Math.exp(-b*x))+c", "y = c*Math.pow((x-a)/(d-x),1/b)", //EXP_RECOVERY, INV_RODBARD
+	"y = a*Math.exp(b*x)", "y = a*Math.pow(x,b)",						//EXP_REGRESSION, POWER_REGRESSION
+	"y = a+x*(b+x*(c+x*(d+x*(e+x*f))))", "y = a+x*(b+x*(c+x*(d+x*(e+x*(f+x*g)))))",
+	"y = a+x*(b+x*(c+x*(d+x*(e+x*(f+x*(g+x*h))))))", "y = a+x*(b+x*(c+x*(d+x*(e+x*(f+x*(g+x*(h+x*i)))))))",
+	"y = a*Math.exp(-(x-b)*(x-b)/(2*c*c))",						//GAUSSIAN_NOOFFSET
+	"y = a*(1-Math.exp(-b*x))",									//EXP_RECOVERY_NOOFFSET
+	"y = a*Math.pow(1-Math.exp(-b*x),c)",						//CHAPMAN
+	"y = a+b*Math.erf((x-c)/d)"									//ERF; note that the c parameter is sqrt2 times the Gaussian sigma
 	};
 
-	/** @deprecated, now in the Minimizer class (since ImageJ 1.46f).
+	/** @deprecated now in the Minimizer class (since ImageJ 1.46f).
 	 *	(probably of not much value for anyone anyhow?) */
 	public static final int IterFactor = 500;
 
@@ -94,7 +126,7 @@ public class CurveFitter implements UserFunction {
 	private double[] xDataSave, yDataSave;	//saved original data after fitting modified data
 	private int numPoints;			// number of data points in actual fit
 	private double ySign = 0;		// remember sign of y data for power-law fit via regression
-	private double sumY = Double.NaN, sumY2 = Double.NaN; // sum(y), sum(y^2) of the data used for fitting
+	private double sumY = Double.NaN, sumY2 = Double.NaN;  // sum(y), sum(y^2) of the data used for fitting
 	private int numParams;			// number of parameters
 	private double[] initialParams; // user specified or estimated initial parameters
 	private double[] initialParamVariations; // estimate of range of parameters
@@ -108,8 +140,8 @@ public class CurveFitter implements UserFunction {
 	private Interpreter macro;		// holds macro with custom equation
 	private int macroStartProgramCounter;	 // equation in macro starts here
 	private int numRegressionParams;// number of parameters that can be calculated by linear regression
-	private int offsetParam = -1;	// parameter number: function has this parameter as offset
-	private int factorParam = -1;	// index of parameter that is slope or multiplicative factor of the function
+	private int offsetParam = -1;   // parameter number: function has this parameter as offset
+	private int factorParam = -1;   // index of parameter that is slope or multiplicative factor of the function
 	private boolean hasSlopeParam;	// whether the 'factorParam' is the slope of the function
 	private double[] finalParams;	// parameters obtained by fit
 	private boolean linearRegressionUsed;	// whether linear regression alone was used instead of the minimizer
@@ -120,14 +152,33 @@ public class CurveFitter implements UserFunction {
 	private static String[] sortedFitList; // names like fitList, but in more logical sequence
 	private static Hashtable<String, Integer> namesTable; // converts fitList String into number
 
-
 	/** Construct a new CurveFitter. */
 	public CurveFitter (double[] xData, double[] yData) {
-		this.xData = xData;
-		this.yData = yData;
-		numPoints = xData.length;
+		int cleanPoints = 0;
+		for (int jj=0; jj<xData.length; jj++) {
+			if (!Double.isNaN(xData[jj] + yData[jj]))
+				cleanPoints++;
+		}
+		if (cleanPoints==xData.length) {
+			this.xData = xData;
+			this.yData = yData;
+		} else { //remove pairs containing a NaN
+			double[] cleanX = new double[cleanPoints];
+			double[] cleanY = new double[cleanPoints];
+			int ptr = 0;
+			for (int jj=0; jj<xData.length; jj++) {
+				if (!Double.isNaN(xData[jj] + yData[jj])) {
+					cleanX[ptr] = xData[jj];
+					cleanY[ptr] = yData[jj];
+					ptr++;
+				}
+			}
+			this.xData = cleanX;
+			this.yData = cleanY;
+		}
+		numPoints = this.xData.length;
 	}
-	
+
 	/** Perform curve fitting with one of the built-in functions
 	 *			doFit(fitType) does the fit quietly
 	 *	Use getStatus() and/or getStatusString() to see whether fitting was (probably) successful and
@@ -136,7 +187,7 @@ public class CurveFitter implements UserFunction {
 	public void doFit(int fitType) {
 		doFit(fitType, false);
 	}
-	
+
 	/** Perform curve fitting with one of the built-in functions
 	 *			doFit(fitType, true) pops up a dialog allowing the user to set the initial
 	 *						fit parameters and various numbers controlling the Minimizer
@@ -144,7 +195,6 @@ public class CurveFitter implements UserFunction {
 	 *	getParams() to access the result.
 	 */
 	public void doFit(int fitType, boolean showSettings) {
-
 		if (!(fitType>=STRAIGHT_LINE && fitType<fitList.length || fitType==CUSTOM))
 			throw new IllegalArgumentException("Invalid fit type");
 		if (fitType==CUSTOM && macro==null && userFunction==null)
@@ -191,10 +241,21 @@ public class CurveFitter implements UserFunction {
 			if (numRegressionParams > 0)
 				minimizerParamsToFullParams(finalParams, false);
 		}
-		if (isModifiedFitType(fitType))
+		if (isModifiedFitType(fitType))         //params of actual fit to user params
 			postProcessModifiedFitType(fitType);
-		time = System.currentTimeMillis()-startTime;
+		if (fitType == ERF)                     //make it nicer
+			if (finalParams[3] < 0) {           // y = a+b*erf((x-c)/d) with negative d: invert b instead
+				finalParams[1] = -finalParams[1];
+				finalParams[3] = -finalParams[3];
+			}
 
+		switch (fitType) {		                //postprocessing for nicer output:
+		    case GAUSSIAN:                      //Gaussians: width (std deviation) should be >0
+                finalParams[3] = Math.abs(finalParams[3]); break;
+            case GAUSSIAN_NOOFFSET:
+                finalParams[2] = Math.abs(finalParams[2]); break;
+		}
+		time = System.currentTimeMillis()-startTime;
 	}
 
 	/** Fit a function defined as a macro String like "y = a + b*x + c*x*x".
@@ -209,15 +270,7 @@ public class CurveFitter implements UserFunction {
 	 */
 	public int doCustomFit(String equation, double[] initialParams, boolean showSettings) {
 		customFormula = null;
-		customParamCount = 0;
-		Program pgm = (new Tokenizer()).tokenize(equation);
-		if (!pgm.hasWord("y")) return 0;
-		if (!pgm.hasWord("x")) return 0;
-		String[] params = {"a","b","c","d","e","f"};
-		for (int i=0; i<params.length; i++) {
-			if (pgm.hasWord(params[i]))
-				customParamCount++;
-		}
+		customParamCount = getNumParams(equation);
 		if (customParamCount==0)
 			return 0;
 		customFormula = equation;
@@ -249,7 +302,7 @@ public class CurveFitter implements UserFunction {
 	 *							userFunction(params, x) method.
 	 *							This function must allow simultaneous calls in multiple threads.
 	 *	@param numParams		Number of parameters of the fit function.
-	 *	@params formula			A String describing the fit formula, may be null.
+	 *	@param formula			A String describing the fit formula, may be null.
 	 *	@param initialParams	Starting point for the parameters; may be null (than values
 	 *							of 0 are used). The fit function with these parameters must
 	 *							not return NaN for any of the data points given in the
@@ -263,7 +316,7 @@ public class CurveFitter implements UserFunction {
 	 *							a few numbers controlling the minimizer.
 	 */
 	public void doCustomFit(UserFunction userFunction, int numParams, String formula,
-			double[] initialParams, double[] initialParamVariations, boolean showSettings) {
+		double[] initialParams, double[] initialParamVariations, boolean showSettings) {
 		this.userFunction = userFunction;
 		this.customParamCount = numParams;
 		this.initialParams = initialParams;
@@ -300,10 +353,14 @@ public class CurveFitter implements UserFunction {
 	 *					   should be set to -1)
 	 */
 	public void setOffsetMultiplySlopeParams(int offsetParam, int multiplyParam, int slopeParam) {
+		if (multiplyParam >= 0 && slopeParam>=0)
+			throw new IllegalArgumentException("CurveFitter: only one of multiplyParam and slopeParam may be given (i.e., >=0)");
 		this.offsetParam = offsetParam;
 		hasSlopeParam = slopeParam >= 0;
 		factorParam = hasSlopeParam ? slopeParam : multiplyParam;
 		numRegressionParams = 0;
+		if (factorParam >= 0 && factorParam==offsetParam)
+			throw new IllegalArgumentException("CurveFitter: offsetParam and slopeParam/factorParam must be different");
 		if (offsetParam >=0) numRegressionParams++;
 		if (factorParam >=0) numRegressionParams++;
 	}
@@ -311,6 +368,15 @@ public class CurveFitter implements UserFunction {
 	/** Get number of parameters for current fit formula
 	 *	Do not use before 'doFit', because the fit function would be undefined.	 */
 	public int getNumParams() {
+		if (fitType == CUSTOM)
+			return customParamCount;
+		else
+			return getNumParams(fitType);
+	}
+
+	/** Returns the number of parameters for a given fit type, except for the 'custom' fit,
+	 *  where the number of parameters is given by the equation: see getNumParams(String) */
+	public static int getNumParams(int fitType) {
 		switch (fitType) {
 			case STRAIGHT_LINE: return 2;
 			case POLY2: return 3;
@@ -322,17 +388,45 @@ public class CurveFitter implements UserFunction {
 			case POLY8: return 9;
 			case EXPONENTIAL: case EXP_REGRESSION: return 2;
 			case POWER: case POWER_REGRESSION:	   return 2;
+			case EXP_RECOVERY_NOOFFSET: return 2;
 			case LOG:	return 2;
-			case RODBARD: case RODBARD2: case INV_RODBARD: case RODBARD_INTERNAL: return 4;
-			case GAMMA_VARIATE: return 4;
 			case LOG2:	return 3;
-			case EXP_WITH_OFFSET: return 3;
-			case GAUSSIAN: case GAUSSIAN_INTERNAL: return 4;
 			case GAUSSIAN_NOOFFSET: return 3;
 			case EXP_RECOVERY: return 3;
-			case CUSTOM: return customParamCount;
+			case CHAPMAN: return 3;
+			case EXP_WITH_OFFSET: return 3;
+			case RODBARD: case RODBARD2: case INV_RODBARD: case RODBARD_INTERNAL: return 4;
+			case GAMMA_VARIATE: return 4;
+			case GAUSSIAN: case GAUSSIAN_INTERNAL: return 4;
+			case ERF:   return 4;
 		}
 		return 0;
+	}
+
+	/** Returns the number of parameters for a custom equation given as a macro String,
+	 *  like "y = a + b*x + c*x*x" .  Restricted to 6 parameters "a" ... "f"
+	 *  (fitting more parameters is not likely to yield an accurate result anyhow).
+	 *  Returns 0 if a very basic check does not find a formula of this type. */
+	public static int getNumParams(String customFormula) {
+		Program pgm = (new Tokenizer()).tokenize(customFormula);
+		if (!pgm.hasWord("y") ||  !pgm.hasWord("x"))
+		    return 0;
+		String[] params = {"a","b","c","d","e","f"};
+		int customParamCount = 0;
+		for (int i=0; i<params.length; i++) {
+			if (pgm.hasWord(params[i])) {
+				customParamCount++;
+			}
+		}
+		return customParamCount;
+	}
+
+	/** Returns the formula value for parameters 'p' at 'x'.
+	 *	Do not use before 'doFit', because the fit function would be undefined. */
+	public final double f(double x) {
+		if (finalParams==null)
+			finalParams = minimizer.getParams();
+		return f(finalParams, x);
 	}
 
 	/** Returns the formula value for parameters 'p' at 'x'.
@@ -341,7 +435,7 @@ public class CurveFitter implements UserFunction {
 		if (fitType!=CUSTOM)
 			return f(fitType, p, x);
 		else {
-			if (macro == null) {	// function defined in plugin
+			if (macro==null) {	// function defined in plugin
 				return userFunction.userFunction(p, x);
 			} else {				// function defined in macro
 				macro.setVariable("x", x);
@@ -383,6 +477,12 @@ public class CurveFitter implements UserFunction {
 				return p[0]*Math.exp(-p[1]*x)+p[2];
 			case EXP_RECOVERY:
 				return p[0]*(1-Math.exp(-p[1]*x))+p[2];
+			case EXP_RECOVERY_NOOFFSET:
+			    return p[0]*(1-Math.exp(-p[1]*x));
+			case CHAPMAN:                               // a*(1-exp(-b*x))^c
+				double value =  p[0]*(Math.pow((1-(Math.exp(-p[1]*x))), p[2]));
+			//	Log.e("test", "values = " + value);
+				return value;
 			case GAUSSIAN:
 				return p[0]+(p[1]-p[0])*Math.exp(-(x-p[2])*(x-p[2])/(2.0*p[3]*p[3]));
 			case GAUSSIAN_INTERNAL:						// replaces GAUSSIAN for the fitting process
@@ -407,7 +507,7 @@ public class CurveFitter implements UserFunction {
 				if (p[1] <= 0) return Double.NaN;
 				if (p[2] <= 0) return Double.NaN;
 				if (p[3] <= 0) return Double.NaN;
-				
+
 				double pw = Math.pow((x - p[0]), p[2]);
 				double e = Math.exp((-(x - p[0]))/p[3]);
 				return p[1]*pw*e;
@@ -422,16 +522,18 @@ public class CurveFitter implements UserFunction {
 				if (p[3]-x < 2*Double.MIN_VALUE || x<p[0]) // avoid x>=d (singularity) and x<a (negative exponent)
 					y = fitType==INV_RODBARD ? Double.NaN : 0.0;
 				else {
-					y = (x-p[0])/(p[3]-x); //(x-a)/(d-x) = ( (a-d)/(x-d) -1 )
-					y = Math.pow(y,1.0/p[1]);  //y=y**(1/b)
+					y = (x-p[0])/(p[3]-x);		//(x-a)/(d-x) = ( (a-d)/(x-d) -1 )
+					y = Math.pow(y,1.0/p[1]);	//y=y**(1/b)
 					y = y*p[2];
 				}
 				return y;
+            case ERF:
+				return p[0] + p[1]*IJMath.erf((x-p[2])/p[3]);	//y=a+b*erf((x-c)/d)
 			default:
 				return 0.0;
 		}
 	}
-	
+
 	/** Get the result of fitting, i.e. the set of parameter values for the best fit.
 	 *	Note that the array returned may have more elements than numParams; ignore the rest.
 	 *	May return an array with only NaN values if the minimizer could not start properly,
@@ -441,7 +543,7 @@ public class CurveFitter implements UserFunction {
 	public double[] getParams() {
 		return finalParams==null ? minimizer.getParams() : finalParams; //if we have no result, take all_NaN result from the Minimizer
 	}
-	
+
 	/** Returns residuals array, i.e., differences between data and curve.
 	 *	The residuals are with respect to the real data, also for fit types where the data are
 	 *	modified before fitting (power&exp fit by linear regression, 'Rodbard NIH Image' ).
@@ -477,11 +579,11 @@ public class CurveFitter implements UserFunction {
 		double stdDev = (sum2-sum*sum/n); //sum of squared residuals
 		return Math.sqrt(stdDev/(n-1.0));
 	}
-	
+
 	/** Returns R^2, where 1.0 is best.
 	<pre>
 	 r^2 = 1 - SSE/SSD
-	 
+
 	 where:	 SSE = sum of the squared errors
 				 SSD = sum of the squared deviations about the mean.
 	</pre>
@@ -524,13 +626,16 @@ public class CurveFitter implements UserFunction {
 	public String getStatusString() {
 		return errorString != null ? errorString : minimizer.STATUS_STRING[getStatus()];
 	}
-	
+
 	/** Get a string with detailed description of the curve fitting results (several lines,
 	 *	including the fit parameters).
 	 */
 	public String getResultString() {
-		String resultS =  "\nFormula: " + getFormula() +
-				"\nStatus: "+getStatusString();
+		String resultS =  "\nFormula: " + getFormula()
+				+ "\nMacro code: "+getMacroCode()
+				+ "\nStatus: "+getStatusString();
+		if (getStatus()==Minimizer.INITIALIZATION_FAILURE)
+			return resultS;
 		if (!linearRegressionUsed) resultS += "\nNumber of completed minimizations: " + minimizer.getCompletedMinimizations();
 		resultS += "\nNumber of iterations: " + getIterations();
 		if (!linearRegressionUsed) resultS += " (max: " + minimizer.getMaxIterations() + ")";
@@ -562,21 +667,31 @@ public class CurveFitter implements UserFunction {
 		this.maxRelError = maxRelError;
 	}
 
+    /** Create output on the number of iterations in the ImageJ Status line, e.g.
+     *  "<ijStatusString> 50 (max 750); ESC to stop"
+     *  @param ijStatusString Displayed in the beginning of the status message. No display if null.
+     *  E.g. "Curve Fit: Iteration "
+     *  @param checkEscape When true, the Minimizer stops if escape is pressed and the status
+     *  becomes ABORTED. Note that checking for ESC does not work in the Event Queue thread. */
+    public void setStatusAndEsc(String ijStatusString, boolean checkEscape) {
+        minimizer.setStatusAndEsc(ijStatusString, checkEscape);
+    }
+
 	/** Get number of iterations performed. Returns 1 in case the fit was done by linear regression only. */
 	public int getIterations() {
 		return linearRegressionUsed ? 1 : minimizer.getIterations();
 	}
-	
+
 	/** Get maximum number of iterations allowed (sum of iteration count for all restarts) */
 	public int getMaxIterations() {
 		return minimizer.getMaxIterations();
 	}
-	
+
 	/** Set maximum number of iterations allowed (sum of iteration count for all restarts) */
 	public void setMaxIterations(int maxIter) {
 		minimizer.setMaxIterations(maxIter);
 	}
-	
+
 	/** Get maximum number of simplex restarts to do. See Minimizer.setMaxRestarts for details. */
 	public int getRestarts() {
 		return minimizer.getMaxRestarts();
@@ -619,17 +734,35 @@ public class CurveFitter implements UserFunction {
 	public String getFormula() {
 		if (fitType==CUSTOM)
 			return customFormula;
-		else
-			return fList[fitType];
+		if (fitType==GAUSSIAN_INTERNAL)
+			fitType = GAUSSIAN;
+		else if (fitType==RODBARD_INTERNAL)
+			fitType = RODBARD;
+		return fList[fitType];
+	}
+	
+	/** Returns macro code of the form "y = ...x" for the fit function used.
+	 *  Note that this is not neccessarily the equation acutally used for the fit
+	 *  (for the various "linear regression" types and RODBARD2, the fit is done
+	 *  differently). Note that no macro code may be avialable for custom fits
+	 *  using the UserFunction interface. */
+	public String getMacroCode() {
+		if (fitType==CUSTOM)
+			return customFormula;
+		if (fitType==GAUSSIAN_INTERNAL)
+			fitType = GAUSSIAN;
+		else if (fitType==RODBARD_INTERNAL)
+			fitType = RODBARD;
+		return fMacro[fitType];
 	}
 
 	/** Returns an array of fit names with nicer sorting */
 	public static String[] getSortedFitList() {
 		if (sortedFitList == null) {
-			String[] l = new String[fitList.length];
+			String[] tmpList = new String[fitList.length];
 			for (int i=0; i<fitList.length; i++)
-				sortedFitList[i] = fitList[sortedTypes[i]];
-			sortedFitList = l;
+				tmpList[i] = fitList[sortedTypes[i]];
+			sortedFitList = tmpList;
 		}
 		return sortedFitList;
 	}
@@ -660,6 +793,7 @@ public class CurveFitter implements UserFunction {
 				double fValue = f(params,xData[i]);
 				sumResidualsSqr += sqr(fValue-yData[i]);
 			}
+            //IJ.log(IJ.d2s(params[0],3,5)+","+IJ.d2s(params[1],3,5)+": r="+IJ.d2s(sumResidualsSqr,3,5)+Thread.currentThread().getName() );
 		} else {	// handle simple linear dependencies by linear regression:
 			//if(getIterations()<1){String s="minimizerPar:";for(int ii=0;ii<=numParams;ii++)s+=" ["+ii+"]:"+IJ.d2s(params[ii],5,9);IJ.log(s);}
 			minimizerParamsToFullParams(params, true);
@@ -697,8 +831,10 @@ public class CurveFitter implements UserFunction {
 				params[i] = offset;
 			else if (i == factorParam)
 				params[i] = factor;
-			else
+			else if (iM>=0)
 				params[i] = params[iM--];
+			else
+				params[i] = Double.NaN;
 		}
 		params[numParams] = sumResidualsSqr;
 	}
@@ -794,7 +930,7 @@ public class CurveFitter implements UserFunction {
 	 */
 	private void modifyInitialParamsAndVariations() {
 		minimizerInitialParams = initialParams.clone();
-		minimizerInitialParamVariations = initialParamVariations.clone();			 
+		minimizerInitialParamVariations = initialParamVariations.clone();
 		if (numRegressionParams >  0) // convert to shorter arrays with only the parameters used by the minimizer
 			for (int i=0, iNew=0; i<numParams; i++)
 				if (i != factorParam && i != offsetParam) {
@@ -811,24 +947,38 @@ public class CurveFitter implements UserFunction {
 	 *	and returns false if the data cannot be fitted because of negative x.
 	 *	In such a case, 'errorString' contains a message about the problem. */
 	private boolean makeInitialParamsAndVariations(int fitType) {
+		if (numPoints == 0) {
+			errorString = "No data to fit";
+			return false;
+		}
 		boolean hasInitialParams = initialParams != null;
 		boolean hasInitialParamVariations = initialParamVariations != null;
-		if (!hasInitialParams)
+		if (!hasInitialParams) {
 			initialParams = new double[numParams];
+			if (fitType==CUSTOM) {
+            	for (int i=0; i<numParams; i++)
+            		initialParams[i] = 1.0;
+            }
+		}
 		if (!hasInitialParamVariations)
 			initialParamVariations = new double[numParams];
-		if (fitType == CUSTOM)
-			return true; //no way to guess initial parameters & variations for an unknown formula
+		if (fitType==CUSTOM) {
+			for (int i=0; i<numParams; i++) {
+				initialParamVariations[i] = 0.1 * initialParams[i];
+                if (initialParamVariations[i] == 0) initialParamVariations[i] = 0.01; //should not be zero
+            }
+            return true; // can't guess the initial parameters or initialParamVariations from the data
+        }
 
 		// Calculate some things that might be useful for predicting parameters
 		double firstx = xData[0];
 		double firsty = yData[0];
 		double lastx = xData[numPoints-1];
 		double lasty = yData[numPoints-1];
-		double xMin=firstx, xMax=firstx;
+		double xMin=firstx, xMax=firstx;    //with this initialization, the loop starts at 1, not 0
 		double yMin=firsty, yMax=firsty;
-		double xMean=0, yMean=0;
-		double xOfMax = xData[0];
+		double xMean=firstx, yMean=firsty;
+		double xOfMax = firstx;
 		for (int i=1; i<numPoints; i++) {
 			xMean += xData[i];
 			yMean += yData[i];
@@ -845,7 +995,7 @@ public class CurveFitter implements UserFunction {
 		double yIntercept = yMean - slope * xMean;
 
 		//We cannot fit the following cases because we would always get NaN function values
-		if (xMin < 0 && fitType==POWER) {
+		if (xMin < 0 && (fitType==POWER||fitType==CHAPMAN)) {
 			errorString = "Cannot fit "+fitList[fitType]+" when x<0";
 			return false;
 		} else if (xMin < 0 && xMax > 0 && fitType==RODBARD) {
@@ -863,16 +1013,20 @@ public class CurveFitter implements UserFunction {
 
 				// also for the other cases, some initial parameters are unused; only to show them with 'showSettings'
 				case EXPONENTIAL:			// a*exp(bx)   assuming change by factor of e between xMin & xMax
-					initialParams[1] = 1./(xMax-xMin+1e-100) * Math.signum(yMean) * Math.signum(slope); //actually ignored, done by regression
-					initialParams[0] = yMean/Math.exp(initialParams[1]*xMean);
+					initialParams[1] = 1.0/(xMax-xMin+1e-100) * Math.signum(yMean) * Math.signum(slope);
+					initialParams[0] = yMean/Math.exp(initialParams[1]*xMean); //don't care, done by regression
 					break;
 				case EXP_WITH_OFFSET:		// a*exp(-bx) + c	assuming b>0, change by factor of e between xMin & xMax
 				case EXP_RECOVERY:			// a*(1-exp(-bx)) + c
 					initialParams[1] = 1./(xMax-xMin+1e-100);
-					initialParams[0] = (yMax-yMin)/Math.exp(initialParams[1]*xMean) * Math.signum(slope) *
+					initialParams[0] = (yMax-yMin+1e-100)/Math.exp(initialParams[1]*xMean) * Math.signum(slope) *
 							fitType==EXP_RECOVERY ? 1 : -1; // don't care, we will do this via regression
 					initialParams[2] = 0.5*yMean;			// don't care, we will do this via regression
 					break;
+				case EXP_RECOVERY_NOOFFSET: // a*(1-exp(-bx))
+				    initialParams[1] = 1.0/(xMax-xMin+1e-100) * Math.signum(yMean) * Math.signum(slope);
+				    initialParams[0] = yMean/Math.exp(initialParams[1]*xMean); //don't care, done by regression
+				    break;
 				case POWER:					// ax^b, assume linear for the beginning
 					initialParams[0] = yMean/(Math.abs(xMean+1e-100));	// don't care, we will do this via regression
 					initialParams[1] = 1.0;
@@ -883,7 +1037,7 @@ public class CurveFitter implements UserFunction {
 					break;
 				case LOG2:					// y = a+b*ln(x-c)
 					initialParams[0] = yMean;				// don't care, we will do this via regression
-					initialParams[1] = (yMax-yMin)/(xMax-xMin+1e-100); // don't care, we will do this via regression
+					initialParams[1] = (yMax-yMin+1e-100)/(xMax-xMin+1e-100); // don't care, we will do this via regression
 					initialParams[2] = Math.min(0., -xMin-0.1*(xMax-xMin)-1e-100);
 					break;
 				case RODBARD:				// d+(a-d)/(1+(x/c)^b)
@@ -894,7 +1048,7 @@ public class CurveFitter implements UserFunction {
 					break;
 				case INV_RODBARD: case RODBARD2: // c*((x-a)/(d-x))^(1/b)
 					initialParams[0] = xMin - 0.1 * (xMax-xMin);
-					initialParams[1] = 1.0;
+					initialParams[1] = slope >= 0 ? 1.0 : -1.0;
 					initialParams[2] = yMax;	// don't care, we will do this via regression
 					initialParams[3] = xMax + (xMax - xMin);
 					break;
@@ -921,8 +1075,25 @@ public class CurveFitter implements UserFunction {
 					initialParams[0] = yMax;	//actually don't care, we will do this via regression
 					initialParams[1] = xOfMax;	  //actually don't care, we will do this via regression
 					initialParams[2] = 0.39894 * (xMax-xMin) * yMean/(yMax+1e-100);
-					break;			  
-				//case CUSTOM:				// initial params should be specified anyhow, otherwise use minimizer default
+					break;
+				case CHAPMAN:                   // a*(1-exp(-b*x))^c
+					initialParams[0] = yMax;
+					initialParams[2] = 1.5; // just assuming any reasonable value
+					for (int i=1; i<numPoints; i++) //find when we reach 50% of maximum
+					    if (yData[i]>0.5*yMax) {  //approximately (1-exp(-1))^1.5 = 0.5
+					        initialParams[1] = 1./xData[i];
+					        break;
+					    }
+					if(Double.isNaN(initialParams[1]) || initialParams[1]>1000./xMax) //in case an outlier at the beginning has fooled us
+					    initialParams[1] = 10./xMax;
+					break;
+				case ERF:	// a+b*erf((x-c)/d)
+					initialParams[0] = 0.5*(yMax+yMin);	//actually don't care, we will do this via regression
+					initialParams[1] = 0.5*(yMax-yMin+1e-100) * (lasty>firsty ? 1 : -1);	//actually don't care, we will do this via regression
+					initialParams[2] = xMin + (xMax-xMin)*(lasty>firsty ? yMax - yMean : yMean - yMin)/(yMax-yMin+1e-100);
+					initialParams[3] = 0.1 * (xMax-xMin+1e-100);
+					break;
+				//no case CUSTOM: here, was done above
 			}
 		}
 		if (!hasInitialParamVariations) {	// estimate initial range for parameters
@@ -940,6 +1111,7 @@ public class CurveFitter implements UserFunction {
 				case EXP_RECOVERY:		 // a*(1-exp(-bx)) + c
 					initialParamVariations[1] = 0.1/(xMax-xMin+1e-100);
 					break;
+				// case CHAPMAN:            // a*(1-exp(-b*x))^c use default (10% of value) for b, c
 				// case POWER:				// ax^b; use default for b
 				// case LOG:				// a*ln(bx); use default for b
 				// case LOG2:				// y = a+b*ln(x-c); use default for c
@@ -959,7 +1131,7 @@ public class CurveFitter implements UserFunction {
 				//	therefore an estimate for a and B is sqrt(tm-t0)
 				//	K [a] can now be calculated from these estimates
 					initialParamVariations[0] = 0.1*Math.max(yMax-yMin, Math.abs(yMax));
-					double ab = xOfMax - firstx + 0.1*(xMax-xMin);
+					double ab = xOfMax - firstx + 0.1*(xMax-xMin+1e-100);
 					initialParamVariations[2] = 0.1*Math.sqrt(ab);
 					initialParamVariations[3] = 0.1*Math.sqrt(ab);
 					break;
@@ -968,6 +1140,10 @@ public class CurveFitter implements UserFunction {
 					break;
 				case GAUSSIAN_NOOFFSET:		// a*exp(-(x-b)^2/(2c^2))
 					initialParamVariations[1] = 0.2*initialParams[2]; //(and default for c)
+					break;
+				case ERF:		            // a+b*erf((x-c)/d)
+					initialParamVariations[2] = 0.1 * (xMax-xMin+1e-100);
+					initialParamVariations[3] = 0.5 * initialParams[3];
 					break;
 			}
 		}
@@ -996,6 +1172,12 @@ public class CurveFitter implements UserFunction {
 				offsetParam = 2;
 				factorParam = 0;
 				break;
+			case EXP_RECOVERY_NOOFFSET:	// a*(1-exp(-bx))
+				factorParam = 0;
+				break;
+			case CHAPMAN:               // a*(1-exp(-b*x))^c
+				factorParam = 0;
+				break;
 			case POWER:					// ax^b
 				factorParam = 0;
 				break;
@@ -1022,7 +1204,11 @@ public class CurveFitter implements UserFunction {
 				break;
 			case GAUSSIAN_NOOFFSET:		// a*exp(-(x-b)^2/(2c^2))
 				factorParam = 0;
-				break;			  
+				break;
+			case ERF:					// a + b*erf((x-c)/d)
+				offsetParam = 0;
+				factorParam = 1;
+				break;
 		}
 		numRegressionParams = 0;
 		if (offsetParam >= 0) numRegressionParams++;
@@ -1042,8 +1228,8 @@ public class CurveFitter implements UserFunction {
 
 	/** returns whether this a fit type that acutally fits modified data with a modified function */
 	private boolean isModifiedFitType(int fitType) {
-		return fitType == POWER_REGRESSION || fitType == EXP_REGRESSION || fitType == RODBARD2	||
-				fitType == GAUSSIAN;
+		return fitType == POWER_REGRESSION || fitType == EXP_REGRESSION || fitType == RODBARD	||
+				fitType == RODBARD2	|| fitType == GAUSSIAN;
 	}
 
 	/** For fits don't use the original data, prepare modified data and fit type.
@@ -1102,7 +1288,7 @@ public class CurveFitter implements UserFunction {
 	/** Get correct params and revert xData, yData if fit has been done via another function */
 	private void postProcessModifiedFitType(int fitType) {
 		if (fitType == POWER_REGRESSION || fitType == EXP_REGRESSION)	// ln y = ln (a*x^b) = ln a + b ln x
-			finalParams[0] = ySign * Math.exp(finalParams[0]);			//or: ln (+,-)y = ln ((+,-)a*exp(bx)) = ln (+,-)a + bx		  
+			finalParams[0] = ySign * Math.exp(finalParams[0]);			//or: ln (+,-)y = ln ((+,-)a*exp(bx)) = ln (+,-)a + bx
 		if (fitType == GAUSSIAN)							// a + b exp(-...) to  a + (b-a)*exp(-...)
 			finalParams[1] += finalParams[0];
 		else if (fitType == RODBARD || fitType == RODBARD2) //d+a/(1+(x/c)^b) to d+(a-d)/(1+(x/c)^b)
@@ -1121,6 +1307,8 @@ public class CurveFitter implements UserFunction {
 
 	/** Pop up a dialog allowing control over simplex starting parameters */
 	private void settingsDialog() {
+	    if (initialParamVariations == null)
+	        initialParamVariations = new double[numParams];
 		GenericDialog gd = new GenericDialog("Simplex Fitting Options");
 		gd.addMessage("Function name: " + getName() + "\n" +
 		"Formula: " + getFormula());
@@ -1131,7 +1319,7 @@ public class CurveFitter implements UserFunction {
 		gd.addNumericField("Number of restarts:", minimizer.getMaxRestarts(), 0);
 		gd.addNumericField("Error tolerance [1*10^(-x)]:", -(Math.log(maxRelError)/Math.log(10)), 0);
 		gd.showDialog();
-		if (gd.wasCanceled()) 
+		if (gd.wasCanceled())
 			return;
 		// read initial parameters:
 		for (int i = 0; i < numParams; i++) {
@@ -1150,11 +1338,11 @@ public class CurveFitter implements UserFunction {
 		n = gd.getNextNumber();
 		setMaxError(Math.pow(10.0, -n));
 	}
-	
+
 	 /**
 	 * Gets index of highest value in an array.
-	 * 
-	 * @param			   Double array.
+	 *
+	 * @param			   array the array.
 	 * @return			   Index of highest value.
 	 */
 	public static int getMax(double[] array) {
@@ -1167,6 +1355,77 @@ public class CurveFitter implements UserFunction {
 			}
 		}
 		return index;
+	}
+
+	public Plot getPlot() {
+		return getPlot(100);
+	}
+
+	public Plot getPlot(int points) {
+		int PLOT_WIDTH=600, PLOT_HEIGHT=350;
+		double[] x = getXPoints();
+		double[] y = getYPoints();
+		if (getStatus()==Minimizer.INITIALIZATION_FAILURE) {
+			Plot plot = new Plot(getFormula(),"X","Y");
+			plot.setColor(Color.RED, Color.RED);
+			plot.addPoints(x, y, PlotWindow.CIRCLE);
+			plot.setColor(Color.BLUE);
+			plot.setFrameSize(PLOT_WIDTH, PLOT_HEIGHT);
+			plot.addLabel(0.02, 0.1, getName());
+			plot.addLabel(0.02, 0.2, getStatusString());
+			return plot;
+		}
+		int npoints = points;
+		if (npoints<x.length)
+			npoints = x.length; //or 2*x.length-1; for 2 values per data point
+		if (npoints>1000)
+			npoints = 1000;
+		double[] a = Tools.getMinMax(x);
+		double xmin=a[0], xmax=a[1];
+		if (points==256) {
+			npoints = points;
+			xmin = 0;
+			xmax = 255;
+		}
+		a = Tools.getMinMax(y);
+		double ymin=a[0], ymax=a[1]; //y range of data points
+		float[] px = new float[npoints];
+		float[] py = new float[npoints];
+		double inc = (xmax-xmin)/(npoints-1);
+		double tmp = xmin;
+		for (int i=0; i<npoints; i++) {
+			px[i]=(float)tmp;
+			tmp += inc;
+		}
+		double[] params = getParams();
+		for (int i=0; i<npoints; i++)
+			py[i] = (float)f(params, px[i]);
+		a = Tools.getMinMax(py);
+		double dataRange = ymax - ymin;
+		ymin = Math.max(ymin - dataRange, Math.min(ymin, a[0])); //expand y range for curve, but not too much
+		ymax = Math.min(ymax + dataRange, Math.max(ymax, a[1]));
+		Plot plot = new Plot(getFormula(), "X", "Y", px, py);
+		plot.setLabel(0, "fit");
+		plot.setLimits(xmin, xmax, ymin, ymax);
+		plot.setFrameSize(PLOT_WIDTH, PLOT_HEIGHT);
+		plot.setColor(Color.RED, Color.RED);
+		plot.addPoints(x, y, PlotWindow.CIRCLE);
+		plot.setLabel(1, "data");
+		plot.setColor(Color.BLUE); //will be used for the data in the constructor
+		StringBuilder legend = new StringBuilder(100);
+		legend.append(getName()); legend.append('\n');
+		legend.append(getFormula()); legend.append('\n');
+        double[] p = getParams();
+        int n = getNumParams();
+        char pChar = 'a';
+        for (int i = 0; i < n; i++) {
+			legend.append(pChar+" = "+IJ.d2s(p[i],5,9)+'\n');
+			pChar++;
+        }
+		legend.append("R^2 = "+IJ.d2s(getRSquared(),4)); legend.append('\n');
+		plot.addLabel(0.02, 0.1, legend.toString());
+		plot.setColor(Color.BLUE);
+		return plot;
 	}
 
 }

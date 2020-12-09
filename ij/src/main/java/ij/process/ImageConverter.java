@@ -5,6 +5,7 @@ import java.awt.image.*;
 import ij.*;
 import ij.gui.*;
 import ij.measure.*;
+import ij.plugin.frame.Recorder;
 
 /** This class converts an ImagePlus object to a different type. */
 public class ImageConverter {
@@ -21,12 +22,15 @@ public class ImageConverter {
 
 	/** Converts this ImagePlus to 8-bit grayscale. */
 	public synchronized void convertToGray8() {
-		if (imp.getStackSize()>1)
-			throw new IllegalArgumentException("Unsupported conversion");
+		if (imp.getStackSize()>1) {
+			new StackConverter(imp).convertToGray8();
+			return;
+		}
 		ImageProcessor ip = imp.getProcessor();
 		if (type==ImagePlus.GRAY16 || type==ImagePlus.GRAY32) {
 			imp.setProcessor(null, ip.convertToByte(doScaling));
 			imp.setCalibration(imp.getCalibration()); //update calibration
+			record();
 		} else if (type==ImagePlus.COLOR_RGB)
 	    	imp.setProcessor(null, ip.convertToByte(doScaling));
 		else if (ip.isPseudoColorLut()) {
@@ -50,10 +54,26 @@ public class ImageConverter {
 			return;
 		if (!(type==ImagePlus.GRAY8||type==ImagePlus.GRAY32||type==ImagePlus.COLOR_RGB))
 			throw new IllegalArgumentException("Unsupported conversion");
+		if (imp.getStackSize()>1) {
+			new StackConverter(imp).convertToGray16();
+			return;
+		}
 		ImageProcessor ip = imp.getProcessor();
+		if (type==ImagePlus.GRAY32)
+			record();
 		imp.trimProcessor();
 		imp.setProcessor(null, ip.convertToShort(doScaling));
 		imp.setCalibration(imp.getCalibration()); //update calibration
+	}
+	
+	private void record() {
+		if (Recorder.record) {
+			Boolean state = ImageConverter.getDoScaling();
+			if (Recorder.scriptMode())
+				Recorder.recordCall("ImageConverter.setDoScaling("+state+");", true);
+			else
+				Recorder.	recordString("setOption(\"ScaleConversions\", "+state+");\n");
+		}
 	}
 
 	/** Converts this ImagePlus to 32-bit grayscale. */
@@ -62,15 +82,29 @@ public class ImageConverter {
 			return;
 		if (!(type==ImagePlus.GRAY8||type==ImagePlus.GRAY16||type==ImagePlus.COLOR_RGB))
 			throw new IllegalArgumentException("Unsupported conversion");
+		Calibration cal = imp.getCalibration();
+		double min = cal.getCValue(imp.getDisplayRangeMin());
+		double max = cal.getCValue(imp.getDisplayRangeMax());
+		if (imp.getStackSize()>1) {
+			new StackConverter(imp).convertToGray32();
+			IJ.setMinAndMax(imp, min, max);
+			return;
+		}
 		ImageProcessor ip = imp.getProcessor();
 		imp.trimProcessor();
-		Calibration cal = imp.getCalibration();
 		imp.setProcessor(null, ip.convertToFloat());
 		imp.setCalibration(cal); //update calibration
+		IJ.setMinAndMax(imp, min, max);
 	}
 
 	/** Converts this ImagePlus to RGB. */
 	public void convertToRGB() {
+		if (imp.getBitDepth()==24)
+			return;
+		if (imp.getStackSize()>1) {
+			new StackConverter(imp).convertToRGB();
+			return;
+		}
 		ImageProcessor ip = imp.getProcessor();
 		imp.setProcessor(null, ip.convertToRGB());
 		imp.setCalibration(imp.getCalibration()); //update calibration
@@ -104,16 +138,13 @@ public class ImageConverter {
 		imp.setStack(null, stack);
 		imp.setDimensions(3, 1, 1);
 		if (imp.isComposite())
-			((CompositeImage)imp).setMode(CompositeImage.GRAYSCALE);
+			((CompositeImage)imp).setMode(IJ.GRAYSCALE);
 	}
 
 	/** Converts an RGB image to a HSB (hue, saturation and brightness) stack. */
 	public void convertToHSB() {
 		if (type!=ImagePlus.COLOR_RGB)
-			throw new IllegalArgumentException("Image must be RGB");
-
-		//convert to hue, saturation and brightness
-		//IJ.showProgress(0.1);
+			throw new IllegalArgumentException("Image must be RGB");;
 		ColorProcessor cp;
 		if (imp.getType()==ImagePlus.COLOR_RGB)
 			cp = (ColorProcessor)imp.getProcessor();
@@ -123,9 +154,41 @@ public class ImageConverter {
 		imp.trimProcessor();
 		imp.setStack(null, stack);
 		imp.setDimensions(3, 1, 1);
-		//IJ.showProgress(1.0);
 	}
 	
+	/** Converts an RGB image to a 32-bit HSB (hue, saturation and brightness) stack. */
+	public void convertToHSB32() {
+		if (type!=ImagePlus.COLOR_RGB)
+			throw new IllegalArgumentException("Image must be RGB");;
+		ColorProcessor cp;
+		if (imp.getType()==ImagePlus.COLOR_RGB)
+			cp = (ColorProcessor)imp.getProcessor();
+		else
+			cp = new ColorProcessor(imp.getImage());
+		ImageStack stack = cp.getHSB32Stack();
+		imp.trimProcessor();
+		imp.setStack(null, stack);
+		imp.setDimensions(3, 1, 1);
+	}
+
+	/** Converts an RGB image to a Lab stack. */
+	public void convertToLab() {
+		if (type!=ImagePlus.COLOR_RGB)
+			throw new IllegalArgumentException("Image must be RGB");
+		ColorSpaceConverter converter = new ColorSpaceConverter();
+  		ImagePlus imp2 = converter.RGBToLab(imp);
+  		Point loc = null;
+  		ImageWindow win = imp.getWindow();
+		if (win!=null)
+			loc = win.getLocation();
+		ImageWindow.setNextLocation(loc);
+		imp2.show();
+		imp.hide();
+  		imp2.copyAttributes(imp);
+  		imp.changes = false;
+  		imp.close();
+	}
+
 	/** Converts a 2 or 3 slice 8-bit stack to RGB. */
 	public void convertRGBStackToRGB() {
 		int stackSize = imp.getStackSize();
@@ -171,6 +234,35 @@ public class ImageConverter {
 			imp.setTitle(imp.getTitle());
 	}
 	
+	/** Converts a 3-slice (hue, saturation, brightness) 32-bit stack to RGB. */
+	public void convertHSB32ToRGB() {
+		if (imp.getStackSize()!=3)
+			throw new IllegalArgumentException("3-slice 8-bit stack required");
+		ImageStack stack = imp.getStack();
+		float[] H = (float[])stack.getPixels(1);
+		float[] S = (float[])stack.getPixels(2);
+		float[] B = (float[])stack.getPixels(3);
+		int width = imp.getWidth();
+		int height = imp.getHeight();
+		imp.trimProcessor();
+		ColorProcessor cp = new ColorProcessor(width, height);
+		cp.setHSB(H, S, B);
+		imp.setImage(cp.createImage());
+		imp.killStack();
+		if (IJ.isLinux())
+			imp.setTitle(imp.getTitle());
+	}
+
+	/** Converts a Lab stack to RGB. */
+	public void convertLabToRGB() {
+		if (imp.getStackSize()!=3)
+			throw new IllegalArgumentException("3-slice 32-bit stack required");
+		ColorSpaceConverter converter = new ColorSpaceConverter();
+		ImagePlus imp2 = converter.LabToRGB(imp);
+		imp2.setCalibration(imp.getCalibration());
+		imp.setImage(imp2);
+	}
+
 	/** Converts an RGB image to 8-bits indexed color. 'nColors' must
 		be greater than 1 and less than or equal to 256. */
 	public void convertRGBtoIndexedColor(int nColors) {
@@ -194,6 +286,7 @@ public class ImageConverter {
 		MedianCut mc = new MedianCut(pixels, width, height);
 		ImageProcessor ip2 = mc.convertToByte(nColors);
 	    imp.setProcessor(null, ip2);
+	    imp.setTypeToColor256();
 	}
 	
 	/** Set true to scale to 0-255 when converting short to byte or float

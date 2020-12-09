@@ -61,7 +61,7 @@ public class Arrow extends Line {
 		if (fillColor!=null) color = fillColor;
 		g.setColor(color);
 		Graphics2D g2 = (Graphics2D)g;
-		g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+		setRenderingHint(g2);
 		AffineTransform at = g2.getDeviceConfiguration().getDefaultTransform();
 		double mag = getMagnification();
 		int xbase=0, ybase=0;
@@ -69,7 +69,7 @@ public class Arrow extends Line {
 			Rectangle r = ic.getSrcRect();
 			xbase = r.x; ybase = r.y;
 		}
-		at.setTransform(mag, 0.0, 0.0, mag, -xbase*mag, -ybase*mag);
+		at.setTransform(mag, 0.0, 0.0, mag, (-xbase+0.5)*mag, (-ybase+0.5)*mag); //0.5: int coordinate at pixel center
 		if (outline) {
 			float lineWidth = (float)(getOutlineWidth()*mag);
 			g2.setStroke(new BasicStroke(lineWidth, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND));
@@ -80,12 +80,11 @@ public class Arrow extends Line {
 			g2.fill(at.createTransformedShape(shape));
 			if (doubleHeaded) g2.fill(at.createTransformedShape(shape2));
 		}
-		if (state!=CONSTRUCTING && !overlay) {
-			int size2 = HANDLE_SIZE/2;
+		if (!overlay) {
 			handleColor=Color.white;
-			drawHandle(g, screenXD(x1d)-size2, screenYD(y1d)-size2);
-			drawHandle(g, screenXD(x2d)-size2, screenYD(y2d)-size2);
-			drawHandle(g, screenXD(x1d+(x2d-x1d)/2.0)-size2, screenYD(y1d+(y2d-y1d)/2.0)-size2);
+			drawHandle(g, screenXD(x1d), screenYD(y1d));
+			drawHandle(g, screenXD(x2d), screenYD(y2d));
+			drawHandle(g, screenXD(x1d+(x2d-x1d)/2.0), screenYD(y1d+(y2d-y1d)/2.0));
 		}
 		if (state!=NORMAL && imp!=null && imp.getRoi()!=null)
 			showStatus();
@@ -149,6 +148,8 @@ public class Arrow extends Line {
 		if (style==NOTCHED) length*=0.74;
 		if (style==OPEN) length*=1.32;
 		if (length<0.0 || style==HEADLESS) length=0.0;
+		double x = getXBase();
+		double y = getYBase();
 		x1d=x+x1R; y1d=y+y1R; x2d=x+x2R; y2d=y+y2R;
 		x1=(int)x1d; y1=(int)y1d; x2=(int)x2d; y2=(int)y2d;
 		double dx=x2d-x1d, dy=y2d-y1d;
@@ -305,6 +306,28 @@ public class Arrow extends Line {
 
 	public void setStyle(int style) {
 		this.style = style;
+	}
+	
+	/* Set the style, where 'style' is "filled", "notched", "open", "headless" or "bar",
+		plus optionial modifiers of "outline", "double", "small", "medium" and "large". */
+	public void setStyle(String style) {
+		style = style.toLowerCase();
+		int newStyle = Arrow.FILLED;
+		if (style.contains("notched"))
+			newStyle = Arrow.NOTCHED;
+		else if (style.contains("open"))
+			newStyle = Arrow.OPEN;
+		else if (style.contains("headless"))
+			newStyle = Arrow.HEADLESS;
+		else if (style.contains("bar"))
+			newStyle = Arrow.BAR;
+		setStyle(newStyle);
+		setOutline(style.contains("outline"));
+		setDoubleHeaded(style.contains("double"));
+		if (style.contains("small"))
+			setHeadSize(5);
+		else if (style.contains("large"))
+			setHeadSize(15);
 	}
 
 	public int getStyle() {

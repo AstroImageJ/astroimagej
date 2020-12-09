@@ -33,7 +33,6 @@ public class ScaleDialog implements PlugInFilter {
 		
 		String scale = "<no scale>";
 		int digits = 2;
-		//IJ.log("ScaleDialog: "+isCalibrated);
 		Roi roi = imp.getRoi();
 		if (roi!=null && (roi instanceof Line)) {
 			measured = ((Line)roi).getRawLength();
@@ -47,13 +46,13 @@ public class ScaleDialog implements PlugInFilter {
 				known = 1.0;
 			}
 			double dscale = measured/known;
-			digits = Tools.getDecimalPlaces(dscale, dscale);
+			digits = Tools.getDecimalPlaces(dscale);
 			unit = cal.getUnit();
 			scale = IJ.d2s(dscale, digits)+" pixels/"+unit;
 			aspectRatio = cal.pixelHeight/cal.pixelWidth;
 		}
 		
-		digits = Tools.getDecimalPlaces(measured, measured);
+		digits = Tools.getDecimalPlaces(measured);
 		int asDigits = aspectRatio==1.0?1:3;
 		SetScaleDialog gd = new SetScaleDialog("Set Scale", scale, length);
 		gd.addNumericField("Distance in pixels:", measured, digits, 8, null);
@@ -71,15 +70,14 @@ public class ScaleDialog implements PlugInFilter {
 			return;
 		measured = gd.getNextNumber();
 		known = gd.getNextNumber();
+		if (aspectRatio==1.0)
+			gd.setSmartRecording(true);
 		aspectRatio = gd.getNextNumber();
+		gd.setSmartRecording(false);
 		unit = gd.getNextString();
         if (unit.equals("A"))
         	unit = ""+IJ.angstromSymbol;
  		global2 = gd.getNextBoolean();
-		//if (measured!=0.0 && known==0.0) {
-		//	imp.setGlobalCalibration(global2?cal:null);
-		//	return;
-		//}
 		if (measured==known && unit.equals("unit"))
 			unit = "pixel";
 		if (measured<=0.0 || known<=0.0 || unit.startsWith("pixel") || unit.startsWith("Pixel") || unit.equals("")) {
@@ -90,7 +88,8 @@ public class ScaleDialog implements PlugInFilter {
 		} else {
 			if (gd.scaleChanged || IJ.macroRunning()) {
 				cal.pixelWidth = known/measured;
-				cal.pixelDepth = cal.pixelWidth;
+				if (cal.pixelDepth==1.0)
+					cal.pixelDepth = cal.pixelWidth;
 			}
 			if (aspectRatio!=0.0)
 				cal.pixelHeight = cal.pixelWidth*aspectRatio;
@@ -98,8 +97,10 @@ public class ScaleDialog implements PlugInFilter {
 				cal.pixelHeight = cal.pixelWidth;
 			cal.setUnit(unit);
 		}
-		if (!cal.equals(calOrig))
+		if (!cal.equals(calOrig)) {
 			imp.setCalibration(cal);
+			imp.changes = true;
+		}
 		imp.setGlobalCalibration(global2?cal:null);
 		if (global2 || global2!=global1)
 			WindowManager.repaintImageWindows();
@@ -163,7 +164,7 @@ class SetScaleDialog extends GenericDialog {
  			theScale = NO_SCALE;
  		else {
  			double scale = measured/known;
-			int digits = Tools.getDecimalPlaces(scale, scale);
+			int digits = Tools.getDecimalPlaces(scale);
  			theScale = IJ.d2s(scale,digits)+(scale==1.0?" pixel/":" pixels/")+unit;
  		}
  		setScale(theScale);

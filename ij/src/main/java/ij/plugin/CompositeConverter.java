@@ -6,6 +6,7 @@ import java.awt.*;
 import java.awt.image.*;
 import ij.plugin.frame.ContrastAdjuster;
 import ij.macro.Interpreter;
+import ij.plugin.frame.Recorder;
 
 /** This plugin implements the Image/Color/Make Composite command. */
 public class CompositeConverter implements PlugIn {
@@ -15,11 +16,10 @@ public class CompositeConverter implements PlugIn {
 		ImagePlus imp = IJ.getImage();
 		if (imp.isComposite()) {
 			CompositeImage ci = (CompositeImage)imp;
-			if (ci.getMode()!=CompositeImage.COMPOSITE) {
-				ci.setMode(CompositeImage.COMPOSITE);
+			if (ci.getMode()!=IJ.COMPOSITE) {
+				ci.setMode(IJ.COMPOSITE);
 				ci.updateAndDraw();
 			}
-			if (!IJ.isMacro()) IJ.run("Channels Tool...");
 			return;
 		}
 		String mode = modes[0];
@@ -31,11 +31,24 @@ public class CompositeConverter implements PlugIn {
 			if (c>7) mode = modes[2];
 		}
 		if (imp.getBitDepth()==24) {
-			if (z>1)
-				convertRGBToCompositeStack(imp, arg);
-			else
-				convertRGBToCompositeImage(imp);
-			if (!IJ.isMacro()) IJ.run("Channels Tool...");
+			ImageWindow win = imp.getWindow();
+			Point loc = win!=null?win.getLocation():null;
+			int slice = imp.getCurrentSlice();
+			ImagePlus imp2 = makeComposite(imp);
+			if (loc!=null) ImageWindow.setNextLocation(loc);
+			imp2.show();
+			imp.changes = false;
+			if (z==1) {
+				imp.hide();
+				WindowManager.setCurrentWindow(imp2.getWindow());
+			} else {
+				if (arg!=null && arg.equals("color"))
+					((CompositeImage)imp2).setMode(IJ.COLOR);
+				imp2.setZ(slice);
+				imp.close();
+			}
+			if (IJ.isMacro() && !Interpreter.isBatchMode())
+				IJ.wait(500);
 		} else if (c>=2 || (IJ.macroRunning()&&c>=1)) {
 			GenericDialog gd = new GenericDialog("Make Composite");
 			gd.addChoice("Display Mode:", modes, mode);
@@ -52,28 +65,27 @@ public class CompositeConverter implements PlugIn {
 			imp.hide();
 			if (location!=null)
 				ImageWindow.setNextLocation(location);
-			if (IJ.isMacro()) {
+			if (IJ.isMacro())
 				IJ.wait(250);
-				ci.show();
-			} else {
-				ci.show();
-				IJ.run("Channels Tool...");
-			}
+			ci.show();
 		} else
 			IJ.error("To create a composite, the current image must be\n a stack with at least 2 channels or be in RGB format.");
 	}
 	
-	void convertRGBToCompositeImage(ImagePlus imp) {
-			ImageWindow win = imp.getWindow();
-			Point loc = win!=null?win.getLocation():null;
-			ImagePlus imp2 = new CompositeImage(imp, CompositeImage.COMPOSITE);
-			if (loc!=null) ImageWindow.setNextLocation(loc);
-			imp2.show();
-			imp.hide();
-			WindowManager.setCurrentWindow(imp2.getWindow());
+	public static ImagePlus makeComposite(ImagePlus imp) {
+		if (imp.getBitDepth()==24) {
+			if (Recorder.scriptMode())
+				Recorder.recordCall("ImagePlus", "imp2 = CompositeConverter.makeComposite(imp);");
+			return convertRGBToComposite(imp);
+		} else
+			return null;
 	}
-
-	void convertRGBToCompositeStack(ImagePlus imp, String arg) {
+	
+	private static ImagePlus convertRGBToComposite(ImagePlus imp) {
+		if (imp.getBitDepth()!=24)
+			throw new IllegalArgumentException("RGB image or stack required");
+		if (imp.getStackSize()==1)
+			return new CompositeImage(imp, IJ.COMPOSITE);
 		int width = imp.getWidth();
 		int height = imp.getHeight();
 		ImageStack stack1 = imp.getStack();
@@ -91,19 +103,10 @@ public class CompositeConverter implements PlugIn {
 			stack2.addSlice(null, B);
 		}
 		n *= 3;
-		imp.changes = false;
-		ImageWindow win = imp.getWindow();
-		Point loc = win!=null?win.getLocation():null;
 		ImagePlus imp2 = new ImagePlus(imp.getTitle(), stack2);
 		imp2.setDimensions(3, n/3, 1);
-		int mode = arg!=null && arg.equals("color")?CompositeImage.COLOR:CompositeImage.COMPOSITE;
- 		imp2 = new CompositeImage(imp2, mode);
-		if (loc!=null) ImageWindow.setNextLocation(loc);
-		imp2.show();
-		imp.changes = false;
-		imp.close();
-		if (IJ.isMacro() && !Interpreter.isBatchMode())
-			IJ.wait(500);
+ 		imp2 = new CompositeImage(imp2, IJ.COMPOSITE);
+		return imp2;
 	}
 
 }

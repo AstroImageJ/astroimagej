@@ -177,7 +177,7 @@ class PixelInspector extends PlugInFrame
 		if (loc!=null)
 			setLocation(loc);
 		else
-			GUI.center(this);
+			GUI.centerOnImageJScreen(this);
 		setResizable(false);
 		show();
 		toFront();
@@ -205,6 +205,7 @@ class PixelInspector extends PlugInFrame
 					add(labels[p]);
 			}
 		}
+		GUI.scale(this);
 		pack();
 	}
 
@@ -314,8 +315,9 @@ class PixelInspector extends PlugInFrame
 	}
 
 	synchronized void update(int whichUpdate) {
-		if (nextUpdate < whichUpdate) nextUpdate = whichUpdate;
-		notify();								//wake up the background thread
+		if (nextUpdate < whichUpdate)
+			nextUpdate = whichUpdate;
+		notify();		//wake up the background thread
 	}
 
 	// the background thread for updating the table
@@ -443,6 +445,8 @@ class PixelInspector extends PlugInFrame
 			double[] minmax = Tools.getMinMax(data);
 			double maxDataValue = Math.max(Math.abs(minmax[0]), Math.abs(minmax[1]));
 			digits = (int)(6-Math.log(maxDataValue)/Math.log(10));
+			if (maxDataValue==0.0)
+				digits = 6;
 			expMode = digits<-1 || digits>7;
 			if (Math.min(minmax[0], minmax[1]) < 0)
 				digits--; //more space needed for minus sign
@@ -510,7 +514,7 @@ class PixelInspector extends PlugInFrame
 		gd.addChoice("Grayscale readout:",GRAY_DISPLAY_TYPES,GRAY_DISPLAY_TYPES[grayDisplayType]);
 		gd.addChoice("RGB readout:",RGB_DISPLAY_TYPES,RGB_DISPLAY_TYPES[rgbDisplayType]);
 		gd.addChoice("Copy to clipboard:", COPY_TYPES, COPY_TYPES[copyType]);
-		gd.addMessage("Use arrow keys to move red outline.\nPress 'c' to copy data to clipboard.");
+		gd.addMessage("Use arrow keys to move red outline.\nPress 'c' to copy data to clipboard.", null, Color.darkGray);
 		Point loc = Prefs.getLocation(LOC_KEY);
 		if (loc!=null) {
 			gd.centerDialog(false);

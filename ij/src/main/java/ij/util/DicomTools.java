@@ -11,7 +11,7 @@ public class DicomTools {
 	/** Sorts a DICOM stack by image number. */
 	public static ImageStack sort(ImageStack stack) {
 		if (IJ.debugMode) IJ.log("Sorting by DICOM image number");
-		if (stack.getSize()==1) return stack;
+		if (stack.size()==1) return stack;
 		String[] strings = getSortStrings(stack, "0020,0013");
 		if (strings==null) return stack;
 		StringSorter.sort(strings);
@@ -26,7 +26,7 @@ public class DicomTools {
 	private static ImageStack sortStack(ImageStack stack, String[] strings) {
 		ImageProcessor ip = stack.getProcessor(1);
 		ImageStack stack2 = new ImageStack(ip.getWidth(), ip.getHeight(), ip.getColorModel());
-		for (int i=0; i<stack.getSize(); i++) {
+		for (int i=0; i<stack.size(); i++) {
 			int slice = (int)Tools.parseDouble(strings[i].substring(strings[i].length()-MAX_DIGITS), 0.0);
 			if (slice==0) return null;
 			stack2.addSlice(sliceLabels[slice-1], stack.getPixels(slice));
@@ -37,7 +37,11 @@ public class DicomTools {
 
 	private static String[] getSortStrings(ImageStack stack, String tag) {
 		double series = getSeriesNumber(getSliceLabel(stack,1));
-		int n = stack.getSize();
+		int n = stack.size();
+		boolean checkRescaleSlope = (stack instanceof VirtualStack)?((VirtualStack)stack).getBitDepth()==16:false;
+		if (Prefs.ignoreRescaleSlope)
+			checkRescaleSlope = false;
+		boolean showError = false;
 		String[] values = new String[n];
 		sliceLabels = new String[n];
 		for (int i=1; i<=n; i++) {
@@ -47,15 +51,27 @@ public class DicomTools {
 			double value = getNumericTag(tags, tag);
 			if (Double.isNaN(value)) {
 				if (IJ.debugMode) IJ.log("  "+tag+"  tag missing in slice "+i);
+				if (showError) rescaleSlopeError(stack);
 				return null;
 			}
 			if (getSeriesNumber(tags)!=series) {
 				if (IJ.debugMode) IJ.log("  all slices must be part of the same series");
+				if (showError) rescaleSlopeError(stack);
 				return null;
 			}
 			values[i-1] = toString(value, MAX_DIGITS) + toString(i, MAX_DIGITS);
+			if (checkRescaleSlope) {
+				double rescaleSlope = getNumericTag(tags, "0028,1053");
+				if (rescaleSlope!=1.0)
+					showError = true;
+			}
 		}
+		if (showError) rescaleSlopeError(stack);
 		return values;
+	}
+	
+	private static void rescaleSlopeError(ImageStack stack) {
+		((VirtualStack)stack).setBitDepth(32);
 	}
 
 	private static String toString(double value, int width) {
@@ -87,13 +103,13 @@ public class DicomTools {
 			String[] xyz = pos0.split("\\\\");
 			if (xyz.length!=3) return voxelDepth;
 			double z0 = Double.parseDouble(xyz[2]);
-			if (stack.isVirtual()) stack.getProcessor(stack.getSize());
-			posn = getTag(stack.getSliceLabel(stack.getSize()), "0020,0032");
+			if (stack.isVirtual()) stack.getProcessor(stack.size());
+			posn = getTag(stack.getSliceLabel(stack.size()), "0020,0032");
 			if (posn==null) return voxelDepth;
 			xyz = posn.split("\\\\");
 			if (xyz.length!=3) return voxelDepth;
 			double zn = Double.parseDouble(xyz[2]);
-			voxelDepth = Math.abs((zn - z0) / (stack.getSize() - 1));
+			voxelDepth = Math.abs((zn - z0) / (stack.size() - 1));
 		}
 		if (IJ.debugMode) IJ.log("DicomTools.getVoxelDepth: "+voxelDepth+"  "+pos0+"  "+posn);
 		return voxelDepth;
@@ -113,6 +129,11 @@ public class DicomTools {
 		return getTag(metadata, id);
 	}
 	
+	/** Returns the name of the specified DICOM tag id. */
+	public static String getTagName(String id) {
+		return DICOM.getTagName(id);
+	}
+		
 	private static double getSeriesNumber(String tags) {
 		double series = getNumericTag(tags, "0020,0011");
 		if (Double.isNaN(series)) series = 0;
@@ -146,4 +167,3 @@ public class DicomTools {
 	}
 
 }
-

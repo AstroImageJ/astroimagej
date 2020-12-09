@@ -7,6 +7,7 @@ import ij.process.ImageProcessor;
 public class ImageWriter {
 	private FileInfo fi;
 	private boolean showProgressBar=true;
+	private boolean savingStack;
 	
 	public ImageWriter (FileInfo fi) {
 		this.fi = fi;
@@ -20,8 +21,7 @@ public class ImageWriter {
 	void write8BitImage(OutputStream out, byte[] pixels)  throws IOException {
 		int bytesWritten = 0;
 		int size = fi.width*fi.height;
-		int count = 8192;
-		
+		int count = getCount(size);
 		while (bytesWritten<size) {
 			if ((bytesWritten + count)>size)
 				count = size - bytesWritten;
@@ -34,6 +34,7 @@ public class ImageWriter {
 	
 	void write8BitStack(OutputStream out, Object[] stack)  throws IOException {
 		showProgressBar = false;
+		savingStack = true;
 		for (int i=0; i<fi.nImages; i++) {
 			IJ.showStatus("Writing: " + (i+1) + "/" + fi.nImages);
 			write8BitImage(out, (byte[])stack[i]);
@@ -57,7 +58,7 @@ public class ImageWriter {
 	void write16BitImage(OutputStream out, short[] pixels)  throws IOException {
 		long bytesWritten = 0L;
 		long size = 2L*fi.width*fi.height;
-		int count = 8192;
+		int count = getCount(size);
 		byte[] buffer = new byte[count];
 
 		while (bytesWritten<size) {
@@ -152,7 +153,7 @@ public class ImageWriter {
 	void writeFloatImage(OutputStream out, float[] pixels)  throws IOException {
 		long bytesWritten = 0L;
 		long size = 4L*fi.width*fi.height;
-		int count = 8192;
+		int count = getCount(size);
 		byte[] buffer = new byte[count];
 		int tmp;
 
@@ -182,6 +183,19 @@ public class ImageWriter {
 			bytesWritten += count;
 			showProgress((double)bytesWritten/size);
 		}
+	}
+	
+	private int getCount(long imageSize) {
+		if (savingStack || imageSize<4L)
+			return (int)imageSize;
+		int count = (int)(imageSize/50L);
+		if (count<65536)
+			count = 65536;
+		if (count>imageSize)
+			count = (int)imageSize;
+		count = (count/4)*4;
+		if (IJ.debugMode) IJ.log("ImageWriter: "+imageSize+" "+count+" "+imageSize/50);	
+		return count;	
 	}
 	
 	void writeFloatStack(OutputStream out, Object[] stack)  throws IOException {
@@ -260,6 +274,8 @@ public class ImageWriter {
 				throw new IOException("ImageWriter: fi.pixels==null");
 		if (fi.nImages>1 && fi.virtualStack==null && !(fi.pixels instanceof Object[]))
 				throw new IOException("ImageWriter: fi.pixels not a stack");
+		if (fi.width*fi.height*fi.getBytesPerPixel()<26214400)
+			showProgressBar = false; // don't show progress bar if image<25MB
 		switch (fi.fileType) {
 			case FileInfo.GRAY8:
 			case FileInfo.COLOR8:
@@ -300,6 +316,7 @@ public class ImageWriter {
 				break;
 			default:
 		}
+		savingStack = false;
 	}
 	
 }

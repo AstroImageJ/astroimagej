@@ -22,15 +22,16 @@ public class ArrowToolOptions implements PlugIn, DialogListener {
 		double width = Arrow.getDefaultWidth();
 		double headSize = Arrow.getDefaultHeadSize();
 		Color color = Toolbar.getForegroundColor();
-		colorName = Colors.getColorName(color, "red");
+		colorName = Colors.colorToString2(color);
 		int style = Arrow.getDefaultStyle();
-		gd = new NonBlockingGenericDialog("Arrow Tool");
+		gd = NonBlockingGenericDialog.newDialog("Arrow Tool");
 		gd.addSlider("Width:", 1, 50, (int)width);
 		gd.addSlider("Size:", 0, 50, headSize);
-		gd.addChoice("Color:", Colors.colors, colorName);
+		gd.addChoice("Color:", Colors.getColors(colorName), colorName);
 		gd.addChoice("Style:", Arrow.styles, Arrow.styles[style]);
 		gd.addCheckbox("Outline", Arrow.getDefaultOutline());
 		gd.addCheckbox("Double head", Arrow.getDefaultDoubleHeaded());
+		gd.addCheckbox("Keep after adding to overlay", Prefs.keepArrowSelections);
 		gd.addDialogListener(this);
 		Point loc = Prefs.getLocation(LOC_KEY);
 		if (loc!=null) {
@@ -48,8 +49,9 @@ public class ArrowToolOptions implements PlugIn, DialogListener {
 		int style2 = gd.getNextChoiceIndex();
 		boolean outline2 = gd.getNextBoolean();
 		boolean doubleHeaded2 = gd.getNextBoolean();
+		Prefs.keepArrowSelections = gd.getNextBoolean();
 		if (colorName!=null && !colorName2.equals(colorName)) {
-			Color color = Colors.getColor(colorName2, Color.black);
+			Color color = Colors.decode(colorName2, null);
 			Toolbar.setForegroundColor(color);
 		}
 		colorName = colorName2;

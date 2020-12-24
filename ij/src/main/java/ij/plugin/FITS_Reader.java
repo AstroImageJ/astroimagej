@@ -666,7 +666,7 @@ class FitsDecoder {
             simpleLine = line;
             }
 		int count = 1;
-		while ( true ) {
+		while (f.available() > 0) {
 			count++;
 			line = getString(80);
 			info.append(line+"\n");

@@ -79,11 +79,18 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			IJ.error("Failed to find an image HDU");
 			return;
 		}
-		if (isCompressedFormat(hdus, firstImageIndex)) {  //use nom.tam.fits to open compressed files
+		if (true) {  //use nom.tam.fits to open compressed files
 			int imageIndex = firstImageIndex;
 			try {
-				// A side effect of this call is that wi, he, and de are set
-				displayHdu = getCompressedImageData((CompressedImageHDU) hdus[imageIndex]);
+				if (isCompressedFormat(hdus, firstImageIndex)) {
+					// A side effect of this call is that wi, he, and de are set
+					displayHdu = getCompressedImageData((CompressedImageHDU) hdus[imageIndex]);
+				} else {
+					displayHdu = hdus[imageIndex];
+					wi = displayHdu.getHeader().getIntValue("NAXIS1");
+					he = displayHdu.getHeader().getIntValue("NAXIS2");
+					de = 1; // Use displaySingleImage
+				}
 			} catch (FitsException e) {
 				IJ.error("Failed to uncompress image: " + e.getMessage());
 				return;
@@ -133,7 +140,8 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 //                return;
 //            }
 //        }
-		} else {   //use legacy custom fits reader to open uncompressed files
+		} /*DISABLED to use nom for opening fits - may not handle 3D images
+		else {   //use legacy custom fits reader to open uncompressed files
 			OpenDialog od = new OpenDialog("Open FITS...", path);
 			String directory = od.getDirectory();
 			String fileName = od.getFileName();
@@ -189,7 +197,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 				IJ.error("This does not appear to be a FITS file.");
 			IJ.showStatus("");
 
-		}
+		}*/
 
 	}
 	// Returns a newline-delimited concatenation of the header lines
@@ -693,6 +701,12 @@ class FitsDecoder {
 				value = "";
 			}
 
+			// If EXTEND is true, the reader will continue past END to look for more headers
+			// this statement skips data entries as headers must be ASCII
+			if (!key.matches("\\A\\p{ASCII}*\\z")) {
+				continue;
+			}
+
 			if (key.equals ("XTENSION") && value.contains("IMAGE") ) {
 				info = new StringBuffer(512);
 				info.append(simpleLine+"\n");
@@ -703,6 +717,7 @@ class FitsDecoder {
 			if (key.equals ("EXTEND") && value.contains("T") && naxis < 1) extensions = true;
 			// Time to stop ?
 			if (key.equals ("END") ) {
+				//if (true) break;
 				if (extensions == false) {
 					break;
 				}else {

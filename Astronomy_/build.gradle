@@ -13,4 +13,11 @@ compileJava {
 
 dependencies {
 	implementation project(':ij')
+
+    //These are in plugins folder
+    implementation('com.eclipsesource.minimal-json:minimal-json:0.9.5')
+    //TODO find better/smaller way
+    implementation 'de.schlichtherle.truezip:truezip-path:7.7.10'
+    implementation 'de.schlichtherle.truezip:truezip-driver-tar:7.7.10'
+    implementation 'de.schlichtherle.truezip:truezip-driver-zip:7.7.10'
 }

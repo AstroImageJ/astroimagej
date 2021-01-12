@@ -1,5 +1,6 @@
 import io.github.fvarrui.javapackager.gradle.PackageTask
 import org.apache.tools.ant.taskdefs.condition.Os
+import groovy.json.JsonSlurper
 
 buildscript {
     repositories {
@@ -63,19 +64,25 @@ task createPlugins {
     }
 }
 
-def jreBaseName = "zulu15.28.13-ca-jre15.0.1"
+def jdks = [macos: [version: 0, ext: "zip", name:""],
+            linux: [version: 0, ext: "tar.gz", name:""],
+            windows: [version: 0, ext: "zip", name:""]]
 
-def downloadJREs = project.download {
-    String[] platforms = ["macosx_x64.zip", "linux_x64.tar.gz", "win_x64.zip"]
-    for (String sys : platforms) {
-        src createURL(jreBaseName, sys)
+// TODO arm mac builds if x86 performance isn't good
+def createJdks = project.download {
+    for (String sys: jdks.keySet()) {
+        String url = "https://api.azul.com/zulu/download/community/v1.0/bundles/latest/?" +
+                "os=${sys}&arch=x86&hw_bitness=64&bundle_type=jdk&ext=${jdks.get(sys).ext}"
+        // Other paramters:
+        // &support_term=lts/mts/sts &release_status=ga/ea/both &jdk_version=11
+        def meta = new JsonSlurper().parse(new URL(url))
+        jdks.get(sys).version = meta.jdk_version[0]
+        jdks.get(sys).ext = meta.ext
+        jdks.get(sys).name = meta.name
+        src meta.url as String
         overwrite false
         dest new File(projectDir, "jres")
     }
-}
-
-String createURL(String base, String sys) {
-    return "https://cdn.azul.com/zulu/bin/" + base + "-" + sys
 }
 
 def commonDist = project.copySpec {
@@ -104,14 +111,16 @@ def commonDist = project.copySpec {
 }
 
 def unZipJres = project.copySpec {
-    from(zipTree(file("${projectDir}/jres/${jreBaseName}-macosx_x64.zip"))) {
-        into ''
-    }
-    from(tarTree(file("${projectDir}/jres/${jreBaseName}-linux_x64.tar.gz"))) {
-        into ''
-    }
-    from(zipTree(file("${projectDir}/jres/${jreBaseName}-win_x64.zip"))) {
-        into ''
+    for (entry in jdks) {
+        if (entry.key == "linux") {
+            from(tarTree(resources.gzip(file("${projectDir}/jres/${entry.value.name}")))) {
+                into ''
+            }
+        } else {
+            from(zipTree(file("${projectDir}/jres/${entry.value.name}"))) {
+                into ''
+            }
+        }
     }
 }
 
@@ -196,21 +205,21 @@ task packageAijForLinux(type: PackageTask, dependsOn: [build, unZipJresTask, com
     mustRunAfter commonFiles
     platform = io.github.fvarrui.javapackager.model.Platform.linux
     createTarball = true
-    jrePath = file("${projectDir}/jres/${jreBaseName}-linux_x64")
+    jdkPath = file("${projectDir}/jres/${jdks.linux.name.replace("." + jdks.linux.ext, "")}")
 }
 task packageAijForMac(type: PackageTask, dependsOn: [build, unZipJresTask, commonFiles]) {
     group 'AstroImageJ Developement'
     mustRunAfter commonFiles
     platform = io.github.fvarrui.javapackager.model.Platform.mac
     createZipball = true
-    jrePath = file("${projectDir}/jres/${jreBaseName}-macosx_x64/zulu-15.jre/")
+    jdkPath = file("${projectDir}/jres/${jdks.macos.name.replace("." + jdks.macos.ext, "")}/zulu-${jdks.macos.version}.jdk/Contents/Home")
 }
 task packageAijForWindows(type: PackageTask, dependsOn: [build, unZipJresTask, commonFiles]) {
     group 'AstroImageJ Developement'
     mustRunAfter commonFiles
     platform = io.github.fvarrui.javapackager.model.Platform.windows
     createZipball = true
-    jrePath = file("${projectDir}/jres/${jreBaseName}-win_x64")
+    jdkPath = file("${projectDir}/jres/${jdks.windows.name.replace("." + jdks.windows.ext, "")}")
 
     vmArgs = [] // Set to nothing so that the ini file will take over
 

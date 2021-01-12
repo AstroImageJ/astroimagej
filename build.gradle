@@ -65,6 +65,7 @@ def jdks = [macos: [version: 0, ext: "zip", name:""],
             windows: [version: 0, ext: "zip", name:""]]
 
 // TODO arm mac builds if x86 performance isn't good
+// TODO clean jres folder when new jdk is added
 def createJdks = project.download {
     for (String sys: jdks.keySet()) {
         String url = "https://api.azul.com/zulu/download/community/v1.0/bundles/latest/?" +

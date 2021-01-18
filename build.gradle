@@ -136,6 +136,27 @@ task verifyDownloadedJres(type: Verify, dependsOn: downloadJavaRuntimes) {
     }
 }
 
+/**
+ * Decompress the Java runtimes into folders.
+ */
+task unZipJresTask(type: Copy, dependsOn: verifyDownloadedJres) {
+    mustRunAfter verifyDownloadedJres
+    javaRuntimeSystems.each {sys, sysInfo ->
+        if (sysInfo.ext == "tar.gz") {
+            from(tarTree(resources.gzip(file("${projectDir}/jres/${sysInfo.name}")))) {
+                into ''
+            }
+        } else if (sysInfo.ext == "zip") {
+            from(zipTree(file("${projectDir}/jres/${sysInfo.name}"))) {
+                into ''
+            }
+        } else {
+            logger.error("Did not know how to handle " + sysInfo.ext + " for " + sys)
+        }
+    }
+    into 'jres'
+}
+
 // Define what files belong to all distributions and their location
 def commonDist = project.copySpec {
     // Copy astronomy_.jar to correct place in distribution
@@ -171,28 +192,9 @@ project.copy {
 }
 
 /**
- * Decompress the Java runtimes into folders.
- */
-task unZipJresTask(type: Copy, dependsOn: verifyDownloadedJres) {
-    mustRunAfter verifyDownloadedJres
-    javaRuntimeSystems.each {sys, sysInfo ->
-        if (sysInfo.ext == "tar.gz") {
-            from(tarTree(resources.gzip(file("${projectDir}/jres/${sysInfo.name}")))) {
-                into ''
-            }
-        } else if (sysInfo.ext == "zip") {
-            from(zipTree(file("${projectDir}/jres/${sysInfo.name}"))) {
-                into ''
-            }
-        } else {
-            logger.error("Did not know how to handle " + sysInfo.ext + " for " + sys)
-        }
-    }
-    into 'jres'
-}
-
-/**
  * Copy the common files into the build directory to simplify their use.
+ *
+ * This is run when building a distribution to refresh the files in case of a change.
  */
 task commonFiles(type: Copy) {
     with commonDist
@@ -204,23 +206,6 @@ task commonFiles(type: Copy) {
             }
         }
     }
-}
-
-// Task to copy built jars into a certain folder, for use with testing
-task copyBuiltJars(dependsOn: build, type: Copy) {
-    group 'AstroImageJ Developement'
-
-    // Copy astronomy_.jar
-    from(file("${project(':Astronomy_').buildDir}/libs/astronomy_-${project(':Astronomy_').version}.jar")) {
-        rename { String name -> return 'Astronomy_.jar' }
-        into ''
-    }
-    // Copy ij.jar
-    from(file("${project(':ij').buildDir}/libs/ij-${project(':ij').version}.jar")) {
-        rename { String name -> return 'ij.jar' }
-        into ''
-    }
-    into "${projectDir}/out"
 }
 
 // Generate AIJ-Run directory and set it up for usage
@@ -353,4 +338,21 @@ javaRuntimeSystems.each {sys, sysInfo ->
         dependsOn taskName
         outputs.upToDateWhen { false }
     }
+}
+
+// Task to copy built jars into a certain folder, for use with testing
+task copyBuiltJars(dependsOn: build, type: Copy) {
+    group 'AstroImageJ Developement'
+
+    // Copy astronomy_.jar
+    from(file("${project(':Astronomy_').buildDir}/libs/astronomy_-${project(':Astronomy_').version}.jar")) {
+        rename { String name -> return 'Astronomy_.jar' }
+        into ''
+    }
+    // Copy ij.jar
+    from(file("${project(':ij').buildDir}/libs/ij-${project(':ij').version}.jar")) {
+        rename { String name -> return 'ij.jar' }
+        into ''
+    }
+    into "${projectDir}/out"
 }

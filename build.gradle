@@ -34,58 +34,81 @@ allprojects {
     group 'edu.louisville.astro.software'
 }
 
-repositories {
-}
-
 subprojects {
     version = '5.0.0-SNAPSHOT'
 }
 
 dependencies {
     // This dependency is used by the application.
-    implementation 'com.google.guava:guava:29.0-jre'
+    //implementation 'com.google.guava:guava:29.0-jre'
     implementation project(':ij')
     implementation project(':Astronomy_')
 
     // Use JUnit test framework
-    testImplementation 'junit:junit:4.13'
+    //testImplementation 'junit:junit:4.13'
 }
 
-task createPlugins {
-    def plugins = file("$buildDir/plugins")
-    outputs.dir plugins
-    doLast {
-        plugins.mkdirs()
-        new File(plugins, 'readme.md').write("test")
-    }
-}
+/**
+ * The set of Java runtimes to download and package AIJ for.
+ * Terms in the map are based on the query parameters.
+ * To add a distribution, simply give it a unique name and fill out its map with the proper values.
+ * See https://app.swaggerhub.com/apis-docs/azul/zulu-download-community
+ */
+def javaRuntimeSystems = [ mac: [version: 0, ext: "zip", name:"", type: "jre", arch: "x86", os: "macos"]
+            // JDK is used as Azul has not produced a jre for arm macs at this time
+           , armMac: [version: 0, ext: "zip", name:"", type: "jdk", arch: "arm", os: "macos"]
+           , linux: [version: 0, ext: "tar.gz", name:"", type: "jre", arch: "x86", os: "linux"]
+           , windows: [version: 0, ext: "zip", name:"", type: "jre", arch: "x86", os: "windows"]
+           ]
 
-def jdks = [macos: [version: 0, ext: "zip", name:""],
-            linux: [version: 0, ext: "tar.gz", name:""],
-            windows: [version: 0, ext: "zip", name:""]]
-
-// TODO arm mac builds if x86 performance isn't good
-// TODO clean jres folder when new jdk is added
-def createJdks = project.download {
-    for (String sys: jdks.keySet()) {
-        String url = "https://api.azul.com/zulu/download/community/v1.0/bundles/latest/?" +
-                "os=${sys}&arch=x86&hw_bitness=64&bundle_type=jdk&ext=${jdks.get(sys).ext}"
-        // Other paramters:
+/**
+ * Download the specified Java runtimes based on javaRuntimeSystems.
+ */
+task downloadJavaRuntimes(type: Download) {
+    javaRuntimeSystems.each {sys, sysInfo ->
+        // Other parameters of note:
         // &support_term=lts/mts/sts &release_status=ga/ea/both &jdk_version=11
-        def meta = new JsonSlurper().parse(new URL(url))
-        jdks.get(sys).version = meta.jdk_version[0]
-        jdks.get(sys).ext = meta.ext
-        jdks.get(sys).name = meta.name
-        src meta.url as String
+        String url ="https://api.azul.com/zulu/download/community/v1.0/bundles/latest/?" +
+                "os=${sysInfo.os}&arch=${sysInfo.arch}&hw_bitness=64&bundle_type=${sysInfo.type}" +
+                "&ext=${sysInfo.ext}"
+        def meta = new JsonSlurper().parse(new URL(url)) // Pull the data from Azul
+
+        // Update the maps with the metadata
+        sysInfo.version = meta.jdk_version.first()
+        sysInfo.ext = meta.ext as String
+        sysInfo.name = meta.name as String
+
+        // Perform the download
+        //noinspection GroovyAssignabilityCheck
+        src meta.url
+        //noinspection GroovyAssignabilityCheck
         overwrite false
-        dest new File(projectDir, "jres")
+        //noinspection GroovyAssignabilityCheck
+        dest 'jres'
     }
+
+    // Collect current runtime files and extensions
+    def currentFiles = javaRuntimeSystems.collectEntries {[it.value.name, it.value.ext]}
+
+    // Remove old unpacked runtimes
+    file("${projectDir}/jres").traverse(type: groovy.io.FileType.DIRECTORIES, maxDepth: 0) {
+        if (!currentFiles.collect {name, ext ->
+            (name as String).replace("." + ext as String, "")}.contains(it.name)) {
+            it.deleteDir()
+        }
+    }
+
+    // Remove old packed runtimes
+    file("${projectDir}/jres").traverse(type: groovy.io.FileType.FILES, maxDepth: 0) {
+        if (!currentFiles.containsKey(it.name)) {
+            it.delete()
+        }
+    }
+
 }
 
+// Define what files belong to all distributions and their location
 def commonDist = project.copySpec {
-    from(createPlugins) {
-        into 'plugins'
-    }
     // Copy astronomy_.jar to correct place in distribution
     from(file("${project(':Astronomy_').buildDir}/libs/astronomy_-${project(':Astronomy_').version}.jar")) {
         rename { String name -> return 'Astronomy_.jar' }
@@ -107,25 +130,41 @@ def commonDist = project.copySpec {
     }
 }
 
-def unZipJres = project.copySpec {
-    for (entry in jdks) {
-        if (entry.key == "linux") {
-            from(tarTree(resources.gzip(file("${projectDir}/jres/${entry.value.name}")))) {
-                into ''
-            }
-        } else {
-            from(zipTree(file("${projectDir}/jres/${entry.value.name}"))) {
-                into ''
-            }
+// Create commonFiles directory for use in runAij and distribution generation
+project.copy {
+    with commonDist
+    into "${buildDir}/commonFiles"
+    if (Os.isFamily(Os.FAMILY_MAC)) {
+        project.exec {
+            commandLine('chmod',  'a=rw', "${buildDir}/commonFiles/AstroImageJ.l4j.ini")
         }
     }
 }
 
-task unZipJresTask(type: Copy) {
-    with unZipJres
-    into "${projectDir}/jres"
+/**
+ * Decompress the Java runtimes into folders.
+ */
+task unZipJresTask(type: Copy, dependsOn: downloadJavaRuntimes) {
+    mustRunAfter downloadJavaRuntimes
+    javaRuntimeSystems.each {sys, sysInfo ->
+        if (sysInfo.ext == "tar.gz") {
+            from(tarTree(resources.gzip(file("${projectDir}/jres/${sysInfo.name}")))) {
+                into ''
+            }
+        } else if (sysInfo.ext == "zip") {
+            from(zipTree(file("${projectDir}/jres/${sysInfo.name}"))) {
+                into ''
+            }
+        } else {
+            logger.error("Did not know how to handle " + sysInfo.ext + " for " + sys)
+        }
+    }
+    into 'jres'
 }
 
+/**
+ * Copy the common files into the build directory to simplify their use.
+ */
 task commonFiles(type: Copy) {
     with commonDist
     into "${buildDir}/commonFiles"
@@ -155,6 +194,7 @@ task copyBuiltJars(dependsOn: build, type: Copy) {
     into "${projectDir}/out"
 }
 
+// Generate AIJ-Run directory and set it up for usage
 task sync(dependsOn: jar, type: Sync) {
     with commonDist
     destinationDir(file("${projectDir}/AIJ-Run"))
@@ -166,21 +206,41 @@ task aijRun(dependsOn: sync, type: JavaExec) {
 
     workingDir(file("${projectDir}/AIJ-Run/"))
 
+    setAllJvmArgs(readConfigFile())
+
     main = "-jar"
     args "${projectDir}/AIJ-Run/ij.jar"
-
 }
 
+List<String> readConfigFile() {
+    List<String> args = new ArrayList<>()
+    File cfg = files("${projectDir}/AIJ-Run/AstroImageJ.l4j.ini").first()
+    if (!cfg.exists()) return args
+    logger.lifecycle(cfg.path)
+
+    cfg.readLines().each {
+        if (it.startsWith("#") /*Comments*/) {
+            return
+        }
+        it.split(" ").each {// Technically this could break, but not expecting too many args in dev environment
+            args.add(it)
+        }
+    }
+
+    return args
+}
+
+//suppress access
 javapackager {
     // common configuration
-    mainClass = 'ij.ImageJ'
-    bundleJre = true
-    customizedJre = false
-    outputDirectory = file("${buildDir}/distributions")
-    additionalResources = file("${buildDir}/commonFiles/").listFiles()
-    runnableJar = file("${buildDir}/commonFiles/ij.jar")
-    assetsDir = file("${projectDir}/packageFiles/assets")
-    name = 'AstroImageJ'
+    mainClass 'ij.ImageJ'
+    bundleJre true
+    customizedJre false
+    outputDirectory file("${buildDir}/distributions")
+    additionalResources file("${buildDir}/commonFiles/").listFiles().toList()
+    runnableJar  file("${buildDir}/commonFiles/ij.jar")
+    assetsDir  file("${projectDir}/packageFiles/assets")
+    name  'AstroImageJ'
     winConfig.setWrapJar(false) // Don't merge the ij.jar into the exe file
     macConfig.setRelocateJar(false) // Don't place ij.jar in Java/ folder
     winConfig.setDisableDirPage(false) // Let users set install location
@@ -188,52 +248,81 @@ javapackager {
     macConfig.setEntitlements(project.file('packageFiles/aij_entitlements.txt'))
     macConfig.setAppId("AstroImageJ")
 
-    organizationName = "AstroImageJ"
-    vmArgs = [] //['-Xmx3000m', '-Xms256m'] // Launch parameters are set in AstroImageJ.l4j.ini
+    organizationName  "AstroImageJ"
+    vmArgs  [] //['-Xmx3000m', '-Xms256m'] // Launch parameters are set in AstroImageJ.l4j.ini
     version = 'dev-x86' // Dummy version to keep it from saying "unspecified"
 
     // Set to true to enable installer generation. Needs to be on the target OS and needs special tooling
     // See https://github.com/fvarrui/JavaPackager#generated-artifacts
     // In future installer/package signing will be added. TODO sign the packages
-    generateInstaller = true
+    generateInstaller  true
 }
-task packageAijForLinux(type: PackageTask, dependsOn: [build, unZipJresTask, commonFiles]) {
-    group 'AstroImageJ Developement'
-    mustRunAfter commonFiles
-    platform = io.github.fvarrui.javapackager.model.Platform.linux
-    createTarball = true
-    jdkPath = file("${projectDir}/jres/${jdks.linux.name.replace("." + jdks.linux.ext, "")}")
-}
-task packageAijForMac(type: PackageTask, dependsOn: [build, unZipJresTask, commonFiles]) {
-    group 'AstroImageJ Developement'
-    mustRunAfter commonFiles
-    platform = io.github.fvarrui.javapackager.model.Platform.mac
-    createZipball = true
-    jdkPath = file("${projectDir}/jres/${jdks.macos.name.replace("." + jdks.macos.ext, "")}/zulu-${jdks.macos.version}.jdk/Contents/Home")
-}
-task packageAijForWindows(type: PackageTask, dependsOn: [build, unZipJresTask, commonFiles]) {
-    group 'AstroImageJ Developement'
-    mustRunAfter commonFiles
-    platform = io.github.fvarrui.javapackager.model.Platform.windows
-    createZipball = true
-    jdkPath = file("${projectDir}/jres/${jdks.windows.name.replace("." + jdks.windows.ext, "")}")
 
-    vmArgs = [] // Set to nothing so that the ini file will take over
+task packageAij
 
-    // build/commonFiles must exist or gradle will fail all tasks.
-    // Wrap in the null check to ensure that it doesn't fail
-    if (file("${buildDir}/commonFiles/").listFiles() != null) {
-        additionalResources = file("${buildDir}/commonFiles/").listFiles() +
-                file("${projectDir}/packageFiles/assets/windows/AstroImageJ.l4j.ini")
+javaRuntimeSystems.each {sys, sysInfo ->
+    String taskName = "packageAijFor" + (sysInfo.os as String).capitalize() + "_" + sysInfo.arch
+
+    tasks.register(taskName, PackageTask) {
+        group 'AstroImageJ Developement'
+
+        //noinspection GroovyAssignabilityCheck
+        version = sysInfo.arch + "_64"
+
+        // Set the platform
+        io.github.fvarrui.javapackager.model.Platform.values().each {
+            String osName = sys.contains("mac") ? "mac" : sys
+            if (it.name() == osName) {
+                //noinspection GroovyAssignabilityCheck
+                platform = it
+            }
+        }
+
+        // Get Java bin fold location
+        File binPath
+        File java = file("${projectDir}/jres/${(sysInfo.name as String).replace("." +sysInfo.ext as String, "")}")
+        if (java.exists()) {
+            java.traverse(type: groovy.io.FileType.DIRECTORIES, nameFilter: 'bin') {binPath = it.parentFile}
+        } else { // One of the runtimes does not exist, pull it
+            logger.error("A JRE was missing, run downloadJavaRuntimes first! " + sys +
+                    " will not have a JRE bundled!")
+        }
+
+        // Sanity check
+        if (binPath == null) return
+
+        // Set the runtime
+        if (sysInfo.type == "jre") {
+            //noinspection GroovyAssignabilityCheck
+            jrePath = binPath
+        } else if (sysInfo.type == "jdk") {
+            //noinspection GroovyAssignabilityCheck
+            jdkPath = binPath
+        }
+
+        if (sysInfo.os == "linux") {
+            //noinspection GroovyAssignabilityCheck
+            createTarball = true
+        } else {
+            //noinspection GroovyAssignabilityCheck
+            createZipball = true
+        }
     }
-}
-task packageAij(dependsOn: [ packageAijForLinux, packageAijForMac, packageAijForWindows ]) {
-    group 'AstroImageJ Developement'
 
-    outputs.upToDateWhen { false }
+    logger.lifecycle("Added a distribution task: " + taskName)
 
-    doLast { // Cleanup loose files (DMG creation fails since it finds one in assets)
-        //project.delete(files("${buildDir}/distributions/assets"))
-        //project.delete(files("${buildDir}/distributions/AstroImageJ"))
+    tasks.named(taskName) {
+        //noinspection GroovyAssignabilityCheck
+        dependsOn 'build', 'unZipJresTask', 'commonFiles'
+        //noinspection GroovyAssignabilityCheck
+        mustRunAfter commonFiles, 'unZipJresTask'
+    }
+
+    // Make the meta task run the smaller ones
+    tasks.named("packageAij") {
+        group 'AstroImageJ Developement'
+        //noinspection GroovyAssignabilityCheck
+        dependsOn taskName
+        outputs.upToDateWhen { false }
     }
 }

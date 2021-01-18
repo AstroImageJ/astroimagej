@@ -11,7 +11,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'io.github.fvarrui:javapackager:1.4.1'
+        classpath 'io.github.fvarrui:javapackager:1.5.0'
     }
 }
 
@@ -62,8 +62,8 @@ dependencies {
  * To add a distribution, simply give it a unique name and fill out its map with the proper values.
  * See https://app.swaggerhub.com/apis-docs/azul/zulu-download-community/1.0#/bundles/get_bundles_latest_
  *
- * The file's name, major Java version, and MD5 hash are also added to this map. Those entries are excluded from
- * the definition for brevity.
+ * The file's name (name), major Java version (version), and MD5 hash (md5) are also added to this map. Those entries
+ * are excluded from the definition for brevity.
  */
 def javaRuntimeSystems = [ mac: [ext: "zip", type: "jre", arch: "x86", os: "macos"]
             // JDK is used as Azul has not produced a jre for arm macs at this time

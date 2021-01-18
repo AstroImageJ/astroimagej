@@ -32,6 +32,21 @@ allprojects {
         jcenter()
     }
     group 'edu.louisville.astro.software'
+
+    java {
+        toolchain {
+            // Gradle
+            languageVersion.set(JavaLanguageVersion.of(14))
+        }
+    }
+}
+
+java {
+    toolchain {
+        // Gradle will download the JDK for compiling/running if one isn't found
+        // This should prevent anyone from using an outdated JDK
+        languageVersion.set(JavaLanguageVersion.of(15))
+    }
 }
 
 subprojects {

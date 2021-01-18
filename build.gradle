@@ -60,7 +60,7 @@ dependencies {
  * The set of Java runtimes to download and package AIJ for.
  * Terms in the map are based on the query parameters.
  * To add a distribution, simply give it a unique name and fill out its map with the proper values.
- * See https://app.swaggerhub.com/apis-docs/azul/zulu-download-community
+ * See https://app.swaggerhub.com/apis-docs/azul/zulu-download-community/1.0#/bundles/get_bundles_latest_
  *
  * The file's name, major Java version, and MD5 hash are also added to this map. Those entries are excluded from
  * the definition for brevity.

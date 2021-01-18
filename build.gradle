@@ -61,12 +61,15 @@ dependencies {
  * Terms in the map are based on the query parameters.
  * To add a distribution, simply give it a unique name and fill out its map with the proper values.
  * See https://app.swaggerhub.com/apis-docs/azul/zulu-download-community
+ *
+ * The file's name, major Java version, and MD5 hash are also added to this map. Those entries are excluded from
+ * the definition for brevity.
  */
-def javaRuntimeSystems = [ mac: [version: 0, ext: "zip", name:"", type: "jre", arch: "x86", os: "macos"]
+def javaRuntimeSystems = [ mac: [ext: "zip", type: "jre", arch: "x86", os: "macos"]
             // JDK is used as Azul has not produced a jre for arm macs at this time
-           , armMac: [version: 0, ext: "zip", name:"", type: "jdk", arch: "arm", os: "macos"]
-           , linux: [version: 0, ext: "tar.gz", name:"", type: "jre", arch: "x86", os: "linux"]
-           , windows: [version: 0, ext: "zip", name:"", type: "jre", arch: "x86", os: "windows"]
+           , armMac: [ext: "zip", type: "jdk", arch: "arm", os: "macos"]
+           , linux: [ext: "tar.gz", type: "jre", arch: "x86", os: "linux"]
+           , windows: [ext: "zip", type: "jre", arch: "x86", os: "windows"]
            ]
 
 /**
@@ -85,6 +88,7 @@ task downloadJavaRuntimes(type: Download) {
         sysInfo.version = meta.jdk_version.first()
         sysInfo.ext = meta.ext as String
         sysInfo.name = meta.name as String
+        sysInfo.md5 = meta.md5_hash as String
 
         // Perform the download
         //noinspection GroovyAssignabilityCheck
@@ -113,6 +117,22 @@ task downloadJavaRuntimes(type: Download) {
         }
     }
 
+}
+
+/**
+ * Verify the downloaded Java runtimes are correct.
+ * If a file fails the check, delete it and rerun to attempt downloading again.
+ */
+task verifyDownloadedJres(type: Verify, dependsOn: downloadJavaRuntimes) {
+    mustRunAfter downloadJavaRuntimes
+    javaRuntimeSystems.each {sys, sysInfo ->
+        //noinspection GroovyAssignabilityCheck
+        src file("${projectDir}/jres/${sysInfo.name}")
+        //noinspection GroovyAssignabilityCheck
+        algorithm 'MD5'
+        //noinspection GroovyAssignabilityCheck
+        checksum sysInfo.md5
+    }
 }
 
 // Define what files belong to all distributions and their location
@@ -152,8 +172,8 @@ project.copy {
 /**
  * Decompress the Java runtimes into folders.
  */
-task unZipJresTask(type: Copy, dependsOn: downloadJavaRuntimes) {
-    mustRunAfter downloadJavaRuntimes
+task unZipJresTask(type: Copy, dependsOn: verifyDownloadedJres) {
+    mustRunAfter verifyDownloadedJres
     javaRuntimeSystems.each {sys, sysInfo ->
         if (sysInfo.ext == "tar.gz") {
             from(tarTree(resources.gzip(file("${projectDir}/jres/${sysInfo.name}")))) {

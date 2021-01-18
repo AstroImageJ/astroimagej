@@ -216,7 +216,6 @@ List<String> readConfigFile() {
     List<String> args = new ArrayList<>()
     File cfg = files("${projectDir}/AIJ-Run/AstroImageJ.l4j.ini").first()
     if (!cfg.exists()) return args
-    logger.lifecycle(cfg.path)
 
     cfg.readLines().each {
         if (it.startsWith("#") /*Comments*/) {

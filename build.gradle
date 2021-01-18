@@ -33,8 +33,19 @@ allprojects {
     }
     group 'edu.louisville.astro.software'
 
-    tasks.withType(JavaCompile) {
-        options.encoding = "UTF-8"
+    java {
+        toolchain {
+            // Gradle
+            languageVersion.set(JavaLanguageVersion.of(14))
+        }
+    }
+}
+
+java {
+    toolchain {
+        // Gradle will download the JDK for compiling/running if one isn't found
+        // This should prevent anyone from using an outdated JDK
+        languageVersion.set(JavaLanguageVersion.of(15))
     }
 }
 

@@ -267,7 +267,7 @@ javaRuntimeSystems.each {sys, sysInfo ->
         group 'AstroImageJ Developement'
 
         //noinspection GroovyAssignabilityCheck
-        version = sysInfo.arch + "_64"
+        version = sysInfo.arch + "_64" // All AIJ builds are 64 bit
 
         // Set the platform
         io.github.fvarrui.javapackager.model.Platform.values().each {

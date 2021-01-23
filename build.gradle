@@ -293,8 +293,6 @@ javaRuntimeSystems.each {sys, sysInfo ->
             }
         }
 
-        System.out.println(String.format("Task: %s; Platform: %s; os: %s", taskName, platform, sys))
-
         // Get Java bin fold location
         File binPath
         File java = file("${projectDir}/jres/${(sysInfo.name as String).replace("." +sysInfo.ext as String, "")}")

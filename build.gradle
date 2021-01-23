@@ -299,7 +299,7 @@ javaRuntimeSystems.each {sys, sysInfo ->
         if (java.exists()) {
             java.traverse(type: groovy.io.FileType.DIRECTORIES, nameFilter: 'bin') {binPath = it.parentFile}
         } else { // One of the runtimes does not exist, pull it
-            logger.error("A JRE was missing, run downloadJavaRuntimes first! " + sys +
+            logger.error("A JRE was missing, run unZipJresTask first! " + sys +
                     " will not have a JRE bundled!")
         }
 

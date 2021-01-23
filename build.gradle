@@ -76,6 +76,8 @@ def javaRuntimeSystems = [ mac: [ext: "zip", type: "jre", arch: "x86", os: "maco
  * Download the specified Java runtimes based on javaRuntimeSystems.
  */
 task downloadJavaRuntimes(type: Download) {
+    mkdir(file("${projectDir}/jres"))
+
     javaRuntimeSystems.each {sys, sysInfo ->
         // Other parameters of note:
         // &support_term=lts/mts/sts &release_status=ga/ea/both &jdk_version=11
@@ -281,7 +283,6 @@ javaRuntimeSystems.each {sys, sysInfo ->
 
         //noinspection GroovyAssignabilityCheck
         version = sysInfo.arch + "_64" // All AIJ builds are 64 bit
-
         // Set the platform
         io.github.fvarrui.javapackager.model.Platform.values().each {
             String osName = sys.contains("mac") ? "mac" : sys

@@ -142,6 +142,7 @@ task verifyDownloadedJres(type: Verify, dependsOn: downloadJavaRuntimes) {
  * Decompress the Java runtimes into folders.
  */
 task unZipJresTask(type: Copy, dependsOn: verifyDownloadedJres) {
+    group 'AstroImageJ Developement'
     mustRunAfter verifyDownloadedJres
     javaRuntimeSystems.each {sys, sysInfo ->
         if (sysInfo.ext == "tar.gz") {

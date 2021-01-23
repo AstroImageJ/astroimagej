@@ -65,7 +65,7 @@ dependencies {
  * The file's name (name), major Java version (version), and MD5 hash (md5) are also added to this map. Those entries
  * are excluded from the definition for brevity.
  */
-def javaRuntimeSystems = [ mac: [ext: "zip", type: "jre", arch: "x86", os: "macos"]
+def javaRuntimeSystems = [ mac: [ext: "zip", type: "jdk", arch: "x86", os: "macos"] //todo revert to jre. JDK is because of packager issue #88
             // JDK is used as Azul has not produced a jre for arm macs at this time
            , armMac: [ext: "zip", type: "jdk", arch: "arm", os: "macos"]
            , linux: [ext: "tar.gz", type: "jre", arch: "x86", os: "linux"]

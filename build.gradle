@@ -285,12 +285,15 @@ javaRuntimeSystems.each {sys, sysInfo ->
         version = sysInfo.arch + "_64" // All AIJ builds are 64 bit
         // Set the platform
         io.github.fvarrui.javapackager.model.Platform.values().each {
-            String osName = sys.contains("mac") ? "mac" : sys
+            if (it == io.github.fvarrui.javapackager.model.Platform.auto) return
+            String osName = sys.toLowerCase().contains("mac") ? "mac" : sys.toLowerCase()
             if (it.name() == osName) {
                 //noinspection GroovyAssignabilityCheck
                 platform = it
             }
         }
+
+        System.out.println(String.format("Task: %s; Platform: %s; os: %s", taskName, platform, sys))
 
         // Get Java bin fold location
         File binPath

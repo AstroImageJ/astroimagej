@@ -11,7 +11,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'io.github.fvarrui:javapackager:1.5.0'
+        classpath 'io.github.fvarrui:javapackager:1.5.1'
     }
 }
 
@@ -65,7 +65,7 @@ dependencies {
  * The file's name (name), major Java version (version), and MD5 hash (md5) are also added to this map. Those entries
  * are excluded from the definition for brevity.
  */
-def javaRuntimeSystems = [ mac: [ext: "zip", type: "jdk", arch: "x86", os: "macos"] //todo revert to jre. JDK is because of packager issue #88
+def javaRuntimeSystems = [ mac: [ext: "zip", type: "jre", arch: "x86", os: "macos"]
             // JDK is used as Azul has not produced a jre for arm macs at this time
            , armMac: [ext: "zip", type: "jdk", arch: "arm", os: "macos"]
            , linux: [ext: "tar.gz", type: "jre", arch: "x86", os: "linux"]
@@ -295,25 +295,25 @@ javaRuntimeSystems.each {sys, sysInfo ->
         }
 
         // Get Java bin fold location
-        File binPath
+        File runtimePath
         File java = file("${projectDir}/jres/${(sysInfo.name as String).replace("." +sysInfo.ext as String, "")}")
         if (java.exists()) {
-            java.traverse(type: groovy.io.FileType.DIRECTORIES, nameFilter: 'bin') {binPath = it.parentFile}
+            java.traverse(type: groovy.io.FileType.FILES, nameFilter: 'release') {runtimePath = it.parentFile}
         } else { // One of the runtimes does not exist, pull it
             logger.error("A JRE was missing, run unZipJresTask first! " + sys +
                     " will not have a JRE bundled!")
         }
 
         // Sanity check
-        if (binPath == null) return
+        if (runtimePath == null) return
 
         // Set the runtime
         if (sysInfo.type == "jre") {
             //noinspection GroovyAssignabilityCheck
-            jrePath = binPath
+            jrePath = runtimePath
         } else if (sysInfo.type == "jdk") {
             //noinspection GroovyAssignabilityCheck
-            jdkPath = binPath
+            jdkPath = runtimePath
         }
 
         if (sysInfo.os == "linux") {

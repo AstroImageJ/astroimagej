@@ -142,7 +142,7 @@ task verifyDownloadedJres(type: Verify, dependsOn: downloadJavaRuntimes) {
  * Decompress the Java runtimes into folders.
  */
 task unZipJresTask(type: Copy, dependsOn: verifyDownloadedJres) {
-    group 'AstroImageJ Developement'
+    group 'AstroImageJ Development'
     mustRunAfter verifyDownloadedJres
     javaRuntimeSystems.each {sys, sysInfo ->
         if (sysInfo.ext == "tar.gz") {
@@ -219,7 +219,7 @@ task sync(dependsOn: jar, type: Sync) {
 
 // Generates a working install directory of AIJ and launches it - make sure to not add it to git!
 task aijRun(dependsOn: sync, type: JavaExec) {
-    group 'AstroImageJ Developement'
+    group 'AstroImageJ Development'
 
     workingDir(file("${projectDir}/AIJ-Run/"))
 
@@ -280,7 +280,7 @@ javaRuntimeSystems.each {sys, sysInfo ->
     String taskName = "packageAijFor" + (sysInfo.os as String).capitalize() + "_" + sysInfo.arch
 
     tasks.register(taskName, PackageTask) {
-        group 'AstroImageJ Developement'
+        group 'AstroImageJ Development'
 
         //noinspection GroovyAssignabilityCheck
         version = sysInfo.arch + "_64" // All AIJ builds are 64 bit
@@ -336,7 +336,7 @@ javaRuntimeSystems.each {sys, sysInfo ->
 
     // Make the meta task run the smaller ones
     tasks.named("packageAij") {
-        group 'AstroImageJ Developement'
+        group 'AstroImageJ Development'
         //noinspection GroovyAssignabilityCheck
         dependsOn taskName
         outputs.upToDateWhen { false }
@@ -345,7 +345,7 @@ javaRuntimeSystems.each {sys, sysInfo ->
 
 // Task to copy built jars into a certain folder, for use with testing
 task copyBuiltJars(dependsOn: build, type: Copy) {
-    group 'AstroImageJ Developement'
+    group 'AstroImageJ Development'
 
     // Copy astronomy_.jar
     from(file("${project(':Astronomy_').buildDir}/libs/astronomy_-${project(':Astronomy_').version}.jar")) {

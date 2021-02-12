@@ -1,5 +1,6 @@
 package ij.plugin;
 import ij.*;
+import ij.astro.AstroImageJ;
 import ij.gui.*;
 import ij.process.*;
 import ij.measure.Calibration;
@@ -161,6 +162,7 @@ public class HyperStackConverter implements PlugIn {
 		
 	/** Displays the specified stack in a HyperStack window. Based on the 
 		Stack_to_Image5D class in Joachim Walter's Image5D plugin. */
+	@AstroImageJ(reason = "unknown; show second image", modified = true)
 	void convertStackToHS(ImagePlus imp) {
         int nChannels = imp.getNChannels();
         int nSlices = imp.getNSlices();
@@ -294,6 +296,7 @@ public class HyperStackConverter implements PlugIn {
 		}
 	}
 
+	@AstroImageJ(reason = "unknown; show second image", modified = true)
 	void convertHSToStack(ImagePlus imp) {
 		if (!(imp.isHyperStack()||imp.isComposite()))
 			return;

@@ -6,6 +6,7 @@ import java.awt.event.*;
 import java.util.*;
 import java.awt.datatransfer.*;
 import ij.*;
+import ij.astro.AstroImageJ;
 import ij.plugin.filter.Analyzer;
 import ij.io.SaveDialog;
 import ij.measure.*;
@@ -62,6 +63,7 @@ public class TextPanel extends Panel implements AdjustmentListener,
 
 
 	/** Constructs a new TextPanel. */
+	@AstroImageJ(reason = "Add block increment", modified = true)
 	public TextPanel() {
 		tc = new TextCanvas(this);
 		setLayout(new BorderLayout());
@@ -548,6 +550,7 @@ public class TextPanel extends Panel implements AdjustmentListener,
 			return (TextWindow)comp;
 	}
 
+	@AstroImageJ(reason = "Add check for AIJ windows", modified = true)
 	void rename(String title2) {
 		ResultsTable rt2 = getOrCreateResultsTable();
 		if (rt2==null)
@@ -595,6 +598,7 @@ public class TextPanel extends Panel implements AdjustmentListener,
 		}
 	}
 
+	@AstroImageJ(reason = "Add check for AIJ windows", modified = true)
 	void duplicate() {
 		ResultsTable rt2 = getOrCreateResultsTable();
 		if (rt2==null)
@@ -619,6 +623,7 @@ public class TextPanel extends Panel implements AdjustmentListener,
         return title3;
 	}
 
+	@AstroImageJ(reason = "Add opening of astro windows", modified = true)
 	void select(int x,int y) {
 		Dimension d = tc.getSize();
 		if(iRowHeight==0 || x>d.width || y>d.height)
@@ -647,6 +652,7 @@ public class TextPanel extends Panel implements AdjustmentListener,
 			interp.showArrayInspector(r);
 	}
 
+	@AstroImageJ(reason = "Run macro to update astro windows", modified = true)
 	void extendSelection(int x,int y) {
 		Dimension d = tc.getSize();
 		if(iRowHeight==0 || x>d.width || y>d.height)
@@ -679,6 +685,7 @@ public class TextPanel extends Panel implements AdjustmentListener,
 	Copies the current selection to the system clipboard.
 	Returns the number of characters copied.
 	*/
+	@AstroImageJ(reason = "Limit selection to tabs", modified = true)
 	public int copySelection() {
 		if (Recorder.record && title.equals("Results"))
 			Recorder.record("String.copyResults");
@@ -890,6 +897,7 @@ public class TextPanel extends Panel implements AdjustmentListener,
 	 * display a "save as" dialog. Returns 'false' if the user cancels
 	 * the dialog.
 	*/
+	@AstroImageJ(reason = "Add check for AIJ window", modified = true)
 	public boolean saveAs(String path) {
 		boolean isResults = IJ.isResultsWindow() && IJ.getTextPanel()==this;
 		boolean summarized = false;

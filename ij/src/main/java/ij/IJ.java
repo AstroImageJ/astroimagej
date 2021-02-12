@@ -1,4 +1,5 @@
 package ij;
+import ij.astro.AstroImageJ;
 import ij.gui.*;
 import ij.process.*;
 import ij.text.*;
@@ -80,12 +81,13 @@ public class IJ {
 	private static Interpreter macroInterpreter;
 	private static boolean protectStatusBar;
 	private static Thread statusBarThread;
-			
+
 	static {
 		osname = System.getProperty("os.name");
 		isWin = osname.startsWith("Windows");
 		isMac = !isWin && osname.startsWith("Mac");
 		isLinux = osname.startsWith("Linux");
+		@AstroImageJ(reason = "Future proof java version check and make it sane; set sane fallback mode", modified = true)
 		String version = System.getProperty("java.specification.version"); // JRE version not needed as version checking is for feature compliance (can also simplify the following regex if this is used)
 		// Safety check to ensure passed version is not null and is a version string (based off safety checks made in original)
 		if (version == null || !version.matches("(^[0-9]+([\\._][0-9]+)+$)|(^[0-9]+$)")) {
@@ -640,10 +642,9 @@ public class IJ {
 			cal = imp.getCalibration();
 			imp.setCalibration(null);
 		}
-		ImageStatistics stats = imp.getStatistics(measurements);
 		ResultsTable rt = new ResultsTable();
 		Analyzer analyzer = new Analyzer(imp, measurements, rt);
-		analyzer.saveResults(stats, imp.getRoi());
+		analyzer.measure();
 		double value = Double.NaN;
 		try {
 			value = rt.getValue(measurement, 0);
@@ -1019,7 +1020,6 @@ public class IJ {
 	}
 	
 	public static void setKeyDown(int key) {
-		if (debugMode) IJ.log("setKeyDown: "+key);
 		switch (key) {
 			case KeyEvent.VK_CONTROL:
 				controlDown=true;
@@ -1049,7 +1049,6 @@ public class IJ {
 	}
 
 	public static void setKeyUp(int key) {
-		if (debugMode) IJ.log("setKeyUp: "+key);
 		switch (key) {
 			case KeyEvent.VK_CONTROL: controlDown=false; break;
 			case KeyEvent.VK_META: if (isMacintosh()) controlDown=false; break;
@@ -1490,6 +1489,7 @@ public class IJ {
 			ImageWindow win = imp.getWindow();
 			if (win!=null) {
 				win.toFront();
+				win.setState(Frame.NORMAL);
 				WindowManager.setWindow(win);
 			}
 			long start = System.currentTimeMillis();
@@ -1513,8 +1513,10 @@ public class IJ {
 
 	/** Activates the window with the specified title. */
 	public static void selectWindow(String title) {
-		if (title.equals("ImageJ")&&ij!=null)
-			{ij.toFront(); return;}
+		if (title.equals("AstroImageJ")&&ij!=null) {
+			ij.toFront();
+			return;
+		}
 		long start = System.currentTimeMillis();
 		while (System.currentTimeMillis()-start<3000) { // 3 sec timeout
 			Window win = WindowManager.getWindow(title);
@@ -1539,9 +1541,10 @@ public class IJ {
 	}
 	
 	static void selectWindow(Window win) {
-		if (win instanceof Frame)
+		if (win instanceof Frame) {
 			((Frame)win).toFront();
-		else
+			((Frame)win).setState(Frame.NORMAL);
+		} else
 			((Dialog)win).toFront();
 		long start = System.currentTimeMillis();
 		while (true) {
@@ -1566,9 +1569,7 @@ public class IJ {
 	}
 	
 	static void setColor(int red, int green, int blue, boolean foreground) {
-	    if (red<0) red=0; if (green<0) green=0; if (blue<0) blue=0; 
-	    if (red>255) red=255; if (green>255) green=255; if (blue>255) blue=255;  
-		Color c = new Color(red, green, blue);
+		Color c = Colors.toColor(red, green, blue);
 		if (foreground) {
 			Toolbar.setForegroundColor(c);
 			ImagePlus img = WindowManager.getCurrentImage();
@@ -1660,6 +1661,12 @@ public class IJ {
 	/** Sets the transfer mode used by the <i>Edit/Paste</i> command, where mode is "Copy", "Blend", "Average", "Difference", 
 		"Transparent", "Transparent2", "AND", "OR", "XOR", "Add", "Subtract", "Multiply", or "Divide". */
 	public static void setPasteMode(String mode) {
+		Roi.setPasteMode(stringToPasteMode(mode));
+	}
+
+	public static int stringToPasteMode(String mode) {
+		if (mode==null)
+			return Blitter.COPY;
 		mode = mode.toLowerCase(Locale.US);
 		int m = Blitter.COPY;
 		if (mode.startsWith("ble") || mode.startsWith("ave"))
@@ -1688,7 +1695,7 @@ public class IJ {
 			m = Blitter.MIN;
 		else if (mode.startsWith("max"))
 			m = Blitter.MAX;
-		Roi.setPasteMode(m);
+		return m;
 	}
 
 	/** Returns a reference to the active image, or displays an error
@@ -1731,6 +1738,7 @@ public class IJ {
 	}
 
 	/** Returns the AstroImageJ version number as a string. */
+	@AstroImageJ(reason = "Method to return AIJ version")
 	public static String getAstroVersion() {
 		return ImageJ.ASTROVERSION;
 	}
@@ -1749,13 +1757,13 @@ public class IJ {
 	/** Returns the path to the specified directory if <code>title</code> is
 		"home" ("user.home"), "downloads", "startup",  "imagej" (ImageJ directory),
 		"plugins", "macros", "luts", "temp", "current", "default",
-		"image" (directory active image was loaded from) or "file" 
-		(directory most recently used to open or save a file),
-		otherwise displays a dialog and returns the path to the
-		directory selected by the user. Returns null if the specified
-		directory is not found or the user cancels the dialog box.
-		Also aborts the macro if the user cancels
-		the dialog box.*/
+		"image" (directory active image was loaded from), "file" 
+		(directory most recently used to open or save a file) or "cwd"
+		(current working directory), otherwise displays a dialog and
+		returns the path to the directory selected by the user. Returns
+		null if the specified directory is not found or the user cancels the
+		dialog box. Also aborts the macro if the user cancels the
+		dialog box.*/
 	public static String getDirectory(String title) {
 		String dir = null;
 		String title2 = title.toLowerCase(Locale.US);
@@ -1789,9 +1797,11 @@ public class IJ {
 				dir = fi.directory;
 			} else
 				dir = null;
-		} else if (title2.equals("file")) {
+		} else if (title2.equals("file"))
 			dir = OpenDialog.getLastDirectory();
-		} else {
+		else if (title2.equals("cwd"))
+			dir = System.getProperty("user.dir");
+		else {
 			DirectoryChooser dc = new DirectoryChooser(title);
 			dir = dc.getDirectory();
 			if (dir==null) Macro.abort();
@@ -2222,9 +2232,13 @@ public class IJ {
 	 public static ImagePlus createImage(String title, String type, int width, int height, int depth) {
 		type = type.toLowerCase(Locale.US);
 		int bitDepth = 8;
-		if (type.contains("16")) bitDepth = 16;
-		if (type.contains("24")||type.contains("rgb")) bitDepth = 24;
-		if (type.contains("32")) bitDepth = 32;
+		if (type.contains("16"))
+			bitDepth = 16;
+		boolean signedInt = type.contains("32-bit int");
+		if (type.contains("32"))
+			bitDepth = 32;
+		if (type.contains("24") || type.contains("rgb") || signedInt)
+			bitDepth = 24;
 		int options = NewImage.FILL_WHITE;
 		if (bitDepth==16 || bitDepth==32)
 			options = NewImage.FILL_BLACK;
@@ -2237,6 +2251,8 @@ public class IJ {
 		else if (type.contains("noise") || type.contains("random"))
 			options = NewImage.FILL_NOISE;
 		options += NewImage.CHECK_AVAILABLE_MEMORY;
+		if (signedInt)
+			options += NewImage.SIGNED_INT;
 		return NewImage.createImage(title, width, height, depth, bitDepth, options);
 	}
 

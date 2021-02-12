@@ -1,4 +1,5 @@
 package ij.io;
+import ij.astro.AstroImageJ;
 import ij.gui.GenericDialog;
 import java.awt.*;
 import java.io.*;
@@ -226,7 +227,8 @@ public class SaveDialog {
 		if (ij==null)
 			parent.dispose();
 	}
-	
+
+	@AstroImageJ(reason = "Increase condition from 5 to 10", modified = true)
 	private boolean noExtension(String name) {
 		if (name==null) return false;
 		int dotIndex = name.indexOf(".");

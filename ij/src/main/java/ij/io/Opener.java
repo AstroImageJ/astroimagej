@@ -1,5 +1,6 @@
 package ij.io;
 import ij.*;
+import ij.astro.AstroImageJ;
 import ij.gui.*;
 import ij.process.*;
 import ij.plugin.frame.*;
@@ -91,14 +92,7 @@ public class Opener {
 				(new PluginInstaller()).install(path);
 				return;
 		}
-		boolean fullPath = path.startsWith("/") || path.startsWith("\\") || path.indexOf(":\\")==1 || path.indexOf(":/")==1 || isURL;
-		if (!fullPath) {
-			String defaultDir = OpenDialog.getDefaultDirectory();
-			if (defaultDir!=null)
-				path = defaultDir + path;
-			else
-				path = (new File(path)).getAbsolutePath();
-		}
+		path = makeFullPath(path);
 		if (!silentMode)
 			IJ.showStatus("Opening: " + path);
 		long start = System.currentTimeMillis();
@@ -140,7 +134,7 @@ public class Opener {
 							maxSize = 60000;
 					}
 					if (size<maxSize) {
-						Editor ed = (Editor)IJ.runPlugIn("ij.plugin.frame.Editor", "");
+						Editor ed = new Editor(path);
 						if (ed!=null) ed.open(getDir(path), getName(path));
 					} else
 						new TextWindow(path,400,450);
@@ -155,20 +149,17 @@ public class Opener {
 					IJ.runPlugIn("ij.plugin.Raw", path);
 					break;
 				case UNKNOWN:
-					String msg =
-						"File is not in a supported format, a reader\n"+
-						"plugin is not available, or it was not found.";
+					File f = new File(path);
+					String msg = (f.exists()) ?
+						"Format not supported or reader plugin not found:"
+						: "File not found:";					
 					if (path!=null) {
 						if (path.length()>64)
 							path = (new File(path)).getName();
-						if (path.length()<=64) {
-							if (IJ.redirectingErrorMessages())
-								msg += " \n   "+path;
-							else
-								msg += " \n	 \n"+path;
-						}
+						if (path.length()<=64)
+								msg += " \n"+path;
 					}
-					if (openUsingPlugins)
+					if (openUsingPlugins && msg.length()>20)
 						msg += "\n \nNOTE: The \"OpenUsingPlugins\" option is set.";
 					IJ.wait(IJ.isMacro()?500:100); // work around for OS X thread deadlock problem
 					IJ.error("Opener", msg);
@@ -177,7 +168,7 @@ public class Opener {
 			}
 		}
 	}
-	
+		
 	/** Displays a JFileChooser and then opens the tiff, dicom, 
 		fits, pgm, jpeg, bmp, gif, lut, roi, or text files selected by 
 		the user. Displays error messages if one or more of the selected 
@@ -272,6 +263,26 @@ public class Opener {
 		return ""+IJ.d2s(time,2)+" seconds ("+IJ.d2s(mb/time,digits)+" MB/sec)";
 	}
 	
+	public static String makeFullPath(String path) {
+		if (path==null)
+			return path;
+		if (!isFullPath(path)) {
+			String defaultDir = OpenDialog.getDefaultDirectory();
+			if (defaultDir!=null)
+				path = defaultDir + path;
+			else
+				path = (new File(path)).getAbsolutePath();
+		}
+		return path;
+	}
+	
+	public static boolean isFullPath(String path) {
+		if (path==null)
+			return false;
+		else
+			return path.startsWith("/") || path.startsWith("\\") || path.contains(":\\") || path.contains(":/") || path.contains("://");
+	}
+
 	private boolean isText(String path) {
 		if (path.endsWith(".txt") || path.endsWith(".ijm") || path.endsWith(".java")
 		|| path.endsWith(".js") || path.endsWith(".html") || path.endsWith(".htm")
@@ -501,7 +512,7 @@ public class Opener {
 		else if (index!=-1 && index<len-1)
 			name = name.substring(index+1);
 		name = name.replaceAll("%20", " ");
-		Editor ed = new Editor();
+		Editor ed = new Editor(name);
 		ed.setSize(600, 300);
 		ed.create(name, text);
 		IJ.showStatus("");
@@ -926,6 +937,7 @@ public class Opener {
 
 	/** Opens a single TIFF or DICOM contained in a ZIP archive,
 		or a ZIPed collection of ".roi" files created by the ROI manager. */	
+	@AstroImageJ(reason = "add support for more file types; open tables in AIJ measurements table", modified = true)
 	public ImagePlus openZip(String path) {
 		ImagePlus imp = null;
 		try {
@@ -1171,6 +1183,7 @@ public class Opener {
 	Attempts to determine the image file type by looking for
 	'magic numbers' and the file name extension.
 	 */
+	@AstroImageJ(reason = "Add more filte types", modified = true)
 	public int getFileType(String path) {
 		if (openUsingPlugins && !path.endsWith(".txt") &&  !path.endsWith(".java"))
 			return UNKNOWN;

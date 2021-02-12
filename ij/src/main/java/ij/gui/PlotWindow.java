@@ -6,6 +6,7 @@ import java.io.*;
 import java.awt.datatransfer.*;
 import java.util.*;
 import ij.*;
+import ij.astro.AstroImageJ;
 import ij.process.*;
 import ij.util.*;
 import ij.text.TextWindow;
@@ -340,6 +341,7 @@ public class PlotWindow extends ImageWindow implements ActionListener, ItemListe
 			SET_RANGE, PREV_RANGE, RESET_RANGE, FIT_RANGE, ZOOM_SELECTION, AXIS_OPTIONS, LEGEND, STYLE, RESET_PLOT};
 
 	/** Prepares and returns the popupMenu of the Data>> button */
+	@AstroImageJ(reason = "Convert COPY item to saving of aperture in case of seeing profile window", modified = true)
 	PopupMenu getDataPopupMenu() {
 		dataPopupMenu = new PopupMenu();
 		GUI.scalePopupMenu(dataPopupMenu);
@@ -394,6 +396,7 @@ public class PlotWindow extends ImageWindow implements ActionListener, ItemListe
 	}
 
 	/** Called if user has activated a button or popup menu item */
+	@AstroImageJ(reason = "Handle saving of various AIJ data", modified = true)
 	public void actionPerformed(ActionEvent e) {
 		try {
 		Object b = e.getSource();

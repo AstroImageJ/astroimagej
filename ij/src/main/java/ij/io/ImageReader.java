@@ -1,5 +1,6 @@
 package ij.io;
 import ij.*;
+import ij.astro.AstroImageJ;
 import ij.process.*;
 import java.io.*;
 import java.net.*;
@@ -198,6 +199,7 @@ public class ImageReader {
 		return pixels;
 	}
 
+	@AstroImageJ(reason = "Add fits file support", modified = true)
 	float[] read32bitImage(InputStream in) throws IOException {
 		if (fi.compression>FileInfo.COMPRESSION_NONE || (fi.stripOffsets!=null&&fi.stripOffsets.length>1))
 			return readCompressed32bitImage(in);
@@ -913,7 +915,7 @@ public class ImageReader {
 	public byte[] lzwUncompress(byte[] input) {
 		if (input==null || input.length==0)
 			return input;
-		byte[][] symbolTable = new byte[4096][1];
+		byte[][] symbolTable = new byte[16384][1];
 		int bitsToRead = 9;
 		int nextSymbol = 258;
 		int code;
@@ -939,6 +941,7 @@ public class ImageReader {
 				out.add(symbolTable[code]);
 				oldCode = code;
 			} else {
+				if (oldCode==-1) oldCode=0;
 				if (code<nextSymbol) {
 					// code is in table
 					out.add(symbolTable[code]);

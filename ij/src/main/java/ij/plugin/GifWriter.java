@@ -1,5 +1,6 @@
 package ij.plugin;
 import ij.*;
+import ij.astro.AstroImageJ;
 import ij.io.*;
 import ij.gui.*;
 import ij.process.*;
@@ -38,7 +39,8 @@ public class GifWriter implements PlugIn {
 		}
 		run(imp, path);
 	}
-	   
+
+	@AstroImageJ(reason = "unknown; add ability to return to original slice", modified = true)
 	private void run(ImagePlus imp, String path) {
 		ImageStack stack = imp.getStack();
 		Overlay overlay = imp.getOverlay();

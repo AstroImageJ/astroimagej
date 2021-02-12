@@ -2,6 +2,7 @@ package ij.plugin;
 import java.io.*;
 import java.util.Properties; 
 import ij.*;
+import ij.astro.AstroImageJ;
 import ij.io.*;
 import ij.process.*;
 import ij.measure.*;
@@ -24,7 +25,8 @@ public class FITS_Writer implements PlugIn {
     private double bZero = 0.0;
     private double bScale = 1.0;
             
-	public void run(String path) {
+	@AstroImageJ(reason = "unknown; commented out GET FILE...file deletion iff exists", modified = true)
+    public void run(String path) {
 		ImagePlus imp = IJ.getImage();
 		ImageProcessor ip = imp.getProcessor();
 		int numImages = imp.getImageStackSize();
@@ -354,6 +356,7 @@ public class FITS_Writer implements PlugIn {
 	/**
 	 * Restarts file at 'path' to beginning of file
 	 */
+	@AstroImageJ(reason = "unknown")
 	void clearFile(String path) {
 		try {
 			FileWriter output = new FileWriter(path, false);

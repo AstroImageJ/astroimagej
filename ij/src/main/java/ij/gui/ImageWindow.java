@@ -4,6 +4,7 @@ import java.awt.image.*;
 import java.util.Properties;
 import java.awt.event.*;
 import ij.*;
+import ij.astro.AstroImageJ;
 import ij.process.*;
 import ij.io.*;
 import ij.measure.*;
@@ -24,13 +25,17 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 	protected ImagePlus imp;
 	protected ImageJ ij;
 	protected ImageCanvas ic;
+	@AstroImageJ(reason = "unknown; unused")
 	public String extraInfo = "";
 	private double initialMagnification = 1;
 	private int newWidth, newHeight;
+	@AstroImageJ(reason = "Widen access", modified = true)
 	protected boolean closed, hasMenus;
 	private boolean newCanvas;
+	@AstroImageJ(reason = "Widen access", modified = true)
 	protected boolean unzoomWhenMinimizing = true;
 	Rectangle maxWindowBounds; // largest possible window on this screen
+	@AstroImageJ(reason = "Widen access", modified = true)
 	protected Rectangle maxBounds; // Size of this window after it is maximized
 	long setMaxBoundsTime;
 	private int sliderHeight;
@@ -66,7 +71,8 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
     public ImageWindow(ImagePlus imp) {
     	this(imp, null);
    }
-    
+
+   @AstroImageJ(reason = "Add checks for AIJ windows to control their positioning", modified = true)
     public ImageWindow(ImagePlus imp, ImageCanvas ic) {
 		super(imp.getTitle());
 		if (SCALE>1.0) {
@@ -154,7 +160,8 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 					(this instanceof HistogramWindow) || this.getTitle().startsWith("Profile of") || this.getTitle().startsWith("About")) show();
 		}
      }
-    
+
+     @AstroImageJ(reason = "Add checks for AIJ windows to control their positioning", modified = true)
 	private void setLocationAndSize(boolean updating) {
 		if (imp==null)
 			return;
@@ -252,6 +259,7 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 		}
 	}
 
+	@AstroImageJ(reason = "Widen access", modified = true)
 	protected Rectangle getMaxWindow(int xloc, int yloc) {
 		return GUI.getMaxWindowBounds(new Point(xloc, yloc));
 	}
@@ -361,7 +369,7 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 	    		s += "32-bit";
 	    		break;
 	    	case ImagePlus.COLOR_RGB:
-	    		s += "RGB";
+	    		s += imp.isRGB() ? "RGB" :  "32-bit (int)";
 	    		break;
     	}
     	if (imp.isInvertedLut())
@@ -392,6 +400,7 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 		return IJ.d2s(n,digits);
     }
 
+    @AstroImageJ(reason = "Disable final check for extra width", modified = true)
     public void paint(Graphics g) {
 		drawInfo(g);
 		Rectangle r = ic.getBounds();
@@ -403,6 +412,7 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
     
 	/** Removes this window from the window list and disposes of it.
 		Returns false if the user cancels the "save changes" dialog. */
+	@AstroImageJ(reason = "Save AIJ plot window location", modified = true)
 	public boolean close() {
 		if (this instanceof PlotWindow) {
 			Prefs.set("plot2.plotFrameLocationX",getX());
@@ -540,7 +550,8 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 		wHeight = Math.min(wHeight, maxWindow.height);
 		return new Rectangle(xloc, maxWindow.y, wWidth, wHeight);
 	}
-	
+
+	@AstroImageJ(reason = "Widen access", modified = true)
 	protected Dimension getExtraSize() {
 		Insets insets = getInsets();
 		int extraWidth = insets.left+insets.right + 10;
@@ -619,7 +630,8 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 			WindowManager.removeWindow(this);
 		}
 	}
-	
+
+	@AstroImageJ(reason = "Always maximize", modified = true)
 	public void windowStateChanged(WindowEvent e) {
 		int oldState = e.getOldState();
 		int newState = e.getNewState();

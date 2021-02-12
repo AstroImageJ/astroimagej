@@ -1,5 +1,6 @@
 package ij.text;
 import ij.*;
+import ij.astro.AstroImageJ;
 import ij.io.*;
 import ij.gui.*;
 import ij.plugin.filter.Analyzer;
@@ -76,6 +77,7 @@ public class TextWindow extends Frame implements ActionListener, FocusListener, 
 		create(title, textPanel, width, height);
 	}
 
+	@AstroImageJ(reason = "Add check for AIJ windows", modified = true)
 	private void create(String title, TextPanel textPanel, int width, int height) {
 		enableEvents(AWTEvent.WINDOW_EVENT_MASK);
 		if (IJ.isLinux()) setBackground(ImageJ.backgroundColor);
@@ -141,7 +143,8 @@ public class TextWindow extends Frame implements ActionListener, FocusListener, 
 		} else
 			dispose();
 	}
-	
+
+	@AstroImageJ(reason = "Add check for AIJ windows", modified = true)
 	void addMenuBar() {
 		mb = new MenuBar();
 		if (Menus.getFontSize()!=0)
@@ -283,6 +286,7 @@ public class TextWindow extends Frame implements ActionListener, FocusListener, 
 	
 	/** Closes this TextWindow. Display a "save changes" dialog
 		if this is the "Results" window and 'showDialog' is true. */
+	@AstroImageJ(reason = "Add check for AIJ windows", modified = true)
 	public void close(boolean showDialog) {
 		if (getTitle().contains("Results") || getTitle().contains("Measure")) {
 			if (showDialog && !Analyzer.resetCounter())

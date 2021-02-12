@@ -1,5 +1,6 @@
 package ij.gui;
 import ij.*;
+import ij.astro.AstroImageJ;
 import ij.measure.Calibration;
 import ij.plugin.frame.SyncWindows;
 import ij.process.ImageProcessor;
@@ -26,6 +27,7 @@ public class StackWindow extends ImageWindow implements Runnable, AdjustmentList
 		this(imp, null);
 	}
 
+	@AstroImageJ(reason = "Add check for autoConvert pref before calling show()", modified = true)
     public StackWindow(ImagePlus imp, ImageCanvas ic) {
 		super(imp, ic);
 		addScrollbars(imp);
@@ -162,6 +164,7 @@ public class StackWindow extends ImageWindow implements Runnable, AdjustmentList
 			throw new RuntimeException("Unknownsource:"+source);
 	}
 
+	@AstroImageJ(reason = "Reset ip if imp is RGB", modified = true)
 	void updatePosition() {
 		if (imp.getType()==ImagePlus.COLOR_RGB) {
 			ImageProcessor ip = imp.getProcessor();

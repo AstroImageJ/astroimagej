@@ -1,4 +1,5 @@
 package ij;
+import ij.astro.AstroImageJ;
 import ij.gui.*;
 import ij.process.*;
 import ij.io.*;
@@ -77,13 +78,14 @@ public class ImageJ extends Frame implements ActionListener,
 	MouseListener, KeyListener, WindowListener, ItemListener, Runnable {
 
 	/** Plugins should call IJ.getVersion() or IJ.getFullVersion() to get the version string. */
-	public static final String VERSION = "1.53f";
-	public static final String BUILD = "51";
+	public static final String VERSION = "1.53h";
+	public static final String BUILD = "";  //62
 	public static Color backgroundColor = new Color(237,237,237);
 	/** SansSerif, 12-point, plain font. */
 	public static final Font SansSerif12 = new Font("SansSerif", Font.PLAIN, 12);
 	/** Address of socket where Image accepts commands */
 	public static final int DEFAULT_PORT = 57294;
+	@AstroImageJ(reason = "Add astroversion")
     public static final String ASTROVERSION = "5.0.0.0";
 	
 	/** Run as normal application. */
@@ -139,6 +141,7 @@ public class ImageJ extends Frame implements ActionListener,
 	/** If 'applet' is not null, creates a new ImageJ frame that runs as an applet.
 		If  'mode' is ImageJ.EMBEDDED and 'applet is null, creates an embedded 
 		(non-standalone) version of ImageJ. */
+	@AstroImageJ(reason = "Change title to AstroImageJ", modified = true)
 	public ImageJ(java.applet.Applet applet, int mode) {
 		super("AstroImageJ");
 		if ((mode&DEBUG)!=0)
@@ -215,7 +218,7 @@ public class ImageJ extends Frame implements ActionListener,
 			IJ.error(err2);
 			IJ.runPlugIn("ij.plugin.ClassChecker", "");
 		}
-		if (IJ.isMacintosh()&&applet==null) { 
+		if (IJ.isMacintosh()&&applet==null) {
 			try {
 				IJ.runPlugIn("ij.plugin.MacAdapter", ""); 
 			} catch(Throwable e) {}
@@ -229,7 +232,8 @@ public class ImageJ extends Frame implements ActionListener,
 		(new ij.macro.StartupRunner()).run(batchMode); // run RunAtStartup and AutoRun macros
 		IJ.showStatus(version()+ m.getPluginCount() + " commands; " + m.getMacroCount() + str);
  	}
- 	
+
+	@AstroImageJ(reason = "Use astronomy_icon", modified = true)
  	private void loadCursors() {
 		Toolkit toolkit = Toolkit.getDefaultToolkit();
 		String path = Prefs.getImageJDir()+"/astronomy_icon.gif";
@@ -268,14 +272,16 @@ public class ImageJ extends Frame implements ActionListener,
 		}
 		//new ProxySettings().logProperties();
 	}
-	
+
+	@AstroImageJ(reason = "Use astronomy icon instead of microscope", modified = true)
     void setIcon() throws Exception {
-		URL url = this.getClass().getResource("/microscope.gif");
+		URL url = this.getClass().getClassLoader().getResource("astronomy_icon.png");
 		if (url==null) return;
 		Image img = createImage((ImageProducer)url.getContent());
 		if (img!=null) setIconImage(img);
 	}
-	
+
+	@AstroImageJ(reason = "make default location 10, 10 instead of -99,-99", modified = true)
 	public Point getPreferredLocation() {
 		int ijX = Prefs.getInt(IJ_X,10);
 		int ijY = Prefs.getInt(IJ_Y,10);
@@ -400,7 +406,10 @@ public class ImageJ extends Frame implements ActionListener,
 	public void mouseClicked(MouseEvent e) {}
 	public void mouseEntered(MouseEvent e) {}
 
+	@AstroImageJ(reason = "Remove In/Out commands, remove tab key shortcut", modified = true)
  	public void keyPressed(KeyEvent e) {
+		if (e.isConsumed())
+			return;
 		int keyCode = e.getKeyCode();
 		IJ.setKeyDown(keyCode);
 		hotkey = false;
@@ -598,8 +607,8 @@ public class ImageJ extends Frame implements ActionListener,
 	public void keyTyped(KeyEvent e) {
 		char keyChar = e.getKeyChar();
 		int flags = e.getModifiers();
-		if (IJ.debugMode) IJ.log("keyTyped: char=\"" + keyChar + "\" (" + (int)keyChar 
-			+ "), flags= "+Integer.toHexString(flags)+ " ("+KeyEvent.getKeyModifiersText(flags)+")");
+		//if (IJ.debugMode) IJ.log("keyTyped: char=\"" + keyChar + "\" (" + (int)keyChar 
+		//	+ "), flags= "+Integer.toHexString(flags)+ " ("+KeyEvent.getKeyModifiersText(flags)+")");
 		if (keyChar=='\\' || keyChar==171 || keyChar==223) {
 			if (((flags&Event.ALT_MASK)!=0))
 				doCommand("Animation Options...");
@@ -791,6 +800,8 @@ public class ImageJ extends Frame implements ActionListener,
 	}
 	
 	/** Quit using a separate thread, hopefully avoiding thread deadlocks. */
+	@AstroImageJ(reason = "Add event calls for closing when DP, AstroConvert, multiplot, or astro stack windows are " +
+			"open", modified = true)
 	public void run() {
 		quitting = true;
 		boolean changes = false;

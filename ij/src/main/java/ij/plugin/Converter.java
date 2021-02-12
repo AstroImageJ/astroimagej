@@ -1,5 +1,6 @@
 package ij.plugin;
 import ij.*;
+import ij.astro.AstroImageJ;
 import ij.process.*;
 import ij.gui.*;
 import java.awt.*;
@@ -36,6 +37,7 @@ public class Converter implements PlugIn {
 	/** Converts the ImagePlus to the specified image type. The string
 	argument corresponds to one of the labels in the Image/Type submenu
 	("8-bit", "16-bit", "32-bit", "8-bit Color", "RGB Color", "RGB Stack", "HSB Stack", "Lab Stack" or "HSB (32-bit)"). */
+	@AstroImageJ(reason = "unknown, setProcessor call at method end.", modified = true)
 	public void convert(String item) {
 		int type = imp.getType();
 		ImageStack stack = null;

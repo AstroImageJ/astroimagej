@@ -5,6 +5,7 @@ import java.awt.event.*;
 import java.awt.image.ColorModel;
 import java.util.*;
 import ij.*;
+import ij.astro.AstroImageJ;
 import ij.io.*;
 import ij.gui.*;
 import ij.process.*;
@@ -22,6 +23,7 @@ public class FolderOpener implements PlugIn {
 	private static boolean staticSortFileNames = true;
 	private static boolean staticOpenAsVirtualStack;
 	private boolean convertToRGB;
+	private boolean convertToGrayscale;  //unused
 	private boolean sortFileNames = true;
 	private boolean sortByMetaData = true;
 	private boolean openAsVirtualStack;
@@ -501,7 +503,8 @@ public class FolderOpener implements PlugIn {
 				stack.addImage(fi);
 		}
 	}
-	
+
+	@AstroImageJ(reason = "Save preference option to open as virtual stack", modified = true)
 	boolean showDialog() {
 		String options = Macro.getOptions();
 		if  (options!=null) {  //macro

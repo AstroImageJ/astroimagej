@@ -1,5 +1,6 @@
 package ij.plugin;
 import ij.*;
+import ij.astro.AstroImageJ;
 import ij.io.*;
 import ij.macro.*;
 import ij.text.*;
@@ -18,6 +19,7 @@ public class Macro_Runner implements PlugIn {
 		on the current thread. Displays a file open dialog if <code>name</code> 
 		is an empty string. The macro or script is assumed to be in the ImageJ 
 		plugins folder if  <code>name</code> is not a full path. */
+	@AstroImageJ(reason = "Fix classloader", modified = true)
 	public void run(String name) {
 		if (IJ.debugMode)
 			IJ.log("Macro_Runner.run(): "+name);
@@ -181,6 +183,7 @@ public class Macro_Runner implements PlugIn {
 		in the plugins folder, in or out of a JAR file, so name conflicts are possible.
 		To avoid name conflicts, it is a good idea to incorporate the plugin
 		or JAR file name in the macro name (e.g., "Image_5D_Macro1.ijm"). */
+	@AstroImageJ(reason = "Fix classloading issues; added ClassLoader param", modified = true)
 	public static String runMacroFromJar(ClassLoader pcl, String name, String arg) {
 		String macro = null;
 		try {

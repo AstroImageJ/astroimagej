@@ -14,7 +14,7 @@ popup02=Properties...
 popup03=Rename...
 popup04=Measure
 popup05=Histogram
-popup06=Duplicate...
+popup06=Duplicate Image...
 popup07=Original Scale
 popup08=-
 popup09=Record...
@@ -217,7 +217,8 @@ overlay07="Remove Overlay",ij.plugin.OverlayCommands("remove")
 overlay08="List Elements",ij.plugin.OverlayCommands("list")
 overlay09="Flatten[F]",ij.plugin.OverlayCommands("flatten")
 overlay10="Labels...",ij.plugin.OverlayLabels
-overlay11="Overlay Options...[Y]",ij.plugin.OverlayCommands("options")
+overlay11="Measure Overlay",ij.plugin.OverlayCommands("measure")
+overlay12="Overlay Options...[Y]",ij.plugin.OverlayCommands("options")
 
 # Plugins installed in the Image/Lookup Tables submenu
 lookup01="Invert LUT",ij.plugin.LutLoader("invert")

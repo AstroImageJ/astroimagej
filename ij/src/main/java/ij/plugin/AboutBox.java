@@ -1,5 +1,6 @@
 package ij.plugin;
 import ij.*;
+import ij.astro.AstroImageJ;
 import ij.process.*;
 import ij.gui.*;
 import java.awt.*;
@@ -14,6 +15,7 @@ import java.awt.image.*;
 		private static final int SMALL_FONT=20, LARGE_FONT=45;
 		private static final Color TEXT_COLOR = new Color(255,255,80);
 
+	@AstroImageJ(modified = true, reason = "Adding AIJ version and authors to about page; fixing class loading issue.")
 	public void run(String arg) {
 		System.gc();
 		int lines = 12;

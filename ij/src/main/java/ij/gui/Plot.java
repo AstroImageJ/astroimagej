@@ -5,6 +5,7 @@ import java.io.*;
 import java.lang.reflect.Method;
 import java.awt.geom.Point2D;
 import ij.*;
+import ij.astro.AstroImageJ;
 import ij.process.*;
 import ij.util.*;
 import ij.plugin.Colors;
@@ -138,6 +139,7 @@ public class Plot implements Cloneable {
 	public static final int RIGHT_MARGIN = 18;
 	/** The default margin width above the plot frame
 	 *	@deprecated Not a fixed value any more, use getDrawingFrame() to get the drawing area */
+	@AstroImageJ(reason = "Increase default from 15 to 50", modified = true)
 	public static final int TOP_MARGIN = 50;
 	/** The default margin width below the plot frame
 	 *	@deprecated Not a fixed value any more, use getDrawingFrame() to get the drawing area */
@@ -190,6 +192,7 @@ public class Plot implements Cloneable {
 	Font currentFont = defaultFont;                 // font as changed by setFont or setFontSize, must never be null
 	private double xScale, yScale;                  // pixels per data unit
 	private int xBasePxl, yBasePxl;                 // pixel coordinates corresponding to 0
+	@AstroImageJ(reason = "Increase default from 12 to 50", modified = true)
 	private int maxIntervals = 50;                  // maximum number of intervals between ticks or grid lines
 	private int tickLength = 7;                     // length of major ticks
 	private int minorTickLength = 3;                // length of minor ticks
@@ -920,6 +923,7 @@ public class Plot implements Cloneable {
 		}
 	}
 
+	@AstroImageJ(reason = "unknown; unused")
 	public void addTitle(double x, double y, String label) {
 		if (textLoc!=null && x==textLoc.getX() && y==textLoc.getY())
 			allPlotObjects.set(textIndex, new PlotObject(label, x, y, currentJustification, currentFont, currentColor, PlotObject.NORMALIZED_LABEL));

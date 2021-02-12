@@ -3,6 +3,7 @@ package ij.plugin;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.ImageStack;
+import ij.astro.AstroImageJ;
 import ij.gui.Plot;
 import ij.io.FileInfo;
 import ij.io.FileOpener;
@@ -30,6 +31,7 @@ import static nom.tam.fits.header.Standard.NAXIS;
 	Add setOption("FlipFitsImages",true) to the
 	Edit/Options/Startup dialog to have images flipped vertically.
 */
+@AstroImageJ(reason = "Better support for FITS files via nom.tam.fits", modified = true)
 public class FITS_Reader extends ImagePlus implements PlugIn {
 	private static boolean flipImages;
 	// private WCS wcs;

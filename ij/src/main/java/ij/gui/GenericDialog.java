@@ -1,5 +1,6 @@
 package ij.gui;
 import ij.*;
+import ij.astro.AstroImageJ;
 import ij.plugin.frame.Recorder;
 import ij.plugin.ScreenGrabber;
 import ij.plugin.filter.PlugInFilter;
@@ -76,7 +77,9 @@ FocusListener, ItemListener, KeyListener, AdjustmentListener, WindowListener {
 	private char echoChar;
 	private boolean hideCancelButton;
 	private boolean centerDialog = true;
+	@AstroImageJ(reason = "unknown")
 	private boolean positionDialog = false;
+	@AstroImageJ(reason = "unknown")
 	private int xPosition = 0, yPosition = 0;
 	private String helpURL;
 	private boolean smartRecording;
@@ -90,6 +93,7 @@ FocusListener, ItemListener, KeyListener, AdjustmentListener, WindowListener {
 	private int[] windowIDs;
 	private String[] windowTitles;
 
+	@AstroImageJ(reason = "unknown")
 	public GenericDialog(String title, int x, int y) {
 		this(title, WindowManager.getCurrentImage()!=null ?
 				WindowManager.getCurrentImage().getWindow() : IJ.getInstance()!=null ? IJ.getInstance() : new Frame());
@@ -114,17 +118,20 @@ FocusListener, ItemListener, KeyListener, AdjustmentListener, WindowListener {
     /** Creates a new GenericDialog using the specified title and parent frame. */
     public GenericDialog(String title, Frame parent) {
 		super(parent, title, true);
+		ImageJ ij = IJ.getInstance();
+		if (ij!=null) setFont(ij.getFont());
 		okay = new Button("  OK  ");
 		cancel = new Button("Cancel");
 		if (Prefs.blackCanvas) {
 			setForeground(SystemColor.controlText);
 			setBackground(SystemColor.control);
 		}
+		//if (IJ.isMacOSX() && System.getProperty("java.vendor").contains("Azul"))
+		//	setForeground(Color.black);  // work around bug on Azul Java 8 on Apple Silicon
 		GridBagLayout grid = new GridBagLayout();
 		c = new GridBagConstraints();
 		setLayout(grid);
 		macroOptions = Macro.getOptions();
-		//IJ.log("macroOptions: "+macroOptions+"  "+title);
 		macro = macroOptions!=null;
 		addKeyListener(this);
 		addWindowListener(this);
@@ -403,6 +410,41 @@ FocusListener, ItemListener, KeyListener, AdjustmentListener, WindowListener {
 
 	public ImagePlus getNextImage() {
 		return WindowManager.getImage(windowIDs[getNextChoiceIndex()]);
+	}
+
+	/**
+	 * Adds a group of choices to the dialog with menu items taken from the
+	 * <code>enum</code> class of the specified default item (enum constant).
+	 * The default item is automatically set. Calls the original (string-based)
+	 * {@link GenericDialog#addChoice(String, String[], String)} method.
+	 * 
+	 * @param <E> the generic enum type containing the items to chose from
+	 * @param label the label displayed for this choice group
+	 * @param defaultItem the menu item initially selected
+	 */
+	public <E extends Enum<E>> void addEnumChoice(String label, Enum<E> defaultItem) {
+		Class<E> enumClass = defaultItem.getDeclaringClass();	
+		E[] enums = enumClass.getEnumConstants();
+		String[] items = new String[enums.length];
+		for (int i = 0; i < enums.length; i++) {
+			items[i] = enums[i].name();
+		}
+		this.addChoice(label, items, defaultItem.name());
+	}
+	
+	/**
+	 * Returns the selected item in the next enum choice menu.
+	 * Note that 'enumClass' is required to infer the proper enum type.
+	 * Throws {@code IllegalArgumentException} if the selected item is not a defined
+	 * constant in the specified enum class.
+	 * 
+	 * @param <E> the generic enum type
+	 * @param enumClass the enum type
+	 * @return the selected item
+	 */
+	public <E extends Enum<E>> E getNextEnumChoice(Class<E> enumClass) {
+		String choiceString = this.getNextChoice();
+		return Enum.valueOf(enumClass, choiceString);
 	}
 
 	/** Adds a checkbox.
@@ -902,7 +944,6 @@ FocusListener, ItemListener, KeyListener, AdjustmentListener, WindowListener {
     	imagePanels.add(imagePanel);
     }
 
-
     /** Set the insets (margins), in pixels, that will be
     	used for the next component added to the dialog
         (except components added to the same row with addToSameRow)
@@ -1009,7 +1050,6 @@ FocusListener, ItemListener, KeyListener, AdjustmentListener, WindowListener {
         if (dialogListeners == null)
             dialogListeners = new Vector();
         dialogListeners.addElement(dl);
-        if (IJ.debugMode) IJ.log("GenericDialog: Listener added: "+dl);
     }
 
 	/** Returns true if the user clicked on "Cancel". */
@@ -1375,13 +1415,11 @@ FocusListener, ItemListener, KeyListener, AdjustmentListener, WindowListener {
 			if (IJ.isMacOSX()&&IJ.isJava18())
 				instance = this;
 			Font font = getFont();
-			if (IJ.debugMode) IJ.log("GenericDialog font: "+fontSizeSet+" "+font);
 			if (!fontSizeSet && font!=null && Prefs.getGuiScale()!=1.0) {
 				fontSizeSet = true;
 				setFont(font.deriveFont((float)(font.getSize()*Prefs.getGuiScale())));
 			}
 			pack();
-
 			if (okay!=null && numberField==null && stringField==null && checkbox==null
 			&& choice==null && slider==null && radioButtonGroups==null && textArea1==null)
 				okay.requestFocusInWindow();
@@ -1393,7 +1431,7 @@ FocusListener, ItemListener, KeyListener, AdjustmentListener, WindowListener {
 
 		}
 	}
-
+	
 	/** For plugins that read their input only via dialogItemChanged, call it at least once, then stop recording */
 	void finalizeRecording() {
 		if (optionsRecorded)
@@ -1409,10 +1447,10 @@ FocusListener, ItemListener, KeyListener, AdjustmentListener, WindowListener {
 
 	@Override
 	public void setFont(Font font) {
-		super.setFont(!fontSizeSet&&Prefs.getGuiScale()!=1.0?font.deriveFont((float)(font.getSize()*Prefs.getGuiScale())):font);
+		super.setFont(!fontSizeSet&&Prefs.getGuiScale()!=1.0&&font!=null?font.deriveFont((float)(font.getSize()*Prefs.getGuiScale())):font);
 		fontSizeSet = true;
 	}
-
+	
     /** Reset the counters before reading the dialog parameters */
 	void resetCounters() {
 		nfIndex = 0;        // prepare for readout
@@ -1732,13 +1770,14 @@ FocusListener, ItemListener, KeyListener, AdjustmentListener, WindowListener {
 
 	void showHelp() {
 		if (helpURL.startsWith("<html>")) {
+			String title = getTitle()+" "+helpLabel;
 			if (this instanceof NonBlockingGenericDialog)
-				new HTMLDialog("", helpURL, false); // non blocking
+				new HTMLDialog(title, helpURL, false); // non blocking
 			else
-				new HTMLDialog(this, "", helpURL); //modal
+				new HTMLDialog(this, title, helpURL); //modal
 		} else {
-			String macro = "run('URL...', 'url="+helpURL+"');";
-			new MacroRunner(macro);
+			String macro = "call('ij.plugin.BrowserLauncher.open', '"+helpURL+"');";
+			new MacroRunner(macro); // open on separate thread using BrowserLauncher
 		}
 	}
 

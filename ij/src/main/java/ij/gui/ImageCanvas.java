@@ -4,6 +4,7 @@ import java.awt.*;
 import java.util.Properties;
 import java.awt.image.*;
 
+import ij.astro.AstroImageJ;
 import ij.plugin.PointToolOptions;
 import ij.process.*;
 import ij.measure.*;
@@ -23,7 +24,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /** This is a Canvas used to display images in a Window. */
 public class ImageCanvas extends Canvas implements MouseListener, MouseMotionListener, Cloneable {
 
-	private static final int LONG_PRESS_THRESHOLD = 750; //ms
 	protected static Cursor defaultCursor = new Cursor(Cursor.DEFAULT_CURSOR);
 	protected static Cursor handCursor = new Cursor(Cursor.HAND_CURSOR);
 	protected static Cursor moveCursor = new Cursor(Cursor.MOVE_CURSOR);
@@ -46,6 +46,7 @@ public class ImageCanvas extends Canvas implements MouseListener, MouseMotionLis
 	private Font font;
 	private Rectangle[] labelRects;
     private boolean maxBoundsReset;
+    @AstroImageJ(reason = "unknown; widen access to protected", modified = true)
     protected Overlay showAllOverlay;
     private static final int LIST_OFFSET = 100000;
     private static Color showAllColor = Prefs.getColor(Prefs.SHOW_ALL_COLOR, new Color(0, 255, 255));
@@ -76,12 +77,18 @@ public class ImageCanvas extends Canvas implements MouseListener, MouseMotionLis
 	protected int ySrcStart;
 	protected int flags;
 
+	@AstroImageJ(reason = "unknowm")
 	public int xClicked = 0;
+	@AstroImageJ(reason = "unknowm")
 	public int yClicked = 0;
 
+	@AstroImageJ(reason = "widen access to protected", modified = true)
 	protected Image offScreenImage;
+	@AstroImageJ(reason = "widen access to protected", modified = true)
 	protected int offScreenWidth = 0;
+	@AstroImageJ(reason = "widen access to protected", modified = true)
 	protected int offScreenHeight = 0;
+	@AstroImageJ(reason = "widen access to protected", modified = true)
 	protected boolean mouseExited = true;
 	private boolean customRoi;
 	private boolean drawNames;
@@ -92,6 +99,8 @@ public class ImageCanvas extends Canvas implements MouseListener, MouseMotionLis
 	private boolean flattening;
 	private Timer pressTimer;
 	private PopupMenu roiPopupMenu;
+	private static int longClickDelay = 1000; //ms
+
 		
 	public ImageCanvas(ImagePlus imp) {
 		this.imp = imp;
@@ -266,7 +275,10 @@ public class ImageCanvas extends Canvas implements MouseListener, MouseMotionLis
 		}
 	}
 
+	@AstroImageJ(reason = "widen access to protected", modified = true)
 	protected void drawRoi(Roi roi, Graphics g) {
+		if (Interpreter.isBatchMode())
+			return;
 		if (roi==currentRoi) {
 			Color lineColor = roi.getStrokeColor();
 			Color fillColor = roi.getFillColor();
@@ -298,6 +310,7 @@ public class ImageCanvas extends Canvas implements MouseListener, MouseMotionLis
 		return slice;
 	}
 
+	@AstroImageJ(reason = "widen access to public", modified = true)
 	public void drawOverlay(Overlay overlay, Graphics g) {
 		if (imp!=null && imp.getHideOverlay() && overlay!=showAllOverlay)
 			return;
@@ -367,7 +380,8 @@ public class ImageCanvas extends Canvas implements MouseListener, MouseMotionLis
 		drawNames = false;
 		font = null;
 	}
-    	
+
+	@AstroImageJ(reason = "widen access to public", modified = true)
 	public void drawOverlay(Graphics g) {
 		drawOverlay(imp.getOverlay(), g);
 	}
@@ -494,8 +508,9 @@ public class ImageCanvas extends Canvas implements MouseListener, MouseMotionLis
 		g.setColor(labelColor);
 		g.drawString(label, x+xoffset, y-2+yoffset);
 		g.setColor(defaultColor);
-	} 
+	}
 
+	@AstroImageJ(reason = "widen access to public", modified = true)
 	public void drawZoomIndicator(Graphics g) {
 		if (hideZoomIndicator)
 			return;
@@ -568,7 +583,8 @@ public class ImageCanvas extends Canvas implements MouseListener, MouseMotionLis
 
     long firstFrame;
     int frames, fps;
-        
+
+	@AstroImageJ(reason = "widen access to protected", modified = true)
 	protected void showFrameRate(Graphics g) {
 		frames++;
 		if (System.currentTimeMillis()>firstFrame+1000) {
@@ -652,7 +668,7 @@ public class ImageCanvas extends Canvas implements MouseListener, MouseMotionLis
 		Overlay o = showAllOverlay;
 		if (o==null)
 			o = imp.getOverlay();
-		if (o==null || !o.isSelectable() || !o.getDrawLabels() || labelRects==null)
+		if (o==null || !o.isSelectable() || !o.isDraggable()|| !o.getDrawLabels() || labelRects==null)
 			return false;
 		for (int i=o.size()-1; i>=0; i--) {
 			if (labelRects!=null&&labelRects[i]!=null&&labelRects[i].contains(sx,sy)) {
@@ -724,7 +740,8 @@ public class ImageCanvas extends Canvas implements MouseListener, MouseMotionLis
 	public void setMagnification(double magnification) {
 		setMagnification2(magnification);
 	}
-		
+
+	@AstroImageJ(reason = "Increase maximum magnification from 32 to 128", modified = true)
 	void setMagnification2(double magnification) {
 		if (magnification>128.0) magnification = 128.0;
 		if (magnification<zoomLevels[0]) magnification = zoomLevels[0];
@@ -733,6 +750,7 @@ public class ImageCanvas extends Canvas implements MouseListener, MouseMotionLis
 	}
 
 	/** Resizes the canvas when the user resizes the window. */
+	@AstroImageJ(reason = "Add 'seeing profile' exception to scaleToFit check", modified = true)
 	void resizeCanvas(int width, int height) {
 		ImageWindow win = imp.getWindow();
 		//IJ.log("resizeCanvas: "+srcRect+" "+imageWidth+"  "+imageHeight+" "+width+"  "+height+" "+dstWidth+"  "+dstHeight+" "+win.maxBounds);
@@ -796,7 +814,8 @@ public class ImageCanvas extends Canvas implements MouseListener, MouseMotionLis
 			maxBoundsReset = true;
 		}
 	}
-	
+
+	@AstroImageJ(reason = "increase zoom levels to 128 from 32", modified = true)
 	private static final double[] zoomLevels = {
 		1/72.0, 1/48.0, 1/32.0, 1/24.0, 1/16.0, 1/12.0, 
 		1/8.0, 1/6.0, 1/4.0, 1/3.0, 1/2.0, 0.75, 1.0, 1.5,
@@ -813,6 +832,7 @@ public class ImageCanvas extends Canvas implements MouseListener, MouseMotionLis
 		return newMag;
 	}
 
+	@AstroImageJ(reason = "increase zoom levels to 128 from 32", modified = true)
 	public static double getHigherZoomLevel(double currentMag) {
 		double newMag = 128.0;
 		for (int i=zoomLevels.length-1; i>=0; i--) {
@@ -828,6 +848,7 @@ public class ImageCanvas extends Canvas implements MouseListener, MouseMotionLis
 		the source rectangle (srcRect) smaller and centers it on the position in the
 		image where the cursor was when zooming has started.
 		Note that sx and sy are screen coordinates. */
+	@AstroImageJ(reason = "increase zoom levels to 128 from 32", modified = true)
 	public void zoomIn(int sx, int sy) {
 		if (magnification>=128) return;
 		scaleToFit = false;
@@ -1230,36 +1251,41 @@ public class ImageCanvas extends Canvas implements MouseListener, MouseMotionLis
 				handleRoiMouseDown(e);
 		}
 		
-		if (pressTimer==null)
-			pressTimer = new java.util.Timer();			
-		pressTimer.schedule(new TimerTask() {
-			public void run() {
-				if (pressTimer != null) {
-					pressTimer.cancel();
-					pressTimer = null;
+		if (longClickDelay>0) {
+			if (pressTimer==null)
+				pressTimer = new java.util.Timer();	
+			final Point cursorLoc = getCursorLoc();	
+			pressTimer.schedule(new TimerTask() {
+				public void run() {
+					if (pressTimer != null) {
+						pressTimer.cancel();
+						pressTimer = null;
+					}
+					Roi roi2 = imp.getRoi();
+					int size2 = roi2!=null?roi2.size():0;
+					Rectangle r2 = roi2!=null?roi2.getBounds():null;
+					boolean empty = r2!=null&&r2.width==0&&r2.height==0;
+					int state = roi2!=null?roi2.getState():-1;
+					boolean unchanged = state!=Roi.MOVING_HANDLE && r1!=null && r2!=null && r2.x==r1.x
+						&& r2.y==r1.y  && r2.width==r1.width && r2.height==r1.height && size2==size1
+						&& !(size2>1&&state==Roi.CONSTRUCTING);
+					boolean cursorMoved = !getCursorLoc().equals(cursorLoc);
+					//IJ.log(size2+" "+empty+" "+unchanged+" "+state+" "+roi1+"  "+roi2);			
+					if ((roi1==null && (size2<=1||empty)) || unchanged) {
+						if (roi1==null) imp.deleteRoi();
+						if (!cursorMoved) handlePopupMenu(e);
+					}
 				}
-				Roi roi2 = imp.getRoi();
-				int size2 = roi2!=null?roi2.size():0;
-				Rectangle r2 = roi2!=null?roi2.getBounds():null;
-				boolean empty = r2!=null&&r2.width==0&&r2.height==0;
-				int state = roi2!=null?roi2.getState():-1;
-				boolean unchanged = state!=Roi.MOVING_HANDLE && r1!=null && r2!=null && r2.x==r1.x
-					&& r2.y==r1.y  && r2.width==r1.width && r2.height==r1.height && size2==size1
-					&& !(size2>1&&state==Roi.CONSTRUCTING);
-				//IJ.log(size2+" "+empty+" "+unchanged+" "+state+" "+roi1+"  "+roi2);				
-				if ((roi1==null && (size2<=1||empty)) || unchanged) {
-					if (roi1==null) imp.deleteRoi();
-					handlePopupMenu(e);
-				}
-			}
-		}, LONG_PRESS_THRESHOLD);
+			}, longClickDelay);
+		}
 		
 	}
 	
 	
 		
 	private boolean drawingTool() {
-		return Toolbar.getToolId()>=15;
+		int id = Toolbar.getToolId();
+		return id==Toolbar.POLYLINE || id==Toolbar.FREELINE || id>=Toolbar.CUSTOM1;
 	}
 	
 	void zoomToSelection(int x, int y) {
@@ -1299,7 +1325,7 @@ public class ImageCanvas extends Canvas implements MouseListener, MouseMotionLis
 			roi.handleMouseUp(sx, sy); // polygon or polyline selection
 			return;
 		}
-		if (roi!=null) {  // show ROI popup?
+		if (roi!=null && !(e.isAltDown()||e.isShiftDown())) {  // show ROI popup?
 			if (roi.contains(ox,oy)) {
 				if (roiPopupMenu==null)
 					addRoiPopupMenu();
@@ -1419,11 +1445,12 @@ public class ImageCanvas extends Canvas implements MouseListener, MouseMotionLis
 					imp.createNewRoi(sx,sy);
 				}
 				return;
-			}
-			if ((type==Roi.POLYGON || type==Roi.POLYLINE || type==Roi.ANGLE)
+			}			
+			boolean segmentedTool = tool==Toolbar.POLYGON || tool==Toolbar.POLYLINE || tool==Toolbar.ANGLE;
+			if (segmentedTool && (type==Roi.POLYGON || type==Roi.POLYLINE || type==Roi.ANGLE)
 			&& roi.getState()==roi.CONSTRUCTING)
 				return;
-			if ((tool==Toolbar.POLYGON||tool==Toolbar.POLYLINE||tool==Toolbar.ANGLE)&& !(IJ.shiftKeyDown()||IJ.altKeyDown())) {
+			if (segmentedTool&& !(IJ.shiftKeyDown()||IJ.altKeyDown())) {
 				imp.deleteRoi();
 				return;
 			}
@@ -1576,6 +1603,7 @@ public class ImageCanvas extends Canvas implements MouseListener, MouseMotionLis
 		}
 	}
 
+	@AstroImageJ(reason = "Update x/yClicked", modified = true)
 	public void mouseReleased(MouseEvent e) {
 		xClicked = e.getX();
 		yClicked = e.getY();
@@ -1772,6 +1800,13 @@ public class ImageCanvas extends Canvas implements MouseListener, MouseMotionLis
 		repaint();
 	}
 	
+	/** Sets the context menu long click delay in milliseconds
+	 * (default is 1000). Set to 0 to disable long click triggering.
+	*/
+	 public static void setLongClickDelay(int delay) {
+		longClickDelay = delay;
+	}
+	
 	void addRoiPopupMenu() {
 		ImageJ ij = IJ.getInstance();
 		if (ij==null)
@@ -1782,6 +1817,7 @@ public class ImageCanvas extends Canvas implements MouseListener, MouseMotionLis
 		addPopupItem("Roi Defaults...", null, roiPopupMenu, ij);
 		addPopupItem("Add to Overlay", "Add Selection...", roiPopupMenu, ij);
 		addPopupItem("Add to ROI Manager", "Add to Manager", roiPopupMenu, ij);				
+		addPopupItem("Duplicate...", null, roiPopupMenu, ij);	
 		addPopupItem("Fit Spline", null, roiPopupMenu, ij);	
 		addPopupItem("Create Mask", null, roiPopupMenu, ij);	
 		addPopupItem("Measure", null, roiPopupMenu, ij);							

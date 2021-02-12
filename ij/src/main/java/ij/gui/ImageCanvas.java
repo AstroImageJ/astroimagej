@@ -143,10 +143,13 @@ public class ImageCanvas extends Canvas implements MouseListener, MouseMotionLis
 	}
 
 	/** Sets the region of the image (in pixels) to be displayed. */
+	@AstroImageJ(reason = "Simply set srcRect to be the given rectangle, allowing for the image to be zoomed out " +
+			"beyond it's bounds; also fixes max zoom in being locked", modified = true)
 	public void setSourceRect(Rectangle r) {
 		if (r==null)
 			return;
-		r = new Rectangle(r.x, r.y, r.width, r.height);
+		this.srcRect = r;
+		/*r = new Rectangle(r.x, r.y, r.width, r.height);
 		imageWidth = imp.getWidth();
 		imageHeight = imp.getHeight();
 		if (r.x<0) r.x = 0;
@@ -178,7 +181,7 @@ public class ImageCanvas extends Canvas implements MouseListener, MouseMotionLis
 		}
 		magnification = (double)dstWidth/srcRect.width;
 		imp.setTitle(imp.getTitle());
-		if (IJ.debugMode) IJ.log("setSourceRect: "+magnification+" "+(int)(srcRect.height*magnification+0.5)+" "+dstHeight+" "+srcRect);
+		if (IJ.debugMode) IJ.log("setSourceRect: "+magnification+" "+(int)(srcRect.height*magnification+0.5)+" "+dstHeight+" "+srcRect);*/
 	}
 
 	void setSrcRect(Rectangle srcRect) {

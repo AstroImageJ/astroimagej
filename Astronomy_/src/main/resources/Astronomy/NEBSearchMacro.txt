@@ -2075,6 +2075,7 @@ STARtempBinnedTime = 0.0;
 binnedObsTimes = newArray(nObservations);
 successPrint = debugPrint(" ",1);
 binTimeCount = 0;
+nBinEntries = 0;
 for (i=1; i<nObservations+1; i++) {
     if (modulus(i,binning) == 0) {
 //  Add binned observation time into the binnedTime array

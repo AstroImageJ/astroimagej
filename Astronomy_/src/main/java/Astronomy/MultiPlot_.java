@@ -2,6 +2,7 @@
 package Astronomy;
 
 import ij.*;
+import ij.astro.AstroImageJ;
 import ij.gui.*;
 import ij.text.*;
 import ij.util.*;
@@ -6656,13 +6657,14 @@ static public void updateColumnLists()
                 plotImageCanvas.repaint();
                 }
 
+@AstroImageJ(reason = "set title Y pos to 0", modified = true)
 static void initializeVariables()
         {
         shiftIsDown = true;
         ignoreUpdate = false;
         title = "Main Title";
         titlePosX = .5;
-        titlePosY = 10;
+        titlePosY = 0;
         subtitle ="Subtitle";
         subtitlePosX = 0.5;
         subtitlePosY = 35;

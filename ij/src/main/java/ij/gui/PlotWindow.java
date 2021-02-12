@@ -24,7 +24,8 @@ public class PlotWindow extends ImageWindow implements ActionListener, ItemListe
 
 	private static final int WIDTH = 600;
 	private static final int HEIGHT = 340;
-	private static final int FONT_SIZE = 14;
+	@AstroImageJ(reason = "Revert font size to 12 from 14", modified = true)
+	private static final int FONT_SIZE = 12;
 	private static final String PREFS_WIDTH = "pp.width";
 	private static final String PREFS_HEIGHT = "pp.height";
 	private static final String PREFS_FONT_SIZE = "pp.fontsize";

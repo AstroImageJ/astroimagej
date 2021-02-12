@@ -283,9 +283,11 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 	}
 
     /** Draws the subtitle. */
+    @AstroImageJ(reason = "Remove info from multiplot window", modified = true)
     public void drawInfo(Graphics g) {
     	if (imp==null)
     		return;
+    	if (this instanceof PlotWindow) return;
         if (textGap!=0) {
 			Insets insets = super.getInsets();
 			if (imp.isComposite()) {

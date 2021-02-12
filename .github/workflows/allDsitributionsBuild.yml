@@ -22,16 +22,16 @@ jobs:
       - name: Build AIJ
         run: ./gradlew build
       - name: Package AIJ
-        run: ./gradlew packageAijForWindows
+        run: ./gradlew packageAijForWindows_x86
       - uses: actions/upload-artifact@v2
         with:
           name: Windows Installer (.exe)
-          path: build/distributions/AstroImageJ_dev-x86.exe
+          path: build/distributions/AstroImageJ-x86_64.exe
       - uses: actions/upload-artifact@v2
         with:
           name: Windows package (.zip)
           #path: build/distributions
-          path: build/distributions/AstroImageJ-dev-x86-windows.zip
+          path: build/distributions/AstroImageJ-x86_64-windows.zip
   linux:
 
     runs-on: ubuntu-latest
@@ -51,11 +51,11 @@ jobs:
       - name: Build AIJ
         run: ./gradlew build
       - name: Package AIJ
-        run: ./gradlew packageAijForLinux
+        run: ./gradlew packageAijForLinux_x86
       - uses: actions/upload-artifact@v2
         with:
           name: Linux Compressed tar file (.tar.gz)
-          path: build/distributions/AstroImageJ-dev-x86-linux.tar.gz #TODO once installer generation is added, gen and upload installers
+          path: build/distributions/AstroImageJ-x86_64-linux.tar.gz #TODO once installer generation is added, gen and upload installers
   macos:
 
     runs-on: macos-latest
@@ -77,12 +77,20 @@ jobs:
       - name: Build AIJ
         run: ./gradlew build
       - name: Package AIJ
-        run: ./gradlew packageAijForMac
+        run: ./gradlew packageAijForMac_x86 packageAijForMac_arm
       - uses: actions/upload-artifact@v2
         with:
           name: MacOS x86 App Version (.zip)
-          path: build/distributions/AstroImageJ-dev-x86-mac.zip
+          path: build/distributions/AstroImageJ-x86_64-mac.zip
+      - uses: actions/upload-artifact@v2
+        with:
+          name: MacOS Arm App Version (.zip)
+          path: build/distributions/AstroImageJ-arm_64-mac.zip
+      - uses: actions/upload-artifact@v2
+        with:
+          name: MacOS Arm App Version (.dmg)
+          path: build/distributions/AstroImageJ-arm_64-mac.dmg
       - uses: actions/upload-artifact@v2
         with:
           name: MacOS x86 Dmg Version (.dmg)
-          path: build/distributions/AstroImageJ_dev-x86.dmg
+          path: build/distributions/AstroImageJ-x86_64.dmg

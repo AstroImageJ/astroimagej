@@ -9293,7 +9293,7 @@ static void initializeVariables()
 
                                 //MAKE TITLE Y-POSITION SLIDER
                                 
-                                titlePosYSlider = new JSlider(JSlider.HORIZONTAL, 0,1000, (int)(titlePosY));
+                                titlePosYSlider = new JSlider(JSlider.HORIZONTAL, -30,1000, (int)(titlePosY));
                                 titlePosYSlider.setBorder (BorderFactory.createEmptyBorder(10,0,0,0));
                                 titlePosYSlider.setFont(p11);
                                 titlePosYSlider.addChangeListener (new ChangeListener()

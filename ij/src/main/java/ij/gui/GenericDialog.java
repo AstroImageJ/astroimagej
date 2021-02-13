@@ -773,13 +773,12 @@ FocusListener, ItemListener, KeyListener, AdjustmentListener, WindowListener {
 	* @param maxValue  the maximum value of the slider
 	* @param defaultValue  the initial value of the slider
 	*/
-	@AstroImageJ(reason = "Allow for multiaperture slider to be float by change 5.1 to 100.1. Javadoc not changed.", modified = true)
 	public void addSlider(String label, double minValue, double maxValue, double defaultValue) {
 		if (defaultValue<minValue) defaultValue=minValue;
 		if (defaultValue>maxValue) defaultValue=maxValue;
 		int digits = 0;
 		double scale = 1.0;
-		if ((maxValue-minValue)<=100.1 && ((minValue != 0.0 && minValue!=(int)minValue)||maxValue!=(int)maxValue||defaultValue!=(int)defaultValue)) {
+		if ((maxValue-minValue)<=5.1 && ((minValue != 0.0 && minValue!=(int)minValue)||maxValue!=(int)maxValue||defaultValue!=(int)defaultValue)) {
 			scale = 50.0;
 			minValue *= scale;
 			maxValue *= scale;
@@ -787,6 +786,16 @@ FocusListener, ItemListener, KeyListener, AdjustmentListener, WindowListener {
 			digits = 2;
 		}
 		addSlider( label, minValue, maxValue, defaultValue, scale, digits);
+	}
+
+	@AstroImageJ(reason = "float slider, primarily for aperture radius")
+	public void addFloatSlider(String label, double minValue, double maxValue, double defaultValue, int digits, double stepSize) {
+		if ( stepSize <= 0 ) stepSize  = 1;
+		double scale = 1.0 / Math.abs( stepSize );
+		minValue *= scale;
+		maxValue *= scale;
+		defaultValue *= scale;
+		addSlider(label, minValue, maxValue, defaultValue, scale, digits);
 	}
 
 	/** This vesion of addSlider() adds a 'stepSize' argument.<br>

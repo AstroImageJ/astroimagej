@@ -3252,7 +3252,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 //			gd.addNumericField ("           Last slice :",  lastSlice, 0);
 	        }
 //        gd.addMessage("");
-        gd.addSlider("Radius of object aperture", 0.01, radius>100?radius:100, radius);
+        gd.addFloatSlider("Radius of object aperture", 0.01, radius>100?radius:100, radius, 3, 1.0);
         gd.addSlider("Inner radius of background annulus", 1, rBack1>100?rBack1:100, rBack1);
         gd.addSlider("Outer radius of background annulus", 1, rBack2>100?rBack2:100, rBack2);
 //        gd.addNumericField ("Radius of object aperture",radius,2);

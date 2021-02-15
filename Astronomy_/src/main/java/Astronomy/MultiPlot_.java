@@ -1272,12 +1272,12 @@ static public void updateColumnLists()
                 if (useTitle)
                         {
                         plot.changeFont(new java.awt.Font("Dialog",java.awt.Font.PLAIN,18));
-                        plot.addTitle(titlePosX, titlePosY/plotSizeY>1?1:titlePosY/plotSizeY,title);
+                        plot.addLabel(titlePosX, (titlePosY-10)/plotSizeY>1?1:(titlePosY-19)/plotSizeY,title);
                         }
                 if (useSubtitle)
                         {
                         plot.changeFont(new java.awt.Font("Dialog",java.awt.Font.PLAIN,14));
-                        plot.addTitle(subtitlePosX, subtitlePosY/plotSizeY>1?1:subtitlePosY/plotSizeY,subtitle);
+                        plot.addLabel(subtitlePosX, subtitlePosY/plotSizeY>1?1:subtitlePosY/plotSizeY,subtitle);
                         }
                 plot.draw();
                 ImageProcessor ip = plot.getProcessor();
@@ -4437,12 +4437,12 @@ static public void updateColumnLists()
                 if (useTitle)
                         {
                         plot.changeFont(new java.awt.Font("Dialog",java.awt.Font.PLAIN,18));
-                        plot.addTitle(titlePosX, titlePosY/plotSizeY>1?1:titlePosY/plotSizeY,title);
+                            plot.addLabel(titlePosX, (titlePosY-10)/plotSizeY>1?1:(titlePosY-19)/plotSizeY,title);
                         }
                 if (useSubtitle)
                         {
                         plot.changeFont(new java.awt.Font("Dialog",java.awt.Font.PLAIN,14));
-                        plot.addTitle(subtitlePosX, subtitlePosY/plotSizeY>1?1:subtitlePosY/plotSizeY, subtitle);
+                        plot.addLabel(subtitlePosX, subtitlePosY/plotSizeY>1?1:subtitlePosY/plotSizeY, subtitle);
                         }
 
                 plotImage = WindowManager.getImage("Plot of "+tableName);
@@ -9293,7 +9293,7 @@ static void initializeVariables()
 
                                 //MAKE TITLE Y-POSITION SLIDER
                                 
-                                titlePosYSlider = new JSlider(JSlider.HORIZONTAL, -30,1000, (int)(titlePosY));
+                                titlePosYSlider = new JSlider(JSlider.HORIZONTAL, 0,1000, (int)(titlePosY));
                                 titlePosYSlider.setBorder (BorderFactory.createEmptyBorder(10,0,0,0));
                                 titlePosYSlider.setFont(p11);
                                 titlePosYSlider.addChangeListener (new ChangeListener()

@@ -923,17 +923,6 @@ public class Plot implements Cloneable {
 		}
 	}
 
-	@AstroImageJ(reason = "unknown; unused")
-	public void addTitle(double x, double y, String label) {
-		if (textLoc!=null && x==textLoc.getX() && y==textLoc.getY())
-			allPlotObjects.set(textIndex, new PlotObject(label, x, y, currentJustification, currentFont, currentColor, PlotObject.NORMALIZED_LABEL));
-		else {
-			allPlotObjects.add(new PlotObject(label, x, y, currentJustification, currentFont, currentColor, PlotObject.NORMALIZED_LABEL));
-			textLoc = new Point2D.Double(x,y);
-			textIndex = allPlotObjects.size()-1;
-		}
-	}
-
 	/* Draws text at the specified location, using the coordinate system defined
 	 * by setLimits() and the justification specified by setJustification(). */
 	public void addText(String label, double x, double y) {

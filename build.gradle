@@ -72,11 +72,35 @@ def javaRuntimeSystems = [ mac: [ext: "zip", type: "jre", arch: "x86", os: "maco
            , windows: [ext: "zip", type: "jre", arch: "x86", os: "windows"]
            ]
 
+boolean canConnectToAzul = true
+
 /**
  * Download the specified Java runtimes based on javaRuntimeSystems.
  */
 task downloadJavaRuntimes(type: Download) {
     mkdir(file("${projectDir}/jres"))
+
+    onlyIf {
+        javaRuntimeSystems.each { sys, sysInfo ->
+            // Other parameters of note:
+            // &support_term=lts/mts/sts &release_status=ga/ea/both &jdk_version=11
+            String url = "https://api.azul.com/zulu/download/community/v1.0/bundles/latest/?" +
+                    "os=${sysInfo.os}&arch=${sysInfo.arch}&hw_bitness=64&bundle_type=${sysInfo.type}" +
+                    "&ext=${sysInfo.ext}"
+
+            // Ensure Azul is responding to API requests
+            def testUrl = new URL(url)
+            def connection = testUrl.openConnection()
+            connection.requestMethod = 'GET'
+            if (connection.responseCode != 200) {
+                logger.warn("A runtime (sys = {}, {}, {}, {}) failed to return from Azul!",
+                        sysInfo.os, sysInfo.arch, sysInfo.ext, sysInfo.type)
+                canConnectToAzul = false
+            }
+        }
+
+        return canConnectToAzul
+    }
 
     javaRuntimeSystems.each {sys, sysInfo ->
         // Other parameters of note:
@@ -84,7 +108,15 @@ task downloadJavaRuntimes(type: Download) {
         String url ="https://api.azul.com/zulu/download/community/v1.0/bundles/latest/?" +
                 "os=${sysInfo.os}&arch=${sysInfo.arch}&hw_bitness=64&bundle_type=${sysInfo.type}" +
                 "&ext=${sysInfo.ext}"
-        def meta = new JsonSlurper().parse(new URL(url)) // Pull the data from Azul
+        def meta
+        try {
+            meta = new JsonSlurper().parse(new URL(url)) // Pull the data from Azul
+        } catch (Exception ignored) {
+            logger.warn("A runtime (sys = {}, {}, {}, {}) failed to return from Azul!",
+                    sysInfo.os, sysInfo.arch, sysInfo.ext, sysInfo.type)
+            canConnectToAzul = false
+            return
+        }
 
         // Update the maps with the metadata
         sysInfo.version = meta.jdk_version.first()
@@ -100,6 +132,8 @@ task downloadJavaRuntimes(type: Download) {
         //noinspection GroovyAssignabilityCheck
         dest 'jres'
     }
+
+    if (!canConnectToAzul) return
 
     // Collect current runtime files and extensions
     def currentFiles = javaRuntimeSystems.collectEntries {[it.value.name, it.value.ext]}
@@ -277,6 +311,10 @@ javapackager {
 task packageAij
 
 javaRuntimeSystems.each {sys, sysInfo ->
+    if (!canConnectToAzul) {
+        System.out.println("Skipping system creation, failed to connect to Azul!")
+        return
+    }
     String taskName = "packageAijFor" + (sysInfo.os as String).capitalize() + "_" + sysInfo.arch
 
     tasks.register(taskName, PackageTask) {

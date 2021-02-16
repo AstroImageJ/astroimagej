@@ -2433,6 +2433,7 @@ public class Plot implements Cloneable {
 
 	/** Draws ticks, grid and axis label for each tick/grid line.
 	 *	The grid or major tick spacing in each direction is given by steps */
+	@AstroImageJ(reason = "Set font size to 12 for axis labels", modified = true)
 	void drawAxesTicksGridNumbers(double[] steps) {
 
 		if (ip==null)
@@ -2713,6 +2714,7 @@ public class Plot implements Cloneable {
 		// --- Write x and y axis text labels
 		if (xCats == null) {
 			ip.setFont(pp.xLabel.getFont() == null ? scFont : scFont(pp.xLabel.getFont()));
+			ip.setFontSize(12);
 			ImageProcessor xLabel = stringToPixels(xLabelToDraw);
 			if(xLabel != null){
 				int xpos = leftMargin+(frame.width-xLabel.getWidth())/2;
@@ -2723,6 +2725,7 @@ public class Plot implements Cloneable {
 		if (yCats == null) {
 			ip.setFont(pp.yLabel.getFont() == null ? scFont : scFont(pp.yLabel.getFont()));
 			ImageProcessor yLabel = stringToPixels(yLabelToDraw);
+			ip.setFontSize(12);
 			if(yLabel != null){
 				yLabel = yLabel.rotateLeft();
 				int xRightOfYLabel = xNumberRight - maxNumWidth - sc(2);

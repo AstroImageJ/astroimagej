@@ -4512,6 +4512,7 @@ static public void updateColumnLists()
                     plotImageCanvas = plotImage.getCanvas();
                     plotImageCanvas.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
                     }
+                    updatePlotPos();
 
                 plotbottompanel = (Panel) plotWindow.getComponent(1);
                 plotbottompanel.getComponentCount();
@@ -4536,6 +4537,12 @@ static public void updateColumnLists()
                 table.setLock(false);    
                 updatePlotRunning = false;
                 }
+
+    static void updatePlotPos() {
+        if (rememberWindowLocations) {
+            IJU.setFrameSizeAndLocation(plot.getImagePlus().getWindow(), plotFrameLocationX, plotFrameLocationY, plotSizeX, plotSizeY);
+        }
+    }
         
     static void drawVMarker (double vMarkerValue, String vMarkerTopText, String vMarkerBotText, Color color)
                     {

@@ -1414,21 +1414,22 @@ static public AstroStackWindow getBestOpenAstroStackWindow()
         }    
 
     
-    public static void setFrameSizeAndLocation(JFrame frame, int defaultX, int defaultY, int defaultWidth, int defaultHeight)
+    public static <T extends Window> void setFrameSizeAndLocation(T frame, int defaultX, int defaultY, int defaultWidth, int defaultHeight)
         {
+            if (frame == null) {
+                return;
+            }
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         GraphicsDevice[] gds = ge.getScreenDevices();
         GraphicsDevice gd = null;
         Rectangle screenBounds = new Rectangle();
         boolean foundScreen = false;
-        for (int j = 0; j < gds.length; j++) 
-            {
-            gd = gds[j];
-            screenBounds.setRect(gd.getDefaultConfiguration().getBounds());
-            if (screenBounds.contains(defaultX, defaultY)) 
-                {
-                foundScreen = true;
-                break;
+            for (GraphicsDevice graphicsDevice : gds) {
+                gd = graphicsDevice;
+                screenBounds.setRect(gd.getDefaultConfiguration().getBounds());
+                if (screenBounds.contains(defaultX, defaultY)) {
+                    foundScreen = true;
+                    break;
                 }
             }
         if (!foundScreen)

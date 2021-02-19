@@ -7,12 +7,10 @@ import ij.gui.*;
 import ij.text.*;
 import ij.util.*;
 import ij.measure.ResultsTable;
-import ij.plugin.*;
 import ij.plugin.PlugIn;
 import ij.Prefs;
 import ij.process.*;
 import ij.io.*;
-import ij.measure.CurveFitter;
 import flanagan.analysis.*;
 
 import javax.swing.*;
@@ -26,8 +24,6 @@ import java.util.*;
 import java.io.*;
 import java.awt.event.*;
 
-import java.lang.Math.*;
-import java.math.BigDecimal;
 import java.text.*;
 
 // astroj ------
@@ -35,12 +31,6 @@ import astroj.*;
 import flanagan.math.MinimizationFunction;
 import flanagan.math.Minimization;
 import java.awt.image.BufferedImage;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import javax.imageio.IIOImage;
-import javax.imageio.ImageIO;
-import javax.imageio.ImageWriteParam;
-import javax.imageio.stream.FileImageOutputStream;
 import javax.swing.border.Border;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
@@ -1272,12 +1262,12 @@ static public void updateColumnLists()
                 if (useTitle)
                         {
                         plot.changeFont(new java.awt.Font("Dialog",java.awt.Font.PLAIN,18));
-                        plot.addLabel(titlePosX, (titlePosY-10)/plotSizeY>1?1:(titlePosY-19)/plotSizeY,title);
+                        renderTitle();
                         }
                 if (useSubtitle)
                         {
                         plot.changeFont(new java.awt.Font("Dialog",java.awt.Font.PLAIN,14));
-                        plot.addLabel(subtitlePosX, subtitlePosY/plotSizeY>1?1:subtitlePosY/plotSizeY,subtitle);
+                        renderSubtitle();
                         }
                 plot.draw();
                 ImageProcessor ip = plot.getProcessor();
@@ -4437,12 +4427,12 @@ static public void updateColumnLists()
                 if (useTitle)
                         {
                         plot.changeFont(new java.awt.Font("Dialog",java.awt.Font.PLAIN,18));
-                            plot.addLabel(titlePosX, (titlePosY-10)/plotSizeY>1?1:(titlePosY-19)/plotSizeY,title);
+                            renderTitle();
                         }
                 if (useSubtitle)
                         {
                         plot.changeFont(new java.awt.Font("Dialog",java.awt.Font.PLAIN,14));
-                        plot.addLabel(subtitlePosX, subtitlePosY/plotSizeY>1?1:subtitlePosY/plotSizeY, subtitle);
+                        renderSubtitle();
                         }
 
                 plotImage = WindowManager.getImage("Plot of "+tableName);
@@ -4715,7 +4705,18 @@ static public void updateColumnLists()
             return chi2/(double)dof;  
             }
         }    
-    
+
+        static void renderSubtitle() {
+            double delta = -41.9;
+            double y0 = subtitlePosY/plotSizeY>1?1:(subtitlePosY + delta)/plotSizeY;
+            plot.addLabel(subtitlePosX, y0+(-3.9)/((float)plotSizeY),subtitle);
+        }
+        static void renderTitle() {
+	        double delta = -41.9;
+            double y0 = titlePosY/plotSizeY>1?1:(titlePosY + delta)/plotSizeY;
+            plot.addLabel(titlePosX, y0,title);
+        }
+
     public static class FitLightCurveChi2 implements MinimizationFunction {
         public double function(double[] param)
             {
@@ -9302,6 +9303,7 @@ static void initializeVariables()
                                         {
                                         JSlider slider=(JSlider)ev.getSource();
                                         titlePosY=slider.getValue();
+                                            System.out.println(titlePosY);
                                         updatePlot(updateNoFits());
                                         }
                                     });

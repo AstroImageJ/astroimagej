@@ -4714,12 +4714,12 @@ static public void updateColumnLists()
         }    
 
         static void renderSubtitle() {
-            double delta = -41.9;
+            double delta = -41.9-2;
             double y0 = subtitlePosY/plotSizeY>1?1:(subtitlePosY + delta)/plotSizeY;
             plot.addLabel(subtitlePosX, y0+(-3.9)/((float)plotSizeY),subtitle);
         }
         static void renderTitle() {
-	        double delta = -41.9;
+	        double delta = -41.9-2;
             double y0 = titlePosY/plotSizeY>1?1:(titlePosY + delta)/plotSizeY;
             plot.addLabel(titlePosX, y0,title);
         }

@@ -6439,6 +6439,7 @@ static public void updateColumnLists()
 
                 if (e.isShiftDown() && !e.isControlDown() && !e.isAltDown())     //select table line nearest x-val of first selected curve
                     {
+                        xval = plot.descaleX(e.getX()); // Fix for scaling
                     nearestLine=0;
                     nearestX = Math.abs(xval-x[firstCurve][0]);
                     if (nn[firstCurve]>0)

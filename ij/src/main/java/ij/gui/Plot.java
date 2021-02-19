@@ -2445,6 +2445,7 @@ public class Plot implements Cloneable {
 		Font scFontMedium = scFont.deriveFont(scFont.getSize2D()*10f/12f); //for axis numbers if full size does not fit
 		Font scFontSmall = scFont.deriveFont(scFont.getSize2D()*9f/12f);   //for subscripts
 		ip.setFont(scFont);
+		ip.setFontSize(12);
 		FontMetrics fm = ip.getFontMetrics();
 		int fontAscent = fm.getAscent();
 		ip.setJustification(LEFT);
@@ -2555,6 +2556,7 @@ public class Plot implements Cloneable {
 		}
 		// ---	A l o n g	Y	A x i s
 		ip.setFont(scFont);
+		ip.setFontSize(12);
 		int maxNumWidth = 0;
 		int xNumberRight = leftMargin-sc(2)-ip.getStringWidth("0")/2;
 		Rectangle rect = ip.getStringBounds("0169");

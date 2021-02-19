@@ -9303,7 +9303,6 @@ static void initializeVariables()
                                         {
                                         JSlider slider=(JSlider)ev.getSource();
                                         titlePosY=slider.getValue();
-                                            System.out.println(titlePosY);
                                         updatePlot(updateNoFits());
                                         }
                                     });

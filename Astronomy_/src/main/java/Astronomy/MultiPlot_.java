@@ -6463,6 +6463,9 @@ static public void updateColumnLists()
                     }
                 else
                     {
+                        if (plotcoordlabel == null) {
+                            return;
+                        }
                     plotcoordlabel.setText("x="+fourPlaces.format(xval)+", y="+fourPlaces.format(yval));
                     IJ.showStatus("plot coordinates: x="+fourPlaces.format(xval)+", y="+fourPlaces.format(yval));
                     if (boldedDatum!=-1)

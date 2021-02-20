@@ -140,8 +140,8 @@ public class Plot implements Cloneable {
 	public static final int RIGHT_MARGIN = 18;
 	/** The default margin width above the plot frame
 	 *	@deprecated Not a fixed value any more, use getDrawingFrame() to get the drawing area */
-	@AstroImageJ(reason = "Increase default from 15 to 38", modified = true)
-	public static final int TOP_MARGIN = 38;
+	@AstroImageJ(reason = "Increase default from 15 to 47", modified = true)
+	public static final int TOP_MARGIN = 47;
 	/** The default margin width below the plot frame
 	 *	@deprecated Not a fixed value any more, use getDrawingFrame() to get the drawing area */
 	public static final int BOTTOM_MARGIN = 40;

@@ -269,6 +269,7 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 	}
 	
 	/** Override Container getInsets() to make room for some text above the image. */
+	@AstroImageJ(reason = "Remove textgap from plot window as the subtitle ius disabled for it.", modified = true)
 	public Insets getInsets() {
 		Insets insets = super.getInsets();
 		if (imp==null)
@@ -278,7 +279,7 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 		if (extraWidth<0) extraWidth = 0;
 		int extraHeight = (int)((MIN_HEIGHT - imp.getHeight()*mag)/2.0);
 		if (extraHeight<0) extraHeight = 0;
-		insets = new Insets(insets.top+textGap+extraHeight, insets.left+extraWidth, insets.bottom+extraHeight, insets.right+extraWidth);
+		insets = new Insets(insets.top+(this instanceof PlotWindow ? 0: textGap)+extraHeight, insets.left+extraWidth, insets.bottom+extraHeight, insets.right+extraWidth);
 		return insets;
 	}
 
@@ -402,7 +403,7 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 		return IJ.d2s(n,digits);
     }
 
-    @AstroImageJ(reason = "Disable final check for extra width", modified = true)
+    @AstroImageJ(reason = "Disable final check for extra width, disables drawing of border rectangle", modified = true)
     public void paint(Graphics g) {
 		drawInfo(g);
 		Rectangle r = ic.getBounds();

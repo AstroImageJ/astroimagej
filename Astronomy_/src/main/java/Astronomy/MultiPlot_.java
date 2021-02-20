@@ -4714,14 +4714,14 @@ static public void updateColumnLists()
         }    
 
         static void renderSubtitle() {
-            double delta = -41.9-2;
-            double y0 = subtitlePosY/plotSizeY>1?1:(subtitlePosY + delta)/plotSizeY;
-            plot.addLabel(subtitlePosX, y0+(-3.9)/((float)plotSizeY),subtitle);
+            Dimension size = plot.getSize();
+            double y = subtitlePosY/size.getHeight()>1?1:(subtitlePosY-38)/size.getHeight();
+            plot.addLabel(subtitlePosX, y,subtitle);
         }
         static void renderTitle() {
-	        double delta = -41.9-2;
-            double y0 = titlePosY/plotSizeY>1?1:(titlePosY + delta)/plotSizeY;
-            plot.addLabel(titlePosX, y0,title);
+            Dimension size = plot.getSize();
+            double y = titlePosY/size.getHeight()>1?1:(titlePosY-38)/size.getHeight();
+            plot.addLabel(titlePosX, y,title);
         }
 
     public static class FitLightCurveChi2 implements MinimizationFunction {

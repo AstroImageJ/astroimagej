@@ -273,6 +273,14 @@ public class PlotWindow extends ImageWindow implements ActionListener, ItemListe
 			ic.requestFocus();	//have focus on the canvas, not the button, so that pressing the space bar allows panning
 	}
 
+	@Override
+	@AstroImageJ(reason = "Correction for plot window bounds to go to top of window.")
+	public Insets getInsets() {
+		Insets b = super.getInsets();
+		b.set(b.top-4, b.left, b.bottom, b.right);
+		return b;
+	}
+
 	/** Sets the Plot object shown in this PlotWindow. Does not update the window. */
 	public void setPlot(Plot plot) {
 		this.plot = plot;

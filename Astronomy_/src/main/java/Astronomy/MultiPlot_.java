@@ -1356,6 +1356,14 @@ static public void updateColumnLists()
                     if (table != null) table.setLock(false);
                     return;
                     }
+                // This is a hack to fix the plot being cached(?) somewhere.
+                // To see demonstrate the broken behavior fixed by this, move the (sub)title and
+                // then resize the window, the position will reset until another position (such as the legend)
+                // is changed, at which point the (sub)title position returns to the new value.
+                if (plot != null) {
+                    plot.dispose();
+                }
+
                 n = table.getCounter();
                 if (n < 1)
                         {
@@ -4716,7 +4724,8 @@ static public void updateColumnLists()
         static void renderSubtitle() {
             Dimension size = plot.getSize();
             double y = subtitlePosY/size.getHeight()>1?1:(subtitlePosY-38)/size.getHeight();
-            plot.addLabel(subtitlePosX, y,subtitle);
+            System.out.println(y);
+            plot.addLabel(subtitlePosX, y, "title"); //subtitle
         }
         static void renderTitle() {
             Dimension size = plot.getSize();

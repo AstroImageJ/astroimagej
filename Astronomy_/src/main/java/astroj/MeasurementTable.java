@@ -27,6 +27,7 @@ public class MeasurementTable extends ResultsTable
 	protected String shortName = null;
     protected boolean locked = false;
 	public static int DEFAULT_DECIMALS = 6;
+    public String filePath = "";
 
 	/**
 	 * Creates an empty default MeasurementTable.
@@ -197,6 +198,7 @@ IJ.log(heading+" "+val);
             String previousLine=null;
 			table = new MeasurementTable(file.getName().equals("")||file.getName()==null?"Measurements":file.getName());	// SHOULD USE filename); BUT CAN'T BECAUSE OF PRIVATE WindowManager.getNonImageWindows() METHOD
 
+            table.filePath = filename;
             String delimiter = "\t";
             if (filename.endsWith(".csv"))
                 delimiter = ",";

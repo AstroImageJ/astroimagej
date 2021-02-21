@@ -1011,6 +1011,10 @@ public class MultiPlot_ implements PlugIn, KeyListener
                     {
                         OKbutton.doClick();
                     }
+                    if (table != null) {
+                        loadConfigOfOpenTable(table.filePath);
+                        forceUpdate = true;
+                    }
                 finishSetup(forceUpdate);
                 }
             }
@@ -10853,7 +10857,7 @@ static void initializeVariables()
                 plotheightlabel.setComponentPopupMenu(plotheightsteppopup);
                 plotsizepanel.add (plotheightlabel);
 
-                plotheightspinnermodel = new SpinnerNumberModel(new Integer(plotSizeY), new Integer(1), null, new Integer(plotSizeYStep));
+                plotheightspinnermodel = new SpinnerNumberModel(plotSizeY, 1, null, plotSizeYStep);
                 plotheightspinner = new JSpinner(plotheightspinnermodel);
                 plotheightspinner.setFont(p11);
                 plotheightspinner.setComponentPopupMenu(plotheightsteppopup);
@@ -18709,33 +18713,37 @@ static void initializeVariables()
         
         static public void loadDataOpenConfig(MeasurementTable newTable, String filePath)
             {
-            String inPath = filePath;
-            String cfgPath = "";
-            
-            int lastDot = inPath.lastIndexOf('.');
-            cfgPath = lastDot > 0 ? inPath.substring(0, lastDot) + ".plotcfg": inPath + ".plotcfg"; 
-            File cfgFile = null;
-            try {cfgFile = new File(cfgPath);}
-            catch (Exception e) {};
-            if (cfgFile != null && cfgFile.isFile())
-                {
-                try {
-                    InputStream is = new BufferedInputStream(new FileInputStream(cfgPath));
-                    Prefs.ijPrefs.load(is);
-                    is.close();
-                    }
-                catch (Exception e) {
-                    IJ.beep();
-                    IJ.showMessage("Load Data and Open Config: Error loading plot config file: "+cfgPath);
-                    }                     
-
-                }
-            setupArrays();
-            getPreferences();                
+                loadConfigOfOpenTable(filePath);
             Frame ntf = WindowManager.getFrame(newTable.shortTitle());
             if (ntf != null) ntf.setVisible(true);                
             setTable(newTable, true);
             if (plotWindow != null) plotWindow.setVisible(true);
+            }
+
+            static public void loadConfigOfOpenTable(String path) {
+                String inPath = path;
+                String cfgPath = "";
+
+                int lastDot = inPath.lastIndexOf('.');
+                cfgPath = lastDot > 0 ? inPath.substring(0, lastDot) + ".plotcfg": inPath + ".plotcfg";
+                File cfgFile = null;
+                try {cfgFile = new File(cfgPath);}
+                catch (Exception e) {};
+                if (cfgFile != null && cfgFile.isFile())
+                {
+                    try {
+                        InputStream is = new BufferedInputStream(new FileInputStream(cfgPath));
+                        Prefs.ijPrefs.load(is);
+                        is.close();
+                    }
+                    catch (Exception e) {
+                        IJ.beep();
+                        IJ.showMessage("Load Data and Open Config: Error loading plot config file: "+cfgPath);
+                    }
+
+                }
+                setupArrays();
+                getPreferences();
             }
       
 

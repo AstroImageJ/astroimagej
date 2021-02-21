@@ -4724,8 +4724,7 @@ static public void updateColumnLists()
         static void renderSubtitle() {
             Dimension size = plot.getSize();
             double y = subtitlePosY/size.getHeight()>1?1:(subtitlePosY-38)/size.getHeight();
-            System.out.println(y);
-            plot.addLabel(subtitlePosX, y, "title"); //subtitle
+            plot.addLabel(subtitlePosX, y, subtitle);
         }
         static void renderTitle() {
             Dimension size = plot.getSize();

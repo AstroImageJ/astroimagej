@@ -969,8 +969,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     OKbutton.doClick();
                 }
                 if (table != null) {
-                    loadConfigOfOpenTable(table.filePath);
-                    forceUpdate = true;
+                    loadConfigOfOpenTable(table.getFilePath());
+                    table.show();
+                    WindowManager.getFrame(table.shortTitle()).setVisible(true);
+                    forceUpdate = false;
                 }
                 finishSetup(forceUpdate);
             }

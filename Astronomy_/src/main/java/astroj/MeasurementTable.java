@@ -27,7 +27,7 @@ public class MeasurementTable extends ResultsTable
 	protected String shortName = null;
     protected boolean locked = false;
 	public static int DEFAULT_DECIMALS = 6;
-    public String filePath = "";
+    protected String filePath = "";
 
 	/**
 	 * Creates an empty default MeasurementTable.
@@ -170,6 +170,10 @@ IJ.log(heading+" "+val);
 		else
 			return true;
 		}
+
+    public String getFilePath() {
+        return filePath;
+    }
 
 	/**
 	 * Returns a MeasurementTable reconstructed from a text file produced by ImageJ from a MeasurementTable/ResultsTable.
@@ -432,6 +436,9 @@ IJ.log(heading+" "+val);
             }
         if (panel != null)
             {
+                if (destName.equals(sourceName)) {
+                    return (MeasurementTable) panel.getResultsTable();
+                }
             lines = panel.getText().split("\n");
 //            for (int i=0; i<lines.length; i++)
 //                {

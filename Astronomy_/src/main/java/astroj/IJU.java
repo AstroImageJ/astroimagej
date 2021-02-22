@@ -1411,10 +1411,13 @@ static public AstroStackWindow getBestOpenAstroStackWindow()
             {
             IJ.log(message);
             } 
-        }    
+        }
 
+        public static <T extends Window> void setFrameSizeAndLocation(T frame, int defaultX, int defaultY, int defaultWidth, int defaultHeight) {
+	        setFrameSizeAndLocation(frame, defaultX, defaultY, defaultWidth, defaultHeight, true);
+        }
     
-    public static <T extends Window> void setFrameSizeAndLocation(T frame, int defaultX, int defaultY, int defaultWidth, int defaultHeight)
+    public static <T extends Window> void setFrameSizeAndLocation(T frame, int defaultX, int defaultY, int defaultWidth, int defaultHeight, boolean enforceScreenBounds)
         {
             if (frame == null) {
                 return;
@@ -1443,11 +1446,11 @@ static public AstroStackWindow getBestOpenAstroStackWindow()
         screenBounds.y += insets.top;  
         screenBounds.width -= insets.left + insets.right;  
         screenBounds.height -= insets.top + insets.bottom; 
-        if (frame.getHeight() > screenBounds.height)
+        if (enforceScreenBounds && frame.getHeight() > screenBounds.height)
             {
-            frame.setSize(frame.getWidth()+((Integer)UIManager.get("ScrollBar.width")).intValue(), screenBounds.height);
+            frame.setSize(frame.getWidth()+ (Integer) UIManager.get("ScrollBar.width"), screenBounds.height);
             }        
-        if (frame.getWidth() > screenBounds.width)
+        if (enforceScreenBounds && frame.getWidth() > screenBounds.width)
             {
             frame.setSize(screenBounds.width, frame.getHeight());
             }        
@@ -1456,11 +1459,11 @@ static public AstroStackWindow getBestOpenAstroStackWindow()
             defaultX = screenBounds.x + screenBounds.width/2 - frame.getWidth()/2;
             defaultY = screenBounds.y + screenBounds.height/2 - frame.getHeight()/2;
             }
-        if (defaultWidth > 0 && defaultWidth < screenBounds.width)
+        if (enforceScreenBounds && (defaultWidth > 0 && defaultWidth < screenBounds.width))
             {
             frame.setSize(defaultWidth, frame.getHeight());
             }
-        if (defaultHeight > 0 && defaultHeight < screenBounds.height)
+        if (enforceScreenBounds && (defaultHeight > 0 && defaultHeight < screenBounds.height))
             {
             frame.setSize(frame.getWidth(), defaultHeight);
             }        

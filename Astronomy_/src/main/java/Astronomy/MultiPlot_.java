@@ -3849,9 +3849,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     }
 
     static void updatePlotPos() {
-        if (rememberWindowLocations) {
-            IJU.setFrameSizeAndLocation(plot.getImagePlus().getWindow(), plotFrameLocationX, plotFrameLocationY, plotSizeX, plotSizeY);
-        }
+       IJU.setFrameSizeAndLocation(plot.getImagePlus().getWindow(), plotFrameLocationX, plotFrameLocationY,
+                plotSizeX, plotSizeY, false);
+        plotWindow.validate();
     }
 
     static void drawVMarker(double vMarkerValue, String vMarkerTopText, String vMarkerBotText, Color color) {

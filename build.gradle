@@ -151,8 +151,7 @@ task downloadJavaRuntimes(type: Download) {
         containsAllDistros = o[0]
         withinDelta = o[1]
 
-        // Always run on github actions
-        return System.env['ON_GITHUB'] != null || (canConnectToAzul && (!withinDelta || !containsAllDistros))
+        return canConnectToAzul && (!withinDelta || !containsAllDistros)
     }
 
     System.out.println("Evaluating Java runtimes...")

@@ -152,11 +152,7 @@ task downloadJavaRuntimes(type: Download) {
         withinDelta = o[1]
 
         // Always run on github actions
-        if (Boolean.valueOf(System.getProperty('ON_GITHUB', 'false'))) {
-            return true
-        }
-
-        return canConnectToAzul && (!withinDelta || !containsAllDistros)
+        return System.env['ON_GITHUB'] != null || (canConnectToAzul && (!withinDelta || !containsAllDistros))
     }
 
     System.out.println("Evaluating Java runtimes...")

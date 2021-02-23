@@ -1,6 +1,9 @@
+import groovy.json.JsonGenerator
 import io.github.fvarrui.javapackager.gradle.PackageTask
 import org.apache.tools.ant.taskdefs.condition.Os
 import groovy.json.JsonSlurper
+import groovy.json.JsonOutput
+import groovy.time.TimeCategory
 
 buildscript {
     repositories {
@@ -73,7 +76,52 @@ def javaRuntimeSystems = [ mac: [ext: "zip", type: "jre", arch: "x86", os: "maco
            ]
 
 boolean canConnectToAzul = true
+def withinDelta = false
+def containsAllDistros = false
 
+/**
+ * Save distribution config to file.
+*/
+void saveDistroConfig(LinkedHashMap<String, LinkedHashMap<String, String>> runtimes) {
+    def cfg = new File("${projectDir}/jres/", "distroConfig.json")
+
+    // File is up to date
+    if (checkDistroConfig(false, true, runtimes)[1] && checkDistroConfig(false, true, runtimes)[0]) return
+
+    cfg.createNewFile()
+    JsonGenerator generator = new JsonGenerator.Options()
+            .dateFormat('MM/dd/YYYY')
+            .build()
+    cfg.write(JsonOutput.prettyPrint(generator.toJson([date_creation: new Date(), runtimes: runtimes])))
+
+}
+
+/**
+ * Check distribution config file for need to pull JREs again.
+ */
+boolean[] checkDistroConfig(boolean containsAllDistros, boolean withinDelta, LinkedHashMap<String, LinkedHashMap<String, String>> runtimes) {
+    def configFile = new File("${projectDir}/jres/", "distroConfig.json")
+
+    if (configFile.exists()) {
+        def cfg = new JsonSlurper().parse(configFile)
+        containsAllDistros = cfg.runtimes.keySet().containsAll(runtimes.keySet())
+
+        use(TimeCategory) {
+            Date old = new Date(cfg.date_creation)
+            def now = new Date()
+
+            // New Java versions release very six months, LTS every 3 years
+            withinDelta = (old + 3.months).after(now)
+        }
+    }
+    return [containsAllDistros, withinDelta]
+}
+
+task saveConfig() {
+    doLast {
+        saveDistroConfig(javaRuntimeSystems)
+    }
+}
 /**
  * Download the specified Java runtimes based on javaRuntimeSystems.
  */
@@ -99,8 +147,14 @@ task downloadJavaRuntimes(type: Download) {
             }
         }
 
-        return canConnectToAzul
+        def o = checkDistroConfig(containsAllDistros, withinDelta, javaRuntimeSystems)
+        containsAllDistros = o[0]
+        withinDelta = o[1]
+
+        return canConnectToAzul && (!withinDelta || !containsAllDistros)
     }
+
+    System.out.println("Evaluating Java runtimes...")
 
     javaRuntimeSystems.each {sys, sysInfo ->
         // Other parameters of note:
@@ -148,7 +202,7 @@ task downloadJavaRuntimes(type: Download) {
 
     // Remove old packed runtimes
     file("${projectDir}/jres").traverse(type: groovy.io.FileType.FILES, maxDepth: 0) {
-        if (!currentFiles.containsKey(it.name)) {
+        if (!currentFiles.containsKey(it.name) && !it.name.contains("distroConfig")) {
             it.delete()
         }
     }
@@ -191,6 +245,7 @@ task unZipJresTask(type: Copy, dependsOn: verifyDownloadedJres) {
             logger.error("Did not know how to handle " + sysInfo.ext + " for " + sys)
         }
     }
+    saveDistroConfig(javaRuntimeSystems)
     into 'jres'
 }
 
@@ -306,6 +361,19 @@ javapackager {
     // See https://github.com/fvarrui/JavaPackager#generated-artifacts
     // In future installer/package signing will be added. TODO sign the packages
     generateInstaller  true
+}
+
+// If cannot connect to Azul, attempt to pull distro. data from meta file
+if (!canConnectToAzul || (withinDelta && containsAllDistros)) {
+    def configFile = new File("${projectDir}/jres/", "distroConfig.json")
+    if (configFile.exists()) {
+        System.out.println("Creating distribution builds based on /jres/distroConfig.json")
+        def cfg = new JsonSlurper().parse(configFile)
+        if (cfg != null || cfg.runtimes != null) {
+            javaRuntimeSystems = cfg.runtimes
+            canConnectToAzul = true
+        }
+    }
 }
 
 task packageAij

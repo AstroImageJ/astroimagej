@@ -151,6 +151,11 @@ task downloadJavaRuntimes(type: Download) {
         containsAllDistros = o[0]
         withinDelta = o[1]
 
+        // Always run on github actions
+        if (Boolean.valueOf(System.getProperty('ON_GITHUB', 'false'))) {
+            return true
+        }
+
         return canConnectToAzul && (!withinDelta || !containsAllDistros)
     }
 

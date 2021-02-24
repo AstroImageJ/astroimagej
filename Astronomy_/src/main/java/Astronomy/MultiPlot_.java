@@ -15791,6 +15791,12 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     }
 
     static public void loadConfigOfOpenTable(String path) {
+        if (path.equals("")) {
+            setupArrays();
+            getPreferences();
+            return;
+        }
+
         String cfgPath = "";
 
         int lastDot = path.lastIndexOf('.');

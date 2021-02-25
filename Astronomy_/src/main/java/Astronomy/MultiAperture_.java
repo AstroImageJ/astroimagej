@@ -968,7 +968,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     }
                 else
                     {
-                    MultiPlot_.setTable(table, false);
+                    MultiPlot_.setTable(table, true);
                     }
                 }
             else
@@ -2813,7 +2813,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     else
                         {
 //                        IJ.log("setTable");
-                        MultiPlot_.setTable(table, false);
+                        MultiPlot_.setTable(table, true);
 //                        IJ.log("setTable complete");
                         }
                     }
@@ -2823,7 +2823,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     if (MultiPlot_.mainFrame!=null && MultiPlot_.getTable()!=null)
                         {
 //                        IJ.log("setTable first time");
-                        MultiPlot_.setTable(table, false);
+                        MultiPlot_.setTable(table, true);
 //                        IJ.log("setTable first time complete");
                         }
                     }

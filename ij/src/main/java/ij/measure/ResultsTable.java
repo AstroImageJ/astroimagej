@@ -1,5 +1,6 @@
 package ij.measure;
 import ij.*;
+import ij.astro.AstroImageJ;
 import ij.plugin.filter.Analyzer;
 import ij.plugin.frame.Editor;
 import ij.text.*;
@@ -1018,6 +1019,7 @@ public class ResultsTable implements Cloneable {
 		a new window if there is no open text window with this title. 
 		The title must be "Results" if this table was obtained using 
 		ResultsTable.getResultsTable() or Analyzer.getResultsTable . */
+	@AstroImageJ(reason = "Disable bringing table to the front when it updates", modified = true)
 	public void show(String windowTitle) {
 		if  (GraphicsEnvironment.isHeadless())
 			return; // Tables can't be displayed in headless mode
@@ -1053,8 +1055,8 @@ public class ResultsTable implements Cloneable {
 			if (frame!=null && frame instanceof TextWindow) {
 				win = (TextWindow)frame;
 				if (win!=null) {
-					win.toFront();
-					WindowManager.setWindow(frame);
+					//win.toFront();
+					//WindowManager.setWindow(frame);
 				}
 			} else {
 				int chars = Math.max(size()>0?getRowAsString(0).length():15, getColumnHeadings().length());

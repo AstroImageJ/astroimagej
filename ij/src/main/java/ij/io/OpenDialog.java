@@ -43,7 +43,7 @@ import javax.swing.filechooser.*;
 			path = lookupPathVariable(path);
 		}
 		if (path==null || path.equals("")) {
-			if (!Prefs.useJFileChooser)
+			if (Prefs.useJFileChooser)
 				jOpen(title, getDefaultDirectory(), null);
 			else
 				open(title, getDefaultDirectory(), null);
@@ -68,7 +68,7 @@ import javax.swing.filechooser.*;
 		if (path!=null)
 			decodePath(path);
 		else {
-			if (!Prefs.useJFileChooser)
+			if (Prefs.useJFileChooser)
 				jOpen(title, defaultDir, defaultName);
 			else
 				open(title, defaultDir, defaultName);

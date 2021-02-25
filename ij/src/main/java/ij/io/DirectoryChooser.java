@@ -16,7 +16,7 @@ import javax.swing.filechooser.*;
  	/** Display a dialog using the specified title. */
  	public DirectoryChooser(String title) {
  		this.title = title;
-		if (IJ.isMacOSX() && Prefs.useJFileChooser)
+		if (IJ.isMacOSX() && !Prefs.useJFileChooser)
 			getDirectoryUsingFileDialog(title);
  		else {
 			String macroOptions = Macro.getOptions();
@@ -85,7 +85,7 @@ import javax.swing.filechooser.*;
 
  	// On Mac OS X, we can select directories using the native file open dialog
  	void getDirectoryUsingFileDialog(String title) {
- 		boolean saveUseJFC = !Prefs.useJFileChooser;
+ 		boolean saveUseJFC = Prefs.useJFileChooser;
  		Prefs.useJFileChooser = false;
 		System.setProperty("apple.awt.fileDialogForDirectories", "true");
 		String dir=null, name=null;

@@ -5803,7 +5803,7 @@ void setupListeners() {
             return cp;
             }
 
-    public void setAstroProcessor(boolean requestUpdateAnnotationsFromHeader) {
+    public synchronized void setAstroProcessor(boolean requestUpdateAnnotationsFromHeader) {
             ImageProcessor ip = imp.getProcessor();
             slice = imp.getCurrentSlice();
             cal = imp.getCalibration();
@@ -5925,7 +5925,7 @@ void setupListeners() {
         updatesEnabled = enabled;
         }
 
-    void updatePanelValues()
+    synchronized void updatePanelValues()
             {
             if (updatesEnabled)
                 {

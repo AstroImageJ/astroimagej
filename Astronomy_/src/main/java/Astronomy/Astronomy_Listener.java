@@ -40,7 +40,7 @@ public class Astronomy_Listener implements PlugIn, ImageListener
             if (!(openFrame instanceof astroj.AstroStackWindow))//(mainComponentClass.getName() != "astroj.AstroStackWindow")
                 {
                 AstroCanvas ac = new AstroCanvas(imp);
-                AstroStackWindow astroWindow = new AstroStackWindow(imp, ac, NEW, RESIZE);
+                new AstroStackWindow(imp, ac, NEW, RESIZE);
                 }
             }
 
@@ -50,7 +50,7 @@ public class Astronomy_Listener implements PlugIn, ImageListener
         {
         }
 
-    public void imageUpdated(ImagePlus imp)
+    public synchronized void imageUpdated(ImagePlus imp)
         {
 //        IJ.log("Image Updated: "+imp.getTitle());
         Frame openFrame = imp.getWindow();

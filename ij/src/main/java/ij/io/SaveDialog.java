@@ -30,7 +30,7 @@ public class SaveDialog {
 			return;
 		String defaultDir = OpenDialog.getDefaultDirectory();
 		defaultName = setExtension(defaultName, extension);
-		if (Prefs.useJFileChooser)
+		if (!Prefs.useJFileChooser)
 			jSave(title, defaultDir, defaultName);
 		else
 			save(title, defaultDir, defaultName);
@@ -47,7 +47,7 @@ public class SaveDialog {
 		if (isMacro())
 			return;
 		defaultName = setExtension(defaultName, extension);
-		if (Prefs.useJFileChooser)
+		if (!Prefs.useJFileChooser)
 			jSave(title, defaultDir, defaultName);
 		else
 			save(title, defaultDir, defaultName);

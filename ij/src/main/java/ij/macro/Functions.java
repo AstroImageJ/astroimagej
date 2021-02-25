@@ -2872,7 +2872,7 @@ public class Functions implements MacroConstants, Measurements {
 		interpolateScaledImages = Prefs.interpolateScaledImages;
 		open100Percent = Prefs.open100Percent;
 		blackCanvas = Prefs.blackCanvas;
-		useJFileChooser = Prefs.useJFileChooser;
+		useJFileChooser = !Prefs.useJFileChooser;
 		debugMode = IJ.debugMode;
 		foregroundColor =Toolbar.getForegroundColor();
 		backgroundColor =Toolbar.getBackgroundColor();

@@ -21,7 +21,7 @@ public class Commands implements PlugIn {
 			else
 				new NewImage();
 		} else if (cmd.equals("open")) {
-			if (Prefs.useJFileChooser && !IJ.macroRunning())
+			if (!Prefs.useJFileChooser && !IJ.macroRunning())
 				new Opener().openMultiple();
 			else
 				new Opener().open();

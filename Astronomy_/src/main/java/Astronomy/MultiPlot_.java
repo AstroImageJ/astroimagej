@@ -1018,16 +1018,19 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     }
 
     static public void updateColumnLists() {
-        int j = 0;
-        for (String column : unfilteredColumns)
+        int j = -1;
+        for (String column : unfilteredColumns) {
             if (column.equals("Label") || column.equals("image")) j++;
+        }
         columns = new String[unfilteredColumns.length - j];
-        j = 0;
-        for (String unfilteredColumn : unfilteredColumns)
+        j = 1;
+        columns[0] = "";
+        for (String unfilteredColumn : unfilteredColumns) {
             if (!unfilteredColumn.equals("Label") && !unfilteredColumn.equals("image")) {
                 columns[j] = unfilteredColumn;
                 j++;
             }
+        }
 
         columnsDetrend = new String[columns.length + 1];
         columnsDetrend[0] = columns[0];

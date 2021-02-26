@@ -141,7 +141,7 @@ public class ImageJ extends Frame implements ActionListener,
 	/** If 'applet' is not null, creates a new ImageJ frame that runs as an applet.
 		If  'mode' is ImageJ.EMBEDDED and 'applet is null, creates an embedded 
 		(non-standalone) version of ImageJ. */
-	@AstroImageJ(reason = "Change title to AstroImageJ", modified = true)
+	@AstroImageJ(reason = "Change title to AstroImageJ; disable setting of jFileChooser to true", modified = true)
 	public ImageJ(java.applet.Applet applet, int mode) {
 		super("AstroImageJ");
 		if ((mode&DEBUG)!=0)
@@ -203,8 +203,8 @@ public class ImageJ extends Frame implements ActionListener,
 					IJ.wait(10);
 					pack();
 					if (IJ.debugMode) IJ.log("pack()");
-					if (!Prefs.jFileChooserSettingChanged)
-						Prefs.useJFileChooser = true;
+					//if (!Prefs.jFileChooserSettingChanged)
+						//Prefs.useJFileChooser = true;
 				} else if (IJ.isMacOSX()) {
 					Rectangle maxBounds = GUI.getMaxWindowBounds(this);
 					if (loc.x+size.width>maxBounds.x+maxBounds.width)

@@ -1,5 +1,6 @@
 package ij.plugin;
 import ij.*;
+import ij.astro.AstroImageJ;
 import ij.gui.*;
 import ij.process.*;
 import ij.measure.Calibration;
@@ -19,6 +20,7 @@ public class Animator implements PlugIn {
 		Set it to "stop" to stop animation. Set it to "next" or "previous"
 		to stop any animation and display the next or previous frame. 
 	*/
+	@AstroImageJ(reason = "Moved startAnimation off thread, makes the pause button more responsive.", modified = true)
 	public void run(String arg) {
 		imp = IJ.getImage();
 		nSlices = imp.getStackSize();
@@ -46,7 +48,8 @@ public class Animator implements PlugIn {
 		}
 			
 		if (arg.equals("start")) {
-			startAnimation();
+			Thread t = new Thread(this::startAnimation);
+			t.start();
 			return;
 		}
 

@@ -7,6 +7,7 @@ import ij.io.*;
 import ij.io.OpenDialog;
 
 import ij.gui.*;
+import ij.plugin.frame.SyncWindows;
 import ij.process.*;
 import ij.text.*;
 //import ij.measure.*;
@@ -6713,7 +6714,22 @@ void setupListeners() {
             ac.paint(ac.getGraphics());
             }
 
-        public void mouseExited(MouseEvent e) 
+    @Override
+    public void showSlice(int index) {
+        super.showSlice(index);
+
+        // Fixes image not updating when slice changes with animate feature
+        //todo fix slow draw
+        ac.paintDoubleBuffered(ac.getGraphics());
+        //ac.paint(ac.getGraphics());
+
+        // Fixes subtitle (x/ nslices string at top of window) not updating
+        synchronized (this) {
+            notify();
+        }
+    }
+
+    public void mouseExited(MouseEvent e)
             {
 //            apertureOverlay.clear();
             ac.setMouseInImage(false);

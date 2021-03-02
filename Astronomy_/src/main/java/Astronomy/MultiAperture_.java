@@ -3504,8 +3504,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     
         /** Returns an ImageIcon, or null if the path was invalid. */
         protected ImageIcon createImageIcon(String path, String description) {
-            MultiPlot_ m = new MultiPlot_();
-            java.net.URL imgURL = m.getClass().getClassLoader().getResource(path);
+            java.net.URL imgURL = MultiPlot_.class.getClassLoader().getResource(path);
             if (imgURL != null) {
                 return new ImageIcon(imgURL, description);
             } else {

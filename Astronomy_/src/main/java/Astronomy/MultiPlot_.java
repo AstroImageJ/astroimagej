@@ -3855,6 +3855,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 plotSizeX, plotSizeY, false);
        plotWindow.pack();
        plotWindow.validate();
+       plotWindow.notify();
     }
 
     static void drawVMarker(double vMarkerValue, String vMarkerTopText, String vMarkerBotText, Color color) {

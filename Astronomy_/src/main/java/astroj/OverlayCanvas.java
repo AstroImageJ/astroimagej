@@ -386,14 +386,16 @@ public class OverlayCanvas extends ImageCanvas
 	public void drawOverlayCanvas (Graphics g)
 		{
 //		g.setColor(Color.green);
-		Enumeration e = rois.elements();
-		while (e.hasMoreElements())
+		synchronized (this) {
+			Enumeration e = rois.elements();
+			while (e.hasMoreElements())
 			{
-			Roi roi = (Roi)e.nextElement();
+				Roi roi = (Roi)e.nextElement();
 //            g.setColor(roi.getColor());
-			roi.draw (g);
+				roi.draw (g);
 //            g.setColor(Color.red);
 			}
+		}
 		}
 
 	/**

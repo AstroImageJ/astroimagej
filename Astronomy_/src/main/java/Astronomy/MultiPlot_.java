@@ -5256,6 +5256,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         }
 
         public void mouseReleased(MouseEvent e) {
+            if (updatePlotRunning) return;
             int screenX = e.getX();
             int screenY = e.getY();
             int imageX = plotImageCanvas.offScreenX(screenX);

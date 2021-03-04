@@ -273,7 +273,11 @@ List<String> readConfigFile() {
             return
         }
         it.split(" ").each {// Technically this could break, but not expecting too many args in dev environment
-            args.add(it)
+            if (it.startsWith('-Xmx') && System.getenv('MEM') != null) {
+                args.add(System.getenv('MEM'))
+            } else {
+                args.add(it)
+            }
         }
     }
 

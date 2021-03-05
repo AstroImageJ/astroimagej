@@ -141,7 +141,8 @@ public class ImageJ extends Frame implements ActionListener,
 	/** If 'applet' is not null, creates a new ImageJ frame that runs as an applet.
 		If  'mode' is ImageJ.EMBEDDED and 'applet is null, creates an embedded 
 		(non-standalone) version of ImageJ. */
-	@AstroImageJ(reason = "Change title to AstroImageJ; disable setting of jFileChooser to true", modified = true)
+	@AstroImageJ(reason = "Change title to AstroImageJ; disable setting of jFileChooser to true; " +
+			"Make MacAdapter look in plugins folder", modified = true)
 	public ImageJ(java.applet.Applet applet, int mode) {
 		super("AstroImageJ");
 		if ((mode&DEBUG)!=0)
@@ -220,7 +221,7 @@ public class ImageJ extends Frame implements ActionListener,
 		}
 		if (IJ.isMacintosh()&&applet==null) {
 			try {
-				IJ.runPlugIn("ij.plugin.MacAdapter", ""); 
+				IJ.runPlugIn("MacAdapter", "");
 			} catch(Throwable e) {}
 		} 
 		if (applet==null)

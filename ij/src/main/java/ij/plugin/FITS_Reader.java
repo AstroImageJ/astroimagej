@@ -81,7 +81,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			IJ.error("Failed to find an image HDU");
 			return;
 		}
-		if (true) {  //use nom.tam.fits to open compressed files
+		if (isCompressedFormat(hdus, firstImageIndex)) {  //use nom.tam.fits to open compressed files
 			int imageIndex = firstImageIndex;
 			try {
 				if (isCompressedFormat(hdus, firstImageIndex)) {
@@ -142,7 +142,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 //                return;
 //            }
 //        }
-		} /*DISABLED to use nom for opening fits - may not handle 3D images
+		}
 		else {   //use legacy custom fits reader to open uncompressed files
 			OpenDialog od = new OpenDialog("Open FITS...", path);
 			String directory = od.getDirectory();
@@ -152,45 +152,28 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			IJ.showStatus("Opening: " + directory + fileName);
 			FitsDecoder fd = new FitsDecoder(directory, fileName);
 			FileInfo fi = null;
-			try {fi = fd.getInfo();}
-			catch (IOException e) {}
-
+			try {
+				fi = fd.getInfo();
+			} catch (IOException e) {}
 			if (fi!=null && fi.width>0 && fi.height>0 && fi.offset>0) {
 				FileOpener fo = new FileOpener(fi);
-				ImagePlus imp = fo.open(false);
-				if(fi.nImages==1) {
-					ImageProcessor ip = imp.getProcessor();
-					ip.flipVertical(); // origin is at bottom left corner
-					setProcessor(fileName, ip);
-				} else {
-					ImageStack stack = imp.getStack(); // origin is at bottom left corner
-					for(int i=1; i<=stack.getSize(); i++)
-						stack.getProcessor(i).flipVertical();
-					setStack(fileName, stack);
+				ImagePlus imp = fo.openImage();
+				if (flipImages) {
+					if (fi.nImages==1) {
+						ImageProcessor ip = imp.getProcessor();
+						ip.flipVertical(); // origin is at bottom left corner
+						setProcessor(fileName, ip);
+					} else {
+						ImageStack stack = imp.getStack(); // origin is at bottom left corner
+						for(int i=1; i<=stack.getSize(); i++)
+							stack.getProcessor(i).flipVertical();
+						setStack(fileName, stack);
+					}
 				}
+				setStack(fileName, imp.getStack());
 				Calibration cal = imp.getCalibration();
-
-				if (fi.fileType==FileInfo.GRAY8 && (fd.bscale!=1.0 || fd.bzero!=0))
-				{
-					cal.setFunction(Calibration.STRAIGHT_LINE, new double[] {fd.bzero, fd.bscale}, "Gray Value");
-				}
-				else if (fi.fileType==FileInfo.GRAY16_SIGNED && fd.bscale==1.0 && fd.bzero==32768.0)
-				{
+				if (fi.fileType==FileInfo.GRAY16_SIGNED && fd.bscale==1.0 && fd.bzero==32768.0)
 					cal.setFunction(Calibration.NONE, null, "Gray Value");
-				}
-				else if (fi.fileType==FileInfo.GRAY16_SIGNED && fd.bscale!=0.0) // && (fd.bscale!=1.0 || fd.bzero!=0.0))
-				{
-					cal.setFunction(Calibration.STRAIGHT_LINE, new double[] {fd.bzero-32768.0*fd.bscale, fd.bscale}, "Gray Value");
-				}
-				else if ((fi.fileType==FileInfo.GRAY32_FLOAT || fi.fileType==FileInfo.GRAY32_INT ||
-						fi.fileType==FileInfo.GRAY64_FLOAT) && (fd.bscale!=1.0 || fd.bzero!=0.0))
-				{    //all of these data types are converted to 32-float by ImageReader before reaching this point
-					ImageProcessor ip = imp.getProcessor();
-					float[] pixels = (float[])ip.getPixels();
-					for (int i = 0; i < pixels.length; i++)
-						pixels[i] = (float)(fd.bzero + fd.bscale*pixels[i]);
-					imp.setProcessor(ip);
-				}
 				setCalibration(cal);
 				setProperty("Info", fd.getHeaderInfo());
 				setFileInfo(fi); // needed for File->Revert
@@ -199,7 +182,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 				IJ.error("This does not appear to be a FITS file.");
 			IJ.showStatus("");
 
-		}*/
+		}
 
 	}
 	// Returns a newline-delimited concatenation of the header lines
@@ -649,10 +632,7 @@ class FitsDecoder {
 	private String directory, fileName;
 	private DataInputStream f;
 	private StringBuffer info = new StringBuffer(512);
-	double bscale = 1.0, bzero = 0.0;
-	boolean extensions=false;
-	String simpleLine = "";
-	int naxis = -1;
+	double bscale, bzero;
 
 	public FitsDecoder(String directory, String fileName) {
 		this.directory = directory;
@@ -673,17 +653,14 @@ class FitsDecoder {
 		f = new DataInputStream(is);
 		String line = getString(80);
 		info.append(line+"\n");
-		if (!line.startsWith("SIMPLE")) {
-			f.close(); return null;
-		} else {
-			simpleLine = line;
-		}
+		if (!line.startsWith("SIMPLE"))
+		{f.close(); return null;}
 		int count = 1;
-		while (f.available() > 0) {
+		while ( true ) {
 			count++;
 			line = getString(80);
 			info.append(line+"\n");
-  
+
 			// Cut the key/value pair
 			int index = line.indexOf ( "=" );
 
@@ -691,7 +668,7 @@ class FitsDecoder {
 			int commentIndex = line.indexOf ( "/", index );
 			if ( commentIndex < 0 )
 				commentIndex = line.length ();
-			
+
 			// Split that values
 			String key;
 			String value;
@@ -703,36 +680,13 @@ class FitsDecoder {
 				value = "";
 			}
 
-			// If EXTEND is true, the reader will continue past END to look for more headers
-			// this statement skips data entries as headers must be ASCII
-			if (!key.matches("\\A\\p{ASCII}*\\z")) {
-				continue;
-			}
-
-			if (key.equals ("XTENSION") && value.contains("IMAGE") ) {
-				info = new StringBuffer(512);
-				info.append(simpleLine+"\n");
-				//IJ.log("******************New Extension******************");
-				continue;
-			}
-
-			if (key.equals ("EXTEND") && value.contains("T") && naxis < 1) extensions = true;
 			// Time to stop ?
-			if (key.equals ("END") ) {
-				//if (true) break;
-				if (extensions == false) {
-					break;
-				}else {
-					extensions=false;
-					info = new StringBuffer(512);
-					continue;
-				}
-			}
+			if (key.equals ("END") ) break;
 
-			// Look for interesting information			
+			// Look for interesting information
 			if (key.equals("BITPIX")) {
 				int bitsPerPixel = Integer.parseInt ( value );
-			   if (bitsPerPixel==8)
+				if (bitsPerPixel==8)
 					fi.fileType = FileInfo.GRAY8;
 				else if (bitsPerPixel==16)
 					fi.fileType = FileInfo.GRAY16_SIGNED;
@@ -754,26 +708,24 @@ class FitsDecoder {
 			else if (key.equals("NAXIS3")) //for multi-frame fits
 				fi.nImages = Integer.parseInt ( value );
 			else if (key.equals("BSCALE"))
-				bscale = Tools.parseDouble ( value, 1.0 );
+				bscale = parseDouble ( value );
 			else if (key.equals("BZERO"))
-				bzero = Tools.parseDouble(value, 0.0);
-		/*else if (key.equals("CDELT1"))
+				bzero = parseDouble ( value );
+			/*else if (key.equals("CDELT1"))
 				fi.pixelWidth = parseDouble ( value );
-		else if (key.equals("CDELT2"))
+			else if (key.equals("CDELT2"))
 				fi.pixelHeight = parseDouble ( value );
-		else if (key.equals("CDELT3"))
+			else if (key.equals("CDELT3"))
 				fi.pixelDepth = parseDouble ( value );
-		else if (key.equals("CTYPE1"))
+			else if (key.equals("CTYPE1"))
 				fi.unit = value;*/
 
 			if (count>360 && fi.width==0)
-				{f.close(); return null;}
+			{f.close(); return null;}
 		}
 		if (fi.pixelWidth==1.0 && fi.pixelDepth==1)
 			fi.unit = "pixel";
 
-		if (fi.fileType==FileInfo.GRAY32_INT && bzero == 2147483648.0 && bscale == 1.0) fi.fileType =
-				FileInfo.GRAY32_UNSIGNED;
 		f.close();
 		fi.offset = 2880+2880*(((count*80)-1)/2880);
 		return fi;
@@ -801,5 +753,5 @@ class FitsDecoder {
 	String getHeaderInfo() {
 		return new String(info);
 	}
-	
+
 }

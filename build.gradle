@@ -245,9 +245,16 @@ task commonFiles(type: Copy) {
     }
 }
 
+def devLaunch =
+
 // Generate AIJ-Run directory and set it up for usage
 task sync(dependsOn: jar, type: Sync) {
     with commonDist
+    with {
+        from(file("${projectDir}/devLaunchOptions.txt")) {
+            rename {String name -> return "AstroImageJ.l4j.ini"}
+        }
+    }
     destinationDir(file("${projectDir}/AIJ-Run"))
 }
 

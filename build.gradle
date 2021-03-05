@@ -268,16 +268,16 @@ List<String> readConfigFile() {
     File cfg = files("${projectDir}/AIJ-Run/AstroImageJ.l4j.ini").first()
     if (!cfg.exists()) return args
 
-    cfg.readLines().each {
+    File devCfg = files("${projectDir}/devLaunchOptions.txt").first()
+
+    File readCfg = devCfg.exists() ? devCfg : cfg
+
+    readCfg.readLines().each {
         if (it.startsWith("#") /*Comments*/) {
             return
         }
         it.split(" ").each {// Technically this could break, but not expecting too many args in dev environment
-            if (it.startsWith('-Xmx') && System.getenv('MEM') != null) {
-                args.add(System.getenv('MEM'))
-            } else {
-                args.add(it)
-            }
+            args.add(it)
         }
     }
 

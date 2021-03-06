@@ -2347,7 +2347,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                             t23Label[curve].setText(Double.isNaN(t23[curve]) ? "NaN" : sixPlaces.format(t23[curve]));
                                             tauLabel[curve].setText(Double.isNaN(tau[curve]) ? "NaN" : sixPlaces.format(tau[curve]));
                                             stellarDensityLabel[curve].setText(Double.isNaN(stellarDensity[curve]) ? "NaN" : fourPlaces.format(stellarDensity[curve]));
-                                            if (MultiAperture_.cancelled) {
+                                            if (!MultiAperture_.cancelled) {
                                                 double midpointFlux = IJU.transitModel(new double[]{bestFit[curve][3]}, bestFit[curve][0], bestFit[curve][4], bestFit[curve][1], bestFit[curve][2], bestFit[curve][3], orbitalPeriod[curve], forceCircularOrbit[curve] ? 0.0 : eccentricity[curve], forceCircularOrbit[curve] ? 0.0 : omega[curve], bestFit[curve][5], bestFit[curve][6], useLonAscNode[curve], lonAscNode[curve])[0];
                                                 midpointFlux = (1-(midpointFlux/bestFit[curve][0]))*1000;
                                                 transitDepthLabel[curve].setText(Double.isNaN(midpointFlux) ? "NaN" : threeDigitsTwoPlaces.format(midpointFlux));

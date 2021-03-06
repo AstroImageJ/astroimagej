@@ -78,7 +78,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 	{
     double autoModeFluxCutOff = 0.010;
     boolean openSimbadForAbsMag = true;
-	boolean cancelled=false;
+	public static boolean cancelled=false;
 	boolean verbose=true;
 	boolean blocked=false;
 	boolean previous=false;

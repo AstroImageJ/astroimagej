@@ -2347,9 +2347,11 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                             t23Label[curve].setText(Double.isNaN(t23[curve]) ? "NaN" : sixPlaces.format(t23[curve]));
                                             tauLabel[curve].setText(Double.isNaN(tau[curve]) ? "NaN" : sixPlaces.format(tau[curve]));
                                             stellarDensityLabel[curve].setText(Double.isNaN(stellarDensity[curve]) ? "NaN" : fourPlaces.format(stellarDensity[curve]));
-                                            double midpointFlux = IJU.transitModel(new double[]{bestFit[curve][3]}, bestFit[curve][0], bestFit[curve][4], bestFit[curve][1], bestFit[curve][2], bestFit[curve][3], orbitalPeriod[curve], forceCircularOrbit[curve] ? 0.0 : eccentricity[curve], forceCircularOrbit[curve] ? 0.0 : omega[curve], bestFit[curve][5], bestFit[curve][6], useLonAscNode[curve], lonAscNode[curve])[0];
-                                            midpointFlux = (1-(midpointFlux/bestFit[curve][0]))*1000;
-                                            transitDepthLabel[curve].setText(Double.isNaN(midpointFlux) ? "NaN" : threeDigitsTwoPlaces.format(midpointFlux));
+                                            if (MultiAperture_.cancelled) {
+                                                double midpointFlux = IJU.transitModel(new double[]{bestFit[curve][3]}, bestFit[curve][0], bestFit[curve][4], bestFit[curve][1], bestFit[curve][2], bestFit[curve][3], orbitalPeriod[curve], forceCircularOrbit[curve] ? 0.0 : eccentricity[curve], forceCircularOrbit[curve] ? 0.0 : omega[curve], bestFit[curve][5], bestFit[curve][6], useLonAscNode[curve], lonAscNode[curve])[0];
+                                                midpointFlux = (1-(midpointFlux/bestFit[curve][0]))*1000;
+                                                transitDepthLabel[curve].setText(Double.isNaN(midpointFlux) ? "NaN" : threeDigitsTwoPlaces.format(midpointFlux));
+                                            }
                                         } else {
                                             bpLabel[curve].setText("");
                                             t14Label[curve].setText("");
@@ -12779,7 +12781,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         transitDepthPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(subBorderColor, 1), "Depth (ppt)", TitledBorder.CENTER, TitledBorder.TOP, p11, Color.darkGray));
 
         transitDepthLabel[c] = new JTextField("");
-        transitDepthLabel[c].setToolTipText("<html>Estimated transit depth at midpoint based on the model.<br>" + "Green Border: fit converged<br>" + "Red Border: fit did not converge<br>" + "Gray Border: no fit in this session</html>");
+        transitDepthLabel[c].setToolTipText("<html>Depth defined as transit model flux deficit at mid-transit (Tc) in parts per thousand (ppt).<br>" + "Green Border: fit converged<br>" + "Red Border: fit did not converge<br>" + "Gray Border: no fit in this session</html>");
         transitDepthLabel[c].setFont(p11);
         transitDepthLabel[c].setHorizontalAlignment(JLabel.CENTER);
         transitDepthLabel[c].setBorder(grayBorder);

@@ -411,7 +411,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
     static JTextField[] chi2dofLabel, dofLabel, chi2Label, bicLabel, sigmaLabel;
     static JTextField[] t14Label, t14HoursLabel, t23Label, tauLabel, bpLabel, stellarDensityLabel;
-    static JTextField[] spectralTypeLabel, planetRadiusLabel, stepsTakenLabel;
+    static JTextField[] transitDepthLabel, planetRadiusLabel, stepsTakenLabel;
     static JPanel[] sigmaPanel;
     static Border[] sigmaBorder;
 
@@ -812,6 +812,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static DecimalFormat twoDigitsOnePlace = new DecimalFormat("00.0", IJU.dfs);
     static DecimalFormat twoDigitsTwoPlaces = new DecimalFormat("00.00", IJU.dfs);
     static DecimalFormat twoDigitsFivePlaces = new DecimalFormat("00.00000", IJU.dfs);
+    static DecimalFormat threeDigitsTwoPlaces = new DecimalFormat("##0.00", IJU.dfs);
     static DecimalFormat ninePlaces = new DecimalFormat("######0.000000000", IJU.dfs);
     static DecimalFormat twoPlaces = new DecimalFormat("######0.00", IJU.dfs);
     static DecimalFormat fourPlaces = new DecimalFormat("0.0000", IJU.dfs);
@@ -2346,7 +2347,12 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                             t23Label[curve].setText(Double.isNaN(t23[curve]) ? "NaN" : sixPlaces.format(t23[curve]));
                                             tauLabel[curve].setText(Double.isNaN(tau[curve]) ? "NaN" : sixPlaces.format(tau[curve]));
                                             stellarDensityLabel[curve].setText(Double.isNaN(stellarDensity[curve]) ? "NaN" : fourPlaces.format(stellarDensity[curve]));
-                                            spectralTypeLabel[curve].setText(Double.isNaN(stellarDensity[curve]) ? "NaN" : IJU.spectralTypeFromDensity(stellarDensity[curve]));
+                                            double min = Double.POSITIVE_INFINITY;
+                                            for (double c : lcModel[curve]) {
+                                                min = Math.min(min, c);
+                                            }
+                                            min = (1-(min/bestFit[curve][0]))*1000;
+                                            transitDepthLabel[curve].setText(Double.isNaN(min) ? "NaN" : threeDigitsTwoPlaces.format(min));
                                         } else {
                                             bpLabel[curve].setText("");
                                             t14Label[curve].setText("");
@@ -2354,7 +2360,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                             t23Label[curve].setText("");
                                             tauLabel[curve].setText("");
                                             stellarDensityLabel[curve].setText("");
-                                            spectralTypeLabel[curve].setText("");
+                                            transitDepthLabel[curve].setText("");
                                         }
                                         chi2dof[curve] = minimization.getMinimum();
                                         bic[curve] = chi2dof[curve] * (detrendXs[curve].length - bestFit[curve].length) + bestFit[curve].length * Math.log(detrendXs[curve].length);
@@ -6120,7 +6126,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         stellarDensityLabel = new JTextField[maxCurves];
         bpLabel = new JTextField[maxCurves];
         planetRadiusLabel = new JTextField[maxCurves];
-        spectralTypeLabel = new JTextField[maxCurves];
+        transitDepthLabel = new JTextField[maxCurves];
         stepsTakenLabel = new JTextField[maxCurves];
 
         bestFit = new double[maxCurves][maxFittedVars];
@@ -12772,6 +12778,22 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         calcParmsLabel.setMaximumSize(labelSize);
         fittedParametersPanel3.add(calcParmsLabel);
 
+        JPanel transitDepthPanel = new JPanel(new SpringLayout());
+        transitDepthPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(subBorderColor, 1), "Depth (ppt)", TitledBorder.CENTER, TitledBorder.TOP, p11, Color.darkGray));
+
+        transitDepthLabel[c] = new JTextField("");
+        transitDepthLabel[c].setToolTipText("<html>Estimated transit depth at midpoint based on the model.<br>" + "Green Border: fit converged<br>" + "Red Border: fit did not converge<br>" + "Gray Border: no fit in this session</html>");
+        transitDepthLabel[c].setFont(p11);
+        transitDepthLabel[c].setHorizontalAlignment(JLabel.CENTER);
+        transitDepthLabel[c].setBorder(grayBorder);
+        transitDepthLabel[c].setPreferredSize(statSize);
+        transitDepthLabel[c].setMaximumSize(statSize);
+        transitDepthLabel[c].setEnabled(useTransitFit[c]);
+        transitDepthLabel[c].setEditable(false);
+        transitDepthPanel.add(transitDepthLabel[c]);
+        SpringUtil.makeCompactGrid(transitDepthPanel, 1, transitDepthPanel.getComponentCount(), 0, 0, 0, 0);
+        fittedParametersPanel3.add(transitDepthPanel);
+
         JPanel bpPanel = new JPanel(new SpringLayout());
         bpPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(subBorderColor, 1), "b", TitledBorder.CENTER, TitledBorder.TOP, p11, Color.darkGray));
 
@@ -12868,22 +12890,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         densityPanel.add(stellarDensityLabel[c]);
         SpringUtil.makeCompactGrid(densityPanel, 1, densityPanel.getComponentCount(), 0, 0, 0, 0);
         fittedParametersPanel3.add(densityPanel);
-
-        JPanel spectralTypePanel = new JPanel(new SpringLayout());
-        spectralTypePanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(subBorderColor, 1), "(e)SpT", TitledBorder.CENTER, TitledBorder.TOP, p11, Color.darkGray));
-
-        spectralTypeLabel[c] = new JTextField("");
-        spectralTypeLabel[c].setToolTipText("<html>Host star spectral type estimated from light curved derived density.<br>" + "This convertion is approximate and assumes the star is on the main sequence.<br>" + "Green Border: fit converged<br>" + "Red Border: fit did not converge<br>" + "Gray Border: no fit in this session</html>");
-        spectralTypeLabel[c].setFont(p11);
-        spectralTypeLabel[c].setHorizontalAlignment(JLabel.CENTER);
-        spectralTypeLabel[c].setBorder(grayBorder);
-        spectralTypeLabel[c].setPreferredSize(statSize);
-        spectralTypeLabel[c].setMaximumSize(statSize);
-        spectralTypeLabel[c].setEnabled(useTransitFit[c]);
-        spectralTypeLabel[c].setEditable(false);
-        spectralTypePanel.add(spectralTypeLabel[c]);
-        SpringUtil.makeCompactGrid(spectralTypePanel, 1, spectralTypePanel.getComponentCount(), 0, 0, 0, 0);
-        fittedParametersPanel3.add(spectralTypePanel);
 
         JPanel planetRadiusPanel = new JPanel(new SpringLayout());
         planetRadiusPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.pink, 1), "Rp (Rjup)", TitledBorder.CENTER, TitledBorder.TOP, p11, Color.darkGray));
@@ -13849,7 +13855,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             stellarDensityLabel[c].setBorder(useTransitFit[c] ? border : grayBorder);
             bpLabel[c].setBorder(useTransitFit[c] ? border : grayBorder);
             planetRadiusLabel[c].setBorder(useTransitFit[c] ? border : grayBorder);
-            spectralTypeLabel[c].setBorder(useTransitFit[c] ? border : grayBorder);
+            transitDepthLabel[c].setBorder(useTransitFit[c] ? border : grayBorder);
 //                tauLabel[c].paint(tauLabel[c].getGraphics());
             chi2dofLabel[c].setBorder(border);
 //                chi2dofLabel[c].paint(chi2dofLabel[c].getGraphics());
@@ -13884,7 +13890,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         tauLabel[c].setEnabled(useTransitFit[c]);
         stellarDensityLabel[c].setEnabled(useTransitFit[c]);
         bpLabel[c].setEnabled(useTransitFit[c]);
-        spectralTypeLabel[c].setEnabled(useTransitFit[c]);
+        transitDepthLabel[c].setEnabled(useTransitFit[c]);
         planetRadiusLabel[c].setEnabled(useTransitFit[c]);
         showResidualCB[c].setEnabled(useTransitFit[c]);
         residualModelColorSelection[c].setEnabled(useTransitFit[c] && showResidual[c] && showModel[c]);

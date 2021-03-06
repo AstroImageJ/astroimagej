@@ -21,6 +21,8 @@ plugins {
 
     // Plugin to download files
     id "de.undercouch.download" version "4.1.1"
+
+    id "org.jetbrains.gradle.plugin.idea-ext" version "1.0"
 }
 
 apply plugin: 'io.github.fvarrui.javapackager.plugin'
@@ -423,5 +425,12 @@ build.configure {
     if (files("${projectDir}/jarLocation.txt").first().exists()) {
         //noinspection GroovyAssignabilityCheck
         finalizedBy copyBuiltJars
+    }
+}
+
+// Hack to make Idea's hammer to run gradle build
+idea.project.settings {
+    taskTriggers {
+        afterBuild tasks.getByName("build")
     }
 }

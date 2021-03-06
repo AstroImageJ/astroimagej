@@ -245,8 +245,6 @@ task commonFiles(type: Copy) {
     }
 }
 
-def devLaunch =
-
 // Generate AIJ-Run directory and set it up for usage
 task sync(dependsOn: jar, type: Sync) {
     with commonDist
@@ -396,6 +394,18 @@ javaRuntimeSystems.each {sys, sysInfo ->
 task copyBuiltJars(dependsOn: build, type: Copy) {
     group 'AstroImageJ Development'
 
+    File locCfg = files("${projectDir}/jarLocation.txt").first()
+    def destination = "${projectDir}/out"
+
+    if (locCfg.exists()) {
+        locCfg.readLines().each {
+            if (it.startsWith("#") /*Comments*/) {
+                return
+            }
+            destination = it
+        }
+    }
+
     // Copy astronomy_.jar
     from(file("${project(':Astronomy_').buildDir}/libs/astronomy_-${project(':Astronomy_').version}.jar")) {
         rename { String name -> return 'Astronomy_.jar' }
@@ -406,5 +416,12 @@ task copyBuiltJars(dependsOn: build, type: Copy) {
         rename { String name -> return 'ij.jar' }
         into ''
     }
-    into "${projectDir}/out"
+    into destination
+}
+
+build.configure {
+    if (files("${projectDir}/jarLocation.txt").first().exists()) {
+        //noinspection GroovyAssignabilityCheck
+        finalizedBy copyBuiltJars
+    }
 }

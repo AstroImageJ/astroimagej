@@ -3509,7 +3509,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         {
                             if (mmag[curve] && totalScaleFactor[curve] == 1000) sigma[curve] *= 1000;
                             llab.append(" (RMS=").append(sigma[curve] >= 1.0 ? uptoThreePlaces.format(sigma[curve] * 1000)
-                                    : threeDigitsTwoPlaces.format(sigma[curve] * 1000)).append(" ppt)");
+                                    : threeDigitsTwoPlaces.format(sigma[curve] * 1000));
                         }
                         if (showLnormInfo && normIndex[curve] != 0 && !mmag[curve] && !force[curve]) {
                             llab.append(" (normalized)");
@@ -3517,11 +3517,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     }
 
                     if (mmag[curve] && showLmmagInfo) {
-                        if (mmag[firstCurve] && totalScaleFactor[firstCurve] == 1000) {
-                            llab.append(" (mmag)");
-                        } else if (totalScaleFactor[curve] == 1000) { llab.append(" (mmag)"); } else {
-                            llab.append(" (mag)");
-                        }
+                        llab.append(" mmag)");
+                    } else {
+                        llab.append(" ppt)");
                     }
 
                     // Duplicate conditions of transit model fit legend

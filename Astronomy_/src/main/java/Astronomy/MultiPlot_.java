@@ -28,6 +28,7 @@ import java.awt.image.BufferedImage;
 import java.io.*;
 import java.text.DecimalFormat;
 import java.util.*;
+import java.util.stream.DoubleStream;
 
 // ------ astroj
 import astroj.*;
@@ -428,7 +429,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static int[] nTries, dof, modelLineWidth, residualLineWidth, startDetrendPars, endDetrendPars;
     static double[] chi2;
     static boolean[] converged;
-    static double[] t14, t23, tau, chi2dof, bp, stellarDensity, planetRadius, bic;
+    static double[] t14, t23, tau, chi2dof, bp, stellarDensity, planetRadius, bic, transitDepth;
     static String[] spectralType;
     static double[] fitMin;
     static double[] fitMax;
@@ -2349,9 +2350,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                             stellarDensityLabel[curve].setText(Double.isNaN(stellarDensity[curve]) ? "NaN" : fourPlaces.format(stellarDensity[curve]));
                                             if (!MultiAperture_.cancelled) {
                                                 double midpointFlux = IJU.transitModel(new double[]{bestFit[curve][3]}, bestFit[curve][0], bestFit[curve][4], bestFit[curve][1], bestFit[curve][2], bestFit[curve][3], orbitalPeriod[curve], forceCircularOrbit[curve] ? 0.0 : eccentricity[curve], forceCircularOrbit[curve] ? 0.0 : omega[curve], bestFit[curve][5], bestFit[curve][6], useLonAscNode[curve], lonAscNode[curve])[0];
-                                                midpointFlux = (1-(midpointFlux/bestFit[curve][0]))*1000;
-                                                transitDepthLabel[curve].setText(Double.isNaN(midpointFlux) ? "NaN" : threeDigitsTwoPlaces.format(midpointFlux));
+                                                transitDepth[curve] = (1-(midpointFlux/bestFit[curve][0]))*1000;
                                             }
+                                            transitDepthLabel[curve].setText(Double.isNaN(transitDepth[curve]) ? "NaN" : threeDigitsTwoPlaces.format(transitDepth[curve]));
                                         } else {
                                             bpLabel[curve].setText("");
                                             t14Label[curve].setText("");
@@ -6012,6 +6013,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         t14 = new double[maxCurves];
         t23 = new double[maxCurves];
         tau = new double[maxCurves];
+        transitDepth = DoubleStream.generate(() -> Double.NaN).limit(maxCurves).toArray();
         stellarDensity = new double[maxCurves];
         bp = new double[maxCurves];
         chi2dof = new double[maxCurves];

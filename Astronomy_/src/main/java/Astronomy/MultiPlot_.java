@@ -3912,7 +3912,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             Graphics g = mainpanel.getGraphics();
             FontMetrics metrics = g.getFontMetrics(font);
             h = metrics.getHeight();
-            w = metrics.stringWidth(llab);
+            w = (int) (metrics.stringWidth(llab) * 1.1);
         }
         plot.setLineWidth(width);
         if (legendRight) { xShift += w; } else if (!legendLeft) xShift += w / 2f;
@@ -3927,14 +3927,15 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             xShift += 3;
             yShift += 3;
         }
-        double x = plotMinX + (plotMaxX - plotMinX) * (legendPosX - xShift / (plotSizeX - Plot.LEFT_MARGIN - Plot.RIGHT_MARGIN));
-        double y = plotMinY + (plotMaxY - plotMinY) * (1 - legPosY + yShift / (plotSizeY - Plot.TOP_MARGIN - Plot.BOTTOM_MARGIN));
+        Dimension s = plot.getSize();
+        double x = plotMinX + (plotMaxX - plotMinX) * (legendPosX - xShift / (s.getWidth()));
+        double y = plotMinY + (plotMaxY - plotMinY) * (1 - legPosY + yShift / (s.getHeight()));
         double[] xx = {x};
         double[] yy = {y};
         if (marker != ij.gui.Plot.LINE) {
             plot.addPoints(xx, yy, marker);
         } else {
-            plot.drawLine(x, y, x + (plotMaxX - plotMinX) * 6.0 / (plotSizeX - Plot.LEFT_MARGIN - Plot.RIGHT_MARGIN), y);
+            plot.drawLine(x, y, x + (plotMaxX - plotMinX) * 6.0 / (s.getWidth()), y);
         }
         plot.setLineWidth(1);
     }

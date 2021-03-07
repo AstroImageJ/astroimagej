@@ -814,6 +814,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static DecimalFormat twoDigitsTwoPlaces = new DecimalFormat("00.00", IJU.dfs);
     static DecimalFormat twoDigitsFivePlaces = new DecimalFormat("00.00000", IJU.dfs);
     static DecimalFormat threeDigitsTwoPlaces = new DecimalFormat("##0.00", IJU.dfs);
+    static DecimalFormat fiveDigitsOnePlace = new DecimalFormat("####0.0", IJU.dfs);
     static DecimalFormat ninePlaces = new DecimalFormat("######0.000000000", IJU.dfs);
     static DecimalFormat twoPlaces = new DecimalFormat("######0.00", IJU.dfs);
     static DecimalFormat fourPlaces = new DecimalFormat("0.0000", IJU.dfs);
@@ -3521,6 +3522,13 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                             llab.append(" (mag)");
                         }
                     }
+
+                    // Duplicate conditions of transit model fit legend
+                    if (detrendFitIndex[curve] == 9 && useTransitFit[curve] && showModel[curve] && showLTranParams[curve]) {
+                        llab.append(" (depth=").append(Double.isNaN(transitDepth[curve]) ? "NaN" : threeDigitsTwoPlaces.format(transitDepth[curve])).append(" ppt)");
+                        llab.append(" (BIC=").append(Double.isNaN(bic[curve]) ? "NaN" : fiveDigitsOnePlace.format(bic[curve])).append(")");
+                    }
+
                     if (!force[curve])//&&(showLScaleInfo || showLShiftInfo))
                     { llab.append(scaleShiftText(force[curve], showLScaleInfo, showLShiftInfo, mmag[curve], showLmmagInfo, totalScaleFactor[curve], totalShiftFactor[curve])); } else if (force[curve])//&&(showLRelScaleInfo || showLRelShiftInfo))
                     { llab.append(scaleShiftText(force[curve], showLRelScaleInfo, showLRelShiftInfo, mmag[curve], showLmmagInfo, totalScaleFactor[curve], totalShiftFactor[curve])); }

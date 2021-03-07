@@ -3508,7 +3508,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         if (((detrendFitIndex[curve] > 1 && showSigmaForDetrendedCurves) || showSigmaForAllCurves))  //!force[curve] &&
                         {
                             if (mmag[curve] && totalScaleFactor[curve] == 1000) sigma[curve] *= 1000;
-                            llab.append(" (RMS=").append(sigma[curve] >= 1.0 ? uptoThreePlaces.format(sigma[curve]) : uptoFivePlaces.format(sigma[curve])).append(")");
+                            llab.append(" (RMS=").append(sigma[curve] >= 1.0 ? uptoThreePlaces.format(sigma[curve] * 1000)
+                                    : threeDigitsTwoPlaces.format(sigma[curve] * 1000)).append(" ppt)");
                         }
                         if (showLnormInfo && normIndex[curve] != 0 && !mmag[curve] && !force[curve]) {
                             llab.append(" (normalized)");

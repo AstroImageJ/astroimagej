@@ -411,7 +411,7 @@ task copyBuiltJars(dependsOn: build, type: Copy) {
     // Copy astronomy_.jar
     from(file("${project(':Astronomy_').buildDir}/libs/astronomy_-${project(':Astronomy_').version}.jar")) {
         rename { String name -> return 'Astronomy_.jar' }
-        into ''
+        into 'plugins'
     }
     // Copy ij.jar
     from(file("${project(':ij').buildDir}/libs/ij-${project(':ij').version}.jar")) {

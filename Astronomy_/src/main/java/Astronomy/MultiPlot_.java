@@ -12810,7 +12810,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         calcParmsLabel.setMaximumSize(labelSize);
         fittedParametersPanel3.add(calcParmsLabel);
 
-        transitDepthPanel[c] = new JPanel(new SpringLayout());
+        transitDepthPanel[c] = new JPanel(new GridBagLayout());
         transitDepthPanel[c].setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(subBorderColor, 1), "Depth (ppt)", TitledBorder.CENTER, TitledBorder.TOP, p11, Color.darkGray));
 
         transitDepthLabel[c] = new JTextField("");
@@ -12822,8 +12822,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         transitDepthLabel[c].setMaximumSize(statSize);
         transitDepthLabel[c].setEnabled(useTransitFit[c]);
         transitDepthLabel[c].setEditable(false);
-        transitDepthPanel[c].add(transitDepthLabel[c]);
-        SpringUtil.makeCompactGrid(transitDepthPanel[c], 1, transitDepthPanel[c].getComponentCount(), 0, 0, 0, 0);
+        transitDepthPanel[c].add(transitDepthLabel[c], new GridBagConstraints());
+        SpringUtil.makeCompactGrid(transitDepthPanel[c], 1, transitDepthPanel[c].getComponentCount(), 0, 0, 24, 0);
         fittedParametersPanel3.add(transitDepthPanel[c]);
 
         JPanel bpPanel = new JPanel(new SpringLayout());

@@ -465,15 +465,15 @@ public class FileDrop
     
     private void makeDropTarget( final java.io.PrintStream out, final java.awt.Component c, boolean recursive )
     {
-        // Make drop target
-        final java.awt.dnd.DropTarget dt = new java.awt.dnd.DropTarget();
+        // Make drop target TODO Reenable code block if this doesn't fix freeze w/ multiplot
+        /*final java.awt.dnd.DropTarget dt = new java.awt.dnd.DropTarget();
         try
         {   dt.addDropTargetListener( dropListener );
         }   // end try
         catch( java.util.TooManyListenersException e )
         {   e.printStackTrace();
             log(out, "FileDrop: Drop will not work due to previous error. Do you have another listener attached?" );
-        }   // end catch
+        }   // end catch*/
         
         // Listen for hierarchy changes and remove the drop target when the parent gets cleared out.
         c.addHierarchyListener( new java.awt.event.HierarchyListener()

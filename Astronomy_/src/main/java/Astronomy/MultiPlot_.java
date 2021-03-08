@@ -12823,7 +12823,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         transitDepthLabel[c].setEnabled(useTransitFit[c]);
         transitDepthLabel[c].setEditable(false);
         transitDepthPanel[c].add(transitDepthLabel[c], new GridBagConstraints());
-        SpringUtil.makeCompactGrid(transitDepthPanel[c], 1, transitDepthPanel[c].getComponentCount(), 0, 0, 24, 0);
         fittedParametersPanel3.add(transitDepthPanel[c]);
 
         JPanel bpPanel = new JPanel(new SpringLayout());

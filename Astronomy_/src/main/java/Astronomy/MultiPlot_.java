@@ -2902,9 +2902,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     }
                     detrendYAverage[curve] /= normAverage;
                     sigma[curve] /= normAverage;
-                    sigmaLabel[curve].setText(sixPlaces.format(sigma[curve]));
-                    sigmaLabel[curve].setToolTipText("<html>RMS of model residuals (normalized).<br>" + "Green Border: fit converged<br>" + "Red Border: fit did not converge<br>" + "Gray Border: no fit in this session</html>");
-                    sigmaPanel[curve].setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(subBorderColor, 1), "RMS (norm)", TitledBorder.CENTER, TitledBorder.TOP, p11, Color.darkGray));
+                    sigmaLabel[curve].setText(sixPlaces.format(sigma[curve] * 1000));
+                    sigmaLabel[curve].setToolTipText("<html>RMS of model residuals (normalized) in parts per thousand (ppt).<br>" + "Green Border: fit converged<br>" + "Red Border: fit did not converge<br>" + "Gray Border: no fit in this session</html>");
+                    sigmaPanel[curve].setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(subBorderColor, 1), "RMS (ppt)", TitledBorder.CENTER, TitledBorder.TOP, p11, Color.darkGray));
 
                     if (yModel1[curve] != null) {
                         for (int nnn = 0; nnn < yModel1[curve].length; nnn++) {

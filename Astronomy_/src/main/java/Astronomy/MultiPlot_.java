@@ -413,7 +413,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static JTextField[] chi2dofLabel, dofLabel, chi2Label, bicLabel, sigmaLabel;
     static JTextField[] t14Label, t14HoursLabel, t23Label, tauLabel, bpLabel, stellarDensityLabel;
     static JTextField[] transitDepthLabel, planetRadiusLabel, stepsTakenLabel;
-    static JPanel[] sigmaPanel;
+    static JPanel[] sigmaPanel, transitDepthPanel;
     static Border[] sigmaBorder;
 
     static double[][] bestFit;
@@ -2986,6 +2986,12 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                             yModel2[curve][nnn] = magSign * 2.5 * Math.log10(yModel2[curve][nnn] / baseline[curve]);   // yMultiplierFactor*
                         }
                     }
+
+                    // Convert Depth to mmag
+                    double magDepth = 2.5 * Math.log10(1.0 + transitDepth[curve]/1000);
+                    transitDepthLabel[curve].setText(fourPlaces.format(magDepth * 1000));
+                    transitDepthLabel[curve].setToolTipText("<html>Depth defined as transit model flux deficit at mid-transit (Tc) in mmag.<br>" + "Green Border: fit converged<br>" + "Red Border: fit did not converge<br>" + "Gray Border: no fit in this session</html>");
+                    transitDepthPanel[curve].setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(subBorderColor, 1), "Depth (mmag)", TitledBorder.CENTER, TitledBorder.TOP, p11, Color.darkGray));
                 }
                 if (normIndex[curve] == 0 && !mmag[curve]) {
                     sigmaLabel[curve].setText(sixPlaces.format(sigma[curve]));
@@ -3524,7 +3530,12 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
                     // Duplicate conditions of transit model fit legend
                     if (detrendFitIndex[curve] == 9 && useTransitFit[curve] && showModel[curve] && showLTranParams[curve]) {
-                        llab.append(" (depth=").append(Double.isNaN(transitDepth[curve]) ? "NaN" : threeDigitsTwoPlaces.format(transitDepth[curve])).append(" ppt)");
+                        llab.append(" (depth=").append(transitDepthLabel[curve].getText());
+                        if (mmag[curve]) {
+                            llab.append(" mmag)");
+                        } else {
+                            llab.append(" ppt)");
+                        }
                         llab.append(" (BIC=").append(Double.isNaN(bic[curve]) ? "NaN" : fiveDigitsOnePlace.format(bic[curve])).append(")");
                     }
 
@@ -6139,6 +6150,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         bpLabel = new JTextField[maxCurves];
         planetRadiusLabel = new JTextField[maxCurves];
         transitDepthLabel = new JTextField[maxCurves];
+        transitDepthPanel = new JPanel[maxCurves];
         stepsTakenLabel = new JTextField[maxCurves];
 
         bestFit = new double[maxCurves][maxFittedVars];
@@ -12790,8 +12802,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         calcParmsLabel.setMaximumSize(labelSize);
         fittedParametersPanel3.add(calcParmsLabel);
 
-        JPanel transitDepthPanel = new JPanel(new SpringLayout());
-        transitDepthPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(subBorderColor, 1), "Depth (ppt)", TitledBorder.CENTER, TitledBorder.TOP, p11, Color.darkGray));
+        transitDepthPanel[c] = new JPanel(new SpringLayout());
+        transitDepthPanel[c].setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(subBorderColor, 1), "Depth (ppt)", TitledBorder.CENTER, TitledBorder.TOP, p11, Color.darkGray));
 
         transitDepthLabel[c] = new JTextField("");
         transitDepthLabel[c].setToolTipText("<html>Depth defined as transit model flux deficit at mid-transit (Tc) in parts per thousand (ppt).<br>" + "Green Border: fit converged<br>" + "Red Border: fit did not converge<br>" + "Gray Border: no fit in this session</html>");
@@ -12802,9 +12814,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         transitDepthLabel[c].setMaximumSize(statSize);
         transitDepthLabel[c].setEnabled(useTransitFit[c]);
         transitDepthLabel[c].setEditable(false);
-        transitDepthPanel.add(transitDepthLabel[c]);
-        SpringUtil.makeCompactGrid(transitDepthPanel, 1, transitDepthPanel.getComponentCount(), 0, 0, 0, 0);
-        fittedParametersPanel3.add(transitDepthPanel);
+        transitDepthPanel[c].add(transitDepthLabel[c]);
+        SpringUtil.makeCompactGrid(transitDepthPanel[c], 1, transitDepthPanel[c].getComponentCount(), 0, 0, 0, 0);
+        fittedParametersPanel3.add(transitDepthPanel[c]);
 
         JPanel bpPanel = new JPanel(new SpringLayout());
         bpPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(subBorderColor, 1), "b", TitledBorder.CENTER, TitledBorder.TOP, p11, Color.darkGray));

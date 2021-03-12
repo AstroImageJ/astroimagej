@@ -5804,7 +5804,7 @@ void setupListeners() {
             return cp;
             }
 
-    public synchronized void setAstroProcessor(boolean requestUpdateAnnotationsFromHeader) {
+    public void setAstroProcessor(boolean requestUpdateAnnotationsFromHeader) {
             ImageProcessor ip = imp.getProcessor();
             slice = imp.getCurrentSlice();
             cal = imp.getCalibration();
@@ -6714,7 +6714,7 @@ void setupListeners() {
             ac.paint(ac.getGraphics());
             }
 
-    @Override
+    /*@Override
     public void showSlice(int index) {
         super.showSlice(index);
 
@@ -6727,7 +6727,7 @@ void setupListeners() {
         synchronized (this) {
             notify();
         }
-    }
+    }*/
 
     public void mouseExited(MouseEvent e)
             {

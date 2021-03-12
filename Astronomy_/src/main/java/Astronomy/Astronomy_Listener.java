@@ -50,7 +50,7 @@ public class Astronomy_Listener implements PlugIn, ImageListener
         {
         }
 
-    public synchronized void imageUpdated(ImagePlus imp)
+    public void imageUpdated(ImagePlus imp)
         {
 //        IJ.log("Image Updated: "+imp.getTitle());
         Frame openFrame = imp.getWindow();

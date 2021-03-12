@@ -48,8 +48,9 @@ public class Animator implements PlugIn {
 		}
 			
 		if (arg.equals("start")) {
-			Thread t = new Thread(this::startAnimation);
-			t.start();
+			//Thread t = new Thread(this::startAnimation);
+			//t.start();
+			startAnimation();
 			return;
 		}
 

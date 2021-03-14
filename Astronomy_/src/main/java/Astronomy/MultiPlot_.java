@@ -3480,13 +3480,18 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                 llab.append(" (transit fit)");
                             }
                         }
-                        if ((detrendFitIndex[curve] > 1 && showSigmaForDetrendedCurves) || showSigmaForAllCurves) {
-                            llab.append(" (RMS=").append(sigma[curve] >= 1.0 ? uptoThreePlaces.format(sigma[curve]) : uptoFivePlaces.format(sigma[curve])).append(")");
-                        }
                         if (showLnormInfo && normIndex[curve] != 0 && !mmag[curve] && !force[curve]) {
                             llab.append(" (normalized)");
                         } else {
                             llab.append(usePixelScale ? " (arcsecs)" : " (pixels)");
+                        }
+                        if ((detrendFitIndex[curve] > 1 && showSigmaForDetrendedCurves) || showSigmaForAllCurves) {
+                            llab.append(" (RMS=").append(sigma[curve] >= 1.0 ? uptoThreePlaces.format(sigma[curve]) : uptoFivePlaces.format(sigma[curve])).append(")");
+                        }
+                        if (mmag[curve] && showLmmagInfo) {
+                            llab.append(" mmag)");
+                        } else {
+                            llab.append(" ppt)");
                         }
                     } else {
                         llab = new StringBuilder(ylabel[curve]);
@@ -3515,25 +3520,24 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                 llab.append(" (transit fit)");
                             }
                         }
+                        if (showLnormInfo && normIndex[curve] != 0 && !mmag[curve] && !force[curve]) {
+                            llab.append(" (normalized)");
+                        }
                         if (((detrendFitIndex[curve] > 1 && showSigmaForDetrendedCurves) || showSigmaForAllCurves))  //!force[curve] &&
                         {
                             double factor = 1000;
                             if (mmag[curve] && totalScaleFactor[curve] == 1000) {
                                 sigma[curve] *= 1000;
-                                factor = 1/1000D; // Fix for display of RMS in legend being times 100
+                                factor = 1/1000D; // Fix for display of RMS in legend being times 1000
                             }
                             llab.append(" (RMS=").append(sigma[curve] >= 1.0 ? uptoThreePlaces.format(sigma[curve] * factor)
                                     : threeDigitsTwoPlaces.format(sigma[curve] * factor));
                         }
-                        if (showLnormInfo && normIndex[curve] != 0 && !mmag[curve] && !force[curve]) {
-                            llab.append(" (normalized)");
+                        if (mmag[curve] && showLmmagInfo) {
+                            llab.append(" mmag)");
+                        } else {
+                            llab.append(" ppt)");
                         }
-                    }
-
-                    if (mmag[curve] && showLmmagInfo) {
-                        llab.append(" mmag)");
-                    } else {
-                        llab.append(" ppt)");
                     }
 
                     // Duplicate conditions of transit model fit legend
@@ -3544,6 +3548,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         } else {
                             llab.append(" ppt)");
                         }
+
+                    }
+                    if (detrendFitIndex[curve] == 9 && showModel[curve] && showLTranParams[curve]) {
                         llab.append(" (BIC=").append(Double.isNaN(bic[curve]) ? "NaN" : fiveDigitsOnePlace.format(bic[curve])).append(")");
                     }
 
@@ -3551,7 +3558,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     { llab.append(scaleShiftText(force[curve], showLScaleInfo, showLShiftInfo, mmag[curve], showLmmagInfo, totalScaleFactor[curve], totalShiftFactor[curve])); } else if (force[curve])//&&(showLRelScaleInfo || showLRelShiftInfo))
                     { llab.append(scaleShiftText(force[curve], showLRelScaleInfo, showLRelShiftInfo, mmag[curve], showLmmagInfo, totalScaleFactor[curve], totalShiftFactor[curve])); }
                     if ((binSize[curve] != 1) && showLBinInfo) {
-                        llab.append(" (bin size = ").append(binSize[curve]).append(")");
+                        llab.append(" (bin=").append(binSize[curve]).append(")");
                     }
                     if (showLSymbolInfo) llab.append(" (").append(markers[markerIndex[curve]]).append(")");
                 }

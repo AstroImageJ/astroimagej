@@ -11,7 +11,6 @@ import ij.io.OpenDialog;
 import ij.measure.Calibration;
 import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
-import ij.util.Tools;
 import nom.tam.fits.*;
 import nom.tam.image.compression.hdu.CompressedImageHDU;
 import nom.tam.util.Cursor;
@@ -31,7 +30,8 @@ import static nom.tam.fits.header.Standard.NAXIS;
 	Add setOption("FlipFitsImages",true) to the
 	Edit/Options/Startup dialog to have images flipped vertically.
 */
-@AstroImageJ(reason = "Better support for FITS files via nom.tam.fits", modified = true)
+@AstroImageJ(reason = "Support for compressed FITS files via nom.tam.fits, invert flipImages to fix inverted aperture display",
+		modified = true)
 public class FITS_Reader extends ImagePlus implements PlugIn {
 	private static boolean flipImages;
 	// private WCS wcs;
@@ -158,7 +158,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			if (fi!=null && fi.width>0 && fi.height>0 && fi.offset>0) {
 				FileOpener fo = new FileOpener(fi);
 				ImagePlus imp = fo.openImage();
-				if (flipImages) {
+				if (!flipImages) {
 					if (fi.nImages==1) {
 						ImageProcessor ip = imp.getProcessor();
 						ip.flipVertical(); // origin is at bottom left corner

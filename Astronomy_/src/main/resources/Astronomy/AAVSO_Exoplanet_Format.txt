@@ -8,10 +8,11 @@
 //  file that conforms to the input requirements specified in the above referenced user guide.  AIJ's log
 //  window will show the progress of the macro, as well as any error messages
 //
-//  REVISION 7.5
-var REVISION = "7.5";
+//  REVISION 7.6
+var REVISION = "7.6";
 //
 //  Release Notes:
+//  7.6 Add CR after Header that precedes first data row; add macro rev number to #SOFTWARE metadata
 //  7.5 Force use of rnFlux
 //  7.4 Add a check if MF_flag was set before calculating MF_entry
 //  7.3 Add user entry of meridian flip time so that the meridian flip values (-1.000, 1.000) can
@@ -218,7 +219,7 @@ print("\\Clear");
 //
 // Fix TYPE and SOFTWARE values
 TYPE="EXOPLANET";
-SOFTWARE="AstroImageJ";
+SOFTWARE="AstroImageJ" + " AAVSO Report Macro Rev. " + REVISION;
 //
 //  Fix the delimiter to be used in the data rows of the report
 DELIM=COMMA;
@@ -623,7 +624,7 @@ File.append("#NOTES=" + NOTES + CR,pathOutputFile);
 //  Construct the header to the data rows of the report
 dataHeaderString = "#" + DATE_TYPE + ",Rel-Norm-Flux,Rel-Norm-Flux-Err";
 if (detrendString != "") {dataHeaderString = dataHeaderString + "," + detrendString;};
-File.append(dataHeaderString,pathOutputFile);
+File.append(dataHeaderString + CR,pathOutputFile);
 //
 //  Get the value in the user's file associated with each of the user-specified labels for:
 //   1.  Date/Time

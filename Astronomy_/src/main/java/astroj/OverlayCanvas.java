@@ -13,7 +13,7 @@ import ij.gui.*;
 public class OverlayCanvas extends ImageCanvas
 	{
 	/** A Vector for storing the ROIs in the overlay. */
-	Vector rois = null;
+	Vector<Roi> rois;
 
 	/**
 	 * Constructor for the overlay, attached to a particular ImagePlus.
@@ -21,7 +21,7 @@ public class OverlayCanvas extends ImageCanvas
 	public OverlayCanvas (ImagePlus imp)
 		{
 		super (imp);
-		rois = new Vector();
+		rois = new Vector<>();
 		}
 
 	/**
@@ -38,10 +38,10 @@ public class OverlayCanvas extends ImageCanvas
 	public boolean removeRoi (int x, int y)
 		{
 		boolean removed = false;
-		Enumeration e = rois.elements();
+		Enumeration<Roi> e = rois.elements();
 		while (e.hasMoreElements())
 			{
-			Roi roi = (Roi)e.nextElement();
+			Roi roi = e.nextElement();
             if (roi instanceof astroj.ApertureRoi)
                 {
                 ApertureRoi apRoi = (ApertureRoi)roi;
@@ -73,7 +73,7 @@ public class OverlayCanvas extends ImageCanvas
 		{
         for (int i=0; i<rois.size();i++)
             {
-            Roi roi = (Roi)rois.get(i);
+            Roi roi = rois.get(i);
             if (roi instanceof astroj.AnnotateRoi)
                 {    
                 AnnotateRoi annotateRoi = (AnnotateRoi)roi;
@@ -83,8 +83,7 @@ public class OverlayCanvas extends ImageCanvas
                 if ((x-xPos)*(x-xPos)+(y-yPos)*(y-yPos) <= radius*radius)
                     {                
                     rois.removeElementAt(i);
-                    i--;
-                    return true;
+                    return true; // Remove first found
                     }
                 }   
             }        
@@ -98,7 +97,7 @@ public class OverlayCanvas extends ImageCanvas
 		{
         for (int i=0; i<rois.size();i++)
             {
-            Roi roi = (Roi)rois.get(i);
+            Roi roi = rois.get(i);
             if (roi instanceof astroj.AnnotateRoi)
                 {    
                 AnnotateRoi annotateRoi = (AnnotateRoi)roi;
@@ -121,7 +120,7 @@ public class OverlayCanvas extends ImageCanvas
 		{
         for (int i=0; i<rois.size();i++)
             {
-            Roi roi = (Roi)rois.get(i);
+            Roi roi = rois.get(i);
             if (roi instanceof astroj.ApertureRoi)
                 {    
                 ApertureRoi apertureRoi = (ApertureRoi)roi;
@@ -144,12 +143,12 @@ public class OverlayCanvas extends ImageCanvas
 		{
         for (int i=0; i<rois.size();i++)
             {
-            Roi roi = (Roi)rois.get(i);
+            Roi roi = rois.get(i);
             if (roi instanceof astroj.ApertureRoi)
                 {    
                 ApertureRoi apertureRoi = (ApertureRoi)roi;
                 String name = apertureRoi.getName();
-                name = name.substring(1, name.length());
+                name = name.substring(1);
                 int num = IJU.parseInteger(name);
                 if (num == ap+1)
                     {                
@@ -165,15 +164,7 @@ public class OverlayCanvas extends ImageCanvas
 	 */
 	public void removeAnnotateRois ()
 		{
-        for (int i=0; i<rois.size();i++)
-            {
-            Roi roi = (Roi)rois.get(i);
-            if (roi instanceof astroj.AnnotateRoi)
-                {      
-                rois.removeElementAt(i);
-                i--;
-                }
-            }
+			rois.removeIf(roi -> roi instanceof AnnotateRoi);
 		}   
     
     /**
@@ -181,19 +172,7 @@ public class OverlayCanvas extends ImageCanvas
 	 */
 	public void removeAstrometryAnnotateRois ()
 		{
-        for (int i=0; i<rois.size();i++)
-            {
-            Roi roi = (Roi)rois.get(i);
-            if (roi instanceof astroj.AnnotateRoi)
-                {
-                AnnotateRoi aroi = (AnnotateRoi)roi;
-                if (aroi.getIsFromAstrometry())
-                    {
-                    rois.removeElementAt(i);
-                    i--;
-                    }
-                }
-            }
+			rois.removeIf(roi -> roi instanceof AnnotateRoi && ((AnnotateRoi) roi).isFromAstrometry);
 		}
     
 	/**
@@ -201,44 +180,22 @@ public class OverlayCanvas extends ImageCanvas
 	 */
 	public void removeApertureRois ()
 		{
-        for (int i=0; i<rois.size();i++)
-            {
-            Roi roi = (Roi)rois.get(i);
-            if (roi instanceof astroj.ApertureRoi)
-                {      
-                rois.removeElementAt(i);
-                i--;
-                }
-            }
-		} 
+			rois.removeIf(roi -> roi instanceof astroj.ApertureRoi);
+		}
 
     /**
-	 * Removes all aperture rois from the overlay list.
+	 * Moves all aperture rois in the overlay list.
 	 */
 	public void moveApertureRois (double dx, double dy)
 		{
-        for (int i=0; i<rois.size();i++)
-            {
-            Roi roi = (Roi)rois.get(i);
-            if (roi instanceof astroj.ApertureRoi)
-                {      
-                ApertureRoi aroi = (ApertureRoi)roi;
-                aroi.move(dx, dy);
-                }
-            }
+			rois.forEach(roi -> {
+				if (roi instanceof astroj.ApertureRoi) ((ApertureRoi) roi).move(dx, dy);
+			});
 		}
     
 	public void removePixelRois ()
 		{
-        for (int i=0; i<rois.size();i++)
-            {
-            Roi roi = (Roi)rois.get(i);
-            if (roi instanceof astroj.PixelRoi)
-                {      
-                rois.removeElementAt(i);
-                i--;
-                }
-            }
+			rois.removeIf(roi -> roi instanceof astroj.PixelRoi);
 		}    
     
     	/**
@@ -248,7 +205,7 @@ public class OverlayCanvas extends ImageCanvas
 		{
         for (int i=0; i<rois.size();i++)
             {
-            Roi roi = (Roi)rois.get(i);
+            Roi roi = rois.get(i);
             if (roi instanceof astroj.MeasurementRoi)
                 {    
                 MeasurementRoi measurementRoi = (MeasurementRoi)roi;
@@ -265,7 +222,7 @@ public class OverlayCanvas extends ImageCanvas
 		{
         for (int i=0; i<rois.size();i++)
             {
-            Roi roi = (Roi)rois.get(i);
+            Roi roi = rois.get(i);
             if (roi instanceof astroj.MeasurementRoi)
                 {    
                 MeasurementRoi mRoi = (MeasurementRoi)roi;
@@ -273,8 +230,7 @@ public class OverlayCanvas extends ImageCanvas
                         targetRoi.getX2()==mRoi.getX2()&&targetRoi.getY2()==mRoi.getY2())
                     {                
                     rois.removeElementAt(i);
-                    i--;
-                    return true;
+                    return true; // Remove first found
                     }
                 }   
             }
@@ -288,7 +244,7 @@ public class OverlayCanvas extends ImageCanvas
 		{
         for (int i=0; i<rois.size();i++)
             {
-            Roi roi = (Roi)rois.get(i);
+            Roi roi = rois.get(i);
             if (roi instanceof astroj.ApertureRoi)
                 {    
                 ApertureRoi aRoi = (ApertureRoi)roi;
@@ -296,8 +252,7 @@ public class OverlayCanvas extends ImageCanvas
                     (targetRoi.getYpos()-aRoi.getYpos())*(targetRoi.getYpos()-aRoi.getYpos()) <= aRoi.getRadius()*aRoi.getRadius())
                     {                
                     rois.removeElementAt(i);
-                    i--;
-                    return true;
+                    return true; // Remove first found
                     }
                 }   
             }
@@ -310,15 +265,14 @@ public class OverlayCanvas extends ImageCanvas
 		{
         for (int i=0; i<rois.size();i++)
             {
-            Roi roi = (Roi)rois.get(i);
+            Roi roi = rois.get(i);
             if (roi instanceof astroj.MeasurementRoi)
                 {    
                 MeasurementRoi mRoi = (MeasurementRoi)roi;
                 if (mRoi.getIsLiveMeasRoi())
                     {                
                     rois.removeElementAt(i);
-                    i--;
-                    return true;
+                    return true; // Remove first found
                     }
                 }   
             }
@@ -340,12 +294,7 @@ public class OverlayCanvas extends ImageCanvas
 		{
 		int n = rois.size();
 		if (n == 0) return;
-		Enumeration e = rois.elements();
-		for (int i=0; i < n && e.hasMoreElements(); i++)
-			{
-			ApertureRoi roi = (ApertureRoi)e.nextElement();
-			roi.log();
-			}
+		rois.forEach(roi -> ((ApertureRoi)roi).log());
 		}
 
 	/**
@@ -356,14 +305,7 @@ public class OverlayCanvas extends ImageCanvas
 		int n = rois.size();
 		if (n == 0) return null;
 
-		Roi[] arr = new Roi[n];
-		Enumeration e = rois.elements();
-		for (int i=0; i < n; i++)
-			{
-			if (e.hasMoreElements())
-				arr[i] = (Roi)e.nextElement();
-			}
-		return arr;
+		return (Roi[]) rois.toArray();
 		}
 
 	/**
@@ -386,16 +328,7 @@ public class OverlayCanvas extends ImageCanvas
 	public void drawOverlayCanvas (Graphics g)
 		{
 //		g.setColor(Color.green);
-		synchronized (this) {
-			Enumeration e = rois.elements();
-			while (e.hasMoreElements())
-			{
-				Roi roi = (Roi)e.nextElement();
-//            g.setColor(roi.getColor());
-				roi.draw (g);
-//            g.setColor(Color.red);
-			}
-		}
+			rois.forEach(roi -> roi.draw(g));
 		}
 
 	/**
@@ -420,7 +353,6 @@ public class OverlayCanvas extends ImageCanvas
 	 */
 	public static OverlayCanvas getOverlayCanvas (ImagePlus imag)
 		{
-		ImageCanvas canvas = null;
 		if (OverlayCanvas.hasOverlayCanvas(imag))
 			{
 			ImageWindow win = imag.getWindow();

@@ -6049,7 +6049,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         t14 = new double[maxCurves];
         t23 = new double[maxCurves];
         tau = new double[maxCurves];
-        transitDepth = DoubleStream.generate(() -> Double.NaN).limit(maxCurves).toArray();
+        transitDepth = DoubleStream.generate(() -> 0).limit(maxCurves).toArray();
         stellarDensity = new double[maxCurves];
         bp = new double[maxCurves];
         chi2dof = new double[maxCurves];

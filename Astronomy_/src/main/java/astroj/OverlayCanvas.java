@@ -305,7 +305,7 @@ public class OverlayCanvas extends ImageCanvas
 		int n = rois.size();
 		if (n == 0) return null;
 
-		return (Roi[]) rois.toArray();
+		return rois.toArray(new Roi[n]);
 		}
 
 	/**

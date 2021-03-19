@@ -2207,8 +2207,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 		for (int i=firstSlice; i <= lastSlice; i++)
 			{
             slice=i;
-			imp.setSlice(i);
-			imp.updateImage();
+            imp.setSliceWithoutUpdate(i); //fixes scroll sync issue
 			if (starOverlay || skyOverlay || valueOverlay || nameOverlay)
 				{
 				ocanvas = OverlayCanvas.getOverlayCanvas (imp);
@@ -2219,6 +2218,13 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 {
                 asw = (AstroStackWindow)imp.getWindow();
                 ac = (AstroCanvas)imp.getCanvas();
+
+                // Mimic callstack of setSlice, but without lock which causes scroll sync issue
+                // TODO fix aperture flicking when processing stacks of small pixel counts
+                asw.setAstroProcessor(false);
+                asw.update(asw.getGraphics());
+                ac.update(ac.getGraphics());
+
                 hasWCS = asw.hasWCS();
                 if (hasWCS) wcs = asw.getWCS();
                 asw.setDisableShiftClick(true);

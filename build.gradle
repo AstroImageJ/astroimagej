@@ -30,9 +30,9 @@ apply plugin: 'io.github.fvarrui.javapackager.plugin'
 // See https://guides.gradle.org/creating-multi-project-builds/
 
 // Java version to compile and package with
-int shippingJava = 15
+def shippingJava = Integer.parseInt(project.javaShippingVersion as String)
 // Minimum Java version binaries should be compatible with
-def targetJava = 8
+def targetJava = Integer.parseInt(project.minJava as String)
 
 allprojects {
     repositories {
@@ -65,7 +65,7 @@ allprojects {
 }
 
 subprojects {
-    version = '5.0.0-SNAPSHOT'
+    version = project.version + getBranchName() + getCommitHash() + getDirty()
 }
 
 dependencies {
@@ -313,6 +313,7 @@ List<String> readConfigFile() {
             args.add(it)
         }
     }
+    args.add('-Daij.dev=true') // Always show full version metadata when running via dev
 
     return args
 }
@@ -459,4 +460,17 @@ idea.project.settings {
     taskTriggers {
         afterBuild tasks.getByName("build")
     }
+}
+
+// Get version metadata
+static def getCommitHash() {
+    '+' + ('git rev-parse --verify --short HEAD'.execute().text.trim())
+}
+
+static def getBranchName() {
+    '+' + ('git rev-parse --abbrev-ref HEAD'.execute().text.trim())
+}
+
+static def getDirty() {
+    'git diff-index HEAD'.execute().text.trim().empty ? '' : '+local'
 }

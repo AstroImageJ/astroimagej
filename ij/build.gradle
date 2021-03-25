@@ -9,6 +9,14 @@ dependencies {
 
 mainClassName = 'ij.ImageJ'
 
+processResources {
+    inputs.property "version", project.version
+
+    filesMatching("aij_version.txt") {
+        expand "version": project.version
+    }
+}
+
 jar {
     FileTree m = fileTree("${rootProject.projectDir}/src/main/resources/plugins/")
     Collection n = m.include("**/*.jar").grep()

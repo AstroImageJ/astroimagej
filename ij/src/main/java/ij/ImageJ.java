@@ -400,8 +400,8 @@ public class ImageJ extends Frame implements ActionListener,
 
 	@AstroImageJ(modified = true, reason = "Add AIj version to display")
 	private String version() {
-		return "ImageJ "+VERSION+BUILD + "; "+"Java "+System.getProperty("java.version")+(IJ.is64Bit()?" [64-bit]; ":" [32-bit]; ") +
-				ASTROVERSION + "; ";
+		return "AIJ " + ASTROVERSION + "; " + "ImageJ "+VERSION+BUILD + "; "+"Java "+System.getProperty("java.version")+
+				(IJ.is64Bit()?" [64-bit]; ":" [32-bit]; ");
 	}
 	
 	public void mouseReleased(MouseEvent e) {}

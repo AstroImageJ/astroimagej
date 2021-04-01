@@ -5894,7 +5894,7 @@ void setupListeners() {
                 ip.invertLut();
             layoutContainer(this);
             ac.updateZoomBoxParameters();
-            updatePanelValues();
+            updatePanelValues();//todo this lags the cursor aperture, especially during multiaperture
             setImageEdges();
             radius = Prefs.get("aperture.radius", radius);
             rBack1 = Prefs.get("aperture.rback1", rBack1);

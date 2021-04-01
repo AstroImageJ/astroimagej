@@ -2206,6 +2206,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 //        IJ.log("firstSlice="+firstSlice+"   lastSlice="+lastSlice);
 		for (int i=firstSlice; i <= lastSlice; i++)
 			{
+                //todo this fixes apertures not showing, find better way
+			    IJ.wait(40);
             slice=i;
             imp.setSliceWithoutUpdate(i); //fixes scroll sync issue
 			if (starOverlay || skyOverlay || valueOverlay || nameOverlay)

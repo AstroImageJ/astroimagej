@@ -387,6 +387,16 @@ public class AstroCanvas extends OverlayCanvas {
         else return srcRect.y - (int)(aspectDelta + ((getWidth()-sx)/magnification));    //(netFlipY && netRotate)
 	}
 
+    @Override
+    public int offScreenY2(int sy) {
+        return Math.round(offScreenY(sy));
+    }
+
+    @Override
+    public int offScreenX2(int sx) {
+        return Math.round(offScreenX(sx));
+    }
+
 	/**Converts screen x/y-coordinates to a floating-point offscreen x-coordinate (required for canvas rotation support).*/
 	@Override
     public double offScreenXD(int sx) {

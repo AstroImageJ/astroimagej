@@ -850,8 +850,8 @@ public class Scores{
                             }
                         }
                     }
-                    freq.add(new Double(scores0[i][j]));
-                    freq.add(new Integer(ii));
+                    freq.add(scores0[i][j]);
+                    freq.add(ii);
                 }   
             }
         }
@@ -2420,7 +2420,7 @@ public class Scores{
                         n = holdingArrayF[0].length;
                         for(int i=0; i<m; i++){
                             for(int j=0; j<n; j++){
-                                holdingArrayD[i][j] = (new Float(holdingArrayF[i][j])).doubleValue();
+                                holdingArrayD[i][j] = (Float.valueOf(holdingArrayF[i][j])).doubleValue();
                             }
                         }
                         // transpose to scores0 format
@@ -2436,7 +2436,7 @@ public class Scores{
                         n = holdingArrayI[0].length;
                         for(int i=0; i<m; i++){
                             for(int j=0; j<n; j++){
-                                holdingArrayD[i][j] = (new Integer(holdingArrayI[i][j])).doubleValue();
+                                holdingArrayD[i][j] = (Integer.valueOf(holdingArrayI[i][j])).doubleValue();
                             }
                         }
                         // transpose to scores0 format
@@ -2554,7 +2554,7 @@ public class Scores{
                                 }
                                 if(!elementSet){
                                     try{
-                                        this.scores0[i][j] = Double.valueOf(holdingArrayS[i][j]);
+                                        this.scores0[i][j] = Double.parseDouble(holdingArrayS[i][j]);
                                     }
                                     catch (Exception e){
                                         this.scores0[i][j] = Double.NaN;
@@ -2570,7 +2570,7 @@ public class Scores{
                 case 5: for(int i=0; i<this.nItems; i++){
                             for(int j=0; j<this.nPersons; j++){
                                 try{
-                                    this.scores0[i][j] = Double.valueOf(holdingArrayD[i][j]);
+                                    this.scores0[i][j] = holdingArrayD[i][j];
                                     }
                                 catch (Exception e){
                                     this.scores0[i][j] = Double.NaN;
@@ -2687,7 +2687,7 @@ public class Scores{
             String[][] sdata = new String[nn][mm];
             for(int i=0; i<nn; i++){
                 for(int j=0; j<mm; j++){
-                    sdata[i][j] = (new Double(ddata[i][j])).toString();
+                    sdata[i][j] = (Double.valueOf(ddata[i][j])).toString();
                 }
             }
             return sdata;

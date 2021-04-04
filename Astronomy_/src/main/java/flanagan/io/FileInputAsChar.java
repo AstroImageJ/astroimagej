@@ -139,7 +139,7 @@ public class FileInputAsChar{
                 }
                 else{
                     ch = (char) ich;
-                    wch = new Character(ch);
+                    wch = ch;
                 }
                 return wch;
         }

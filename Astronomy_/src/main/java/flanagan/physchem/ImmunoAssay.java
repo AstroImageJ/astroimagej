@@ -1181,11 +1181,11 @@ public class ImmunoAssay extends Regression{
 
         int defaultBoxP = 0;
         int ret0 = 1 + JOptionPane.showOptionDialog(null, commentsP, headerCommentP, JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE,null, boxTitlesP, boxTitlesP[defaultBoxP]);
-        ret.add(new Integer(ret0));
+        ret.add(ret0);
         int ret1 = 0;
         if(ret0==6)ret1 = Db.readInt("enter polynomial degree");
         if(ret0==7)ret1 = Db.readInt("enter non-integer polynomial number of terms");
-        ret.add(new Integer(ret1));
+        ret.add(ret1);
         double ret2 = 0.0;
         double ret3 = 0.0;
         if(ret0==2){
@@ -1196,8 +1196,8 @@ public class ImmunoAssay extends Regression{
             ret2 = Db.readDouble("Enter four parameter logistic fixed bottom value");
             ret3 = Db.readDouble("Enter four parameter logistic fixed top value");
         }
-        ret.add(new Double(ret2));
-        ret.add(new Double(ret3));
+        ret.add(ret2);
+        ret.add(ret3);
 
         return ret;
     }
@@ -1742,7 +1742,7 @@ public class ImmunoAssay extends Regression{
             }
             if(checkFlag){
                 this.nTurningPoints++;
-                turns.add(new Integer(i));
+                turns.add(i);
                 direction = -direction;
                 this.ambigCheck = true;
                 checkFlag = false;
@@ -1932,12 +1932,12 @@ public class ImmunoAssay extends Regression{
                     this.propagatedErrors[i] = "**";
                 }
                 else{
-                    alpe.add(new Double(this.responses[i]));
+                    alpe.add(this.responses[i]);
                     temp = this.getSampleConcn(this.responses[i]);
                     temp = this.getSampleConcnError();
-                    alpe.add(new Double(temp));
+                    alpe.add(temp);
                     temp = Fmath.truncate(temp, super.prec);
-                    this.propagatedErrors[i] = (new Double(temp)).toString();
+                    this.propagatedErrors[i] = (Double.valueOf(temp)).toString();
                 }
             }
 
@@ -2973,8 +2973,8 @@ public class ImmunoAssay extends Regression{
         fout.close();
 
         // Return data to compare method
-        al.add(new Double(super.chiSquare));
-        al.add(new Integer(super.nParam));
+        al.add(super.chiSquare);
+        al.add(super.nParam);
         al.add(methodName);
 
         return al;
@@ -3065,16 +3065,16 @@ public class ImmunoAssay extends Regression{
         }
 
         // return data to compare method
-        al.add(new Integer(resultFlag));
-        al.add(new Integer(modelXindices[0]));
-        al.add(new Integer(modelXindices[1]));
-        al.add(new Double(fRatio));
-        al.add(new Double(fProb));
-        al.add(new Double(fRatioAtSignificanceLevel));
-        al.add(new Integer(degreesOfFreedom[0]));
-        al.add(new Integer(degreesOfFreedom[1]));
-        al.add(new Integer(nData[0]));
-        al.add(new Integer(nData[1]));
+        al.add(resultFlag);
+        al.add(modelXindices[0]);
+        al.add(modelXindices[1]);
+        al.add(fRatio);
+        al.add(fProb);
+        al.add(fRatioAtSignificanceLevel);
+        al.add(degreesOfFreedom[0]);
+        al.add(degreesOfFreedom[1]);
+        al.add(nData[0]);
+        al.add(nData[1]);
 
         return al;
     }

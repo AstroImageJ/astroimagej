@@ -688,12 +688,12 @@ public class TriCubicInterpolation{
     	            for(int k=0; k<this.nPoints-1; k++){
     	                d3 = this.x3[k+1] - this.x3[k];
                         double[][][] cc = new double[4][4][4];
-    	                coeff.add(new Double(d1));
-    	                coeff.add(new Double(this.x1[i]));
-    	                coeff.add(new Double(d2));
-    	                coeff.add(new Double(this.x2[j]));
-    	                coeff.add(new Double(d3));
-    	                coeff.add(new Double(this.x3[k]));
+    	                coeff.add(d1);
+    	                coeff.add(this.x1[i]);
+    	                coeff.add(d2);
+    	                coeff.add(this.x2[j]);
+    	                coeff.add(d3);
+    	                coeff.add(this.x3[k]);
 
     	                for(int ii=0; ii<8; ii++){
     	                    yt[ii] = this.y[i+unitCube[ii][0]][j+unitCube[ii][1]][k+unitCube[ii][2]];

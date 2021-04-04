@@ -230,7 +230,7 @@ public class CurveSmooth{
         for(int i=0; i<n; i++){
             this.xData[i] = i;
             this.yData[i] = y[i].doubleValue();
-            String ii = (new Integer(i)).toString();
+            String ii = (Integer.valueOf(i)).toString();
             this.xBDdata[i] = new BigDecimal(ii);
             this.yBDdata[i] = y[i];
         }
@@ -267,7 +267,7 @@ public class CurveSmooth{
         for(int i=0; i<n; i++){
             this.xData[i] = i;
             this.yData[i] = y[i].doubleValue();
-            String xx = (new Double(i)).toString();
+            String xx = (Double.valueOf(i)).toString();
             this.xBDdata[i] = new BigDecimal(xx);
             this.yBDdata[i] = new BigDecimal(y[i]);
         }
@@ -312,7 +312,7 @@ public class CurveSmooth{
         if(this.arbprec)this.xBDdata = new BigDecimal[nn];
         for(int i=0; i<nn; i++){
             this.xData[i] = i;
-            if(this.arbprec)this.xBDdata[i] = new BigDecimal((new Integer(i)).toString());
+            if(this.arbprec)this.xBDdata[i] = new BigDecimal((Integer.valueOf(i)).toString());
         }
         this.check();
     }
@@ -346,7 +346,7 @@ public class CurveSmooth{
         if(!this.arbprec){
             this.xBDdata = new BigDecimal[this.nPoints];
             for(int i=0; i<this.nPoints; i++){
-               this.xBDdata[i] = new BigDecimal((new Double(this.xData[i])).toString()); 
+               this.xBDdata[i] = new BigDecimal((Double.valueOf(this.xData[i])).toString());
             }
         }
         
@@ -429,7 +429,7 @@ public class CurveSmooth{
                 for(int j=lp; j<=up; j++){               
                     sumbd = sumbd.add(this.yBDdata[j]);
                 }
-                String xx = (new Integer(nw)).toString();
+                String xx = (Integer.valueOf(nw)).toString();
                 this.yDataMovAvBD[i] = sumbd.divide(new BigDecimal(xx), BigDecimal.ROUND_HALF_UP);
                 this.yDataMovAv[i] = this.yDataMovAvBD[i].doubleValue();
             }
@@ -439,7 +439,7 @@ public class CurveSmooth{
                     sum += this.yData[j];
                 }
                 this.yDataMovAv[i] = sum/nw;
-                String xx = (new Double(this.yDataMovAv[i])).toString();
+                String xx = (Double.valueOf(this.yDataMovAv[i])).toString();
                 this.yDataMovAvBD[i] = new BigDecimal(xx);
             }
         }
@@ -1367,9 +1367,9 @@ System.out.println("lm " +this.lastPlotMethod);
         for(int i=0; i<nnMin; i++){
            holdx[i] = this.almin.get(k++);
            holdy[i] = this.almin.get(k++);
-           String xh = (new Double(holdx[i])).toString();
+           String xh = (Double.valueOf(holdx[i])).toString();
            holdxBD[i] = new BigDecimal(xh);
-           String yh = (new Double(holdy[i])).toString();
+           String yh = (Double.valueOf(holdy[i])).toString();
            holdyBD[i] = new BigDecimal(yh);
         }
         this.minima[flag][0] = holdx;
@@ -1438,9 +1438,9 @@ System.out.println("lm " +this.lastPlotMethod);
         for(int i=0; i<nnMax; i++){
            holdx[i] = this.almax.get(k++);
            holdy[i] = this.almax.get(k++);
-           String xh = (new Double(holdx[i])).toString();
+           String xh = (Double.valueOf(holdx[i])).toString();
            holdxBD[i] = new BigDecimal(xh);
-           String yh = (new Double(holdy[i])).toString();
+           String yh = (Double.valueOf(holdy[i])).toString();
            holdyBD[i] = new BigDecimal(yh);
         }
         this.maxima[flag][0] = holdx;

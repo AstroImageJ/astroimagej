@@ -266,7 +266,7 @@ public class KeyboardInput
                 String line="";
                 BigDecimal big = null;
                 boolean finish = false;
-                Double dfltD = new Double(dflt);
+                Double dfltD = dflt;
                 String dfltM = dfltD.toString();
 
                 System.out.print(mess + " [default value = " + dfltM + "] ");
@@ -298,7 +298,7 @@ public class KeyboardInput
                 String line="";
                 BigDecimal big = null;
                 boolean finish = false;
-                Float dfltF = new Float(dflt);
+                Float dfltF = dflt;
                 String dfltM = dfltF.toString();
 
                 System.out.print(mess + " [default value = " + dfltM + "] ");
@@ -330,7 +330,7 @@ public class KeyboardInput
                 String line="";
                 BigDecimal big = null;
                 boolean finish = false;
-                Long dfltL = new Long(dflt);
+                Long dfltL = dflt;
                 String dfltM = dfltL.toString();
 
                 System.out.print(mess + " [default value = " + dfltM + "] ");
@@ -362,7 +362,7 @@ public class KeyboardInput
                 String line="";
                 BigDecimal big = null;
                 boolean finish = false;
-                Integer dfltI = new Integer(dflt);
+                Integer dfltI = dflt;
                 String dfltM = dfltI.toString();
 
                 System.out.print(mess + " [default value = " + dfltM + "] ");
@@ -655,7 +655,7 @@ public class KeyboardInput
                 String line="";
                 BigInteger big = null;
                 boolean finish = false;
-                Long dfltL = new Long(dflt);
+                Long dfltL = dflt;
                 String dfltM = dfltL.toString();
 
                 System.out.print(mess + " [default value = " + dfltM + "] ");
@@ -687,7 +687,7 @@ public class KeyboardInput
                 String line="";
                 BigInteger big = null;
                 boolean finish = false;
-                Integer dfltI = new Integer(dflt);
+                Integer dfltI = dflt;
                 String dfltM = dfltI.toString();
 
                 System.out.print(mess + " [default value = " + dfltM + "] ");

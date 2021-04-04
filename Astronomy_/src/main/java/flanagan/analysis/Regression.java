@@ -2327,11 +2327,11 @@ public class Regression{
             fProb = ((Double)array0.get(1)).doubleValue();
             fSign = ((Double)array0.get(8)).doubleValue();
 
-            array1.add(new Double(chiLast));
-            array1.add(new Double(chi));
-            array1.add(new Double(fRatio));
-            array1.add(new Double(fProb));
-            array1.add(new Double(fSign));
+            array1.add(chiLast);
+            array1.add(chi);
+            array1.add(fRatio);
+            array1.add(fProb);
+            array1.add(fSign);
 
             // First comparison test
             if(fRatio<fSign){
@@ -2357,11 +2357,11 @@ public class Regression{
             fProb = ((Double)array0.get(1)).doubleValue();
             fSign = ((Double)array0.get(8)).doubleValue();
 
-            array1.add(new Double(chiLast));
-            array1.add(new Double(chi));
-            array1.add(new Double(fRatio));
-            array1.add(new Double(fProb));
-            array1.add(new Double(fSign));
+            array1.add(chiLast);
+            array1.add(chi);
+            array1.add(fRatio);
+            array1.add(fProb);
+            array1.add(fSign);
 
             // comparison test
             if(fRatio<fSign){
@@ -2396,8 +2396,8 @@ public class Regression{
 
 
         this.bestPolyArray.clear();
-        this.bestPolyArray.add(new Integer(this.bestPolynomialDegree));
-        this.bestPolyArray.add(new Integer(nComp));
+        this.bestPolyArray.add(this.bestPolynomialDegree);
+        this.bestPolyArray.add(nComp);
         this.bestPolyArray.add(deg0s);
         this.bestPolyArray.add(deg1s);
         this.bestPolyArray.add(chi0s);
@@ -2539,11 +2539,11 @@ public class Regression{
             fProb = ((Double)array0.get(1)).doubleValue();
             fSign = ((Double)array0.get(8)).doubleValue();
 
-            array1.add(new Double(chiLast));
-            array1.add(new Double(chi));
-            array1.add(new Double(fRatio));
-            array1.add(new Double(fProb));
-            array1.add(new Double(fSign));
+            array1.add(chiLast);
+            array1.add(chi);
+            array1.add(fRatio);
+            array1.add(fProb);
+            array1.add(fSign);
 
             // comparison test
             if(fRatio<fSign){
@@ -2578,8 +2578,8 @@ public class Regression{
 
 
         this.bestPolyArray.clear();
-        this.bestPolyArray.add(new Integer(this.bestPolynomialDegree));
-        this.bestPolyArray.add(new Integer(nComp));
+        this.bestPolyArray.add(this.bestPolynomialDegree);
+        this.bestPolyArray.add(nComp);
         this.bestPolyArray.add(deg0s);
         this.bestPolyArray.add(deg1s);
         this.bestPolyArray.add(chi0s);
@@ -3593,20 +3593,20 @@ public class Regression{
         this.penalty=true;
 
         // First element reserved for method number if other methods than 'cliff' are added later
-	if(this.penalties.isEmpty())this.penalties.add(new Integer(this.constraintMethod));
+	if(this.penalties.isEmpty())this.penalties.add(this.constraintMethod);
 
 	// add constraint
 	if(penalties.size()==1){
-            this.penalties.add(new Integer(1));
+            this.penalties.add(1);
 	}
 	else{
             int nPC = ((Integer)this.penalties.get(1)).intValue();
             nPC++;
-            this.penalties.set(1, new Integer(nPC));
+            this.penalties.set(1, nPC);
 	} 
-	this.penalties.add(new Integer(paramIndex));
-        this.constrainedSingle.add(new Integer(paramIndex));
- 	this.penalties.add(new Integer(conDir));
+	this.penalties.add(paramIndex);
+        this.constrainedSingle.add(paramIndex);
+ 	this.penalties.add(conDir);
         String chold = "";
         switch(conDir){
             case -1: chold = "must be >= " + constraint;
@@ -3619,7 +3619,7 @@ public class Regression{
         }
         this.constrainedSingle.add(chold);
         
- 	this.penalties.add(new Double(constraint));
+ 	this.penalties.add(constraint);
  	if(paramIndex>this.maxConstraintIndex)this.maxConstraintIndex = paramIndex;
         
     }
@@ -3640,22 +3640,22 @@ public class Regression{
 	this.sumPenalty=true;
 
         // First element reserved for method number if other methods than 'cliff' are added later
-        if(this.sumPenalties.isEmpty())this.sumPenalties.add(new Integer(this.constraintMethod));
+        if(this.sumPenalties.isEmpty())this.sumPenalties.add(this.constraintMethod);
 
     	// add constraint
 	if(sumPenalties.size()==1){
-            this.sumPenalties.add(new Integer(1));
+            this.sumPenalties.add(1);
 	}
 	else{
             int nPC = ((Integer)this.sumPenalties.get(1)).intValue();
             nPC++;
-            this.sumPenalties.set(1, new Integer(nPC));
+            this.sumPenalties.set(1, nPC);
 	}
-	this.sumPenalties.add(new Integer(nCon));
+	this.sumPenalties.add(nCon);
 	this.sumPenalties.add(paramIndices);
 	this.sumPenalties.add(plusOrMinus);
- 	this.sumPenalties.add(new Integer(conDir));
- 	this.sumPenalties.add(new Double(constraint));
+ 	this.sumPenalties.add(conDir);
+ 	this.sumPenalties.add(constraint);
  	ArrayMaths am = new ArrayMaths(paramIndices);
  	int maxI = am.getMaximum_as_int();
  	if(maxI>this.maxConstraintIndex)this.maxConstraintIndex = maxI;
@@ -3686,7 +3686,7 @@ public class Regression{
         }
         
         for(int i=0; i<paramIndices.length; i++){
-            this.constrainedMultiple.add(new Integer(paramIndices[i]));
+            this.constrainedMultiple.add(paramIndices[i]);
             this.constrainedMultiple.add(chold);
         }
     }
@@ -7941,15 +7941,15 @@ public class Regression{
 
         // Return arraylist
         ArrayList<Object> arrayl = new ArrayList<Object>();
-        arrayl.add(new Double(fRatio));
-        arrayl.add(new Double(fProb));
+        arrayl.add(Double.valueOf(fRatio));
+        arrayl.add(Double.valueOf(fProb));
         arrayl.add(new Boolean(reversed));
-        arrayl.add(new Double(chiSquareR));
-        arrayl.add(new Integer(nParametersR));
-        arrayl.add(new Double(chiSquareF));
-        arrayl.add(new Integer(nParametersF));
-        arrayl.add(new Integer(nPoints));
-        arrayl.add(new Double(Stat.fTestValueGivenFprob(significance, degFreedomD, degFreedomF)));
+        arrayl.add(Double.valueOf(chiSquareR));
+        arrayl.add(Integer.valueOf(nParametersR));
+        arrayl.add(Double.valueOf(chiSquareF));
+        arrayl.add(Integer.valueOf(nParametersF));
+        arrayl.add(Integer.valueOf(nPoints));
+        arrayl.add(Double.valueOf(Stat.fTestValueGivenFprob(significance, degFreedomD, degFreedomF)));
 
         return arrayl;
     }
@@ -9353,18 +9353,18 @@ public class Regression{
 	    }
 
 	    // transfer results to the ArrayList
-	    ret.add(new Double(min));
-	    ret.add(new Integer(mini));
-	    ret.add(new Double(max));
-	    ret.add(new Integer(maxi));
-	    ret.add(new Double(peak));
-	    ret.add(new Integer(peaki));
-	    ret.add(new Integer(signFlag));
-	    ret.add(new Double(shift));
-	    ret.add(new Double(mean));
-	    ret.add(new Integer(signCheckZero));
-	    ret.add(new Integer(signCheckPos));
-	    ret.add(new Integer(signCheckNeg));
+	    ret.add(min);
+	    ret.add(mini);
+	    ret.add(max);
+	    ret.add(maxi);
+	    ret.add(peak);
+	    ret.add(peaki);
+	    ret.add(signFlag);
+	    ret.add(shift);
+	    ret.add(mean);
+	    ret.add(signCheckZero);
+	    ret.add(signCheckPos);
+	    ret.add(signCheckNeg);
 
 
 	    return ret;

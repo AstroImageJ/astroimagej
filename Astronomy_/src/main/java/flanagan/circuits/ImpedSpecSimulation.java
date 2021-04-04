@@ -434,7 +434,7 @@ public class ImpedSpecSimulation{
         selectedData.add(Conv.copy(hold));
 
         if(this.voltageSet && this.referenceSet){
-            selectedData.add(new Double(this.appliedVoltage.getReal()));
+            selectedData.add(this.appliedVoltage.getReal());
 
             selectedData.add(this.referenceImpedance);
 
@@ -514,7 +514,7 @@ public class ImpedSpecSimulation{
         vec.addElement(Conv.copy(hold));
 
         if(this.voltageSet && this.referenceSet){
-            vec.addElement(new Double(this.appliedVoltage.getReal()));
+            vec.addElement(this.appliedVoltage.getReal());
 
             vec.addElement(this.referenceImpedance);
 

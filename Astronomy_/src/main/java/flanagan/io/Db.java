@@ -1208,7 +1208,7 @@ public class Db{
                 boolean finish = false;
                 String mess0 = "";
                 if(Db.inputTypeInfo)mess0 = "Input type: BigDecimal\n";
-                Double dfltD = new Double(dflt);
+                Double dfltD = dflt;
                 String dfltmess = dfltD.toString();
                 mess = mess + "\n";
 
@@ -1245,7 +1245,7 @@ public class Db{
                 boolean finish = false;
                 String mess0 = "";
                 if(Db.inputTypeInfo)mess0 = "Input type: BigDecimal\n";
-                Float dfltF = new Float(dflt);
+                Float dfltF = dflt;
                 String dfltmess = dfltF.toString();
                 mess = mess + "\n";
 
@@ -1282,7 +1282,7 @@ public class Db{
                 boolean finish = false;
                 String mess0 = "";
                 if(Db.inputTypeInfo)mess0 = "Input type: BigDecimal\n";
-                Long dfltF = new Long(dflt);
+                Long dfltF = dflt;
                 String dfltmess = dfltF.toString();
                 mess = mess + "\n";
 
@@ -1319,7 +1319,7 @@ public class Db{
                 boolean finish = false;
                 String mess0 = "";
                 if(Db.inputTypeInfo)mess0 = "Input type: BigDecimal\n";
-                Integer dfltF = new Integer(dflt);
+                Integer dfltF = dflt;
                 String dfltmess = dfltF.toString();
                 mess = mess + "\n";
 
@@ -1475,7 +1475,7 @@ public class Db{
                 boolean finish = false;
                 String mess0 = "";
                 if(Db.inputTypeInfo)mess0 = "Input type: BigInteger\n";
-                Long dfltF = new Long(dflt);
+                Long dfltF = dflt;
                 String dfltmess = dfltF.toString();
                 mess = mess + "\n";
 
@@ -1512,7 +1512,7 @@ public class Db{
                 boolean finish = false;
                 String mess0 = "";
                 if(Db.inputTypeInfo)mess0 = "Input type: BigInteger\n";
-                Integer dfltF = new Integer(dflt);
+                Integer dfltF = dflt;
                 String dfltmess = dfltF.toString();
                 mess = mess + "\n";
 

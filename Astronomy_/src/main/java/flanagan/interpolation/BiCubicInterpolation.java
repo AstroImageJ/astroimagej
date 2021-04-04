@@ -440,10 +440,10 @@ public class BiCubicInterpolation{
     	            // Calculate grid coefficients for 4-point grid square with point i,j at the top left corner
                     double[][] cc = new double[4][4];
     	            d2 = this.x2[j] - this.x2[j+1];
-    	            coeff.add(new Double(d1));
-    	            coeff.add(new Double(this.x1[i]));
-    	            coeff.add(new Double(d2));
-    	            coeff.add(new Double(this.x2[j+1]));
+    	            coeff.add(d1);
+    	            coeff.add(this.x1[i]);
+    	            coeff.add(d2);
+    	            coeff.add(this.x2[j + 1]);
     	            yt[0] = this.y[i][j+1];
     	            dydx1t[0] = this.dydx1[i][j+1];
     	            dydx2t[0] = this.dydx2[i][j+1];

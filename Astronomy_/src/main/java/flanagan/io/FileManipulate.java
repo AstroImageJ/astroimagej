@@ -136,7 +136,7 @@ public class FileManipulate{
                 }
                 else{
                     ch = (char) ich;
-                    wch = new Character(ch);
+                    wch = ch;
                 }
                 return wch;
         }

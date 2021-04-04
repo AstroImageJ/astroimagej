@@ -151,7 +151,7 @@ public class PolylineSimplification{
         for (i = 0; i < k; i++) {
             if (pointMarker[i]){
                 results.add(buffer[i]);
-                indices.add(new Integer(indicesBuffer[i]));
+                indices.add(indicesBuffer[i]);
             }
         }
         this.nSimplifiedPoints = results.size();

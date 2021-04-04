@@ -1366,7 +1366,7 @@ public class BiSlider_V_Presentation
       double  Val  = 0d;
       Val = MiddleVal + ((double)i) / 100d * Amplitude;
 
-      Hashtable1.put(new Integer(i), new JLabel(DecimalFormater.format(Val)));
+      Hashtable1.put(i, new JLabel(DecimalFormater.format(Val)));
     }
     JSlider1.setLabelTable(Hashtable1);
 

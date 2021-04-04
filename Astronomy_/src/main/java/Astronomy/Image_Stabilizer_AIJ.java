@@ -447,7 +447,7 @@ public class Image_Stabilizer_AIJ implements PlugInFilter {
         if (null == fileName || fileName.length() == 0) {
             String title = imp.getTitle();
             String baseName = getBaseName(title);
-            Object[] args = { Integer.valueOf(slice) };
+            Object[] args = {slice};
             fileName = baseName + String.format("%05d", args) + ".tif";
         }
         else {
@@ -458,7 +458,7 @@ public class Image_Stabilizer_AIJ implements PlugInFilter {
             if (!dup)
                 fileName = baseName + ".tif";
             else {
-                Object[] args = { Integer.valueOf(slice) };
+                Object[] args = {slice};
                 fileName = baseName + String.format("%05d", args) + ".tif";
             }
         }

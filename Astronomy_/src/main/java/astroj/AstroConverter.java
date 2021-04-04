@@ -677,7 +677,7 @@ public class AstroConverter implements ItemListener, ActionListener, ChangeListe
         timeZoneLabel.setFont(p12);
         timeZoneLabel.setToolTipText("Set time zone offset from UTC");
         timeZonePanel.add (timeZoneLabel);
-        SpinnerModel timeZoneSpinnerModel = new SpinnerNumberModel(new Double(nowTimeZoneOffset), new Double(-12), new Double(12), new Double(1.0));
+        SpinnerModel timeZoneSpinnerModel = new SpinnerNumberModel(Double.valueOf(nowTimeZoneOffset), Double.valueOf(-12), Double.valueOf(12), Double.valueOf(1.0));
 
         timeZoneOffsetSpinner = new JSpinner(timeZoneSpinnerModel);
         timeZoneOffsetSpinner.setEnabled(!autoTimeZone);

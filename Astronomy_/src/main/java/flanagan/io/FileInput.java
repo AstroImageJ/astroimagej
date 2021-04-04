@@ -443,7 +443,7 @@ public class FileInput{
                         if(this.fullLine.charAt(i)==',')test3=true;
                         if(this.fullLine.charAt(i)==':')test3=true;
                         if(this.fullLine.charAt(i)==';')test3=true;
-                        if(test3)al1.add(new Integer(i));
+                        if(test3)al1.add(i);
                     }
                     int nal1 = al1.size();
 
@@ -494,7 +494,7 @@ public class FileInput{
                                 }
                             }
                             if(test6){
-                                al2.add(new Integer(jj+1));
+                                al2.add(jj + 1);
                             }
                             if(ii>=nal1)test4 = false;
                         }

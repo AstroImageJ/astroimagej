@@ -535,7 +535,7 @@ TextListener, FocusListener, ItemListener, KeyListener {
       tf.addFocusListener(this);
    //   tf.addKeyListener(this);
       numberField.addElement(tf);
-      defaultValues.addElement(new Double(defaultValue));
+      defaultValues.addElement(defaultValue);
       defaultText.addElement(tf.getText());
       x++; c.gridx = x; // WO prev: c.gridx = 1; 
       c.gridy = y;
@@ -818,7 +818,7 @@ TextListener, FocusListener, ItemListener, KeyListener {
 
     protected Double getValue(String theText) {
        Double d;
-       try {d = new Double(theText);}
+       try {d = Double.valueOf(theText);}
       catch (NumberFormatException e){
          d = null;
       }

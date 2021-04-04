@@ -1323,7 +1323,7 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
         minFileNumberLabel.setHorizontalAlignment (JLabel.RIGHT);
         minmaxValuePanel.add(minFileNumberLabel);
 
-        minFileNumberModel = new SpinnerNumberModel(new Long(minFileNumber),new Long(0), null, new Long(1));
+        minFileNumberModel = new SpinnerNumberModel(minFileNumber, 0L, null, 1L);
         minFileNumberSpinner = new JSpinner(minFileNumberModel);
         JSpinner.NumberEditor minFileNumberEditor = new JSpinner.NumberEditor( minFileNumberSpinner, "#" );
         minFileNumberSpinner.setEditor( minFileNumberEditor );
@@ -1339,7 +1339,7 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
         maxFileNumberLabel.setHorizontalAlignment (JLabel.RIGHT);
         minmaxValuePanel.add(maxFileNumberLabel);
 
-        maxFileNumberModel = new SpinnerNumberModel(new Long(maxFileNumber),new Long(0), null, new Long(1));
+        maxFileNumberModel = new SpinnerNumberModel(maxFileNumber, 0L, null, 1L);
         maxFileNumberSpinner = new JSpinner(maxFileNumberModel);
         JSpinner.NumberEditor maxFileNumberEditor = new JSpinner.NumberEditor( maxFileNumberSpinner, "#" );
         maxFileNumberSpinner.setEditor( maxFileNumberEditor );
@@ -2077,7 +2077,7 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
 		linearityLine1Panel.add (NLCLabel);
 
 
-        coeffAModel = new SpinnerNumberModel(new Double(coeffA), null, null, new Double(0.0));
+        coeffAModel = new SpinnerNumberModel(coeffA, null, null, 0.0);
         coeffASpinner = new JSpinner(coeffAModel);
         JSpinner.NumberEditor coeffANumberEditor = new JSpinner.NumberEditor( coeffASpinner, "0.0#######E0" );
         coeffASpinner.setEditor(coeffANumberEditor);
@@ -2092,7 +2092,7 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
         coeffBLabel.setFont(b12);
         linearityLine1Panel.add(coeffBLabel);
 
-        coeffBModel = new SpinnerNumberModel(new Double(coeffB), null, null, new Double(0.0));
+        coeffBModel = new SpinnerNumberModel(coeffB, null, null, 0.0);
         coeffBSpinner = new JSpinner(coeffBModel);
         coeffBSpinner.setFont(p12);
         JSpinner.NumberEditor coeffBNumberEditor = new JSpinner.NumberEditor( coeffBSpinner, "0.0#######E0" );
@@ -2107,7 +2107,7 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
         coeffCLabel.setHorizontalAlignment (JLabel.RIGHT);
         linearityLine1Panel.add(coeffCLabel);
 
-        coeffCModel = new SpinnerNumberModel(new Double(coeffC), null, null, new Double(0.0));
+        coeffCModel = new SpinnerNumberModel(coeffC, null, null, 0.0);
         coeffCSpinner = new JSpinner(coeffCModel);
         coeffCSpinner.setFont(p12);
         JSpinner.NumberEditor coeffCNumberEditor = new JSpinner.NumberEditor( coeffCSpinner, "0.0#######E0" );
@@ -2122,7 +2122,7 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
         coeffDLabel.setHorizontalAlignment (JLabel.RIGHT);
         linearityLine1Panel.add(coeffDLabel);
 
-        coeffDModel = new SpinnerNumberModel(new Double(coeffD), null, null, new Double(0.0));
+        coeffDModel = new SpinnerNumberModel(coeffD, null, null, 0.0);
         coeffDSpinner = new JSpinner(coeffDModel);
         coeffDSpinner.setFont(p12);
         JSpinner.NumberEditor coeffDNumberEditor = new JSpinner.NumberEditor( coeffDSpinner, "0.0#######E0" );
@@ -2185,7 +2185,7 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
         outlierRadiusLabel.setFont(p12);
         outlierRemovalPanel.add(outlierRadiusLabel);
         
-        outlierRadiusModel = new SpinnerNumberModel(new Integer(outlierRadius), 2, null, new Integer(1));
+        outlierRadiusModel = new SpinnerNumberModel(outlierRadius, 2, null, 1);
         outlierRadiusSpinner = new JSpinner(outlierRadiusModel);
         JSpinner.NumberEditor outlierRadiusNumberEditor = new JSpinner.NumberEditor(outlierRadiusSpinner, "#" );
         outlierRadiusSpinner.setEditor( outlierRadiusNumberEditor );        
@@ -2209,7 +2209,7 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
         outlierThresholdLabel.setFont(p12);
         outlierRemovalPanel.add(outlierThresholdLabel);
         
-        outlierThresholdModel = new SpinnerNumberModel(new Integer(outlierThreshold), 1, null, new Integer(10));
+        outlierThresholdModel = new SpinnerNumberModel(outlierThreshold, 1, null, 10);
         outlierThresholdSpinner = new JSpinner(outlierThresholdModel);
         JSpinner.NumberEditor outlierThresholdNumberEditor = new JSpinner.NumberEditor(outlierThresholdSpinner, "#" );
         outlierThresholdSpinner.setEditor(outlierThresholdNumberEditor );        
@@ -2701,7 +2701,7 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
         pollingPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY, 1), "Polling Interval", TitledBorder.CENTER, TitledBorder.TOP, p12, Color.DARK_GRAY));
 //        pollingPanel.setMaximumSize(radioSize);
         
-        pollingIntervalModel = new SpinnerNumberModel(new Integer(pollingInterval),new Integer(0), null, new Integer(1));
+        pollingIntervalModel = new SpinnerNumberModel(pollingInterval, 0, null, 1);
         pollingIntervalSpinner = new JSpinner(pollingIntervalModel);
         pollingIntervalSpinner.setMaximumSize(new Dimension(radioWidth+20,textboxHeight));
         pollingIntervalSpinner.setPreferredSize(new Dimension(radioWidth+20,textboxHeight));
@@ -2911,27 +2911,27 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
         {
         if (e.getSource() == minFileNumberSpinner && minFileNumberSpinner.isEnabled())
             {
-            long newValue =  new Long(((Long)minFileNumberSpinner.getValue()).longValue() - e.getWheelRotation());
+            long newValue = ((Long) minFileNumberSpinner.getValue()).longValue() - e.getWheelRotation();
             if (newValue >= 0) minFileNumberSpinner.setValue(newValue);
             }
         else if (e.getSource() == maxFileNumberSpinner && maxFileNumberSpinner.isEnabled())
             {
-            long newValue =  new Long(((Long)maxFileNumberSpinner.getValue()).longValue() - e.getWheelRotation());
+            long newValue = ((Long) maxFileNumberSpinner.getValue()).longValue() - e.getWheelRotation();
             if (newValue >= 0) maxFileNumberSpinner.setValue(newValue>(Long)minFileNumberSpinner.getValue()?newValue:(Long)minFileNumberSpinner.getValue());
             }
         else if (e.getSource() == pollingIntervalSpinner)
             {
-            int newValue =  new Integer(((Integer)pollingIntervalSpinner.getValue()).intValue() - e.getWheelRotation());
+            int newValue = ((Integer) pollingIntervalSpinner.getValue()).intValue() - e.getWheelRotation();
             if (newValue > 0) pollingIntervalSpinner.setValue(newValue);
             }
         else if (e.getSource() == outlierRadiusSpinner && outlierRadiusSpinner.isEnabled())
             {
-            int newValue =  new Integer(((Integer)outlierRadiusSpinner.getValue()).intValue() - e.getWheelRotation());
+            int newValue = ((Integer) outlierRadiusSpinner.getValue()).intValue() - e.getWheelRotation();
             if (newValue > 1) outlierRadiusSpinner.setValue(newValue);
             }  
         else if (e.getSource() == outlierThresholdSpinner && outlierThresholdSpinner.isEnabled())
             {
-            int newValue =  new Integer(((Integer)outlierThresholdSpinner.getValue()).intValue() - 10*e.getWheelRotation());
+            int newValue = ((Integer) outlierThresholdSpinner.getValue()).intValue() - 10 * e.getWheelRotation();
             if (newValue > 0) outlierThresholdSpinner.setValue(newValue);
             }         
         else if (e.getSource() == coeffASpinner)

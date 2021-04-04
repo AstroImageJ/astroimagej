@@ -2294,12 +2294,12 @@ public class Matrix{
     	            }
     	            if(m==this.numberOfColumns){
     	                nIdentical++;
-    	                ret.add(new Integer(i));
-    	                ret.add(new Integer(j));
+    	                ret.add(i);
+    	                ret.add(j);
     	            }
     	        }
     	    }
-    	    ret.add(0,new Integer(nIdentical));
+    	    ret.add(0, nIdentical);
     	    return ret;
     	}
 
@@ -2316,12 +2316,12 @@ public class Matrix{
     	            }
     	            if(m==this.numberOfRows){
     	                nIdentical++;
-    	                ret.add(new Integer(i));
-    	                ret.add(new Integer(j));
+    	                ret.add(i);
+    	                ret.add(j);
     	            }
     	        }
     	    }
-    	    ret.add(0,new Integer(nIdentical));
+    	    ret.add(0, nIdentical);
     	    return ret;
     	}
 
@@ -2337,10 +2337,10 @@ public class Matrix{
     	        }
     	        if(m==this.numberOfColumns){
     	            nZero++;
-    	            ret.add(new Integer(i));
+    	            ret.add(i);
     	        }
     	    }
-    	    ret.add(0,new Integer(nZero));
+    	    ret.add(0, nZero);
     	    return ret;
     	}
 
@@ -2356,10 +2356,10 @@ public class Matrix{
     	        }
     	        if(m==this.numberOfRows){
     	            nZero++;
-    	            ret.add(new Integer(i));
+    	            ret.add(i);
     	        }
     	    }
-    	    ret.add(0,new Integer(nZero));
+    	    ret.add(0, nZero);
     	    return ret;
     	}
 

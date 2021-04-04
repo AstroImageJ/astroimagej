@@ -1324,7 +1324,7 @@ public class FitsJ
 			}
 
 		Object[] arr = new Object[]
-				{key, val, new Double(d), new Integer(i), new Boolean(b), comment, new Integer(typ)};
+				{key, val, d, i, b, comment, typ};
 		return arr;
 		}
 

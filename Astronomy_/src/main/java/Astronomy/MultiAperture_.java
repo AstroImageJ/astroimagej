@@ -15,8 +15,6 @@ import astroj.*;
 import ij.util.Tools;
 
 import java.text.DecimalFormat;
-import javax.swing.JLabel;
- 
 
 
 /**
@@ -74,6 +72,7 @@ import javax.swing.JLabel;
  * @author F. Hessman (Goettingen)
  * @changes added dialog() to make it easier to sub-class (e.g. Stack_Aligner)
  */
+@SuppressWarnings("SpellCheckingInspection")
 public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMotionListener, KeyListener
 	{
     double autoModeFluxCutOff = 0.010;
@@ -108,7 +107,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     Toolbar toolbar;
 
 
-	String infoMessage = new String("");
+	String infoMessage = "";
 
 //	double vx = 0.0;
 //	double vy = 0.0;
@@ -190,9 +189,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 //	double ratio = 0.0;		// FIRST APERTURE
 //	double ratioError = 0.0;
 //	double ratioSNR = 0.0;
-	public static String RATIO = new String ("rel_flux_T1");
-    public static String TOTAL = new String ("tot_C_cnts");
-    public static String TOTAL_ERROR = new String ("tot_C_err");
+	public static String RATIO = "rel_flux_T1";
+    public static String TOTAL = "tot_C_cnts";
+    public static String TOTAL_ERROR = "tot_C_err";
 
     protected boolean autoMode=false;
     protected boolean singleStep=false;
@@ -254,45 +253,45 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 //    DecimalFormatSymbols dfs = uptoEightPlaces.getDecimalFormatSymbols();
        
 	
-    protected static String PREFS_AUTOMODE        = new String ("multiaperture.automode");  //0 click - for use with macros
-    protected static String PREFS_FINISHED        = new String ("multiaperture.finished");  //signals finished to macros
-    protected static String PREFS_CANCELED        = new String ("multiaperture.canceled");
-    protected static String PREFS_PREVIOUS        = new String ("multiaperture.previous");
-    protected static String PREFS_SINGLESTEP      = new String ("multiaperture.singlestep");
-    protected static String PREFS_ALLOWSINGLESTEPAPCHANGES = new String ("multiaperture.allowsinglestepapchanges");
-    protected static String PREFS_USEVARSIZEAP    = new String ("multiaperture.usevarsizeap");
-    protected static String PREFS_USEMA           = new String ("multiaperture.usema");
-    protected static String PREFS_USEALIGN        = new String ("multiaperture.usealign");
-    protected static String PREFS_USEWCS          = new String ("multiaperture.usewcs");
-    protected static String PREFS_HALTONERROR = new String ("multiaperture.haltOnError");
-    protected static String PREFS_SHOWHELP        = new String ("multiaperture.showhelp");
-    protected static String PREFS_ALWAYSFIRSTSLICE= new String ("multiaperture.alwaysstartatfirstSlice");
-    protected static String PREFS_APFWHMFACTOR    = new String ("multiaperture.apfwhmfactor");
-    protected static String PREFS_AUTOMODEFLUXCUTOFF = new String ("multiaperture.automodefluxcutoff");
+    protected static String PREFS_AUTOMODE        = "multiaperture.automode";  //0 click - for use with macros
+    protected static String PREFS_FINISHED        = "multiaperture.finished";  //signals finished to macros
+    protected static String PREFS_CANCELED        = "multiaperture.canceled";
+    protected static String PREFS_PREVIOUS        = "multiaperture.previous";
+    protected static String PREFS_SINGLESTEP      = "multiaperture.singlestep";
+    protected static String PREFS_ALLOWSINGLESTEPAPCHANGES = "multiaperture.allowsinglestepapchanges";
+    protected static String PREFS_USEVARSIZEAP    = "multiaperture.usevarsizeap";
+    protected static String PREFS_USEMA           = "multiaperture.usema";
+    protected static String PREFS_USEALIGN        = "multiaperture.usealign";
+    protected static String PREFS_USEWCS          = "multiaperture.usewcs";
+    protected static String PREFS_HALTONERROR = "multiaperture.haltOnError";
+    protected static String PREFS_SHOWHELP        = "multiaperture.showhelp";
+    protected static String PREFS_ALWAYSFIRSTSLICE= "multiaperture.alwaysstartatfirstSlice";
+    protected static String PREFS_APFWHMFACTOR    = "multiaperture.apfwhmfactor";
+    protected static String PREFS_AUTOMODEFLUXCUTOFF = "multiaperture.automodefluxcutoff";
 //    protected static String PREFS_FOLLOW          = new String ("multiaperture.follow");
 //	protected static String PREFS_WIDETABLE       = new String ("multiaperture.widetable");
-	protected static String PREFS_SHOWRATIO       = new String ("multiaperture.showratio");
-    protected static String PREFS_SHOWCOMPTOT     = new String ("multiaperture.showcomptot");
-	protected static String PREFS_SHOWRATIO_ERROR = new String ("multiaperture.showratioerror");
-	protected static String PREFS_SHOWRATIO_SNR   = new String ("multiaperture.showratiosnr");
-    protected static String PREFS_NAPERTURESMAX   = new String ("multiaperture.naperturesmax");
-	protected static String PREFS_XAPERTURES      = new String ("multiaperture.xapertures");
-	protected static String PREFS_YAPERTURES      = new String ("multiaperture.yapertures");
-	protected static String PREFS_RAAPERTURES      = new String ("multiaperture.raapertures");
-	protected static String PREFS_DECAPERTURES      = new String ("multiaperture.decapertures"); 
-    protected static String PREFS_ABSMAGAPERTURES  = new String ("multiaperture.absmagapertures"); 
-    protected static String PREFS_ISREFSTAR       = new String ("multiaperture.isrefstar");
-    protected static String PREFS_ISALIGNSTAR       = new String ("multiaperture.isalignstar");
-    protected static String PREFS_CENTROIDSTAR       = new String ("multiaperture.centroidstar");
-    protected static String PREFS_USEMACROIMAGE   = new String ("multiaperture.useMacroImage");
-    protected static String PREFS_MACROIMAGENAME  = new String ("multiaperture.macroImageName");
-    protected static String PREFS_ENABLEDOUBLECLICKS  = new String ("multiaperture.enableDoubleClicks");
-    protected static String PREFS_ALWAYSFIRST  = new String ("multiaperture.alwaysstartatfirstslice");
-    protected static String PREFS_UPDATEPLOT  = new String ("multiaperture.updatePlot");
-    protected static String PREFS_GETMAGS  = new String ("multiaperture.getMags");
-    protected static String PREFS_XLOCATION  = new String ("multiaperture.xLocation");
-    protected static String PREFS_YLOCATION  = new String ("multiaperture.yLocation");
-    protected static String PREFS_PREVNUMMONITORS  = new String ("multiaperture.prevNumberOfMonitors");
+	protected static String PREFS_SHOWRATIO       = "multiaperture.showratio";
+    protected static String PREFS_SHOWCOMPTOT     = "multiaperture.showcomptot";
+	protected static String PREFS_SHOWRATIO_ERROR = "multiaperture.showratioerror";
+	protected static String PREFS_SHOWRATIO_SNR   = "multiaperture.showratiosnr";
+    protected static String PREFS_NAPERTURESMAX   = "multiaperture.naperturesmax";
+	protected static String PREFS_XAPERTURES      = "multiaperture.xapertures";
+	protected static String PREFS_YAPERTURES      = "multiaperture.yapertures";
+	protected static String PREFS_RAAPERTURES      = "multiaperture.raapertures";
+	protected static String PREFS_DECAPERTURES      = "multiaperture.decapertures";
+    protected static String PREFS_ABSMAGAPERTURES  = "multiaperture.absmagapertures";
+    protected static String PREFS_ISREFSTAR       = "multiaperture.isrefstar";
+    protected static String PREFS_ISALIGNSTAR       = "multiaperture.isalignstar";
+    protected static String PREFS_CENTROIDSTAR       = "multiaperture.centroidstar";
+    protected static String PREFS_USEMACROIMAGE   = "multiaperture.useMacroImage";
+    protected static String PREFS_MACROIMAGENAME  = "multiaperture.macroImageName";
+    protected static String PREFS_ENABLEDOUBLECLICKS  = "multiaperture.enableDoubleClicks";
+    protected static String PREFS_ALWAYSFIRST  = "multiaperture.alwaysstartatfirstslice";
+    protected static String PREFS_UPDATEPLOT  = "multiaperture.updatePlot";
+    protected static String PREFS_GETMAGS  = "multiaperture.getMags";
+    protected static String PREFS_XLOCATION  = "multiaperture.xLocation";
+    protected static String PREFS_YLOCATION  = "multiaperture.yLocation";
+    protected static String PREFS_PREVNUMMONITORS  = "multiaperture.prevNumberOfMonitors";
 
     
     protected static Boolean ENABLECENTROID = true;
@@ -334,8 +333,12 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             if (numImages == 2)
                 {
                 int[] idList = WindowManager.getIDList();
+                    if (idList == null) {
+                        cancel();
+                        return DONE;
+                    }
                 imp = idList[0] == imp.getID() ? WindowManager.getImage(idList[1]) : WindowManager.getImage(idList[0]);
-                if (imp.getWindow() instanceof PlotWindow)
+                if ((imp != null ? imp.getWindow() : null) instanceof PlotWindow)
                     {
                     IJ.showMessage("No image windows open for Multi-aperture processing");
                     cancel();
@@ -617,7 +620,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 				}
 			if (yPosStored.length != nAperturesStored )
 				{
-				IJ.error("The number of stored x and y aperture positions are not equal: "+nAperturesStored+"!="+(yPosStored == null ? 0 : yPosStored.length));
+				IJ.error("The number of stored x and y aperture positions are not equal: "+nAperturesStored+"!="+ yPosStored.length);
 				return false;
 				}
             
@@ -654,10 +657,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 isRefStarStored = new boolean[nAperturesStored];
                 for (int ap = 0; ap < nAperturesStored; ap++)
                     {
-                    if (ap == 0)
-                        isRefStarStored[ap] = false;
-                    else
-                        isRefStarStored[ap] = true;
+                        isRefStarStored[ap] = ap != 0;
                     }
 				}
             
@@ -770,10 +770,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 isRefStar = new boolean[nApertures];
                 for (int ap = 0; ap < nApertures; ap++)
                     {
-                    if (ap == 0)
-                        isRefStar[ap] = false;
-                    else
-                        isRefStar[ap] = true;
+                        isRefStar[ap] = ap != 0;
                     }
 				}
             
@@ -909,10 +906,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
         for (int i=0; i < arr.length; i++)
             {
-            if (s[i].equalsIgnoreCase("true"))
-                arr[i] = true;
-            else
-                arr[i] = false;
+                arr[i] = s[i].equalsIgnoreCase("true");
             }
 
 		return arr;
@@ -1126,7 +1120,6 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             else
                 {
                 doubleClick = true;
-                return;
                 }
             }
         }
@@ -1245,8 +1238,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             if (singleStep && ngot >= nApertures)
                 {
                 //PROCESS ONE SLICE AT A TIME WHILE IN SINGLE STEP MODE
-                xOld = (double[]) xPos.clone();
-                yOld = (double[]) yPos.clone();
+                xOld = xPos.clone();
+                yOld = yPos.clone();
                 if (!checkResultsTable())
                     {
                     IJ.showMessage("Multi-Aperture failed to create Measurements table");
@@ -1324,8 +1317,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             else
                 {	// PROCESS ALL SLICES WHEN NOT IN SINGLE STEP MODE
                 noMoreInput ();
-                xOld = (double[]) xPos.clone();
-                yOld = (double[]) yPos.clone();
+                xOld = xPos.clone();
+                yOld = yPos.clone();
                 saveNewApertures ();
                 if (!checkResultsTable())
                     {
@@ -1880,38 +1873,38 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 	 */
         protected void saveNewApertures ()
             {
-            String xpos = "";
-            String ypos = "";
-            String ra = "";
-            String dec = "";
-            String amag = "";
-            String isref = "";
-            String isalign = "";
-            String centroid = "";
+            StringBuilder xpos = new StringBuilder();
+            StringBuilder ypos = new StringBuilder();
+            StringBuilder ra = new StringBuilder();
+            StringBuilder dec = new StringBuilder();
+            StringBuilder amag = new StringBuilder();
+            StringBuilder isref = new StringBuilder();
+            StringBuilder isalign = new StringBuilder();
+            StringBuilder centroid = new StringBuilder();
             uptoEightPlaces.setDecimalFormatSymbols(IJU.dfs);
             for (int i=0; i < nApertures; i++)
                 {
                 if (i == 0)
                     {
-                    xpos += (float)xPos[i];
-                    ypos += (float)yPos[i];
-                    amag += (float)absMag[i];
-                    if (hasWCS) ra += uptoEightPlaces.format(raPos[i]);
-                    if (hasWCS) dec += uptoEightPlaces.format(decPos[i]);                    
-                    isref += isRefStar[i];
-                    isalign += isAlignStar[i];
-                    centroid += centroidStar[i];
+                    xpos.append((float) xPos[i]);
+                    ypos.append((float) yPos[i]);
+                    amag.append((float) absMag[i]);
+                    if (hasWCS) ra.append(uptoEightPlaces.format(raPos[i]));
+                    if (hasWCS) dec.append(uptoEightPlaces.format(decPos[i]));
+                    isref.append(isRefStar[i]);
+                    isalign.append(isAlignStar[i]);
+                    centroid.append(centroidStar[i]);
                     }
                 else
                     {
-                    xpos += ","+(float)xPos[i];
-                    ypos += ","+(float)yPos[i];
-                    amag += ","+(float)absMag[i];
-                    if (hasWCS) ra += ","+uptoEightPlaces.format(raPos[i]);
-                    if (hasWCS) dec += ","+uptoEightPlaces.format(decPos[i]);                     
-                    isref += ","+isRefStar[i];
-                    isalign += ","+isAlignStar[i];
-                    centroid += ","+centroidStar[i];
+                    xpos.append(",").append((float) xPos[i]);
+                    ypos.append(",").append((float) yPos[i]);
+                    amag.append(",").append((float) absMag[i]);
+                    if (hasWCS) ra.append(",").append(uptoEightPlaces.format(raPos[i]));
+                    if (hasWCS) dec.append(",").append(uptoEightPlaces.format(decPos[i]));
+                    isref.append(",").append(isRefStar[i]);
+                    isalign.append(",").append(isAlignStar[i]);
+                    centroid.append(",").append(centroidStar[i]);
                     }
                 }
             if (aperturesInitialized)
@@ -1950,14 +1943,14 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     }
                 nAperturesStored = nApertures;
 
-                Prefs.set (MultiAperture_.PREFS_XAPERTURES, xpos);
-                Prefs.set (MultiAperture_.PREFS_YAPERTURES, ypos);
-                Prefs.set (MultiAperture_.PREFS_RAAPERTURES, ra);
-                Prefs.set (MultiAperture_.PREFS_DECAPERTURES, dec);
-                Prefs.set (MultiAperture_.PREFS_ABSMAGAPERTURES, amag);
-                Prefs.set (MultiAperture_.PREFS_ISREFSTAR, isref);
-                Prefs.set (MultiAperture_.PREFS_ISALIGNSTAR, isalign);
-                Prefs.set (MultiAperture_.PREFS_CENTROIDSTAR, centroid);
+                Prefs.set (MultiAperture_.PREFS_XAPERTURES, xpos.toString());
+                Prefs.set (MultiAperture_.PREFS_YAPERTURES, ypos.toString());
+                Prefs.set (MultiAperture_.PREFS_RAAPERTURES, ra.toString());
+                Prefs.set (MultiAperture_.PREFS_DECAPERTURES, dec.toString());
+                Prefs.set (MultiAperture_.PREFS_ABSMAGAPERTURES, amag.toString());
+                Prefs.set (MultiAperture_.PREFS_ISREFSTAR, isref.toString());
+                Prefs.set (MultiAperture_.PREFS_ISALIGNSTAR, isalign.toString());
+                Prefs.set (MultiAperture_.PREFS_CENTROIDSTAR, centroid.toString());
                 }
             }
 
@@ -1997,10 +1990,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             startDragX = ac.offScreenXD(startDragScreenX);
             startDragY = ac.offScreenYD(startDragScreenY);
             selectedApertureRoi = ocanvas.findApertureRoi(startDragX, startDragY, 0);
-            if (selectedApertureRoi != null && !aperturesInitialized) 
-                asw.setMovingAperture(true);
-            else
-                asw.setMovingAperture(false);
+                asw.setMovingAperture(selectedApertureRoi != null && !aperturesInitialized);
             }
         }
 	public void mouseClicked(MouseEvent e) {}
@@ -3030,7 +3020,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 	/**
 	 * Set up extended table format.
 	 */
-	protected boolean checkResultsTable ()
+	@SuppressWarnings("UnusedAssignment")
+    protected boolean checkResultsTable ()
 		{
         
         if (isInstanceOfStackAlign) return true;
@@ -3377,13 +3368,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         if (!(this instanceof Stack_Aligner) && !gd.wasOKed()) 
             {
             cancel();
-            Thread t2 = new Thread()
-                {
-                public void run()
-                    {
-                    IJ.runPlugIn("Astronomy.Set_Aperture", "from_MA");
-                    }
-                };
+            Thread t2 = new Thread(() -> IJ.runPlugIn("Astronomy.Set_Aperture", "from_MA"));
             t2.start();            
             return false;
             }         

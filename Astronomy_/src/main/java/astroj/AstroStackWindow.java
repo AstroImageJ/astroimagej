@@ -8057,7 +8057,7 @@ double[] processCoordinatePair(JTextField textFieldA, int decimalPlacesA, int ba
         {
         GenericDialog gd = new GenericDialog ("Edit Aperture", getX()+getWidth()/2-165, getY()+getHeight()/2-77);
         gd.enableYesNoCancel("Save", "Delete");
-        gd.addCheckbox("Display Centroid Crosshair", roi.getIsCentroid());
+        gd.addCheckbox("Display Centroid Crosshair", roi != null && roi.getIsCentroid());
         gd.addNumericField("Aperture Radius:",roi.getRadius(), 6, 20,"(pixels)");
         gd.addNumericField("Background Inner Radius:", roi.getBack1(), 6, 20,"(pixels)");
         gd.addNumericField("Background Outer Radius:", roi.getBack2(), 6, 20,"(pixels)");
@@ -8825,18 +8825,20 @@ double[] processCoordinatePair(JTextField textFieldA, int decimalPlacesA, int ba
         Prefs.set("Astronomy_Tool.useInvertingLut", useInvertingLut);
         Prefs.set("Astronomy_Tool.showAnnotations", ac.showAnnotations);
         Prefs.set("Astronomy_Tool.autoNupEleft",autoNupEleft);
-        String fileName = IJU.getSliceFilename(imp);
-        if (!autoNupEleft || (autoNupEleft && !(fileName.endsWith(".png") || fileName.endsWith(".jpg"))))
+        if (imp != null) {
+            String fileName = IJU.getSliceFilename(imp);
+            if (!autoNupEleft || (autoNupEleft && !(fileName.endsWith(".png") || fileName.endsWith(".jpg"))))
             {
-            Prefs.set("Astronomy_Tool.invertX", invertX);
-            Prefs.set("Astronomy_Tool.invertY", invertY);
-            Prefs.set("Astronomy_Tool.rotation", rotation);
-            Prefs.set("Astronomy_Tool.showZoom", showZoom);
-            Prefs.set("Astronomy_Tool.showDir", showDir);
-            Prefs.set("Astronomy_Tool.showXY", showXY);
-            Prefs.set("Astronomy_Tool.showScaleX", showScaleX);
-            Prefs.set("Astronomy_Tool.showScaleY", showScaleY);
+                Prefs.set("Astronomy_Tool.invertX", invertX);
+                Prefs.set("Astronomy_Tool.invertY", invertY);
+                Prefs.set("Astronomy_Tool.rotation", rotation);
+                Prefs.set("Astronomy_Tool.showZoom", showZoom);
+                Prefs.set("Astronomy_Tool.showDir", showDir);
+                Prefs.set("Astronomy_Tool.showXY", showXY);
+                Prefs.set("Astronomy_Tool.showScaleX", showScaleX);
+                Prefs.set("Astronomy_Tool.showScaleY", showScaleY);
             }
+        }
         Prefs.set("Astronomy_Tool.showAbsMag", showAbsMag);
         Prefs.set("Astronomy_Tool.showIntCntWithAbsMag", showIntCntWithAbsMag);        
         Prefs.set("aperture.skyoverlay", showSkyOverlay);

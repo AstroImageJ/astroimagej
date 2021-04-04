@@ -1258,12 +1258,12 @@ public class PlanarWaveguide{
             int arraylSize = arraylTE.size();
             while(testVec<arraylSize){
                 // Check mode number has associated experimental data
-                tempI = ((Integer)arraylTE.get(arraylHeaderIndex)).intValue();
+                tempI = (Integer) arraylTE.get(arraylHeaderIndex);
                 testVec++;
                 if(tempI>0){
                     modeType[atCurveNumber] = "TE";
                     modeType[atCurveNumber+1] = "TE";
-                    modeNumber[atCurveNumber] = ((Integer)arraylTE.get(arraylHeaderIndex-1)).intValue();
+                    modeNumber[atCurveNumber] = (Integer) arraylTE.get(arraylHeaderIndex - 1);
                     modeNumber[atCurveNumber+1] = modeNumber[atCurveNumber];
                     testVec++;
 
@@ -1271,8 +1271,8 @@ public class PlanarWaveguide{
                     double[] tempThick = new double[tempI];
                     double[] tempRefra = new double[tempI];
                     for(int i=0; i<tempI; i++){
-                        tempThick[i] = ((Double)arraylTE.get(arraylIndex++)).doubleValue();
-                        tempRefra[i] = ((Double)arraylTE.get(arraylIndex++)).doubleValue();
+                        tempThick[i] = (Double) arraylTE.get(arraylIndex++);
+                        tempRefra[i] = (Double) arraylTE.get(arraylIndex++);
                         testVec += 2;
                     }
                     double[] log10TempThick = Conv.copy(tempThick);
@@ -1306,12 +1306,12 @@ public class PlanarWaveguide{
             int arraylSize = arraylTM.size();
             while(testVec<arraylSize){
                 // Check mode number has associated experimental data
-                tempI = ((Integer)arraylTM.get(arraylHeaderIndex)).intValue();
+                tempI = (Integer) arraylTM.get(arraylHeaderIndex);
                 testVec++;
                 if(tempI>0){
                     modeType[atCurveNumber] = "TM";
                     modeType[atCurveNumber+1] = "TM";
-                    modeNumber[atCurveNumber] = ((Integer)arraylTM.get(arraylHeaderIndex-1)).intValue();
+                    modeNumber[atCurveNumber] = (Integer) arraylTM.get(arraylHeaderIndex - 1);
                     testVec++;
                     modeNumber[atCurveNumber+1] = modeNumber[atCurveNumber];
 
@@ -1319,8 +1319,8 @@ public class PlanarWaveguide{
                     double[] tempThick = new double[tempI];
                     double[] tempRefra = new double[tempI];
                     for(int i=0; i<tempI; i++){
-                        tempThick[i] = ((Double)arraylTM.get(arraylIndex++)).doubleValue();
-                        tempRefra[i] = ((Double)arraylTM.get(arraylIndex++)).doubleValue();
+                        tempThick[i] = (Double) arraylTM.get(arraylIndex++);
+                        tempRefra[i] = (Double) arraylTM.get(arraylIndex++);
                         testVec += 2;
                     }
                     double[] log10TempThick = Conv.copy(tempThick);

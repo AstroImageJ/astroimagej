@@ -175,7 +175,7 @@ public class Maximisation{
         // Set any single parameter constraint parameters
         if(this.penalty){
             Integer itemp = (Integer)this.penalties.get(1);
-            this.nConstraints = itemp.intValue();
+            this.nConstraints = itemp;
             this.penaltyParam = new int[this.nConstraints];
             this.penaltyCheck = new int[this.nConstraints];
             this.constraints = new double[this.nConstraints];
@@ -183,13 +183,13 @@ public class Maximisation{
             int j=2;
             for(int i=0;i<this.nConstraints;i++){
                 itemp = (Integer)this.penalties.get(j);
-                this.penaltyParam[i] = itemp.intValue();
+                this.penaltyParam[i] = itemp;
                 j++;
                 itemp = (Integer)this.penalties.get(j);
-                this.penaltyCheck[i] = itemp.intValue();
+                this.penaltyCheck[i] = itemp;
                 j++;
                 dtemp = (Double)this.penalties.get(j);
-                this.constraints[i] = dtemp.doubleValue();
+                this.constraints[i] = dtemp;
                 j++;
             }
         }
@@ -197,7 +197,7 @@ public class Maximisation{
         // Set any multiple parameter constraint parameters
         if(this.sumPenalty){
             Integer itemp = (Integer)this.sumPenalties.get(1);
-            this.nSumConstraints = itemp.intValue();
+            this.nSumConstraints = itemp;
             this.sumPenaltyParam = new int[this.nSumConstraints][];
             this.sumPlusOrMinus = new double[this.nSumConstraints][];
             this.sumPenaltyCheck = new int[this.nSumConstraints];
@@ -209,7 +209,7 @@ public class Maximisation{
             int j=2;
             for(int i=0;i<this.nSumConstraints;i++){
                 itemp = (Integer)this.sumPenalties.get(j);
-                this.sumPenaltyNumber[i] = itemp.intValue();
+                this.sumPenaltyNumber[i] = itemp;
                 j++;
                 itempArray = (int[])this.sumPenalties.get(j);
                 this.sumPenaltyParam[i] = itempArray;
@@ -218,10 +218,10 @@ public class Maximisation{
                 this.sumPlusOrMinus[i] = dtempArray;
                 j++;
                 itemp = (Integer)this.sumPenalties.get(j);
-                this.sumPenaltyCheck[i] = itemp.intValue();
+                this.sumPenaltyCheck[i] = itemp;
                 j++;
                 dtemp = (Double)this.sumPenalties.get(j);
-                this.sumConstraints[i] = dtemp.doubleValue();
+                this.sumConstraints[i] = dtemp;
                 j++;
             }
         }
@@ -705,7 +705,7 @@ public class Maximisation{
 		    this.penalties.add(1);
 		}
 		else{
-		    int nPC = ((Integer)this.penalties.get(1)).intValue();
+		    int nPC = (Integer) this.penalties.get(1);
             nPC++;
             this.penalties.set(1, nPC);
 		}
@@ -736,7 +736,7 @@ public class Maximisation{
 		    this.sumPenalties.add(1);
 		}
 		else{
-		    int nPC = ((Integer)this.sumPenalties.get(1)).intValue();
+		    int nPC = (Integer) this.sumPenalties.get(1);
             nPC++;
             this.sumPenalties.set(1, nPC);
 		}

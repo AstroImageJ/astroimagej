@@ -80,14 +80,14 @@ class GenericDialogPlus extends GenericDialog2
       TextField tf = (TextField)numberField.elementAt(i);
       String theText = tf.getText();
       String originalText = (String)defaultText.elementAt(i);
-      double defaultValue = ((Double)(defaultValues.elementAt(i))).doubleValue();
+      double defaultValue = (Double) (defaultValues.elementAt(i));
       double value;
       if (theText.equals(originalText))
          value = defaultValue;
       else {
          Double d = getValue(theText);
          if (d!=null)
-            value = d.doubleValue();
+            value = d;
          else {
             // invalidNumber = true;
             value = 0.0;
@@ -778,14 +778,14 @@ TextListener, FocusListener, ItemListener, KeyListener {
          //IJ.write("getNextNumber: "+label+"  "+theText);
       }   
       String originalText = (String)defaultText.elementAt(nfIndex);
-      double defaultValue = ((Double)(defaultValues.elementAt(nfIndex))).doubleValue();
+      double defaultValue = (Double) (defaultValues.elementAt(nfIndex));
       double value;
       if (theText.equals(originalText))
          value = defaultValue;
       else {
          Double d = getValue(theText);
          if (d!=null)
-            value = d.doubleValue();
+            value = d;
          else {
             invalidNumber = true;
             value = 0.0;

@@ -760,7 +760,7 @@ public class DataType{
                                 for(int i=0; i<this.nArrayElements; i++)ret[i] = Conv.convert_BigInteger_to_double(bi[i]);
                                 break; 
                         case 3: Double[] dd = (Double[])this.convert_to_highestPrecision();
-                                for(int i=0; i<this.nArrayElements; i++)ret[i] = dd[i].doubleValue();
+                                for(int i=0; i<this.nArrayElements; i++)ret[i] = dd[i];
                                 break; 
                         case 4: Float[] ff = (Float[])this.convert_to_highestPrecision();
                                 for(int i=0; i<this.nArrayElements; i++)ret[i] = Conv.convert_Float_to_double(ff[i]);

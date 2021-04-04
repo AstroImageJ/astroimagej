@@ -7127,8 +7127,8 @@ public class Stat extends ArrayMaths{
                         double[] entroex= new double[nex];
                         int ii = -1;
                         for(int i=0; i<nex; i++){
-                            alphaex[i] = (extrap.get(++ii)).doubleValue();
-                            entroex[i] = Math.log((extrap.get(++ii)).doubleValue() - entropyMin);
+                            alphaex[i] = extrap.get(++ii);
+                            entroex[i] = Math.log(extrap.get(++ii) - entropyMin);
                         }
                         Regression reg = new Regression(alphaex, entroex);
                         reg.linear();
@@ -7245,8 +7245,8 @@ public class Stat extends ArrayMaths{
                         double[] entroex= new double[nex];
                         int ii = -1;
                         for(int i=0; i<nex; i++){
-                            alphaex[i] = (extrap.get(++ii)).doubleValue();
-                            entroex[i] = Math.log((extrap.get(++ii)).doubleValue() - entropyMin);
+                            alphaex[i] = extrap.get(++ii);
+                            entroex[i] = Math.log(extrap.get(++ii) - entropyMin);
                         }
                         Regression reg = new Regression(alphaex, entroex);
                         reg.linear();
@@ -7363,8 +7363,8 @@ public class Stat extends ArrayMaths{
                         double[] entroex= new double[nex];
                         int ii = -1;
                         for(int i=0; i<nex; i++){
-                            alphaex[i] = (extrap.get(++ii)).doubleValue();
-                            entroex[i] = Math.log10((extrap.get(++ii)).doubleValue() - entropyMin);
+                            alphaex[i] = extrap.get(++ii);
+                            entroex[i] = Math.log10(extrap.get(++ii) - entropyMin);
                         }
                         Regression reg = new Regression(alphaex, entroex);
                         reg.linear();
@@ -12490,8 +12490,8 @@ public class Stat extends ArrayMaths{
                 outliers = new double[nOutliers];
                 outIndices = new int[nOutliers];
                 for(int i=0; i<nOutliers; i++){
-                    outliers[i] = ((Double)outers.get(2*i)).doubleValue();
-                    outIndices[i] = ((Integer)outers.get(2*i+1)).intValue();
+                    outliers[i] = (Double) outers.get(2 * i);
+                    outIndices[i] = (Integer) outers.get(2 * i + 1);
                 }
             }
 
@@ -12566,7 +12566,7 @@ public class Stat extends ArrayMaths{
                 outIndices = new int[nOutliers];
                 for(int i=0; i<nOutliers; i++){
                     outliers[i] = ((BigDecimal)outers.get(2*i));
-                    outIndices[i] = ((Integer)outers.get(2*i+1)).intValue();
+                    outIndices[i] = (Integer) outers.get(2 * i + 1);
                 }
             }
 
@@ -12665,8 +12665,8 @@ public class Stat extends ArrayMaths{
                 outliers = new double[nOutliers];
                 outIndices = new int[nOutliers];
                 for(int i=0; i<nOutliers; i++){
-                    outliers[i] = ((Double)outers.get(2*i)).doubleValue();
-                    outIndices[i] = ((Integer)outers.get(2*i+1)).intValue();
+                    outliers[i] = (Double) outers.get(2 * i);
+                    outIndices[i] = (Integer) outers.get(2 * i + 1);
                 }
             }
 
@@ -12739,7 +12739,7 @@ public class Stat extends ArrayMaths{
                 outIndices = new int[nOutliers];
                 for(int i=0; i<nOutliers; i++){
                     outliers[i] = ((BigDecimal)outers.get(2*i));
-                    outIndices[i] = ((Integer)outers.get(2*i+1)).intValue();
+                    outIndices[i] = (Integer) outers.get(2 * i + 1);
                 }
             }
 
@@ -12841,39 +12841,39 @@ public class Stat extends ArrayMaths{
         if(this.minmax.size()!=0){
             switch(this.type){
             case 0:
-            case 1: double dd = ((Double)this.minmax.get(0)).doubleValue();
+            case 1: double dd = (Double) this.minmax.get(0);
                     am.minmax.add(dd);
-                    dd = ((Double)this.minmax.get(1)).doubleValue();
+                    dd = (Double) this.minmax.get(1);
                     am.minmax.add(dd);
                     break;
             case 4:
-            case 5: long ll= ((Long)this.minmax.get(0)).longValue();
+            case 5: long ll= (Long) this.minmax.get(0);
                     am.minmax.add((double) ll);
-                    ll = ((Long)this.minmax.get(1)).longValue();
+                    ll = (Long) this.minmax.get(1);
                     am.minmax.add(ll);
                     break;
             case 2:
-            case 3: float ff = ((Float)this.minmax.get(0)).floatValue();
+            case 3: float ff = (Float) this.minmax.get(0);
                     am.minmax.add((double) ff);
-                    ff = ((Float)this.minmax.get(1)).floatValue();
+                    ff = (Float) this.minmax.get(1);
                     am.minmax.add((double) ff);
                     break;
             case 6:
-            case 7: int ii = ((Integer)this.minmax.get(0)).intValue();
+            case 7: int ii = (Integer) this.minmax.get(0);
                     am.minmax.add(ii);
                     ii = ((Double)this.minmax.get(1)).intValue();
                     am.minmax.add(ii);
                     break;
             case 8:
-            case 9: short ss = ((Short)this.minmax.get(0)).shortValue();
+            case 9: short ss = (Short) this.minmax.get(0);
                     am.minmax.add(ss);
                     ss = ((Double)this.minmax.get(1)).shortValue();
                     am.minmax.add((ss));
                     break;
             case 10:
-            case 11: byte bb = ((Byte)this.minmax.get(0)).byteValue();
+            case 11: byte bb = (Byte) this.minmax.get(0);
                     am.minmax.add(bb);
-                    ss = ((Byte)this.minmax.get(1)).byteValue();
+                    ss = (Byte) this.minmax.get(1);
                     am.minmax.add((bb));
                     break;
             case 12: BigDecimal bd = (BigDecimal)this.minmax.get(0);
@@ -12889,7 +12889,7 @@ public class Stat extends ArrayMaths{
                     bi = null;
                     break;
             case 16:
-            case 17: int iii = ((Integer)this.minmax.get(0)).intValue();
+            case 17: int iii = (Integer) this.minmax.get(0);
                     am.minmax.add(iii);
                     iii = ((Double)this.minmax.get(1)).intValue();
                     am.minmax.add(iii);
@@ -12904,7 +12904,7 @@ public class Stat extends ArrayMaths{
             case 1:
             case 2:
             case 3:
-            case 18: double dd = ((Double)summ.get(0)).doubleValue();
+            case 18: double dd = (Double) summ.get(0);
                     am.summ.add(dd);
                     break;
             case 4:
@@ -12917,11 +12917,11 @@ public class Stat extends ArrayMaths{
             case 11:
             case 16:
             case 17: if(this.sumlongToDouble){
-                        double dd2 = ((Double)summ.get(0)).doubleValue();
+                        double dd2 = (Double) summ.get(0);
                         am.summ.add(dd2);
                     }
                     else{
-                        long ll = ((Long)summ.get(0)).longValue();
+                        long ll = (Long) summ.get(0);
                         am.summ.add(ll);
                     }
                     break;
@@ -12948,7 +12948,7 @@ public class Stat extends ArrayMaths{
             case 1:
             case 2:
             case 3:
-            case 18: double dd = ((Double)productt.get(0)).doubleValue();
+            case 18: double dd = (Double) productt.get(0);
                     am.productt.add(dd);
                     break;
             case 4:
@@ -12961,11 +12961,11 @@ public class Stat extends ArrayMaths{
             case 11:
             case 16:
             case 17: if(this.sumlongToDouble){
-                        double dd2 = ((Double)productt.get(0)).doubleValue();
+                        double dd2 = (Double) productt.get(0);
                         am.productt.add(dd2);
                     }
                     else{
-                        long ll = ((Long)productt.get(0)).longValue();
+                        long ll = (Long) productt.get(0);
                         am.productt.add(ll);
                     }
                     break;

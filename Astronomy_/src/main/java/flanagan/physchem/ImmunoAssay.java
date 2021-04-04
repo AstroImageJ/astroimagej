@@ -756,7 +756,7 @@ public class ImmunoAssay extends Regression{
         this.titleOne = "Best polynomial fitting: r = c[0] + c[1].a +  c[1].a^2 + ... + c[n].a^n; best fit degree (n) = ";
         if(!this.setDataOneDone)this.setDataOne();
         ArrayList<Object> al = super.bestPolynomial();
-        this.bestPolyDegree = ((Integer)al.get(0)).intValue();
+        this.bestPolyDegree = (Integer) al.get(0);
         this.titleOne += " " + this.bestPolyDegree;
         for(int i=0; i<this.nInterp; i++){
             this.calculatedResponses[i] = 0.0;
@@ -1091,10 +1091,10 @@ public class ImmunoAssay extends Regression{
 
         ArrayList<Object> choice = chooseEquation(0);
 
-        int choice0 = ((Integer)choice.get(0)).intValue();
-        int choice1 = ((Integer)choice.get(1)).intValue();
-        double choice2 = ((Double)choice.get(2)).doubleValue();
-        double choice3 = ((Double)choice.get(3)).doubleValue();
+        int choice0 = (Integer) choice.get(0);
+        int choice1 = (Integer) choice.get(1);
+        double choice2 = (Double) choice.get(2);
+        double choice3 = (Double) choice.get(3);
 
         switch(choice0){
             case 1: this.fiveParameterLogisticFit();
@@ -1752,7 +1752,7 @@ public class ImmunoAssay extends Regression{
         // calculate limited range for one turning point
         if(this.nTurningPoints==1){
             this.turnIndices = new int[1];
-            this.turnIndices[0] = ((Integer)turns.get(0)).intValue();
+            this.turnIndices[0] = (Integer) turns.get(0);
             if(this.turnIndices[0]<=this.nInterp/2){
                 this.interpStartIndex = this.turnIndices[0];
             }
@@ -1768,7 +1768,7 @@ public class ImmunoAssay extends Regression{
         if(this.nTurningPoints>1){
 
             this.turnIndices = new int[this.nTurningPoints];
-            for(int i= 0; i<this.nTurningPoints; i++)this.turnIndices[i] = ((Integer)turns.get(i)).intValue();
+            for(int i= 0; i<this.nTurningPoints; i++)this.turnIndices[i] = (Integer) turns.get(i);
 
             int[] nts = new int[this.nTurningPoints+1];
             int[] nte = new int[this.nTurningPoints+1];
@@ -1946,8 +1946,8 @@ public class ImmunoAssay extends Regression{
             double[] resp = new double[npe];
             double[] xerr = new double[npe];
             for(int i=0; i<npe; i++){
-                resp[i] = (alpe.get(2*i)).doubleValue();
-                xerr[i] = (alpe.get(2*i+1)).doubleValue();
+                resp[i] = alpe.get(2 * i);
+                xerr[i] = alpe.get(2 * i + 1);
             }
             CubicSpline cspe = new CubicSpline(resp, xerr);
             double[] respe = new double[1001];
@@ -2637,27 +2637,27 @@ public class ImmunoAssay extends Regression{
 
         // select first equation
         ArrayList<Object> choice = this.chooseEquation(1);
-        int model1index = ((Integer)choice.get(0)).intValue();
+        int model1index = (Integer) choice.get(0);
         int degree1 = 0;
         int nTerms1 = 0;
         double bottom1 = 0;
         double top1 = 0;
         if(model1index==6){
-            degree1 = ((Integer)choice.get(1)).intValue();
+            degree1 = (Integer) choice.get(1);
             this.degSet = true;
         }
         if(model1index==7){
-            nTerms1 = ((Integer)choice.get(1)).intValue();
+            nTerms1 = (Integer) choice.get(1);
             this.nTermsSet = true;
         }
         if(model1index==2){
-            bottom1 = ((Double)choice.get(2)).doubleValue();
-            top1 = ((Double)choice.get(3)).doubleValue();
+            bottom1 = (Double) choice.get(2);
+            top1 = (Double) choice.get(3);
             this.fiveBotTopSet = true;
         }
         if(model1index==4){
-            bottom1 = ((Double)choice.get(2)).doubleValue();
-            top1 = ((Double)choice.get(3)).doubleValue();
+            bottom1 = (Double) choice.get(2);
+            top1 = (Double) choice.get(3);
             this.fourBotTopSet = true;
         }
 
@@ -2665,27 +2665,27 @@ public class ImmunoAssay extends Regression{
 
         // select second equation
         choice = this.chooseEquation(2);
-        int model2index = ((Integer)choice.get(0)).intValue();
+        int model2index = (Integer) choice.get(0);
         int degree2 = 0;
         int nTerms2 = 0;
         double bottom2 = 0;
         double top2 = 0;
         if(model2index==6){
-            degree2 = ((Integer)choice.get(1)).intValue();
+            degree2 = (Integer) choice.get(1);
             this.degSet = true;
         }
         if(model2index==7){
-            nTerms2 = ((Integer)choice.get(1)).intValue();
+            nTerms2 = (Integer) choice.get(1);
             this.nTermsSet = true;
         }
         if(model2index==2){
-            bottom2 = ((Double)choice.get(2)).doubleValue();
-            top2 = ((Double)choice.get(3)).doubleValue();
+            bottom2 = (Double) choice.get(2);
+            top2 = (Double) choice.get(3);
             this.fiveBotTopSet = true;
         }
         if(model2index==4){
-            bottom2 = ((Double)choice.get(2)).doubleValue();
-            top2 = ((Double)choice.get(3)).doubleValue();
+            bottom2 = (Double) choice.get(2);
+            top2 = (Double) choice.get(3);
             this.fourBotTopSet = true;
         }
         this.compare(model1index, degree1, bottom1, top1, nTerms1, model2index, degree2, bottom2, top2, nTerms2, significance, filename);
@@ -2761,8 +2761,8 @@ public class ImmunoAssay extends Regression{
         }
 
         ArrayList<Object> al1 = this.fittingForCompare(model1index, degree1, bottom1, top1, nTerms1, false);
-        sumOfSquaresComp[0] = ((Double)al1.get(0)).doubleValue();
-        nParamComp[0] =((Integer)al1.get(1)).intValue();
+        sumOfSquaresComp[0] = (Double) al1.get(0);
+        nParamComp[0] = (Integer) al1.get(1);
         methodNameComp[0] = (String)al1.get(2);
 
         // Fit to second equation
@@ -2783,21 +2783,21 @@ public class ImmunoAssay extends Regression{
             }
         }
         ArrayList<Object> al2 = this.fittingForCompare(model2index, degree2, bottom2, top2, nTerms2, true);
-        sumOfSquaresComp[1] = ((Double)al2.get(0)).doubleValue();
-        nParamComp[1] =((Integer)al2.get(1)).intValue();
+        sumOfSquaresComp[1] = (Double) al2.get(0);
+        nParamComp[1] = (Integer) al2.get(1);
         methodNameComp[1] = (String)al2.get(2);
 
 
         // Compare the goodness of fit to the two equations
         ArrayList<Object> al3 = ImmunoAssay.comparisonTest(modelXindices, sumOfSquaresComp[0], nParamComp[0], this.nAnalyteConcns, sumOfSquaresComp[1], nParamComp[1], this.nAnalyteConcns, significance);
-        int resultFlag = ((Integer)al3.get(0)).intValue();
-        int model1indexn = ((Integer)al3.get(1)).intValue();
-        int model2indexn = ((Integer)al3.get(2)).intValue();
-        double fRatio = ((Double)al3.get(3)).doubleValue();
-        double fProb = ((Double)al3.get(4)).doubleValue();
-        double fRatioAtSignificanceLevel = ((Double)al3.get(5)).doubleValue();
-        int degreesOfFreedom1 = ((Integer)al3.get(6)).intValue();
-        int degreesOfFreedom2 = ((Integer)al3.get(7)).intValue();
+        int resultFlag = (Integer) al3.get(0);
+        int model1indexn = (Integer) al3.get(1);
+        int model2indexn = (Integer) al3.get(2);
+        double fRatio = (Double) al3.get(3);
+        double fProb = (Double) al3.get(4);
+        double fRatioAtSignificanceLevel = (Double) al3.get(5);
+        int degreesOfFreedom1 = (Integer) al3.get(6);
+        int degreesOfFreedom2 = (Integer) al3.get(7);
         if(model1indexn!=model1index){
             int holdI = nParamComp[0];
             nParamComp[0] = nParamComp[1];

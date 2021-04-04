@@ -688,7 +688,7 @@ public class AstroConverter implements ItemListener, ActionListener, ChangeListe
             {
             public void stateChanged(ChangeEvent ev)
                 {
-                nowTimeZoneOffset = ((Double)timeZoneOffsetSpinner.getValue()).doubleValue();
+                nowTimeZoneOffset = (Double) timeZoneOffsetSpinner.getValue();
                 processAction(null);
                 }
             });
@@ -698,7 +698,7 @@ public class AstroConverter implements ItemListener, ActionListener, ChangeListe
                 {
                 if (!autoTimeZone)
                     {
-                    double newValue = ((Double)timeZoneOffsetSpinner.getValue()).doubleValue() - e.getWheelRotation();
+                    double newValue = (Double) timeZoneOffsetSpinner.getValue() - e.getWheelRotation();
                     if (newValue < -12.0)
                         timeZoneOffsetSpinner.setValue(-12.0);
                     else if (newValue > 12.0)

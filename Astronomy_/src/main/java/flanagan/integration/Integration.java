@@ -202,7 +202,7 @@ public class Integration{
         	if(!this.gaussQuadIndex.isEmpty()){
             		for(int k=0; k<this.gaussQuadIndex.size(); k++){
                 		Integer ki = this.gaussQuadIndex.get(k);
-                		if(ki.intValue()==this.glPoints){
+                		if(ki ==this.glPoints){
                     			test=false;
                     			kn = k;
                 		}
@@ -271,7 +271,7 @@ public class Integration{
         	if(!this.gaussQuadIndex.isEmpty()){
             		for(int k=0; k<this.gaussQuadIndex.size(); k++){
                 		Integer ki = this.gaussQuadIndex.get(k);
-                		if(ki.intValue()==this.glPoints){
+                		if(ki ==this.glPoints){
                     			test=false;
                     			kn = k;
                 		}

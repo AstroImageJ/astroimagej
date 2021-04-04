@@ -687,14 +687,14 @@ public class GouyChapmanStern{
         for(int i=0; i<numOfIons; i++){
             this.ionNames[i]    = (String)this.vec.get(0+i*5);
             hold                = (Double)this.vec.get(1+i*5);
-            this.initConcnM[i]  = hold.doubleValue();
+            this.initConcnM[i]  = hold;
             this.initConcn[i]   = this.initConcnM[i]*1e3;
             hold                = (Double)this.vec.get(2+i*5);
-            this.radii[i]       = hold.doubleValue();
+            this.radii[i]       = hold;
             holi                = (Integer)this.vec.get(3+i*5);
-            this.charges[i]     = holi.intValue();
+            this.charges[i]     = holi;
             hold                = (Double)this.vec.get(4+i*5);
-            this.assocConstsM[i]= hold.doubleValue();
+            this.assocConstsM[i]= hold;
             this.assocConsts[i] = this.assocConstsM[i]*1e-3;
             if(this.assocConsts[i]>0.0D){
                 indexK[ii] = i;

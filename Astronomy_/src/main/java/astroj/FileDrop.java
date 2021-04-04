@@ -431,7 +431,7 @@ public class FileDrop
             }   // end catch
             supportsDnD = support;
         }   // end if: first time through
-        return supportsDnD.booleanValue();
+        return supportsDnD;
     }   // end supportsDnD
     
     

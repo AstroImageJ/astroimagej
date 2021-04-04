@@ -39,7 +39,7 @@ public class JSONParser {
 		if(statusStack.size()==0)
 			return -1;
 		Integer status=(Integer)statusStack.getFirst();
-		return status.intValue();
+		return status;
 	}
 	
     /**

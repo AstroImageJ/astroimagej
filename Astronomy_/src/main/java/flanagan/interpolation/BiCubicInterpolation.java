@@ -563,10 +563,10 @@ public class BiCubicInterpolation{
             int gridn = grid1*(this.mPoints-1) + grid2;
 
             // grid details
-            double distance1  = ((Double)coeff.get(5*gridn)).doubleValue();
-            double x1lower  = ((Double)coeff.get(5*gridn+1)).doubleValue();
-            double distance2  = ((Double)coeff.get(5*gridn+2)).doubleValue();
-            double x2lower  = ((Double)coeff.get(5*gridn+3)).doubleValue();
+            double distance1  = (Double) coeff.get(5 * gridn);
+            double x1lower  = (Double) coeff.get(5 * gridn + 1);
+            double distance2  = (Double) coeff.get(5 * gridn + 2);
+            double x2lower  = (Double) coeff.get(5 * gridn + 3);
             double[][] gCoeff = (double[][])coeff.get(5*gridn+4);
             double x1Normalised = (xx1 - x1lower)/distance1;
             double x2Normalised = (xx2 - x2lower)/distance2;

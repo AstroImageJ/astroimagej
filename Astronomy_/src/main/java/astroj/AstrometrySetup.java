@@ -505,7 +505,7 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
             {
             public void stateChanged(ChangeEvent ev)
                 {
-                annotateRadius = ((Double)annotateRadiusSpinner.getValue()).doubleValue();
+                annotateRadius = (Double) annotateRadiusSpinner.getValue();
                 }
             });
         annotateRadiusSpinner.addMouseWheelListener( new MouseWheelListener()
@@ -514,7 +514,7 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
                 {
                 if (annotate)
                     {
-                    annotateRadius = ((Double)annotateRadiusSpinner.getValue()).doubleValue()- e.getWheelRotation()*annotateRadiusStep;
+                    annotateRadius = (Double) annotateRadiusSpinner.getValue() - e.getWheelRotation()*annotateRadiusStep;
                     if (annotateRadius < 1.0) annotateRadius = 1.0;
                     annotateRadiusSpinner.setValue(annotateRadius);
                     }
@@ -731,14 +731,14 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
             {
             public void stateChanged(ChangeEvent ev)
                 {
-                maxPeakFindValue = ((Double)maxPeakFindSpinner.getValue()).doubleValue();
+                maxPeakFindValue = (Double) maxPeakFindSpinner.getValue();
                 }
             });
         maxPeakFindSpinner.addMouseWheelListener( new MouseWheelListener()
             {
             public void mouseWheelMoved( MouseWheelEvent e )
                 {
-                double newValue = ((Double)maxPeakFindSpinner.getValue()).doubleValue()- e.getWheelRotation()*maxPeakFindStep;
+                double newValue = (Double) maxPeakFindSpinner.getValue() - e.getWheelRotation()*maxPeakFindStep;
                 maxPeakFindSpinner.setValue(newValue);
                 }
             });
@@ -800,14 +800,14 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
             {
             public void stateChanged(ChangeEvent ev)
                 {
-                minPeakFindToleranceSTDEV = ((Double)noiseTolSpinner.getValue()).doubleValue();
+                minPeakFindToleranceSTDEV = (Double) noiseTolSpinner.getValue();
                 }
             });
         noiseTolSpinner.addMouseWheelListener( new MouseWheelListener()
             {
             public void mouseWheelMoved( MouseWheelEvent e )
                 {
-                double newValue = ((Double)noiseTolSpinner.getValue()).doubleValue()- e.getWheelRotation()*noiseTolStep;
+                double newValue = (Double) noiseTolSpinner.getValue() - e.getWheelRotation()*noiseTolStep;
                 if (newValue < 0 ) newValue = 0;
                 noiseTolSpinner.setValue(newValue);
                 }
@@ -921,7 +921,7 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
             {
             public void stateChanged(ChangeEvent ev)
                 {
-                apertureRadius = ((Double)apertureRadiusSpinner.getValue()).doubleValue();
+                apertureRadius = (Double) apertureRadiusSpinner.getValue();
                 if (apertureBack1 < apertureRadius) apertureBack1 = apertureRadius;
                 if (apertureBack2 < apertureBack1+1) apertureBack2 = apertureBack1+1;
                 apertureBack1Spinner.setModel(new SpinnerNumberModel(apertureBack1, apertureRadius, null, apertureStep));
@@ -936,7 +936,7 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
                 {
                 if (useCentroid)
                     {
-                    apertureRadius = ((Double)apertureRadiusSpinner.getValue()).doubleValue()- e.getWheelRotation()*apertureStep;
+                    apertureRadius = (Double) apertureRadiusSpinner.getValue() - e.getWheelRotation()*apertureStep;
                     if (apertureRadius < 1.0) apertureRadius = 1.0;
                     if (apertureBack1 < apertureRadius) apertureBack1 = apertureRadius;
                     if (apertureBack2 < apertureBack1+1) apertureBack2 = apertureBack1+1;                
@@ -974,7 +974,7 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
             {
             public void stateChanged(ChangeEvent ev)
                 {
-                apertureBack1 = ((Double)apertureBack1Spinner.getValue()).doubleValue();
+                apertureBack1 = (Double) apertureBack1Spinner.getValue();
                 if (apertureBack1 < apertureRadius) apertureBack1 = apertureRadius;
                 if (apertureBack2 < apertureBack1+1) apertureBack2 = apertureBack1+1;
                 apertureBack1Spinner.setModel(new SpinnerNumberModel(apertureBack1, apertureRadius, null, apertureStep));
@@ -989,7 +989,7 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
                 {
                 if (useCentroid)
                     {                
-                    apertureBack1 = ((Double)apertureBack1Spinner.getValue()).doubleValue()- e.getWheelRotation()*apertureStep;
+                    apertureBack1 = (Double) apertureBack1Spinner.getValue() - e.getWheelRotation()*apertureStep;
                     if (apertureBack1 < apertureRadius) apertureBack1 = apertureRadius;
                     if (apertureBack2 < apertureBack1+1) apertureBack2 = apertureBack1+1;
                     apertureBack1Spinner.setModel(new SpinnerNumberModel(apertureBack1, apertureRadius, null, apertureStep));
@@ -1024,7 +1024,7 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
             {
             public void stateChanged(ChangeEvent ev)
                 {
-                apertureBack2 = ((Double)apertureBack2Spinner.getValue()).doubleValue();
+                apertureBack2 = (Double) apertureBack2Spinner.getValue();
                 if (apertureBack2 < apertureBack1+1) apertureBack2 = apertureBack1+1;
                 apertureBack2Spinner.setModel(new SpinnerNumberModel(apertureBack2, apertureBack1 + 1, null, apertureStep));
                 apertureBack2Spinner.setEditor(new JSpinner.NumberEditor(apertureBack2Spinner, "0.00"));                
@@ -1036,7 +1036,7 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
                 {
                 if (useCentroid)
                     {                
-                    apertureBack2 = ((Double)apertureBack2Spinner.getValue()).doubleValue()- e.getWheelRotation()*apertureStep;
+                    apertureBack2 = (Double) apertureBack2Spinner.getValue() - e.getWheelRotation()*apertureStep;
                     if (apertureBack2 < apertureBack1+1) apertureBack2 = apertureBack1+1;
                     apertureBack2Spinner.setModel(new SpinnerNumberModel(apertureBack2, apertureBack1 + 1, null, apertureStep));
                     apertureBack2Spinner.setEditor(new JSpinner.NumberEditor(apertureBack2Spinner, "0.00"));                
@@ -1122,7 +1122,7 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
             {
             public void stateChanged(ChangeEvent ev)
                 {
-                scaleEstimate = ((Double)scaleEstimateSpinner.getValue()).doubleValue();
+                scaleEstimate = (Double) scaleEstimateSpinner.getValue();
                 }
             });
         scaleEstimateSpinner.addMouseWheelListener( new MouseWheelListener()
@@ -1131,7 +1131,7 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
                 {
                 if (useScale)
                     {                
-                    scaleEstimate = ((Double)scaleEstimateSpinner.getValue()).doubleValue()- e.getWheelRotation()*scaleStep;
+                    scaleEstimate = (Double) scaleEstimateSpinner.getValue() - e.getWheelRotation()*scaleStep;
                     if (scaleEstimate < 0.0) scaleEstimate = 0.0;
                     scaleEstimateSpinner.setValue(scaleEstimate);
     //                scaleEstimateSpinner.setModel(new SpinnerNumberModel(Double.valueOf(scaleEstimate), Double.valueOf(0.0), null, Double.valueOf(scaleStep)));
@@ -1160,7 +1160,7 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
             {
             public void stateChanged(ChangeEvent ev)
                 {
-                scaleError = ((Double)scaleErrorSpinner.getValue()).doubleValue();
+                scaleError = (Double) scaleErrorSpinner.getValue();
                 }
             });
         scaleErrorSpinner.addMouseWheelListener( new MouseWheelListener()
@@ -1169,7 +1169,7 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
                 {
                 if (useScale)
                     {
-                    scaleError = ((Double)scaleErrorSpinner.getValue()).doubleValue()- e.getWheelRotation()*scaleStep;
+                    scaleError = (Double) scaleErrorSpinner.getValue() - e.getWheelRotation()*scaleStep;
                     if (scaleError < 0.0) scaleError = 0.0;
                     scaleErrorSpinner.setValue(scaleError);
     //                scaleErrorSpinner.setModel(new SpinnerNumberModel(Double.valueOf(scaleError), Double.valueOf(0.0), null, Double.valueOf(scaleStep)));
@@ -1333,7 +1333,7 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
             {
             public void stateChanged(ChangeEvent ev)
                 {
-                raDecRadius = ((Double)raDecRadiusSpinner.getValue()).doubleValue();
+                raDecRadius = (Double) raDecRadiusSpinner.getValue();
                 }
             });
         raDecRadiusSpinner.addMouseWheelListener( new MouseWheelListener()
@@ -1342,7 +1342,7 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
                 {
                 if (useRaDec)
                     {                
-                    raDecRadius = ((Double)raDecRadiusSpinner.getValue()).doubleValue()- e.getWheelRotation()*raDecRadiusStep;
+                    raDecRadius = (Double) raDecRadiusSpinner.getValue() - e.getWheelRotation()*raDecRadiusStep;
                     if (raDecRadius < 0.0) raDecRadius = 0.0;
                     raDecRadiusSpinner.setValue(raDecRadius);
                     }
@@ -1625,8 +1625,8 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
         {
         if (ev.getSource() == startSliceSpinner)
             {
-            startSlice = ((Integer)startSliceSpinner.getValue()).intValue();
-            endSlice = ((Integer)endSliceSpinner.getValue()).intValue();
+            startSlice = (Integer) startSliceSpinner.getValue();
+            endSlice = (Integer) endSliceSpinner.getValue();
             if (startSlice < fSlice) startSlice = fSlice;
             if (startSlice > endSlice) startSlice = endSlice;
             startSliceNumberModel = new SpinnerNumberModel(startSlice, fSlice, endSlice, 1);
@@ -1636,8 +1636,8 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
             } 
         else if (ev.getSource() == endSliceSpinner)
             {
-            startSlice = ((Integer)startSliceSpinner.getValue()).intValue();
-            endSlice = ((Integer)endSliceSpinner.getValue()).intValue();
+            startSlice = (Integer) startSliceSpinner.getValue();
+            endSlice = (Integer) endSliceSpinner.getValue();
             if (endSlice > lSlice) endSlice = lSlice;
             if (endSlice < startSlice) endSlice = startSlice;
             startSliceNumberModel = new SpinnerNumberModel(startSlice, fSlice, endSlice, 1);
@@ -1647,17 +1647,17 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
             } 
         else if (ev.getSource() == medianFilterRadiusSpinner)
             {
-            medianFilterRadius = ((Integer)medianFilterRadiusSpinner.getValue()).intValue();
+            medianFilterRadius = (Integer) medianFilterRadiusSpinner.getValue();
             if (medianFilterRadius < 2) medianFilterRadius = 2;
             }
         else if (ev.getSource() == maxNumStarsSpinner)
             {
-            maxNumStars = ((Integer)maxNumStarsSpinner.getValue()).intValue();
+            maxNumStars = (Integer) maxNumStarsSpinner.getValue();
             if (maxNumStars < MIN_MAX_STARS) maxNumStars = MIN_MAX_STARS;
             }     
         else if (ev.getSource() == distortionOrderSpinner)
             {
-            distortionOrder = ((Integer)distortionOrderSpinner.getValue()).intValue();
+            distortionOrder = (Integer) distortionOrderSpinner.getValue();
             if (distortionOrder < minOrder) distortionOrder = minOrder;
             if (distortionOrder > maxOrder) distortionOrder = maxOrder;
             }          
@@ -1708,35 +1708,35 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
         {
         if (e.getSource() == startSliceSpinner && startSliceSpinner.isEnabled())
             {
-            int endValue = ((Integer)endSliceSpinner.getValue()).intValue();
-            int newValue = ((Integer) startSliceSpinner.getValue()).intValue() - e.getWheelRotation();
+            int endValue = (Integer) endSliceSpinner.getValue();
+            int newValue = (Integer) startSliceSpinner.getValue() - e.getWheelRotation();
             if (newValue >= fSlice && newValue <= endValue) startSliceSpinner.setValue(newValue);
             else if (newValue < fSlice) startSliceSpinner.setValue(fSlice);
             else startSliceSpinner.setValue(endValue);
             }
         else if (e.getSource() == endSliceSpinner && endSliceSpinner.isEnabled())
             {
-            int startValue = ((Integer)startSliceSpinner.getValue()).intValue();
-            int newValue = ((Integer) endSliceSpinner.getValue()).intValue() - e.getWheelRotation();
+            int startValue = (Integer) startSliceSpinner.getValue();
+            int newValue = (Integer) endSliceSpinner.getValue() - e.getWheelRotation();
             if (newValue >= startValue && newValue <= lSlice) endSliceSpinner.setValue(newValue);
             else if (newValue < startValue) endSliceSpinner.setValue(startValue);
             else endSliceSpinner.setValue(lSlice);
             }     
         else if (e.getSource() == medianFilterRadiusSpinner && medianFilterRadiusSpinner.isEnabled())
             {
-            medianFilterRadius = ((Integer) medianFilterRadiusSpinner.getValue()).intValue() - e.getWheelRotation();
+            medianFilterRadius = (Integer) medianFilterRadiusSpinner.getValue() - e.getWheelRotation();
             if (medianFilterRadius < 2) medianFilterRadius = 2;
             medianFilterRadiusSpinner.setValue(medianFilterRadius);
             }   
         else if (e.getSource() == maxNumStarsSpinner)
             {
-            maxNumStars = ((Integer) maxNumStarsSpinner.getValue()).intValue() - e.getWheelRotation();
+            maxNumStars = (Integer) maxNumStarsSpinner.getValue() - e.getWheelRotation();
             if (maxNumStars < MIN_MAX_STARS) maxNumStars = MIN_MAX_STARS;
             maxNumStarsSpinner.setValue(maxNumStars);
             }  
         else if (e.getSource() == distortionOrderSpinner && distortionOrderSpinner.isEnabled())
             {
-            distortionOrder = ((Integer) distortionOrderSpinner.getValue()).intValue() - e.getWheelRotation();
+            distortionOrder = (Integer) distortionOrderSpinner.getValue() - e.getWheelRotation();
             if (distortionOrder < minOrder) distortionOrder = minOrder;
             if (distortionOrder > maxOrder) distortionOrder = maxOrder;
             distortionOrderSpinner.setValue(distortionOrder);

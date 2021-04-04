@@ -2858,50 +2858,50 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
         {
         if (ev.getSource() == minFileNumberSpinner)
             {
-            minFileNumber = ((Long)minFileNumberSpinner.getValue()).longValue();
+            minFileNumber = (Long) minFileNumberSpinner.getValue();
             Prefs.set("dataproc.minFileNumber", minFileNumber);
             countValidFiles();
             }
         else if (ev.getSource() == maxFileNumberSpinner)
             {
-            maxFileNumber = ((Long)maxFileNumberSpinner.getValue()).longValue();
+            maxFileNumber = (Long) maxFileNumberSpinner.getValue();
             if (maxFileNumber < minFileNumber) maxFileNumberSpinner.setValue((Long)minFileNumber);
             Prefs.set("dataproc.maxFileNumber", maxFileNumber);
             countValidFiles();
             }
         else if (ev.getSource() == pollingIntervalSpinner)
             {
-            pollingInterval = ((Integer)pollingIntervalSpinner.getValue()).intValue();
+            pollingInterval = (Integer) pollingIntervalSpinner.getValue();
             Prefs.set("dataproc.pollingInterval", pollingInterval);
             }
         else if (ev.getSource() == outlierRadiusSpinner)
             {
-            outlierRadius = ((Integer)outlierRadiusSpinner.getValue()).intValue();
+            outlierRadius = (Integer) outlierRadiusSpinner.getValue();
             Prefs.set("dataproc.outlierRadius", outlierRadius);
             }  
         else if (ev.getSource() == outlierThresholdSpinner)
             {
-            outlierThreshold = ((Integer)outlierThresholdSpinner.getValue()).intValue();
+            outlierThreshold = (Integer) outlierThresholdSpinner.getValue();
             Prefs.set("dataproc.outlierThreshold", outlierThreshold);
             }         
         else if (ev.getSource() == coeffASpinner)
             {
-            coeffA = ((Double)coeffASpinner.getValue()).doubleValue();
+            coeffA = (Double) coeffASpinner.getValue();
             Prefs.set("dataproc.coeffA", coeffA);
             }
         else if (ev.getSource() == coeffBSpinner)
             {
-            coeffB = ((Double)coeffBSpinner.getValue()).doubleValue();
+            coeffB = (Double) coeffBSpinner.getValue();
             Prefs.set("dataproc.coeffB", coeffB);
             }
         else if (ev.getSource() == coeffCSpinner)
             {
-            coeffC = ((Double)coeffCSpinner.getValue()).doubleValue();
+            coeffC = (Double) coeffCSpinner.getValue();
             Prefs.set("dataproc.coeffC", coeffC);
             }
         else if (ev.getSource() == coeffDSpinner)
             {
-            coeffD = ((Double)coeffDSpinner.getValue()).doubleValue();
+            coeffD = (Double) coeffDSpinner.getValue();
             Prefs.set("dataproc.coeffD", coeffD);
             }        
         }
@@ -2911,47 +2911,47 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
         {
         if (e.getSource() == minFileNumberSpinner && minFileNumberSpinner.isEnabled())
             {
-            long newValue = ((Long) minFileNumberSpinner.getValue()).longValue() - e.getWheelRotation();
+            long newValue = (Long) minFileNumberSpinner.getValue() - e.getWheelRotation();
             if (newValue >= 0) minFileNumberSpinner.setValue(newValue);
             }
         else if (e.getSource() == maxFileNumberSpinner && maxFileNumberSpinner.isEnabled())
             {
-            long newValue = ((Long) maxFileNumberSpinner.getValue()).longValue() - e.getWheelRotation();
+            long newValue = (Long) maxFileNumberSpinner.getValue() - e.getWheelRotation();
             if (newValue >= 0) maxFileNumberSpinner.setValue(newValue>(Long)minFileNumberSpinner.getValue()?newValue:(Long)minFileNumberSpinner.getValue());
             }
         else if (e.getSource() == pollingIntervalSpinner)
             {
-            int newValue = ((Integer) pollingIntervalSpinner.getValue()).intValue() - e.getWheelRotation();
+            int newValue = (Integer) pollingIntervalSpinner.getValue() - e.getWheelRotation();
             if (newValue > 0) pollingIntervalSpinner.setValue(newValue);
             }
         else if (e.getSource() == outlierRadiusSpinner && outlierRadiusSpinner.isEnabled())
             {
-            int newValue = ((Integer) outlierRadiusSpinner.getValue()).intValue() - e.getWheelRotation();
+            int newValue = (Integer) outlierRadiusSpinner.getValue() - e.getWheelRotation();
             if (newValue > 1) outlierRadiusSpinner.setValue(newValue);
             }  
         else if (e.getSource() == outlierThresholdSpinner && outlierThresholdSpinner.isEnabled())
             {
-            int newValue = ((Integer) outlierThresholdSpinner.getValue()).intValue() - 10 * e.getWheelRotation();
+            int newValue = (Integer) outlierThresholdSpinner.getValue() - 10 * e.getWheelRotation();
             if (newValue > 0) outlierThresholdSpinner.setValue(newValue);
             }         
         else if (e.getSource() == coeffASpinner)
             {
-            coeffASpinner.setValue(((Double)coeffASpinner.getValue()).doubleValue()
+            coeffASpinner.setValue((Double) coeffASpinner.getValue()
                     - e.getWheelRotation()*0.0 );
             }
         else if (e.getSource() == coeffBSpinner)
             {
-            coeffBSpinner.setValue(((Double)coeffBSpinner.getValue()).doubleValue()
+            coeffBSpinner.setValue((Double) coeffBSpinner.getValue()
                     - e.getWheelRotation()*0.0 );
             }
         else if (e.getSource() == coeffCSpinner)
             {
-            coeffCSpinner.setValue(((Double)coeffCSpinner.getValue()).doubleValue()
+            coeffCSpinner.setValue((Double) coeffCSpinner.getValue()
                     - e.getWheelRotation()*0.0 );
             }
         else if (e.getSource() == coeffDSpinner)
             {
-            coeffDSpinner.setValue(((Double)coeffDSpinner.getValue()).doubleValue()
+            coeffDSpinner.setValue((Double) coeffDSpinner.getValue()
                     - e.getWheelRotation()*0.0 );
             }        
         }

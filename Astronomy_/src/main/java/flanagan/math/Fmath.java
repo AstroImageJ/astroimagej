@@ -1984,7 +1984,7 @@ public class Fmath{
             if(numberOfIndices!=0){
                 indices = new int[numberOfIndices];
                 for(int i=0; i<numberOfIndices; i++){
-                    indices[i] = (arrayl.get(i)).intValue();
+                    indices[i] = arrayl.get(i);
                 }
             }
             return indices;
@@ -2005,7 +2005,7 @@ public class Fmath{
             if(numberOfIndices!=0){
                 indices = new int[numberOfIndices];
                 for(int i=0; i<numberOfIndices; i++){
-                    indices[i] = (arrayl.get(i)).intValue();
+                    indices[i] = arrayl.get(i);
                 }
             }
             return indices;
@@ -2026,7 +2026,7 @@ public class Fmath{
             if(numberOfIndices!=0){
                 indices = new int[numberOfIndices];
                 for(int i=0; i<numberOfIndices; i++){
-                    indices[i] = (arrayl.get(i)).intValue();
+                    indices[i] = arrayl.get(i);
                 }
             }
             return indices;
@@ -2047,7 +2047,7 @@ public class Fmath{
             if(numberOfIndices!=0){
                 indices = new int[numberOfIndices];
                 for(int i=0; i<numberOfIndices; i++){
-                    indices[i] = (arrayl.get(i)).intValue();
+                    indices[i] = arrayl.get(i);
                 }
             }
             return indices;
@@ -2068,7 +2068,7 @@ public class Fmath{
             if(numberOfIndices!=0){
                 indices = new int[numberOfIndices];
                 for(int i=0; i<numberOfIndices; i++){
-                    indices[i] = (arrayl.get(i)).intValue();
+                    indices[i] = arrayl.get(i);
                 }
             }
             return indices;
@@ -2089,7 +2089,7 @@ public class Fmath{
             if(numberOfIndices!=0){
                 indices = new int[numberOfIndices];
                 for(int i=0; i<numberOfIndices; i++){
-                    indices[i] = (arrayl.get(i)).intValue();
+                    indices[i] = arrayl.get(i);
                 }
             }
             return indices;
@@ -2110,7 +2110,7 @@ public class Fmath{
             if(numberOfIndices!=0){
                 indices = new int[numberOfIndices];
                 for(int i=0; i<numberOfIndices; i++){
-                    indices[i] = (arrayl.get(i)).intValue();
+                    indices[i] = arrayl.get(i);
                 }
             }
             return indices;
@@ -2131,7 +2131,7 @@ public class Fmath{
             if(numberOfIndices!=0){
                 indices = new int[numberOfIndices];
                 for(int i=0; i<numberOfIndices; i++){
-                    indices[i] = (arrayl.get(i)).intValue();
+                    indices[i] = arrayl.get(i);
                 }
             }
             return indices;
@@ -2152,7 +2152,7 @@ public class Fmath{
             if(numberOfIndices!=0){
                 indices = new int[numberOfIndices];
                 for(int i=0; i<numberOfIndices; i++){
-                    indices[i] = (arrayl.get(i)).intValue();
+                    indices[i] = arrayl.get(i);
                 }
             }
             return indices;

@@ -159,7 +159,7 @@ public class PolylineSimplification{
         this.simplifiedIndices = new int[this.nSimplifiedPoints];
         for(i=0; i<this.nSimplifiedPoints; i++){
             this.simplifiedPoints[i] = results.get(i);
-            this.simplifiedIndices[i] = ((Integer)indices.get(i)).intValue();
+            this.simplifiedIndices[i] = (Integer) indices.get(i);
         }
         
         // Remove duplicate points

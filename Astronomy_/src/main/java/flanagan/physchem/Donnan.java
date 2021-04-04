@@ -949,10 +949,10 @@ public class Donnan{
             this.ionNames[i]= (String)this.arrayl.get(0+i*7);
             // concentration in compartment A
             hold            = (Double)this.arrayl.get(1+i*7);
-            this.concnA[i]  = hold.doubleValue()*1e3;
+            this.concnA[i]  = hold *1e3;
             hold            = (Double)this.arrayl.get(2+i*7);
             // concentration in compartment B
-            this.concnB[i]  = hold.doubleValue()*1e3;
+            this.concnB[i]  = hold *1e3;
             // total moles of ion i
             this.molesT[i]  = this.concnA[i]*volumeA + this.concnB[i]*volumeB;
             if(this.molesT[i]>0.0D){
@@ -963,17 +963,17 @@ public class Donnan{
             }
             // association constant
             hold            = (Double)this.arrayl.get(3+i*7);
-            this.assocConsts[i] = hold.doubleValue()*1e-3;
+            this.assocConsts[i] = hold *1e-3;
             if(this.assocConsts[i]>0.0D){
                 indexK[ii] = i;
                 ii++;
             }
             // ion radius
             hold            = (Double)this.arrayl.get(4+i*7);
-            this.radii[i]   = hold.doubleValue();
+            this.radii[i]   = hold;
             // ion charge
             holi            = (Integer)this.arrayl.get(5+i*7);
-            this.charges[i] = holi.intValue();
+            this.charges[i] = holi;
             // running check for all ions having same absolute charge
             if(i==0){
                 this.chargeValue = Math.abs(this.charges[0]);
@@ -984,7 +984,7 @@ public class Donnan{
 
             // partition coefficient
             hold        = (Double)this.arrayl.get(6+i*7);
-            this.partCoeff[i]= hold.doubleValue();
+            this.partCoeff[i]= hold;
             this.indexPC[i] = true;
             if(this.partCoeff[i]==-1.0D){
                 this.indexPC[i] = false;

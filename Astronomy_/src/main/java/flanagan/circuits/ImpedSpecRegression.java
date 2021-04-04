@@ -1351,13 +1351,13 @@ public class ImpedSpecRegression extends Regression{
             bound  = new double[this.numberOfAddedConstraints];
             int index = 0;
             for(int i=0; i<this.numberOfAddedConstraints; i++){
-                int parameter = ((Integer)constraints.get(index)).intValue();
+                int parameter = (Integer) constraints.get(index);
                 param[i] = parameter;
                 index++;
-                int direction = ((Integer)constraints.get(index)).intValue();
+                int direction = (Integer) constraints.get(index);
                 direct[i] = direction;
                 index++;
-                double boundary = ((Double)constraints.get(index)).doubleValue();
+                double boundary = (Double) constraints.get(index);
                 bound[i] = boundary;
                 index++;
                 this.addConstraint(parameter, direction, boundary);

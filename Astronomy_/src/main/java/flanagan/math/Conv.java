@@ -102,7 +102,7 @@ public class Conv{
     }
    
     public static double convert_Double_to_double(Double xx){
-        return xx.doubleValue();
+        return xx;
     }
         
     public static float convert_double_to_float(double x){
@@ -118,14 +118,14 @@ public class Conv{
     }
 
     public static float convert_Double_to_float(Double xx){
-        double x = xx.doubleValue();
+        double x = xx;
         if(x>max_float_as_double)throw new IllegalArgumentException("Double is too large to be recast as float");
         if(!suppressMessage)System.out.println("Class Conv: method convert_Double_to_float: possible loss of precision");
         return xx.floatValue();
     }
 
     public static Float convert_Double_to_Float(Double xx){
-        double x = xx.doubleValue();
+        double x = xx;
         if(x>max_float_as_double)throw new IllegalArgumentException("Double is too large to be recast as Float");
         if(!suppressMessage)System.out.println("Class Conv: method convert_Double_to_Float: possible loss of precision");
         return xx.floatValue();
@@ -144,14 +144,14 @@ public class Conv{
     }
 
     public static long convert_Double_to_long(Double xx){
-        double x = xx.doubleValue();
+        double x = xx;
         if(x>max_long_as_double)throw new IllegalArgumentException("Double is too large to be recast as long");
         if(!Fmath.isInteger(x))throw new IllegalArgumentException("Double is not, arithmetically, an integer");
         return xx.longValue();
     }
 
     public static Long convert_Double_to_Long(Double xx){
-        double x = xx.doubleValue();
+        double x = xx;
         if(x>max_long_as_double)throw new IllegalArgumentException("Double is too large to be recast as Long");
         if(!Fmath.isInteger(x))throw new IllegalArgumentException("Double is not, arithmetically, an integer");
         return xx.longValue();
@@ -170,14 +170,14 @@ public class Conv{
     }
 
     public static int convert_Double_to_int(Double xx){
-        double x = xx.doubleValue();
+        double x = xx;
         if(x>max_int_as_double)throw new IllegalArgumentException("Double is too large to be recast as int");
         if(!Fmath.isInteger(x))throw new IllegalArgumentException("Double is not, arithmetically, an integer");
         return xx.intValue();
     }
 
     public static Integer convert_Double_to_Integer(Double xx){
-        double x = xx.doubleValue();
+        double x = xx;
         if(x>max_int_as_double)throw new IllegalArgumentException("Double is too large to be recast as Integer");
         if(!Fmath.isInteger(x))throw new IllegalArgumentException("Double is not, arithmetically, an integer");
         return xx.intValue();
@@ -196,14 +196,14 @@ public class Conv{
     }
 
     public static short convert_Double_to_short(Double xx){
-        double x = xx.doubleValue();
+        double x = xx;
         if(x>max_short_as_double)throw new IllegalArgumentException("Double is too large to be recast as short");
         if(!Fmath.isInteger(x))throw new IllegalArgumentException("Double is not, arithmetically, an integer");
         return xx.shortValue();
     }
 
     public static Short convert_Double_to_Short(Double xx){
-        double x = xx.doubleValue();
+        double x = xx;
         if(x>max_short_as_double)throw new IllegalArgumentException("Double is too large to be recast as Short");
         if(!Fmath.isInteger(x))throw new IllegalArgumentException("Double is not, arithmetically, an integer");
         return xx.shortValue();
@@ -222,14 +222,14 @@ public class Conv{
     }
 
     public static byte convert_Double_to_byte(Double xx){
-        double x = xx.doubleValue();
+        double x = xx;
         if(x>max_byte_as_double)throw new IllegalArgumentException("Double is too large to be recast as byte");
         if(!Fmath.isInteger(x))throw new IllegalArgumentException("Double is not, arithmetically, an integer");
         return xx.byteValue();
     }
 
     public static Byte convert_Double_to_Byte(Double xx){
-        double x = xx.doubleValue();
+        double x = xx;
         if(x>max_byte_as_double)throw new IllegalArgumentException("Double is too large to be recast as Byte");
         if(!Fmath.isInteger(x))throw new IllegalArgumentException("Double is not, arithmetically, an integer");
         return xx.byteValue();
@@ -240,7 +240,7 @@ public class Conv{
     }
 
     public static BigDecimal convert_Double_to_BigDecimal(Double xx){
-        return new BigDecimal(xx.doubleValue());
+        return new BigDecimal(xx);
     }
 
     public static BigInteger convert_double_to_BigInteger(double x){
@@ -249,7 +249,7 @@ public class Conv{
     }
 
     public static BigInteger convert_Double_to_BigInteger(Double xx){
-        double x = xx.doubleValue();
+        double x = xx;
         if(!Fmath.isInteger(x))throw new IllegalArgumentException("double is not, arithmetically, an integer");
         return new BigInteger(Double.toString(x).trim());
     }
@@ -259,7 +259,7 @@ public class Conv{
     }
     
     public static String convert_Double_to_String(Double x){
-        return (Double.toString(x.doubleValue())).trim();
+        return (Double.toString(x)).trim();
     }
 
     // float and Float -> . . .
@@ -268,7 +268,7 @@ public class Conv{
     }
    
     public static float convert_Float_to_float(Float xx){
-        return xx.floatValue();
+        return xx;
     }
     
     public static double convert_float_to_double(float x){
@@ -300,14 +300,14 @@ public class Conv{
     }
 
     public static long convert_Float_to_long(Float xx){
-        float x = xx.floatValue();
+        float x = xx;
         if(x>max_long_as_float)throw new IllegalArgumentException("Float is too large to be recast as long");
         if(!Fmath.isInteger(x))throw new IllegalArgumentException("Float is not, arithmetically, an integer");
         return xx.longValue();
     }
 
     public static Long convert_Float_to_Long(Float xx){
-        float x = xx.floatValue();
+        float x = xx;
         if(x>max_long_as_float)throw new IllegalArgumentException("Float is too large to be recast as Long");
         if(!Fmath.isInteger(x))throw new IllegalArgumentException("Float is not, arithmetically, an integer");
         return xx.longValue();
@@ -326,14 +326,14 @@ public class Conv{
     }
 
     public static int convert_Float_to_int(Float xx){
-        float x = xx.floatValue();
+        float x = xx;
         if(x>max_int_as_float)throw new IllegalArgumentException("Float is too large to be recast as int");
         if(!Fmath.isInteger(x))throw new IllegalArgumentException("Float is not, arithmetically, an integer");
         return xx.intValue();
     }
 
     public static Integer convert_Float_to_Integer(Float xx){
-        float x = xx.floatValue();
+        float x = xx;
         if(x>max_int_as_float)throw new IllegalArgumentException("Float is too large to be recast as Integer");
         if(!Fmath.isInteger(x))throw new IllegalArgumentException("Float is not, arithmetically, an integer");
         return xx.intValue();
@@ -352,14 +352,14 @@ public class Conv{
     }
 
     public static short convert_Float_to_short(Float xx){
-        float x = xx.floatValue();
+        float x = xx;
         if(x>max_short_as_float)throw new IllegalArgumentException("Float is too large to be recast as short");
         if(!Fmath.isInteger(x))throw new IllegalArgumentException("Float is not, arithmetically, an integer");
         return xx.shortValue();
     }
 
     public static Short convert_Float_to_Short(Float xx){
-        float x = xx.floatValue();
+        float x = xx;
         if(x>max_short_as_float)throw new IllegalArgumentException("Float is too large to be recast as Short");
         if(!Fmath.isInteger(x))throw new IllegalArgumentException("Float is not, arithmetically, an integer");
         return xx.shortValue();
@@ -378,14 +378,14 @@ public class Conv{
     }
 
     public static byte convert_Float_to_byte(Float xx){
-        float x = xx.floatValue();
+        float x = xx;
         if(x>max_byte_as_float)throw new IllegalArgumentException("Float is too large to be recast as byte");
         if(!Fmath.isInteger(x))throw new IllegalArgumentException("Float is not, arithmetically, an integer");
         return xx.byteValue();
     }
 
     public static Byte convert_Float_to_Byte(Float xx){
-        float x = xx.floatValue();
+        float x = xx;
         if(x>max_byte_as_float)throw new IllegalArgumentException("Float is too large to be recast as Byte");
         if(!Fmath.isInteger(x))throw new IllegalArgumentException("Float is not, arithmetically, an integer");
         return xx.byteValue();
@@ -415,7 +415,7 @@ public class Conv{
     }
     
     public static String convert_Float_to_String(Float x){
-        return (Float.toString(x.floatValue())).trim();
+        return (Float.toString(x)).trim();
     }
 
     // long and Long -> . . .
@@ -424,7 +424,7 @@ public class Conv{
     }
    
     public static long convert_Long_to_long(Long xx){
-        return xx.longValue();
+        return xx;
     }
     
     public static double convert_long_to_double(long x){
@@ -478,13 +478,13 @@ public class Conv{
     }
 
     public static int convert_Long_to_int(Long xx){
-        long x = xx.longValue();
+        long x = xx;
         if(x>max_int_as_long)throw new IllegalArgumentException("Long is too large to be recast as int");
         return xx.intValue();
     }
 
     public static Integer convert_Long_to_Integer(Long xx){
-        long x = xx.longValue();
+        long x = xx;
         if(x>max_int_as_long)throw new IllegalArgumentException("Long is too large to be recast as Integer");
         return xx.intValue();
     }
@@ -500,13 +500,13 @@ public class Conv{
     }
 
     public static short convert_Long_to_short(Long xx){
-        long x = xx.longValue();
+        long x = xx;
         if(x>max_short_as_long)throw new IllegalArgumentException("Long is too large to be recast as short");
         return xx.shortValue();
     }
 
     public static Short convert_Long_to_Short(Long xx){
-        long x = xx.longValue();
+        long x = xx;
         if(x>max_short_as_long)throw new IllegalArgumentException("Long is too large to be recast as Short");
         return xx.shortValue();
     }
@@ -522,13 +522,13 @@ public class Conv{
     }
 
     public static byte convert_Long_to_byte(Long xx){
-        long x = xx.longValue();
+        long x = xx;
         if(x>max_byte_as_long)throw new IllegalArgumentException("Long is too large to be recast as byte");
         return xx.byteValue();
     }
 
     public static Byte convert_Long_to_Byte(Long xx){
-        long x = xx.longValue();
+        long x = xx;
         if(x>max_byte_as_long)throw new IllegalArgumentException("Long is too large to be recast as Byte");
         return xx.byteValue();
     }
@@ -555,7 +555,7 @@ public class Conv{
     }
     
     public static String convert_Long_to_String(Long x){
-        return (Long.toString(x.longValue())).trim();
+        return (Long.toString(x)).trim();
     }
 
     // int and Integer -> . . .
@@ -564,7 +564,7 @@ public class Conv{
     }
    
     public static int convert_Integer_to_int(Integer xx){
-        return xx.intValue();
+        return xx;
     }
     
     public static double convert_int_to_double(int x){
@@ -630,13 +630,13 @@ public class Conv{
     }
 
     public static short convert_Integer_to_short(Integer xx){
-        int x = xx.intValue();
+        int x = xx;
         if(x>max_short_as_int)throw new IllegalArgumentException("Integer is too large to be recast as short");
         return xx.shortValue();
     }
 
     public static Short convert_Integer_to_Short(Integer xx){
-        int x = xx.intValue();
+        int x = xx;
         if(x>max_short_as_int)throw new IllegalArgumentException("Integer is too large to be recast as Short");
         return xx.shortValue();
     }
@@ -652,13 +652,13 @@ public class Conv{
     }
 
     public static byte convert_Integer_to_byte(Integer xx){
-        int x = xx.intValue();
+        int x = xx;
         if(x>max_byte_as_int)throw new IllegalArgumentException("Integer is too large to be recast as byte");
         return xx.byteValue();
     }
 
     public static Byte convert_Integer_to_Byte(Integer xx){
-        int x = xx.intValue();
+        int x = xx;
         if(x>max_byte_as_int)throw new IllegalArgumentException("Integer is too large to be recast as Byte");
         return xx.byteValue();
     }
@@ -684,7 +684,7 @@ public class Conv{
     }
     
     public static String convert_Integer_to_String(Integer x){
-        return (Integer.toString(x.intValue())).trim();
+        return (Integer.toString(x)).trim();
     }
     
     public static char convert_int_to_char(int x){
@@ -699,7 +699,7 @@ public class Conv{
     }
    
     public static short convert_Short_to_short(Short xx){
-        return xx.shortValue();
+        return xx;
     }    
     
     public static double convert_short_to_double(short x){
@@ -777,13 +777,13 @@ public class Conv{
     }
 
     public static byte convert_Short_to_byte(Short xx){
-        int x = xx.shortValue();
+        int x = xx;
         if(x>max_byte_as_short)throw new IllegalArgumentException("Short is too large to be recast as byte");
         return xx.byteValue();
     }
 
     public static Byte convert_Short_to_Byte(Short xx){
-        int x = xx.shortValue();
+        int x = xx;
         if(x>max_byte_as_short)throw new IllegalArgumentException("Short is too large to be recast as Byte");
         return xx.byteValue();
     }
@@ -809,7 +809,7 @@ public class Conv{
     }
     
     public static String convert_Short_to_String(Short x){
-        return (Short.toString(x.shortValue())).trim();
+        return (Short.toString(x)).trim();
     }
 
     
@@ -819,7 +819,7 @@ public class Conv{
     }
    
     public static byte convert_Byte_to_byte(Byte xx){
-        return xx.byteValue();
+        return xx;
     }    
     
     public static double convert_byte_to_double(byte x){
@@ -923,7 +923,7 @@ public class Conv{
     }
     
     public static String convert_Byte_to_String(Byte x){
-        return (Byte.toString(x.byteValue())).trim();
+        return (Byte.toString(x)).trim();
     }
     
     // BigDecimal -> . . .
@@ -1307,7 +1307,7 @@ public class Conv{
     }
        
     public static char convert_Character_to_char(Character x){
-        return x.charValue();
+        return x;
     }
     
     public static BigDecimal convert_char_to_BigDecimal(char x){

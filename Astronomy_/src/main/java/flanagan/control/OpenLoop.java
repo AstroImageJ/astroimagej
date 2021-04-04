@@ -579,11 +579,11 @@ public class OpenLoop extends BlackBox{
                 int j=0;
                 for(int i=0; i<this.nSeg; i++){
                     Integer holdI1 = (Integer)this.segments.get(j);
-                    int ii = holdI1.intValue();
+                    int ii = holdI1;
                     bb.segments.add(ii);
                     j++;
                     Integer holdI2 = (Integer)this.segments.get(j);
-                    ii = holdI2.intValue();
+                    ii = holdI2;
                     bb.segments.add(ii);
                     j++;
                     String holdS = (String)this.segments.get(j);

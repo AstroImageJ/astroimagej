@@ -2323,9 +2323,9 @@ public class Regression{
             // first comparison
             array0 = Regression.testOfAdditionalTerms_ArrayList(chiLast, 0, chi, 1, nData, this.fProbSignificance);
             nComp++;
-            fRatio = ((Double)array0.get(0)).doubleValue();
-            fProb = ((Double)array0.get(1)).doubleValue();
-            fSign = ((Double)array0.get(8)).doubleValue();
+            fRatio = (Double) array0.get(0);
+            fProb = (Double) array0.get(1);
+            fSign = (Double) array0.get(8);
 
             array1.add(chiLast);
             array1.add(chi);
@@ -2353,9 +2353,9 @@ public class Regression{
             // comparison
             array0 = Regression.testOfAdditionalTerms_ArrayList(chiLast, deg-1, chi, deg, nData, this.fProbSignificance);
             nComp++;
-            fRatio = ((Double)array0.get(0)).doubleValue();
-            fProb = ((Double)array0.get(1)).doubleValue();
-            fSign = ((Double)array0.get(8)).doubleValue();
+            fRatio = (Double) array0.get(0);
+            fProb = (Double) array0.get(1);
+            fSign = (Double) array0.get(8);
 
             array1.add(chiLast);
             array1.add(chi);
@@ -2387,11 +2387,11 @@ public class Regression{
         for(int i=0; i<nComp; i++){
             deg0s[i] = i;
             deg1s[i] = i+1;
-            chi0s[i] = (array1.get(5*i)).doubleValue();
-            chi1s[i] = (array1.get(5*i+1)).doubleValue();
-            fRatios[i] = (array1.get(5*i+2)).doubleValue();
-            fProbs[i] = (array1.get(5*i+3)).doubleValue();
-            fSigns[i] = (array1.get(5*i+4)).doubleValue();
+            chi0s[i] = array1.get(5 * i);
+            chi1s[i] = array1.get(5 * i + 1);
+            fRatios[i] = array1.get(5 * i + 2);
+            fProbs[i] = array1.get(5 * i + 3);
+            fSigns[i] = array1.get(5 * i + 4);
         }
 
 
@@ -2535,9 +2535,9 @@ public class Regression{
             // comparison
             array0 = Regression.testOfAdditionalTerms_ArrayList(chiLast, deg-1, chi, deg, nData, this.fProbSignificance);
             nComp++;
-            fRatio = ((Double)array0.get(0)).doubleValue();
-            fProb = ((Double)array0.get(1)).doubleValue();
-            fSign = ((Double)array0.get(8)).doubleValue();
+            fRatio = (Double) array0.get(0);
+            fProb = (Double) array0.get(1);
+            fSign = (Double) array0.get(8);
 
             array1.add(chiLast);
             array1.add(chi);
@@ -2569,11 +2569,11 @@ public class Regression{
         for(int i=0; i<nComp; i++){
             deg0s[i] = i+1;
             deg1s[i] = i+2;
-            chi0s[i] = (array1.get(5*i)).doubleValue();
-            chi1s[i] = (array1.get(5*i+1)).doubleValue();
-            fRatios[i] = (array1.get(5*i+2)).doubleValue();
-            fProbs[i] = (array1.get(5*i+3)).doubleValue();
-            fSigns[i] = (array1.get(5*i+4)).doubleValue();
+            chi0s[i] = array1.get(5 * i);
+            chi1s[i] = array1.get(5 * i + 1);
+            fRatios[i] = array1.get(5 * i + 2);
+            fProbs[i] = array1.get(5 * i + 3);
+            fSigns[i] = array1.get(5 * i + 4);
         }
 
 
@@ -3118,7 +3118,7 @@ public class Regression{
         // Set any single parameter constraint parameters
         if(this.penalty){
             Integer itemp = (Integer)this.penalties.get(1);
-            this.nConstraints = itemp.intValue();
+            this.nConstraints = itemp;
             this.penaltyParam = new int[this.nConstraints];
             this.penaltyCheck = new int[this.nConstraints];
             this.constraints = new double[this.nConstraints];
@@ -3126,13 +3126,13 @@ public class Regression{
             int j=2;
             for(int i=0;i<this.nConstraints;i++){
                 itemp = (Integer)this.penalties.get(j);
-                this.penaltyParam[i] = itemp.intValue();
+                this.penaltyParam[i] = itemp;
                 j++;
                 itemp = (Integer)this.penalties.get(j);
-                this.penaltyCheck[i] = itemp.intValue();
+                this.penaltyCheck[i] = itemp;
                 j++;
                 dtemp = (Double)this.penalties.get(j);
-                this.constraints[i] = dtemp.doubleValue();
+                this.constraints[i] = dtemp;
                 j++;
             }
         }
@@ -3140,7 +3140,7 @@ public class Regression{
         // Set any multiple parameters constraint parameters
         if(this.sumPenalty){
             Integer itemp = (Integer)this.sumPenalties.get(1);
-            this.nSumConstraints = itemp.intValue();
+            this.nSumConstraints = itemp;
             this.sumPenaltyParam = new int[this.nSumConstraints][];
             this.sumPlusOrMinus = new double[this.nSumConstraints][];
             this.sumPenaltyCheck = new int[this.nSumConstraints];
@@ -3152,7 +3152,7 @@ public class Regression{
             int j=2;
             for(int i=0;i<this.nSumConstraints;i++){
                 itemp = (Integer)this.sumPenalties.get(j);
-                this.sumPenaltyNumber[i] = itemp.intValue();
+                this.sumPenaltyNumber[i] = itemp;
                 j++;
                 itempArray = (int[])this.sumPenalties.get(j);
                 this.sumPenaltyParam[i] = itempArray;
@@ -3161,10 +3161,10 @@ public class Regression{
                 this.sumPlusOrMinus[i] = dtempArray;
                 j++;
                 itemp = (Integer)this.sumPenalties.get(j);
-                this.sumPenaltyCheck[i] = itemp.intValue();
+                this.sumPenaltyCheck[i] = itemp;
                 j++;
                 dtemp = (Double)this.sumPenalties.get(j);
-                this.sumConstraints[i] = dtemp.doubleValue();
+                this.sumConstraints[i] = dtemp;
                 j++;
             }
         }
@@ -3600,7 +3600,7 @@ public class Regression{
             this.penalties.add(1);
 	}
 	else{
-            int nPC = ((Integer)this.penalties.get(1)).intValue();
+            int nPC = (Integer) this.penalties.get(1);
             nPC++;
             this.penalties.set(1, nPC);
 	} 
@@ -3647,7 +3647,7 @@ public class Regression{
             this.sumPenalties.add(1);
 	}
 	else{
-            int nPC = ((Integer)this.sumPenalties.get(1)).intValue();
+            int nPC = (Integer) this.sumPenalties.get(1);
             nPC++;
             this.sumPenalties.set(1, nPC);
 	}
@@ -8071,12 +8071,12 @@ public class Regression{
 	 	Double tempd = null;
 	 	Integer tempi = null;
 	    tempi = (Integer)ret1.get(5);
-	 	int peaki = tempi.intValue();
+	 	int peaki = tempi;
 	    double mean = xData[0][peaki];
 
 	    // Calculate peak value
 	    tempd = (Double)ret1.get(4);
-	    double peak = tempd.doubleValue();
+	    double peak = tempd;
 
 	    // Fill arrays needed by the Simplex
         double[] start = new double[this.nParam];
@@ -8090,10 +8090,10 @@ public class Regression{
             ArrayList<Object> ret0 = Regression.dataSign(xData[0]);
 	 	    Double tempdd = null;
 	        tempdd = (Double)ret0.get(2);
-	 	    double xmax = tempdd.doubleValue();
+	 	    double xmax = tempdd;
 	 	    if(xmax==0.0D){
 	 	        tempdd = (Double)ret0.get(0);
-	 	        xmax = tempdd.doubleValue();
+	 	        xmax = tempdd;
 	 	    }
 	        step[0]=xmax*0.1D;
 	    }
@@ -8165,7 +8165,7 @@ public class Regression{
 	    Double tempd=null;
 	    ArrayList<Object> retY = Regression.dataSign(yData);
 	    tempd = (Double)retY.get(4);
-	    double yPeak = tempd.doubleValue();
+	    double yPeak = tempd;
 	    boolean yFlag = false;
 	    if(yPeak<0.0D){
 	        System.out.println("Regression.fitGaussian(): This implementation of the Gaussian distribution takes only positive y values\n(noise taking low values below zero are allowed)");
@@ -8181,7 +8181,7 @@ public class Regression{
 	    ArrayList<Object> ret1 = Regression.dataSign(yData);
 	 	Integer tempi = null;
 	    tempi = (Integer)ret1.get(5);
-	 	int peaki = tempi.intValue();
+	 	int peaki = tempi;
 	    double mean = xData[0][peaki];
 
 	    // Calculate an estimate of the sd
@@ -8189,7 +8189,7 @@ public class Regression{
 
 	    // Calculate estimate of y scale
 	    tempd = (Double)ret1.get(4);
-	    double ym = tempd.doubleValue();
+	    double ym = tempd;
 	    ym=ym*sd*Math.sqrt(2.0D*Math.PI);
 
         // Fill arrays needed by the Simplex
@@ -8206,10 +8206,10 @@ public class Regression{
             ArrayList<Object> ret0 = Regression.dataSign(xData[0]);
 	 	    Double tempdd = null;
 	        tempdd = (Double)ret0.get(2);
-	 	    double xmax = tempdd.doubleValue();
+	 	    double xmax = tempdd;
 	 	    if(xmax==0.0D){
 	 	        tempdd = (Double)ret0.get(0);
-	 	        xmax = tempdd.doubleValue();
+	 	        xmax = tempdd;
 	 	    }
 	        step[1]=xmax*0.1D;
 	    }
@@ -8301,7 +8301,7 @@ public class Regression{
 	    Double tempd=null;
 	    ArrayList<Object> retY = Regression.dataSign(yData);
 	    tempd = (Double)retY.get(4);
-	    double yPeak = tempd.doubleValue();
+	    double yPeak = tempd;
 	    boolean yFlag = false;
 	    if(yPeak<0.0D){
 	        System.out.println("Regression.fitGaussian(): This implementation of the Gaussian distribution takes only positive y values\n(noise taking low values below zero are allowed)");
@@ -8428,7 +8428,7 @@ public class Regression{
 	    Double tempd=null;
 	    ArrayList<Object> retY = Regression.dataSign(yData);
 	    tempd = (Double)retY.get(4);
-	    double yPeak = tempd.doubleValue();
+	    double yPeak = tempd;
 	    boolean yFlag = false;
 	    if(yPeak<0.0D){
 	        System.out.println("Regression.fitGaussian(): This implementation of the Gaussian distribution takes only positive y values\n(noise taking low values below zero are allowed)");
@@ -8444,7 +8444,7 @@ public class Regression{
 	    ArrayList<Object> ret1 = Regression.dataSign(yData);
 	 	Integer tempi = null;
 	    tempi = (Integer)ret1.get(5);
-	 	int peaki = tempi.intValue();
+	 	int peaki = tempi;
 	    double mean = xData[0][peaki];
 
 	    // Calculate an estimate of the sd
@@ -8452,7 +8452,7 @@ public class Regression{
 
 	    // Calculate estimate of y scale
 	    tempd = (Double)ret1.get(4);
-	    double ym = tempd.doubleValue();
+	    double ym = tempd;
 
 
         // Fill arrays needed by the Simplex
@@ -8468,10 +8468,10 @@ public class Regression{
                 ArrayList<Object> ret0 = Regression.dataSign(xData[0]);
 	 	        Double tempdd = null;
 	            tempdd = (Double)ret0.get(2);
-	 	        double xmax = tempdd.doubleValue();
+	 	        double xmax = tempdd;
 	 	        if(xmax==0.0D){
 	 	            tempdd = (Double)ret0.get(0);
-	 	            xmax = tempdd.doubleValue();
+	 	            xmax = tempdd;
 	 	        }
 	            step[counter+1]=Math.abs(xmax*0.1D);
 	        }
@@ -8630,7 +8630,7 @@ public class Regression{
 	    Double tempd=null;
 	    ArrayList<Object> retY = Regression.dataSign(yData);
 	    tempd = (Double)retY.get(4);
-	    double yPeak = tempd.doubleValue();
+	    double yPeak = tempd;
 	    boolean yFlag = false;
 	    if(yPeak<0.0D){
 	        System.out.println("Regression.fitLogNormalTwoPar(): This implementation of the two parameter log-nprmal distribution takes only positive y values\n(noise taking low values below zero are allowed)");
@@ -8646,7 +8646,7 @@ public class Regression{
 	    ArrayList<Object> ret1 = Regression.dataSign(yData);
 	 	Integer tempi = null;
 	    tempi = (Integer)ret1.get(5);
-	 	int peaki = tempi.intValue();
+	 	int peaki = tempi;
 	    double mean = xData[0][peaki];
 
 	    // Calculate an estimate of the mu
@@ -8661,7 +8661,7 @@ public class Regression{
 
 	    // Calculate estimate of y scale
 	    tempd = (Double)ret1.get(4);
-	    double ym = tempd.doubleValue();
+	    double ym = tempd;
 	    ym=ym*Math.exp(mu - sigma*sigma/2);
 
         // Fill arrays needed by the Simplex
@@ -8678,10 +8678,10 @@ public class Regression{
             ArrayList<Object> ret0 = Regression.dataSign(xData[0]);
 	 	    Double tempdd = null;
 	        tempdd = (Double)ret0.get(2);
-	 	    double xmax = tempdd.doubleValue();
+	 	    double xmax = tempdd;
 	 	    if(xmax==0.0D){
 	 	        tempdd = (Double)ret0.get(0);
-	 	        xmax = tempdd.doubleValue();
+	 	        xmax = tempdd;
 	 	    }
 	        step[0]=xmax*0.1D;
 	    }
@@ -8689,10 +8689,10 @@ public class Regression{
 	        ArrayList<Object> ret0 = Regression.dataSign(xData[0]);
 	 	    Double tempdd = null;
 	        tempdd = (Double)ret0.get(2);
-	 	    double xmax = tempdd.doubleValue();
+	 	    double xmax = tempdd;
 	 	    if(xmax==0.0D){
 	 	        tempdd = (Double)ret0.get(0);
-	 	        xmax = tempdd.doubleValue();
+	 	        xmax = tempdd;
 	 	    }
 	        step[1]=xmax*0.1D;
 	    }
@@ -8758,7 +8758,7 @@ public class Regression{
 	    Double tempd=null;
 	    ArrayList<Object> retY = Regression.dataSign(yData);
 	    tempd = (Double)retY.get(4);
-	    double yPeak = tempd.doubleValue();
+	    double yPeak = tempd;
 	    boolean yFlag = false;
 	    if(yPeak<0.0D){
 	        System.out.println("Regression.fitLogNormalThreePar(): This implementation of the three parameter log-normal distribution takes only positive y values\n(noise taking low values below zero are allowed)");
@@ -8774,7 +8774,7 @@ public class Regression{
 	    ArrayList<Object> ret1 = Regression.dataSign(yData);
 	 	Integer tempi = null;
 	    tempi = (Integer)ret1.get(5);
-	 	int peaki = tempi.intValue();
+	 	int peaki = tempi;
 	    double mean = xData[0][peaki];
 
 	    // Calculate an estimate of the gamma
@@ -8791,16 +8791,16 @@ public class Regression{
 	    ArrayList<Object> ret0 = Regression.dataSign(xData[0]);
 	 	Double tempdd = null;
 	 	tempdd = (Double)ret0.get(0);
-	 	double xmin = tempdd.doubleValue();
+	 	double xmin = tempdd;
 	    tempdd = (Double)ret0.get(2);
-	 	double xmax = tempdd.doubleValue();
+	 	double xmax = tempdd;
 	    double alpha = xmin - (xmax - xmin)/100.0D;;
 	    if(xmin==0.0D)alpha -= (xmax - xmin)/100.0D;
 
 
 	    // Calculate estimate of y scale
 	    tempd = (Double)ret1.get(4);
-	    double ym = tempd.doubleValue();
+	    double ym = tempd;
 	    ym=ym*(gamma+alpha)*Math.exp(- beta*beta/2);
 
         // Fill arrays needed by the Simplex
@@ -8882,7 +8882,7 @@ public class Regression{
 	    Double tempd=null;
 	    ArrayList<Object> retY = Regression.dataSign(yData);
 	    tempd = (Double)retY.get(4);
-	    double yPeak = tempd.doubleValue();
+	    double yPeak = tempd;
 	    boolean yFlag = false;
 	    if(yPeak<0.0D){
 	        System.out.println("Regression.fitLorentzian(): This implementation of the Lorentzian distribution takes only positive y values\n(noise taking low values below zero are allowed)");
@@ -8898,7 +8898,7 @@ public class Regression{
 	    ArrayList ret1 = Regression.dataSign(yData);
 	 	Integer tempi = null;
 	    tempi = (Integer)ret1.get(5);
-	 	int peaki = tempi.intValue();
+	 	int peaki = tempi;
 	    double mean = xData[0][peaki];
 
 	    // Calculate an estimate of the half-height width
@@ -8906,7 +8906,7 @@ public class Regression{
 
 	    // Calculate estimate of y scale
 	    tempd = (Double)ret1.get(4);
-	    double ym = tempd.doubleValue();
+	    double ym = tempd;
 	    ym=ym*sd*Math.PI/2.0D;
 
         // Fill arrays needed by the Simplex
@@ -8922,10 +8922,10 @@ public class Regression{
             ArrayList<Object> ret0 = Regression.dataSign(xData[0]);
 	 	    Double tempdd = null;
 	        tempdd = (Double)ret0.get(2);
-	 	    double xmax = tempdd.doubleValue();
+	 	    double xmax = tempdd;
 	 	    if(xmax==0.0D){
 	 	        tempdd = (Double)ret0.get(0);
-	 	        xmax = tempdd.doubleValue();
+	 	        xmax = tempdd;
 	 	    }
 	        step[0]=xmax*0.1D;
 	    }
@@ -9428,12 +9428,12 @@ public class Regression{
 	    Double tempd=null;
 	    ArrayList<Object> retY = Regression.dataSign(yData);
 	    tempd = (Double)retY.get(4);
-	    double yPeak = tempd.doubleValue();
+	    double yPeak = tempd;
 	    Integer tempi = null;
 	    tempi = (Integer)retY.get(5);
-	 	int peaki = tempi.intValue();
+	 	int peaki = tempi;
 	 	tempd = (Double)retY.get(8);
-	 	double mean = tempd.doubleValue();
+	 	double mean = tempd;
 
 	 	// check for infinity
 	    boolean testInf = true;
@@ -9444,11 +9444,11 @@ public class Regression{
 	            if(dof<1 && !this.ignoreDofFcheck)throw new IllegalArgumentException("The effective degrees of freedom have been reduced to zero");
  	            retY = Regression.dataSign(yData);
 	            tempd = (Double)retY.get(4);
-	            yPeak = tempd.doubleValue();
+	            yPeak = tempd;
 	            tempi = (Integer)retY.get(5);
-	 	        peaki = tempi.intValue();
+	 	        peaki = tempi;
 	 	        tempd = (Double)retY.get(8);
-	 	        mean = tempd.doubleValue();
+	 	        mean = tempd;
 	 	    }
 	 	    else{
 	 	        testInf = false;
@@ -9477,11 +9477,11 @@ public class Regression{
 	    // minimum value of x
 	    ArrayList<Object> retX = Regression.dataSign(this.xData[0]);
         tempd = (Double)retX.get(0);
-	    double xMin = tempd.doubleValue();
+	    double xMin = tempd;
 
 	    // maximum value of x
         tempd = (Double)retX.get(2);
-	    double xMax = tempd.doubleValue();
+	    double xMax = tempd;
 
         // Calculate  x value at peak y (estimate of the 'distribution mode')
 		double distribMode = xData[0][peaki];
@@ -9562,10 +9562,10 @@ public class Regression{
                         ArrayList<Object> ret0 = Regression.dataSign(xData[0]);
 	 	                Double tempdd = null;
 	                    tempdd = (Double)ret0.get(2);
-	 	                double xmax = tempdd.doubleValue();
+	 	                double xmax = tempdd;
 	 	                if(xmax==0.0D){
 	 	                    tempdd = (Double)ret0.get(0);
-	 	                    xmax = tempdd.doubleValue();
+	 	                    xmax = tempdd;
 	 	                }
 	                    step[0]=xmax*0.1D;
 	                }
@@ -9640,10 +9640,10 @@ public class Regression{
                         ArrayList<Object> ret0 = Regression.dataSign(xData[0]);
 	 	                Double tempdd = null;
 	                    tempdd = (Double)ret0.get(2);
-	 	                double xmax = tempdd.doubleValue();
+	 	                double xmax = tempdd;
 	 	                if(xmax==0.0D){
 	 	                    tempdd = (Double)ret0.get(0);
-	 	                    xmax = tempdd.doubleValue();
+	 	                    xmax = tempdd;
 	 	                }
 	                    step[0]=xmax*0.1D;
 	                }
@@ -10111,7 +10111,7 @@ public class Regression{
 	        Double tempd=null;
 	        ArrayList<Object> retY = Regression.dataSign(yData);
 	        tempd = (Double)retY.get(4);
-	        double yPeak = tempd.doubleValue();
+	        double yPeak = tempd;
 	        boolean yFlag = false;
 
 	    if(yPeak<0.0D){
@@ -10130,7 +10130,7 @@ public class Regression{
 
         // Calculate  x value at peak y (estimate of the 'distribution mode')
 	    tempi = (Integer)retY.get(5);
-	 	int peaki = tempi.intValue();
+	 	int peaki = tempi;
 	    double distribMode = xData[0][peaki];
 
 	    // Calculate an estimate of the half-height width
@@ -10153,10 +10153,10 @@ public class Regression{
                         ArrayList<Object> ret0 = Regression.dataSign(xData[0]);
 	 	                Double tempdd = null;
 	                    tempdd = (Double)ret0.get(2);
-	 	                double xmax = tempdd.doubleValue();
+	 	                double xmax = tempdd;
 	 	                if(xmax==0.0D){
 	 	                    tempdd = (Double)ret0.get(0);
-	 	                    xmax = tempdd.doubleValue();
+	 	                    xmax = tempdd;
 	 	                }
 	                    step[0]=xmax*0.1D;
 	                }
@@ -10780,10 +10780,10 @@ public class Regression{
 	    Double tempd=null;
 	    ArrayList<Object> retY = Regression.dataSign(yData);
 	    tempd = (Double)retY.get(4);
-	    double yPeak = tempd.doubleValue();
+	    double yPeak = tempd;
 	    Integer tempi = null;
 	    tempi = (Integer)retY.get(5);
-	 	int peaki = tempi.intValue();
+	 	int peaki = tempi;
 
  	    // check sign of y data
  	    String ss = "Exponential";
@@ -10806,7 +10806,7 @@ public class Regression{
 	    // minimum value of x
 	    ArrayList<Object> retX = Regression.dataSign(this.xData[0]);
         tempd = (Double)retX.get(0);
-	    double xMin = tempd.doubleValue();
+	    double xMin = tempd;
 
         // estimate of sigma
         double yE = yPeak/Math.exp(1.0D);
@@ -10839,10 +10839,10 @@ public class Regression{
                         ArrayList<Object> ret0 = Regression.dataSign(xData[0]);
 	 	                Double tempdd = null;
 	                    tempdd = (Double)ret0.get(2);
-	 	                double xmax = tempdd.doubleValue();
+	 	                double xmax = tempdd;
 	 	                if(xmax==0.0D){
 	 	                    tempdd = (Double)ret0.get(0);
-	 	                    xmax = tempdd.doubleValue();
+	 	                    xmax = tempdd;
 	 	                }
 	                    step[0]=xmax*0.1D;
 	                }
@@ -10960,10 +10960,10 @@ public class Regression{
 	    Double tempd=null;
 	    ArrayList<Object> retY = Regression.dataSign(yData);
 	    tempd = (Double)retY.get(4);
-	    double yPeak = tempd.doubleValue();
+	    double yPeak = tempd;
 	    Integer tempi = null;
 	    tempi = (Integer)retY.get(5);
-	 	int peaki = tempi.intValue();
+	 	int peaki = tempi;
 
  	    // check sign of y data
  	    String ss = "Rayleigh";
@@ -10997,11 +10997,11 @@ public class Regression{
 	    // minimum value of x
 	    ArrayList<Object> retX = Regression.dataSign(this.xData[0]);
         tempd = (Double)retX.get(0);
-	    double xMin = tempd.doubleValue();
+	    double xMin = tempd;
 
 	    // maximum value of x
         tempd = (Double)retX.get(2);
-	    double xMax = tempd.doubleValue();
+	    double xMax = tempd;
 
         // Calculate  x value at peak y (estimate of the 'distribution mode')
 		double distribMode = xData[0][peaki];
@@ -11176,19 +11176,19 @@ public class Regression{
 	    Double tempd=null;
 	    ArrayList<Object> retY = Regression.dataSign(yData);
 	    tempd = (Double)retY.get(4);
-	    double yPeak = tempd.doubleValue();
+	    double yPeak = tempd;
 	    Integer tempi = null;
 	    tempi = (Integer)retY.get(5);
-	 	int peaki = tempi.intValue();
+	 	int peaki = tempi;
 
 	 	// check for infinity
 	 	if(this.infinityCheck(yPeak, peaki)){
  	        retY = Regression.dataSign(yData);
 	        tempd = (Double)retY.get(4);
-	        yPeak = tempd.doubleValue();
+	        yPeak = tempd;
 	        tempi = null;
 	        tempi = (Integer)retY.get(5);
-	 	    peaki = tempi.intValue();
+	 	    peaki = tempi;
 	 	}
 
  	    // check sign of y data
@@ -11211,11 +11211,11 @@ public class Regression{
 	    // minimum value of x
 	    ArrayList<Object> retX = Regression.dataSign(this.xData[0]);
         tempd = (Double)retX.get(0);
-	    double xMin = tempd.doubleValue();
+	    double xMin = tempd;
 
 	    // maximum value of x
         tempd = (Double)retX.get(2);
-	    double xMax = tempd.doubleValue();
+	    double xMax = tempd;
 
         // Calculate  x value at peak y (estimate of the 'distribution mode')
 		double distribMode = xData[0][peaki];
@@ -12681,7 +12681,7 @@ public class Regression{
 	    Double tempd=null;
 	    ArrayList<Object> retY = Regression.dataSign(yData);
 	    tempd = (Double)retY.get(4);
-	    double yPeak = tempd.doubleValue();
+	    double yPeak = tempd;
 	    boolean yFlag = false;
 	    if(yPeak<0.0D){
 	        System.out.println("Regression.fitLogistic(): This implementation of the Logistic distribution takes only positive y values\n(noise taking low values below zero are allowed)");
@@ -12697,7 +12697,7 @@ public class Regression{
 	    ArrayList<Object> ret1 = Regression.dataSign(yData);
 	 	Integer tempi = null;
 	    tempi = (Integer)ret1.get(5);
-	 	int peaki = tempi.intValue();
+	 	int peaki = tempi;
 	    double mu = xData[0][peaki];
 
 	    // Calculate an estimate of the beta
@@ -12705,7 +12705,7 @@ public class Regression{
 
 	    // Calculate estimate of y scale
 	    tempd = (Double)ret1.get(4);
-	    double ym = tempd.doubleValue();
+	    double ym = tempd;
 	    ym=ym*beta*Math.sqrt(2.0D*Math.PI);
 
         // Fill arrays needed by the Simplex
@@ -12722,10 +12722,10 @@ public class Regression{
             ArrayList<Object> ret0 = Regression.dataSign(xData[0]);
 	 	    Double tempdd = null;
 	        tempdd = (Double)ret0.get(2);
-	 	    double xmax = tempdd.doubleValue();
+	 	    double xmax = tempdd;
 	 	    if(xmax==0.0D){
 	 	        tempdd = (Double)ret0.get(0);
-	 	        xmax = tempdd.doubleValue();
+	 	        xmax = tempdd;
 	 	    }
 	        step[0]=xmax*0.1D;
 	    }
@@ -12801,7 +12801,7 @@ public class Regression{
 	    Double tempd=null;
 	    ArrayList<Object> retY = Regression.dataSign(yData);
 	    tempd = (Double)retY.get(4);
-	    double yPeak = tempd.doubleValue();
+	    double yPeak = tempd;
 	    boolean yFlag = false;
 	    if(yPeak<0.0D){
 	        System.out.println("Regression.fitBeta(): This implementation of the Beta distribution takes only positive y values\n(noise taking low values below zero are allowed)");
@@ -12819,18 +12819,18 @@ public class Regression{
 
         // Calculate  x value at peak y (estimate of the 'distribution mode')
 	    tempi = (Integer)retY.get(5);
-	 	int peaki = tempi.intValue();
+	 	int peaki = tempi;
 	    double distribMode = xData[0][peaki];
 
 	    // minimum value
 	    tempd = (Double)retX.get(0);
-	    double minX = tempd.doubleValue();
+	    double minX = tempd;
 	    // maximum value
 	    tempd = (Double)retX.get(2);
-	    double maxX = tempd.doubleValue();
+	    double maxX = tempd;
 	    // mean value
 	    tempd = (Double)retX.get(8);
-	    double meanX = tempd.doubleValue();
+	    double meanX = tempd;
 
 
 	    // test that data is within range
@@ -12990,7 +12990,7 @@ public class Regression{
 	    Double tempd=null;
 	    ArrayList<Object> retY = Regression.dataSign(yData);
 	    tempd = (Double)retY.get(4);
-	    double yPeak = tempd.doubleValue();
+	    double yPeak = tempd;
 	    boolean yFlag = false;
 	    if(yPeak<0.0D){
 	        System.out.println("Regression.fitGamma(): This implementation of the Gamma distribution takes only positive y values\n(noise taking low values below zero are allowed)");
@@ -13008,18 +13008,18 @@ public class Regression{
 
         // Calculate  x value at peak y (estimate of the 'distribution mode')
 	    tempi = (Integer)retY.get(5);
-	 	int peaki = tempi.intValue();
+	 	int peaki = tempi;
 	    double distribMode = xData[0][peaki];
 
 	    // minimum value
 	    tempd = (Double)retX.get(0);
-	    double minX = tempd.doubleValue();
+	    double minX = tempd;
 	    // maximum value
 	    tempd = (Double)retX.get(2);
-	    double maxX = tempd.doubleValue();
+	    double maxX = tempd;
 	    // mean value
 	    tempd = (Double)retX.get(8);
-	    double meanX = tempd.doubleValue();
+	    double meanX = tempd;
 
 
 	    // test that data is within range
@@ -13146,7 +13146,7 @@ public class Regression{
 	    Double tempd=null;
 	    ArrayList<Object> retY = Regression.dataSign(yData);
 	    tempd = (Double)retY.get(4);
-	    double yPeak = tempd.doubleValue();
+	    double yPeak = tempd;
 	    boolean yFlag = false;
 	    if(yPeak<0.0D){
 	        System.out.println("Regression.fitGamma(): This implementation of the Erlang distribution takes only positive y values\n(noise taking low values below zero are allowed)");
@@ -13164,18 +13164,18 @@ public class Regression{
 
         // Calculate  x value at peak y (estimate of the 'distribution mode')
 	    tempi = (Integer)retY.get(5);
-	 	int peaki = tempi.intValue();
+	 	int peaki = tempi;
 	    double distribMode = xData[0][peaki];
 
 	    // minimum value
 	    tempd = (Double)retX.get(0);
-	    double minX = tempd.doubleValue();
+	    double minX = tempd;
 	    // maximum value
 	    tempd = (Double)retX.get(2);
-	    double maxX = tempd.doubleValue();
+	    double maxX = tempd;
 	    // mean value
 	    tempd = (Double)retX.get(8);
-	    double meanX = tempd.doubleValue();
+	    double meanX = tempd;
 
 
 	    // test that data is within range

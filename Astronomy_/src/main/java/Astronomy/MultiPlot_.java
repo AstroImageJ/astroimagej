@@ -5279,8 +5279,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         }
 
         public void mousePressed(MouseEvent e) {
-            startDragX = plotImageCanvas.offScreenX(e.getX());
-            startDragY = plotImageCanvas.offScreenY(e.getY());
+            startDragX = (int) plot.descaleX(e.getX());
+            startDragY = (int) plot.descaleY(e.getY());
             startDragScreenX = e.getX();
             startDragScreenY = e.getY();
             startDragSubImageX = plotImageCanvas.getSrcRect().x;
@@ -5557,8 +5557,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     };
 
     static public void handleControlLeftClickDrag(MouseEvent e, int imageX, int imageY) {
-        double x = plotMinX + (double) (imageX - (Plot.LEFT_MARGIN)) * (plotMaxX - plotMinX) / (double) (plotSizeX - (Plot.LEFT_MARGIN + Plot.RIGHT_MARGIN));
-        double y = plotMaxY - (double) (imageY - (Plot.TOP_MARGIN)) * (plotMaxY - plotMinY) / (double) (plotSizeY - (Plot.TOP_MARGIN + Plot.BOTTOM_MARGIN));
+        double x = plot.descaleX(e.getX());
+        double y = plot.descaleY(e.getY());
         double delta = 0.025 * (plotMaxX - plotMinX);
         boolean alreadyMoved = false;
         if (showDMarkers && x > dMarker2Value - delta && x < dMarker2Value + delta) {
@@ -5598,8 +5598,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     }
 
     static public void handleControlRightClickDrag(MouseEvent e, int imageX, int imageY) {
-        double x = plotMinX + (double) (imageX - (Plot.LEFT_MARGIN)) * (plotMaxX - plotMinX) / (double) (plotSizeX - (Plot.LEFT_MARGIN + Plot.RIGHT_MARGIN));
-        double y = plotMaxY - (double) (imageY - (Plot.TOP_MARGIN)) * (plotMaxY - plotMinY) / (double) (plotSizeY - (Plot.TOP_MARGIN + Plot.BOTTOM_MARGIN));
+        double x = plot.descaleX(e.getX());
+        double y = plot.descaleY(e.getY());
         showDMarkersCB.setSelected(true);
         showDMarkers = true;
         if (e.isShiftDown()) //update vertical marker 4 position

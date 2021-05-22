@@ -3339,10 +3339,11 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         if (plotImageCanvas != null) //zoom != 0.0 &&
         {
-            plotMinX = totalPanOffsetX + newPanOffsetX + pltMinX + (pltMaxX - pltMinX) * (mouseX / (plotSizeX - (Plot.LEFT_MARGIN + Plot.RIGHT_MARGIN + 1))) * zoom;
-            plotMaxX = totalPanOffsetX + newPanOffsetX + pltMaxX - (pltMaxX - pltMinX) * ((plotSizeX - (Plot.LEFT_MARGIN + Plot.RIGHT_MARGIN + 1) - mouseX) / (plotSizeX - (Plot.LEFT_MARGIN + Plot.RIGHT_MARGIN + 1))) * zoom;
-            plotMinY = totalPanOffsetY + newPanOffsetY + pltMinY + (pltMaxY - pltMinY) * ((plotSizeY - (Plot.TOP_MARGIN + Plot.BOTTOM_MARGIN) - mouseY) / (plotSizeY - (Plot.TOP_MARGIN + Plot.BOTTOM_MARGIN))) * zoom;
-            plotMaxY = totalPanOffsetY + newPanOffsetY + pltMaxY - (pltMaxY - pltMinY) * (mouseY / (plotSizeY - (Plot.TOP_MARGIN + Plot.BOTTOM_MARGIN))) * zoom;
+            Rectangle s = plot.getDrawingFrame();
+            plotMinX = totalPanOffsetX + newPanOffsetX + pltMinX + (pltMaxX - pltMinX) * (mouseX / s.width) * zoom;
+            plotMaxX = totalPanOffsetX + newPanOffsetX + pltMaxX - (pltMaxX - pltMinX) * (((s.width +1) - mouseX) / (s.width)) * zoom;
+            plotMinY = totalPanOffsetY + newPanOffsetY + pltMinY + (pltMaxY - pltMinY) * ((s.height - mouseY) / (s.height)) * zoom;
+            plotMaxY = totalPanOffsetY + newPanOffsetY + pltMaxY - (pltMaxY - pltMinY) * (mouseY / (s.height)) * zoom;
         } else {
             plotMinX = pltMinX;
             plotMaxX = pltMaxX;
@@ -5303,10 +5304,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             int imageX = plotImageCanvas.offScreenX(screenX);
             int imageY = plotImageCanvas.offScreenY(screenY);
 
-            double xval = plotMinX + (double) (startDragX - Plot.LEFT_MARGIN) * (plotMaxX - plotMinX) / (double) (plotSizeX - (Plot.LEFT_MARGIN + Plot.RIGHT_MARGIN));
-            double yval = plotMaxY - (double) (startDragY - Plot.TOP_MARGIN) * (plotMaxY - plotMinY) / (double) (plotSizeY - (Plot.TOP_MARGIN + Plot.BOTTOM_MARGIN));
-            double dxval = (double) (imageX - startDragX) * (plotMaxX - plotMinX) / (double) (plotSizeX - (Plot.LEFT_MARGIN + Plot.RIGHT_MARGIN));
-            double dyval = (double) (imageY - startDragY) * (-1.0) * (plotMaxY - plotMinY) / (double) (plotSizeY - (Plot.TOP_MARGIN + Plot.BOTTOM_MARGIN));
+            double xval = plotMinX + (double) (startDragX - Plot.LEFT_MARGIN) * (plotMaxX - plotMinX) / (double) (plot.getDrawingFrame().width);
+            double yval = plotMaxY - (double) (startDragY - Plot.TOP_MARGIN) * (plotMaxY - plotMinY) / (double) (plot.getDrawingFrame().height);
+            double dxval = (double) (imageX - startDragX) * (plotMaxX - plotMinX) / (double) (plot.getDrawingFrame().width);
+            double dyval = (double) (imageY - startDragY) * (-1.0) * (plotMaxY - plotMinY) / (double) (plot.getDrawingFrame().height);
 
 
             if (((e.getModifiers() & MouseEvent.BUTTON2_MASK) != 0) && button2Drag && !e.isShiftDown() && !e.isControlDown() && !e.isAltDown()) {                                                          // measure distance and report in Results Table
@@ -5449,10 +5450,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
                         addElement(list, path, Color.red, 2);
                         plotImageCanvas.setDisplayList(list);
-                        double x = plotMinX + (double) (imageX - (Plot.LEFT_MARGIN)) * (plotMaxX - plotMinX) / (double) (plotSizeX - (Plot.LEFT_MARGIN + Plot.RIGHT_MARGIN));
-                        double y = plotMaxY - (double) (imageY - (Plot.TOP_MARGIN)) * (plotMaxY - plotMinY) / (double) (plotSizeY - (Plot.TOP_MARGIN + Plot.BOTTOM_MARGIN));
-                        double dx = (double) (imageX - startDragX) * (plotMaxX - plotMinX) / (double) (plotSizeX - (Plot.LEFT_MARGIN + Plot.RIGHT_MARGIN));
-                        double dy = (double) (imageY - startDragY) * (-1.0) * (plotMaxY - plotMinY) / (double) (plotSizeY - (Plot.TOP_MARGIN + Plot.BOTTOM_MARGIN));
+                        double x = plotMinX + (double) (imageX - (Plot.LEFT_MARGIN)) * (plotMaxX - plotMinX) / (double) (plot.getDrawingFrame().width);
+                        double y = plotMaxY - (double) (imageY - (Plot.TOP_MARGIN)) * (plotMaxY - plotMinY) / (double) (plot.getDrawingFrame().height);
+                        double dx = (double) (imageX - startDragX) * (plotMaxX - plotMinX) / (double) (plot.getDrawingFrame().width);
+                        double dy = (double) (imageY - startDragY) * (-1.0) * (plotMaxY - plotMinY) / (double) (plot.getDrawingFrame().height);
                         plotbottompanel = (Panel) plotWindow.getComponent(1);
                         plotbottompanel.setSize(600, 30);
                         plotcoordlabel = (Label) plotbottompanel.getComponent(4);
@@ -5473,10 +5474,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
                     addElement(list, path, Color.red, 2);
                     plotImageCanvas.setDisplayList(list);
-                    double x = plotMinX + (double) (imageX - (Plot.LEFT_MARGIN)) * (plotMaxX - plotMinX) / (double) (plotSizeX - (Plot.LEFT_MARGIN + Plot.RIGHT_MARGIN));
-                    double y = plotMaxY - (double) (imageY - (Plot.TOP_MARGIN)) * (plotMaxY - plotMinY) / (double) (plotSizeY - (Plot.TOP_MARGIN + Plot.BOTTOM_MARGIN));
-                    double dx = (double) (imageX - startDragX) * (plotMaxX - plotMinX) / (double) (plotSizeX - (Plot.LEFT_MARGIN + Plot.RIGHT_MARGIN));
-                    double dy = (double) (imageY - startDragY) * (-1.0) * (plotMaxY - plotMinY) / (double) (plotSizeY - (Plot.TOP_MARGIN + Plot.BOTTOM_MARGIN));
+                    double x = plotMinX + (double) (imageX - (Plot.LEFT_MARGIN)) * (plotMaxX - plotMinX) / (double) plot.getDrawingFrame().width;
+                    double y = plotMaxY - (double) (imageY - (Plot.TOP_MARGIN)) * (plotMaxY - plotMinY) / (double) (plot.getDrawingFrame().height);
+                    double dx = (double) (imageX - startDragX) * (plotMaxX - plotMinX) / (double) (plot.getDrawingFrame().width);
+                    double dy = (double) (imageY - startDragY) * (-1.0) * (plotMaxY - plotMinY) / (double) (plot.getDrawingFrame().height);
                     plotcoordlabel.setText("x=" + fourPlaces.format(x) + ", y=" + fourPlaces.format(y) + ", dx=" + fourPlaces.format(dx) + ", dy=" + fourPlaces.format(dy));
                     IJ.showStatus("plot coordinates: x=" + fourPlaces.format(x) + ", y=" + fourPlaces.format(y) + ", dx=" + fourPlaces.format(dx) + ", dy=" + fourPlaces.format(dy));
                 } else if ((e.getModifiers() & MouseEvent.BUTTON1_MASK) != 0)            // dragging with left mouse button (pan image)
@@ -5484,8 +5485,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     if (!e.isControlDown() && !e.isAltDown()) {
 //                                    if (true)//(zoom != 0.0)
 //                                        {
-                        newPanOffsetX = -(plotMaxX - plotMinX) * (screenX - startDragScreenX) / (plotSizeX - (Plot.LEFT_MARGIN + Plot.RIGHT_MARGIN));
-                        newPanOffsetY = (plotMaxY - plotMinY) * (screenY - startDragScreenY) / (plotSizeY - (Plot.TOP_MARGIN + Plot.BOTTOM_MARGIN));
+                        newPanOffsetX = -(plotMaxX - plotMinX) * (screenX - startDragScreenX) / (plot.getDrawingFrame().width);
+                        newPanOffsetY = (plotMaxY - plotMinY) * (screenY - startDragScreenY) / plot.getDrawingFrame().height;
                         updatePlot(updateNoFits());
 //                                        }
 //                                    else
@@ -5500,8 +5501,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                             plotcoordlabel.setText("DATA: x=" + fourPlaces.format(x[firstCurve][boldedDatum]) + ", y=" + fourPlaces.format(y[firstCurve][boldedDatum]));
                             IJ.showStatus("data values: x=" + fourPlaces.format(x[firstCurve][boldedDatum]) + ", y=" + fourPlaces.format(y[firstCurve][boldedDatum]));
                         } else {
-                            double x = plotMinX + (double) (imageX - (Plot.LEFT_MARGIN)) * (plotMaxX - plotMinX) / (double) (plotSizeX - (Plot.LEFT_MARGIN + Plot.RIGHT_MARGIN));
-                            double y = plotMaxY - (double) (imageY - (Plot.TOP_MARGIN)) * (plotMaxY - plotMinY) / (double) (plotSizeY - (Plot.TOP_MARGIN + Plot.BOTTOM_MARGIN));  //was 58
+                            double x = plotMinX + (double) (imageX - (Plot.LEFT_MARGIN)) * (plotMaxX - plotMinX) / (double) (plot.getDrawingFrame().width);
+                            double y = plotMaxY - (double) (imageY - (Plot.TOP_MARGIN)) * (plotMaxY - plotMinY) / (double) (plot.getDrawingFrame().height);  //was 58
                             plotcoordlabel.setText("x=" + fourPlaces.format(x) + ", y=" + fourPlaces.format(y));
                             IJ.showStatus("plot coordinates: x=" + fourPlaces.format(x) + ", y=" + fourPlaces.format(y));
                         }
@@ -5518,8 +5519,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
             int imageX = plotImageCanvas.offScreenX(e.getX());
             int imageY = plotImageCanvas.offScreenY(e.getY());
-            double xval = plotMinX + (double) (imageX - (Plot.LEFT_MARGIN)) * (plotMaxX - plotMinX) / (double) (plotSizeX - (Plot.LEFT_MARGIN + Plot.RIGHT_MARGIN));
-            double yval = plotMaxY - (double) (imageY - (Plot.TOP_MARGIN)) * (plotMaxY - plotMinY) / (double) (plotSizeY - (Plot.TOP_MARGIN + Plot.BOTTOM_MARGIN));
+            double xval = plotMinX + (double) (imageX - (Plot.LEFT_MARGIN)) * (plotMaxX - plotMinX) / (double) (plot.getDrawingFrame().width);
+            double yval = plotMaxY - (double) (imageY - (Plot.TOP_MARGIN)) * (plotMaxY - plotMinY) / (double) (plot.getDrawingFrame().height);
 
 
             if (e.isShiftDown() && !e.isControlDown() && !e.isAltDown())     //select table line nearest x-val of first selected curve

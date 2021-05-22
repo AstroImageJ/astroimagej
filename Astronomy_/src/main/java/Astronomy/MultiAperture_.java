@@ -2241,7 +2241,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             {
             IJ.beep();
             shutDown();
-            //IJ.log(String.valueOf((System.currentTimeMillis() - timeStart)/1000D));
+            IJ.showStatus("Multiaperture photometry took " + (System.currentTimeMillis() - timeStart)/1000D + " seconds");
             }
         }
 

@@ -3340,9 +3340,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         if (plotImageCanvas != null) //zoom != 0.0 &&
         {
             Rectangle s = plot.getDrawingFrame();
-            plotMinX = totalPanOffsetX + newPanOffsetX + pltMinX + (pltMaxX - pltMinX) * (mouseX / s.width) * zoom;
-            plotMaxX = totalPanOffsetX + newPanOffsetX + pltMaxX - (pltMaxX - pltMinX) * (((s.width +1) - mouseX) / (s.width)) * zoom;
-            plotMinY = totalPanOffsetY + newPanOffsetY + pltMinY + (pltMaxY - pltMinY) * ((s.height - mouseY) / (s.height)) * zoom;
+            plotMinX = totalPanOffsetX + newPanOffsetX + pltMinX + (pltMaxX - pltMinX) * ((mouseX - 1)/ s.width) * zoom;
+            plotMaxX = totalPanOffsetX + newPanOffsetX + pltMaxX - (pltMaxX - pltMinX) * ((s.width - mouseX - 15) / (s.width)) * zoom;
+            plotMinY = totalPanOffsetY + newPanOffsetY + pltMinY + (pltMaxY - pltMinY) * ((s.height - 15 - mouseY) / (s.height)) * zoom;
             plotMaxY = totalPanOffsetY + newPanOffsetY + pltMaxY - (pltMaxY - pltMinY) * (mouseY / (s.height)) * zoom;
         } else {
             plotMinX = pltMinX;

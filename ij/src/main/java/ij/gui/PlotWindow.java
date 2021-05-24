@@ -277,7 +277,7 @@ public class PlotWindow extends ImageWindow implements ActionListener, ItemListe
 	@AstroImageJ(reason = "Correction for plot window bounds to go to top of window.")
 	public Insets getInsets() {
 		Insets b = super.getInsets();
-		b.set(b.top-4, b.left, b.bottom, b.right+18);
+		b.set(b.top-4, b.left, b.bottom, b.right);
 		return b;
 	}
 

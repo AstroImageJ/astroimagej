@@ -5690,8 +5690,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 //                        newPanOffsetY=0.0;
             }
             zoom -= (1 - zoom) * magChangeSteps / 25.0;
-            zoom = Math.min(zoom, 0.99);
-            zoom = Math.max(zoom, 0.0);
+            zoom = Math.min(Math.max(zoom, 0.0), 0.99);
             updatePlot(updateNoFits());
         }
     }

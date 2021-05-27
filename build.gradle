@@ -312,6 +312,8 @@ List<String> readConfigFile() {
 
     File readCfg = devCfg.exists() ? devCfg : cfg
 
+    logger.lifecycle("Launching using options from: " + (devCfg.exists() ? "dev. config" : "default config"))
+
     readCfg.readLines().each {
         if (it.startsWith("#") /*Comments*/) {
             return
@@ -321,6 +323,8 @@ List<String> readConfigFile() {
         }
     }
     args.add('-Daij.dev=true') // Always show full version metadata when running via dev
+
+    logger.lifecycle("Launching with the following arguments: " + args)
 
     return args
 }

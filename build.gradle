@@ -23,6 +23,8 @@ plugins {
     id "de.undercouch.download" version "4.1.1"
 
     id "org.jetbrains.gradle.plugin.idea-ext" version "1.0"
+
+    id 'net.nemerosa.versioning' version '2.8.2'
 }
 
 apply plugin: 'io.github.fvarrui.javapackager.plugin'
@@ -463,14 +465,14 @@ idea.project.settings {
 }
 
 // Get version metadata
-static def getCommitHash() {
-    '+' + ('git rev-parse --verify --short HEAD'.execute().text.trim())
+def getCommitHash() {
+    '+' + versioning.info.build
 }
 
-static def getBranchName() {
-    '+' + ('git rev-parse --abbrev-ref HEAD'.execute().text.trim())
+def getBranchName() {
+    '+' + versioning.info.branch
 }
 
-static def getDirty() {
-    'git diff-index HEAD'.execute().text.trim().empty ? '' : '+local'
+def getDirty() {
+    !versioning.info.dirty ? '' : '+local'
 }

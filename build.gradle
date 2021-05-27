@@ -66,8 +66,13 @@ allprojects {
     }
 }
 
+// Get version metadata
+final commitHash = '+' + versioning.info.build
+final branchName = '+' + versioning.info.branch
+final dirtySuffix = !versioning.info.dirty ? '' : '+local'
+
 subprojects {
-    version = project.version + getBranchName() + getCommitHash() + getDirty()
+    version = project.version + branchName + commitHash + dirtySuffix
 }
 
 dependencies {
@@ -462,17 +467,4 @@ idea.project.settings {
     taskTriggers {
         afterBuild tasks.getByName("build")
     }
-}
-
-// Get version metadata
-def getCommitHash() {
-    '+' + versioning.info.build
-}
-
-def getBranchName() {
-    '+' + versioning.info.branch
-}
-
-def getDirty() {
-    !versioning.info.dirty ? '' : '+local'
 }

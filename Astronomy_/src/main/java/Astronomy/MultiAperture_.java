@@ -2216,6 +2216,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 asw.update(asw.getGraphics());
                 // This fixes histogram not updating
                 asw.updatePanelValues(false);
+                asw.updateCalibration();
 
                 hasWCS = asw.hasWCS();
                 if (hasWCS) wcs = asw.getWCS();

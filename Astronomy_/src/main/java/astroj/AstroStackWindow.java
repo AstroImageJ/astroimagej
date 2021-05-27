@@ -5771,7 +5771,7 @@ void setupListeners() {
 //            lengthTextField.setText(fourPlaces.format(photom.sourceBrightness()));            
             }
 
-    protected void getStatistics()
+    public void getStatistics()
             {
             Roi roi = imp.getRoi();
             imp.killRoi();
@@ -5804,6 +5804,49 @@ void setupListeners() {
             return cp;
             }
 
+    /**
+     * Updates the image pixel scale calibration sliders and display if auto update is enabled.
+     * (Histogram sliders at bottom of stack window).
+     */
+    public synchronized void updateCalibration() {
+        getStatistics();
+
+        if (imp.getType() == ImagePlus.COLOR_256 || imp.getType() == ImagePlus.COLOR_RGB || imp.getType() == ImagePlus.GRAY8)
+        {
+            useFixedMinMaxValues = false;
+            useFixedMinMaxValuesCB.setState(false);
+            minValue = cal.getCValue(0);
+            maxValue = cal.getCValue(255);
+            if (min < minValue) min = minValue;
+            if (max > maxValue) max = maxValue;
+        }
+        else
+        {
+            maxValue = useFixedMinMaxValues ? fixedMaxValue : (startupPrevLevels ? Math.max(max, stats.max) : stats.max);
+            minValue = useFixedMinMaxValues ? fixedMinValue : (startupPrevLevels ? Math.min(min, stats.min) : stats.min);
+            if (imp.getType() == ImagePlus.GRAY16 && maxValue - minValue < 256)
+                maxValue = minValue + 255;
+        }
+
+        if (startupAutoLevel || autoScaleIconClicked)
+        {
+            if (imp.getType()==ImagePlus.COLOR_RGB)
+            {
+                min = Math.max(stats.mean - autoScaleFactorLowRGB*stats.stdDev, minValue);
+                max = Math.min(stats.mean + autoScaleFactorHighRGB*stats.stdDev, maxValue);
+            }
+            else
+            {
+                min = Math.max(stats.mean - autoScaleFactorLow*stats.stdDev, minValue);
+                max = Math.min(stats.mean + autoScaleFactorHigh*stats.stdDev, maxValue);
+            }
+        } else if (!startupPrevLevels && !startupPrevLevelsPerSlice)
+        {
+            min = minValue;
+            max = maxValue;
+        }
+    }
+
     public synchronized void setAstroProcessor(boolean requestUpdateAnnotationsFromHeader) {
             ImageProcessor ip = imp.getProcessor();
             slice = imp.getCurrentSlice();
@@ -5829,49 +5872,9 @@ void setupListeners() {
             ac.setShowPixelScale(showScaleX, showScaleY, pixelScaleX, pixelScaleY);
             saveWCStoPrefsMenuItem.setEnabled(wcs != null && (wcs.hasPA || wcs.hasScale));
             if (autoNupEleft) setBestOrientation();
-            getStatistics();
 
-            if (imp.getType() == ImagePlus.COLOR_256 || imp.getType() == ImagePlus.COLOR_RGB || imp.getType() == ImagePlus.GRAY8)
-                {
-                useFixedMinMaxValues = false;
-                useFixedMinMaxValuesCB.setState(false);
-                minValue = cal.getCValue(0);
-                maxValue = cal.getCValue(255);
-                if (min < minValue) min = minValue;
-                if (max > maxValue) max = maxValue;
-                }
-            else
-                {
-                maxValue = useFixedMinMaxValues ? fixedMaxValue : (startupPrevLevels ? Math.max(max, stats.max) : stats.max);
-                minValue = useFixedMinMaxValues ? fixedMinValue : (startupPrevLevels ? Math.min(min, stats.min) : stats.min);
-                if (imp.getType() == ImagePlus.GRAY16 && maxValue - minValue < 256)
-                     maxValue = minValue + 255;
-                }
+            updateCalibration();
 
-            if (startupAutoLevel || autoScaleIconClicked)
-                {
-                if (imp.getType()==ImagePlus.COLOR_RGB)
-                    {
-                    min = Math.max(stats.mean - autoScaleFactorLowRGB*stats.stdDev, minValue);
-                    max = Math.min(stats.mean + autoScaleFactorHighRGB*stats.stdDev, maxValue);
-                    }
-                else
-                    {
-                    min = Math.max(stats.mean - autoScaleFactorLow*stats.stdDev, minValue);
-                    max = Math.min(stats.mean + autoScaleFactorHigh*stats.stdDev, maxValue);
-                    }
-                }
-            else if (!startupPrevLevels && !startupPrevLevelsPerSlice)
-                {
-                min = minValue;
-                max = maxValue;
-                }
-//            else
-//                {
-//                min = imp.getProcessor().getMin();
-//                max = imp.getProcessor().getMax();
-//                }
-            
             if (autoDisplayAnnotationsFromHeader && (requestUpdateAnnotationsFromHeader || oldSlice != slice))
                 {
                 displayAnnotationsFromHeader(true, false, false);

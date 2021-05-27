@@ -2186,7 +2186,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 	/**
 	 * Perform photometry on each image of selected sub-stack.
 	 */
-	protected void processStack ()
+	synchronized protected void processStack ()
 		{
 		verbose=false;
 //		vx = 0.0;
@@ -2214,6 +2214,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
                 // This fixes the counter subtitle of the stack window not updating as the images progress
                 asw.update(asw.getGraphics());
+                // This fixes histogram not updating
+                asw.updatePanelValues(false);
 
                 hasWCS = asw.hasWCS();
                 if (hasWCS) wcs = asw.getWCS();

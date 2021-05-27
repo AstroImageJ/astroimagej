@@ -5926,7 +5926,10 @@ void setupListeners() {
         updatesEnabled = enabled;
         }
 
-    synchronized void updatePanelValues()
+    synchronized void updatePanelValues() {
+            updatePanelValues(true);
+    }
+    public synchronized void updatePanelValues(boolean updateImage)
             {
             if (updatesEnabled)
                 {
@@ -6006,7 +6009,9 @@ void setupListeners() {
                     }
                 imp.setDisplayRange(cal.getRawValue(min), cal.getRawValue(max));
                 minMaxChanged = true;
-                imp.updateAndDraw();
+                if (updateImage) {
+                    imp.updateAndDraw();
+                }
                 }
             }
     

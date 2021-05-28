@@ -5847,7 +5847,24 @@ void setupListeners() {
         }
     }
 
+    public synchronized void updateWCS() {
+        wcs = new WCS(imp);
+        goodWCS = wcs.hasWCS();
+        RATextField.setEditable(goodWCS);
+        DecTextField.setEditable(goodWCS);
+        wcs.setUseSIPAlways(useSIPAllProjections);
+        extraInfo = " ("+wcs.coordsys+")";
+        ac.setWCS(wcs);
+        if (autoSaveWCStoPrefs) updatePrefsFromWCS(false);
+        ac.setShowPixelScale(showScaleX, showScaleY, pixelScaleX, pixelScaleY);
+        saveWCStoPrefsMenuItem.setEnabled(wcs != null && (wcs.hasPA || wcs.hasScale));
+        if (autoNupEleft) setBestOrientation();
+    }
+
     public synchronized void setAstroProcessor(boolean requestUpdateAnnotationsFromHeader) {
+        setAstroProcessor(requestUpdateAnnotationsFromHeader, true);
+    }
+    public synchronized void setAstroProcessor(boolean requestUpdateAnnotationsFromHeader, boolean updateImage) {
             ImageProcessor ip = imp.getProcessor();
             slice = imp.getCurrentSlice();
             cal = imp.getCalibration();
@@ -5860,18 +5877,8 @@ void setupListeners() {
             impTitle = imp.getTitle();
             this.setTitle(impTitle);
             stackSize = imp.getStackSize();
-            
-            wcs = new WCS(imp);
-            goodWCS = wcs.hasWCS();
-            RATextField.setEditable(goodWCS);
-            DecTextField.setEditable(goodWCS);
-            wcs.setUseSIPAlways(useSIPAllProjections);
-            extraInfo = " ("+wcs.coordsys+")";
-            ac.setWCS(wcs);
-            if (autoSaveWCStoPrefs) updatePrefsFromWCS(false);
-            ac.setShowPixelScale(showScaleX, showScaleY, pixelScaleX, pixelScaleY);
-            saveWCStoPrefsMenuItem.setEnabled(wcs != null && (wcs.hasPA || wcs.hasScale));
-            if (autoNupEleft) setBestOrientation();
+
+            updateWCS();
 
             updateCalibration();
 
@@ -5897,7 +5904,7 @@ void setupListeners() {
                 ip.invertLut();
             layoutContainer(this);
             ac.updateZoomBoxParameters();
-            updatePanelValues();//todo this lags the cursor aperture, especially during multiaperture
+            updatePanelValues(updateImage);//todo this lags the cursor aperture, especially during multiaperture
             setImageEdges();
             radius = Prefs.get("aperture.radius", radius);
             rBack1 = Prefs.get("aperture.rback1", rBack1);

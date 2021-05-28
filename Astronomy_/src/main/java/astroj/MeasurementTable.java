@@ -436,9 +436,6 @@ IJ.log(heading+" "+val);
             }
         if (panel != null)
             {
-                if (destName.equals(sourceName)) {
-                    return (MeasurementTable) panel.getResultsTable();
-                }
             lines = panel.getText().split("\n");
 //            for (int i=0; i<lines.length; i++)
 //                {
@@ -599,7 +596,7 @@ IJ.log(heading+" "+val);
                 table.incrementCounter();
                 row++;
     //                table.addValue(1, 1);
-                table.addLabel(header[1], "Row_1");
+                table.setValue(header[1], row, "Row_1");
                 for (int i=2; i<h; i++)
                     {
                     header[i]="Col_"+(i-1);
@@ -644,7 +641,7 @@ IJ.log(heading+" "+val);
             else
                 {
                 table.incrementCounter();
-                table.addLabel(header[1], "Dummy_Row");
+                table.setValue(header[1], row,"Dummy_Row");
                 for (int col=(2); col < h; col++)
                     {
                     table.addValue(header[col],0.0);

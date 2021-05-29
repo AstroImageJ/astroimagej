@@ -246,6 +246,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static String vMarker2BotText;
     static boolean saveImage;
     static boolean savePlot;
+    static boolean saveSeeingProfile;
     static boolean saveConfig;
     static boolean saveTable;
     static boolean saveApertures;
@@ -255,6 +256,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static boolean unshift;
     static boolean autoAstroDataUpdate;
     static String imageSuffix;
+    static String seeingProfileSuffix;
     static String aperSuffix;
     static String logSuffix, fitPanelSuffix, fitPanelTextSuffix, dataSubsetSuffix;
     static String plotSuffix;
@@ -5785,6 +5787,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         vMarker2BotText = "Egress";
         saveImage = true;
         savePlot = true;
+        saveSeeingProfile = true;
         saveConfig = true;
         saveTable = true;
         saveApertures = true;
@@ -5798,6 +5801,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         unshift = true;
         autoAstroDataUpdate = true;
         imageSuffix = "_field";
+        seeingProfileSuffix = "_seeing-profile";
         aperSuffix = "_measurements";
         logSuffix = "_calibration";
         fitPanelSuffix = "_fitpanel";
@@ -16658,6 +16662,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static void saveAllDialog() {
         saveImage = Prefs.get("Astronomy_Tool.saveImage", saveImage);
         savePlot = Prefs.get("Astronomy_Tool.savePlot", savePlot);
+        saveSeeingProfile = Prefs.get("Astronomy_Tool.saveSeeingProfile", saveSeeingProfile);
         saveConfig = Prefs.get("Astronomy_Tool.saveConfig", saveConfig);
         saveTable = Prefs.get("Astronomy_Tool.saveTable", saveTable);
         saveApertures = Prefs.get("Astronomy_Tool.saveApertures", saveApertures);
@@ -16667,6 +16672,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         saveDataSubset = Prefs.get("Astronomy_Tool.saveDataSubset", saveDataSubset);
         showDataSubsetPanel = Prefs.get("Astronomy_Tool.showDataSubsetPanel", showDataSubsetPanel);
         imageSuffix = Prefs.get("Astronomy_Tool.imageSuffix", imageSuffix);
+        seeingProfileSuffix = Prefs.get("Astronomy_Tool.seeingProfileSuffix", seeingProfileSuffix);
         plotSuffix = Prefs.get("Astronomy_Tool.plotSuffix", plotSuffix);
         configSuffix = Prefs.get("Astronomy_Tool.configSuffix", configSuffix);
         dataSuffix = Prefs.get("Astronomy_Tool.dataSuffix", dataSuffix);
@@ -16681,10 +16687,11 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         gd.enableYesNoCancel("Save Files Now", "Save Settings Only");
 
         gd.addMessage("Select items to save when using save all:");
-        gd.addCheckboxGroup(1, 8, new String[]{"Image", "Plot", "Plot Config", "Data Table", "Apertures", "Fit Panels", "Fit Text", "Log"}, new boolean[]{saveImage, savePlot, saveConfig, saveTable, saveApertures, saveFitPanels, saveFitPanelText, saveLog});
+        gd.addCheckboxGroup(1, 9, new String[]{"Image", "Plot", "Seeing Profile", "Plot Config", "Data Table", "Apertures", "Fit Panels", "Fit Text", "Log"}, new boolean[]{saveImage, savePlot, saveSeeingProfile, saveConfig, saveTable, saveApertures, saveFitPanels, saveFitPanelText, saveLog});
         gd.addCheckboxGroup(1, 2, new String[]{"Data Subset", "Show Data Subset Panel"}, new boolean[]{saveDataSubset, showDataSubsetPanel});
         gd.addStringField("Science Image display suffix:", imageSuffix, 40);
         gd.addStringField("Plot image display suffix:", plotSuffix, 40);
+        gd.addStringField("Seeing Profile suffix:", seeingProfileSuffix, 40);
         gd.addStringField("Plot config file suffix**:", configSuffix, 40);
         gd.addStringField("Full data table file suffix**:", dataSuffix, 40);
         gd.addStringField("Data table subset file suffix:", dataSubsetSuffix, 40);
@@ -16700,6 +16707,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         if (gd.wasCanceled()) return;
         saveImage = gd.getNextBoolean();
         savePlot = gd.getNextBoolean();
+        saveSeeingProfile = gd.getNextBoolean();
         saveConfig = gd.getNextBoolean();
         saveTable = gd.getNextBoolean();
         saveApertures = gd.getNextBoolean();
@@ -16712,6 +16720,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         imageSuffix = gd.getNextString();
         plotSuffix = gd.getNextString();
+        seeingProfileSuffix = gd.getNextString();
         configSuffix = gd.getNextString();
         dataSuffix = gd.getNextString();
         dataSubsetSuffix = gd.getNextString();
@@ -16724,6 +16733,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         Prefs.set("Astronomy_Tool.saveImage", saveImage);
         Prefs.set("Astronomy_Tool.savePlot", savePlot);
+        Prefs.set("Astronomy_Tool.saveSeeingProfile", saveSeeingProfile);
         Prefs.set("Astronomy_Tool.saveConfig", saveConfig);
         Prefs.set("Astronomy_Tool.saveTable", saveTable);
         Prefs.set("Astronomy_Tool.saveApertures", saveApertures);
@@ -16735,12 +16745,13 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         Prefs.set("Astronomy_Tool.imageSuffix", imageSuffix);
         Prefs.set("Astronomy_Tool.plotSuffix", plotSuffix);
+        Prefs.set("Astronomy_Tool.seeingProfileSuffix", seeingProfileSuffix);
         Prefs.set("Astronomy_Tool.configSuffix", configSuffix);
         Prefs.set("Astronomy_Tool.dataSuffix", dataSuffix);
         Prefs.set("Astronomy_Tool.dataSubsetSuffix", dataSubsetSuffix);
         Prefs.set("Astronomy_Tool.aperSuffix", aperSuffix);
         Prefs.set("Astronomy_Tool.fitPanelSuffix", fitPanelSuffix);
-        Prefs.set("Astronomy_Tool.fitPanelSuffix", fitPanelTextSuffix);
+        Prefs.set("Astronomy_Tool.fitPanelTextSuffix", fitPanelTextSuffix);
         Prefs.set("Astronomy_Tool.logSuffix", logSuffix);
 
         Prefs.set("Astronomy_Tool.saveAllPNG", saveAllPNG);
@@ -16794,15 +16805,19 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         SaveDialog sf = new SaveDialog(saveAll ? "Save all" : "Save as " + format.toUpperCase(), imageFound ? iplus.getShortTitle() : MeasurementTable.shorterName(table.shortTitle()), "");
         if (sf.getDirectory() == null || sf.getFileName() == null) return;
-        String outPath = sf.getDirectory() + sf.getFileName();
-        int location = outPath.lastIndexOf('.');
-        if (location >= 0) outPath = outPath.substring(0, location);
-        outBase = outPath;
+        String outFileBase = sf.getFileName();
+        int location = outFileBase.lastIndexOf('.');
+        if (location > (outFileBase.length() - 5) || outFileBase.endsWith(".plotcfg") || outFileBase.endsWith(".apertures")) outFileBase = outFileBase.substring(0, location);
+        outBase = sf.getDirectory() + outFileBase;
+        String outPath = outBase;
         if (outBase.endsWith(imageSuffix)) {
             location = outBase.lastIndexOf(imageSuffix);
             if (location >= 0) outBase = outBase.substring(0, location);
         } else if (outBase.endsWith(plotSuffix)) {
             location = outBase.lastIndexOf(plotSuffix);
+            if (location >= 0) outBase = outBase.substring(0, location);
+        } else if (outBase.endsWith(seeingProfileSuffix)) {
+            location = outBase.lastIndexOf(seeingProfileSuffix);
             if (location >= 0) outBase = outBase.substring(0, location);
         } else if (outBase.endsWith(configSuffix)) {
             location = outBase.lastIndexOf(configSuffix);
@@ -16829,6 +16844,17 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         if (saveAll && (savePlot || saveConfig || saveTable)) {
             saveDataImageConfig(savePlot, saveConfig, saveTable, true, format, outBase + plotSuffix + "." + format, outBase + configSuffix + ".plotcfg", outBase + dataSuffix + Prefs.get("options.ext", ".xls"));
+        }
+
+        if (saveSeeingProfile) {
+            String imagepath = outBase + seeingProfileSuffix + "." + format;
+            ImagePlus image = WindowManager.getImage("Seeing Profile");
+            if (image == null) {
+            } else if (format.equalsIgnoreCase("png")) {
+                IJ.runPlugIn(image, "ij.plugin.PNG_Writer", imagepath);
+            } else if (format.equalsIgnoreCase("jpg")) {
+                IJ.runPlugIn(image, "ij.plugin.JpegWriter", imagepath);
+            }
         }
 
         if (saveAll && saveApertures) {
@@ -17166,6 +17192,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         saveImage = Prefs.get("Astronomy_Tool.saveImage", saveImage);
         savePlot = Prefs.get("Astronomy_Tool.savePlot", savePlot);
+        saveSeeingProfile = Prefs.get("Astronomy_Tool.saveSeeingProfile", saveSeeingProfile);
         saveConfig = Prefs.get("Astronomy_Tool.saveConfig", saveConfig);
         saveTable = Prefs.get("Astronomy_Tool.saveTable", saveTable);
         saveApertures = Prefs.get("Astronomy_Tool.saveApertures", saveApertures);
@@ -17178,6 +17205,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         imageSuffix = Prefs.get("Astronomy_Tool.imageSuffix", imageSuffix);
         plotSuffix = Prefs.get("Astronomy_Tool.plotSuffix", plotSuffix);
+        seeingProfileSuffix = Prefs.get("Astronomy_Tool.seeingProfileSuffix", seeingProfileSuffix);
         configSuffix = Prefs.get("Astronomy_Tool.configSuffix", configSuffix);
         dataSuffix = Prefs.get("Astronomy_Tool.dataSuffix", dataSuffix);
         dataSubsetSuffix = Prefs.get("Astronomy_Tool.dataSubsetSuffix", dataSubsetSuffix);
@@ -17473,6 +17501,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         Prefs.set("Astronomy_Tool.saveImage", saveImage);
         Prefs.set("Astronomy_Tool.savePlot", savePlot);
+        Prefs.set("Astronomy_Tool.saveSeeingProfile", saveSeeingProfile);
         Prefs.set("Astronomy_Tool.saveConfig", saveConfig);
         Prefs.set("Astronomy_Tool.saveTable", saveTable);
         Prefs.set("Astronomy_Tool.saveApertures", saveApertures);
@@ -17483,6 +17512,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         Prefs.set("Astronomy_Tool.showDataSubsetPanel", showDataSubsetPanel);
         Prefs.set("Astronomy_Tool.imageSuffix", imageSuffix);
         Prefs.set("Astronomy_Tool.plotSuffix", plotSuffix);
+        Prefs.set("Astronomy_Tool.seeingProfileSuffix", seeingProfileSuffix);
         Prefs.set("Astronomy_Tool.configSuffix", configSuffix);
         Prefs.set("Astronomy_Tool.dataSuffix", dataSuffix);
         Prefs.set("Astronomy_Tool.aperSuffix", aperSuffix);

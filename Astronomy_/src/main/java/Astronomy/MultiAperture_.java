@@ -959,11 +959,11 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 {
                 if (MultiPlot_.getTable()!=null && MultiPlot_.getTable().equals(table))
                     {
-                    MultiPlot_.updatePlot(MultiPlot_.updateAllFits());
+                    MultiPlot_.updatePlot(MultiPlot_.updateAllFits(), slice==initialLastSlice);
                     }
                 else
                     {
-                    MultiPlot_.setTable(table, true);
+                    MultiPlot_.setTable(table, true, slice==initialLastSlice);
                     }
                 }
             else
@@ -971,7 +971,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 IJ.runPlugIn("Astronomy.MultiPlot_",tableName);
                 if (MultiPlot_.mainFrame!=null && MultiPlot_.getTable()!=null)
                     {
-                    MultiPlot_.setTable(table, false);
+                    MultiPlot_.setTable(table, false, slice==initialLastSlice);
                      }
                 }
             }
@@ -2809,7 +2809,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 //                                IJ.log("waiting");
 //                                IJ.wait(100);
 //                                }
-                        MultiPlot_.updatePlot(MultiPlot_.updateAllFits());
+                        MultiPlot_.updatePlot(MultiPlot_.updateAllFits(), slice==initialLastSlice);
 //                        IJ.log("update plot complete");
                         }
                     else

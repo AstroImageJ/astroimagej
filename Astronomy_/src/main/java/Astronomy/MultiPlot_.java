@@ -956,6 +956,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     }
 
     static public void setTable(MeasurementTable inTable, boolean forceUpdate) {
+        setTable(inTable, forceUpdate, false);
+    }
+
+    static public void setTable(MeasurementTable inTable, boolean forceUpdate, boolean useAutoAstroDataUpdate) {
         table = inTable;
         if (table == null) {
             makeDummyTable();
@@ -970,7 +974,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             } else {
                 updateColumnLists();
                 Prefs.set("plot2.tableName", tableName);
-                if (table != null && !tableName.equals("No Table Selected") && autoAstroDataUpdate && addAstroDataFrameWasShowing && OKbutton != null) {
+                if (table != null && !tableName.equals("No Table Selected") && useAutoAstroDataUpdate && autoAstroDataUpdate && addAstroDataFrameWasShowing && OKbutton != null) {
                     OKbutton.doClick();
                 }
                 if (table != null) {
@@ -1207,7 +1211,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     /**
      * Starts timer which handles simultaneous updatePlot requests.
      */
-    static protected void startDelayedUpdateTimer(final boolean[] updateFit, final boolean skipAutoAstroDataUpdate) {
+    static protected void startDelayedUpdateTimer(final boolean[] updateFit, final boolean useAutoAstroDataUpdate) {
         try {
             if (delayedUpdateTimer != null) {
                 delayedUpdateTimer.cancel();
@@ -1219,7 +1223,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
             delayedUpdateTask = new TimerTask() {
                 public void run() {
-                    updatePlot(updateFit, skipAutoAstroDataUpdate);
+                    updatePlot(updateFit, useAutoAstroDataUpdate);
                 }
 
             };
@@ -1236,19 +1240,18 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         updatePlot(updateFit, false);
     }
 
-    static public void updatePlot(boolean[] updateFit, boolean skipAutoAstroDataUpdate) {
+    static public void updatePlot(boolean[] updateFit, boolean useAutoAstroDataUpdate) {
 //                IJ.log("table "+(table == null?"==":"!=")+" null");
 //                IJ.log("table "+(table != null && table.isLocked()?"is locked":"is unlocked"));
 //                IJ.log("Plot update is "+(updatePlotEnabled?"enabled":"not enabled"));
 //                IJ.log("Plot update is "+(updatePlotRunning?"running":"not running"));
         if ((table != null && table.isLocked()) || !updatePlotEnabled || updatePlotRunning) {
 //                    IJ.log("starting delayed updatePlot() timer");
-            startDelayedUpdateTimer(updateFit, skipAutoAstroDataUpdate);
+            startDelayedUpdateTimer(updateFit, false);
             return;
         }
         updatePlotRunning = true;
-
-        if (table != null && !tableName.equals("No Table Selected") && !skipAutoAstroDataUpdate && autoAstroDataUpdate && addAstroDataFrameWasShowing && OKbutton != null) {
+        if (table != null && !tableName.equals("No Table Selected") && useAutoAstroDataUpdate && autoAstroDataUpdate && addAstroDataFrameWasShowing && OKbutton != null) {
             OKbutton.doClick();
         }
 
@@ -5799,7 +5802,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         saveAllPNG = true;
         unscale = true;
         unshift = true;
-        autoAstroDataUpdate = true;
+        autoAstroDataUpdate = false;
         imageSuffix = "_field";
         seeingProfileSuffix = "_seeing-profile";
         aperSuffix = "_measurements";

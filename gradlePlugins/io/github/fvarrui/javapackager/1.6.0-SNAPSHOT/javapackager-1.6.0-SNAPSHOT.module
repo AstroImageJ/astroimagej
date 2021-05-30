@@ -3,15 +3,15 @@
   "component": {
     "group": "io.github.fvarrui",
     "module": "javapackager",
-    "version": "1.4.0-SNAPSHOT",
+    "version": "1.6.0-SNAPSHOT",
     "attributes": {
       "org.gradle.status": "integration"
     }
   },
   "createdBy": {
     "gradle": {
-      "version": "6.7",
-      "buildId": "jydkn3okcvcdlbzjavhh4y6dre"
+      "version": "6.8.3",
+      "buildId": "hhizbdtjava6vjqtemwjogpmoe"
     }
   },
   "variants": [
@@ -26,13 +26,13 @@
       },
       "files": [
         {
-          "name": "javapackager-1.4.0-SNAPSHOT.jar",
-          "url": "javapackager-1.4.0-SNAPSHOT.jar",
-          "size": 379449,
-          "sha512": "8eb1704447e86f2e4ccc2adbb28cf32f2a30d8b03e47266fcc38001c2a0d6645c72100a4605659672f7466e31d989ad9597d1c84309ea024b5dccd782afc0d19",
-          "sha256": "ce72954d04f9d5f3eaaa4df6e3e045863d15771583ff5a00539947b2e5ee3767",
-          "sha1": "b26fed65fca4a54a6245818a4496bed5c8f25e49",
-          "md5": "dd58274bf2118a7e1965008e261c223d"
+          "name": "javapackager-1.6.0-SNAPSHOT.jar",
+          "url": "javapackager-1.6.0-SNAPSHOT.jar",
+          "size": 411660,
+          "sha512": "584b832f128607bec9b99c178662cf13a659f60b82967af37733363fe154253f73433483866f8676281e21ba5150515906bbf326b6aa1cef6df6f70cd8d8fe54",
+          "sha256": "b227c9cb5bcd30e8b3b97fd63a4008a3f332d5c8c1a0beb6ecd7880a0222fe0a",
+          "sha1": "91eefec0465f44b34b381f458352b2294144e2cf",
+          "md5": "d9c9e76153ec9ebcf14a3242b6973db3"
         }
       ]
     },
@@ -101,17 +101,31 @@
           "version": {
             "requires": "2.4.7"
           }
+        },
+        {
+          "group": "com.netflix.nebula",
+          "module": "gradle-ospackage-plugin",
+          "version": {
+            "requires": "8.4.1"
+          }
+        },
+        {
+          "group": "net.jsign",
+          "module": "jsign-core",
+          "version": {
+            "requires": "3.1"
+          }
         }
       ],
       "files": [
         {
-          "name": "javapackager-1.4.0-SNAPSHOT.jar",
-          "url": "javapackager-1.4.0-SNAPSHOT.jar",
-          "size": 379449,
-          "sha512": "8eb1704447e86f2e4ccc2adbb28cf32f2a30d8b03e47266fcc38001c2a0d6645c72100a4605659672f7466e31d989ad9597d1c84309ea024b5dccd782afc0d19",
-          "sha256": "ce72954d04f9d5f3eaaa4df6e3e045863d15771583ff5a00539947b2e5ee3767",
-          "sha1": "b26fed65fca4a54a6245818a4496bed5c8f25e49",
-          "md5": "dd58274bf2118a7e1965008e261c223d"
+          "name": "javapackager-1.6.0-SNAPSHOT.jar",
+          "url": "javapackager-1.6.0-SNAPSHOT.jar",
+          "size": 411660,
+          "sha512": "584b832f128607bec9b99c178662cf13a659f60b82967af37733363fe154253f73433483866f8676281e21ba5150515906bbf326b6aa1cef6df6f70cd8d8fe54",
+          "sha256": "b227c9cb5bcd30e8b3b97fd63a4008a3f332d5c8c1a0beb6ecd7880a0222fe0a",
+          "sha1": "91eefec0465f44b34b381f458352b2294144e2cf",
+          "md5": "d9c9e76153ec9ebcf14a3242b6973db3"
         }
       ]
     }

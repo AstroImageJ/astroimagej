@@ -5,13 +5,13 @@ import groovy.json.JsonSlurper
 buildscript {
     repositories {
         //mavenLocal()
-        /*maven {
+        maven {
             url 'gradlePlugins'
-        }*/
+        }
         mavenCentral()
     }
     dependencies {
-        classpath 'io.github.fvarrui:javapackager:1.5.1'
+        classpath 'io.github.fvarrui:javapackager:1.6.0-SNAPSHOT'
     }
 }
 
@@ -95,10 +95,10 @@ dependencies {
  * are excluded from the definition for brevity.
  */
 def javaRuntimeSystems = [ mac: [ext: "zip", arch: "x86", os: "macos"]
-            // JDK is used as Azul has not produced a jre for arm macs at this time
            , armMac: [ext: "zip", arch: "arm", os: "macos"]
            , linux: [ext: "tar.gz", arch: "x86", os: "linux"]
            , windows: [ext: "zip", arch: "x86", os: "windows"]
+           , armWindows: [ext: "zip", arch: "arm", os: "windows"]
            ]
 
 boolean canConnectToAzul = true
@@ -280,6 +280,7 @@ task sync(dependsOn: jar, type: Sync) {
     with commonDist
     with {
         from(file("${projectDir}/devLaunchOptions.txt")) {
+            duplicatesStrategy = DuplicatesStrategy.INCLUDE
             rename {String name -> return "AstroImageJ.l4j.ini"}
         }
     }

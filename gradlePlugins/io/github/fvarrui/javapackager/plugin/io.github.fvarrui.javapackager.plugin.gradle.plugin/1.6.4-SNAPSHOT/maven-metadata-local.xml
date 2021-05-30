@@ -2,17 +2,17 @@
 <metadata modelVersion="1.1.0">
   <groupId>io.github.fvarrui.javapackager.plugin</groupId>
   <artifactId>io.github.fvarrui.javapackager.plugin.gradle.plugin</artifactId>
-  <version>1.4.0-SNAPSHOT</version>
+  <version>1.6.4-SNAPSHOT</version>
   <versioning>
     <snapshot>
       <localCopy>true</localCopy>
     </snapshot>
-    <lastUpdated>20201101033540</lastUpdated>
+    <lastUpdated>20210529235203</lastUpdated>
     <snapshotVersions>
       <snapshotVersion>
         <extension>pom</extension>
-        <value>1.4.0-SNAPSHOT</value>
-        <updated>20201101033540</updated>
+        <value>1.6.4-SNAPSHOT</value>
+        <updated>20210529235203</updated>
       </snapshotVersion>
     </snapshotVersions>
   </versioning>

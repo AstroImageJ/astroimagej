@@ -6488,7 +6488,7 @@ protected ImageIcon createImageIcon(String path, String description) {
                                                             }
                                                         else
                                                             Prefs.set("multiaperture.automode",true);
-                                                        IJ.runPlugIn("MultiAperture_", "");
+                                                        IJ.runPlugIn("Astronomy.MultiAperture_", "");
                                                         Prefs.set("multiaperture.automode",false);
                                                         Prefs.set("multiaperture.useMacroImage",false);
                                                         boolean finished=Prefs.get("multiaperture.finished",true);

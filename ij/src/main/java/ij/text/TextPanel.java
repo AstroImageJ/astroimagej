@@ -646,7 +646,7 @@ public class TextPanel extends Panel implements AdjustmentListener,
 		}
 		tc.repaint();
 		selLine=r;
-		IJ.runPlugIn("UpdateAstroWindows", "");
+		IJ.runPlugIn("Astronomy.UpdateAstroWindows", "");
 		Interpreter interp = Interpreter.getInstance();
 		if (interp!=null && title.equals("Debug"))
 			interp.showArrayInspector(r);
@@ -670,7 +670,7 @@ public class TextPanel extends Panel implements AdjustmentListener,
 		}
 		tc.repaint();
 		selLine=r;
-		IJ.runPlugIn("UpdateAstroWindows", "");
+		IJ.runPlugIn("Astronomy.UpdateAstroWindows", "");
 	}
 
     /** Converts a y coordinate in pixels into a row index. */

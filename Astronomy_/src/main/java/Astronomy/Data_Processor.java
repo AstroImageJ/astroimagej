@@ -5772,7 +5772,7 @@ protected ImageIcon createImageIcon(String path, String description) {
                 }
             else
                 {
-                IJ.save(impLocal, filePath);
+                IJ.save((ImagePlus) impLocal.clone(), filePath);
                 }
             if (compress)
                 {

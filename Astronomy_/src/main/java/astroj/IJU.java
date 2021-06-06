@@ -1413,11 +1413,11 @@ static public AstroStackWindow getBestOpenAstroStackWindow()
             } 
         }
 
-        public static <T extends Window> void setFrameSizeAndLocation(T frame, int defaultX, int defaultY, int defaultWidth, int defaultHeight) {
+        public synchronized static <T extends Window> void setFrameSizeAndLocation(T frame, int defaultX, int defaultY, int defaultWidth, int defaultHeight) {
 	        setFrameSizeAndLocation(frame, defaultX, defaultY, defaultWidth, defaultHeight, true);
         }
     
-    public static <T extends Window> void setFrameSizeAndLocation(T frame, int defaultX, int defaultY, int defaultWidth, int defaultHeight, boolean enforceScreenBounds)
+    public synchronized static <T extends Window> void setFrameSizeAndLocation(T frame, int defaultX, int defaultY, int defaultWidth, int defaultHeight, boolean enforceScreenBounds)
         {
             if (frame == null) {
                 return;

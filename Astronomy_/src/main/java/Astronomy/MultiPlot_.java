@@ -6980,7 +6980,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         mainpanel = new JPanel(new SpringLayout());
 //                mainpanel.addMouseListener(panelMouseListener);
         mainpanel.addMouseMotionListener(panelMouseMotionListener);
-        FileDrop fileDrop = new FileDrop(mainpanel, BorderFactory.createEmptyBorder(), MultiPlot_::openDragAndDropFiles);
 
 
         mainscrollpane = new JScrollPane(mainpanel);
@@ -10258,6 +10257,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             addNewAstroData();
             addAstroDataFrameWasShowing = true;
         }
+        FileDrop fileDrop = new FileDrop(mainpanel, BorderFactory.createEmptyBorder(), MultiPlot_::openDragAndDropFiles);
     }
 
 
@@ -10267,7 +10267,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         subFrame.setIconImage(plotIcon.getImage());
         mainsubpanel = new JPanel(new SpringLayout());
         mainsubpanel.addMouseMotionListener(panelMouseMotionListener);
-        FileDrop fileDrop = new FileDrop(mainsubpanel, BorderFactory.createEmptyBorder(), MultiPlot_::openDragAndDropFiles);
 
         subscrollpane = new JScrollPane(mainsubpanel);
         subFrame.setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
@@ -10362,6 +10361,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 //                    xdatacolumndefault.addItem("rel_flux_T2");
 //                    }
         panelsUpdating = false;
+        FileDrop fileDrop = new FileDrop(mainsubpanel, BorderFactory.createEmptyBorder(), MultiPlot_::openDragAndDropFiles);
     }
 
 
@@ -12169,7 +12169,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         fitPanel[c] = new JPanel(new SpringLayout());
 //            fitPanel[c].setBorder(BorderFactory.createLineBorder(color[c], 2));
         fitPanel[c].setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(color[c], 2), table == null ? "No Table Selected" : ylabel[c].trim().equals("") ? "No Data Column Selected" : ylabel[c], TitledBorder.CENTER, TitledBorder.TOP, b12, Color.darkGray));
-        FileDrop fileDrop = new FileDrop(fitPanel[c], BorderFactory.createEmptyBorder(), MultiPlot_::openDragAndDropFiles);
 
         fitMenuBar[c] = new JMenuBar();
         fitFileMenu[c] = new JMenu("File    ");
@@ -13590,7 +13589,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         fitScrollPane[c] = new JScrollPane(fitPanel[c]);
         fitFrame[c].add(fitScrollPane[c]);
         fitFrame[c].setJMenuBar(fitMenuBar[c]);
-        fitFrame[c].pack();
         fitFrame[c].setResizable(true);
 
         int firstFittedCurve = 0;
@@ -13612,6 +13610,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             IJU.setFrameSizeAndLocation(fitFrame[c], 40 + c * 25, 40 + c * 25, 0, 0);
         }
         if (openFitPanels && detrendFitIndex[c] == 9) fitFrame[c].setVisible(true);
+
+        fitFrame[c].pack();
+        FileDrop fileDrop = new FileDrop(fitPanel[c], BorderFactory.createEmptyBorder(), MultiPlot_::openDragAndDropFiles);
     }
 
     static void updatePriorCenters(int c) {
@@ -13691,10 +13692,12 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             parentPanel.add(fitDetrendComboBox[c][row - 7]);
         } else {  //light curve parameter
             JLabel rowNameLabel = new JLabel(rowName);
-            rowNameLabel.setFont(p12);
-            rowNameLabel.setToolTipText(rowNameToolTipText);
-            rowNameLabel.setPreferredSize(labelSize);
-            rowNameLabel.setMaximumSize(labelSize);
+            if (rowNameLabel.isVisible()) {
+                rowNameLabel.setFont(p12);
+                rowNameLabel.setToolTipText(rowNameToolTipText);
+                rowNameLabel.setPreferredSize(labelSize);
+                rowNameLabel.setMaximumSize(labelSize);
+            }
             parentPanel.add(rowNameLabel);
         }
 
@@ -13871,10 +13874,12 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 fitStepSpinner[c][row].setValue(newValue);
             }
         });
-        parentPanel.add(fitStepSpinner[c][row]);
+        synchronized (parentPanel.getTreeLock()) {
+            parentPanel.add(fitStepSpinner[c][row]);
 
-        JLabel dummyLabel4 = new JLabel("");
-        parentPanel.add(dummyLabel4);
+            JLabel dummyLabel4 = new JLabel("");
+            parentPanel.add(dummyLabel4);
+        }
     }
 
     static void setFittedParametersBorderColor(final int c, final Border border) {
@@ -14041,7 +14046,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 closeRefStarFrame();
             }
         });
-        FileDrop fileDrop = new FileDrop(refStarMainPanel, BorderFactory.createEmptyBorder(), MultiPlot_::openDragAndDropFiles);
+
         multiUpdate = false;
         showSaturationWarning = Prefs.get(Aperture_.AP_PREFS_SHOWSATWARNING, showSaturationWarning);
         saturationWarningLevel = Prefs.get(Aperture_.AP_PREFS_SATWARNLEVEL, saturationWarningLevel);
@@ -14423,6 +14428,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         }
         refStarFrame.setVisible(true);
         refStarPanelWasShowing = true;
+        FileDrop fileDrop = new FileDrop(refStarMainPanel, BorderFactory.createEmptyBorder(), MultiPlot_::openDragAndDropFiles);
 
     }
 
@@ -15320,7 +15326,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         subFrame = null;
     }
 
-    static void openDragAndDropFiles(java.io.File[] files) {
+    static synchronized void openDragAndDropFiles(java.io.File[] files) {
         int errorCode;
         dragAndDropFiles = files;
         errorCode = 1;

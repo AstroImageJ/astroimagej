@@ -2180,10 +2180,12 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             Prefs.set("aperture.reposition", centroidStar[ap]);
             setShowAsCentered(centroidStar[ap]);
 
-            valueOverlay = false;
-            drawAperture();
+            valueOverlay = false; // Don't show values as they will differ when measured and will be drawn over
+            drawAperture(); // Apterure draw fix 1 - can be removed at cost of last copuple aperture not drawing
         }
-        Toolkit.getDefaultToolkit().sync();
+
+        ocanvas.drawOverlayCanvas(ocanvas.getGraphics()); // Apterure draw fix 2 - can be removed at cost of slightly more flickering
+
         valueOverlay = Prefs.get (AP_PREFS_VALUEOVERLAY, valueOverlay);
         for (int ap = 0; ap < nApertures; ap++) {
             if (!isRefStar[ap]) {
@@ -2280,6 +2282,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
             noteOtherApertureProperty(ap);
         }
+
+        ocanvas.drawOverlayCanvas(ocanvas.getGraphics()); // Apterure draw fix 3 - can be removed at cost of slightly more flickering on the values displayed
 
         if (!isInstanceOfStackAlign && showMeanWidth && calcRadProFWHM) {
             if (nFWHM > 0) { fwhmMean /= nFWHM; } else fwhmMean = 0.0;

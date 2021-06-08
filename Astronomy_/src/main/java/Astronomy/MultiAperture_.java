@@ -2201,9 +2201,11 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             xCenter = xPos[ap];
             yCenter = yPos[ap];
 
+            boolean holdReposition = Prefs.get("aperture.reposition", reposition);
+            Prefs.set("aperture.reposition", centroidStar[ap]);
             setShowAsCentered(centroidStar[ap]);
 
-            boolean holdReposition = Prefs.get("aperture.reposition", reposition);
+            ocanvas.removeApertureRoi(ocanvas.findApertureRoiByNumber(ap)); // Clear old aperture to prevent duplication
             if (!measureAperture()) {
                 if (haltOnError || this instanceof Stack_Aligner) {
                     Prefs.set("aperture.reposition", holdReposition);

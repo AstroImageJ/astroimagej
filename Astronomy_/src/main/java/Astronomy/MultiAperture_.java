@@ -1882,8 +1882,6 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         long timeStart = System.currentTimeMillis();
 //        IJ.log("firstSlice="+firstSlice+"   lastSlice="+lastSlice);
         for (int i = firstSlice; i <= lastSlice; i++) {
-            //todo this fixes apertures not showing, find better way
-            IJ.wait(1);
             slice = i;
             imp.setSliceWithoutUpdate(i); //fixes scroll sync issue
             if (starOverlay || skyOverlay || valueOverlay || nameOverlay) {
@@ -2181,6 +2179,27 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             boolean holdReposition = Prefs.get("aperture.reposition", reposition);
             Prefs.set("aperture.reposition", centroidStar[ap]);
             setShowAsCentered(centroidStar[ap]);
+
+            valueOverlay = false;
+            drawAperture();
+        }
+        Toolkit.getDefaultToolkit().sync();
+        valueOverlay = Prefs.get (AP_PREFS_VALUEOVERLAY, valueOverlay);
+        for (int ap = 0; ap < nApertures; ap++) {
+            if (!isRefStar[ap]) {
+                setApertureColor(Color.green);
+                setApertureName("T" + (ap + 1));
+                setAbsMag(targetAbsMag[ap]);
+            } else {
+                setApertureColor(Color.red);
+                setApertureName("C" + (ap + 1));
+                setAbsMag(absMag[ap]);
+            }
+
+            xCenter = xPos[ap];
+            yCenter = yPos[ap];
+
+            boolean holdReposition = Prefs.get("aperture.reposition", reposition);
             if (!measureAperture()) {
                 if (haltOnError || this instanceof Stack_Aligner) {
                     Prefs.set("aperture.reposition", holdReposition);

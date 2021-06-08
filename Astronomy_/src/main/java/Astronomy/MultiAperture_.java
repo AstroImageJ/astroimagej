@@ -2201,6 +2201,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             xCenter = xPos[ap];
             yCenter = yPos[ap];
 
+            setShowAsCentered(centroidStar[ap]);
+
             boolean holdReposition = Prefs.get("aperture.reposition", reposition);
             if (!measureAperture()) {
                 if (haltOnError || this instanceof Stack_Aligner) {

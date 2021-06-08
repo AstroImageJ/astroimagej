@@ -4,17 +4,18 @@ import java.awt.event.*;
 import java.awt.datatransfer.*;
 import java.awt.image.*;
 import java.io.*;
-import java.lang.reflect.*;
 import ij.*;
 import ij.process.*;
 import ij.gui.*;
 import ij.plugin.frame.Editor;
+import ij.plugin.frame.Recorder;
 import ij.text.TextWindow;
 import ij.util.Tools;
 	
-/**	Copies and pastes images to the clipboard. */
+/**	Copies/pastes images to/from the system clipboard. */
 public class Clipboard implements PlugIn, Transferable {
 	static java.awt.datatransfer.Clipboard clipboard;
+	private ImagePlus gImp;
 	
 	public void run(String arg) {
 		if (IJ.altKeyDown()) {
@@ -37,12 +38,46 @@ public class Clipboard implements PlugIn, Transferable {
 			showInternalClipboard();
 	}
 	
+	/** Copies the contents of the specified image, or selection, to the system clicpboard. */
+	public static void copyToSystem(ImagePlus imp) {
+		Clipboard cplugin = new Clipboard();
+		cplugin.gImp = imp;
+		cplugin.setup();
+		try {
+			cplugin.clipboard.setContents(cplugin, null);
+		} catch (Throwable t) {}
+	}
+	
 	void copy(boolean cut) {
 		ImagePlus imp = WindowManager.getCurrentImage();
-		if (imp!=null)
+		if (imp!=null) {
 	 		imp.copy(cut);
-	 	else
+	 		if (cut)
+	 			imp.changes = true;
+	 	} else
 	 		IJ.noImage();
+	 	if (Recorder.scriptMode()) {
+	 		if (cut)
+				Recorder.recordCall("imp.cut();");
+			else
+				Recorder.recordCall("imp.copy();");
+	 	}
+	}
+	
+	private ImagePlus flatten(ImagePlus imp) {
+		if (imp.getOverlay()!=null && !imp.getHideOverlay() && !imp.isHyperStack()) {
+			ImagePlus imp2 = imp;
+			Roi roi = imp.getRoi();
+			if (imp.getStackSize()>1) {
+				imp.deleteRoi();
+				int slice = imp.getCurrentSlice();
+				imp = new Duplicator().run(imp, slice, slice);
+			}
+			imp = imp.flatten();
+			imp.setRoi(roi);
+			imp2.setRoi(roi);
+		}
+		return imp;
 	}
 	
 	void paste() {
@@ -50,9 +85,11 @@ public class Clipboard implements PlugIn, Transferable {
 			showSystemClipboard();
 		else {
 			ImagePlus imp = WindowManager.getCurrentImage();
-			if (imp!=null)
+			if (imp!=null) {
 				imp.paste();
-			else
+				if (Recorder.scriptMode())
+					Recorder.recordCall("imp.paste();");
+			} else
 				showInternalClipboard	();
 		}
 	}
@@ -63,10 +100,13 @@ public class Clipboard implements PlugIn, Transferable {
 	}
 	
 	void copyToSystem() {
+		this.gImp = WindowManager.getCurrentImage();
 		setup();
 		try {
 			clipboard.setContents(this, null);
 		} catch (Throwable t) {}
+	 	if (Recorder.scriptMode())
+			Recorder.recordCall("imp.copyToSystem();");
 	}
 	
 	void showSystemClipboard() {
@@ -76,12 +116,6 @@ public class Clipboard implements PlugIn, Transferable {
 			Transferable transferable = clipboard.getContents(null);
 			boolean imageSupported = transferable.isDataFlavorSupported(DataFlavor.imageFlavor);
 			boolean textSupported = transferable.isDataFlavorSupported(DataFlavor.stringFlavor);
-			if (!imageSupported && IJ.isMacOSX() && !IJ.isJava16()) {
-				// attempt to open PICT file using QuickTime for Java
-				Object mc = IJ.runPlugIn("MacClipboard", ""); 
-				if (mc!=null && (mc instanceof ImagePlus) && ((ImagePlus)mc).getImage()!=null)
-					return;
-			}
 			if (imageSupported) {
 				Image img = (Image)transferable.getTransferData(DataFlavor.imageFlavor);
 				if (img==null) {
@@ -123,27 +157,19 @@ public class Clipboard implements PlugIn, Transferable {
 	public Object getTransferData(DataFlavor flavor) throws UnsupportedFlavorException {
 		if (!isDataFlavorSupported(flavor))
 			throw new UnsupportedFlavorException(flavor);
-		ImagePlus imp = WindowManager.getCurrentImage();
-		if (imp!=null) {
-			ImageProcessor ip;
-			if (imp.isComposite()) {
-				ip = new ColorProcessor(imp.getImage());
-				ip.setRoi(imp.getRoi());
-			} else	
-				ip = imp.getProcessor();
-			ip = ip.crop();
-			int w = ip.getWidth();
-			int h = ip.getHeight();
-			IJ.showStatus(w+"x"+h+ " image copied to system clipboard");
-			Image img = IJ.getInstance().createImage(w, h);
-			Graphics g = img.getGraphics();
-			g.drawImage(ip.createImage(), 0, 0, null);
-			g.dispose();
-			return img;
-		} else {
-			//IJ.noImage();
+		ImagePlus imp = gImp!=null?gImp:WindowManager.getCurrentImage();
+		if (imp==null)
 			return null;
+		Roi roi = imp.getRoi();
+		if (roi!=null && !roi.isLine()) {
+			Rectangle bounds = roi.getBounds();
+			if (!(bounds.x==0&&bounds.y==0&&bounds.width==imp.getWidth()&&bounds.height==imp.getHeight()))
+				imp = imp.crop();
 		}
+		boolean overlay = imp.getOverlay()!=null && !imp.getHideOverlay();
+		if (overlay && !imp.tempOverlay())
+			imp = imp.flatten(); 
+		return imp.getImage();
 	}
 	
 	void showInternalClipboard() {
@@ -165,134 +191,6 @@ public class Clipboard implements PlugIn, Transferable {
 		} else
 			IJ.error("The internal clipboard is empty.");
 	}
-	
-    /**
-    boolean displayMacImage(Transferable t) {
-    	Image img = getMacImage(t);
-    	if (img!=null) {
-			WindowManager.checkForDuplicateName = true;          
-			new ImagePlus("Clipboard", img).show();
-		}
-		return img!=null;
-    }
-
-	// Mac OS X's data transfer handling is horribly broken. We sometimes
-	// need to use the "image/x-pict" MIME type and then Quicktime
-	// for Java in order to get the image data.
-	Image getMacImage(Transferable t) {
-		if (!isQTJavaInstalled())
-			return null;
-		Image img = null;
-		DataFlavor[] d = t.getTransferDataFlavors();
-		if (d==null || d.length==0)
-			return null;
-		try {
-			Object is = t.getTransferData(d[0]);
-			if (is==null || !(is instanceof InputStream))
-				return null;
-			img = getImageFromPictStream((InputStream)is);
-		} catch (Exception e) {}
-		return img;
-    }
-    
-	// Converts a PICT to an AWT image using QuickTime for Java.
-	// This code was contributed by Gord Peters.
-	Image getImageFromPictStream(InputStream is) {
-		try {
-			ByteArrayOutputStream baos= new ByteArrayOutputStream();
-			// We need to strip the header from the data because a PICT file
-			// has a 512 byte header and then the data, but in our case we only
-			// need the data. --GP
-			byte[] header= new byte[512];
-			byte[] buf= new byte[4096];
-			int retval= 0, size= 0;
-			baos.write(header, 0, 512);
-			while ( (retval= is.read(buf, 0, 4096)) > 0)
-				baos.write(buf, 0, retval);		
-			baos.close();
-			size = baos.size();
-			//IJ.log("size: "+size); IJ.wait(2000);
-			if (size<=0)
-				return null;
-			byte[] imgBytes= baos.toByteArray();
-			// Again with the uglyness.  Here we need to use the Quicktime
-			// for Java code in order to create an Image object from
-			// the PICT data we received on the clipboard.  However, in
-			// order to get this to compile on other platforms, we use
-			// the Java reflection API.
-			//
-			// For reference, here is the equivalent code without
-			// reflection:
-			//
-			//
-			// if (QTSession.isInitialized() == false) {
-			//     QTSession.open();
-			// }
-			// QTHandle handle= new QTHandle(imgBytes);
-			// GraphicsImporter gi=
-			//     new GraphicsImporter(QTUtils.toOSType("PICT"));
-			// gi.setDataHandle(handle);
-			// QDRect qdRect= gi.getNaturalBounds();
-			// GraphicsImporterDrawer gid= new GraphicsImporterDrawer(gi);
-			// QTImageProducer qip= new QTImageProducer(gid,
-			//                          new Dimension(qdRect.getWidth(),
-			//                                        qdRect.getHeight()));
-			// return(Toolkit.getDefaultToolkit().createImage(qip));
-			//
-			// --GP
-			//IJ.log("quicktime.QTSession");
-			Class c = Class.forName("quicktime.QTSession");
-			Method m = c.getMethod("isInitialized", null);
-			Boolean b= (Boolean)m.invoke(null, null);			
-			if (b.booleanValue() == false) {
-				m= c.getMethod("open", null);
-				m.invoke(null, null);
-			}
-			c= Class.forName("quicktime.util.QTHandle");
-			Constructor con = c.getConstructor(new Class[] {imgBytes.getClass() });
-			Object handle= con.newInstance(new Object[] { imgBytes });
-			String s= new String("PICT");
-			c = Class.forName("quicktime.util.QTUtils");
-			m = c.getMethod("toOSType", new Class[] { s.getClass() });
-			Integer type= (Integer)m.invoke(null, new Object[] { s });
-			c = Class.forName("quicktime.std.image.GraphicsImporter");
-			con = c.getConstructor(new Class[] { type.TYPE });
-			Object importer= con.newInstance(new Object[] { type });
-			m = c.getMethod("setDataHandle",
-			new Class[] { Class.forName("quicktime.util." + "QTHandleRef") });
-			m.invoke(importer, new Object[] { handle });
-			m = c.getMethod("getNaturalBounds", null);
-			Object rect= m.invoke(importer, null);
-			c = Class.forName("quicktime.app.view.GraphicsImporterDrawer");
-			con = c.getConstructor(new Class[] { importer.getClass() });
-			Object iDrawer = con.newInstance(new Object[] { importer });
-			m = rect.getClass().getMethod("getWidth", null);
-			Integer width= (Integer)m.invoke(rect, null);
-			m = rect.getClass().getMethod("getHeight", null);
-			Integer height= (Integer)m.invoke(rect, null);
-			Dimension d= new Dimension(width.intValue(), height.intValue());
-			c = Class.forName("quicktime.app.view.QTImageProducer");
-			con = c.getConstructor(new Class[] { iDrawer.getClass(), d.getClass() });
-			Object producer= con.newInstance(new Object[] { iDrawer, d });
-			if (producer instanceof ImageProducer)
-				return(Toolkit.getDefaultToolkit().createImage((ImageProducer)producer));
-		} catch (Exception e) {
-			IJ.showStatus("QuickTime for java error");
-		}
-		return null;
-    }
-
-	// Retuns true if QuickTime for Java is installed.
-	// This code was contributed by Gord Peters.
-	boolean isQTJavaInstalled() {
-		boolean isInstalled = false;
-		try {
-			Class c= Class.forName("quicktime.QTSession");
-			isInstalled = true;
-		} catch (Exception e) {}
-		return isInstalled;
-	}
-	*/
 
 }
 

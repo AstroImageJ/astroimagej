@@ -162,14 +162,14 @@ public class Donnan{
     // Concentrations - Molar,  assocK - M^-1, radius - metres, charge - valency e.g. +1
     public void setIon(String ion, double concnA, double concnB, double assocK, double radius, int charge){
         this.arrayl.add(ion);
-        this.arrayl.add(new Double(concnA));
-        this.arrayl.add(new Double(concnB));
+        this.arrayl.add(concnA);
+        this.arrayl.add(concnB);
         if(concnA>0.0D || concnB>0.0)this.nonZeroConcns++;
-        this.arrayl.add(new Double(assocK));
+        this.arrayl.add(assocK);
         if(assocK!=0.0D)this.nonZeroAssocK++;
-        this.arrayl.add(new Double(radius));
-        this.arrayl.add(new Integer(charge));
-        this.arrayl.add(new Double(-1.0D));
+        this.arrayl.add(radius);
+        this.arrayl.add(charge);
+        this.arrayl.add(-1.0D);
         this.numOfIons++;
     }
 
@@ -178,14 +178,14 @@ public class Donnan{
     // Concentrations - Molar,  assocK - M^-1, radius - metres, charge - valency e.g. +1
     public void setIon(double partCoeff, String ion, double concnA, double concnB, double assocK, double radius, int charge){
         this.arrayl.add(ion);
-        this.arrayl.add(new Double(concnA));
-        this.arrayl.add(new Double(concnB));
+        this.arrayl.add(concnA);
+        this.arrayl.add(concnB);
         if(concnA>0.0D || concnB>0.0)this.nonZeroConcns++;
-        this.arrayl.add(new Double(assocK));
+        this.arrayl.add(assocK);
         if(assocK!=0.0D)this.nonZeroAssocK++;
-        this.arrayl.add(new Double(radius));
-        this.arrayl.add(new Integer(charge));
-        this.arrayl.add(new Double(partCoeff));
+        this.arrayl.add(radius);
+        this.arrayl.add(charge);
+        this.arrayl.add(partCoeff);
         this.numOfIons++;
     }
 
@@ -195,13 +195,13 @@ public class Donnan{
     // association constant = 0.0D
     public void setIon(String ion, double concnA, double concnB, double radius, int charge){
         this.arrayl.add(ion);
-        this.arrayl.add(new Double(concnA));
-        this.arrayl.add(new Double(concnB));
+        this.arrayl.add(concnA);
+        this.arrayl.add(concnB);
         if(concnA>0.0D || concnB>0.0)this.nonZeroConcns++;
-        this.arrayl.add(new Double(0.0D));
-        this.arrayl.add(new Double(radius));
-        this.arrayl.add(new Integer(charge));
-        this.arrayl.add(new Double(-1.0D));
+        this.arrayl.add(0.0D);
+        this.arrayl.add(radius);
+        this.arrayl.add(charge);
+        this.arrayl.add(-1.0D);
         this.numOfIons++;
     }
 
@@ -211,13 +211,13 @@ public class Donnan{
     // association constant = 0.0D
     public void setIon(double partCoeff, String ion, double concnA, double concnB, double radius, int charge){
         this.arrayl.add(ion);
-        this.arrayl.add(new Double(concnA));
-        this.arrayl.add(new Double(concnB));
+        this.arrayl.add(concnA);
+        this.arrayl.add(concnB);
         if(concnA>0.0D || concnB>0.0)this.nonZeroConcns++;
-        this.arrayl.add(new Double(0.0D));
-        this.arrayl.add(new Double(radius));
-        this.arrayl.add(new Integer(charge));
-        this.arrayl.add(new Double (partCoeff));
+        this.arrayl.add(0.0D);
+        this.arrayl.add(radius);
+        this.arrayl.add(charge);
+        this.arrayl.add(partCoeff);
         this.numOfIons++;
     }
 
@@ -229,10 +229,10 @@ public class Donnan{
     public void setIon(String ion, double concnA, double concnB, double assocK){
         IonicRadii ir = new IonicRadii();
         this.arrayl.add(ion);
-        this.arrayl.add(new Double(concnA));
-        this.arrayl.add(new Double(concnB));
+        this.arrayl.add(concnA);
+        this.arrayl.add(concnB);
         if(concnA>0.0D || concnB>0.0)this.nonZeroConcns++;
-        this.arrayl.add(new Double(assocK));
+        this.arrayl.add(assocK);
         if(assocK!=0.0D)this.nonZeroAssocK++;
         double rad = 0.0D;
         if(this.radiusType){
@@ -247,7 +247,7 @@ public class Donnan{
             String mess2 = "Please enter radius in metres\n";
             rad = Db.readDouble(mess1+mess2);
         }
-        this.arrayl.add(new Double(rad));
+        this.arrayl.add(rad);
         int charg = 0;
         charg = ir.charge(ion);
         if(charg==0){
@@ -255,8 +255,8 @@ public class Donnan{
             String mess2 = "Please enter charge, e.g +2";
             charg = Db.readInt(mess1+mess2);
         }
-        this.arrayl.add(new Integer(charg));
-        this.arrayl.add(new Double(-1.0D));
+        this.arrayl.add(charg);
+        this.arrayl.add(-1.0D);
         this.numOfIons++;
     }
 
@@ -267,10 +267,10 @@ public class Donnan{
     public void setIon(double partCoeff, String ion, double concnA, double concnB, double assocK){
         IonicRadii ir = new IonicRadii();
         this.arrayl.add(ion);
-        this.arrayl.add(new Double(concnA));
-        this.arrayl.add(new Double(concnB));
+        this.arrayl.add(concnA);
+        this.arrayl.add(concnB);
         if(concnA>0.0D || concnB>0.0)this.nonZeroConcns++;
-        this.arrayl.add(new Double(assocK));
+        this.arrayl.add(assocK);
         if(assocK!=0.0D)this.nonZeroAssocK++;
         double rad = 0.0D;
         if(this.includeIc){
@@ -289,7 +289,7 @@ public class Donnan{
                 if(rad==0.0D)this.includeIc = false;
             }
         }
-        this.arrayl.add(new Double(rad));
+        this.arrayl.add(rad);
         int charg = 0;
         charg = ir.charge(ion);
         if(charg==0){
@@ -297,8 +297,8 @@ public class Donnan{
             String mess2 = "Please enter charge, e.g +2";
             charg = Db.readInt(mess1+mess2);
         }
-        this.arrayl.add(new Integer(charg));
-        this.arrayl.add(new Double(partCoeff));
+        this.arrayl.add(charg);
+        this.arrayl.add(partCoeff);
         this.numOfIons++;
     }
 
@@ -310,10 +310,10 @@ public class Donnan{
     public void setIon(String ion, double concnA, double concnB){
         IonicRadii ir = new IonicRadii();
         this.arrayl.add(ion);
-        this.arrayl.add(new Double(concnA));
-        this.arrayl.add(new Double(concnB));
+        this.arrayl.add(concnA);
+        this.arrayl.add(concnB);
         if(concnA>0.0D || concnB>0.0)this.nonZeroConcns++;
-        this.arrayl.add(new Double(0.0D));
+        this.arrayl.add(0.0D);
         double rad = 0.0D;
         if(this.radiusType){
             rad = ir.hydratedRadius(ion);
@@ -327,7 +327,7 @@ public class Donnan{
             rad = Db.readDouble(mess1+mess2);
             if(rad==0.0D)this.includeIc = false;
         }
-        this.arrayl.add(new Double(rad));
+        this.arrayl.add(rad);
         int charg = 0;
         charg = ir.charge(ion);
         if(charg==0){
@@ -335,8 +335,8 @@ public class Donnan{
             String mess2 = "Please enter charge, e.g +2";
             charg = Db.readInt(mess1+mess2);
         }
-        this.arrayl.add(new Integer(charg));
-        this.arrayl.add(new Double(-1.0D));
+        this.arrayl.add(charg);
+        this.arrayl.add(-1.0D);
         this.numOfIons++;
     }
 
@@ -348,10 +348,10 @@ public class Donnan{
     public void setIon(double partCoeff, String ion, double concnA, double concnB){
         IonicRadii ir = new IonicRadii();
         this.arrayl.add(ion);
-        this.arrayl.add(new Double(concnA));
-        this.arrayl.add(new Double(concnB));
+        this.arrayl.add(concnA);
+        this.arrayl.add(concnB);
         if(concnA>0.0D || concnB>0.0)this.nonZeroConcns++;
-        this.arrayl.add(new Double(0.0D));
+        this.arrayl.add(0.0D);
         double rad = 0.0D;
         if(this.includeIc){
             if(this.radiusType){
@@ -369,7 +369,7 @@ public class Donnan{
                 if(rad==0.0D)this.includeIc = false;
             }
         }
-        this.arrayl.add(new Double(rad));
+        this.arrayl.add(rad);
         int charg = 0;
         charg = ir.charge(ion);
         if(charg==0){
@@ -377,8 +377,8 @@ public class Donnan{
             String mess2 = "Please enter charge, e.g +2";
             charg = Db.readInt(mess1+mess2);
         }
-        this.arrayl.add(new Integer(charg));
-        this.arrayl.add(new Double(partCoeff));
+        this.arrayl.add(charg);
+        this.arrayl.add(partCoeff);
         this.numOfIons++;
     }
 
@@ -949,10 +949,10 @@ public class Donnan{
             this.ionNames[i]= (String)this.arrayl.get(0+i*7);
             // concentration in compartment A
             hold            = (Double)this.arrayl.get(1+i*7);
-            this.concnA[i]  = hold.doubleValue()*1e3;
+            this.concnA[i]  = hold *1e3;
             hold            = (Double)this.arrayl.get(2+i*7);
             // concentration in compartment B
-            this.concnB[i]  = hold.doubleValue()*1e3;
+            this.concnB[i]  = hold *1e3;
             // total moles of ion i
             this.molesT[i]  = this.concnA[i]*volumeA + this.concnB[i]*volumeB;
             if(this.molesT[i]>0.0D){
@@ -963,17 +963,17 @@ public class Donnan{
             }
             // association constant
             hold            = (Double)this.arrayl.get(3+i*7);
-            this.assocConsts[i] = hold.doubleValue()*1e-3;
+            this.assocConsts[i] = hold *1e-3;
             if(this.assocConsts[i]>0.0D){
                 indexK[ii] = i;
                 ii++;
             }
             // ion radius
             hold            = (Double)this.arrayl.get(4+i*7);
-            this.radii[i]   = hold.doubleValue();
+            this.radii[i]   = hold;
             // ion charge
             holi            = (Integer)this.arrayl.get(5+i*7);
-            this.charges[i] = holi.intValue();
+            this.charges[i] = holi;
             // running check for all ions having same absolute charge
             if(i==0){
                 this.chargeValue = Math.abs(this.charges[0]);
@@ -984,7 +984,7 @@ public class Donnan{
 
             // partition coefficient
             hold        = (Double)this.arrayl.get(6+i*7);
-            this.partCoeff[i]= hold.doubleValue();
+            this.partCoeff[i]= hold;
             this.indexPC[i] = true;
             if(this.partCoeff[i]==-1.0D){
                 this.indexPC[i] = false;

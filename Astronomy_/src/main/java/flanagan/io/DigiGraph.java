@@ -510,8 +510,8 @@ public class DigiGraph extends Canvas implements MouseListener{
                     // identify left (1) or right (3) hand mouse click
                     this.button = me.getButton();
                     if(this.button==1){
-                        this.xAndYvalues.add(new Integer(this.xPos));
-                        this.xAndYvalues.add(new Integer(this.yPos));
+                        this.xAndYvalues.add(this.xPos);
+                        this.xAndYvalues.add(this.yPos);
                     }
 
                     // close file if right button clicked

@@ -4,8 +4,7 @@ import ij.gui.*;
 import ij.process.*;
 import ij.io.*;
 import ij.plugin.filter.*;
-import ij.plugin.frame.LineWidthAdjuster;
-import ij.plugin.frame.ContrastAdjuster;
+import ij.plugin.frame.*;
 import ij.measure.Calibration;
 import java.awt.*;
 
@@ -16,10 +15,10 @@ public class AppearanceOptions implements PlugIn, DialogListener {
 	private boolean black = Prefs.blackCanvas;
 	private boolean noBorder = Prefs.noBorder;
 	private boolean inverting = Prefs.useInvertingLut;
-	private boolean antialiased = Prefs.antialiasedTools;
 	private int rangeIndex = ContrastAdjuster.get16bitRangeIndex();
 	private LUT[] luts = getLuts();
-	private int setMenuSize = Menus.getFontSize();
+	private int menuFontSize = Menus.getFontSize();
+	private double saveScale = Prefs.getGuiScale();
 	private boolean redrawn, repainted;
 
  	public void run(String arg) {
@@ -27,29 +26,41 @@ public class AppearanceOptions implements PlugIn, DialogListener {
  	}
 		
 	void showDialog() {
-		String[] ranges = ContrastAdjuster.sixteenBitRanges;
-		GenericDialog gd = new GenericDialog("Appearance", IJ.getInstance());
+		String[] ranges = ContrastAdjuster.getSixteenBitRanges();
+		GenericDialog gd = new GenericDialog("Appearance");
 		gd.addCheckbox("Interpolate zoomed images", Prefs.interpolateScaledImages);
 		gd.addCheckbox("Open images at 100%", Prefs.open100Percent);
 		gd.addCheckbox("Black canvas", Prefs.blackCanvas);
 		gd.addCheckbox("No image border", Prefs.noBorder);
 		gd.addCheckbox("Use inverting lookup table", Prefs.useInvertingLut);
-		gd.addCheckbox("Antialiased tool icons", Prefs.antialiasedTools);
-		gd.addCheckbox("Auto contrast stacks (or use shift key)", Prefs.autoContrast);
+		gd.addCheckbox("Auto contrast stacks", Prefs.autoContrast);
+		gd.addCheckbox("IJ window always on top", Prefs.alwaysOnTop);
+		if (IJ.isLinux())
+			gd.addCheckbox("Cancel button on right", Prefs.dialogCancelButtonOnRight);
 		gd.addChoice("16-bit range:", ranges, ranges[rangeIndex]);
-		gd.addNumericField("Menu font size:", Menus.getFontSize(), 0, 3, "points");
-        gd.addHelp(IJ.URL+"/docs/menus/edit.html#appearance");
-        gd.addDialogListener(this);
+		Font font = new Font("SansSerif", Font.PLAIN, 9);
+		if (!IJ.isMacOSX()) {
+			gd.setInsets(0, 0, 0);
+			gd.addNumericField("Menu font size:", Menus.getFontSize(), 0, 4, "points");
+			if (IJ.isWindows()) {
+				gd.setInsets(2,30,5);
+				gd.addMessage("Setting size>17 may not work on Windows", font);
+			}
+		}
+		gd.setInsets(0, 0, 0);
+		gd.addNumericField("GUI scale (0.5-3.0):", Prefs.getGuiScale(), 1, 4, "");
+		gd.setInsets(2,20,0);
+		gd.addMessage("Set to 1.5 to double size of tool icons, or 2.5 to triple", font);
+		gd.addHelp(IJ.URL+"/docs/menus/edit.html#appearance");
+		gd.addDialogListener(this);
 		gd.showDialog();
 		if (gd.wasCanceled()) {
-			if (antialiased!=Prefs.antialiasedTools)
-				Toolbar.getInstance().repaint();
 			Prefs.interpolateScaledImages = interpolate;
 			Prefs.open100Percent = open100;
 			Prefs.blackCanvas = black;
 			Prefs.noBorder = noBorder;
 			Prefs.useInvertingLut = inverting;
-			Prefs.antialiasedTools = antialiased;
+			Prefs.setGuiScale(saveScale);
 			if (redrawn) draw();
 			if (repainted) repaintWindow();
 			Prefs.open100Percent = open100;
@@ -66,15 +77,36 @@ public class AppearanceOptions implements PlugIn, DialogListener {
 			}
 			return;
 		}
-		if (setMenuSize!=Menus.getFontSize() && !IJ.isMacintosh()) {
-			Menus.setFontSize(setMenuSize);
-			IJ.showMessage("Appearance", "Restart ImageJ to use the new font size");
+		boolean messageShown = false;
+		double scale =  Prefs.getGuiScale();
+		if (scale!=saveScale) {
+			if (!IJ.isMacOSX()) {
+				IJ.showMessage("Appearance", "Restart ImageJ to resize \"ImageJ\" window");
+				messageShown = true;
+			} else {
+				ImageJ ij = IJ.getInstance();
+				if (ij!=null)
+					ij.resize();
+			}	
 		}
+		boolean fontSizeChanged = menuFontSize!=Menus.getFontSize();
+		if (fontSizeChanged)
+			Menus.setFontSize(menuFontSize);
+		if (!messageShown && fontSizeChanged && !IJ.isMacOSX())
+			IJ.showMessage("Appearance", "Restart ImageJ to use the new font size");
 		if (Prefs.useInvertingLut) {
 			IJ.showMessage("Appearance",
 				"The \"Use inverting lookup table\" option is set. Newly opened\n"+
 				"8-bit images will use an inverting LUT (white=0, black=255).");
 		}
+		int range = ImagePlus.getDefault16bitRange();
+		if (range>0 && Recorder.record) {
+			if (Recorder.scriptMode())
+				Recorder.recordCall("ImagePlus.setDefault16bitRange("+range+");");
+			else
+				Recorder.recordString("call(\"ij.ImagePlus.setDefault16bitRange\", "+range+");\n");
+		}
+
 	}
 	
 	public boolean dialogItemChanged(GenericDialog gd, AWTEvent e) {
@@ -84,12 +116,14 @@ public class AppearanceOptions implements PlugIn, DialogListener {
 		boolean blackCanvas = gd.getNextBoolean();
 		boolean noBorder = gd.getNextBoolean();
 		Prefs.useInvertingLut = gd.getNextBoolean();
-		boolean antialiasedTools = gd.getNextBoolean();
-		boolean toolbarChange = antialiasedTools!=Prefs.antialiasedTools;
-		Prefs.antialiasedTools = antialiasedTools;
+		boolean alwaysOnTop = Prefs.alwaysOnTop;
 		Prefs.autoContrast = gd.getNextBoolean();
-		if (toolbarChange) Toolbar.getInstance().repaint();
-		setMenuSize = (int)gd.getNextNumber();
+		Prefs.alwaysOnTop = gd.getNextBoolean();
+		if (IJ.isLinux())
+			Prefs.dialogCancelButtonOnRight = gd.getNextBoolean();
+		if (!IJ.isMacOSX())
+			menuFontSize = (int)gd.getNextNumber();
+		Prefs.setGuiScale(gd.getNextNumber());
 		if (interpolate!=Prefs.interpolateScaledImages) {
 			Prefs.interpolateScaledImages = interpolate;
 			draw();
@@ -101,6 +135,10 @@ public class AppearanceOptions implements PlugIn, DialogListener {
 		if (noBorder!=Prefs.noBorder) {
 			Prefs.noBorder = noBorder;
 			repaintWindow();
+		}
+		if (alwaysOnTop!=Prefs.alwaysOnTop) {
+			ImageJ ij = IJ.getInstance();
+			if (ij!=null) ij.setAlwaysOnTop(Prefs.alwaysOnTop);
 		}
 		int rangeIndex2 = gd.getNextChoiceIndex();
 		int range1 = ImagePlus.getDefault16bitRange();

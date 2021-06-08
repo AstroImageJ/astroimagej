@@ -251,12 +251,12 @@ public class SurfaceSmooth{
         this.yBDdata = new BigDecimal[n];
         for(int i=0; i<m; i++){
             this.xData[i] = i;
-            String ii = (new Integer(i)).toString();
+            String ii = (Integer.valueOf(i)).toString();
             this.xBDdata[i] = new BigDecimal(ii);
         }
         for(int i=0; i<n; i++){
             this.yData[i] = i;
-            String ii = (new Integer(i)).toString();
+            String ii = (Integer.valueOf(i)).toString();
             this.yBDdata[i] = new BigDecimal(ii);
         }
         for(int i=0; i<n; i++){
@@ -311,12 +311,12 @@ public class SurfaceSmooth{
         this.yBDdata = new BigDecimal[m];
         for(int i=0; i<m; i++){
             this.xData[i] = i;
-            String xx = (new Integer(i)).toString();
+            String xx = (Integer.valueOf(i)).toString();
             this.xBDdata[i] = new BigDecimal(xx);
         }
         for(int i=0; i<n; i++){
             this.yData[i] = i;
-            String xx = (new Integer(i)).toString();
+            String xx = (Integer.valueOf(i)).toString();
             this.yBDdata[i] = new BigDecimal(xx);
         }
         for(int i=0; i<n; i++){
@@ -403,10 +403,10 @@ public class SurfaceSmooth{
             this.xBDdata = new BigDecimal[this.nPointsX];
             this.yBDdata = new BigDecimal[this.nPointsY];
             for(int i=0; i<this.nPointsX; i++){
-               this.xBDdata[i] = new BigDecimal((new Double(this.xData[i])).toString()); 
+               this.xBDdata[i] = new BigDecimal((Double.valueOf(this.xData[i])).toString());
             }
             for(int i=0; i<this.nPointsY; i++){
-               this.yBDdata[i] = new BigDecimal((new Double(this.yData[i])).toString()); 
+               this.yBDdata[i] = new BigDecimal((Double.valueOf(this.yData[i])).toString());
             }
         }       
     }
@@ -565,7 +565,7 @@ public class SurfaceSmooth{
                             sumbd = sumbd.add(this.zBDdata[k2][k1]);
                         }
                     }
-                    String xx = (new Integer(nw1*nw2)).toString();
+                    String xx = (Integer.valueOf(nw1*nw2)).toString();
                     this.zDataMovAvBD[j][i] = sumbd.divide(new BigDecimal(xx), BigDecimal.ROUND_HALF_UP);
                     this.zDataMovAv[j][i] = this.zDataMovAvBD[j][i].doubleValue();
                 }
@@ -577,7 +577,7 @@ public class SurfaceSmooth{
                         }
                     }             
                     this.zDataMovAv[j][i] = sum/(nw1*nw2);
-                    String xx = (new Double(this.zDataMovAv[j][i])).toString();
+                    String xx = (Double.valueOf(this.zDataMovAv[j][i])).toString();
                     this.zDataMovAvBD[j][i] = new BigDecimal(xx);
                 }
             }

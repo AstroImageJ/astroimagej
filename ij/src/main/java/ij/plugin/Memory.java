@@ -1,11 +1,13 @@
 package ij.plugin;
 import ij.*;
+import ij.astro.AstroImageJ;
 import ij.gui.*;
 import java.io.*;
 import ij.util.Tools;
 
 
 /** This plugin implements the Edit/Options/Memory command. */
+@AstroImageJ(reason = "Update for AIJ config file and defaults", modified = true)
 public class Memory implements PlugIn {
 	String s;
 	int index1, index2;

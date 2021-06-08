@@ -45,6 +45,7 @@ import flanagan.plot.*;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.RoundingMode;
 
 public class ThreeDimensionalSmooth{
     
@@ -313,15 +314,15 @@ public class ThreeDimensionalSmooth{
         this.zBDdata = new BigDecimal[c];
         for(int i=0; i<a; i++){
             this.xData[i] = i;
-            this.xBDdata[i] = new BigDecimal((new Integer(i)).toString());
+            this.xBDdata[i] = new BigDecimal((Integer.valueOf(i)).toString());
         }
         for(int i=0; i<b; i++){
             this.yData[i] = i;
-            this.yBDdata[i] = new BigDecimal((new Integer(i)).toString());
+            this.yBDdata[i] = new BigDecimal((Integer.valueOf(i)).toString());
         }
         for(int i=0; i<c; i++){
             this.zData[i] = i;
-            this.zBDdata[i] = new BigDecimal((new Integer(i)).toString());
+            this.zBDdata[i] = new BigDecimal((Integer.valueOf(i)).toString());
         }
         for(int i=0; i<a; i++){
            for(int j=0; j<b; j++){
@@ -379,15 +380,15 @@ public class ThreeDimensionalSmooth{
         this.zBDdata = new BigDecimal[c];
         for(int i=0; i<a; i++){
             this.xData[i] = i;
-            this.xBDdata[i] = new BigDecimal((new Integer(i)).toString());
+            this.xBDdata[i] = new BigDecimal((Integer.valueOf(i)).toString());
         }
         for(int i=0; i<b; i++){
             this.yData[i] = i;
-            this.yBDdata[i] = new BigDecimal((new Integer(i)).toString());
+            this.yBDdata[i] = new BigDecimal((Integer.valueOf(i)).toString());
         }
         for(int i=0; i<c; i++){
             this.zData[i] = i;
-            this.zBDdata[i] = new BigDecimal((new Integer(i)).toString());
+            this.zBDdata[i] = new BigDecimal((Integer.valueOf(i)).toString());
         }
         for(int i=0; i<a; i++){
            for(int j=0; j<b; j++){
@@ -507,13 +508,13 @@ public class ThreeDimensionalSmooth{
             this.yBDdata = new BigDecimal[this.nPointsY];
             this.zBDdata = new BigDecimal[this.nPointsZ];
             for(int i=0; i<this.nPointsX; i++){
-               this.xBDdata[i] = new BigDecimal((new Double(this.xData[i])).toString()); 
+               this.xBDdata[i] = new BigDecimal((Double.valueOf(this.xData[i])).toString());
             }
             for(int i=0; i<this.nPointsY; i++){
-               this.yBDdata[i] = new BigDecimal((new Double(this.yData[i])).toString()); 
+               this.yBDdata[i] = new BigDecimal((Double.valueOf(this.yData[i])).toString());
             }
             for(int i=0; i<this.nPointsZ; i++){
-               this.zBDdata[i] = new BigDecimal((new Double(this.zData[i])).toString()); 
+               this.zBDdata[i] = new BigDecimal((Double.valueOf(this.zData[i])).toString());
             }
         }
     }
@@ -752,8 +753,8 @@ public class ThreeDimensionalSmooth{
                                 }
                             }
                         }
-                        String xx = (new Integer(nw1*nw2+nw3)).toString();
-                        this.vDataMovAvBD[k][j][i] = sumbd.divide(new BigDecimal(xx), BigDecimal.ROUND_HALF_UP);
+                        String xx = (Integer.valueOf(nw1 * nw2 + nw3)).toString();
+                        this.vDataMovAvBD[k][j][i] = sumbd.divide(new BigDecimal(xx), RoundingMode.HALF_UP);
                         this.vDataMovAv[k][j][i] = this.vDataMovAvBD[k][j][i].doubleValue();
                     }
                     else{
@@ -766,7 +767,7 @@ public class ThreeDimensionalSmooth{
                             }
                         }
                         this.vDataMovAv[k][j][i] = sum/(nw1*nw2*nw3);
-                        String xx = (new Double(this.vDataMovAv[k][j][i])).toString();
+                        String xx = (Double.valueOf(this.vDataMovAv[k][j][i])).toString();
                         this.vDataMovAvBD[k][j][i] = new BigDecimal(xx);
                     }
                 }

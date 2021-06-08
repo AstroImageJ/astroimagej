@@ -5,13 +5,13 @@ import groovy.json.JsonSlurper
 buildscript {
     repositories {
         //mavenLocal()
-        /*maven {
+        maven {
             url 'gradlePlugins'
-        }*/
+        }
         mavenCentral()
     }
     dependencies {
-        classpath 'io.github.fvarrui:javapackager:1.5.1'
+        classpath 'io.github.fvarrui:javapackager:1.6.0-SNAPSHOT'
     }
 }
 
@@ -21,29 +21,58 @@ plugins {
 
     // Plugin to download files
     id "de.undercouch.download" version "4.1.1"
+
+    id "org.jetbrains.gradle.plugin.idea-ext" version "1.0"
+
+    id 'net.nemerosa.versioning' version '2.8.2'
 }
 
 apply plugin: 'io.github.fvarrui.javapackager.plugin'
 
 // See https://guides.gradle.org/creating-multi-project-builds/
 
+// Java version to compile and package with
+def shippingJava = Integer.parseInt(project.javaShippingVersion as String)
+// Minimum Java version binaries should be compatible with
+def targetJava = Integer.parseInt(project.minJava as String)
+
 allprojects {
     repositories {
-        jcenter()
+        //jcenter() Shutdown
+        mavenCentral()
     }
     group 'edu.louisville.astro.software'
+
+    tasks.withType(JavaCompile).configureEach {
+        // Set language level and binary level to 8 (binary only when building with a JDK 9+)
+        // Ensures newer language features aren't used
+        options.release.set(targetJava)
+
+        // AIJ is large, so this caches compiling results and only recompiles changed files
+        options.incremental = true
+
+        // Allow unicode
+        options.encoding('UTF-8')
+
+        options.fork = true
+    }
 
     java {
         toolchain {
             // Gradle will download the JDK for compiling/running if one isn't found
             // This should prevent anyone from using an outdated JDK
-            languageVersion.set(JavaLanguageVersion.of(15))
+            languageVersion.set(JavaLanguageVersion.of(shippingJava))
         }
     }
 }
 
+// Get version metadata
+final commitHash = '+' + versioning.info.build
+final branchName = '+' + versioning.info.branch
+final dirtySuffix = !versioning.info.dirty ? '' : '+local'
+
 subprojects {
-    version = '5.0.0-SNAPSHOT'
+    version = project.version + branchName + commitHash + dirtySuffix
 }
 
 dependencies {
@@ -65,12 +94,14 @@ dependencies {
  * The file's name (name), major Java version (version), and MD5 hash (md5) are also added to this map. Those entries
  * are excluded from the definition for brevity.
  */
-def javaRuntimeSystems = [ mac: [ext: "zip", type: "jre", arch: "x86", os: "macos"]
-            // JDK is used as Azul has not produced a jre for arm macs at this time
-           , armMac: [ext: "zip", type: "jdk", arch: "arm", os: "macos"]
-           , linux: [ext: "tar.gz", type: "jre", arch: "x86", os: "linux"]
-           , windows: [ext: "zip", type: "jre", arch: "x86", os: "windows"]
+def javaRuntimeSystems = [ mac: [ext: "zip", arch: "x86", os: "macos"]
+           , armMac: [ext: "zip", arch: "arm", os: "macos"]
+           , linux: [ext: "tar.gz", arch: "x86", os: "linux"]
+           , windows: [ext: "zip", arch: "x86", os: "windows"]
+           , armWindows: [ext: "zip", arch: "arm", os: "windows"]
            ]
+
+boolean canConnectToAzul = true
 
 /**
  * Download the specified Java runtimes based on javaRuntimeSystems.
@@ -78,19 +109,50 @@ def javaRuntimeSystems = [ mac: [ext: "zip", type: "jre", arch: "x86", os: "maco
 task downloadJavaRuntimes(type: Download) {
     mkdir(file("${projectDir}/jres"))
 
+    onlyIf {
+        javaRuntimeSystems.each { sys, sysInfo ->
+            // Other parameters of note:
+            // &support_term=lts/mts/sts &release_status=ga/ea/both &bundle_type=${sysInfo.type}
+            String url = "https://api.azul.com/zulu/download/community/v1.0/bundles/latest/?" +
+                    "os=${sysInfo.os}&arch=${sysInfo.arch}&hw_bitness=64" +
+                    "&ext=${sysInfo.ext}&jdk_version=${shippingJava}"
+
+            // Ensure Azul is responding to API requests
+            def testUrl = new URL(url)
+            def connection = testUrl.openConnection()
+            connection.requestMethod = 'GET'
+            if (connection.responseCode != 200) {
+                logger.warn("A runtime (sys = {}, {}, {}, {}) failed to return from Azul!",
+                        sysInfo.os, sysInfo.arch, sysInfo.ext, sysInfo.type)
+                canConnectToAzul = false
+            }
+        }
+
+        return canConnectToAzul
+    }
+
     javaRuntimeSystems.each {sys, sysInfo ->
         // Other parameters of note:
-        // &support_term=lts/mts/sts &release_status=ga/ea/both &jdk_version=11
+        // &support_term=lts/mts/sts &release_status=ga/ea/both &bundle_type=${sysInfo.type}
         String url ="https://api.azul.com/zulu/download/community/v1.0/bundles/latest/?" +
-                "os=${sysInfo.os}&arch=${sysInfo.arch}&hw_bitness=64&bundle_type=${sysInfo.type}" +
-                "&ext=${sysInfo.ext}"
-        def meta = new JsonSlurper().parse(new URL(url)) // Pull the data from Azul
+                "os=${sysInfo.os}&arch=${sysInfo.arch}&hw_bitness=64" +
+                "&ext=${sysInfo.ext}&jdk_version=${shippingJava}"
+        def meta
+        try {
+            meta = new JsonSlurper().parse(new URL(url)) // Pull the data from Azul
+        } catch (Exception ignored) {
+            logger.warn("A runtime (sys = {}, {}, {}, {}) failed to return from Azul!",
+                    sysInfo.os, sysInfo.arch, sysInfo.ext, sysInfo.type)
+            canConnectToAzul = false
+            return
+        }
 
         // Update the maps with the metadata
         sysInfo.version = meta.jdk_version.first()
         sysInfo.ext = meta.ext as String
         sysInfo.name = meta.name as String
         sysInfo.md5 = meta.md5_hash as String
+        sysInfo.type = meta.bundle_type as String
 
         // Perform the download
         //noinspection GroovyAssignabilityCheck
@@ -100,6 +162,8 @@ task downloadJavaRuntimes(type: Download) {
         //noinspection GroovyAssignabilityCheck
         dest 'jres'
     }
+
+    if (!canConnectToAzul) return
 
     // Collect current runtime files and extensions
     def currentFiles = javaRuntimeSystems.collectEntries {[it.value.name, it.value.ext]}
@@ -214,6 +278,12 @@ task commonFiles(type: Copy) {
 // Generate AIJ-Run directory and set it up for usage
 task sync(dependsOn: jar, type: Sync) {
     with commonDist
+    with {
+        from(file("${projectDir}/devLaunchOptions.txt")) {
+            duplicatesStrategy = DuplicatesStrategy.INCLUDE
+            rename {String name -> return "AstroImageJ.l4j.ini"}
+        }
+    }
     destinationDir(file("${projectDir}/AIJ-Run"))
 }
 
@@ -225,6 +295,11 @@ task aijRun(dependsOn: sync, type: JavaExec) {
 
     setAllJvmArgs(readConfigFile())
 
+    //noinspection GroovyAssignabilityCheck, GroovyAccessibility
+    javaLauncher = javaToolchains.launcherFor {// Force it to use the toolchain java version
+        languageVersion = JavaLanguageVersion.of(shippingJava)
+    }
+
     main = "-jar"
     args "${projectDir}/AIJ-Run/ij.jar"
 }
@@ -234,7 +309,13 @@ List<String> readConfigFile() {
     File cfg = files("${projectDir}/AIJ-Run/AstroImageJ.l4j.ini").first()
     if (!cfg.exists()) return args
 
-    cfg.readLines().each {
+    File devCfg = files("${projectDir}/devLaunchOptions.txt").first()
+
+    File readCfg = devCfg.exists() ? devCfg : cfg
+
+    logger.lifecycle("Launching using options from: " + (devCfg.exists() ? "dev. config" : "default config"))
+
+    readCfg.readLines().each {
         if (it.startsWith("#") /*Comments*/) {
             return
         }
@@ -242,6 +323,9 @@ List<String> readConfigFile() {
             args.add(it)
         }
     }
+    args.add('-Daij.dev=true') // Always show full version metadata when running via dev
+
+    logger.lifecycle("Launching with the following arguments: " + args)
 
     return args
 }
@@ -277,6 +361,10 @@ javapackager {
 task packageAij
 
 javaRuntimeSystems.each {sys, sysInfo ->
+    if (!canConnectToAzul) {
+        System.out.println("Skipping system creation, failed to connect to Azul!")
+        return
+    }
     String taskName = "packageAijFor" + (sysInfo.os as String).capitalize() + "_" + sysInfo.arch
 
     tasks.register(taskName, PackageTask) {
@@ -347,15 +435,41 @@ javaRuntimeSystems.each {sys, sysInfo ->
 task copyBuiltJars(dependsOn: build, type: Copy) {
     group 'AstroImageJ Development'
 
+    File locCfg = files("${projectDir}/jarLocation.txt").first()
+    def destination = "${projectDir}/out"
+
+    if (locCfg.exists()) {
+        locCfg.readLines().each {
+            if (it.startsWith("#") /*Comments*/) {
+                return
+            }
+            destination = it
+        }
+    }
+
     // Copy astronomy_.jar
     from(file("${project(':Astronomy_').buildDir}/libs/astronomy_-${project(':Astronomy_').version}.jar")) {
         rename { String name -> return 'Astronomy_.jar' }
-        into ''
+        into 'plugins'
     }
     // Copy ij.jar
     from(file("${project(':ij').buildDir}/libs/ij-${project(':ij').version}.jar")) {
         rename { String name -> return 'ij.jar' }
         into ''
     }
-    into "${projectDir}/out"
+    into destination
+}
+
+build.configure {
+    if (files("${projectDir}/jarLocation.txt").first().exists()) {
+        //noinspection GroovyAssignabilityCheck
+        finalizedBy copyBuiltJars
+    }
+}
+
+// Hack to make Idea's hammer to run gradle build
+idea.project.settings {
+    taskTriggers {
+        afterBuild tasks.getByName("build")
+    }
 }

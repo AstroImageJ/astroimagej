@@ -33,10 +33,10 @@ public class BMP_Reader extends ImagePlus implements PlugIn {
                         String msg = e.getMessage();
                         if (msg==null || msg.equals(""))
                                 msg = ""+e;
-                        IJ.error("BMP Decoder", msg);
+                        IJ.error("BMP Reader", msg);
                         return;
                 } finally {
-					if( is!=null) {
+					if (is!=null) {
 						try {
 							is.close();
 						} catch (IOException e) {}
@@ -44,7 +44,7 @@ public class BMP_Reader extends ImagePlus implements PlugIn {
 				}
 
                 MemoryImageSource mis = bmp.makeImageSource();
-                if (mis==null) IJ.write("mis=null");
+                if (mis==null) IJ.log("BMP_Reader: mis=null");
                 Image img = Toolkit.getDefaultToolkit().createImage(mis);
                 FileInfo fi = new FileInfo();
                 fi.fileFormat = FileInfo.BMP;
@@ -182,7 +182,6 @@ class BMPDecoder {
 
         void getPalette() throws IOException {
                 noOfEntries = actualColorsUsed;
-                //IJ.write("noOfEntries: " + noOfEntries);
                 if (noOfEntries>0) {
                         r = new byte[noOfEntries];
                         g = new byte[noOfEntries];

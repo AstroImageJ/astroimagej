@@ -1201,9 +1201,9 @@ public class ImpedSpecRegression extends Regression{
 
     // user addition of constraints
     public void addNewConstraint(int parameter, int direction, double boundary){
-        this.constraints.add(new Integer(parameter));
-        this.constraints.add(new Integer(direction));
-        this.constraints.add(new Double(boundary));
+        this.constraints.add(parameter);
+        this.constraints.add(direction);
+        this.constraints.add(boundary);
         this.numberOfAddedConstraints++;
         this.constraintsAdded = true;
     }
@@ -1216,9 +1216,9 @@ public class ImpedSpecRegression extends Regression{
         }
         if(parameterNumber == -1)throw new IllegalArgumentException("Parameter symbol, " + parameterSymbol + ", not found");
 
-        this.constraints.add(new Integer(parameterNumber));
-        this.constraints.add(new Integer(direction));
-        this.constraints.add(new Double(boundary));
+        this.constraints.add(parameterNumber);
+        this.constraints.add(direction);
+        this.constraints.add(boundary);
         this.numberOfAddedConstraints++;
         this.constraintsAdded = true;
     }
@@ -1313,9 +1313,9 @@ public class ImpedSpecRegression extends Regression{
 
         // store initial estimates and associated data
         this.results = new ArrayList<Object>();
-        this.results.add(new Integer(this.numberOfFrequencies));
-        this.results.add(new Integer(this.numberOfParameters));
-        this.results.add(new Integer(this.degreesOfFreedom));
+        this.results.add(this.numberOfFrequencies);
+        this.results.add(this.numberOfParameters);
+        this.results.add(this.degreesOfFreedom);
         this.results.add(this.parameterSymbols);
         this.results.add(Conv.copy(this.initialEstimates));
         this.results.add(Conv.copy(this.initialSteps));
@@ -1351,13 +1351,13 @@ public class ImpedSpecRegression extends Regression{
             bound  = new double[this.numberOfAddedConstraints];
             int index = 0;
             for(int i=0; i<this.numberOfAddedConstraints; i++){
-                int parameter = ((Integer)constraints.get(index)).intValue();
+                int parameter = (Integer) constraints.get(index);
                 param[i] = parameter;
                 index++;
-                int direction = ((Integer)constraints.get(index)).intValue();
+                int direction = (Integer) constraints.get(index);
                 direct[i] = direction;
                 index++;
-                double boundary = ((Double)constraints.get(index)).doubleValue();
+                double boundary = (Double) constraints.get(index);
                 bound[i] = boundary;
                 index++;
                 this.addConstraint(parameter, direction, boundary);
@@ -1425,23 +1425,23 @@ public class ImpedSpecRegression extends Regression{
         this.results.add(this.preMinimumGradients);
         this.results.add(this.postMinimumGradients);
         this.sumOfSquares = this.getSumOfSquares();
-        this.results.add(new Double(this.sumOfSquares));
+        this.results.add(this.sumOfSquares);
         this.reducedSumOfSquares = this.sumOfSquares/this.degreesOfFreedom;
-        this.results.add(new Double(this.reducedSumOfSquares));
+        this.results.add(this.reducedSumOfSquares);
         if(this.weightsSet){
             this.chiSquare = this.getChiSquare();
-            this.results.add(new Double(this.chiSquare));
+            this.results.add(this.chiSquare);
             this.reducedChiSquare = this.getReducedChiSquare();
-            this.results.add(new Double(this.reducedChiSquare));
+            this.results.add(this.reducedChiSquare);
         }
         else{
            this.results.add(null);
            this.results.add(null);
         }
         this.numberOfIterations2 = this.getNiter();
-        this.results.add(new Integer(this.numberOfIterations1));
-        this.results.add(new Integer(this.numberOfIterations2));
-        this.results.add(new Integer(this.maximumIterations));
+        this.results.add(this.numberOfIterations1);
+        this.results.add(this.numberOfIterations2);
+        this.results.add(this.maximumIterations);
         this.results.add(this.dataEnteredType[this.dataEnteredTypePointer]);
 
         this.results.add(this.frequencies);

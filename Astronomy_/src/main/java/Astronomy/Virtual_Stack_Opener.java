@@ -274,7 +274,7 @@ class VirtualOpenerDialog extends GenericDialog {
 		String theText = tf.getText();
 		double value;
 		Double d;
-		try {d = new Double(theText);}
+		try {d = Double.valueOf(theText);}
 		catch (NumberFormatException e){
 			d = null;
 		}

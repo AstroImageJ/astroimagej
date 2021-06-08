@@ -3,25 +3,28 @@ import ij.*;
 import ij.process.*;
 import ij.gui.*;
 import ij.util.Tools;
+import ij.io.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
 
-/** This plugin implements the File/Batch/Convert command, 
+/** This plugin implements the File/ /Convert command, 
 	which converts the images in a folder to a specified format. */
 	public class BatchConverter implements PlugIn, ActionListener {
 		private static final String[] formats = {"TIFF", "8-bit TIFF", "JPEG", "GIF", "PNG", "PGM", "BMP", "FITS", "Text Image", "ZIP", "Raw"};
 		private static String format = formats[0];
-		//private static int height;
 		private static double scale = 1.0;
+		private static boolean useBioFormats;
 		private static int interpolationMethod = ImageProcessor.BILINEAR;
+		private static boolean averageWhenDownSizing;
 		private String[] methods = ImageProcessor.getInterpolationMethods();
 		private Button input, output;
 		private TextField inputDir, outputDir;
 		private GenericDialog gd;
 
 	public void run(String arg) {
-		if (!showDialog()) return;
+		if (!showDialog())
+			return;
 		String inputPath = inputDir.getText();
 		if (inputPath.equals("")) {
 			IJ.error("Batch Converter", "Please choose an input folder");
@@ -43,33 +46,41 @@ import java.io.*;
 			return;
 		}
 		String[] list = (new File(inputPath)).list();
-		ImageJ ij = IJ.getInstance();
-		if (ij!=null) ij.getProgressBar().setBatchMode(true);
 		IJ.resetEscape();
+		Opener opener = new Opener();
+		opener.setSilentMode(true);
+		long t0 = System.currentTimeMillis();
 		for (int i=0; i<list.length; i++) {
-			if (IJ.escapePressed()) break;
+			if (IJ.escapePressed())
+				break;
 			if (IJ.debugMode) IJ.log(i+"  "+list[i]);
 			String path = inputPath + list[i];
 			if ((new File(path)).isDirectory())
 				continue;
 			if (list[i].startsWith(".")||list[i].endsWith(".avi")||list[i].endsWith(".AVI"))
 				continue;
+			IJ.showStatus(i+"/"+list.length);
 			IJ.showProgress(i+1, list.length);
-			ImagePlus imp = IJ.openImage(path);
-			if (imp==null) continue;
-			//if (height!=0) {
-			//	double aspectRatio = (double)imp.getWidth()/imp.getHeight();
-			//	int width = (int)(height*aspectRatio);
-			//	ImageProcessor ip = imp.getProcessor();
-			//	ip.setInterpolationMethod(interpolationMethod);
-			//	imp.setProcessor(null, ip.resize(width,height));
-			//} else 
+			ImagePlus imp = null;
+			IJ.redirectErrorMessages(true);
+			if (useBioFormats)
+				imp = Opener.openUsingBioFormats(path);
+			else
+				imp = opener.openImage(inputPath,list[i]);
+			IJ.redirectErrorMessages(false);
+			if (imp==null) {
+				String reader = useBioFormats?"Bio-Formats not found or":"IJ.openImage()";
+				IJ.log(reader+" returned null: "+path);
+				continue;
+			}
 			if (scale!=1.0) {
 				int width = (int)(scale*imp.getWidth());
 				int height = (int)(scale*imp.getHeight());
 				ImageProcessor ip = imp.getProcessor();
 				ip.setInterpolationMethod(interpolationMethod);
-				imp.setProcessor(null, ip.resize(width,height,true));
+				ip.setProgressBar(null);
+				imp.setProcessor(null, ip.resize(width,height,averageWhenDownSizing));
+				ip = null;
 			}
 			if (format.equals("8-bit TIFF") || format.equals("GIF")) {
 				if (imp.getBitDepth()==24)
@@ -79,27 +90,35 @@ import java.io.*;
 			}
 			IJ.saveAs(imp, format, outputPath+list[i]);
 			imp.close();
+			imp = null;
 		}
+		IJ.showStatus(list.length+" files converted in "+IJ.d2s((System.currentTimeMillis()-t0)/1000.0,2)+" seconds");
 		IJ.showProgress(1,1);
 		Prefs.set("batch.input", inputDir.getText());
 		Prefs.set("batch.output", outputDir.getText());
 	}
-		
-	boolean showDialog() {
+			
+	private boolean showDialog() {
 		gd = new GenericDialog("Batch Convert");
 		addPanels(gd);
 		gd.setInsets(15, 0, 5);
-		gd.addChoice("Output Format: ", formats, format);
+		gd.addChoice("Output_format:", formats, format);
 		gd.addChoice("Interpolation:", methods, methods[interpolationMethod]);
 		//gd.addStringField("Height (pixels): ", height==0?"\u2014":""+height, 6);
-		gd.addNumericField("Scale Factor: ", scale, 2);
+		gd.addNumericField("Scale factor:", scale, 2);
+		gd.addCheckbox("Average when downsizing", averageWhenDownSizing);
+		gd.addCheckbox("Read images using Bio-Formats", useBioFormats);
 		gd.setOKLabel("Convert");
 		gd.showDialog();
+		if (gd.wasCanceled())
+			return false;
 		format = gd.getNextChoice();
 		interpolationMethod = gd.getNextChoiceIndex();
 		//height = (int)Tools.parseDouble(gd.getNextString(), 0.0);
 		scale = gd.getNextNumber();
-		return !gd.wasCanceled();
+		averageWhenDownSizing = gd.getNextBoolean();
+		useBioFormats = gd.getNextBoolean();
+		return true;
 	}
 
 	void addPanels(GenericDialog gd) {
@@ -130,8 +149,6 @@ import java.io.*;
 			inputDir.setText(path);
 		else
 			outputDir.setText(path);
-		if (IJ.isMacOSX())
-			{gd.setVisible(false); gd.setVisible(true);}
 	}
 
 }

@@ -264,8 +264,8 @@ public class DataType{
         Object[] ret = new Object[3];
         if(!this.typeFound)this.inner();
         ret[0] = (Object)this.objTypeName;
-        ret[1] = (Object)(new Integer(this.objTypeDim));
-        ret[2] = (Object)(new Integer(this.objTypeCode));
+        ret[1] = (Object)(this.objTypeDim);
+        ret[2] = (Object)(this.objTypeCode);
         return ret;
     }
         
@@ -569,7 +569,7 @@ public class DataType{
                                 }
                                 this.highestArray = (Object)ll;
                                 break;
-                        case 6: Integer[] ii = new Integer[this.nArrayElements]; 
+                        case 6: Integer[] ii = new Integer[this.nArrayElements];
                                 for(int i=0; i<this.nArrayElements;i++){
                                     switch(this.arrayCodes[i]){    
                                         case 0: ii[i] = Conv.convert_String_to_Integer((String)this.arrayObjects[i]);
@@ -586,7 +586,7 @@ public class DataType{
                                 }
                                 this.highestArray = (Object)ii;
                                 break;
-                        case 7: Integer[] ci = new Integer[this.nArrayElements]; 
+                        case 7: Integer[] ci = new Integer[this.nArrayElements];
                                 for(int i=0; i<this.nArrayElements;i++){
                                     switch(this.arrayCodes[i]){    
                                         case 0: ci[i] = Conv.convert_String_to_Integer((String)this.arrayObjects[i]);
@@ -660,7 +660,7 @@ public class DataType{
                 int nn = 0;
                 for(int i=0; i<n; i++){
                     if(codeT[i]==0){
-                        al.add(new Integer(i));
+                        al.add(i);
                         nn++;
                     }
                 }
@@ -674,22 +674,22 @@ public class DataType{
                             BigInteger xbi = new BigInteger(((String)objList[ii]).trim());
                             retI = 2;
                             try{
-                                double xdl = Double.valueOf((String)objList[ii]);
+                                double xdl = Double.parseDouble((String)objList[ii]);
                                 retI = 3;
                                 try{
-                                    float xf = Float.valueOf((String)objList[ii]);
+                                    float xf = Float.parseFloat((String)objList[ii]);
                                     retI = 4;
                                     try{
-                                        long xl = Long.valueOf((String)objList[ii]);
+                                        long xl = Long.parseLong((String)objList[ii]);
                                         retI = 5;
                                         try{
-                                            int xi = Integer.valueOf((String)objList[ii]);
+                                            int xi = Integer.parseInt((String)objList[ii]);
                                             retI = 6;
                                             try{
-                                                short xs = Short.valueOf((String)objList[ii]);
+                                                short xs = Short.parseShort((String)objList[ii]);
                                                 retI = 7;
                                                 try{
-                                                    byte xb = Byte.valueOf((String)objList[ii]);
+                                                    byte xb = Byte.parseByte((String)objList[ii]);
                                                     retI = 9;
                                                 }catch(NumberFormatException err){
                                                     test2 = false;
@@ -760,7 +760,7 @@ public class DataType{
                                 for(int i=0; i<this.nArrayElements; i++)ret[i] = Conv.convert_BigInteger_to_double(bi[i]);
                                 break; 
                         case 3: Double[] dd = (Double[])this.convert_to_highestPrecision();
-                                for(int i=0; i<this.nArrayElements; i++)ret[i] = dd[i].doubleValue();
+                                for(int i=0; i<this.nArrayElements; i++)ret[i] = dd[i];
                                 break; 
                         case 4: Float[] ff = (Float[])this.convert_to_highestPrecision();
                                 for(int i=0; i<this.nArrayElements; i++)ret[i] = Conv.convert_Float_to_double(ff[i]);

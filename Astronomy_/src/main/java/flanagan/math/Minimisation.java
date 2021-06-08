@@ -184,7 +184,7 @@ public class Minimisation{
         // Set any single parameter constraint parameters
         if(this.penalty){
             Integer itemp = (Integer)this.penalties.get(1);
-            this.nConstraints = itemp.intValue();
+            this.nConstraints = itemp;
             this.penaltyParam = new int[this.nConstraints];
             this.penaltyCheck = new int[this.nConstraints];
             this.constraints = new double[this.nConstraints];
@@ -192,13 +192,13 @@ public class Minimisation{
             int j=2;
             for(int i=0;i<this.nConstraints;i++){
                 itemp = (Integer)this.penalties.get(j);
-                this.penaltyParam[i] = itemp.intValue();
+                this.penaltyParam[i] = itemp;
                 j++;
                 itemp = (Integer)this.penalties.get(j);
-                this.penaltyCheck[i] = itemp.intValue();
+                this.penaltyCheck[i] = itemp;
                 j++;
                 dtemp = (Double)this.penalties.get(j);
-                this.constraints[i] = dtemp.doubleValue();
+                this.constraints[i] = dtemp;
                 j++;
             }
         }
@@ -206,7 +206,7 @@ public class Minimisation{
         // Set any multiple parameter constraint parameters
         if(this.sumPenalty){
             Integer itemp = (Integer)this.sumPenalties.get(1);
-            this.nSumConstraints = itemp.intValue();
+            this.nSumConstraints = itemp;
             this.sumPenaltyParam = new int[this.nSumConstraints][];
             this.sumPlusOrMinus = new double[this.nSumConstraints][];
             this.sumPenaltyCheck = new int[this.nSumConstraints];
@@ -218,7 +218,7 @@ public class Minimisation{
             int j=2;
             for(int i=0;i<this.nSumConstraints;i++){
                 itemp = (Integer)this.sumPenalties.get(j);
-                this.sumPenaltyNumber[i] = itemp.intValue();
+                this.sumPenaltyNumber[i] = itemp;
                 j++;
                 itempArray = (int[])this.sumPenalties.get(j);
                 this.sumPenaltyParam[i] = itempArray;
@@ -227,10 +227,10 @@ public class Minimisation{
                 this.sumPlusOrMinus[i] = dtempArray;
                 j++;
                 itemp = (Integer)this.sumPenalties.get(j);
-                this.sumPenaltyCheck[i] = itemp.intValue();
+                this.sumPenaltyCheck[i] = itemp;
                 j++;
                 dtemp = (Double)this.sumPenalties.get(j);
-                this.sumConstraints[i] = dtemp.doubleValue();
+                this.sumConstraints[i] = dtemp;
                 j++;
             }
         }
@@ -707,20 +707,20 @@ public class Minimisation{
 	public void addConstraint(int paramIndex, int conDir, double constraint){
 	    this.penalty=true;
         // First element reserved for method number if other methods than 'cliff' are added later
-		if(this.penalties.isEmpty())this.penalties.add(new Integer(this.constraintMethod));
+		if(this.penalties.isEmpty())this.penalties.add(this.constraintMethod);
 
 		// add constraint
 	    if(penalties.size()==1){
-		    this.penalties.add(new Integer(1));
+		    this.penalties.add(1);
 		}
 		else{
-		    int nPC = ((Integer)this.penalties.get(1)).intValue();
+		    int nPC = (Integer) this.penalties.get(1);
             nPC++;
-            this.penalties.set(1, new Integer(nPC));
+            this.penalties.set(1, nPC);
 		}
-		this.penalties.add(new Integer(paramIndex));
- 	    this.penalties.add(new Integer(conDir));
- 	    this.penalties.add(new Double(constraint));
+		this.penalties.add(paramIndex);
+ 	    this.penalties.add(conDir);
+ 	    this.penalties.add(constraint);
  	    if(paramIndex>this.maxConstraintIndex)this.maxConstraintIndex = paramIndex;
 
  	}
@@ -739,22 +739,22 @@ public class Minimisation{
 	    if(nCon!=nPorM)throw new IllegalArgumentException("num of parameters, " + nCon + ", does not equal number of parameter signs, " + nPorM);
 	    this.sumPenalty=true;
         // First element reserved for method number if other methods than 'cliff' are added later
-		if(this.sumPenalties.isEmpty())this.sumPenalties.add(new Integer(this.constraintMethod));
+		if(this.sumPenalties.isEmpty())this.sumPenalties.add(this.constraintMethod);
 
 		// add constraint
 		if(sumPenalties.size()==1){
-		    this.sumPenalties.add(new Integer(1));
+		    this.sumPenalties.add(1);
 		}
 		else{
-		    int nPC = ((Integer)this.sumPenalties.get(1)).intValue();
+		    int nPC = (Integer) this.sumPenalties.get(1);
             nPC++;
-            this.sumPenalties.set(1, new Integer(nPC));
+            this.sumPenalties.set(1, nPC);
 		}
-		this.sumPenalties.add(new Integer(nCon));
+		this.sumPenalties.add(nCon);
 		this.sumPenalties.add(paramIndices);
 		this.sumPenalties.add(plusOrMinus);
- 	    this.sumPenalties.add(new Integer(conDir));
- 	    this.sumPenalties.add(new Double(constraint));
+ 	    this.sumPenalties.add(conDir);
+ 	    this.sumPenalties.add(constraint);
  	    ArrayMaths am = new ArrayMaths(paramIndices);
  	    int maxI = am.getMaximum_as_int();
  	    if(maxI>this.maxConstraintIndex)this.maxConstraintIndex = maxI;
@@ -763,7 +763,7 @@ public class Minimisation{
  	// Set constraint method
  	public void setConstraintMethod(int conMeth){
  	    this.constraintMethod = conMeth;
- 	    if(!this.penalties.isEmpty())this.penalties.set(0, new Integer(this.constraintMethod));
+ 	    if(!this.penalties.isEmpty())this.penalties.set(0, this.constraintMethod);
  	}
 
 	// remove all constraint boundaries for the minimisation

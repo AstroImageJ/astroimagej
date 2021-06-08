@@ -6,15 +6,14 @@ import ij.*;
 images. It's based on FlowLayout, but with vertical and centered flow. */
 public class ImageLayout implements LayoutManager {
 
-    int hgap;
-    int vgap;
+    int hgap = ImageWindow.HGAP;
+    int vgap = ImageWindow.VGAP;
 	ImageCanvas ic;
+	boolean ignoreNonImageWidths;
 
-    /** Creates a new ImageLayout with center alignment and 5 pixel horizontal and vertical gaps. */
+    /** Creates a new ImageLayout with center alignment. */
     public ImageLayout(ImageCanvas ic) {
     	this.ic = ic;
-		this.hgap = 5;
-		this.vgap = 5;
     }
 
     /** Not used by this class. */
@@ -32,7 +31,8 @@ public class ImageLayout implements LayoutManager {
 		for (int i=0; i<nmembers; i++) {
 		    Component m = target.getComponent(i);
 			Dimension d = m.getPreferredSize();
-			dim.width = Math.max(dim.width, d.width);
+			if (i==0 || !ignoreNonImageWidths)
+    			dim.width = Math.max(dim.width, d.width);
 			if (i>0) dim.height += vgap;
 			dim.height += d.height;
 		}
@@ -46,6 +46,14 @@ public class ImageLayout implements LayoutManager {
     public Dimension minimumLayoutSize(Container target) {
 		return preferredLayoutSize(target);
     }
+
+    /** Determines whether to ignore the width of non-image components when calculating
+     *  the preferred width (default false, i.e. the maximum of the widths of all components is used).
+     *  When true, components that do not fit the window will be truncated at the right.
+     *  The width of the 0th component (the ImageCanvas) is always taken into account. */
+	public void ignoreNonImageWidths(boolean ignoreNonImageWidths) {
+		this.ignoreNonImageWidths = ignoreNonImageWidths;
+	}
 
     /** Centers the elements in the specified column, if there is any slack.*/
     private void moveComponents(Container target, int x, int y, int width, int height, int nmembers) {
@@ -71,7 +79,7 @@ public class ImageLayout implements LayoutManager {
 		for (int i=1; i<nmembers; i++) {
 			Component m = target.getComponent(i);
 			d = m.getPreferredSize();
-			extraHeight += d.height;
+			extraHeight += d.height+vgap;
 		}
 		d = target.getSize();
 		int preferredImageWidth = d.width - (insets.left + insets.right + hgap*2);
@@ -96,7 +104,8 @@ public class ImageLayout implements LayoutManager {
 				m.setSize(d.width, d.height);
 			if (y > 0) y += vgap;
 			y += d.height;
-			colw = Math.max(colw, d.width);
+			if (i==0 || !ignoreNonImageWidths)
+				colw = Math.max(colw, d.width);
 		}
 		moveComponents(target, x, insets.top + vgap, colw, maxheight - y, nmembers);
     }

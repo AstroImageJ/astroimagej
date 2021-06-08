@@ -19,7 +19,6 @@ public class ByteBlitter implements Blitter {
 
 	public void setTransparentColor(Color c) {
 		transparent = ip.getBestIndex(c);
-		//ij.IJ.write(c+" "+transparent);
 	}
 	
 	/** Copies the byte image in 'ip' to (x,y) using the specified mode. */
@@ -165,9 +164,6 @@ public class ByteBlitter implements Blitter {
 					}
 					break;
 			}
-			if (y%20==0)
-				ip.showProgress((double)(y-r1.y)/r1.height);
 		}
-		ip.hideProgress();
 	}
 }

@@ -170,10 +170,10 @@ public class GouyChapmanStern{
     // Concentrations - Molar,  assocK - M^-1, radius - metres, charge - valency e.g. +1
     public void setIon(String ion, double concn, double radius, int charge, double assocK){
         this.vec.add(ion);
-        this.vec.add(new Double(concn));
-        this.vec.add(new Double(radius));
-        this.vec.add(new Integer(charge));
-        this.vec.add(new Double(assocK));
+        this.vec.add(concn);
+        this.vec.add(radius);
+        this.vec.add(charge);
+        this.vec.add(assocK);
         if(assocK!=0.0D)this.nonZeroAssocK++;
         this.numOfIons++;
         this.unpackArrayList = false;
@@ -184,10 +184,10 @@ public class GouyChapmanStern{
     // association constant = 0.0D
     public void setIon(String ion, double concn, double radius, int charge){
         this.vec.add(ion);
-        this.vec.add(new Double(concn));
-        this.vec.add(new Double(radius));
-        this.vec.add(new Integer(charge));
-        this.vec.add(new Double(0.0D));
+        this.vec.add(concn);
+        this.vec.add(radius);
+        this.vec.add(charge);
+        this.vec.add(0.0D);
         this.numOfIons++;
         this.unpackArrayList = false;
     }
@@ -199,7 +199,7 @@ public class GouyChapmanStern{
     public void setIon(String ion, double concn, double assocK){
         IonicRadii ir = new IonicRadii();
         this.vec.add(ion);
-        this.vec.add(new Double(concn));
+        this.vec.add(concn);
         double rad = 0.0D;
         if(this.radiusType){
             rad = ir.hydratedRadius(ion);
@@ -212,7 +212,7 @@ public class GouyChapmanStern{
             String mess2 = "Please enter radius in metres\n";
             rad = Db.readDouble(mess1+mess2);
         }
-        this.vec.add(new Double(rad));
+        this.vec.add(rad);
         int charg = 0;
         charg = ir.charge(ion);
         if(charg==0){
@@ -220,8 +220,8 @@ public class GouyChapmanStern{
             String mess2 = "Please enter charge as, e.g +2";
             charg = Db.readInt(mess1+mess2);
         }
-        this.vec.add(new Integer(charg));
-        this.vec.add(new Double(assocK));
+        this.vec.add(charg);
+        this.vec.add(assocK);
         if(assocK!=0.0D)this.nonZeroAssocK++;
         this.numOfIons++;
         this.unpackArrayList = false;
@@ -234,7 +234,7 @@ public class GouyChapmanStern{
     public void setIon(String ion, double concn){
         IonicRadii ir = new IonicRadii();
         this.vec.add(ion);
-        this.vec.add(new Double(concn));
+        this.vec.add(concn);
         double rad = 0.0D;
         if(this.radiusType){
             rad = ir.hydratedRadius(ion);
@@ -247,7 +247,7 @@ public class GouyChapmanStern{
             String mess2 = "Please enter radius in metres\n";
             rad = Db.readDouble(mess1+mess2);
         }
-        this.vec.add(new Double(rad));
+        this.vec.add(rad);
         int charg = 0;
         charg = ir.charge(ion);
         if(charg==0){
@@ -255,8 +255,8 @@ public class GouyChapmanStern{
             String mess2 = "Please enter charge as, e.g +2";
             charg = Db.readInt(mess1+mess2);
         }
-        this.vec.add(new Integer(charg));
-        this.vec.add(new Double(0.0D));
+        this.vec.add(charg);
+        this.vec.add(0.0D);
         this.numOfIons++;
         this.unpackArrayList = false;
     }
@@ -687,14 +687,14 @@ public class GouyChapmanStern{
         for(int i=0; i<numOfIons; i++){
             this.ionNames[i]    = (String)this.vec.get(0+i*5);
             hold                = (Double)this.vec.get(1+i*5);
-            this.initConcnM[i]  = hold.doubleValue();
+            this.initConcnM[i]  = hold;
             this.initConcn[i]   = this.initConcnM[i]*1e3;
             hold                = (Double)this.vec.get(2+i*5);
-            this.radii[i]       = hold.doubleValue();
+            this.radii[i]       = hold;
             holi                = (Integer)this.vec.get(3+i*5);
-            this.charges[i]     = holi.intValue();
+            this.charges[i]     = holi;
             hold                = (Double)this.vec.get(4+i*5);
-            this.assocConstsM[i]= hold.doubleValue();
+            this.assocConstsM[i]= hold;
             this.assocConsts[i] = this.assocConstsM[i]*1e-3;
             if(this.assocConsts[i]>0.0D){
                 indexK[ii] = i;

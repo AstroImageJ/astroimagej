@@ -1,5 +1,5 @@
 package ij.gui;
-import ij.IJ;
+import ij.*;
 import java.awt.*;
 import java.awt.event.*;
 
@@ -11,24 +11,28 @@ public class YesNoCancelDialog extends Dialog implements ActionListener, KeyList
 	private boolean firstPaint = true;
 
 	public YesNoCancelDialog(Frame parent, String title, String msg) {
+		this(parent, title, msg, "  Yes  ", "  No  ");
+	}
+
+	public YesNoCancelDialog(Frame parent, String title, String msg, String yesLabel, String noLabel) {
 		super(parent, title, true);
 		setLayout(new BorderLayout());
 		Panel panel = new Panel();
 		panel.setLayout(new FlowLayout(FlowLayout.LEFT, 10, 10));
 		MultiLineLabel message = new MultiLineLabel(msg);
-		message.setFont(new Font("Dialog", Font.PLAIN, 12));
+		message.setFont(new Font("Dialog", Font.PLAIN, 14));
 		panel.add(message);
 		add("North", panel);
 		
 		panel = new Panel();
 		panel.setLayout(new FlowLayout(FlowLayout.RIGHT, 15, 8));
-		if (IJ.isMacintosh() && msg.startsWith("Save")) {
+		if (msg.startsWith("Save")) {
 			yesB = new Button("  Save  ");
 			noB = new Button("Don't Save");
 			cancelB = new Button("  Cancel  ");
 		} else {
-			yesB = new Button("  Yes  ");
-			noB = new Button("  No  ");
+			yesB = new Button(yesLabel);
+			noB = new Button(noLabel);
 			cancelB = new Button(" Cancel ");
 		}
 		yesB.addActionListener(this);
@@ -37,20 +41,23 @@ public class YesNoCancelDialog extends Dialog implements ActionListener, KeyList
 		yesB.addKeyListener(this);
 		noB.addKeyListener(this);
 		cancelB.addKeyListener(this);
-		if (IJ.isMacintosh()) {
+		if (IJ.isWindows() || Prefs.dialogCancelButtonOnRight) {
+			panel.add(yesB);
 			panel.add(noB);
 			panel.add(cancelB);
-			panel.add(yesB);
-			setResizable(false);
 		} else {
-			panel.add(yesB);
 			panel.add(noB);
 			panel.add(cancelB);
+			panel.add(yesB);
 		}
+		if (IJ.isMacintosh())
+			setResizable(false);
 		add("South", panel);
 		addWindowListener(this);
+		GUI.scale(this);
 		pack();
-		GUI.center(this);
+		yesB.requestFocusInWindow();
+		GUI.centerOnImageJScreen(this);
 		show();
 	}
     

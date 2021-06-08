@@ -69,8 +69,8 @@ public class Macro {
 	
 	/** Aborts the currently running macro or any plugin using IJ.run(). */
 	public static void abort() {
-		abort = true;
 		//IJ.log("Abort: "+Thread.currentThread().getName());
+		abort = true;
 		if (Thread.currentThread().getName().endsWith("Macro$")) {
 			table.remove(Thread.currentThread());
 			throw new RuntimeException(MACRO_CANCELED);
@@ -84,8 +84,9 @@ public class Macro {
 		@see ij.io.OpenDialog
 	*/
 	public static String getOptions() {
-		//IJ.log("getOptions: "+Thread.currentThread().hashCode()); //ts
-		if (Thread.currentThread().getName().startsWith("Run$_")) {
+		String threadName = Thread.currentThread().getName();
+		//IJ.log("getOptions: "+threadName+" "+Thread.currentThread().hashCode()); //ts
+		if (threadName.startsWith("Run$_")||threadName.startsWith("RMI TCP")) {
 			Object options = table.get(Thread.currentThread());
 			return options==null?null:options+" ";
 		} else
@@ -94,7 +95,7 @@ public class Macro {
 
 	/** Define a set of Macro options for the current Thread. */
 	public static void setOptions(String options) {
-		//IJ.log("setOptions: "+Thread.currentThread().hashCode()+" "+options); //ts
+		//IJ.log("setOptions: "+Thread.currentThread().getName()+" "+Thread.currentThread().hashCode()+" "+options); //ts
 		if (options==null || options.equals(""))
 			table.remove(Thread.currentThread());
 		else
@@ -113,6 +114,8 @@ public class Macro {
 
 	public static String getValue(String options, String key, String defaultValue) {
 		key = trimKey(key);
+		if (!options.endsWith(" "))
+			options = options + " ";
         key += '=';
 		int index=-1;
 		do { // Require that key not be preceded by a letter
@@ -127,20 +130,24 @@ public class Macro {
 			else
 				return options.substring(1, index);
 		} else if (options.charAt(0)=='[') {
-			index = options.indexOf("]",1);
-			if (index<=1)
+			int count = 1;
+			index = -1;
+			for (int i=1; i<options.length(); i++) {
+				char ch = options.charAt(i);
+				if (ch=='[')
+					count++;
+				else if (ch==']')
+					count--;
+				if (count==0) {
+					index = i;
+					break;
+				}
+			}
+			if (index<0)
 				return defaultValue;
 			else
 				return options.substring(1, index);
 		} else {
-			//if (options.indexOf('=')==-1) {
-			//	options = options.trim();
-			//	IJ.log("getValue: "+key+"  |"+options+"|");
-			//	if (options.length()>0)
-			//		return options;
-			//	else
-			//		return defaultValue;
-			//}
 			index = options.indexOf(" ");
 			if (index<0)
 				return defaultValue;
@@ -158,6 +165,13 @@ public class Macro {
 			key = key.substring(0,index);
 		key = key.toLowerCase(Locale.US);
 		return key;
+	}
+	
+	/** Evaluates 'code' and returns the output, or any error, 
+	 * as a String (e.g., Macro.eval("2+2") returns "4").	
+	*/
+	public static String eval(String code) {
+		return new Interpreter().eval(code);
 	}
 
 }

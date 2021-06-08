@@ -438,7 +438,7 @@ public class Aperture_ implements PlugInFilter
         else
             toolbar.setTool(0);
 //		showApertureStatus ();
-		imp.unlock();
+		if (imp.isLocked()) imp.unlock();
 		}
 
 	/**

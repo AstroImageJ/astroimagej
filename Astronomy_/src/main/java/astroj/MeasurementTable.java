@@ -27,6 +27,7 @@ public class MeasurementTable extends ResultsTable
 	protected String shortName = null;
     protected boolean locked = false;
 	public static int DEFAULT_DECIMALS = 6;
+    protected String filePath = "";
 
 	/**
 	 * Creates an empty default MeasurementTable.
@@ -170,6 +171,10 @@ IJ.log(heading+" "+val);
 			return true;
 		}
 
+    public String getFilePath() {
+        return filePath;
+    }
+
 	/**
 	 * Returns a MeasurementTable reconstructed from a text file produced by ImageJ from a MeasurementTable/ResultsTable.
 	 */
@@ -197,6 +202,7 @@ IJ.log(heading+" "+val);
             String previousLine=null;
 			table = new MeasurementTable(file.getName().equals("")||file.getName()==null?"Measurements":file.getName());	// SHOULD USE filename); BUT CAN'T BECAUSE OF PRIVATE WindowManager.getNonImageWindows() METHOD
 
+            table.filePath = filename;
             String delimiter = "\t";
             if (filename.endsWith(".csv"))
                 delimiter = ",";
@@ -590,7 +596,7 @@ IJ.log(heading+" "+val);
                 table.incrementCounter();
                 row++;
     //                table.addValue(1, 1);
-                table.addLabel(header[1], "Row_1");
+                table.setValue(header[1], row, "Row_1");
                 for (int i=2; i<h; i++)
                     {
                     header[i]="Col_"+(i-1);
@@ -635,7 +641,7 @@ IJ.log(heading+" "+val);
             else
                 {
                 table.incrementCounter();
-                table.addLabel(header[1], "Dummy_Row");
+                table.setValue(header[1], row,"Dummy_Row");
                 for (int col=(2); col < h; col++)
                     {
                     table.addValue(header[col],0.0);

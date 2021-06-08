@@ -1753,7 +1753,7 @@ implements Serializable, MouseListener, MouseMotionListener, MouseWheelListener,
       double  Val  = 0d;
       Val = MiddleVal + ((double)i) / PRECISE_SCALE_FACTOR * Amplitude;
       
-      Hashtable1.put(new Integer(i), new JLabel(DecimalFormater.format(Val)));
+      Hashtable1.put(i, new JLabel(DecimalFormater.format(Val)));
     }
     JSlider1.setLabelTable(Hashtable1);
     JSlider1.validate();

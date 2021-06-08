@@ -187,10 +187,10 @@ public class TimeAndDate{
         int hour = cal.get(Calendar.HOUR);
         int amPm =  cal.get(Calendar.AM_PM);
         if(amPm==0){
-            this.hour12 = (new Integer(hour)).toString() + " AM";
+            this.hour12 = (Integer.valueOf(hour)).toString() + " AM";
         }
         else{
-            this.hour12 = (new Integer(hour)).toString() + " PM";
+            this.hour12 = (Integer.valueOf(hour)).toString() + " PM";
         }
         return this.hour12;
     }
@@ -216,7 +216,7 @@ public class TimeAndDate{
     // Get time as hour.minute (24 hour clock)
     public String getShortTime24(){
         int hourI = this.getHour24();
-        this.shortTime24 = (new Integer(hourI)).toString();
+        this.shortTime24 = (Integer.valueOf(hourI)).toString();
         int minI = this.getMinute();
         if(minI<10){
             this.shortTime24 += ".0" + minI;
@@ -231,7 +231,7 @@ public class TimeAndDate{
     public String getShortTime12(){
         int hourI = cal.get(Calendar.HOUR);
         int amPm =  cal.get(Calendar.AM_PM);
-        this.shortTime12 = (new Integer(hourI)).toString();
+        this.shortTime12 = (Integer.valueOf(hourI)).toString();
         int minI = this.getMinute();
         if(minI<10){
             this.shortTime12 += ".0" + minI;
@@ -251,7 +251,7 @@ public class TimeAndDate{
     // Get time as hour.minute.second (24 hour clock)
     public String getMidTime24(){
         int hourI = this.getHour24();
-        this.midTime24 = (new Integer(hourI)).toString();
+        this.midTime24 = (Integer.valueOf(hourI)).toString();
         int minI = this.getMinute();
         if(minI<10){
             this.midTime24 += ".0" + minI;
@@ -273,7 +273,7 @@ public class TimeAndDate{
     public String getMidTime12(){
         int hourI = cal.get(Calendar.HOUR);
         int amPm =  cal.get(Calendar.AM_PM);
-        this.midTime12 = (new Integer(hourI)).toString();
+        this.midTime12 = (Integer.valueOf(hourI)).toString();
         int minI = this.getMinute();
         if(minI<10){
             this.midTime12 += ".0" + minI;
@@ -300,7 +300,7 @@ public class TimeAndDate{
     // Get time as hour.minute.second.millisecond (24 hour clock)
     public String getFullTime24(){
         int hourI = this.getHour24();
-        this.fullTime24 = (new Integer(hourI)).toString();
+        this.fullTime24 = (Integer.valueOf(hourI)).toString();
         int minI = this.getMinute();
         if(minI<10){
             this.fullTime24 += ".0" + minI;
@@ -334,7 +334,7 @@ public class TimeAndDate{
     public String getFullTime12(){
         int hourI = cal.get(Calendar.HOUR);
         int amPm =  cal.get(Calendar.AM_PM);
-        this.fullTime12 = (new Integer(hourI)).toString();
+        this.fullTime12 = (Integer.valueOf(hourI)).toString();
         int minI = this.getMinute();
         if(minI<10){
             this.fullTime12 += ".0" + minI;
@@ -660,7 +660,7 @@ public class TimeAndDate{
 
     // Returns the date as 'day of month' 'month name' 'year'
     public String getDate(){
-        this.date = (new Integer(this.getDayOfTheMonth())).toString();
+        this.date = (Integer.valueOf(this.getDayOfTheMonth())).toString();
         this.date += " " + this.getMonth();
         this.date += " " + this.getYear();
         return this.date;
@@ -677,7 +677,7 @@ public class TimeAndDate{
 
     // Returns the date as the UK short format - 'day of month'.'month number'.'year final two digits'
     public String getShortDateUK(){
-        this.shortDateUK = (new Integer(this.getDayOfTheMonth())).toString();
+        this.shortDateUK = (Integer.valueOf(this.getDayOfTheMonth())).toString();
         if(this.shortDateUK.length()<2)this.shortDateUK = "0" + this.shortDateUK;
         int monthI = this.getMonthAsInteger();
         if(monthI<10){
@@ -686,14 +686,14 @@ public class TimeAndDate{
         else{
             this.shortDateUK += "." + monthI;
         }
-        String yearS = (new Integer(this.getYear())).toString();
+        String yearS = (Integer.valueOf(this.getYear())).toString();
         this.shortDateUK += "." + yearS.substring(2);
         return this.shortDateUK;
     }
 
     // Returns the date as the US short format - 'month number'/'day of month'/'year final two digits'
      public String getShortDateUS(){
-        this.shortDateUS = (new Integer(this.getMonthAsInteger())).toString();
+        this.shortDateUS = (Integer.valueOf(this.getMonthAsInteger())).toString();
         if(this.shortDateUS.length()<2)this.shortDateUS = "0" + this.shortDateUS;
         int dayI = this.getDayOfTheMonth();
         if(dayI<10){
@@ -702,7 +702,7 @@ public class TimeAndDate{
         else{
             this.shortDateUS += "/" + dayI;
         }
-        String yearS = (new Integer(this.getYear())).toString();
+        String yearS = (Integer.valueOf(this.getYear())).toString();
         this.shortDateUS+= "/" + yearS.substring(2);
         return this.shortDateUS;
     }

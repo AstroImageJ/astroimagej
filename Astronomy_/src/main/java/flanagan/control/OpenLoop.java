@@ -160,8 +160,8 @@ public class OpenLoop extends BlackBox{
             this.nSeg = 1;                          // number of analogue, digital, AtoD, ZOH segments
             this.checkNoMix = true;                 // true - no ADC or DAC
             this.checkPath = true;                  // true if segment has been called
-            this.segments.add(new Integer(0));
-            this.segments.add(new Integer(nBoxes-1));
+            this.segments.add(0);
+            this.segments.add(nBoxes - 1);
             this.segments.add("analogue");
             BlackBox bb = this.combineSegment(0, nBoxes-1);
             this.segments.add(bb);
@@ -208,16 +208,16 @@ public class OpenLoop extends BlackBox{
 
             int nextStart = 0;
             if(adcFirst){
-                this.segments.add(new Integer(0));
-                this.segments.add(new Integer(adc0));
+                this.segments.add(0);
+                this.segments.add(adc0);
                 this.segments.add("digital");
                 BlackBox bb = this.combineSegment(0, adc0);
                 this.segments.add(bb);
                 nextStart = adc0+1;
             }
             else{
-                this.segments.add(new Integer(0));
-                this.segments.add(new Integer(dac0));
+                this.segments.add(0);
+                this.segments.add(dac0);
                 this.segments.add("analogue");
                 BlackBox bb = this.combineSegment(0, dac0);
                 this.segments.add(bb);
@@ -283,8 +283,8 @@ public class OpenLoop extends BlackBox{
             if(endFound)nextDac = nBoxes-1;
             if(nextAdc<nextDac)throw new IllegalArgumentException("Two consecutive ADCs with no intervening DAC");
             this.nSeg++;
-            this.segments.add(new Integer(0));
-            this.segments.add(new Integer(nextDac));
+            this.segments.add(0);
+            this.segments.add(nextDac);
             this.segments.add("digital");
             BlackBox bb = this.combineSegment(0, nextDac);
             this.segments.add(bb);
@@ -332,8 +332,8 @@ public class OpenLoop extends BlackBox{
             if(endFound)nextAdc = nBoxes-1;
             if(nextDac<nextAdc)throw new IllegalArgumentException("Two consecutive DACs with no intervening ADC");
             this.nSeg++;
-            this.segments.add(new Integer(0));
-            this.segments.add(new Integer(nextAdc));
+            this.segments.add(0);
+            this.segments.add(nextAdc);
             this.segments.add("digital");
             BlackBox bb = this.combineSegment(0, nextAdc);
             this.segments.add(bb);
@@ -579,12 +579,12 @@ public class OpenLoop extends BlackBox{
                 int j=0;
                 for(int i=0; i<this.nSeg; i++){
                     Integer holdI1 = (Integer)this.segments.get(j);
-                    int ii = holdI1.intValue();
-                    bb.segments.add(new Integer(ii));
+                    int ii = holdI1;
+                    bb.segments.add(ii);
                     j++;
                     Integer holdI2 = (Integer)this.segments.get(j);
-                    ii = holdI2.intValue();
-                    bb.segments.add(new Integer(ii));
+                    ii = holdI2;
+                    bb.segments.add(ii);
                     j++;
                     String holdS = (String)this.segments.get(j);
                     bb.segments.add(holdS);

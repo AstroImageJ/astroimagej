@@ -8,20 +8,28 @@
 //  file that conforms to the input requirements specified in the above referenced user guide.  AIJ's log
 //  window will show the progress of the macro, as well as any error messages
 //
-//  REVISION 7.1
-var REVISION = "7.1";
+//  REVISION 7.6
+var REVISION = "7.6";
 //
 //  Release Notes:
+//  7.6 Add CR after Header that precedes first data row; add macro rev number to #SOFTWARE metadata
+//  7.5 Force use of rnFlux
+//  7.4 Add a check if MF_flag was set before calculating MF_entry
+//  7.3 Add user entry of meridian flip time so that the meridian flip values (-1.000, 1.000) can
+//      be appropriately set in the output report
+//  7.2 Add capability to show previous entries; add note that comma separated list of detrend
+//      labels should not have a space after any commas; added ability to include Meridian_Flip
+//      as a detrend parameter
 //  7.1 Minor changes to macro functions to be compatible with NEB analysis macro ones; changed
 //      straight print to logfile to debugPrint function; changed method for asking user to select
-//      measurement file; added CR to File.append messages to take care of extra LF issue; 
+//      measurement file; added CR to File.append messages to take care of extra LF issue;
 //  7.0 Included ; inside } for DiffLabel test; put in a test to make sure that the chosen DiffLabel and
 //      DiffErrorLabel are in the measurement table
 //
 //                                     SET DEBUG MODE
 //   0 = Logfile only contains status messages
-//   1 = Debug values are used for all entries and Logfile contains detailed, intermittent information  
-var debugMode = 0;                   
+//   1 = Debug values are used for all entries and Logfile contains detailed, intermittent information
+var debugMode = 0;
 //
 //                                   DEFINE GLOBAL VARIABLES
 //
@@ -144,7 +152,7 @@ function findPositionInHeader (string,substr,delimiter,flag) {
 function findValue (string,position,Delimiter) {
     nextDelim=-1;
     for (i = 0; i<position; i++) {
-         lastDelim=nextDelim+1; 
+         lastDelim=nextDelim+1;
          nextDelim=indexOf(string,Delimiter,lastDelim);
 //  Check if this is the last item in the string
          if (nextDelim==-1) {
@@ -191,6 +199,7 @@ lenDate=15;
 lenDifference=15;
 lenError=15;
 lenDetrend=12;
+lenMFTime=8;
 //
 //                               BEGIN USER DIALOGUES
 //
@@ -210,37 +219,45 @@ print("\\Clear");
 //
 // Fix TYPE and SOFTWARE values
 TYPE="EXOPLANET";
-SOFTWARE="AstroImageJ";
+SOFTWARE="AstroImageJ" + " AAVSO Report Macro Rev. " + REVISION;
 //
 //  Fix the delimiter to be used in the data rows of the report
 DELIM=COMMA;
 //
 //  Request the Primary AAVSO observer code
 //
-Dialog.addString("Primary Observer AAVSO Code","",lenObscode);
+OBSCODE = call("ij.Prefs.get","AAVSOReport.OBSCODE","");
+Dialog.addString("Primary Observer AAVSO Code",OBSCODE,lenObscode);
 //
 //  Request the type of date used
 DateTypes=newArray("BJD_TDB","JD_UTC","HJD_UTC");
-Dialog.addChoice("Date Type*",DateTypes);
-Dialog.addString("Enter label for the Date Type (leave blank if same as Date Type choice)","",15);
+DATE_TYPE = call("ij.Prefs.get","AAVSOReport.DATE_TYPE","BJD_TDB");
+Dialog.addChoice("Date Type:",DateTypes,DATE_TYPE);
+DateLabel = call("ij.Prefs.get","AAVSOReport.DateLabel","");
+Dialog.addString("Enter label for the Date Type (leave blank if same as Date Type choice)",DateLabel,15);
 //
 //  Request the type of camera used
 ObsTypes=newArray("CCD","DSLR");
-Dialog.addChoice("Select Camera Used (select CCD for CMOS cameras)*",ObsTypes);
+OBSTYPE = call("ij.Prefs.get","AAVSOReport.OBSTYPE","CCD");
+Dialog.addChoice("Select Camera Used (select CCD for CMOS cameras)*",ObsTypes,OBSTYPE);
 //
 //  Request the star name
-Dialog.addString("Enter Host Star Name*","",20);
+STAR_NAME = call("ij.Prefs.get","AAVSOReport.STAR_NAME","");
+Dialog.addString("Enter Host Star Name*",STAR_NAME,20);
 //
 //  Request the exoplanet name
 Dialog.addMessage("");
-Dialog.addString("Enter Exoplanet Name (leave blank if same as Host Star Name","",20);
+EXOPLANET_NAME = call("ij.Prefs.get","AAVSOReport.EXOPLANET_NAME","");
+Dialog.addString("Enter Exoplanet Name (leave blank if same as Host Star Name",EXOPLANET_NAME,20);
 //
 //  Request the binning used
 BinningChoices=newArray("1x1","2x2","3x3","4x4");
-Dialog.addChoice("Select binning used*",BinningChoices);
+BINNING = call("ij.Prefs.get","AAVSOReport.BINNING","1x1");
+Dialog.addChoice("Select binning used*",BinningChoices,BINNING);
 //
 //  Request the exoposure time used
-Dialog.addString("Enter exposure Time (sec)*","",lenExposureTime);
+EXPOSURE_TIME = call("ij.Prefs.get","AAVSOReport.EXPOSURE_TIME","");
+Dialog.addString("Enter exposure time (sec)*",EXPOSURE_TIME,lenExposureTime);
 //
 //  Request the filter used - must be a valid AAVSO-known filter
 FilterChoices=newArray(
@@ -275,17 +292,10 @@ FilterChoices=newArray(
    "HAC: H-alpha continuum",
    "O  : Other filter not listed above, must describe in Notes"
 );
-Dialog.addChoice("Select filter Used*",FilterChoices);
+filter_type = call("ij.Prefs.get","AAVSOReport.filter_type","CV : Clear or No filter");
+Dialog.addChoice("Select filter Used*",FilterChoices,filter_type);
 //
-//  Request the type of differential measurement data used and the labels used
-MeasurementChoices=newArray("Relative Normalized Flux","Differential Magnitude");
-Dialog.addChoice("Select type of measurement data*",MeasurementChoices);
-Dialog.addMessage("Enter the labels for the measurement data and error, if different from the default values associated with the above choice (see above link to AIJ Macro Help):");
-US=fromCharCode(95);
-Dialog.addString("Measurement data label, if different from the default","",15);
-Dialog.addString("Measurement error label if different from the default","",15);
 Dialog.show();
-
 //
 //*****************  GET THE FIRST PAGE OF USE INPUTS
 //
@@ -298,6 +308,7 @@ debugPrint("#DELIM=" + DELIM,1);
 //
 //  Get the primary observer code
 OBSCODE=Dialog.getString();
+call("ij.Prefs.set","AAVSOReport.OBSCODE",OBSCODE);
 if (OBSCODE=="") {
      errorHandling("*** ERROR: No Obscode was entered");
 };
@@ -306,19 +317,23 @@ checkStringLength("OBSCODE",OBSCODE,lenObscode);
 //
 //  Get the type of date used
 DATE_TYPE=Dialog.getChoice();
+call("ij.Prefs.set","AAVSOReport.DATE_TYPE",DATE_TYPE);
 debugPrint("#DATE_TYPE=" + DATE_TYPE,1);
 // Get label for date type; if the user does not specify one, then the string choice for Date Type will be used.
 DateLabel=Dialog.getString();
+call("ij.Prefs.set","AAVSOReport.DateLabel",DateLabel);
 if (DateLabel=="") {
     DateLabel=DATE_TYPE;
 };
 //
 //  Get the type of camera used
 OBSTYPE=Dialog.getChoice();
+call("ij.Prefs.set","AAVSOReport.OBSTYPE",OBSTYPE);
 debugPrint("#OBSTYPE=" + OBSTYPE,1);
 //
 //  Get the star name
 STAR_NAME=Dialog.getString();
+call("ij.Prefs.set","AAVSOReport.STAR_NAME",STAR_NAME);
 if (STAR_NAME=="") {
      errorHandling("*** ERROR: No host star name was entered");
 };
@@ -327,6 +342,7 @@ checkStringLength("Host Star Name",STAR_NAME,lenStarName);
 //
 //  Get the exoplanet name - if blank, use the star name
 EXOPLANET_NAME=Dialog.getString();
+call("ij.Prefs.set","AAVSOReport.EXOPLANET_NAME",EXOPLANET_NAME);
 if (EXOPLANET_NAME=="") {
      EXOPLANET_NAME = STAR_NAME;
 };
@@ -336,9 +352,11 @@ checkStringLength("Exoplanet name",EXOPLANET_NAME,lenExoplanetName);
 //  Get the binning used
 BINNING=Dialog.getChoice();
 debugPrint("#BINNING=" + BINNING,1);
+call("ij.Prefs.set","AAVSOReport.BINNING",BINNING);
 //
 //  Get the exposure time used and check its validity
 EXPOSURE_TIME=Dialog.getString();
+call("ij.Prefs.set","AAVSOReport.EXPOSURE_TIME",EXPOSURE_TIME);
 debugPrint("#EXPOSURE_TIME=" + EXPOSURE_TIME,1);
 if (EXPOSURE_TIME=="") {
      errorHandling("*** ERROR: No exposure time was entered");
@@ -354,36 +372,15 @@ checkRange("Exposure Time",expTime,0,600);
 //
 //  Get the filter used
 filter_type=Dialog.getChoice();
+call("ij.Prefs.set","AAVSOReport.filter_type",filter_type);
 FILTER=substring(filter_type,0,3);
 debugPrint("#FILTER=" + FILTER,1);
 //
-//  Get the type of diff. measurement data used
-MEASUREMENT_TYPE=Dialog.getChoice();
-// Check if a measurement type was selected
-if (MEASUREMENT_TYPE=="") {
-    errorHandling ("*** ERROR: A measurement type was not selected");
-};
-// Convert selection to measurement type code
-if (MEASUREMENT_TYPE=="Relative Normalized Flux") {
-    mType="Rnflux";
-    } else {mType="Dmag";
-      };
-debugPrint("#MEASUREMENT_TYPE=" + mType,1);
-//
-// Get labels for the difference measurement and the difference error
-DiffLabel=Dialog.getString();
-if (DiffLabel=="") {
-     if (mType=="Rnflux") {
-        DiffLabel="rel_flux_T1_n";
-        } else {DiffLabel="rel_flux_T1(mag)";};
-};
-DiffErrorLabel=Dialog.getString();
-if (DiffErrorLabel=="") {
-     if (mType=="Rnflux") {
-        DiffErrorLabel="rel_flux_err_T1_n";
-        } else {DiffErrorLabel="rel_flux_err_T1(mag)";};
-};
-
+//  Force measurement type to be relative normalized flux
+MEASUREMENT_TYPE = "Relative Normalized Flux";
+DiffLabel = "rel_flux_T1_n";
+DiffErrorLabel= "rel_flux_err_T1_n";
+mType="Rnflux";
 //
 //****************** CREATE THE SECOND PAGE OF USER DIALOGUES
 //
@@ -392,26 +389,37 @@ Dialog.create("");
 //
 //  Request information on any detrend parameters used
 Dialog.addMessage("");
-Dialog.addString("Enter a comma separated list of any detrend parameters used - note, these are case sensitive","",lenDetrendParameterList);
-Dialog.addMessage("Enter labels used for the following detrend parameters:");
-Dialog.addMessage("(Note: you may leave the label blank if the label is the same as the corresponding name in the above list of detrend parameter)");
-Dialog.addString("Detrend-1 parameter","",15);
-Dialog.addString("Detrend-2 parameter","",15);
-Dialog.addString("Detrend-3 parameter","",15);
-Dialog.addString("Detrend-4 parameter","",15);
-
+DETREND_PARAMETERS = call("ij.Prefs.get","AAVSOReport.DETREND_PARAMETERS","");
+Dialog.addMessage("Enter a comma separated list of up to four (4) detrend parameters.");
+Dialog.addString("Notes: These parameters are case sensitive. Meridan flips should be labelled as Meridian" + "<underscore>" + "Flip.",DETREND_PARAMETERS,lenDetrendParameterList);
+//
+//  Request meridian flip time if Meridian_Flip was a detrend parameter
+Dialog.addMessage("If meridian flip was a detrend parameter, the (decimal part) of the meridian flip time as entered on AIJ's Multi-plot Main screen must be entered below:");
+MF_TIME = call("ij.Prefs.get","AAVSOReport.MF_TIME","");
+Dialog.addString("Enter decimal part of meridian flip time (sec)",MF_TIME,lenMFTime)
+//
 Dialog.addMessage("OTHER OPTIONAL PARAMETERS:");
 //
 //  Request information on other optional parameters
-Dialog.addString("Secondary Observers - comma separated list of AAVSO observer codes","",20);
-Dialog.addString("Priors - comma separated list of prior names and values","",100);
-Dialog.addString("Results - comma separated list of result names and values","",100);
-Dialog.addString("Notes - observing conditions, known systematics, etc.","",100);
+SECONDARY_OBSCODES = call("ij.Prefs.get","AAVSOReport.SECONDARY_OBSCODES","");
+Dialog.addString("Secondary Observers - comma separated list of AAVSO observer codes",SECONDARY_OBSCODES,20);
+PRIORS = call("ij.Prefs.get","AAVSOReport.PRIORS","");
+Dialog.addString("Priors - comma separated list of prior names and values",PRIORS,100);
+RESULTS = call("ij.Prefs.get","AAVSOReport.RESULTS","");
+Dialog.addString("Results - comma separated list of result names and values",RESULTS,100);
+NOTES = call("ij.Prefs.get","AAVSOReport.NOTES","");
+Dialog.addString("Notes - observing conditions, known systematics, etc.",NOTES,100);
 //
 //  Request the delimiter in the Measurements table
 DelimChoices=newArray("Tab","Comma");
-Dialog.addChoice("Delimiter in Measurements Table (for AIJ files: Tab for *.tbl,*.txt,and *.xls files; Comma for *.csv files)",DelimChoices);
-Dialog.addCheckbox("Check here if the first column of the measurements table header contains a label.  Note: This should normally remain unchecked for AIJ tables",false);
+DelimChoice = call("ij.Prefs.get","AAVSOReport.DelimiterChoice","Tab");
+Dialog.addChoice("Delimiter in Measurements Table (for AIJ files: Tab for *.tbl,*.txt,and *.xls files; Comma for *.csv files)",DelimChoices,DelimChoice);
+//
+//  Ask if first col. of measurements table contains a label
+firstMeasTableColFlag = call("ij.Prefs.get","AAVSOReport.firstMeasTableColFlag",false);
+Dialog.addCheckbox("Check here if the first column of the measurements table header contains a label.  Note: This should normally remain unchecked for AIJ tables",firstMeasTableColFlag);
+//
+//  Ask for Measurements file
 Dialog.addMessage("Next, after clicking OK, select the measurement file from which the report will be generated.");
 //
 Dialog.show();
@@ -421,71 +429,81 @@ Dialog.show();
 //
 //  Get detrend parameter descripton list
 DETREND_PARAMETERS=Dialog.getString();
+call("ij.Prefs.set","AAVSOReport.DETREND_PARAMETERS",DETREND_PARAMETERS);
 debugPrint("#DETREND_PARAMETERS=" + DETREND_PARAMETERS,1);
 checkStringLength("Detrend Parameters",DETREND_PARAMETERS,lenDetrendParameterList);
 //
-//  Get user-specified labels for detrend parameters.  If
-//  there is no user-specified label for a detrend parameter n,
-//  but the user had included it the earlier comma-separated
-//  list of detrend parameters (i.e., DETREND_PARAMETERS),
-//  then use the item in the comma-separated list as the label
+//  Separate out user-specified labels for detrend parameters.
 //
-//  First, parse DETREND_PARAMETERS, if it is not empty,
-//  and pull out each detrend parameter into an array.
-//
-detrendParameter=newArray("","","","");
+detrendLabel=newArray("","","","");
+MF_flag = false;
 if (DETREND_PARAMETERS != "") {
     success=true;
 //  Loop as long as there are more detrend parameters, up to 4
     for (i=0; i<4 && success; i++) {
 //  result is returned in globalValue
         success=findValue(DETREND_PARAMETERS,i+1,COMMA);
-       detrendParameter[i]=globalValue;
+        detrendLabel[i]=globalValue;
+        lenString = lengthOf(detrendLabel[i]);
+//  Check if any spaces between comma  and beginning of the detrend parameter.
+//  If so, eliminate space(s);
+        j=0;
+        success1 = true;
+        while (j<lenString && success1) {
+            lenString = lengthOf(detrendLabel[i]);
+            firstChar = substring(detrendLabel[i],0,1);
+            if (firstChar == " ") {
+               detrendLabel[i] = substring(detrendLabel[i],1,lenString);
+               } else {success1=false;};
+            j=j+1;
+       };
+//  Set MF_flag if Meridian_Flip was a detrend parameter
+    if (detrendLabel[i] == "Meridian_Flip") {MF_flag=true;};
     };
 };
-detrendLabel=newArray("","","","");
-//  Check for the following cases involving each item in the
-//  Detrend Parameter List and corresponding user-entered
-//  values for a Detrend Label:
-//                                   (1)                    (2)                         (3)
-//             If Parameter List item is:   and Detrend Label is:   then:
-//                           Empty                          Not-empty                 error
-//                           Not-empty                      Empty                     use (1)
-//                           Not-empty                      Not-empty                 use (2)
-//                           Empty                          Empty                     do nothing
-for (i=0; i<4; i++) {
-    detrendLabel[i]=Dialog.getString();
-    case1=(detrendParameter[i] == "") &&  (detrendLabel[i] != "");
-    case2=(detrendParameter[i] != "")  &&  (detrendLabel[i] == "");
-    case3=(detrendParameter[i] != "")  &&  (detrendLabel[i] != "");
-    case4=(detrendParameter[i] == "") &&  (detrendLabel[i] == "");
-//  Test each case; for case3 and case4, detrendLabel[i] will equal
-//   what was entered, if anything, or empty if there was no user entry
-    if (case1) {
-        errorHandling ("**** ERROR: Detrend Parameter-" + d2s(i) + " is empty, yet a Detrend Label was specified");
-        } else  {
-                    if (case2) {
-                       detrendLabel[i]=detrendParameter[i];
-                    }
-            }
-};  
+//
+//  Get meridian flip time if Meridian_Flip was a detrend parameter
+MF_TIME=Dialog.getString();
+call("ij.Prefs.set","AAVSOReport.MF_TIME",MF_TIME);
+//
+debugPrint("#MERIDIAN_FLIP_TIME=" + MF_TIME,1);
+if (MF_flag) {
+   if (MF_TIME=="") {
+      errorHandling("*** ERROR: No meridian flip time was entered");
+      } else {
+//  if Meridian_Flip was a detrend parameter, convert MF_TIME to a number
+             mfTime=parseFloat(MF_TIME);
+// Check if entry is a not a number or is zero
+             if (isNaN(mfTime) || mfTime==0) {errorHandling("*** ERROR: Invalid meridian flip time");};
+// Get "day digit" of the mfTime; if 0, then the cooresponding observation times that have a day digit equal
+// to the day digit in the first observation's time will be used as comparisons to mfTime. If, for example,
+// mfDayDigit=1, then the comparison must wait until the day digit in the observation times turn over to the
+// next day.
+             mfDayDigit = floor(mfTime);
+             mfFractPart = mfTime-mfDayDigit;
+             };
+};
 //
 //  Get any secondary observer codes
 SECONDARY_OBSCODES=Dialog.getString();
+call("ij.Prefs.set","AAVSOReport.SECONDARY_OBSCODES",SECONDARY_OBSCODES);
 debugPrint("#SECONDARY_OBSCODES=" + SECONDARY_OBSCODES,1);
 checkStringLength("Secondary Obscodes",SECONDARY_OBSCODES,lenSecObscodes);
 //
 //  Get any information on priors
 PRIORS=Dialog.getString();
+call("ij.Prefs.set","AAVSOReport.PRIORS",PRIORS);
 debugPrint("#PRIORS=" + PRIORS,1);
 //
 //  Get any information on results
 RESULTS=Dialog.getString();
+call("ij.Prefs.set","AAVSOReport.RESULTS",RESULTS);
 debugPrint("#RESULTS=" + RESULTS,1);
 checkStringLength("Results",RESULTS,lenResults);
 //
 //  Get any notes
 NOTES=Dialog.getString();
+call("ij.Prefs.set","AAVSOReport.NOTES",NOTES);
 debugPrint("#NOTES=" + NOTES,1);
 checkStringLength("Notes",NOTES,lenNotes);
 //
@@ -494,6 +512,7 @@ checkStringLength("Notes",NOTES,lenNotes);
 //  to this.
 //
 DelimiterChoice=Dialog.getChoice();
+call("ij.Prefs.set","AAVSOReport.DelimiterChoice",DelimiterChoice);
 if (DelimiterChoice=="Tab") {
     inputFileDelimiter=TAB;
     } else {
@@ -502,7 +521,8 @@ if (DelimiterChoice=="Tab") {
 //
 // Get flag indicating if first column of measurement table header contains a label
 //      False=no label, True=label
-firstMeasTableColFlag=Dialog.getCheckbox();      
+firstMeasTableColFlag=Dialog.getCheckbox();
+call("ij.Prefs.set","AAVSOReport.firstMeasTableColFlag",firstMeasTableColFlag);
 //
 //
 //---------------BEGIN OUTPUTING REPORT KEYWORDS AND DATA ROWS TO OUPUT FILE
@@ -583,49 +603,93 @@ File.append("#EXOPLANET_NAME=" + EXOPLANET_NAME + CR,pathOutputFile);
 File.append("#BINNING=" + BINNING + CR,pathOutputFile);;
 File.append("#EXPOSURE_TIME=" + EXPOSURE_TIME + CR,pathOutputFile);
 File.append("#FILTER=" + FILTER + CR,pathOutputFile);
-File.append("#DETREND_PARAMETERS=" + DETREND_PARAMETERS + CR,pathOutputFile);
+//   Re-create detrend parameter string
+success=true;
+detrendString = "";
+for (i=0; i<4 && success; i++) {
+    if (detrendLabel[i] !="") {
+//  Put a comma in only if not the first parameter
+        if (i==0) {
+                detrendString = detrendLabel[i];
+                } else {detrendString = detrendString + "," + detrendLabel[i];}
+        } else {success=false;};
+};
+File.append("#DETREND_PARAMETERS=" + detrendString + CR,pathOutputFile);
 File.append("#MEASUREMENT_TYPE=" + mType + CR,pathOutputFile);
 File.append("#SECONDARY_OBSCODES=" + SECONDARY_OBSCODES + CR,pathOutputFile);
 checkStringLength("Priors",PRIORS,lenPriors);
 File.append("#PRIORS=" + PRIORS + CR,pathOutputFile);;
 File.append("#RESULTS=" + RESULTS + CR,pathOutputFile);
 File.append("#NOTES=" + NOTES + CR,pathOutputFile);
-//
-//  Put an empty line between the # keywords above and the rows of data
-File.append(" " + CR,pathOutputFile);
-debugPrint(" ",1);
+//  Construct the header to the data rows of the report
+dataHeaderString = "#" + DATE_TYPE + ",Rel-Norm-Flux,Rel-Norm-Flux-Err";
+if (detrendString != "") {dataHeaderString = dataHeaderString + "," + detrendString;};
+File.append(dataHeaderString + CR,pathOutputFile);
 //
 //  Get the value in the user's file associated with each of the user-specified labels for:
 //   1.  Date/Time
 //   2.  Relative flux difference or differential magnitude
 //   3.  Error associated with above.
 //   4.  Values for each of the detrend parameters
-//  Assume that such labels and values are separated by the 
+//  Assume that such labels and values are separated by the
 //  user-specified delimiter inputFileDelimiter
 //
 //  Cycle through each of the data rows in the user's file for the above values
 for (k=1; k<nRows+1; k++) {
      rowString=fileArray[k];
      success=getData(DateLabel,header,rowString,inputFileDelimiter,firstMeasTableColFlag);
-     date_time=d2s(globalValue,5);
+     date_time=d2s(globalValue,6);
+//
+//   If Meridan_Flip was a detrend parameter, calculate the appropriate table entry
+//   - i.e., a -1.0 or +1.0
+     if (MF_flag) {
+//   Get observation day time (e.g., if day-time is 2457313.052634, then obsDayTime would
+//   equal 3.052634 and initialDay would equal 3
+         lenglobalValue = lengthOf(globalValue);
+         obsDayTime = substring(globalValue,6,lenglobalValue);
+         lenDayTime = lengthOf(obsDayTime);
+         obsFractPart = parseFloat(substring(obsDayTime,1,lenDayTime));
+         obsDayDigit = parseFloat(substring(obsDayTime,0,1));
+//   If this is the first observation, store obsDayDigit in initialDayDigit
+         if (k==1) {initialDayDigit = obsDayDigit;};
+//   Get "day" relative to beginning of the observation (e.g., relDay = 0 if the day
+//   has not turned over yet
+         relDay = obsDayDigit - initialDayDigit;
+//   if relDay is less than mfDayDigit, use -1.0 as meridian flip entry in report.
+//   If relDay matches mfDayDigit and fractional part of observation time is less
+//   than fractional part of meridian flip time, use -1.0 as meridian flip entry
+//   in report.
+//   However, if relDay matches mfDayDigit and fractional part of observation time
+//   is equal to or greater than the fractional part of meridian flip time, use 1.0).
+//   Finally, if relDay is greater than mfDayDigit, also use 1.0.
+         if (relDay < mfDayDigit) {mfEntry = d2s(-1.0,6);};
+         if (relDay == mfDayDigit && obsFractPart <  mfFractPart) {mfEntry = d2s(-1.0,6);};
+         if (relDay == mfDayDigit && obsFractPart >= mfFractPart) {mfEntry = d2s(1.0,6);};
+         if (relDay > mfDayDigit) {mfEntry = d2s(1.0,6);};
+     };
 
      success=getData(DiffLabel,header,rowString,inputFileDelimiter,firstMeasTableColFlag);
      diff = d2s(globalValue,6);
 
      success=getData(DiffErrorLabel,header,rowString,inputFileDelimiter,firstMeasTableColFlag);
      diff_error = d2s(globalValue,6);
-  
-     detrendValue=newArray("","","","");
-     delimValue=newArray("","","","");
+
+     detrendValue = newArray("","","","");
+     delimValue = newArray("","","","");
      success=true;
      for (i=0; i<4&&success; i++) {
          if (detrendLabel[i]!="") {
-             success=getData(detrendLabel[i],header,rowString,inputFileDelimiter,firstMeasTableColFlag);
-             detrendValue[i] = d2s(globalValue,6);
-             delimValue[i] = DELIM;
-         } else {
-            success=false;
-         };
+//   Treat Meridan Flips separately - namely, use the above calculated value of mfEntry.
+             if (detrendLabel[i] == "Meridian_Flip") {
+                success=true;
+                detrendValue[i] = mfEntry;
+                delimValue[i] = DELIM;
+                } else {
+                              success=getData(detrendLabel[i],header,rowString,inputFileDelimiter,firstMeasTableColFlag);
+                              detrendValue[i] = d2s(globalValue,6);
+                              delimValue[i] = DELIM;
+                             };
+         } else {success=false;};
      };
 //
 //  Print to the log window and output file the appropriate data rows, where each item is separated by DELIM and the row ends with a CR

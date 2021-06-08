@@ -115,7 +115,7 @@ public class ArrayMaths{
         this.length = array.length;
         this.array = new ArrayList<Object>(this.length);
         this.type = 0;
-        for(int i=0; i<this.length; i++)this.array.add(new Double(array[i]));
+        for(int i=0; i<this.length; i++)this.array.add(array[i]);
         this.originalTypes = new int[this.length];
         for(int i=0; i<this.length; i++)this.originalTypes[i] = this.type;
         this.originalTypes = new int[this.length];
@@ -137,7 +137,7 @@ public class ArrayMaths{
         this.length = array.length;
         this.array = new ArrayList<Object>(this.length);
         this.type = 4;
-        for(int i=0; i<this.length; i++)this.array.add(new Long(array[i]));
+        for(int i=0; i<this.length; i++)this.array.add(array[i]);
         this.originalTypes = new int[this.length];
         for(int i=0; i<this.length; i++)this.originalTypes[i] = this.type;
         this.minmax();
@@ -157,7 +157,7 @@ public class ArrayMaths{
         this.length = array.length;
         this.array = new ArrayList<Object>(this.length);
         this.type = 2;
-        for(int i=0; i<this.length; i++)this.array.add(new Float(array[i]));
+        for(int i=0; i<this.length; i++)this.array.add(array[i]);
         this.originalTypes = new int[this.length];
         for(int i=0; i<this.length; i++)this.originalTypes[i] = this.type;
         this.minmax();
@@ -177,7 +177,7 @@ public class ArrayMaths{
         this.length = array.length;
         this.array = new ArrayList<Object>(this.length);
         this.type = 6;
-        for(int i=0; i<this.length; i++)this.array.add(new Integer(array[i]));
+        for(int i=0; i<this.length; i++)this.array.add(array[i]);
         this.originalTypes = new int[this.length];
         for(int i=0; i<this.length; i++)this.originalTypes[i] = this.type;
         this.minmax();
@@ -197,7 +197,7 @@ public class ArrayMaths{
         this.length = array.length;
         this.array = new ArrayList<Object>(this.length);
         this.type = 8;
-        for(int i=0; i<this.length; i++)this.array.add(new Short(array[i]));
+        for(int i=0; i<this.length; i++)this.array.add(array[i]);
         this.originalTypes = new int[this.length];
         for(int i=0; i<this.length; i++)this.originalTypes[i] = this.type;
         this.minmax();
@@ -217,7 +217,7 @@ public class ArrayMaths{
         this.length = array.length;
         this.array = new ArrayList<Object>(this.length);
         this.type = 10;
-        for(int i=0; i<this.length; i++)this.array.add(new Byte(array[i]));
+        for(int i=0; i<this.length; i++)this.array.add(array[i]);
         this.originalTypes = new int[this.length];
         for(int i=0; i<this.length; i++)this.originalTypes[i] = this.type;
         this.minmax();
@@ -275,7 +275,7 @@ public class ArrayMaths{
         this.length = array.length;
         this.array = new ArrayList<Object>(this.length);
         this.type = 16;
-        for(int i=0; i<this.length; i++)this.array.add(new Character(array[i]));
+        for(int i=0; i<this.length; i++)this.array.add(array[i]);
         this.originalTypes = new int[this.length];
         for(int i=0; i<this.length; i++)this.originalTypes[i] = this.type;
         this.minmax();
@@ -403,7 +403,7 @@ public class ArrayMaths{
                     for(int i=0; i<this.length; i++){
                         switch(this.originalTypes[i]){
                         case 1: Double hold1= (Double)arrayv.elementAt(i);
-                                this.array.add(new Complex(hold1.doubleValue()));
+                                this.array.add(new Complex(hold1));
                                 break;
                         case 3: Float hold3 = (Float)arrayv.elementAt(i);
                                 this.array.add(new Complex(hold3.doubleValue()));
@@ -433,7 +433,7 @@ public class ArrayMaths{
                                 this.array.add(Conv.convert_Phasor_to_Complex(hold15));
                                 break;
                         case 17: Character hold17 = (Character)arrayv.elementAt(i);
-                                this.array.add(new Complex((double)((int)hold17.charValue())));
+                                this.array.add(new Complex((double)((int) hold17)));
                                 break;
                         case 18: String hold18 = (String)arrayv.elementAt(i);
                                 this.array.add(new Complex(Double.parseDouble(hold18)));
@@ -446,7 +446,7 @@ public class ArrayMaths{
                     for(int i=0; i<this.length; i++){
                         switch(this.originalTypes[i]){
                         case 1: Double hold1= (Double)arrayv.elementAt(i);
-                                this.array.add(new Phasor(hold1.doubleValue()));
+                                this.array.add(new Phasor(hold1));
                                 break;
                         case 3: Float hold3 = (Float)arrayv.elementAt(i);
                                 this.array.add(new Phasor(hold3.doubleValue()));
@@ -476,7 +476,7 @@ public class ArrayMaths{
                                 this.array.add(hold15);
                                 break;
                         case 17: Character hold17 = (Character)arrayv.elementAt(i);
-                                this.array.add(new Phasor((double)((int)hold17.charValue())));
+                                this.array.add(new Phasor((double)((int) hold17)));
                                 break;
                         default: throw new IllegalArgumentException("Data type not identified by this method");
                         }
@@ -572,7 +572,7 @@ public class ArrayMaths{
                                 this.array.add(Conv.convert_Byte_to_Double(hold11));
                                 break;
                         case 17: Character hold17 = (Character)arrayv.elementAt(i);
-                                this.array.add(new Double(Double.parseDouble(hold17.toString())));
+                                this.array.add(Double.parseDouble(hold17.toString()));
                                 break;
                        default: throw new IllegalArgumentException("Data type not identified by this method");
                         }
@@ -594,7 +594,7 @@ public class ArrayMaths{
                                 this.array.add(Conv.convert_Byte_to_Long(hold11));
                                 break;
                         case 17: Character hold17 = (Character)arrayv.elementAt(i);
-                                this.array.add(new Long((long)((int)hold17.charValue())));
+                                this.array.add((long) ((int) hold17));
                                 break;
                         default: throw new IllegalArgumentException("Data type not identified by this method");
                         }
@@ -714,7 +714,7 @@ public class ArrayMaths{
                     for(int i=0; i<this.length; i++){
                         switch(this.originalTypes[i]){
                         case 1: Double hold1= (Double)arrayl.get(i);
-                                this.array.add(new Complex(hold1.doubleValue()));
+                                this.array.add(new Complex(hold1));
                                 break;
                         case 3: Float hold3 = (Float)arrayl.get(i);
                                 this.array.add(new Complex(hold3.doubleValue()));
@@ -744,7 +744,7 @@ public class ArrayMaths{
                                 this.array.add(Conv.convert_Phasor_to_Complex(hold15));
                                 break;
                         case 17: Character hold17 = (Character)arrayl.get(i);
-                                this.array.add(new Complex((double)((int)hold17.charValue())));
+                                this.array.add(new Complex((double)((int) hold17)));
                                 break;
                         case 18: String hold18 = (String)arrayl.get(i);
                                 this.array.add(new Complex(Double.parseDouble(hold18)));
@@ -757,7 +757,7 @@ public class ArrayMaths{
                     for(int i=0; i<this.length; i++){
                         switch(this.originalTypes[i]){
                         case 1: Double hold1= (Double)arrayl.get(i);
-                                this.array.add(new Phasor(hold1.doubleValue()));
+                                this.array.add(new Phasor(hold1));
                                 break;
                         case 3: Float hold3 = (Float)arrayl.get(i);
                                 this.array.add(new Phasor(hold3.doubleValue()));
@@ -787,7 +787,7 @@ public class ArrayMaths{
                                 this.array.add(hold15);
                                 break;
                         case 17: Character hold17 = (Character)arrayl.get(i);
-                                this.array.add(new Phasor((double)((int)hold17.charValue())));
+                                this.array.add(new Phasor((double)((int) hold17)));
                                 break;
                         default: throw new IllegalArgumentException("Data type not identified by this method");
                         }
@@ -883,7 +883,7 @@ public class ArrayMaths{
                                 this.array.add(Conv.convert_Byte_to_Double(hold11));
                                 break;
                         case 17: Character hold17 = (Character)arrayl.get(i);
-                                this.array.add(new Double(Double.parseDouble(hold17.toString())));
+                                this.array.add(Double.parseDouble(hold17.toString()));
                                 break;
                        default: throw new IllegalArgumentException("Data type not identified by this method");
                         }
@@ -905,7 +905,7 @@ public class ArrayMaths{
                                 this.array.add(Conv.convert_Byte_to_Long(hold11));
                                 break;
                         case 17: Character hold17 = (Character)arrayl.get(i);
-                                this.array.add(new Long((long)((int)hold17.charValue())));
+                                this.array.add((long) ((int) hold17));
                                 break;
                         default: throw new IllegalArgumentException("Data type not identified by this method");
                         }
@@ -1004,40 +1004,40 @@ public class ArrayMaths{
         if(this.minmax.size()!=0){
             switch(this.type){
             case 0:
-            case 1: double dd = ((Double)this.minmax.get(0)).doubleValue();
-                    am.minmax.add(new Double(dd));
-                    dd = ((Double)this.minmax.get(1)).doubleValue();
-                    am.minmax.add(new Double(dd));
+            case 1: double dd = (Double) this.minmax.get(0);
+                    am.minmax.add(dd);
+                    dd = (Double) this.minmax.get(1);
+                    am.minmax.add(dd);
                     break;
             case 4:
-            case 5: long ll= ((Long)this.minmax.get(0)).longValue();
-                    am.minmax.add(new Double(ll));
-                    ll = ((Long)this.minmax.get(1)).longValue();
-                    am.minmax.add(new Long(ll));
+            case 5: long ll= (Long) this.minmax.get(0);
+                    am.minmax.add((double) ll);
+                    ll = (Long) this.minmax.get(1);
+                    am.minmax.add(ll);
                     break;
             case 2:
-            case 3: float ff = ((Float)this.minmax.get(0)).floatValue();
-                    am.minmax.add(new Double(ff));
-                    ff = ((Float)this.minmax.get(1)).floatValue();
-                    am.minmax.add(new Double(ff));
+            case 3: float ff = (Float) this.minmax.get(0);
+                    am.minmax.add((double) ff);
+                    ff = (Float) this.minmax.get(1);
+                    am.minmax.add((double) ff);
                     break;
             case 6:
-            case 7: int ii = ((Integer)this.minmax.get(0)).intValue();
-                    am.minmax.add(new Integer(ii));
+            case 7: int ii = (Integer) this.minmax.get(0);
+                    am.minmax.add(ii);
                     ii = ((Double)this.minmax.get(1)).intValue();
-                    am.minmax.add(new Integer(ii));
+                    am.minmax.add(ii);
                     break;
             case 8:
-            case 9: short ss = ((Short)this.minmax.get(0)).shortValue();
-                    am.minmax.add(new Short(ss));
+            case 9: short ss = (Short) this.minmax.get(0);
+                    am.minmax.add(ss);
                     ss = ((Double)this.minmax.get(1)).shortValue();
-                    am.minmax.add(new Short((ss)));
+                    am.minmax.add((ss));
                     break;
             case 10:
-            case 11: byte bb = ((Byte)this.minmax.get(0)).byteValue();
-                    am.minmax.add(new Byte(bb));
-                    ss = ((Byte)this.minmax.get(1)).byteValue();
-                    am.minmax.add(new Byte((bb)));
+            case 11: byte bb = (Byte) this.minmax.get(0);
+                    am.minmax.add(bb);
+                    ss = (Byte) this.minmax.get(1);
+                    am.minmax.add((bb));
                     break;
             case 12: BigDecimal bd = (BigDecimal)this.minmax.get(0);
                     am.minmax.add(bd);
@@ -1052,10 +1052,10 @@ public class ArrayMaths{
                     bi = null;
                     break;
             case 16:
-            case 17: int iii = ((Integer)this.minmax.get(0)).intValue();
-                    am.minmax.add(new Integer(iii));
+            case 17: int iii = (Integer) this.minmax.get(0);
+                    am.minmax.add(iii);
                     iii = ((Double)this.minmax.get(1)).intValue();
-                    am.minmax.add(new Integer(iii));
+                    am.minmax.add(iii);
                     break;
             }
         }
@@ -1067,8 +1067,8 @@ public class ArrayMaths{
             case 1:
             case 2:
             case 3:
-            case 18: double dd = ((Double)summ.get(0)).doubleValue();
-                    am.summ.add(new Double(dd));
+            case 18: double dd = (Double) summ.get(0);
+                    am.summ.add(dd);
                     break;
             case 4:
             case 5:
@@ -1080,12 +1080,12 @@ public class ArrayMaths{
             case 11:
             case 16:
             case 17: if(this.sumlongToDouble){
-                        double dd2 = ((Double)summ.get(0)).doubleValue();
-                        am.summ.add(new Double(dd2));
+                        double dd2 = (Double) summ.get(0);
+                        am.summ.add(dd2);
                     }
                     else{
-                        long ll = ((Long)summ.get(0)).longValue();
-                        am.summ.add(new Long(ll));
+                        long ll = (Long) summ.get(0);
+                        am.summ.add(ll);
                     }
                     break;
             case 12: BigDecimal bd = (BigDecimal)summ.get(0);
@@ -1111,8 +1111,8 @@ public class ArrayMaths{
             case 1:
             case 2:
             case 3:
-            case 18: double dd = ((Double)productt.get(0)).doubleValue();
-                    am.productt.add(new Double(dd));
+            case 18: double dd = (Double) productt.get(0);
+                    am.productt.add(dd);
                     break;
             case 4:
             case 5:
@@ -1124,12 +1124,12 @@ public class ArrayMaths{
             case 11:
             case 16:
             case 17: if(this.sumlongToDouble){
-                        double dd2 = ((Double)productt.get(0)).doubleValue();
-                        am.productt.add(new Double(dd2));
+                        double dd2 = (Double) productt.get(0);
+                        am.productt.add(dd2);
                     }
                     else{
-                        long ll = ((Long)productt.get(0)).longValue();
-                        am.productt.add(new Long(ll));
+                        long ll = (Long) productt.get(0);
+                        am.productt.add(ll);
                     }
                     break;
             case 12: BigDecimal bd = (BigDecimal)productt.get(0);
@@ -1152,27 +1152,27 @@ public class ArrayMaths{
         switch(this.type){
             case 0:
             case 1: double[] dd = Conv.copy(this.getArray_as_double());
-                    for(int i=0; i<this.length; i++)am.array.add(new Double(dd[i]));
+                    for(int i=0; i<this.length; i++)am.array.add(dd[i]);
                     break;
             case 2:
             case 3: float[] ff = Conv.copy(this.getArray_as_float());
-                    for(int i=0; i<this.length; i++)am.array.add(new Float(ff[i]));
+                    for(int i=0; i<this.length; i++)am.array.add(ff[i]);
                     break;
             case 4:
             case 5: long[] ll = Conv.copy(this.getArray_as_long());
-                    for(int i=0; i<this.length; i++)am.array.add(new Long(ll[i]));
+                    for(int i=0; i<this.length; i++)am.array.add(ll[i]);
                     break;
             case 6:
             case 7: int[] ii = Conv.copy(this.getArray_as_int());
-                    for(int i=0; i<this.length; i++)am.array.add(new Integer(ii[i]));
+                    for(int i=0; i<this.length; i++)am.array.add(ii[i]);
                     break;
             case 8:
             case 9: short[] ss = Conv.copy(this.getArray_as_short());
-                    for(int i=0; i<this.length; i++)am.array.add(new Short(ss[i]));
+                    for(int i=0; i<this.length; i++)am.array.add(ss[i]);
                     break;
             case 10:
             case 11: byte[] bb = Conv.copy(this.getArray_as_byte());
-                    for(int i=0; i<this.length; i++)am.array.add(new Byte(bb[i]));
+                    for(int i=0; i<this.length; i++)am.array.add(bb[i]);
                     break;
             case 12: BigDecimal[] bd = Conv.copy(this.getArray_as_BigDecimal());
                     for(int i=0; i<this.length; i++)am.array.add(bd[i]);
@@ -1188,7 +1188,7 @@ public class ArrayMaths{
                     break;
             case 16:
             case 17: char[] cc = Conv.copy(this.getArray_as_char());
-                    for(int i=0; i<this.length; i++)am.array.add(new Character(cc[i]));
+                    for(int i=0; i<this.length; i++)am.array.add(cc[i]);
                     break;
             case 18: String[] sss = Conv.copy(this.getArray_as_String());
                     for(int i=0; i<this.length; i++)am.array.add(sss[i]);
@@ -1235,7 +1235,7 @@ public class ArrayMaths{
         double[] retArray = new double[this.length];
         switch(this.type){
             case 0:
-            case 1: for(int i=0; i<this.length; i++)retArray[i] = ((Double)this.array.get(i)).doubleValue();
+            case 1: for(int i=0; i<this.length; i++)retArray[i] = (Double) this.array.get(i);
                     break;
             case 2:
             case 3: for(int i=0; i<this.length; i++)retArray[i] = Conv.convert_Float_to_double((Float)this.array.get(i));
@@ -1256,10 +1256,10 @@ public class ArrayMaths{
                     break;
             case 13: for(int i=0; i<this.length; i++)retArray[i] = Conv.convert_BigInteger_to_double((BigInteger)this.array.get(i));
                     break;
-            case 18: for(int i=0; i<this.length; i++)retArray[i] = Double.valueOf(((String)this.array.get(i)));
+            case 18: for(int i=0; i<this.length; i++)retArray[i] = Double.parseDouble(((String)this.array.get(i)));
                     break;
             case 16:
-            case 17: for(int i=0; i<this.length; i++)retArray[i] = Conv.convert_int_to_double((int)((Character)this.array.get(i)).charValue());
+            case 17: for(int i=0; i<this.length; i++)retArray[i] = Conv.convert_int_to_double((int) (Character) this.array.get(i));
                     break;
             case 14:
             case 15: throw new IllegalArgumentException("The " + this.typeName[this.type] + " is not a numerical type for which a conversion to double is meaningful/supported");
@@ -1300,10 +1300,10 @@ public class ArrayMaths{
                     break;
             case 13: for(int i=0; i<this.length; i++)retArray[i] = Conv.convert_BigInteger_to_Double((BigInteger)this.array.get(i));
                     break;
-            case 18: for(int i=0; i<this.length; i++)retArray[i] = new Double((String)this.array.get(i));
+            case 18: for(int i=0; i<this.length; i++)retArray[i] = Double.valueOf((String)this.array.get(i));
                     break;
             case 16:
-            case 17: for(int i=0; i<this.length; i++)retArray[i] = Conv.convert_int_to_Double((int)((Character)this.array.get(i)).charValue());
+            case 17: for(int i=0; i<this.length; i++)retArray[i] = Conv.convert_int_to_Double((int) (Character) this.array.get(i));
                     break;
             case 14:
             case 15: throw new IllegalArgumentException("The " + this.typeName[this.type] + " is not a numerical type for which a conversion to Double is meaningful/supported");
@@ -1344,10 +1344,10 @@ public class ArrayMaths{
                     break;
             case 13: for(int i=0; i<this.length; i++)retArray[i] = Conv.convert_BigInteger_to_Float((BigInteger)this.array.get(i));
                     break;
-            case 18: for(int i=0; i<this.length; i++)retArray[i] = new Float((String)this.array.get(i));
+            case 18: for(int i=0; i<this.length; i++)retArray[i] = Float.valueOf((String)this.array.get(i));
                     break;
             case 16:
-            case 17: for(int i=0; i<this.length; i++)retArray[i] = Conv.convert_int_to_Float((int)((Character)this.array.get(i)).charValue());
+            case 17: for(int i=0; i<this.length; i++)retArray[i] = Conv.convert_int_to_Float((int) (Character) this.array.get(i));
                     break;
             case 14:
             case 15:  throw new IllegalArgumentException("The " + this.typeName[this.type] + " is not a numerical type for which a conversion to Float is meaningful/supported");
@@ -1370,7 +1370,7 @@ public class ArrayMaths{
             case 1: for(int i=0; i<this.length; i++)retArray[i] = Conv.convert_Double_to_float((Double)this.array.get(i));
                     break;
             case 2:
-            case 3: for(int i=0; i<this.length; i++)retArray[i] = ((Float)this.array.get(i)).floatValue();
+            case 3: for(int i=0; i<this.length; i++)retArray[i] = (Float) this.array.get(i);
                     break;
             case 4:
             case 5: for(int i=0; i<this.length; i++)retArray[i] = Conv.convert_Long_to_float((Long)this.array.get(i));
@@ -1388,10 +1388,10 @@ public class ArrayMaths{
                     break;
             case 13: for(int i=0; i<this.length; i++)retArray[i] = Conv.convert_BigInteger_to_float((BigInteger)this.array.get(i));
                     break;
-            case 18: for(int i=0; i<this.length; i++)retArray[i] = (new Float((String)this.array.get(i))).floatValue();
+            case 18: for(int i=0; i<this.length; i++)retArray[i] = Float.valueOf((String) this.array.get(i));
                     break;
             case 16:
-            case 17: for(int i=0; i<this.length; i++)retArray[i] = Conv.convert_int_to_float((int)((Character)this.array.get(i)).charValue());
+            case 17: for(int i=0; i<this.length; i++)retArray[i] = Conv.convert_int_to_float((int) (Character) this.array.get(i));
                     break;
             case 14:
             case 15: throw new IllegalArgumentException("The " + this.typeName[this.type] + " is not a numerical type for which a conversion to float is meaningful/supported");
@@ -1417,7 +1417,7 @@ public class ArrayMaths{
             case 3: for(int i=0; i<this.length; i++)retArray[i] = Conv.convert_Float_to_long((Float)this.array.get(i));
                     break;
             case 4:
-            case 5: for(int i=0; i<this.length; i++)retArray[i] = ((Long)this.array.get(i)).longValue();
+            case 5: for(int i=0; i<this.length; i++)retArray[i] = (Long) this.array.get(i);
                     break;
             case 6:
             case 7: for(int i=0; i<this.length; i++)retArray[i] = Conv.convert_Integer_to_long((Integer)this.array.get(i));
@@ -1432,10 +1432,10 @@ public class ArrayMaths{
                     break;
             case 13: for(int i=0; i<this.length; i++)retArray[i] = Conv.convert_BigInteger_to_long((BigInteger)this.array.get(i));
                     break;
-            case 18: for(int i=0; i<this.length; i++)retArray[i] = (new Long((String)this.array.get(i))).longValue();
+            case 18: for(int i=0; i<this.length; i++)retArray[i] = Long.valueOf((String) this.array.get(i));
                     break;
             case 16:
-            case 17: for(int i=0; i<this.length; i++)retArray[i] = Conv.convert_int_to_long((int)((Character)this.array.get(i)).charValue());
+            case 17: for(int i=0; i<this.length; i++)retArray[i] = Conv.convert_int_to_long((int) (Character) this.array.get(i));
                     break;
             case 14:
             case 15:  throw new IllegalArgumentException("The " + this.typeName[this.type] + " is not a numerical type for which a conversion to long is meaningful/supported");
@@ -1476,10 +1476,10 @@ public class ArrayMaths{
                     break;
             case 13: for(int i=0; i<this.length; i++)retArray[i] = Conv.convert_BigInteger_to_Long((BigInteger)this.array.get(i));
                     break;
-            case 18: for(int i=0; i<this.length; i++)retArray[i] = new Long((String)this.array.get(i));
+            case 18: for(int i=0; i<this.length; i++)retArray[i] = Long.valueOf((String)this.array.get(i));
                     break;
             case 16:
-            case 17: for(int i=0; i<this.length; i++)retArray[i] = Conv.convert_int_to_Long((int)((Character)this.array.get(i)).charValue());
+            case 17: for(int i=0; i<this.length; i++)retArray[i] = Conv.convert_int_to_Long((int) (Character) this.array.get(i));
                     break;
             case 14:
             case 15: throw new IllegalArgumentException("The " + this.typeName[this.type] + " is not a numerical type for which a conversion to Long is meaningful/supported");
@@ -1521,10 +1521,10 @@ public class ArrayMaths{
                     break;
             case 13: for(int i=0; i<this.length; i++)retArray[i] = Conv.convert_BigInteger_to_Integer((BigInteger)this.array.get(i));
                     break;
-            case 18: for(int i=0; i<this.length; i++)retArray[i] = new Integer((String)this.array.get(i));
+            case 18: for(int i=0; i<this.length; i++)retArray[i] = Integer.valueOf((String)this.array.get(i));
                     break;
              case 16:
-            case 17: for(int i=0; i<this.length; i++)retArray[i] = new Integer((int)((Character)this.array.get(i)).charValue());
+            case 17: for(int i=0; i<this.length; i++)retArray[i] = (int) (Character) this.array.get(i);
                     break;
             case 14:
             case 15: throw new IllegalArgumentException("The " + this.typeName[this.type] + " is not a numerical type for which a conversion to Integer is meaningful/supported");
@@ -1553,7 +1553,7 @@ public class ArrayMaths{
             case 5: for(int i=0; i<this.length; i++)retArray[i] = Conv.convert_Long_to_int((Long)this.array.get(i));
                     break;
             case 6:
-            case 7: for(int i=0; i<this.length; i++)retArray[i] = ((Integer)this.array.get(i)).intValue();
+            case 7: for(int i=0; i<this.length; i++)retArray[i] = (Integer) this.array.get(i);
                     break;
             case 8:
             case 9: for(int i=0; i<this.length; i++)retArray[i] = Conv.convert_Short_to_int((Short)this.array.get(i));
@@ -1565,10 +1565,10 @@ public class ArrayMaths{
                     break;
             case 13: for(int i=0; i<this.length; i++)retArray[i] = Conv.convert_BigInteger_to_int((BigInteger)this.array.get(i));
                     break;
-            case 18: for(int i=0; i<this.length; i++)retArray[i] = (new Integer((String)this.array.get(i))).intValue();
+            case 18: for(int i=0; i<this.length; i++)retArray[i] = Integer.valueOf((String) this.array.get(i));
                     break;
             case 16:
-            case 17: for(int i=0; i<this.length; i++)retArray[i] = (int)((Character)this.array.get(i)).charValue();
+            case 17: for(int i=0; i<this.length; i++)retArray[i] = (int) (Character) this.array.get(i);
                     break;
             case 14:
             case 15: throw new IllegalArgumentException("The " + this.typeName[this.type] + " is not a numerical type for which a conversion to int is meaningful/supported");
@@ -1600,7 +1600,7 @@ public class ArrayMaths{
             case 7: for(int i=0; i<this.length; i++)retArray[i] = Conv.convert_Integer_to_short((Integer)this.array.get(i));
                     break;
             case 8:
-            case 9: for(int i=0; i<this.length; i++)retArray[i] = ((Short)this.array.get(i)).shortValue();
+            case 9: for(int i=0; i<this.length; i++)retArray[i] = (Short) this.array.get(i);
                     break;
             case 10:
             case 11: for(int i=0; i<this.length; i++)retArray[i] = Conv.convert_Byte_to_short((Byte)this.array.get(i));
@@ -1609,10 +1609,10 @@ public class ArrayMaths{
                     break;
             case 13: for(int i=0; i<this.length; i++)retArray[i] = Conv.convert_BigInteger_to_short((BigInteger)this.array.get(i));
                     break;
-            case 18: for(int i=0; i<this.length; i++)retArray[i] = (new Short((String)this.array.get(i))).shortValue();
+            case 18: for(int i=0; i<this.length; i++)retArray[i] = Short.valueOf((String) this.array.get(i));
                     break;
             case 16:
-            case 17: for(int i=0; i<this.length; i++)retArray[i] = Conv.convert_int_to_short((int)((Character)this.array.get(i)).charValue());
+            case 17: for(int i=0; i<this.length; i++)retArray[i] = Conv.convert_int_to_short((int) (Character) this.array.get(i));
                     break;
             case 14:
             case 15: throw new IllegalArgumentException("The " + this.typeName[this.type] + " is not a numerical type for which a conversion to short is meaningful/supported");
@@ -1654,10 +1654,10 @@ public class ArrayMaths{
                     break;
             case 13: for(int i=0; i<this.length; i++)retArray[i] = Conv.convert_BigInteger_to_Short((BigInteger)this.array.get(i));
                     break;
-            case 18: for(int i=0; i<this.length; i++)retArray[i] = new Short((String)this.array.get(i));
+            case 18: for(int i=0; i<this.length; i++)retArray[i] = Short.valueOf((String)this.array.get(i));
                     break;
             case 16:
-            case 17: for(int i=0; i<this.length; i++)retArray[i] = Conv.convert_int_to_Short((int)((Character)this.array.get(i)).charValue());
+            case 17: for(int i=0; i<this.length; i++)retArray[i] = Conv.convert_int_to_Short((int) (Character) this.array.get(i));
                     break;
             case 14:
             case 15: throw new IllegalArgumentException("The " + this.typeName[this.type] + " is not a numerical type for which a conversion to Short is meaningful/supported");
@@ -1692,16 +1692,16 @@ public class ArrayMaths{
             case 9: for(int i=0; i<this.length; i++)retArray[i] = Conv.convert_Short_to_byte((Short)this.array.get(i));
                     break;
             case 10:
-            case 11: for(int i=0; i<this.length; i++)retArray[i] = ((Byte)this.array.get(i)).byteValue();
+            case 11: for(int i=0; i<this.length; i++)retArray[i] = (Byte) this.array.get(i);
                     break;
             case 12: for(int i=0; i<this.length; i++)retArray[i] = Conv.convert_BigDecimal_to_byte((BigDecimal)this.array.get(i));
                     break;
             case 13: for(int i=0; i<this.length; i++)retArray[i] = Conv.convert_BigInteger_to_byte((BigInteger)this.array.get(i));
                     break;
-            case 18: for(int i=0; i<this.length; i++)retArray[i] = (new Byte((String)this.array.get(i))).byteValue();
+            case 18: for(int i=0; i<this.length; i++)retArray[i] = Byte.valueOf((String) this.array.get(i));
                     break;
             case 16:
-            case 17: for(int i=0; i<this.length; i++)retArray[i] = Conv.convert_int_to_byte((int)((Character)this.array.get(i)).charValue());
+            case 17: for(int i=0; i<this.length; i++)retArray[i] = Conv.convert_int_to_byte((int) (Character) this.array.get(i));
                     break;
             case 14:
             case 15: throw new IllegalArgumentException("The " + this.typeName[this.type] + " is not a numerical type for which a conversion to byte is meaningful/supported");
@@ -1742,10 +1742,10 @@ public class ArrayMaths{
                     break;
             case 13: for(int i=0; i<this.length; i++)retArray[i] = Conv.convert_BigInteger_to_Byte((BigInteger)this.array.get(i));
                     break;
-            case 18: for(int i=0; i<this.length; i++)retArray[i] = new Byte((String)this.array.get(i));
+            case 18: for(int i=0; i<this.length; i++)retArray[i] = Byte.valueOf((String)this.array.get(i));
                     break;
             case 16:
-            case 17: for(int i=0; i<this.length; i++)retArray[i] = Conv.convert_int_to_Byte((int)((Character)this.array.get(i)).charValue());
+            case 17: for(int i=0; i<this.length; i++)retArray[i] = Conv.convert_int_to_Byte((int) (Character) this.array.get(i));
                     break;
             case 14:
             case 15: throw new IllegalArgumentException("The " + this.typeName[this.type] + " is not a numerical type for which a conversion to Byte is meaningful/supported");
@@ -1789,7 +1789,7 @@ public class ArrayMaths{
             case 18: for(int i=0; i<this.length; i++)retArray[i] = new BigDecimal((String)this.array.get(i));
                     break;
             case 16:
-            case 17: for(int i=0; i<this.length; i++)retArray[i] = Conv.convert_int_to_BigDecimal((int)((Character)this.array.get(i)).charValue());
+            case 17: for(int i=0; i<this.length; i++)retArray[i] = Conv.convert_int_to_BigDecimal((int) (Character) this.array.get(i));
                     break;
             case 14:
             case 15: throw new IllegalArgumentException("The " + this.typeName[this.type] + " is not a numerical type for which a conversion to BigDecimal is meaningful/supported");
@@ -1833,7 +1833,7 @@ public class ArrayMaths{
             case 18: for(int i=0; i<this.length; i++)retArray[i] = new BigInteger((String)this.array.get(i));
                     break;
             case 16:
-            case 17: for(int i=0; i<this.length; i++)retArray[i] = Conv.convert_int_to_BigInteger((int)((Character)this.array.get(i)).charValue());
+            case 17: for(int i=0; i<this.length; i++)retArray[i] = Conv.convert_int_to_BigInteger((int) (Character) this.array.get(i));
                     break;
             case 14:
             case 15: throw new IllegalArgumentException("The " + this.typeName[this.type] + " is not a numerical type for which a conversion to BigInteger is meaningful/supported");
@@ -1853,7 +1853,7 @@ public class ArrayMaths{
         Complex[] retArray = Complex.oneDarray(this.length);
         switch(this.type){
             case 0:
-            case 1: for(int i=0; i<this.length; i++)retArray[i] = new Complex(((Double)this.array.get(i)).doubleValue());
+            case 1: for(int i=0; i<this.length; i++)retArray[i] = new Complex((Double) this.array.get(i));
                     break;
             case 2:
             case 3: for(int i=0; i<this.length; i++)retArray[i] = new Complex(((Float)this.array.get(i)).doubleValue());
@@ -1884,12 +1884,12 @@ public class ArrayMaths{
                             retArray[i] = Complex.valueOf(ss);
                         }
                         else{
-                            retArray[i] = new Complex(Double.valueOf(ss));
+                            retArray[i] = new Complex(Double.parseDouble(ss));
                         }
                     }
                     break;
             case 16:
-            case 17: for(int i=0; i<this.length; i++)retArray[i] = new Complex(Conv.convert_int_to_double((int)((Character)this.array.get(i)).charValue()));
+            case 17: for(int i=0; i<this.length; i++)retArray[i] = new Complex(Conv.convert_int_to_double((int) (Character) this.array.get(i)));
                     break;
             default: throw new IllegalArgumentException("Data type not identified by this method");
         }
@@ -1907,7 +1907,7 @@ public class ArrayMaths{
         Phasor[] retArray = Phasor.oneDarray(this.length);
         switch(this.type){
             case 0:
-            case 1: for(int i=0; i<this.length; i++)retArray[i] = new Phasor(((Double)this.array.get(i)).doubleValue());
+            case 1: for(int i=0; i<this.length; i++)retArray[i] = new Phasor((Double) this.array.get(i));
                     break;
             case 2:
             case 3: for(int i=0; i<this.length; i++)retArray[i] = new Phasor(((Float)this.array.get(i)).doubleValue());
@@ -1938,12 +1938,12 @@ public class ArrayMaths{
                             retArray[i] = Phasor.valueOf(ss);
                         }
                         else{
-                            retArray[i] = new Phasor(Double.valueOf(ss));
+                            retArray[i] = new Phasor(Double.parseDouble(ss));
                         }
                     }
                     break;
             case 16:
-            case 17: for(int i=0; i<this.length; i++)retArray[i] = new Phasor(Conv.convert_int_to_double((int)((Character)this.array.get(i)).charValue()));
+            case 17: for(int i=0; i<this.length; i++)retArray[i] = new Phasor(Conv.convert_int_to_double((int) (Character) this.array.get(i)));
                     break;
             default: throw new IllegalArgumentException("Data type not identified by this method");
         }
@@ -1961,7 +1961,7 @@ public class ArrayMaths{
         Character[] retArray = new Character[this.length];
         switch(this.type){
             case 6:
-            case 7: for(int i=0; i<this.length; i++)retArray[i] = new Character((char)(((Integer)this.array.get(i)).intValue()));
+            case 7: for(int i=0; i<this.length; i++)retArray[i] = (char) (((Integer) this.array.get(i)).intValue());
                     break;
             case 16:
             case 17: for(int i=0; i<this.length; i++)retArray[i] = (Character)this.array.get(i);
@@ -1976,7 +1976,7 @@ public class ArrayMaths{
                         }
                     }
                     if(test){
-                        for(int i=0; i<this.length; i++)retArray[i] = new Character(ss[i].charAt(0));
+                        for(int i=0; i<this.length; i++)retArray[i] = ss[i].charAt(0);
                     }
                     else{
                         throw new IllegalArgumentException("The String array elements are too long to be converted to Character");
@@ -2016,7 +2016,7 @@ public class ArrayMaths{
             case 7: for(int i=0; i<this.length; i++)retArray[i] = (char)(((Integer)this.array.get(i)).intValue());
                     break;
             case 16:
-            case 17: for(int i=0; i<this.length; i++)retArray[i] = (((Character)this.array.get(i)).charValue());
+            case 17: for(int i=0; i<this.length; i++)retArray[i] = ((Character) this.array.get(i));
                     break;
             case 18: boolean test = true;
                     String[] ss = new String[this.length];
@@ -2324,7 +2324,7 @@ public class ArrayMaths{
         double[] retArray = new double[end-start+1];
         switch(this.type){
             case 0:
-            case 1: for(int i=start; i<=end; i++)retArray[i-start] = ((Double)this.array.get(i)).doubleValue();
+            case 1: for(int i=start; i<=end; i++)retArray[i-start] = (Double) this.array.get(i);
                     break;
             case 2:
             case 3: for(int i=start; i<=end; i++)retArray[i-start] = Conv.convert_Float_to_double((Float)this.array.get(i));
@@ -2345,10 +2345,10 @@ public class ArrayMaths{
                     break;
             case 13: for(int i=start; i<=end; i++)retArray[i-start] = Conv.convert_BigInteger_to_double((BigInteger)this.array.get(i));
                     break;
-            case 18: for(int i=start; i<=end; i++)retArray[i-start] = Double.valueOf(((String)this.array.get(i)));
+            case 18: for(int i=start; i<=end; i++)retArray[i-start] = Double.parseDouble(((String)this.array.get(i)));
                     break;
             case 16:
-            case 17: for(int i=start; i<=end; i++)retArray[i-start] = Conv.convert_int_to_double((int)((Character)this.array.get(i)).charValue());
+            case 17: for(int i=start; i<=end; i++)retArray[i-start] = Conv.convert_int_to_double((int) (Character) this.array.get(i));
                     break;
             case 14:
             case 15: throw new IllegalArgumentException("The " + this.typeName[this.type] + " is not a numerical type for which a conversion to double is meaningful/supported");
@@ -2386,10 +2386,10 @@ public class ArrayMaths{
                     break;
             case 13: for(int i=start; i<=end; i++)retArray[i-start] = Conv.convert_BigInteger_to_Double((BigInteger)this.array.get(i));
                     break;
-            case 18: for(int i=start; i<=end; i++)retArray[i-start] = new Double((String)this.array.get(i));
+            case 18: for(int i=start; i<=end; i++)retArray[i-start] = Double.valueOf((String)this.array.get(i));
                     break;
             case 16:
-            case 17: for(int i=start; i<=end; i++)retArray[i-start] = Conv.convert_int_to_Double((int)((Character)this.array.get(i)).charValue());
+            case 17: for(int i=start; i<=end; i++)retArray[i-start] = Conv.convert_int_to_Double((int) (Character) this.array.get(i));
                     break;
             case 14:
             case 15: throw new IllegalArgumentException("The " + this.typeName[this.type] + " is not a numerical type for which a conversion to Double is meaningful/supported");
@@ -2427,10 +2427,10 @@ public class ArrayMaths{
                     break;
             case 13: for(int i=start; i<=end; i++)retArray[i-start] = Conv.convert_BigInteger_to_Float((BigInteger)this.array.get(i));
                     break;
-            case 18: for(int i=start; i<=end; i++)retArray[i-start] = new Float((String)this.array.get(i));
+            case 18: for(int i=start; i<=end; i++)retArray[i-start] = Float.valueOf((String)this.array.get(i));
                     break;
             case 16:
-            case 17: for(int i=start; i<=end; i++)retArray[i-start] = Conv.convert_int_to_Float((int)((Character)this.array.get(i)).charValue());
+            case 17: for(int i=start; i<=end; i++)retArray[i-start] = Conv.convert_int_to_Float((int) (Character) this.array.get(i));
                     break;
             case 14:
             case 15:  throw new IllegalArgumentException("The " + this.typeName[this.type] + " is not a numerical type for which a conversion to Float is meaningful/supported");
@@ -2450,7 +2450,7 @@ public class ArrayMaths{
             case 1: for(int i=start; i<=end; i++)retArray[i-start] = Conv.convert_Double_to_float((Double)this.array.get(i));
                     break;
             case 2:
-            case 3: for(int i=start; i<=end; i++)retArray[i-start] = ((Float)this.array.get(i)).floatValue();
+            case 3: for(int i=start; i<=end; i++)retArray[i-start] = (Float) this.array.get(i);
                     break;
             case 4:
             case 5: for(int i=start; i<=end; i++)retArray[i-start] = Conv.convert_Long_to_float((Long)this.array.get(i));
@@ -2468,10 +2468,10 @@ public class ArrayMaths{
                     break;
             case 13: for(int i=start; i<=end; i++)retArray[i-start] = Conv.convert_BigInteger_to_float((BigInteger)this.array.get(i));
                     break;
-            case 18: for(int i=start; i<=end; i++)retArray[i-start] = (new Float((String)this.array.get(i))).floatValue();
+            case 18: for(int i=start; i<=end; i++)retArray[i-start] = Float.valueOf((String) this.array.get(i));
                     break;
             case 16:
-            case 17: for(int i=start; i<=end; i++)retArray[i-start] = Conv.convert_int_to_float((int)((Character)this.array.get(i)).charValue());
+            case 17: for(int i=start; i<=end; i++)retArray[i-start] = Conv.convert_int_to_float((int) (Character) this.array.get(i));
                     break;
             case 14:
             case 15: throw new IllegalArgumentException("The " + this.typeName[this.type] + " is not a numerical type for which a conversion to float is meaningful/supported");
@@ -2494,7 +2494,7 @@ public class ArrayMaths{
             case 3: for(int i=start; i<=end; i++)retArray[i-start] = Conv.convert_Float_to_long((Float)this.array.get(i));
                     break;
             case 4:
-            case 5: for(int i=start; i<=end; i++)retArray[i-start] = ((Long)this.array.get(i)).longValue();
+            case 5: for(int i=start; i<=end; i++)retArray[i-start] = (Long) this.array.get(i);
                     break;
             case 6:
             case 7: for(int i=start; i<=end; i++)retArray[i-start] = Conv.convert_Integer_to_long((Integer)this.array.get(i));
@@ -2509,10 +2509,10 @@ public class ArrayMaths{
                     break;
             case 13: for(int i=start; i<=end; i++)retArray[i-start] = Conv.convert_BigInteger_to_long((BigInteger)this.array.get(i));
                     break;
-            case 18: for(int i=start; i<=end; i++)retArray[i-start] = (new Long((String)this.array.get(i))).longValue();
+            case 18: for(int i=start; i<=end; i++)retArray[i-start] = Long.valueOf((String) this.array.get(i));
                     break;
             case 16:
-            case 17: for(int i=start; i<=end; i++)retArray[i-start] = Conv.convert_int_to_long((int)((Character)this.array.get(i)).charValue());
+            case 17: for(int i=start; i<=end; i++)retArray[i-start] = Conv.convert_int_to_long((int) (Character) this.array.get(i));
                     break;
             case 14:
             case 15:  throw new IllegalArgumentException("The " + this.typeName[this.type] + " is not a numerical type for which a conversion to long is meaningful/supported");
@@ -2550,10 +2550,10 @@ public class ArrayMaths{
                     break;
             case 13: for(int i=start; i<=end; i++)retArray[i-start] = Conv.convert_BigInteger_to_Long((BigInteger)this.array.get(i));
                     break;
-            case 18: for(int i=start; i<=end; i++)retArray[i-start] = new Long((String)this.array.get(i));
+            case 18: for(int i=start; i<=end; i++)retArray[i-start] = Long.valueOf((String)this.array.get(i));
                     break;
             case 16:
-            case 17: for(int i=start; i<=end; i++)retArray[i-start] = Conv.convert_int_to_Long((int)((Character)this.array.get(i)).charValue());
+            case 17: for(int i=start; i<=end; i++)retArray[i-start] = Conv.convert_int_to_Long((int) (Character) this.array.get(i));
                     break;
             case 14:
             case 15: throw new IllegalArgumentException("The " + this.typeName[this.type] + " is not a numerical type for which a conversion to Long is meaningful/supported");
@@ -2592,10 +2592,10 @@ public class ArrayMaths{
                     break;
             case 13: for(int i=start; i<=end; i++)retArray[i-start] = Conv.convert_BigInteger_to_Integer((BigInteger)this.array.get(i));
                     break;
-            case 18: for(int i=start; i<=end; i++)retArray[i-start] = new Integer((String)this.array.get(i));
+            case 18: for(int i=start; i<=end; i++)retArray[i-start] = Integer.valueOf((String)this.array.get(i));
                     break;
              case 16:
-            case 17: for(int i=start; i<=end; i++)retArray[i-start] = new Integer((int)((Character)this.array.get(i)).charValue());
+            case 17: for(int i=start; i<=end; i++)retArray[i-start] = (int) (Character) this.array.get(i);
                     break;
             case 14:
             case 15: throw new IllegalArgumentException("The " + this.typeName[this.type] + " is not a numerical type for which a conversion to Integer is meaningful/supported");
@@ -2621,7 +2621,7 @@ public class ArrayMaths{
             case 5: for(int i=start; i<=end; i++)retArray[i-start] = Conv.convert_Long_to_int((Long)this.array.get(i));
                     break;
             case 6:
-            case 7: for(int i=start; i<=end; i++)retArray[i-start] = ((Integer)this.array.get(i)).intValue();
+            case 7: for(int i=start; i<=end; i++)retArray[i-start] = (Integer) this.array.get(i);
                     break;
             case 8:
             case 9: for(int i=start; i<=end; i++)retArray[i-start] = Conv.convert_Short_to_int((Short)this.array.get(i));
@@ -2633,10 +2633,10 @@ public class ArrayMaths{
                     break;
             case 13: for(int i=start; i<=end; i++)retArray[i-start] = Conv.convert_BigInteger_to_int((BigInteger)this.array.get(i));
                     break;
-            case 18: for(int i=start; i<=end; i++)retArray[i-start] = (new Integer((String)this.array.get(i))).intValue();
+            case 18: for(int i=start; i<=end; i++)retArray[i-start] = Integer.valueOf((String) this.array.get(i));
                     break;
             case 16:
-            case 17: for(int i=start; i<=end; i++)retArray[i-start] = (int)((Character)this.array.get(i)).charValue();
+            case 17: for(int i=start; i<=end; i++)retArray[i-start] = (int) (Character) this.array.get(i);
                     break;
             case 14:
             case 15: throw new IllegalArgumentException("The " + this.typeName[this.type] + " is not a numerical type for which a conversion to int is meaningful/supported");
@@ -2665,7 +2665,7 @@ public class ArrayMaths{
             case 7: for(int i=start; i<=end; i++)retArray[i-start] = Conv.convert_Integer_to_short((Integer)this.array.get(i));
                     break;
             case 8:
-            case 9: for(int i=start; i<=end; i++)retArray[i-start] = ((Short)this.array.get(i)).shortValue();
+            case 9: for(int i=start; i<=end; i++)retArray[i-start] = (Short) this.array.get(i);
                     break;
             case 10:
             case 11: for(int i=start; i<=end; i++)retArray[i-start] = Conv.convert_Byte_to_short((Byte)this.array.get(i));
@@ -2674,10 +2674,10 @@ public class ArrayMaths{
                     break;
             case 13: for(int i=start; i<=end; i++)retArray[i-start] = Conv.convert_BigInteger_to_short((BigInteger)this.array.get(i));
                     break;
-            case 18: for(int i=start; i<=end; i++)retArray[i-start] = (new Short((String)this.array.get(i))).shortValue();
+            case 18: for(int i=start; i<=end; i++)retArray[i-start] = Short.valueOf((String) this.array.get(i));
                     break;
             case 16:
-            case 17: for(int i=start; i<=end; i++)retArray[i-start] = Conv.convert_int_to_short((int)((Character)this.array.get(i)).charValue());
+            case 17: for(int i=start; i<=end; i++)retArray[i-start] = Conv.convert_int_to_short((int) (Character) this.array.get(i));
                     break;
             case 14:
             case 15: throw new IllegalArgumentException("The " + this.typeName[this.type] + " is not a numerical type for which a conversion to short is meaningful/supported");
@@ -2716,10 +2716,10 @@ public class ArrayMaths{
                     break;
             case 13: for(int i=start; i<=end; i++)retArray[i-start] = Conv.convert_BigInteger_to_Short((BigInteger)this.array.get(i));
                     break;
-            case 18: for(int i=start; i<=end; i++)retArray[i-start] = new Short((String)this.array.get(i));
+            case 18: for(int i=start; i<=end; i++)retArray[i-start] = Short.valueOf((String)this.array.get(i));
                     break;
             case 16:
-            case 17: for(int i=start; i<=end; i++)retArray[i-start] = Conv.convert_int_to_Short((int)((Character)this.array.get(i)).charValue());
+            case 17: for(int i=start; i<=end; i++)retArray[i-start] = Conv.convert_int_to_Short((int) (Character) this.array.get(i));
                     break;
             case 14:
             case 15: throw new IllegalArgumentException("The " + this.typeName[this.type] + " is not a numerical type for which a conversion to Short is meaningful/supported");
@@ -2751,16 +2751,16 @@ public class ArrayMaths{
             case 9: for(int i=start; i<=end; i++)retArray[i-start] = Conv.convert_Short_to_byte((Short)this.array.get(i));
                     break;
             case 10:
-            case 11: for(int i=start; i<=end; i++)retArray[i-start] = ((Byte)this.array.get(i)).byteValue();
+            case 11: for(int i=start; i<=end; i++)retArray[i-start] = (Byte) this.array.get(i);
                     break;
             case 12: for(int i=start; i<=end; i++)retArray[i-start] = Conv.convert_BigDecimal_to_byte((BigDecimal)this.array.get(i));
                     break;
             case 13: for(int i=start; i<=end; i++)retArray[i-start] = Conv.convert_BigInteger_to_byte((BigInteger)this.array.get(i));
                     break;
-            case 18: for(int i=start; i<=end; i++)retArray[i-start] = (new Byte((String)this.array.get(i))).byteValue();
+            case 18: for(int i=start; i<=end; i++)retArray[i-start] = Byte.valueOf((String) this.array.get(i));
                     break;
             case 16:
-            case 17: for(int i=start; i<=end; i++)retArray[i-start] = Conv.convert_int_to_byte((int)((Character)this.array.get(i)).charValue());
+            case 17: for(int i=start; i<=end; i++)retArray[i-start] = Conv.convert_int_to_byte((int) (Character) this.array.get(i));
                     break;
             case 14:
             case 15: throw new IllegalArgumentException("The " + this.typeName[this.type] + " is not a numerical type for which a conversion to byte is meaningful/supported");
@@ -2798,10 +2798,10 @@ public class ArrayMaths{
                     break;
             case 13: for(int i=start; i<=end; i++)retArray[i-start] = Conv.convert_BigInteger_to_Byte((BigInteger)this.array.get(i));
                     break;
-            case 18: for(int i=start; i<=end; i++)retArray[i-start] = new Byte((String)this.array.get(i));
+            case 18: for(int i=start; i<=end; i++)retArray[i-start] = Byte.valueOf((String)this.array.get(i));
                     break;
             case 16:
-            case 17: for(int i=start; i<=end; i++)retArray[i-start] = Conv.convert_int_to_Byte((int)((Character)this.array.get(i)).charValue());
+            case 17: for(int i=start; i<=end; i++)retArray[i-start] = Conv.convert_int_to_Byte((int) (Character) this.array.get(i));
                     break;
             case 14:
             case 15: throw new IllegalArgumentException("The " + this.typeName[this.type] + " is not a numerical type for which a conversion to Byte is meaningful/supported");
@@ -2842,7 +2842,7 @@ public class ArrayMaths{
             case 18: for(int i=start; i<=end; i++)retArray[i-start] = new BigDecimal((String)this.array.get(i));
                     break;
             case 16:
-            case 17: for(int i=start; i<=end; i++)retArray[i-start] = Conv.convert_int_to_BigDecimal((int)((Character)this.array.get(i)).charValue());
+            case 17: for(int i=start; i<=end; i++)retArray[i-start] = Conv.convert_int_to_BigDecimal((int) (Character) this.array.get(i));
                     break;
             case 14:
             case 15: throw new IllegalArgumentException("The " + this.typeName[this.type] + " is not a numerical type for which a conversion to BigDecimal is meaningful/supported");
@@ -2883,7 +2883,7 @@ public class ArrayMaths{
             case 18: for(int i=start; i<=end; i++)retArray[i-start] = new BigInteger((String)this.array.get(i));
                     break;
             case 16:
-            case 17: for(int i=start; i<=end; i++)retArray[i-start] = Conv.convert_int_to_BigInteger((int)((Character)this.array.get(i)).charValue());
+            case 17: for(int i=start; i<=end; i++)retArray[i-start] = Conv.convert_int_to_BigInteger((int) (Character) this.array.get(i));
                     break;
             case 14:
             case 15: throw new IllegalArgumentException("The " + this.typeName[this.type] + " is not a numerical type for which a conversion to BigInteger is meaningful/supported");
@@ -2900,7 +2900,7 @@ public class ArrayMaths{
         Complex[] retArray = Complex.oneDarray(this.length);
         switch(this.type){
             case 0:
-            case 1: for(int i=start; i<=end; i++)retArray[i-start] = new Complex(((Double)this.array.get(i)).doubleValue());
+            case 1: for(int i=start; i<=end; i++)retArray[i-start] = new Complex((Double) this.array.get(i));
                     break;
             case 2:
             case 3: for(int i=start; i<=end; i++)retArray[i-start] = new Complex(((Float)this.array.get(i)).doubleValue());
@@ -2931,12 +2931,12 @@ public class ArrayMaths{
                             retArray[i-start] = Complex.valueOf(ss);
                         }
                         else{
-                            retArray[i-start] = new Complex(Double.valueOf(ss));
+                            retArray[i-start] = new Complex(Double.parseDouble(ss));
                         }
                     }
                     break;
             case 16:
-            case 17: for(int i=start; i<=end; i++)retArray[i-start] = new Complex(Conv.convert_int_to_double((int)((Character)this.array.get(i)).charValue()));
+            case 17: for(int i=start; i<=end; i++)retArray[i-start] = new Complex(Conv.convert_int_to_double((int) (Character) this.array.get(i)));
                     break;
             default: throw new IllegalArgumentException("Data type not identified by this method");
         }
@@ -2951,7 +2951,7 @@ public class ArrayMaths{
         Phasor[] retArray = Phasor.oneDarray(this.length);
         switch(this.type){
             case 0:
-            case 1: for(int i=start; i<=end; i++)retArray[i-start] = new Phasor(((Double)this.array.get(i)).doubleValue());
+            case 1: for(int i=start; i<=end; i++)retArray[i-start] = new Phasor((Double) this.array.get(i));
                     break;
             case 2:
             case 3: for(int i=start; i<=end; i++)retArray[i-start] = new Phasor(((Float)this.array.get(i)).doubleValue());
@@ -2982,12 +2982,12 @@ public class ArrayMaths{
                             retArray[i-start] = Phasor.valueOf(ss);
                         }
                         else{
-                            retArray[i-start] = new Phasor(Double.valueOf(ss));
+                            retArray[i-start] = new Phasor(Double.parseDouble(ss));
                         }
                     }
                     break;
             case 16:
-            case 17: for(int i=start; i<=end; i++)retArray[i-start] = new Phasor(Conv.convert_int_to_double((int)((Character)this.array.get(i)).charValue()));
+            case 17: for(int i=start; i<=end; i++)retArray[i-start] = new Phasor(Conv.convert_int_to_double((int) (Character) this.array.get(i)));
                     break;
             default: throw new IllegalArgumentException("Data type not identified by this method");
         }
@@ -3002,7 +3002,7 @@ public class ArrayMaths{
         Character[] retArray = new Character[end-start+1];
         switch(this.type){
             case 6:
-            case 7: for(int i=start; i<=end; i++)retArray[i-start] = new Character((char)(((Integer)this.array.get(i)).intValue()));
+            case 7: for(int i=start; i<=end; i++)retArray[i-start] = (char) (((Integer) this.array.get(i)).intValue());
                     break;
             case 16:
             case 17: for(int i=start; i<=end; i++)retArray[i-start] = (Character)this.array.get(i);
@@ -3017,7 +3017,7 @@ public class ArrayMaths{
                         }
                     }
                     if(test){
-                        for(int i=start; i<=end; i++)retArray[i-start] = new Character(ss[i-start].charAt(0));
+                        for(int i=start; i<=end; i++)retArray[i-start] = ss[i - start].charAt(0);
                     }
                     else{
                         throw new IllegalArgumentException("The String array elements are too long to be converted to Character");
@@ -3054,7 +3054,7 @@ public class ArrayMaths{
             case 7: for(int i=start; i<=end; i++)retArray[i-start] = (char)(((Integer)this.array.get(i)).intValue());
                     break;
             case 16:
-            case 17: for(int i=start; i<=end; i++)retArray[i-start] = (((Character)this.array.get(i)).charValue());
+            case 17: for(int i=start; i<=end; i++)retArray[i-start] = ((Character) this.array.get(i));
                     break;
             case 18: boolean test = true;
                     String[] ss = new String[end-start+1];
@@ -3340,7 +3340,7 @@ public class ArrayMaths{
         switch(aType){
             case 0:
             case 1: double[] arrayD = new double[arraylength];
-                    for(int i=0; i<arraylength; i++)arrayD[i] = ((Double)arrayo[i]).doubleValue();
+                    for(int i=0; i<arraylength; i++)arrayD[i] = (Double) arrayo[i];
                     double amaxD=arrayD[0];
                     double aminD=arrayD[0];
                     maxIndexx = 0;
@@ -3355,12 +3355,12 @@ public class ArrayMaths{
                             minIndexx = i;
                         }
                     }
-                    minmaxx.add(new Double(amaxD));
-                    minmaxx.add(new Double(aminD));
+                    minmaxx.add(amaxD);
+                    minmaxx.add(aminD);
                     break;
             case 4:
             case 5: long[] arrayL = new long[arraylength];
-                    for(int i=0; i<arraylength; i++)arrayL[i] = ((Long)arrayo[i]).longValue();
+                    for(int i=0; i<arraylength; i++)arrayL[i] = (Long) arrayo[i];
                     long amaxL=arrayL[0];
                     long aminL=arrayL[0];
                     maxIndexx = 0;
@@ -3375,12 +3375,12 @@ public class ArrayMaths{
                             minIndexx = i;
                         }
                     }
-                    minmaxx.add(new Long(amaxL));
-                    minmaxx.add(new Long(aminL));
+                    minmaxx.add(amaxL);
+                    minmaxx.add(aminL);
                     break;
             case 2:
             case 3: float[] arrayF = new float[arraylength];
-                    for(int i=0; i<arraylength; i++)arrayF[i] = ((Float)arrayo[i]).floatValue();
+                    for(int i=0; i<arraylength; i++)arrayF[i] = (Float) arrayo[i];
                     float amaxF=arrayF[0];
                     float aminF=arrayF[0];
                     maxIndexx = 0;
@@ -3395,12 +3395,12 @@ public class ArrayMaths{
                             minIndexx = i;
                         }
                     }
-                    minmaxx.add(new Float(amaxF));
-                    minmaxx.add(new Float(aminF));
+                    minmaxx.add(amaxF);
+                    minmaxx.add(aminF);
                     break;
             case 6:
             case 7: int[] arrayI = new int[arraylength];
-                    for(int i=0; i<arraylength; i++)arrayI[i] = ((Integer)arrayo[i]).intValue();
+                    for(int i=0; i<arraylength; i++)arrayI[i] = (Integer) arrayo[i];
                     int amaxI=arrayI[0];
                     int aminI=arrayI[0];
                     maxIndexx = 0;
@@ -3415,12 +3415,12 @@ public class ArrayMaths{
                             minIndexx = i;
                         }
                     }
-                    minmaxx.add(new Integer(amaxI));
-                    minmaxx.add(new Integer(aminI));
+                    minmaxx.add(amaxI);
+                    minmaxx.add(aminI);
                     break;
             case 8:
             case 9: short[] arrayS = new short[arraylength];
-                    for(int i=0; i<arraylength; i++)arrayS[i] = ((Short)arrayo[i]).shortValue();
+                    for(int i=0; i<arraylength; i++)arrayS[i] = (Short) arrayo[i];
                     short amaxS=arrayS[0];
                     short aminS=arrayS[0];
                     maxIndexx = 0;
@@ -3435,12 +3435,12 @@ public class ArrayMaths{
                             minIndexx = i;
                         }
                     }
-                    minmaxx.add(new Short(amaxS));
-                    minmaxx.add(new Short(aminS));
+                    minmaxx.add(amaxS);
+                    minmaxx.add(aminS);
                     break;
             case 10:
             case 11: byte[] arrayB = new byte[arraylength];
-                    for(int i=0; i<arraylength; i++)arrayB[i] = ((Byte)arrayo[i]).byteValue();
+                    for(int i=0; i<arraylength; i++)arrayB[i] = (Byte) arrayo[i];
                     byte amaxB=arrayB[0];
                     byte aminB=arrayB[0];
                     maxIndexx = 0;
@@ -3455,8 +3455,8 @@ public class ArrayMaths{
                             minIndexx = i;
                         }
                     }
-                    minmaxx.add(new Byte(amaxB));
-                    minmaxx.add(new Byte(aminB));
+                    minmaxx.add(amaxB);
+                    minmaxx.add(aminB);
                     break;
             case 12: BigDecimal[] arrayBD = new BigDecimal[arraylength];
                     for(int i=0; i<arraylength; i++)arrayBD[i] = (BigDecimal)arrayo[i];
@@ -3498,7 +3498,7 @@ public class ArrayMaths{
                     break;
             case 16:
             case 17: int[] arrayInt = new int[arraylength];
-                    for(int i=0; i<arraylength; i++)arrayInt[i] = (int)(((Character)arrayo[i]).charValue());
+                    for(int i=0; i<arraylength; i++)arrayInt[i] = (int)((Character) arrayo[i]);
                     int amaxInt=arrayInt[0];
                     int aminInt=arrayInt[0];
                     maxIndexx = 0;
@@ -3513,8 +3513,8 @@ public class ArrayMaths{
                             minIndexx = i;
                         }
                     }
-                    minmaxx.add(new Character((char)amaxInt));
-                    minmaxx.add(new Character((char)aminInt));
+                    minmaxx.add((char) amaxInt);
+                    minmaxx.add((char) aminInt);
                     break;
             case 14:
             case 15:
@@ -3544,7 +3544,7 @@ public class ArrayMaths{
         double max = 0.0D;
         switch(this.type){
             case 0:
-            case 1: max = ((Double)this.minmax.get(0)).doubleValue();
+            case 1: max = (Double) this.minmax.get(0);
                     break;
             case 2:
             case 3: max = Conv.convert_Float_to_double((Float)this.minmax.get(0));
@@ -3582,7 +3582,7 @@ public class ArrayMaths{
 
     public Double getMaximum_as_Double(){
         if(this.suppressMessages)Conv.suppressMessages();
-        Double max = new Double(0.0D);
+        Double max = 0.0D;
         switch(this.type){
             case 0:
             case 1: max = (Double)this.minmax.get(0);
@@ -3624,7 +3624,7 @@ public class ArrayMaths{
 
     public Float getMaximum_as_Float(){
         if(this.suppressMessages)Conv.suppressMessages();
-        Float max = new Float(0.0D);
+        Float max = 0.0f;
         switch(this.type){
             case 0:
             case 1: max = Conv.convert_Double_to_Float((Double)this.minmax.get(0));
@@ -3673,7 +3673,7 @@ public class ArrayMaths{
             case 1: max = Conv.convert_Double_to_float((Double)this.minmax.get(0));
                     break;
             case 2:
-            case 3: max = ((Float)this.minmax.get(0)).floatValue();
+            case 3: max = (Float) this.minmax.get(0);
                     break;
             case 4:
             case 5: max = Conv.convert_Long_to_float((Long)this.minmax.get(0));
@@ -3718,7 +3718,7 @@ public class ArrayMaths{
             case 3: max = Conv.convert_Float_to_long((Float)this.minmax.get(0));
                     break;
             case 4:
-            case 5: max = ((Long)this.minmax.get(0)).longValue();
+            case 5: max = (Long) this.minmax.get(0);
                     break;
             case 6:
             case 7: max = Conv.convert_Integer_to_long((Integer)this.minmax.get(0));
@@ -3751,7 +3751,7 @@ public class ArrayMaths{
 
     public Long getMaximum_as_Long(){
         if(this.suppressMessages)Conv.suppressMessages();
-        Long max = new Long(0L);
+        Long max = 0L;
         switch(this.type){
             case 0:
             case 1: max = Conv.convert_Double_to_Long((Double)this.minmax.get(0));
@@ -3805,7 +3805,7 @@ public class ArrayMaths{
             case 5: max = Conv.convert_Long_to_int((Long)this.minmax.get(0));
                     break;
             case 6:
-            case 7: max = ((Integer)this.minmax.get(0)).intValue();
+            case 7: max = (Integer) this.minmax.get(0);
                     break;
             case 8:
             case 9: max = Conv.convert_Short_to_int((Short)this.minmax.get(0));
@@ -3835,7 +3835,7 @@ public class ArrayMaths{
 
     public Integer getMaximum_as_Integer(){
         if(this.suppressMessages)Conv.suppressMessages();
-        Integer max = new Integer(0);
+        Integer max = 0;
         switch(this.type){
             case 0:
             case 1: max = Conv.convert_Double_to_Integer((Double)this.minmax.get(0));
@@ -3892,7 +3892,7 @@ public class ArrayMaths{
             case 7: max = Conv.convert_Integer_to_short((Integer)this.minmax.get(0));
                     break;
             case 8:
-            case 9: max = ((Short)this.minmax.get(0)).shortValue();
+            case 9: max = (Short) this.minmax.get(0);
                     break;
             case 10:
             case 11: max = Conv.convert_Byte_to_short((Byte)this.minmax.get(0));
@@ -3919,7 +3919,7 @@ public class ArrayMaths{
 
     public Short getMaximum_as_Short(){
         if(this.suppressMessages)Conv.suppressMessages();
-        Short max = new Short((short)0);
+        Short max = (short) 0;
         switch(this.type){
             case 0:
             case 1: max = Conv.convert_Double_to_Short((Double)this.minmax.get(0));
@@ -3979,7 +3979,7 @@ public class ArrayMaths{
             case 9: max = Conv.convert_Short_to_byte((Short)this.minmax.get(0));
                     break;
             case 10:
-            case 11: max = ((Byte)this.minmax.get(0)).byteValue();
+            case 11: max = (Byte) this.minmax.get(0);
                     break;
             case 12: max = Conv.convert_BigDecimal_to_byte((BigDecimal)this.minmax.get(0));
                     break;
@@ -4003,7 +4003,7 @@ public class ArrayMaths{
 
     public Byte getMaximum_as_Byte(){
         if(this.suppressMessages)Conv.suppressMessages();
-        Byte max = new Byte((byte)0);
+        Byte max = (byte) 0;
         switch(this.type){
             case 0:
             case 1: max = Conv.convert_Double_to_Byte((Double)this.minmax.get(0));
@@ -4136,7 +4136,7 @@ public class ArrayMaths{
             case 7: max = (char)((Integer)this.minmax.get(1)).intValue();
                     break;
             case 16:
-            case 17: max = ((Character)this.minmax.get(1)).charValue();
+            case 17: max = (Character) this.minmax.get(1);
                     break;
             case 0:
             case 1:
@@ -4166,10 +4166,10 @@ public class ArrayMaths{
 
     public Character getMaximum_as_Character(){
         if(this.suppressMessages)Conv.suppressMessages();
-        Character max = new Character('\u0000');
+        Character max = '\u0000';
         switch(this.type){
             case 6:
-            case 7: max = new Character((char)((Integer)this.minmax.get(1)).intValue());
+            case 7: max = (char) ((Integer) this.minmax.get(1)).intValue();
                     break;
             case 16:
             case 17: max = (Character)this.minmax.get(1);
@@ -4213,7 +4213,7 @@ public class ArrayMaths{
         double min = 0.0D;
         switch(this.type){
             case 0:
-            case 1: min = ((Double)this.minmax.get(1)).doubleValue();
+            case 1: min = (Double) this.minmax.get(1);
                     break;
             case 2:
             case 3: min = Conv.convert_Float_to_double((Float)this.minmax.get(1));
@@ -4252,7 +4252,7 @@ public class ArrayMaths{
 
     public Double getMinimum_as_Double(){
         if(this.suppressMessages)Conv.suppressMessages();
-        Double min = new Double(0.0D);
+        Double min = 0.0D;
         switch(this.type){
             case 0:
             case 1: min = (Double)this.minmax.get(1);
@@ -4294,7 +4294,7 @@ public class ArrayMaths{
 
     public Float getMinimum_as_Float(){
         if(this.suppressMessages)Conv.suppressMessages();
-        Float min = new Float(0.0D);
+        Float min = 0.0f;
         switch(this.type){
             case 0:
             case 1: min = Conv.convert_Double_to_Float((Double)this.minmax.get(1));
@@ -4342,7 +4342,7 @@ public class ArrayMaths{
             case 1: min = Conv.convert_Double_to_float((Double)this.minmax.get(1));
                     break;
             case 2:
-            case 3: min = ((Float)this.minmax.get(1)).floatValue();
+            case 3: min = (Float) this.minmax.get(1);
                     break;
             case 4:
             case 5: min = Conv.convert_Long_to_float((Long)this.minmax.get(1));
@@ -4387,7 +4387,7 @@ public class ArrayMaths{
             case 3: min = Conv.convert_Float_to_long((Float)this.minmax.get(1));
                     break;
             case 4:
-            case 5: min = ((Long)this.minmax.get(1)).longValue();
+            case 5: min = (Long) this.minmax.get(1);
                     break;
             case 6:
             case 7: min = Conv.convert_Integer_to_long((Integer)this.minmax.get(1));
@@ -4420,7 +4420,7 @@ public class ArrayMaths{
 
     public Long getMinimum_as_Long(){
         if(this.suppressMessages)Conv.suppressMessages();
-        Long min = new Long(0L);
+        Long min = 0L;
         switch(this.type){
             case 0:
             case 1: min = Conv.convert_Double_to_Long((Double)this.minmax.get(1));
@@ -4474,7 +4474,7 @@ public class ArrayMaths{
             case 5: min = Conv.convert_Long_to_int((Long)this.minmax.get(1));
                     break;
             case 6:
-            case 7: min = ((Integer)this.minmax.get(1)).intValue();
+            case 7: min = (Integer) this.minmax.get(1);
                     break;
             case 8:
             case 9: min = Conv.convert_Short_to_int((Short)this.minmax.get(1));
@@ -4504,7 +4504,7 @@ public class ArrayMaths{
 
     public Integer getMinimum_as_Integer(){
         if(this.suppressMessages)Conv.suppressMessages();
-        Integer min = new Integer(0);
+        Integer min = 0;
         switch(this.type){
             case 0:
             case 1: min = Conv.convert_Double_to_Integer((Double)this.minmax.get(1));
@@ -4561,7 +4561,7 @@ public class ArrayMaths{
             case 7: min = Conv.convert_Integer_to_short((Integer)this.minmax.get(1));
                     break;
             case 8:
-            case 9: min = ((Short)this.minmax.get(1)).shortValue();
+            case 9: min = (Short) this.minmax.get(1);
                     break;
             case 10:
             case 11: min = Conv.convert_Byte_to_short((Byte)this.minmax.get(1));
@@ -4588,7 +4588,7 @@ public class ArrayMaths{
 
     public Short getMinimum_as_Short(){
         if(this.suppressMessages)Conv.suppressMessages();
-        Short min = new Short((short)0);
+        Short min = (short) 0;
         switch(this.type){
             case 0:
             case 1: min = Conv.convert_Double_to_Short((Double)this.minmax.get(1));
@@ -4648,7 +4648,7 @@ public class ArrayMaths{
             case 9: min = Conv.convert_Short_to_byte((Short)this.minmax.get(1));
                     break;
             case 10:
-            case 11: min = ((Byte)this.minmax.get(1)).byteValue();
+            case 11: min = (Byte) this.minmax.get(1);
                     break;
             case 12: min = Conv.convert_BigDecimal_to_byte((BigDecimal)this.minmax.get(1));
                     break;
@@ -4672,7 +4672,7 @@ public class ArrayMaths{
 
     public Byte getMinimum_as_Byte(){
         if(this.suppressMessages)Conv.suppressMessages();
-        Byte min = new Byte((byte)0);
+        Byte min = (byte) 0;
         switch(this.type){
             case 0:
             case 1: min = Conv.convert_Double_to_Byte((Double)this.minmax.get(1));
@@ -4804,7 +4804,7 @@ public class ArrayMaths{
             case 7: min = (char)((Integer)this.minmax.get(1)).intValue();
                     break;
             case 16:
-            case 17: min = ((Character)this.minmax.get(1)).charValue();
+            case 17: min = (Character) this.minmax.get(1);
                     break;
             case 0:
             case 1:
@@ -4834,10 +4834,10 @@ public class ArrayMaths{
 
     public Character getMinimum_as_Character(){
         if(this.suppressMessages)Conv.suppressMessages();
-        Character min = new Character('\u0000');
+        Character min = '\u0000';
         switch(this.type){
             case 6:
-            case 7: min = new Character((char)((Integer)this.minmax.get(1)).intValue());
+            case 7: min = (char) ((Integer) this.minmax.get(1)).intValue();
                     break;
             case 16:
             case 17: min = (Character)this.minmax.get(1);
@@ -4940,7 +4940,7 @@ public class ArrayMaths{
             case 9:
             case 10:
             case 11: double[] dd = this.getArray_as_double();
-                    for(int i=0; i<this.length; i++)am.array.add(new Double(dd[i] + constant));
+                    for(int i=0; i<this.length; i++)am.array.add(dd[i] + constant);
                     am.type = 0;
                     break;
             case 12: for(int i=0; i<this.length; i++){
@@ -5008,7 +5008,7 @@ public class ArrayMaths{
             case 9:
             case 10:
             case 11: double[] dd = this.getArray_as_double();
-                    for(int i=0; i<this.length; i++)am.array.add(new Double(dd[i] + arrayD[i]));
+                    for(int i=0; i<this.length; i++)am.array.add(dd[i] + arrayD[i]);
                     am.type = 0;
                     break;
             case 12: for(int i=0; i<this.length; i++){
@@ -5054,7 +5054,7 @@ public class ArrayMaths{
         int nArg = arrayD.length;
         if(this.length!=nArg)throw new IllegalArgumentException("The argument array [length = " + nArg + "], must be of the same length as this instance array [length = " + this.length +"]");
         double[] arrayd = new double[this.length];
-        for(int i=0; i<this.length; i++)arrayd[i] = arrayD[i].doubleValue();
+        for(int i=0; i<this.length; i++)arrayd[i] = arrayD[i];
         return this.plus(arrayd);
     }
 
@@ -5098,7 +5098,7 @@ public class ArrayMaths{
             case 1:
             case 2:
             case 3: double[] dd = this.getArray_as_double();
-                    for(int i=0; i<this.length; i++)am.array.add(new Double(dd[i] + (double)constant));
+                    for(int i=0; i<this.length; i++)am.array.add(dd[i] + (double) constant);
                     am.type = 0;
                     break;
             case 4:
@@ -5111,11 +5111,11 @@ public class ArrayMaths{
             case 11:long max =  this.getMaximum_as_long();
                     long[] ll = this.getArray_as_long();
                     if((Long.MAX_VALUE-max)>=constant){
-                        for(int i=0; i<this.length; i++)am.array.add(new Long(ll[i] + constant));
+                        for(int i=0; i<this.length; i++)am.array.add(ll[i] + constant);
                         am.type = 4;
                     }
                     else{
-                       for(int i=0; i<this.length; i++)am.array.add(new Double((double)ll[i] + (double)constant));
+                       for(int i=0; i<this.length; i++)am.array.add((double) ll[i] + (double) constant);
                        am.type = 0;
                     }
                     break;
@@ -5160,7 +5160,7 @@ public class ArrayMaths{
 
     // add a constant to the elements of the internal array
     public ArrayMaths plus(Long constant){
-        long constantl =  constant.longValue();
+        long constantl = constant;
         return this.plus(constantl);
     }
 
@@ -5179,7 +5179,7 @@ public class ArrayMaths{
             case 1:
             case 2:
             case 3: double[] dd = this.getArray_as_double();
-                    for(int i=0; i<this.length; i++)am.array.add(new Double(dd[i] + (double)arrayL[i]));
+                    for(int i=0; i<this.length; i++)am.array.add(dd[i] + (double) arrayL[i]);
                     am.type = 0;
                     break;
             case 4:
@@ -5194,11 +5194,11 @@ public class ArrayMaths{
                     long max2 = am2.getMaximum_as_long();
                     long[] ll = this.getArray_as_long();
                     if((Long.MAX_VALUE-max1)>=max2){
-                        for(int i=0; i<this.length; i++)am.array.add(new Long(ll[i] + arrayL[i]));
+                        for(int i=0; i<this.length; i++)am.array.add(ll[i] + arrayL[i]);
                         am.type = 4;
                     }
                     else{
-                       for(int i=0; i<this.length; i++)am.array.add(new Double((double)ll[i] + (double)arrayL[i]));
+                       for(int i=0; i<this.length; i++)am.array.add((double) ll[i] + (double) arrayL[i]);
                        am.type = 0;
                     }
                     break;
@@ -5246,7 +5246,7 @@ public class ArrayMaths{
         int nArg = arrayL.length;
         if(this.length!=nArg)throw new IllegalArgumentException("The argument array [length = " + nArg + "], must be of the same length as this instance array [length = " + this.length +"]");
         long[] arrayl = new long[this.length];
-        for(int i=0; i<this.length; i++)arrayl[i] = arrayL[i].longValue();
+        for(int i=0; i<this.length; i++)arrayl[i] = arrayL[i];
         return this.plus(arrayl);
     }
 
@@ -5262,17 +5262,17 @@ public class ArrayMaths{
             case 1:
             case 2:
             case 3: double[] dd = this.getArray_as_double();
-                    for(int i=0; i<this.length; i++)am.array.add(new Double(dd[i] + (double)constant));
+                    for(int i=0; i<this.length; i++)am.array.add(dd[i] + (double) constant);
                     am.type = 0;
                     break;
             case 4:long max =  this.getMaximum_as_long();
                     long[] ll = this.getArray_as_long();
                     if((Long.MAX_VALUE-max)>=constant){
-                        for(int i=0; i<this.length; i++)am.array.add(new Long(ll[i] + constant));
+                        for(int i=0; i<this.length; i++)am.array.add(ll[i] + constant);
                         am.type = 4;
                     }
                     else{
-                       for(int i=0; i<this.length; i++)am.array.add(new Double((double)ll[i] + (double)constant));
+                       for(int i=0; i<this.length; i++)am.array.add((double) ll[i] + (double) constant);
                        am.type = 0;
                     }
                     break;
@@ -5285,11 +5285,11 @@ public class ArrayMaths{
             case 11:int maxi =  this.getMaximum_as_int();
                     int[] lll = this.getArray_as_int();
                     if((Integer.MAX_VALUE-maxi)>=constant){
-                        for(int i=0; i<this.length; i++)am.array.add(new Integer(lll[i] + constant));
+                        for(int i=0; i<this.length; i++)am.array.add(lll[i] + constant);
                         am.type = 6;
                     }
                     else{
-                       for(int i=0; i<this.length; i++)am.array.add(new Double((double)lll[i] + (double)constant));
+                       for(int i=0; i<this.length; i++)am.array.add((double) lll[i] + (double) constant);
                        am.type = 0;
                     }
                     break;
@@ -5335,7 +5335,7 @@ public class ArrayMaths{
 
     // add a constant to the elements of the internal array
     public ArrayMaths plus(Integer constant){
-        int constantl =  constant.intValue();
+        int constantl = constant;
         return this.plus(constantl);
     }
 
@@ -5352,7 +5352,7 @@ public class ArrayMaths{
             case 1:
             case 2:
             case 3: double[] dd = this.getArray_as_double();
-                    for(int i=0; i<this.length; i++)am.array.add(new Double(dd[i] + (double)arrayI[i]));
+                    for(int i=0; i<this.length; i++)am.array.add(dd[i] + (double) arrayI[i]);
                     am.type = 0;
                     break;
             case 4: long max =  this.getMaximum_as_long();
@@ -5360,11 +5360,11 @@ public class ArrayMaths{
                     long max2 = am2.getMaximum_as_long();
                     long[] ll = this.getArray_as_long();
                     if((Long.MAX_VALUE-max)>=max2){
-                        for(int i=0; i<this.length; i++)am.array.add(new Long(ll[i] + arrayI[i]));
+                        for(int i=0; i<this.length; i++)am.array.add(ll[i] + arrayI[i]);
                         am.type = 4;
                     }
                     else{
-                       for(int i=0; i<this.length; i++)am.array.add(new Double((double)ll[i] + (double)arrayI[i]));
+                       for(int i=0; i<this.length; i++)am.array.add((double) ll[i] + (double) arrayI[i]);
                        am.type = 0;
                     }
                     break;
@@ -5379,11 +5379,11 @@ public class ArrayMaths{
                     int maxi2 = am22.getMaximum_as_int();
                     int[] lll = this.getArray_as_int();
                     if((Integer.MAX_VALUE-maxi)>=maxi2){
-                        for(int i=0; i<this.length; i++)am.array.add(new Integer(lll[i] + arrayI[i]));
+                        for(int i=0; i<this.length; i++)am.array.add(lll[i] + arrayI[i]);
                         am.type = 6;
                     }
                     else{
-                       for(int i=0; i<this.length; i++)am.array.add(new Double((double)lll[i] + (double)arrayI[i]));
+                       for(int i=0; i<this.length; i++)am.array.add((double) lll[i] + (double) arrayI[i]);
                        am.type = 0;
                     }
                     break;
@@ -5431,7 +5431,7 @@ public class ArrayMaths{
         int nArg = arrayI.length;
         if(this.length!=nArg)throw new IllegalArgumentException("The argument array [length = " + nArg + "], must be of the same length as this instance array [length = " + this.length +"]");
         int[] arrayl = new int[this.length];
-        for(int i=0; i<this.length; i++)arrayl[i] = arrayI[i].intValue();
+        for(int i=0; i<this.length; i++)arrayl[i] = arrayI[i];
         return this.plus(arrayl);
     }
 
@@ -5447,17 +5447,17 @@ public class ArrayMaths{
             case 1:
             case 2:
             case 3: double[] dd = this.getArray_as_double();
-                    for(int i=0; i<this.length; i++)am.array.add(new Double(dd[i] + (double)constant));
+                    for(int i=0; i<this.length; i++)am.array.add(dd[i] + (double) constant);
                     am.type = 0;
                     break;
             case 4:long max =  this.getMaximum_as_long();
                     long[] ll = this.getArray_as_long();
                     if((Long.MAX_VALUE-max)>=constant){
-                        for(int i=0; i<this.length; i++)am.array.add(new Long(ll[i] + (long)constant));
+                        for(int i=0; i<this.length; i++)am.array.add(ll[i] + (long) constant);
                         am.type = 4;
                     }
                     else{
-                       for(int i=0; i<this.length; i++)am.array.add(new Double((double)ll[i] + (double)constant));
+                       for(int i=0; i<this.length; i++)am.array.add((double) ll[i] + (double) constant);
                        am.type = 0;
                     }
                     break;
@@ -5470,11 +5470,11 @@ public class ArrayMaths{
             case 11:short maxi =  this.getMaximum_as_short();
                     short[] lll = this.getArray_as_short();
                     if((Integer.MAX_VALUE-maxi)>=constant){
-                        for(int i=0; i<this.length; i++)am.array.add(new Integer(lll[i] + (int)constant));
+                        for(int i=0; i<this.length; i++)am.array.add(lll[i] + (int) constant);
                         am.type = 6;
                     }
                     else{
-                       for(int i=0; i<this.length; i++)am.array.add(new Double((double)lll[i] + (double)constant));
+                       for(int i=0; i<this.length; i++)am.array.add((double) lll[i] + (double) constant);
                        am.type = 0;
                     }
                     break;
@@ -5519,7 +5519,7 @@ public class ArrayMaths{
 
     // add a constant to the elements of the internal array
     public ArrayMaths plus(Short constant){
-        short constantl = constant.shortValue();
+        short constantl = constant;
         return this.plus(constantl);
     }
 
@@ -5535,7 +5535,7 @@ public class ArrayMaths{
             case 1:
             case 2:
             case 3: double[] dd = this.getArray_as_double();
-                    for(int i=0; i<this.length; i++)am.array.add(new Double(dd[i] + (double)arrayI[i]));
+                    for(int i=0; i<this.length; i++)am.array.add(dd[i] + (double) arrayI[i]);
                     am.type = 0;
                     break;
             case 4: long max =  this.getMaximum_as_long();
@@ -5543,11 +5543,11 @@ public class ArrayMaths{
                     long max2 = am2.getMaximum_as_long();
                     long[] ll = this.getArray_as_long();
                     if((Long.MAX_VALUE-max)>=max2){
-                        for(int i=0; i<this.length; i++)am.array.add(new Long(ll[i] + (long)arrayI[i]));
+                        for(int i=0; i<this.length; i++)am.array.add(ll[i] + (long) arrayI[i]);
                         am.type = 4;
                     }
                     else{
-                       for(int i=0; i<this.length; i++)am.array.add(new Double((double)ll[i] + (double)arrayI[i]));
+                       for(int i=0; i<this.length; i++)am.array.add((double) ll[i] + (double) arrayI[i]);
                        am.type = 0;
                     }
                     break;
@@ -5562,11 +5562,11 @@ public class ArrayMaths{
                     short maxi2 = am22.getMaximum_as_short();
                     short[] lll = this.getArray_as_short();
                     if((Integer.MAX_VALUE-maxi)>=maxi2){
-                        for(int i=0; i<this.length; i++)am.array.add(new Integer(lll[i] + (int)arrayI[i]));
+                        for(int i=0; i<this.length; i++)am.array.add(lll[i] + (int) arrayI[i]);
                         am.type = 6;
                     }
                     else{
-                       for(int i=0; i<this.length; i++)am.array.add(new Double((double)lll[i] + (double)arrayI[i]));
+                       for(int i=0; i<this.length; i++)am.array.add((double) lll[i] + (double) arrayI[i]);
                        am.type = 0;
                     }
                     break;
@@ -5614,7 +5614,7 @@ public class ArrayMaths{
         int nArg = arrayI.length;
         if(this.length!=nArg)throw new IllegalArgumentException("The argument array [length = " + nArg + "], must be of the same length as this instance array [length = " + this.length +"]");
         short[] arrayl = new short[this.length];
-        for(int i=0; i<this.length; i++)arrayl[i] = arrayI[i].shortValue();
+        for(int i=0; i<this.length; i++)arrayl[i] = arrayI[i];
         return this.plus(arrayl);
     }
 
@@ -5679,17 +5679,17 @@ public class ArrayMaths{
             case 1:
             case 2:
             case 3: double[] dd = this.getArray_as_double();
-                    for(int i=0; i<this.length; i++)am.array.add(new Double(dd[i] + (double)constant));
+                    for(int i=0; i<this.length; i++)am.array.add(dd[i] + (double) constant);
                     am.type = 0;
                     break;
             case 4:long max =  this.getMaximum_as_long();
                     long[] ll = this.getArray_as_long();
                     if((Long.MAX_VALUE-max)>=constant){
-                        for(int i=0; i<this.length; i++)am.array.add(new Long(ll[i] + (long)constant));
+                        for(int i=0; i<this.length; i++)am.array.add(ll[i] + (long) constant);
                         am.type = 4;
                     }
                     else{
-                       for(int i=0; i<this.length; i++)am.array.add(new Double((double)ll[i] + (double)constant));
+                       for(int i=0; i<this.length; i++)am.array.add((double) ll[i] + (double) constant);
                        am.type = 0;
                     }
                     break;
@@ -5702,11 +5702,11 @@ public class ArrayMaths{
             case 11:byte maxi =  this.getMaximum_as_byte();
                     byte[] lll = this.getArray_as_byte();
                     if((Integer.MAX_VALUE-maxi)>=constant){
-                        for(int i=0; i<this.length; i++)am.array.add(new Integer(lll[i] + (int)constant));
+                        for(int i=0; i<this.length; i++)am.array.add(lll[i] + (int) constant);
                         am.type = 6;
                     }
                     else{
-                       for(int i=0; i<this.length; i++)am.array.add(new Double((double)lll[i] + (double)constant));
+                       for(int i=0; i<this.length; i++)am.array.add((double) lll[i] + (double) constant);
                        am.type = 0;
                     }
                     break;
@@ -5751,7 +5751,7 @@ public class ArrayMaths{
 
     // add a constant to the elements of the internal array
     public ArrayMaths plus(Byte constant){
-        byte constantl =  constant.byteValue();
+        byte constantl = constant;
         return this.plus(constantl);
     }
 
@@ -5767,7 +5767,7 @@ public class ArrayMaths{
             case 1:
             case 2:
             case 3: double[] dd = this.getArray_as_double();
-                    for(int i=0; i<this.length; i++)am.array.add(new Double(dd[i] + (double)arrayI[i]));
+                    for(int i=0; i<this.length; i++)am.array.add(dd[i] + (double) arrayI[i]);
                     am.type = 0;
                     break;
             case 4: long max =  this.getMaximum_as_long();
@@ -5775,11 +5775,11 @@ public class ArrayMaths{
                     long max2 = am2.getMaximum_as_long();
                     long[] ll = this.getArray_as_long();
                     if((Long.MAX_VALUE-max)>=max2){
-                        for(int i=0; i<this.length; i++)am.array.add(new Long(ll[i] + (long)arrayI[i]));
+                        for(int i=0; i<this.length; i++)am.array.add(ll[i] + (long) arrayI[i]);
                         am.type = 4;
                     }
                     else{
-                       for(int i=0; i<this.length; i++)am.array.add(new Double((double)ll[i] + (double)arrayI[i]));
+                       for(int i=0; i<this.length; i++)am.array.add((double) ll[i] + (double) arrayI[i]);
                        am.type = 0;
                     }
                     break;
@@ -5794,11 +5794,11 @@ public class ArrayMaths{
                     byte maxi2 = am22.getMaximum_as_byte();
                     byte[] lll = this.getArray_as_byte();
                     if((Integer.MAX_VALUE-maxi)>=maxi2){
-                        for(int i=0; i<this.length; i++)am.array.add(new Integer(lll[i] + (int)arrayI[i]));
+                        for(int i=0; i<this.length; i++)am.array.add(lll[i] + (int) arrayI[i]);
                         am.type = 6;
                     }
                     else{
-                       for(int i=0; i<this.length; i++)am.array.add(new Double((double)lll[i] + (double)arrayI[i]));
+                       for(int i=0; i<this.length; i++)am.array.add((double) lll[i] + (double) arrayI[i]);
                        am.type = 0;
                     }
                     break;
@@ -5846,7 +5846,7 @@ public class ArrayMaths{
         int nArg = arrayI.length;
         if(this.length!=nArg)throw new IllegalArgumentException("The argument array [length = " + nArg + "], must be of the same length as this instance array [length = " + this.length +"]");
         byte[] arrayl = new byte[this.length];
-        for(int i=0; i<this.length; i++)arrayl[i] = arrayI[i].byteValue();
+        for(int i=0; i<this.length; i++)arrayl[i] = arrayI[i];
         return this.plus(arrayl);
     }
 
@@ -6556,7 +6556,7 @@ public class ArrayMaths{
             case 9:
             case 10:
             case 11: double[] dd = this.getArray_as_double();
-                    for(int i=0; i<this.length; i++)am.array.add(new Double(dd[i] - constant));
+                    for(int i=0; i<this.length; i++)am.array.add(dd[i] - constant);
                     am.type = 0;
                     break;
             case 12: for(int i=0; i<this.length; i++){
@@ -6622,7 +6622,7 @@ public class ArrayMaths{
             case 9:
             case 10:
             case 11: double[] dd = this.getArray_as_double();
-                    for(int i=0; i<this.length; i++)am.array.add(new Double(dd[i] - arrayD[i]));
+                    for(int i=0; i<this.length; i++)am.array.add(dd[i] - arrayD[i]);
                     am.type = 0;
                     break;
             case 12: for(int i=0; i<this.length; i++){
@@ -6667,7 +6667,7 @@ public class ArrayMaths{
         int nArg = arrayD.length;
         if(this.length!=nArg)throw new IllegalArgumentException("The argument array [length = " + nArg + "], must be of the same length as this instance array [length = " + this.length +"]");
         double[] arrayd = new double[this.length];
-        for(int i=0; i<this.length; i++)arrayd[i] = arrayD[i].doubleValue();
+        for(int i=0; i<this.length; i++)arrayd[i] = arrayD[i];
         return this.minus(arrayd);
     }
 
@@ -6711,7 +6711,7 @@ public class ArrayMaths{
             case 1:
             case 2:
             case 3: double[] dd = this.getArray_as_double();
-                    for(int i=0; i<this.length; i++)am.array.add(new Double(dd[i] - (double)constant));
+                    for(int i=0; i<this.length; i++)am.array.add(dd[i] - (double) constant);
                     am.type = 0;
                     break;
             case 4:
@@ -6724,11 +6724,11 @@ public class ArrayMaths{
             case 11:long max =  this.getMaximum_as_long();
                     long[] ll = this.getArray_as_long();
                     if((Long.MAX_VALUE-max)>=constant){
-                        for(int i=0; i<this.length; i++)am.array.add(new Long(ll[i] - constant));
+                        for(int i=0; i<this.length; i++)am.array.add(ll[i] - constant);
                         am.type = 4;
                     }
                     else{
-                       for(int i=0; i<this.length; i++)am.array.add(new Double((double)ll[i] - (double)constant));
+                       for(int i=0; i<this.length; i++)am.array.add((double) ll[i] - (double) constant);
                        am.type = 0;
                     }
                     break;
@@ -6771,7 +6771,7 @@ public class ArrayMaths{
 
     // subtract a constant from the elements of the internal array
     public ArrayMaths minus(Long constant){
-        long constantl =  constant.longValue();
+        long constantl = constant;
         return this.minus(constantl);
     }
 
@@ -6790,7 +6790,7 @@ public class ArrayMaths{
             case 1:
             case 2:
             case 3: double[] dd = this.getArray_as_double();
-                    for(int i=0; i<this.length; i++)am.array.add(new Double(dd[i] - (double)arrayL[i]));
+                    for(int i=0; i<this.length; i++)am.array.add(dd[i] - (double) arrayL[i]);
                     am.type = 0;
                     break;
             case 4:
@@ -6805,11 +6805,11 @@ public class ArrayMaths{
                     long max2 = am2.getMaximum_as_long();
                     long[] ll = this.getArray_as_long();
                     if((Long.MAX_VALUE-max1)>=max2){
-                        for(int i=0; i<this.length; i++)am.array.add(new Long(ll[i] - arrayL[i]));
+                        for(int i=0; i<this.length; i++)am.array.add(ll[i] - arrayL[i]);
                         am.type = 4;
                     }
                     else{
-                       for(int i=0; i<this.length; i++)am.array.add(new Double((double)ll[i] - (double)arrayL[i]));
+                       for(int i=0; i<this.length; i++)am.array.add((double) ll[i] - (double) arrayL[i]);
                        am.type = 0;
                     }
                     break;
@@ -6855,7 +6855,7 @@ public class ArrayMaths{
         int nArg = arrayL.length;
         if(this.length!=nArg)throw new IllegalArgumentException("The argument array [length = " + nArg + "], must be of the same length as this instance array [length = " + this.length +"]");
         long[] arrayl = new long[this.length];
-        for(int i=0; i<this.length; i++)arrayl[i] = arrayL[i].longValue();
+        for(int i=0; i<this.length; i++)arrayl[i] = arrayL[i];
         return this.minus(arrayl);
     }
 
@@ -6871,17 +6871,17 @@ public class ArrayMaths{
             case 1:
             case 2:
             case 3: double[] dd = this.getArray_as_double();
-                    for(int i=0; i<this.length; i++)am.array.add(new Double(dd[i] - (double)constant));
+                    for(int i=0; i<this.length; i++)am.array.add(dd[i] - (double) constant);
                     am.type = 0;
                     break;
             case 4:long max =  this.getMaximum_as_long();
                     long[] ll = this.getArray_as_long();
                     if((Long.MAX_VALUE-max)>=constant){
-                        for(int i=0; i<this.length; i++)am.array.add(new Long(ll[i] - constant));
+                        for(int i=0; i<this.length; i++)am.array.add(ll[i] - constant);
                         am.type = 4;
                     }
                     else{
-                       for(int i=0; i<this.length; i++)am.array.add(new Double((double)ll[i] - (double)constant));
+                       for(int i=0; i<this.length; i++)am.array.add((double) ll[i] - (double) constant);
                        am.type = 0;
                     }
                     break;
@@ -6894,11 +6894,11 @@ public class ArrayMaths{
             case 11:int maxi =  this.getMaximum_as_int();
                     int[] lll = this.getArray_as_int();
                     if((Integer.MAX_VALUE-maxi)>=constant){
-                        for(int i=0; i<this.length; i++)am.array.add(new Integer(lll[i] - constant));
+                        for(int i=0; i<this.length; i++)am.array.add(lll[i] - constant);
                         am.type = 6;
                     }
                     else{
-                       for(int i=0; i<this.length; i++)am.array.add(new Double((double)lll[i] - (double)constant));
+                       for(int i=0; i<this.length; i++)am.array.add((double) lll[i] - (double) constant);
                        am.type = 0;
                     }
                     break;
@@ -6941,7 +6941,7 @@ public class ArrayMaths{
 
     // subtract a constant from the elements of the internal array
     public ArrayMaths minus(Integer constant){
-        int constantl =  constant.intValue();
+        int constantl = constant;
         return this.minus(constantl);
     }
 
@@ -6958,7 +6958,7 @@ public class ArrayMaths{
             case 1:
             case 2:
             case 3: double[] dd = this.getArray_as_double();
-                    for(int i=0; i<this.length; i++)am.array.add(new Double(dd[i] - (double)arrayI[i]));
+                    for(int i=0; i<this.length; i++)am.array.add(dd[i] - (double) arrayI[i]);
                     am.type = 0;
                     break;
             case 4: long max =  this.getMaximum_as_long();
@@ -6966,11 +6966,11 @@ public class ArrayMaths{
                     long max2 = am2.getMaximum_as_long();
                     long[] ll = this.getArray_as_long();
                     if((Long.MAX_VALUE-max)>=max2){
-                        for(int i=0; i<this.length; i++)am.array.add(new Long(ll[i] - arrayI[i]));
+                        for(int i=0; i<this.length; i++)am.array.add(ll[i] - arrayI[i]);
                         am.type = 4;
                     }
                     else{
-                       for(int i=0; i<this.length; i++)am.array.add(new Double((double)ll[i] - (double)arrayI[i]));
+                       for(int i=0; i<this.length; i++)am.array.add((double) ll[i] - (double) arrayI[i]);
                        am.type = 0;
                     }
                     break;
@@ -6985,11 +6985,11 @@ public class ArrayMaths{
                     int maxi2 = am22.getMaximum_as_int();
                     int[] lll = this.getArray_as_int();
                     if((Integer.MAX_VALUE-maxi)>=maxi2){
-                        for(int i=0; i<this.length; i++)am.array.add(new Integer(lll[i] - arrayI[i]));
+                        for(int i=0; i<this.length; i++)am.array.add(lll[i] - arrayI[i]);
                         am.type = 6;
                     }
                     else{
-                       for(int i=0; i<this.length; i++)am.array.add(new Double((double)lll[i] - (double)arrayI[i]));
+                       for(int i=0; i<this.length; i++)am.array.add((double) lll[i] - (double) arrayI[i]);
                        am.type = 0;
                     }
                     break;
@@ -7035,7 +7035,7 @@ public class ArrayMaths{
         int nArg = arrayI.length;
         if(this.length!=nArg)throw new IllegalArgumentException("The argument array [length = " + nArg + "], must be of the same length as this instance array [length = " + this.length +"]");
         int[] arrayl = new int[this.length];
-        for(int i=0; i<this.length; i++)arrayl[i] = arrayI[i].intValue();
+        for(int i=0; i<this.length; i++)arrayl[i] = arrayI[i];
         return this.minus(arrayl);
     }
 
@@ -7051,17 +7051,17 @@ public class ArrayMaths{
             case 1:
             case 2:
             case 3: double[] dd = this.getArray_as_double();
-                    for(int i=0; i<this.length; i++)am.array.add(new Double(dd[i] - (double)constant));
+                    for(int i=0; i<this.length; i++)am.array.add(dd[i] - (double) constant);
                     am.type = 0;
                     break;
             case 4:long max =  this.getMaximum_as_long();
                     long[] ll = this.getArray_as_long();
                     if((Long.MAX_VALUE-max)>=constant){
-                        for(int i=0; i<this.length; i++)am.array.add(new Long(ll[i] - (long)constant));
+                        for(int i=0; i<this.length; i++)am.array.add(ll[i] - (long) constant);
                         am.type = 4;
                     }
                     else{
-                       for(int i=0; i<this.length; i++)am.array.add(new Double((double)ll[i] - (double)constant));
+                       for(int i=0; i<this.length; i++)am.array.add((double) ll[i] - (double) constant);
                        am.type = 0;
                     }
                     break;
@@ -7074,11 +7074,11 @@ public class ArrayMaths{
             case 11:short maxi =  this.getMaximum_as_short();
                     short[] lll = this.getArray_as_short();
                     if((Integer.MAX_VALUE-maxi)>=constant){
-                        for(int i=0; i<this.length; i++)am.array.add(new Integer(lll[i] - (int)constant));
+                        for(int i=0; i<this.length; i++)am.array.add(lll[i] - (int) constant);
                         am.type = 6;
                     }
                     else{
-                       for(int i=0; i<this.length; i++)am.array.add(new Double((double)lll[i] - (double)constant));
+                       for(int i=0; i<this.length; i++)am.array.add((double) lll[i] - (double) constant);
                        am.type = 0;
                     }
                     break;
@@ -7121,7 +7121,7 @@ public class ArrayMaths{
 
     // subtract a constant from the elements of the internal array
     public ArrayMaths minus(Short constant){
-        short constantl =  constant.shortValue();
+        short constantl = constant;
         return this.minus(constantl);
     }
 
@@ -7138,7 +7138,7 @@ public class ArrayMaths{
             case 1:
             case 2:
             case 3: double[] dd = this.getArray_as_double();
-                    for(int i=0; i<this.length; i++)am.array.add(new Double(dd[i] - (double)arrayI[i]));
+                    for(int i=0; i<this.length; i++)am.array.add(dd[i] - (double) arrayI[i]);
                     am.type = 0;
                     break;
             case 4: long max =  this.getMaximum_as_long();
@@ -7146,11 +7146,11 @@ public class ArrayMaths{
                     long max2 = am2.getMaximum_as_long();
                     long[] ll = this.getArray_as_long();
                     if((Long.MAX_VALUE-max)>=max2){
-                        for(int i=0; i<this.length; i++)am.array.add(new Long(ll[i] - (long)arrayI[i]));
+                        for(int i=0; i<this.length; i++)am.array.add(ll[i] - (long) arrayI[i]);
                         am.type = 4;
                     }
                     else{
-                       for(int i=0; i<this.length; i++)am.array.add(new Double((double)ll[i] - (double)arrayI[i]));
+                       for(int i=0; i<this.length; i++)am.array.add((double) ll[i] - (double) arrayI[i]);
                        am.type = 0;
                     }
                     break;
@@ -7165,11 +7165,11 @@ public class ArrayMaths{
                     short maxi2 = am22.getMaximum_as_short();
                     short[] lll = this.getArray_as_short();
                     if((Integer.MAX_VALUE-maxi)>=maxi2){
-                        for(int i=0; i<this.length; i++)am.array.add(new Integer(lll[i] - (int)arrayI[i]));
+                        for(int i=0; i<this.length; i++)am.array.add(lll[i] - (int) arrayI[i]);
                         am.type = 6;
                     }
                     else{
-                       for(int i=0; i<this.length; i++)am.array.add(new Double((double)lll[i] - (double)arrayI[i]));
+                       for(int i=0; i<this.length; i++)am.array.add((double) lll[i] - (double) arrayI[i]);
                        am.type = 0;
                     }
                     break;
@@ -7215,7 +7215,7 @@ public class ArrayMaths{
         int nArg = arrayI.length;
         if(this.length!=nArg)throw new IllegalArgumentException("The argument array [length = " + nArg + "], must be of the same length as this instance array [length = " + this.length +"]");
         short[] arrayl = new short[this.length];
-        for(int i=0; i<this.length; i++)arrayl[i] = arrayI[i].shortValue();
+        for(int i=0; i<this.length; i++)arrayl[i] = arrayI[i];
         return this.minus(arrayl);
     }
 
@@ -7278,17 +7278,17 @@ public class ArrayMaths{
             case 1:
             case 2:
             case 3: double[] dd = this.getArray_as_double();
-                    for(int i=0; i<this.length; i++)am.array.add(new Double(dd[i] - (double)constant));
+                    for(int i=0; i<this.length; i++)am.array.add(dd[i] - (double) constant);
                     am.type = 0;
                     break;
             case 4:long max =  this.getMaximum_as_long();
                     long[] ll = this.getArray_as_long();
                     if((Long.MAX_VALUE-max)>=constant){
-                        for(int i=0; i<this.length; i++)am.array.add(new Long(ll[i] - (long)constant));
+                        for(int i=0; i<this.length; i++)am.array.add(ll[i] - (long) constant);
                         am.type = 4;
                     }
                     else{
-                       for(int i=0; i<this.length; i++)am.array.add(new Double((double)ll[i] - (double)constant));
+                       for(int i=0; i<this.length; i++)am.array.add((double) ll[i] - (double) constant);
                        am.type = 0;
                     }
                     break;
@@ -7301,11 +7301,11 @@ public class ArrayMaths{
             case 11:byte maxi =  this.getMaximum_as_byte();
                     byte[] lll = this.getArray_as_byte();
                     if((Integer.MAX_VALUE-maxi)>=constant){
-                        for(int i=0; i<this.length; i++)am.array.add(new Integer(lll[i] - (int)constant));
+                        for(int i=0; i<this.length; i++)am.array.add(lll[i] - (int) constant);
                         am.type = 6;
                     }
                     else{
-                       for(int i=0; i<this.length; i++)am.array.add(new Double((double)lll[i] - (double)constant));
+                       for(int i=0; i<this.length; i++)am.array.add((double) lll[i] - (double) constant);
                        am.type = 0;
                     }
                     break;
@@ -7348,7 +7348,7 @@ public class ArrayMaths{
 
     // subtract a constant from the elements of the internal array
     public ArrayMaths minus(Byte constant){
-        byte constantl =  constant.byteValue();
+        byte constantl = constant;
         return this.minus(constantl);
     }
 
@@ -7365,7 +7365,7 @@ public class ArrayMaths{
             case 1:
             case 2:
             case 3: double[] dd = this.getArray_as_double();
-                    for(int i=0; i<this.length; i++)am.array.add(new Double(dd[i] - (double)arrayI[i]));
+                    for(int i=0; i<this.length; i++)am.array.add(dd[i] - (double) arrayI[i]);
                     am.type = 0;
                     break;
             case 4: long max =  this.getMaximum_as_long();
@@ -7373,11 +7373,11 @@ public class ArrayMaths{
                     long max2 = am2.getMaximum_as_long();
                     long[] ll = this.getArray_as_long();
                     if((Long.MAX_VALUE-max)>=max2){
-                        for(int i=0; i<this.length; i++)am.array.add(new Long(ll[i] - (long)arrayI[i]));
+                        for(int i=0; i<this.length; i++)am.array.add(ll[i] - (long) arrayI[i]);
                         am.type = 4;
                     }
                     else{
-                       for(int i=0; i<this.length; i++)am.array.add(new Double((double)ll[i] - (double)arrayI[i]));
+                       for(int i=0; i<this.length; i++)am.array.add((double) ll[i] - (double) arrayI[i]);
                        am.type = 0;
                     }
                     break;
@@ -7392,11 +7392,11 @@ public class ArrayMaths{
                     byte maxi2 = am22.getMaximum_as_byte();
                     byte[] lll = this.getArray_as_byte();
                     if((Integer.MAX_VALUE-maxi)>=maxi2){
-                        for(int i=0; i<this.length; i++)am.array.add(new Integer(lll[i] - (int)arrayI[i]));
+                        for(int i=0; i<this.length; i++)am.array.add(lll[i] - (int) arrayI[i]);
                         am.type = 6;
                     }
                     else{
-                       for(int i=0; i<this.length; i++)am.array.add(new Double((double)lll[i] - (double)arrayI[i]));
+                       for(int i=0; i<this.length; i++)am.array.add((double) lll[i] - (double) arrayI[i]);
                        am.type = 0;
                     }
                     break;
@@ -7442,7 +7442,7 @@ public class ArrayMaths{
         int nArg = arrayI.length;
         if(this.length!=nArg)throw new IllegalArgumentException("The argument array [length = " + nArg + "], must be of the same length as this instance array [length = " + this.length +"]");
         byte[] arrayl = new byte[this.length];
-        for(int i=0; i<this.length; i++)arrayl[i] = arrayI[i].byteValue();
+        for(int i=0; i<this.length; i++)arrayl[i] = arrayI[i];
         return this.minus(arrayl);
     }
 
@@ -7889,7 +7889,7 @@ public class ArrayMaths{
             case 9:
             case 10:
             case 11: double[] dd = this.getArray_as_double();
-                    for(int i=0; i<this.length; i++)am.array.add(new Double(dd[i]*constant));
+                    for(int i=0; i<this.length; i++)am.array.add(dd[i] * constant);
                     am.type = 0;
                     break;
             case 12: for(int i=0; i<this.length; i++){
@@ -7957,7 +7957,7 @@ public class ArrayMaths{
             case 1:
             case 2:
             case 3: double[] dd = this.getArray_as_double();
-                    for(int i=0; i<this.length; i++)am.array.add(new Double(dd[i]*(double)constant));
+                    for(int i=0; i<this.length; i++)am.array.add(dd[i] * (double) constant);
                     am.type = 0;
                     break;
             case 4:
@@ -7970,11 +7970,11 @@ public class ArrayMaths{
             case 11:long max =  this.getMaximum_as_long();
                     long[] ll = this.getArray_as_long();
                     if((Long.MAX_VALUE-max)>=constant){
-                        for(int i=0; i<this.length; i++)am.array.add(new Long(ll[i]*constant));
+                        for(int i=0; i<this.length; i++)am.array.add(ll[i] * constant);
                         am.type = 4;
                     }
                     else{
-                       for(int i=0; i<this.length; i++)am.array.add(new Double((double)ll[i]*(double)constant));
+                       for(int i=0; i<this.length; i++)am.array.add((double) ll[i] * (double) constant);
                        am.type = 0;
                     }
                     break;
@@ -8017,7 +8017,7 @@ public class ArrayMaths{
 
     // multiply the elements of the internal array by a constant
     public ArrayMaths times(Long constant){
-        long constantl =  constant.longValue();
+        long constantl = constant;
         return this.times(constantl);
     }
 
@@ -8033,17 +8033,17 @@ public class ArrayMaths{
             case 1:
             case 2:
             case 3: double[] dd = this.getArray_as_double();
-                    for(int i=0; i<this.length; i++)am.array.add(new Double(dd[i]*(double)constant));
+                    for(int i=0; i<this.length; i++)am.array.add(dd[i] * (double) constant);
                     am.type = 0;
                     break;
             case 4:long max =  this.getMaximum_as_long();
                     long[] ll = this.getArray_as_long();
                     if((Long.MAX_VALUE-max)>=constant){
-                        for(int i=0; i<this.length; i++)am.array.add(new Long(ll[i]*constant));
+                        for(int i=0; i<this.length; i++)am.array.add(ll[i] * constant);
                         am.type = 4;
                     }
                     else{
-                       for(int i=0; i<this.length; i++)am.array.add(new Double((double)ll[i]*(double)constant));
+                       for(int i=0; i<this.length; i++)am.array.add((double) ll[i] * (double) constant);
                        am.type = 0;
                     }
                     break;
@@ -8056,11 +8056,11 @@ public class ArrayMaths{
             case 11:int maxi =  this.getMaximum_as_int();
                     int[] lll = this.getArray_as_int();
                     if((Integer.MAX_VALUE-maxi)>=constant){
-                        for(int i=0; i<this.length; i++)am.array.add(new Integer(lll[i]*constant));
+                        for(int i=0; i<this.length; i++)am.array.add(lll[i] * constant);
                         am.type = 6;
                     }
                     else{
-                       for(int i=0; i<this.length; i++)am.array.add(new Double((double)lll[i]*(double)constant));
+                       for(int i=0; i<this.length; i++)am.array.add((double) lll[i] * (double) constant);
                        am.type = 0;
                     }
                     break;
@@ -8103,7 +8103,7 @@ public class ArrayMaths{
 
     // multiply the elements of the internal array by a constant
     public ArrayMaths times(Integer constant){
-        int constantl =  constant.intValue();
+        int constantl = constant;
         return this.times(constantl);
     }
 
@@ -8119,17 +8119,17 @@ public class ArrayMaths{
             case 1:
             case 2:
             case 3: double[] dd = this.getArray_as_double();
-                    for(int i=0; i<this.length; i++)am.array.add(new Double(dd[i]*(double)constant));
+                    for(int i=0; i<this.length; i++)am.array.add(dd[i] * (double) constant);
                     am.type = 0;
                     break;
             case 4:long max =  this.getMaximum_as_long();
                     long[] ll = this.getArray_as_long();
                     if((Long.MAX_VALUE-max)>=constant){
-                        for(int i=0; i<this.length; i++)am.array.add(new Long(ll[i]*(long)constant));
+                        for(int i=0; i<this.length; i++)am.array.add(ll[i] * (long) constant);
                         am.type = 4;
                     }
                     else{
-                       for(int i=0; i<this.length; i++)am.array.add(new Double((double)ll[i]*(double)constant));
+                       for(int i=0; i<this.length; i++)am.array.add((double) ll[i] * (double) constant);
                        am.type = 0;
                     }
                     break;
@@ -8142,11 +8142,11 @@ public class ArrayMaths{
             case 11:short maxi =  this.getMaximum_as_short();
                     short[] lll = this.getArray_as_short();
                     if((Integer.MAX_VALUE-maxi)>=constant){
-                        for(int i=0; i<this.length; i++)am.array.add(new Integer(lll[i]*(int)constant));
+                        for(int i=0; i<this.length; i++)am.array.add(lll[i] * (int) constant);
                         am.type = 6;
                     }
                     else{
-                       for(int i=0; i<this.length; i++)am.array.add(new Double((double)lll[i]*(double)constant));
+                       for(int i=0; i<this.length; i++)am.array.add((double) lll[i] * (double) constant);
                        am.type = 0;
                     }
                     break;
@@ -8189,7 +8189,7 @@ public class ArrayMaths{
 
     // multiply the elements of the internal array by a constant
     public ArrayMaths times(Short constant){
-        short constantl =  constant.shortValue();
+        short constantl = constant;
         return this.times(constantl);
     }
 
@@ -8252,17 +8252,17 @@ public class ArrayMaths{
             case 1:
             case 2:
             case 3: double[] dd = this.getArray_as_double();
-                    for(int i=0; i<this.length; i++)am.array.add(new Double(dd[i]*(double)constant));
+                    for(int i=0; i<this.length; i++)am.array.add(dd[i] * (double) constant);
                     am.type = 0;
                     break;
             case 4:long max =  this.getMaximum_as_long();
                     long[] ll = this.getArray_as_long();
                     if((Long.MAX_VALUE-max)>=constant){
-                        for(int i=0; i<this.length; i++)am.array.add(new Long(ll[i]*(long)constant));
+                        for(int i=0; i<this.length; i++)am.array.add(ll[i] * (long) constant);
                         am.type = 4;
                     }
                     else{
-                       for(int i=0; i<this.length; i++)am.array.add(new Double((double)ll[i]*(double)constant));
+                       for(int i=0; i<this.length; i++)am.array.add((double) ll[i] * (double) constant);
                        am.type = 0;
                     }
                     break;
@@ -8275,11 +8275,11 @@ public class ArrayMaths{
             case 11:byte maxi =  this.getMaximum_as_byte();
                     byte[] lll = this.getArray_as_byte();
                     if((Integer.MAX_VALUE-maxi)>=constant){
-                        for(int i=0; i<this.length; i++)am.array.add(new Integer(lll[i]*(int)constant));
+                        for(int i=0; i<this.length; i++)am.array.add(lll[i] * (int) constant);
                         am.type = 6;
                     }
                     else{
-                       for(int i=0; i<this.length; i++)am.array.add(new Double((double)lll[i]*(double)constant));
+                       for(int i=0; i<this.length; i++)am.array.add((double) lll[i] * (double) constant);
                        am.type = 0;
                     }
                     break;
@@ -8322,7 +8322,7 @@ public class ArrayMaths{
 
     // multiply the elements of the internal array by a constant
     public ArrayMaths times(Byte constant){
-        byte constantl =  constant.byteValue();
+        byte constantl = constant;
         return this.times(constantl);
     }
 
@@ -8478,7 +8478,7 @@ public class ArrayMaths{
             case 9:
             case 10:
             case 11: double[] dd = this.getArray_as_double();
-                    for(int i=0; i<this.length; i++)am.array.add(new Double(dd[i]/constant));
+                    for(int i=0; i<this.length; i++)am.array.add(dd[i] / constant);
                     am.type = 0;
                     break;
             case 12: for(int i=0; i<this.length; i++){
@@ -8546,7 +8546,7 @@ public class ArrayMaths{
             case 1:
             case 2:
             case 3: double[] dd = this.getArray_as_double();
-                    for(int i=0; i<this.length; i++)am.array.add(new Double(dd[i]/(double)constant));
+                    for(int i=0; i<this.length; i++)am.array.add(dd[i] / (double) constant);
                     am.type = 0;
                     break;
             case 4:
@@ -8559,11 +8559,11 @@ public class ArrayMaths{
             case 11:long max =  this.getMaximum_as_long();
                     long[] ll = this.getArray_as_long();
                     if((Long.MAX_VALUE-max)>=constant){
-                        for(int i=0; i<this.length; i++)am.array.add(new Long(ll[i]/constant));
+                        for(int i=0; i<this.length; i++)am.array.add(ll[i] / constant);
                         am.type = 4;
                     }
                     else{
-                       for(int i=0; i<this.length; i++)am.array.add(new Double((double)ll[i]/(double)constant));
+                       for(int i=0; i<this.length; i++)am.array.add((double) ll[i] / (double) constant);
                        am.type = 0;
                     }
                     break;
@@ -8606,7 +8606,7 @@ public class ArrayMaths{
 
     // divide the elements of the internal array by a constant
     public ArrayMaths over(Long constant){
-        long constantl =  constant.longValue();
+        long constantl = constant;
         return this.over(constantl);
     }
 
@@ -8623,12 +8623,12 @@ public class ArrayMaths{
             case 1:
             case 2:
             case 3: double[] dd = this.getArray_as_double();
-                    for(int i=0; i<this.length; i++)am.array.add(new Double(dd[i]/(double)constant));
+                    for(int i=0; i<this.length; i++)am.array.add(dd[i] / (double) constant);
                     am.type = 0;
                     break;
             case 4:long max =  this.getMaximum_as_long();
                     long[] ll = this.getArray_as_long();
-                    for(int i=0; i<this.length; i++)am.array.add(new Long(ll[i]/constant));
+                    for(int i=0; i<this.length; i++)am.array.add(ll[i] / constant);
                     am.type = 4;
                     break;
             case 5:
@@ -8639,7 +8639,7 @@ public class ArrayMaths{
             case 10:
             case 11:int maxi =  this.getMaximum_as_int();
                     int[] lll = this.getArray_as_int();
-                    for(int i=0; i<this.length; i++)am.array.add(new Integer(lll[i]/constant));
+                    for(int i=0; i<this.length; i++)am.array.add(lll[i] / constant);
                     am.type = 6;
                     break;
             case 12: for(int i=0; i<this.length; i++){
@@ -8681,7 +8681,7 @@ public class ArrayMaths{
 
     // divide the elements of the internal array by a constant
     public ArrayMaths over(Integer constant){
-        int constantl =  constant.intValue();
+        int constantl = constant;
         return this.over(constantl);
     }
 
@@ -8697,12 +8697,12 @@ public class ArrayMaths{
             case 1:
             case 2:
             case 3: double[] dd = this.getArray_as_double();
-                    for(int i=0; i<this.length; i++)am.array.add(new Double(dd[i]/(double)constant));
+                    for(int i=0; i<this.length; i++)am.array.add(dd[i] / (double) constant);
                     am.type = 0;
                     break;
             case 4:long max =  this.getMaximum_as_long();
                     long[] ll = this.getArray_as_long();
-                    for(int i=0; i<this.length; i++)am.array.add(new Long(ll[i]/(long)constant));
+                    for(int i=0; i<this.length; i++)am.array.add(ll[i] / (long) constant);
                     am.type = 4;
                     break;
             case 5:
@@ -8713,7 +8713,7 @@ public class ArrayMaths{
             case 10:
             case 11:short maxi =  this.getMaximum_as_short();
                     short[] lll = this.getArray_as_short();
-                    for(int i=0; i<this.length; i++)am.array.add(new Integer(lll[i]/(int)constant));
+                    for(int i=0; i<this.length; i++)am.array.add(lll[i] / (int) constant);
                     am.type = 6;
                     break;
             case 12: for(int i=0; i<this.length; i++){
@@ -8755,7 +8755,7 @@ public class ArrayMaths{
 
     // divide the elements of the internal array by a constant
     public ArrayMaths over(Short constant){
-        short constantl =  constant.shortValue();
+        short constantl = constant;
         return this.over(constantl);
     }
 
@@ -8818,12 +8818,12 @@ public class ArrayMaths{
             case 1:
             case 2:
             case 3: double[] dd = this.getArray_as_double();
-                    for(int i=0; i<this.length; i++)am.array.add(new Double(dd[i]/(double)constant));
+                    for(int i=0; i<this.length; i++)am.array.add(dd[i] / (double) constant);
                     am.type = 0;
                     break;
             case 4: long max =  this.getMaximum_as_long();
                     long[] ll = this.getArray_as_long();
-                    for(int i=0; i<this.length; i++)am.array.add(new Long(ll[i]/(long)constant));
+                    for(int i=0; i<this.length; i++)am.array.add(ll[i] / (long) constant);
                     am.type = 4;
                     break;
             case 5:
@@ -8834,7 +8834,7 @@ public class ArrayMaths{
             case 10:
             case 11:byte maxi =  this.getMaximum_as_byte();
                     byte[] lll = this.getArray_as_byte();
-                    for(int i=0; i<this.length; i++)am.array.add(new Double((double)lll[i]/(double)constant));
+                    for(int i=0; i<this.length; i++)am.array.add((double) lll[i] / (double) constant);
                     am.type = 0;
                     break;
             case 12: for(int i=0; i<this.length; i++){
@@ -8876,7 +8876,7 @@ public class ArrayMaths{
 
     // divide the elements of the internal array by a constant
     public ArrayMaths over(Byte constant){
-        byte constantl =  constant.byteValue();
+        byte constantl = constant;
         return this.over(constantl);
     }
 
@@ -9016,32 +9016,32 @@ public class ArrayMaths{
         switch(this.type){
             case 0:
             case 1:double[] dd = this.getArray_as_double();
-                   for(int i=0; i<this.length; i++)am.array.add(new Double(Fmath.truncate(dd[i], n)));
+                   for(int i=0; i<this.length; i++)am.array.add(Fmath.truncate(dd[i], n));
                    am.type = this.type;
                    break;
             case 2:
             case 3:float[] ff = this.getArray_as_float();
-                   for(int i=0; i<this.length; i++)am.array.add(new Float(Fmath.truncate(ff[i], n)));
+                   for(int i=0; i<this.length; i++)am.array.add(Fmath.truncate(ff[i], n));
                    am.type = this.type;
                    break;
             case 4:
             case 5:long[] ll = this.getArray_as_long();
-                   for(int i=0; i<this.length; i++)am.array.add(new Long(ll[i]));
+                   for(int i=0; i<this.length; i++)am.array.add(ll[i]);
                    am.type = this.type;
                    break;
             case 6:
             case 7:int[] ii = this.getArray_as_int();
-                   for(int i=0; i<this.length; i++)am.array.add(new Long(ii[i]));
+                   for(int i=0; i<this.length; i++)am.array.add((long) ii[i]);
                    am.type = this.type;
                    break;
             case 8:
             case 9:short[] ss = this.getArray_as_short();
-                   for(int i=0; i<this.length; i++)am.array.add(new Short(ss[i]));
+                   for(int i=0; i<this.length; i++)am.array.add(ss[i]);
                    am.type = this.type;
                    break;
             case 10:
             case 11:byte[] bb = this.getArray_as_byte();
-                   for(int i=0; i<this.length; i++)am.array.add(new Byte(bb[i]));
+                   for(int i=0; i<this.length; i++)am.array.add(bb[i]);
                    am.type = this.type;
                    break;
             case 12:BigDecimal[] bd = this.getArray_as_BigDecimal();
@@ -9062,7 +9062,7 @@ public class ArrayMaths{
                    break;
             case 16:
             case 17:char[] ch = this.getArray_as_char();
-                   for(int i=0; i<this.length; i++)am.array.add(new Character(ch[i]));
+                   for(int i=0; i<this.length; i++)am.array.add(ch[i]);
                    am.type = this.type;
                    break;
             case 18: String[] st = this.getArray_as_String();
@@ -9090,32 +9090,32 @@ public class ArrayMaths{
         switch(this.type){
             case 0:
             case 1:double[] dd = this.getArray_as_double();
-                   for(int i=0; i<this.length; i++)am.array.add(new Double(Math.floor(dd[i])));
+                   for(int i=0; i<this.length; i++)am.array.add(Math.floor(dd[i]));
                    am.type = this.type;
                    break;
             case 2:
             case 3:float[] ff = this.getArray_as_float();
-                   for(int i=0; i<this.length; i++)am.array.add(new Float(Math.floor(ff[i])));
+                   for(int i=0; i<this.length; i++)am.array.add((float) Math.floor(ff[i]));
                    am.type = this.type;
                    break;
             case 4:
             case 5:long[] ll = this.getArray_as_long();
-                   for(int i=0; i<this.length; i++)am.array.add(new Long(ll[i]));
+                   for(int i=0; i<this.length; i++)am.array.add(ll[i]);
                    am.type = this.type;
                    break;
             case 6:
             case 7:int[] ii = this.getArray_as_int();
-                   for(int i=0; i<this.length; i++)am.array.add(new Long(ii[i]));
+                   for(int i=0; i<this.length; i++)am.array.add((long) ii[i]);
                    am.type = this.type;
                    break;
             case 8:
             case 9:short[] ss = this.getArray_as_short();
-                   for(int i=0; i<this.length; i++)am.array.add(new Short(ss[i]));
+                   for(int i=0; i<this.length; i++)am.array.add(ss[i]);
                    am.type = this.type;
                    break;
             case 10:
             case 11:byte[] bb = this.getArray_as_byte();
-                   for(int i=0; i<this.length; i++)am.array.add(new Byte(bb[i]));
+                   for(int i=0; i<this.length; i++)am.array.add(bb[i]);
                    am.type = this.type;
                    break;
             case 12:BigDecimal[] bd = this.getArray_as_BigDecimal();
@@ -9136,7 +9136,7 @@ public class ArrayMaths{
                    break;
             case 16:
             case 17:char[] ch = this.getArray_as_char();
-                   for(int i=0; i<this.length; i++)am.array.add(new Character(ch[i]));
+                   for(int i=0; i<this.length; i++)am.array.add(ch[i]);
                    am.type = this.type;
                    break;
             case 18: String[] st = this.getArray_as_String();
@@ -9164,32 +9164,32 @@ public class ArrayMaths{
         switch(this.type){
             case 0:
             case 1:double[] dd = this.getArray_as_double();
-                   for(int i=0; i<this.length; i++)am.array.add(new Double(Math.ceil(dd[i])));
+                   for(int i=0; i<this.length; i++)am.array.add(Math.ceil(dd[i]));
                    am.type = this.type;
                    break;
             case 2:
             case 3:float[] ff = this.getArray_as_float();
-                   for(int i=0; i<this.length; i++)am.array.add(new Float(Math.ceil(ff[i])));
+                   for(int i=0; i<this.length; i++)am.array.add((float) Math.ceil(ff[i]));
                    am.type = this.type;
                    break;
             case 4:
             case 5:long[] ll = this.getArray_as_long();
-                   for(int i=0; i<this.length; i++)am.array.add(new Long(ll[i]));
+                   for(int i=0; i<this.length; i++)am.array.add(ll[i]);
                    am.type = this.type;
                    break;
             case 6:
             case 7:int[] ii = this.getArray_as_int();
-                   for(int i=0; i<this.length; i++)am.array.add(new Long(ii[i]));
+                   for(int i=0; i<this.length; i++)am.array.add((long) ii[i]);
                    am.type = this.type;
                    break;
             case 8:
             case 9:short[] ss = this.getArray_as_short();
-                   for(int i=0; i<this.length; i++)am.array.add(new Short(ss[i]));
+                   for(int i=0; i<this.length; i++)am.array.add(ss[i]);
                    am.type = this.type;
                    break;
             case 10:
             case 11:byte[] bb = this.getArray_as_byte();
-                   for(int i=0; i<this.length; i++)am.array.add(new Byte(bb[i]));
+                   for(int i=0; i<this.length; i++)am.array.add(bb[i]);
                    am.type = this.type;
                    break;
             case 12:BigDecimal[] bd = this.getArray_as_BigDecimal();
@@ -9210,7 +9210,7 @@ public class ArrayMaths{
                    break;
             case 16:
             case 17:char[] ch = this.getArray_as_char();
-                   for(int i=0; i<this.length; i++)am.array.add(new Character(ch[i]));
+                   for(int i=0; i<this.length; i++)am.array.add(ch[i]);
                    am.type = this.type;
                    break;
             case 18: String[] st = this.getArray_as_String();
@@ -9238,32 +9238,32 @@ public class ArrayMaths{
         switch(this.type){
             case 0:
             case 1:double[] dd = this.getArray_as_double();
-                   for(int i=0; i<this.length; i++)am.array.add(new Double(Math.rint(dd[i])));
+                   for(int i=0; i<this.length; i++)am.array.add(Math.rint(dd[i]));
                    am.type = this.type;
                    break;
             case 2:
             case 3:float[] ff = this.getArray_as_float();
-                   for(int i=0; i<this.length; i++)am.array.add(new Float(Math.rint(ff[i])));
+                   for(int i=0; i<this.length; i++)am.array.add((float) Math.rint(ff[i]));
                    am.type = this.type;
                    break;
             case 4:
             case 5:long[] ll = this.getArray_as_long();
-                   for(int i=0; i<this.length; i++)am.array.add(new Long(ll[i]));
+                   for(int i=0; i<this.length; i++)am.array.add(ll[i]);
                    am.type = this.type;
                    break;
             case 6:
             case 7:int[] ii = this.getArray_as_int();
-                   for(int i=0; i<this.length; i++)am.array.add(new Long(ii[i]));
+                   for(int i=0; i<this.length; i++)am.array.add((long) ii[i]);
                    am.type = this.type;
                    break;
             case 8:
             case 9:short[] ss = this.getArray_as_short();
-                   for(int i=0; i<this.length; i++)am.array.add(new Short(ss[i]));
+                   for(int i=0; i<this.length; i++)am.array.add(ss[i]);
                    am.type = this.type;
                    break;
             case 10:
             case 11:byte[] bb = this.getArray_as_byte();
-                   for(int i=0; i<this.length; i++)am.array.add(new Byte(bb[i]));
+                   for(int i=0; i<this.length; i++)am.array.add(bb[i]);
                    am.type = this.type;
                    break;
             case 12:BigDecimal[] bd = this.getArray_as_BigDecimal();
@@ -9284,7 +9284,7 @@ public class ArrayMaths{
                    break;
             case 16:
             case 17:char[] ch = this.getArray_as_char();
-                   for(int i=0; i<this.length; i++)am.array.add(new Character(ch[i]));
+                   for(int i=0; i<this.length; i++)am.array.add(ch[i]);
                    am.type = this.type;
                    break;
             case 18: String[] st = this.getArray_as_String();
@@ -9351,7 +9351,7 @@ public class ArrayMaths{
             case 16:
             case 17:
             case 18: double[] dd = this.getArray_as_double();
-                     for(int i=0; i<this.length; i++)am.array.add(new Double(Math.log(dd[i])));
+                     for(int i=0; i<this.length; i++)am.array.add(Math.log(dd[i]));
                      am.type = 1;
                      break;
             case 14: Complex[] cc = this.getArray_as_Complex();
@@ -9397,7 +9397,7 @@ public class ArrayMaths{
             case 16:
             case 17:
             case 18: double[] dd = this.getArray_as_double();
-                     for(int i=0; i<this.length; i++)am.array.add(new Double(Fmath.log2(dd[i])));
+                     for(int i=0; i<this.length; i++)am.array.add(Fmath.log2(dd[i]));
                      am.type = 1;
                      break;
             case 14: Complex[] cc = this.getArray_as_Complex();
@@ -9443,7 +9443,7 @@ public class ArrayMaths{
             case 16:
             case 17:
             case 18: double[] dd = this.getArray_as_double();
-                     for(int i=0; i<this.length; i++)am.array.add(new Double(Math.log10(dd[i])));
+                     for(int i=0; i<this.length; i++)am.array.add(Math.log10(dd[i]));
                      am.type = 1;
                      break;
             case 14: Complex[] cc = this.getArray_as_Complex();
@@ -9488,7 +9488,7 @@ public class ArrayMaths{
             case 16:
             case 17:
             case 18: double[] dd = this.getArray_as_double();
-                     for(int i=0; i<this.length; i++)am.array.add(new Double(Math.pow(10.0, dd[i])));
+                     for(int i=0; i<this.length; i++)am.array.add(Math.pow(10.0, dd[i]));
                      am.type = 1;
                      break;
             case 14: Complex[] cc = this.getArray_as_Complex();
@@ -9534,7 +9534,7 @@ public class ArrayMaths{
             case 16:
             case 17:
             case 18: double[] dd = this.getArray_as_double();
-                     for(int i=0; i<this.length; i++)am.array.add(new Double(dd[i]*Fmath.log2(dd[i])));
+                     for(int i=0; i<this.length; i++)am.array.add(dd[i] * Fmath.log2(dd[i]));
                      am.type = 1;
                      break;
             case 14: Complex[] cc = this.getArray_as_Complex();
@@ -9580,7 +9580,7 @@ public class ArrayMaths{
             case 16:
             case 17:
             case 18: double[] dd = this.getArray_as_double();
-                     for(int i=0; i<this.length; i++)am.array.add(new Double(dd[i]*Math.log(dd[i])));
+                     for(int i=0; i<this.length; i++)am.array.add(dd[i] * Math.log(dd[i]));
                      am.type = 1;
                      break;
             case 14: Complex[] cc = this.getArray_as_Complex();
@@ -9626,7 +9626,7 @@ public class ArrayMaths{
             case 16:
             case 17:
             case 18: double[] dd = this.getArray_as_double();
-                     for(int i=0; i<this.length; i++)am.array.add(new Double(dd[i]*Math.log10(dd[i])));
+                     for(int i=0; i<this.length; i++)am.array.add(dd[i] * Math.log10(dd[i]));
                      am.type = 1;
                      break;
             case 14: Complex[] cc = this.getArray_as_Complex();
@@ -9691,7 +9691,7 @@ public class ArrayMaths{
             case 16:
             case 17:
             case 18: double[] dd = this.getArray_as_double();
-                     for(int i=0; i<this.length; i++)am.array.add(new Double(Math.sqrt(dd[i])));
+                     for(int i=0; i<this.length; i++)am.array.add(Math.sqrt(dd[i]));
                      am.type = 1;
                      break;
             case 14: Complex[] cc = this.getArray_as_Complex();
@@ -9737,7 +9737,7 @@ public class ArrayMaths{
             case 16:
             case 17:
             case 18: double[] dd = this.getArray_as_double();
-                     for(int i=0; i<this.length; i++)am.array.add(new Double(1.0D/Math.sqrt(dd[i])));
+                     for(int i=0; i<this.length; i++)am.array.add(1.0D / Math.sqrt(dd[i]));
                      am.type = 1;
                      break;
             case 14: Complex[] cc = this.getArray_as_Complex();
@@ -9769,32 +9769,32 @@ public class ArrayMaths{
         switch(this.type){
             case 0:
             case 1: double[] dd = this.getArray_as_double();
-                     for(int i=0; i<this.length; i++)am.array.add(new Double(Math.abs(dd[i])));
+                     for(int i=0; i<this.length; i++)am.array.add(Math.abs(dd[i]));
                      am.type = this.type;
                      break;
             case 2:
             case 3: float[] ff = this.getArray_as_float();
-                     for(int i=0; i<this.length; i++)am.array.add(new Float(Math.abs(ff[i])));
+                     for(int i=0; i<this.length; i++)am.array.add(Math.abs(ff[i]));
                      am.type = this.type;
                      break;
             case 4:
             case 5: long[] ll = this.getArray_as_long();
-                     for(int i=0; i<this.length; i++)am.array.add(new Long(Math.abs(ll[i])));
+                     for(int i=0; i<this.length; i++)am.array.add(Math.abs(ll[i]));
                      am.type = this.type;
                      break;
             case 6:
             case 7: int[] ii1 = this.getArray_as_int();
-                     for(int i=0; i<this.length; i++)am.array.add(new Integer(Math.abs(ii1[i])));
+                     for(int i=0; i<this.length; i++)am.array.add(Math.abs(ii1[i]));
                      am.type = this.type;
                      break;
             case 8:
             case 9: int[] ii2 = this.getArray_as_int();
-                     for(int i=0; i<this.length; i++)am.array.add(new Short((short)Math.abs(ii2[i])));
+                     for(int i=0; i<this.length; i++)am.array.add((short) Math.abs(ii2[i]));
                      am.type = this.type;
                      break;
             case 10:
             case 11: int[] ii3 = this.getArray_as_int();
-                     for(int i=0; i<this.length; i++)am.array.add(new Byte((byte)Math.abs(ii3[i])));
+                     for(int i=0; i<this.length; i++)am.array.add((byte) Math.abs(ii3[i]));
                      am.type = this.type;
                      break;
             case 12: BigDecimal[] bd = this.getArray_as_BigDecimal();
@@ -9815,11 +9815,11 @@ public class ArrayMaths{
                     break;
             case 16:
             case 17: int[] ii4 = this.getArray_as_int();
-                     for(int i=0; i<this.length; i++)am.array.add(new Integer(Math.abs(ii4[i])));
+                     for(int i=0; i<this.length; i++)am.array.add(Math.abs(ii4[i]));
                      am.type = this.type;
                      break;
             case 18: double[] dd2 = this.getArray_as_double();
-                     for(int i=0; i<this.length; i++)am.array.add(new Double(Math.abs(dd2[i])));
+                     for(int i=0; i<this.length; i++)am.array.add(Math.abs(dd2[i]));
                      am.type = 1;
                      break;
             default: throw new IllegalArgumentException("Data type not identified by this method");
@@ -9858,7 +9858,7 @@ public class ArrayMaths{
             case 16:
             case 17:
             case 18: double[] dd = this.getArray_as_double();
-                     for(int i=0; i<this.length; i++)am.array.add(new Double(Math.exp(dd[i])));
+                     for(int i=0; i<this.length; i++)am.array.add(Math.exp(dd[i]));
                      am.type = 1;
                      break;
             case 14: Complex[] cc = this.getArray_as_Complex();
@@ -9902,7 +9902,7 @@ public class ArrayMaths{
             case 16:
             case 17:
             case 18: double[] dd = this.getArray_as_double();
-                     for(int i=0; i<this.length; i++)am.array.add(new Double(1.0D/dd[i]));
+                     for(int i=0; i<this.length; i++)am.array.add(1.0D / dd[i]);
                      am.type = 1;
                      break;
             case 12:
@@ -9953,7 +9953,7 @@ public class ArrayMaths{
             case 16:
             case 17:
             case 18: double[] dd = this.getArray_as_double();
-                     for(int i=0; i<this.length; i++)am.array.add(new Double(Math.pow(dd[i], n)));
+                     for(int i=0; i<this.length; i++)am.array.add(Math.pow(dd[i], n));
                      am.type = 1;
                      break;
             case 12: BigDecimal[] bd = this.getArray_as_BigDecimal();
@@ -10015,7 +10015,7 @@ public class ArrayMaths{
             case 16:
             case 17:
             case 18: double[] dd = this.getArray_as_double();
-                     for(int i=0; i<this.length; i++)am.array.add(new Double(Math.pow(dd[i], n)));
+                     for(int i=0; i<this.length; i++)am.array.add(Math.pow(dd[i], n));
                      am.type = 1;
                      break;
             case 14: Complex[] cc = this.getArray_as_Complex();
@@ -10064,7 +10064,7 @@ public class ArrayMaths{
             case 16:
             case 17:
             case 18: double[] dd = this.getArray_as_double();
-                     for(int i=0; i<this.length; i++)am.array.add(new Double(Math.pow(dd[i], n)));
+                     for(int i=0; i<this.length; i++)am.array.add(Math.pow(dd[i], n));
                      am.type = 1;
                      break;
             case 12: BigDecimal[] bd = this.getArray_as_BigDecimal();
@@ -10156,32 +10156,32 @@ public class ArrayMaths{
             case 16:
             case 17:
             case 18:double[] dd = this.getArray_as_double();
-                    for(int i=0; i<this.length; i++)am.array.add(new Double(-dd[i]));
+                    for(int i=0; i<this.length; i++)am.array.add(-dd[i]);
                     am.type = 1;
                     break;
             case 2:
             case 3: float[] ff = this.getArray_as_float();
-                    for(int i=0; i<this.length; i++)am.array.add(new Float(-ff[i]));
+                    for(int i=0; i<this.length; i++)am.array.add(-ff[i]);
                     am.type = 3;
                     break;
             case 4:
             case 5: long[] ll = this.getArray_as_long();
-                    for(int i=0; i<this.length; i++)am.array.add(new Long(-ll[i]));
+                    for(int i=0; i<this.length; i++)am.array.add(-ll[i]);
                     am.type = 5;
                     break;
             case 6:
             case 7: int[] ii = this.getArray_as_int();
-                    for(int i=0; i<this.length; i++)am.array.add(new Integer(-ii[i]));
+                    for(int i=0; i<this.length; i++)am.array.add(-ii[i]);
                     am.type = 7;
                     break;
             case 8:
             case 9: short[] ss = this.getArray_as_short();
-                    for(int i=0; i<this.length; i++)am.array.add(new Short((short)(-ss[i])));
+                    for(int i=0; i<this.length; i++)am.array.add((short) (-ss[i]));
                     am.type = 9;
                     break;
             case 10:
             case 11: byte[] bb = this.getArray_as_byte();
-                    for(int i=0; i<this.length; i++)am.array.add(new Byte((byte)(-bb[i])));
+                    for(int i=0; i<this.length; i++)am.array.add((byte) (-bb[i]));
                     am.type = 11;
                     break;
             case 12: BigDecimal[] bd = this.getArray_as_BigDecimal();
@@ -10226,7 +10226,7 @@ public class ArrayMaths{
             case 18: double[] dd = this.getArray_as_double();
                     double sum = 0.0D;
                     for(int i=0; i<this.length; i++)sum += dd[i];
-                    this.summ.add(new Double(sum));
+                    this.summ.add(sum);
                     break;
             case 4:
             case 5:
@@ -10248,11 +10248,11 @@ public class ArrayMaths{
                         double[] dd2 = this.getArray_as_double();
                         double sum2 = 0.0D;
                         for(int i=0; i<this.length; i++)sum2 += dd2[i];
-                        this.summ.add(new Double(sum2));
+                        this.summ.add(sum2);
                         this.sumlongToDouble = true;
                     }
                     else{
-                        this.summ.add(new Long(suml));
+                        this.summ.add(suml);
                     }
                     break;
             case 12: BigDecimal[] bd = this.getArray_as_BigDecimal();
@@ -10308,7 +10308,7 @@ public class ArrayMaths{
             case 1:
             case 2:
             case 3:
-            case 18: sum = ((Double)this.summ.get(0)).doubleValue();
+            case 18: sum = (Double) this.summ.get(0);
                     break;
             case 4:
             case 5:
@@ -10320,7 +10320,7 @@ public class ArrayMaths{
             case 11:
             case 16:
             case 17: if(this.sumlongToDouble){
-                        sum = ((Double)this.summ.get(0)).doubleValue();
+                        sum = (Double) this.summ.get(0);
                     }
                     else{
                         sum = Conv.convert_Long_to_double((Long)this.summ.get(0));
@@ -10347,7 +10347,7 @@ public class ArrayMaths{
     public Double getSum_as_Double(){
         if(this.suppressMessages)Conv.suppressMessages();
         if(!this.sumDone)this.calcSum();
-        Double sum = new Double(0.0D);
+        Double sum = 0.0D;
         switch(this.type){
             case 0:
             case 1:
@@ -10437,7 +10437,7 @@ public class ArrayMaths{
     public Float getSum_as_Float(){
         if(this.suppressMessages)Conv.suppressMessages();
         if(!this.sumDone)this.calcSum();
-        Float sum = new Float(0.0F);
+        Float sum = 0.0F;
         switch(this.type){
             case 0:
             case 1:
@@ -10528,7 +10528,7 @@ public class ArrayMaths{
     public Long getSum_as_Long(){
         if(this.suppressMessages)Conv.suppressMessages();
         if(!this.sumDone)this.calcSum();
-        Long sum = new Long(0L);
+        Long sum = 0L;
         switch(this.type){
             case 0:
             case 1:
@@ -10619,7 +10619,7 @@ public class ArrayMaths{
     public Integer getSum_as_Integer(){
         if(this.suppressMessages)Conv.suppressMessages();
         if(!this.sumDone)this.calcSum();
-        Integer sum = new Integer(0);
+        Integer sum = 0;
         switch(this.type){
             case 0:
             case 1:
@@ -10709,7 +10709,7 @@ public class ArrayMaths{
     public Short getSum_as_Short(){
         if(this.suppressMessages)Conv.suppressMessages();
         if(!this.sumDone)this.calcSum();
-        Short sum = new Short((short)0);
+        Short sum = (short) 0;
         switch(this.type){
             case 0:
             case 1:
@@ -10800,7 +10800,7 @@ public class ArrayMaths{
     public Byte getSum_as_Byte(){
         if(this.suppressMessages)Conv.suppressMessages();
         if(!this.sumDone)this.calcSum();
-        Byte sum = new Byte((byte)0);
+        Byte sum = (byte) 0;
         switch(this.type){
             case 0:
             case 1:
@@ -10943,7 +10943,7 @@ public class ArrayMaths{
             case 1:
             case 2:
             case 3:
-            case 18: sum = new Complex(((Double)this.summ.get(0)).doubleValue());
+            case 18: sum = new Complex((Double) this.summ.get(0));
                     break;
             case 4:
             case 5:
@@ -10955,7 +10955,7 @@ public class ArrayMaths{
             case 11:
             case 16:
             case 17: if(this.sumlongToDouble){
-                        sum = new Complex(((Double)this.summ.get(0)).doubleValue());
+                        sum = new Complex((Double) this.summ.get(0));
                     }
                     else{
                         sum = new Complex(((Long)this.summ.get(0)).doubleValue());
@@ -10989,7 +10989,7 @@ public class ArrayMaths{
             case 1:
             case 2:
             case 3:
-            case 18: sum = new Phasor(((Double)this.summ.get(0)).doubleValue());
+            case 18: sum = new Phasor((Double) this.summ.get(0));
                     break;
             case 4:
             case 5:
@@ -11001,7 +11001,7 @@ public class ArrayMaths{
             case 11:
             case 16:
             case 17: if(this.sumlongToDouble){
-                        sum = new Phasor(((Double)this.summ.get(0)).doubleValue());
+                        sum = new Phasor((Double) this.summ.get(0));
                     }
                     else{
                         sum = new Phasor(((Long)this.summ.get(0)).doubleValue());
@@ -11034,7 +11034,7 @@ public class ArrayMaths{
             case 1:
             case 2:
             case 3:
-            case 18: sum = Double.toString(((Double)this.summ.get(0)).doubleValue());
+            case 18: sum = Double.toString((Double) this.summ.get(0));
                     break;
             case 4:
             case 5:
@@ -11046,7 +11046,7 @@ public class ArrayMaths{
             case 11:
             case 16:
             case 17: if(this.sumlongToDouble){
-                        sum = Double.toString(((Double)this.summ.get(0)).doubleValue());
+                        sum = Double.toString((Double) this.summ.get(0));
                     }
                     else{
                         sum = Double.toString(((Long)this.summ.get(0)).doubleValue());
@@ -11077,7 +11077,7 @@ public class ArrayMaths{
             case 18: double[] dd = this.getArray_as_double();
                     double product= 1.0D;
                     for(int i=0; i<this.length; i++)product*= dd[i];
-                    this.productt.add(new Double(product));
+                    this.productt.add(product);
                     break;
             case 4:
             case 5:
@@ -11099,11 +11099,11 @@ public class ArrayMaths{
                         double[] dd2 = this.getArray_as_double();
                         double product2 = 1.0D;
                         for(int i=0; i<this.length; i++)product2 *= dd2[i];
-                        this.productt.add(new Double(product2));
+                        this.productt.add(product2);
                         this.sumlongToDouble = true;
                     }
                     else{
-                        this.productt.add(new Long(productl));
+                        this.productt.add(productl);
                     }
                     break;
             case 12: BigDecimal[] bd = this.getArray_as_BigDecimal();
@@ -11158,7 +11158,7 @@ public class ArrayMaths{
             case 1:
             case 2:
             case 3:
-            case 18: product= ((Double)this.productt.get(0)).doubleValue();
+            case 18: product= (Double) this.productt.get(0);
                     break;
             case 4:
             case 5:
@@ -11170,7 +11170,7 @@ public class ArrayMaths{
             case 11:
             case 16:
             case 17: if(this.productlongToDouble){
-                        product= ((Double)this.productt.get(0)).doubleValue();
+                        product= (Double) this.productt.get(0);
                     }
                     else{
                         product= Conv.convert_Long_to_double((Long)this.productt.get(0));
@@ -11197,7 +11197,7 @@ public class ArrayMaths{
     public Double getProduct_as_Double(){
         if(this.suppressMessages)Conv.suppressMessages();
         if(!this.productDone)this.calcProduct();
-        Double product= new Double(0.0D);
+        Double product= 0.0D;
         switch(this.type){
             case 0:
             case 1:
@@ -11288,7 +11288,7 @@ public class ArrayMaths{
     public Float getProduct_as_Float(){
         if(this.suppressMessages)Conv.suppressMessages();
         if(!this.productDone)this.calcProduct();
-        Float product= new Float(0.0F);
+        Float product= 0.0F;
         switch(this.type){
             case 0:
             case 1:
@@ -11379,7 +11379,7 @@ public class ArrayMaths{
     public Long getProduct_as_Long(){
         if(this.suppressMessages)Conv.suppressMessages();
         if(!this.productDone)this.calcProduct();
-        Long product= new Long(0L);
+        Long product= 0L;
         switch(this.type){
             case 0:
             case 1:
@@ -11469,7 +11469,7 @@ public class ArrayMaths{
     public Integer getProduct_as_Integer(){
         if(this.suppressMessages)Conv.suppressMessages();
         if(!this.productDone)this.calcProduct();
-        Integer product= new Integer(0);
+        Integer product= 0;
         switch(this.type){
             case 0:
             case 1:
@@ -11559,7 +11559,7 @@ public class ArrayMaths{
     public Short getProduct_as_Short(){
         if(this.suppressMessages)Conv.suppressMessages();
         if(!this.productDone)this.calcProduct();
-        Short product= new Short((short)0);
+        Short product= (short) 0;
         switch(this.type){
             case 0:
             case 1:
@@ -11649,7 +11649,7 @@ public class ArrayMaths{
     public Byte getProduct_as_Byte(){
         if(this.suppressMessages)Conv.suppressMessages();
         if(!this.productDone)this.calcProduct();
-        Byte product= new Byte((byte)0);
+        Byte product= (byte) 0;
         switch(this.type){
             case 0:
             case 1:
@@ -11791,7 +11791,7 @@ public class ArrayMaths{
             case 1:
             case 2:
             case 3:
-            case 18: product= new Complex(((Double)this.productt.get(0)).doubleValue());
+            case 18: product= new Complex((Double) this.productt.get(0));
                     break;
             case 4:
             case 5:
@@ -11803,7 +11803,7 @@ public class ArrayMaths{
             case 11:
             case 16:
             case 17: if(this.productlongToDouble){
-                        product= new Complex(((Double)this.productt.get(0)).doubleValue());
+                        product= new Complex((Double) this.productt.get(0));
                     }
                     else{
                         product= new Complex(((Long)this.productt.get(0)).doubleValue());
@@ -11836,7 +11836,7 @@ public class ArrayMaths{
             case 1:
             case 2:
             case 3:
-            case 18: product= new Phasor(((Double)this.productt.get(0)).doubleValue());
+            case 18: product= new Phasor((Double) this.productt.get(0));
                     break;
             case 4:
             case 5:
@@ -11848,7 +11848,7 @@ public class ArrayMaths{
             case 11:
             case 16:
             case 17: if(this.productlongToDouble){
-                        product= new Phasor(((Double)this.productt.get(0)).doubleValue());
+                        product= new Phasor((Double) this.productt.get(0));
                     }
                     else{
                         product= new Phasor(((Long)this.productt.get(0)).doubleValue());
@@ -11881,7 +11881,7 @@ public class ArrayMaths{
             case 1:
             case 2:
             case 3:
-            case 18: product= Double.toString(((Double)this.productt.get(0)).doubleValue());
+            case 18: product= Double.toString((Double) this.productt.get(0));
                     break;
             case 4:
             case 5:
@@ -11893,7 +11893,7 @@ public class ArrayMaths{
             case 11:
             case 16:
             case 17: if(this.productlongToDouble){
-                        product= Double.toString(((Double)this.productt.get(0)).doubleValue());
+                        product= Double.toString((Double) this.productt.get(0));
                     }
                     else{
                         product= Double.toString(((Long)this.productt.get(0)).doubleValue());
@@ -12239,20 +12239,20 @@ public class ArrayMaths{
 
             al = new ArrayList<Integer>();
             jj = iStart;
-            al.add(new Integer(jj));
+            al.add(jj);
             for(int i=1; i<=n; i++){
                 jj++;
                 if(test[i]!=test[i-1]){
-                    al.add(new Integer(jj-1));
-                    al.add(new Integer(jj));
+                    al.add(jj - 1);
+                    al.add(jj);
                 }
             }
-            al.add(new Integer(iEnd));
+            al.add(iEnd);
 
             int nSub = al.size();
             for(int i=0; i<nSub; i+=2){
-                int vs = (al.get(i)).intValue();
-                int ve = (al.get(i+1)).intValue();
+                int vs = al.get(i);
+                int ve = al.get(i + 1);
                 if((ve-vs+1)>1)this.indexSort(ii+1, vs, ve);
             }
         }
@@ -12505,7 +12505,7 @@ public class ArrayMaths{
                      double[] zz = new double[am.length];
                      for(int i=0; i<this.length; i++)zz[i] = yy[i];
                      for(int i=0; i<xlength; i++)zz[i+this.length] = xx[i];
-                     for(int i=0; i<am.length; i++)am.array.add(new Double(zz[i]));
+                     for(int i=0; i<am.length; i++)am.array.add(zz[i]);
                      am.type = 1;
                      break;
             case 12:
@@ -12561,7 +12561,7 @@ public class ArrayMaths{
 
      public ArrayMaths concatenate(Double[] xx){
         double[] dd = new double[xx.length];
-        for(int i=0; i<xx.length; i++)dd[i] = xx[i].doubleValue();
+        for(int i=0; i<xx.length; i++)dd[i] = xx[i];
         return this.concatenate(dd);
      }
 
@@ -12582,7 +12582,7 @@ public class ArrayMaths{
                    double[] zz = new double[am.length];
                    for(int i=0; i<this.length; i++)zz[i] = yy[i];
                    for(int i=0; i<xlength; i++)zz[i+this.length] = (double)xx[i];
-                   for(int i=0; i<am.length; i++)am.array.add(new Double(zz[i]));
+                   for(int i=0; i<am.length; i++)am.array.add(zz[i]);
                    am.type = 1;
                    break;
             case 4:
@@ -12598,7 +12598,7 @@ public class ArrayMaths{
                      float[] gg = new float[am.length];
                      for(int i=0; i<this.length; i++)gg[i] = ff[i];
                      for(int i=0; i<xlength; i++)gg[i+this.length] = xx[i];
-                     for(int i=0; i<am.length; i++)am.array.add(new Float(gg[i]));
+                     for(int i=0; i<am.length; i++)am.array.add(gg[i]);
                      am.type = 3;
                      break;
             case 12:
@@ -12655,7 +12655,7 @@ public class ArrayMaths{
     // concatenates two arrays
     public ArrayMaths concatenate(Float[] xx){
         float[] dd = new float[xx.length];
-        for(int i=0; i<xx.length; i++)dd[i] = xx[i].floatValue();
+        for(int i=0; i<xx.length; i++)dd[i] = xx[i];
         return this.concatenate(dd);
      }
 
@@ -12675,7 +12675,7 @@ public class ArrayMaths{
                    double[] zz = new double[am.length];
                    for(int i=0; i<this.length; i++)zz[i] = yy[i];
                    for(int i=0; i<xlength; i++)zz[i+this.length] = (double)xx[i];
-                   for(int i=0; i<am.length; i++)am.array.add(new Double(zz[i]));
+                   for(int i=0; i<am.length; i++)am.array.add(zz[i]);
                    am.type = 1;
                    break;
             case 4:
@@ -12691,7 +12691,7 @@ public class ArrayMaths{
                      long[] mm = new long[am.length];
                      for(int i=0; i<this.length; i++)mm[i] = ll[i];
                      for(int i=0; i<xlength; i++)mm[i+this.length] = xx[i];
-                     for(int i=0; i<am.length; i++)am.array.add(new Long(mm[i]));
+                     for(int i=0; i<am.length; i++)am.array.add(mm[i]);
                      am.type = 3;
                      break;
             case 12: BigDecimal[] bd1 = this.getArray_as_BigDecimal();
@@ -12759,7 +12759,7 @@ public class ArrayMaths{
     // concatenates two arrays
     public ArrayMaths concatenate(Long[] xx){
         long[] dd = new long[xx.length];
-        for(int i=0; i<xx.length; i++)dd[i] = xx[i].longValue();
+        for(int i=0; i<xx.length; i++)dd[i] = xx[i];
         return this.concatenate(dd);
      }
 
@@ -12773,7 +12773,7 @@ public class ArrayMaths{
     // concatenates two arrays
     public ArrayMaths concatenate(Integer[] xx){
         int[] dd = new int[xx.length];
-        for(int i=0; i<xx.length; i++)dd[i] = xx[i].intValue();
+        for(int i=0; i<xx.length; i++)dd[i] = xx[i];
         return this.concatenate(dd);
     }
 
@@ -12787,7 +12787,7 @@ public class ArrayMaths{
     // concatenates two arrays
     public ArrayMaths concatenate(Short[] xx){
         short[] dd = new short[xx.length];
-        for(int i=0; i<xx.length; i++)dd[i] = xx[i].shortValue();
+        for(int i=0; i<xx.length; i++)dd[i] = xx[i];
         return this.concatenate(dd);
     }
 
@@ -12801,7 +12801,7 @@ public class ArrayMaths{
     // concatenates two arrays
     public ArrayMaths concatenate(Byte[] xx){
         byte[] dd = new byte[xx.length];
-        for(int i=0; i<xx.length; i++)dd[i] = xx[i].byteValue();
+        for(int i=0; i<xx.length; i++)dd[i] = xx[i];
         return this.concatenate(dd);
     }
 
@@ -13121,7 +13121,7 @@ public class ArrayMaths{
                    double[] zz = new double[am.length];
                    for(int i=0; i<this.length; i++)zz[i] = yy[i];
                    for(int i=0; i<xlength; i++)zz[i+this.length] = (double)xx[i];
-                   for(int i=0; i<am.length; i++)am.array.add(new Double(zz[i]));
+                   for(int i=0; i<am.length; i++)am.array.add(zz[i]);
                    am.type = 1;
                    break;
             case 4:
@@ -13135,7 +13135,7 @@ public class ArrayMaths{
                      long[] mm = new long[am.length];
                      for(int i=0; i<this.length; i++)mm[i] = ll[i];
                      for(int i=0; i<xlength; i++)mm[i+this.length] = xx[i];
-                     for(int i=0; i<am.length; i++)am.array.add(new Long(mm[i]));
+                     for(int i=0; i<am.length; i++)am.array.add(mm[i]);
                      am.type = 3;
                      break;
             case 12: BigDecimal[] bd1 = this.getArray_as_BigDecimal();
@@ -13185,7 +13185,7 @@ public class ArrayMaths{
                      char[] dh = new char[am.length];
                      for(int i=0; i<this.length; i++)dh[i] = ch[i];
                      for(int i=0; i<xlength; i++)dh[i+this.length] = xx[i];
-                     for(int i=0; i<am.length; i++)am.array.add(new Character(dh[i]));
+                     for(int i=0; i<am.length; i++)am.array.add(dh[i]);
                      am.type = 1;
                      break;
             case 18: String[] ss1 = this.getArray_as_String();
@@ -13211,7 +13211,7 @@ public class ArrayMaths{
     // concatenates two arrays
     public ArrayMaths concatenate(Character[] xx){
         char[] dd = new char[xx.length];
-        for(int i=0; i<xx.length; i++)dd[i] = xx[i].charValue();
+        for(int i=0; i<xx.length; i++)dd[i] = xx[i];
         return this.concatenate(dd);
     }
 
@@ -13366,7 +13366,7 @@ public class ArrayMaths{
     // finds the index of the first occurence of the element equal to a given value in an array
     // returns -1 if none found
     public int indexOf(Double value){
-        double val = value.doubleValue();
+        double val = value;
         return this.indexOf(val);
     }
 
@@ -13400,7 +13400,7 @@ public class ArrayMaths{
     // finds the index of the first occurence of the element equal to a given value in an array
     // returns -1 if none found
     public int indexOf(Float value){
-        float val = value.floatValue();
+        float val = value;
         return this.indexOf(val);
     }
 
@@ -13435,7 +13435,7 @@ public class ArrayMaths{
     // finds the index of the first occurence of the element equal to a given value in an array
     // returns -1 if none found
     public int indexOf(Long value){
-        long val = value.longValue();
+        long val = value;
         return this.indexOf(val);
     }
 
@@ -13469,7 +13469,7 @@ public class ArrayMaths{
     // finds the index of the first occurence of the element equal to a given value in an array
     // returns -1 if none found
     public int indexOf(Integer value){
-        int val = value.intValue();
+        int val = value;
         return this.indexOf(val);
     }
 
@@ -13503,7 +13503,7 @@ public class ArrayMaths{
     // finds the index of the first occurence of the element equal to a given value in an array
     // returns -1 if none found
     public int indexOf(Short value){
-        short val = value.shortValue();
+        short val = value;
         return this.indexOf(val);
     }
 
@@ -13537,7 +13537,7 @@ public class ArrayMaths{
     // finds the index of the first occurence of the element equal to a given value in an array
     // returns -1 if none found
     public int indexOf(Byte value){
-        byte val = value.byteValue();
+        byte val = value;
         return this.indexOf(val);
     }
 
@@ -13572,7 +13572,7 @@ public class ArrayMaths{
     // finds the index of the first occurence of the element equal to a given value in an array
     // returns -1 if none found
     public int indexOf(Character value){
-        char val = value.charValue();
+        char val = value;
         return this.indexOf(val);
     }
 
@@ -13724,13 +13724,13 @@ public class ArrayMaths{
             for(int i=0; i<this.length; i++){
                 if(arrayc[i]==value){
                     numberOfIndices++;
-                    arrayl.add(new Integer(i));
+                    arrayl.add(i);
                 }
             }
             if(numberOfIndices!=0){
                 indices = new int[numberOfIndices];
                 for(int i=0; i<numberOfIndices; i++){
-                    indices[i] = (arrayl.get(i)).intValue();
+                    indices[i] = arrayl.get(i);
                 }
             }
         }
@@ -13744,7 +13744,7 @@ public class ArrayMaths{
     // finds all indices of the occurences of the element equal to a given value in an array
     // returns null if none found
     public int[] indicesOf(Double value){
-        double val = value.doubleValue();
+        double val = value;
         return this.indicesOf(val);
     }
 
@@ -13760,13 +13760,13 @@ public class ArrayMaths{
             for(int i=0; i<this.length; i++){
                 if(arrayc[i]==value){
                     numberOfIndices++;
-                    arrayl.add(new Integer(i));
+                    arrayl.add(i);
                 }
             }
             if(numberOfIndices!=0){
                 indices = new int[numberOfIndices];
                 for(int i=0; i<numberOfIndices; i++){
-                    indices[i] = (arrayl.get(i)).intValue();
+                    indices[i] = arrayl.get(i);
                 }
             }
         }
@@ -13780,7 +13780,7 @@ public class ArrayMaths{
     // finds all indices of the occurences of the element equal to a given value in an array
     // returns null if none found
     public int[] indicesOf(Float value){
-        float val = value.floatValue();
+        float val = value;
         return this.indicesOf(val);
     }
 
@@ -13797,13 +13797,13 @@ public class ArrayMaths{
             for(int i=0; i<this.length; i++){
                 if(arrayc[i]==value){
                     numberOfIndices++;
-                    arrayl.add(new Integer(i));
+                    arrayl.add(i);
                 }
             }
             if(numberOfIndices!=0){
                 indices = new int[numberOfIndices];
                 for(int i=0; i<numberOfIndices; i++){
-                    indices[i] = (arrayl.get(i)).intValue();
+                    indices[i] = arrayl.get(i);
                 }
             }
         }
@@ -13817,7 +13817,7 @@ public class ArrayMaths{
     // finds all indices of the occurences of the element equal to a given value in an array
     // returns null if none found
     public int[] indicesOf(Long value){
-        long val = value.longValue();
+        long val = value;
         return this.indicesOf(val);
     }
 
@@ -13833,13 +13833,13 @@ public class ArrayMaths{
             for(int i=0; i<this.length; i++){
                 if(arrayc[i]==value){
                     numberOfIndices++;
-                    arrayl.add(new Integer(i));
+                    arrayl.add(i);
                 }
             }
             if(numberOfIndices!=0){
                 indices = new int[numberOfIndices];
                 for(int i=0; i<numberOfIndices; i++){
-                    indices[i] = (arrayl.get(i)).intValue();
+                    indices[i] = arrayl.get(i);
                 }
             }
         }
@@ -13853,7 +13853,7 @@ public class ArrayMaths{
     // finds all indices of the occurences of the element equal to a given value in an array
     // returns null if none found
     public int[] indicesOf(Integer value){
-        int val = value.intValue();
+        int val = value;
         return this.indicesOf(val);
     }
 
@@ -13869,13 +13869,13 @@ public class ArrayMaths{
             for(int i=0; i<this.length; i++){
                 if(arrayc[i]==value){
                     numberOfIndices++;
-                    arrayl.add(new Integer(i));
+                    arrayl.add(i);
                 }
             }
             if(numberOfIndices!=0){
                 indices = new int[numberOfIndices];
                 for(int i=0; i<numberOfIndices; i++){
-                    indices[i] = (arrayl.get(i)).intValue();
+                    indices[i] = arrayl.get(i);
                 }
             }
         }
@@ -13889,7 +13889,7 @@ public class ArrayMaths{
     // finds all indices of the occurences of the element equal to a given value in an array
     // returns null if none found
     public int[] indicesOf(Short value){
-        short val = value.shortValue();
+        short val = value;
         return this.indicesOf(val);
     }
 
@@ -13905,13 +13905,13 @@ public class ArrayMaths{
             for(int i=0; i<this.length; i++){
                 if(arrayc[i]==value){
                     numberOfIndices++;
-                    arrayl.add(new Integer(i));
+                    arrayl.add(i);
                 }
             }
             if(numberOfIndices!=0){
                 indices = new int[numberOfIndices];
                 for(int i=0; i<numberOfIndices; i++){
-                    indices[i] = (arrayl.get(i)).intValue();
+                    indices[i] = arrayl.get(i);
                 }
             }
         }
@@ -13925,7 +13925,7 @@ public class ArrayMaths{
     // finds all indices of the occurences of the element equal to a given value in an array
     // returns null if none found
     public int[] indicesOf(Byte value){
-        byte val = value.byteValue();
+        byte val = value;
         return this.indicesOf(val);
     }
 
@@ -13942,13 +13942,13 @@ public class ArrayMaths{
             for(int i=0; i<this.length; i++){
                 if(arrayc[i]==value){
                     numberOfIndices++;
-                    arrayl.add(new Integer(i));
+                    arrayl.add(i);
                 }
             }
             if(numberOfIndices!=0){
                 indices = new int[numberOfIndices];
                 for(int i=0; i<numberOfIndices; i++){
-                    indices[i] = (arrayl.get(i)).intValue();
+                    indices[i] = arrayl.get(i);
                 }
             }
         }
@@ -13962,7 +13962,7 @@ public class ArrayMaths{
     // finds all indices of the occurences of the element equal to a given value in an array
     // returns null if none found
     public int[] indicesOf(Character value){
-        char val = value.charValue();
+        char val = value;
         return this.indicesOf(val);
     }
 
@@ -13978,13 +13978,13 @@ public class ArrayMaths{
             for(int i=0; i<this.length; i++){
                 if(arrayc[i].equals(value)){
                     numberOfIndices++;
-                    arrayl.add(new Integer(i));
+                    arrayl.add(i);
                 }
             }
             if(numberOfIndices!=0){
                 indices = new int[numberOfIndices];
                 for(int i=0; i<numberOfIndices; i++){
-                    indices[i] = (arrayl.get(i)).intValue();
+                    indices[i] = arrayl.get(i);
                 }
             }
         }
@@ -14007,13 +14007,13 @@ public class ArrayMaths{
             for(int i=0; i<this.length; i++){
                 if(arrayc[i].equals(value)){
                     numberOfIndices++;
-                    arrayl.add(new Integer(i));
+                    arrayl.add(i);
                 }
             }
             if(numberOfIndices!=0){
                 indices = new int[numberOfIndices];
                 for(int i=0; i<numberOfIndices; i++){
-                    indices[i] = (arrayl.get(i)).intValue();
+                    indices[i] = arrayl.get(i);
                 }
             }
         }
@@ -14036,13 +14036,13 @@ public class ArrayMaths{
             for(int i=0; i<this.length; i++){
                 if(arrayc[i].equals(value)){
                     numberOfIndices++;
-                    arrayl.add(new Integer(i));
+                    arrayl.add(i);
                 }
             }
             if(numberOfIndices!=0){
                 indices = new int[numberOfIndices];
                 for(int i=0; i<numberOfIndices; i++){
-                    indices[i] = (arrayl.get(i)).intValue();
+                    indices[i] = arrayl.get(i);
                 }
             }
         }
@@ -14065,13 +14065,13 @@ public class ArrayMaths{
             for(int i=0; i<this.length; i++){
                 if(arrayc[i].compareTo(value)==0){
                     numberOfIndices++;
-                    arrayl.add(new Integer(i));
+                    arrayl.add(i);
                 }
             }
             if(numberOfIndices!=0){
                 indices = new int[numberOfIndices];
                 for(int i=0; i<numberOfIndices; i++){
-                    indices[i] = (arrayl.get(i)).intValue();
+                    indices[i] = arrayl.get(i);
                 }
             }
         }
@@ -14094,13 +14094,13 @@ public class ArrayMaths{
             for(int i=0; i<this.length; i++){
                 if(arrayc[i].compareTo(value)==0){
                     numberOfIndices++;
-                    arrayl.add(new Integer(i));
+                    arrayl.add(i);
                 }
             }
             if(numberOfIndices!=0){
                 indices = new int[numberOfIndices];
                 for(int i=0; i<numberOfIndices; i++){
-                    indices[i] = (arrayl.get(i)).intValue();
+                    indices[i] = arrayl.get(i);
                 }
             }
         }
@@ -14135,7 +14135,7 @@ public class ArrayMaths{
 
     // finds the index of the first occurence of the nearest element to a given value in an array
     public int nearestIndex(Double value){
-        double val = value.doubleValue();
+        double val = value;
         return this.nearestIndex(val);
     }
 
@@ -14163,7 +14163,7 @@ public class ArrayMaths{
 
     // finds the index of the first occurence of the nearest element to a given value in an array
     public int nearestIndex(Float value){
-        float val = value.floatValue();
+        float val = value;
         return this.nearestIndex(val);
     }
 
@@ -14192,7 +14192,7 @@ public class ArrayMaths{
 
     // finds the index of the first occurence of the nearest element to a given value in an array
     public int nearestIndex(Long value){
-        long val = value.longValue();
+        long val = value;
         return this.nearestIndex(val);
     }
 
@@ -14221,7 +14221,7 @@ public class ArrayMaths{
 
     // finds the index of the first occurence of the nearest element to a given value in an array
     public int nearestIndex(Integer value){
-        int val = value.intValue();
+        int val = value;
         return this.nearestIndex(val);
     }
 
@@ -14251,7 +14251,7 @@ public class ArrayMaths{
 
     // finds the index of the first occurence of the nearest element to a given value in an array
     public int nearestIndex(Short value){
-        short val = value.shortValue();
+        short val = value;
         return this.nearestIndex(val);
     }
 
@@ -14279,7 +14279,7 @@ public class ArrayMaths{
 
     // finds the index of the first occurence of the nearest element to a given value in an array
     public int nearestIndex(Byte value){
-        byte val = value.byteValue();
+        byte val = value;
         return this.nearestIndex(val);
     }
 
@@ -14307,7 +14307,7 @@ public class ArrayMaths{
 
     // finds the index of the first occurence of the nearest element to a given value in an array
     public int nearestIndex(Character value){
-        char val = value.charValue();
+        char val = value;
         return this.nearestIndex(val);
     }
 
@@ -14364,7 +14364,7 @@ public class ArrayMaths{
     // finds the value of the nearest element to a given value in an array
     public double nearestValue(double value){
         int index = this.nearestIndex(value);
-        double ret = ((Double)(this.array.get(index))).doubleValue();
+        double ret = (Double) (this.array.get(index));
         return ret;
     }
 
@@ -14378,7 +14378,7 @@ public class ArrayMaths{
     // finds the value of the nearest element to a given value in an array
     public float nearestValue(float value){
         int index = this.nearestIndex(value);
-        float ret = ((Float)(this.array.get(index))).floatValue();
+        float ret = (Float) (this.array.get(index));
         return ret;
     }
 
@@ -14392,7 +14392,7 @@ public class ArrayMaths{
     // finds the value of the nearest element to a given value in an array
     public long nearestValue(long value){
         int index = this.nearestIndex(value);
-        long ret = ((Long)(this.array.get(index))).longValue();
+        long ret = (Long) (this.array.get(index));
         return ret;
     }
 
@@ -14406,7 +14406,7 @@ public class ArrayMaths{
     // finds the value of the nearest element to a given value in an array
     public int nearestValue(int value){
         int index = this.nearestIndex(value);
-        int ret = ((Integer)(this.array.get(index))).intValue();
+        int ret = (Integer) (this.array.get(index));
         return ret;
     }
 
@@ -14420,7 +14420,7 @@ public class ArrayMaths{
     // finds the value of the nearest element to a given value in an array
     public short nearestValue(short value){
         int index = this.nearestIndex(value);
-        short ret = ((Short)(this.array.get(index))).shortValue();
+        short ret = (Short) (this.array.get(index));
         return ret;
     }
 
@@ -14434,7 +14434,7 @@ public class ArrayMaths{
     // finds the value of the nearest element to a given value in an array
     public byte nearestValue(byte value){
         int index = this.nearestIndex(value);
-        byte ret = ((Byte)(this.array.get(index))).byteValue();
+        byte ret = (Byte) (this.array.get(index));
         return ret;
     }
 
@@ -14448,7 +14448,7 @@ public class ArrayMaths{
     // finds the value of the nearest element to a given value in an array
     public char nearestValue(char value){
         int index = this.nearestIndex(value);
-        char ret = ((Character)(this.array.get(index))).charValue();
+        char ret = (Character) (this.array.get(index));
         return ret;
     }
 
@@ -14505,7 +14505,7 @@ public class ArrayMaths{
     }
 
     public Double getMaximumDifference_as_Double(){
-        return new Double(this.getMaximumDifference_as_double());
+        return this.getMaximumDifference_as_double();
     }
 
     // return maximum difference, i.e. range
@@ -14532,7 +14532,7 @@ public class ArrayMaths{
     }
 
     public Float getMaximumDifference_as_Float(){
-        return new Float(this.getMaximumDifference_as_float());
+        return this.getMaximumDifference_as_float();
     }
 
     // return maximum difference, i.e. range
@@ -14559,7 +14559,7 @@ public class ArrayMaths{
     }
 
     public Long getMaximumDifference_as_Long(){
-        return new Long(this.getMaximumDifference_as_long());
+        return this.getMaximumDifference_as_long();
     }
 
     // return maximum difference, i.e. range
@@ -14586,7 +14586,7 @@ public class ArrayMaths{
     }
 
     public Integer getMaximumDifference_as_Integer(){
-        return new Integer(this.getMaximumDifference_as_int());
+        return this.getMaximumDifference_as_int();
     }
 
     // return maximum difference, i.e. range
@@ -14613,7 +14613,7 @@ public class ArrayMaths{
     }
 
     public Short getMaximumDifference_as_Short(){
-        return new Short(this.getMaximumDifference_as_short());
+        return this.getMaximumDifference_as_short();
     }
 
     // return maximum difference, i.e. range
@@ -14640,7 +14640,7 @@ public class ArrayMaths{
     }
 
     public Byte getMaximumDifference_as_Byte(){
-        return new Byte(this.getMaximumDifference_as_byte());
+        return this.getMaximumDifference_as_byte();
     }
 
     // return maximum difference, i.e. range
@@ -14720,7 +14720,7 @@ public class ArrayMaths{
     }
 
     public Double getMinimumDifference_as_Double(){
-        return new Double(this.getMinimumDifference_as_double());
+        return this.getMinimumDifference_as_double();
     }
 
     // return minimum difference
@@ -14752,7 +14752,7 @@ public class ArrayMaths{
     }
 
     public Float getMinimumDifference_as_Float(){
-        return new Float(this.getMinimumDifference_as_float());
+        return this.getMinimumDifference_as_float();
     }
 
     // return minimum difference
@@ -14784,7 +14784,7 @@ public class ArrayMaths{
     }
 
     public Long getMinimumDifference_as_Long(){
-        return new Long(this.getMinimumDifference_as_long());
+        return this.getMinimumDifference_as_long();
     }
 
     // return minimum difference
@@ -14816,7 +14816,7 @@ public class ArrayMaths{
     }
 
     public Integer getMinimumDifference_as_Integer(){
-        return new Integer(this.getMinimumDifference_as_int());
+        return this.getMinimumDifference_as_int();
     }
 
     // return minimum difference
@@ -14848,7 +14848,7 @@ public class ArrayMaths{
     }
 
     public Short getMinimumDifference_as_Short(){
-        return new Short(this.getMinimumDifference_as_short());
+        return this.getMinimumDifference_as_short();
     }
 
 
@@ -14881,7 +14881,7 @@ public class ArrayMaths{
     }
 
     public Byte getMinimumDifference_as_Byte(){
-        return new Byte(this.getMinimumDifference_as_byte());
+        return this.getMinimumDifference_as_byte();
     }
 
     // return minimum difference

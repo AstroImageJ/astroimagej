@@ -8,23 +8,25 @@ import ij.ImageStack;
 
 /**
 This is an 32-bit RGB image and methods that operate on that image.. Based on the ImageProcessor class from
-"KickAss Java Programming" by Tonny Espeset (http://www.sn.no/~espeset).
+"KickAss Java Programming" by Tonny Espeset (1996).
 */
 public class ColorProcessor extends ImageProcessor {
 
 	protected int[] pixels;
 	protected int[] snapshotPixels = null;
 	private int bgColor = 0xffffffff; //white
-	private int min=0, max=255;
+	protected int min=0, max=255;
 	private WritableRaster rgbRaster;
 	private SampleModel rgbSampleModel;
+	private boolean caSnapshot;
 	
 	// Weighting factors used by getPixelValue(), getHistogram() and convertToByte().
 	// Enable "Weighted RGB Conversion" in <i>Edit/Options/Conversions</i>
 	// to use 0.299, 0.587 and 0.114.
 	private static double rWeight=1d/3d, gWeight=1d/3d,	bWeight=1d/3d; 
-
-	/**Creates a ColorProcessor from an AWT Image. */
+	private double[] weights; // Overrides rWeight, etc. when set by setWeights()
+	 
+	/**Creates a ColorProcessor from an AWT Image or BufferedImage. */
 	public ColorProcessor(Image img) {
 		width = img.getWidth(null);
 		height = img.getHeight(null);
@@ -60,19 +62,7 @@ public class ColorProcessor extends ImageProcessor {
 	}
 	
 	public Image createImage() {
-		if (ij.IJ.isJava16())
-			return createBufferedImage();
-		if (source==null) {
-			source = new MemoryImageSource(width, height, cm, pixels, 0, width);
-			source.setAnimated(true);
-			source.setFullBufferUpdates(true);
-			img = Toolkit.getDefaultToolkit().createImage(source);
-		} else if (newPixels) {
-			source.newPixels(pixels, cm, 0, width);
-			newPixels = false;
-		} else
-			source.newPixels();
-		return img;
+		return createBufferedImage();
 	}
 
 	Image createBufferedImage() {
@@ -97,10 +87,8 @@ public class ColorProcessor extends ImageProcessor {
 
 	public void setColorModel(ColorModel cm) {
 		if (cm!=null && (cm instanceof IndexColorModel))
-			throw new IllegalArgumentException("DirectColorModel required");
+			throw new IllegalArgumentException("RGB images do not support IndexColorModels");
 		this.cm = cm;
-		newPixels = true;
-		source = null;
 		rgbSampleModel = null;
 		rgbRaster = null;
 	}
@@ -120,22 +108,28 @@ public class ColorProcessor extends ImageProcessor {
 		return new Color(r,g,b);
 	}
 
-
 	/** Sets the foreground color. */
 	public void setColor(Color color) {
 		fgColor = color.getRGB();
 		drawingColor = color;
+		fillValueSet = true;
 	}
-
 
 	/** Sets the fill/draw color, where <code>color</code> is an RGB int. */
 	public void setColor(int color) {
 		fgColor = color;
+		fillValueSet = true;
 	}
 
 	/** Sets the default fill/draw value, where <code>value</code> is interpreted as an RGB int. */
 	public void setValue(double value) {
 		fgColor = (int)value;
+		fillValueSet = true;
+	}
+
+	/** Returns the foreground fill/draw value. */
+	public double getForegroundValue() {
+		return fgColor;
 	}
 
 	/** Sets the background fill value, where <code>value</code> is interpreted as an RGB int. */
@@ -188,20 +182,19 @@ public class ColorProcessor extends ImageProcessor {
 			applyTable(lut, channels);
 	}
 	
-
 	public void snapshot() {
 		snapshotWidth = width;
 		snapshotHeight = height;
 		if (snapshotPixels==null || (snapshotPixels!=null && snapshotPixels.length!=pixels.length))
 			snapshotPixels = new int[width * height];
 		System.arraycopy(pixels, 0, snapshotPixels, 0, width*height);
+		caSnapshot = false;
 	}
 
 
 	public void reset() {
-		if (snapshotPixels==null)
-			return;
-		System.arraycopy(snapshotPixels, 0, pixels, 0, width*height);
+		if (snapshotPixels!=null)
+			System.arraycopy(snapshotPixels, 0, pixels, 0, width*height);
 	}
 
 
@@ -221,22 +214,37 @@ public class ColorProcessor extends ImageProcessor {
 			}
 		}
 	}
+	
+	/** Used by the ContrastAdjuster */
+	public void caSnapshot(boolean set) {
+		caSnapshot = set;
+	}
 
+	/** Used by the ContrastAdjuster */
+	public boolean caSnapshot() {
+		return caSnapshot;
+	}
+	
 	/** Swaps the pixel and snapshot (undo) arrays. */
 	public void swapPixelArrays() {
-		if (snapshotPixels==null) return;	
+		if (snapshotPixels==null)
+			return;	
 		int pixel;
 		for (int i=0; i<pixels.length; i++) {
 			pixel = pixels[i];
 			pixels[i] = snapshotPixels[i];
 			snapshotPixels[i] = pixel;
 		}
+		caSnapshot = false;
 	}
 
 	public void setSnapshotPixels(Object pixels) {
+		if (caSnapshot && pixels==null)
+			return;
 		snapshotPixels = (int[])pixels;
 		snapshotWidth=width;
 		snapshotHeight=height;
+		caSnapshot = false;
 	}
 
 	/** Returns a reference to the snapshot pixel array. Used by the ContrastAdjuster. */
@@ -387,10 +395,13 @@ public class ColorProcessor extends ImageProcessor {
 			int r = (c&0xff0000)>>16;
 			int g = (c&0xff00)>>8;
 			int b = c&0xff;
-			return (float)(r*rWeight + g*gWeight + b*bWeight);
+			if (weights!=null)
+				return (float)(r*weights[0] + g*weights[1] + b*weights[2]);
+			else
+				return (float)(r*rWeight + g*gWeight + b*bWeight);
 		}
 		else 
-			return 0;
+			return Float.NaN;
 	}
 
 
@@ -411,9 +422,11 @@ public class ColorProcessor extends ImageProcessor {
 	public void setPixels(Object pixels) {
 		this.pixels = (int[])pixels;
 		resetPixels(pixels);
-		if (pixels==null) snapshotPixels = null;
+		if (pixels==null)
+			snapshotPixels = null;
 		rgbRaster = null;
 		image = null;
+		caSnapshot = false;
 	}
 
 
@@ -433,6 +446,22 @@ public class ColorProcessor extends ImageProcessor {
 		}
 	}
 	
+	/** Returns hue, saturation and brightness in 3 float arrays. */
+	public void getHSB(float[] H, float[] S, float[] B) {
+		int c, r, g, b;
+		float[] hsb = new float[3];
+		for (int i=0; i < width*height; i++) {
+			c = pixels[i];
+			r = (c&0xff0000)>>16;
+			g = (c&0xff00)>>8;
+			b = c&0xff;
+			hsb = Color.RGBtoHSB(r, g, b, hsb);
+			H[i] = hsb[0];
+			S[i] = hsb[1];
+			B[i] = hsb[2];
+		}
+	}
+
 	/** Returns an ImageStack with three 8-bit slices,
 	    representing hue, saturation and brightness */
 	public ImageStack getHSBStack() {
@@ -441,6 +470,23 @@ public class ColorProcessor extends ImageProcessor {
 		byte[] H = new byte[width*height];
 		byte[] S = new byte[width*height];
 		byte[] B = new byte[width*height];
+		getHSB(H, S, B);
+		ColorModel cm = getDefaultColorModel();
+		ImageStack stack = new ImageStack(width, height, cm);
+		stack.addSlice("Hue", H);
+		stack.addSlice("Saturation", S);
+		stack.addSlice("Brightness", B);
+		return stack;
+	}
+
+	/** Returns an ImageStack with three 32-bit slices,
+	    representing hue, saturation and brightness */
+	public ImageStack getHSB32Stack() {
+		int width = getWidth();
+		int height = getHeight();
+		float[] H = new float[width*height];
+		float[] S = new float[width*height];
+		float[] B = new float[width*height];
 		getHSB(H, S, B);
 		ColorModel cm = getDefaultColorModel();
 		ImageStack stack = new ImageStack(width, height, cm);
@@ -481,34 +527,35 @@ public class ColorProcessor extends ImageProcessor {
 		}
 	}
 
-	/** Returns the specified plane (1=red, 2=green, 3=blue) as a byte array. */
+	/** Returns the specified plane (1=red, 2=green, 3=blue, 4=alpha) as a byte array. */
 	public byte[] getChannel(int channel) {
 		ByteProcessor bp = getChannel(channel, null);
 		return (byte[])bp.getPixels();
 	}
 	
-	/** Returns the specified plane (1=red, 2=green, 3=blue) as a ByteProcessor. */
+	/** Returns the specified plane (1=red, 2=green, 3=blue, 4=alpha) as a ByteProcessor. */
 	public ByteProcessor getChannel(int channel, ByteProcessor bp) {
 		int size = width*height;
 		if (bp == null || bp.getWidth()!=width || bp.getHeight()!=height)
 			bp = new ByteProcessor(width, height);
 		byte[] bPixels = (byte[])bp.getPixels();
 		int shift = 16 - 8*(channel-1);
-		int byteMask = 255<<shift;
+		if (channel==4) shift=24;
 		for (int i=0; i<size; i++)
-			bPixels[i] = (byte)((pixels[i]&byteMask)>>shift);
+			bPixels[i] = (byte)(pixels[i]>>shift);
 		return bp;
 	}
 	
 	/** Sets the pixels of one color channel from a ByteProcessor.
-	*  @param channelNumber   Determines the color channel, 1=red, 2=green, 3=blue
-	*  @param bp              The ByteProcessor where the image data are read from.
+	*  @param channel  Determines the color channel, 1=red, 2=green, 3=blue, 4=alpha
+	*  @param bp  The ByteProcessor where the image data are read from.
 	*/
 	public void setChannel(int channel, ByteProcessor bp) {
 		byte[] bPixels = (byte[])bp.getPixels();
 		int value;
 		int size = width*height;
 		int shift = 16 - 8*(channel-1);
+		if (channel==4) shift=24;
 		int resetMask = 0xffffffff^(255<<shift);
 		for (int i=0; i<size; i++)
 			pixels[i] = (pixels[i]&resetMask) | ((bPixels[i]&255)<<shift);
@@ -531,6 +578,12 @@ public class ColorProcessor extends ImageProcessor {
 			brightness = (float)((B[i]&0xff)/255.0);
 			pixels[i] = Color.HSBtoRGB(hue, saturation, brightness);
 		}
+	}
+
+	/** Sets the current pixels from 3 float arrays (hue, saturation and brightness). */
+	public void setHSB(float[] H, float[] S, float[] B) {
+		for (int i=0; i < width*height; i++)
+			pixels[i] = Color.HSBtoRGB(H[i], S[i], B[i]);
 	}
 	
 	/** Updates the brightness using the pixels in the specified FloatProcessor). */
@@ -626,7 +679,7 @@ public class ColorProcessor extends ImageProcessor {
 	
 	public static final int RGB_NOISE=0, RGB_MEDIAN=1, RGB_FIND_EDGES=2,
 		RGB_ERODE=3, RGB_DILATE=4, RGB_THRESHOLD=5, RGB_ROTATE=6,
-		RGB_SCALE=7, RGB_RESIZE=8, RGB_TRANSLATE=9;
+		RGB_SCALE=7, RGB_RESIZE=8, RGB_TRANSLATE=9, RGB_MIN=10, RGB_MAX=11;
 
  	/** Performs the specified filter on the red, green and blue planes of this image. */
  	public void filterRGB(int type, double arg) {
@@ -725,6 +778,16 @@ public class ColorProcessor extends ImageProcessor {
 				ij.IJ.showStatus("Translating blue");
 				b.translate(arg, arg2); showProgress(0.90);
 				break;
+			case RGB_MIN:
+				r.filter(MIN); showProgress(0.40);
+				g.filter(MIN); showProgress(0.65);
+				b.filter(MIN); showProgress(0.90);
+				break;
+			case RGB_MAX:
+				r.filter(MAX); showProgress(0.40);
+				g.filter(MAX); showProgress(0.65);
+				b.filter(MAX); showProgress(0.90);
+				break;
 		}
 		
 		R = (byte[])r.getPixels();
@@ -736,9 +799,9 @@ public class ColorProcessor extends ImageProcessor {
 		return null;
 	}
 
-   public void noise(double range) {
-    	filterRGB(RGB_NOISE, range);
-    }
+	public void noise(double range) {
+		filterRGB(RGB_NOISE, range);
+	}
 
 	public void medianFilter() {
     	filterRGB(RGB_MEDIAN, 0.0);
@@ -830,11 +893,12 @@ public class ColorProcessor extends ImageProcessor {
 			for (int xs=0; xs<roiWidth; xs++)
 				pixels2[offset1++] = pixels[offset2++];
 		}
-		return new ColorProcessor(roiWidth, roiHeight, pixels2);
+		ColorProcessor cp2 = new ColorProcessor(roiWidth, roiHeight, pixels2);
+		return cp2;
 	}
 	
 	/** Returns a duplicate of this image. */ 
-	public synchronized ImageProcessor duplicate() { 
+	public ImageProcessor duplicate() { 
 		int[] pixels2 = new int[width*height]; 
 		System.arraycopy(pixels, 0, pixels2, 0, width*height); 
 		return new ColorProcessor(width, height, pixels2); 
@@ -899,6 +963,16 @@ public class ColorProcessor extends ImageProcessor {
 		@see ImageProcessor#setInterpolate
 	*/
 	public ImageProcessor resize(int dstWidth, int dstHeight) {
+		if (roiWidth==dstWidth && roiHeight==dstHeight)
+			return crop();
+		if (interpolationMethod!=NONE && (width==1||height==1)) {
+				ByteProcessor r2 = (ByteProcessor)getChannel(1,null).resizeLinearly(dstWidth, dstHeight);
+				ByteProcessor g2 = (ByteProcessor)getChannel(2,null).resizeLinearly(dstWidth, dstHeight);
+				ByteProcessor b2 = (ByteProcessor)getChannel(3,null).resizeLinearly(dstWidth, dstHeight);
+				ColorProcessor ip2 = new ColorProcessor(dstWidth, dstHeight);
+				ip2.setChannel(1, r2); ip2.setChannel(2, g2); ip2.setChannel(3, b2);
+				return ip2;
+		}
         if (interpolationMethod==BICUBIC)
         	return filterRGB(RGB_RESIZE, dstWidth, dstHeight);
 		double srcCenterX = roiX + roiWidth/2.0;
@@ -910,10 +984,8 @@ public class ColorProcessor extends ImageProcessor {
 		double xlimit = width-1.0, xlimit2 = width-1.001;
 		double ylimit = height-1.0, ylimit2 = height-1.001;
 		if (interpolationMethod==BILINEAR) {
-			//if (xScale<=0.25 && yScale<=0.25)
-			//	return makeThumbnail(dstWidth, dstHeight, 0.6);
-			dstCenterX += xScale/2.0;
-			dstCenterY += yScale/2.0;
+			if (dstWidth!=width) dstCenterX+=xScale/4.0;
+			if (dstHeight!=height) dstCenterY+=yScale/4.0;
 		}
 		ImageProcessor ip2 = createProcessor(dstWidth, dstHeight);
 		int[] pixels2 = (int[])ip2.getPixels();
@@ -944,7 +1016,7 @@ public class ColorProcessor extends ImageProcessor {
 	}
 	
 	/** Uses averaging to creates a new ColorProcessor containing 
-		a downsized copy  of this image or selection. */
+		a downsized copy of this image or selection. */
 	public ImageProcessor makeThumbnail(int width2, int height2, double smoothFactor) {
 		return resize(width2, height2, true);
 	}
@@ -1107,43 +1179,66 @@ public class ColorProcessor extends ImageProcessor {
 		showProgress(1.0);
 	}
 
-	/** 3x3 unweighted smoothing. */
+	/** A 3x3 filter operation, where the argument (ImageProcessor.BLUR_MORE,  FIND_EDGES, 
+	     MEDIAN_FILTER, MIN or MAX) determines the filter type. */
 	public void filter(int type) {
-		int p1, p2, p3, p4, p5, p6, p7, p8, p9;
-		int inc = roiHeight/25;
-		if (inc<1) inc = 1;
-		
-		int[] pixels2 = (int[])getPixelsCopy();
-		int offset, rsum=0, gsum=0, bsum=0;
-        int rowOffset = width;
-		for (int y=yMin; y<=yMax; y++) {
-			offset = xMin + y * width;
-			p1 = 0;
-			p2 = pixels2[offset-rowOffset-1];
-			p3 = pixels2[offset-rowOffset];
-			p4 = 0;
-			p5 = pixels2[offset-1];
-			p6 = pixels2[offset];
-			p7 = 0;
-			p8 = pixels2[offset+rowOffset-1];
-			p9 = pixels2[offset+rowOffset];
+		if (type == FIND_EDGES)
+			filterRGB(RGB_FIND_EDGES, 0, 0);
+		else if (type == MEDIAN_FILTER)
+			filterRGB(RGB_MEDIAN, 0, 0);
+		else if (type == MIN)
+			filterRGB(RGB_MIN, 0, 0);
+		else if (type == MAX)
+			filterRGB(RGB_MAX, 0, 0);
+		else
+		    blurMore();
+	}
 
-			for (int x=xMin; x<=xMax; x++) {
+	/** BLUR MORE: 3x3 unweighted smoothing is implemented directly, does not convert the image to three ByteProcessors. */
+	private void blurMore() {
+		int p1 = 0, p2, p3, p4 = 0, p5, p6, p7 = 0, p8, p9;
+		
+		int[] prevRow = new int[width];
+		int[] thisRow = new int[width];
+		int[] nextRow = new int[width];
+		System.arraycopy(pixels, Math.max(roiY-1,0)*width, thisRow, 0, width);
+		System.arraycopy(pixels, roiY*width, nextRow, 0, width);
+		for (int y=roiY; y<roiY+roiHeight; y++) {
+			int[] tmp = prevRow;
+			prevRow = thisRow;
+			thisRow = nextRow;
+			nextRow = tmp;
+			if (y < height-1)
+				System.arraycopy(pixels, (y+1)*width, nextRow, 0, width);
+			else
+				nextRow = thisRow;
+			int offset = roiX + y*width;
+
+			p2 = prevRow[roiX==0 ? roiX : roiX-1];
+			p3 = prevRow[roiX];
+			p5 = thisRow[roiX==0 ? roiX : roiX-1];
+			p6 = thisRow[roiX];
+			p8 = nextRow[roiX==0 ? roiX : roiX-1];
+			p9 = nextRow[roiX];
+
+			for (int x=roiX; x<roiX+roiWidth; x++) {
 				p1 = p2; p2 = p3;
-				p3 = pixels2[offset-rowOffset+1];
 				p4 = p5; p5 = p6;
-				p6 = pixels2[offset+1];
 				p7 = p8; p8 = p9;
-				p9 = pixels2[offset+rowOffset+1];
-				rsum = (p1 & 0xff0000) + (p2 & 0xff0000) + (p3 & 0xff0000) + (p4 & 0xff0000) + (p5 & 0xff0000)
+				if (x < width-1) {
+					p3 = prevRow[x+1];
+					p6 = thisRow[x+1];
+					p9 = nextRow[x+1];
+				}
+				int rsum = (p1 & 0xff0000) + (p2 & 0xff0000) + (p3 & 0xff0000) + (p4 & 0xff0000) + (p5 & 0xff0000)
 					+ (p6 & 0xff0000) + (p7 & 0xff0000) + (p8 & 0xff0000) + (p9 & 0xff0000);
-				gsum = (p1 & 0xff00) + (p2 & 0xff00) + (p3 & 0xff00) + (p4 & 0xff00) + (p5 & 0xff00)
+				int gsum = (p1 & 0xff00) + (p2 & 0xff00) + (p3 & 0xff00) + (p4 & 0xff00) + (p5 & 0xff00)
 					+ (p6 & 0xff00) + (p7 & 0xff00) + (p8 & 0xff00) + (p9 & 0xff00);
-				bsum = (p1 & 0xff) + (p2 & 0xff) + (p3 & 0xff) + (p4 & 0xff) + (p5 & 0xff)
+				int bsum = (p1 & 0xff) + (p2 & 0xff) + (p3 & 0xff) + (p4 & 0xff) + (p5 & 0xff)
 					+ (p6 & 0xff) + (p7 & 0xff) + (p8 & 0xff) + (p9 & 0xff);
-				pixels[offset++] = 0xff000000 | ((rsum/9) & 0xff0000) | ((gsum/9) & 0xff00) | (bsum/9);
+				pixels[offset++] = 0xff000000 | (((rsum+(4<<16))/9) & 0xff0000) | (((gsum+(4<<8))/9) & 0xff00) | ((bsum+4)/9);
 			}
-			if (y%inc==0)
+			if (roiHeight*roiWidth>1000000 && (y&0xff)==0)
 				showProgress((double)(y-roiY)/roiHeight);
 		}
 		showProgress(1.0);
@@ -1152,6 +1247,9 @@ public class ColorProcessor extends ImageProcessor {
 	public int[] getHistogram() {
 		if (mask!=null)
 			return getHistogram(mask);
+		double rw=rWeight, gw=gWeight, bw=bWeight;
+		if (weights!=null)
+			{rw=weights[0]; gw=weights[1]; bw=weights[2];}
 		int c, r, g, b, v;
 		int[] histogram = new int[256];
 		for (int y=roiY; y<(roiY+roiHeight); y++) {
@@ -1161,7 +1259,7 @@ public class ColorProcessor extends ImageProcessor {
 				r = (c&0xff0000)>>16;
 				g = (c&0xff00)>>8;
 				b = c&0xff;
-				v = (int)(r*rWeight + g*gWeight + b*bWeight + 0.5);
+				v = (int)(r*rw + g*gw + b*bw + 0.5);
 				histogram[v]++;
 			}
 		}
@@ -1172,6 +1270,9 @@ public class ColorProcessor extends ImageProcessor {
 	public int[] getHistogram(ImageProcessor mask) {
 		if (mask.getWidth()!=roiWidth||mask.getHeight()!=roiHeight)
 			throw new IllegalArgumentException(maskSizeError(mask));
+		double rw=rWeight, gw=gWeight, bw=bWeight;
+		if (weights!=null)
+			{rw=weights[0]; gw=weights[1]; bw=weights[2];}
 		byte[] mpixels = (byte[])mask.getPixels();
 		int c, r, g, b, v;
 		int[] histogram = new int[256];
@@ -1184,13 +1285,21 @@ public class ColorProcessor extends ImageProcessor {
 					r = (c&0xff0000)>>16;
 					g = (c&0xff00)>>8;
 					b = c&0xff;
-					v = (int)(r*rWeight + g*gWeight + b*bWeight + 0.5);
+					v = (int)(r*rw + g*gw + b*bw + 0.5);
 					histogram[v]++;
 				}
 				i++;
 			}
 		}
 		return histogram;
+	}
+
+	public synchronized boolean weightedHistogram() {
+		if (weights!=null && (weights[0]!=1d/3d||weights[1]!=1d/3d||weights[2]!=1d/3d))
+			return true;
+		if (rWeight!=1d/3d || gWeight!=1d/3d || bWeight!=1d/3d)
+			return true;
+		return false;
 	}
 
 	/** Performs a convolution operation using the specified kernel. */
@@ -1222,7 +1331,10 @@ public class ColorProcessor extends ImageProcessor {
 	/** Sets the weighting factors used by getPixelValue(), getHistogram()
 		and convertToByte() to do color conversions. The default values are
 		1/3, 1/3 and 1/3. Check "Weighted RGB Conversions" in
-		<i>Edit/Options/Conversions</i> to use 0.299, 0.587 and 0.114. */
+		<i>Edit/Options/Conversions</i> to use 0.299, 0.587 and 0.114.
+		@see #getWeightingFactors
+		@see #setRGBWeights
+	*/
 	public static void setWeightingFactors(double rFactor, double gFactor, double bFactor) {
 		rWeight = rFactor;
 		gWeight = gFactor;
@@ -1230,12 +1342,33 @@ public class ColorProcessor extends ImageProcessor {
 	}
 
 	/** Returns the three weighting factors used by getPixelValue(), 
-		getHistogram() and convertToByte() to do color conversions. */
+		getHistogram() and convertToByte() to do color conversions.
+		@see #setWeightingFactors
+		@see #getRGBWeights
+	*/
 	public static double[] getWeightingFactors() {
 		double[] weights = new double[3];
 		weights[0] = rWeight;
 		weights[1] = gWeight;
 		weights[2] = bWeight;
+		return weights;
+	}
+	
+	/** This is a thread-safe (non-static) version of setWeightingFactors(). */
+	public void setRGBWeights(double rweight, double gweight, double bweight) {
+		weights = new double[3];
+		weights[0] = rweight;
+		weights[1] = gweight;
+		weights[2] = bweight;
+	}
+
+	/** This is a thread-safe (non-static) version of setWeightingFactors(). */
+	public void setRGBWeights(double[] weights) {
+		this.weights = weights;
+	}
+	
+	/** Returns the values set by setRGBWeights(), or null if setRGBWeights() has not been called. */
+	public double[] getRGBWeights() {
 		return weights;
 	}
 
@@ -1272,7 +1405,7 @@ public class ColorProcessor extends ImageProcessor {
 	/** Not implemented. */
 	public void threshold(int level) {}
 	
-	/** Returns the number of color channels of the image, i.e., 3. */
+	/** Returns the number of color channels (3). */
 	public int getNChannels() {
 		return 3;
 	}

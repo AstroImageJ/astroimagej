@@ -1,4 +1,5 @@
 package ij.io;
+import ij.astro.AstroImageJ;
 import ij.gui.GenericDialog;
 import java.awt.*;
 import java.io.*;
@@ -85,7 +86,7 @@ public class SaveDialog {
 				name += extension;
 			else
 				name = name.substring(0, dotIndex) + extension;
-		} else
+		} else if (!name.endsWith(extension))
 			name += extension;
 		return name;
 	}
@@ -184,8 +185,16 @@ public class SaveDialog {
 		FileDialog fd = new FileDialog(parent, title, FileDialog.SAVE);
 		if (defaultName!=null)
 			fd.setFile(defaultName);
-		if (defaultDir!=null)
+		if (defaultDir!=null) {
+			if (IJ.isWindows() && defaultDir.contains("/")) {
+				File f = new File(defaultDir);
+				if (f.isDirectory())
+					try {
+						defaultDir = f.getCanonicalPath();
+					} catch (IOException e) {}
+			}
 			fd.setDirectory(defaultDir);
+		}
 		fd.show();
 		name = fd.getFile();
 		String origName = name;
@@ -218,7 +227,8 @@ public class SaveDialog {
 		if (ij==null)
 			parent.dispose();
 	}
-	
+
+	@AstroImageJ(reason = "Increase condition from 5 to 10", modified = true)
 	private boolean noExtension(String name) {
 		if (name==null) return false;
 		int dotIndex = name.indexOf(".");
@@ -240,5 +250,14 @@ public class SaveDialog {
 		}
 		return name;
 	}
-		
+	
+	public static String getPath(ImagePlus imp, String extension) {
+		String title = imp!=null?imp.getTitle():"Untitled";
+		SaveDialog sd = new SaveDialog("Save As", title, extension);
+		if (sd.getFileName()==null)
+			return null;
+		else
+			return sd.getDirectory()+sd.getFileName();
+	}
+			
 }

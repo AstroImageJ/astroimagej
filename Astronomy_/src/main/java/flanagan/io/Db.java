@@ -195,7 +195,7 @@ public class Db{
                 nElements = al.size();
                 darray = new double[nElements];
                 for(int i=0; i<nElements; i++){
-                    darray[i] = (al.get(i)).doubleValue();
+                    darray[i] = al.get(i);
                 }
 
                 return darray;
@@ -1208,7 +1208,7 @@ public class Db{
                 boolean finish = false;
                 String mess0 = "";
                 if(Db.inputTypeInfo)mess0 = "Input type: BigDecimal\n";
-                Double dfltD = new Double(dflt);
+                Double dfltD = dflt;
                 String dfltmess = dfltD.toString();
                 mess = mess + "\n";
 
@@ -1245,7 +1245,7 @@ public class Db{
                 boolean finish = false;
                 String mess0 = "";
                 if(Db.inputTypeInfo)mess0 = "Input type: BigDecimal\n";
-                Float dfltF = new Float(dflt);
+                Float dfltF = dflt;
                 String dfltmess = dfltF.toString();
                 mess = mess + "\n";
 
@@ -1282,7 +1282,7 @@ public class Db{
                 boolean finish = false;
                 String mess0 = "";
                 if(Db.inputTypeInfo)mess0 = "Input type: BigDecimal\n";
-                Long dfltF = new Long(dflt);
+                Long dfltF = dflt;
                 String dfltmess = dfltF.toString();
                 mess = mess + "\n";
 
@@ -1319,7 +1319,7 @@ public class Db{
                 boolean finish = false;
                 String mess0 = "";
                 if(Db.inputTypeInfo)mess0 = "Input type: BigDecimal\n";
-                Integer dfltF = new Integer(dflt);
+                Integer dfltF = dflt;
                 String dfltmess = dfltF.toString();
                 mess = mess + "\n";
 
@@ -1475,7 +1475,7 @@ public class Db{
                 boolean finish = false;
                 String mess0 = "";
                 if(Db.inputTypeInfo)mess0 = "Input type: BigInteger\n";
-                Long dfltF = new Long(dflt);
+                Long dfltF = dflt;
                 String dfltmess = dfltF.toString();
                 mess = mess + "\n";
 
@@ -1512,7 +1512,7 @@ public class Db{
                 boolean finish = false;
                 String mess0 = "";
                 if(Db.inputTypeInfo)mess0 = "Input type: BigInteger\n";
-                Integer dfltF = new Integer(dflt);
+                Integer dfltF = dflt;
                 String dfltmess = dfltF.toString();
                 mess = mess + "\n";
 
@@ -1604,12 +1604,12 @@ public class Db{
 
         // Shows a message and the value of a Double in a message dialogue box
         public static final synchronized void show(String message, Double output){
-            JOptionPane.showMessageDialog(null, message+" "+output.doubleValue(), "Db.show (Double)", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(null, message+" "+ output, "Db.show (Double)", JOptionPane.INFORMATION_MESSAGE);
         }
 
         // the value of a Double in a message dialogue box
         public static final synchronized void show(Double output){
-            JOptionPane.showMessageDialog(null, " "+output.doubleValue(), "Db.show (Double)", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(null, " "+ output, "Db.show (Double)", JOptionPane.INFORMATION_MESSAGE);
         }
 
         // Shows a message and the value of a float in a message dialogue box
@@ -1634,12 +1634,12 @@ public class Db{
 
         // Shows a message and the value of a Float in a message dialogue box
         public static final synchronized void show(String message, Float output){
-            JOptionPane.showMessageDialog(null, message+" "+output.floatValue(), "Db.show (float)", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(null, message+" "+ output, "Db.show (float)", JOptionPane.INFORMATION_MESSAGE);
         }
 
         // Shows the value of a Float in a message dialogue box
         public static final synchronized void show(Float output){
-            JOptionPane.showMessageDialog(null, " "+output.floatValue(), "Db.show (float)", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(null, " "+ output, "Db.show (float)", JOptionPane.INFORMATION_MESSAGE);
         }
 
         // Shows a message and the value of a BigDecimal in a message dialogue box
@@ -1674,12 +1674,12 @@ public class Db{
 
         // Shows a message and the value of a Integer in a message dialogue box
         public static final synchronized void show(String message, Integer output){
-            JOptionPane.showMessageDialog(null, message+" "+output.intValue(), "Db.show (int)", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(null, message+" "+ output, "Db.show (int)", JOptionPane.INFORMATION_MESSAGE);
         }
 
         // Shows the value of a Integer in a message dialogue box
         public static final synchronized void show(Integer output){
-            JOptionPane.showMessageDialog(null, " "+output.intValue(), "Db.show (int)", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(null, " "+ output, "Db.show (int)", JOptionPane.INFORMATION_MESSAGE);
         }
 
         // Shows a message and the value of a long in a message dialogue box
@@ -1694,12 +1694,12 @@ public class Db{
 
         // Shows a message and the value of a Long in a message dialogue box
         public static final synchronized void show(String message, Long output){
-            JOptionPane.showMessageDialog(null, message+" "+output.longValue(), "Db.show (long)", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(null, message+" "+ output, "Db.show (long)", JOptionPane.INFORMATION_MESSAGE);
         }
 
         // Shows a message and the value of a Long in a message dialogue box
         public static final synchronized void show(Long output){
-            JOptionPane.showMessageDialog(null, " "+output.longValue(), "Db.show (long)", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(null, " "+ output, "Db.show (long)", JOptionPane.INFORMATION_MESSAGE);
         }
 
         // Shows a message and the value of a short in a message dialogue box
@@ -1714,12 +1714,12 @@ public class Db{
 
         // Shows a message and the value of a Short in a message dialogue box
         public static final synchronized void show(String message, Short output){
-            JOptionPane.showMessageDialog(null, message+" "+output.shortValue(), "Db.show (short)", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(null, message+" "+ output, "Db.show (short)", JOptionPane.INFORMATION_MESSAGE);
         }
 
         // Shows the value of a Short in a message dialogue box
         public static final synchronized void show(Short output){
-            JOptionPane.showMessageDialog(null, " "+output.shortValue(), "Db.show (short)", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(null, " "+ output, "Db.show (short)", JOptionPane.INFORMATION_MESSAGE);
         }
 
         // Shows a message and the value of a byte in a message dialogue box
@@ -1734,12 +1734,12 @@ public class Db{
 
         // Shows a message and the value of a Byte in a message dialogue box
         public static final synchronized void show(String message, Byte output){
-            JOptionPane.showMessageDialog(null, message+" "+output.byteValue(), "Db.show (byte)", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(null, message+" "+ output, "Db.show (byte)", JOptionPane.INFORMATION_MESSAGE);
         }
 
         // Shows the value of a Byte in a message dialogue box
         public static final synchronized void show(Byte output){
-            JOptionPane.showMessageDialog(null, " "+output.byteValue(), "Db.show (byte)", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(null, " "+ output, "Db.show (byte)", JOptionPane.INFORMATION_MESSAGE);
         }
 
         // Shows a message and the value of a Complex in a message dialogue box
@@ -1834,12 +1834,12 @@ public class Db{
 
         // Shows a message and the value of a Boolean in a message dialogue box
         public static final synchronized void show(String message, Boolean output){
-            JOptionPane.showMessageDialog(null, message+" "+output.booleanValue(), "Db.show (boolean)", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(null, message+" "+ output, "Db.show (boolean)", JOptionPane.INFORMATION_MESSAGE);
         }
 
         // Shows the value of a Boolean in a message dialogue box
         public static final synchronized void show(Boolean output){
-            JOptionPane.showMessageDialog(null, " "+output.booleanValue(), "Db.show (boolean)", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(null, " "+ output, "Db.show (boolean)", JOptionPane.INFORMATION_MESSAGE);
         }
 
         // Shows a message and the value of a char in a message dialogue box
@@ -1854,12 +1854,12 @@ public class Db{
 
         // Shows a message and the value of a Character in a message dialogue box
         public static final synchronized void show(String message, Character output){
-            JOptionPane.showMessageDialog(null, message+" "+output.charValue(), "Db.show (char)", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(null, message+" "+ output, "Db.show (char)", JOptionPane.INFORMATION_MESSAGE);
         }
 
         // Shows the value of a Character in a message dialogue box
         public static final synchronized void show(Character output){
-            JOptionPane.showMessageDialog(null, " "+output.charValue(), "Db.show (char)", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(null, " "+ output, "Db.show (char)", JOptionPane.INFORMATION_MESSAGE);
         }
 
         // Shows a message and the value of a String in a message dialogue box

@@ -688,12 +688,12 @@ public class TriCubicInterpolation{
     	            for(int k=0; k<this.nPoints-1; k++){
     	                d3 = this.x3[k+1] - this.x3[k];
                         double[][][] cc = new double[4][4][4];
-    	                coeff.add(new Double(d1));
-    	                coeff.add(new Double(this.x1[i]));
-    	                coeff.add(new Double(d2));
-    	                coeff.add(new Double(this.x2[j]));
-    	                coeff.add(new Double(d3));
-    	                coeff.add(new Double(this.x3[k]));
+    	                coeff.add(d1);
+    	                coeff.add(this.x1[i]);
+    	                coeff.add(d2);
+    	                coeff.add(this.x2[j]);
+    	                coeff.add(d3);
+    	                coeff.add(this.x3[k]);
 
     	                for(int ii=0; ii<8; ii++){
     	                    yt[ii] = this.y[i+unitCube[ii][0]][j+unitCube[ii][1]][k+unitCube[ii][2]];
@@ -804,12 +804,12 @@ public class TriCubicInterpolation{
 
             // Find grid surrounding the interpolation point
             int gridn =0;
-            double distance1  = ((Double)coeff.get(7*gridn)).doubleValue();
-            double x1lower  = ((Double)coeff.get(7*gridn+1)).doubleValue();
-            double distance2  = ((Double)coeff.get(7*gridn+2)).doubleValue();
-            double x2lower  = ((Double)coeff.get(7*gridn+3)).doubleValue();
-            double distance3  = ((Double)coeff.get(7*gridn+4)).doubleValue();
-            double x3lower  = ((Double)coeff.get(7*gridn+5)).doubleValue();
+            double distance1  = (Double) coeff.get(7 * gridn);
+            double x1lower  = (Double) coeff.get(7 * gridn + 1);
+            double distance2  = (Double) coeff.get(7 * gridn + 2);
+            double x2lower  = (Double) coeff.get(7 * gridn + 3);
+            double distance3  = (Double) coeff.get(7 * gridn + 4);
+            double x3lower  = (Double) coeff.get(7 * gridn + 5);
             boolean test = true;
             while(test){
                 boolean test1 = false;
@@ -823,12 +823,12 @@ public class TriCubicInterpolation{
                 }
                 else{
                     gridn++;
-                    distance1  = ((Double)coeff.get(7*gridn)).doubleValue();
-                    x1lower  = ((Double)coeff.get(7*gridn+1)).doubleValue();
-                    distance2  = ((Double)coeff.get(7*gridn+2)).doubleValue();
-                    x2lower  = ((Double)coeff.get(7*gridn+3)).doubleValue();
-                    distance3  = ((Double)coeff.get(7*gridn+4)).doubleValue();
-                    x3lower  = ((Double)coeff.get(7*gridn+5)).doubleValue();
+                    distance1  = (Double) coeff.get(7 * gridn);
+                    x1lower  = (Double) coeff.get(7 * gridn + 1);
+                    distance2  = (Double) coeff.get(7 * gridn + 2);
+                    x2lower  = (Double) coeff.get(7 * gridn + 3);
+                    distance3  = (Double) coeff.get(7 * gridn + 4);
+                    x3lower  = (Double) coeff.get(7 * gridn + 5);
                 }
             }
             double[][][] gCoeff = (double[][][])coeff.get(7*gridn+6);

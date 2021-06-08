@@ -443,7 +443,7 @@ public class FileInput{
                         if(this.fullLine.charAt(i)==',')test3=true;
                         if(this.fullLine.charAt(i)==':')test3=true;
                         if(this.fullLine.charAt(i)==';')test3=true;
-                        if(test3)al1.add(new Integer(i));
+                        if(test3)al1.add(i);
                     }
                     int nal1 = al1.size();
 
@@ -457,7 +457,7 @@ public class FileInput{
                         while(test4){
                             test5 = true;
                             test6 = false;
-                            jj =((Integer)al1.get(ii)).intValue();
+                            jj = (Integer) al1.get(ii);
                             if(jj==0){
                                 test6 = true;
                             }
@@ -480,7 +480,7 @@ public class FileInput{
 
                                     }
                                     else{
-                                        kk  =((Integer)al1.get(ii+1)).intValue();
+                                        kk  = (Integer) al1.get(ii + 1);
                                         test5 = true;
                                         for(int i=jj+1; i<kk; i++){
                                             if(this.fullLine.charAt(i)!=' '){
@@ -494,7 +494,7 @@ public class FileInput{
                                 }
                             }
                             if(test6){
-                                al2.add(new Integer(jj+1));
+                                al2.add(jj + 1);
                             }
                             if(ii>=nal1)test4 = false;
                         }
@@ -502,7 +502,7 @@ public class FileInput{
                         int nal2 = al2.size();
                         if(nal2>0){
                             for(int i=nal2-1; i>=0; i--){
-                                int mm = ((Integer)al2.get(i)).intValue();
+                                int mm = (Integer) al2.get(i);
                                 if(mm>=len-1){
                                     this.fullLine += this.holdingWord;
                                 }

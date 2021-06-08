@@ -80,14 +80,14 @@ class GenericDialogPlus extends GenericDialog2
       TextField tf = (TextField)numberField.elementAt(i);
       String theText = tf.getText();
       String originalText = (String)defaultText.elementAt(i);
-      double defaultValue = ((Double)(defaultValues.elementAt(i))).doubleValue();
+      double defaultValue = (Double) (defaultValues.elementAt(i));
       double value;
       if (theText.equals(originalText))
          value = defaultValue;
       else {
          Double d = getValue(theText);
          if (d!=null)
-            value = d.doubleValue();
+            value = d;
          else {
             // invalidNumber = true;
             value = 0.0;
@@ -535,7 +535,7 @@ TextListener, FocusListener, ItemListener, KeyListener {
       tf.addFocusListener(this);
    //   tf.addKeyListener(this);
       numberField.addElement(tf);
-      defaultValues.addElement(new Double(defaultValue));
+      defaultValues.addElement(defaultValue);
       defaultText.addElement(tf.getText());
       x++; c.gridx = x; // WO prev: c.gridx = 1; 
       c.gridy = y;
@@ -778,14 +778,14 @@ TextListener, FocusListener, ItemListener, KeyListener {
          //IJ.write("getNextNumber: "+label+"  "+theText);
       }   
       String originalText = (String)defaultText.elementAt(nfIndex);
-      double defaultValue = ((Double)(defaultValues.elementAt(nfIndex))).doubleValue();
+      double defaultValue = (Double) (defaultValues.elementAt(nfIndex));
       double value;
       if (theText.equals(originalText))
          value = defaultValue;
       else {
          Double d = getValue(theText);
          if (d!=null)
-            value = d.doubleValue();
+            value = d;
          else {
             invalidNumber = true;
             value = 0.0;
@@ -818,7 +818,7 @@ TextListener, FocusListener, ItemListener, KeyListener {
 
     protected Double getValue(String theText) {
        Double d;
-       try {d = new Double(theText);}
+       try {d = Double.valueOf(theText);}
       catch (NumberFormatException e){
          d = null;
       }

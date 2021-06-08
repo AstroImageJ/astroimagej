@@ -7,6 +7,7 @@ import ij.io.*;
 import ij.io.OpenDialog;
 
 import ij.gui.*;
+import ij.plugin.frame.SyncWindows;
 import ij.process.*;
 import ij.text.*;
 //import ij.measure.*;
@@ -5770,7 +5771,7 @@ void setupListeners() {
 //            lengthTextField.setText(fourPlaces.format(photom.sourceBrightness()));            
             }
 
-    protected void getStatistics()
+    public void getStatistics()
             {
             Roi roi = imp.getRoi();
             imp.killRoi();
@@ -5803,7 +5804,67 @@ void setupListeners() {
             return cp;
             }
 
-    public void setAstroProcessor(boolean requestUpdateAnnotationsFromHeader) {
+    /**
+     * Updates the image pixel scale calibration sliders and display if auto update is enabled.
+     * (Histogram sliders at bottom of stack window).
+     */
+    public synchronized void updateCalibration() {
+        getStatistics();
+
+        if (imp.getType() == ImagePlus.COLOR_256 || imp.getType() == ImagePlus.COLOR_RGB || imp.getType() == ImagePlus.GRAY8)
+        {
+            useFixedMinMaxValues = false;
+            useFixedMinMaxValuesCB.setState(false);
+            minValue = cal.getCValue(0);
+            maxValue = cal.getCValue(255);
+            if (min < minValue) min = minValue;
+            if (max > maxValue) max = maxValue;
+        }
+        else
+        {
+            maxValue = useFixedMinMaxValues ? fixedMaxValue : (startupPrevLevels ? Math.max(max, stats.max) : stats.max);
+            minValue = useFixedMinMaxValues ? fixedMinValue : (startupPrevLevels ? Math.min(min, stats.min) : stats.min);
+            if (imp.getType() == ImagePlus.GRAY16 && maxValue - minValue < 256)
+                maxValue = minValue + 255;
+        }
+
+        if (startupAutoLevel || autoScaleIconClicked)
+        {
+            if (imp.getType()==ImagePlus.COLOR_RGB)
+            {
+                min = Math.max(stats.mean - autoScaleFactorLowRGB*stats.stdDev, minValue);
+                max = Math.min(stats.mean + autoScaleFactorHighRGB*stats.stdDev, maxValue);
+            }
+            else
+            {
+                min = Math.max(stats.mean - autoScaleFactorLow*stats.stdDev, minValue);
+                max = Math.min(stats.mean + autoScaleFactorHigh*stats.stdDev, maxValue);
+            }
+        } else if (!startupPrevLevels && !startupPrevLevelsPerSlice)
+        {
+            min = minValue;
+            max = maxValue;
+        }
+    }
+
+    public synchronized void updateWCS() {
+        wcs = new WCS(imp);
+        goodWCS = wcs.hasWCS();
+        RATextField.setEditable(goodWCS);
+        DecTextField.setEditable(goodWCS);
+        wcs.setUseSIPAlways(useSIPAllProjections);
+        extraInfo = " ("+wcs.coordsys+")";
+        ac.setWCS(wcs);
+        if (autoSaveWCStoPrefs) updatePrefsFromWCS(false);
+        ac.setShowPixelScale(showScaleX, showScaleY, pixelScaleX, pixelScaleY);
+        saveWCStoPrefsMenuItem.setEnabled(wcs != null && (wcs.hasPA || wcs.hasScale));
+        if (autoNupEleft) setBestOrientation();
+    }
+
+    public synchronized void setAstroProcessor(boolean requestUpdateAnnotationsFromHeader) {
+        setAstroProcessor(requestUpdateAnnotationsFromHeader, true);
+    }
+    public synchronized void setAstroProcessor(boolean requestUpdateAnnotationsFromHeader, boolean updateImage) {
             ImageProcessor ip = imp.getProcessor();
             slice = imp.getCurrentSlice();
             cal = imp.getCalibration();
@@ -5816,61 +5877,11 @@ void setupListeners() {
             impTitle = imp.getTitle();
             this.setTitle(impTitle);
             stackSize = imp.getStackSize();
-            
-            wcs = new WCS(imp);
-            goodWCS = wcs.hasWCS();
-            RATextField.setEditable(goodWCS);
-            DecTextField.setEditable(goodWCS);
-            wcs.setUseSIPAlways(useSIPAllProjections);
-            extraInfo = " ("+wcs.coordsys+")";
-            ac.setWCS(wcs);
-            if (autoSaveWCStoPrefs) updatePrefsFromWCS(false);
-            ac.setShowPixelScale(showScaleX, showScaleY, pixelScaleX, pixelScaleY);
-            saveWCStoPrefsMenuItem.setEnabled(wcs != null && (wcs.hasPA || wcs.hasScale));
-            if (autoNupEleft) setBestOrientation();
-            getStatistics();
 
-            if (imp.getType() == ImagePlus.COLOR_256 || imp.getType() == ImagePlus.COLOR_RGB || imp.getType() == ImagePlus.GRAY8)
-                {
-                useFixedMinMaxValues = false;
-                useFixedMinMaxValuesCB.setState(false);
-                minValue = cal.getCValue(0);
-                maxValue = cal.getCValue(255);
-                if (min < minValue) min = minValue;
-                if (max > maxValue) max = maxValue;
-                }
-            else
-                {
-                maxValue = useFixedMinMaxValues ? fixedMaxValue : (startupPrevLevels ? Math.max(max, stats.max) : stats.max);
-                minValue = useFixedMinMaxValues ? fixedMinValue : (startupPrevLevels ? Math.min(min, stats.min) : stats.min);
-                if (imp.getType() == ImagePlus.GRAY16 && maxValue - minValue < 256)
-                     maxValue = minValue + 255;
-                }
+            updateWCS();
 
-            if (startupAutoLevel || autoScaleIconClicked)
-                {
-                if (imp.getType()==ImagePlus.COLOR_RGB)
-                    {
-                    min = Math.max(stats.mean - autoScaleFactorLowRGB*stats.stdDev, minValue);
-                    max = Math.min(stats.mean + autoScaleFactorHighRGB*stats.stdDev, maxValue);
-                    }
-                else
-                    {
-                    min = Math.max(stats.mean - autoScaleFactorLow*stats.stdDev, minValue);
-                    max = Math.min(stats.mean + autoScaleFactorHigh*stats.stdDev, maxValue);
-                    }
-                }
-            else if (!startupPrevLevels && !startupPrevLevelsPerSlice)
-                {
-                min = minValue;
-                max = maxValue;
-                }
-//            else
-//                {
-//                min = imp.getProcessor().getMin();
-//                max = imp.getProcessor().getMax();
-//                }
-            
+            updateCalibration();
+
             if (autoDisplayAnnotationsFromHeader && (requestUpdateAnnotationsFromHeader || oldSlice != slice))
                 {
                 displayAnnotationsFromHeader(true, false, false);
@@ -5893,7 +5904,7 @@ void setupListeners() {
                 ip.invertLut();
             layoutContainer(this);
             ac.updateZoomBoxParameters();
-            updatePanelValues();
+            updatePanelValues(updateImage);//todo this lags the cursor aperture, especially during multiaperture
             setImageEdges();
             radius = Prefs.get("aperture.radius", radius);
             rBack1 = Prefs.get("aperture.rback1", rBack1);
@@ -5925,7 +5936,10 @@ void setupListeners() {
         updatesEnabled = enabled;
         }
 
-    void updatePanelValues()
+    synchronized void updatePanelValues() {
+            updatePanelValues(true);
+    }
+    public synchronized void updatePanelValues(boolean updateImage)
             {
             if (updatesEnabled)
                 {
@@ -6005,7 +6019,9 @@ void setupListeners() {
                     }
                 imp.setDisplayRange(cal.getRawValue(min), cal.getRawValue(max));
                 minMaxChanged = true;
-                imp.updateAndDraw();
+                if (updateImage) {
+                    imp.updateAndDraw();
+                }
                 }
             }
     
@@ -6713,7 +6729,22 @@ void setupListeners() {
             ac.paint(ac.getGraphics());
             }
 
-        public void mouseExited(MouseEvent e) 
+    @Override
+    public void showSlice(int index) {
+        super.showSlice(index);
+
+        // Fixes image not updating when slice changes with animate feature
+        //todo fix slow draw
+        ac.paintDoubleBuffered(ac.getGraphics());
+        //ac.paint(ac.getGraphics());
+
+        // Fixes subtitle (x/ nslices string at top of window) not updating
+        synchronized (this) {
+            notify();
+        }
+    }
+
+    public void mouseExited(MouseEvent e)
             {
 //            apertureOverlay.clear();
             ac.setMouseInImage(false);
@@ -8041,7 +8072,7 @@ double[] processCoordinatePair(JTextField textFieldA, int decimalPlacesA, int ba
         {
         GenericDialog gd = new GenericDialog ("Edit Aperture", getX()+getWidth()/2-165, getY()+getHeight()/2-77);
         gd.enableYesNoCancel("Save", "Delete");
-        gd.addCheckbox("Display Centroid Crosshair", roi.getIsCentroid());
+        gd.addCheckbox("Display Centroid Crosshair", roi != null && roi.getIsCentroid());
         gd.addNumericField("Aperture Radius:",roi.getRadius(), 6, 20,"(pixels)");
         gd.addNumericField("Background Inner Radius:", roi.getBack1(), 6, 20,"(pixels)");
         gd.addNumericField("Background Outer Radius:", roi.getBack2(), 6, 20,"(pixels)");
@@ -8809,18 +8840,20 @@ double[] processCoordinatePair(JTextField textFieldA, int decimalPlacesA, int ba
         Prefs.set("Astronomy_Tool.useInvertingLut", useInvertingLut);
         Prefs.set("Astronomy_Tool.showAnnotations", ac.showAnnotations);
         Prefs.set("Astronomy_Tool.autoNupEleft",autoNupEleft);
-        String fileName = IJU.getSliceFilename(imp);
-        if (!autoNupEleft || (autoNupEleft && !(fileName.endsWith(".png") || fileName.endsWith(".jpg"))))
+        if (imp != null) {
+            String fileName = IJU.getSliceFilename(imp);
+            if (!autoNupEleft || (autoNupEleft && !(fileName.endsWith(".png") || fileName.endsWith(".jpg"))))
             {
-            Prefs.set("Astronomy_Tool.invertX", invertX);
-            Prefs.set("Astronomy_Tool.invertY", invertY);
-            Prefs.set("Astronomy_Tool.rotation", rotation);
-            Prefs.set("Astronomy_Tool.showZoom", showZoom);
-            Prefs.set("Astronomy_Tool.showDir", showDir);
-            Prefs.set("Astronomy_Tool.showXY", showXY);
-            Prefs.set("Astronomy_Tool.showScaleX", showScaleX);
-            Prefs.set("Astronomy_Tool.showScaleY", showScaleY);
+                Prefs.set("Astronomy_Tool.invertX", invertX);
+                Prefs.set("Astronomy_Tool.invertY", invertY);
+                Prefs.set("Astronomy_Tool.rotation", rotation);
+                Prefs.set("Astronomy_Tool.showZoom", showZoom);
+                Prefs.set("Astronomy_Tool.showDir", showDir);
+                Prefs.set("Astronomy_Tool.showXY", showXY);
+                Prefs.set("Astronomy_Tool.showScaleX", showScaleX);
+                Prefs.set("Astronomy_Tool.showScaleY", showScaleY);
             }
+        }
         Prefs.set("Astronomy_Tool.showAbsMag", showAbsMag);
         Prefs.set("Astronomy_Tool.showIntCntWithAbsMag", showIntCntWithAbsMag);        
         Prefs.set("aperture.skyoverlay", showSkyOverlay);

@@ -387,6 +387,16 @@ public class AstroCanvas extends OverlayCanvas {
         else return srcRect.y - (int)(aspectDelta + ((getWidth()-sx)/magnification));    //(netFlipY && netRotate)
 	}
 
+    @Override
+    public int offScreenY2(int sy) {
+        return Math.round(offScreenY(sy));
+    }
+
+    @Override
+    public int offScreenX2(int sx) {
+        return Math.round(offScreenX(sx));
+    }
+
 	/**Converts screen x/y-coordinates to a floating-point offscreen x-coordinate (required for canvas rotation support).*/
 	@Override
     public double offScreenXD(int sx) {
@@ -543,7 +553,7 @@ public class AstroCanvas extends OverlayCanvas {
                         OverlayCanvas oc = getOverlayCanvas(imp);
                         if (oc.numberOfRois() > 0) drawOverlayCanvas(g);
                         transEnabled = false;
-                        if (overlay!=null) ((ImageCanvas)this).drawOverlay(overlay, g);
+                        //if (overlay!=null) ((ImageCanvas)this).drawOverlay(overlay, g);
                         if (showAllOverlay!=null) ((ImageCanvas)this).drawOverlay(showAllOverlay, g);
                         if (roi!=null) drawRoi(roi, g);
                         transEnabled = true;
@@ -630,7 +640,7 @@ public class AstroCanvas extends OverlayCanvas {
             OverlayCanvas oc = getOverlayCanvas(imp);
             if (oc.numberOfRois() > 0) drawOverlayCanvas(offScreenGraphics);
             transEnabled = false;
-			if (overlay!=null) ((ImageCanvas)this).drawOverlay(overlay, offScreenGraphics);
+			//if (overlay!=null) ((ImageCanvas)this).drawOverlay(overlay, offScreenGraphics);
 			if (showAllOverlay!=null) ((ImageCanvas)this).drawOverlay(showAllOverlay, offScreenGraphics);
 			if (roi!=null) drawRoi(roi, offScreenGraphics);
             transEnabled = true;
@@ -683,7 +693,7 @@ public class AstroCanvas extends OverlayCanvas {
         OverlayCanvas oc = getOverlayCanvas(imp);
         if (oc.numberOfRois() > 0) drawOverlayCanvas(imageGraphics);
         transEnabled = false;
-        if (overlay!=null) ((ImageCanvas)this).drawOverlay(overlay, imageGraphics);
+        //if (overlay!=null) ((ImageCanvas)this).drawOverlay(overlay, imageGraphics);
         if (showAllOverlay!=null) ((ImageCanvas)this).drawOverlay(showAllOverlay, imageGraphics);
         if (roi!=null) drawRoi(roi, imageGraphics);
         transEnabled = true;

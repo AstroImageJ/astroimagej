@@ -2,10 +2,12 @@ package ij.plugin.filter;
 import ij.*;
 import ij.process.*;
 import ij.gui.*;
-import ij.text.*;
+//import ij.text.*;
+import ij.measure.ResultsTable;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.*;
+import java.util.ArrayList;
 
 /** Displays the active image's look-up table. */
 public class LutViewer implements PlugInFilter {
@@ -14,10 +16,14 @@ public class LutViewer implements PlugInFilter {
 	
 	public int setup(String arg, ImagePlus imp) {
 		this.imp = imp;
-		return DOES_ALL-DOES_RGB+NO_UNDO+NO_CHANGES;
+		return DOES_ALL+NO_UNDO+NO_CHANGES;
 	}
 
 	public void run(ImageProcessor ip) {
+		if (ip.getNChannels()==3) {
+			IJ.error("RGB images do not have LUTs.");
+			return;
+		}
 		int xMargin = 35;
 		int yMargin = 20;
 		int width = 256;
@@ -140,12 +146,15 @@ class LutWindow extends ImageWindow implements ActionListener {
 		byte[] b = new byte[size];
 		icm.getReds(r); 
 		icm.getGreens(g); 
-		icm.getBlues(b);
-		StringBuffer sb = new StringBuffer();
-		String headings = "Index\tRed\tGreen\tBlue";
-		for (int i=0; i<size; i++)
-			sb.append(i+"\t"+(r[i]&255)+"\t"+(g[i]&255)+"\t"+(b[i]&255)+"\n");
-		TextWindow tw = new TextWindow("LUT", headings, sb.toString(), 250, 400);
+		icm.getBlues(b);		
+		ResultsTable rt = new ResultsTable();
+		for (int i=0; i<size; i++) {
+      		rt.setValue("Index", i, i);
+      		rt.setValue("Red", i, r[i]&255);
+      		rt.setValue("Green", i, g[i]&255);
+      		rt.setValue("Blue", i, b[i]&255);
+      	}
+		rt.show("LUT");
 	}
 
 } // LutWindow class

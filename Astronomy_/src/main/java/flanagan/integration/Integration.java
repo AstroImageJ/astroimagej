@@ -202,7 +202,7 @@ public class Integration{
         	if(!this.gaussQuadIndex.isEmpty()){
             		for(int k=0; k<this.gaussQuadIndex.size(); k++){
                 		Integer ki = this.gaussQuadIndex.get(k);
-                		if(ki.intValue()==this.glPoints){
+                		if(ki ==this.glPoints){
                     			test=false;
                     			kn = k;
                 		}
@@ -212,7 +212,7 @@ public class Integration{
         	if(test){
             		// Calculate and store coefficients
             		this.gaussQuadCoeff(this.glPoints);
-            		this.gaussQuadIndex.add(new Integer(this.glPoints));
+            		this.gaussQuadIndex.add(this.glPoints);
             		this.gaussQuadDistArrayList.add(this.gaussQuadDist);
             		this.gaussQuadWeightArrayList.add(this.gaussQuadWeight);
         	}
@@ -271,7 +271,7 @@ public class Integration{
         	if(!this.gaussQuadIndex.isEmpty()){
             		for(int k=0; k<this.gaussQuadIndex.size(); k++){
                 		Integer ki = this.gaussQuadIndex.get(k);
-                		if(ki.intValue()==this.glPoints){
+                		if(ki ==this.glPoints){
                     			test=false;
                     			kn = k;
                 		}
@@ -281,7 +281,7 @@ public class Integration{
         	if(test){
             		// Calculate and store coefficients
             		this.gaussQuadCoeff(this.glPoints);
-            		this.gaussQuadIndex.add(new Integer(this.glPoints));
+            		this.gaussQuadIndex.add(this.glPoints);
             		this.gaussQuadDistArrayList.add(this.gaussQuadDist);
             		this.gaussQuadWeightArrayList.add(this.gaussQuadWeight);
         	}
@@ -318,9 +318,9 @@ public class Integration{
                 this.integralSD = Math.sqrt(sd/sum);
                 
                 ArrayList<Double> ret = new ArrayList<Double>();
-                ret.add(new Double(this.integralSum));
-                ret.add(new Double(this.integralMean));
-                ret.add(new Double(this.integralSD));
+                ret.add(this.integralSum);
+                ret.add(this.integralMean);
+                ret.add(this.integralSD);
                 
                 this.integrationStatsDone = true;
                 this.integrationDone = true;

@@ -1,10 +1,12 @@
 package ij.plugin;
 import ij.*;
+import ij.astro.AstroImageJ;
 import ij.gui.*;
 import ij.process.*;
 import ij.measure.Calibration;
 import ij.macro.Interpreter;
 import ij.io.FileInfo;
+import ij.plugin.frame.Recorder;
 import java.awt.image.ColorModel;
 
 
@@ -13,13 +15,13 @@ import java.awt.image.ColorModel;
 public class HyperStackConverter implements PlugIn {
 	public static final int CZT=0, CTZ=1, ZCT=2, ZTC=3, TCZ=4, TZC=5;
 	static final int C=0, Z=1, T=2;
-    static final String[] orders = {"xyczt(default)", "xyctz", "xyzct", "xyztc", "xytcz", "xytzc"};
-    static int order = CZT;
-    static boolean splitRGB = true;
+	static final String[] orders = {"xyczt(default)", "xyctz", "xyzct", "xyztc", "xytcz", "xytzc"};
+	static int ordering = CZT;
+	static boolean splitRGB = true;
 
 	public void run(String arg) {
 		if (arg.equals("new"))
-		{newHyperStack(); return;}
+			{newHyperStack(); return;}
 		ImagePlus imp = IJ.getImage();
     	if (arg.equals("stacktohs"))
     		convertStackToHS(imp);
@@ -27,8 +29,140 @@ public class HyperStackConverter implements PlugIn {
     		convertHSToStack(imp);
 	}
 	
-	/** Displays the current stack in a HyperStack window. Based on the 
+	/** Converts the specified stack into a hyperstack with 'c' channels, 'z' slices and
+		 't' frames using the default ordering ("xyczt") and display mode ("Composite"). */
+	public static ImagePlus toHyperStack(ImagePlus imp, int c, int z, int t) {
+		return toHyperStack(imp, c, z, t, null, null);
+	}
+
+	/** Converts the specified stack into a hyperstack with 'c' channels, 'z' slices and
+		 't' frames using the default ordering ("xyczt") and the specified display
+		 mode ("composite", "color" or "grayscale"). */
+	public static ImagePlus toHyperStack(ImagePlus imp, int c, int z, int t, String mode) {
+		return toHyperStack(imp, c, z, t, null, mode);
+	}
+
+	/** Converts the specified stack into a hyperstack with 'c' channels,
+	 *  'z' slices and 't' frames. The default "xyczt" order is used if
+	 * 'order' is null. The default "composite" display mode is used
+	 * if 'mode' is null.
+	 * @param imp the stack to be converted
+	 * @param c channels
+	 * @param z slices
+	 * @param t frames
+	 * @param order hyperstack order ("default", "xyctz", "xyzct", "xyztc", "xytcz" or "xytzc")
+	 * @param mode display mode ("composite", "color" or "grayscale")
+	 * @return the resulting hyperstack
+	*/
+	public static ImagePlus toHyperStack(ImagePlus imp, int c, int z, int t, String order, String mode) {
+		int n = imp.getStackSize();
+		if (n==1)
+			throw new IllegalArgumentException("Stack required");
+		if (imp.getBitDepth()==24 && mode.equalsIgnoreCase("composite"))
+			mode = "color";
+		if (c*z*t!=n)
+			throw new IllegalArgumentException("C*Z*T not equal stack size");
+		imp.setDimensions(c, z, t);
+		if (order==null || order.equals("default") || order.equals("xyczt"))
+			order = orders[0];
+		int intOrder = CZT;
+		for (int i=0; i<orders.length; i++) {
+			if (order.equals(orders[i])) {
+				intOrder = i;
+				break;
+			}
+		}
+		if (intOrder!=CZT && imp.getStack().isVirtual())
+			reorderVirtualStack(imp, intOrder);
+		else
+			(new HyperStackConverter()).shuffle(imp, intOrder);
+		ImagePlus imp2 = imp;
+		int intMode = IJ.COMPOSITE;
+		if (mode!=null) {
+			if (mode.equalsIgnoreCase("color"))
+				intMode = IJ.COLOR;
+			else if (mode.equalsIgnoreCase("grayscale"))
+				intMode = IJ.GRAYSCALE;
+		}
+		if (c>1) {
+			LUT[] luts = imp.getLuts();
+			if (luts!=null && luts.length<c)
+				luts = null;
+			imp2 = new CompositeImage(imp, intMode);
+			if (luts!=null)
+				((CompositeImage)imp2).setLuts(luts);
+		}
+		imp2.setOpenAsHyperStack(true);
+		imp2.setOverlay(imp.getOverlay());
+		return imp2;
+	}
+	
+	/** Converts the specified hyperstack into a stack. */
+	public static void toStack(ImagePlus imp) {
+		if (imp.isHyperStack()||imp.isComposite()) {
+			imp.setDimensions(1,imp.getStackSize(),1);
+			imp.draw();				
+		}
+	}
+	
+	private static void reorderVirtualStack(ImagePlus imp, int order) {
+		if (!(imp.getStack() instanceof VirtualStack))
+			return;
+		int[] indexes = shuffleVirtual(imp, order);
+		VirtualStack vstack = (VirtualStack)imp.getStack();
+		vstack.setIndexes(indexes);
+	}
+	
+	//String msg = "This is a custom VirtualStack. To switch to "+orders[order]+" order,\n"
+	//	+"save in TIFF format, import as a TIFF Virtual Stack and\n"
+	//	+"again use the \"Stack to Hyperstack\" command.";
+	
+	private static int[] shuffleVirtual(ImagePlus imp, int order) {
+		int n = imp.getStackSize();
+		int nChannels = imp.getNChannels();
+		int nSlices = imp.getNSlices();
+		int nFrames = imp.getNFrames();
+		int first=C, middle=Z, last=T;
+		int nFirst=nChannels, nMiddle=nSlices, nLast=nFrames;
+		switch (order) {
+			case CTZ: first=C; middle=T; last=Z;
+				nFirst=nChannels; nMiddle=nFrames; nLast=nSlices;
+				break;
+			case ZCT: first=Z; middle=C; last=T;
+				nFirst=nSlices; nMiddle=nChannels; nLast=nFrames;
+				break;
+			case ZTC: first=Z; middle=T; last=C;
+				nFirst=nSlices; nMiddle=nFrames; nLast=nChannels;
+				break;
+			case TCZ: first=T; middle=C; last=Z;
+				nFirst=nFrames; nMiddle=nChannels; nLast=nSlices;
+				break;
+			case TZC: first=T; middle=Z; last=C;
+				nFirst=nFrames; nMiddle=nSlices; nLast=nChannels;
+				break;
+		}
+		int[] indexes1 = new int[n];
+		int[] indexes2 = new int[n];
+		for (int i=0; i<n; i++) {
+			indexes1[i] = i;
+			indexes2[i] = i;
+		}
+		int[] index = new int[3];
+		for (index[2]=0; index[2]<nFrames; ++index[2]) {
+			for (index[1]=0; index[1]<nSlices; ++index[1]) {
+				for (index[0]=0; index[0]<nChannels; ++index[0]) {
+					int dstIndex = index[0] + index[1]*nChannels + index[2]*nChannels*nSlices;
+					int srcIndex = index[first] + index[middle]*nFirst + index[last]*nFirst*nMiddle;
+					indexes1[dstIndex] = indexes2[srcIndex];
+				}
+			}
+		}
+		return indexes1;
+	}
+		
+	/** Displays the specified stack in a HyperStack window. Based on the 
 		Stack_to_Image5D class in Joachim Walter's Image5D plugin. */
+	@AstroImageJ(reason = "unknown; show second image", modified = true)
 	void convertStackToHS(ImagePlus imp) {
         int nChannels = imp.getNChannels();
         int nSlices = imp.getNSlices();
@@ -41,7 +175,7 @@ public class HyperStackConverter implements PlugIn {
 		boolean rgb = imp.getBitDepth()==24;
 		String[] modes = {"Composite", "Color", "Grayscale"};
 		GenericDialog gd = new GenericDialog("Convert to HyperStack");
-		gd.addChoice("Order:", orders, orders[order]);
+		gd.addChoice("Order:", orders, orders[ordering]);
 		gd.addNumericField("Channels (c):", nChannels, 0);
 		gd.addNumericField("Slices (z):", nSlices, 0);
 		gd.addNumericField("Frames (t):", nFrames, 0);
@@ -52,7 +186,7 @@ public class HyperStackConverter implements PlugIn {
 		}
 		gd.showDialog();
 		if (gd.wasCanceled()) return;
-		order = gd.getNextChoiceIndex();
+		ordering = gd.getNextChoiceIndex();
 		nChannels = (int) gd.getNextNumber();
 		nSlices = (int) gd.getNextNumber();
 		nFrames = (int) gd.getNextNumber();
@@ -72,31 +206,44 @@ public class HyperStackConverter implements PlugIn {
 			return;
 		}
 		imp.setDimensions(nChannels, nSlices, nFrames);
-		if (order!=CZT && imp.getStack().isVirtual())
-			IJ.error("HyperStack Converter", "Virtual stacks must by in XYCZT order.");
-		else {
-			shuffle(imp, order);
-			ImagePlus imp2 = imp;
-			if (nChannels>1 && imp.getBitDepth()!=24) {
-				LUT[] luts = imp.getLuts();
-				if (luts!=null && luts.length<nChannels) luts = null;
-				imp2 = new CompositeImage(imp, mode+1);
-				if (luts!=null)
-					((CompositeImage)imp2).setLuts(luts);
-			} else if (imp.getClass().getName().indexOf("Image5D")!=-1) {
-				imp2 = imp.createImagePlus();
-				imp2.setStack(imp.getTitle(), imp.getImageStack());
-				imp2.setDimensions(imp.getNChannels(), imp.getNSlices(), imp.getNFrames());
-				imp2.getProcessor().resetMinAndMax();
-			}
-			imp2.setOpenAsHyperStack(true);
-			if (imp.getWindow()!=null || imp!=imp2)
+		if (ordering!=CZT && imp.getStack().isVirtual())
+			reorderVirtualStack(imp, ordering);
+		else
+			shuffle(imp, ordering);
+		ImagePlus imp2 = imp;
+		if (nChannels>1 && imp.getBitDepth()!=24) {
+			LUT[] luts = imp.getLuts();
+			if (luts!=null && luts.length<nChannels) luts = null;
+			imp2 = new CompositeImage(imp, mode+1);
+			if (luts!=null)
+				((CompositeImage)imp2).setLuts(luts);
+		} else if (imp.getClass().getName().indexOf("Image5D")!=-1) {
+			imp2 = imp.createImagePlus();
+			imp2.setStack(imp.getTitle(), imp.getImageStack());
+			imp2.setDimensions(imp.getNChannels(), imp.getNSlices(), imp.getNFrames());
+			imp2.getProcessor().resetMinAndMax();
+		}
+		imp2.setOpenAsHyperStack(true);
+		if (imp.getWindow()!=null || imp!=imp2) {
+			if (Interpreter.isBatchMode())
+				imp2.show();
+			else
 				new StackWindow(imp2);
-			if (imp!=imp2) {
-				imp2.setOverlay(imp.getOverlay());
-				imp.hide();
-                imp2.show();
-				WindowManager.setCurrentWindow(imp2.getWindow());
+		}
+		if (imp!=imp2) {
+			imp2.setOverlay(imp.getOverlay());
+			imp.hide();
+			imp2.show();
+			WindowManager.setCurrentWindow(imp2.getWindow());
+		}
+		if (Recorder.record && Recorder.scriptMode()) {
+			String order = orders[ordering];
+			if (order.equals(orders[0])) { // default order
+				Recorder.recordCall("imp2 = HyperStackConverter.toHyperStack(imp, "+nChannels+", "+
+					nSlices+", "+nFrames+", \""+modes[mode]+"\");");
+			} else {
+				Recorder.recordCall("imp2 = HyperStackConverter.toHyperStack(imp, "+nChannels+", "+
+					nSlices+", "+nFrames+", \""+order+"\", \""+modes[mode]+"\");");
 			}
 		}
 	}
@@ -149,8 +296,10 @@ public class HyperStackConverter implements PlugIn {
 		}
 	}
 
+	@AstroImageJ(reason = "unknown; show second image", modified = true)
 	void convertHSToStack(ImagePlus imp) {
-		if (!imp.isHyperStack()) return;
+		if (!(imp.isHyperStack()||imp.isComposite()))
+			return;
 		ImagePlus imp2 = imp;
 		if (imp.isComposite()) {
 			ImageStack stack = imp.getStack();
@@ -167,8 +316,10 @@ public class HyperStackConverter implements PlugIn {
 		if (imp!=imp2) {
 			imp2.setOverlay(imp.getOverlay());
 			imp.hide();
-                imp2.show();
+			imp2.show();
 		}
+		if (Recorder.record && Recorder.scriptMode())
+			Recorder.recordCall("HyperStackConverter.toStack(imp);");
 	}
 	
 	void newHyperStack() {

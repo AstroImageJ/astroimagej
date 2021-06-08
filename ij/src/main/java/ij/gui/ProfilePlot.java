@@ -15,9 +15,9 @@ public class ProfilePlot {
 	static final double ASPECT_RATIO = 0.5;
 	private double min, max;
 	private boolean minAndMaxCalculated;
-    private static double fixedMin = Prefs.getDouble("pp.min",0.0);
-    private static double fixedMax = Prefs.getDouble("pp.max",0.0);
-    
+	private static double fixedMin;
+	private static double fixedMax;
+
 	protected ImagePlus imp;
 	protected double[] profile;
 	protected double magnification;
@@ -26,7 +26,7 @@ public class ProfilePlot {
 	protected String yLabel;
 	protected float[] xValues;
 
-	
+
 	public ProfilePlot() {
 	}
 
@@ -51,7 +51,6 @@ public class ProfilePlot {
 		units = cal.getUnits();
 		yLabel = cal.getValueUnit();
 		ImageProcessor ip = imp.getProcessor();
-		//ip.setCalibrationTable(cal.getCTable());
 		if (roiType==Roi.LINE)
 			profile = getStraightLineProfile(roi, cal, ip);
 		else if (roiType==Roi.POLYLINE || roiType==Roi.FREELINE) {
@@ -72,14 +71,6 @@ public class ProfilePlot {
 			magnification = 1.0;
 	}
 
-	//void calibrate(Calibration cal) {
-	//	float[] cTable = cal.getCTable();
-	//	if (cTable!=null)
-	//		for ()
-	//			profile[i] = profile[i];
-	//	
-	//}
-	
 	/** Returns the size of the plot that createWindow() creates. */
 	public Dimension getPlotSize() {
 		if (profile==null) return null;
@@ -89,7 +80,7 @@ public class ProfilePlot {
 			width = MIN_WIDTH;
 			height = (int)(width*ASPECT_RATIO);
 		}
-		Dimension screen = IJ.getScreenSize();
+		Rectangle screen = GUI.getMaxWindowBounds(imp!=null ? imp.getWindow() : IJ.getInstance());
 		int maxWidth = Math.min(screen.width-200, 1000);
 		if (width>maxWidth) {
 			width = maxWidth;
@@ -97,19 +88,17 @@ public class ProfilePlot {
 		}
 		return new Dimension(width, height);
 	}
-	
+
 	/** Displays this profile plot in a window. */
 	public void createWindow() {
 		Plot plot = getPlot();
-		if (plot==null) return;
-		plot.setSourceImageID(imp.getID());
-		plot.show();
+		if (plot!=null)
+			plot.show();
 	}
-	
-	Plot getPlot() {
+
+	public Plot getPlot() {
 		if (profile==null)
 			return null;
-		Dimension d = getPlotSize();
 		String xLabel = "Distance ("+units+")";
   		int n = profile.length;
   		if (xValues==null) {
@@ -128,7 +117,7 @@ public class ProfilePlot {
 		}
 		return plot;
 	}
-	
+
 	String getShortTitle(ImagePlus imp) {
 		String title = imp.getTitle();
 		int index = title.lastIndexOf('.');
@@ -141,49 +130,52 @@ public class ProfilePlot {
 	public double[] getProfile() {
 		return profile;
 	}
-	
+
 	/** Returns the calculated minimum value. */
 	public double getMin() {
 		if (!minAndMaxCalculated)
 			findMinAndMax();
 		return min;
 	}
-	
+
 	/** Returns the calculated maximum value. */
 	public double getMax() {
 		if (!minAndMaxCalculated)
 			findMinAndMax();
 		return max;
 	}
-	
+
 	/** Sets the y-axis min and max. Specify (0,0) to autoscale. */
 	public static void setMinAndMax(double min, double max) {
 		fixedMin = min;
 		fixedMax = max;
 		IJ.register(ProfilePlot.class);
 	}
-	
+
 	/** Returns the profile plot y-axis min. Auto-scaling is used if min=max=0. */
 	public static double getFixedMin() {
 		return fixedMin;
 	}
-	
+
 	/** Returns the profile plot y-axis max. Auto-scaling is used if min=max=0. */
 	public static double getFixedMax() {
 		return fixedMax;
 	}
-	
+
 	double[] getStraightLineProfile(Roi roi, Calibration cal, ImageProcessor ip) {
 			ip.setInterpolate(PlotWindow.interpolate);
 			Line line = (Line)roi;
 			double[] values = line.getPixels();
 			if (values==null) return null;
 			if (cal!=null && cal.pixelWidth!=cal.pixelHeight) {
-				double dx = cal.pixelWidth*(line.x2 - line.x1);
-				double dy = cal.pixelHeight*(line.y2 - line.y1);
-				double length = Math.round(Math.sqrt(dx*dx + dy*dy));
-				if (values.length>1)
-					xInc = length/(values.length-1);
+				FloatPolygon p = line.getFloatPoints();
+				double dx = p.xpoints[1] - p.xpoints[0];
+				double dy = p.ypoints[1] - p.ypoints[0];
+				double pixelLength = Math.sqrt(dx*dx + dy*dy);
+				dx = cal.pixelWidth*dx;
+				dy = cal.pixelHeight*dy;
+				double calibratedLength = Math.sqrt(dx*dx + dy*dy);
+				xInc = calibratedLength * 1.0/pixelLength;
 			}
 			return values;
 	}
@@ -208,8 +200,8 @@ public class ProfilePlot {
 			xInc = cal.pixelHeight;
 		return profile;
 	}
-	
-	double[] getColumnAverageProfile(Rectangle rect, ImageProcessor ip) {
+
+	public static double[] getColumnAverageProfile(Rectangle rect, ImageProcessor ip) {
 		double[] profile = new double[rect.width];
 		int[] counts = new int[rect.width];
 		double[] aLine;
@@ -226,8 +218,15 @@ public class ProfilePlot {
 		for (int i=0; i<rect.width; i++)
 			profile[i] /= counts[i];
 		return profile;
-	}	
+	}
 
+	/** Returns the profile for a polyline with single-pixel width.
+	 *  If subpixel resolution is enabled (Plot options>subpixel resolution),
+	 *  the line coordinates are interpreted as the roi line shown at high zoom level,
+	 *  i.e., integer (x,y) is at the top left corner of pixel (x,y).
+	 *  Thus, the coordinates of the pixel center are taken as (x+0.5, y+0.5).
+	 *  If subpixel resolution if off, the coordinates of the pixel centers are taken
+	 *  as integer (x,y). */
 	double[] getIrregularProfile(Roi roi, ImageProcessor ip, Calibration cal) {
 		boolean interpolate = PlotWindow.interpolate;
 		boolean calcXValues = cal!=null && cal.pixelWidth!=cal.pixelHeight;
@@ -276,11 +275,34 @@ public class ProfilePlot {
 		return values2;
 	}
 
+	/*
+	double[] getIrregularProfile(Roi roi, ImageProcessor ip, Calibration cal) {
+		boolean interpolate = PlotWindow.interpolate;
+		FloatPolygon p = roi.getFloatPolygon();
+		float[][] xyPoints = ((PolygonRoi)roi).getEquidistantPoints(p.xpoints, p.ypoints, p.npoints, 1.0, imp);
+		float[] xPoints = xyPoints[0];
+		float[] yPoints = xyPoints[1];
+		double[] values = new double[xPoints.length];
+		for (int i=0; i<xPoints.length; i++)
+			values[i] = interpolate ?
+				ip.getInterpolatedValue(xPoints[i], yPoints[i]) :
+				ip.getPixelValue((int)Math.round(xPoints[i]), (int)Math.round(yPoints[i]));
+		return values;
+	}
+	*/
+
 	double[] getWideLineProfile(ImagePlus imp, int lineWidth) {
-		Roi roi = (Roi)imp.getRoi().clone();
+		Roi roi = imp.getRoi();
+		if (roi == null) return null;	//roi may have changed asynchronously
+		if ((roi instanceof PolygonRoi) && roi.getState()==Roi.CONSTRUCTING)
+			return null;				//don't disturb roi under construction by spline fit
+		roi = (Roi)roi.clone();
 		ImageProcessor ip2 = (new Straightener()).straightenLine(imp, lineWidth);
+		if (ip2 == null) return null;
 		int width = ip2.getWidth();
 		int height = ip2.getHeight();
+		if (ip2 instanceof FloatProcessor)
+			return getColumnAverageProfile(new Rectangle(0,0,width,height),ip2);
 		profile = new double[width];
 		double[] aLine;
 		ip2.setInterpolate(false);
@@ -298,7 +320,7 @@ public class ProfilePlot {
 		}
 		return profile;
 	}
-	
+
 	void findMinAndMax() {
 		if (profile==null) return;
 		double min = Double.MAX_VALUE;
@@ -312,6 +334,6 @@ public class ProfilePlot {
 		this.min = min;
 		this.max = max;
 	}
-	
+
 
 }

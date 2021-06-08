@@ -16,7 +16,7 @@ import javax.swing.filechooser.*;
  	/** Display a dialog using the specified title. */
  	public DirectoryChooser(String title) {
  		this.title = title;
-		if (IJ.isMacOSX())
+		if (IJ.isMacOSX() && !Prefs.useJFileChooser)
 			getDirectoryUsingFileDialog(title);
  		else {
 			String macroOptions = Macro.getOptions();
@@ -51,8 +51,7 @@ import javax.swing.filechooser.*;
 					if (chooser.showOpenDialog(null)==JFileChooser.APPROVE_OPTION) {
 						File file = chooser.getSelectedFile();
 						directory = file.getAbsolutePath();
-						if (!directory.endsWith(File.separator))
-							directory += File.separator;
+						directory = IJ.addSeparator(directory);
 						OpenDialog.setDefaultDirectory(directory);
 					}
 				}
@@ -78,8 +77,7 @@ import javax.swing.filechooser.*;
 			if (chooser.showOpenDialog(null)==JFileChooser.APPROVE_OPTION) {
 				File file = chooser.getSelectedFile();
 				directory = file.getAbsolutePath();
-				if (!directory.endsWith(File.separator))
-					directory += File.separator;
+				directory = IJ.addSeparator(directory);
 				OpenDialog.setDefaultDirectory(directory);
 			}
 		} catch (Exception e) {}
@@ -99,13 +97,14 @@ import javax.swing.filechooser.*;
 		}
 		if (IJ.debugMode)
 			IJ.log("DirectoryChooser: dir=\""+dir+"\",  file=\""+name+"\"");
-		OpenDialog od = new OpenDialog(title, dir, name);
-		if (od.getDirectory()==null)
+		OpenDialog od = new OpenDialog(title, dir, null);
+		String odDir = od.getDirectory();
+		if (odDir==null)
 			directory = null;
-		else
-			directory = od.getDirectory() + od.getFileName() + "/";
-		if (directory!=null)
+		else {
+			directory = odDir + od.getFileName() + "/";
 			OpenDialog.setDefaultDirectory(directory);
+		}
 		System.setProperty("apple.awt.fileDialogForDirectories", "false");
  		Prefs.useJFileChooser = saveUseJFC;
 	}

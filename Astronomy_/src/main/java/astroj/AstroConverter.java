@@ -677,7 +677,7 @@ public class AstroConverter implements ItemListener, ActionListener, ChangeListe
         timeZoneLabel.setFont(p12);
         timeZoneLabel.setToolTipText("Set time zone offset from UTC");
         timeZonePanel.add (timeZoneLabel);
-        SpinnerModel timeZoneSpinnerModel = new SpinnerNumberModel(new Double(nowTimeZoneOffset), new Double(-12), new Double(12), new Double(1.0));
+        SpinnerModel timeZoneSpinnerModel = new SpinnerNumberModel(Double.valueOf(nowTimeZoneOffset), Double.valueOf(-12), Double.valueOf(12), Double.valueOf(1.0));
 
         timeZoneOffsetSpinner = new JSpinner(timeZoneSpinnerModel);
         timeZoneOffsetSpinner.setEnabled(!autoTimeZone);
@@ -688,7 +688,7 @@ public class AstroConverter implements ItemListener, ActionListener, ChangeListe
             {
             public void stateChanged(ChangeEvent ev)
                 {
-                nowTimeZoneOffset = ((Double)timeZoneOffsetSpinner.getValue()).doubleValue();
+                nowTimeZoneOffset = (Double) timeZoneOffsetSpinner.getValue();
                 processAction(null);
                 }
             });
@@ -698,7 +698,7 @@ public class AstroConverter implements ItemListener, ActionListener, ChangeListe
                 {
                 if (!autoTimeZone)
                     {
-                    double newValue = ((Double)timeZoneOffsetSpinner.getValue()).doubleValue() - e.getWheelRotation();
+                    double newValue = (Double) timeZoneOffsetSpinner.getValue() - e.getWheelRotation();
                     if (newValue < -12.0)
                         timeZoneOffsetSpinner.setValue(-12.0);
                     else if (newValue > 12.0)

@@ -3953,7 +3953,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             Graphics g = mainpanel.getGraphics();
             FontMetrics metrics = g.getFontMetrics(font);
             h = metrics.getHeight();
-            w = (int) (metrics.stringWidth(llab) * 1.1);
+            w = (int) (metrics.stringWidth(llab) * 1.1) + 18;
         }
         plot.setLineWidth(width);
         if (legendRight) { xShift += w; } else if (!legendLeft) xShift += w / 2f;

@@ -31,6 +31,7 @@ package nom.tam.fits;
  * #L%
  */
 
+import static nom.tam.fits.header.Aij.ANNOTATE;
 import static nom.tam.fits.header.Standard.BITPIX;
 import static nom.tam.fits.header.Standard.COMMENT;
 import static nom.tam.fits.header.Standard.END;
@@ -60,6 +61,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import nom.tam.fits.FitsFactory.FitsSettings;
+import nom.tam.fits.header.Aij;
 import nom.tam.fits.header.IFitsHeader;
 import nom.tam.util.ArrayDataInput;
 import nom.tam.util.ArrayDataOutput;
@@ -1519,7 +1521,9 @@ public class Header implements FitsElement {
                 insertComment(nextHCard.getComment());
             } else if (nextHCard.getKey().equals(HISTORY.key())) {
                 insertHistory(nextHCard.getComment());
-            } else {
+            } else if (nextHCard.getKey().equals(ANNOTATE.key())) {
+                updateLine(ANNOTATE.key(), nextHCard);
+            }else {
                 updateLine(nextHCard.getKey(), nextHCard);
             }
         }
@@ -1560,7 +1564,7 @@ public class Header implements FitsElement {
 
     private void addDuplicate(HeaderCard dup) {
         if (!COMMENT.key().equals(dup.getKey()) && !HISTORY.key().equals(dup.getKey()) &&
-                !"ANNOTATE".equals(dup.getKey()) && !dup.getKey().trim().isEmpty()) {
+                !ANNOTATE.key().equals(dup.getKey()) && !dup.getKey().trim().isEmpty()) {
             LOG.log(Level.WARNING, "Multiple occurrences of key:" + dup.getKey());
             if (this.duplicates == null) {
                 this.duplicates = new ArrayList<HeaderCard>();

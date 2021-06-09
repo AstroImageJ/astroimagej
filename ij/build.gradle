@@ -4,7 +4,7 @@ plugins {
 }
 
 dependencies {
-    implementation 'gov.nasa.gsfc.heasarc:nom-tam-fits:1.15.2'
+    implementation project(':Nom Fits Module')
 }
 
 mainClassName = 'ij.ImageJ'
@@ -28,6 +28,7 @@ jar {
 
     // Ship nom.tam.fits
     from {
+        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
 }

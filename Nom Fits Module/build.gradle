@@ -1,0 +1,27 @@
+plugins {
+    // Apply the java-library plugin to add support for Java Library
+    id 'java'
+}
+
+dependencies {
+    implementation "org.apache.maven.wagon:wagon-ssh:2.7"
+    implementation "org.tinyjee.dim:doxia-include-macro:1.1"
+    implementation "org.apache.maven.doxia:doxia-module-markdown:1.6"
+    implementation "com.puppycrawl.tools:checkstyle:6.14.1"
+    implementation "org.apache.maven.doxia:doxia-module-markdown:1.6"
+    implementation "org.apache.commons:commons-compress:1.18"
+    implementation "com.google.code.findbugs:annotations:3.0.0"
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.3.1'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.3.1'
+    testCompileOnly 'junit:junit:4.12'
+    testRuntimeOnly 'org.junit.vintage:junit-vintage-engine:5.3.1'
+    testImplementation "com.nanohttpd:nanohttpd-webserver:2.1.1"
+    testImplementation "org.openjdk.jmh:jmh-core:1.11.2"
+    testImplementation "org.openjdk.jmh:jmh-generator-annprocess:1.11.2"
+}
+
+test.onlyIf { project.hasProperty('runTests') }
+
+test {
+    useJUnitPlatform()
+}

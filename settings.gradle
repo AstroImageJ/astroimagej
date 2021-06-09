@@ -1,3 +1,5 @@
 rootProject.name = 'AstroImageJ'
 include 'ij'
 include 'Astronomy_'
+include 'Nom Fits Module'
+

@@ -55,6 +55,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -1558,7 +1559,8 @@ public class Header implements FitsElement {
     }
 
     private void addDuplicate(HeaderCard dup) {
-        if (!COMMENT.key().equals(dup.getKey()) && !HISTORY.key().equals(dup.getKey()) && !dup.getKey().trim().isEmpty()) {
+        if (!COMMENT.key().equals(dup.getKey()) && !HISTORY.key().equals(dup.getKey()) &&
+                !"ANNOTATE".equals(dup.getKey()) && !dup.getKey().trim().isEmpty()) {
             LOG.log(Level.WARNING, "Multiple occurrences of key:" + dup.getKey());
             if (this.duplicates == null) {
                 this.duplicates = new ArrayList<HeaderCard>();

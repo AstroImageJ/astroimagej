@@ -12,7 +12,7 @@ import java.awt.image.*;
 	 * about.jpg in ij.jar, scaling it 600% and adding text to an overlay.
 	*/
 	public class AboutBox implements PlugIn {
-		private static final int SMALL_FONT=20, LARGE_FONT=45;
+		private static final int SMALL_FONT=20, LARGE_FONT=35;
 		private static final Color TEXT_COLOR = new Color(255,255,80);
 
 	@AstroImageJ(modified = true, reason = "Adding AIJ version and authors to about page; fixing class loading issue.")
@@ -29,9 +29,9 @@ import java.awt.image.*;
 		text[6] = "ImageJ is in the public domain";
 		text[7] = "════════════════════════════════";
 		text[8] = "AstroImageJ "+IJ.getAstroVersion();
-		text[9] = "Karen Collins (SAO), John Kielkopf,";
-		text[10] = "and Kevin Eastridge (GMU)";
-		text[11] = "University of Louisville";
+		text[9] = "Karen Collins (Smithsonian Astrophysical Observatory)";
+		text[10] = "Kevin Eastridge (George Mason University)";
+		text[11] = "John Kielkopf (University of Louisville)";
 		text[12] = "AstroImageJ is Licensed under GPL 3.0";
 		ImageProcessor ip = null;
 		ImageJ ij = IJ.getInstance();
@@ -52,11 +52,11 @@ import java.awt.image.*;
 		int width = imp.getWidth();
 		Overlay overlay = new Overlay();
 		Font font = new Font("SansSerif", Font.PLAIN, LARGE_FONT);
-		int y  = 60;
-		int xcenter = 410;
+		int y  = 50;
+		int xcenter = 350;
 		add(text[0], xcenter, y, font, TextRoi.CENTER, overlay);
 		font = new Font("SansSerif", Font.PLAIN, SMALL_FONT);
-		y += 45;
+		y += 37;
 		add(text[1], xcenter, y, font, TextRoi.CENTER, overlay);
 		y += 27;
 		add(text[2], xcenter, y, font, TextRoi.CENTER, overlay);
@@ -70,9 +70,11 @@ import java.awt.image.*;
 		add(text[6], xcenter, y, font, TextRoi.CENTER, overlay);
 		y += 27;
 		add(text[7], xcenter, y, font, TextRoi.CENTER, overlay);
-		y += 27;
+		font = new Font("SansSerif", Font.PLAIN, LARGE_FONT);
+		y += 40;
 		add(text[8], xcenter, y, font, TextRoi.CENTER, overlay);
-		y += 27;
+		font = new Font("SansSerif", Font.PLAIN, SMALL_FONT);
+		y += 37;
 		add(text[9], xcenter, y, font, TextRoi.CENTER, overlay);
 		if (IJ.maxMemory()>0L) {
 			y += 27;
@@ -80,7 +82,8 @@ import java.awt.image.*;
 		}
 		y += 27;
 		add(text[11], xcenter, y, font, TextRoi.CENTER, overlay);
-		add(text[12], width-10, ip.getHeight()-10, font, TextRoi.RIGHT, overlay);
+		y += 33;
+		add(text[12], xcenter, y, font, TextRoi.CENTER, overlay);
 		imp.setOverlay(overlay);
 		ImageWindow.centerNextImage();
 		imp.show();

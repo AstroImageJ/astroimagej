@@ -81,22 +81,24 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			IJ.error("Failed to find an image HDU");
 			return;
 		}
-		if (isCompressedFormat(hdus, firstImageIndex)) {  //use nom.tam.fits to open compressed files
+		if (true) {//isCompressedFormat(hdus, firstImageIndex)) {  //use nom.tam.fits to open compressed files
 			int imageIndex = firstImageIndex;
 			try {
 				if (isCompressedFormat(hdus, firstImageIndex)) {
 					// A side effect of this call is that wi, he, and de are set
 					displayHdu = getCompressedImageData((CompressedImageHDU) hdus[imageIndex]);
+
 				} else {
 					displayHdu = hdus[imageIndex];
 					wi = displayHdu.getHeader().getIntValue("NAXIS1");
 					he = displayHdu.getHeader().getIntValue("NAXIS2");
 					de = 1; // Use displaySingleImage
-				}
+					}
 			} catch (FitsException e) {
-				IJ.error("Failed to uncompress image: " + e.getMessage());
+				IJ.error("AIJ does not recognized this file as a FITS file: " + e.getMessage());
 				return;
 			}
+			//IJ.log("Opened with nom.tam.fits");
 			bzero = (float) displayHdu.getBZero();
 			bscale = (float) displayHdu.getBScale();
 
@@ -178,6 +180,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 				setProperty("Info", fd.getHeaderInfo());
 				setFileInfo(fi); // needed for File->Revert
 				if (path.equals("")) show();
+				//IJ.log("Opened with legacy fits reader");
 			} else
 				IJ.error("This does not appear to be a FITS file.");
 			IJ.showStatus("");

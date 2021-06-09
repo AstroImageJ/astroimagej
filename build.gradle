@@ -324,7 +324,7 @@ List<String> readConfigFile() {
             args.add(it)
         }
     }
-    args.add('-Daij.dev=true') // Always show full version metadata when running via dev
+    args.add('-Daij.dev') // Always show full version metadata when running via dev
 
     logger.lifecycle("Launching with the following arguments: " + args)
 

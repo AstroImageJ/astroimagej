@@ -314,7 +314,7 @@ public class FITS_Writer implements PlugIn {
 		if      (numBytes==2) {bitperpix = "                  16";}
 		else if (numBytes==4) {bitperpix = "                 -32";}
 		else if (numBytes==1) {bitperpix = "                   8";}
- 		appendFile(writeCard("SIMPLE", "                   T", "Created by ImageJ FITS_Writer"), path);
+ 		appendFile(writeCard("SIMPLE", "                   T", "Created by AstroImageJ v"+IJ.getAstroVersion()), path);
  		appendFile(writeCard("BITPIX", bitperpix, "number of bits per data pixel"), path);
  		appendFile(writeCard("NAXIS", "                   2", "number of data axes"), path);
 		appendFile(writeCard("NAXIS1", wbuf + imw, "length of data axis 1"), path);

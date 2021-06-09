@@ -288,6 +288,7 @@ public class FITS_Writer implements PlugIn {
 	/**
 	 * Copies the image header contained in the image's Info property.
 	 */
+	@AstroImageJ(reason = "Add AIJ version as comment in place of 'by ImageJ'", modified = true)
 	void createHeader(String[] hdr, String path, ImageProcessor ip, int numBytes) {
 		String bitperpix = "";
         int imw=ip.getWidth();

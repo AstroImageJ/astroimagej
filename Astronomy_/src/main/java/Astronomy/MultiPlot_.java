@@ -4074,6 +4074,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             double u2 = priorCenter[curve][6];  //quadratic limb darkening parameter 2
             double e = forceCircularOrbit[curve] ? 0.0 : eccentricity[curve];
             double ohm = forceCircularOrbit[curve] ? 0.0 : omega[curve];
+            double b = 0.0;
             if (useTransitFit[curve]) {
                 f0 = lockToCenter[curve][0] ? priorCenter[curve][0] : param[fp < nPars ? fp++ : nPars - 1]; // baseline flux
                 p0 = lockToCenter[curve][1] ? Math.sqrt(priorCenter[curve][1]) : param[fp < nPars ? fp++ : nPars - 1]; // r_p/r_*
@@ -4082,6 +4083,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 incl = lockToCenter[curve][4] ? priorCenter[curve][4] * Math.PI / 180.0 : param[fp < nPars ? fp++ : nPars - 1];  //inclination
                 u1 = lockToCenter[curve][5] ? priorCenter[curve][5] : param[fp < nPars ? fp++ : nPars - 1];  //quadratic limb darkening parameter 1
                 u2 = lockToCenter[curve][6] ? priorCenter[curve][6] : param[fp < nPars ? fp++ : nPars - 1];  //quadratic limb darkening parameter 2
+                b=Math.cos(incl)*ar;
+                if (b > 1.0 + p0) {  //ensure planet transits or grazes the star
+                    incl = Math.acos((1.0 + p0)/ar);
+                }
                 lcModel[curve] = IJU.transitModel(detrendXs[curve], f0, incl, p0, ar, tc, orbitalPeriod[curve], e, ohm, u1, u2, useLonAscNode[curve], lonAscNode[curve]);
             }
 

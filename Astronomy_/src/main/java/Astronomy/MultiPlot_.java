@@ -4048,7 +4048,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
     static void renderTitle() {
         Dimension size = plot.getSize();
-        double y = titlePosY / size.getHeight() > 1 ? 1 : (titlePosY - 30) / size.getHeight();
+        double y = titlePosY / size.getHeight() > 1 ? 1 : (titlePosY - 35) / size.getHeight();
         plot.addLabel(titlePosX, y, title);
     }
 

@@ -192,15 +192,9 @@ public class AstroCanvas extends OverlayCanvas {
         }
 
     public void setOrientation(boolean flipx, boolean flipy, int rot) {
-        if (imp.getTitle().toLowerCase(Locale.ENGLISH).endsWith(".png")) {
-            flipX = false;
-            flipY = false;
-            rotation = 0;
-        } else {
-            flipX = flipx;
-            flipY = flipy;
-            rotation = rot;
-        }
+        flipX = flipx;
+        flipY = flipy;
+        rotation = rot;
         setCanvasTransform();
     }
 

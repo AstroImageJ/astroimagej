@@ -3345,108 +3345,105 @@ protected ImageIcon createImageIcon(String path, String description) {
             }
         }
 
-        void setOrientation() {
+        void setOrientation(boolean saveConfig) {
+            if (isNonScienceImage()) {
+                determineOrientation();
+            }
             ac.setOrientation(invertX, invertY, rotation);
             ac.updateZoomBoxParameters();
             netFlipX = ac.getNetFlipX();
             netFlipY = ac.getNetFlipY();
             netRotate = ac.getNetRotate();
             ac.paint(ac.getGraphics());
-            Prefs.set("Astronomy_Tool.invertX", invertX);
-            Prefs.set("Astronomy_Tool.invertY", invertY);
-            Prefs.set("Astronomy_Tool.rotation", rotation);            
+            if (saveConfig) {
+                Prefs.set("Astronomy_Tool.invertX", invertX);
+                Prefs.set("Astronomy_Tool.invertY", invertY);
+                Prefs.set("Astronomy_Tool.rotation", rotation);
             }
+        }
+
+        void setOrientation() {
+            setOrientation(isNonScienceImage());
+        }
          
         void setBestOrientation() {
             //boolean usewcs = Prefs.get ("multiaperture.usewcs", false);
             //IJ.log("Running Best Orientation");
-            if (autoNupEleft)
-                {
-                if (wcs != null && wcs.hasWCS())  //usewcs &&
-                    {
-                    double npa = (360+wcs.getNorthPA())%360;
-                    double epa = (360+wcs.getEastPA())%360;
-                    invertY = (npa > 90 && npa < 270) ? true : false; 
-                    invertX = (epa < 0 || epa > 180) ? true : false;
-                    if (invertXYRB != null && invertY && invertX )
-                        {
-                        invertXYRB.setState(true);
-                        invertXRB.setState(false); 
-                        invertYRB.setState(false);
-                        invertNoneRB.setState(false);
-                        }
-                    else if (invertXYRB != null && !invertY && !invertX )
-                        {
-                        invertXYRB.setState(false);
-                        invertXRB.setState(false); 
-                        invertYRB.setState(false);
-                        invertNoneRB.setState(true);
-                        }
-                    else if (invertXYRB != null && invertY)
-                        {
-                        invertXYRB.setState(false);
-                        invertXRB.setState(false); 
-                        invertYRB.setState(true);
-                        invertNoneRB.setState(false);
-                        }
-                    else if (invertXYRB != null && invertX)
-                        {
-                        invertXYRB.setState(false);
-                        invertXRB.setState(true); 
-                        invertYRB.setState(false);
-                        invertNoneRB.setState(false);
-                        }                
-                    rotation = AstroCanvas.ROT_0;
-                    if (rotate0RB != null)
-                        {
-                        rotate0RB.setState(true);
-                        rotate90RB.setState(false);
-                        rotate180RB.setState(false);
-                        rotate270RB.setState(false);
-                        }
-                    ac.setOrientation(invertX, invertY, rotation);
-                    ac.updateZoomBoxParameters();
-                    netFlipX = ac.getNetFlipX();
-                    netFlipY = ac.getNetFlipY();
-                    netRotate = ac.getNetRotate();
-                    ac.paint(ac.getGraphics());
-                    Prefs.set("Astronomy_Tool.invertX", invertX);
-                    Prefs.set("Astronomy_Tool.invertY", invertY);
-                    Prefs.set("Astronomy_Tool.rotation", rotation);
-                    }
-                else
-                    {
-                    String fileName = IJU.getSliceFilename(imp);
-                    if (fileName.endsWith(".png") || fileName.endsWith(".jpg"))
-                        {
-                        invertX = false;
-                        invertY = false;
-                        rotation = AstroCanvas.ROT_0;
-                        showZoom = false;
-                        showDir = false;
-                        showXY = false;
-                        showScaleX = false;
-                        showScaleY = false;
-                        if (invertXYRB != null)
-                            {
-                            invertXYRB.setState(false);
-                            invertXRB.setState(false); 
-                            invertYRB.setState(false);
-                            invertNoneRB.setState(true);
-                            rotate0RB.setState(true);
-                            rotate90RB.setState(false);
-                            rotate180RB.setState(false);
-                            rotate270RB.setState(false);
-                            showZoomCB.setState(false);
-                            showDirCB.setState(false);
-                            showXYCB.setState(false);
-                            showScaleXCB.setState(false);
-                            showScaleYCB.setState(false);
-                            }
-                        }
-                    }
-                } 
+            determineOrientation();
+            setOrientation(!isNonScienceImage());
+        }
+
+        private void determineOrientation() {
+            if(!autoNupEleft) return;
+
+            // Determine orientation based on WCS
+            if (wcs != null && wcs.hasWCS()) {
+                double npa = (360 + wcs.getNorthPA()) % 360;
+                double epa = (360 + wcs.getEastPA()) % 360;
+                invertY = (npa > 90 && npa < 270) ? true : false;
+                invertX = (epa < 0 || epa > 180) ? true : false;
+                if (invertXYRB != null && invertY && invertX) {
+                    invertXYRB.setState(true);
+                    invertXRB.setState(false);
+                    invertYRB.setState(false);
+                    invertNoneRB.setState(false);
+                } else if (invertXYRB != null && !invertY && !invertX) {
+                    invertXYRB.setState(false);
+                    invertXRB.setState(false);
+                    invertYRB.setState(false);
+                    invertNoneRB.setState(true);
+                } else if (invertXYRB != null && invertY) {
+                    invertXYRB.setState(false);
+                    invertXRB.setState(false);
+                    invertYRB.setState(true);
+                    invertNoneRB.setState(false);
+                } else if (invertXYRB != null && invertX) {
+                    invertXYRB.setState(false);
+                    invertXRB.setState(true);
+                    invertYRB.setState(false);
+                    invertNoneRB.setState(false);
+                }
+                rotation = AstroCanvas.ROT_0;
+                if (rotate0RB != null) {
+                    rotate0RB.setState(true);
+                    rotate90RB.setState(false);
+                    rotate180RB.setState(false);
+                    rotate270RB.setState(false);
+                }
             }
+
+            // Ignore orientation for pngs and jpgs
+            if (isNonScienceImage()) {
+                invertX = false;
+                invertY = false;
+                rotation = AstroCanvas.ROT_0;
+                showZoom = false;
+                showDir = false;
+                showXY = false;
+                showScaleX = false;
+                showScaleY = false;
+                if (invertXYRB != null) {
+                    invertXYRB.setState(false);
+                    invertXRB.setState(false);
+                    invertYRB.setState(false);
+                    invertNoneRB.setState(true);
+                    rotate0RB.setState(true);
+                    rotate90RB.setState(false);
+                    rotate180RB.setState(false);
+                    rotate270RB.setState(false);
+                    showZoomCB.setState(false);
+                    showDirCB.setState(false);
+                    showXYCB.setState(false);
+                    showScaleXCB.setState(false);
+                    showScaleYCB.setState(false);
+                }
+            }
+        }
+
+        private boolean isNonScienceImage() {
+            String fileName = IJU.getSliceFilename(imp);
+            return autoNupEleft && (fileName.endsWith(".png") || fileName.endsWith(".jpg"));
+        }
 
 
             public void actionPerformed(ActionEvent e) {

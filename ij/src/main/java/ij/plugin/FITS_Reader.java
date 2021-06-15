@@ -11,6 +11,7 @@ import ij.io.OpenDialog;
 import ij.measure.Calibration;
 import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
+import ij.util.ArrayBoxingUtil;
 import nom.tam.fits.*;
 import nom.tam.image.compression.hdu.CompressedImageHDU;
 import nom.tam.util.Cursor;
@@ -291,12 +292,15 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 
 	private ImageProcessor process3DimensionalImage(BasicHDU hdu, Data imgData)
 			throws FitsException {
-		short[][][] itab = (short[][][]) imgData.getKernel();
+
+		Number[][][] itab = ArrayBoxingUtil.convert2Boxed(imgData.getKernel());
 		float[] xValues = new float[wi];
 		float[] yValues = new float[wi];
 
+		IJ.log(String.valueOf(itab.length));
+
 		for (int y = 0; y < wi; y++) {
-			yValues[y] = bzero + bscale * itab[0][0][y];
+			yValues[y] = bzero + bscale * itab[0][0][y].floatValue();
 		}
 
 		String unitY = "IntensityRS ";
@@ -328,7 +332,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		P.draw();
 
 		FloatProcessor imgtmp;
-		imgtmp = new FloatProcessor(wi, he);
+		imgtmp = new FloatProcessor(wi*3, he*3);
 		ImageProcessor ip = getImageProcessor2(yValues, imgtmp);
 		setProcessor(fileName, ip);
 		return ip;

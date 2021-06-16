@@ -25,7 +25,7 @@ public class ArrayBoxingUtil {
         typeMapping.put(Float.TYPE, Float.class);
     }
 
-    // N-dimensional boxing of primitive arrays
+    // Example usage
     public static void main(String[] args) {
         Integer[][][] test = (Integer[][][]) boxArray(new int[][][] {{{1}, {1, 2, 3}}, {}});
     }

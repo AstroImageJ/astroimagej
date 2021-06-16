@@ -4,14 +4,12 @@ import ij.IJ;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.astro.AstroImageJ;
-import ij.gui.Plot;
 import ij.io.FileInfo;
 import ij.io.FileOpener;
 import ij.io.OpenDialog;
 import ij.measure.Calibration;
 import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
-import ij.util.ArrayBoxingUtil;
 import nom.tam.fits.*;
 import nom.tam.image.compression.hdu.CompressedImageHDU;
 import nom.tam.util.Cursor;
@@ -22,8 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.zip.GZIPInputStream;
 
-import static nom.tam.fits.header.Standard.BITPIX;
-import static nom.tam.fits.header.Standard.NAXIS;
+import static nom.tam.fits.header.Standard.*;
 
 
 /** Opens and displays FITS images. The FITS format is 
@@ -277,10 +274,9 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 
 		if (hdu.getHeader().getIntValue(NAXIS) == 2) {
 			imageProcessor = process2DimensionalImage(hdu, imgData);
-		} else if (hdu.getHeader().getIntValue(NAXIS) == 3)
-		//&& hdu.getAxes()[dim - 2] == 1 && hdu.getAxes()[dim - 3] == 1)
-		{
-			imageProcessor = process3DimensionalImage(hdu, imgData);
+		} else if (hdu.getHeader().getIntValue(NAXIS) == 3) {
+			process3DimensionalImage(hdu, imgData);
+			return;
 		}
 
 		if (imageProcessor == null) {
@@ -292,59 +288,54 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 
 	private ImageProcessor process3DimensionalImage(BasicHDU hdu, Data imgData)
 			throws FitsException {
+		ImageProcessor ip = null;
+		ImageStack stack = new ImageStack();
 
-		Number[][][] itab = ArrayBoxingUtil.convert2Boxed(imgData.getKernel());
-		float[] xValues = new float[wi];
-		float[] yValues = new float[wi];
+		for (int i = 0; i < hdu.getHeader().getIntValue(NAXISn.n(3).key()); i++) {
+			if (hdu.getBitPix() == 16) {
+				final short[][] itab = ((short[][][]) imgData.getKernel())[i];
+				TableWrapper wrapper = (x, y) -> itab[y][x];
+				ip = getImageProcessor(wrapper);
 
-		IJ.log(String.valueOf(itab.length));
+			} // 8 bits
+			else if (hdu.getBitPix() == 8) {
+				// Only in the 8 case is the signed-to-unsigned correction done -- oversight?!?
+				final byte[][] itab = ((byte[][][]) imgData.getKernel())[i];
+				TableWrapper wrapper = (x, y) -> (float) (itab[y][x] < 0 ? itab[y][x] + 256 : itab[y][x]);
+				ip = getImageProcessor(wrapper);
+			} // 16-bits
+			///////////////// 32 BITS ///////////////////////
+			else if (hdu.getBitPix() == 32) {
+				final int[][] itab = ((int[][][]) imgData.getKernel())[i];
+				TableWrapper wrapper = (x, y) -> (float) itab[y][x];
+				ip = getImageProcessor(wrapper);
+			} // 32 bits
+			/////////////// -32 BITS ?? /////////////////////////////////
+			else if (hdu.getBitPix() == -32) {
+				final float[][] itab = ((float[][][]) imgData.getKernel())[i];
+				TableWrapper wrapper = (x, y) -> (float) itab[y][x];
+				ip = getImageProcessor(wrapper);
+			} // -32 bits
+			/////////////// -64 BITS ?? /////////////////////////////////
+			else if (hdu.getBitPix() == -64) {
+				final double[][] itab = ((double[][][]) imgData.getKernel())[i];
+				TableWrapper wrapper = (x, y) -> (float) itab[y][x];
+				ip = getImageProcessor(wrapper);
+			} // -64 bits
+			else {
+				ip = imagePlus.getProcessor();
+			}
 
-		for (int y = 0; y < wi; y++) {
-			yValues[y] = bzero + bscale * itab[0][0][y].floatValue();
+			Calibration cal = new Calibration();
+			cal.setFunction(Calibration.NONE, null, "Gray Value");
+			ip.setCalibrationTable(cal.getCTable());
+			setCalibration(cal);
+			stack.addSlice(ip);
+
 		}
+		setStack(fileName, stack);
 
-		String unitY = "IntensityRS ";
-		String unitX = "FrequencyRS ";
-		float CRPIX1 = getCRPIX1(hdu);
-		float CDELT1 = getCDELT1(hdu);
-		int div = 1;
-		float CRVAL1 = getCRVAL1ProcessX(hdu, xValues, CRPIX1, CDELT1);
-		if (CRVAL1 > 2000000000) {
-			div = 1000000000;
-			unitX += "(Ghz)";
-		} else if (CRVAL1 > 1000000000) {
-			div = 1000000;
-			unitX += "(Mhz)";
-		} else if (CRVAL1 > 1000000) {
-			div = 1000;
-			unitX += "(Khz)";
-		} else {
-			unitX += "(Hz)";
-		}
-
-		for (int x = 0; x < wi; x++) {
-			xValues[x] = xValues[x] / div;
-		}
-
-		@SuppressWarnings("deprecation") Plot P = new Plot(
-				"PlotWinTitle" + " " + fileName,
-				"X: " + unitX, "Y: " + unitY, xValues, yValues);
-		P.draw();
-
-		FloatProcessor imgtmp;
-		imgtmp = new FloatProcessor(wi*3, he*3);
-		ImageProcessor ip = getImageProcessor2(yValues, imgtmp);
-		setProcessor(fileName, ip);
 		return ip;
-	}
-
-	private float getCDELT1(BasicHDU hdu) {
-		float CDELT1 = 0;
-		if (hdu.getHeader().getStringValue("CDELT1") != null) {
-			CDELT1 = Float
-					.parseFloat(hdu.getHeader().getStringValue("CDELT1"));
-		}
-		return CDELT1;
 	}
 
 	private ImageProcessor process2DimensionalImage(BasicHDU hdu, Data imgData)
@@ -474,27 +465,6 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		return ip;
 	}
 
-	private float getCRPIX1(BasicHDU hdu) {
-		float CRPIX1 = 0;
-		if (hdu.getHeader().getStringValue("CRPIX1") != null) {
-			CRPIX1 = Float.parseFloat(
-					hdu.getHeader().getStringValue("CRPIX1"));
-		}
-		return CRPIX1;
-	}
-
-	private float getCRVAL1ProcessX(BasicHDU hdu, float[] xValues, float CRPIX1, float CDELT1) {
-		float CRVAL1 = 0;
-		if (hdu.getHeader().getStringValue("CRVAL1") != null) {
-			CRVAL1 = Float
-					.parseFloat(hdu.getHeader().getStringValue("CRVAL1"));
-		}
-		for (int x = 0; x < wi; x++) {
-			xValues[x] = CRVAL1 + (x - CRPIX1) * CDELT1;
-		}
-		return CRVAL1;
-	}
-
 	// The following code excerpted from ij.process.FloatProcessor serves to document the layout
 	// of the float[] that is called imgtab in getImageProcessor[]:
 	//
@@ -546,16 +516,6 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		ip = imgtmp;
 		ip.flipVertical();
 		return ip;
-	}
-
-	private void fixDimensions(BasicHDU hdu, int dim) throws FitsException {
-		wi = hdu.getAxes()[dim - 1];
-		he = hdu.getAxes()[dim - 2];
-		if (dim > 2) {
-			de = hdu.getAxes()[dim - 3];
-		} else {
-			de = 1;
-		}
 	}
 
 	private BasicHDU[] getHDU(String path) throws FitsException {
@@ -753,8 +713,7 @@ class FitsDecoder {
 	}
 
 	double parseDouble(String s) throws NumberFormatException {
-		Double d = new Double(s);
-		return d.doubleValue();
+		return Double.parseDouble(s);
 	}
 
 	String getHeaderInfo() {

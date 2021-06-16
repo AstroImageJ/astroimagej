@@ -10,6 +10,8 @@ import ij.io.OpenDialog;
 import ij.measure.Calibration;
 import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
+import ij.util.ArrayBoxingUtil;
+import ij.util.ArrayUtil;
 import nom.tam.fits.*;
 import nom.tam.image.compression.hdu.CompressedImageHDU;
 import nom.tam.util.Cursor;
@@ -18,6 +20,7 @@ import java.io.DataInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.zip.GZIPInputStream;
 
 import static nom.tam.fits.header.Standard.*;
@@ -254,7 +257,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	private ImageHDU getCompressedImageData(CompressedImageHDU hdu) throws FitsException {
 		wi = hdu.getHeader().getIntValue("ZNAXIS1");
 		he = hdu.getHeader().getIntValue("ZNAXIS2");
-		de = 1;
+		de = hdu.getHeader().getIntValue("ZNAXIS3", 1);
 
 		return hdu.asImageHDU();
 	}
@@ -275,8 +278,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		if (hdu.getHeader().getIntValue(NAXIS) == 2) {
 			imageProcessor = process2DimensionalImage(hdu, imgData);
 		} else if (hdu.getHeader().getIntValue(NAXIS) == 3) {
-			process3DimensionalImage(hdu, imgData);
-			return;
+			imageProcessor = process3DimensionalImage(hdu, imgData);
 		}
 
 		if (imageProcessor == null) {
@@ -286,52 +288,31 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		}
 	}
 
+	//todo fix for compressed 3d images - currently only the 1 image is read, the others return all 0
 	private ImageProcessor process3DimensionalImage(BasicHDU hdu, Data imgData)
 			throws FitsException {
 		ImageProcessor ip = null;
 		ImageStack stack = new ImageStack();
 
 		for (int i = 0; i < hdu.getHeader().getIntValue(NAXISn.n(3).key()); i++) {
-			if (hdu.getBitPix() == 16) {
-				final short[][] itab = ((short[][][]) imgData.getKernel())[i];
-				TableWrapper wrapper = (x, y) -> itab[y][x];
-				ip = getImageProcessor(wrapper);
+			final Number[][] itab = ((Number[][][]) ArrayBoxingUtil.boxArray(imgData.getKernel()))[i];
 
-			} // 8 bits
-			else if (hdu.getBitPix() == 8) {
-				// Only in the 8 case is the signed-to-unsigned correction done -- oversight?!?
-				final byte[][] itab = ((byte[][][]) imgData.getKernel())[i];
-				TableWrapper wrapper = (x, y) -> (float) (itab[y][x] < 0 ? itab[y][x] + 256 : itab[y][x]);
-				ip = getImageProcessor(wrapper);
-			} // 16-bits
-			///////////////// 32 BITS ///////////////////////
-			else if (hdu.getBitPix() == 32) {
-				final int[][] itab = ((int[][][]) imgData.getKernel())[i];
-				TableWrapper wrapper = (x, y) -> (float) itab[y][x];
-				ip = getImageProcessor(wrapper);
-			} // 32 bits
-			/////////////// -32 BITS ?? /////////////////////////////////
-			else if (hdu.getBitPix() == -32) {
-				final float[][] itab = ((float[][][]) imgData.getKernel())[i];
-				TableWrapper wrapper = (x, y) -> (float) itab[y][x];
-				ip = getImageProcessor(wrapper);
-			} // -32 bits
-			/////////////// -64 BITS ?? /////////////////////////////////
-			else if (hdu.getBitPix() == -64) {
-				final double[][] itab = ((double[][][]) imgData.getKernel())[i];
-				TableWrapper wrapper = (x, y) -> (float) itab[y][x];
-				ip = getImageProcessor(wrapper);
-			} // -64 bits
-			else {
-				ip = imagePlus.getProcessor();
-			}
+			// Same as what process2DimensionalImage, but via (un)boxing to simplify code
+			ip = switch (hdu.getBitPix()) {
+				case 16, -32, 32, -64 -> { // No 64 case?
+					TableWrapper wrapper = (x, y) -> itab[y][x].floatValue();
+					yield getImageProcessor(wrapper);
+				}
+				case 8 -> {
+					// Only in the 8 case is the signed-to-unsigned correction done -- oversight?!?
+					TableWrapper wrapper = (x, y) -> itab[y][x].floatValue() < 0 ?
+							itab[y][x].floatValue() + 256 : itab[y][x].floatValue();
+					yield getImageProcessor(wrapper);
+				}
+				default -> imagePlus.getProcessor();
+			};
 
-			Calibration cal = new Calibration();
-			cal.setFunction(Calibration.NONE, null, "Gray Value");
-			ip.setCalibrationTable(cal.getCTable());
-			setCalibration(cal);
 			stack.addSlice(ip);
-
 		}
 		setStack(fileName, stack);
 

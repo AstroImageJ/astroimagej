@@ -2181,7 +2181,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             setShowAsCentered(centroidStar[ap]);
 
             valueOverlay = false; // Don't show values as they will differ when measured and will be drawn over
-            adjustAperture(false); // Aperture draw fix 0 - adjusts aperture position to match centroid if applicaable
+
+            // Disable these and aperture clearing on per-ap basis for flicker,
+            // but not drift when subset of aperture has centroiding enabled
+            adjustAperture(false, centroidStar[ap]); // Aperture draw fix 0 - adjusts aperture position to match centroid if applicaable
             drawAperture(); // Apterure draw fix 1 - can be removed at cost of last copuple aperture not drawing
         }
 

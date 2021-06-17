@@ -556,7 +556,9 @@ protected void measurePhotometry()
     }
 
 
-protected boolean adjustAperture(boolean updatePhotometry)
+		protected boolean adjustAperture(boolean updatePhotometry) {return adjustAperture(updatePhotometry, reposition);}
+
+		protected boolean adjustAperture(boolean updatePhotometry, boolean centroid)
         {
         ip = imp.getProcessor();
 		if (stackSize > 1)
@@ -571,7 +573,9 @@ protected boolean adjustAperture(boolean updatePhotometry)
         if (!(this instanceof MultiAperture_))
             {
             showAsCentered = reposition;
-            }
+            } else {
+        	reposition = centroid;
+		}
 
         if (useVariableAp)
             {

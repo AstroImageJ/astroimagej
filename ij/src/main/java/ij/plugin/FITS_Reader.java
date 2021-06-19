@@ -111,8 +111,6 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 				return;
 			}
 
-			setProperty("Info", getHeaderInfo(displayHdu));
-
 			Data imgData = displayHdu.getData();
 
 			if ((wi < 0) || (he < 0)) {
@@ -130,6 +128,8 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			} else {
 				displayStackedImage();
 			}
+
+			setProperty("Info", getHeaderInfo(displayHdu));
 
 			IJ.showStatus("");
 //        } else {

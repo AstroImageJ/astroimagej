@@ -11,7 +11,6 @@ import ij.measure.Calibration;
 import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
 import ij.util.ArrayBoxingUtil;
-import ij.util.ArrayUtil;
 import nom.tam.fits.*;
 import nom.tam.image.compression.hdu.CompressedImageHDU;
 import nom.tam.util.Cursor;
@@ -20,7 +19,6 @@ import java.io.DataInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
 import java.util.zip.GZIPInputStream;
 
 import static nom.tam.fits.header.Standard.*;
@@ -275,6 +273,10 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		ImageProcessor imageProcessor = null;
 		int dim = hdu.getAxes().length;  //NAXIS
 
+		if (isTessFfi(hdu)) {
+			hdu.addValue("BJD_TDB", generateBjd(hdu), "AIJ-calc. BJD_TDB");
+		}
+
 		if (hdu.getHeader().getIntValue(NAXIS) == 2) {
 			imageProcessor = process2DimensionalImage(hdu, imgData);
 		} else if (hdu.getHeader().getIntValue(NAXIS) == 3) {
@@ -286,6 +288,26 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			imageProcessor.flipVertical();
 			setProcessor(fileName, imageProcessor);
 		}
+	}
+
+	/**
+	 * Determine if the image is a TESS FFI
+	 */
+	private boolean isTessFfi(BasicHDU<?> hdu) {
+		var telescope = hdu.getHeader().findCard("TELESCOP");
+		var imageType = hdu.getHeader().findCard("IMAGTYPE");
+
+		return telescope.getValue().strip().equals("TESS") && imageType.getComment().contains("FFI image typ");
+	}
+
+	private double generateBjd(BasicHDU<?> hdu) {
+		var header = hdu.getHeader();
+		var bjdRefi = header.getIntValue("BJDREFI");
+		var bjdReff = header.getDoubleValue("BJDREFF");
+		var tStart = header.getDoubleValue("TSTART");
+		var telapse = header.getDoubleValue("TELAPSE");
+
+		return bjdRefi + bjdReff + tStart + telapse/2.0;
 	}
 
 	//todo fix for compressed 3d images - currently only the 1 image is read, the others return all 0

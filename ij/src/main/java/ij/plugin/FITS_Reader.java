@@ -275,7 +275,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		int dim = hdu.getAxes().length;  //NAXIS
 
 		if (isTessFfi(hdu)) {
-			hdu.addValue("BJD_TDB", generateBjd(hdu), "AIJ-calc. BJD_TDB");
+			hdu.addValue("BJD_TDB", generateBjd(hdu), "Calc by AIJ as BJDREFI+BJDREFF+TSTART+TELAPSE/2.0");
 		}
 
 		if (hdu.getHeader().getIntValue(NAXIS) == 2) {

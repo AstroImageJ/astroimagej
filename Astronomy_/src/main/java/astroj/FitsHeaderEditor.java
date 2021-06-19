@@ -329,6 +329,8 @@ public class FitsHeaderEditor implements ListSelectionListener, ActionListener, 
         frame.setLocation(frameX, frameY);
 
 		frame.setVisible (true);
+
+		searchTF.grabFocus();
     }
 
 

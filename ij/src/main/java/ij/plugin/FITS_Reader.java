@@ -19,6 +19,7 @@ import java.io.DataInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Objects;
 import java.util.zip.GZIPInputStream;
 
 import static nom.tam.fits.header.Standard.*;
@@ -297,7 +298,14 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		var telescope = hdu.getHeader().findCard("TELESCOP");
 		var imageType = hdu.getHeader().findCard("IMAGTYPE");
 
-		return telescope.getValue().strip().equals("TESS") && imageType.getComment().contains("FFI image typ");
+		if (telescope == null || imageType == null) {
+			return false;
+		}
+
+		var tVal = Objects.requireNonNullElse(telescope.getValue(), "");
+		var iCom = Objects.requireNonNullElse(imageType.getComment(), "");
+
+		return tVal.strip().equals("TESS") && iCom.contains("FFI image type");
 	}
 
 	private double generateBjd(BasicHDU<?> hdu) {

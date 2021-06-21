@@ -16,6 +16,8 @@ import ij.*;
 import java.text.*;
 import java.net.*;
 import java.io.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 import ij.gui.*;
@@ -1516,18 +1518,18 @@ public class AstroConverter implements ItemListener, ActionListener, ChangeListe
 
         JLabel updateleapSecLabel = new JLabel ("Update");
         updateleapSecLabel.setFont(p12);
-        updateleapSecLabel.setToolTipText("Leapsecs are now updated with a new AIJ release. USNO Leapsec server is no longer available."); //("Update leap second table from USNO website");
+        updateleapSecLabel.setToolTipText("Leapsecs are now updated via the Earth Rotation Center as USNO Leapsec server is no longer available.\n Leap seconds before 2017 are provided by AIJ."); //("Update leap second table from USNO website");
         updateleapSecLabel.setHorizontalAlignment (JTextField.RIGHT);
-        updateleapSecLabel.setEnabled(false);
+        updateleapSecLabel.setEnabled(true);
 		eoiLeapSecPanel.add (updateleapSecLabel);
 
         updateLeapSecTableButton = new JButton(updateLeapSecTableIcon);
-        updateLeapSecTableButton.setToolTipText("Leapsecs are now updated with a new AIJ release. USNO Leapsec server is no longer available."); //("Update leap second table from USNO website");
+        updateLeapSecTableButton.setToolTipText("Leapsecs are now updated via the Earth Rotation Center as USNO Leapsec server is no longer available.\n Leap seconds before 2017 are provided by AIJ."); //("Update leap second table from USNO website");
         updateLeapSecTableButton.setMargin(buttonMargin);
         updateLeapSecTableButton.addActionListener(this);
         updateLeapSecTableButton.setPreferredSize(iconDimension);
         eoiLeapSecPanel.add(updateLeapSecTableButton);
-        updateLeapSecTableButton.setEnabled(false);
+        updateLeapSecTableButton.setEnabled(true);
 
         JLabel autoLeapSecLabel = new JLabel ("  Auto");
         autoLeapSecLabel.setFont(p12);
@@ -3986,59 +3988,38 @@ double[] processCoordinatePair(JTextField textFieldA, int decimalPlacesA, int ba
     boolean getUSNOLeapSecTable()
         {
         try {
-            URL leapSecTable = new URL("http://maia.usno.navy.mil/ser7/tai-utc.dat");
+            URL leapSecTable = new URL("https://hpiers.obspm.fr/iers/bul/bulc/Leap_Second.dat");
             URLConnection leapSecTableCon = leapSecTable.openConnection();
             leapSecTableCon.setConnectTimeout(10000);
             leapSecTableCon.setReadTimeout(10000);
             BufferedReader in = new BufferedReader(new InputStreamReader(leapSecTableCon.getInputStream()));
-            java.util.ArrayList<Double> leapJD = new java.util.ArrayList<Double>(0);
-            java.util.ArrayList<Double> leapSEC = new java.util.ArrayList<Double>(0);
-            java.util.ArrayList<Double> leapbaseMJD = new java.util.ArrayList<Double>(0);
-            java.util.ArrayList<Double> leapbaseMJDMultiplier = new java.util.ArrayList<Double>(0);
+            ArrayList<Double> leapJD = new ArrayList<>(Arrays.asList(leapSecJD));
+            ArrayList<Double> leapSEC = new ArrayList<>(Arrays.asList(TAIminusUTC));
+            ArrayList<Double> leapbaseMJD = new ArrayList<>(Arrays.asList(baseMJD));
+            ArrayList<Double> leapbaseMJDMultiplier = new ArrayList<>(Arrays.asList(baseMJDMultiplier));
             double jd = 0, leap = 0, base = 0, multiplier = 0;
             double oldjd = 0;
             String inputLine;
             newleapSecTableReady = false;
             while ((inputLine = in.readLine()) != null)
                 {
-                String[] pieces = inputLine.trim().split("[ )\t]{1,}");
-                if (pieces.length>13 && pieces[3].equalsIgnoreCase("=JD") && pieces[5].equalsIgnoreCase("TAI-UTC="))
-                    {
-                    jd = Tools.parseDouble(pieces[4]);
-                    if (Double.isNaN(jd) || jd<0.0)
-                        {
-                        showMessage("Invalid Julian Date read from table");
-                        break;
-                        }
-                    leap = Tools.parseDouble(pieces[6]);
-                    if (Double.isNaN(leap))
-                        {
-                        showMessage("Invalid leap second value read from table");
-                        break;
-                        }
-                    if (jd < oldjd)
-                        {
+                    if (inputLine.startsWith("#")) continue;
+                    String[] parsed = Pattern.compile("(\\s+)").split(inputLine);
+                    base = Double.parseDouble(parsed[1]);
+                    jd = base + 2400000.5;
+                    if (jd < oldjd) {
                         showMessage("Julian Date table values are not in increasing order");
                         break;
-                        }
-                    base = Tools.parseDouble(pieces[11]);
-                    if (Double.isNaN(base))
-                        {
-                        showMessage("Invalid MJD base value read from table");
-                        break;
-                        }
-                    multiplier = Tools.parseDouble(pieces[13].replace("S", " "));
-                    if (Double.isNaN(multiplier))
-                        {
-                        showMessage("Invalid MJD base multiplier read from table");
-                        break;
-                        }
+                    }
+                    if (jd <= leapSecJD[leapSecJD.length - 1]) { // The current values are fine, so only want to get new leap seconds
+                        continue;
+                    }
+                    leap = Double.parseDouble(parsed[5]);
                     leapJD.add(jd);
                     leapSEC.add(leap);
-                    leapbaseMJD.add(base);
-                    leapbaseMJDMultiplier.add(multiplier);
+                    leapbaseMJD.add(41317.0);
+                    leapbaseMJDMultiplier.add(0D);
                     oldjd = jd;
-                    }
                 }
             if (leapJD.size() > 0)
                 {
@@ -4052,8 +4033,8 @@ double[] processCoordinatePair(JTextField textFieldA, int decimalPlacesA, int ba
             in.close();
             }
             catch (IOException ioe){
-                showMessage("USNO query error", "<html>"+"Could not open link to USNO website at"+"<br>"+
-                            "http://maia.usno.navy.mil/ser7/tai-utc.dat."+"<br>"+
+                showMessage("USNO query error", "<html>"+"Could not open link to Earth Orientation Center at"+"<br>"+
+                            "https://hpiers.obspm.fr/iers/bul/bulc/Leap_Second.dat."+"<br>"+
                             "Check internet connection."+"</html>");
                 newleapSecTableReady = false;
                 }

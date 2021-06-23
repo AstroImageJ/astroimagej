@@ -42,7 +42,7 @@ public class ArrayBoxingUtil {
             component = component.getComponentType();
         }
 
-        Class<?> boxedType = typeMapping.get(component);
+        Class<?> boxedType = typeMapping.getOrDefault(component, component);
         for (int i = 0; i < levels; i++)
             boxedType = boxedType.arrayType();
 

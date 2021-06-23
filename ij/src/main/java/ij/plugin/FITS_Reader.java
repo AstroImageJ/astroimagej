@@ -47,6 +47,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	// The image data comes in different types, but in the end, we turn them all into floats.
 	// So no matter what type the data is, we wrap it with a lambda that takes two indices and
 	// returns a float.
+	@FunctionalInterface
 	private interface TableWrapper { float valueAt(int x, int y); }
 
 	/**
@@ -62,7 +63,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		 * Extract array of HDU from FITS file using nom.tam.fits
 		 * This also uses the old style FITS decoder to create a FileInfo.
 		 */
-		BasicHDU[] hdus;
+		BasicHDU<?>[] hdus;
 		try {
 			hdus = getHDU(path);
 		} catch (FitsException e) {
@@ -74,7 +75,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		 * For fpacked files the image is in the second HDU. For uncompressed images
 		 * it is the first HDU.
 		 */
-		BasicHDU displayHdu;
+		BasicHDU<?> displayHdu;
 		int firstImageIndex = firstImageHDU(hdus);
 		if (firstImageIndex<0)
 		{
@@ -82,18 +83,16 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			return;
 		}
 		if (true) {//isCompressedFormat(hdus, firstImageIndex)) {  //use nom.tam.fits to open compressed files
-			int imageIndex = firstImageIndex;
 			try {
 				if (isCompressedFormat(hdus, firstImageIndex)) {
 					// A side effect of this call is that wi, he, and de are set
-					displayHdu = getCompressedImageData((CompressedImageHDU) hdus[imageIndex]);
-
+					displayHdu = getCompressedImageData((CompressedImageHDU) hdus[firstImageIndex]);
 				} else {
-					displayHdu = hdus[imageIndex];
+					displayHdu = hdus[firstImageIndex];
 					wi = displayHdu.getHeader().getIntValue("NAXIS1");
 					he = displayHdu.getHeader().getIntValue("NAXIS2");
 					de = 1; // Use displaySingleImage
-					}
+				}
 			} catch (FitsException e) {
 				IJ.error("AIJ does not recognized this file as a FITS file: " + e.getMessage());
 				return;
@@ -133,19 +132,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			setProperty("Info", getHeaderInfo(displayHdu));
 
 			IJ.showStatus("");
-//        } else {
-//            int imageIndex = firstImageIndex;
-//            displayHdu = hdus[imageIndex];
-//            try {
-//                // wi, he, and de are set
-//                fixDimensions(displayHdu, displayHdu.getAxes().length);
-//            } catch (FitsException e) {
-//                IJ.error("Failed to set image dimensions: " + e.getMessage());
-//                return;
-//            }
-//        }
-		}
-		else {   //use legacy custom fits reader to open uncompressed files
+		} else {   //use legacy custom fits reader to open uncompressed files
 			OpenDialog od = new OpenDialog("Open FITS...", path);
 			String directory = od.getDirectory();
 			String fileName = od.getFileName();
@@ -156,7 +143,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			FileInfo fi = null;
 			try {
 				fi = fd.getInfo();
-			} catch (IOException e) {}
+			} catch (IOException ignored) {}
 			if (fi!=null && fi.width>0 && fi.height>0 && fi.offset>0) {
 				FileOpener fo = new FileOpener(fi);
 				ImagePlus imp = fo.openImage();
@@ -188,11 +175,14 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		}
 
 	}
-	// Returns a newline-delimited concatenation of the header lines
-	private String getHeaderInfo(BasicHDU displayHdu) {
+
+	/**
+	 * Returns a newline-delimited concatenation of the header lines.
+	 */
+	private String getHeaderInfo(BasicHDU<?> displayHdu) {
 		Header header = displayHdu.getHeader();
 		header.setSimple(true);
-		StringBuffer info = new StringBuffer();
+		StringBuilder info = new StringBuilder();
 		Cursor<String, HeaderCard> iter = header.iterator();
 		while (iter.hasNext()) {
 			info.append(iter.next());
@@ -202,7 +192,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		return info.toString();
 	}
 
-	private FileInfo decodeFileInfo(BasicHDU displayHdu) throws FitsException {
+	private FileInfo decodeFileInfo(BasicHDU<?> displayHdu) throws FitsException {
 		Header header = displayHdu.getHeader();
 		FileInfo fi = new FileInfo();
 		fi.fileFormat = FileInfo.FITS;
@@ -222,26 +212,23 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	}
 
 	private int fileTypeFromBitsPerPixel(int bitsPerPixel) throws FitsException {
-		switch (bitsPerPixel) {
-			case 8:
-				return FileInfo.GRAY8;
-			case 16:
-				return FileInfo.GRAY16_SIGNED;
-			case 32:
-				return FileInfo.GRAY32_INT;
-			case -32:
-				return FileInfo.GRAY32_FLOAT;
-			case -64:
-				return FileInfo.GRAY64_FLOAT;
-			default:
-				throw new FitsException("BITPIX must be 8, 16, 32, -32 or -64, but BITPIX=" + bitsPerPixel);
-		}
+		return switch (bitsPerPixel) {
+			case 8 -> FileInfo.GRAY8;
+			case 16 -> FileInfo.GRAY16_SIGNED;
+			case 32 -> FileInfo.GRAY32_INT;
+			case -32 -> FileInfo.GRAY32_FLOAT;
+			case -64 -> FileInfo.GRAY64_FLOAT;
+			default -> throw new FitsException("BITPIX must be 8, 16, 32, -32 or -64, but BITPIX=" + bitsPerPixel);
+		};
 	}
 
-	private int firstImageHDU(BasicHDU[] basicHDU) {
-		for (int i=0; i < basicHDU.length; i++)
+	/**
+	 * Find first HDU from the provided array with NAXIS > 1, assume it is an image.
+	 */
+	private int firstImageHDU(BasicHDU<?>[] basicHDUs) {
+		for (int i=0; i < basicHDUs.length; i++)
 		{
-			if (basicHDU[i].getHeader().getIntValue(NAXIS) > 1)
+			if (basicHDUs[i].getHeader().getIntValue(NAXIS) > 1)
 			{
 				return i;
 			}
@@ -249,10 +236,18 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		return -1;
 	}
 
-	private boolean isCompressedFormat(BasicHDU[] basicHDU, int imageIndex) {
+	/**
+	 * Determine if the HDU at {@param imageIndex} is a compressed image.
+	 */
+	private boolean isCompressedFormat(BasicHDU<?>[] basicHDU, int imageIndex) {
 		return basicHDU[imageIndex].getHeader().getBooleanValue("ZIMAGE", false);
 	}
 
+	/**
+	 * Converted a compressed ImageHDU to an ImageHDU.
+	 * <p>
+	 * Updates {@link FITS_Reader#wi}, {@link FITS_Reader#he}, and {@link FITS_Reader#de}
+	 */
 	private ImageHDU getCompressedImageData(CompressedImageHDU hdu) throws FitsException {
 		wi = hdu.getHeader().getIntValue("ZNAXIS1");
 		he = hdu.getHeader().getIntValue("ZNAXIS2");
@@ -269,10 +264,11 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		setStack(fileName, stack);
 	}
 
-	private void displaySingleImage(BasicHDU hdu, Data imgData)
-			throws FitsException {
+	/**
+	 * Takes single set of FITS data and opens the image.
+	 */
+	private void displaySingleImage(BasicHDU<?> hdu, Data imgData) throws FitsException {
 		ImageProcessor imageProcessor = null;
-		int dim = hdu.getAxes().length;  //NAXIS
 
 		if (isTessFfi(hdu)) {
 			hdu.addValue("BJD_TDB", generateBjd(hdu), "Calc by AIJ as BJDREFI+BJDREFF+TSTART+TELAPSE/2.0");
@@ -292,7 +288,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	}
 
 	/**
-	 * Determine if the image is a TESS FFI
+	 * Determine if the image is a TESS FFI.
 	 */
 	private boolean isTessFfi(BasicHDU<?> hdu) {
 		var telescope = hdu.getHeader().findCard("TELESCOP");
@@ -308,6 +304,11 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		return tVal.strip().equals("TESS") && iCom.contains("FFI image type");
 	}
 
+	/**
+	 * Calculate BJD_TDB for TESS FFIs as they are missing it.
+	 * <p>
+	 * Note: Assumes all needed cards are present.
+	 */
 	private double generateBjd(BasicHDU<?> hdu) {
 		var header = hdu.getHeader();
 		var bjdRefi = header.getIntValue("BJDREFI");
@@ -318,8 +319,11 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		return bjdRefi + bjdReff + tStart + telapse/2.0;
 	}
 
+	/**
+	 * Take 3D fits data and open it as an {@link ImageStack}.
+	 */
 	//todo fix for compressed 3d images - currently only the 1 image is read, the others return all 0
-	private ImageProcessor process3DimensionalImage(BasicHDU hdu, Data imgData)
+	private ImageProcessor process3DimensionalImage(BasicHDU<?> hdu, Data imgData)
 			throws FitsException {
 		ImageProcessor ip = null;
 		ImageStack stack = new ImageStack();
@@ -349,131 +353,87 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		return ip;
 	}
 
-	private ImageProcessor process2DimensionalImage(BasicHDU hdu, Data imgData)
-			throws FitsException {
-		ImageProcessor ip;
-//        ///////////////////////////// 16 BITS ///////////////////////
-//        if (hdu.getBitPix() == 16) {
-//            short[][] itab = (short[][]) imgData.getKernel();
-//            TableWrapper wrapper = (x, y) -> itab[y][x];
-//            ip = getImageProcessor(wrapper);
-//
-//        } // 8 bits
-//        else if (hdu.getBitPix() == 8) {
-//            // Only in the 8 case is the signed-to-unsigned correction done -- oversight?!?
-//            byte[][] itab = (byte[][]) imgData.getKernel();
-//            TableWrapper wrapper = (x, y) -> (float)(itab[y][x] < 0 ? itab[y][x] + 256 : itab[y][x]);
-//            ip = getImageProcessor(wrapper);
-//        } // 16-bits
-//        ///////////////// 32 BITS ///////////////////////
-//        else if (hdu.getBitPix() == 32) {
-//            int[][] itab = (int[][]) imgData.getKernel();
-//            TableWrapper wrapper = (x, y) -> (float)itab[y][x];
-//            ip = getImageProcessor(wrapper);
-//        } // 32 bits
-//        /////////////// -32 BITS ?? /////////////////////////////////
-//        else if (hdu.getBitPix() == -32) {
-//            float[][] itab = (float[][]) imgData.getKernel();
-//            TableWrapper wrapper = (x, y) -> (float)itab[y][x];
-//            ip = getImageProcessor(wrapper);
+	/**
+	 * Convert 2D image data into an ImageProcessor, all image data is converted to floats for display.
+	 * <p>
+	 * Data is transposed to match {@link FloatProcessor}
+	 *
+	 * @see FITS_Reader#getImageProcessor
+	 */
+	private ImageProcessor process2DimensionalImage(BasicHDU<?> hdu, Data imgData) throws FitsException {
+		return switch (hdu.getBitPix()) {
+			/////////////// 16 bit case Shorts ////////////////////
+			case 16 -> {
+				final short[][] itab = (short[][]) imgData.getKernel();
+				TableWrapper wrapper = (x, y) -> itab[y][x];
+				yield getImageProcessor(wrapper);
+			}
+			/////////////// 8 bit case Bytes ////////////////////
+			case 8 -> {
+				// Only in the 8 case is the signed-to-unsigned correction done -- oversight?!?
+				final byte[][] itab = (byte[][]) imgData.getKernel();
+				TableWrapper wrapper = (x, y) -> (float) (itab[y][x] < 0 ? itab[y][x] + 256 : itab[y][x]);
+				yield getImageProcessor(wrapper);
+			}
+			/////////////// 32 bit case Ints ////////////////////
+			case 32 -> {
+				final int[][] itab = (int[][]) imgData.getKernel();
+				TableWrapper wrapper = (x, y) -> (float) itab[y][x];
+				yield getImageProcessor(wrapper);
+			}
+			/////////////// -32 bit case Floats ////////////////////
+			case -32 -> {
+				final float[][] itab = (float[][]) imgData.getKernel();
+				TableWrapper wrapper = (x, y) -> itab[y][x];
+				yield getImageProcessor(wrapper);
+				/*
+				// Special spectre optique transit
+				if ((hdu.getHeader().getStringValue("STATUS") != null) && (hdu
+						.getHeader().getStringValue("STATUS")
+						.equals("SPECTRUM")) && (
+						hdu.getHeader().getIntValue(NAXIS) == 2)) {
+					IJ.log("spectre optique");
+					float[] xValues = new float[wi];
+					float[] yValues = new float[wi];
+					for (int y = 0; y < wi; y++) {
+						yValues[y] = itab[0][y];
+						if (yValues[y] < 0) {
+							yValues[y] = 0;
+						}
+					}
+					String unitY = "IntensityRS ";
+					String unitX = "WavelengthRS ";
+					float CRPIX1 = getCRPIX1(hdu);
+					float CDELT1 = getCDELT1(hdu);
+					float odiv = 1;
+					float CRVAL1 = getCRVAL1ProcessX(hdu, xValues, CRPIX1, CDELT1);
+					if (CRVAL1 < 0.000001) {
+						odiv = 1000000;
+						unitX += "(" + "\u00B5" + "m)";
+					} else {
+						unitX += "ADU";
+					}
 
-		if (hdu.getBitPix() == 16) {
-			final short[][] itab = (short[][]) imgData.getKernel();
-			TableWrapper wrapper = new TableWrapper() {
-				@Override
-				public float valueAt(int x, int y) {
-					return itab[y][x];
-				}
-			};
-			ip = getImageProcessor(wrapper);
+					for (int x = 0; x < wi; x++) {
+						xValues[x] = xValues[x] * odiv;
+					}
 
-		} // 8 bits
-		else if (hdu.getBitPix() == 8) {
-			// Only in the 8 case is the signed-to-unsigned correction done -- oversight?!?
-			final byte[][] itab = (byte[][]) imgData.getKernel();
-			TableWrapper wrapper = new TableWrapper() {
-				@Override
-				public float valueAt(int x, int y) {
-					return (float) (itab[y][x] < 0 ? itab[y][x] + 256 : itab[y][x]);
-				}
-			};
-			ip = getImageProcessor(wrapper);
-		} // 16-bits
-		///////////////// 32 BITS ///////////////////////
-		else if (hdu.getBitPix() == 32) {
-			final int[][] itab = (int[][]) imgData.getKernel();
-			TableWrapper wrapper = new TableWrapper() {
-				@Override
-				public float valueAt(int x, int y) {
-					return (float) itab[y][x];
-				}
-			};
-			ip = getImageProcessor(wrapper);
-		} // 32 bits
-		/////////////// -32 BITS ?? /////////////////////////////////
-		else if (hdu.getBitPix() == -32) {
-			final float[][] itab = (float[][]) imgData.getKernel();
-			TableWrapper wrapper = new TableWrapper() {
-				@Override
-				public float valueAt(int x, int y) {
-					return (float) itab[y][x];
-				}
-			};
-			ip = getImageProcessor(wrapper);
-
-			// special spectre optique transit
-//            if ((hdu.getHeader().getStringValue("STATUS") != null) && (hdu
-//                    .getHeader().getStringValue("STATUS")
-//                    .equals("SPECTRUM")) && (
-//                    hdu.getHeader().getIntValue(NAXIS) == 2)) {
-//                //IJ.log("spectre optique");
-//                float[] xValues = new float[wi];
-//                float[] yValues = new float[wi];
-//                for (int y = 0; y < wi; y++) {
-//                    yValues[y] = itab[0][y];
-//                    if (yValues[y] < 0) {
-//                        yValues[y] = 0;
-//                    }
-//                }
-//                String unitY = "IntensityRS ";
-//                String unitX = "WavelengthRS ";
-//                float CRPIX1 = getCRPIX1(hdu);
-//                float CDELT1 = getCDELT1(hdu);
-//                float odiv = 1;
-//                float CRVAL1 = getCRVAL1ProcessX(hdu, xValues, CRPIX1, CDELT1);
-//                if (CRVAL1 < 0.000001) {
-//                    odiv = 1000000;
-//                    unitX += "(" + "\u00B5" + "m)";
-//                } else {
-//                    unitX += "ADU";
-//                }
-//
-//                for (int x = 0; x < wi; x++) {
-//                    xValues[x] = xValues[x] * odiv;
-//                }
-//
-//                @SuppressWarnings("deprecation") Plot P = new Plot(
-//                        "PlotWinTitle "
-//                                + fileName, "X: " + unitX, "Y: " + unitY,
-//                        xValues, yValues);
-//                P.draw();
-//            } //// end of special optique
-		} // -32 bits
-		/////////////// -64 BITS ?? /////////////////////////////////
-		else if (hdu.getBitPix() == -64) {
-			final double[][] itab = (double[][]) imgData.getKernel();
-			TableWrapper wrapper = new TableWrapper() {
-				@Override
-				public float valueAt(int x, int y) {
-					return (float) itab[y][x];
-				}
-			};
-			ip = getImageProcessor(wrapper);
-		}
-		else {
-			ip = imagePlus.getProcessor();
-		}
-		return ip;
+					@SuppressWarnings("deprecation") Plot P = new Plot(
+							"PlotWinTitle "
+									+ fileName, "X: " + unitX, "Y: " + unitY,
+							xValues, yValues);
+					P.draw();
+				}// End of special optique */
+			}
+			/////////////// -64 bit case Doubles ////////////////////
+			case -64 -> {
+				final double[][] itab = (double[][]) imgData.getKernel();
+				TableWrapper wrapper = (x, y) -> (float) itab[y][x];
+				yield getImageProcessor(wrapper);
+			} // No 64-bit case?? (not defined by FITS standard)
+			/////////////// Default case ////////////////////
+			default -> imagePlus.getProcessor();
+		};
 	}
 
 	// The following code excerpted from ij.process.FloatProcessor serves to document the layout
@@ -495,6 +455,11 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	//
 	// Notice that again, the x index is the tighter loop.
 
+	/**
+	 * Sets the current ImageProcessor to a new FloatProcessor.
+	 * <p>
+	 * Take fits data as floats, scale and shift it by bscale and bzero.
+	 */
 	private ImageProcessor getImageProcessor(TableWrapper wrapper) {
 		ImageProcessor ip;
 		int idx = 0;
@@ -508,12 +473,15 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 				idx++;
 			}
 		}
-		ip = getImageProcessor2(imgtab, imgtmp);
+		ip = conditionFloatProcessor(imgtab, imgtmp);
 		this.setProcessor(fileName, ip);
 		return ip;
 	}
 
-	private ImageProcessor getImageProcessor2(float[] imgtab, FloatProcessor imgtmp) {
+	/**
+	 * Set pixel and scaling data of the ImageProcessor, flip the image vertically.
+	 */
+	private ImageProcessor conditionFloatProcessor(float[] imgtab, FloatProcessor imgtmp) {
 		ImageProcessor ip;
 		imgtmp.setPixels(imgtab);
 		imgtmp.resetMinAndMax();
@@ -529,7 +497,10 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		return ip;
 	}
 
-	private BasicHDU[] getHDU(String path) throws FitsException {
+	/**
+	 * Create an {@link OpenDialog}, and read in the selected FITS file.
+	 */
+	private BasicHDU<?>[] getHDU(String path) throws FitsException {
 		OpenDialog od = new OpenDialog("Open FITS...", path);
 		directory = od.getDirectory();
 		fileName = od.getFileName();

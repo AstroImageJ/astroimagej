@@ -281,6 +281,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		}
 
 		if (imageProcessor == null) {
+			if (imagePlus == null) return;
 			imageProcessor = imagePlus.getProcessor();
 			imageProcessor.flipVertical();
 			setProcessor(fileName, imageProcessor);

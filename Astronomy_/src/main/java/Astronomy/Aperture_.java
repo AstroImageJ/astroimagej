@@ -556,7 +556,7 @@ protected void measurePhotometry()
     }
 
 
-		protected boolean adjustAperture(boolean updatePhotometry) {return adjustAperture(updatePhotometry, reposition);}
+		protected boolean adjustAperture(boolean updatePhotometry) {return adjustAperture(updatePhotometry, showAsCentered);}
 
 		protected boolean adjustAperture(boolean updatePhotometry, boolean centroid)
         {

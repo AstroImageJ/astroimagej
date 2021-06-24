@@ -15,10 +15,10 @@ import nom.tam.fits.*;
 import nom.tam.image.compression.hdu.CompressedImageHDU;
 import nom.tam.util.Cursor;
 
-import java.io.DataInputStream;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.zip.GZIPInputStream;
 
@@ -120,7 +120,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 
 			if (de >= 1){
 				try {
-					displaySingleImage(displayHdu, imgData);
+					displaySingleImage(displayHdu, imgData, hdus);
 				} catch (FitsException e) {
 					IJ.error("Failed to display single image: " + e.getMessage());
 					return;
@@ -192,6 +192,9 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		return info.toString();
 	}
 
+	/**
+	 * Generate {@link FileInfo} for the FITS image for use in displaying it.
+	 */
 	private FileInfo decodeFileInfo(BasicHDU<?> displayHdu) throws FitsException {
 		Header header = displayHdu.getHeader();
 		FileInfo fi = new FileInfo();
@@ -267,15 +270,22 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	/**
 	 * Takes single set of FITS data and opens the image.
 	 */
-	private void displaySingleImage(BasicHDU<?> hdu, Data imgData) throws FitsException {
+	private void displaySingleImage(BasicHDU<?> hdu, Data imgData, BasicHDU<?>[] hdus) throws FitsException {
 		ImageProcessor imageProcessor = null;
 
 		if (isTessFfi(hdu)) {
 			hdu.addValue("BJD_TDB", generateBjd(hdu), "Calc by AIJ as BJDREFI+BJDREFF+TSTART+TELAPSE/2.0");
 		}
 
-		if (hdu.getHeader().getIntValue(NAXIS) == 2) {
-			imageProcessor = process2DimensionalImage(hdu, imgData);
+		if (hdu instanceof TableHDU<?> tableHDU) {
+			if (isTessCut(tableHDU)) {
+				var data = (Number[][][]) ArrayBoxingUtil.boxArray(tableHDU.getColumn("FLUX"));
+				var hdr = convertHeaderForFfi(hdus[2].getHeader(), tableHDU);
+
+				imageProcessor = makeStackFrom3DData(data, tableHDU.getNRows(), -32, makeHeadersTessCut(hdr, tableHDU));
+			}
+		} else if (hdu.getHeader().getIntValue(NAXIS) == 2) {
+			imageProcessor = processTwoDimensionalImage(hdu, imgData);
 		} else if (hdu.getHeader().getIntValue(NAXIS) == 3) {
 			imageProcessor = process3DimensionalImage(hdu, imgData);
 		}
@@ -286,6 +296,79 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			imageProcessor.flipVertical();
 			setProcessor(fileName, imageProcessor);
 		}
+	}
+
+	/**
+	 * Determine if a table is a TESS cut.
+	 */
+	private boolean isTessCut(TableHDU<?> tableHDU) {
+		return tableHDU.getHeader().getStringValue("CREATOR").equals("astrocut");
+	}
+
+	/**
+	 * Convert base image header for TESScut images to a 3D FITS image.
+	 * <p>
+	 * Updates {@link FITS_Reader#wi}, {@link FITS_Reader#he}, and {@link FITS_Reader#de}
+	 */
+	private Header convertHeaderForFfi(Header header, TableHDU<?> tableHDU) {
+		header.setNaxes(3);
+		header.setNaxis(3, tableHDU.getNRows());
+		header.deleteKey("EXTNAME");
+		header.deleteKey("INSTRUME");
+		header.deleteKey("TELESCOP");
+		header.deleteKey("CHECKSUM");
+		wi = header.getIntValue(NAXIS1);
+		he = header.getIntValue(NAXIS2);
+		de = tableHDU.getNRows();
+
+		return header;
+	}
+
+	/**
+	 * Creates the header string for each image within a TESScut.
+	 * <p>
+	 * Adds BJD_TDB to the header, and does the evaluation of image quality.
+	 * Modifies the header.
+	 * <p>
+	 * Adapted from TESS Cut code by John Kielkopf.
+	 */
+	private List<String> makeHeadersTessCut(final Header hdr, final TableHDU<?> tableHDU) {
+		List<String> headers = new ArrayList<>(tableHDU.getNRows());
+
+		try {
+			var bjds = (Number[]) ArrayBoxingUtil.boxArray(tableHDU.getColumn("TIME"));
+			var quality = (Number[]) ArrayBoxingUtil.boxArray(tableHDU.getColumn("QUALITY"));
+
+			for (int i = 0; i < tableHDU.getNRows(); i++) {
+				hdr.setSimple(true); // Needed for MA to read the header data
+
+				// Delete previously added keys as hdr object is not a copy and is shared for all images
+				hdr.deleteKey("BJD_TDB");
+				hdr.deleteKey("AIJ_Q");
+
+				var bjd0 = 2457000d;
+				var bjd1 = 0d;
+				bjd1 = bjds[i].doubleValue();
+				hdr.addValue("BJD_TDB", bjd0 + bjd1, "Calc. BJD_TDB");
+
+				// If the image should be skipped add this card, string check for 'AIJ_Q' to skip image
+				// Based on TESS Cut code by John Kielkopf
+				if (quality[i].intValue() != 0 || Double.isNaN(bjd1)) {
+					hdr.addValue("AIJ_Q", quality[i].intValue() != 0 || Double.isNaN(bjd1), "Skippable Image?");
+				}
+
+				// Get the Header as a String
+				final var baos = new ByteArrayOutputStream();
+				final var utf8 = StandardCharsets.UTF_8.name();
+				try (PrintStream ps = new PrintStream(baos, true, utf8)) {
+					hdr.dumpHeader(ps);
+				} catch (Exception ignored) {}
+
+				headers.add(baos.toString(utf8));
+			}
+		} catch (Exception ignored) {}
+
+		return headers;
 	}
 
 	/**
@@ -324,31 +407,41 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	 * Take 3D fits data and open it as an {@link ImageStack}.
 	 */
 	//todo fix for compressed 3d images - currently only the 1 image is read, the others return all 0
-	private ImageProcessor process3DimensionalImage(BasicHDU<?> hdu, Data imgData)
-			throws FitsException {
+	private ImageProcessor process3DimensionalImage(BasicHDU<?> hdu, Data imgData) throws FitsException {
+		return makeStackFrom3DData(((Number[][][]) ArrayBoxingUtil.boxArray(imgData.getKernel())),
+				hdu.getHeader().getIntValue(NAXISn.n(3).key()), hdu.getBitPix());
+	}
+
+	/**
+	 * From 3D array of pixel data,create a stack.
+	 * @see FITS_Reader#makeStackFrom3DData(Number[][][], int, int, List)
+	 */
+	private ImageProcessor makeStackFrom3DData(final Number[][][] data, final int imageCount, final int bitpix) {
+		return makeStackFrom3DData(data, imageCount, bitpix, null);
+	}
+
+	/**
+	 * From 3D array of pixel data, create a stack. Uses provided Header to set info for processes such
+	 * as MultiAperture.
+	 */
+	private ImageProcessor makeStackFrom3DData(final Number[][][] data, final int imageCount, final int bitpix,
+											   final List<String> headers) {
 		ImageProcessor ip = null;
 		ImageStack stack = new ImageStack();
 
-		for (int i = 0; i < hdu.getHeader().getIntValue(NAXISn.n(3).key()); i++) {
-			final Number[][] itab = ((Number[][][]) ArrayBoxingUtil.boxArray(imgData.getKernel()))[i];
-
-			// Same as what process2DimensionalImage, but via (un)boxing to simplify code
-			ip = switch (hdu.getBitPix()) {
-				case 16, -32, 32, -64 -> { // No 64 case?
-					TableWrapper wrapper = (x, y) -> itab[y][x].floatValue();
-					yield getImageProcessor(wrapper);
+		for (int i = 0; i < imageCount; i++) {
+			String header = "";
+			if (headers != null) {
+				if (headers.get(i).contains("AIJ_Q")) { // For TESScut, skip bad images
+					IJ.log("Skipping an image due to quality and/or lack of BJD: " + (i+1));
+					continue;
 				}
-				case 8 -> {
-					// Only in the 8 case is the signed-to-unsigned correction done -- oversight?!?
-					TableWrapper wrapper = (x, y) -> itab[y][x].floatValue() < 0 ?
-							itab[y][x].floatValue() + 256 : itab[y][x].floatValue();
-					yield getImageProcessor(wrapper);
-				}
-				default -> imagePlus.getProcessor();
-			};
-
-			stack.addSlice(ip);
+				header = headers.get(i) + "\n";
+			}
+			ip = twoDimensionalImageData2Processor(data[i], bitpix);
+			stack.addSlice("Cut " + (i+1) + "\n" + header, ip); // The table is 1-indexed 'cause FORTRAN
 		}
+
 		setStack(fileName, stack);
 
 		return ip;
@@ -361,78 +454,26 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	 *
 	 * @see FITS_Reader#getImageProcessor
 	 */
-	private ImageProcessor process2DimensionalImage(BasicHDU<?> hdu, Data imgData) throws FitsException {
-		return switch (hdu.getBitPix()) {
-			/////////////// 16 bit case Shorts ////////////////////
-			case 16 -> {
-				final short[][] itab = (short[][]) imgData.getKernel();
-				TableWrapper wrapper = (x, y) -> itab[y][x];
+	private ImageProcessor processTwoDimensionalImage(BasicHDU<?> hdu, Data imgData) throws FitsException {
+		return twoDimensionalImageData2Processor((Number[][]) ArrayBoxingUtil.boxArray(imgData.getKernel()),
+				hdu.getBitPix());
+	}
+
+	/**
+	 * Convert 2D image data to an ImageProcessor
+	 */
+	private ImageProcessor twoDimensionalImageData2Processor(final Number[][] imageData, final int bitPix) {
+		return switch (bitPix) {
+			case 16, -32, 32, -64 -> { // No 64 case as fits spec does not define one?
+				TableWrapper wrapper = (x, y) -> imageData[y][x].floatValue();
 				yield getImageProcessor(wrapper);
 			}
-			/////////////// 8 bit case Bytes ////////////////////
 			case 8 -> {
 				// Only in the 8 case is the signed-to-unsigned correction done -- oversight?!?
-				final byte[][] itab = (byte[][]) imgData.getKernel();
-				TableWrapper wrapper = (x, y) -> (float) (itab[y][x] < 0 ? itab[y][x] + 256 : itab[y][x]);
+				TableWrapper wrapper = (x, y) -> imageData[y][x].floatValue() < 0 ?
+						imageData[y][x].floatValue() + 256 : imageData[y][x].floatValue();
 				yield getImageProcessor(wrapper);
 			}
-			/////////////// 32 bit case Ints ////////////////////
-			case 32 -> {
-				final int[][] itab = (int[][]) imgData.getKernel();
-				TableWrapper wrapper = (x, y) -> (float) itab[y][x];
-				yield getImageProcessor(wrapper);
-			}
-			/////////////// -32 bit case Floats ////////////////////
-			case -32 -> {
-				final float[][] itab = (float[][]) imgData.getKernel();
-				TableWrapper wrapper = (x, y) -> itab[y][x];
-				yield getImageProcessor(wrapper);
-				/*
-				// Special spectre optique transit
-				if ((hdu.getHeader().getStringValue("STATUS") != null) && (hdu
-						.getHeader().getStringValue("STATUS")
-						.equals("SPECTRUM")) && (
-						hdu.getHeader().getIntValue(NAXIS) == 2)) {
-					IJ.log("spectre optique");
-					float[] xValues = new float[wi];
-					float[] yValues = new float[wi];
-					for (int y = 0; y < wi; y++) {
-						yValues[y] = itab[0][y];
-						if (yValues[y] < 0) {
-							yValues[y] = 0;
-						}
-					}
-					String unitY = "IntensityRS ";
-					String unitX = "WavelengthRS ";
-					float CRPIX1 = getCRPIX1(hdu);
-					float CDELT1 = getCDELT1(hdu);
-					float odiv = 1;
-					float CRVAL1 = getCRVAL1ProcessX(hdu, xValues, CRPIX1, CDELT1);
-					if (CRVAL1 < 0.000001) {
-						odiv = 1000000;
-						unitX += "(" + "\u00B5" + "m)";
-					} else {
-						unitX += "ADU";
-					}
-
-					for (int x = 0; x < wi; x++) {
-						xValues[x] = xValues[x] * odiv;
-					}
-
-					@SuppressWarnings("deprecation") Plot P = new Plot(
-							"PlotWinTitle "
-									+ fileName, "X: " + unitX, "Y: " + unitY,
-							xValues, yValues);
-					P.draw();
-				}// End of special optique */
-			}
-			/////////////// -64 bit case Doubles ////////////////////
-			case -64 -> {
-				final double[][] itab = (double[][]) imgData.getKernel();
-				TableWrapper wrapper = (x, y) -> (float) itab[y][x];
-				yield getImageProcessor(wrapper);
-			} // No 64-bit case?? (not defined by FITS standard)
-			/////////////// Default case ////////////////////
 			default -> imagePlus.getProcessor();
 		};
 	}

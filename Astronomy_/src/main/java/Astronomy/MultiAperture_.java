@@ -2181,14 +2181,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             setShowAsCentered(centroidStar[ap]);
 
             valueOverlay = false; // Don't show values as they will differ when measured and will be drawn over
-
-            // Disable these and aperture clearing on per-ap basis for flicker,
-            // but not drift when subset of aperture has centroiding enabled
-            adjustAperture(false, centroidStar[ap]); // Aperture draw fix 0 - adjusts aperture position to match centroid if applicaable
-            drawAperture(); // Apterure draw fix 1 - can be removed at cost of last copuple aperture not drawing
         }
-
-        ocanvas.drawOverlayCanvas(ocanvas.getGraphics()); // Apterure draw fix 2 - can be removed at cost of slightly more flickering
 
         valueOverlay = Prefs.get (AP_PREFS_VALUEOVERLAY, valueOverlay);
         for (int ap = 0; ap < nApertures; ap++) {
@@ -2209,7 +2202,6 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             Prefs.set("aperture.reposition", centroidStar[ap]);
             setShowAsCentered(centroidStar[ap]);
 
-            ocanvas.removeApertureRoi(ocanvas.findApertureRoiByNumber(ap)); // Clear old aperture to prevent duplication
             if (!measureAperture()) {
                 if (haltOnError || this instanceof Stack_Aligner) {
                     Prefs.set("aperture.reposition", holdReposition);

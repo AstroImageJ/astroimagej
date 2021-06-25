@@ -3,6 +3,7 @@ package ij.plugin;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.ImageStack;
+import ij.Prefs;
 import ij.astro.AstroImageJ;
 import ij.io.FileInfo;
 import ij.io.FileOpener;
@@ -43,6 +44,8 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	private int de;
 	private float bzero;
 	private float bscale;
+
+	public static boolean doTessQualCheck = Prefs.getBoolean(".aij.doTessQualCheck", true);
 
 	// The image data comes in different types, but in the end, we turn them all into floats.
 	// So no matter what type the data is, we wrap it with a lambda that takes two indices and
@@ -353,7 +356,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 
 				// If the image should be skipped add this card, string check for 'AIJ_Q' to skip image
 				// Based on TESS Cut code by John Kielkopf
-				if (quality[i].intValue() != 0 || Double.isNaN(bjd1)) {
+				if ((doTessQualCheck && quality[i].intValue() != 0) || Double.isNaN(bjd1)) {
 					hdr.addValue("AIJ_Q", quality[i].intValue() != 0 || Double.isNaN(bjd1), "Skippable Image?");
 				}
 

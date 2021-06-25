@@ -7,6 +7,7 @@ import ij.io.*;
 import ij.io.OpenDialog;
 
 import ij.gui.*;
+import ij.plugin.FITS_Reader;
 import ij.plugin.frame.SyncWindows;
 import ij.process.*;
 import ij.text.*;
@@ -1099,6 +1100,15 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                 showRemovedPixelsCB = new CheckboxMenuItem("Mark pixels > 2 sigma from mean in photometer background region", showRemovedPixels);
                 showRemovedPixelsCB.addItemListener(this);
                 preferencesMenu.add(showRemovedPixelsCB);
+
+                preferencesMenu.addSeparator();
+                var qualCheckTess = new CheckboxMenuItem("When opening TESS images, also open images with data quality flag set",
+                        FITS_Reader.doTessQualCheck);
+                qualCheckTess.addItemListener(e -> {
+                    FITS_Reader.doTessQualCheck = e.getStateChange() == ItemEvent.SELECTED;
+                    Prefs.set("aij.doTessQualCheck", FITS_Reader.doTessQualCheck);
+                });
+                preferencesMenu.add(qualCheckTess);
 
                 mainMenuBar.add(preferencesMenu);
                 

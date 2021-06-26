@@ -282,6 +282,10 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 
 		if (isTicaImage(hdu)) {
 			hdu.addValue("BJD_TDB", generateBjd(hdu), "Calc by AIJ as TJD_ZERO + MIDTJD");
+			if (hdu.getHeader().getIntValue("QUAL_BIT") != 0) {
+				IJ.error("Skipped TICA image as QUAL_BIT is nonzero.");
+				return;
+			}
 		}
 
 		if (hdu instanceof TableHDU<?> tableHDU) {

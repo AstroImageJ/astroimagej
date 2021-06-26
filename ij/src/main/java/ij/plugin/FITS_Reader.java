@@ -460,7 +460,8 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			String header = "";
 			if (headers != null) {
 				if (headers.get(i).contains("AIJ_Q")) { // For TESScut, skip bad images
-					IJ.log("Skipping an image due to quality and/or lack of BJD: " + (i+1));
+					IJ.log("Skipping an image due to " +
+							(doTessQualCheck ? "quality and/or " : "") +"lack of BJD: " + (i+1));
 					continue;
 				}
 				header = headers.get(i) + "\n";

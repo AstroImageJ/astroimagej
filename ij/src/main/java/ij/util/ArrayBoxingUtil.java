@@ -11,7 +11,7 @@ import java.util.stream.IntStream;
  */
 //todo document
 //todo move to nom.tam.fits
-//todo check accuracy of output
+//todo add boxed -> primitive
 public class ArrayBoxingUtil {
     private static final Map<Class<?>, Class<?>> typeMapping = new HashMap<>();
     static {
@@ -113,6 +113,10 @@ public class ArrayBoxingUtil {
         if (array instanceof char[] array2) {
             return IntStream.range(0, array2.length)
                     .mapToObj(i -> ((char[]) array2)[i]).toArray(Character[]::new);
+        }
+        // Input is already a 1D boxed array
+        if (array instanceof Object[] array2 && !array2.getClass().getComponentType().isArray()) {
+            return array;
         }
         return null;
     }

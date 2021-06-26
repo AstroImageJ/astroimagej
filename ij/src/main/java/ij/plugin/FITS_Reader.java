@@ -45,7 +45,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	private float bzero;
 	private float bscale;
 
-	public static boolean doTessQualCheck = Prefs.getBoolean(".aij.doTessQualCheck", true);
+	public static boolean doTessQualCheck = Prefs.getBoolean(".aij.doTessQualCheck", false);
 
 	// The image data comes in different types, but in the end, we turn them all into floats.
 	// So no matter what type the data is, we wrap it with a lambda that takes two indices and

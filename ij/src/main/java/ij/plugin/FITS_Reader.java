@@ -280,6 +280,10 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			hdu.addValue("BJD_TDB", generateBjd(hdu), "Calc by AIJ as BJDREFI+BJDREFF+TSTART+TELAPSE/2.0");
 		}
 
+		if (isTicaImage(hdu)) {
+			hdu.addValue("BJD_TDB", generateBjd(hdu), "Calc by AIJ as TJD_ZERO + MIDTJD");
+		}
+
 		if (hdu instanceof TableHDU<?> tableHDU) {
 			if (isTessCut(tableHDU)) {
 				var data = (Number[][][]) ArrayBoxingUtil.boxArray(tableHDU.getColumn("FLUX"));
@@ -391,19 +395,39 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		return tVal.strip().equals("TESS") && iCom.contains("FFI image type");
 	}
 
+
 	/**
-	 * Calculate BJD_TDB for TESS FFIs as they are missing it.
+	 * Determine if the image is a TICA image
+	 */
+	private boolean isTicaImage(BasicHDU<?> hdu) {
+		return null != hdu.getHeader().findCard("TICAVER");
+	}
+
+	/**
+	 * Calculate BJD_TDB for TESS or TICA FFIs as they are missing it.
 	 * <p>
 	 * Note: Assumes all needed cards are present.
 	 */
 	private double generateBjd(BasicHDU<?> hdu) {
 		var header = hdu.getHeader();
-		var bjdRefi = header.getIntValue("BJDREFI");
-		var bjdReff = header.getDoubleValue("BJDREFF");
-		var tStart = header.getDoubleValue("TSTART");
-		var telapse = header.getDoubleValue("TELAPSE");
 
-		return bjdRefi + bjdReff + tStart + telapse/2.0;
+		if (isTessFfi(hdu)) {
+			var bjdRefi = header.getIntValue("BJDREFI");
+			var bjdReff = header.getDoubleValue("BJDREFF");
+			var tStart = header.getDoubleValue("TSTART");
+			var telapse = header.getDoubleValue("TELAPSE");
+
+			return bjdRefi + bjdReff + tStart + telapse/2.0;
+		}
+
+		if (isTicaImage(hdu)) {
+			var tjdZero = header.getDoubleValue("TJD_ZERO");
+			var midTjd = header.getDoubleValue("MIDTJD");
+
+			return tjdZero + midTjd;
+		}
+
+		return -1;
 	}
 
 	/**

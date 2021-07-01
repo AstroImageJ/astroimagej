@@ -104,6 +104,9 @@ public class FolderOpener implements PlugIn {
 		return image;
 	}
 
+	@AstroImageJ(reason = "When opening images that individually go to a stack, preserve stack title. This allows" +
+			" MultiAperture to run on a folder of 3D fits images, otherwise WCS and other information is lost.",
+			modified = true)
 	public void run(String arg) {
 		boolean isMacro = Macro.getOptions()!=null;
 		if (!directorySet)
@@ -336,10 +339,7 @@ public class FolderOpener implements PlugIn {
 						ImageProcessor ip = null;
 						if (stackSize>1) {
 							String sliceLabel = inputStack.getSliceLabel(slice);
-							if (sliceLabel!=null && sliceLabel.length()<=15)
-								label2 += ":"+sliceLabel;
-							else if (label2!=null && !label2.equals(""))
-								label2 += ":"+slice;
+							label2 = "Image " + (i+1) + " : " + sliceLabel;
 						}
 						ip = inputStack.getProcessor(slice);
 						if (convertToRGB) {

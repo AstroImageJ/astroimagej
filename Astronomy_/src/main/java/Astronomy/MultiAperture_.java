@@ -1836,8 +1836,17 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             // GET NON-STANDARD PARAMETERS AND CLEAN UP
             return finishFancyDialog(gd);
 
+        } else {  //handle automode
+            firstSlice = 1;
+            lastSlice = 1;
+            doStack = false;
+            if (stackSize > 1) {
+                lastSlice = stackSize;
+                doStack = true;
+            }
+            initialFirstSlice = firstSlice;
+            initialLastSlice = lastSlice;
         }
-
         return true;
     }
 

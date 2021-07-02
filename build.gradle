@@ -252,7 +252,7 @@ def commonDist = project.copySpec {
 project.copy {
     with commonDist
     into "${buildDir}/commonFiles"
-    if (Os.isFamily(Os.FAMILY_MAC)) {
+    if (Os.isFamily(Os.FAMILY_MAC) && file("${buildDir}/commonFiles/AstroImageJ.l4j.ini").exists()) {
         project.exec {
             commandLine('chmod',  'a=rw', "${buildDir}/commonFiles/AstroImageJ.l4j.ini")
         }
@@ -268,7 +268,7 @@ task commonFiles(type: Copy) {
     with commonDist
     into "${buildDir}/commonFiles"
     doLast {
-        if (Os.isFamily(Os.FAMILY_MAC)) {
+        if (Os.isFamily(Os.FAMILY_MAC) && file("${buildDir}/commonFiles/AstroImageJ.l4j.ini").exists()) {
             project.exec {
                 commandLine('chmod',  'a=rw', "${buildDir}/commonFiles/AstroImageJ.l4j.ini")
             }

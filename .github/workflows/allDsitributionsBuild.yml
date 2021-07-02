@@ -15,19 +15,26 @@ jobs:
           java-version: 16
         #- name: Install WiX Toolset
         #run: choco install wixtoolset
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
-      - name: Package AIJ
-        run: ./gradlew packageAijForWindows_x86
-      - uses: actions/upload-artifact@v2
-        with:
-          name: Windows Installer (.exe)
-          path: build/distributions/AstroImageJ-x86_64.exe
-      - uses: actions/upload-artifact@v2
-        with:
-          name: Windows package (.zip)
-          #path: build/distributions
-          path: build/distributions/AstroImageJ-x86_64-windows.zip
+        - name: Grant execute permission for gradlew
+          run: chmod +x gradlew
+        - name: Package AIJ
+          run: ./gradlew packageAijForWindows_x86 packageAijForWindows_arm
+        - uses: actions/upload-artifact@v2
+          with:
+            name: Windows (x86) Installer (.exe)
+            path: build/distributions/*x86*.exe
+        - uses: actions/upload-artifact@v2
+          with:
+            name: Windows (x86) package (.zip)
+            path: build/distributions/*x86*.zip
+        - uses: actions/upload-artifact@v2
+          with:
+            name: Windows (Arm) Installer (.exe)
+            path: build/distributions/*arm*.exe
+        - uses: actions/upload-artifact@v2
+          with:
+            name: Windows (Arm) package (.zip)
+            path: build/distributions/*arm*.exe
   linux:
 
     runs-on: ubuntu-latest
@@ -45,7 +52,7 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: Linux Compressed tar file (.tar.gz)
-          path: build/distributions/AstroImageJ-x86_64-linux.tar.gz #TODO once installer generation is added, gen and upload installers
+          path: build/distributions/*x86*.tar.gz #TODO once installer generation is added, gen and upload installers
   macos:
 
     runs-on: macos-latest

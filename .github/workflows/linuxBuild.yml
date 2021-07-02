@@ -26,4 +26,4 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: Linux Compressed tar file (.tar.gz)
-          path: build/distributions/AstroImageJ-x86_64-linux.tar.gz #TODO once installer generation is added, gen and upload installers
+          path: build/distributions/*x86*.tar.gz #TODO once installer generation is added, gen and upload installers

@@ -27,18 +27,16 @@ jobs:
         - uses: actions/upload-artifact@v2
           with:
             name: Windows (x86) Installer (.exe)
-            path: build/distributions/AstroImageJ-x86_64.exe
+            path: build/distributions/*x86*.exe
         - uses: actions/upload-artifact@v2
           with:
             name: Windows (x86) package (.zip)
-            #path: build/distributions
-            path: build/distributions/AstroImageJ-x86_64-windows.zip
+            path: build/distributions/*x86*.zip
         - uses: actions/upload-artifact@v2
           with:
             name: Windows (Arm) Installer (.exe)
-            path: build/distributions/AstroImageJ-arm_64.exe
+            path: build/distributions/*arm*.exe
         - uses: actions/upload-artifact@v2
           with:
             name: Windows (Arm) package (.zip)
-            #path: build/distributions
-            path: build/distributions/AstroImageJ-arm_64-windows.zip
+            path: build/distributions/*arm*.exe

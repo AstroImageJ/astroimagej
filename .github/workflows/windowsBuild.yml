@@ -11,33 +11,34 @@ on: workflow_dispatch # manually triggered
 
 jobs:
   build:
-
-    runs-on: windows-latest
-
-    steps:
-    - uses: actions/checkout@v2
-    - name: Set up JDK 15
-      uses: actions/setup-java@v1
-      with:
-        java-version: 15
-    #- name: Install WiX Toolset
-      #run: choco install wixtoolset
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
-    - name: Make Common Files
-      run: ./gradlew commonFiles
-    - name: Unzip JREs
-      run: ./gradlew unZipJresTask
-    - name: Build AIJ
-      run: ./gradlew build
-    - name: Package AIJ
-      run: ./gradlew packageAijForWindows
-    - uses: actions/upload-artifact@v2
-      with:
-        name: Installer
-        path: build/distributions/AstroImageJ_dev-x86.exe
-    - uses: actions/upload-artifact@v2
-      with:
-        name: Portable
-        #path: build/distributions
-        path: build/distributions/AstroImageJ-dev-x86-windows.zip
+      runs-on: windows-latest
+      steps:
+        - uses: actions/checkout@v2
+        - name: Set up JDK 16
+          uses: actions/setup-java@v1
+          with:
+            java-version: 16
+          #- name: Install WiX Toolset
+          #run: choco install wixtoolset
+        - name: Grant execute permission for gradlew
+          run: chmod +x gradlew
+        - name: Package AIJ
+          run: ./gradlew packageAijForWindows_x86 packageAijForWindows_arm
+        - uses: actions/upload-artifact@v2
+          with:
+            name: Windows (x86) Installer (.exe)
+            path: build/distributions/AstroImageJ-x86_64.exe
+        - uses: actions/upload-artifact@v2
+          with:
+            name: Windows (x86) package (.zip)
+            #path: build/distributions
+            path: build/distributions/AstroImageJ-x86_64-windows.zip
+        - uses: actions/upload-artifact@v2
+          with:
+            name: Windows (Arm) Installer (.exe)
+            path: build/distributions/AstroImageJ-arm_64.exe
+        - uses: actions/upload-artifact@v2
+          with:
+            name: Windows (Arm) package (.zip)
+            #path: build/distributions
+            path: build/distributions/AstroImageJ-arm_64-windows.zip

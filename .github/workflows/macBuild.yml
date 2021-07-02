@@ -15,28 +15,30 @@ jobs:
     runs-on: macos-latest
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up JDK 15
-      uses: actions/setup-java@v1
-      with:
-        java-version: 15
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
-    - name: Make Common Files
-      run: ./gradlew commonFiles
-    - name: Make ini writable I hope
-      run: chmod u=rwx build/commonFiles/AstroImageJ.l4j.ini
-    - name: Unzip JREs
-      run: ./gradlew unZipJresTask
-    - name: Build AIJ
-      run: ./gradlew build
-    - name: Package AIJ
-      run: ./gradlew packageAijForMac
-    - uses: actions/upload-artifact@v2
-      with:
-        name: App Version
-        path: build/distributions/AstroImageJ-dev-x86-mac.zip
-    - uses: actions/upload-artifact@v2
-      with:
-        name: Dmg Version
-        path: build/distributions/AstroImageJ_dev-x86.dmg
+      - uses: actions/checkout@v2
+      - name: Set up JDK 16
+        uses: actions/setup-java@v1
+        with:
+          java-version: 16
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+      - name: Make ini writable I hope
+        run: chmod u=rwx build/commonFiles/AstroImageJ.l4j.ini
+      - name: Package AIJ
+        run: ./gradlew packageAijForMacos_x86 packageAijForMacos_arm
+      - uses: actions/upload-artifact@v2
+        with:
+          name: MacOS x86 App Version (.zip)
+          path: build/distributions/AstroImageJ-x86_64-mac.zip
+      - uses: actions/upload-artifact@v2
+        with:
+          name: MacOS Arm App Version (.zip)
+          path: build/distributions/AstroImageJ-arm_64-mac.zip
+      - uses: actions/upload-artifact@v2
+        with:
+          name: MacOS Arm App Version (.dmg)
+          path: build/distributions/AstroImageJ-arm_64-mac.dmg
+      - uses: actions/upload-artifact@v2
+        with:
+          name: MacOS x86 Dmg Version (.dmg)
+          path: build/distributions/AstroImageJ-x86_64.dmg

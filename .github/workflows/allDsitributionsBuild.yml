@@ -58,6 +58,8 @@ jobs:
           java-version: 16
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
+      - name: Make Common Files
+        run: ./gradlew commonFiles
       - name: Make ini writable I hope
         run: chmod u=rwx build/commonFiles/AstroImageJ.l4j.ini
       - name: Package AIJ

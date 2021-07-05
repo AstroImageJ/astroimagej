@@ -372,7 +372,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static JMenuItem[] saveFitPanelPngMenuItem, saveFitPanelJpgMenuItem, saveFitTextMenuItem;
 
     static boolean[][] autoUpdatePrior;
-    static double[] sigma, tolerance, residualShift, autoResidualShift;
+    static double[] sigma, prevSigma, prevBic, tolerance, residualShift, autoResidualShift;
     //        static double residualShiftStep;
     static double[] defaultFitStep;
     static JSpinner[] toleranceSpinner, residualShiftSpinner;
@@ -3012,6 +3012,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             } else {
                 detrendpanelgroup[curve].setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
             }
+            setRMSBackgroundNewThread(curve);
         }
 
 
@@ -6053,6 +6054,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         coeffs = new double[maxCurves][];
         dof = new int[maxCurves];
         sigma = new double[maxCurves];
+        prevSigma = new double[maxCurves];
+        prevBic = new double[maxCurves];
         nTries = new int[maxCurves];
         smoothLen = new int[maxCurves];
         converged = new boolean[maxCurves];
@@ -6410,6 +6413,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             ASInclude[i] = true;
             plotY[i] = i == 0;
             sigma[i] = 0.0;
+            prevSigma[i] = Double.POSITIVE_INFINITY;
+            prevBic[i] = Double.POSITIVE_INFINITY;
             autoUpdatePriors[i] = true;
             smooth[i] = false;
             smoothLen[i] = 31;
@@ -13897,7 +13902,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 } else { bestFitLabel[c][p].setBorder(border); }
 //                    bestFitLabel[c][p].paint(bestFitLabel[c][p].getGraphics());
             }
-
             t14Label[c].setBorder(useTransitFit[c] ? border : grayBorder);
 //                t14Label[c].paint(t14Label[c].getGraphics());
             t14HoursLabel[c].setBorder(useTransitFit[c] ? border : grayBorder);
@@ -13921,11 +13925,38 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             chi2Label[c].setBorder(border);
 //                chi2Label[c].paint(chi2Label[c].getGraphics());
             stepsTakenLabel[c].setBorder(border);
+            //sigmaLabel[c].setBackground(defaultBackgroundColor);
         }
     }
 
     static void setFittedParametersBorderColorNewThread(final int c, final Border border) {
         Thread t = new Thread(() -> setFittedParametersBorderColor(c, border));
+        t.start();
+        Thread.yield();
+    }
+
+    static void setRMSBackground(final int c) {
+        if (bestFitLabel[c][0] != null) {
+            if (sigma[c] < prevSigma[c]) {
+                sigmaLabel[c].setBackground(Color.green);
+            //} else if (sigma[c] > prevSigma[c]) {
+            //    sigmaLabel[c].setBackground(Color.red);
+            }
+            if (bic[c] < prevBic[c] - 2.0) {
+                bicLabel[c].setBackground(Color.green);
+                //} else if (sigma[c] > prevSigma[c]) {
+                //    sigmaLabel[c].setBackground(Color.red);
+            }
+            prevSigma[c] = sigma[c];
+            prevBic[c] = bic[c];
+            IJ.wait(100);
+            sigmaLabel[c].setBackground(defaultBackground);
+            bicLabel[c].setBackground(defaultBackground);
+        }
+    }
+
+    static void setRMSBackgroundNewThread(final int c) {
+        Thread t = new Thread(() -> setRMSBackground(c));
         t.start();
         Thread.yield();
     }

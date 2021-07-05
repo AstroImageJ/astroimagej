@@ -442,6 +442,11 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
      public AstroStackWindow(ImagePlus imp, AstroCanvas ac, boolean refresh, boolean resize) {
 
                 super(imp, ac);
+
+                // Fixes the menu bar being overridden on macs
+                // See ImageWindow#setImageJMenuBar(ImageWindow)
+                imp.setIJMenuBar(false);
+
                 Locale.setDefault(IJU.locale);
 //                SET DEFAULT SYSTEM LOOK AND FEEL
 //                UIManager.LookAndFeelInfo[] laf = UIManager.getInstalledLookAndFeels();

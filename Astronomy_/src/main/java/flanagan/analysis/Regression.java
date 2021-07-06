@@ -7943,7 +7943,7 @@ public class Regression{
         ArrayList<Object> arrayl = new ArrayList<Object>();
         arrayl.add(Double.valueOf(fRatio));
         arrayl.add(Double.valueOf(fProb));
-        arrayl.add(new Boolean(reversed));
+        arrayl.add(Boolean.valueOf(reversed));
         arrayl.add(Double.valueOf(chiSquareR));
         arrayl.add(Integer.valueOf(nParametersR));
         arrayl.add(Double.valueOf(chiSquareF));

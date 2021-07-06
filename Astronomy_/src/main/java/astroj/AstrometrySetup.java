@@ -132,7 +132,7 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
     boolean useDistortionOrder = true;
     int distortionOrder = 2;
     int minOrder = 2;
-    int maxOrder = 5;
+    int maxOrder = 9;
     
     int fSlice = 1, cSlice = 1, lSlice = 1;
     

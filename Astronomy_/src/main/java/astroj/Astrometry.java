@@ -84,7 +84,7 @@ public class Astrometry //implements KeyListener
     boolean useDistortionOrder = true;
     int distortionOrder = 2;  //number of SIP distortion coefficients requested
     int minOrder = 2;
-    int maxOrder = 5;   
+    int maxOrder = 9;
         
     boolean canceled = false;
     boolean setupCanceled = false;
@@ -724,91 +724,18 @@ public class Astrometry //implements KeyListener
                 "IMAGEW",
                 "IMAGEH",
                 "A_ORDER",
-                "A_0_2",
-                "A_0_3",
-                "A_0_4",
-                "A_0_5",
-                "A_1_1",
-                "A_1_2",
-                "A_1_3",
-                "A_1_4",
-                "A_2_0",
-                "A_2_1",
-                "A_2_2",
-                "A_2_3",
-                "A_3_0",
-                "A_3_1",
-                "A_3_2",
-                "A_4_0",
-                "A_4_1",
-                "A_5_0",
                 "B_ORDER",
-                "B_0_2",
-                "B_0_3",
-                "B_0_4",
-                "B_0_5",
-                "B_1_1",
-                "B_1_2",
-                "B_1_3",
-                "B_1_4",
-                "B_2_0",
-                "B_2_1",
-                "B_2_2",
-                "B_2_3",
-                "B_3_0",
-                "B_3_1",
-                "B_3_2",
-                "B_4_0",
-                "B_4_1",
-                "B_5_0",
                 "AP_ORDER",
-                "AP_0_1",
-                "AP_0_2",
-                "AP_0_3",
-                "AP_0_4",
-                "AP_0_5",
-                "AP_1_0",
-                "AP_1_1",
-                "AP_1_2",
-                "AP_1_3",
-                "AP_1_4",
-                "AP_2_0",
-                "AP_2_1",
-                "AP_2_2",
-                "AP_2_3",
-                "AP_3_0",
-                "AP_3_1",
-                "AP_3_2",
-                "AP_4_0",
-                "AP_4_1",
-                "AP_5_0",
-                "BP_ORDER",
-                "BP_0_1",
-                "BP_0_2",
-                "BP_0_3",
-                "BP_0_4",
-                "BP_0_5",
-                "BP_1_0",
-                "BP_1_1",
-                "BP_1_2",
-                "BP_1_3",
-                "BP_1_4",
-                "BP_2_0",
-                "BP_2_1",
-                "BP_2_2",
-                "BP_2_3",
-                "BP_3_0",
-                "BP_3_1",
-                "BP_3_2",
-                "BP_4_0",
-                "BP_4_1",
-                "BP_5_0",};
+                "BP_ORDER"};
+
             Calendar cal = Calendar.getInstance();
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");        
             header = FitsJ.addHistory("WCS created by AIJ link to Astronomy.net website", header);
             if (resaveRaw) headerRaw = FitsJ.addHistory("WCS created by AIJ link to Astronomy.net website", headerRaw);
             header = FitsJ.addHistory("WCS created on "+sdf.format(cal.getTime()), header); 
             if (resaveRaw) headerRaw = FitsJ.addHistory("WCS created on "+sdf.format(cal.getTime()), headerRaw);
+
+
             for (int i=0; i<keywords.length; i++)
                 {
                 cardNum = FitsJ.findCardWithKey(keywords[i], header);
@@ -822,7 +749,7 @@ public class Astrometry //implements KeyListener
                     if (cardNum != -1)
                         {
                         headerRaw = FitsJ.removeCards(keywords[i], headerRaw);
-                        }   
+                        }
                     }
                 wcsCardNum = FitsJ.findCardWithKey(keywords[i], wcsHeader);
                 if (wcsCardNum != -1)
@@ -830,10 +757,104 @@ public class Astrometry //implements KeyListener
                     header = FitsJ.addCard(wcsHeader[wcsCardNum], header);
                     if (resaveRaw)
                         {
-                        headerRaw = FitsJ.addCard(wcsHeader[wcsCardNum], headerRaw);                        
+                        headerRaw = FitsJ.addCard(wcsHeader[wcsCardNum], headerRaw);
                         }
                     }
                 }
+
+            for (int i=0; i<10; i++) {
+                for (int j=0; j<10; j++) {
+                    cardNum = FitsJ.findCardWithKey("A_"+i+"_"+j, header);
+                    if (cardNum != -1) {
+                        header = FitsJ.removeCards("A_"+i+"_"+j, header);
+                        }
+                    if (resaveRaw) {
+                        cardNum = FitsJ.findCardWithKey("A_"+i+"_"+j, headerRaw);
+                        if (cardNum != -1) {
+                            headerRaw = FitsJ.removeCards("A_"+i+"_"+j, headerRaw);
+                            }
+                        }
+                    cardNum = FitsJ.findCardWithKey("B_"+i+"_"+j, header);
+                    if (cardNum != -1) {
+                        header = FitsJ.removeCards("B_"+i+"_"+j, header);
+                        }
+                    if (resaveRaw) {
+                        cardNum = FitsJ.findCardWithKey("B_"+i+"_"+j, headerRaw);
+                        if (cardNum != -1) {
+                            headerRaw = FitsJ.removeCards("B_"+i+"_"+j, headerRaw);
+                            }
+                        }
+                    cardNum = FitsJ.findCardWithKey("AP_"+i+"_"+j, header);
+                    if (cardNum != -1) {
+                        header = FitsJ.removeCards("AP_"+i+"_"+j, header);
+                        }
+                    if (resaveRaw) {
+                        cardNum = FitsJ.findCardWithKey("AP_"+i+"_"+j, headerRaw);
+                        if (cardNum != -1) {
+                            headerRaw = FitsJ.removeCards("AP_"+i+"_"+j, headerRaw);
+                            }
+                        }
+                    cardNum = FitsJ.findCardWithKey("BP_"+i+"_"+j, header);
+                    if (cardNum != -1) {
+                        header = FitsJ.removeCards("BP_"+i+"_"+j, header);
+                        }
+                    if (resaveRaw) {
+                        cardNum = FitsJ.findCardWithKey("BP_"+i+"_"+j, headerRaw);
+                        if (cardNum != -1) {
+                            headerRaw = FitsJ.removeCards("BP_"+i+"_"+j, headerRaw);
+                            }
+                        }
+                    }
+                }
+
+            for (int i=0; i<10; i++) {
+                for (int j = 0; j < 10; j++) {
+                    wcsCardNum = FitsJ.findCardWithKey("A_"+i+"_"+j, wcsHeader);
+                    if (wcsCardNum != -1) {
+                        header = FitsJ.addCard(wcsHeader[wcsCardNum], header);
+                        if (resaveRaw) {
+                            headerRaw = FitsJ.addCard(wcsHeader[wcsCardNum], headerRaw);
+                        }
+                    }
+                }
+            }
+
+            for (int i=0; i<10; i++) {
+                for (int j = 0; j < 10; j++) {
+                    wcsCardNum = FitsJ.findCardWithKey("B_"+i+"_"+j, wcsHeader);
+                    if (wcsCardNum != -1) {
+                        header = FitsJ.addCard(wcsHeader[wcsCardNum], header);
+                        if (resaveRaw) {
+                            headerRaw = FitsJ.addCard(wcsHeader[wcsCardNum], headerRaw);
+                        }
+                    }
+                }
+            }
+
+            for (int i=0; i<10; i++) {
+                for (int j = 0; j < 10; j++) {
+                    wcsCardNum = FitsJ.findCardWithKey("AP_"+i+"_"+j, wcsHeader);
+                    if (wcsCardNum != -1) {
+                        header = FitsJ.addCard(wcsHeader[wcsCardNum], header);
+                        if (resaveRaw) {
+                            headerRaw = FitsJ.addCard(wcsHeader[wcsCardNum], headerRaw);
+                        }
+                    }
+                }
+            }
+
+            for (int i=0; i<10; i++) {
+                for (int j = 0; j < 10; j++) {
+                    wcsCardNum = FitsJ.findCardWithKey("BP_"+i+"_"+j, wcsHeader);
+                    if (wcsCardNum != -1) {
+                        header = FitsJ.addCard(wcsHeader[wcsCardNum], header);
+                        if (resaveRaw) {
+                            headerRaw = FitsJ.addCard(wcsHeader[wcsCardNum], headerRaw);
+                        }
+                    }
+                }
+            }
+
             if (canceled) return CANCELED;
             saveActive = true;
             
@@ -1144,8 +1165,7 @@ public class Astrometry //implements KeyListener
             *                       not deviating from each other by more than this (this could be a result of
             *                       precision loss when sorting ints instead of floats, or because sorting does not
             *                       take the height correction in 'trueEdmHeight' into account
-            * @param outputType 
-            */   
+            */
         void analyzeAndMarkMaxima(ImageProcessor ip, ByteProcessor typeP, long[] maxPoints, boolean excludeEdgesNow,
                 boolean isEDM, float globalMin, double tolerance, float maxSortingError) {
                 byte[] types =  (byte[])typeP.getPixels();

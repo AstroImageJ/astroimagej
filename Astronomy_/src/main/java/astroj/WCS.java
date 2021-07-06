@@ -460,7 +460,7 @@ public class WCS
 					else
 						logInfo += "SIP B_ORDER not found in FITS header!\n";
                     
-					AP_ORDER = -1;
+					AP_ORDER = A_ORDER; //in case there is no AP_ORDER (e.g. TICA FFIs)
 					icard = FitsJ.findCardWithKey ("AP_ORDER",hdr);
 					if (icard >= 0)
 						{
@@ -474,7 +474,7 @@ public class WCS
 					else
 						logInfo += "SIP AP_ORDER not found in FITS header!\n";
 
-					BP_ORDER = -1;
+					BP_ORDER = B_ORDER; //in case there is no BP_ORDER (e.g. TICA FFIs)
 					icard = FitsJ.findCardWithKey ("BP_ORDER",hdr);
 					if (icard >= 0)
 						{
@@ -1349,6 +1349,7 @@ public class WCS
                 sum = px*sum + SP[AP_ORDER-i+1];
                 }
             p[0] = px + sum;
+			//IJ.log("AP_ORDER="+AP_ORDER);
             }
 
 		if (hasSIPinv[1] && (useSIPAlways || projection.equals("TAN")))  //transcoded from WCSTools - avoids Math.pow operation
@@ -1362,12 +1363,12 @@ public class WCS
                     }
                 }
 
-                double sum = SP[0];
-                for (int i=BP_ORDER; i>=1; i--)
-                    sum = px*sum + SP[BP_ORDER-i+1];
+			double sum = SP[0];
+			for (int i=BP_ORDER; i>=1; i--)
+				sum = px*sum + SP[BP_ORDER-i+1];
 
-                p[1] = py + sum;        
-        
+			p[1] = py + sum;
+        	//IJ.log("BP_ORDER="+BP_ORDER);
             }        
 
 		// TRANSLATE FITS COORDINATES TO ImageJ COORDINATES
@@ -1470,7 +1471,7 @@ public class WCS
     
     void writeLog()
         {
-//        IJ.log(logInfo);
+        //IJ.log(logInfo);
         }
     
     public double getWCSDistance(double x1pix, double y1pix, double x2pix, double y2pix)

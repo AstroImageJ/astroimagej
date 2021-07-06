@@ -111,6 +111,7 @@ task downloadJavaRuntimes(type: Download) {
     mkdir(file("${projectDir}/jres"))
 
     onlyIf {
+        //noinspection GroovyAssignabilityCheck
         javaRuntimeSystems.each { sys, sysInfo ->
             // Other parameters of note:
             // &support_term=lts/mts/sts &release_status=ga/ea/both &bundle_type=${sysInfo.type}
@@ -132,6 +133,7 @@ task downloadJavaRuntimes(type: Download) {
         return canConnectToAzul
     }
 
+    //noinspection GroovyAssignabilityCheck
     javaRuntimeSystems.each {sys, sysInfo ->
         // Other parameters of note:
         // &support_term=lts/mts/sts &release_status=ga/ea/both &bundle_type=${sysInfo.type}
@@ -167,6 +169,7 @@ task downloadJavaRuntimes(type: Download) {
     if (!canConnectToAzul) return
 
     // Collect current runtime files and extensions
+    //noinspection GroovyAssignabilityCheck
     def currentFiles = javaRuntimeSystems.collectEntries {[it.value.name, it.value.ext]}
 
     // Remove old unpacked runtimes
@@ -193,6 +196,7 @@ task downloadJavaRuntimes(type: Download) {
  */
 task verifyDownloadedJres(type: Verify, dependsOn: downloadJavaRuntimes) {
     mustRunAfter downloadJavaRuntimes
+    //noinspection GroovyAssignabilityCheck
     javaRuntimeSystems.each {sys, sysInfo ->
         //noinspection GroovyAssignabilityCheck
         src file("${projectDir}/jres/${sysInfo.name}")
@@ -209,6 +213,7 @@ task verifyDownloadedJres(type: Verify, dependsOn: downloadJavaRuntimes) {
 task unZipJresTask(type: Copy, dependsOn: verifyDownloadedJres) {
     group 'AstroImageJ Development'
     mustRunAfter verifyDownloadedJres
+    //noinspection GroovyAssignabilityCheck
     javaRuntimeSystems.each {sys, sysInfo ->
         if (sysInfo.ext == "tar.gz") {
             from(tarTree(resources.gzip(file("${projectDir}/jres/${sysInfo.name}")))) {
@@ -219,7 +224,7 @@ task unZipJresTask(type: Copy, dependsOn: verifyDownloadedJres) {
                 into ''
             }
         } else {
-            logger.error("Did not know how to handle " + sysInfo.ext + " for " + sys)
+            logger.error("Did not know how to handle " + sysInfo.ext + " for " + sys as String)
         }
     }
     into 'jres'
@@ -279,6 +284,7 @@ task commonFiles(type: Copy) {
 // Generate AIJ-Run directory and set it up for usage
 task sync(dependsOn: jar, type: Sync) {
     with commonDist
+    //noinspection GroovyAssignabilityCheck
     with {
         from(file("${projectDir}/devLaunchOptions.txt")) {
             duplicatesStrategy = DuplicatesStrategy.INCLUDE
@@ -314,19 +320,19 @@ List<String> readConfigFile() {
 
     File readCfg = devCfg.exists() ? devCfg : cfg
 
-    logger.lifecycle("Launching using options from: " + (devCfg.exists() ? "dev. config" : "default config"))
+    logger.lifecycle("Launching using options from: " + (devCfg.exists() ? "dev. config" : "default config") as String)
 
     readCfg.readLines().each {
         if (it.startsWith("#") /*Comments*/) {
             return
         }
         it.split(" ").each {// Technically this could break, but not expecting too many args in dev environment
-            args.add(it)
+            args.add(it as String)
         }
     }
     args.add('-Daij.dev') // Always show full version metadata when running via dev
 
-    logger.lifecycle("Launching with the following arguments: " + args)
+    logger.lifecycle("Launching with the following arguments: " + args as String)
 
     return args
 }
@@ -338,7 +344,7 @@ javapackager {
     bundleJre true
     customizedJre false
     outputDirectory file("${buildDir}/distributions")
-    additionalResources file("${buildDir}/commonFiles/").listFiles().toList()
+    additionalResources file("${buildDir}/commonFiles/").listFiles().toList() as List<File>
     runnableJar  file("${buildDir}/commonFiles/ij.jar")
     assetsDir  file("${projectDir}/packageFiles/assets")
     name  'AstroImageJ'
@@ -361,6 +367,7 @@ javapackager {
 
 task packageAij
 
+//noinspection GroovyAssignabilityCheck
 javaRuntimeSystems.each {sys, sysInfo ->
     if (!canConnectToAzul) {
         System.out.println("Skipping system creation, failed to connect to Azul!")
@@ -368,6 +375,7 @@ javaRuntimeSystems.each {sys, sysInfo ->
     }
     String taskName = "packageAijFor" + (sysInfo.os as String).capitalize() + "_" + sysInfo.arch
 
+    //noinspection GroovyAssignabilityCheck
     tasks.register(taskName, PackageTask) {
         group 'AstroImageJ Development'
 
@@ -390,7 +398,7 @@ javaRuntimeSystems.each {sys, sysInfo ->
             java.traverse(type: groovy.io.FileType.FILES, nameFilter: 'release') {runtimePath = it.parentFile}
         } else { // One of the runtimes does not exist, pull it
             logger.error("A JRE was missing, run unZipJresTask first! " + sys +
-                    " will not have a JRE bundled!")
+                    " will not have a JRE bundled!" as String)
         }
 
         // Sanity check
@@ -414,7 +422,7 @@ javaRuntimeSystems.each {sys, sysInfo ->
         }
     }
 
-    logger.lifecycle("Added a distribution task: " + taskName)
+    logger.lifecycle("Added a distribution task: " + taskName as String)
 
     tasks.named(taskName) {
         //noinspection GroovyAssignabilityCheck
@@ -437,7 +445,7 @@ task copyBuiltJars(dependsOn: build, type: Copy) {
     group 'AstroImageJ Development'
 
     File locCfg = files("${projectDir}/jarLocation.txt").first()
-    def destination = "${projectDir}/out"
+    def destination = "${projectDir}/out" as String
 
     if (locCfg.exists()) {
         locCfg.readLines().each {

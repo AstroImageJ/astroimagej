@@ -779,6 +779,11 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         setMenuBar(mainMenuBar);
     }
 
+    @Override
+    public MenuBar getMenuBar() {
+        return mainMenuBar;
+    }
+
     void saveAndClose(boolean cleanWindow)
                 {
                 savePrefs();

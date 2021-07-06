@@ -751,8 +751,10 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 	public int getSliderHeight() {
 		return sliderHeight;
 	}
-	
+
+	@AstroImageJ(modified = true, reason = "Don't run for AstroStackWindow")
 	public static void setImageJMenuBar(ImageWindow win) {
+    	if (win.getClass().getName().contains("AstroStackWindow")) return;
 		ImageJ ij = IJ.getInstance();
 		boolean setMenuBar = true;
 		ImagePlus imp = win.getImagePlus();

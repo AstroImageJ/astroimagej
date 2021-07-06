@@ -142,9 +142,10 @@ public class ImageJ extends Frame implements ActionListener,
 		If  'mode' is ImageJ.EMBEDDED and 'applet is null, creates an embedded 
 		(non-standalone) version of ImageJ. */
 	@AstroImageJ(reason = "Change title to AstroImageJ; disable setting of jFileChooser to true; " +
-			"Make MacAdapter look in plugins folder", modified = true)
+			"Make MacAdapter look in plugins folder; se mac to use screen menubar", modified = true)
 	public ImageJ(java.applet.Applet applet, int mode) {
 		super("AstroImageJ");
+		System.setProperty("apple.laf.useScreenMenuBar", "true");
 		if ((mode&DEBUG)!=0)
 			IJ.setDebugMode(true);
 		mode = mode & 255;

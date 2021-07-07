@@ -3014,7 +3014,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             } else {
                 detrendpanelgroup[curve].setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
             }
-            setRMSBICBackgroundNewThread(curve);
+            if (refStarChanged || detrendParChanged) setRMSBICBackgroundNewThread(curve);
         }
 
 
@@ -13667,6 +13667,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             useFitDetrendCB[c][row - 7].setPreferredSize(checkBoxSize);
             useFitDetrendCB[c][row - 7].setMaximumSize(checkBoxSize);
             useFitDetrendCB[c][row - 7].addItemListener(e -> {
+                detrendParChanged = true;
                 detrendVarDisplayed[c] = row - 7;
                 detrendVarButton[c][row - 7].setSelected(true);
                 if (useFitDetrendCB[c][row - 7].isSelected()) {
@@ -13680,7 +13681,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     useFitDetrendCB[c][row - 7].setEnabled(true);
                 }
                 enableTransitComponents(c);
-                detrendParChanged = true;
                 if (autoUpdateFit[c]) updatePlot(updateOneFit(c));
             });
             parentPanel.add(useFitDetrendCB[c][row - 7]);
@@ -13696,6 +13696,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             } else { fitDetrendComboBox[c][row - 7].setSelectedItem(detrendlabel[c][row - 7]); }
             fitDetrendComboBox[c][row - 7].addActionListener(ae -> {
                 if (fitDetrendComboBox[c][row - 7].isEnabled()) {
+                    detrendParChanged = true;
                     useFitDetrendCB[c][row - 7].setSelected(true);
                     detrendVarButton[c][row - 7].setSelected(true);
                     detrendVarDisplayed[c] = row - 7;
@@ -13942,21 +13943,22 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
     static void setRMSBICBackground(final int c) {
         if (bestFitLabel[c][0] != null) {
+            //IJ.log("refStarChanged="+refStarChanged+"   detrendParChanged="+detrendParChanged);
             if (refStarChanged && (sigma[c] < prevSigma[c])) {
                 sigmaLabel[c].setBackground(Color.green);
             //} else if (sigma[c] > prevSigma[c]) {
             //    sigmaLabel[c].setBackground(Color.red);
             }
-            if (detrendParChanged && (bic[c] < prevBic[c] - 2.0)) {
+            if (!refStarChanged && detrendParChanged && (bic[c] < prevBic[c] - 2.0)) {
                 bicLabel[c].setBackground(Color.green);
                 //} else if (sigma[c] > prevSigma[c]) {
                 //    sigmaLabel[c].setBackground(Color.red);
             }
             prevSigma[c] = sigma[c];
             prevBic[c] = bic[c];
+            IJ.wait(100);
             refStarChanged = false;
             detrendParChanged = false;
-            IJ.wait(100);
             sigmaLabel[c].setBackground(defaultBackground);
             bicLabel[c].setBackground(defaultBackground);
         }
@@ -14518,7 +14520,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     }
                 }
             }
-
+            refStarChanged = true;
             if (e.getStateChange() == ItemEvent.DESELECTED) {
                 isRefStar[r] = false;
                 refStarLabel[r].setText("T" + (r + 1));
@@ -14530,7 +14532,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             }
             absMagTF[r].setEditable(isRefStar[r]);
             updatePlotEnabled = false;
-            refStarChanged = true;
             waitForPlotUpdateToFinish();
             checkAndLockTable();
 

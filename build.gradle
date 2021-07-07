@@ -190,6 +190,21 @@ task downloadJavaRuntimes(type: Download) {
 }
 
 /**
+ * On MacOs, for some reason after a jdk is used once for packaging it becomes invalid.
+ * This is run to "reset" the JDK to allow packaging to complete.
+ * Runs only on MacOs
+ */
+task deleteDecompressedJres() {
+    onlyIf {
+        Os.isFamily(Os.FAMILY_MAC)
+    }
+    // Remove old unpacked runtimes
+    file("${projectDir}/jres").traverse(type: groovy.io.FileType.DIRECTORIES, maxDepth: 0) {
+        it.deleteDir()
+    }
+}
+
+/**
  * Verify the downloaded Java runtimes are correct.
  * If a file fails the check, delete it and rerun to attempt downloading again.
  * Could also check the sha256_hash.
@@ -212,7 +227,7 @@ task verifyDownloadedJres(type: Verify, dependsOn: downloadJavaRuntimes) {
  */
 task unZipJresTask(type: Copy, dependsOn: verifyDownloadedJres) {
     group 'AstroImageJ Development'
-    mustRunAfter verifyDownloadedJres
+    mustRunAfter verifyDownloadedJres, deleteDecompressedJres
     //noinspection GroovyAssignabilityCheck
     javaRuntimeSystems.each {sys, sysInfo ->
         if (sysInfo.ext == "tar.gz") {
@@ -375,6 +390,7 @@ javaRuntimeSystems.each {sys, sysInfo ->
     }
     String taskName = "packageAijFor" + (sysInfo.os as String).capitalize() + "_" + sysInfo.arch
 
+    File runtimePath2
     //noinspection GroovyAssignabilityCheck
     tasks.register(taskName, PackageTask) {
         group 'AstroImageJ Development'
@@ -412,6 +428,7 @@ javaRuntimeSystems.each {sys, sysInfo ->
             //noinspection GroovyAssignabilityCheck
             jdkPath = runtimePath
         }
+        runtimePath2 = runtimePath
 
         if (sysInfo.os == "linux") {
             //noinspection GroovyAssignabilityCheck

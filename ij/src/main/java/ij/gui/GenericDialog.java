@@ -838,7 +838,8 @@ FocusListener, ItemListener, KeyListener, AdjustmentListener, WindowListener {
 	}
 
 	private void addSlider(String label, double minValue, double maxValue, double defaultValue, double scale, int digits) {
-		int columns = 4 + digits - 2;
+		@AstroImageJ(reason = "Value text box on Mac is two characters too narrow.", modified = true)
+		int columns = 4 + digits + (IJ.isMacOSX()?0:- 2);
 		if ( columns < 4 ) columns = 4;
 		if (minValue<0.0) columns++;
 		String mv = IJ.d2s(maxValue,0);

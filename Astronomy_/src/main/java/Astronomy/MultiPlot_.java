@@ -170,6 +170,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static boolean saveNewResidualColumn;
     static boolean saveNewResidualErrColumn;
     static boolean updatePlotEnabled;
+    static boolean refStarChanged;
+    static boolean detrendParChanged;
     static boolean disableUpdatePlotBox;
     static boolean astroConverterUpdating;
     static boolean useNelderMeadChi2ForDetrend;
@@ -3012,7 +3014,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             } else {
                 detrendpanelgroup[curve].setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
             }
-            setRMSBackgroundNewThread(curve);
+            setRMSBICBackgroundNewThread(curve);
         }
 
 
@@ -5772,6 +5774,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         addZenithDistance = false;
         prioritizeColumns = true;
         updatePlotEnabled = true;
+        refStarChanged = false;
+        detrendParChanged = false;
         disableUpdatePlotBox = false;
         astroConverterUpdating = false;
         xlabeldefault = "J.D.-2400000";
@@ -13676,6 +13680,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     useFitDetrendCB[c][row - 7].setEnabled(true);
                 }
                 enableTransitComponents(c);
+                detrendParChanged = true;
                 if (autoUpdateFit[c]) updatePlot(updateOneFit(c));
             });
             parentPanel.add(useFitDetrendCB[c][row - 7]);
@@ -13935,28 +13940,30 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         Thread.yield();
     }
 
-    static void setRMSBackground(final int c) {
+    static void setRMSBICBackground(final int c) {
         if (bestFitLabel[c][0] != null) {
-            if (sigma[c] < prevSigma[c]) {
+            if (refStarChanged && (sigma[c] < prevSigma[c])) {
                 sigmaLabel[c].setBackground(Color.green);
             //} else if (sigma[c] > prevSigma[c]) {
             //    sigmaLabel[c].setBackground(Color.red);
             }
-            if (bic[c] < prevBic[c] - 2.0) {
+            if (detrendParChanged && (bic[c] < prevBic[c] - 2.0)) {
                 bicLabel[c].setBackground(Color.green);
                 //} else if (sigma[c] > prevSigma[c]) {
                 //    sigmaLabel[c].setBackground(Color.red);
             }
             prevSigma[c] = sigma[c];
             prevBic[c] = bic[c];
+            refStarChanged = false;
+            detrendParChanged = false;
             IJ.wait(100);
             sigmaLabel[c].setBackground(defaultBackground);
             bicLabel[c].setBackground(defaultBackground);
         }
     }
 
-    static void setRMSBackgroundNewThread(final int c) {
-        Thread t = new Thread(() -> setRMSBackground(c));
+    static void setRMSBICBackgroundNewThread(final int c) {
+        Thread t = new Thread(() -> setRMSBICBackground(c));
         t.start();
         Thread.yield();
     }
@@ -14523,6 +14530,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             }
             absMagTF[r].setEditable(isRefStar[r]);
             updatePlotEnabled = false;
+            refStarChanged = true;
             waitForPlotUpdateToFinish();
             checkAndLockTable();
 
@@ -15311,6 +15319,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
     static void saveAndClose() {
         updatePlotEnabled = true;
+        refStarChanged = false;
+        detrendParChanged = false;
         panelsUpdating = false;
         if (table != null) table.setLock(false);
         closeFitFrames();

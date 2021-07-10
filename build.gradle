@@ -453,11 +453,11 @@ javaRuntimeSystems.each {sys, sysInfo ->
         mustRunAfter commonFiles, deleteDecompressedJres, unZipJresTask
 
         onlyIf {
-            JavaVersion.current().compareTo(JavaVersion.toVersion(shippingJava)) >= 0
-            if (!(JavaVersion.current().compareTo(JavaVersion.toVersion(shippingJava)) >= 0)) {
+            if (!(Integer.valueOf(JavaVersion.current().getMajorVersion()) >= shippingJava)) {
                 logger.error("Skipping packaging as the current JVM used by Gradle is older than the required Java" +
-                        " version: ${shippingJava}")
+                        " version: ${shippingJava}" as String)
             }
+            Integer.valueOf(JavaVersion.current().getMajorVersion()) >= shippingJava
         }
     }
 

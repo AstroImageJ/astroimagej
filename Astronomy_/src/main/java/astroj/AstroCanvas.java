@@ -590,8 +590,7 @@ public class AstroCanvas extends OverlayCanvas {
 			Graphics offScreenGraphics = offScreenImage.getGraphics();
 			setInterpolation(offScreenGraphics, Prefs.interpolateScaledImages);
 			Image img = imp.getImage();
-            if (isTransformed)
-                flipAndRotateCanvas(offScreenGraphics);
+            flipAndRotateCanvas(offScreenGraphics);
             if (!netRotate)
                 {
                 if (img!=null)

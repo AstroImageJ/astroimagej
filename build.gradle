@@ -420,7 +420,7 @@ javaRuntimeSystems.each {sys, sysInfo ->
         } else { // One of the runtimes does not exist, pull it
             logger.error("A JRE was missing, run unZipJresTask first! " + sys +
                     " will fallback to the default runtime path" as String)
-            runtimePath = java
+            runtimePath = new File(java, sysInfo.os == "macos" ? "zulu-${shippingJava}.${sysInfo.type}" : "")
         }
 
         // Sanity check

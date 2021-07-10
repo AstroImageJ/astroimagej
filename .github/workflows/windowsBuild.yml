@@ -11,32 +11,32 @@ on: workflow_dispatch # manually triggered
 
 jobs:
   build:
-      runs-on: windows-latest
-      steps:
-        - uses: actions/checkout@v2
-        - name: Set up JDK 16
-          uses: actions/setup-java@v1
-          with:
-            java-version: 16
-          #- name: Install WiX Toolset
-          #run: choco install wixtoolset
-        - name: Grant execute permission for gradlew
-          run: chmod +x gradlew
-        - name: Package AIJ
-          run: ./gradlew packageAijForWindows_x86 packageAijForWindows_arm
-        - uses: actions/upload-artifact@v2
-          with:
-            name: Windows (x86) Installer (.exe)
-            path: build/distributions/*x86*.exe
-        - uses: actions/upload-artifact@v2
-          with:
-            name: Windows (x86) package (.zip)
-            path: build/distributions/*x86*.zip
-        - uses: actions/upload-artifact@v2
-          with:
-            name: Windows (Arm) Installer (.exe)
-            path: build/distributions/*arm*.exe
-        - uses: actions/upload-artifact@v2
-          with:
-            name: Windows (Arm) package (.zip)
-            path: build/distributions/*arm*.exe
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up JDK 16
+        uses: actions/setup-java@v1
+        with:
+          java-version: 16
+      - name: Install WiX Toolset
+        run: choco install wixtoolset
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+      - name: Package AIJ
+        run: ./gradlew packageAijForWindows_x86 packageAijForWindows_arm
+      - uses: actions/upload-artifact@v2
+        with:
+          name: Windows (x86) Installer (.exe)
+          path: build/distributions/*x86*.exe
+      - uses: actions/upload-artifact@v2
+        with:
+          name: Windows (x86) package (.zip)
+          path: build/distributions/*x86*.zip
+      - uses: actions/upload-artifact@v2
+        with:
+          name: Windows (Arm) Installer (.exe)
+          path: build/distributions/*arm*.exe
+      - uses: actions/upload-artifact@v2
+        with:
+          name: Windows (Arm) package (.zip)
+          path: build/distributions/*arm*.exe

@@ -2292,6 +2292,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             noteOtherApertureProperty(ap);
         }
 
+        ocanvas.drawOverlayCanvas(ocanvas.getGraphics()); // Apterure draw fix 2 - can be removed at cost of slightly more flickering
+
         canvas.repaintOverlay();
         canvas.repaint();
 

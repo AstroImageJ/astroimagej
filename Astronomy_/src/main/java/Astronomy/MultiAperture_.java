@@ -2292,7 +2292,16 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             noteOtherApertureProperty(ap);
         }
 
-        ocanvas.drawOverlayCanvas(ocanvas.getGraphics()); // Apterure draw fix 2 - can be removed at cost of slightly more flickering
+        // Increase chance of aperture actually rendering on mac
+        if (IJ.isMacOSX()) {
+            ocanvas.update(ocanvas.getGraphics());
+            canvas.update(canvas.getGraphics());
+            //ocanvas.repaint();//renders extra apertures?!
+        } else {
+            // This is broken on mac.
+            // Causes apertures to render in wrong location, if they render at all
+            ocanvas.drawOverlayCanvas(ocanvas.getGraphics());
+        }
 
         canvas.repaintOverlay();
         canvas.repaint();

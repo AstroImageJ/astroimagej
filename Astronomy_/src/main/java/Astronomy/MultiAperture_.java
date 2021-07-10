@@ -2292,7 +2292,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             noteOtherApertureProperty(ap);
         }
 
-        ocanvas.drawOverlayCanvas(ocanvas.getGraphics()); // Apterure draw fix 3 - can be removed at cost of slightly more flickering on the values displayed
+        canvas.repaintOverlay();
+        canvas.repaint();
 
         if (!isInstanceOfStackAlign && showMeanWidth && calcRadProFWHM) {
             if (nFWHM > 0) { fwhmMean /= nFWHM; } else fwhmMean = 0.0;

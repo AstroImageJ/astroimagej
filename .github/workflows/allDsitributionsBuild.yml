@@ -74,16 +74,17 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: MacOS x86 App Version (.zip)
-          path: build/distributions/AstroImageJ-x86_64-mac.zip
+          path: build/distributions/*x86*.zip
       - uses: actions/upload-artifact@v2
         with:
           name: MacOS Arm App Version (.zip)
-          path: build/distributions/AstroImageJ-arm_64-mac.zip
+          path: build/distributions/*arm*.zip
       - uses: actions/upload-artifact@v2
         with:
           name: MacOS Arm App Version (.dmg)
-          path: build/distributions/AstroImageJ-arm_64-mac.dmg
+          path: build/distributions/*arm*.dmg
       - uses: actions/upload-artifact@v2
         with:
           name: MacOS x86 Dmg Version (.dmg)
-          path: build/distributions/AstroImageJ-x86_64.dmg
+          path: build/distributions/*x86*.dmg
+

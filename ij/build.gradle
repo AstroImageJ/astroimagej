@@ -21,9 +21,11 @@ jar {
     FileTree m = fileTree("${rootProject.projectDir}/src/main/resources/plugins/")
     Collection n = m.include("**/*.jar").grep()
 
+    archiveFileName = 'ij.jar'
+
     manifest {
-        attributes("Main-Class": mainClassName)
-        attributes("Class-Path": "plugins/ ${n.collect {'plugins/' + ((File)it).getName()}.join(' ')}")
+        attributes("Main-Class": mainClassName,
+                   "Class-Path": "plugins/ ${n.collect {'plugins/' + ((File)it).getName()}.join(' ')}")
     }
 
     // Ship nom.tam.fits

@@ -198,9 +198,12 @@ task deleteDecompressedJres() {
     onlyIf {
         Os.isFamily(Os.FAMILY_MAC)
     }
-    // Remove old unpacked runtimes
-    file("${projectDir}/jres").traverse(type: groovy.io.FileType.DIRECTORIES, maxDepth: 0) {
-        it.deleteDir()
+    if (Os.isFamily(Os.FAMILY_MAC)) {
+        logger.info('Removing decompressed runtimes.')
+        // Remove old unpacked runtimes
+        file("${projectDir}/jres").traverse(type: groovy.io.FileType.DIRECTORIES, maxDepth: 0) {
+            it.deleteDir()
+        }
     }
 }
 
@@ -248,7 +251,7 @@ task unZipJresTask(type: Copy, dependsOn: verifyDownloadedJres) {
 // Define what files belong to all distributions and their location
 def commonDist = project.copySpec {
     // Copy astronomy_.jar to correct place in distribution
-    from(file("${project(':Astronomy_').buildDir}/libs/astronomy_-${project(':Astronomy_').version}.jar")) {
+    from(file("${project(':Astronomy_').buildDir}/libs/astronomy_.jar")) {
         rename { String name -> return 'Astronomy_.jar' }
         into 'plugins'
     }
@@ -262,8 +265,7 @@ def commonDist = project.copySpec {
     }
 
     // Copy ij.jar to correct place in distribution
-    from(file("${project(':ij').buildDir}/libs/ij-${project(':ij').version}.jar")) {
-        rename { String name -> return 'ij.jar' }
+    from(file("${project(':ij').buildDir}/libs/ij.jar")) {
         into ''
     }
 }
@@ -322,8 +324,8 @@ task aijRun(dependsOn: sync, type: JavaExec) {
         languageVersion = JavaLanguageVersion.of(shippingJava)
     }
 
-    main = "-jar"
-    args "${projectDir}/AIJ-Run/ij.jar"
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'ij.ImageJ'
 }
 
 List<String> readConfigFile() {
@@ -390,7 +392,6 @@ javaRuntimeSystems.each {sys, sysInfo ->
     }
     String taskName = "packageAijFor" + (sysInfo.os as String).capitalize() + "_" + sysInfo.arch
 
-    File runtimePath2
     //noinspection GroovyAssignabilityCheck
     tasks.register(taskName, PackageTask) {
         group 'AstroImageJ Development'
@@ -428,7 +429,6 @@ javaRuntimeSystems.each {sys, sysInfo ->
             //noinspection GroovyAssignabilityCheck
             jdkPath = runtimePath
         }
-        runtimePath2 = runtimePath
 
         if (sysInfo.os == "linux") {
             //noinspection GroovyAssignabilityCheck
@@ -443,9 +443,9 @@ javaRuntimeSystems.each {sys, sysInfo ->
 
     tasks.named(taskName) {
         //noinspection GroovyAssignabilityCheck
-        dependsOn 'build', 'unZipJresTask', 'commonFiles'
+        dependsOn build, unZipJresTask, commonFiles
         //noinspection GroovyAssignabilityCheck
-        mustRunAfter commonFiles, 'unZipJresTask'
+        mustRunAfter commonFiles, deleteDecompressedJres, unZipJresTask
     }
 
     // Make the meta task run the smaller ones

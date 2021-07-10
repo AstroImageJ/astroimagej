@@ -5,3 +5,7 @@ plugins {
 dependencies {
 	implementation project(':ij')
 }
+
+jar {
+    archiveFileName = 'Astronomy_.jar'
+}

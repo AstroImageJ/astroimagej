@@ -291,6 +291,7 @@ project.copy {
  * This is run when building a distribution to refresh the files in case of a change.
  */
 task commonFiles(type: Copy) {
+    dependsOn ':ij:build', ':Astronomy_:build'
     with commonDist
     into "${buildDir}/commonFiles"
     doLast {

@@ -1,13 +1,12 @@
 plugins {
-    id 'java'        
-    id 'application'
+    id 'java'
 }
 
 dependencies {
     implementation project(':Nom_Fits')
 }
 
-mainClassName = 'ij.ImageJ'
+def mainClassName = 'ij.ImageJ'
 
 processResources {
     inputs.property "version", project.version

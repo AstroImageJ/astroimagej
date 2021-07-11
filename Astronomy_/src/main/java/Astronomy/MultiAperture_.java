@@ -726,7 +726,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             IJ.beep();
             return false;
         }
-        if (imp.getCurrentSlice() != firstSlice) imp.setSlice(firstSlice);
+        imp.setSlice(firstSlice);
         ip = imp.getProcessor();
         imp.killRoi();
         return true;

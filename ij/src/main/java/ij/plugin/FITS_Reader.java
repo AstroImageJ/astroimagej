@@ -12,6 +12,8 @@ import ij.measure.Calibration;
 import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
 import ij.util.ArrayBoxingUtil;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import nom.tam.fits.*;
 import nom.tam.image.compression.hdu.CompressedImageHDU;
 import nom.tam.util.Cursor;
@@ -22,6 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.zip.GZIPInputStream;
+import java.util.Locale;
 
 import static nom.tam.fits.header.Standard.*;
 
@@ -39,13 +42,19 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	private ImagePlus imagePlus;
 	private String directory;
 	private String fileName;
+	private String fileBase;
+	private String fileType;
 	private int wi;
 	private int he;
 	private int de;
 	private float bzero;
 	private float bscale;
 
-	public static boolean doTessQualCheck = Prefs.getBoolean(".aij.doTessQualCheck", false);
+	private Locale locale = Locale.US;
+	private DecimalFormatSymbols dfs = new DecimalFormatSymbols(locale);
+	private DecimalFormat fourDigits = new DecimalFormat("0000", dfs);
+
+	public static boolean skipTessQualCheck = Prefs.getBoolean(".aij.skipTessQualCheck", false);
 
 	// The image data comes in different types, but in the end, we turn them all into floats.
 	// So no matter what type the data is, we wrap it with a lambda that takes two indices and
@@ -203,6 +212,17 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		FileInfo fi = new FileInfo();
 		fi.fileFormat = FileInfo.FITS;
 		fi.fileName = fileName.endsWith(".fz") ? fileName.substring(0, fileName.length() - 3) : fileName;
+		if (fileName.lastIndexOf('.') > 0 && fileName.lastIndexOf('.') < fileName.length()) {
+			if (fileName.startsWith("tess-s")) {
+				fileBase = fileName.substring(0, 14);
+			} else {
+				fileBase = fileName.substring(0, fileName.lastIndexOf('.'));
+			}
+			fileType = fileName.substring(fileName.lastIndexOf('.')+1, fileName.length());
+		} else {
+			fileBase = "Slice_";
+			fileType = "";
+		}
 		fi.directory = directory;
 		fi.width = wi;
 		fi.height = he;
@@ -356,6 +376,8 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 				// Delete previously added keys as hdr object is not a copy and is shared for all images
 				hdr.deleteKey("BJD_TDB");
 				hdr.deleteKey("AIJ_Q");
+				hdr.deleteKey("NO_BJD");
+				hdr.deleteKey("NAXIS3");
 
 				var bjd0 = 2457000d;
 				var bjd1 = 0d;
@@ -364,8 +386,10 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 
 				// If the image should be skipped add this card, string check for 'AIJ_Q' to skip image
 				// Based on TESS Cut code by John Kielkopf
-				if ((doTessQualCheck && quality[i].intValue() != 0) || Double.isNaN(bjd1)) {
-					hdr.addValue("AIJ_Q", quality[i].intValue() != 0 || Double.isNaN(bjd1), "Skippable Image?");
+				if ((!skipTessQualCheck && quality[i].intValue() != 0)) {
+					hdr.addValue("AIJ_Q", quality[i].intValue() != 0, "Skipped due to quality flag");
+				} else if (Double.isNaN(bjd1)) {
+					hdr.addValue("NO_BJD", 0, "Skipped due to invalid or missing BJD time");
 				}
 
 				// Get the Header as a String
@@ -464,14 +488,17 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			String header = "";
 			if (headers != null) {
 				if (headers.get(i).contains("AIJ_Q")) { // For TESScut, skip bad images
-					IJ.log("Skipping an image due to " +
-							(doTessQualCheck ? "quality and/or " : "") +"lack of BJD: " + (i+1));
+					IJ.log("Skipping an image due to quality flag: " + (i+1));
+					continue;
+				}
+				else if (headers.get(i).contains("NO_BJD")) { // For TESScut, skip if no BJD available
+					IJ.log("Skipping an image due to a missing or invalid BJD time: " + (i+1));
 					continue;
 				}
 				header = headers.get(i) + "\n";
 			}
 			ip = twoDimensionalImageData2Processor(data[i], bitpix);
-			stack.addSlice("Cut " + (i+1) + "\n" + header, ip); // The table is 1-indexed 'cause FORTRAN
+			stack.addSlice(fileBase + "_" + (imageCount<10000 ? fourDigits.format(i+1) : (i+1)) + (fileType.length() > 0 ? "." + fileType : "") + "\n" + header, ip); // The table is 1-indexed 'cause FORTRAN
 		}
 
 		setStack(fileName, stack);

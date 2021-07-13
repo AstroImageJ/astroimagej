@@ -1119,10 +1119,10 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
 
                 preferencesMenu.addSeparator();
                 var qualCheckTess = new CheckboxMenuItem("When opening TESS images, also open images with data quality flag set",
-                        FITS_Reader.doTessQualCheck);
+                        FITS_Reader.skipTessQualCheck);
                 qualCheckTess.addItemListener(e -> {
-                    FITS_Reader.doTessQualCheck = e.getStateChange() == ItemEvent.SELECTED;
-                    Prefs.set("aij.doTessQualCheck", FITS_Reader.doTessQualCheck);
+                    FITS_Reader.skipTessQualCheck = e.getStateChange() == ItemEvent.SELECTED;
+                    Prefs.set("aij.skipTessQualCheck", FITS_Reader.skipTessQualCheck);
                 });
                 preferencesMenu.add(qualCheckTess);
 

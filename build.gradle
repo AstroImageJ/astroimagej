@@ -44,7 +44,7 @@ allprojects {
     group 'edu.louisville.astro.software'
 
     tasks.withType(JavaCompile).configureEach {
-        // Set language level and binary level to 8 (binary only when building with a JDK 9+)
+        // Set language level and binary level to targetJava (binary only when building with a JDK 9+)
         // Ensures newer language features aren't used
         options.release.set(targetJava)
 

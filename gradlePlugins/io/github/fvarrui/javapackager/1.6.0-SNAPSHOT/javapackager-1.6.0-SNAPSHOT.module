@@ -96,10 +96,10 @@
           }
         },
         {
-          "group": "io.github.fvarrui",
-          "module": "gradle-launch4j",
+          "group": "edu.sc.seis.launch4j",
+          "module": "launch4j",
           "version": {
-            "requires": "2.4.7"
+            "requires": "2.5.0"
           }
         },
         {

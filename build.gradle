@@ -452,14 +452,6 @@ javaRuntimeSystems.each {sys, sysInfo ->
         dependsOn build, unZipJresTask, commonFiles
         //noinspection GroovyAssignabilityCheck
         mustRunAfter commonFiles, deleteDecompressedJres, unZipJresTask
-
-        onlyIf {
-            if (!(Integer.valueOf(JavaVersion.current().getMajorVersion()) >= shippingJava)) {
-                logger.error("Skipping packaging as the current JVM used by Gradle is older than the required Java" +
-                        " version: ${shippingJava}" as String)
-            }
-            Integer.valueOf(JavaVersion.current().getMajorVersion()) >= shippingJava
-        }
     }
 
     // Make the meta task run the smaller ones

@@ -1,10 +1,10 @@
 package ij.util;
 
 import java.lang.reflect.Array;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.stream.IntStream;
 
 /**
  * Utility class for boxing n-dimensional arrays, primarily intended for use in dynamic handling of nom.tam.fits output.
@@ -86,33 +86,71 @@ public class ArrayBoxingUtil {
      */
     public static Object box1DArray(final Object array) {
         if (array instanceof float[] array2) {
-            return IntStream.range(0, array2.length)
-                    .mapToObj(i -> ((float[]) array2)[i]).toArray(Float[]::new);
+            List<Float> list = new ArrayList<>();
+            for (int i = 0; i < array2.length; i++) {
+                Float aFloat = ((float[]) array2)[i];
+                list.add(aFloat);
+            }
+            return list.toArray(new Float[0]);
         }
         if (array instanceof byte[] array2) {
-            return IntStream.range(0, array2.length)
-                    .mapToObj(i -> ((byte[]) array2)[i]).toArray(Byte[]::new);
+            List<Byte> list = new ArrayList<>();
+            for (int i = 0; i < array2.length; i++) {
+                Byte aByte = ((byte[]) array2)[i];
+                list.add(aByte);
+            }
+            return list.toArray(new Byte[0]);
         }
         if (array instanceof double[] array2) {
-            return Arrays.stream(array2, 0, array2.length).boxed().toArray(Double[]::new);
+            List<Double> list = new ArrayList<>();
+            int bound = array2.length;
+            for (int i = 0; i < bound; i++) {
+                Double aDouble = array2[i];
+                list.add(aDouble);
+            }
+            return list.toArray(new Double[0]);
         }
         if (array instanceof int[] array2) {
-            return Arrays.stream(array2, 0, array2.length).boxed().toArray(Integer[]::new);
+            List<Integer> list = new ArrayList<>();
+            int bound = array2.length;
+            for (int j = 0; j < bound; j++) {
+                Integer integer = array2[j];
+                list.add(integer);
+            }
+            return list.toArray(new Integer[0]);
         }
         if (array instanceof short[] array2) {
-            return IntStream.range(0, array2.length)
-                    .mapToObj(i -> ((short[]) array2)[i]).toArray(Short[]::new);
+            List<Short> list = new ArrayList<>();
+            for (int i = 0; i < array2.length; i++) {
+                Short aShort = ((short[]) array2)[i];
+                list.add(aShort);
+            }
+            return list.toArray(new Short[0]);
         }
         if (array instanceof long[] array2) {
-            return Arrays.stream(array2, 0, array2.length).boxed().toArray(Long[]::new);
+            List<Long> list = new ArrayList<>();
+            int bound = array2.length;
+            for (int i = 0; i < bound; i++) {
+                Long aLong = array2[i];
+                list.add(aLong);
+            }
+            return list.toArray(new Long[0]);
         }
         if (array instanceof boolean[] array2) {
-            return IntStream.range(0, array2.length)
-                    .mapToObj(i -> ((boolean[]) array2)[i]).toArray(Boolean[]::new);
+            List<Boolean> list = new ArrayList<>();
+            for (int i = 0; i < array2.length; i++) {
+                Boolean aBoolean = ((boolean[]) array2)[i];
+                list.add(aBoolean);
+            }
+            return list.toArray(new Boolean[0]);
         }
         if (array instanceof char[] array2) {
-            return IntStream.range(0, array2.length)
-                    .mapToObj(i -> ((char[]) array2)[i]).toArray(Character[]::new);
+            List<Character> list = new ArrayList<>();
+            for (int i = 0; i < array2.length; i++) {
+                Character character = ((char[]) array2)[i];
+                list.add(character);
+            }
+            return list.toArray(new Character[0]);
         }
         // Input is already a 1D boxed array
         if (array instanceof Object[] array2 && !array2.getClass().getComponentType().isArray()) {

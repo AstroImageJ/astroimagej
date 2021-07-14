@@ -12,20 +12,19 @@ import ij.measure.Calibration;
 import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
 import ij.util.ArrayBoxingUtil;
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
 import nom.tam.fits.*;
 import nom.tam.image.compression.hdu.CompressedImageHDU;
 import nom.tam.util.Cursor;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
-import java.util.function.Function;
-import java.util.zip.GZIPInputStream;
 import java.util.Locale;
+import java.util.Objects;
+import java.util.zip.GZIPInputStream;
 
 import static nom.tam.fits.header.Standard.*;
 

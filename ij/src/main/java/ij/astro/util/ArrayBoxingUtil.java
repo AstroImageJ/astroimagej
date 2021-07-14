@@ -1,4 +1,4 @@
-package ij.util;
+package ij.astro.util;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;

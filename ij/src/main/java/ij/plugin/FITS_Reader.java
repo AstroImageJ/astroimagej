@@ -23,6 +23,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.zip.GZIPInputStream;
 import java.util.Locale;
 
@@ -310,7 +311,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 
 		if (hdu instanceof TableHDU<?> tableHDU) {
 			if (isTessCut(tableHDU)) {
-				var data = (Number[][][]) ArrayBoxingUtil.boxArray(tableHDU.getColumn("FLUX"));
+				var data = (Object[]) tableHDU.getColumn("FLUX");
 				var hdr = convertHeaderForFfi(hdus[2].getHeader(), tableHDU);
 
 				imageProcessor = makeStackFrom3DData(data, tableHDU.getNRows(), -32, makeHeadersTessCut(hdr, tableHDU));
@@ -461,17 +462,16 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	/**
 	 * Take 3D fits data and open it as an {@link ImageStack}.
 	 */
-	//todo fix for compressed 3d images - currently only the 1 image is read, the others return all 0
 	private ImageProcessor process3DimensionalImage(BasicHDU<?> hdu, Data imgData) throws FitsException {
-		return makeStackFrom3DData(((Number[][][]) ArrayBoxingUtil.boxArray(imgData.getKernel())),
+		return makeStackFrom3DData((Object[]) imgData.getKernel(),
 				hdu.getHeader().getIntValue(NAXISn.n(3).key()), hdu.getBitPix());
 	}
 
 	/**
 	 * From 3D array of pixel data,create a stack.
-	 * @see FITS_Reader#makeStackFrom3DData(Number[][][], int, int, List)
+	 * @see FITS_Reader#makeStackFrom3DData(Object[], int, int, List)
 	 */
-	private ImageProcessor makeStackFrom3DData(final Number[][][] data, final int imageCount, final int bitpix) {
+	private ImageProcessor makeStackFrom3DData(final Object[] data, final int imageCount, final int bitpix) {
 		return makeStackFrom3DData(data, imageCount, bitpix, null);
 	}
 
@@ -479,7 +479,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	 * From 3D array of pixel data, create a stack. Uses provided Header to set info for processes such
 	 * as MultiAperture.
 	 */
-	private ImageProcessor makeStackFrom3DData(final Number[][][] data, final int imageCount, final int bitpix,
+	private ImageProcessor makeStackFrom3DData(final Object[] data, final int imageCount, final int bitpix,
 											   final List<String> headers) {
 		ImageProcessor ip = null;
 		ImageStack stack = new ImageStack();
@@ -514,27 +514,42 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	 * @see FITS_Reader#getImageProcessor
 	 */
 	private ImageProcessor processTwoDimensionalImage(BasicHDU<?> hdu, Data imgData) throws FitsException {
-		return twoDimensionalImageData2Processor((Number[][]) ArrayBoxingUtil.boxArray(imgData.getKernel()),
-				hdu.getBitPix());
+		return twoDimensionalImageData2Processor(imgData.getKernel(), hdu.getBitPix());
 	}
 
 	/**
 	 * Convert 2D image data to an ImageProcessor
 	 */
-	private ImageProcessor twoDimensionalImageData2Processor(final Number[][] imageData, final int bitPix) {
+	private ImageProcessor twoDimensionalImageData2Processor(final Object imageData, final int bitPix) {
+		TableWrapper wrapper;
+		if (imageData instanceof float[][] data) {
+			wrapper = (x, y) -> data[y][x];
+		} else if (imageData instanceof double[][] data) {
+			wrapper = (x, y) -> (float) data[y][x];
+		} else if (imageData instanceof short[][] data) {
+			wrapper = (x, y) -> data[y][x];
+		} else if (imageData instanceof byte[][] data) {
+			wrapper = (x, y) -> data[y][x];
+		} else if (imageData instanceof int[][] data) {
+			wrapper = (x, y) -> data[y][x];
+		} else if (imageData instanceof long[][] data) {
+			wrapper = (x, y) -> data[y][x];
+		} else {
+			throw new IllegalStateException("Tried to open image data that was not a numeric. " + imageData.getClass());
+		}
+
 		return switch (bitPix) {
-			case 16, -32, 32, -64 -> { // No 64 case as fits spec does not define one?
-				TableWrapper wrapper = (x, y) -> imageData[y][x].floatValue();
-				yield getImageProcessor(wrapper);
-			}
+			// No 64 case as fits spec does not define one?
+			case 16, -32, 32, -64 -> getImageProcessor(wrapper);
 			case 8 -> {
 				// Only in the 8 case is the signed-to-unsigned correction done -- oversight?!?
-				TableWrapper wrapper = (x, y) -> imageData[y][x].floatValue() < 0 ?
-						imageData[y][x].floatValue() + 256 : imageData[y][x].floatValue();
-				yield getImageProcessor(wrapper);
+				TableWrapper wrapper2 = (x, y) -> wrapper.valueAt(x,y) < 0 ?
+						wrapper.valueAt(x,y) + 256 : wrapper.valueAt(x,y);
+				yield getImageProcessor(wrapper2);
 			}
 			default -> imagePlus.getProcessor();
 		};
+
 	}
 
 	// The following code excerpted from ij.process.FloatProcessor serves to document the layout

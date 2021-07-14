@@ -38,7 +38,6 @@ public class ApertureRoi extends Roi
     protected boolean showName = false;
 	protected boolean showValues = false;
     AstroCanvas ac = null;
-    AffineTransform canvTrans = null;
     boolean netFlipX=false, netFlipY=false, netRotate=false, showMag=true, showIntCntWithMag = true;
 
 	public ApertureRoi (double x, double y, double rad1, double rad2, double rad3, double integratedCnts, boolean isCentered)
@@ -302,7 +301,6 @@ public class ApertureRoi extends Roi
             {
             aij =  true;
             ac =(AstroCanvas)ic;
-            canvTrans = ((Graphics2D)g).getTransform();
             ((Graphics2D)g).setTransform(ac.invCanvTrans);
             netFlipX = ac.getNetFlipX();
             netFlipY = ac.getNetFlipY();
@@ -382,7 +380,7 @@ public class ApertureRoi extends Roi
 			g.drawString (nameText, xl,yl);
         else if(showValues && value != null && !value.equals(""))
 			g.drawString (value, xl,yl);
-        if (aij) ((Graphics2D)g).setTransform(canvTrans);
+        if (aij) ((Graphics2D)g).setTransform(ac.canvTrans);
 		}
 
 	/**

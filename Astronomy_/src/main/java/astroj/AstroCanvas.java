@@ -471,7 +471,7 @@ public class AstroCanvas extends OverlayCanvas {
 
 
     @Override
-	    public void paint(Graphics g) 
+	    public synchronized void paint(Graphics g)
             {
             if (g != null)
                 {
@@ -570,7 +570,7 @@ public class AstroCanvas extends OverlayCanvas {
 
 	// Use double buffer to reduce flicker when drawing complex ROIs.
 	// Author: Erik Meijering
-	void paintDoubleBuffered(Graphics g) {
+	synchronized void paintDoubleBuffered(Graphics g) {
         int clipWidth = srcRect.width+1; //+1 to allow for partial pixel at edge
         int clipHeight = srcRect.height+1; //+1 to allow for partial pixel at edge
 		int offScrnWidth = (int)(clipWidth*magnification);
@@ -633,13 +633,16 @@ public class AstroCanvas extends OverlayCanvas {
                 offScreenGraphics.fillRect(xx2, yy1 , offScrnWidth-xx2, offScrnHeight-yy1);
             if (yy2 < offScrnHeight)
                 offScreenGraphics.fillRect(xx1, yy2 , xx2-xx1, offScrnHeight-yy2);
+
             transEnabled = true;
 
             if (showPhotometerCursor && mouseInImage && astronomyMode) updatePhotometerOverlay(offScreenGraphics);
             OverlayCanvas oc = getOverlayCanvas(imp);
             if (oc.numberOfRois() > 0) drawOverlayCanvas(offScreenGraphics);
             transEnabled = false;
+
 			//if (overlay!=null) ((ImageCanvas)this).drawOverlay(overlay, offScreenGraphics);
+
 			if (showAllOverlay!=null) ((ImageCanvas)this).drawOverlay(showAllOverlay, offScreenGraphics);
 			if (roi!=null) drawRoi(roi, offScreenGraphics);
             transEnabled = true;
@@ -647,7 +650,7 @@ public class AstroCanvas extends OverlayCanvas {
 			if (IJ.debugMode) showFrameRate(offScreenGraphics);
 
 			g.drawImage(offScreenImage, 0, 0, null);
-            
+
             }
 		catch(OutOfMemoryError e) 
             {
@@ -790,7 +793,7 @@ public class AstroCanvas extends OverlayCanvas {
     }
     
 @Override
-	 public void drawZoomIndicator(Graphics g) {   
+	 public void drawZoomIndicator(Graphics g) {
         ((Graphics2D)g).setTransform(invCanvTrans);
         g.setFont (p12);
 		g.setColor(zoomIndicatorColor);

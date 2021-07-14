@@ -2321,7 +2321,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                 bottomPanelB.setBorder(BorderFactory.createEmptyBorder(0, 0, 5, 0));
 
 //                SpringUtil.makeCompactGrid (bottomPanelB, 1, bottomPanelB.getComponentCount(), 5,0,5,0);
-                ImageProcessor ip = imp.getProcessor();
+//                ImageProcessor ip = imp.getProcessor();
 
                 getBiSliderStatistics();
                 histogram = stats.histogram;
@@ -8093,6 +8093,7 @@ double[] processCoordinatePair(JTextField textFieldA, int decimalPlacesA, int ba
     
     void editApertureRoi(ApertureRoi roi)
         {
+        if (roi == null) return;
         GenericDialog gd = new GenericDialog ("Edit Aperture", getX()+getWidth()/2-165, getY()+getHeight()/2-77);
         gd.enableYesNoCancel("Save", "Delete");
         gd.addCheckbox("Display Centroid Crosshair", roi != null && roi.getIsCentroid());

@@ -138,7 +138,6 @@ public class AIJ {
      */
     private static void checkAndExecuteTimers() {
         synchronized (AIJ.class) {
-            IJ.log("t");
             aijLogPanelsTimer.forEach((caller, closingConditions) -> {
                 if (!closingConditions.autoClose) return;
                 if (System.currentTimeMillis() - closingConditions.lastModified > 5000) {

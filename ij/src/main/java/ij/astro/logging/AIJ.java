@@ -10,6 +10,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class AIJ {
     private static final Map<String, TextPanel> aijLogPanels = new HashMap<>();
@@ -17,40 +20,11 @@ public class AIJ {
      * Stores a log's last modified time and if it should auto-close
      */
     private static final Map<String, ClosingConditions> aijLogPanelsTimer = new HashMap<>();
-    private static final Thread timer;
     public static final String key = ".aij.useNewLogWindow";
 
     static {
-        timer = new Thread("AIJ Log Closer") {
-            @Override
-            public void run() {
-                while (true) {
-                    try {
-                        sleep(1000);
-                        synchronized (AIJ.class) {
-                            aijLogPanelsTimer.forEach((caller, closingConditions) -> {
-                                if (!closingConditions.autoClose) return;
-                                if (System.currentTimeMillis() - closingConditions.lastModified > 5000) {
-                                    ((LogWindow)WindowManager.getWindow(caller + " Log")).close();
-                                }
-                            });
-                            // Remove old entries
-                            for (Map.Entry<String, ClosingConditions> entry : aijLogPanelsTimer.entrySet()) {
-                                if (!entry.getValue().autoClose) continue;
-                                if (System.currentTimeMillis() - entry.getValue().lastModified > 5000) {
-                                    aijLogPanelsTimer.remove(entry.getKey());
-                                }
-                            }
-                        }
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                        break;
-                    }
-                }
-            }
-        };
-        timer.setPriority(Thread.MIN_PRIORITY);
-        timer.start();
+        final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
+        executorService.scheduleWithFixedDelay(AIJ::checkAndExecuteTimers, 1L, 1L, TimeUnit.SECONDS);
     }
 
     /**
@@ -99,8 +73,6 @@ public class AIJ {
      */
     public static synchronized void log(String msg, boolean useNewWindow) {
         if ("".equals(msg)) return;
-
-        if (timer.getState() == Thread.State.NEW) timer.start();
 
         var caller = getCallerName();
 
@@ -159,6 +131,28 @@ public class AIJ {
      */
     private static synchronized boolean predicateClassChecker(Class<?> clazz) {
         return !clazz.getName().contains("Thread") && !clazz.equals(AIJ.class);
+    }
+
+    /**
+     * Evaluates all logs for expired ones and cleans them.
+     */
+    private static void checkAndExecuteTimers() {
+        synchronized (AIJ.class) {
+            IJ.log("t");
+            aijLogPanelsTimer.forEach((caller, closingConditions) -> {
+                if (!closingConditions.autoClose) return;
+                if (System.currentTimeMillis() - closingConditions.lastModified > 5000) {
+                    ((LogWindow)WindowManager.getWindow(caller + " Log")).close();
+                }
+            });
+            // Remove old entries
+            for (Map.Entry<String, ClosingConditions> entry : aijLogPanelsTimer.entrySet()) {
+                if (!entry.getValue().autoClose) continue;
+                if (System.currentTimeMillis() - entry.getValue().lastModified > 5000) {
+                    aijLogPanelsTimer.remove(entry.getKey());
+                }
+            }
+        }
     }
 
     private record ClosingConditions(boolean autoClose, Long lastModified) {

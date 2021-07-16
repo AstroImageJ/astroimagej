@@ -201,6 +201,7 @@ task downloadJavaRuntimes(type: Download) {
  * Runs only on MacOs
  */
 task deleteDecompressedJres() {
+    outputs.upToDateWhen {false}
     onlyIf {
         Os.isFamily(Os.FAMILY_MAC)
     }
@@ -293,6 +294,7 @@ project.copy {
  * This is run when building a distribution to refresh the files in case of a change.
  */
 task commonFiles(type: Copy) {
+    outputs.upToDateWhen {false}
     dependsOn ':ij:build', ':Astronomy_:build'
     with commonDist
     into "${buildDir}/commonFiles"
@@ -423,7 +425,8 @@ javaRuntimeSystems.each {sys, sysInfo ->
         } else { // One of the runtimes does not exist, pull it
             logger.error("A JRE was missing, run unZipJresTask first! " + sys +
                     " will fallback to the default runtime path" as String)
-            runtimePath = new File(java, sysInfo.os == "macos" ? "zulu-${shippingJava}.${sysInfo.type}" : "")
+            runtimePath = new File(java, sysInfo.os == "macos" ?
+                    "zulu-${shippingJava}.${sysInfo.type}/Contents/Home" : "")
         }
 
         // Sanity check

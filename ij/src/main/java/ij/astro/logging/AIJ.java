@@ -91,7 +91,16 @@ public class AIJ {
         var callingClass = classOptional.isPresent() ? classOptional.get() : AIJ.class;
         return callingClass.isAnnotationPresent(Translation.class)
                 ? callingClass.getAnnotation(Translation.class).value()
-                : callingClass.getSimpleName();
+                : formatCaller(callingClass.getSimpleName());
+    }
+
+
+    /**
+     * Takes class names and turns them into normal English.
+     */
+    private static synchronized String formatCaller(String name) {
+        return name.replaceAll("(?<=[A-Z])(?=[A-Z][a-z])|(?<=[^A-Z])(?=[A-Z])|(?<=[A-Za-z])(?=[^A-Za-z])", " ")
+                .replaceAll("_", " ").trim();
     }
 
     /**

@@ -585,10 +585,10 @@ public class ResultsTable implements Cloneable {
 		setValue(column, row, Double.NaN);
 		if (stringColumns==null)
 			stringColumns = new Hashtable();
-		ArrayList stringColumn = (ArrayList)stringColumns.get(new Integer(column));
+		ArrayList stringColumn = (ArrayList)stringColumns.get(Integer.valueOf(column));
 		if (stringColumn==null) {
 			stringColumn = new ArrayList();
-			stringColumns.put(new Integer(column), stringColumn);
+			stringColumns.put(Integer.valueOf(column), stringColumn);
 		}
 		int size = stringColumn.size();
 		if (row>=size) {
@@ -714,7 +714,7 @@ public class ResultsTable implements Cloneable {
 			double value = columns[col][row];
 			String str = null;
 			if (Double.isNaN(value) && stringColumns!=null) {
-				ArrayList stringColumn = (ArrayList)stringColumns.get(new Integer(col));
+				ArrayList stringColumn = (ArrayList)stringColumns.get(Integer.valueOf(col));
 				if (stringColumn!=null && row>=0 && row<stringColumn.size()) {
 						str = (String)stringColumn.get(row);
 						if (firstValueNumeric && "".equals(str)) {
@@ -775,7 +775,7 @@ public class ResultsTable implements Cloneable {
 		//IJ.log("getValueAsString1: col="+column+ ", row= "+row+", value= "+value+", size="+stringColumns.size());
 		if (Double.isNaN(value) && stringColumns!=null) {
 			String string = "NaN";
-			ArrayList stringColumn = (ArrayList)stringColumns.get(new Integer(column));
+			ArrayList stringColumn = (ArrayList)stringColumns.get(Integer.valueOf(column));
 			if (stringColumn==null)
 				return string;
 			//IJ.log("getValueAsString2: "+column+ +row+" "+stringColumn.size());
@@ -937,7 +937,7 @@ public class ResultsTable implements Cloneable {
 			if (columns[col]!=null) {
 				for (int i=rowIndex; i<counter-1; i++)
 					columns[col][i] = columns[col][i+1];
-				ArrayList stringColumn = stringColumns!=null?(ArrayList)stringColumns.get(new Integer(col)):null;
+				ArrayList stringColumn = stringColumns!=null?(ArrayList)stringColumns.get(Integer.valueOf(col)):null;
 				if (stringColumn!=null && stringColumn.size()==counter) {
 					for (int i=rowIndex; i<counter-1; i++)
 						stringColumn.set(i,stringColumn.get(i+1));
@@ -1583,7 +1583,7 @@ public class ResultsTable implements Cloneable {
 		ComparableEntry[] ces = new ComparableEntry[size()];
 		ArrayList stringColumn = null;
 		if (stringColumns!=null)
-		    stringColumn = (ArrayList) stringColumns.get (new Integer (col));
+		    stringColumn = (ArrayList) stringColumns.get (Integer.valueOf(col));
 		for (int i = 0; i < size(); i++) {
 		    ComparableEntry ce = new ComparableEntry();
 		    ce.index = i;
@@ -1603,9 +1603,9 @@ public class ResultsTable implements Cloneable {
 		    ArrayList sc = null;
 		    Map scs =  stringColumns;
 		    	if (scs != null)
-			sc = (ArrayList) scs.get (new Integer (i));
+			sc = (ArrayList) scs.get (Integer.valueOf(i));
 		    if (sc != null) {
-				ArrayList sc2 = (ArrayList) rt2.stringColumns.get (new Integer (i));
+				ArrayList sc2 = (ArrayList) rt2.stringColumns.get (Integer.valueOf(i));
 				for (int j = 0; j < size(); j++)
 			    	sc.set (j, sc2.get (ces[j].index));
 		    }

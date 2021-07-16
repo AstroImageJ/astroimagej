@@ -219,7 +219,7 @@ public class Menus {
 		addPlugInItem(analyzeMenu, "Calibrate...", "ij.plugin.filter.Calibrator", 0, false);
 		if (IJ.isMacOSX()) {
 			addPlugInItem(analyzeMenu, "Histogram", "ij.plugin.Histogram", 0, false);
-			shortcuts.put(new Integer(KeyEvent.VK_H),"Histogram");
+			shortcuts.put(Integer.valueOf(KeyEvent.VK_H),"Histogram");
 		} else
 			addPlugInItem(analyzeMenu, "Histogram", "ij.plugin.Histogram", KeyEvent.VK_H, false);
 		addPlugInItem(analyzeMenu, "Plot Profile", "ij.plugin.Profiler(\"plot\")", KeyEvent.VK_K, false);
@@ -428,10 +428,10 @@ public class Menus {
 		else {
 			if (shift) {
 				item = new MenuItem(label, new MenuShortcut(shortcut, true));
-				shortcuts.put(new Integer(shortcut+200),label);
+				shortcuts.put(Integer.valueOf(shortcut+200),label);
 			} else {
 				item = new MenuItem(label, new MenuShortcut(shortcut));
-				shortcuts.put(new Integer(shortcut),label);
+				shortcuts.put(Integer.valueOf(shortcut),label);
 			}
 		}
 		if (addSorted) {
@@ -532,7 +532,7 @@ public class Menus {
 			}
 		}
 		if (keyCode>=KeyEvent.VK_F1 && keyCode<=KeyEvent.VK_F12) {
-			shortcuts.put(new Integer(keyCode),command);
+			shortcuts.put(Integer.valueOf(keyCode),command);
 			keyCode = 0;
 		} else if (keyCode>=265 && keyCode<=290) {
 			keyCode -= 200;
@@ -700,7 +700,7 @@ public class Menus {
 		if (i == null) {
 			if (menu.getItemCount() > 0)
 				addSeparator(menu);
-			i = new Integer(menu.getItemCount());
+			i = Integer.valueOf(menu.getItemCount());
 			menuSeparators.put(menu, i);
 		}
 		return i.intValue();
@@ -1502,10 +1502,10 @@ public class Menus {
 			item = new MenuItem(command);
 		else if (functionKey) {
 			command += " [F"+(code-KeyEvent.VK_F1+1)+"]";
-			shortcuts.put(new Integer(code),command);
+			shortcuts.put(Integer.valueOf(code),command);
 			item = new MenuItem(command);
 		} else {
-			shortcuts.put(new Integer(code),command);
+			shortcuts.put(Integer.valueOf(code),command);
 			int keyCode = code;
 			boolean shift = false;
 			if (keyCode>=265 && keyCode<=290) {
@@ -1633,7 +1633,7 @@ public class Menus {
 	/** Returns 'true' if this keyboard shortcut is in use. */
 	public static boolean shortcutInUse(String shortcut) {
 		int code = convertShortcutToCode(shortcut);
-		if (shortcuts.get(new Integer(code))!=null)
+		if (shortcuts.get(Integer.valueOf(code))!=null)
 			return true;
 		else
 			return false;

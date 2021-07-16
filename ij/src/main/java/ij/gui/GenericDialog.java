@@ -207,7 +207,7 @@ FocusListener, ItemListener, KeyListener, AdjustmentListener, WindowListener {
 		tf.addFocusListener(this);
 		tf.addKeyListener(this);
 		numberField.addElement(tf);
-		defaultValues.addElement(new Double(defaultValue));
+		defaultValues.addElement(Double.valueOf(defaultValue));
 		defaultText.addElement(tf.getText());
 		c.gridx = GridBagConstraints.RELATIVE;
 		c.anchor = GridBagConstraints.WEST;
@@ -710,7 +710,7 @@ FocusListener, ItemListener, KeyListener, AdjustmentListener, WindowListener {
 		add(thisChoice, c);
 		choice.addElement(thisChoice);
 		int index = thisChoice.getSelectedIndex();
-		defaultChoiceIndexes.addElement(new Integer(index));
+		defaultChoiceIndexes.addElement(Integer.valueOf(index));
 		if (Recorder.record || macro)
 			saveLabel(thisChoice, label);
     }
@@ -924,10 +924,10 @@ FocusListener, ItemListener, KeyListener, AdjustmentListener, WindowListener {
 		tf.addFocusListener(this);
 		tf.addKeyListener(this);
 		numberField.addElement(tf);
-		sliderIndexes.add(new Integer(numberField.size()-1));
-		sliderScales.add(new Double(scale));
-		sliderDigits.add(new Integer(digits));
-		defaultValues.addElement(new Double(defaultValue/scale));
+		sliderIndexes.add(Integer.valueOf(numberField.size()-1));
+		sliderScales.add(Double.valueOf(scale));
+		sliderDigits.add(Integer.valueOf(digits));
+		defaultValues.addElement(Double.valueOf(defaultValue/scale));
 		defaultText.addElement(tf.getText());
 		tf.setEditable(true);
 		firstSlider = false;
@@ -1182,7 +1182,7 @@ FocusListener, ItemListener, KeyListener, AdjustmentListener, WindowListener {
 
  	protected Double getValue(String text) {
  		Double d;
- 		try {d = new Double(text);}
+ 		try {d = Double.valueOf(text);}
 		catch (NumberFormatException e){
 			d = null;
 		}

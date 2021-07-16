@@ -411,6 +411,7 @@ public boolean setoptions() {
 /********************************************************
 *	 Gets Color lookup Table from  8 bit image plus pointer to image
 */
+@AstroImageJ(reason = "Remove deprecated finalize call")
 void Process8bitCLT(ImagePlus image) {  
 		colorDepth = 8;
 		setTransparent(false);		  
@@ -458,7 +459,6 @@ void Process8bitCLT(ImagePlus image) {
 				colorTab[k+2] = (byte)m.getBlue(i);
 			}
 		}
-		m.finalize();  
 	}	   
 
    /**

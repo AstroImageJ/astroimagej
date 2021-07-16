@@ -4568,7 +4568,7 @@ public class Functions implements MacroConstants, Measurements {
 				for(int i=0;i<args.length;i++) {
 					double value = Tools.parseDouble((String)args[i]);
 					if (!Double.isNaN(value)) {
-						args[i] = new Integer((int)value);
+						args[i] = Integer.valueOf((int)value);
 						argClasses[i] = int.class;
 					} else
 						argClasses[i] = args[i].getClass();

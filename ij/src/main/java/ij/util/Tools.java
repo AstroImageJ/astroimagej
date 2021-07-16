@@ -238,8 +238,8 @@ import java.security.MessageDigest;
 		final Integer[] indexes = new Integer[n];
 		final Double[] data = new Double[n];
 		for (int i=0; i<n; i++) {
-			indexes[i] = new Integer(i);
-			data[i] = new Double(values[i]);
+			indexes[i] = Integer.valueOf(i);
+			data[i] = Double.valueOf(values[i]);
 		}
 		Arrays.sort(indexes, new Comparator<Integer>() {
 			public int compare(final Integer o1, final Integer o2) {
@@ -257,7 +257,7 @@ import java.security.MessageDigest;
 		int n = data.length;
 		final Integer[] indexes = new Integer[n];
 		for (int i=0; i<n; i++)
-			indexes[i] = new Integer(i);
+			indexes[i] = Integer.valueOf(i);
 		Arrays.sort(indexes, new Comparator<Integer>() {
 			public int compare(final Integer o1, final Integer o2) {
 				return data[o1].compareToIgnoreCase(data[o2]);

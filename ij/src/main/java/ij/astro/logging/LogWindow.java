@@ -7,6 +7,10 @@ import ij.text.TextWindow;
 
 import java.awt.*;
 
+/**
+ * Custom TextWindow for use with {@link AIJ}'s logging capabilities - implements closing and screen pos/size of
+ * log window.
+ */
 public class LogWindow extends TextWindow {
     public LogWindow(String path, String text, int width, int height) {
         super(path, text, width, height);
@@ -19,8 +23,7 @@ public class LogWindow extends TextWindow {
             setLocation(loc);
         } else {
             setSize(width, height);
-            if (!IJ.debugMode)
-                GUI.centerOnImageJScreen(this);
+            if (!IJ.debugMode) GUI.centerOnImageJScreen(this);
         }
     }
 

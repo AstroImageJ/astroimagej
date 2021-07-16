@@ -14,7 +14,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-public class AIJ {
+/**
+ * AIJ Logger class. Supports opt-in auto-closing of log window, opening a new log window for each calling class's log
+ * invoke, and adding calling the class as a prefix to a log message when falling back to {@link IJ#log(String)}.
+ */
+public class AIJLogger {
     private static final Map<String, TextPanel> aijLogPanels = new HashMap<>();
     /**
      * Stores a log's last modified time and if it should auto-close
@@ -24,7 +28,7 @@ public class AIJ {
 
     static {
         final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
-        executorService.scheduleWithFixedDelay(AIJ::checkAndExecuteTimers, 1L, 1L, TimeUnit.SECONDS);
+        executorService.scheduleWithFixedDelay(AIJLogger::checkAndExecuteTimers, 1L, 1L, TimeUnit.SECONDS);
     }
 
     /**
@@ -110,8 +114,8 @@ public class AIJ {
     private static synchronized String getCallerName() {
         var classOptional = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE)
                 .walk(s -> s.map(StackWalker.StackFrame::getDeclaringClass)
-                        .filter(AIJ::predicateClassChecker).findFirst());
-        var callingClass = classOptional.isPresent() ? classOptional.get() : AIJ.class;
+                        .filter(AIJLogger::predicateClassChecker).findFirst());
+        var callingClass = classOptional.isPresent() ? classOptional.get() : AIJLogger.class;
         return callingClass.isAnnotationPresent(Translation.class)
                 ? callingClass.getAnnotation(Translation.class).value()
                 : formatCaller(callingClass.getSimpleName());
@@ -130,14 +134,14 @@ public class AIJ {
      * Ignore these classes in the callstack.
      */
     private static synchronized boolean predicateClassChecker(Class<?> clazz) {
-        return !clazz.getName().contains("Thread") && !clazz.equals(AIJ.class);
+        return !clazz.getName().contains("Thread") && !clazz.equals(AIJLogger.class);
     }
 
     /**
      * Evaluates all logs for expired ones and cleans them.
      */
     private static void checkAndExecuteTimers() {
-        synchronized (AIJ.class) {
+        synchronized (AIJLogger.class) {
             aijLogPanelsTimer.forEach((caller, closingConditions) -> {
                 if (!closingConditions.autoClose) return;
                 if (System.currentTimeMillis() - closingConditions.lastModified > 5000) {

@@ -5,7 +5,7 @@ import ij.ImagePlus;
 import ij.ImageStack;
 import ij.Prefs;
 import ij.astro.AstroImageJ;
-import ij.astro.logging.AIJ;
+import ij.astro.logging.AIJLogger;
 import ij.astro.logging.Translation;
 import ij.astro.util.ArrayBoxingUtil;
 import ij.io.FileInfo;
@@ -74,7 +74,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		// wcs = null;
 		imagePlus = null;
 
-		AIJ.setLogAutoCloses(true);
+		AIJLogger.setLogAutoCloses(true);
 
 		/*
 		 * Extract array of HDU from FITS file using nom.tam.fits
@@ -492,11 +492,11 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			String header = "";
 			if (headers != null) {
 				if (headers.get(i).contains("AIJ_Q")) { // For TESScut, skip bad images
-					AIJ.log("Skipping an image due to quality flag: " + (i+1));
+					AIJLogger.log("Skipping an image due to quality flag: " + (i+1));
 					continue;
 				}
 				else if (headers.get(i).contains("NO_BJD")) { // For TESScut, skip if no BJD available
-					AIJ.log("Skipping an image due to a missing or invalid BJD time: " + (i+1));
+					AIJLogger.log("Skipping an image due to a missing or invalid BJD time: " + (i+1));
 					continue;
 				}
 				header = headers.get(i) + "\n";

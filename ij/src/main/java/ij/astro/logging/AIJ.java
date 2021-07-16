@@ -96,11 +96,11 @@ public class AIJ {
 
 
     /**
-     * Takes class names and turns them into normal English.
+     * Rudimentary method takes class names and turns them into normal English.
      */
     private static synchronized String formatCaller(String name) {
         return name.replaceAll("(?<=[A-Z])(?=[A-Z][a-z])|(?<=[^A-Z])(?=[A-Z])|(?<=[A-Za-z])(?=[^A-Za-z])", " ")
-                .replaceAll("_", " ").trim();
+                .replaceAll("_", " ").replaceAll("\s+", " ").trim();
     }
 
     /**

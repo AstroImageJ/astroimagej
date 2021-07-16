@@ -78,8 +78,8 @@ public class ImageJ extends Frame implements ActionListener,
 	MouseListener, KeyListener, WindowListener, ItemListener, Runnable {
 
 	/** Plugins should call IJ.getVersion() or IJ.getFullVersion() to get the version string. */
-	public static final String VERSION = "1.53h";
-	public static final String BUILD = "";  //62
+	public static final String VERSION = "1.53k";
+	public static final String BUILD = "";  //19
 	public static Color backgroundColor = new Color(237,237,237);
 	/** SansSerif, 12-point, plain font. */
 	public static final Font SansSerif12 = new Font("SansSerif", Font.PLAIN, 12);
@@ -87,7 +87,7 @@ public class ImageJ extends Frame implements ActionListener,
 	public static final int DEFAULT_PORT = 57294;
 	@AstroImageJ(reason = "Add astroversion")
     public static final String ASTROVERSION = getAijVersion();
-	
+
 	/** Run as normal application. */
 	public static final int STANDALONE = 0;
 	
@@ -142,7 +142,7 @@ public class ImageJ extends Frame implements ActionListener,
 		If  'mode' is ImageJ.EMBEDDED and 'applet is null, creates an embedded 
 		(non-standalone) version of ImageJ. */
 	@AstroImageJ(reason = "Change title to AstroImageJ; disable setting of jFileChooser to true; " +
-			"Make MacAdapter look in plugins folder; se mac to use screen menubar", modified = true)
+			"Make MacAdapter look in plugins folder; set mac to use screen menubar", modified = true)
 	public ImageJ(java.applet.Applet applet, int mode) {
 		super("AstroImageJ");
 		System.setProperty("apple.laf.useScreenMenuBar", "true");
@@ -222,7 +222,10 @@ public class ImageJ extends Frame implements ActionListener,
 		}
 		if (IJ.isMacintosh()&&applet==null) {
 			try {
-				IJ.runPlugIn("MacAdapter", "");
+				if (IJ.javaVersion()>8) // newer JREs use different drag-drop, about mechanism
+					IJ.runPlugIn("MacAdapter9", "");
+				else
+					IJ.runPlugIn("MacAdapter", "");
 			} catch(Throwable e) {}
 		} 
 		if (applet==null)
@@ -746,7 +749,8 @@ public class ImageJ extends Frame implements ActionListener,
 		if (!noGUI && (ij==null || (ij!=null && !ij.isShowing()))) {
 			ij = new ImageJ(null, mode);
 			ij.exitWhenQuitting = true;
-		}
+		} else if (batchMode && noGUI)
+			Prefs.load(null, null);
 		int macros = 0;
 		for (int i=0; i<nArgs; i++) {
 			String arg = args[i];

@@ -1681,6 +1681,8 @@ public class ImageCanvas extends Canvas implements MouseListener, MouseMotionLis
 		int sy = screenY(oy);
 		for (int i=o.size()-1; i>=0; i--) {
 			Roi roi = o.get(i);
+			if (roi==null)
+				continue;
 			//IJ.log(".isAltDown: "+roi.contains(ox, oy));
 			boolean containsMousePoint = false;
 			if (roi instanceof Line) {	//grab line roi near its center

@@ -93,7 +93,7 @@ public class Menus {
 		instance = this;
 	}
 
-	@AstroImageJ(reason = "Disable IJ zoom in favor of AIJ zoom, rename IJ to AIJ", modified = true)
+	@AstroImageJ(reason = "Disable IJ zoom in favor of AIJ zoom, rename IJ to AIJ, remove IJ news", modified = true)
 	String addMenuBar() {
 		scale = Prefs.getGuiScale();
 		if ((scale>=1.5&&scale<2.0) || (scale>=2.5&&scale<3.0))
@@ -241,10 +241,6 @@ public class Menus {
 
 		Menu help = getMenu("Help");
 		addPlugInItem(help, "ImageJ Website...", "ij.plugin.BrowserLauncher", 0, false);
-		addPlugInItem(help, "ImageJ News...", "ij.plugin.BrowserLauncher(\""+IJ.URL+"/notes.html\")", 0, false);
-		addPlugInItem(help, "Documentation...", "ij.plugin.BrowserLauncher(\""+IJ.URL+"/docs\")", 0, false);
-		addPlugInItem(help, "Installation...", "ij.plugin.SimpleCommands(\"install\")", 0, false);
-		addPlugInItem(help, "Mailing List...", "ij.plugin.BrowserLauncher(\"https://list.nih.gov/archives/imagej.html\")", 0, false);
 		help.addSeparator();
 		addPlugInItem(help, "Dev. Resources...", "ij.plugin.BrowserLauncher(\""+IJ.URL+"/developer/index.html\")", 0, false);
 		addPlugInItem(help, "Plugins...", "ij.plugin.BrowserLauncher(\""+IJ.URL+"/plugins\")", 0, false);
@@ -833,6 +829,8 @@ public class Menus {
 	/** Returns the specified ImageJ menu (e.g., "File>New") or null if it is not found. */
 	public static Menu getImageJMenu(String menuPath) {
 		if (menus==null)
+			IJ.init();
+		if (menus==null)
 			return null;
 		if (menus.get(menuPath)!=null)
 			return getMenu(menuPath, false);
@@ -1340,6 +1338,8 @@ public class Menus {
         
 	/** Returns the hashtable that associates commands with plugins. */
 	public static Hashtable getCommands() {
+		if (pluginsTable==null)
+			IJ.init();
 		return pluginsTable;
 	}
         
@@ -1668,6 +1668,8 @@ public class Menus {
 
 	/** Called once when ImageJ quits. */
 	public static void savePreferences(Properties prefs) {
+		if (pluginsPrefs==null)
+			return;
 		int index = 0;
 		for (Enumeration en=pluginsPrefs.elements(); en.hasMoreElements();) {
 			String key = "plugin" + (index/10)%10 + index%10;

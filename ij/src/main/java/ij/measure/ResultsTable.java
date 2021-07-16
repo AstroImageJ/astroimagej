@@ -856,6 +856,10 @@ public class ResultsTable implements Cloneable {
 		showRowNumbersSet = true;
 	}
 
+	public boolean showRowNumbers() {
+		return showRowNumbers;
+	}
+
 	public void showRowIndexes(boolean showIndexes) {
 		showRowNumbers = showIndexes;
 		baseRowNumber = showIndexes?0:1;
@@ -1233,8 +1237,9 @@ public class ResultsTable implements Cloneable {
 				if (j==labelsIndex&&labels)
 					rt.addLabel(headings[labelsIndex], items[labelsIndex]);
 				else {
-					double value = j<items.length?Tools.parseDouble(items[j]):Double.NaN;
-					if (Double.isNaN(value)) {
+					double defaultValue = -Double.MAX_VALUE;
+					double value = j<items.length?Tools.parseDouble(items[j], defaultValue):Double.NaN;
+					if (value==defaultValue) {
 						String item = j<items.length?items[j]:"";
 						if (commasReplaced) {
 							item = item.replaceAll(commaSubstitute2, ",");

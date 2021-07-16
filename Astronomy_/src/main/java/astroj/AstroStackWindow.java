@@ -3,6 +3,7 @@ package astroj;
 import Astronomy.MultiAperture_;
 import Astronomy.MultiPlot_;
 import ij.*;
+import ij.astro.logging.AIJ;
 import ij.io.*;
 import ij.io.OpenDialog;
 
@@ -1125,6 +1126,12 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                     Prefs.set("aij.skipTessQualCheck", FITS_Reader.skipTessQualCheck);
                 });
                 preferencesMenu.add(qualCheckTess);
+
+                preferencesMenu.addSeparator();
+                var logInNewWindows = new CheckboxMenuItem("When logging, separate logs based on the task logging them",
+                        Prefs.getBoolean(AIJ.key, true));
+                logInNewWindows.addItemListener(e -> Prefs.set(AIJ.key.substring(1), e.getStateChange() == ItemEvent.SELECTED));
+                preferencesMenu.add(logInNewWindows);
 
                 mainMenuBar.add(preferencesMenu);
                 

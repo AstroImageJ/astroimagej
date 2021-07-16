@@ -5,13 +5,15 @@ import ij.ImagePlus;
 import ij.ImageStack;
 import ij.Prefs;
 import ij.astro.AstroImageJ;
+import ij.astro.logging.AIJ;
+import ij.astro.logging.Translation;
+import ij.astro.util.ArrayBoxingUtil;
 import ij.io.FileInfo;
 import ij.io.FileOpener;
 import ij.io.OpenDialog;
 import ij.measure.Calibration;
 import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
-import ij.astro.util.ArrayBoxingUtil;
 import nom.tam.fits.*;
 import nom.tam.image.compression.hdu.CompressedImageHDU;
 import nom.tam.util.Cursor;
@@ -36,6 +38,7 @@ import static nom.tam.fits.header.Standard.*;
 */
 @AstroImageJ(reason = "Support for compressed FITS files via nom.tam.fits, invert flipImages to fix inverted aperture display",
 		modified = true)
+@Translation("Fits Reader")
 public class FITS_Reader extends ImagePlus implements PlugIn {
 	private static boolean flipImages;
 	// private WCS wcs;
@@ -487,11 +490,11 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			String header = "";
 			if (headers != null) {
 				if (headers.get(i).contains("AIJ_Q")) { // For TESScut, skip bad images
-					IJ.log("Skipping an image due to quality flag: " + (i+1));
+					AIJ.log("Skipping an image due to quality flag: " + (i+1));
 					continue;
 				}
 				else if (headers.get(i).contains("NO_BJD")) { // For TESScut, skip if no BJD available
-					IJ.log("Skipping an image due to a missing or invalid BJD time: " + (i+1));
+					AIJ.log("Skipping an image due to a missing or invalid BJD time: " + (i+1));
 					continue;
 				}
 				header = headers.get(i) + "\n";

@@ -2,10 +2,12 @@ package ij.astro.logging;
 
 import ij.IJ;
 import ij.Prefs;
+import ij.WindowManager;
 import ij.gui.GUI;
 import ij.text.TextWindow;
 
 import java.awt.*;
+import java.util.Arrays;
 
 /**
  * Custom TextWindow for use with {@link AIJ}'s logging capabilities - implements closing and screen pos/size of
@@ -19,6 +21,14 @@ public class LogWindow extends TextWindow {
         var h = (int)Prefs.get(LOG_HEIGHT_KEY, height);
 
         if (loc!=null&&w>0 && h>0) {
+            //todo improve offset generation
+            var openLogWindows = Arrays.stream(WindowManager.getNonImageTitles())
+                    .filter(s -> s.toLowerCase().contains("log")).count();
+            if (!Prefs.isLocationOnScreen(loc)) {
+                openLogWindows *= -1;
+            }
+            loc.translate((int) (openLogWindows*50), (int) (openLogWindows*50));
+
             setSize(w, h);
             setLocation(loc);
         } else {

@@ -149,10 +149,10 @@ public class AIJLogger {
                     if (lWin != null) lWin.close();
                 }
             });
-            // Remove old entries
+            // Remove outdated entries that don't need timing information
             for (Map.Entry<String, ClosingConditions> entry : aijLogPanelsTimer.entrySet()) {
-                if (!entry.getValue().autoClose) continue;
-                if (System.currentTimeMillis() - entry.getValue().lastModified > 5000) {
+                if (entry.getValue().autoClose) continue; // Persist entries that autoClose
+                if (System.currentTimeMillis() - entry.getValue().lastModified > 10000) {
                     aijLogPanelsTimer.remove(entry.getKey());
                 }
             }
@@ -161,7 +161,7 @@ public class AIJLogger {
 
     private record ClosingConditions(boolean autoClose, long lastModified) {
         ClosingConditions() {
-            this(false, 0L);
+            this(false);
         }
 
         ClosingConditions(boolean autoClose) {

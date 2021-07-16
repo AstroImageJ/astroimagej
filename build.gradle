@@ -56,7 +56,7 @@ allprojects {
 
         options.fork = true
 
-        options.compilerArgs << '-Xlint:dep-ann'
+        options.compilerArgs << '-Xlint:-dep-ann'
 
         javaCompiler = javaToolchains.compilerFor {
             languageVersion = JavaLanguageVersion.of(shippingJava)

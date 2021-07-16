@@ -145,7 +145,8 @@ public class AIJLogger {
             aijLogPanelsTimer.forEach((caller, closingConditions) -> {
                 if (!closingConditions.autoClose) return;
                 if (System.currentTimeMillis() - closingConditions.lastModified > 5000) {
-                    ((LogWindow)WindowManager.getWindow(caller + " Log")).close();
+                    var lWin = ((LogWindow)WindowManager.getWindow(caller + " Log"));
+                    if (lWin != null) lWin.close();
                 }
             });
             // Remove old entries

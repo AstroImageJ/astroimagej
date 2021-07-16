@@ -158,7 +158,7 @@ public class AIJLogger {
         }
     }
 
-    private record ClosingConditions(boolean autoClose, Long lastModified) {
+    private record ClosingConditions(boolean autoClose, long lastModified) {
         ClosingConditions() {
             this(false, 0L);
         }

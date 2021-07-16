@@ -205,10 +205,12 @@ public class IJ {
  			else
 				new PlugInFilterRunner(thePlugIn, commandName, arg);
 		} catch (ClassNotFoundException e) {
-			log("Plugin or class not found: \"" + className + "\"\n(" + e+")");
-			String path = Prefs.getCustomPropsPath();
-			if (path!=null);
-				log("Error may be due to custom properties at " + path);
+			if (!(className!=null && className.startsWith("MacAdapter"))) {
+				log("Plugin or class not found: \"" + className + "\"\n(" + e+")");
+				String path = Prefs.getCustomPropsPath();
+				if (path!=null);
+					log("Error may be due to custom properties at " + path);
+			}
 		}
 		catch (InstantiationException e) {log("Unable to load plugin (ins)");}
 		catch (IllegalAccessException e) {log("Unable to load plugin, possibly \nbecause it is not public.");}
@@ -460,6 +462,67 @@ public class IJ {
 		}
 	}
 	
+	/**Displays a message in the status bar and flashes
+	 * either the status bar or the active image.<br>
+	 * See: http://wsr.imagej.net/macros/FlashingStatusMessages.txt
+	*/ 
+	public static void showStatus(String message, String options) {
+		showStatus(message);
+		if (options==null)
+			return;
+		options = options.replace("flash", "");
+		options = options.replace("ms", "");
+		Color optionalColor = null;
+		int index1 = options.indexOf("#");
+		if (index1>=0) {  // hex color?
+			int index2 = options.indexOf(" ", index1);
+			if (index2==-1) index2 = options.length();
+			String hexColor = options.substring(index1, index2);
+			optionalColor = Colors.decode(hexColor, null);
+			options = options.replace(hexColor, "");
+		}
+		if (optionalColor==null) {  // "red", "green", etc.
+			for (String c : Colors.colors) {
+				if (options.contains(c)) {
+					optionalColor = Colors.getColor(c, ImageJ.backgroundColor);
+					options = options.replace(c, "");
+					break;
+				}
+			}
+		}
+		boolean flashImage = options.contains("image");
+		Color defaultColor = new Color(255,255,245);
+		int defaultDelay = 500;
+		ImagePlus imp = WindowManager.getCurrentImage();
+		if (flashImage) {
+			options = options.replace("image", "");
+			if (imp!=null && imp.getWindow()!=null) {
+				defaultColor = Color.black;
+				defaultDelay = 100;
+			}
+			else
+				flashImage = false;
+		}
+		Color color = optionalColor!=null?optionalColor:defaultColor;
+		int delay = (int)Tools.parseDouble(options, defaultDelay);
+		if (delay>8000)
+			delay = 8000;
+		String colorString = null;
+		ImageJ ij = IJ.getInstance();
+		if (flashImage) {
+			Color previousColor = imp.getWindow().getBackground();
+			imp.getWindow().setBackground(color);
+			if (delay>0) {
+				wait(delay);			
+				imp.getWindow().setBackground(previousColor);
+			}
+		} else if (ij!=null) {
+			ij.getStatusBar().setBackground(color);
+			wait(delay);
+			ij.getStatusBar().setBackground(ij.backgroundColor);
+		}
+	}
+	
 	/**
 	* @deprecated
 	* replaced by IJ.log(), ResultsTable.setResult() and TextWindow.append().
@@ -706,10 +769,12 @@ public class IJ {
 	}
 
 	/**	Updates the progress bar, where the length of the bar is set to
-    (<code>currentValue+1)/finalValue</code> of the maximum bar length.
-    The bar is erased if <code>currentValue&gt;=finalValue</code>. 
-    The bar is updated only if more than 90 ms have passed since the last call.
-    Does nothing if the ImageJ window is not present. */
+     * (<code>currentValue+1)/finalValue</code> of the maximum bar length.
+     * The bar is erased if <code>currentValue&gt;=finalValue</code>. 
+     * The bar is updated only if more than 90 ms have passed since the
+     * last call. Displays subordinate progress bars as dots if
+     * 'currentIndex' is negative (example: Plugins/Utilities/Benchmark).
+    */
     public static void showProgress(int currentIndex, int finalIndex) {
 		if (progressBar!=null) {
 			progressBar.show(currentIndex, finalIndex);
@@ -2399,10 +2464,8 @@ public class IJ {
 			return new String[0];
 		for (int i=0; i<lutsMenu.getItemCount(); i++) {
 			MenuItem menuItem = lutsMenu.getItem(i);
-			if (menuItem.getActionListeners().length == 0) // separator?
-				continue;
 			String label = menuItem.getLabel();
-			if (label.equals("Invert LUT") || label.equals("Apply LUT"))
+			if (label.equals("-") || label.equals("Invert LUT") || label.equals("Apply LUT"))
 				continue;
 			String command = (String)commands.get(label);
 			if (command==null || command.startsWith("ij.plugin.LutLoader"))

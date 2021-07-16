@@ -93,7 +93,7 @@ public class Menus {
 		instance = this;
 	}
 
-	@AstroImageJ(reason = "Disable IJ zoom in favor of AIJ zoom, rename IJ to AIJ", modified = true)
+	@AstroImageJ(reason = "Disable IJ zoom in favor of AIJ zoom, rename IJ to AIJ, remove IJ news", modified = true)
 	String addMenuBar() {
 		scale = Prefs.getGuiScale();
 		if ((scale>=1.5&&scale<2.0) || (scale>=2.5&&scale<3.0))
@@ -219,7 +219,7 @@ public class Menus {
 		addPlugInItem(analyzeMenu, "Calibrate...", "ij.plugin.filter.Calibrator", 0, false);
 		if (IJ.isMacOSX()) {
 			addPlugInItem(analyzeMenu, "Histogram", "ij.plugin.Histogram", 0, false);
-			shortcuts.put(new Integer(KeyEvent.VK_H),"Histogram");
+			shortcuts.put(Integer.valueOf(KeyEvent.VK_H),"Histogram");
 		} else
 			addPlugInItem(analyzeMenu, "Histogram", "ij.plugin.Histogram", KeyEvent.VK_H, false);
 		addPlugInItem(analyzeMenu, "Plot Profile", "ij.plugin.Profiler(\"plot\")", KeyEvent.VK_K, false);
@@ -241,10 +241,6 @@ public class Menus {
 
 		Menu help = getMenu("Help");
 		addPlugInItem(help, "ImageJ Website...", "ij.plugin.BrowserLauncher", 0, false);
-		addPlugInItem(help, "ImageJ News...", "ij.plugin.BrowserLauncher(\""+IJ.URL+"/notes.html\")", 0, false);
-		addPlugInItem(help, "Documentation...", "ij.plugin.BrowserLauncher(\""+IJ.URL+"/docs\")", 0, false);
-		addPlugInItem(help, "Installation...", "ij.plugin.SimpleCommands(\"install\")", 0, false);
-		addPlugInItem(help, "Mailing List...", "ij.plugin.BrowserLauncher(\"https://list.nih.gov/archives/imagej.html\")", 0, false);
 		help.addSeparator();
 		addPlugInItem(help, "Dev. Resources...", "ij.plugin.BrowserLauncher(\""+IJ.URL+"/developer/index.html\")", 0, false);
 		addPlugInItem(help, "Plugins...", "ij.plugin.BrowserLauncher(\""+IJ.URL+"/plugins\")", 0, false);
@@ -432,10 +428,10 @@ public class Menus {
 		else {
 			if (shift) {
 				item = new MenuItem(label, new MenuShortcut(shortcut, true));
-				shortcuts.put(new Integer(shortcut+200),label);
+				shortcuts.put(Integer.valueOf(shortcut+200),label);
 			} else {
 				item = new MenuItem(label, new MenuShortcut(shortcut));
-				shortcuts.put(new Integer(shortcut),label);
+				shortcuts.put(Integer.valueOf(shortcut),label);
 			}
 		}
 		if (addSorted) {
@@ -536,7 +532,7 @@ public class Menus {
 			}
 		}
 		if (keyCode>=KeyEvent.VK_F1 && keyCode<=KeyEvent.VK_F12) {
-			shortcuts.put(new Integer(keyCode),command);
+			shortcuts.put(Integer.valueOf(keyCode),command);
 			keyCode = 0;
 		} else if (keyCode>=265 && keyCode<=290) {
 			keyCode -= 200;
@@ -704,7 +700,7 @@ public class Menus {
 		if (i == null) {
 			if (menu.getItemCount() > 0)
 				addSeparator(menu);
-			i = new Integer(menu.getItemCount());
+			i = Integer.valueOf(menu.getItemCount());
 			menuSeparators.put(menu, i);
 		}
 		return i.intValue();
@@ -832,6 +828,8 @@ public class Menus {
 
 	/** Returns the specified ImageJ menu (e.g., "File>New") or null if it is not found. */
 	public static Menu getImageJMenu(String menuPath) {
+		if (menus==null)
+			IJ.init();
 		if (menus==null)
 			return null;
 		if (menus.get(menuPath)!=null)
@@ -1340,6 +1338,8 @@ public class Menus {
         
 	/** Returns the hashtable that associates commands with plugins. */
 	public static Hashtable getCommands() {
+		if (pluginsTable==null)
+			IJ.init();
 		return pluginsTable;
 	}
         
@@ -1502,10 +1502,10 @@ public class Menus {
 			item = new MenuItem(command);
 		else if (functionKey) {
 			command += " [F"+(code-KeyEvent.VK_F1+1)+"]";
-			shortcuts.put(new Integer(code),command);
+			shortcuts.put(Integer.valueOf(code),command);
 			item = new MenuItem(command);
 		} else {
-			shortcuts.put(new Integer(code),command);
+			shortcuts.put(Integer.valueOf(code),command);
 			int keyCode = code;
 			boolean shift = false;
 			if (keyCode>=265 && keyCode<=290) {
@@ -1633,7 +1633,7 @@ public class Menus {
 	/** Returns 'true' if this keyboard shortcut is in use. */
 	public static boolean shortcutInUse(String shortcut) {
 		int code = convertShortcutToCode(shortcut);
-		if (shortcuts.get(new Integer(code))!=null)
+		if (shortcuts.get(Integer.valueOf(code))!=null)
 			return true;
 		else
 			return false;
@@ -1668,6 +1668,8 @@ public class Menus {
 
 	/** Called once when ImageJ quits. */
 	public static void savePreferences(Properties prefs) {
+		if (pluginsPrefs==null)
+			return;
 		int index = 0;
 		for (Enumeration en=pluginsPrefs.elements(); en.hasMoreElements();) {
 			String key = "plugin" + (index/10)%10 + index%10;

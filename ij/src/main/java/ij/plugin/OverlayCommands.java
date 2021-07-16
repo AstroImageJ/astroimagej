@@ -293,6 +293,13 @@ public class OverlayCommands implements PlugIn {
 
 	void flatten() {
 		ImagePlus imp = IJ.getImage();
+		Roi roi = imp.getRoi();
+		if (imp.getStackSize()>1 && roi!=null && (roi instanceof PointRoi)) {
+			ImagePlus imp2 = imp.flatten();
+			imp2.setTitle(WindowManager.getUniqueName(imp.getTitle()));
+			imp2.show();
+			return;
+		}
 		Overlay overlay = imp.getOverlay();
 		Overlay roiManagerOverlay = null;
 		ImageCanvas ic = imp.getCanvas();
@@ -403,6 +410,7 @@ public class OverlayCommands implements PlugIn {
 	public static void listRois(Roi[] rois) {
 		ImagePlus imp = WindowManager.getCurrentImage();
 		ResultsTable rt = new ResultsTable();
+		rt.showRowNumbers(true);
 		for (int i=0; i<rois.length; i++) {
 			if (rois[i]==null)
 				continue;
@@ -431,6 +439,10 @@ public class OverlayCommands implements PlugIn {
 				Rectangle2D.Double bounds = rois[i].getFloatBounds();
 				rt.setValue("X", i, (int)Math.round(bounds.x));
 				rt.setValue("Y", i, (int)Math.round(bounds.y));
+			} else if (rois[i] instanceof Arrow) {
+				Polygon p = ((Arrow)rois[i]).getPoints();
+				rt.setValue("X", i, p.xpoints[1]);
+				rt.setValue("Y", i, p.ypoints[1]);
 			} else {
 				rt.setValue("X", i, r.x);
 				rt.setValue("Y", i, r.y);

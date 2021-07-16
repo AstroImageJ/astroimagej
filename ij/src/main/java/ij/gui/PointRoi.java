@@ -366,6 +366,16 @@ public class PointRoi extends PolygonRoi {
 		return this;
 	}
 
+	/** Adds a point at the specified stack position. */
+	public void addPoint(double x, double y, int position) {
+		if (counters==null) {
+			counters = new short[100];
+			positions = new int[100];
+		}
+		addPoint(null, x, y);
+		positions[nPoints-1] = position;	
+	}
+
 	protected void deletePoint(int index) {
 		super.deletePoint(index);
 		if (index>=0 && index<=nPoints && counters!=null) {
@@ -691,8 +701,7 @@ public class PointRoi extends PolygonRoi {
 			int nChannels = 1;
 			int nSlices = 1;
 			int nFrames = 1;
-			boolean isHyperstack = false;				isHyperstack = true;
-
+			boolean isHyperstack = true;
 			if (imp.isComposite() || imp.isHyperStack()) {
 				nChannels = imp.getNChannels();
 				nSlices = imp.getNSlices();

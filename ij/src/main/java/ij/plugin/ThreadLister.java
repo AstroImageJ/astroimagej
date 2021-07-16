@@ -1,6 +1,7 @@
 package ij.plugin;
 import java.io.*;
 import ij.*;
+import ij.astro.AstroImageJ;
 import ij.text.*;
 
 /**
@@ -35,6 +36,7 @@ public class ThreadLister implements PlugIn {
     }
     
     // Display info about a thread group and its threads and groups
+    @AstroImageJ(reason = "Remove deprecated isDaemon check", modified = true)
     private static void list_group(PrintWriter out, ThreadGroup g, 
                        String indent) {
         if (g == null) return;
@@ -48,7 +50,7 @@ public class ThreadLister implements PlugIn {
         
         out.println(indent + "Thread Group: " + g.getName() + 
                 "  Max Priority: " + g.getMaxPriority() +
-                (g.isDaemon()?" Daemon":"") + "\n");
+                "\n");
         
         for(int i = 0; i < num_threads; i++)
             print_thread_info(out, threads[i], indent + "    ");

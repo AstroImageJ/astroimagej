@@ -3,13 +3,12 @@ package astroj;
 import Astronomy.MultiAperture_;
 import Astronomy.MultiPlot_;
 import ij.*;
-import ij.astro.logging.AIJ;
+import ij.astro.logging.AIJLogger;
 import ij.io.*;
 import ij.io.OpenDialog;
 
 import ij.gui.*;
 import ij.plugin.FITS_Reader;
-import ij.plugin.frame.SyncWindows;
 import ij.process.*;
 import ij.text.*;
 //import ij.measure.*;
@@ -23,7 +22,6 @@ import ij.plugin.Macro_Runner;
 import java.awt.*;
 import java.awt.image.*;
 import java.awt.event.*;
-import java.lang.reflect.*;
 
 //import java.awt.image.*;
 import java.io.*;
@@ -1129,8 +1127,8 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
 
                 preferencesMenu.addSeparator();
                 var logInNewWindows = new CheckboxMenuItem("When logging, separate logs based on the task logging them",
-                        Prefs.getBoolean(AIJ.key, true));
-                logInNewWindows.addItemListener(e -> Prefs.set(AIJ.key.substring(1), e.getStateChange() == ItemEvent.SELECTED));
+                        Prefs.getBoolean(AIJLogger.key, true));
+                logInNewWindows.addItemListener(e -> Prefs.set(AIJLogger.key.substring(1), e.getStateChange() == ItemEvent.SELECTED));
                 preferencesMenu.add(logInNewWindows);
 
                 mainMenuBar.add(preferencesMenu);

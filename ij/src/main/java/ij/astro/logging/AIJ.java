@@ -3,10 +3,10 @@ package ij.astro.logging;
 import ij.IJ;
 import ij.Prefs;
 import ij.text.TextPanel;
-import ij.text.TextWindow;
 
 import java.awt.*;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -63,16 +63,26 @@ public class AIJ {
 
         var caller = getCallerName();
 
+        if (msg.equals("\\Closed")) {
+            aijLogPanels.remove(caller);
+            if (!useNewWindow) IJ.log(msg);
+        }
+
         if (useNewWindow) {
+            aijLogPanels.values().removeAll(Collections.singleton(null));
             aijLogPanels.computeIfAbsent(caller,
-                    s -> new TextWindow(caller + " Log", "", 400, 250).getTextPanel());
+                    s -> new LogWindow(caller + " Log", "",400, 250).getTextPanel());
             var panel = aijLogPanels.get(caller);
-            panel.setVisible(true);
+            panel.updateDisplay();
             panel.setFont(new Font("SansSerif", Font.PLAIN, 16));
             panel.appendLine(msg);
         } else {
             IJ.log(caller + ": " + msg);
         }
+    }
+
+    protected static synchronized void removePanel(TextPanel textPanel) {
+        aijLogPanels.values().removeAll(Collections.singleton(textPanel));
     }
 
     public static synchronized String getLog() {

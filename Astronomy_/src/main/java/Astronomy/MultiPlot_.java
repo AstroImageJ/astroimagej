@@ -16534,7 +16534,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     }
 
     public static void savePlotImageAsPng() {
-        SaveDialog sf = new SaveDialog("Save plot image as JPG...", MeasurementTable.shorterName(table.shortTitle()), ".png");
+        SaveDialog sf = new SaveDialog("Save plot image as PNG...", MeasurementTable.shorterName(table.shortTitle()), ".png");
         if (sf.getDirectory() == null || sf.getFileName() == null) return;
         savePlotImage(sf.getDirectory() + sf.getFileName(), "ij.plugin.PNG_Writer");
     }

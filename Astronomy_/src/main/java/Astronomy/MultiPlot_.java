@@ -16534,27 +16534,34 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     }
 
     public static void savePlotImageAsPng() {
-        ImagePlus image = WindowManager.getImage("Plot of " + tableName);
-        if (image == null) {
-            IJ.beep();
-            IJ.showMessage("No plot image to save");
-            return;
-        }
-        SaveDialog sf = new SaveDialog("Save plot image as PNG...", MeasurementTable.shorterName(table.shortTitle()), ".png");
+        SaveDialog sf = new SaveDialog("Save plot image as JPG...", MeasurementTable.shorterName(table.shortTitle()), ".png");
         if (sf.getDirectory() == null || sf.getFileName() == null) return;
-        IJ.runPlugIn(image, "ij.plugin.PNG_Writer", sf.getDirectory() + sf.getFileName());
+        savePlotImage(sf.getDirectory() + sf.getFileName(), "ij.plugin.PNG_Writer");
     }
 
     public static void savePlotImageAsJpg() {
+        SaveDialog sf = new SaveDialog("Save plot image as JPG...", MeasurementTable.shorterName(table.shortTitle()), ".jpg");
+        if (sf.getDirectory() == null || sf.getFileName() == null) return;
+        savePlotImage(sf.getDirectory() + sf.getFileName(), "ij.plugin.JpegWriter");
+    }
+
+    public static void savePlotImageAsPng(String path) {
+        savePlotImage(path, "ij.plugin.PNG_Writer");
+    }
+
+    public static void savePlotImageAsJpg(String path) {
+        savePlotImage(path, "ij.plugin.JpegWriter");
+    }
+
+    public static void savePlotImage(String path, String writer) {
         ImagePlus image = WindowManager.getImage("Plot of " + tableName);
         if (image == null) {
             IJ.beep();
             IJ.showMessage("No plot image to save");
             return;
         }
-        SaveDialog sf = new SaveDialog("Save plot image as JPG...", MeasurementTable.shorterName(table.shortTitle()), ".jpg");
-        if (sf.getDirectory() == null || sf.getFileName() == null) return;
-        IJ.runPlugIn(image, "ij.plugin.JpegWriter", sf.getDirectory() + sf.getFileName());
+        if (path == null) return;
+        IJ.runPlugIn(image, writer, path);
     }
 
     static void saveConfig(boolean template) {

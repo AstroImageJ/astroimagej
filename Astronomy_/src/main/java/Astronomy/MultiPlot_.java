@@ -16533,7 +16533,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         return !gd.wasCanceled();
     }
 
-    static void savePlotImageAsPng() {
+    public static void savePlotImageAsPng() {
         ImagePlus image = WindowManager.getImage("Plot of " + tableName);
         if (image == null) {
             IJ.beep();
@@ -16545,7 +16545,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         IJ.runPlugIn(image, "ij.plugin.PNG_Writer", sf.getDirectory() + sf.getFileName());
     }
 
-    static void savePlotImageAsJpg() {
+    public static void savePlotImageAsJpg() {
         ImagePlus image = WindowManager.getImage("Plot of " + tableName);
         if (image == null) {
             IJ.beep();

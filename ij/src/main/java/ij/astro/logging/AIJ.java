@@ -63,11 +63,6 @@ public class AIJ {
 
         var caller = getCallerName();
 
-        if (msg.equals("\\Closed")) {
-            aijLogPanels.remove(caller);
-            if (!useNewWindow) IJ.log(msg);
-        }
-
         if (useNewWindow) {
             aijLogPanels.values().removeAll(Collections.singleton(null));
             aijLogPanels.computeIfAbsent(caller,

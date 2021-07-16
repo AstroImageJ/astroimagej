@@ -14,7 +14,6 @@ import ij.io.OpenDialog;
 import ij.measure.Calibration;
 import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
-import ij.astro.util.ArrayBoxingUtil;
 import nom.tam.fits.*;
 import nom.tam.image.compression.hdu.CompressedImageHDU;
 import nom.tam.util.Cursor;
@@ -74,6 +73,8 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	public void run(String path) {
 		// wcs = null;
 		imagePlus = null;
+
+		AIJ.setLogAutoCloses(true);
 
 		/*
 		 * Extract array of HDU from FITS file using nom.tam.fits

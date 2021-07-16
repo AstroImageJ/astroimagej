@@ -2,6 +2,7 @@ package ij.astro.logging;
 
 import ij.IJ;
 import ij.Prefs;
+import ij.WindowManager;
 import ij.text.TextPanel;
 
 import java.awt.*;
@@ -12,7 +13,45 @@ import java.util.Map;
 
 public class AIJ {
     private static final Map<String, TextPanel> aijLogPanels = new HashMap<>();
+    /**
+     * Stores a log's last modified time and if it should auto-close
+     */
+    private static final Map<String, ClosingConditions> aijLogPanelsTimer = new HashMap<>();
+    private static final Thread timer;
     public static final String key = ".aij.useNewLogWindow";
+
+    static {
+        timer = new Thread("AIJ Log Closer") {
+            @Override
+            public void run() {
+                while (true) {
+                    try {
+                        sleep(1000);
+                        synchronized (AIJ.class) {
+                            aijLogPanelsTimer.forEach((caller, closingConditions) -> {
+                                if (!closingConditions.autoClose) return;
+                                if (System.currentTimeMillis() - closingConditions.lastModified > 5000) {
+                                    ((LogWindow)WindowManager.getWindow(caller + " Log")).close();
+                                }
+                            });
+                            // Remove old entries
+                            for (Map.Entry<String, ClosingConditions> entry : aijLogPanelsTimer.entrySet()) {
+                                if (!entry.getValue().autoClose) continue;
+                                if (System.currentTimeMillis() - entry.getValue().lastModified > 5000) {
+                                    aijLogPanelsTimer.remove(entry.getKey());
+                                }
+                            }
+                        }
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                        break;
+                    }
+                }
+            }
+        };
+        timer.setPriority(Thread.MIN_PRIORITY);
+        timer.start();
+    }
 
     /**
      * Create a new log window for the caller, log the obj to a new line.
@@ -61,6 +100,8 @@ public class AIJ {
     public static synchronized void log(String msg, boolean useNewWindow) {
         if ("".equals(msg)) return;
 
+        if (timer.getState() == Thread.State.NEW) timer.start();
+
         var caller = getCallerName();
 
         if (useNewWindow) {
@@ -71,9 +112,19 @@ public class AIJ {
             panel.updateDisplay();
             panel.setFont(new Font("SansSerif", Font.PLAIN, 16));
             panel.appendLine(msg);
+            aijLogPanelsTimer.computeIfPresent(caller,
+                    (s, closingConditions) -> new ClosingConditions(closingConditions.autoClose));
+            aijLogPanelsTimer.putIfAbsent(caller, new ClosingConditions());
         } else {
             IJ.log(caller + ": " + msg);
         }
+    }
+
+    /**
+     * Sets whether the logger for the caller should auto-close or not
+     */
+    public static synchronized void setLogAutoCloses(boolean autoCloses) {
+        aijLogPanelsTimer.put(getCallerName(), new ClosingConditions(autoCloses));
     }
 
     protected static synchronized void removePanel(TextPanel textPanel) {
@@ -108,6 +159,16 @@ public class AIJ {
      */
     private static synchronized boolean predicateClassChecker(Class<?> clazz) {
         return !clazz.getName().contains("Thread") && !clazz.equals(AIJ.class);
+    }
+
+    private record ClosingConditions(boolean autoClose, Long lastModified) {
+        ClosingConditions() {
+            this(false, 0L);
+        }
+
+        ClosingConditions(boolean autoClose) {
+            this(autoClose, System.currentTimeMillis());
+        }
     }
 
 }

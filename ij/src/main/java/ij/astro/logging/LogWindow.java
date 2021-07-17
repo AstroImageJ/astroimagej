@@ -29,7 +29,7 @@ public class LogWindow extends TextWindow {
             if (!Prefs.isLocationOnScreen(loc)) {
                 openLogWindows *= -1;
             }
-            translation = openLogWindows*50;
+            translation = openLogWindows*5;
 
             loc.translate(translation, translation);
 

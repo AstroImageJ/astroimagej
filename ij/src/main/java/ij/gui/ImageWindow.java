@@ -379,7 +379,7 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
     	}
     	if (imp.isInvertedLut())
     		s += " (inverting LUT)";
-		return s+"; "+getImageSize(imp) + extraInfo;
+		return s+"; "+getImageSize(imp);
     }
     
     public static String getImageSize(ImagePlus imp) {

@@ -5493,7 +5493,13 @@ void openDragAndDropFiles(java.io.File[] files)
         }
 
 
-// This method returns a buffered image with the contents of an image
+    @Override
+    // Add extraInfo to subtitle
+    public synchronized String createSubtitle() {
+        return super.createSubtitle() + extraInfo;
+    }
+
+    // This method returns a buffered image with the contents of an image
 public static BufferedImage toBufferedImage(Image image) {
     if (image instanceof BufferedImage) {
         return (BufferedImage)image;

@@ -25,7 +25,7 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 	protected ImagePlus imp;
 	protected ImageJ ij;
 	protected ImageCanvas ic;
-	@AstroImageJ(reason = "unknown; unused")
+	@AstroImageJ(reason = "adds WCS info to Image subtitle")
 	public String extraInfo = "";
 	private double initialMagnification = 1;
 	private int newWidth, newHeight;
@@ -310,7 +310,7 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
     }
     
     /** Creates the subtitle. */
-    public String createSubtitle() {
+    public synchronized String createSubtitle() {
     	String s="";
     	if (imp==null)
     		return s;
@@ -379,7 +379,7 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
     	}
     	if (imp.isInvertedLut())
     		s += " (inverting LUT)";
-     	return s+"; "+getImageSize(imp);
+		return s+"; "+getImageSize(imp) + extraInfo;
     }
     
     public static String getImageSize(ImagePlus imp) {

@@ -5914,7 +5914,6 @@ void setupListeners() {
             stackSize = imp.getStackSize();
 
             updateWCS();
-            createSubtitle();
             updateCalibration();
 
             if (autoDisplayAnnotationsFromHeader && (requestUpdateAnnotationsFromHeader || oldSlice != slice))
@@ -5967,11 +5966,7 @@ void setupListeners() {
             writeNumericPanelField(photom.sourceBrightness(), lengthTextField);
             }
 
-    public synchronized String createSubtitle() {
-        String subtitle = super.createSubtitle();
-        return subtitle + extraInfo;
-    }
-    
+
     public void setUpdatesEnabled(boolean enabled)
         {
         updatesEnabled = enabled;

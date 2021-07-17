@@ -2,6 +2,8 @@ package ij.gui;
 import ij.ImageJ;
 import ij.IJ;
 import ij.Prefs;
+import ij.astro.AstroImageJ;
+
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.*;
@@ -29,7 +31,7 @@ public class ScrollbarWithLabel extends Panel implements Adjustable, AdjustmentL
 		add(icon, BorderLayout.WEST);
 		add(bar, BorderLayout.CENTER);
 		bar.addAdjustmentListener(this);
-		addKeyListener(IJ.getInstance()); 
+		addKeyListener(IJ.getInstance());
 	}
 		
 	/* (non-Javadoc)
@@ -152,7 +154,7 @@ public class ScrollbarWithLabel extends Panel implements Adjustable, AdjustmentL
 		private BasicStroke stroke = new BasicStroke((float)(2*SCALE));
 		private char type;
 		private Image image;
-		
+
 		public Icon(char type) {
 			addMouseListener(this);
 			addKeyListener(IJ.getInstance()); 
@@ -164,12 +166,14 @@ public class ScrollbarWithLabel extends Panel implements Adjustable, AdjustmentL
 		public Dimension getPreferredSize() {
 			return new Dimension(WIDTH, HEIGHT);
 		}
-				
-		public void update(Graphics g) {
+
+		@AstroImageJ(reason = "synchronized to improve responsiveness of play/pause button in AIJ")
+		public synchronized void update(Graphics g) {
 			paint(g);
 		}
-		
-		public void paint(Graphics g) {
+
+		@AstroImageJ(reason = "synchronized to improve responsiveness of play/pause button in AIJ")
+		public synchronized void paint(Graphics g) {
 			g.setColor(Color.white);
 			g.fillRect(0, 0, WIDTH, HEIGHT);
 			Graphics2D g2d = (Graphics2D)g;
@@ -179,8 +183,9 @@ public class ScrollbarWithLabel extends Panel implements Adjustable, AdjustmentL
 			else
 				drawLetter(g);
 		}
-		
-		private void drawLetter(Graphics g) {
+
+		@AstroImageJ(reason = "synchronized to improve responsiveness of play/pause button in AIJ")
+		private synchronized void drawLetter(Graphics g) {
 			Font font = new Font("SansSerif", Font.PLAIN, 14);
 			if (SCALE>1.0)
 				font = font.deriveFont((float)(font.getSize()*SCALE));
@@ -189,7 +194,8 @@ public class ScrollbarWithLabel extends Panel implements Adjustable, AdjustmentL
 			g.drawString(String.valueOf(type), (int)(2*SCALE), (int)(12*SCALE));
 		}
 
-		private void drawPlayPauseButton(Graphics2D g) {
+		@AstroImageJ(reason = "synchronized to improve responsiveness of play/pause button in AIJ")
+		private synchronized void drawPlayPauseButton(Graphics2D g) {
 			if (stackWindow.getAnimate()) {
 				g.setColor(Color.black);
 				g.setStroke(stroke);

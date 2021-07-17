@@ -14,6 +14,8 @@ import java.util.Arrays;
  * log window.
  */
 public class LogWindow extends TextWindow {
+    private int translation;
+
     public LogWindow(String path, String text, int width, int height) {
         super(path, text, width, height);
         var loc = Prefs.getLocation(LOG_LOC_KEY);
@@ -27,7 +29,9 @@ public class LogWindow extends TextWindow {
             if (!Prefs.isLocationOnScreen(loc)) {
                 openLogWindows *= -1;
             }
-            loc.translate(openLogWindows*50, openLogWindows*50);
+            translation = openLogWindows*50;
+
+            loc.translate(translation, translation);
 
             setSize(w, h);
             setLocation(loc);
@@ -41,6 +45,7 @@ public class LogWindow extends TextWindow {
     public void close() {
         super.close();
         AIJLogger.removePanel(getTextPanel());
+        getLocation().translate(-translation, -translation);
         Prefs.saveLocation(LOG_LOC_KEY, getLocation());
         Dimension d = getSize();
         Prefs.set(LOG_WIDTH_KEY, d.width);

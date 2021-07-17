@@ -375,6 +375,9 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			var bjds = (Number[]) ArrayBoxingUtil.boxArray(tableHDU.getColumn("TIME"));
 			var quality = (Number[]) ArrayBoxingUtil.boxArray(tableHDU.getColumn("QUALITY"));
 
+			// Control for logging data
+			var hasErrors = false;
+
 			for (int i = 0; i < tableHDU.getNRows(); i++) {
 				hdr.setSimple(true); // Needed for MA to read the header data
 
@@ -392,8 +395,10 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 				// If the image should be skipped add this card, string check for 'AIJ_Q' to skip image
 				// Based on TESS Cut code by John Kielkopf
 				if ((!skipTessQualCheck && quality[i].intValue() != 0)) {
+					hasErrors = true;
 					hdr.addValue("AIJ_Q", quality[i].intValue() != 0, "Skipped due to quality flag");
 				} else if (Double.isNaN(bjd1)) {
+					hasErrors = true;
 					hdr.addValue("NO_BJD", 0, "Skipped due to invalid or missing BJD time");
 				}
 
@@ -406,6 +411,8 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 
 				headers.add(baos.toString(utf8));
 			}
+
+			if (hasErrors) AIJLogger.log("Encountered an issue opening: " + fileName);
 		} catch (Exception ignored) {}
 
 		return headers;
@@ -492,17 +499,18 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			String header = "";
 			if (headers != null) {
 				if (headers.get(i).contains("AIJ_Q")) { // For TESScut, skip bad images
-					AIJLogger.log("Skipping an image due to quality flag: " + (i+1));
+					AIJLogger.log("     Skipping an image due to quality flag: " + (i+1));
 					continue;
 				}
 				else if (headers.get(i).contains("NO_BJD")) { // For TESScut, skip if no BJD available
-					AIJLogger.log("Skipping an image due to a missing or invalid BJD time: " + (i+1));
+					AIJLogger.log("     Skipping an image due to a missing or invalid BJD time: " + (i+1));
 					continue;
 				}
 				header = headers.get(i) + "\n";
 			}
 			ip = twoDimensionalImageData2Processor(data[i], bitpix);
-			stack.addSlice(fileBase + "_" + (imageCount<10000 ? fourDigits.format(i+1) : (i+1)) + (fileType.length() > 0 ? "." + fileType : "") + "\n" + header, ip); // The table is 1-indexed 'cause FORTRAN
+			stack.addSlice(fileBase + "_" + (imageCount<10000 ? fourDigits.format(i+1) : (i+1))
+					+ (fileType.length() > 0 ? "." + fileType : "") + "\n" + header, ip);
 		}
 
 		setStack(fileName, stack);

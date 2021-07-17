@@ -1,6 +1,7 @@
 package ij.astro.logging;
 
 import ij.IJ;
+import ij.IJEventListener;
 import ij.Prefs;
 import ij.WindowManager;
 import ij.text.TextPanel;
@@ -19,6 +20,7 @@ import java.util.concurrent.TimeUnit;
  * invoke, and adding calling the class as a prefix to a log message when falling back to {@link IJ#log(String)}.
  */
 public class AIJLogger {
+    private static int callerWidth = 0;
     private static final Map<String, TextPanel> aijLogPanels = new HashMap<>();
     /**
      * Stores a log's last modified time and if it should auto-close
@@ -29,6 +31,13 @@ public class AIJLogger {
     static {
         final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
         executorService.scheduleWithFixedDelay(AIJLogger::checkAndExecuteTimers, 1L, 1L, TimeUnit.SECONDS);
+
+        // Reset width when log window is closed
+        IJ.addEventListener(eventID -> {
+            if (eventID == IJEventListener.LOG_WINDOW_CLOSED) {
+                callerWidth = 0;
+            }
+        });
     }
 
     /**
@@ -92,7 +101,7 @@ public class AIJLogger {
                     (s, closingConditions) -> new ClosingConditions(closingConditions.autoClose));
             aijLogPanelsTimer.putIfAbsent(caller, new ClosingConditions());
         } else {
-            IJ.log(caller + ": " + msg);
+            IJ.log(padTitle(caller + ": ") + msg);
         }
     }
 
@@ -103,12 +112,28 @@ public class AIJLogger {
         aijLogPanelsTimer.put(getCallerName(), new ClosingConditions(autoCloses));
     }
 
+    public static synchronized String getLog() {
+        return aijLogPanels.containsKey(getCallerName()) ? aijLogPanels.get(getCallerName()).getText() : IJ.getLog();
+    }
+
     protected static synchronized void removePanel(TextPanel textPanel) {
         aijLogPanels.values().removeAll(Collections.singleton(textPanel));
     }
 
-    public static synchronized String getLog() {
-        return aijLogPanels.containsKey(getCallerName()) ? aijLogPanels.get(getCallerName()).getText() : IJ.getLog();
+    /**
+     * Add padding to align messages in unified log window
+     */
+    private static synchronized String padTitle(String caller) {
+        var logWindow = WindowManager.getWindow("Log");
+        if (logWindow != null) {
+            var met = logWindow.getFontMetrics(logWindow.getFont());
+            if (met.stringWidth(caller) > callerWidth) callerWidth = met.stringWidth(caller);
+            while (met.stringWidth(caller) < callerWidth - 3*met.stringWidth(" ")) {
+                caller += " ";
+            }
+        }
+
+        return caller;
     }
 
     private static synchronized String getCallerName() {

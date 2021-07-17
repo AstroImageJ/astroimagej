@@ -580,7 +580,6 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                 wcs.setUseSIPAlways(useSIPAllProjections);
                 extraInfo = " ("+wcs.coordsys+")";
                 ac.setWCS(wcs);
-                createSubtitle();
                 if (autoNupEleft) setBestOrientation();
                 ac.setOrientation(invertX, invertY, rotation);
                 ac.setShowPixelScale(showScaleX, showScaleY, pixelScaleX, pixelScaleY);
@@ -5975,6 +5974,7 @@ void setupListeners() {
     synchronized void updatePanelValues() {
             updatePanelValues(true);
     }
+
     public synchronized void updatePanelValues(boolean updateImage)
             {
             if (updatesEnabled)
@@ -6080,7 +6080,7 @@ void setupListeners() {
         else
             {
             writeNumericPanelField(imp.getProcessor().getPixelValue((int)lastImageX, (int)lastImageY), valueTextField);
-            }            
+            }
         }
     
     
@@ -6101,7 +6101,7 @@ void setupListeners() {
                 textField.setText(fourPlaces.format(value));
                 }
             }
-        
+
         }
     
     void writeNumericPanelField(double value, JTextField textField)
@@ -6121,7 +6121,7 @@ void setupListeners() {
                 textField.setText(fourPlaces.format(value));
                 }
             }
-        
+
         } 
    
     
@@ -6624,7 +6624,7 @@ void setupListeners() {
                             
                         double value = ip.getPixelValue((int)imageX, (int)imageY);
 
-                        updateXYValue(imageX, imageY, value, DRAGGING);
+                        updateXYValue(imageX, imageY, DRAGGING);
                         if (!apMoving)
                                 {
                                 updateResultsTable(imageX, imageY, value, DRAGGING);
@@ -6667,15 +6667,13 @@ void setupListeners() {
                                     }
                             else if (e.getButton() == MouseEvent.BUTTON2)                     //middle mouse click
                                     {
-                                    double value = ip.getPixelValue((int)imageX, (int)imageY);
                                     if (goodWCS)
                                             {
                                             xy[0]= startDragCenX;
                                             xy[1]= startDragCenY;
                                             radec = wcs.pixels2wcs (xy);
                                             }
-                                    updateXYValue(imageX, imageY, value, NOT_DRAGGING);
-                                    value = ip.getPixelValue((int)startDragCenX, (int)startDragCenY);
+                                    updateXYValue(imageX, imageY, NOT_DRAGGING);
                                     if (!apMoving)
                                             {
                                             photom1.setRemoveBackStars(removeBackStars);
@@ -6690,7 +6688,7 @@ void setupListeners() {
                                                 OverlayCanvas.getOverlayCanvas(imp).add (roi);
                                                 OverlayCanvas.getOverlayCanvas(imp).repaint();
                                                 }
-                                            updateResultsTable(startDragCenX, startDragCenY, value, NOT_DRAGGING);
+                                            updateResultsTable(startDragCenX, startDragCenY, ip.getPixelValue((int)startDragCenX, (int)startDragCenY), NOT_DRAGGING);
                                             }
                                     if (middleClickCenter)
                                             {
@@ -6788,17 +6786,15 @@ void setupListeners() {
             }
 
         public void mouseMoved(MouseEvent e) {
-                
+
                 ac.setMousePosition(e.getX(),e.getY());
                 screenX = e.getX();
                 screenY = e.getY();
                 double imageX = ac.offScreenXD(e.getX());
                 double imageY = ac.offScreenYD(e.getY());
-                ImageProcessor ip = imp.getProcessor();
                 lastImageX = imageX;
                 lastImageY = imageY;
 
-                double value = ip.getPixelValue((int)imageX, (int)imageY);
                 String lab;
                 xy[0]= imageX;
                 xy[1]= imageY;
@@ -6823,7 +6819,7 @@ void setupListeners() {
                     {
                     lab = "";
                     }
-                updateXYValue(imageX, imageY, value, NOT_DRAGGING);
+                updateXYValue(imageX, imageY, NOT_DRAGGING);
                 prevImageX = lastImageX;
                 prevImageY = lastImageY;
                 }
@@ -6837,9 +6833,7 @@ void setupListeners() {
                 double imageY = ac.offScreenYD(screenY);
                 ac.xClicked = e.getX();
                 ac.yClicked = e.getY();
-                ImageProcessor ip = imp.getProcessor();
-                IJ.setInputEvent(e);                
-                double value = ip.getPixelValue((int)imageX, (int)imageY);
+                IJ.setInputEvent(e);
                 lastImageX = imageX;
                 lastImageY = imageY;
                 magnification = ac.getMagnification();
@@ -6866,7 +6860,7 @@ void setupListeners() {
                                                 xy[1]= imageY;
                                                 radec = wcs.pixels2wcs (xy);
                                                 }
-                                        updateXYValue(imageX, imageY, value, NOT_DRAGGING);
+                                        updateXYValue(imageX, imageY, NOT_DRAGGING);
                                         }
                                 }
                         else if ((e.getModifiers() & MouseEvent.BUTTON2_MASK) != 0 || (e.getModifiers() & MouseEvent.BUTTON3_MASK) != 0)        // dragging with middle mouse button
@@ -6898,7 +6892,7 @@ void setupListeners() {
                                 
                                 //if (!movingAperture) imp.setRoi(new Line(startDragCenX, startDragCenY, imageX, imageY));
 
-                                updateXYValue(imageX, imageY, value, DRAGGING);
+                                updateXYValue(imageX, imageY, DRAGGING);
                                 }
                        
 //                        else if ((e.getModifiers() & MouseEvent.BUTTON1_MASK) != 0 && e.isShiftDown() && !e.isControlDown())
@@ -6943,6 +6937,7 @@ void setupListeners() {
 //                                        if (imageRect.y+h>icHeight) imageRect.y = ipHeight-h;
 
                                         ac.setSourceRect(imageRect);
+                                        ImageProcessor ip = imp.getProcessor();
                                         savedIpWidth = ip.getWidth();
                                         savedIpHeight = ip.getHeight();
                                         Prefs.set("Astronomy_Tool.savedIpWidth", savedIpWidth);
@@ -6971,7 +6966,7 @@ void setupListeners() {
                                         {
                                         lab = "";
                                         }
-                                updateXYValue(imageX, imageY, value, NOT_DRAGGING);
+                                updateXYValue(imageX, imageY, NOT_DRAGGING);
                                 }
                         }
 
@@ -7033,7 +7028,7 @@ void setupListeners() {
         }
 
 
-    void updateXYValue(double imageX, double imageY, double value, boolean dragging)
+    void updateXYValue(double imageX, double imageY, boolean dragging)
             {
             setValueTextField();
             ijXTextField.setText(fourPlaces.format(imageX));

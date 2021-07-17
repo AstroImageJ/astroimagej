@@ -63,14 +63,14 @@ public class Astronomy_Listener implements PlugIn, ImageListener
             if (asw.isReady && !asw.minMaxChanged)
                 {
 //                IJ.log("Actually Updating Image: "+imp.getTitle());
-                asw.setAstroProcessor(false);
+                asw.setAstroProcessor(false,false);
                 }
             else
                 {
                 asw.minMaxChanged = false;
                 }
             }
-            
+
         }
 
     }

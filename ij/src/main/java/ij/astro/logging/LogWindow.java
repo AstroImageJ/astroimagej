@@ -22,12 +22,12 @@ public class LogWindow extends TextWindow {
 
         if (loc!=null&&w>0 && h>0) {
             //todo improve offset generation
-            var openLogWindows = Arrays.stream(WindowManager.getNonImageTitles())
+            var openLogWindows = (int) Arrays.stream(WindowManager.getNonImageTitles())
                     .filter(s -> s.toLowerCase().contains("log")).count();
             if (!Prefs.isLocationOnScreen(loc)) {
                 openLogWindows *= -1;
             }
-            loc.translate((int) (openLogWindows*50), (int) (openLogWindows*50));
+            loc.translate(openLogWindows*50, openLogWindows*50);
 
             setSize(w, h);
             setLocation(loc);

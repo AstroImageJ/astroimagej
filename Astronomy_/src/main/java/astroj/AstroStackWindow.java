@@ -180,7 +180,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             int canHeightBeforeMaximize;
             int canWidthBeforeMaximize;            
             double magbefore = 1;
-            
+            String extraInfo ="";
 
             public boolean minMaxChanged = false;
             boolean newClick;
@@ -579,7 +579,8 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                 goodWCS = wcs.hasWCS();
                 wcs.setUseSIPAlways(useSIPAllProjections);
                 extraInfo = " ("+wcs.coordsys+")";
-                ac.setWCS(wcs); 
+                ac.setWCS(wcs);
+                createSubtitle();
                 if (autoNupEleft) setBestOrientation();
                 ac.setOrientation(invertX, invertY, rotation);
                 ac.setShowPixelScale(showScaleX, showScaleY, pixelScaleX, pixelScaleY);
@@ -5907,7 +5908,7 @@ void setupListeners() {
             stackSize = imp.getStackSize();
 
             updateWCS();
-
+            createSubtitle();
             updateCalibration();
 
             if (autoDisplayAnnotationsFromHeader && (requestUpdateAnnotationsFromHeader || oldSlice != slice))
@@ -5927,7 +5928,8 @@ void setupListeners() {
                 sliceMax[i] = i < oldSliceMax.length ? oldSliceMax[i] : max;
                 }  
 
-//            infoTextField.setText(""+super.createSubtitle());
+            //infoTextField.setText(""+super.createSubtitle());
+
             if (useInvertingLut != ip.isInvertedLut() && !ip.isColorLut())
                 ip.invertLut();
             layoutContainer(this);
@@ -5958,6 +5960,11 @@ void setupListeners() {
             lengthLabel.setText("Int Cnts:");
             writeNumericPanelField(photom.sourceBrightness(), lengthTextField);
             }
+
+    public synchronized String createSubtitle() {
+        String subtitle = super.createSubtitle();
+        return subtitle + extraInfo;
+    }
     
     public void setUpdatesEnabled(boolean enabled)
         {

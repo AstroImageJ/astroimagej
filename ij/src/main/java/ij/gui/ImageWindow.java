@@ -282,7 +282,7 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 	}
 
     /** Draws the subtitle. */
-    @AstroImageJ(reason = "Remove info from multiplot window", modified = true)
+    @AstroImageJ(reason = "Remove info from multiplot window; Make sure text has background", modified = true)
     public void drawInfo(Graphics g) {
     	if (imp==null)
     		return;
@@ -303,6 +303,10 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 				Font font = new Font("SansSerif", Font.PLAIN, (int)(12*SCALE));
 				g.setFont(font);
 			}
+			var c = g.getColor();
+			g.setColor(Color.WHITE);
+			g.fillRect(insets.left+5, 0, getWidth(), insets.top+TEXT_GAP+3);
+			g.setColor(c);
 			g.drawString(createSubtitle(), insets.left+5, insets.top+TEXT_GAP);
 		}
     }

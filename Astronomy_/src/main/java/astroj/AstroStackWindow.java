@@ -7030,6 +7030,7 @@ void setupListeners() {
 
     void updateXYValue(double imageX, double imageY, boolean dragging)
             {
+                drawInfo(getGraphics());
             setValueTextField();
             ijXTextField.setText(fourPlaces.format(imageX));
             ijYTextField.setText(fourPlaces.format(imageY));

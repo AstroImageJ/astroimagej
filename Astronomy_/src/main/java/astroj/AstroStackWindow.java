@@ -2584,7 +2584,7 @@ protected ImageIcon createImageIcon(String path, String description) {
      * {@link AstroStackWindow#updateXYValue(double, double, boolean)} calling a method that locks the EventQueue.
      * Draws a background to prevent text from "bolding" or overlapping from multiple calls.
      */
-    public void drawSubtitle() {
+    private void drawSubtitle() {
         var g = getGraphics();
         var sub = createSubtitle();
         if (oldSubtitle.equals("") || !oldSubtitle.equals(sub)) {

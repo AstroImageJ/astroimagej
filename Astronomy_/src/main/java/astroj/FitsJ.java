@@ -1758,26 +1758,34 @@ public class FitsJ
 		int icard2 = 0;
 
 		try	{
-			// CHECK FOR STANDARD KEYWORD "EXPTIME" (SECS)
-            String tcomment = "";
-			icard = findCardWithKey ("EXPTIME",cards);
-			if (icard >= 0)
-				{
-				tstart = getCardDoubleValue (cards[icard]);
-				if (! Double.isNaN(tstart))
-					return tstart;
-				}
-            
+
+			String tcomment = "";
+
             // CHECK FOR KEYWORD "TELAPSE" (e.g. TESS)
 
 			icard = findCardWithKey ("TELAPSE",cards);
 			if (icard >= 0)
 				{
 				tstart = getCardDoubleValue (cards[icard]);
-				if (! Double.isNaN(tstart))
-                    tcomment = getCardComment(cards[icard]);
-                    if (tcomment != null && tcomment.contains("[d]")) tstart = tstart*24.0*3600.0; 
-					return tstart;
+				if (! Double.isNaN(tstart)) {
+					tcomment = getCardComment(cards[icard]);
+					if (tcomment != null && tcomment.contains("[d]")) tstart = tstart * 24.0 * 3600.0;
+					}
+				return tstart;
+				}
+
+			// CHECK FOR STANDARD KEYWORD "EXPTIME" (SECS)
+
+
+			icard = findCardWithKey ("EXPTIME",cards);
+			if (icard >= 0)
+				{
+				tstart = getCardDoubleValue (cards[icard]);
+				if (! Double.isNaN(tstart)) {
+					tcomment = getCardComment(cards[icard]);
+					if (tcomment != null && tcomment.contains("[d]")) tstart = tstart * 24.0 * 3600.0;
+					}
+				return tstart;
 				}
 
 			// CHECK FOR KEYWORD "EXPOSURE" (e.g. Mount Stromlo)
@@ -1786,21 +1794,25 @@ public class FitsJ
 			if (icard >= 0)
 				{
 				tstart = getCardDoubleValue (cards[icard]);
-				if (! Double.isNaN(tstart))
-                    tcomment = getCardComment(cards[icard]);
-                    if (tcomment != null && tcomment.contains("[d]")) tstart = tstart*24.0*3600.0; 
-					return tstart;
+				if (! Double.isNaN(tstart)) {
+					tcomment = getCardComment(cards[icard]);
+					if (tcomment != null && tcomment.contains("[d]")) tstart = tstart * 24.0 * 3600.0;
+					}
+				return tstart;
 				}
             
             // CHECK FOR KEYWORD "EXP_TIME" (e.g. Mt. Laguna)
             
             icard = findCardWithKey ("EXP_TIME",cards);
-                if (icard >= 0)
-                    {
-                    tstart = getCardDoubleValue (cards[icard]);
-                    if (! Double.isNaN(tstart))
-                        return tstart;
-                    }             
+			if (icard >= 0)
+				{
+				tstart = getCardDoubleValue (cards[icard]);
+				if (! Double.isNaN(tstart)) {
+					tcomment = getCardComment(cards[icard]);
+					if (tcomment != null && tcomment.contains("[d]")) tstart = tstart * 24.0 * 3600.0;
+					}
+				return tstart;
+				}
 
 			// OR CHECK FOR 'TM-START' AND 'TM-END' (SECS)
 

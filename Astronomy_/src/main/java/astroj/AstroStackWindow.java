@@ -2578,6 +2578,12 @@ protected ImageIcon createImageIcon(String path, String description) {
     }
 }
 
+    /**
+     * This is used to force the subtitle to update when animation/MA is running and the cursor is mvoed over the
+     * stackwindow. The subtitle is normally prevented from updating due to
+     * {@link AstroStackWindow#updateXYValue(double, double, boolean)} calling a method that locks the EventQueue.
+     * Draws a background to prevent text from "bolding" or overlapping from multiple calls.
+     */
     public void drawSubtitle() {
         var g = getGraphics();
         var sub = createSubtitle();
@@ -2588,7 +2594,6 @@ protected ImageIcon createImageIcon(String path, String description) {
             g.setColor(c);
             oldSubtitle = sub;
             drawInfo(g);
-            //g.drawString(sub, super.getInsets().left+5, super.getInsets().top+g.getFontMetrics().getHeight());
         }
     }
 

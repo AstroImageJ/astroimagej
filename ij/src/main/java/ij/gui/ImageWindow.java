@@ -1,11 +1,8 @@
 package ij.gui;
 import java.awt.*;
-import java.awt.image.*;
-import java.util.Properties;
 import java.awt.event.*;
 import ij.*;
 import ij.astro.AstroImageJ;
-import ij.process.*;
 import ij.io.*;
 import ij.measure.*;
 import ij.plugin.frame.*;
@@ -21,7 +18,7 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 	public static final int HGAP = 5;
 	public static final int VGAP = 5;
 	public static final String LOC_KEY = "image.loc";
-	
+
 	protected ImagePlus imp;
 	protected ImageJ ij;
 	protected ImageCanvas ic;
@@ -282,7 +279,7 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 	}
 
     /** Draws the subtitle. */
-    @AstroImageJ(reason = "Remove info from multiplot window; Make sure text has background", modified = true)
+    @AstroImageJ(reason = "Remove info from multiplot window", modified = true)
     public void drawInfo(Graphics g) {
     	if (imp==null)
     		return;
@@ -303,10 +300,6 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 				Font font = new Font("SansSerif", Font.PLAIN, (int)(12*SCALE));
 				g.setFont(font);
 			}
-			var c = g.getColor();
-			g.setColor(Color.WHITE);
-			g.fillRect(insets.left+5, 0, getWidth(), insets.top+TEXT_GAP+3);
-			g.setColor(c);
 			g.drawString(createSubtitle(), insets.left+5, insets.top+TEXT_GAP);
 		}
     }

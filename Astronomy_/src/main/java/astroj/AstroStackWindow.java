@@ -133,6 +133,8 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
 
             double radius = 25, rBack1 = 40, rBack2 = 60;
 
+            private String oldSubtitle = "";
+
             int astrometryStatus = 2;
             Astrometry astrometry;
             int hgap = 0;
@@ -2544,7 +2546,8 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                 otherPanelsHeight = topPanelA.getHeight() + topPanelB.getHeight() +
                                     bottomPanelB.getHeight() + minMaxBiSlider.getHeight();
                 frameHeightPadding = this.getHeight() - ac.getHeight();// - minMaxBiSlider.getHeight() - bottomPanelB.getHeight();
-                
+                drawInfo(getGraphics());
+                repaint();
      }
 
 //            class thisDocumentListener implements DocumentListener
@@ -2575,9 +2578,21 @@ protected ImageIcon createImageIcon(String path, String description) {
     }
 }
 
+    public void drawSubtitle() {
+        var g = getGraphics();
+        var sub = createSubtitle();
+        if (oldSubtitle.equals("") || !oldSubtitle.equals(sub)) {
+            var c = g.getColor();
+            g.setColor(Color.WHITE);
+            g.fillRect(super.getInsets().left+5, 0, getWidth(), super.getInsets().top+g.getFontMetrics().getHeight()+3);
+            g.setColor(c);
+            oldSubtitle = sub;
+            drawInfo(g);
+            //g.drawString(sub, super.getInsets().left+5, super.getInsets().top+g.getFontMetrics().getHeight());
+        }
+    }
 
-
-    void updateMinMaxValueTextFields() 
+    void updateMinMaxValueTextFields()
         {
         if (!useFixedMinMaxValues)
             {
@@ -7030,7 +7045,7 @@ void setupListeners() {
 
     void updateXYValue(double imageX, double imageY, boolean dragging)
             {
-                drawInfo(getGraphics());
+                drawSubtitle();
             setValueTextField();
             ijXTextField.setText(fourPlaces.format(imageX));
             ijYTextField.setText(fourPlaces.format(imageY));

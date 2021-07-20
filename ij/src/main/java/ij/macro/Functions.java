@@ -1,5 +1,6 @@
 package ij.macro;
 import ij.*;
+import ij.astro.AstroImageJ;
 import ij.process.*;
 import ij.gui.*;
 import ij.measure.*;
@@ -4517,6 +4518,7 @@ public class Functions implements MacroConstants, Measurements {
 	// Calls a public static method with an arbitrary number
 	// of String parameters, returning a String.
 	// Contributed by Johannes Schindelin
+	@AstroImageJ(reason = "Allow invoking nonpublic members", modified = true)
 	String call() {
 		// get class and method name
 		String fullName = getFirstString();
@@ -4573,7 +4575,8 @@ public class Functions implements MacroConstants, Measurements {
 					} else
 						argClasses[i] = args[i].getClass();
 				}
-				m = c.getMethod(methodName,argClasses);
+				m = c.getDeclaredMethod(methodName,argClasses);
+				m.trySetAccessible();
 			} catch(Exception ex) {
 				m = null;
 			}

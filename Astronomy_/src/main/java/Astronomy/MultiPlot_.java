@@ -17068,7 +17068,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         }
     }
 
-    static void getPreferences() {
+    public static void getPreferences() {
         tableName = Prefs.get("plot2.tableName", tableName);
         keepFileNamesOnAppend = Prefs.get("plot2.keepFileNamesOnAppend", keepFileNamesOnAppend);
         templateDir = Prefs.get("plot2.templateDir", templateDir);

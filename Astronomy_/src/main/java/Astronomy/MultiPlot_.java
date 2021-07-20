@@ -1236,6 +1236,16 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         }
     }
 
+    // For macro users
+    public static void updatePlot() {
+        updatePlot(updateAllFits(), false);
+    }
+
+    // For macro users
+    public static void updatePlot(int i) {
+        updatePlot(updateOneFit(i), false);
+    }
+
 
     //------------------------UPDATEPLOT()---------------------------------------
     static public void updatePlot(boolean[] updateFit) {

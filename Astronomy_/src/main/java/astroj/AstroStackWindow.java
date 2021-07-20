@@ -6078,6 +6078,9 @@ void setupListeners() {
                 if (updateImage) {
                     imp.updateAndDraw();
                 }
+                if (imp.getWindow() != null) {
+                    imp.getWindow().repaint();
+                }
                 }
             }
     
@@ -6782,6 +6785,26 @@ void setupListeners() {
 //                }
             ac.paint(ac.getGraphics());
             }
+
+    public void updateIntCnts() {
+        radius = Prefs.get("aperture.radius", radius);
+        rBack1 = Prefs.get("aperture.rback1", rBack1);
+        rBack2 = Prefs.get("aperture.rback2", rBack2);
+        photom = new Photometer(cal);
+        photom.setRemoveBackStars(removeBackStars);
+        ac.setAperture(radius,rBack1,rBack2,showSkyOverlay,showPhotometer);
+        photom.setMarkRemovedPixels(false);
+        photom.measure(imp, exact, lastImageX, lastImageY, radius, rBack1, rBack2);
+        if (showMeanNotPeak) {
+            peakLabel.setText("Mean:");
+            writeNumericPanelField(photom.meanBrightness(), peakTextField);
+        } else {
+            peakLabel.setText("Peak:");
+            writeNumericPanelField(photom.peakBrightness(), peakTextField);
+        }
+        lengthLabel.setText("Int Cnts:");
+        writeNumericPanelField(photom.sourceBrightness(), lengthTextField);
+    }
 
     @Override
     public void showSlice(int index) {

@@ -5,6 +5,7 @@ import ij.IJ;
 import ij.ImagePlus;
 import ij.Prefs;
 import ij.WindowManager;
+import ij.astro.logging.AIJLogger;
 import ij.gui.GenericDialog;
 import ij.gui.PlotWindow;
 import ij.gui.Toolbar;
@@ -1911,6 +1912,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 asw.updateWCS();
                 asw.updateCalibration();
 
+                // Fixes Int Cnts display not updating
+                asw.updateIntCnts();
+
                 hasWCS = asw.hasWCS();
                 if (hasWCS) wcs = asw.getWCS();
                 asw.setDisableShiftClick(true);
@@ -1933,6 +1937,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         if (processingStack) {
             IJ.beep();
             shutDown();
+            AIJLogger.log("Multiaperture photometry took " + (System.currentTimeMillis() - timeStart) / 1000D + " seconds");
             IJ.showStatus("Multiaperture photometry took " + (System.currentTimeMillis() - timeStart) / 1000D + " seconds");
         }
     }

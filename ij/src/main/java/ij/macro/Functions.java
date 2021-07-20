@@ -4560,7 +4560,8 @@ public class Functions implements MacroConstants, Measurements {
 				for(int i=0;i<args.length;i++)
 					argClasses[i] = args[i].getClass();
 			}
-			m = c.getMethod(methodName,argClasses);
+			m = c.getDeclaredMethod(methodName,argClasses);
+			m.trySetAccessible();
 		} catch(Exception ex) {
 			m = null;
 		}

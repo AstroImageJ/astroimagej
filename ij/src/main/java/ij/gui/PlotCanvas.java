@@ -1,8 +1,6 @@
 package ij.gui;
 
 import java.awt.*;
-
-import ij.astro.AstroImageJ;
 import ij.process.*;
 import ij.*;
 import ij.util.*;
@@ -252,12 +250,4 @@ public class PlotCanvas extends ImageCanvas {
         }
         return rangeArrowIndex;
     }
-
-	@Override
-	@AstroImageJ(reason = "Add AIJ version to plot window")
-	public void paint(Graphics g) {
-		super.paint(g);
-		var bounds = g.getFontMetrics().getStringBounds("AIJ " + IJ.getAstroVersion(), g);
-		g.drawString("AIJ " + IJ.getAstroVersion(), (int) (imageWidth - bounds.getWidth()), imageHeight - 3);
-	}
 }

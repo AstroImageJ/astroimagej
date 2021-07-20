@@ -3,6 +3,7 @@ package Astronomy;
 
 import ij.*;
 import ij.astro.AstroImageJ;
+import ij.astro.logging.AIJLogger;
 import ij.gui.*;
 import ij.io.OpenDialog;
 import ij.io.SaveDialog;
@@ -3882,6 +3883,14 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             plotImageCanvas = plotImage.getCanvas();
             plotImageCanvas.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
         }
+
+        plot.changeFont(new java.awt.Font("Dialog", java.awt.Font.PLAIN, 12));
+        plot.setJustification(Plot.BOTTOM_RIGHT);
+        var wid = plotImage.getImage().getGraphics().getFontMetrics(plot.getCurrentFont()).stringWidth("AIJ " + IJ.getAstroVersion());
+        var pWid = plot.getSize().getWidth();
+        var h = plot.getSize().getHeight();
+        plot.addLabel((pWid - wid)/pWid, (h + 45)/h, "AIJ " + IJ.getAstroVersion());
+
         updatePlotPos();
 
         plotbottompanel = (Panel) plotWindow.getComponent(1);

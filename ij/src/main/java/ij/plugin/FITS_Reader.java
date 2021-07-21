@@ -74,7 +74,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		// wcs = null;
 		imagePlus = null;
 
-		AIJLogger.setLogAutoCloses(true);
+		AIJLogger.setLogAutoCloses(Prefs.getBoolean(AIJLogger.CERTAIN_LOGS_AUTO_CLOSE, true));
 
 		/*
 		 * Extract array of HDU from FITS file using nom.tam.fits

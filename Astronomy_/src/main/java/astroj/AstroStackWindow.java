@@ -1129,9 +1129,13 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
 
                 preferencesMenu.addSeparator();
                 var logInNewWindows = new CheckboxMenuItem("When logging, separate logs based on the task logging them",
-                        Prefs.getBoolean(AIJLogger.key, true));
-                logInNewWindows.addItemListener(e -> Prefs.set(AIJLogger.key.substring(1), e.getStateChange() == ItemEvent.SELECTED));
+                        Prefs.getBoolean(AIJLogger.USE_NEW_LOG_WINDOW_KEY, true));
+                logInNewWindows.addItemListener(e -> Prefs.set(AIJLogger.USE_NEW_LOG_WINDOW_KEY.substring(1), e.getStateChange() == ItemEvent.SELECTED));
+                var logAutoClose = new CheckboxMenuItem("Separate log windows auto-close for some tasks",
+                        Prefs.getBoolean(AIJLogger.CERTAIN_LOGS_AUTO_CLOSE, true));
+                logAutoClose.addItemListener(e -> Prefs.set(AIJLogger.CERTAIN_LOGS_AUTO_CLOSE.substring(1), e.getStateChange() == ItemEvent.SELECTED));
                 preferencesMenu.add(logInNewWindows);
+                preferencesMenu.add(logAutoClose);
 
                 mainMenuBar.add(preferencesMenu);
                 

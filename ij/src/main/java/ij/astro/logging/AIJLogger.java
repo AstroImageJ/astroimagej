@@ -26,7 +26,8 @@ public class AIJLogger {
      * Stores a log's last modified time and if it should auto-close
      */
     private static final Map<String, ClosingConditions> aijLogPanelsTimer = new HashMap<>();
-    public static final String key = ".aij.useNewLogWindow";
+    public static final String USE_NEW_LOG_WINDOW_KEY = ".aij.useNewLogWindow";
+    public static final String CERTAIN_LOGS_AUTO_CLOSE = ".aij.cLogsAutoClose";
 
     static {
         final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
@@ -44,7 +45,7 @@ public class AIJLogger {
      * Create a new log window for the caller, log the obj to a new line.
      */
     public static synchronized void log(Object obj) {
-        log(obj, Prefs.getBoolean(key, true));
+        log(obj, Prefs.getBoolean(USE_NEW_LOG_WINDOW_KEY, true));
     }
 
     /**
@@ -77,7 +78,7 @@ public class AIJLogger {
      * Create a new log window for the caller, log the msg to a new line.
      */
     public static synchronized void log(String msg) {
-        log(msg, Prefs.getBoolean(key, true));
+        log(msg, Prefs.getBoolean(USE_NEW_LOG_WINDOW_KEY, true));
     }
 
     /**

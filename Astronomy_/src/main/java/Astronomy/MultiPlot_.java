@@ -3886,10 +3886,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         plot.changeFont(new java.awt.Font("Dialog", java.awt.Font.PLAIN, 12));
         plot.setJustification(Plot.BOTTOM_RIGHT);
-        var wid = plotImage.getImage().getGraphics().getFontMetrics(plot.getCurrentFont()).stringWidth("AIJ " + IJ.getAstroVersion());
+        var wid = plotImage.getImage().getGraphics().getFontMetrics(plot.getCurrentFont()).stringWidth("AIJ " + IJ.getAstroVersion().split("[+]")[0]);
         var pWid = plot.getSize().getWidth();
         var h = plot.getSize().getHeight();
-        plot.addLabel((pWid - wid)/pWid, (h + 45)/h, "AIJ " + IJ.getAstroVersion());
+        plot.addLabel((pWid - wid - 10)/pWid, (h + 43)/h, "AIJ " + IJ.getAstroVersion().split("[+]")[0]);
 
         updatePlotPos();
 

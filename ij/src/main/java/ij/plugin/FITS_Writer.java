@@ -25,7 +25,7 @@ public class FITS_Writer implements PlugIn {
     private double bZero = 0.0;
     private double bScale = 1.0;
             
-	@AstroImageJ(reason = "unknown; commented out GET FILE...file deletion iff exists", modified = true)
+	@AstroImageJ(reason = "commented out GET FILE...file deletion iff exists", modified = true)
     public void run(String path) {
 		ImagePlus imp = IJ.getImage();
 		ImageProcessor ip = imp.getProcessor();

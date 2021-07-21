@@ -254,7 +254,7 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 		}
 	}
 
-	@AstroImageJ(reason = "Widen access", modified = true)
+	@AstroImageJ(reason = "Widen access", modified = true, unused = true)
 	protected Rectangle getMaxWindow(int xloc, int yloc) {
 		return GUI.getMaxWindowBounds(new Point(xloc, yloc));
 	}

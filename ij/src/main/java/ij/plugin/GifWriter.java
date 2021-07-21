@@ -40,7 +40,7 @@ public class GifWriter implements PlugIn {
 		run(imp, path);
 	}
 
-	@AstroImageJ(reason = "unknown; add ability to return to original slice", modified = true)
+	@AstroImageJ(reason = "Add ability to return to original slice", modified = true)
 	private void run(ImagePlus imp, String path) {
 		ImageStack stack = imp.getStack();
 		Overlay overlay = imp.getOverlay();

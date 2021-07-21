@@ -402,7 +402,7 @@ public class ImageJ extends Frame implements ActionListener,
 		return version()+System.getProperty("os.name")+" "+System.getProperty("os.version")+"; "+IJ.freeMemory();
 	}
 
-	@AstroImageJ(modified = true, reason = "Add AIj version to display")
+	@AstroImageJ(modified = true, reason = "Add AIJ version to display")
 	private String version() {
 		return "AIJ " + ASTROVERSION + "; " + "ImageJ "+VERSION+BUILD + "; "+"Java "+System.getProperty("java.version")+
 				(IJ.is64Bit()?" [64-bit]; ":" [32-bit]; ");

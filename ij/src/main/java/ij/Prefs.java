@@ -632,7 +632,7 @@ public class Prefs {
 			return null;
     }
 
-	@AstroImageJ(reason = "unknown")
+	@AstroImageJ(reason = "Check if location is on the screen")
      public static boolean isLocationOnScreen(Point loc) {
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         GraphicsDevice[] gds = ge.getScreenDevices();

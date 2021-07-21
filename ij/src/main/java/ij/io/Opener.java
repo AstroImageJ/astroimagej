@@ -1213,7 +1213,7 @@ public class Opener {
 	Attempts to determine the image file type by looking for
 	'magic numbers' and the file name extension.
 	 */
-	@AstroImageJ(reason = "Add more filte types", modified = true)
+	@AstroImageJ(reason = "Add more file types", modified = true)
 	public int getFileType(String path) {
 		if (openUsingPlugins && !path.endsWith(".txt") &&  !path.endsWith(".java"))
 			return UNKNOWN;

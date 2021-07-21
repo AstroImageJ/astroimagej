@@ -2,7 +2,6 @@
 package Astronomy;
 
 import ij.*;
-import ij.astro.AstroImageJ;
 import ij.astro.logging.AIJLogger;
 import ij.gui.*;
 import ij.io.OpenDialog;
@@ -5748,7 +5747,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         plotImageCanvas.repaint();
     }
 
-    @AstroImageJ(reason = "set title Y pos to 0", modified = true)
     static void initializeVariables() {
         shiftIsDown = true;
         ignoreUpdate = false;

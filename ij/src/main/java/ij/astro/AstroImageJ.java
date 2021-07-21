@@ -28,4 +28,15 @@ public @interface AstroImageJ {
      * @return whether the annotated code existed within ImageJ and was modified for use with AIJ
      */
     boolean modified() default false;
+
+    /**
+     * @return if the usage or implementation of this feature was lost.
+     */
+    boolean lostImplementation() default false;
+
+
+    /**
+     * @return if the usage of this annotated member was lost.
+     */
+    boolean unused() default false;
 }

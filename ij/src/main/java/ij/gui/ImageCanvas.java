@@ -46,7 +46,7 @@ public class ImageCanvas extends Canvas implements MouseListener, MouseMotionLis
 	private Font font;
 	private Rectangle[] labelRects;
     private boolean maxBoundsReset;
-    @AstroImageJ(reason = "unknown; widen access to protected", modified = true)
+    @AstroImageJ(reason = "Control if the overlay should be shown; widen access to protected", modified = true)
     protected Overlay showAllOverlay;
     private static final int LIST_OFFSET = 100000;
     private static Color showAllColor = Prefs.getColor(Prefs.SHOW_ALL_COLOR, new Color(0, 255, 255));
@@ -77,9 +77,9 @@ public class ImageCanvas extends Canvas implements MouseListener, MouseMotionLis
 	protected int ySrcStart;
 	protected int flags;
 
-	@AstroImageJ(reason = "unknowm")
+	@AstroImageJ(reason = "Set but never used", lostImplementation = true)
 	public int xClicked = 0;
-	@AstroImageJ(reason = "unknowm")
+	@AstroImageJ(reason = "Set but never used", lostImplementation = true)
 	public int yClicked = 0;
 
 	@AstroImageJ(reason = "widen access to protected", modified = true)
@@ -384,7 +384,7 @@ public class ImageCanvas extends Canvas implements MouseListener, MouseMotionLis
 		font = null;
 	}
 
-	@AstroImageJ(reason = "widen access to public", modified = true)
+	@AstroImageJ(reason = "widen access to public", modified = true, unused = true)
 	public void drawOverlay(Graphics g) {
 		drawOverlay(imp.getOverlay(), g);
 	}

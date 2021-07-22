@@ -540,7 +540,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	 * handled by this processor.
 	 *
 	 * @see <a href="https://fits.gsfc.nasa.gov/fits_primer.html#:~:text=unit.-,data%20units,-The">FITS Primer</a> or
-	 * the <a href="https://fits.gsfc.nasa.gov/fits_primer.html#:~:text=unit.-,data%20units,-The">FITS specification</a>
+	 * the <a href="https://fits.gsfc.nasa.gov/fits_standard.html">FITS specification</a>
 	 * for information on types stored, and the use of BITPIX card to process them. It is assumed that nom.tam.fits will
 	 * return the proper datatype.
 	 *

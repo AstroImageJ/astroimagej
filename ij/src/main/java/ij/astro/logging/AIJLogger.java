@@ -72,8 +72,9 @@ public class AIJLogger {
             log(Arrays.toString(objA), useNewWindow);
         } else if (obj == null) {
             log("null", useNewWindow);
+        } else {
+            log(obj.toString(), useNewWindow);
         }
-        log(obj.toString(), useNewWindow);
     }
 
     /**

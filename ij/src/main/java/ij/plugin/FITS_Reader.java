@@ -61,7 +61,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 
 	// The image data comes in different types, but in the end, we turn them all into floats.
 	// So no matter what type the data is, we wrap it with a lambda that takes two indices and
-	// returns a float.
+	// returns a float. This uses floats as there is no DoubleProcessor from imagej
 	@FunctionalInterface
 	private interface TableWrapper { float valueAt(int x, int y); }
 
@@ -248,7 +248,10 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			case 16 -> FileInfo.GRAY16_SIGNED;
 			case 32 -> FileInfo.GRAY32_INT;
 			case -32 -> FileInfo.GRAY32_FLOAT;
-			case -64 -> FileInfo.GRAY64_FLOAT;
+			case -64 -> {
+				AIJLogger.log("Opening a double precision image as single precision... " + fileName);
+				yield FileInfo.GRAY64_FLOAT;
+			}
 			default -> throw new FitsException("BITPIX must be 8, 16, 32, -32 or -64, but BITPIX=" + bitsPerPixel);
 		};
 	}

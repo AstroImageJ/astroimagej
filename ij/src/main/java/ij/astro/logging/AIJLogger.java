@@ -70,6 +70,8 @@ public class AIJLogger {
             log(Arrays.toString(objA), useNewWindow);
         } else if (obj instanceof short[] objA) {
             log(Arrays.toString(objA), useNewWindow);
+        } else if (obj == null) {
+            log("null", useNewWindow);
         }
         log(obj.toString(), useNewWindow);
     }

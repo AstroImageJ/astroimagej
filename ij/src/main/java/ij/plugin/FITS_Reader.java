@@ -530,7 +530,20 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	}
 
 	/**
-	 * Convert 2D image data to an ImageProcessor
+	 * Convert 2D image data to an ImageProcessor.
+	 * <br></br>
+	 * Note: In 2005, the 64-bit signed integer was added, with BITPIX=64
+	 * <br></br>
+	 * Note: The FITS specification indicates valid BITPIX is only for BITPIX ∈ {-64, -32, 8, 16, 32,
+	 * 64}. Invalid values will cause the image to not be read, but an error is only thrown in
+	 * {@link FITS_Reader#fileTypeFromBitsPerPixel(int)}. Images with nonconforming values may exist, but are not
+	 * handled by this processor.
+	 *
+	 * @see <a href="https://fits.gsfc.nasa.gov/fits_primer.html#:~:text=unit.-,data%20units,-The">FITS Primer</a> or
+	 * the <a href="https://fits.gsfc.nasa.gov/fits_primer.html#:~:text=unit.-,data%20units,-The">FITS specification</a>
+	 * for information on types stored, and the use of BITPIX card to process them. It is assumed that nom.tam.fits will
+	 * return the proper datatype.
+	 *
 	 */
 	private ImageProcessor twoDimensionalImageData2Processor(final Object imageData, final int bitPix) {
 		TableWrapper wrapper;
@@ -551,10 +564,12 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		}
 
 		return switch (bitPix) {
-			// No 64 case as fits spec does not define one?
+			//todo Handle 64-bit integer datatype - needs work on FileInfo side and its usages
 			case 16, -32, 32, -64 -> getImageProcessor(wrapper);
 			case 8 -> {
-				// Only in the 8 case is the signed-to-unsigned correction done -- oversight?!?
+				// Only in the 8 case is the signed-to-unsigned correction done at this level, as FITS uses unsigned,
+				// bytes but Java's are signed. Other conversions are handled via BZERO and BSCALE, as defined by the
+				// FITS Specification.
 				TableWrapper wrapper2 = (x, y) -> wrapper.valueAt(x,y) < 0 ?
 						wrapper.valueAt(x,y) + 256 : wrapper.valueAt(x,y);
 				yield getImageProcessor(wrapper2);

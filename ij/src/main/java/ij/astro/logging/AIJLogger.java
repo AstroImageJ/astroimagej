@@ -94,13 +94,13 @@ public class AIJLogger {
         if (useNewWindow) {
             aijLogPanels.values().removeAll(Collections.singleton(null));
             aijLogPanels.computeIfAbsent(caller,
-                    s -> new LogWindow(caller + " Log", "",400, 250).getTextPanel());
+                    caller1 -> new LogWindow(caller1 + " Log", "",400, 250).getTextPanel());
             var panel = aijLogPanels.get(caller);
             panel.updateDisplay();
             panel.setFont(new Font("SansSerif", Font.PLAIN, 16));
             panel.appendLine(msg);
             aijLogPanelsTimer.computeIfPresent(caller,
-                    (s, closingConditions) -> new ClosingConditions(closingConditions.autoClose));
+                    (caller_, closingConditions) -> new ClosingConditions(closingConditions.autoClose));
             aijLogPanelsTimer.putIfAbsent(caller, new ClosingConditions());
         } else {
             IJ.log(padTitle(caller + ": ") + msg);

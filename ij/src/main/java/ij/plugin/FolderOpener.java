@@ -44,6 +44,8 @@ public class FolderOpener implements PlugIn {
 	private int step = 1;
 	private double scale = 100.0;
 	private boolean openAsSeparateImages;
+	@AstroImageJ(reason = "Allow FITS reader to track virtual stack")
+	public static boolean virtualIntended;
 
 	
 	/** Opens the images in the specified directory as a stack. Displays
@@ -465,6 +467,7 @@ public class FolderOpener implements PlugIn {
 			String dir = Recorder.fixPath(directory);
    			Recorder.recordCall("imp = FolderOpener.open(\""+dir+"\", \""+options+"\");");
 		}
+		virtualIntended = false;
 	}
 	
 	private void openAsSeparateImages(ImagePlus imp) {
@@ -583,6 +586,7 @@ public class FolderOpener implements PlugIn {
 			if (!openAsSeparateImages)
 				staticOpenAsVirtualStack = openAsVirtualStack;
 		}
+		virtualIntended = openAsVirtualStack;
 		return true;
 	}
 	

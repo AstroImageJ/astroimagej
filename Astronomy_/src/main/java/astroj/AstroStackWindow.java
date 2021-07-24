@@ -6190,11 +6190,12 @@ void setupListeners() {
         public void maximize() {
             if (updatesEnabled)
                 {
-                fillNotFit = true;
+                fillNotFit = false;
                 fitImageToCanvas();
                 validate();
-                repaint();
-                imp.updateAndDraw();
+                //repaint();
+                //imp.updateAndDraw();
+                setAstroProcessor(false);
                 }
         }
         
@@ -6208,13 +6209,14 @@ void setupListeners() {
 //        ac.setMaxBounds();
 		pack();
 //		ac.setMaxBounds();
-		repaint();      
+		repaint();
 //        setSize(winWidthBeforeMaximize, winHeightBeforeMaximize);
 //        fillNotFit =true;
 //        fitImageToCanvas();
 //		if (unzoomWhenMinimizing)
 //			ic.unzoom();
 //		unzoomWhenMinimizing = true;
+        setAstroProcessor(false);
         }
 
 //        @Override

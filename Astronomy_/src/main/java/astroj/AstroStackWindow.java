@@ -399,7 +399,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                      appendToAnnotationsInHeaderMenuItem, deleteAnnotationsFromHeaderMenuItem, clearAllAnnotateRoisMenuItem;
             
             MenuItem backupAllAIJPrefsMenuItem, restoreAllAIJPrefsMenuItem, restoreDefaultAIJPrefsMenuItem;
-            MenuItem combineStackImagesMenuItem, copyFitsHeaderProcessMenuItem;
+            MenuItem combineStackImagesMenuItem, concatStacksMenuItem, copyFitsHeaderProcessMenuItem;
 
             MenuItem stackSorterMenuItem, alignStackMenuItem, imageStabilizerMenuItem, imageStabilizerApplyMenuItem;
             MenuItem debayerMenuItem, splitChannelsMenuItem, imagesToStackMenuItem, stackToImagesMenuItem, RGBComposerMenuItem;
@@ -1517,10 +1517,14 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                 processMenu.add(dataReducerMenuItem);
 
                 processMenu.addSeparator();
-                
+
                 combineStackImagesMenuItem = new MenuItem("Combine stack slices into single image...");
                 combineStackImagesMenuItem.addActionListener(this);
-                processMenu.add(combineStackImagesMenuItem);   
+                processMenu.add(combineStackImagesMenuItem);
+
+                concatStacksMenuItem = new MenuItem("Combine stacks into single stack...");
+                concatStacksMenuItem.addActionListener(this);
+                processMenu.add(concatStacksMenuItem);
                 
                 imageCalcMenuItem = new MenuItem("Image/stack calculator...");
                 imageCalcMenuItem.addActionListener(this);
@@ -3842,7 +3846,12 @@ protected ImageIcon createImageIcon(String path, String description) {
                     {
                     if (imp.getType()==ImagePlus.COLOR_RGB) imp.getProcessor().reset();
                     IJ.run("Z Project...", "");
-                    }          
+                    }
+                else if(b == concatStacksMenuItem)
+                    {
+                    if (imp.getType()==ImagePlus.COLOR_RGB) imp.getProcessor().reset();
+                    IJ.run("Concatenate...", "");
+                    }
                 else if(b == imageCalcMenuItem)
                     {
                     if (imp.getType()==ImagePlus.COLOR_RGB) imp.getProcessor().reset();

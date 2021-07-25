@@ -2226,10 +2226,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                 
 //                IJ.log("stackSliders.length="+stackSliders.length);
                 if (cSelector != null) mainPanel.add(cSelector);
-                if (zSelector != null) {
-                    mainPanel.add(zSelector);
-                    zSelector.addAdjustmentListener(l -> updatePanelValues());
-                }
+                if (zSelector != null) mainPanel.add(zSelector);
                 if (tSelector != null) mainPanel.add(tSelector);
                 
 //                if (super.getNScrollbars() > 0)

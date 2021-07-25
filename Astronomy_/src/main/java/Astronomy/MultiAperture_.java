@@ -8,7 +8,6 @@ import ij.WindowManager;
 import ij.astro.logging.AIJLogger;
 import ij.gui.GenericDialog;
 import ij.gui.PlotWindow;
-import ij.gui.StackWindow;
 import ij.gui.Toolbar;
 import ij.measure.ResultsTable;
 import ij.process.ImageProcessor;
@@ -1898,7 +1897,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         for (int i = firstSlice; i <= lastSlice; i++) {
             slice = i;
             imp.setSliceWithoutUpdate(i); //fixes scroll sync issue
-            waitForDraws(); // Fixes scrollbar not updating on mac
+            waitForEventQueue(); // Fixes scrollbar not updating on mac
             if (starOverlay || skyOverlay || valueOverlay || nameOverlay) {
                 ocanvas = OverlayCanvas.getOverlayCanvas(imp);
                 canvas = ocanvas;
@@ -2463,7 +2462,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
      * This method blocks the current thread to wait for the EventQueue to finish
      */
     // This is a hack
-    private void waitForDraws() {
+    private void waitForEventQueue() {
         // This fix is generally only needed on mac
         if (!IJ.isMacOSX()) return;
         try {

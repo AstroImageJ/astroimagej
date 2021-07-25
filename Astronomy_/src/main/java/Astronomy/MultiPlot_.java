@@ -6418,7 +6418,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             modelColorIndex[i] = (7 + i) % colors.length;
             residualModelColorIndex[i] = (7 + i) % colors.length;
             residualColorIndex[i] = (7 + i) % colors.length;
-
             markerIndex[i] = 3;   //default to dot
             residualSymbolIndex[i] = 3;
 //                        detrendFit[i] = true;
@@ -6435,7 +6434,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             plotY[i] = i == 0;
             sigma[i] = 0.0;
             prevSigma[i] = Double.POSITIVE_INFINITY;
-            prevBic[i] = Double.POSITIVE_INFINITY;
+            prevBic[i] = Double.NEGATIVE_INFINITY;
             autoUpdatePriors[i] = true;
             smooth[i] = false;
             smoothLen[i] = 31;
@@ -13687,6 +13686,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 detrendParChanged = true;
                 detrendVarDisplayed[c] = row - 7;
                 detrendVarButton[c][row - 7].setSelected(true);
+                prevBic[c] = bic[c];
                 if (useFitDetrendCB[c][row - 7].isSelected()) {
                     useFitDetrendCB[c][row - 7].setEnabled(false);
                     detrendbox[c].setSelectedIndex(fitDetrendComboBox[c][row - 7].getSelectedIndex());
@@ -13962,18 +13962,14 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         if (bestFitLabel[c][0] != null) {
             //IJ.log("refStarChanged="+refStarChanged+"   detrendParChanged="+detrendParChanged);
             if (refStarChanged && (sigma[c] < prevSigma[c])) {
-                sigmaLabel[c].setBackground(Color.green);
-            //} else if (sigma[c] > prevSigma[c]) {
-            //    sigmaLabel[c].setBackground(Color.red);
+                sigmaLabel[c].setBackground(new Color(0, 235, 0));  //light green
             }
-            if (!refStarChanged && detrendParChanged && (bic[c] < prevBic[c] - 2.0)) {
-                bicLabel[c].setBackground(Color.green);
-                //} else if (sigma[c] > prevSigma[c]) {
-                //    sigmaLabel[c].setBackground(Color.red);
+            if (!refStarChanged && detrendParChanged) {
+                if (bic[c] < prevBic[c] - 10.0) bicLabel[c].setBackground(Color.magenta);
+                else if (bic[c] < prevBic[c] - 2.0) bicLabel[c].setBackground(new Color(0, 235, 0));  //light green
+                else if (bic[c] < prevBic[c]) bicLabel[c].setBackground(Color.yellow);
             }
-            prevSigma[c] = sigma[c];
-            prevBic[c] = bic[c];
-            IJ.wait(100);
+            IJ.wait(200);
             refStarChanged = false;
             detrendParChanged = false;
             sigmaLabel[c].setBackground(defaultBackground);
@@ -14538,6 +14534,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 }
             }
             refStarChanged = true;
+            for (int curve = 0; curve < maxCurves; curve++){
+                prevSigma[curve] = sigma[curve];
+            }
             if (e.getStateChange() == ItemEvent.DESELECTED) {
                 isRefStar[r] = false;
                 refStarLabel[r].setText("T" + (r + 1));

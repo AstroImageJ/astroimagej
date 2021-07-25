@@ -1937,7 +1937,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         if (processingStack) {
             IJ.beep();
             shutDown();
-            AIJLogger.log("Multiaperture photometry took " + (System.currentTimeMillis() - timeStart) / 1000D + " seconds");
+            //AIJLogger.log("Multiaperture photometry took " + (System.currentTimeMillis() - timeStart) / 1000D + " seconds");
             IJ.showStatus("Multiaperture photometry took " + (System.currentTimeMillis() - timeStart) / 1000D + " seconds");
         }
     }

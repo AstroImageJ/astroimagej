@@ -1907,13 +1907,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
                 // This fixes the counter subtitle of the stack window not updating as the images progress
                 asw.update(asw.getGraphics());
-                // This fixes histogram not updating
-                asw.updatePanelValues(false);
-                asw.updateWCS();
-                asw.updateCalibration();
 
-                // Fixes Int Cnts display not updating
-                asw.updateIntCnts();
+                asw.setAstroProcessor(false);
 
                 hasWCS = asw.hasWCS();
                 if (hasWCS) wcs = asw.getWCS();

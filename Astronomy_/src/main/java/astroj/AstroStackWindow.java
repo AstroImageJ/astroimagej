@@ -3417,6 +3417,16 @@ protected ImageIcon createImageIcon(String path, String description) {
             }
         }
 
+        /**
+         * Fixes a draw bug in MA where aperture do not get cleared/rendered in the proper location.
+         * Unneeded when {@link AstroStackWindow#autoNupEleft} is {@code true} as
+         * {@link AstroStackWindow#setOrientation(boolean)} will be called.
+         */
+        public void repaintAstroCanvas() {
+            if (autoNupEleft) return;
+            ac.paint(ac.getGraphics());
+        }
+
         void setOrientation() {
             setOrientation(isNonScienceImage());
         }

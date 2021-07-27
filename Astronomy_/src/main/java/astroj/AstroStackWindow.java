@@ -6207,11 +6207,11 @@ void setupListeners() {
     
         @Override
         public void maximize() {
-            if (IJ.isMacOSX() && updatesEnabled)
+            if (!IJ.isMacOSX() && updatesEnabled)
                 {
                 fillNotFit = false;
                 fitImageToCanvas();
-                //validate();
+                validate();
                 //repaint();
                 //imp.updateAndDraw();
                 setAstroProcessor(false);

@@ -842,7 +842,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         if (asw != null && asw.autoDisplayAnnotationsFromHeader) asw.displayAnnotationsFromHeader(true, true, false);
 
         if (stackTask != null) stackTask = null;
-        if (stackTaskTimer != null) stackTaskTimer = null;
+        if (stackTaskTimer != null) {
+            stackTaskTimer.cancel();
+            stackTaskTimer = null;
+        }
         if (doubleClickTask != null) doubleClickTask = null;
         if (doubleClickTaskTimer != null) doubleClickTaskTimer = null;
         if ((table != null) && !Data_Processor.active && !isInstanceOfStackAlign) {

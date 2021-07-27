@@ -239,6 +239,19 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		return fi;
 	}
 
+	/**
+	 * Converts BITPIX to a {@link FileInfo} for image display.
+	 * <br></br>
+	 * Note: In 2005, the 64-bit signed integer was added, with BITPIX=64
+	 * <br></br>
+	 * Note: The FITS specification indicates valid BITPIX is only for BITPIX ∈ {-64, -32, 8, 16, 32,
+	 * 64}. Images with nonconforming values may exist and can be read via nom.tam.fits, but this will throw if an
+	 * invalid value is given.
+	 *
+	 * @see <a href="https://fits.gsfc.nasa.gov/fits_primer.html#:~:text=unit.-,data%20units,-The">FITS Primer</a> or
+	 * the <a href="https://fits.gsfc.nasa.gov/fits_standard.html">FITS specification</a>
+	 * for information on types stored, and the use of BITPIX card to process them.
+	 */
 	private int fileTypeFromBitsPerPixel(int bitsPerPixel) throws FitsException {
 		return switch (bitsPerPixel) {
 			case 8 -> FileInfo.GRAY8;
@@ -249,6 +262,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 				AIJLogger.log("Opening a double precision image as single precision... " + fileName);
 				yield FileInfo.GRAY64_FLOAT;
 			}
+			//todo Handle 64-bit integer datatype - needs work on FileInfo side and its usages
 			default -> throw new FitsException("BITPIX must be 8, 16, 32, -32 or -64, but BITPIX=" + bitsPerPixel);
 		};
 	}
@@ -322,10 +336,10 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 					AIJLogger.log("Cannot open 'table' images as a virtual stack.", false);
 				}
 
-				imageProcessor = makeStackFrom3DData(data, tableHDU.getNRows(), -32, makeHeadersTessCut(hdr, tableHDU));
+				imageProcessor = makeStackFrom3DData(data, tableHDU.getNRows(), makeHeadersTessCut(hdr, tableHDU));
 			}
 		} else if (hdu.getHeader().getIntValue(NAXIS) == 2) {
-			imageProcessor = processTwoDimensionalImage(hdu, imgData);
+			imageProcessor = twoDimensionalImageData2Processor(imgData);
 		} else if (hdu.getHeader().getIntValue(NAXIS) == 3) {
 			if (FolderOpener.virtualIntended) {
 				AIJLogger.log("Cannot open 3D images as a virtual stack.", false);
@@ -482,23 +496,22 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	 */
 	private ImageProcessor process3DimensionalImage(BasicHDU<?> hdu, Data imgData) throws FitsException {
 		return makeStackFrom3DData((Object[]) imgData.getKernel(),
-				hdu.getHeader().getIntValue(NAXISn.n(3).key()), hdu.getBitPix());
+				hdu.getHeader().getIntValue(NAXISn.n(3).key()));
 	}
 
 	/**
 	 * From 3D array of pixel data,create a stack.
-	 * @see FITS_Reader#makeStackFrom3DData(Object[], int, int, List)
+	 * @see FITS_Reader#makeStackFrom3DData(Object[], int, List)
 	 */
-	private ImageProcessor makeStackFrom3DData(final Object[] data, final int imageCount, final int bitpix) {
-		return makeStackFrom3DData(data, imageCount, bitpix, null);
+	private ImageProcessor makeStackFrom3DData(final Object[] data, final int imageCount) {
+		return makeStackFrom3DData(data, imageCount, null);
 	}
 
 	/**
 	 * From 3D array of pixel data, create a stack. Uses provided Header to set info for processes such
 	 * as MultiAperture.
 	 */
-	private ImageProcessor makeStackFrom3DData(final Object[] data, final int imageCount, final int bitpix,
-											   final List<String> headers) {
+	private ImageProcessor makeStackFrom3DData(final Object[] data, final int imageCount, final List<String> headers) {
 		ImageProcessor ip = null;
 		ImageStack stack = new ImageStack();
 
@@ -515,7 +528,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 				}
 				header = headers.get(i) + "\n";
 			}
-			ip = twoDimensionalImageData2Processor(data[i], bitpix);
+			ip = twoDimensionalImageData2Processor(data[i]);
 			stack.addSlice(fileBase + "_" + (imageCount<10000 ? fourDigits.format(i+1) : (i+1))
 					+ (fileType.length() > 0 ? "." + fileType : "") + "\n" + header, ip);
 		}
@@ -523,67 +536,6 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		setStack(fileName, stack);
 
 		return ip;
-	}
-
-	/**
-	 * Convert 2D image data into an ImageProcessor, all image data is converted to floats for display.
-	 * <p>
-	 * Data is transposed to match {@link FloatProcessor}
-	 *
-	 * @see FITS_Reader#getImageProcessor
-	 */
-	private ImageProcessor processTwoDimensionalImage(BasicHDU<?> hdu, Data imgData) throws FitsException {
-		return twoDimensionalImageData2Processor(imgData.getKernel(), hdu.getBitPix());
-	}
-
-	/**
-	 * Convert 2D image data to an ImageProcessor.
-	 * <br></br>
-	 * Note: In 2005, the 64-bit signed integer was added, with BITPIX=64
-	 * <br></br>
-	 * Note: The FITS specification indicates valid BITPIX is only for BITPIX ∈ {-64, -32, 8, 16, 32,
-	 * 64}. Invalid values will cause the image to not be read, but an error is only thrown in
-	 * {@link FITS_Reader#fileTypeFromBitsPerPixel(int)}. Images with nonconforming values may exist, but are not
-	 * handled by this processor.
-	 *
-	 * @see <a href="https://fits.gsfc.nasa.gov/fits_primer.html#:~:text=unit.-,data%20units,-The">FITS Primer</a> or
-	 * the <a href="https://fits.gsfc.nasa.gov/fits_standard.html">FITS specification</a>
-	 * for information on types stored, and the use of BITPIX card to process them. It is assumed that nom.tam.fits will
-	 * return the proper datatype.
-	 *
-	 */
-	private ImageProcessor twoDimensionalImageData2Processor(final Object imageData, final int bitPix) {
-		TableWrapper wrapper;
-		if (imageData instanceof float[][] data) {
-			wrapper = (x, y) -> data[y][x];
-		} else if (imageData instanceof double[][] data) {
-			wrapper = (x, y) -> (float) data[y][x];
-		} else if (imageData instanceof short[][] data) {
-			wrapper = (x, y) -> data[y][x];
-		} else if (imageData instanceof byte[][] data) {
-			wrapper = (x, y) -> data[y][x];
-		} else if (imageData instanceof int[][] data) {
-			wrapper = (x, y) -> data[y][x];
-		} else if (imageData instanceof long[][] data) {
-			wrapper = (x, y) -> data[y][x];
-		} else {
-			throw new IllegalStateException("Tried to open image data that was not a numeric. " + imageData.getClass());
-		}
-
-		return switch (bitPix) {
-			//todo Handle 64-bit integer datatype - needs work on FileInfo side and its usages
-			case 16, -32, 32, -64 -> getImageProcessor(wrapper);
-			case 8 -> {
-				// Only in the 8 case is the signed-to-unsigned correction done at this level, as FITS uses unsigned,
-				// bytes but Java's are signed. Other conversions are handled via BZERO and BSCALE, as defined by the
-				// FITS Specification.
-				TableWrapper wrapper2 = (x, y) -> wrapper.valueAt(x,y) < 0 ?
-						wrapper.valueAt(x,y) + 256 : wrapper.valueAt(x,y);
-				yield getImageProcessor(wrapper2);
-			}
-			default -> imagePlus.getProcessor();
-		};
-
 	}
 
 	// The following code excerpted from ij.process.FloatProcessor serves to document the layout
@@ -601,9 +553,38 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 
 	// Examine how our TableWrapper lambda is implemented:
 	//
-	//    TableWrapper wrapper = (x, y) -> itab[y][x];
+	//    TableWrapper wrapper = (x, y) -> data[y][x];
 	//
 	// Notice that again, the x index is the tighter loop.
+
+	/**
+	 * Convert 2D image data into an ImageProcessor, all image data is converted to floats for display.
+	 * <p>
+	 * Data is transposed to match {@link FloatProcessor}
+	 */
+	private ImageProcessor twoDimensionalImageData2Processor(final Object imageData) {
+		TableWrapper wrapper;
+		if (imageData instanceof float[][] data) {
+			wrapper = (x, y) -> data[y][x];
+		} else if (imageData instanceof double[][] data) {
+			wrapper = (x, y) -> (float) data[y][x];
+		} else if (imageData instanceof short[][] data) {
+			wrapper = (x, y) -> data[y][x];
+		} else if (imageData instanceof int[][] data) {
+			wrapper = (x, y) -> data[y][x];
+		} else if (imageData instanceof long[][] data) {
+			wrapper = (x, y) -> data[y][x];
+		} else if (imageData instanceof byte[][] data) {
+			// The signed-to-unsigned correction is done at this level, as FITS uses unsigned bytes
+			// but Java's are signed. Other conversions are handled via BZERO and BSCALE,
+			// as defined by the FITS Specification.
+			wrapper = (x, y) -> Byte.toUnsignedInt(data[y][x]);
+		} else {
+			throw new IllegalStateException("Tried to open image data that was not a numeric. " + imageData.getClass());
+		}
+
+		return getImageProcessor(wrapper);
+	}
 
 	/**
 	 * Sets the current ImageProcessor to a new FloatProcessor.

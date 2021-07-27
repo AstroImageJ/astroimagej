@@ -6846,6 +6846,12 @@ void setupListeners() {
         }
     }
 
+    @Override
+    public synchronized void adjustmentValueChanged(AdjustmentEvent e) {
+        super.adjustmentValueChanged(e);
+        updatePanelValues();
+    }
+
     public void mouseExited(MouseEvent e)
             {
 //            apertureOverlay.clear();

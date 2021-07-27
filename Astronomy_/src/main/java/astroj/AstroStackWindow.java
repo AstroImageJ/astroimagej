@@ -29,6 +29,7 @@ import java.io.*;
 import javax.swing.*;
 //import javax.swing.border.TitledBorder;
 //import javax.swing.event.*;
+import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 //import java.util.Properties;
 //import java.util.EventListener;
@@ -3428,7 +3429,7 @@ protected ImageIcon createImageIcon(String path, String description) {
          */
         public void repaintAstroCanvas() {
             if (autoNupEleft) return;
-            ac.paint(ac.getGraphics());
+            setOrientation();
         }
 
         void setOrientation() {

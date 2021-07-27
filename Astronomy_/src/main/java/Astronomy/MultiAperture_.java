@@ -1922,6 +1922,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 // Fixes apertures not properly being drawn/cleared when autoNupEleft is disabled
                 asw.repaintAstroCanvas();
 
+                //waitForEventQueue();
+
                 hasWCS = asw.hasWCS();
                 if (hasWCS) wcs = asw.getWCS();
                 asw.setDisableShiftClick(true);
@@ -2470,8 +2472,6 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
      */
     // This is a hack
     private void waitForEventQueue() {
-        // This fix is generally only needed on mac
-        if (!IJ.isMacOSX()) return;
         try {
             // We don't actually care about what happens, we just want the blocking
             EventQueue.invokeAndWait(() -> {});

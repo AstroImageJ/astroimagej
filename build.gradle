@@ -22,7 +22,7 @@ plugins {
     // Plugin to download files
     id "de.undercouch.download" version "4.1.1"
 
-    id "org.jetbrains.gradle.plugin.idea-ext" version "1.0"
+    id "org.jetbrains.gradle.plugin.idea-ext" version "1.0.+"
 
     id 'net.nemerosa.versioning' version '2.8.2'
 }
@@ -339,10 +339,10 @@ task aijRun(dependsOn: sync, type: JavaExec) {
 
 List<String> readConfigFile() {
     List<String> args = new ArrayList<>()
-    File cfg = files("${projectDir}/AIJ-Run/AstroImageJ.l4j.ini").first()
+    File cfg = file("${projectDir}/AIJ-Run/AstroImageJ.l4j.ini") as File
     if (!cfg.exists()) return args
 
-    File devCfg = files("${projectDir}/devLaunchOptions.txt").first()
+    File devCfg = file("${projectDir}/devLaunchOptions.txt") as File
 
     File readCfg = devCfg.exists() ? devCfg : cfg
 
@@ -396,7 +396,7 @@ task packageAij
 //noinspection GroovyAssignabilityCheck
 javaRuntimeSystems.each {sys, sysInfo ->
     if (!canConnectToAzul) {
-        System.out.println("Skipping system creation, failed to connect to Azul!")
+        logger.error("Skipping system creation, failed to connect to Azul!")
         return
     }
     String taskName = "packageAijFor" + (sysInfo.os as String).capitalize() + "_" + sysInfo.arch
@@ -450,7 +450,7 @@ javaRuntimeSystems.each {sys, sysInfo ->
         }
     }
 
-    logger.lifecycle("Added a distribution task: " + taskName as String)
+    logger.quiet("Added a distribution task: " + taskName as String)
 
     tasks.named(taskName) {
         //noinspection GroovyAssignabilityCheck
@@ -472,17 +472,17 @@ javaRuntimeSystems.each {sys, sysInfo ->
 task copyBuiltJars(dependsOn: build, type: Copy) {
     group 'AstroImageJ Development'
 
-    File locCfg = files("${projectDir}/jarLocation.txt").first()
-    def destination = "${projectDir}/out" as String
-
-    if (locCfg.exists()) {
-        locCfg.readLines().each {
-            if (it.startsWith("#") /*Comments*/) {
-                return
-            }
-            destination = it
+    onlyIf {
+        def properDirectory = file("${projectDir}/jarLocation.txt").exists() &&
+                outputDestination().toPath().resolve('ij.jar').toFile().exists()
+        if (!properDirectory) {
+            logger.error '[copyBuiltJars] Was not given the correct path! ' +
+                    'Must be the absolute path to the folder containing ij.jar!' as String
         }
+        properDirectory
     }
+
+    def destination = outputDestination()
 
     // Copy astronomy_.jar to correct place in distribution
     from(file("${project(':Astronomy_').buildDir}/libs/astronomy_.jar")) {
@@ -495,18 +495,31 @@ task copyBuiltJars(dependsOn: build, type: Copy) {
         into ''
     }
     into destination
-}
 
-build.configure {
-    if (files("${projectDir}/jarLocation.txt").first().exists()) {
-        //noinspection GroovyAssignabilityCheck
-        finalizedBy copyBuiltJars
+    doLast {
+        logger.quiet '[copyBuiltJars] Copying jars to destination...'
     }
 }
 
-// Hack to make Idea's hammer to run gradle build
+File outputDestination() {
+    File locCfg = file("${projectDir}/jarLocation.txt") as File
+    def destination = "${projectDir}/out" as String
+
+    if (locCfg.exists()) {
+        locCfg.readLines().each {
+            if (it.startsWith("#") /*Comments*/) {
+                return
+            }
+            destination = it
+        }
+    }
+
+    return file(destination) as File
+}
+
+// Make Idea's hammer icon run copyBuiltJars
 idea.project.settings {
     taskTriggers {
-        afterBuild tasks.getByName("build")
+        afterBuild tasks.getByName('copyBuiltJars')
     }
 }

@@ -25,7 +25,7 @@ jobs:
           path: build/distributions/*x86*.exe
       - uses: actions/upload-artifact@v2
         with:
-          name: Windows (x86) package (.zip)
+          name: Windows (x86) Package (.zip)
           path: build/distributions/*x86*.zip
       - uses: actions/upload-artifact@v2
         with:
@@ -33,8 +33,8 @@ jobs:
           path: build/distributions/*arm*.exe
       - uses: actions/upload-artifact@v2
         with:
-          name: Windows (Arm) package (.zip)
-          path: build/distributions/*arm*.exe
+          name: Windows (Arm) Package (.zip)
+          path: build/distributions/*arm*.zip
   linux:
 
     runs-on: ubuntu-latest
@@ -51,7 +51,7 @@ jobs:
         run: ./gradlew packageAijForLinux_x86
       - uses: actions/upload-artifact@v2
         with:
-          name: Linux Compressed tar file (.tar.gz)
+          name: Linux (x86) Package (.tar.gz)
           path: build/distributions/*x86*.tar.gz #TODO once installer generation is added, gen and upload installers
   macos:
 
@@ -73,18 +73,18 @@ jobs:
         run: ./gradlew packageAijForMacos_x86 packageAijForMacos_arm
       - uses: actions/upload-artifact@v2
         with:
-          name: MacOS x86 App Version (.zip)
+          name: MacOS (x86) App Version (.zip)
           path: build/distributions/*x86*.zip
       - uses: actions/upload-artifact@v2
         with:
-          name: MacOS Arm App Version (.zip)
+          name: MacOS (Arm) App Version (.zip)
           path: build/distributions/*arm*.zip
       - uses: actions/upload-artifact@v2
         with:
-          name: MacOS Arm App Version (.dmg)
+          name: MacOS (Arm) App Version (.dmg)
           path: build/distributions/*arm*.dmg
       - uses: actions/upload-artifact@v2
         with:
-          name: MacOS x86 Dmg Version (.dmg)
+          name: MacOS (x86) Dmg Version (.dmg)
           path: build/distributions/*x86*.dmg
 

@@ -6838,7 +6838,8 @@ void setupListeners() {
         // Fixes image not updating when slice changes with animate feature
         //todo fix slow draw
         ac.paintDoubleBuffered(ac.getGraphics());
-        //ac.paint(ac.getGraphics());
+
+        setAstroProcessor(false); // Part of GH-20 fix
 
         // Fixes subtitle (x/ nslices string at top of window) not updating
         synchronized (this) {
@@ -6847,9 +6848,15 @@ void setupListeners() {
     }
 
     @Override
+    // Part of fix for GH-20
     public synchronized void adjustmentValueChanged(AdjustmentEvent e) {
         super.adjustmentValueChanged(e);
-        updatePanelValues();
+        if (e.getSource()==zSelector) {
+            z = zSelector.getValue();
+            int slice = hyperStack ? imp.getSlice() : imp.getCurrentSlice();
+            if (z==slice&&e.getAdjustmentType()==AdjustmentEvent.TRACK) return;
+            showSlice(e.getValue());
+        }
     }
 
     public void mouseExited(MouseEvent e)

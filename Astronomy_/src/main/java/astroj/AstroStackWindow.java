@@ -6839,7 +6839,7 @@ void setupListeners() {
         //todo fix slow draw
         ac.paintDoubleBuffered(ac.getGraphics());
 
-        setAstroProcessor(false); // Part of GH-20 fix
+        EventQueue.invokeLater(() -> setAstroProcessor(false)); // Part of GH-20 fix, fixes arrow key scroll
 
         // Fixes subtitle (x/ nslices string at top of window) not updating
         synchronized (this) {

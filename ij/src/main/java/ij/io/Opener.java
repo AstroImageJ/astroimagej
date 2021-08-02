@@ -1,27 +1,39 @@
 package ij.io;
+
 import ij.*;
 import ij.astro.AstroImageJ;
-import ij.gui.*;
-import ij.process.*;
-import ij.plugin.frame.*;
+import ij.astro.util.ZipOpenerUtil;
+import ij.gui.Roi;
+import ij.macro.Interpreter;
+import ij.measure.ResultsTable;
 import ij.plugin.*;
+import ij.plugin.frame.Editor;
+import ij.plugin.frame.Recorder;
+import ij.plugin.frame.RoiManager;
+import ij.process.FHT;
+import ij.process.ImageConverter;
+import ij.process.ImageProcessor;
+import ij.process.LUT;
 import ij.text.TextWindow;
 import ij.util.Java2;
-import ij.measure.ResultsTable;
-import ij.macro.Interpreter;
-import ij.util.Tools;
-import java.awt.*;
-import java.awt.image.*;
-import java.io.*;
-import java.net.URL;
-import java.net.*;
-import java.util.*;
-import java.util.zip.*;
-import javax.swing.*;
-import javax.swing.filechooser.*;
-import java.awt.event.KeyEvent;
+
 import javax.imageio.ImageIO;
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.KeyEvent;
+import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
+import java.awt.image.IndexColorModel;
+import java.io.*;
 import java.lang.reflect.Method;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.Arrays;
+import java.util.Hashtable;
+import java.util.Locale;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 /** Opens tiff (and tiff stacks), dicom, fits, pgm, jpeg, bmp or
 	gif images, and look-up tables, using a file open dialog or a path.
@@ -313,6 +325,8 @@ public class Opener {
 	 * the file type is unrecognised.
 	 * @see ij.IJ#openImage(String)
 	*/
+	@AstroImageJ(reason = "Don't check for image openable when getting file type for interior zip paths",
+			modified = true)
 	public ImagePlus openImage(String directory, String name) {
 		ImagePlus imp;
 		FileOpener.setSilentMode(silentMode);
@@ -321,7 +335,7 @@ public class Opener {
 		OpenDialog.setLastDirectory(directory);
 		OpenDialog.setLastName(name);
 		String path = directory+name;
-		this.fileType = getFileType(path);
+		this.fileType = getFileType(path, !(path.contains(".zip") && !path.endsWith(".zip")));
 		if (IJ.debugMode) IJ.log("openImage: \""+types[this.fileType]+"\", "+path);
 		switch (this.fileType) {
 			case TIFF:
@@ -967,9 +981,22 @@ public class Opener {
 
 	/** Opens a single TIFF or DICOM contained in a ZIP archive,
 		or a ZIPed collection of ".roi" files created by the ROI manager. */	
-	@AstroImageJ(reason = "add support for more file types; open tables in AIJ measurements table", modified = true)
+	@AstroImageJ(reason = "add support for more file types; open tables in AIJ measurements table; " +
+			"open zip as folder", modified = true)
 	public ImagePlus openZip(String path) {
 		ImagePlus imp = null;
+
+		// Open zip as folder iff it contains FITS files
+		var fo = new FolderOpener();
+		fo.setDirectory(path);
+		var hasFits = Arrays.stream(ZipOpenerUtil.getFilesInZip(path)).anyMatch(s ->
+				this.getFileType(s, false) == Opener.FITS);
+		if (hasFits) {
+			fo.openAsVirtualStack(ZipOpenerUtil.getOption());
+			return fo.openFolder(path);
+		}
+		// End open zip as folder
+
 		try {
 			ZipInputStream zis = new ZipInputStream(new FileInputStream(path));
 			ZipEntry entry = zis.getNextEntry();
@@ -1213,8 +1240,18 @@ public class Opener {
 	Attempts to determine the image file type by looking for
 	'magic numbers' and the file name extension.
 	 */
-	@AstroImageJ(reason = "Add more file types", modified = true)
+	@AstroImageJ(reason = "overload to impl checkOpenable")
 	public int getFileType(String path) {
+		return getFileType(path, true);
+	}
+
+	/**
+	Attempts to determine the image file type by looking for
+	'magic numbers' and the file name extension.
+	 */
+	@AstroImageJ(reason = "Add more file types; extend how fits file is checked; " +
+			"skip read check for files within a zip; add option to ignore unopenable file", modified = true)
+	private int getFileType(String path, boolean checkOpenable) {
 		if (openUsingPlugins && !path.endsWith(".txt") &&  !path.endsWith(".java"))
 			return UNKNOWN;
 		File file = new File(path);
@@ -1222,9 +1259,11 @@ public class Opener {
 		InputStream is;
 		byte[] buf = new byte[132];
 		try {
-			is = new FileInputStream(file);
-			is.read(buf, 0, 132);
-			is.close();
+			if (checkOpenable) {
+				is = new FileInputStream(file);
+				is.read(buf, 0, 132);
+				is.close();
+			}
 		} catch (IOException e) {
 			return UNKNOWN;
 		}
@@ -1284,7 +1323,8 @@ public class Opener {
 
 		// FITS ("SIMP")
 		if ((b0==83 && b1==73 && b2==77 && b3==80) || name.endsWith(".fts.gz") || name.endsWith(".fits.gz") ||
-				name.endsWith(".fit.gz") || name.endsWith(".fts.fz") || name.endsWith(".fits.fz") || name.endsWith(".fit.fz"))
+				name.endsWith(".fit.gz") || name.endsWith(".fts.fz") || name.endsWith(".fits.fz") ||
+				name.endsWith(".fit.fz") || name.endsWith(".fits"))
 			return FITS;
 			
 		// Java source file, text file or macro

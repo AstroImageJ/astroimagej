@@ -1,17 +1,26 @@
 package ij.plugin;
-import java.awt.*;
-import java.io.*;
-import java.awt.event.*;
-import java.awt.image.ColorModel;
-import java.util.*;
+
 import ij.*;
 import ij.astro.AstroImageJ;
-import ij.io.*;
-import ij.gui.*;
-import ij.process.*;
+import ij.astro.util.ZipOpenerUtil;
+import ij.gui.GenericDialog;
+import ij.gui.Overlay;
+import ij.gui.Roi;
+import ij.io.FileInfo;
+import ij.io.OpenDialog;
+import ij.io.Opener;
 import ij.measure.Calibration;
-import ij.util.*;
 import ij.plugin.frame.Recorder;
+import ij.process.ImageProcessor;
+import ij.util.DicomTools;
+import ij.util.StringSorter;
+import ij.util.Tools;
+
+import java.awt.*;
+import java.awt.image.ColorModel;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Properties;
 
 /** Implements the File/Import/Image Sequence command, which
 	opens a folder of images as a stack. */
@@ -141,6 +150,13 @@ public class FolderOpener implements PlugIn {
 		}
 		File file = new File(directory);
 		String[] list = file.list();
+
+		// Zip as folder
+		if (list == null) {
+			list = ZipOpenerUtil.getFilesInZip(directory);
+			if (list.length == 0) list = null;
+		} // End zip as folder
+
 		if (list==null) {
 			String parent = file.getParent();
 			file = new File(parent);

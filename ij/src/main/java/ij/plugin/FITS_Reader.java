@@ -316,11 +316,11 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		ImageProcessor imageProcessor = null;
 
 		if (isTessFfi(hdu)) {
-			hdu.addValue("BJD_TDB", generateBjd(hdu), "Calc by AIJ as BJDREFI+BJDREFF+TSTART+TELAPSE/2.0");
+			hdu.addValue("BJD_TDB", generateTimings(hdu), "Calc by AIJ as BJDREFI+BJDREFF+TSTART+TELAPSE/2.0");
 		}
 
 		if (isTicaImage(hdu)) {
-			hdu.addValue("BJD_TDB", generateBjd(hdu), "Calc by AIJ as TJD_ZERO + MIDTJD");
+			hdu.addValue("JD_TDB", generateTimings(hdu), "Calc by AIJ as TJD_ZERO + MIDTJD");
 			if (hdu.getHeader().getIntValue("QUAL_BIT") != 0) {
 				IJ.error("Skipped TICA image as QUAL_BIT is nonzero.");
 				return;
@@ -469,7 +469,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	 * <p>
 	 * Note: Assumes all needed cards are present.
 	 */
-	private double generateBjd(BasicHDU<?> hdu) {
+	private double generateTimings(BasicHDU<?> hdu) {
 		var header = hdu.getHeader();
 
 		if (isTessFfi(hdu)) {
@@ -485,7 +485,10 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			var tjdZero = header.getDoubleValue("TJD_ZERO");
 			var midTjd = header.getDoubleValue("MIDTJD");
 
-			return tjdZero + midTjd;
+			var jd_tdb = tjdZero + midTjd;
+
+			//FitsDate.getFitsDateString() todo convert to FITS dat format and add as MID-OBS
+			return jd_tdb;
 		}
 
 		return -1;

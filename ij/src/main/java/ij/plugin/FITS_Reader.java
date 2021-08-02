@@ -19,11 +19,9 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Objects;
+import java.util.*;
 import java.util.zip.GZIPInputStream;
+import java.util.zip.ZipFile;
 
 import static nom.tam.fits.header.Standard.*;
 
@@ -80,7 +78,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		BasicHDU<?>[] hdus;
 		try {
 			hdus = getHDU(path);
-		} catch (FitsException e) {
+		} catch (FitsException | IOException e) {
 			IJ.error("Unable to open FITS file " + path + ": " + e.getMessage());
 			return;
 		}
@@ -634,7 +632,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	/**
 	 * Create an {@link OpenDialog}, and read in the selected FITS file.
 	 */
-	private BasicHDU<?>[] getHDU(String path) throws FitsException {
+	private BasicHDU<?>[] getHDU(String path) throws FitsException, IOException {
 		OpenDialog od = new OpenDialog("Open FITS...", path);
 		directory = od.getDirectory();
 		fileName = od.getFileName();
@@ -645,10 +643,37 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		//IJ.log("Opening: " + directory + fileName);
 
 		FitsFactory.setAllowHeaderRepairs(true);
-		Fits fits = new Fits(directory + fileName);
 		fileName = fileName.endsWith(".fz") ? fileName.substring(0, fileName.length() - 3) : fileName;
-		return fits.read();
+
+		var fr = getFitsFile(path);
+		var hdus = fr.fits.read();
+
+		fr.zipFile.ifPresent(z -> {
+			try {
+				z.close(); // Close the zip file to prevent leaking memory, needs to be done after fits file is read
+			} catch (IOException ignored) {}
+		});
+
+		return hdus;
 	}
+
+	/**
+	 * Opens a FITS file from the path. If it is in a zip file, it will open the zip
+	 */
+	private FitsRead getFitsFile(String path) throws IOException, FitsException {
+		if (path.contains(".zip")) {
+			var s = path.split("\\.zip");
+			var zip = new ZipFile(s[0] + ".zip");
+
+			return new FitsRead(new Fits(zip.getInputStream(zip.getEntry(s[1].substring(1)))), Optional.of(zip));
+		}
+		return new FitsRead(new Fits(path), Optional.empty());
+	}
+
+	/**
+	 * Used to pass out the zipFile from the opening so that it may be closed.
+	 */
+	private record FitsRead(Fits fits, Optional<ZipFile> zipFile) {}
 
 	// The following code is nice, but it is causing a dependency on skyview.geometry.WCS, so bye-bye.
 	//

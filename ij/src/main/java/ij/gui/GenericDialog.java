@@ -77,10 +77,6 @@ FocusListener, ItemListener, KeyListener, AdjustmentListener, WindowListener {
 	private char echoChar;
 	private boolean hideCancelButton;
 	private boolean centerDialog = true;
-	@AstroImageJ(reason = "Used for opening dialog at a position", lostImplementation = true)
-	private boolean positionDialog = false;
-	@AstroImageJ(reason = "Used for opening dialog at a position", lostImplementation = true)
-	private int xPosition = 0, yPosition = 0;
 	private String helpURL;
 	private boolean smartRecording;
 	private Vector imagePanels;
@@ -94,12 +90,11 @@ FocusListener, ItemListener, KeyListener, AdjustmentListener, WindowListener {
 	private String[] windowTitles;
 
 	@AstroImageJ(reason = "Overloaded method to create dialog at a position")
-	public GenericDialog(String title, int x, int y) { //todo dialog positioning is not implemented
+	public GenericDialog(String title, int x, int y) {
 		this(title, WindowManager.getCurrentImage()!=null ?
 				WindowManager.getCurrentImage().getWindow() : IJ.getInstance()!=null ? IJ.getInstance() : new Frame());
-		positionDialog = true;
-		xPosition = x;
-		yPosition = y;
+
+		if (Prefs.isLocationOnScreen(new Point(x, y))) setLocation(x, y);
 	}
 
 

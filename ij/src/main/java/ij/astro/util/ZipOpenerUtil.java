@@ -39,7 +39,7 @@ public class ZipOpenerUtil {
         if (!path.contains(".zip")) return null;
         var s = path.split("\\.zip");
         var zip = new ZipFile(s[0] + ".zip");
-        var entryPathStream = zip.stream().map(ZipEntry::getName);
+        var entryPathStream = zip.stream().map(ZipEntry::getName).filter(s1 -> !s1.contains("__MACOSX"));
         var out = entryPathStream.toArray(String[]::new);
         zip.close();
         return out;

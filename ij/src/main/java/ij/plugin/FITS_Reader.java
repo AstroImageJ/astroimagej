@@ -326,7 +326,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		}
 
 		if (hdu instanceof TableHDU<?> tableHDU) {
-			if (isTessCut(tableHDU)) {
+			if (isTessCut(tableHDU) || isTessPostageStamp(hdus)) {
 				var data = (Object[]) tableHDU.getColumn("FLUX");
 				var hdr = convertHeaderForFfi(hdus[2].getHeader(), tableHDU);
 
@@ -334,7 +334,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 					AIJLogger.log("Cannot open 'table' images as a virtual stack.", false);
 				}
 
-				imageProcessor = makeStackFrom3DData(data, tableHDU.getNRows(), makeHeadersTessCut(hdr, tableHDU));
+				imageProcessor = makeStackFrom3DData(data, tableHDU.getNRows(), makeHeadersTessCut(hdr, tableHDU, hdus));
 			}
 		} else if (hdu.getHeader().getIntValue(NAXIS) == 2) {
 			imageProcessor = twoDimensionalImageData2Processor(imgData.getKernel());
@@ -357,7 +357,16 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	 * Determine if a table is a TESS cut.
 	 */
 	private boolean isTessCut(TableHDU<?> tableHDU) {
-		return tableHDU.getHeader().getStringValue("CREATOR").equals("astrocut");
+		return "astrocut".equals(tableHDU.getHeader().getStringValue("CREATOR"));
+	}
+
+	/**
+	 * Determine if a table is a TESS 2-minute postage stamp.
+	 */
+	private boolean isTessPostageStamp(BasicHDU<?>[] hdus) {
+		var hdu = hdus[0];
+		return ("TESS").equals(hdu.getTelescope()) && hdu.getHeader().containsKey("CREATOR") &&
+				hdu.getHeader().getStringValue("CREATOR").contains("TargetPixelExporterPipelineModule");
 	}
 
 	/**
@@ -387,7 +396,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	 * <p>
 	 * Adapted from TESS Cut code by John Kielkopf.
 	 */
-	private List<String> makeHeadersTessCut(final Header hdr, final TableHDU<?> tableHDU) {
+	private List<String> makeHeadersTessCut(final Header hdr, final TableHDU<?> tableHDU, BasicHDU<?>[] hdus) {
 		List<String> headers = new ArrayList<>(tableHDU.getNRows());
 
 		try {
@@ -405,20 +414,29 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 				hdr.deleteKey("AIJ_Q");
 				hdr.deleteKey("NO_BJD");
 				hdr.deleteKey("NAXIS3");
+				hdr.deleteKey("OBJECT");
 
 				var bjd0 = 2457000d;
 				var bjd1 = 0d;
 				bjd1 = bjds[i].doubleValue();
-				hdr.addValue("BJD_TDB", bjd0 + bjd1, "Calc. BJD_TDB");
+				if (!Double.isNaN(bjd0 + bjd1)) hdr.addValue("BJD_TDB", bjd0 + bjd1, "Calc. BJD_TDB");
 
-				// If the image should be skipped add this card, string check for 'AIJ_Q' to skip image
-				// Based on TESS Cut code by John Kielkopf
-				if ((!skipTessQualCheck && quality[i].intValue() != 0)) {
-					hasErrors = true;
-					hdr.addValue("AIJ_Q", quality[i].intValue() != 0, "Skipped due to quality flag");
-				} else if (Double.isNaN(bjd1)) {
-					hasErrors = true;
-					hdr.addValue("NO_BJD", 0, "Skipped due to invalid or missing BJD time");
+				if (isTessCut(tableHDU)) {
+					// If the image should be skipped add this card, string check for 'AIJ_Q' to skip image
+					// Based on TESS Cut code by John Kielkopf
+					if ((!skipTessQualCheck && quality[i].intValue() != 0)) {
+						hasErrors = true;
+						hdr.addValue("AIJ_Q", quality[i].intValue() != 0, "Skipped due to quality flag");
+					} else if (Double.isNaN(bjd1)) {
+						hasErrors = true;
+						hdr.addValue("NO_BJD", 0, "Skipped due to invalid or missing BJD time");
+					}
+				} else if (isTessPostageStamp(hdus)) {
+					hdr.addValue("OBJECT", hdus[2].getHeader().getStringValue("OBJECT"), "Object ID");
+					if (Double.isNaN(bjd1)) {
+						hdr.addValue("NO_BJD", 0, "Skipped due to invalid or missing BJD time");
+						hasErrors = true;
+					}
 				}
 
 				// Get the Header as a String
@@ -430,7 +448,6 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 
 				headers.add(baos.toString(utf8));
 			}
-
 			if (hasErrors) AIJLogger.log("Encountered an issue opening: " + fileName);
 		} catch (Exception ignored) {}
 

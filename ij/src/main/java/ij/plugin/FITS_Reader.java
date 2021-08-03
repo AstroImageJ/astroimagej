@@ -9,6 +9,7 @@ import ij.astro.logging.AIJLogger;
 import ij.astro.logging.Translation;
 import ij.astro.util.ArrayBoxingUtil;
 import ij.astro.util.LeapSeconds;
+import ij.astro.util.SkyAlgorithmsTimeUtil;
 import ij.io.FileInfo;
 import ij.io.FileOpener;
 import ij.io.OpenDialog;
@@ -23,6 +24,8 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.*;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipFile;
@@ -509,8 +512,14 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			// Julian Dates" Eastman et al. 2010
 			var jdUtc = jdTdb - leapSeconds - 32.184;
 
-			//FitsDate.getFitsDateString() todo convert to FITS date format and add as MID-OBS
+			hdu.addValue("JD_TDB", jdTdb, "Calc by AIJ as TJD_ZERO + MIDTJD");
 			hdu.addValue("JD_UTC", jdUtc, "Calc by AIJ as JD_TDB - leapsecs - 32.184s");
+
+			var dt = SkyAlgorithmsTimeUtil.UTDateFromJD(jdTdb);
+			var hmsms = SkyAlgorithmsTimeUtil.ut2Array(dt[3]);
+			var dateTime = LocalDateTime.of((int) dt[0], (int) dt[1], (int) dt[2], hmsms[0], hmsms[1],
+					hmsms[2], hmsms[3] * (10^6)).toInstant(ZoneOffset.ofTotalSeconds(0));
+			hdu.addValue("MID-OBS", FitsDate.getFitsDateString(Date.from(dateTime)), "Date");
 		}
 	}
 

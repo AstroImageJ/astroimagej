@@ -94,7 +94,7 @@ import java.util.TimeZone;
 
 
 
-class SkyAlgorithmsTimeUtil {
+public class SkyAlgorithmsTimeUtil {
     /**
      * The mathematical constant PI.
      */
@@ -208,6 +208,22 @@ class SkyAlgorithmsTimeUtil {
         utdate[3] = ut;
 
         return utdate;
+    }
+
+
+    /**
+     * Converts UT time to {hours, minutes, seconds, milliseconds}
+     */
+    public static int[] ut2Array(double utTime) {
+        var hour = (int) utTime;
+        var rem = utTime - hour;
+        var min = (int) (rem * 60);
+        rem = rem - min/60D;
+        var secs = (int) (rem * 3600);
+        rem = rem - secs/3600D;
+        var ms = (int) (rem * 3600000);
+
+        return new int[]{hour, min, secs, ms};
     }
 
 }

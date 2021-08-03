@@ -8,6 +8,7 @@ import ij.astro.AstroImageJ;
 import ij.astro.logging.AIJLogger;
 import ij.astro.logging.Translation;
 import ij.astro.util.ArrayBoxingUtil;
+import ij.astro.util.LeapSeconds;
 import ij.io.FileInfo;
 import ij.io.FileOpener;
 import ij.io.OpenDialog;
@@ -502,7 +503,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			var midTjd = header.getDoubleValue("MIDTJD");
 			var jdTdb = tjdZero + midTjd;
 
-			var leapSeconds = 0; //TODO get leapseconds
+			var leapSeconds = (new LeapSeconds()).getLeapSeconds(jdTdb);
 
 			// JD_TDB -> JD_UTC, see "Achieving Better Than 1 Minute Accuracy in the Heliocentric and Barycentric
 			// Julian Dates" Eastman et al. 2010

@@ -7,13 +7,13 @@ import ij.WindowManager;
 import ij.text.TextPanel;
 
 import java.awt.*;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * AIJ Logger class. Supports opt-in auto-closing of log window, opening a new log window for each calling class's log
@@ -105,6 +105,21 @@ public class AIJLogger {
         } else {
             IJ.log(padTitle(caller + ": ") + msg);
         }
+    }
+
+    /**
+     * Prints the stacktrace of the caller in a log window.
+     * Disables auto-closing for the caller.
+     */
+    public static synchronized void logStacktrace() {
+        setLogAutoCloses(false);
+        log("Stacktrace: " +
+                StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE).walk(AIJLogger::walk2List));
+    }
+
+    private static synchronized List<StackWalker.StackFrame> walk2List(Stream<StackWalker.StackFrame> stackFrameStream) {
+        return stackFrameStream.filter(stackFrame -> !stackFrame.getDeclaringClass().equals(AIJLogger.class))
+                .collect(Collectors.toList());
     }
 
     /**

@@ -1,6 +1,9 @@
 package ij.plugin;
 
-import ij.*;
+import ij.IJ;
+import ij.ImagePlus;
+import ij.ImageStack;
+import ij.Prefs;
 import ij.astro.AstroImageJ;
 import ij.astro.logging.AIJLogger;
 import ij.astro.logging.Translation;
@@ -313,12 +316,9 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	private void displaySingleImage(BasicHDU<?> hdu, Data imgData, BasicHDU<?>[] hdus) throws FitsException {
 		ImageProcessor imageProcessor = null;
 
-		if (isTessFfi(hdu)) {
-			hdu.addValue("BJD_TDB", generateTimings(hdu), "Calc by AIJ as BJDREFI+BJDREFF+TSTART+TELAPSE/2.0");
-		}
+		generateTimings(hdu);
 
 		if (isTicaImage(hdu)) {
-			hdu.addValue("JD_TDB", generateTimings(hdu), "Calc by AIJ as TJD_ZERO + MIDTJD");
 			if (hdu.getHeader().getIntValue("QUAL_BIT") != 0) {
 				IJ.error("Skipped TICA image as QUAL_BIT is nonzero.");
 				return;
@@ -467,7 +467,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	 * <p>
 	 * Note: Assumes all needed cards are present.
 	 */
-	private double generateTimings(BasicHDU<?> hdu) {
+	private void generateTimings(BasicHDU<?> hdu) throws HeaderCardException {
 		var header = hdu.getHeader();
 
 		if (isTessFfi(hdu)) {
@@ -476,20 +476,24 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			var tStart = header.getDoubleValue("TSTART");
 			var telapse = header.getDoubleValue("TELAPSE");
 
-			return bjdRefi + bjdReff + tStart + telapse/2.0;
+			var bjdTdb = bjdRefi + bjdReff + tStart + telapse/2.0;
+			hdu.addValue("BJD_TDB", bjdTdb, "Calc by AIJ as BJDREFI+BJDREFF+TSTART+TELAPSE/2.0");
 		}
 
 		if (isTicaImage(hdu)) {
 			var tjdZero = header.getDoubleValue("TJD_ZERO");
 			var midTjd = header.getDoubleValue("MIDTJD");
+			var jdTdb = tjdZero + midTjd;
 
-			var jd_tdb = tjdZero + midTjd;
+			var leapSeconds = 0; //TODO get leapseconds
 
-			//FitsDate.getFitsDateString() todo convert to FITS dat format and add as MID-OBS
-			return jd_tdb;
+			// JD_TDB -> JD_UTC, see "Achieving Better Than 1 Minute Accuracy in the Heliocentric and Barycentric
+			// Julian Dates" Eastman et al. 2010
+			var jdUtc = jdTdb - leapSeconds - 32.184;
+
+			//FitsDate.getFitsDateString() todo convert to FITS date format and add as MID-OBS
+			hdu.addValue("JD_UTC", jdUtc, "Calc by AIJ as JD_TDB - leapsecs - 32.184s");
 		}
-
-		return -1;
 	}
 
 	/**

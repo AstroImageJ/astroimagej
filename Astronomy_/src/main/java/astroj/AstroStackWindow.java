@@ -2,46 +2,37 @@ package astroj;
 
 import Astronomy.MultiAperture_;
 import Astronomy.MultiPlot_;
+import bislider.com.visutools.nav.bislider.*;
 import ij.*;
 import ij.astro.logging.AIJLogger;
-import ij.io.*;
+import ij.gui.GenericDialog;
+import ij.gui.Roi;
+import ij.gui.StackWindow;
+import ij.gui.Toolbar;
 import ij.io.OpenDialog;
-
-import ij.gui.*;
-import ij.plugin.FITS_Reader;
-import ij.process.*;
-import ij.text.*;
-//import ij.measure.*;
+import ij.io.SaveDialog;
 import ij.measure.Calibration;
+import ij.plugin.FITS_Reader;
 import ij.plugin.FolderOpener;
 import ij.plugin.Macro_Runner;
-//import ij.plugin.filter.*;
-//import ij.plugin.frame.*;
-//import ij.macro.Interpreter;
-
-import java.awt.*;
-import java.awt.image.*;
-import java.awt.event.*;
-
-//import java.awt.image.*;
-import java.io.*;
+import ij.process.ColorProcessor;
+import ij.process.ImageProcessor;
+import ij.process.ImageStatistics;
+import ij.process.StackProcessor;
+import ij.text.TextPanel;
+import ij.util.Tools;
 
 import javax.swing.*;
-//import javax.swing.border.TitledBorder;
-//import javax.swing.event.*;
-import java.lang.reflect.InvocationTargetException;
-import java.util.*;
-//import java.util.Properties;
-//import java.util.EventListener;
-
-import java.text.*;
-
-import java.io.File;
-import java.util.List;
-
-import bislider.com.visutools.nav.bislider.*;
-import ij.util.Tools;
+import java.awt.*;
+import java.awt.event.*;
+import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
+import java.awt.image.PixelGrabber;
+import java.io.*;
 import java.net.*;
+import java.text.DecimalFormat;
+import java.util.List;
+import java.util.*;
 
 
 
@@ -6855,7 +6846,7 @@ void setupListeners() {
             z = zSelector.getValue();
             int slice = hyperStack ? imp.getSlice() : imp.getCurrentSlice();
             if (z==slice&&e.getAdjustmentType()==AdjustmentEvent.TRACK) return;
-            showSlice(e.getValue());
+            EventQueue.invokeLater(() -> setAstroProcessor(false));
         }
     }
 

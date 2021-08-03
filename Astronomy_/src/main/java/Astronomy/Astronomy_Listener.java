@@ -1,11 +1,14 @@
 package Astronomy;//Astronomy_Listener.java
 
-import ij.*;
-import ij.plugin.*;
+import astroj.AstroCanvas;
+import astroj.AstroStackWindow;
+import ij.IJ;
+import ij.ImageListener;
+import ij.ImagePlus;
+import ij.Prefs;
+import ij.plugin.PlugIn;
 
-import astroj.*;
-
-import java.awt.Frame;
+import java.awt.*;
 
 /**
  * @author K.A. Collins, University of Louisville
@@ -63,7 +66,7 @@ public class Astronomy_Listener implements PlugIn, ImageListener
             if (asw.isReady && !asw.minMaxChanged)
                 {
 //                IJ.log("Actually Updating Image: "+imp.getTitle());
-                asw.setAstroProcessor(false,false);
+                asw.setAstroProcessor(false);
                 }
             else
                 {

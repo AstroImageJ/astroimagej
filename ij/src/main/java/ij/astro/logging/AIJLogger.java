@@ -96,9 +96,11 @@ public class AIJLogger {
             aijLogPanels.computeIfAbsent(caller,
                     caller1 -> new LogWindow(caller1 + " Log", "",400, 250).getTextPanel());
             var panel = aijLogPanels.get(caller);
-            panel.updateDisplay();
-            panel.setFont(new Font("SansSerif", Font.PLAIN, 16));
-            panel.appendLine(msg);
+            EventQueue.invokeLater(() -> {
+                panel.updateDisplay();
+                panel.setFont(new Font("SansSerif", Font.PLAIN, 16));
+                panel.appendLine(msg);
+            });
             aijLogPanelsTimer.computeIfPresent(caller,
                     (caller_, closingConditions) -> new ClosingConditions(closingConditions.autoClose));
             aijLogPanelsTimer.putIfAbsent(caller, new ClosingConditions());
@@ -110,6 +112,8 @@ public class AIJLogger {
     /**
      * Prints the stacktrace of the caller in a log window.
      * Disables auto-closing for the caller.
+     * <p>The first method in the stacktrace is the caller of this method. {@link AIJLogger}'s methods
+     * are filtered out.</p>
      */
     public static synchronized void logStacktrace() {
         setLogAutoCloses(false);

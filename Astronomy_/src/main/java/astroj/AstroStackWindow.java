@@ -6846,7 +6846,6 @@ void setupListeners() {
     // Part of fix for GH-20
     public synchronized void adjustmentValueChanged(AdjustmentEvent e) {
         super.adjustmentValueChanged(e);
-        if (IJ.isMacOSX()) return; // On mac this fix seems unneeded, and slows down the scrollbar
         if (e.getSource()==zSelector) {
             z = zSelector.getValue();
             int slice = hyperStack ? imp.getSlice() : imp.getCurrentSlice();

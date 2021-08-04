@@ -1,29 +1,29 @@
 // AstroConvertor.java
 package astroj;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.util.*;
-import java.util.Timer;
-import java.util.TimerTask;
+import ij.Prefs;
+import ij.astro.util.LeapSeconds;
+import ij.gui.MultiLineLabel;
+import ij.util.Tools;
+import util.BrowserOpener;
 
 import javax.swing.*;
-import javax.swing.border.*;
 import javax.swing.border.Border;
-import javax.swing.event.*;
-
-import ij.*;
-import java.text.*;
-import java.net.*;
+import javax.swing.border.CompoundBorder;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.TitledBorder;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.PopupMenuEvent;
+import javax.swing.event.PopupMenuListener;
+import java.awt.*;
+import java.awt.event.*;
 import java.io.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-
-import ij.gui.*;
-import ij.util.*;
-
-import util.BrowserOpener;
+import java.net.*;
+import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
+import java.util.Timer;
+import java.util.*;
 
 
 /**
@@ -33,7 +33,7 @@ import util.BrowserOpener;
  * @version 1.0
  * 
  */
-public class AstroConverter implements ItemListener, ActionListener, ChangeListener, MouseListener   // PropertyChangeListener, MouseMotionListener, MouseWheelListener,
+public class AstroConverter extends LeapSeconds implements ItemListener, ActionListener, ChangeListener, MouseListener   // PropertyChangeListener, MouseMotionListener, MouseWheelListener,
 	{
     String      version = "3.4.0";
 	TimerTask	task = null;
@@ -75,13 +75,13 @@ public class AstroConverter implements ItemListener, ActionListener, ChangeListe
 //    char decSep = symbols.getDecimalSeparator(); 
 //    char thouSep = symbols.getGroupingSeparator();    
 
-    double jdNow, lstNow, epochNow, newnum, bjdEOI, hjdEOI, hjdEOICorr, bjdEOICorr;
+    double lstNow, epochNow, newnum, bjdEOI, hjdEOI, hjdEOICorr, bjdEOICorr;
     double pmTwiJD, amTwiJD;
     double airmass = 1.0;
-    double jdEOI=2451545.0, lstEOI, epochEOI, oldjdEOI;
+    double lstEOI, epochEOI, oldjdEOI;
     int jdEOIStep = GregorianCalendar.DAY_OF_MONTH;
     int jdEOIStepFactor = 1;
-    double leapSec=0.0, dT = 0.0, g, TDB;
+    double dT = 0.0, g, TDB;
     double nowTimeZoneOffset = 0, eoiTimeZoneOffset = 0;
     double[] coords;
     double[][] ssbAngles = new double[9][2]; //0=Mercury, 1=Venus, 2=Moon, 3=Mars, 4=Jupiter, 5=Saturn, 6=Uranus, 7=Neptune, 8=Pluto; 0=objSSb distance, 1=SSB altitude
@@ -110,7 +110,6 @@ public class AstroConverter implements ItemListener, ActionListener, ChangeListe
     double[] utDateNow = {0.0, 0.0, 0.0, 0.0};
     double[] locDateNow = {0.0, 0.0, 0.0, 0.0};
     double[] utDateJ2000 = {2000, 1, 1, 12}; //11.982171};
-    double[] utDateEOI = {2000, 1, 1, 12};
     double[] locDateEOI = {2000, 1, 1, 12};
     double[] pmTwiDate = {2000, 1, 1, 12};
     double[] amTwiDate = {2000, 1, 1, 12};
@@ -147,7 +146,6 @@ public class AstroConverter implements ItemListener, ActionListener, ChangeListe
     JCheckBox useNowEpochCB, autoLeapSecCB, useOhioStateCheckBox;
     boolean useNowEpoch = false, autoLeapSec = true, jdEOIupMouseDown = false, jdEOIdownMouseDown = false, spinnerActive = false;
     Object mouseSource, textFieldSource;
-    Double[] leapSecJD,  TAIminusUTC, baseMJD, baseMJDMultiplier;
 //    String leapSource = " (default)";
 
 
@@ -324,6 +322,7 @@ public class AstroConverter implements ItemListener, ActionListener, ChangeListe
 //            IJ.log(ff.getFontName());
 //            }
 
+        logger = this::showMessage;
         initDefaultLeapSecs();
         getPrefs();
         if (dp) useNowEpoch = false;
@@ -2963,372 +2962,24 @@ double[] processCoordinatePair(JTextField textFieldA, int decimalPlacesA, int ba
         return x;
         }
 
-    public boolean getTAIminusUTC()
-    {
-        leapSec = 0.0;
-//        leapSource = " (default)";
+    @Override
+    public boolean getTAIminusUTC() {
+        var out = super.getTAIminusUTC();
         leapSecTextField.setBackground(leapGreen);
-        if (leapSecJD == null || TAIminusUTC == null || baseMJD == null || baseMJDMultiplier == null ||
-            leapSecJD.length < 2 || TAIminusUTC.length < 2 || baseMJD.length < 2 || baseMJDMultiplier.length < 2 ||
-            leapSecJD.length != TAIminusUTC.length || leapSecJD.length != baseMJD.length || leapSecJD.length != baseMJDMultiplier.length)
-            {
-            initDefaultLeapSecs();
-            return false;
-            }
-        if (jdEOI<leapSecJD[0])
-            {
-            estimateLeapSecs();
-            return true;
-            }
-        for (int i=1; i<leapSecJD.length;i++)
-            {
-            if (jdEOI>=leapSecJD[i-1] && jdEOI<leapSecJD[i])
-                {
-                leapSec = TAIminusUTC[i-1] + (jdEOI - 2400000 - baseMJD[i-1])*baseMJDMultiplier[i-1];
-//                leapSource = "(actual)";
-                leapSecTextField.setBackground(leapGreen);
-                return true;
-                }
-            }
-        if (jdEOI>=leapSecJD[leapSecJD.length-1] && jdEOI <= jdNow+365.0)
-            {
-            leapSec = TAIminusUTC[TAIminusUTC.length-1] + (jdEOI - 2400000 - baseMJD[TAIminusUTC.length-1])*baseMJDMultiplier[TAIminusUTC.length-1];
-//            leapSource = "(actual)";
-            leapSecTextField.setBackground(leapGreen);
-            return true;
-            }
-        estimateLeapSecs();
-        return true;
+        return out;
     }
 
 
-    void estimateLeapSecs()
-    {
+    @Override
+    protected void estimateLeapSecs() {
+        super.estimateLeapSecs();
         double y = utDateEOI[0] +(utDateEOI[1]-0.5)/12.0;
-        double u = 0.0;
-        double dt = 0.0;
-        leapSec = 0.0;
-//        leapSource = "(estimate)";
         leapSecTextField.setBackground(leapYellow);
-        if (y<-1999)
-            {
-//            leapSource = "(out of range)";
+        if (y<-1999) {
             leapSecTextField.setBackground(leapRed);
-            y = -1999;
-            u = (y-1820)/100;
-            dt = -20 + 32 * u*u;
-            }
-        else if(y >= -1999 && y < -500.0)
-            {
-            u = (y-1820)/100;
-            dt = -20 + 32 * u*u;
-            }
-        else if (y>=-500 && y<500.0)
-            {
-            u = y/100;
-            double u2 = u*u;
-            double u3 = u2*u;
-            double u4 = u3*u;
-            double u5 = u4*u;
-            double u6 = u5*u;
-            dt = 10583.6 - 1014.41 * u + 33.78311 * u2 - 5.952053 * u3 - 0.1798452 * u4 + 0.022174192 * u5 + 0.0090316521 * u6;
-            }
-        else if (y>=500 && y<1600.0)
-            {
-            u = (y-1000)/100;
-            double u2 = u*u;
-            double u3 = u2*u;
-            double u4 = u3*u;
-            double u5 = u4*u;
-            double u6 = u5*u;
-            dt = 1574.2 - 556.01 * u + 71.23472 * u2 + 0.319781 * u3 - 0.8503463 * u4 - 0.005050998 * u5 + 0.0083572073 * u6;
-            }
-        else if (y>=1600 && y<1700.0)
-            {
-            u = y - 1600;
-            double u2 = u*u;
-            double u3 = u2*u;
-            dt = 120 - 0.9808 * u - 0.01532 * u2 + u3 / 7129;
-            }
-        else if (y>=1700 && y<1800.0)
-            {
-            u = y - 1700;
-            double u2 = u*u;
-            double u3 = u2*u;
-            double u4 = u3*u;
-            dt = 8.83 + 0.1603 * u - 0.0059285 * u2 + 0.00013336 * u3 - u4 / 1174000;
-            }
-        else if (y>=1800 && y<1860.0)
-            {
-            u = y - 1800;
-            double u2 = u*u;
-            double u3 = u2*u;
-            double u4 = u3*u;
-            double u5 = u4*u;
-            double u6 = u5*u;
-            double u7 = u6*u;
-            dt = 13.72 - 0.332447 * u + 0.0068612 * u2 + 0.0041116 * u3 - 0.00037436 * u4 + 0.0000121272 * u5 - 0.0000001699 * u6 + 0.000000000875 * u7;
-            }
-        else if (y>=1860 && y<1900.0)
-            {
-            u = y - 1860;
-            double u2 = u*u;
-            double u3 = u2*u;
-            double u4 = u3*u;
-            double u5 = u4*u;
-            dt = 7.62 + 0.5737 * u - 0.251754 * u2 + 0.01680668 * u3 -0.0004473624 * u4 + u5 / 233174;
-            }
-        else if (y>=1900 && y<1920.0)
-            {
-            u = y - 1900;
-            double u2 = u*u;
-            double u3 = u2*u;
-            double u4 = u3*u;
-            dt = -2.79 + 1.494119 * u - 0.0598939 * u2 + 0.0061966 * u3 - 0.000197 * u4;
-            }
-        else if (y>=1920 && y<1941.0)
-            {
-            u = y - 1920;
-            double u2 = u*u;
-            double u3 = u2*u;
-            dt = 21.20 + 0.84493*u - 0.076100 * u2 + 0.0020936 * u3;
-            }
-        else if (y>=1941 && y<1961.0)
-            {
-            u = y - 1950;
-            double u2 = u*u;
-            double u3 = u2*u;
-            dt = 29.07 + 0.407*u - u2/233 + u3 / 2547;
-            }
-        else if (y>=1961 && y<1986.0)
-            {
-            u = y - 1975;
-            double u2 = u*u;
-            double u3 = u2*u;
-            dt = 45.45 + 1.067*u - u2/260 - u3 / 718;
-            }
-        else if (y>=1986 && y<2005.0)
-            {
-            u = y - 2000;
-            double u2 = u*u;
-            double u3 = u2*u;
-            double u4 = u3*u;
-            double u5 = u4*u;
-            dt = 63.86 + 0.3345 * u - 0.060374 * u2 + 0.0017275 * u3 + 0.000651814 * u4 + 0.00002373599 * u5;
-            }
-        else if (y>=2005 && y<2050.0)
-            {
-            u = y - 2000;
-            double u2 = u*u;
-            dt = 62.92 + 0.32217 * u + 0.005589 * u2;
-            }
-        else if (y>=2050 && y<2150.0)
-            {
-            dt = -20 + 32 * ((y-1820)/100)*((y-1820)/100) - 0.5628 * (2150 - y);
-            }
-        else if (y>=2150 && y<3000.0)
-            {
-            u = (y-1820)/100;
-            double u2 = u*u;
-            dt = -20 + 32 * u2;
-            }
-        else
-            {
-            y=3000.0;
-            u = (y-1820)/100;
-            double u2 = u*u;
-            dt = -20 + 32 * u2;
-//            leapSource = "(out of range)";
+        } else if(!((y >= -1999 && y < -500.0) || (y>=-500 && y<3000.0))) {
             leapSecTextField.setBackground(leapRed);
-            }
-        leapSec = dt - 32.184;
-    }
-
-
-    void initDefaultLeapSecs()
-    {
-    leapSecJD = new Double[]
-                            {
-                            2437300.5,
-                            2437512.5,
-                            2437665.5,
-                            2438334.5,
-                            2438395.5,
-                            2438486.5,
-                            2438639.5,
-                            2438761.5,
-                            2438820.5,
-                            2438942.5,
-                            2439004.5,
-                            2439126.5,
-                            2439887.5,
-                            2441317.5,
-                            2441499.5,
-                            2441683.5,
-                            2442048.5,
-                            2442413.5,
-                            2442778.5,
-                            2443144.5,
-                            2443509.5,
-                            2443874.5,
-                            2444239.5,
-                            2444786.5,
-                            2445151.5,
-                            2445516.5,
-                            2446247.5,
-                            2447161.5,
-                            2447892.5,
-                            2448257.5,
-                            2448804.5,
-                            2449169.5,
-                            2449534.5,
-                            2450083.5,
-                            2450630.5,
-                            2451179.5,
-                            2453736.5,
-                            2454832.5,
-                            2456109.5,
-                            2457204.5,
-                            2457754.5
-                            };
-
-    TAIminusUTC =  new Double[]
-                            {
-                             1.4228180,
-                             1.3728180,
-                             1.8458580,
-                             1.9458580,
-                             3.2401300,
-                             3.3401300,
-                             3.4401300,
-                             3.5401300,
-                             3.6401300,
-                             3.7401300,
-                             3.8401300,
-                             4.3131700,
-                             4.2131700,
-                            10.0,
-                            11.0,
-                            12.0,
-                            13.0,
-                            14.0,
-                            15.0,
-                            16.0,
-                            17.0,
-                            18.0,
-                            19.0,
-                            20.0,
-                            21.0,
-                            22.0,
-                            23.0,
-                            24.0,
-                            25.0,
-                            26.0,
-                            27.0,
-                            28.0,
-                            29.0,
-                            30.0,
-                            31.0,
-                            32.0,
-                            33.0,
-                            34.0,
-                            35.0,
-                            36.0,
-                            37.0
-                            };
-
-
-
-    baseMJD =  new Double[]
-                            {
-                            37300.0,
-                            37300.0,
-                            37665.0,
-                            37665.0,
-                            38761.0,
-                            38761.0,
-                            38761.0,
-                            38761.0,
-                            38761.0,
-                            38761.0,
-                            38761.0,
-                            39126.0,
-                            39126.0,
-                            41317.0,
-                            41317.0,
-                            41317.0,
-                            41317.0,
-                            41317.0,
-                            41317.0,
-                            41317.0,
-                            41317.0,
-                            41317.0,
-                            41317.0,
-                            41317.0,
-                            41317.0,
-                            41317.0,
-                            41317.0,
-                            41317.0,
-                            41317.0,
-                            41317.0,
-                            41317.0,
-                            41317.0,
-                            41317.0,
-                            41317.0,
-                            41317.0,
-                            41317.0,
-                            41317.0,
-                            41317.0,
-                            41317.0,
-                            41317.0,
-                            41317.0
-                            };
-
-    baseMJDMultiplier =  new Double[]
-                            {
-                            0.001296,
-                            0.001296,
-                            0.0011232,
-                            0.0011232,
-                            0.001296,
-                            0.001296,
-                            0.001296,
-                            0.001296,
-                            0.001296,
-                            0.001296,
-                            0.001296,
-                            0.002592,
-                            0.002592,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0,
-                            0.0
-                            };
-
+        }
     }
 
     void displayLeapSecondTable(boolean update)
@@ -3985,59 +3636,14 @@ double[] processCoordinatePair(JTextField textFieldA, int decimalPlacesA, int ba
 
 
 
-    boolean getUSNOLeapSecTable()
-        {
-        try {
-            URL leapSecTable = new URL("https://hpiers.obspm.fr/iers/bul/bulc/Leap_Second.dat");
-            URLConnection leapSecTableCon = leapSecTable.openConnection();
-            leapSecTableCon.setConnectTimeout(10000);
-            leapSecTableCon.setReadTimeout(10000);
-            BufferedReader in = new BufferedReader(new InputStreamReader(leapSecTableCon.getInputStream()));
-            ArrayList<Double> leapJD = new ArrayList<>(Arrays.asList(leapSecJD));
-            ArrayList<Double> leapSEC = new ArrayList<>(Arrays.asList(TAIminusUTC));
-            ArrayList<Double> leapbaseMJD = new ArrayList<>(Arrays.asList(baseMJD));
-            ArrayList<Double> leapbaseMJDMultiplier = new ArrayList<>(Arrays.asList(baseMJDMultiplier));
-            double jd = 0, leap = 0, base = 0, multiplier = 0;
-            double oldjd = 0;
-            String inputLine;
-            newleapSecTableReady = false;
-            while ((inputLine = in.readLine()) != null)
-                {
-                    if (inputLine.startsWith("#")) continue;
-                    String[] parsed = Pattern.compile("(\\s+)").split(inputLine);
-                    base = Double.parseDouble(parsed[1]);
-                    jd = base + 2400000.5;
-                    if (jd < oldjd) {
-                        showMessage("Julian Date table values are not in increasing order");
-                        break;
-                    }
-                    if (jd <= leapSecJD[leapSecJD.length - 1]) { // The current values are fine, so only want to get new leap seconds
-                        continue;
-                    }
-                    leap = Double.parseDouble(parsed[5]);
-                    leapJD.add(jd);
-                    leapSEC.add(leap);
-                    leapbaseMJD.add(41317.0);
-                    leapbaseMJDMultiplier.add(0D);
-                    oldjd = jd;
-                }
-            if (leapJD.size() > 0)
-                {
-                newleapSecTableReady = true;
-                leapSecJD = leapJD.toArray(leapSecJD);
-                TAIminusUTC = leapSEC.toArray(TAIminusUTC);
-                baseMJD = leapbaseMJD.toArray(baseMJD);
-                baseMJDMultiplier = leapbaseMJDMultiplier.toArray(baseMJDMultiplier);
-                }
-
-            in.close();
-            }
-            catch (IOException ioe){
+        protected boolean getUSNOLeapSecTable() {
+            try {
+                getIERSLeapSecTable();
+            } catch (IOException e) {
                 showMessage("USNO query error", "<html>"+"Could not open link to Earth Orientation Center at"+"<br>"+
-                            "https://hpiers.obspm.fr/iers/bul/bulc/Leap_Second.dat."+"<br>"+
-                            "Check internet connection."+"</html>");
-                newleapSecTableReady = false;
-                }
+                        "https://hpiers.obspm.fr/iers/bul/bulc/Leap_Second.dat."+"<br>"+
+                        "Check internet connection."+"</html>");
+            }
             return newleapSecTableReady;
         }
 

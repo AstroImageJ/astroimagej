@@ -9,17 +9,19 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
 public class LeapSeconds {
-    private Double[] leapSecJD;
-    private Double[] TAIminusUTC;
-    private Double[] baseMJD;
-    private Double[] baseMJDMultiplier;
-    private double leapSec;
-    private double[] utDateEOI = {2000, 1, 1, 12};
-    private double jdEOI;
-    private double jdNow;
+    protected Double[] leapSecJD;
+    protected Double[] TAIminusUTC;
+    protected Double[] baseMJD;
+    protected Double[] baseMJDMultiplier;
+    protected double leapSec;
+    protected double[] utDateEOI = {2000, 1, 1, 12};
+    protected double jdEOI = 2451545.0;
+    protected double jdNow;
+    protected Consumer<String> logger = AIJLogger::log;
 
     /**
      * Gives the number of leap seconds for the provided mjd.
@@ -36,13 +38,17 @@ public class LeapSeconds {
         return leapSec;
     }
 
-    private boolean getTAIminusUTC() {
+    protected boolean getTAIminusUTC() {
         leapSec = 0.0;
         if (leapSecJD == null || TAIminusUTC == null || baseMJD == null || baseMJDMultiplier == null ||
                 leapSecJD.length < 2 || TAIminusUTC.length < 2 || baseMJD.length < 2 || baseMJDMultiplier.length < 2 ||
                 leapSecJD.length != TAIminusUTC.length || leapSecJD.length != baseMJD.length || leapSecJD.length != baseMJDMultiplier.length) {
             initDefaultLeapSecs();
-            getIERSLeapSecTable();
+            try {
+                getIERSLeapSecTable();
+            } catch (IOException e) {
+                AIJLogger.log("Failed to connect to IERS.");
+            }
             return false;
         }
         if (jdEOI < leapSecJD[0]) {
@@ -63,7 +69,7 @@ public class LeapSeconds {
         return true;
     }
 
-    private void initDefaultLeapSecs() {
+    protected void initDefaultLeapSecs() {
         leapSecJD = new Double[]{
                 2437300.5,
                 2437512.5,
@@ -243,53 +249,49 @@ public class LeapSeconds {
 
     }
 
-    private void getIERSLeapSecTable() {
-        try {
-            URL leapSecTable = new URL("https://hpiers.obspm.fr/iers/bul/bulc/Leap_Second.dat");
-            URLConnection leapSecTableCon = leapSecTable.openConnection();
-            leapSecTableCon.setConnectTimeout(10000);
-            leapSecTableCon.setReadTimeout(10000);
-            BufferedReader in = new BufferedReader(new InputStreamReader(leapSecTableCon.getInputStream()));
-            ArrayList<Double> leapJD = new ArrayList<>(Arrays.asList(leapSecJD));
-            ArrayList<Double> leapSEC = new ArrayList<>(Arrays.asList(TAIminusUTC));
-            ArrayList<Double> leapbaseMJD = new ArrayList<>(Arrays.asList(baseMJD));
-            ArrayList<Double> leapbaseMJDMultiplier = new ArrayList<>(Arrays.asList(baseMJDMultiplier));
-            double jd, leap, base;
-            double oldjd = 0;
-            String inputLine;
-            while ((inputLine = in.readLine()) != null) {
-                if (inputLine.startsWith("#")) continue;
-                String[] parsed = Pattern.compile("(\\s+)").split(inputLine);
-                base = Double.parseDouble(parsed[1]);
-                jd = base + 2400000.5;
-                if (jd < oldjd) {
-                    AIJLogger.log("Julian Date table values are not in increasing order");
-                    break;
-                }
-                if (jd <= leapSecJD[leapSecJD.length - 1]) { // The current values are fine, so only want to get new leap seconds
-                    continue;
-                }
-                leap = Double.parseDouble(parsed[5]);
-                leapJD.add(jd);
-                leapSEC.add(leap);
-                leapbaseMJD.add(41317.0);
-                leapbaseMJDMultiplier.add(0D);
-                oldjd = jd;
+    protected void getIERSLeapSecTable() throws IOException {
+        URL leapSecTable = new URL("https://hpiers.obspm.fr/iers/bul/bulc/Leap_Second.dat");
+        URLConnection leapSecTableCon = leapSecTable.openConnection();
+        leapSecTableCon.setConnectTimeout(10000);
+        leapSecTableCon.setReadTimeout(10000);
+        BufferedReader in = new BufferedReader(new InputStreamReader(leapSecTableCon.getInputStream()));
+        ArrayList<Double> leapJD = new ArrayList<>(Arrays.asList(leapSecJD));
+        ArrayList<Double> leapSEC = new ArrayList<>(Arrays.asList(TAIminusUTC));
+        ArrayList<Double> leapbaseMJD = new ArrayList<>(Arrays.asList(baseMJD));
+        ArrayList<Double> leapbaseMJDMultiplier = new ArrayList<>(Arrays.asList(baseMJDMultiplier));
+        double jd, leap, base;
+        double oldjd = 0;
+        String inputLine;
+        while ((inputLine = in.readLine()) != null) {
+            if (inputLine.startsWith("#")) continue;
+            String[] parsed = Pattern.compile("(\\s+)").split(inputLine);
+            base = Double.parseDouble(parsed[1]);
+            jd = base + 2400000.5;
+            if (jd < oldjd) {
+                logger.accept("Julian Date table values are not in increasing order");
+                break;
             }
-            if (leapJD.size() > 0) {
-                leapSecJD = leapJD.toArray(leapSecJD);
-                TAIminusUTC = leapSEC.toArray(TAIminusUTC);
-                baseMJD = leapbaseMJD.toArray(baseMJD);
-                baseMJDMultiplier = leapbaseMJDMultiplier.toArray(baseMJDMultiplier);
+            if (jd <= leapSecJD[leapSecJD.length - 1]) { // The current values are fine, so only want to get new leap seconds
+                continue;
             }
-
-            in.close();
-        } catch (IOException ioe) {
-            AIJLogger.log("Failed to pull leap seconds from IERS");
+            leap = Double.parseDouble(parsed[5]);
+            leapJD.add(jd);
+            leapSEC.add(leap);
+            leapbaseMJD.add(41317.0);
+            leapbaseMJDMultiplier.add(0D);
+            oldjd = jd;
         }
+        if (leapJD.size() > 0) {
+            leapSecJD = leapJD.toArray(leapSecJD);
+            TAIminusUTC = leapSEC.toArray(TAIminusUTC);
+            baseMJD = leapbaseMJD.toArray(baseMJD);
+            baseMJDMultiplier = leapbaseMJDMultiplier.toArray(baseMJDMultiplier);
+        }
+
+        in.close();
     }
 
-    void estimateLeapSecs() {
+    protected void estimateLeapSecs() {
         double y = utDateEOI[0] + (utDateEOI[1] - 0.5) / 12.0;
         double u;
         double dt;

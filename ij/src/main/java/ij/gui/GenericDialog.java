@@ -1,19 +1,30 @@
 package ij.gui;
+
 import ij.*;
 import ij.astro.AstroImageJ;
-import ij.plugin.frame.Recorder;
-import ij.plugin.ScreenGrabber;
-import ij.plugin.filter.PlugInFilter;
-import ij.plugin.filter.PlugInFilterRunner;
-import ij.util.Tools;
-import ij.macro.*;
 import ij.io.OpenDialog;
+import ij.macro.Interpreter;
+import ij.macro.MacroRunner;
+import ij.plugin.ScreenGrabber;
+import ij.plugin.filter.PlugInFilterRunner;
+import ij.plugin.frame.Recorder;
+import ij.util.Tools;
+
 import java.awt.*;
-import java.io.*;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.UnsupportedFlavorException;
+import java.awt.dnd.DnDConstants;
+import java.awt.dnd.DropTarget;
+import java.awt.dnd.DropTargetAdapter;
+import java.awt.dnd.DropTargetDropEvent;
 import java.awt.event.*;
-import java.util.*;
-import java.awt.datatransfer.*;
-import java.awt.dnd.*;
+import java.awt.image.ImageProducer;
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.util.Hashtable;
+import java.util.Locale;
+import java.util.Vector;
 
 
 /**
@@ -130,7 +141,19 @@ FocusListener, ItemListener, KeyListener, AdjustmentListener, WindowListener {
 		macro = macroOptions!=null;
 		addKeyListener(this);
 		addWindowListener(this);
+		setIcon();
     }
+
+	@AstroImageJ(reason = "Use astronomy icon instead of default image")
+	void setIcon() {
+		URL url = this.getClass().getClassLoader().getResource("astronomy_icon.png");
+		if (url==null) return;
+		Image img = null;
+		try {
+			img = createImage((ImageProducer)url.getContent());
+		} catch (IOException ignored) {}
+		if (img!=null) setIconImage(img);
+	}
 
 	/** Adds a numeric field. The first word of the label must be
 		unique or command recording will not work.

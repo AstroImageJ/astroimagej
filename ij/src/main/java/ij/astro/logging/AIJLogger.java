@@ -96,11 +96,9 @@ public class AIJLogger {
             aijLogPanels.computeIfAbsent(caller,
                     caller1 -> new LogWindow(caller1 + " Log", "",400, 250).getTextPanel());
             var panel = aijLogPanels.get(caller);
-            EventQueue.invokeLater(() -> {
-                panel.updateDisplay();
-                panel.setFont(new Font("SansSerif", Font.PLAIN, 16));
-                panel.appendLine(msg);
-            });
+            panel.updateDisplay();
+            panel.setFont(new Font("SansSerif", Font.PLAIN, 16));
+            panel.appendLine(msg);
             aijLogPanelsTimer.computeIfPresent(caller,
                     (caller_, closingConditions) -> new ClosingConditions(closingConditions.autoClose));
             aijLogPanelsTimer.putIfAbsent(caller, new ClosingConditions());

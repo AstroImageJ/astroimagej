@@ -106,9 +106,9 @@ public class SkyAlgorithmsTimeUtil {
     public static final double PI = 3.14159265358979;
 
     public static void main(String[] args) {
-        double[] jds = {2451368.56319, // July 9, 1999, 1:31:00
-                        2451004.48001, // July 9, 1998, 23:31:13
-                        2459430.94598, // August 4, 2021, 10:42:13
+        double[] jds = {2451368.56319, // July 9, 1999, 1:30:59:62
+                        2451004.48001, // July 9, 1998, 23:31:12:86
+                        2459430.94598, // August 4, 2021, 10:42:12:67
                         };
 
         for (double jd : jds) {

@@ -1,20 +1,31 @@
 package ij;
-import java.awt.*;
-import java.awt.image.*;
-import java.net.URL;
-import java.util.*;
 
 import ij.astro.AstroImageJ;
-import ij.process.*;
-import ij.io.*;
 import ij.gui.*;
-
-import ij.measure.*;
-import ij.plugin.filter.Analyzer;
-import ij.util.*;
+import ij.io.FileInfo;
+import ij.io.FileOpener;
+import ij.io.Opener;
 import ij.macro.Interpreter;
+import ij.measure.Calibration;
+import ij.measure.Measurements;
 import ij.plugin.*;
-import ij.plugin.frame.*;
+import ij.plugin.filter.Analyzer;
+import ij.plugin.frame.Channels;
+import ij.plugin.frame.ContrastAdjuster;
+import ij.plugin.frame.Recorder;
+import ij.plugin.frame.RoiManager;
+import ij.process.*;
+import ij.util.DicomTools;
+import ij.util.Tools;
+
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
+import java.awt.image.ImageObserver;
+import java.awt.image.PixelGrabber;
+import java.util.Enumeration;
+import java.util.Properties;
+import java.util.Vector;
 
 
 /**
@@ -295,16 +306,24 @@ public class ImagePlus implements ImageObserver, Measurements, Cloneable {
 		}
 	}
 
-	/** Updates this image from the pixel data in its
-		associated ImageProcessor, then displays it. Does
-		nothing if there is no window associated with
-		this image (i.e. show() has not been called).*/
+
+	@AstroImageJ(reason = "Overload to preserve original functionality of updateAndDraw")
 	public synchronized void updateAndDraw() {
+		updateAndDraw(true);
+	}
+
+	/** Updates this image from the pixel data in its
+	 associated ImageProcessor, then displays it. Does
+	 nothing if there is no window associated with
+	 this image (i.e. show() has not been called).*/
+	@AstroImageJ(reason = "Fix excessive draw calls from Astronomy_Listener by optionally disabling updates",
+			modified = true)
+	public synchronized void updateAndDraw(boolean doNotify) {
 		if (win==null) {
 			img = null;
 			return;
 		}
-		if (stack!=null && !stack.isVirtual() && currentSlice>=1 && currentSlice<=stack.size()) {		
+		if (stack!=null && !stack.isVirtual() && currentSlice>=1 && currentSlice<=stack.size()) {
 			if (stack.size()>1 && win!=null && !(win instanceof StackWindow)) {
 				setStack(stack);	//adds scroll bar if stack size has changed to >1
 				return;
@@ -319,7 +338,7 @@ public class ImagePlus implements ImageObserver, Measurements, Cloneable {
 		}
 		if (win!=null) {
 			win.getCanvas().setImageUpdated();
-			if (listeners.size()>0) notifyListeners(UPDATED);
+			if (doNotify && listeners.size()>0) notifyListeners(UPDATED);
 		}
 		draw();
 	}

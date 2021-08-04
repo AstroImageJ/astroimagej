@@ -6089,7 +6089,7 @@ void setupListeners() {
                 imp.setDisplayRange(cal.getRawValue(min), cal.getRawValue(max));
                 minMaxChanged = true;
                 if (updateImage) {
-                    imp.updateAndDraw();
+                    imp.updateAndDraw(false);
                 }
                 if (imp.getWindow() != null) {
                     imp.getWindow().repaint();

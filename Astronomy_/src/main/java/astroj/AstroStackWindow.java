@@ -6831,6 +6831,8 @@ void setupListeners() {
         //EventQueue.invokeLater(() -> setAstroProcessor(false)); // Part of GH-20 fix, fixes arrow key scroll
         minMaxChanged = false; // Makes Astronomy_Listener update the image in place of the above
 
+        drawSubtitle();
+
         // Fixes subtitle (x/ nslices string at top of window) not updating
         synchronized (this) {
             notify();

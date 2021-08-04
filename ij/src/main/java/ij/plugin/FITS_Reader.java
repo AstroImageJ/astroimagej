@@ -525,7 +525,8 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			var dateTime = LocalDateTime.of((int) dt[0], (int) dt[1], (int) dt[2], hmsms[0], hmsms[1],
 					hmsms[2]).toInstant(ZoneOffset.ofTotalSeconds(0));
 			dateTime = dateTime.plusMillis(hmsms[3]);
-			hdu.addValue("DATE-OBS", FitsDate.getFitsDateString(Date.from(dateTime)), "Start of exposure");
+			hdu.addValue("DATE-OBS", FitsDate.getFitsDateString(Date.from(dateTime)),
+					"[UTC] Start date and time of the observation");
 
 			// Copy exposure time
 			hdu.addValue("TELAPSE", header.getIntValue("INT_TIME"), "Integration time (s)");

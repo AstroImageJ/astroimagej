@@ -430,6 +430,8 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             GraphicsDevice defaultScreen = ge.getDefaultScreenDevice();
             Rectangle defaultScreenBounds = defaultScreen.getDefaultConfiguration().getBounds();
 
+            private boolean hasNotified;
+
      public AstroStackWindow(ImagePlus imp, AstroCanvas ac, boolean refresh, boolean resize) {
 
                 super(imp, ac);
@@ -6089,7 +6091,8 @@ void setupListeners() {
                 imp.setDisplayRange(cal.getRawValue(min), cal.getRawValue(max));
                 minMaxChanged = true;
                 if (updateImage) {
-                    imp.updateAndDraw(false);
+                    imp.updateAndDraw(!hasNotified);
+                    hasNotified = true; // Fixes flash
                 }
                 if (imp.getWindow() != null) {
                     imp.getWindow().repaint();

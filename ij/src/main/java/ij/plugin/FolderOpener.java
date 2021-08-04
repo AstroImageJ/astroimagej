@@ -523,8 +523,9 @@ public class FolderOpener implements PlugIn {
 		}
 	}
 
-	@AstroImageJ(reason = "Save preference option to open as virtual stack", modified = true)
-	boolean showDialog() {
+	@AstroImageJ(reason = "Save preference option to open as virtual stack; widen access; support zip files as folder",
+			modified = true)
+	public boolean showDialog() {
 		String options = Macro.getOptions();
 		if  (options!=null) {  //macro
 			String optionsOrig = options;
@@ -543,6 +544,10 @@ public class FolderOpener implements PlugIn {
 		if (directorySet) {
 			File f = new File(directory);
 			String[] names = f.list();
+			// Zip as folder
+			if (names == null || names.length == 0) {
+				names = ZipOpenerUtil.getFilesInZip(directory);
+			} // End zip as folder
 			names = (new FolderOpener()).trimFileList(names);
 			countStr = ""+names.length;
 		} else

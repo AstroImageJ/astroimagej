@@ -991,8 +991,7 @@ public class Opener {
 		fo.setDirectory(path);
 		var hasFits = Arrays.stream(ZipOpenerUtil.getFilesInZip(path)).anyMatch(s ->
 				this.getFileType(s, false) == Opener.FITS);
-		if (hasFits) {
-			fo.openAsVirtualStack(ZipOpenerUtil.getOption());
+		if (hasFits && fo.showDialog()) {
 			return fo.openFolder(path);
 		}
 		// End open zip as folder

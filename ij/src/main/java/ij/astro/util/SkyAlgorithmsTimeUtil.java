@@ -2,7 +2,12 @@
 
 package ij.astro.util;
 
+import nom.tam.fits.FitsDate;
+
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.TimeZone;
 
 
@@ -99,6 +104,24 @@ public class SkyAlgorithmsTimeUtil {
      * The mathematical constant PI.
      */
     public static final double PI = 3.14159265358979;
+
+    public static void main(String[] args) {
+        double[] jds = {2451368.56319, // July 9, 1999, 1:31:00
+                        2451004.48001, // July 9, 1998, 23:31:13
+                        2459430.94598, // August 4, 2021, 10:42:13
+                        };
+
+        for (double jd : jds) {
+            // This should match what is done in FITS_Reader
+            var dt = SkyAlgorithmsTimeUtil.UTDateFromJD(jd);
+            var hmsms = SkyAlgorithmsTimeUtil.ut2Array(dt[3]);
+            var dateTime = LocalDateTime.of((int) dt[0], (int) dt[1], (int) dt[2], hmsms[0], hmsms[1],
+                    hmsms[2]).toInstant(ZoneOffset.ofTotalSeconds(0));
+            dateTime = dateTime.plusMillis(hmsms[3]);
+            System.out.println(jd + " = " + FitsDate.getFitsDateString(Date.from(dateTime)));
+        }
+
+    }
 
     /**
      * Compute the Julian Day for the given date.

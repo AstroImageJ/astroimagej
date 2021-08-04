@@ -503,8 +503,8 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 
 		if (isTicaImage(hdu)) {
 			var tjdZero = header.getDoubleValue("TJD_ZERO");
-			var midTjd = header.getDoubleValue("MIDTJD");
-			var jdTdb = tjdZero + midTjd;
+			var startTjd = header.getDoubleValue("STARTTJD");
+			var jdTdb = tjdZero + startTjd;
 
 			var leapSeconds = (new LeapSeconds()).getLeapSeconds(jdTdb);
 
@@ -512,14 +512,18 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			// Julian Dates" Eastman et al. 2010
 			var jdUtc = jdTdb - leapSeconds - 32.184;
 
-			hdu.addValue("JD_TDB", jdTdb, "Calc by AIJ as TJD_ZERO + MIDTJD");
-			hdu.addValue("JD_UTC", jdUtc, "Calc by AIJ as JD_TDB - leapsecs - 32.184s");
+			//hdu.addValue("JD_TDB", jdTdb, "Calc by AIJ as TJD_ZERO + STARTTJD");
+			//hdu.addValue("JD_UTC", jdUtc, "Calc by AIJ as JD_TDB - leapsecs - 32.184s");
 
-			var dt = SkyAlgorithmsTimeUtil.UTDateFromJD(jdTdb);
+			var dt = SkyAlgorithmsTimeUtil.UTDateFromJD(jdUtc);
 			var hmsms = SkyAlgorithmsTimeUtil.ut2Array(dt[3]);
 			var dateTime = LocalDateTime.of((int) dt[0], (int) dt[1], (int) dt[2], hmsms[0], hmsms[1],
-					hmsms[2], hmsms[3] * (10^6)).toInstant(ZoneOffset.ofTotalSeconds(0));
-			hdu.addValue("MID-OBS", FitsDate.getFitsDateString(Date.from(dateTime)), "Date");
+					hmsms[2]).toInstant(ZoneOffset.ofTotalSeconds(0));
+			dateTime = dateTime.plusMillis(hmsms[3]);
+			hdu.addValue("DATE-OBS", FitsDate.getFitsDateString(Date.from(dateTime)), "Start of exposure");
+
+			// Copy exposure time
+			hdu.addValue("TELAPSE", header.getIntValue("INT_TIME"), "Integration time (s)");
 		}
 	}
 

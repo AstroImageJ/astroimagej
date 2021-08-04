@@ -2,7 +2,11 @@
 
 package astroj;
 
-import java.util.*;
+import ij.astro.util.SkyAlgorithmsTimeUtil;
+
+import java.util.Calendar;
+import java.util.TimeZone;
+
 import static java.lang.Math.*;
 
 
@@ -93,56 +97,12 @@ import static java.lang.Math.*;
 
 
 
-public class SkyAlgorithms
+public class SkyAlgorithms extends SkyAlgorithmsTimeUtil
 	{
     /**
      * The mathematical constant PI.
      */
     public static final double PI = 3.14159265358979;
-
-    /**
-     *  Compute the Julian Day for the given date.
-     *  Julian Date is the number of days since noon of Jan 1 4713 B.C.
-     * @param ny year
-     * @param nm month
-     * @param nd day
-     * @param ut UT time
-     * @return Julian Date
-     */
-    public static double CalcJD(int ny, int nm, int nd, double ut)
-    {
-    double A, B, C, D, jd, day;
-
-    day = nd + ut / 24.0;
-    if ((nm == 1) || (nm == 2))
-        {
-        ny = ny - 1;
-        nm = nm + 12;
-        }
-
-    if (((double)(ny + nm / 12.0 + day / 365.25)) >= (1582.0 + 10.0 / 12.0 + 15.0 / 365.25))
-        {
-        A = ((int) (ny / 100.0));
-        B = 2.0 - A + (int) (A / 4.0);
-        }
-    else
-        {
-        B = 0.0;
-        }
-
-    if (ny < 0.0)
-        {
-        C = (int) ((365.25 * (double) ny) - 0.75);
-        }
-    else
-        {
-        C = (int) (365.25 * (double) ny);
-        }
-
-    D = (int) (30.6001 * (double) (nm + 1));
-    jd = B + C + D + day + 1720994.5;
-    return (jd);
-    }
 
 
     /**
@@ -256,7 +216,7 @@ public static double JDNow()
       int hours, minutes, seconds, milliseconds;
 
       double ut, jd;
-      
+
 	  Calendar now = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 
       year = now.get(Calendar.YEAR);
@@ -404,83 +364,6 @@ public static double UTNow()
 
     return (ut) ;
     }
-
-/**
- * Calculate the current universal date and time with millisecond resolution.
- * @return {year, month, day, UT_time}
- */
-public static double[] UTDateNow()
-    {
-    int hours, minutes, seconds, milliseconds;
-    double[] utdate = {0, 0, 0, 0};
-    double ut;
-
-    Calendar now = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-
-    utdate[0] = now.get(Calendar.YEAR);
-    utdate[1] = now.get(Calendar.MONTH)+1;
-    utdate[2] = now.get(Calendar.DAY_OF_MONTH);
-    hours = now.get(Calendar.HOUR_OF_DAY);
-    minutes = now.get(Calendar.MINUTE);
-    seconds = now.get(Calendar.SECOND);
-    milliseconds = now.get(Calendar.MILLISECOND);
-
-    /* Calculate floating point ut in hours */
-
-    ut = ( (double) milliseconds )/3600000. +
-         ( (double) seconds )/3600. +
-         ( (double) minutes )/60. +
-         ( (double) hours );
-    utdate[3] = ut;
-    return (utdate) ;
-    }
-
-
-/**
- * Convert a Julian day into universal date and time.
- * Numerical Recipes in C, 2nd ed., Cambridge University Press 1992.
- * @param jd Julian date of interest
- * @return {year, month, day, UT_time}
- */
-	public static double[] UTDateFromJD (double jd)
-		{
-        int julian = (int)(jd+0.5);
-        double ut = (jd-(double)julian+0.5)*24.0;
-		int ja,jalpha,jb,jc,jdd,je;
-		int IGREG = 2299161;
-		double[] utdate = {0, 0, 0, 0};
-
-		if (julian >= IGREG)
-			{
-			jalpha = (int)(((julian-1867216)-0.25)/36524.25);
-			ja = julian+1+jalpha-(int)(0.25*jalpha);
-			}
-		else if (julian < 0)
-			{
-			ja = julian+36525*(1-julian/36525);
-			}
-		else	{
-			ja = julian;
-			}
-		jb = ja + 1524;
-		jc = (int)(6680.0+((double)(jb-2439870)-122.1)/365.25);
-		jdd = (int)(365*jc+(0.25*jc));
-		je = (int)((jb-jdd)/30.6001);
-		int day = jb-jdd-(int)(30.6001*je);
-		int mm = je-1;
-		if (mm > 12) mm -= 12;
-		int iyyy = jc-4715;
-		if (mm > 2) iyyy--;
-		if (iyyy <= 0) iyyy--;
-		if (julian < 0) iyyy -= 100*(1-julian/36525);
-
-		utdate[0] = iyyy;
-		utdate[1] = mm;
-		utdate[2] = day;
-		utdate[3] = ut;
-
-		return utdate;
-		}
 
 
 

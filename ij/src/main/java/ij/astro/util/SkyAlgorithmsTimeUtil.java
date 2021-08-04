@@ -100,10 +100,6 @@ import java.util.TimeZone;
 
 
 public class SkyAlgorithmsTimeUtil {
-    /**
-     * The mathematical constant PI.
-     */
-    public static final double PI = 3.14159265358979;
 
     public static void main(String[] args) {
         double[] jds = {2451368.56319, // July 9, 1999, 1:30:59:62

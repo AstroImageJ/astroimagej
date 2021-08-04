@@ -437,9 +437,14 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 					}
 				} else if (isTessPostageStamp(hdus)) {
 					hdr.addValue("OBJECT", hdus[0].getHeader().getStringValue("OBJECT"), "Object ID");
-					if (Double.isNaN(bjd1)) {
-						hdr.addValue("NO_BJD", 0, "Skipped due to invalid or missing BJD time");
+					if (quality[i].intValue() == 8) {
+						hdr.addValue("AIJ_Q2", quality[i].intValue() != 0, "Null image");
+					} else if ((!skipTessQualCheck && quality[i].intValue() != 0)) {
 						hasErrors = true;
+						hdr.addValue("AIJ_Q", quality[i].intValue() != 0, "Skipped due to quality flag");
+					} else if (Double.isNaN(bjd1)) {
+						hasErrors = true;
+						hdr.addValue("NO_BJD", 0, "Skipped due to invalid or missing BJD time");
 					}
 				}
 
@@ -557,8 +562,9 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 				if (headers.get(i).contains("AIJ_Q")) { // For TESScut, skip bad images
 					AIJLogger.log("     Skipping an image due to quality flag: " + (i+1));
 					continue;
-				}
-				else if (headers.get(i).contains("NO_BJD")) { // For TESScut, skip if no BJD available
+				} else if (headers.get(i).contains("AIJ_Q2")) { // For Postage stamp, skip null images
+					continue;
+				} else if (headers.get(i).contains("NO_BJD")) { // For TESScut, skip if no BJD available
 					AIJLogger.log("     Skipping an image due to a missing or invalid BJD time: " + (i+1));
 					continue;
 				}

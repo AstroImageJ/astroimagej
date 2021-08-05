@@ -5930,10 +5930,10 @@ void setupListeners() {
         if (autoNupEleft) setBestOrientation();
     }
 
-    public synchronized void setAstroProcessor(boolean requestUpdateAnnotationsFromHeader) {
+    public void setAstroProcessor(boolean requestUpdateAnnotationsFromHeader) {
         setAstroProcessor(requestUpdateAnnotationsFromHeader, true);
     }
-    public synchronized void setAstroProcessor(boolean requestUpdateAnnotationsFromHeader, boolean updateImage) {
+    public void setAstroProcessor(boolean requestUpdateAnnotationsFromHeader, boolean updateImage) {
             ImageProcessor ip = imp.getProcessor();
             slice = imp.getCurrentSlice();
             cal = imp.getCalibration();
@@ -6006,11 +6006,11 @@ void setupListeners() {
         updatesEnabled = enabled;
         }
 
-    synchronized void updatePanelValues() {
+    void updatePanelValues() {
             updatePanelValues(true);
     }
 
-    public synchronized void updatePanelValues(boolean updateImage)
+    public void updatePanelValues(boolean updateImage)
             {
             if (updatesEnabled)
                 {
@@ -6091,7 +6091,9 @@ void setupListeners() {
                 imp.setDisplayRange(cal.getRawValue(min), cal.getRawValue(max));
                 minMaxChanged = true;
                 if (updateImage) {
-                    imp.updateAndDraw(!hasNotified);
+                    synchronized (imp) {
+                        imp.updateAndDraw(!hasNotified);
+                    }
                     hasNotified = true; // Fixes flash
                 }
                 if (imp.getWindow() != null) {

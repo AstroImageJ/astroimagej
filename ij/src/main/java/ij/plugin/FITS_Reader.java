@@ -150,6 +150,12 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 
 			setProperty("Info", getHeaderInfo(displayHdu));
 
+			// This fixes deadlock with MA when opening then closing settings,
+			// with help display disabled, and attempting to place aperture
+			synchronized (this) {
+				unlock();
+			}
+
 			IJ.showStatus("");
 		} else {   //use legacy custom fits reader to open uncompressed files
 			OpenDialog od = new OpenDialog("Open FITS...", path);

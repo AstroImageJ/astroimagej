@@ -6848,12 +6848,15 @@ void setupListeners() {
     // Part of fix for GH-20
     public synchronized void adjustmentValueChanged(AdjustmentEvent e) {
         super.adjustmentValueChanged(e);
+        if (IJ.isMacOSX()) {
+            return;
+        }
         if (e.getSource()==zSelector) {
             z = zSelector.getValue();
             int slice = hyperStack ? imp.getSlice() : imp.getCurrentSlice();
             if (z==slice&&e.getAdjustmentType()==AdjustmentEvent.TRACK) return;
             //EventQueue.invokeLater(() -> setAstroProcessor(false));
-            minMaxChanged = false; // Makes Astronomy_Listener update the image in place of the above
+            //minMaxChanged = false; // Makes Astronomy_Listener update the image in place of the above
             drawSubtitle();
         }
     }

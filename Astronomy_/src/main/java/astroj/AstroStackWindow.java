@@ -174,6 +174,10 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             double magbefore = 1;
             String extraInfo ="";
 
+            /**
+             * Causes {@link Astronomy.Astronomy_Listener#imageUpdated(ImagePlus)} to update the image when its value
+             * is {@code false} via calling {@link AstroStackWindow#setAstroProcessor(boolean)}.
+             */
             public boolean minMaxChanged = false;
             boolean newClick;
             boolean button23Drag;

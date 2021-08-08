@@ -6837,9 +6837,6 @@ void setupListeners() {
         //todo fix slow draw
         ac.paintDoubleBuffered(ac.getGraphics());
 
-        //EventQueue.invokeLater(() -> setAstroProcessor(false)); // Part of GH-20 fix, fixes arrow key scroll
-        //minMaxChanged = false; // Makes Astronomy_Listener update the image in place of the above
-
         drawSubtitle();
 
         // Fixes subtitle (x/ nslices string at top of window) not updating
@@ -6856,8 +6853,6 @@ void setupListeners() {
             z = zSelector.getValue();
             int slice = hyperStack ? imp.getSlice() : imp.getCurrentSlice();
             if (z==slice&&e.getAdjustmentType()==AdjustmentEvent.TRACK) return;
-            //EventQueue.invokeLater(() -> setAstroProcessor(false));
-            //minMaxChanged = false; // Makes Astronomy_Listener update the image in place of the above
             drawSubtitle();
             notifyAll();
         }

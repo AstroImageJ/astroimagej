@@ -6093,7 +6093,7 @@ void setupListeners() {
                     DecTextField.setText("");
                     }
                 imp.setDisplayRange(cal.getRawValue(min), cal.getRawValue(max));
-                minMaxChanged = true;
+                //minMaxChanged = true;
                 if (updateImage) {
                     synchronized (imp) {
                         imp.updateAndDraw(!hasNotified);
@@ -6101,7 +6101,7 @@ void setupListeners() {
                     hasNotified = true; // Fixes flash
                 }
                 if (imp.getWindow() != null) {
-                    imp.getWindow().repaint();
+                    //imp.getWindow().repaint();
                 }
                 }
             }
@@ -6838,7 +6838,7 @@ void setupListeners() {
         ac.paintDoubleBuffered(ac.getGraphics());
 
         //EventQueue.invokeLater(() -> setAstroProcessor(false)); // Part of GH-20 fix, fixes arrow key scroll
-        minMaxChanged = false; // Makes Astronomy_Listener update the image in place of the above
+        //minMaxChanged = false; // Makes Astronomy_Listener update the image in place of the above
 
         drawSubtitle();
 
@@ -6852,16 +6852,14 @@ void setupListeners() {
     // Part of fix for GH-20
     public synchronized void adjustmentValueChanged(AdjustmentEvent e) {
         super.adjustmentValueChanged(e);
-        if (IJ.isMacOSX()) {
-            return;
-        }
         if (e.getSource()==zSelector) {
             z = zSelector.getValue();
             int slice = hyperStack ? imp.getSlice() : imp.getCurrentSlice();
             if (z==slice&&e.getAdjustmentType()==AdjustmentEvent.TRACK) return;
             //EventQueue.invokeLater(() -> setAstroProcessor(false));
-            minMaxChanged = false; // Makes Astronomy_Listener update the image in place of the above
+            //minMaxChanged = false; // Makes Astronomy_Listener update the image in place of the above
             drawSubtitle();
+            notifyAll();
         }
     }
 

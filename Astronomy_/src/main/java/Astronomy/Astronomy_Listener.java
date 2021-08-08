@@ -9,6 +9,8 @@ import ij.Prefs;
 import ij.plugin.PlugIn;
 
 import java.awt.*;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 /**
  * @author K.A. Collins, University of Louisville
@@ -53,7 +55,7 @@ public class Astronomy_Listener implements PlugIn, ImageListener
         {
         }
 
-    public synchronized void imageUpdated(ImagePlus imp)
+    public void imageUpdated(ImagePlus imp)
         {
 //        IJ.log("Image Updated: "+imp.getTitle());
         Frame openFrame = imp.getWindow();
@@ -66,7 +68,8 @@ public class Astronomy_Listener implements PlugIn, ImageListener
             if (asw.isReady && !asw.minMaxChanged)
                 {
 //                IJ.log("Actually Updating Image: "+imp.getTitle());
-                asw.setAstroProcessor(false);
+                ;
+                ex.execute(() -> asw.setAstroProcessor(false));
                 }
             else
                 {
@@ -75,6 +78,7 @@ public class Astronomy_Listener implements PlugIn, ImageListener
             }
 
         }
+        final Executor ex = Executors.newCachedThreadPool();
 
     }
 

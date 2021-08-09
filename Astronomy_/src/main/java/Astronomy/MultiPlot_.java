@@ -7108,9 +7108,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         saveimagejpgmenuitem.addActionListener(e -> savePlotImageAsJpg());
         filemenu.add(saveimagejpgmenuitem);
 
-        JMenuItem saveimagepdfmenuitem = new JMenuItem("Save plot image as PDF...");
+        JMenuItem saveimagepdfmenuitem = new JMenuItem("Save plot image as raster PDF...");
         saveimagepdfmenuitem.setToolTipText("<html>" + "saves plot image as a .pdf file" + "</html>");
-        saveimagepdfmenuitem.addActionListener(e -> savePlotImageAsPdf());
+        saveimagepdfmenuitem.addActionListener(e -> savePlotImageAsRasterPdf());
         filemenu.add(saveimagepdfmenuitem);
 
         saveplotconfigmenuitem = new JMenuItem("Save plot configuration...");
@@ -16564,13 +16564,13 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         savePlotImage(sf.getDirectory() + sf.getFileName(), "ij.plugin.JpegWriter");
     }
 
-    public static void savePlotImageAsPdf() {
-        SaveDialog sf = new SaveDialog("Save plot image as PDF...", MeasurementTable.shorterName(table.shortTitle()), ".pdf");
+    public static void savePlotImageAsRasterPdf() {
+        SaveDialog sf = new SaveDialog("Save plot image as raster PDF...", MeasurementTable.shorterName(table.shortTitle()), ".pdf");
         if (sf.getDirectory() == null || sf.getFileName() == null) return;
         savePlotImage(sf.getDirectory() + sf.getFileName(), Pdf_Writer.class.getName());
     }
 
-    public static void savePlotImageAsPdf(String path) {
+    public static void savePlotImageAsRasterPdf(String path) {
         savePlotImage(path, Pdf_Writer.class.getName());
     }
 

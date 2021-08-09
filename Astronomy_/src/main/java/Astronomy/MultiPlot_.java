@@ -1,8 +1,12 @@
 // MultiPlot_.java
 package Astronomy;
 
+import astroj.*;
+import flanagan.analysis.Regression;
+import flanagan.analysis.Smooth;
+import flanagan.math.Minimization;
+import flanagan.math.MinimizationFunction;
 import ij.*;
-import ij.astro.logging.AIJLogger;
 import ij.gui.*;
 import ij.io.OpenDialog;
 import ij.io.SaveDialog;
@@ -11,6 +15,7 @@ import ij.plugin.PlugIn;
 import ij.process.ImageProcessor;
 import ij.text.TextPanel;
 import ij.util.Tools;
+import util.Pdf_Writer;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -29,13 +34,6 @@ import java.io.*;
 import java.text.DecimalFormat;
 import java.util.*;
 import java.util.stream.DoubleStream;
-
-// ------ astroj
-import astroj.*;
-import flanagan.analysis.Regression;
-import flanagan.analysis.Smooth;
-import flanagan.math.Minimization;
-import flanagan.math.MinimizationFunction;
 
 /**
  * This plugin plots any number of columns from a Results or MeasurementTable.  This plugin
@@ -7109,6 +7107,11 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         saveimagejpgmenuitem.setToolTipText("<html>" + "saves plot image as a .jpg file" + "</html>");
         saveimagejpgmenuitem.addActionListener(e -> savePlotImageAsJpg());
         filemenu.add(saveimagejpgmenuitem);
+
+        JMenuItem saveimagepdfmenuitem = new JMenuItem("Save plot image as PDF...");
+        saveimagepdfmenuitem.setToolTipText("<html>" + "saves plot image as a .pdf file" + "</html>");
+        saveimagepdfmenuitem.addActionListener(e -> savePlotImageAsPdf());
+        filemenu.add(saveimagepdfmenuitem);
 
         saveplotconfigmenuitem = new JMenuItem("Save plot configuration...");
         saveplotconfigmenuitem.setToolTipText("<html>" + "saves plot configuration to a user selected file</html>");
@@ -16559,6 +16562,16 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         SaveDialog sf = new SaveDialog("Save plot image as JPG...", MeasurementTable.shorterName(table.shortTitle()), ".jpg");
         if (sf.getDirectory() == null || sf.getFileName() == null) return;
         savePlotImage(sf.getDirectory() + sf.getFileName(), "ij.plugin.JpegWriter");
+    }
+
+    public static void savePlotImageAsPdf() {
+        SaveDialog sf = new SaveDialog("Save plot image as PDF...", MeasurementTable.shorterName(table.shortTitle()), ".pdf");
+        if (sf.getDirectory() == null || sf.getFileName() == null) return;
+        savePlotImage(sf.getDirectory() + sf.getFileName(), Pdf_Writer.class.getName());
+    }
+
+    public static void savePlotImageAsPdf(String path) {
+        savePlotImage(path, Pdf_Writer.class.getName());
     }
 
     public static void savePlotImageAsPng(String path) {

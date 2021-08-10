@@ -296,6 +296,7 @@ project.copy {
 task commonFiles(type: Copy) {
     outputs.upToDateWhen {false}
     dependsOn ':ij:build', ':Astronomy_:build'
+    mustRunAfter ':ij:build', ':Astronomy_:build'
     with commonDist
     into "${buildDir}/commonFiles"
     doLast {

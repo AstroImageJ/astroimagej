@@ -5,6 +5,7 @@ plugins {
 dependencies {
     implementation project(':Nom_Fits')
     api "com.github.librepdf:openpdf:1.3.26"
+    implementation 'org.openjdk.nashorn:nashorn-core:15.3'
 }
 
 def mainClassName = 'ij.ImageJ'
@@ -29,6 +30,7 @@ jar {
     }
 
     // Ship nom.tam.fits
+    dependsOn configurations.runtimeClasspath
     from {
         duplicatesStrategy = DuplicatesStrategy.EXCLUDE
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }

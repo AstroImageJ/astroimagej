@@ -2228,7 +2228,23 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                 if (cSelector != null) mainPanel.add(cSelector);
                 if (zSelector != null) mainPanel.add(zSelector);
                 if (tSelector != null) mainPanel.add(tSelector);
-                
+//                JScrollBar stackSlider = new JScrollBar(JScrollBar.HORIZONTAL, 0, 1, 0, imp.getNSlices());
+//                stackSlider.addAdjustmentListener(new AdjustmentListener() {
+//                                                      //@Override
+//                                                      public void adjustmentValueChanged(AdjustmentEvent e) {
+//                                                          int slice = stackSlider.getValue()+1;
+//                                                          imp.setSlice(slice);
+//                                                      }
+//                                                  });
+//                mainPanel.add(stackSlider);
+//
+//                JSlider stackSlider2 = new JSlider(JSlider.HORIZONTAL, 1, imp.getNSlices(), 1);
+//                stackSlider2.addChangeListener(ev -> {
+//                    int slice = stackSlider2.getValue();
+//                    imp.setSlice(slice);
+//                });
+//                mainPanel.add(stackSlider2);
+
 //                if (super.getNScrollbars() > 0)
 //                        for (int i = 0; i < super.getNScrollbars(); i++)
 //                                {
@@ -6010,6 +6026,11 @@ void setupListeners() {
         updatesEnabled = enabled;
         }
 
+    public boolean getUpdatesEnabled()
+        {
+        return updatesEnabled;
+        }
+
     void updatePanelValues() {
             updatePanelValues(true);
     }
@@ -7631,19 +7652,21 @@ void setupListeners() {
                     }
                 }
             }
-        
+
         public void mouseWheelMoved( MouseWheelEvent e ) {
 
                     if (updatesEnabled)
                         {
+                        int magChangeSteps = e.getWheelRotation();
+                        if (magChangeSteps == 0) return;
+                        updatesEnabled = false;
                         int screenX = e.getX();
                         int screenY = e.getY();
                         ac.setMousePosition(screenX, screenY);
                         double imageX = ac.offScreenXD(screenX);
                         double imageY = ac.offScreenYD(screenY);
-                        ImageProcessor ip = imp.getProcessor();
-                        double value = ip.getPixelValue((int)imageX, (int)imageY);
-                        int magChangeSteps = e.getWheelRotation();
+                        //ImageProcessor ip = imp.getProcessor();
+                        //double value = ip.getPixelValue((int)imageX, (int)imageY);
                         IJ.setInputEvent(e);
                         if (e.isControlDown() && ((e.getModifiers() & MouseEvent.BUTTON3_MASK) == 0))
                             {
@@ -7658,6 +7681,7 @@ void setupListeners() {
                             zoomControl(screenX, screenY, magChangeSteps, WHEEL);
                             }
                         }
+                    updatesEnabled = true;
                     }
 
 
@@ -7738,7 +7762,7 @@ void setupListeners() {
                         {
                         zoomIn((int)(screenX), (int)(screenY), mouseClick, false, 0.0);
                         }
-                else  //magChangeSteps==0
+                else if (mouseClick) // and magChangeSteps==0
                     {
                     adjustSourceRect(zoom, screenX, screenY, true);
                     }

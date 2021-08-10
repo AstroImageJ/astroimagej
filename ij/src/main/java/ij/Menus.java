@@ -1,19 +1,20 @@
 package ij;
+
 import ij.astro.AstroImageJ;
-import ij.process.*;
-import ij.util.*;
 import ij.gui.ImageWindow;
 import ij.plugin.MacroInstaller;
-import ij.gui.Toolbar;
-import ij.macro.Interpreter;
-import java.awt.*;
-import java.awt.image.*;
-import java.awt.event.*;
-import java.util.*;
-import java.io.*;
+import ij.process.ImageProcessor;
+import ij.util.StringSorter;
+
 import java.applet.Applet;
-import java.awt.event.*;
-import java.util.zip.*;
+import java.awt.*;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.image.IndexColorModel;
+import java.io.*;
+import java.util.*;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 /**
 This class installs and updates ImageJ's menus. Note that menu labels,
@@ -284,7 +285,8 @@ public class Menus {
 			error = error!=null?error+="\n"+jarError:jarError;
 		return error;
 	}
-	
+
+	@AstroImageJ(reason = "Remove python", modified = true)
 	public static Menu getExamplesMenu(ActionListener listener) {
 		Menu menu = new Menu("Examples");
 		Menu submenu = new Menu("Plots");
@@ -376,13 +378,13 @@ public class Menus {
 		addExample(submenu, "Sine/Cosine Table", "Sine_Cosine_Table.bsh");
 		submenu.addActionListener(listener);
 		menu.add(submenu);
-		submenu = new Menu("Python");
+		/*submenu = new Menu("Python");
 		addExample(submenu, "Sphere", "Sphere.py");
 		addExample(submenu, "Animated Gaussian Blur", "Animated_Gaussian_Blur.py");
 		addExample(submenu, "Spiral Rotation", "Spiral_Rotation.py");
 		addExample(submenu, "Overlay", "Overlay.py");
 		submenu.addActionListener(listener);
-		menu.add(submenu);
+		menu.add(submenu);*/
 		submenu = new Menu("Java");
 		addExample(submenu, "Sphere", "Sphere_.java");
 		addExample(submenu, "Plasma Cloud", "Plasma_Cloud.java");

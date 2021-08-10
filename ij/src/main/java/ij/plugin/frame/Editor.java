@@ -1,19 +1,24 @@
 package ij.plugin.frame;
+
+import ij.*;
+import ij.astro.AstroImageJ;
+import ij.gui.GenericDialog;
+import ij.gui.YesNoCancelDialog;
+import ij.io.SaveDialog;
+import ij.macro.*;
+import ij.plugin.JavaScriptEvaluator;
+import ij.plugin.MacroInstaller;
+import ij.plugin.Macro_Runner;
+import ij.text.TextWindow;
+import ij.util.Tools;
+
 import java.awt.*;
+import java.awt.datatransfer.*;
 import java.awt.event.*;
 import java.io.*;
-import java.util.*;
-import java.awt.datatransfer.*;																																																																																													
-import ij.*;
-import ij.gui.*;
-import ij.util.Tools;
-import ij.text.*;
-import ij.macro.*;
-import ij.plugin.MacroInstaller;
-import ij.plugin.Commands;
-import ij.plugin.Macro_Runner;
-import ij.plugin.JavaScriptEvaluator;
-import ij.io.SaveDialog;
+import java.util.ArrayList;
+import java.util.Locale;
+import java.util.Properties;
 
 /** This is a simple TextArea based editor for editing and compiling plugins. */
 public class Editor extends PlugInFrame implements ActionListener, ItemListener,
@@ -67,8 +72,10 @@ public class Editor extends PlugInFrame implements ActionListener, ItemListener,
 	static final String INSERT_SPACES= "editor.spaces";
 	static final String TAB_INC= "editor.tab-inc";
 	private final static int MACRO=0, JAVASCRIPT=1, BEANSHELL=2, PYTHON=3;
-	private final static String[] languages = {"Macro", "JavaScript", "BeanShell", "Python"};
-	private final static String[] extensions = {".ijm", ".js", ".bsh", ".py"};	
+	@AstroImageJ(reason = "Remove python", modified = true)
+	private final static String[] languages = {"Macro", "JavaScript", "BeanShell"};
+	@AstroImageJ(reason = "Remove python", modified = true)
+	private final static String[] extensions = {".ijm", ".js", ".bsh"};
 	public static Editor currentMacroEditor;
 	private TextArea ta;
 	private String path;
@@ -270,7 +277,8 @@ public class Editor extends PlugInFrame implements ActionListener, ItemListener,
 		Menus.updateWindowMenuItem(getTitle(), title);
 		setTitle(title);
 	}
-	
+
+	@AstroImageJ(reason = "Remove python", modified = true)
 	public void create(String name, String text) {
 		ta.append(text);
 		if (IJ.isMacOSX()) IJ.wait(25); // needed to get setCaretPosition() on OS X
@@ -291,7 +299,7 @@ public class Editor extends PlugInFrame implements ActionListener, ItemListener,
 			macrosMenu.add(new MenuItem("Evaluate Macro"));
 			macrosMenu.add(new MenuItem("Evaluate JavaScript", new MenuShortcut(KeyEvent.VK_J, false)));
 			macrosMenu.add(new MenuItem("Evaluate BeanShell", new MenuShortcut(KeyEvent.VK_B, true)));
-			macrosMenu.add(new MenuItem("Evaluate Python", new MenuShortcut(KeyEvent.VK_P, false)));
+			//macrosMenu.add(new MenuItem("Evaluate Python", new MenuShortcut(KeyEvent.VK_P, false)));
 			macrosMenu.add(new MenuItem("Show Log Window", new MenuShortcut(KeyEvent.VK_L, true)));
 			macrosMenu.addSeparator();
 			// MACROS_MENU_ITEMS must be updated if items are added to this menu

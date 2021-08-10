@@ -258,7 +258,7 @@ task unZipJresTask(type: Copy, dependsOn: verifyDownloadedJres) {
 // Define what files belong to all distributions and their location
 def commonDist = project.copySpec {
     // Copy astronomy_.jar to correct place in distribution
-    from(file("${project(':Astronomy_').buildDir}/libs/astronomy_.jar")) {
+    from(file("${project(':Astronomy_').buildDir}/libs/Astronomy_.jar")) {
         rename { String name -> return 'Astronomy_.jar' }
         into 'plugins'
     }

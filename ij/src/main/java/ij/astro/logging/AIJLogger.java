@@ -41,6 +41,9 @@ public class AIJLogger {
         });
     }
 
+    // No instantiating
+    private AIJLogger(){}
+
     /**
      * Create a new log window for the caller, log the obj to a new line.
      */

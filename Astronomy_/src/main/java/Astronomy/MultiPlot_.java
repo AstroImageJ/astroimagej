@@ -380,8 +380,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 //        static JPopupMenu residualShiftStepPopup;
     static int[] maxFitSteps;
     static JSpinner[] maxFitStepsSpinner, modelLineWidthSpinner, residualLineWidthSpinner;
-    static boolean[] useTransitFit, showLTranParams, showLResidual, autoUpdateFit, showModel, showResidual, showResidualError;
-    static JCheckBox[] forceCircularOrbitCB, useTransitFitCB, showLTranParamsCB, showLResidualCB, showResidualErrorCB, autoUpdateFitCB, showModelCB, showResidualCB;
+    static boolean[] useTransitFit, bpLock, showLTranParams, showLResidual, autoUpdateFit, showModel, showResidual, showResidualError;
+    static JCheckBox[] forceCircularOrbitCB, useTransitFitCB, showLTranParamsCB, bpLockCB, showLResidualCB, showResidualErrorCB, autoUpdateFitCB, showModelCB, showResidualCB;
 
     static boolean[][] lockToCenter, isFitted;
     static JCheckBox[][] lockToCenterCB;
@@ -413,7 +413,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static JPanel[] fitStepStepPanel;
 
     static JTextField[] chi2dofLabel, dofLabel, chi2Label, bicLabel, sigmaLabel;
-    static JTextField[] t14Label, t14HoursLabel, t23Label, tauLabel, bpLabel, stellarDensityLabel;
+    static JSpinner[] bpSpinner;
+    static JTextField[] t14Label, t14HoursLabel, t23Label, tauLabel, stellarDensityLabel;
     static JTextField[] transitDepthLabel, planetRadiusLabel, stepsTakenLabel;
     static JPanel[] sigmaPanel, transitDepthPanel;
     static Border[] sigmaBorder;
@@ -444,7 +445,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static JPanel[] fitPanel;
     static JScrollPane[] fitScrollPane;
     static int[] fitFrameLocationX, fitFrameLocationY;
-    static Dimension labelSize, legendLabelSize, spinnerSize, orbitalSpinnerSize, stellarSpinnerSize;
+    static Dimension labelSize, legendLabelSize, spinnerSize, orbitalSpinnerSize, stellarSpinnerSize,bpSize;
     static Dimension bestFitSize, statSize, checkBoxSize, choiceBoxSize, spacerSize, controlSpinnerSize, lineWidthSpinnerSize, colorSelectorSize;
     static double xPlotMinRaw;
     static Color defaultBackground;
@@ -802,6 +803,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
     static TitledBorder dataSectionBorder;
     static String fitFormat = "#####0.0########";
+    static String oneDotThreeFormat = "#####0.000";
     static DecimalFormat uptoNinePlaces = new DecimalFormat("########0.#########", IJU.dfs);
     static DecimalFormat uptoEightPlaces = new DecimalFormat("#####0.########", IJU.dfs);
     static DecimalFormat uptoSixPlaces = new DecimalFormat("#####0.######", IJU.dfs);
@@ -2328,7 +2330,11 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                                 if (p == 1) {
                                                     bestFit[curve][p] = Math.sqrt(priorCenter[curve][p]);
                                                 } else if (p == 4) {
-                                                    bestFit[curve][p] = priorCenter[curve][p] * Math.PI / 180.0;
+                                                    if (bpLock[curve]) {
+                                                        bestFit[curve][4] = Math.acos(bp[curve]/bestFit[curve][2]);
+                                                    } else {
+                                                        bestFit[curve][p] = priorCenter[curve][p] * Math.PI / 180.0;
+                                                    }
                                                 } else { bestFit[curve][p] = priorCenter[curve][p]; }
                                             } else if (p >= 7 && p < 7 + maxDetrendVars && detrendIndex[curve][p - 7] != 0 && detrendYDNotConstant[p - 7] && lockToCenter[curve][p]) {
                                                 bestFit[curve][p] = priorCenter[curve][p];
@@ -2350,7 +2356,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                         }
                                         if (useTransitFit[curve]) {
                                             //Winn 2010 eqautions 14, 15, 16
-                                            bp[curve] = bestFit[curve][2] * Math.cos(bestFit[curve][4]) * (1.0 - (forceCircularOrbit[curve] ? 0.0 : eccentricity[curve] * eccentricity[curve])) / (1.0 + (forceCircularOrbit[curve] ? 0.0 : eccentricity[curve]) * Math.sin(forceCircularOrbit[curve] ? 0.0 : omega[curve]));
+                                            if (!bpLock[curve]) bp[curve] = bestFit[curve][2] * Math.cos(bestFit[curve][4]) * (1.0 - (forceCircularOrbit[curve] ? 0.0 : eccentricity[curve] * eccentricity[curve])) / (1.0 + (forceCircularOrbit[curve] ? 0.0 : eccentricity[curve]) * Math.sin(forceCircularOrbit[curve] ? 0.0 : omega[curve]));
                                             double bp2 = bp[curve] * bp[curve];
                                             t14[curve] = (orbitalPeriod[curve] / Math.PI * Math.asin(Math.sqrt((1.0 + bestFit[curve][1]) * (1.0 + bestFit[curve][1]) - bp2) / (Math.sin(bestFit[curve][4]) * bestFit[curve][2])) * Math.sqrt(1.0 - (forceCircularOrbit[curve] ? 0.0 : eccentricity[curve] * eccentricity[curve])) / (1.0 + (forceCircularOrbit[curve] ? 0.0 : eccentricity[curve]) * Math.sin(forceCircularOrbit[curve] ? 0.0 : omega[curve])));
                                             t23[curve] = (orbitalPeriod[curve] / Math.PI * Math.asin(Math.sqrt((1.0 - bestFit[curve][1]) * (1.0 - bestFit[curve][1]) - bp2) / (Math.sin(bestFit[curve][4]) * bestFit[curve][2])) * Math.sqrt(1.0 - (forceCircularOrbit[curve] ? 0.0 : eccentricity[curve] * eccentricity[curve])) / (1.0 + (forceCircularOrbit[curve] ? 0.0 : eccentricity[curve]) * Math.sin(forceCircularOrbit[curve] ? 0.0 : omega[curve])));
@@ -2358,7 +2364,12 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                             double sin2tTpioP = Math.pow(Math.sin(t14[curve] * Math.PI / orbitalPeriod[curve]), 2);
                                             stellarDensity[curve] = 0.0189 / (orbitalPeriod[curve] * orbitalPeriod[curve]) * Math.pow(((1.0 + bestFit[curve][1]) * (1.0 + bestFit[curve][1]) - bp2 * (1 - sin2tTpioP)) / sin2tTpioP, 1.5);
 
-                                            bpLabel[curve].setText(Double.isNaN(bp[curve]) ? "NaN" : threePlaces.format(bp[curve]));
+                                            if (bpLock[curve]) {
+                                                priorCenterSpinner[curve][4].setValue(bestFit[curve][4]*180.0/Math.PI);
+                                            }
+                                            else {
+                                                bpSpinner[curve].setValue(bp[curve]);
+                                            }
                                             t14Label[curve].setText(Double.isNaN(t14[curve]) ? "NaN" : sixPlaces.format(t14[curve]));
                                             t14HoursLabel[curve].setText(Double.isNaN(t14[curve]) ? "NaN" : IJU.decToSex(24 * t14[curve], 0, 24, false));
                                             t23Label[curve].setText(Double.isNaN(t23[curve]) ? "NaN" : sixPlaces.format(t23[curve]));
@@ -2370,7 +2381,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                             //}
                                             transitDepthLabel[curve].setText(Double.isNaN(transitDepth[curve]) ? "NaN" : threeDigitsTwoPlaces.format(transitDepth[curve]));
                                         } else {
-                                            bpLabel[curve].setText("");
+                                            //bpSpinner[curve].setValue(0.0);
                                             t14Label[curve].setText("");
                                             t14HoursLabel[curve].setText("");
                                             t23Label[curve].setText("");
@@ -4099,13 +4110,18 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 p0 = lockToCenter[curve][1] ? Math.sqrt(priorCenter[curve][1]) : param[fp < nPars ? fp++ : nPars - 1]; // r_p/r_*
                 ar = lockToCenter[curve][2] ? priorCenter[curve][2] : param[fp < nPars ? fp++ : nPars - 1]; // a/r_*
                 tc = lockToCenter[curve][3] ? priorCenter[curve][3] : param[fp < nPars ? fp++ : nPars - 1]; //transit center time
-                incl = lockToCenter[curve][4] ? priorCenter[curve][4] * Math.PI / 180.0 : param[fp < nPars ? fp++ : nPars - 1];  //inclination
+                if (!bpLock[curve]) {
+                    incl = lockToCenter[curve][4] ? priorCenter[curve][4] * Math.PI / 180.0 : param[fp < nPars ? fp++ : nPars - 1];  //inclination
+                    b = Math.cos(incl) * ar;
+                    if (b > 1.0 + p0) {  //ensure planet transits or grazes the star
+                        incl = Math.acos((1.0 + p0) / ar);
+                    }
+                } else {
+                    incl = Math.acos(bp[curve]/ar);
+                }
                 u1 = lockToCenter[curve][5] ? priorCenter[curve][5] : param[fp < nPars ? fp++ : nPars - 1];  //quadratic limb darkening parameter 1
                 u2 = lockToCenter[curve][6] ? priorCenter[curve][6] : param[fp < nPars ? fp++ : nPars - 1];  //quadratic limb darkening parameter 2
-                b=Math.cos(incl)*ar;
-                if (b > 1.0 + p0) {  //ensure planet transits or grazes the star
-                    incl = Math.acos((1.0 + p0)/ar);
-                }
+
                 lcModel[curve] = IJU.transitModel(detrendXs[curve], f0, incl, p0, ar, tc, orbitalPeriod[curve], e, ohm, u1, u2, useLonAscNode[curve], lonAscNode[curve]);
             }
 
@@ -4123,9 +4139,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 if (!lockToCenter[curve][2] && (ar < (1.0 + p0))) {
                     chi2[curve] = Double.POSITIVE_INFINITY;  //boundary check that planet does not orbit within star
                 } else if ((!lockToCenter[curve][2] || !lockToCenter[curve][4]) && ((ar * Math.cos(incl) * (1.0 - e * e) / (1.0 + e * Math.sin(ohm * Math.PI / 180.0))) >= 1.0 + p0)) {
-                    if (!lockToCenter[curve][4]) {
+                    if (!lockToCenter[curve][4] && autoUpdatePrior[curve][4]) {
                         priorCenter[curve][4] = Math.round(10.0 * Math.acos((0.5 + p0) * (1.0 + e * Math.sin(ohm * Math.PI / 180.0)) / (ar * (1.0 - e * e))) * 180.0 / Math.PI) / 10.0;
-                        if (Double.isNaN(priorCenter[curve][4])) priorCenter[curve][4] = 89.0;
+                        if (Double.isNaN(priorCenter[curve][4])) priorCenter[curve][4] = 89.9;
                         priorCenterSpinner[curve][4].setValue(priorCenter[curve][4]);
                     }
                     chi2[curve] = Double.POSITIVE_INFINITY; //boundary check that planet passes in front of star
@@ -6133,6 +6149,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         useTransitFitCB = new JCheckBox[maxCurves];
         showLTranParamsCB = new JCheckBox[maxCurves];
         showLResidualCB = new JCheckBox[maxCurves];
+        bpLockCB = new JCheckBox[maxCurves];
 
         fitMenuBar = new JMenuBar[maxCurves];
         fitFileMenu = new JMenu[maxCurves];
@@ -6194,7 +6211,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         t23Label = new JTextField[maxCurves];
         tauLabel = new JTextField[maxCurves];
         stellarDensityLabel = new JTextField[maxCurves];
-        bpLabel = new JTextField[maxCurves];
+        bpSpinner = new JSpinner[maxCurves];
         planetRadiusLabel = new JTextField[maxCurves];
         transitDepthLabel = new JTextField[maxCurves];
         transitDepthPanel = new JPanel[maxCurves];
@@ -6232,6 +6249,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 //                errlabel = new String[maxCurves];
 //                operrlabel = new String[maxCurves];
         showErrors = new boolean[maxCurves];
+        bpLock = new boolean[maxCurves];
         hasErrors = new boolean[maxCurves];
 //////                showErr = new boolean[maxCurves];
 //                showOpErrors = new boolean[maxCurves];
@@ -6420,6 +6438,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             residualSymbolIndex[i] = 3;
 //                        detrendFit[i] = true;
             force[i] = false;
+            bpLock[i] = false;
             showErrors[i] = false;
 //                        showOpErrors[i] = false;
             hasErrors[i] = false;
@@ -11752,6 +11771,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         spinnerSize = new Dimension(125, 25);
         orbitalSpinnerSize = new Dimension(70, 25);
         stellarSpinnerSize = new Dimension(60, 25);
+        bpSize = new Dimension(55, 25);
         labelSize = new Dimension(135, 25);
         legendLabelSize = new Dimension(120, 25);
         controlSpinnerSize = new Dimension(105, 25);
@@ -12292,7 +12312,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         });
         autoPriorsMenu[c].add(tcPriorCB[c]);
 
-        inclPriorCB[c] = new JCheckBoxMenuItem("Include transit inclination in auto prior update", autoUpdatePrior[c][3]);
+        inclPriorCB[c] = new JCheckBoxMenuItem("Include transit inclination in auto prior update", autoUpdatePrior[c][4]);
         inclPriorCB[c].addItemListener(e -> {
             autoUpdatePrior[c][4] = e.getStateChange() == ItemEvent.SELECTED;
             enableTransitComponents(c);
@@ -12872,16 +12892,58 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         JPanel bpPanel = new JPanel(new SpringLayout());
         bpPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(subBorderColor, 1), "b", TitledBorder.CENTER, TitledBorder.TOP, p11, Color.darkGray));
 
-        bpLabel[c] = new JTextField("");
-        bpLabel[c].setToolTipText("<html>Impact angle of the transit.<br>" + "For circular orbits, b = (a/R*)cos(inclination)<br>" + "Green Border: fit converged<br>" + "Red Border: fit did not converge<br>" + "Gray Border: no fit in this session</html>");
-        bpLabel[c].setFont(p11);
-        bpLabel[c].setHorizontalAlignment(JLabel.CENTER);
-        bpLabel[c].setBorder(grayBorder);
-        bpLabel[c].setPreferredSize(new Dimension(50, 25));
-        bpLabel[c].setMaximumSize(new Dimension(50, 25));
-        bpLabel[c].setEnabled(useTransitFit[c]);
-        bpLabel[c].setEditable(false);
-        bpPanel.add(bpLabel[c]);
+        bpSpinner[c] = new JSpinner(new SpinnerNumberModel(Double.valueOf(bp[c]), Double.valueOf(0.0), Double.valueOf(2.0), Double.valueOf(0.01)));
+        bpSpinner[c].setEnabled(bpLock[c] && useTransitFit[c]);
+        bpSpinner[c].setFont(p11);
+        bpSpinner[c].setEditor(new JSpinner.NumberEditor(bpSpinner[c], oneDotThreeFormat));
+        bpSpinner[c].setBorder(bpLock[c] ? lockBorder : grayBorder);
+        if (!bpLock[c]) {
+            bpSpinner[c].setValue(Math.cos((Math.PI/180.0)*priorCenter[c][4])/priorCenter[c][2]);
+        }
+        bpSpinner[c].setPreferredSize(bpSize);
+        bpSpinner[c].setMaximumSize(bpSize);
+        //bpSpinner[c].setComponentPopupMenu(priorCenterStepPopup[row]);
+        bpSpinner[c].setToolTipText("\"<html>Impact parameter of the transit model.<br>" + "For circular orbits, b = (a/R*)cos(inclination)<br>" + "Green Border: fit converged<br>" + "Red Border: fit did not converge<br>" + "Gray Border: no fit in this session</html>");
+        bpSpinner[c].addChangeListener(ev -> {
+            if (bpLock[c]) {
+                bp[c] = (Double) bpSpinner[c].getValue();
+                double inclination = (180.0/Math.PI)*Math.acos(bp[c]/bestFit[c][2]);
+                //double inclination = (180/Math.PI)*Math.acos((1.0 + (forceCircularOrbit[c] ? 0.0 : eccentricity[c]) * Math.sin(forceCircularOrbit[c] ? 0.0 : omega[c])) / (bestFit[c][2] * (1.0 - (forceCircularOrbit[c] ? 0.0 : eccentricity[c] * eccentricity[c]))));
+                priorCenterSpinner[c][4].setValue(Double.valueOf(inclination));
+                priorCenter[c][4] = inclination;
+                if (autoUpdateFit[c]) updatePlot(updateOneFit(c));
+            }
+        });
+        bpSpinner[c].addMouseWheelListener(e -> {
+            double newValue = (Double) bpSpinner[c].getValue() - e.getWheelRotation() * 0.01;
+            if (newValue < 0.0) newValue = 0.0;
+            if (newValue > 2.0) newValue = 2.0;
+            if (bpSpinner[c].isEnabled()) {
+                bpSpinner[c].setValue(newValue);
+            }
+        });
+        bpPanel.add(bpSpinner[c]);
+
+        bpLockCB[c] = new JCheckBox("", bpLock[c]);
+        bpLockCB[c].setEnabled(bpLock[c]);
+        bpLockCB[c].setFont(p12);
+        bpLockCB[c].setToolTipText("Lock impact parameter of transit.");
+        bpLockCB[c].addItemListener(e -> {
+            bpLock[c] = (e.getStateChange() == ItemEvent.SELECTED);
+            bpSpinner[c].setEnabled(bpLock[c] && useTransitFit[c]);
+            lockToCenterCB[c][4].setEnabled(!bpLock[c] && useTransitFit[c]);
+            lockToCenter[c][4] = bpLock[c] || lockToCenterCB[c][4].isSelected();
+            priorCenterSpinner[c][4].setEnabled(!bpLock[c] && (lockToCenterCB[c][4].isSelected() || !autoUpdatePrior[c][4]) && useTransitFit[c]);
+            if (bpLock[c]) {
+                double inclination = (180.0/Math.PI)*Math.acos(bp[c]/bestFit[c][2]);
+                //double inclination = (180/Math.PI)*Math.acos((1.0 + (forceCircularOrbit[c] ? 0.0 : eccentricity[c]) * Math.sin(forceCircularOrbit[c] ? 0.0 : omega[c])) / (bestFit[c][2] * (1.0 - (forceCircularOrbit[c] ? 0.0 : eccentricity[c] * eccentricity[c]))));
+                priorCenterSpinner[c][4].setValue(inclination);
+                priorCenter[c][4] = inclination;
+                if (autoUpdateFit[c]) updatePlot(updateOneFit(c));
+            }
+        });
+        bpPanel.add(bpLockCB[c]);
+
         SpringUtil.makeCompactGrid(bpPanel, 1, bpPanel.getComponentCount(), 0, 0, 0, 0);
         fittedParametersPanel3.add(bpPanel);
 
@@ -13673,7 +13735,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 priorCenterSpinner[c][3].setValue((dMarker2Value + dMarker3Value) / 2.0);   // tc = transit center time
             }
         }
-        if (!lockToCenter[c][4] && autoUpdatePrior[c][4]) {
+        if (!lockToCenter[c][4] && !bpLock[c] && autoUpdatePrior[c][4]) {
             priorCenterSpinner[c][4].setValue(Math.round(10.0 * Math.acos((0.5 + Math.sqrt(rpOrstarEst)) / (priorCenter[c][2])) * 180.0 / Math.PI) / 10.0); // inclination
         }
     }
@@ -13756,7 +13818,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         parentPanel.add(dummyLabel3);
 
         lockToCenterCB[c][row] = new JCheckBox("", lockToCenter[c][row]);
-        lockToCenterCB[c][row].setEnabled(isDetrend ? useFitDetrendCB[c][row - 7].isSelected() : useTransitFit[c]);
+        lockToCenterCB[c][row].setEnabled(isDetrend ? useFitDetrendCB[c][row - 7].isSelected() : (row == 4 && bpLock[c] ? false : useTransitFit[c]));
         lockToCenterCB[c][row].setHorizontalAlignment(JLabel.CENTER);
         lockToCenterCB[c][row].setPreferredSize(checkBoxSize);
         lockToCenterCB[c][row].setMaximumSize(checkBoxSize);
@@ -13783,14 +13845,14 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 //            IJ.log("priorCenterStep["+row+"]="+priorCenterStep[row]);
 //            IJ.log("");
         priorCenterSpinner[c][row] = new JSpinner(new SpinnerNumberModel(Double.valueOf(priorCenter[c][row]), Double.valueOf(min), Double.valueOf(max), Double.valueOf(priorCenterStep[row])));
-        priorCenterSpinner[c][row].setEnabled(isDetrend ? useFitDetrendCB[c][row - 7].isSelected() : useTransitFit[c]);
+        priorCenterSpinner[c][row].setEnabled(isDetrend ? useFitDetrendCB[c][row - 7].isSelected() : (row == 4 && bpLock[c] ? false : useTransitFit[c]));
         priorCenterSpinner[c][row].setFont(p11);
         priorCenterSpinner[c][row].setEditor(new JSpinner.NumberEditor(priorCenterSpinner[c][row], fitFormat));
         priorCenterSpinner[c][row].setBorder(lockToCenter[c][row] ? lockBorder : grayBorder);
         priorCenterSpinner[c][row].setPreferredSize(spinnerSize);
         priorCenterSpinner[c][row].setMaximumSize(spinnerSize);
         priorCenterSpinner[c][row].setComponentPopupMenu(priorCenterStepPopup[row]);
-        if (row < 4 && !isDetrend) {
+        if (row < 5 && !isDetrend) {
             priorCenterSpinner[c][row].setToolTipText("<html>The parameter's starting value for the fit.<br>" + "---------------------------------------------<br>" + "To enter a custom value, either disable 'Auto Update Priors' or enable 'Lock'.<br>" + "---------------------------------------------<br>" + "Right click to set spinner stepsize</html>");
         } else {
             priorCenterSpinner[c][row].setToolTipText("<html>The parameter's starting value for the fit.<br>" + "---------------------------------------------<br>" + "Right click to set spinner stepsize</html>");
@@ -13936,7 +13998,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 //                t23Label[c].paint(t23Label[c].getGraphics());
             tauLabel[c].setBorder(useTransitFit[c] ? border : grayBorder);
             stellarDensityLabel[c].setBorder(useTransitFit[c] ? border : grayBorder);
-            bpLabel[c].setBorder(useTransitFit[c] ? border : grayBorder);
+            bpSpinner[c].setBorder(useTransitFit[c] && bpLock[c] ? border : grayBorder);
             planetRadiusLabel[c].setBorder(useTransitFit[c] ? border : grayBorder);
             transitDepthLabel[c].setBorder(useTransitFit[c] ? border : grayBorder);
 //                tauLabel[c].paint(tauLabel[c].getGraphics());
@@ -13998,7 +14060,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         t23Label[c].setEnabled(useTransitFit[c]);
         tauLabel[c].setEnabled(useTransitFit[c]);
         stellarDensityLabel[c].setEnabled(useTransitFit[c]);
-        bpLabel[c].setEnabled(useTransitFit[c]);
+        bpSpinner[c].setEnabled(useTransitFit[c] && bpLock[c]);
+        bpLockCB[c].setEnabled(useTransitFit[c]);
         transitDepthLabel[c].setEnabled(useTransitFit[c]);
         planetRadiusLabel[c].setEnabled(useTransitFit[c]);
         showResidualCB[c].setEnabled(useTransitFit[c]);
@@ -14013,8 +14076,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         for (int row = 0; row < 7; row++)  //priorCenterSpinner[c].length
         {
             bestFitLabel[c][row].setEnabled(useTransitFit[c]);
-            lockToCenterCB[c][row].setEnabled(useTransitFit[c]);
-            priorCenterSpinner[c][row].setEnabled(useTransitFit[c] && (row > 4 || !autoUpdatePriors[c] || !autoUpdatePrior[c][row] || lockToCenter[c][row]));
+            lockToCenterCB[c][row].setEnabled(row == 4 && bpLock[c] ? false : useTransitFit[c]);
+            priorCenterSpinner[c][row].setEnabled(row == 4 && bpLock[c] ? false : useTransitFit[c] && (row > 4 || !autoUpdatePriors[c] || !autoUpdatePrior[c][row] || lockToCenter[c][row]));
             usePriorWidthCB[c][row].setEnabled(useTransitFit[c]);
             priorWidthSpinner[c][row].setEnabled(useTransitFit[c] && usePriorWidth[c][row] && (row > 1 || !autoUpdatePriors[c] || !autoUpdatePrior[c][row] || lockToCenter[c][row]));
             useCustomFitStepCB[c][row].setEnabled(useTransitFit[c]);
@@ -17334,6 +17397,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             fitFrameLocationX[i] = (int) Prefs.get("plot2.fitFrameLocationX" + i, fitFrameLocationX[i]);
             fitFrameLocationY[i] = (int) Prefs.get("plot2.fitFrameLocationY" + i, fitFrameLocationY[i]);
             orbitalPeriod[i] = Prefs.get("plot.orbitalPeriod" + i, orbitalPeriod[i]);
+            bp[i] = Prefs.get("plot.bp" + i, bp[i]);
             eccentricity[i] = Prefs.get("plot.eccentricity" + i, eccentricity[i]);
             omega[i] = Prefs.get("plot.omega" + i, omega[i]);
             teff[i] = Prefs.get("plot.teff" + i, teff[i]);
@@ -17356,6 +17420,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             autoUpdatePrior[i][1] = Prefs.get("plot.autoUpdatePrior[" + i + "][1]", autoUpdatePrior[i][1]);
             autoUpdatePrior[i][2] = Prefs.get("plot.autoUpdatePrior[" + i + "][2]", autoUpdatePrior[i][2]);
             autoUpdatePrior[i][3] = Prefs.get("plot.autoUpdatePrior[" + i + "][3]", autoUpdatePrior[i][3]);
+            autoUpdatePrior[i][4] = Prefs.get("plot.autoUpdatePrior[" + i + "][4]", autoUpdatePrior[i][4]);
+            bpLock[i] = Prefs.get("plot.bpLock[" + i + "]", bpLock[i]);
 
             moreOptions[i] = Prefs.get("plot.moreOptions" + i, moreOptions[i]);
             oplabel[i] = Prefs.get("plot.oplabel" + i, oplabel[i]);
@@ -17634,6 +17700,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             Prefs.set("plot2.fitFrameLocationX" + i, fitFrameLocationX[i]);
             Prefs.set("plot2.fitFrameLocationY" + i, fitFrameLocationY[i]);
             Prefs.set("plot.orbitalPeriod" + i, orbitalPeriod[i]);
+            Prefs.set("plot.bp" + i, bp[i]);
             Prefs.set("plot.eccentricity" + i, eccentricity[i]);
             Prefs.set("plot.omega" + i, omega[i]);
             Prefs.set("plot.teff" + i, teff[i]);
@@ -17656,6 +17723,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             Prefs.set("plot.autoUpdatePrior[" + i + "][1]", autoUpdatePrior[i][1]);
             Prefs.set("plot.autoUpdatePrior[" + i + "][2]", autoUpdatePrior[i][2]);
             Prefs.set("plot.autoUpdatePrior[" + i + "][3]", autoUpdatePrior[i][3]);
+            Prefs.set("plot.autoUpdatePrior[" + i + "][4]", autoUpdatePrior[i][4]);
+            Prefs.set("plot.bpLock[" + i + "]", bpLock[i]);
 
             Prefs.set("plot.xlabel" + i, xlabel[i]);
             Prefs.set("plot.ylabel" + i, ylabel[i]);

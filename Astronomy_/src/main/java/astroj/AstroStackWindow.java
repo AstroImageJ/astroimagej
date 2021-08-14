@@ -6039,7 +6039,7 @@ void setupListeners() {
             {
             if (updatesEnabled)
                 {
-                ImageProcessor ip = imp.getProcessor();
+                //ImageProcessor ip = imp.getProcessor();
                 getBiSliderStatistics();
 
                 if (startupPrevLevelsPerSlice)

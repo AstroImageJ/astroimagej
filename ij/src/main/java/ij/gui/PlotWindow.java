@@ -1,19 +1,23 @@
 package ij.gui;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.io.*;
-import java.awt.datatransfer.*;
-import java.util.*;
 import ij.*;
 import ij.astro.AstroImageJ;
-import ij.process.*;
-import ij.util.*;
-import ij.text.TextWindow;
-import ij.plugin.filter.Analyzer;
-import ij.plugin.filter.PlugInFilterRunner;
-import ij.measure.*;
 import ij.io.SaveDialog;
+import ij.measure.ResultsTable;
+import ij.process.ColorProcessor;
+import ij.process.ImageProcessor;
+import ij.util.Tools;
+
+import java.awt.*;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.ClipboardOwner;
+import java.awt.datatransfer.StringSelection;
+import java.awt.datatransfer.Transferable;
+import java.awt.event.*;
+import java.io.CharArrayWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.Properties;
 
 /** This class implements the Analyze/Plot Profile command.
 * @author Michael Schmid
@@ -277,7 +281,7 @@ public class PlotWindow extends ImageWindow implements ActionListener, ItemListe
 	@AstroImageJ(reason = "Correction for plot window bounds to go to top of window.")
 	public Insets getInsets() {
 		Insets b = super.getInsets();
-		b.set(b.top-4, b.left, b.bottom, b.right);
+		b.set(b.top, b.left, b.bottom, b.right);
 		return b;
 	}
 

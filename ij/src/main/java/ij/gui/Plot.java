@@ -1,19 +1,30 @@
 package ij.gui;
-import java.awt.*;
-import java.util.*;
-import java.io.*;
-import java.lang.reflect.Method;
-import java.awt.geom.Point2D;
+
 import ij.*;
 import ij.astro.AstroImageJ;
-import ij.process.*;
-import ij.util.*;
-import ij.plugin.Colors;
-import ij.plugin.filter.Analyzer;
+import ij.astro.accessors.IPlotObject;
+import ij.astro.accessors.IPlotProperties;
 import ij.macro.Interpreter;
 import ij.measure.Calibration;
 import ij.measure.Measurements;
 import ij.measure.ResultsTable;
+import ij.plugin.Colors;
+import ij.plugin.filter.Analyzer;
+import ij.process.ByteProcessor;
+import ij.process.ColorProcessor;
+import ij.process.ImageProcessor;
+import ij.util.FontUtil;
+import ij.util.Tools;
+
+import java.awt.*;
+import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
+import java.io.*;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Locale;
+import java.util.Vector;
 
 /** This class creates an image that line graphs, scatter plots and plots of vector fields
  *	(arrows) can be drawn on and displayed.
@@ -151,9 +162,12 @@ public class Plot implements Cloneable {
 	/** key in ImagePlus properties to access the plot behind an ImagePlus */
 	public static final String PROPERTY_KEY = "thePlot";
 
-	static final float DEFAULT_FRAME_LINE_WIDTH = 1.0001f; //Frame thickness
-	private static final int MIN_X_GRIDSPACING = 45;	//minimum distance between grid lines or ticks along x at plot width 0
-	private static final int MIN_Y_GRIDSPACING = 30;	//minimum distance between grid lines or ticks along y at plot height 0
+	@AstroImageJ(reason = "Access widen for Vector Plot saving", modified = true)
+	public static final float DEFAULT_FRAME_LINE_WIDTH = 1.0001f; //Frame thickness
+	@AstroImageJ(reason = "Access widen for Vector Plot saving", modified = true)
+	public static final int MIN_X_GRIDSPACING = 45;	//minimum distance between grid lines or ticks along x at plot width 0
+	@AstroImageJ(reason = "Access widen for Vector Plot saving", modified = true)
+	public static final int MIN_Y_GRIDSPACING = 30;	//minimum distance between grid lines or ticks along y at plot height 0
 	private final double MIN_LOG_RATIO = 3;				//If max/min ratio is less than this, force linear axis even if log required. should be >2
 	private static final int LEGEND_PADDING = 4;		//pixels around legend text etc
 	private static final int LEGEND_LINELENGTH = 20;	//length of lines in legend
@@ -163,15 +177,18 @@ public class Plot implements Cloneable {
 	private static final int MAX_ARROWHEAD_LENGTH = 20;
 	private static final String MULTIPLY_SYMBOL = "\u00B7"; //middot, default multiplication symbol for scientific notation. Use setOptions("msymbol=\\u00d7") for '×'
 
-	PlotProperties pp = new PlotProperties();		//size, range, formatting etc, for easy serialization
+	@AstroImageJ(reason = "Access widen for Vector Plot saving", modified = true)
+	public PlotProperties pp = new PlotProperties();		//size, range, formatting etc, for easy serialization
 	PlotProperties ppSnapshot;						//copy for reverting
-	Vector<PlotObject> allPlotObjects = new Vector<PlotObject>();	//all curves, labels etc., also serialized for saving/reading
+	@AstroImageJ(reason = "Access widen for Vector Plot saving", modified = true)
+	public Vector<PlotObject> allPlotObjects = new Vector<PlotObject>();	//all curves, labels etc., also serialized for saving/reading
 	Vector<PlotObject> allPlotObjectsSnapshot;      //copy for reverting
 	private PlotVirtualStack stack;
 	/** For high-resolution plots, everything will be scaled with this number. Otherwise, must be 1.0.
 	 *  (creating margins, saving PlotProperties etc only supports scale=1.0) */
 	float scale = 1.0f;
-	Rectangle frame = null;							//the clip frame, do not use for image scale
+	@AstroImageJ(reason = "Access widen for Vector Plot saving", modified = true)
+	public Rectangle frame = null;							//the clip frame, do not use for image scale
 	//The following are the margin sizes actually used. They are modified for font size and also scaled for high-resolution plots
 	int leftMargin = LEFT_MARGIN, rightMargin = RIGHT_MARGIN, topMargin = TOP_MARGIN, bottomMargin = BOTTOM_MARGIN;
 	int frameWidth;									//width corresponding to plot range; frame.width is larger by 1
@@ -179,24 +196,32 @@ public class Plot implements Cloneable {
 	int preferredPlotWidth = PlotWindow.plotWidth;  //default size of plot frame (not taking 'High-Resolution' scale factor into account)
 	int preferredPlotHeight = PlotWindow.plotHeight;
 
-	double xMin = Double.NaN, xMax, yMin, yMax;		//current plot range, logarithm if log axis
-	double[] currentMinMax = new double[]{Double.NaN, 0, Double.NaN, 0}; //current plot range, xMin, xMax, yMin, yMax (values, not logarithm if log axis)
+	@AstroImageJ(reason = "Access widen for Vector Plot saving", modified = true)
+	public double xMin = Double.NaN, xMax, yMin, yMax;		//current plot range, logarithm if log axis
+	@AstroImageJ(reason = "Access widen for Vector Plot saving", modified = true)
+	public double[] currentMinMax = new double[]{Double.NaN, 0, Double.NaN, 0}; //current plot range, xMin, xMax, yMin, yMax (values, not logarithm if log axis)
 	double[] defaultMinMax = new double[]{Double.NaN, 0, Double.NaN, 0}; //default plot range
 	double[] savedMinMax = new double[]{Double.NaN, 0, Double.NaN, 0};	//keeps previous range for revert
 	int[] enlargeRange;                             // whether to enlarge the range slightly to avoid values at the border (0=off, USUALLY_ENLARGE, ALWAYS_ENLARGE)
-	boolean logXAxis, logYAxis;                     // whether to really use log axis (never for small relative range)
+	@AstroImageJ(reason = "Access widen for Vector Plot saving", modified = true)
+	public boolean logXAxis, logYAxis;                     // whether to really use log axis (never for small relative range)
 	//for passing on what should be kept when 'live' plotting (PlotMaker), but note that 'COPY_EXTRA_OBJECTS' is also on for live plotting:
 	int templateFlags = COPY_SIZE | COPY_LABELS | COPY_AXIS_STYLE | COPY_CONTENTS_STYLE | COPY_LEGEND;
 	private int dsize = PlotWindow.getDefaultFontSize();
 	Font defaultFont = FontUtil.getFont("Arial",Font.PLAIN,dsize); //default font for labels, axis, etc.
 	Font currentFont = defaultFont;                 // font as changed by setFont or setFontSize, must never be null
-	private double xScale, yScale;                  // pixels per data unit
-	private int xBasePxl, yBasePxl;                 // pixel coordinates corresponding to 0
+	@AstroImageJ(reason = "Access widen for Vector Plot saving", modified = true)
+	public double xScale, yScale;                  // pixels per data unit
+	@AstroImageJ(reason = "Access widen for Vector Plot saving", modified = true)
+	public int xBasePxl, yBasePxl;                 // pixel coordinates corresponding to 0
 	@AstroImageJ(reason = "Increase default from 12 to 50", modified = true)
 	private int maxIntervals = 50;                  // maximum number of intervals between ticks or grid lines
-	private int tickLength = 7;                     // length of major ticks
-	private int minorTickLength = 3;                // length of minor ticks
-	private Color gridColor = new Color(0xc0c0c0);  // light gray
+	@AstroImageJ(reason = "Access widen for Vector Plot saving", modified = true)
+	public int tickLength = 7;                     // length of major ticks
+	@AstroImageJ(reason = "Access widen for Vector Plot saving", modified = true)
+	public int minorTickLength = 3;                // length of minor ticks
+	@AstroImageJ(reason = "Access widen for Vector Plot saving", modified = true)
+	public Color gridColor = new Color(0xc0c0c0);  // light gray
 	private ImageProcessor ip;
 	private ImagePlus imp;                          // if we have an ImagePlus, updateAndDraw on changes
 	private String title;
@@ -210,7 +235,8 @@ public class Plot implements Cloneable {
 	private boolean ignoreForce2Grid;               // after explicit setting of range (limits), ignore 'FORCE2GRID' flags
 	//private boolean snapToMinorGrid;  			// snap to grid when zooming to selection
 	private static double SEPARATED_BAR_WIDTH=0.5;  // for plots with separate bars (e.g. categories), fraction of space, 0.1-1.0
-	double[] steps;                                 // x & y interval between numbers, major ticks & grid lines, remembered for redrawing the grid
+	@AstroImageJ(reason = "Access widen for Vector Plot saving", modified = true)
+	public double[] steps;                                 // x & y interval between numbers, major ticks & grid lines, remembered for redrawing the grid
 	private int objectToReplace = -1;               // index in allPlotObjects, for replace
 	private Point2D.Double textLoc;                 // remembers position of previous addLabel call (replaces text if at the same position)
 	private int textIndex;                          // remembers index of previous addLabel call (for replacing if at the same position)
@@ -239,6 +265,11 @@ public class Plot implements Cloneable {
 	*/
 	public Plot(String title, String xLabel, String yLabel, double[] x, double[] y) {
 		this(title, xLabel, yLabel, x!=null?Tools.toFloat(x):null, y!=null?Tools.toFloat(y):null, getDefaultFlags());
+	}
+
+	@AstroImageJ(reason = "Get margins for vector PlotOutput")
+	public Rectangle2D getMargins() {
+		return new Rectangle2D.Double(leftMargin, topMargin, frameWidth, frameHeight);
 	}
 
 	/** This version of the constructor has a 'flags' argument for
@@ -872,7 +903,8 @@ public class Plot implements Cloneable {
 		allPlotObjects.add(new PlotObject(shapeType, floatCoords, currentLineWidth, currentColor, currentColor2));
 	}
 
-	public static double calculateDistance(int x1, int y1, int x2, int y2) {
+	@AstroImageJ(reason = "Access widen for Vector Plot saving", modified = true)
+	public static double calculateDistance(double x1, double y1, double x2, double y2) {
 		return java.lang.Math.sqrt((x2 - x1)*(double)(x2 - x1) + (y2 - y1)*(double)(y2 - y1));
 	}
 
@@ -1825,7 +1857,8 @@ public class Plot implements Cloneable {
 
 	/** Converts calibrated coordinates to pixel coordinates. In contrast to the image calibration, also
 	 *	works with log axes and inverted x axes. Returns a large number instead NaN for log x axis and zero or negative x */
-	private int scaleXWithOverflow(double x) {
+	@AstroImageJ(reason = "Access widen for Vector Plot saving", modified = true)
+	public int scaleXWithOverflow(double x) {
 		if (!logXAxis || x>0)
 			return scaleX(x);
 		else
@@ -1834,7 +1867,8 @@ public class Plot implements Cloneable {
 
 	/** Converts calibrated coordinates to pixel coordinates. In contrast to the image calibration, also
 	 *	works with log axes and inverted x axes. Returns a large number instead NaN for log y axis and zero or negative y */
-	private int scaleYWithOverflow(double y) {
+	@AstroImageJ(reason = "Access widen for Vector Plot saving", modified = true)
+	public int scaleYWithOverflow(double y) {
 		if (!logYAxis || y>0)
 			return scaleY(y);
 		else
@@ -1842,14 +1876,16 @@ public class Plot implements Cloneable {
 	}
 
 	/** Scales a value of the original plot for a high-resolution plot. Returns an integer number of pixels >=1 */
-	int sc(float length) {
+	@AstroImageJ(reason = "Access widen for Vector Plot saving", modified = true)
+	public int sc(float length) {
 		int pixels = (int)(length*scale + 0.5);
 		if (pixels < 1) pixels = 1;
 		return pixels;
 	}
 
 	/** Scales a font of the original plot for a high-resolution plot. */
-	Font scFont(Font font) {
+	@AstroImageJ(reason = "Access widen for Vector Plot saving", modified = true)
+	public Font scFont(Font font) {
 		float size = font.getSize2D();
 		return scale==1 ? font : font.deriveFont(size*scale);
 	}
@@ -2448,11 +2484,13 @@ public class Plot implements Cloneable {
 	}
 
 	/** Whether to draw simple axes without ticks, grid and numbers only for min, max*/
-	private boolean simpleXAxis() {
+	@AstroImageJ(reason = "Access widen for Vector Plot saving", modified = true)
+	public boolean simpleXAxis() {
 		return !hasFlag(X_TICKS | X_MINOR_TICKS | X_LOG_TICKS | X_GRID | X_NUMBERS);
 	}
 
-	private boolean simpleYAxis() {
+	@AstroImageJ(reason = "Access widen for Vector Plot saving", modified = true)
+	public boolean simpleYAxis() {
 		return !hasFlag(Y_TICKS | Y_MINOR_TICKS | Y_LOG_TICKS | Y_GRID | Y_NUMBERS);
 	}
 
@@ -2765,7 +2803,8 @@ public class Plot implements Cloneable {
 
 	/** Returns the array of categories from an axis label in the form {cat1,cat2,cat3}, or null if not this form
 	 *  @param labelCode  can be 'x' or 'y', for the x or y axis label*/
-	String[] labelsInBraces(char labelCode) {
+	@AstroImageJ(reason = "Access widen for Vector Plot saving", modified = true)
+	public String[] labelsInBraces(char labelCode) {
 		String s = getLabel(labelCode);
 		if (s.startsWith("{") && s.endsWith("}")) {
 			String inBraces = s.substring(1, s.length() - 1);
@@ -2777,7 +2816,8 @@ public class Plot implements Cloneable {
 	}
 
 	/** Returns the smallest "nice" number >= v. "Nice" numbers are .. 0.5, 1, 2, 5, 10, 20 ... */
-	double niceNumber(double v) {
+	@AstroImageJ(reason = "Access widen for Vector Plot saving", modified = true)
+    public double niceNumber(double v) {
 		double base = Math.pow(10,Math.floor(Math.log10(v)-1.e-6));
 		if (v > 5.0000001*base) return 10*base;
 		else if (v > 2.0000001*base) return 5*base;
@@ -2824,7 +2864,8 @@ public class Plot implements Cloneable {
 	}
 
 	/** Returns the user-supplied (via setOptions) or default multiplication symbol (middot) */
-	String getMultiplySymbol() {
+	@AstroImageJ(reason = "Access widen for Vector Plot saving", modified = true)
+	public String getMultiplySymbol() {
 		String multiplySymbol = Tools.getStringFromList(pp.frame.options, "msymbol=");
 		if (multiplySymbol==null)
 			multiplySymbol = Tools.getStringFromList(pp.frame.options, "multiplysymbol=");
@@ -2946,7 +2987,8 @@ public class Plot implements Cloneable {
 	 *  by a negative return value, or if suggestedDigits is negative
 	 *  Returns 'suggestedDigits' if not 0 and compatible with the resolution; negative values of
 	 *  'suggestedDigits' switch to scientific notation. */
-	static int getDigits(double n, double resolution, int maxDigits, int suggestedDigits) {
+	@AstroImageJ(reason = "Access widen for Vector Plot saving", modified = true)
+	public static int getDigits(double n, double resolution, int maxDigits, int suggestedDigits) {
 		if (n==Math.round(n) && Math.abs(n) < Math.pow(10,maxDigits-1)-1) //integers and not too big
 			return suggestedDigits;
 		else
@@ -2958,7 +3000,8 @@ public class Plot implements Cloneable {
 	 *  by a negative return value
 	 *  Returns 'suggestedDigits' if not 0 and compatible with the resolution; negative values of
 	 *  'suggestedDigits' switch to sceintific notation. */
-	static int getDigits(double n1, double n2, double resolution, int maxDigits, int suggestedDigits) {
+	@AstroImageJ(reason = "Access widen for Vector Plot saving", modified = true)
+	public static int getDigits(double n1, double n2, double resolution, int maxDigits, int suggestedDigits) {
 		if (n1==0 && n2==0) return suggestedDigits;
 		return getDigits2(Math.max(Math.abs(n1),Math.abs(n2)), resolution, maxDigits, suggestedDigits);
 	}
@@ -2985,7 +3028,9 @@ public class Plot implements Cloneable {
 		return n==Math.round(n);
 	}
 
-	private void drawPlotObject(PlotObject plotObject, ImageProcessor ip) {
+	@AstroImageJ(reason = "widen access", modified = true)
+	protected void drawPlotObject(PlotObject plotObject, ImageProcessor ip) {
+		//var plotObject = (PlotObject) iPlotObject;
 		//IJ.log("DRAWING type="+plotObject.type+" lineWidth="+plotObject.lineWidth+" shape="+plotObject.shape);
 		if (plotObject.hasFlag(PlotObject.HIDDEN)) return;
 		ip.setColor(plotObject.color);
@@ -3955,7 +4000,8 @@ public class Plot implements Cloneable {
 	}
 
 	/** Whether a given flag 'what' is set */
-	boolean hasFlag(int what) {
+	@AstroImageJ(reason = "Access widen for Vector Plot saving", modified = true)
+	public boolean hasFlag(int what) {
 		return (pp.axisFlags&what) != 0;
 	}
 
@@ -4062,7 +4108,8 @@ public class Plot implements Cloneable {
  *  To enable reading serialized PlotObjects of plots created with previous versions of ImageJ,
  *  the variable names MUST NEVER be changed! Also any additions should be made after careful thought,
  *  since they have to be kept for all future versions. */
-class PlotProperties implements Cloneable, Serializable {
+@AstroImageJ(reason = "Implement IPlotProperties for Vector Plot saving", modified = true)
+class PlotProperties implements Cloneable, Serializable, IPlotProperties {
 	/** The serialVersionUID should not be modified, otherwise saved plots won't be readable any more */
 	static final long serialVersionUID = 1L;
 	//
@@ -4113,6 +4160,26 @@ class PlotProperties implements Cloneable, Serializable {
 		return pp2;
 	}
 
+	@AstroImageJ(reason = "Implement IPlotProperties for Vector Plot saving")
+	public PlotObject getFrame() {
+		return frame;
+	}
+
+	@AstroImageJ(reason = "Implement IPlotProperties for Vector Plot saving")
+	public PlotObject getxLabel() {
+		return xLabel;
+	}
+
+	@AstroImageJ(reason = "Implement IPlotProperties for Vector Plot saving")
+	public PlotObject getyLabel() {
+		return yLabel;
+	}
+
+	@AstroImageJ(reason = "Implement IPlotProperties for Vector Plot saving")
+	public PlotObject getLegend() {
+		return legend;
+	}
+
 } // class PlotProperties
 
 /** This class contains the data and properties for displaying a curve, a set of arrows, a line or a label in a plot,
@@ -4122,7 +4189,8 @@ class PlotProperties implements Cloneable, Serializable {
  *  To enable reading serialized PlotObjects of plots created with previous versions of ImageJ,
  *  the variable names MUST NEVER be changed! Also any additions should be made after careful thought,
  *  since they have to be kept for all future versions. */
-class PlotObject implements Cloneable, Serializable {
+@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving", modified = true)
+class PlotObject implements Cloneable, Serializable, IPlotObject {
 	/** The serialVersionUID should not be modified, otherwise saved plots won't be readable any more */
 	static final long serialVersionUID = 1L;
 	/** Constants for the type of objects. These are powers of two so one can use them as masks */
@@ -4258,7 +4326,8 @@ class PlotObject implements Cloneable, Serializable {
 	}
 
 	/** Whether a given flag 'what' is set */
-	boolean hasFlag(int what) {
+	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving", modified = true)
+	public boolean hasFlag(int what) {
 		return (flags&what) != 0;
 	}
 
@@ -4273,30 +4342,35 @@ class PlotObject implements Cloneable, Serializable {
 	}
 
 	/** Whether an XY_DATA object has a curve to draw */
-	boolean hasCurve() {
+	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving", modified = true)
+	public boolean hasCurve() {
 		return type == XY_DATA && (shape == Plot.LINE || shape == Plot.CONNECTED_CIRCLES || shape == Plot.FILLED);
 	}
 
 	/** Whether an XY_DATA object has markers to draw */
-	boolean hasMarker() {
+	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving", modified = true)
+	public boolean hasMarker() {
 		return type == XY_DATA && (shape == Plot.CIRCLE || shape == Plot.X || shape == Plot.BOX || shape == Plot.TRIANGLE
 				|| shape == Plot.CROSS || shape == Plot.DIAMOND || shape == Plot.DOT || shape == Plot.CONNECTED_CIRCLES
 				|| shape == Plot.CUSTOM);
 	}
 
 	/** Whether an XY_DATA object has markers that can be filled */
-	boolean hasFilledMarker() {
+	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving", modified = true)
+	public boolean hasFilledMarker() {
 		return type == XY_DATA && color2 != null && (shape == Plot.CIRCLE || shape == Plot.BOX || shape == Plot.TRIANGLE ||
 				shape == Plot.DIAMOND || shape == Plot.CONNECTED_CIRCLES);
 	}
 
 	/** Size of the markers for an XY_DATA object with markers */
-	int getMarkerSize () {
+	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving", modified = true)
+	public int getMarkerSize () {
 		return lineWidth<=1 ? 5 : 7;
 	}
 
 	/** Sets the font. Also writes font properties for serialization. */
-	void setFont(Font font) {
+	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving", modified = true)
+	public void setFont(Font font) {
 		if (font == this.font) return;
 		this.font = font;
 		if (font == null) {
@@ -4309,7 +4383,8 @@ class PlotObject implements Cloneable, Serializable {
 	}
 
 	/** Returns the font, or null if none specified */
-	Font getFont() {
+	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving", modified = true)
+	public Font getFont() {
 		if (font == null && fontFamily != null)     //after recovery from serialization, create the font from its description
 			font = FontUtil.getFont(fontFamily, flags&FONT_STYLE_MASK, fontSize);
 		return font;
@@ -4366,5 +4441,235 @@ class PlotObject implements Cloneable, Serializable {
 	public String toString() {  //for debug messages
 		String s = "PlotObject type="+type+" flags="+flags+" xV:"+(xValues==null ? "-":yValues.length)+" yV:"+(yValues==null ? "-":yValues.length)+" label="+label+" col="+color+" fSize="+fontSize+" ff="+fontFamily;
 		return s;
+	}
+
+	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving")
+	public int getType() {
+		return type;
+	}
+
+	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving")
+	public void setType(int type) {
+		this.type = type;
+	}
+
+	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving")
+	public int getFlags() {
+		return flags;
+	}
+
+	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving")
+	public void setFlags(int flags) {
+		this.flags = flags;
+	}
+
+	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving")
+	public String getOptions() {
+		return options;
+	}
+
+	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving")
+	public void setOptions(String options) {
+		this.options = options;
+	}
+
+	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving")
+	public float[] getxValues() {
+		return xValues;
+	}
+
+	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving")
+	public void setxValues(float[] xValues) {
+		this.xValues = xValues;
+	}
+
+	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving")
+	public float[] getyValues() {
+		return yValues;
+	}
+
+	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving")
+	public void setyValues(float[] yValues) {
+		this.yValues = yValues;
+	}
+
+	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving")
+	public float[] getxEValues() {
+		return xEValues;
+	}
+
+	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving")
+	public void setxEValues(float[] xEValues) {
+		this.xEValues = xEValues;
+	}
+
+	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving")
+	public float[] getyEValues() {
+		return yEValues;
+	}
+
+	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving")
+	public void setyEValues(float[] yEValues) {
+		this.yEValues = yEValues;
+	}
+
+	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving")
+	public ArrayList getShapeData() {
+		return shapeData;
+	}
+
+	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving")
+	public void setShapeData(ArrayList shapeData) {
+		this.shapeData = shapeData;
+	}
+
+	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving")
+	public String getShapeType() {
+		return shapeType;
+	}
+
+	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving")
+	public void setShapeType(String shapeType) {
+		this.shapeType = shapeType;
+	}
+
+	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving")
+	public int getShape() {
+		return shape;
+	}
+
+	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving")
+	public void setShape(int shape) {
+		this.shape = shape;
+	}
+
+	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving")
+	public float getLineWidth() {
+		return lineWidth;
+	}
+
+	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving")
+	public void setLineWidth(float lineWidth) {
+		this.lineWidth = lineWidth;
+	}
+
+	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving")
+	public Color getColor() {
+		return color;
+	}
+
+	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving")
+	public void setColor(Color color) {
+		this.color = color;
+	}
+
+	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving")
+	public Color getColor2() {
+		return color2;
+	}
+
+	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving")
+	public void setColor2(Color color2) {
+		this.color2 = color2;
+	}
+
+	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving")
+	public double getX() {
+		return x;
+	}
+
+	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving")
+	public void setX(double x) {
+		this.x = x;
+	}
+
+	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving")
+	public double getY() {
+		return y;
+	}
+
+	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving")
+	public void setY(double y) {
+		this.y = y;
+	}
+
+	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving")
+	public double getxEnd() {
+		return xEnd;
+	}
+
+	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving")
+	public void setxEnd(double xEnd) {
+		this.xEnd = xEnd;
+	}
+
+	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving")
+	public double getyEnd() {
+		return yEnd;
+	}
+
+	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving")
+	public void setyEnd(double yEnd) {
+		this.yEnd = yEnd;
+	}
+
+	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving")
+	public int getStep() {
+		return step;
+	}
+
+	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving")
+	public void setStep(int step) {
+		this.step = step;
+	}
+
+	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving")
+	public String getLabel() {
+		return label;
+	}
+
+	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving")
+	public void setLabel(String label) {
+		this.label = label;
+	}
+
+	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving")
+	public int getJustification() {
+		return justification;
+	}
+
+	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving")
+	public void setJustification(int justification) {
+		this.justification = justification;
+	}
+
+	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving")
+	public String getMacroCode() {
+		return macroCode;
+	}
+
+	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving")
+	public void setMacroCode(String macroCode) {
+		this.macroCode = macroCode;
+	}
+
+	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving")
+	public String getFontFamily() {
+		return fontFamily;
+	}
+
+	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving")
+	public void setFontFamily(String fontFamily) {
+		this.fontFamily = fontFamily;
+	}
+
+	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving")
+	public float getFontSize() {
+		return fontSize;
+	}
+
+	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving")
+	public void setFontSize(float fontSize) {
+		this.fontSize = fontSize;
 	}
 } // class PlotObject

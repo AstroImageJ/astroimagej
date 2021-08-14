@@ -7,6 +7,7 @@ import flanagan.analysis.Smooth;
 import flanagan.math.Minimization;
 import flanagan.math.MinimizationFunction;
 import ij.*;
+import ij.astro.util.PdfPlotOutput;
 import ij.gui.*;
 import ij.io.OpenDialog;
 import ij.io.SaveDialog;
@@ -15,7 +16,6 @@ import ij.plugin.PlugIn;
 import ij.process.ImageProcessor;
 import ij.text.TextPanel;
 import ij.util.Tools;
-import util.Pdf_Writer;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -3924,6 +3924,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 //                    showErrors[i] = errorcolumnbox[i].isSelected();
 //                    }
         table.setLock(false);
+        plotWindow.getImagePlus().setPlot(plot);
         updatePlotRunning = false;
     }
 
@@ -7130,9 +7131,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         saveimagejpgmenuitem.addActionListener(e -> savePlotImageAsJpg());
         filemenu.add(saveimagejpgmenuitem);
 
-        JMenuItem saveimagepdfmenuitem = new JMenuItem("Save plot image as raster PDF...");
+        JMenuItem saveimagepdfmenuitem = new JMenuItem("Save plot image as vector PDF...");
         saveimagepdfmenuitem.setToolTipText("<html>" + "saves plot image as a .pdf file" + "</html>");
-        saveimagepdfmenuitem.addActionListener(e -> savePlotImageAsRasterPdf());
+        saveimagepdfmenuitem.addActionListener(e -> savePlotImageAsVectorPdf());
         filemenu.add(saveimagepdfmenuitem);
 
         saveplotconfigmenuitem = new JMenuItem("Save plot configuration...");
@@ -16647,14 +16648,14 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         savePlotImage(sf.getDirectory() + sf.getFileName(), "ij.plugin.JpegWriter");
     }
 
-    public static void savePlotImageAsRasterPdf() {
-        SaveDialog sf = new SaveDialog("Save plot image as raster PDF...", MeasurementTable.shorterName(table.shortTitle()), ".pdf");
+    public static void savePlotImageAsVectorPdf() {
+        SaveDialog sf = new SaveDialog("Save plot image as vector PDF...", MeasurementTable.shorterName(table.shortTitle()), ".pdf");
         if (sf.getDirectory() == null || sf.getFileName() == null) return;
-        savePlotImage(sf.getDirectory() + sf.getFileName(), Pdf_Writer.class.getName());
+        PdfPlotOutput.savePlot(plot, sf.getDirectory() + sf.getFileName());
     }
 
-    public static void savePlotImageAsRasterPdf(String path) {
-        savePlotImage(path, Pdf_Writer.class.getName());
+    public static void savePlotImageAsVectorPdf(String path) {
+        PdfPlotOutput.savePlot(plot, path);
     }
 
     public static void savePlotImageAsPng(String path) {

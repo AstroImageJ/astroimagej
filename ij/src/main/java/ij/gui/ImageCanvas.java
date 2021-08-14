@@ -1,23 +1,27 @@
 package ij.gui;
 
-import java.awt.*;
-import java.util.Properties;
-import java.awt.image.*;
-
+import ij.*;
 import ij.astro.AstroImageJ;
+import ij.macro.Interpreter;
+import ij.macro.MacroRunner;
+import ij.measure.ResultsTable;
 import ij.plugin.PointToolOptions;
-import ij.process.*;
-import ij.measure.*;
 import ij.plugin.WandToolOptions;
 import ij.plugin.frame.Recorder;
 import ij.plugin.frame.RoiManager;
 import ij.plugin.tool.PlugInTool;
-import ij.macro.*;
-import ij.*;
-import ij.util.*;
-import java.awt.event.*;
-import java.util.*;
-import java.awt.geom.*;
+import ij.process.FloatPolygon;
+import ij.util.Tools;
+
+import java.awt.*;
+import java.awt.event.InputEvent;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
+import java.awt.image.IndexColorModel;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.Vector;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 
@@ -221,7 +225,7 @@ public class ImageCanvas extends Canvas implements MouseListener, MouseMotionLis
 
 	public void update(Graphics g) {
 		paint(g);
-	}
+	}//todo mark
 	
 	//public void repaint() {
 	//	super.repaint();
@@ -239,7 +243,7 @@ public class ImageCanvas extends Canvas implements MouseListener, MouseMotionLis
 			if (roi!=null)
 				roi.updatePaste();
 			if (imageWidth!=0) {
-				paintDoubleBuffered(g);
+				paintDoubleBuffered(g);//todo mark
 				setPaintPending(false);
 				return;
 			}
@@ -250,7 +254,7 @@ public class ImageCanvas extends Canvas implements MouseListener, MouseMotionLis
 				imp.updateImage();
 			}
 			setInterpolation(g, Prefs.interpolateScaledImages);
-			Image img = imp.getImage();
+			Image img = imp.getImage();//todo mark
 			if (img!=null)
  				g.drawImage(img, 0, 0, (int)(srcRect.width*magnification+0.5), (int)(srcRect.height*magnification+0.5),
 				srcRect.x, srcRect.y, srcRect.x+srcRect.width, srcRect.y+srcRect.height, null);
@@ -298,7 +302,7 @@ public class ImageCanvas extends Canvas implements MouseListener, MouseMotionLis
 			roi.setFillColor(fillColor);
 			currentRoi = null;
 		} else
-			roi.draw(g);
+			roi.draw(g);//todo mark
     }
            
 	public int getSliceNumber(String label) {
@@ -389,7 +393,7 @@ public class ImageCanvas extends Canvas implements MouseListener, MouseMotionLis
 		drawOverlay(imp.getOverlay(), g);
 	}
 
-    private void initGraphics(Overlay overlay, Graphics g, Color textColor, Color defaultColor) {
+    private void initGraphics(Overlay overlay, Graphics g, Color textColor, Color defaultColor) {//todo mark
 		if (smallFont==null) {
 			smallFont = new Font("SansSerif", Font.PLAIN, 9);
 			largeFont = IJ.font12;

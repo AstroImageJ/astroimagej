@@ -2,6 +2,7 @@ package ij.gui;
 
 import ij.*;
 import ij.astro.AstroImageJ;
+import ij.astro.util.PdfPlotOutput;
 import ij.io.SaveDialog;
 import ij.measure.ResultsTable;
 import ij.process.ColorProcessor;
@@ -77,8 +78,8 @@ public class PlotWindow extends ImageWindow implements ActionListener, ItemListe
 	private static final int NO_GRID_LINES = 16;
 	private static final int NO_TICKS = 32;
 	private static String moreButtonLabel = "More "+'\u00bb';
-	@AstroImageJ(reason = "Convert data button to save button", modified = true)
-	private static String dataButtonLabel = "Save";
+	@AstroImageJ(reason = "Convert data button to PNG button", modified = true)
+	private static String dataButtonLabel = "PNG";
 
 	boolean wasActivated;			// true after window has been activated once, needed by PlotCanvas
 
@@ -228,12 +229,12 @@ public class PlotWindow extends ImageWindow implements ActionListener, ItemListe
 	}
 
 	/** Displays the plot. */
-	@AstroImageJ(reason = "Disable 'More' plot option by setting it invisible")
+	@AstroImageJ(reason = "Disable 'More' plot option by setting it invisiblel List -> PDF")
 	public void draw() {
 		Panel bottomPanel = new Panel();
 		int hgap = IJ.isMacOSX()?1:5;
 
-		list = new Button(" List ");
+		list = new Button(" PDF ");
 		list.addActionListener(this);
 		bottomPanel.add(list);
 		bottomPanel.setLayout(new FlowLayout(FlowLayout.RIGHT,hgap,0));
@@ -418,9 +419,13 @@ public class PlotWindow extends ImageWindow implements ActionListener, ItemListe
 		Object b = e.getSource();
 		if (b==live)
 			toggleLiveProfiling();
-		else if (b==list)
-			showList(/*useLabels=*/true);
-		else if (b==data) {
+		else if (b==list) {
+			String fileName = getTitle().replace("Plot of ","").replace("Measurements in ", "");
+			SaveDialog sf = new SaveDialog("Save plot as vector PDF", fileName, ".pdf");
+			if (sf.getDirectory() == null || sf.getFileName() == null) return;
+			PdfPlotOutput.savePlot(imp.getPlot(), sf.getDirectory()+sf.getFileName());
+			//showList(/*useLabels=*/true);
+		} else if (b==data) {
 			//enableDisableMenuItems();
 			//dataPopupMenu.show((Component)b, 1, 1);
 			String fileName = getTitle().replace("Plot of ","").replace("Measurements in ", "");

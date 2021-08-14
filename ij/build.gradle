@@ -4,8 +4,8 @@ plugins {
 
 dependencies {
     implementation project(':Nom_Fits')
-    api "com.github.librepdf:openpdf:1.3.26"
     implementation 'org.openjdk.nashorn:nashorn-core:15.3'
+    api 'de.rototor.pdfbox:graphics2d:0.32'
 }
 
 def mainClassName = 'ij.ImageJ'

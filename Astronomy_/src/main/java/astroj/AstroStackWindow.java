@@ -21,6 +21,7 @@ import ij.process.ImageStatistics;
 import ij.process.StackProcessor;
 import ij.text.TextPanel;
 import ij.util.Tools;
+import util.PdfRasterWriter;
 
 import javax.swing.*;
 import java.awt.*;
@@ -383,10 +384,10 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
 
             MenuItem exitMenuItem, flipDataXMenuItem, flipDataYMenuItem, rotateDataCWMenuItem, rotateDataCCWMenuItem, simbadSearchRadiusMenuItem;
             MenuItem openMenuItem, openInNewWindowMenuItem, openSeqMenuItem,openSeqInNewWindowMenuItem;
-            MenuItem saveDisplayAsJpgMenuItem, saveDisplayAsPngMenuItem, saveStatePNGMenuItem, saveStateJPGMenuItem, setSaveStateMenuItem;
+            MenuItem saveDisplayAsJpgMenuItem, saveDisplayAsPngMenuItem, saveDisplayAsPdfMenuItem, saveStatePNGMenuItem, saveStateJPGMenuItem, setSaveStateMenuItem;
             MenuItem openAperturesMenuItem, saveAperturesMenuItem, saveMenuItem, saveFitsMenuItem, saveStackSequenceMenuItem, clearOverlayMenuItem;
             MenuItem openRaDecAperturesMenuItem, saveRaDecAperturesMenuItem;
-            MenuItem saveTiffMenuItem, saveJpegMenuItem, savePngMenuItem, saveBmpMenuItem, saveGifMenuItem, saveAviMenuItem;
+            MenuItem saveTiffMenuItem, saveJpegMenuItem, savePdfMenuItem, savePngMenuItem, saveBmpMenuItem, saveGifMenuItem, saveAviMenuItem;
             MenuItem dirAngleMenuItem, saveWCStoPrefsMenuItem, astrometryMenuItem, astrometrySetupMenuItem;
             MenuItem annotateMenuItem, editAnnotationMenuItem, deleteAnnotationMenuItem;
             MenuItem annotateFromHeaderMenuItem, annotateAppendFromHeaderMenuItem, replaceAnnotationsInHeaderMenuItem, 
@@ -947,6 +948,10 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                 saveDisplayAsJpgMenuItem = new MenuItem("Save image display as JPEG...");
                 saveDisplayAsJpgMenuItem.addActionListener(this);
                 fileMenu.add(saveDisplayAsJpgMenuItem);
+
+                saveDisplayAsPdfMenuItem = new MenuItem("Save image display as PDF...");
+                saveDisplayAsPdfMenuItem.addActionListener(this);
+                fileMenu.add(saveDisplayAsPdfMenuItem);
                 
                 fileMenu.addSeparator();
                 
@@ -1013,6 +1018,10 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                 saveJpegMenuItem = new MenuItem("Save image/slice as JPEG...");
                 saveJpegMenuItem.addActionListener(this);
                 fileMenu.add(saveJpegMenuItem);
+
+                savePdfMenuItem = new MenuItem("Save image/slice as PDF...");
+                savePdfMenuItem.addActionListener(this);
+                fileMenu.add(savePdfMenuItem);
 
                 saveGifMenuItem = new MenuItem("Save image/stack as GIF...");
                 saveGifMenuItem.addActionListener(this);
@@ -3608,6 +3617,10 @@ protected ImageIcon createImageIcon(String path, String description) {
                     {
                     saveImageDisplay("jpg", false);
                     }
+                else if (b==saveDisplayAsPdfMenuItem)
+                    {
+                    saveImageDisplay("pdf", false);
+                    }
                 else if (b==saveDisplayAsPngMenuItem)
                     {
                     saveImageDisplay("png", false);
@@ -3649,6 +3662,21 @@ protected ImageIcon createImageIcon(String path, String description) {
                     IJ.run("Jpeg...");
                     if (imp.getType()==ImagePlus.COLOR_RGB) setAstroProcessor(false);
                     }
+                else if (b==savePdfMenuItem)
+                {
+                    if (imp.getType()==ImagePlus.COLOR_RGB) imp.getProcessor().reset();
+                    SaveDialog sf = new SaveDialog("Save plot image as PDF...", imp.getTitle(), ".pdf");
+                    if (sf.getDirectory() == null || sf.getFileName() == null) return;
+                    var path = sf.getDirectory() + sf.getFileName();
+                    ImagePlus image = WindowManager.getCurrentImage();
+                    if (image == null) {
+                        IJ.beep();
+                        IJ.showMessage("No image to save");
+                        return;
+                    }
+                    IJ.runPlugIn(image, PdfRasterWriter.class.getCanonicalName(), path);
+                    if (imp.getType()==ImagePlus.COLOR_RGB) setAstroProcessor(false);
+                }
                 else if (b==saveGifMenuItem)
                     {
                     if (imp.getType()==ImagePlus.COLOR_RGB) imp.getProcessor().reset();
@@ -5204,6 +5232,10 @@ void saveImageDisplay(String format, boolean saveAll)
         Graphics gg = imageDisplay.createGraphics();
         ac.paint(gg);  
         gg.dispose();
+            if ("pdf".equals(format)) {
+                new PdfRasterWriter().writeImage(imageDisplay, saveFile.getAbsolutePath());
+                return;
+            }
         IJU.saveAsPngOrJpg(imageDisplay, saveFile, format);
         }
 

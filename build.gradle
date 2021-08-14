@@ -382,6 +382,8 @@ javapackager {
     macConfig.setEntitlements(project.file('packageFiles/aij_entitlements.txt'))
     macConfig.setAppId("AstroImageJ")
 
+    linuxConfig.wrapJar = false
+
     organizationName  "AstroImageJ"
     vmArgs  [] //['-Xmx3000m', '-Xms256m'] // Launch parameters are set in AstroImageJ.l4j.ini
     version = 'dev-x86' // Dummy version to keep it from saying "unspecified"

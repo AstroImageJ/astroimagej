@@ -12895,7 +12895,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         JPanel bpPanel = new JPanel(new SpringLayout());
         bpPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(subBorderColor, 1), "b", TitledBorder.CENTER, TitledBorder.TOP, p11, Color.darkGray));
 
-        bpSpinner[c] = new JSpinner(new SpinnerNumberModel(Double.valueOf(bp[c]), Double.valueOf(0.0), Double.valueOf(2.0), Double.valueOf(0.01)));
+        bpSpinner[c] = new JSpinner(new SpinnerNumberModel(Double.valueOf(bp[c] >= 0.0 && bp[c] <= 2.0 ? bp[c] : 0.0), Double.valueOf(0.0), Double.valueOf(2.0), Double.valueOf(0.01)));
         bpSpinner[c].setEnabled(bpLock[c] && useTransitFit[c]);
         bpSpinner[c].setFont(p11);
         bpSpinner[c].setEditor(new JSpinner.NumberEditor(bpSpinner[c], oneDotThreeFormat));
@@ -12911,7 +12911,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             if (bpLock[c]) {
                 bp[c] = (Double) bpSpinner[c].getValue();
                 double inclination = (180.0/Math.PI)*Math.acos(bp[c]/bestFit[c][2]);
-                //double inclination = (180/Math.PI)*Math.acos((1.0 + (forceCircularOrbit[c] ? 0.0 : eccentricity[c]) * Math.sin(forceCircularOrbit[c] ? 0.0 : omega[c])) / (bestFit[c][2] * (1.0 - (forceCircularOrbit[c] ? 0.0 : eccentricity[c] * eccentricity[c]))));
                 priorCenterSpinner[c][4].setValue(Double.valueOf(inclination));
                 priorCenter[c][4] = inclination;
                 if (autoUpdateFit[c]) updatePlot(updateOneFit(c));
@@ -13823,13 +13822,18 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         copyAndLockButton[c][row].setPreferredSize(new Dimension(18, 25));
         copyAndLockButton[c][row].setToolTipText("Click to copy fitted value to prior center value and lock.");
         copyAndLockButton[c][row].addActionListener(e -> {
-            lockToCenterCB[c][row].setSelected(true);
+            double value = bestFit[c][row];
             if (row == 1) {
-                priorCenterSpinner[c][row].setValue(bestFit[c][row]*bestFit[c][row]);
+                lockToCenterCB[c][row].setSelected(true);
+                priorCenterSpinner[c][row].setValue(value*value);
             } else if (row == 4) {
-                if (!bpLock[c]) priorCenterSpinner[c][row].setValue(180.0*bestFit[c][row]/Math.PI);
+                if (!bpLock[c]){
+                    lockToCenterCB[c][row].setSelected(true);
+                    priorCenterSpinner[c][row].setValue(180.0 * value / Math.PI);
+                }
             } else {
-                priorCenterSpinner[c][row].setValue(bestFit[c][row]);
+                lockToCenterCB[c][row].setSelected(true);
+                priorCenterSpinner[c][row].setValue(value);
             }
         });
         parentPanel.add(copyAndLockButton[c][row]);

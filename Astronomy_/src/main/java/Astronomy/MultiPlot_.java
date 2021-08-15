@@ -372,6 +372,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static JMenuItem[] saveFitPanelPngMenuItem, saveFitPanelJpgMenuItem, saveFitTextMenuItem;
 
     static boolean[][] autoUpdatePrior;
+    static ImageIcon copyAndLockIcon = createImageIcon("astroj/images/customlegend.png", "Lock to the current fitted value.");
+    static JButton[][] copyAndLockButton;
     static double[] sigma, prevSigma, prevBic, tolerance, residualShift, autoResidualShift;
     //        static double residualShiftStep;
     static double[] defaultFitStep;
@@ -6174,6 +6176,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         isFitted = new boolean[maxCurves][maxFittedVars];
         lockToCenter = new boolean[maxCurves][maxFittedVars];
         lockToCenterCB = new JCheckBox[maxCurves][maxFittedVars];
+        copyAndLockButton = new JButton[maxCurves][maxFittedVars];
         priorCenter = new double[maxCurves][maxFittedVars];
         priorCenterStep = new double[maxFittedVars];
         priorCenterSpinner = new JSpinner[maxCurves][maxFittedVars];
@@ -13810,13 +13813,26 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         bestFitLabel[c][row].setMaximumSize(bestFitSize);
         parentPanel.add(bestFitLabel[c][row]);
 
-        JLabel dummyLabel3 = new JLabel();
-        dummyLabel3.setFont(p12);
-//            rowNameLabel.setToolTipText(rowNameToolTipText);
-        dummyLabel3.setPreferredSize(spacerSize);
-        dummyLabel3.setMaximumSize(spacerSize);
-        parentPanel.add(dummyLabel3);
-
+//        JLabel dummyLabel3 = new JLabel();
+//        dummyLabel3.setFont(p12);
+//        dummyLabel3.setPreferredSize(spacerSize);
+//        dummyLabel3.setMaximumSize(spacerSize);
+//        parentPanel.add(dummyLabel3);
+        copyAndLockButton[c][row] = new JButton(copyAndLockIcon);
+        copyAndLockButton[c][row].setMaximumSize(new Dimension(18, 25));
+        copyAndLockButton[c][row].setPreferredSize(new Dimension(18, 25));
+        copyAndLockButton[c][row].setToolTipText("Click to copy fitted value to prior center value and lock.");
+        copyAndLockButton[c][row].addActionListener(e -> {
+            lockToCenterCB[c][row].setSelected(true);
+            if (row == 1) {
+                priorCenterSpinner[c][row].setValue(bestFit[c][row]*bestFit[c][row]);
+            } else if (row == 4) {
+                if (!bpLock[c]) priorCenterSpinner[c][row].setValue(180.0*bestFit[c][row]/Math.PI);
+            } else {
+                priorCenterSpinner[c][row].setValue(bestFit[c][row]);
+            }
+        });
+        parentPanel.add(copyAndLockButton[c][row]);
         lockToCenterCB[c][row] = new JCheckBox("", lockToCenter[c][row]);
         lockToCenterCB[c][row].setEnabled(isDetrend ? useFitDetrendCB[c][row - 7].isSelected() : (row == 4 && bpLock[c] ? false : useTransitFit[c]));
         lockToCenterCB[c][row].setHorizontalAlignment(JLabel.CENTER);

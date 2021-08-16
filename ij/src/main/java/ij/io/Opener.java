@@ -33,6 +33,7 @@ import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.Locale;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 
 /** Opens tiff (and tiff stacks), dicom, fits, pgm, jpeg, bmp or
@@ -709,13 +710,14 @@ public class Opener {
 		}
 		return imp;
 	}
-	
+
+	@AstroImageJ(reason = "Open pngs in zip as folder", modified = true)
 	ImagePlus openUsingImageIO(String path) {
 		ImagePlus imp = null;
 		BufferedImage img = null;
 		File f = new File(path);
 		try {
-			img = ImageIO.read(f);
+			img = getImageFromPath(path);
 		} catch (Exception e) {
 			IJ.error("Open Using ImageIO", ""+e);
 		} 
@@ -740,6 +742,22 @@ public class Opener {
 			fi.directory = parent + File.separator;
 		imp.setFileInfo(fi);
 		return imp;
+	}
+
+	/**
+	 * Get image from the path. If it is in a zip file, it will open the zip
+	 */
+	@AstroImageJ(reason = "Open zip of pngs as folder")
+	private BufferedImage getImageFromPath(String path) throws IOException {
+		if (path.contains(".zip")) {
+			var s = path.split("\\.zip");
+			var zip = new ZipFile(s[0] + ".zip");
+
+			var img = ImageIO.read(zip.getInputStream(zip.getEntry(s[1].substring(1))));
+			zip.close();
+			return img;
+		}
+		return ImageIO.read(new File(path));
 	}
 
 	/** Converts the specified RGB image to 8-bits if the 3 channels are identical. */
@@ -990,7 +1008,7 @@ public class Opener {
 		var fo = new FolderOpener();
 		fo.setDirectory(path);
 		var hasFits = Arrays.stream(ZipOpenerUtil.getFilesInZip(path)).anyMatch(s ->
-				this.getFileType(s, false) == Opener.FITS);
+				getFileType(s, false) == Opener.FITS || getFileType(s, false) == Opener.PNG);
 		if (hasFits) {
 			if (fo.showDialog()) {
 				return fo.openFolder(path);
@@ -1253,7 +1271,8 @@ public class Opener {
 	'magic numbers' and the file name extension.
 	 */
 	@AstroImageJ(reason = "Add more file types; extend how fits file is checked; " +
-			"skip read check for files within a zip; add option to ignore unopenable file", modified = true)
+			"skip read check for files within a zip; add option to ignore unopenable file; " +
+			"add extension check for pngs", modified = true)
 	private int getFileType(String path, boolean checkOpenable) {
 		if (openUsingPlugins && !path.endsWith(".txt") &&  !path.endsWith(".java"))
 			return UNKNOWN;
@@ -1317,7 +1336,7 @@ public class Opener {
 			return LUT;
 		
 		// PNG
-		if (b0==137 && b1==80 && b2==78 && b3==71)
+		if ((b0==137 && b1==80 && b2==78 && b3==71) || name.endsWith(".png"))
 			return PNG;
 				
 		// ZIP containing a TIFF

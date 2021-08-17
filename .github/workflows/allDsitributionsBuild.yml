@@ -53,6 +53,10 @@ jobs:
         with:
           name: Linux (x86) Package (.tar.gz)
           path: build/distributions/*x86*.tar.gz #TODO once installer generation is added, gen and upload installers
+      - uses: actions/upload-artifact@v2
+        with:
+          name: Linux (x86) Debian Installer (.deb)
+          path: build/distributions/*x86*.deb
   macos:
 
     runs-on: macos-latest

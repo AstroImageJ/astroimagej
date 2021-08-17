@@ -11,7 +11,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'io.github.fvarrui:javapackager:1.6.0-SNAPSHOT'
+        classpath 'io.github.fvarrui:javapackager:1.6.19-SNAPSHOT'
     }
 }
 

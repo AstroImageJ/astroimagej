@@ -1,10 +1,11 @@
 package ij.plugin;
-import ij.*;
-import ij.process.*;
+
+import ij.IJ;
+import ij.ImagePlus;
+import ij.Prefs;
+import ij.astro.AstroImageJ;
 import ij.gui.*;
 import ij.plugin.frame.Recorder;
-import java.awt.*;
-import java.awt.event.*;
 
 /** Implements the Analyze/Plot Profile and Edit/Options/Profile Plot Options commands. */
 public class Profiler implements PlugIn, PlotMaker {
@@ -12,6 +13,7 @@ public class Profiler implements PlugIn, PlotMaker {
 	boolean firstTime = true;
 	boolean plotVertically;
 
+	@AstroImageJ(reason = "Set plot in window's imp", modified = true)
 	public void run(String arg) {
 		if (arg.equals("set"))
 			{doOptions(); return;}
@@ -23,7 +25,7 @@ public class Profiler implements PlugIn, PlotMaker {
 		if (plot==null)
 			return;
 		plot.setPlotMaker(this);
-		plot.show();
+		plot.show().getImagePlus().setPlot(plot);
 		Roi roi = imp.getRoi();
 		if (roi!=null && roi.getType()==Roi.RECTANGLE)
 			plot.getImagePlus().setProperty ("Label", plotVertically ? "vertical" : "horizontal");

@@ -1,16 +1,21 @@
 package Astronomy;// Seeing_Profile.java
 
-import ij.*;
-import ij.plugin.filter.PlugInFilter;
-import ij.process.*;
-import ij.gui.*;
+import astroj.*;
+import ij.IJ;
+import ij.ImagePlus;
+import ij.Prefs;
+import ij.astro.AstroImageJ;
+import ij.gui.GenericDialog;
+import ij.gui.ImageCanvas;
+import ij.gui.Plot;
+import ij.gui.PlotWindow;
 import ij.measure.Calibration;
+import ij.plugin.filter.PlugInFilter;
+import ij.process.ImageProcessor;
 
 import java.awt.*;
-import java.util.*;
-import java.text.*;
-
-import astroj.*;
+import java.text.DecimalFormat;
+import java.util.Locale;
 
 /**
  * Plots radial profile of star-like object.
@@ -276,6 +281,7 @@ public class Seeing_Profile implements PlugInFilter
     
 
 		// CREATE PLOT WITH LABELS
+    @AstroImageJ(reason = "Set plot in window's imp", modified = true)
     protected void createPlot(ImageProcessor ip)
         {
         int plotOptions = 0;
@@ -362,7 +368,7 @@ public class Seeing_Profile implements PlugInFilter
             }
 		plot.addLabel(0.5,0.0,"FWHM: "+df.format(fwhm)+" ["+cal.getUnits()+"]"+(pixScale > 0 ? " : "+df.format(fwhm*pixScale)+" [arcsec]" : ""));
         plot.setJustification(ImageProcessor.LEFT_JUSTIFY);
-        plot.show();
+        plot.show().getImagePlus().setPlot(plot);
 		}
 
 

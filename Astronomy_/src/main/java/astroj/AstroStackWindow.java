@@ -3446,9 +3446,10 @@ protected ImageIcon createImageIcon(String path, String description) {
          * Fixes a draw bug in MA where aperture do not get cleared/rendered in the proper location.
          * Unneeded when {@link AstroStackWindow#autoNupEleft} is {@code true} as
          * {@link AstroStackWindow#setOrientation(boolean)} will be called.
+         * Update KC 20210823: apertures flash for large images when autoNupELeft is excluded. Removed the corresponding if/return.
          */
         public void repaintAstroCanvas() {
-            if (autoNupEleft) return;
+            //if (autoNupEleft) return;
             setOrientation();
         }
 
@@ -3473,32 +3474,32 @@ protected ImageIcon createImageIcon(String path, String description) {
                 invertY = (npa > 90 && npa < 270) ? true : false;
                 invertX = (epa < 0 || epa > 180) ? true : false;
                 if (invertXYRB != null && invertY && invertX) {
-                    invertXYRB.setState(true);
-                    invertXRB.setState(false);
-                    invertYRB.setState(false);
-                    invertNoneRB.setState(false);
+                    if (!invertXYRB.getState()) invertXYRB.setState(true);
+                    if (invertXRB.getState()) invertXRB.setState(false);
+                    if (invertYRB.getState()) invertYRB.setState(false);
+                    if (invertNoneRB.getState()) invertNoneRB.setState(false);
                 } else if (invertXYRB != null && !invertY && !invertX) {
-                    invertXYRB.setState(false);
-                    invertXRB.setState(false);
-                    invertYRB.setState(false);
-                    invertNoneRB.setState(true);
+                    if (invertXYRB.getState()) invertXYRB.setState(false);
+                    if (invertXRB.getState()) invertXRB.setState(false);
+                    if (invertYRB.getState()) invertYRB.setState(false);
+                    if (!invertNoneRB.getState()) invertNoneRB.setState(true);
                 } else if (invertXYRB != null && invertY) {
-                    invertXYRB.setState(false);
-                    invertXRB.setState(false);
-                    invertYRB.setState(true);
-                    invertNoneRB.setState(false);
+                    if (invertXYRB.getState()) invertXYRB.setState(false);
+                    if (invertXRB.getState()) invertXRB.setState(false);
+                    if (!invertYRB.getState()) invertYRB.setState(true);
+                    if (invertNoneRB.getState()) invertNoneRB.setState(false);
                 } else if (invertXYRB != null && invertX) {
-                    invertXYRB.setState(false);
-                    invertXRB.setState(true);
-                    invertYRB.setState(false);
-                    invertNoneRB.setState(false);
+                    if (invertXYRB.getState()) invertXYRB.setState(false);
+                    if (!invertXRB.getState()) invertXRB.setState(true);
+                    if (invertYRB.getState()) invertYRB.setState(false);
+                    if (invertNoneRB.getState()) invertNoneRB.setState(false);
                 }
                 rotation = AstroCanvas.ROT_0;
                 if (rotate0RB != null) {
-                    rotate0RB.setState(true);
-                    rotate90RB.setState(false);
-                    rotate180RB.setState(false);
-                    rotate270RB.setState(false);
+                    if (!rotate0RB.getState()) rotate0RB.setState(true);
+                    if (rotate90RB.getState()) rotate90RB.setState(false);
+                    if (rotate180RB.getState()) rotate180RB.setState(false);
+                    if (rotate270RB.getState()) rotate270RB.setState(false);
                 }
             }
 
@@ -3513,19 +3514,19 @@ protected ImageIcon createImageIcon(String path, String description) {
                 showScaleX = false;
                 showScaleY = false;
                 if (invertXYRB != null) {
-                    invertXYRB.setState(false);
-                    invertXRB.setState(false);
-                    invertYRB.setState(false);
-                    invertNoneRB.setState(true);
-                    rotate0RB.setState(true);
-                    rotate90RB.setState(false);
-                    rotate180RB.setState(false);
-                    rotate270RB.setState(false);
-                    showZoomCB.setState(false);
-                    showDirCB.setState(false);
-                    showXYCB.setState(false);
-                    showScaleXCB.setState(false);
-                    showScaleYCB.setState(false);
+                    if (invertXYRB.getState()) invertXYRB.setState(false);
+                    if (invertXRB.getState()) invertXRB.setState(false);
+                    if (invertYRB.getState()) invertYRB.setState(false);
+                    if (!invertNoneRB.getState()) invertNoneRB.setState(true);
+                    if (!rotate0RB.getState()) rotate0RB.setState(true);
+                    if (rotate90RB.getState()) rotate90RB.setState(false);
+                    if (rotate180RB.getState()) rotate180RB.setState(false);
+                    if (rotate270RB.getState()) rotate270RB.setState(false);
+                    if (showZoomCB.getState()) showZoomCB.setState(false);
+                    if (showDirCB.getState()) showDirCB.setState(false);
+                    if (showXYCB.getState()) showXYCB.setState(false);
+                    if (showScaleXCB.getState()) showScaleXCB.setState(false);
+                    if (showScaleYCB.getState()) showScaleYCB.setState(false);
                 }
             }
         }

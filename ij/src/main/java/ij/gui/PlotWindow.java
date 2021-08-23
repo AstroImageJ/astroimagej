@@ -80,6 +80,8 @@ public class PlotWindow extends ImageWindow implements ActionListener, ItemListe
 	private static String moreButtonLabel = "More "+'\u00bb';
 	@AstroImageJ(reason = "Convert data button to PNG button", modified = true)
 	private static String dataButtonLabel = "PNG";
+	@AstroImageJ(reason = "Seeing profile apertures")
+	private Button copy = new Button(getTitle().startsWith("Seeing Profile")?"Save Aperture":"Copy...");
 
 	boolean wasActivated;			// true after window has been activated once, needed by PlotCanvas
 
@@ -229,13 +231,17 @@ public class PlotWindow extends ImageWindow implements ActionListener, ItemListe
 	}
 
 	/** Displays the plot. */
-	@AstroImageJ(reason = "Disable 'More' plot option by setting it invisiblel List -> PDF")
+	@AstroImageJ(reason = "Disable 'More' plot option by setting it invisiblel List -> PDF; add copy button", modified = true)
 	public void draw() {
 		Panel bottomPanel = new Panel();
 		int hgap = IJ.isMacOSX()?1:5;
 
 		list = new Button(" PDF ");
 		list.addActionListener(this);
+		if (getTitle().startsWith("Seeing Profile")) {
+			copy.addActionListener(this);
+			bottomPanel.add(copy);
+		}
 		bottomPanel.add(list);
 		bottomPanel.setLayout(new FlowLayout(FlowLayout.RIGHT,hgap,0));
 		data = new Button(dataButtonLabel);
@@ -440,11 +446,15 @@ public class PlotWindow extends ImageWindow implements ActionListener, ItemListe
 			SaveDialog sf = new SaveDialog("Save plot as PNG",fileName, ".png");
 			if (sf.getDirectory() == null || sf.getFileName() == null) return;
 			IJ.runPlugIn(imp, "ij.plugin.PNG_Writer", sf.getDirectory()+sf.getFileName());
-		} else if (getTitle().startsWith("Seeing Profile")) {
-			Prefs.set("aperture.radius",Prefs.get("seeingprofile.radius", 20));
-			Prefs.set("aperture.rback1",Prefs.get("seeingprofile.rback1", 30));
-			Prefs.set("aperture.rback2",Prefs.get("seeingprofile.rback2", 40));
-			Prefs.set("setaperture.aperturechanged",true);
+		} else if (b==copy) {
+			if (getTitle().startsWith("Seeing Profile")) {
+				Prefs.set("aperture.radius",Prefs.get("seeingprofile.radius", 20));
+				Prefs.set("aperture.rback1",Prefs.get("seeingprofile.rback1", 30));
+				Prefs.set("aperture.rback2",Prefs.get("seeingprofile.rback2", 40));
+				Prefs.set("setaperture.aperturechanged",true);
+			} else {
+				copyToClipboard(false);
+			}
 		}
 		else if (b==menuItems[COPY])
 			copyToClipboard(false);

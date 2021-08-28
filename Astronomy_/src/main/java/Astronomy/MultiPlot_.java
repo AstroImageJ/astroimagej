@@ -374,7 +374,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static boolean[][] autoUpdatePrior;
     static ImageIcon copyAndLockIcon = createImageIcon("astroj/images/customlegend.png", "Lock to the current fitted value.");
     static JButton[][] copyAndLockButton;
-    static double[] sigma, prevSigma, prevBic, tolerance, residualShift, autoResidualShift;
+    public static double[] sigma, prevSigma, prevBic, tolerance, residualShift, autoResidualShift;
     //        static double residualShiftStep;
     static double[] defaultFitStep;
     static JSpinner[] toleranceSpinner, residualShiftSpinner;
@@ -674,7 +674,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
     static JPanel[] refStarPanel;
     static JLabel[] refStarLabel;
-    static JCheckBox[] refStarCB;
+    public static JCheckBox[] refStarCB;
     static boolean[] isRefStar;
     static JTextField[] absMagTF;
     static double[] absMag;
@@ -13266,6 +13266,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         SpringUtil.makeCompactGrid(fitStatisticsPanel, 1, fitStatisticsPanel.getComponentCount(), 0, 0, 0, 0);
         fitPanel[c].add(fitStatisticsPanel);
 
+        // Fit Optimizations
+        fitPanel[c].add(new FitOptimization(c, 0).makeFitOptimizationPanel());//todo is this forcing the window open on MP start?
+
         JPanel plotPanel = new JPanel(new SpringLayout());
         plotPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(mainBorderColor, 1), "Plot Settings", TitledBorder.LEFT, TitledBorder.TOP, b12, Color.darkGray));
 
@@ -14001,7 +14004,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         }
     }
 
-    static void setFittedParametersBorderColor(final int c, final Border border) {
+    static void
+    setFittedParametersBorderColor(final int c, final Border border) {
         if (bestFitLabel[c][0] != null) {
             for (int p = 0; p < bestFitLabel[c].length; p++) {
                 if (lockToCenter[c][p] || bestFitLabel[c][p].getText().equals("")) {
@@ -15218,7 +15222,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
     }
 
-    static void waitForPlotUpdateToFinish() {
+    public static void waitForPlotUpdateToFinish() {
         int cnt = 0;  //timeout after 1 second
         while (cnt < 10 && updatePlotRunning) {
             IJ.wait(100);

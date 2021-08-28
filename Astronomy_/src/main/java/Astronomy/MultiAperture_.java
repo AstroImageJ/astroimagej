@@ -1920,6 +1920,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 asw.setAstroProcessor(false);
 
                 // Fixes apertures not properly being drawn/cleared when autoNupEleft is disabled
+                //KC: but I don't understand why
                 asw.repaintAstroCanvas();
 
                 //waitForEventQueue();

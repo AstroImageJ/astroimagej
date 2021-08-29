@@ -848,7 +848,7 @@ public class PlotUpdater {
     //todo make threadsafe
     //todo remove unneeded parts
     //todo specific minimization objects
-    public PlotResults updateCurve() {
+    private PlotResults updateCurve() {
         var minimization = minimizationThreadLocal.get();
         var avgCount = initAvgCount;
         var atLeastOne = initAtLeastOne;
@@ -1259,6 +1259,7 @@ public class PlotUpdater {
             }
             sigma[curve] = Math.sqrt(sigma[curve] / residual[curve].length);
             var rms = sigma[curve] / bestFit[curve][0];
+            AIJLogger.log("rms: " + rms);
             return new PlotResults(rms, bic[curve]);
         }
 

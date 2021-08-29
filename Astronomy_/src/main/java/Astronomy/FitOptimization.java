@@ -64,6 +64,8 @@ public class FitOptimization implements AutoCloseable {
         optimizeButton.addActionListener(e -> {
             optimizeButton.setSelected(!optimizeButton.isSelected());
             //optimizeButton.setText("Cancel");//todo set title based on state
+            MultiPlot_.updatePlot(curve);
+            testCompMin();
         });
         compStarPanel.add(optimizeButton);
 
@@ -130,6 +132,25 @@ public class FitOptimization implements AutoCloseable {
         SpringUtil.makeCompactGrid(fitOptimizationPanel, 1, fitOptimizationPanel.getComponentCount(), 2, 2, 2, 2);
 
         return fitOptimizationPanel;
+    }
+
+    private void testCompMin() {
+        selectable = null;
+        selectable2PrimaryIndex = null;
+        PlotUpdater.invalidateInstance();
+        if (selectable == null) {
+            if (MultiPlot_.isRefStar != null) {
+                setSelectable(MultiPlot_.isRefStar);
+            } else {
+                AIJLogger.log("Open ref. star panel");
+                return;
+            }
+        }
+
+        targetStar = Integer.parseInt(MultiPlot_.ylabel[curve].split("rel_flux_T")[1]) - 1;
+
+        BigInteger initState = createBinaryRepresentation(selectable);
+        PlotUpdater.getInstance(curve, targetStar).fitCurveAndGetResults(setArrayToState(initState));
     }
 
     private void minimizeCompStars() {

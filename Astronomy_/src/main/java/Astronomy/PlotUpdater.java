@@ -869,7 +869,7 @@ public class PlotUpdater {
         //detrendYAverage[curve] = 0.0;
 
         for (int v = 0; v < maxDetrendVars; v++) {
-            detrendYDNotConstant[v] = detrendFitIndex[curve] == 1;
+            //detrendYDNotConstant[v] = detrendFitIndex[curve] == 1;
         }
         if (detrendFitIndex[curve] != 0) {
             for (int v = 0; v < maxDetrendVars; v++) {
@@ -935,11 +935,6 @@ public class PlotUpdater {
                         detrendYs[curve] = Arrays.copyOf(detrendY, detrendCount);
                         detrendYEs[curve] = Arrays.copyOf(detrendYE, detrendCount);
 
-
-                        AIJLogger.log(y[2]);
-                        AIJLogger.log(detrendYAverage[curve]);
-                        AIJLogger.log(detrendYs[2]);
-
                         //getStarData();
 
                         for (int i= 0; i< detrendXs[curve].length; i++) {
@@ -954,8 +949,6 @@ public class PlotUpdater {
                             total[curve][i] = compSum;
                             totvar[curve][i] = compVar;
                         }
-
-
 
                         /*for (int i= 0; i< detrendXs[curve].length; i++) {
                             detrendYs[curve][i] = total[curve][i] == 0 ? Double.NaN : source[targetStar][i] / total[curve][i];
@@ -1266,7 +1259,7 @@ public class PlotUpdater {
             sigma[curve] = Math.sqrt(sigma[curve] / residual[curve].length);
             var rms = sigma[curve] / bestFit[curve][0];
             AIJLogger.log("rms: " + rms);
-            AIJLogger.log(sigma[curve]);
+            AIJLogger.log("bic: " + bic[curve]);
             return new PlotResults(rms, bic[curve]);
         }
 

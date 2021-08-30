@@ -69,6 +69,7 @@ public class PlotUpdater {
 
     public PlotResults fitCurveAndGetResults(boolean[] isRefStar) {
         localIsRefStar = isRefStar;
+        MultiPlot_.updateTotals();
 
         return updateCurve();
     }
@@ -884,6 +885,20 @@ public class PlotUpdater {
         if (atLeastOne || detrendFitIndex[curve] == 9) {
             if (detrendFitIndex[curve] != 1) {
                 if (detrendCount > 0) {
+                    for (int j = 0; j < nn[curve]; j++) {
+                        //if (noNaNs) {
+                        detrendYAverage[curve] += y[curve][j];
+                        if (detrendFitIndex[curve] == 9) {
+                            if (x[curve][j] > fitLeft[curve] + (fitRight[curve] - fitLeft[curve]) / 4.0 && x[curve][j] < fitRight[curve] - (fitRight[curve] - fitLeft[curve]) / 4.0) {
+                                yDepthEstimate[curve] += y[curve][j];
+                                depthCount++;
+                            } else if (x[curve][j] < fitLeft[curve] || x[curve][j] > fitRight[curve]) {
+                                yBaselineAverage[curve] += y[curve][j];
+                                baselineCount++;
+                            }
+                        }
+                        //}
+                    }
                     yAverage[curve] /= avgCount; //avgCount is always >= detrendCount, so > 0 here
                     detrendYAverage[curve] /= detrendCount;
                     if (baselineCount > 0) {
@@ -917,10 +932,15 @@ public class PlotUpdater {
                     
                     if ((detrendVarsUsed[curve] > 0 || detrendFitIndex[curve] == 9 && useTransitFit[curve]) && detrendYNotConstant && detrendCount > (detrendFitIndex[curve] == 9 && useTransitFit[curve] ? 7 : 0) + detrendVarsUsed[curve] + 2) { //need enough data to provide degrees of freedom for successful fit
                         detrendXs[curve] = Arrays.copyOf(detrendX, detrendCount);
-                        //detrendYs[curve] = Arrays.copyOf(detrendY, detrendCount);
-                        //detrendYEs[curve] = Arrays.copyOf(detrendYE, detrendCount);
+                        detrendYs[curve] = Arrays.copyOf(detrendY, detrendCount);
+                        detrendYEs[curve] = Arrays.copyOf(detrendYE, detrendCount);
 
-                        getStarData();
+
+                        AIJLogger.log(y[2]);
+                        AIJLogger.log(detrendYAverage[curve]);
+                        AIJLogger.log(detrendYs[2]);
+
+                        //getStarData();
 
                         for (int i= 0; i< detrendXs[curve].length; i++) {
                             var compSum = 0.0;
@@ -935,30 +955,16 @@ public class PlotUpdater {
                             totvar[curve][i] = compVar;
                         }
 
-                        for (int i= 0; i< detrendXs[curve].length; i++) {
+
+
+                        /*for (int i= 0; i< detrendXs[curve].length; i++) {
                             detrendYs[curve][i] = total[curve][i] == 0 ? Double.NaN : source[targetStar][i] / total[curve][i];
                             if (source[curve][i] == 0 || total[curve][i] == 0) {
                                 detrendYEs[curve][i] = Double.POSITIVE_INFINITY;
                             } else {
                                 detrendYEs[curve][i] = detrendYs[curve][i] * Math.sqrt(srcvar[targetStar][i]*srcvar[targetStar][i] / (source[targetStar][i] * source[targetStar][i]) + totvar[curve][i] / (total[curve][i] * total[curve][i]));
                             }
-                        }
-
-                        for (int j = 0; j < nn[curve]; j++) {
-                            //if (noNaNs) {
-                                detrendYAverage[curve] += y[curve][j];
-                                if (detrendFitIndex[curve] == 9) {
-                                    if (x[curve][j] > fitLeft[curve] + (fitRight[curve] - fitLeft[curve]) / 4.0 && x[curve][j] < fitRight[curve] - (fitRight[curve] - fitLeft[curve]) / 4.0) {
-                                        yDepthEstimate[curve] += y[curve][j];
-                                        depthCount++;
-                                    } else if (x[curve][j] < fitLeft[curve] || x[curve][j] > fitRight[curve]) {
-                                        yBaselineAverage[curve] += y[curve][j];
-                                        baselineCount++;
-                                    }
-                                }
-                            //}
-                        }
-
+                        }*/
 
                         if (updateFit) {
                             int fittedDetrendParStart;
@@ -1260,6 +1266,7 @@ public class PlotUpdater {
             sigma[curve] = Math.sqrt(sigma[curve] / residual[curve].length);
             var rms = sigma[curve] / bestFit[curve][0];
             AIJLogger.log("rms: " + rms);
+            AIJLogger.log(sigma[curve]);
             return new PlotResults(rms, bic[curve]);
         }
 

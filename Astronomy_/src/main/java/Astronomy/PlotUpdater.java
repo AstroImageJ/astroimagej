@@ -895,6 +895,7 @@ public class PlotUpdater {
             totvar[curve][i] = compVar;
         }
 
+        //todo binning code
         for (int i= 0; i< detrendXs[curve].length; i++) {
             var bucketSize = 0;
             y[curve][i] = total[curve][i] == 0 ? Double.NaN : source[targetStar][i] / total[curve][i];

@@ -151,6 +151,7 @@ public class FitOptimization implements AutoCloseable {
 
         BigInteger initState = createBinaryRepresentation(selectable);
         PlotUpdater.getInstance(curve, targetStar).fitCurveAndGetResults(setArrayToState(initState));
+        MultiPlot_.updatePlot(curve);
     }
 
     private void minimizeCompStars() {

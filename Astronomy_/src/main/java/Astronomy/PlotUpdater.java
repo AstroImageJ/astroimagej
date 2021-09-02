@@ -882,10 +882,45 @@ public class PlotUpdater {
 
         if (!plotY[curve]) return new PlotResults(Double.NaN, Double.NaN); //todo add filtering on return for NaN
 
+        for (int i= 0; i< detrendXs[curve].length; i++) {
+            var compSum = 0.0;
+            var compVar = 0.0;
+            for (int ap = 0; ap < localIsRefStar.length; ap++) {
+                if (localIsRefStar[ap] && targetStar != ap) {
+                    compSum += source[ap][i];
+                    compVar += srcvar[ap][i];
+                }
+            }
+            total[curve][i] = compSum;
+            totvar[curve][i] = compVar;
+        }
+
+        for (int i= 0; i< detrendXs[curve].length; i++) {
+            var bucketSize = 0;
+            y[curve][i] = total[curve][i] == 0 ? Double.NaN : source[targetStar][i] / total[curve][i];
+            if (nnr[curve] > 0 && i == nn[curve] - 1) { bucketSize = nnr[curve]; } else {
+                bucketSize = binSize[curve];
+            }
+            if (source[curve][i] == 0 || total[curve][i] == 0) {
+                detrendY[i] = Double.POSITIVE_INFINITY;
+            } else {
+                yerr[curve][i] = hasErrors[curve] || hasOpErrors[curve] ? (detrendY[i] * Math.sqrt(srcvar[targetStar][i]*srcvar[targetStar][i] / (source[targetStar][i] * source[targetStar][i]) + totvar[curve][i] / (total[curve][i] * total[curve][i]))) : 1;
+
+                var ye = yerr[curve][i] / bucketSize;
+
+                detrendYE[i] = ye;
+                //detrendYE[i] = detrendY[i] * Math.sqrt(srcvar[targetStar][i]*srcvar[targetStar][i] / (source[targetStar][i] * source[targetStar][i]) + totvar[curve][i] / (total[curve][i] * total[curve][i]));
+            }
+            detrendY[i] = y[curve][i]; // / bucketSize;
+        }
+
+        //y matches MP at 1783, past that is smoothing that modifies y before yAvg and detrendY is calculated
+
         if (atLeastOne || detrendFitIndex[curve] == 9) {
             if (detrendFitIndex[curve] != 1) {
                 if (detrendCount > 0) {
                     for (int j = 0; j < nn[curve]; j++) {
+                        avgCount++;
                         //if (noNaNs) {
                         detrendYAverage[curve] += y[curve][j];
                         if (detrendFitIndex[curve] == 9) {
@@ -901,6 +936,8 @@ public class PlotUpdater {
                     }
                     yAverage[curve] /= avgCount; //avgCount is always >= detrendCount, so > 0 here
                     detrendYAverage[curve] /= detrendCount;
+                    AIJLogger.log("detYAvg");
+                    AIJLogger.log(detrendYAverage[curve]);
                     if (baselineCount > 0) {
                         yBaselineAverage[curve] /= baselineCount;
                     } else {
@@ -937,27 +974,7 @@ public class PlotUpdater {
 
                         //getStarData();
 
-                        for (int i= 0; i< detrendXs[curve].length; i++) {
-                            var compSum = 0.0;
-                            var compVar = 0.0;
-                            for (int ap = 0; ap < localIsRefStar.length; ap++) {
-                                if (localIsRefStar[ap] && targetStar != ap) {
-                                    compSum += source[ap][i];
-                                    compVar += srcvar[ap][i];
-                                }
-                            }
-                            total[curve][i] = compSum;
-                            totvar[curve][i] = compVar;
-                        }
-
-                        /*for (int i= 0; i< detrendXs[curve].length; i++) {
-                            detrendYs[curve][i] = total[curve][i] == 0 ? Double.NaN : source[targetStar][i] / total[curve][i];
-                            if (source[curve][i] == 0 || total[curve][i] == 0) {
-                                detrendYEs[curve][i] = Double.POSITIVE_INFINITY;
-                            } else {
-                                detrendYEs[curve][i] = detrendYs[curve][i] * Math.sqrt(srcvar[targetStar][i]*srcvar[targetStar][i] / (source[targetStar][i] * source[targetStar][i]) + totvar[curve][i] / (total[curve][i] * total[curve][i]));
-                            }
-                        }*/
+                        AIJLogger.log(detrendYs[curve]);
 
                         if (updateFit) {
                             int fittedDetrendParStart;

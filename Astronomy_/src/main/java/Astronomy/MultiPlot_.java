@@ -7,6 +7,7 @@ import flanagan.analysis.Smooth;
 import flanagan.math.Minimization;
 import flanagan.math.MinimizationFunction;
 import ij.*;
+import ij.astro.logging.AIJLogger;
 import ij.astro.util.PdfPlotOutput;
 import ij.gui.*;
 import ij.io.OpenDialog;
@@ -2200,6 +2201,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         if (detrendCount > 0) {
                             yAverage[curve] /= avgCount; //avgCount is always >= detrendCount, so > 0 here
                             detrendYAverage[curve] /= detrendCount;
+                            AIJLogger.log("detYAvg");
+                            AIJLogger.log(detrendYAverage[curve]);
                             if (baselineCount > 0) { yBaselineAverage[curve] /= baselineCount; } else {
                                 yBaselineAverage[curve] = detrendYAverage[curve] * 1.005;
                             }
@@ -2229,6 +2232,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                 detrendXs[curve] = Arrays.copyOf(detrendX, detrendCount);
                                 detrendYs[curve] = Arrays.copyOf(detrendY, detrendCount);
                                 detrendYEs[curve] = Arrays.copyOf(detrendYE, detrendCount);
+                                AIJLogger.log(detrendYs[curve]);
+                                //AIJLogger.log(detrendYEs[curve]);
                                 if (updateFit[curve]) {
                                     int fittedDetrendParStart;
                                     if (detrendFitIndex[curve] == 9) {

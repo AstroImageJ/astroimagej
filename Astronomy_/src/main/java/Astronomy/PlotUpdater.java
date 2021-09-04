@@ -81,7 +81,7 @@ public class PlotUpdater {
         boolean goodErrData = true;
         source = new double[numAps][numRows];
         srcvar = new double[numAps][numRows];
-        total = new double[numAps][numRows];
+        total = new double[numAps][numRows];//todo only need 1 per row, don't make here
         totvar = new double[numAps][numRows];
         for (int ap = 0; ap < numAps; ap++) {
             for (int row = 0; row < numRows; row++) {
@@ -101,7 +101,7 @@ public class PlotUpdater {
         int snrcol = ResultsTable.COLUMN_NOT_FOUND;
         int peakcol = ResultsTable.COLUMN_NOT_FOUND;
 
-        for (int ap = 0; ap < numAps; ap++) {
+        for (int ap = 0; ap < numAps; ap++) {//todo skip unused target stars, shave down aray size to just be comp stars + target
             col = table.getColumnIndex("Source-Sky_" + (isRefStar[ap] ? "C" : "T") + (ap + 1));
             if (col == ResultsTable.COLUMN_NOT_FOUND) {
                 IJ.beep();
@@ -892,9 +892,9 @@ public class PlotUpdater {
                 }
             }
             total[curve][i] = compSum;
-            totvar[curve][i] = compVar;
+            totvar[targetStar][i] = compVar;
         }
-
+//todo error if operator is not 0
         //todo binning code
         for (int i= 0; i< detrendXs[curve].length; i++) {
             var bucketSize = 0;
@@ -905,14 +905,11 @@ public class PlotUpdater {
             if (source[curve][i] == 0 || total[curve][i] == 0) {
                 detrendY[i] = Double.POSITIVE_INFINITY;
             } else {
-                yerr[curve][i] = hasErrors[curve] || hasOpErrors[curve] ? (detrendY[i] * Math.sqrt(srcvar[targetStar][i]*srcvar[targetStar][i] / (source[targetStar][i] * source[targetStar][i]) + totvar[curve][i] / (total[curve][i] * total[curve][i]))) : 1;
+                yerr[curve][i] = hasErrors[curve] || hasOpErrors[curve] ? (y[curve][i] * Math.sqrt(srcvar[targetStar][i]/* * srcvar[targetStar][i]*/ / (source[targetStar][i] * source[targetStar][i]) + totvar[targetStar][i] / (total[curve][i] * total[curve][i]))) : 1;
 
-                var ye = yerr[curve][i] / bucketSize;
-
-                detrendYE[i] = ye;
-                //detrendYE[i] = detrendY[i] * Math.sqrt(srcvar[targetStar][i]*srcvar[targetStar][i] / (source[targetStar][i] * source[targetStar][i]) + totvar[curve][i] / (total[curve][i] * total[curve][i]));
+                detrendYE[i] = yerr[curve][i];
             }
-            detrendY[i] = y[curve][i]; // / bucketSize;
+            detrendY[i] = y[curve][i]; //todo binning/trimming - can be done in setupData
         }
 
         //y matches MP at 1783, past that is smoothing that modifies y before yAvg and detrendY is calculated
@@ -975,7 +972,7 @@ public class PlotUpdater {
 
                         //getStarData();
 
-                        AIJLogger.log(detrendYs[curve]);
+                        AIJLogger.log(detrendYEs[curve]);
 
                         if (updateFit) {
                             int fittedDetrendParStart;
@@ -1274,7 +1271,7 @@ public class PlotUpdater {
             for (int i = 0; i < residual[curve].length; i++) {
                 sigma[curve] += residual[curve][i] * residual[curve][i];
             }
-            sigma[curve] = Math.sqrt(sigma[curve] / residual[curve].length);
+            sigma[curve] = Math.sqrt(sigma[curve] / cnt);
             var rms = sigma[curve] / bestFit[curve][0];
             AIJLogger.log("rms: " + rms);
             AIJLogger.log("bic: " + bic[curve]);

@@ -138,13 +138,12 @@ public class FitOptimization implements AutoCloseable {
         selectable = null;
         selectable2PrimaryIndex = null;
         PlotUpdater.invalidateInstance();
-        if (selectable == null) {
-            if (MultiPlot_.isRefStar != null) {
-                setSelectable(MultiPlot_.isRefStar);
-            } else {
-                AIJLogger.log("Open ref. star panel");
-                return;
-            }
+        MultiPlot_.showRefStarJPanel();
+        if (MultiPlot_.isRefStar != null) {
+            setSelectable(MultiPlot_.isRefStar);
+        } else {
+            AIJLogger.log("Open ref. star panel");
+            return;
         }
 
         targetStar = Integer.parseInt(MultiPlot_.ylabel[curve].split("rel_flux_T")[1]) - 1;
@@ -158,13 +157,12 @@ public class FitOptimization implements AutoCloseable {
         selectable = null;
         selectable2PrimaryIndex = null;
         PlotUpdater.invalidateInstance();
-        if (selectable == null) {
-            if (MultiPlot_.isRefStar != null) {
-                setSelectable(MultiPlot_.isRefStar);
-            } else {
-                AIJLogger.log("Open ref. star panel");
-                return;
-            }
+        MultiPlot_.showRefStarJPanel();
+        if (MultiPlot_.isRefStar != null) {
+            setSelectable(MultiPlot_.isRefStar);
+        } else {
+            AIJLogger.log("Open ref. star panel");
+            return;
         }
 
         //todo do for C stars

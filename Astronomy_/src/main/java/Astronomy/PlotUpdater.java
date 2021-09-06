@@ -19,7 +19,6 @@ import static Astronomy.MultiPlot_.*;
  */
 public class PlotUpdater {
     private static PlotUpdater INSTANCE;
-    //todo curve and comp. star/param setting
     private int curve;
     private int targetStar;
     private boolean[] refStarEnabled;
@@ -52,6 +51,7 @@ public class PlotUpdater {
         this.targetStar = targetStar;
         getStarData();
         setupData();
+        conditionData();
         //todo add stuff
         // add check for fitter running only on Tstar and other conditions
         // //todo extract star and filter from this "rel_flux_Txx"
@@ -778,7 +778,7 @@ public class PlotUpdater {
                             }
                         }
                     } else {
-                        for (int j = 0; j < nn[curve]; j++) { //todo check on Source-Sky, Source_Error values, and detrend parameters for NaNs. If a NaN is found, bail out and give an appropriate error.
+                        for (int j = 0; j < nn[curve]; j++) {
                             noNaNs = true;
                             if (!Double.isNaN(y[curve][j])) {
                                 for (int v = 0; v < maxDetrendVars; v++) {
@@ -839,6 +839,92 @@ public class PlotUpdater {
                     initDetrendX = detrendX;
                 }
             }
+        }
+    }
+
+    // RMS/BIC aren't exact matches with this, but close enough
+    private void conditionData() {
+        for (int ap = 0; ap < source.length; ap++) {
+            int bucketSize = 0;
+            var workingSource = new double[nn[curve]];
+            var workingSrcvar = new double[nn[curve]];
+            if (excludedHeadSamples + excludedTailSamples >= n) { //Handle case for more samples excluded than in dataset
+                excludedHeadSamples = excludedHeadSamples < n ? excludedHeadSamples : n - 1;
+                excludedTailSamples = n - excludedHeadSamples - 1;
+            }
+            for (int j = 0; j < nn[curve]; j++) {
+                if (nnr[curve] > 0 && j == nn[curve] - 1) {
+                    bucketSize = nnr[curve];
+                } else {
+                    bucketSize = binSize[curve];
+                }
+                for (int k = excludedHeadSamples; k < (bucketSize + excludedHeadSamples); k++) {
+                    var i = j * binSize[curve] + k;
+                    workingSource[j] += source[ap][i];
+                    workingSrcvar[j] += srcvar[ap][i];
+                }
+                workingSource[j] /= bucketSize;
+                workingSrcvar[j] /= bucketSize;
+            }
+
+            fitMin[curve] = (useDMarker1 ? dMarker1Value : Double.NEGATIVE_INFINITY) + xOffset;
+            fitMax[curve] = (useDMarker4 ? dMarker4Value : Double.POSITIVE_INFINITY) + xOffset;
+            fitLeft[curve] = dMarker2Value + xOffset;
+            fitRight[curve] = dMarker3Value + xOffset;
+            switch (detrendFitIndex[curve]) {
+                case 2: // left of D2
+                    fitMax[curve] = fitLeft[curve];
+                    break;
+                case 3: // right of D3
+                    fitMin[curve] = fitRight[curve];
+                    break;
+                case 4: // outside D2 and D3
+                    break;
+                case 5: // inside D2 and D3
+                    fitMin[curve] = fitLeft[curve];
+                    fitMax[curve] = fitRight[curve];
+                    break;
+                case 6: // left of D3
+                    fitMax[curve] = fitRight[curve];
+                    break;
+                case 7: // right of D2
+                    fitMin[curve] = fitLeft[curve];
+                    break;
+                case 8: // use all data
+                    break;
+                case 9: // use all data to fit transit with simultaneaous detrend
+                    break;
+                default: // use all data
+                    detrendFitIndex[curve] = 0;
+                    break;
+            }
+
+            var workingSource2 = new double[nn[curve]];
+            var workingSrcvar2 = new double[nn[curve]];
+            AIJLogger.log("pre filter 2");
+            AIJLogger.log(workingSource);
+            AIJLogger.log(workingSrcvar);
+            //todo check on Source-Sky, Source_Error values, and detrend parameters for NaNs. If a NaN is found, bail out and give an appropriate error.
+            for (int j = 0; j < nn[curve]; j++) {
+                if (detrendFitIndex[curve] != 1) {
+                    if (detrendFitIndex[curve] == 4) {
+                        if ((x[curve][j] > fitMin[curve] && x[curve][j] < fitLeft[curve]) || (x[curve][j] > fitRight[curve] && x[curve][j] < fitMax[curve])) {
+                            workingSource2[j] = workingSource[j];
+                            workingSrcvar2[j] = workingSrcvar[j];
+                        }
+                    } else {
+                        if (x[curve][j] > fitMin[curve]) {
+                            if (x[curve][j] < fitMax[curve]) {
+                                workingSource2[j] = workingSource[j];
+                                workingSrcvar2[j] = workingSrcvar[j];
+                            }
+                        }
+                    }
+                }
+            }
+
+            source[ap] = workingSource2;
+            srcvar[ap] = workingSrcvar2;
         }
     }
 
@@ -903,7 +989,7 @@ public class PlotUpdater {
 
         if (!plotY[curve]) return new PlotResults(Double.NaN, Double.NaN);
 
-        for (int i= 0; i< detrendXs[curve].length; i++) {
+        for (int i= 0; i < detrendXs[curve].length; i++) {
             var compSum = 0.0;
             var compVar = 0.0;
             for (int ap = 0; ap < localIsRefStar.length; ap++) {
@@ -915,22 +1001,21 @@ public class PlotUpdater {
             total[curve][i] = compSum;
             totvar[targetStar][i] = compVar;
         }
-//todo error if operator is not 0
-        //todo binning code
-        for (int i= 0; i< detrendXs[curve].length; i++) {
-            var bucketSize = 0;
+
+
+        for (int i= 0; i < detrendXs[curve].length; i++) {
             y[i] = total[curve][i] == 0 ? Double.NaN : source[targetStar][i] / total[curve][i];
-            if (nnr[curve] > 0 && i == nn[curve] - 1) { bucketSize = nnr[curve]; } else {
-                bucketSize = binSize[curve];
-            }
             if (source[curve][i] == 0 || total[curve][i] == 0) {
                 detrendY[i] = Double.POSITIVE_INFINITY;
             } else {
                 detrendYE[i] = hasErrors[curve] || hasOpErrors[curve] ? (y[i] * Math.sqrt(srcvar[targetStar][i] / (source[targetStar][i] * source[targetStar][i]) + totvar[targetStar][i] / (total[curve][i] * total[curve][i]))) : 1;
             }
-            yerr = detrendYE; //todo check if yerr matches MP, if this is needed
-            detrendY[i] = y[i]; //todo binning/trimming - can be done in setupData
+            yerr = detrendYE;
+            detrendY[i] = y[i];
         }
+
+        AIJLogger.log(detrendY);
+        AIJLogger.log(detrendYE);
 
         if (atLeastOne || detrendFitIndex[curve] == 9) {
             if (detrendFitIndex[curve] != 1) {

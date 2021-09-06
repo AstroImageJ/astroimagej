@@ -39,7 +39,7 @@ public class CompStarFitting extends Optimizer {
 
     private FitOptimization.MinimumState plotUpdater() {
         var minimumState = new FitOptimization.MinimumState();
-        for (BigInteger state = startState; state.compareTo(endState) < 0; state = state.add(BigInteger.ONE)) {//todo countdown from state? allows for current state = iterations left
+        for (BigInteger state = startState; state.compareTo(endState) <= 0; state = state.add(BigInteger.ONE)) {//todo countdown from state? allows for current state = iterations left
             if (state.equals(BigInteger.ZERO)) continue;
 
             var x = fitOptimization.setArrayToState(state);

@@ -149,7 +149,8 @@ public class FitOptimization implements AutoCloseable {
         targetStar = Integer.parseInt(MultiPlot_.ylabel[curve].split("rel_flux_T")[1]) - 1;
 
         BigInteger initState = createBinaryRepresentation(selectable);
-        PlotUpdater.getInstance(curve, targetStar).fitCurveAndGetResults(setArrayToState(initState));
+        var x = PlotUpdater.getInstance(curve, targetStar).fitCurveAndGetResults(setArrayToState(initState));
+        AIJLogger.log(x);
         MultiPlot_.updatePlot(curve);
     }
 

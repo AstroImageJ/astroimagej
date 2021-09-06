@@ -896,6 +896,11 @@ public class PlotUpdater {
             }
         }
 
+        if (operatorIndex[curve] != 0) {
+            IJ.error("Operator must be 0");
+            return new PlotResults(Double.NaN, Double.NaN);
+        }
+
         if (!plotY[curve]) return new PlotResults(Double.NaN, Double.NaN);
 
         for (int i= 0; i< detrendXs[curve].length; i++) {

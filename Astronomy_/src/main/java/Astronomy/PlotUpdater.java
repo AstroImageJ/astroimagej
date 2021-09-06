@@ -901,9 +901,7 @@ public class PlotUpdater {
 
             var workingSource2 = new double[nn[curve]];
             var workingSrcvar2 = new double[nn[curve]];
-            AIJLogger.log("pre filter 2");
-            AIJLogger.log(workingSource);
-            AIJLogger.log(workingSrcvar);
+
             //todo check on Source-Sky, Source_Error values, and detrend parameters for NaNs. If a NaN is found, bail out and give an appropriate error.
             for (int j = 0; j < nn[curve]; j++) {
                 if (detrendFitIndex[curve] != 1) {

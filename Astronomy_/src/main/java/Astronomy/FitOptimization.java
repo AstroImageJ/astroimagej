@@ -11,7 +11,9 @@ import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.math.BigInteger;
 import java.util.Comparator;
+import java.util.Objects;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 
 //todo organize properly
@@ -32,6 +34,8 @@ public class FitOptimization implements AutoCloseable {
     private final ExecutorService pool;
     private boolean[] selectable;
     CompletionService<MinimumState> completionService;
+    public DynamicCounter compCounter;
+
     //todo atomic strings for iter count fields
     //todo get min state out, volatile/synchronized int, or atomic? need to track comparison value as well. Could also make a map and minimize similar to autoswitch
     //https://www.baeldung.com/java-thread-safety
@@ -59,26 +63,31 @@ public class FitOptimization implements AutoCloseable {
         JPanel compStarPanel = new JPanel(new SpringLayout());
         compStarPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(MultiPlot_.subBorderColor, 1), "Comparison Star Selection", TitledBorder.CENTER, TitledBorder.TOP, MultiPlot_.p11, Color.darkGray));
 
-        var optimizeButton = new JToggleButton("Exhaustive Optimize");
-        optimizeButton.setToolTipText("Exhaustive search of comparison star combinations for minimize RMS of the fit. Only comparison stars selected at the start of this run are searched.");
+        var compOptimizationSelection = new JComboBox<ToolTipWrapper>();
+        compOptimizationSelection.setEditable(false);
+        compOptimizationSelection.setRenderer(new ToolTipRenderer());
+        var compBruteForce = new ToolTipWrapper("Exhaustive Optimize", "Exhaustive search of comparison star combinations for minimize RMS of the fit. Only comparison stars selected at the start of this run are searched.");
+        var compTest = new ToolTipWrapper("Debug", "Debug a single run.");
+        compOptimizationSelection.addItem(compBruteForce);
+        compOptimizationSelection.addItem(compTest);
+        var optimizeButton = new JToggleButton("Start");
+        optimizeButton.setToolTipText("Begin the optimization. Click again to stop it.");
         optimizeButton.addActionListener(e -> {
-            optimizeButton.setSelected(!optimizeButton.isSelected());
-            //optimizeButton.setText("Cancel");//todo set title based on state
-            MultiPlot_.updatePlot(curve);
-            testCompMin();
+            optimizeButton.setSelected(optimizeButton.isSelected());
+            if (optimizeButton.isSelected()) {
+                optimizeButton.setText("Cancel");
+                if (Objects.equals(compOptimizationSelection.getSelectedItem(), compTest)) {
+                    testCompMin();
+                } else if (Objects.equals(compOptimizationSelection.getSelectedItem(), compBruteForce)) {
+                    minimizeCompStars();
+                }
+            } else {
+                optimizeButton.setText("Start");
+                pool.shutdownNow();
+            }
         });
+        compStarPanel.add(compOptimizationSelection);
         compStarPanel.add(optimizeButton);
-
-        //todo pull out fitOptimizePanel to new class with the logic, simply add it here
-
-        var smartOptimizeButton = new JToggleButton("Smart Optimize", true);//todo fix selection
-        smartOptimizeButton.setToolTipText("Nonexhaustive search of comparison star combinations for minimize RMS of the fit. Only comparison stars selected at the start of this run are searched.");
-        smartOptimizeButton.addActionListener(e -> {
-            smartOptimizeButton.setSelected(!smartOptimizeButton.isSelected());
-            //smartOptimizeButton.setText("Cancel");//todo set title based on state
-            minimizeCompStars();
-        });
-        compStarPanel.add(smartOptimizeButton);
 
         var compOptiIterLabel = new JLabel("Iter. Remaining:");
         compOptiIterLabel.setToolTipText("Number of iterations remaining in comp. star optimization.");
@@ -90,6 +99,7 @@ public class FitOptimization implements AutoCloseable {
         compOptiIterCount.setMaximumSize(new Dimension(50, 10));
         compOptiIterCount.setHorizontalAlignment(SwingConstants.RIGHT);
         compOptiIterCount.setToolTipText("Number of iterations remaining in comp. star optimization.");
+        compCounter = new DynamicCounter(compOptiIterCount);
         compStarPanel.add(compOptiIterCount);
 
         SpringUtil.makeCompactGrid(compStarPanel, 2, compStarPanel.getComponentCount()/2, 0, 0, 0, 0);
@@ -97,21 +107,31 @@ public class FitOptimization implements AutoCloseable {
         JPanel detrendOptPanel = new JPanel(new SpringLayout());
         detrendOptPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(MultiPlot_.subBorderColor, 1), "Detrend Parameter Selection", TitledBorder.CENTER, TitledBorder.TOP, MultiPlot_.p11, Color.darkGray));
 
-        var paramOptimizeButton = new JToggleButton("Exhaustive Optimize");
-        paramOptimizeButton.setToolTipText("Exhaustive search of detrend parameter combinations for minimize BIC of the fit. Only detren parameters selected at the start of this run are searched.");
-        paramOptimizeButton.addActionListener(e -> {
-            paramOptimizeButton.setSelected(!paramOptimizeButton.isSelected());
-            //paramOptimizeButton.setText("Cancel");//todo set title based on state
+        var detrendOptimizationSelection = new JComboBox<ToolTipWrapper>();
+        detrendOptimizationSelection.setEditable(false);
+        detrendOptimizationSelection.setRenderer(new ToolTipRenderer());
+        var detrendBruteForce = new ToolTipWrapper("Exhaustive Optimize", "Exhaustive search of detrendarison star combinations for minimize RMS of the fit. Only detrendarison stars selected at the start of this run are searched.");
+        var detrendTest = new ToolTipWrapper("Debug", "Debug a single run.");
+        detrendOptimizationSelection.addItem(detrendBruteForce);
+        detrendOptimizationSelection.addItem(detrendTest);
+        var detOptimizeButton = new JToggleButton("Start");
+        detOptimizeButton.setToolTipText("Begin the optimization. Click again to stop it.");
+        detOptimizeButton.addActionListener(e -> {
+            detOptimizeButton.setSelected(detOptimizeButton.isSelected());
+            if (detOptimizeButton.isSelected()) {
+                detOptimizeButton.setText("Cancel");
+                if (Objects.equals(detrendOptimizationSelection.getSelectedItem(), detrendTest)) {
+                    AIJLogger.log("Not yet implemented.");
+                } else if (Objects.equals(detrendOptimizationSelection.getSelectedItem(), detrendBruteForce)) {
+                    AIJLogger.log("Not yet implemented.");
+                }
+            } else {
+                detOptimizeButton.setText("Start");
+                pool.shutdownNow();
+            }
         });
-        detrendOptPanel.add(paramOptimizeButton);
-
-        var smartParamOptimizeButton = new JToggleButton("Smart Optimize");
-        smartParamOptimizeButton.setToolTipText("Nonexhaustive search of detrend parameter combinations for minimize BIC of the fit. Only detren parameters selected at the start of this run are searched.");
-        smartParamOptimizeButton.addActionListener(e -> {
-            smartParamOptimizeButton.setSelected(!smartParamOptimizeButton.isSelected());
-            //smartParamOptimizeButton.setText("Cancel");//todo set title based on state, dont change size
-        });
-        detrendOptPanel.add(smartParamOptimizeButton);
+        detrendOptPanel.add(detrendOptimizationSelection);
+        detrendOptPanel.add(detOptimizeButton);
 
         var paramOptiIterLabel = new JLabel("Iter. Remaining:"); //todo make field
         paramOptiIterLabel.setToolTipText("Number of iterations remaining in detrend parameter optimization.");
@@ -269,11 +289,19 @@ public class FitOptimization implements AutoCloseable {
      * Modifies {@link FitOptimization#selectable2PrimaryIndex}.
      * @return an integer representing the current state of enabled options.
      */
-    private BigInteger createBinaryRepresentation(boolean[] options) { //todo make options a field, check if detrend is like this
+    private BigInteger createBinaryRepresentation(boolean[] options) {
+        return createBinaryRepresentation(options, true);
+    }
+
+    /**
+     * Modifies {@link FitOptimization#selectable2PrimaryIndex}.
+     * @return an integer representing the current state of enabled options.
+     */
+    private BigInteger createBinaryRepresentation(boolean[] options, boolean updateIndex) {
         int enabledOptions = 0;
         for (int i = 0; i < options.length; i++) {
             if (options[i]) {
-                selectable2PrimaryIndex[enabledOptions] = i;
+                if (updateIndex) selectable2PrimaryIndex[enabledOptions] = i;
                 enabledOptions++;
             }
         }
@@ -332,6 +360,63 @@ public class FitOptimization implements AutoCloseable {
             if (o1.comparator == o2.comparator) return 0;
             if (o1.lessThan(o2)) return -1;
             return 1;
+        }
+    }
+
+    public interface ToolTipProvider {
+        String getToolTip();
+    }
+
+    public class ToolTipWrapper implements ToolTipProvider {
+        final Object value;
+        final String toolTip;
+
+        public ToolTipWrapper(Object value, String toolTip) {
+            this.value = value;
+            this.toolTip = toolTip;
+        }
+
+        @Override
+        public String getToolTip() {
+            return toolTip;
+        }
+
+        @Override
+        public String toString() {
+            return value.toString();
+        }
+    }
+
+    public class ToolTipRenderer extends DefaultListCellRenderer {
+
+        @Override
+        public Component getListCellRendererComponent(JList list, Object value,
+                                                      int index, boolean isSelected, boolean cellHasFocus) {
+            JComponent component = (JComponent) super.getListCellRendererComponent(list, value, index, isSelected,
+                    cellHasFocus);
+            String tip = null;
+            if (value instanceof ToolTipProvider) {
+                ToolTipProvider ttp = (ToolTipProvider) value;
+                tip = ttp.getToolTip();
+            }
+            list.setToolTipText(tip);
+            return component;
+        }
+    }
+
+    public class DynamicCounter extends AtomicReference<BigInteger> {
+        JTextField textField;
+
+        public DynamicCounter(JTextField field) {
+            super();
+            textField = field;
+        }
+        public void dynamicSet(BigInteger integer) {
+            if (getAcquire() != null && getAcquire().compareTo(integer) == 0) {
+                return;
+            }
+            lazySet(integer);
+            textField.setText(integer.toString());
         }
     }
 }

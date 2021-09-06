@@ -1012,9 +1012,6 @@ public class PlotUpdater {
             detrendY[i] = y[i];
         }
 
-        AIJLogger.log(detrendY);
-        AIJLogger.log(detrendYE);
-
         if (atLeastOne || detrendFitIndex[curve] == 9) {
             if (detrendFitIndex[curve] != 1) {
                 if (detrendCount > 0) {

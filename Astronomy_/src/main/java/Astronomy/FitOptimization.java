@@ -3,24 +3,20 @@ package Astronomy;
 import Astronomy.multiplot.optimization.CompStarFitting;
 import Astronomy.multiplot.optimization.Optimizer;
 import astroj.SpringUtil;
+import ij.IJ;
 import ij.astro.logging.AIJLogger;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 import java.util.function.BiFunction;
 
 //todo organize properly
 public class FitOptimization implements AutoCloseable {
-    //todo put back chunk size, was changed to handle single threaded case
-    private static final BigInteger CHUNK_SIZE = BigInteger.valueOf(Integer.MAX_VALUE);//BigInteger.valueOf(32); //todo find a good value
+    private static final int MAX_THREADS = 32;
     private final int curve;
     private int targetStar;
     /**
@@ -35,6 +31,7 @@ public class FitOptimization implements AutoCloseable {
     private int[] selectable2PrimaryIndex;
     private final ExecutorService pool;
     private boolean[] selectable;
+    CompletionService<MinimumState> completionService;
     //todo atomic strings for iter count fields
     //todo get min state out, volatile/synchronized int, or atomic? need to track comparison value as well. Could also make a map and minimize similar to autoswitch
     //https://www.baeldung.com/java-thread-safety
@@ -43,7 +40,10 @@ public class FitOptimization implements AutoCloseable {
     public FitOptimization(int curve, int epsilon) {
         this.curve = curve;
         EPSILON = epsilon;
-        this.pool = Executors.newCachedThreadPool();
+        this.pool = new ThreadPoolExecutor(0, MAX_THREADS,
+                10L, TimeUnit.SECONDS,
+                new SynchronousQueue<>());
+        completionService = new ExecutorCompletionService<>(pool);
     }
 
     public void setSelectable(boolean[] selectable) {
@@ -138,7 +138,7 @@ public class FitOptimization implements AutoCloseable {
         selectable = null;
         selectable2PrimaryIndex = null;
         PlotUpdater.invalidateInstance();
-        MultiPlot_.showRefStarJPanel();
+        if (MultiPlot_.refStarFrame == null) MultiPlot_.showRefStarJPanel();
         if (MultiPlot_.isRefStar != null) {
             setSelectable(MultiPlot_.isRefStar);
         } else {
@@ -157,11 +157,11 @@ public class FitOptimization implements AutoCloseable {
         selectable = null;
         selectable2PrimaryIndex = null;
         PlotUpdater.invalidateInstance();
-        MultiPlot_.showRefStarJPanel();
+        if (MultiPlot_.refStarFrame == null) MultiPlot_.showRefStarJPanel();
         if (MultiPlot_.isRefStar != null) {
             setSelectable(MultiPlot_.isRefStar);
         } else {
-            AIJLogger.log("Open ref. star panel");
+            AIJLogger.log("Open ref. star panel.");
             return;
         }
 
@@ -170,8 +170,11 @@ public class FitOptimization implements AutoCloseable {
         targetStar = Integer.parseInt(MultiPlot_.ylabel[curve].split("rel_flux_T")[1]) - 1;
 
         BigInteger initState = createBinaryRepresentation(selectable); //numAps has number of apertures
-        divideTasksAndRun(new MinimumState(initState, Double.MAX_VALUE/*MultiPlot_.sigma[curve]*/), BigInteger.ONE,
+
+        var finalState = divideTasksAndRun(new MinimumState(initState, Double.MAX_VALUE), BigInteger.ONE,
                 (start, end) -> new CompStarFitting(start, end, this));
+
+        setFinalState("RMS", finalState, MultiPlot_.refStarCB);
     }
 
     //todo isRefStar is only not null when the window is/has been open
@@ -185,33 +188,52 @@ public class FitOptimization implements AutoCloseable {
     // then when the optimization is started, throw an error message to the user specifying what conditions
     // are required for minimization.
 
-    private void divideTasksAndRun(final MinimumState initState, final BigInteger startingPoint, //todo does detrend need to start at 0? if not, can remove this param
+    /**
+     * @param initState
+     * @param startingPoint
+     * @param optimizerBiFunction
+     * @return the final state array
+     */
+    private boolean[] divideTasksAndRun(final MinimumState initState, final BigInteger startingPoint, //todo does detrend need to start at 0? if not, can remove this param
                                    BiFunction<BigInteger, BigInteger, Optimizer> optimizerBiFunction) {
         var minimumState = initState;
         var state = minimumState.state;
-        var minStates = new ArrayList<Future<MinimumState>>();
+        var count = 0;
+        var CHUNK_SIZE = state.divide(BigInteger.valueOf(MAX_THREADS)).add(BigInteger.ONE);
         for (BigInteger start = startingPoint; start.compareTo(state) < 0;) {
             var end = state.add(BigInteger.ONE).min(start.add(CHUNK_SIZE));
-            minStates.add(evaluateStatesInRange(optimizerBiFunction.apply(start, end)));
+            evaluateStatesInRange(optimizerBiFunction.apply(start, end));
             start = end;
+            count++;
         }
 
-        try {
-            for (Future<MinimumState> minimumStateFuture : minStates) {
-                var determinedState = minimumStateFuture.get();
+        Future<MinimumState> msf;
+        var hasErrored = false;
+        while (count > 0 && !hasErrored) {
+            try {
+                msf = completionService.take();
+                var determinedState = msf.get();
                 if (determinedState.lessThan(minimumState)) minimumState = determinedState;
+                count--;
+            } catch (InterruptedException | ExecutionException e) {
+                e.printStackTrace();
+                hasErrored = true;
             }
-        } catch (ExecutionException | InterruptedException e) {
-            AIJLogger.log(e);
         }
 
-        AIJLogger.log(minimumState);
+        if (hasErrored) IJ.error("Error occurred during minimization, preceding with lowest RMS found.");
 
-        var x = setArrayToState(minimumState.state);
-        for (int r = 0; r < x.length; r++) { //todo method to set state
-            MultiPlot_.refStarCB[r].setSelected(x[r]);
-        }
+        return setArrayToState(minimumState.state);
     }
+
+    private static void setFinalState(String minimizationTarget, boolean[] state, JCheckBox[] selectables) {
+        for (int r = 0; r < state.length; r++) {
+            selectables[r].setSelected(state[r]);
+        }
+        AIJLogger.log("Found minimum " + minimizationTarget + " state, reference stars set.");
+        IJ.beep();
+    }
+
     //todo make workingState be a BigInteger or BitSet to handle more comp stars
     // BigInteger makes splitting the tasks and the generation of all possible combinations easier
     // BitSet is potentially easier to extract values from and generation of the state array
@@ -220,8 +242,8 @@ public class FitOptimization implements AutoCloseable {
     // see if this happens with normal MP operation, fix
     // see if this is fixed when pulling out fitting code (probably)
 
-    private Future<MinimumState> evaluateStatesInRange(Optimizer optimizer) {
-        return pool.submit(optimizer);
+    private void evaluateStatesInRange(Optimizer optimizer) {
+        completionService.submit(optimizer);
     }
 
     //todo this is still broken

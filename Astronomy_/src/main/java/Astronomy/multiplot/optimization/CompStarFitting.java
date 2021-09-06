@@ -3,7 +3,6 @@ package Astronomy.multiplot.optimization;
 import Astronomy.FitOptimization;
 import Astronomy.MultiPlot_;
 import Astronomy.PlotUpdater;
-import ij.astro.logging.AIJLogger;
 
 import java.math.BigInteger;
 
@@ -16,7 +15,6 @@ public class CompStarFitting extends Optimizer {
     @Override
     //todo option to save calculated states and their RMS in a sorted list
     public FitOptimization.MinimumState call() throws Exception {
-        PlotUpdater.getInstance(fitOptimization.getCurve(), fitOptimization.getTargetStar());
         return plotUpdater();
     }
 
@@ -47,8 +45,10 @@ public class CompStarFitting extends Optimizer {
             var x = fitOptimization.setArrayToState(state);
             var r = PlotUpdater.getInstance(curve, fitOptimization.getTargetStar()).fitCurveAndGetResults(x);
 
-            AIJLogger.log(x);
-            AIJLogger.log(r);
+            if (Double.isNaN(r.rms()) || Double.isNaN(r.bic())) continue;
+
+            /*AIJLogger.log(x);
+            AIJLogger.log(r);*/
             var newState = new FitOptimization.MinimumState(state, r.rms());
             if (newState.lessThan(minimumState)) minimumState = newState;
         }

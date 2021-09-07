@@ -31,7 +31,7 @@ public class FitOptimization implements AutoCloseable {
      * For reference stars, it is "initially selected reference star" -> "reference star index."
      */
     private int[] selectable2PrimaryIndex;
-    private final ExecutorService pool;
+    private ExecutorService pool;
     private boolean[] selectable;
     CompletionService<MinimumState> completionService;
     public DynamicCounter compCounter;
@@ -44,10 +44,7 @@ public class FitOptimization implements AutoCloseable {
     public FitOptimization(int curve, int epsilon) {
         this.curve = curve;
         EPSILON = epsilon;
-        this.pool = new ThreadPoolExecutor(0, MAX_THREADS,
-                10L, TimeUnit.SECONDS,
-                new SynchronousQueue<>());
-        completionService = new ExecutorCompletionService<>(pool);
+        setupThreadedSpace();
     }
 
     public void setSelectable(boolean[] selectable) {
@@ -218,6 +215,7 @@ public class FitOptimization implements AutoCloseable {
      */
     private boolean[] divideTasksAndRun(final MinimumState initState, final BigInteger startingPoint, //todo does detrend need to start at 0? if not, can remove this param
                                    BiFunction<BigInteger, BigInteger, Optimizer> optimizerBiFunction) {
+        setupThreadedSpace();
         var minimumState = initState;
         var state = minimumState.state;
         var count = 0;
@@ -273,6 +271,12 @@ public class FitOptimization implements AutoCloseable {
 
     private void evaluateStatesInRange(Optimizer optimizer) {
         completionService.submit(optimizer);
+    }
+
+    private void setupThreadedSpace() {
+        pool = new ThreadPoolExecutor(0, MAX_THREADS,
+                10L, TimeUnit.SECONDS, new SynchronousQueue<>());
+        completionService = new ExecutorCompletionService<>(pool);
     }
 
     //todo this is still broken

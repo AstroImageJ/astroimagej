@@ -234,6 +234,9 @@ public class FitOptimization implements AutoCloseable {
             try {
                 msf = completionService.take();
                 var determinedState = msf.get();
+                AIJLogger.log("New chunk minimum found:");
+                AIJLogger.log(determinedState.comparator);
+                AIJLogger.log(setArrayToState(determinedState.state));
                 if (determinedState.lessThan(minimumState)) minimumState = determinedState;
                 count--;
             } catch (InterruptedException | ExecutionException e) {
@@ -243,6 +246,10 @@ public class FitOptimization implements AutoCloseable {
         }
 
         if (hasErrored) IJ.error("Error occurred during minimization, preceding with lowest RMS found.");
+
+        AIJLogger.log("Found global minimum:");
+        AIJLogger.log(minimumState.comparator);
+        AIJLogger.log(setArrayToState(minimumState.state));
 
         return setArrayToState(minimumState.state);
     }

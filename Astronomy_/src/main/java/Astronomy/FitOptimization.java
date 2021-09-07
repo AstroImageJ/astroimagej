@@ -127,7 +127,8 @@ public class FitOptimization implements AutoCloseable {
                 }
             } else {
                 detOptimizeButton.setText("Start");
-                pool.shutdownNow();
+                //todo rebuild pool/service after cancel as no new tasks can be submitted
+                //pool.shutdownNow();
             }
         });
         detrendOptPanel.add(detrendOptimizationSelection);

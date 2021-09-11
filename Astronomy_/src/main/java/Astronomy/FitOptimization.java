@@ -76,7 +76,7 @@ public class FitOptimization implements AutoCloseable {
                 if (Objects.equals(compOptimizationSelection.getSelectedItem(), compTest)) {
                     testCompMin();
                 } else if (Objects.equals(compOptimizationSelection.getSelectedItem(), compBruteForce)) {
-                    minimizeCompStars();
+                    Executors.newSingleThreadExecutor().submit(this::minimizeCompStars);
                 }
             } else {
                 optimizeButton.setText("Start");
@@ -188,6 +188,8 @@ public class FitOptimization implements AutoCloseable {
         targetStar = Integer.parseInt(MultiPlot_.ylabel[curve].split("rel_flux_T")[1]) - 1;
 
         BigInteger initState = createBinaryRepresentation(selectable); //numAps has number of apertures
+
+        compCounter.setBasis(initState);
 
         var finalState = divideTasksAndRun(new MinimumState(initState, Double.MAX_VALUE), BigInteger.ONE,
                 (start, end) -> new CompStarFitting(start, end, this));
@@ -417,15 +419,23 @@ public class FitOptimization implements AutoCloseable {
 
     public class DynamicCounter extends AtomicReference<BigInteger> {
         JTextField textField;
+        BigInteger basis;
 
         public DynamicCounter(JTextField field) {
             super();
             textField = field;
         }
-        public void dynamicSet(BigInteger integer) {
+
+        public synchronized void dynamicSet(BigInteger integer) {
             if (getAcquire() != null && getAcquire().compareTo(integer) == 0) {
                 return;
             }
+            lazySet(integer);
+            textField.setText(basis.subtract(integer).toString());
+        }
+
+        public synchronized void setBasis(BigInteger integer) {
+            basis = integer;
             lazySet(integer);
             textField.setText(integer.toString());
         }

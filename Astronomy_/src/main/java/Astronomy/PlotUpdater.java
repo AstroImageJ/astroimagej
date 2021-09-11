@@ -63,11 +63,11 @@ public class PlotUpdater {
         return INSTANCE;
     }
 
-    public static void invalidateInstance() {
+    public synchronized static void invalidateInstance() {
         INSTANCE = null;
     }
 
-    public PlotResults fitCurveAndGetResults(boolean[] isRefStar) {
+    public synchronized PlotResults fitCurveAndGetResults(boolean[] isRefStar) {
         localIsRefStar = isRefStar;
         return updateCurve();
     }
@@ -926,7 +926,7 @@ public class PlotUpdater {
         }
     }
 
-    private PlotResults updateCurve() {
+    private synchronized PlotResults updateCurve() {
         var minimization = minimizationThreadLocal.get();
         var avgCount = initAvgCount;
         var atLeastOne = initAtLeastOne;

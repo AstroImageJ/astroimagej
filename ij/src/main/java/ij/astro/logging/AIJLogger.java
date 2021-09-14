@@ -28,6 +28,7 @@ public class AIJLogger {
     private static final Map<String, ClosingConditions> aijLogPanelsTimer = new HashMap<>();
     public static final String USE_NEW_LOG_WINDOW_KEY = ".aij.useNewLogWindow";
     public static final String CERTAIN_LOGS_AUTO_CLOSE = ".aij.cLogsAutoClose";
+    private static final String separator = "&#&";
 
     static {
         final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
@@ -93,11 +94,12 @@ public class AIJLogger {
         if ("".equals(msg)) return;
 
         var caller = getCallerName();
+        var callerTitle = caller.split(separator)[0];
 
         if (useNewWindow) {
             aijLogPanels.values().removeAll(Collections.singleton(null));
             aijLogPanels.computeIfAbsent(caller,
-                    caller1 -> new LogWindow(caller1 + " Log", "",400, 250).getTextPanel());
+                    caller1 -> new LogWindow(callerTitle + " Log", "",400, 250).getTextPanel());
             var panel = aijLogPanels.get(caller);
             panel.updateDisplay();
             panel.setFont(new Font("SansSerif", Font.PLAIN, 16));
@@ -106,7 +108,7 @@ public class AIJLogger {
                     (caller_, closingConditions) -> new ClosingConditions(closingConditions.autoClose));
             aijLogPanelsTimer.putIfAbsent(caller, new ClosingConditions());
         } else {
-            IJ.log(padTitle(caller + ": ") + msg);
+            IJ.log(padTitle(callerTitle + ": ") + msg);
         }
     }
 
@@ -164,7 +166,9 @@ public class AIJLogger {
                         .filter(AIJLogger::predicateClassChecker).findFirst());
         var callingClass = classOptional.isPresent() ? classOptional.get() : AIJLogger.class;
         return callingClass.isAnnotationPresent(Translation.class)
-                ? callingClass.getAnnotation(Translation.class).value()
+                ? callingClass.getAnnotation(Translation.class).value() +
+                    (callingClass.getAnnotation(Translation.class).trackThread()
+                        ? separator + Thread.currentThread().getId() : "")
                 : formatCaller(callingClass.getSimpleName());
     }
 

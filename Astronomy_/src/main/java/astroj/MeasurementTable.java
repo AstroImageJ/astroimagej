@@ -2,14 +2,19 @@
 
 package astroj;
 
-import ij.*;
-import ij.measure.*;
-import ij.text.*;
-import ij.util.*;
+import ij.IJ;
+import ij.ImagePlus;
+import ij.WindowManager;
+import ij.measure.ResultsTable;
+import ij.text.TextPanel;
+import ij.text.TextWindow;
+import ij.util.Tools;
 
-import java.awt.Frame;
-import java.awt.TextArea;
-import java.io.*;
+import java.awt.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.Vector;
 
 
@@ -641,7 +646,8 @@ IJ.log(heading+" "+val);
             else
                 {
                 table.incrementCounter();
-                table.setValue(header[1], row,"Dummy_Row");
+                //noinspection deprecation
+                table.addLabel(header[1],"Dummy_Row");
                 for (int col=(2); col < h; col++)
                     {
                     table.addValue(header[col],0.0);

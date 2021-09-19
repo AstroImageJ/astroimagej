@@ -18,7 +18,7 @@ import java.util.function.BiFunction;
 
 //todo organize properly
 public class FitOptimization implements AutoCloseable {
-    private static final int MAX_THREADS = 32;
+    private static final int MAX_THREADS = getThreadCount();
     private final int curve;
     private int targetStar;
     /**
@@ -333,6 +333,15 @@ public class FitOptimization implements AutoCloseable {
 
     public int getTargetStar() {
         return targetStar;
+    }
+
+    /**
+     * Ignores hyper-threading.
+     * @return an estimate of the number of available threads that can be used for minimization
+     */
+    private static int getThreadCount() {
+        final int maxRealThreads = Runtime.getRuntime().availableProcessors();
+        return Math.max(1 + (maxRealThreads / 3), maxRealThreads - 4);
     }
 
     /**

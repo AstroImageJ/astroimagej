@@ -36,6 +36,9 @@ public class FitOptimization implements AutoCloseable {
     CompletionService<MinimumState> completionService;
     public DynamicCounter compCounter;
 
+    private JToggleButton detOptimizeButton;
+    private JToggleButton optimizeButton;
+
     //todo atomic strings for iter count fields
     //todo get min state out, volatile/synchronized int, or atomic? need to track comparison value as well. Could also make a map and minimize similar to autoswitch
     //https://www.baeldung.com/java-thread-safety
@@ -67,7 +70,7 @@ public class FitOptimization implements AutoCloseable {
         var compTest = new ToolTipWrapper("Debug", "Debug a single run.");
         compOptimizationSelection.addItem(compBruteForce);
         compOptimizationSelection.addItem(compTest);
-        var optimizeButton = new JToggleButton("Start");
+        optimizeButton = new JToggleButton("Start");
         optimizeButton.setToolTipText("Begin the optimization. Click again to stop it.");
         optimizeButton.addActionListener(e -> {
             optimizeButton.setSelected(optimizeButton.isSelected());
@@ -111,7 +114,7 @@ public class FitOptimization implements AutoCloseable {
         var detrendTest = new ToolTipWrapper("Debug", "Debug a single run.");
         detrendOptimizationSelection.addItem(detrendBruteForce);
         detrendOptimizationSelection.addItem(detrendTest);
-        var detOptimizeButton = new JToggleButton("Start");
+        detOptimizeButton = new JToggleButton("Start");
         detOptimizeButton.setToolTipText("Begin the optimization. Click again to stop it.");
         detOptimizeButton.addActionListener(e -> {
             detOptimizeButton.setSelected(detOptimizeButton.isSelected());
@@ -195,6 +198,13 @@ public class FitOptimization implements AutoCloseable {
                 (start, end) -> new CompStarFitting(start, end, this));
 
         setFinalState("RMS", finalState, MultiPlot_.refStarCB);
+        MultiPlot_.updatePlot(curve);
+        optimizeButton.setSelected(false);
+        optimizeButton.setText("Start");
+
+        // Fixes weird y-data selection changes
+        MultiPlot_.subFrame.repaint();
+        MultiPlot_.mainsubpanel.repaint();
     }
 
     //todo isRefStar is only not null when the window is/has been open

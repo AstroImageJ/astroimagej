@@ -11,9 +11,9 @@ import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.math.BigInteger;
 import java.util.Comparator;
+import java.util.Hashtable;
 import java.util.Objects;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 
 //todo organize properly
@@ -94,7 +94,7 @@ public class FitOptimization implements AutoCloseable {
         compOptiIterLabel.setHorizontalAlignment(SwingConstants.CENTER);
         compStarPanel.add(compOptiIterLabel);
 
-        var compOptiIterCount = new JTextField("12345");
+        var compOptiIterCount = new JTextField("N/A");
         compOptiIterCount.setEditable(false);//todo make field
         compOptiIterCount.setMaximumSize(new Dimension(50, 10));
         compOptiIterCount.setHorizontalAlignment(SwingConstants.RIGHT);
@@ -138,7 +138,7 @@ public class FitOptimization implements AutoCloseable {
         paramOptiIterLabel.setHorizontalAlignment(SwingConstants.CENTER);
         detrendOptPanel.add(paramOptiIterLabel);
 
-        var paramOptiIterCount = new JTextField("12345");//todo make field
+        var paramOptiIterCount = new JTextField("N/A");//todo make field
         paramOptiIterCount.setEditable(false);
         paramOptiIterCount.setMaximumSize(new Dimension(50, 10));
         paramOptiIterCount.setToolTipText("Number of iterations remaining in detrend parameter optimization.");
@@ -427,8 +427,7 @@ public class FitOptimization implements AutoCloseable {
             JComponent component = (JComponent) super.getListCellRendererComponent(list, value, index, isSelected,
                     cellHasFocus);
             String tip = null;
-            if (value instanceof ToolTipProvider) {
-                ToolTipProvider ttp = (ToolTipProvider) value;
+            if (value instanceof ToolTipProvider ttp) {
                 tip = ttp.getToolTip();
             }
             list.setToolTipText(tip);
@@ -436,9 +435,10 @@ public class FitOptimization implements AutoCloseable {
         }
     }
 
-    public class DynamicCounter extends AtomicReference<BigInteger> {
+    public class DynamicCounter {
         JTextField textField;
         BigInteger basis;
+        Hashtable<Long, BigInteger> counters = new Hashtable<>(getThreadCount());
 
         public DynamicCounter(JTextField field) {
             super();
@@ -446,17 +446,27 @@ public class FitOptimization implements AutoCloseable {
         }
 
         public synchronized void dynamicSet(BigInteger integer) {
-            if (getAcquire() != null && getAcquire().compareTo(integer) == 0) {
-                return;
-            }
-            lazySet(integer);
-            textField.setText(basis.subtract(integer).toString());
+            if (integer == null) return;
+            setCounter(integer);
+            textField.setText(getTotalCount());
         }
 
         public synchronized void setBasis(BigInteger integer) {
             basis = integer;
-            lazySet(integer);
             textField.setText(integer.toString());
+        }
+
+        private synchronized String getTotalCount() {
+            BigInteger total = basis;
+            for (BigInteger value : counters.values()) {
+                total = total.subtract(value);
+            }
+
+            return total.toString();
+        }
+
+        private void setCounter(BigInteger integer) {
+            counters.put(Thread.currentThread().getId(), integer);
         }
     }
 }

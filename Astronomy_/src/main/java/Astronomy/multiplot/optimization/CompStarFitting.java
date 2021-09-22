@@ -42,12 +42,12 @@ public class CompStarFitting extends Optimizer {
 
     private FitOptimization.MinimumState plotUpdater() {
         var minimumState = new FitOptimization.MinimumState();
-        long counter = 0;
+        BigInteger counter = BigInteger.ZERO;
         for (BigInteger state = startState; state.compareTo(endState) <= 0; state = state.add(BigInteger.ONE)) {//todo countdown from state? allows for current state = iterations left
-            counter++;
+            counter = counter.add(BigInteger.ONE);
             if (state.equals(BigInteger.ZERO)) continue;
             if (Thread.interrupted()) break;
-            fitOptimization.compCounter.dynamicSet(state);
+            fitOptimization.compCounter.dynamicSet(counter);
 
             var x = fitOptimization.setArrayToState(state);
             var r = PlotUpdater.getInstance(curve, fitOptimization.getTargetStar()).fitCurveAndGetResults(x);

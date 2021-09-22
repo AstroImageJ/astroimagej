@@ -3,9 +3,11 @@ package Astronomy.multiplot.optimization;
 import Astronomy.FitOptimization;
 import Astronomy.MultiPlot_;
 import Astronomy.PlotUpdater;
+import ij.astro.logging.Translation;
 
 import java.math.BigInteger;
 
+@Translation(value = "Comparison Star Minimizer", trackThread = true)
 public class CompStarFitting extends Optimizer {
 
     public CompStarFitting(final BigInteger startState, final BigInteger endState, FitOptimization fitOptimization) {
@@ -40,7 +42,9 @@ public class CompStarFitting extends Optimizer {
 
     private FitOptimization.MinimumState plotUpdater() {
         var minimumState = new FitOptimization.MinimumState();
+        long counter = 0;
         for (BigInteger state = startState; state.compareTo(endState) <= 0; state = state.add(BigInteger.ONE)) {//todo countdown from state? allows for current state = iterations left
+            counter++;
             if (state.equals(BigInteger.ZERO)) continue;
             if (Thread.interrupted()) break;
             fitOptimization.compCounter.dynamicSet(state);
@@ -50,8 +54,8 @@ public class CompStarFitting extends Optimizer {
 
             if (Double.isNaN(r.rms()) || Double.isNaN(r.bic())) continue;
 
-            /*AIJLogger.log(x);
-            AIJLogger.log(r);*/
+            //AIJLogger.log(state.toString(2));
+            //AIJLogger.log(r);
             var newState = new FitOptimization.MinimumState(state, r.rms());
             if (newState.lessThan(minimumState)) minimumState = newState;
         }

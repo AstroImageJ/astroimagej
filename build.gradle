@@ -123,7 +123,7 @@ task downloadJavaRuntimes(type: Download) {
             // &support_term=lts/mts/sts &release_status=ga/ea/both &bundle_type=${sysInfo.type}
             String url = "https://api.azul.com/zulu/download/community/v1.0/bundles/latest/?" +
                     "os=${sysInfo.os}&arch=${sysInfo.arch}&hw_bitness=64" +
-                    "&ext=${sysInfo.ext}&jdk_version=${shippingJava}"
+                    "&ext=${sysInfo.ext}&java_version=${shippingJava}"
 
             // Ensure Azul is responding to API requests
             def testUrl = new URL(url)
@@ -145,7 +145,7 @@ task downloadJavaRuntimes(type: Download) {
         // &support_term=lts/mts/sts &release_status=ga/ea/both &bundle_type=${sysInfo.type}
         String url ="https://api.azul.com/zulu/download/community/v1.0/bundles/latest/?" +
                 "os=${sysInfo.os}&arch=${sysInfo.arch}&hw_bitness=64" +
-                "&ext=${sysInfo.ext}&jdk_version=${shippingJava}"
+                "&ext=${sysInfo.ext}&java_version=${shippingJava}"
         def meta
         try {
             meta = new JsonSlurper().parse(new URL(url)) // Pull the data from Azul
@@ -157,7 +157,7 @@ task downloadJavaRuntimes(type: Download) {
         }
 
         // Update the maps with the metadata
-        sysInfo.version = meta.jdk_version.first()
+        sysInfo.version = meta.java_version.first()
         sysInfo.ext = meta.ext as String
         sysInfo.name = meta.name as String
         sysInfo.md5 = meta.md5_hash as String

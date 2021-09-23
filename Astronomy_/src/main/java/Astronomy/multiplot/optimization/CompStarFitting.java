@@ -44,7 +44,6 @@ public class CompStarFitting extends Optimizer {
         var minimumState = new FitOptimization.MinimumState();
         BigInteger counter = BigInteger.ZERO;
         for (BigInteger state = startState; state.compareTo(endState) <= 0; state = state.add(BigInteger.ONE)) {//todo countdown from state? allows for current state = iterations left
-            counter = counter.add(BigInteger.ONE);
             if (state.equals(BigInteger.ZERO)) continue;
             if (Thread.interrupted()) break;
             fitOptimization.compCounter.dynamicSet(counter);
@@ -58,6 +57,7 @@ public class CompStarFitting extends Optimizer {
             //AIJLogger.log(r);
             var newState = new FitOptimization.MinimumState(state, r.rms());
             if (newState.lessThan(minimumState)) minimumState = newState;
+            counter = counter.add(BigInteger.ONE);
         }
         return minimumState;
     }

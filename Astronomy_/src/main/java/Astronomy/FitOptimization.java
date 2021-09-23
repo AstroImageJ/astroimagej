@@ -19,6 +19,8 @@ import java.util.function.BiFunction;
 //todo organize properly
 public class FitOptimization implements AutoCloseable {
     private static final int MAX_THREADS = getThreadCount();
+    private ScheduledExecutorService ipsExecutorService;
+    private BigInteger iterRemainingOld = BigInteger.ZERO;
     private final int curve;
     private int targetStar;
     /**
@@ -35,6 +37,7 @@ public class FitOptimization implements AutoCloseable {
     private boolean[] selectable;
     CompletionService<MinimumState> completionService;
     public DynamicCounter compCounter;
+    public DynamicCounter detrendCounter;
 
     private JToggleButton detOptimizeButton;
     private JToggleButton optimizeButton;
@@ -84,6 +87,7 @@ public class FitOptimization implements AutoCloseable {
             } else {
                 optimizeButton.setText("Start");
                 pool.shutdownNow();
+                ipsExecutorService.shutdown();
             }
         });
         compStarPanel.add(compOptimizationSelection);
@@ -128,6 +132,7 @@ public class FitOptimization implements AutoCloseable {
             } else {
                 detOptimizeButton.setText("Start");
                 pool.shutdownNow();
+                ipsExecutorService.shutdown();
             }
         });
         detrendOptPanel.add(detrendOptimizationSelection);
@@ -143,6 +148,7 @@ public class FitOptimization implements AutoCloseable {
         paramOptiIterCount.setMaximumSize(new Dimension(50, 10));
         paramOptiIterCount.setToolTipText("Number of iterations remaining in detrend parameter optimization.");
         paramOptiIterCount.setHorizontalAlignment(SwingConstants.RIGHT);
+        detrendCounter = new DynamicCounter(paramOptiIterCount);
         detrendOptPanel.add(paramOptiIterCount);
 
         SpringUtil.makeCompactGrid(detrendOptPanel, 2, detrendOptPanel.getComponentCount()/2, 0, 0, 0, 0);
@@ -193,6 +199,7 @@ public class FitOptimization implements AutoCloseable {
         BigInteger initState = createBinaryRepresentation(selectable); //numAps has number of apertures
 
         compCounter.setBasis(initState);
+        scheduleIpsCounter(0);
 
         var finalState = divideTasksAndRun(new MinimumState(initState, Double.MAX_VALUE), BigInteger.ONE,
                 (start, end) -> new CompStarFitting(start, end, this));
@@ -205,6 +212,7 @@ public class FitOptimization implements AutoCloseable {
         // Fixes weird y-data selection changes
         MultiPlot_.subFrame.repaint();
         MultiPlot_.mainsubpanel.repaint();
+        ipsExecutorService.shutdown();
     }
 
     //todo isRefStar is only not null when the window is/has been open
@@ -335,6 +343,7 @@ public class FitOptimization implements AutoCloseable {
     @Override
     public void close() throws Exception {
         pool.shutdown();
+        ipsExecutorService.shutdown();
     }
 
     public int getCurve() {
@@ -343,6 +352,30 @@ public class FitOptimization implements AutoCloseable {
 
     public int getTargetStar() {
         return targetStar;
+    }
+
+    private void scheduleIpsCounter(int minimizing) {
+        ipsExecutorService = Executors.newSingleThreadScheduledExecutor();
+        ipsExecutorService.scheduleWithFixedDelay(() -> updateIpsCounter(minimizing), 1L, 1L, TimeUnit.SECONDS);
+    }
+
+    private synchronized void updateIpsCounter(int minimizing) {
+        var counter = switch (minimizing) {
+            case 0 -> compCounter;
+            case 1 -> detrendCounter;
+            default -> throw new IllegalStateException("Unexpected value: " + minimizing);
+        };
+        var iterRemaining = counter.getSum();
+        var ips = iterRemainingOld.subtract(iterRemaining);
+        iterRemainingOld = iterRemaining;
+
+        var totalSecs = counter.getTotalCount().divide(ips);
+        var hours = totalSecs.divide(BigInteger.valueOf(3600));
+        var minutes = (totalSecs.mod(BigInteger.valueOf(3600))).divide(BigInteger.valueOf(60));
+        var seconds = totalSecs.mod(BigInteger.valueOf(60));
+
+        IJ.showStatus("Minimization IPS: " + ips +
+                "; Estimated time remaining: " + String.format("%02d:%02d:%02d", hours, minutes, seconds));
     }
 
     /**
@@ -437,7 +470,7 @@ public class FitOptimization implements AutoCloseable {
 
     public class DynamicCounter {
         JTextField textField;
-        BigInteger basis;
+        BigInteger basis, sum;
         Hashtable<Long, BigInteger> counters = new Hashtable<>(getThreadCount());
 
         public DynamicCounter(JTextField field) {
@@ -448,21 +481,28 @@ public class FitOptimization implements AutoCloseable {
         public synchronized void dynamicSet(BigInteger integer) {
             if (integer == null) return;
             setCounter(integer);
-            textField.setText(getTotalCount());
+            textField.setText(getTotalCount().toString());
         }
 
         public synchronized void setBasis(BigInteger integer) {
             basis = integer;
+            sum = BigInteger.ZERO;
+            counters.clear();
             textField.setText(integer.toString());
         }
 
-        private synchronized String getTotalCount() {
+        public synchronized BigInteger getSum() {
+            return sum;
+        }
+
+        private synchronized BigInteger getTotalCount() {
             BigInteger total = basis;
             for (BigInteger value : counters.values()) {
                 total = total.subtract(value);
             }
 
-            return total.toString();
+            sum = total;
+            return total;
         }
 
         private void setCounter(BigInteger integer) {

@@ -2922,6 +2922,11 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         normAverage /= normCount;
                     }
 
+//                    IJ.log("normAverage  = "+normAverage);
+//                    IJ.log("fit baseline = "+bestFit[curve][0]);
+                    if (detrendFitIndex[curve] == 9 && useTransitFit[curve] && detrendXs[curve] != null && detrendYEs[curve] != null && yModel1[curve] != null) {
+                        normAverage = bestFit[curve][0];
+                    }
                     for (int j = 0; j < nn[curve]; j++) {
                         if (hasErrors[curve] || hasOpErrors[curve]) {
                             yerr[curve][j] /= normAverage;

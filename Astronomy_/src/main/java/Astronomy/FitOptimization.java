@@ -375,7 +375,7 @@ public class FitOptimization implements AutoCloseable {
         var minutes = (totalSecs.mod(BigInteger.valueOf(3600))).divide(BigInteger.valueOf(60));
         var seconds = totalSecs.mod(BigInteger.valueOf(60));
 
-        IJ.showStatus("Minimization IPS: " + ips +
+        IJ.showStatus("!Minimization IPS: " + ips +
                 "; Estimated time remaining: " + String.format("%02d:%02d:%02d", hours, minutes, seconds));
     }
 

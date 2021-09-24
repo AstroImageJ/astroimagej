@@ -235,6 +235,7 @@ public class FitOptimization implements AutoCloseable {
     private boolean[] divideTasksAndRun(final MinimumState initState, final BigInteger startingPoint, //todo does detrend need to start at 0? if not, can remove this param
                                    BiFunction<BigInteger, BigInteger, Optimizer> optimizerBiFunction) {
         setupThreadedSpace();
+        iterRemainingOld = BigInteger.ZERO;
         var minimumState = initState;
         var state = minimumState.state;
         var count = 0;

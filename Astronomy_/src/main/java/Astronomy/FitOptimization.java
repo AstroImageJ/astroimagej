@@ -217,7 +217,7 @@ public class FitOptimization implements AutoCloseable {
         // Fixes weird y-data selection changes
         MultiPlot_.subFrame.repaint();
         MultiPlot_.mainsubpanel.repaint();
-        ipsExecutorService.shutdown();
+        if (ipsExecutorService != null) ipsExecutorService.shutdown();
     }
 
     //todo isRefStar is only not null when the window is/has been open

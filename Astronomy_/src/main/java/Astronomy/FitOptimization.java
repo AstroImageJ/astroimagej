@@ -19,6 +19,7 @@ import java.util.function.BiFunction;
 //todo organize properly
 public class FitOptimization implements AutoCloseable {
     private static final int MAX_THREADS = getThreadCount();
+    private static final BigInteger MIN_CHUNK_SIZE = BigInteger.valueOf(1000L);
     private ScheduledExecutorService ipsExecutorService;
     private BigInteger iterRemainingOld = BigInteger.ZERO;
     private final int curve;
@@ -244,7 +245,7 @@ public class FitOptimization implements AutoCloseable {
         var minimumState = initState;
         var state = minimumState.state;
         var count = 0;
-        var CHUNK_SIZE = state.divide(BigInteger.valueOf(MAX_THREADS)).add(BigInteger.ONE);
+        var CHUNK_SIZE = state.divide(BigInteger.valueOf(MAX_THREADS)).max(MIN_CHUNK_SIZE).add(BigInteger.ONE);
         for (BigInteger start = startingPoint; start.compareTo(state) < 0;) {
             var end = state.add(BigInteger.ONE).min(start.add(CHUNK_SIZE));
             evaluateStatesInRange(optimizerBiFunction.apply(start, end));

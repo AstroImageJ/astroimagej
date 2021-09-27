@@ -12214,6 +12214,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
 
     static void createFitPanel(final int c) {
+        if (fitFrame[c] != null && fitFrame[c].isShowing()) return;
         int nlines = 1;
         fitFrame[c] = new JFrame("Data Set " + (c + 1) + " Fit Settings");
         fitFrame[c].setIconImage(fitFrameIcon.getImage());

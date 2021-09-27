@@ -177,7 +177,7 @@ public class FitOptimization implements AutoCloseable {
         BigInteger initState = createBinaryRepresentation(selectable);
         var x = PlotUpdater.getInstance(curve, targetStar).fitCurveAndGetResults(setArrayToState(initState));
         AIJLogger.log(x);
-        MultiPlot_.updatePlot(curve);
+        finishOptimization(optimizeButton);
     }
 
     private void minimizeCompStars() {
@@ -205,9 +205,14 @@ public class FitOptimization implements AutoCloseable {
                 (start, end) -> new CompStarFitting(start, end, this));
 
         setFinalState("RMS", finalState, MultiPlot_.refStarCB);
+        finishOptimization(optimizeButton);
+    }
+
+    //todo counter won't go to 0 on reruns of 2-comp star cases, force?
+    private void finishOptimization(JToggleButton button) {
         MultiPlot_.updatePlot(curve);
-        optimizeButton.setSelected(false);
-        optimizeButton.setText("Start");
+        button.setSelected(false);
+        button.setText("Start");
 
         // Fixes weird y-data selection changes
         MultiPlot_.subFrame.repaint();

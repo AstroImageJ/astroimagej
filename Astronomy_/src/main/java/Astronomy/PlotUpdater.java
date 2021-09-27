@@ -67,7 +67,7 @@ public class PlotUpdater {
         INSTANCE = null;
     }
 
-    public synchronized PlotResults fitCurveAndGetResults(boolean[] isRefStar) {
+    public synchronized OptimizerResults fitCurveAndGetResults(boolean[] isRefStar) {
         localIsRefStar = isRefStar;
         return updateCurve();
     }
@@ -926,7 +926,7 @@ public class PlotUpdater {
         }
     }
 
-    private synchronized PlotResults updateCurve() {
+    private synchronized OptimizerResults updateCurve() {
         var minimization = minimizationThreadLocal.get();
         var avgCount = initAvgCount;
         var atLeastOne = initAtLeastOne;
@@ -982,10 +982,10 @@ public class PlotUpdater {
 
         if (operatorIndex[curve] != 0) {
             IJ.error("Operator must be 0");
-            return new PlotResults(Double.NaN, Double.NaN);
+            return new OptimizerResults(Double.NaN, Double.NaN);
         }
 
-        if (!plotY[curve]) return new PlotResults(Double.NaN, Double.NaN);
+        if (!plotY[curve]) return new OptimizerResults(Double.NaN, Double.NaN);
 
         for (int i= 0; i < detrendXs[curve].length; i++) {
             var compSum = 0.0;
@@ -1367,13 +1367,13 @@ public class PlotUpdater {
             var rms = sigma / bestFit[0];
             /*AIJLogger.log("rms: " + rms * 1000);
             AIJLogger.log("bic: " + bic);*/
-            return new PlotResults(rms, bic);
+            return new OptimizerResults(rms, bic);
         }
 
-        return new PlotResults(Double.NaN, Double.NaN);
+        return new OptimizerResults(Double.NaN, Double.NaN);
     }
 
-    public record PlotResults(double rms, double bic) {}
+    public record OptimizerResults(double rms, double bic) {}
 
     public class FitLightCurveChi2 implements MinimizationFunction {
         double[] detrendY;

@@ -1016,7 +1016,7 @@ public class PlotUpdater {
             if (detrendFitIndex[curve] != 1) {
                 if (detrendCount > 0) {
                     for (int j = 0; j < nn[curve]; j++) {
-                        avgCount++;
+                        //avgCount++;
                         //if (noNaNs) {
                         detrendYAverage += y[j];
                         if (detrendFitIndex[curve] == 9) {

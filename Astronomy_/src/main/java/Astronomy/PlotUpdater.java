@@ -1060,6 +1060,100 @@ public class PlotUpdater {
                             varCount++;
                         }
                     }
+
+                    // Update prior centers/widths //todo mark
+                    var priorCenter = new double[maxFittedVars];
+                    var priorWidth = new double[maxFittedVars];
+                    priorCenter[0] = 1.0;  //f0 = baseline flux
+                    priorCenterStep[0] = 0.001;
+                    priorWidth[0] = 0.005;
+                    priorWidthStep[0] = 0.001;
+                    fitStepStep[0] = 0.1;
+
+                    priorCenter[1] = 0.010;    // depth = (r_p/r_*)^2
+                    priorCenterStep[1] = 0.001;
+                    priorWidth[1] = 0.010;
+                    priorWidthStep[1] = 0.001;
+                    fitStepStep[1] = 0.1;
+
+                    priorCenter[2] = 10.0;   // a/r_*
+                    priorCenterStep[2] = 1.0;
+                    priorWidth[2] = 7;
+                    priorWidthStep[2] = 1.0;
+                    fitStepStep[2] = 0.1;
+
+                    priorCenter[3] = 2456500;  // tc = transit center time
+                    priorCenterStep[3] = 0.001;
+                    priorWidth[3] = 0.015;
+                    priorWidthStep[3] = 0.001;
+                    fitStepStep[3] = 0.01;
+
+                    priorCenter[4] = 88.0;  // inclination
+                    priorCenterStep[4] = 1.0;
+                    priorWidth[4] = 15;
+                    priorWidthStep[4] = 1;
+                    fitStepStep[4] = 1.0;
+
+                    priorCenter[5] = 0.3;  // u1
+                    priorCenterStep[5] = 0.1;
+                    priorWidth[5] = 1.0;
+                    priorWidthStep[5] = 0.1;
+                    fitStepStep[5] = 0.1;
+
+                    priorCenter[6] = 0.3;  // u2
+                    priorCenterStep[6] = 0.1;
+                    priorWidth[6] = 1.0;
+                    priorWidthStep[6] = 0.1;
+                    fitStepStep[6] = 0.1;
+
+                    if (priorCenter.length > 7) {
+                        for (int j = 7; j < priorCenter.length; j++) { //detrend1, detrend2, ...
+                            priorCenter[j] = 0.0;
+                            priorCenterStep[j] = 0.000001;
+                            priorWidth[j] = 1.0;
+                            priorWidthStep[j] = 0.01;
+                            fitStepStep[j] = 0.1;
+                        }
+                    }
+                    if (!lockToCenter[curve][0] && autoUpdatePrior[curve][0]) {
+                        priorCenter[0] = yBaselineAverage;   //f0 = baseline flux
+                        priorWidth[0] = Math.abs(yBaselineAverage / 5.0);
+                    }
+
+                    double rpOrstarEst = Math.abs((yBaselineAverage - yDepthEstimate) / yBaselineAverage);
+                    if (!lockToCenter[curve][1] && autoUpdatePrior[curve][1]) {
+                        priorCenter[1] = rpOrstarEst;          // depth = (r_p/r_*)^2
+                        priorWidth[1] = Math.abs(rpOrstarEst / 2.0);
+                    }
+
+                    //Adapted from Winn 2010 equation 14
+                    if (!lockToCenter[curve][2] && autoUpdatePrior[curve][2]) {
+                        priorCenter[2] = (1 + Math.sqrt(priorCenter[1])) / (Math.sin(Math.PI * (dMarker3Value - dMarker2Value) / orbitalPeriod[curve])); // ar = a/r_*
+                    }
+                    if (!lockToCenter[curve][3] && autoUpdatePrior[curve][3]) {
+                        if (showXAxisNormal) {
+                            priorCenter[3] = (int) xPlotMinRaw + (dMarker2Value + dMarker3Value) / 2.0;   // tc = transit center time
+                        } else {
+                            priorCenter[3] = (dMarker2Value + dMarker3Value) / 2.0;   // tc = transit center time
+                        }
+                    }
+                    if (!lockToCenter[curve][4] && !bpLock[curve] && autoUpdatePrior[curve][4]) {
+                        priorCenter[4] = Math.round(10.0 * Math.acos((0.5 + Math.sqrt(rpOrstarEst)) / (priorCenter[2])) * 180.0 / Math.PI) / 10.0; // inclination
+                    }
+                    if (bpLock[curve]) {
+                        var bp1 = (Double) bpSpinner[curve].getValue();
+                        priorCenter[4] = (180.0/Math.PI)*Math.acos(bp1/bestFit[2]);
+                    }
+                    // Pull locked values
+                    for (int d = 0; d < maxDetrendVars + 7; d++) {
+                        if (lockToCenterCB[curve][d].isSelected()) {
+                            priorCenter[d] = (Double) priorCenterSpinner[curve][d].getValue();
+                        }
+                    }
+                    // End update
+                    //todo remove debug code
+                    AIJLogger.log(priorCenter);
+                    AIJLogger.log(MultiPlot_.priorCenter[curve]);
                     
                     if ((detrendVarsUsed[curve] > 0 || detrendFitIndex[curve] == 9 && useTransitFit[curve]) && detrendYNotConstant && detrendCount > (detrendFitIndex[curve] == 9 && useTransitFit[curve] ? 7 : 0) + detrendVarsUsed[curve] + 2) { //need enough data to provide degrees of freedom for successful fit
                         detrendX = Arrays.copyOf(detrendX, detrendCount);
@@ -1118,13 +1212,13 @@ public class PlotUpdater {
                                 // 7+ = detrend parameters
                                 for (fp = 0; fp < nFitted; fp++) {
                                     if (index[fp] == 1) {
-                                        start[fp] = Math.sqrt(priorCenter[curve][1]);
-                                        width[fp] = Math.sqrt(priorWidth[curve][1]);
+                                        start[fp] = Math.sqrt(priorCenter[1]);//todo check FitLightCurveChi2
+                                        width[fp] = Math.sqrt(priorWidth[1]);
                                         step[fp] = Math.sqrt(getFitStep(curve, 1));
                                         minimization.addConstraint(fp, -1, 0.0);
                                     } else if (index[fp] == 4) {
-                                        start[fp] = priorCenter[curve][4] * Math.PI / 180.0;  // inclination
-                                        width[fp] = priorWidth[curve][4] * Math.PI / 180.0;
+                                        start[fp] = priorCenter[4] * Math.PI / 180.0;  // inclination
+                                        width[fp] = priorWidth[4] * Math.PI / 180.0;
                                         step[fp] = getFitStep(curve, 4) * Math.PI / 180.0;
                                         minimization.addConstraint(fp, 1, 90.0 * Math.PI / 180.0);
                                         minimization.addConstraint(fp, -1, 50.0 * Math.PI / 180.0);
@@ -1140,8 +1234,8 @@ public class PlotUpdater {
                                             minimization.addConstraint(fp, 1, 1.0);
                                             minimization.addConstraint(fp, -1, -1.0);
                                         }
-                                        start[fp] = priorCenter[curve][index[fp]];
-                                        width[fp] = priorWidth[curve][index[fp]];
+                                        start[fp] = priorCenter[index[fp]];
+                                        width[fp] = priorWidth[index[fp]];
                                         step[fp] = getFitStep(curve, index[fp]);
                                     }
                                     if (usePriorWidth[curve][index[fp]]) {
@@ -1151,7 +1245,7 @@ public class PlotUpdater {
                                 }
 
                                 minimization.setNrestartsMax(1);
-                                minimization.nelderMead(new FitLightCurveChi2(detrendY, dof, bp, detrendX, detrendYE, isFitted, detrendYAverage),
+                                minimization.nelderMead(new FitLightCurveChi2(detrendY, dof, bp, detrendX, detrendYE, isFitted, detrendYAverage, priorCenter),
                                         start, step, tolerance[curve], maxFitSteps[curve]);
                                 coeffs = minimization.getParamValues();
                                 nTries = minimization.getNiter() - 1;
@@ -1163,18 +1257,18 @@ public class PlotUpdater {
                                         fp++;
                                     } else if (p < 7 && useTransitFit[curve] && lockToCenter[curve][p]) {
                                         if (p == 1) {
-                                            bestFit[p] = Math.sqrt(priorCenter[curve][p]);
+                                            bestFit[p] = Math.sqrt(priorCenter[p]);
                                         } else if (p == 4) {
                                             if (bpLock[curve]) {
                                                 bestFit[4] = Math.acos(bp / bestFit[2]);
                                             } else {
-                                                bestFit[p] = priorCenter[curve][p] * Math.PI / 180.0;
+                                                bestFit[p] = priorCenter[p] * Math.PI / 180.0;
                                             }
                                         } else {
-                                            bestFit[p] = priorCenter[curve][p];
+                                            bestFit[p] = priorCenter[p];
                                         }
                                     } else if (p >= 7 && p < 7 + maxDetrendVars && detrendIndex[curve][p - 7] != 0 && detrendYDNotConstant[p - 7] && lockToCenter[curve][p]) {
-                                        bestFit[p] = priorCenter[curve][p];
+                                        bestFit[p] = priorCenter[p];
                                     } else {
                                         bestFit[p] = Double.NaN;
                                     }
@@ -1202,7 +1296,7 @@ public class PlotUpdater {
                                     if (isFitted[p]) {
                                         detrendFactor[p - 7] = coeffs[fp++];
                                     } else if (lockToCenter[curve][p]) {
-                                        detrendFactor[p - 7] = priorCenter[curve][p];
+                                        detrendFactor[p - 7] = priorCenter[p];
                                     }
                                 }
                             } else if (useNelderMeadChi2ForDetrend) {
@@ -1380,11 +1474,11 @@ public class PlotUpdater {
         double dof;
         double chi2;
         double bp;
-        double[] detrendX, detrendYE;
+        double[] detrendX, detrendYE, priorCenter;
         boolean[] isFitted;
         double detrendYAverage;
 
-        public FitLightCurveChi2(double[] detrendY, double dof, double bp, double[] detrendX, double[] detrendYE, boolean[] isFitted, double detrendYAverage) {
+        public FitLightCurveChi2(double[] detrendY, double dof, double bp, double[] detrendX, double[] detrendYE, boolean[] isFitted, double detrendYAverage, double[] priorCenter) {
             this.detrendY = detrendY;
             this.dof = dof;
             this.bp = bp;
@@ -1392,6 +1486,7 @@ public class PlotUpdater {
             this.detrendYE = detrendYE;
             this.isFitted = isFitted;
             this.detrendYAverage = detrendYAverage;
+            this.priorCenter = priorCenter;
         }
 
         public double function(double[] param) {
@@ -1405,23 +1500,23 @@ public class PlotUpdater {
             double residual;
             int fp = 0;
 
-            double f0 = priorCenter[curve][0]; // baseline flux
-            double p0 = priorCenter[curve][1]; // r_p/r_*
-            double ar = priorCenter[curve][2]; // a/r_*
-            double tc = priorCenter[curve][3]; //transit center time
-            double incl = priorCenter[curve][4];  //inclination
-            double u1 = priorCenter[curve][5];  //quadratic limb darkening parameter 1
-            double u2 = priorCenter[curve][6];  //quadratic limb darkening parameter 2
+            double f0 = priorCenter[0]; // baseline flux
+            double p0 = priorCenter[1]; // r_p/r_*
+            double ar = priorCenter[2]; // a/r_*
+            double tc = priorCenter[3]; //transit center time
+            double incl = priorCenter[4];  //inclination
+            double u1 = priorCenter[5];  //quadratic limb darkening parameter 1
+            double u2 = priorCenter[6];  //quadratic limb darkening parameter 2
             double e = forceCircularOrbit[curve] ? 0.0 : eccentricity[curve];
             double ohm = forceCircularOrbit[curve] ? 0.0 : omega[curve];
             double b = 0.0;
             if (useTransitFit[curve]) {
-                f0 = lockToCenter[curve][0] ? priorCenter[curve][0] : param[fp < nPars ? fp++ : nPars - 1]; // baseline flux
-                p0 = lockToCenter[curve][1] ? Math.sqrt(priorCenter[curve][1]) : param[fp < nPars ? fp++ : nPars - 1]; // r_p/r_*
-                ar = lockToCenter[curve][2] ? priorCenter[curve][2] : param[fp < nPars ? fp++ : nPars - 1]; // a/r_*
-                tc = lockToCenter[curve][3] ? priorCenter[curve][3] : param[fp < nPars ? fp++ : nPars - 1]; //transit center time
+                f0 = lockToCenter[curve][0] ? priorCenter[0] : param[fp < nPars ? fp++ : nPars - 1]; // baseline flux
+                p0 = lockToCenter[curve][1] ? Math.sqrt(priorCenter[1]) : param[fp < nPars ? fp++ : nPars - 1]; // r_p/r_*
+                ar = lockToCenter[curve][2] ? priorCenter[2] : param[fp < nPars ? fp++ : nPars - 1]; // a/r_*
+                tc = lockToCenter[curve][3] ? priorCenter[3] : param[fp < nPars ? fp++ : nPars - 1]; //transit center time
                 if (!bpLock[curve]) {
-                    incl = lockToCenter[curve][4] ? priorCenter[curve][4] * Math.PI / 180.0 : param[fp < nPars ? fp++ : nPars - 1];  //inclination
+                    incl = lockToCenter[curve][4] ? priorCenter[4] * Math.PI / 180.0 : param[fp < nPars ? fp++ : nPars - 1];  //inclination
                     b = Math.cos(incl) * ar;
                     if (b > 1.0 + p0) {  //ensure planet transits or grazes the star
                         incl = Math.acos((1.0 + p0) / ar);
@@ -1429,8 +1524,8 @@ public class PlotUpdater {
                 } else {
                     incl = Math.acos(bp/ar);
                 }
-                u1 = lockToCenter[curve][5] ? priorCenter[curve][5] : param[fp < nPars ? fp++ : nPars - 1];  //quadratic limb darkening parameter 1
-                u2 = lockToCenter[curve][6] ? priorCenter[curve][6] : param[fp < nPars ? fp++ : nPars - 1];  //quadratic limb darkening parameter 2
+                u1 = lockToCenter[curve][5] ? priorCenter[5] : param[fp < nPars ? fp++ : nPars - 1];  //quadratic limb darkening parameter 1
+                u2 = lockToCenter[curve][6] ? priorCenter[6] : param[fp < nPars ? fp++ : nPars - 1];  //quadratic limb darkening parameter 2
 
                 lcModel[curve] = IJU.transitModel(detrendX, f0, incl, p0, ar, tc, orbitalPeriod[curve], e, ohm, u1, u2, useLonAscNode[curve], lonAscNode[curve]);
             }
@@ -1440,7 +1535,7 @@ public class PlotUpdater {
                 if (isFitted[p]) {
                     dPars[dp++] = param[fp++];
                 } else if (detrendIndex[curve][p - 7] != 0 && detrendYDNotConstant[p - 7] && lockToCenter[curve][p]) {
-                    dPars[dp++] = priorCenter[curve][p];
+                    dPars[dp++] = priorCenter[p];
                 }
             }
 
@@ -1450,9 +1545,9 @@ public class PlotUpdater {
                     chi2 = Double.POSITIVE_INFINITY;  //boundary check that planet does not orbit within star
                 } else if ((!lockToCenter[curve][2] || !lockToCenter[curve][4]) && ((ar * Math.cos(incl) * (1.0 - e * e) / (1.0 + e * Math.sin(ohm * Math.PI / 180.0))) >= 1.0 + p0)) {
                     if (!lockToCenter[curve][4] && autoUpdatePrior[curve][4]) {
-                        priorCenter[curve][4] = Math.round(10.0 * Math.acos((0.5 + p0) * (1.0 + e * Math.sin(ohm * Math.PI / 180.0)) / (ar * (1.0 - e * e))) * 180.0 / Math.PI) / 10.0;
-                        if (Double.isNaN(priorCenter[curve][4])) priorCenter[curve][4] = 89.9;
-                        //priorCenterSpinner[curve][4].setValue(priorCenter[curve][4]);
+                        priorCenter[4] = Math.round(10.0 * Math.acos((0.5 + p0) * (1.0 + e * Math.sin(ohm * Math.PI / 180.0)) / (ar * (1.0 - e * e))) * 180.0 / Math.PI) / 10.0;
+                        if (Double.isNaN(priorCenter[4])) priorCenter[4] = 89.9;
+                        //priorCenterSpinner[curve][4].setValue(priorCenter[4]);
                     }
                     chi2 = Double.POSITIVE_INFINITY; //boundary check that planet passes in front of star
                 } else if ((!lockToCenter[curve][5] || !lockToCenter[curve][6]) && (((u1 + u2) > 1.0) || ((u1 + u2) < 0.0) || (u1 > 1.0) || (u1 < 0.0) || (u2 < -1.0) || (u2 > 1.0))) {

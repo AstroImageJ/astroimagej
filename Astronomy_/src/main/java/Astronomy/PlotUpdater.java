@@ -1115,6 +1115,12 @@ public class PlotUpdater {
                             fitStepStep[j] = 0.1;
                         }
                     }
+
+                    // Pull locked values
+                    for (int d = 0; d < maxDetrendVars + 7; d++) {
+                            priorCenter[d] = (Double) priorCenterSpinner[curve][d].getValue();
+                    }
+
                     if (!lockToCenter[curve][0] && autoUpdatePrior[curve][0]) {
                         priorCenter[0] = yBaselineAverage;   //f0 = baseline flux
                         priorWidth[0] = Math.abs(yBaselineAverage / 5.0);
@@ -1144,14 +1150,7 @@ public class PlotUpdater {
                         var bp1 = (Double) bpSpinner[curve].getValue();
                         priorCenter[4] = (180.0/Math.PI)*Math.acos(bp1/bestFit[2]);
                     }
-                    // Pull locked values
-                    for (int d = 0; d < maxDetrendVars + 7; d++) {
-                        if (lockToCenterCB[curve][d].isSelected()) {
-                            priorCenter[d] = (Double) priorCenterSpinner[curve][d].getValue();
-                        }
-                    }
                     // End update
-                    //todo remove debug code
                     AIJLogger.log(priorCenter);
                     AIJLogger.log(MultiPlot_.priorCenter[curve]);
                     
@@ -1273,7 +1272,8 @@ public class PlotUpdater {
                                         bestFit[p] = Double.NaN;
                                     }
                                 }
-                                if (useTransitFit[curve]) {
+                                AIJLogger.log(bestFit);
+                                /*if (useTransitFit[curve]) {//todo not used in PU, remove
                                     //Winn 2010 eqautions 14, 15, 16
                                     if (!bpLock[curve])
                                         bp = bestFit[2] * Math.cos(bestFit[4]) * (1.0 - (forceCircularOrbit[curve] ? 0.0 : eccentricity[curve] * eccentricity[curve])) / (1.0 + (forceCircularOrbit[curve] ? 0.0 : eccentricity[curve]) * Math.sin(forceCircularOrbit[curve] ? 0.0 : omega[curve]));
@@ -1286,7 +1286,7 @@ public class PlotUpdater {
 
                                     double midpointFlux = IJU.transitModel(new double[]{bestFit[3]}, bestFit[0], bestFit[4], bestFit[1], bestFit[2], bestFit[3], orbitalPeriod[curve], forceCircularOrbit[curve] ? 0.0 : eccentricity[curve], forceCircularOrbit[curve] ? 0.0 : omega[curve], bestFit[5], bestFit[6], useLonAscNode[curve], lonAscNode[curve])[0];
                                     transitDepth[curve] = (1 - (midpointFlux / bestFit[0])) * 1000;
-                                }
+                                }*/
                                 
                                 chi2dof = minimization.getMinimum();
                                 bic = chi2dof * (detrendX.length - bestFit.length) + bestFit.length * Math.log(detrendX.length);

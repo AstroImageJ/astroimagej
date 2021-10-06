@@ -10,6 +10,8 @@ import ij.Prefs;
 import ij.astro.logging.AIJLogger;
 import ij.measure.ResultsTable;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Arrays;
 
 import static Astronomy.MultiPlot_.*;
@@ -1467,7 +1469,26 @@ public class PlotUpdater {
         return new OptimizerResults(Double.NaN, Double.NaN);
     }
 
-    public record OptimizerResults(double rms, double bic) {}
+    public record OptimizerResults(double rms, double bic) {
+        @Override
+        public String toString() {
+            var rmso = rms;
+            var bico = bic;
+            if (Double.isFinite(rms)) {
+                BigDecimal bd = new BigDecimal(Double.toString(rms * 1000));
+                rmso = bd.setScale(6, RoundingMode.HALF_UP).doubleValue();
+            }
+            if (Double.isFinite(bic)) {
+                BigDecimal bdb = new BigDecimal(Double.toString(bic));
+                bico = bdb.setScale(4, RoundingMode.HALF_UP).doubleValue();
+            }
+
+            return "OptimizerResults{" +
+                    "rms=" + rmso +
+                    ", bic=" + bico +
+                    '}';
+        }
+    }
 
     public class FitLightCurveChi2 implements MinimizationFunction {
         double[] detrendY;

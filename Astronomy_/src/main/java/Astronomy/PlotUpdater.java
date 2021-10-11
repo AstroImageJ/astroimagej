@@ -972,6 +972,7 @@ public class PlotUpdater {
         var nTries = MultiPlot_.nTries[curve];
         var converged = MultiPlot_.converged[curve];
         var createDetrendModel = MultiPlot_.createDetrendModel;
+        var detrend = MultiPlot_.detrend[curve];//new double[maxDetrendVars][n];
 
         if (detrendFitIndex[curve] != 0) {
             for (int v = 0; v < maxDetrendVars; v++) {
@@ -1015,6 +1016,72 @@ public class PlotUpdater {
         }
 
         if (atLeastOne || detrendFitIndex[curve] == 9) {
+            double[] detrendAverage = new double[maxDetrendVars];
+            int[] detrendPower = new int[maxDetrendVars];
+            for (int v = 0; v < maxDetrendVars; v++) {
+                detrendAverage[v] = 0.0;
+                detrendPower[v] = 1;
+                int numNaNs = 0;
+                for (int j = 0; j < nn[curve]; j++) {
+                    if (Double.isNaN(detrend[v][j])) {
+                        numNaNs++;
+                    } else {
+                        detrendAverage[v] += detrend[v][j] / (double) nn[curve];
+                    }
+                }
+                detrendAverage[v] = ((double) nn[curve] / ((double) nn[curve] - (double) numNaNs)) * detrendAverage[v];
+                for (int j = 0; j < nn[curve]; j++) {
+                    detrend[v][j] -= detrendAverage[v];
+                }
+
+                if (v > 0) {
+                    for (int u = 0; u < v; u++) {
+                        if (detrendIndex[curve][u] == detrendIndex[curve][v]) detrendPower[v]++;
+                    }
+                }
+                if (detrendPower[v] > 1) {
+                    detrendAverage[v] = 0.0;
+                    numNaNs = 0;
+                    for (int j = 0; j < nn[curve]; j++) {
+                        if (Double.isNaN(detrend[v][j])) {
+                            numNaNs++;
+                        } else {
+                            detrendAverage[v] += detrend[v][j];
+                        }
+                    }
+                    detrendAverage[v] /= (nn[curve] - numNaNs);
+                    for (int j = 0; j < nn[curve]; j++) {
+                        detrend[v][j] -= detrendAverage[v];
+                    }
+                }
+            }
+            for (int v = 0; v < maxDetrendVars; v++) {
+                if (detrendPower[v] == 2) {
+                    for (int j = 0; j < nn[curve]; j++) {
+                        detrend[v][j] *= detrend[v][j];
+                    }
+                } else if (detrendPower[v] > 2) {
+                    for (int j = 0; j < nn[curve]; j++) {
+                        detrend[v][j] = Math.pow(detrend[v][j], detrendPower[v]);
+                    }
+                }
+            }
+
+            double meridianFlip = mfMarker1Value + xOffset;
+            for (int v = 0; v < maxDetrendVars; v++) {
+                if (detrendIndex[curve][v] == 1)    //Meridian Flip Detrend Selected
+                {
+                    for (int j = 0; j < nn[curve]; j++) {
+                        if (x[curve][j] < meridianFlip)  //meridian flip fitting data = -1.0 to left and 1.0 to right of flip
+                        {
+                            detrend[v][j] = -1.0;
+                        } else {
+                            detrend[v][j] = 1.0;
+                        }
+                    }
+                }
+            }
+
             if (detrendFitIndex[curve] != 1) {
                 if (detrendCount > 0) {
                     for (int j = 0; j < nn[curve]; j++) {
@@ -1381,7 +1448,7 @@ public class PlotUpdater {
                     boolean noNaNs = true;
                     if (!Double.isNaN(y[j])) {
                         for (int v = 0; v < maxDetrendVars; v++) {
-                            if (detrendIndex[curve][v] != 0 && Double.isNaN(detrend[curve][v][j])) {
+                            if (detrendIndex[curve][v] != 0 && Double.isNaN(detrend[v][j])) {
                                 noNaNs = false;
                                 break;
                             }
@@ -1414,7 +1481,7 @@ public class PlotUpdater {
                         trend = yAverage;
                         for (int v = 0; v < maxDetrendVars; v++) {
                             if (detrendIndex[curve][v] != 0 && detrendYDNotConstant[v]) {
-                                trend += detrendFactor[v] * (detrend[curve][v][j]);//-detrendAverage[v]);
+                                trend += detrendFactor[v] * (detrend[v][j]);//-detrendAverage[v]);
                             }
                         }
                         trend /= yAverage;
@@ -1432,7 +1499,7 @@ public class PlotUpdater {
                     trend = 0.0;
                     for (int v = 0; v < maxDetrendVars; v++) {
                         if (detrendIndex[curve][v] != 0 && detrendYDNotConstant[v]) {
-                            trend += detrendFactor[v] * (detrend[curve][v][j]);//-detrendAverage[v]);
+                            trend += detrendFactor[v] * (detrend[v][j]);//-detrendAverage[v]);
                         }
                     }
                     if (hasErrors[curve] || hasOpErrors[curve]) {
@@ -1495,7 +1562,7 @@ public class PlotUpdater {
         double dof;
         double chi2;
         double bp;
-        double[] detrendX, detrendYE, priorCenter;
+        double[] detrendX, detrendYE, priorCenter, lcModel;
         boolean[] isFitted;
         double detrendYAverage;
 
@@ -1548,7 +1615,7 @@ public class PlotUpdater {
                 u1 = lockToCenter[curve][5] ? priorCenter[5] : param[fp < nPars ? fp++ : nPars - 1];  //quadratic limb darkening parameter 1
                 u2 = lockToCenter[curve][6] ? priorCenter[6] : param[fp < nPars ? fp++ : nPars - 1];  //quadratic limb darkening parameter 2
 
-                lcModel[curve] = IJU.transitModel(detrendX, f0, incl, p0, ar, tc, orbitalPeriod[curve], e, ohm, u1, u2, useLonAscNode[curve], lonAscNode[curve]);
+                lcModel = IJU.transitModel(detrendX, f0, incl, p0, ar, tc, orbitalPeriod[curve], e, ohm, u1, u2, useLonAscNode[curve], lonAscNode[curve]);
             }
 
             int dp = 0;
@@ -1579,7 +1646,7 @@ public class PlotUpdater {
                         for (int i = 0; i < numDetrendVars; i++) {
                             residual -= detrendVars[i][j] * dPars[i];
                         }
-                        residual -= (lcModel[curve][j] - detrendYAverage);
+                        residual -= (lcModel[j] - detrendYAverage);
                         chi2 += ((residual * residual) / (detrendYE[j] * detrendYE[j]));
                     }
                 }

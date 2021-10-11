@@ -9,7 +9,9 @@ import ij.astro.logging.AIJLogger;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
+import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.RoundingMode;
 import java.util.Comparator;
 import java.util.Hashtable;
 import java.util.Objects;
@@ -42,6 +44,7 @@ public class FitOptimization implements AutoCloseable {
 
     private JToggleButton detOptimizeButton;
     private JToggleButton optimizeButton;
+    private RollingAvg rollingAvg = new RollingAvg();
 
     //todo atomic strings for iter count fields
     //todo get min state out, volatile/synchronized int, or atomic? need to track comparison value as well. Could also make a map and minimize similar to autoswitch
@@ -82,6 +85,7 @@ public class FitOptimization implements AutoCloseable {
                 optimizeButton.setText("Cancel");
                 if (Objects.equals(compOptimizationSelection.getSelectedItem(), compTest)) {
                     testCompMin();
+                    MultiPlot_.updatePlot(curve);
                 } else if (Objects.equals(compOptimizationSelection.getSelectedItem(), compBruteForce)) {
                     Executors.newSingleThreadExecutor().submit(this::minimizeCompStars);
                 }
@@ -287,14 +291,6 @@ public class FitOptimization implements AutoCloseable {
         IJ.beep();
     }
 
-    //todo make workingState be a BigInteger or BitSet to handle more comp stars
-    // BigInteger makes splitting the tasks and the generation of all possible combinations easier
-    // BitSet is potentially easier to extract values from and generation of the state array
-
-    //todo fix outofmemory error in plot, likely references to tbe image processor not being removed
-    // see if this happens with normal MP operation, fix
-    // see if this is fixed when pulling out fitting code (probably)
-
     private void evaluateStatesInRange(Optimizer optimizer) {
         completionService.submit(optimizer);
     }
@@ -363,6 +359,7 @@ public class FitOptimization implements AutoCloseable {
 
     private void scheduleIpsCounter(int minimizing) {
         ipsExecutorService = Executors.newSingleThreadScheduledExecutor();
+        rollingAvg = new RollingAvg();
         ipsExecutorService.scheduleWithFixedDelay(() -> updateIpsCounter(minimizing), 1L, 1L, TimeUnit.SECONDS);
     }
 
@@ -372,17 +369,19 @@ public class FitOptimization implements AutoCloseable {
             case 1 -> detrendCounter;
             default -> throw new IllegalStateException("Unexpected value: " + minimizing);
         };
+
         var iterRemaining = counter.getSum();
         var ips = iterRemainingOld.subtract(iterRemaining);
         iterRemainingOld = iterRemaining;
 
-        var totalSecs = counter.getTotalCount().divide(ips);
+        var totalSecs = counter.getTotalCount().divide(rollingAvg.getAverage(ips).toBigInteger());
         var hours = totalSecs.divide(BigInteger.valueOf(3600));
         var minutes = (totalSecs.mod(BigInteger.valueOf(3600))).divide(BigInteger.valueOf(60));
         var seconds = totalSecs.mod(BigInteger.valueOf(60));
 
         IJ.showStatus("!Minimization IPS: " + ips +
                 "; Estimated time remaining: " + String.format("%02d:%02d:%02d", hours, minutes, seconds));
+        IJ.showProgress(1 - new BigDecimal(iterRemaining).divide(new BigDecimal(counter.basis), 3, RoundingMode.HALF_UP).doubleValue());
     }
 
     /**
@@ -432,6 +431,20 @@ public class FitOptimization implements AutoCloseable {
             if (o1.comparator == o2.comparator) return 0;
             if (o1.lessThan(o2)) return -1;
             return 1;
+        }
+    }
+
+    static class RollingAvg {
+        BigDecimal currentAverage = BigDecimal.ZERO;
+        BigDecimal count = BigDecimal.ZERO;
+
+        public BigDecimal getAverage(BigInteger newDatum) {
+            var protoAverage = new BigDecimal(newDatum);
+            if (newDatum.compareTo(BigInteger.ZERO) <= 0) return protoAverage;
+            protoAverage = protoAverage.add(currentAverage.multiply(count));
+            count = count.add(BigDecimal.ONE);
+            currentAverage = protoAverage.divide(count, 2, RoundingMode.HALF_UP);
+            return currentAverage;
         }
     }
 
@@ -500,6 +513,10 @@ public class FitOptimization implements AutoCloseable {
 
         public synchronized BigInteger getSum() {
             return sum;
+        }
+
+        public BigInteger getBasis() {
+            return basis;
         }
 
         private synchronized BigInteger getTotalCount() {

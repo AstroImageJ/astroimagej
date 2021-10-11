@@ -23,7 +23,6 @@ public class PlotUpdater {
     private static PlotUpdater INSTANCE;
     private int curve;
     private int targetStar;
-    private boolean[] refStarEnabled;
     private boolean updateFit = true;
     private int initAvgCount;
     private boolean initAtLeastOne;
@@ -944,7 +943,7 @@ public class PlotUpdater {
         var total = Arrays.copyOf(this.total, this.total.length);
         var totvar = Arrays.copyOf(this.totvar, this.totvar.length);
         double[] y = new double[detrendXs[curve].length];
-        var yAverage = MultiPlot_.yAverage[curve];
+        var yAverage = 0D;
         var yDepthEstimate = MultiPlot_.yDepthEstimate[curve];
         var yBaselineAverage = MultiPlot_.yBaselineAverage[curve];
         var detrendYAverage = MultiPlot_.detrendYAverage[curve];
@@ -1005,14 +1004,17 @@ public class PlotUpdater {
 
 
         for (int i= 0; i < detrendXs[curve].length; i++) {
-            y[i] = total[curve][i] == 0 ? Double.NaN : source[targetStar][i] / total[curve][i];
+            if (total[curve][i] == 0) continue;//todo better nan filtering
+            y[i] = source[targetStar][i] / total[curve][i];
             if (source[curve][i] == 0 || total[curve][i] == 0) {
                 detrendY[i] = Double.POSITIVE_INFINITY;
             } else {
                 detrendYE[i] = hasErrors[curve] || hasOpErrors[curve] ? (y[i] * Math.sqrt(srcvar[targetStar][i] / (source[targetStar][i] * source[targetStar][i]) + totvar[targetStar][i] / (total[curve][i] * total[curve][i]))) : 1;
             }
-            yerr = detrendYE;
+            detrendYE[i] = detrendYE[i];
+            yerr[i] = detrendYE[i];
             detrendY[i] = y[i];
+            yAverage += y[i];
         }
 
         if (atLeastOne || detrendFitIndex[curve] == 9) {
@@ -1220,8 +1222,6 @@ public class PlotUpdater {
                         priorCenter[4] = (180.0/Math.PI)*Math.acos(bp1/bestFit[2]);
                     }
                     // End update
-                    AIJLogger.log(priorCenter);
-                    AIJLogger.log(MultiPlot_.priorCenter[curve]);
                     
                     if ((detrendVarsUsed[curve] > 0 || detrendFitIndex[curve] == 9 && useTransitFit[curve]) && detrendYNotConstant && detrendCount > (detrendFitIndex[curve] == 9 && useTransitFit[curve] ? 7 : 0) + detrendVarsUsed[curve] + 2) { //need enough data to provide degrees of freedom for successful fit
                         detrendX = Arrays.copyOf(detrendX, detrendCount);
@@ -1280,7 +1280,7 @@ public class PlotUpdater {
                                 // 7+ = detrend parameters
                                 for (fp = 0; fp < nFitted; fp++) {
                                     if (index[fp] == 1) {
-                                        start[fp] = Math.sqrt(priorCenter[1]);//todo check FitLightCurveChi2
+                                        start[fp] = Math.sqrt(priorCenter[1]);
                                         width[fp] = Math.sqrt(priorWidth[1]);
                                         step[fp] = Math.sqrt(getFitStep(curve, 1));
                                         minimization.addConstraint(fp, -1, 0.0);
@@ -1341,7 +1341,7 @@ public class PlotUpdater {
                                         bestFit[p] = Double.NaN;
                                     }
                                 }
-                                AIJLogger.log(bestFit);
+
                                 /*if (useTransitFit[curve]) {//todo not used in PU, remove
                                     //Winn 2010 eqautions 14, 15, 16
                                     if (!bpLock[curve])
@@ -1536,13 +1536,27 @@ public class PlotUpdater {
         return new OptimizerResults(Double.NaN, Double.NaN);
     }
 
-    public record OptimizerResults(double rms, double bic) {
+    // _dummy is exists to allow the rms to be automatically rounded
+    public record OptimizerResults(double rms, double bic, boolean _dummy) {
+        public OptimizerResults(double rms, double bic) {
+            this(round(rms), bic, true);
+        }
+
+        private static double round(double val) {
+            var valo = val;
+            if (Double.isFinite(val)) {
+                BigDecimal bd = new BigDecimal(Double.toString(val * 1000));
+                valo = bd.setScale(6, RoundingMode.HALF_UP).doubleValue();
+            }
+            return valo;
+        }
+
         @Override
         public String toString() {
             var rmso = rms;
             var bico = bic;
             if (Double.isFinite(rms)) {
-                BigDecimal bd = new BigDecimal(Double.toString(rms * 1000));
+                BigDecimal bd = new BigDecimal(Double.toString(rms));
                 rmso = bd.setScale(6, RoundingMode.HALF_UP).doubleValue();
             }
             if (Double.isFinite(bic)) {

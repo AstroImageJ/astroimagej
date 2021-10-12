@@ -1,7 +1,7 @@
 package Astronomy.multiplot.optimization;
 
+import Astronomy.CurveFitter;
 import Astronomy.FitOptimization;
-import Astronomy.PlotUpdater;
 import ij.astro.logging.Translation;
 
 import java.math.BigInteger;
@@ -28,7 +28,7 @@ public class CompStarFitting extends Optimizer {
             fitOptimization.compCounter.dynamicSet(counter);
 
             var x = fitOptimization.setArrayToState(state);
-            var r = PlotUpdater.getInstance(curve, fitOptimization.getTargetStar()).fitCurveAndGetResults(x);
+            var r = CurveFitter.getInstance(curve, fitOptimization.getTargetStar()).fitCurveAndGetResults(x);
 
             if (Double.isNaN(r.rms()) || Double.isNaN(r.bic())) continue;
 

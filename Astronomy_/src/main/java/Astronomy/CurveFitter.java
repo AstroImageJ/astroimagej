@@ -19,8 +19,8 @@ import static Astronomy.MultiPlot_.*;
 /**
  * Extracted version of {@link MultiPlot_#updatePlot(boolean[], boolean)} for the multithreaded optimizer.
  */
-public class PlotUpdater {
-    private static PlotUpdater INSTANCE;
+public class CurveFitter {
+    private static CurveFitter INSTANCE;
     private final int curve;
     private final int targetStar;
     private int initAvgCount;
@@ -44,7 +44,7 @@ public class PlotUpdater {
     ThreadLocal<Minimization> minimizationThreadLocal = ThreadLocal.withInitial(Minimization::new);
 
     // Chunk 1 stuff here (shared between all threads)
-    private PlotUpdater(int curve, int targetStar) {
+    private CurveFitter(int curve, int targetStar) {
         this.curve = curve;
         this.targetStar = targetStar;
         getStarData();
@@ -54,9 +54,9 @@ public class PlotUpdater {
         //      extract star and filter from this "rel_flux_Txx"
     }
 
-    public synchronized static PlotUpdater getInstance(int curve, int targetStar) {
+    public synchronized static CurveFitter getInstance(int curve, int targetStar) {
         if (INSTANCE == null || INSTANCE.curve != curve || INSTANCE.targetStar != targetStar)
-            INSTANCE = new PlotUpdater(curve, targetStar);
+            INSTANCE = new CurveFitter(curve, targetStar);
         return INSTANCE;
     }
 

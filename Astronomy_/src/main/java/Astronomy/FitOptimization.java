@@ -163,7 +163,7 @@ public class FitOptimization implements AutoCloseable {
     private void testCompMin() {
         selectable = null;
         selectable2PrimaryIndex = null;
-        PlotUpdater.invalidateInstance();
+        CurveFitter.invalidateInstance();
         if (MultiPlot_.refStarFrame == null) MultiPlot_.showRefStarJPanel();
         if (MultiPlot_.isRefStar != null) {
             setSelectable(MultiPlot_.isRefStar);
@@ -175,7 +175,7 @@ public class FitOptimization implements AutoCloseable {
         targetStar = Integer.parseInt(MultiPlot_.ylabel[curve].split("rel_flux_T")[1]) - 1;
 
         BigInteger initState = createBinaryRepresentation(selectable);
-        var x = PlotUpdater.getInstance(curve, targetStar).fitCurveAndGetResults(setArrayToState(initState));
+        var x = CurveFitter.getInstance(curve, targetStar).fitCurveAndGetResults(setArrayToState(initState));
         AIJLogger.log(x);
         finishOptimization(optimizeButton);
     }
@@ -183,7 +183,7 @@ public class FitOptimization implements AutoCloseable {
     private void minimizeCompStars() {
         selectable = null;
         selectable2PrimaryIndex = null;
-        PlotUpdater.invalidateInstance();
+        CurveFitter.invalidateInstance();
         if (MultiPlot_.refStarFrame == null) MultiPlot_.showRefStarJPanel();
         if (MultiPlot_.isRefStar != null) {
             setSelectable(MultiPlot_.isRefStar);

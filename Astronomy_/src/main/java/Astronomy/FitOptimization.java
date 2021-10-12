@@ -251,7 +251,7 @@ public class FitOptimization implements AutoCloseable {
         var count = 0;
         var CHUNK_SIZE = state.divide(BigInteger.valueOf(MAX_THREADS)).max(MIN_CHUNK_SIZE).add(BigInteger.ONE);
         for (BigInteger start = startingPoint; start.compareTo(state) < 0;) {
-            var end = state.add(BigInteger.ONE).min(start.add(CHUNK_SIZE));
+            var end = state.add(BigInteger.ONE).min(start.add(CHUNK_SIZE)).min(state);
             evaluateStatesInRange(optimizerBiFunction.apply(start, end));
             start = end;
             count++;

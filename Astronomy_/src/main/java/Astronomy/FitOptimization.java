@@ -192,6 +192,7 @@ public class FitOptimization implements AutoCloseable {
         if (MultiPlot_.refStarFrame == null) MultiPlot_.showRefStarJPanel();
         if (MultiPlot_.isRefStar != null) {
             setSelectable(MultiPlot_.isRefStar);
+            MultiPlot_.saveCompEnsemble();
         } else {
             AIJLogger.log("Open ref. star panel.");
             return;

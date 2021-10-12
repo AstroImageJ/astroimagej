@@ -676,6 +676,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static JLabel[] refStarLabel;
     public static JCheckBox[] refStarCB;
     static boolean[] isRefStar;
+    private static boolean[] savedIsRefStar;
     static JTextField[] absMagTF;
     static double[] absMag;
     static boolean hasAbsMag;
@@ -14322,10 +14323,18 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             });
             allNonePanel.add(allButton);
 
-            JButton setButton = new JButton("Set");
-            setButton.setToolTipText("Sets the current enabled stars as the 'cycle' set");
-            setButton.addActionListener(e -> cycleEnabledStarsLess1PressedConsecutive = false);
+            JButton setButton = new JButton("Save");
+            setButton.setToolTipText("Sets the current enabled stars as the 'cycle' set, and saves them for use in 'Recall.'");
+            setButton.addActionListener(e -> {
+                cycleEnabledStarsLess1PressedConsecutive = false;
+                saveCompEnsemble();
+            });
             allNonePanel.add(setButton);
+
+            JButton recallButton = new JButton("Recall");
+            recallButton.setToolTipText("Sets the current enabled stars to match the stars that were 'Saved.'");
+            recallButton.addActionListener(e -> loadCompEnsemble());
+            allNonePanel.add(recallButton);
 
             JButton cycleEnabledStarsLess1Button = new JButton("Cycle Enabled Stars Less One");
             cycleEnabledStarsLess1Button.setToolTipText("Removes one star at a time from the current selected set");
@@ -14585,6 +14594,17 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         refStarPanelWasShowing = true;
         FileDrop fileDrop = new FileDrop(refStarMainPanel, BorderFactory.createEmptyBorder(), MultiPlot_::openDragAndDropFiles);
 
+    }
+
+    public static void saveCompEnsemble() {
+        if (isRefStar == null) return;
+        savedIsRefStar = Arrays.copyOf(isRefStar, isRefStar.length);
+    }
+
+    public static void loadCompEnsemble() {
+        for (int r = 0; r < savedIsRefStar.length; r++) {
+            refStarCB[r].setSelected(savedIsRefStar[r]);
+        }
     }
 
 

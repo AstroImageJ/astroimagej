@@ -46,10 +46,6 @@ public class FitOptimization implements AutoCloseable {
     private JToggleButton optimizeButton;
     private RollingAvg rollingAvg = new RollingAvg();
 
-    //todo atomic strings for iter count fields
-    //todo get min state out, volatile/synchronized int, or atomic? need to track comparison value as well. Could also make a map and minimize similar to autoswitch
-    //https://www.baeldung.com/java-thread-safety
-
     // Init. after numAps is set
     public FitOptimization(int curve, int epsilon) {
         this.curve = curve;
@@ -62,7 +58,6 @@ public class FitOptimization implements AutoCloseable {
         this.selectable2PrimaryIndex = new int[selectable.length];
     }
 
-    //todo buttons -> list of options, buttton for start/stop [[optimization: List], [iterations: count]]
     public Component makeFitOptimizationPanel() {//todo see if multirun issue is fixed by making this static and it creates a new instance of this
         JPanel fitOptimizationPanel = new JPanel(new SpringLayout());
         fitOptimizationPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(MultiPlot_.mainBorderColor, 1), "Fit Optimization", TitledBorder.LEFT, TitledBorder.TOP, MultiPlot_.b12, Color.darkGray));

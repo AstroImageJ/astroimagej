@@ -1,7 +1,6 @@
 package Astronomy.multiplot.optimization;
 
 import Astronomy.FitOptimization;
-import Astronomy.MultiPlot_;
 import Astronomy.PlotUpdater;
 import ij.astro.logging.Translation;
 
@@ -20,30 +19,10 @@ public class CompStarFitting extends Optimizer {
         return plotUpdater();
     }
 
-    private FitOptimization.MinimumState checkboxTestCase() {
-        var minimumState = new FitOptimization.MinimumState();
-        for (BigInteger state = startState; state.compareTo(endState) < 0; state = state.add(BigInteger.ONE)) {//todo countdown from state? allows for current state = iterations left
-            if (state.equals(BigInteger.ZERO)) continue;
-            fitOptimization.compCounter.dynamicSet(state);
-
-            var x = fitOptimization.setArrayToState(state);
-            for (int r = 0; r < x.length; r++) {
-                MultiPlot_.refStarCB[r].setSelected(x[r]);
-            }
-            MultiPlot_.updatePlot(curve);
-            MultiPlot_.waitForPlotUpdateToFinish();
-            var newState = new FitOptimization.MinimumState(state, MultiPlot_.sigma[curve]);
-            if (newState.lessThan(minimumState)) minimumState = newState;
-            System.gc();//todo remove if possible
-        }
-        System.out.println(fitOptimization.workingState2SelectableStateString(minimumState.state()));
-        return minimumState;
-    }
-
     private FitOptimization.MinimumState plotUpdater() {
         var minimumState = new FitOptimization.MinimumState();
         BigInteger counter = BigInteger.ZERO;
-        for (BigInteger state = startState; state.compareTo(endState) <= 0; state = state.add(BigInteger.ONE)) {//todo countdown from state? allows for current state = iterations left
+        for (BigInteger state = startState; state.compareTo(endState) <= 0; state = state.add(BigInteger.ONE)) {
             if (state.equals(BigInteger.ZERO)) continue;
             if (Thread.interrupted()) break;
             fitOptimization.compCounter.dynamicSet(counter);

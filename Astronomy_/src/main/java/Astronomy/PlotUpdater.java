@@ -21,9 +21,8 @@ import static Astronomy.MultiPlot_.*;
  */
 public class PlotUpdater {
     private static PlotUpdater INSTANCE;
-    private int curve;
-    private int targetStar;
-    private boolean updateFit = true;
+    private final int curve;
+    private final int targetStar;
     private int initAvgCount;
     private boolean initAtLeastOne;
     private int initDetrendCount;
@@ -38,8 +37,6 @@ public class PlotUpdater {
 
     double[][] source;
     double[][] srcvar;
-    double[][] total;
-    double[][] totvar;
 
     boolean[] localIsRefStar;
 
@@ -53,9 +50,8 @@ public class PlotUpdater {
         getStarData();
         setupData();
         conditionData();
-        //todo add stuff
-        // add check for fitter running only on Tstar and other conditions
-        // //todo extract star and filter from this "rel_flux_Txx"
+        // todo add check for fitter running only on Tstar and other conditions
+        //      extract star and filter from this "rel_flux_Txx"
     }
 
     public synchronized static PlotUpdater getInstance(int curve, int targetStar) {
@@ -80,14 +76,10 @@ public class PlotUpdater {
         boolean goodErrData = true;
         source = new double[numAps][numRows];
         srcvar = new double[numAps][numRows];
-        total = new double[numAps][numRows];//todo only need 1 per row, don't make here
-        totvar = new double[numAps][numRows];
         for (int ap = 0; ap < numAps; ap++) {
             for (int row = 0; row < numRows; row++) {
                 source[ap][row] = 0.0;
-                total[ap][row] = 0.0;
                 srcvar[ap][row] = 0.0;
-                totvar[ap][row] = 0.0;
             }
         }
         double value;
@@ -940,8 +932,6 @@ public class PlotUpdater {
         var detrendYE = Arrays.copyOf(initDetrendYE, initDetrendYE.length);
         var detrendX = Arrays.copyOf(initDetrendX, initDetrendX.length);
         var detrendYD = Arrays.copyOf(initDetrendYD, initDetrendYD.length);
-        var total = Arrays.copyOf(this.total, this.total.length);
-        var totvar = Arrays.copyOf(this.totvar, this.totvar.length);
         double[] y = new double[detrendXs[curve].length];
         var yAverage = 0D;
         var yDepthEstimate = MultiPlot_.yDepthEstimate[curve];
@@ -989,6 +979,8 @@ public class PlotUpdater {
 
         if (!plotY[curve]) return new OptimizerResults(Double.NaN, Double.NaN);
 
+        var total = new double[detrendXs[curve].length];
+        var totvar = new double[detrendXs[curve].length];
         for (int i= 0; i < detrendXs[curve].length; i++) {
             var compSum = 0.0;
             var compVar = 0.0;
@@ -998,18 +990,18 @@ public class PlotUpdater {
                     compVar += srcvar[ap][i];
                 }
             }
-            total[curve][i] = compSum;
-            totvar[targetStar][i] = compVar;
+            total[i] = compSum;
+            totvar[i] = compVar;
         }
 
 
         for (int i= 0; i < detrendXs[curve].length; i++) {
-            if (total[curve][i] == 0) continue;//todo better nan filtering
-            y[i] = source[targetStar][i] / total[curve][i];
-            if (source[curve][i] == 0 || total[curve][i] == 0) {
+            if (total[i] == 0) continue;//todo better nan filtering
+            y[i] = source[targetStar][i] / total[i];
+            if (source[curve][i] == 0 || total[i] == 0) {
                 detrendY[i] = Double.POSITIVE_INFINITY;
             } else {
-                detrendYE[i] = hasErrors[curve] || hasOpErrors[curve] ? (y[i] * Math.sqrt(srcvar[targetStar][i] / (source[targetStar][i] * source[targetStar][i]) + totvar[targetStar][i] / (total[curve][i] * total[curve][i]))) : 1;
+                detrendYE[i] = hasErrors[curve] || hasOpErrors[curve] ? (y[i] * Math.sqrt(srcvar[targetStar][i] / (source[targetStar][i] * source[targetStar][i]) + totvar[i] / (total[i] * total[i]))) : 1;
             }
             detrendYE[i] = detrendYE[i];
             yerr[i] = detrendYE[i];
@@ -1132,7 +1124,7 @@ public class PlotUpdater {
                         }
                     }
 
-                    // Update prior centers/widths //todo mark
+                    // Update prior centers/widths
                     var priorCenter = new double[maxFittedVars];
                     var priorWidth = new double[maxFittedVars];
                     priorCenter[0] = 1.0;  //f0 = baseline flux
@@ -1228,181 +1220,164 @@ public class PlotUpdater {
                         detrendY = Arrays.copyOf(detrendY, detrendCount);
                         detrendYE = Arrays.copyOf(detrendYE, detrendCount);
 
-                        if (updateFit) {
-                            int fittedDetrendParStart;
-                            
-                            if (detrendFitIndex[curve] == 9) {
-                                minimization.removeConstraints();
-                                
-                                int nFitted = 0;
-                                for (int p = 0; p < 7; p++) {
-                                    if (useTransitFit[curve] && !lockToCenter[curve][p]) {
-                                        isFitted[p] = true;
-                                        nFitted++;
-                                    } else {
-                                        isFitted[p] = false;
-                                    }
+                        int fittedDetrendParStart;
+
+                        if (detrendFitIndex[curve] == 9) {
+                            minimization.removeConstraints();
+
+                            int nFitted = 0;
+                            for (int p = 0; p < 7; p++) {
+                                if (useTransitFit[curve] && !lockToCenter[curve][p]) {
+                                    isFitted[p] = true;
+                                    nFitted++;
+                                } else {
+                                    isFitted[p] = false;
                                 }
-                                
-                                fittedDetrendParStart = nFitted;
-                                for (int p = 7; p < maxFittedVars; p++) {
-                                    if (detrendIndex[curve][p - 7] != 0 && detrendYDNotConstant[p - 7] && !lockToCenter[curve][p]) {
-                                        isFitted[p] = true;
-                                        nFitted++;
-                                    } else {
-                                        isFitted[p] = false;
-                                    }
+                            }
+
+                            fittedDetrendParStart = nFitted;
+                            for (int p = 7; p < maxFittedVars; p++) {
+                                if (detrendIndex[curve][p - 7] != 0 && detrendYDNotConstant[p - 7] && !lockToCenter[curve][p]) {
+                                    isFitted[p] = true;
+                                    nFitted++;
+                                } else {
+                                    isFitted[p] = false;
                                 }
+                            }
 
-                                start = new double[nFitted];
-                                width = new double[nFitted];
-                                step = new double[nFitted];
+                            start = new double[nFitted];
+                            width = new double[nFitted];
+                            step = new double[nFitted];
 
-                                index = new int[nFitted];
-                                int fp = 0;  //fitted parameter
-                                for (int p = 0; p < maxFittedVars; p++) {
-                                    if (isFitted[p]) {
-                                        index[fp] = p;
-                                        fp++;
-                                    }
+                            index = new int[nFitted];
+                            int fp = 0;  //fitted parameter
+                            for (int p = 0; p < maxFittedVars; p++) {
+                                if (isFitted[p]) {
+                                    index[fp] = p;
+                                    fp++;
                                 }
-                                
+                            }
 
-                                dof = detrendX.length - start.length;
 
-                                // 0 = f0 = baseline flux
-                                // 1 = p0 = r_p/r_*
-                                // 2 = ar = a/r_*
-                                // 3 = tc = transit center time
-                                // 4 = i = inclination
-                                // 5 = u1 = quadratic limb darkening parameter 1
-                                // 6 = u2 = quadratic limb darkening parameter 2
-                                // 7+ = detrend parameters
-                                for (fp = 0; fp < nFitted; fp++) {
-                                    if (index[fp] == 1) {
-                                        start[fp] = Math.sqrt(priorCenter[1]);
-                                        width[fp] = Math.sqrt(priorWidth[1]);
-                                        step[fp] = Math.sqrt(getFitStep(curve, 1));
-                                        minimization.addConstraint(fp, -1, 0.0);
-                                    } else if (index[fp] == 4) {
-                                        start[fp] = priorCenter[4] * Math.PI / 180.0;  // inclination
-                                        width[fp] = priorWidth[4] * Math.PI / 180.0;
-                                        step[fp] = getFitStep(curve, 4) * Math.PI / 180.0;
-                                        minimization.addConstraint(fp, 1, 90.0 * Math.PI / 180.0);
-                                        minimization.addConstraint(fp, -1, 50.0 * Math.PI / 180.0);
-                                    } else {
-                                        if (index[fp] == 0) minimization.addConstraint(fp, -1, 0.0);
-                                        if (index[fp] == 2) minimization.addConstraint(fp, -1, 2.0);
-                                        if (index[fp] == 3) minimization.addConstraint(fp, -1, 0.0);
-                                        if (index[fp] == 5) {
-                                            minimization.addConstraint(fp, 1, 1.0);
-                                            minimization.addConstraint(fp, -1, -1.0);
-                                        }
-                                        if (index[fp] == 6) {
-                                            minimization.addConstraint(fp, 1, 1.0);
-                                            minimization.addConstraint(fp, -1, -1.0);
-                                        }
-                                        start[fp] = priorCenter[index[fp]];
-                                        width[fp] = priorWidth[index[fp]];
-                                        step[fp] = getFitStep(curve, index[fp]);
+                            dof = detrendX.length - start.length;
+
+                            // 0 = f0 = baseline flux
+                            // 1 = p0 = r_p/r_*
+                            // 2 = ar = a/r_*
+                            // 3 = tc = transit center time
+                            // 4 = i = inclination
+                            // 5 = u1 = quadratic limb darkening parameter 1
+                            // 6 = u2 = quadratic limb darkening parameter 2
+                            // 7+ = detrend parameters
+                            for (fp = 0; fp < nFitted; fp++) {
+                                if (index[fp] == 1) {
+                                    start[fp] = Math.sqrt(priorCenter[1]);
+                                    width[fp] = Math.sqrt(priorWidth[1]);
+                                    step[fp] = Math.sqrt(getFitStep(curve, 1));
+                                    minimization.addConstraint(fp, -1, 0.0);
+                                } else if (index[fp] == 4) {
+                                    start[fp] = priorCenter[4] * Math.PI / 180.0;  // inclination
+                                    width[fp] = priorWidth[4] * Math.PI / 180.0;
+                                    step[fp] = getFitStep(curve, 4) * Math.PI / 180.0;
+                                    minimization.addConstraint(fp, 1, 90.0 * Math.PI / 180.0);
+                                    minimization.addConstraint(fp, -1, 50.0 * Math.PI / 180.0);
+                                } else {
+                                    if (index[fp] == 0) minimization.addConstraint(fp, -1, 0.0);
+                                    if (index[fp] == 2) minimization.addConstraint(fp, -1, 2.0);
+                                    if (index[fp] == 3) minimization.addConstraint(fp, -1, 0.0);
+                                    if (index[fp] == 5) {
+                                        minimization.addConstraint(fp, 1, 1.0);
+                                        minimization.addConstraint(fp, -1, -1.0);
                                     }
-                                    if (usePriorWidth[curve][index[fp]]) {
-                                        minimization.addConstraint(fp, 1, start[fp] + width[fp]);
-                                        minimization.addConstraint(fp, -1, start[fp] - width[fp]);
+                                    if (index[fp] == 6) {
+                                        minimization.addConstraint(fp, 1, 1.0);
+                                        minimization.addConstraint(fp, -1, -1.0);
                                     }
+                                    start[fp] = priorCenter[index[fp]];
+                                    width[fp] = priorWidth[index[fp]];
+                                    step[fp] = getFitStep(curve, index[fp]);
                                 }
+                                if (usePriorWidth[curve][index[fp]]) {
+                                    minimization.addConstraint(fp, 1, start[fp] + width[fp]);
+                                    minimization.addConstraint(fp, -1, start[fp] - width[fp]);
+                                }
+                            }
 
-                                minimization.setNrestartsMax(1);
-                                minimization.nelderMead(new FitLightCurveChi2(detrendY, dof, bp, detrendX, detrendYE, isFitted, detrendYAverage, priorCenter),
-                                        start, step, tolerance[curve], maxFitSteps[curve]);
-                                coeffs = minimization.getParamValues();
-                                nTries = minimization.getNiter() - 1;
-                                converged = minimization.getConvStatus();
-                                fp = 0;
-                                for (int p = 0; p < maxFittedVars; p++) {
-                                    if (isFitted[p]) {
-                                        bestFit[p] = coeffs[fp];
-                                        fp++;
-                                    } else if (p < 7 && useTransitFit[curve] && lockToCenter[curve][p]) {
-                                        if (p == 1) {
-                                            bestFit[p] = Math.sqrt(priorCenter[p]);
-                                        } else if (p == 4) {
-                                            if (bpLock[curve]) {
-                                                bestFit[4] = Math.acos(bp / bestFit[2]);
-                                            } else {
-                                                bestFit[p] = priorCenter[p] * Math.PI / 180.0;
-                                            }
+                            minimization.setNrestartsMax(1);
+                            minimization.nelderMead(new FitLightCurveChi2(detrendY, dof, bp, detrendX, detrendYE, isFitted, detrendYAverage, priorCenter),
+                                    start, step, tolerance[curve], maxFitSteps[curve]);
+                            coeffs = minimization.getParamValues();
+                            nTries = minimization.getNiter() - 1;
+                            converged = minimization.getConvStatus();
+                            fp = 0;
+                            for (int p = 0; p < maxFittedVars; p++) {
+                                if (isFitted[p]) {
+                                    bestFit[p] = coeffs[fp];
+                                    fp++;
+                                } else if (p < 7 && useTransitFit[curve] && lockToCenter[curve][p]) {
+                                    if (p == 1) {
+                                        bestFit[p] = Math.sqrt(priorCenter[p]);
+                                    } else if (p == 4) {
+                                        if (bpLock[curve]) {
+                                            bestFit[4] = Math.acos(bp / bestFit[2]);
                                         } else {
-                                            bestFit[p] = priorCenter[p];
+                                            bestFit[p] = priorCenter[p] * Math.PI / 180.0;
                                         }
-                                    } else if (p >= 7 && p < 7 + maxDetrendVars && detrendIndex[curve][p - 7] != 0 && detrendYDNotConstant[p - 7] && lockToCenter[curve][p]) {
-                                        bestFit[p] = priorCenter[p];
                                     } else {
-                                        bestFit[p] = Double.NaN;
+                                        bestFit[p] = priorCenter[p];
                                     }
+                                } else if (p >= 7 && p < 7 + maxDetrendVars && detrendIndex[curve][p - 7] != 0 && detrendYDNotConstant[p - 7] && lockToCenter[curve][p]) {
+                                    bestFit[p] = priorCenter[p];
+                                } else {
+                                    bestFit[p] = Double.NaN;
                                 }
+                            }
 
-                                /*if (useTransitFit[curve]) {//todo not used in PU, remove
-                                    //Winn 2010 eqautions 14, 15, 16
-                                    if (!bpLock[curve])
-                                        bp = bestFit[2] * Math.cos(bestFit[4]) * (1.0 - (forceCircularOrbit[curve] ? 0.0 : eccentricity[curve] * eccentricity[curve])) / (1.0 + (forceCircularOrbit[curve] ? 0.0 : eccentricity[curve]) * Math.sin(forceCircularOrbit[curve] ? 0.0 : omega[curve]));
-                                    double bp2 = bp * bp;
-                                    t14[curve] = (orbitalPeriod[curve] / Math.PI * Math.asin(Math.sqrt((1.0 + bestFit[1]) * (1.0 + bestFit[1]) - bp2) / (Math.sin(bestFit[4]) * bestFit[2])) * Math.sqrt(1.0 - (forceCircularOrbit[curve] ? 0.0 : eccentricity[curve] * eccentricity[curve])) / (1.0 + (forceCircularOrbit[curve] ? 0.0 : eccentricity[curve]) * Math.sin(forceCircularOrbit[curve] ? 0.0 : omega[curve])));
-                                    t23[curve] = (orbitalPeriod[curve] / Math.PI * Math.asin(Math.sqrt((1.0 - bestFit[1]) * (1.0 - bestFit[1]) - bp2) / (Math.sin(bestFit[4]) * bestFit[2])) * Math.sqrt(1.0 - (forceCircularOrbit[curve] ? 0.0 : eccentricity[curve] * eccentricity[curve])) / (1.0 + (forceCircularOrbit[curve] ? 0.0 : eccentricity[curve]) * Math.sin(forceCircularOrbit[curve] ? 0.0 : omega[curve])));
-                                    tau[curve] = (t14[curve] - t23[curve]) / 2.0;
-                                    double sin2tTpioP = Math.pow(Math.sin(t14[curve] * Math.PI / orbitalPeriod[curve]), 2);
-                                    stellarDensity[curve] = 0.0189 / (orbitalPeriod[curve] * orbitalPeriod[curve]) * Math.pow(((1.0 + bestFit[1]) * (1.0 + bestFit[1]) - bp2 * (1 - sin2tTpioP)) / sin2tTpioP, 1.5);
+                            chi2dof = minimization.getMinimum();
+                            bic = chi2dof * (detrendX.length - bestFit.length) + bestFit.length * Math.log(detrendX.length);
 
-                                    double midpointFlux = IJU.transitModel(new double[]{bestFit[3]}, bestFit[0], bestFit[4], bestFit[1], bestFit[2], bestFit[3], orbitalPeriod[curve], forceCircularOrbit[curve] ? 0.0 : eccentricity[curve], forceCircularOrbit[curve] ? 0.0 : omega[curve], bestFit[5], bestFit[6], useLonAscNode[curve], lonAscNode[curve])[0];
-                                    transitDepth[curve] = (1 - (midpointFlux / bestFit[0])) * 1000;
-                                }*/
-                                
-                                chi2dof = minimization.getMinimum();
-                                bic = chi2dof * (detrendX.length - bestFit.length) + bestFit.length * Math.log(detrendX.length);
-
-                                fp = fittedDetrendParStart;
-                                for (int p = 7; p < maxFittedVars; p++) {
-                                    if (isFitted[p]) {
-                                        detrendFactor[p - 7] = coeffs[fp++];
-                                    } else if (lockToCenter[curve][p]) {
-                                        detrendFactor[p - 7] = priorCenter[p];
-                                    }
+                            fp = fittedDetrendParStart;
+                            for (int p = 7; p < maxFittedVars; p++) {
+                                if (isFitted[p]) {
+                                    detrendFactor[p - 7] = coeffs[fp++];
+                                } else if (lockToCenter[curve][p]) {
+                                    detrendFactor[p - 7] = priorCenter[p];
                                 }
-                            } else if (useNelderMeadChi2ForDetrend) {
-                                minimization.removeConstraints();
-                                start = new double[detrendVars.length];
-                                step = new double[detrendVars.length];
-                                for (int i = 0; i < start.length; i++) {
-                                    start[i] = 0.0;
-                                    step[i] = 1.0;
-                                }
-                                double fTol = 1e-10;
-                                int nMax = 20000;
-                                minimization.nelderMead(new FitDetrendChi2(detrendY, detrendYE), start, step, fTol, nMax);
-                                coeffs = minimization.getParamValues();
+                            }
+                        } else if (useNelderMeadChi2ForDetrend) {
+                            minimization.removeConstraints();
+                            start = new double[detrendVars.length];
+                            step = new double[detrendVars.length];
+                            for (int i = 0; i < start.length; i++) {
+                                start[i] = 0.0;
+                                step[i] = 1.0;
+                            }
+                            double fTol = 1e-10;
+                            int nMax = 20000;
+                            minimization.nelderMead(new FitDetrendChi2(detrendY, detrendYE), start, step, fTol, nMax);
+                            coeffs = minimization.getParamValues();
 
-                                varCount = 0;
-                                for (int v = 0; v < maxDetrendVars; v++) {
-                                    if (detrendIndex[curve][v] != 0 && detrendYDNotConstant[v]) {
-                                        detrendFactor[v] = coeffs[varCount];
-                                        varCount++;
-                                    }
+                            varCount = 0;
+                            for (int v = 0; v < maxDetrendVars; v++) {
+                                if (detrendIndex[curve][v] != 0 && detrendYDNotConstant[v]) {
+                                    detrendFactor[v] = coeffs[varCount];
+                                    varCount++;
                                 }
-                            } else {  //use regression
-                                Regression regression = new Regression(detrendVars, detrendY);
-                                regression.linear();
-                                coeffs = regression.getCoeff();
+                            }
+                        } else {  //use regression
+                            Regression regression = new Regression(detrendVars, detrendY);
+                            regression.linear();
+                            coeffs = regression.getCoeff();
 
-                                varCount = 1;
-                                for (int v = 0; v < maxDetrendVars; v++) {
-                                    if (detrendIndex[curve][v] != 0 && detrendYDNotConstant[v]) {
-                                        detrendFactor[v] = coeffs[varCount];
-                                        varCount++;
-                                    }
+                            varCount = 1;
+                            for (int v = 0; v < maxDetrendVars; v++) {
+                                if (detrendIndex[curve][v] != 0 && detrendYDNotConstant[v]) {
+                                    detrendFactor[v] = coeffs[varCount];
+                                    varCount++;
                                 }
                             }
                         }
-                        
+
 
                         if (detrendFitIndex[curve] == 9 && useTransitFit[curve]) {
                             createDetrendModel = false;

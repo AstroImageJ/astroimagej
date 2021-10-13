@@ -14081,7 +14081,11 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     }
 
     static double getFitStep(int c, int row) {
-        return useCustomFitStep[c][row] ? fitStep[c][row] > 0.0 ? fitStep[c][row] : defaultFitStep[row] : (usePriorWidth[c][row] && priorWidth[c][row] > 0.0 ? (priorWidth[c][row] * 0.9 < priorCenter[c][row] ? priorWidth[c][row] * 0.9 : priorCenter[c][row] > 0.0 ? priorCenter[c][row] : defaultFitStep[row]) : (priorCenter[c][row] < defaultFitStep[row] && priorCenter[c][row] > 0.0 ? priorCenter[c][row] : defaultFitStep[row]));
+        return getFitStep(c, row, priorWidth[c], priorCenter[c]);
+    }
+
+    static double getFitStep(int c, int row, double[] width, double[] center) {
+        return useCustomFitStep[c][row] ? fitStep[c][row] > 0.0 ? fitStep[c][row] : defaultFitStep[row] : (usePriorWidth[c][row] && width[row] > 0.0 ? (width[row] * 0.9 < center[row] ? width[row] * 0.9 : center[row] > 0.0 ? center[row] : defaultFitStep[row]) : (center[row] < defaultFitStep[row] && center[row] > 0.0 ? center[row] : defaultFitStep[row]));
     }
 
     static void enableTransitComponents(int c) {

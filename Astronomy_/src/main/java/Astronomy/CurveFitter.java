@@ -1273,12 +1273,12 @@ public class CurveFitter {
                                 if (index[fp] == 1) {
                                     start[fp] = Math.sqrt(priorCenter[1]);
                                     width[fp] = Math.sqrt(priorWidth[1]);
-                                    step[fp] = Math.sqrt(getFitStep(curve, 1));
+                                    step[fp] = Math.sqrt(getFitStep(curve, 1, priorWidth, priorCenter));
                                     minimization.addConstraint(fp, -1, 0.0);
                                 } else if (index[fp] == 4) {
                                     start[fp] = priorCenter[4] * Math.PI / 180.0;  // inclination
                                     width[fp] = priorWidth[4] * Math.PI / 180.0;
-                                    step[fp] = getFitStep(curve, 4) * Math.PI / 180.0;
+                                    step[fp] = getFitStep(curve, 4, priorWidth, priorCenter) * Math.PI / 180.0;
                                     minimization.addConstraint(fp, 1, 90.0 * Math.PI / 180.0);
                                     minimization.addConstraint(fp, -1, 50.0 * Math.PI / 180.0);
                                 } else {
@@ -1295,7 +1295,7 @@ public class CurveFitter {
                                     }
                                     start[fp] = priorCenter[index[fp]];
                                     width[fp] = priorWidth[index[fp]];
-                                    step[fp] = getFitStep(curve, index[fp]);
+                                    step[fp] = getFitStep(curve, index[fp], priorWidth, priorCenter);
                                 }
                                 if (usePriorWidth[curve][index[fp]]) {
                                     minimization.addConstraint(fp, 1, start[fp] + width[fp]);

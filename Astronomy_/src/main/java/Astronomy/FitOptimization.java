@@ -198,7 +198,7 @@ public class FitOptimization implements AutoCloseable {
 
         BigInteger initState = createBinaryRepresentation(selectable); //numAps has number of apertures
 
-        compCounter.setBasis(initState);
+        compCounter.setBasis(initState.subtract(BigInteger.ONE)); // Subtract 1 as 0-state is skipped
         scheduleIpsCounter(0);
 
         var finalState = divideTasksAndRun(new MinimumState(initState, Double.MAX_VALUE), BigInteger.ONE,
@@ -208,7 +208,6 @@ public class FitOptimization implements AutoCloseable {
         finishOptimization(optimizeButton);
     }
 
-    //todo counter won't go to 0 on reruns of 2-comp star cases, force?
     private void finishOptimization(JToggleButton button) {
         MultiPlot_.updatePlot(curve);
         button.setSelected(false);

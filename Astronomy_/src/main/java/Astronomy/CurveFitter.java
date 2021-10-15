@@ -49,7 +49,6 @@ public class CurveFitter {
         this.targetStar = targetStar;
         getStarData();
         setupData();
-        conditionData();
         // todo add check for fitter running only on Tstar and other conditions
         //      extract star and filter from this "rel_flux_Txx"
     }
@@ -835,89 +834,108 @@ public class CurveFitter {
         }
     }
 
-    // RMS/BIC aren't exact matches with this, but close enough
-    private void conditionData() {
-        for (int ap = 0; ap < source.length; ap++) {
-            int bucketSize = 0;
-            var workingSource = new double[nn[curve]];
-            var workingSrcvar = new double[nn[curve]];
-            if (excludedHeadSamples + excludedTailSamples >= n) { //Handle case for more samples excluded than in dataset
-                excludedHeadSamples = excludedHeadSamples < n ? excludedHeadSamples : n - 1;
-                excludedTailSamples = n - excludedHeadSamples - 1;
+    private FluxData conditionData() {
+        var rel_flux = new double[source[0].length];
+        var rel_flux_err = new double[source[0].length];
+        for (int i= 0; i < source[0].length; i++) {
+            var compSum = 0.0;
+            var compVar = 0.0;
+            for (int ap = 0; ap < localIsRefStar.length; ap++) {
+                if (localIsRefStar[ap] && targetStar != ap) {
+                    compSum += source[ap][i];
+                    compVar += srcvar[ap][i];
+                }
             }
-            for (int j = 0; j < nn[curve]; j++) {
-                if (nnr[curve] > 0 && j == nn[curve] - 1) {
-                    bucketSize = nnr[curve];
+            if (compSum == 0) continue;
+            rel_flux[i] = source[targetStar][i] / compSum;
+            if (source[curve][i] == 0) {
+                rel_flux[i] = Double.POSITIVE_INFINITY;
+            } else {
+                rel_flux_err[i] = hasErrors[curve] || hasOpErrors[curve] ? (rel_flux[i] * Math.sqrt(srcvar[targetStar][i] / (source[targetStar][i] * source[targetStar][i]) + compVar / (compSum * compSum))) : 1;
+            }
+        }
+
+        int bucketSize = 0;
+        var workingSource = new double[nn[curve]];
+        var workingSrcvar = new double[nn[curve]];
+        if (excludedHeadSamples + excludedTailSamples >= n) { //Handle case for more samples excluded than in dataset
+            excludedHeadSamples = excludedHeadSamples < n ? excludedHeadSamples : n - 1;
+            excludedTailSamples = n - excludedHeadSamples - 1;
+        }
+        for (int j = 0; j < nn[curve]; j++) {
+            if (nnr[curve] > 0 && j == nn[curve] - 1) {
+                bucketSize = nnr[curve];
+            } else {
+                bucketSize = binSize[curve];
+            }
+            for (int k = excludedHeadSamples; k < (bucketSize + excludedHeadSamples); k++) {
+                var i = j * binSize[curve] + k;
+                workingSource[j] += rel_flux[i];
+                workingSrcvar[j] += rel_flux_err[i];
+            }
+            workingSource[j] /= bucketSize;
+            workingSrcvar[j] /= bucketSize;
+        }
+
+        fitMin[curve] = (useDMarker1 ? dMarker1Value : Double.NEGATIVE_INFINITY) + xOffset;
+        fitMax[curve] = (useDMarker4 ? dMarker4Value : Double.POSITIVE_INFINITY) + xOffset;
+        fitLeft[curve] = dMarker2Value + xOffset;
+        fitRight[curve] = dMarker3Value + xOffset;
+        switch (detrendFitIndex[curve]) {
+            case 2: // left of D2
+                fitMax[curve] = fitLeft[curve];
+                break;
+            case 3: // right of D3
+                fitMin[curve] = fitRight[curve];
+                break;
+            case 4: // outside D2 and D3
+                break;
+            case 5: // inside D2 and D3
+                fitMin[curve] = fitLeft[curve];
+                fitMax[curve] = fitRight[curve];
+                break;
+            case 6: // left of D3
+                fitMax[curve] = fitRight[curve];
+                break;
+            case 7: // right of D2
+                fitMin[curve] = fitLeft[curve];
+                break;
+            case 8: // use all data
+                break;
+            case 9: // use all data to fit transit with simultaneaous detrend
+                break;
+            default: // use all data
+                detrendFitIndex[curve] = 0;
+                break;
+        }
+
+        var workingSource2 = new double[nn[curve]];
+        var workingSrcvar2 = new double[nn[curve]];
+
+        //todo check on Source-Sky, Source_Error values, and detrend parameters for NaNs. If a NaN is found, bail out and give an appropriate error.
+        for (int j = 0; j < nn[curve]; j++) {
+            if (detrendFitIndex[curve] != 1) {
+                if (detrendFitIndex[curve] == 4) {
+                    if ((x[curve][j] > fitMin[curve] && x[curve][j] < fitLeft[curve]) || (x[curve][j] > fitRight[curve] && x[curve][j] < fitMax[curve])) {
+                        workingSource2[j] = workingSource[j];
+                        workingSrcvar2[j] = workingSrcvar[j];
+                    }
                 } else {
-                    bucketSize = binSize[curve];
-                }
-                for (int k = excludedHeadSamples; k < (bucketSize + excludedHeadSamples); k++) {
-                    var i = j * binSize[curve] + k;
-                    workingSource[j] += source[ap][i];
-                    workingSrcvar[j] += srcvar[ap][i];
-                }
-                workingSource[j] /= bucketSize;
-                workingSrcvar[j] /= bucketSize;
-            }
-
-            fitMin[curve] = (useDMarker1 ? dMarker1Value : Double.NEGATIVE_INFINITY) + xOffset;
-            fitMax[curve] = (useDMarker4 ? dMarker4Value : Double.POSITIVE_INFINITY) + xOffset;
-            fitLeft[curve] = dMarker2Value + xOffset;
-            fitRight[curve] = dMarker3Value + xOffset;
-            switch (detrendFitIndex[curve]) {
-                case 2: // left of D2
-                    fitMax[curve] = fitLeft[curve];
-                    break;
-                case 3: // right of D3
-                    fitMin[curve] = fitRight[curve];
-                    break;
-                case 4: // outside D2 and D3
-                    break;
-                case 5: // inside D2 and D3
-                    fitMin[curve] = fitLeft[curve];
-                    fitMax[curve] = fitRight[curve];
-                    break;
-                case 6: // left of D3
-                    fitMax[curve] = fitRight[curve];
-                    break;
-                case 7: // right of D2
-                    fitMin[curve] = fitLeft[curve];
-                    break;
-                case 8: // use all data
-                    break;
-                case 9: // use all data to fit transit with simultaneaous detrend
-                    break;
-                default: // use all data
-                    detrendFitIndex[curve] = 0;
-                    break;
-            }
-
-            var workingSource2 = new double[nn[curve]];
-            var workingSrcvar2 = new double[nn[curve]];
-
-            //todo check on Source-Sky, Source_Error values, and detrend parameters for NaNs. If a NaN is found, bail out and give an appropriate error.
-            for (int j = 0; j < nn[curve]; j++) {
-                if (detrendFitIndex[curve] != 1) {
-                    if (detrendFitIndex[curve] == 4) {
-                        if ((x[curve][j] > fitMin[curve] && x[curve][j] < fitLeft[curve]) || (x[curve][j] > fitRight[curve] && x[curve][j] < fitMax[curve])) {
+                    if (x[curve][j] > fitMin[curve]) {
+                        if (x[curve][j] < fitMax[curve]) {
                             workingSource2[j] = workingSource[j];
                             workingSrcvar2[j] = workingSrcvar[j];
-                        }
-                    } else {
-                        if (x[curve][j] > fitMin[curve]) {
-                            if (x[curve][j] < fitMax[curve]) {
-                                workingSource2[j] = workingSource[j];
-                                workingSrcvar2[j] = workingSrcvar[j];
-                            }
                         }
                     }
                 }
             }
-
-            source[ap] = workingSource2;
-            srcvar[ap] = workingSrcvar2;
         }
+
+        return new FluxData(workingSource2, workingSrcvar2);
     }
+
+    record FluxData(double[] rel_flux, double[] err) {};
+
 
     private synchronized OptimizerResults updateCurve() {
         var minimization = minimizationThreadLocal.get();
@@ -979,31 +997,10 @@ public class CurveFitter {
 
         if (!plotY[curve]) return new OptimizerResults(Double.NaN, Double.NaN);
 
-        var total = new double[detrendXs[curve].length];
-        var totvar = new double[detrendXs[curve].length];
-        for (int i= 0; i < detrendXs[curve].length; i++) {
-            var compSum = 0.0;
-            var compVar = 0.0;
-            for (int ap = 0; ap < localIsRefStar.length; ap++) {
-                if (localIsRefStar[ap] && targetStar != ap) {
-                    compSum += source[ap][i];
-                    compVar += srcvar[ap][i];
-                }
-            }
-            total[i] = compSum;
-            totvar[i] = compVar;
-        }
-
-
-        for (int i= 0; i < detrendXs[curve].length; i++) {
-            if (total[i] == 0) continue;//todo better nan filtering
-            y[i] = source[targetStar][i] / total[i];
-            if (source[curve][i] == 0 || total[i] == 0) {
-                detrendY[i] = Double.POSITIVE_INFINITY;
-            } else {
-                detrendYE[i] = hasErrors[curve] || hasOpErrors[curve] ? (y[i] * Math.sqrt(srcvar[targetStar][i] / (source[targetStar][i] * source[targetStar][i]) + totvar[i] / (total[i] * total[i]))) : 1;
-            }
-            detrendYE[i] = detrendYE[i];
+        var flux = conditionData();
+        for (int i = 0; i < flux.rel_flux.length; i++) {
+            y[i] = flux.rel_flux[i];
+            detrendYE[i] = flux.err[i];
             yerr[i] = detrendYE[i];
             detrendY[i] = y[i];
             yAverage += y[i];

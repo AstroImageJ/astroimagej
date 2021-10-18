@@ -871,9 +871,10 @@ public class CurveFitter {
             for (int k = excludedHeadSamples; k < (bucketSize + excludedHeadSamples); k++) {
                 var i = j * binSize[curve] + k;
                 workingSource[j] += rel_flux[i];
-                workingSrcvar[j] += rel_flux_err[i];
+                workingSrcvar[j] += rel_flux_err[i] * rel_flux_err[i];
             }
             workingSource[j] /= bucketSize;
+            workingSrcvar[j] = Math.sqrt(workingSrcvar[j]);
             workingSrcvar[j] /= bucketSize;
         }
 
@@ -1001,7 +1002,7 @@ public class CurveFitter {
         for (int i = 0; i < flux.rel_flux.length; i++) {
             y[i] = flux.rel_flux[i];
             detrendYE[i] = flux.err[i];
-            yerr[i] = detrendYE[i];
+            yerr[i] = flux.err[i];
             detrendY[i] = y[i];
             yAverage += y[i];
         }

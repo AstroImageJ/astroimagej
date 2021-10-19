@@ -1,45 +1,40 @@
 // Data_Prosser.java
 package Astronomy;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.HashMap;
-import java.util.Properties;
-import java.util.Enumeration;
-
-
-import javax.swing.*;
-import javax.swing.event.*;
-import javax.swing.text.*;
-import javax.swing.border.*;
-
-import ij.*;
-import ij.io.*;
-
-import java.text.*;
-
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeEvent;
-
-import ij.process.*;
-import ij.gui.*;
-
-import java.util.*;
-import ij.plugin.*;
-
 import astroj.*;
-import astroj.SpringUtil;		// OR GET IT FROM AN EXTERNAL PACKAGE
+import ij.*;
+import ij.gui.GenericDialog;
+import ij.gui.ImageCanvas;
+import ij.gui.ImageWindow;
+import ij.io.DirectoryChooser;
+import ij.io.FileInfo;
+import ij.io.OpenDialog;
+import ij.plugin.Macro_Runner;
+import ij.plugin.PlugIn;
+import ij.process.ImageProcessor;
 
-import java.awt.image.BufferedImage;
-
-import java.io.*;
-import java.util.zip.GZIPOutputStream;
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageWriteParam;
 import javax.imageio.stream.FileImageOutputStream;
+import javax.swing.*;
+import javax.swing.border.TitledBorder;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.text.MaskFormatter;
+import java.awt.*;
+import java.awt.event.*;
+import java.awt.image.BufferedImage;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.io.*;
+import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
+import java.util.Timer;
+import java.util.*;
+import java.util.zip.GZIPOutputStream;
 
 
 /**
@@ -6002,12 +5997,14 @@ protected ImageIcon createImageIcon(String path, String description) {
     
     int cntFiles(String calPath, String calBase)
         {
+        if (calPath == null || calBase == null) return 0;
         String fileBase = calBase.trim();
         int cnt = 0;
         File calDir = new File (calPath.trim());
         if (calDir.isDirectory())
             {
             File[] files = calDir.listFiles();
+            if (files == null) return 0;
             if (files.length > 0)
                 {
                 for (int i=0; i < files.length; i++)

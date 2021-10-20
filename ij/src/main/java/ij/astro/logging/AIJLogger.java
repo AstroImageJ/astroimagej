@@ -67,7 +67,7 @@ public class AIJLogger {
         } else if (obj instanceof long[] objA) {
             log(Arrays.toString(objA), useNewWindow);
         } else if (obj instanceof Object[] objA) {
-            log(Arrays.toString(objA), useNewWindow);
+            log(Arrays.deepToString(objA), useNewWindow);
         } else if (obj instanceof byte[] objA) {
             log(Arrays.toString(objA), useNewWindow);
         } else if (obj instanceof char[] objA) {

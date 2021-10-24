@@ -30,7 +30,7 @@ jobs:
           path: build/distributions/*x86*.exe
       - uses: actions/upload-artifact@v2
         with:
-          name: Windows (x86) package (.zip)
+          name: Windows (x86) Package (.zip)
           path: build/distributions/*x86*.zip
       - uses: actions/upload-artifact@v2
         with:
@@ -38,5 +38,5 @@ jobs:
           path: build/distributions/*arm*.exe
       - uses: actions/upload-artifact@v2
         with:
-          name: Windows (Arm) package (.zip)
-          path: build/distributions/*arm*.exe
+          name: Windows (Arm) Package (.zip)
+          path: build/distributions/*arm*.zip

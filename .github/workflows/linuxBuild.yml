@@ -12,7 +12,6 @@ on: workflow_dispatch # manually triggered
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v2
       - name: Set up JDK 16
@@ -25,5 +24,13 @@ jobs:
         run: ./gradlew packageAijForLinux_x86
       - uses: actions/upload-artifact@v2
         with:
-          name: Linux Compressed tar file (.tar.gz)
-          path: build/distributions/*x86*.tar.gz #TODO once installer generation is added, gen and upload installers
+          name: Linux (x86) Universal Package (.tar.gz)
+          path: build/distributions/*x86*.tar.gz
+      - uses: actions/upload-artifact@v2
+        with:
+          name: Linux (x86) Debian Installer (.deb)
+          path: build/distributions/*x86*.deb
+      - uses: actions/upload-artifact@v2
+        with:
+          name: Linux (x86) Red Hat Installer (.rpm)
+          path: build/distributions/*x86*.rpm

@@ -56,9 +56,9 @@ jobs:
           name: Linux (x86) Debian Installer (.deb)
           path: build/distributions/*x86*.deb
       - uses: actions/upload-artifact@v2
-          with:
-            name: Linux (x86) Red Hat Installer (.rpm)
-            path: build/distributions/*x86*.rpm
+        with:
+          name: Linux (x86) Red Hat Installer (.rpm)
+          path: build/distributions/*x86*.rpm
   macos:
     runs-on: macos-latest
     steps:

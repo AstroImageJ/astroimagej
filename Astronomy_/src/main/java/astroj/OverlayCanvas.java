@@ -1,11 +1,15 @@
 // OverlayCanvas.java
 package astroj;
 
-import java.awt.*;
-import java.util.*;
+import ij.ImagePlus;
+import ij.gui.ImageCanvas;
+import ij.gui.ImageWindow;
+import ij.gui.Roi;
+import ij.gui.StackWindow;
 
-import ij.*;
-import ij.gui.*;
+import java.awt.*;
+import java.util.Enumeration;
+import java.util.Vector;
 
 /**
  * A special ImageCanvas which displays lists of ROIs in a non-destructive overlay.
@@ -29,6 +33,7 @@ public class OverlayCanvas extends ImageCanvas
 	 */
 	public void add (Roi roi)
 		{
+		if (rois.contains(roi)) return;
 		rois.addElement (roi);
 		}
 

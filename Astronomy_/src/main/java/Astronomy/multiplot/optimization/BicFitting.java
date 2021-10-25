@@ -38,7 +38,7 @@ public class BicFitting extends Optimizer {
             var x = newState(state);
             var r = CurveFitter.getInstance(curve, fitOptimization.getTargetStar()).fitCurveAndGetResults(x);
 
-            if (Double.isNaN(r.rms()) || Double.isNaN(r.bic())) continue;
+            if (/*Double.isNaN(r.rms()) ||*/ Double.isNaN(r.bic())) continue;
 
             //AIJLogger.log(state.toString(2));
             /*AIJLogger.log(state);

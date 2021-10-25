@@ -645,7 +645,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static boolean[] fromMag;
     static int[] normIndex;
     static int[] detrendFitIndex;
-    static int[][] detrendIndex;
+    public static int[][] detrendIndex;
 
     static boolean[] plotY;
     static boolean[] useColumnName;

@@ -38,8 +38,6 @@ public class CurveFitter {
     double[][] source;
     double[][] srcvar;
 
-    boolean[] localIsRefStar;
-
     //private final Minimization minimization = new Minimization();
     ThreadLocal<Minimization> minimizationThreadLocal = ThreadLocal.withInitial(Minimization::new);
 
@@ -63,9 +61,16 @@ public class CurveFitter {
         INSTANCE = null;
     }
 
-    public synchronized OptimizerResults fitCurveAndGetResults(boolean[] isRefStar) {
-        localIsRefStar = isRefStar;
-        return updateCurve();
+    public OptimizerResults fitCurveAndGetResults(boolean[] isRefStar) {
+        return fitCurveAndGetResults(isRefStar, detrendIndex[curve]);
+    }
+
+    public OptimizerResults fitCurveAndGetResults(int[] detrendIndex) {
+        return fitCurveAndGetResults(isRefStar, detrendIndex);
+    }
+
+    public OptimizerResults fitCurveAndGetResults(boolean[] isRefStar, int[] detrendIndex) {
+        return updateCurve(isRefStar, detrendIndex);
     }
 
     private synchronized void getStarData() {
@@ -834,7 +839,7 @@ public class CurveFitter {
         }
     }
 
-    private FluxData conditionData() {
+    private FluxData conditionData(boolean[] localIsRefStar) {
         var rel_flux = new double[source[0].length];
         var rel_flux_err = new double[source[0].length];
         for (int i= 0; i < source[0].length; i++) {
@@ -938,7 +943,7 @@ public class CurveFitter {
     record FluxData(double[] rel_flux, double[] err) {};
 
 
-    private synchronized OptimizerResults updateCurve() {
+    private synchronized OptimizerResults updateCurve(boolean[] isRefStar, int[] detrendIndex) {
         var minimization = minimizationThreadLocal.get();
         var avgCount = initAvgCount;
         var atLeastOne = initAtLeastOne;
@@ -981,10 +986,14 @@ public class CurveFitter {
         var converged = MultiPlot_.converged[curve];
         var createDetrendModel = MultiPlot_.createDetrendModel;
         var detrend = MultiPlot_.detrend[curve];//new double[maxDetrendVars][n];
+        var maxDetrendVars = MultiPlot_.maxDetrendVars - (MultiPlot_.detrendIndex[curve].length - detrendIndex.length);
+        var maxFittedVars = 7 + maxDetrendVars;
+
+        detrendVarsUsed[curve] = (int) Arrays.stream(detrendIndex).filter(i -> i != 0).count();
 
         if (detrendFitIndex[curve] != 0) {
             for (int v = 0; v < maxDetrendVars; v++) {
-                if (detrendIndex[curve][v] != 0) {
+                if (detrendIndex[v] != 0) {
                     atLeastOne = true;
                     break;
                 }
@@ -998,7 +1007,7 @@ public class CurveFitter {
 
         if (!plotY[curve]) return new OptimizerResults(Double.NaN, Double.NaN);
 
-        var flux = conditionData();
+        var flux = conditionData(isRefStar);
         for (int i = 0; i < flux.rel_flux.length; i++) {
             y[i] = flux.rel_flux[i];
             detrendYE[i] = flux.err[i];
@@ -1028,7 +1037,7 @@ public class CurveFitter {
 
                 if (v > 0) {
                     for (int u = 0; u < v; u++) {
-                        if (detrendIndex[curve][u] == detrendIndex[curve][v]) detrendPower[v]++;
+                        if (detrendIndex[u] == detrendIndex[v]) detrendPower[v]++;
                     }
                 }
                 if (detrendPower[v] > 1) {
@@ -1061,7 +1070,7 @@ public class CurveFitter {
 
             double meridianFlip = mfMarker1Value + xOffset;
             for (int v = 0; v < maxDetrendVars; v++) {
-                if (detrendIndex[curve][v] == 1)    //Meridian Flip Detrend Selected
+                if (detrendIndex[v] == 1)    //Meridian Flip Detrend Selected
                 {
                     for (int j = 0; j < nn[curve]; j++) {
                         if (x[curve][j] < meridianFlip)  //meridian flip fitting data = -1.0 to left and 1.0 to right of flip
@@ -1109,14 +1118,14 @@ public class CurveFitter {
                     }
 
                     for (int v = 0; v < maxDetrendVars; v++) {
-                        if (detrendIndex[curve][v] != 0 && !detrendYDNotConstant[v] && detrendVarsUsed[curve] > 0) {
+                        if (detrendIndex[v] != 0 && !detrendYDNotConstant[v] && detrendVarsUsed[curve] > 0) {
                             detrendVarsUsed[curve]--;
                         }
                     }
                     detrendVars = new double[detrendVarsUsed[curve]][detrendCount];
                     int varCount = 0;
                     for (int v = 0; v < maxDetrendVars; v++) {
-                        if (detrendIndex[curve][v] != 0 && detrendYDNotConstant[v]) {
+                        if (detrendIndex[v] != 0 && detrendYDNotConstant[v]) {
                             detrendVars[varCount] = Arrays.copyOf(detrendYD[v], detrendCount);
                             varCount++;
                         }
@@ -1178,8 +1187,8 @@ public class CurveFitter {
                     }
 
                     // Pull locked values
-                    for (int d = 0; d < maxDetrendVars + 7; d++) {
-                            priorCenter[d] = (Double) priorCenterSpinner[curve][d].getValue();
+                    for (int d = 0; d < maxDetrendVars + 7; d++) {//todo recalculate from detrendVars, only if not locked
+                        priorCenter[d] = (Double) priorCenterSpinner[curve][d].getValue();
                     }
 
                     if (!lockToCenter[curve][0] && autoUpdatePrior[curve][0]) {
@@ -1235,7 +1244,7 @@ public class CurveFitter {
 
                             fittedDetrendParStart = nFitted;
                             for (int p = 7; p < maxFittedVars; p++) {
-                                if (detrendIndex[curve][p - 7] != 0 && detrendYDNotConstant[p - 7] && !lockToCenter[curve][p]) {
+                                if (detrendIndex[p - 7] != 0 && detrendYDNotConstant[p - 7] && !lockToCenter[curve][p]) {
                                     isFitted[p] = true;
                                     nFitted++;
                                 } else {
@@ -1302,7 +1311,7 @@ public class CurveFitter {
                             }
 
                             minimization.setNrestartsMax(1);
-                            minimization.nelderMead(new FitLightCurveChi2(detrendY, dof, bp, detrendX, detrendYE, isFitted, detrendYAverage, priorCenter),
+                            minimization.nelderMead(new FitLightCurveChi2(detrendY, dof, bp, detrendX, detrendYE, isFitted, detrendYAverage, priorCenter, detrendIndex, maxFittedVars, detrendVars),
                                     start, step, tolerance[curve], maxFitSteps[curve]);
                             coeffs = minimization.getParamValues();
                             nTries = minimization.getNiter() - 1;
@@ -1324,7 +1333,7 @@ public class CurveFitter {
                                     } else {
                                         bestFit[p] = priorCenter[p];
                                     }
-                                } else if (p >= 7 && p < 7 + maxDetrendVars && detrendIndex[curve][p - 7] != 0 && detrendYDNotConstant[p - 7] && lockToCenter[curve][p]) {
+                                } else if (p >= 7 && p < 7 + maxDetrendVars && detrendIndex[p - 7] != 0 && detrendYDNotConstant[p - 7] && lockToCenter[curve][p]) {
                                     bestFit[p] = priorCenter[p];
                                 } else {
                                     bestFit[p] = Double.NaN;
@@ -1357,7 +1366,7 @@ public class CurveFitter {
 
                             varCount = 0;
                             for (int v = 0; v < maxDetrendVars; v++) {
-                                if (detrendIndex[curve][v] != 0 && detrendYDNotConstant[v]) {
+                                if (detrendIndex[v] != 0 && detrendYDNotConstant[v]) {
                                     detrendFactor[v] = coeffs[varCount];
                                     varCount++;
                                 }
@@ -1369,7 +1378,7 @@ public class CurveFitter {
 
                             varCount = 1;
                             for (int v = 0; v < maxDetrendVars; v++) {
-                                if (detrendIndex[curve][v] != 0 && detrendYDNotConstant[v]) {
+                                if (detrendIndex[v] != 0 && detrendYDNotConstant[v]) {
                                     detrendFactor[v] = coeffs[varCount];
                                     varCount++;
                                 }
@@ -1421,7 +1430,7 @@ public class CurveFitter {
                     boolean noNaNs = true;
                     if (!Double.isNaN(y[j])) {
                         for (int v = 0; v < maxDetrendVars; v++) {
-                            if (detrendIndex[curve][v] != 0 && Double.isNaN(detrend[v][j])) {
+                            if (detrendIndex[v] != 0 && Double.isNaN(detrend[v][j])) {
                                 noNaNs = false;
                                 break;
                             }
@@ -1453,7 +1462,7 @@ public class CurveFitter {
                     for (int j = 0; j < nn[curve]; j++) {
                         trend = yAverage;
                         for (int v = 0; v < maxDetrendVars; v++) {
-                            if (detrendIndex[curve][v] != 0 && detrendYDNotConstant[v]) {
+                            if (detrendIndex[v] != 0 && detrendYDNotConstant[v]) {
                                 trend += detrendFactor[v] * (detrend[v][j]);//-detrendAverage[v]);
                             }
                         }
@@ -1471,7 +1480,7 @@ public class CurveFitter {
                 for (int j = 0; j < nn[curve]; j++) {
                     trend = 0.0;
                     for (int v = 0; v < maxDetrendVars; v++) {
-                        if (detrendIndex[curve][v] != 0 && detrendYDNotConstant[v]) {
+                        if (detrendIndex[v] != 0 && detrendYDNotConstant[v]) {
                             trend += detrendFactor[v] * (detrend[v][j]);//-detrendAverage[v]);
                         }
                     }
@@ -1552,8 +1561,11 @@ public class CurveFitter {
         double[] detrendX, detrendYE, priorCenter, lcModel;
         boolean[] isFitted;
         double detrendYAverage;
+        int[] detrendIndex;
+        int maxFittedVars;
+        double[][] detrendVars;
 
-        public FitLightCurveChi2(double[] detrendY, double dof, double bp, double[] detrendX, double[] detrendYE, boolean[] isFitted, double detrendYAverage, double[] priorCenter) {
+        public FitLightCurveChi2(double[] detrendY, double dof, double bp, double[] detrendX, double[] detrendYE, boolean[] isFitted, double detrendYAverage, double[] priorCenter, int[] detrendIndex, int maxFittedVars, double[][] detrendVars) {
             this.detrendY = detrendY;
             this.dof = dof;
             this.bp = bp;
@@ -1562,6 +1574,9 @@ public class CurveFitter {
             this.isFitted = isFitted;
             this.detrendYAverage = detrendYAverage;
             this.priorCenter = priorCenter;
+            this.detrendIndex = detrendIndex;
+            this.maxFittedVars = maxFittedVars;
+            this.detrendVars = detrendVars;
         }
 
         public double function(double[] param) {
@@ -1609,7 +1624,7 @@ public class CurveFitter {
             for (int p = 7; p < maxFittedVars; p++) {
                 if (isFitted[p]) {
                     dPars[dp++] = param[fp++];
-                } else if (detrendIndex[curve][p - 7] != 0 && detrendYDNotConstant[p - 7] && lockToCenter[curve][p]) {
+                } else if (detrendIndex[p - 7] != 0 && detrendYDNotConstant[p - 7] && lockToCenter[curve][p]) {
                     dPars[dp++] = priorCenter[p];
                 }
             }

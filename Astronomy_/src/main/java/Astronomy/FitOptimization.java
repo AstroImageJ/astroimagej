@@ -1,5 +1,6 @@
 package Astronomy;
 
+import Astronomy.multiplot.optimization.BicFitting;
 import Astronomy.multiplot.optimization.CompStarFitting;
 import Astronomy.multiplot.optimization.Optimizer;
 import astroj.SpringUtil;
@@ -12,24 +13,30 @@ import java.awt.*;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Hashtable;
 import java.util.Objects;
 import java.util.concurrent.*;
 import java.util.function.BiFunction;
 
+import static Astronomy.MultiPlot_.fitDetrendComboBox;
+
 //todo organize properly
 public class FitOptimization implements AutoCloseable {
     private static final int MAX_THREADS = getThreadCount();
     private static final BigInteger MIN_CHUNK_SIZE = BigInteger.valueOf(1000L);
-    private ScheduledExecutorService ipsExecutorService;
-    private BigInteger iterRemainingOld = BigInteger.ZERO;
-    private final int curve;
-    private int targetStar;
     /**
      * The change in the comparator to determine improvement
      */
     private static int EPSILON;
+    private final int curve;
+    public DynamicCounter compCounter;
+    public DynamicCounter detrendCounter;
+    CompletionService<MinimumState> completionService;
+    private ScheduledExecutorService ipsExecutorService;
+    private BigInteger iterRemainingOld = BigInteger.ZERO;
+    private int targetStar;
     /**
      * The index of this array is the selected option,
      * the value of the array is the option index in the relevant {@link MultiPlot_} array.
@@ -38,10 +45,6 @@ public class FitOptimization implements AutoCloseable {
     private int[] selectable2PrimaryIndex;
     private ExecutorService pool;
     private boolean[] selectable;
-    CompletionService<MinimumState> completionService;
-    public DynamicCounter compCounter;
-    public DynamicCounter detrendCounter;
-
     private JToggleButton detOptimizeButton;
     private JToggleButton optimizeButton;
     private RollingAvg rollingAvg = new RollingAvg();
@@ -53,9 +56,33 @@ public class FitOptimization implements AutoCloseable {
         setupThreadedSpace();
     }
 
+    private static void setFinalState(String minimizationTarget, boolean[] state, JCheckBox[] selectables) {
+        for (int r = 0; r < state.length; r++) {
+            selectables[r].setSelected(state[r]);
+        }
+        AIJLogger.log("Found minimum " + minimizationTarget + " state, reference stars set.");
+        IJ.beep();
+    }
+
+    /**
+     * Ignores hyper-threading.
+     *
+     * @return an estimate of the number of available threads that can be used for minimization
+     */
+    private static int getThreadCount() {
+        final int maxRealThreads = Runtime.getRuntime().availableProcessors();
+        return Math.max(1 + (maxRealThreads / 3), maxRealThreads - 4);
+    }
+
     public void setSelectable(boolean[] selectable) {
         this.selectable = selectable;
         this.selectable2PrimaryIndex = new int[selectable.length];
+    }
+
+    public void setSelectable(int selectableSize) {
+        this.selectable = new boolean[selectableSize];
+        Arrays.fill(this.selectable, true);
+        this.selectable2PrimaryIndex = new int[selectableSize];
     }
 
     public Component makeFitOptimizationPanel() {//todo see if multirun issue is fixed by making this static and it creates a new instance of this
@@ -106,7 +133,7 @@ public class FitOptimization implements AutoCloseable {
         compCounter = new DynamicCounter(compOptiIterCount);
         compStarPanel.add(compOptiIterCount);
 
-        SpringUtil.makeCompactGrid(compStarPanel, 2, compStarPanel.getComponentCount()/2, 0, 0, 0, 0);
+        SpringUtil.makeCompactGrid(compStarPanel, 2, compStarPanel.getComponentCount() / 2, 0, 0, 0, 0);
 
         JPanel detrendOptPanel = new JPanel(new SpringLayout());
         detrendOptPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(MultiPlot_.subBorderColor, 1), "Detrend Parameter Selection", TitledBorder.CENTER, TitledBorder.TOP, MultiPlot_.p11, Color.darkGray));
@@ -125,9 +152,10 @@ public class FitOptimization implements AutoCloseable {
             if (detOptimizeButton.isSelected()) {
                 detOptimizeButton.setText("Cancel");
                 if (Objects.equals(detrendOptimizationSelection.getSelectedItem(), detrendTest)) {
-                    AIJLogger.log("Not yet implemented.");
+                    testParamMin();
+                    MultiPlot_.updatePlot(curve);
                 } else if (Objects.equals(detrendOptimizationSelection.getSelectedItem(), detrendBruteForce)) {
-                    AIJLogger.log("Not yet implemented.");
+                    Executors.newSingleThreadExecutor().submit(this::minimizeParams);
                 }
             } else {
                 detOptimizeButton.setText("Start");
@@ -151,7 +179,7 @@ public class FitOptimization implements AutoCloseable {
         detrendCounter = new DynamicCounter(paramOptiIterCount);
         detrendOptPanel.add(paramOptiIterCount);
 
-        SpringUtil.makeCompactGrid(detrendOptPanel, 2, detrendOptPanel.getComponentCount()/2, 0, 0, 0, 0);
+        SpringUtil.makeCompactGrid(detrendOptPanel, 2, detrendOptPanel.getComponentCount() / 2, 0, 0, 0, 0);
 
         fitOptimizationPanel.add(compStarPanel);
         fitOptimizationPanel.add(detrendOptPanel);
@@ -204,8 +232,57 @@ public class FitOptimization implements AutoCloseable {
         var finalState = divideTasksAndRun(new MinimumState(initState, Double.MAX_VALUE), BigInteger.ONE,
                 (start, end) -> new CompStarFitting(start, end, this));
 
-        setFinalState("RMS", finalState, MultiPlot_.refStarCB);
+        setFinalState("RMS", finalState.stateArray, MultiPlot_.refStarCB);
         finishOptimization(optimizeButton);
+    }
+
+    private void testParamMin() {
+        selectable = null;
+        selectable2PrimaryIndex = null;
+
+        setSelectable((int) Arrays.stream(MultiPlot_.detrendIndex[curve]).filter(i -> i != 0).count());
+
+        if (MultiPlot_.refStarFrame == null) MultiPlot_.showRefStarJPanel();
+        CurveFitter.invalidateInstance();
+        //EPSILON = 2;
+
+        targetStar = Integer.parseInt(MultiPlot_.ylabel[curve].split("rel_flux_T")[1]) - 1;
+
+        var x = CurveFitter.getInstance(curve, targetStar).fitCurveAndGetResults(MultiPlot_.detrendIndex[curve]);
+        AIJLogger.log(x);
+        finishOptimization(optimizeButton);
+        EPSILON = 0;
+    }
+
+    private void minimizeParams() {
+        selectable = null;
+        selectable2PrimaryIndex = null;
+
+        setSelectable((int) Arrays.stream(MultiPlot_.detrendIndex[curve]).filter(i -> i != 0).count());
+        if (selectable.length < 2) {
+            IJ.error("More than one detrend parameter is needed for optimization");
+            return;
+        }
+
+        if (MultiPlot_.refStarFrame == null) MultiPlot_.showRefStarJPanel();
+        CurveFitter.invalidateInstance();
+        EPSILON = 2;
+
+        targetStar = Integer.parseInt(MultiPlot_.ylabel[curve].split("rel_flux_T")[1]) - 1;
+
+        BigInteger initState = createBinaryRepresentation(selectable); //numAps has number of apertures
+
+        detrendCounter.setBasis(initState.subtract(BigInteger.ONE)); // Subtract 1 as 0-state is skipped
+        scheduleIpsCounter(0);
+
+        var finalState = divideTasksAndRun(new MinimumState(initState, Double.MAX_VALUE), BigInteger.ONE,
+                (start, end) -> new BicFitting(start, end, this));
+
+
+        if (finalState.outState instanceof int[] x) setFinalState(x);
+
+        finishOptimization(detOptimizeButton);
+        EPSILON = 0;
     }
 
     private void finishOptimization(JToggleButton button) {
@@ -219,32 +296,21 @@ public class FitOptimization implements AutoCloseable {
         if (ipsExecutorService != null) ipsExecutorService.shutdown();
     }
 
-    //todo isRefStar is only not null when the window is/has been open
-
-    //todo require that the y-data column corresponding to the data set fitting panel contains
-    // "rel_flux_Txx" (where the x's can be any valid aperture number) and a corresponding error
-    // column must exist named "rel_flux_err_Txx", where xx should be the same. This means we will
-    // not attempt to optimize a comp star, just target stars, and we can avoid all of the
-    // mathematical operators, etc, for non- rel_flux type data. We also need to only support
-    // "Unphased" and "Days Since Tc" phase-folding modes on MP-main. If any of these conditions are not met,
-    // then when the optimization is started, throw an error message to the user specifying what conditions
-    // are required for minimization.
-
     /**
      * @param initState
      * @param startingPoint
      * @param optimizerBiFunction
      * @return the final state array
      */
-    private boolean[] divideTasksAndRun(final MinimumState initState, final BigInteger startingPoint, //todo does detrend need to start at 0? if not, can remove this param
-                                   BiFunction<BigInteger, BigInteger, Optimizer> optimizerBiFunction) {
+    private OutPair divideTasksAndRun(final MinimumState initState, final BigInteger startingPoint, //todo does detrend need to start at 0? if not, can remove this param
+                                      BiFunction<BigInteger, BigInteger, Optimizer> optimizerBiFunction) {
         setupThreadedSpace();
         iterRemainingOld = BigInteger.ZERO;
         var minimumState = initState;
         var state = minimumState.state;
         var count = 0;
         var CHUNK_SIZE = state.divide(BigInteger.valueOf(MAX_THREADS)).max(MIN_CHUNK_SIZE).add(BigInteger.ONE);
-        for (BigInteger start = startingPoint; start.compareTo(state) < 0;) {
+        for (BigInteger start = startingPoint; start.compareTo(state) < 0; ) {
             var end = state.add(BigInteger.ONE).min(start.add(CHUNK_SIZE)).min(state);
             evaluateStatesInRange(optimizerBiFunction.apply(start, end));
             start = end;
@@ -274,14 +340,25 @@ public class FitOptimization implements AutoCloseable {
         AIJLogger.log(minimumState.comparator);
         AIJLogger.log(setArrayToState(minimumState.state));
 
-        return setArrayToState(minimumState.state);
+        return new OutPair(setArrayToState(minimumState.state), minimumState.outState);
     }
 
-    private static void setFinalState(String minimizationTarget, boolean[] state, JCheckBox[] selectables) {
-        for (int r = 0; r < state.length; r++) {
-            selectables[r].setSelected(state[r]);
+    private void setFinalState(int[] state) {
+        /*for (int i = 0; i < fitDetrendComboBox[curve].length; i++) {
+            MultiPlot_.useFitDetrendCB[curve][i].setSelected(false);
+            for (int b : state) {
+                if (fitDetrendComboBox[curve][i].getSelectedIndex() == b && (b != 0)) {
+                    MultiPlot_.useFitDetrendCB[curve][i].setSelected(true);
+                }
+            }
+        }*/
+        for (int i = 0; i < state.length; i++) {
+            if (state[i] != 0) {
+                fitDetrendComboBox[curve][i].setSelectedIndex(state[i]);
+            }
+            MultiPlot_.useFitDetrendCB[curve][i].setSelected(state[i] != 0);
         }
-        AIJLogger.log("Found minimum " + minimizationTarget + " state, reference stars set.");
+        AIJLogger.log("Found minimum BIC" + " state, the state has been set.");
         IJ.beep();
     }
 
@@ -315,6 +392,7 @@ public class FitOptimization implements AutoCloseable {
 
     /**
      * Modifies {@link FitOptimization#selectable2PrimaryIndex}.
+     *
      * @return an integer representing the current state of enabled options.
      */
     private BigInteger createBinaryRepresentation(boolean[] options) {
@@ -323,6 +401,7 @@ public class FitOptimization implements AutoCloseable {
 
     /**
      * Modifies {@link FitOptimization#selectable2PrimaryIndex}.
+     *
      * @return an integer representing the current state of enabled options.
      */
     private BigInteger createBinaryRepresentation(boolean[] options, boolean updateIndex) {
@@ -378,13 +457,11 @@ public class FitOptimization implements AutoCloseable {
         IJ.showProgress(1 - new BigDecimal(iterRemaining).divide(new BigDecimal(counter.basis), 3, RoundingMode.HALF_UP).doubleValue());
     }
 
-    /**
-     * Ignores hyper-threading.
-     * @return an estimate of the number of available threads that can be used for minimization
-     */
-    private static int getThreadCount() {
-        final int maxRealThreads = Runtime.getRuntime().availableProcessors();
-        return Math.max(1 + (maxRealThreads / 3), maxRealThreads - 4);
+    public interface ToolTipProvider {
+        String getToolTip();
+    }
+
+    private record OutPair(boolean[] stateArray, Object outState) {
     }
 
     /**
@@ -392,7 +469,11 @@ public class FitOptimization implements AutoCloseable {
      * Contains the current working state and the comparator value.
      */
     //todo rename to StateTracker or similar?
-    public record MinimumState(BigInteger state, double comparator) {
+    public record MinimumState(BigInteger state, double comparator, Object outState) {
+        public MinimumState(BigInteger state, double comparator) {
+            this(state, comparator, null);
+        }
+
         /**
          * Makes a state with most negative integer and of the largest comparator.
          */
@@ -440,10 +521,6 @@ public class FitOptimization implements AutoCloseable {
             currentAverage = protoAverage.divide(count, 2, RoundingMode.HALF_UP);
             return currentAverage;
         }
-    }
-
-    public interface ToolTipProvider {
-        String getToolTip();
     }
 
     public class ToolTipWrapper implements ToolTipProvider {
@@ -498,19 +575,19 @@ public class FitOptimization implements AutoCloseable {
             textField.setText(getTotalCount().toString());
         }
 
-        public synchronized void setBasis(BigInteger integer) {
-            basis = integer;
-            sum = BigInteger.ZERO;
-            counters.clear();
-            textField.setText(integer.toString());
-        }
-
         public synchronized BigInteger getSum() {
             return sum;
         }
 
         public BigInteger getBasis() {
             return basis;
+        }
+
+        public synchronized void setBasis(BigInteger integer) {
+            basis = integer;
+            sum = BigInteger.ZERO;
+            counters.clear();
+            textField.setText(integer.toString());
         }
 
         private synchronized BigInteger getTotalCount() {

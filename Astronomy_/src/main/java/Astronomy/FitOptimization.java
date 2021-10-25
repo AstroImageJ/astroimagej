@@ -273,7 +273,7 @@ public class FitOptimization implements AutoCloseable {
         BigInteger initState = createBinaryRepresentation(selectable); //numAps has number of apertures
 
         detrendCounter.setBasis(initState.subtract(BigInteger.ONE)); // Subtract 1 as 0-state is skipped
-        scheduleIpsCounter(0);
+        scheduleIpsCounter(1);
 
         var finalState = divideTasksAndRun(new MinimumState(initState, Double.MAX_VALUE), BigInteger.ONE,
                 (start, end) -> new BicFitting(start, end, this));

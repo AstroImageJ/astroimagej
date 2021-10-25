@@ -344,14 +344,6 @@ public class FitOptimization implements AutoCloseable {
     }
 
     private void setFinalState(int[] state) {
-        /*for (int i = 0; i < fitDetrendComboBox[curve].length; i++) {
-            MultiPlot_.useFitDetrendCB[curve][i].setSelected(false);
-            for (int b : state) {
-                if (fitDetrendComboBox[curve][i].getSelectedIndex() == b && (b != 0)) {
-                    MultiPlot_.useFitDetrendCB[curve][i].setSelected(true);
-                }
-            }
-        }*/
         for (int i = 0; i < state.length; i++) {
             if (state[i] != 0) {
                 fitDetrendComboBox[curve][i].setSelectedIndex(state[i]);

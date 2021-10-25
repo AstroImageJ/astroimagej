@@ -11,7 +11,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'io.github.fvarrui:javapackager:1.6.0'
+        classpath 'io.github.fvarrui:javapackager:1.6.2'
     }
 }
 
@@ -38,7 +38,6 @@ def targetJava = Integer.parseInt(project.minJava as String)
 
 allprojects {
     repositories {
-        //jcenter() Shutdown
         mavenCentral()
     }
     group 'edu.louisville.astro.software'

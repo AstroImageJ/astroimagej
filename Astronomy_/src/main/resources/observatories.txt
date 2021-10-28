@@ -29,8 +29,8 @@ Whitin Obs., Wellesley, MA	42.295300	-71.306700	141
 #
 # Standard Entries
 Abastumani Astrophysical Obs. R Abastumani/Mt.  Kanobili	41.755	42.8216666666667	1583
-Abrah�o de Moraes Obs. R Valinhos	-23.0016666666667	-46.9666666666667	850
-Alger Obs. Bouzar�a	36.8016666666667	3.035	345
+Abrahão de Moraes Obs. R Valinhos	-23.0016666666667	-46.9666666666667	850
+Alger Obs. Bouzaréa	36.8016666666667	3.035	345
 Algonquin Radio Obs. R Lake Traverse, Ontario	45.955	-78.0733333333333	260
 Allegheny Obs. Pittsburgh	40.4833333333333	-80.0216666666667	380
 ALMA Chajnantor	-23.0057	-67.759	5000
@@ -60,7 +60,7 @@ Beijing Obs. Sta. R Miyun	40.5566666666667	116.765	160
 Beijing Obs. Sta. Tianjing	39.1333333333333	117.058333333333	5
 Belgrade Ast. Obs. Belgrade, Serbia	44.8033333333333	20.5133333333333	253
 Belogradchik Ast. Obs. Belogradchik	43.6233333333333	22.675	650
-Besan�on Obs. Besan�on	47.25	5.98666666666667	312
+Besançon Obs. Besançon	47.25	5.98666666666667	312
 Big Bear Solar Obs. Big Bear City	34.258	-116.921	2067
 Black Moshannon Obs. State College/Rattlesnake Mtn.	40.9216666666667	-78.005	738
 Bochum Obs. Bochum	51.465	7.22333333333333	132
@@ -88,7 +88,7 @@ Caltech Submillimeter Obs. R Hilo/Mauna Kea, Hawaii	19.8216666666667	-155.475	40
 Cambridge Univ. Obs. Cambridge, England	52.2133333333333	0.095	30
 Canada-France-Hawaii Tel. Corp. I Hilo/Mauna Kea,  Hawaii	19.825	-155.468333333333	4204
 Canis Mayor Obs., Italy	44.104356	10.007758	0
-Cantonal Obs. Neuch�tel	46.9983333333333	6.95833333333333	488
+Cantonal Obs. Neuchâtel	46.9983333333333	6.95833333333333	488
 Capilla Peak Obs. Albuquerque/Capilla Peak	34.6966666666667	-106.405	2842
 Capodimonte Ast. Obs. Naples	40.8633333333333	14.255	150
 Carlos U. Cesco Sta. San Juan/El Leoncito	-31.8016666666667	-69.33	2348
@@ -100,7 +100,7 @@ Catholic Univ. Ast. Inst. Nijmegen	51.825	5.86833333333333	62
 Celestial	35.295278	-93.136389	0
 Central Inst. for Earth Physics Potsdam	52.3816666666667	13.0666666666667	91
 Cerro Armazones Obs.	-24.5975	-70.1963888888889	0
-Cerro Cal�n National Ast. Obs. Santiago/Cerro Cal�n	-33.3966666666667	-70.5466666666667	860
+Cerro Calán National Ast. Obs. Santiago/Cerro Calán	-33.3966666666667	-70.5466666666667	860
 Cerro El Roble Ast. Obs. Santiago/Cerro El Roble	-32.9816666666667	-71.02	2220
 Cerro Tololo Inter-Amer. Obs. R I La Serena/Cerro  Tololo	-30.165	-70.815	2215
 Chabot Space &amp; Science Center Oakland	37.8183333333333	-122.181666666667	476
@@ -117,16 +117,16 @@ Cluj-Napoca Ast. Obs. Cluj-Napoca	46.7133333333333	23.5983333333333	750
 Clyde W. Tombaugh Obs. Lawrence	38.96	-95.25	323
 Coats Obs. Paisley, Scotland	55.8455	-4.43115	0
 Coimbra Ast. Obs. Coimbra	40.2066666666667	-8.43	99
-Cointe Obs. Li�ge	50.6183333333333	5.565	127
+Cointe Obs. Liège	50.6183333333333	5.565	127
 Collurania Ast. Obs. Teramo	42.6583333333333	13.7333333333333	388
 Copenhagen Univ. Obs. Brorfelde	55.625	11.6666666666667	90
 Copenhagen Univ. Obs. Copenhagen	55.6866666666667	12.5766666666667	0
 Cordell-Lorenz	35.204444	-85.92	0
-C�rdoba Ast. Obs. C�rdoba	-31.4216666666667	-64.1966666666667	434
-C�rdoba Obs. Astrophys. Sta. Bosque Alegre	-31.5983333333333	-64.5466666666667	1250
+Córdoba Ast. Obs. Córdoba	-31.4216666666667	-64.1966666666667	434
+Córdoba Obs. Astrophys. Sta. Bosque Alegre	-31.5983333333333	-64.5466666666667	1250
 Corralitos Obs. Las Cruces	32.38	-107.043333333333	1453
-C�te d'Azur Obs. Calern Sta. I L St. Vallier-de-Thiey	43.7483333333333	6.92666666666667	1270
-C�te d'Azur Obs. Nice/Mont Gros	43.7233333333333	7.30166666666667	372
+Côte d'Azur Obs. Calern Sta. I L St. Vallier-de-Thiey	43.7483333333333	6.92666666666667	1270
+Côte d'Azur Obs. Nice/Mont Gros	43.7233333333333	7.30166666666667	372
 Crawford Hill Obs. R Holmdel	40.3916666666667	-74.1866666666667	114
 Crimean Astrophysical Obs. Partizanskoye	44.7283333333333	34.0166666666667	550
 Crimean Astrophysical Obs. R Simeis	44.535	34.0166666666667	676
@@ -156,8 +156,8 @@ Ellin Bank Obs., Victoria, Australia	-38.244722	145.960000	0
 Engelhardt Ast. Obs. Kazan	55.8383333333333	48.815	98
 Erwin W. Fick Obs. Boone	42.005	-93.9416666666667	332
 European Incoh. Scatter Facility R Kiruna	67.86	20.435	418
-European Incoh. Scatter Facility R Sodankyl�	67.3633333333333	26.6266666666667	197
-European Incoh. Scatter Facility R Troms�	69.5866666666667	19.52	85
+European Incoh. Scatter Facility R Sodankylä	67.3633333333333	26.6266666666667	197
+European Incoh. Scatter Facility R Tromsø	69.5866666666667	19.52	85
 European Southern Obs. Headquarters	48.26	11.671	0
 European Southern Obs. R La Serena/Cerro La Silla	-29.2566666666667	-70.73	2347
 Faulkes Telescope South (FTS), Australia	-31.273333	149.07	1165
@@ -173,20 +173,20 @@ Friedrich Schiller Univ. Obs. Jena	50.93	11.4866666666667	356
 FTN (LCOGT), Haleakala Obs., Hawaii	20.706944	-156.257222	3055
 Gauribidanur Radio Obs. R Gauribidanur	13.6033333333333	77.435	686
 Gemini North Obs. Hilo/Mauna Kea, Hawaii	19.8233333333333	-155.468333333333	4213
-Gemini South Obs. La Serena/Cerro Pach�n	-30.2283333333333	-70.7233333333333	2725
+Gemini South Obs. La Serena/Cerro Pachón	-30.2283333333333	-70.7233333333333	2725
 Geneva Obs. Sauverny	46.3066666666667	6.13666666666667	465
 Geodetical Faculty Obs. Zagreb	45.825	16.0216666666667	146
 George Mason Univ. Obs., GMU, VA	38.852600	-77.304400	95
 George R. Agassiz Sta. R Fort Davis	30.635	-103.946666666667	1603
 George R. Wallace Jr. Aph. Obs. Westford	42.61	-71.485	107
-German Spanish Ast. Center G�rgal/Calar Alto Mtn.	37.23	-2.53666666666667	2168
+German Spanish Ast. Center Gérgal/Calar Alto Mtn.	37.23	-2.53666666666667	2168
 Glen D. Riley	41.7003	-88.1598	0
 Godlee Obs. Manchester, England	53.4766666666667	-2.23333333333333	77
 Goethe Link Obs. Brooklyn	39.55	-86.395	300
 Goldendale Obs.	45.839388	-120.816237	0
 Goldstone Complex R Fort Irwin	35.39	-116.848333333333	1036
 Gornergrat North &amp; South Obs. R I  Zermatt/Gornergrat	45.985	7.785	3135
-G�ttingen Univ. Obs. G�ttingen	51.53	9.94333333333333	159
+Göttingen Univ. Obs. Göttingen	51.53	9.94333333333333	159
 Grant O. Gale Obs. Grinnell	41.7566666666667	-92.72	318
 Grenoble Obs. R Gap/Plateau de Bure	44.6333333333333	5.90833333333333	2552
 Griffith Obs. Los Angeles	34.1183333333333	-118.298333333333	357
@@ -208,16 +208,16 @@ Hat Creek Radio Ast. Obs. R Cassel	40.8183333333333	-121.473333333333	1043
 Haystack Obs. R Westford	42.6233333333333	-71.4883333333333	146
 Heliophysical Obs. Debrecen	47.56	21.6233333333333	132
 Heliophysical Obs. Sta. Gyula	46.6533333333333	21.27	135
-Helw�n Obs. Helw�n	29.8583333333333	31.38	116
+Helwân Obs. Helwân	29.8583333333333	31.38	116
 Hereford Arizona Obs.	31.452056	-110.237667	1426
 Hida Obs. Kamitakara	36.2483333333333	137.308333333333	1276
-High Alpine Research Obs. M�rren/Jungfraujoch	46.5483333333333	7.985	3576
+High Alpine Research Obs. Mürren/Jungfraujoch	46.5483333333333	7.985	3576
 Hiraiso Solar Terr. Rsch. Center R Nakaminato	36.3666666666667	140.625	27
 Hoher List Obs. Daun/Hoher List	50.1633333333333	6.85	533
 Hopkins Obs. R Williamstown	42.7116666666667	-73.2016666666667	215
 Howell	33.468143	-88.817524	0
 Hvar Obs. Hvar	43.1783333333333	16.4483333333333	238
-Incoherent Scatter Facility R S�ndre Str�mfjord	66.9866666666667	-50.95	180
+Incoherent Scatter Facility R Søndre Strømfjord	66.9866666666667	-50.95	180
 Indian Ast. Obs. Hanle/Mt. Saraswati	32.78	78.965	4467
 Inst. of Astrophysics Dushanbe	38.5616666666667	68.7816666666667	820
 Inst. of Geodesy Ast. Obs. Hannover	52.3883333333333	9.71333333333333	71
@@ -239,7 +239,7 @@ Judson B. Coit	42.35025	-71.105372	0
 Kagoshima Space Center R Uchinoura	31.2283333333333	131.066666666667	228
 Kaliningrad Univ. Obs. Kaliningrad	54.7133333333333	20.495	24
 Kandilli Obs. Istanbul	41.0633333333333	29.0616666666667	120
-Kanzelh�he Solar Obs. Klagenfurt/Kanzelh�he	46.6783333333333	13.9066666666667	1526
+Kanzelhöhe Solar Obs. Klagenfurt/Kanzelhöhe	46.6783333333333	13.9066666666667	1526
 Kapteyn Obs. Roden	53.1283333333333	6.44333333333333	12
 Karl Schwarzschild Obs. Tautenburg	50.9816666666667	11.7133333333333	331
 Kashima Space Reseach Center R Kashima	35.955	140.663333333333	32
@@ -251,17 +251,17 @@ Kiso Obs. Kiso	35.7933333333333	137.628333333333	1130
 Kitt Peak National Obs. Tucson/Kitt Peak	31.9633333333333	-111.6	2120
 Kodaikanal Solar Obs. Kodaikanal	10.23	77.4683333333333	2343
 Konkoly Obs. Budapest	47.5	18.965	474
-Konkoly Obs. Sta. Piszk�stet�	47.9183333333333	19.895	958
+Konkoly Obs. Sta. Piszkéstetö	47.9183333333333	19.895	958
 Korea Ast. Obs. Taejeon	36.3983333333333	127.371666666667	120
 Kottamia Obs. Kottamia	29.9316666666667	31.825	476
-Kryonerion Ast. Obs. Ki�ton/Mt. Killini	37.9733333333333	22.6216666666667	905
+Kryonerion Ast. Obs. Kiáton/Mt. Killini	37.9733333333333	22.6216666666667	905
 Kuffner Obs. Vienna	48.2133333333333	16.2966666666667	302
 Kutztown Univ. Obs. Kutztown, PA	40.515	-75.785	122
 Kvistaberg Obs. Bro	59.5016666666667	17.6066666666667	33
 Kwasan Obs. Kyoto	34.995	135.793333333333	221
 Kyoto Univ. Ast. Dept. Obs. Kyoto	35.0283333333333	135.786666666667	86
 Kyoto Univ. Physics Dept. Obs. Kyoto	35.0283333333333	135.786666666667	80
-L. Figl Astrophysical Obs. St. Corona at Sch�pfl	48.0833333333333	15.9233333333333	890
+L. Figl Astrophysical Obs. St. Corona at Schöpfl	48.0833333333333	15.9233333333333	890
 La Plata Ast. Obs. La Plata	-34.9083333333333	-57.9316666666667	17
 Ladd Obs. Providence	41.8383333333333	-71.4	69
 Las Campanas Obs. Vallenar/Cerro Las Campanas	-29.0083333333333	-70.7	2282
@@ -274,17 +274,17 @@ Leiden Obs. Southern Sta. Hartebeespoort	-25.7733333333333	27.8766666666667	1220
 Leuschner Obs. Lafayette	37.9183333333333	-122.156666666667	304
 Lick Obs. San Jose/Mt. Hamilton	37.3433333333333	-121.636666666667	1290
 Lisbon Ast. Obs. Lisbon	38.7116666666667	-9.18666666666667	111
-Llano del Hato Obs. M�rida	8.79	-70.8666666666667	3610
+Llano del Hato Obs. Mérida	8.79	-70.8666666666667	3610
 Lohrmann Obs. Dresden	51.05	13.8716666666667	324
-Lomnick� St�t Coronal Obs. Poprad/Mt. Lomnick�  St�t	49.1966666666667	20.22	2632
+Lomnický Stít Coronal Obs. Poprad/Mt. Lomnický Stít	49.1966666666667	20.22	2632
 Los Alamos	35.775125	-106.245597	0
 Los Molinos Ast. Obs. Montevideo	-34.755	-56.19	110
 Lowell Obs. Flagstaff	35.2033333333333	-111.665	2219
 Lowell Obs. Sta. Flagstaff/Anderson Mesa	35.0966666666667	-111.536666666667	2200
-Lund Obs. J�van Sta. Bj�rnstorp	55.6233333333333	13.4333333333333	145
+Lund Obs. Jävan Sta. Björnstorp	55.6233333333333	13.4333333333333	145
 Lund Obs. Lund	55.6983333333333	13.1866666666667	34
 LURE Obs. L Kahului/Haleakala, Maui	20.71	-156.258333333333	3049
-Lustb�hel Obs. Graz	47.065	15.495	480
+Lustbühel Obs. Graz	47.065	15.495	480
 Lvov Univ. Obs. Lvov	49.8333333333333	24.03	330
 Lyon Univ. Obs. St. Genis Laval	45.695	4.785	299
 MacLean Obs. Incline Village	39.295	-119.928333333333	2546
@@ -305,8 +305,8 @@ McGraw-Hill Obs. Tucson/Kitt Peak	31.95	-111.616666666667	1925
 McKim	39.645556	-86.852222	0
 Medicina Radio Ast. Sta. R Medicina	44.52	11.645	44
 Melton Memorial Obs. Columbia	33.9966666666667	-81.0266666666667	98
-Mets�hovi Obs. Kirkkonummi	60.22	24.3966666666667	60
-Mets�hovi Obs. Radio Rsch. Sta. R Kirkkonummi	60.2183333333333	24.3933333333333	61
+Metsähovi Obs. Kirkkonummi	60.22	24.3966666666667	60
+Metsähovi Obs. Radio Rsch. Sta. R Kirkkonummi	60.2183333333333	24.3933333333333	61
 Meudon Obs. Meudon	48.805	2.23166666666667	162
 Meyer Observatory (PJMO), Coryell County, TX	31.681111	-97.67416667	300
 Meyer-Womble Obs. Georgetown/Mt. Evans	39.5866666666667	-105.64	4305
@@ -322,7 +322,7 @@ Mizusawa Astrogeodynamics Obs. Mizusawa	39.135	141.131666666667	61
 MMT Obs. Amado/Mt. Hopkins	31.6883333333333	-110.885	2608
 Moletai Ast. Obs. Moletai	55.3166666666667	25.5633333333333	220
 Molonglo Radio Obs. R Hoskinstown, New South Wales	-35.3716666666667	149.423333333333	732
-Mont M�gantic Ast. Obs. M�gantic/Mont M�gantic,  Quebec	45.455	-71.1533333333333	1114
+Mont Mégantic Ast. Obs. Mégantic/Mont Mégantic, Quebec	45.455	-71.1533333333333	1114
 Montevideo Obs. Montevideo	-34.91	-56.2133333333333	24
 Montgomery Bell Academy Obs., McMinnville, TN	35.677306	-85.608750	538
 Moore Obs. Brownsboro	38.344791	-85.528476	229.0
@@ -347,7 +347,7 @@ Nagoya Univ. Radio Ast. Lab. R Nagoya	35.1483333333333	136.973333333333	75
 Nagoya Univ. Sugadaira Sta. R Toyokawa	36.52	138.321666666667	1280
 Nagoya Univ. Toyokawa Sta. R Toyokawa	34.835	137.37	25
 Nassau Ast. Obs. Montville	41.5916666666667	-81.075	390
-National Ast. Obs. Bogot�	4.59833333333333	-74.0816666666667	2640
+National Ast. Obs. Bogotá	4.59833333333333	-74.0816666666667	2640
 National Ast. Obs. Madrid	40.41	-3.685	670
 National Ast. Obs. R Mitaka	35.6716666666667	139.541666666667	58
 National Ast. Obs. R Tonantzintla	19.0333333333333	-98.3133333333333	2150
@@ -384,7 +384,7 @@ Obs. of Haute-Provence Forcalquier/St. Michel	43.9316666666667	5.71333333333333	
 Odeillo Solar Obs.	42.493959	2.029316	0
 Odessa Obs. Odessa	46.4766666666667	30.7583333333333	60
 Okayama Astrophysical Obs. Kurashiki/Mt. Chikurin	34.5733333333333	133.596666666667	372
-Ole R�mer Obs. �rhus	56.1283333333333	10.1966666666667	50
+Ole Rømer Obs. Århus	56.1283333333333	10.1966666666667	50
 Ondrejov Obs. R Ondrejov	49.91	14.7833333333333	533
 Onsala Space Obs. R Onsala	57.3933333333333	11.9183333333333	24
 Ottawa River Solar Obs. Ottawa, Ontario	45.3866666666667	-75.8933333333333	58
@@ -395,13 +395,13 @@ Palermo Univ. Ast. Obs. Palermo	38.1116666666667	13.3583333333333	72
 Palomar Obs. Palomar Mtn.	33.3566666666667	-116.863333333333	1706
 Paranal Obs. Antofagasta/Cerro Paranal	-24.625	-70.4033333333333	2635
 Paris Obs. Paris	48.8366666666667	2.33666666666667	67
-Paris Obs. Radio Ast. Sta. R Nan�ay	47.38	2.19666666666667	150
+Paris Obs. Radio Ast. Sta. R Nançay	47.38	2.19666666666667	150
 Perkins Obs. Delaware	40.2516666666667	-83.055	280
 Perth Obs. Bickley, Western Australia	-32.0083333333333	116.135	391
 PEST Obs., Perth, Australia	-31.992500	115.798333	19
 Peter van de Kamp Obs., Swarthmore, PA	39.907100	-75.355550	65
-Pic du Midi Obs. Bagn�res-de-Bigorre	42.9366666666667	0.145	2861
-Pico dos Dias Obs. Itajub�/Pico dos Dias	-22.535	-45.5833333333333	1870
+Pic du Midi Obs. Bagnères-de-Bigorre	42.9366666666667	0.145	2861
+Pico dos Dias Obs. Itajubá/Pico dos Dias	-22.535	-45.5833333333333	1870
 Pie Town	34.301003	-108.119183	0
 Piedade Obs. Belo Horizonte	-19.8216666666667	-43.5116666666667	1746
 Pine Bluff Obs. Pine Bluff	43.0783333333333	-89.685	366
@@ -457,7 +457,7 @@ Siding Spring Obs. Coonabarabran/Siding Spring,  N.S.W.	-31.2733333333333	149.06
 Simon Stevin Obs. R Hoeven	51.5666666666667	4.56333333333333	9
 Simosato Hydrographic Obs. R L Simosato	33.575	135.94	63
 Sirahama Hydrographic Obs. Sirahama	34.7133333333333	138.988333333333	172
-Skalnat� Pleso Obs. Poprad	49.1883333333333	20.245	1783
+Skalnaté Pleso Obs. Poprad	49.1883333333333	20.245	1783
 Skibotn Ast. Obs. Skibotn	69.3483333333333	20.365	157
 Slovak Technical Univ. Obs. Bratislava	48.155	17.12	171
 Smith College's McConnell Observatory	42.3125	-72.6458	60.0
@@ -476,7 +476,7 @@ Sproul Obs. Swarthmore	39.905	-75.3566666666667	63
 SRI Radio Ast. Obs. R Stanford	37.405	-122.176666666667	168
 St. Petersburg Univ. Obs. St. Petersburg	59.9416666666667	30.295	3
 Stanford Center for Radar Ast. R Palo Alto	37.4583333333333	-122.178333333333	172
-State Obs. Heidelberg/K�nigstuhl	49.3983333333333	8.72166666666667	570
+State Obs. Heidelberg/Königstuhl	49.3983333333333	8.72166666666667	570
 Stephanion Obs. Stephanion	37.755	22.8283333333333	800
 Sternberg State Ast. Inst. Moscow	55.7	37.545	195
 Steward Obs. Catalina Sta. Tucson/Mt. Bigelow	32.4166666666667	-110.731666666667	2510
@@ -485,7 +485,7 @@ Steward Obs. Catalina Sta. Tucson/Tumamoc Hill	32.2133333333333	-111.005	950
 Steward Obs. Sta. Tucson/Kitt Peak	31.9633333333333	-111.6	2071
 Steward Obs. Tucson	32.2333333333333	-110.948333333333	757
 Stockert Radio Obs. R Eschweiler	50.57	6.72333333333333	435
-Stockholm Obs. Saltsj�baden	59.2716666666667	18.3083333333333	60
+Stockholm Obs. Saltsjöbaden	59.2716666666667	18.3083333333333	60
 Strasbourg Obs. Strasbourg	48.5833333333333	7.77	142
 Strawbridge Obs. R Haverford	40.0116666666667	-75.3033333333333	116
 Stuttgart Obs. Welzheim	48.875	9.59666666666667	547
@@ -494,7 +494,7 @@ Submillimeter Telescope Obs. R Safford/Mt. Graham	32.7016666666667	-109.89166666
 Super-Kamiokande N Obs.	36.43	137.31	-2400
 Swabian Obs. Stuttgart	48.7833333333333	9.19666666666667	354
 Swanson Observatory and Angele Observatory/Monte Sano	34.74949	-86.51395	0
-Swiss Federal Obs. Z�rich	47.3766666666667	8.55166666666667	469
+Swiss Federal Obs. Zürich	47.3766666666667	8.55166666666667	469
 Syracuse Univ. Obs. Syracuse	43.0366666666667	-76.1383333333333	160
 Table Mountain Obs. Wrightwood	34.3816666666667	-117.681666666667	2285
 Taipei Obs. Taipei	25.0783333333333	121.526666666667	31
@@ -513,9 +513,9 @@ Toulouse Univ. Obs. Toulouse	43.6116666666667	1.46333333333333	195
 Toyokawa Obs. R Toyokawa	34.8366666666667	137.371666666667	18
 Tremsdorf Radio Ast. Obs. R Tremsdorf	52.285	13.1366666666667	35
 Trieste Ast. Obs. R Trieste	45.643269	13.875405	400
-T�bingen Univ. Ast. Obs. T�bingen	48.5383333333333	9.05833333333333	470
-T�bitak National Obs. Antalya/Mt. Bakirlitepe	36.825	30.335	2515
-Tuorla Obs. Piikki�	60.4166666666667	22.4466666666667	40
+Tübingen Univ. Ast. Obs. Tübingen	48.5383333333333	9.05833333333333	470
+Tübitak National Obs. Antalya/Mt. Bakirlitepe	36.825	30.335	2515
+Tuorla Obs. Piikkiö	60.4166666666667	22.4466666666667	40
 Turin Ast. Obs. Pino Torinese	45.0383333333333	7.775	622
 U.S. Air Force Academy Obs. Colorado Springs	39.0066666666667	-104.875	2187
 U.S. Naval Obs. Sta. Flagstaff	35.1833333333333	-111.74	2316
@@ -534,12 +534,12 @@ Univ. of Maryland Obs. R College Park	39.0016666666667	-76.9566666666667	53
 Univ. of Mich. Radio Ast. Obs. R Dexter	42.3983333333333	-83.9366666666667	345
 Univ. of S.C. Radio Obs. R Columbia	33.9966666666667	-81.0316666666667	127
 Univ. of St. Andrews Obs. St. Andrews, Scotland	56.3366666666667	-2.815	30
-Univ. of Thessalon�ki Obs. Thessalon�ki	40.6166666666667	22.9583333333333	28
+Univ. of Thessaloníki Obs. Thessaloníki	40.6166666666667	22.9583333333333	28
 Urania Obs. Budapest	47.485	19.065	166
 Urania Obs. Vienna	48.2116666666667	16.385	193
 Uttar Pradesh State Obs. Naini Tal/Manora Peak	29.3616666666667	79.4566666666667	1927
 Vainu Bappu Obs. Kavalur	12.5766666666667	78.8266666666667	725
-Valassk� Mezir�c� Obs. Valassk� Mezir�c�	49.4633333333333	17.975	338
+Valasské Mezirící Obs. Valasské Mezirící	49.4633333333333	17.975	338
 Valongo Obs. Rio de Janeiro/Mt. Valongo	-22.8983333333333	-43.1866666666667	52
 Van Vleck Obs. Middletown	41.555	-72.66	65
 Vassar College Observatory NY	41.683011	-73.890604	0

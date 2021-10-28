@@ -20,6 +20,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
 import java.net.*;
+import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Timer;
@@ -153,7 +154,7 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
     JTextField currentLocDateTextField, currentLocTimeTextField;
     JTextField objectIDTextField, leapSecTextField, eoiBJDTextField, eoiBJDdTTextField, eoiHJDTextField, eoiHJDdTTextField;
 //    JLabel leapSourceLabel;
-    JComboBox  observatoryIDComboBox;
+    JComboBox<String>  observatoryIDComboBox;
     JButton updateLeapSecTableButton, jdEOIupButton,jdEOIdownButton, nowEOIButton, pmTwilightButton, amTwilightButton;
     JButton jdLocEOIupButton,jdLocEOIdownButton, skyMapButton, simbadButton;
     JLabel moonPhaseLabel, OSULabel;
@@ -717,7 +718,7 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
         JPanel observatoryIDPanel = new JPanel(new SpringLayout());
         observatoryIDPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(mainBorderColor, 1), "Observatory ID", TitledBorder.LEFT, TitledBorder.TOP, b12, Color.DARK_GRAY));
 
-		observatoryIDComboBox = new JComboBox(observatoryIDs);
+		observatoryIDComboBox = new JComboBox<>(observatoryIDs);
 		observatoryIDComboBox.setPreferredSize(new Dimension((int)(coordSize.width*3.0),coordSize.height+2));
         observatoryIDComboBox.setFont(p12);
 //        observatoryIDComboBox.setEditable(true);
@@ -3657,7 +3658,7 @@ void getObservatories()
 //            showMessage(this.getClass().toString());
             URL astroccDir = this.getClass().getProtectionDomain().getCodeSource().getLocation();//.toURI().toString().substring(6);
             prefsDir = (new File(astroccDir.getFile())).getParent();
-            prefsDir = URLDecoder.decode(prefsDir, "UTF-8");
+            prefsDir = URLDecoder.decode(prefsDir, StandardCharsets.UTF_8);
             if (!this.getClass().toString().contains("Coordinate_Converter"))
                 prefsDir = (new File(prefsDir)).getParent();
 
@@ -3683,7 +3684,7 @@ void getObservatories()
                 File file = new File(filename);
                 if (file.exists())
                     {
-                    FileReader fr = new FileReader(file);     //open custom observatory file outside jar
+                    FileReader fr = new FileReader(file, StandardCharsets.UTF_8);     //open custom observatory file outside jar
                     in = new BufferedReader(fr);
                     line = in.readLine();
                     processObservatories(line, in);
@@ -3720,7 +3721,7 @@ void getInternalObservatories(String filename)
             InputStream fn = getClass().getClassLoader().getResourceAsStream("observatories.txt");     //get file from inside jar
             if (fn != null)
                 {
-                in = new BufferedReader(new InputStreamReader(fn));
+                in = new BufferedReader(new InputStreamReader(fn, StandardCharsets.UTF_8));
                 line = in.readLine();
                 processObservatories(line, in);
 
@@ -3734,7 +3735,7 @@ void getInternalObservatories(String filename)
                         }
 
                     fn = getClass().getClassLoader().getResourceAsStream("observatories.txt");
-                    in = new BufferedReader(new InputStreamReader(fn));
+                    in = new BufferedReader(new InputStreamReader(fn, StandardCharsets.UTF_8));
 
                     FileWriter fw = new FileWriter(filename);
                     BufferedWriter out = new BufferedWriter(fw);

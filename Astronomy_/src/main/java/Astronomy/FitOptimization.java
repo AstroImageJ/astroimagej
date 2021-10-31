@@ -29,7 +29,7 @@ public class FitOptimization implements AutoCloseable {
     /**
      * The change in the comparator to determine improvement
      */
-    private static int EPSILON;
+    private static double EPSILON;
     private final int curve;
     public DynamicCounter compCounter;
     public DynamicCounter detrendCounter;
@@ -48,6 +48,8 @@ public class FitOptimization implements AutoCloseable {
     private JToggleButton detOptimizeButton;
     private JToggleButton optimizeButton;
     private RollingAvg rollingAvg = new RollingAvg();
+    private JSpinner detrendEpsilon;
+    public JSpinner detrendParamCount;
 
     // Init. after numAps is set
     public FitOptimization(int curve, int epsilon) {
@@ -138,6 +140,11 @@ public class FitOptimization implements AutoCloseable {
         JPanel detrendOptPanel = new JPanel(new SpringLayout());
         detrendOptPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(MultiPlot_.subBorderColor, 1), "Detrend Parameter Selection", TitledBorder.CENTER, TitledBorder.TOP, MultiPlot_.p11, Color.darkGray));
 
+        //todo improve look of detrendEpsilon and dentrendParamCount
+        detrendEpsilon = new JSpinner(new SpinnerNumberModel(2, 0D, 100, 1));
+        detrendEpsilon.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(MultiPlot_.subBorderColor, 1), "ε", TitledBorder.CENTER, TitledBorder.TOP, MultiPlot_.p11, Color.darkGray));
+        detrendOptPanel.add(detrendEpsilon);
+
         var detrendOptimizationSelection = new JComboBox<ToolTipWrapper>();
         detrendOptimizationSelection.setEditable(false);
         detrendOptimizationSelection.setRenderer(new ToolTipRenderer());
@@ -165,6 +172,10 @@ public class FitOptimization implements AutoCloseable {
         });
         detrendOptPanel.add(detrendOptimizationSelection);
         detrendOptPanel.add(detOptimizeButton);
+
+        detrendParamCount = new JSpinner(new SpinnerNumberModel(2, 0, 100, 1));
+        detrendParamCount.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(MultiPlot_.subBorderColor, 1), "Max Param. Count", TitledBorder.CENTER, TitledBorder.TOP, MultiPlot_.p11, Color.darkGray));
+        detrendOptPanel.add(detrendParamCount);
 
         var paramOptiIterLabel = new JLabel("Iter. Remaining:"); //todo make field
         paramOptiIterLabel.setToolTipText("Number of iterations remaining in detrend parameter optimization.");
@@ -266,7 +277,7 @@ public class FitOptimization implements AutoCloseable {
 
         if (MultiPlot_.refStarFrame == null) MultiPlot_.showRefStarJPanel();
         CurveFitter.invalidateInstance();
-        EPSILON = 2;
+        EPSILON = (double) detrendEpsilon.getValue();
 
         targetStar = Integer.parseInt(MultiPlot_.ylabel[curve].split("rel_flux_T")[1]) - 1;
 

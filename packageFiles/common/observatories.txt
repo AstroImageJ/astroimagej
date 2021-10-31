@@ -176,7 +176,7 @@ Gemini North Obs. Hilo/Mauna Kea, Hawaii	19.8233333333333	-155.468333333333	4213
 Gemini South Obs. La Serena/Cerro Pachón	-30.2283333333333	-70.7233333333333	2725
 Geneva Obs. Sauverny	46.3066666666667	6.13666666666667	465
 Geodetical Faculty Obs. Zagreb	45.825	16.0216666666667	146
-George Mason Univ. Obs., GMU, VA	38.852600	-77.304400	95
+George Mason Univ. Obs., GMU, VA	38.828194	-77.305345	148.72
 George R. Agassiz Sta. R Fort Davis	30.635	-103.946666666667	1603
 George R. Wallace Jr. Aph. Obs. Westford	42.61	-71.485	107
 German Spanish Ast. Center Gérgal/Calar Alto Mtn.	37.23	-2.53666666666667	2168

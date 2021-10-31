@@ -28,9 +28,9 @@ public class BicFitting extends Optimizer {
 
 
     private FitOptimization.MinimumState plotUpdater() {
-        var minimumState = new FitOptimization.MinimumState();
+        var minimumState = new FitOptimization.MinimumState(endState, MultiPlot_.bic[curve]);
         BigInteger counter = BigInteger.ZERO;
-        for (BigInteger state = startState; state.compareTo(endState) <= 0; state = state.add(BigInteger.ONE)) {
+        for (BigInteger state = startState; state.compareTo(endState) < 0; state = state.add(BigInteger.ONE)) {
             if (state.equals(BigInteger.ZERO)) continue;
             if (Thread.interrupted()) break;
             fitOptimization.detrendCounter.dynamicSet(counter);

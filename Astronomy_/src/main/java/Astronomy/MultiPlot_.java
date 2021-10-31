@@ -434,7 +434,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static int[] nTries, dof, modelLineWidth, residualLineWidth, startDetrendPars, endDetrendPars;
     static double[] chi2;
     static boolean[] converged;
-    static double[] t14, t23, tau, chi2dof, bp, stellarDensity, planetRadius, bic, transitDepth;
+    static double[] t14, t23, tau, chi2dof, bp, stellarDensity, planetRadius, transitDepth;
+    public static double[] bic;
     static String[] spectralType;
     static double[] fitMin;
     static double[] fitMax;

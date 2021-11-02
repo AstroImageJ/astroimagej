@@ -45,6 +45,11 @@ public class CurveFitter {
     private CurveFitter(int curve, int targetStar) {
         this.curve = curve;
         this.targetStar = targetStar;
+
+        // Update table data - here we use full data, while on first open of a table MP will use truncated data
+        MultiPlot_.updateTotals();
+        MultiPlot_.updateGUI();
+
         getStarData();
         setupData();
         // todo add check for fitter running only on Tstar and other conditions

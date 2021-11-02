@@ -350,6 +350,7 @@ public class FitOptimization implements AutoCloseable {
         AIJLogger.log("Found global minimum:");
         AIJLogger.log(minimumState.comparator);
         AIJLogger.log(setArrayToState(minimumState.state));
+        if (minimumState.outState != null) AIJLogger.log(minimumState.outState);
 
         return new OutPair(setArrayToState(minimumState.state), minimumState.outState);
     }

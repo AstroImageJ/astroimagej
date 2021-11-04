@@ -66,6 +66,10 @@ public class CurveFitter {
         INSTANCE = null;
     }
 
+    public OptimizerResults fitCurveAndGetResults() {
+        return fitCurveAndGetResults(isRefStar, detrendIndex[curve]);
+    }
+
     public OptimizerResults fitCurveAndGetResults(boolean[] isRefStar) {
         return fitCurveAndGetResults(isRefStar, detrendIndex[curve]);
     }

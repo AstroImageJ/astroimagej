@@ -3,6 +3,7 @@ package Astronomy.multiplot.optimization;
 import Astronomy.CurveFitter;
 import Astronomy.FitOptimization;
 import Astronomy.MultiPlot_;
+import ij.astro.logging.AIJLogger;
 
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -28,14 +29,25 @@ public class BicFitting extends Optimizer {
 
 
     private FitOptimization.MinimumState plotUpdater() {
-        var minimumState = new FitOptimization.MinimumState(endState, MultiPlot_.bic[curve]);
+        var state0 = newState(BigInteger.ZERO);
+        Arrays.fill(state0, 0);
+        var b = CurveFitter.getInstance(curve, fitOptimization.getTargetStar()).fitCurveAndGetResults(state0);
+        var minimumState = new FitOptimization.MinimumState(endState, b.bic(), state0);
+        final var refBic = b.bic();
+        final var epsilon = FitOptimization.EPSILON;
         BigInteger counter = BigInteger.ZERO;
         for (BigInteger state = startState; state.compareTo(endState) < 0; state = state.add(BigInteger.ONE)) {
             if (state.equals(BigInteger.ZERO)) continue;
             if (Thread.interrupted()) break;
             fitOptimization.detrendCounter.dynamicSet(counter);
+            counter = counter.add(BigInteger.ONE);
 
             var x = newState(state);
+            var paramCount = Arrays.stream(x).filter(i -> i != 0).count();
+
+            // Ensure param count is <= max params
+            if (paramCount > (int) fitOptimization.detrendParamCount.getValue()) continue;
+
             var r = CurveFitter.getInstance(curve, fitOptimization.getTargetStar()).fitCurveAndGetResults(x);
 
             if (Double.isNaN(r.rms()) || Double.isNaN(r.bic())) continue;
@@ -45,8 +57,13 @@ public class BicFitting extends Optimizer {
             AIJLogger.log(x);
             AIJLogger.log(r);*/
             var newState = new FitOptimization.MinimumState(state, r.bic(), x);
-            if (newState.lessThan(minimumState)) minimumState = newState;
-            counter = counter.add(BigInteger.ONE);
+            AIJLogger.log(x);
+            AIJLogger.log(r);
+            AIJLogger.log(newState.lessThan(refBic, epsilon * paramCount));
+            AIJLogger.log(newState.lessThan(minimumState, 0));
+            if (newState.lessThan(refBic, epsilon * paramCount) && newState.lessThan(minimumState, 0)) {//todo epsilon check seems broken
+                minimumState = newState;
+            }
         }
         /*AIJLogger.log("--------");
         AIJLogger.log(minimumState);*/

@@ -29,7 +29,7 @@ public class FitOptimization implements AutoCloseable {
     /**
      * The change in the comparator to determine improvement
      */
-    private static double EPSILON;
+    public static double EPSILON;
     private final int curve;
     public DynamicCounter compCounter;
     public DynamicCounter detrendCounter;
@@ -494,6 +494,10 @@ public class FitOptimization implements AutoCloseable {
             return comparator < minState.comparator - EPSILON;
         }
 
+        public boolean lessThan(MinimumState minState, double epsilon) {
+            return comparator < minState.comparator - epsilon;
+        }
+
         /**
          * @param comparator2 the state to compare to.
          * @return if current state is less than the {@code comparator2} based on the comparators
@@ -501,6 +505,10 @@ public class FitOptimization implements AutoCloseable {
          */
         public boolean lessThan(double comparator2) {
             return comparator < comparator2 - EPSILON;
+        }
+
+        public boolean lessThan(double comparator2, double epsilon) {
+            return comparator < comparator2 - epsilon;
         }
     }
 

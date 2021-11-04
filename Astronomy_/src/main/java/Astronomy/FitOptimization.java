@@ -315,6 +315,10 @@ public class FitOptimization implements AutoCloseable {
      */
     private OutPair divideTasksAndRun(final MinimumState initState, final BigInteger startingPoint, //todo does detrend need to start at 0? if not, can remove this param
                                       BiFunction<BigInteger, BigInteger, Optimizer> optimizerBiFunction) {
+        // Update table data - here we use full data, while on first open of a table MP will use truncated data
+        MultiPlot_.updateTotals();
+        MultiPlot_.updateGUI();
+
         setupThreadedSpace();
         iterRemainingOld = BigInteger.ZERO;
         var minimumState = initState;

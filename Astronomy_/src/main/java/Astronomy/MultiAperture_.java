@@ -2148,7 +2148,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 setVariableAperture(true, Math.max(xFWHM / nFWHM, yFWHM / nFWHM) * apFWHMFactor, apFWHMFactor, autoModeFluxCutOff);
             } else { setVariableAperture(true, radiusRD / nRD, 0.0, autoModeFluxCutOff); }
         }
-        //OverlayCanvas.getOverlayCanvas(imp).clearRois();
+
+        // This is needed when running from DP for some reason, other rois are not removed
+        OverlayCanvas.getOverlayCanvas(imp).removeApertureRois();
+
         nFWHM = 0;
         fwhmMean = 0.0;
         for (int ap = 0; ap < nApertures; ap++) {

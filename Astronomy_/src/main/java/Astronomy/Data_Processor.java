@@ -12,6 +12,7 @@ import ij.io.OpenDialog;
 import ij.plugin.Macro_Runner;
 import ij.plugin.PlugIn;
 import ij.process.ImageProcessor;
+import util.UIHelper;
 
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
@@ -353,27 +354,8 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
 		{
         getPrefs();
 		if (IJ.isWindows()) slash="\\";
-        
-        if (IJ.isWindows())
-                {
-//                try {UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());}
-//                try {UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");}
-                try {UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");}
-//                try {UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());}
-                catch (Exception e) { }
-                }
-        else
-                {
-                try {UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");}
-                catch (Exception e) { }
-                }
-//            try {UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");}
-//            try {UIManager.setLookAndFeel("com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");}
-//            try {UIManager.setLookAndFeel("com.sun.java.swing.plaf.motif.MotifLookAndFeel");}
 
-
-//        try {UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());}
-//        catch (Exception e) { }
+        UIHelper.setLookAndFeel();
         images = new HashMap<String, String>(20);
 //		startDialog();
 //		}

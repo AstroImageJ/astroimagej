@@ -16,6 +16,7 @@ import ij.plugin.PlugIn;
 import ij.process.ImageProcessor;
 import ij.text.TextPanel;
 import ij.util.Tools;
+import util.UIHelper;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -831,12 +832,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     public void run(String inTableName) {
         Locale.setDefault(IJU.locale);
         //SET DEFAULT SYSTEM LOOK AND FEEL
+        UIHelper.setLookAndFeel();
         if (IJ.isWindows()) {
-
-//                        try {UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");}
-            try {UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");}
-//                        try {UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());}
-            catch (Exception ignored) { }
             JLabel testlabel = new JLabel("test");
             p11 = testlabel.getFont();
             String winFont = p11.getFontName();
@@ -849,7 +846,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             b12 = new Font(winFont, Font.BOLD, 12);
             b14 = new Font(winFont, Font.BOLD, 14);
         } else if (IJ.isLinux()) {
-            try {UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");} catch (Exception ignored) { }
             p8 = new Font(fontName, Font.PLAIN, 8);
             p9 = new Font(fontName, Font.PLAIN, 8);
             p10 = new Font(fontName, Font.PLAIN, 9);
@@ -859,13 +855,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             b12 = new Font(fontName, Font.BOLD, 11);
             b14 = new Font(fontName, Font.BOLD, 13);
         }
-//                    try {UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");}
-//                    try {UIManager.setLookAndFeel("com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");}
-//                    try {UIManager.setLookAndFeel("com.sun.java.swing.plaf.motif.MotifLookAndFeel");}
         else {
-            try {UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");}
-//                        try {UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());}
-            catch (Exception ignored) { }
             p8 = new Font(fontName, Font.PLAIN, 8);
             p9 = new Font(fontName, Font.PLAIN, 8);
             p10 = new Font(fontName, Font.PLAIN, 9);

@@ -1,23 +1,26 @@
 package ij;
+
 import ij.astro.AstroImageJ;
 import ij.gui.*;
-import ij.process.*;
-import ij.io.*;
-import ij.plugin.*;
-import ij.plugin.filter.*;
-import ij.plugin.frame.*;
-import ij.text.*;
 import ij.macro.Interpreter;
-import ij.io.Opener;
-import ij.util.*;
+import ij.plugin.GelAnalyzer;
+import ij.plugin.JavaProperties;
+import ij.plugin.MacroInstaller;
+import ij.plugin.Orthogonal_Views;
+import ij.plugin.filter.PlugInFilterRunner;
+import ij.plugin.frame.*;
+import ij.text.TextWindow;
+import ij.util.Tools;
+
+import javax.swing.*;
+import javax.swing.text.DefaultEditorKit;
 import java.awt.*;
-import java.util.*;
 import java.awt.event.*;
-import java.io.*;
-import java.net.*;
-import java.awt.image.*;
-import javax.swing.ImageIcon;
-import javax.swing.JLabel;
+import java.awt.image.ImageProducer;
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.util.*;
 
 /**
 This frame is the main ImageJ class.
@@ -142,7 +145,7 @@ public class ImageJ extends Frame implements ActionListener,
 		If  'mode' is ImageJ.EMBEDDED and 'applet is null, creates an embedded 
 		(non-standalone) version of ImageJ. */
 	@AstroImageJ(reason = "Change title to AstroImageJ; disable setting of jFileChooser to true; " +
-			"Make MacAdapter look in plugins folder; set mac to use screen menubar", modified = true)
+			"Make MacAdapter look in plugins folder; set mac to use screen menubar; update keymapping on mac for copy/paste", modified = true)
 	public ImageJ(java.applet.Applet applet, int mode) {
 		super("AstroImageJ");
 		System.setProperty("apple.laf.useScreenMenuBar", "true");
@@ -227,6 +230,10 @@ public class ImageJ extends Frame implements ActionListener,
 				else
 					IJ.runPlugIn("MacAdapter", "");
 			} catch(Throwable e) {}
+			InputMap im = (InputMap) UIManager.get("TextField.focusInputMap");
+			im.put(KeyStroke.getKeyStroke(KeyEvent.VK_C, KeyEvent.META_DOWN_MASK), DefaultEditorKit.copyAction);
+			im.put(KeyStroke.getKeyStroke(KeyEvent.VK_V, KeyEvent.META_DOWN_MASK), DefaultEditorKit.pasteAction);
+			im.put(KeyStroke.getKeyStroke(KeyEvent.VK_X, KeyEvent.META_DOWN_MASK), DefaultEditorKit.cutAction);
 		} 
 		if (applet==null)
 			IJ.runPlugIn("ij.plugin.DragAndDrop", "");

@@ -22,6 +22,7 @@ import ij.process.StackProcessor;
 import ij.text.TextPanel;
 import ij.util.Tools;
 import util.PdfRasterWriter;
+import util.UIHelper;
 
 import javax.swing.*;
 import java.awt.*;
@@ -451,32 +452,8 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
 //                for (int i = 0 ; i < laf.length; i++)
 //                IJ.log(""+laf[i]);
 //                System.setProperty("com.apple.laf.useScreenMenuBar", "false");
-                
-                if (IJ.isWindows())
-                        {
-//                        try {UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");}
-                        try {UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");}
-//                        try {UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());}
-                        catch (Exception e) { }
-                        }
-                else if (IJ.isLinux())
-                        {
-                        try {UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");}
-                        catch (Exception e) { }
-                        }
-//                    try {UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");}
-//                    try {UIManager.setLookAndFeel("com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");}
-//                    try {UIManager.setLookAndFeel("com.sun.java.swing.plaf.motif.MotifLookAndFeel");}
-                else 
-                        {
-                        try {UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");}
-//                        try {UIManager.setLookAndFeel("com.apple.laf.AquaLookAndFeel");}
-//                        try {UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());}
-                        catch (Exception e) { }
-//                        System.setProperty("apple.awt.graphics.UseQuartz","true");
-                        }
-//                System.setProperty("apple.laf.useScreenMenuBar", "false");
-//                System.setProperty("com.apple.macos.useScreenMenuBar", "false");
+
+                UIHelper.setLookAndFeel();
 
 //                if (rememberWindowLocation)
 //                    {

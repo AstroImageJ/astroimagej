@@ -1,8 +1,12 @@
 package ij.util;
-import ij.*;
-import ij.Prefs;
-import java.awt.*;
+
+import ij.IJ;
+import ij.astro.AstroImageJ;
+
 import javax.swing.*;
+import javax.swing.text.DefaultEditorKit;
+import java.awt.*;
+import java.awt.event.KeyEvent;
 
 /**
 This class contains static methods that use the Java 2 API. They are isolated 
@@ -42,6 +46,7 @@ public class Java2 {
 	}
 	
 	/** Sets the Swing look and feel to the system look and feel (Windows only). */
+	@AstroImageJ(reason = "update keymapping on mac for copy/paste", modified = true)
 	public static void setSystemLookAndFeel() {
 		if (lookAndFeelSet || !IJ.isWindows()) return;
 		try {
@@ -49,6 +54,13 @@ public class Java2 {
 		} catch(Throwable t) {}
 		lookAndFeelSet = true;
 		IJ.register(Java2.class);
+
+		if (IJ.isMacOSX()) {
+			InputMap im = (InputMap) UIManager.get("TextField.focusInputMap");
+			im.put(KeyStroke.getKeyStroke(KeyEvent.VK_C, KeyEvent.META_DOWN_MASK), DefaultEditorKit.copyAction);
+			im.put(KeyStroke.getKeyStroke(KeyEvent.VK_V, KeyEvent.META_DOWN_MASK), DefaultEditorKit.pasteAction);
+			im.put(KeyStroke.getKeyStroke(KeyEvent.VK_X, KeyEvent.META_DOWN_MASK), DefaultEditorKit.cutAction);
+		}
 	}
 
 }

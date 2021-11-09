@@ -6,6 +6,7 @@ import ij.astro.util.LeapSeconds;
 import ij.gui.MultiLineLabel;
 import ij.util.Tools;
 import util.BrowserOpener;
+import util.UIHelper;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -331,32 +332,7 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
         proxy = new Proxy(Proxy.Type.HTTP, socketaddr);         
         getObservatories();
 
-        if (isWin)
-                {
-                try {UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");}
-//                try {UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");}
-//                try {UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");}
-//                try {UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());}
-                catch (Exception e) { }
-                }
-        else if (isLinux)
-                {
-                try {UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");}
-                catch (Exception e) { }
-                }
-        else
-                {
-                try {UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");}
-                catch (Exception e) { }
-                }
-//            try {UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");}
-//            try {UIManager.setLookAndFeel("com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");}
-//            try {UIManager.setLookAndFeel("com.sun.java.swing.plaf.motif.MotifLookAndFeel");}
-
-
-//        try {UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());}
-//        catch (Exception e) { }
-
+        UIHelper.setLookAndFeel();
 
         if (!isWin)
             {

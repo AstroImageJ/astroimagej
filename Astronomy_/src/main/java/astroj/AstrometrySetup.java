@@ -2,20 +2,18 @@
 
 package astroj;
 
-import java.awt.*;
-import java.util.*;
-
-import ij.*;
+import ij.IJ;
+import ij.Prefs;
 import ij.util.Tools;
-import java.awt.event.*;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+import util.UIHelper;
 
-
-import java.text.DecimalFormat;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.text.DecimalFormat;
+import java.util.Locale;
 
 
 
@@ -173,30 +171,7 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
 
 	public boolean start(int firstSlice, int currentSlice, int lastSlice, String startButtonLabel, AstroConverter astroCC, boolean useSexagesimal)
 		{
-        if (IJ.isWindows())
-                {
-//                        try {UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");}
-                try {UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");}
-//                        try {UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());}
-                catch (Exception e) { }
-                }
-        else if (IJ.isLinux())
-                {
-                try {UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");}
-                catch (Exception e) { }
-                }
-//                    try {UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");}
-//                    try {UIManager.setLookAndFeel("com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");}
-//                    try {UIManager.setLookAndFeel("com.sun.java.swing.plaf.motif.MotifLookAndFeel");}
-        else if (IJ.isMacOSX())
-                {
-
-                try {UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");}
-//                        try {UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());}
-                catch (Exception e) { }
-                }
-//                System.setProperty("apple.laf.useScreenMenuBar", "false");
-//                System.setProperty("com.apple.macos.useScreenMenuBar", "false");
+        UIHelper.setLookAndFeel();
 
         GraphicsEnvironment localGfxEnvironment = GraphicsEnvironment.getLocalGraphicsEnvironment();
         defaultScreen = localGfxEnvironment.getDefaultScreenDevice();

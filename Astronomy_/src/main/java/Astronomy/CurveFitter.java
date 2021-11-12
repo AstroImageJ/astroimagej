@@ -13,6 +13,10 @@ import ij.measure.ResultsTable;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.function.Function;
+import java.util.regex.Pattern;
 
 import static Astronomy.MultiPlot_.*;
 
@@ -23,6 +27,10 @@ public class CurveFitter {
     private static CurveFitter INSTANCE;
     private final int curve;
     private final int targetStar;
+    double[][] source;
+    double[][] srcvar;
+    //private final Minimization minimization = new Minimization();
+    ThreadLocal<Minimization> minimizationThreadLocal = ThreadLocal.withInitial(Minimization::new);
     private int initAvgCount;
     private boolean initAtLeastOne;
     private int initDetrendCount;
@@ -34,12 +42,7 @@ public class CurveFitter {
     private double[] initDetrendYE;
     private double[][] initDetrendYD;
     private double[] initDetrendX;
-
-    double[][] source;
-    double[][] srcvar;
-
-    //private final Minimization minimization = new Minimization();
-    ThreadLocal<Minimization> minimizationThreadLocal = ThreadLocal.withInitial(Minimization::new);
+    private boolean doInstancedDetrendCalculation = false;
 
     // Chunk 1 stuff here (shared between all threads)
     private CurveFitter(int curve, int targetStar) {
@@ -67,6 +70,7 @@ public class CurveFitter {
     }
 
     public OptimizerResults fitCurveAndGetResults(boolean[] isRefStar) {
+        doInstancedDetrendCalculation = true;
         return fitCurveAndGetResults(isRefStar, detrendIndex[curve]);
     }
 
@@ -844,30 +848,52 @@ public class CurveFitter {
         }
     }
 
-    private FluxData conditionData(boolean[] localIsRefStar) {
+    private FluxData conditionData(int ap2reference, boolean[] localIsRefStar, int totCcntAP) {
         var rel_flux = new double[source[0].length];
         var rel_flux_err = new double[source[0].length];
-        for (int i= 0; i < source[0].length; i++) {
+        var tot_C_cnts = new double[source[0].length];
+        var tot_C_err = new double[source[0].length];
+        var rel_flux_snr = new double[source[0].length];
+
+        for (int i = 0; i < source[0].length; i++) {
             var compSum = 0.0;
             var compVar = 0.0;
             for (int ap = 0; ap < localIsRefStar.length; ap++) {
-                if (localIsRefStar[ap] && targetStar != ap) {
+                if (localIsRefStar[ap] && ap2reference != ap) {
                     compSum += source[ap][i];
                     compVar += srcvar[ap][i];
                 }
             }
             if (compSum == 0) continue;
-            rel_flux[i] = source[targetStar][i] / compSum;
+            rel_flux[i] = source[ap2reference][i] / compSum;
+            var inverseFactor = 0D;
             if (source[curve][i] == 0) {
                 rel_flux[i] = Double.POSITIVE_INFINITY;
             } else {
-                rel_flux_err[i] = hasErrors[curve] || hasOpErrors[curve] ? (rel_flux[i] * Math.sqrt(srcvar[targetStar][i] / (source[targetStar][i] * source[targetStar][i]) + compVar / (compSum * compSum))) : 1;
+                var factor = Math.sqrt(srcvar[ap2reference][i] / (source[ap2reference][i] * source[ap2reference][i]) + compVar / (compSum * compSum));
+                rel_flux_err[i] = hasErrors[curve] || hasOpErrors[curve] ? (rel_flux[i] * factor) : 1;
+                inverseFactor = 1 / factor;
+            }
+            if (doInstancedDetrendCalculation) {
+                if (ap2reference == targetStar) {
+                    tot_C_cnts[i] = totCcntAP < 0 ? 0.0 : compSum;
+                    tot_C_err[i] = totCcntAP < 0 ? 0.0 : Math.sqrt(compVar);
+                }
+                rel_flux_snr[i] = inverseFactor;
             }
         }
 
+        return new FluxData(binAndTrimData(rel_flux), binAndTrimData(rel_flux_err, true),
+                binAndTrimData(rel_flux_snr), binAndTrimData(tot_C_cnts), binAndTrimData(tot_C_err));
+    }
+
+    private double[] binAndTrimData(double[] allData) {
+        return binAndTrimData(allData, false);
+    }
+
+    private double[] binAndTrimData(double[] allData, boolean sumOfSquares) {
         int bucketSize = 0;
         var workingSource = new double[nn[curve]];
-        var workingSrcvar = new double[nn[curve]];
         if (excludedHeadSamples + excludedTailSamples >= n) { //Handle case for more samples excluded than in dataset
             excludedHeadSamples = excludedHeadSamples < n ? excludedHeadSamples : n - 1;
             excludedTailSamples = n - excludedHeadSamples - 1;
@@ -880,12 +906,12 @@ public class CurveFitter {
             }
             for (int k = excludedHeadSamples; k < (bucketSize + excludedHeadSamples); k++) {
                 var i = j * binSize[curve] + k;
-                workingSource[j] += rel_flux[i];
-                workingSrcvar[j] += rel_flux_err[i] * rel_flux_err[i];
+                workingSource[j] += sumOfSquares ? allData[i] * allData[i] : allData[i];
+            }
+            if (sumOfSquares) {
+                workingSource[j] = Math.sqrt(workingSource[j]);
             }
             workingSource[j] /= bucketSize;
-            workingSrcvar[j] = Math.sqrt(workingSrcvar[j]);
-            workingSrcvar[j] /= bucketSize;
         }
 
         fitMin[curve] = (useDMarker1 ? dMarker1Value : Double.NEGATIVE_INFINITY) + xOffset;
@@ -921,7 +947,6 @@ public class CurveFitter {
         }
 
         var workingSource2 = new double[nn[curve]];
-        var workingSrcvar2 = new double[nn[curve]];
 
         //todo check on Source-Sky, Source_Error values, and detrend parameters for NaNs. If a NaN is found, bail out and give an appropriate error.
         for (int j = 0; j < nn[curve]; j++) {
@@ -929,24 +954,62 @@ public class CurveFitter {
                 if (detrendFitIndex[curve] == 4) {
                     if ((x[curve][j] > fitMin[curve] && x[curve][j] < fitLeft[curve]) || (x[curve][j] > fitRight[curve] && x[curve][j] < fitMax[curve])) {
                         workingSource2[j] = workingSource[j];
-                        workingSrcvar2[j] = workingSrcvar[j];
                     }
                 } else {
                     if (x[curve][j] > fitMin[curve]) {
                         if (x[curve][j] < fitMax[curve]) {
                             workingSource2[j] = workingSource[j];
-                            workingSrcvar2[j] = workingSrcvar[j];
                         }
                     }
                 }
             }
         }
 
-        return new FluxData(workingSource2, workingSrcvar2);
+        return workingSource2;
     }
 
-    record FluxData(double[] rel_flux, double[] err) {};
+    private CurveData preprocessData(boolean[] localIsRefStar) {
+        int totCcntAP = -1;
+        for (int ap = 0; ap < numAps; ap++) {
+            if (!isRefStar[ap]) {
+                totCcntAP = ap;
+                break;
+            }
+        }
 
+        var targetFlux = conditionData(targetStar, localIsRefStar, totCcntAP);
+
+        HashMap<ColumnInfo, double[]> instancedParamData = new HashMap<>();
+        if (doInstancedDetrendCalculation) {
+            if (detrendFitIndex[curve] != 0) {
+                for (int v = 0; v < maxDetrendVars; v++) {
+                    if (detrendIndex[curve][v] > 1) {
+                        for (ParamType type : ParamType.values()) {
+                            if (!type.matches(detrendlabel[curve][v])) continue;
+                            var ap = type.getAperture(detrendlabel[curve][v]);
+                            if (type == ParamType.TOT_C_ERR || type == ParamType.TOT_C_CNTS) {
+                                instancedParamData.put(new ColumnInfo(type, -1, v), type.getData(targetFlux));
+                                AIJLogger.log(localIsRefStar);
+                                AIJLogger.log(new ColumnInfo(type, -1, v));
+                                AIJLogger.log(detrendlabel[curve][v]);
+                                AIJLogger.log(type.getData(targetFlux));
+                            } else {
+                                if (ap == null) continue;
+                                var data = ap == targetStar ? targetFlux : conditionData(ap, localIsRefStar, totCcntAP);
+                                instancedParamData.put(new ColumnInfo(type, ap, v), type.getData(data));
+                                AIJLogger.log(localIsRefStar);//todo data matches, but rms doesn't?
+                                AIJLogger.log(new ColumnInfo(type, ap, v));
+                                AIJLogger.log(detrendlabel[curve][v]);
+                                AIJLogger.log(type.getData(data));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return new CurveData(targetFlux.flux, targetFlux.err, instancedParamData);
+    }
 
     private synchronized OptimizerResults updateCurve(boolean[] isRefStar, int[] detrendIndex) {
         var minimization = minimizationThreadLocal.get();
@@ -990,7 +1053,7 @@ public class CurveFitter {
         var nTries = MultiPlot_.nTries[curve];
         var converged = MultiPlot_.converged[curve];
         var createDetrendModel = MultiPlot_.createDetrendModel;
-        var detrend = MultiPlot_.detrend[curve];//new double[maxDetrendVars][n];
+        var detrend = Arrays.stream(MultiPlot_.detrend[curve]).map(double[]::clone).toArray($ -> MultiPlot_.detrend[curve].clone());
         var maxDetrendVars = MultiPlot_.maxDetrendVars - (MultiPlot_.detrendIndex[curve].length - detrendIndex.length);
         var maxFittedVars = 7 + maxDetrendVars;
 
@@ -1012,14 +1075,17 @@ public class CurveFitter {
 
         if (!plotY[curve]) return new OptimizerResults(Double.NaN, Double.NaN);
 
-        var flux = conditionData(isRefStar);
-        for (int i = 0; i < flux.rel_flux.length; i++) {
-            y[i] = flux.rel_flux[i];
-            detrendYE[i] = flux.err[i];
-            yerr[i] = flux.err[i];
+        var curveData = preprocessData(isRefStar);
+        for (int i = 0; i < curveData.rel_flux.length; i++) {
+            y[i] = curveData.rel_flux[i];
+            detrendYE[i] = curveData.err[i];
+            yerr[i] = curveData.err[i];
             detrendY[i] = y[i];
             yAverage += y[i];
         }
+
+        curveData.instancedParamData.forEach((columnInfo, data) -> detrend[columnInfo.detrendColumn] = data);
+        //AIJLogger.log(Arrays.equals(detrend[0], curveData.instancedParamData.values().stream().findFirst().get()));
 
         if (atLeastOne || detrendFitIndex[curve] == 9) {
             double[] detrendAverage = new double[maxDetrendVars];
@@ -1223,10 +1289,10 @@ public class CurveFitter {
                     }
                     if (bpLock[curve]) {
                         var bp1 = (Double) bpSpinner[curve].getValue();
-                        priorCenter[4] = (180.0/Math.PI)*Math.acos(bp1/bestFit[2]);
+                        priorCenter[4] = (180.0 / Math.PI) * Math.acos(bp1 / bestFit[2]);
                     }
                     // End update
-                    
+
                     if ((detrendVarsUsed[curve] > 0 || detrendFitIndex[curve] == 9 && useTransitFit[curve]) && detrendYNotConstant && detrendCount > (detrendFitIndex[curve] == 9 && useTransitFit[curve] ? 7 : 0) + detrendVarsUsed[curve] + 2) { //need enough data to provide degrees of freedom for successful fit
                         detrendX = Arrays.copyOf(detrendX, detrendCount);
                         detrendY = Arrays.copyOf(detrendY, detrendCount);
@@ -1492,7 +1558,7 @@ public class CurveFitter {
                     if (hasErrors[curve] || hasOpErrors[curve]) {
                         yerr[j] /= (y[j] / (y[j] - trend));
                     }
-                   y[j] -= trend;
+                    y[j] -= trend;
                 }
             }
         }
@@ -1515,15 +1581,63 @@ public class CurveFitter {
             }
             sigma = Math.sqrt(sigma / cnt);
             var rms = sigma / bestFit[0];
-            /*AIJLogger.log("rms: " + rms * 1000);
-            AIJLogger.log("bic: " + bic);*/
+            AIJLogger.log("rms: " + rms * 1000);
+            AIJLogger.log("bic: " + bic);
             return new OptimizerResults(rms, bic);
         }
 
         return new OptimizerResults(Double.NaN, Double.NaN);
     }
 
-    // _dummy is exists to allow the rms to be automatically rounded
+    enum ParamType {
+        REL_FLUX_SNR(FluxData::snr),
+        TOT_C_CNTS(FluxData::totalCCounts),
+        TOT_C_ERR(FluxData::totalCCountErr),
+        REL_FLUX(FluxData::flux),
+        REL_FLUX_ERR(FluxData::err);
+
+        private final Pattern pattern;
+        private final Function<FluxData, double[]> dataGetter;
+
+        ParamType(Function<FluxData, double[]> dataGetter) {
+            var name = this.name().toLowerCase(Locale.ENGLISH);
+            var patternString = name + (name.startsWith("tot_c_") ? "" : "_" + "[ct]([0-9]+)");
+            pattern = Pattern.compile(patternString);
+            this.dataGetter = dataGetter;
+        }
+
+        public Integer getAperture(String detrendLabel) {
+            detrendLabel = detrendLabel.toLowerCase(Locale.ENGLISH);
+            var match = pattern.matcher(detrendLabel);
+            try {
+                if (match.matches()) {
+                    return Integer.parseInt(match.groupCount() == 1 ? match.group(1) : match.group()) - 1;
+                }
+            } catch (NumberFormatException ignored) {
+            }
+
+            return null;
+        }
+
+        public boolean matches(String detrendLabel) {
+            return pattern.matcher(detrendLabel.toLowerCase(Locale.ENGLISH)).matches();
+        }
+
+        public double[] getData(FluxData data) {
+            return dataGetter.apply(data);
+        }
+    }
+
+    private record FluxData(double[] flux, double[] err, double[] snr, double[] totalCCounts, double[] totalCCountErr) {
+    }
+
+    record CurveData(double[] rel_flux, double[] err, HashMap<ColumnInfo, double[]> instancedParamData) {
+    }
+
+    record ColumnInfo(ParamType type, int ap, int detrendColumn) {
+    }
+
+    // _dummy exists to allow the rms to be automatically rounded
     public record OptimizerResults(double rms, double bic, boolean _dummy) {
         public OptimizerResults(double rms, double bic) {
             this(round(rms), bic, true);
@@ -1617,7 +1731,7 @@ public class CurveFitter {
                         incl = Math.acos((1.0 + p0) / ar);
                     }
                 } else {
-                    incl = Math.acos(bp/ar);
+                    incl = Math.acos(bp / ar);
                 }
                 u1 = lockToCenter[curve][5] ? priorCenter[5] : param[fp < nPars ? fp++ : nPars - 1];  //quadratic limb darkening parameter 1
                 u2 = lockToCenter[curve][6] ? priorCenter[6] : param[fp < nPars ? fp++ : nPars - 1];  //quadratic limb darkening parameter 2
@@ -1676,6 +1790,7 @@ public class CurveFitter {
         public FitDetrendOnly(double[] detrendY) {
             this.detrendY = detrendY;
         }
+
         public double function(double[] param) {
             double sd = 0.0;
             double residual;

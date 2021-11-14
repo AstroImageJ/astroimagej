@@ -989,18 +989,10 @@ public class CurveFitter {
                             var ap = type.getAperture(detrendlabel[curve][v]);
                             if (type == ParamType.TOT_C_ERR || type == ParamType.TOT_C_CNTS) {
                                 instancedParamData.put(new ColumnInfo(type, -1, v), type.getData(targetFlux));
-                                AIJLogger.log(localIsRefStar);
-                                AIJLogger.log(new ColumnInfo(type, -1, v));
-                                AIJLogger.log(detrendlabel[curve][v]);
-                                AIJLogger.log(type.getData(targetFlux));
                             } else {
                                 if (ap == null) continue;
                                 var data = ap == targetStar ? targetFlux : conditionData(ap, localIsRefStar, totCcntAP);
                                 instancedParamData.put(new ColumnInfo(type, ap, v), type.getData(data));
-                                AIJLogger.log(localIsRefStar);//todo data matches, but rms doesn't?
-                                AIJLogger.log(new ColumnInfo(type, ap, v));
-                                AIJLogger.log(detrendlabel[curve][v]);
-                                AIJLogger.log(type.getData(data));
                             }
                         }
                     }
@@ -1085,7 +1077,6 @@ public class CurveFitter {
         }
 
         curveData.instancedParamData.forEach((columnInfo, data) -> detrend[columnInfo.detrendColumn] = data);
-        //AIJLogger.log(Arrays.equals(detrend[0], curveData.instancedParamData.values().stream().findFirst().get()));
 
         if (atLeastOne || detrendFitIndex[curve] == 9) {
             double[] detrendAverage = new double[maxDetrendVars];
@@ -1197,7 +1188,7 @@ public class CurveFitter {
                     int varCount = 0;
                     for (int v = 0; v < maxDetrendVars; v++) {
                         if (detrendIndex[v] != 0 && detrendYDNotConstant[v]) {
-                            detrendVars[varCount] = Arrays.copyOf(detrendYD[v], detrendCount);
+                            detrendVars[varCount] = Arrays.copyOf(detrend[v] /*detrendYD[v]*/, detrendCount); // Changed to fix issues with comp. min
                             varCount++;
                         }
                     }
@@ -1258,7 +1249,7 @@ public class CurveFitter {
                     }
 
                     // Pull locked values
-                    for (int d = 0; d < maxDetrendVars + 7; d++) {//todo recalculate from detrendVars, only if not locked
+                    for (int d = 0; d < maxDetrendVars + 7; d++) {
                         priorCenter[d] = (Double) priorCenterSpinner[curve][d].getValue();
                     }
 

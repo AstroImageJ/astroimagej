@@ -1572,8 +1572,8 @@ public class CurveFitter {
             }
             sigma = Math.sqrt(sigma / cnt);
             var rms = sigma / bestFit[0];
-            AIJLogger.log("rms: " + rms * 1000);
-            AIJLogger.log("bic: " + bic);
+            /*AIJLogger.log("rms: " + rms * 1000);
+            AIJLogger.log("bic: " + bic);*/
             return new OptimizerResults(rms, bic);
         }
 

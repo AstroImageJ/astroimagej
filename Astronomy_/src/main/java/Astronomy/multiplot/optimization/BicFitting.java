@@ -3,6 +3,7 @@ package Astronomy.multiplot.optimization;
 import Astronomy.CurveFitter;
 import Astronomy.FitOptimization;
 import Astronomy.MultiPlot_;
+import ij.IJ;
 import ij.astro.logging.AIJLogger;
 
 import java.math.BigInteger;
@@ -24,6 +25,9 @@ public class BicFitting extends Optimizer {
 
     @Override
     public FitOptimization.MinimumState call() throws Exception {
+        // This is a hack to prevent MP's delayed update plot timer from interfering with the optimizer
+        IJ.wait(1000);
+
         return plotUpdater();
     }
 

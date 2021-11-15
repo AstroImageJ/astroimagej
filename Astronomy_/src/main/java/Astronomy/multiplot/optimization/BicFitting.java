@@ -72,7 +72,7 @@ public class BicFitting extends Optimizer {
 
     private int[] newState(BigInteger state) {
         var out = Arrays.copyOf(initialDetrendIndex, initialDetrendIndex.length); //todo can this not be a copy?
-        for (int i = 0; i < state.bitLength(); i++) {
+        for (int i = 0; i < out.length; i++) {
             if (!state.testBit(i)) {
                 out[index2workingIndexMapping[i]] = 0;
             }

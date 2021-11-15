@@ -10,16 +10,10 @@ import java.util.Arrays;
 
 public class BicFitting extends Optimizer {
     private final int[] initialDetrendIndex;
-    private final int[] index2workingIndexMapping;
 
     public BicFitting(BigInteger startState, BigInteger endState, FitOptimization fitOptimization) {
         super(startState, endState, fitOptimization);
         initialDetrendIndex = Arrays.copyOf(MultiPlot_.detrendIndex[curve], MultiPlot_.detrendIndex[curve].length);
-        index2workingIndexMapping = new int[(int) Arrays.stream(initialDetrendIndex).filter(j -> j != 0).count()];
-        int p = 0;
-        for (int i = 0; i < initialDetrendIndex.length; i++) {
-            if (initialDetrendIndex[i] != 0) index2workingIndexMapping[p++] = i;
-        }
     }
 
     @Override
@@ -71,10 +65,10 @@ public class BicFitting extends Optimizer {
     }
 
     private int[] newState(BigInteger state) {
-        var out = Arrays.copyOf(initialDetrendIndex, initialDetrendIndex.length); //todo can this not be a copy?
+        var out = Arrays.copyOf(initialDetrendIndex, initialDetrendIndex.length);
         for (int i = 0; i < out.length; i++) {
             if (!state.testBit(i)) {
-                out[index2workingIndexMapping[i]] = 0;
+                out[i] = 0;
             }
         }
         return out;

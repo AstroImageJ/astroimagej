@@ -4,7 +4,6 @@ import Astronomy.CurveFitter;
 import Astronomy.FitOptimization;
 import Astronomy.MultiPlot_;
 import ij.IJ;
-import ij.astro.logging.AIJLogger;
 
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -61,11 +60,8 @@ public class BicFitting extends Optimizer {
             AIJLogger.log(x);
             AIJLogger.log(r);*/
             var newState = new FitOptimization.MinimumState(state, r.bic(), x);
-            AIJLogger.log(x);
-            AIJLogger.log(r);
-            AIJLogger.log(newState.lessThan(refBic, epsilon * paramCount));
-            AIJLogger.log(newState.lessThan(minimumState, 0));
-            if (newState.lessThan(refBic, epsilon * paramCount) && newState.lessThan(minimumState, 0)) {//todo epsilon check seems broken
+            //AIJLogger.log(newState.lessThan(refBic, epsilon * paramCount));
+            if (newState.lessThan(refBic, epsilon * paramCount) && newState.lessThan(minimumState, 0)) {
                 minimumState = newState;
             }
         }

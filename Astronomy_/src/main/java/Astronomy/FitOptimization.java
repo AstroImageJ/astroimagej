@@ -87,7 +87,7 @@ public class FitOptimization implements AutoCloseable {
         this.selectable2PrimaryIndex = new int[selectableSize];
     }
 
-    public Component makeFitOptimizationPanel() {//todo see if multirun issue is fixed by making this static and it creates a new instance of this
+    public Component makeFitOptimizationPanel() {
         JPanel fitOptimizationPanel = new JPanel(new SpringLayout());
         fitOptimizationPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(MultiPlot_.mainBorderColor, 1), "Fit Optimization", TitledBorder.LEFT, TitledBorder.TOP, MultiPlot_.b12, Color.darkGray));
 
@@ -128,7 +128,7 @@ public class FitOptimization implements AutoCloseable {
         compStarPanel.add(compOptiIterLabel);
 
         var compOptiIterCount = new JTextField("N/A");
-        compOptiIterCount.setEditable(false);//todo make field
+        compOptiIterCount.setEditable(false);
         compOptiIterCount.setMaximumSize(new Dimension(50, 10));
         compOptiIterCount.setHorizontalAlignment(SwingConstants.RIGHT);
         compOptiIterCount.setToolTipText("Number of iterations remaining in comp. star optimization.");
@@ -140,9 +140,13 @@ public class FitOptimization implements AutoCloseable {
         JPanel detrendOptPanel = new JPanel(new SpringLayout());
         detrendOptPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(MultiPlot_.subBorderColor, 1), "Detrend Parameter Selection", TitledBorder.CENTER, TitledBorder.TOP, MultiPlot_.p11, Color.darkGray));
 
-        //todo improve look of detrendEpsilon and dentrendParamCount
+        var eLabel = new JLabel("ε");
+        eLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        eLabel.setToolTipText("The required change in BIC between selected states to be considered a better value.");
+        detrendOptPanel.add(eLabel);
+
         detrendEpsilon = new JSpinner(new SpinnerNumberModel(2, 0D, 100, 1));
-        detrendEpsilon.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(MultiPlot_.subBorderColor, 1), "ε", TitledBorder.CENTER, TitledBorder.TOP, MultiPlot_.p11, Color.darkGray));
+        detrendEpsilon.setToolTipText("The required change in BIC between selected states to be considered a better value.");
         detrendOptPanel.add(detrendEpsilon);
 
         var detrendOptimizationSelection = new JComboBox<ToolTipWrapper>();
@@ -173,16 +177,21 @@ public class FitOptimization implements AutoCloseable {
         detrendOptPanel.add(detrendOptimizationSelection);
         detrendOptPanel.add(detOptimizeButton);
 
+        var pLabel = new JLabel("   Max Param. Count:   ");
+        pLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        pLabel.setToolTipText("The maximum number of detrend parameters to be enabled.");
+        detrendOptPanel.add(pLabel);
+
         detrendParamCount = new JSpinner(new SpinnerNumberModel(2, 0, 100, 1));
-        detrendParamCount.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(MultiPlot_.subBorderColor, 1), "Max Param. Count", TitledBorder.CENTER, TitledBorder.TOP, MultiPlot_.p11, Color.darkGray));
+        detrendParamCount.setToolTipText("The maximum number of detrend parameters to be enabled.");
         detrendOptPanel.add(detrendParamCount);
 
-        var paramOptiIterLabel = new JLabel("Iter. Remaining:"); //todo make field
+        var paramOptiIterLabel = new JLabel("Iter. Remaining:");
         paramOptiIterLabel.setToolTipText("Number of iterations remaining in detrend parameter optimization.");
         paramOptiIterLabel.setHorizontalAlignment(SwingConstants.CENTER);
         detrendOptPanel.add(paramOptiIterLabel);
 
-        var paramOptiIterCount = new JTextField("N/A");//todo make field
+        var paramOptiIterCount = new JTextField("N/A");
         paramOptiIterCount.setEditable(false);
         paramOptiIterCount.setMaximumSize(new Dimension(50, 10));
         paramOptiIterCount.setToolTipText("Number of iterations remaining in detrend parameter optimization.");

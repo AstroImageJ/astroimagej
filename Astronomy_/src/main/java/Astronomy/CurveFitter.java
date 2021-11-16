@@ -43,11 +43,15 @@ public class CurveFitter {
     private double[][] initDetrendYD;
     private double[] initDetrendX;
     private boolean doInstancedDetrendCalculation = false;
+    public static int[] detrendIndex;
+    public static String[] detrendlabel;
 
     // Chunk 1 stuff here (shared between all threads)
     private CurveFitter(int curve, int targetStar) {
         this.curve = curve;
         this.targetStar = targetStar;
+        detrendIndex = MultiPlot_.detrendIndex[curve];
+        detrendlabel = MultiPlot_.detrendlabel[curve];
 
         getStarData();
         setupData();
@@ -66,12 +70,12 @@ public class CurveFitter {
     }
 
     public OptimizerResults fitCurveAndGetResults() {
-        return fitCurveAndGetResults(isRefStar, detrendIndex[curve]);
+        return fitCurveAndGetResults(isRefStar, MultiPlot_.detrendIndex[curve]);
     }
 
     public OptimizerResults fitCurveAndGetResults(boolean[] isRefStar) {
         doInstancedDetrendCalculation = true;
-        return fitCurveAndGetResults(isRefStar, detrendIndex[curve]);
+        return fitCurveAndGetResults(isRefStar, MultiPlot_.detrendIndex[curve]);
     }
 
     public OptimizerResults fitCurveAndGetResults(int[] detrendIndex) {
@@ -279,15 +283,15 @@ public class CurveFitter {
 
                 if (detrendFitIndex[curve] != 0) {
                     for (int v = 0; v < maxDetrendVars; v++) {
-                        if (detrendIndex[curve][v] > 1) {
-                            detrendcolumn[curve][v] = table.getColumnIndex(detrendlabel[curve][v]);
+                        if (detrendIndex[v] > 1) {
+                            detrendcolumn[curve][v] = table.getColumnIndex(detrendlabel[v]);
 
                             if (detrendcolumn[curve][v] == ResultsTable.COLUMN_NOT_FOUND) {
-                                detrendIndex[curve][v] = 0;
+                                detrendIndex[v] = 0;
                             } else {
                                 detrendVarsUsed[curve]++;
                             }
-                        } else if (detrendIndex[curve][v] == 1)  //Meridian Flip Detrend Selected
+                        } else if (detrendIndex[v] == 1)  //Meridian Flip Detrend Selected
                         {
                             detrendVarsUsed[curve]++;
                         }
@@ -364,7 +368,7 @@ public class CurveFitter {
                                 if (operatorIndex[curve] != 0) yop[curve][j] = Double.NaN;
                                 if (detrendFitIndex[curve] != 0) {
                                     for (int v = 0; v < maxDetrendVars; v++) {
-                                        if (detrendIndex[curve][v] != 0) {
+                                        if (detrendIndex[v] != 0) {
                                             detrend[curve][v][j] = Double.NaN;
                                         }
                                     }
@@ -403,7 +407,7 @@ public class CurveFitter {
                             }
                             if (detrendFitIndex[curve] != 0) {
                                 for (int v = 0; v < maxDetrendVars; v++) {
-                                    if (detrendIndex[curve][v] > 1) {
+                                    if (detrendIndex[v] > 1) {
                                         detrend[curve][v][j] += table.getValueAsDouble(detrendcolumn[curve][v], j * binSize[curve] + k);
                                     }
                                 }
@@ -434,7 +438,7 @@ public class CurveFitter {
                     }
                     if (detrendFitIndex[curve] != 0) {
                         for (int v = 0; v < maxDetrendVars; v++) {
-                            if (detrendIndex[curve][v] != 0) {
+                            if (detrendIndex[v] != 0) {
                                 detrend[curve][v][j] /= bucketSize;
                             }
                         }
@@ -648,7 +652,7 @@ public class CurveFitter {
             }
             if (detrendFitIndex[curve] != 0) {
                 for (int v = 0; v < maxDetrendVars; v++) {
-                    if (detrendIndex[curve][v] != 0) {
+                    if (detrendIndex[v] != 0) {
                         atLeastOne = true;
                         break;
                     }
@@ -675,7 +679,7 @@ public class CurveFitter {
 
                     if (v > 0) {
                         for (int u = 0; u < v; u++) {
-                            if (detrendIndex[curve][u] == detrendIndex[curve][v]) detrendPower[v]++;
+                            if (detrendIndex[u] == detrendIndex[v]) detrendPower[v]++;
                         }
                     }
                     if (detrendPower[v] > 1) {
@@ -708,7 +712,7 @@ public class CurveFitter {
 
                 double meridianFlip = mfMarker1Value + xOffset;
                 for (int v = 0; v < maxDetrendVars; v++) {
-                    if (detrendIndex[curve][v] == 1)    //Meridian Flip Detrend Selected
+                    if (detrendIndex[v] == 1)    //Meridian Flip Detrend Selected
                     {
                         for (int j = 0; j < nn[curve]; j++) {
                             if (x[curve][j] < meridianFlip)  //meridian flip fitting data = -1.0 to left and 1.0 to right of flip
@@ -741,7 +745,7 @@ public class CurveFitter {
                             noNaNs = true;
                             if (!Double.isNaN(y[curve][j])) {
                                 for (int v = 0; v < maxDetrendVars; v++) {
-                                    if (detrendIndex[curve][v] != 0 && Double.isNaN(detrend[curve][v][j])) {
+                                    if (detrendIndex[v] != 0 && Double.isNaN(detrend[curve][v][j])) {
                                         noNaNs = false;
                                         break;
                                     }
@@ -778,7 +782,7 @@ public class CurveFitter {
                             if (xModel2[curve][0] >= xModel2[curve][1]) xModel2[curve] = null;
                         } else {
                             for (int v = 0; v < maxDetrendVars; v++) {
-                                if (detrendIndex[curve][v] > 0) {
+                                if (detrendIndex[v] > 0) {
                                     detrendFactor[curve][v] = 0.0;
                                 }
                             }
@@ -788,7 +792,7 @@ public class CurveFitter {
                             noNaNs = true;
                             if (!Double.isNaN(y[curve][j])) {
                                 for (int v = 0; v < maxDetrendVars; v++) {
-                                    if (detrendIndex[curve][v] != 0 && Double.isNaN(detrend[curve][v][j])) {
+                                    if (detrendIndex[v] != 0 && Double.isNaN(detrend[curve][v][j])) {
                                         noNaNs = false;
                                         break;
                                     }
@@ -826,7 +830,7 @@ public class CurveFitter {
                             xModel2[curve] = null;
                         } else {
                             for (int v = 0; v < maxDetrendVars; v++) {
-                                if (detrendIndex[curve][v] > 0) {
+                                if (detrendIndex[v] > 0) {
                                     detrendFactor[curve][v] = 0.0;
                                 }
                             }
@@ -983,10 +987,10 @@ public class CurveFitter {
         if (doInstancedDetrendCalculation) {
             if (detrendFitIndex[curve] != 0) {
                 for (int v = 0; v < maxDetrendVars; v++) {
-                    if (detrendIndex[curve][v] > 1) {
+                    if (detrendIndex[v] > 1) {
                         for (ParamType type : ParamType.values()) {
-                            if (!type.matches(detrendlabel[curve][v])) continue;
-                            var ap = type.getAperture(detrendlabel[curve][v]);
+                            if (!type.matches(detrendlabel[v])) continue;
+                            var ap = type.getAperture(detrendlabel[v]);
                             if (type == ParamType.TOT_C_ERR || type == ParamType.TOT_C_CNTS) {
                                 instancedParamData.put(new ColumnInfo(type, -1, v), type.getData(targetFlux));
                             } else {
@@ -1046,7 +1050,7 @@ public class CurveFitter {
         var converged = MultiPlot_.converged[curve];
         var createDetrendModel = MultiPlot_.createDetrendModel;
         var detrend = Arrays.stream(MultiPlot_.detrend[curve]).map(double[]::clone).toArray($ -> MultiPlot_.detrend[curve].clone());
-        var maxDetrendVars = MultiPlot_.maxDetrendVars - (MultiPlot_.detrendIndex[curve].length - detrendIndex.length);
+        var maxDetrendVars = MultiPlot_.maxDetrendVars;
         var maxFittedVars = 7 + maxDetrendVars;
 
         detrendVarsUsed[curve] = (int) Arrays.stream(detrendIndex).filter(i -> i != 0).count();

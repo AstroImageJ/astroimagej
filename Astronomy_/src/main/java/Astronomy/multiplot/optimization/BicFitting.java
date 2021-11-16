@@ -10,10 +10,16 @@ import java.util.Arrays;
 
 public class BicFitting extends Optimizer {
     private final int[] initialDetrendIndex;
+    private final String[] detrendlabel;
 
     public BicFitting(BigInteger startState, BigInteger endState, FitOptimization fitOptimization) {
         super(startState, endState, fitOptimization);
         initialDetrendIndex = Arrays.copyOf(MultiPlot_.detrendIndex[curve], MultiPlot_.detrendIndex[curve].length);
+        detrendlabel = new String[initialDetrendIndex.length];
+        for (int i = 0; i < MultiPlot_.detrendIndex[curve].length; i++) {
+            initialDetrendIndex[i] = MultiPlot_.fitDetrendComboBox[curve][i].getSelectedIndex();
+            detrendlabel[i] = (String) MultiPlot_.fitDetrendComboBox[curve][i].getSelectedItem();
+        }
     }
 
     @Override
@@ -29,6 +35,11 @@ public class BicFitting extends Optimizer {
         var state0 = newState(BigInteger.ZERO);
         Arrays.fill(state0, 0);
         var b = CurveFitter.getInstance(curve, fitOptimization.getTargetStar()).fitCurveAndGetResults(state0);
+
+        CurveFitter.detrendIndex = initialDetrendIndex;
+        CurveFitter.detrendlabel = detrendlabel;
+        CurveFitter.getInstance(curve, fitOptimization.getTargetStar()).setupData();
+
         var minimumState = new FitOptimization.MinimumState(endState, b.bic(), state0);
         final var refBic = b.bic();
         final var epsilon = FitOptimization.EPSILON;

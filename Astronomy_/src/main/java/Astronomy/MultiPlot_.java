@@ -425,7 +425,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static double[][] bestFit;
     static JTextField[][] bestFitLabel;
 
-    static JComboBox<Object>[][] fitDetrendComboBox;
+    public static JComboBox<Object>[][] fitDetrendComboBox;
     static JCheckBox[][] useFitDetrendCB;
 
     static JButton[] fitNowButton;

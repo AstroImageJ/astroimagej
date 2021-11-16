@@ -152,7 +152,7 @@ public class FitOptimization implements AutoCloseable {
         var detrendOptimizationSelection = new JComboBox<ToolTipWrapper>();
         detrendOptimizationSelection.setEditable(false);
         detrendOptimizationSelection.setRenderer(new ToolTipRenderer());
-        var detrendBruteForce = new ToolTipWrapper("Exhaustive Optimize", "Exhaustive search of detrendarison star combinations for minimize RMS of the fit. Only detrendarison stars selected at the start of this run are searched.");
+        var detrendBruteForce = new ToolTipWrapper("Exhaustive Optimize", "Exhaustive search of parameter combinations for minimum BIC of the fit. All set parameters are searched.");
         var detrendTest = new ToolTipWrapper("Debug", "Debug a single run.");
         detrendOptimizationSelection.addItem(detrendBruteForce);
         detrendOptimizationSelection.addItem(detrendTest);
@@ -278,7 +278,7 @@ public class FitOptimization implements AutoCloseable {
         selectable = null;
         selectable2PrimaryIndex = null;
 
-        setSelectable((int) Arrays.stream(MultiPlot_.detrendIndex[curve]).filter(i -> i != 0).count());
+        setSelectable(MultiPlot_.detrendIndex[curve].length);
         if (selectable.length < 2) {
             IJ.error("More than one detrend parameter is needed for optimization");
             return;

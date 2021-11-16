@@ -140,14 +140,14 @@ public class FitOptimization implements AutoCloseable {
         JPanel detrendOptPanel = new JPanel(new SpringLayout());
         detrendOptPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(MultiPlot_.subBorderColor, 1), "Detrend Parameter Selection", TitledBorder.CENTER, TitledBorder.TOP, MultiPlot_.p11, Color.darkGray));
 
-        var eLabel = new JLabel("ε");
-        eLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        eLabel.setToolTipText("The required change in BIC between selected states to be considered a better value.");
-        detrendOptPanel.add(eLabel);
+        var pLabel = new JLabel("   Max Detrend Pars.:   ");
+        pLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        pLabel.setToolTipText("The maximum number of detrend parameters to be enabled.");
+        detrendOptPanel.add(pLabel);
 
-        detrendEpsilon = new JSpinner(new SpinnerNumberModel(2, 0D, 100, 1));
-        detrendEpsilon.setToolTipText("The required change in BIC between selected states to be considered a better value.");
-        detrendOptPanel.add(detrendEpsilon);
+        detrendParamCount = new JSpinner(new SpinnerNumberModel(2, 0, 100, 1));
+        detrendParamCount.setToolTipText("The maximum number of detrend parameters to be enabled.");
+        detrendOptPanel.add(detrendParamCount);
 
         var detrendOptimizationSelection = new JComboBox<ToolTipWrapper>();
         detrendOptimizationSelection.setEditable(false);
@@ -177,14 +177,14 @@ public class FitOptimization implements AutoCloseable {
         detrendOptPanel.add(detrendOptimizationSelection);
         detrendOptPanel.add(detOptimizeButton);
 
-        var pLabel = new JLabel("   Max Param. Count:   ");
-        pLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        pLabel.setToolTipText("The maximum number of detrend parameters to be enabled.");
-        detrendOptPanel.add(pLabel);
+        var eLabel = new JLabel("Min. BIC Thres.:");
+        eLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        eLabel.setToolTipText("The required change in BIC between selected states to be considered a better value.");
+        detrendOptPanel.add(eLabel);
 
-        detrendParamCount = new JSpinner(new SpinnerNumberModel(2, 0, 100, 1));
-        detrendParamCount.setToolTipText("The maximum number of detrend parameters to be enabled.");
-        detrendOptPanel.add(detrendParamCount);
+        detrendEpsilon = new JSpinner(new SpinnerNumberModel(2, 0D, 100, 1));
+        detrendEpsilon.setToolTipText("The required change in BIC between selected states to be considered a better value.");
+        detrendOptPanel.add(detrendEpsilon);
 
         var paramOptiIterLabel = new JLabel("Iter. Remaining:");
         paramOptiIterLabel.setToolTipText("Number of iterations remaining in detrend parameter optimization.");

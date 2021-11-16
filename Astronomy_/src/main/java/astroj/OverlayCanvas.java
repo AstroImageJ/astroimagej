@@ -33,7 +33,11 @@ public class OverlayCanvas extends ImageCanvas
 	 */
 	public void add (Roi roi)
 		{
-		if (rois.contains(roi)) return;
+		// Don't add duplicate rois - roi's equal's method (used by Vector#contains) does not check if rois
+		// are of different types
+		var index = rois.indexOf(roi);
+		if (index >= 0 && rois.get(index).getClass().isAssignableFrom(roi.getClass())) return;
+
 		rois.addElement (roi);
 		}
 

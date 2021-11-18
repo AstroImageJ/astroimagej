@@ -117,6 +117,8 @@ public class FitOptimization implements AutoCloseable {
                 optimizeButton.setText("Start");
                 pool.shutdownNow();
                 ipsExecutorService.shutdown();
+                IJ.showProgress(1);
+                IJ.showStatus("");
             }
         });
         compStarPanel.add(compOptimizationSelection);
@@ -172,6 +174,8 @@ public class FitOptimization implements AutoCloseable {
                 detOptimizeButton.setText("Start");
                 pool.shutdownNow();
                 ipsExecutorService.shutdown();
+                IJ.showProgress(1);
+                IJ.showStatus("");
             }
         });
         detrendOptPanel.add(detrendOptimizationSelection);

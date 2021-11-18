@@ -13,12 +13,10 @@ import java.awt.*;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.Hashtable;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.BiFunction;
+import java.util.regex.Pattern;
 
 import static Astronomy.MultiPlot_.fitDetrendComboBox;
 
@@ -26,6 +24,7 @@ import static Astronomy.MultiPlot_.fitDetrendComboBox;
 public class FitOptimization implements AutoCloseable {
     private static final int MAX_THREADS = getThreadCount();
     private static final BigInteger MIN_CHUNK_SIZE = BigInteger.valueOf(1000L);
+    private final static Pattern apGetter = Pattern.compile("rel_flux_[ct]([0-9]+)");
     /**
      * The change in the comparator to determine improvement
      */
@@ -33,6 +32,7 @@ public class FitOptimization implements AutoCloseable {
     private final int curve;
     public DynamicCounter compCounter;
     public DynamicCounter detrendCounter;
+    public JSpinner detrendParamCount;
     CompletionService<MinimumState> completionService;
     private ScheduledExecutorService ipsExecutorService;
     private BigInteger iterRemainingOld = BigInteger.ZERO;
@@ -49,7 +49,6 @@ public class FitOptimization implements AutoCloseable {
     private JToggleButton optimizeButton;
     private RollingAvg rollingAvg = new RollingAvg();
     private JSpinner detrendEpsilon;
-    public JSpinner detrendParamCount;
 
     // Init. after numAps is set
     public FitOptimization(int curve, int epsilon) {
@@ -224,7 +223,7 @@ public class FitOptimization implements AutoCloseable {
             return;
         }
 
-        targetStar = Integer.parseInt(MultiPlot_.ylabel[curve].split("rel_flux_T")[1]) - 1;
+        setTargetStar();
 
         BigInteger initState = createBinaryRepresentation(selectable);
         var x = CurveFitter.getInstance(curve, targetStar).fitCurveAndGetResults(setArrayToState(initState));
@@ -244,9 +243,7 @@ public class FitOptimization implements AutoCloseable {
             return;
         }
 
-        //todo do for C stars
-        //todo error if this fails
-        targetStar = Integer.parseInt(MultiPlot_.ylabel[curve].split("rel_flux_T")[1]) - 1;
+        setTargetStar();
 
         BigInteger initState = createBinaryRepresentation(selectable); //numAps has number of apertures
 
@@ -268,14 +265,24 @@ public class FitOptimization implements AutoCloseable {
 
         if (MultiPlot_.refStarFrame == null) MultiPlot_.showRefStarJPanel();
         CurveFitter.invalidateInstance();
-        //EPSILON = 2;
 
-        targetStar = Integer.parseInt(MultiPlot_.ylabel[curve].split("rel_flux_T")[1]) - 1;
+        setTargetStar();
 
         var x = CurveFitter.getInstance(curve, targetStar).fitCurveAndGetResults(MultiPlot_.detrendIndex[curve]);
         AIJLogger.log(x);
         finishOptimization(optimizeButton);
         EPSILON = 0;
+    }
+
+    private void setTargetStar() {
+        var match = apGetter.matcher(MultiPlot_.ylabel[curve].toLowerCase(Locale.ENGLISH));
+        try {
+            if (match.matches()) {
+                targetStar = Integer.parseInt(match.groupCount() == 1 ? match.group(1) : match.group()) - 1;
+            }
+        } catch (NumberFormatException ignored) {
+            return;
+        }
     }
 
     private void minimizeParams() {
@@ -292,7 +299,7 @@ public class FitOptimization implements AutoCloseable {
         CurveFitter.invalidateInstance();
         EPSILON = (double) detrendEpsilon.getValue();
 
-        targetStar = Integer.parseInt(MultiPlot_.ylabel[curve].split("rel_flux_T")[1]) - 1;
+        setTargetStar();
 
         BigInteger initState = createBinaryRepresentation(selectable); //numAps has number of apertures
 

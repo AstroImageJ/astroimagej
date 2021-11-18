@@ -13,14 +13,16 @@ import java.awt.*;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Hashtable;
+import java.util.Locale;
+import java.util.Objects;
 import java.util.concurrent.*;
 import java.util.function.BiFunction;
 import java.util.regex.Pattern;
 
 import static Astronomy.MultiPlot_.fitDetrendComboBox;
 
-//todo organize properly
 public class FitOptimization implements AutoCloseable {
     private static final int MAX_THREADS = getThreadCount();
     private static final BigInteger MIN_CHUNK_SIZE = BigInteger.valueOf(1000L);
@@ -250,7 +252,7 @@ public class FitOptimization implements AutoCloseable {
         compCounter.setBasis(initState.subtract(BigInteger.ONE)); // Subtract 1 as 0-state is skipped
         scheduleIpsCounter(0);
 
-        var finalState = divideTasksAndRun(new MinimumState(initState, Double.MAX_VALUE), BigInteger.ONE,
+        var finalState = divideTasksAndRun(new MinimumState(initState, Double.MAX_VALUE),
                 (start, end) -> new CompStarFitting(start, end, this));
 
         setFinalState("RMS", finalState.stateArray, MultiPlot_.refStarCB);
@@ -274,17 +276,6 @@ public class FitOptimization implements AutoCloseable {
         EPSILON = 0;
     }
 
-    private void setTargetStar() {
-        var match = apGetter.matcher(MultiPlot_.ylabel[curve].toLowerCase(Locale.ENGLISH));
-        try {
-            if (match.matches()) {
-                targetStar = Integer.parseInt(match.groupCount() == 1 ? match.group(1) : match.group()) - 1;
-            }
-        } catch (NumberFormatException ignored) {
-            return;
-        }
-    }
-
     private void minimizeParams() {
         selectable = null;
         selectable2PrimaryIndex = null;
@@ -306,7 +297,7 @@ public class FitOptimization implements AutoCloseable {
         detrendCounter.setBasis(initState.subtract(BigInteger.ONE)); // Subtract 1 as 0-state is skipped
         scheduleIpsCounter(1);
 
-        var finalState = divideTasksAndRun(new MinimumState(initState, Double.MAX_VALUE), BigInteger.ONE,
+        var finalState = divideTasksAndRun(new MinimumState(initState, Double.MAX_VALUE),
                 (start, end) -> new BicFitting(start, end, this));
 
 
@@ -314,6 +305,17 @@ public class FitOptimization implements AutoCloseable {
 
         finishOptimization(detOptimizeButton);
         EPSILON = 0;
+    }
+
+    private void setTargetStar() {
+        var match = apGetter.matcher(MultiPlot_.ylabel[curve].toLowerCase(Locale.ENGLISH));
+        try {
+            if (match.matches()) {
+                targetStar = Integer.parseInt(match.groupCount() == 1 ? match.group(1) : match.group()) - 1;
+            }
+        } catch (NumberFormatException ignored) {
+            IJ.error("Optimization must be run on a curve representing an aperture.");
+        }
     }
 
     private void finishOptimization(JToggleButton button) {
@@ -330,12 +332,9 @@ public class FitOptimization implements AutoCloseable {
     }
 
     /**
-     * @param initState
-     * @param startingPoint
-     * @param optimizerBiFunction
      * @return the final state array
      */
-    private OutPair divideTasksAndRun(final MinimumState initState, final BigInteger startingPoint, //todo does detrend need to start at 0? if not, can remove this param
+    private OutPair divideTasksAndRun(final MinimumState initState,
                                       BiFunction<BigInteger, BigInteger, Optimizer> optimizerBiFunction) {
         // Update table data - here we use full data, while on first open of a table MP will use truncated data
         MultiPlot_.updateTotals();
@@ -347,7 +346,7 @@ public class FitOptimization implements AutoCloseable {
         var state = minimumState.state;
         var count = 0;
         var CHUNK_SIZE = state.divide(BigInteger.valueOf(MAX_THREADS)).max(MIN_CHUNK_SIZE).add(BigInteger.ONE);
-        for (BigInteger start = startingPoint; start.compareTo(state) < 0; ) {
+        for (BigInteger start = BigInteger.ONE; start.compareTo(state) < 0; ) {
             var end = state.add(BigInteger.ONE).min(start.add(CHUNK_SIZE)).min(state);
             evaluateStatesInRange(optimizerBiFunction.apply(start, end));
             start = end;
@@ -400,16 +399,6 @@ public class FitOptimization implements AutoCloseable {
         pool = new ThreadPoolExecutor(0, MAX_THREADS,
                 10L, TimeUnit.SECONDS, new SynchronousQueue<>());
         completionService = new ExecutorCompletionService<>(pool);
-    }
-
-    //todo this is still broken
-    public String workingState2SelectableStateString(final BigInteger state) {
-        var r = BigInteger.ZERO;
-        for (int i = 0; i < selectable2PrimaryIndex.length; i++) {
-            if (state.testBit(i)) r = r.setBit(selectable2PrimaryIndex[i]);
-        }
-        var x = new StringBuffer(r.toString(2)).reverse();
-        return x.toString();
     }
 
     public boolean[] setArrayToState(final BigInteger state) {
@@ -500,7 +489,6 @@ public class FitOptimization implements AutoCloseable {
      * State tracker object for selected parameter optimization.
      * Contains the current working state and the comparator value.
      */
-    //todo rename to StateTracker or similar?
     public record MinimumState(BigInteger state, double comparator, Object outState) {
         public MinimumState(BigInteger state, double comparator) {
             this(state, comparator, null);
@@ -537,15 +525,6 @@ public class FitOptimization implements AutoCloseable {
 
         public boolean lessThan(double comparator2, double epsilon) {
             return comparator < comparator2 - epsilon;
-        }
-    }
-
-    static class MinimumStateComparator implements Comparator<MinimumState> {
-        @Override
-        public int compare(MinimumState o1, MinimumState o2) {
-            if (o1.comparator == o2.comparator) return 0;
-            if (o1.lessThan(o2)) return -1;
-            return 1;
         }
     }
 

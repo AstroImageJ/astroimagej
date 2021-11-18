@@ -7,10 +7,12 @@ import ij.IJ;
 
 import java.math.BigInteger;
 import java.util.Arrays;
+import java.util.HashMap;
 
 public class BicFitting extends Optimizer {
     private final int[] initialDetrendIndex;
     private final String[] detrendlabel;
+    private final HashMap<Integer, FitOptimization.MinimumState> stateTracker = new HashMap<>();
 
     public BicFitting(BigInteger startState, BigInteger endState, FitOptimization fitOptimization) {
         super(startState, endState, fitOptimization);
@@ -30,7 +32,6 @@ public class BicFitting extends Optimizer {
         return plotUpdater();
     }
 
-
     private FitOptimization.MinimumState plotUpdater() {
         var state0 = newState(BigInteger.ZERO);
         Arrays.fill(state0, 0);
@@ -43,6 +44,7 @@ public class BicFitting extends Optimizer {
         var minimumState = new FitOptimization.MinimumState(endState, b.bic(), state0);
         final var refBic = b.bic();
         final var epsilon = FitOptimization.EPSILON;
+        final var maxParams = (int) fitOptimization.detrendParamCount.getValue();
         BigInteger counter = BigInteger.ZERO;
         for (BigInteger state = startState; state.compareTo(endState) < 0; state = state.add(BigInteger.ONE)) {
             if (state.equals(BigInteger.ZERO)) continue;
@@ -54,24 +56,31 @@ public class BicFitting extends Optimizer {
             var paramCount = Arrays.stream(x).filter(i -> i != 0).count();
 
             // Ensure param count is <= max params
-            if (paramCount > (int) fitOptimization.detrendParamCount.getValue()) continue;
+            if (paramCount > maxParams) continue;
 
             var r = CurveFitter.getInstance(curve, fitOptimization.getTargetStar()).fitCurveAndGetResults(x);
 
             if (Double.isNaN(r.rms()) || Double.isNaN(r.bic())) continue;
 
-            //AIJLogger.log(state.toString(2));
-            /*AIJLogger.log(state);
-            AIJLogger.log(x);
-            AIJLogger.log(r);*/
             var newState = new FitOptimization.MinimumState(state, r.bic(), x);
-            //AIJLogger.log(newState.lessThan(refBic, epsilon * paramCount));
-            if (newState.lessThan(refBic, epsilon * paramCount) && newState.lessThan(minimumState, 0)) {
-                minimumState = newState;
+
+            if (newState.lessThan(refBic, epsilon * paramCount)) { // Only store valid states
+                stateTracker.computeIfPresent((int) paramCount, ($i, minState) ->
+                        newState.lessThan(minState, 0) ? newState : minState);
+                stateTracker.putIfAbsent((int) paramCount, newState);
             }
         }
-        /*AIJLogger.log("--------");
-        AIJLogger.log(minimumState);*/
+
+        var m = 0;
+        for (int n = 1; n <= maxParams; n++) {
+            if (!stateTracker.containsKey(n)) continue;
+            var state = stateTracker.get(n);
+            if (state.lessThan(minimumState, (n-m) * epsilon)) {
+                minimumState = state;
+                m = n;
+            }
+        }
+
         return minimumState;
     }
 

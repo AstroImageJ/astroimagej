@@ -314,6 +314,8 @@ public class FitOptimization implements AutoCloseable {
         MultiPlot_.subFrame.repaint();
         MultiPlot_.mainsubpanel.repaint();
         if (ipsExecutorService != null) ipsExecutorService.shutdown();
+        IJ.showStatus("");
+        IJ.showProgress(1);
     }
 
     /**
@@ -450,7 +452,7 @@ public class FitOptimization implements AutoCloseable {
     private void scheduleIpsCounter(int minimizing) {
         ipsExecutorService = Executors.newSingleThreadScheduledExecutor();
         rollingAvg = new RollingAvg();
-        ipsExecutorService.scheduleWithFixedDelay(() -> updateIpsCounter(minimizing), 1L, 1L, TimeUnit.SECONDS);
+        ipsExecutorService.scheduleAtFixedRate(() -> updateIpsCounter(minimizing), 1L, 1L, TimeUnit.SECONDS);
     }
 
     private synchronized void updateIpsCounter(int minimizing) {
@@ -464,6 +466,8 @@ public class FitOptimization implements AutoCloseable {
         var ips = iterRemainingOld.subtract(iterRemaining);
         iterRemainingOld = iterRemaining;
 
+        var avgIps = rollingAvg.getAverage(ips);
+        if (avgIps.compareTo(BigDecimal.ZERO) == 0) return;
         var totalSecs = counter.getTotalCount().divide(rollingAvg.getAverage(ips).toBigInteger());
         var hours = totalSecs.divide(BigInteger.valueOf(3600));
         var minutes = (totalSecs.mod(BigInteger.valueOf(3600))).divide(BigInteger.valueOf(60));

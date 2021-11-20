@@ -298,8 +298,7 @@ public class FitOptimization implements AutoCloseable {
         scheduleIpsCounter(1);
 
         var finalState = divideTasksAndRun(new MinimumState(initState, Double.MAX_VALUE),
-                (start, end) -> new BicFitting(start, end, this));
-
+                (start, end) -> new BicFitting(start, end, this), false);
 
         if (finalState.outState instanceof int[] x) setFinalState(x);
 
@@ -336,6 +335,14 @@ public class FitOptimization implements AutoCloseable {
      */
     private OutPair divideTasksAndRun(final MinimumState initState,
                                       BiFunction<BigInteger, BigInteger, Optimizer> optimizerBiFunction) {
+        return divideTasksAndRun(initState, optimizerBiFunction, true);
+    }
+
+    /**
+     * @return the final state array
+     */
+    private OutPair divideTasksAndRun(final MinimumState initState,
+                                      BiFunction<BigInteger, BigInteger, Optimizer> optimizerBiFunction, boolean multithreaded) {
         // Update table data - here we use full data, while on first open of a table MP will use truncated data
         MultiPlot_.updateTotals();
         MultiPlot_.updateGUI();
@@ -345,11 +352,17 @@ public class FitOptimization implements AutoCloseable {
         var minimumState = initState;
         var state = minimumState.state;
         var count = 0;
-        var CHUNK_SIZE = state.divide(BigInteger.valueOf(MAX_THREADS)).max(MIN_CHUNK_SIZE).add(BigInteger.ONE);
-        for (BigInteger start = BigInteger.ONE; start.compareTo(state) < 0; ) {
-            var end = state.add(BigInteger.ONE).min(start.add(CHUNK_SIZE)).min(state);
-            evaluateStatesInRange(optimizerBiFunction.apply(start, end));
-            start = end;
+
+        if (multithreaded) {
+            var CHUNK_SIZE = state.divide(BigInteger.valueOf(MAX_THREADS)).max(MIN_CHUNK_SIZE).add(BigInteger.ONE);
+            for (BigInteger start = BigInteger.ONE; start.compareTo(state) < 0; ) {
+                var end = state.add(BigInteger.ONE).min(start.add(CHUNK_SIZE)).min(state);
+                evaluateStatesInRange(optimizerBiFunction.apply(start, end));
+                start = end;
+                count++;
+            }
+        } else {
+            evaluateStatesInRange(optimizerBiFunction.apply(BigInteger.ONE, state));
             count++;
         }
 

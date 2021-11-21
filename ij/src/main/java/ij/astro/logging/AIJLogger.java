@@ -53,30 +53,22 @@ public class AIJLogger {
     }
 
     /**
+     * Create a new log window for the caller, log the obj(s) to a new line.
+     */
+    public static synchronized void logMulti(Object... obj) {
+        StringBuilder str = new StringBuilder();
+        for (int i = 0; i < obj.length; i++) {
+            str.append(object2String(obj[i]));
+            if (i != obj.length - 1 && !(obj[i] instanceof String)) str.append("; ");
+        }
+        log(str.toString(), Prefs.getBoolean(USE_NEW_LOG_WINDOW_KEY, true));
+    }
+
+    /**
      * Object log. Will box primitives as overloads are messy.
      */
     public static synchronized void log(Object obj, boolean useNewWindow) {
-        if (obj instanceof int[] objA) {
-            log(Arrays.toString(objA), useNewWindow);
-        } else if (obj instanceof double[] objA) {
-            log(Arrays.toString(objA), useNewWindow);
-        } else if (obj instanceof float[] objA) {
-            log(Arrays.toString(objA), useNewWindow);
-        } else if (obj instanceof boolean[] objA) {
-            log(Arrays.toString(objA), useNewWindow);
-        } else if (obj instanceof long[] objA) {
-            log(Arrays.toString(objA), useNewWindow);
-        } else if (obj instanceof Object[] objA) {
-            log(Arrays.deepToString(objA), useNewWindow);
-        } else if (obj instanceof byte[] objA) {
-            log(Arrays.toString(objA), useNewWindow);
-        } else if (obj instanceof char[] objA) {
-            log(Arrays.toString(objA), useNewWindow);
-        } else if (obj instanceof short[] objA) {
-            log(Arrays.toString(objA), useNewWindow);
-        } else {
-            log(String.valueOf(obj), useNewWindow);
-        }
+        log(object2String(obj), useNewWindow);
     }
 
     /**
@@ -207,6 +199,30 @@ public class AIJLogger {
                     aijLogPanelsTimer.remove(entry.getKey());
                 }
             }
+        }
+    }
+
+    private static String object2String(Object obj) {
+        if (obj instanceof int[] objA) {
+            return Arrays.toString(objA);
+        } else if (obj instanceof double[] objA) {
+            return Arrays.toString(objA);
+        } else if (obj instanceof float[] objA) {
+            return Arrays.toString(objA);
+        } else if (obj instanceof boolean[] objA) {
+            return Arrays.toString(objA);
+        } else if (obj instanceof long[] objA) {
+            return Arrays.toString(objA);
+        } else if (obj instanceof Object[] objA) {
+            return Arrays.deepToString(objA);
+        } else if (obj instanceof byte[] objA) {
+            return Arrays.toString(objA);
+        } else if (obj instanceof char[] objA) {
+            return Arrays.toString(objA);
+        } else if (obj instanceof short[] objA) {
+            return Arrays.toString(objA);
+        } else {
+            return String.valueOf(obj);
         }
     }
 

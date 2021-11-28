@@ -7,10 +7,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.security.PrivilegedActionException;
-import java.util.Iterator;
 
 /**
  * Class to facilitate in the opening of webpages in the system's default browser.
@@ -46,14 +42,7 @@ public class BrowserOpener {
             command = new String[]{"start", "url"}; // final option at opening the link
         }
 
-        Process process = AccessController.doPrivileged((PrivilegedAction<Process>) () -> {
-            try {
-                return Runtime.getRuntime().exec(command);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            return null;
-        });
+        Process process = Runtime.getRuntime().exec(command);
 
         if (process == null) {
             throw new IOException("Failed to open URL via BrowserOpener");

@@ -11,14 +11,17 @@ import ij.gui.Toolbar;
 import ij.measure.ResultsTable;
 import ij.process.ImageProcessor;
 import ij.util.Tools;
+import util.GenericSwingDialog;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.lang.reflect.InvocationTargetException;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.Locale;
 import java.util.TimerTask;
+import java.util.function.Consumer;
 
 
 /**
@@ -1759,7 +1762,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         lastSlice = stackSize;
         if (singleStep) { lastSlice = firstSlice; }
         if (!autoMode) {
-            GenericDialog gd = dialog();
+            GenericSwingDialog gd = dialog();
 
             gd.showDialog();
             xLocation = gd.getX();
@@ -1785,9 +1788,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             }
 //                Prefs.set (MultiAperture_.PREFS_NAPERTURESMAX, nAperturesMax);
             if (stackSize > 1) {
-                firstSlice = (int) gd.getNextNumber();
+                //firstSlice = (int) gd.getNextNumber();
                 if (gd.invalidNumber() || firstSlice < 1) { firstSlice = 1; }
-                lastSlice = (int) gd.getNextNumber();
+                //lastSlice = (int) gd.getNextNumber();
                 if (gd.invalidNumber() || lastSlice > stackSize) { lastSlice = stackSize; }
                 if (firstSlice != lastSlice) {
                     if (firstSlice > lastSlice) {
@@ -1803,31 +1806,27 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             }
             initialFirstSlice = firstSlice;
             initialLastSlice = lastSlice;
-            radius = gd.getNextNumber();
+            //radius = gd.getNextNumber();
             if (gd.invalidNumber() || radius <= 0) {
                 IJ.beep();
                 IJ.error("Invalid aperture radius: " + radius);
                 return false;
             }
             if (oldradius != radius) { changeAperture(); }
-            rBack1 = gd.getNextNumber();
+            //rBack1 = gd.getNextNumber();
             if (gd.invalidNumber() || rBack1 < radius) {
                 IJ.beep();
                 IJ.error("Invalid background inner radius: " + rBack1);
                 return false;
             }
             if (oldrBack1 != rBack1) { changeAperture(); }
-            rBack2 = gd.getNextNumber();
+            //rBack2 = gd.getNextNumber();
             if (gd.invalidNumber() || rBack2 < rBack1) {
                 IJ.beep();
                 IJ.error("Invalid background outer radius: " + rBack2);
                 return false;
             }
             if (oldrBack2 != rBack2) { changeAperture(); }
-            previous = gd.getNextBoolean();
-            useWCS = gd.getNextBoolean();
-            singleStep = gd.getNextBoolean();
-            allowSingleStepApChanges = gd.getNextBoolean();
             if (singleStep) { lastSlice = firstSlice; }
 //                oneTable = !gd.getNextBoolean();
 //                wideTable = gd.getNextBoolean();
@@ -2857,46 +2856,30 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     /**
      * Standard preferences dialog for MultiAperture_
      */
-    protected GenericDialog dialog() {
+    protected GenericSwingDialog dialog() {
         if (!Prefs.isLocationOnScreen(new Point(xLocation, yLocation))) {
             xLocation = 10;
             yLocation = 10;
         }
 
-        GenericDialog gd = new GenericDialog("Multi-Aperture Measurements", xLocation, yLocation);
-//		gd.addMessage ("Aperture radii should have been set with the \"Set Aperture\" tool (double-click icon).");
-
-//		gd.addNumericField ("   Maximum number of apertures per image :", nAperturesMax,0,6,"");
-//        gd.addMessage("");
+        GenericSwingDialog gd = new GenericSwingDialog("Multi-Aperture Measurements", xLocation, yLocation);
         if (stackSize > 1) {
-            gd.addSlider("           First slice ", 1, stackSize, (firstSlice == stackSize || (alwaysstartatfirstSlice && !(this instanceof Stack_Aligner))) ? 1 : firstSlice);
-            gd.addSlider("           Last slice ", 1, stackSize, lastSlice);
-//			gd.addNumericField ("           First slice :", firstSlice == stackSize ? 1 : firstSlice,0);
-//			gd.addNumericField ("           Last slice :",  lastSlice, 0);
+            gd.addSlider("           First slice ", 1, stackSize, (firstSlice == stackSize || (alwaysstartatfirstSlice && !(this instanceof Stack_Aligner))) ? 1 : firstSlice, d -> firstSlice = d.intValue());
+            gd.addSlider("           Last slice ", 1, stackSize, lastSlice, d -> lastSlice = d.intValue());
         }
-//        gd.addMessage("");
-        gd.addFloatSlider("Radius of object aperture", 0.01, radius > 100 ? radius : 100, radius, 3, 1.0);
-        gd.addFloatSlider("Inner radius of background annulus", 0.01, rBack1 > 100 ? rBack1 : 100, rBack1, 3, 1.0);
-        gd.addFloatSlider("Outer radius of background annulus", 0.01, rBack2 > 100 ? rBack2 : 100, rBack2, 3, 1.0);
-//        gd.addNumericField ("Radius of object aperture",radius,2);
-//		gd.addNumericField ("Inner radius of background annulus",rBack1,2);
-//		gd.addNumericField ("Outer radius of background annulus",rBack2,2);
-//        gd.addMessage("");
-        gd.addCheckbox("Use previous " + nAperturesStored + " apertures (1-click to set first aperture location)", previous && nAperturesStored > 0);
-        gd.addCheckbox("Use RA/Dec to locate aperture positions", useWCS);
-        gd.addCheckbox("Use single step mode (1-click to set first aperture location in each image)", singleStep);
-        gd.addCheckbox("Allow aperture changes between slices in single step mode (right click to advance image)", allowSingleStepApChanges);
-//		gd.addCheckbox ("Put results in image's own measurements table.", !oneTable);
-//		gd.addCheckbox ("All measurements from one image on the same Measurements Table line.", wideTable);
+        gd.addFloatSlider("Radius of object aperture", 0.01, radius > 100 ? radius : 100, false, radius, 3, 1.0, d -> radius = d.intValue());
+        gd.addFloatSlider("Inner radius of background annulus", 0.01, rBack1 > 100 ? rBack1 : 100, false, rBack1, 3, 1.0, d -> rBack1 = d.intValue());
+        gd.addFloatSlider("Outer radius of background annulus", 0.01, rBack2 > 100 ? rBack2 : 100, false, rBack2, 3, 1.0, d -> rBack2 = d.intValue());
+        gd.addCheckbox("Use previous " + nAperturesStored + " apertures (1-click to set first aperture location)", previous && nAperturesStored > 0, b -> previous = b);
+        gd.addCheckbox("Use RA/Dec to locate aperture positions", useWCS, b -> useWCS = b);
+        gd.addCheckbox("Use single step mode (1-click to set first aperture location in each image)", singleStep, b -> singleStep = b);
+        gd.addCheckbox("Allow aperture changes between slices in single step mode (right click to advance image)", allowSingleStepApChanges, b -> allowSingleStepApChanges = b);
         gd.addMessage("");
 
         // HERE ARE THE THINGS WHICH AREN'T ABSOLUTELY NECESSARY
         addFancyDialog(gd);
 
-        // gd.addCheckbox ("Track moving object (experimental!).",follow);
-        // gd.addMessage (" ");
         gd.addMessage("CLICK 'PLACE APERTURES' AND SELECT APERTURE LOCATIONS WITH LEFT CLICKS.\nTHEN RIGHT CLICK or <ENTER> TO BEGIN PROCESSING.\n(to abort aperture selection or processing, press <ESC>)");
-//        gd.addMessage ("(to abort aperture selection or processing, press <ESC>)");
         if (!(this instanceof Stack_Aligner)) gd.enableYesNoCancel("Place Apertures", "Aperture Settings");
         return gd;
     }
@@ -2905,48 +2888,41 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
      * Adds options to MultiAperture_ dialog() which aren't absolutely necessary.
      * Sub-classes of MultiAperture_ may choose to replace or extend this functionality if they use the original dialog().
      */
-    protected void addFancyDialog(GenericDialog gd) {
+    protected void addFancyDialog(GenericSwingDialog gd) {
+        final var list1 = new ArrayList<Consumer<Boolean>>();
+        list1.add(b -> reposition = b);
+        list1.add(b -> haltOnError = b);
+        list1.add(b -> removeBackStars = b);
+        list1.add(b -> backIsPlane = b);
+
         // GET NON-REQUIRED DIALOGUE FIELDS:
-        //	showRatio,showRatioError,showRatioSNR,useVarSizeAp,apFWHMFactor
-//        gd.addCheckbox ("Reposition aperture to object centroid (leave unchecked to center aperture at mouse click or RA/Dec)",reposition);
         gd.addCheckboxGroup(2, 2, new String[]{"Centroid apertures (initial setting)", "Halt processing on WCS or centroid error",
                         "Remove stars from background", "Assume background is a plane"},
 //                                                "Compute relative flux", "Compute relative flux error",
 //                                                "Compute relative flux signal-to-noise", "Compute total comparison star counts"},
-                new boolean[]{reposition, haltOnError, removeBackStars, backIsPlane});//,showRatio, showRatioError,showRatioSNR,showCompTot});
-//        gd.addCheckbox ("Assume background is a plane.", backIsPlane);
+                new boolean[]{reposition, haltOnError, removeBackStars, backIsPlane}, list1);//,showRatio, showRatioError,showRatioSNR,showCompTot});
 
-//		gd.addCheckboxGroup (1, 2, new String[]{"Compute relative flux", "Compute relative flux error"}, new boolean[]{showRatio, showRatioError});
-//		gd.addCheckbox ("Compute relative flux error (only if you check \"Compute relative flux\" above).",showRatioError);
-//		gd.addCheckboxGroup (1, 2, new String[]{"Compute relative flux signal-to-noise", "Compute total comparison star counts"}, new boolean[]{showRatioSNR,showCompTot});
-//        gd.addCheckbox ("Compute total comparison star counts.",showCompTot);
         gd.addMessage("");
-        gd.addCheckbox("Vary aperture radius based on FWHM", useVarSizeAp);
-        gd.addSlider("            FWHM factor (set to 0.00 for radial profile mode):", 0.0, 5.1, apFWHMFactor);
-        gd.addNumericField("Radial profile mode normalized flux cutoff:", autoModeFluxCutOff, 3, 6, "(0 < cuffoff < 1 ; default = 0.010)");
+        gd.addCheckbox("Vary aperture radius based on FWHM", useVarSizeAp, b -> useVarSizeAp = b);
+        gd.addSlider("            FWHM factor (set to 0.00 for radial profile mode):", 0.0, 5.1, false, apFWHMFactor, d -> apFWHMFactor = d);
+        gd.addBoundedNumericField("Radial profile mode normalized flux cutoff:", new GenericSwingDialog.Bounds(0, false, 1, false), autoModeFluxCutOff, .01, 6, "(0 < cuffoff < 1 ; default = 0.010)", d -> autoModeFluxCutOff = d);
         gd.addMessage("");
-        gd.addCheckbox("Prompt to enter ref star apparent magnitude (required if target star apparent mag is desired)", getMags);
+        gd.addCheckbox("Prompt to enter ref star apparent magnitude (required if target star apparent mag is desired)", getMags, b -> getMags = b);
+
+        final var list2 = new ArrayList<Consumer<Boolean>>();
+        list1.add(b -> updatePlot = b);
+        list1.add(b -> showHelp = b);
         gd.addCheckboxGroup(1, 2, new String[]{"Update table and plot while running", "Show help panel during aperture selection"},
-                new boolean[]{updatePlot, showHelp});
+                new boolean[]{updatePlot, showHelp}, list2);
     }
 
     /**
      * Last part of non-required dialog created by addFancyDialog().
      * Sub-classes not using the original dialog() will need a dummy version of this method!
      */
-    protected boolean finishFancyDialog(GenericDialog gd) {
+    protected boolean finishFancyDialog(GenericSwingDialog gd) {
         // GET NON-REQUIRED DIALOGUE FIELDS:
         //	showRatio,showRatioError,showRatioSNR,useVarSizeAp,apFWHMFactor
-        reposition = gd.getNextBoolean();
-        haltOnError = gd.getNextBoolean();
-        removeBackStars = gd.getNextBoolean();
-        backIsPlane = gd.getNextBoolean();
-        useVarSizeAp = gd.getNextBoolean();
-        apFWHMFactor = gd.getNextNumber();
-        autoModeFluxCutOff = gd.getNextNumber();
-        getMags = gd.getNextBoolean();
-        updatePlot = gd.getNextBoolean();
-        showHelp = gd.getNextBoolean();
         if (gd.invalidNumber()) {
             IJ.beep();
             IJ.error("Invalid number entered");

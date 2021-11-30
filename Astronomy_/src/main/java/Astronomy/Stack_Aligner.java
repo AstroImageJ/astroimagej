@@ -1,16 +1,21 @@
 package Astronomy;// Stack_Aligner.java
 
-import ij.*;
-import ij.gui.*;
-import ij.process.*;
+import astroj.AstroStackWindow;
+import astroj.Centroid;
+import astroj.FitsJ;
+import astroj.IJU;
+import ij.IJ;
+import ij.ImagePlus;
+import ij.Prefs;
+import ij.process.ColorProcessor;
+import ij.process.ImageProcessor;
+import ij.util.Tools;
+import util.GenericSwingDialog;
 
 import java.awt.*;
-import java.util.*;
-
-import astroj.*;
-import ij.util.Tools;
 import java.io.File;
 import java.text.DecimalFormat;
+import java.util.Locale;
 
 /**
  * Based on MultiAperture_.java
@@ -116,35 +121,26 @@ public class Stack_Aligner extends MultiAperture_
 	/**
 	 * Dialog for this MultiAperture_ sub-class
 	 */
-	protected GenericDialog dialog()
+	protected GenericSwingDialog dialog()
 		{
 		// CREATE DIALOGUE WINDOW
-		GenericDialog gd = new GenericDialog("Stack Aligner");
+		GenericSwingDialog gd = new GenericSwingDialog("Stack Aligner");
 
 		// REQUIRED FIELDS
-
-//		gd.addNumericField ("   Maximum number of alignment objects per image :", nAperturesMax,0,6,"");
-//        gd.addMessage("");
 		if (stackSize > 1)
 			{
-            gd.addSlider("           First slice ", 1, stackSize, firstSlice == stackSize ? 1 : firstSlice);
-            gd.addSlider("           Last slice ", 1, stackSize, lastSlice);
-//			gd.addNumericField ("           First slice :", firstSlice == stackSize ? 1 : firstSlice,0);
-//			gd.addNumericField ("           Last slice :",  lastSlice, 0);
+            gd.addSlider("           First slice ", 1, stackSize, firstSlice == stackSize ? 1 : firstSlice, d -> firstSlice = d.intValue());
+            gd.addSlider("           Last slice ", 1, stackSize, lastSlice, d -> lastSlice = d.intValue());
 	        }
         gd.addMessage("");
-        gd.addSlider("Radius of object aperture", 1, radius>100?radius:100, radius);
-        gd.addSlider("Inner radius of background annulus", 1, rBack1>100?rBack1:100, rBack1);
-        gd.addSlider("Outer radius of background annulus", 1, rBack2>100?rBack2:100, rBack2);
-//        gd.addMessage("");
+        gd.addSlider("Radius of object aperture", 1, radius>100?radius:100, false, radius, d -> radius = d.intValue());
+        gd.addSlider("Inner radius of background annulus", 1, rBack1>100?rBack1:100, false, rBack1, d -> rBack1 = d.intValue());
+        gd.addSlider("Outer radius of background annulus", 1, rBack2>100?rBack2:100, false, rBack2, d -> rBack2 = d.intValue());
 
-		gd.addCheckbox ("Use previous "+nAperturesStored+" apertures (1-click to set first aperture location)",previous && nAperturesStored > 0);
-        gd.addCheckbox ("Use RA/Dec to locate initial aperture positions", useWCS);
-		gd.addCheckbox ("Use single step mode (1-click to set first aperture location in each image)",singleStep);
-        gd.addCheckbox ("Allow aperture changes between slices in single step mode (right click to advance image)",allowSingleStepApChanges);
-//		gd.addMessage (" ");
-//		gd.addCheckbox ("Put results in stack's own measurements table.", !oneTable);
-//		gd.addCheckbox ("All measurements from one image on the same line.",wideTable);
+		gd.addCheckbox ("Use previous "+nAperturesStored+" apertures (1-click to set first aperture location)",previous && nAperturesStored > 0, b -> previous = b);
+        gd.addCheckbox ("Use RA/Dec to locate initial aperture positions", useWCS, b -> useWCS = b);
+		gd.addCheckbox ("Use single step mode (1-click to set first aperture location in each image)",singleStep, b -> singleStep = b);
+        gd.addCheckbox ("Allow aperture changes between slices in single step mode (right click to advance image)",allowSingleStepApChanges, b -> allowSingleStepApChanges = b);
 		gd.addMessage ("");
 
 		// NON-REQUIRED FIELDS (mirrored in finishFancyDialog())
@@ -152,11 +148,11 @@ public class Stack_Aligner extends MultiAperture_
         useWCSOnly = Prefs.get ("stackAligner.useWCSOnly", useWCSOnly);
         normalize = Prefs.get ("stackAligner.normalize", normalize);
         whole = Prefs.get ("stackAligner.whole", whole);
-        if (hasWCS) gd.addCheckbox ("Use only WCS headers for alignment (no apertures required)", useWCSOnly);
-		gd.addCheckbox ("Remove background and scale to common level", normalize);
-		gd.addCheckbox ("Align only to whole pixels (no interpolation)",whole);
+        if (hasWCS) gd.addCheckbox ("Use only WCS headers for alignment (no apertures required)", useWCSOnly, b -> useWCSOnly = b);
+		gd.addCheckbox ("Remove background and scale to common level", normalize, b -> normalize = b);
+		gd.addCheckbox ("Align only to whole pixels (no interpolation)",whole, b -> whole = b);
         gd.addMessage ("");
-        gd.addCheckbox ("Show help panel during aperture selection.", showHelp);
+        gd.addCheckbox ("Show help panel during aperture selection.", showHelp, b -> showHelp = b);
         if (imp.getStack().isVirtual())
             {
             gd.addMessage ("NOTE: ***THIS IS A VIRTUAL STACK***\nAligned images will be placed in the sub-directory 'aligned'.\n"+ 
@@ -172,17 +168,13 @@ public class Stack_Aligner extends MultiAperture_
 	/**
 	 * Parses the non-required fields of the dialog and cleans up thereafter.
 	 */
-	protected boolean finishFancyDialog (GenericDialog gd)
+	protected boolean finishFancyDialog (GenericSwingDialog gd)
 		{
         holdSingleStep = singleStep;
         if (hasWCS) 
             {
-            useWCSOnly = gd.getNextBoolean();
             runningWCSOnlyAlignment = useWCSOnly;
             }
-		normalize = gd.getNextBoolean();
-		whole     = gd.getNextBoolean();
-        showHelp  = gd.getNextBoolean();
         
         Prefs.set ("stackAligner.useWCSOnly", useWCSOnly);
         Prefs.set ("stackAligner.normalize", normalize);

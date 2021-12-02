@@ -2863,18 +2863,25 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         }
 
         GenericSwingDialog gd = new GenericSwingDialog("Multi-Aperture Measurements", xLocation, yLocation);
+        var sliders = new Panel[5];
         if (stackSize > 1) {
-            gd.addSlider("           First slice ", 1, stackSize, (firstSlice == stackSize || (alwaysstartatfirstSlice && !(this instanceof Stack_Aligner))) ? 1 : firstSlice, d -> firstSlice = d.intValue());
-            gd.addSlider("           Last slice ", 1, stackSize, lastSlice, d -> lastSlice = d.intValue());
+            sliders[0] = gd.addSlider("           First slice ", 1, stackSize, (firstSlice == stackSize || (alwaysstartatfirstSlice && !(this instanceof Stack_Aligner))) ? 1 : firstSlice, d -> firstSlice = d.intValue());
+            sliders[1] = gd.addSlider("           Last slice ", 1, stackSize, lastSlice, d -> lastSlice = d.intValue());
         }
-        gd.addFloatSlider("Radius of object aperture", 0.01, radius > 100 ? radius : 100, false, radius, 3, 1.0, d -> radius = d.intValue());
-        gd.addFloatSlider("Inner radius of background annulus", 0.01, rBack1 > 100 ? rBack1 : 100, false, rBack1, 3, 1.0, d -> rBack1 = d.intValue());
-        gd.addFloatSlider("Outer radius of background annulus", 0.01, rBack2 > 100 ? rBack2 : 100, false, rBack2, 3, 1.0, d -> rBack2 = d.intValue());
+        sliders[2] = gd.addFloatSlider("Radius of object aperture", 0.01, radius > 100 ? radius : 100, false, radius, 3, 1.0, d -> radius = d.intValue());
+        sliders[3] = gd.addFloatSlider("Inner radius of background annulus", 0.01, rBack1 > 100 ? rBack1 : 100, false, rBack1, 3, 1.0, d -> rBack1 = d.intValue());
+        sliders[4] = gd.addFloatSlider("Outer radius of background annulus", 0.01, rBack2 > 100 ? rBack2 : 100, false, rBack2, 3, 1.0, d -> rBack2 = d.intValue());
         gd.addCheckbox("Use previous " + nAperturesStored + " apertures (1-click to set first aperture location)", previous && nAperturesStored > 0, b -> previous = b);
         gd.addCheckbox("Use RA/Dec to locate aperture positions", useWCS, b -> useWCS = b);
         gd.addCheckbox("Use single step mode (1-click to set first aperture location in each image)", singleStep, b -> singleStep = b);
         gd.addCheckbox("Allow aperture changes between slices in single step mode (right click to advance image)", allowSingleStepApChanges, b -> allowSingleStepApChanges = b);
         gd.addMessage("");
+
+        // Make all sliders the same size
+        var sliderWidth = Math.max(GenericSwingDialog.getSliderWidth(sliders[2]), Integer.toString(stackSize).length());
+        for (Panel slider : sliders) {
+            GenericSwingDialog.setSliderSpinnerColumns(slider, sliderWidth);
+        }
 
         // HERE ARE THE THINGS WHICH AREN'T ABSOLUTELY NECESSARY
         addFancyDialog(gd);
@@ -2904,7 +2911,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
         gd.addMessage("");
         gd.addCheckbox("Vary aperture radius based on FWHM", useVarSizeAp, b -> useVarSizeAp = b);
-        gd.addSlider("            FWHM factor (set to 0.00 for radial profile mode):", 0.0, 5.1, false, apFWHMFactor, d -> apFWHMFactor = d);
+        gd.addFloatSlider("            FWHM factor (set to 0.00 for radial profile mode):", 0.0, 5.1, apFWHMFactor, 3, 0.01, d -> apFWHMFactor = d);
         gd.addBoundedNumericField("Radial profile mode normalized flux cutoff:", new GenericSwingDialog.Bounds(0, false, 1, false), autoModeFluxCutOff, .01, 6, "(0 < cuffoff < 1 ; default = 0.010)", d -> autoModeFluxCutOff = d);
         gd.addMessage("");
         gd.addCheckbox("Prompt to enter ref star apparent magnitude (required if target star apparent mag is desired)", getMags, b -> getMags = b);

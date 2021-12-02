@@ -19,6 +19,7 @@ import java.awt.image.ImageProducer;
 import java.io.IOException;
 import java.net.URL;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
@@ -597,6 +598,28 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
     public void setLocation(int x, int y) {
         super.setLocation(x, y);
         centerDialog = false;
+    }
+
+    public static int getSliderWidth(Panel sliderPanel) {
+        return getTextFieldFromSlider(sliderPanel).map(JTextField::getColumns).orElse(0);
+    }
+
+    public static void setSliderSpinnerColumns(Panel sliderPanel, int columns) {
+        if (sliderPanel == null) return;
+        getTextFieldFromSlider(sliderPanel).ifPresent(jFormattedTextField -> jFormattedTextField.setColumns(columns));
+    }
+
+    private static Optional<JFormattedTextField> getTextFieldFromSlider(Panel sliderPanel) {
+        for (Component component : sliderPanel.getComponents()) {
+            if (component instanceof JSpinner spinner) {
+                for (Component spinnerComponent : spinner.getComponents()) {
+                    if (spinnerComponent instanceof JSpinner.DefaultEditor editor) {
+                        return Optional.of(editor.getTextField());
+                    }
+                }
+            }
+        }
+        return Optional.empty();
     }
 
     private JFormattedTextField modifySpinner(JSpinner spinner, boolean removeButtons) {

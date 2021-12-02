@@ -102,6 +102,12 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     protected static String PREFS_YAPERTURES = "multiaperture.yapertures";
     protected static String PREFS_RAAPERTURES = "multiaperture.raapertures";
     protected static String PREFS_DECAPERTURES = "multiaperture.decapertures";
+    protected static final String PREFS_MAXPEAKVALUE = "multiaperture.maxpeakvalue";
+    protected static final String PREFS_MINPEAKVALUE = "multiaperture.minpeakvalue";
+    protected static final String PREFS_UPPERBRIGHTNESS = "multiaperture.upperbrightness";
+    protected static final String PREFS_LOWERBRIGHTNESS = "multiaperture.lowerbrightness";
+    protected static final String PREFS_BRIGHTNESSDISTANCE = "multiaperture.brightnessdistance";
+    protected static final String PREFS_MAXSUGGESTEDSTARS = "multiaperture.maxsuggestedstars";
 
 //	double vx = 0.0;
 //	double vy = 0.0;
@@ -257,6 +263,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     ImageIcon MAIcon;
     int helpFrameLocationX = 10;
     int helpFrameLocationY = 10;
+    double maxPeakValue = 0, minPeakValue = 0, upperBrightness = 50, lowerBrightness = 50, brightness2DistanceWeight = 100;
+    int maxSuggestedStars = 30;
     boolean useWCS = false, suggestCompStars = true, tempSuggestCompStars = true;
     boolean useMA = true, useAlign = false;
     TimerTask stackTask = null;
@@ -509,6 +517,12 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         reposition = Prefs.get("aperture.reposition", reposition);
         haltOnError = Prefs.get(MultiAperture_.PREFS_HALTONERROR, haltOnError);
         useWCS = Prefs.get(MultiAperture_.PREFS_USEWCS, useWCS);
+        maxPeakValue = Prefs.get(MultiAperture_.PREFS_MAXPEAKVALUE, maxPeakValue);
+        minPeakValue = Prefs.get(MultiAperture_.PREFS_MINPEAKVALUE, minPeakValue);
+        upperBrightness = Prefs.get(MultiAperture_.PREFS_UPPERBRIGHTNESS, upperBrightness);
+        lowerBrightness = Prefs.get(MultiAperture_.PREFS_LOWERBRIGHTNESS, lowerBrightness);
+        brightness2DistanceWeight = Prefs.get(MultiAperture_.PREFS_BRIGHTNESSDISTANCE, brightness2DistanceWeight);
+        maxSuggestedStars = (int) Prefs.get(MultiAperture_.PREFS_MAXSUGGESTEDSTARS, maxSuggestedStars);
         suggestCompStars = Prefs.get(PREFS_SUGGESTCOMPSTARS, suggestCompStars);
         oldUseVarSizeAp = useVarSizeAp;
         apFWHMFactor = Prefs.get(MultiAperture_.PREFS_APFWHMFACTOR, apFWHMFactor);
@@ -1189,9 +1203,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 AIJLogger.log(1);
 
                 final var t1Source = photom.peakBrightness();//source; //todo peak or source?
-                final var delta = t1Source * 0.2;
-                var minBound = Math.max(t1Source - delta, imp.getStatistics().stdDev * 0.1);
-                var maxBound = t1Source + (delta);
+                final var starThresholdUp = t1Source * (lowerBrightness/100);
+                final var starThresholdLow = t1Source * (1 + upperBrightness/100);
+                var minBound = Math.min(starThresholdUp, maxPeakValue);
+                var maxBound = Math.max(starThresholdLow, minPeakValue);
 
                 var maxima = StarFinder.findLocalMaxima(imp, minBound, maxBound, Math.floorDiv(Math.min(ip.getHeight(), ip.getWidth()), 100));
 
@@ -2359,7 +2374,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         canvas.repaint();
 
         if (!isInstanceOfStackAlign && showMeanWidth && calcRadProFWHM) {
-            if (nFWHM > 0) { fwhmMean /= nFWHM; } else fwhmMean = 0.0;
+            if (nFWHM > 0) {
+                fwhmMean /= nFWHM;
+            } else fwhmMean = 0.0;
             table.addValue("FWHM_Mean", fwhmMean, 6);
         }
 
@@ -2896,7 +2913,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         }
 
         GenericSwingDialog gd = new GenericSwingDialog("Multi-Aperture Measurements", xLocation, yLocation);
-        var sliders = new Panel[5];
+        var sliders = new JPanel[5];
         if (stackSize > 1) {
             sliders[0] = gd.addSlider("           First slice ", 1, stackSize, (firstSlice == stackSize || (alwaysstartatfirstSlice && !(this instanceof Stack_Aligner))) ? 1 : firstSlice, d -> firstSlice = d.intValue());
             sliders[1] = gd.addSlider("           Last slice ", 1, stackSize, lastSlice, d -> lastSlice = d.intValue());
@@ -2913,7 +2930,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
         // Make all sliders the same size
         var sliderWidth = Math.max(GenericSwingDialog.getSliderWidth(sliders[2]), Integer.toString(stackSize).length());
-        for (Panel slider : sliders) {
+        for (JPanel slider : sliders) {
             GenericSwingDialog.setSliderSpinnerColumns(slider, sliderWidth);
         }
 
@@ -2935,6 +2952,23 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         list1.add(b -> haltOnError = b);
         list1.add(b -> removeBackStars = b);
         list1.add(b -> backIsPlane = b);
+
+        final var columns = Math.max(10, Math.max(Double.toString(imp.getProcessor().getHistogramMax()).length(), Double.toString(maxPeakValue).length()));
+        final var maxPeak = gd.addBoundedNumericField("Max. Peak Value", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), maxPeakValue, 1, columns, null, d -> maxPeakValue = d);
+        final var minPeak = gd.addBoundedNumericField("Min. Peak Value", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), minPeakValue, 1, columns, null, d -> minPeakValue = d);
+        final var maxStars = gd.addBoundedNumericField("Max. Suggested Stars", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), maxSuggestedStars, 1, columns, null, d -> maxSuggestedStars = d.intValue());
+        final var maxDBrightness = gd.addBoundedNumericField("Max. Delta Brightness %", new GenericSwingDialog.Bounds(0, 100), upperBrightness, 1, columns, null, d -> upperBrightness = d);
+        final var minDBrightness = gd.addBoundedNumericField("Min. Delta Brightness %", new GenericSwingDialog.Bounds(0, 100), lowerBrightness, 1, columns, null, d -> lowerBrightness = d);
+        final var brightnessVsDistance = gd.addBoundedNumericField("Weigh of brightness vs distance", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), brightness2DistanceWeight, 1, columns, null, d -> brightness2DistanceWeight = d);
+        maxPeak.setToolTipText("Maximum peak value to consider a star");
+        minPeak.setToolTipText("Minimum peak value to consider a star");
+        maxStars.setToolTipText("Maximum number of stars to select");
+        maxDBrightness.setToolTipText("Upper brightness limit of comp stars that are selected relative to the target star brightness");
+        minDBrightness.setToolTipText("Lower brightness limit of comp stars that are selected relative to the target star brightness");
+        brightnessVsDistance.setToolTipText("not yet implemented");
+        brightnessVsDistance.setEnabled(false);
+
+        gd.addMessage("");
 
         // GET NON-REQUIRED DIALOGUE FIELDS:
         gd.addCheckboxGroup(2, 2, new String[]{"Centroid apertures (initial setting)", "Halt processing on WCS or centroid error",

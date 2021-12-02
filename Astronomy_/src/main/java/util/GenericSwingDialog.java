@@ -615,16 +615,16 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         centerDialog = false;
     }
 
-    public static int getSliderWidth(Panel sliderPanel) {
+    public static int getSliderWidth(JPanel sliderPanel) {
         return getTextFieldFromSlider(sliderPanel).map(JTextField::getColumns).orElse(0);
     }
 
-    public static void setSliderSpinnerColumns(Panel sliderPanel, int columns) {
+    public static void setSliderSpinnerColumns(JPanel sliderPanel, int columns) {
         if (sliderPanel == null) return;
         getTextFieldFromSlider(sliderPanel).ifPresent(jFormattedTextField -> jFormattedTextField.setColumns(columns));
     }
 
-    private static Optional<JFormattedTextField> getTextFieldFromSlider(Panel sliderPanel) {
+    private static Optional<JFormattedTextField> getTextFieldFromSlider(JPanel sliderPanel) {
         for (Component component : sliderPanel.getComponents()) {
             if (component instanceof JSpinner spinner) {
                 for (Component spinnerComponent : spinner.getComponents()) {

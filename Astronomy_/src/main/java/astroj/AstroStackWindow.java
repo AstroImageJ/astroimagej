@@ -2139,12 +2139,6 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
 
                 astrometry = new Astrometry();
 
-                var x = new JButton();
-                x.addActionListener((l) -> {
-                    //StarFinder.findStars(imp);
-                });
-                topPanelA.add(x);
-
                 buttonHeader = new JButton(headerIcon);
                 buttonHeader.setToolTipText("display fits header");
                 buttonHeader.setPreferredSize(iconDimension);

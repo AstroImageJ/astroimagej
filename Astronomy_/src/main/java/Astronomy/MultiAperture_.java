@@ -5,6 +5,7 @@ import ij.IJ;
 import ij.ImagePlus;
 import ij.Prefs;
 import ij.WindowManager;
+import ij.astro.logging.AIJLogger;
 import ij.gui.GenericDialog;
 import ij.gui.PlotWindow;
 import ij.gui.Toolbar;
@@ -84,6 +85,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     protected static String PREFS_USEMA = "multiaperture.usema";
     protected static String PREFS_USEALIGN = "multiaperture.usealign";
     protected static String PREFS_USEWCS = "multiaperture.usewcs";
+    protected static String PREFS_SUGGESTCOMPSTARS = "multiaperture.suggestCompStars";
     protected static String PREFS_HALTONERROR = "multiaperture.haltOnError";
     protected static String PREFS_SHOWHELP = "multiaperture.showhelp";
     protected static String PREFS_ALWAYSFIRSTSLICE = "multiaperture.alwaysstartatfirstSlice";
@@ -255,7 +257,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     ImageIcon MAIcon;
     int helpFrameLocationX = 10;
     int helpFrameLocationY = 10;
-    boolean useWCS = false;
+    boolean useWCS = false, suggestCompStars = true, tempSuggestCompStars = true;
     boolean useMA = true, useAlign = false;
     TimerTask stackTask = null;
     java.util.Timer stackTaskTimer = null;
@@ -507,6 +509,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         reposition = Prefs.get("aperture.reposition", reposition);
         haltOnError = Prefs.get(MultiAperture_.PREFS_HALTONERROR, haltOnError);
         useWCS = Prefs.get(MultiAperture_.PREFS_USEWCS, useWCS);
+        suggestCompStars = Prefs.get(PREFS_SUGGESTCOMPSTARS, suggestCompStars);
         oldUseVarSizeAp = useVarSizeAp;
         apFWHMFactor = Prefs.get(MultiAperture_.PREFS_APFWHMFACTOR, apFWHMFactor);
         oldapFWHMFactor = apFWHMFactor;
@@ -882,6 +885,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         Prefs.set(MultiAperture_.PREFS_USEMA, useMA);
         Prefs.set(MultiAperture_.PREFS_USEALIGN, useAlign);
         Prefs.set(MultiAperture_.PREFS_USEWCS, useWCS);
+        Prefs.set(PREFS_SUGGESTCOMPSTARS, suggestCompStars);
         Prefs.set(MultiAperture_.PREFS_SHOWHELP, showHelp);
         Prefs.set(MultiAperture_.PREFS_ALWAYSFIRSTSLICE, alwaysstartatfirstSlice);
         Prefs.set(MultiAperture_.PREFS_APFWHMFACTOR, apFWHMFactor);
@@ -1171,6 +1175,35 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 }
                 if (!processingStack && !autoMode && (firstSlice < lastSlice)) IJ.beep();
                 if (!processingStack) shutDown();
+            }
+
+            AIJLogger.logMulti(suggestCompStars, tempSuggestCompStars);
+            if (suggestCompStars && tempSuggestCompStars) {
+                xCenter = xPos[0];
+                yCenter = yPos[0];
+
+                // Make sure photometry is current
+                measurePhotometry();
+                //todo make sure t1 is a star
+
+                AIJLogger.log(1);
+
+                final var t1Source = photom.peakBrightness();//source; //todo peak or source?
+                final var delta = t1Source * 0.2;
+                var minBound = Math.max(t1Source - delta, imp.getStatistics().stdDev * 0.1);
+                var maxBound = t1Source + (delta);
+
+                var maxima = StarFinder.findLocalMaxima(imp, minBound, maxBound, Math.floorDiv(Math.min(ip.getHeight(), ip.getWidth()), 100));
+
+                for (StarFinder.CoordinateMaxima coordinateMaxima : maxima.coordinateMaximas()) {
+                    AIJLogger.log(ngot + 1);
+                    AIJLogger.log(coordinateMaxima);//todo apertures placing in wrong coordinates
+                    xCenter = coordinateMaxima.x();
+                    yCenter = coordinateMaxima.y();
+                    addAperture(true, false);
+                }
+
+                tempSuggestCompStars = false; // Disable suggestion for all other stars
             }
         }
     }
@@ -2872,6 +2905,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         sliders[3] = gd.addFloatSlider("Inner radius of background annulus", 0.01, rBack1 > 100 ? rBack1 : 100, false, rBack1, 3, 1.0, d -> rBack1 = d.intValue());
         sliders[4] = gd.addFloatSlider("Outer radius of background annulus", 0.01, rBack2 > 100 ? rBack2 : 100, false, rBack2, 3, 1.0, d -> rBack2 = d.intValue());
         gd.addCheckbox("Use previous " + nAperturesStored + " apertures (1-click to set first aperture location)", previous && nAperturesStored > 0, b -> previous = b);
+        gd.addCheckbox("Suggest comparison stars", suggestCompStars, b -> suggestCompStars = b);
         gd.addCheckbox("Use RA/Dec to locate aperture positions", useWCS, b -> useWCS = b);
         gd.addCheckbox("Use single step mode (1-click to set first aperture location in each image)", singleStep, b -> singleStep = b);
         gd.addCheckbox("Allow aperture changes between slices in single step mode (right click to advance image)", allowSingleStepApChanges, b -> allowSingleStepApChanges = b);

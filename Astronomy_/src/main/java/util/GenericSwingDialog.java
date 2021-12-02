@@ -466,7 +466,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
             AtomicReference<Number> stepSize = new AtomicReference<>(numberModel.getStepSize());
 
             var stepSizeDialog = new GenericSwingDialog("Set Step Size");
-            stepSizeDialog.addBoundedNumericField("Step Size", new Bounds(0, 100), stepSize.get().doubleValue(), 1, 4, null, stepSize::set);
+            stepSizeDialog.addBoundedNumericField("Step Size", new Bounds(0, Double.MAX_VALUE), stepSize.get().doubleValue(), 1, 10, null, stepSize::set);
             //stepSizeDialog.enableYesNoCancel("Confirm", null);
             stepSizeDialog.centerDialog(true);
             stepSizeDialog.showDialog();

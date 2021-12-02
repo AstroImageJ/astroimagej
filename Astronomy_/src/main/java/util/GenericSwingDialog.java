@@ -258,7 +258,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
      * @param maxValue     the maximum value of the slider
      * @param defaultValue the initial value of the slider
      */
-    public Panel addSlider(String label, double minValue, double maxValue, double defaultValue, Consumer<Double> consumer) {
+    public JPanel addSlider(String label, double minValue, double maxValue, double defaultValue, Consumer<Double> consumer) {
         return addSlider(label, minValue, maxValue, true, defaultValue, consumer);
     }
 
@@ -272,7 +272,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
      * @param maxValue     the maximum value of the slider
      * @param defaultValue the initial value of the slider
      */
-    public Panel addSlider(String label, double minValue, double maxValue, boolean clipMaxValue, double defaultValue, Consumer<Double> consumer) {
+    public JPanel addSlider(String label, double minValue, double maxValue, boolean clipMaxValue, double defaultValue, Consumer<Double> consumer) {
         if (defaultValue < minValue) defaultValue = minValue;
         if (defaultValue > maxValue) defaultValue = maxValue;
         int digits = 0;
@@ -288,11 +288,11 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         return addSlider(label, minValue, maxValue, clipMaxValue, defaultValue, scale, digits, consumer);
     }
 
-    public Panel addSlider(String label, double minValue, double maxValue, double defaultValue, double stepSize, Consumer<Double> consumer) {
+    public JPanel addSlider(String label, double minValue, double maxValue, double defaultValue, double stepSize, Consumer<Double> consumer) {
         return addSlider(label, minValue, maxValue, true, defaultValue, stepSize, consumer);
     }
 
-    public Panel addSlider(String label, double minValue, double maxValue, boolean clipMaxValue, double defaultValue, double stepSize, Consumer<Double> consumer) {
+    public JPanel addSlider(String label, double minValue, double maxValue, boolean clipMaxValue, double defaultValue, double stepSize, Consumer<Double> consumer) {
         if (stepSize <= 0) stepSize = 1;
         int digits = digits(stepSize);
         if (digits == 1 && "Angle:".equals(label)) digits = 2;
@@ -307,11 +307,11 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         return addSlider(label, minValue, maxValue, clipMaxValue, defaultValue, scale, digits, consumer);
     }
 
-    public Panel addFloatSlider(String label, double minValue, double maxValue, double defaultValue, int digits, double stepSize, Consumer<Double> consumer) {
+    public JPanel addFloatSlider(String label, double minValue, double maxValue, double defaultValue, int digits, double stepSize, Consumer<Double> consumer) {
         return addFloatSlider(label, minValue, maxValue, true, defaultValue, digits, stepSize, consumer);
     }
 
-    public Panel addFloatSlider(String label, double minValue, double maxValue, boolean clipMaxValue, double defaultValue, int digits, double stepSize, Consumer<Double> consumer) {
+    public JPanel addFloatSlider(String label, double minValue, double maxValue, boolean clipMaxValue, double defaultValue, int digits, double stepSize, Consumer<Double> consumer) {
         if (stepSize <= 0) stepSize = 1;
         double scale = 1.0 / Math.abs(stepSize);
         minValue *= scale;
@@ -321,7 +321,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         return addSlider(label, minValue, maxValue, clipMaxValue, defaultValue, scale, digits, consumer);
     }
 
-    private Panel addSlider(String label, final double minValue, final double maxValue, boolean clipMaxValue, final double defaultValue, final double scale, final int digits, Consumer<Double> consumer) {
+    private JPanel addSlider(String label, final double minValue, final double maxValue, boolean clipMaxValue, final double defaultValue, final double scale, final int digits, Consumer<Double> consumer) {
         int columns = 4 + digits + (IJ.isMacOSX() ? 0 : -2);
         if (columns < 4) columns = 4;
         if (minValue < 0.0) columns++;
@@ -369,7 +369,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
                 spinner.setValue(newValue);
         });
 
-        Panel panel = new Panel();
+        JPanel panel = new JPanel();
         GridBagLayout pgrid = new GridBagLayout();
         GridBagConstraints pc = new GridBagConstraints();
         panel.setLayout(pgrid);
@@ -396,11 +396,11 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         return panel;
     }
 
-    public Component addUnboundedNumericField(String label, double defaultValue, double stepSize, int columns, String units, Consumer<Double> consumer) {
+    public JComponent addUnboundedNumericField(String label, double defaultValue, double stepSize, int columns, String units, Consumer<Double> consumer) {
         return addBoundedNumericField(label, new Bounds(), defaultValue, stepSize, columns, units, consumer);
     }
 
-    public Component addBoundedNumericField(String label, Bounds bounds, double defaultValue, double stepSize, int columns, String units, Consumer<Double> consumer) {
+    public JComponent addBoundedNumericField(String label, Bounds bounds, double defaultValue, double stepSize, int columns, String units, Consumer<Double> consumer) {
         Label fieldLabel = makeLabel(label.replaceAll("_", " "));
         c.gridx = 0;
         c.gridy++;
@@ -460,12 +460,12 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
 
         c.gridx = GridBagConstraints.RELATIVE;
         c.anchor = GridBagConstraints.WEST;
-        Component out;
+        JComponent out;
         if (units == null || units.equals("")) {
             addLocal(tf, c);
             out = tf;
         } else {
-            Panel panel = new Panel();
+            JPanel panel = new JPanel();
             panel.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
             panel.add(tf);
             panel.add(new Label(" " + units));
@@ -997,7 +997,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         }
     }
 
-    public record ComponentPair(Component c1, Component c2) {
+    public record ComponentPair(JComponent c1, JComponent c2) {
     }
 
     private class NumericFieldStepSizeEditor implements MouseListener {

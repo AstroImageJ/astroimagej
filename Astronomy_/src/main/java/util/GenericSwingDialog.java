@@ -321,7 +321,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
     }
 
     private Panel addSlider(String label, final double minValue, final double maxValue, boolean clipMaxValue, final double defaultValue, final double scale, final int digits, Consumer<Double> consumer) {
-        int columns = 4 + digits + (IJ.isMacOSX() ? 0 : -2);
+        int columns = 4 + Double.toString(maxValue).length() + digits + (IJ.isMacOSX() ? 0 : -2);
         if (columns < 4) columns = 4;
         if (minValue < 0.0) columns++;
         String mv = IJ.d2s(maxValue, 0);

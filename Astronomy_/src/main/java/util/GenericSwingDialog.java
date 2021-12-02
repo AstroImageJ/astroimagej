@@ -351,8 +351,23 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         var f = modifySpinner(spinner, true);
         if (f != null) f.setColumns(columns);
 
-        spinner.addChangeListener($ -> consumer.accept((Double) spinner.getValue()));
+        spinner.addChangeListener($ -> {
+            consumer.accept((Double) spinner.getValue());
+            s.setValue(((Double) spinner.getValue()).intValue());
+        });
         s.addAdjustmentListener(e -> spinner.setValue(s.getValue() / scale));
+        s.addMouseWheelListener(e -> {
+                var delta = e.getPreciseWheelRotation() * s.getUnitIncrement();
+                var newValue = -delta + s.getValue();
+
+                if (newValue < s.getMinimum()) {
+                    newValue = s.getMinimum();
+                } else if (newValue > s.getMaximum()) {
+                    newValue = s.getMaximum();
+                }
+
+                spinner.setValue(newValue);
+        });
 
         Panel panel = new Panel();
         GridBagLayout pgrid = new GridBagLayout();

@@ -1201,17 +1201,17 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 measurePhotometry();
                 //todo make sure t1 is a star
 
-                AIJLogger.log(1);
-
                 final var t1Source = photom.peakBrightness();//source; //todo peak or source?
-                final var starThresholdUp = t1Source * (lowerBrightness/100);
+                final var starThresholdUp = t1Source * (1 - lowerBrightness/100);
                 final var starThresholdLow = t1Source * (1 + upperBrightness/100);
                 var minBound = Math.min(starThresholdUp, maxPeakValue);
                 var maxBound = Math.max(starThresholdLow, minPeakValue);
 
                 var maxima = StarFinder.findLocalMaxima(imp, minBound, maxBound, Math.floorDiv(Math.min(ip.getHeight(), ip.getWidth()), 100));
 
+                int i = 0;
                 for (StarFinder.CoordinateMaxima coordinateMaxima : maxima.coordinateMaximas()) {
+                    if (i++ >= maxSuggestedStars) break;
                     AIJLogger.log(ngot + 1);
                     AIJLogger.log(coordinateMaxima);//todo apertures placing in wrong coordinates
                     xCenter = coordinateMaxima.x();
@@ -2964,7 +2964,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         gd.addToSameRow();
         final var minDBrightness = gd.addBoundedNumericField("Min. Delta Brightness %", new GenericSwingDialog.Bounds(0, 100), lowerBrightness, 1, columns, null, d -> lowerBrightness = d);
 
-        final var brightnessVsDistance = gd.addBoundedNumericField("Weigh of brightness vs distance", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), brightness2DistanceWeight, 1, columns, null, d -> brightness2DistanceWeight = d);
+        final var brightnessVsDistance = gd.addBoundedNumericField("Weight of brightness vs. Distance:", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), brightness2DistanceWeight, 1, columns, null, d -> brightness2DistanceWeight = d);
         gd.addToSameRow();
         final var maxStars = gd.addBoundedNumericField("Max. Suggested Stars", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), maxSuggestedStars, 1, columns, null, true, d -> maxSuggestedStars = d.intValue());
 

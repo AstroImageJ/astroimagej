@@ -3051,8 +3051,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         gd.addCheckbox("Prompt to enter ref star apparent magnitude (required if target star apparent mag is desired)", getMags, b -> getMags = b);
 
         final var list2 = new ArrayList<Consumer<Boolean>>();
-        list1.add(b -> updatePlot = b);
-        list1.add(b -> showHelp = b);
+        list2.add(b -> updatePlot = b);
+        list2.add(b -> showHelp = b);
         gd.addCheckboxGroup(1, 2, new String[]{"Update table and plot while running", "Show help panel during aperture selection"},
                 new boolean[]{updatePlot, showHelp}, list2);
     }

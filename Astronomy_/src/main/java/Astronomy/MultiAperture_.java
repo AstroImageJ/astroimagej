@@ -22,6 +22,7 @@ import java.text.DecimalFormat;
 import java.util.List;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 
 /**
@@ -1200,7 +1201,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 measurePhotometry();
                 //todo make sure t1 is a star
 
-                final var t1Source = photom.peakBrightness();//source; //todo peak or source?
+                final var t1Source = photom.peakBrightness();
                 final var starThresholdLow = t1Source * (1 - lowerBrightness/100d);
                 final var starThresholdUp = t1Source * (1 + upperBrightness/100d);
                 var minBound = Math.max(starThresholdLow, minPeakValue);
@@ -1210,17 +1211,19 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     IJ.error("The maximum threshold/peak value was too small, aborting");
                 }
 
-                var maxima = StarFinder.findLocalMaxima(imp, minBound, maxBound, Math.floorDiv(Math.min(ip.getHeight(), ip.getWidth()), 100));
+                var maxima = StarFinder.findLocalMaxima(imp, minBound, Double.MAX_VALUE, Math.floorDiv(Math.min(ip.getHeight(), ip.getWidth()), 100));
 
                 if (maxima.coordinateMaximas().size() == 0) {
                     AIJLogger.log("Found no comp. stars, check the boundries");
                     return;
                 }
+
                 AIJLogger.log("Number of maxima: " + maxima.coordinateMaximas().size());
                 var m = removeCloseStars(maxima.coordinateMaximas());
                 AIJLogger.log("Filtered number of maxima: " + m.size());
                 Collection<StarFinder.CoordinateMaxima> set =
                         m.size() > maxSuggestedStars ? distanceFactorLimit(m, t1Source) : m;
+                set.removeIf(c -> c.value() > maxBound);
 
                 AIJLogger.log("Placing suggested comp. stars...");
                 for (StarFinder.CoordinateMaxima coordinateMaxima : set) {
@@ -1249,7 +1252,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     private List<StarFinder.CoordinateMaxima> distanceFactorLimit(TreeSet<StarFinder.CoordinateMaxima> initialSet, final double t1Source) {
         AIJLogger.log("More comp. stars were found then requested, filtering...");
         var out = initialSet.stream().sorted(Comparator.comparingDouble(o -> calculateDistanceBrightnessFactor(t1Source, o)));
-        return out.limit(maxSuggestedStars).toList();
+        return out.limit(maxSuggestedStars).collect(Collectors.toList());
     }
 
     private double calculateDistanceBrightnessFactor(double t1Source, StarFinder.CoordinateMaxima coordinateMaxima) {

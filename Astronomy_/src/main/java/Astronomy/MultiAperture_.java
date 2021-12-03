@@ -3040,6 +3040,13 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         Prefs.set(MultiAperture_.PREFS_ENABLEDOUBLECLICKS, enableDoubleClicks);
         Prefs.set(MultiAperture_.PREFS_UPDATEPLOT, updatePlot);
         Prefs.set(MultiAperture_.PREFS_GETMAGS, getMags);
+        Prefs.set(MultiAperture_.PREFS_MAXPEAKVALUE, maxPeakValue);
+        Prefs.set(MultiAperture_.PREFS_MINPEAKVALUE, minPeakValue);
+        Prefs.set(MultiAperture_.PREFS_UPPERBRIGHTNESS, upperBrightness);
+        Prefs.set(MultiAperture_.PREFS_LOWERBRIGHTNESS, lowerBrightness);
+        Prefs.set(MultiAperture_.PREFS_BRIGHTNESSDISTANCE, brightness2DistanceWeight);
+        Prefs.set(MultiAperture_.PREFS_MAXSUGGESTEDSTARS, maxSuggestedStars);
+        Prefs.set(PREFS_SUGGESTCOMPSTARS, suggestCompStars);
 
         if (!(this instanceof Stack_Aligner) && !gd.wasOKed()) {
             cancel();

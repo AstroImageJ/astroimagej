@@ -3000,7 +3000,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
         gd.addMessage("");
         gd.addCheckbox("Vary aperture radius based on FWHM", useVarSizeAp, b -> useVarSizeAp = b);
-        gd.addFloatSlider("            FWHM factor (set to 0.00 for radial profile mode):", 0.0, 5.1, apFWHMFactor, 3, 0.1, d -> apFWHMFactor = d);
+        gd.addFloatSlider("            FWHM factor (set to 0.00 for radial profile mode):", 0.0, 5.0, false, apFWHMFactor, 3, 0.1, d -> apFWHMFactor = d);
         gd.addBoundedNumericField("Radial profile mode normalized flux cutoff:", new GenericSwingDialog.Bounds(0, false, 1, false), autoModeFluxCutOff, .01, 6, "(0 < cuffoff < 1 ; default = 0.010)", d -> autoModeFluxCutOff = d);
         gd.addMessage("");
         gd.addCheckbox("Prompt to enter ref star apparent magnitude (required if target star apparent mag is desired)", getMags, b -> getMags = b);

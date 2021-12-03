@@ -2955,11 +2955,17 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
         final var columns = Math.max(10, Math.max(Double.toString(imp.getProcessor().getHistogramMax()).length(), Double.toString(maxPeakValue).length()));
         final var maxPeak = gd.addBoundedNumericField("Max. Peak Value", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), maxPeakValue, 1, columns, null, d -> maxPeakValue = d);
+        gd.addToSameRow();
         final var minPeak = gd.addBoundedNumericField("Min. Peak Value", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), minPeakValue, 1, columns, null, d -> minPeakValue = d);
-        final var maxStars = gd.addBoundedNumericField("Max. Suggested Stars", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), maxSuggestedStars, 1, columns, null, d -> maxSuggestedStars = d.intValue());
+
         final var maxDBrightness = gd.addBoundedNumericField("Max. Delta Brightness %", new GenericSwingDialog.Bounds(0, 100), upperBrightness, 1, columns, null, d -> upperBrightness = d);
+        gd.addToSameRow();
         final var minDBrightness = gd.addBoundedNumericField("Min. Delta Brightness %", new GenericSwingDialog.Bounds(0, 100), lowerBrightness, 1, columns, null, d -> lowerBrightness = d);
+
         final var brightnessVsDistance = gd.addBoundedNumericField("Weigh of brightness vs distance", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), brightness2DistanceWeight, 1, columns, null, d -> brightness2DistanceWeight = d);
+        gd.addToSameRow();
+        final var maxStars = gd.addBoundedNumericField("Max. Suggested Stars", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), maxSuggestedStars, 1, columns, null, d -> maxSuggestedStars = d.intValue());
+
         maxPeak.setToolTipText("Maximum peak value to consider a star");
         minPeak.setToolTipText("Minimum peak value to consider a star");
         maxStars.setToolTipText("Maximum number of stars to select");

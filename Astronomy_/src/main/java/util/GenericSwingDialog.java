@@ -42,6 +42,8 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
     private boolean fontSizeSet = false;
     private String helpLabel = "Help";
     private String helpURL;
+    private boolean addToSameRow;
+    private boolean addToSameRowCalled;
 
     public GenericSwingDialog(String title) {
         this(title, guessParentFrame());
@@ -121,9 +123,15 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         final var box = new JCheckBox(label.replaceAll("_", " "));
         box.setSelected(initValue);
         box.addActionListener($ -> consumer.accept(box.isSelected()));
-        c.gridx = 0;
-        c.gridy++;
-        c.insets = new Insets(DialogBoxType.CHECKBOX.isPresent() ? 0 : 15, 20, 0, 0);
+        if (addToSameRow) {
+            c.gridx = GridBagConstraints.RELATIVE;
+            c.insets.left = 10;
+            addToSameRow = false;
+        } else {
+            c.gridx = 0;
+            c.gridy++;
+            c.insets = new Insets(DialogBoxType.CHECKBOX.isPresent() ? 0 : 15, 20, 0, 0);
+        }
         c.anchor = GridBagConstraints.WEST;
         c.gridwidth = 2;
         addLocal(box, c);
@@ -195,9 +203,14 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
 
     public JComboBox<String> addChoice(String label, String[] items, String defaultItem, Consumer<String> consumer) {
         Label fieldLabel = makeLabel(label.replaceAll("_", " "));
-        c.gridx = 0;
-        c.gridy++;
-        c.insets = DialogBoxType.CHOICE.isPresent() ? new Insets(5, 0, 5, 0) : new Insets(0, 0, 5, 0);
+        if (addToSameRow) {
+            c.gridx = GridBagConstraints.RELATIVE;
+            addToSameRow = false;
+        } else {
+            c.gridx = 0;
+            c.gridy++;
+            c.insets = DialogBoxType.CHOICE.isPresent() ? new Insets(5, 0, 5, 0) : new Insets(0, 0, 5, 0);
+        }
         c.anchor = GridBagConstraints.EAST;
         c.gridwidth = 1;
 
@@ -229,9 +242,14 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
     public Component addMessage(String text, Font font, Color color) {
         Component theLabel = text.indexOf('\n') >= 0 ? new MultiLineLabel(text) : new Label(text);
 
-        c.gridx = 0;
-        c.gridy++;
-        c.insets = new Insets("".equals(text) ? 0 : 10, 20, 0, 0);
+        if (addToSameRow) {
+            c.gridx = GridBagConstraints.RELATIVE;
+            addToSameRow = false;
+        } else {
+            c.gridx = 0;
+            c.gridy++;
+            c.insets = new Insets("".equals(text) ? 0 : 10, 20, 0, 0);
+        }
 
         c.gridwidth = GridBagConstraints.REMAINDER;
         c.anchor = GridBagConstraints.WEST;
@@ -328,9 +346,15 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         String mv = IJ.d2s(maxValue, 0);
         if (mv.length() > 4 && digits == 0) columns += mv.length() - 4;
         Label fieldLabel = makeLabel(label.replaceAll("_", " "));
-        c.gridx = 0;
-        c.gridy++;
-        c.insets = new Insets(0, 0, 3, 0);
+        if (addToSameRow) {
+            c.gridx = GridBagConstraints.RELATIVE;
+            c.insets.bottom += 3;
+            addToSameRow = false;
+        } else {
+            c.gridx = 0;
+            c.gridy++;
+            c.insets = new Insets(0, 0, 3, 0);
+        }
 
         c.anchor = GridBagConstraints.EAST;
         c.gridwidth = 1;
@@ -402,12 +426,23 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
 
     public JComponent addBoundedNumericField(String label, Bounds bounds, double defaultValue, double stepSize, int columns, String units, Consumer<Double> consumer) {
         Label fieldLabel = makeLabel(label.replaceAll("_", " "));
-        c.gridx = 0;
-        c.gridy++;
-        c.insets = new Insets(0, 0, 3, 0);
+        if (addToSameRow) {
+            c.gridx = GridBagConstraints.RELATIVE;
+            c.insets.left = 10;
+        } else {
+            c.gridx = 0;
+            c.gridy++;
+            c.insets = new Insets(DialogBoxType.NUMERIC.isPresent() ? 0 : 5, 0, 3, 0);
+        }
+
         c.anchor = GridBagConstraints.EAST;
         c.gridwidth = 1;
         addLocal(fieldLabel, c);
+
+        if (addToSameRow) {
+            c.insets.left = 0;
+            addToSameRow = false;
+        }
 
         if (IJ.isWindows()) columns -= 2;
         if (columns < 1) columns = 1;
@@ -585,10 +620,13 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
             if (!hideCancelButton) buttons.add(cancel);
             buttons.add(okay);
         }
-        c.gridx = 0;
-        c.gridy++;
+        if (addToSameRow) {
+            c.gridx = GridBagConstraints.RELATIVE;
+        } else {
+            c.gridx = 0; c.gridy++;
+        }
         c.anchor = GridBagConstraints.SOUTHEAST;
-        c.gridwidth = 2;
+        c.gridwidth = addToSameRowCalled?GridBagConstraints.REMAINDER:2;
         c.insets = new Insets(15, 0, 0, 0);
         add(buttons, c);
 
@@ -700,6 +738,11 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
 
     public void addHelp(String url) {
         helpURL = url;
+    }
+
+    public void addToSameRow() {
+        addToSameRow = true;
+        addToSameRowCalled = true;
     }
 
     void showHelp() {
@@ -957,7 +1000,8 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
     private enum DialogBoxType {
         CHECKBOX,
         SLIDER,
-        CHOICE;
+        CHOICE,
+        NUMERIC;
 
         public int amount = 0;
 

@@ -424,7 +424,15 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         return addBoundedNumericField(label, new Bounds(), defaultValue, stepSize, columns, units, consumer);
     }
 
+    public JComponent addUnboundedNumericField(String label, double defaultValue, double stepSize, int columns, String units, boolean useInt, Consumer<Double> consumer) {
+        return addBoundedNumericField(label, new Bounds(), defaultValue, stepSize, columns, units, useInt, consumer);
+    }
+
     public JComponent addBoundedNumericField(String label, Bounds bounds, double defaultValue, double stepSize, int columns, String units, Consumer<Double> consumer) {
+        return addBoundedNumericField(label, bounds, defaultValue, stepSize, columns, units, false, consumer);
+    }
+
+    public JComponent addBoundedNumericField(String label, Bounds bounds, double defaultValue, double stepSize, int columns, String units, final boolean useInt, Consumer<Double> consumer) {
         Label fieldLabel = makeLabel(label.replaceAll("_", " "));
         if (addToSameRow) {
             c.gridx = GridBagConstraints.RELATIVE;
@@ -467,7 +475,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
                 tf.setValue(v);
                 return;
             }
-            consumer.accept(v);
+            consumer.accept(useInt ? Math.rint(v) : v);
         });
 
         // Add right-click functionality
@@ -477,11 +485,15 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
             JFormattedTextField.AbstractFormatter format = new DefaultFormatter() {
                 @Override
                 public Object stringToValue(String string) {
-                    return Double.parseDouble(string);
+                    var d = Double.parseDouble(string);
+                    return useInt ? (int) d : d;
                 }
 
                 @Override
                 public String valueToString(Object value) {
+                    if (useInt && value instanceof Double d) {
+                        return Integer.toString(d.intValue());
+                    }
                     return value.toString();
                 }
             };

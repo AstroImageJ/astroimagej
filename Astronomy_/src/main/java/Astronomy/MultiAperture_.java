@@ -2953,8 +2953,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         list1.add(b -> removeBackStars = b);
         list1.add(b -> backIsPlane = b);
 
-        final var columns = Math.max(10, Math.max(Double.toString(imp.getProcessor().getHistogramMax()).length(), Double.toString(maxPeakValue).length()));
-        final var maxPeak = gd.addBoundedNumericField("Max. Peak Value", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), maxPeakValue, 1, columns, null, d -> maxPeakValue = d);
+        final var columns = Math.max(10, Math.max(Double.toString(imp.getProcessor().getStatistics().max).length(), Double.toString(maxPeakValue).length()));
+        final var maxPeak = gd.addBoundedNumericField("Max. Peak Value", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), Math.max(imp.getProcessor().getStatistics().max, maxPeakValue), 1, columns, null, d -> maxPeakValue = d);
         gd.addToSameRow();
         final var minPeak = gd.addBoundedNumericField("Min. Peak Value", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), minPeakValue, 1, columns, null, d -> minPeakValue = d);
 
@@ -2964,7 +2964,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
         final var brightnessVsDistance = gd.addBoundedNumericField("Weigh of brightness vs distance", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), brightness2DistanceWeight, 1, columns, null, d -> brightness2DistanceWeight = d);
         gd.addToSameRow();
-        final var maxStars = gd.addBoundedNumericField("Max. Suggested Stars", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), maxSuggestedStars, 1, columns, null, d -> maxSuggestedStars = d.intValue());
+        final var maxStars = gd.addBoundedNumericField("Max. Suggested Stars", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), maxSuggestedStars, 1, columns, null, true, d -> maxSuggestedStars = d.intValue());
 
         maxPeak.setToolTipText("Maximum peak value to consider a star");
         minPeak.setToolTipText("Minimum peak value to consider a star");

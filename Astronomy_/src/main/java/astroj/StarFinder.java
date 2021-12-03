@@ -157,9 +157,17 @@ public class StarFinder {
             return Math.sqrt(squaredDistanceTo(crd2));
         }
 
+        public double distanceTo(double x1, double y1) {
+            return Math.sqrt(squaredDistanceTo(x1, y1));
+        }
+
         public double squaredDistanceTo(CoordinateMaxima crd2) {
-            final var h = x - crd2.x;
-            final var v = y - crd2.y;
+            return squaredDistanceTo(crd2.x, crd2.y);
+        }
+
+        public double squaredDistanceTo(double x1, double y1) {
+            final var h = x - x1;
+            final var v = y - y1;
             return h*h + v*v;
         }
 

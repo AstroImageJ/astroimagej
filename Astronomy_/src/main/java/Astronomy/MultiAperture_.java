@@ -19,9 +19,8 @@ import java.awt.*;
 import java.awt.event.*;
 import java.lang.reflect.InvocationTargetException;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.Locale;
-import java.util.TimerTask;
+import java.util.List;
+import java.util.*;
 import java.util.function.Consumer;
 
 
@@ -1195,7 +1194,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             AIJLogger.logMulti(suggestCompStars, tempSuggestCompStars);
             if (suggestCompStars && tempSuggestCompStars) {
                 xCenter = xPos[0];
-                yCenter = yPos[0];
+                yCenter = xPos[0];
 
                 // Make sure photometry is current
                 measurePhotometry();
@@ -1209,9 +1208,13 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
                 var maxima = StarFinder.findLocalMaxima(imp, minBound, maxBound, Math.floorDiv(Math.min(ip.getHeight(), ip.getWidth()), 100));
 
-                int i = 0;
-                for (StarFinder.CoordinateMaxima coordinateMaxima : maxima.coordinateMaximas()) {
-                    if (i++ >= maxSuggestedStars) break;
+                AIJLogger.log("Number of maxima: " + maxima.coordinateMaximas().size());
+                Collection<StarFinder.CoordinateMaxima> set =
+                        maxima.coordinateMaximas().size() > maxSuggestedStars ?
+                        distanceFactorLimit(maxima.coordinateMaximas(), t1Source) :
+                        maxima.coordinateMaximas();
+
+                for (StarFinder.CoordinateMaxima coordinateMaxima : set) {
                     AIJLogger.log(ngot + 1);
                     AIJLogger.log(coordinateMaxima);//todo apertures placing in wrong coordinates
                     xCenter = coordinateMaxima.x();
@@ -1222,6 +1225,29 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 tempSuggestCompStars = false; // Disable suggestion for all other stars
             }
         }
+    }
+
+    private List<StarFinder.CoordinateMaxima> distanceFactorLimit(TreeSet<StarFinder.CoordinateMaxima> initialSet, final double t1Source) {
+        var out = initialSet.stream().sorted(Comparator.comparingDouble(o -> calculateDistanceBrightnessFactor(t1Source, o)));
+        return out.limit(maxSuggestedStars).toList();
+    }
+
+    private double calculateDistanceBrightnessFactor(double t1Source, StarFinder.CoordinateMaxima coordinateMaxima) {
+        final double imageWidth2 = imp.getWidth() * imp.getWidth();
+        final double imageHeight2 = imp.getHeight() * imp.getHeight();
+        final double imageDiaogonalLength = Math.sqrt(imageHeight2 + imageWidth2);
+
+        final double normDistance = 1 - (coordinateMaxima.distanceTo(xPos[0], xPos[0]) / imageDiaogonalLength);
+
+        xCenter = coordinateMaxima.x();
+        yCenter = coordinateMaxima.y();
+
+        //todo limit brightness search zone
+        adjustAperture(true, false);
+
+        final double normBrightness = 1 - (Math.abs(t1Source - Math.min(source, 2*t1Source) / t1Source));
+
+        return brightness2DistanceWeight * normBrightness + (1 - brightness2DistanceWeight) * normDistance;
     }
 
     boolean placeApertures(int start, int end, boolean enableCentroid, boolean clearRois) {
@@ -2973,8 +2999,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         maxStars.c2().setToolTipText("Maximum number of stars to select");
         maxDBrightness.c2().setToolTipText("Upper brightness limit of comp stars that are selected relative to the target star brightness");
         minDBrightness.c2().setToolTipText("Lower brightness limit of comp stars that are selected relative to the target star brightness");
-        brightnessVsDistance.c2().setToolTipText("not yet implemented");
-        brightnessVsDistance.c2().setEnabled(false);
+        brightnessVsDistance.c2().setToolTipText("Weight of brightness to distance, used to limit the number of stars selected if more than desired are found");
 
         JSpinner maxPeakSpin = (JSpinner) maxPeak.c1();
         JSpinner minPeakSpin = (JSpinner) minPeak.c1();

@@ -1192,7 +1192,6 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 if (!processingStack) shutDown();
             }
 
-            AIJLogger.logMulti(suggestCompStars, tempSuggestCompStars);
             if (suggestCompStars && tempSuggestCompStars) {
                 xCenter = xPos[0];
                 yCenter = yPos[0];

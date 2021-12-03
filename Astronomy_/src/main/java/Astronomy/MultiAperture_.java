@@ -1194,26 +1194,35 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             AIJLogger.logMulti(suggestCompStars, tempSuggestCompStars);
             if (suggestCompStars && tempSuggestCompStars) {
                 xCenter = xPos[0];
-                yCenter = xPos[0];
+                yCenter = yPos[0];
 
                 // Make sure photometry is current
                 measurePhotometry();
                 //todo make sure t1 is a star
 
                 final var t1Source = photom.peakBrightness();//source; //todo peak or source?
-                final var starThresholdUp = t1Source * (1 - lowerBrightness/100);
-                final var starThresholdLow = t1Source * (1 + upperBrightness/100);
-                var minBound = Math.min(starThresholdUp, maxPeakValue);
-                var maxBound = Math.max(starThresholdLow, minPeakValue);
+                final var starThresholdLow = t1Source * (1 - lowerBrightness/100d);
+                final var starThresholdUp = t1Source * (1 + upperBrightness/100d);
+                var minBound = Math.max(starThresholdLow, minPeakValue);
+                var maxBound = Math.min(starThresholdUp, maxPeakValue);
+
+                if (maxBound <= minBound) {
+                    IJ.error("The maximum threshold/peak value was too small, aborting");
+                }
 
                 var maxima = StarFinder.findLocalMaxima(imp, minBound, maxBound, Math.floorDiv(Math.min(ip.getHeight(), ip.getWidth()), 100));
 
+                if (maxima.coordinateMaximas().size() == 0) {
+                    AIJLogger.log("Found no comp. stars, check the boundries");
+                    return;
+                }
                 AIJLogger.log("Number of maxima: " + maxima.coordinateMaximas().size());
+                var m = removeCloseStars(maxima.coordinateMaximas());
+                AIJLogger.log("Filtered number of maxima: " + m.size());
                 Collection<StarFinder.CoordinateMaxima> set =
-                        maxima.coordinateMaximas().size() > maxSuggestedStars ?
-                        distanceFactorLimit(maxima.coordinateMaximas(), t1Source) :
-                        maxima.coordinateMaximas();
+                        m.size() > maxSuggestedStars ? distanceFactorLimit(m, t1Source) : m;
 
+                AIJLogger.log("Placing suggested comp. stars...");
                 for (StarFinder.CoordinateMaxima coordinateMaxima : set) {
                     AIJLogger.log(ngot + 1);
                     AIJLogger.log(coordinateMaxima);//todo apertures placing in wrong coordinates
@@ -1227,7 +1236,18 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         }
     }
 
+    private TreeSet<StarFinder.CoordinateMaxima> removeCloseStars(TreeSet<StarFinder.CoordinateMaxima> initialSet) {
+        TreeSet<StarFinder.CoordinateMaxima> copy = (TreeSet<StarFinder.CoordinateMaxima>) initialSet.clone();
+        final var radius2 = radius * radius;
+        initialSet.removeIf(cm -> cm.squaredDistanceTo(xPos[0], yPos[0]) <= (radius2));
+
+        initialSet.removeIf(cm -> copy.parallelStream().filter(c -> cm.squaredDistanceTo(c) <= radius2).anyMatch(c -> c.value() >= 1.1 * cm.value()));
+
+        return initialSet;
+    }
+
     private List<StarFinder.CoordinateMaxima> distanceFactorLimit(TreeSet<StarFinder.CoordinateMaxima> initialSet, final double t1Source) {
+        AIJLogger.log("More comp. stars were found then requested, filtering...");
         var out = initialSet.stream().sorted(Comparator.comparingDouble(o -> calculateDistanceBrightnessFactor(t1Source, o)));
         return out.limit(maxSuggestedStars).toList();
     }
@@ -1237,7 +1257,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         final double imageHeight2 = imp.getHeight() * imp.getHeight();
         final double imageDiaogonalLength = Math.sqrt(imageHeight2 + imageWidth2);
 
-        final double normDistance = 1 - (coordinateMaxima.distanceTo(xPos[0], xPos[0]) / imageDiaogonalLength);
+        final double normDistance = 1 - (coordinateMaxima.distanceTo(xPos[0], yPos[0]) / imageDiaogonalLength);
 
         xCenter = coordinateMaxima.x();
         yCenter = coordinateMaxima.y();

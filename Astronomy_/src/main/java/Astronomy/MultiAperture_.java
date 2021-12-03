@@ -401,6 +401,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         }
 
         // GET HOW MANY APERTURES WILL BE MEASURED WITH WHAT RADII
+        maxPeakValue = Prefs.get(MultiAperture_.PREFS_MAXPEAKVALUE, imp.getProcessor().getStatistics().max);
 
         if (!setUpApertures() || nApertures == 0 || !prepare()) {
             imp.unlock();
@@ -2922,7 +2923,6 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         sliders[3] = gd.addFloatSlider("Inner radius of background annulus", 0.01, rBack1 > 100 ? rBack1 : 100, false, rBack1, 3, 1.0, d -> rBack1 = d.intValue());
         sliders[4] = gd.addFloatSlider("Outer radius of background annulus", 0.01, rBack2 > 100 ? rBack2 : 100, false, rBack2, 3, 1.0, d -> rBack2 = d.intValue());
         gd.addCheckbox("Use previous " + nAperturesStored + " apertures (1-click to set first aperture location)", previous && nAperturesStored > 0, b -> previous = b);
-        gd.addCheckbox("Suggest comparison stars", suggestCompStars, b -> suggestCompStars = b);
         gd.addCheckbox("Use RA/Dec to locate aperture positions", useWCS, b -> useWCS = b);
         gd.addCheckbox("Use single step mode (1-click to set first aperture location in each image)", singleStep, b -> singleStep = b);
         gd.addCheckbox("Allow aperture changes between slices in single step mode (right click to advance image)", allowSingleStepApChanges, b -> allowSingleStepApChanges = b);
@@ -2953,6 +2953,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         list1.add(b -> removeBackStars = b);
         list1.add(b -> backIsPlane = b);
 
+        // Suggestion of comp. stars
+        gd.addCheckbox("Suggest comparison stars", suggestCompStars, b -> suggestCompStars = b);
         final var columns = Math.max(10, Math.max(Double.toString(imp.getProcessor().getStatistics().max).length(), Double.toString(maxPeakValue).length()));
         final var maxPeak = gd.addBoundedNumericField("Max. Peak Value", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), Math.max(imp.getProcessor().getStatistics().max, maxPeakValue), 1, columns, null, d -> maxPeakValue = d);
         gd.addToSameRow();
@@ -2966,13 +2968,26 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         gd.addToSameRow();
         final var maxStars = gd.addBoundedNumericField("Max. Suggested Stars", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), maxSuggestedStars, 1, columns, null, true, d -> maxSuggestedStars = d.intValue());
 
-        maxPeak.setToolTipText("Maximum peak value to consider a star");
-        minPeak.setToolTipText("Minimum peak value to consider a star");
-        maxStars.setToolTipText("Maximum number of stars to select");
-        maxDBrightness.setToolTipText("Upper brightness limit of comp stars that are selected relative to the target star brightness");
-        minDBrightness.setToolTipText("Lower brightness limit of comp stars that are selected relative to the target star brightness");
-        brightnessVsDistance.setToolTipText("not yet implemented");
-        brightnessVsDistance.setEnabled(false);
+        maxPeak.c2().setToolTipText("Maximum peak value to consider a star");
+        minPeak.c2().setToolTipText("Minimum peak value to consider a star");
+        maxStars.c2().setToolTipText("Maximum number of stars to select");
+        maxDBrightness.c2().setToolTipText("Upper brightness limit of comp stars that are selected relative to the target star brightness");
+        minDBrightness.c2().setToolTipText("Lower brightness limit of comp stars that are selected relative to the target star brightness");
+        brightnessVsDistance.c2().setToolTipText("not yet implemented");
+        brightnessVsDistance.c2().setEnabled(false);
+
+        JSpinner maxPeakSpin = (JSpinner) maxPeak.c1();
+        JSpinner minPeakSpin = (JSpinner) minPeak.c1();
+        maxPeakSpin.getModel().addChangeListener($ -> {
+            if (maxPeakSpin.getValue() instanceof Double d) {
+                if (d.compareTo(minPeakValue) <= 0) maxPeakSpin.setValue(GenericSwingDialog.nextUp(minPeakValue));
+            }
+        });
+        minPeakSpin.getModel().addChangeListener($ -> {
+            if (minPeakSpin.getValue() instanceof Double d) {
+                if (d.compareTo(maxPeakValue) >= 0) minPeakSpin.setValue(GenericSwingDialog.nextDown(maxPeakValue));
+            }
+        });
 
         gd.addMessage("");
 

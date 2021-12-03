@@ -154,9 +154,13 @@ public class StarFinder {
 
     public record CoordinateMaxima(double value, int x, int y) implements Comparable<CoordinateMaxima> {
         public double distanceTo(CoordinateMaxima crd2) {
+            return Math.sqrt(squaredDistanceTo(crd2));
+        }
+
+        public double squaredDistanceTo(CoordinateMaxima crd2) {
             final var h = x - crd2.x;
             final var v = y - crd2.y;
-            return Math.sqrt(h*h + v*v);
+            return h*h + v*v;
         }
 
         @Override

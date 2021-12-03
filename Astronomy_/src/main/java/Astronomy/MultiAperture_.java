@@ -2956,7 +2956,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         // Suggestion of comp. stars
         gd.addCheckbox("Suggest comparison stars", suggestCompStars, b -> suggestCompStars = b);
         final var columns = Math.max(10, Math.max(Double.toString(imp.getProcessor().getStatistics().max).length(), Double.toString(maxPeakValue).length()));
-        final var maxPeak = gd.addBoundedNumericField("Max. Peak Value", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), Math.max(imp.getProcessor().getStatistics().max, maxPeakValue), 1, columns, null, d -> maxPeakValue = d);
+        final var maxPeak = gd.addBoundedNumericField("Max. Peak Value", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), maxPeakValue, 1, columns, null, d -> maxPeakValue = d);
         gd.addToSameRow();
         final var minPeak = gd.addBoundedNumericField("Min. Peak Value", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), minPeakValue, 1, columns, null, d -> minPeakValue = d);
 

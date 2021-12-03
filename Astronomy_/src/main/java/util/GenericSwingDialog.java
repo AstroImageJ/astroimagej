@@ -91,7 +91,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
      * @see Math#nextDown(double)
      */
     // Custom version to remove special case at 0
-    private static double nextDown(double d) {
+    public static double nextDown(double d) {
         if (Double.isNaN(d) || d == Double.NEGATIVE_INFINITY)
             return d;
         else {
@@ -104,7 +104,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
      * @see Math#nextUp(double)
      */
     // Custom version to remove special case at 0
-    private static double nextUp(double d) {
+    public static double nextUp(double d) {
         // Use a single conditional and handle the likely cases first.
         if (d < Double.POSITIVE_INFINITY) {
             // Add +0.0 to get rid of a -0.0 (+0.0 + -0.0 => +0.0).
@@ -420,19 +420,19 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         return panel;
     }
 
-    public JComponent addUnboundedNumericField(String label, double defaultValue, double stepSize, int columns, String units, Consumer<Double> consumer) {
+    public ComponentPair addUnboundedNumericField(String label, double defaultValue, double stepSize, int columns, String units, Consumer<Double> consumer) {
         return addBoundedNumericField(label, new Bounds(), defaultValue, stepSize, columns, units, consumer);
     }
 
-    public JComponent addUnboundedNumericField(String label, double defaultValue, double stepSize, int columns, String units, boolean useInt, Consumer<Double> consumer) {
+    public ComponentPair addUnboundedNumericField(String label, double defaultValue, double stepSize, int columns, String units, boolean useInt, Consumer<Double> consumer) {
         return addBoundedNumericField(label, new Bounds(), defaultValue, stepSize, columns, units, useInt, consumer);
     }
 
-    public JComponent addBoundedNumericField(String label, Bounds bounds, double defaultValue, double stepSize, int columns, String units, Consumer<Double> consumer) {
+    public ComponentPair addBoundedNumericField(String label, Bounds bounds, double defaultValue, double stepSize, int columns, String units, Consumer<Double> consumer) {
         return addBoundedNumericField(label, bounds, defaultValue, stepSize, columns, units, false, consumer);
     }
 
-    public JComponent addBoundedNumericField(String label, Bounds bounds, double defaultValue, double stepSize, int columns, String units, final boolean useInt, Consumer<Double> consumer) {
+    public ComponentPair addBoundedNumericField(String label, Bounds bounds, double defaultValue, double stepSize, int columns, String units, final boolean useInt, Consumer<Double> consumer) {
         Label fieldLabel = makeLabel(label.replaceAll("_", " "));
         if (addToSameRow) {
             c.gridx = GridBagConstraints.RELATIVE;
@@ -520,7 +520,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
             out = panel;
         }
 
-        return out;
+        return new ComponentPair(tf, out);
     }
 
     private void updateStepSize(JSpinner spinner) {
@@ -674,7 +674,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         getTextFieldFromSlider(sliderPanel).ifPresent(jFormattedTextField -> jFormattedTextField.setColumns(columns));
     }
 
-    private static Optional<JFormattedTextField> getTextFieldFromSlider(JPanel sliderPanel) {
+    public static Optional<JFormattedTextField> getTextFieldFromSlider(JPanel sliderPanel) {
         for (Component component : sliderPanel.getComponents()) {
             if (component instanceof JSpinner spinner) {
                 for (Component spinnerComponent : spinner.getComponents()) {

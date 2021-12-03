@@ -3109,6 +3109,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         Prefs.set(MultiAperture_.PREFS_BRIGHTNESSDISTANCE, brightness2DistanceWeight);
         Prefs.set(MultiAperture_.PREFS_MAXSUGGESTEDSTARS, maxSuggestedStars);
         Prefs.set(PREFS_SUGGESTCOMPSTARS, suggestCompStars);
+        Prefs.savePreferences();
 
         if (!(this instanceof Stack_Aligner) && !gd.wasOKed()) {
             cancel();

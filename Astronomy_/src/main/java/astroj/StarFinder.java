@@ -27,13 +27,13 @@ public class StarFinder {
         //ip.sharpen();
         //ip.convolve3x3(kernals[i]);
 
-        AIJLogger.logMulti(imp.getStatistics().stdDev * 0.1);
+        AIJLogger.multiLog(imp.getStatistics().stdDev * 0.1);
 
         var maximaProcess = findLocalMaxima(imp, imp.getStatistics().stdDev * 0.1, Double.MAX_VALUE, 0);//ImageProcessor.NO_THRESHOLD
         var ip = maximaProcess.ip;
         var maxima = maximaProcess.coordinateMaximas.descendingSet();
 
-        AIJLogger.logMulti(maxima);
+        AIJLogger.multiLog(maxima);
 
         var centroid = new Centroid();
 
@@ -115,7 +115,7 @@ public class StarFinder {
                         var roi = new AnnotateRoi(true, false, true, false, x, y, 0.6, "test", Color.BLUE);
                         roi.setImage(imp);
                         OverlayCanvas.getOverlayCanvas(imp).add(roi);
-                        AIJLogger.logMulti("Found maxima: ", x, y);
+                        AIJLogger.multiLog("Found maxima: ", x, y);
                     }
                 }
             }

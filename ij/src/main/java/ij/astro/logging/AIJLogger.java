@@ -55,7 +55,7 @@ public class AIJLogger {
     /**
      * Create a new log window for the caller, log the obj(s) to a new line.
      */
-    public static synchronized void logMulti(Object... obj) {
+    public static synchronized void multiLog(Object... obj) {
         StringBuilder str = new StringBuilder();
         for (int i = 0; i < obj.length; i++) {
             str.append(object2String(obj[i]));

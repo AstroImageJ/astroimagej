@@ -1243,7 +1243,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         final var radius2 = 4 * radius * radius;
         initialSet.removeIf(cm -> cm.squaredDistanceTo(xPos[0], yPos[0]) <= (radius2));
 
-        initialSet.removeIf(cm -> copy.parallelStream().filter(c -> cm.squaredDistanceTo(c) <= radius2).anyMatch(c -> c.value() >= 1.1 * cm.value()));
+        initialSet.removeIf(cm -> copy.parallelStream().filter(c -> cm.squaredDistanceTo(c) <= radius2).anyMatch(c -> c.value() >= cm.value()));
 
         return initialSet;
     }
@@ -1259,17 +1259,23 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         final double imageHeight2 = imp.getHeight() * imp.getHeight();
         final double imageDiaogonalLength = Math.sqrt(imageHeight2 + imageWidth2);
 
-        final double normDistance = 1 - (coordinateMaxima.distanceTo(xPos[0], yPos[0]) / imageDiaogonalLength);
-
         xCenter = coordinateMaxima.x();
         yCenter = coordinateMaxima.y();
 
         //todo limit brightness search zone
-        adjustAperture(true, false);
+        adjustAperture(true, reposition);
+
+        final double normDistance = 1 - (distanceTo(xPos[0], yPos[0], xCenter, yCenter) / imageDiaogonalLength);
 
         final double normBrightness = 1 - (Math.abs(t1Source - Math.min(source, 2*t1Source) / t1Source));
 
         return brightness2DistanceWeight * normBrightness + (1 - brightness2DistanceWeight) * normDistance;
+    }
+
+    private double distanceTo(double x1, double y1, double x2, double y2) {
+        final var h = x2 - x1;
+        final var v = y2 - y1;
+        return Math.sqrt(h*h + v*v);
     }
 
     boolean placeApertures(int start, int end, boolean enableCentroid, boolean clearRois) {

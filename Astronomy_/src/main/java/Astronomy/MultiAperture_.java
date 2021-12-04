@@ -2974,6 +2974,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         GenericSwingDialog gd = new GenericSwingDialog("Multi-Aperture Measurements", xLocation, yLocation);
         var sliders = new JPanel[5];
         if (stackSize > 1) {
+            firstSlice = (alwaysstartatfirstSlice && !(this instanceof Stack_Aligner)) ? 1 : firstSlice;
             sliders[0] = gd.addSlider("           First slice ", 1, stackSize, (firstSlice == stackSize || (alwaysstartatfirstSlice && !(this instanceof Stack_Aligner))) ? 1 : firstSlice, d -> firstSlice = d.intValue());
             sliders[1] = gd.addSlider("           Last slice ", 1, stackSize, lastSlice, d -> lastSlice = d.intValue());
         }

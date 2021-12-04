@@ -1243,7 +1243,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         final var radius2 = 4 * radius * radius;
         initialSet.removeIf(cm -> cm.squaredDistanceTo(xPos[0], yPos[0]) <= (radius2));
 
-        initialSet.removeIf(cm -> copy.parallelStream().filter(c -> cm.squaredDistanceTo(c) <= radius2).anyMatch(c -> c.value() >= cm.value()));
+        //todo does this need to be non-parallel stream?
+        initialSet.removeIf(cm -> copy.parallelStream().anyMatch(c -> cm.squaredDistanceTo(c) <= radius2));
 
         return initialSet;
     }
@@ -1271,6 +1272,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
         return brightness2DistanceWeight * normBrightness + (1 - brightness2DistanceWeight) * normDistance;
     }
+
+    record WeightedCoordinateMaxima(StarFinder.CoordinateMaxima cm, double weight) {}
 
     private double distanceTo(double x1, double y1, double x2, double y2) {
         final var h = x2 - x1;

@@ -1240,6 +1240,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
     private TreeSet<StarFinder.CoordinateMaxima> removeCloseStars(TreeSet<StarFinder.CoordinateMaxima> initialSet) {
         TreeSet<StarFinder.CoordinateMaxima> copy = (TreeSet<StarFinder.CoordinateMaxima>) initialSet.clone();
+        initialSet = (TreeSet<StarFinder.CoordinateMaxima>) initialSet.descendingSet();
         final var radius2 = 4 * radius * radius;
         initialSet.removeIf(cm -> cm.squaredDistanceTo(xPos[0], yPos[0]) <= (radius2));
 

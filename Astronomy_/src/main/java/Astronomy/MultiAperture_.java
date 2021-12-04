@@ -273,6 +273,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     TimerTask doubleClickTask = null;
     java.util.Timer doubleClickTaskTimer = null;
     DecimalFormat uptoEightPlaces = new DecimalFormat("#####0.########", IJU.dfs);
+    double max = 0;
 
 //	public static double RETRY_RADIUS = 3.0;
 
@@ -399,9 +400,11 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             if (hasWCS) wcs = asw.getWCS();
             asw.setDisableShiftClick(true);
         }
+        
+        max = imp.getStatistics().max;
 
         // GET HOW MANY APERTURES WILL BE MEASURED WITH WHAT RADII
-        maxPeakValue = Prefs.get(MultiAperture_.PREFS_MAXPEAKVALUE, imp.getProcessor().getStatistics().max);
+        maxPeakValue = Prefs.get(MultiAperture_.PREFS_MAXPEAKVALUE, max);
 
         if (!setUpApertures() || nApertures == 0 || !prepare()) {
             imp.unlock();
@@ -3014,7 +3017,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
         // Suggestion of comp. stars
         gd.addCheckbox("Suggest comparison stars", suggestCompStars, b -> suggestCompStars = b);
-        final var columns = Math.max(10, Math.max(Double.toString(imp.getProcessor().getStatistics().max).length(), Double.toString(maxPeakValue).length()));
+        final var columns = Math.max(10, Math.max(Double.toString(max).length(), Double.toString(maxPeakValue).length()));
         final var maxPeak = gd.addBoundedNumericField("Max. Peak Value", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), maxPeakValue, 1, columns, null, d -> maxPeakValue = d);
         gd.addToSameRow();
         final var minPeak = gd.addBoundedNumericField("Min. Peak Value", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), minPeakValue, 1, columns, null, d -> minPeakValue = d);

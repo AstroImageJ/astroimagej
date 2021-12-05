@@ -65,7 +65,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	// So no matter what type the data is, we wrap it with a lambda that takes two indices and
 	// returns a float. This uses floats as there is no DoubleProcessor from imagej
 	@FunctionalInterface
-	private interface TableWrapper { float valueAt(int x, int y); }
+	private interface TableWrapper { double valueAt(int x, int y); }
 
 	/**
 	 * Main processing method for the FITS_Reader object
@@ -643,7 +643,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		imgtab = new float[wi * he];
 		for (int y = 0; y < he; y++) {
 			for (int x = 0; x < wi; x++) {
-				imgtab[idx] = bzero + bscale * wrapper.valueAt(x, y);
+				imgtab[idx] = (float) (bzero + bscale * wrapper.valueAt(x, y));
 				idx++;
 			}
 		}

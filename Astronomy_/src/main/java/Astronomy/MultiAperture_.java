@@ -1281,7 +1281,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                         .anyMatch(c -> cm.squaredDistanceTo(c) <= radius2));
 
         // Remove all stars that are outside the thresholds
-        initialSet.removeIf(c -> c.value() >= low && c.value() <= high);
+        initialSet.removeIf(c -> !(c.value() >= low && c.value() <= high));
 
         return (TreeSet<StarFinder.CoordinateMaxima>) initialSet.descendingSet();
     }

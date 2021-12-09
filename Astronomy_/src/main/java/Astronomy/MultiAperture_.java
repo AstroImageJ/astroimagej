@@ -22,7 +22,6 @@ import java.text.DecimalFormat;
 import java.util.List;
 import java.util.*;
 import java.util.function.Consumer;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 
@@ -1257,6 +1256,21 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         final var low = t1Source * (1 - lowerBrightness/100d);
         initialSet.removeIf(cm -> cm.squaredDistanceTo(xPos[0], yPos[0]) <= (radius2));
 
+        final var reversedSet = (TreeSet<StarFinder.CoordinateMaxima>) initialSet.descendingSet();
+        final var toRemove = new HashSet<StarFinder.CoordinateMaxima>();
+        for (StarFinder.CoordinateMaxima brighter : reversedSet) {
+            for (StarFinder.CoordinateMaxima fainter : reversedSet.tailSet(brighter, false)) {
+                if (brighter != fainter) {
+                    if (brighter.squaredDistanceTo(fainter) <= radius2) {
+                        toRemove.add(fainter);
+                        if (fainter.value() > 0.1 * brighter.value()) toRemove.add(brighter);
+                    }
+                }
+            }
+        }
+
+        initialSet.removeAll(toRemove);
+
         TreeSet<StarFinder.CoordinateMaxima> n;
         getMeasurementPrefs();
 
@@ -1270,15 +1284,6 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         }).collect(Collectors.toCollection(TreeSet::new));
 
         initialSet = n;
-
-        @SuppressWarnings("unchecked")
-        TreeSet<StarFinder.CoordinateMaxima> copy = (TreeSet<StarFinder.CoordinateMaxima>) initialSet.clone();
-
-        initialSet.removeIf(cm ->
-                copy.parallelStream()
-                        .filter(Predicate.not(cm::equals))
-                        .filter(c -> c.value() >= 0.9 * cm.value() && c.value() <= 1.1 * cm.value())
-                        .anyMatch(c -> cm.squaredDistanceTo(c) <= radius2));
 
         // Remove all stars that are outside the thresholds
         initialSet.removeIf(c -> !(c.value() >= low && c.value() <= high));

@@ -1204,7 +1204,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 measurePhotometry();
                 //todo make sure t1 is a star
 
-                final var t1Source = photom.peakBrightness();
+                final var t1Source = photom.sourceBrightness();
                 final var starThresholdLow = t1Source * (1 - lowerBrightness/100d);
                 final var starThresholdUp = t1Source * (1 + upperBrightness/100d);
                 var minBound = Math.max(imp.getCalibration().getRawValue(asw.min), minPeakValue);

@@ -148,7 +148,13 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             double sliderMultiplier, sliderShift;
             double prevMag, prevImageX=0, prevImageY=0;
             double startMinDisplayValue, startMaxDisplayValue;
-            double imageMedian, min, max, minValue, maxValue, meanValue, stdDevValue;
+            double imageMedian;
+    public double min;
+    double max;
+    double minValue;
+    double maxValue;
+    double meanValue;
+    double stdDevValue;
             double[] sliceMin, sliceMax;
             double scaleMin, scaleMax, fixedMinValue, fixedMaxValue;
             double brightness, contrast, brightstepsize, contrastStepSize;

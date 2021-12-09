@@ -152,7 +152,11 @@ public class StarFinder {
         };
     }
 
-    public record CoordinateMaxima(double value, int x, int y) implements Comparable<CoordinateMaxima> {
+    public record CoordinateMaxima(double value, double x, double y) implements Comparable<CoordinateMaxima> {
+        public CoordinateMaxima(CoordinateMaxima c, double newVal) {
+            this(newVal, c.x(), c.y());
+        }
+
         public double distanceTo(CoordinateMaxima crd2) {
             return Math.sqrt(squaredDistanceTo(crd2));
         }

@@ -264,7 +264,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     ImageIcon MAIcon;
     int helpFrameLocationX = 10;
     int helpFrameLocationY = 10;
-    double maxPeakValue = 0, minPeakValue = 0, upperBrightness = 50, lowerBrightness = 50, brightness2DistanceWeight = 100;
+    double maxPeakValue = Double.MAX_VALUE, minPeakValue = 2000, upperBrightness = 50, lowerBrightness = 50, brightness2DistanceWeight = 100;
     int maxSuggestedStars = 30;
     boolean useWCS = false, suggestCompStars = true, tempSuggestCompStars = true;
     boolean useMA = true, useAlign = false;
@@ -1207,13 +1207,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 final var t1Source = photom.peakBrightness();
                 final var starThresholdLow = t1Source * (1 - lowerBrightness/100d);
                 final var starThresholdUp = t1Source * (1 + upperBrightness/100d);
-                var minBound = Math.max(starThresholdLow, minPeakValue);
+                var minBound = Math.max(imp.getCalibration().getRawValue(asw.min), minPeakValue);
 
-                if (maxPeakValue <= minBound) {
-                    IJ.error("The maximum peak value was too small, aborting");
-                }
-
-                var maxima = StarFinder.findLocalMaxima(imp, minBound, maxPeakValue, Math.floorDiv(Math.min(ip.getHeight(), ip.getWidth()), 100));
+                var maxima = StarFinder.findLocalMaxima(imp, minPeakValue, maxPeakValue, Math.floorDiv(Math.min(ip.getHeight(), ip.getWidth()), 100));
 
                 if (maxima.coordinateMaximas().size() == 0) {
                     AIJLogger.log("Found no comp. stars, check the boundries");
@@ -1221,17 +1217,18 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 }
 
                 AIJLogger.log("Number of maxima: " + maxima.coordinateMaximas().size());
-                var m = removeCloseStars(maxima.coordinateMaximas());
-                AIJLogger.log("Number of maxima that met distance threshold: " + m.size());
+                AIJLogger.log("Filtering...");
+                var m = removeCloseStars(maxima.coordinateMaximas(), t1Source);
+                AIJLogger.log("Number of maxima that met distance and brightness thresholds: " + m.size());
                 Collection<WeightedCoordinateMaxima> set = distanceFactorLimit(m, t1Source);
-                AIJLogger.log("Number of maxima that met brightness threshold: " + set.size());
+                AIJLogger.log("Number of maxima that met distance weighted brightness threshold: " + set.size());
 
                 AIJLogger.log("Placing suggested comp. stars...");
-                for (WeightedCoordinateMaxima coordinateMaxima : set) {//todo stars aren't always the same
+                for (WeightedCoordinateMaxima coordinateMaxima : set) {
                     AIJLogger.log(ngot + 1);
                     AIJLogger.log(coordinateMaxima);//todo apertures placing in wrong coordinates for tica image, fine for others, due to wcs
-                    xCenter = coordinateMaxima.cm.x() + Centroid.PIXELCENTER;
-                    yCenter = coordinateMaxima.cm.y() + Centroid.PIXELCENTER;
+                    xCenter = coordinateMaxima.cm.x();
+                    yCenter = coordinateMaxima.cm.y();
 
                     addAperture(true, false);
                 }
@@ -1242,9 +1239,28 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         }
     }
 
-    private TreeSet<StarFinder.CoordinateMaxima> removeCloseStars(TreeSet<StarFinder.CoordinateMaxima> initialSet) {
+    private TreeSet<StarFinder.CoordinateMaxima> removeCloseStars(TreeSet<StarFinder.CoordinateMaxima> initialSet, double t1Source) {
         final var radius2 = 4 * radius * radius;
+        final var high = t1Source * (1 + upperBrightness/100d);
+        final var low = t1Source * (1 - lowerBrightness/100d);
         initialSet.removeIf(cm -> cm.squaredDistanceTo(xPos[0], yPos[0]) <= (radius2));
+
+        TreeSet<StarFinder.CoordinateMaxima> n;
+        getMeasurementPrefs();
+
+        n = initialSet.parallelStream().map(m -> {
+            // Centroid for all stars
+            var center = adjustAperture(imp, m.y(), m.y(), radius, rBack1, rBack2, true).center();
+            var photom = measurePhotometry(imp, center.x(), center.y(), radius, rBack1, rBack2);
+
+            var s = photom.sourceBrightness();
+            if (s >= low && s <= high) {
+                return new StarFinder.CoordinateMaxima(s, center.x(), center.y());
+            }
+            return null;
+        }).filter(Objects::nonNull).collect(Collectors.toCollection(TreeSet::new));
+
+        initialSet = n;
 
         @SuppressWarnings("unchecked")
         TreeSet<StarFinder.CoordinateMaxima> copy = (TreeSet<StarFinder.CoordinateMaxima>) initialSet.clone();
@@ -1255,12 +1271,12 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                         .filter(c -> c.value() >= 0.9 * cm.value() && c.value() <= 1.1 * cm.value())
                         .anyMatch(c -> cm.squaredDistanceTo(c) <= radius2));
 
-        return initialSet;
+        return (TreeSet<StarFinder.CoordinateMaxima>) initialSet.descendingSet();
     }
 
     private List<WeightedCoordinateMaxima> distanceFactorLimit(TreeSet<StarFinder.CoordinateMaxima> initialSet, final double t1Source) {
-        final var b = t1Source * (1 + upperBrightness/100d);
-        final var out = initialSet.parallelStream().map(o -> calculateDistanceBrightnessFactor(t1Source, o)).filter(c -> b >= c.source).sorted(Comparator.comparingDouble(o -> o.weight));
+        final Comparator<WeightedCoordinateMaxima> x = Comparator.comparingDouble(d -> d.weight);
+        final var out = initialSet.parallelStream().map(o -> calculateDistanceBrightnessFactor(t1Source, o)).sorted(x.reversed());
         return out.limit(maxSuggestedStars).collect(Collectors.toList());
     }
 
@@ -1269,21 +1285,14 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         final double imageHeight2 = imp.getHeight() * imp.getHeight();
         final double imageDiaogonalLength = Math.sqrt(imageHeight2 + imageWidth2);
 
-        xCenter = coordinateMaxima.x();
-        yCenter = coordinateMaxima.y();
-
-        //todo limit brightness search zone
-        adjustAperture(true, reposition);
-
         final double normDistance = 1 - (distanceTo(xPos[0], yPos[0], xCenter, yCenter) / imageDiaogonalLength);
 
-        final double normBrightness = 1 - (Math.abs(t1Source - Math.min(source, 2*t1Source) / t1Source));
+        final double normBrightness = 1 - (Math.abs(t1Source - Math.min(coordinateMaxima.value(), 2*t1Source) / t1Source));
 
-        return new WeightedCoordinateMaxima(coordinateMaxima, brightness2DistanceWeight * normBrightness + (1 - brightness2DistanceWeight) * normDistance, source);
+        return new WeightedCoordinateMaxima(coordinateMaxima, (brightness2DistanceWeight/100d) * normBrightness + (1 - brightness2DistanceWeight/100d) * normDistance);
     }
 
-    //todo weight is a supplier, the comparator then calls it
-    record WeightedCoordinateMaxima(StarFinder.CoordinateMaxima cm, double weight, double source) {}
+    record WeightedCoordinateMaxima(StarFinder.CoordinateMaxima cm, double weight) {}
 
     private double distanceTo(double x1, double y1, double x2, double y2) {
         final var h = x2 - x1;
@@ -3032,7 +3041,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         gd.addToSameRow();
         final var minDBrightness = gd.addBoundedNumericField("Min. Delta Brightness %", new GenericSwingDialog.Bounds(0, 100), lowerBrightness, 1, columns, null, d -> lowerBrightness = d);
 
-        final var brightnessVsDistance = gd.addBoundedNumericField("Weight of brightness vs. Distance:", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), brightness2DistanceWeight, 1, columns, null, d -> brightness2DistanceWeight = d);
+        final var brightnessVsDistance = gd.addBoundedNumericField("Weight of brightness vs. Distance:", new GenericSwingDialog.Bounds(0, 100), brightness2DistanceWeight, 1, columns, null, d -> brightness2DistanceWeight = d);
         gd.addToSameRow();
         final var maxStars = gd.addBoundedNumericField("Max. Suggested Stars", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), maxSuggestedStars, 1, columns, null, true, d -> maxSuggestedStars = d.intValue());
 

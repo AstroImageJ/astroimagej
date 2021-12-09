@@ -1250,15 +1250,12 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
         n = initialSet.parallelStream().map(m -> {
             // Centroid for all stars
-            var center = adjustAperture(imp, m.y(), m.y(), radius, rBack1, rBack2, true).center();
+            var center = adjustAperture(imp, m.x(), m.y(), radius, rBack1, rBack2, true).center();
             var photom = measurePhotometry(imp, center.x(), center.y(), radius, rBack1, rBack2);
 
             var s = photom.sourceBrightness();
-            if (s >= low && s <= high) {
-                return new StarFinder.CoordinateMaxima(s, center.x(), center.y());
-            }
-            return null;
-        }).filter(Objects::nonNull).collect(Collectors.toCollection(TreeSet::new));
+            return new StarFinder.CoordinateMaxima(s, center.x(), center.y());
+        }).collect(Collectors.toCollection(TreeSet::new));
 
         initialSet = n;
 
@@ -1270,6 +1267,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                         .filter(Predicate.not(cm::equals))
                         .filter(c -> c.value() >= 0.9 * cm.value() && c.value() <= 1.1 * cm.value())
                         .anyMatch(c -> cm.squaredDistanceTo(c) <= radius2));
+
+        // Remove all stars that are outside the thresholds
+        initialSet.removeIf(c -> c.value() >= low && c.value() <= high);
 
         return (TreeSet<StarFinder.CoordinateMaxima>) initialSet.descendingSet();
     }

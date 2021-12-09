@@ -1216,6 +1216,18 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     return;
                 }
 
+                if (maxima.coordinateMaximas().size() > 5000) {
+                    var g = new GenericSwingDialog("MA Automatic Comp. Star Selection");
+                    g.addMessage("Maxima count has exceeded 5000, this can take a while to process, " +
+                            "do you wish to continue?\nMaxima count: " + maxima.coordinateMaximas().size() +
+                            "\nChanging the peak value bounds will effect this number.");
+                    g.enableYesNoCancel();
+                    g.centerDialog(true);
+                    g.showDialog();
+                    IJ.beep();
+                    if (g.wasCanceled() || !g.wasOKed()) return;
+                }
+
                 AIJLogger.log("Number of maxima: " + maxima.coordinateMaximas().size());
                 AIJLogger.log("Filtering...");
                 var m = removeCloseStars(maxima.coordinateMaximas(), t1Source);

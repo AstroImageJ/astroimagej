@@ -44,6 +44,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
     private String helpURL;
     private boolean addToSameRow;
     private boolean addToSameRowCalled;
+    private boolean saveAndUseStepSize;
 
     public GenericSwingDialog(String title) {
         this(title, guessParentFrame());
@@ -113,6 +114,28 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         } else { // d is NaN or +Infinity
             return d;
         }
+    }
+
+    public static int getSliderWidth(JPanel sliderPanel) {
+        return getTextFieldFromSlider(sliderPanel).map(JTextField::getColumns).orElse(0);
+    }
+
+    public static void setSliderSpinnerColumns(JPanel sliderPanel, int columns) {
+        if (sliderPanel == null) return;
+        getTextFieldFromSlider(sliderPanel).ifPresent(jFormattedTextField -> jFormattedTextField.setColumns(columns));
+    }
+
+    public static Optional<JFormattedTextField> getTextFieldFromSlider(JPanel sliderPanel) {
+        for (Component component : sliderPanel.getComponents()) {
+            if (component instanceof JSpinner spinner) {
+                for (Component spinnerComponent : spinner.getComponents()) {
+                    if (spinnerComponent instanceof JSpinner.DefaultEditor editor) {
+                        return Optional.of(editor.getTextField());
+                    }
+                }
+            }
+        }
+        return Optional.empty();
     }
 
     public void setHideCancelButton(boolean hideCancelButton) {
@@ -368,7 +391,9 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         if (IJ.isWindows()) columns -= 2;
         if (columns < 1) columns = 1;
 
-        var spinner = new JSpinner(new SpinnerNumberModel(defaultValue, minValue, clipMaxValue ? maxValue : Double.MAX_VALUE, 1 / scale));
+        var id = stepSizeId(label);
+
+        var spinner = new JSpinner(new SpinnerNumberModel(defaultValue, minValue, clipMaxValue ? maxValue : Double.MAX_VALUE, Prefs.get(id, 1 / scale)));
         if (IJ.isLinux()) spinner.setBackground(Color.white);
 
         // Remove buttons and add right-click functionality
@@ -381,17 +406,22 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         });
         s.addAdjustmentListener(e -> spinner.setValue(s.getValue() / scale));
         s.addMouseWheelListener(e -> {
-                var delta = e.getPreciseWheelRotation() * s.getUnitIncrement();
-                var newValue = -delta + s.getValue();
+            var delta = e.getPreciseWheelRotation() * s.getUnitIncrement();
+            var newValue = -delta + s.getValue();
 
-                if (newValue < s.getMinimum()) {
-                    newValue = s.getMinimum();
-                } else if (newValue > s.getMaximum()) {
-                    newValue = s.getMaximum();
-                }
+            if (newValue < s.getMinimum()) {
+                newValue = s.getMinimum();
+            } else if (newValue > s.getMaximum()) {
+                newValue = s.getMaximum();
+            }
 
-                spinner.setValue(newValue);
+            spinner.setValue(newValue);
         });
+
+        if (saveAndUseStepSize) {
+            spinner.addPropertyChangeListener($ ->
+                    Prefs.set(id, ((SpinnerNumberModel) spinner.getModel()).getStepSize().doubleValue()));
+        }
 
         JPanel panel = new JPanel();
         GridBagLayout pgrid = new GridBagLayout();
@@ -418,6 +448,14 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         addLocal(panel, c);
 
         return panel;
+    }
+
+    private String stepSizeId(String label) {
+        var classOptional = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE)
+                .walk(s1 -> s1.map(StackWalker.StackFrame::getDeclaringClass)
+                        .filter(c -> !c.getName().contains("Thread") && !c.equals(GenericSwingDialog.class)).findFirst());
+        var s = classOptional.map(Class::getName).orElse("NONAME");
+        return "stepSize." + s + label.replaceAll("[\s:]", "");
     }
 
     public ComponentPair addUnboundedNumericField(String label, double defaultValue, double stepSize, int columns, String units, Consumer<Double> consumer) {
@@ -461,7 +499,9 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
             defaultValue = bounds.max();
         }
 
-        var tf = new JSpinner(new SpinnerNumberModel(defaultValue, bounds.min(), bounds.max(), stepSize));
+        var id = stepSizeId(label);
+
+        var tf = new JSpinner(new SpinnerNumberModel(defaultValue, bounds.min(), bounds.max(), Prefs.get(id, stepSize)));
         if (IJ.isLinux()) tf.setBackground(Color.white);
 
         tf.addChangeListener($ -> {
@@ -477,6 +517,11 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
             }
             consumer.accept(useInt ? Math.rint(v) : v);
         });
+
+        if (saveAndUseStepSize) {
+            tf.addPropertyChangeListener($ ->
+                    Prefs.set(id, ((SpinnerNumberModel) tf.getModel()).getStepSize().doubleValue()));
+        }
 
         // Add right-click functionality
         var f = modifySpinner(tf, false);
@@ -537,6 +582,17 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
                 ((SpinnerNumberModel) model).setStepSize(stepSize.get());
             }
         }
+    }
+
+    public boolean saveAndUseStepSize() {
+        return saveAndUseStepSize;
+    }
+
+    /**
+     * If the dialog should save the step size values to preferences and use them later on
+     */
+    public void setSaveAndUseStepSize(boolean saveAndUseStepSize) {
+        this.saveAndUseStepSize = saveAndUseStepSize;
     }
 
     public void setOKLabel(String label) {
@@ -635,10 +691,11 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         if (addToSameRow) {
             c.gridx = GridBagConstraints.RELATIVE;
         } else {
-            c.gridx = 0; c.gridy++;
+            c.gridx = 0;
+            c.gridy++;
         }
         c.anchor = GridBagConstraints.SOUTHEAST;
-        c.gridwidth = addToSameRowCalled?GridBagConstraints.REMAINDER:2;
+        c.gridwidth = addToSameRowCalled ? GridBagConstraints.REMAINDER : 2;
         c.insets = new Insets(15, 0, 0, 0);
         add(buttons, c);
 
@@ -663,28 +720,6 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
     public void setLocation(int x, int y) {
         super.setLocation(x, y);
         centerDialog = false;
-    }
-
-    public static int getSliderWidth(JPanel sliderPanel) {
-        return getTextFieldFromSlider(sliderPanel).map(JTextField::getColumns).orElse(0);
-    }
-
-    public static void setSliderSpinnerColumns(JPanel sliderPanel, int columns) {
-        if (sliderPanel == null) return;
-        getTextFieldFromSlider(sliderPanel).ifPresent(jFormattedTextField -> jFormattedTextField.setColumns(columns));
-    }
-
-    public static Optional<JFormattedTextField> getTextFieldFromSlider(JPanel sliderPanel) {
-        for (Component component : sliderPanel.getComponents()) {
-            if (component instanceof JSpinner spinner) {
-                for (Component spinnerComponent : spinner.getComponents()) {
-                    if (spinnerComponent instanceof JSpinner.DefaultEditor editor) {
-                        return Optional.of(editor.getTextField());
-                    }
-                }
-            }
-        }
-        return Optional.empty();
     }
 
     private JFormattedTextField modifySpinner(JSpinner spinner, boolean removeButtons) {
@@ -941,6 +976,12 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
     public void windowClosing(WindowEvent e) {
         wasCanceled = true;
         dispose();
+    }
+
+    @Override
+    public void dispose() {
+        super.dispose();
+        Prefs.savePreferences();
     }
 
     /**

@@ -1230,8 +1230,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 AIJLogger.log("Filtering...");
                 var m = removeCloseStars(maxima.coordinateMaximas(), t1Source);
                 AIJLogger.log("Number of maxima that met distance and brightness thresholds: " + m.size());
-                Collection<WeightedCoordinateMaxima> set = distanceFactorLimit(m, t1Source);
-                AIJLogger.log("Number of maxima that met distance weighted brightness threshold: " + set.size());
+                AIJLogger.log("Weighing peaks...");
+                Collection<WeightedCoordinateMaxima> set = weightAndLimitPeaks(m, t1Source);
 
                 AIJLogger.log("Placing suggested comp. stars...");
                 for (WeightedCoordinateMaxima coordinateMaxima : set) {
@@ -1294,7 +1294,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         return (TreeSet<StarFinder.CoordinateMaxima>) initialSet.descendingSet();
     }
 
-    private List<WeightedCoordinateMaxima> distanceFactorLimit(TreeSet<StarFinder.CoordinateMaxima> initialSet, final double t1Source) {
+    private List<WeightedCoordinateMaxima> weightAndLimitPeaks(TreeSet<StarFinder.CoordinateMaxima> initialSet, final double t1Source) {
         final Comparator<WeightedCoordinateMaxima> x = Comparator.comparingDouble(d -> d.weight);
         final var out = initialSet.parallelStream().map(o -> calculateDistanceBrightnessFactor(t1Source, o)).sorted(x.reversed());
         return out.limit(maxSuggestedStars).collect(Collectors.toList());

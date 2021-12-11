@@ -19,6 +19,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.lang.reflect.InvocationTargetException;
 import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.List;
 import java.util.*;
 import java.util.function.Consumer;
@@ -1216,8 +1217,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
                 if (maxima.coordinateMaximas().size() > 25000) {
                     var g = new GenericSwingDialog("MA Automatic Comp. Star Selection");
-                    g.addMessage("Maxima count has exceeded 25000, this can take a while to process, " +
-                            "do you wish to continue?\nMaxima count: " + maxima.coordinateMaximas().size() +
+                    g.addMessage("Maxima count has exceeded " + NumberFormat.getInstance().format(25000) + "; this can take a while to process, " +
+                            "do you wish to continue?\nMaxima count: " + NumberFormat.getInstance().format(maxima.coordinateMaximas().size()) +
                             "\nChanging the peak value bounds will effect this number.");
                     g.enableYesNoCancel();
                     g.centerDialog(true);
@@ -1226,10 +1227,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     if (g.wasCanceled() || !g.wasOKed()) return;
                 }
 
-                AIJLogger.log("Number of maxima: " + maxima.coordinateMaximas().size());
+                AIJLogger.log("Number of maxima: " + NumberFormat.getInstance().format(maxima.coordinateMaximas().size()));
                 AIJLogger.log("Filtering...");
                 var m = removeCloseStars(maxima.coordinateMaximas(), t1Source);
-                AIJLogger.log("Number of maxima that met distance and brightness thresholds: " + m.size());
+                AIJLogger.log("Number of maxima that met distance and brightness thresholds: " + NumberFormat.getInstance().format(m.size()));
                 AIJLogger.log("Weighing peaks...");
                 Collection<WeightedCoordinateMaxima> set = weightAndLimitPeaks(m, t1Source);
 

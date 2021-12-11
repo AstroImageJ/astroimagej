@@ -1214,9 +1214,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     return;
                 }
 
-                if (maxima.coordinateMaximas().size() > 5000) {
+                if (maxima.coordinateMaximas().size() > 25000) {
                     var g = new GenericSwingDialog("MA Automatic Comp. Star Selection");
-                    g.addMessage("Maxima count has exceeded 5000, this can take a while to process, " +
+                    g.addMessage("Maxima count has exceeded 25000, this can take a while to process, " +
                             "do you wish to continue?\nMaxima count: " + maxima.coordinateMaximas().size() +
                             "\nChanging the peak value bounds will effect this number.");
                     g.enableYesNoCancel();

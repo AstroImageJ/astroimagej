@@ -1306,9 +1306,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         final double imageHeight2 = imp.getHeight() * imp.getHeight();
         final double imageDiaogonalLength = Math.sqrt(imageHeight2 + imageWidth2);
 
-        final double normDistance = 1 - (distanceTo(xPos[0], yPos[0], xCenter, yCenter) / imageDiaogonalLength);
+        final double normDistance = 1 - (distanceTo(xPos[0], yPos[0], coordinateMaxima.x(), coordinateMaxima.y()) / imageDiaogonalLength);
 
-        final double normBrightness = 1 - (Math.abs(t1Source - Math.min(coordinateMaxima.value(), 2*t1Source) / t1Source));
+        final double normBrightness = 1 - Math.abs((t1Source - Math.min(coordinateMaxima.value(), 2*t1Source)) / t1Source);
 
         return new WeightedCoordinateMaxima(coordinateMaxima, (brightness2DistanceWeight/100d) * normBrightness + (1 - brightness2DistanceWeight/100d) * normDistance);
     }

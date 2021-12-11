@@ -1201,12 +1201,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
                 // Make sure photometry is current
                 measurePhotometry();
-                //todo make sure t1 is a star
 
                 final var t1Source = photom.sourceBrightness();
-                final var starThresholdLow = t1Source * (1 - lowerBrightness/100d);
-                final var starThresholdUp = t1Source * (1 + upperBrightness/100d);
-                var minBound = Math.max(imp.getCalibration().getRawValue(asw.min), minPeakValue);
 
                 var maxima = StarFinder.findLocalMaxima(imp, minPeakValue, maxPeakValue, Math.floorDiv(Math.min(ip.getHeight(), ip.getWidth()), 100));
 
@@ -3064,7 +3060,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         gd.addToSameRow();
         final var minDBrightness = gd.addBoundedNumericField("Min. Delta Brightness %", new GenericSwingDialog.Bounds(0, 100), lowerBrightness, 1, columns, null, d -> lowerBrightness = d);
 
-        final var brightnessVsDistance = gd.addBoundedNumericField("Weight of brightness vs. Distance:", new GenericSwingDialog.Bounds(0, 100), brightness2DistanceWeight, 1, columns, null, d -> brightness2DistanceWeight = d);
+        final var brightnessVsDistance = gd.addBoundedNumericField("Weight of brightness vs. distance:", new GenericSwingDialog.Bounds(0, 100), brightness2DistanceWeight, 1, columns, null, d -> brightness2DistanceWeight = d);
         gd.addToSameRow();
         final var maxStars = gd.addBoundedNumericField("Max. Suggested Stars", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), maxSuggestedStars, 1, columns, null, true, d -> maxSuggestedStars = d.intValue());
 
@@ -3073,7 +3069,11 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         maxStars.c2().setToolTipText("Maximum number of stars to select");
         maxDBrightness.c2().setToolTipText("Upper brightness limit of comp stars that are selected relative to the target star brightness");
         minDBrightness.c2().setToolTipText("Lower brightness limit of comp stars that are selected relative to the target star brightness");
-        brightnessVsDistance.c2().setToolTipText("Weight of brightness to distance, used to limit the number of stars selected if more than desired are found");
+        brightnessVsDistance.c2().setToolTipText("<html>Weight of brightness vs distance, used to sort stars.<br>" +
+                "Based on normalized Source-Sky brightness and distance relative to T1.<br>" +
+                "A value of 100 makes the weighting based entirely on the normalized brightness.<br>" +
+                "A value of 0 makes the weighting entirely based on proximity to T1.<br>" +
+                "If more stars were found than the maximum allowed, the stars with lower weights are discarded first.</html>");
 
         JSpinner maxPeakSpin = (JSpinner) maxPeak.c1();
         JSpinner minPeakSpin = (JSpinner) minPeak.c1();

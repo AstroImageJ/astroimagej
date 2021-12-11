@@ -222,7 +222,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     boolean enterPressed = false;
     boolean hasWCS = false;
     boolean runningWCSOnlyAlignment = false;
-    boolean convoleStarSuggestion = true;
+    boolean convoleStarSuggestion = false;
     astroj.AstroStackWindow asw = null;
     astroj.AstroCanvas ac = null;
     WCS wcs = null;

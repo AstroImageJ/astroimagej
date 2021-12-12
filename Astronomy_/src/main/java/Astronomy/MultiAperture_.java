@@ -109,7 +109,6 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     protected static final String PREFS_LOWERBRIGHTNESS = "multiaperture.lowerbrightness";
     protected static final String PREFS_BRIGHTNESSDISTANCE = "multiaperture.brightnessdistance";
     protected static final String PREFS_MAXSUGGESTEDSTARS = "multiaperture.maxsuggestedstars";
-    protected static final String PREFS_CONVOLVESTARSUGGESTION = "multiaperture.convolvestarsuggestion";
 
 //	double vx = 0.0;
 //	double vy = 0.0;
@@ -3055,9 +3054,6 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
         // Suggestion of comp. stars
         gd.addCheckbox("Suggest comparison stars", suggestCompStars, b -> suggestCompStars = b);
-        gd.addCheckbox("Use averaged image for peak finding", convoleStarSuggestion, b -> convoleStarSuggestion = b)
-                .setToolTipText("<html>When locating local maxima, first average the surrounding pixel values in a 3×3 grid." +
-                        "<br>Can prevent apertures being placed on nonstars.</html>");
         final var columns = Math.max(10, Math.max(Double.toString(max).length(), Double.toString(maxPeakValue).length()));
         final var maxPeak = gd.addBoundedNumericField("Max. Peak Value", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), maxPeakValue, 1, columns, null, d -> maxPeakValue = d);
         gd.addToSameRow();
@@ -3167,7 +3163,6 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         Prefs.set(MultiAperture_.PREFS_LOWERBRIGHTNESS, lowerBrightness);
         Prefs.set(MultiAperture_.PREFS_BRIGHTNESSDISTANCE, brightness2DistanceWeight);
         Prefs.set(MultiAperture_.PREFS_MAXSUGGESTEDSTARS, maxSuggestedStars);
-        Prefs.set(MultiAperture_.PREFS_CONVOLVESTARSUGGESTION, convoleStarSuggestion);
         Prefs.set(PREFS_SUGGESTCOMPSTARS, suggestCompStars);
         Prefs.savePreferences();
 

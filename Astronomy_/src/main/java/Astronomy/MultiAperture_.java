@@ -1262,6 +1262,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         for (StarFinder.CoordinateMaxima brighter : reversedSet) {
             for (StarFinder.CoordinateMaxima fainter : reversedSet.tailSet(brighter, false)) {
                 if (brighter != fainter) {
+                    if (toRemove.contains(brighter)) continue;
+                    if (toRemove.contains(fainter)) continue;
                     var d = brighter.squaredDistanceTo(fainter);
                     if (d <= radius2) {
                         if (d > radiusHalf) {

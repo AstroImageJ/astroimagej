@@ -3059,7 +3059,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         gd.addToSameRow();
         final var minPeak = gd.addBoundedNumericField("Min. Peak Value", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), minPeakValue, 1, columns, null, d -> minPeakValue = d);
 
-        final var maxDBrightness = gd.addBoundedNumericField("Max. Delta Brightness %", new GenericSwingDialog.Bounds(0, 100), upperBrightness, 1, columns, null, d -> upperBrightness = d);
+        final var maxDBrightness = gd.addBoundedNumericField("Max. Delta Brightness %", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), upperBrightness, 1, columns, null, d -> upperBrightness = d);
         gd.addToSameRow();
         final var minDBrightness = gd.addBoundedNumericField("Min. Delta Brightness %", new GenericSwingDialog.Bounds(0, 100), lowerBrightness, 1, columns, null, d -> lowerBrightness = d);
 

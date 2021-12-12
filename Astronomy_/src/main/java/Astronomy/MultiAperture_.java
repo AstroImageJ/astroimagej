@@ -1205,7 +1205,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
                 final var t1Source = photom.sourceBrightness();
 
-                var maxima = StarFinder.findLocalMaxima(imp, minPeakValue, maxPeakValue, Math.floorDiv(Math.min(ip.getHeight(), ip.getWidth()), 100));
+                var maxima = StarFinder.findLocalMaxima(imp, minPeakValue, Double.MAX_VALUE, Math.floorDiv(Math.min(ip.getHeight(), ip.getWidth()), 100));
 
                 if (maxima.coordinateMaximas().size() == 0) {
                     AIJLogger.log("Found no comp. stars, check the boundries");
@@ -1259,7 +1259,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         for (StarFinder.CoordinateMaxima brighter : reversedSet) {
             for (StarFinder.CoordinateMaxima fainter : reversedSet.tailSet(brighter, false)) {
                 if (brighter != fainter) {
-                    if (toRemove.contains(brighter)) continue;
+                    if (brighter.value() < maxPeakValue && fainter.value() < maxPeakValue) {
+                        if (toRemove.contains(brighter)) continue;
+                    }
                     if (toRemove.contains(fainter)) continue;
                     var d = brighter.squaredDistanceTo(fainter);
                     if (d <= radius2) {
@@ -1273,6 +1275,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         }
 
         initialSet.removeAll(toRemove);
+        initialSet.removeIf(cm -> cm.value() >= maxPeakValue);
 
         TreeSet<StarFinder.CoordinateMaxima> n;
         getMeasurementPrefs();

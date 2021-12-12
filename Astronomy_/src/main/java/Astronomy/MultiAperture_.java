@@ -223,7 +223,6 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     boolean enterPressed = false;
     boolean hasWCS = false;
     boolean runningWCSOnlyAlignment = false;
-    boolean convoleStarSuggestion = false;
     astroj.AstroStackWindow asw = null;
     astroj.AstroCanvas ac = null;
     WCS wcs = null;
@@ -530,7 +529,6 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         lowerBrightness = Prefs.get(MultiAperture_.PREFS_LOWERBRIGHTNESS, lowerBrightness);
         brightness2DistanceWeight = Prefs.get(MultiAperture_.PREFS_BRIGHTNESSDISTANCE, brightness2DistanceWeight);
         maxSuggestedStars = (int) Prefs.get(MultiAperture_.PREFS_MAXSUGGESTEDSTARS, maxSuggestedStars);
-        convoleStarSuggestion = Prefs.get(MultiAperture_.PREFS_CONVOLVESTARSUGGESTION, convoleStarSuggestion);
         suggestCompStars = Prefs.get(PREFS_SUGGESTCOMPSTARS, suggestCompStars);
         oldUseVarSizeAp = useVarSizeAp;
         apFWHMFactor = Prefs.get(MultiAperture_.PREFS_APFWHMFACTOR, apFWHMFactor);
@@ -1208,7 +1206,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
                 final var t1Source = photom.sourceBrightness();
 
-                var maxima = StarFinder.findLocalMaxima(imp, minPeakValue, maxPeakValue, Math.floorDiv(Math.min(ip.getHeight(), ip.getWidth()), 100), convoleStarSuggestion);
+                var maxima = StarFinder.findLocalMaxima(imp, minPeakValue, maxPeakValue, Math.floorDiv(Math.min(ip.getHeight(), ip.getWidth()), 100));
 
                 if (maxima.coordinateMaximas().size() == 0) {
                     AIJLogger.log("Found no comp. stars, check the boundries");

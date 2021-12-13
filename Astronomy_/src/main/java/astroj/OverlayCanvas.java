@@ -174,9 +174,17 @@ public class OverlayCanvas extends ImageCanvas
 	public void removeAnnotateRois ()
 		{
 			rois.removeIf(roi -> roi instanceof AnnotateRoi);
-		}   
-    
-    /**
+		}
+
+	/**
+	 * Removes all annotate rois from the overlay list.
+	 */
+	public void removeMarkingRois ()
+	{
+		rois.removeIf(roi -> roi instanceof MarkingRoi);
+	}
+
+		/**
 	 * Removes all astrometry annotate rois from the overlay list.
 	 */
 	public void removeAstrometryAnnotateRois ()

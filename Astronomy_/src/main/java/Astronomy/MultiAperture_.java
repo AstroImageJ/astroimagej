@@ -110,6 +110,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     protected static final String PREFS_LOWERBRIGHTNESS = "multiaperture.lowerbrightness";
     protected static final String PREFS_BRIGHTNESSDISTANCE = "multiaperture.brightnessdistance";
     protected static final String PREFS_MAXSUGGESTEDSTARS = "multiaperture.maxsuggestedstars";
+    protected static final String PREFS_DEBUGAPERTURESUGGESTION = "multiaperture.debugaperturesuggestion";
 
 //	double vx = 0.0;
 //	double vy = 0.0;
@@ -197,6 +198,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     protected boolean foundFWHM = false;
     protected boolean showRatio = true;
     protected boolean showCompTot = true;
+    protected boolean debugAp = false;
 
 //	protected boolean follow=false;
 //	protected boolean wideTable=true;
@@ -530,6 +532,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         brightness2DistanceWeight = Prefs.get(MultiAperture_.PREFS_BRIGHTNESSDISTANCE, brightness2DistanceWeight);
         maxSuggestedStars = (int) Prefs.get(MultiAperture_.PREFS_MAXSUGGESTEDSTARS, maxSuggestedStars);
         suggestCompStars = Prefs.get(PREFS_SUGGESTCOMPSTARS, suggestCompStars);
+        debugAp = Prefs.get(PREFS_DEBUGAPERTURESUGGESTION, debugAp);
         oldUseVarSizeAp = useVarSizeAp;
         apFWHMFactor = Prefs.get(MultiAperture_.PREFS_APFWHMFACTOR, apFWHMFactor);
         oldapFWHMFactor = apFWHMFactor;
@@ -1197,6 +1200,11 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 if (!processingStack) shutDown();
             }
 
+            if (suggestCompStars && !tempSuggestCompStars && debugAp) {
+                ocanvas.removeMarkingRois();
+                debugAp = false;
+            }
+
             if (suggestCompStars && tempSuggestCompStars) {
                 xCenter = xPos[0];
                 yCenter = yPos[0];
@@ -1254,6 +1262,15 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         final var low = t1Source * (1 - lowerBrightness/100d);
         initialSet.removeIf(cm -> cm.squaredDistanceTo(xPos[0], yPos[0]) <= (radius2));
 
+        if (debugAp) {
+            initialSet.forEach(cm -> {
+                var ap = new MarkingRoi(cm.x(), cm.y(), false);
+                ap.setImage(imp);
+                ap.setFillColor(Color.RED);
+                ocanvas.add(ap);
+            });
+        }
+
         final var radiusHalf = 0.25 * radius * radius;
         final var reversedSet = (TreeSet<StarFinder.CoordinateMaxima>) initialSet.descendingSet();
         final var toRemove = new HashSet<StarFinder.CoordinateMaxima>();
@@ -1302,6 +1319,15 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         n.removeAll(m);
 
         initialSet = n;
+
+        if (debugAp) {
+            initialSet.forEach(cm -> {
+                var ap = new MarkingRoi(cm.x(), cm.y(), true);
+                ap.setImage(imp);
+                ap.setFillColor(Color.BLUE);
+                ocanvas.add(ap);
+            });
+        }
 
         // Remove all stars that are outside the thresholds
         initialSet.removeIf(c -> !(c.value() >= low && c.value() <= high));
@@ -3075,6 +3101,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
         // Suggestion of comp. stars
         gd.addCheckbox("Suggest comparison stars", suggestCompStars, b -> suggestCompStars = b);
+        gd.addCheckbox("Debug suggested stars", debugAp, b -> debugAp = b).setToolTipText("Draws apertures around peaks at various stages");
         final var columns = Math.max(10, Math.max(Double.toString(max).length(), Double.toString(maxPeakValue).length()));
         final var maxPeak = gd.addBoundedNumericField("Max. Peak Value", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), maxPeakValue, 1, columns, null, d -> maxPeakValue = d);
         gd.addToSameRow();
@@ -3185,6 +3212,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         Prefs.set(MultiAperture_.PREFS_BRIGHTNESSDISTANCE, brightness2DistanceWeight);
         Prefs.set(MultiAperture_.PREFS_MAXSUGGESTEDSTARS, maxSuggestedStars);
         Prefs.set(PREFS_SUGGESTCOMPSTARS, suggestCompStars);
+        Prefs.set(PREFS_DEBUGAPERTURESUGGESTION, debugAp);
         Prefs.savePreferences();
 
         if (!(this instanceof Stack_Aligner) && !gd.wasOKed()) {

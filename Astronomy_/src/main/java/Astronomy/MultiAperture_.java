@@ -22,6 +22,7 @@ import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.List;
 import java.util.*;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -1288,6 +1289,17 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             var s = photom.sourceBrightness();
             return new StarFinder.CoordinateMaxima(s, center.x(), center.y());
         }).collect(Collectors.toCollection(TreeSet::new));
+
+        // Remove elements where the apertures would be identical
+        var m = new ConcurrentLinkedDeque<StarFinder.CoordinateMaxima>();
+        n.parallelStream().forEach(c -> {
+            if (m.contains(c)) return;
+            n.parallelStream().forEach(c2 -> {
+                if (c == c2) return;
+                if (c2.identicalRoi(c)) m.add(c2);
+            });
+        });
+        n.removeAll(m);
 
         initialSet = n;
 

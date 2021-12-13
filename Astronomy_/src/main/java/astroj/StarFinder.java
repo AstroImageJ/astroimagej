@@ -175,6 +175,10 @@ public class StarFinder {
             return h*h + v*v;
         }
 
+        public boolean identicalRoi(CoordinateMaxima c2) {
+            return (int)x == (int)c2.x && (int)y == (int)c2.y;
+        }
+
         @Override
         public int compareTo(CoordinateMaxima o) {
             return Double.compare(value, o.value);

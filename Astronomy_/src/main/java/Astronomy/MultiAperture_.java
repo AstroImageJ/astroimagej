@@ -111,6 +111,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     protected static final String PREFS_BRIGHTNESSDISTANCE = "multiaperture.brightnessdistance";
     protected static final String PREFS_MAXSUGGESTEDSTARS = "multiaperture.maxsuggestedstars";
     protected static final String PREFS_DEBUGAPERTURESUGGESTION = "multiaperture.debugaperturesuggestion";
+    protected static final String PREFS_GAUSSRADIUS = "multiaperture.gaussradius";
 
 //	double vx = 0.0;
 //	double vy = 0.0;
@@ -278,6 +279,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     java.util.Timer doubleClickTaskTimer = null;
     DecimalFormat uptoEightPlaces = new DecimalFormat("#####0.########", IJU.dfs);
     double max = 0;
+    private double gaussRadius = 1.5;
 
 //	public static double RETRY_RADIUS = 3.0;
 
@@ -534,6 +536,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         maxSuggestedStars = (int) Prefs.get(MultiAperture_.PREFS_MAXSUGGESTEDSTARS, maxSuggestedStars);
         suggestCompStars = Prefs.get(PREFS_SUGGESTCOMPSTARS, suggestCompStars);
         debugAp = Prefs.get(PREFS_DEBUGAPERTURESUGGESTION, debugAp);
+        gaussRadius = Prefs.get(PREFS_GAUSSRADIUS, gaussRadius);
         oldUseVarSizeAp = useVarSizeAp;
         apFWHMFactor = Prefs.get(MultiAperture_.PREFS_APFWHMFACTOR, apFWHMFactor);
         oldapFWHMFactor = apFWHMFactor;
@@ -1215,7 +1218,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
                 final var t1Source = photom.sourceBrightness();
 
-                var maxima = StarFinder.findLocalMaxima(imp, minPeakValue, Double.MAX_VALUE, (int) Math.ceil(2 * radius));
+                var maxima = StarFinder.findLocalMaxima(imp, minPeakValue, Double.MAX_VALUE, (int) Math.ceil(2 * radius), gaussRadius);
 
                 if (maxima.coordinateMaximas().size() == 0) {
                     AIJLogger.log("Found no comp. stars, check the boundries");
@@ -3105,6 +3108,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         gd.addCheckbox("Suggest comparison stars", suggestCompStars, b -> suggestCompStars = b);
         gd.addCheckbox("Debug suggested stars", debugAp, b -> debugAp = b).setToolTipText("Draws apertures around peaks at various stages");
         final var columns = Math.max(10, Math.max(Double.toString(max).length(), Double.toString(maxPeakValue).length()));
+
+        final var gauss = gd.addBoundedNumericField("Gauss Filter Radius", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), gaussRadius, 1, columns, "pixels", d -> gaussRadius = d);
         final var maxPeak = gd.addBoundedNumericField("Max. Peak Value", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), maxPeakValue, 1, columns, null, d -> maxPeakValue = d);
         gd.addToSameRow();
         final var minPeak = gd.addBoundedNumericField("Min. Peak Value", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), minPeakValue, 1, columns, null, d -> minPeakValue = d);
@@ -3117,6 +3122,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         gd.addToSameRow();
         final var maxStars = gd.addBoundedNumericField("Max. Suggested Stars", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), maxSuggestedStars, 1, columns, null, true, d -> maxSuggestedStars = d.intValue());
 
+        gauss.c2().setToolTipText("Radius of gaussian smoothing to use when finding initial peaks.\n Set to 1 to disable");
         maxPeak.c2().setToolTipText("Maximum peak value to consider a star");
         minPeak.c2().setToolTipText("Minimum peak value to consider a star");
         maxStars.c2().setToolTipText("Maximum number of stars to select");
@@ -3215,6 +3221,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         Prefs.set(MultiAperture_.PREFS_MAXSUGGESTEDSTARS, maxSuggestedStars);
         Prefs.set(PREFS_SUGGESTCOMPSTARS, suggestCompStars);
         Prefs.set(PREFS_DEBUGAPERTURESUGGESTION, debugAp);
+        Prefs.set(PREFS_GAUSSRADIUS, gaussRadius);
         Prefs.savePreferences();
 
         if (!(this instanceof Stack_Aligner) && !gd.wasOKed()) {

@@ -1,5 +1,6 @@
 package astroj;
 
+import ij.IJ;
 import ij.ImagePlus;
 import ij.astro.logging.AIJLogger;
 import ij.process.ImageProcessor;
@@ -29,7 +30,7 @@ public class StarFinder {
 
         AIJLogger.multiLog(imp.getStatistics().stdDev * 0.1);
 
-        var maximaProcess = findLocalMaxima(imp, imp.getStatistics().stdDev * 0.1, Double.MAX_VALUE, 0);//ImageProcessor.NO_THRESHOLD
+        var maximaProcess = findLocalMaxima(imp, imp.getStatistics().stdDev * 0.1, Double.MAX_VALUE, 0, 1);//ImageProcessor.NO_THRESHOLD
         var ip = maximaProcess.ip;
         var maxima = maximaProcess.coordinateMaximas.descendingSet();
 
@@ -80,8 +81,11 @@ public class StarFinder {
      */
     // Does not work on a ROI, but the whole image
     //todo make astrometry use this
-    public static ProcessingMaxima findLocalMaxima(ImagePlus imp, double thresholdLower, double thresholdUpper, int border) {
-        var ip = imp.getProcessor().duplicate();
+    public static ProcessingMaxima findLocalMaxima(ImagePlus imp, double thresholdLower, double thresholdUpper, int border, double gaussRadius) {
+        var imp2 = imp.duplicate();
+        if (gaussRadius != 1) IJ.run(imp2, "Median...", "radius=" + gaussRadius);
+
+        var ip = imp2.getProcessor().duplicate();
         var coordinates = new HashSet<CoordinateMaxima>();
 
         final var doLowerThresholdCheck = thresholdLower != ImageProcessor.NO_THRESHOLD;

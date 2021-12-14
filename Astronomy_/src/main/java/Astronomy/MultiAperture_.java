@@ -1214,7 +1214,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
                 final var t1Source = photom.sourceBrightness();
 
-                var maxima = StarFinder.findLocalMaxima(imp, minPeakValue, Double.MAX_VALUE, Math.floorDiv(Math.min(ip.getHeight(), ip.getWidth()), 100));
+                var maxima = StarFinder.findLocalMaxima(imp, minPeakValue, Double.MAX_VALUE, (int) Math.ceil(2 * radius));
 
                 if (maxima.coordinateMaximas().size() == 0) {
                     AIJLogger.log("Found no comp. stars, check the boundries");

@@ -462,6 +462,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             //ocanvas.clearRois();
             ocanvas.removeApertureRois();
             ocanvas.removeAstrometryAnnotateRois();
+            ocanvas.removeMarkingRois();
         }
         if (previous && (!useWCS || (useWCS && (raPosStored == null || decPosStored == null)))) {
             infoMessage = "Please select first aperture (right click to finalize) ...";
@@ -1376,6 +1377,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         if (clearRois && (starOverlay || skyOverlay || valueOverlay || nameOverlay)) {
             //ocanvas.clearRois();
             ocanvas.removeApertureRois();
+            ocanvas.removeMarkingRois();
             ocanvas.removeAstrometryAnnotateRois();
         }
 

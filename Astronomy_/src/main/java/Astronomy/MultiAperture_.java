@@ -113,6 +113,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     protected static final String PREFS_DEBUGAPERTURESUGGESTION = "multiaperture.debugaperturesuggestion";
     protected static final String PREFS_GAUSSRADIUS = "multiaperture.gaussradius";
     protected static final String PREFS_AUTOPEAKS = "multiaperture.autopeaks";
+    protected static final String PREFS_AUTORADIUS = "multiaperture.autoradius";
 
 //	double vx = 0.0;
 //	double vy = 0.0;
@@ -281,6 +282,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     DecimalFormat uptoEightPlaces = new DecimalFormat("#####0.########", IJU.dfs);
     double max = 0;
     private double gaussRadius = 3.5;
+    private boolean autoRadius = true;
 
 //	public static double RETRY_RADIUS = 3.0;
 
@@ -539,6 +541,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         debugAp = Prefs.get(PREFS_DEBUGAPERTURESUGGESTION, debugAp);
         gaussRadius = Prefs.get(PREFS_GAUSSRADIUS, gaussRadius);
         autoPeakValues = Prefs.get(PREFS_AUTOPEAKS, autoPeakValues);
+        autoRadius = Prefs.get(PREFS_AUTORADIUS, autoRadius);
         oldUseVarSizeAp = useVarSizeAp;
         apFWHMFactor = Prefs.get(MultiAperture_.PREFS_APFWHMFACTOR, apFWHMFactor);
         oldapFWHMFactor = apFWHMFactor;
@@ -1076,6 +1079,16 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             yCenter = e != null ? canvas.offScreenYD(e.getY()) : 0;
             if (!autoMode && !(previous && firstClick) && ngot < nApertures) {
                 apertureClicked = ocanvas.findApertureRoi((int) xCenter, (int) yCenter, 0) != null;
+            }
+
+            if (firstClick && autoRadius) {
+                var rs = Seeing_Profile.getRadii(imp, xCenter, yCenter);
+                radius = rs.r();
+                rBack1 = rs.r2();
+                rBack2 = rs.r3();
+                Prefs.set("aperture.radius", radius);
+                Prefs.set("aperture.rback1", rBack1);
+                Prefs.set("aperture.rback2", rBack2);
             }
 
             // ADD APERTURE TO LIST OR SHIFT OLD APERTURE POSITIONS
@@ -3076,6 +3089,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             sliders[0] = gd.addSlider("           First slice ", 1, stackSize, (firstSlice == stackSize || (alwaysstartatfirstSlice && !(this instanceof Stack_Aligner))) ? 1 : firstSlice, d -> firstSlice = d.intValue());
             sliders[1] = gd.addSlider("           Last slice ", 1, stackSize, lastSlice, d -> lastSlice = d.intValue());
         }
+        gd.addCheckbox("Auto Radius", autoRadius, b -> autoRadius = b);
+        //gd.addToSameRow();
         sliders[2] = gd.addFloatSlider("Radius of object aperture", 0.01, radius > 100 ? radius : 100, false, radius, 3, 1.0, d -> radius = d);
         sliders[3] = gd.addFloatSlider("Inner radius of background annulus", 0.01, rBack1 > 100 ? rBack1 : 100, false, rBack1, 3, 1.0, d -> rBack1 = d);
         sliders[4] = gd.addFloatSlider("Outer radius of background annulus", 0.01, rBack2 > 100 ? rBack2 : 100, false, rBack2, 3, 1.0, d -> rBack2 = d);
@@ -3117,7 +3132,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
         final var gauss = gd.addBoundedNumericField("Gauss Filter Radius", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), gaussRadius, 1, columns, "pixels", d -> gaussRadius = d);
         final var autoPeaks = gd.addCheckbox("Auto Thresholds", autoPeakValues, b -> autoPeakValues = b);
-        gd.addToSameRow();
+        //gd.addToSameRow();
         final var maxPeak = gd.addBoundedNumericField("Max. Peak Value", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), maxPeakValue, 1, columns, null, d -> maxPeakValue = d);
         gd.addToSameRow();
         final var minPeak = gd.addBoundedNumericField("Min. Peak Value", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), minPeakValue, 1, columns, null, d -> minPeakValue = d);
@@ -3130,10 +3145,20 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         gd.addToSameRow();
         final var maxStars = gd.addBoundedNumericField("Max. Suggested Stars", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), maxSuggestedStars, 1, columns, null, true, d -> maxSuggestedStars = d.intValue());
         autoPeaks.setToolTipText("When enabled, pull peak values from the image histogram");
+
+        minPeak.c1().setEnabled(!autoPeakValues);
+        maxPeak.c1().setEnabled(!autoPeakValues);
+        if (autoPeakValues) {
+            GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText("1.1 Mean PV"));
+            GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText("0.9 Max PV"));
+        } else {
+            GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText(""+minPeakValue));
+            GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText(""+maxPeakValue));
+        }
         autoPeaks.addActionListener($ -> {
-            minPeak.c1().setEnabled(!autoPeakValues);
-            maxPeak.c1().setEnabled(!autoPeakValues);
-            if (autoPeakValues) {
+            minPeak.c1().setEnabled(autoPeakValues);
+            maxPeak.c1().setEnabled(autoPeakValues);
+            if (!autoPeakValues) {
                 GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText("1.1 Mean PV"));
                 GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText("0.9 Max PV"));
             } else {
@@ -3244,6 +3269,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         Prefs.set(PREFS_DEBUGAPERTURESUGGESTION, debugAp);
         Prefs.set(PREFS_GAUSSRADIUS, gaussRadius);
         Prefs.set(PREFS_AUTOPEAKS, autoPeakValues);
+        Prefs.set(PREFS_AUTORADIUS, autoRadius);
         Prefs.savePreferences();
 
         if (!(this instanceof Stack_Aligner) && !gd.wasOKed()) {

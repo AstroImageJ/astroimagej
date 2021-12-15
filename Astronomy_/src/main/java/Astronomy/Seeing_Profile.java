@@ -4,7 +4,6 @@ import astroj.*;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.Prefs;
-import ij.astro.AstroImageJ;
 import ij.gui.GenericDialog;
 import ij.gui.ImageCanvas;
 import ij.gui.Plot;
@@ -149,6 +148,32 @@ public class Seeing_Profile implements PlugInFilter
 //        imp.changes = false;
 		}
 
+        public record ApRadii(double r, double r2, double r3) {}
+
+        public static ApRadii getRadii(ImagePlus imp, double x, double y) {
+            var sp = new Seeing_Profile();
+            sp.cal = imp.getCalibration();
+            sp.autoModeFluxCutOff = Prefs.get (MultiAperture_.PREFS_AUTOMODEFLUXCUTOFF, sp.autoModeFluxCutOff);
+            sp.X0 = x;
+            sp.Y0 = y;
+            sp.mR = Prefs.get ("aperture.radius", sp.mR);
+            sp.mR1 = Prefs.get ("aperture.rback1", sp.mR*1.2);
+            sp.mR2 = Prefs.get ("aperture.rback2", sp.mR*2.0);
+            sp.recenter = Prefs.get("aperture.reposition", true);
+            sp.center = new Centroid();
+            sp.center.measure(imp, sp.X0, sp.Y0, sp.mR, sp.mR1, sp.mR2, sp.recenter, Prefs.get("aperture.backplane", false), Prefs.get("aperture.removebackstars", true));
+            sp.X0 = sp.center.x();
+            sp.Y0 = sp.center.y();
+            sp.background = sp.center.background();
+            sp.peak = sp.center.peak();
+            sp.peak_raw = sp.peak;
+            sp.low_raw = 0.0;
+
+            sp.getRadialDistribution(imp.getProcessor());
+
+            return new ApRadii(sp.r1, sp.r2, sp.r3);
+        }
+
 
 	/**
 	 * Calculates the radial distribution of intensities around the center (X0,Y0).
@@ -226,7 +251,7 @@ public class Seeing_Profile implements PlugInFilter
             // CALIBRATE X-AXIS USING LEFT-OVER BIN
 
 
-            if (cal.getUnit() == "pixel")
+            if ("pixel".equals(cal.getUnit()))
                 {
                 for (int k=0; k < nBins; k++)
                     radii[k]  *= cal.pixelWidth;
@@ -281,7 +306,6 @@ public class Seeing_Profile implements PlugInFilter
     
 
 		// CREATE PLOT WITH LABELS
-    @AstroImageJ(reason = "Set plot in window's imp", modified = true)
     protected void createPlot(ImageProcessor ip)
         {
         int plotOptions = 0;

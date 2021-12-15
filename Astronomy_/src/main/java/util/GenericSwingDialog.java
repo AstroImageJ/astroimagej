@@ -655,7 +655,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         setMaximumSize(Toolkit.getDefaultToolkit().getScreenSize());
         if (no != null) {
             scrollPane.validate();
-            scrollPane.setMinimumSize(scrollPane.getPreferredSize());
+            scrollPane.setMinimumSize(getLayout().minimumLayoutSize(scrollPane));
         }
         setLayout(new GridBagLayout());
         Panel buttons = new Panel();
@@ -717,7 +717,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         pack();
         if (rootPane.getComponentCount() > 0) okay.requestFocusInWindow();
         if (centerDialog) GUI.centerOnImageJScreen(this);
-        setMinimumSize(new Dimension(scrollPane.getPreferredSize().width, getMinimumSize().height));
+        setMinimumSize(getLayout().minimumLayoutSize(scrollPane));
         setMaximumSize(new Dimension(scrollPane.getPreferredSize().width, getMaximumSize().height));
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setVisible(true);

@@ -3,6 +3,7 @@ package astroj;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.astro.logging.AIJLogger;
+import ij.plugin.Duplicator;
 import ij.process.ImageProcessor;
 
 import java.awt.*;
@@ -82,7 +83,8 @@ public class StarFinder {
     // Does not work on a ROI, but the whole image
     //todo make astrometry use this
     public static ProcessingMaxima findLocalMaxima(ImagePlus imp, double thresholdLower, double thresholdUpper, int border, double gaussRadius) {
-        var imp2 = imp.duplicate();
+        var imp2 = (new Duplicator()).crop(imp);
+
         if (gaussRadius != 1) IJ.run(imp2, "Median...", "radius=" + gaussRadius);
 
         var ip = imp2.getProcessor().duplicate();

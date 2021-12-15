@@ -47,10 +47,11 @@ public class BicFitting extends Optimizer {
         final var maxParams = (int) fitOptimization.detrendParamCount.getValue();
         BigInteger counter = BigInteger.ZERO;
         for (BigInteger state = startState; state.compareTo(endState) < 0; state = state.add(BigInteger.ONE)) {
-            if (state.equals(BigInteger.ZERO)) continue;
-            if (Thread.interrupted()) break;
             fitOptimization.detrendCounter.dynamicSet(counter);
             counter = counter.add(BigInteger.ONE);
+
+            if (state.equals(BigInteger.ZERO)) continue;
+            if (Thread.interrupted()) break;
 
             var x = newState(state);
             var paramCount = Arrays.stream(x).filter(i -> i != 0).count();

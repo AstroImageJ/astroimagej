@@ -138,6 +138,15 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         return Optional.empty();
     }
 
+    public static Optional<JTextField> getTextFieldFromSpinner(JSpinner spinner) {
+        for (Component component : spinner.getComponents()) {
+            if (component instanceof JSpinner.DefaultEditor editor) {
+                return Optional.of(editor.getTextField());
+            }
+        }
+        return Optional.empty();
+    }
+
     public void setHideCancelButton(boolean hideCancelButton) {
         this.hideCancelButton = hideCancelButton;
     }
@@ -530,6 +539,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
             JFormattedTextField.AbstractFormatter format = new DefaultFormatter() {
                 @Override
                 public Object stringToValue(String string) {
+                    if (!f.isEnabled()) return bounds.min();
                     var d = Double.parseDouble(string);
                     return useInt ? (int) d : d;
                 }

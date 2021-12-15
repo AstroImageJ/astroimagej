@@ -112,6 +112,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     protected static final String PREFS_MAXSUGGESTEDSTARS = "multiaperture.maxsuggestedstars";
     protected static final String PREFS_DEBUGAPERTURESUGGESTION = "multiaperture.debugaperturesuggestion";
     protected static final String PREFS_GAUSSRADIUS = "multiaperture.gaussradius";
+    protected static final String PREFS_AUTOPEAKS = "multiaperture.autopeaks";
 
 //	double vx = 0.0;
 //	double vy = 0.0;
@@ -172,7 +173,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     protected boolean[] isAlignStar;
     protected boolean[] centroidStar;
     protected double[] absMag, targetAbsMag;
-    protected boolean hasAbsMag = false;
+    protected boolean hasAbsMag = false, autoPeakValues = true;
     protected double totAbsMag = 0.0;
     protected int numAbsRefs = 0;
     protected double[] src;           // net integrated counts for each aperture
@@ -268,8 +269,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     ImageIcon MAIcon;
     int helpFrameLocationX = 10;
     int helpFrameLocationY = 10;
-    double maxPeakValue = Double.MAX_VALUE, minPeakValue = 2000, upperBrightness = 50, lowerBrightness = 50, brightness2DistanceWeight = 100;
-    int maxSuggestedStars = 30;
+    double maxPeakValue = Double.MAX_VALUE, minPeakValue = 2000, upperBrightness = 50, lowerBrightness = 50, brightness2DistanceWeight = 50;
+    int maxSuggestedStars = 12;
     boolean useWCS = false, suggestCompStars = true, tempSuggestCompStars = true;
     boolean useMA = true, useAlign = false;
     TimerTask stackTask = null;
@@ -279,7 +280,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     java.util.Timer doubleClickTaskTimer = null;
     DecimalFormat uptoEightPlaces = new DecimalFormat("#####0.########", IJU.dfs);
     double max = 0;
-    private double gaussRadius = 1.5;
+    private double gaussRadius = 3.5;
 
 //	public static double RETRY_RADIUS = 3.0;
 
@@ -537,6 +538,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         suggestCompStars = Prefs.get(PREFS_SUGGESTCOMPSTARS, suggestCompStars);
         debugAp = Prefs.get(PREFS_DEBUGAPERTURESUGGESTION, debugAp);
         gaussRadius = Prefs.get(PREFS_GAUSSRADIUS, gaussRadius);
+        autoPeakValues = Prefs.get(PREFS_AUTOPEAKS, autoPeakValues);
         oldUseVarSizeAp = useVarSizeAp;
         apFWHMFactor = Prefs.get(MultiAperture_.PREFS_APFWHMFACTOR, apFWHMFactor);
         oldapFWHMFactor = apFWHMFactor;
@@ -1218,7 +1220,11 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
                 final var t1Source = photom.sourceBrightness();
 
-                var maxima = StarFinder.findLocalMaxima(imp, minPeakValue, Double.MAX_VALUE, (int) Math.ceil(2 * radius), gaussRadius);
+                final var stats = imp.getStatistics();
+                var minP = autoPeakValues ? stats.mean * 1.1 : minPeakValue;
+                var maxP = autoPeakValues ? stats.max * 0.9 : maxPeakValue;
+
+                var maxima = StarFinder.findLocalMaxima(imp, minP, Double.MAX_VALUE, (int) Math.ceil(2 * radius), gaussRadius);
 
                 if (maxima.coordinateMaximas().size() == 0) {
                     AIJLogger.log("Found no comp. stars, check the boundries");
@@ -1239,7 +1245,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
                 AIJLogger.log("Number of maxima: " + NumberFormat.getInstance().format(maxima.coordinateMaximas().size()));
                 AIJLogger.log("Filtering...");
-                var m = removeCloseStars(maxima.coordinateMaximas(), t1Source);
+                var m = removeCloseStars(maxima.coordinateMaximas(), t1Source, maxP);
                 AIJLogger.log("Number of maxima that met distance and brightness thresholds: " + NumberFormat.getInstance().format(m.size()));
                 AIJLogger.log("Weighing peaks...");
                 Collection<WeightedCoordinateMaxima> set = weightAndLimitPeaks(m, t1Source);
@@ -1260,7 +1266,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         }
     }
 
-    private TreeSet<StarFinder.CoordinateMaxima> removeCloseStars(TreeSet<StarFinder.CoordinateMaxima> initialSet, double t1Source) {
+    private TreeSet<StarFinder.CoordinateMaxima> removeCloseStars(TreeSet<StarFinder.CoordinateMaxima> initialSet, double t1Source, double maxP) {
         final var radius2 = 4 * radius * radius;
         final var high = t1Source * (1 + upperBrightness/100d);
         final var low = t1Source * (1 - lowerBrightness/100d);
@@ -1297,7 +1303,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         }
 
         initialSet.removeAll(toRemove);
-        initialSet.removeIf(cm -> cm.value() >= maxPeakValue);
+        initialSet.removeIf(cm -> cm.value() >= maxP);
 
         TreeSet<StarFinder.CoordinateMaxima> n;
         getMeasurementPrefs();
@@ -3110,6 +3116,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         final var columns = Math.max(10, Math.max(Double.toString(max).length(), Double.toString(maxPeakValue).length()));
 
         final var gauss = gd.addBoundedNumericField("Gauss Filter Radius", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), gaussRadius, 1, columns, "pixels", d -> gaussRadius = d);
+        final var autoPeaks = gd.addCheckbox("Auto Thresholds", autoPeakValues, b -> autoPeakValues = b);
+        gd.addToSameRow();
         final var maxPeak = gd.addBoundedNumericField("Max. Peak Value", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), maxPeakValue, 1, columns, null, d -> maxPeakValue = d);
         gd.addToSameRow();
         final var minPeak = gd.addBoundedNumericField("Min. Peak Value", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), minPeakValue, 1, columns, null, d -> minPeakValue = d);
@@ -3121,6 +3129,19 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         final var brightnessVsDistance = gd.addBoundedNumericField("Weight of brightness vs. distance:", new GenericSwingDialog.Bounds(0, 100), brightness2DistanceWeight, 1, columns, null, d -> brightness2DistanceWeight = d);
         gd.addToSameRow();
         final var maxStars = gd.addBoundedNumericField("Max. Suggested Stars", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), maxSuggestedStars, 1, columns, null, true, d -> maxSuggestedStars = d.intValue());
+        autoPeaks.setToolTipText("When enabled, pull peak values from the image histogram");
+        autoPeaks.addActionListener($ -> {
+            minPeak.c1().setEnabled(!autoPeakValues);
+            maxPeak.c1().setEnabled(!autoPeakValues);
+            if (autoPeakValues) {
+                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText("1.1 Mean PV"));
+                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText("0.9 Max PV"));
+            } else {
+                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText(""+minPeakValue));
+                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText(""+maxPeakValue));
+            }
+        });
+
 
         gauss.c2().setToolTipText("Radius of gaussian smoothing to use when finding initial peaks.\n Set to 1 to disable");
         maxPeak.c2().setToolTipText("Maximum peak value to consider a star");
@@ -3222,6 +3243,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         Prefs.set(PREFS_SUGGESTCOMPSTARS, suggestCompStars);
         Prefs.set(PREFS_DEBUGAPERTURESUGGESTION, debugAp);
         Prefs.set(PREFS_GAUSSRADIUS, gaussRadius);
+        Prefs.set(PREFS_AUTOPEAKS, autoPeakValues);
         Prefs.savePreferences();
 
         if (!(this instanceof Stack_Aligner) && !gd.wasOKed()) {

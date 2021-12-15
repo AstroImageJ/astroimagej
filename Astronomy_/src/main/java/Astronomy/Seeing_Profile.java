@@ -170,6 +170,7 @@ public class Seeing_Profile implements PlugInFilter
             sp.low_raw = 0.0;
 
             sp.getRadialDistribution(imp.getProcessor());
+            sp.createPlot(imp.getProcessor());
 
             return new ApRadii(sp.r1, sp.r2, sp.r3);
         }

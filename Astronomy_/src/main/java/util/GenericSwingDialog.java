@@ -246,7 +246,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         c.anchor = GridBagConstraints.EAST;
         c.gridwidth = 1;
 
-        add(fieldLabel, c);
+        addLocal(fieldLabel, c);
         var thisChoice = new JComboBox<String>();
         thisChoice.addKeyListener(this);
         thisChoice.addItemListener($ -> consumer.accept((String) thisChoice.getSelectedItem()));
@@ -258,7 +258,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         }
         c.gridx = GridBagConstraints.RELATIVE;
         c.anchor = GridBagConstraints.WEST;
-        add(thisChoice, c);
+        addLocal(thisChoice, c);
 
         return thisChoice;
     }
@@ -649,7 +649,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
 
     public void displayDialog(boolean show) {
         if (!show) return;
-        setupPaneLayout();
+        //setupPaneLayout();
         setResizable(false);
         //todo make it resizable, limit max size to some fraction of screen size?
         setMaximumSize(Toolkit.getDefaultToolkit().getScreenSize());
@@ -779,6 +779,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         if (ij != null) setFont(ij.getFont());
         setLayout(new BorderLayout(0, 0)); // Forces scrollpane to actually work
         //todo remove black box around basePanel
+        basePanel.setLayout(new GridBagLayout());
         basePanel.validate();
         scrollPane.setViewportView(basePanel);
         addWindowListener(this);

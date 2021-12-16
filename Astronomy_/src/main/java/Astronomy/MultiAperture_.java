@@ -1283,7 +1283,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         final var radius2 = 4 * radius * radius;
         final var high = t1Source * (1 + upperBrightness/100d);
         final var low = t1Source * (1 - lowerBrightness/100d);
-        initialSet.removeIf(cm -> cm.squaredDistanceTo(xPos[0], yPos[0]) <= (radius2));
+        //initialSet.removeIf(cm -> cm.squaredDistanceTo(xPos[0], yPos[0]) <= (radius2));
 
         if (debugAp) {
             initialSet.forEach(cm -> {
@@ -1324,11 +1324,14 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         n = initialSet.parallelStream().map(m -> {
             // Centroid for all stars
             var center = adjustAperture(imp, m.x(), m.y(), radius, rBack1, rBack2, true).center();
+
+            if (squaredDistanceTo(xPos[0], yPos[0], center.x(), center.y()) <= (radius2)) return null;
+
             var photom = measurePhotometry(imp, center.x(), center.y(), radius, rBack1, rBack2);
 
             var s = photom.sourceBrightness();
             return new StarFinder.CoordinateMaxima(s, center.x(), center.y());
-        }).collect(Collectors.toCollection(TreeSet::new));
+        }).filter(Objects::nonNull).collect(Collectors.toCollection(TreeSet::new));
 
         // Remove elements where the apertures would be identical
         var m = new ConcurrentLinkedDeque<StarFinder.CoordinateMaxima>();
@@ -1385,9 +1388,13 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     record WeightedCoordinateMaxima(StarFinder.CoordinateMaxima cm, double weight) {}
 
     private double distanceTo(double x1, double y1, double x2, double y2) {
+        return squaredDistanceTo(x1, y1, x2, y2);
+    }
+
+    private double squaredDistanceTo(double x1, double y1, double x2, double y2) {
         final var h = x2 - x1;
         final var v = y2 - y1;
-        return Math.sqrt(h*h + v*v);
+        return h*h + v*v;
     }
 
     boolean placeApertures(int start, int end, boolean enableCentroid, boolean clearRois) {

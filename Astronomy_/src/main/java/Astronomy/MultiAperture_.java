@@ -282,7 +282,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     DecimalFormat uptoEightPlaces = new DecimalFormat("#####0.########", IJU.dfs);
     double max = 0;
     private double gaussRadius = 3.5;
-    private boolean autoRadius = true;
+    private boolean autoRadius = true, t1Placed = false;
 
 //	public static double RETRY_RADIUS = 3.0;
 
@@ -1081,7 +1081,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 apertureClicked = ocanvas.findApertureRoi((int) xCenter, (int) yCenter, 0) != null;
             }
 
-            if (firstClick && autoRadius) {
+            if (firstClick && autoRadius && !t1Placed) {
                 var rs = Seeing_Profile.getRadii(imp, xCenter, yCenter);
                 radius = rs.r();
                 rBack1 = rs.r2();
@@ -1440,6 +1440,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 setApertureName("C" + (ap + 1));
                 if (absMag[ap] < 99.0) setAbsMag(absMag[ap]);
             }
+
+            if (!t1Placed) t1Placed = "T1".equals(apertureName);
 
             if ((useMA || useAlign) && useWCS) {
                 if (autoMode && !hasWCS) {

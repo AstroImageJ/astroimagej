@@ -798,6 +798,18 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         helpURL = url;
     }
 
+    public JButton getOkay() {
+        return okay;
+    }
+
+    public JButton getCancel() {
+        return cancel;
+    }
+
+    public JButton getNo() {
+        return no;
+    }
+
     public void addToSameRow() {
         addToSameRow = true;
         addToSameRowCalled = true;

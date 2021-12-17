@@ -1238,7 +1238,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 debugAp = false;
             }
 
-            if (suggestCompStars && tempSuggestCompStars) {
+            if (suggestCompStars && tempSuggestCompStars && ngot < maxSuggestedStars) {
                 xCenter = xPos[0];
                 yCenter = yPos[0];
 
@@ -1339,7 +1339,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             // Centroid for all stars
             var center = adjustAperture(imp, m.x(), m.y(), radius, rBack1, rBack2, true).center();
 
-            if (squaredDistanceTo(xPos[0], yPos[0], center.x(), center.y()) <= (radius2)) return null;
+            for (int i = 0; i < xPos.length; i++) {
+                if (squaredDistanceTo(xPos[i], yPos[i], center.x(), center.y()) <= (radius2)) return null;
+            }
 
             var photom = measurePhotometry(imp, center.x(), center.y(), radius, rBack1, rBack2);
 
@@ -1378,7 +1380,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     private List<WeightedCoordinateMaxima> weightAndLimitPeaks(TreeSet<StarFinder.CoordinateMaxima> initialSet, final double t1Source) {
         final Comparator<WeightedCoordinateMaxima> x = Comparator.comparingDouble(d -> d.weight);
         final var out = initialSet.parallelStream().map(o -> calculateDistanceBrightnessFactor(t1Source, o)).sorted(x.reversed());
-        return out.limit(maxSuggestedStars).collect(Collectors.toList());
+        return out.limit(maxSuggestedStars - ngot).collect(Collectors.toList());
     }
 
     private WeightedCoordinateMaxima calculateDistanceBrightnessFactor(double t1Source, StarFinder.CoordinateMaxima coordinateMaxima) {
@@ -3166,7 +3168,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
         final var brightnessVsDistance = gd.addBoundedNumericField("Weight of brightness vs. distance:", new GenericSwingDialog.Bounds(0, 100), brightness2DistanceWeight, 1, columns, null, d -> brightness2DistanceWeight = d);
         gd.addToSameRow();
-        final var maxStars = gd.addBoundedNumericField("Max. Suggested Stars", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), maxSuggestedStars, 1, columns, null, true, d -> maxSuggestedStars = d.intValue());
+        final var maxStars = gd.addBoundedNumericField("Max. Comp. Stars", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), maxSuggestedStars, 1, columns, null, true, d -> maxSuggestedStars = d.intValue());
         autoPeaks.setToolTipText("When enabled, pull peak values from the image histogram");
 
         minPeak.c1().setEnabled(!autoPeakValues);
@@ -3194,7 +3196,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         gauss.c2().setToolTipText("Radius of gaussian smoothing to use when finding initial peaks.\n Set to 1 to disable");
         maxPeak.c2().setToolTipText("Maximum peak value to consider a star");
         minPeak.c2().setToolTipText("Minimum peak value to consider a star");
-        maxStars.c2().setToolTipText("Maximum number of stars to select");
+        maxStars.c2().setToolTipText("Maximum number of comparison stars to select, includes already selected comp. stars in its count");
         maxDBrightness.c2().setToolTipText("Upper brightness limit of comp stars that are selected relative to the target star brightness");
         minDBrightness.c2().setToolTipText("Lower brightness limit of comp stars that are selected relative to the target star brightness");
         brightnessVsDistance.c2().setToolTipText("<html>Weight of brightness vs distance, used to sort stars.<br>" +

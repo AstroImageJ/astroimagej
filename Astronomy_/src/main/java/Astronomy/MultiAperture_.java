@@ -283,6 +283,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     double max = 0;
     private double gaussRadius = 3.5;
     private boolean autoRadius = true, t1Placed = false;
+    private Seeing_Profile.ApRadii oldRadii;
 
 //	public static double RETRY_RADIUS = 3.0;
 
@@ -492,10 +493,21 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         }
     }
 
+    private void resetRadii() {
+        if (oldRadii == null) return;
+        radius = oldRadii.r();
+        rBack1 = oldRadii.r2();
+        rBack2 = oldRadii.r3();
+        Prefs.set("aperture.radius", radius);
+        Prefs.set("aperture.rback1", rBack1);
+        Prefs.set("aperture.rback2", rBack2);
+    }
+
     protected void cancel() {
         if (table != null) table.setLock(false);
         if (table != null) table.show();
         if (table != null) table.setLock(false);
+        resetRadii();
         Prefs.set(MultiAperture_.PREFS_AUTOMODE, "false");
         Prefs.set(MultiAperture_.PREFS_FINISHED, "true");
         Prefs.set(MultiAperture_.PREFS_USEMACROIMAGE, "false");
@@ -939,6 +951,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         Prefs.set("plot2.absMagFrameLocationY", yAbsMagLocation);
         Prefs.set("plot2.helpFrameLocationX", helpFrameLocationX);
         Prefs.set("plot2.helpFrameLocationY", helpFrameLocationY);
+        resetRadii();
     }
 
     /**
@@ -1082,6 +1095,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             }
 
             if (firstClick && autoRadius && !t1Placed) {
+                oldRadii = new Seeing_Profile.ApRadii(radius, rBack1, rBack2);
                 var rs = Seeing_Profile.getRadii(imp, xCenter, yCenter);
                 radius = rs.r();
                 rBack1 = rs.r2();

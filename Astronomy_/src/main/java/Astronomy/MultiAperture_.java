@@ -1248,8 +1248,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 final var t1Source = photom.sourceBrightness();
 
                 final var stats = imp.getStatistics();
-                var minP = autoPeakValues ? stats.mean * 1.1 : minPeakValue;
+                var minP = autoPeakValues ? stats.mean + (3 * stats.stdDev) : minPeakValue;
                 var maxP = autoPeakValues ? stats.max * 0.9 : maxPeakValue;
+
+                AIJLogger.log("Peak thresholds: min= " + minP + "; max= " + maxP);
 
                 var maxima = StarFinder.findLocalMaxima(imp, minP, Double.MAX_VALUE, (int) Math.ceil(2 * radius), gaussRadius);
 
@@ -1262,7 +1264,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     var g = new GenericSwingDialog("MA Automatic Comp. Star Selection");
                     g.addMessage("Maxima count has exceeded " + NumberFormat.getInstance().format(25000) + "; this can take a while to process, " +
                             "do you wish to continue?\nMaxima count: " + NumberFormat.getInstance().format(maxima.coordinateMaximas().size()) +
-                            "\nChanging the peak value bounds will effect this number.");
+                            "\nChanging the peak value bounds will effect this number.\n" + "Probable causes are that " +
+                            "the Minimum peak threshold is set too low and/or the Maximum peak threshold is set " +
+                            "too high. Ensure that the Minimum value set is above the highest sky background region " +
+                            "and that the Maximum is below the saturation level.\n");
                     g.enableYesNoCancel();
                     g.centerDialog(true);
                     g.showDialog();
@@ -1270,15 +1275,20 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     if (g.wasCanceled() || !g.wasOKed()) return;
                 }
 
+                if (cancelled) return;
+
                 AIJLogger.log("Number of maxima: " + NumberFormat.getInstance().format(maxima.coordinateMaximas().size()));
                 AIJLogger.log("Filtering...");
                 var m = removeCloseStars(maxima.coordinateMaximas(), t1Source, maxP);
+                if (cancelled) return;
                 AIJLogger.log("Number of maxima that met distance and brightness thresholds: " + NumberFormat.getInstance().format(m.size()));
                 AIJLogger.log("Weighing peaks...");
                 Collection<WeightedCoordinateMaxima> set = weightAndLimitPeaks(m, t1Source);
+                if (cancelled) return;
 
                 AIJLogger.log("Placing suggested comp. stars...");
                 for (WeightedCoordinateMaxima coordinateMaxima : set) {
+                    if (cancelled) return;
                     AIJLogger.log(ngot + 1);
                     AIJLogger.log(coordinateMaxima);//todo apertures placing in wrong coordinates for tica image, fine for others, due to wcs
                     xCenter = coordinateMaxima.cm.x();
@@ -3174,7 +3184,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         minPeak.c1().setEnabled(!autoPeakValues);
         maxPeak.c1().setEnabled(!autoPeakValues);
         if (autoPeakValues) {
-            GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText("1.1 Mean PV"));
+            GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText("3σ + Mean PV"));
             GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText("0.9 Max PV"));
         } else {
             GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText(""+minPeakValue));

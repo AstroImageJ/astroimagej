@@ -152,6 +152,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
     }
 
     public JCheckBox addCheckbox(String label, boolean initValue, Consumer<Boolean> consumer) {
+        var b = Box.createHorizontalBox();
         final var box = new JCheckBox(label.replaceAll("_", " "));
         box.setSelected(initValue);
         box.addActionListener($ -> consumer.accept(box.isSelected()));
@@ -165,8 +166,9 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
             c.insets = new Insets(DialogBoxType.CHECKBOX.isPresent() ? 0 : 15, 20, 0, 0);
         }
         c.anchor = GridBagConstraints.WEST;
-        c.gridwidth = 2;
-        addLocal(box, c);
+        c.gridwidth = 1;
+        b.add(box);
+        addLocal(b, c);
         c.insets.left = 0;
 
         return box;
@@ -372,6 +374,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
     }
 
     private JPanel addSlider(String label, final double minValue, final double maxValue, boolean clipMaxValue, final double defaultValue, final double scale, final int digits, Consumer<Double> consumer) {
+        Box b = Box.createHorizontalBox();
         int columns = 4 + digits + (IJ.isMacOSX() ? 0 : -2);
         if (columns < 4) columns = 4;
         if (minValue < 0.0) columns++;
@@ -390,7 +393,8 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
 
         c.anchor = GridBagConstraints.EAST;
         c.gridwidth = 1;
-        addLocal(fieldLabel, c);
+        b.add(fieldLabel);
+        b.add(Box.createHorizontalGlue());
 
         Scrollbar s = new Scrollbar(Scrollbar.HORIZONTAL, (int) defaultValue, 1, (int) minValue, (int) maxValue + 1);
         GUI.fixScrollbar(s);
@@ -449,12 +453,13 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         pc.anchor = GridBagConstraints.EAST;
         panel.add(spinner, pc);
 
-        c.gridx = GridBagConstraints.RELATIVE;
+        c.gridx = 0;
         c.gridwidth = 1;
-        c.anchor = GridBagConstraints.WEST;
+        c.anchor = GridBagConstraints.EAST;
         c.insets.left = 0;
         c.insets.bottom -= 3;
-        addLocal(panel, c);
+        b.add(panel);
+        addLocal(b, c);
 
         return panel;
     }
@@ -480,6 +485,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
     }
 
     public ComponentPair addBoundedNumericField(String label, Bounds bounds, double defaultValue, double stepSize, int columns, String units, final boolean useInt, Consumer<Double> consumer) {
+        Box b = Box.createHorizontalBox();
         Label fieldLabel = makeLabel(label.replaceAll("_", " "));
         if (addToSameRow) {
             c.gridx = GridBagConstraints.RELATIVE;
@@ -492,7 +498,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
 
         c.anchor = GridBagConstraints.EAST;
         c.gridwidth = 1;
-        addLocal(fieldLabel, c);
+        b.add(fieldLabel);
 
         if (addToSameRow) {
             c.insets.left = 0;
@@ -560,20 +566,24 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
 
         if (IJ.isLinux()) tf.setBackground(Color.white);
 
-        c.gridx = GridBagConstraints.RELATIVE;
-        c.anchor = GridBagConstraints.WEST;
         JComponent out;
         if (units == null || units.equals("")) {
-            addLocal(tf, c);
+            b.add(tf);
             out = tf;
         } else {
             JPanel panel = new JPanel();
             panel.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
             panel.add(tf);
             panel.add(new Label(" " + units));
-            addLocal(panel, c);
+            b.add(panel);
             out = panel;
         }
+
+        b.add(Box.createHorizontalStrut(10));
+
+        b.add(Box.createHorizontalGlue());
+
+        addLocal(b, c);
 
         return new ComponentPair(tf, out);
     }

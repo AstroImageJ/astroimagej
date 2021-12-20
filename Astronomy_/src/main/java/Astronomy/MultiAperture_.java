@@ -3230,7 +3230,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             minPeak.c1().setEnabled(autoPeakValues);
             maxPeak.c1().setEnabled(autoPeakValues);
             if (!autoPeakValues) {
-                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText("1.1 Mean PV"));
+                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText("3σ + Mean PV"));
                 GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText("0.9 Max PV"));
             } else {
                 GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText(""+minPeakValue));

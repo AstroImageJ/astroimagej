@@ -1253,8 +1253,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 final var t1Source = photom.sourceBrightness();
 
                 final var stats = asw.stats == null ? imp.getStatistics() : asw.stats;
+
                 var minP = autoPeakValues ? stats.mean + (3 * stats.stdDev) : minPeakValue;
-                var maxP = autoPeakValues ? stats.max * 0.9 : maxPeakValue;
+                var maxP = autoPeakValues ? asw.maxValue * 0.9 : maxPeakValue;
 
                 var maxima = StarFinder.findLocalMaxima(imp, minP, Double.MAX_VALUE, (int) Math.ceil(2 * radius), gaussRadius);
 
@@ -3227,7 +3228,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
         final var stats = asw.stats == null ? imp.getStatistics() : asw.stats;
         var minP = autoPeakValues ? stats.mean + (3 * stats.stdDev) : minPeakValue;
-        var maxP = autoPeakValues ? stats.max * 0.9 : maxPeakValue;
+        var maxP = autoPeakValues ? asw.maxValue * 0.9 : maxPeakValue;
         minPeak.c1().setEnabled(!autoPeakValues);
         maxPeak.c1().setEnabled(!autoPeakValues);
         var formatter = new DecimalFormat("0.#####E0");

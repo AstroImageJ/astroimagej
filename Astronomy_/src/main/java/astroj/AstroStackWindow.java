@@ -152,7 +152,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
     public double min;
     double max;
     double minValue;
-    double maxValue;
+    public double maxValue;
     double meanValue;
     double stdDevValue;
             double[] sliceMin, sliceMax;

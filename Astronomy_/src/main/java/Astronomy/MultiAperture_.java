@@ -1421,7 +1421,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     private List<WeightedCoordinateMaxima> weightAndLimitPeaks(TreeSet<StarFinder.CoordinateMaxima> initialSet, final double t1Source) {
         final Comparator<WeightedCoordinateMaxima> x = Comparator.comparingDouble(d -> d.weight);
         final var out = initialSet.parallelStream().map(o -> calculateDistanceBrightnessFactor(t1Source, o)).sorted(x.reversed());
-        return out.limit(maxSuggestedStars - ngot).collect(Collectors.toList());
+        return out.limit(maxSuggestedStars - (ngot - 1)).collect(Collectors.toList());
     }
 
     private WeightedCoordinateMaxima calculateDistanceBrightnessFactor(double t1Source, StarFinder.CoordinateMaxima coordinateMaxima) {

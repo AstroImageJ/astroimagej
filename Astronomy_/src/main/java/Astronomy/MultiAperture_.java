@@ -3199,8 +3199,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         gd.addCheckbox("Suggest comparison stars", suggestCompStars, b -> suggestCompStars = b);
         gd.addCheckbox("Debug suggested stars", debugAp, b -> debugAp = b).setToolTipText("Draws apertures around peaks at various stages");
 
-        final var starSelection = gd.addBoundedNumericField("Star to base selecion on", new GenericSwingDialog.Bounds(1, Double.MAX_VALUE), referenceStar, 1, columns, "apertures", true, d -> referenceStar = d.intValue());
-        final var gauss = gd.addBoundedNumericField("Gauss Filter Radius", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), gaussRadius, 1, columns, "      pixels", d -> gaussRadius = d);
+        final var starSelection = gd.addBoundedNumericField("Star to base selecion on", new GenericSwingDialog.Bounds(1, Double.MAX_VALUE), referenceStar, 1, 10, "apertures", true, d -> referenceStar = d.intValue());
+        final var gauss = gd.addBoundedNumericField("Gauss Filter Radius", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), gaussRadius, 1, 10, "      pixels", d -> gaussRadius = d);
         final var autoPeaks = gd.addCheckbox("Auto Thresholds", autoPeakValues, b -> autoPeakValues = b);
         gd.addToSameRow();
         gd.setOverridePosition(true);

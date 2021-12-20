@@ -3157,7 +3157,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         }
         gd.addCheckbox("Auto Radius", autoRadius, b -> autoRadius = b);
         gd.addToSameRow();
+        gd.setOverridePosition(true);
         sliders[2] = gd.addFloatSlider("Radius of object aperture", 0.01, radius > 100 ? radius : 100, false, radius, 3, 1.0, d -> radius = d);
+        gd.setOverridePosition(false);
         sliders[3] = gd.addFloatSlider("Inner radius of background annulus", 0.01, rBack1 > 100 ? rBack1 : 100, false, rBack1, 3, 1.0, d -> rBack1 = d);
         sliders[4] = gd.addFloatSlider("Outer radius of background annulus", 0.01, rBack2 > 100 ? rBack2 : 100, false, rBack2, 3, 1.0, d -> rBack2 = d);
         gd.addCheckbox("Use previous " + nAperturesStored + " apertures (1-click to set first aperture location)", previous && nAperturesStored > 0, b -> previous = b);
@@ -3200,11 +3202,12 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         final var starSelection = gd.addBoundedNumericField("Star to base selecion on", new GenericSwingDialog.Bounds(1, Double.MAX_VALUE), referenceStar, 1, columns, "apertures", true, d -> referenceStar = d.intValue());
         final var gauss = gd.addBoundedNumericField("Gauss Filter Radius", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), gaussRadius, 1, columns, "      pixels", d -> gaussRadius = d);
         final var autoPeaks = gd.addCheckbox("Auto Thresholds", autoPeakValues, b -> autoPeakValues = b);
-        //gd.addToSameRow();
+        gd.addToSameRow();
+        gd.setOverridePosition(true);
         final var maxPeak = gd.addBoundedNumericField("Max. Peak Value", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), maxPeakValue, 1, columns, null, d -> maxPeakValue = d);
         gd.addToSameRow();
         final var minPeak = gd.addBoundedNumericField("Min. Peak Value", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), minPeakValue, 1, columns, null, d -> minPeakValue = d);
-
+        gd.setOverridePosition(false);
         final var maxDBrightness = gd.addBoundedNumericField("Max. Delta Brightness %", new GenericSwingDialog.Bounds(1, Double.MAX_VALUE), upperBrightness, 1, columns, null, d -> upperBrightness = d);
         gd.addToSameRow();
         final var minDBrightness = gd.addBoundedNumericField("Min. Delta Brightness %", new GenericSwingDialog.Bounds(1, 100), lowerBrightness, 1, columns, null, d -> lowerBrightness = d);

@@ -35,6 +35,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
     private final JButton okay = new JButton("  OK  ");
     private final JButton cancel = new JButton("Cancel");
     private final JPanel basePanel = new JPanel(new GridBagLayout());
+    private int x = 0;
     private JButton no, help;
     private boolean wasOKed = false, wasCanceled = false;
     private boolean hideCancelButton = false;
@@ -45,6 +46,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
     private boolean addToSameRow;
     private boolean addToSameRowCalled;
     private boolean saveAndUseStepSize;
+    private boolean overridePosition = false;
 
     public GenericSwingDialog(String title) {
         this(title, guessParentFrame());
@@ -168,7 +170,9 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         c.anchor = GridBagConstraints.WEST;
         c.gridwidth = 1;
         b.add(box);
+        if (overridePosition) c.gridx = x;
         addLocal(b, c);
+        x++;
         c.insets.left = 0;
 
         return box;
@@ -230,7 +234,9 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         c.anchor = GridBagConstraints.WEST;
         c.insets = new Insets(0, 20, 0, 0);
         //addToSameRow = false;
+        if (overridePosition) c.gridx = x;
         addLocal(panel, c);
+        x++;
 
         return panel;
     }
@@ -260,7 +266,9 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         }
         c.gridx = GridBagConstraints.RELATIVE;
         c.anchor = GridBagConstraints.WEST;
+        if (overridePosition) c.gridx = x;
         addLocal(thisChoice, c);
+        x++;
 
         return thisChoice;
     }
@@ -294,7 +302,9 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
             theLabel.setFont(font);
         }
         if (color != null) theLabel.setForeground(color);
+        if (overridePosition) c.gridx = x;
         addLocal(theLabel, c);
+        x++;
         c.fill = GridBagConstraints.NONE;
 
         return theLabel;
@@ -453,13 +463,11 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         pc.anchor = GridBagConstraints.EAST;
         panel.add(spinner, pc);
 
-        c.gridx = 0;
-        c.gridwidth = 1;
         c.anchor = GridBagConstraints.EAST;
-        c.insets.left = 0;
-        c.insets.bottom -= 3;
         b.add(panel);
+        if (overridePosition) c.gridx = x;
         addLocal(b, c);
+        x++;
 
         return panel;
     }
@@ -583,10 +591,22 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
 
         b.add(Box.createHorizontalGlue());
 
+        if (overridePosition) c.gridx = x;
         addLocal(b, c);
+        x++;
 
         return new ComponentPair(tf, out);
     }
+
+    public void resetPositionOverride() {
+        x = 0;
+    }
+
+    public void setOverridePosition(boolean va) {
+        if (va) resetPositionOverride();
+        overridePosition = va;
+    }
+
 
     private void updateStepSize(JSpinner spinner) {
         final var model = spinner.getModel();

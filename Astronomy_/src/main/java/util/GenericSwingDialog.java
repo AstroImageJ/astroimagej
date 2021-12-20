@@ -47,6 +47,9 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
     private boolean addToSameRowCalled;
     private boolean saveAndUseStepSize;
     private boolean overridePosition = false;
+    private int anchor = 0;
+    private boolean customAnchor = false;
+    private int leftInset = 0;
 
     public GenericSwingDialog(String title) {
         this(title, guessParentFrame());
@@ -506,6 +509,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
 
         c.anchor = GridBagConstraints.EAST;
         c.gridwidth = 1;
+        b.add(Box.createHorizontalStrut(5));
         b.add(fieldLabel);
 
         if (addToSameRow) {
@@ -592,6 +596,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         b.add(Box.createHorizontalGlue());
 
         if (overridePosition) c.gridx = x;
+        useCustomPosition();
         addLocal(b, c);
         x++;
 
@@ -600,6 +605,23 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
 
     public void resetPositionOverride() {
         x = 0;
+    }
+
+    public void setNewPosition(int anchor) {
+        customAnchor = true;
+        this.anchor = anchor;
+    }
+
+    public void setLeftInset(int inset) {
+        this.leftInset = inset;
+    }
+
+    private void useCustomPosition() {
+        if (customAnchor) {
+            customAnchor = false;
+            c.anchor = this.anchor;
+            c.insets.left = leftInset;
+        }
     }
 
     public void setOverridePosition(boolean va) {

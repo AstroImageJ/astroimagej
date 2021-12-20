@@ -3230,9 +3230,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         var maxP = autoPeakValues ? stats.max * 0.9 : maxPeakValue;
         minPeak.c1().setEnabled(!autoPeakValues);
         maxPeak.c1().setEnabled(!autoPeakValues);
+        var formatter = new DecimalFormat("0.#####E0");
         if (autoPeakValues) {
-            GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText(Double.toString(minP)));
-            GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText(Double.toString(maxP)));
+            GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText(formatter.format(minP)));
+            GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText(formatter.format(maxP)));
         } else {
             GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText(""+minPeakValue));
             GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText(""+maxPeakValue));
@@ -3241,8 +3242,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             minPeak.c1().setEnabled(autoPeakValues);
             maxPeak.c1().setEnabled(autoPeakValues);
             if (!autoPeakValues) {
-                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText(Double.toString(minP)));
-                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText(Double.toString(maxP)));
+                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText(formatter.format(minP)));
+                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText(formatter.format(maxP)));
             } else {
                 GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText(""+minPeakValue));
                 GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText(""+maxPeakValue));

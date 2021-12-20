@@ -1083,7 +1083,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             }
 
             slice = imp.getCurrentSlice();
-            if (imp.getWindow() instanceof astroj.AstroStackWindow) {
+            if (imp.getWindow() instanceof AstroStackWindow) {
                 asw = (AstroStackWindow) imp.getWindow();
                 ac = (AstroCanvas) imp.getCanvas();
                 hasWCS = asw.hasWCS();
@@ -1250,7 +1250,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
                 final var t1Source = photom.sourceBrightness();
 
-                final var stats = imp.getStatistics();
+                final var stats = asw.stats == null ? imp.getStatistics() : asw.stats;
                 var minP = autoPeakValues ? stats.mean + (3 * stats.stdDev) : minPeakValue;
                 var maxP = autoPeakValues ? stats.max * 0.9 : maxPeakValue;
 

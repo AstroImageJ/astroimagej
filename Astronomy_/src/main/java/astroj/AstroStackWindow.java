@@ -89,7 +89,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             DecimalFormat uptoSixPlaces = new DecimalFormat("0.######", IJU.dfs);
             DecimalFormat scientificSixPlaces = new DecimalFormat("0.######E00", IJU.dfs);
 
-            ImageStatistics stats;
+            public ImageStatistics stats;
 //            Dimension screenDim;
 //            Rectangle screenDim;
 

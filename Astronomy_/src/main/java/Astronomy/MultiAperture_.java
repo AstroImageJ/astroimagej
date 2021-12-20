@@ -1258,11 +1258,6 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
                 var maxima = StarFinder.findLocalMaxima(imp, minP, Double.MAX_VALUE, (int) Math.ceil(2 * radius), gaussRadius);
 
-                if (maxima.coordinateMaximas().size() == 0) {
-                    AIJLogger.log("Found no comp. stars, check the boundries");
-                    return;
-                }
-
                 if (maxima.coordinateMaximas().size() > 25000) {
                     var g = new GenericSwingDialog("MA Automatic Comp. Star Selection");
                     g.addMessage("Maxima count has exceeded " + NumberFormat.getInstance().format(25000) + "; this can take a while to process, " +

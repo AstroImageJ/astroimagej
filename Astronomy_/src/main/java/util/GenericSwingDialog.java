@@ -621,6 +621,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
             customAnchor = false;
             c.anchor = this.anchor;
             c.insets.left = leftInset;
+            leftInset = 0;
         }
     }
 

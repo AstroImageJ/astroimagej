@@ -1243,7 +1243,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 debugAp = false;
             }
 
-            if (suggestCompStars && tempSuggestCompStars && ngot < referenceStar + maxSuggestedStars) {
+            if (suggestCompStars && tempSuggestCompStars) {
                 xCenter = xPos[referenceStar - 1];
                 yCenter = yPos[referenceStar - 1];
 
@@ -1421,7 +1421,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     private List<WeightedCoordinateMaxima> weightAndLimitPeaks(TreeSet<StarFinder.CoordinateMaxima> initialSet, final double t1Source) {
         final Comparator<WeightedCoordinateMaxima> x = Comparator.comparingDouble(d -> d.weight);
         final var out = initialSet.parallelStream().map(o -> calculateDistanceBrightnessFactor(t1Source, o)).sorted(x.reversed());
-        return out.limit(maxSuggestedStars - (ngot - 1)).collect(Collectors.toList());
+        return out.limit(maxSuggestedStars).collect(Collectors.toList());
     }
 
     private WeightedCoordinateMaxima calculateDistanceBrightnessFactor(double t1Source, StarFinder.CoordinateMaxima coordinateMaxima) {

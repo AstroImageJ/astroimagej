@@ -1252,10 +1252,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
                 final var t1Source = photom.sourceBrightness();
 
-                final var stats = asw.stats == null ? imp.getStatistics() : asw.stats;
-
-                var minP = autoPeakValues ? stats.mean + (3 * stats.stdDev) : minPeakValue;
-                var maxP = autoPeakValues ? asw.maxValue * 0.9 : maxPeakValue;
+                final var liveStats = asw.getLiveStatistics();
+                var minP = autoPeakValues ? liveStats.mean + (1 * liveStats.stdDev) : minPeakValue;
+                var maxP = autoPeakValues ? liveStats.max * 0.9 : maxPeakValue;
 
                 var maxima = StarFinder.findLocalMaxima(imp, minP, Double.MAX_VALUE, (int) Math.ceil(2 * radius), gaussRadius);
 
@@ -3226,7 +3225,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         final var maxStars = gd.addBoundedNumericField("Max. Comp. Stars", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), maxSuggestedStars, 1, columns, null, true, d -> maxSuggestedStars = d.intValue());
         autoPeaks.setToolTipText("<hmtl>When enabled, set peak thresholds based on image statistics.<br>Max = 0.9 * Max Pixel Value, Min = Mean Pixel Value + 1σ.</html>");
 
-        final var liveStats = asw.getLiveStatistics();//asw.stats == null ? imp.getStatistics() : asw.stats;
+        final var liveStats = asw.getLiveStatistics();
         var minP = autoPeakValues ? liveStats.mean + (1 * liveStats.stdDev) : minPeakValue;
         var maxP = autoPeakValues ? liveStats.max * 0.9 : maxPeakValue;
         if (enableLog) AIJLogger.log("Image mean = "+liveStats.mean);

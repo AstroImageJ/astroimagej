@@ -272,7 +272,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     ImageIcon MAIcon;
     int helpFrameLocationX = 10;
     int helpFrameLocationY = 10;
-    double maxPeakValue = Double.MAX_VALUE, minPeakValue = 2000, upperBrightness = 50, lowerBrightness = 50, brightness2DistanceWeight = 50;
+    double maxPeakValue = Double.MAX_VALUE, minPeakValue = 2000, upperBrightness = 150, lowerBrightness = 50, brightness2DistanceWeight = 50;
     int maxSuggestedStars = 12;
     boolean useWCS = false, suggestCompStars = true, tempSuggestCompStars = true;
     boolean useMA = true, useAlign = false;
@@ -1337,8 +1337,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
     private TreeSet<StarFinder.CoordinateMaxima> removeCloseStars(TreeSet<StarFinder.CoordinateMaxima> initialSet, double t1Source, double maxP) {
         final var radius2 = 4 * radius * radius;
-        final var high = t1Source * (1 + upperBrightness/100d);
-        final var low = t1Source * (1 - lowerBrightness/100d);
+        final var high = t1Source * (upperBrightness/100d);
+        final var low = t1Source * (lowerBrightness/100d);
         //initialSet.removeIf(cm -> cm.squaredDistanceTo(xPos[0], yPos[0]) <= (radius2));
 
         if (debugAp) {
@@ -1428,25 +1428,23 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     private WeightedCoordinateMaxima calculateDistanceBrightnessFactor(double t1Source, StarFinder.CoordinateMaxima coordinateMaxima) {
         final double imageWidth2 = imp.getWidth() * imp.getWidth();
         final double imageHeight2 = imp.getHeight() * imp.getHeight();
-        final double imageDiaogonalLength = Math.sqrt(imageHeight2 + imageWidth2);
+        final double imageDiagonalLength = Math.sqrt(imageHeight2 + imageWidth2);
 
         final var b = coordinateMaxima.value();
         final double normBrightness;
         if (b <= t1Source) {
-            normBrightness = 1 - (t1Source - b) / (t1Source * lowerBrightness / 100.0);
+            normBrightness = 1.0 - (t1Source - b) / (t1Source * (1.0 - (lowerBrightness / 100.0)));
         } else {
-            normBrightness = 1 - (b - t1Source) / (t1Source * upperBrightness / 100.0);
+            normBrightness = 1.0 - (b - t1Source) / (t1Source * ((upperBrightness / 100.0) - 1.0));
         }
-
-        final double normDistance = 1 - (distanceTo(xPos[referenceStar - 1], yPos[referenceStar - 1], coordinateMaxima.x(), coordinateMaxima.y()) / imageDiaogonalLength);
-
+        final double normDistance = 1 - (distanceTo(xPos[referenceStar - 1], yPos[referenceStar - 1], coordinateMaxima.x(), coordinateMaxima.y()) / imageDiagonalLength);
         return new WeightedCoordinateMaxima(coordinateMaxima, (brightness2DistanceWeight/100d) * normBrightness + (1 - brightness2DistanceWeight/100d) * normDistance);
     }
 
     record WeightedCoordinateMaxima(StarFinder.CoordinateMaxima cm, double weight) {}
 
     private double distanceTo(double x1, double y1, double x2, double y2) {
-        return squaredDistanceTo(x1, y1, x2, y2);
+        return Math.sqrt(squaredDistanceTo(x1, y1, x2, y2));
     }
 
     private double squaredDistanceTo(double x1, double y1, double x2, double y2) {
@@ -3201,9 +3199,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         listb.add(b -> suggestCompStars = b);
         listb.add(b -> enableLog = b);
         listb.add(b -> debugAp = b);
-        gd.addCheckboxGroup(1, 3, new String[]{"Suggest comparison stars", "Enable log", "Show peaks"}, new boolean[]{suggestCompStars, enableLog, debugAp}, listb);
+        gd.addCheckboxGroup(1, 3, new String[]{"Auto comparison stars", "Enable log", "Show peaks"}, new boolean[]{suggestCompStars, enableLog, debugAp}, listb);
 
-        final var gauss = gd.addBoundedNumericField("Gauss Filter Radius", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), gaussRadius, 1, 10, "pixels", d -> gaussRadius = d);
+        final var gauss = gd.addBoundedNumericField("Smoothing Filter Radius", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), gaussRadius, 1, 10, "pixels", d -> gaussRadius = d);
         final var autoPeaks = gd.addCheckbox("Auto Thresholds", autoPeakValues, b -> autoPeakValues = b);
         gd.addToSameRow();
         gd.setOverridePosition(true);
@@ -3216,54 +3214,60 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         final var starSelection = gd.addBoundedNumericField("Base Aperture", new GenericSwingDialog.Bounds(1, Double.MAX_VALUE), referenceStar, 1, 7, null, true, d -> referenceStar = d.intValue());
         gd.addToSameRow();
         gd.resetPositionOverride();
-        final var maxDBrightness = gd.addBoundedNumericField("Max. Delta Brightness %", new GenericSwingDialog.Bounds(1, Double.MAX_VALUE), upperBrightness, 1, columns, null, d -> upperBrightness = d);
+        if (upperBrightness < 101.0) upperBrightness = 150.0;
+        if (lowerBrightness >  99.0 || lowerBrightness < 0.0 ) lowerBrightness = 50.0;
+        final var maxDBrightness = gd.addBoundedNumericField("Max. Comp. Brightness %", new GenericSwingDialog.Bounds(101, Double.MAX_VALUE), upperBrightness, 1, columns, null, d -> upperBrightness = d);
         gd.addToSameRow();
-        final var minDBrightness = gd.addBoundedNumericField("Min. Delta Brightness %", new GenericSwingDialog.Bounds(1, 100), lowerBrightness, 1, columns, null, d -> lowerBrightness = d);
+        final var minDBrightness = gd.addBoundedNumericField("Min. Comp. Brightness %", new GenericSwingDialog.Bounds(0, 99), lowerBrightness, 1, columns, null, d -> lowerBrightness = d);
         gd.setOverridePosition(false);
 
         final var brightnessVsDistance = gd.addBoundedNumericField("Weight of brightness vs. distance:", new GenericSwingDialog.Bounds(0, 100), brightness2DistanceWeight, 1, columns, null, d -> brightness2DistanceWeight = d);
         gd.addToSameRow();
         final var maxStars = gd.addBoundedNumericField("Max. Comp. Stars", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), maxSuggestedStars, 1, columns, null, true, d -> maxSuggestedStars = d.intValue());
-        autoPeaks.setToolTipText("When enabled, pull peak values from the image histogram\nMax = 0.9 Max Pixel Value, Min = Mean Pixel Value + 3σ");
+        autoPeaks.setToolTipText("<hmtl>When enabled, set peak thresholds based on image statistics.<br>Max = 0.9 * Max Pixel Value, Min = Mean Pixel Value + 1σ.</html>");
 
-        final var stats = asw.stats == null ? imp.getStatistics() : asw.stats;
-        var minP = autoPeakValues ? stats.mean + (3 * stats.stdDev) : minPeakValue;
-        var maxP = autoPeakValues ? asw.maxValue * 0.9 : maxPeakValue;
+        final var liveStats = asw.getLiveStatistics();//asw.stats == null ? imp.getStatistics() : asw.stats;
+        var minP = autoPeakValues ? liveStats.mean + (1 * liveStats.stdDev) : minPeakValue;
+        var maxP = autoPeakValues ? liveStats.max * 0.9 : maxPeakValue;
+        if (enableLog) AIJLogger.log("Image mean = "+liveStats.mean);
+        if (enableLog) AIJLogger.log("Image stdDev = "+liveStats.stdDev);
+        if (enableLog) AIJLogger.log("Image max = "+liveStats.max);
         minPeak.c1().setEnabled(!autoPeakValues);
         maxPeak.c1().setEnabled(!autoPeakValues);
-        var formatter = new DecimalFormat("0.#####E0");
+        DecimalFormat fourPlaces = new DecimalFormat("###,##0.00", IJU.dfs);
+        DecimalFormat scientificFourPlaces = new DecimalFormat("0.####E00", IJU.dfs);
         if (autoPeakValues) {
-            GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText(formatter.format(minP)));
-            GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText(formatter.format(maxP)));
+            GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText(minP < 1000000.0 ? fourPlaces.format(minP) : scientificFourPlaces.format(minP)));
+            GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText(maxP < 1000000.0 ? fourPlaces.format(maxP) : scientificFourPlaces.format(maxP)));
         } else {
-            GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText(""+minPeakValue));
-            GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText(""+maxPeakValue));
+            GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText(minPeakValue < 1000000.0 ? fourPlaces.format(minPeakValue) : scientificFourPlaces.format(minPeakValue)));
+            GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText(maxPeakValue < 1000000.0 ? fourPlaces.format(maxPeakValue) : scientificFourPlaces.format(maxPeakValue)));
         }
         autoPeaks.addActionListener($ -> {
             minPeak.c1().setEnabled(autoPeakValues);
             maxPeak.c1().setEnabled(autoPeakValues);
             if (!autoPeakValues) {
-                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText(formatter.format(minP)));
-                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText(formatter.format(maxP)));
+                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText(minP < 1000000.0 ? fourPlaces.format(minP) : scientificFourPlaces.format(minP)));
+                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText(maxP < 1000000.0 ? fourPlaces.format(maxP) : scientificFourPlaces.format(maxP)));
             } else {
-                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText(""+minPeakValue));
-                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText(""+maxPeakValue));
+                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText(minPeakValue < 1000000.0 ? fourPlaces.format(minPeakValue) : scientificFourPlaces.format(minPeakValue)));
+                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText(maxPeakValue < 1000000.0 ? fourPlaces.format(maxPeakValue) : scientificFourPlaces.format(maxPeakValue)));
             }
         });
 
 
         starSelection.c2().setToolTipText("The aperture to base comparison star selection on.");
-        gauss.c2().setToolTipText("Radius of gaussian smoothing to use when finding initial peaks.\n Set to 1 to disable");
-        maxPeak.c2().setToolTipText("Maximum peak value to consider a star");
-        minPeak.c2().setToolTipText("Minimum peak value to consider a star");
-        maxStars.c2().setToolTipText("Maximum number of comparison stars to select, includes already selected comp. stars in its count");
-        maxDBrightness.c2().setToolTipText("Upper brightness limit of comp stars that are selected relative to the target star brightness");
-        minDBrightness.c2().setToolTipText("Lower brightness limit of comp stars that are selected relative to the target star brightness");
+        gauss.c2().setToolTipText("<html>Radius of gaussian smoothing to use when finding initial peaks.<br> Set to 1 to disable.</html>");
+        maxPeak.c2().setToolTipText("Maximum peak value to consider");
+        minPeak.c2().setToolTipText("Minimum peak value to consider");
+        maxStars.c2().setToolTipText("Maximum number of comparison stars to select. Includes already selected comp. stars in its count");
+        maxDBrightness.c2().setToolTipText("Upper brightness limit of comp stars relative to the base aperture brightness");
+        minDBrightness.c2().setToolTipText("Lower brightness limit of comp stars relative to the base aperture brightness");
         brightnessVsDistance.c2().setToolTipText("<html>Weight of brightness vs distance, used to sort stars.<br>" +
-                "Based on normalized Source-Sky brightness and distance relative to T1.<br>" +
+                "Based on normalized Source-Sky brightness and distance relative to the specified base aperture.<br>" +
                 "A value of 100 makes the weighting based entirely on the normalized brightness.<br>" +
-                "A value of 0 makes the weighting entirely based on proximity to T1.<br>" +
-                "If more stars were found than the maximum allowed, the stars with lower weights are discarded first.</html>");
+                "A value of 0 makes the weighting entirely based on proximity to the specified base aperture.<br>" +
+                "If more stars were found than the maximum requested, the stars with the highest weights are used.</html>");
 
         JSpinner maxPeakSpin = (JSpinner) maxPeak.c1();
         JSpinner minPeakSpin = (JSpinner) minPeak.c1();

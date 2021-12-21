@@ -5878,6 +5878,20 @@ void setupListeners() {
 //            lengthTextField.setText(fourPlaces.format(photom.sourceBrightness()));            
             }
 
+    public ImageStatistics getLiveStatistics()
+    {
+        Roi roi = imp.getRoi();
+        imp.killRoi();
+        if (imp.getType()==ImagePlus.COLOR_RGB)
+        {
+            ImageProcessor ip = imp.getProcessor();
+            ip.reset();
+        }
+        ImageStatistics liveStats = imp.getStatistics(ImageStatistics.MEAN+ImageStatistics.MIN_MAX+ImageStatistics.STD_DEV, BISLIDER_SEGMENTS);
+        imp.setRoi(roi);
+        return liveStats;
+    }
+
     public void getStatistics()
             {
             Roi roi = imp.getRoi();

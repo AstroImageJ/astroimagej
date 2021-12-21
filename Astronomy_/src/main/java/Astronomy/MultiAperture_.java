@@ -1355,7 +1355,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         for (StarFinder.CoordinateMaxima brighter : reversedSet) {
             for (StarFinder.CoordinateMaxima fainter : reversedSet.tailSet(brighter, false)) {
                 if (brighter != fainter) {
-                    if (brighter.value() < maxPeakValue && fainter.value() < maxPeakValue) {
+                    if (brighter.value() < maxP && fainter.value() < maxP) {
                         if (toRemove.contains(brighter)) continue;
                     }
                     if (toRemove.contains(fainter)) continue;

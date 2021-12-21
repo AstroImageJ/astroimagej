@@ -1243,7 +1243,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 debugAp = false;
             }
 
-            if (suggestCompStars && tempSuggestCompStars) {
+            if (suggestCompStars && tempSuggestCompStars && ngot >= referenceStar) {
                 xCenter = xPos[referenceStar - 1];
                 yCenter = yPos[referenceStar - 1];
 

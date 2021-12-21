@@ -18,6 +18,8 @@ import java.awt.event.*;
 import java.awt.image.ImageProducer;
 import java.io.IOException;
 import java.net.URL;
+import java.text.NumberFormat;
+import java.text.ParseException;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
@@ -558,8 +560,16 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
                 @Override
                 public Object stringToValue(String string) {
                     if (!f.isEnabled()) return bounds.min();
-                    var d = Double.parseDouble(string);
-                    return useInt ? (int) d : d;
+                    NumberFormat nF = NumberFormat.getNumberInstance();
+
+                    try {
+                        var d = nF.parse(string);
+                        return useInt ? d.intValue() : d.doubleValue();
+                    } catch (ParseException e) {
+                        e.printStackTrace();
+                    }
+
+                    return bounds.min();
                 }
 
                 @Override

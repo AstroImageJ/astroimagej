@@ -40,7 +40,7 @@ allprojects {
     repositories {
         mavenCentral()
     }
-    group 'edu.louisville.astro.software'
+    group 'com.astroimagej'
 
     tasks.withType(JavaCompile).configureEach {
         // Set language level and binary level to targetJava (binary only when building with a JDK 9+)

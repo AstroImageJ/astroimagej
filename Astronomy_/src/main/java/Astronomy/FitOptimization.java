@@ -3,9 +3,11 @@ package Astronomy;
 import Astronomy.multiplot.optimization.BicFitting;
 import Astronomy.multiplot.optimization.CompStarFitting;
 import Astronomy.multiplot.optimization.Optimizer;
+import astroj.MeasurementTable;
 import astroj.SpringUtil;
 import ij.IJ;
 import ij.astro.logging.AIJLogger;
+import ij.measure.ResultsTable;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
@@ -21,7 +23,7 @@ import java.util.concurrent.*;
 import java.util.function.BiFunction;
 import java.util.regex.Pattern;
 
-import static Astronomy.MultiPlot_.fitDetrendComboBox;
+import static Astronomy.MultiPlot_.*;
 
 public class FitOptimization implements AutoCloseable {
     private static final int MAX_THREADS = getThreadCount();
@@ -51,6 +53,8 @@ public class FitOptimization implements AutoCloseable {
     private JToggleButton optimizeButton;
     private RollingAvg rollingAvg = new RollingAvg();
     private JSpinner detrendEpsilon;
+    private int nSigmaOutlier = 5;
+    private ResultsTable backupTable;
 
     // Init. after numAps is set
     public FitOptimization(int curve, int epsilon) {
@@ -91,6 +95,24 @@ public class FitOptimization implements AutoCloseable {
     public Component makeFitOptimizationPanel() {
         JPanel fitOptimizationPanel = new JPanel(new SpringLayout());
         fitOptimizationPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(MultiPlot_.mainBorderColor, 1), "Fit Optimization", TitledBorder.LEFT, TitledBorder.TOP, MultiPlot_.b12, Color.darkGray));
+
+        var outlierRemoval = new JPanel(new SpringLayout());
+        outlierRemoval.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(MultiPlot_.subBorderColor, 1), "Outlier Removal", TitledBorder.CENTER, TitledBorder.TOP, MultiPlot_.p11, Color.darkGray));
+        var undoButton = new JButton("⟲");
+        undoButton.addActionListener($ -> undoOutlierClean());
+        undoButton.setFont(undoButton.getFont().deriveFont(15f));
+        outlierRemoval.add(undoButton);
+        var cleanButton = new JButton("Clean");
+        cleanButton.addActionListener($ -> cleanOutliers());
+        outlierRemoval.add(cleanButton);
+        var cleanLabel = new JLabel("Nσ:");
+        cleanLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        outlierRemoval.add(cleanLabel);
+        var cleanSpin = new JSpinner(new SpinnerNumberModel(nSigmaOutlier, 1, null, 1));
+        cleanSpin.addChangeListener($ -> nSigmaOutlier = (int) cleanSpin.getValue());
+        outlierRemoval.add(cleanSpin);
+        SpringUtil.makeCompactGrid(outlierRemoval, 2, outlierRemoval.getComponentCount() / 2, 0, 0, 2, 2);
+        fitOptimizationPanel.add(outlierRemoval);
 
         JPanel compStarPanel = new JPanel(new SpringLayout());
         compStarPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(MultiPlot_.subBorderColor, 1), "Comparison Star Selection", TitledBorder.CENTER, TitledBorder.TOP, MultiPlot_.p11, Color.darkGray));
@@ -211,6 +233,43 @@ public class FitOptimization implements AutoCloseable {
         SpringUtil.makeCompactGrid(fitOptimizationPanel, 1, fitOptimizationPanel.getComponentCount(), 2, 2, 2, 2);
 
         return fitOptimizationPanel;
+    }
+
+    private void cleanOutliers() {
+        int errcolumn = ResultsTable.COLUMN_NOT_FOUND;
+        if (ylabel[curve].startsWith("rel_flux_T") || ylabel[curve].startsWith("rel_flux_C")) {
+            errcolumn = table.getColumnIndex("rel_flux_err_" + ylabel[curve].substring(9));
+        } else if (ylabel[curve].startsWith("Source-Sky_")) {
+            errcolumn = table.getColumnIndex("Source_Error_" + ylabel[curve].substring(11));
+        } else if (ylabel[curve].startsWith("tot_C_cnts")) {
+            errcolumn = table.getColumnIndex("tot_C_err" + ylabel[curve].substring(10));
+        } else if (ylabel[curve].startsWith("Source_AMag_")) {
+            errcolumn = table.getColumnIndex("Source_AMag_Err_" + ylabel[curve].substring(12));
+        }
+        if (errcolumn == ResultsTable.COLUMN_NOT_FOUND) return;
+
+        var oldTable = (ResultsTable) table.clone();
+
+        var hasActionToUndo = false;
+        for (int i = 0; i < table.getColumn(ylabel[curve]).length; i++) {
+            if (residual[curve][i] < nSigmaOutlier * table.getValueAsDouble(errcolumn, i)) {
+                hasActionToUndo = true;
+                table.deleteRow(i);
+            }
+        }
+
+        if (hasActionToUndo) {
+            backupTable = oldTable;
+            MultiPlot_.updatePlot();
+        }
+    }
+
+    private void undoOutlierClean() {
+        if (backupTable != null) {
+            table = (MeasurementTable) backupTable;
+            backupTable = null;
+            MultiPlot_.updatePlot();
+        }
     }
 
     private void testCompMin() {

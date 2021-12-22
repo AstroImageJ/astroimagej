@@ -15,10 +15,7 @@ import java.awt.*;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
-import java.util.Arrays;
-import java.util.Hashtable;
-import java.util.Locale;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.BiFunction;
 import java.util.regex.Pattern;
@@ -251,14 +248,18 @@ public class FitOptimization implements AutoCloseable {
         var oldTable = (ResultsTable) table.clone();
 
         var hasActionToUndo = false;
+        var toRemove = new HashSet<Integer>();
         for (int i = 0; i < table.getColumn(ylabel[curve]).length; i++) {
             if (residual[curve][i] < nSigmaOutlier * table.getValueAsDouble(errcolumn, i)) {
                 hasActionToUndo = true;
-                table.deleteRow(i);
+                toRemove.add(i);
             }
         }
 
         if (hasActionToUndo) {
+            for (Integer i : toRemove) {
+                table.deleteRow(i);
+            }
             backupTable = oldTable;
             MultiPlot_.updatePlot();
         }

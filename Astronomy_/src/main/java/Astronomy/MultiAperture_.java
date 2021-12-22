@@ -1243,7 +1243,12 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 debugAp = false;
             }
 
-            if (suggestCompStars && tempSuggestCompStars && ngot >= referenceStar) {
+            var refCount = 0;
+            for (boolean b : isRefStar) {
+                if (b) refCount++;
+            }
+
+            if (suggestCompStars && tempSuggestCompStars && ngot >= referenceStar && refCount < maxSuggestedStars) {
                 xCenter = xPos[referenceStar - 1];
                 yCenter = yPos[referenceStar - 1];
 
@@ -1314,11 +1319,11 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 if (cancelled) return;
                 if (enableLog) AIJLogger.log("Number of maxima that met distance and brightness thresholds: " + NumberFormat.getInstance().format(m.size()));
                 if (enableLog) AIJLogger.log("Weighing peaks...");
-                Collection<WeightedCoordinateMaxima> set = weightAndLimitPeaks(m, t1Source);
+                var set = weightAndLimitPeaks(m, t1Source);
                 if (cancelled) return;
 
                 if (enableLog) AIJLogger.log("Placing suggested comp. stars...");
-                for (WeightedCoordinateMaxima coordinateMaxima : set) {
+                for (WeightedCoordinateMaxima coordinateMaxima : set.subList(0, maxSuggestedStars - refCount)) {
                     if (cancelled) return;
                     if (enableLog) AIJLogger.log(ngot + 1);
                     if (enableLog) AIJLogger.log(coordinateMaxima);//todo apertures placing in wrong coordinates for tica image, fine for others, due to wcs

@@ -237,44 +237,35 @@ public class FitOptimization implements AutoCloseable {
             IJ.error("Binsize must be set to 1 for outlier cleaning. Aborting.");
             return;
         }
-//        int errcolumn = ResultsTable.COLUMN_NOT_FOUND;
-//        if (ylabel[curve].startsWith("rel_flux_T") || ylabel[curve].startsWith("rel_flux_C")) {
-//            errcolumn = table.getColumnIndex("rel_flux_err_" + ylabel[curve].substring(9));
-//        } else if (ylabel[curve].startsWith("Source-Sky_")) {
-//            errcolumn = table.getColumnIndex("Source_Error_" + ylabel[curve].substring(11));
-//        } else if (ylabel[curve].startsWith("tot_C_cnts")) {
-//            errcolumn = table.getColumnIndex("tot_C_err" + ylabel[curve].substring(10));
-//        } else if (ylabel[curve].startsWith("Source_AMag_")) {
-//            errcolumn = table.getColumnIndex("Source_AMag_Err_" + ylabel[curve].substring(12));
-//        }
-//        if (errcolumn == ResultsTable.COLUMN_NOT_FOUND) return;
-
         var oldTable = (ResultsTable) table.clone();
 
         var hasActionToUndo = false;
         var toRemove = new HashSet<Integer>();
-        for (int i = 0; i < yerr[curve].length; i++) {
+
+        for (int i = 0; i < residual[curve].length; i++) {
             if (Math.abs(residual[curve][i]) > Math.abs(nSigmaOutlier * yerr[curve][i])) {//table.getValueAsDouble(errcolumn, i)) {
                 hasActionToUndo = true;
                 toRemove.add(i);
-                IJ.log("residual="+Math.abs(residual[curve][i])+"  (n*yerr="+Math.abs(nSigmaOutlier * yerr[curve][i]));
+                //AIJLogger.log("Datapoint removed because residual > n * yerr: "+Math.abs(residual[curve][i])+" > "+Math.abs(nSigmaOutlier * yerr[curve][i]));
             }
         }
 
         if (hasActionToUndo) {
             for (Integer i : toRemove) {
+                //AIJLogger.log("row["+i+"] removed");
                 table.deleteRow(i);
             }
             backupTable = oldTable;
-            MultiPlot_.updatePlot();//updateAllFits());
+            MultiPlot_.updatePlot( MultiPlot_.updateAllFits());
         }
+        AIJLogger.log(""+toRemove.size()+" outliers removed");
     }
 
     private void undoOutlierClean() {
         if (backupTable != null) {
             table = (MeasurementTable) backupTable;
             backupTable = null;
-            MultiPlot_.updatePlot();
+            MultiPlot_.updatePlot(MultiPlot_.updateAllFits());
         }
     }
 

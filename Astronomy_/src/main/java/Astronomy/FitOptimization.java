@@ -7,7 +7,6 @@ import astroj.MeasurementTable;
 import astroj.SpringUtil;
 import ij.IJ;
 import ij.astro.logging.AIJLogger;
-import ij.measure.ResultsTable;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
@@ -130,7 +129,8 @@ public class FitOptimization implements AutoCloseable {
         cleanLabel.setToolTipText("The number of sigma away from the model to clean.");
         outlierRemoval.add(cleanLabel);
         var cleanSpin = new JSpinner(new SpinnerNumberModel(nSigmaOutlier, 1, null, 1));
-        cleanSpin.addChangeListener($ -> nSigmaOutlier = (int) cleanSpin.getValue());
+        addMouseListener(cleanSpin);
+        cleanSpin.addChangeListener($ -> nSigmaOutlier = ((Number) cleanSpin.getValue()).intValue());
         cleanSpin.setToolTipText("The number of sigma away from the model to clean.");
         outlierRemoval.add(cleanSpin);
 
@@ -199,6 +199,7 @@ public class FitOptimization implements AutoCloseable {
         detrendOptPanel.add(pLabel);
 
         detrendParamCount = new JSpinner(new SpinnerNumberModel(2, 0, 100, 1));
+        addMouseListener(detrendParamCount);
         detrendParamCount.setToolTipText("The maximum number of detrend parameters to be enabled.");
         detrendOptPanel.add(detrendParamCount);
 
@@ -238,6 +239,7 @@ public class FitOptimization implements AutoCloseable {
         detrendOptPanel.add(eLabel);
 
         detrendEpsilon = new JSpinner(new SpinnerNumberModel(2, 0D, 100, 1));
+        addMouseListener(detrendEpsilon);
         detrendEpsilon.setToolTipText("The required change in BIC between selected states to be considered a better value.");
         detrendOptPanel.add(detrendEpsilon);
 
@@ -602,6 +604,29 @@ public class FitOptimization implements AutoCloseable {
         IJ.showStatus("!Minimization IPS: " + ips +
                 "; Estimated time remaining: " + String.format("%02d:%02d:%02d", hours, minutes, seconds));
         IJ.showProgress(1 - new BigDecimal(iterRemaining).divide(new BigDecimal(counter.basis), 3, RoundingMode.HALF_UP).doubleValue());
+    }
+
+    private void addMouseListener(JSpinner spinner) {
+        for (Component component : spinner.getComponents()) {
+            if (component instanceof JSpinner.DefaultEditor editor) {
+                editor.addMouseWheelListener(e -> {
+                    if (spinner.getModel() instanceof SpinnerNumberModel spin) {
+                        var delta = e.getPreciseWheelRotation() * spin.getStepSize().doubleValue();
+                        var newValue = -delta + ((Number) spinner.getValue()).doubleValue();
+
+                        if (newValue < ((Number) spin.getMinimum()).doubleValue()) {
+                            newValue = ((Number) spin.getMinimum()).doubleValue();
+                        } else if (spin.getMaximum() != null) {
+                            if (newValue > ((Number) spin.getMaximum()).doubleValue()) {
+                                newValue = ((Number) spin.getMaximum()).doubleValue();
+                            }
+                        }
+
+                        spinner.setValue(newValue);
+                    }
+                });
+            }
+        }
     }
 
     public interface ToolTipProvider {

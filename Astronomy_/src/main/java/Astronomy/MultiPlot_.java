@@ -17618,6 +17618,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
 
     static void savePreferences() {
+        FitOptimization.savePrefs();
         Prefs.set("plot2.tableName", tableName);
         Prefs.set("plot2.keepFileNamesOnAppend", keepFileNamesOnAppend);
         Prefs.set("plot2.templateDir", templateDir);

@@ -6,6 +6,7 @@ import Astronomy.multiplot.optimization.Optimizer;
 import astroj.MeasurementTable;
 import astroj.SpringUtil;
 import ij.IJ;
+import ij.Prefs;
 import ij.astro.logging.AIJLogger;
 
 import javax.swing.*;
@@ -49,12 +50,14 @@ public class FitOptimization implements AutoCloseable {
     private JToggleButton optimizeButton;
     private RollingAvg rollingAvg = new RollingAvg();
     private JSpinner detrendEpsilon;
-    private int nSigmaOutlier = 5;
-    private static boolean showOptLog = true;
+    private static int nSigmaOutlier = 5;
+    private static boolean showOptLog = false;
     public MeasurementTable backupTable1, backupTable2, backupTable3, backupTable4, backupTable5;
     public int nRemoved1=0, nRemoved2=0, nRemoved3=0, nRemoved4=0, nRemoved5=0, nRemoved6=0;
     public JTextField cleanNumTF = new JTextField("0");
     private static final HashSet<FitOptimization> INSTANCES = new HashSet<>();
+    protected static final String PREFS_ENABLELOG = "fitoptimization.enablelog";
+    protected static final String PREFS_NSIGMA = "fitoptimization.nsigma";
 
     // Init. after numAps is set
     public FitOptimization(int curve, int epsilon) {
@@ -62,6 +65,8 @@ public class FitOptimization implements AutoCloseable {
         EPSILON = epsilon;
         setupThreadedSpace();
         INSTANCES.add(this);
+        nSigmaOutlier = Prefs.getInt(PREFS_NSIGMA, nSigmaOutlier);
+        showOptLog = Prefs.getBoolean(PREFS_ENABLELOG, showOptLog);
     }
 
     public static void clearCleanHistory() {
@@ -131,7 +136,7 @@ public class FitOptimization implements AutoCloseable {
         logCheckBox.addActionListener($ -> showOptLog = logCheckBox.isSelected());
         logCheckBox.setToolTipText("Display a log of optimization actions.");
         outlierRemoval.add(logCheckBox);
-        var cleanLabel = new JLabel("N x σ:");
+        var cleanLabel = new JLabel("N × σ:");
         cleanLabel.setHorizontalAlignment(SwingConstants.CENTER);
         cleanLabel.setToolTipText("The number of sigma away from the model to clean.");
         outlierRemoval.add(cleanLabel);
@@ -575,6 +580,12 @@ public class FitOptimization implements AutoCloseable {
         pool.shutdown();
         ipsExecutorService.shutdown();
         INSTANCES.remove(this);
+        savePrefs();
+    }
+
+    public static void savePrefs() {
+        Prefs.set(PREFS_NSIGMA, nSigmaOutlier);
+        Prefs.set(PREFS_ENABLELOG, showOptLog);
     }
 
     public int getCurve() {

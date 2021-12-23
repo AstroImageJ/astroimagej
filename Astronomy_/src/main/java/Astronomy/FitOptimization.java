@@ -290,7 +290,7 @@ public class FitOptimization implements AutoCloseable {
         for (int i = 0; i < residual[curve].length; i++) {
             if (Math.abs(residual[curve][i]) > Math.abs(nSigmaOutlier * yerr[curve][i])) {//table.getValueAsDouble(errcolumn, i)) {
                 hasActionToUndo = true;
-                toRemove.add(i);
+                toRemove.add(excludedHeadSamples + i);
                 //if (showOptLog) AIJLogger.log("Datapoint removed because residual > n * yerr: "+Math.abs(residual[curve][i])+" > "+Math.abs(nSigmaOutlier * yerr[curve][i]));
             }
         }

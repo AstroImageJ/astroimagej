@@ -51,7 +51,10 @@ public class FitOptimization implements AutoCloseable {
     private RollingAvg rollingAvg = new RollingAvg();
     private JSpinner detrendEpsilon;
     private int nSigmaOutlier = 5;
-    private ResultsTable backupTable;
+    private static boolean showOptLog = true;
+    public MeasurementTable backupTable1, backupTable2, backupTable3, backupTable4, backupTable5;
+    public int nRemoved1=0, nRemoved2=0, nRemoved3=0, nRemoved4=0, nRemoved5=0, nRemoved6=0;
+    public JTextField cleanNumTF = new JTextField("0");
 
     // Init. after numAps is set
     public FitOptimization(int curve, int epsilon) {
@@ -60,11 +63,26 @@ public class FitOptimization implements AutoCloseable {
         setupThreadedSpace();
     }
 
+    public void clearCleanHistory(){
+        backupTable1 = null;
+        backupTable2 = null;
+        backupTable3 = null;
+        backupTable4 = null;
+        backupTable5 = null;
+        nRemoved1 = 0;
+        nRemoved2 = 0;
+        nRemoved3 = 0;
+        nRemoved4 = 0;
+        nRemoved5 = 0;
+        nRemoved6 = 0;
+        cleanNumTF.setText("0");
+    }
+
     private static void setFinalState(String minimizationTarget, boolean[] state, JCheckBox[] selectables) {
         for (int r = 0; r < state.length; r++) {
             selectables[r].setSelected(state[r]);
         }
-        AIJLogger.log("Found minimum " + minimizationTarget + " state, reference stars set.");
+        if (showOptLog) AIJLogger.log("Found minimum " + minimizationTarget + " state, reference stars set.");
         IJ.beep();
     }
 
@@ -98,16 +116,29 @@ public class FitOptimization implements AutoCloseable {
         var undoButton = new JButton("⟲");
         undoButton.addActionListener($ -> undoOutlierClean());
         undoButton.setFont(undoButton.getFont().deriveFont(15f));
+        undoButton.setToolTipText("<html>Undo clean<br>(up to 5 levels)</html>");
         outlierRemoval.add(undoButton);
         var cleanButton = new JButton("Clean");
         cleanButton.addActionListener($ -> cleanOutliers());
         outlierRemoval.add(cleanButton);
-        var cleanLabel = new JLabel("Nσ:");
+        var logCheckBox = new JCheckBox("Log", showOptLog);
+        logCheckBox.addActionListener($ -> showOptLog = logCheckBox.isSelected());
+        logCheckBox.setToolTipText("Display a log of optimization actions.");
+        outlierRemoval.add(logCheckBox);
+        var cleanLabel = new JLabel("N x σ:");
         cleanLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        cleanLabel.setToolTipText("The number of sigma away from the model to clean.");
         outlierRemoval.add(cleanLabel);
         var cleanSpin = new JSpinner(new SpinnerNumberModel(nSigmaOutlier, 1, null, 1));
         cleanSpin.addChangeListener($ -> nSigmaOutlier = (int) cleanSpin.getValue());
+        cleanSpin.setToolTipText("The number of sigma away from the model to clean.");
         outlierRemoval.add(cleanSpin);
+
+        cleanNumTF.setEditable(false);
+        cleanNumTF.setMaximumSize(new Dimension(50, 10));
+        cleanNumTF.setHorizontalAlignment(SwingConstants.RIGHT);
+        cleanNumTF.setToolTipText("Number of data points removed.");
+        outlierRemoval.add(cleanNumTF);
         SpringUtil.makeCompactGrid(outlierRemoval, 2, outlierRemoval.getComponentCount() / 2, 0, 0, 2, 2);
         fitOptimizationPanel.add(outlierRemoval);
 
@@ -237,7 +268,7 @@ public class FitOptimization implements AutoCloseable {
             IJ.error("Binsize must be set to 1 for outlier cleaning. Aborting.");
             return;
         }
-        var oldTable = (ResultsTable) table.clone();
+        var oldTable = (MeasurementTable) table.clone();
 
         var hasActionToUndo = false;
         var toRemove = new HashSet<Integer>();
@@ -246,27 +277,53 @@ public class FitOptimization implements AutoCloseable {
             if (Math.abs(residual[curve][i]) > Math.abs(nSigmaOutlier * yerr[curve][i])) {//table.getValueAsDouble(errcolumn, i)) {
                 hasActionToUndo = true;
                 toRemove.add(i);
-                //AIJLogger.log("Datapoint removed because residual > n * yerr: "+Math.abs(residual[curve][i])+" > "+Math.abs(nSigmaOutlier * yerr[curve][i]));
+                //if (showOptLog) AIJLogger.log("Datapoint removed because residual > n * yerr: "+Math.abs(residual[curve][i])+" > "+Math.abs(nSigmaOutlier * yerr[curve][i]));
             }
         }
 
         if (hasActionToUndo) {
             for (Integer i : toRemove) {
-                //AIJLogger.log("row["+i+"] removed");
+                //if (showOptLog) AIJLogger.log("row["+i+"] removed");
                 table.deleteRow(i);
             }
-            backupTable = oldTable;
+            nRemoved6 = nRemoved5;
+            nRemoved5 = nRemoved4;
+            nRemoved4 = nRemoved3;
+            nRemoved3 = nRemoved2;
+            nRemoved2 = nRemoved1;
+            nRemoved1 = toRemove.size();
+            backupTable5 = backupTable4;
+            backupTable4 = backupTable3;
+            backupTable3 = backupTable2;
+            backupTable2 = backupTable1;
+            backupTable1 = oldTable;
             MultiPlot_.updatePlot( MultiPlot_.updateAllFits());
         }
-        AIJLogger.log(""+toRemove.size()+" outliers removed");
+
+        cleanNumTF.setText(""+(nRemoved1+nRemoved2+nRemoved3+nRemoved4+nRemoved5+nRemoved6));
+        if (showOptLog) AIJLogger.log(""+toRemove.size()+" new outliers removed");
     }
 
     private void undoOutlierClean() {
-        if (backupTable != null) {
-            table = (MeasurementTable) backupTable;
-            backupTable = null;
+        if (backupTable1 != null) {
+            table = (MeasurementTable) backupTable1;
+            backupTable1 = backupTable2;
+            backupTable2 = backupTable3;
+            backupTable3 = backupTable4;
+            backupTable4 = backupTable5;
+            backupTable5 = null;
+            cleanNumTF.setText(""+(nRemoved2+nRemoved3+nRemoved4+nRemoved5+nRemoved6));
+            nRemoved1 = nRemoved2;
+            nRemoved2 = nRemoved3;
+            nRemoved3 = nRemoved4;
+            nRemoved4 = nRemoved5;
+            nRemoved5 = nRemoved6;
+            nRemoved6 = 0;
             MultiPlot_.updatePlot(MultiPlot_.updateAllFits());
+        } else {
+            IJ.beep();
         }
+
     }
 
     private void testCompMin() {
@@ -277,7 +334,7 @@ public class FitOptimization implements AutoCloseable {
         if (MultiPlot_.isRefStar != null) {
             setSelectable(MultiPlot_.isRefStar);
         } else {
-            AIJLogger.log("Open ref. star panel");
+            if (showOptLog) AIJLogger.log("Open ref. star panel");
             return;
         }
 
@@ -285,7 +342,7 @@ public class FitOptimization implements AutoCloseable {
 
         BigInteger initState = createBinaryRepresentation(selectable);
         var x = CurveFitter.getInstance(curve, targetStar).fitCurveAndGetResults(setArrayToState(initState));
-        AIJLogger.log(x);
+        if (showOptLog) AIJLogger.log(x);
         finishOptimization(optimizeButton);
     }
 
@@ -297,7 +354,7 @@ public class FitOptimization implements AutoCloseable {
         if (MultiPlot_.isRefStar != null) {
             setSelectable(MultiPlot_.isRefStar);
         } else {
-            AIJLogger.log("Open ref. star panel.");
+            if (showOptLog) AIJLogger.log("Open ref. star panel.");
             return;
         }
 
@@ -327,7 +384,7 @@ public class FitOptimization implements AutoCloseable {
         setTargetStar();
 
         var x = CurveFitter.getInstance(curve, targetStar).fitCurveAndGetResults(MultiPlot_.detrendIndex[curve]);
-        AIJLogger.log(x);
+        if (showOptLog) AIJLogger.log(x);
         finishOptimization(optimizeButton);
         EPSILON = 0;
     }
@@ -428,9 +485,9 @@ public class FitOptimization implements AutoCloseable {
             try {
                 msf = completionService.take();
                 var determinedState = msf.get();
-                AIJLogger.log("New chunk minimum found:");
-                AIJLogger.log(determinedState.comparator);
-                AIJLogger.log(setArrayToState(determinedState.state));
+                if (showOptLog) AIJLogger.log("New chunk minimum found:");
+                if (showOptLog) AIJLogger.log(determinedState.comparator);
+                if (showOptLog) AIJLogger.log(setArrayToState(determinedState.state));
                 if (determinedState.lessThan(minimumState)) minimumState = determinedState;
                 count--;
             } catch (InterruptedException | ExecutionException e) {
@@ -441,10 +498,10 @@ public class FitOptimization implements AutoCloseable {
 
         if (hasErrored) IJ.error("Error occurred during minimization, preceding with lowest RMS found.");
 
-        AIJLogger.log("Found global minimum:");
-        AIJLogger.log(minimumState.comparator);
-        AIJLogger.log(setArrayToState(minimumState.state));
-        if (minimumState.outState != null) AIJLogger.log(minimumState.outState);
+        if (showOptLog) AIJLogger.log("Found global minimum:");
+        if (showOptLog) AIJLogger.log(minimumState.comparator);
+        if (showOptLog) AIJLogger.log(setArrayToState(minimumState.state));
+        if (showOptLog && minimumState.outState != null) AIJLogger.log(minimumState.outState);
 
         return new OutPair(setArrayToState(minimumState.state), minimumState.outState);
     }
@@ -456,7 +513,7 @@ public class FitOptimization implements AutoCloseable {
             }
             MultiPlot_.useFitDetrendCB[curve][i].setSelected(state[i] != 0);
         }
-        AIJLogger.log("Found minimum BIC" + " state, the state has been set.");
+        if (showOptLog) AIJLogger.log("Found minimum BIC" + " state, the state has been set.");
         IJ.beep();
     }
 

@@ -54,15 +54,22 @@ public class FitOptimization implements AutoCloseable {
     public MeasurementTable backupTable1, backupTable2, backupTable3, backupTable4, backupTable5;
     public int nRemoved1=0, nRemoved2=0, nRemoved3=0, nRemoved4=0, nRemoved5=0, nRemoved6=0;
     public JTextField cleanNumTF = new JTextField("0");
+    private static final HashSet<FitOptimization> INSTANCES = new HashSet<>();
 
     // Init. after numAps is set
     public FitOptimization(int curve, int epsilon) {
         this.curve = curve;
         EPSILON = epsilon;
         setupThreadedSpace();
+        INSTANCES.add(this);
     }
 
-    public void clearCleanHistory(){
+    public static void clearCleanHistory() {
+        INSTANCES.removeIf(Objects::isNull);
+        INSTANCES.forEach(FitOptimization::clearHistory);
+    }
+
+    public void clearHistory(){
         backupTable1 = null;
         backupTable2 = null;
         backupTable3 = null;
@@ -567,6 +574,7 @@ public class FitOptimization implements AutoCloseable {
     public void close() throws Exception {
         pool.shutdown();
         ipsExecutorService.shutdown();
+        INSTANCES.remove(this);
     }
 
     public int getCurve() {

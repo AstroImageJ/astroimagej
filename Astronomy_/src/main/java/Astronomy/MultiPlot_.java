@@ -17,7 +17,6 @@ import ij.process.ImageProcessor;
 import ij.text.TextPanel;
 import ij.util.Tools;
 import util.UIHelper;
-import Astronomy.FitOptimization;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -958,7 +957,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
     static public void setTable(MeasurementTable inTable, boolean forceUpdate, boolean useAutoAstroDataUpdate) {
         table = inTable;
-        //FitOptimization.clearCleanHistory();
+        FitOptimization.clearCleanHistory();
         if (table == null) {
             makeDummyTable();
         } else {
@@ -1014,7 +1013,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static public void makeDummyTable() {
         tableName = "No Table Selected";
         table = null; //MeasurementTable.getTable(tableName);
-        //FitOptimization.clearCleanHistory();
+        FitOptimization.clearCleanHistory();
         dataSectionBorder.setTitle("Data (" + MeasurementTable.shorterName(tableName) + ")");
         unfilteredColumns = new String[1];
         unfilteredColumns[0] = "";
@@ -1174,7 +1173,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static public void clearPlot() {
         checkAndLockTable();
         table = new MeasurementTable(tableName);
-        //FitOptimization.clearCleanHistory();
+        FitOptimization.clearCleanHistory();
         table.setLock(false);
 //        table.show();
         if (plot != null) {

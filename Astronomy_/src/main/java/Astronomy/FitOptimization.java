@@ -233,26 +233,31 @@ public class FitOptimization implements AutoCloseable {
     }
 
     private void cleanOutliers() {
-        int errcolumn = ResultsTable.COLUMN_NOT_FOUND;
-        if (ylabel[curve].startsWith("rel_flux_T") || ylabel[curve].startsWith("rel_flux_C")) {
-            errcolumn = table.getColumnIndex("rel_flux_err_" + ylabel[curve].substring(9));
-        } else if (ylabel[curve].startsWith("Source-Sky_")) {
-            errcolumn = table.getColumnIndex("Source_Error_" + ylabel[curve].substring(11));
-        } else if (ylabel[curve].startsWith("tot_C_cnts")) {
-            errcolumn = table.getColumnIndex("tot_C_err" + ylabel[curve].substring(10));
-        } else if (ylabel[curve].startsWith("Source_AMag_")) {
-            errcolumn = table.getColumnIndex("Source_AMag_Err_" + ylabel[curve].substring(12));
+        if (binSize[curve] > 1) {
+            IJ.error("Binsize must be set to 1 for outlier cleaning. Aborting.");
+            return;
         }
-        if (errcolumn == ResultsTable.COLUMN_NOT_FOUND) return;
+//        int errcolumn = ResultsTable.COLUMN_NOT_FOUND;
+//        if (ylabel[curve].startsWith("rel_flux_T") || ylabel[curve].startsWith("rel_flux_C")) {
+//            errcolumn = table.getColumnIndex("rel_flux_err_" + ylabel[curve].substring(9));
+//        } else if (ylabel[curve].startsWith("Source-Sky_")) {
+//            errcolumn = table.getColumnIndex("Source_Error_" + ylabel[curve].substring(11));
+//        } else if (ylabel[curve].startsWith("tot_C_cnts")) {
+//            errcolumn = table.getColumnIndex("tot_C_err" + ylabel[curve].substring(10));
+//        } else if (ylabel[curve].startsWith("Source_AMag_")) {
+//            errcolumn = table.getColumnIndex("Source_AMag_Err_" + ylabel[curve].substring(12));
+//        }
+//        if (errcolumn == ResultsTable.COLUMN_NOT_FOUND) return;
 
         var oldTable = (ResultsTable) table.clone();
 
         var hasActionToUndo = false;
         var toRemove = new HashSet<Integer>();
-        for (int i = 0; i < table.getColumn(ylabel[curve]).length; i++) {
-            if (residual[curve][i] < nSigmaOutlier * table.getValueAsDouble(errcolumn, i)) {
+        for (int i = 0; i < yerr[curve].length; i++) {
+            if (Math.abs(residual[curve][i]) > Math.abs(nSigmaOutlier * yerr[curve][i])) {//table.getValueAsDouble(errcolumn, i)) {
                 hasActionToUndo = true;
                 toRemove.add(i);
+                IJ.log("residual="+Math.abs(residual[curve][i])+"  (n*yerr="+Math.abs(nSigmaOutlier * yerr[curve][i]));
             }
         }
 
@@ -261,7 +266,7 @@ public class FitOptimization implements AutoCloseable {
                 table.deleteRow(i);
             }
             backupTable = oldTable;
-            MultiPlot_.updatePlot();
+            MultiPlot_.updatePlot();//updateAllFits());
         }
     }
 

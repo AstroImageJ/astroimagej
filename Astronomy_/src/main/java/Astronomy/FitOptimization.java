@@ -38,6 +38,8 @@ public class FitOptimization implements AutoCloseable {
     private ScheduledExecutorService ipsExecutorService;
     private BigInteger iterRemainingOld = BigInteger.ZERO;
     private int targetStar;
+    private static int maxDetrend = 1;
+    private static double bict = 2;
     /**
      * The index of this array is the selected option,
      * the value of the array is the option index in the relevant {@link MultiPlot_} array.
@@ -58,6 +60,8 @@ public class FitOptimization implements AutoCloseable {
     private static final HashSet<FitOptimization> INSTANCES = new HashSet<>();
     protected static final String PREFS_ENABLELOG = "fitoptimization.enablelog";
     protected static final String PREFS_NSIGMA = "fitoptimization.nsigma";
+    protected static final String PREFS_MAX_DETREND = "fitoptimization.maxdetrend";
+    protected static final String PREFS_BIC_THRESHOLD = "fitoptimization.bict";
 
     // Init. after numAps is set
     public FitOptimization(int curve, int epsilon) {
@@ -67,6 +71,8 @@ public class FitOptimization implements AutoCloseable {
         INSTANCES.add(this);
         nSigmaOutlier = Prefs.getInt(PREFS_NSIGMA, nSigmaOutlier);
         showOptLog = Prefs.getBoolean(PREFS_ENABLELOG, showOptLog);
+        bict = Prefs.getDouble(PREFS_BIC_THRESHOLD, bict);
+        maxDetrend = Prefs.getInt(PREFS_MAX_DETREND, maxDetrend);
     }
 
     public static void clearCleanHistory() {
@@ -210,7 +216,7 @@ public class FitOptimization implements AutoCloseable {
         pLabel.setToolTipText("The maximum number of detrend parameters to be enabled.");
         detrendOptPanel.add(pLabel);
 
-        detrendParamCount = new JSpinner(new SpinnerNumberModel(2, 0, 100, 1));
+        detrendParamCount = new JSpinner(new SpinnerNumberModel(bict, 0, 100, 1));
         addMouseListener(detrendParamCount);
         detrendParamCount.setToolTipText("The maximum number of detrend parameters to be enabled.");
         detrendOptPanel.add(detrendParamCount);
@@ -250,7 +256,7 @@ public class FitOptimization implements AutoCloseable {
         eLabel.setToolTipText("The required change in BIC between selected states to be considered a better value.");
         detrendOptPanel.add(eLabel);
 
-        detrendEpsilon = new JSpinner(new SpinnerNumberModel(2, 0D, 100, 1));
+        detrendEpsilon = new JSpinner(new SpinnerNumberModel(maxDetrend, 0D, 100, 1));
         addMouseListener(detrendEpsilon);
         detrendEpsilon.setToolTipText("The required change in BIC between selected states to be considered a better value.");
         detrendOptPanel.add(detrendEpsilon);
@@ -586,6 +592,8 @@ public class FitOptimization implements AutoCloseable {
     public static void savePrefs() {
         Prefs.set(PREFS_NSIGMA, nSigmaOutlier);
         Prefs.set(PREFS_ENABLELOG, showOptLog);
+        Prefs.set(PREFS_MAX_DETREND, maxDetrend);
+        Prefs.set(PREFS_BIC_THRESHOLD, bict);
     }
 
     public int getCurve() {

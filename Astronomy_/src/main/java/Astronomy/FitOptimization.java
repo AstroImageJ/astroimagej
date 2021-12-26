@@ -216,7 +216,7 @@ public class FitOptimization implements AutoCloseable {
         pLabel.setToolTipText("The maximum number of detrend parameters to be enabled.");
         detrendOptPanel.add(pLabel);
 
-        detrendParamCount = new JSpinner(new SpinnerNumberModel(bict, 0, 100, 1));
+        detrendParamCount = new JSpinner(new SpinnerNumberModel(maxDetrend, 0, 100, 1));
         addMouseListener(detrendParamCount);
         detrendParamCount.setToolTipText("The maximum number of detrend parameters to be enabled.");
         detrendOptPanel.add(detrendParamCount);
@@ -256,7 +256,7 @@ public class FitOptimization implements AutoCloseable {
         eLabel.setToolTipText("The required change in BIC between selected states to be considered a better value.");
         detrendOptPanel.add(eLabel);
 
-        detrendEpsilon = new JSpinner(new SpinnerNumberModel(maxDetrend, 0D, 100, 1));
+        detrendEpsilon = new JSpinner(new SpinnerNumberModel(bict, 0D, 100, 1));
         addMouseListener(detrendEpsilon);
         detrendEpsilon.setToolTipText("The required change in BIC between selected states to be considered a better value.");
         detrendOptPanel.add(detrendEpsilon);

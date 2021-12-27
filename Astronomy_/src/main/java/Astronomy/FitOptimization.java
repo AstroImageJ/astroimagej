@@ -300,6 +300,7 @@ public class FitOptimization implements AutoCloseable {
             }
             cleanNumTF.setText("-" + toRemove.size());
             undoBuffer.addFirst(oldTable);
+            if (undoBuffer.size() > 10) undoBuffer.removeLast();
             MultiPlot_.updatePlot( MultiPlot_.updateAllFits());
         } else {
             IJ.beep();

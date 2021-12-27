@@ -52,10 +52,9 @@ public class FitOptimization implements AutoCloseable {
     private JToggleButton optimizeButton;
     private RollingAvg rollingAvg = new RollingAvg();
     private JSpinner detrendEpsilon;
-    private static int nSigmaOutlier = 5;
+    private static double nSigmaOutlier = 5;
     private static boolean showOptLog = false;
-    public MeasurementTable backupTable1, backupTable2, backupTable3, backupTable4, backupTable5;
-    public int nRemoved1=0, nRemoved2=0, nRemoved3=0, nRemoved4=0, nRemoved5=0, nRemoved6=0;
+    public static LinkedList<MeasurementTable> undoBuffer = new LinkedList<>();
     public JTextField cleanNumTF = new JTextField("0");
     private static final HashSet<FitOptimization> INSTANCES = new HashSet<>();
     protected static final String PREFS_ENABLELOG = "fitoptimization.enablelog";
@@ -69,10 +68,11 @@ public class FitOptimization implements AutoCloseable {
         EPSILON = epsilon;
         setupThreadedSpace();
         INSTANCES.add(this);
-        nSigmaOutlier = Prefs.getInt(PREFS_NSIGMA, nSigmaOutlier);
-        showOptLog = Prefs.getBoolean(PREFS_ENABLELOG, showOptLog);
-        bict = Prefs.getDouble(PREFS_BIC_THRESHOLD, bict);
-        maxDetrend = Prefs.getInt(PREFS_MAX_DETREND, maxDetrend);
+        nSigmaOutlier = Prefs.get(PREFS_NSIGMA, nSigmaOutlier);
+        showOptLog = Prefs.get(PREFS_ENABLELOG, showOptLog);
+        bict = Prefs.get(PREFS_BIC_THRESHOLD, bict);
+        maxDetrend = (int) Prefs.get(PREFS_MAX_DETREND, maxDetrend);
+        AIJLogger.multiLog(nSigmaOutlier, bict, maxDetrend);
     }
 
     public static void clearCleanHistory() {
@@ -81,17 +81,7 @@ public class FitOptimization implements AutoCloseable {
     }
 
     public void clearHistory(){
-        backupTable1 = null;
-        backupTable2 = null;
-        backupTable3 = null;
-        backupTable4 = null;
-        backupTable5 = null;
-        nRemoved1 = 0;
-        nRemoved2 = 0;
-        nRemoved3 = 0;
-        nRemoved4 = 0;
-        nRemoved5 = 0;
-        nRemoved6 = 0;
+        undoBuffer.clear();
         cleanNumTF.setText("0");
     }
 
@@ -146,16 +136,16 @@ public class FitOptimization implements AutoCloseable {
         cleanLabel.setHorizontalAlignment(SwingConstants.CENTER);
         cleanLabel.setToolTipText("The number of sigma away from the model to clean.");
         outlierRemoval.add(cleanLabel);
-        var cleanSpin = new JSpinner(new SpinnerNumberModel(nSigmaOutlier, 1, null, 1));
+        var cleanSpin = new JSpinner(new SpinnerNumberModel(nSigmaOutlier, 1d, null, 1d));
         addMouseListener(cleanSpin);
-        cleanSpin.addChangeListener($ -> nSigmaOutlier = ((Number) cleanSpin.getValue()).intValue());
+        cleanSpin.addChangeListener($ -> nSigmaOutlier = ((Number) cleanSpin.getValue()).doubleValue());
         cleanSpin.setToolTipText("The number of sigma away from the model to clean.");
         outlierRemoval.add(cleanSpin);
 
         cleanNumTF.setEditable(false);
         cleanNumTF.setMaximumSize(new Dimension(50, 10));
         cleanNumTF.setHorizontalAlignment(SwingConstants.RIGHT);
-        cleanNumTF.setToolTipText("Number of data points removed.");
+        cleanNumTF.setToolTipText("Number of data removed (-) or restored (+).");
         outlierRemoval.add(cleanNumTF);
         SpringUtil.makeCompactGrid(outlierRemoval, 2, outlierRemoval.getComponentCount() / 2, 0, 0, 2, 2);
         fitOptimizationPanel.add(outlierRemoval);
@@ -217,6 +207,7 @@ public class FitOptimization implements AutoCloseable {
         detrendOptPanel.add(pLabel);
 
         detrendParamCount = new JSpinner(new SpinnerNumberModel(maxDetrend, 0, 100, 1));
+        detrendParamCount.addChangeListener($ -> maxDetrend = ((Number) detrendParamCount.getValue()).intValue());
         addMouseListener(detrendParamCount);
         detrendParamCount.setToolTipText("The maximum number of detrend parameters to be enabled.");
         detrendOptPanel.add(detrendParamCount);
@@ -258,6 +249,7 @@ public class FitOptimization implements AutoCloseable {
 
         detrendEpsilon = new JSpinner(new SpinnerNumberModel(bict, 0D, 100, 1));
         addMouseListener(detrendEpsilon);
+        detrendEpsilon.addChangeListener($ -> bict = ((Number) detrendEpsilon.getValue()).doubleValue());
         detrendEpsilon.setToolTipText("The required change in BIC between selected states to be considered a better value.");
         detrendOptPanel.add(detrendEpsilon);
 
@@ -306,39 +298,22 @@ public class FitOptimization implements AutoCloseable {
                 //if (showOptLog) AIJLogger.log("row["+i+"] removed");
                 table.deleteRow(i);
             }
-            nRemoved6 = nRemoved5;
-            nRemoved5 = nRemoved4;
-            nRemoved4 = nRemoved3;
-            nRemoved3 = nRemoved2;
-            nRemoved2 = nRemoved1;
-            nRemoved1 = toRemove.size();
-            backupTable5 = backupTable4;
-            backupTable4 = backupTable3;
-            backupTable3 = backupTable2;
-            backupTable2 = backupTable1;
-            backupTable1 = oldTable;
+            cleanNumTF.setText("-" + toRemove.size());
+            undoBuffer.addFirst(oldTable);
             MultiPlot_.updatePlot( MultiPlot_.updateAllFits());
+        } else {
+            IJ.beep();
+            cleanNumTF.setText("0");
         }
 
-        cleanNumTF.setText(""+(nRemoved1+nRemoved2+nRemoved3+nRemoved4+nRemoved5+nRemoved6));
         if (showOptLog) AIJLogger.log(""+toRemove.size()+" new outliers removed");
     }
 
     private void undoOutlierClean() {
-        if (backupTable1 != null) {
-            table = (MeasurementTable) backupTable1;
-            backupTable1 = backupTable2;
-            backupTable2 = backupTable3;
-            backupTable3 = backupTable4;
-            backupTable4 = backupTable5;
-            backupTable5 = null;
-            cleanNumTF.setText(""+(nRemoved2+nRemoved3+nRemoved4+nRemoved5+nRemoved6));
-            nRemoved1 = nRemoved2;
-            nRemoved2 = nRemoved3;
-            nRemoved3 = nRemoved4;
-            nRemoved4 = nRemoved5;
-            nRemoved5 = nRemoved6;
-            nRemoved6 = 0;
+        if (!undoBuffer.isEmpty()) {
+            var rs = table.size();
+            table = undoBuffer.pop();
+            cleanNumTF.setText("+"+(table.size() - rs));
             MultiPlot_.updatePlot(MultiPlot_.updateAllFits());
         } else {
             IJ.beep();
@@ -594,6 +569,7 @@ public class FitOptimization implements AutoCloseable {
         Prefs.set(PREFS_ENABLELOG, showOptLog);
         Prefs.set(PREFS_MAX_DETREND, maxDetrend);
         Prefs.set(PREFS_BIC_THRESHOLD, bict);
+        AIJLogger.multiLog("closing", nSigmaOutlier, bict, maxDetrend);
     }
 
     public int getCurve() {

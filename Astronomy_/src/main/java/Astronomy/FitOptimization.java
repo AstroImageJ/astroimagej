@@ -300,7 +300,7 @@ public class FitOptimization implements AutoCloseable {
         var oldTable = (MeasurementTable) table.clone();
 
         var hasActionToUndo = false;
-        var toRemove = new HashSet<Integer>();
+        var toRemove = new TreeSet<Integer>();
 
         for (int i = 0; i < residual[curve].length; i++) {
             if (Math.abs(residual[curve][i]) > Math.abs(nSigmaOutlier * yerr[curve][i])) {//table.getValueAsDouble(errcolumn, i)) {
@@ -311,7 +311,7 @@ public class FitOptimization implements AutoCloseable {
         }
 
         if (hasActionToUndo) {
-            for (Integer i : toRemove) {
+            for (Integer i : toRemove.descendingSet()) {
                 //if (showOptLog) AIJLogger.log("row["+i+"] removed");
                 table.deleteRow(i);
             }

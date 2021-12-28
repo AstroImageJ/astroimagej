@@ -276,9 +276,24 @@ public class FitOptimization implements AutoCloseable {
     }
 
     private void cleanOutliers() {
-        if (binSize[curve] > 1) {
-            IJ.error("Binsize must be set to 1 for outlier cleaning. Aborting.");
-            return;
+        int holdBinSize = 1;
+        boolean holdUseDMarker1 = false;
+        if (binSize[curve] > 1 || useDMarker1) {
+            holdBinSize = binSize[curve];
+            holdUseDMarker1 = useDMarker1;
+            binSize[curve] = 1;
+            useDMarker1 = false;
+            updatePlot(updateOneFit(curve));
+            for(int i = 0; i < 30; i++) {
+                IJ.wait(100);
+                if (!updatePlotRunning) {
+                    break;
+                }
+                if (i == 29){
+                    IJ.error("Unsuccessfully attempted to disable left trim and/or set Binsize = 1 for outlier cleaning. Aborting.");
+                    return;
+                    }
+                }
         }
         var oldTable = (MeasurementTable) table.clone();
 
@@ -308,6 +323,19 @@ public class FitOptimization implements AutoCloseable {
         }
 
         if (showOptLog) AIJLogger.log(""+toRemove.size()+" new outliers removed");
+
+        if (holdBinSize > 1 || holdUseDMarker1) {
+            binSize[curve] = holdBinSize;
+            useDMarker1 = holdUseDMarker1;
+            MultiPlot_.updatePlot(MultiPlot_.updateOneFit(curve));
+            for(int i = 0; i < 300; i++) {
+                IJ.wait(10);
+                if (!updatePlotRunning) break;
+                if (i == 299){
+                    IJ.error("Unsuccessfully attempted to replot after re-enabling left trim and/or set Binsize = 1 after outlier cleaning.");
+                }
+            }
+        }
     }
 
     private void undoOutlierClean() {

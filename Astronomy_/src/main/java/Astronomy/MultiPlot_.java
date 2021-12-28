@@ -2585,7 +2585,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         }
                     }
                 } else {
-                    detrendpanelgroup[curve].setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+                    if(detrendpanelgroup[curve] != null) detrendpanelgroup[curve].setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
                 }
 
                 if (detrendFitIndex[curve] == 9 && useTransitFit[curve] && yModel1[curve] != null) {
@@ -4685,7 +4685,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             Prefs.set("plot2.JDColumn", JDColumn);
 
             saveAstroPanelPrefs();
-
+            checkAndLockTable();
             int tableLength = table.getCounter();
             for (int i = 0; i < tableLength; i++) {
                 if (updateMPCC(i)) {

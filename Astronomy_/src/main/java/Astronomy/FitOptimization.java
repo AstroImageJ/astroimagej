@@ -278,11 +278,14 @@ public class FitOptimization implements AutoCloseable {
     private void cleanOutliers() {
         int holdBinSize = 1;
         boolean holdUseDMarker1 = false;
+        boolean holdUseDMarker4 = false;
         if (binSize[curve] > 1 || useDMarker1) {
             holdBinSize = binSize[curve];
             holdUseDMarker1 = useDMarker1;
+            holdUseDMarker4 = useDMarker4;
             binSize[curve] = 1;
             useDMarker1 = false;
+            useDMarker4 = false;
             updatePlot(updateOneFit(curve));
             for(int i = 0; i < 30; i++) {
                 IJ.wait(100);
@@ -327,6 +330,7 @@ public class FitOptimization implements AutoCloseable {
         if (holdBinSize > 1 || holdUseDMarker1) {
             binSize[curve] = holdBinSize;
             useDMarker1 = holdUseDMarker1;
+            useDMarker4 = holdUseDMarker4;
             MultiPlot_.updatePlot(MultiPlot_.updateOneFit(curve));
             for(int i = 0; i < 300; i++) {
                 IJ.wait(10);

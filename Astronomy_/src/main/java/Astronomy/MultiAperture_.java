@@ -287,6 +287,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     private boolean autoRadius = true, t1Placed = false;
     private Seeing_Profile.ApRadii oldRadii;
     private int referenceStar = 1;
+    private boolean suggestionRunning;
 
 //	public static double RETRY_RADIUS = 3.0;
 
@@ -1048,6 +1049,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     }
 
     void processSingleClick(MouseEvent e) {
+        if (suggestionRunning) return;
 
 //        if (!enterPressed && !autoMode)
 //            {
@@ -1249,6 +1251,11 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             }
 
             if (suggestCompStars && tempSuggestCompStars && ngot >= referenceStar && refCount < maxSuggestedStars) {
+                suggestionRunning = true;
+                var warning = new AnnotateRoi(false, false, true, false, imp.getWidth()/2f, imp.getHeight()/2f, 2, "Searching for comparison stars...", Color.GREEN);
+                warning.setImage(imp);
+                ocanvas.add(warning);
+
                 xCenter = xPos[referenceStar - 1];
                 yCenter = yPos[referenceStar - 1];
 
@@ -1281,9 +1288,11 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     IJ.beep();
                     if (g.wasCanceled()) {
                         cancelled = true;
+                        ocanvas.removeRoi(warning);
                         shutDown();
                     } else if (!g.wasOKed()) {
                         tempSuggestCompStars = false;
+                        ocanvas.removeRoi(warning);
                         return;
                     }
                 }
@@ -1303,10 +1312,12 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     g.showDialog();
                     IJ.beep();
                     if (g.wasCanceled()) {
+                        ocanvas.removeRoi(warning);
                         cancelled = true;
                         shutDown();
                     } else if (!g.wasOKed()) {
                         tempSuggestCompStars = false;
+                        ocanvas.removeRoi(warning);
                         return;
                     }
                 }
@@ -1323,19 +1334,25 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 if (cancelled) return;
 
                 if (enableLog) AIJLogger.log("Placing suggested comp. stars...");
-                for (WeightedCoordinateMaxima coordinateMaxima : set.subList(0, Math.min(maxSuggestedStars - refCount, set.size() - 1))) {
-                    if (cancelled) return;
-                    if (enableLog) AIJLogger.log(ngot + 1);
-                    if (enableLog) AIJLogger.log(coordinateMaxima);//todo apertures placing in wrong coordinates for tica image, fine for others, due to wcs
-                    xCenter = coordinateMaxima.cm.x();
-                    yCenter = coordinateMaxima.cm.y();
+                if (set.size() > 0) {
+                    for (WeightedCoordinateMaxima coordinateMaxima : set.subList(0, Math.min(maxSuggestedStars - refCount, set.size() - 1))) {
+                        if (cancelled) return;
+                        if (enableLog) AIJLogger.log(ngot + 1);
+                        if (enableLog) AIJLogger.log(coordinateMaxima);//todo apertures placing in wrong coordinates for tica image, fine for others, due to wcs
+                        xCenter = coordinateMaxima.cm.x();
+                        yCenter = coordinateMaxima.cm.y();
 
-                    addAperture(true, false);
+                        addAperture(true, false);
+                    }
+                    if (enableLog) AIJLogger.log("Finished placing comp. stars!");
                 }
-                if (enableLog) AIJLogger.log("Finished placing comp. stars!");
+
+                ocanvas.removeRoi(warning);
 
                 tempSuggestCompStars = false; // Disable suggestion for all other stars
             }
+
+            suggestionRunning = false;
         }
     }
 

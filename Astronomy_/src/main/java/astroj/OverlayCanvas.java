@@ -41,6 +41,10 @@ public class OverlayCanvas extends ImageCanvas
 		rois.addElement (roi);
 		}
 
+	public boolean removeRoi(Roi roi) {
+		return rois.remove(roi);
+	}
+
 	/**
 	 * Removes a particular roi from the overlay list if it encloses the pixel position (x,y).
 	 */

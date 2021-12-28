@@ -1632,10 +1632,10 @@ public class CurveFitter {
     record ColumnInfo(ParamType type, int ap, int detrendColumn) {
     }
 
-    // _dummy exists to allow the rms to be automatically rounded
-    public record OptimizerResults(double rms, double bic, boolean _dummy) {
+    public record OptimizerResults(double rms, double bic) {
         public OptimizerResults(double rms, double bic) {
-            this(round(rms), bic, true);
+            this.rms = round(rms);
+            this.bic = bic;
         }
 
         private static double round(double val) {

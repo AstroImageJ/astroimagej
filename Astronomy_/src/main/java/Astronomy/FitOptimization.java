@@ -72,7 +72,6 @@ public class FitOptimization implements AutoCloseable {
         showOptLog = Prefs.get(PREFS_ENABLELOG, showOptLog);
         bict = Prefs.get(PREFS_BIC_THRESHOLD, bict);
         maxDetrend = (int) Prefs.get(PREFS_MAX_DETREND, maxDetrend);
-        AIJLogger.multiLog(nSigmaOutlier, bict, maxDetrend);
     }
 
     public static void clearCleanHistory() {
@@ -602,7 +601,6 @@ public class FitOptimization implements AutoCloseable {
         Prefs.set(PREFS_ENABLELOG, showOptLog);
         Prefs.set(PREFS_MAX_DETREND, maxDetrend);
         Prefs.set(PREFS_BIC_THRESHOLD, bict);
-        AIJLogger.multiLog("closing", nSigmaOutlier, bict, maxDetrend);
     }
 
     public int getCurve() {

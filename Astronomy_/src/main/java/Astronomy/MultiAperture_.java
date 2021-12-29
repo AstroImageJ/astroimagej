@@ -3266,10 +3266,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText(minPeakValue < 1000000.0 ? fourPlaces.format(minPeakValue) : scientificFourPlaces.format(minPeakValue)));
             GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText(maxPeakValue < 1000000.0 ? fourPlaces.format(maxPeakValue) : scientificFourPlaces.format(maxPeakValue)));
         }
-        autoPeaks.addActionListener($ -> {
-            minPeak.c1().setEnabled(autoPeakValues);
-            maxPeak.c1().setEnabled(autoPeakValues);
-            if (!autoPeakValues) {
+        autoPeaks.addPropertyChangeListener($ -> {
+            minPeak.c1().setEnabled(!autoPeakValues);
+            maxPeak.c1().setEnabled(!autoPeakValues);
+            if (autoPeakValues) {
                 GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText(minP < 1000000.0 ? fourPlaces.format(minP) : scientificFourPlaces.format(minP)));
                 GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText(maxP < 1000000.0 ? fourPlaces.format(maxP) : scientificFourPlaces.format(maxP)));
             } else {
@@ -3319,7 +3319,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         suggestionComponents.addAll(s.subComponents().subList(1, s.subComponents().size()));
 
         toggleComponents(suggestionComponents, suggestCompStars);
-        s.subComponents().getFirst().addPropertyChangeListener($ -> toggleComponents(suggestionComponents, suggestCompStars));
+        ((JCheckBox)s.subComponents().getFirst()).addActionListener($ -> toggleComponents(suggestionComponents, !suggestCompStars));
 
         gd.addMessage("");
 

@@ -3267,8 +3267,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText(maxPeakValue < 1000000.0 ? fourPlaces.format(maxPeakValue) : scientificFourPlaces.format(maxPeakValue)));
         }
         autoPeaks.addPropertyChangeListener($ -> {
-            minPeak.c1().setEnabled(!autoPeakValues);
-            maxPeak.c1().setEnabled(!autoPeakValues);
+            minPeak.c1().setEnabled(!autoPeakValues && suggestCompStars);
+            maxPeak.c1().setEnabled(!autoPeakValues && suggestCompStars);
             if (autoPeakValues) {
                 GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText(minP < 1000000.0 ? fourPlaces.format(minP) : scientificFourPlaces.format(minP)));
                 GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText(maxP < 1000000.0 ? fourPlaces.format(maxP) : scientificFourPlaces.format(maxP)));

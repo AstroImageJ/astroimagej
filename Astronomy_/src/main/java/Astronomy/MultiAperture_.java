@@ -3250,9 +3250,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         final var liveStats = asw.getLiveStatistics();
         var minP = autoPeakValues ? liveStats.mean + (1 * liveStats.stdDev) : minPeakValue;
         var maxP = autoPeakValues ? liveStats.max * 0.9 : maxPeakValue;
-        if (enableLog) AIJLogger.log("Image mean = "+liveStats.mean);
-        if (enableLog) AIJLogger.log("Image stdDev = "+liveStats.stdDev);
-        if (enableLog) AIJLogger.log("Image max = "+liveStats.max);
+        //if (enableLog) AIJLogger.log("Image mean = "+liveStats.mean);
+        //if (enableLog) AIJLogger.log("Image stdDev = "+liveStats.stdDev);
+        //if (enableLog) AIJLogger.log("Image max = "+liveStats.max);
         minPeak.c1().setEnabled(!autoPeakValues);
         maxPeak.c1().setEnabled(!autoPeakValues);
         DecimalFormat fourPlaces = new DecimalFormat("###,##0.00", IJU.dfs);

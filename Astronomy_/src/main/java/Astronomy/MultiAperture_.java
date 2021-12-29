@@ -3175,7 +3175,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             sliders[0] = gd.addSlider("           First slice ", 1, stackSize, (firstSlice == stackSize || (alwaysstartatfirstSlice && !(this instanceof Stack_Aligner))) ? 1 : firstSlice, d -> firstSlice = d.intValue());
             sliders[1] = gd.addSlider("           Last slice ", 1, stackSize, lastSlice, d -> lastSlice = d.intValue());
         }
-        gd.addCheckbox("Auto Radius", autoRadius, b -> autoRadius = b);
+        var autoRadiusBox = gd.addCheckbox("Auto Radius", autoRadius, b -> autoRadius = b);
+        autoRadiusBox.addChangeListener($ -> toggleComponents(sliders, 2, !autoRadius));
+        toggleComponents(sliders, 2, !autoRadius);
         gd.addToSameRow();
         gd.setOverridePosition(true);
         sliders[2] = gd.addFloatSlider("Radius of object aperture", 0.01, radius > 100 ? radius : 100, false, radius, 3, 1.0, d -> radius = d);
@@ -3220,7 +3222,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         listb.add(b -> suggestCompStars = b);
         listb.add(b -> enableLog = b);
         listb.add(b -> debugAp = b);
-        gd.addCheckboxGroup(1, 3, new String[]{"Auto comparison stars", "Enable log", "Show peaks"}, new boolean[]{suggestCompStars, enableLog, debugAp}, listb);
+        var s = gd.addCheckboxGroup(1, 3, new String[]{"Auto comparison stars", "Enable log", "Show peaks"}, new boolean[]{suggestCompStars, enableLog, debugAp}, listb);
 
         final var gauss = gd.addBoundedNumericField("Smoothing Filter Radius", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), gaussRadius, 1, 10, "pixels", d -> gaussRadius = d);
         final var autoPeaks = gd.addCheckbox("Auto Thresholds", autoPeakValues, b -> autoPeakValues = b);
@@ -3303,6 +3305,22 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             }
         });
 
+        var suggestionComponents = new LinkedHashSet<Component>();
+        suggestionComponents.add(gauss.c2());
+        suggestionComponents.add(gauss.c1());
+        suggestionComponents.add(autoPeaks);
+        suggestionComponents.add(minPeak.c2());
+        suggestionComponents.add(maxPeak.c2());
+        suggestionComponents.add(starSelection.c2());
+        suggestionComponents.add(maxDBrightness.c2());
+        suggestionComponents.add(minDBrightness.c2());
+        suggestionComponents.add(brightnessVsDistance.c2());
+        suggestionComponents.add(maxStars.c2());
+        suggestionComponents.addAll(s.subComponents().subList(1, s.subComponents().size()));
+
+        toggleComponents(suggestionComponents, suggestCompStars);
+        s.subComponents().getFirst().addPropertyChangeListener($ -> toggleComponents(suggestionComponents, suggestCompStars));
+
         gd.addMessage("");
 
         // GET NON-REQUIRED DIALOGUE FIELDS:
@@ -3324,6 +3342,45 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         list2.add(b -> showHelp = b);
         gd.addCheckboxGroup(1, 2, new String[]{"Update table and plot while running", "Show help panel during aperture selection"},
                 new boolean[]{updatePlot, showHelp}, list2);
+    }
+
+    private void toggleComponents(Component[] components, int offset, boolean toggle) {
+        for (int i = offset; i < components.length; i++) {
+            if (components[i] == null) continue;
+            components[i].setEnabled(toggle);
+            if (components[i] instanceof Container) {
+                for (Component child : ((Container) components[i]).getComponents()) {
+                    setEnabled(child, toggle);
+                }
+            }
+            if (components[i] instanceof Panel panel) {
+                toggleComponents(panel.getComponents(), 0, toggle);
+            } else if (components[i] instanceof JSpinner spinner) {
+                toggleComponents(spinner.getComponents(), 0, toggle);
+            } else if (components[i] instanceof JSlider slider) {
+                toggleComponents(slider.getComponents(), 0, toggle);
+            } else if (components[i] instanceof JSpinner.DefaultEditor editor) {
+                AIJLogger.log(1);
+                editor.getSpinner().setEnabled(toggle);
+                editor.getTextField().setEnabled(toggle);
+            }
+            components[i].setEnabled(toggle);
+        }
+    }
+
+    void setEnabled(Component component, boolean enabled) {
+        component.setEnabled(enabled);
+        if (component instanceof Container) {
+            for (Component child : ((Container) component).getComponents()) {
+                setEnabled(child, enabled);
+            }
+        }
+    }
+
+    private void toggleComponents(Collection<Component> components, boolean toggle) {
+        for (Component component : components) {
+            component.setEnabled(toggle);
+        }
     }
 
     /**

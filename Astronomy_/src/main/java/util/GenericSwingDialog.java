@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.text.NumberFormat;
 import java.text.ParseException;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
@@ -183,11 +184,11 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         return box;
     }
 
-    public Panel addCheckboxGroup(int rows, int columns, String[] labels, boolean[] defaultValues, List<Consumer<Boolean>> consumers) {
+    public ComponentPair addCheckboxGroup(int rows, int columns, String[] labels, boolean[] defaultValues, List<Consumer<Boolean>> consumers) {
         return addCheckboxGroup(rows, columns, labels, defaultValues, null, consumers);
     }
 
-    public Panel addCheckboxGroup(int rows, int columns, String[] labels, boolean[] defaultValues, String[] headings, List<Consumer<Boolean>> consumers) {
+    public ComponentPair addCheckboxGroup(int rows, int columns, String[] labels, boolean[] defaultValues, String[] headings, List<Consumer<Boolean>> consumers) {
         Panel panel = new Panel();
         int nRows = headings != null ? rows + 1 : rows;
         panel.setLayout(new GridLayout(nRows, columns, 6, 0));
@@ -204,6 +205,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
             }
         }
         int i1 = 0;
+        var boxes = new LinkedList<Component>();
         //int[] index = new int[labels.length];
         for (int row = 0; row < rows; row++) {
             for (int col = 0; col < columns; col++) {
@@ -223,6 +225,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
                 cb.setSelected(defaultValues[i1]);
                 final int finalI = i1;
                 cb.addActionListener($ -> consumers.get(finalI).accept(cb.isSelected()));
+                boxes.add(cb);
                 if (IJ.isLinux()) {
                     Panel panel2 = new Panel();
                     panel2.setLayout(new BorderLayout());
@@ -243,7 +246,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         addLocal(panel, c);
         x++;
 
-        return panel;
+        return new ComponentPair(panel, null, boxes);
     }
 
     public JComboBox<String> addChoice(String label, String[] items, String defaultItem, Consumer<String> consumer) {
@@ -1180,7 +1183,10 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         }
     }
 
-    public record ComponentPair(JComponent c1, JComponent c2) {
+    public record ComponentPair(Component c1, JComponent c2, LinkedList<Component> subComponents) {
+        public ComponentPair(JComponent c1, JComponent c2) {
+            this(c1, c2, null);
+        }
     }
 
     private class NumericFieldStepSizeEditor implements MouseListener {

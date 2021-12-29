@@ -53,7 +53,7 @@ public class FitOptimization implements AutoCloseable {
     private RollingAvg rollingAvg = new RollingAvg();
     private JSpinner detrendEpsilon;
     private static double nSigmaOutlier = 5;
-    private static boolean showOptLog = false;
+    static boolean showOptLog = false;
     public static LinkedList<MeasurementTable> undoBuffer = new LinkedList<>();
     public JTextField cleanNumTF = new JTextField("0");
     private static final HashSet<FitOptimization> INSTANCES = new HashSet<>();
@@ -61,6 +61,7 @@ public class FitOptimization implements AutoCloseable {
     protected static final String PREFS_NSIGMA = "fitoptimization.nsigma";
     protected static final String PREFS_MAX_DETREND = "fitoptimization.maxdetrend";
     protected static final String PREFS_BIC_THRESHOLD = "fitoptimization.bict";
+    private JTextField difNumTF = new JTextField("0");
 
     // Init. after numAps is set
     public FitOptimization(int curve, int epsilon) {
@@ -127,10 +128,12 @@ public class FitOptimization implements AutoCloseable {
         var cleanButton = new JButton("Clean");
         cleanButton.addActionListener($ -> cleanOutliers());
         outlierRemoval.add(cleanButton);
-        var logCheckBox = new JCheckBox("Log", showOptLog);
-        logCheckBox.addActionListener($ -> showOptLog = logCheckBox.isSelected());
-        logCheckBox.setToolTipText("Display a log of optimization actions.");
-        outlierRemoval.add(logCheckBox);
+        difNumTF.setEditable(false);
+        difNumTF.setMaximumSize(new Dimension(50, 10));
+        difNumTF.setHorizontalAlignment(SwingConstants.RIGHT);
+        difNumTF.setColumns(3);
+        difNumTF.setToolTipText("Total number of data points removed.");
+        outlierRemoval.add(difNumTF);
         var cleanLabel = new JLabel("N × σ:");
         cleanLabel.setHorizontalAlignment(SwingConstants.CENTER);
         cleanLabel.setToolTipText("The number of sigma away from the model to clean.");
@@ -144,7 +147,7 @@ public class FitOptimization implements AutoCloseable {
         cleanNumTF.setEditable(false);
         cleanNumTF.setMaximumSize(new Dimension(50, 10));
         cleanNumTF.setHorizontalAlignment(SwingConstants.RIGHT);
-        cleanNumTF.setToolTipText("Number of data removed (-) or restored (+).");
+        cleanNumTF.setToolTipText("Last operation number of data points removed (-) or restored (+).");
         outlierRemoval.add(cleanNumTF);
         SpringUtil.makeCompactGrid(outlierRemoval, 2, outlierRemoval.getComponentCount() / 2, 0, 0, 2, 2);
         fitOptimizationPanel.add(outlierRemoval);
@@ -267,8 +270,19 @@ public class FitOptimization implements AutoCloseable {
 
         SpringUtil.makeCompactGrid(detrendOptPanel, 2, detrendOptPanel.getComponentCount() / 2, 0, 0, 0, 0);
 
+        JPanel logOptPanel = new JPanel(new SpringLayout());
+        var t = new JLabel("Log");
+        logOptPanel.add(t);
+        var logCheckBox = new JCheckBox("", showOptLog);
+        logCheckBox.addActionListener($ -> showOptLog = logCheckBox.isSelected());
+        logCheckBox.setToolTipText("Display a log of optimization actions.");
+        logOptPanel.add(logCheckBox);
+
+        SpringUtil.makeCompactGrid(logOptPanel, 2, 1, 2, 2, 2, 2);
+
         fitOptimizationPanel.add(compStarPanel);
         fitOptimizationPanel.add(detrendOptPanel);
+        //fitOptimizationPanel.add(logOptPanel);
         SpringUtil.makeCompactGrid(fitOptimizationPanel, 1, fitOptimizationPanel.getComponentCount(), 2, 2, 2, 2);
 
         return fitOptimizationPanel;
@@ -339,6 +353,8 @@ public class FitOptimization implements AutoCloseable {
                 }
             }
         }
+
+        difNumTF.setText("" + (undoBuffer.size() > 0 ? table.size() - undoBuffer.getLast().size() : "0"));
     }
 
     private void undoOutlierClean() {
@@ -350,7 +366,7 @@ public class FitOptimization implements AutoCloseable {
         } else {
             IJ.beep();
         }
-
+        difNumTF.setText("" + (undoBuffer.size() > 0 ? table.size() - undoBuffer.getLast().size() : "0"));
     }
 
     private void testCompMin() {

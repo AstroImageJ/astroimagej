@@ -13280,7 +13280,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         fitPanel[c].add(fitStatisticsPanel);
 
         // Fit Optimizations
-        fitPanel[c].add(new FitOptimization(c, 0).makeFitOptimizationPanel());//todo is this forcing the window open on MP start?
+        var opti = new FitOptimization(c, 0);
+        fitPanel[c].add(opti.makeFitOptimizationPanel());
 
         JPanel plotPanel = new JPanel(new SpringLayout());
         plotPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(mainBorderColor, 1), "Plot Settings", TitledBorder.LEFT, TitledBorder.TOP, b12, Color.darkGray));
@@ -13366,9 +13367,17 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         SpringUtil.makeCompactGrid(modelLineWidthPanel, 1, modelLineWidthPanel.getComponentCount(), 0, 0, 0, 0);
         modelPanel.add(modelLineWidthPanel);
 
+        JPanel optiPanelControl = new JPanel(new SpringLayout());
+        optiPanelControl.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(subBorderColor, 1), "Log", TitledBorder.CENTER, TitledBorder.TOP, p11, Color.darkGray));
 
-        JLabel modelDummyLabel = new JLabel("");
+
+        JLabel modelDummyLabel = new JLabel("   ");
         modelPanel.add(modelDummyLabel);
+
+        var logCheckBox = new JCheckBox("Log Optimization", FitOptimization.showOptLog);
+        logCheckBox.addActionListener($ -> FitOptimization.showOptLog = logCheckBox.isSelected());
+        logCheckBox.setToolTipText("Display a log of optimization actions.");
+        modelPanel.add(logCheckBox);
 
         SpringUtil.makeCompactGrid(modelPanel, 1, modelPanel.getComponentCount(), 0, 0, 0, 0);
         plotPanel.add(modelPanel);
@@ -13712,6 +13721,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 break;
             }
         }
+        fitFrame[c].pack();
         if (rememberWindowLocations) {
             if (keepSeparateLocationsForFitWindows) {
                 IJU.setFrameSizeAndLocation(fitFrame[c], fitFrameLocationX[c], fitFrameLocationY[c], 0, 0);
@@ -13725,7 +13735,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         }
         if (openFitPanels && detrendFitIndex[c] == 9) fitFrame[c].setVisible(true);
 
-        fitFrame[c].pack();
         FileDrop fileDrop = new FileDrop(fitPanel[c], BorderFactory.createEmptyBorder(), MultiPlot_::openDragAndDropFiles);
     }
 

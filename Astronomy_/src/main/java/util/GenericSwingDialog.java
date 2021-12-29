@@ -793,6 +793,10 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         centerDialog = b;
     }
 
+    public void disableNo() {
+        no = null;
+    }
+
     public void setLocation(int x, int y) {
         super.setLocation(x, y);
         centerDialog = false;

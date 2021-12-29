@@ -1303,8 +1303,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                             "the Minimum peak threshold is set too high and/or the Maximum peak threshold is set " +
                             "too low. Ensure that the Minimum value set is above the highest sky background region " +
                             "and that the Maximum is below the saturation level.\n");
-                    g.enableYesNoCancel("Continue Auto", "Continue Manual");
+                    g.enableYesNoCancel("Continue Manual", "");
                     g.centerDialog(true);
+                    g.disableNo();
                     g.getOkay().setToolTipText("Continue to automatically extract comp stars");
                     g.getNo().setToolTipText("Cancel the automatic comp star extraction, " +
                             "but continue with manual aperture placement");

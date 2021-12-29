@@ -1268,6 +1268,18 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 //                table = MeasurementTable.getTable (tableName);
 //                tpanel = MeasurementTable.getTextPanel(MeasurementTable.longerName(tableName));
 
+        //Make sure all panels have been created. If not created within 5 secs, abort.
+        if (fitPanel[maxCurves-1] == null){
+            for (int i=0; i<51; i++){
+                IJ.wait(100);
+                if (fitPanel[maxCurves-1] != null){
+                    //IJ.log("fitPanel wait = "+(i*100)+"msec");
+                    break;
+                }
+                if (i == 50) return;
+            }
+        }
+
         if (table == null || tableName.equals("No Table Selected")) {
             updatePlotRunning = false;
             if (table != null) table.setLock(false);

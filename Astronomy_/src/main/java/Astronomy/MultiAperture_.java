@@ -1307,8 +1307,6 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     g.centerDialog(true);
                     g.disableNo();
                     g.getOkay().setToolTipText("Continue to automatically extract comp stars");
-                    g.getNo().setToolTipText("Cancel the automatic comp star extraction, " +
-                            "but continue with manual aperture placement");
                     g.getCancel().setToolTipText("Cancel both automatic and manual aperture placement");
                     g.showDialog();
                     IJ.beep();
@@ -2765,7 +2763,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     IJ.runPlugIn("Astronomy.MultiPlot_", tableName);
                     if (MultiPlot_.mainFrame != null && MultiPlot_.getTable() != null) {
 //                        IJ.log("setTable first time");
-                        MultiPlot_.setTable(table, true);
+                        MultiPlot_.setTable(table, false);
 //                        IJ.log("setTable first time complete");
                     }
                 }

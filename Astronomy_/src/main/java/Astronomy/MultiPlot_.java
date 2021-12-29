@@ -978,7 +978,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     loadConfigOfOpenTable(table.getFilePath());
                     table.show();
                     WindowManager.getFrame(table.shortTitle()).setVisible(true);
-                    forceUpdate = true;
+                    //forceUpdate = true;
                 }
                 finishSetup(forceUpdate);
             }
@@ -2858,7 +2858,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
                         if (normCount == 0) {
                             normAverage = 0.0;
-                            for (int j = 0; j < nn[curve]; j++) {
+                            for (int j = 0; j < yModel1[curve].length; j++) {
                                 if (!Double.isNaN(yModel1[curve][j]) && !Double.isNaN(detrendXs[curve][j])) {
                                     invVar = 1 / (detrendYEs[curve][j] * detrendYEs[curve][j]);
                                     normAverage += yModel1[curve][j] * invVar;
@@ -15652,7 +15652,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         }
                         setupArrays();
                         getPreferences();
-                        setTable(newTable, true);
+                        setTable(newTable, false);
                         if (plotWindow != null) plotWindow.setVisible(true);
                     }
                 }

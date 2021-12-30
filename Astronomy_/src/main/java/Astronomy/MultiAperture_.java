@@ -1306,8 +1306,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     g.enableYesNoCancel("Continue Manual", "");
                     g.centerDialog(true);
                     g.disableNo();
-                    g.getOkay().setToolTipText("Continue to manually palce comp. stars");
-                    g.getCancel().setToolTipText("Cancel both automatic and manual aperture placement");
+                    g.getOkay().setToolTipText("Continue to manually place comparison star apertures.");
+                    g.getCancel().setToolTipText("Cancel both automatic and manual aperture placement.");
                     g.showDialog();
                     IJ.beep();
                     if (g.wasCanceled()) {
@@ -1333,9 +1333,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 if (cancelled) return;
 
                 if (set.size() == 0) {
-                    var g = new GenericSwingDialog("MA Automatic Comp. Star Selection");
-                    g.addMessage("No comparison stars found that meat the brightness thresholds set.\n" +
-                            "Check the brightness threshold settings.\n");
+                    var g = new GenericSwingDialog("MA Automatic Comparison Star Selection");
+                    g.addMessage("No comparison stars found that meet the brightness thresholds set.\n" +
+                            "Check the brightness threshold settings in the Multi-Aperture set-up panel.\n");
                     g.enableYesNoCancel("Continue Manual", "");
                     g.centerDialog(true);
                     g.disableNo();

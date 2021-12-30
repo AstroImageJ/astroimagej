@@ -4735,6 +4735,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
 
             table.show();
+            table.setLock(false);
             updatePlot(updateAllFits(), true);
             Thread t2 = new Thread(() -> {
                 if (OKbutton != null) {

@@ -16,6 +16,7 @@ import ij.plugin.PlugIn;
 import ij.process.ImageProcessor;
 import ij.text.TextPanel;
 import ij.util.Tools;
+import util.GenericSwingDialog;
 import util.UIHelper;
 
 import javax.swing.*;
@@ -34,6 +35,7 @@ import java.awt.image.BufferedImage;
 import java.io.*;
 import java.text.DecimalFormat;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.stream.DoubleStream;
 
 /**
@@ -16134,24 +16136,26 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
 
     static void saveDataSubsetDialog(String savePath) {
-        boolean saveColumnHeadings = true;
-        boolean saveHeadersAsComment = true;
-        boolean saveRowNumbers = true;
-        boolean saveRowLabels = true;
+        class Holder {
+            public static boolean saveColumnHeadings = true;
+            public static boolean saveHeadersAsComment = true;
+            public static boolean saveRowNumbers = true;
+            public static boolean saveRowLabels = true;
+        }
         maxSubsetColumns = (int) Prefs.get("plot2.maxSubsetColumns", maxSubsetColumns);
         boolean[] subsetColumnEnable = new boolean[maxSubsetColumns];
         String[] subsetColumn = new String[maxSubsetColumns];
-        saveColumnHeadings = Prefs.get("plot2.saveColumnHeadings", saveColumnHeadings);
-        saveHeadersAsComment = Prefs.get("plot2.saveHeadersAsComment", saveHeadersAsComment);
-        saveRowNumbers = Prefs.get("plot2.saveRowNumbers", saveRowNumbers);
-        saveRowLabels = Prefs.get("plot2.saveRowLabels", saveRowLabels);
+        Holder.saveColumnHeadings = Prefs.get("plot2.saveColumnHeadings", Holder.saveColumnHeadings);
+        Holder.saveHeadersAsComment = Prefs.get("plot2.saveHeadersAsComment", Holder.saveHeadersAsComment);
+        Holder.saveRowNumbers = Prefs.get("plot2.saveRowNumbers", Holder.saveRowNumbers);
+        Holder.saveRowLabels = Prefs.get("plot2.saveRowLabels", Holder.saveRowLabels);
 
         for (int i = 0; i < maxSubsetColumns; i++) {
             subsetColumnEnable[i] = true;
             subsetColumn[i] = "";
         }
 
-        GenericDialog gd = new GenericDialog("Save data subset", mainFrame.getX() + 25, mainFrame.getY() + 50);
+        var gd = new GenericSwingDialog("Save data subset", mainFrame.getX() + 25, mainFrame.getY() + 50);
 
         for (int i = 0; i < maxSubsetColumns; i++) {
             subsetColumnEnable[i] = Prefs.get("plot2.subsetColumnEnable" + i, subsetColumnEnable[i]);
@@ -16159,7 +16163,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         }
 
         gd.addMessage("Select datasets in the order (left to right) desired in the output file.\nNo column will be output for blank selections.");
-        gd.addSlider("Number of data selection boxes (next time):", 1, 20, maxSubsetColumns < 21 && maxSubsetColumns > 0 ? maxSubsetColumns : 5);
+        gd.addSlider("Number of data selection boxes (next time):", 1, 20, maxSubsetColumns < 21 && maxSubsetColumns > 0 ? maxSubsetColumns : 5, d -> maxSubsetColumns = d.intValue());
         String[] saveColumns = new String[columns.length + 1];
         saveColumns[0] = "";
         String meridian_flip = "Meridian_Flip";
@@ -16168,38 +16172,37 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             System.arraycopy(columns, 1, saveColumns, 2, columns.length - 1);
         }
         for (int i = 0; i < maxSubsetColumns; i++) {
-            gd.addCheckbox("Enable Column " + (i + 1), subsetColumnEnable[i]);
-            gd.addChoice("Data Column " + (i + 1) + ":", saveColumns, subsetColumn[i]);
+            int finalI = i;
+            gd.addCheckbox("Enable Column " + (i + 1), subsetColumnEnable[i], b -> subsetColumnEnable[finalI] = b);
+            gd.addChoice("Data Column " + (i + 1) + ":", saveColumns, subsetColumn[i], b -> subsetColumn[finalI] = b);
         }
 
         String[] optionLabels = {"Save column headings", "Comment headings with '#'", "Save row numbers", "Save row labels"};
-        boolean[] optionSettings = {saveColumnHeadings, saveHeadersAsComment, saveRowNumbers, saveRowLabels};
-        gd.addCheckboxGroup(2, 2, optionLabels, optionSettings);
+        boolean[] optionSettings = {Holder.saveColumnHeadings, Holder.saveHeadersAsComment, Holder.saveRowNumbers, Holder.saveRowLabels};
+        final var cs = new ArrayList<Consumer<Boolean>>();
+        cs.add(b -> Holder.saveColumnHeadings = b);
+        cs.add(b -> Holder.saveHeadersAsComment = b);
+        cs.add(b -> Holder.saveRowNumbers = b);
+        cs.add(b -> Holder.saveRowLabels = b);
+        gd.addCheckboxGroup(2, 2, optionLabels, optionSettings, cs);
 
         gd.showDialog();
-        maxSubsetColumns = (int) gd.getNextNumber();
         Prefs.set("plot2.maxSubsetColumns", maxSubsetColumns);
         if (gd.wasCanceled()) return;
 
         boolean meridianFlipSelected = false;
-        for (int i = 0; i < maxSubsetColumns; i++) {
-            subsetColumnEnable[i] = gd.getNextBoolean();
-            subsetColumn[i] = gd.getNextChoice();
+        for (int i = 0; i < subsetColumn.length; i++) {
             if (subsetColumn[i].equals("Meridian_Flip")) meridianFlipSelected = true;
         }
-        saveColumnHeadings = gd.getNextBoolean();
-        saveHeadersAsComment = gd.getNextBoolean();
-        saveRowNumbers = gd.getNextBoolean();
-        saveRowLabels = gd.getNextBoolean();
 
         for (int i = 0; i < maxSubsetColumns; i++) {
             Prefs.set("plot2.subsetColumnEnable" + i, subsetColumnEnable[i]);
             Prefs.set("plot2.subsetColumn" + i, subsetColumn[i]);
         }
-        Prefs.set("plot2.saveColumnHeadings", saveColumnHeadings);
-        Prefs.set("plot2.saveHeadersAsComment", saveHeadersAsComment);
-        Prefs.set("plot2.saveRowNumbers", saveRowNumbers);
-        Prefs.set("plot2.saveRowLabels", saveRowLabels);
+        Prefs.set("plot2.saveColumnHeadings", Holder.saveColumnHeadings);
+        Prefs.set("plot2.saveHeadersAsComment", Holder.saveHeadersAsComment);
+        Prefs.set("plot2.saveRowNumbers", Holder.saveRowNumbers);
+        Prefs.set("plot2.saveRowLabels", Holder.saveRowLabels);
 
         if (meridianFlipSelected) {
             if (!meridianFlipTimeColumnNotice()) return;

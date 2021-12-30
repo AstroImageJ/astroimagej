@@ -1332,8 +1332,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 var set = weightAndLimitPeaks(m, t1Source);
                 if (cancelled) return;
 
-                if (enableLog) AIJLogger.log("Placing suggested comp. stars...");
                 if (set.size() > 0) {
+                    if (enableLog) AIJLogger.log("Placing suggested comp. stars...");
                     for (WeightedCoordinateMaxima coordinateMaxima : set.subList(0, Math.min(maxSuggestedStars - refCount, set.size() - 1))) {
                         if (cancelled) return;
                         if (enableLog) AIJLogger.log(ngot + 1);
@@ -3266,11 +3266,13 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText(maxPeakValue < 1000000.0 ? fourPlaces.format(maxPeakValue) : scientificFourPlaces.format(maxPeakValue)));
         }
         autoPeaks.addPropertyChangeListener($ -> {
+            var minP1 = autoPeakValues ? liveStats.mean + (1 * liveStats.stdDev) : minPeakValue;
+            var maxP1 = autoPeakValues ? liveStats.max * 0.9 : maxPeakValue;
             minPeak.c1().setEnabled(!autoPeakValues && suggestCompStars);
             maxPeak.c1().setEnabled(!autoPeakValues && suggestCompStars);
             if (autoPeakValues) {
-                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText(minP < 1000000.0 ? fourPlaces.format(minP) : scientificFourPlaces.format(minP)));
-                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText(maxP < 1000000.0 ? fourPlaces.format(maxP) : scientificFourPlaces.format(maxP)));
+                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText(minP < 1000000.0 ? fourPlaces.format(minP1) : scientificFourPlaces.format(minP1)));
+                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText(maxP < 1000000.0 ? fourPlaces.format(maxP1) : scientificFourPlaces.format(maxP1)));
             } else {
                 GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText(minPeakValue < 1000000.0 ? fourPlaces.format(minPeakValue) : scientificFourPlaces.format(minPeakValue)));
                 GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText(maxPeakValue < 1000000.0 ? fourPlaces.format(maxPeakValue) : scientificFourPlaces.format(maxPeakValue)));

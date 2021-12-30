@@ -16171,11 +16171,20 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         if (saveColumns.length > 2) {
             System.arraycopy(columns, 1, saveColumns, 2, columns.length - 1);
         }
+        gd.addMessage("             Column                          Enabled");
+        gd.setOverridePosition(true);
+        gd.resetPositionOverride();
         for (int i = 0; i < maxSubsetColumns; i++) {
             int finalI = i;
-            gd.addCheckbox("Enable Column " + (i + 1), subsetColumnEnable[i], b -> subsetColumnEnable[finalI] = b);
-            gd.addChoice("Data Column " + (i + 1) + ":", saveColumns, subsetColumn[i], b -> subsetColumn[finalI] = b);
+            gd.setNewPosition(GridBagConstraints.WEST);
+            gd.addChoice(IJ.pad((i + 1) + ":", 3), saveColumns, subsetColumn[i], b -> subsetColumn[finalI] = b);
+            gd.resetPositionOverride();
+            gd.setNewPosition(GridBagConstraints.CENTER);
+            gd.addToSameRow();
+            gd.addCheckbox("", subsetColumnEnable[i], b -> subsetColumnEnable[finalI] = b);
+            gd.resetPositionOverride();
         }
+        gd.setOverridePosition(false);
 
         String[] optionLabels = {"Save column headings", "Comment headings with '#'", "Save row numbers", "Save row labels"};
         boolean[] optionSettings = {Holder.saveColumnHeadings, Holder.saveHeadersAsComment, Holder.saveRowNumbers, Holder.saveRowLabels};

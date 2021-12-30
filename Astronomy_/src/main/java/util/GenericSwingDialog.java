@@ -176,6 +176,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         c.anchor = GridBagConstraints.WEST;
         c.gridwidth = 1;
         b.add(box);
+        useCustomPosition();
         if (overridePosition) c.gridx = x;
         addLocal(b, c);
         x++;
@@ -250,6 +251,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
     }
 
     public JComboBox<String> addChoice(String label, String[] items, String defaultItem, Consumer<String> consumer) {
+        Box b = Box.createHorizontalBox();
         Label fieldLabel = makeLabel(label.replaceAll("_", " "));
         if (addToSameRow) {
             c.gridx = GridBagConstraints.RELATIVE;
@@ -262,7 +264,8 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         c.anchor = GridBagConstraints.EAST;
         c.gridwidth = 1;
 
-        addLocal(fieldLabel, c);
+        b.add(fieldLabel);
+        //addLocal(fieldLabel, c);
         var thisChoice = new JComboBox<String>();
         thisChoice.addKeyListener(this);
         thisChoice.addItemListener($ -> consumer.accept((String) thisChoice.getSelectedItem()));
@@ -274,8 +277,10 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         }
         c.gridx = GridBagConstraints.RELATIVE;
         c.anchor = GridBagConstraints.WEST;
+        useCustomPosition();
         if (overridePosition) c.gridx = x;
-        addLocal(thisChoice, c);
+        b.add(thisChoice);
+        addLocal(b, c);
         x++;
 
         return thisChoice;
@@ -311,6 +316,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         }
         if (color != null) theLabel.setForeground(color);
         if (overridePosition) c.gridx = x;
+        useCustomPosition();
         addLocal(theLabel, c);
         x++;
         c.fill = GridBagConstraints.NONE;

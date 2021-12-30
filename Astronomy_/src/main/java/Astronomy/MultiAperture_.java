@@ -1306,7 +1306,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     g.enableYesNoCancel("Continue Manual", "");
                     g.centerDialog(true);
                     g.disableNo();
-                    g.getOkay().setToolTipText("Continue to automatically extract comp stars");
+                    g.getOkay().setToolTipText("Continue to manually palce comp. stars");
                     g.getCancel().setToolTipText("Cancel both automatic and manual aperture placement");
                     g.showDialog();
                     IJ.beep();
@@ -1331,6 +1331,28 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 if (enableLog) AIJLogger.log("Weighing peaks...");
                 var set = weightAndLimitPeaks(m, t1Source);
                 if (cancelled) return;
+
+                if (set.size() == 0) {
+                    var g = new GenericSwingDialog("MA Automatic Comp. Star Selection");
+                    g.addMessage("No comparison stars found that meat the brightness thresholds set.\n" +
+                            "Check the brightness threshold settings.\n");
+                    g.enableYesNoCancel("Continue Manual", "");
+                    g.centerDialog(true);
+                    g.disableNo();
+                    g.getOkay().setToolTipText("Continue to manually palce comp. stars");
+                    g.getCancel().setToolTipText("Cancel Multi-Aperture");
+                    g.showDialog();
+                    IJ.beep();
+                    if (g.wasCanceled()) {
+                        ocanvas.removeRoi(warning);
+                        cancelled = true;
+                        shutDown();
+                    } else if (!g.wasOKed()) {
+                        tempSuggestCompStars = false;
+                        ocanvas.removeRoi(warning);
+                        return;
+                    }
+                }
 
                 if (set.size() > 0) {
                     if (enableLog) AIJLogger.log("Placing suggested comp. stars...");

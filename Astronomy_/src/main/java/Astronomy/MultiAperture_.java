@@ -1339,7 +1339,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     g.enableYesNoCancel("Continue Manual", "");
                     g.centerDialog(true);
                     g.disableNo();
-                    g.getOkay().setToolTipText("Continue to manually palce comp. stars");
+                    g.getOkay().setToolTipText("Continue to manually place comp. stars");
                     g.getCancel().setToolTipText("Cancel Multi-Aperture");
                     g.showDialog();
                     IJ.beep();

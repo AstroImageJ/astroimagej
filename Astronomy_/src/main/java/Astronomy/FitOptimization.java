@@ -478,6 +478,7 @@ public class FitOptimization implements AutoCloseable {
         if (finalState.outState instanceof int[] x) setFinalState(x);
 
         finishOptimization(detOptiCards);
+        detrendCounter.setBasis(BigInteger.ZERO);
         EPSILON = 0;
     }
 

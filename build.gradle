@@ -383,6 +383,9 @@ javapackager {
     macConfig.setEntitlements(project.file('packageFiles/aij_entitlements.txt'))
     macConfig.setAppId("AstroImageJ")
 
+    // Don't copy deps into a "libs" folder - we bundle them into ij.jar or Astronomy_.jar and the plugins folder
+    copyDependencies = false
+
     linuxConfig.wrapJar = false
 
     organizationName  "AstroImageJ"

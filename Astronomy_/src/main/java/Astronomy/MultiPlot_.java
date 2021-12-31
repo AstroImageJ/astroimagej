@@ -5796,14 +5796,14 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         airmassName = "AIRMASS";
         altitudeName = "ALTITUDE";
         azimuthName = "AZIMUTH";
-        bjdName = "BJD_TDB_MOBS";
+        bjdName = "BJD_TDB";
         bjdCorrName = "BJD_CORR";
         decNowName = "DEC_EOD";
         raNowName = "RA_EOD";
         dec2000Name = "DEC_J2000";
         ra2000Name = "RA_J2000";
-        gjdName = "JD_UTC_MOBS";
-        hjdName = "HJD_UTC_MOBS";
+        gjdName = "JD_UTC";
+        hjdName = "HJD_UTC";
         hjdCorrName = "HJD_CORR";
         hourAngleName = "HOUR_ANGLE";
         zenithDistanceName = "ZENITH_DIST";

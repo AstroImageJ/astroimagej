@@ -4,13 +4,13 @@ plugins {
 }
 
 dependencies {
-    implementation "org.apache.maven.wagon:wagon-ssh:2.7"
-    implementation "org.tinyjee.dim:doxia-include-macro:1.1"
-    implementation "org.apache.maven.doxia:doxia-module-markdown:1.6"
-    implementation "com.puppycrawl.tools:checkstyle:6.14.1"
-    implementation "org.apache.maven.doxia:doxia-module-markdown:1.6"
+    compileOnly "org.apache.maven.wagon:wagon-ssh:2.7"
+    compileOnly "org.tinyjee.dim:doxia-include-macro:1.1"
+    compileOnly "org.apache.maven.doxia:doxia-module-markdown:1.6"
+    compileOnly "com.puppycrawl.tools:checkstyle:6.14.1"
+    compileOnly "org.apache.maven.doxia:doxia-module-markdown:1.6"
     implementation "org.apache.commons:commons-compress:1.18"
-    implementation "com.google.code.findbugs:annotations:3.0.0"
+    compileOnly "com.google.code.findbugs:annotations:3.0.0"
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.3.1'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.3.1'
     testCompileOnly 'junit:junit:4.12'

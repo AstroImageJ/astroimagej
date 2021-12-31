@@ -1,6 +1,7 @@
 // AstroConvertor.java
 package astroj;
 
+import ij.IJ;
 import ij.Prefs;
 import ij.astro.util.LeapSeconds;
 import ij.gui.MultiLineLabel;
@@ -122,6 +123,7 @@ public class AstroConverter extends LeapSeconds implements ItemListener, ActionL
     boolean newSimbadData=false, newleapSecTableReady=false, ssObject=false, twiLocal = true, running = false;
     boolean SIMBADAccessFailed = false;
     boolean OSUAccessFailed = false;
+    boolean OSUBJDFound = false;
     boolean validObjectID = false;
     boolean useCustomObservatoryList = false;
     boolean reportSSBDown = true;
@@ -3576,11 +3578,12 @@ double[] processCoordinatePair(JTextField textFieldA, int decimalPlacesA, int ba
         t.start();
         Thread.yield();
         OSUAccessFailed = false;
+        OSUBJDFound = false;
         double bjd = bjdEOI;
         try {
 //            String objectID = URLEncoder.encode(objectIDTextField.getText().trim(),"UTF-8");
             URL ohioState;
-            ohioState = new URL("http://astroutils.astronomy.ohio-state.edu/time/utc2bjd.url.php?UTC="+jd+"&RA="+(ra2000*15)+"&DEC="+dec2000);
+            ohioState = new URL("https://astroutils.astronomy.osu.edu/time/utc2bjd.url.php?UTC="+jd+"&RA="+(ra2000*15)+"&DEC="+dec2000);
             URLConnection ohioStateCon;
             if (useProxy) ohioStateCon = ohioState.openConnection(proxy);
             else ohioStateCon = ohioState.openConnection();            
@@ -3590,13 +3593,20 @@ double[] processCoordinatePair(JTextField textFieldA, int decimalPlacesA, int ba
             String inputLine;
             while ((inputLine = in.readLine()) != null)
                 {
-//                IJ.log(inputLine);
+                //IJ.log(inputLine);
                 if (inputLine.startsWith("<pre>"))
                     {
                     inputLine =inputLine.substring(5);
                     bjd = Tools.parseDouble(inputLine.trim(),0.0);
+                    OSUBJDFound = true;
                     break;
                     }
+                }
+            if (!OSUBJDFound){
+                showMessage("Ohio State BJD query error", "<html>"+"The OSU site did not return a valid BJD value."+"<br>"+
+                          "Report this problem to the AIJ team via the user forum."+"<br>"+
+                          "An option is to use internal calculations (see Preferences menu)."+"</html>");
+                OSUAccessFailed = true;
                 }
             in.close();
             }

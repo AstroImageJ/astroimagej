@@ -5,20 +5,26 @@ import ij.IJ;
 import ij.ImagePlus;
 import ij.Prefs;
 import ij.WindowManager;
+import ij.astro.logging.AIJLogger;
 import ij.gui.GenericDialog;
 import ij.gui.PlotWindow;
 import ij.gui.Toolbar;
 import ij.measure.ResultsTable;
 import ij.process.ImageProcessor;
 import ij.util.Tools;
+import util.GenericSwingDialog;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.lang.reflect.InvocationTargetException;
 import java.text.DecimalFormat;
-import java.util.Locale;
-import java.util.TimerTask;
+import java.text.NumberFormat;
+import java.util.List;
+import java.util.*;
+import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 
 /**
@@ -81,6 +87,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     protected static String PREFS_USEMA = "multiaperture.usema";
     protected static String PREFS_USEALIGN = "multiaperture.usealign";
     protected static String PREFS_USEWCS = "multiaperture.usewcs";
+    protected static String PREFS_SUGGESTCOMPSTARS = "multiaperture.suggestCompStars";
     protected static String PREFS_HALTONERROR = "multiaperture.haltOnError";
     protected static String PREFS_SHOWHELP = "multiaperture.showhelp";
     protected static String PREFS_ALWAYSFIRSTSLICE = "multiaperture.alwaysstartatfirstSlice";
@@ -97,6 +104,18 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     protected static String PREFS_YAPERTURES = "multiaperture.yapertures";
     protected static String PREFS_RAAPERTURES = "multiaperture.raapertures";
     protected static String PREFS_DECAPERTURES = "multiaperture.decapertures";
+    protected static final String PREFS_MAXPEAKVALUE = "multiaperture.maxpeakvalue";
+    protected static final String PREFS_MINPEAKVALUE = "multiaperture.minpeakvalue";
+    protected static final String PREFS_UPPERBRIGHTNESS = "multiaperture.upperbrightness";
+    protected static final String PREFS_LOWERBRIGHTNESS = "multiaperture.lowerbrightness";
+    protected static final String PREFS_BRIGHTNESSDISTANCE = "multiaperture.brightnessdistance";
+    protected static final String PREFS_MAXSUGGESTEDSTARS = "multiaperture.maxsuggestedstars";
+    protected static final String PREFS_DEBUGAPERTURESUGGESTION = "multiaperture.debugaperturesuggestion";
+    protected static final String PREFS_GAUSSRADIUS = "multiaperture.gaussradius";
+    protected static final String PREFS_AUTOPEAKS = "multiaperture.autopeaks";
+    protected static final String PREFS_AUTORADIUS = "multiaperture.autoradius";
+    protected static final String PREFS_REFERENCESTAR = "multiaperture.referencestar";
+    protected static final String PREFS_ENABLELOG = "multiaperture.enablelog";
 
 //	double vx = 0.0;
 //	double vy = 0.0;
@@ -157,7 +176,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     protected boolean[] isAlignStar;
     protected boolean[] centroidStar;
     protected double[] absMag, targetAbsMag;
-    protected boolean hasAbsMag = false;
+    protected boolean hasAbsMag = false, autoPeakValues = true;
     protected double totAbsMag = 0.0;
     protected int numAbsRefs = 0;
     protected double[] src;           // net integrated counts for each aperture
@@ -170,7 +189,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     protected double[] angleFixed;
     protected double[] roundFixed;
     protected double peak = 0.0;        // max pixel value in aperture
-    protected boolean autoMode = false;
+    protected boolean autoMode = false, enableLog = true;
     protected boolean singleStep = false;
     protected boolean allowSingleStepApChanges = false;
     protected boolean simulatedLeftClick = false;
@@ -184,6 +203,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     protected boolean foundFWHM = false;
     protected boolean showRatio = true;
     protected boolean showCompTot = true;
+    protected boolean debugAp = false;
 
 //	protected boolean follow=false;
 //	protected boolean wideTable=true;
@@ -252,7 +272,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     ImageIcon MAIcon;
     int helpFrameLocationX = 10;
     int helpFrameLocationY = 10;
-    boolean useWCS = false;
+    double maxPeakValue = Double.MAX_VALUE, minPeakValue = 2000, upperBrightness = 150, lowerBrightness = 50, brightness2DistanceWeight = 50;
+    int maxSuggestedStars = 12;
+    boolean useWCS = false, suggestCompStars = true, tempSuggestCompStars = true;
     boolean useMA = true, useAlign = false;
     TimerTask stackTask = null;
     java.util.Timer stackTaskTimer = null;
@@ -260,6 +282,12 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     TimerTask doubleClickTask = null;
     java.util.Timer doubleClickTaskTimer = null;
     DecimalFormat uptoEightPlaces = new DecimalFormat("#####0.########", IJU.dfs);
+    double max = 0;
+    private double gaussRadius = 3.5;
+    private boolean autoRadius = true, t1Placed = false;
+    private Seeing_Profile.ApRadii oldRadii;
+    private int referenceStar = 1;
+    private boolean suggestionRunning;
 
 //	public static double RETRY_RADIUS = 3.0;
 
@@ -386,8 +414,11 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             if (hasWCS) wcs = asw.getWCS();
             asw.setDisableShiftClick(true);
         }
+        
+        max = imp.getStatistics().max;
 
         // GET HOW MANY APERTURES WILL BE MEASURED WITH WHAT RADII
+        maxPeakValue = Prefs.get(MultiAperture_.PREFS_MAXPEAKVALUE, max);
 
         if (!setUpApertures() || nApertures == 0 || !prepare()) {
             imp.unlock();
@@ -441,6 +472,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             //ocanvas.clearRois();
             ocanvas.removeApertureRois();
             ocanvas.removeAstrometryAnnotateRois();
+            ocanvas.removeMarkingRois();
         }
         if (previous && (!useWCS || (useWCS && (raPosStored == null || decPosStored == null)))) {
             infoMessage = "Please select first aperture (right click to finalize) ...";
@@ -465,10 +497,21 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         }
     }
 
+    private void resetRadii() {
+        if (oldRadii == null) return;
+        radius = oldRadii.r();
+        rBack1 = oldRadii.r2();
+        rBack2 = oldRadii.r3();
+        Prefs.set("aperture.radius", radius);
+        Prefs.set("aperture.rback1", rBack1);
+        Prefs.set("aperture.rback2", rBack2);
+    }
+
     protected void cancel() {
         if (table != null) table.setLock(false);
         if (table != null) table.show();
         if (table != null) table.setLock(false);
+        resetRadii();
         Prefs.set(MultiAperture_.PREFS_AUTOMODE, "false");
         Prefs.set(MultiAperture_.PREFS_FINISHED, "true");
         Prefs.set(MultiAperture_.PREFS_USEMACROIMAGE, "false");
@@ -504,6 +547,19 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         reposition = Prefs.get("aperture.reposition", reposition);
         haltOnError = Prefs.get(MultiAperture_.PREFS_HALTONERROR, haltOnError);
         useWCS = Prefs.get(MultiAperture_.PREFS_USEWCS, useWCS);
+        maxPeakValue = Prefs.get(MultiAperture_.PREFS_MAXPEAKVALUE, maxPeakValue);
+        minPeakValue = Prefs.get(MultiAperture_.PREFS_MINPEAKVALUE, minPeakValue);
+        upperBrightness = Prefs.get(MultiAperture_.PREFS_UPPERBRIGHTNESS, upperBrightness);
+        lowerBrightness = Prefs.get(MultiAperture_.PREFS_LOWERBRIGHTNESS, lowerBrightness);
+        brightness2DistanceWeight = Prefs.get(MultiAperture_.PREFS_BRIGHTNESSDISTANCE, brightness2DistanceWeight);
+        maxSuggestedStars = (int) Prefs.get(MultiAperture_.PREFS_MAXSUGGESTEDSTARS, maxSuggestedStars);
+        suggestCompStars = Prefs.get(PREFS_SUGGESTCOMPSTARS, suggestCompStars);
+        debugAp = Prefs.get(PREFS_DEBUGAPERTURESUGGESTION, debugAp);
+        gaussRadius = Prefs.get(PREFS_GAUSSRADIUS, gaussRadius);
+        autoPeakValues = Prefs.get(PREFS_AUTOPEAKS, autoPeakValues);
+        autoRadius = Prefs.get(PREFS_AUTORADIUS, autoRadius);
+        enableLog = Prefs.get(PREFS_ENABLELOG, enableLog);
+        referenceStar = (int) Prefs.get(PREFS_REFERENCESTAR, referenceStar);
         oldUseVarSizeAp = useVarSizeAp;
         apFWHMFactor = Prefs.get(MultiAperture_.PREFS_APFWHMFACTOR, apFWHMFactor);
         oldapFWHMFactor = apFWHMFactor;
@@ -879,6 +935,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         Prefs.set(MultiAperture_.PREFS_USEMA, useMA);
         Prefs.set(MultiAperture_.PREFS_USEALIGN, useAlign);
         Prefs.set(MultiAperture_.PREFS_USEWCS, useWCS);
+        Prefs.set(PREFS_SUGGESTCOMPSTARS, suggestCompStars);
         Prefs.set(MultiAperture_.PREFS_SHOWHELP, showHelp);
         Prefs.set(MultiAperture_.PREFS_ALWAYSFIRSTSLICE, alwaysstartatfirstSlice);
         Prefs.set(MultiAperture_.PREFS_APFWHMFACTOR, apFWHMFactor);
@@ -900,6 +957,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         Prefs.set("plot2.absMagFrameLocationY", yAbsMagLocation);
         Prefs.set("plot2.helpFrameLocationX", helpFrameLocationX);
         Prefs.set("plot2.helpFrameLocationY", helpFrameLocationY);
+        resetRadii();
     }
 
     /**
@@ -991,6 +1049,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     }
 
     void processSingleClick(MouseEvent e) {
+        if (suggestionRunning) return;
 
 //        if (!enterPressed && !autoMode)
 //            {
@@ -1028,7 +1087,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             }
 
             slice = imp.getCurrentSlice();
-            if (imp.getWindow() instanceof astroj.AstroStackWindow) {
+            if (imp.getWindow() instanceof AstroStackWindow) {
                 asw = (AstroStackWindow) imp.getWindow();
                 ac = (AstroCanvas) imp.getCanvas();
                 hasWCS = asw.hasWCS();
@@ -1040,6 +1099,17 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             yCenter = e != null ? canvas.offScreenYD(e.getY()) : 0;
             if (!autoMode && !(previous && firstClick) && ngot < nApertures) {
                 apertureClicked = ocanvas.findApertureRoi((int) xCenter, (int) yCenter, 0) != null;
+            }
+
+            if (firstClick && autoRadius && !t1Placed) {
+                oldRadii = new Seeing_Profile.ApRadii(radius, rBack1, rBack2);
+                var rs = Seeing_Profile.getRadii(imp, previous ? xPosStored[0] : xCenter, previous ? yPosStored[0] : yCenter);
+                radius = rs.r();
+                rBack1 = rs.r2();
+                rBack2 = rs.r3();
+                Prefs.set("aperture.radius", radius);
+                Prefs.set("aperture.rback1", rBack1);
+                Prefs.set("aperture.rback2", rBack2);
             }
 
             // ADD APERTURE TO LIST OR SHIFT OLD APERTURE POSITIONS
@@ -1169,7 +1239,260 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 if (!processingStack && !autoMode && (firstSlice < lastSlice)) IJ.beep();
                 if (!processingStack) shutDown();
             }
+
+            if (suggestCompStars && !tempSuggestCompStars && debugAp) {
+                ocanvas.removeMarkingRois();
+                debugAp = false;
+            }
+
+            var refCount = 0;
+            for (boolean b : isRefStar) {
+                if (b) refCount++;
+            }
+
+            if (suggestCompStars && tempSuggestCompStars && ngot >= referenceStar && refCount < maxSuggestedStars) {
+                suggestionRunning = true;
+                var warning = new AnnotateRoi(false, false, true, false, imp.getWidth()/2f, imp.getHeight()/2f, 2, "Searching for comparison stars...", Color.GREEN);
+                warning.setImage(imp);
+                ocanvas.add(warning);
+
+                xCenter = xPos[referenceStar - 1];
+                yCenter = yPos[referenceStar - 1];
+
+                // Make sure photometry is current
+                measurePhotometry();
+
+                final var t1Source = photom.sourceBrightness();
+
+                final var liveStats = asw.getLiveStatistics();
+                var minP = autoPeakValues ? liveStats.mean + (1 * liveStats.stdDev) : minPeakValue;
+                var maxP = autoPeakValues ? liveStats.max * 0.9 : maxPeakValue;
+
+                var maxima = StarFinder.findLocalMaxima(imp, minP, Double.MAX_VALUE, (int) Math.ceil(2 * radius), gaussRadius);
+
+                if (maxima.coordinateMaximas().size() > 25000) {
+                    var g = new GenericSwingDialog("MA Automatic Comp. Star Selection");
+                    g.addMessage("Maxima count has exceeded " + NumberFormat.getInstance().format(25000) + "; this can take a while to process, " +
+                            "do you wish to continue?\nMaxima count: " + NumberFormat.getInstance().format(maxima.coordinateMaximas().size()) +
+                            "\nChanging the peak value bounds will effect this number.\n" + "Probable causes are that " +
+                            "the Minimum peak threshold is set too low and/or the Maximum peak threshold is set " +
+                            "too high. Ensure that the Minimum value set is above the highest sky background region " +
+                            "and that the Maximum is below the saturation level.\n");
+                    g.enableYesNoCancel("Continue Auto", "Continue Manual");
+                    g.centerDialog(true);
+                    g.getOkay().setToolTipText("Continue to automatically extract comp stars");
+                    g.getNo().setToolTipText("Cancel the automatic comp star extraction, " +
+                            "but continue with manual aperture placement");
+                    g.getCancel().setToolTipText("Cancel both automatic and manual aperture placement");
+                    g.showDialog();
+                    IJ.beep();
+                    if (g.wasCanceled()) {
+                        cancelled = true;
+                        ocanvas.removeRoi(warning);
+                        shutDown();
+                    } else if (!g.wasOKed()) {
+                        tempSuggestCompStars = false;
+                        ocanvas.removeRoi(warning);
+                        return;
+                    }
+                }
+
+                if (maxima.coordinateMaximas().size() == 0) {
+                    var g = new GenericSwingDialog("MA Automatic Comp. Star Selection");
+                    g.addMessage("Number of maxima found is 0!\nProbable causes are that " +
+                            "the Minimum peak threshold is set too high and/or the Maximum peak threshold is set " +
+                            "too low. Ensure that the Minimum value set is above the highest sky background region " +
+                            "and that the Maximum is below the saturation level.\n");
+                    g.enableYesNoCancel("Continue Manual", "");
+                    g.centerDialog(true);
+                    g.disableNo();
+                    g.getOkay().setToolTipText("Continue to manually place comparison star apertures.");
+                    g.getCancel().setToolTipText("Cancel both automatic and manual aperture placement.");
+                    g.showDialog();
+                    IJ.beep();
+                    if (g.wasCanceled()) {
+                        ocanvas.removeRoi(warning);
+                        cancelled = true;
+                        shutDown();
+                    } else if (!g.wasOKed()) {
+                        tempSuggestCompStars = false;
+                        ocanvas.removeRoi(warning);
+                        return;
+                    }
+                }
+
+                if (cancelled) return;
+
+                if (enableLog) AIJLogger.log("Number of maxima: " + NumberFormat.getInstance().format(maxima.coordinateMaximas().size()));
+                if (enableLog) AIJLogger.log("Filtering...");
+                var m = removeCloseStars(maxima.coordinateMaximas(), t1Source, maxP);
+                if (cancelled) return;
+                if (enableLog) AIJLogger.log("Number of maxima that met distance and brightness thresholds: " + NumberFormat.getInstance().format(m.size()));
+                if (enableLog) AIJLogger.log("Weighing peaks...");
+                var set = weightAndLimitPeaks(m, t1Source);
+                if (cancelled) return;
+
+                if (set.size() == 0) {
+                    var g = new GenericSwingDialog("MA Automatic Comparison Star Selection");
+                    g.addMessage("No comparison stars found that meet the brightness thresholds set.\n" +
+                            "Check the brightness threshold settings in the Multi-Aperture set-up panel.\n");
+                    g.enableYesNoCancel("Continue Manual", "");
+                    g.centerDialog(true);
+                    g.disableNo();
+                    g.getOkay().setToolTipText("Continue to manually place comp. stars");
+                    g.getCancel().setToolTipText("Cancel Multi-Aperture");
+                    g.showDialog();
+                    IJ.beep();
+                    if (g.wasCanceled()) {
+                        ocanvas.removeRoi(warning);
+                        cancelled = true;
+                        shutDown();
+                    } else if (!g.wasOKed()) {
+                        tempSuggestCompStars = false;
+                        ocanvas.removeRoi(warning);
+                        return;
+                    }
+                }
+
+                if (set.size() > 0) {
+                    if (enableLog) AIJLogger.log("Placing suggested comp. stars...");
+                    for (WeightedCoordinateMaxima coordinateMaxima : set.subList(0, Math.min(maxSuggestedStars - refCount, set.size() - 1))) {
+                        if (cancelled) return;
+                        if (enableLog) AIJLogger.log(ngot + 1);
+                        if (enableLog) AIJLogger.log(coordinateMaxima);//todo apertures placing in wrong coordinates for tica image, fine for others, due to wcs
+                        xCenter = coordinateMaxima.cm.x();
+                        yCenter = coordinateMaxima.cm.y();
+
+                        addAperture(true, false);
+                    }
+                    if (enableLog) AIJLogger.log("Finished placing comp. stars!");
+                }
+
+                ocanvas.removeRoi(warning);
+
+                tempSuggestCompStars = false; // Disable suggestion for all other stars
+            }
+
+            suggestionRunning = false;
         }
+    }
+
+    private TreeSet<StarFinder.CoordinateMaxima> removeCloseStars(TreeSet<StarFinder.CoordinateMaxima> initialSet, double t1Source, double maxP) {
+        final var radius2 = 4 * radius * radius;
+        final var high = t1Source * (upperBrightness/100d);
+        final var low = t1Source * (lowerBrightness/100d);
+        //initialSet.removeIf(cm -> cm.squaredDistanceTo(xPos[0], yPos[0]) <= (radius2));
+
+        if (debugAp) {
+            initialSet.forEach(cm -> {
+                var ap = new MarkingRoi(cm.x(), cm.y(), false);
+                ap.setImage(imp);
+                ap.setFillColor(Color.RED);
+                ocanvas.add(ap);
+            });
+        }
+
+        final var radiusHalf = 0.25 * radius * radius;
+        final var reversedSet = (TreeSet<StarFinder.CoordinateMaxima>) initialSet.descendingSet();
+        final var toRemove = new HashSet<StarFinder.CoordinateMaxima>();
+        for (StarFinder.CoordinateMaxima brighter : reversedSet) {
+            for (StarFinder.CoordinateMaxima fainter : reversedSet.tailSet(brighter, false)) {
+                if (brighter != fainter) {
+                    if (brighter.value() < maxP && fainter.value() < maxP) {
+                        if (toRemove.contains(brighter)) continue;
+                    }
+                    if (toRemove.contains(fainter)) continue;
+                    var d = brighter.squaredDistanceTo(fainter);
+                    if (d <= radius2) {
+                        if (d > radiusHalf) {
+                            if (fainter.value() > 0.1 * brighter.value()) toRemove.add(brighter);
+                        }
+                        toRemove.add(fainter);
+                    }
+                }
+            }
+        }
+
+        initialSet.removeAll(toRemove);
+        initialSet.removeIf(cm -> cm.value() >= maxP);
+
+        TreeSet<StarFinder.CoordinateMaxima> n;
+        getMeasurementPrefs();
+
+        n = initialSet.parallelStream().map(m -> {
+            // Centroid for all stars
+            var center = adjustAperture(imp, m.x(), m.y(), radius, rBack1, rBack2, true).center();
+
+            for (int i = 0; i < xPos.length; i++) {
+                if (squaredDistanceTo(xPos[i], yPos[i], center.x(), center.y()) <= (radius2)) return null;
+            }
+
+            var photom = measurePhotometry(imp, center.x(), center.y(), radius, rBack1, rBack2);
+
+            var s = photom.sourceBrightness();
+            return new StarFinder.CoordinateMaxima(s, center.x(), center.y());
+        }).filter(Objects::nonNull).collect(Collectors.toCollection(TreeSet::new));
+
+        // Remove elements where the apertures would be identical
+        var m = new ConcurrentLinkedDeque<StarFinder.CoordinateMaxima>();
+        n.parallelStream().forEach(c -> {
+            if (m.contains(c)) return;
+            n.parallelStream().forEach(c2 -> {
+                if (c == c2) return;
+                if (c2.identicalRoi(c)) m.add(c2);
+            });
+        });
+        n.removeAll(m);
+
+        initialSet = n;
+
+        if (debugAp) {
+            initialSet.forEach(cm -> {
+                var ap = new MarkingRoi(cm.x(), cm.y(), true);
+                ap.setImage(imp);
+                ap.setFillColor(Color.BLUE);
+                ocanvas.add(ap);
+            });
+        }
+
+        // Remove all stars that are outside the thresholds
+        initialSet.removeIf(c -> !(c.value() >= low && c.value() <= high));
+
+        return (TreeSet<StarFinder.CoordinateMaxima>) initialSet.descendingSet();
+    }
+
+    private List<WeightedCoordinateMaxima> weightAndLimitPeaks(TreeSet<StarFinder.CoordinateMaxima> initialSet, final double t1Source) {
+        final Comparator<WeightedCoordinateMaxima> x = Comparator.comparingDouble(d -> d.weight);
+        final var out = initialSet.parallelStream().map(o -> calculateDistanceBrightnessFactor(t1Source, o)).sorted(x.reversed());
+        return out.limit(maxSuggestedStars).collect(Collectors.toList());
+    }
+
+    private WeightedCoordinateMaxima calculateDistanceBrightnessFactor(double t1Source, StarFinder.CoordinateMaxima coordinateMaxima) {
+        final double imageWidth2 = imp.getWidth() * imp.getWidth();
+        final double imageHeight2 = imp.getHeight() * imp.getHeight();
+        final double imageDiagonalLength = Math.sqrt(imageHeight2 + imageWidth2);
+
+        final var b = coordinateMaxima.value();
+        final double normBrightness;
+        if (b <= t1Source) {
+            normBrightness = 1.0 - (t1Source - b) / (t1Source * (1.0 - (lowerBrightness / 100.0)));
+        } else {
+            normBrightness = 1.0 - (b - t1Source) / (t1Source * ((upperBrightness / 100.0) - 1.0));
+        }
+        final double normDistance = 1 - (distanceTo(xPos[referenceStar - 1], yPos[referenceStar - 1], coordinateMaxima.x(), coordinateMaxima.y()) / imageDiagonalLength);
+        return new WeightedCoordinateMaxima(coordinateMaxima, (brightness2DistanceWeight/100d) * normBrightness + (1 - brightness2DistanceWeight/100d) * normDistance);
+    }
+
+    record WeightedCoordinateMaxima(StarFinder.CoordinateMaxima cm, double weight) {}
+
+    private double distanceTo(double x1, double y1, double x2, double y2) {
+        return Math.sqrt(squaredDistanceTo(x1, y1, x2, y2));
+    }
+
+    private double squaredDistanceTo(double x1, double y1, double x2, double y2) {
+        final var h = x2 - x1;
+        final var v = y2 - y1;
+        return h*h + v*v;
     }
 
     boolean placeApertures(int start, int end, boolean enableCentroid, boolean clearRois) {
@@ -1181,6 +1504,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         if (clearRois && (starOverlay || skyOverlay || valueOverlay || nameOverlay)) {
             //ocanvas.clearRois();
             ocanvas.removeApertureRois();
+            ocanvas.removeMarkingRois();
             ocanvas.removeAstrometryAnnotateRois();
         }
 
@@ -1221,6 +1545,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 setApertureName("C" + (ap + 1));
                 if (absMag[ap] < 99.0) setAbsMag(absMag[ap]);
             }
+
+            if (!t1Placed) t1Placed = "T1".equals(apertureName);
 
             if ((useMA || useAlign) && useWCS) {
                 if (autoMode && !hasWCS) {
@@ -1759,7 +2085,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         lastSlice = stackSize;
         if (singleStep) { lastSlice = firstSlice; }
         if (!autoMode) {
-            GenericDialog gd = dialog();
+            GenericSwingDialog gd = dialog();
 
             gd.showDialog();
             xLocation = gd.getX();
@@ -1785,9 +2111,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             }
 //                Prefs.set (MultiAperture_.PREFS_NAPERTURESMAX, nAperturesMax);
             if (stackSize > 1) {
-                firstSlice = (int) gd.getNextNumber();
+                //firstSlice = (int) gd.getNextNumber();
                 if (gd.invalidNumber() || firstSlice < 1) { firstSlice = 1; }
-                lastSlice = (int) gd.getNextNumber();
+                //lastSlice = (int) gd.getNextNumber();
                 if (gd.invalidNumber() || lastSlice > stackSize) { lastSlice = stackSize; }
                 if (firstSlice != lastSlice) {
                     if (firstSlice > lastSlice) {
@@ -1803,31 +2129,27 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             }
             initialFirstSlice = firstSlice;
             initialLastSlice = lastSlice;
-            radius = gd.getNextNumber();
+            //radius = gd.getNextNumber();
             if (gd.invalidNumber() || radius <= 0) {
                 IJ.beep();
                 IJ.error("Invalid aperture radius: " + radius);
                 return false;
             }
             if (oldradius != radius) { changeAperture(); }
-            rBack1 = gd.getNextNumber();
+            //rBack1 = gd.getNextNumber();
             if (gd.invalidNumber() || rBack1 < radius) {
                 IJ.beep();
                 IJ.error("Invalid background inner radius: " + rBack1);
                 return false;
             }
             if (oldrBack1 != rBack1) { changeAperture(); }
-            rBack2 = gd.getNextNumber();
+            //rBack2 = gd.getNextNumber();
             if (gd.invalidNumber() || rBack2 < rBack1) {
                 IJ.beep();
                 IJ.error("Invalid background outer radius: " + rBack2);
                 return false;
             }
             if (oldrBack2 != rBack2) { changeAperture(); }
-            previous = gd.getNextBoolean();
-            useWCS = gd.getNextBoolean();
-            singleStep = gd.getNextBoolean();
-            allowSingleStepApChanges = gd.getNextBoolean();
             if (singleStep) { lastSlice = firstSlice; }
 //                oneTable = !gd.getNextBoolean();
 //                wideTable = gd.getNextBoolean();
@@ -2327,7 +2649,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         canvas.repaint();
 
         if (!isInstanceOfStackAlign && showMeanWidth && calcRadProFWHM) {
-            if (nFWHM > 0) { fwhmMean /= nFWHM; } else fwhmMean = 0.0;
+            if (nFWHM > 0) {
+                fwhmMean /= nFWHM;
+            } else fwhmMean = 0.0;
             table.addValue("FWHM_Mean", fwhmMean, 6);
         }
 
@@ -2461,7 +2785,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     IJ.runPlugIn("Astronomy.MultiPlot_", tableName);
                     if (MultiPlot_.mainFrame != null && MultiPlot_.getTable() != null) {
 //                        IJ.log("setTable first time");
-                        MultiPlot_.setTable(table, true);
+                        MultiPlot_.setTable(table, false);
 //                        IJ.log("setTable first time complete");
                     }
                 }
@@ -2857,46 +3181,46 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     /**
      * Standard preferences dialog for MultiAperture_
      */
-    protected GenericDialog dialog() {
+    protected GenericSwingDialog dialog() {
         if (!Prefs.isLocationOnScreen(new Point(xLocation, yLocation))) {
             xLocation = 10;
             yLocation = 10;
         }
 
-        GenericDialog gd = new GenericDialog("Multi-Aperture Measurements", xLocation, yLocation);
-//		gd.addMessage ("Aperture radii should have been set with the \"Set Aperture\" tool (double-click icon).");
+        GenericSwingDialog gd = new GenericSwingDialog("Multi-Aperture Measurements", xLocation, yLocation);
+        gd.setSaveAndUseStepSize(true);
 
-//		gd.addNumericField ("   Maximum number of apertures per image :", nAperturesMax,0,6,"");
-//        gd.addMessage("");
+        var sliders = new JPanel[5];
         if (stackSize > 1) {
-            gd.addSlider("           First slice ", 1, stackSize, (firstSlice == stackSize || (alwaysstartatfirstSlice && !(this instanceof Stack_Aligner))) ? 1 : firstSlice);
-            gd.addSlider("           Last slice ", 1, stackSize, lastSlice);
-//			gd.addNumericField ("           First slice :", firstSlice == stackSize ? 1 : firstSlice,0);
-//			gd.addNumericField ("           Last slice :",  lastSlice, 0);
+            firstSlice = (alwaysstartatfirstSlice && !(this instanceof Stack_Aligner)) ? 1 : firstSlice;
+            sliders[0] = gd.addSlider("           First slice ", 1, stackSize, (firstSlice == stackSize || (alwaysstartatfirstSlice && !(this instanceof Stack_Aligner))) ? 1 : firstSlice, d -> firstSlice = d.intValue());
+            sliders[1] = gd.addSlider("           Last slice ", 1, stackSize, lastSlice, d -> lastSlice = d.intValue());
         }
-//        gd.addMessage("");
-        gd.addFloatSlider("Radius of object aperture", 0.01, radius > 100 ? radius : 100, radius, 3, 1.0);
-        gd.addFloatSlider("Inner radius of background annulus", 0.01, rBack1 > 100 ? rBack1 : 100, rBack1, 3, 1.0);
-        gd.addFloatSlider("Outer radius of background annulus", 0.01, rBack2 > 100 ? rBack2 : 100, rBack2, 3, 1.0);
-//        gd.addNumericField ("Radius of object aperture",radius,2);
-//		gd.addNumericField ("Inner radius of background annulus",rBack1,2);
-//		gd.addNumericField ("Outer radius of background annulus",rBack2,2);
-//        gd.addMessage("");
-        gd.addCheckbox("Use previous " + nAperturesStored + " apertures (1-click to set first aperture location)", previous && nAperturesStored > 0);
-        gd.addCheckbox("Use RA/Dec to locate aperture positions", useWCS);
-        gd.addCheckbox("Use single step mode (1-click to set first aperture location in each image)", singleStep);
-        gd.addCheckbox("Allow aperture changes between slices in single step mode (right click to advance image)", allowSingleStepApChanges);
-//		gd.addCheckbox ("Put results in image's own measurements table.", !oneTable);
-//		gd.addCheckbox ("All measurements from one image on the same Measurements Table line.", wideTable);
+        var autoRadiusBox = gd.addCheckbox("Auto Radius", autoRadius, b -> autoRadius = b);
+        autoRadiusBox.addChangeListener($ -> toggleComponents(sliders, 2, !autoRadius));
+        toggleComponents(sliders, 2, !autoRadius);
+        gd.addToSameRow();
+        gd.setOverridePosition(true);
+        sliders[2] = gd.addFloatSlider("Radius of object aperture", 0.01, radius > 100 ? radius : 100, false, radius, 3, 1.0, d -> radius = d);
+        gd.setOverridePosition(false);
+        sliders[3] = gd.addFloatSlider("Inner radius of background annulus", 0.01, rBack1 > 100 ? rBack1 : 100, false, rBack1, 3, 1.0, d -> rBack1 = d);
+        sliders[4] = gd.addFloatSlider("Outer radius of background annulus", 0.01, rBack2 > 100 ? rBack2 : 100, false, rBack2, 3, 1.0, d -> rBack2 = d);
+        gd.addCheckbox("Use previous " + nAperturesStored + " apertures (1-click to set first aperture location)", previous && nAperturesStored > 0, b -> previous = b);
+        gd.addCheckbox("Use RA/Dec to locate aperture positions", useWCS, b -> useWCS = b);
+        gd.addCheckbox("Use single step mode (1-click to set first aperture location in each image)", singleStep, b -> singleStep = b);
+        gd.addCheckbox("Allow aperture changes between slices in single step mode (right click to advance image)", allowSingleStepApChanges, b -> allowSingleStepApChanges = b);
         gd.addMessage("");
+
+        // Make all sliders the same size
+        var sliderWidth = Math.max(GenericSwingDialog.getSliderWidth(sliders[2]), Integer.toString(stackSize).length());
+        for (JPanel slider : sliders) {
+            GenericSwingDialog.setSliderSpinnerColumns(slider, sliderWidth);
+        }
 
         // HERE ARE THE THINGS WHICH AREN'T ABSOLUTELY NECESSARY
         addFancyDialog(gd);
 
-        // gd.addCheckbox ("Track moving object (experimental!).",follow);
-        // gd.addMessage (" ");
         gd.addMessage("CLICK 'PLACE APERTURES' AND SELECT APERTURE LOCATIONS WITH LEFT CLICKS.\nTHEN RIGHT CLICK or <ENTER> TO BEGIN PROCESSING.\n(to abort aperture selection or processing, press <ESC>)");
-//        gd.addMessage ("(to abort aperture selection or processing, press <ESC>)");
         if (!(this instanceof Stack_Aligner)) gd.enableYesNoCancel("Place Apertures", "Aperture Settings");
         return gd;
     }
@@ -2905,48 +3229,190 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
      * Adds options to MultiAperture_ dialog() which aren't absolutely necessary.
      * Sub-classes of MultiAperture_ may choose to replace or extend this functionality if they use the original dialog().
      */
-    protected void addFancyDialog(GenericDialog gd) {
+    protected void addFancyDialog(GenericSwingDialog gd) {
+        final var list1 = new ArrayList<Consumer<Boolean>>();
+        list1.add(b -> reposition = b);
+        list1.add(b -> haltOnError = b);
+        list1.add(b -> removeBackStars = b);
+        list1.add(b -> backIsPlane = b);
+
+        // Suggestion of comp. stars
+        final var columns = Math.max(10, Math.max(Double.toString(max).length(), Double.toString(maxPeakValue).length()));
+
+        final var listb = new ArrayList<Consumer<Boolean>>();
+        listb.add(b -> suggestCompStars = b);
+        listb.add(b -> enableLog = b);
+        listb.add(b -> debugAp = b);
+        var s = gd.addCheckboxGroup(1, 3, new String[]{"Auto comparison stars", "Enable log", "Show peaks"}, new boolean[]{suggestCompStars, enableLog, debugAp}, listb);
+
+        final var gauss = gd.addBoundedNumericField("Smoothing Filter Radius", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), gaussRadius, 1, 10, "pixels", d -> gaussRadius = d);
+        final var autoPeaks = gd.addCheckbox("Auto Thresholds", autoPeakValues, b -> autoPeakValues = b);
+        gd.addToSameRow();
+        gd.setOverridePosition(true);
+        final var maxPeak = gd.addBoundedNumericField("Max. Peak Value", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), maxPeakValue, 1, columns, null, d -> maxPeakValue = d);
+        gd.addToSameRow();
+        final var minPeak = gd.addBoundedNumericField("Min. Peak Value", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), minPeakValue, 1, columns, null, d -> minPeakValue = d);
+        gd.resetPositionOverride();
+        gd.setNewPosition(GridBagConstraints.WEST);
+        gd.setLeftInset(20);
+        final var starSelection = gd.addBoundedNumericField("Base Aperture", new GenericSwingDialog.Bounds(1, Double.MAX_VALUE), referenceStar, 1, 7, null, true, d -> referenceStar = d.intValue());
+        gd.addToSameRow();
+        gd.resetPositionOverride();
+        if (upperBrightness < 101.0) upperBrightness = 150.0;
+        if (lowerBrightness >  99.0 || lowerBrightness < 0.0 ) lowerBrightness = 50.0;
+        final var maxDBrightness = gd.addBoundedNumericField("Max. Comp. Brightness %", new GenericSwingDialog.Bounds(101, Double.MAX_VALUE), upperBrightness, 1, columns, null, d -> upperBrightness = d);
+        gd.addToSameRow();
+        final var minDBrightness = gd.addBoundedNumericField("Min. Comp. Brightness %", new GenericSwingDialog.Bounds(0, 99), lowerBrightness, 1, columns, null, d -> lowerBrightness = d);
+        gd.setOverridePosition(false);
+
+        final var brightnessVsDistance = gd.addBoundedNumericField("Weight of brightness vs. distance:", new GenericSwingDialog.Bounds(0, 100), brightness2DistanceWeight, 1, columns, null, d -> brightness2DistanceWeight = d);
+        gd.addToSameRow();
+        final var maxStars = gd.addBoundedNumericField("Max. Comp. Stars", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), maxSuggestedStars, 1, columns, null, true, d -> maxSuggestedStars = d.intValue());
+        autoPeaks.setToolTipText("<hmtl>When enabled, set peak thresholds based on image statistics.<br>Max = 0.9 * Max Pixel Value, Min = Mean Pixel Value + 1σ.</html>");
+
+        final var liveStats = asw.getLiveStatistics();
+        var minP = autoPeakValues ? liveStats.mean + (1 * liveStats.stdDev) : minPeakValue;
+        var maxP = autoPeakValues ? liveStats.max * 0.9 : maxPeakValue;
+        //if (enableLog) AIJLogger.log("Image mean = "+liveStats.mean);
+        //if (enableLog) AIJLogger.log("Image stdDev = "+liveStats.stdDev);
+        //if (enableLog) AIJLogger.log("Image max = "+liveStats.max);
+        minPeak.c1().setEnabled(!autoPeakValues);
+        maxPeak.c1().setEnabled(!autoPeakValues);
+        DecimalFormat fourPlaces = new DecimalFormat("###,##0.00", IJU.dfs);
+        DecimalFormat scientificFourPlaces = new DecimalFormat("0.####E00", IJU.dfs);
+        if (autoPeakValues) {
+            GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText(minP < 1000000.0 ? fourPlaces.format(minP) : scientificFourPlaces.format(minP)));
+            GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText(maxP < 1000000.0 ? fourPlaces.format(maxP) : scientificFourPlaces.format(maxP)));
+        } else {
+            GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText(minPeakValue < 1000000.0 ? fourPlaces.format(minPeakValue) : scientificFourPlaces.format(minPeakValue)));
+            GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText(maxPeakValue < 1000000.0 ? fourPlaces.format(maxPeakValue) : scientificFourPlaces.format(maxPeakValue)));
+        }
+        autoPeaks.addPropertyChangeListener($ -> {
+            var minP1 = autoPeakValues ? liveStats.mean + (1 * liveStats.stdDev) : minPeakValue;
+            var maxP1 = autoPeakValues ? liveStats.max * 0.9 : maxPeakValue;
+            minPeak.c1().setEnabled(!autoPeakValues && suggestCompStars);
+            maxPeak.c1().setEnabled(!autoPeakValues && suggestCompStars);
+            if (autoPeakValues) {
+                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText(minP < 1000000.0 ? fourPlaces.format(minP1) : scientificFourPlaces.format(minP1)));
+                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText(maxP < 1000000.0 ? fourPlaces.format(maxP1) : scientificFourPlaces.format(maxP1)));
+            } else {
+                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText(minPeakValue < 1000000.0 ? fourPlaces.format(minPeakValue) : scientificFourPlaces.format(minPeakValue)));
+                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText(maxPeakValue < 1000000.0 ? fourPlaces.format(maxPeakValue) : scientificFourPlaces.format(maxPeakValue)));
+            }
+        });
+
+
+        starSelection.c2().setToolTipText("The aperture to base comparison star selection on.");
+        gauss.c2().setToolTipText("<html>Radius of gaussian smoothing to use when finding initial peaks.<br> Set to 1 to disable.</html>");
+        maxPeak.c2().setToolTipText("Maximum peak value to consider");
+        minPeak.c2().setToolTipText("Minimum peak value to consider");
+        maxStars.c2().setToolTipText("Maximum number of comparison stars to select. Includes already selected comp. stars in its count");
+        maxDBrightness.c2().setToolTipText("Upper brightness limit of comp stars relative to the base aperture brightness");
+        minDBrightness.c2().setToolTipText("Lower brightness limit of comp stars relative to the base aperture brightness");
+        brightnessVsDistance.c2().setToolTipText("<html>Weight of brightness vs distance, used to sort stars.<br>" +
+                "Based on normalized Source-Sky brightness and distance relative to the specified base aperture.<br>" +
+                "A value of 100 makes the weighting based entirely on the normalized brightness.<br>" +
+                "A value of 0 makes the weighting entirely based on proximity to the specified base aperture.<br>" +
+                "If more stars were found than the maximum requested, the stars with the highest weights are used.</html>");
+
+        JSpinner maxPeakSpin = (JSpinner) maxPeak.c1();
+        JSpinner minPeakSpin = (JSpinner) minPeak.c1();
+        maxPeakSpin.getModel().addChangeListener($ -> {
+            if (maxPeakSpin.getValue() instanceof Double d) {
+                if (d.compareTo(minPeakValue) <= 0) maxPeakSpin.setValue(GenericSwingDialog.nextUp(minPeakValue));
+            }
+        });
+        minPeakSpin.getModel().addChangeListener($ -> {
+            if (minPeakSpin.getValue() instanceof Double d) {
+                if (d.compareTo(maxPeakValue) >= 0) minPeakSpin.setValue(GenericSwingDialog.nextDown(maxPeakValue));
+            }
+        });
+
+        var suggestionComponents = new LinkedHashSet<Component>();
+        suggestionComponents.add(gauss.c2());
+        suggestionComponents.add(gauss.c1());
+        suggestionComponents.add(autoPeaks);
+        suggestionComponents.add(minPeak.c2());
+        suggestionComponents.add(maxPeak.c2());
+        suggestionComponents.add(starSelection.c2());
+        suggestionComponents.add(maxDBrightness.c2());
+        suggestionComponents.add(minDBrightness.c2());
+        suggestionComponents.add(brightnessVsDistance.c2());
+        suggestionComponents.add(maxStars.c2());
+        suggestionComponents.addAll(s.subComponents().subList(1, s.subComponents().size()));
+
+        toggleComponents(suggestionComponents, suggestCompStars);
+        ((JCheckBox)s.subComponents().getFirst()).addActionListener($ -> toggleComponents(suggestionComponents, !suggestCompStars));
+
+        gd.addMessage("");
+
         // GET NON-REQUIRED DIALOGUE FIELDS:
-        //	showRatio,showRatioError,showRatioSNR,useVarSizeAp,apFWHMFactor
-//        gd.addCheckbox ("Reposition aperture to object centroid (leave unchecked to center aperture at mouse click or RA/Dec)",reposition);
         gd.addCheckboxGroup(2, 2, new String[]{"Centroid apertures (initial setting)", "Halt processing on WCS or centroid error",
                         "Remove stars from background", "Assume background is a plane"},
 //                                                "Compute relative flux", "Compute relative flux error",
 //                                                "Compute relative flux signal-to-noise", "Compute total comparison star counts"},
-                new boolean[]{reposition, haltOnError, removeBackStars, backIsPlane});//,showRatio, showRatioError,showRatioSNR,showCompTot});
-//        gd.addCheckbox ("Assume background is a plane.", backIsPlane);
+                new boolean[]{reposition, haltOnError, removeBackStars, backIsPlane}, list1);//,showRatio, showRatioError,showRatioSNR,showCompTot});
 
-//		gd.addCheckboxGroup (1, 2, new String[]{"Compute relative flux", "Compute relative flux error"}, new boolean[]{showRatio, showRatioError});
-//		gd.addCheckbox ("Compute relative flux error (only if you check \"Compute relative flux\" above).",showRatioError);
-//		gd.addCheckboxGroup (1, 2, new String[]{"Compute relative flux signal-to-noise", "Compute total comparison star counts"}, new boolean[]{showRatioSNR,showCompTot});
-//        gd.addCheckbox ("Compute total comparison star counts.",showCompTot);
         gd.addMessage("");
-        gd.addCheckbox("Vary aperture radius based on FWHM", useVarSizeAp);
-        gd.addSlider("            FWHM factor (set to 0.00 for radial profile mode):", 0.0, 5.1, apFWHMFactor);
-        gd.addNumericField("Radial profile mode normalized flux cutoff:", autoModeFluxCutOff, 3, 6, "(0 < cuffoff < 1 ; default = 0.010)");
+        gd.addCheckbox("Vary aperture radius based on FWHM", useVarSizeAp, b -> useVarSizeAp = b);
+        gd.addFloatSlider("            FWHM factor (set to 0.00 for radial profile mode):", 0.0, 5.0, false, apFWHMFactor, 3, 0.1, d -> apFWHMFactor = d);
+        gd.addBoundedNumericField("Radial profile mode normalized flux cutoff:", new GenericSwingDialog.Bounds(0, false, 1, false), autoModeFluxCutOff, .01, 6, "(0 < cuffoff < 1 ; default = 0.010)", d -> autoModeFluxCutOff = d);
         gd.addMessage("");
-        gd.addCheckbox("Prompt to enter ref star apparent magnitude (required if target star apparent mag is desired)", getMags);
+        gd.addCheckbox("Prompt to enter ref star apparent magnitude (required if target star apparent mag is desired)", getMags, b -> getMags = b);
+
+        final var list2 = new ArrayList<Consumer<Boolean>>();
+        list2.add(b -> updatePlot = b);
+        list2.add(b -> showHelp = b);
         gd.addCheckboxGroup(1, 2, new String[]{"Update table and plot while running", "Show help panel during aperture selection"},
-                new boolean[]{updatePlot, showHelp});
+                new boolean[]{updatePlot, showHelp}, list2);
+    }
+
+    private void toggleComponents(Component[] components, int offset, boolean toggle) {
+        for (int i = offset; i < components.length; i++) {
+            if (components[i] == null) continue;
+            components[i].setEnabled(toggle);
+            if (components[i] instanceof Container) {
+                for (Component child : ((Container) components[i]).getComponents()) {
+                    setEnabled(child, toggle);
+                }
+            }
+            if (components[i] instanceof Panel panel) {
+                toggleComponents(panel.getComponents(), 0, toggle);
+            } else if (components[i] instanceof JSpinner spinner) {
+                toggleComponents(spinner.getComponents(), 0, toggle);
+            } else if (components[i] instanceof JSlider slider) {
+                toggleComponents(slider.getComponents(), 0, toggle);
+            } else if (components[i] instanceof JSpinner.DefaultEditor editor) {
+                AIJLogger.log(1);
+                editor.getSpinner().setEnabled(toggle);
+                editor.getTextField().setEnabled(toggle);
+            }
+            components[i].setEnabled(toggle);
+        }
+    }
+
+    void setEnabled(Component component, boolean enabled) {
+        component.setEnabled(enabled);
+        if (component instanceof Container) {
+            for (Component child : ((Container) component).getComponents()) {
+                setEnabled(child, enabled);
+            }
+        }
+    }
+
+    private void toggleComponents(Collection<Component> components, boolean toggle) {
+        for (Component component : components) {
+            component.setEnabled(toggle);
+        }
     }
 
     /**
      * Last part of non-required dialog created by addFancyDialog().
      * Sub-classes not using the original dialog() will need a dummy version of this method!
      */
-    protected boolean finishFancyDialog(GenericDialog gd) {
+    protected boolean finishFancyDialog(GenericSwingDialog gd) {
         // GET NON-REQUIRED DIALOGUE FIELDS:
         //	showRatio,showRatioError,showRatioSNR,useVarSizeAp,apFWHMFactor
-        reposition = gd.getNextBoolean();
-        haltOnError = gd.getNextBoolean();
-        removeBackStars = gd.getNextBoolean();
-        backIsPlane = gd.getNextBoolean();
-        useVarSizeAp = gd.getNextBoolean();
-        apFWHMFactor = gd.getNextNumber();
-        autoModeFluxCutOff = gd.getNextNumber();
-        getMags = gd.getNextBoolean();
-        updatePlot = gd.getNextBoolean();
-        showHelp = gd.getNextBoolean();
         if (gd.invalidNumber()) {
             IJ.beep();
             IJ.error("Invalid number entered");
@@ -2983,6 +3449,20 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         Prefs.set(MultiAperture_.PREFS_ENABLEDOUBLECLICKS, enableDoubleClicks);
         Prefs.set(MultiAperture_.PREFS_UPDATEPLOT, updatePlot);
         Prefs.set(MultiAperture_.PREFS_GETMAGS, getMags);
+        Prefs.set(MultiAperture_.PREFS_MAXPEAKVALUE, maxPeakValue);
+        Prefs.set(MultiAperture_.PREFS_MINPEAKVALUE, minPeakValue);
+        Prefs.set(MultiAperture_.PREFS_UPPERBRIGHTNESS, upperBrightness);
+        Prefs.set(MultiAperture_.PREFS_LOWERBRIGHTNESS, lowerBrightness);
+        Prefs.set(MultiAperture_.PREFS_BRIGHTNESSDISTANCE, brightness2DistanceWeight);
+        Prefs.set(MultiAperture_.PREFS_MAXSUGGESTEDSTARS, maxSuggestedStars);
+        Prefs.set(PREFS_SUGGESTCOMPSTARS, suggestCompStars);
+        Prefs.set(PREFS_DEBUGAPERTURESUGGESTION, debugAp);
+        Prefs.set(PREFS_GAUSSRADIUS, gaussRadius);
+        Prefs.set(PREFS_AUTOPEAKS, autoPeakValues);
+        Prefs.set(PREFS_AUTORADIUS, autoRadius);
+        Prefs.set(PREFS_REFERENCESTAR, referenceStar);
+        Prefs.set(PREFS_ENABLELOG, enableLog);
+        Prefs.savePreferences();
 
         if (!(this instanceof Stack_Aligner) && !gd.wasOKed()) {
             cancel();

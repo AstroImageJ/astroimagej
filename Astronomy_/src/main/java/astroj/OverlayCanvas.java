@@ -41,6 +41,10 @@ public class OverlayCanvas extends ImageCanvas
 		rois.addElement (roi);
 		}
 
+	public boolean removeRoi(Roi roi) {
+		return rois.remove(roi);
+	}
+
 	/**
 	 * Removes a particular roi from the overlay list if it encloses the pixel position (x,y).
 	 */
@@ -174,9 +178,17 @@ public class OverlayCanvas extends ImageCanvas
 	public void removeAnnotateRois ()
 		{
 			rois.removeIf(roi -> roi instanceof AnnotateRoi);
-		}   
-    
-    /**
+		}
+
+	/**
+	 * Removes all annotate rois from the overlay list.
+	 */
+	public void removeMarkingRois ()
+	{
+		rois.removeIf(roi -> roi instanceof MarkingRoi);
+	}
+
+		/**
 	 * Removes all astrometry annotate rois from the overlay list.
 	 */
 	public void removeAstrometryAnnotateRois ()

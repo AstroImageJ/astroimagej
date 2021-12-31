@@ -9,4 +9,6 @@ import java.lang.annotation.RetentionPolicy;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Translation {
     String value();
+
+    boolean trackThread() default false;
 }

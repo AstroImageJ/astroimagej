@@ -16,6 +16,7 @@ import ij.plugin.PlugIn;
 import ij.process.ImageProcessor;
 import ij.text.TextPanel;
 import ij.util.Tools;
+import util.GenericSwingDialog;
 import util.UIHelper;
 
 import javax.swing.*;
@@ -34,6 +35,7 @@ import java.awt.image.BufferedImage;
 import java.io.*;
 import java.text.DecimalFormat;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.stream.DoubleStream;
 
 /**
@@ -375,7 +377,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static boolean[][] autoUpdatePrior;
     static ImageIcon copyAndLockIcon = createImageIcon("astroj/images/customlegend.png", "Lock to the current fitted value.");
     static JButton[][] copyAndLockButton;
-    static double[] sigma, prevSigma, prevBic, tolerance, residualShift, autoResidualShift;
+    public static double[] sigma, prevSigma, prevBic, tolerance, residualShift, autoResidualShift;
     //        static double residualShiftStep;
     static double[] defaultFitStep;
     static JSpinner[] toleranceSpinner, residualShiftSpinner;
@@ -425,7 +427,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static double[][] bestFit;
     static JTextField[][] bestFitLabel;
 
-    static JComboBox<Object>[][] fitDetrendComboBox;
+    public static JComboBox<Object>[][] fitDetrendComboBox;
     static JCheckBox[][] useFitDetrendCB;
 
     static JButton[] fitNowButton;
@@ -435,7 +437,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static int[] nTries, dof, modelLineWidth, residualLineWidth, startDetrendPars, endDetrendPars;
     static double[] chi2;
     static boolean[] converged;
-    static double[] t14, t23, tau, chi2dof, bp, stellarDensity, planetRadius, bic, transitDepth;
+    static double[] t14, t23, tau, chi2dof, bp, stellarDensity, planetRadius, transitDepth;
+    public static double[] bic;
     static String[] spectralType;
     static double[] fitMin;
     static double[] fitMax;
@@ -646,7 +649,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static boolean[] fromMag;
     static int[] normIndex;
     static int[] detrendFitIndex;
-    static int[][] detrendIndex;
+    public static int[][] detrendIndex;
 
     static boolean[] plotY;
     static boolean[] useColumnName;
@@ -675,8 +678,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
     static JPanel[] refStarPanel;
     static JLabel[] refStarLabel;
-    static JCheckBox[] refStarCB;
+    public static JCheckBox[] refStarCB;
     static boolean[] isRefStar;
+    private static boolean[] savedIsRefStar;
     static JTextField[] absMagTF;
     static double[] absMag;
     static boolean hasAbsMag;
@@ -955,6 +959,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
     static public void setTable(MeasurementTable inTable, boolean forceUpdate, boolean useAutoAstroDataUpdate) {
         table = inTable;
+        FitOptimization.clearCleanHistory();
         if (table == null) {
             makeDummyTable();
         } else {
@@ -1010,6 +1015,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static public void makeDummyTable() {
         tableName = "No Table Selected";
         table = null; //MeasurementTable.getTable(tableName);
+        FitOptimization.clearCleanHistory();
         dataSectionBorder.setTitle("Data (" + MeasurementTable.shorterName(tableName) + ")");
         unfilteredColumns = new String[1];
         unfilteredColumns[0] = "";
@@ -1169,6 +1175,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static public void clearPlot() {
         checkAndLockTable();
         table = new MeasurementTable(tableName);
+        FitOptimization.clearCleanHistory();
         table.setLock(false);
 //        table.show();
         if (plot != null) {
@@ -1262,6 +1269,18 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         checkAndLockTable();
 //                table = MeasurementTable.getTable (tableName);
 //                tpanel = MeasurementTable.getTextPanel(MeasurementTable.longerName(tableName));
+
+        //Make sure all panels have been created. If not created within 5 secs, abort.
+        if (fitPanel[maxCurves-1] == null){
+            for (int i=0; i<51; i++){
+                IJ.wait(100);
+                if (fitPanel[maxCurves-1] != null){
+                    //IJ.log("fitPanel wait = "+(i*100)+"msec");
+                    break;
+                }
+                if (i == 50) return;
+            }
+        }
 
         if (table == null || tableName.equals("No Table Selected")) {
             updatePlotRunning = false;
@@ -2580,7 +2599,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         }
                     }
                 } else {
-                    detrendpanelgroup[curve].setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+                    if(detrendpanelgroup[curve] != null) detrendpanelgroup[curve].setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
                 }
 
                 if (detrendFitIndex[curve] == 9 && useTransitFit[curve] && yModel1[curve] != null) {
@@ -2841,7 +2860,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
                         if (normCount == 0) {
                             normAverage = 0.0;
-                            for (int j = 0; j < nn[curve]; j++) {
+                            for (int j = 0; j < yModel1[curve].length; j++) {
                                 if (!Double.isNaN(yModel1[curve][j]) && !Double.isNaN(detrendXs[curve][j])) {
                                     invVar = 1 / (detrendYEs[curve][j] * detrendYEs[curve][j]);
                                     normAverage += yModel1[curve][j] * invVar;
@@ -2912,6 +2931,11 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         normAverage /= normCount;
                     }
 
+//                    IJ.log("normAverage  = "+normAverage);
+//                    IJ.log("fit baseline = "+bestFit[curve][0]);
+                    if (detrendFitIndex[curve] == 9 && useTransitFit[curve] && detrendXs[curve] != null && detrendYEs[curve] != null && yModel1[curve] != null) {
+                        normAverage = bestFit[curve][0];
+                    }
                     for (int j = 0; j < nn[curve]; j++) {
                         if (hasErrors[curve] || hasOpErrors[curve]) {
                             yerr[curve][j] /= normAverage;
@@ -4675,7 +4699,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             Prefs.set("plot2.JDColumn", JDColumn);
 
             saveAstroPanelPrefs();
-
+            checkAndLockTable();
             int tableLength = table.getCounter();
             for (int i = 0; i < tableLength; i++) {
                 if (updateMPCC(i)) {
@@ -4713,6 +4737,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
 
             table.show();
+            table.setLock(false);
             updatePlot(updateAllFits(), true);
             Thread t2 = new Thread(() -> {
                 if (OKbutton != null) {
@@ -5771,14 +5796,14 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         airmassName = "AIRMASS";
         altitudeName = "ALTITUDE";
         azimuthName = "AZIMUTH";
-        bjdName = "BJD_TDB_MOBS";
+        bjdName = "BJD_TDB";
         bjdCorrName = "BJD_CORR";
         decNowName = "DEC_EOD";
         raNowName = "RA_EOD";
         dec2000Name = "DEC_J2000";
         ra2000Name = "RA_J2000";
-        gjdName = "JD_UTC_MOBS";
-        hjdName = "HJD_UTC_MOBS";
+        gjdName = "JD_UTC";
+        hjdName = "HJD_UTC";
         hjdCorrName = "HJD_CORR";
         hourAngleName = "HOUR_ANGLE";
         zenithDistanceName = "ZENITH_DIST";
@@ -12199,6 +12224,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
 
     static void createFitPanel(final int c) {
+        if (fitFrame[c] != null && fitFrame[c].isShowing()) return;
         int nlines = 1;
         fitFrame[c] = new JFrame("Data Set " + (c + 1) + " Fit Settings");
         fitFrame[c].setIconImage(fitFrameIcon.getImage());
@@ -13256,6 +13282,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         SpringUtil.makeCompactGrid(fitStatisticsPanel, 1, fitStatisticsPanel.getComponentCount(), 0, 0, 0, 0);
         fitPanel[c].add(fitStatisticsPanel);
 
+        // Fit Optimizations
+        var opti = new FitOptimization(c, 0);
+        fitPanel[c].add(opti.makeFitOptimizationPanel());
+
         JPanel plotPanel = new JPanel(new SpringLayout());
         plotPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(mainBorderColor, 1), "Plot Settings", TitledBorder.LEFT, TitledBorder.TOP, b12, Color.darkGray));
 
@@ -13340,9 +13370,17 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         SpringUtil.makeCompactGrid(modelLineWidthPanel, 1, modelLineWidthPanel.getComponentCount(), 0, 0, 0, 0);
         modelPanel.add(modelLineWidthPanel);
 
+        JPanel optiPanelControl = new JPanel(new SpringLayout());
+        optiPanelControl.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(subBorderColor, 1), "Log", TitledBorder.CENTER, TitledBorder.TOP, p11, Color.darkGray));
 
-        JLabel modelDummyLabel = new JLabel("");
+
+        JLabel modelDummyLabel = new JLabel("   ");
         modelPanel.add(modelDummyLabel);
+
+        var logCheckBox = new JCheckBox("Log Optimization", FitOptimization.showOptLog);
+        logCheckBox.addActionListener($ -> FitOptimization.showOptLog = logCheckBox.isSelected());
+        logCheckBox.setToolTipText("Display a log of optimization actions.");
+        modelPanel.add(logCheckBox);
 
         SpringUtil.makeCompactGrid(modelPanel, 1, modelPanel.getComponentCount(), 0, 0, 0, 0);
         plotPanel.add(modelPanel);
@@ -13686,6 +13724,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 break;
             }
         }
+        fitFrame[c].pack();
         if (rememberWindowLocations) {
             if (keepSeparateLocationsForFitWindows) {
                 IJU.setFrameSizeAndLocation(fitFrame[c], fitFrameLocationX[c], fitFrameLocationY[c], 0, 0);
@@ -13699,7 +13738,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         }
         if (openFitPanels && detrendFitIndex[c] == 9) fitFrame[c].setVisible(true);
 
-        fitFrame[c].pack();
         FileDrop fileDrop = new FileDrop(fitPanel[c], BorderFactory.createEmptyBorder(), MultiPlot_::openDragAndDropFiles);
     }
 
@@ -13991,7 +14029,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         }
     }
 
-    static void setFittedParametersBorderColor(final int c, final Border border) {
+    static void
+    setFittedParametersBorderColor(final int c, final Border border) {
         if (bestFitLabel[c][0] != null) {
             for (int p = 0; p < bestFitLabel[c].length; p++) {
                 if (lockToCenter[c][p] || bestFitLabel[c][p].getText().equals("")) {
@@ -14060,7 +14099,11 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     }
 
     static double getFitStep(int c, int row) {
-        return useCustomFitStep[c][row] ? fitStep[c][row] > 0.0 ? fitStep[c][row] : defaultFitStep[row] : (usePriorWidth[c][row] && priorWidth[c][row] > 0.0 ? (priorWidth[c][row] * 0.9 < priorCenter[c][row] ? priorWidth[c][row] * 0.9 : priorCenter[c][row] > 0.0 ? priorCenter[c][row] : defaultFitStep[row]) : (priorCenter[c][row] < defaultFitStep[row] && priorCenter[c][row] > 0.0 ? priorCenter[c][row] : defaultFitStep[row]));
+        return getFitStep(c, row, priorWidth[c], priorCenter[c]);
+    }
+
+    static double getFitStep(int c, int row, double[] width, double[] center) {
+        return useCustomFitStep[c][row] ? fitStep[c][row] > 0.0 ? fitStep[c][row] : defaultFitStep[row] : (usePriorWidth[c][row] && width[row] > 0.0 ? (width[row] * 0.9 < center[row] ? width[row] * 0.9 : center[row] > 0.0 ? center[row] : defaultFitStep[row]) : (center[row] < defaultFitStep[row] && center[row] > 0.0 ? center[row] : defaultFitStep[row]));
     }
 
     static void enableTransitComponents(int c) {
@@ -14302,10 +14345,18 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             });
             allNonePanel.add(allButton);
 
-            JButton setButton = new JButton("Set");
-            setButton.setToolTipText("Sets the current enabled stars as the 'cycle' set");
-            setButton.addActionListener(e -> cycleEnabledStarsLess1PressedConsecutive = false);
+            JButton setButton = new JButton("Save");
+            setButton.setToolTipText("Sets the current enabled stars as the 'cycle' set, and saves them for use in 'Recall.'");
+            setButton.addActionListener(e -> {
+                cycleEnabledStarsLess1PressedConsecutive = false;
+                saveCompEnsemble();
+            });
             allNonePanel.add(setButton);
+
+            JButton recallButton = new JButton("Recall");
+            recallButton.setToolTipText("Sets the current enabled stars to match the stars that were 'Saved.'");
+            recallButton.addActionListener(e -> loadCompEnsemble());
+            allNonePanel.add(recallButton);
 
             JButton cycleEnabledStarsLess1Button = new JButton("Cycle Enabled Stars Less One");
             cycleEnabledStarsLess1Button.setToolTipText("Removes one star at a time from the current selected set");
@@ -14565,6 +14616,17 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         refStarPanelWasShowing = true;
         FileDrop fileDrop = new FileDrop(refStarMainPanel, BorderFactory.createEmptyBorder(), MultiPlot_::openDragAndDropFiles);
 
+    }
+
+    public static void saveCompEnsemble() {
+        if (isRefStar == null) return;
+        savedIsRefStar = Arrays.copyOf(isRefStar, isRefStar.length);
+    }
+
+    public static void loadCompEnsemble() {
+        for (int r = 0; r < savedIsRefStar.length; r++) {
+            refStarCB[r].setSelected(savedIsRefStar[r]);
+        }
     }
 
 
@@ -15247,7 +15309,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
     }
 
-    static void waitForPlotUpdateToFinish() {
+    public static void waitForPlotUpdateToFinish() {
         int cnt = 0;  //timeout after 1 second
         while (cnt < 10 && updatePlotRunning) {
             IJ.wait(100);
@@ -15593,7 +15655,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         }
                         setupArrays();
                         getPreferences();
-                        setTable(newTable, true);
+                        setTable(newTable, false);
                         if (plotWindow != null) plotWindow.setVisible(true);
                     }
                 }
@@ -16074,24 +16136,26 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
 
     static void saveDataSubsetDialog(String savePath) {
-        boolean saveColumnHeadings = true;
-        boolean saveHeadersAsComment = true;
-        boolean saveRowNumbers = true;
-        boolean saveRowLabels = true;
+        class Holder {
+            public static boolean saveColumnHeadings = true;
+            public static boolean saveHeadersAsComment = true;
+            public static boolean saveRowNumbers = true;
+            public static boolean saveRowLabels = true;
+        }
         maxSubsetColumns = (int) Prefs.get("plot2.maxSubsetColumns", maxSubsetColumns);
         boolean[] subsetColumnEnable = new boolean[maxSubsetColumns];
         String[] subsetColumn = new String[maxSubsetColumns];
-        saveColumnHeadings = Prefs.get("plot2.saveColumnHeadings", saveColumnHeadings);
-        saveHeadersAsComment = Prefs.get("plot2.saveHeadersAsComment", saveHeadersAsComment);
-        saveRowNumbers = Prefs.get("plot2.saveRowNumbers", saveRowNumbers);
-        saveRowLabels = Prefs.get("plot2.saveRowLabels", saveRowLabels);
+        Holder.saveColumnHeadings = Prefs.get("plot2.saveColumnHeadings", Holder.saveColumnHeadings);
+        Holder.saveHeadersAsComment = Prefs.get("plot2.saveHeadersAsComment", Holder.saveHeadersAsComment);
+        Holder.saveRowNumbers = Prefs.get("plot2.saveRowNumbers", Holder.saveRowNumbers);
+        Holder.saveRowLabels = Prefs.get("plot2.saveRowLabels", Holder.saveRowLabels);
 
         for (int i = 0; i < maxSubsetColumns; i++) {
             subsetColumnEnable[i] = true;
             subsetColumn[i] = "";
         }
 
-        GenericDialog gd = new GenericDialog("Save data subset", mainFrame.getX() + 25, mainFrame.getY() + 50);
+        var gd = new GenericSwingDialog("Save data subset", mainFrame.getX() + 25, mainFrame.getY() + 50);
 
         for (int i = 0; i < maxSubsetColumns; i++) {
             subsetColumnEnable[i] = Prefs.get("plot2.subsetColumnEnable" + i, subsetColumnEnable[i]);
@@ -16099,7 +16163,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         }
 
         gd.addMessage("Select datasets in the order (left to right) desired in the output file.\nNo column will be output for blank selections.");
-        gd.addSlider("Number of data selection boxes (next time):", 1, 20, maxSubsetColumns < 21 && maxSubsetColumns > 0 ? maxSubsetColumns : 5);
+        gd.addSlider("Number of data selection boxes (next time):", 1, 20, maxSubsetColumns < 21 && maxSubsetColumns > 0 ? maxSubsetColumns : 5, d -> maxSubsetColumns = d.intValue());
         String[] saveColumns = new String[columns.length + 1];
         saveColumns[0] = "";
         String meridian_flip = "Meridian_Flip";
@@ -16107,39 +16171,47 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         if (saveColumns.length > 2) {
             System.arraycopy(columns, 1, saveColumns, 2, columns.length - 1);
         }
+        gd.addMessage("             Column                          Enabled");
+        gd.setOverridePosition(true);
+        gd.resetPositionOverride();
         for (int i = 0; i < maxSubsetColumns; i++) {
-            gd.addCheckbox("Enable Column " + (i + 1), subsetColumnEnable[i]);
-            gd.addChoice("Data Column " + (i + 1) + ":", saveColumns, subsetColumn[i]);
+            int finalI = i;
+            gd.setNewPosition(GridBagConstraints.WEST);
+            gd.addChoice(IJ.pad((i + 1) + ":", 3), saveColumns, subsetColumn[i], b -> subsetColumn[finalI] = b);
+            gd.resetPositionOverride();
+            gd.setNewPosition(GridBagConstraints.CENTER);
+            gd.addToSameRow();
+            gd.addCheckbox("", subsetColumnEnable[i], b -> subsetColumnEnable[finalI] = b);
+            gd.resetPositionOverride();
         }
+        gd.setOverridePosition(false);
 
         String[] optionLabels = {"Save column headings", "Comment headings with '#'", "Save row numbers", "Save row labels"};
-        boolean[] optionSettings = {saveColumnHeadings, saveHeadersAsComment, saveRowNumbers, saveRowLabels};
-        gd.addCheckboxGroup(2, 2, optionLabels, optionSettings);
+        boolean[] optionSettings = {Holder.saveColumnHeadings, Holder.saveHeadersAsComment, Holder.saveRowNumbers, Holder.saveRowLabels};
+        final var cs = new ArrayList<Consumer<Boolean>>();
+        cs.add(b -> Holder.saveColumnHeadings = b);
+        cs.add(b -> Holder.saveHeadersAsComment = b);
+        cs.add(b -> Holder.saveRowNumbers = b);
+        cs.add(b -> Holder.saveRowLabels = b);
+        gd.addCheckboxGroup(2, 2, optionLabels, optionSettings, cs);
 
         gd.showDialog();
-        maxSubsetColumns = (int) gd.getNextNumber();
         Prefs.set("plot2.maxSubsetColumns", maxSubsetColumns);
         if (gd.wasCanceled()) return;
 
         boolean meridianFlipSelected = false;
-        for (int i = 0; i < maxSubsetColumns; i++) {
-            subsetColumnEnable[i] = gd.getNextBoolean();
-            subsetColumn[i] = gd.getNextChoice();
+        for (int i = 0; i < subsetColumn.length; i++) {
             if (subsetColumn[i].equals("Meridian_Flip")) meridianFlipSelected = true;
         }
-        saveColumnHeadings = gd.getNextBoolean();
-        saveHeadersAsComment = gd.getNextBoolean();
-        saveRowNumbers = gd.getNextBoolean();
-        saveRowLabels = gd.getNextBoolean();
 
         for (int i = 0; i < maxSubsetColumns; i++) {
             Prefs.set("plot2.subsetColumnEnable" + i, subsetColumnEnable[i]);
             Prefs.set("plot2.subsetColumn" + i, subsetColumn[i]);
         }
-        Prefs.set("plot2.saveColumnHeadings", saveColumnHeadings);
-        Prefs.set("plot2.saveHeadersAsComment", saveHeadersAsComment);
-        Prefs.set("plot2.saveRowNumbers", saveRowNumbers);
-        Prefs.set("plot2.saveRowLabels", saveRowLabels);
+        Prefs.set("plot2.saveColumnHeadings", Holder.saveColumnHeadings);
+        Prefs.set("plot2.saveHeadersAsComment", Holder.saveHeadersAsComment);
+        Prefs.set("plot2.saveRowNumbers", Holder.saveRowNumbers);
+        Prefs.set("plot2.saveRowLabels", Holder.saveRowLabels);
 
         if (meridianFlipSelected) {
             if (!meridianFlipTimeColumnNotice()) return;
@@ -17580,6 +17652,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
 
     static void savePreferences() {
+        FitOptimization.savePrefs();
         Prefs.set("plot2.tableName", tableName);
         Prefs.set("plot2.keepFileNamesOnAppend", keepFileNamesOnAppend);
         Prefs.set("plot2.templateDir", templateDir);

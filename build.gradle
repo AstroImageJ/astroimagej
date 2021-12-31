@@ -1,6 +1,6 @@
+import groovy.json.JsonSlurper
 import io.github.fvarrui.javapackager.gradle.PackageTask
 import org.apache.tools.ant.taskdefs.condition.Os
-import groovy.json.JsonSlurper
 
 buildscript {
     repositories {
@@ -40,7 +40,7 @@ allprojects {
     repositories {
         mavenCentral()
     }
-    group 'edu.louisville.astro.software'
+    group 'com.astroimagej'
 
     tasks.withType(JavaCompile).configureEach {
         // Set language level and binary level to targetJava (binary only when building with a JDK 9+)
@@ -309,6 +309,8 @@ task commonFiles(type: Copy) {
 
 // Generate AIJ-Run directory and set it up for usage
 task sync(dependsOn: jar, type: Sync) {
+    dependsOn ':ij:build', ':Astronomy_:build'
+
     with commonDist
     //noinspection GroovyAssignabilityCheck
     with {

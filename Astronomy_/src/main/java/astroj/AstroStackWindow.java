@@ -89,7 +89,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             DecimalFormat uptoSixPlaces = new DecimalFormat("0.######", IJU.dfs);
             DecimalFormat scientificSixPlaces = new DecimalFormat("0.######E00", IJU.dfs);
 
-            ImageStatistics stats;
+            public ImageStatistics stats;
 //            Dimension screenDim;
 //            Rectangle screenDim;
 
@@ -148,7 +148,13 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             double sliderMultiplier, sliderShift;
             double prevMag, prevImageX=0, prevImageY=0;
             double startMinDisplayValue, startMaxDisplayValue;
-            double imageMedian, min, max, minValue, maxValue, meanValue, stdDevValue;
+            double imageMedian;
+    public double min;
+    double max;
+    double minValue;
+    public double maxValue;
+    double meanValue;
+    double stdDevValue;
             double[] sliceMin, sliceMax;
             double scaleMin, scaleMax, fixedMinValue, fixedMaxValue;
             double brightness, contrast, brightstepsize, contrastStepSize;
@@ -2135,7 +2141,9 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                         {
                         }                    
                     });
-                topPanelA.add(buttonAstrometry);   
+                topPanelA.add(buttonAstrometry);
+
+                astrometry = new Astrometry();
 
                 buttonHeader = new JButton(headerIcon);
                 buttonHeader.setToolTipText("display fits header");
@@ -5869,6 +5877,20 @@ void setupListeners() {
 //            lengthLabel.setText("Int Cnts:");
 //            lengthTextField.setText(fourPlaces.format(photom.sourceBrightness()));            
             }
+
+    public ImageStatistics getLiveStatistics()
+    {
+        Roi roi = imp.getRoi();
+        imp.killRoi();
+        if (imp.getType()==ImagePlus.COLOR_RGB)
+        {
+            ImageProcessor ip = imp.getProcessor();
+            ip.reset();
+        }
+        ImageStatistics liveStats = imp.getStatistics(ImageStatistics.MEAN+ImageStatistics.MIN_MAX+ImageStatistics.STD_DEV, BISLIDER_SEGMENTS);
+        imp.setRoi(roi);
+        return liveStats;
+    }
 
     public void getStatistics()
             {

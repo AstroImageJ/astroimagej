@@ -3198,13 +3198,13 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         }
         var autoRadiusBox = gd.addCheckbox("Auto Radius", autoRadius, b -> autoRadius = b);
         autoRadiusBox.addChangeListener($ -> toggleComponents(sliders, 2, !autoRadius));
-        toggleComponents(sliders, 2, !autoRadius);
         gd.addToSameRow();
         gd.setOverridePosition(true);
         sliders[2] = gd.addFloatSlider("Radius of object aperture", 0.01, radius > 100 ? radius : 100, false, radius, 3, 1.0, d -> radius = d);
         gd.setOverridePosition(false);
         sliders[3] = gd.addFloatSlider("Inner radius of background annulus", 0.01, rBack1 > 100 ? rBack1 : 100, false, rBack1, 3, 1.0, d -> rBack1 = d);
         sliders[4] = gd.addFloatSlider("Outer radius of background annulus", 0.01, rBack2 > 100 ? rBack2 : 100, false, rBack2, 3, 1.0, d -> rBack2 = d);
+        toggleComponents(sliders, 2, !autoRadius);
         gd.addCheckbox("Use previous " + nAperturesStored + " apertures (1-click to set first aperture location)", previous && nAperturesStored > 0, b -> previous = b);
         gd.addCheckbox("Use RA/Dec to locate aperture positions", useWCS, b -> useWCS = b);
         gd.addCheckbox("Use single step mode (1-click to set first aperture location in each image)", singleStep, b -> singleStep = b);

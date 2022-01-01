@@ -455,6 +455,11 @@ javaRuntimeSystems.each {sys, sysInfo ->
             //noinspection GroovyAssignabilityCheck
             createZipball = true
         }
+
+        // Installer is made by the signing script
+        if (sysInfo.os == "macos") {
+            generateInstaller = false
+        }
     }
 
     logger.quiet("Added a distribution task: " + taskName as String)

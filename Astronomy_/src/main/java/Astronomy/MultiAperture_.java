@@ -3271,13 +3271,11 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         autoPeaks.setToolTipText("<hmtl>When enabled, set peak thresholds based on image statistics.<br>Max = 0.9 * Max Pixel Value, Min = Mean Pixel Value + 1σ.</html>");
 
         final var liveStats = asw.getLiveStatistics();
-        var minP = autoPeakValues ? liveStats.mean + (1 * liveStats.stdDev) : minPeakValue;
-        var maxP = autoPeakValues ? liveStats.max * 0.9 : maxPeakValue;
+        var minP = liveStats.mean + (1 * liveStats.stdDev);
+        var maxP = liveStats.max * 0.9;
         //if (enableLog) AIJLogger.log("Image mean = "+liveStats.mean);
         //if (enableLog) AIJLogger.log("Image stdDev = "+liveStats.stdDev);
         //if (enableLog) AIJLogger.log("Image max = "+liveStats.max);
-        minPeak.c1().setEnabled(!autoPeakValues);
-        maxPeak.c1().setEnabled(!autoPeakValues);
         DecimalFormat fourPlaces = new DecimalFormat("###,##0.00", IJU.dfs);
         DecimalFormat scientificFourPlaces = new DecimalFormat("0.####E00", IJU.dfs);
         if (autoPeakValues) {
@@ -3287,19 +3285,6 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText(minPeakValue < 1000000.0 ? fourPlaces.format(minPeakValue) : scientificFourPlaces.format(minPeakValue)));
             GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText(maxPeakValue < 1000000.0 ? fourPlaces.format(maxPeakValue) : scientificFourPlaces.format(maxPeakValue)));
         }
-        autoPeaks.addPropertyChangeListener($ -> {
-            var minP1 = autoPeakValues ? liveStats.mean + (1 * liveStats.stdDev) : minPeakValue;
-            var maxP1 = autoPeakValues ? liveStats.max * 0.9 : maxPeakValue;
-            minPeak.c1().setEnabled(!autoPeakValues && suggestCompStars);
-            maxPeak.c1().setEnabled(!autoPeakValues && suggestCompStars);
-            if (autoPeakValues) {
-                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText(minP < 1000000.0 ? fourPlaces.format(minP1) : scientificFourPlaces.format(minP1)));
-                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText(maxP < 1000000.0 ? fourPlaces.format(maxP1) : scientificFourPlaces.format(maxP1)));
-            } else {
-                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText(minPeakValue < 1000000.0 ? fourPlaces.format(minPeakValue) : scientificFourPlaces.format(minPeakValue)));
-                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText(maxPeakValue < 1000000.0 ? fourPlaces.format(maxPeakValue) : scientificFourPlaces.format(maxPeakValue)));
-            }
-        });
 
 
         starSelection.c2().setToolTipText("The aperture to base comparison star selection on.");
@@ -3341,8 +3326,52 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         suggestionComponents.add(maxStars.c2());
         suggestionComponents.addAll(s.subComponents().subList(1, s.subComponents().size()));
 
+        var actionPeaks = (ActionListener) $ -> {
+            var minP1 = liveStats.mean + (1 * liveStats.stdDev);
+            var maxP1 = liveStats.max * 0.9;
+            minPeak.c1().setEnabled(autoPeakValues && suggestCompStars);
+            maxPeak.c1().setEnabled(autoPeakValues && suggestCompStars);
+            if (!autoPeakValues) {
+                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText(minP < 1000000.0 ? fourPlaces.format(minP1) : scientificFourPlaces.format(minP1)));
+                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText(maxP < 1000000.0 ? fourPlaces.format(maxP1) : scientificFourPlaces.format(maxP1)));
+            } else {
+                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText(minPeakValue < 1000000.0 ? fourPlaces.format(minPeakValue) : scientificFourPlaces.format(minPeakValue)));
+                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText(maxPeakValue < 1000000.0 ? fourPlaces.format(maxPeakValue) : scientificFourPlaces.format(maxPeakValue)));
+            }
+        };
+
         toggleComponents(suggestionComponents, suggestCompStars);
-        ((JCheckBox)s.subComponents().getFirst()).addActionListener($ -> toggleComponents(suggestionComponents, !suggestCompStars));
+        ((JCheckBox)s.subComponents().getFirst()).addActionListener($ -> {
+            toggleComponents(suggestionComponents, !suggestCompStars);
+            var minP1 = liveStats.mean + (1 * liveStats.stdDev);
+            var maxP1 = liveStats.max * 0.9;
+            minPeak.c1().setEnabled(!autoPeakValues && !suggestCompStars);
+            maxPeak.c1().setEnabled(!autoPeakValues && !suggestCompStars);
+            if (autoPeakValues) {
+                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText(minP < 1000000.0 ? fourPlaces.format(minP1) : scientificFourPlaces.format(minP1)));
+                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText(maxP < 1000000.0 ? fourPlaces.format(maxP1) : scientificFourPlaces.format(maxP1)));
+            } else {
+                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText(minPeakValue < 1000000.0 ? fourPlaces.format(minPeakValue) : scientificFourPlaces.format(minPeakValue)));
+                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText(maxPeakValue < 1000000.0 ? fourPlaces.format(maxPeakValue) : scientificFourPlaces.format(maxPeakValue)));
+            }
+        });
+
+
+        autoPeaks.addActionListener($ -> {
+            var minP1 = liveStats.mean + (1 * liveStats.stdDev);
+            var maxP1 = liveStats.max * 0.9;
+            minPeak.c1().setEnabled(autoPeakValues && suggestCompStars);
+            maxPeak.c1().setEnabled(autoPeakValues && suggestCompStars);
+            if (!autoPeakValues) {
+                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText(minP < 1000000.0 ? fourPlaces.format(minP1) : scientificFourPlaces.format(minP1)));
+                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText(maxP < 1000000.0 ? fourPlaces.format(maxP1) : scientificFourPlaces.format(maxP1)));
+            } else {
+                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText(minPeakValue < 1000000.0 ? fourPlaces.format(minPeakValue) : scientificFourPlaces.format(minPeakValue)));
+                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText(maxPeakValue < 1000000.0 ? fourPlaces.format(maxPeakValue) : scientificFourPlaces.format(maxPeakValue)));
+            }
+        });
+        minPeak.c1().setEnabled(!autoPeakValues);
+        maxPeak.c1().setEnabled(!autoPeakValues);
 
         gd.addMessage("");
 

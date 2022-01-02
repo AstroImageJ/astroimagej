@@ -390,6 +390,14 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             }
         }
 
+        // Sets up canvas again as running through DP gives it the wrong one
+        canvas = imp.getCanvas();
+        ocanvas = null;
+        if (starOverlay || skyOverlay || valueOverlay || nameOverlay) {
+            ocanvas = OverlayCanvas.getOverlayCanvas(imp);
+            canvas = ocanvas;
+        }
+
         Prefs.set(MultiAperture_.PREFS_CANCELED, "false");
         cancelled = false;
         firstRun = true;

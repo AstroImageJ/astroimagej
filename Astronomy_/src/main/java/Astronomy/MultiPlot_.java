@@ -164,6 +164,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static boolean panelAltDown;
     static boolean keepFileNamesOnAppend;
     static public boolean updatePlotRunning;
+    static public boolean autoAstroDataUpdateRunning;
     static boolean saveNewXColumn;
     static boolean saveNewYColumn;
     static boolean saveNewYErrColumn;
@@ -833,7 +834,12 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static DecimalFormat sixPlaces = new DecimalFormat("######0.000000", IJU.dfs);
     static DecimalFormat detrendParameterFormat = new DecimalFormat("######0.000000000000", IJU.dfs);
 
-    public void run(String inTableName) {
+    public void run(String inTableNamePlusOptions) {
+        boolean useAutoAstroDataUpdate = false;
+        String inTableName = "";
+        String[] inOptions = inTableNamePlusOptions.split(",");
+        if (inOptions.length > 0) inTableName = inOptions[0];
+        if (inOptions.length > 1) useAutoAstroDataUpdate = true;
         Locale.setDefault(IJU.locale);
         //SET DEFAULT SYSTEM LOOK AND FEEL
         UIHelper.setLookAndFeel();
@@ -899,11 +905,14 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         // FIND ALL TABLES
         if (inTableName != null && !inTableName.equals("")) requestedTableName = inTableName;
-        findTables(false);
+        findTables(false, useAutoAstroDataUpdate);
     }
 
-
     static void findTables(boolean forceUpdate) {
+        findTables(forceUpdate, false);
+    }
+
+    static void findTables(boolean forceUpdate, boolean useAutoAstroDataUpdate) {
         String[] tables = MeasurementTable.getMeasurementTableNames();
         if (tables == null || tables.length == 0) {
             makeDummyTable();
@@ -924,7 +933,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     if (requestedTableName.equals(filteredTable)) {
                         tableName = requestedTableName;
                         requestedTableName = null;
-                        setTable(MeasurementTable.getTable(tableName), forceUpdate);
+                        setTable(MeasurementTable.getTable(tableName), forceUpdate, useAutoAstroDataUpdate);
                         break;
                     }
                 }
@@ -936,7 +945,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 makeDummyTable();
             } else if (filteredTables.length == 1) {
                 tableName = filteredTables[0];
-                setTable(MeasurementTable.getTable(tableName), forceUpdate);
+                setTable(MeasurementTable.getTable(tableName), forceUpdate, useAutoAstroDataUpdate);
             } else                            // IF MORE THAN ONE, ASK WHICH TABLE SHOULD BE USED
             {
                 GenericDialog gd = new GenericDialog("Plot Table Columns");
@@ -947,7 +956,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     makeDummyTable();
                 } else {
                     tableName = gd.getNextChoice();
-                    setTable(MeasurementTable.getTable(tableName), forceUpdate);
+                    setTable(MeasurementTable.getTable(tableName), forceUpdate, useAutoAstroDataUpdate);
                 }
             }
         }
@@ -973,16 +982,16 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             } else {
                 updateColumnLists();
                 Prefs.set("plot2.tableName", tableName);
-                if (table != null && !tableName.equals("No Table Selected") && useAutoAstroDataUpdate && autoAstroDataUpdate && addAstroDataFrameWasShowing && OKbutton != null) {
-                    OKbutton.doClick();
-                }
+//                if (table != null && !tableName.equals("No Table Selected") && useAutoAstroDataUpdate && autoAstroDataUpdate && addAstroDataFrameWasShowing && OKbutton != null) {
+//                    OKbutton.doClick();
+//                }
                 if (table != null) {
                     loadConfigOfOpenTable(table.getFilePath());
                     table.show();
                     WindowManager.getFrame(table.shortTitle()).setVisible(true);
                     forceUpdate = true;
                 }
-                finishSetup(forceUpdate);
+                finishSetup(forceUpdate, useAutoAstroDataUpdate);
             }
         }
     }
@@ -991,7 +1000,11 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         return table;
     }
 
-    static void finishSetup(boolean forceUpdate) {
+    static void finishSetup(boolean forceUpdate){
+        finishSetup(forceUpdate, false);
+    }
+    static void finishSetup(boolean forceUpdate, boolean useAutoAstroDataUpdate) {
+        //if (oldUnfilteredColumns==null) IJ.log("old unfiltercolumns is null");
         if (mainFrame == null || !mainFrame.isVisible()) {
             showMainJPanel();
         }
@@ -1003,11 +1016,11 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 //            for (int i=0; i<(unfilteredColumns==null?0:unfilteredColumns.length); i++)
 //                IJ.log("unfilteredColumn["+i+"]="+unfilteredColumns[i]);
 //            }
-        else if (forceUpdate || !Arrays.equals(unfilteredColumns, oldUnfilteredColumns)) {
+        else if (forceUpdate || oldUnfilteredColumns==null || !Arrays.equals(unfilteredColumns, oldUnfilteredColumns)) {
             updatePanels();
         }
         oldUnfilteredColumns = unfilteredColumns.clone();
-        updatePlot(updateAllFits());
+        updatePlot(updateAllFits(), useAutoAstroDataUpdate);
     }
 
 //------------------------------------------------------------------------------
@@ -1130,6 +1143,12 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
     static public void updatePanels() {
         savePreferences();
+        int timeout = 31;
+        while (updatePlotRunning && timeout > 0) {
+            IJ.wait(100);
+            timeout--;
+        }
+        if (timeout != 31) IJ.log("Waited "+(timeout*0.1)+" seconds for plot to finish before closing MP panels.");
         closeFitFrames();
         if (mainFrame.isVisible()) {
             if (subFrame.isVisible()) {
@@ -1261,32 +1280,37 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             startDelayedUpdateTimer(updateFit, false);
             return;
         }
-        updatePlotRunning = true;
-        if (table != null && !tableName.equals("No Table Selected") && useAutoAstroDataUpdate && autoAstroDataUpdate && addAstroDataFrameWasShowing && OKbutton != null) {
-            OKbutton.doClick();
-        }
 
-        checkAndLockTable();
-//                table = MeasurementTable.getTable (tableName);
-//                tpanel = MeasurementTable.getTextPanel(MeasurementTable.longerName(tableName));
-
-        //Make sure all panels have been created. If not created within 5 secs, abort.
-        if (fitPanel[maxCurves-1] == null){
-            for (int i=0; i<51; i++){
-                IJ.wait(100);
-                if (fitPanel[maxCurves-1] != null){
-                    //IJ.log("fitPanel wait = "+(i*100)+"msec");
-                    break;
-                }
-                if (i == 50) return;
-            }
-        }
 
         if (table == null || tableName.equals("No Table Selected")) {
             updatePlotRunning = false;
             if (table != null) table.setLock(false);
             return;
         }
+
+        updatePlotRunning = true;
+
+        if (table != null && !tableName.equals("No Table Selected") && useAutoAstroDataUpdate && autoAstroDataUpdate && addAstroDataFrameWasShowing && OKbutton != null) {
+            autoAstroDataUpdateRunning = true;
+            OKbutton.doClick();
+            autoAstroDataUpdateRunning = false;
+
+        }
+
+        unfilteredColumns = table.getColumnHeadings().split("\t");
+        if (!Arrays.equals(unfilteredColumns, oldUnfilteredColumns)) {
+            updatePlotRunning = false;
+            if (table != null) table.setLock(false);
+            updateColumnLists();
+            updatePanels();
+        }
+
+        checkAndLockTable();
+//                table = MeasurementTable.getTable (tableName);
+//                tpanel = MeasurementTable.getTextPanel(MeasurementTable.longerName(tableName));
+
+
+
         // This is a hack to fix the plot being cached(?) somewhere.
         // To see demonstrate the broken behavior fixed by this, move the (sub)title and
         // then resize the window, the position will reset until another position (such as the legend)
@@ -1306,16 +1330,24 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             maxColumnLength = Math.max(n, 2 * maxColumnLength);
             setupDataBuffers();
         }
-        unfilteredColumns = table.getColumnHeadings().split("\t");
+
         vMarker1Value = Prefs.get("plot.vMarker1Value", vMarker1Value);
         vMarker2Value = Prefs.get("plot.vMarker2Value", vMarker2Value);
-        if (!Arrays.equals(unfilteredColumns, oldUnfilteredColumns)) {
-            updatePlotRunning = false;
-            if (table != null) table.setLock(false);
-            updateColumnLists();
-            updatePanels();
-        }
 
+        //Make sure all panels have been created. If not created within 5 secs, abort.
+        if (fitPanel[maxCurves-1] == null){
+            for (int i=0; i<51; i++){
+                IJ.wait(100);
+                if (fitPanel[maxCurves-1] != null){
+                    //IJ.log("fitPanel wait = "+(i*100)+"msec");
+                    break;
+                }
+                if (i == 50) {
+                    IJ.log("fitPanel wait = "+(i*100)+"msec");
+                    return;
+                }
+            }
+        }
         savePreferences();
         updateSaturatedStars();
         for (int curve = 0; curve < maxCurves; curve++) {
@@ -4738,7 +4770,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
             table.show();
             table.setLock(false);
-            updatePlot(updateAllFits(), true);
+            if (!autoAstroDataUpdateRunning) updatePlot(updateAllFits(), false);
             Thread t2 = new Thread(() -> {
                 if (OKbutton != null) {
                     OKbutton.setForeground(defaultOKForeground);
@@ -5960,6 +5992,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         panelAltDown = false;
         keepFileNamesOnAppend = true;
         updatePlotRunning = false;
+        autoAstroDataUpdateRunning = false;
         boldedDatum = -1;
         pixelScale = 1.0;
 
@@ -10322,12 +10355,13 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 //                    if (table != null) table.setLock(false);
             refStarPanelWasShowing = true;
         }
-        showMoreCurvesJPanel();
+
         if (!plotAutoMode && (addAstroDataFrameWasShowing)) //table != null &&
         {
             addNewAstroData();
             addAstroDataFrameWasShowing = true;
         }
+        showMoreCurvesJPanel();
         FileDrop fileDrop = new FileDrop(mainpanel, BorderFactory.createEmptyBorder(), MultiPlot_::openDragAndDropFiles);
     }
 
@@ -14033,7 +14067,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     setFittedParametersBorderColor(final int c, final Border border) {
         if (bestFitLabel[c][0] != null) {
             for (int p = 0; p < bestFitLabel[c].length; p++) {
-                if (lockToCenter[c][p] || bestFitLabel[c][p].getText().equals("")) {
+                if (bestFitLabel[c][p].getText() == null || lockToCenter[c][p] || bestFitLabel[c][p].getText().equals("")) {
                     bestFitLabel[c][p].setBorder(grayBorder);
                 } else if (bestFitLabel[c][p].getText().equals("constant var")) {
                     bestFitLabel[c][p].setBorder(failedBorder);

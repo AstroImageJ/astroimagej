@@ -5095,7 +5095,7 @@ protected ImageIcon createImageIcon(String path, String description) {
        int extraHeight()
             {
             return getInsets().top + getInsets().bottom + otherPanelsHeight
-                    + super.getNScrollbars()*18 + 10;
+                    + super.getNScrollbars()*17 + 10;
             }
 
 //       void clearAndPaint(){

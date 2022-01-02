@@ -204,6 +204,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     protected boolean showRatio = true;
     protected boolean showCompTot = true;
     protected boolean debugAp = false;
+    protected boolean firstRun = true;
 
 //	protected boolean follow=false;
 //	protected boolean wideTable=true;
@@ -303,6 +304,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
     static public void clearTable() {
         if (table != null && MeasurementTable.getTextPanel(tableName) != null) {
+            //table.deleteRows(0,table.size()-1);
+            //table = MeasurementTable.getTable(tableName);
+            //MultiPlot_.setTable(table, false);
+            //table = null;
             table = new MeasurementTable(tableName);
             table.show();
         } else {
@@ -387,6 +392,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
         Prefs.set(MultiAperture_.PREFS_CANCELED, "false");
         cancelled = false;
+        firstRun = true;
         this.getMeasurementPrefs();
         suffix = "_T1";
         if (!autoMode) {
@@ -910,16 +916,22 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         if (table != null) table.setLock(false);
         if (processingStack && table != null && !isInstanceOfStackAlign && !updatePlot && !Data_Processor.active) {
             if (MultiPlot_.mainFrame != null) {
+                //IJ.log("made it 1");
                 if (MultiPlot_.getTable() != null && MultiPlot_.getTable().equals(table)) {
+                    //IJ.log("made it 2");
                     MultiPlot_.updatePlot(MultiPlot_.updateAllFits(), slice == initialLastSlice);
+                    //IJ.log("made it 2b");
                 } else {
-                    MultiPlot_.setTable(table, true, slice == initialLastSlice);
+                    //IJ.log("made it 3");
+                    MultiPlot_.setTable(table, false, slice == initialLastSlice);
+                    //IJ.log("made it 3b");
                 }
             } else {
-                IJ.runPlugIn("Astronomy.MultiPlot_", tableName);
-                if (MultiPlot_.mainFrame != null && MultiPlot_.getTable() != null) {
-                    MultiPlot_.setTable(table, false, slice == initialLastSlice);
-                }
+                IJ.runPlugIn("Astronomy.MultiPlot_", tableName+",true");  //",true" enables useAutoAstroDataUpdate
+                //if (MultiPlot_.mainFrame != null && MultiPlot_.getTable() != null) {
+                //IJ.log("made it 4");
+                //    MultiPlot_.setTable(table, false, slice == initialLastSlice);
+                //}
             }
         }
         cancelled = true;
@@ -2962,10 +2974,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         }
 
         tablePanel = MeasurementTable.getTextPanel(tableName);
-        if (table != null && tablePanel != null && (table.getCounter() > 0 || !updatePlot)) {
+        if (table != null && tablePanel != null && (table.getCounter() > 0 || (!updatePlot && !firstRun))) {
             return true;  //!autoMode && ()
         }
-
+        firstRun = false;
         table = MeasurementTable.getTable(tableName);
 
         if (table == null) {
@@ -2978,7 +2990,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         int i = 0;
 
         tablePanel = MeasurementTable.getTextPanel(tableName);
-
+//        IJ.log("setting up headings");
         hasAbsMag = false;
         for (int ap = 0; ap < nApertures; ap++) {
             if (isRefStar[ap] && absMag[ap] < 99.0) {

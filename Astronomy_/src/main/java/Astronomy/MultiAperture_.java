@@ -3338,20 +3338,6 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         suggestionComponents.add(maxStars.c2());
         suggestionComponents.addAll(s.subComponents().subList(1, s.subComponents().size()));
 
-        var actionPeaks = (ActionListener) $ -> {
-            var minP1 = liveStats.mean + (1 * liveStats.stdDev);
-            var maxP1 = liveStats.max * 0.9;
-            minPeak.c1().setEnabled(autoPeakValues && suggestCompStars);
-            maxPeak.c1().setEnabled(autoPeakValues && suggestCompStars);
-            if (!autoPeakValues) {
-                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText(minP < 1000000.0 ? fourPlaces.format(minP1) : scientificFourPlaces.format(minP1)));
-                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText(maxP < 1000000.0 ? fourPlaces.format(maxP1) : scientificFourPlaces.format(maxP1)));
-            } else {
-                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText(minPeakValue < 1000000.0 ? fourPlaces.format(minPeakValue) : scientificFourPlaces.format(minPeakValue)));
-                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText(maxPeakValue < 1000000.0 ? fourPlaces.format(maxPeakValue) : scientificFourPlaces.format(maxPeakValue)));
-            }
-        };
-
         toggleComponents(suggestionComponents, suggestCompStars);
         ((JCheckBox)s.subComponents().getFirst()).addActionListener($ -> {
             toggleComponents(suggestionComponents, !suggestCompStars);
@@ -3382,8 +3368,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText(maxPeakValue < 1000000.0 ? fourPlaces.format(maxPeakValue) : scientificFourPlaces.format(maxPeakValue)));
             }
         });
-        minPeak.c1().setEnabled(!autoPeakValues);
-        maxPeak.c1().setEnabled(!autoPeakValues);
+        minPeak.c1().setEnabled((autoPeakValues && suggestCompStars));
+        maxPeak.c1().setEnabled((autoPeakValues && suggestCompStars));
 
         gd.addMessage("");
 

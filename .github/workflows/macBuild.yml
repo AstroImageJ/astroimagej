@@ -36,11 +36,11 @@ jobs:
         with:
           name: MacOS (Arm) App (.zip)
           path: build/distributions/*arm*.zip
-      - uses: actions/upload-artifact@v2
-        with:
-          name: MacOS (Arm) Installer (.dmg)
-          path: build/distributions/*arm*.dmg
-      - uses: actions/upload-artifact@v2
-        with:
-          name: MacOS (x86) Installer (.dmg)
-          path: build/distributions/*x86*.dmg
+#      - uses: actions/upload-artifact@v2
+#        with:
+#          name: MacOS (Arm) Installer (.dmg)
+#          path: build/distributions/*arm*.dmg
+#      - uses: actions/upload-artifact@v2
+#        with:
+#          name: MacOS (x86) Installer (.dmg)
+#          path: build/distributions/*x86*.dmg

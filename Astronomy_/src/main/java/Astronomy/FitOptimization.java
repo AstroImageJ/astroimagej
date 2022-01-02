@@ -48,8 +48,8 @@ public class FitOptimization implements AutoCloseable {
     private int[] selectable2PrimaryIndex;
     private ExecutorService pool;
     private boolean[] selectable;
-    private JToggleButton detOptimizeButton;
-    private JToggleButton optimizeButton;
+    private JPanel detOptiCards;
+    private JPanel compOptiCards;
     private RollingAvg rollingAvg = new RollingAvg();
     private JSpinner detrendEpsilon;
     private static double nSigmaOutlier = 5;
@@ -162,28 +162,38 @@ public class FitOptimization implements AutoCloseable {
         var compTest = new ToolTipWrapper("Debug", "Debug a single run.");
         compOptimizationSelection.addItem(compBruteForce);
         compOptimizationSelection.addItem(compTest);
-        optimizeButton = new JToggleButton("Start");
-        optimizeButton.setToolTipText("Begin the optimization. Click again to stop it.");
-        optimizeButton.addActionListener(e -> {
-            optimizeButton.setSelected(optimizeButton.isSelected());
-            if (optimizeButton.isSelected()) {
-                optimizeButton.setText("Cancel");
-                if (Objects.equals(compOptimizationSelection.getSelectedItem(), compTest)) {
-                    testCompMin();
-                    MultiPlot_.updatePlot(curve);
-                } else if (Objects.equals(compOptimizationSelection.getSelectedItem(), compBruteForce)) {
-                    Executors.newSingleThreadExecutor().submit(this::minimizeCompStars);
-                }
-            } else {
-                optimizeButton.setText("Start");
-                pool.shutdownNow();
-                ipsExecutorService.shutdown();
-                IJ.showProgress(1);
-                IJ.showStatus("");
+
+        compOptiCards = new JPanel(new CardLayout());
+        var compOptiButtonStart = new JButton("Start");
+        var compOptiButtonCancel = new JToggleButton("Cancel", true);
+
+        compOptiCards.add(compOptiButtonStart);
+        compOptiCards.add(compOptiButtonCancel);
+
+        compOptiButtonStart.addActionListener($ -> {
+            CardLayout cl = (CardLayout) compOptiCards.getLayout();
+            cl.next(compOptiCards);
+            if (Objects.equals(compOptimizationSelection.getSelectedItem(), compTest)) {
+                testCompMin();
+                MultiPlot_.updatePlot(curve);
+            } else if (Objects.equals(compOptimizationSelection.getSelectedItem(), compBruteForce)) {
+                Executors.newSingleThreadExecutor().submit(this::minimizeCompStars);
             }
         });
+
+        compOptiButtonCancel.addActionListener($ -> {
+            CardLayout cl = (CardLayout) compOptiCards.getLayout();
+            cl.next(compOptiCards);
+            pool.shutdownNow();
+            ipsExecutorService.shutdown();
+            IJ.showProgress(1);
+            IJ.showStatus("");
+        });
+
+        compOptiCards.setToolTipText("Begin the optimization. Click again to stop it.");
+
         compStarPanel.add(compOptimizationSelection);
-        compStarPanel.add(optimizeButton);
+        compStarPanel.add(compOptiCards);
 
         var compOptiIterLabel = new JLabel("Iter. Remaining:");
         compOptiIterLabel.setToolTipText("Number of iterations remaining in comp. star optimization.");
@@ -221,28 +231,37 @@ public class FitOptimization implements AutoCloseable {
         var detrendTest = new ToolTipWrapper("Debug", "Debug a single run.");
         detrendOptimizationSelection.addItem(detrendBruteForce);
         detrendOptimizationSelection.addItem(detrendTest);
-        detOptimizeButton = new JToggleButton("Start");
-        detOptimizeButton.setToolTipText("Begin the optimization. Click again to stop it.");
-        detOptimizeButton.addActionListener(e -> {
-            detOptimizeButton.setSelected(detOptimizeButton.isSelected());
-            if (detOptimizeButton.isSelected()) {
-                detOptimizeButton.setText("Cancel");
-                if (Objects.equals(detrendOptimizationSelection.getSelectedItem(), detrendTest)) {
-                    testParamMin();
-                    MultiPlot_.updatePlot(curve);
-                } else if (Objects.equals(detrendOptimizationSelection.getSelectedItem(), detrendBruteForce)) {
-                    Executors.newSingleThreadExecutor().submit(this::minimizeParams);
-                }
-            } else {
-                detOptimizeButton.setText("Start");
-                pool.shutdownNow();
-                ipsExecutorService.shutdown();
-                IJ.showProgress(1);
-                IJ.showStatus("");
+
+        detOptiCards = new JPanel(new CardLayout());
+
+        var detOptiButtonStart = new JButton("Start");
+        var detOptiButtonCancel = new JToggleButton("Cancel", true);
+        detOptiCards.add(detOptiButtonStart);
+        detOptiCards.add(detOptiButtonCancel);
+
+        detOptiButtonStart.addActionListener($ -> {
+            CardLayout cl = (CardLayout) detOptiCards.getLayout();
+            cl.next(detOptiCards);
+            if (Objects.equals(detrendOptimizationSelection.getSelectedItem(), detrendTest)) {
+                testParamMin();
+                MultiPlot_.updatePlot(curve);
+            } else if (Objects.equals(detrendOptimizationSelection.getSelectedItem(), detrendBruteForce)) {
+                Executors.newSingleThreadExecutor().submit(this::minimizeParams);
             }
         });
+
+        detOptiButtonCancel.addActionListener($ -> {
+            CardLayout cl = (CardLayout) detOptiCards.getLayout();
+            cl.next(detOptiCards);
+            pool.shutdownNow();
+            ipsExecutorService.shutdown();
+            IJ.showProgress(1);
+            IJ.showStatus("");
+        });
+
+        detOptiCards.setToolTipText("Begin the optimization. Click again to stop it.");
         detrendOptPanel.add(detrendOptimizationSelection);
-        detrendOptPanel.add(detOptimizeButton);
+        detrendOptPanel.add(detOptiCards);
 
         var eLabel = new JLabel("Min. BIC Thres.:");
         eLabel.setHorizontalAlignment(SwingConstants.CENTER);
@@ -386,7 +405,7 @@ public class FitOptimization implements AutoCloseable {
         BigInteger initState = createBinaryRepresentation(selectable);
         var x = CurveFitter.getInstance(curve, targetStar).fitCurveAndGetResults(setArrayToState(initState));
         if (showOptLog) AIJLogger.log(x);
-        finishOptimization(optimizeButton);
+        finishOptimization(compOptiCards);
     }
 
     private void minimizeCompStars() {
@@ -412,7 +431,7 @@ public class FitOptimization implements AutoCloseable {
                 (start, end) -> new CompStarFitting(start, end, this));
 
         setFinalState("RMS", finalState.stateArray, MultiPlot_.refStarCB);
-        finishOptimization(optimizeButton);
+        finishOptimization(compOptiCards);
     }
 
     private void testParamMin() {
@@ -428,7 +447,7 @@ public class FitOptimization implements AutoCloseable {
 
         var x = CurveFitter.getInstance(curve, targetStar).fitCurveAndGetResults(MultiPlot_.detrendIndex[curve]);
         if (showOptLog) AIJLogger.log(x);
-        finishOptimization(optimizeButton);
+        finishOptimization(detOptiCards);
         EPSILON = 0;
     }
 
@@ -458,7 +477,8 @@ public class FitOptimization implements AutoCloseable {
 
         if (finalState.outState instanceof int[] x) setFinalState(x);
 
-        finishOptimization(detOptimizeButton);
+        finishOptimization(detOptiCards);
+        detrendCounter.setBasis(BigInteger.ZERO);
         EPSILON = 0;
     }
 
@@ -473,10 +493,10 @@ public class FitOptimization implements AutoCloseable {
         }
     }
 
-    private void finishOptimization(JToggleButton button) {
+    private void finishOptimization(JPanel button) {
         MultiPlot_.updatePlot(curve);
-        button.setSelected(false);
-        button.setText("Start");
+        CardLayout cl = (CardLayout) button.getLayout();
+        cl.first(button);
 
         // Fixes weird y-data selection changes
         MultiPlot_.subFrame.repaint();

@@ -1113,7 +1113,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 apertureClicked = ocanvas.findApertureRoi((int) xCenter, (int) yCenter, 0) != null;
             }
 
-            if (firstClick && autoRadius && !t1Placed) {
+            if (!autoMode && firstClick && autoRadius && !t1Placed) {
                 oldRadii = new Seeing_Profile.ApRadii(radius, rBack1, rBack2);
                 var rs = Seeing_Profile.getRadii(imp, previous ? xPosStored[0] : xCenter, previous ? yPosStored[0] : yCenter);
                 radius = rs.r();

@@ -6202,7 +6202,7 @@ void setupListeners() {
 
         }
     
-    void writeNumericPanelField(double value, JTextField textField)
+    synchronized void writeNumericPanelField(double value, JTextField textField)
         {
         if (Double.isNaN(value))
             {

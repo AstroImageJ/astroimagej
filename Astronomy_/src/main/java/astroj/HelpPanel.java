@@ -31,13 +31,19 @@
 
 package astroj;
 
-import java.awt.*;
-import java.awt.Color;
-import java.awt.event.*;
-import java.io.IOException;
+import ij.IJ;
+
 import javax.swing.*;
-import javax.swing.text.*;
-import javax.swing.event.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DefaultHighlighter;
+import javax.swing.text.Document;
+import javax.swing.text.Highlighter;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.IOException;
 
 import static ij.IJ.showMessage;
 
@@ -211,7 +217,7 @@ public class HelpPanel extends JFrame implements ActionListener, DocumentListene
             }
         } else {
             entry.setBackground(ERROR_COLOR);
-            java.awt.Toolkit.getDefaultToolkit().beep();
+            IJ.beep();
             message("'" + s + "' not found. Press ESC to start a new search");
             pos = 0;
         }

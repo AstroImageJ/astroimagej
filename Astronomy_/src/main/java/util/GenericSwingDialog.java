@@ -397,7 +397,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         return addSlider(label, minValue, maxValue, clipMaxValue, defaultValue, scale, digits, consumer);
     }
 
-    private JPanel addSlider(String label, final double minValue, final double maxValue, boolean clipMaxValue, final double defaultValue, final double scale, final int digits, Consumer<Double> consumer) {
+    private JPanel addSlider(String label, final double minValue, final double maxValue, boolean clipMaxValue, double defaultValue, final double scale, final int digits, Consumer<Double> consumer) {
         Box b = Box.createHorizontalBox();
         int columns = 4 + digits + (IJ.isMacOSX() ? 0 : -2);
         if (columns < 4) columns = 4;
@@ -429,6 +429,9 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         if (columns < 1) columns = 1;
 
         var id = stepSizeId(label);
+
+        if (defaultValue < minValue) defaultValue = minValue;
+        if (defaultValue > maxValue) defaultValue = maxValue;
 
         var spinner = new JSpinner(new SpinnerNumberModel(defaultValue, minValue, clipMaxValue ? maxValue : Double.MAX_VALUE, Prefs.get(id, 1 / scale)));
         if (IJ.isLinux()) spinner.setBackground(Color.white);

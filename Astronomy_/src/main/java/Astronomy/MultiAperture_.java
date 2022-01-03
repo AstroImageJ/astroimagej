@@ -1130,6 +1130,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 Prefs.set("aperture.radius", radius);
                 Prefs.set("aperture.rback1", rBack1);
                 Prefs.set("aperture.rback2", rBack2);
+                // Don't focus on the seeing profile, allowing smoother access to continuing MA
+                canvas.requestFocus();
             }
 
             // ADD APERTURE TO LIST OR SHIFT OLD APERTURE POSITIONS

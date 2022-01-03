@@ -1121,9 +1121,34 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 apertureClicked = ocanvas.findApertureRoi((int) xCenter, (int) yCenter, 0) != null;
             }
 
+            // Autoradius feature
             if (!autoMode && firstClick && autoRadius && !t1Placed) {
                 oldRadii = new Seeing_Profile.ApRadii(radius, rBack1, rBack2);
-                var rs = Seeing_Profile.getRadii(imp, previous ? xPosStored[0] : xCenter, previous ? yPosStored[0] : yCenter);
+
+                var x = xCenter;
+                var y = yCenter;
+                // Acount for old star positions
+                if (previous && nAperturesStored > 0) {
+                    x = xPosStored[0];
+                    y = yPosStored[0];
+                    var ra = -1000001d;
+                    var dec = -1000001d;
+                    if (raPosStored != null && decPosStored != null) {
+                        ra = raPosStored[0];
+                        dec = decPosStored[0];
+                    }
+                    if ((useMA || useAlign) && useWCS) {
+                        if (!hasWCS || (!(ra < -1000000) && !(dec < -1000000))) {
+                            if (hasWCS && ra > -1000000 && dec > -1000000) {
+                                double[] xy = wcs.wcs2pixels(new double[]{ra, dec});
+                                x = xy[0];
+                                y = xy[1];
+                            }
+                        }
+                    }
+                }
+
+                var rs = Seeing_Profile.getRadii(imp, x, y);
                 if (rs.isValid()) {
                     radius = rs.r();
                     rBack1 = rs.r2();

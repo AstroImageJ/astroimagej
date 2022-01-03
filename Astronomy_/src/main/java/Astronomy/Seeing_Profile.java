@@ -148,7 +148,11 @@ public class Seeing_Profile implements PlugInFilter
 //        imp.changes = false;
 		}
 
-        public record ApRadii(double r, double r2, double r3) {}
+        public record ApRadii(double r, double r2, double r3) {
+            public boolean isValid() {
+                return r != 0 && r2 != 0 && r3 != 0;
+            }
+        }
 
         public static ApRadii getRadii(ImagePlus imp, double x, double y) {
             var sp = new Seeing_Profile();

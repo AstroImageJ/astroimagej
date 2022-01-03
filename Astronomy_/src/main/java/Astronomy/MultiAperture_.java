@@ -1124,13 +1124,16 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             if (!autoMode && firstClick && autoRadius && !t1Placed) {
                 oldRadii = new Seeing_Profile.ApRadii(radius, rBack1, rBack2);
                 var rs = Seeing_Profile.getRadii(imp, previous ? xPosStored[0] : xCenter, previous ? yPosStored[0] : yCenter);
-                radius = rs.r();
-                rBack1 = rs.r2();
-                rBack2 = rs.r3();
-                Prefs.set("aperture.radius", radius);
-                Prefs.set("aperture.rback1", rBack1);
-                Prefs.set("aperture.rback2", rBack2);
-                // Don't focus on the seeing profile, allowing smoother access to continuing MA
+                if (rs.isValid()) {
+                    radius = rs.r();
+                    rBack1 = rs.r2();
+                    rBack2 = rs.r3();
+                    Prefs.set("aperture.radius", radius);
+                    Prefs.set("aperture.rback1", rBack1);
+                    Prefs.set("aperture.rback2", rBack2);
+                }
+                // Don't focus on the seeing profile, allowing smoother access to continue MA
+                asw.requestFocus();
                 canvas.requestFocus();
             }
 

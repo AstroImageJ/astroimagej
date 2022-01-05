@@ -24,7 +24,7 @@ public class AstroImageJ_Updater implements PlugIn {
     
     public static final String URL8 = "http://www.astro.louisville.edu/software/astroimagej/updates/updatesjava8";
 
-	public static final String URL16 = "http://www.astro.louisville.edu/software/astroimagej/updates/updatesjava16";
+	public static final String URL17 = "http://www.astro.louisville.edu/software/astroimagej/updates/updatesjava17";
 
 	public static String URL = URL6;
     
@@ -158,7 +158,7 @@ public class AstroImageJ_Updater implements PlugIn {
             }
 		if (majorVersion>4)
 		{
-			URL = URL16;
+			URL = URL17;
 		}
         
 		String[] list = openUrlAsList(URL+"/versions.txt");

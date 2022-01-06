@@ -1200,6 +1200,17 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         public ComponentPair(JComponent c1, JComponent c2) {
             this(c1, c2, null);
         }
+
+        public JComponent asSwingComponent(Type type) {
+            return switch (type) {
+                case C1 -> ((JComponent) c1);
+                case C2 -> c2;
+            };
+        }
+
+        public enum Type {
+            C1, C2;
+        }
     }
 
     private class NumericFieldStepSizeEditor implements MouseListener {

@@ -26,6 +26,8 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import static util.GenericSwingDialog.ComponentPair.Type.C1;
+
 
 /**
  * Based on Aperture_.java, but with pre-selection of multiple apertures and processing of stacks.
@@ -3337,19 +3339,19 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         }
 
 
-        starSelection.c2().setToolTipText("The aperture to base comparison star selection on.");
-        gauss.c2().setToolTipText("Radius of gaussian smoothing to use when finding initial peaks.\n Set to 1 to disable.");
-        maxPeak.c2().setToolTipText("Maximum peak value to consider");
-        minPeak.c2().setToolTipText("Minimum peak value to consider");
-        maxStars.c2().setToolTipText("Maximum number of comparison stars to select. Includes already selected comp. stars in its count");
-        maxDBrightness.c2().setToolTipText("Upper brightness limit of comp stars relative to the base aperture brightness");
-        minDBrightness.c2().setToolTipText("Lower brightness limit of comp stars relative to the base aperture brightness");
-        brightnessVsDistance.c2().setToolTipText("""
-                Weight of brightness vs distance, used to sort stars.
-                Based on normalized Source-Sky brightness and distance relative to the specified base aperture.
-                A value of 100 makes the weighting based entirely on the normalized brightness.
-                A value of 0 makes the weighting entirely based on proximity to the specified base aperture.
-                If more stars were found than the maximum requested, the stars with the highest weights are used.""");
+        starSelection.asSwingComponent(C1).setToolTipText("The aperture to base comparison star selection on.");
+        gauss.asSwingComponent(C1).setToolTipText("Radius of gaussian smoothing to use when finding initial peaks.\n Set to 1 to disable.");
+        maxPeak.asSwingComponent(C1).setToolTipText("Maximum peak value to consider");
+        minPeak.asSwingComponent(C1).setToolTipText("Minimum peak value to consider");
+        maxStars.asSwingComponent(C1).setToolTipText("Maximum number of comparison stars to select. Includes already selected comp. stars in its count");
+        maxDBrightness.asSwingComponent(C1).setToolTipText("Upper brightness limit of comp stars relative to the base aperture brightness");
+        minDBrightness.asSwingComponent(C1).setToolTipText("Lower brightness limit of comp stars relative to the base aperture brightness");
+        brightnessVsDistance.asSwingComponent(C1).setToolTipText("""
+                <html>Weight of brightness vs distance, used to sort stars.<br>
+                Based on normalized Source-Sky brightness and distance relative to the specified base aperture.<br>
+                A value of 100 makes the weighting based entirely on the normalized brightness.<br>
+                A value of 0 makes the weighting entirely based on proximity to the specified base aperture.<br>
+                If more stars were found than the maximum requested, the stars with the highest weights are used.</html>""");
 
         JSpinner maxPeakSpin = (JSpinner) maxPeak.c1();
         JSpinner minPeakSpin = (JSpinner) minPeak.c1();

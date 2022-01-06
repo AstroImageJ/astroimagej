@@ -161,7 +161,7 @@ public class FitOptimization implements AutoCloseable {
         var compBruteForce = new ToolTipWrapper("Exhaustive Optimize", "Exhaustive search of comparison star combinations for minimize RMS of the fit. Only comparison stars selected at the start of this run are searched.");
         var compTest = new ToolTipWrapper("Debug", "Debug a single run.");
         compOptimizationSelection.addItem(compBruteForce);
-        compOptimizationSelection.addItem(compTest);
+        if (IJ.isAijDev()) compOptimizationSelection.addItem(compTest);
 
         compOptiCards = new JPanel(new CardLayout());
         var compOptiButtonStart = new JButton("Start");
@@ -230,7 +230,7 @@ public class FitOptimization implements AutoCloseable {
         var detrendBruteForce = new ToolTipWrapper("Exhaustive Optimize", "Exhaustive search of parameter combinations for minimum BIC of the fit. All set parameters are searched.");
         var detrendTest = new ToolTipWrapper("Debug", "Debug a single run.");
         detrendOptimizationSelection.addItem(detrendBruteForce);
-        detrendOptimizationSelection.addItem(detrendTest);
+        if (IJ.isAijDev()) detrendOptimizationSelection.addItem(detrendTest);
 
         detOptiCards = new JPanel(new CardLayout());
 

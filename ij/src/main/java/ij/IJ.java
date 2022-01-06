@@ -1,32 +1,36 @@
 package ij;
+
 import ij.astro.AstroImageJ;
 import ij.gui.*;
-import ij.process.*;
-import ij.text.*;
 import ij.io.*;
-import ij.plugin.*;
-import ij.plugin.filter.*;
-import ij.util.Tools;
-import ij.plugin.frame.Recorder;
-import ij.plugin.frame.ThresholdAdjuster;
 import ij.macro.Interpreter;
 import ij.macro.MacroRunner;
 import ij.measure.Calibration;
-import ij.measure.ResultsTable;
 import ij.measure.Measurements;
-import java.awt.event.*;
-import java.text.*;
-import java.util.*;	
-import java.awt.*;	
+import ij.measure.ResultsTable;
+import ij.plugin.*;
+import ij.plugin.filter.Analyzer;
+import ij.plugin.filter.PlugInFilter;
+import ij.plugin.filter.PlugInFilterRunner;
+import ij.plugin.frame.Recorder;
+import ij.plugin.frame.ThresholdAdjuster;
+import ij.process.*;
+import ij.text.TextPanel;
+import ij.text.TextWindow;
+import ij.util.Tools;
+
 import java.applet.Applet;
+import java.awt.*;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
 import java.io.*;
-import java.lang.reflect.*;
-import java.net.*;
-import javax.net.ssl.*;
-import java.security.cert.*;
-import java.security.KeyStore;
-import java.nio.ByteBuffer;
 import java.math.RoundingMode;
+import java.net.URL;
+import java.net.URLConnection;
+import java.nio.ByteBuffer;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.util.*;
 
 
 /** This class consists of static utility methods. */
@@ -1806,6 +1810,11 @@ public class IJ {
 	@AstroImageJ(reason = "Method to return AIJ version")
 	public static String getAstroVersion() {
 		return ImageJ.ASTROVERSION;
+	}
+
+	@AstroImageJ(reason = "Check if in AIJ dev environment")
+	public static boolean isAijDev() {
+		return ImageJ.isAijDev();
 	}
 	
 	/** Returns the ImageJ version and build number as a String, for 

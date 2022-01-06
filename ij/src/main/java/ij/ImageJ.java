@@ -924,11 +924,16 @@ public class ImageJ extends Frame implements ActionListener,
 			String v = new Scanner(Objects.requireNonNull(ImageJ.class.getClassLoader()
 					.getResource("aij_version.txt")).openStream()).nextLine();
 			// If not running as AIJ dev, only show major part of the version
-			return System.getProperty("aij.dev") == null ? v.split("\\+")[0] : v;
+			return !isAijDev() ? v.split("\\+")[0] : v;
 		} catch (IOException e) {
 			e.printStackTrace();
 			return "5-local";
 		}
+	}
+
+	@AstroImageJ(reason = "Check if in AIJ dev environment")
+	protected static boolean isAijDev() {
+		return System.getProperty("aij.dev") != null;
 	}
 
 }

@@ -3296,6 +3296,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         listb.add(b -> enableLog = b);
         listb.add(b -> debugAp = b);
         var s = gd.addCheckboxGroup(1, 3, new String[]{"Auto comparison stars", "Enable log", "Show peaks"}, new boolean[]{suggestCompStars, enableLog, debugAp}, listb);
+        var boxes = s.subComponents();
+        ((JComponent) boxes.get(0)).setToolTipText("If enabled, uses the following settings to generate a set of comparison stars based on the references star.");
+        ((JComponent) boxes.get(1)).setToolTipText("Enable log output for comparison star selection.");
+        ((JComponent) boxes.get(2)).setToolTipText("Draw dummy apertures to show peak values comp. star selection is considering.");
 
         final var gauss = gd.addBoundedNumericField("Smoothing Filter Radius", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), gaussRadius, 1, 10, "pixels", d -> gaussRadius = d);
         final var autoPeaks = gd.addCheckbox("Auto Thresholds", autoPeakValues, b -> autoPeakValues = b);

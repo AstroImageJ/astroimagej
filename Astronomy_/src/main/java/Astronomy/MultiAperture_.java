@@ -1122,7 +1122,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             }
 
             // Autoradius feature
-            if (!autoMode && firstClick && autoRadius && !t1Placed) {
+            if (!autoMode && firstClick && autoRadius && !t1Placed && !(this instanceof Stack_Aligner)) {
                 oldRadii = new Seeing_Profile.ApRadii(radius, rBack1, rBack2);
 
                 var x = xCenter;

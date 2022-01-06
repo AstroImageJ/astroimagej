@@ -12,9 +12,11 @@ import ij.process.ImageProcessor;
 import ij.util.Tools;
 import util.GenericSwingDialog;
 
+import javax.swing.*;
 import java.awt.*;
 import java.io.File;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.Locale;
 
 /**
@@ -124,24 +126,28 @@ public class Stack_Aligner extends MultiAperture_
 	protected GenericSwingDialog dialog()
 		{
 		// CREATE DIALOGUE WINDOW
+        var sliders = new ArrayList<JPanel>();
 		GenericSwingDialog gd = new GenericSwingDialog("Stack Aligner");
 
 		// REQUIRED FIELDS
+            //GenericSwingDialog.setSliderSpinnerColumns(3);
 		if (stackSize > 1)
 			{
-            gd.addSlider("           First slice ", 1, stackSize, firstSlice == stackSize ? 1 : firstSlice, d -> firstSlice = d.intValue());
-            gd.addSlider("           Last slice ", 1, stackSize, lastSlice, d -> lastSlice = d.intValue());
+            sliders.add(gd.addSlider("           First slice ", 1, stackSize, firstSlice == stackSize ? 1 : firstSlice, d -> firstSlice = d.intValue()));
+            sliders.add(gd.addSlider("           Last slice ", 1, stackSize, lastSlice, d -> lastSlice = d.intValue()));
 	        }
         gd.addMessage("");
-        gd.addSlider("Radius of object aperture", 1, radius>100?radius:100, false, radius, d -> radius = d.intValue());
-        gd.addSlider("Inner radius of background annulus", 1, rBack1>100?rBack1:100, false, rBack1, d -> rBack1 = d.intValue());
-        gd.addSlider("Outer radius of background annulus", 1, rBack2>100?rBack2:100, false, rBack2, d -> rBack2 = d.intValue());
+        sliders.add(gd.addSlider("Radius of object aperture", 1, radius>100?radius:100, false, radius, d -> radius = d.intValue()));
+        sliders.add(gd.addSlider("Inner radius of background annulus", 1, rBack1>100?rBack1:100, false, rBack1, d -> rBack1 = d.intValue()));
+        sliders.add(gd.addSlider("Outer radius of background annulus", 1, rBack2>100?rBack2:100, false, rBack2, d -> rBack2 = d.intValue()));
 
 		gd.addCheckbox ("Use previous "+nAperturesStored+" apertures (1-click to set first aperture location)",previous && nAperturesStored > 0, b -> previous = b);
         gd.addCheckbox ("Use RA/Dec to locate initial aperture positions", useWCS, b -> useWCS = b);
 		gd.addCheckbox ("Use single step mode (1-click to set first aperture location in each image)",singleStep, b -> singleStep = b);
         gd.addCheckbox ("Allow aperture changes between slices in single step mode (right click to advance image)",allowSingleStepApChanges, b -> allowSingleStepApChanges = b);
 		gd.addMessage ("");
+
+        sliders.forEach(s -> GenericSwingDialog.getTextFieldFromSlider(s).ifPresent(tf -> tf.setColumns(5)));
 
 		// NON-REQUIRED FIELDS (mirrored in finishFancyDialog())
 

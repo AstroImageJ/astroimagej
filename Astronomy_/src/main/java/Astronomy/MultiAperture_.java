@@ -1302,7 +1302,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 if (b) refCount++;
             }
 
-            if (!autoMode && suggestCompStars && tempSuggestCompStars && ngot >= referenceStar && refCount < maxSuggestedStars) {
+            if (!autoMode && suggestCompStars && tempSuggestCompStars && ngot >= referenceStar && refCount < maxSuggestedStars && !(this instanceof Stack_Aligner)) {
                 suggestionRunning = true;
                 var warning = new AnnotateRoi(false, false, true, false, imp.getWidth()/2f, imp.getHeight()/2f, 2, "Searching for comparison stars...", Color.GREEN);
                 warning.setImage(imp);

@@ -127,7 +127,11 @@ public class Stack_Aligner extends MultiAperture_
 		{
 		// CREATE DIALOGUE WINDOW
         var sliders = new ArrayList<JPanel>();
-		GenericSwingDialog gd = new GenericSwingDialog("Stack Aligner");
+        if (!Prefs.isLocationOnScreen(new Point(xLocation, yLocation))) {
+            xLocation = 10;
+            yLocation = 10;
+        }
+		GenericSwingDialog gd = new GenericSwingDialog("Stack Aligner", xLocation, yLocation);
 
 		// REQUIRED FIELDS
             //GenericSwingDialog.setSliderSpinnerColumns(3);

@@ -3321,7 +3321,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         final var minDBrightness = gd.addBoundedNumericField("Min. Comp. Brightness %", new GenericSwingDialog.Bounds(0, 99), lowerBrightness, 1, columns, null, d -> lowerBrightness = d);
         gd.setOverridePosition(false);
 
-        final var brightnessVsDistance = gd.addBoundedNumericField("Weight of brightness vs. distance:", new GenericSwingDialog.Bounds(0, 100), brightness2DistanceWeight, 1, columns, null, d -> brightness2DistanceWeight = d);
+        final var brightnessVsDistance = gd.addBoundedNumericField("Weight of brightness vs. distance %", new GenericSwingDialog.Bounds(0, 100), brightness2DistanceWeight, 1, columns, null, d -> brightness2DistanceWeight = d);
         gd.addToSameRow();
         final var maxStars = gd.addBoundedNumericField("Max. Comp. Stars", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), maxSuggestedStars, 1, columns, null, true, d -> maxSuggestedStars = d.intValue());
         autoPeaks.setToolTipText("When enabled, set peak thresholds based on image statistics.\nMax = 0.9 * Max Pixel Value, Min = Mean Pixel Value + 1σ.");

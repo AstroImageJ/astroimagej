@@ -747,6 +747,15 @@ public class FitOptimization implements AutoCloseable {
         public boolean lessThan(double comparator2, double epsilon) {
             return comparator < comparator2 - epsilon;
         }
+
+        @Override
+        public String toString() {
+            return "MinimumState{" +
+                    "state=" + state +
+                    ", comparator=" + comparator +
+                    ", outState=" + AIJLogger.object2String(outState) +
+                    '}';
+        }
     }
 
     static class RollingAvg {

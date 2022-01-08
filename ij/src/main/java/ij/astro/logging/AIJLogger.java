@@ -202,7 +202,7 @@ public class AIJLogger {
         }
     }
 
-    private static String object2String(Object obj) {
+    public static String object2String(Object obj) {
         if (obj instanceof int[] objA) {
             return Arrays.toString(objA);
         } else if (obj instanceof double[] objA) {

@@ -1371,6 +1371,8 @@ public class CurveFitter {
                                     step[fp] = getFitStep(curve, index[fp], priorWidth, priorCenter);
                                 }
                                 if (usePriorWidth[curve][index[fp]]) {
+                                    width[fp] = MultiPlot_.priorWidth[curve][index[fp]];
+                                    step[fp] = getFitStep(curve, index[fp]);
                                     minimization.addConstraint(fp, 1, start[fp] + width[fp]);
                                     minimization.addConstraint(fp, -1, start[fp] - width[fp]);
                                 }

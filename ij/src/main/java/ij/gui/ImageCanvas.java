@@ -231,7 +231,8 @@ public class ImageCanvas extends Canvas implements MouseListener, MouseMotionLis
 	//	super.repaint();
 	//	//if (IJ.debugMode) IJ.log("repaint: "+imp);
 	//}
-	
+
+	@AstroImageJ(reason = "Set interpolation to fix rendering at higher UI scales", modified = true)
     public void paint(Graphics g) {
 		// if (IJ.debugMode) IJ.log("paint: "+imp);
 		painted = true;
@@ -253,8 +254,11 @@ public class ImageCanvas extends Canvas implements MouseListener, MouseMotionLis
 				imageUpdated = false;
 				imp.updateImage();
 			}
+			((Graphics2D) g).setRenderingHint(RenderingHints.KEY_INTERPOLATION,
+					RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+
 			setInterpolation(g, Prefs.interpolateScaledImages);
-			Image img = imp.getImage();//todo mark
+			Image img = imp.getImage();
 			if (img!=null)
  				g.drawImage(img, 0, 0, (int)(srcRect.width*magnification+0.5), (int)(srcRect.height*magnification+0.5),
 				srcRect.x, srcRect.y, srcRect.x+srcRect.width, srcRect.y+srcRect.height, null);

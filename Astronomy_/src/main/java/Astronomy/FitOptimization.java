@@ -24,7 +24,7 @@ import static Astronomy.MultiPlot_.*;
 
 public class FitOptimization implements AutoCloseable {
     private static final int MAX_THREADS = getThreadCount();
-    private static final BigInteger MIN_CHUNK_SIZE = BigInteger.valueOf(1000L);
+    private static final BigInteger MIN_CHUNK_SIZE = BigInteger.valueOf(512L);
     private final static Pattern apGetter = Pattern.compile("rel_flux_[ct]([0-9]+)");
     /**
      * The change in the comparator to determine improvement

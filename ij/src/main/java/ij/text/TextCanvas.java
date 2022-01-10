@@ -1,7 +1,9 @@
 package ij.text;
+
+import ij.astro.AstroImageJ;
 import ij.util.Java2;
+
 import java.awt.*;
-import java.awt.event.*;
 
 class TextCanvas extends Canvas {
 
@@ -30,7 +32,8 @@ class TextCanvas extends Canvas {
 	public void update(Graphics g) {
 		paint(g);
 	}
-  
+
+	@AstroImageJ(reason = "Fix text scaling for UI scaling", modified = true)
 	public void paint(Graphics g) {
 		if (tp==null || g==null) return;
 		Dimension d = getSize();
@@ -81,6 +84,8 @@ class TextCanvas extends Canvas {
 				x+=w;
 			}
 		}
+		((Graphics2D) g).setRenderingHint(RenderingHints.KEY_INTERPOLATION,
+				RenderingHints.VALUE_INTERPOLATION_BICUBIC);
 		if (iImage!=null)
 			g.drawImage(iImage,0,0,null);
 	}

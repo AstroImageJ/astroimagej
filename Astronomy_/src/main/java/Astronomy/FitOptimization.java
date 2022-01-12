@@ -384,6 +384,8 @@ public class FitOptimization implements AutoCloseable {
             table = undoBuffer.pop();
             cleanNumTF.setText("+"+(table.size() - rs));
             MultiPlot_.updatePlot(MultiPlot_.updateAllFits());
+            table.show();
+            tpanel = MeasurementTable.getTextPanel(MeasurementTable.longerName(tableName));
         } else {
             IJ.beep();
         }

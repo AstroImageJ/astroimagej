@@ -1005,7 +1005,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 Prefs.set("aperture.reposition", centroidStar[ap]);
                 xCenter = xPos[ap];
                 yCenter = yPos[ap];
-                if (!adjustAperture(true)) {
+                if (!adjustAperture(true, centroidStar[ap])) {
                     if (haltOnError || this instanceof Stack_Aligner) {
                         selectedApertureRoi = null;
                         asw.setMovingAperture(false);

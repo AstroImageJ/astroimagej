@@ -372,6 +372,8 @@ public class FitOptimization implements AutoCloseable {
                 }
             }
         }
+        table.show();
+        tpanel = MeasurementTable.getTextPanel(MeasurementTable.longerName(tableName));
 
         difNumTF.setText("" + (undoBuffer.size() > 0 ? table.size() - undoBuffer.getLast().size() : "0"));
     }

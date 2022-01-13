@@ -527,7 +527,7 @@ public class FitOptimization implements AutoCloseable {
         MultiPlot_.updateTotals();
         MultiPlot_.updateGUI();
 
-        if (showOptLog) AIJLogger.log(String.format("Using %d threads", MAX_THREADS));
+        if (showOptLog) AIJLogger.log(String.format("Using at most %d threads", MAX_THREADS));
 
         setupThreadedSpace();
         iterRemainingOld = BigInteger.ZERO;
@@ -547,6 +547,8 @@ public class FitOptimization implements AutoCloseable {
             evaluateStatesInRange(optimizerBiFunction.apply(BigInteger.ONE, state));
             count++;
         }
+
+        if (showOptLog) AIJLogger.log(String.format("Using %d threads", count));
 
         Future<MinimumState> msf;
         var hasErrored = false;

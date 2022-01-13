@@ -308,6 +308,16 @@ public class FitOptimization implements AutoCloseable {
     }
 
     private void cleanOutliers() {
+        if (!plotY[curve]) {
+            IJ.error("The 'Plot' check box for this data set must be enabled in Multi-Plot Y-data panel for optimization.");
+            return;
+        }
+
+        if (!useTransitFit[curve]) {
+            IJ.error("The 'Enable Transit Fit' check box for this data set must be enabled in the fit settings panel for optimization.");
+            return;
+        }
+
         int holdBinSize = 1;
         boolean holdUseDMarker1 = false;
         boolean holdUseDMarker4 = false;
@@ -424,6 +434,11 @@ public class FitOptimization implements AutoCloseable {
             return;
         }
 
+        if (!plotY[curve]) {
+            IJ.error("The 'Plot' check box for this data set must be enabled in Multi-Plot Y-data panel for optimization.");
+            return;
+        }
+
         setTargetStar();
 
         BigInteger initState = createBinaryRepresentation(selectable); //numAps has number of apertures
@@ -462,6 +477,11 @@ public class FitOptimization implements AutoCloseable {
         setSelectable(MultiPlot_.detrendIndex[curve].length);
         if (selectable.length < 2) {
             IJ.error("More than one detrend parameter is needed for optimization");
+            return;
+        }
+
+        if (!plotY[curve]) {
+            IJ.error("The 'Plot' check box for this data set must be enabled in Multi-Plot Y-data panel for optimization.");
             return;
         }
 
@@ -567,7 +587,7 @@ public class FitOptimization implements AutoCloseable {
             }
         }
 
-        if (hasErrored) IJ.error("Error occurred during minimization, preceding with lowest RMS found.");
+        if (hasErrored) IJ.error("Error occurred during minimization, proceeding with lowest RMS found.");
 
         if (showOptLog) AIJLogger.log("Found global minimum:");
         if (showOptLog) AIJLogger.log(minimumState.comparator);

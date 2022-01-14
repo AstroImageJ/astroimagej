@@ -436,6 +436,8 @@ public class FitOptimization implements AutoCloseable {
 
         if (!plotY[curve]) {
             IJ.error("The 'Plot' check box for this data set must be enabled in Multi-Plot Y-data panel for optimization.");
+            CardLayout cl = (CardLayout) compOptiCards.getLayout();
+            cl.next(compOptiCards);
             return;
         }
 
@@ -477,11 +479,15 @@ public class FitOptimization implements AutoCloseable {
         setSelectable(MultiPlot_.detrendIndex[curve].length);
         if (selectable.length < 2) {
             IJ.error("More than one detrend parameter is needed for optimization");
+            CardLayout cl = (CardLayout) detOptiCards.getLayout();
+            cl.next(detOptiCards);
             return;
         }
 
         if (!plotY[curve]) {
             IJ.error("The 'Plot' check box for this data set must be enabled in Multi-Plot Y-data panel for optimization.");
+            CardLayout cl = (CardLayout) detOptiCards.getLayout();
+            cl.next(detOptiCards);
             return;
         }
 

@@ -8,6 +8,7 @@ import astroj.SpringUtil;
 import ij.IJ;
 import ij.Prefs;
 import ij.astro.logging.AIJLogger;
+import util.UIHelper;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
@@ -121,6 +122,7 @@ public class FitOptimization implements AutoCloseable {
         var outlierRemoval = new JPanel(new SpringLayout());
         outlierRemoval.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(MultiPlot_.subBorderColor, 1), "Outlier Removal", TitledBorder.CENTER, TitledBorder.TOP, MultiPlot_.p11, Color.darkGray));
         var undoButton = new JButton("⟲");
+        var undoFont = undoButton.getFont();
         undoButton.addActionListener($ -> undoOutlierClean());
         undoButton.setFont(undoButton.getFont().deriveFont(15f));
         undoButton.setToolTipText("<html>Undo clean<br>(up to 5 levels)</html>");
@@ -304,6 +306,8 @@ public class FitOptimization implements AutoCloseable {
         //fitOptimizationPanel.add(logOptPanel);
         SpringUtil.makeCompactGrid(fitOptimizationPanel, 1, fitOptimizationPanel.getComponentCount(), 2, 2, 2, 2);
 
+        UIHelper.recursiveFontSetter(fitOptimizationPanel, p12);
+        undoButton.setFont(undoFont);
         return fitOptimizationPanel;
     }
 

@@ -4,6 +4,7 @@ import ij.IJ;
 
 import javax.swing.*;
 import javax.swing.text.DefaultEditorKit;
+import java.awt.*;
 import java.awt.event.KeyEvent;
 
 public class UIHelper {
@@ -31,5 +32,14 @@ public class UIHelper {
         }
 
         lookAndFeelSet = true;
+    }
+
+    public static void recursiveFontSetter(Component component, Font font) {
+        if (component instanceof Container container) {
+            for (Component containerComponent : container.getComponents()) {
+                recursiveFontSetter(containerComponent, font);
+            }
+        }
+        component.setFont(font);
     }
 }

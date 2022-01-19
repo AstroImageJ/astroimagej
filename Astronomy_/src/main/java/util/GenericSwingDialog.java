@@ -30,7 +30,6 @@ import java.util.function.Consumer;
  * A Swing implementation of {@link ij.gui.GenericDialog}.
  */
 //todo missing objects
-//    same row option
 public class GenericSwingDialog extends JDialog implements ActionListener, TextListener, FocusListener, ItemListener,
         KeyListener, AdjustmentListener, WindowListener {
     private final GridBagConstraints c = new GridBagConstraints();
@@ -789,12 +788,12 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
             fontSizeSet = true;
             setFont(font.deriveFont((float) (font.getSize() * Prefs.getGuiScale())));
         }
-        pack();
         if (rootPane.getComponentCount() > 0) okay.requestFocusInWindow();
         if (centerDialog) GUI.centerOnImageJScreen(this);
         setMinimumSize(getLayout().minimumLayoutSize(scrollPane));
         setMaximumSize(new Dimension(scrollPane.getPreferredSize().width, getMaximumSize().height));
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        pack();
         setVisible(true);
     }
 

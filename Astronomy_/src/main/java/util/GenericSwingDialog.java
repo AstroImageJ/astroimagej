@@ -788,6 +788,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
             fontSizeSet = true;
             setFont(font.deriveFont((float) (font.getSize() * Prefs.getGuiScale())));
         }
+        UIHelper.recursiveFontSetter(this, getFont());
         if (rootPane.getComponentCount() > 0) okay.requestFocusInWindow();
         if (centerDialog) GUI.centerOnImageJScreen(this);
         setMinimumSize(getLayout().minimumLayoutSize(scrollPane));

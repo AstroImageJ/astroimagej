@@ -4810,6 +4810,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         if (rememberWindowLocations) {
             IJU.setFrameSizeAndLocation(addAstroDataFrame, addAstroDataFrameLocationX, addAstroDataFrameLocationY, 0, 0);
         }
+        UIHelper.recursiveFontSetter(addAstroDataFrame, p11);
+        addAstroDataFrame.pack();
         addAstroDataFrame.setVisible(true);
         addAstroDataFrameWasShowing = true;
 
@@ -14646,6 +14648,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         if (rememberWindowLocations) {
             IJU.setFrameSizeAndLocation(refStarFrame, refStarFrameLocationX, refStarFrameLocationY, 0, 0);
         }
+        UIHelper.recursiveFontSetter(refStarFrame, p11);
+        refStarFrame.pack();
         refStarFrame.setVisible(true);
         refStarPanelWasShowing = true;
         FileDrop fileDrop = new FileDrop(refStarMainPanel, BorderFactory.createEmptyBorder(), MultiPlot_::openDragAndDropFiles);

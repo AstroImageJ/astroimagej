@@ -1,30 +1,18 @@
 package astroj;
 
-import java.awt.*;
-import java.util.Properties;
-import java.awt.image.*;
-import ij.process.*;
-import ij.measure.*;
-import ij.plugin.WandToolOptions;
-import ij.plugin.frame.Recorder;
-import ij.plugin.frame.RoiManager;
-import ij.macro.*;
-import ij.gui.StackWindow;
-import ij.gui.Roi;
-import ij.*;
-import ij.gui.ImageWindow;
-import ij.gui.ImageCanvas;
-import ij.gui.Toolbar;
-import ij.gui.Arrow;
+import ij.IJ;
+import ij.ImagePlus;
+import ij.Prefs;
+import ij.gui.*;
 import ij.plugin.tool.PlugInTool;
-import ij.util.*;
-import java.awt.event.*;
-import java.util.*;
-import java.text.*;
-import java.awt.font.FontRenderContext;
 
-import java.awt.geom.*;
-import javax.swing.UIManager;
+import java.awt.*;
+import java.awt.event.MouseEvent;
+import java.awt.font.FontRenderContext;
+import java.awt.geom.AffineTransform;
+import java.awt.image.MemoryImageSource;
+import java.text.DecimalFormat;
+import java.util.Locale;
 
 public class AstroCanvas extends OverlayCanvas {
 
@@ -705,6 +693,16 @@ public class AstroCanvas extends OverlayCanvas {
 
 
 	}
+
+    @Override
+    public void mouseMoved(MouseEvent e) {
+        super.mouseMoved(e);
+        int sx = e.getX();
+        int sy = e.getY();
+        int ox = (int) offScreenXD(sx);
+        int oy = (int) offScreenYD(sy);
+        setCursor(sx, sy, ox, oy);
+    }
 
     void updatePhotometerOverlay(Graphics g)
                 {

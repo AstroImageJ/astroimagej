@@ -3,6 +3,7 @@ package util;
 import ij.IJ;
 
 import javax.swing.*;
+import javax.swing.border.TitledBorder;
 import javax.swing.text.DefaultEditorKit;
 import java.awt.*;
 import java.awt.event.KeyEvent;
@@ -38,6 +39,11 @@ public class UIHelper {
         if (component instanceof Container container) {
             for (Component containerComponent : container.getComponents()) {
                 recursiveFontSetter(containerComponent, font);
+            }
+        }
+        if (component instanceof JComponent jComponent) {
+            if (jComponent.getBorder() instanceof TitledBorder titledBorder) {
+                titledBorder.setTitleFont(font);
             }
         }
         component.setFont(font);

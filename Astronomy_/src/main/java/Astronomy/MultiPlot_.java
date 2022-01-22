@@ -4804,7 +4804,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         SpringUtil.makeCompactGrid(addAstroDataPanel, addAstroDataPanel.getComponentCount() / 2, 2, 6, 6, 6, 6);
 
         addAstroDataFrame.add(addAstroDataScrollPane);
-        addAstroDataFrame.pack();
         addAstroDataFrame.setResizable(true);
 
         if (rememberWindowLocations) {

@@ -1240,8 +1240,11 @@ public class IJU {
         frame.setLocation(defaultX, defaultY);
     }
 
-
     public static void saveApertures(String apsPath) {
+        saveApertures(apsPath, null);
+    }
+
+    public static void saveApertures(String apsPath, AstroStackWindow astroStackWindow) {
         File outFile = new File(apsPath);
         if (outFile.isDirectory()) {
             IJ.error("bad aperture save filename");
@@ -1261,6 +1264,20 @@ public class IJU {
                     key.startsWith(".multiaperture.isalignstar") || key.startsWith(".multiaperture.centroidstar") ||
                     key.startsWith(".multiaperture.naperturesmax") || key.startsWith(".multiaperture.absmagapertures"))
                 prefs.put(key, Prefs.ijPrefs.getProperty(key));
+        }
+        if (astroStackWindow != null) {
+            var rois = astroStackWindow.ac.getRois();
+            if (rois != null) {
+                Arrays.stream(rois)
+                        .filter(r -> r instanceof ApertureRoi)
+                        .findAny()
+                        .ifPresent(r -> {
+                            var roi = (ApertureRoi) r;
+                            prefs.put(".aperture.radius", Double.toString(roi.r1));
+                            prefs.put(".aperture.rback1", Double.toString(roi.r2));
+                            prefs.put(".aperture.rback2", Double.toString(roi.r3));
+                        });
+            }
         }
         try {
             FileOutputStream fos = new FileOutputStream(apsPath);

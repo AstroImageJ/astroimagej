@@ -3589,7 +3589,7 @@ protected ImageIcon createImageIcon(String path, String description) {
                     String apsPath = sf.getDirectory() + sf.getFileName();
                     int location = apsPath.lastIndexOf('.');
                     if (location >= 0) apsPath = apsPath.substring(0, location);
-                    IJU.saveApertures(apsPath+".apertures");
+                    IJU.saveApertures(apsPath+".apertures", this);
                     }
                 else if (b==openRaDecAperturesMenuItem)
                     {

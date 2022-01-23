@@ -918,6 +918,10 @@ public class CurveFitter {
             workingSource[j] /= bucketSize;
         }
 
+        return workingSource;
+    }
+
+    private double[] trimData(double[] workingSource) {
         fitMin[curve] = (useDMarker1 ? dMarker1Value : Double.NEGATIVE_INFINITY) + xOffset;
         fitMax[curve] = (useDMarker4 ? dMarker4Value : Double.POSITIVE_INFINITY) + xOffset;
         fitLeft[curve] = dMarker2Value + xOffset;
@@ -953,7 +957,8 @@ public class CurveFitter {
         var workingSource2 = new double[nn[curve]];
 
         //todo check on Source-Sky, Source_Error values, and detrend parameters for NaNs. If a NaN is found, bail out and give an appropriate error.
-        for (int j = 0; j < nn[curve]; j++) {
+        for (int j = 0; j < workingSource.length; j++) {
+            workingSource2[j] = Double.NaN;
             if (detrendFitIndex[curve] != 1) {
                 if (detrendFitIndex[curve] == 4) {
                     if ((x[curve][j] > fitMin[curve] && x[curve][j] < fitLeft[curve]) || (x[curve][j] > fitRight[curve] && x[curve][j] < fitMax[curve])) {
@@ -969,7 +974,7 @@ public class CurveFitter {
             }
         }
 
-        return workingSource2;
+        return Arrays.stream(workingSource2).filter(Double::isFinite).toArray();
     }
 
     private CurveData preprocessData(boolean[] localIsRefStar) {
@@ -1020,7 +1025,7 @@ public class CurveFitter {
         var detrendYE = Arrays.copyOf(initDetrendYE, initDetrendYE.length);
         var detrendX = Arrays.copyOf(initDetrendX, initDetrendX.length);
         var detrendYD = Arrays.copyOf(initDetrendYD, initDetrendYD.length);
-        double[] y = new double[detrendXs[curve].length];
+
         var yAverage = 0D;
         var yDepthEstimate = MultiPlot_.yDepthEstimate[curve];
         var yBaselineAverage = MultiPlot_.yBaselineAverage[curve];
@@ -1072,13 +1077,14 @@ public class CurveFitter {
         if (!plotY[curve]) return new OptimizerResults(Double.NaN, Double.NaN);
 
         var curveData = preprocessData(isRefStar);
+        double[] y = new double[nn[curve]];
         for (int i = 0; i < curveData.rel_flux.length; i++) {
             y[i] = curveData.rel_flux[i];
-            detrendYE[i] = curveData.err[i];
             yerr[i] = curveData.err[i];
-            detrendY[i] = y[i];
             yAverage += y[i];
         }
+        detrendYE = trimData(curveData.err);
+        detrendY = trimData(y);
 
         curveData.instancedParamData.forEach((columnInfo, data) -> detrend[columnInfo.detrendColumn] = data);
 

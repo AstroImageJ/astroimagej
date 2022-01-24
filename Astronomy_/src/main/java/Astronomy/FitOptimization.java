@@ -13,6 +13,7 @@ import util.UIHelper;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
+import java.awt.event.InputEvent;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
@@ -128,7 +129,13 @@ public class FitOptimization implements AutoCloseable {
         undoButton.setToolTipText("<html>Undo clean<br>(up to 5 levels)</html>");
         outlierRemoval.add(undoButton);
         var cleanButton = new JButton("Clean");
-        cleanButton.addActionListener($ -> cleanOutliers());
+        //noinspection deprecation
+        cleanButton.addActionListener(ae -> cleanOutliers((ae.getModifiers() & InputEvent.SHIFT_MASK) != 0));
+        cleanButton.setToolTipText("""
+                    <html>
+                    Left-click to clean data relative to the per-point uncertainties.<br>
+                    Shift-left-click or right-click to clean data relative to the RMS of the model residuals.
+                    </html>""");
         outlierRemoval.add(cleanButton);
         difNumTF.setEditable(false);
         difNumTF.setMaximumSize(new Dimension(50, 10));
@@ -311,7 +318,7 @@ public class FitOptimization implements AutoCloseable {
         return fitOptimizationPanel;
     }
 
-    private void cleanOutliers() {
+    private void cleanOutliers(boolean useRms) {
         if (!plotY[curve]) {
             IJ.error("The 'Plot' check box for this data set must be enabled in Multi-Plot Y-data panel for optimization.");
             return;
@@ -350,7 +357,8 @@ public class FitOptimization implements AutoCloseable {
         var toRemove = new TreeSet<Integer>();
 
         for (int i = 0; i < residual[curve].length; i++) {
-            if (Math.abs(residual[curve][i]) > Math.abs(nSigmaOutlier * yerr[curve][i])) {//table.getValueAsDouble(errcolumn, i)) {
+            var sigma = useRms ? MultiPlot_.sigma[curve] : yerr[curve][i];
+            if (Math.abs(residual[curve][i]) > Math.abs(nSigmaOutlier * sigma)) {
                 hasActionToUndo = true;
                 toRemove.add(excludedHeadSamples + i);
                 //if (showOptLog) AIJLogger.log("Datapoint removed because residual > n * yerr: "+Math.abs(residual[curve][i])+" > "+Math.abs(nSigmaOutlier * yerr[curve][i]));

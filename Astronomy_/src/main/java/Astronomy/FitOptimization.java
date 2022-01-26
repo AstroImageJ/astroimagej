@@ -14,6 +14,8 @@ import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.awt.event.InputEvent;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
@@ -129,6 +131,30 @@ public class FitOptimization implements AutoCloseable {
         undoButton.setToolTipText("<html>Undo clean<br>(up to 5 levels)</html>");
         outlierRemoval.add(undoButton);
         var cleanButton = new JButton("Clean");
+        cleanButton.addMouseListener(new MouseListener() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (SwingUtilities.isRightMouseButton(e)) {
+                    cleanOutliers(true);
+                }
+            }
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+            }
+
+            @Override
+            public void mouseEntered(MouseEvent e) {
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+            }
+        });
         //noinspection deprecation
         cleanButton.addActionListener(ae -> cleanOutliers((ae.getModifiers() & InputEvent.SHIFT_MASK) != 0));
         cleanButton.setToolTipText("""

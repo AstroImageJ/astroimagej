@@ -724,7 +724,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
     public void displayDialog(boolean show) {
         if (!show) return;
         //setupPaneLayout();
-        setResizable(false);
+        setResizable(true);
         //todo make it resizable, limit max size to some fraction of screen size?
         setMaximumSize(Toolkit.getDefaultToolkit().getScreenSize());
         if (no != null) {
@@ -781,7 +781,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         c.anchor = GridBagConstraints.SOUTHEAST;
         c.gridwidth = addToSameRowCalled ? GridBagConstraints.REMAINDER : 2;
         c.insets = new Insets(15, 0, 0, 0);
-        add(buttons, c);
+        addLocal(buttons, c);//todo buttons not in scrollpane
 
         Font font = getFont();
         if (!fontSizeSet && font != null && Prefs.getGuiScale() != 1.0) {
@@ -791,9 +791,11 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         UIHelper.recursiveFontSetter(this, getFont());
         if (rootPane.getComponentCount() > 0) okay.requestFocusInWindow();
         if (centerDialog) GUI.centerOnImageJScreen(this);
+        scrollPane.validate();
         setMinimumSize(getLayout().minimumLayoutSize(scrollPane));
         setMaximumSize(new Dimension(scrollPane.getPreferredSize().width, getMaximumSize().height));
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setContentPane(scrollPane);
         pack();
         setVisible(true);
     }

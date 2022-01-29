@@ -3257,11 +3257,12 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         sliders[3] = gd.addFloatSlider("Inner radius of background annulus", 0.01, rBack1 > 100 ? rBack1 : 100, false, rBack1, 3, 1.0, d -> rBack1 = d);
         sliders[4] = gd.addFloatSlider("Outer radius of background annulus", 0.01, rBack2 > 100 ? rBack2 : 100, false, rBack2, 3, 1.0, d -> rBack2 = d);
         toggleComponents(sliders, 2, !autoRadius);
+        gd.addDoubleSpaceLineSeparator();
         gd.addCheckbox("Use previous " + nAperturesStored + " apertures (1-click to set first aperture location)", previous && nAperturesStored > 0, b -> previous = b);
         gd.addCheckbox("Use RA/Dec to locate aperture positions", useWCS, b -> useWCS = b);
         gd.addCheckbox("Use single step mode (1-click to set first aperture location in each image)", singleStep, b -> singleStep = b);
         gd.addCheckbox("Allow aperture changes between slices in single step mode (right click to advance image)", allowSingleStepApChanges, b -> allowSingleStepApChanges = b);
-        gd.addMessage("");
+        gd.addDoubleSpaceLineSeparator();
 
         // Make all sliders the same size
         var sliderWidth = Math.max(GenericSwingDialog.getSliderWidth(sliders[2]), Integer.toString(stackSize).length());
@@ -3416,7 +3417,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         minPeak.c1().setEnabled((!autoPeakValues && suggestCompStars));
         maxPeak.c1().setEnabled((!autoPeakValues && suggestCompStars));
 
-        gd.addMessage("");
+        gd.addDoubleSpaceLineSeparator();
 
         // GET NON-REQUIRED DIALOGUE FIELDS:
         gd.addCheckboxGroup(2, 2, new String[]{"Centroid apertures (initial setting)", "Halt processing on WCS or centroid error",
@@ -3425,11 +3426,11 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 //                                                "Compute relative flux signal-to-noise", "Compute total comparison star counts"},
                 new boolean[]{reposition, haltOnError, removeBackStars, backIsPlane}, list1);//,showRatio, showRatioError,showRatioSNR,showCompTot});
 
-        gd.addMessage("");
+        gd.addDoubleSpaceLineSeparator();
         gd.addCheckbox("Vary aperture radius based on FWHM", useVarSizeAp, b -> useVarSizeAp = b);
         gd.addFloatSlider("            FWHM factor (set to 0.00 for radial profile mode):", 0.0, 5.0, false, apFWHMFactor, 3, 0.1, d -> apFWHMFactor = d);
         gd.addBoundedNumericField("Radial profile mode normalized flux cutoff:", new GenericSwingDialog.Bounds(0, false, 1, false), autoModeFluxCutOff, .01, 6, "(0 < cuffoff < 1 ; default = 0.010)", d -> autoModeFluxCutOff = d);
-        gd.addMessage("");
+        gd.addDoubleSpaceLineSeparator();
         gd.addCheckbox("Prompt to enter ref star apparent magnitude (required if target star apparent mag is desired)", getMags, b -> getMags = b);
 
         final var list2 = new ArrayList<Consumer<Boolean>>();

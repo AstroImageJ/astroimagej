@@ -188,6 +188,35 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         return addCheckboxGroup(rows, columns, labels, defaultValues, null, consumers);
     }
 
+    public void addSingleSpaceLineSeparator() {
+        addMessage("");
+        addToSameRow();
+        addLineSeparator();
+    }
+
+    public void addDoubleSpaceLineSeparator() {
+        addMessage("");
+        addLineSeparator();
+        addMessage("");
+    }
+
+    public void addLineSeparator() {
+        var sep = new JSeparator();
+        sep.setPreferredSize(new Dimension(5,3));
+        var c = new GridBagConstraints();
+        c.fill = GridBagConstraints.HORIZONTAL;
+        c.weightx = 1;
+        if (!addToSameRow) {
+            this.c.gridy++;
+        } else {
+            addToSameRow = false;
+        }
+        c.gridy = this.c.gridy;
+        c.gridx = 0;
+        c.gridwidth = GridBagConstraints.REMAINDER;
+        addLocal(sep, c);
+    }
+
     public ComponentPair addCheckboxGroup(int rows, int columns, String[] labels, boolean[] defaultValues, String[] headings, List<Consumer<Boolean>> consumers) {
         Panel panel = new Panel();
         int nRows = headings != null ? rows + 1 : rows;
@@ -316,7 +345,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         if (color != null) theLabel.setForeground(color);
         if (overridePosition) c.gridx = x;
         useCustomPosition();
-        addLocal(theLabel, c);
+        if (!text.equals("")) addLocal(theLabel, c);
         x++;
         c.fill = GridBagConstraints.NONE;
 

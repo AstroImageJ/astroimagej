@@ -1519,7 +1519,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                 IJ.showMessage("Cannot access " + getPositionColumn(ylabel[curve], "X") + " source position data column for distance calculation !");
                             }
                             operatorIndex[curve] = 0;
-                            operatorselection[curve].setSelectedIndex(operatorIndex[curve]);
+                            //operatorselection[curve].setSelectedIndex(operatorIndex[curve]);
                             plotY[curve] = false;
                             usecurvebox[curve].setSelected(false);
                             savecolumnbutton[curve].setEnabled(plotY[curve]);
@@ -1529,7 +1529,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                 IJ.showMessage("Cannot access " + getPositionColumn(ylabel[curve], "Y") + " source position data column for distance calculation !");
                             }
                             operatorIndex[curve] = 0;
-                            operatorselection[curve].setSelectedIndex(operatorIndex[curve]);
+                            //operatorselection[curve].setSelectedIndex(operatorIndex[curve]);
                             plotY[curve] = false;
                             usecurvebox[curve].setSelected(false);
                             savecolumnbutton[curve].setEnabled(plotY[curve]);
@@ -1596,7 +1596,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 //                                                        if (oplabel[curve].trim().length() != 0)
 //                                                            IJ.showMessage ("Cannot access Y"+curve+" operator data column "+oplabel[curve]+" !");
                             operatorIndex[curve] = 0;
-                            operatorselection[curve].setSelectedIndex(operatorIndex[curve]);
+                            //operatorselection[curve].setSelectedIndex(operatorIndex[curve]);
                         } else if (operatorIndex[curve] == 5) //calculate distance
                         {
                             xc2column[curve] = table.getColumnIndex(getPositionColumn(oplabel[curve], "X"));
@@ -1607,14 +1607,14 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                     IJ.showMessage("Cannot access " + getPositionColumn(oplabel[curve], "X") + " source position data column for distance calculation !");
                                 }
                                 operatorIndex[curve] = 0;
-                                operatorselection[curve].setSelectedIndex(operatorIndex[curve]);
+                                //operatorselection[curve].setSelectedIndex(operatorIndex[curve]);
                             }
                             if (yc2column[curve] == ResultsTable.COLUMN_NOT_FOUND) {
                                 if (getPositionColumn(oplabel[curve], "Y").trim().length() != 0) {
                                     IJ.showMessage("Cannot access " + getPositionColumn(oplabel[curve], "Y") + " source position data column for distance calculation !");
                                 }
                                 operatorIndex[curve] = 0;
-                                operatorselection[curve].setSelectedIndex(operatorIndex[curve]);
+                                //operatorselection[curve].setSelectedIndex(operatorIndex[curve]);
                             }
                         }
 
@@ -10955,6 +10955,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 //                else
 //                    operatorcolumn[c].setPrototypeDisplayValue("1234567890123456");
         operatorcolumn[c].addActionListener(ae -> {
+            operatorIndex[c] = operatorselection[c].getSelectedIndex();
             oplabel[c] = (String) operatorcolumn[c].getSelectedItem();
             updatePlot(updateOneFit(c));
         });

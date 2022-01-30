@@ -754,8 +754,10 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         if (!show) return;
         //setupPaneLayout();
         setResizable(true);
-        //todo make it resizable, limit max size to some fraction of screen size?
+        //todo limit max size to some fraction of screen size?
         setMaximumSize(Toolkit.getDefaultToolkit().getScreenSize());
+        var displayPane = new JPanel();
+        displayPane.setLayout(new GridBagLayout());
         if (no != null) {
             scrollPane.validate();
             scrollPane.setMinimumSize(getLayout().minimumLayoutSize(scrollPane));
@@ -810,7 +812,8 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         c.anchor = GridBagConstraints.SOUTHEAST;
         c.gridwidth = addToSameRowCalled ? GridBagConstraints.REMAINDER : 2;
         c.insets = new Insets(15, 0, 0, 0);
-        addLocal(buttons, c);//todo buttons not in scrollpane
+        displayPane.add(scrollPane);
+        displayPane.add(buttons, c);//todo buttons not in scrollpane
 
         Font font = getFont();
         if (!fontSizeSet && font != null && Prefs.getGuiScale() != 1.0) {
@@ -824,8 +827,21 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         setMinimumSize(getLayout().minimumLayoutSize(scrollPane));
         setMaximumSize(new Dimension(scrollPane.getPreferredSize().width, getMaximumSize().height));
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        setContentPane(scrollPane);
+        setContentPane(displayPane);
         pack();
+        displayPane.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                super.componentResized(e);
+                var currentBorders = displayPane.getSize();
+                var buttonPanelSize = buttons.getSize();
+
+                var h = currentBorders.height - buttonPanelSize.height - 25;
+                var w = currentBorders.width;
+                scrollPane.setSize(new Dimension(w, h));
+                scrollPane.setMinimumSize(new Dimension(w, h));
+            }
+        });
         setVisible(true);
     }
 

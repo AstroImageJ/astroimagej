@@ -840,6 +840,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
                 var w = currentBorders.width;
                 scrollPane.setSize(new Dimension(w, h));
                 scrollPane.setMinimumSize(new Dimension(w, h));
+                repaint();
             }
         });
         setVisible(true);

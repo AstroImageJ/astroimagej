@@ -153,7 +153,7 @@ public class FolderOpener implements PlugIn {
 
 		// Zip as folder
 		if (list == null) {
-			list = ZipOpenerUtil.getFilesInZip(directory);
+			list = ZipOpenerUtil.getFilePathsInZip(directory);
 			if (list.length == 0) list = null;
 		} // End zip as folder
 
@@ -546,7 +546,7 @@ public class FolderOpener implements PlugIn {
 			String[] names = f.list();
 			// Zip as folder
 			if (names == null || names.length == 0) {
-				names = ZipOpenerUtil.getFilesInZip(directory);
+				names = ZipOpenerUtil.getFilePathsInZip(directory);
 			} // End zip as folder
 			names = (new FolderOpener()).trimFileList(names);
 			countStr = ""+names.length;

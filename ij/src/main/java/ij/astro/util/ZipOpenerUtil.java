@@ -56,7 +56,13 @@ public class ZipOpenerUtil {
         }
 
         public static String[] getPaths(InternalZipFile[] a) {
+            if (a == null || a.length == 0) return new String[0];
             return Arrays.stream(a).map(InternalZipFile::path).toArray(String[]::new);
+        }
+
+        public static long getUncompressedSizeInBytes(InternalZipFile[] a) {
+            if (a == null || a.length == 0) return 0;
+            return Arrays.stream(a).mapToLong(InternalZipFile::uncompressedSizeInBytes).sum();
         }
     }
 }

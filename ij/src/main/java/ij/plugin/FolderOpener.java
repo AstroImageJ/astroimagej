@@ -2,6 +2,7 @@ package ij.plugin;
 
 import ij.*;
 import ij.astro.AstroImageJ;
+import ij.astro.types.Pair;
 import ij.astro.util.ZipOpenerUtil;
 import ij.gui.GenericDialog;
 import ij.gui.Overlay;
@@ -19,6 +20,7 @@ import ij.util.Tools;
 import java.awt.*;
 import java.awt.image.ColorModel;
 import java.io.File;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Properties;
 
@@ -572,17 +574,26 @@ public class FolderOpener implements PlugIn {
 		gd.addHelp(IJ.URL+"/docs/menus/file.html#seq1");
 
 		// Add display of stack size
-		gd.addMessage("Matched files: " + getFileCount(gd));
+		var initialSizes = getFileCount(gd);
+		gd.addMessage("Matched files: " + initialSizes.first());
 		var filterCountDisplay = (Label) gd.getComponent(gd.getComponentCount() - 1);
+		gd.addMessage("Estimated stack size: " + initialSizes.second() + " MB");
+		var filterSizeDisplay = (Label) gd.getComponent(gd.getComponentCount() - 1);
 
 		((TextField) gd.getStringFields().get(1)).addTextListener($ -> {
 			filterCountDisplay.setText("Matched files: " + 0);
-			filterCountDisplay.setText("Matched files: " + getFileCount(gd));
+			filterSizeDisplay.setText("Estimated stack size: " + 0 + " MB");
+			var x = getFileCount(gd);
+			filterCountDisplay.setText("Matched files: " + x.first());
+			filterSizeDisplay.setText("Estimated stack size: " + x.second() + " MB");
 		});
 
 		((TextField) gd.getStringFields().get(0)).addTextListener($ -> {
 			filterCountDisplay.setText("Matched files: " + 0);
-			filterCountDisplay.setText("Matched files: " + getFileCount(gd));
+			var x = getFileCount(gd);
+			filterCountDisplay.setText("Matched files: " + x.first());
+			filterSizeDisplay.setText("Estimated stack size: " + 0 + " MB");
+			filterSizeDisplay.setText("Estimated stack size: " + x.second() + " MB");
 		});
 		// End display stack size
 
@@ -767,8 +778,11 @@ public class FolderOpener implements PlugIn {
 		return StringSorter.sortNumerically(list);
 	}
 
+	/**
+	 * @return first = file count, second = size in MB
+	 */
 	@AstroImageJ(reason = "Obtain filtered file count")
-	private int getFileCount(GenericDialog gd) {
+	private Pair.IntFloatPair getFileCount(GenericDialog gd) {
 		var filter = ((TextField) gd.getStringFields().get(1)).getText();
 		if (legacyRegex!=null) filter = "("+legacyRegex+")";
 
@@ -777,8 +791,10 @@ public class FolderOpener implements PlugIn {
 		File file = new File(directory);
 		String[] list = file.list();
 		// Zip as folder
+		ZipOpenerUtil.InternalZipFile[] zipEntries = null;
 		if (list == null) {
-			list = ZipOpenerUtil.getFilePathsInZip(directory);
+			zipEntries = ZipOpenerUtil.getFilesInZip(directory);
+			list = ZipOpenerUtil.InternalZipFile.getPaths(zipEntries);
 			if (list.length == 0) list = null;
 		} // End zip as folder
 
@@ -789,7 +805,7 @@ public class FolderOpener implements PlugIn {
 			if (list!=null)
 				directory = parent;
 			else {
-				return 0;
+				return Pair.IntFloatPair.empty();
 			}
 		}
 
@@ -805,13 +821,22 @@ public class FolderOpener implements PlugIn {
 			list = fileList.toArray(new String[fileList.size()]);
 
 		list = trimFileList(list);
-		if (list==null) return 0;
+		if (list==null) return Pair.IntFloatPair.empty();
 
 		// Dynamic filter does not support legacy regex
 		list = getFilteredList(list, filter, null);
-		if (list == null) return 0;
+		if (list == null) return Pair.IntFloatPair.empty();
 
-		return list.length;
+		// Get file sizes
+		long sizeInBytes = ZipOpenerUtil.InternalZipFile.getUncompressedSizeInBytes(zipEntries);
+		if (sizeInBytes == 0) {
+			for (String s : list) {
+				var f = Path.of(directory, s).toFile();
+				sizeInBytes += f.length();
+			}
+		}
+
+		return new Pair.IntFloatPair(list.length, sizeInBytes / 1_000_000F);
 	}
 
 } // FolderOpener

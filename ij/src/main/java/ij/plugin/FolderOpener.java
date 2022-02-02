@@ -118,7 +118,8 @@ public class FolderOpener implements PlugIn {
 	}
 
 	@AstroImageJ(reason = "When opening images that individually go to a stack, preserve stack title. This allows" +
-			" MultiAperture to run on a folder of 3D fits images, otherwise WCS and other information is lost.",
+			" MultiAperture to run on a folder of 3D fits images, otherwise WCS and other information is lost;" +
+			" If filter fails to match any files, after closing the error reopen dialog.",
 			modified = true)
 	public void run(String arg) {
 		boolean isMacro = Macro.getOptions()!=null;
@@ -238,8 +239,10 @@ public class FolderOpener implements PlugIn {
 			if (legacyRegex!=null)
 				pluginName += "(legacy)";
 			list = getFilteredList(list, filter, pluginName);
-			if (list==null)
+			if (list==null) {
+				run(arg); // Reopen dialog if filter fails
 				return;
+			}
 			IJ.showStatus("");
 			t0 = System.currentTimeMillis();
 			if (sortFileNames || dicomImages || IJ.isMacOSX())

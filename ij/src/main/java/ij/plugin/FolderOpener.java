@@ -523,7 +523,8 @@ public class FolderOpener implements PlugIn {
 		}
 	}
 
-	@AstroImageJ(reason = "Save preference option to open as virtual stack; widen access; support zip files as folder",
+	@AstroImageJ(reason = "Save preference option to open as virtual stack; widen access; support zip files as folder;" +
+			"Add filter count",
 			modified = true)
 	public boolean showDialog() {
 		String options = Macro.getOptions();
@@ -569,6 +570,22 @@ public class FolderOpener implements PlugIn {
 		gd.addCheckbox("Use virtual stack", Prefs.get("folderopener.openAsVirtualStack", openAsVirtualStack));
 		gd.addCheckbox("Open as separate images", false);		
 		gd.addHelp(IJ.URL+"/docs/menus/file.html#seq1");
+
+		// Add display of stack size
+		gd.addMessage("Matched files: " + getFileCount(gd));
+		var filterCountDisplay = (Label) gd.getComponent(gd.getComponentCount() - 1);
+
+		((TextField) gd.getStringFields().get(1)).addTextListener($ -> {
+			filterCountDisplay.setText("Matched files: " + 0);
+			filterCountDisplay.setText("Matched files: " + getFileCount(gd));
+		});
+
+		((TextField) gd.getStringFields().get(0)).addTextListener($ -> {
+			filterCountDisplay.setText("Matched files: " + 0);
+			filterCountDisplay.setText("Matched files: " + getFileCount(gd));
+		});
+		// End display stack size
+
 		gd.showDialog();
 		if (gd.wasCanceled())
 			return false;
@@ -748,6 +765,53 @@ public class FolderOpener implements PlugIn {
 	*/
 	public String[] sortFileList(String[] list) {
 		return StringSorter.sortNumerically(list);
+	}
+
+	@AstroImageJ(reason = "Obtain filtered file count")
+	private int getFileCount(GenericDialog gd) {
+		var filter = ((TextField) gd.getStringFields().get(1)).getText();
+		if (legacyRegex!=null) filter = "("+legacyRegex+")";
+
+		var directory = this.directory;
+		directory = ((TextField) gd.getStringFields().get(0)).getText();
+		File file = new File(directory);
+		String[] list = file.list();
+		// Zip as folder
+		if (list == null) {
+			list = ZipOpenerUtil.getFilePathsInZip(directory);
+			if (list.length == 0) list = null;
+		} // End zip as folder
+
+		if (list==null) {
+			String parent = file.getParent();
+			file = new File(parent);
+			list = file.list();
+			if (list!=null)
+				directory = parent;
+			else {
+				return 0;
+			}
+		}
+
+		//remove subdirectories from list
+		ArrayList<String> fileList = new ArrayList<>();
+		for (String s : list) {
+			File f = (new File(directory + s));
+			if (!f.isDirectory())
+				fileList.add(s);
+		}
+
+		if (fileList.size()<list.length)
+			list = fileList.toArray(new String[fileList.size()]);
+
+		list = trimFileList(list);
+		if (list==null) return 0;
+
+		// Dynamic filter does not support legacy regex
+		list = getFilteredList(list, filter, null);
+		if (list == null) return 0;
+
+		return list.length;
 	}
 
 } // FolderOpener

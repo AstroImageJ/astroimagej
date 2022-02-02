@@ -1007,7 +1007,7 @@ public class Opener {
 		// Open zip as folder iff it contains FITS files
 		var fo = new FolderOpener();
 		fo.setDirectory(path);
-		var hasFits = Arrays.stream(ZipOpenerUtil.getFilesInZip(path)).anyMatch(s ->
+		var hasFits = Arrays.stream(ZipOpenerUtil.getFilesInZip(path)).map(ZipOpenerUtil.InternalZipFile::path).anyMatch(s ->
 				getFileType(s, false) == Opener.FITS || getFileType(s, false) == Opener.PNG);
 		if (hasFits) {
 			if (fo.showDialog()) {

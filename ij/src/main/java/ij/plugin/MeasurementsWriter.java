@@ -1,10 +1,15 @@
 package ij.plugin;
-import ij.*;
-import ij.text.*;
+
+import ij.IJ;
+import ij.Prefs;
+import ij.WindowManager;
+import ij.astro.AstroImageJ;
+import ij.io.SaveDialog;
 import ij.measure.ResultsTable;
-import ij.io.*;
-import java.io.*;
-import java.awt.Frame;
+import ij.text.TextPanel;
+import ij.text.TextWindow;
+
+import java.awt.*;
 
 /** Saves a table as a csv or tab-delimited text file. */
 public class MeasurementsWriter implements PlugIn {
@@ -12,7 +17,8 @@ public class MeasurementsWriter implements PlugIn {
 	public void run(String path) {
 		save(path);
 	}
-	
+
+	@AstroImageJ(reason = "Save table with 16 decimal places, not 6", modified = true)
 	public boolean save(String path) {
 		Frame frame = WindowManager.getFrontWindow();
 		if (frame!=null && (frame instanceof TextWindow) && !"Log".equals(frame.getTitle())) {
@@ -41,7 +47,12 @@ public class MeasurementsWriter implements PlugIn {
 				if (file == null) return false;
 				path = sd.getDirectory() + file;
 			}
-			return rt.save(path);
+
+			var oldPrecision = rt.getPrecision();
+			rt.setPrecision(16);
+			var out = rt.save(path);
+			rt.setPrecision(oldPrecision);
+			return out;
 		}
 		return true;
 	}

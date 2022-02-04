@@ -1,18 +1,25 @@
 package ij.text;
-import java.awt.*;
-import java.io.*;
-import java.awt.event.*;
-import java.util.*;
-import java.awt.datatransfer.*;
+
 import ij.*;
 import ij.astro.AstroImageJ;
-import ij.plugin.filter.Analyzer;
-import ij.io.SaveDialog;
-import ij.measure.*;
-import ij.util.Tools;
-import ij.plugin.frame.Recorder;
 import ij.gui.*;
+import ij.io.SaveDialog;
 import ij.macro.Interpreter;
+import ij.measure.ResultsTable;
+import ij.measure.ResultsTableMacros;
+import ij.plugin.filter.Analyzer;
+import ij.plugin.frame.Recorder;
+import ij.util.Tools;
+
+import java.awt.*;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.ClipboardOwner;
+import java.awt.datatransfer.StringSelection;
+import java.awt.datatransfer.Transferable;
+import java.awt.event.*;
+import java.io.*;
+import java.util.ArrayList;
+import java.util.Vector;
 
 
 /**
@@ -914,7 +921,7 @@ public class TextPanel extends Panel implements AdjustmentListener,
 	 * display a "save as" dialog. Returns 'false' if the user cancels
 	 * the dialog.
 	*/
-	@AstroImageJ(reason = "Add check for AIJ window", modified = true)
+	@AstroImageJ(reason = "Add check for AIJ window; Save table with 16 decimal places, not 6", modified = true)
 	public boolean saveAs(String path) {
 		boolean isResults = IJ.isResultsWindow() && IJ.getTextPanel()==this;
 		boolean summarized = false;
@@ -933,7 +940,10 @@ public class TextPanel extends Panel implements AdjustmentListener,
 					return false;
 				path = sd.getDirectory() + fileName;
 			}
+			var oldPrecision = rt.getPrecision();
+			rt.setPrecision(16);
 			rt.saveAndRename(path);
+			rt.setPrecision(oldPrecision);
 			TextWindow tw = getTextWindow();
 			String title2 = rt.getTitle();
 			if (tw!=null && !"Results".equals(title)) {

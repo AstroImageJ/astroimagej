@@ -1,19 +1,29 @@
 package ij.measure;
-import ij.*;
+
+import ij.IJ;
+import ij.ImagePlus;
+import ij.Prefs;
+import ij.WindowManager;
 import ij.astro.AstroImageJ;
-import ij.plugin.filter.Analyzer;
-import ij.plugin.frame.Editor;
-import ij.text.*;
-import ij.process.*;
 import ij.gui.Roi;
+import ij.io.OpenDialog;
+import ij.io.SaveDialog;
+import ij.macro.Interpreter;
+import ij.macro.Program;
+import ij.macro.Tokenizer;
+import ij.macro.Variable;
+import ij.plugin.filter.Analyzer;
+import ij.process.*;
+import ij.text.TextPanel;
+import ij.text.TextWindow;
 import ij.util.Tools;
-import ij.io.*;
-import ij.macro.*;
+
 import java.awt.*;
-import java.text.*;
-import java.util.*;
 import java.io.*;
 import java.math.RoundingMode;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.util.*;
 
 
 /** This is a table for storing measurement results and strings as columns of values. 
@@ -838,6 +848,11 @@ public class ResultsTable implements Cloneable {
 				decimalPlaces[i] = (short)precision;
 		}
 	}
+
+	@AstroImageJ(reason = "Allow for table writer to reset precision to what it was before")
+	public short getPrecision() {
+		return precision;
+	}
 	
 	public void setDecimalPlaces(int column, int digits) {
 		if ((column<0) || (column>=headings.length))
@@ -1312,8 +1327,11 @@ public class ResultsTable implements Cloneable {
 		return ok;
 	}
 
+	@AstroImageJ(reason = "Save table with 16 decimal places, not 6", modified = true)
 	public void saveAs(String path) throws IOException {
 		boolean emptyTable = size()==0 && lastColumn<0;
+		var oldPrecision = getPrecision();
+		setPrecision(16);
 		if (path==null || path.equals("")) {
 			SaveDialog sd = new SaveDialog("Save Table", "Table", Prefs.defaultResultsExtension());
 			String file = sd.getFileName();
@@ -1345,6 +1363,7 @@ public class ResultsTable implements Cloneable {
 			File f = new File(path);
 			title =  f.getName();
 		}
+		setPrecision(oldPrecision);
 	}
 	
 	/** Returns the default headings ("Area","Mean","StdDev", etc.). */

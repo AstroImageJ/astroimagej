@@ -104,4 +104,6 @@ public class Pair {
             return new CharPair();
         }
     }
+
+    private Pair() {}
 }

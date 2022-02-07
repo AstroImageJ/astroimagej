@@ -83,25 +83,27 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		 * This also uses the old style FITS decoder to create a FileInfo.
 		 */
 		BasicHDU<?>[] hdus;
+		boolean canUseNom = true;
 		try {
 			hdus = getHDU(path);
 		} catch (FitsException | IOException e) {
-			IJ.error("Unable to open FITS file " + path + ": " + e.getMessage());
-			return;
+			canUseNom = false;
+			hdus = null;
 		}
 
-		/*
-		 * For fpacked files the image is in the second HDU. For uncompressed images
-		 * it is the first HDU.
-		 */
-		BasicHDU<?> displayHdu;
-		int firstImageIndex = firstImageHDU(hdus);
-		if (firstImageIndex<0)
-		{
-			IJ.error("Failed to find an image HDU");
-			return;
-		}
-		if (true) {//isCompressedFormat(hdus, firstImageIndex)) {  //use nom.tam.fits to open compressed files
+		if (canUseNom) { // Use nom.tam.fits to open files
+			/*
+			 * For fpacked files the image is in the second HDU. For uncompressed images
+			 * it is the first HDU.
+			 */
+			BasicHDU<?> displayHdu;
+			int firstImageIndex = firstImageHDU(hdus);
+			if (firstImageIndex<0)
+			{
+				IJ.error("Failed to find an image HDU");
+				return;
+			}
+
 			try {
 				if (isCompressedFormat(hdus, firstImageIndex)) {
 					// A side effect of this call is that wi, he, and de are set
@@ -151,7 +153,9 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			setProperty("Info", getHeaderInfo(displayHdu));
 
 			IJ.showStatus("");
-		} else {   //use legacy custom fits reader to open uncompressed files
+		} else {   // Use legacy fits reader in case of failure
+			AIJLogger.log("Failed to open image with nom.tam.fits, attempting with legacy mode...");
+
 			OpenDialog od = new OpenDialog("Open FITS...", path);
 			String directory = od.getDirectory();
 			String fileName = od.getFileName();

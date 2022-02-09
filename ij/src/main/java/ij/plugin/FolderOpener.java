@@ -20,7 +20,6 @@ import ij.util.Tools;
 import java.awt.*;
 import java.awt.image.ColorModel;
 import java.io.File;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Properties;
 
@@ -583,21 +582,15 @@ public class FolderOpener implements PlugIn {
 		gd.addMessage("Estimated stack size: " + initialSizes.second() + " MB");
 		var filterSizeDisplay = (Label) gd.getComponent(gd.getComponentCount() - 1);
 
-		((TextField) gd.getStringFields().get(1)).addTextListener($ -> {
-			filterCountDisplay.setText("Matched files: " + 0);
-			filterSizeDisplay.setText("Estimated stack size: " + 0 + " MB");
-			var x = getFileCount(gd);
-			filterCountDisplay.setText("Matched files: " + x.first());
-			filterSizeDisplay.setText("Estimated stack size: " + x.second() + " MB");
-		});
-
-		((TextField) gd.getStringFields().get(0)).addTextListener($ -> {
-			filterCountDisplay.setText("Matched files: " + 0);
-			var x = getFileCount(gd);
-			filterCountDisplay.setText("Matched files: " + x.first());
-			filterSizeDisplay.setText("Estimated stack size: " + 0 + " MB");
-			filterSizeDisplay.setText("Estimated stack size: " + x.second() + " MB");
-		});
+		for (Object stringField : gd.getStringFields()) {
+			((TextField) stringField).addTextListener($ -> {
+				filterCountDisplay.setText("Matched files: " + 0);
+				filterSizeDisplay.setText("Estimated stack size: " + 0 + " MB");
+				var x = getFileCount(gd);
+				filterCountDisplay.setText("Matched files: " + x.first());
+				filterSizeDisplay.setText("Estimated stack size: " + IJ.d2s(x.second(), 1) + " MB");
+			});
+		}
 		// End display stack size
 
 		gd.showDialog();
@@ -830,14 +823,33 @@ public class FolderOpener implements PlugIn {
 		list = getFilteredList(list, filter, null);
 		if (list == null) return Pair.IntFloatPair.empty();
 
-		// Get file sizes
-		long sizeInBytes = ZipOpenerUtil.InternalZipFile.getUncompressedSizeInBytes(zipEntries);
-		if (sizeInBytes == 0) {
-			for (String s : list) {
-				var f = Path.of(directory, s).toFile();
-				sizeInBytes += f.length();
+		// Get file sizes by locating a prototypical image file manually calculating its byte size in memory
+		var width = 0;
+		var height = 0;
+		var bitDepth = 0;
+		long sizeInBytes = 0;
+		var stackCountPerImage = 1;
+		for (String sf : list) {
+			Opener opener = new Opener();
+			opener.setSilentMode(true);
+			IJ.redirectErrorMessages(true);
+			ImagePlus imp = opener.openImage(directory, sf);
+			IJ.redirectErrorMessages(false);
+
+			if (imp != null) {
+				width = imp.getWidth();
+				height = imp.getHeight();
+				bitDepth = imp.getBytesPerPixel();
+				stackCountPerImage = imp.getImageStackSize();
+				break;
 			}
 		}
+
+		var increment = Integer.parseInt(((TextField) gd.getNumericFields().get(1)).getText());
+		var count = Integer.parseInt(((TextField) gd.getStringFields().get(2)).getText());
+		var start = Integer.parseInt(((TextField) gd.getNumericFields().get(0)).getText());
+
+		sizeInBytes = (long) bitDepth * width * height * ((long) ((count - start + 1) / increment) * stackCountPerImage);
 
 		return new Pair.IntFloatPair(list.length, sizeInBytes / 1_000_000F);
 	}

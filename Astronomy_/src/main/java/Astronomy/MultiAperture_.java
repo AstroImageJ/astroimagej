@@ -1408,7 +1408,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
                 if (set.size() > 0) {
                     if (enableLog) AIJLogger.log("Placing suggested comp. stars...");
-                    for (WeightedCoordinateMaxima coordinateMaxima : set.subList(0, Math.min(maxSuggestedStars - refCount, set.size() - 1))) {
+                    for (WeightedCoordinateMaxima coordinateMaxima : set.subList(0, Math.min(maxSuggestedStars - refCount, set.size()))) {
                         if (cancelled) return;
                         if (enableLog) AIJLogger.log(ngot + 1);
                         if (enableLog) AIJLogger.log(coordinateMaxima);//todo apertures placing in wrong coordinates for tica image, fine for others, due to wcs

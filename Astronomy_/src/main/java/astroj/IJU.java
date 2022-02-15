@@ -7,7 +7,6 @@ import ij.IJ;
 import ij.ImagePlus;
 import ij.Prefs;
 import ij.WindowManager;
-import ij.astro.types.Pair;
 import ij.gui.ImageWindow;
 import ij.io.FileInfo;
 import ij.io.OpenDialog;
@@ -1381,7 +1380,7 @@ public class IJU {
         return foundR1 ? fwhmRD : Double.NaN;
     }
 
-    public static Pair.GenericPair<double[], Boolean> transitModel(double[] bjd, double f0, double inclination, double p0, double ar, double tc, double P,
+    public static double[] transitModel(double[] bjd, double f0, double inclination, double p0, double ar, double tc, double P,
                                                 double e, double omega, double u1, double u2, boolean useLonAscNode, double lonAscNode) {
         // This routine computes the lightcurve for occultation of a
         // quadratically limb-darkened source and was derived from the EXOFAST
@@ -1446,9 +1445,6 @@ public class IJU {
         // special case integrations
         double tol = 1.0e-14;
         double kap1, kap0, kapArg1, kapArg0, lambdaeArg, z2, x1, x2, x3, q, n;
-
-        // If the ellpic solution converged
-        var converged = true;
 
         for (int i = 0; i < nz; i++) {
             if (abs(p - zArray[i]) < tol) zArray[i] = p;
@@ -1525,12 +1521,9 @@ public class IJU {
                 ellke(q);
                 n = 1.0 / x1 - 1.0;
 
-                var ellpic = ellpic_bulirsch(n, q);
-                if (converged) converged = ellpic.second() == 0;
-
-                // lambda_1: 
+                // lambda_1:
                 lambdad[i] = 2.0 / 9.0 / PI / sqrt(x2 - x1) * (((1.0 - x2) * (2.0 * x2 + x1 - 3.0) - 3.0 * x3 * (x2 - 2.0)) * kk + (x2 - x1) *
-                        (z2 + 7.0 * p2 - 4.0) * ek - 3.0 * x3 / x1 * ellpic.first());
+                        (z2 + 7.0 * p2 - 4.0) * ek - 3.0 * x3 / x1 * ellpic_bulirsch(n, q));
                 continue;
             }
 
@@ -1557,11 +1550,9 @@ public class IJU {
                     n = x2 / x1 - 1.0;
                     ellke(q);
 
-                    var ellpic = ellpic_bulirsch(n, q);
-                    if (converged) converged = ellpic.second() == 0;
                     // Case 3, Case 9 - anywhere in between
                     // lambda_2
-                    lambdad[i] = 2.0 / 9.0 / PI / sqrt(1.0 - x1) * ((1.0 - 5.0 * z2 + p2 + x3 * x3) * kk + (1.0 - x1) * (z2 + 7.0 * p2 - 4.0) * ek - 3.0 * x3 / x1 * ellpic.first());
+                    lambdad[i] = 2.0 / 9.0 / PI / sqrt(1.0 - x1) * ((1.0 - 5.0 * z2 + p2 + x3 * x3) * kk + (1.0 - x1) * (z2 + 7.0 * p2 - 4.0) * ek - 3.0 * x3 / x1 * ellpic_bulirsch(n, q));
                 }
                 continue;
             }
@@ -1598,7 +1589,7 @@ public class IJU {
             }
 //            IJ.log("z["+i+"]="+zArray[i]+" => y[i]="+muo1[i]); 
         }
-        return new Pair.GenericPair<>(muo1, converged);//todo pass out input args that failed for logging?
+        return muo1;
     }
 
     public static double getTcPhase(double e, double omega) {
@@ -1884,7 +1875,7 @@ public class IJU {
     /**
      * @return the solution, second value indicates convergence if it is 0
      */
-    public static Pair.DoublePair ellpic_bulirsch(double n, double k) {
+    public static double ellpic_bulirsch(double n, double k) {
         // NAME:
         //   ELLPIC_BULIRSCH
         //
@@ -1922,8 +1913,7 @@ public class IJU {
         double g;
 
         var count = 0;
-        var converged = false;
-        while (count <= 100) {
+        while (count <= 20) {
             f = c;
             c = d / p + c;
             g = e / p;
@@ -1935,13 +1925,12 @@ public class IJU {
                 kc = 2.0 * sqrt(e);
                 e = kc * m0;
             } else {
-                converged = true;
                 break;
             }
             count++;
         }
 
-        return new Pair.DoublePair(0.5 * PI * (c * m0 + d) / (m0 * (m0 + p)), converged ? 0 : 1);
+        return 0.5 * PI * (c * m0 + d) / (m0 * (m0 + p));
     }
 
 

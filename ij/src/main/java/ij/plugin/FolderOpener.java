@@ -845,13 +845,21 @@ public class FolderOpener implements PlugIn {
 			}
 		}
 
-		var increment = Integer.parseInt(((TextField) gd.getNumericFields().get(1)).getText());
-		var count = Integer.parseInt(((TextField) gd.getStringFields().get(2)).getText());
-		var start = Integer.parseInt(((TextField) gd.getNumericFields().get(0)).getText());
+		var increment = safeParse(((TextField) gd.getNumericFields().get(1)).getText());
+		var count = safeParse(((TextField) gd.getStringFields().get(2)).getText());
+		var start = safeParse(((TextField) gd.getNumericFields().get(0)).getText());
 
 		sizeInBytes = (long) bitDepth * width * height * ((long) ((count - start + 1) / increment) * stackCountPerImage);
 
 		return new Pair.IntFloatPair(list.length, sizeInBytes / 1_000_000F);
+	}
+
+	@AstroImageJ(reason = "Don't error")
+	private static int safeParse(String s) {
+		try {
+			return Integer.parseInt(s);
+		} catch (NumberFormatException ignored) {}
+		return 1;
 	}
 
 } // FolderOpener

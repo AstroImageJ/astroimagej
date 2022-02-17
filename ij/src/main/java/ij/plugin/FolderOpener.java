@@ -845,9 +845,9 @@ public class FolderOpener implements PlugIn {
 			}
 		}
 
-		var increment = safeParse(((TextField) gd.getNumericFields().get(1)).getText());
-		var count = safeParse(((TextField) gd.getStringFields().get(2)).getText());
-		var start = safeParse(((TextField) gd.getNumericFields().get(0)).getText());
+		var increment = safeParse(((TextField) gd.getNumericFields().get(1)).getText(), 1);
+		var count = safeParse(((TextField) gd.getStringFields().get(2)).getText(), list.length);
+		var start = safeParse(((TextField) gd.getNumericFields().get(0)).getText(), 1);
 
 		sizeInBytes = (long) bitDepth * width * height * ((long) ((count - start + 1) / increment) * stackCountPerImage);
 
@@ -855,11 +855,11 @@ public class FolderOpener implements PlugIn {
 	}
 
 	@AstroImageJ(reason = "Don't error")
-	private static int safeParse(String s) {
+	private static int safeParse(String s, int fallback) {
 		try {
 			return Integer.parseInt(s);
 		} catch (NumberFormatException ignored) {}
-		return 1;
+		return fallback;
 	}
 
 } // FolderOpener

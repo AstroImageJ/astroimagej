@@ -14,19 +14,21 @@ import ij.io.FileInfo;
 import ij.io.FileOpener;
 import ij.io.OpenDialog;
 import ij.measure.Calibration;
-import ij.process.FloatProcessor;
-import ij.process.ImageProcessor;
+import ij.process.*;
 import nom.tam.fits.*;
 import nom.tam.image.compression.hdu.CompressedImageHDU;
 import nom.tam.util.Cursor;
 
 import java.io.*;
+import java.lang.reflect.Array;
 import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipFile;
 
@@ -52,8 +54,10 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	private int wi;
 	private int he;
 	private int de;
-	private float bzero;
-	private float bscale;
+	@AstroImageJ(reason = "make double for the images that need it", modified = true)
+	private double bzero;
+	@AstroImageJ(reason = "make double for the images that need it", modified = true)
+	private double bscale;
 
 	private Locale locale = Locale.US;
 	private DecimalFormatSymbols dfs = new DecimalFormatSymbols(locale);
@@ -610,27 +614,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	 * Data is transposed to match {@link FloatProcessor}
 	 */
 	private ImageProcessor twoDimensionalImageData2Processor(final Object imageData) {
-		TableWrapper wrapper;
-		if (imageData instanceof float[][] data) {
-			wrapper = (x, y) -> data[y][x];
-		} else if (imageData instanceof double[][] data) {
-			wrapper = (x, y) -> (float) data[y][x];
-		} else if (imageData instanceof short[][] data) {
-			wrapper = (x, y) -> data[y][x];
-		} else if (imageData instanceof int[][] data) {
-			wrapper = (x, y) -> data[y][x];
-		} else if (imageData instanceof long[][] data) {
-			wrapper = (x, y) -> data[y][x];
-		} else if (imageData instanceof byte[][] data) {
-			// The signed-to-unsigned correction is done at this level, as FITS uses unsigned bytes
-			// but Java's are signed. Other conversions are handled via BZERO and BSCALE,
-			// as defined by the FITS Specification.
-			wrapper = (x, y) -> Byte.toUnsignedInt(data[y][x]);
-		} else {
-			throw new IllegalStateException("Tried to open image data that was not a numeric. " + imageData.getClass());
-		}
-
-		return getImageProcessor(wrapper);
+		return getImageProcessor(imageData, ImageType.getType(imageData));
 	}
 
 	/**
@@ -638,37 +622,89 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	 * <p>
 	 * Take fits data as floats, scale and shift it by bscale and bzero.
 	 */
-	private ImageProcessor getImageProcessor(TableWrapper wrapper) {
+	private ImageProcessor getImageProcessor(final Object imageData, ImageType type) {
 		ImageProcessor ip;
-		int idx = 0;
-		float[] imgtab;
-		FloatProcessor imgtmp;
-		imgtmp = new FloatProcessor(wi, he);
-		imgtab = new float[wi * he];
-		for (int y = 0; y < he; y++) {
-			for (int x = 0; x < wi; x++) {
-				imgtab[idx] = (float) (bzero + bscale * wrapper.valueAt(x, y));
-				idx++;
-			}
-		}
-		ip = conditionFloatProcessor(imgtab, imgtmp);
+
+		var imgtmp = type.makeProcessor(wi, he);
+		var imgtab = type.createImageData(imageData, wi, he, bzero, bscale);
+		ip = conditionImageProcessor(imgtab, imgtmp);
 		this.setProcessor(fileName, ip);
 		return ip;
+	}
+	private static final Function<Number, Number> NO_OP_TRANSFORMER = n -> n;
+
+	enum ImageType {
+		BYTE((w, h) -> new ByteProcessor(w, h), byte[][].class, n -> Byte.toUnsignedInt(n.byteValue()), Number::byteValue),
+		SHORT((w, h) -> new ShortProcessor(w, h), short[][].class, NO_OP_TRANSFORMER, Number::shortValue),
+		INT((w, h) -> new IntProcessor(w, h), int[][].class, NO_OP_TRANSFORMER, Number::intValue),//todo check if intprocessor works ok, if not use float
+		LONG((w, h) -> new FloatProcessor(w, h), long[][].class, NO_OP_TRANSFORMER, Number::floatValue), //this loses accuracy for some values
+		FLOAT((w, h) -> new FloatProcessor(w, h), float[][].class, NO_OP_TRANSFORMER, Number::floatValue),
+		DOUBLE((w, h) -> new FloatProcessor(w, h), double[][].class, NO_OP_TRANSFORMER, Number::floatValue);//this loses accuracy for some values
+
+		private final BiFunction<Integer, Integer, ? extends ImageProcessor> factory;
+		private final Class<?> rawDataType;
+		private final Function<Number, Number> valueTransformer;
+		private final Function<Number, Number> typeTransformer;
+
+		ImageType(BiFunction<Integer, Integer, ? extends ImageProcessor> factory, Class<?> rawDataType,
+				  Function<Number, Number> valueTransformer, Function<Number, Number> typeTransformer) {
+			this.factory = factory;
+			this.rawDataType = rawDataType;
+			this.valueTransformer = valueTransformer;
+			this.typeTransformer = typeTransformer;
+		}
+
+		static ImageType getType(Object rawData) {
+			for (ImageType type : values()) {
+				if (type.rawDataType.isInstance(rawData)) return type;
+			}
+			throw new IllegalStateException("Tried to open image data that was not a numeric. " + rawData.getClass());
+		}
+
+		ImageProcessor makeProcessor(int width, int height) {
+			return factory.apply(width, height);
+		}
+
+		Object createImageData(Object rawData, int width, int height, double bzero, double bscale) {
+			if (rawDataType.isInstance(rawData)) {
+				final var baseClass = rawDataType.componentType().componentType();
+				final var pixelArray = Array.newInstance(baseClass, width * height);
+
+				var p = 0;
+				for (int y = 0; y < height; y++) {
+					Object yArray = null;//halves needed reflective lookups
+					if (rawData instanceof Object[] a) {
+						yArray = a[y];
+					}
+					for (int x = 0; x < width; x++) {
+						// y and x are inverted because of the implementations of ImageProcessor#getPixelValue
+						var rawVal = Array.getDouble(yArray, x);
+						double pixelValue = bzero + bscale * valueTransformer.apply(rawVal).doubleValue();
+						Array.set(pixelArray, p, typeTransformer.apply(pixelValue));
+						p++;
+					}
+				}
+
+				return pixelArray;
+			}
+
+			throw new IllegalStateException("Incorrect raw data given to make ImageProcessor");
+		}
 	}
 
 	/**
 	 * Set pixel and scaling data of the ImageProcessor, flip the image vertically.
 	 */
-	private ImageProcessor conditionFloatProcessor(float[] imgtab, FloatProcessor imgtmp) {
+	private ImageProcessor conditionImageProcessor(Object imgtab, ImageProcessor imgtmp) {
 		ImageProcessor ip;
 		imgtmp.setPixels(imgtab);
 		imgtmp.resetMinAndMax();
 
 		if (he == 1) {
-			imgtmp = (FloatProcessor) imgtmp.resize(wi, 100);
+			imgtmp = imgtmp.resize(wi, 100);
 		}
 		if (wi == 1) {
-			imgtmp = (FloatProcessor) imgtmp.resize(100, he);
+			imgtmp = imgtmp.resize(100, he);
 		}
 		ip = imgtmp;
 		ip.flipVertical();

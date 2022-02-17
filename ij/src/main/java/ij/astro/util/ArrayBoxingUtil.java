@@ -38,8 +38,12 @@ public class ArrayBoxingUtil {
         int levels = 0;
 
         Class<?> component = primitiveArrayType.getComponentType();
-        for (; component.isArray(); levels++) {
-            component = component.getComponentType();
+        if (component != null) {
+            for (; component.isArray(); levels++) {
+                component = component.getComponentType();
+            }
+        } else {
+            component = primitiveArrayType;
         }
 
         Class<?> boxedType = typeMapping.getOrDefault(component, component);

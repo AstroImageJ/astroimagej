@@ -1,16 +1,20 @@
 package ij.plugin;
+
 import ij.*;
-import ij.process.*;
-import ij.gui.*;
-import java.awt.*;
-import java.awt.image.*;
-import ij.plugin.frame.ContrastAdjuster;
+import ij.astro.AstroImageJ;
+import ij.gui.GenericDialog;
+import ij.gui.ImageWindow;
 import ij.macro.Interpreter;
+import ij.plugin.frame.Channels;
 import ij.plugin.frame.Recorder;
+import ij.process.ColorProcessor;
+
+import java.awt.*;
 
 /** This plugin implements the Image/Color/Make Composite command. */
 public class CompositeConverter implements PlugIn {
 
+	@AstroImageJ(reason = "Run Channels plugin", modified = true)
 	public void run(String arg) {
 		String[] modes = {"Composite", "Color", "Grayscale"};
 		ImagePlus imp = IJ.getImage();
@@ -47,6 +51,7 @@ public class CompositeConverter implements PlugIn {
 				imp2.setZ(slice);
 				imp.close();
 			}
+			if (!IJ.isMacro()) ((Channels) IJ.runPlugIn("ij.plugin.frame.Channels", arg)).requestFocus();
 			if (IJ.isMacro() && !Interpreter.isBatchMode())
 				IJ.wait(500);
 		} else if (c>=2 || (IJ.macroRunning()&&c>=1)) {
@@ -68,6 +73,8 @@ public class CompositeConverter implements PlugIn {
 			if (IJ.isMacro())
 				IJ.wait(250);
 			ci.show();
+			ci.getWindow().toBack();
+			IJ.runPlugIn("ij.plugin.frame.Channels", arg);
 		} else
 			IJ.error("To create a composite, the current image must be\n a stack with at least 2 channels or be in RGB format.");
 	}

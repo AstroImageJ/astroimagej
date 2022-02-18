@@ -1038,10 +1038,10 @@ public class CurveFitter {
         boolean[] isFitted = Arrays.copyOf(MultiPlot_.isFitted[curve], MultiPlot_.isFitted[curve].length);
         double[] coeffs = Arrays.copyOf(MultiPlot_.coeffs[curve], MultiPlot_.coeffs[curve].length);
         var detrendVars = Arrays.copyOf(MultiPlot_.detrendVars, MultiPlot_.detrendVars.length);
-        var xModel1 = Arrays.copyOf(MultiPlot_.xModel1[curve], MultiPlot_.xModel1[curve].length);
+        var xModel1 = MultiPlot_.xModel1[curve] != null ? Arrays.copyOf(MultiPlot_.xModel1[curve], MultiPlot_.xModel1[curve].length) : null;
         var xModel2 = MultiPlot_.xModel2[curve];
-        var yModel1 = Arrays.copyOf(MultiPlot_.yModel1[curve], MultiPlot_.yModel1[curve].length);
-        var yModel2 = Arrays.copyOf(MultiPlot_.yModel2[curve], MultiPlot_.yModel2[curve].length);
+        var yModel1 = MultiPlot_.yModel1[curve] != null ? Arrays.copyOf(MultiPlot_.yModel1[curve], MultiPlot_.yModel1[curve].length) : null;
+        var yModel2 = MultiPlot_.yModel2[curve] != null ? Arrays.copyOf(MultiPlot_.yModel2[curve], MultiPlot_.yModel2[curve].length) : null;
         var yerr = Arrays.copyOf(MultiPlot_.yerr[curve], MultiPlot_.yerr[curve].length);
         var yModel1Err = MultiPlot_.yModel1Err[curve];
         var residual = MultiPlot_.residual[curve];
@@ -1310,7 +1310,7 @@ public class CurveFitter {
                                     isFitted[p] = true;
                                     nFitted++;
                                 } else {
-                                    isFitted[p] = false;
+                                    isFitted[p] = false;//todo mark
                                 }
                             }
 
@@ -1460,7 +1460,7 @@ public class CurveFitter {
                         }
 
 
-                        if (detrendFitIndex[curve] == 9 && useTransitFit[curve]) {
+                        if (detrendFitIndex[curve] == 9 && useTransitFit[curve]) {//todo mark
                             createDetrendModel = false;
                             xModel1 = detrendX;
                             int xModel2Len = plotSizeX + 1;
@@ -1587,6 +1587,177 @@ public class CurveFitter {
             /*AIJLogger.log("rms: " + rms * 1000);
             AIJLogger.log("bic: " + bic);*/
             return new OptimizerResults(rms, bic);
+        } else {
+            int cnt = 0;
+            detrendYAverage = 0;
+            double y2Ave = 0;
+            if (detrendFitIndex[curve] == 4) {
+                for (int j = 0; j < nn[curve]; j++) {
+                    if (!Double.isNaN(y[j]) && ((x[curve][j] > fitMin[curve] && x[curve][j] < fitLeft[curve]) || (x[curve][j] > fitRight[curve] && x[curve][j] < fitMax[curve]))) {
+                        y2Ave += y[j] * y[j];
+                        detrendYAverage += y[j];
+                        cnt++;
+                    }
+                }
+
+            } else {
+                sigma = 0.0;
+                for (int j = 0; j < nn[curve]; j++) {
+                    if (!Double.isNaN(x[curve][j]) && !Double.isNaN(y[j]) && x[curve][j] > fitMin[curve] && x[curve][j] < fitMax[curve]) {
+                        if (detrendFitIndex[curve] == 9 && useTransitFit[curve] && residual != null) {
+                            sigma += residual[cnt] * residual[cnt];
+                        } else {
+                            y2Ave += y[j] * y[j];
+                        }
+                        detrendYAverage += y[j];
+                        cnt++;
+                    }
+                }
+            }
+
+            y2Ave /= cnt;
+            detrendYAverage /= cnt;
+
+            if (normIndex[curve] != 0) {
+                double normMin = (useDMarker1 ? dMarker1Value : Double.NEGATIVE_INFINITY) + xOffset;
+                double normMax = (useDMarker4 ? dMarker4Value : Double.POSITIVE_INFINITY) + xOffset;
+                double normLeft = dMarker2Value + xOffset;
+                double normRight = dMarker3Value + xOffset;
+
+//                            if ((xlabel2[firstCurve].contains("J.D.") || xlabel2[firstCurve].contains("JD")) && showXAxisNormal)
+//                                {
+//                                normMin += (int)xPlotMin;
+//                                normMax += (int)xPlotMin;
+//                                normLeft += (int)xPlotMin;
+//                                normRight += (int)xPlotMin;
+//                                }
+                double normAverage = 0.0;
+                double normCount = 0;
+                double invVar = 0;
+                switch (normIndex[curve]) {
+                    case 1: // left of D2
+                        normMax = normLeft;
+                        break;
+                    case 2: // right of D3
+                        normMin = normRight;
+                        break;
+                    case 3: // outside D2 and D3
+                        break;
+                    case 4: // inside D2 and D3
+                        normMin = normLeft;
+                        normMax = normRight;
+                        break;
+                    case 5: // left of D3
+                        normMax = normRight;
+                        break;
+                    case 6: // right of D2
+                        normMin = normLeft;
+                        break;
+                    case 7: // use all data
+                        break;
+                    default:
+                        normIndex[curve] = 0;
+                        normMax = normMin;
+                        break;
+                }
+                if (detrendFitIndex[curve] == 9 && useTransitFit[curve] && detrendX != null && detrendYE != null && yModel1 != null) {
+                    int nnn = detrendX.length;
+                    if (normIndex[curve] == 3) {
+                        for (int j = 0; j < nnn; j++) {
+                            if (!Double.isNaN(yModel1[j]) && !Double.isNaN(detrendX[j]) && ((detrendX[j] > normMin && detrendX[j] < normLeft) || (detrendX[j] > normRight && detrendX[j] < normMax))) {
+                                invVar = 1 / (detrendYE[j] * detrendYE[j]);
+                                normAverage += yModel1[j] * invVar;
+                                normCount += invVar;
+                            }
+                        }
+                    } else {
+                        for (int j = 0; j < nnn; j++) {
+                            if (!Double.isNaN(yModel1[j]) && !Double.isNaN(detrendX[j]) && detrendX[j] > normMin && detrendX[j] < normMax) {
+                                invVar = 1 / (detrendYE[j] * detrendYE[j]);
+                                normAverage += yModel1[j] * invVar;
+                                normCount += invVar;
+                            }
+                        }
+                    }
+
+                    if (normCount == 0) {
+                        normAverage = 0.0;
+                        for (int j = 0; j < yModel1.length; j++) {
+                            if (!Double.isNaN(yModel1[j]) && !Double.isNaN(detrendX[j])) {
+                                invVar = 1 / (detrendYE[j] * detrendYE[j]);
+                                normAverage += yModel1[j] * invVar;
+                                normCount += invVar;
+                            }
+                        }
+                    }
+                } else if (useNelderMeadChi2ForDetrend) {
+                    if (normIndex[curve] == 3) {
+                        for (int j = 0; j < nn[curve]; j++) {
+                            if (!Double.isNaN(y[j]) && !Double.isNaN(x[curve][j]) && ((x[curve][j] > normMin && x[curve][j] < normLeft) || (x[curve][j] > normRight && x[curve][j] < normMax))) {
+                                invVar = 1 / (yerr[j] * yerr[j]);
+                                normAverage += y[j] * invVar;
+                                normCount += invVar;
+                            }
+                        }
+                    } else {
+                        for (int j = 0; j < nn[curve]; j++) {
+                            if (!Double.isNaN(y[j]) && !Double.isNaN(x[curve][j]) && x[curve][j] > normMin && x[curve][j] < normMax) {
+                                invVar = 1 / (yerr[j] * yerr[j]);
+                                normAverage += y[j] * invVar;
+                                normCount += invVar;
+                            }
+                        }
+                    }
+
+                    if (normCount == 0) {
+                        normAverage = 0.0;
+                        for (int j = 0; j < nn[curve]; j++) {
+                            if (!Double.isNaN(y[j]) && !Double.isNaN(x[curve][j])) {
+                                invVar = 1 / (yerr[j] * yerr[j]);
+                                normAverage += y[j] * invVar;
+                                normCount += invVar;
+                            }
+                        }
+                    }
+                } else {
+                    if (normIndex[curve] == 3) {
+                        for (int j = 0; j < nn[curve]; j++) {
+                            if (!Double.isNaN(y[j]) && !Double.isNaN(x[curve][j]) && ((x[curve][j] > normMin && x[curve][j] < normLeft) || (x[curve][j] > normRight && x[curve][j] < normMax))) {
+                                normAverage += y[j];
+                                normCount += 1.0;
+                            }
+                        }
+                    } else {
+                        for (int j = 0; j < nn[curve]; j++) {
+                            if (!Double.isNaN(y[j]) && !Double.isNaN(x[curve][j]) && x[curve][j] > normMin && x[curve][j] < normMax) {
+                                normAverage += y[j];
+                                normCount += 1.0;
+                            }
+                        }
+                    }
+
+                    if (normCount == 0) {
+                        normAverage = 0.0;
+                        for (int j = 0; j < nn[curve]; j++) {
+                            if (!Double.isNaN(y[j]) && !Double.isNaN(x[curve][j])) {
+                                normAverage += y[j];
+                                normCount += 1.0;
+                            }
+                        }
+                    }
+                }
+
+                if (normAverage == 0.0 || normCount == 0) {
+                    normAverage = 1.0;
+                } else {
+                    normAverage /= normCount;
+                }
+
+                sigma = Math.sqrt(y2Ave - detrendYAverage * detrendYAverage);
+                sigma /= normAverage;
+
+                return new OptimizerResults(sigma, bic);
+            }
         }
 
         return new OptimizerResults(Double.NaN, Double.NaN);

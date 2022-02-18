@@ -5,6 +5,7 @@ import Astronomy.multiplot.optimization.CompStarFitting;
 import Astronomy.multiplot.optimization.Optimizer;
 import astroj.MeasurementTable;
 import astroj.SpringUtil;
+import flanagan.analysis.Stat;
 import ij.IJ;
 import ij.Prefs;
 import ij.astro.logging.AIJLogger;
@@ -13,6 +14,7 @@ import util.UIHelper;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -27,23 +29,32 @@ import java.util.regex.Pattern;
 import static Astronomy.MultiPlot_.*;
 
 public class FitOptimization implements AutoCloseable {
+    protected static final String PREFS_ENABLELOG = "fitoptimization.enablelog";
+    protected static final String PREFS_NSIGMA = "fitoptimization.nsigma";
+    protected static final String PREFS_MAX_DETREND = "fitoptimization.maxdetrend";
+    protected static final String PREFS_BIC_THRESHOLD = "fitoptimization.bict";
     private static final int MAX_THREADS = getThreadCount();
     private static final BigInteger MIN_CHUNK_SIZE = BigInteger.valueOf(512L);
     private final static Pattern apGetter = Pattern.compile("rel_flux_[ct]([0-9]+)");
+    private static final HashSet<FitOptimization> INSTANCES = new HashSet<>();
     /**
      * The change in the comparator to determine improvement
      */
     public static double EPSILON;
+    public static LinkedList<MeasurementTable> undoBuffer = new LinkedList<>();
+    static boolean showOptLog = false;
+    private static int maxDetrend = 1;
+    private static double bict = 2;
+    private static double nSigmaOutlier = 5;
     private final int curve;
     public DynamicCounter compCounter;
     public DynamicCounter detrendCounter;
     public JSpinner detrendParamCount;
+    public JTextField cleanNumTF = new JTextField("0");
     CompletionService<MinimumState> completionService;
     private ScheduledExecutorService ipsExecutorService;
     private BigInteger iterRemainingOld = BigInteger.ZERO;
     private int targetStar;
-    private static int maxDetrend = 1;
-    private static double bict = 2;
     /**
      * The index of this array is the selected option,
      * the value of the array is the option index in the relevant {@link MultiPlot_} array.
@@ -56,16 +67,7 @@ public class FitOptimization implements AutoCloseable {
     private JPanel compOptiCards;
     private RollingAvg rollingAvg = new RollingAvg();
     private JSpinner detrendEpsilon;
-    private static double nSigmaOutlier = 5;
-    static boolean showOptLog = false;
-    public static LinkedList<MeasurementTable> undoBuffer = new LinkedList<>();
-    public JTextField cleanNumTF = new JTextField("0");
-    private static final HashSet<FitOptimization> INSTANCES = new HashSet<>();
-    protected static final String PREFS_ENABLELOG = "fitoptimization.enablelog";
-    protected static final String PREFS_NSIGMA = "fitoptimization.nsigma";
-    protected static final String PREFS_MAX_DETREND = "fitoptimization.maxdetrend";
-    protected static final String PREFS_BIC_THRESHOLD = "fitoptimization.bict";
-    private JTextField difNumTF = new JTextField("0");
+    private final JTextField difNumTF = new JTextField("0");
 
     // Init. after numAps is set
     public FitOptimization(int curve, int epsilon) {
@@ -84,11 +86,6 @@ public class FitOptimization implements AutoCloseable {
         INSTANCES.forEach(FitOptimization::clearHistory);
     }
 
-    public void clearHistory(){
-        undoBuffer.clear();
-        cleanNumTF.setText("0");
-    }
-
     private static void setFinalState(String minimizationTarget, boolean[] state, JCheckBox[] selectables) {
         for (int r = 0; r < state.length; r++) {
             selectables[r].setSelected(state[r]);
@@ -105,6 +102,18 @@ public class FitOptimization implements AutoCloseable {
     private static int getThreadCount() {
         final int maxRealThreads = Runtime.getRuntime().availableProcessors();
         return Math.max(1 + (maxRealThreads / 3), maxRealThreads - 4);
+    }
+
+    public static void savePrefs() {
+        Prefs.set(PREFS_NSIGMA, nSigmaOutlier);
+        Prefs.set(PREFS_ENABLELOG, showOptLog);
+        Prefs.set(PREFS_MAX_DETREND, maxDetrend);
+        Prefs.set(PREFS_BIC_THRESHOLD, bict);
+    }
+
+    public void clearHistory() {
+        undoBuffer.clear();
+        cleanNumTF.setText("0");
     }
 
     public void setSelectable(boolean[] selectable) {
@@ -135,7 +144,14 @@ public class FitOptimization implements AutoCloseable {
             @Override
             public void mouseClicked(MouseEvent e) {
                 if (SwingUtilities.isRightMouseButton(e)) {
-                    cleanOutliers(true);
+                    cleanOutliers(CleanMode.RMS);
+                    return;
+                }
+
+                if (e.isAltDown()) {
+                    cleanOutliers(CleanMode.POINT_MEDIAN);
+                    AIJLogger.log(1);
+                    return;
                 }
             }
 
@@ -156,12 +172,12 @@ public class FitOptimization implements AutoCloseable {
             }
         });
         //noinspection deprecation
-        cleanButton.addActionListener(ae -> cleanOutliers((ae.getModifiers() & InputEvent.SHIFT_MASK) != 0));
+        cleanButton.addActionListener(ae -> cleanOutliers(CleanMode.getMode(ae)));
         cleanButton.setToolTipText("""
-                    <html>
-                    Left-click to clean data relative to the per-point uncertainties.<br>
-                    Shift-left-click or right-click to clean data relative to the RMS of the model residuals.
-                    </html>""");
+                <html>
+                Left-click to clean data relative to the per-point uncertainties.<br>
+                Shift-left-click or right-click to clean data relative to the RMS of the model residuals.
+                </html>""");
         outlierRemoval.add(cleanButton);
         difNumTF.setEditable(false);
         difNumTF.setMaximumSize(new Dimension(50, 10));
@@ -344,7 +360,7 @@ public class FitOptimization implements AutoCloseable {
         return fitOptimizationPanel;
     }
 
-    private void cleanOutliers(boolean useRms) {
+    private void cleanOutliers(CleanMode cleanMode) {
         if (!plotY[curve]) {
             IJ.error("The 'Plot' check box for this data set must be enabled in Multi-Plot Y-data panel for optimization.");
             return;
@@ -366,16 +382,16 @@ public class FitOptimization implements AutoCloseable {
             useDMarker1 = false;
             useDMarker4 = false;
             updatePlot(updateOneFit(curve));
-            for(int i = 0; i < 30; i++) {
+            for (int i = 0; i < 30; i++) {
                 IJ.wait(100);
                 if (!updatePlotRunning) {
                     break;
                 }
-                if (i == 29){
+                if (i == 29) {
                     IJ.error("Unsuccessfully attempted to disable left trim and/or set Binsize = 1 for outlier cleaning. Aborting.");
                     return;
-                    }
                 }
+            }
         }
         var oldTable = (MeasurementTable) table.clone();
 
@@ -383,7 +399,11 @@ public class FitOptimization implements AutoCloseable {
         var toRemove = new TreeSet<Integer>();
 
         for (int i = 0; i < residual[curve].length; i++) {
-            var sigma = useRms ? MultiPlot_.sigma[curve] : yerr[curve][i];
+            var sigma = switch (cleanMode) {
+                case RMS -> MultiPlot_.sigma[curve];
+                case POINT -> yerr[curve][i];
+                case POINT_MEDIAN -> Stat.median(yerr[curve]);
+            };
             if (Math.abs(residual[curve][i]) > Math.abs(nSigmaOutlier * sigma)) {
                 hasActionToUndo = true;
                 toRemove.add(excludedHeadSamples + i);
@@ -399,23 +419,26 @@ public class FitOptimization implements AutoCloseable {
             cleanNumTF.setText("-" + toRemove.size());
             undoBuffer.addFirst(oldTable);
             if (undoBuffer.size() > 10) undoBuffer.removeLast();
-            MultiPlot_.updatePlot( MultiPlot_.updateAllFits());
+            // If the table is empty MP proceeeds with no errors and doesn't update the plot
+            if (table.size() == 0) IJ.error("Cleaning", "Removed all points in the table, " +
+                    "please undo and lower the number of sigma being used");
+            MultiPlot_.updatePlot(MultiPlot_.updateAllFits());
         } else {
             IJ.beep();
             cleanNumTF.setText("0");
         }
 
-        if (showOptLog) AIJLogger.log(""+toRemove.size()+" new outliers removed");
+        if (showOptLog) AIJLogger.log("" + toRemove.size() + " new outliers removed");
 
         if (holdBinSize > 1 || holdUseDMarker1) {
             binSize[curve] = holdBinSize;
             useDMarker1 = holdUseDMarker1;
             useDMarker4 = holdUseDMarker4;
             MultiPlot_.updatePlot(MultiPlot_.updateOneFit(curve));
-            for(int i = 0; i < 300; i++) {
+            for (int i = 0; i < 300; i++) {
                 IJ.wait(10);
                 if (!updatePlotRunning) break;
-                if (i == 299){
+                if (i == 299) {
                     IJ.error("Unsuccessfully attempted to replot after re-enabling left trim and/or set Binsize = 1 after outlier cleaning.");
                 }
             }
@@ -430,7 +453,7 @@ public class FitOptimization implements AutoCloseable {
         if (!undoBuffer.isEmpty()) {
             var rs = table.size();
             table = undoBuffer.pop();
-            cleanNumTF.setText("+"+(table.size() - rs));
+            cleanNumTF.setText("+" + (table.size() - rs));
             MultiPlot_.updatePlot(MultiPlot_.updateAllFits());
             table.show();
             tpanel = MeasurementTable.getTextPanel(MeasurementTable.longerName(tableName));
@@ -718,13 +741,6 @@ public class FitOptimization implements AutoCloseable {
         savePrefs();
     }
 
-    public static void savePrefs() {
-        Prefs.set(PREFS_NSIGMA, nSigmaOutlier);
-        Prefs.set(PREFS_ENABLELOG, showOptLog);
-        Prefs.set(PREFS_MAX_DETREND, maxDetrend);
-        Prefs.set(PREFS_BIC_THRESHOLD, bict);
-    }
-
     public int getCurve() {
         return curve;
     }
@@ -782,6 +798,18 @@ public class FitOptimization implements AutoCloseable {
                     }
                 });
             }
+        }
+    }
+
+    enum CleanMode {
+        RMS,
+        POINT_MEDIAN,
+        POINT;
+
+        static CleanMode getMode(ActionEvent ae) {
+            if ((ae.getModifiers() & InputEvent.SHIFT_MASK) != 0) return RMS;
+            if ((ae.getModifiers() & InputEvent.ALT_MASK) != 0) return POINT_MEDIAN;
+            return POINT;
         }
     }
 

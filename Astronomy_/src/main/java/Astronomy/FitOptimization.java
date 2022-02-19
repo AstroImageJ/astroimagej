@@ -375,11 +375,11 @@ public class FitOptimization implements AutoCloseable {
         int holdBinSize = 1;
         boolean holdUseDMarker1 = false;
         boolean holdUseDMarker4 = false;
-        if (binSize[curve] > 1 || useDMarker1) {
-            holdBinSize = binSize[curve];
+        if (inputAverageOverSize[curve] > 1 || useDMarker1) {
+            holdBinSize = inputAverageOverSize[curve];
             holdUseDMarker1 = useDMarker1;
             holdUseDMarker4 = useDMarker4;
-            binSize[curve] = 1;
+            inputAverageOverSize[curve] = 1;
             useDMarker1 = false;
             useDMarker4 = false;
             updatePlot(updateOneFit(curve));
@@ -432,7 +432,7 @@ public class FitOptimization implements AutoCloseable {
         if (showOptLog) AIJLogger.log("" + toRemove.size() + " new outliers removed");
 
         if (holdBinSize > 1 || holdUseDMarker1) {
-            binSize[curve] = holdBinSize;
+            inputAverageOverSize[curve] = holdBinSize;
             useDMarker1 = holdUseDMarker1;
             useDMarker4 = holdUseDMarker4;
             MultiPlot_.updatePlot(MultiPlot_.updateOneFit(curve));

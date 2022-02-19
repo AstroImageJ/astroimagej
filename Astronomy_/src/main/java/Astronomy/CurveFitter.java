@@ -154,8 +154,8 @@ public class CurveFitter {
         }
 
         for (int curve = 0; curve < maxCurves; curve++) {
-            if (binSize[curve] < 1) {
-                binSize[curve] = 1;
+            if (inputAverageOverSize[curve] < 1) {
+                inputAverageOverSize[curve] = 1;
             }
         }
 
@@ -207,8 +207,8 @@ public class CurveFitter {
 
         int[] detrendVarsUsed = new int[maxCurves];
 
-        nn[curve] = (n - excluded) / binSize[curve];
-        nnr[curve] = (n - excluded) % binSize[curve];
+        nn[curve] = (n - excluded) / inputAverageOverSize[curve];
+        nnr[curve] = (n - excluded) % inputAverageOverSize[curve];
         if (nnr[curve] > 0) nn[curve]++;
         detrendVarsUsed[curve] = 0;
 
@@ -234,7 +234,7 @@ public class CurveFitter {
             }
 
             if (plotY[curve]) {
-                int bucketSize = binSize[curve];
+                int bucketSize = inputAverageOverSize[curve];
 
                 for (int j = 0; j < nn[curve]; j++) {
                     double xin;
@@ -242,11 +242,11 @@ public class CurveFitter {
                     if (nnr[curve] > 0 && j == nn[curve] - 1) {
                         bucketSize = nnr[curve];
                     } else {
-                        bucketSize = binSize[curve];
+                        bucketSize = inputAverageOverSize[curve];
                     }
                     x[curve][j] = 0;
                     for (int k = excludedHeadSamples; k < (bucketSize + excludedHeadSamples); k++) {
-                        xin = table.getValueAsDouble(xcolumn[curve], j * binSize[curve] + k);
+                        xin = table.getValueAsDouble(xcolumn[curve], j * inputAverageOverSize[curve] + k);
                         if (Double.isNaN(xin)) {
                             numNaN += 1;
                             if (numNaN == bucketSize) {
@@ -334,7 +334,7 @@ public class CurveFitter {
                     hasOpErrors[curve] = false;
                 }
 
-                int bucketSize = binSize[curve];
+                int bucketSize = inputAverageOverSize[curve];
                 for (int j = 0; j < nn[curve]; j++) {
                     double yin;
                     double errin;
@@ -351,14 +351,14 @@ public class CurveFitter {
                     xc2[curve][j] = 0;
                     yc1[curve][j] = 0;
                     yc2[curve][j] = 0;
-                    // BIN DATA IF APPLICABLE
+                    // AVERAGE DATA IF APPLICABLE
                     if (nnr[curve] > 0 && j == nn[curve] - 1) {
                         bucketSize = nnr[curve];
                     } else {
-                        bucketSize = binSize[curve];
+                        bucketSize = inputAverageOverSize[curve];
                     }
                     for (int k = excludedHeadSamples; k < (bucketSize + excludedHeadSamples); k++) {
-                        yin = table.getValueAsDouble(ycolumn[curve], j * binSize[curve] + k);
+                        yin = table.getValueAsDouble(ycolumn[curve], j * inputAverageOverSize[curve] + k);
                         if (Double.isNaN(yin)) {
                             numNaN += 1;
                             if (numNaN == bucketSize) {
@@ -392,14 +392,14 @@ public class CurveFitter {
                             y[curve][j] += yin;
 
                             if (hasErrors[curve]) {
-                                errin = table.getValueAsDouble(errcolumn[curve], j * binSize[curve] + k);
+                                errin = table.getValueAsDouble(errcolumn[curve], j * inputAverageOverSize[curve] + k);
                                 if (fromMag[curve]) {
                                     errin = yin * (-Math.pow(10, -errin / 2.5) + 1);
                                 }
                                 yerr[curve][j] += errin * errin;
                             }
                             if (operatorIndex[curve] != 0) {
-                                opin = table.getValueAsDouble(opcolumn[curve], j * binSize[curve] + k);
+                                opin = table.getValueAsDouble(opcolumn[curve], j * inputAverageOverSize[curve] + k);
                                 if (fromMag[curve]) {
                                     opin = Math.pow(10, -opin / 2.5);
                                 }
@@ -408,19 +408,19 @@ public class CurveFitter {
                             if (detrendFitIndex[curve] != 0) {
                                 for (int v = 0; v < maxDetrendVars; v++) {
                                     if (detrendIndex[v] > 1) {
-                                        detrend[curve][v][j] += table.getValueAsDouble(detrendcolumn[curve][v], j * binSize[curve] + k);
+                                        detrend[curve][v][j] += table.getValueAsDouble(detrendcolumn[curve][v], j * inputAverageOverSize[curve] + k);
                                     }
                                 }
                             }
                             if (operatorIndex[curve] == 5) //calculate distance
                             {
-                                xc1[curve][j] += table.getValueAsDouble(xc1column[curve], j * binSize[curve] + k);
-                                xc2[curve][j] += table.getValueAsDouble(xc2column[curve], j * binSize[curve] + k);
-                                yc1[curve][j] += table.getValueAsDouble(yc1column[curve], j * binSize[curve] + k);
-                                yc2[curve][j] += table.getValueAsDouble(yc2column[curve], j * binSize[curve] + k);
+                                xc1[curve][j] += table.getValueAsDouble(xc1column[curve], j * inputAverageOverSize[curve] + k);
+                                xc2[curve][j] += table.getValueAsDouble(xc2column[curve], j * inputAverageOverSize[curve] + k);
+                                yc1[curve][j] += table.getValueAsDouble(yc1column[curve], j * inputAverageOverSize[curve] + k);
+                                yc2[curve][j] += table.getValueAsDouble(yc2column[curve], j * inputAverageOverSize[curve] + k);
                             }
                             if (hasOpErrors[curve]) {
-                                operrin = table.getValueAsDouble(operrcolumn[curve], j * binSize[curve] + k);
+                                operrin = table.getValueAsDouble(operrcolumn[curve], j * inputAverageOverSize[curve] + k);
                                 if (fromMag[curve]) {
                                     operrin = opin * (-Math.pow(10, -operrin / 2.5) + 1);
                                 }
@@ -887,15 +887,15 @@ public class CurveFitter {
             }
         }
 
-        return new FluxData(binAndTrimData(rel_flux), binAndTrimData(rel_flux_err, true),
-                binAndTrimData(rel_flux_snr), binAndTrimData(tot_C_cnts), binAndTrimData(tot_C_err));
+        return new FluxData(averageAndTrimData(rel_flux), averageAndTrimData(rel_flux_err, true),
+                averageAndTrimData(rel_flux_snr), averageAndTrimData(tot_C_cnts), averageAndTrimData(tot_C_err));
     }
 
-    private double[] binAndTrimData(double[] allData) {
-        return binAndTrimData(allData, false);
+    private double[] averageAndTrimData(double[] allData) {
+        return averageAndTrimData(allData, false);
     }
 
-    private double[] binAndTrimData(double[] allData, boolean sumOfSquares) {
+    private double[] averageAndTrimData(double[] allData, boolean sumOfSquares) {
         int bucketSize = 0;
         var workingSource = new double[nn[curve]];
         if (excludedHeadSamples + excludedTailSamples >= n) { //Handle case for more samples excluded than in dataset
@@ -906,10 +906,10 @@ public class CurveFitter {
             if (nnr[curve] > 0 && j == nn[curve] - 1) {
                 bucketSize = nnr[curve];
             } else {
-                bucketSize = binSize[curve];
+                bucketSize = inputAverageOverSize[curve];
             }
             for (int k = excludedHeadSamples; k < (bucketSize + excludedHeadSamples); k++) {
-                var i = j * binSize[curve] + k;
+                var i = j * inputAverageOverSize[curve] + k;
                 workingSource[j] += sumOfSquares ? allData[i] * allData[i] : allData[i];
             }
             if (sumOfSquares) {

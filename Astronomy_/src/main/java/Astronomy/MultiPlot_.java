@@ -134,8 +134,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static boolean showLRelScaleInfo;
     static boolean showLShiftInfo;
     static boolean showLRelShiftInfo;
-    static boolean showYBinInfo;
-    static boolean showLBinInfo;
+    static boolean showYAvgInfo;
+    static boolean showLAvgInfo;
     static boolean showYmmagInfo;
     static boolean showLmmagInfo, showLdetrendInfo, showLnormInfo;
     static boolean showYSymbolInfo;
@@ -561,7 +561,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
     static MeasurementTable table;
     static TextPanel tpanel;
-    static JLabel dummylabel1, binsizespinnerlabel, mmagrefsspinnerlabel, dummylabel4;
+    static JLabel dummylabel1, inputAverageOverSizespinnerlabel, mmagrefsspinnerlabel, dummylabel4;
 
     static ImageWindow plotWindow;
     static ImagePlus plotImage;
@@ -658,7 +658,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static boolean[] force;
     static boolean[] ASInclude;
 
-    static int[] binSize;
+    static int[] inputAverageOverSize;
 
     static String[] legend;
     static String[] xyc1label;
@@ -667,7 +667,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static JCheckBox[] usecurvebox;
     static JCheckBox[] errorcolumnbox;
     static JCheckBox[] operrorcolumnbox;
-    static JCheckBox[] usebinbox;
+    static JCheckBox[] useDataAvgbox;
     static JCheckBox[] usemmagbox, fromMagBox;
     static JComboBox<ImageIcon>[] normtypecombobox;
     static JComboBox<ImageIcon>[] detrendtypecombobox;
@@ -707,9 +707,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static JComboBox<Object>[] modelColorSelection, residualModelColorSelection;
     static JComboBox<Object>[] residualColorSelection;
 
-    static SpinnerModel[] binsizespinnermodel;
+    static SpinnerModel[] inputAverageOverSizespinnermodel;
     static SpinnerModel[] smoothlenspinnermodel;
-    static JSpinner[] binsizespinner;
+    static JSpinner[] inputAverageOverSizespinner;
     static JSpinner[] smoothlenspinner;
     static JPanel[] morelegendradiopanelgroup;
     static JPanel[] autoscalepanelgroup;
@@ -1351,9 +1351,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         savePreferences();
         updateSaturatedStars();
         for (int curve = 0; curve < maxCurves; curve++) {
-            if (binSize[curve] < 1) {
-                binSize[curve] = 1;
-                binsizespinner[curve].setValue(1);
+            if (inputAverageOverSize[curve] < 1) {
+                inputAverageOverSize[curve] = 1;
+                inputAverageOverSizespinner[curve].setValue(1);
             }
         }
 
@@ -1412,8 +1412,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         int[] detrendVarsUsed = new int[maxCurves];
 
         for (int curve = 0; curve < maxCurves; curve++) {
-            nn[curve] = (n - excluded) / binSize[curve];
-            nnr[curve] = (n - excluded) % binSize[curve];
+            nn[curve] = (n - excluded) / inputAverageOverSize[curve];
+            nnr[curve] = (n - excluded) % inputAverageOverSize[curve];
             if (nnr[curve] > 0) nn[curve]++;
             detrendVarsUsed[curve] = 0;
 //                        xModel1[curve] = null;
@@ -1459,7 +1459,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 }
 
                 if (plotY[curve]) {
-                    int bucketSize = binSize[curve];
+                    int bucketSize = inputAverageOverSize[curve];
 
                     for (int j = 0; j < nn[curve]; j++) {
                         double xin;
@@ -1467,11 +1467,11 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         if (nnr[curve] > 0 && j == nn[curve] - 1) {
                             bucketSize = nnr[curve];
                         } else {
-                            bucketSize = binSize[curve];
+                            bucketSize = inputAverageOverSize[curve];
                         }
                         x[curve][j] = 0;
                         for (int k = excludedHeadSamples; k < (bucketSize + excludedHeadSamples); k++) {
-                            xin = table.getValueAsDouble(xcolumn[curve], j * binSize[curve] + k);
+                            xin = table.getValueAsDouble(xcolumn[curve], j * inputAverageOverSize[curve] + k);
                             if (Double.isNaN(xin)) {
                                 numNaN += 1;
                                 if (numNaN == bucketSize) {
@@ -1655,7 +1655,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         hasOpErrors[curve] = false;
                     }
 
-                    int bucketSize = binSize[curve];
+                    int bucketSize = inputAverageOverSize[curve];
                     for (int j = 0; j < nn[curve]; j++) {
                         double yin;
                         double errin;
@@ -1672,12 +1672,12 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         xc2[curve][j] = 0;
                         yc1[curve][j] = 0;
                         yc2[curve][j] = 0;
-                        // BIN DATA IF APPLICABLE
+                        // AVERAGE DATA IF APPLICABLE
                         if (nnr[curve] > 0 && j == nn[curve] - 1) { bucketSize = nnr[curve]; } else {
-                            bucketSize = binSize[curve];
+                            bucketSize = inputAverageOverSize[curve];
                         }
                         for (int k = excludedHeadSamples; k < (bucketSize + excludedHeadSamples); k++) {
-                            yin = table.getValueAsDouble(ycolumn[curve], j * binSize[curve] + k);
+                            yin = table.getValueAsDouble(ycolumn[curve], j * inputAverageOverSize[curve] + k);
                             if (Double.isNaN(yin)) {
                                 numNaN += 1;
                                 if (numNaN == bucketSize) {
@@ -1711,14 +1711,14 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                 y[curve][j] += yin;
 
                                 if (hasErrors[curve]) {
-                                    errin = table.getValueAsDouble(errcolumn[curve], j * binSize[curve] + k);
+                                    errin = table.getValueAsDouble(errcolumn[curve], j * inputAverageOverSize[curve] + k);
                                     if (fromMag[curve]) {
                                         errin = yin * (-Math.pow(10, -errin / 2.5) + 1);
                                     }
                                     yerr[curve][j] += errin * errin;
                                 }
                                 if (operatorIndex[curve] != 0) {
-                                    opin = table.getValueAsDouble(opcolumn[curve], j * binSize[curve] + k);
+                                    opin = table.getValueAsDouble(opcolumn[curve], j * inputAverageOverSize[curve] + k);
                                     if (fromMag[curve]) {
                                         opin = Math.pow(10, -opin / 2.5);
                                     }
@@ -1727,19 +1727,19 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                 if (detrendFitIndex[curve] != 0) {
                                     for (int v = 0; v < maxDetrendVars; v++) {
                                         if (detrendIndex[curve][v] > 1) {
-                                            detrend[curve][v][j] += table.getValueAsDouble(detrendcolumn[curve][v], j * binSize[curve] + k);
+                                            detrend[curve][v][j] += table.getValueAsDouble(detrendcolumn[curve][v], j * inputAverageOverSize[curve] + k);
                                         }
                                     }
                                 }
                                 if (operatorIndex[curve] == 5) //calculate distance
                                 {
-                                    xc1[curve][j] += table.getValueAsDouble(xc1column[curve], j * binSize[curve] + k);
-                                    xc2[curve][j] += table.getValueAsDouble(xc2column[curve], j * binSize[curve] + k);
-                                    yc1[curve][j] += table.getValueAsDouble(yc1column[curve], j * binSize[curve] + k);
-                                    yc2[curve][j] += table.getValueAsDouble(yc2column[curve], j * binSize[curve] + k);
+                                    xc1[curve][j] += table.getValueAsDouble(xc1column[curve], j * inputAverageOverSize[curve] + k);
+                                    xc2[curve][j] += table.getValueAsDouble(xc2column[curve], j * inputAverageOverSize[curve] + k);
+                                    yc1[curve][j] += table.getValueAsDouble(yc1column[curve], j * inputAverageOverSize[curve] + k);
+                                    yc2[curve][j] += table.getValueAsDouble(yc2column[curve], j * inputAverageOverSize[curve] + k);
                                 }
                                 if (hasOpErrors[curve]) {
-                                    operrin = table.getValueAsDouble(operrcolumn[curve], j * binSize[curve] + k);
+                                    operrin = table.getValueAsDouble(operrcolumn[curve], j * inputAverageOverSize[curve] + k);
                                     if (fromMag[curve]) {
                                         operrin = opin * (-Math.pow(10, -operrin / 2.5) + 1);
                                     }
@@ -3382,7 +3382,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 if (totalScaleFactor[firstCurve] == 1000.0) { ylab += " (mmag)"; } else ylab += " (mag)";
             }
 
-            if ((binSize[firstCurve] != 1) && showYBinInfo) ylab += " (bin size = " + binSize[firstCurve] + ")";
+            if ((inputAverageOverSize[firstCurve] != 1) && showYAvgInfo) ylab += " (averaged data size = " + inputAverageOverSize[firstCurve] + ")";
             if (showYSymbolInfo) {
                 ylab += " (" + colors[colorIndex[firstCurve]] + " " + markers[markerIndex[firstCurve]] + ")";
             }
@@ -3633,8 +3633,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     if (!force[curve])//&&(showLScaleInfo || showLShiftInfo))
                     { llab.append(scaleShiftText(force[curve], showLScaleInfo, showLShiftInfo, mmag[curve], showLmmagInfo, totalScaleFactor[curve], totalShiftFactor[curve])); } else if (force[curve])//&&(showLRelScaleInfo || showLRelShiftInfo))
                     { llab.append(scaleShiftText(force[curve], showLRelScaleInfo, showLRelShiftInfo, mmag[curve], showLmmagInfo, totalScaleFactor[curve], totalShiftFactor[curve])); }
-                    if ((binSize[curve] != 1) && showLBinInfo) {
-                        llab.append(" (bin=").append(binSize[curve]).append(")");
+                    if ((inputAverageOverSize[curve] != 1) && showLAvgInfo) {
+                        llab.append(" (input average=").append(inputAverageOverSize[curve]).append(")");
                     }
                     if (showLSymbolInfo) llab.append(" (").append(markers[markerIndex[curve]]).append(")");
                 }
@@ -3684,8 +3684,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         xx[0] = x[curve][boldedDatum];
                         yy[0] = y[curve][boldedDatum];
                     } else {
-                        xx[0] = x[curve][boldedDatum * binSize[firstCurve] / (binSize[curve])];
-                        yy[0] = y[curve][boldedDatum * binSize[firstCurve] / (binSize[curve])];
+                        xx[0] = x[curve][boldedDatum * inputAverageOverSize[firstCurve] / (inputAverageOverSize[curve])];
+                        yy[0] = y[curve][boldedDatum * inputAverageOverSize[firstCurve] / (inputAverageOverSize[curve])];
                     }
                     plot.addPoints(xx, yy, marker[curve]);
                     if (showResidual[curve] && plottedResidual[curve] != null && useTransitFit[curve] && detrendFitIndex[curve] == 9) {
@@ -3701,7 +3701,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                 plot.addPoints(xx, yy, residualSymbol[curve]);
                             }
                         } else {
-                            int nnn = boldedDatum * binSize[firstCurve] / binSize[curve] - nFitTrim[curve];
+                            int nnn = boldedDatum * inputAverageOverSize[firstCurve] / inputAverageOverSize[curve] - nFitTrim[curve];
                             if (nnn >= 0 && nnn < plottedResidual[curve].length) {
                                 xx[0] = xModel1[curve][nnn];
                                 yy[0] = plottedResidual[curve][nnn];
@@ -5051,14 +5051,14 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         residualHeading += magsuffix;
         residualErrHeading += magsuffix;
 
-        if ((binSize[c] != 1)) {
-            String binsuffix = "(binSize=" + binSize[c] + ")";
-            xHeading += binsuffix;
-            yHeading += binsuffix;
-            yErrHeading += binsuffix;
-            modelHeading += binsuffix;
-            residualHeading += binsuffix;
-            residualErrHeading += binsuffix;
+        if ((inputAverageOverSize[c] != 1)) {
+            String avgSuffix = "(inputAverageOverSize=" + inputAverageOverSize[c] + ")";
+            xHeading += avgSuffix;
+            yHeading += avgSuffix;
+            yErrHeading += avgSuffix;
+            modelHeading += avgSuffix;
+            residualHeading += avgSuffix;
+            residualErrHeading += avgSuffix;
         } else if (showXAxisNormal) {
             xHeading += "_B";
         }
@@ -5160,10 +5160,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 //            if (gd.wasCanceled()) return;
 //            }
         int skipNum = excludedHeadSamples < nn[c] ? excludedHeadSamples : nn[c] - 1;
-        if (binSize[c] != 1 || skipNum < 0) skipNum = 0;
+        if (inputAverageOverSize[c] != 1 || skipNum < 0) skipNum = 0;
         if (saveNewXColumn) {
             xColumn = table.getColumnIndex(xHeading);
-            if (binSize[c] == 1 && skipNum > 0) {
+            if (inputAverageOverSize[c] == 1 && skipNum > 0) {
                 for (int i = 0; i < skipNum; i++) {
                     table.setValue(xColumn, i, Double.NaN);
                 }
@@ -5190,7 +5190,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         if (saveNewYColumn) {
             yColumn = table.getColumnIndex(yHeading);
 
-            if (binSize[c] == 1 && skipNum > 0) {
+            if (inputAverageOverSize[c] == 1 && skipNum > 0) {
                 for (int i = 0; i < skipNum; i++) {
                     table.setValue(yColumn, i, Double.NaN);
                 }
@@ -5223,7 +5223,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         }
         if ((hasErrors[c] || hasOpErrors[c]) && saveNewYErrColumn) {
             yErrColumn = table.getColumnIndex(yErrHeading);
-            if (binSize[c] == 1 && skipNum > 0) {
+            if (inputAverageOverSize[c] == 1 && skipNum > 0) {
                 for (int i = 0; i < skipNum; i++) {
                     table.setValue(yErrColumn, i, Double.NaN);
                 }
@@ -5238,7 +5238,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 }
             }
         }
-        skipNum = (binSize[c] == 1 ? skipNum : 0) + nFitTrim[c];
+        skipNum = (inputAverageOverSize[c] == 1 ? skipNum : 0) + nFitTrim[c];
         if (saveNewModelColumn) {
             modelColumn = table.getColumnIndex(modelHeading);
             if (skipNum > 0) {
@@ -5428,11 +5428,11 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         tpanel = MeasurementTable.getTextPanel(MeasurementTable.longerName(tableName));
                         int lineCount = tpanel.getLineCount();
                         if (selectedRowEnd >= lineCount - excludedTailSamples) {
-                            selectedRowStart = binSize[firstCurve] * ((lineCount - excludedHeadSamples - excludedTailSamples) / binSize[firstCurve]) - binSize[firstCurve];
-                            selectedRowEnd = selectedRowStart + binSize[firstCurve] - 1;
+                            selectedRowStart = inputAverageOverSize[firstCurve] * ((lineCount - excludedHeadSamples - excludedTailSamples) / inputAverageOverSize[firstCurve]) - inputAverageOverSize[firstCurve];
+                            selectedRowEnd = selectedRowStart + inputAverageOverSize[firstCurve] - 1;
                         }
                         tpanel.setSelection(selectedRowStart, selectedRowEnd);
-                        boldedDatum = (selectedRowStart - excludedHeadSamples) / binSize[firstCurve];
+                        boldedDatum = (selectedRowStart - excludedHeadSamples) / inputAverageOverSize[firstCurve];
                         plotcoordlabel.setText("DATA: x=" + fourPlaces.format(x[firstCurve][boldedDatum]) + ", y=" + fourPlaces.format(y[firstCurve][boldedDatum]));
                         IJ.showStatus("data values: x=" + fourPlaces.format(x[firstCurve][boldedDatum]) + ", y=" + fourPlaces.format(y[firstCurve][boldedDatum]));
                         updatePlot(updateAllFits());
@@ -5446,14 +5446,14 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 } else if (e.getButton() == MouseEvent.BUTTON3 && e.isShiftDown() && !e.isControlDown() && !e.isAltDown() && !deletedRowList.isEmpty()) //shift + right mouse click release
                 {                                                                                     //undo delete selected table row
                     int lastRow = tpanel.getLineCount() - 1;
-                    if (selectedRowEnd <= lastRow - binSize[firstCurve]) {  //restore all rows other than the last one OR next to last one when when binze > 1
+                    if (selectedRowEnd <= lastRow - inputAverageOverSize[firstCurve]) {  //restore all rows other than the last one OR next to last one when when inputAverageOverSize > 1
                         String[] lines = new String[lastRow - selectedRowStart + 1];
                         for (int i = 0; i < lines.length; i++) {
                             lines[i] = tpanel.getLine(selectedRowStart + i);
                         }
                         tpanel.setSelection(selectedRowStart, lastRow);
                         tpanel.clearSelection();
-                        for (int i = 0; i < binSize[firstCurve]; i++) {
+                        for (int i = 0; i < inputAverageOverSize[firstCurve]; i++) {
                             if (!deletedRowList.isEmpty()) {
                                 tpanel.appendWithoutUpdate(deletedRowList.remove(deletedRowList.size() - 1));
                             }
@@ -5461,16 +5461,16 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         for (String line : lines) {
                             tpanel.appendWithoutUpdate(line);
                         }
-                    } else if (selectedRowEnd < lastRow) { //restore next to last row when binsize > 1
-                        selectedRowStart -= binSize[firstCurve];
-                        selectedRowEnd -= binSize[firstCurve];
+                    } else if (selectedRowEnd < lastRow) { //restore next to last row when inputAverageOverSize > 1
+                        selectedRowStart -= inputAverageOverSize[firstCurve];
+                        selectedRowEnd -= inputAverageOverSize[firstCurve];
                         String[] lines = new String[lastRow - selectedRowEnd];
                         for (int i = 0; i < lines.length; i++) {
                             lines[i] = tpanel.getLine(selectedRowEnd + 1 + i);
                         }
                         tpanel.setSelection(selectedRowEnd + 1, lastRow);
                         tpanel.clearSelection();
-                        for (int i = 0; i < binSize[firstCurve]; i++) {
+                        for (int i = 0; i < inputAverageOverSize[firstCurve]; i++) {
                             if (!deletedRowList.isEmpty()) {
                                 tpanel.appendWithoutUpdate(deletedRowList.remove(deletedRowList.size() - 1));
                             }
@@ -5478,23 +5478,23 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         for (String line : lines) {
                             tpanel.appendWithoutUpdate(line);
                         }
-                        selectedRowStart += binSize[firstCurve];
-                        selectedRowEnd += binSize[firstCurve];
+                        selectedRowStart += inputAverageOverSize[firstCurve];
+                        selectedRowEnd += inputAverageOverSize[firstCurve];
 
                     } else { //restore last row in table
-                        for (int i = 0; i < binSize[firstCurve]; i++) {
+                        for (int i = 0; i < inputAverageOverSize[firstCurve]; i++) {
                             if (!deletedRowList.isEmpty()) {
                                 tpanel.appendWithoutUpdate(deletedRowList.remove(deletedRowList.size() - 1));
                             }
                         }
-                        selectedRowStart += binSize[firstCurve];
+                        selectedRowStart += inputAverageOverSize[firstCurve];
                     }
                     table = MeasurementTable.getTable(tableName);
                     table.show();
                     tpanel = MeasurementTable.getTextPanel(MeasurementTable.longerName(tableName));
-                    selectedRowEnd = selectedRowStart + binSize[firstCurve] - 1;
+                    selectedRowEnd = selectedRowStart + inputAverageOverSize[firstCurve] - 1;
                     tpanel.setSelection(selectedRowStart, selectedRowEnd);
-                    boldedDatum = (selectedRowStart - excludedHeadSamples) / binSize[firstCurve];
+                    boldedDatum = (selectedRowStart - excludedHeadSamples) / inputAverageOverSize[firstCurve];
                     plotcoordlabel.setText("DATA: x=" + fourPlaces.format(x[firstCurve][boldedDatum]) + ", y=" + fourPlaces.format(y[firstCurve][boldedDatum]));
                     IJ.showStatus("data values: x=" + fourPlaces.format(x[firstCurve][boldedDatum]) + ", y=" + fourPlaces.format(y[firstCurve][boldedDatum]));
                     updatePlot(updateAllFits());
@@ -5632,7 +5632,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         }
                     }
                 }
-                tpanel.setSelection(excludedHeadSamples + nearestLine * binSize[firstCurve], excludedHeadSamples + (nearestLine + 1) * binSize[firstCurve] - 1);
+                tpanel.setSelection(excludedHeadSamples + nearestLine * inputAverageOverSize[firstCurve], excludedHeadSamples + (nearestLine + 1) * inputAverageOverSize[firstCurve] - 1);
                 boldedDatum = nearestLine;
                 plotcoordlabel.setText("DATA: x=" + fourPlaces.format(x[firstCurve][nearestLine]) + ", y=" + fourPlaces.format(y[firstCurve][nearestLine]));
                 IJ.showStatus("data values: x=" + fourPlaces.format(x[firstCurve][nearestLine]) + ", y=" + fourPlaces.format(y[firstCurve][nearestLine]));
@@ -5961,8 +5961,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         showLRelScaleInfo = false;
         showLShiftInfo = false;
         showLRelShiftInfo = false;
-        showYBinInfo = true;
-        showLBinInfo = true;
+        showYAvgInfo = true;
+        showLAvgInfo = true;
         showYmmagInfo = true;
         showLmmagInfo = true;
         showLdetrendInfo = true;
@@ -6360,7 +6360,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         useLegend = new boolean[maxCurves];
         force = new boolean[maxCurves];
 //                detrendFit = new boolean[maxCurves];
-        binSize = new int[maxCurves];
+        inputAverageOverSize = new int[maxCurves];
         legend = new String[maxCurves];
         xyc1label = new String[maxCurves];
         xyc2label = new String[maxCurves];
@@ -6370,7 +6370,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         usecurvebox = new JCheckBox[maxCurves];
         errorcolumnbox = new JCheckBox[maxCurves];
 //                operrorcolumnbox = new JCheckBox[maxCurves];
-        usebinbox = new JCheckBox[maxCurves];
+        useDataAvgbox = new JCheckBox[maxCurves];
         usemmagbox = new JCheckBox[maxCurves];
         fromMagBox = new JCheckBox[maxCurves];
         normtypecombobox = new JComboBox[maxCurves];
@@ -6392,8 +6392,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         modelColorSelection = new JComboBox[maxCurves];
         residualModelColorSelection = new JComboBox[maxCurves];
         residualColorSelection = new JComboBox[maxCurves];
-        binsizespinnermodel = new SpinnerModel[maxCurves];
-        binsizespinner = new JSpinner[maxCurves];
+        inputAverageOverSizespinnermodel = new SpinnerModel[maxCurves];
+        inputAverageOverSizespinner = new JSpinner[maxCurves];
         smoothlenspinnermodel = new SpinnerModel[maxCurves];
         smoothlenspinner = new JSpinner[maxCurves];
         morelegendradiopanelgroup = new JPanel[maxCurves];
@@ -6623,7 +6623,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             customShiftFactor[i] = 0 - i * 0.005;
             customShiftStep[i] = 0.005;
             detrendVarDisplayed[i] = 0;
-            binSize[i] = 1;
+            inputAverageOverSize[i] = 1;
             baseline[i] = 0;
             legend[i] = "Legend" + (i + 1);
             normIndex[i] = 7;
@@ -8422,14 +8422,14 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         });
         legendpopup.add(legendshowsigmaallCB);
 
-        JMenuItem legendshowbinCB = new JCheckBoxMenuItem("Append bin size to legend", showLBinInfo);
-        legendshowbinCB.addItemListener(e -> {
+        JMenuItem legendShowInputAvgSizeCB = new JCheckBoxMenuItem("Append averaged data size to legend", showLAvgInfo);
+        legendShowInputAvgSizeCB.addItemListener(e -> {
             if (e.getStateChange() == ItemEvent.DESELECTED) {
-                showLBinInfo = false;
-            } else if (e.getStateChange() == ItemEvent.SELECTED) showLBinInfo = true;
+                showLAvgInfo = false;
+            } else if (e.getStateChange() == ItemEvent.SELECTED) showLAvgInfo = true;
             updatePlot(updateNoFits());
         });
-        legendpopup.add(legendshowbinCB);
+        legendpopup.add(legendShowInputAvgSizeCB);
         JMenuItem legendshowsymbolCB = new JCheckBoxMenuItem("Append symbol description to legend", showLSymbolInfo);
         legendshowsymbolCB.addItemListener(e -> {
             if (e.getStateChange() == ItemEvent.DESELECTED) {
@@ -8755,14 +8755,14 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         });
         yaxispopup.add(showymmagCB);
 
-        JMenuItem showybinCB = new JCheckBoxMenuItem("Append bin size to Y-axis label", showYBinInfo);
-        showybinCB.addItemListener(e -> {
+        JMenuItem showYInputAvgCB = new JCheckBoxMenuItem("Append averaged data size to Y-axis label", showYAvgInfo);
+        showYInputAvgCB.addItemListener(e -> {
             if (e.getStateChange() == ItemEvent.DESELECTED) {
-                showYBinInfo = false;
-            } else if (e.getStateChange() == ItemEvent.SELECTED) showYBinInfo = true;
+                showYAvgInfo = false;
+            } else if (e.getStateChange() == ItemEvent.SELECTED) showYAvgInfo = true;
             updatePlot(updateNoFits());
         });
-        yaxispopup.add(showybinCB);
+        yaxispopup.add(showYInputAvgCB);
 
         JMenuItem showysymbolCB = new JCheckBoxMenuItem("Append symbol description to Y-axis label", showYSymbolInfo);
         showysymbolCB.addItemListener(e -> {
@@ -10598,14 +10598,14 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         lineslabel.setMaximumSize(new Dimension(45, 25));
         mainsubpanelgroup.add(lineslabel);
 
-        JLabel binslabel = new JLabel("Bin Size");
-        binslabel.setFont(b11);
-        binslabel.setForeground(Color.DARK_GRAY);
-        binslabel.setMaximumSize(new Dimension(50, 25));
-        binslabel.setPreferredSize(new Dimension(50, 25));
-        binslabel.setHorizontalAlignment(JLabel.CENTER);
-        binslabel.setToolTipText("Plot binned data using the number of samples/bin indicated");
-        mainsubpanelgroup.add(binslabel);
+        JLabel inputAverageLabel = new JLabel("<HTML><CENTER>Input<BR><CENTER>Average</HTML>");
+        inputAverageLabel.setFont(b11);
+        inputAverageLabel.setForeground(Color.DARK_GRAY);
+        inputAverageLabel.setMaximumSize(new Dimension(50, 25));
+        inputAverageLabel.setPreferredSize(new Dimension(50, 25));
+        inputAverageLabel.setHorizontalAlignment(JLabel.CENTER);
+        inputAverageLabel.setToolTipText("Average data over n samples before processing further (detrending, ploting, etc)");
+        mainsubpanelgroup.add(inputAverageLabel);
         forceIcon = createImageIcon("astroj/images/grab.png", "Transfer 'Page Rel' settings to absolute settings");
         insertColumnIcon = createImageIcon("astroj/images/insertcolumn.png", "Save curve as new table column");
     }
@@ -11008,21 +11008,21 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         uselinesbox[c].setHorizontalAlignment(JLabel.CENTER);
         mainsubpanelgroup.add(uselinesbox[c]);
 
-        binsizespinnermodel[c] = new SpinnerNumberModel(binSize[c], 1, null, 1);
-        binsizespinner[c] = new JSpinner(binsizespinnermodel[c]);
-        binsizespinner[c].setFont(p11);
-        binsizespinner[c].setMaximumSize(new Dimension(50, 25));
-        binsizespinner[c].setPreferredSize(new Dimension(50, 25));
-        binsizespinner[c].addChangeListener(ev -> {
-            binSize[c] = (Integer) binsizespinner[c].getValue();
-            Prefs.set("plot.binSize" + c, binSize[c]);
+        inputAverageOverSizespinnermodel[c] = new SpinnerNumberModel(inputAverageOverSize[c], 1, null, 1);
+        inputAverageOverSizespinner[c] = new JSpinner(inputAverageOverSizespinnermodel[c]);
+        inputAverageOverSizespinner[c].setFont(p11);
+        inputAverageOverSizespinner[c].setMaximumSize(new Dimension(50, 25));
+        inputAverageOverSizespinner[c].setPreferredSize(new Dimension(50, 25));
+        inputAverageOverSizespinner[c].addChangeListener(ev -> {
+            inputAverageOverSize[c] = (Integer) inputAverageOverSizespinner[c].getValue();
+            Prefs.set("plot.inputAverageOverSize" + c, inputAverageOverSize[c]);
             updatePlot(updateOneFit(c));
         });
-        binsizespinner[c].addMouseWheelListener(e -> {
-            int newValue = (Integer) binsizespinner[c].getValue() - e.getWheelRotation();
-            if (newValue > 0) binsizespinner[c].setValue(newValue);
+        inputAverageOverSizespinner[c].addMouseWheelListener(e -> {
+            int newValue = (Integer) inputAverageOverSizespinner[c].getValue() - e.getWheelRotation();
+            if (newValue > 0) inputAverageOverSizespinner[c].setValue(newValue);
         });
-        mainsubpanelgroup.add(binsizespinner[c]);
+        mainsubpanelgroup.add(inputAverageOverSizespinner[c]);
 
     }
 
@@ -15137,46 +15137,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         }
     }
 
-    static void bintime(double[] x, double[] y, double[] yerr, double binwidth) {
-
-    }
-//    pro bintime, jd, flux, err, binsize, binjd, binflux, binerr
-//
-//    good = where(finite(jd))
-//    jdfit = jd[good]
-//    fluxfit = flux[good]
-//    errfit = err[good]
-//
-//    jdmax = max(jdfit)
-//    jdmin = min(jdfit)
-//
-//            ;convert minutes to days
-//    binday = binsize/(24.0d0*60.0d0)
-//
-//    npoints = n_elements(jdfit)
-//    nbins = (jdmax - jdmin)/binday
-//
-//            binjd = dblarr(nbins) + !values.d_nan
-//    binflux = dblarr(nbins) + !values.d_nan
-//            binerr = dblarr(nbins) + !values.d_nan
-//
-//for i=0L,nbins-1 do begin
-//            tobin = where(jdfit ge (jdmin + i*binday) and jdfit lt (jdmin + (i+1)*binday))
-//    if tobin[0] ne -1 then begin
-//            ;; inverse variance weighted means
-//    binflux[i] = total(fluxfit[tobin]/(errfit[tobin]^2))/total(1d0/errfit[tobin]^2)
-//    binjd[i] =   total(jdfit[tobin]/(errfit[tobin]^2))/total(1d0/errfit[tobin]^2)
-//    binerr[i] = 1d0/(sqrt(total(1d0/errfit[tobin]^2)))
-//    endif
-//            endfor
-//
-//    good = where(finite(binjd))
-//    binjd = binjd[good]
-//    binflux = binflux[good]
-//    binerr = binerr[good]
-//
-//    end
-
     static void saveApertures() {
         storeApertures();
         SaveDialog sf = new SaveDialog("Save apertures", MeasurementTable.shorterName(table.shortTitle()), "");
@@ -16768,7 +16728,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
     static boolean meridianFlipTimeColumnNotice() {
         GenericDialog gd = new GenericDialog("Meridian Flip Output Warning", mainFrame.getX() + 25, mainFrame.getY() + 100);
-        gd.addMessage("Meridian_Flip has been selected as an output data column.\n" + "Certain plot settings are first required to ensure that proper meridian flip data are written.\n" + "(1) The meridian flip time marker must be set properly in the 'Multi-plot Main' panel.\n" + "(2) The time data column corresponding to the output data columns must be set as the\n" + "'X-data' column for the top-most enabled 'Multi-plot Y-data' plot row.\n" + "(3) 'Bin Size' on the top-most enabled row must be set the same as for the data columns being written.\n" + "NOTE: All output data are unbinned unless binned data have been previously saved back into the\n" + "measurements table using the 'New Col' button on the left side of a 'Multi-plot Y-data' row.\n" + "Therefore, before saving a data subset, 'Bin Size' on the top-most enabled plot row should be set to '1'\n" + "unless binned data were previously saved to the measurements table and are selected as the output data.");
+        gd.addMessage("Meridian_Flip has been selected as an output data column.\n" + "Certain plot settings are first required to ensure that proper meridian flip data are written.\n" + "(1) The meridian flip time marker must be set properly in the 'Multi-plot Main' panel.\n" + "(2) The time data column corresponding to the output data columns must be set as the\n" + "'X-data' column for the top-most enabled 'Multi-plot Y-data' plot row.\n" + "(3) 'Input Average Size' on the top-most enabled row must be set the same as for the data columns being written.\n" + "NOTE: All output data are unaveraged unless average input data have been previously saved back into the\n" + "measurements table using the 'New Col' button on the left side of a 'Multi-plot Y-data' row.\n" + "Therefore, before saving a data subset, 'Input Average Size' on the top-most enabled plot row should be set to '1'\n" + "unless averaged data were previously saved to the measurements table and are selected as the output data.");
 
         gd.addMessage("Press 'OK' if the plot settings are correct,\n" + "or 'Cancel' if the plot settings need to be changed.");
         gd.showDialog();
@@ -17483,8 +17443,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         showLRelScaleInfo = Prefs.get("plot.showLRelScaleInfo", showLRelScaleInfo);
         showLShiftInfo = Prefs.get("plot.showLShiftInfo", showLShiftInfo);
         showLRelShiftInfo = Prefs.get("plot.showLRelShiftInfo", showLRelShiftInfo);
-        showYBinInfo = Prefs.get("plot.showYBinInfo", showYBinInfo);
-        showLBinInfo = Prefs.get("plot.showLBinInfo", showLBinInfo);
+        showYAvgInfo = Prefs.get("plot.showYBinInfo", showYAvgInfo);
+        showLAvgInfo = Prefs.get("plot.showLBinInfo", showLAvgInfo);
         showYmmagInfo = Prefs.get("plot.showYmmagInfo", showYmmagInfo);
         showLmmagInfo = Prefs.get("plot.showLmmagInfo", showLmmagInfo);
         useNelderMeadChi2ForDetrend = Prefs.get("plot.useNelderMeadChi2ForDetrend", useNelderMeadChi2ForDetrend);
@@ -17608,7 +17568,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             useLegend[i] = Prefs.get("plot.useLegend" + i, useLegend[i]);
             legend[i] = Prefs.get("plot.legend" + i, legend[i]);
             operatorIndex[i] = (int) Prefs.get("plot.operatorIndex" + i, operatorIndex[i]);
-            binSize[i] = (int) Prefs.get("plot.binSize" + i, binSize[i]);
+            inputAverageOverSize[i] = (int) Prefs.get("plot.inputAverageOverSize" + i, inputAverageOverSize[i]);
             plotY[i] = Prefs.get("plot.plotY" + i, plotY[i]);
             force[i] = Prefs.get("plot.force" + i, force[i]);
             showErrors[i] = Prefs.get("plot.showErrors" + i, showErrors[i]);
@@ -17797,8 +17757,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         Prefs.set("plot.showLRelScaleInfo", showLRelScaleInfo);
         Prefs.set("plot.showLShiftInfo", showLShiftInfo);
         Prefs.set("plot.showLRelShiftInfo", showLRelShiftInfo);
-        Prefs.set("plot.showYBinInfo", showYBinInfo);
-        Prefs.set("plot.showLBinInfo", showLBinInfo);
+        Prefs.set("plot.showYBinInfo", showYAvgInfo);
+        Prefs.set("plot.showLBinInfo", showLAvgInfo);
         Prefs.set("plot.showYmmagInfo", showYmmagInfo);
         Prefs.set("plot.showLmmagInfo", showLmmagInfo);
         Prefs.set("plot.useNelderMeadChi2ForDetrend", useNelderMeadChi2ForDetrend);
@@ -17909,7 +17869,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             Prefs.set("plot.legend" + i, legend[i]);
             Prefs.set("plot.operatorIndex" + i, operatorIndex[i]);
             Prefs.set("plot.moreOptions" + i, moreOptions[i]);
-            Prefs.set("plot.binSize" + i, binSize[i]);
+            Prefs.set("plot.inputAverageOverSize" + i, inputAverageOverSize[i]);
             Prefs.set("plot.plotY" + i, plotY[i]);
             Prefs.set("plot.force" + i, force[i]);
             Prefs.set("plot.showErrors" + i, showErrors[i]);

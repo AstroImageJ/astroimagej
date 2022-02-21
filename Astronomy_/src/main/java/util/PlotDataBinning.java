@@ -17,7 +17,7 @@ public class PlotDataBinning {
         var xMin = t.minimum();
         var xMax = t.maximum();
 
-        var minBinWidth = Stat.median(IntStream.range(1, x.length).mapToDouble(i -> x[i] - x[i-1]).toArray());
+        var minBinWidth = Stat.median(IntStream.range(1, x.length).parallel().mapToDouble(i -> x[i] - x[i-1]).toArray());
         if (minBinWidth > binWidth) binWidth = minBinWidth;
 
         var span = xMax - xMin;

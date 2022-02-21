@@ -7,6 +7,7 @@ import flanagan.analysis.Smooth;
 import flanagan.math.Minimization;
 import flanagan.math.MinimizationFunction;
 import ij.*;
+import ij.astro.types.Pair;
 import ij.astro.util.PdfPlotOutput;
 import ij.gui.*;
 import ij.io.OpenDialog;
@@ -17,6 +18,7 @@ import ij.process.ImageProcessor;
 import ij.text.TextPanel;
 import ij.util.Tools;
 import util.GenericSwingDialog;
+import util.PlotDataBinning;
 import util.UIHelper;
 
 import javax.swing.*;
@@ -833,6 +835,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static DecimalFormat threePlaces = new DecimalFormat("######0.000", IJU.dfs);
     static DecimalFormat sixPlaces = new DecimalFormat("######0.000000", IJU.dfs);
     static DecimalFormat detrendParameterFormat = new DecimalFormat("######0.000000000000", IJU.dfs);
+    private static boolean[] binDisplay = new boolean[maxCurves];//todo preferences
+    private static JPanel[] displayBinningPanel = new JPanel[maxCurves];
+    private static ArrayList<Pair.GenericPair<Double, JSpinner>> minutes = new ArrayList<>(maxCurves);
 
     public void run(String inTableNamePlusOptions) {
         boolean useAutoAstroDataUpdate = false;
@@ -3487,9 +3492,27 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 }
 
                 plot.setColor(color[curve]);
-                if (marker[curve] == ij.gui.Plot.DOT) { plot.setLineWidth(4); } else plot.setLineWidth(1);
 
-                plot.addPoints(Arrays.copyOf(x[curve], nn[curve]), Arrays.copyOf(y[curve], nn[curve]), marker[curve]);
+                if (binDisplay[curve]) {
+                    // Convert to JD
+                    var binWidth = minutes.get(curve).first() / (24D * 60D);
+
+                    // Bin data
+                    var binnedData = PlotDataBinning.binData(Arrays.copyOf(x[curve], nn[curve]), Arrays.copyOf(y[curve], nn[curve]), binWidth);
+
+                    // Update bin width as the minimum was calculated at the same time
+                    minutes.get(curve).second().setValue(binnedData.second() * 24D * 60D);
+
+                    var pts = binnedData.first();
+
+                    if (marker[curve] == ij.gui.Plot.DOT) { plot.setLineWidth(8); } else plot.setLineWidth(2);
+                    plot.addPoints(pts.first(), pts.second(), marker[curve]);
+                    plot.setColor(Color.gray);
+                }
+
+                if (binDisplay[curve] || marker[curve] == ij.gui.Plot.DOT) { plot.setLineWidth(4); } else plot.setLineWidth(1);
+
+                plot.addPoints(Arrays.copyOf(x[curve], nn[curve]), Arrays.copyOf(y[curve], nn[curve]), binDisplay[curve] ? Plot.DOT : marker[curve]);
 
                 plot.setLineWidth(1);
 
@@ -6132,6 +6155,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         residual = new double[maxCurves][];
         plottedResidual = new double[maxCurves][];
 
+        binDisplay = new boolean[maxCurves];
+
         start = new double[maxCurves][];
         width = new double[maxCurves][];
         step = new double[maxCurves][];
@@ -6397,6 +6422,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         smoothlenspinnermodel = new SpinnerModel[maxCurves];
         smoothlenspinner = new JSpinner[maxCurves];
         morelegendradiopanelgroup = new JPanel[maxCurves];
+        displayBinningPanel = new JPanel[maxCurves];
+        minutes = new ArrayList<>(maxCurves);
         autoscalepanelgroup = new JPanel[maxCurves];
         customscalepanelgroup = new JPanel[maxCurves];
         detrendpanelgroup = new JPanel[maxCurves];
@@ -10777,6 +10804,41 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         customscalelabelgroup.add(Box.createHorizontalStrut(20));
         mainsubpanelgroup.add(customscalelabelgroup);
 
+        //todo make use bin vars
+        JPanel displayBinningGroup = new JPanel();
+        displayBinningGroup.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+        displayBinningGroup.setLayout(new BoxLayout(displayBinningGroup, BoxLayout.X_AXIS));
+
+        if (useWideDataPanel) { displayBinningGroup.setPreferredSize(new Dimension(225, 20)); } else {
+            displayBinningGroup.setPreferredSize(new Dimension(325, 20));
+        }
+
+        displayBinningGroup.add(Box.createHorizontalStrut(1));
+
+        JLabel displayBinningLabel = new JLabel("<HTML><CENTER>Display<BR><CENTER>Binning</HTML>");
+        displayBinningLabel.setFont(b11);
+        displayBinningLabel.setForeground(Color.DARK_GRAY);
+        displayBinningLabel.setHorizontalAlignment(JLabel.CENTER);
+        displayBinningLabel.setComponentPopupMenu(legendpopup);
+        displayBinningLabel.setToolTipText("Right click to set legend preferences");
+        displayBinningLabel.setMaximumSize(new Dimension(75, 45));
+        displayBinningLabel.setPreferredSize(new Dimension(75, 45));
+        displayBinningLabel.setMinimumSize(new Dimension(75, 25));
+        displayBinningGroup.add(displayBinningLabel);
+        displayBinningGroup.add(Box.createHorizontalStrut(5));
+
+        displayBinningGroup.add(Box.createGlue());
+
+        JLabel displayBinSizeLabel = new JLabel("Bin Size (minutes)");
+        displayBinSizeLabel.setFont(b11);
+        displayBinSizeLabel.setForeground(Color.DARK_GRAY);
+        displayBinSizeLabel.setHorizontalAlignment(JLabel.CENTER);
+        if (useWideDataPanel) { displayBinSizeLabel.setPreferredSize(new Dimension(125, 20)); } else {
+            displayBinSizeLabel.setPreferredSize(new Dimension(225, 20));
+        }
+
+        mainsubpanelgroup.add(displayBinningGroup);
+
         JPanel legendslabelgroup = new JPanel();
         legendslabelgroup.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
         legendslabelgroup.setLayout(new BoxLayout(legendslabelgroup, BoxLayout.X_AXIS));
@@ -11607,7 +11669,29 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         mainsubpanelgroup.add(customscalepanelgroup[c]);
 
 //
+//todo mark
+        displayBinningPanel[c] = new JPanel();
+        displayBinningPanel[c].setLayout(new BoxLayout(displayBinningPanel[c], BoxLayout.X_AXIS));
+        var binCB = new JCheckBox();
+        binCB.addChangeListener($ -> {
+            binDisplay[c] = binCB.isSelected();
+            updatePlot(c);
+        });
+        displayBinningPanel[c].add(binCB);
 
+        var binSpin = new JSpinner(new SpinnerNumberModel(5, 0, 100*24*60d, 1d));
+        if (minutes.size() == c) {
+            minutes.add(new Pair.GenericPair<>((Double) binSpin.getValue(), binSpin));
+        } else {
+            minutes.set(c, new Pair.GenericPair<>((Double) binSpin.getValue(), binSpin));
+        }
+        binSpin.addChangeListener($ -> {
+            minutes.set(c, new Pair.GenericPair<>((Double) binSpin.getValue(), binSpin));
+            updatePlot(c);
+        });
+        displayBinningPanel[c].add(binSpin);
+
+        mainsubpanelgroup.add(displayBinningPanel[c]);
 
         //LEGEND RADIO GROUP AND TEXT FIELD
 

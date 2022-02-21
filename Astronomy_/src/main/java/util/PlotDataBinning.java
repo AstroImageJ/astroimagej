@@ -2,27 +2,30 @@ package util;
 
 import flanagan.analysis.Stat;
 import flanagan.math.ArrayMaths;
-import ij.astro.logging.AIJLogger;
 import ij.astro.types.Pair;
 
 import java.util.Arrays;
+import java.util.stream.IntStream;
 
 public class PlotDataBinning {
 
-    public static Pair.GenericPair<double[], double[]> binData(double[] x, double[] y, double binWidth) {
+    //todo return binWidth
+    public static Pair.GenericPair<Pair.GenericPair<double[], double[]>, Double> binData(double[] x, double[] y, double binWidth) {
         if (x.length != y.length) throw new IllegalArgumentException("Arrays must be of the same length");
 
         var t = new ArrayMaths(x);
         var xMin = t.minimum();
         var xMax = t.maximum();
 
+        var minBinWidth = Stat.median(IntStream.range(1, x.length).mapToDouble(i -> x[i] - x[i-1]).toArray());
+        if (minBinWidth > binWidth) binWidth = minBinWidth;
+
         var span = xMax - xMin;
         var nBins = (int) Math.ceil(span/binWidth);
 
-        AIJLogger.multiLog(xMin, xMax, span, nBins);
-
         var binBounds = new double[nBins + 1];
-        Arrays.setAll(binBounds, i -> (i * binWidth) + xMin);
+        double finalBinWidth = binWidth;
+        Arrays.setAll(binBounds, i -> (i * finalBinWidth) + xMin);
 
         var bins = new DataBin[nBins];
         Arrays.setAll(bins, i -> new DataBin(x.length, i));
@@ -48,7 +51,7 @@ public class PlotDataBinning {
             outY[i] = binCompleted.get(i).second();
         }
 
-        return new Pair.GenericPair<>(outX, outY);
+        return new Pair.GenericPair<>(new Pair.GenericPair<>(outX, outY), binWidth);
     }
 
     private record DataBin(double[] x, double[] y, Holder lastIndex, int binIndex) {

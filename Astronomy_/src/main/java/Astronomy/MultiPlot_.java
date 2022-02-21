@@ -10604,7 +10604,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         inputAverageLabel.setMaximumSize(new Dimension(50, 25));
         inputAverageLabel.setPreferredSize(new Dimension(50, 25));
         inputAverageLabel.setHorizontalAlignment(JLabel.CENTER);
-        inputAverageLabel.setToolTipText("Average data over n samples before processing further (detrending, ploting, etc)");
+        inputAverageLabel.setToolTipText("Average data over n samples before processing further (detrending, plotting, etc)");
         mainsubpanelgroup.add(inputAverageLabel);
         forceIcon = createImageIcon("astroj/images/grab.png", "Transfer 'Page Rel' settings to absolute settings");
         insertColumnIcon = createImageIcon("astroj/images/insertcolumn.png", "Save curve as new table column");

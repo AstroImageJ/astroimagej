@@ -37,7 +37,11 @@ public class OverlayCanvas extends ImageCanvas
 		// are of different types
 		var index = rois.indexOf(roi);
 		if (index >= 0 && rois.get(index).getClass().isAssignableFrom(roi.getClass())) {
-			if (roi.getName().equals(rois.get(0).getName())) return;
+			var newRoiName = roi.getName();
+			var oldRoiName = rois.get(index).getName();
+
+			var neitherNull = newRoiName != null && oldRoiName != null;
+			if ((neitherNull && newRoiName.equals(oldRoiName))) return;
 		}
 
 		rois.addElement (roi);

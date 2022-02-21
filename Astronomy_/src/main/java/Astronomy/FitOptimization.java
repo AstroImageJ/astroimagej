@@ -176,7 +176,8 @@ public class FitOptimization implements AutoCloseable {
         cleanButton.setToolTipText("""
                 <html>
                 Left-click to clean data relative to the per-point uncertainties.<br>
-                Shift-left-click or right-click to clean data relative to the RMS of the model residuals.
+                Shift-left-click or right-click to clean data relative to the RMS of the model residuals.<br>
+                Alt-left0click to clean data based on per-point error deviation from median.
                 </html>""");
         outlierRemoval.add(cleanButton);
         difNumTF.setEditable(false);
@@ -405,7 +406,11 @@ public class FitOptimization implements AutoCloseable {
                 case POINT -> yerr[curve][i];
                 case POINT_MEDIAN -> Stat.median(yerr[curve]);
             };
-            if (Math.abs(residual[curve][i]) > Math.abs(nSigmaOutlier * sigma)) {
+            var comparator = switch (cleanMode) {
+                case POINT_MEDIAN -> yerr[curve][i];
+                default -> residual[curve][i];
+            };
+            if (Math.abs(comparator) > Math.abs(nSigmaOutlier * sigma)) {
                 hasActionToUndo = true;
                 toRemove.add(excludedHeadSamples + i);
                 //if (showOptLog) AIJLogger.log("Datapoint removed because residual > n * yerr: "+Math.abs(residual[curve][i])+" > "+Math.abs(nSigmaOutlier * yerr[curve][i]));
@@ -420,9 +425,9 @@ public class FitOptimization implements AutoCloseable {
             cleanNumTF.setText("-" + toRemove.size());
             undoBuffer.addFirst(oldTable);
             if (undoBuffer.size() > 10) undoBuffer.removeLast();
-            // If the table is empty MP proceeeds with no errors and doesn't update the plot
+            // If the table is empty MP proceeds with no errors and doesn't update the plot
             if (table.size() == 0) IJ.error("Cleaning", "Removed all points in the table, " +
-                    "please undo and lower the number of sigma being used");
+                    "please undo and increase the number of sigma being used");
             MultiPlot_.updatePlot(MultiPlot_.updateAllFits());
         } else {
             IJ.beep();

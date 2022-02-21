@@ -9,9 +9,15 @@ import java.util.stream.IntStream;
 
 public class PlotDataBinning {
 
-    //todo return binWidth
     public static Pair.GenericPair<Pair.GenericPair<double[], double[]>, Double> binData(double[] x, double[] y, double binWidth) {
+        return binDataErr(x, y, null, binWidth);
+    }
+
+    public static Pair.GenericPair<Pair.GenericPair<double[], double[]>, Double> binDataErr(double[] x, double[] y, double[] err, double binWidth) {
         if (x.length != y.length) throw new IllegalArgumentException("Arrays must be of the same length");
+
+        var withErr = err != null;
+        if (!withErr) err = new double[x.length];
 
         var t = new ArrayMaths(x);
         var xMin = t.minimum();
@@ -34,7 +40,7 @@ public class PlotDataBinning {
             var p = 0;
             var accepted = false;
             while (!accepted) {
-                accepted = bins[p].accept(binBounds, x[i], y[i]);
+                accepted = bins[p].accept(binBounds, x[i], y[i], err[i]);
                 p++;
                 if (p == bins.length) break;
             }
@@ -42,7 +48,8 @@ public class PlotDataBinning {
             if (!accepted) throw new RuntimeException("data did not fit into a bin");
         }
 
-        var binCompleted = Arrays.stream(bins).parallel().map(DataBin::binnedDatum).toList();
+        var binCompleted = Arrays.stream(bins).parallel()
+                .map(withErr ? DataBin::binnedDatumErr : DataBin::binnedDatum).toList();
         var outX = new double[binCompleted.size()];
         var outY = new double[binCompleted.size()];
 
@@ -54,14 +61,15 @@ public class PlotDataBinning {
         return new Pair.GenericPair<>(new Pair.GenericPair<>(outX, outY), binWidth);
     }
 
-    private record DataBin(double[] x, double[] y, Holder lastIndex, int binIndex) {
+    private record DataBin(double[] x, double[] y, double[] err, Holder lastIndex, int binIndex) {
         public DataBin(int maximumSize, int binIndex) {
-            this(new double[maximumSize], new double[maximumSize], new Holder(), binIndex);
+            this(new double[maximumSize], new double[maximumSize], new double[maximumSize], new Holder(), binIndex);
         }
 
-        public void addData(double xDatum, double yDatum) {
+        public void addData(double xDatum, double yDatum, double errDatum) {
             x[lastIndex.val] = xDatum;
             y[lastIndex.val] = yDatum;
+            err[lastIndex.val] = errDatum;
             lastIndex.val++;
         }
 
@@ -70,9 +78,32 @@ public class PlotDataBinning {
                     Stat.mean(Arrays.copyOf(y, lastIndex.val)));
         }
 
+        //todo binErr is tossed
+        public Pair.DoublePair binnedDatumErr() {
+            var totalErr = Arrays.stream(err).sum();
+            var totalErr2 = totalErr * totalErr;
+            var err2 = Arrays.stream(err).map(d -> d*d).toArray();
+            var invErr2 = Arrays.stream(err2).map(d -> d != 0 ? 1/d : 0).toArray();
+            var totInvErr2 = Arrays.stream(invErr2).sum();
+
+            var totX = IntStream.range(0, lastIndex.val).mapToDouble(i -> x[i]/err2[i]).sum();
+            var binX = totX / totInvErr2;
+
+            var totY = IntStream.range(0, lastIndex.val).mapToDouble(i -> y[i]/err2[i]).sum();
+            var binY = totY / totInvErr2;
+
+            var binErr = 1/Math.sqrt(totInvErr2);
+
+            return new Pair.DoublePair(binX, binY);
+        }
+
         public boolean accept(double[] binBounds, double x, double y) {
+            return accept(binBounds, x, y, 0);
+        }
+
+        public boolean accept(double[] binBounds, double x, double y, double err) {
             if (x>=binBounds[binIndex] && x<binBounds[binIndex+1]) {
-                addData(x, y);
+                addData(x, y, err);
                 return true;
             }
 

@@ -3498,7 +3498,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     var binWidth = minutes.get(curve).first() / (24D * 60D);
 
                     // Bin data
-                    var binnedData = PlotDataBinning.binData(Arrays.copyOf(x[curve], nn[curve]), Arrays.copyOf(y[curve], nn[curve]), binWidth);
+                    var binnedData = PlotDataBinning.binDataErr(Arrays.copyOf(x[curve], nn[curve]), Arrays.copyOf(y[curve], nn[curve]), Arrays.copyOf(yerr[curve], nn[curve]), binWidth);
 
                     // Update bin width as the minimum was calculated at the same time
                     minutes.get(curve).second().setValue(binnedData.second() * 24D * 60D);
@@ -3516,6 +3516,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
                 plot.setLineWidth(1);
 
+                if (binDisplay[curve]) plot.setColor(Color.gray);
                 if ((showErrors[curve] || operatorIndex[curve] == 6) && (hasErrors[curve] || hasOpErrors[curve]))     //code to replace plot.addErrorBars
                 {               //since plot.addErrorBars only plots with lines enabled
                     for (int j = 0; j < nn[curve]; j++) {
@@ -3524,6 +3525,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         plot.drawLine(x[curve][j] - (3.0 * (plotMaxX - plotMinX) / plotSizeX), y[curve][j] - yerr[curve][j], x[curve][j] + (3.0 * (plotMaxX - plotMinX) / plotSizeX), y[curve][j] - yerr[curve][j]);
                     }
                 }
+
+                plot.setColor(color[curve]);
 
                 if (lines[curve] && !(marker[curve] == ij.gui.Plot.LINE)) {
                     for (int j = 0; j < nn[curve] - 1; j++) {
@@ -10820,22 +10823,23 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         displayBinningLabel.setForeground(Color.DARK_GRAY);
         displayBinningLabel.setHorizontalAlignment(JLabel.CENTER);
         displayBinningLabel.setComponentPopupMenu(legendpopup);
-        displayBinningLabel.setToolTipText("Right click to set legend preferences");
+        displayBinningLabel.setToolTipText("Whether the display should bin datum together.");
         displayBinningLabel.setMaximumSize(new Dimension(75, 45));
         displayBinningLabel.setPreferredSize(new Dimension(75, 45));
         displayBinningLabel.setMinimumSize(new Dimension(75, 25));
         displayBinningGroup.add(displayBinningLabel);
         displayBinningGroup.add(Box.createHorizontalStrut(5));
 
-        displayBinningGroup.add(Box.createGlue());
+        //displayBinningGroup.add(Box.createGlue());
 
-        JLabel displayBinSizeLabel = new JLabel("Bin Size (minutes)");
+        JLabel displayBinSizeLabel = new JLabel("<HTML><CENTER>Bin Size<br><CENTER>(minutes)</HTML>");
         displayBinSizeLabel.setFont(b11);
         displayBinSizeLabel.setForeground(Color.DARK_GRAY);
         displayBinSizeLabel.setHorizontalAlignment(JLabel.CENTER);
-        if (useWideDataPanel) { displayBinSizeLabel.setPreferredSize(new Dimension(125, 20)); } else {
-            displayBinSizeLabel.setPreferredSize(new Dimension(225, 20));
-        }
+        displayBinningGroup.add(displayBinSizeLabel);
+        displayBinningGroup.add(Box.createHorizontalStrut(5));
+
+        SpringUtil.makeCompactGrid(displayBinningGroup, 1, displayBinningGroup.getComponentCount(), 0, 0, 0, 0);
 
         mainsubpanelgroup.add(displayBinningGroup);
 
@@ -11669,17 +11673,17 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         mainsubpanelgroup.add(customscalepanelgroup[c]);
 
 //
-//todo mark
         displayBinningPanel[c] = new JPanel();
         displayBinningPanel[c].setLayout(new BoxLayout(displayBinningPanel[c], BoxLayout.X_AXIS));
+        displayBinningPanel[c].add(Box.createHorizontalStrut(25));
         var binCB = new JCheckBox();
         binCB.addChangeListener($ -> {
             binDisplay[c] = binCB.isSelected();
             updatePlot(c);
         });
         displayBinningPanel[c].add(binCB);
-
-        var binSpin = new JSpinner(new SpinnerNumberModel(5, 0, 100*24*60d, 1d));
+        displayBinningPanel[c].add(Box.createHorizontalStrut(10));
+        var binSpin = new JSpinner(new SpinnerNumberModel(5, 0, Double.MAX_VALUE, 1d));
         if (minutes.size() == c) {
             minutes.add(new Pair.GenericPair<>((Double) binSpin.getValue(), binSpin));
         } else {
@@ -11689,6 +11693,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             minutes.set(c, new Pair.GenericPair<>((Double) binSpin.getValue(), binSpin));
             updatePlot(c);
         });
+        GenericSwingDialog.getTextFieldFromSpinner(binSpin).ifPresent(s -> s.setColumns(5));
         displayBinningPanel[c].add(binSpin);
 
         mainsubpanelgroup.add(displayBinningPanel[c]);

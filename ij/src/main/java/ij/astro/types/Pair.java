@@ -3,7 +3,15 @@ package ij.astro.types;
 import java.util.Optional;
 
 public class Pair {
-    public record GenericPair<T1, T2>(T1 first, T2 second) {}
+    public record GenericPair<T1, T2>(T1 first, T2 second) {
+        public GenericPair<T1, T2> setFirst(T1 first) {
+            return new GenericPair<>(first, second);
+        }
+
+        public GenericPair<T1, T2> setSecond(T2 second) {
+            return new GenericPair<>(first, second);
+        }
+    }
 
     public record OptionalGenericPair<T1, T2>(Optional<T1> first, Optional<T2> second) {
         public OptionalGenericPair() {

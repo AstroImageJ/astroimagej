@@ -10638,16 +10638,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         mainsubpanelgroup.add(inputAverageLabel);
         forceIcon = createImageIcon("astroj/images/grab.png", "Transfer 'Page Rel' settings to absolute settings");
         insertColumnIcon = createImageIcon("astroj/images/insertcolumn.png", "Save curve as new table column");
-    }
-
-
-    static void constructOtherGroupBottomLabels(JPanel mainsubpanelgroup) {
-        JLabel seconddatasetlabel = new JLabel("<HTML><CENTER>Data<BR><CENTER>Set</HTML>");
-        seconddatasetlabel.setFont(b11);
-        seconddatasetlabel.setForeground(Color.DARK_GRAY);
-        seconddatasetlabel.setHorizontalAlignment(JLabel.CENTER);
-        seconddatasetlabel.setMaximumSize(new Dimension(35, 25));
-        if (!useWideDataPanel) mainsubpanelgroup.add(seconddatasetlabel);
 
         JLabel smoothlabel = new JLabel("<HTML><CENTER>Smo-<BR><CENTER>oth</HTML>");
         smoothlabel.setFont(b11);
@@ -10664,6 +10654,16 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         smoothlenlabel.setHorizontalAlignment(JLabel.CENTER);
         smoothlenlabel.setMaximumSize(new Dimension(35, 25));
         mainsubpanelgroup.add(smoothlenlabel);
+    }
+
+
+    static void constructOtherGroupBottomLabels(JPanel mainsubpanelgroup) {
+        JLabel seconddatasetlabel = new JLabel("<HTML><CENTER>Data<BR><CENTER>Set</HTML>");
+        seconddatasetlabel.setFont(b11);
+        seconddatasetlabel.setForeground(Color.DARK_GRAY);
+        seconddatasetlabel.setHorizontalAlignment(JLabel.CENTER);
+        seconddatasetlabel.setMaximumSize(new Dimension(35, 25));
+        if (!useWideDataPanel) mainsubpanelgroup.add(seconddatasetlabel);
 
         JPanel detrendlabelgroup = new JPanel(new SpringLayout());
         detrendlabelgroup.setMaximumSize(new Dimension(195, 20));
@@ -10818,7 +10818,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         displayBinningGroup.add(Box.createHorizontalStrut(1));
 
-        JLabel displayBinningLabel = new JLabel("<HTML><CENTER>Display<BR><CENTER>Binning</HTML>");
+        JLabel displayBinningLabel = new JLabel("<HTML><CENTER>Out<BR><CENTER>Bin</HTML>");
         displayBinningLabel.setFont(b11);
         displayBinningLabel.setForeground(Color.DARK_GRAY);
         displayBinningLabel.setHorizontalAlignment(JLabel.CENTER);
@@ -11090,17 +11090,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         });
         mainsubpanelgroup.add(inputAverageOverSizespinner[c]);
 
-    }
-
-    static void constructOtherGroup(JPanel mainsubpanelgroup, final int c) {
-        if (!useWideDataPanel) {
-            othercurvelabel[c] = new JLabel("" + (c + 1));
-            othercurvelabel[c].setFont(p11);
-            othercurvelabel[c].setBorder(BorderFactory.createLineBorder(color[c], 2));
-            othercurvelabel[c].setHorizontalAlignment(JLabel.CENTER);
-            mainsubpanelgroup.add(othercurvelabel[c]);
-        }
-
         usesmoothbox[c] = new JCheckBox("", smooth[c]);
         usesmoothbox[c].addItemListener(e -> {
             if (e.getStateChange() == ItemEvent.DESELECTED) {
@@ -11126,6 +11115,16 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             if (newValue > 0) smoothlenspinner[c].setValue(newValue);
         });
         mainsubpanelgroup.add(smoothlenspinner[c]);
+    }
+
+    static void constructOtherGroup(JPanel mainsubpanelgroup, final int c) {
+        if (!useWideDataPanel) {
+            othercurvelabel[c] = new JLabel("" + (c + 1));
+            othercurvelabel[c].setFont(p11);
+            othercurvelabel[c].setBorder(BorderFactory.createLineBorder(color[c], 2));
+            othercurvelabel[c].setHorizontalAlignment(JLabel.CENTER);
+            mainsubpanelgroup.add(othercurvelabel[c]);
+        }
 
 
         //DETREND PANEL GROUP

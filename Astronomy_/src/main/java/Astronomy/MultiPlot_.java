@@ -3491,24 +3491,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     plot.addPoints(Arrays.copyOf(xModel2[curve], xModel2[curve].length), Arrays.copyOf(yModel2[curve], yModel2[curve].length), ij.gui.Plot.LINE);
                 }
 
-                plot.setColor(color[curve]);
-
-                if (binDisplay[curve]) {
-                    // Convert to JD
-                    var binWidth = minutes.get(curve).first() / (24D * 60D);
-
-                    // Bin data
-                    var binnedData = PlotDataBinning.binDataErr(Arrays.copyOf(x[curve], nn[curve]), Arrays.copyOf(y[curve], nn[curve]), Arrays.copyOf(yerr[curve], nn[curve]), binWidth);
-
-                    // Update bin width as the minimum was calculated at the same time
-                    minutes.get(curve).second().setValue(binnedData.second() * 24D * 60D);
-
-                    var pts = binnedData.first();
-
-                    if (marker[curve] == ij.gui.Plot.DOT) { plot.setLineWidth(8); } else plot.setLineWidth(2);
-                    plot.addPoints(pts.first(), pts.second(), marker[curve]);
-                    plot.setColor(Color.gray);
-                }
+                plot.setColor(binDisplay[curve] ? Color.GRAY : color[curve]);
 
                 if (binDisplay[curve] || marker[curve] == ij.gui.Plot.DOT) { plot.setLineWidth(4); } else plot.setLineWidth(1);
 
@@ -3526,7 +3509,22 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     }
                 }
 
-                plot.setColor(color[curve]);
+                if (binDisplay[curve]) {
+                    // Convert to JD
+                    var binWidth = minutes.get(curve).first() / (24D * 60D);
+
+                    // Bin data
+                    var binnedData = PlotDataBinning.binDataErr(Arrays.copyOf(x[curve], nn[curve]), Arrays.copyOf(y[curve], nn[curve]), Arrays.copyOf(yerr[curve], nn[curve]), binWidth);
+
+                    // Update bin width as the minimum was calculated at the same time
+                    minutes.get(curve).second().setValue(binnedData.second() * 24D * 60D);
+
+                    var pts = binnedData.first();
+
+                    plot.setColor(color[curve]);
+                    if (marker[curve] == ij.gui.Plot.DOT) { plot.setLineWidth(8); } else plot.setLineWidth(2);
+                    plot.addPoints(pts.first(), pts.second(), marker[curve]);
+                }
 
                 if (lines[curve] && !(marker[curve] == ij.gui.Plot.LINE)) {
                     for (int j = 0; j < nn[curve] - 1; j++) {

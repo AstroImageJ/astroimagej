@@ -175,9 +175,9 @@ public class FitOptimization implements AutoCloseable {
         cleanButton.addActionListener(ae -> cleanOutliers(CleanMode.getMode(ae)));
         cleanButton.setToolTipText("""
                 <html>
-                Left-click to clean data relative to the per-point uncertainties.<br>
-                Shift-left-click or right-click to clean data relative to the RMS of the model residuals.<br>
-                Alt-left0click to clean data based on per-point error deviation from median.
+                Left-click to remove all data points that are outliers from the transit model by more than N times the per-point photometric error.<br>
+                Shift-left-click to remove all data points that are outliers from the transit model by more than N times the RMS of the transit model residuals.<br>
+                Alt-left-click to remove all data points that have photometric error greater than N time the median photometric error (e.g. cleans clouded data points).
                 </html>""");
         outlierRemoval.add(cleanButton);
         difNumTF.setEditable(false);

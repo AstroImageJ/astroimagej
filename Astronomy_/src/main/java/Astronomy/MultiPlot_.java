@@ -10848,7 +10848,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         displayBinningLabel.setToolTipText("Whether the display should bin datum together.");
         displayBinningLabel.setMaximumSize(new Dimension(75, 45));
         displayBinningLabel.setPreferredSize(new Dimension(75, 45));
-        displayBinningLabel.setMinimumSize(new Dimension(75, 25));
+        //displayBinningLabel.setMinimumSize(new Dimension(75, 25));
         displayBinningGroup.add(displayBinningLabel);
         displayBinningGroup.add(Box.createHorizontalStrut(5));
 
@@ -10861,8 +10861,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         displayBinningGroup.add(displayBinSizeLabel);
         displayBinningGroup.add(Box.createHorizontalStrut(5));
 
-        SpringUtil.makeCompactGrid(displayBinningGroup, 1, displayBinningGroup.getComponentCount(), 0, 0, 0, 0);
-
+        displayBinningGroup.setMaximumSize(new Dimension(100, 45));
+        displayBinningGroup.setPreferredSize(new Dimension(100, 40));
         mainsubpanelgroup.add(displayBinningGroup);
 
         JPanel legendslabelgroup = new JPanel();
@@ -11696,7 +11696,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 //
         displayBinningPanel[c] = new JPanel();
         displayBinningPanel[c].setLayout(new BoxLayout(displayBinningPanel[c], BoxLayout.X_AXIS));
-        displayBinningPanel[c].add(Box.createHorizontalStrut(25));
+        displayBinningPanel[c].add(Box.createHorizontalStrut(10));
         var binCB = new JCheckBox();
         binCB.addChangeListener($ -> {
             binDisplay[c] = binCB.isSelected();

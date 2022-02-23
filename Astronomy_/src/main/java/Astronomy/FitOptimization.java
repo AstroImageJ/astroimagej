@@ -400,12 +400,13 @@ public class FitOptimization implements AutoCloseable {
         var hasActionToUndo = false;
         var toRemove = new TreeSet<Integer>();
 
+        var sigma = switch (cleanMode) {
+            case RMS -> MultiPlot_.sigma[curve];
+            case POINT_MEDIAN -> Stat.median(Arrays.copyOf(yerr[curve], nn[curve]));
+            default -> 0;
+        };
         for (int i = 0; i < residual[curve].length; i++) {
-            var sigma = switch (cleanMode) {
-                case RMS -> MultiPlot_.sigma[curve];
-                case POINT -> yerr[curve][i];
-                case POINT_MEDIAN -> Stat.median(yerr[curve]);
-            };
+            if (cleanMode == CleanMode.POINT) sigma = yerr[curve][i];
             var comparator = switch (cleanMode) {
                 case POINT_MEDIAN -> yerr[curve][i];
                 default -> residual[curve][i];

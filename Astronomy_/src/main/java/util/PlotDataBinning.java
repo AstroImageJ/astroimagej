@@ -9,11 +9,11 @@ import java.util.stream.IntStream;
 
 public class PlotDataBinning {
 
-    public static Pair.GenericPair<Pair.GenericPair<double[], double[]>, Double> binData(double[] x, double[] y, double binWidth) {
+    public static Pair.GenericPair<DoubleArrayTriple, Double> binData(double[] x, double[] y, double binWidth) {
         return binDataErr(x, y, null, binWidth);
     }
 
-    public static Pair.GenericPair<Pair.GenericPair<double[], double[]>, Double> binDataErr(double[] x, double[] y, double[] err, double binWidth) {
+    public static Pair.GenericPair<DoubleArrayTriple, Double> binDataErr(double[] x, double[] y, double[] err, double binWidth) {
         if (x.length != y.length) throw new IllegalArgumentException("Arrays must be of the same length");
 
         var withErr = err != null;
@@ -52,13 +52,15 @@ public class PlotDataBinning {
                 .map(withErr ? DataBin::binnedDatumErr : DataBin::binnedDatum).toList();
         var outX = new double[binCompleted.size()];
         var outY = new double[binCompleted.size()];
+        var outErr = new double[binCompleted.size()];
 
         for (int i = 0; i < binCompleted.size(); i++) {
-            outX[i] = binCompleted.get(i).first();
-            outY[i] = binCompleted.get(i).second();
+            outX[i] = binCompleted.get(i).x();
+            outY[i] = binCompleted.get(i).y();
+            outErr[i] = binCompleted.get(i).err();
         }
 
-        return new Pair.GenericPair<>(new Pair.GenericPair<>(outX, outY), binWidth);
+        return new Pair.GenericPair<>(new DoubleArrayTriple(outX, outY, outErr), binWidth);
     }
 
     private record DataBin(double[] x, double[] y, double[] err, Holder lastIndex, int binIndex) {
@@ -73,13 +75,11 @@ public class PlotDataBinning {
             lastIndex.val++;
         }
 
-        public Pair.DoublePair binnedDatum() {
-            return new Pair.DoublePair(Stat.mean(Arrays.copyOf(x, lastIndex.val)),
-                    Stat.mean(Arrays.copyOf(y, lastIndex.val)));
+        public DoubleTriple binnedDatum() {
+            return new DoubleTriple(Stat.mean(Arrays.copyOf(x, lastIndex.val)), Stat.mean(Arrays.copyOf(y, lastIndex.val)), 0);
         }
 
-        //todo binErr is tossed
-        public Pair.DoublePair binnedDatumErr() {
+        public DoubleTriple binnedDatumErr() {
             var totalErr = Arrays.stream(err).sum();
             var totalErr2 = totalErr * totalErr;
             var err2 = Arrays.stream(err).map(d -> d*d).toArray();
@@ -94,7 +94,7 @@ public class PlotDataBinning {
 
             var binErr = 1/Math.sqrt(totInvErr2);
 
-            return new Pair.DoublePair(binX, binY);
+            return new DoubleTriple(binX, binY, binErr);
         }
 
         public boolean accept(double[] binBounds, double x, double y) {
@@ -114,4 +114,8 @@ public class PlotDataBinning {
             public int val = 0;
         }
     }
+
+    private record DoubleTriple(double x, double y, double err) {}
+
+    public record DoubleArrayTriple(double[] x, double[] y, double[] err) {}
 }

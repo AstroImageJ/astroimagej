@@ -838,6 +838,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     private static boolean[] binDisplay = new boolean[maxCurves];//todo preferences
     private static JPanel[] displayBinningPanel = new JPanel[maxCurves];
     private static ArrayList<Pair.GenericPair<Double, JSpinner>> minutes = new ArrayList<>(maxCurves);
+    private static boolean showOutBinRms = true;
+    private static double[] outBinRms;
 
     public void run(String inTableNamePlusOptions) {
         boolean useAutoAstroDataUpdate = false;
@@ -3523,7 +3525,15 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
                     plot.setColor(color[curve]);
                     if (marker[curve] == ij.gui.Plot.DOT) { plot.setLineWidth(8); } else plot.setLineWidth(2);
-                    plot.addPoints(pts.first(), pts.second(), marker[curve]);
+                    plot.addPoints(pts.x(), pts.y(), marker[curve]);
+
+                    // Calculate binned RMS
+                    if (useTransitFit[curve]) {
+                        var modelBin = IJU.transitModel(pts.x(), bestFit[curve][0], bestFit[curve][4], bestFit[curve][1], bestFit[curve][2], bestFit[curve][3], orbitalPeriod[curve], forceCircularOrbit[curve] ? 0.0 : eccentricity[curve], forceCircularOrbit[curve] ? 0.0 : omega[curve], bestFit[curve][5], bestFit[curve][6], useLonAscNode[curve], lonAscNode[curve]);
+                        outBinRms[curve] = CurveFitter.calculateRms(curve, modelBin, pts.err(), pts.err(), pts.x(), pts.x(), pts.y(), pts.err(), bestFit[curve]);
+                    } else {
+                        outBinRms[curve] = CurveFitter.calculateRms(curve, null, pts.err(), pts.err(), pts.x(), pts.x(), pts.y(), pts.err(), bestFit[curve]);
+                    }
                 }
 
                 if (lines[curve] && !(marker[curve] == ij.gui.Plot.LINE)) {
@@ -3659,6 +3669,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     { llab.append(scaleShiftText(force[curve], showLRelScaleInfo, showLRelShiftInfo, mmag[curve], showLmmagInfo, totalScaleFactor[curve], totalShiftFactor[curve])); }
                     if ((inputAverageOverSize[curve] != 1) && showLAvgInfo) {
                         llab.append(" (input average=").append(inputAverageOverSize[curve]).append(")");
+                    }
+                    if (showOutBinRms && binDisplay[curve]) {
+                        llab.append(" (RMS=").append(uptoThreePlaces.format(outBinRms[curve])).append("/").append(uptoTwoPlaces.format(minutes.get(curve).first())).append(" min)");
                     }
                     if (showLSymbolInfo) llab.append(" (").append(markers[markerIndex[curve]]).append(")");
                 }
@@ -6424,6 +6437,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         smoothlenspinner = new JSpinner[maxCurves];
         morelegendradiopanelgroup = new JPanel[maxCurves];
         displayBinningPanel = new JPanel[maxCurves];
+        outBinRms = new double[maxCurves];
         minutes = new ArrayList<>(maxCurves);
         autoscalepanelgroup = new JPanel[maxCurves];
         customscalepanelgroup = new JPanel[maxCurves];
@@ -8449,6 +8463,15 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             updatePlot(updateNoFits());
         });
         legendpopup.add(legendshowsigmaallCB);
+
+        JMenuItem legendShowOutbinCB = new JCheckBoxMenuItem("Append output binned Std. Dev. to legend", showOutBinRms);
+        legendShowOutbinCB.addItemListener(e -> {
+            if (e.getStateChange() == ItemEvent.DESELECTED) {
+                showOutBinRms = false;
+            } else if (e.getStateChange() == ItemEvent.SELECTED) showOutBinRms = true;
+            updatePlot(updateNoFits());
+        });
+        legendpopup.add(legendShowOutbinCB);
 
         JMenuItem legendShowInputAvgSizeCB = new JCheckBoxMenuItem("Append averaged data size to legend", showLAvgInfo);
         legendShowInputAvgSizeCB.addItemListener(e -> {
@@ -17531,6 +17554,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         showLRelShiftInfo = Prefs.get("plot.showLRelShiftInfo", showLRelShiftInfo);
         showYAvgInfo = Prefs.get("plot.showYBinInfo", showYAvgInfo);
         showLAvgInfo = Prefs.get("plot.showLBinInfo", showLAvgInfo);
+        showOutBinRms = Prefs.get("plot.showOutBinRms", showOutBinRms);
         showYmmagInfo = Prefs.get("plot.showYmmagInfo", showYmmagInfo);
         showLmmagInfo = Prefs.get("plot.showLmmagInfo", showLmmagInfo);
         useNelderMeadChi2ForDetrend = Prefs.get("plot.useNelderMeadChi2ForDetrend", useNelderMeadChi2ForDetrend);
@@ -17845,6 +17869,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         Prefs.set("plot.showLRelShiftInfo", showLRelShiftInfo);
         Prefs.set("plot.showYBinInfo", showYAvgInfo);
         Prefs.set("plot.showLBinInfo", showLAvgInfo);
+        Prefs.set("plot.showOutBinRms", showOutBinRms);
         Prefs.set("plot.showYmmagInfo", showYmmagInfo);
         Prefs.set("plot.showLmmagInfo", showLmmagInfo);
         Prefs.set("plot.useNelderMeadChi2ForDetrend", useNelderMeadChi2ForDetrend);

@@ -1581,7 +1581,7 @@ public class CurveFitter {
             int len = yModel1.length;
             residual = new double[len];
             if (hasErrors[curve] || hasOpErrors[curve]) yModel1Err = new double[len];
-            for (int j = 0; j < nn[curve]; j++) {
+            for (int j = 0; j < Math.min(nn[curve], x.length); j++) {
                 if (cnt < len && !Double.isNaN(x[j]) && !Double.isNaN(y[j]) && x[j] > fitMin[curve] && x[j] < fitMax[curve]) {
                     residual[cnt] = y[j] - yModel1[cnt];
                     if (hasErrors[curve] || hasOpErrors[curve]) yModel1Err[cnt] = yerr[j];
@@ -1599,7 +1599,7 @@ public class CurveFitter {
             detrendYAverage = 0;
             double y2Ave = 0;
             if (detrendFitIndex[curve] == 4) {
-                for (int j = 0; j < nn[curve]; j++) {
+                for (int j = 0; j < Math.min(nn[curve], x.length); j++) {
                     if (!Double.isNaN(y[j]) && ((x[j] > fitMin[curve] && x[j] < fitLeft[curve]) || (x[j] > fitRight[curve] && x[j] < fitMax[curve]))) {
                         y2Ave += y[j] * y[j];
                         detrendYAverage += y[j];
@@ -1609,7 +1609,7 @@ public class CurveFitter {
 
             } else {
                 sigma = 0.0;
-                for (int j = 0; j < nn[curve]; j++) {
+                for (int j = 0; j < Math.min(nn[curve], x.length); j++) {
                     if (!Double.isNaN(x[j]) && !Double.isNaN(y[j]) && x[j] > fitMin[curve] && x[j] < fitMax[curve]) {
                         if (detrendFitIndex[curve] == 9 && useTransitFit[curve] && residual != null) {
                             sigma += residual[cnt] * residual[cnt];
@@ -1692,7 +1692,7 @@ public class CurveFitter {
                     }
                 } else if (useNelderMeadChi2ForDetrend) {
                     if (normIndex[curve] == 3) {
-                        for (int j = 0; j < nn[curve]; j++) {
+                        for (int j = 0; j < Math.min(nn[curve], x.length); j++) {
                             if (!Double.isNaN(y[j]) && !Double.isNaN(x[j]) && ((x[j] > normMin && x[j] < normLeft) || (x[j] > normRight && x[j] < normMax))) {
                                 invVar = 1 / (yerr[j] * yerr[j]);
                                 normAverage += y[j] * invVar;
@@ -1700,7 +1700,7 @@ public class CurveFitter {
                             }
                         }
                     } else {
-                        for (int j = 0; j < nn[curve]; j++) {
+                        for (int j = 0; j < Math.min(nn[curve], x.length); j++) {
                             if (!Double.isNaN(y[j]) && !Double.isNaN(x[j]) && x[j] > normMin && x[j] < normMax) {
                                 invVar = 1 / (yerr[j] * yerr[j]);
                                 normAverage += y[j] * invVar;
@@ -1711,7 +1711,7 @@ public class CurveFitter {
 
                     if (normCount == 0) {
                         normAverage = 0.0;
-                        for (int j = 0; j < nn[curve]; j++) {
+                        for (int j = 0; j < Math.min(nn[curve], x.length); j++) {
                             if (!Double.isNaN(y[j]) && !Double.isNaN(x[j])) {
                                 invVar = 1 / (yerr[j] * yerr[j]);
                                 normAverage += y[j] * invVar;
@@ -1721,14 +1721,14 @@ public class CurveFitter {
                     }
                 } else {
                     if (normIndex[curve] == 3) {
-                        for (int j = 0; j < nn[curve]; j++) {
+                        for (int j = 0; j < Math.min(nn[curve], x.length); j++) {
                             if (!Double.isNaN(y[j]) && !Double.isNaN(x[j]) && ((x[j] > normMin && x[j] < normLeft) || (x[j] > normRight && x[j] < normMax))) {
                                 normAverage += y[j];
                                 normCount += 1.0;
                             }
                         }
                     } else {
-                        for (int j = 0; j < nn[curve]; j++) {
+                        for (int j = 0; j < Math.min(nn[curve], x.length); j++) {
                             if (!Double.isNaN(y[j]) && !Double.isNaN(x[j]) && x[j] > normMin && x[j] < normMax) {
                                 normAverage += y[j];
                                 normCount += 1.0;
@@ -1738,7 +1738,7 @@ public class CurveFitter {
 
                     if (normCount == 0) {
                         normAverage = 0.0;
-                        for (int j = 0; j < nn[curve]; j++) {
+                        for (int j = 0; j < Math.min(nn[curve], x.length); j++) {
                             if (!Double.isNaN(y[j]) && !Double.isNaN(x[j])) {
                                 normAverage += y[j];
                                 normCount += 1.0;

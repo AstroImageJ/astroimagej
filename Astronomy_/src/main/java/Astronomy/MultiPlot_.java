@@ -3528,9 +3528,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     plot.addPoints(pts.x(), pts.y(), marker[curve]);
 
                     // Calculate binned RMS
-                    if (useTransitFit[curve]) {
-                        var modelBin = IJU.transitModel(pts.x(), bestFit[curve][0], bestFit[curve][4], bestFit[curve][1], bestFit[curve][2], bestFit[curve][3], orbitalPeriod[curve], forceCircularOrbit[curve] ? 0.0 : eccentricity[curve], forceCircularOrbit[curve] ? 0.0 : omega[curve], bestFit[curve][5], bestFit[curve][6], useLonAscNode[curve], lonAscNode[curve]);
-                        outBinRms[curve] = CurveFitter.calculateRms(curve, modelBin, pts.err(), pts.err(), pts.x(), pts.x(), pts.y(), pts.err(), bestFit[curve]);
+                    if (detrendFitIndex[curve] == 9 && useTransitFit[curve]) {
+                        var modelBin = yModel1[curve];//IJU.transitModel(pts.x(), bestFit[curve][0], bestFit[curve][4], bestFit[curve][1], bestFit[curve][2], bestFit[curve][3], orbitalPeriod[curve], forceCircularOrbit[curve] ? 0.0 : eccentricity[curve], forceCircularOrbit[curve] ? 0.0 : omega[curve], bestFit[curve][5], bestFit[curve][6], useLonAscNode[curve], lonAscNode[curve]);
+                        outBinRms[curve] = 1000*CurveFitter.calculateRms(curve, modelBin, pts.err(), pts.err(), pts.x(), pts.x(), pts.y(), pts.err(), bestFit[curve]);
+                        outBinRms[curve] *= bestFit[curve][0];
                     } else {
                         outBinRms[curve] = 1000*CurveFitter.calculateRms(curve, null, pts.err(), pts.err(), pts.x(), pts.x(), pts.y(), pts.err(), bestFit[curve]);
                     }
@@ -3671,7 +3672,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         llab.append(" (input average=").append(inputAverageOverSize[curve]).append(")");
                     }
                     if (showOutBinRms && binDisplay[curve]) {
-                        llab.append(" (RMS=").append(uptoThreePlaces.format(outBinRms[curve])).append("/").append(uptoTwoPlaces.format(minutes.get(curve).first())).append(" min)");
+                        llab.append(" (RMS=").append(uptoTwoPlaces.format(outBinRms[curve])).append("/").append(uptoTwoPlaces.format(minutes.get(curve).first())).append(" min)");
                     }
                     if (showLSymbolInfo) llab.append(" (").append(markers[markerIndex[curve]]).append(")");
                 }

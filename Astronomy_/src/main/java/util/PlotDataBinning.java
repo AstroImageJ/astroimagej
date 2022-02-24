@@ -48,7 +48,7 @@ public class PlotDataBinning {
             if (!accepted) throw new RuntimeException("data did not fit into a bin");
         }
 
-        var binCompleted = Arrays.stream(bins).parallel()
+        var binCompleted = Arrays.stream(bins).parallel().filter(DataBin::hasData)
                 .map(withErr ? DataBin::binnedDatumErr : DataBin::binnedDatum).toList();
         var outX = new double[binCompleted.size()];
         var outY = new double[binCompleted.size()];
@@ -75,11 +75,16 @@ public class PlotDataBinning {
             lastIndex.val++;
         }
 
+        public boolean hasData() {
+            return lastIndex.val > 0;
+        }
+
         public DoubleTriple binnedDatum() {
             return new DoubleTriple(Stat.mean(Arrays.copyOf(x, lastIndex.val)), Stat.mean(Arrays.copyOf(y, lastIndex.val)), 0);
         }
 
         public DoubleTriple binnedDatumErr() {
+            var err = Arrays.copyOf(this.err, lastIndex.val);
             var totalErr = Arrays.stream(err).sum();
             var totalErr2 = totalErr * totalErr;
             var err2 = Arrays.stream(err).map(d -> d*d).toArray();

@@ -3529,9 +3529,31 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
                     // Calculate binned RMS
                     if (detrendFitIndex[curve] == 9 && useTransitFit[curve]) {
-                        var modelBin = IJU.transitModel(pts.x(), bestFit[curve][0], bestFit[curve][4], bestFit[curve][1], bestFit[curve][2], bestFit[curve][3], orbitalPeriod[curve], forceCircularOrbit[curve] ? 0.0 : eccentricity[curve], forceCircularOrbit[curve] ? 0.0 : omega[curve], bestFit[curve][5], bestFit[curve][6], useLonAscNode[curve], lonAscNode[curve]);
-                        outBinRms[curve] = CurveFitter.calculateRms(curve, modelBin, pts.err(), pts.err(), pts.x(), pts.x(), pts.y(), pts.err(), bestFit[curve]);
+                        // Undo shift so the model works
+                        var xModelBin = Arrays.copyOf(pts.x(), pts.x().length);
+                        for (int nnn = 0; nnn < xModelBin.length; nnn++) {
+                            xModelBin[nnn] += xOffset;
+                        }
+                        var modelBin = IJU.transitModel(xModelBin, bestFit[curve][0], bestFit[curve][4], bestFit[curve][1], bestFit[curve][2], bestFit[curve][3], orbitalPeriod[curve], forceCircularOrbit[curve] ? 0.0 : eccentricity[curve], forceCircularOrbit[curve] ? 0.0 : omega[curve], bestFit[curve][5], bestFit[curve][6], useLonAscNode[curve], lonAscNode[curve]);
 
+                        // I don't know why this is needed, but with htis RMS behaves as expected
+                        for (int nnn = 0; nnn < modelBin.length; nnn++) {
+                            modelBin[nnn] /= bestFit[curve][0];
+                            if (normIndex[curve] != 0 && !mmag[curve] && !force[curve]) {
+                                modelBin[nnn] = 1 + totalScaleFactor[curve] * (modelBin[nnn] - 1.0) + subtotalShiftFactor[curve];
+                            } else {
+                                modelBin[nnn] = totalScaleFactor[curve] * modelBin[nnn] + subtotalShiftFactor[curve];
+                            }
+                        }
+
+                        outBinRms[curve] = 1000*CurveFitter.calculateRms(curve, modelBin, pts.err(), pts.err(), pts.x(), pts.x(), pts.y(), pts.err(), bestFit[curve]);
+                        outBinRms[curve] *= bestFit[curve][0];
+                        /*AIJLogger.log(outBinRms[curve]);
+                        AIJLogger.log(Arrays.equals(modelBin, yModel1[curve]));
+
+                        plot.setColor(Color.BLACK);
+                        plot.setLineWidth(2);
+                        plot.addPoints(pts.x(), modelBin, Plot.LINE);*/
                     } else {
                         outBinRms[curve] = 1000*CurveFitter.calculateRms(curve, null, pts.err(), pts.err(), pts.x(), pts.x(), pts.y(), pts.err(), bestFit[curve]);
                     }
@@ -11698,7 +11720,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         displayBinningPanel[c].setLayout(new BoxLayout(displayBinningPanel[c], BoxLayout.X_AXIS));
         displayBinningPanel[c].add(Box.createHorizontalStrut(10));
         var binCB = new JCheckBox();
-        binCB.addChangeListener($ -> {
+        binCB.addActionListener($ -> {
             binDisplay[c] = binCB.isSelected();
             updatePlot(c);
         });

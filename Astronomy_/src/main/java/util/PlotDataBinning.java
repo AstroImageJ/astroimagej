@@ -5,6 +5,7 @@ import flanagan.math.ArrayMaths;
 import ij.astro.types.Pair;
 
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.stream.IntStream;
 
 public class PlotDataBinning {
@@ -23,7 +24,7 @@ public class PlotDataBinning {
         var xMin = t.minimum();
         var xMax = t.maximum();
 
-        var minBinWidth = Stat.median(IntStream.range(1, x.length).parallel().mapToDouble(i -> x[i] - x[i-1]).toArray());
+        var minBinWidth = new ArrayMaths(IntStream.range(1, x.length).parallel().mapToDouble(i -> x[i] - x[i-1]).toArray()).minimum();
         if (minBinWidth > binWidth) binWidth = minBinWidth;
 
         var span = xMax - xMin;
@@ -48,12 +49,14 @@ public class PlotDataBinning {
             if (!accepted) throw new RuntimeException("data did not fit into a bin");
         }
 
-        var binCompleted = Arrays.stream(bins).parallel().filter(DataBin::hasData)
-                .map(withErr ? DataBin::binnedDatumErr : DataBin::binnedDatum).toList();
+        var binCompleted = Arrays.asList(Arrays.stream(bins).parallel().filter(DataBin::hasData)
+                .map(withErr ? DataBin::binnedDatumErr : DataBin::binnedDatum).toArray(DoubleTriple[]::new));
         var outX = new double[binCompleted.size()];
         var outY = new double[binCompleted.size()];
         var outErr = new double[binCompleted.size()];
 
+        // Order the elements by time
+        binCompleted.sort(Comparator.comparingDouble(c -> c.x));
         for (int i = 0; i < binCompleted.size(); i++) {
             outX[i] = binCompleted.get(i).x();
             outY[i] = binCompleted.get(i).y();

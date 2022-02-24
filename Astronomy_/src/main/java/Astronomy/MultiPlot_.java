@@ -3529,9 +3529,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
                     // Calculate binned RMS
                     if (detrendFitIndex[curve] == 9 && useTransitFit[curve]) {
-                        var modelBin = yModel1[curve];//IJU.transitModel(pts.x(), bestFit[curve][0], bestFit[curve][4], bestFit[curve][1], bestFit[curve][2], bestFit[curve][3], orbitalPeriod[curve], forceCircularOrbit[curve] ? 0.0 : eccentricity[curve], forceCircularOrbit[curve] ? 0.0 : omega[curve], bestFit[curve][5], bestFit[curve][6], useLonAscNode[curve], lonAscNode[curve]);
-                        outBinRms[curve] = 1000*CurveFitter.calculateRms(curve, modelBin, pts.err(), pts.err(), pts.x(), pts.x(), pts.y(), pts.err(), bestFit[curve]);
-                        outBinRms[curve] *= bestFit[curve][0];
+                        var modelBin = IJU.transitModel(pts.x(), bestFit[curve][0], bestFit[curve][4], bestFit[curve][1], bestFit[curve][2], bestFit[curve][3], orbitalPeriod[curve], forceCircularOrbit[curve] ? 0.0 : eccentricity[curve], forceCircularOrbit[curve] ? 0.0 : omega[curve], bestFit[curve][5], bestFit[curve][6], useLonAscNode[curve], lonAscNode[curve]);
+                        outBinRms[curve] = CurveFitter.calculateRms(curve, modelBin, pts.err(), pts.err(), pts.x(), pts.x(), pts.y(), pts.err(), bestFit[curve]);
+
                     } else {
                         outBinRms[curve] = 1000*CurveFitter.calculateRms(curve, null, pts.err(), pts.err(), pts.x(), pts.x(), pts.y(), pts.err(), bestFit[curve]);
                     }

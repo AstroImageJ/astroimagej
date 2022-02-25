@@ -1,5 +1,6 @@
 package Astronomy.postprocess;
 
+import astroj.FitsJ;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.ImageStack;
@@ -32,7 +33,9 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
         if (gd.wasOKed()) {
             processImage(imp, pallet.get());
             for (Color color : Color.values()) {
-                color.makeStackDisplayable(imp.getTitle()).show();
+                var impC = color.makeStackDisplayable(imp.getTitle());
+                FitsJ.copyHeader(imp, impC);
+                impC.show();
             }
         }
 
@@ -65,7 +68,6 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
         for (int slice = 1; slice <= stackSize; slice++) {
             var mim = MetaImage.createImage(stack.getProcessor(slice));
             for (Color color : Color.values()) {
-                //todo header copy is broken
                 color.stack.addSlice(stack.getSliceLabel(slice), mim.makeImageProcessor(pallete, color));
             }
         }
@@ -132,7 +134,7 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
      */
     record MetaPixel(short topLeft, short topRight, short bottomLeft, short bottomRight) {}
 
-    enum Pallete {//todo image icon for menu display
+    enum Pallete {
         BGGR {
             public int getColorValue(MetaPixel metaPixel, Color color) {
                 return switch (color) {

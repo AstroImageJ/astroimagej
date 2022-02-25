@@ -2,6 +2,7 @@ package astroj;
 
 import Astronomy.MultiAperture_;
 import Astronomy.MultiPlot_;
+import Astronomy.postprocess.PhotometricDebayer;
 import bislider.com.visutools.nav.bislider.*;
 import ij.*;
 import ij.astro.logging.AIJLogger;
@@ -404,7 +405,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             MenuItem combineStackImagesMenuItem, concatStacksMenuItem, copyFitsHeaderProcessMenuItem;
 
             MenuItem stackSorterMenuItem, alignStackMenuItem, imageStabilizerMenuItem, imageStabilizerApplyMenuItem;
-            MenuItem debayerMenuItem, splitChannelsMenuItem, imagesToStackMenuItem, stackToImagesMenuItem, RGBComposerMenuItem;
+            MenuItem debayerMenuItem, photoDebayerMenuItem, splitChannelsMenuItem, imagesToStackMenuItem, stackToImagesMenuItem, RGBComposerMenuItem;
             MenuItem normalizeStackMenuItem, shiftImageMenuItem, editFitsHeaderMenuItem, copyFitsHeaderMenuItem, staticProfilerMenuItem, stackToRGBMenuItem, makeCompositeMenuItem;
             MenuItem apertureSettingsMenuItem, multiApertureMenuItem, multiPlotMenuItem, openMeasurementsTableMenuItem, threeDSurfacePlotMenuItem;
             MenuItem bestEdgesMenuItem, imageCalcMenuItem, seeingProfileMenuItem, dynamicProfilerMenuItem;
@@ -1602,7 +1603,11 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
 
                 debayerMenuItem = new MenuItem("Debayer Image (FITS header aware)...");
                 debayerMenuItem.addActionListener(this);
-                colorMenu.add(debayerMenuItem); 
+                colorMenu.add(debayerMenuItem);
+
+                photoDebayerMenuItem = new MenuItem("Photometric Friendly Debayer (FITS header aware)...");
+                photoDebayerMenuItem.addActionListener(this);
+                colorMenu.add(photoDebayerMenuItem);
                 
                 makeCompositeMenuItem = new MenuItem("Make Composite color image");
                 makeCompositeMenuItem.addActionListener(this);
@@ -3999,7 +4004,12 @@ protected ImageIcon createImageIcon(String path, String description) {
                     {
                     if (imp.getType()==ImagePlus.COLOR_RGB) imp.getProcessor().reset();
                     IJ.runPlugIn("Astronomy.Debayer_Image_FITS", "");
-                    }   
+                    }
+                else if(b == photoDebayerMenuItem)
+                {
+                    if (imp.getType()==ImagePlus.COLOR_RGB) imp.getProcessor().reset();
+                    IJ.runPlugIn(PhotometricDebayer.class.getName(), "");
+                }
                 else if(b == makeCompositeMenuItem)
                     {
                     if (imp.getType()==ImagePlus.COLOR_RGB) imp.getProcessor().reset();

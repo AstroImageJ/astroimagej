@@ -11741,6 +11741,20 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             updatePlot(c);
         });
         GenericSwingDialog.getTextFieldFromSpinner(binSpin).ifPresent(s -> s.setColumns(5));
+        binSpin.addMouseWheelListener(e -> {
+            if (binSpin.getModel() instanceof SpinnerNumberModel spin) {
+                var delta = e.getPreciseWheelRotation() * spin.getStepSize().doubleValue();
+                var newValue = -delta + (Double) binSpin.getValue();
+
+                if (newValue < (Double) spin.getMinimum()) {
+                    newValue = (Double) spin.getMinimum();
+                } else if (newValue > (Double) spin.getMaximum()) {
+                    newValue = (Double) spin.getMaximum();
+                }
+
+                binSpin.setValue(newValue);
+            }
+        });
         displayBinningPanel[c].add(binSpin);
 
         mainsubpanelgroup.add(displayBinningPanel[c]);

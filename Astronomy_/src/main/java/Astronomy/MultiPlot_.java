@@ -3515,6 +3515,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     // Convert to JD
                     var binWidth = minutes.get(curve).first() / (24D * 60D);
 
+                    if (binWidth == 0) {
+                        binWidth = .001;
+                    }
+
                     // Bin data
                     var binnedData = PlotDataBinning.binDataErr(Arrays.copyOf(x[curve], nn[curve]), Arrays.copyOf(y[curve], nn[curve]), Arrays.copyOf(yerr[curve], nn[curve]), binWidth);
 

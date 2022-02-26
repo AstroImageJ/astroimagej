@@ -31,22 +31,9 @@ package nom.tam.fits;
  * #L%
  */
 
-import static nom.tam.fits.header.Aij.ANNOTATE;
-import static nom.tam.fits.header.Standard.BITPIX;
-import static nom.tam.fits.header.Standard.COMMENT;
-import static nom.tam.fits.header.Standard.END;
-import static nom.tam.fits.header.Standard.EXTEND;
-import static nom.tam.fits.header.Standard.GCOUNT;
-import static nom.tam.fits.header.Standard.GROUPS;
-import static nom.tam.fits.header.Standard.HISTORY;
-import static nom.tam.fits.header.Standard.NAXIS;
-import static nom.tam.fits.header.Standard.NAXISn;
-import static nom.tam.fits.header.Standard.PCOUNT;
-import static nom.tam.fits.header.Standard.SIMPLE;
-import static nom.tam.fits.header.Standard.TFIELDS;
-import static nom.tam.fits.header.Standard.XTENSION;
-import static nom.tam.fits.header.Standard.XTENSION_BINTABLE;
-import static nom.tam.fits.header.extra.CXCExt.LONGSTRN;
+import nom.tam.fits.FitsFactory.FitsSettings;
+import nom.tam.fits.header.IFitsHeader;
+import nom.tam.util.*;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -56,20 +43,12 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import nom.tam.fits.FitsFactory.FitsSettings;
-import nom.tam.fits.header.Aij;
-import nom.tam.fits.header.IFitsHeader;
-import nom.tam.util.ArrayDataInput;
-import nom.tam.util.ArrayDataOutput;
-import nom.tam.util.AsciiFuncs;
-import nom.tam.util.Cursor;
-import nom.tam.util.FitsIO;
-import nom.tam.util.HashedList;
-import nom.tam.util.RandomAccess;
+import static nom.tam.fits.header.Aij.ANNOTATE;
+import static nom.tam.fits.header.Standard.*;
+import static nom.tam.fits.header.extra.CXCExt.LONGSTRN;
 
 /**
  * This class describes methods to access and manipulate the header for a FITS
@@ -1228,6 +1207,7 @@ public class Header implements FitsElement {
 
         boolean firstCard = true;
         HeaderCardCountingArrayDataInput cardCountingArray = new HeaderCardCountingArrayDataInput(dis);
+        System.out.println(2);//todo fails to read second HDU, but there is not second HDU?
         try {
             while (true) {
                 HeaderCard fcard = new HeaderCard(cardCountingArray);
@@ -1269,6 +1249,7 @@ public class Header implements FitsElement {
             }
             throw new IOException("Invalid FITS Header:", new TruncatedFileException(e.getMessage()));
         } catch (Exception e) {
+            e.printStackTrace();
             throw new IOException("Invalid FITS Header", e);
         }
         if (this.fileOffset >= 0) {
@@ -1594,6 +1575,9 @@ public class Header implements FitsElement {
     }
 
     private void checkFirstCard(String key) throws IOException {
+        System.out.println(key);
+        //if (true)return;
+        //if ("?\u0004?\u0004?\u0004?".equals(key))
         if (key == null || !key.equals(SIMPLE.key()) && !key.equals(XTENSION.key())) {
             if (this.fileOffset > 0 && FitsFactory.getAllowTerminalJunk()) {
                 throw new EOFException("Not FITS format at " + this.fileOffset + ":" + key);

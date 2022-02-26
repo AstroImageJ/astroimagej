@@ -150,7 +150,6 @@ public class FitOptimization implements AutoCloseable {
 
                 if (e.isAltDown()) {
                     cleanOutliers(CleanMode.POINT_MEDIAN);
-                    AIJLogger.log(1);
                     return;
                 }
             }

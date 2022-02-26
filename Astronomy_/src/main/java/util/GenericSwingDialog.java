@@ -822,7 +822,6 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         }
         UIHelper.recursiveFontSetter(this, getFont());
         if (rootPane.getComponentCount() > 0) okay.requestFocusInWindow();
-        if (centerDialog) GUI.centerOnImageJScreen(this);
         scrollPane.validate();
         setMinimumSize(getLayout().minimumLayoutSize(scrollPane));
         setMaximumSize(new Dimension(scrollPane.getPreferredSize().width, getMaximumSize().height));
@@ -844,6 +843,9 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
                 revalidate();
             }
         });
+        if (centerDialog) {
+            GUI.centerOnImageJScreen(this);
+        }
         setVisible(true);
     }
 

@@ -1339,7 +1339,8 @@ public class ImagePlus implements ImageObserver, Measurements, Cloneable {
     	}
 	}
 
-	protected void setType(int type) {
+	@AstroImageJ(reason = "Access widen for photometric debayer", modified = true)
+	public void setType(int type) {
 		if ((type<0) || (type>COLOR_RGB))
 			return;
 		int previousType = imageType;

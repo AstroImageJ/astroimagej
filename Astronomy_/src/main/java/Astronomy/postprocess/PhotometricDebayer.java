@@ -210,8 +210,10 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
         public ImageStack stack = new ImageStack();
 
         public ImagePlus makeStackDisplayable(String title) {
-            if (this == LUMINOSITY) stack.setOptions("32-bit int");//todo when this is set luminosity breaks and the values become dumb
-            return new ImagePlus(title + " (" + name() + ")", stack);
+            if (this == LUMINOSITY) stack.setOptions("32-bit int");
+            var impC = new ImagePlus(title + " (" + name() + ")", stack);
+            if (this == Color.LUMINOSITY) impC.setType(ImagePlus.GRAY32);
+            return impC;
         }
 
         static void resetStacks() {

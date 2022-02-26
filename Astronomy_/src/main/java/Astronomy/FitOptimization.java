@@ -453,6 +453,8 @@ public class FitOptimization implements AutoCloseable {
         tpanel = MeasurementTable.getTextPanel(MeasurementTable.longerName(tableName));
 
         difNumTF.setText("" + (undoBuffer.size() > 0 ? table.size() - undoBuffer.getLast().size() : "0"));
+
+        savePrefs();
     }
 
     private void undoOutlierClean() {

@@ -106,20 +106,19 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
         public static MetaImage createImage(ImageProcessor ip) {
             var mim = new MetaImage(ip);
 
-            var pixels = ((short[]) ip.getPixels());
             for (int x = 0; x < mim.width(); x++) {
                 for (int y = 0; y < mim.height(); y++) {
-                    var xi = 2*x;//todo check coord conversion
+                    var xi = 2*x;
                     var yi = 2*y;
 
                     // Extract subpixels
-                    var topLeft = pixels[xi + (yi*mim.width())];
+                    var topLeft = (short) ip.get(xi ,yi);
                     xi++;
-                    var topRight = pixels[xi + (yi*mim.width())];
+                    var topRight = (short) ip.get(xi ,yi);
                     yi++;
-                    var bottomRight = pixels[xi + (yi*mim.width())];
+                    var bottomRight = (short) ip.get(xi ,yi);
                     xi--;
-                    var bottomLeft = pixels[xi + (yi*mim.width())];
+                    var bottomLeft = (short) ip.get(xi ,yi);
                     mim.pixels[x + (y * mim.width)] = new MetaPixel(topLeft, topRight, bottomLeft, bottomRight);
                 }
             }
@@ -130,6 +129,7 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
         public ImageProcessor makeImageProcessor(Pallete pallete, Color color) {
             var ip = color.makeImageProcessor.apply(width, height);
 
+            var m = getMetaPixel(0, 0);
             for (int x = 0; x < width; x++) {
                 for (int y = 0; y < height; y++) {
                     ip.putPixel(x, y, pallete.getColorValue(getMetaPixel(x, y), color));
@@ -143,14 +143,30 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
     /**
      * Describes the 2x2 super/meta pixel of the pallete
      */
-    record MetaPixel(short topLeft, short topRight, short bottomLeft, short bottomRight) {}
+    record MetaPixel(short topLeft, short topRight, short bottomLeft, short bottomRight) {
+        int topLeftAsInt() {
+            return Short.toUnsignedInt(topLeft);
+        }
+
+        int topRightAsInt() {
+            return Short.toUnsignedInt(topRight);
+        }
+
+        int bottomLeftAsInt() {
+            return Short.toUnsignedInt(bottomLeft);
+        }
+
+        int bottomRightAsInt() {
+            return Short.toUnsignedInt(bottomRight);
+        }
+    }
 
     enum Pallete {
         BGGR {
             public int getColorValue(MetaPixel metaPixel, Color color) {
                 return switch (color) {
-                    case RED -> metaPixel.bottomRight;
-                    case BLUE -> metaPixel.topLeft;
+                    case RED -> metaPixel.bottomRightAsInt();
+                    case BLUE -> metaPixel.topLeftAsInt();
                     case GREEN -> avgGreen(metaPixel.topRight, metaPixel.bottomLeft);
                     case LUMINOSITY -> sum(metaPixel);
                 };
@@ -159,8 +175,8 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
         GBRG {
             public int getColorValue(MetaPixel metaPixel, Color color) {
                 return switch (color) {
-                    case RED -> metaPixel.bottomLeft;
-                    case BLUE -> metaPixel.topRight;
+                    case RED -> metaPixel.bottomLeftAsInt();
+                    case BLUE -> metaPixel.topRightAsInt();
                     case GREEN -> avgGreen(metaPixel.topLeft, metaPixel.bottomRight);
                     case LUMINOSITY -> sum(metaPixel);
                 };
@@ -169,8 +185,8 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
         GRBG {
             public int getColorValue(MetaPixel metaPixel, Color color) {
                 return switch (color) {
-                    case RED -> metaPixel.topRight;
-                    case BLUE -> metaPixel.bottomLeft;
+                    case RED -> metaPixel.topRightAsInt();
+                    case BLUE -> metaPixel.bottomLeftAsInt();
                     case GREEN -> avgGreen(metaPixel.topLeft, metaPixel.bottomRight);
                     case LUMINOSITY -> sum(metaPixel);
                 };
@@ -179,8 +195,8 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
         RGGB {
             public int getColorValue(MetaPixel metaPixel, Color color) {
                 return switch (color) {
-                    case RED -> metaPixel.topLeft;
-                    case BLUE -> metaPixel.bottomRight;
+                    case RED -> metaPixel.topLeftAsInt();
+                    case BLUE -> metaPixel.bottomRightAsInt();
                     case GREEN -> avgGreen(metaPixel.topRight, metaPixel.bottomLeft);
                     case LUMINOSITY -> sum(metaPixel);
                 };
@@ -193,12 +209,12 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
             return Arrays.stream(values()).map(Enum::name).toArray(String[]::new);
         }
 
-        private static short avgGreen(short a, short b) {
-            return (short) ((a + b) / 2);
+        private static int avgGreen(short a, short b) {
+            return ((Short.toUnsignedInt(a) + Short.toUnsignedInt(b)) / 2);
         }
 
         private static int sum(MetaPixel mp) {
-            return mp.topLeft + mp.bottomLeft + mp.bottomRight + mp.topRight;
+            return mp.topLeftAsInt() + mp.bottomLeftAsInt() + mp.bottomRightAsInt() + mp.topRightAsInt();
         }
     }
 

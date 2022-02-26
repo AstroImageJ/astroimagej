@@ -105,10 +105,10 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
                     var topLeft = pixels[xi + (yi*mim.width())];
                     xi++;
                     var topRight = pixels[xi + (yi*mim.width())];
-                    yi++; xi--;
-                    var bottomLeft = pixels[xi + (yi*mim.width())];
-                    xi++;
+                    yi++;
                     var bottomRight = pixels[xi + (yi*mim.width())];
+                    xi--;
+                    var bottomLeft = pixels[xi + (yi*mim.width())];
                     mim.pixels[x + (y * mim.width)] = new MetaPixel(topLeft, topRight, bottomLeft, bottomRight);
                 }
             }

@@ -23,7 +23,18 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
         var gd = new GenericSwingDialog("Debayer");
 
         AtomicReference<Pallete> pallet = new AtomicReference<>(Pallete.RGGB);
-        gd.addChoice("Subpixel arrangement", Pallete.names(), Pallete.RGGB.name(),
+
+        // Suggest pallet from header
+        var header = FitsJ.getHeader(imp);
+        if (header != null) {
+            var cardId = FitsJ.findCardWithKey("BAYERPAT", header);
+
+            if (Arrays.asList(Pallete.names()).contains(FitsJ.getCardStringValue(header[cardId]))) {
+                pallet.set(Pallete.valueOf(FitsJ.getCardStringValue(header[cardId])));
+            }
+        }
+
+        gd.addChoice("Subpixel arrangement", Pallete.names(), pallet.get().name(),
                 (s) -> pallet.set(Pallete.valueOf(s)));
         gd.centerDialog(true);
         gd.showDialog();

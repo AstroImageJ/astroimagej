@@ -4801,6 +4801,11 @@ protected ImageIcon createImageIcon(String path, String description) {
         getStatistics();
         if (imp.getType()!=ImagePlus.COLOR_RGB)
             {
+            if (stats.stdDev == 0) {
+                autoScaleFactorLow = (stats.mean - min);
+                autoScaleFactorHigh = (max - stats.mean);
+                return;
+            }
             autoScaleFactorLow=(stats.mean - min)/stats.stdDev;
             autoScaleFactorHigh=(max - stats.mean)/stats.stdDev;
             Prefs.set("Astronomy_Tool.autoScaleFactorLow", autoScaleFactorLow);
@@ -5968,8 +5973,9 @@ void setupListeners() {
             }
             else
             {
-                min = Math.max(stats.mean - autoScaleFactorLow*stats.stdDev, minValue);
-                max = Math.min(stats.mean + autoScaleFactorHigh*stats.stdDev, maxValue);
+                var sd = stats.stdDev == 0 ? 1 : stats.stdDev;
+                min = Math.max(stats.mean - autoScaleFactorLow*sd, minValue);
+                max = Math.min(stats.mean + autoScaleFactorHigh*sd, maxValue);
             }
         } else if (!startupPrevLevels && !startupPrevLevelsPerSlice)
         {

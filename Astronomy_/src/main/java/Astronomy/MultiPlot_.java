@@ -3559,7 +3559,11 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         plot.setLineWidth(2);
                         plot.addPoints(pts.x(), modelBin, Plot.LINE);*/
                     } else {
-                        outBinRms[curve] = 1000*CurveFitter.calculateRms(curve, null, pts.err(), pts.err(), pts.x(), pts.x(), pts.y(), pts.err(), bestFit[curve]);
+                        var xModelBin = Arrays.copyOf(pts.x(), pts.x().length);
+                        for (int nnn = 0; nnn < xModelBin.length; nnn++) {
+                            xModelBin[nnn] += xOffset;
+                        }
+                        outBinRms[curve] = 1000*CurveFitter.calculateRms(curve, null, pts.err(), pts.err(), xModelBin, xModelBin, pts.y(), pts.err(), bestFit[curve]);
                     }
                 }
 

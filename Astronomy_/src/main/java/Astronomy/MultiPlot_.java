@@ -11724,6 +11724,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         displayBinningPanel[c].setLayout(new BoxLayout(displayBinningPanel[c], BoxLayout.X_AXIS));
         displayBinningPanel[c].add(Box.createHorizontalStrut(10));
         var binCB = new JCheckBox();
+        binCB.setSelected(binDisplay[c]);
         binCB.addActionListener($ -> {
             binDisplay[c] = binCB.isSelected();
             updatePlot(c);
@@ -11734,6 +11735,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         if (minutes.size() == c) {
             minutes.add(new Pair.GenericPair<>((Double) binSpin.getValue(), binSpin));
         } else {
+            binSpin.setValue(minutes.get(c).first());
             minutes.set(c, new Pair.GenericPair<>((Double) binSpin.getValue(), binSpin));
         }
         binSpin.addChangeListener($ -> {
@@ -17754,6 +17756,13 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 useCustomFitStep[i][v] = Prefs.get("plot.useCustomFitStep[" + i + "][" + v + "]", useCustomFitStep[i][v]);
                 fitStep[i][v] = Prefs.get("plot.fitStep[" + i + "][" + v + "]", fitStep[i][v]);
             }
+            if (i < minutes.size()) {
+                minutes.set(i, minutes.get(i).setFirst(Prefs.get("plot.displayBinMinutes[" + i +"]", minutes.get(i).first())));
+                minutes.get(i).second().setValue(minutes.get(i).first());
+            } else {
+                minutes.add(new Pair.GenericPair<>(Prefs.get("plot.displayBinMinutes[" + i +"]", 5), null));
+            }
+            binDisplay[i] = Prefs.get("plot.displayBin[" + i +"]", binDisplay[i]);
         }
     }
 
@@ -18048,6 +18057,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 Prefs.set("plot.useCustomFitStep[" + i + "][" + v + "]", useCustomFitStep[i][v]);
                 Prefs.set("plot.fitStep[" + i + "][" + v + "]", fitStep[i][v]);
             }
+            Prefs.set("plot.displayBinMinutes[" + i +"]", minutes.get(i).first());
+            Prefs.set("plot.displayBin[" + i +"]", binDisplay[i]);
         }
     }
 }

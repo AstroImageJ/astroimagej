@@ -4,6 +4,7 @@ import astroj.FitsJ;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.ImageStack;
+import ij.Prefs;
 import ij.plugin.filter.ExtendedPlugInFilter;
 import ij.plugin.filter.PlugInFilterRunner;
 import ij.process.ImageProcessor;
@@ -12,11 +13,16 @@ import ij.process.ShortProcessor;
 import util.GenericSwingDialog;
 
 import java.security.InvalidParameterException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 
 public class PhotometricDebayer implements ExtendedPlugInFilter {
+    private static final String ENABLE_COLOR_BASE = ".photomatric.debayer_color_";
+    private final HashMap<Color, Boolean> enabledColors = new HashMap<>();
 
     @Override
     public int showDialog(ImagePlus imp, String command, PlugInFilterRunner pfr) {
@@ -34,8 +40,19 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
             }
         }
 
+        var options = new String[Color.values().length];
+        var defaults = new boolean[Color.values().length];
+        var settings = new ArrayList<Consumer<Boolean>>();
+        for (int i = 0; i < Color.values().length; i++) {
+            options[i] = Color.values()[i].name();
+            defaults[i] = enabledColors.getOrDefault(Color.values()[i], true);
+            int finalI = i;
+            settings.add(b -> enabledColors.put(Color.values()[finalI], b));
+        }
+
         gd.addChoice("Subpixel arrangement", Pallete.names(), pallet.get().name(),
                 (s) -> pallet.set(Pallete.valueOf(s)));
+        gd.addCheckboxGroup(2, 2, options, defaults, settings);
         gd.centerDialog(true);
         gd.showDialog();
 
@@ -44,12 +61,14 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
         if (gd.wasOKed()) {
             processImage(imp, pallet.get());
             for (Color color : Color.values()) {
+                if (!enabledColors.get(color)) continue;
                 var impC = color.makeStackDisplayable(imp.getTitle());
                 FitsJ.copyHeader(imp, impC);
                 impC.show();
             }
         }
 
+        savePrefs();
         return DOES_16 | NO_CHANGES | DONE;
     }
 
@@ -64,6 +83,7 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
             IJ.error("Image is not in the form of 2x2 subpixels.");
             return DONE;
         }
+        loadPrefs();
         return DOES_16;
     }
 
@@ -79,6 +99,7 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
         for (int slice = 1; slice <= stackSize; slice++) {
             var mim = MetaImage.createImage(stack.getProcessor(slice));
             for (Color color : Color.values()) {
+                if (!enabledColors.get(color)) continue;
                 color.stack.addSlice(stack.getSliceLabel(slice), mim.makeImageProcessor(pallete, color));
             }
         }
@@ -137,6 +158,16 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
             }
 
             return ip;
+        }
+    }
+
+    private void savePrefs() {
+        enabledColors.forEach((c, b) -> Prefs.set(ENABLE_COLOR_BASE.substring(1)+c.name(), b));
+    }
+
+    private void loadPrefs() {
+        for (Color color : Color.values()) {
+            enabledColors.put(color, Prefs.getBoolean( ENABLE_COLOR_BASE+color.name(), true));
         }
     }
 

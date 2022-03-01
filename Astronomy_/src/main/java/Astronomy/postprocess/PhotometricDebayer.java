@@ -150,7 +150,6 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
         public ImageProcessor makeImageProcessor(Pallete pallete, Color color) {
             var ip = color.makeImageProcessor.apply(width, height);
 
-            var m = getMetaPixel(0, 0);
             for (int x = 0; x < width; x++) {
                 for (int y = 0; y < height; y++) {
                     ip.putPixel(x, y, pallete.getColorValue(getMetaPixel(x, y), color));

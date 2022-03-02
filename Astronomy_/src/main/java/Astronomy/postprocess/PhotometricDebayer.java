@@ -60,10 +60,15 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
 
         if (gd.wasOKed()) {
             processImage(imp, pallet.get());
+
+            //FitsJ.copyHeader(imp, impC);
+            header = FitsJ.setCard("NAXIS1", imp.getWidth()/2, "Width", header);
+            header = FitsJ.setCard("NAXIS2", imp.getHeight()/2, "Height", header);
+
             for (Color color : Color.values()) {
                 if (!enabledColors.get(color)) continue;
                 var impC = color.makeStackDisplayable(imp.getTitle());
-                FitsJ.copyHeader(imp, impC);
+                FitsJ.putHeader(impC, header);
                 impC.show();
             }
         }

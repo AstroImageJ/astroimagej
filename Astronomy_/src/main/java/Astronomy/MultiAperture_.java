@@ -2639,8 +2639,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
             // STORE RESULTS
 
+            suffix = (isRefStar[ap] ? "_C" : "_T") + (ap+1);
             if (ap == 0) {
-                suffix = isRefStar[ap] ? "_C1" : "_T1";
                 storeResults();
             } else { storeAdditionalResults(ap); }
 

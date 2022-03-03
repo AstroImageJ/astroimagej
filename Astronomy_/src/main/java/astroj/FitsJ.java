@@ -2,10 +2,16 @@
 
 package astroj;
 
-import java.util.*;
+import ij.IJ;
+import ij.ImagePlus;
+import ij.ImageStack;
+import ij.WindowManager;
+import ij.util.Tools;
 
-import ij.*;
-import ij.util.*;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.Properties;
 
 /**
  * A collection of helpful static methods to read, manipulate, write, and query FITS-based images within ImageJ.
@@ -30,14 +36,25 @@ public class FitsJ
 	public static int 	COMMENT_PART = 5;
 	public static int 	TYPE_PART = 6;
 
-	/**
+		/**
+	 * Extracts the original FITS header from the Properties object of the
+	 * ImagePlus image (or from the slice label in the case of an ImageStack)
+	 * and returns it as a String object representing all card.
+	 *
+ * @param img		The ImagePlus image which has the FITS header in it's "Info" property.
+	 */
+	public static String getHeaderString(ImagePlus img) {
+		return getHeaderString(img, img.getCurrentSlice());
+	}
+
+		/**
 	 * Extracts the original FITS header from the Properties object of the
 	 * ImagePlus image (or from the slice label in the case of an ImageStack)
 	 * and returns it as a String object representing all card.
 	 *
 	 * @param img		The ImagePlus image which has the FITS header in it's "Info" property.
 	 */
-	public static String getHeaderString (ImagePlus img)
+	public static String getHeaderString(ImagePlus img, int slice)
 		{
 		String content = null;
 
@@ -51,7 +68,6 @@ public class FitsJ
 			}
 		else if (depth > 1)
 			{
-			int slice = img.getCurrentSlice();
 			ImageStack stack = img.getStack();
 			content = stack.getSliceLabel(slice);
             if (content == null)
@@ -65,16 +81,27 @@ public class FitsJ
 		return content;
 		}
 
-	/**
+		/**
+	 * Extracts the original FITS header from the Properties object of the
+	 * ImagePlus image (or from the slice label in the case of an ImageStack)
+	 * and returns it as an array of String objects representing each card.
+	 *
+ * @param img		The ImagePlus image which has the FITS header in it's "Info" property.
+	 */
+	public static String[] getHeader(ImagePlus img) {
+		return getHeader(img, img.getCurrentSlice());
+	}
+
+		/**
 	 * Extracts the original FITS header from the Properties object of the
 	 * ImagePlus image (or from the slice label in the case of an ImageStack)
 	 * and returns it as an array of String objects representing each card.
 	 *
 	 * @param img		The ImagePlus image which has the FITS header in it's "Info" property.
 	 */
-	public static String[] getHeader (ImagePlus img)
+	public static String[] getHeader(ImagePlus img, int slice)
 		{
-		String content = getHeaderString(img);
+		String content = getHeaderString(img, slice);
 		if (content == null) return null;
 		// PARSE INTO LINES
 

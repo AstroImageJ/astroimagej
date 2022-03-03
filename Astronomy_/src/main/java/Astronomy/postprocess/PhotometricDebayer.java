@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class PhotometricDebayer implements ExtendedPlugInFilter {
     private static final String ENABLE_COLOR_BASE = ".photomatric.debayer_color_";
@@ -105,7 +106,8 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
             var mim = MetaImage.createImage(stack.getProcessor(slice));
             for (Color color : Color.values()) {
                 if (!enabledColors.get(color)) continue;
-                color.stack.addSlice(stack.getSliceLabel(slice), mim.makeImageProcessor(pallete, color));
+                var transform = buildTransforms(FitsJ.getHeader(imp, slice));
+                color.stack.addSlice(stack.getSliceLabel(slice), mim.makeImageProcessor(pallete, color, transform));
             }
         }
     }
@@ -152,17 +154,50 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
             return mim;
         }
 
-        public ImageProcessor makeImageProcessor(Pallete pallete, Color color) {
+        public ImageProcessor makeImageProcessor(Pallete pallete, Color color, Function<MetaPixel, MetaPixel> transform) {
             var ip = color.makeImageProcessor.apply(width, height);
 
             for (int x = 0; x < width; x++) {
                 for (int y = 0; y < height; y++) {
-                    ip.putPixel(x, y, pallete.getColorValue(getMetaPixel(x, y), color));
+                    ip.putPixel(x, y, pallete.getColorValue(transform.apply(getMetaPixel(x, y)), color));
                 }
             }
 
             return ip;
         }
+    }
+
+    // The extra identity functions could be removed, but are left in for clarity
+    Function<MetaPixel, MetaPixel> buildTransforms(String[] header) {
+        Function<MetaPixel, MetaPixel> transform = Function.identity();
+
+        var orderI = FitsJ.findCardWithKey("ROWORDER", header);
+        if (orderI != -1) {
+            var s = FitsJ.getCardStringValue(header[orderI]);
+            if ("BOTTOM-UP".equals(s)) {
+                transform = transform.andThen(Function.identity());
+            } else {
+                transform = transform.andThen(MetaPixel::flipY);
+            }
+        } else {
+            // IJ coords are y-inverted of fits coords, so bottom up is already correct
+            transform = transform.andThen(MetaPixel::flipY);
+        }
+
+        var bayerShiftXI = FitsJ.findCardWithKey("XBAYROFF", header);
+        var bayerShiftYI = FitsJ.findCardWithKey("YBAYROFF", header);
+
+        if (bayerShiftXI != -1) {
+            var xs = FitsJ.getCardIntValue(header[bayerShiftXI]);
+            transform = xs % 2 == 0 ? Function.identity() : MetaPixel::flipX;
+        }
+
+        if (bayerShiftYI != -1) {
+            var ys = FitsJ.getCardIntValue(header[bayerShiftYI]);
+            transform = ys % 2 == 0 ? Function.identity() : MetaPixel::flipY;
+        }
+
+        return transform;
     }
 
     private void savePrefs() {
@@ -193,6 +228,20 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
 
         int bottomRightAsInt() {
             return Short.toUnsignedInt(bottomRight);
+        }
+
+        /**
+         * @return the metaPixel rotated over the y-axis, such that the top left corner is now the top right corner
+         */
+        MetaPixel flipX() {
+            return new MetaPixel(topRight, topLeft, bottomRight, bottomLeft);
+        }
+
+        /**
+         * @return the metaPixel rotated over the x-axis, such that the top left corner is now the bottom left corner
+         */
+        MetaPixel flipY() {
+            return new MetaPixel(bottomLeft, bottomRight, topLeft, topRight);
         }
     }
 

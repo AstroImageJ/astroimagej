@@ -12,7 +12,6 @@ import ij.process.IntProcessor;
 import ij.process.ShortProcessor;
 import util.GenericSwingDialog;
 
-import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -27,6 +26,12 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
 
     @Override
     public int showDialog(ImagePlus imp, String command, PlugInFilterRunner pfr) {
+        /*AIJLogger.log(4);
+        //FITS_Writer.writeImageData(imp.getStack().getProcessor(1), null);
+        FITS_Writer.saveImage(imp, null);
+        AIJLogger.log(1);
+        if (true)return DONE;*/
+
         var gd = new GenericSwingDialog("Debayer");
 
         AtomicReference<Pallete> pallet = new AtomicReference<>(Pallete.RGGB);
@@ -36,8 +41,10 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
         if (header != null) {
             var cardId = FitsJ.findCardWithKey("BAYERPAT", header);
 
-            if (Arrays.asList(Pallete.names()).contains(FitsJ.getCardStringValue(header[cardId]))) {
-                pallet.set(Pallete.valueOf(FitsJ.getCardStringValue(header[cardId])));
+            if (cardId != -1) {
+                if (Arrays.asList(Pallete.names()).contains(FitsJ.getCardStringValue(header[cardId]))) {
+                    pallet.set(Pallete.valueOf(FitsJ.getCardStringValue(header[cardId])));
+                }
             }
         }
 

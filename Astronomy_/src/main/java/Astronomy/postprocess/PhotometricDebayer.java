@@ -75,7 +75,7 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
         }
 
         savePrefs();
-        return DOES_16 | NO_CHANGES | DONE;
+        return DOES_16 | DOES_8G | NO_CHANGES | DONE;
     }
 
     @Override
@@ -90,7 +90,7 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
             return DONE;
         }
         loadPrefs();
-        return DOES_16;
+        return DOES_16 | DOES_8G;
     }
 
     @Override
@@ -124,7 +124,6 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
 
         private MetaImage(ImageProcessor ip) {
             this(ip.getWidth() / 2, ip.getHeight() / 2);
-            if (!(ip instanceof ShortProcessor)) throw new InvalidParameterException("Must be 16-bit image.");
         }
 
         public MetaPixel getMetaPixel(int x, int y) {

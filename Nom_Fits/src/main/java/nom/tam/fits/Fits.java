@@ -31,14 +31,12 @@ package nom.tam.fits;
  * #L%
  */
 
-import java.io.Closeable;
-import java.io.DataOutput;
-import java.io.DataOutputStream;
-import java.io.EOFException;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import nom.tam.fits.compress.CompressionManager;
+import nom.tam.fits.utilities.FitsCheckSum;
+import nom.tam.util.*;
+
+import java.io.*;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,17 +44,6 @@ import java.util.NoSuchElementException;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import nom.tam.fits.compress.CompressionManager;
-import nom.tam.fits.utilities.FitsCheckSum;
-import nom.tam.util.ArrayDataInput;
-import nom.tam.util.ArrayDataOutput;
-import nom.tam.util.BufferedDataInputStream;
-import nom.tam.util.BufferedDataOutputStream;
-import nom.tam.util.BufferedFile;
-import nom.tam.util.RandomAccess;
-import nom.tam.util.SafeClose;
 
 /**
  * This class provides access to routines to allow users to read and write FITS
@@ -655,7 +642,7 @@ public class Fits implements Closeable {
             }
         }
         this.lastFileOffset = FitsUtil.findOffset(this.dataStr);
-        BasicHDU<Data> nextHDU = FitsFactory.hduFactory(hdr, data);
+        BasicHDU<Data> nextHDU = FitsFactory.hduFactory(hdr, data);//todo why 2 HDUs being found?
         this.hduList.add(nextHDU);
         return nextHDU;
     }
@@ -682,7 +669,10 @@ public class Fits implements Closeable {
                 }
                 throw new FitsException("IO error: " + e);
             } catch (IOException e) {
-                throw new FitsException("IO error: " + e);
+                // This is a hack to fix non-compliant fits files from failing to open due to the false detection of a second HDU
+                /*e.printStackTrace();
+                throw new FitsException("IO error: " + e);*/
+                this.atEOF = true;
             }
         }
     }

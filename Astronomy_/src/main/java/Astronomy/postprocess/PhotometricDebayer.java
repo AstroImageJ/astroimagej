@@ -202,12 +202,12 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
 
         if (bayerShiftXI != -1) {
             var xs = FitsJ.getCardIntValue(header[bayerShiftXI]);
-            transform = xs % 2 == 0 ? Function.identity() : MetaPixel::flipX;
+            transform = transform.andThen(xs % 2 == 0 ? Function.identity() : MetaPixel::flipX);
         }
 
         if (bayerShiftYI != -1) {
             var ys = FitsJ.getCardIntValue(header[bayerShiftYI]);
-            transform = ys % 2 == 0 ? Function.identity() : MetaPixel::flipY;
+            transform = transform.andThen(ys % 2 == 0 ? Function.identity() : MetaPixel::flipY);
         }
 
         return transform;

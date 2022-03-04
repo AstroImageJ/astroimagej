@@ -1,6 +1,5 @@
 package ij.astro.util;
 
-import ij.astro.logging.AIJLogger;
 import ij.process.*;
 
 import java.util.function.BiFunction;
@@ -261,7 +260,6 @@ public enum ImageType {
         if (ip instanceof IntProcessor) {
             return INT;
         } else if (ip instanceof ShortProcessor) {
-            AIJLogger.log(0);
             return SHORT;
         } else if (ip instanceof ByteProcessor) {
             return BYTE;

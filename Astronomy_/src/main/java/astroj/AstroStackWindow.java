@@ -14,6 +14,7 @@ import ij.io.OpenDialog;
 import ij.io.SaveDialog;
 import ij.measure.Calibration;
 import ij.plugin.FITS_Reader;
+import ij.plugin.FITS_Writer;
 import ij.plugin.FolderOpener;
 import ij.plugin.Macro_Runner;
 import ij.process.ColorProcessor;
@@ -393,7 +394,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             MenuItem exitMenuItem, flipDataXMenuItem, flipDataYMenuItem, rotateDataCWMenuItem, rotateDataCCWMenuItem, simbadSearchRadiusMenuItem;
             MenuItem openMenuItem, openInNewWindowMenuItem, openSeqMenuItem,openSeqInNewWindowMenuItem;
             MenuItem saveDisplayAsJpgMenuItem, saveDisplayAsPngMenuItem, saveDisplayAsPdfMenuItem, saveStatePNGMenuItem, saveStateJPGMenuItem, setSaveStateMenuItem;
-            MenuItem openAperturesMenuItem, saveAperturesMenuItem, saveMenuItem, saveFitsMenuItem, saveStackSequenceMenuItem, clearOverlayMenuItem;
+            MenuItem openAperturesMenuItem, saveAperturesMenuItem, saveMenuItem, saveFitsMenuItem, saveFitsStackMenuItem, saveStackSequenceMenuItem, clearOverlayMenuItem;
             MenuItem openRaDecAperturesMenuItem, saveRaDecAperturesMenuItem;
             MenuItem saveTiffMenuItem, saveJpegMenuItem, savePdfMenuItem, savePngMenuItem, saveBmpMenuItem, saveGifMenuItem, saveAviMenuItem;
             MenuItem dirAngleMenuItem, saveWCStoPrefsMenuItem, astrometryMenuItem, astrometrySetupMenuItem;
@@ -994,6 +995,10 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                 saveFitsMenuItem = new MenuItem("Save image/slice as FITS...");
                 saveFitsMenuItem.addActionListener(this);
                 fileMenu.add(saveFitsMenuItem);
+
+                saveFitsStackMenuItem = new MenuItem("Save image/stack as FITS...");
+                saveFitsStackMenuItem.addActionListener(this);
+                fileMenu.add(saveFitsStackMenuItem);
 
                 saveTiffMenuItem = new MenuItem("Save image/stack as TIFF...");
                 saveTiffMenuItem.addActionListener(this);
@@ -3639,8 +3644,11 @@ protected ImageIcon createImageIcon(String path, String description) {
                     }
                 else if (b==saveFitsMenuItem)
                     {
-                    IJ.run("FITS...");
+                    FITS_Writer.saveImage(imp, null, imp.getCurrentSlice());
                     }
+                else if (b==saveFitsStackMenuItem) {
+                    IJ.run("FITS...");
+                }
                 else if (b==saveTiffMenuItem)
                     {
                     if (imp.getType()==ImagePlus.COLOR_RGB) imp.getProcessor().reset();

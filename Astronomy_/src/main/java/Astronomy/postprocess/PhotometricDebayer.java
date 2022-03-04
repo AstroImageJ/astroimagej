@@ -7,6 +7,7 @@ import ij.ImageStack;
 import ij.Prefs;
 import ij.plugin.filter.ExtendedPlugInFilter;
 import ij.plugin.filter.PlugInFilterRunner;
+import ij.process.ByteProcessor;
 import ij.process.ImageProcessor;
 import ij.process.IntProcessor;
 import ij.process.ShortProcessor;
@@ -124,13 +125,13 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
     /**
      * x is width, y is height. Top left pixel is 0, 0
      */
-    record MetaImage(MetaPixel[] pixels, int width, int height) {
-        public MetaImage(int width, int height) {
-            this(new MetaPixel[width * height], width, height);
+    record MetaImage(MetaPixel[] pixels, int width, int height, BiFunction<Integer, Integer, ImageProcessor> ipMaker) {
+        public MetaImage(int width, int height, BiFunction<Integer, Integer, ImageProcessor> ipMaker) {
+            this(new MetaPixel[width * height], width, height, ipMaker);
         }
 
         private MetaImage(ImageProcessor ip) {
-            this(ip.getWidth() / 2, ip.getHeight() / 2);
+            this(ip.getWidth() / 2, ip.getHeight() / 2, getMaker(ip));
         }
 
         public MetaPixel getMetaPixel(int x, int y) {
@@ -161,7 +162,7 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
         }
 
         public ImageProcessor makeImageProcessor(Pallete pallete, Color color, Function<MetaPixel, MetaPixel> transform) {
-            var ip = color.makeImageProcessor.apply(width, height);
+            var ip = color.makeImageProcessor(ipMaker).apply(width, height);
 
             for (int x = 0; x < width; x++) {
                 for (int y = 0; y < height; y++) {
@@ -170,6 +171,15 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
             }
 
             return ip;
+        }
+
+        private static BiFunction<Integer, Integer, ImageProcessor> getMaker(ImageProcessor ip) {
+            if (ip instanceof ShortProcessor) {
+                return ShortProcessor::new;
+            } else if (ip instanceof ByteProcessor) {
+                return ByteProcessor::new;
+            }
+            return ShortProcessor::new;
         }
     }
 
@@ -309,16 +319,12 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
         RED,
         GREEN,
         BLUE,
-        LUMINOSITY(IntProcessor::new);
+        LUMINOSITY;
 
-        public final BiFunction<Integer, Integer, ImageProcessor> makeImageProcessor;
-
-        Color() {
-            makeImageProcessor = ShortProcessor::new;
-        }
-
-        Color(BiFunction<Integer, Integer, ImageProcessor> makeImageProcessor) {
-            this.makeImageProcessor = makeImageProcessor;
+        public BiFunction<Integer, Integer, ImageProcessor>
+        makeImageProcessor(BiFunction<Integer, Integer, ImageProcessor> ipMaker) {
+            if (this == LUMINOSITY) return IntProcessor::new;
+            return ipMaker;
         }
 
         public ImageStack stack = new ImageStack();

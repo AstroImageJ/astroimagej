@@ -335,9 +335,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			}
 		}
 
-		if (isBasic3DImage(hdus)) {
-			imageProcessor = makeStackFromManyHDU(hdus);
-		} else if (hdu instanceof TableHDU<?> tableHDU) {
+		if (hdu instanceof TableHDU<?> tableHDU) {
 			if (isTessCut(tableHDU) || isTessPostageStamp(hdus)) {
 				var data = (Object[]) tableHDU.getColumn("FLUX");
 				var hdr = convertHeaderForFfi(hdus[2].getHeader(), tableHDU);
@@ -348,6 +346,8 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 
 				imageProcessor = makeStackFrom3DData(data, tableHDU.getNRows(), makeHeadersTessCut(hdr, tableHDU, hdus));
 			}
+		} else if (isBasic3DImage(hdus)) {
+			imageProcessor = makeStackFromManyHDU(hdus);
 		} else if (hdu.getHeader().getIntValue(NAXIS) == 2) {
 			imageProcessor = twoDimensionalImageData2Processor(imgData.getKernel());
 		} else if (hdu.getHeader().getIntValue(NAXIS) == 3) {
@@ -366,7 +366,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	}
 
 	private boolean isBasic3DImage(BasicHDU<?>[] hdus) {
-		return Arrays.stream(hdus).allMatch(hdu -> hdu instanceof ImageHDU);
+		return hdus.length > 1 && Arrays.stream(hdus).allMatch(hdu -> (hdu instanceof ImageHDU) && hdu.getKernel() != null);
 	}
 
 	/**

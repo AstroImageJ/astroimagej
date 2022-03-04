@@ -1599,15 +1599,15 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                 
                 stackToImagesMenuItem = new MenuItem("Stack to Images");
                 stackToImagesMenuItem.addActionListener(this);
-                colorMenu.add(stackToImagesMenuItem);                
+                colorMenu.add(stackToImagesMenuItem);
 
-                debayerMenuItem = new MenuItem("Debayer Image (FITS header aware)...");
-                debayerMenuItem.addActionListener(this);
-                colorMenu.add(debayerMenuItem);
-
-                photoDebayerMenuItem = new MenuItem("Photometric Friendly Debayer (FITS header aware)...");
+                photoDebayerMenuItem = new MenuItem("Debayer to single color/luminosity 1/4 size stack(s)");
                 photoDebayerMenuItem.addActionListener(this);
                 colorMenu.add(photoDebayerMenuItem);
+
+                debayerMenuItem = new MenuItem("Debayer with demosaicing and smoothing options");
+                debayerMenuItem.addActionListener(this);
+                colorMenu.add(debayerMenuItem);
                 
                 makeCompositeMenuItem = new MenuItem("Make Composite color image");
                 makeCompositeMenuItem.addActionListener(this);

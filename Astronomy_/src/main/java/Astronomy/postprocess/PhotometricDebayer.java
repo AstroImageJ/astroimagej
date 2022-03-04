@@ -185,9 +185,6 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
             } else {
                 transform = transform.andThen(MetaPixel::flipY);
             }
-        } else {
-            // IJ coords are y-inverted of fits coords, so bottom up is already correct
-            transform = transform.andThen(MetaPixel::flipY);
         }
 
         var bayerShiftXI = FitsJ.findCardWithKey("XBAYROFF", header);

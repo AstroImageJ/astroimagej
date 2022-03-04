@@ -8,13 +8,14 @@ import ij.astro.AstroImageJ;
 import ij.astro.logging.AIJLogger;
 import ij.astro.logging.Translation;
 import ij.astro.util.ArrayBoxingUtil;
+import ij.astro.util.ImageType;
 import ij.astro.util.LeapSeconds;
 import ij.astro.util.SkyAlgorithmsTimeUtil;
 import ij.io.FileInfo;
 import ij.io.FileOpener;
 import ij.io.OpenDialog;
 import ij.measure.Calibration;
-import ij.process.*;
+import ij.process.ImageProcessor;
 import nom.tam.fits.*;
 import nom.tam.image.compression.hdu.CompressedImageHDU;
 import nom.tam.util.Cursor;
@@ -26,7 +27,6 @@ import java.text.DecimalFormatSymbols;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
-import java.util.function.BiFunction;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipFile;
 
@@ -335,7 +335,9 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			}
 		}
 
-		if (hdu instanceof TableHDU<?> tableHDU) {
+		if (isBasic3DImage(hdus)) {
+			imageProcessor = makeStackFromManyHDU(hdus);
+		} else if (hdu instanceof TableHDU<?> tableHDU) {
 			if (isTessCut(tableHDU) || isTessPostageStamp(hdus)) {
 				var data = (Object[]) tableHDU.getColumn("FLUX");
 				var hdr = convertHeaderForFfi(hdus[2].getHeader(), tableHDU);
@@ -361,6 +363,10 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			imageProcessor.flipVertical();
 			setProcessor(fileName, imageProcessor);
 		}
+	}
+
+	private boolean isBasic3DImage(BasicHDU<?>[] hdus) {
+		return Arrays.stream(hdus).allMatch(hdu -> hdu instanceof ImageHDU);
 	}
 
 	/**
@@ -587,6 +593,35 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		return ip;
 	}
 
+	/**
+	 * Create a stack from a fits file that only contains multiple images
+	 */
+	private ImageProcessor makeStackFromManyHDU(BasicHDU<?>[] hdus) {
+		ImageProcessor ip = null;
+		ImageStack stack = new ImageStack();
+
+		for (int i = 0; i < hdus.length; i++) {
+			// Get the Header as a String
+			var hdr = hdus[i].getHeader();
+			var header = "";
+			hdr.setSimple(true); // Needed for MA
+			final var baos = new ByteArrayOutputStream();
+			final var utf8 = StandardCharsets.UTF_8.name();
+			try (PrintStream ps = new PrintStream(baos, true, utf8)) {
+				hdr.dumpHeader(ps);
+				header = baos.toString(utf8);
+			} catch (Exception ignored) {}
+
+			ip = twoDimensionalImageData2Processor(hdus[i].getKernel());
+			stack.addSlice(fileBase + "_" + (hdus.length<10000 ? fourDigits.format(i+1) : (i+1))
+					+ (fileType.length() > 0 ? "." + fileType : "") + "\n" + header, ip);
+		}
+
+		setStack(fileName, stack);
+
+		return ip;
+	}
+
 	// The following code excerpted from ij.process.FloatProcessor serves to document the layout
 	// of the float[] that is called imgtab in getImageProcessor[]:
 	//
@@ -621,165 +656,6 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		ip = conditionImageProcessor(imgtab, imgtmp);
 		this.setProcessor(fileName, ip);
 		return ip;
-	}
-
-	enum ImageType {
-		BYTE((w, h) -> new ByteProcessor(w, h), byte[][].class) {
-			@Override
-			Object processImageData(Object rawData, int width, int height, double bzero, double bscale) {
-				if (rawData instanceof byte[][] values) {
-					final var pixelArray = new byte[width * height];
-
-					var p = 0;
-					for (int y = 0; y < height; y++) {
-						for (int x = 0; x < width; x++) {
-							// y and x are inverted because of the implementations of ImageProcessor#getPixelValue
-							double pixelValue = bzero + bscale * Byte.toUnsignedInt(values[y][x]);
-							pixelArray[p] = (byte) pixelValue;
-							p++;
-						}
-					}
-
-					return pixelArray;
-				}
-
-				throw new IllegalStateException("Incorrect raw data given to make an ImageProcessor");
-			}
-		},
-		SHORT((w, h) -> new ShortProcessor(w, h), short[][].class) {
-			@Override
-			Object processImageData(Object rawData, int width, int height, double bzero, double bscale) {
-				if (rawData instanceof short[][] values) {
-					final var pixelArray = new short[width * height];
-
-					var p = 0;
-					for (int y = 0; y < height; y++) {
-						for (int x = 0; x < width; x++) {
-							// y and x are inverted because of the implementations of ImageProcessor#getPixelValue
-							double pixelValue = bzero + bscale * values[y][x];
-							pixelArray[p] = (short) pixelValue;
-							p++;
-						}
-					}
-
-					return pixelArray;
-				}
-
-				throw new IllegalStateException("Incorrect raw data given to make an ImageProcessor");
-			}
-		},
-		//todo check if intprocessor works ok, if not use float
-		INT((w, h) -> new IntProcessor(w, h), int[][].class) {
-			@Override
-			Object processImageData(Object rawData, int width, int height, double bzero, double bscale) {
-				if (rawData instanceof int[][] values) {
-					final var pixelArray = new int[width * height];
-
-					var p = 0;
-					for (int y = 0; y < height; y++) {
-						for (int x = 0; x < width; x++) {
-							// y and x are inverted because of the implementations of ImageProcessor#getPixelValue
-							double pixelValue = bzero + bscale * values[y][x];
-							pixelArray[p] = (int) pixelValue;
-							p++;
-						}
-					}
-
-					return pixelArray;
-				}
-
-				throw new IllegalStateException("Incorrect raw data given to make an ImageProcessor");
-			}
-		},
-		//this loses accuracy for some values
-		LONG((w, h) -> new FloatProcessor(w, h), long[][].class) {
-			@Override
-			Object processImageData(Object rawData, int width, int height, double bzero, double bscale) {
-				if (rawData instanceof long[][] values) {
-					final var pixelArray = new long[width * height];
-
-					var p = 0;
-					for (int y = 0; y < height; y++) {
-						for (int x = 0; x < width; x++) {
-							// y and x are inverted because of the implementations of ImageProcessor#getPixelValue
-							double pixelValue = bzero + bscale * values[y][x];
-							pixelArray[p] = (long) pixelValue;
-							p++;
-						}
-					}
-
-					return pixelArray;
-				}
-
-				throw new IllegalStateException("Incorrect raw data given to make an ImageProcessor");
-			}
-		},
-		FLOAT((w, h) -> new FloatProcessor(w, h), float[][].class) {
-			@Override
-			Object processImageData(Object rawData, int width, int height, double bzero, double bscale) {
-				if (rawData instanceof float[][] values) {
-					final var pixelArray = new float[width * height];
-
-					var p = 0;
-					for (int y = 0; y < height; y++) {
-						for (int x = 0; x < width; x++) {
-							// y and x are inverted because of the implementations of ImageProcessor#getPixelValue
-							double pixelValue = bzero + bscale * values[y][x];
-							pixelArray[p] = (float) pixelValue;
-							p++;
-						}
-					}
-
-					return pixelArray;
-				}
-
-				throw new IllegalStateException("Incorrect raw data given to make an ImageProcessor");
-			}
-		},
-		//this loses accuracy for some values
-		DOUBLE((w, h) -> new FloatProcessor(w, h), double[][].class) {
-			@Override
-			Object processImageData(Object rawData, int width, int height, double bzero, double bscale) {
-				if (rawData instanceof double[][] values) {
-					final var pixelArray = new double[width * height];
-
-					var p = 0;
-					for (int y = 0; y < height; y++) {
-						for (int x = 0; x < width; x++) {
-							// y and x are inverted because of the implementations of ImageProcessor#getPixelValue
-							double pixelValue = bzero + bscale * values[y][x];
-							pixelArray[p] = pixelValue;
-							p++;
-						}
-					}
-
-					return pixelArray;
-				}
-
-				throw new IllegalStateException("Incorrect raw data given to make an ImageProcessor");
-			}
-		};
-
-		private final BiFunction<Integer, Integer, ? extends ImageProcessor> factory;
-		private final Class<?> rawDataType;
-
-		ImageType(BiFunction<Integer, Integer, ? extends ImageProcessor> factory, Class<?> rawDataType) {
-			this.factory = factory;
-			this.rawDataType = rawDataType;
-		}
-
-		static ImageType getType(Object rawData) {
-			for (ImageType type : values()) {
-				if (type.rawDataType.isInstance(rawData)) return type;
-			}
-			throw new IllegalStateException("Tried to open image data that was not a numeric. " + rawData.getClass());
-		}
-
-		ImageProcessor makeProcessor(int width, int height) {
-			return factory.apply(width, height);
-		}
-
-		abstract Object processImageData(Object rawData, int width, int height, double bzero, double bscale);
 	}
 
 	/**

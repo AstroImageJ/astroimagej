@@ -1,11 +1,24 @@
 package ij.plugin;
-import java.io.*;
-import java.util.Properties; 
-import ij.*;
+
+import ij.IJ;
+import ij.ImagePlus;
+import ij.ImageStack;
 import ij.astro.AstroImageJ;
-import ij.io.*;
-import ij.process.*;
-import ij.measure.*;
+import ij.astro.util.ImageType;
+import ij.io.SaveDialog;
+import ij.measure.Calibration;
+import ij.process.ByteProcessor;
+import ij.process.FloatProcessor;
+import ij.process.ImageProcessor;
+import ij.process.ShortProcessor;
+import nom.tam.fits.Fits;
+import nom.tam.fits.FitsException;
+import nom.tam.fits.HeaderCard;
+
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Properties;
 
 /**
  * This plugin saves a 16 or 32 bit image in FITS format. It is a stripped-down version of the SaveAs_FITS 
@@ -17,6 +30,7 @@ import ij.measure.*;
  * <br>Version 2008-12-15 : fixed END card recognition bug (F.V. Hessman, Univ. Goettingen).
  * <br>Version 2019-11-03 : various updates  (K.A. Collins, CfA-Harvard and Smithsonian).
  */
+@AstroImageJ(reason = "Use nom.tam.fits to write images", modified = true)
 public class FITS_Writer implements PlugIn {
 
     private int numCards = 0;
@@ -28,6 +42,12 @@ public class FITS_Writer implements PlugIn {
 	@AstroImageJ(reason = "commented out GET FILE...file deletion iff exists", modified = true)
     public void run(String path) {
 		ImagePlus imp = IJ.getImage();
+
+		if (true) { // AIJ uses nom.tam for fits export
+			saveImage(imp, path);
+			return;
+		}
+
 		ImageProcessor ip = imp.getProcessor();
 		int numImages = imp.getImageStackSize();
 		int bitDepth = imp.getBitDepth();
@@ -90,6 +110,47 @@ public class FITS_Writer implements PlugIn {
 		char[] endFiller = new char[fillerLength];
 		appendFile(endFiller, path);
     }
+
+	public static void saveImage(ImagePlus imp, String path) {
+		// GET PATH
+		if (path == null || path.trim().length() == 0) {
+			String title = "image.fits";
+			SaveDialog sd = new SaveDialog("Write FITS image",title,".fits");
+			path = sd.getDirectory()+sd.getFileName();
+		}
+
+		try (var f = new Fits()) {
+			for (int slice = 1; slice <= imp.getStackSize(); slice++) {
+				var stack = imp.getStack();
+				var ip = stack.getProcessor(slice);
+				var type = ImageType.getType(ip);
+				var data = type.make2DArray(ip);//todo handle color images
+				var hdu = Fits.makeHDU(data);
+				var header = hdu.getHeader();
+
+				// Duplicate header for new image
+				var oldHeader = getHeader(imp, slice);
+				if (oldHeader != null) {
+					for (String cardString : oldHeader) {
+						var card = HeaderCard.create(cardString);
+						if (header.containsKey(card.getKey())) {
+							continue;
+						}
+						header.addLine(card);
+					}
+				}
+
+				f.addHDU(hdu);
+			}
+
+			Files.createDirectories(Path.of(path).getParent());
+			if (!Path.of(path).toFile().exists()) Files.createFile(Path.of(path));
+			f.write(Path.of(path).toFile());
+		} catch (IOException | FitsException e) {
+			e.printStackTrace();
+			IJ.error("Failed to write file.");
+		}
+	}
 
 //	/**
 //	 * Creates a FITS header for an image which doesn't have one already.
@@ -219,9 +280,22 @@ public class FITS_Writer implements PlugIn {
 	 *
 	 * Taken from the ImageJ astroj package (www.astro.physik.uni-goettingen.de/~hessman/ImageJ/Astronomy)
 	 *
+ * @param img		The ImagePlus image which has the FITS header in it's "Info" property.
+	 */
+	public static String[] getHeader(ImagePlus img) {
+		return getHeader(img, img.getCurrentSlice());
+	}
+
+	/**
+	 * Extracts the original FITS header from the Properties object of the
+	 * ImagePlus image (or from the current slice label in the case of an ImageStack)
+	 * and returns it as an array of String objects representing each card.
+	 *
+	 * Taken from the ImageJ astroj package (www.astro.physik.uni-goettingen.de/~hessman/ImageJ/Astronomy)
+	 *
 	 * @param img		The ImagePlus image which has the FITS header in it's "Info" property.
 	 */
-	public static String[] getHeader (ImagePlus img) {
+	public static String[] getHeader (ImagePlus img, int slice) {
 		String content = null;
 
 		int depth = img.getStackSize();
@@ -232,7 +306,6 @@ public class FITS_Writer implements PlugIn {
 			content = (String)props.getProperty ("Info");
 		}
 		else if (depth > 1) {
-			int slice = img.getCurrentSlice();
 			ImageStack stack = img.getStack();
 			content = stack.getSliceLabel(slice);
             if (content == null) {

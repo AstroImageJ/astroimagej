@@ -5,6 +5,8 @@ import ij.IJ;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.Prefs;
+import ij.astro.logging.AIJLogger;
+import ij.plugin.FITS_Writer;
 import ij.plugin.filter.ExtendedPlugInFilter;
 import ij.plugin.filter.PlugInFilterRunner;
 import ij.process.ByteProcessor;
@@ -27,11 +29,14 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
 
     @Override
     public int showDialog(ImagePlus imp, String command, PlugInFilterRunner pfr) {
-        /*AIJLogger.log(4);
-        //FITS_Writer.writeImageData(imp.getStack().getProcessor(1), null);
-        FITS_Writer.saveImage(imp, null);
+        AIJLogger.log(4);
+        try {
+            FITS_Writer.saveImage(imp, null);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         AIJLogger.log(1);
-        if (true)return DONE;*/
+        if (true)return DONE;
 
         var gd = new GenericSwingDialog("Debayer");
 
@@ -98,7 +103,7 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
             return DONE;
         }
         loadPrefs();
-        return DOES_16 | DOES_8G;
+        return /*DOES_16 | DOES_8G*/DOES_ALL;
     }
 
     @Override

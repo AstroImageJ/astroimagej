@@ -112,6 +112,10 @@ public class FITS_Writer implements PlugIn {
     }
 
 	public static void saveImage(ImagePlus imp, String path) {
+		saveImage(imp, path, -1);
+	}
+
+	public static void saveImage(ImagePlus imp, String path, int specificSlice) {
 		// GET PATH
 		if (path == null || path.trim().length() == 0) {
 			String title = "image.fits";
@@ -119,8 +123,12 @@ public class FITS_Writer implements PlugIn {
 			path = sd.getDirectory()+sd.getFileName();
 		}
 
+		var doFz = path.endsWith(".fz");
+		var doGz = path.endsWith(".gz");
+
 		try (var f = new Fits()) {
 			for (int slice = 1; slice <= imp.getStackSize(); slice++) {
+				if (specificSlice != -1 && slice != specificSlice) continue;
 				var stack = imp.getStack();
 				var ip = stack.getProcessor(slice);
 				var type = ImageType.getType(ip);
@@ -145,6 +153,7 @@ public class FITS_Writer implements PlugIn {
 
 			Files.createDirectories(Path.of(path).getParent());
 			if (!Path.of(path).toFile().exists()) Files.createFile(Path.of(path));
+			//todo fz and gz compression, based on file extension? must be lossless
 			f.write(Path.of(path).toFile());
 		} catch (IOException | FitsException e) {
 			e.printStackTrace();

@@ -570,6 +570,58 @@ public class IJU {
         }
     }
 
+    /**
+     * Saves new aperture locations to preferences.
+     */
+    public static void updateApertures(ImagePlus imp) {
+        var oc = OverlayCanvas.getOverlayCanvas(imp);
+        var hasWCS = false;
+        WCS wcs = null;
+        if (imp.getWindow() instanceof astroj.AstroStackWindow asw) {
+            var ac = (AstroCanvas) oc;
+            hasWCS = asw.hasWCS();
+            if (hasWCS) wcs = asw.getWCS();
+        }
+        var apertureRois = Arrays.stream(oc.getRois()).filter(roi -> roi instanceof ApertureRoi).toArray(ApertureRoi[]::new);
+        var nApertures = apertureRois.length;
+
+        StringBuilder ra = new StringBuilder();
+        StringBuilder dec = new StringBuilder();
+        StringBuilder amag = new StringBuilder();
+        StringBuilder isref = new StringBuilder();
+        StringBuilder centroid = new StringBuilder();
+        uptoEightPlaces.setDecimalFormatSymbols(IJU.dfs);
+        for (int i = 0; i < nApertures; i++) {
+            if (i == 0) {
+                amag.append((float) apertureRois[i].getAMag());
+                if (hasWCS) {
+                    var raDec = wcs.pixels2wcs(new double[]{apertureRois[i].xPos, apertureRois[i].yPos});
+                    ra.append(uptoEightPlaces.format(raDec[0]));
+                    dec.append(uptoEightPlaces.format(raDec[1]));
+                }
+                isref.append(apertureRois[i].getIsRefStar());
+                centroid.append(apertureRois[i].getIsCentroid());
+            } else {
+                amag.append(",").append((float) apertureRois[i].getAMag());
+                if (hasWCS) {
+                    var raDec = wcs.pixels2wcs(new double[]{apertureRois[i].xPos, apertureRois[i].yPos});
+                    ra.append(",").append(uptoEightPlaces.format(raDec[0]));
+                    dec.append(",").append(uptoEightPlaces.format(raDec[1]));
+                }
+                isref.append(",").append(apertureRois[i].getIsRefStar());
+                centroid.append(",").append(apertureRois[i].getIsCentroid());
+            }
+        }
+        if (nApertures > 0) {
+            IJ.showStatus("saving new aperture locations");
+
+            Prefs.set("multiaperture.raapertures", ra.toString());
+            Prefs.set("multiaperture.decapertures", dec.toString());
+            Prefs.set("multiaperture.absmagapertures", amag.toString());
+            Prefs.set("multiaperture.isrefstar", isref.toString());
+            Prefs.set("multiaperture.centroidstar", centroid.toString());
+        }
+    }
 
     public static void saveRaDecApertures() {
         int nAps = 0;

@@ -3602,6 +3602,7 @@ protected ImageIcon createImageIcon(String path, String description) {
                     }
                 else if (b==saveRaDecAperturesMenuItem)
                     {
+                    IJU.updateApertures(imp);
                     IJU.saveRaDecApertures();
                     }
                 else if (b==saveDisplayAsJpgMenuItem)
@@ -8287,6 +8288,7 @@ double[] processCoordinatePair(JTextField textFieldA, int decimalPlacesA, int ba
             {
             OverlayCanvas.getOverlayCanvas(imp).removeApertureRoi(roi);
             }
+        IJU.updateApertures(imp);
         ac.repaint();
         }
 

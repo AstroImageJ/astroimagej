@@ -14,11 +14,19 @@ import ij.process.ShortProcessor;
 import nom.tam.fits.Fits;
 import nom.tam.fits.FitsException;
 import nom.tam.fits.HeaderCard;
+import nom.tam.fits.ImageHDU;
+import nom.tam.fits.compression.algorithm.api.ICompressorControl;
+import nom.tam.fits.compression.algorithm.rice.RiceCompressOption;
+import nom.tam.fits.compression.provider.CompressorProvider;
+import nom.tam.fits.header.Compression;
+import nom.tam.image.compression.hdu.CompressedImageHDU;
+import nom.tam.util.FitsOutputStream;
 
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Properties;
+import java.util.zip.GZIPOutputStream;
 
 /**
  * This plugin saves a 16 or 32 bit image in FITS format. It is a stripped-down version of the SaveAs_FITS 
@@ -153,8 +161,13 @@ public class FITS_Writer implements PlugIn {
 
 			Files.createDirectories(Path.of(path).getParent());
 			if (!Path.of(path).toFile().exists()) Files.createFile(Path.of(path));
-			//todo fz and gz compression, based on file extension? must be lossless
-			f.write(Path.of(path).toFile());
+
+			if (doGz) {
+				var out = new FitsOutputStream(new GZIPOutputStream(new FileOutputStream(Path.of(path).toFile())));
+				f.write(out);
+			} else {
+				f.write(Path.of(path).toFile());
+			}
 		} catch (IOException | FitsException e) {
 			e.printStackTrace();
 			IJ.error("Failed to write file.");

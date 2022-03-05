@@ -4,7 +4,7 @@ package nom.tam.util.test;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 2004 - 2015 nom-tam-fits
+ * Copyright (C) 2004 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,14 +31,13 @@ package nom.tam.util.test;
  * #L%
  */
 
-import static org.junit.Assert.assertEquals;
+import nom.tam.util.FitsFile;
+import nom.tam.util.FitsInputStream;
+import org.junit.Test;
 
 import java.io.FileInputStream;
 
-import nom.tam.util.BufferedDataInputStream;
-import nom.tam.util.BufferedFile;
-
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 public class BigFileTest {
 
@@ -53,7 +52,7 @@ public class BigFileTest {
             }
             System.out.println("Big file test.  Takes quite a while.");
             byte[] buf = new byte[100000000]; // 100 MB
-            BufferedFile bf = new BufferedFile(fname, "rw");
+            FitsFile bf = new FitsFile(fname, "rw");
             byte sample = 13;
 
             for (int i = 0; i < 30; i += 1) {
@@ -67,7 +66,7 @@ public class BigFileTest {
             bf.close();
 
             // Now try to skip within the file.
-            bf = new BufferedFile(fname, "r");
+            bf = new FitsFile(fname, "r");
             long skip = 2500000000L; // 2.5 G
 
             long val1 = bf.getFilePointer();
@@ -81,7 +80,7 @@ public class BigFileTest {
             assertEquals("SkipPos", skip, val2);
             assertEquals("SkipVal", sample, val);
 
-            BufferedDataInputStream bdis = new BufferedDataInputStream(new FileInputStream(fname));
+            FitsInputStream bdis = new FitsInputStream(new FileInputStream(fname));
             bdis.skipAllBytes(skip);
             val = bdis.read();
             bdis.close();

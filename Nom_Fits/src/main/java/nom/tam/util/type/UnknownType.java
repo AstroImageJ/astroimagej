@@ -4,7 +4,7 @@ package nom.tam.util.type;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 2004 - 2015 nom-tam-fits
+ * Copyright (C) 2004 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -33,7 +33,7 @@ package nom.tam.util.type;
 
 import java.nio.Buffer;
 
-class UnknownType extends PrimitiveTypeBase<Buffer> {
+class UnknownType extends ElementType<Buffer> {
 
     protected UnknownType() {
         super(0, true, Object.class, Object.class, null, 'L', 0);

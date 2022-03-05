@@ -4,7 +4,7 @@ package nom.tam.image.compression.tile.mask;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2016 nom-tam-fits
+ * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,16 +31,11 @@ package nom.tam.image.compression.tile.mask;
  * #L%
  */
 
-import java.nio.ByteBuffer;
-import java.nio.DoubleBuffer;
-import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
-import java.nio.LongBuffer;
-import java.nio.ShortBuffer;
-
 import nom.tam.fits.compression.algorithm.api.ICompressorControl;
 import nom.tam.image.tile.operation.buffer.TileBuffer;
-import nom.tam.util.type.PrimitiveTypes;
+import nom.tam.util.type.ElementType;
+
+import java.nio.*;
 
 /**
  * restore the null pixel values of an image.
@@ -57,17 +52,17 @@ public class NullPixelMaskRestorer extends AbstractNullPixelMask {
             ByteBuffer decompressed = ByteBuffer.allocate(getTileBuffer().getPixelSize());
             getCompressorControl().decompress(getMask(), decompressed, getCompressorControl().option());
             setMask(decompressed);
-            if (getTileBuffer().getBaseType().is(PrimitiveTypes.DOUBLE)) {
+            if (getTileBuffer().getBaseType().is(ElementType.DOUBLE)) {
                 restoreNullDoubles();
-            } else if (getTileBuffer().getBaseType().is(PrimitiveTypes.FLOAT)) {
+            } else if (getTileBuffer().getBaseType().is(ElementType.FLOAT)) {
                 restoreNullFloats();
-            } else if (getTileBuffer().getBaseType().is(PrimitiveTypes.LONG)) {
+            } else if (getTileBuffer().getBaseType().is(ElementType.LONG)) {
                 restoreNullLongs();
-            } else if (getTileBuffer().getBaseType().is(PrimitiveTypes.INT)) {
+            } else if (getTileBuffer().getBaseType().is(ElementType.INT)) {
                 restoreNullInts();
-            } else if (getTileBuffer().getBaseType().is(PrimitiveTypes.SHORT)) {
+            } else if (getTileBuffer().getBaseType().is(ElementType.SHORT)) {
                 restoreNullShorts();
-            } else if (getTileBuffer().getBaseType().is(PrimitiveTypes.BYTE)) {
+            } else if (getTileBuffer().getBaseType().is(ElementType.BYTE)) {
                 restoreNullBytes();
             }
         }

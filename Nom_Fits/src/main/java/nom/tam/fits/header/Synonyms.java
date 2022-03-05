@@ -9,7 +9,7 @@ import nom.tam.fits.header.extra.STScIExt;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2015 nom-tam-fits
+ * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -43,8 +43,10 @@ import nom.tam.fits.header.extra.STScIExt;
  * @author Richard van Nieuwenhoven
  */
 public enum Synonyms {
+    @SuppressWarnings("deprecation")
     EQUINOX(Standard.EQUINOX, Standard.EPOCH),
     TIMESYS(NOAOExt.TIMESYS, STScIExt.TIMESYS),
+    @SuppressWarnings("deprecation")
     RADESYS(Standard.RADESYS, Standard.RADECSYS),
     DARKTIME(NOAOExt.DARKTIME, SBFitsExt.DARKTIME);
 

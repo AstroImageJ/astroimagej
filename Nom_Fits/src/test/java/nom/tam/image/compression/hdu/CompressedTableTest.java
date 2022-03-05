@@ -4,7 +4,7 @@ package nom.tam.image.compression.hdu;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2016 nom-tam-fits
+ * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,20 +31,6 @@ package nom.tam.image.compression.hdu;
  * #L%
  */
 
-import static nom.tam.fits.header.Standard.XTENSION_BINTABLE;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.util.Random;
-import java.util.zip.GZIPInputStream;
-
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
 import nom.tam.fits.BinaryTableHDU;
 import nom.tam.fits.Fits;
 import nom.tam.fits.Header;
@@ -54,6 +40,17 @@ import nom.tam.fits.header.Standard;
 import nom.tam.fits.util.BlackBoxImages;
 import nom.tam.util.Cursor;
 import nom.tam.util.SafeClose;
+import org.junit.Assert;
+import org.junit.Test;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.util.Random;
+import java.util.zip.GZIPInputStream;
+
+import static nom.tam.fits.header.Standard.XTENSION_BINTABLE;
 
 public class CompressedTableTest {
 

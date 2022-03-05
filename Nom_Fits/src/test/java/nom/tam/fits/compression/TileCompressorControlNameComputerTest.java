@@ -4,7 +4,7 @@ package nom.tam.fits.compression;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2016 nom-tam-fits
+ * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,15 +31,12 @@ package nom.tam.fits.compression;
  * #L%
  */
 
-import static nom.tam.fits.header.Compression.ZCMPTYPE_HCOMPRESS_1;
-import static nom.tam.fits.header.Compression.ZCMPTYPE_PLIO_1;
-import static nom.tam.fits.header.Compression.ZCMPTYPE_RICE_1;
-import static nom.tam.fits.header.Compression.ZQUANTIZ_NO_DITHER;
-import static org.junit.Assert.assertEquals;
 import nom.tam.fits.compression.provider.CompressorControlNameComputer;
-
 import org.junit.Before;
 import org.junit.Test;
+
+import static nom.tam.fits.header.Compression.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Note that the purpose of these tests is to demonstrate how the class names

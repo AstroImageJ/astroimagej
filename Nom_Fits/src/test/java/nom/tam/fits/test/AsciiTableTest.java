@@ -4,7 +4,7 @@ package nom.tam.fits.test;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 2004 - 2015 nom-tam-fits
+ * Copyright (C) 2004 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,15 +31,15 @@ package nom.tam.fits.test;
  * #L%
  */
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import nom.tam.fits.*;
+import nom.tam.fits.header.Standard;
+import nom.tam.util.*;
+import nom.tam.util.test.ThrowAnyException;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
+import java.io.*;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
@@ -47,31 +47,8 @@ import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
-import nom.tam.fits.AsciiTable;
-import nom.tam.fits.AsciiTableHDU;
-import nom.tam.fits.BasicHDU;
-import nom.tam.fits.Fits;
-import nom.tam.fits.FitsException;
-import nom.tam.fits.FitsFactory;
-import nom.tam.fits.Header;
-import nom.tam.fits.HeaderCard;
-import nom.tam.fits.PaddingException;
-import nom.tam.fits.TableHDU;
-import nom.tam.fits.header.Standard;
-import nom.tam.util.ArrayDataInput;
-import nom.tam.util.ArrayDataOutput;
-import nom.tam.util.ArrayFuncs;
-import nom.tam.util.BufferedDataInputStream;
-import nom.tam.util.BufferedDataOutputStream;
-import nom.tam.util.BufferedFile;
-import nom.tam.util.Cursor;
-import nom.tam.util.SafeClose;
-import nom.tam.util.TestArrayFuncs;
-import nom.tam.util.test.ThrowAnyException;
-
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import static nom.tam.fits.header.DataDescription.*;
+import static org.junit.Assert.*;
 
 /**
  * This class tests the AsciiTableHDU and AsciiTable FITS classes and implicitly
@@ -179,7 +156,7 @@ public class AsciiTableTest {
         assertEquals("delrAft", 48, th.getNRows());
         th.deleteRows(50);
         assertEquals("delrAft", 48, th.getNRows());
-        BufferedFile bf = new BufferedFile("target/at1y.fits", "rw");
+        FitsFile bf = new FitsFile("target/at1y.fits", "rw");
         f.write(bf);
         bf.close();
 
@@ -192,7 +169,7 @@ public class AsciiTableTest {
         assertEquals("delcAft1", 3, th.getNCols());
         th.deleteColumnsIndexZero(0, 2);
         assertEquals("delcAft2", 1, th.getNCols());
-        bf = new BufferedFile("target/at1z.fits", "rw");
+        bf = new FitsFile("target/at1z.fits", "rw");
         f.write(bf);
         bf.close();
 
@@ -309,7 +286,7 @@ public class AsciiTableTest {
             54321
         });
 
-        BufferedFile bf = new BufferedFile("target/at1x.fits", "rw");
+        FitsFile bf = new FitsFile("target/at1x.fits", "rw");
         f.write(bf);
 
         f = new Fits("target/at1x.fits");
@@ -378,7 +355,7 @@ public class AsciiTableTest {
     // have a least one character in the output column.
     @Test
     public void nullAscii() throws Exception {
-        BufferedFile bf = new BufferedFile("target/at3.fits", "rw");
+        FitsFile bf = new FitsFile("target/at3.fits", "rw");
         Object[] o = new Object[]{
             new String[]{
                 null,
@@ -512,7 +489,7 @@ public class AsciiTableTest {
     }
 
     public void writeFile(Fits f, String name) throws Exception {
-        BufferedFile bf = new BufferedFile(name, "rw");
+        FitsFile bf = new FitsFile(name, "rw");
         f.write(bf);
         bf.flush();
         bf.close();
@@ -802,7 +779,7 @@ public class AsciiTableTest {
                 .card(Standard.TFIELDS).value(1)//
                 .card(Standard.TBCOLn.n(1)).value(4)//
                 .card(Standard.TFORMn.n(1)).value("I1");
-        ArrayDataInput str = new BufferedDataInputStream(new ByteArrayInputStream(new byte[10]));
+        ArrayDataInput str = new FitsInputStream(new ByteArrayInputStream(new byte[10]));
         FitsException actual = null;
         try {
             new AsciiTable(hdr).read(str);
@@ -821,7 +798,7 @@ public class AsciiTableTest {
                 .card(Standard.TFIELDS).value(1)//
                 .card(Standard.TBCOLn.n(1)).value(4)//
                 .card(Standard.TFORMn.n(1)).value("I1");
-        ArrayDataOutput str = new BufferedDataOutputStream(new ByteArrayOutputStream());
+        ArrayDataOutput str = new FitsOutputStream(new ByteArrayOutputStream());
         FitsException actual = null;
         try {
             new AsciiTable(hdr) {
@@ -855,7 +832,7 @@ public class AsciiTableTest {
                 .card(Standard.TFIELDS).value(1)//
                 .card(Standard.TBCOLn.n(1)).value(4)//
                 .card(Standard.TFORMn.n(1)).value("I1");
-        ArrayDataOutput str = new BufferedDataOutputStream(new ByteArrayOutputStream());
+        ArrayDataOutput str = new FitsOutputStream(new ByteArrayOutputStream());
         FitsException actual = null;
         try {
             new AsciiTable(hdr) {
@@ -875,7 +852,7 @@ public class AsciiTableTest {
     @Test
     public void testToFailedWrite2() throws Exception {
         AsciiTableHDU table = (AsciiTableHDU) Fits.makeHDU(getSampleCols());
-        ArrayDataOutput str = new BufferedDataOutputStream(new ByteArrayOutputStream()) {
+        ArrayDataOutput str = new FitsOutputStream(new ByteArrayOutputStream()) {
 
             int count = 0;
 
@@ -942,7 +919,7 @@ public class AsciiTableTest {
                 .card(Standard.TFIELDS).value(1)//
                 .card(Standard.TBCOLn.n(1)).value(2)//
                 .card(Standard.TFORMn.n(1)).value("I1");
-        ArrayDataInput str = new BufferedDataInputStream(new ByteArrayInputStream(new byte[2880 * 2]));
+        ArrayDataInput str = new FitsInputStream(new ByteArrayInputStream(new byte[2880 * 2]));
         FitsException actual = null;
         try {
             AsciiTable asciiTable = new AsciiTable(hdr);
@@ -1010,7 +987,7 @@ public class AsciiTableTest {
                 .card(Standard.TFIELDS).value(1)//
                 .card(Standard.TBCOLn.n(1)).value(2)//
                 .card(Standard.TFORMn.n(1)).value("I1");
-        ArrayDataInput str = new BufferedDataInputStream(new ByteArrayInputStream(new byte[2880 - 1]));
+        ArrayDataInput str = new FitsInputStream(new ByteArrayInputStream(new byte[2880 - 1]));
         FitsException actual = null;
         try {
             AsciiTable asciiTable = new AsciiTable(hdr) {
@@ -1039,13 +1016,7 @@ public class AsciiTableTest {
                 .card(Standard.TFIELDS).value(1)//
                 .card(Standard.TBCOLn.n(1)).value(2)//
                 .card(Standard.TFORMn.n(1)).value("I1");
-        ArrayDataInput str = new BufferedDataInputStream(new ByteArrayInputStream(new byte[2880 - 1])) {
-
-            @Override
-            public void readFully(byte[] b) throws IOException {
-                throw new IOException("XXXXX");
-            }
-        };
+        ArrayDataInput str = new FitsInputStream(new ByteArrayInputStream(new byte[2880 - 1]));
         FitsException actual = null;
         try {
             AsciiTable asciiTable = new AsciiTable(hdr);
@@ -1054,6 +1025,226 @@ public class AsciiTableTest {
             actual = e;
         }
         assertNotNull(actual);
-        assertTrue(actual.getCause().getMessage().contains("XXXXX"));
     }
+
+    @Test
+    public void testI10() throws Exception {
+        // Test configurable edge case of ASCII table with format I10 columns;
+        // there are pros and cons for interpreting these as int or long,
+        // so configurability is provided.
+        String i10loc = "src/test/resources/nom/tam/fits/test/test_i10.fits";
+
+        // Default configuration is preferInt.
+        AsciiTable t0 = (AsciiTable) new Fits(i10loc).getHDU(1).getData();
+        assertEquals(int[].class, t0.getColumn(1).getClass());
+
+        // Test with explicit configuration.
+        AsciiTable ti = readAsciiTable(i10loc, true);
+        assertEquals(int[].class, ti.getColumn(1).getClass());
+
+        AsciiTable tl = readAsciiTable(i10loc, false);
+        assertEquals(long[].class, tl.getColumn(1).getClass());
+    }
+
+    
+    private AsciiTable readAsciiTable(String location, boolean preferInt) throws Exception {
+        ArrayDataInput in = new FitsFile(location);
+        // Skip the primary HDU
+        Header primaryHdr = Header.readHeader(in);
+        Header tblHdr = Header.readHeader(in);
+        AsciiTable table = new AsciiTable(tblHdr, preferInt);
+        table.read(in);
+        return table;
+    }
+    
+    @Test
+    public void testI10Limits1() throws Exception {
+        // I10 column with TLMINn and TLMAXn defined, both within int range ==> use int...
+        String i10loc = "src/test/resources/nom/tam/fits/test/test_i10.fits";
+        int col = 1;
+        
+        // Default configuration is preferInt.
+        AsciiTableHDU hdu = (AsciiTableHDU) new Fits(i10loc).getHDU(1);
+
+        hdu.setColumnMeta(col, TLMINn, Integer.MIN_VALUE, null, true);
+        hdu.setColumnMeta(col, TLMAXn, Integer.MAX_VALUE, null, true);
+
+        AsciiTable t1 = new AsciiTable(hdu.getHeader(), true);
+        assertEquals(int.class, t1.getColumnType(col));
+        
+        t1 = new AsciiTable(hdu.getHeader(), false);
+        assertEquals(int.class, t1.getColumnType(col));
+    }
+    
+    @Test
+    public void testI10Limits2() throws Exception {
+        // I10 column with TDMINn and TDMAXn defined, both within int range ==> use int...
+        String i10loc = "src/test/resources/nom/tam/fits/test/test_i10.fits";
+        int col = 1;
+        
+        // Default configuration is preferInt.
+        AsciiTableHDU hdu = (AsciiTableHDU) new Fits(i10loc).getHDU(1);
+
+        hdu.setColumnMeta(col, TDMINn, Integer.MIN_VALUE, null, true);
+        hdu.setColumnMeta(col, TDMAXn, Integer.MAX_VALUE, null, true);
+
+        AsciiTable t1 = new AsciiTable(hdu.getHeader(), true);
+        assertEquals(int.class, t1.getColumnType(col));
+        
+        t1 = new AsciiTable(hdu.getHeader(), false);
+        assertEquals(int.class, t1.getColumnType(col));
+    }
+    
+    @Test
+    public void testI10Limits3() throws Exception {
+        // I10 column with TLMAXn in int range, but TLMINn outside ==> use long...
+        String i10loc = "src/test/resources/nom/tam/fits/test/test_i10.fits";
+        int col = 1;
+        
+        // Default configuration is preferInt.
+        AsciiTableHDU hdu = (AsciiTableHDU) new Fits(i10loc).getHDU(1);
+
+        hdu.setColumnMeta(col, TLMINn, Integer.MIN_VALUE - 1L, null, true);
+        hdu.setColumnMeta(col, TLMAXn, Integer.MAX_VALUE, null, true);
+
+        AsciiTable t1 = new AsciiTable(hdu.getHeader(), true);
+        assertEquals(long.class, t1.getColumnType(col));
+        
+        t1 = new AsciiTable(hdu.getHeader(), false);
+        assertEquals(long.class, t1.getColumnType(col));
+    }
+    
+    @Test
+    public void testI10Limits3B() throws Exception {
+        // I10 column with TLMAXn in int range, but TLMINn outside ==> use long...
+        String i10loc = "src/test/resources/nom/tam/fits/test/test_i10.fits";
+        int col = 1;
+        
+        // Default configuration is preferInt.
+        AsciiTableHDU hdu = (AsciiTableHDU) new Fits(i10loc).getHDU(1);
+
+        hdu.setColumnMeta(col, TDMINn, Integer.MIN_VALUE - 1L, null, true);
+        hdu.setColumnMeta(col, TDMAXn, Integer.MAX_VALUE, null, true);
+
+        AsciiTable t1 = new AsciiTable(hdu.getHeader(), true);
+        assertEquals(long.class, t1.getColumnType(col));
+        
+        t1 = new AsciiTable(hdu.getHeader(), false);
+        assertEquals(long.class, t1.getColumnType(col));
+    }
+    
+    @Test
+    public void testI10Limits4() throws Exception {
+        // I10 column with TLMINn in int range, but TLMAXn outside ==> use long...
+        String i10loc = "src/test/resources/nom/tam/fits/test/test_i10.fits";
+        int col = 1;
+        
+        // Default configuration is preferInt.
+        AsciiTableHDU hdu = (AsciiTableHDU) new Fits(i10loc).getHDU(1);
+
+        hdu.setColumnMeta(col, TLMINn, Integer.MIN_VALUE, null, true);
+        hdu.setColumnMeta(col, TLMAXn, Integer.MAX_VALUE + 1L, null, true);
+
+        AsciiTable t1 = new AsciiTable(hdu.getHeader(), true);
+        assertEquals(long.class, t1.getColumnType(col));
+        
+        t1 = new AsciiTable(hdu.getHeader(), false);
+        assertEquals(long.class, t1.getColumnType(col));
+    }
+    
+    @Test
+    public void testI10Limits4B() throws Exception {
+        // I10 column with TLMINn in int range, but TLMAXn outside ==> use long...
+        String i10loc = "src/test/resources/nom/tam/fits/test/test_i10.fits";
+        int col = 1;
+        
+        // Default configuration is preferInt.
+        AsciiTableHDU hdu = (AsciiTableHDU) new Fits(i10loc).getHDU(1);
+
+        hdu.setColumnMeta(col, TDMINn, Integer.MIN_VALUE, null, true);
+        hdu.setColumnMeta(col, TDMAXn, Integer.MAX_VALUE + 1L, null, true);
+
+        AsciiTable t1 = new AsciiTable(hdu.getHeader(), true);
+        assertEquals(long.class, t1.getColumnType(col));
+        
+        t1 = new AsciiTable(hdu.getHeader(), false);
+        assertEquals(long.class, t1.getColumnType(col));
+    }
+    
+    @Test
+    public void testI10Limits5() throws Exception {
+        // Only TLMIN, is defined (in int range), use caller's preference for I10...
+        String i10loc = "src/test/resources/nom/tam/fits/test/test_i10.fits";
+        int col = 1;
+        
+        // Default configuration is preferInt.
+        AsciiTableHDU hdu = (AsciiTableHDU) new Fits(i10loc).getHDU(1);
+
+        hdu.setColumnMeta(col, TLMINn, Integer.MIN_VALUE, null, true);
+
+        AsciiTable t1 = new AsciiTable(hdu.getHeader(), true);
+        assertEquals(int.class, t1.getColumnType(col));
+        
+        t1 = new AsciiTable(hdu.getHeader(), false);
+        assertEquals(long.class, t1.getColumnType(col));
+    }
+    
+    
+    @Test
+    public void testI10Limits6() throws Exception {
+        // Only TLMAX, is defined (in int range), use caller's preference for I10...
+        String i10loc = "src/test/resources/nom/tam/fits/test/test_i10.fits";
+        int col = 1;
+        
+        // Default configuration is preferInt.
+        AsciiTableHDU hdu = (AsciiTableHDU) new Fits(i10loc).getHDU(1);
+
+        hdu.setColumnMeta(col, TLMAXn, Integer.MAX_VALUE, null, true);
+
+        AsciiTable t1 = new AsciiTable(hdu.getHeader(), true);
+        assertEquals(int.class, t1.getColumnType(col));
+        
+        t1 = new AsciiTable(hdu.getHeader(), false);
+        assertEquals(long.class, t1.getColumnType(col));
+    }
+    
+    
+    @Test
+    public void testI10Limits7() throws Exception {
+        // Only TDMIN, is defined (in int range), use caller's preference for I10...
+        String i10loc = "src/test/resources/nom/tam/fits/test/test_i10.fits";
+        int col = 1;
+        
+        // Default configuration is preferInt.
+        AsciiTableHDU hdu = (AsciiTableHDU) new Fits(i10loc).getHDU(1);
+
+        hdu.setColumnMeta(col, TDMINn, Integer.MIN_VALUE, null, true);
+
+        AsciiTable t1 = new AsciiTable(hdu.getHeader(), true);
+        assertEquals(int.class, t1.getColumnType(col));
+        
+        t1 = new AsciiTable(hdu.getHeader(), false);
+        assertEquals(long.class, t1.getColumnType(col));
+    }
+    
+    
+    @Test
+    public void testI10Limits8() throws Exception {
+        // Only TDMAX, is defined (in int range), use caller's preference for I10...
+        String i10loc = "src/test/resources/nom/tam/fits/test/test_i10.fits";
+        int col = 1;
+        
+        // Default configuration is preferInt.
+        AsciiTableHDU hdu = (AsciiTableHDU) new Fits(i10loc).getHDU(1);
+
+        hdu.setColumnMeta(col, TDMAXn, Integer.MAX_VALUE, null, true);
+
+        AsciiTable t1 = new AsciiTable(hdu.getHeader(), true);
+        assertEquals(int.class, t1.getColumnType(col));
+        
+        t1 = new AsciiTable(hdu.getHeader(), false);
+        assertEquals(long.class, t1.getColumnType(col));
+    }
+   
+
 }

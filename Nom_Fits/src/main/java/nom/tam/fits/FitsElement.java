@@ -4,7 +4,7 @@ package nom.tam.fits;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 2004 - 2015 nom-tam-fits
+ * Copyright (C) 2004 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,10 +31,10 @@ package nom.tam.fits;
  * #L%
  */
 
-import java.io.IOException;
-
 import nom.tam.util.ArrayDataInput;
 import nom.tam.util.ArrayDataOutput;
+
+import java.io.IOException;
 
 /**
  * This interface allows to easily perform basic I/O operations on a FITS
@@ -54,6 +54,15 @@ public interface FitsElement {
     long getSize();
 
     /**
+     * @deprecated This method is poorly conceived as we cannot really read from 
+     *              just any <code>ArrayDataInput</code> but only those that
+     *              utilize {@link nom.tam.util.FitsDecoder} to convert binary data to
+     *              Java types. As such, this method is inherently unsafe as it can 
+     *              be used to properly interpret FITS files.
+     *              It will be removed in a future release of this library,
+     *              and will be replaced with a new <code>read(FitsDecoder)</code>
+     *              method that offers similar functionality in a safe way. 
+     * 
      * Read a data array into the current object and if needed position to the
      * beginning of the next FITS block.
      * 
@@ -64,6 +73,7 @@ public interface FitsElement {
      * @throws IOException
      *             if the read was unsuccessful.
      */
+    @Deprecated
     void read(ArrayDataInput in) throws FitsException, IOException;
 
     /**
@@ -88,9 +98,18 @@ public interface FitsElement {
     /**
      * @return <code>true</code> if this element can be rewritten?
      */
-    boolean rewriteable();
-
+    boolean rewriteable();    
+    
     /**
+     * @deprecated This method is poorly conceived as we cannot really write FITS content to 
+     *              just any <code>ArrayDataOutput</code> but only to ones that utilize
+     *              {@link nom.tam.util.FitsEncoder} to convert Java types to FITS binary
+     *              format. As such, this
+     *              method is inherently unsafe as it can be used to create unreadable FITS files.
+     *              It will be removed from the public API in a future release of this library,
+     *              and will be replaced with a new <code>write(FitsEncoder)</code>
+     *              method that offers similar functionality in a safe way. 
+     * 
      * Write the contents of the element to a data sink.
      * 
      * @param out
@@ -100,5 +119,6 @@ public interface FitsElement {
      * @throws IOException
      *             if the write was unsuccessful.
      */
+    @Deprecated
     void write(ArrayDataOutput out) throws FitsException, IOException;
 }

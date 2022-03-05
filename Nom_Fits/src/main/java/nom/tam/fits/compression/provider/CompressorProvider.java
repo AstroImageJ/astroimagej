@@ -4,7 +4,7 @@ package nom.tam.fits.compression.provider;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2015 nom-tam-fits
+ * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,51 +31,20 @@ package nom.tam.fits.compression.provider;
  * #L%
  */
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.nio.Buffer;
-import java.nio.ByteBuffer;
-import java.util.ServiceLoader;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import nom.tam.fits.BinaryTable;
 import nom.tam.fits.BinaryTableHDU;
 import nom.tam.fits.FitsException;
 import nom.tam.fits.compression.algorithm.api.ICompressOption;
 import nom.tam.fits.compression.algorithm.api.ICompressor;
 import nom.tam.fits.compression.algorithm.api.ICompressorControl;
-import nom.tam.fits.compression.algorithm.gzip.GZipCompressor.ByteGZipCompressor;
-import nom.tam.fits.compression.algorithm.gzip.GZipCompressor.DoubleGZipCompressor;
-import nom.tam.fits.compression.algorithm.gzip.GZipCompressor.FloatGZipCompressor;
-import nom.tam.fits.compression.algorithm.gzip.GZipCompressor.IntGZipCompressor;
-import nom.tam.fits.compression.algorithm.gzip.GZipCompressor.LongGZipCompressor;
-import nom.tam.fits.compression.algorithm.gzip.GZipCompressor.ShortGZipCompressor;
-import nom.tam.fits.compression.algorithm.gzip2.GZip2Compressor.ByteGZip2Compressor;
-import nom.tam.fits.compression.algorithm.gzip2.GZip2Compressor.DoubleGZip2Compressor;
-import nom.tam.fits.compression.algorithm.gzip2.GZip2Compressor.FloatGZip2Compressor;
-import nom.tam.fits.compression.algorithm.gzip2.GZip2Compressor.IntGZip2Compressor;
-import nom.tam.fits.compression.algorithm.gzip2.GZip2Compressor.LongGZip2Compressor;
-import nom.tam.fits.compression.algorithm.gzip2.GZip2Compressor.ShortGZip2Compressor;
-import nom.tam.fits.compression.algorithm.hcompress.HCompressor.ByteHCompressor;
-import nom.tam.fits.compression.algorithm.hcompress.HCompressor.DoubleHCompressor;
-import nom.tam.fits.compression.algorithm.hcompress.HCompressor.FloatHCompressor;
-import nom.tam.fits.compression.algorithm.hcompress.HCompressor.IntHCompressor;
-import nom.tam.fits.compression.algorithm.hcompress.HCompressor.ShortHCompressor;
+import nom.tam.fits.compression.algorithm.gzip.GZipCompressor.*;
+import nom.tam.fits.compression.algorithm.gzip2.GZip2Compressor.*;
+import nom.tam.fits.compression.algorithm.hcompress.HCompressor.*;
 import nom.tam.fits.compression.algorithm.plio.PLIOCompress.BytePLIOCompressor;
 import nom.tam.fits.compression.algorithm.plio.PLIOCompress.IntPLIOCompressor;
 import nom.tam.fits.compression.algorithm.plio.PLIOCompress.ShortPLIOCompressor;
-import nom.tam.fits.compression.algorithm.rice.RiceCompressor.ByteRiceCompressor;
-import nom.tam.fits.compression.algorithm.rice.RiceCompressor.DoubleRiceCompressor;
-import nom.tam.fits.compression.algorithm.rice.RiceCompressor.FloatRiceCompressor;
-import nom.tam.fits.compression.algorithm.rice.RiceCompressor.IntRiceCompressor;
-import nom.tam.fits.compression.algorithm.rice.RiceCompressor.ShortRiceCompressor;
-import nom.tam.fits.compression.algorithm.uncompressed.NoCompressCompressor.ByteNoCompressCompressor;
-import nom.tam.fits.compression.algorithm.uncompressed.NoCompressCompressor.DoubleNoCompressCompressor;
-import nom.tam.fits.compression.algorithm.uncompressed.NoCompressCompressor.FloatNoCompressCompressor;
-import nom.tam.fits.compression.algorithm.uncompressed.NoCompressCompressor.IntNoCompressCompressor;
-import nom.tam.fits.compression.algorithm.uncompressed.NoCompressCompressor.LongNoCompressCompressor;
-import nom.tam.fits.compression.algorithm.uncompressed.NoCompressCompressor.ShortNoCompressCompressor;
+import nom.tam.fits.compression.algorithm.rice.RiceCompressor.*;
+import nom.tam.fits.compression.algorithm.uncompressed.NoCompressCompressor.*;
 import nom.tam.fits.compression.provider.api.ICompressorProvider;
 import nom.tam.fits.compression.provider.param.api.ICompressParameters;
 import nom.tam.fits.compression.provider.param.api.IHeaderAccess;
@@ -83,6 +52,14 @@ import nom.tam.fits.compression.provider.param.hcompress.HCompressParameters;
 import nom.tam.fits.compression.provider.param.hcompress.HCompressQuantizeParameters;
 import nom.tam.fits.compression.provider.param.rice.RiceCompressParameters;
 import nom.tam.fits.compression.provider.param.rice.RiceQuantizeCompressParameters;
+
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.nio.Buffer;
+import java.nio.ByteBuffer;
+import java.util.ServiceLoader;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Standard implementation of the {@code ICompressorProvider} interface.
@@ -287,6 +264,9 @@ public class CompressorProvider implements ICompressorProvider {
                 }
             }
         }
+        if (defaultProvider == null) {
+            return null;
+        }
         return defaultProvider.createCompressorControl(quantAlgorithm, compressionAlgorithm, baseType);
     }
 
@@ -300,9 +280,8 @@ public class CompressorProvider implements ICompressorProvider {
                 if (clazz.length > 1) {
                     Class<?> parametersClass = clazz[1];
                     return new TileCompressorControl(compressorClass, parametersClass);
-                } else {
-                    return new TileCompressorControl(compressorClass);
                 }
+                return new TileCompressorControl(compressorClass);
             }
         }
         return null;

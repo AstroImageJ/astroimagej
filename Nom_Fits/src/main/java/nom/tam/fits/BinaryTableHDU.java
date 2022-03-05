@@ -4,7 +4,7 @@ package nom.tam.fits;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 2004 - 2015 nom-tam-fits
+ * Copyright (C) 2004 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,28 +31,14 @@ package nom.tam.fits;
  * #L%
  */
 
-import static nom.tam.fits.header.Standard.NAXIS1;
-import static nom.tam.fits.header.Standard.NAXIS2;
-import static nom.tam.fits.header.Standard.PCOUNT;
-import static nom.tam.fits.header.Standard.TDIMn;
-import static nom.tam.fits.header.Standard.TDISPn;
-import static nom.tam.fits.header.Standard.TFIELDS;
-import static nom.tam.fits.header.Standard.TFORMn;
-import static nom.tam.fits.header.Standard.THEAP;
-import static nom.tam.fits.header.Standard.TNULLn;
-import static nom.tam.fits.header.Standard.TSCALn;
-import static nom.tam.fits.header.Standard.TTYPEn;
-import static nom.tam.fits.header.Standard.TUNITn;
-import static nom.tam.fits.header.Standard.TZEROn;
-import static nom.tam.fits.header.Standard.XTENSION;
-import static nom.tam.fits.header.Standard.XTENSION_BINTABLE;
-
-import java.io.PrintStream;
-
 import nom.tam.fits.header.IFitsHeader;
 import nom.tam.fits.header.Standard;
 import nom.tam.util.ArrayDataOutput;
 import nom.tam.util.ArrayFuncs;
+
+import java.io.PrintStream;
+
+import static nom.tam.fits.header.Standard.*;
 
 /** FITS binary table header/data unit */
 public class BinaryTableHDU extends TableHDU<BinaryTable> {
@@ -189,17 +175,18 @@ public class BinaryTableHDU extends TableHDU<BinaryTable> {
         }
 
         stream.println("      Data Information:");
-        if (myData == null || this.myData.getNRows() == 0 || this.myData.getNCols() == 0) {
+        if (myData == null) {
             stream.println("         No data present");
+        } else if (this.myData.getNRows() == 0 || this.myData.getNCols() == 0) {
+            stream.println("         Empty data content");
             if (this.myData.getHeapSize() > 0) {
                 stream.println("         Heap size is: " + this.myData.getHeapSize() + " bytes");
             }
         } else {
-
             stream.println("          Number of rows=" + this.myData.getNRows());
             stream.println("          Number of columns=" + this.myData.getNCols());
             if (this.myData.getHeapSize() > 0) {
-                stream.println("          Heap size is: " + this.myData.getHeapSize() + " bytes");
+                stream.println("         Heap size is: " + this.myData.getHeapSize() + " bytes");
             }
             Object[] cols = this.myData.getFlatColumns();
             for (int i = 0; i < cols.length; i += 1) {

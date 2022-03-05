@@ -4,7 +4,7 @@ package nom.tam.image.compression.bintable;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2016 nom-tam-fits
+ * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,16 +31,15 @@ package nom.tam.image.compression.bintable;
  * #L%
  */
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-
 import nom.tam.fits.FitsException;
 import nom.tam.image.compression.hdu.CompressedTableData;
 import nom.tam.util.ArrayDataOutput;
-import nom.tam.util.BufferedDataOutputStream;
 import nom.tam.util.ByteBufferOutputStream;
 import nom.tam.util.ColumnTable;
-import nom.tam.util.SafeClose;
+import nom.tam.util.FitsOutputStream;
+
+import java.io.IOException;
+import java.nio.ByteBuffer;
 
 public class BinaryTableTileCompressor extends BinaryTableTile {
 
@@ -62,13 +61,10 @@ public class BinaryTableTileCompressor extends BinaryTableTile {
     @Override
     public void run() {
         ByteBuffer buffer = ByteBuffer.wrap(new byte[getUncompressedSizeInBytes()]);
-        ArrayDataOutput os = new BufferedDataOutputStream(new ByteBufferOutputStream(buffer));
-        try {
+        try (ArrayDataOutput os = new FitsOutputStream(new ByteBufferOutputStream(buffer))) {
             this.data.write(os, this.rowStart, this.rowEnd, this.column);
         } catch (IOException e) {
             throw new IllegalStateException("could not write compressed data", e);
-        } finally {
-            SafeClose.close(os);
         }
         buffer.rewind();
         int spaceForCompression = getUncompressedSizeInBytes();

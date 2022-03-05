@@ -709,6 +709,9 @@ public class AstroCanvas extends OverlayCanvas {
                 ((Graphics2D)g).setTransform(invCanvTrans);
                 transEnabled = false;
                 g.setColor(mouseApertureColor);
+                /*var m = getMousePosition();
+                screenX = m.x;
+                screenY = m.y;*/
                 imageX = offScreenXD(screenX);
                 imageY = offScreenYD(screenY);
 //                IJ.log(" imageX = "+imageX+"    imageY = "+imageY);
@@ -739,6 +742,8 @@ public class AstroCanvas extends OverlayCanvas {
                     g.drawOval (x2,y2,w2,h2);
                     g.drawOval (x3,y3,w3,h3);
                     }
+                g.setColor(Color.CYAN);
+                g.drawRect((int) screenX, (int) screenY, 1, 1);
 
 //                oldX3=x3;
 //                oldY3=y3;

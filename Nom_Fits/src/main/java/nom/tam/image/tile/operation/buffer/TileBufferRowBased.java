@@ -4,7 +4,7 @@ package nom.tam.image.tile.operation.buffer;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2015 nom-tam-fits
+ * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,13 +31,13 @@ package nom.tam.image.tile.operation.buffer;
  * #L%
  */
 
-import java.nio.Buffer;
+import nom.tam.util.type.ElementType;
 
-import nom.tam.util.type.PrimitiveType;
+import java.nio.Buffer;
 
 public class TileBufferRowBased extends TileBuffer {
 
-    public TileBufferRowBased(PrimitiveType<Buffer> baseType, int dataOffset, int width, int height) {
+    public TileBufferRowBased(ElementType<Buffer> baseType, int dataOffset, int width, int height) {
         super(baseType, dataOffset, width, height);
     }
 

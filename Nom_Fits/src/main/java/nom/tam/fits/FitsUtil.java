@@ -4,7 +4,7 @@ package nom.tam.fits;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 2004 - 2015 nom-tam-fits
+ * Copyright (C) 2004 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,6 +31,10 @@ package nom.tam.fits;
  * #L%
  */
 
+import nom.tam.util.ArrayDataOutput;
+import nom.tam.util.AsciiFuncs;
+import nom.tam.util.RandomAccess;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,10 +45,6 @@ import java.net.URLConnection;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import nom.tam.util.ArrayDataOutput;
-import nom.tam.util.AsciiFuncs;
-import nom.tam.util.RandomAccess;
 
 /**
  * This class comprises static utility functions used throughout the FITS
@@ -123,7 +123,18 @@ public final class FitsUtil {
         for (int i = 0; i < res.length; i += 1) {
 
             int start = i * maxLen;
-            int end = start + maxLen;
+
+            // AK: The FITS standard states that a 0 byte terminates the
+            // string before the fixed length, and characters beyond it
+            // are undefined. So, we first check where the string ends.
+            int l = 0;
+            for (; l < maxLen; l++) {
+                if (bytes[l] == 0) {
+                    break;
+                }
+            }
+            int end = start + l;
+
             // Pre-trim the string to avoid keeping memory
             // hanging around. (Suggested by J.C. Segovia, ESA).
 
@@ -170,7 +181,6 @@ public final class FitsUtil {
             }
         }
         return res;
-
     }
 
     /**
@@ -182,7 +192,7 @@ public final class FitsUtil {
         boolean[] bool = new boolean[bytes.length];
 
         for (int i = 0; i < bytes.length; i += 1) {
-            bool[i] = bytes[i] == 'T';
+            bool[i] = (bytes[i] == 'T');
         }
         return bool;
     }
@@ -195,9 +205,8 @@ public final class FitsUtil {
     public static long findOffset(Closeable o) {
         if (o instanceof RandomAccess) {
             return ((RandomAccess) o).getFilePointer();
-        } else {
-            return -1;
         }
+        return -1;
     }
 
     /**
@@ -314,15 +323,21 @@ public final class FitsUtil {
      *             if the operation was failed or not possible
      */
     public static void reposition(Closeable o, long offset) throws FitsException {
+        // TODO AK: argument should be RandomAccess instead of Closeable, since
+        // that's the only type we actually handle...
+
         if (o == null) {
             throw new FitsException("Attempt to reposition null stream");
-        } else if (!(o instanceof RandomAccess) || offset < 0) {
+        }
+
+        if (!(o instanceof RandomAccess) || offset < 0) {
             throw new FitsException("Invalid attempt to reposition stream " + o + " of type " + o.getClass().getName() + " to " + offset);
         }
+
         try {
             ((RandomAccess) o).seek(offset);
         } catch (IOException e) {
-            throw new FitsException("Unable to repostion stream " + o + " of type " + o.getClass().getName() + " to " + offset + "   Exception:" + e.getMessage(), e);
+            throw new FitsException("Unable to repostion stream " + o + " of type " + o.getClass().getName() + " to " + offset + ": " + e.getMessage(), e);
         }
     }
 

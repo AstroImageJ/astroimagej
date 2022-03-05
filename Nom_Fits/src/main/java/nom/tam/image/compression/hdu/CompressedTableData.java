@@ -4,7 +4,7 @@ package nom.tam.image.compression.hdu;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2016 nom-tam-fits
+ * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,13 +31,6 @@ package nom.tam.image.compression.hdu;
  * #L%
  */
 
-import static nom.tam.fits.header.Standard.TFIELDS;
-import static nom.tam.image.compression.bintable.BinaryTableTileDescription.tile;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 import nom.tam.fits.BinaryTable;
 import nom.tam.fits.FitsException;
 import nom.tam.fits.FitsFactory;
@@ -48,6 +41,13 @@ import nom.tam.image.compression.bintable.BinaryTableTile;
 import nom.tam.image.compression.bintable.BinaryTableTileCompressor;
 import nom.tam.image.compression.bintable.BinaryTableTileDecompressor;
 import nom.tam.util.ColumnTable;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import static nom.tam.fits.header.Standard.TFIELDS;
+import static nom.tam.image.compression.bintable.BinaryTableTileDescription.tile;
 
 public class CompressedTableData extends BinaryTable {
 
@@ -93,7 +93,7 @@ public class CompressedTableData extends BinaryTable {
         if (this.columnCompressionAlgorithms.length < ncols) {
             this.columnCompressionAlgorithms = Arrays.copyOfRange(this.columnCompressionAlgorithms, 0, ncols);
         }
-        this.tiles = new ArrayList<BinaryTableTile>();
+        this.tiles = new ArrayList<>();
         for (int column = 0; column < ncols; column++) {
             addByteVaryingColumn();
             int tileIndex = 1;
@@ -114,7 +114,7 @@ public class CompressedTableData extends BinaryTable {
         int nrows = targetHeader.getIntValue(Standard.NAXIS2);
         int ncols = compressedHeader.getIntValue(TFIELDS);
         this.rowsPerTile = compressedHeader.getIntValue(Compression.ZTILELEN, nrows);
-        this.tiles = new ArrayList<BinaryTableTile>();
+        this.tiles = new ArrayList<>();
         BinaryTable.createColumnDataFor(dataToFill);
         for (int column = 0; column < ncols; column++) {
             int tileIndex = 1;

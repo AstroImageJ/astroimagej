@@ -4,7 +4,7 @@ package nom.tam.image;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 2004 - 2015 nom-tam-fits
+ * Copyright (C) 2004 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,11 +31,11 @@ package nom.tam.image;
  * #L%
  */
 
-import java.io.IOException;
-
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import nom.tam.util.ArrayFuncs;
 import nom.tam.util.RandomAccess;
+
+import java.io.IOException;
 
 /**
  * This class provides a subset of an N-dimensional image. Modified May 2, 2000
@@ -302,7 +302,7 @@ public abstract class StandardImageTiler implements ImageTiler {
         long currentOffset = this.randomAccessFile.getFilePointer();
         Object o = ArrayFuncs.newInstance(this.base, this.dims);
         this.randomAccessFile.seek(this.fileOffset);
-        this.randomAccessFile.readLArray(o);
+        this.randomAccessFile.readArrayFully(o);
         this.randomAccessFile.seek(currentOffset);
         return o;
     }

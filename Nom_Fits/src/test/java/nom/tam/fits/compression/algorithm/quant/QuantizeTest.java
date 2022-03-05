@@ -4,7 +4,7 @@ package nom.tam.fits.compression.algorithm.quant;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2015 nom-tam-fits
+ * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,15 +31,6 @@ package nom.tam.fits.compression.algorithm.quant;
  * #L%
  */
 
-import java.io.RandomAccessFile;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.nio.ByteBuffer;
-import java.nio.DoubleBuffer;
-import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
-import java.util.Arrays;
-
 import nom.tam.fits.BinaryTableHDU;
 import nom.tam.fits.FitsFactory;
 import nom.tam.fits.Header;
@@ -54,9 +45,17 @@ import nom.tam.fits.compression.provider.param.quant.QuantizeParameters;
 import nom.tam.fits.header.Compression;
 import nom.tam.util.ArrayFuncs;
 import nom.tam.util.SafeClose;
-
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.io.RandomAccessFile;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.nio.ByteBuffer;
+import java.nio.DoubleBuffer;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+import java.util.Arrays;
 
 public class QuantizeTest {
 

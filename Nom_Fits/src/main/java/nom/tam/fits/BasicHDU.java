@@ -4,7 +4,7 @@ package nom.tam.fits;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 2004 - 2015 nom-tam-fits
+ * Copyright (C) 2004 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,30 +31,10 @@ package nom.tam.fits;
  * #L%
  */
 
-import static nom.tam.fits.header.Standard.AUTHOR;
-import static nom.tam.fits.header.Standard.BLANK;
-import static nom.tam.fits.header.Standard.BSCALE;
-import static nom.tam.fits.header.Standard.BUNIT;
-import static nom.tam.fits.header.Standard.BZERO;
-import static nom.tam.fits.header.Standard.DATAMAX;
-import static nom.tam.fits.header.Standard.DATAMIN;
-import static nom.tam.fits.header.Standard.DATE;
-import static nom.tam.fits.header.Standard.DATE_OBS;
-import static nom.tam.fits.header.Standard.EPOCH;
-import static nom.tam.fits.header.Standard.EQUINOX;
-import static nom.tam.fits.header.Standard.EXTEND;
-import static nom.tam.fits.header.Standard.GCOUNT;
-import static nom.tam.fits.header.Standard.GROUPS;
-import static nom.tam.fits.header.Standard.INSTRUME;
-import static nom.tam.fits.header.Standard.NAXIS;
-import static nom.tam.fits.header.Standard.NAXISn;
-import static nom.tam.fits.header.Standard.OBJECT;
-import static nom.tam.fits.header.Standard.OBSERVER;
-import static nom.tam.fits.header.Standard.ORIGIN;
-import static nom.tam.fits.header.Standard.PCOUNT;
-import static nom.tam.fits.header.Standard.REFERENC;
-import static nom.tam.fits.header.Standard.TELESCOP;
-import static nom.tam.util.LoggerHelper.getLogger;
+import nom.tam.fits.header.Bitpix;
+import nom.tam.fits.header.IFitsHeader;
+import nom.tam.util.ArrayDataInput;
+import nom.tam.util.ArrayDataOutput;
 
 import java.io.IOException;
 import java.io.PrintStream;
@@ -62,14 +42,14 @@ import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import nom.tam.fits.header.IFitsHeader;
-import nom.tam.fits.header.Standard;
-import nom.tam.util.ArrayDataInput;
-import nom.tam.util.ArrayDataOutput;
+import static nom.tam.fits.header.Standard.*;
+import static nom.tam.util.LoggerHelper.getLogger;
 
 /**
  * This abstract class is the parent of all HDU types. It provides basic
  * functionality for an HDU.
+ * 
+ * @param <DataClass>  the generic type of data contained in this HDU instance.
  */
 public abstract class BasicHDU<DataClass extends Data> implements FitsElement {
 
@@ -77,16 +57,40 @@ public abstract class BasicHDU<DataClass extends Data> implements FitsElement {
 
     private static final Logger LOG = getLogger(BasicHDU.class);
 
+    /**
+     * @deprecated Use {@link Bitpix#VALUE_FOR_BYTE} instead.
+     */
+    @Deprecated
     public static final int BITPIX_BYTE = 8;
 
+    /**
+     * @deprecated Use {@link Bitpix#VALUE_FOR_SHORT} instead.
+     */
+    @Deprecated
     public static final int BITPIX_SHORT = 16;
 
+    /**
+     * @deprecated Use {@link Bitpix#VALUE_FOR_INT} instead.
+     */
+    @Deprecated
     public static final int BITPIX_INT = 32;
 
+    /**
+     * @deprecated Use {@link Bitpix#VALUE_FOR_LONG} instead.
+     */
+    @Deprecated
     public static final int BITPIX_LONG = 64;
 
+    /**
+     * @deprecated Use {@link Bitpix#VALUE_FOR_FLOAT} instead.
+     */
+    @Deprecated
     public static final int BITPIX_FLOAT = -32;
 
+    /**
+     * @deprecated Use {@link Bitpix#VALUE_FOR_DOUBLE} instead.
+     */
+    @Deprecated
     public static final int BITPIX_DOUBLE = -64;
 
 
@@ -141,25 +145,6 @@ public abstract class BasicHDU<DataClass extends Data> implements FitsElement {
      */
     public static boolean isData(Object o) {
         return false;
-    }
-
-
-    /**
-     * Safely replace a card in the header, knowing that no exception will
-     * occur. Only for internal use!
-     * 
-     * @param key
-     *            the key of the card
-     * @param isString
-     *            is the value a String
-     * @param value
-     *            the String representation of the value
-     */
-    protected void saveReplaceCard(String key, boolean isString, String value) {
-        HeaderCard card = HeaderCard.saveNewHeaderCard(key, null, isString);
-        card.setValue(value);
-        this.myHeader.deleteKey(card.getKey());
-        this.myHeader.addLine(card);
     }
 
     public void addValue(IFitsHeader key, boolean val) throws HeaderCardException {
@@ -267,22 +252,25 @@ public abstract class BasicHDU<DataClass extends Data> implements FitsElement {
 
         return axes;
     }
+    
+    /** 
+     * Return the Bitpix enum type for this HDU.
+     * 
+     * @return      The Bitpix enum object for this HDU.
+     * 
+     * @throws FitsException    if the BITPIX value in the header is absent or invalid.
+     * 
+     * @since 1.16
+     * 
+     * @see #getBitPix()
+     * @see Header#setBitpix(Bitpix)
+     */
+    public Bitpix getBitpix() throws FitsException {
+        return Bitpix.fromHeader(myHeader);
+    }
 
-    public int getBitPix() throws FitsException {
-        int bitpix = this.myHeader.getIntValue(Standard.BITPIX, -1);
-        switch (bitpix) {
-            case BITPIX_BYTE:
-            case BITPIX_SHORT:
-            case BITPIX_INT:
-            case BITPIX_LONG:
-            case BITPIX_FLOAT:
-            case BITPIX_DOUBLE:
-                break;
-            default:
-                throw new FitsException("Unknown BITPIX type " + bitpix);
-        }
-
-        return bitpix;
+    public final int getBitPix() throws FitsException {
+        return getBitpix().getHeaderValue();
     }
 
     public long getBlankValue() throws FitsException {
@@ -574,10 +562,10 @@ public abstract class BasicHDU<DataClass extends Data> implements FitsElement {
 
         if (newPrimary && !canBePrimary()) {
             throw new FitsException("Invalid attempt to make HDU of type:" + this.getClass().getName() + " primary.");
-        } else {
-            this.isPrimary = newPrimary;
-        }
-
+        } 
+        
+        this.isPrimary = newPrimary;
+       
         // Some FITS readers don't like the PCOUNT and GCOUNT keywords
         // in a primary array or they EXTEND keyword in extensions.
 
@@ -607,7 +595,9 @@ public abstract class BasicHDU<DataClass extends Data> implements FitsElement {
             HeaderCard pcard = this.myHeader.findCard(PCOUNT);
             HeaderCard gcard = this.myHeader.findCard(GCOUNT);
 
-            this.myHeader.getCard(2 + naxis);
+            //this.myHeader.getCard(2 + naxis);
+            this.myHeader.findCard(NAXIS.key() + naxis);
+            
             if (pcard == null) {
                 this.myHeader.addValue(PCOUNT, pcount);
             }

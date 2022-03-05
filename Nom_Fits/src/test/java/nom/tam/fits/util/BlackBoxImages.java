@@ -4,7 +4,7 @@ package nom.tam.fits.util;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2015 nom-tam-fits
+ * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,6 +31,8 @@ package nom.tam.fits.util;
  * #L%
  */
 
+import nom.tam.util.SafeClose;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -40,8 +42,6 @@ import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.util.zip.GZIPInputStream;
-
-import nom.tam.util.SafeClose;
 
 public class BlackBoxImages {
 

@@ -4,7 +4,7 @@ package nom.tam.image.compression.hdu;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2015 nom-tam-fits
+ * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,43 +31,6 @@ package nom.tam.image.compression.hdu;
  * #L%
  */
 
-import static nom.tam.fits.header.Checksum.CHECKSUM;
-import static nom.tam.fits.header.Checksum.DATASUM;
-import static nom.tam.fits.header.Compression.ZBITPIX;
-import static nom.tam.fits.header.Compression.ZBLANK;
-import static nom.tam.fits.header.Compression.ZBLOCKED;
-import static nom.tam.fits.header.Compression.ZCMPTYPE;
-import static nom.tam.fits.header.Compression.ZCTYPn;
-import static nom.tam.fits.header.Compression.ZDATASUM;
-import static nom.tam.fits.header.Compression.ZDITHER0;
-import static nom.tam.fits.header.Compression.ZEXTEND;
-import static nom.tam.fits.header.Compression.ZFORMn;
-import static nom.tam.fits.header.Compression.ZGCOUNT;
-import static nom.tam.fits.header.Compression.ZHECKSUM;
-import static nom.tam.fits.header.Compression.ZIMAGE;
-import static nom.tam.fits.header.Compression.ZNAMEn;
-import static nom.tam.fits.header.Compression.ZNAXIS;
-import static nom.tam.fits.header.Compression.ZNAXISn;
-import static nom.tam.fits.header.Compression.ZPCOUNT;
-import static nom.tam.fits.header.Compression.ZQUANTIZ;
-import static nom.tam.fits.header.Compression.ZSIMPLE;
-import static nom.tam.fits.header.Compression.ZTABLE;
-import static nom.tam.fits.header.Compression.ZTENSION;
-import static nom.tam.fits.header.Compression.ZTILELEN;
-import static nom.tam.fits.header.Compression.ZTILEn;
-import static nom.tam.fits.header.Compression.ZVALn;
-import static nom.tam.fits.header.Standard.BITPIX;
-import static nom.tam.fits.header.Standard.EXTNAME;
-import static nom.tam.fits.header.Standard.GCOUNT;
-import static nom.tam.fits.header.Standard.NAXIS;
-import static nom.tam.fits.header.Standard.NAXISn;
-import static nom.tam.fits.header.Standard.PCOUNT;
-import static nom.tam.fits.header.Standard.TFORMn;
-import static nom.tam.fits.header.Standard.THEAP;
-import static nom.tam.fits.header.Standard.XTENSION;
-
-import java.util.Map;
-
 import nom.tam.fits.HeaderCard;
 import nom.tam.fits.HeaderCardException;
 import nom.tam.fits.header.Compression;
@@ -75,6 +38,13 @@ import nom.tam.fits.header.GenericKey;
 import nom.tam.fits.header.IFitsHeader;
 import nom.tam.fits.header.IFitsHeader.VALUE;
 import nom.tam.util.Cursor;
+
+import java.util.Map;
+
+import static nom.tam.fits.header.Checksum.CHECKSUM;
+import static nom.tam.fits.header.Checksum.DATASUM;
+import static nom.tam.fits.header.Compression.*;
+import static nom.tam.fits.header.Standard.*;
 
 enum BackupRestoreUnCompressedHeaderCard {
     MAP_ANY(null) {
@@ -129,6 +99,7 @@ enum BackupRestoreUnCompressedHeaderCard {
     MAP_ZBLANK(ZBLANK),
     MAP_ZTILELEN(ZTILELEN),
     MAP_ZCTYPn(ZCTYPn),
+    @SuppressWarnings("deprecation")
     MAP_ZBLOCKED(ZBLOCKED),
     MAP_ZCMPTYPE(ZCMPTYPE),
     MAP_ZDATASUM(ZDATASUM),

@@ -1,32 +1,22 @@
 package nom.tam.fits.compression.algorithm.gzip;
 
-import java.io.IOException;
-import java.nio.Buffer;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.DoubleBuffer;
-import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
-import java.nio.LongBuffer;
-import java.nio.ShortBuffer;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.GZIPOutputStream;
-
 import nom.tam.fits.compression.algorithm.api.ICompressor;
 import nom.tam.util.ArrayFuncs;
 import nom.tam.util.ByteBufferInputStream;
 import nom.tam.util.ByteBufferOutputStream;
 import nom.tam.util.FitsIO;
-import nom.tam.util.SafeClose;
-import nom.tam.util.type.PrimitiveType;
-import nom.tam.util.type.PrimitiveTypeHandler;
-import nom.tam.util.type.PrimitiveTypes;
+import nom.tam.util.type.ElementType;
+
+import java.io.IOException;
+import java.nio.*;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 /*
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2015 nom-tam-fits
+ * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -179,9 +169,9 @@ public abstract class GZipCompressor<T extends Buffer> implements ICompressor<T>
 
     private final class TypeConversion<B extends Buffer> {
 
-        private final PrimitiveType<B> from;
+        private final ElementType<B> from;
 
-        private final PrimitiveType<T> to;
+        private final ElementType<T> to;
 
         private final B fromBuffer;
 
@@ -191,9 +181,9 @@ public abstract class GZipCompressor<T extends Buffer> implements ICompressor<T>
 
         private final Object toArray;
 
-        private TypeConversion(PrimitiveType<B> from) {
+        private TypeConversion(ElementType<B> from) {
             this.from = from;
-            this.to = getPrimitiveType(GZipCompressor.this.primitiveSize);
+            this.to = getElementType(GZipCompressor.this.primitiveSize);
             this.toBuffer = GZipCompressor.this.nioBuffer;
             this.fromBuffer = from.asTypedBuffer(ByteBuffer.wrap(GZipCompressor.this.buffer));
             this.fromArray = from.newArray(DEFAULT_GZIP_BUFFER_SIZE / from.size());
@@ -220,7 +210,7 @@ public abstract class GZipCompressor<T extends Buffer> implements ICompressor<T>
 
     protected T nioBuffer;
 
-    private final byte[] sizeArray = new byte[PrimitiveTypes.INT.size()];
+    private final byte[] sizeArray = new byte[ElementType.INT.size()];
 
     private final IntBuffer sizeBuffer = ByteBuffer.wrap(this.sizeArray).order(ByteOrder.LITTLE_ENDIAN).asIntBuffer();
 
@@ -232,9 +222,7 @@ public abstract class GZipCompressor<T extends Buffer> implements ICompressor<T>
     public boolean compress(T pixelData, ByteBuffer compressed) {
         this.nioBuffer.rewind();
         int pixelDataLimit = pixelData.limit();
-        GZIPOutputStream zip = null;
-        try {
-            zip = createGZipOutputStream(pixelDataLimit, compressed);
+        try (GZIPOutputStream zip = createGZipOutputStream(pixelDataLimit, compressed)) {
             while (pixelData.hasRemaining()) {
                 int count = Math.min(pixelData.remaining(), this.nioBuffer.capacity());
                 pixelData.limit(pixelData.position() + count);
@@ -245,8 +233,6 @@ public abstract class GZipCompressor<T extends Buffer> implements ICompressor<T>
             }
         } catch (IOException e) {
             throw new IllegalStateException("could not gzip data", e);
-        } finally {
-            SafeClose.close(zip);
         }
         compressed.limit(compressed.position());
         return true;
@@ -256,9 +242,7 @@ public abstract class GZipCompressor<T extends Buffer> implements ICompressor<T>
     public void decompress(ByteBuffer compressed, T pixelData) {
         this.nioBuffer.rewind();
         TypeConversion<Buffer> typeConverter = getTypeConverter(compressed, pixelData.limit());
-        GZIPInputStream zip = null;
-        try {
-            zip = createGZipInputStream(compressed);
+        try (GZIPInputStream zip = createGZipInputStream(compressed)) {
             int count;
             while ((count = zip.read(this.buffer)) >= 0) {
                 if (typeConverter != null) {
@@ -270,14 +254,12 @@ public abstract class GZipCompressor<T extends Buffer> implements ICompressor<T>
             }
         } catch (IOException e) {
             throw new IllegalStateException("could not gunzip data", e);
-        } finally {
-            SafeClose.close(zip);
         }
     }
 
     @SuppressWarnings("unchecked")
-    private <B extends Buffer> PrimitiveType<B> getPrimitiveType(int size) {
-        return (PrimitiveType<B>) PrimitiveTypeHandler.valueOf(size * FitsIO.BITS_OF_1_BYTE);
+    private <B extends Buffer> ElementType<B> getElementType(int size) {
+        return (ElementType<B>) ElementType.forBitpix(size * FitsIO.BITS_OF_1_BYTE);
     }
 
     private TypeConversion<Buffer> getTypeConverter(ByteBuffer compressed, int nrOfPrimitiveElements) {
@@ -292,7 +274,7 @@ public abstract class GZipCompressor<T extends Buffer> implements ICompressor<T>
                     if (uncompressedSize % nrOfPrimitiveElements == 0) {
                         int compressedPrimitiveSize = uncompressedSize / nrOfPrimitiveElements;
                         if (compressedPrimitiveSize != this.primitiveSize) {
-                            return new TypeConversion<Buffer>(getPrimitiveType(compressedPrimitiveSize));
+                            return new TypeConversion<>(getElementType(compressedPrimitiveSize));
                         }
                     }
                 }

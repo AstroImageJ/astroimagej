@@ -4,7 +4,7 @@ package nom.tam.fits.compression.algorithm.plio;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2015 nom-tam-fits
+ * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,19 +31,18 @@ package nom.tam.fits.compression.algorithm.plio;
  * #L%
  */
 
+import nom.tam.fits.compression.algorithm.plio.PLIOCompress.BytePLIOCompressor;
+import nom.tam.fits.compression.algorithm.plio.PLIOCompress.IntPLIOCompressor;
+import nom.tam.fits.compression.algorithm.plio.PLIOCompress.ShortPLIOCompressor;
+import nom.tam.util.SafeClose;
+import org.junit.Assert;
+import org.junit.Test;
+
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
 import java.util.Arrays;
-
-import nom.tam.fits.compression.algorithm.plio.PLIOCompress.BytePLIOCompressor;
-import nom.tam.fits.compression.algorithm.plio.PLIOCompress.IntPLIOCompressor;
-import nom.tam.fits.compression.algorithm.plio.PLIOCompress.ShortPLIOCompressor;
-import nom.tam.util.SafeClose;
-
-import org.junit.Assert;
-import org.junit.Test;
 
 public class PLIOCompressTest {
 

@@ -4,7 +4,7 @@ package nom.tam.fits;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 2004 - 2015 nom-tam-fits
+ * Copyright (C) 2004 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,19 +31,18 @@ package nom.tam.fits;
  * #L%
  */
 
-import static nom.tam.fits.header.Standard.GCOUNT;
-import static nom.tam.fits.header.Standard.GROUPS;
-import static nom.tam.fits.header.Standard.NAXISn;
-import static nom.tam.fits.header.Standard.PCOUNT;
-
-import java.io.EOFException;
-import java.io.IOException;
-
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import nom.tam.fits.header.Bitpix;
 import nom.tam.fits.header.Standard;
 import nom.tam.util.ArrayDataInput;
 import nom.tam.util.ArrayDataOutput;
 import nom.tam.util.ArrayFuncs;
+import nom.tam.util.FitsEncoder;
+
+import java.io.EOFException;
+import java.io.IOException;
+
+import static nom.tam.fits.header.Standard.*;
 
 /**
  * This class instantiates FITS Random Groups data. Random groups are
@@ -103,22 +102,7 @@ public class RandomGroupsData extends Data {
         // Got the information we need to build the header.
 
         h.setSimple(true);
-        if (dbase == byte.class) {
-            h.setBitpix(BasicHDU.BITPIX_BYTE);
-        } else if (dbase == short.class) {
-            h.setBitpix(BasicHDU.BITPIX_SHORT);
-        } else if (dbase == int.class) {
-            h.setBitpix(BasicHDU.BITPIX_INT);
-        } else if (dbase == long.class) { // Non-standard
-            h.setBitpix(BasicHDU.BITPIX_LONG);
-        } else if (dbase == float.class) {
-            h.setBitpix(BasicHDU.BITPIX_FLOAT);
-        } else if (dbase == double.class) {
-            h.setBitpix(BasicHDU.BITPIX_DOUBLE);
-        } else {
-            throw new FitsException("Data type:" + dbase + " not supported for random groups");
-        }
-
+        h.setBitpix(Bitpix.forPrimitiveType(dbase));
         h.setNaxes(ddims.length + 1);
         h.addValue(NAXISn.n(1), 0);
         for (int i = 2; i <= ddims.length + 1; i += 1) {
@@ -142,10 +126,9 @@ public class RandomGroupsData extends Data {
     protected long getTrueSize() {
 
         if (this.dataArray != null && this.dataArray.length > 0) {
-            return (ArrayFuncs.computeLSize(this.dataArray[0][0]) + ArrayFuncs.computeLSize(this.dataArray[0][1])) * this.dataArray.length;
-        } else {
-            return 0;
+            return (FitsEncoder.computeSize(this.dataArray[0][0]) + FitsEncoder.computeSize(this.dataArray[0][1])) * this.dataArray.length;
         }
+        return 0;
     }
 
     /** Read the RandomGroupsData */
@@ -155,9 +138,9 @@ public class RandomGroupsData extends Data {
         setFileOffset(str);
 
         try {
-            str.readLArray(this.dataArray);
+            str.readArrayFully(this.dataArray);
         } catch (IOException e) {
-            throw new FitsException("IO error reading Random Groups data " + e);
+            throw new FitsException("IO error reading Random Groups data ", e);
         }
         int pad = FitsUtil.padding(getTrueSize());
         try {
@@ -176,7 +159,7 @@ public class RandomGroupsData extends Data {
             str.writeArray(this.dataArray);
             FitsUtil.pad(str, getTrueSize());
         } catch (IOException e) {
-            throw new FitsException("IO error writing random groups data " + e);
+            throw new FitsException("IO error writing random groups data ", e);
         }
     }
 

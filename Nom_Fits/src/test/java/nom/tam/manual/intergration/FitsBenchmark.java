@@ -4,7 +4,7 @@ package nom.tam.manual.intergration;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2015 nom-tam-fits
+ * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,18 +31,17 @@ package nom.tam.manual.intergration;
  * #L%
  */
 
-import java.io.IOException;
-import java.util.regex.Pattern;
-
 import nom.tam.fits.BasicHDU;
 import nom.tam.fits.Fits;
 import nom.tam.fits.util.BlackBoxImages;
-
 import org.openjdk.jmh.Main;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.runner.RunnerException;
+
+import java.io.IOException;
+import java.util.regex.Pattern;
 
 @State(Scope.Benchmark)
 public class FitsBenchmark {

@@ -199,6 +199,11 @@ public enum ImageType {
             }
             return outArray;
         }
+
+        @Override
+        public boolean isFloatingPoint() {
+            return true;
+        }
     },
     //this loses accuracy for some values
     DOUBLE(FloatProcessor::new, double[][].class) {
@@ -239,6 +244,11 @@ public enum ImageType {
 
             return outArray;//todo flag that this is a 32-bit conversion
         }
+
+        @Override
+        public boolean isFloatingPoint() {
+            return true;
+        }
     };
 
     private final BiFunction<Integer, Integer, ? extends ImageProcessor> factory;
@@ -269,6 +279,10 @@ public enum ImageType {
             //todo how to handle? use complex?
         }
         throw new IllegalStateException("Tried to get an image type that was not known: " + ip.getClass());
+    }
+
+    public boolean isFloatingPoint() {
+        return false;
     }
 
     public ImageProcessor makeProcessor(int width, int height) {

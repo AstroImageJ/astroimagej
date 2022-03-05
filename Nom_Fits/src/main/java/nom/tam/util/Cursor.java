@@ -4,7 +4,7 @@ package nom.tam.util;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 2004 - 2015 nom-tam-fits
+ * Copyright (C) 2004 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -34,6 +34,9 @@ package nom.tam.util;
 /**
  * This interface extends the Iterator interface to allow insertion of data and
  * move to previous entries in a collection.
+ * 
+ * @param <KEY>       the generic type of the keyword element
+ * @param <VALUE>     the generic type of the associated value  
  */
 public interface Cursor<KEY, VALUE> extends java.util.Iterator<VALUE> {
 

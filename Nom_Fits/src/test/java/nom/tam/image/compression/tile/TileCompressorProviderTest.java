@@ -4,7 +4,7 @@ package nom.tam.image.compression.tile;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2015 nom-tam-fits
+ * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,24 +31,7 @@ package nom.tam.image.compression.tile;
  * #L%
  */
 
-import static nom.tam.fits.header.Compression.ZBITPIX;
-import static nom.tam.fits.header.Compression.ZCMPTYPE;
-import static nom.tam.fits.header.Compression.ZNAXIS;
-import static nom.tam.fits.header.Compression.ZNAXISn;
-import static nom.tam.fits.header.Compression.ZTILEn;
-
-import java.nio.Buffer;
-import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
-import java.util.ArrayList;
-import java.util.List;
-
-import nom.tam.fits.BinaryTable;
-import nom.tam.fits.FitsException;
-import nom.tam.fits.FitsFactory;
-import nom.tam.fits.Header;
-import nom.tam.fits.HeaderCard;
-import nom.tam.fits.HeaderCardException;
+import nom.tam.fits.*;
 import nom.tam.fits.compression.algorithm.api.ICompressOption;
 import nom.tam.fits.compression.algorithm.api.ICompressor;
 import nom.tam.fits.compression.algorithm.api.ICompressorControl;
@@ -67,12 +50,19 @@ import nom.tam.image.tile.operation.TileArea;
 import nom.tam.image.tile.operation.buffer.TileBuffer;
 import nom.tam.image.tile.operation.buffer.TileBufferFactory;
 import nom.tam.util.test.ThrowAnyException;
-import nom.tam.util.type.PrimitiveType;
+import nom.tam.util.type.ElementType;
 import nom.tam.util.type.PrimitiveTypes;
-
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.nio.Buffer;
+import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
+import java.util.ArrayList;
+import java.util.List;
+
+import static nom.tam.fits.header.Compression.*;
 
 public class TileCompressorProviderTest {
 
@@ -299,7 +289,7 @@ public class TileCompressorProviderTest {
                 return control.option();
             }
         };
-        final TileBuffer tileBuffer = TileBufferFactory.createTileBuffer((PrimitiveType) PrimitiveTypes.BYTE, 0, 10, 10, 10);
+        final TileBuffer tileBuffer = TileBufferFactory.createTileBuffer((ElementType) PrimitiveTypes.BYTE, 0, 10, 10, 10);
         TileDecompressor tileDecompressor = new TileDecompressor(image, 1, new TileArea()) {
 
             @Override

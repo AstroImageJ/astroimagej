@@ -1,20 +1,15 @@
 package nom.tam.fits;
 
-import static nom.tam.fits.header.Standard.NAXISn;
-import static nom.tam.fits.header.Standard.TFIELDS;
-import static nom.tam.fits.header.Standard.TFORMn;
-import static nom.tam.fits.header.Standard.TTYPEn;
-
-import java.util.logging.Logger;
-
 import nom.tam.fits.header.GenericKey;
 import nom.tam.fits.header.IFitsHeader;
+
+import static nom.tam.fits.header.Standard.*;
 
 /*
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 2004 - 2015 nom-tam-fits
+ * Copyright (C) 2004 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -44,10 +39,10 @@ import nom.tam.fits.header.IFitsHeader;
 /**
  * This class allows FITS binary and ASCII tables to be accessed via a common
  * interface.
+ * 
+ * @param <T> the generic type of table data contained in this HDU instance.
  */
 public abstract class TableHDU<T extends AbstractTableData> extends BasicHDU<T> {
-
-    private static final Logger LOG = Logger.getLogger(TableHDU.class.getName());
 
     /**
      * Create the TableHDU. Note that this will normally only be invoked by
@@ -60,6 +55,11 @@ public abstract class TableHDU<T extends AbstractTableData> extends BasicHDU<T> 
      */
     protected TableHDU(Header hdr, T td) {
         super(hdr, td);
+        for (int i = getNCols(); --i >= 0;) {
+            if (getColumnName(i) == null) {
+                setDefaultColumnName(i);
+            }
+        }
     }
 
     /**
@@ -82,8 +82,11 @@ public abstract class TableHDU<T extends AbstractTableData> extends BasicHDU<T> 
     public int addColumn(Object newCol) throws FitsException {
         int nCols = getNCols();
         this.myHeader.addValue(TFIELDS, nCols);
+        setDefaultColumnName(nCols);
         return nCols;
     }
+    
+
 
     /**
      * Add a row to the end of the table. If this is the first row, then this
@@ -335,7 +338,8 @@ public abstract class TableHDU<T extends AbstractTableData> extends BasicHDU<T> 
         }
         return ttype;
     }
-
+    
+    
     /**
      * @return all of the columns of the table.
      * @throws FitsException
@@ -435,37 +439,133 @@ public abstract class TableHDU<T extends AbstractTableData> extends BasicHDU<T> 
      *            The comment for the header
      * @param after
      *            Should the header card be after the current column metadata
-     *            block (true), or immediately before the TFORM card (false). @throws
-     *            FitsException if the operation failed
-     * @throws FitsException
+     *            block (<code>true</code>), or immediately before the TFORM card 
+     *            (<code>false</code>).
+     * @throws HeaderCardException
      *             if the header could not be updated
      */
-    public void setColumnMeta(int index, IFitsHeader key, String value, String comment, boolean after) throws FitsException {
+    public void setColumnMeta(int index, IFitsHeader key, String value, String comment, boolean after) throws HeaderCardException {
         setCurrentColumn(index, after);
         this.myHeader.addLine(new HeaderCard(key.n(index + 1).key(), value, comment));
     }
 
-    public void setColumnMeta(int index, String key, boolean value, String comment, boolean after) throws FitsException {
+    /**
+     * Specify column metadata for a given column in a way that allows all of
+     * the column metadata for a given column to be organized together.
+     *
+     * @param index
+     *            The 0-based index of the column
+     * @param key
+     *            The column key. I.e., the keyword will be key+(index+1)
+     * @param value
+     *            The value to be placed in the header.
+     * @param comment
+     *            The comment for the header
+     * @param after
+     *            Should the header card be after the current column metadata
+     *            block (<code>true</code>), or immediately before the TFORM card 
+     *            (<code>false</code>).
+     * @throws HeaderCardException
+     *             if the header could not be updated
+     *             
+     * @since 1.16
+     */
+    public void setColumnMeta(int index, IFitsHeader key, Number value, String comment, boolean after) throws HeaderCardException {
+        setCurrentColumn(index, after);
+        this.myHeader.addLine(new HeaderCard(key.n(index + 1).key(), value, comment));
+    }
+    
+    /**
+     * Specify column metadata for a given column in a way that allows all of
+     * the column metadata for a given column to be organized together.
+     *
+     * @param index
+     *            The 0-based index of the column
+     * @param key
+     *            The column key. I.e., the keyword will be key+(index+1)
+     * @param value
+     *            The value to be placed in the header.
+     * @param comment
+     *            The comment for the header
+     * @param after
+     *            Should the header card be after the current column metadata
+     *            block (<code>true</code>), or immediately before the TFORM card 
+     *            (<code>false</code>).
+     * @throws HeaderCardException
+     *             if the header could not be updated
+     */
+    public void setColumnMeta(int index, String key, Boolean value, String comment, boolean after) throws HeaderCardException {
         setCurrentColumn(index, after);
         this.myHeader.addLine(new HeaderCard(key + (index + 1), value, comment));
     }
 
-    public void setColumnMeta(int index, String key, double value, String comment, boolean after) throws FitsException {
+    /**
+     * Specify column metadata for a given column in a way that allows all of
+     * the column metadata for a given column to be organized together.
+     *
+     * @param index
+     *            The 0-based index of the column
+     * @param key
+     *            The column key. I.e., the keyword will be key+(index+1)
+     * @param value
+     *            The value to be placed in the header.
+     * @param comment
+     *            The comment for the header
+     * @param after
+     *            Should the header card be after the current column metadata
+     *            block (<code>true</code>), or immediately before the TFORM card 
+     *            (<code>false</code>).
+     * @throws HeaderCardException
+     *             if the header could not be updated
+     */
+    public void setColumnMeta(int index, String key, Number value, String comment, boolean after) throws HeaderCardException {
         setCurrentColumn(index, after);
         this.myHeader.addLine(new HeaderCard(key + (index + 1), value, comment));
     }
 
-    public void setColumnMeta(int index, String key, double value, int precision, String comment, boolean after) throws FitsException {
+    /**
+     * Specify column metadata for a given column in a way that allows all of
+     * the column metadata for a given column to be organized together.
+     *
+     * @param index
+     *            The 0-based index of the column
+     * @param key
+     *            The column key. I.e., the keyword will be key+(index+1)
+     * @param value
+     *            The value to be placed in the header.
+     * @param precision
+     *            The maximum number of decimal places to show after the leading figure. (Trailing zeroes will be ommitted.)
+     * @param comment
+     *            The comment for the header
+     * @param after
+     *            Should the header card be after the current column metadata
+     *            block (<code>true</code>), or immediately before the TFORM card 
+     *            (<code>false</code>).
+     * @throws HeaderCardException
+     *             if the header could not be updated
+     */
+    public void setColumnMeta(int index, String key, Number value, int precision, String comment, boolean after) throws HeaderCardException {
         setCurrentColumn(index, after);
         this.myHeader.addLine(new HeaderCard(key + (index + 1), value, precision, comment));
     }
-
-    public void setColumnMeta(int index, String key, long value, String comment, boolean after) throws FitsException {
-        setCurrentColumn(index, after);
-        this.myHeader.addLine(new HeaderCard(key + (index + 1), value, comment));
-    }
-
-    public void setColumnMeta(int index, String key, String value, String comment) throws FitsException {
+    
+ 
+    /**
+     * Specify column metadata for a given column in a way that allows all of
+     * the column metadata for a given column to be organized together.
+     *
+     * @param index
+     *            The 0-based index of the column
+     * @param key
+     *            The column key. I.e., the keyword will be key+(index+1)
+     * @param value
+     *            The value to be placed in the header.
+     * @param comment
+     *            The comment for the header
+     * @throws HeaderCardException
+     *             if the header could not be updated
+     */
+    public void setColumnMeta(int index, String key, String value, String comment) throws HeaderCardException {
         setColumnMeta(index, key, value, comment, true);
     }
 
@@ -485,21 +585,37 @@ public abstract class TableHDU<T extends AbstractTableData> extends BasicHDU<T> 
      *            Should the header card be after the current column metadata
      *            block (true), or immediately before the TFORM card (false). @throws
      *            FitsException if the operation failed
-     * @throws FitsException
+     * @throws HeaderCardException
      *             if the header could not be updated
      * @deprecated use
      *             {@link #setColumnMeta(int, IFitsHeader, String, String, boolean)}
      */
     @Deprecated
-    public void setColumnMeta(int index, String key, String value, String comment, boolean after) throws FitsException {
+    public void setColumnMeta(int index, String key, String value, String comment, boolean after) throws HeaderCardException {
         setCurrentColumn(index, after);
         this.myHeader.addLine(new HeaderCard(key + (index + 1), value, comment));
     }
 
-    public void setColumnName(int index, String name, String comment) throws FitsException {
+    public void setColumnName(int index, String name, String comment) throws HeaderCardException {
         setColumnMeta(index, TTYPEn, name, comment, true);
     }
 
+    private void setDefaultColumnName(int index) {
+        // TODO 
+        // AK: We currently allow undefined column names, but some other software, such as fv, have
+        // problemss processing such files. By uncommenting the lines below, we can enable
+        // setting default column names when columns are created or added to the table...
+        // This should not break anything in principle, but can increase header size,
+        // and therefore some of out unit tests may fail, unless adjusted...
+        
+//        try {
+//            setColumnName(index, "Column" + (index + 1), "default column name");
+//        } catch (Exception e) {
+//            // Should not happen.
+//            e.printStackTrace();
+//        }
+    }
+    
     /**
      * Set the cursor in the header to point after the metadata for the
      * specified column

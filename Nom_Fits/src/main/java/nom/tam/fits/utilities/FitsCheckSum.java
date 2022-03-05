@@ -4,7 +4,7 @@ package nom.tam.fits.utilities;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2015 nom-tam-fits
+ * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,32 +31,23 @@ package nom.tam.fits.utilities;
  * #L%
  */
 
-import static nom.tam.fits.header.Checksum.CHECKSUM;
-import static nom.tam.fits.header.Checksum.DATASUM;
-import static nom.tam.util.FitsIO.BYTE_1_OF_LONG_MASK;
-import static nom.tam.util.FitsIO.BYTE_2_OF_LONG_MASK;
-import static nom.tam.util.FitsIO.BYTE_3_OF_LONG_MASK;
-import static nom.tam.util.FitsIO.BYTE_4_OF_LONG_MASK;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.logging.Logger;
-
 import nom.tam.fits.BasicHDU;
 import nom.tam.fits.FitsException;
 import nom.tam.fits.Header;
 import nom.tam.util.AsciiFuncs;
-import nom.tam.util.BufferedDataOutputStream;
 import nom.tam.util.FitsIO;
+import nom.tam.util.FitsOutputStream;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+
+import static nom.tam.fits.header.Checksum.CHECKSUM;
+import static nom.tam.fits.header.Checksum.DATASUM;
+import static nom.tam.util.FitsIO.*;
 
 public final class FitsCheckSum {
 
     private static final int CHECKSUM_STRING_SIZE = 16;
-
-    /**
-     * logger to log to.
-     */
-    private static final Logger LOG = Logger.getLogger(FitsCheckSum.class.getName());
 
     private static final int CHECKSUM_BLOCK_SIZE = 4;
 
@@ -219,7 +210,7 @@ public final class FitsCheckSum {
             // write the header to stream to get the cards sorted. no need to
             // flush because we will ignore the data.
             ByteArrayOutputStream hduByteImage = new ByteArrayOutputStream();
-            hdu.getHeader().write(new BufferedDataOutputStream(hduByteImage));
+            hdu.getHeader().write(new FitsOutputStream(hduByteImage));
             hduByteImage.reset();
 
             /*
@@ -230,7 +221,7 @@ public final class FitsCheckSum {
              * Sparc...) supposed that the correct implementation is in the
              * write() interface.
              */
-            BufferedDataOutputStream bdos = new BufferedDataOutputStream(hduByteImage);
+            FitsOutputStream bdos = new FitsOutputStream(hduByteImage);
             hdu.getData().write(bdos);
             bdos.flush();
             

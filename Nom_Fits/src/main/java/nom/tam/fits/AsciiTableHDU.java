@@ -4,7 +4,7 @@ package nom.tam.fits;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 2004 - 2015 nom-tam-fits
+ * Copyright (C) 2004 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,31 +31,19 @@ package nom.tam.fits;
  * #L%
  */
 
-import static nom.tam.fits.header.Standard.NAXIS1;
-import static nom.tam.fits.header.Standard.NAXIS2;
-import static nom.tam.fits.header.Standard.TBCOLn;
-import static nom.tam.fits.header.Standard.TFIELDS;
-import static nom.tam.fits.header.Standard.TFORMn;
-import static nom.tam.fits.header.Standard.TNULLn;
-import static nom.tam.fits.header.Standard.TTYPEn;
-import static nom.tam.fits.header.Standard.TUNITn;
-import static nom.tam.fits.header.Standard.TZEROn;
-import static nom.tam.fits.header.Standard.XTENSION;
-
-import java.io.PrintStream;
-import java.util.logging.Logger;
-
 import nom.tam.fits.header.IFitsHeader;
 import nom.tam.fits.header.Standard;
 import nom.tam.util.ArrayFuncs;
 import nom.tam.util.Cursor;
 
+import java.io.PrintStream;
+
+import static nom.tam.fits.header.Standard.*;
+
 /**
  * FITS ASCII table header/data unit
  */
 public class AsciiTableHDU extends TableHDU<AsciiTable> {
-
-    private static final Logger LOG = Logger.getLogger(AsciiTableHDU.class.getName());
 
     /**
      * The standard column stems for an ASCII table. Note that TBCOL is not
@@ -119,9 +107,9 @@ public class AsciiTableHDU extends TableHDU<AsciiTable> {
                 }
             }
             return true;
-        } else {
-            return false;
         }
+        
+        return false;
     }
 
     /**
@@ -242,10 +230,16 @@ public class AsciiTableHDU extends TableHDU<AsciiTable> {
      *            the column index
      * @param newNull
      *            the String representing null
+     * @throws IllegalArgumentException     
+     *            if the string argument contains characters that are not allowed in FITS
+     *            headers. That is if it contains characters outside the range of 0x20
+     *            thru 0x7E.
      */
-    public void setNullString(int col, String newNull) {
+    public void setNullString(int col, String newNull) throws IllegalArgumentException {
         this.myHeader.positionAfterIndex(TBCOLn, col + 1);
-        saveReplaceCard(TNULLn.n(col + 1).key(), true, newNull);
+        HeaderCard card = HeaderCard.create(TNULLn.n(col + 1), newNull);
+        this.myHeader.deleteKey(card.getKey());
+        this.myHeader.addLine(card);
         this.myData.setNullString(col, newNull);
     }
 

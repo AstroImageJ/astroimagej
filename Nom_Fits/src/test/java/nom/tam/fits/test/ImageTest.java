@@ -4,7 +4,7 @@ package nom.tam.fits.test;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 2004 - 2015 nom-tam-fits
+ * Copyright (C) 2004 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,17 +31,15 @@ package nom.tam.fits.test;
  * #L%
  */
 
-import static nom.tam.fits.header.Standard.AUTHOR;
-import static nom.tam.fits.header.Standard.DATAMAX;
-import static nom.tam.fits.header.Standard.DATAMIN;
-import static nom.tam.fits.header.Standard.DATE;
-import static nom.tam.fits.header.Standard.DATE_OBS;
-import static nom.tam.fits.header.Standard.INSTRUME;
-import static nom.tam.fits.header.Standard.OBSERVER;
-import static nom.tam.fits.header.Standard.ORIGIN;
-import static nom.tam.fits.header.Standard.REFERENC;
-import static nom.tam.fits.header.Standard.TELESCOP;
-import static org.junit.Assert.assertEquals;
+import nom.tam.fits.*;
+import nom.tam.fits.header.Standard;
+import nom.tam.util.ArrayFuncs;
+import nom.tam.util.FitsFile;
+import nom.tam.util.SafeClose;
+import nom.tam.util.TestArrayFuncs;
+import nom.tam.util.test.ThrowAnyException;
+import org.junit.Assert;
+import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -50,22 +48,8 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.TimeZone;
 
-import nom.tam.fits.BasicHDU;
-import nom.tam.fits.Fits;
-import nom.tam.fits.FitsException;
-import nom.tam.fits.FitsFactory;
-import nom.tam.fits.Header;
-import nom.tam.fits.ImageData;
-import nom.tam.fits.ImageHDU;
-import nom.tam.fits.header.Standard;
-import nom.tam.util.ArrayFuncs;
-import nom.tam.util.BufferedFile;
-import nom.tam.util.SafeClose;
-import nom.tam.util.TestArrayFuncs;
-import nom.tam.util.test.ThrowAnyException;
-
-import org.junit.Assert;
-import org.junit.Test;
+import static nom.tam.fits.header.Standard.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Test the ImageHDU, ImageData and ImageTiler classes. - multiple HDU's in a
@@ -169,9 +153,9 @@ public class ImageTest {
             assertEquals("HDU count before", f.getNumberOfHDUs(), 8);
 
             // Write a FITS file.
-            BufferedFile bf = null;
+            FitsFile bf = null;
             try {
-                bf = new BufferedFile("target/image1.fits", "rw");
+                bf = new FitsFile("target/image1.fits", "rw");
                 f.write(bf);
                 bf.flush();
             } finally {
@@ -181,9 +165,9 @@ public class ImageTest {
             SafeClose.close(f);
         }
 
-        BufferedFile bf = null;
+        FitsFile bf = null;
         try {
-            bf = new BufferedFile(new File("target/image1.fits"));
+            bf = new FitsFile(new File("target/image1.fits"));
             f = new Fits("target/image1.fits");
 
             // Read a FITS file

@@ -4,7 +4,7 @@ package nom.tam.fits.test;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 2004 - 2015 nom-tam-fits
+ * Copyright (C) 2004 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,21 +31,20 @@ package nom.tam.fits.test;
  * #L%
  */
 
-import static org.junit.Assert.assertEquals;
-
-import java.io.IOException;
-import java.lang.reflect.Array;
-
 import nom.tam.fits.Fits;
 import nom.tam.fits.FitsException;
 import nom.tam.fits.ImageHDU;
 import nom.tam.image.StandardImageTiler;
 import nom.tam.util.ArrayFuncs;
-import nom.tam.util.BufferedFile;
+import nom.tam.util.FitsFile;
 import nom.tam.util.SafeClose;
-
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.io.IOException;
+import java.lang.reflect.Array;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * This class tests the ImageTiler. It first creates a FITS file and then reads
@@ -193,10 +192,10 @@ public class TilerTest {
 
     private void doTest(Object data, String suffix) throws IOException, FitsException, Exception {
         Fits f = null;
-        BufferedFile bf = null;
+        FitsFile bf = null;
         try {
             f = new Fits();
-            bf = new BufferedFile("target/tiler" + suffix + ".fits", "rw");
+            bf = new FitsFile("target/tiler" + suffix + ".fits", "rw");
             f.addHDU(Fits.makeHDU(data));
             f.write(bf);
         } finally {

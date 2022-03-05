@@ -4,7 +4,7 @@ package nom.tam.image.compression.tile;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2015 nom-tam-fits
+ * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,36 +31,7 @@ package nom.tam.image.compression.tile;
  * #L%
  */
 
-import static nom.tam.fits.header.Compression.COMPRESSED_DATA_COLUMN;
-import static nom.tam.fits.header.Compression.GZIP_COMPRESSED_DATA_COLUMN;
-import static nom.tam.fits.header.Compression.NULL_PIXEL_MASK_COLUMN;
-import static nom.tam.fits.header.Compression.UNCOMPRESSED_DATA_COLUMN;
-import static nom.tam.fits.header.Compression.ZBITPIX;
-import static nom.tam.fits.header.Compression.ZCMPTYPE;
-import static nom.tam.fits.header.Compression.ZCMPTYPE_GZIP_1;
-import static nom.tam.fits.header.Compression.ZMASKCMP;
-import static nom.tam.fits.header.Compression.ZNAXIS;
-import static nom.tam.fits.header.Compression.ZNAXISn;
-import static nom.tam.fits.header.Compression.ZQUANTIZ;
-import static nom.tam.fits.header.Compression.ZTILEn;
-import static nom.tam.fits.header.Standard.TTYPEn;
-import static nom.tam.image.compression.tile.TileCompressionType.COMPRESSED;
-import static nom.tam.image.compression.tile.TileCompressionType.GZIP_COMPRESSED;
-import static nom.tam.image.compression.tile.TileCompressionType.UNCOMPRESSED;
-
-import java.lang.reflect.Array;
-import java.nio.Buffer;
-import java.nio.ByteBuffer;
-import java.util.Arrays;
-import java.util.concurrent.ExecutorService;
-
-import nom.tam.fits.BinaryTable;
-import nom.tam.fits.BinaryTableHDU;
-import nom.tam.fits.FitsException;
-import nom.tam.fits.FitsFactory;
-import nom.tam.fits.Header;
-import nom.tam.fits.HeaderCard;
-import nom.tam.fits.HeaderCardBuilder;
+import nom.tam.fits.*;
 import nom.tam.fits.compression.algorithm.api.ICompressOption;
 import nom.tam.fits.compression.algorithm.api.ICompressorControl;
 import nom.tam.fits.compression.provider.CompressorProvider;
@@ -69,9 +40,17 @@ import nom.tam.fits.compression.provider.param.api.HeaderCardAccess;
 import nom.tam.image.compression.tile.mask.ImageNullPixelMask;
 import nom.tam.image.tile.operation.AbstractTiledImageOperation;
 import nom.tam.image.tile.operation.TileArea;
-import nom.tam.util.type.PrimitiveType;
-import nom.tam.util.type.PrimitiveTypeHandler;
-import nom.tam.util.type.PrimitiveTypes;
+import nom.tam.util.type.ElementType;
+
+import java.lang.reflect.Array;
+import java.nio.Buffer;
+import java.nio.ByteBuffer;
+import java.util.Arrays;
+import java.util.concurrent.ExecutorService;
+
+import static nom.tam.fits.header.Compression.*;
+import static nom.tam.fits.header.Standard.TTYPEn;
+import static nom.tam.image.compression.tile.TileCompressionType.*;
 
 /**
  * This class represents a complete tiledImageOperation of tileOperations
@@ -301,14 +280,11 @@ public class TiledImageCompressionOperation extends AbstractTiledImageOperation<
     private void readBaseType(Header header) {
         if (getBaseType() == null) {
             int zBitPix = header.getIntValue(ZBITPIX);
-            PrimitiveType<Buffer> primitiveType = PrimitiveTypeHandler.valueOf(zBitPix);
-            if (primitiveType == null) {
-                primitiveType = PrimitiveTypeHandler.nearestValueOf(zBitPix);
-                if (primitiveType == PrimitiveTypes.UNKNOWN) {
-                    throw new IllegalArgumentException("illegal value for zbitpix " + zBitPix);
-                }
+            ElementType<Buffer> elementType = ElementType.forNearestBitpix(zBitPix);
+            if (elementType == ElementType.UNKNOWN) {
+                throw new IllegalArgumentException("illegal value for ZBITPIX " + zBitPix);
             }
-            setBaseType(primitiveType);
+            setBaseType(elementType);
         }
     }
 

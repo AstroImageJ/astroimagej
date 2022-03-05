@@ -4,7 +4,7 @@ package nom.tam.fits.compression.algorithm.gzip2;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2015 nom-tam-fits
+ * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,20 +31,14 @@ package nom.tam.fits.compression.algorithm.gzip2;
  * #L%
  */
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import nom.tam.fits.compression.algorithm.gzip.GZipCompressor;
+import nom.tam.util.type.ElementType;
+
 import java.io.IOException;
-import java.nio.Buffer;
-import java.nio.ByteBuffer;
-import java.nio.DoubleBuffer;
-import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
-import java.nio.LongBuffer;
-import java.nio.ShortBuffer;
+import java.nio.*;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
-
-import nom.tam.fits.compression.algorithm.gzip.GZipCompressor;
-import nom.tam.util.SafeClose;
-import nom.tam.util.type.PrimitiveTypes;
 
 public abstract class GZip2Compressor<T extends Buffer> extends GZipCompressor<T> {
 
@@ -54,7 +48,7 @@ public abstract class GZip2Compressor<T extends Buffer> extends GZipCompressor<T
     public static class IntGZip2Compressor extends GZip2Compressor<IntBuffer> {
 
         public IntGZip2Compressor() {
-            super(PrimitiveTypes.INT.size());
+            super(ElementType.INT.size());
         }
 
         @Override
@@ -72,7 +66,7 @@ public abstract class GZip2Compressor<T extends Buffer> extends GZipCompressor<T
     public static class FloatGZip2Compressor extends GZip2Compressor<FloatBuffer> {
 
         public FloatGZip2Compressor() {
-            super(PrimitiveTypes.FLOAT.size());
+            super(ElementType.FLOAT.size());
         }
 
         @Override
@@ -90,7 +84,7 @@ public abstract class GZip2Compressor<T extends Buffer> extends GZipCompressor<T
     public static class LongGZip2Compressor extends GZip2Compressor<LongBuffer> {
 
         public LongGZip2Compressor() {
-            super(PrimitiveTypes.LONG.size());
+            super(ElementType.LONG.size());
         }
 
         @Override
@@ -108,7 +102,7 @@ public abstract class GZip2Compressor<T extends Buffer> extends GZipCompressor<T
     public static class DoubleGZip2Compressor extends GZip2Compressor<DoubleBuffer> {
 
         public DoubleGZip2Compressor() {
-            super(PrimitiveTypes.DOUBLE.size());
+            super(ElementType.DOUBLE.size());
         }
 
         @Override
@@ -126,7 +120,7 @@ public abstract class GZip2Compressor<T extends Buffer> extends GZipCompressor<T
     public static class ShortGZip2Compressor extends GZip2Compressor<ShortBuffer> {
 
         public ShortGZip2Compressor() {
-            super(PrimitiveTypes.SHORT.size());
+            super(ElementType.SHORT.size());
         }
 
         @Override
@@ -155,19 +149,17 @@ public abstract class GZip2Compressor<T extends Buffer> extends GZipCompressor<T
     }
 
     @Override
+    @SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE", justification = "what null check is FB even referring to?")
     public boolean compress(T pixelData, ByteBuffer compressed) {
         int pixelDataLimit = pixelData.limit();
         byte[] pixelBytes = new byte[pixelDataLimit * this.primitiveSize];
         getPixel(pixelData, pixelBytes);
         pixelBytes = shuffle(pixelBytes);
-        GZIPOutputStream zip = null;
-        try {
-            zip = createGZipOutputStream(pixelDataLimit, compressed);
+        try (GZIPOutputStream zip = createGZipOutputStream(pixelDataLimit, compressed)) {
+            // FIXME AK: FB complains the line below has a redundant null ckeck for 'zip', but where exactly?
             zip.write(pixelBytes, 0, pixelBytes.length);
         } catch (IOException e) {
             throw new IllegalStateException("could not gzip data", e);
-        } finally {
-            SafeClose.close(zip);
         }
         return true;
     }
@@ -176,9 +168,7 @@ public abstract class GZip2Compressor<T extends Buffer> extends GZipCompressor<T
     public void decompress(ByteBuffer compressed, T pixelData) {
         int pixelDataLimit = pixelData.limit();
         byte[] pixelBytes = new byte[pixelDataLimit * this.primitiveSize];
-        GZIPInputStream zip = null;
-        try {
-            zip = createGZipInputStream(compressed);
+        try (GZIPInputStream zip = createGZipInputStream(compressed)) {
             int count = 0;
             int offset = 0;
             while (offset < pixelBytes.length && count >= 0) {
@@ -189,8 +179,6 @@ public abstract class GZip2Compressor<T extends Buffer> extends GZipCompressor<T
             }
         } catch (IOException e) {
             throw new IllegalStateException("could not gunzip data", e);
-        } finally {
-            SafeClose.close(zip);
         }
         pixelBytes = unshuffle(pixelBytes);
         setPixel(pixelData, pixelBytes);

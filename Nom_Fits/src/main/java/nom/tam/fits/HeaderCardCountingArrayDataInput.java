@@ -4,7 +4,7 @@ package nom.tam.fits;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2015 nom-tam-fits
+ * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,16 +31,25 @@ package nom.tam.fits;
  * #L%
  */
 
-import java.io.IOException;
-
 import nom.tam.util.ArrayDataInput;
 
+import java.io.IOException;
+
 /**
+ * 
+ * <p>
  * A helper class to keep track of the number of physical cards for a logical
  * card.
+ * </p>
+ * 
+ * <p>
+ * This class should not have public visibility. And really, the counting should be
+ * completely internalized by HeaderCard. Perhaps remove in a future major release.
+ * </p>
  * 
  * @author Richard van Nieuwenhoven
  */
+@Deprecated
 public class HeaderCardCountingArrayDataInput {
 
     /**
@@ -78,6 +87,15 @@ public class HeaderCardCountingArrayDataInput {
      */
     public void cardRead() {
         physicalCardsRead++;
+    }
+
+    /**
+     * indicate whether mark/reset functionality is supported
+     * 
+     * @return true iff mark/reset will work
+     */
+    public boolean markSupported() {
+        return input.markSupported();
     }
 
     /**

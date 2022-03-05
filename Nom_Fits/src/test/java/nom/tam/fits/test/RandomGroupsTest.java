@@ -4,7 +4,7 @@ package nom.tam.fits.test;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 2004 - 2015 nom-tam-fits
+ * Copyright (C) 2004 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,24 +31,17 @@ package nom.tam.fits.test;
  * #L%
  */
 
-import static org.junit.Assert.assertEquals;
+import nom.tam.fits.*;
+import nom.tam.util.ArrayFuncs;
+import nom.tam.util.FitsFile;
+import nom.tam.util.SafeClose;
+import org.junit.Assert;
+import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 
-import nom.tam.fits.BasicHDU;
-import nom.tam.fits.Fits;
-import nom.tam.fits.FitsUtil;
-import nom.tam.fits.Header;
-import nom.tam.fits.RandomGroupsData;
-import nom.tam.fits.RandomGroupsHDU;
-import nom.tam.fits.FitsException;
-import nom.tam.util.ArrayFuncs;
-import nom.tam.util.BufferedFile;
-import nom.tam.util.SafeClose;
-
-import org.junit.Assert;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Test random groups formats in FITS data. Write and read random groups data
@@ -62,9 +55,9 @@ public class RandomGroupsTest {
         float[] pa = new float[3];
 
         Object[][] data = new Object[1][2];
-        BufferedFile bf = null;
+        FitsFile bf = null;
         try {
-            bf = new BufferedFile("target/rg1.fits", "rw");
+            bf = new FitsFile("target/rg1.fits", "rw");
 
             data[0][0] = pa;
             data[0][1] = fa;
@@ -123,7 +116,7 @@ public class RandomGroupsTest {
         // all the data in place first.
         try {
             f = new Fits();
-            bf = new BufferedFile("target/rg2.fits", "rw");
+            bf = new FitsFile("target/rg2.fits", "rw");
             // Generate a FITS HDU from the kernel.
             f.addHDU(Fits.makeHDU(data));
             f.write(bf);
@@ -164,7 +157,7 @@ public class RandomGroupsTest {
     }
 
     @Test
-    public void typedRandomGroup() throws FitsException {
+    public void typedRandomGroup() throws Exception {
         testGroupCreationAndRecreationByType(new byte[20][20], new byte[3], 8, "byte");
         testGroupCreationAndRecreationByType(new short[20][20], new short[3], 16, "short");
         testGroupCreationAndRecreationByType(new int[20][20], new int[3], 32, "int");
@@ -174,7 +167,7 @@ public class RandomGroupsTest {
     }
 
     @Test(expected = FitsException.class)
-    public void illegalTypedRandomGroup() throws FitsException {
+    public void illegalTypedRandomGroup() throws Exception {
         testGroupCreationAndRecreationByType(new Double[20][20], new Double[3], -64, "Double");
     }
 
@@ -183,9 +176,9 @@ public class RandomGroupsTest {
         float[][] fa = new float[20][20];
         float[] pa = new float[3];
         RandomGroupsData groups;
-        BufferedFile bf = null;
+        FitsFile bf = null;
         try {
-            bf = new BufferedFile("target/testResetData", "rw");
+            bf = new FitsFile("target/testResetData", "rw");
             Object[][] data = new Object[1][2];
             data[0][0] = pa;
             data[0][1] = fa;
@@ -198,7 +191,7 @@ public class RandomGroupsTest {
 
         // ok now test it
         try {
-            bf = new BufferedFile("target/testResetData", "rw");
+            bf = new FitsFile("target/testResetData", "rw");
             bf.readLong();
             groups = new RandomGroupsData();
             groups.read(bf);
@@ -212,7 +205,7 @@ public class RandomGroupsTest {
         }
     }
 
-    private void testGroupCreationAndRecreationByType(Object fa, Object pa, int bipix, String typeName) throws FitsException {
+    private void testGroupCreationAndRecreationByType(Object fa, Object pa, int bipix, String typeName) throws Exception {
         Object[][] data = new Object[1][2];
         data[0][0] = pa;
         data[0][1] = fa;

@@ -4,7 +4,7 @@ package nom.tam.fits.compression.algorithm.quant;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2015 nom-tam-fits
+ * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,12 +31,12 @@ package nom.tam.fits.compression.algorithm.quant;
  * #L%
  */
 
+import nom.tam.fits.compression.algorithm.api.ICompressor;
+
 import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-
-import nom.tam.fits.compression.algorithm.api.ICompressor;
 
 public class QuantizeProcessor {
 

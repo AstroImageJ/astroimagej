@@ -4,7 +4,7 @@ package nom.tam.fits.test;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 2004 - 2015 nom-tam-fits
+ * Copyright (C) 2004 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,30 +31,20 @@ package nom.tam.fits.test;
  * #L%
  */
 
-import static nom.tam.fits.header.Checksum.CHECKSUM;
-import static org.junit.Assert.assertEquals;
+import nom.tam.fits.*;
+import nom.tam.fits.header.Standard;
+import nom.tam.fits.utilities.FitsCheckSum;
+import nom.tam.util.Cursor;
+import nom.tam.util.FitsInputStream;
+import nom.tam.util.FitsOutputStream;
+import nom.tam.util.test.ThrowAnyException;
+import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.util.Arrays;
 
-import nom.tam.fits.BasicHDU;
-import nom.tam.fits.Fits;
-import nom.tam.fits.FitsException;
-import nom.tam.fits.FitsFactory;
-import nom.tam.fits.Header;
-import nom.tam.fits.HeaderCard;
-import nom.tam.fits.ImageData;
-import nom.tam.fits.ImageHDU;
-import nom.tam.fits.header.Standard;
-import nom.tam.fits.utilities.FitsCheckSum;
-import nom.tam.util.BufferedDataInputStream;
-import nom.tam.util.BufferedDataOutputStream;
-import nom.tam.util.Cursor;
-import nom.tam.util.test.ThrowAnyException;
-
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author tmcglynn
@@ -120,7 +110,7 @@ public class ChecksumTest {
 
         Fits.setChecksum(bhdu);
         ByteArrayOutputStream bs = new ByteArrayOutputStream();
-        BufferedDataOutputStream bdos = new BufferedDataOutputStream(bs);
+        FitsOutputStream bdos = new FitsOutputStream(bs);
         f.write(bdos);
         bdos.close();
         byte[] stream = bs.toByteArray();
@@ -134,7 +124,7 @@ public class ChecksumTest {
     public void testCheckSumBasic() throws Exception {
         FileInputStream in = new FileInputStream("src/test/resources/nom/tam/fits/test/test.fits");
         Fits fits = new Fits();
-        fits.setStream(new BufferedDataInputStream(in));
+        fits.setStream(new FitsInputStream(in));
         fits.read();
         in.close();
         fits.setChecksum();
@@ -142,9 +132,11 @@ public class ChecksumTest {
 
     @Test
     public void testCheckSum2() throws Exception {
+        // AK: This test requires long strings to be disabled.
+        FitsFactory.setLongStringsEnabled(false);
         FileInputStream in = new FileInputStream("src/test/resources/nom/tam/fits/test/test.fits");
         Fits fits = new Fits();
-        fits.setStream(new BufferedDataInputStream(in));
+        fits.setStream(new FitsInputStream(in));
         fits.read();
         in.close();
         fits.setChecksum();

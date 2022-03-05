@@ -4,7 +4,7 @@ package nom.tam.util.type;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 2004 - 2015 nom-tam-fits
+ * Copyright (C) 2004 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -33,7 +33,7 @@ package nom.tam.util.type;
 
 import java.nio.Buffer;
 
-class BooleanType extends PrimitiveTypeBase<Buffer> {
+class BooleanType extends ElementType<Buffer> {
 
     protected BooleanType() {
         super(1, false, boolean.class, Boolean.class, null, 'Z', 0);

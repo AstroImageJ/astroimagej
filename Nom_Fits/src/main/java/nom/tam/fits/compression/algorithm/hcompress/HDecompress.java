@@ -4,7 +4,7 @@ package nom.tam.fits.compression.algorithm.hcompress;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2015 nom-tam-fits
+ * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,13 +31,9 @@ package nom.tam.fits.compression.algorithm.hcompress;
  * #L%
  */
 
-import static nom.tam.fits.compression.algorithm.hcompress.HCompress.BITS_OF_1_BYTE;
-import static nom.tam.fits.compression.algorithm.hcompress.HCompress.BITS_OF_1_NYBBLE;
-import static nom.tam.fits.compression.algorithm.hcompress.HCompress.BYTE_MASK;
-import static nom.tam.fits.compression.algorithm.hcompress.HCompress.NYBBLE_MASK;
-import static nom.tam.fits.compression.algorithm.hcompress.HCompress.ROUNDING_HALF;
-
 import java.nio.ByteBuffer;
+
+import static nom.tam.fits.compression.algorithm.hcompress.HCompress.*;
 
 /**
  * The original decompression code was written by R. White at the STScI and
@@ -700,9 +696,8 @@ public class HDecompress {
         c = inputBit(infile) | c << 1;
         if (c == N62) {
             return 0;
-        } else {
-            return N14;
         }
+        return N14;
     }
 
     private int inputNbits(ByteBuffer infile, int n) {

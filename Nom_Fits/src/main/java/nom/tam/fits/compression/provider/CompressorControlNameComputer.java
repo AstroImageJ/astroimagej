@@ -4,7 +4,7 @@ package nom.tam.fits.compression.provider;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2016 nom-tam-fits
+ * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -90,9 +90,8 @@ public class CompressorControlNameComputer {
                     Compression.ZQUANTIZ_SUBTRACTIVE_DITHER_1.equalsIgnoreCase(quantAlgorithm) || //
                     Compression.ZQUANTIZ_SUBTRACTIVE_DITHER_2.equalsIgnoreCase(quantAlgorithm)) {
                 return "Quant";
-            } else {
-                return "Unknown";
             }
+            return "Unknown";
         }
         return "";
     }

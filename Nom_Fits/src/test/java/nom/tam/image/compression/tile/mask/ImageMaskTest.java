@@ -4,7 +4,7 @@ package nom.tam.image.compression.tile.mask;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2016 nom-tam-fits
+ * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,26 +31,19 @@ package nom.tam.image.compression.tile.mask;
  * #L%
  */
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-
-import java.lang.reflect.Constructor;
-import java.nio.Buffer;
-import java.nio.ByteBuffer;
-import java.nio.DoubleBuffer;
-import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
-import java.nio.LongBuffer;
-import java.nio.ShortBuffer;
-import java.util.Arrays;
-
 import nom.tam.image.tile.operation.buffer.TileBuffer;
 import nom.tam.image.tile.operation.buffer.TileBufferFactory;
-import nom.tam.util.type.PrimitiveType;
+import nom.tam.util.type.ElementType;
 import nom.tam.util.type.PrimitiveTypes;
-
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.lang.reflect.Constructor;
+import java.nio.*;
+import java.util.Arrays;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 public class ImageMaskTest {
 
@@ -338,18 +331,18 @@ public class ImageMaskTest {
         constrs[0].newInstance();
     }
 
-    protected TileBuffer createTileBuffer(Buffer buffer, PrimitiveType type) {
+    protected TileBuffer createTileBuffer(Buffer buffer, ElementType type) {
         TileBuffer tileBuffer = TileBufferFactory.createTileBuffer(type, 0, 10, 10, 1);
         tileBuffer.setData(buffer);
         return tileBuffer;
     }
 
-    protected void createTilePreserver(Buffer buffer, ImageNullPixelMask mask, PrimitiveType type, int tileIndex) {
+    protected void createTilePreserver(Buffer buffer, ImageNullPixelMask mask, ElementType type, int tileIndex) {
         TileBuffer tileBuffer = createTileBuffer(buffer, type);
         mask.createTilePreserver(tileBuffer, tileIndex).preserveNull();
     }
 
-    protected NullPixelMaskRestorer createTileRestorer(Buffer buffer, ImageNullPixelMask mask, PrimitiveType type, int tileIndex) {
+    protected NullPixelMaskRestorer createTileRestorer(Buffer buffer, ImageNullPixelMask mask, ElementType type, int tileIndex) {
         TileBuffer tileBuffer = createTileBuffer(buffer, type);
         return mask.createTileRestorer(tileBuffer, tileIndex);
     }

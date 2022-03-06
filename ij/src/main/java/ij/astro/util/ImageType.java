@@ -28,7 +28,7 @@ public enum ImageType {
         }
 
         @Override
-        public Object make2DArray(ImageProcessor ip) {
+        public Object make2DArray(ImageProcessor ip, boolean useBZero) {
             var lip = ((ByteProcessor) ip);
 
             var width = ip.getWidth();
@@ -67,7 +67,7 @@ public enum ImageType {
         }
 
         @Override
-        public Object make2DArray(ImageProcessor ip) {//todo support 3d images? (write entire stack as one layered image, with option to disable?)
+        public Object make2DArray(ImageProcessor ip, boolean useBZero) {//todo support 3d images? (write entire stack as one layered image, with option to disable?)
             var lip = ((ShortProcessor) ip);
 
             var width = lip.getWidth();
@@ -76,7 +76,7 @@ public enum ImageType {
             var outArray = new short[height][width];
             for (int x = 0; x < width; x++) {
                 for (int y = 0; y < height; y++) {
-                    outArray[height - 1 - y][x] = (short) (lip.get(x, y) + Short.MIN_VALUE); // Subtract BZERO
+                    outArray[height - 1 - y][x] = (short) (lip.get(x, y) + (useBZero ? Short.MIN_VALUE : 0)); // Subtract BZERO
                 }
             }
 
@@ -106,7 +106,7 @@ public enum ImageType {
         }
 
         @Override
-        public Object make2DArray(ImageProcessor ip) {
+        public Object make2DArray(ImageProcessor ip, boolean useBZero) {
             var lip = ((IntProcessor) ip);
 
             var width = ip.getWidth();
@@ -115,7 +115,7 @@ public enum ImageType {
             var outArray = new int[height][width];
             for (int x = 0; x < width; x++) {
                 for (int y = 0; y < height; y++) {
-                    outArray[height - 1 - y][x] = lip.get(x, y) + Integer.MIN_VALUE; // Subtract BZERO
+                    outArray[height - 1 - y][x] = lip.get(x, y) + (useBZero ? Integer.MIN_VALUE : 0); // Subtract BZERO
                 }
             }
 
@@ -146,7 +146,7 @@ public enum ImageType {
         }
 
         @Override
-        public Object make2DArray(ImageProcessor ip) {
+        public Object make2DArray(ImageProcessor ip, boolean useBZero) {
             var lip = ((FloatProcessor) ip);
 
             var width = ip.getWidth();
@@ -155,7 +155,7 @@ public enum ImageType {
             var outArray = new long[height][width];
             for (int x = 0; x < width; x++) {
                 for (int y = 0; y < height; y++) {
-                    outArray[height - 1 - y][x] = lip.get(x, y) + Long.MIN_VALUE; // Subtract BZERO
+                    outArray[height - 1 - y][x] = lip.get(x, y) + (useBZero ? Long.MIN_VALUE : 0); // Subtract BZERO
                 }
             }
 
@@ -185,7 +185,7 @@ public enum ImageType {
         }
 
         @Override
-        public Object make2DArray(ImageProcessor ip) {
+        public Object make2DArray(ImageProcessor ip, boolean useBZero) {
             var lip = ((FloatProcessor) ip);
 
             var width = ip.getWidth();
@@ -229,7 +229,7 @@ public enum ImageType {
         }
 
         @Override
-        public Object make2DArray(ImageProcessor ip) {
+        public Object make2DArray(ImageProcessor ip, boolean useBZero) {
             var lip = ((FloatProcessor) ip);
 
             var width = ip.getWidth();
@@ -291,5 +291,5 @@ public enum ImageType {
 
     public abstract Object processImageData(Object rawData, int width, int height, double bzero, double bscale);
 
-    public abstract Object make2DArray(ImageProcessor ip);
+    public abstract Object make2DArray(ImageProcessor ip, boolean useBZero);
 }

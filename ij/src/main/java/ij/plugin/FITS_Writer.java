@@ -14,12 +14,7 @@ import ij.process.ShortProcessor;
 import nom.tam.fits.Fits;
 import nom.tam.fits.FitsException;
 import nom.tam.fits.HeaderCard;
-import nom.tam.fits.ImageHDU;
-import nom.tam.fits.compression.algorithm.api.ICompressorControl;
-import nom.tam.fits.compression.algorithm.rice.RiceCompressOption;
-import nom.tam.fits.compression.provider.CompressorProvider;
-import nom.tam.fits.header.Compression;
-import nom.tam.image.compression.hdu.CompressedImageHDU;
+import nom.tam.fits.header.Standard;
 import nom.tam.util.FitsOutputStream;
 
 import java.io.*;
@@ -140,12 +135,25 @@ public class FITS_Writer implements PlugIn {
 				var stack = imp.getStack();
 				var ip = stack.getProcessor(slice);
 				var type = ImageType.getType(ip);
-				var data = type.make2DArray(ip);//todo handle color images
+
+				// Get the old header and check if BZERO is needed
+				var useBZero = false;
+				var oldHeader = getHeader(imp, slice);
+				if (oldHeader != null) {
+					for (String cardString : oldHeader) {
+						var card = HeaderCard.create(cardString);
+						if (Standard.BZERO.key().equals(card.getKey())) {
+							useBZero = true;
+							break;
+						}
+					}
+				}
+
+				var data = type.make2DArray(ip, useBZero);//todo handle color images
 				var hdu = Fits.makeHDU(data);
 				var header = hdu.getHeader();
 
 				// Duplicate header for new image
-				var oldHeader = getHeader(imp, slice);
 				if (oldHeader != null) {
 					for (String cardString : oldHeader) {
 						var card = HeaderCard.create(cardString);

@@ -195,6 +195,8 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
             } else {
                 transform = transform.andThen(MetaPixel::flipY);
             }
+        } else {
+            transform = transform.andThen(MetaPixel::flipY);
         }
 
         var bayerShiftXI = FitsJ.findCardWithKey("XBAYROFF", header);

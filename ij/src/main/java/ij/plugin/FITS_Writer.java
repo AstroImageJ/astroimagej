@@ -20,6 +20,7 @@ import nom.tam.util.FitsOutputStream;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Properties;
 import java.util.zip.GZIPOutputStream;
 
@@ -157,7 +158,9 @@ public class FITS_Writer implements PlugIn {
 				if (oldHeader != null) {
 					for (String cardString : oldHeader) {
 						var card = HeaderCard.create(cardString);
-						if (header.containsKey(card.getKey())) {
+						if (header.containsKey(card.getKey()) && // No overwriting of old header values
+								Arrays.stream(Standard.values()).anyMatch(s -> card.getKey().equals(s.key())) && // Use auto-genned HDU header info
+								!card.isCommentStyleCard()) { // Allow duplicate comment-style cards
 							continue;
 						}
 						header.addLine(card);

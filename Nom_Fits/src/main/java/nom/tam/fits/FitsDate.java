@@ -4,7 +4,7 @@ package nom.tam.fits;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2015 nom-tam-fits
+ * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,6 +31,8 @@ package nom.tam.fits;
  * #L%
  */
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 import java.text.DecimalFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -40,12 +42,10 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 /**
  * Fits date object parsed from the different type of date combinations
  */
-public class FitsDate {
+public class FitsDate implements Comparable<FitsDate> {
 
     /**
      * logger to log to.
@@ -75,7 +75,7 @@ public class FitsDate {
     private static final int NEW_FORMAT_YEAR_GROUP = 2;
 
     private static final Pattern NORMAL_REGEX = Pattern
-            .compile("\\s*(([0-9][0-9][0-9][0-9])-([0-9][0-9])-([0-9][0-9]))(T([0-9][0-9]):([0-9][0-9]):([0-9][0-9])(\\.([0-9][0-9][0-9]|[0-9][0-9]))?)?\\s*");
+            .compile("\\s*(([0-9][0-9][0-9][0-9])-([0-9][0-9])-([0-9][0-9]))(T([0-9][0-9]):([0-9][0-9]):([0-9][0-9])(\\.([0-9]+))?)?\\s*");
 
     private static final int OLD_FORMAT_DAY_OF_MONTH_GROUP = 1;
 
@@ -85,9 +85,11 @@ public class FitsDate {
 
     private static final Pattern OLD_REGEX = Pattern.compile("\\s*([0-9][0-9])/([0-9][0-9])/([0-9][0-9])\\s*");
 
-    private static final int TWO_DIGIT_MILISECONDS_FACTOR = 10;
-
     private static final int YEAR_OFFSET = 1900;
+    
+    private static final int NB_DIGITS_MILLIS = 3;
+    
+    private static final int POW_TEN = 10;
 
     /**
      * @return the current date in FITS date format
@@ -204,11 +206,12 @@ public class FitsDate {
     private static int getMilliseconds(Matcher match, int groupIndex) {
         String value = match.group(groupIndex);
         if (value != null) {
-            int result = Integer.parseInt(value);
-            if (value.length() == 2) {
-                result = result * FitsDate.TWO_DIGIT_MILISECONDS_FACTOR;
+            value = String.format("%-3s", value).replace(' ', '0');
+            int num = Integer.parseInt(value);
+            if (value.length() > NB_DIGITS_MILLIS) {
+                num = (int) Math.round(num / Math.pow(POW_TEN, value.length() - NB_DIGITS_MILLIS));
             }
-            return result;
+            return num;
         }
         return -1;
     }
@@ -288,6 +291,59 @@ public class FitsDate {
             }
         }
         return buf.toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == this) {
+            return true;
+        }
+        if (!(o instanceof FitsDate)) {
+            return false;
+        }
+
+        FitsDate fitsDate = (FitsDate) o;
+        return hour == fitsDate.hour && mday == fitsDate.mday && millisecond == fitsDate.millisecond
+                && minute == fitsDate.minute && month == fitsDate.month && second == fitsDate.second && year == fitsDate.year;
+    }
+
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = prime * hour;
+        result = prime * result + mday;
+        result = prime * result + millisecond;
+        result = prime * result + minute;
+        result = prime * result + month;
+        result = prime * result + second;
+        result = prime * result + year;
+
+        return result;
+    }
+
+    @Override
+    public int compareTo(FitsDate fitsDate) {
+        int result = Integer.compare(year, fitsDate.year);
+        if (result == 0) {
+            result = Integer.compare(month, fitsDate.month);
+            if (result == 0) {
+                result = Integer.compare(mday, fitsDate.mday);
+                if (result == 0) {
+                    result = Integer.compare(hour, fitsDate.hour);
+                    if (result == 0) {
+                        result = Integer.compare(minute, fitsDate.minute);
+                        if (result == 0) {
+                            result = Integer.compare(second, fitsDate.second);
+                            if (result == 0) {
+                                result = Integer.compare(millisecond, fitsDate.millisecond);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return result;
     }
 
     private void appendThreeDigitValue(StringBuilder buf, int value) {

@@ -4,7 +4,7 @@ package nom.tam.image.compression.tile;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2015 nom-tam-fits
+ * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,12 +31,12 @@ package nom.tam.image.compression.tile;
  * #L%
  */
 
-import java.nio.ByteBuffer;
-
 import nom.tam.image.compression.tile.mask.ImageNullPixelMask;
 import nom.tam.image.compression.tile.mask.NullPixelMaskPreserver;
 import nom.tam.image.tile.operation.TileArea;
-import nom.tam.util.type.PrimitiveTypes;
+import nom.tam.util.type.ElementType;
+
+import java.nio.ByteBuffer;
 
 public class TileCompressor extends TileCompressionOperation {
 
@@ -64,7 +64,7 @@ public class TileCompressor extends TileCompressionOperation {
             getPreviousTileOperation().waitForResult();
             ByteBuffer compressedWholeArea = getCompressedWholeArea();
             this.compressedOffset = compressedWholeArea.position();
-            PrimitiveTypes.BYTE.appendBuffer(compressedWholeArea, this.compressedData);
+            ElementType.BYTE.appendBuffer(compressedWholeArea, this.compressedData);
             replaceCompressedBufferWithTargetArea(compressedWholeArea);
         } else {
             this.compressedOffset = 0;

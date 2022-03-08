@@ -4,7 +4,7 @@ package nom.tam.util.test;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 2004 - 2015 nom-tam-fits
+ * Copyright (C) 2004 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,21 +31,18 @@ package nom.tam.util.test;
  * #L%
  */
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertTrue;
-
-import java.lang.reflect.Constructor;
-
+import nom.tam.fits.Header;
 import nom.tam.util.ArrayFuncs;
 import nom.tam.util.AsciiFuncs;
 import nom.tam.util.TestArrayFuncs;
-
+import nom.tam.util.type.ElementType;
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.lang.reflect.Constructor;
+import java.util.Arrays;
+
+import static org.junit.Assert.*;
 
 /**
  * @author Thomas McGlynn
@@ -340,7 +337,12 @@ public class ArrayFuncsTest {
             }
         }
     }
-
+    
+    @Test
+    public void testDeepCloneNull() {
+        assertNull(ArrayFuncs.deepClone(null));
+    }
+    
     /**
      * Test of doubleArrayEquals method, of class nom.tam.util.ArrayFuncs.
      */
@@ -519,7 +521,7 @@ public class ArrayFuncsTest {
         byte b = 0;
         TestArrayFuncs.testPattern(test, b);
 
-        assertEquals(ArrayFuncs.getBaseArray(test), test[0][0]);
+        assertEquals(test[0][0], ArrayFuncs.getBaseArray(test));
     }
 
     /**
@@ -529,8 +531,8 @@ public class ArrayFuncsTest {
     public void testGetBaseClass() {
         System.out.println("getBaseClass");
 
-        assertEquals(ArrayFuncs.getBaseClass(new int[2][3]), int.class);
-        assertEquals(ArrayFuncs.getBaseClass(new String[3]), String.class);
+        assertEquals(int.class, ArrayFuncs.getBaseClass(new int[2][3]));
+        assertEquals(String.class, ArrayFuncs.getBaseClass(new String[3]));
     }
 
     /**
@@ -539,15 +541,14 @@ public class ArrayFuncsTest {
     @Test
     public void testGetBaseLength() {
 
-        assertEquals(ArrayFuncs.getBaseLength(new int[2][3]), 4);
-        assertEquals(ArrayFuncs.getBaseLength(new double[2][3]), 8);
-        assertEquals(ArrayFuncs.getBaseLength(new byte[2][3]), 1);
-        assertEquals(ArrayFuncs.getBaseLength(new short[2][3]), 2);
-        assertEquals(ArrayFuncs.getBaseLength(new int[2][3]), 4);
-        assertEquals(ArrayFuncs.getBaseLength(new char[2][3]), 2);
-        assertEquals(ArrayFuncs.getBaseLength(new float[2][3]), 4);
-        assertEquals(ArrayFuncs.getBaseLength(new boolean[2][3]), 1);
-        assertEquals(ArrayFuncs.getBaseLength(new Object[2][3]), -1);
+        assertEquals(ElementType.INT.size(), ArrayFuncs.getBaseLength(new int[2][3]));
+        assertEquals(ElementType.DOUBLE.size(), ArrayFuncs.getBaseLength(new double[2][3]));
+        assertEquals(ElementType.BYTE.size(), ArrayFuncs.getBaseLength(new byte[2][3]));
+        assertEquals(ElementType.SHORT.size(), ArrayFuncs.getBaseLength(new short[2][3]));
+        assertEquals(ElementType.CHAR.size(), ArrayFuncs.getBaseLength(new char[2][3]));
+        assertEquals(ElementType.FLOAT.size(), ArrayFuncs.getBaseLength(new float[2][3]));
+        assertEquals(ElementType.BOOLEAN.size(), ArrayFuncs.getBaseLength(new boolean[2][3]));
+        assertEquals(-1, ArrayFuncs.getBaseLength(new Object[2][3]));
     }
 
     /**
@@ -565,9 +566,9 @@ public class ArrayFuncsTest {
         assertEquals(ArrayFuncs.getDimensions(new Integer(0)).length, 0);
         int[][] test = new int[2][3];
         int[] dims = ArrayFuncs.getDimensions(test);
-        assertEquals(dims.length, 2);
-        assertEquals(dims[0], 2);
-        assertEquals(dims[1], 3);
+        assertEquals(2, dims.length);
+        assertEquals(2, dims[0]);
+        assertEquals(3, dims[1]);
     }
 
     /**
@@ -581,8 +582,8 @@ public class ArrayFuncsTest {
         Class<?> newType = double.class;
 
         double[][] result = (double[][]) nom.tam.util.ArrayFuncs.mimicArray(array, newType);
-        assertEquals(result.length, array.length);
-        assertEquals(result[0].length, array[0].length);
+        assertEquals(array.length, result.length);
+        assertEquals(array[0].length, result[0].length);
     }
 
     /**
@@ -665,6 +666,11 @@ public class ArrayFuncsTest {
     }
 
     @Test(expected = RuntimeException.class)
+    public void testCurlMultiArray() throws Exception {
+        Assert.assertNull(ArrayFuncs.curl(new int[10][10], new int[] {20, 5}));
+    }
+    
+    @Test(expected = RuntimeException.class)
     public void testCurlWrongArray() throws Exception {
         Assert.assertNull(ArrayFuncs.curl(new int[]{
             1,
@@ -689,5 +695,58 @@ public class ArrayFuncsTest {
     public void testnLElementsFail() throws Exception {
         Assert.assertEquals(1, ArrayFuncs.nLElements(this));
     }
+    
+    @Test
+    public void testArrayDescriptionOfNull() throws Exception {
+        Assert.assertEquals("NULL", ArrayFuncs.arrayDescription(null));
+    }
+    
+    @Test
+    public void testCopyMultidim() throws Exception {
+        int[][] from = new int[2][3];
+        
+        int k = 0;
+        for (int i=0; i<from.length; i++) {
+            for (int j=0; j<from[i].length; j++) {
+                from[i][j] = ++k;
+            }
+        }
 
+        int[][] to = new int[2][3];
+        ArrayFuncs.copyArray(from, to);
+        
+        for (int i=0; i<from.length; i++) {
+            for (int j=0; j<from[i].length; j++) {
+                assertEquals("[" + i + ", " + j + "]", from[i][j], to[i][j]);
+            }
+        }
+    }
+    
+    @Test
+    public void testCopyHeterogeneous() throws Exception {
+        int[] i = new int[] { 1, 2, 3 };
+        double[] d = new double[] { 1.1, 2.1 };
+        Object from = new Object[] { i, d };
+        Object[] to = new Object[] { new int[i.length], new double[d.length] };
+        ArrayFuncs.copyArray(from, to);
+        
+        assertTrue(Arrays.equals(i, (int[]) to[0]));
+        assertTrue(Arrays.equals(d, (double[]) to[1]));
+    }
+    
+    
+    @Test(expected = IllegalArgumentException.class)
+    public void testCopyNotArray() throws Exception {
+        ArrayFuncs.copyArray(new Header(), new Header());
+    }
+    
+    @Test(expected = IllegalArgumentException.class)
+    public void testCopyMismatchedType() throws Exception {
+        ArrayFuncs.copyArray(new int[3], new double[3]);
+    }
+    
+    @Test(expected = IllegalArgumentException.class)
+    public void testCopyMismatchedSize() throws Exception {
+        ArrayFuncs.copyArray(new int[3], new int[4]);
+    }
 }

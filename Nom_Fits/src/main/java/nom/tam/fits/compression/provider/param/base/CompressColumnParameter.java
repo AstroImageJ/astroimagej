@@ -4,7 +4,7 @@ package nom.tam.fits.compression.provider.param.base;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2016 nom-tam-fits
+ * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,9 +31,9 @@ package nom.tam.fits.compression.provider.param.base;
  * #L%
  */
 
-import java.lang.reflect.Array;
-
 import nom.tam.fits.compression.provider.param.api.ICompressColumnParameter;
+
+import java.lang.reflect.Array;
 
 public abstract class CompressColumnParameter<T, OPTION> extends CompressParameter<OPTION> implements ICompressColumnParameter {
 
@@ -64,24 +64,22 @@ public abstract class CompressColumnParameter<T, OPTION> extends CompressParamet
     protected final T initializedColumn() {
         if (this.original != null) {
             return this.original.initializedColumn();
-        } else {
-            final int arraySize = this.size;
-            final Class<T> arrayClass = this.clazz;
-            synchronized (this) {
-                if (this.column == null) {
-                    this.column = arrayClass.cast(Array.newInstance(arrayClass.getComponentType(), arraySize));
-                }
-            }
-            return this.column;
         }
+        final int arraySize = this.size;
+        final Class<T> arrayClass = this.clazz;
+        synchronized (this) {
+            if (this.column == null) {
+                this.column = arrayClass.cast(Array.newInstance(arrayClass.getComponentType(), arraySize));
+            }
+        }
+        return this.column;
     }
 
     protected final T originalColumn() {
         if (this.original != null) {
             return this.original.originalColumn();
-        } else {
-            return this.column;
         }
+        return this.column;
     }
 
     public void setOriginal(CompressColumnParameter<T, OPTION> value) {

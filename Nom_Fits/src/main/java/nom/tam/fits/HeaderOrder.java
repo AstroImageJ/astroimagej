@@ -1,24 +1,14 @@
 package nom.tam.fits;
 
-import static nom.tam.fits.header.Standard.BITPIX;
-import static nom.tam.fits.header.Standard.BLOCKED;
-import static nom.tam.fits.header.Standard.END;
-import static nom.tam.fits.header.Standard.EXTEND;
-import static nom.tam.fits.header.Standard.GCOUNT;
-import static nom.tam.fits.header.Standard.NAXIS;
-import static nom.tam.fits.header.Standard.PCOUNT;
-import static nom.tam.fits.header.Standard.SIMPLE;
-import static nom.tam.fits.header.Standard.TFIELDS;
-import static nom.tam.fits.header.Standard.THEAP;
-import static nom.tam.fits.header.Standard.XTENSION;
-
 import java.io.Serializable;
+
+import static nom.tam.fits.header.Standard.*;
 
 /*
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 2004 - 2015 nom-tam-fits
+ * Copyright (C) 2004 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -52,9 +42,9 @@ import java.io.Serializable;
 public class HeaderOrder implements java.util.Comparator<String>, Serializable {
 
     /**
-     * Serialization id.
+     * 
      */
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -5900038332559417655L;
 
     /**
      * Which order should the cards indexed by these keys be written out? This
@@ -65,6 +55,7 @@ public class HeaderOrder implements java.util.Comparator<String>, Serializable {
      *         1 if the second argument should be written first <br>
      *         0 if either is legal.
      */
+    @SuppressWarnings("deprecation")
     @Override
     public int compare(String c1, String c2) {
         // Note that we look at each of the ordered FITS keywords in the
@@ -100,9 +91,8 @@ public class HeaderOrder implements java.util.Comparator<String>, Serializable {
             if (naxisNc2 > 0) {
                 if (naxisNc1 < naxisNc2) {
                     return -1;
-                } else {
-                    return 1;
                 }
+                return 1;
             }
             return -1;
         } else if (naxisNc2 > 0) {

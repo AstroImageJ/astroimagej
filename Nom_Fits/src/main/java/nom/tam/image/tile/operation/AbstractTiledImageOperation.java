@@ -4,7 +4,7 @@ package nom.tam.image.tile.operation;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2016 nom-tam-fits
+ * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,14 +31,14 @@ package nom.tam.image.tile.operation;
  * #L%
  */
 
+import nom.tam.fits.FitsException;
+import nom.tam.util.type.ElementType;
+
 import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.Buffer;
 import java.util.Arrays;
-
-import nom.tam.fits.FitsException;
-import nom.tam.util.type.PrimitiveType;
 
 public abstract class AbstractTiledImageOperation<OPERATION extends ITileOperation> implements ITiledImageOperation {
 
@@ -47,7 +47,7 @@ public abstract class AbstractTiledImageOperation<OPERATION extends ITileOperati
     /**
      * Interprets the value of the BITPIX keyword in the uncompressed FITS image
      */
-    private PrimitiveType<Buffer> baseType;
+    private ElementType<Buffer> baseType;
 
     private int[] tileAxes;
 
@@ -60,7 +60,7 @@ public abstract class AbstractTiledImageOperation<OPERATION extends ITileOperati
     }
 
     @Override
-    public PrimitiveType<Buffer> getBaseType() {
+    public ElementType<Buffer> getBaseType() {
         return this.baseType;
     }
 
@@ -147,7 +147,7 @@ public abstract class AbstractTiledImageOperation<OPERATION extends ITileOperati
         return this.tileOperations;
     }
 
-    protected void setBaseType(PrimitiveType<Buffer> baseType) {
+    protected void setBaseType(ElementType<Buffer> baseType) {
         this.baseType = baseType;
     }
 }

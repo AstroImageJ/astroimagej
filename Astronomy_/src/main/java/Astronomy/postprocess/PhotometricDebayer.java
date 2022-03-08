@@ -27,12 +27,6 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
 
     @Override
     public int showDialog(ImagePlus imp, String command, PlugInFilterRunner pfr) {
-        /*AIJLogger.log(4);
-        //FITS_Writer.writeImageData(imp.getStack().getProcessor(1), null);
-        FITS_Writer.saveImage(imp, null);
-        AIJLogger.log(1);
-        if (true)return DONE;*/
-
         var gd = new GenericSwingDialog("Debayer");
 
         AtomicReference<Pallete> pallet = new AtomicReference<>(Pallete.RGGB);

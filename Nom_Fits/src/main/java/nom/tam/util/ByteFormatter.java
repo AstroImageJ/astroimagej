@@ -4,7 +4,7 @@ package nom.tam.util;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 2004 - 2015 nom-tam-fits
+ * Copyright (C) 2004 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -32,6 +32,11 @@ package nom.tam.util;
  */
 
 /**
+ * @deprecated  This class should not be exposed in the publi API and is meant
+ *  for internal use only in ASCII tables. Also, it may have overlapping 
+ *  functionality with other classes, which should probably be eliminated for
+ *  simplicity's sake (and thus less chance of nasty bugs).
+ * 
  * This class provides mechanisms for efficiently formatting numbers and
  * Strings. Data is appended to existing byte arrays. Note that the formatting
  * of real or double values may differ slightly (in the last bit) from the
@@ -54,6 +59,7 @@ package nom.tam.util;
  * transitions take place the user can force either exponential or decimal
  * notation.
  */
+@Deprecated
 public final class ByteFormatter {
 
     public static final String NOT_A_NUMBER = "NaN";
@@ -211,8 +217,7 @@ public final class ByteFormatter {
      * @param shift
      *            The exponent of the power of 10 that we shifted val to get the
      *            given mantissa.
-     * @return Offset of next available character in buffer. @ * if the value
-     *         was truncated
+     * @return Offset of next available character in buffer.
      */
     private int combineReal(double val, byte[] buf, int off, int len, byte[] mant, int lmant, int shift) {
 
@@ -279,30 +284,28 @@ public final class ByteFormatter {
 
         if (simple) {
             return Math.abs(mantissa(mant, lmant, exp, simple, buf, off, len));
-        } else {
-            off = mantissa(mant, lmant, 0, simple, buf, off, len - lexp - 1);
-            if (off < 0) {
-                off = -off;
-                len -= off;
-                // Handle the expanded exponent by filling
-                if (exp == MAXIMUM_SINGLE_DIGIT_INTEGER || exp == MAXIMUM_TWO_DIGIT_INTEGER) {
-                    // Cannot fit...
-                    if (off + len == minSize) {
-                        truncationFiller(buf, off, len);
-                        return off + len;
-                    } else {
-                        // Steal a character from the mantissa.
-                        off--;
-                    }
-                }
-                exp++;
-                lexp = format(exp, this.tbuf2, 0, ByteFormatter.TEMP_BUFFER_SIZE);
-            }
-            buf[off] = (byte) 'E';
-            off++;
-            System.arraycopy(this.tbuf2, 0, buf, off, lexp);
-            return off + lexp;
         }
+        off = mantissa(mant, lmant, 0, simple, buf, off, len - lexp - 1);
+        if (off < 0) {
+            off = -off;
+            len -= off;
+            // Handle the expanded exponent by filling
+            if (exp == MAXIMUM_SINGLE_DIGIT_INTEGER || exp == MAXIMUM_TWO_DIGIT_INTEGER) {
+                // Cannot fit...
+                if (off + len == minSize) {
+                    truncationFiller(buf, off, len);
+                    return off + len;
+                }
+                // Steal a character from the mantissa.
+                off--;
+            }
+            exp++;
+            lexp = format(exp, this.tbuf2, 0, ByteFormatter.TEMP_BUFFER_SIZE);
+        }
+        buf[off] = (byte) 'E';
+        off++;
+        System.arraycopy(this.tbuf2, 0, buf, off, lexp);
+        return off + lexp;
     }
 
     /**
@@ -366,16 +369,17 @@ public final class ByteFormatter {
      * still be consistent from machine to machine.
      * <p>
      * Recall that the binary representation of the double is of the form
-     * <tt>d = 0.bbbbbbbb x 2<sup>n</sup></tt> where there are up to 53 binary
-     * digits in the binary fraction (including the assumed leading 1 bit for
-     * normalized numbers). We find a value m such that
-     * <tt>10<sup>m</sup> d</tt> is between <tt>2<sup>53</sup></tt> and
-     * <tt>2<sup>63</sup></tt>. This product will be exactly convertible to a
-     * long with no loss of precision. Getting the decimal representation for
+     * <code>d = 0.bbbbbbbb x 2<sup>n</sup></code> where there are up to 53
+     * binary digits in the binary fraction (including the assumed leading 1 bit
+     * for normalized numbers). We find a value m such that
+     * <code>10<sup>m</sup> d</code> is between <code>2<sup>53</sup></code> and
+     * <code>2<sup>63</sup></code>. This product will be exactly convertible to
+     * a long with no loss of precision. Getting the decimal representation for
      * that is trivial (see formatLong). This is a decimal mantissa and we have
-     * an exponent (<tt>-m</tt>). All we have to do is manipulate the decimal
-     * point to where we want to see it. Errors can arise due to roundoff in the
-     * scaling multiplication, but should be no more than a single bit.
+     * an exponent (<code>-m</code>). All we have to do is manipulate the
+     * decimal point to where we want to see it. Errors can arise due to
+     * roundoff in the scaling multiplication, but should be no more than a
+     * single bit.
      * 
      * @param val
      *            Double to be formatted
@@ -385,8 +389,7 @@ public final class ByteFormatter {
      *            Offset within buffer
      * @param len
      *            Maximum length of integer
-     * @return offset of next unused character in input buffer. @ * if the value
-     *         was truncated
+     * @return offset of next unused character in input buffer. 
      */
     public int format(double val, byte[] buf, int off, int len) {
 
@@ -400,9 +403,8 @@ public final class ByteFormatter {
         } else if (Double.isInfinite(val)) {
             if (val > 0) {
                 return format(INFINITY, buf, off, len);
-            } else {
-                return format(NEGATIVE_INFINITY, buf, off, len);
             }
+            return format(NEGATIVE_INFINITY, buf, off, len);
         }
 
         int power = (int) (Math.log(pos) * ByteFormatter.I_LOG_10);
@@ -476,14 +478,14 @@ public final class ByteFormatter {
      * still be consistent from machine to machine.
      * <p>
      * Recall that the binary representation of the float is of the form
-     * <tt>d = 0.bbbbbbbb x 2<sup>n</sup></tt> where there are up to 24 binary
-     * digits in the binary fraction (including the assumed leading 1 bit for
-     * normalized numbers). We find a value m such that
-     * <tt>10<sup>m</sup> d</tt> is between <tt>2<sup>24</sup></tt> and
-     * <tt>2<sup>32</sup></tt>. This product will be exactly convertible to an
-     * int with no loss of precision. Getting the decimal representation for
+     * <code>d = 0.bbbbbbbb x 2<sup>n</sup></code> where there are up to 24
+     * binary digits in the binary fraction (including the assumed leading 1 bit
+     * for normalized numbers). We find a value m such that
+     * <code>10<sup>m</sup> d</code> is between <code>2<sup>24</sup></code> and
+     * <code>2<sup>32</sup></code>. This product will be exactly convertible to
+     * an int with no loss of precision. Getting the decimal representation for
      * that is trivial (see formatInteger). This is a decimal mantissa and we
-     * have an exponent ( <tt>-m</tt>). All we have to do is manipulate the
+     * have an exponent ( <code>-m</code>). All we have to do is manipulate the
      * decimal point to where we want to see it. Errors can arise due to
      * roundoff in the scaling multiplication, but should be very small.
      * 
@@ -510,9 +512,8 @@ public final class ByteFormatter {
         } else if (Float.isInfinite(val)) {
             if (val > 0) {
                 return format("Infinity", buf, off, len);
-            } else {
-                return format("-Infinity", buf, off, len);
             }
+            return format("-Infinity", buf, off, len);
         }
 
         int power = (int) Math.floor(Math.log(pos) * ByteFormatter.I_LOG_10);
@@ -596,10 +597,9 @@ public final class ByteFormatter {
         if (val == Integer.MIN_VALUE) {
             if (len > ByteFormatter.NUMBER_BASE) {
                 return format("-2147483648", buf, off, len);
-            } else {
-                truncationFiller(buf, off, len);
-                return off + len;
             }
+            truncationFiller(buf, off, len);
+            return off + len;
         }
 
         int pos = Math.abs(val);
@@ -676,10 +676,9 @@ public final class ByteFormatter {
         if (val == Long.MIN_VALUE) {
             if (len > MAX_LONG_LENGTH) {
                 return format("-9223372036854775808", buf, off, len);
-            } else {
-                truncationFiller(buf, off, len);
-                return off + len;
             }
+            truncationFiller(buf, off, len);
+            return off + len;
         }
         long pos = Math.abs(val);
         // First count the number of characters in the result.

@@ -4,7 +4,7 @@ package nom.tam.fits.compression.algorithm.rice;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2015 nom-tam-fits
+ * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,12 +31,6 @@ package nom.tam.fits.compression.algorithm.rice;
  * #L%
  */
 
-import java.io.RandomAccessFile;
-import java.nio.BufferUnderflowException;
-import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
-import java.nio.ShortBuffer;
-
 import nom.tam.fits.Header;
 import nom.tam.fits.HeaderCardException;
 import nom.tam.fits.compression.algorithm.rice.RiceCompressor.ByteRiceCompressor;
@@ -47,9 +41,14 @@ import nom.tam.fits.compression.provider.param.rice.RiceCompressParameters;
 import nom.tam.fits.header.Compression;
 import nom.tam.util.SafeClose;
 import nom.tam.util.type.PrimitiveTypes;
-
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.io.RandomAccessFile;
+import java.nio.BufferUnderflowException;
+import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
+import java.nio.ShortBuffer;
 
 public class RiceCompressTest {
 

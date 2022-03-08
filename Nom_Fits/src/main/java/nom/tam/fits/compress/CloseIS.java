@@ -4,7 +4,7 @@ package nom.tam.fits.compress;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2015 nom-tam-fits
+ * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,17 +31,12 @@ package nom.tam.fits.compress;
  * #L%
  */
 
-import static nom.tam.util.LoggerHelper.getLogger;
-
-import java.io.BufferedInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.FilterInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.nio.charset.Charset;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static nom.tam.util.LoggerHelper.getLogger;
 
 public class CloseIS extends FilterInputStream {
 
@@ -63,6 +58,7 @@ public class CloseIS extends FilterInputStream {
 
     private final Process proc;
 
+    @SuppressWarnings("resource")
     public CloseIS(Process proc, final InputStream compressed) {
         super(new BufferedInputStream(proc.getInputStream(), CompressionManager.ONE_MEGABYTE));
         if (compressed == null) {
@@ -153,13 +149,11 @@ public class CloseIS extends FilterInputStream {
         if (exception != null || exitValue != 0) {
             if (errorText != null && !errorText.trim().isEmpty()) {
                 throw new IOException(errorText, exception);
-            } else {
-                if (exception == null) {
-                    throw new IOException("exit value was " + exitValue);
-                } else {
-                    throw exception;
-                }
             }
+            if (exception == null) {
+                throw new IOException("exit value was " + exitValue);
+            }
+            throw exception;
         }
     }
 

@@ -4,7 +4,7 @@ package nom.tam.image.compression.tile;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2015 nom-tam-fits
+ * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,9 +31,6 @@ package nom.tam.image.compression.tile;
  * #L%
  */
 
-import java.lang.reflect.Array;
-import java.nio.ByteBuffer;
-
 import nom.tam.fits.compression.algorithm.api.ICompressOption;
 import nom.tam.fits.compression.algorithm.api.ICompressorControl;
 import nom.tam.image.compression.tile.mask.AbstractNullPixelMask;
@@ -41,8 +38,10 @@ import nom.tam.image.compression.tile.mask.ImageNullPixelMask;
 import nom.tam.image.tile.operation.AbstractTileOperation;
 import nom.tam.image.tile.operation.ITileOperation;
 import nom.tam.image.tile.operation.TileArea;
-import nom.tam.util.type.PrimitiveTypeHandler;
-import nom.tam.util.type.PrimitiveTypes;
+import nom.tam.util.type.ElementType;
+
+import java.lang.reflect.Array;
+import java.nio.ByteBuffer;
 
 /**
  * abstract information holder about the a tile that represents a rectangular
@@ -69,7 +68,7 @@ abstract class TileCompressionOperation extends AbstractTileOperation implements
     }
 
     private ByteBuffer convertToBuffer(Object data) {
-        return PrimitiveTypeHandler.valueOf(data.getClass().getComponentType()).convertToByteBuffer(data);
+        return ElementType.forClass(data.getClass().getComponentType()).convertToByteBuffer(data);
     }
 
     /**
@@ -85,7 +84,7 @@ abstract class TileCompressionOperation extends AbstractTileOperation implements
     protected byte[] getCompressedData() {
         byte[] data = new byte[this.compressedData.limit()];
         this.compressedData.rewind();
-        PrimitiveTypes.BYTE.getArray(this.compressedData, data);
+        ElementType.BYTE.getArray(this.compressedData, data);
         return data;
     }
 

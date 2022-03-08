@@ -4,7 +4,7 @@ package nom.tam.fits.compression.algorithm.api;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2015 nom-tam-fits
+ * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -38,6 +38,8 @@ import java.nio.ByteBuffer;
  * Compressor that can compress a Buffer into a ByteBuffer and vize versa. the
  * Byte buffer must have enough space allocated else an exception will be
  * thrown.
+ * 
+ * @param <T>  The generic type of NIO buffer on which this compressor operates.
  */
 public interface ICompressor<T extends Buffer> {
 

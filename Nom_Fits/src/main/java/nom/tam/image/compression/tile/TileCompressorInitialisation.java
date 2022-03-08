@@ -4,7 +4,7 @@ package nom.tam.image.compression.tile;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2016 nom-tam-fits
+ * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,10 +31,10 @@ package nom.tam.image.compression.tile;
  * #L%
  */
 
-import java.nio.Buffer;
-
 import nom.tam.image.tile.operation.ITileOperationInitialisation;
 import nom.tam.image.tile.operation.TileArea;
+
+import java.nio.Buffer;
 
 final class TileCompressorInitialisation implements ITileOperationInitialisation<TileCompressionOperation> {
 

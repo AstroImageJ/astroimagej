@@ -4,7 +4,7 @@ package nom.tam.manual.intergration;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2015 nom-tam-fits
+ * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,16 +31,15 @@ package nom.tam.manual.intergration;
  * #L%
  */
 
-import java.io.IOException;
-
 import nom.tam.fits.BasicHDU;
 import nom.tam.fits.Fits;
 import nom.tam.fits.FitsException;
 import nom.tam.fits.util.BlackBoxImages;
 import nom.tam.util.SafeClose;
-
 import org.junit.Ignore;
 import org.junit.Test;
+
+import java.io.IOException;
 
 public class TestFitsFileWithVeryBigHeaders {
 

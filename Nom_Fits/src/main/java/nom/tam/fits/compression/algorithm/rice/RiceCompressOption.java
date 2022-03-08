@@ -4,7 +4,7 @@ package nom.tam.fits.compression.algorithm.rice;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2015 nom-tam-fits
+ * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -33,13 +33,13 @@ package nom.tam.fits.compression.algorithm.rice;
 
 import nom.tam.fits.compression.algorithm.api.ICompressOption;
 import nom.tam.fits.compression.provider.param.api.ICompressParameters;
-import nom.tam.util.type.PrimitiveTypes;
+import nom.tam.util.type.ElementType;
 
 public class RiceCompressOption implements ICompressOption {
 
     public static final int DEFAULT_RICE_BLOCKSIZE = 32;
 
-    public static final int DEFAULT_RICE_BYTEPIX = PrimitiveTypes.INT.size();
+    public static final int DEFAULT_RICE_BYTEPIX = ElementType.INT.size();
 
     /**
      * this is a circular dependency that still has to be cut.

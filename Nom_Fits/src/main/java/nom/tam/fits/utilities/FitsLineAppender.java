@@ -6,7 +6,7 @@ import nom.tam.fits.HeaderCard;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2015 nom-tam-fits
+ * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -40,7 +40,11 @@ import nom.tam.fits.HeaderCard;
  * line.
  * 
  * @author Richard van Nieuwenhoven
+ * 
+ * @deprecated Was needed by {@link FitsLineAppender} only, which itself is deprecated in
+ *              favor of the package-level <code>nom.tam.fits.HeaderCardFormatter</code>.
  */
+@Deprecated
 public class FitsLineAppender {
 
     /**

@@ -4,7 +4,7 @@ package nom.tam.util.test;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2016 nom-tam-fits
+ * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,10 +31,10 @@ package nom.tam.util.test;
  * #L%
  */
 
-import java.io.IOException;
-
 import nom.tam.fits.FitsException;
 import nom.tam.fits.HeaderCardException;
+
+import java.io.IOException;
 
 public class ThrowAnyException {
 

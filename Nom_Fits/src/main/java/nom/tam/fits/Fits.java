@@ -4,7 +4,7 @@ package nom.tam.fits;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 2004 - 2015 nom-tam-fits
+ * Copyright (C) 2004 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -111,7 +111,7 @@ import java.util.logging.Logger;
  * <li>The utilities package includes simple tools to copy and list FITS files.
  * </ul>
  * 
- * @version 1.12
+ * @version 1.16
  */
 public class Fits implements Closeable {
 
@@ -128,7 +128,7 @@ public class Fits implements Closeable {
     /**
      * A vector of HDUs that have been added to this Fits object.
      */
-    private final List<BasicHDU<?>> hduList = new ArrayList<BasicHDU<?>>();
+    private final List<BasicHDU<?>> hduList = new ArrayList<>();
 
     /**
      * Has the input stream reached the EOF?
@@ -248,6 +248,7 @@ public class Fits implements Closeable {
      *             Thrown if unable to find or open a file or URL from the
      *             string given.
      **/
+    @SuppressWarnings("resource")
     public Fits(String filename, boolean compressed) throws FitsException {
         if (filename == null) {
             throw new FitsException("Null FITS Identifier String");
@@ -260,6 +261,7 @@ public class Fits implements Closeable {
             }
         } catch (Exception e) {
             LOG.log(Level.FINE, "not a file " + filename, e);
+            throw new FitsException("could not detect type of " + filename, e);
         }
         try {
             InputStream str = Thread.currentThread().getContextClassLoader().getResourceAsStream(filename);
@@ -269,6 +271,7 @@ public class Fits implements Closeable {
             }
         } catch (Exception e) {
             LOG.log(Level.FINE, "not a resource " + filename, e);
+            throw new FitsException("could not detect type of " + filename, e);
         }
         try {
             InputStream is = FitsUtil.getURLStream(new URL(filename), 0);
@@ -276,8 +279,9 @@ public class Fits implements Closeable {
             return;
         } catch (Exception e) {
             LOG.log(Level.FINE, "not a url " + filename, e);
+            throw new FitsException("could not detect type of " + filename, e);
         }
-        throw new FitsException("could not detect type of " + filename);
+
     }
 
     /**
@@ -291,6 +295,7 @@ public class Fits implements Closeable {
      *             Thrown if unable to find or open a file or URL from the
      *             string given.
      */
+    @SuppressWarnings("resource")
     public Fits(URL myURL) throws FitsException {
         try {
             streamInit(FitsUtil.getURLStream(myURL, 0));
@@ -361,16 +366,12 @@ public class Fits implements Closeable {
      */
     public static String version() {
         Properties props = new Properties();
-        InputStream versionProperties = null;
-        try {
-            versionProperties = Fits.class.getResourceAsStream("/META-INF/maven/gov.nasa.gsfc.heasarc/nom-tam-fits/pom.properties");
+        try (InputStream versionProperties = Fits.class.getResourceAsStream("/META-INF/maven/gov.nasa.gsfc.heasarc/nom-tam-fits/pom.properties")) {
             props.load(versionProperties);
             return props.getProperty("version");
         } catch (IOException e) {
             LOG.log(Level.INFO, "reading version failed, ignoring", e);
             return "unknown";
-        } finally {
-            saveClose(versionProperties);
         }
     }
 
@@ -446,6 +447,7 @@ public class Fits implements Closeable {
      * @throws FitsException
      *             if the opening of the file failed.
      */
+    @SuppressWarnings("resource")
     @SuppressFBWarnings(value = "OBL_UNSATISFIED_OBLIGATION", justification = "stream stays open, and will be read when nessesary.")
     protected void fileInit(File myFile, boolean compressed) throws FitsException {
         try {
@@ -460,7 +462,7 @@ public class Fits implements Closeable {
     }
 
     /**
-     * @return the n'th HDU. If the HDU is already read simply return a pointer
+     * Returns the n'th HDU. If the HDU is already read simply return a pointer
      *         to the cached data. Otherwise read the associated stream until
      *         the n'th HDU is read.
      * @param n
@@ -564,8 +566,8 @@ public class Fits implements Closeable {
             permissions += "w";
         }
         try {
-            this.dataStr = new BufferedFile(file, permissions);
-            ((BufferedFile) this.dataStr).seek(0);
+            this.dataStr = new FitsFile(file, permissions);
+            ((FitsFile) this.dataStr).seek(0);
         } catch (IOException e) {
             throw new FitsException("Unable to open file " + file.getPath(), e);
         }
@@ -601,7 +603,7 @@ public class Fits implements Closeable {
         if (is instanceof ArrayDataInput) {
             this.dataStr = (ArrayDataInput) is;
         } else {
-            this.dataStr = new BufferedDataInputStream(is);
+            this.dataStr = new FitsInputStream(is);
         }
         read();
     }
@@ -627,23 +629,36 @@ public class Fits implements Closeable {
         if (this.dataStr instanceof RandomAccess && this.lastFileOffset > 0) {
             FitsUtil.reposition(this.dataStr, this.lastFileOffset);
         }
+
         Header hdr = Header.readHeader(this.dataStr);
         if (hdr == null) {
             this.atEOF = true;
             return null;
         }
+
         Data data = hdr.makeData();
         try {
             data.read(this.dataStr);
         } catch (PaddingException e) {
+            // Stream end before required padding after data...
             e.updateHeader(hdr);
-            if (!FitsFactory.getAllowTerminalJunk()) {
-                throw e;
-            }
+            LOG.warning("Missing padding after data segment.");
         }
+
+
+        // Check for truncation even if we successfully skipped to the expected end
+        // since skip may allow going beyond the EOF.
+        if (Fits.checkTruncated(this.dataStr)) {
+            // File ends before required padding after data...
+            // (files allow skipping beyond the end, which is why we don't
+            // catch it above)
+            LOG.warning("Missing padding after data segment.");
+        }
+
         this.lastFileOffset = FitsUtil.findOffset(this.dataStr);
-        BasicHDU<Data> nextHDU = FitsFactory.hduFactory(hdr, data);//todo why 2 HDUs being found?
+        BasicHDU<Data> nextHDU = FitsFactory.hduFactory(hdr, data);
         this.hduList.add(nextHDU);
+
         return nextHDU;
     }
 
@@ -654,28 +669,20 @@ public class Fits implements Closeable {
      *             if the operation failed
      */
     private void readToEnd() throws FitsException {
-
-        while (this.dataStr != null && !this.atEOF) {
-            try {
+        try {
+            while (this.dataStr != null && !this.atEOF) {
                 if (readHDU() == null) {
-                    break;
-                }
-            } catch (EOFException e) {
-                if (FitsFactory.getAllowTerminalJunk() && //
-                        e.getCause() instanceof TruncatedFileException && //
-                        getNumberOfHDUs() > 0) {
-                    this.atEOF = true;
+                    if (getNumberOfHDUs() == 0) {
+                        throw new FitsException("Not FITS file.");
+                    }
                     return;
                 }
-                throw new FitsException("IO error: " + e);
-            } catch (IOException e) {
-                // This is a hack to fix non-compliant fits files from failing to open due to the false detection of a second HDU
-                /*e.printStackTrace();
-                throw new FitsException("IO error: " + e);*/
-                this.atEOF = true;
             }
+        } catch (IOException e) {
+            throw new FitsException("Corrupted FITS file.", e);
         }
     }
+
 
     /**
      * Add or Modify the CHECKSUM keyword in all headers. by R J Mathar
@@ -692,17 +699,27 @@ public class Fits implements Closeable {
     }
 
     /**
+     * @deprecated This method is poorly conceived as we cannot really read FITS from 
+     *              just any <code>ArrayDataInput</code> but only those,
+     *              which utilize {@link nom.tam.util.FitsDecoder} to convert Java types to 
+     *              FITS binary format, such as {@link FitsInputStream} or {@link FitsFile} 
+     *              (or else a wrapped <code>DataInputStream</code>).
+     *              As such, this method is inherently unsafe as it can be used to parse
+     *              FITS content iscorrectly. It will be removed from the public API in a 
+     *              future major release.
+     * 
      * Set the data stream to be used for future input.
      * 
      * @param stream
      *            The data stream to be used.
      */
+    @Deprecated
     public void setStream(ArrayDataInput stream) {
         this.dataStr = stream;
         this.atEOF = false;
         this.lastFileOffset = -1;
     }
-
+    
     /**
      * Return the number of HDUs in the Fits object. If the FITS file is
      * associated with an external stream make sure that we have exhausted the
@@ -739,13 +756,13 @@ public class Fits implements Closeable {
     public void skipHDU() throws FitsException, IOException {
         if (this.atEOF) {
             return;
-        } else {
-            Header hdr = new Header(this.dataStr);
-            int dataSize = (int) hdr.getDataSize();
-            this.dataStr.skipAllBytes(dataSize);
-            if (this.dataStr instanceof RandomAccess) {
-                this.lastFileOffset = ((RandomAccess) this.dataStr).getFilePointer();
-            }
+        } 
+
+        Header hdr = new Header(this.dataStr);
+        int dataSize = (int) hdr.getDataSize();
+        this.dataStr.skipAllBytes(dataSize);
+        if (this.dataStr instanceof RandomAccess) {
+            this.lastFileOffset = ((RandomAccess) this.dataStr).getFilePointer();
         }
     }
 
@@ -766,7 +783,7 @@ public class Fits implements Closeable {
     }
 
     /**
-     * Initialize the input stream. Mostly this checks to see if the stream is
+     * Initializes the input stream. Mostly this checks to see if the stream is
      * compressed and wraps the stream if necessary. Even if the stream is not
      * compressed, it will likely be wrapped in a PushbackInputStream. So users
      * should probably not supply a BufferedDataInputStream themselves, but
@@ -777,72 +794,157 @@ public class Fits implements Closeable {
      * @throws FitsException
      *             if the initialization failed
      */
+    @SuppressWarnings("resource")
     protected void streamInit(InputStream inputStream) throws FitsException {
-        this.dataStr = new BufferedDataInputStream(CompressionManager.decompress(inputStream));
+        this.dataStr = new FitsInputStream(CompressionManager.decompress(inputStream));
     }
 
     /**
-     * Write a Fits Object to an external Stream.
+     * Writes the contents to a designated FITS file. It is up to the caller to 
+     * close the file as appropriate after writing to it.
      * 
-     * @param os
-     *            A DataOutput stream.
-     * @throws FitsException
-     *             if the operation failed
+     * @param file              a file that support FITS encoding
+     * @throws FitsException    if there were any errors writing the contents themselves.
+     * @throws IOException      if the underlying file could not be trimmed or closed.
+     * 
+     * @since 1.16
+     * 
+     * @see #write(FitsOutputStream)
      */
-    public void write(DataOutput os) throws FitsException {
-        ArrayDataOutput obs;
-        boolean newOS = false;
-        if (os instanceof ArrayDataOutput) {
-            obs = (ArrayDataOutput) os;
-        } else if (os instanceof DataOutputStream) {
-            newOS = true;
-            obs = new BufferedDataOutputStream((DataOutputStream) os);
-        } else {
-            throw new FitsException("Cannot create ArrayDataOutput from class " + os.getClass().getName());
-        }
-        for (BasicHDU<?> basicHDU : hduList) {
-            basicHDU.write(obs);
-        }
-        if (newOS) {
-            try {
-                obs.flush();
-                obs.close();
-            } catch (IOException e) {
-                throw new FitsException("Error flushing/closing the FITS output stream: " + e, e);
-            }
-        }
-        if (obs instanceof BufferedFile) {
-            try {
-                ((BufferedFile) obs).setLength(((BufferedFile) obs).getFilePointer());
-            } catch (IOException e) {
-                throw new FitsException("Error resizing the FITS output stream: " + e, e);
-            }
-        }
+    public void write(FitsFile file) throws IOException, FitsException {
+        write((ArrayDataOutput) file);
+        file.setLength(file.getFilePointer());
     }
 
     /**
-     * Write the FITS to the specified file. This is a wrapper method provided
-     * for convenience, which calls the {@link #write(DataOutput)} method. It
-     * creates a suitable {@link nom.tam.util.BufferedFile}, to which the FITS
-     * is then written. Upon completion the underlying stream is closed.
+     * Writes the contents to a designated FITS output stream. It is up to the caller
+     * to close the stream as appropriate after writing to it.
      * 
-     * @param file
-     *            a file to which the FITS is to be written.
-     * @throws FitsException
-     *             if {@link #write(DataOutput)} failed
-     * @throws IOException
-     *             if the underlying output stream could not be created or
-     *             closed.
+     * @param out               an output stream that supports FITS encoding.
+     * @throws FitsException    if there were any errors writing the contents themselves.
+     * @throws IOException      if the underlying file could not be flushed or closed.
+     *
+     * @since 1.16
+     * 
+     * @see #write(FitsFile)
+     * @see #write(File)
+     * @see #write(String)
+     */
+    public void write(FitsOutputStream out) throws IOException, FitsException {
+        write((ArrayDataOutput) out);
+        out.flush();
+    }
+
+    /**
+     * Writes the contents to a new file.
+     * 
+     * @param file              a file to which the FITS is to be written.
+     * @throws FitsException    if there were any errors writing the contents themselves.
+     * @throws IOException      if the underlying output stream could not be created or closed.
+     * 
+     * @see #write(FitsOutputStream)
      */
     public void write(File file) throws IOException, FitsException {
-        BufferedFile bf = null;
-        try {
-            bf = new BufferedFile(file, "rw");
-            write(bf);
-        } finally {
-            SafeClose.close(bf);
+        try (FileOutputStream o = new FileOutputStream(file)) {
+            write(new FitsOutputStream(o));
+            o.close();
         }
     }
+
+    /**
+     * Writes the contents to the specified file. It simply wraps {@link #write(File)}
+     * for convenience.
+     * 
+     * @param fileName          the file name/path
+     * @throws FitsException    if there were any errors writing the contents themselves.
+     * @throws IOException      if the underlying stream could not be created or closed.
+     * 
+     * @since 1.16
+     * 
+     * @see #write(File)
+     */
+    public void write(String fileName) throws IOException, FitsException {
+        write(new File(fileName));
+    }
+
+    // TODO For DataOutputStream this one conflicts with write(DataOutput). However
+    //      once that one is deprecated, this one can be exposed safely.
+    //    public void write(OutputStream os) throws IOException, FitsException {
+    //        write(new FitsOutputStream(os));
+    //    }
+
+
+    /**
+     * Writes the contents to the specified output. This should not be exposed
+     * outside of this class, since the output object must have FITS-specific
+     * encoding, and we can only make sure of that if this is called locally
+     * only.
+     * 
+     * @param out              the output with a FITS-specific encoding.
+     * @throws FitsException    if the operation failed
+     */
+    private void write(ArrayDataOutput out) throws FitsException {
+        for (BasicHDU<?> basicHDU : hduList) {
+            basicHDU.write(out);
+        }
+    }
+
+
+    /**
+     * @deprecated This method is poorly conceived as we cannot really write FITS to 
+     *              just any <code>DataOutput</code> but only to specific {@link ArrayDataOutput},
+     *              which utilize {@link nom.tam.util.FitsEncoder} to convert Java types to 
+     *              FITS binary format, such as {@link FitsOutputStream} or {@link FitsFile} 
+     *              (or else a wrapped <code>DataOutputStream</code>).
+     *              As such, this method is inherently unsafe as it can be used to create 
+     *              unreadable FITS files. It will be removed from a future major release.
+     *              Use one of the more appropriate other <code>write()</code>
+     *              methods instead.
+     * 
+     * Writes the contents to an external file or stream. The file or stream remains
+     * open and it is up to the caller to close it as appropriate.
+     * 
+     * @param os
+     *            A <code>DataOutput</code> stream.
+     * @throws FitsException
+     *             if the operation failed
+     *             
+     * @see #write(FitsFile)
+     * @see #write(FitsOutputStream)
+     * @see #write(File)
+     * @see #write(String)
+     */
+    @Deprecated
+    public void write(DataOutput os) throws FitsException {
+        if (os instanceof FitsFile) {
+            try {
+                write((FitsFile) os);
+            } catch (IOException e) {
+                throw new FitsException("Error writing to FITS file: " + e, e);
+            }
+            return;
+        }
+
+        if (os instanceof FitsOutputStream) {
+            try {
+                write((FitsOutputStream) os);
+            } catch (IOException e) {
+                throw new FitsException("Error writing to FITS output stream: " + e, e);
+            }
+            return;
+        }
+
+        if (!(os instanceof DataOutputStream)) {
+            throw new FitsException("Cannot create FitsOutputStream from class " + os.getClass().getName());
+        }
+
+        try {
+            write(new FitsOutputStream((DataOutputStream) os));
+        } catch (IOException e) {
+            throw new FitsException("Error writing to the FITS output stream: " + e, e);
+        }
+    }
+
 
     @Override
     public void close() throws IOException {
@@ -850,6 +952,7 @@ public class Fits implements Closeable {
             this.dataStr.close();
         }
     }
+
 
     /**
      * set the checksum of a HDU.
@@ -876,5 +979,41 @@ public class Fits implements Closeable {
     @Deprecated
     public static long checksum(final byte[] data) {
         return FitsCheckSum.checksum(data);
+    }
+    
+    
+    /**
+     * Checks if the file ends before the current read positon, and if so, it 
+     * may log a warning. This may happen with {@link FitsFile} where the 
+     * contract of {@link RandomAccess} allows for skipping ahead beyond the 
+     * end of file, since expanding the file is allowed when writing. Only a 
+     * subsequent read call would fail.
+     *
+     * @param in    the input from which the FITS content was read.
+     * @return      <code>true</code> if the current read position is beyond
+     *              the end-of-file, otherwise <code>false</code>.
+     * @throws IOException  if there was an IO error accessing the file or stream.
+     * 
+     * @see #skip(long)
+     * @see #skipBytes(int)
+     * @see #skipAllBytes(long)
+     * 
+     * 
+     * @since 1.16
+     */
+    static boolean checkTruncated(ArrayDataInput in) throws IOException {
+        if (!(in instanceof RandomAccess)) {
+            // We cannot skip more than is available in an input stream.
+            return false;
+        }
+        
+        RandomAccess f = (RandomAccess) in;
+        long pos = f.getFilePointer();
+        long len = f.length();
+        if (pos > len) {
+            LOG.log(Level.WARNING, "Premature file end at " + len + " (expected " + pos + ")", new Throwable());
+            return true;
+        }
+        return false;
     }
 }

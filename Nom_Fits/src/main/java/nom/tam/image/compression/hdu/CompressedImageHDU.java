@@ -4,7 +4,7 @@ package nom.tam.image.compression.hdu;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2015 nom-tam-fits
+ * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,27 +31,18 @@ package nom.tam.image.compression.hdu;
  * #L%
  */
 
-import static nom.tam.fits.header.Compression.ZIMAGE;
-import static nom.tam.fits.header.Standard.BLANK;
-
-import java.nio.Buffer;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import nom.tam.fits.BinaryTableHDU;
-import nom.tam.fits.FitsException;
-import nom.tam.fits.Header;
-import nom.tam.fits.HeaderCard;
-import nom.tam.fits.ImageData;
-import nom.tam.fits.ImageHDU;
+import nom.tam.fits.*;
 import nom.tam.fits.compression.algorithm.api.ICompressOption;
 import nom.tam.fits.header.Compression;
 import nom.tam.fits.header.GenericKey;
 import nom.tam.fits.header.IFitsHeader;
 import nom.tam.util.Cursor;
+
+import java.nio.Buffer;
+import java.util.*;
+
+import static nom.tam.fits.header.Compression.ZIMAGE;
+import static nom.tam.fits.header.Standard.BLANK;
 
 /**
  * A compressed image is a normal binary table with a defined structure. The
@@ -68,9 +59,9 @@ public class CompressedImageHDU extends BinaryTableHDU {
      */
     static final List<IFitsHeader> TABLE_COLUMN_KEYS = Collections.unmodifiableList(Arrays.asList(binaryTableColumnKeyStems()));
 
-    static final Map<IFitsHeader, BackupRestoreUnCompressedHeaderCard> COMPRESSED_HEADER_MAPPING = new HashMap<IFitsHeader, BackupRestoreUnCompressedHeaderCard>();
+    static final Map<IFitsHeader, BackupRestoreUnCompressedHeaderCard> COMPRESSED_HEADER_MAPPING = new HashMap<>();
 
-    static final Map<IFitsHeader, BackupRestoreUnCompressedHeaderCard> UNCOMPRESSED_HEADER_MAPPING = new HashMap<IFitsHeader, BackupRestoreUnCompressedHeaderCard>();
+    static final Map<IFitsHeader, BackupRestoreUnCompressedHeaderCard> UNCOMPRESSED_HEADER_MAPPING = new HashMap<>();
 
     /**
      * Prepare a compressed image hdu for the specified image. the tile axis

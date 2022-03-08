@@ -1,11 +1,28 @@
 package ij.plugin;
-import java.io.*;
-import java.util.Properties; 
-import ij.*;
+
+import ij.IJ;
+import ij.ImagePlus;
+import ij.ImageStack;
 import ij.astro.AstroImageJ;
-import ij.io.*;
-import ij.process.*;
-import ij.measure.*;
+import ij.astro.util.ImageType;
+import ij.io.SaveDialog;
+import ij.measure.Calibration;
+import ij.process.ByteProcessor;
+import ij.process.FloatProcessor;
+import ij.process.ImageProcessor;
+import ij.process.ShortProcessor;
+import nom.tam.fits.Fits;
+import nom.tam.fits.FitsException;
+import nom.tam.fits.HeaderCard;
+import nom.tam.fits.header.Standard;
+import nom.tam.util.FitsOutputStream;
+
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.Properties;
+import java.util.zip.GZIPOutputStream;
 
 /**
  * This plugin saves a 16 or 32 bit image in FITS format. It is a stripped-down version of the SaveAs_FITS 
@@ -17,6 +34,7 @@ import ij.measure.*;
  * <br>Version 2008-12-15 : fixed END card recognition bug (F.V. Hessman, Univ. Goettingen).
  * <br>Version 2019-11-03 : various updates  (K.A. Collins, CfA-Harvard and Smithsonian).
  */
+@AstroImageJ(reason = "Use nom.tam.fits to write images", modified = true)
 public class FITS_Writer implements PlugIn {
 
     private int numCards = 0;
@@ -25,9 +43,15 @@ public class FITS_Writer implements PlugIn {
     private double bZero = 0.0;
     private double bScale = 1.0;
             
-	@AstroImageJ(reason = "commented out GET FILE...file deletion iff exists", modified = true)
+	@AstroImageJ(reason = "commented out GET FILE...file deletion iff exists, use nom.tam for export", modified = true)
     public void run(String path) {
 		ImagePlus imp = IJ.getImage();
+
+		if (true) { // AIJ uses nom.tam for fits export
+			saveImage(imp, path);
+			return;
+		}
+
 		ImageProcessor ip = imp.getProcessor();
 		int numImages = imp.getImageStackSize();
 		int bitDepth = imp.getBitDepth();
@@ -90,6 +114,76 @@ public class FITS_Writer implements PlugIn {
 		char[] endFiller = new char[fillerLength];
 		appendFile(endFiller, path);
     }
+
+	public static void saveImage(ImagePlus imp, String path) {
+		saveImage(imp, path, -1);
+	}
+
+	public static void saveImage(ImagePlus imp, String path, int specificSlice) {
+		// GET PATH
+		if (path == null || path.trim().length() == 0) {
+			String title = "image.fits";
+			SaveDialog sd = new SaveDialog("Write FITS image",title,".fits");
+			path = sd.getDirectory()+sd.getFileName();
+		}
+
+		var doFz = path.endsWith(".fz");
+		var doGz = path.endsWith(".gz");
+
+		try (var f = new Fits()) {
+			for (int slice = 1; slice <= imp.getStackSize(); slice++) {
+				if (specificSlice != -1 && slice != specificSlice) continue;
+				var stack = imp.getStack();
+				var ip = stack.getProcessor(slice);
+				var type = ImageType.getType(ip);
+
+				// Get the old header and check if BZERO is needed
+				var useBZero = false;
+				var oldHeader = getHeader(imp, slice);
+				if (oldHeader != null) {
+					for (String cardString : oldHeader) {
+						var card = HeaderCard.create(cardString);
+						if (Standard.BZERO.key().equals(card.getKey())) {
+							useBZero = true;
+							break;
+						}
+					}
+				}
+
+				var data = type.make2DArray(ip, useBZero);//todo handle color images
+				var hdu = Fits.makeHDU(data);
+				var header = hdu.getHeader();
+
+				// Duplicate header for new image
+				if (oldHeader != null) {
+					for (String cardString : oldHeader) {
+						var card = HeaderCard.create(cardString);
+						if (header.containsKey(card.getKey()) && // No overwriting of old header values
+								Arrays.stream(Standard.values()).anyMatch(s -> card.getKey().equals(s.key())) && // Use auto-genned HDU header info
+								!card.isCommentStyleCard()) { // Allow duplicate comment-style cards
+							continue;
+						}
+						header.addLine(card);
+					}
+				}
+
+				f.addHDU(hdu);
+			}
+
+			Files.createDirectories(Path.of(path).getParent());
+			if (!Path.of(path).toFile().exists()) Files.createFile(Path.of(path));
+
+			if (doGz) {
+				var out = new FitsOutputStream(new GZIPOutputStream(new FileOutputStream(Path.of(path).toFile())));
+				f.write(out);
+			} else {
+				f.write(Path.of(path).toFile());
+			}
+		} catch (IOException | FitsException e) {
+			e.printStackTrace();
+			IJ.error("Failed to write file.");
+		}
+	}
 
 //	/**
 //	 * Creates a FITS header for an image which doesn't have one already.
@@ -219,9 +313,22 @@ public class FITS_Writer implements PlugIn {
 	 *
 	 * Taken from the ImageJ astroj package (www.astro.physik.uni-goettingen.de/~hessman/ImageJ/Astronomy)
 	 *
+ * @param img		The ImagePlus image which has the FITS header in it's "Info" property.
+	 */
+	public static String[] getHeader(ImagePlus img) {
+		return getHeader(img, img.getCurrentSlice());
+	}
+
+	/**
+	 * Extracts the original FITS header from the Properties object of the
+	 * ImagePlus image (or from the current slice label in the case of an ImageStack)
+	 * and returns it as an array of String objects representing each card.
+	 *
+	 * Taken from the ImageJ astroj package (www.astro.physik.uni-goettingen.de/~hessman/ImageJ/Astronomy)
+	 *
 	 * @param img		The ImagePlus image which has the FITS header in it's "Info" property.
 	 */
-	public static String[] getHeader (ImagePlus img) {
+	public static String[] getHeader (ImagePlus img, int slice) {
 		String content = null;
 
 		int depth = img.getStackSize();
@@ -232,7 +339,6 @@ public class FITS_Writer implements PlugIn {
 			content = (String)props.getProperty ("Info");
 		}
 		else if (depth > 1) {
-			int slice = img.getCurrentSlice();
 			ImageStack stack = img.getStack();
 			content = stack.getSliceLabel(slice);
             if (content == null) {

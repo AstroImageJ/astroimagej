@@ -4,7 +4,7 @@ package nom.tam.util.test;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 2004 - 2015 nom-tam-fits
+ * Copyright (C) 2004 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,14 +31,13 @@ package nom.tam.util.test;
  * #L%
  */
 
-import static org.junit.Assert.assertEquals;
+import nom.tam.util.ArrayFuncs;
+import nom.tam.util.TestArrayFuncs;
+import org.junit.Test;
 
 import java.util.Arrays;
 
-import nom.tam.util.ArrayFuncs;
-import nom.tam.util.TestArrayFuncs;
-
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 public class ArrayFuncs2Test {
 

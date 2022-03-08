@@ -4,7 +4,7 @@ package nom.tam.fits.compression.provider.param.hcompress;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2016 nom-tam-fits
+ * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,13 +31,13 @@ package nom.tam.fits.compression.provider.param.hcompress;
  * #L%
  */
 
-import java.util.Arrays;
-
 import nom.tam.fits.compression.algorithm.api.ICompressOption;
 import nom.tam.fits.compression.algorithm.hcompress.HCompressorQuantizeOption;
 import nom.tam.fits.compression.provider.param.api.ICompressHeaderParameter;
 import nom.tam.fits.compression.provider.param.api.ICompressParameters;
 import nom.tam.fits.compression.provider.param.quant.QuantizeParameters;
+
+import java.util.Arrays;
 
 public class HCompressQuantizeParameters extends QuantizeParameters {
 

@@ -4,7 +4,7 @@ package nom.tam.fits;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 2004 - 2015 nom-tam-fits
+ * Copyright (C) 2004 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,20 +31,12 @@ package nom.tam.fits;
  * #L%
  */
 
-import static nom.tam.fits.header.Standard.BITPIX;
-import static nom.tam.fits.header.Standard.GCOUNT;
-import static nom.tam.fits.header.Standard.GROUPS;
-import static nom.tam.fits.header.Standard.NAXIS;
-import static nom.tam.fits.header.Standard.NAXISn;
-import static nom.tam.fits.header.Standard.PCOUNT;
-import static nom.tam.fits.header.Standard.SIMPLE;
-import static nom.tam.fits.header.Standard.XTENSION;
-import static nom.tam.fits.header.Standard.XTENSION_IMAGE;
+import nom.tam.fits.header.Bitpix;
+import nom.tam.util.ArrayFuncs;
 
 import java.io.PrintStream;
-import java.util.logging.Logger;
 
-import nom.tam.util.ArrayFuncs;
+import static nom.tam.fits.header.Standard.*;
 
 /**
  * Random groups HDUs. Note that the internal storage of random groups is a
@@ -57,14 +49,11 @@ import nom.tam.util.ArrayFuncs;
  */
 public class RandomGroupsHDU extends BasicHDU<RandomGroupsData> {
 
-    private static final Logger LOG = Logger.getLogger(RandomGroupsHDU.class.getName());
-
     public static RandomGroupsData encapsulate(Object o) throws FitsException {
         if (o instanceof Object[][]) {
             return new RandomGroupsData((Object[][]) o);
-        } else {
-            throw new FitsException("Attempt to encapsulate invalid data in Random Group");
         }
+        throw new FitsException("Attempt to encapsulate invalid data in Random Group");
     }
 
     static Object[] generateSampleRow(Header h) throws FitsException {
@@ -72,32 +61,7 @@ public class RandomGroupsHDU extends BasicHDU<RandomGroupsData> {
         int ndim = h.getIntValue(NAXIS, 0) - 1;
         int[] dims = new int[ndim];
 
-        int bitpix = h.getIntValue(BITPIX, 0);
-
-        Class<?> baseClass;
-
-        switch (bitpix) {
-            case BasicHDU.BITPIX_BYTE:
-                baseClass = Byte.TYPE;
-                break;
-            case BasicHDU.BITPIX_SHORT:
-                baseClass = Short.TYPE;
-                break;
-            case BasicHDU.BITPIX_INT:
-                baseClass = Integer.TYPE;
-                break;
-            case BasicHDU.BITPIX_LONG:
-                baseClass = Long.TYPE;
-                break;
-            case BasicHDU.BITPIX_FLOAT:
-                baseClass = Float.TYPE;
-                break;
-            case BasicHDU.BITPIX_DOUBLE:
-                baseClass = Double.TYPE;
-                break;
-            default:
-                throw new FitsException("Invalid BITPIX:" + bitpix);
-        }
+        Class<?> baseClass = Bitpix.fromHeader(h).getNumberType();
 
         // Note that we have to invert the order of the axes
         // for the FITS file to get the order in the array we

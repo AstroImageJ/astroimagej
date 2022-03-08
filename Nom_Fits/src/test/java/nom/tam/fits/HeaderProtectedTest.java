@@ -4,7 +4,7 @@ package nom.tam.fits;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2016 nom-tam-fits
+ * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,16 +31,15 @@ package nom.tam.fits;
  * #L%
  */
 
-import static nom.tam.fits.header.Standard.GROUPS;
+import nom.tam.fits.header.GenericKey;
+import nom.tam.fits.header.Standard;
+import nom.tam.util.FitsOutputStream;
+import org.junit.Assert;
+import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
 
-import nom.tam.fits.header.GenericKey;
-import nom.tam.fits.header.Standard;
-import nom.tam.util.BufferedDataOutputStream;
-
-import org.junit.Assert;
-import org.junit.Test;
+import static nom.tam.fits.header.Standard.GROUPS;
 
 public class HeaderProtectedTest {
 
@@ -62,18 +61,52 @@ public class HeaderProtectedTest {
         Assert.assertNotNull(actual);
     }
 
+    @Test(expected = HeaderCardException.class)
+    public void testInvalidReplaceKey1() throws Exception {
+        Header h = new Header();
+        h.addValue("TEST", "string", "comment");
+        h.replaceKey("TEST", "NOTVALID1");
+    }
+    
+    @Test(expected = HeaderCardException.class)
+    public void testInvalidReplaceKey2() throws Exception {
+        Header h = new Header();
+        h.addValue("TEST", "string", "comment");
+        h.replaceKey("TEST", "NOT\tVAL");
+    }
+    
+    @Test(expected = HeaderCardException.class)
+    public void testInvalidReplaceKey3() throws Exception {
+        Header h = new Header();
+        h.addValue("TEST", "string", "comment");
+        h.replaceKey("TEST", "NOT VAL");
+    }
+    
+    @Test(expected = HeaderCardException.class)
+    public void testInvalidReplaceKey4() throws Exception {
+        Header h = new Header();
+        h.addValue("TEST", "string", "comment");
+        h.replaceKey("TEST", "NOT*VAL");
+    }
+    
     @Test
     public void testTrueDataSize() throws Exception {
         Header header = new Header();
-        Assert.assertEquals(0L, header.trueDataSize());
+        // No BITPIX
+        Assert.assertEquals(0L, header.trueDataSize()); 
+        header.addValue(Standard.BITPIX, 32);
+        // No NAXIS
+        Assert.assertEquals(0L, header.trueDataSize()); 
+        
+        header = new Header();
         header.nullImage();
-        header.write(new BufferedDataOutputStream(new ByteArrayOutputStream(), 80));
+        header.write(new FitsOutputStream(new ByteArrayOutputStream(), 80));
         Assert.assertEquals(0L, header.trueDataSize());
         header.setNaxes(2);
         header.setNaxis(1, 0);
         header.setNaxis(2, 2);
         header.addValue(GROUPS, true);
-        header.write(new BufferedDataOutputStream(new ByteArrayOutputStream(), 80));
+        header.write(new FitsOutputStream(new ByteArrayOutputStream(), 80));
         Assert.assertEquals(2L, header.trueDataSize());
     }
 

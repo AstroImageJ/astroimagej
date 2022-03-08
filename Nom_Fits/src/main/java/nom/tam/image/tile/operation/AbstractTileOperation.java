@@ -4,7 +4,7 @@ package nom.tam.image.tile.operation;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2016 nom-tam-fits
+ * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,13 +31,13 @@ package nom.tam.image.tile.operation;
  * #L%
  */
 
+import nom.tam.image.tile.operation.buffer.TileBuffer;
+import nom.tam.image.tile.operation.buffer.TileBufferFactory;
+import nom.tam.util.type.ElementType;
+
 import java.nio.Buffer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-
-import nom.tam.image.tile.operation.buffer.TileBuffer;
-import nom.tam.image.tile.operation.buffer.TileBufferFactory;
-import nom.tam.util.type.PrimitiveType;
 
 public abstract class AbstractTileOperation implements Runnable, ITileOperation {
 
@@ -101,7 +101,7 @@ public abstract class AbstractTileOperation implements Runnable, ITileOperation 
         }
     }
 
-    protected PrimitiveType<Buffer> getBaseType() {
+    protected ElementType<Buffer> getBaseType() {
         return this.tiledImageOperation.getBaseType();
     }
 

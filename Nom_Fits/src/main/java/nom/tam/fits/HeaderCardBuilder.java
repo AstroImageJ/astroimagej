@@ -4,7 +4,7 @@ package nom.tam.fits;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2015 nom-tam-fits
+ * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,11 +31,10 @@ package nom.tam.fits;
  * #L%
  */
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.util.Date;
 
 import nom.tam.fits.header.IFitsHeader;
+
+import java.util.Date;
 
 /**
  * builder pattern implementation for easy readable header card creation.
@@ -62,7 +61,7 @@ public class HeaderCardBuilder {
     /**
      * scale to use for decimal values.
      */
-    private int scale = -1;
+    private int precision = -1;
 
     /**
      * constructor to the header card builder.
@@ -155,29 +154,22 @@ public class HeaderCardBuilder {
     }
 
     /**
-     * set the value of the current card.If the card did not exist yet the card
+     * Sets a new number value for the current card. If the card did not exist yet the card
      * will be created.
      * 
-     * @param newValue
-     *            the new value to set.
+     * @param value     the new number value to set.
      * @return this
-     * @throws HeaderCardException
-     *             if the card creation failed.
+     * @throws HeaderCardException if the card creation failed.
+     * @throws LongValueException 
+     *                  if the number value cannot be represented in the space available
+     *                  for it in the 80-character wide FITS header record.    
      */
-    public HeaderCardBuilder value(double newValue) throws HeaderCardException {
+    public HeaderCardBuilder value(Number value) throws HeaderCardException, LongValueException {
         if (this.card == null) {
-            if (scale >= 0) {
-                this.card = new HeaderCard(this.key.key(), newValue, scale, null);
-            } else {
-                this.card = new HeaderCard(this.key.key(), newValue, null);
-            }
+            this.card = new HeaderCard(this.key.key(), value, precision, null);
             this.header.addLine(this.card);
         } else {
-            if (scale >= 0) {
-                this.card.setValue(newValue, scale);
-            } else {
-                this.card.setValue(newValue);
-            }
+            this.card.setValue(value, precision);
         }
         return this;
     }
@@ -191,62 +183,11 @@ public class HeaderCardBuilder {
      * @return this
      * @throws HeaderCardException
      *             if the card creation failed.
+     * @throws LongValueException 
+     *             if the number value cannot be represented in the space available
+     *             for it in the 80-character wide FITS header record.
      */
-    public HeaderCardBuilder value(BigDecimal newValue) throws HeaderCardException {
-        final BigDecimal scaledValue;
-        if (scale >= 0) {
-            scaledValue = newValue.setScale(scale, RoundingMode.HALF_UP);
-        } else {
-            scaledValue = newValue;
-        }
-        if (this.card == null) {
-            this.card = new HeaderCard(this.key.key(), scaledValue, null);
-            this.header.addLine(this.card);
-        } else {
-            this.card.setValue(scaledValue);
-        }
-        return this;
-    }
-
-    /**
-     * set the value of the current card.If the card did not exist yet the card
-     * will be created.
-     * 
-     * @param newValue
-     *            the new value to set.
-     * @return this
-     * @throws HeaderCardException
-     *             if the card creation failed.
-     */
-    public HeaderCardBuilder value(float newValue) throws HeaderCardException {
-        if (this.card == null) {
-            if (scale >= 0) {
-                this.card = new HeaderCard(this.key.key(), newValue, scale, null);
-            } else {
-                this.card = new HeaderCard(this.key.key(), newValue, null);
-            }
-            this.header.addLine(this.card);
-        } else {
-            if (scale >= 0) {
-                this.card.setValue(newValue, scale);
-            } else {
-                this.card.setValue(newValue);
-            }
-        }
-        return this;
-    }
-
-    /**
-     * set the value of the current card.If the card did not exist yet the card
-     * will be created.
-     * 
-     * @param newValue
-     *            the new value to set.
-     * @return this
-     * @throws HeaderCardException
-     *             if the card creation failed.
-     */
-    public HeaderCardBuilder value(int newValue) throws HeaderCardException {
+    public HeaderCardBuilder value(String newValue) throws HeaderCardException, LongValueException {
         if (this.card == null) {
             this.card = new HeaderCard(this.key.key(), newValue, null);
             this.header.addLine(this.card);
@@ -257,67 +198,62 @@ public class HeaderCardBuilder {
     }
 
     /**
-     * set the value of the current card.If the card did not exist yet the card
-     * will be created.
+     * Sets the number of decimals to show for the following decimal values. This method
+     * is now deprecated. Use {@link #precision(int)} instead.
      * 
-     * @param newValue
-     *            the new value to set.
+     * @param decimals     the new number of decimal places to show.
      * @return this
-     * @throws HeaderCardException
-     *             if the card creation failed.
+     * 
+     * @deprecated Use {@link #precision(int)} instead.
      */
-    public HeaderCardBuilder value(long newValue) throws HeaderCardException {
-        if (this.card == null) {
-            this.card = new HeaderCard(this.key.key(), newValue, null);
-            this.header.addLine(this.card);
-        } else {
-            this.card.setValue(newValue);
-        }
+    @Deprecated
+    public HeaderCardBuilder scale(int decimals) {
+        this.precision = decimals;
+        return this;
+    }
+    
+    
+    /**
+     * Sets the number of decimals to show for the following decimal values. 
+     * Trailing zeroes will be ommitted.
+     * 
+     * 
+     * @param decimals     the number of decimals to show for the following decimal values. 
+     * @return              this
+     * 
+     * @since 1.16
+     */
+    public HeaderCardBuilder precision(int decimals) {
+        this.precision = decimals;
         return this;
     }
 
     /**
-     * set the value of the current card.If the card did not exist yet the card
-     * will be created.
-     * 
-     * @param newValue
-     *            the new value to set.
-     * @return this
-     * @throws HeaderCardException
-     *             if the card creation failed.
-     */
-    public HeaderCardBuilder value(String newValue) throws HeaderCardException {
-        if (this.card == null) {
-            this.card = new HeaderCard(this.key.key(), newValue, null);
-            this.header.addLine(this.card);
-        } else {
-            this.card.setValue(newValue);
-        }
-        return this;
-    }
-
-    /**
-     * set the scale for the following decimal values.
-     * 
-     * @param newScale
-     *            the new scale to use
-     * @return this
-     */
-    public HeaderCardBuilder scale(int newScale) {
-        this.scale = newScale;
-        return this;
-    }
-
-    /**
-     * use no scale for the following decimal values.
+     * This method has been deprecated. Please use {@link #autoPrecision()} instead.
      * 
      * @return this
+     * 
+     * @deprecated Use {@link #autoPrecision()} instead
      */
+    @Deprecated
     public HeaderCardBuilder noScale() {
-        this.scale = -1;
+        this.precision = -1;
         return this;
     }
 
+    /**
+     * Use the native precision for the given number type. Trailing zeroes will be
+     * ommitted.
+     * 
+     * @return this
+     * 
+     * @since 1.16
+     */
+    public HeaderCardBuilder autoPrecision() {
+        this.precision = -1;
+        return this;
+    }
+    
     /**
      * @return the filled header.
      */
@@ -325,3 +261,4 @@ public class HeaderCardBuilder {
         return header;
     }
 }
+

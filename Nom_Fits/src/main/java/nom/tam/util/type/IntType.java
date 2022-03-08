@@ -4,7 +4,7 @@ package nom.tam.util.type;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 2004 - 2015 nom-tam-fits
+ * Copyright (C) 2004 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,17 +31,17 @@ package nom.tam.util.type;
  * #L%
  */
 
+import nom.tam.fits.header.Bitpix;
+
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 
-class IntType extends PrimitiveTypeBase<IntBuffer> {
-
-    private static final int BIT_PIX = 32;
+class IntType extends ElementType<IntBuffer> {
 
     private static final int SIZE = 4;
 
     protected IntType() {
-        super(SIZE, false, int.class, Integer.class, IntBuffer.class, 'I', BIT_PIX);
+        super(SIZE, false, int.class, Integer.class, IntBuffer.class, 'I', Bitpix.VALUE_FOR_INT);
     }
 
     @Override

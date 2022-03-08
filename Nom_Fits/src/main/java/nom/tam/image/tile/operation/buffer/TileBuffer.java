@@ -4,7 +4,7 @@ package nom.tam.image.tile.operation.buffer;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2015 nom-tam-fits
+ * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,9 +31,9 @@ package nom.tam.image.tile.operation.buffer;
  * #L%
  */
 
-import java.nio.Buffer;
+import nom.tam.util.type.ElementType;
 
-import nom.tam.util.type.PrimitiveType;
+import java.nio.Buffer;
 
 /**
  * This view on the image data represents a tileOperation that is row based, so
@@ -50,11 +50,11 @@ public abstract class TileBuffer {
     /**
      * the tileOperation this view is connected to
      */
-    private final PrimitiveType<Buffer> baseType;
+    private final ElementType<Buffer> baseType;
 
     private final int width;
 
-    protected TileBuffer(PrimitiveType<Buffer> baseType, int dataOffset, int width, int height) {
+    protected TileBuffer(ElementType<Buffer> baseType, int dataOffset, int width, int height) {
         this.baseType = baseType;
         this.offset = dataOffset;
         this.width = width;
@@ -68,7 +68,7 @@ public abstract class TileBuffer {
     public void finish() {
     }
 
-    public PrimitiveType<Buffer> getBaseType() {
+    public ElementType<Buffer> getBaseType() {
         return this.baseType;
     }
 

@@ -4,7 +4,7 @@ package nom.tam.image.compression.tile;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2016 nom-tam-fits
+ * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,14 +31,12 @@ package nom.tam.image.compression.tile;
  * #L%
  */
 
-import static nom.tam.image.compression.tile.TileCompressionType.COMPRESSED;
-import static nom.tam.image.compression.tile.TileCompressionType.GZIP_COMPRESSED;
-import static nom.tam.image.compression.tile.TileCompressionType.UNCOMPRESSED;
-
 import nom.tam.fits.FitsException;
 import nom.tam.fits.compression.provider.param.api.IHeaderAccess;
 import nom.tam.image.tile.operation.ITileOperationInitialisation;
 import nom.tam.image.tile.operation.TileArea;
+
+import static nom.tam.image.compression.tile.TileCompressionType.*;
 
 final class TileDecompressorInitialisation implements ITileOperationInitialisation<TileCompressionOperation> {
 

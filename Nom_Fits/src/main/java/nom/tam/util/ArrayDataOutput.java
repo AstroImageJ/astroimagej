@@ -1,42 +1,13 @@
 package nom.tam.util;
 
-/*
- * #%L
- * nom.tam FITS library
- * %%
- * Copyright (C) 2004 - 2015 nom-tam-fits
- * %%
- * This is free and unencumbered software released into the public domain.
- * 
- * Anyone is free to copy, modify, publish, use, compile, sell, or
- * distribute this software, either in source code form or as a compiled
- * binary, for any purpose, commercial or non-commercial, and by any
- * means.
- * 
- * In jurisdictions that recognize copyright laws, the author or authors
- * of this software dedicate any and all copyright interest in the
- * software to the public domain. We make this dedication for the benefit
- * of the public at large and to the detriment of our heirs and
- * successors. We intend this dedication to be an overt act of
- * relinquishment in perpetuity of all present and future rights to this
- * software under copyright law.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
- * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
- * IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR
- * OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
- * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
- * OTHER DEALINGS IN THE SOFTWARE.
- * #L%
- */
-
+import java.io.Closeable;
+import java.io.DataOutput;
 import java.io.IOException;
 
 /**
- * Special high performance scientific extension of the DataOutput interface.
+ * Interface for writing array data to outputs.
  */
-public interface ArrayDataOutput extends java.io.DataOutput, FitsIO {
+public interface ArrayDataOutput extends DataOutput, Closeable {
 
     /**
      * Flush the output buffer
@@ -54,7 +25,9 @@ public interface ArrayDataOutput extends java.io.DataOutput, FitsIO {
      * @throws IOException
      *             if one of the underlying write operations failed
      */
-    void write(boolean[] buf) throws IOException;
+    default void write(boolean[] buf) throws IOException {
+        write(buf, 0, buf.length);
+    }
 
     /**
      * Write a segment of an array of boolean's.
@@ -71,6 +44,46 @@ public interface ArrayDataOutput extends java.io.DataOutput, FitsIO {
     void write(boolean[] buf, int offset, int size) throws IOException;
 
     /**
+     * Write an array of booleans, including legal <code>null</code> values.
+     * 
+     * @param buf
+     *            array of booleans.
+     * @throws IOException
+     *             if one of the underlying write operations failed
+     *             
+     * @since 1.16
+     */
+    default void write(Boolean[] buf) throws IOException {
+        write(buf, 0, buf.length);
+    }
+
+    /**
+     * Write a segment of an array of booleans, possibly including legal
+     * <code>null</code> values.
+     * The method has a default implementation, which calls {@link #writeBoolean(boolean)}
+     * element by element. Classes that implement this interface might want to
+     * replace that with a more efficient block read implementation/
+     * 
+     * @param buf
+     *            array of booleans.
+     * @param offset
+     *            start index in the array
+     * @param size
+     *            number of array elements to write
+     * @throws IOException
+     *             if one of the underlying write operations failed
+     *             
+     * @since 1.16
+     */
+    default void write(Boolean[] buf, int offset, int size) throws IOException {
+       int to = offset + size;
+
+       for (int i = offset; i < to; i++) {
+           writeBoolean(buf[i].booleanValue());
+       }
+    }
+
+    /**
      * Write an array of char's.
      * 
      * @param buf
@@ -78,7 +91,9 @@ public interface ArrayDataOutput extends java.io.DataOutput, FitsIO {
      * @throws IOException
      *             if one of the underlying write operations failed
      */
-    void write(char[] buf) throws IOException;
+    default void write(char[] buf) throws IOException {
+        write(buf, 0, buf.length);
+    }
 
     /**
      * Write a segment of an array of char's.
@@ -102,7 +117,9 @@ public interface ArrayDataOutput extends java.io.DataOutput, FitsIO {
      * @throws IOException
      *             if one of the underlying write operations failed
      */
-    void write(double[] buf) throws IOException;
+    default void write(double[] buf) throws IOException {
+        write(buf, 0, buf.length);
+    }
 
     /**
      * Write a segment of an array of double's.
@@ -126,7 +143,9 @@ public interface ArrayDataOutput extends java.io.DataOutput, FitsIO {
      * @throws IOException
      *             if one of the underlying write operations failed
      */
-    void write(float[] buf) throws IOException;
+    default void write(float[] buf) throws IOException {
+        write(buf, 0, buf.length);
+    }
 
     /**
      * Write a segment of an array of float's.
@@ -150,7 +169,9 @@ public interface ArrayDataOutput extends java.io.DataOutput, FitsIO {
      * @throws IOException
      *             if one of the underlying write operations failed
      */
-    void write(int[] buf) throws IOException;
+    default void write(int[] buf) throws IOException {
+        write(buf, 0, buf.length);
+    }
 
     /**
      * Write a segment of an array of int's.
@@ -174,7 +195,9 @@ public interface ArrayDataOutput extends java.io.DataOutput, FitsIO {
      * @throws IOException
      *             if one of the underlying write operations failed
      */
-    void write(long[] buf) throws IOException;
+    default void write(long[] buf) throws IOException {
+        write(buf, 0, buf.length);
+    }
 
     /**
      * Write a segment of an array of longs.
@@ -198,7 +221,9 @@ public interface ArrayDataOutput extends java.io.DataOutput, FitsIO {
      * @throws IOException
      *             if one of the underlying write operations failed
      */
-    void write(short[] buf) throws IOException;
+    default void write(short[] buf) throws IOException {
+        write(buf, 0, buf.length);
+    }
 
     /**
      * Write a segment of an array of shorts.
@@ -223,7 +248,9 @@ public interface ArrayDataOutput extends java.io.DataOutput, FitsIO {
      * @throws IOException
      *             if one of the underlying write operations failed
      */
-    void write(String[] buf) throws IOException;
+    default void write(String[] buf) throws IOException {
+        write(buf, 0, buf.length);
+    }
 
     /**
      * Write a segment of an array of Strings. Equivalent to calling writeBytes
@@ -241,20 +268,20 @@ public interface ArrayDataOutput extends java.io.DataOutput, FitsIO {
     void write(String[] buf, int offset, int size) throws IOException;
 
     /**
-     * This routine provides efficient writing of arrays of any primitive type.
-     * The String class is also handled but it is an error to invoke this method
-     * with an object that is not an array of these types. If the array is
-     * multidimensional, then it calls itself recursively to write the entire
-     * array. Strings are written using the standard 1 byte format (i.e., as in
-     * writeBytes). If the array is an array of objects, then
-     * writePrimitiveArray will be called for each element of the array.
+     * Writes the contents of a Java array to the output translating the data to
+     * the required binary representation. The argument may be a generic Java
+     * array, including multi-dimensional arrays and heterogeneous arrays of
+     * arrays.
      * 
      * @param o
-     *            The object to be written. It must be an array of a primitive
-     *            type, Object, or String.
+     *            the Java array, including heterogeneous arrays of arrays. If
+     *            <code>null</code> nothing will be written to the output.
      * @throws IOException
-     *             if one of the underlying write operations failed
+     *             if there was an IO error writing to the output
+     * @throws IllegalArgumentException
+     *             if the supplied object is not a Java array or if it contains
+     *             Java types that are not supported by the encoder.
      */
-    void writeArray(Object o) throws IOException;
+    void writeArray(Object o) throws IOException, IllegalArgumentException;
 
 }

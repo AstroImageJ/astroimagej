@@ -4,7 +4,7 @@ package nom.tam.fits.header;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2015 nom-tam-fits
+ * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,13 +31,13 @@ package nom.tam.fits.header;
  * #L%
  */
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-
 import nom.tam.fits.header.IFitsHeader.HDU;
 import nom.tam.fits.header.IFitsHeader.SOURCE;
 import nom.tam.fits.header.IFitsHeader.VALUE;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * generic key interface, create an IFitsHeader from a key.
@@ -54,7 +54,7 @@ public final class GenericKey {
     private static final Map<String, IFitsHeader> STANDARD_KEYS;
 
     static {
-        Map<String, IFitsHeader> headers = new HashMap<String, IFitsHeader>();
+        Map<String, IFitsHeader> headers = new HashMap<>();
         for (IFitsHeader key : Standard.values()) {
             headers.put(key.key(), key);
         }

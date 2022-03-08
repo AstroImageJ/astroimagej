@@ -4,7 +4,7 @@ package nom.tam.fits;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2016 nom-tam-fits
+ * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,17 +31,16 @@ package nom.tam.fits;
  * #L%
  */
 
-import static nom.tam.fits.header.Standard.NAXISn;
-import static nom.tam.fits.header.Standard.XTENSION_IMAGE;
+import nom.tam.fits.header.Standard;
+import org.junit.Assert;
+import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.NoSuchElementException;
 
-import nom.tam.fits.header.Standard;
-
-import org.junit.Assert;
-import org.junit.Test;
+import static nom.tam.fits.header.Standard.NAXISn;
+import static nom.tam.fits.header.Standard.XTENSION_IMAGE;
 
 public class ProtectedFitsTest {
 
@@ -166,6 +165,6 @@ public class ProtectedFitsTest {
             actual = e;
         }
         Assert.assertNotNull(actual);
-        Assert.assertTrue(actual.getMessage().toLowerCase().contains("string not supported"));
+        Assert.assertTrue(actual.getMessage().toLowerCase().contains("string"));
     }
 }

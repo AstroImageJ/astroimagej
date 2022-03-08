@@ -6,7 +6,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2015 nom-tam-fits
+ * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -33,6 +33,21 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
  * #L%
  */
 
+/**
+ * @deprecated  It is a rusty-rail compatibility implementation only, 
+ *              unsafe for general use.
+ *              No longer used within the FITS package itself.
+ *              If you do attempt to use it with the deprecated APIs,
+ *              beware that no data will be filled into the buffer
+ *              of this object ever by the library, although its 
+ *              length and position fields may be updated to pretend 
+ *              as if the buffer were always hall full / half 
+ *              available... 
+ *
+ * @see BufferEncoder
+ * @see BufferDecoder
+ */
+@Deprecated
 public class BufferPointer {
 
     /**
@@ -43,30 +58,39 @@ public class BufferPointer {
     /**
      * The number of valid characters in the buffer
      */
-    protected int bufferLength;
+    protected int length;
 
     /**
      * The current offset into the buffer
      */
-    protected int bufferOffset;
+    protected int pos;
 
     public BufferPointer() {
     }
 
     @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "intended exposure of mutable data")
     public BufferPointer(byte[] buffer) {
+        this();
         this.buffer = buffer;
     }
 
     protected BufferPointer init(int bufferSize) {
         this.buffer = new byte[bufferSize];
-        this.bufferOffset = 0;
-        this.bufferLength = 0;
+        this.pos = 0;
+        this.length = 0;
         return this;
     }
 
     protected void invalidate() {
-        this.bufferLength = 0;
-        this.bufferOffset = 0;
+        this.length = 0;
+        this.pos = 0;
+    }
+    
+    public int position() {
+        return pos;
+    }
+    
+    public int limit() {
+        return length;
     }
 }

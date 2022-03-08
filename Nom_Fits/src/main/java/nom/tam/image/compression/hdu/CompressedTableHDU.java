@@ -4,7 +4,7 @@ package nom.tam.image.compression.hdu;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2016 nom-tam-fits
+ * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,16 +31,12 @@ package nom.tam.image.compression.hdu;
  * #L%
  */
 
-import static nom.tam.fits.header.Compression.ZTABLE;
-
-import nom.tam.fits.BinaryTable;
-import nom.tam.fits.BinaryTableHDU;
-import nom.tam.fits.FitsException;
-import nom.tam.fits.Header;
-import nom.tam.fits.HeaderCard;
+import nom.tam.fits.*;
 import nom.tam.fits.header.Standard;
 import nom.tam.util.Cursor;
-import nom.tam.util.type.PrimitiveTypes;
+import nom.tam.util.type.ElementType;
+
+import static nom.tam.fits.header.Compression.ZTABLE;
 
 public class CompressedTableHDU extends BinaryTableHDU {
 
@@ -106,7 +102,7 @@ public class CompressedTableHDU extends BinaryTableHDU {
     public BinaryTableHDU asBinaryTableHDU() throws FitsException {
         Header header = new Header();
         header.addValue(Standard.XTENSION, Standard.XTENSION_BINTABLE);
-        header.addValue(Standard.BITPIX, PrimitiveTypes.BYTE.bitPix());
+        header.addValue(Standard.BITPIX, ElementType.BYTE.bitPix());
         header.addValue(Standard.NAXIS, 2);
         Cursor<String, HeaderCard> headerIterator = header.iterator();
         Cursor<String, HeaderCard> iterator = getHeader().iterator();

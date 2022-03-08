@@ -4,7 +4,7 @@ package nom.tam.manual.intergration;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2015 nom-tam-fits
+ * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,15 +31,14 @@ package nom.tam.manual.intergration;
  * #L%
  */
 
-import java.util.Random;
-
 import nom.tam.util.ArrayFuncs;
 import nom.tam.util.ByteFormatter;
 import nom.tam.util.array.MultiArrayCopier;
-
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
+
+import java.util.Random;
 
 public class UtilTest {
 

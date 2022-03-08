@@ -4,7 +4,7 @@ package nom.tam.fits;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 2004 - 2015 nom-tam-fits
+ * Copyright (C) 2004 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,14 +31,11 @@ package nom.tam.fits;
  * #L%
  */
 
-import static nom.tam.fits.header.Standard.GCOUNT;
-import static nom.tam.fits.header.Standard.NAXIS1;
-import static nom.tam.fits.header.Standard.NAXIS2;
-import static nom.tam.fits.header.Standard.PCOUNT;
-import static nom.tam.fits.header.Standard.TBCOLn;
-import static nom.tam.fits.header.Standard.TFIELDS;
-import static nom.tam.fits.header.Standard.TFORMn;
-import static nom.tam.fits.header.Standard.TNULLn;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import nom.tam.fits.header.Bitpix;
+import nom.tam.fits.header.IFitsHeader;
+import nom.tam.fits.header.Standard;
+import nom.tam.util.*;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -46,21 +43,13 @@ import java.lang.reflect.Array;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import nom.tam.fits.header.IFitsHeader;
-import nom.tam.fits.header.Standard;
-import nom.tam.util.ArrayDataInput;
-import nom.tam.util.ArrayDataOutput;
-import nom.tam.util.ArrayFuncs;
-import nom.tam.util.ByteFormatter;
-import nom.tam.util.ByteParser;
-import nom.tam.util.Cursor;
-import nom.tam.util.FormatException;
-import nom.tam.util.RandomAccess;
+import static nom.tam.fits.header.DataDescription.*;
+import static nom.tam.fits.header.Standard.*;
 
 /**
  * This class represents the data in an ASCII table
  */
+@SuppressWarnings("deprecation")
 public class AsciiTable extends AbstractTableData {
 
     private static final int MAX_INTEGER_LENGTH = 10;
@@ -138,6 +127,37 @@ public class AsciiTable extends AbstractTableData {
      *             if the operation failed
      */
     public AsciiTable(Header hdr) throws FitsException {
+        this(hdr, true);
+    }
+    
+   
+    /**
+     * <p>
+     * Create an ASCII table given a header, with custom integer handling
+     * support.
+     * </p>
+     *
+     * <p>The <code>preferInt</code> parameter controls how columns
+     * with format "<code>I10</code>" are handled; this is tricky because some,
+     * but not all, integers that can be represented in 10 characters can
+     * be represented as 32-bit integers.  Setting it <code>true</code> may make it
+     * more likely to avoid unexpected type changes during round-tripping,
+     * but it also means that some (large number) data in I10 columns may
+     * be impossible to read.
+     * </p>
+     * 
+     * @param hdr
+     *            The header describing the table
+     * @param preferInt
+     *            if <code>true</code>, format "I10" columns will be assumed
+     *            <code>int.class</code>, provided TLMINn/TLMAXn or TDMINn/TDMAXn 
+     *            limits (if defined) allow it. 
+     *            if <code>false</code>, I10 columns that have no clear indication 
+     *            of data range will be assumed <code>long.class</code>.
+     * @throws FitsException
+     *             if the operation failed
+     */
+    public AsciiTable(Header hdr, boolean preferInt) throws FitsException {
 
         this.nRows = hdr.getIntValue(NAXIS2);
         this.nFields = hdr.getIntValue(TFIELDS);
@@ -147,6 +167,7 @@ public class AsciiTable extends AbstractTableData {
         this.offsets = new int[this.nFields];
         this.lengths = new int[this.nFields];
         this.nulls = new String[this.nFields];
+        
 
         for (int i = 0; i < this.nFields; i += 1) {
             this.offsets[i] = hdr.getIntValue(TBCOLn.n(i + 1)) - 1;
@@ -167,10 +188,10 @@ public class AsciiTable extends AbstractTableData {
                     this.types[i] = String.class;
                     break;
                 case 'I':
-                    if (this.lengths[i] > MAX_INTEGER_LENGTH) {
-                        this.types[i] = long.class;
+                    if (this.lengths[i] == MAX_INTEGER_LENGTH) {
+                        this.types[i] = guessI10Type(i, hdr, preferInt);
                     } else {
-                        this.types[i] = int.class;
+                        this.types[i] = this.lengths[i] > MAX_INTEGER_LENGTH ? long.class : int.class;
                     }
                     break;
                 case 'F':
@@ -190,7 +211,85 @@ public class AsciiTable extends AbstractTableData {
             }
         }
     }
+    
+    /**
+     * Checks if the integer value of a specific key requires <code>long</code>
+     * value type to store.
+     * 
+     * @param h     the header
+     * @param key   the keyword to check
+     * @return      <code>true</code> if the keyword exists and has an integer value that is
+     *              outside the range of <code>int</code>. Otherwise <code>false</code>
+     *              
+     * @see #guessI10Type(int, Header, boolean)
+     */
+    private boolean requiresLong(Header h, IFitsHeader key, Long dft) {
+        long l = h.getLongValue(key, dft);
+        if (l == dft) {
+            return false;
+        }
 
+        return (l < Integer.MIN_VALUE || l > Integer.MAX_VALUE);
+    }
+    
+    /**
+     * Guesses what type of values to use to return I10 type table values. Depending on the
+     * range of represented values I10 may fit into <code>int</code> types, or else
+     * require <code>long</code> type arrays. Therefore, the method checks for the
+     * presence of standard column limit keywords TLMINn/TLMAXn and TDMINn/TDMAXn
+     * and if these exist and are outside of the range of an <code>int</code> then
+     * the call will return <code>long.class</code>. If the header does not define the
+     * data limits (fully), it will return the class the caller prefers. Otherwise (data limits
+     * were defined and fit into the <code>int</code> range) <code>int.class</code> will
+     * be returned.
+     * 
+     * @param col           the 0-based table column index
+     * @param h             the header
+     * @param preferInt     whether we prefer <code>int.class</code> over <code>long.class</code>
+     *                      in case the header does not provide us with a clue. 
+     * @return              <code>long.class</code> if the data requires long or
+     *                      we prefer it. Othwerwise <code>int.class</code>
+     *                      
+     * @see #AsciiTable(Header, boolean)
+     */
+    private Class<?> guessI10Type(int col, Header h, boolean preferInt) {
+        col++;
+        
+        if (requiresLong(h, TLMINn.n(col), Long.MAX_VALUE)) {
+            return long.class;
+        }
+        if (requiresLong(h, TLMAXn.n(col), Long.MIN_VALUE)) {
+            return long.class;
+        }
+        if (requiresLong(h, TDMINn.n(col), Long.MAX_VALUE)) {
+            return long.class;
+        }
+        if (requiresLong(h, TDMAXn.n(col), Long.MIN_VALUE)) {
+            return long.class;
+        }
+        
+        if ((h.containsKey(TLMINn.n(col)) || h.containsKey(TDMINn.n(col))) //
+                && (h.containsKey(TLMAXn.n(col)) || h.containsKey(TDMAXn.n(col)))) {
+            // There are keywords defining both min/max values, and none of them require long types...
+            return int.class;
+        }
+        
+        return preferInt ? int.class : long.class;
+    }
+
+
+    /**
+     * Return the data type in the specified column, such as <code>int.class</code> or <code>String.class</code>.
+     * 
+     * @param col   The 0-based column index
+     * @return      the class of data in the specified column.
+     * 
+     * @since 1.16
+     */
+    public final Class<?> getColumnType(int col) {
+        return types[col];
+    }
+    
     int addColInfo(int col, Cursor<String, HeaderCard> iter) throws HeaderCardException {
 
         String tform = null;
@@ -501,7 +600,7 @@ public class AsciiTable extends AbstractTableData {
                 throw new FitsException("Invalid type for ASCII table conversion:" + array[col]);
             }
         } catch (FormatException e) {
-            throw new FitsException("Error parsing data at row,col:" + row + "," + col + "  " + e);
+            throw new FitsException("Error parsing data at row,col:" + row + "," + col + "  ", e);
         }
         return true;
     }
@@ -519,7 +618,7 @@ public class AsciiTable extends AbstractTableData {
         try {
             Standard.context(AsciiTable.class);
             hdr.setXtension("TABLE");
-            hdr.setBitpix(BasicHDU.BITPIX_BYTE);
+            hdr.setBitpix(Bitpix.BYTE);
             hdr.setNaxes(2);
             hdr.setNaxis(1, this.rowLen);
             hdr.setNaxis(2, this.nRows);
@@ -640,9 +739,8 @@ public class AsciiTable extends AbstractTableData {
     public Object getElement(int row, int col) throws FitsException {
         if (this.data != null) {
             return singleElement(row, col);
-        } else {
-            return parseSingleElement(row, col);
         }
+        return parseSingleElement(row, col);
     }
 
     /**
@@ -682,9 +780,8 @@ public class AsciiTable extends AbstractTableData {
 
         if (this.data != null) {
             return singleRow(row);
-        } else {
-            return parseSingleRow(row);
-        }
+        } 
+        return parseSingleRow(row);
     }
 
     /**
@@ -720,9 +817,8 @@ public class AsciiTable extends AbstractTableData {
     public boolean isNull(int row, int col) {
         if (this.isNull != null) {
             return this.isNull[row * this.nFields + col];
-        } else {
-            return false;
         }
+        return false;
     }
 
     /**
@@ -746,12 +842,10 @@ public class AsciiTable extends AbstractTableData {
         if (extractElement(0, this.lengths[col], res, 0, 0, this.nulls[col])) {
             this.buffer = null;
             return res[0];
-
-        } else {
-
-            this.buffer = null;
-            return null;
-        }
+        } 
+        
+        this.buffer = null;
+        return null;
     }
 
     /**

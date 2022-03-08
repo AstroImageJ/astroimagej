@@ -4,7 +4,7 @@ package nom.tam.fits.test;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2015 nom-tam-fits
+ * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,7 +31,8 @@ package nom.tam.fits.test;
  * #L%
  */
 
-import static org.junit.Assert.assertEquals;
+import nom.tam.fits.Fits;
+import org.junit.Test;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -40,9 +41,7 @@ import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import nom.tam.fits.Fits;
-
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 public class MiscTest {
 
@@ -95,7 +94,7 @@ public class MiscTest {
     }
 
     @Test
-    public void testRegex() {
+    public void testRegex() throws Exception {
         Pattern doubleQuotePattern = Pattern.compile("''");
         Pattern stringPattern = Pattern.compile("'(?:[^']|'{2})*'");
         String[] testStrings = {

@@ -4,7 +4,7 @@ package nom.tam.image.compression.hdu;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2015 nom-tam-fits
+ * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,10 +31,6 @@ package nom.tam.image.compression.hdu;
  * #L%
  */
 
-import static nom.tam.fits.header.Compression.ZIMAGE;
-
-import java.nio.Buffer;
-
 import nom.tam.fits.BinaryTable;
 import nom.tam.fits.FitsException;
 import nom.tam.fits.Header;
@@ -42,6 +38,10 @@ import nom.tam.fits.HeaderCard;
 import nom.tam.fits.compression.algorithm.api.ICompressOption;
 import nom.tam.image.compression.tile.TiledImageCompressionOperation;
 import nom.tam.util.ArrayFuncs;
+
+import java.nio.Buffer;
+
+import static nom.tam.fits.header.Compression.ZIMAGE;
 
 public class CompressedImageData extends BinaryTable {
 

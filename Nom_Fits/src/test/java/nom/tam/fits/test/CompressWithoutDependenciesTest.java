@@ -4,7 +4,7 @@ package nom.tam.fits.test;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 2004 - 2015 nom-tam-fits
+ * Copyright (C) 2004 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,8 +31,9 @@ package nom.tam.fits.test;
  * #L%
  */
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import nom.tam.fits.compress.CompressionManager;
+import nom.tam.util.SafeClose;
+import org.junit.Test;
 
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -41,10 +42,8 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.junit.Test;
-
-import nom.tam.fits.compress.CompressionManager;
-import nom.tam.util.SafeClose;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test reading .Z and .gz compressed files.

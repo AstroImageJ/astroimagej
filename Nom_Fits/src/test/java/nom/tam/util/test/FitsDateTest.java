@@ -4,7 +4,7 @@ package nom.tam.util.test;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2015 nom-tam-fits
+ * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,18 +31,17 @@ package nom.tam.util.test;
  * #L%
  */
 
-import static org.junit.Assert.assertEquals;
+import nom.tam.fits.FitsDate;
+import nom.tam.fits.FitsException;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import nom.tam.fits.FitsDate;
-import nom.tam.fits.FitsException;
-
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 public class FitsDateTest {
 
@@ -127,6 +126,34 @@ public class FitsDateTest {
         } catch (Exception e) {
             return "EX";
         }
+    }
+
+    @Test
+    public void equalsAndHashCodeTest() throws FitsException {
+        FitsDate fitsDate = new FitsDate("1997-07-25");
+        FitsDate fitsDate2 = new FitsDate("1997-07-25");
+
+        assert(fitsDate.equals(fitsDate));
+        assert(fitsDate2.equals(fitsDate) && fitsDate.equals(fitsDate2));
+        assert(fitsDate.hashCode() == fitsDate2.hashCode());
+        assert(!fitsDate.equals(null));
+
+        fitsDate = new FitsDate("2019-07-12");
+        assert(!fitsDate.equals(fitsDate2));
+        assert(!(fitsDate.hashCode() == fitsDate2.hashCode()));
+
+        assert(FitsDate.getFitsDateString(new FitsDate("   1997-07-25T10:50:01.999").toDate()).equals(FitsDate.getFitsDateString(new FitsDate("   1997-07-25T10:50:01.999").toDate())));
+    }
+
+    @Test
+    public void comparableTest() throws FitsException {
+        FitsDate fitsDate1 = new FitsDate("1997-07-25");
+        FitsDate fitsDate2 = new FitsDate("2997-07-25");
+        FitsDate fitsDate3 = new FitsDate("1997-07-25");
+
+        assert(fitsDate1.compareTo(fitsDate2) < 0);
+        assert(fitsDate2.compareTo(fitsDate1) > 0);
+        assert(fitsDate1.compareTo(fitsDate3) == 0);
     }
 
 }

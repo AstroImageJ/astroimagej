@@ -4,7 +4,7 @@ package nom.tam.fits.header;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2015 nom-tam-fits
+ * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -163,7 +163,7 @@ public enum DataDescription implements IFitsHeader {
      * used in 'TABLE' or 'BINTABLE' extensions and is analogous to the DATAMAX
      * keyword used for FITS images.
      */
-    TDMAXn(SOURCE.HEASARC, HDU.TABLE, VALUE.REAL, "maximum physical value in the column"),
+    TDMAXn(SOURCE.HEASARC, HDU.TABLE, VALUE.REAL, "maximum value in the column"),
     /**
      * The value field of this indexed keyword shall contain a floating point
      * number specifying the minimum valid physical value represented in column
@@ -171,7 +171,7 @@ public enum DataDescription implements IFitsHeader {
      * used in 'TABLE' or 'BINTABLE' extensions and is analogous to the DATAMIN
      * keyword used for FITS images.
      */
-    TDMINn(SOURCE.HEASARC, HDU.TABLE, VALUE.REAL, "minimum physical value in the column"),
+    TDMINn(SOURCE.HEASARC, HDU.TABLE, VALUE.REAL, "minimum value in the column"),
     /**
      * The value field shall contain a character string giving a title that is
      * suitable for display purposes, e.g., for annotation on images or plots of

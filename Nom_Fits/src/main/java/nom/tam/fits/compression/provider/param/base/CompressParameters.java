@@ -4,7 +4,7 @@ package nom.tam.fits.compression.provider.param.base;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2016 nom-tam-fits
+ * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,17 +31,13 @@ package nom.tam.fits.compression.provider.param.base;
  * #L%
  */
 
-import static nom.tam.fits.header.Standard.TTYPEn;
-
-import nom.tam.fits.BinaryTable;
-import nom.tam.fits.BinaryTableHDU;
-import nom.tam.fits.FitsException;
-import nom.tam.fits.HeaderCard;
-import nom.tam.fits.HeaderCardException;
+import nom.tam.fits.*;
 import nom.tam.fits.compression.provider.param.api.ICompressColumnParameter;
 import nom.tam.fits.compression.provider.param.api.ICompressHeaderParameter;
 import nom.tam.fits.compression.provider.param.api.ICompressParameters;
 import nom.tam.fits.compression.provider.param.api.IHeaderAccess;
+
+import static nom.tam.fits.header.Standard.TTYPEn;
 
 public abstract class CompressParameters implements ICompressParameters {
 

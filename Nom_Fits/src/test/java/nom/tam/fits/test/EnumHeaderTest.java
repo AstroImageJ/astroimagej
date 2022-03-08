@@ -4,7 +4,7 @@ package nom.tam.fits.test;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2015 nom-tam-fits
+ * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,45 +31,24 @@ package nom.tam.fits.test;
  * #L%
  */
 
-import static nom.tam.fits.header.InstrumentDescription.FILTER;
-import static nom.tam.fits.header.Standard.INSTRUME;
-import static nom.tam.fits.header.Standard.NAXISn;
-import static nom.tam.fits.header.extra.NOAOExt.WATn_nnn;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import nom.tam.fits.BasicHDU;
+import nom.tam.fits.Fits;
+import nom.tam.fits.FitsException;
+import nom.tam.fits.Header;
+import nom.tam.fits.header.*;
+import nom.tam.fits.header.extra.*;
+import org.junit.Assert;
+import org.junit.Test;
 
 import java.lang.reflect.Constructor;
 import java.net.URL;
 import java.util.Arrays;
 
-import nom.tam.fits.BasicHDU;
-import nom.tam.fits.Fits;
-import nom.tam.fits.Header;
-import nom.tam.fits.FitsException;
-import nom.tam.fits.header.Checksum;
-import nom.tam.fits.header.Compression;
-import nom.tam.fits.header.DataDescription;
-import nom.tam.fits.header.FitsHeaderImpl;
-import nom.tam.fits.header.GenericKey;
-import nom.tam.fits.header.HierarchicalGrouping;
-import nom.tam.fits.header.IFitsHeader;
-import nom.tam.fits.header.InstrumentDescription;
-import nom.tam.fits.header.NonStandard;
-import nom.tam.fits.header.ObservationDescription;
-import nom.tam.fits.header.ObservationDurationDescription;
-import nom.tam.fits.header.Standard;
-import nom.tam.fits.header.Synonyms;
-import nom.tam.fits.header.extra.CXCExt;
-import nom.tam.fits.header.extra.CXCStclSharedExt;
-import nom.tam.fits.header.extra.MaxImDLExt;
-import nom.tam.fits.header.extra.NOAOExt;
-import nom.tam.fits.header.extra.SBFitsExt;
-import nom.tam.fits.header.extra.STScIExt;
-
-import org.junit.Assert;
-import org.junit.Test;
+import static nom.tam.fits.header.InstrumentDescription.FILTER;
+import static nom.tam.fits.header.Standard.INSTRUME;
+import static nom.tam.fits.header.Standard.NAXISn;
+import static nom.tam.fits.header.extra.NOAOExt.WATn_nnn;
+import static org.junit.Assert.*;
 
 /**
  * Check out header manipulation.
@@ -178,7 +157,7 @@ public class EnumHeaderTest {
     }
 
     @Test
-    public void testSynonyms() {
+    public void testSynonyms() throws Exception {
         Assert.assertEquals(Standard.EQUINOX, Synonyms.primaryKeyword(Standard.EPOCH));
         Assert.assertEquals("EQUINOX", Synonyms.primaryKeyword("EPOCH"));
         Assert.assertArrayEquals(new IFitsHeader[]{
@@ -211,19 +190,19 @@ public class EnumHeaderTest {
     }
 
     @Test
-    public void testLookup() {
+    public void testLookup() throws Exception {
         assertSame(Standard.BITPIX, GenericKey.lookup(Standard.BITPIX.key()));
         assertSame(Standard.NAXISn, GenericKey.lookup(Standard.NAXISn.n(99).key()));
 
     }
 
     @Test
-    public void testIFitsHeader() {
+    public void testIFitsHeader() throws Exception {
         assertEquals(9, IFitsHeader.HDU.values().length);
         assertSame(IFitsHeader.HDU.ANY, IFitsHeader.HDU.valueOf(IFitsHeader.HDU.ANY.name()));
         assertEquals(14, IFitsHeader.SOURCE.values().length);
         assertSame(IFitsHeader.SOURCE.UNKNOWN, IFitsHeader.SOURCE.valueOf(IFitsHeader.SOURCE.UNKNOWN.name()));
-        assertEquals(6, IFitsHeader.VALUE.values().length);
+        assertEquals(7, IFitsHeader.VALUE.values().length);
         assertSame(IFitsHeader.VALUE.ANY, IFitsHeader.VALUE.valueOf(IFitsHeader.VALUE.ANY.name()));
         assertEquals(4, Synonyms.values().length);
     }

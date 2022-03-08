@@ -4,7 +4,7 @@ package nom.tam.fits.test;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2015 nom-tam-fits
+ * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,8 +31,16 @@ package nom.tam.fits.test;
  * #L%
  */
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import nom.tam.fits.Fits;
+import nom.tam.fits.FitsException;
+import nom.tam.fits.FitsFactory;
+import nom.tam.fits.utilities.FitsCopy;
+import nom.tam.fits.utilities.FitsReader;
+import nom.tam.fits.utilities.Main;
+import nom.tam.util.FitsFile;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -40,17 +48,8 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.lang.reflect.Constructor;
 
-import nom.tam.fits.Fits;
-import nom.tam.fits.FitsFactory;
-import nom.tam.fits.FitsException;
-import nom.tam.fits.utilities.FitsCopy;
-import nom.tam.fits.utilities.FitsReader;
-import nom.tam.fits.utilities.Main;
-import nom.tam.util.BufferedFile;
-
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 public class TestMain {
 
@@ -126,7 +125,7 @@ public class TestMain {
         Fits f = new Fits("src/test/resources/nom/tam/fits/test/test.fits");
         f.readHDU();
         f.addHDU(Fits.makeHDU(new short[5][5]));
-        BufferedFile testFile = new BufferedFile(new File("target/testMainRead.fits"), "rw");
+        FitsFile testFile = new FitsFile(new File("target/testMainRead.fits"), "rw");
         f.write(testFile);
         f.close();
         testFile.close();

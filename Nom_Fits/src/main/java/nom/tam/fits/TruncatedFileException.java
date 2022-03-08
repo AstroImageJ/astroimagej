@@ -4,7 +4,7 @@ package nom.tam.fits;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 2004 - 2015 nom-tam-fits
+ * Copyright (C) 2004 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -33,13 +33,15 @@ package nom.tam.fits;
 
 /**
  * This exception is thrown when an EOF is detected in the middle of an HDU.
+ * 
+ * @see FitsFactory#setAllowTerminalJunk(boolean)
  */
 public class TruncatedFileException extends FitsException {
 
     /**
-     * serial version UID.
+     * 
      */
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = -4824457442211702123L;
 
     public TruncatedFileException(String msg) {
         super(msg);

@@ -4,7 +4,7 @@ package nom.tam.fits;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2016 nom-tam-fits
+ * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -30,21 +30,16 @@ package nom.tam.fits;
  * OTHER DEALINGS IN THE SOFTWARE.
  * #L%
  */
-import static nom.tam.fits.header.Standard.BITPIX;
-import static nom.tam.fits.header.Standard.BLOCKED;
-import static nom.tam.fits.header.Standard.END;
-import static nom.tam.fits.header.Standard.NAXIS;
-import static nom.tam.fits.header.Standard.SIMPLE;
-import static nom.tam.fits.header.Standard.THEAP;
-import static org.junit.Assert.assertEquals;
+
+import nom.tam.util.ArrayDataOutput;
+import nom.tam.util.FitsOutputStream;
+import org.junit.Assert;
+import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
 
-import nom.tam.util.ArrayDataOutput;
-import nom.tam.util.BufferedDataOutputStream;
-
-import org.junit.Assert;
-import org.junit.Test;
+import static nom.tam.fits.header.Standard.*;
+import static org.junit.Assert.assertEquals;
 
 public class HeaderOrderTest {
 
@@ -73,12 +68,12 @@ public class HeaderOrderTest {
      */
     @Test
     public void headerOrder() throws Exception {
-        ArrayDataOutput dos = new BufferedDataOutputStream(new ByteArrayOutputStream(), 80);
+        ArrayDataOutput dos = new FitsOutputStream(new ByteArrayOutputStream(), 80);
         Header header = new Header();
         
         header.addValue(BLOCKED, 1);
         header.addValue(SIMPLE, true);
-        header.addValue(BITPIX, 1);
+        header.addValue(BITPIX, 8);
         header.addValue(THEAP, 1);  
         header.addValue(NAXIS, 0);
         header.addValue(END, true);
@@ -97,7 +92,7 @@ public class HeaderOrderTest {
         Assert.assertEquals(THEAP.key(), header.iterator(4).next().getKey());
         header = new Header();
         header.addValue(SIMPLE, true);
-        header.addValue(BITPIX, 1);
+        header.addValue(BITPIX, 8);
         header.addValue(NAXIS, 0);
         header.addValue(END, true);
         header.addValue(THEAP, 1);

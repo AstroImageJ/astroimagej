@@ -4,7 +4,7 @@ package nom.tam.util;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2015 nom-tam-fits
+ * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,312 +31,131 @@ package nom.tam.util;
  * #L%
  */
 
+
 import java.io.EOFException;
 import java.io.IOException;
-import java.lang.reflect.Array;
 
-import nom.tam.util.type.PrimitiveType;
-import nom.tam.util.type.PrimitiveTypeHandler;
-import nom.tam.util.type.PrimitiveTypes;
+/**
+ * @deprecated  This is a rusty rail implementation only, unsafe for general use.
+ *      Use {@link FitsDecoder} instead, which provides a similar function but in
+ *      a more consistent way and with a less misleading name, or else use {@link InputDecoder}
+ *      as a base for implementing efficient custom decoding of binary inputs. 
+ *      
+ *      
+ *
+ * @see FitsDecoder
+ */
+@Deprecated
+public abstract class BufferDecoder extends FitsDecoder {
 
-public abstract class BufferDecoder {
-
-    private class PrimitiveArrayRecurse {
-
-        /**
-         * Counter used in reading arrays
-         */
-        private long primitiveArrayCount;
-
-        protected long primitiveArrayRecurse(Object o) throws IOException {
-            if (o == null) {
-                return this.primitiveArrayCount;
-            }
-            if (!o.getClass().isArray()) {
-                throw new IOException("Invalid object passed to BufferedDataInputStream.readArray:" + o.getClass().getName());
-            }
-            int length = Array.getLength(o);
-            // Is this a multidimensional array? If so process recursively.
-            if (o.getClass().getComponentType().isArray()) {
-                for (int i = 0; i < length; i++) {
-                    primitiveArrayRecurse(Array.get(o, i));
-                }
-            } else {
-                // This is a one-d array. Process it using our special
-                // functions.
-                PrimitiveType<?> type = PrimitiveTypeHandler.valueOf(o.getClass().getComponentType());
-                if (type == PrimitiveTypes.BOOLEAN) {
-                    this.primitiveArrayCount += read((boolean[]) o, 0, length);
-                } else if (type == PrimitiveTypes.BYTE) {
-                    int len = read((byte[]) o, 0, length);
-                    this.primitiveArrayCount += len;
-                    if (len < length) {
-                        throw new EOFException();
-                    }
-                } else if (type == PrimitiveTypes.CHAR) {
-                    this.primitiveArrayCount += read((char[]) o, 0, length);
-                } else if (type == PrimitiveTypes.SHORT) {
-                    this.primitiveArrayCount += read((short[]) o, 0, length);
-                } else if (type == PrimitiveTypes.INT) {
-                    this.primitiveArrayCount += read((int[]) o, 0, length);
-                } else if (type == PrimitiveTypes.LONG) {
-                    this.primitiveArrayCount += read((long[]) o, 0, length);
-                } else if (type == PrimitiveTypes.FLOAT) {
-                    this.primitiveArrayCount += read((float[]) o, 0, length);
-                } else if (type == PrimitiveTypes.DOUBLE) {
-                    this.primitiveArrayCount += read((double[]) o, 0, length);
-                } else if (type == PrimitiveTypes.STRING || type == PrimitiveTypes.UNKNOWN) {
-                    for (int i = 0; i < length; i++) {
-                        primitiveArrayRecurse(Array.get(o, i));
-                    }
-                }
-            }
-            return this.primitiveArrayCount;
-        }
-    }
-
-    private final BufferPointer sharedBuffer;
-
-    public BufferDecoder(BufferPointer sharedBuffer) {
-        this.sharedBuffer = sharedBuffer;
-    }
-
+   
+    
+    private BufferPointer p;
+    
     /**
-     * This should only be used when a small number of bytes is required
-     * (substantially smaller than bufferSize.
      * 
-     * @param needBytes
-     *            the number of bytes needed for the next operation.
-     * @throws IOException
-     *             if the buffer could not be filled
+     * @param p     Unused, but the position and length fields are set/reset as to pretend that half of
+     *              the buffer is perpetually available for reading.
+     *              However, at no point will there be any data actually in the buffer of this object,
+     *              and you should by all means avoid directly loading data from the stream into this
+     *              dead-end buffer, other than the hopefully untiggered existing implementation
+     *              of <code>checkBuffer(int)</code> (and it's safest if you don't override
+     *              or ever call <code>checkBuffer(int)</code> from your code!).
      */
-    protected abstract void checkBuffer(int needBytes) throws IOException;
+    public BufferDecoder(BufferPointer p) {
+        super();
+        
+        this.p = p;
+        
+        pretendHalfPopulated();
+        
+        setInput(new InputReader() {
+            private byte[] b1 = new byte[1];
 
-    protected abstract int eofCheck(EOFException e, int start, int index, int length) throws EOFException;
-
-    protected int read(boolean[] b, int start, int length) throws IOException {
-
-        int i = start;
-        try {
-            for (; i < start + length; i++) {
-                b[i] = readBoolean();
-            }
-            return length;
-        } catch (EOFException e) {
-            return eofCheck(e, start, i, 1);
-        }
-    }
-
-    protected int read(byte[] buf, int offset, int len) throws IOException {
-        checkBuffer(-1);
-        int total = 0;
-
-        // Ensure that the entire dataBuffer.buffer is read.
-        while (len > 0) {
-
-            if (this.sharedBuffer.bufferOffset < this.sharedBuffer.bufferLength) {
-
-                int get = len;
-                if (this.sharedBuffer.bufferOffset + get > this.sharedBuffer.bufferLength) {
-                    get = this.sharedBuffer.bufferLength - this.sharedBuffer.bufferOffset;
+            @Override
+            public int read() throws IOException {
+                int n = BufferDecoder.this.read(b1, 0, 1);
+                if (n < 0) {
+                    return n;
                 }
-                System.arraycopy(this.sharedBuffer.buffer, this.sharedBuffer.bufferOffset, buf, offset, get);
-                len -= get;
-                this.sharedBuffer.bufferOffset += get;
-                offset += get;
-                total += get;
-                continue;
-
-            } else {
-
-                // This might be pretty long, but we know that the
-                // old dataBuffer.buffer is exhausted.
-                try {
-                    if (len > this.sharedBuffer.buffer.length) {
-                        checkBuffer(this.sharedBuffer.buffer.length);
-                    } else {
-                        checkBuffer(len);
-                    }
-                } catch (EOFException e) {
-                    if (this.sharedBuffer.bufferLength > 0) {
-                        System.arraycopy(this.sharedBuffer.buffer, 0, buf, offset, this.sharedBuffer.bufferLength);
-                        total += this.sharedBuffer.bufferLength;
-                        this.sharedBuffer.bufferLength = 0;
-                    }
-                    if (total == 0) {
-                        throw e;
-                    } else {
-                        return total;
-                    }
-                }
+                return b1[0];
             }
-        }
 
-        return total;
+            @Override
+            public int read(byte[] b, int from, int length) throws IOException {
+                return BufferDecoder.this.read(b, from, length);
+            }    
+        });
     }
-
-    protected int read(char[] c, int start, int length) throws IOException {
-
-        int i = start;
-        try {
-            for (; i < start + length; i++) {
-                c[i] = readChar();
-            }
-            return length * FitsIO.BYTES_IN_CHAR;
-        } catch (EOFException e) {
-            return eofCheck(e, start, i, FitsIO.BYTES_IN_CHAR);
-        }
-    }
-
-    protected int read(double[] d, int start, int length) throws IOException {
-
-        int i = start;
-        try {
-            for (; i < start + length; i++) {
-                d[i] = Double.longBitsToDouble(readLong());
-            }
-            return length * FitsIO.BYTES_IN_DOUBLE;
-        } catch (EOFException e) {
-            return eofCheck(e, start, i, FitsIO.BYTES_IN_DOUBLE);
-        }
-    }
-
-    protected int read(float[] f, int start, int length) throws IOException {
-
-        int i = start;
-        try {
-            for (; i < start + length; i++) {
-                f[i] = Float.intBitsToFloat(readInt());
-            }
-            return length * FitsIO.BYTES_IN_FLOAT;
-        } catch (EOFException e) {
-            return eofCheck(e, start, i, FitsIO.BYTES_IN_FLOAT);
-        }
-    }
-
-    protected int read(int[] i, int start, int length) throws IOException {
-
-        int ii = start;
-        try {
-            for (; ii < start + length; ii++) {
-                i[ii] = readInt();
-            }
-            return length * FitsIO.BYTES_IN_INTEGER;
-        } catch (EOFException e) {
-            return eofCheck(e, start, ii, FitsIO.BYTES_IN_INTEGER);
-        }
-    }
-
-    protected int read(long[] l, int start, int length) throws IOException {
-
-        int i = start;
-        try {
-            for (; i < start + length; i++) {
-                l[i] = readLong();
-            }
-            return length * FitsIO.BYTES_IN_LONG;
-        } catch (EOFException e) {
-            return eofCheck(e, start, i, FitsIO.BYTES_IN_LONG);
-        }
-
-    }
-
-    protected int read(short[] s, int start, int length) throws IOException {
-
-        int i = start;
-        try {
-            for (; i < start + length; i++) {
-                s[i] = readShort();
-            }
-            return length * FitsIO.BYTES_IN_SHORT;
-        } catch (EOFException e) {
-            return eofCheck(e, start, i, FitsIO.BYTES_IN_SHORT);
-        }
-    }
-
+    
     /**
-     * @return a boolean from the buffer
-     * @throws IOException
-     *             if the underlying operation fails
+     * We'll always pretend the buffer to be half populated at pos=0, in order to avoid triggering
+     * a read from the input into the unused buffer of BufferPointer, or a write to the
+     * output from that buffer... If the pointer has no buffer, length will be 0 also.
      */
-    protected boolean readBoolean() throws IOException {
-        checkBuffer(FitsIO.BYTES_IN_BOOLEAN);
-        return this.sharedBuffer.buffer[this.sharedBuffer.bufferOffset++] == 1;
+    private void pretendHalfPopulated() {
+        p.pos = 0; 
+        p.length = p.buffer == null ? 0 : p.buffer.length >>> 1;   
     }
-
+    
+    @Override
+    boolean makeAvailable(int needBytes) throws IOException {
+        pretendHalfPopulated();
+        boolean result = super.makeAvailable(needBytes);
+        return result;
+    }
+    
     /**
-     * @return a char from the buffer
-     * @throws IOException
-     *             if the underlying operation fails
+     * @deprecated  No longer used internally, kept only for back-compatibility since it used to be a needed abstract method.
+     *              It's safest if you never override or call this method from your code!
+     *             
+     * @param needBytes     the number of byte we need available to decode the next element
+     * @throws IOException  if the data could not be made available due to an IO error of the underlying input.
      */
-    protected char readChar() throws IOException {
-        checkBuffer(FitsIO.BYTES_IN_CHAR);
-        return (char) readUncheckedShort();
+    protected void checkBuffer(int needBytes) throws IOException {
     }
-
+    
+    @Override
+    protected int read(byte[] buf, int offset, int length) throws IOException {
+        throw new UnsupportedOperationException("You need to override this with an implementation that reads from the desired input.");
+    }
+    
     /**
-     * @return an integer value from the buffer
-     * @throws IOException
-     *             if the underlying operation fails
+     * @deprecated  No longer used internally, kept only for back-compatibility since it used to be a needed abstract method.
+     * 
+     * @param e     the <code>EOFException</code> thrown by one of the read calls.
+     * @param start the index of the first array element we wanted to fill
+     * @param index the array index of the element during which the exception was thrown
+     * @param elementSize the number of bytes per element we were processing
+     * 
+     * @return the numer of bytes successfully processed from the input before the exception occurred.
+     * @throws EOFException
+     *              if the input had no more data to process
      */
-    protected int readInt() throws IOException {
-        checkBuffer(FitsIO.BYTES_IN_INTEGER);
-        return readUncheckedInt();
+    protected int eofCheck(EOFException e, int start, int index, int elementSize) throws EOFException {
+        return super.eofCheck(e, (index - start), -1) * elementSize;
     }
-
+    
+    /**
+     * See the contract of {@link ArrayDataInput#readLArray(Object)}.
+     * 
+     * @param o
+     *            an array, to be populated
+     * @return the actual number of bytes read from the input, or -1 if already
+     *         at the end-of-file.
+     * @throws IllegalArgumentException
+     *             if the argument is not an array or if it contains an element
+     *             that is not supported for decoding.
+     * @throws IOException
+     *             if there was an IO error reading from the input
+     */
     protected long readLArray(Object o) throws IOException {
-        return new PrimitiveArrayRecurse().primitiveArrayRecurse(o);
-    }
-
-    /**
-     * @return a long value from the buffer
-     * @throws IOException
-     *             if the underlying operation fails
-     */
-    protected long readLong() throws IOException {
-        checkBuffer(FitsIO.BYTES_IN_LONG);
-        int i1 = readUncheckedInt();
-        int i2 = readUncheckedInt();
-        return (long) i1 << FitsIO.BITS_OF_4_BYTES | i2 & FitsIO.INTEGER_MASK;
-    }
-
-    protected double readDouble() throws IOException {
-        return Double.longBitsToDouble(readLong());
-    }
-
-    protected float readFloat() throws IOException {
-        return Float.intBitsToFloat(readInt());
-    }
-
-    protected void readFully(byte[] b, int off, int len) throws IOException {
-        if (off < 0 || len < 0 || off + len > b.length) {
-            throw new IOException("Attempt to read outside byte array");
-        }
-        if (read(b, off, len) < len) {
-            throw new EOFException();
+        try { 
+            return super.readArray(o); 
+        } catch (IllegalArgumentException e) {
+            throw new IOException(e);
         }
     }
-
-    /**
-     * @return a short from the buffer
-     * @throws IOException
-     *             if the underlying operation fails
-     */
-    protected short readShort() throws IOException {
-        checkBuffer(FitsIO.BYTES_IN_SHORT);
-        return (short) readUncheckedShort();
-    }
-
-    private int readUncheckedInt() {
-        return this.sharedBuffer.buffer[this.sharedBuffer.bufferOffset++] << FitsIO.BITS_OF_3_BYTES | //
-                (this.sharedBuffer.buffer[this.sharedBuffer.bufferOffset++] & FitsIO.BYTE_MASK) << FitsIO.BITS_OF_2_BYTES | //
-                (this.sharedBuffer.buffer[this.sharedBuffer.bufferOffset++] & FitsIO.BYTE_MASK) << FitsIO.BITS_OF_1_BYTE | //
-                this.sharedBuffer.buffer[this.sharedBuffer.bufferOffset++] & FitsIO.BYTE_MASK;
-    }
-
-    private int readUncheckedShort() {
-        return this.sharedBuffer.buffer[this.sharedBuffer.bufferOffset++] << FitsIO.BITS_OF_1_BYTE | //
-                this.sharedBuffer.buffer[this.sharedBuffer.bufferOffset++] & FitsIO.BYTE_MASK;
-    }
-
+ 
+    
 }

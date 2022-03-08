@@ -4,7 +4,7 @@ package nom.tam.fits;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 2004 - 2015 nom-tam-fits
+ * Copyright (C) 2004 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,24 +31,16 @@ package nom.tam.fits;
  * #L%
  */
 
-import static nom.tam.fits.header.Standard.BITPIX;
-import static nom.tam.fits.header.Standard.GROUPS;
-import static nom.tam.fits.header.Standard.NAXIS;
-import static nom.tam.fits.header.Standard.NAXISn;
-import static nom.tam.fits.header.Standard.SIMPLE;
-import static nom.tam.fits.header.Standard.XTENSION;
-import static nom.tam.fits.header.Standard.XTENSION_IMAGE;
-import static nom.tam.util.LoggerHelper.getLogger;
+import nom.tam.image.StandardImageTiler;
+import nom.tam.util.ArrayFuncs;
+import nom.tam.util.type.ElementType;
 
 import java.io.PrintStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import nom.tam.image.StandardImageTiler;
-import nom.tam.util.ArrayFuncs;
-import nom.tam.util.type.PrimitiveType;
-import nom.tam.util.type.PrimitiveTypeHandler;
-import nom.tam.util.type.PrimitiveTypes;
+import static nom.tam.fits.header.Standard.*;
+import static nom.tam.util.LoggerHelper.getLogger;
 
 /**
  * FITS image header/data unit
@@ -75,10 +67,10 @@ public class ImageHDU extends BasicHDU<ImageData> {
      */
     public static boolean isData(Object o) {
         if (o.getClass().isArray()) {
-            PrimitiveType<?> type = PrimitiveTypeHandler.valueOf(ArrayFuncs.getBaseClass(o));
-            return type != PrimitiveTypes.BOOLEAN && //
-                    type != PrimitiveTypes.STRING && //
-                    type != PrimitiveTypes.UNKNOWN;
+            ElementType<?> type = ElementType.forClass(ArrayFuncs.getBaseClass(o));
+            return type != ElementType.BOOLEAN && //
+                    type != ElementType.STRING && //
+                    type != ElementType.UNKNOWN;
 
         }
         return false;

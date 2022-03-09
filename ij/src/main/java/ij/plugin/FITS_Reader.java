@@ -694,34 +694,70 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		fileName = fileName.endsWith(".fz") ? fileName.substring(0, fileName.length() - 3) : fileName;
 
 		var fr = getFitsFile(path);
-		var hdus = fr.fits.read();
+		if (fr.hasErrored) return null;
+		try (var f = fr.fits) {
+			var hdus = f.read();
+			fr.zipFile.ifPresent(z -> {
+				try {
+					z.close(); // Close the zip file to prevent leaking memory, needs to be done after fits file is read
+				} catch (IOException ignored) {}
+			});
 
-		fr.zipFile.ifPresent(z -> {
-			try {
-				z.close(); // Close the zip file to prevent leaking memory, needs to be done after fits file is read
-			} catch (IOException ignored) {}
-		});
-
-		return hdus;
+			return hdus;
+		} catch (IOException e) {
+			throw e;
+		}
 	}
 
 	/**
 	 * Opens a FITS file from the path. If it is in a zip file, it will open the zip
 	 */
-	private FitsRead getFitsFile(String path) throws IOException, FitsException {
+	private FitsRead getFitsFile(String path) {
+		Fits f = null;
 		if (path.contains(".zip")) {
 			var s = path.split("\\.zip");
-			var zip = new ZipFile(s[0] + ".zip");
 
-			return new FitsRead(new Fits(zip.getInputStream(zip.getEntry(s[1].substring(1)))), Optional.of(zip));
+			try (var zip = new ZipFile(s[0] + ".zip")) {
+				f = new Fits(zip.getInputStream(zip.getEntry(s[1].substring(1))));
+				return new FitsRead(f, Optional.of(zip));
+			} catch (IOException | FitsException e) {
+				closeThing(f);
+				return new FitsRead(true);
+			}
+
 		}
-		return new FitsRead(new Fits(path), Optional.empty());
+
+		try  {
+			f = new Fits(path);
+			return new FitsRead(f, Optional.empty());
+		} catch (FitsException e) {
+			closeThing(f);
+			return new FitsRead(true);
+		}
 	}
 
 	/**
 	 * Used to pass out the zipFile from the opening so that it may be closed.
 	 */
-	private record FitsRead(Fits fits, Optional<ZipFile> zipFile) {}
+	private record FitsRead(Fits fits, Optional<ZipFile> zipFile, boolean hasErrored) {
+		public FitsRead(Fits fits, @SuppressWarnings("OptionalUsedAsFieldOrParameterType") Optional<ZipFile> zipFile) {
+			this(fits, zipFile, false);
+		}
+
+		public FitsRead(boolean hasErrored) {
+			this(null, Optional.empty(), hasErrored);
+		}
+	}
+
+	private record PostFitsRead(Fits fits, BasicHDU<?>[] hdus) {}
+
+	private void closeThing(Closeable closeable) {
+		if (closeable == null) return;
+		try {
+			closeable.close();
+		} catch (IOException ignored) {
+		}
+	}
 
 	// The following code is nice, but it is causing a dependency on skyview.geometry.WCS, so bye-bye.
 	//

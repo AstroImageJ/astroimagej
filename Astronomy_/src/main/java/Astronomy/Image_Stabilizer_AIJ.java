@@ -60,16 +60,21 @@ WARRANTY OF ANY KIND CONCERNING  THE MERCHANTABILITY OF THIS SOFTWARE  OR ITS
 FITNESS FOR ANY PARTICULAR PURPOSE.
 */
 
-import java.lang.*;
+import ij.IJ;
+import ij.ImagePlus;
+import ij.ImageStack;
+import ij.VirtualStack;
+import ij.gui.GenericDialog;
+import ij.io.DirectoryChooser;
+import ij.io.FileSaver;
+import ij.plugin.filter.PlugInFilter;
+import ij.plugin.frame.Editor;
+import ij.process.*;
+
 import java.io.File;
 import java.io.IOException;
-import java.awt.event.*;
-import ij.*;
-import ij.gui.*;
-import ij.process.*;
-import ij.plugin.filter.*;
-import ij.plugin.frame.Editor;
-import ij.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 
 public class Image_Stabilizer_AIJ implements PlugInFilter {
@@ -444,6 +449,9 @@ public class Image_Stabilizer_AIJ implements PlugInFilter {
         catch (NullPointerException e) {
             // do nothing...
         }
+        if (fileName != null) {
+            fileName = fileName.split("\n")[0];
+        }
         if (null == fileName || fileName.length() == 0) {
             String title = imp.getTitle();
             String baseName = getBaseName(title);
@@ -462,8 +470,15 @@ public class Image_Stabilizer_AIJ implements PlugInFilter {
                 fileName = baseName + String.format("%05d", args) + ".tif";
             }
         }
+        var p = Path.of(outputDir + fileName);
         FileSaver fs = new FileSaver(new ImagePlus(fileName, ip));
-        fs.saveAsTiff(outputDir + File.separator + fileName);
+        try {
+            Files.createDirectories(p.getParent());
+            Files.createFile(p);
+            fs.saveAsTiff(p.toString());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
 

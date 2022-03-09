@@ -1,18 +1,21 @@
 package ij;
-import ij.process.*;
-import ij.io.*;
-import ij.gui.ImageCanvas;
-import ij.util.Tools;
+
+import ij.astro.AstroImageJ;
+import ij.io.Opener;
 import ij.plugin.FolderOpener;
-import java.io.*;
+import ij.process.*;
+import ij.util.Tools;
+
 import java.awt.*;
 import java.awt.image.ColorModel;
+import java.io.File;
 import java.util.Properties;
 
 /** This class represents an array of disk-resident images. */
 public class VirtualStack extends ImageStack {
 	private static final int INITIAL_SIZE = 100;
-	private String path;
+	@AstroImageJ(reason = "Widen access for stack aligner", modified = true)
+	public String path;
 	private int nSlices;
 	private String[] names;
 	private String[] labels;

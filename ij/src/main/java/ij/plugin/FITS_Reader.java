@@ -86,14 +86,17 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		 */
 		BasicHDU<?>[] hdus;
 		boolean canUseNom = true;
+		PostFitsRead postFitsRead = null;
 		try {
-			hdus = getHDU(path);
+			postFitsRead = getHDU(path);
 		} catch (FitsException | IOException e) {
 			canUseNom = false;
 			hdus = null;
 		}
 
-		if (canUseNom) { // Use nom.tam.fits to open files
+		if (canUseNom && postFitsRead != null) { // Use nom.tam.fits to open files
+			hdus = postFitsRead.hdus;
+
 			/*
 			 * For fpacked files the image is in the second HDU. For uncompressed images
 			 * it is the first HDU.
@@ -153,6 +156,8 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			}
 
 			setProperty("Info", getHeaderInfo(displayHdu));
+
+			closeThing(postFitsRead.fits);
 
 			IJ.showStatus("");
 		} else {   // Use legacy fits reader in case of failure
@@ -680,7 +685,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	/**
 	 * Create an {@link OpenDialog}, and read in the selected FITS file.
 	 */
-	private BasicHDU<?>[] getHDU(String path) throws FitsException, IOException {
+	private PostFitsRead getHDU(String path) throws FitsException, IOException {
 		OpenDialog od = new OpenDialog("Open FITS...", path);
 		directory = od.getDirectory();
 		fileName = od.getFileName();
@@ -695,7 +700,9 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 
 		var fr = getFitsFile(path);
 		if (fr.hasErrored) return null;
-		try (var f = fr.fits) {
+		Fits f = null;
+		try {
+			f = fr.fits;
 			var hdus = f.read();
 			fr.zipFile.ifPresent(z -> {
 				try {
@@ -703,8 +710,9 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 				} catch (IOException ignored) {}
 			});
 
-			return hdus;
-		} catch (IOException e) {
+			return new PostFitsRead(f, hdus);
+		} catch (FitsException e) {
+			closeThing(f);
 			throw e;
 		}
 	}

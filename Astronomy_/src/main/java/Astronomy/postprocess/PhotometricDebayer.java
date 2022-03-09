@@ -1,10 +1,12 @@
 package Astronomy.postprocess;
 
 import astroj.FitsJ;
+import astroj.IJU;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.Prefs;
+import ij.plugin.FITS_Writer;
 import ij.plugin.filter.ExtendedPlugInFilter;
 import ij.plugin.filter.PlugInFilterRunner;
 import ij.process.ByteProcessor;
@@ -13,6 +15,8 @@ import ij.process.IntProcessor;
 import ij.process.ShortProcessor;
 import util.GenericSwingDialog;
 
+import java.io.File;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -24,6 +28,8 @@ import java.util.function.Function;
 public class PhotometricDebayer implements ExtendedPlugInFilter {
     private static final String ENABLE_COLOR_BASE = ".photomatric.debayer_color_";
     private final HashMap<Color, Boolean> enabledColors = new HashMap<>();
+    private boolean isVirtual = false;
+    private Path virtualDebayerFolder = null;
 
     @Override
     public int showDialog(ImagePlus imp, String command, PlugInFilterRunner pfr) {
@@ -61,19 +67,24 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
 
         Color.resetStacks();
 
-        if (gd.wasOKed()) {
-            processImage(imp, pallet.get());
+        try {
+            if (gd.wasOKed()) {
+                processImage(imp, pallet.get());
 
-            //FitsJ.copyHeader(imp, impC);
-            header = FitsJ.setCard("NAXIS1", imp.getWidth()/2, "Width", header);
-            header = FitsJ.setCard("NAXIS2", imp.getHeight()/2, "Height", header);
-
-            for (Color color : Color.values()) {
-                if (!enabledColors.get(color)) continue;
-                var impC = color.makeStackDisplayable(imp.getTitle());
-                FitsJ.putHeader(impC, header);
-                impC.show();
+                if (!isVirtual) {
+                    for (Color color : Color.values()) {
+                        if (!enabledColors.get(color)) continue;
+                        var impC = color.makeStackDisplayable(imp.getTitle());
+                        header = headerUpdate(header, impC);
+                        FitsJ.putHeader(impC, header);
+                        impC.show();
+                    }
+                } else {
+                    IJ.showMessage("Virtual stack debayering complete.\nAligned images are saved in subdirectory 'debayered'.");
+                }
             }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
         savePrefs();
@@ -91,6 +102,21 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
             IJ.error("Image is not in the form of 2x2 subpixels.");
             return DONE;
         }
+
+        isVirtual = imp.getStack().isVirtual();
+        if (isVirtual) {
+            var imageDir = Path.of(imp.getOriginalFileInfo().directory, "debayered");
+            File dir = imageDir.toFile();
+            if (!dir.exists()) {
+                dir.mkdir();
+            } else if (dir.isFile()) {
+                IJ.beep();
+                IJ.showMessage("A file named 'debayered' in the stack directory is blocking the creation of the sub-directory.");
+                return DONE;
+            }
+            virtualDebayerFolder = imageDir;
+        }
+
         loadPrefs();
         return DOES_16 | DOES_8G;
     }
@@ -109,9 +135,45 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
             for (Color color : Color.values()) {
                 if (!enabledColors.get(color)) continue;
                 var transform = buildTransforms(FitsJ.getHeader(imp, slice));
-                color.stack.addSlice(stack.getSliceLabel(slice), mim.makeImageProcessor(pallete, color, transform));
+
+                if (!isVirtual) {
+                    color.stack.addSlice(stack.getSliceLabel(slice), mim.makeImageProcessor(pallete, color, transform));
+                } else {
+                    var imageFilename = IJU.getSliceFilename(imp, slice);
+                    ImagePlus imp2 = new ImagePlus(imp.getStack().getSliceLabel(slice), mim.makeImageProcessor(pallete, color, transform));
+                    imp2.setCalibration(imp.getCalibration());
+                    imp2.setFileInfo(imp.getFileInfo());
+                    String[] scienceHeader = FitsJ.getHeader(imp);
+                    if (scienceHeader != null) {
+                        scienceHeader = headerUpdate(scienceHeader, imp2);
+                        FitsJ.putHeader(imp2, scienceHeader);
+                    }
+                    if (color == Color.LUMINOSITY) {
+                        imp2.setType(ImagePlus.GRAY32);
+                        imp2.getStack().setOptions("32-bit int");
+                    } else if (imp2.getBytesPerPixel() == 1){
+                        imp2.setType(ImagePlus.GRAY8);
+                    } else {
+                        imp2.setType(ImagePlus.GRAY16);
+                    }
+                    FITS_Writer.saveImage(imp2, virtualDebayerFolder.resolve(color.name().toLowerCase()).resolve(imageFilename).toString());
+                }
             }
         }
+    }
+
+    private String[] headerUpdate(String[] header, ImagePlus imp) {
+        if (header == null) return null;
+        header = FitsJ.setCard("NAXIS1", imp.getWidth()/2, "Width", header);
+        header = FitsJ.setCard("NAXIS2", imp.getHeight()/2, "Height", header);
+        header = FitsJ.removeCards("BAYERPAT", header);
+        header = FitsJ.removeCards("ROWORDER", header);
+        header = FitsJ.removeCards("XBAYROFF", header);
+        header = FitsJ.removeCards("YBAYROFF", header);
+        header = FitsJ.removeCards("IMAGEW", header);
+        header = FitsJ.removeCards("IMAGEH", header);
+
+        return header;
     }
 
     // raw coords -> metacoords (half the size of the original, represent the full subbixel array (2x2 of raw pixels))

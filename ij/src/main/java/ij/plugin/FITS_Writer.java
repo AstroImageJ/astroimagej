@@ -167,6 +167,15 @@ public class FITS_Writer implements PlugIn {
 					}
 				}
 
+				// Ensure scaling is correct
+				if (useBZero && !type.isFloatingPoint() && type != ImageType.BYTE) {
+					header.addValue(Standard.BZERO, (long)type.getBZero());
+					header.addValue(Standard.BSCALE, 1);
+				} else {
+					header.deleteKey(Standard.BZERO);
+					header.deleteKey(Standard.BSCALE);
+				}
+
 				f.addHDU(hdu);
 			}
 

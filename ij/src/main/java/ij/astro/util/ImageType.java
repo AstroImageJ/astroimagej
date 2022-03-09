@@ -43,6 +43,11 @@ public enum ImageType {
 
             return outArray;
         }
+
+        @Override
+        public double getBZero() {
+            return -(double)Byte.MIN_VALUE; // Not really needed as java bytes are already unsigned
+        }
     },
     SHORT(ShortProcessor::new, short[][].class) {
         @Override
@@ -81,6 +86,11 @@ public enum ImageType {
             }
 
             return outArray;
+        }
+
+        @Override
+        public double getBZero() {
+            return -(double)Short.MIN_VALUE;
         }
     },
     INT(IntProcessor::new, int[][].class) {
@@ -121,6 +131,11 @@ public enum ImageType {
 
             return outArray;
         }
+
+        @Override
+        public double getBZero() {
+            return -(double)Integer.MIN_VALUE;
+        }
     },
     //this loses accuracy for some values
     LONG(FloatProcessor::new, long[][].class) {
@@ -160,6 +175,11 @@ public enum ImageType {
             }
 
             return outArray;//todo flag that this is a 32-bit conversion by way of floats
+        }
+
+        @Override
+        public double getBZero() {
+            return -(double)Long.MIN_VALUE;
         }
     },
     FLOAT(FloatProcessor::new, float[][].class) {
@@ -292,4 +312,8 @@ public enum ImageType {
     public abstract Object processImageData(Object rawData, int width, int height, double bzero, double bscale);
 
     public abstract Object make2DArray(ImageProcessor ip, boolean useBZero);
+
+    public double getBZero() {
+        return 0;
+    }
 }

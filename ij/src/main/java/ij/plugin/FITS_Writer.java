@@ -176,6 +176,7 @@ public class FITS_Writer implements PlugIn {
 			if (doGz) {
 				var out = new FitsOutputStream(new GZIPOutputStream(new FileOutputStream(Path.of(path).toFile())));
 				f.write(out);
+				out.close();
 			} else {
 				f.write(Path.of(path).toFile());
 			}

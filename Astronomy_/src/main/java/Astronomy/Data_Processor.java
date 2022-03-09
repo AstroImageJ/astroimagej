@@ -35,7 +35,6 @@ import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Timer;
 import java.util.*;
-import java.util.zip.GZIPOutputStream;
 
 
 /**
@@ -5745,49 +5744,13 @@ protected ImageIcon createImageIcon(String path, String description) {
 
             if (filePath.toLowerCase().endsWith(".fits") || filePath.toLowerCase().endsWith(".fit") || filePath.toLowerCase().endsWith(".fts"))
                 {
-                IJ.runPlugIn(impLocal, "ij.plugin.FITS_Writer", filePath);
+                IJ.runPlugIn(impLocal, "ij.plugin.FITS_Writer", filePath + (compress ? ".gz" : ""));
                 }
             else
                 {
                 IJ.save((ImagePlus) impLocal.clone(), filePath);
                 }
-            if (compress)
-                {
-                File infile = new File(filePath);
-                File outfile = new File(filePath+".gz");
-                if (infile.exists())
-                    {
-                    if (outfile.exists()) outfile.delete();
-                    try {
-                        GZIPOutputStream out = new GZIPOutputStream(new FileOutputStream(filePath+".gz"));
-                        FileInputStream in = new FileInputStream(filePath);
-
-                        // Transfer bytes from the input file to the GZIP output stream
-                        byte[] buf = new byte[2880];
-                        int len;
-                        while ((len = in.read(buf)) > 0)
-                            {
-                            out.write(buf, 0, len);
-                            }
-                        in.close();
-
-                        // Complete the GZIP file
-                        out.finish();
-                        out.close();
-                        infile.delete();
-                        log("    Compressed and saved "+name+" file \""+filePath+".gz"+"\"");
-                        }
-                    catch (IOException e)
-                        {
-                        error("    Error creating GZIP compressed "+name+" file \""+filePath+".gz"+"\"");
-                        return false;
-                        }
-                    }                
-                }
-            else
-                {
-                log("    Saved "+name+" file \""+filePath+"\"");
-                }
+            log("    Saved "+name+" file \""+filePath+"\"");
             }
         else
             {

@@ -93,18 +93,18 @@ public enum ImageType {
             return -(double)Short.MIN_VALUE;
         }
     },
-    INT(IntProcessor::new, int[][].class) {
+    INT(FloatProcessor::new/*IntProcessor::new*/, int[][].class) {//todo when using int processor, fits_reader displays invalid values
         @Override
         public Object processImageData(Object rawData, int width, int height, double bzero, double bscale) {
             if (rawData instanceof int[][] values) {
-                final var pixelArray = new int[width * height];
+                final var pixelArray = new float[width * height];//new int[]
 
                 var p = 0;
                 for (int y = 0; y < height; y++) {
                     for (int x = 0; x < width; x++) {
                         // y and x are inverted because of the implementations of ImageProcessor#getPixelValue
                         double pixelValue = bzero + bscale * values[y][x];
-                        pixelArray[p] = (int) pixelValue;
+                        pixelArray[p] = (float) pixelValue;
                         p++;
                     }
                 }

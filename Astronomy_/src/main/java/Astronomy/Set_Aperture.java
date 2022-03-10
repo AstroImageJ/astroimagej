@@ -1,14 +1,9 @@
 package Astronomy;// Set_Aperture.java
 
-import ij.*;
-import ij.gui.*;
-import ij.plugin.*;
-import ij.process.*;
-
-import java.awt.*;
-import java.awt.event.*;
-
-import astroj.*;
+import ij.IJ;
+import ij.Prefs;
+import ij.gui.GenericDialog;
+import ij.plugin.PlugIn;
 
 /**
  * Setup plug-in for Aperture_ which sets the following characteristics:
@@ -217,9 +212,9 @@ public class Set_Aperture implements PlugIn
 		{
 		GenericDialog gd = new GenericDialog ("Aperture Photometry Settings");
 
-        gd.addSlider("Radius of object aperture", 1, radius>100?radius:100, radius);
-        gd.addSlider("Inner radius of background annulus", 1, rBack1>100?rBack1:100, rBack1);
-        gd.addSlider("Outer radius of background annulus", 1, rBack2>100?rBack2:100, rBack2); 
+        gd.addFloatSlider("Radius of object aperture", 1, radius>100?radius:100, radius, 3, 1);
+        gd.addFloatSlider("Inner radius of background annulus", 1, rBack1>100?rBack1:100, rBack1, 3, 1);
+        gd.addFloatSlider("Outer radius of background annulus", 1, rBack2>100?rBack2:100, rBack2, 3, 1);
         gd.addCheckbox ("Use variable aperture (Multi-Aperture only)", useVarSizeAp);
         gd.addSlider("          FWHM factor (set to 0.00 for radial profile mode)", 0.0, 5.1, apFWHMFactor);
         gd.addNumericField("Radial profile mode normalized flux cutoff",  autoModeFluxCutOff, 3, 6, "(0 < cuffoff < 1 ; default = 0.010)");

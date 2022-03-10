@@ -199,6 +199,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     protected boolean enableDoubleClicks = true;
     protected boolean multiApertureRunning = false;
     protected boolean useVarSizeAp = false;
+    protected boolean useRadialProfile = false;
     protected boolean showHelp = true;
     protected boolean alwaysstartatfirstSlice = false;
     protected boolean haltOnError = true;
@@ -2493,7 +2494,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     nFWHM++;
                     xFWHM += xWidth;
                     yFWHM += yWidth;
-                    if (apFWHMFactor == 0.0) {
+                    if (useRadialProfile) {
                         if (radialDistribution(xCenter, yCenter, radius, back)) {
                             nRD++;
                             radiusRD += rRD;
@@ -2518,7 +2519,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 radiusRD = radius;
                 nRD = 1;
             }
-            if (apFWHMFactor != 0.0) {
+            if (!useRadialProfile) {
                 setVariableAperture(true, Math.max(xFWHM / nFWHM, yFWHM / nFWHM) * apFWHMFactor, apFWHMFactor, autoModeFluxCutOff);
             } else { setVariableAperture(true, radiusRD / nRD, 0.0, autoModeFluxCutOff); }
         }
@@ -3073,7 +3074,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 i = table.getFreeColumn(AP_RSOURCE);
             }
             if (useVarSizeAp) {
-                if (apFWHMFactor > 0) {
+                if (!useRadialProfile) {
                     if (table.getColumnIndex(AP_FWHMMULT) == ResultsTable.COLUMN_NOT_FOUND) {
                         i = table.getFreeColumn(AP_FWHMMULT);
                     }
@@ -3427,11 +3428,35 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 new boolean[]{reposition, haltOnError, removeBackStars, backIsPlane}, list1);//,showRatio, showRatioError,showRatioSNR,showCompTot});
 
         gd.addDoubleSpaceLineSeparator();
-        gd.addCheckbox("Vary aperture radius based on FWHM", useVarSizeAp, b -> useVarSizeAp = b);
-        gd.addFloatSlider("            FWHM factor (set to 0.00 for radial profile mode):", 0.0, 5.0, false, apFWHMFactor, 3, 0.1, d -> apFWHMFactor = d);
-        gd.addBoundedNumericField("Radial profile mode normalized flux cutoff:", new GenericSwingDialog.Bounds(0, false, 1, false), autoModeFluxCutOff, .01, 6, "(0 < cuffoff < 1 ; default = 0.010)", d -> autoModeFluxCutOff = d);
+        var b1 = gd.addCheckbox("Vary aperture radius based on FWHM", useVarSizeAp, b -> useVarSizeAp = b);
+        gd.addToSameRow();
+        gd.setOverridePosition(true);
+        gd.setNewPosition(GridBagConstraints.WEST);
+        gd.addFloatSlider("FWHM factor:", 0.1, 5.0, false, apFWHMFactor, 3, 0.1, d -> apFWHMFactor = d);
+        gd.resetPositionOverride();
+        gd.setLeftInset(20);
+        var b2 = gd.addCheckbox("Vary aperture radius based radial profile", useRadialProfile, b -> useRadialProfile = b);
+        gd.addToSameRow();
+        gd.setLeftInset(-250);
+        gd.setNewPosition(GridBagConstraints.WEST);
+        gd.addBoundedNumericField("Normalized flux cutoff threshold:", new GenericSwingDialog.Bounds(0, false, 1, false), autoModeFluxCutOff, .01, 6, "(0 < cuffoff < 1 ; default = 0.010)", d -> autoModeFluxCutOff = d);
+        gd.setOverridePosition(false);
+        gd.resetPositionOverride();
         gd.addDoubleSpaceLineSeparator();
         gd.addCheckbox("Prompt to enter ref star apparent magnitude (required if target star apparent mag is desired)", getMags, b -> getMags = b);
+
+        // Only 1 checkbox at a time
+        b1.addChangeListener($ -> {
+            if (b1.isSelected()) {
+                b2.setSelected(false);
+            }
+        });
+
+        b2.addChangeListener($ -> {
+            if (b2.isSelected()) {
+                b1.setSelected(false);
+            }
+        });
 
         final var list2 = new ArrayList<Consumer<Boolean>>();
         list2.add(b -> updatePlot = b);

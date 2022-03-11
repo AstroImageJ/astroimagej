@@ -92,6 +92,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		} catch (FitsException | IOException e) {
 			canUseNom = false;
 			hdus = null;
+			e.printStackTrace();
 		}
 
 		if (canUseNom && postFitsRead != null) { // Use nom.tam.fits to open files
@@ -704,11 +705,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		try {
 			f = fr.fits;
 			var hdus = f.read();
-			fr.zipFile.ifPresent(z -> {
-				try {
-					z.close(); // Close the zip file to prevent leaking memory, needs to be done after fits file is read
-				} catch (IOException ignored) {}
-			});
+			fr.zipFile.ifPresent(this::closeThing);
 
 			return new PostFitsRead(f, hdus);
 		} catch (FitsException e) {
@@ -725,7 +722,9 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		if (path.contains(".zip")) {
 			var s = path.split("\\.zip");
 
-			try (var zip = new ZipFile(s[0] + ".zip")) {
+			ZipFile zip = null;
+			try {
+				zip = new ZipFile(s[0] + ".zip");
 				f = new Fits(zip.getInputStream(zip.getEntry(s[1].substring(1))));
 				return new FitsRead(f, Optional.of(zip));
 			} catch (IOException | FitsException e) {

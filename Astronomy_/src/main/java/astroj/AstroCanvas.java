@@ -742,8 +742,8 @@ public class AstroCanvas extends OverlayCanvas {
                     g.drawOval (x2,y2,w2,h2);
                     g.drawOval (x3,y3,w3,h3);
                     }
-                g.setColor(Color.CYAN);
-                g.drawRect((int) screenX, (int) screenY, 1, 1);
+                /*g.setColor(Color.CYAN);
+                g.drawRect((int) screenX, (int) screenY, 1, 1);*/
 
 //                oldX3=x3;
 //                oldY3=y3;

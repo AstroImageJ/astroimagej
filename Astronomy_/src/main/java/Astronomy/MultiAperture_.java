@@ -3432,7 +3432,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         gd.addToSameRow();
         gd.setOverridePosition(true);
         gd.setNewPosition(GridBagConstraints.WEST);
-        gd.addFloatSlider("FWHM factor:", 0.1, 5.0, false, apFWHMFactor, 3, 0.1, d -> apFWHMFactor = d);
+        gd.addFloatSlider("FWHM factor:", 0.1, 5.0, false, apFWHMFactor, 3, 1, d -> apFWHMFactor = d);
         gd.resetPositionOverride();
         gd.setLeftInset(20);
         var b2 = gd.addCheckbox("Vary aperture radius based radial profile", useRadialProfile, b -> useRadialProfile = b);

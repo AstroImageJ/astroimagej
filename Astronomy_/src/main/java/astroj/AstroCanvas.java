@@ -125,8 +125,8 @@ public class AstroCanvas extends OverlayCanvas {
 
         void buildRedCrossHairCursor()
             {
-            int curWidth=32;
-			int curHeight=32;
+            int curWidth=33;
+			int curHeight=33;
             int x;
             int y;
 			int pix[] = new int[curWidth*curHeight];
@@ -137,12 +137,12 @@ public class AstroCanvas extends OverlayCanvas {
 			int curCol = Color.RED.getRGB();
 
 			for(x=0; x<curWidth; x++)
-                pix[(curWidth)*(curHeight/2)+x]=curCol;
+                pix[(curWidth)*(curHeight/2 + 1)+x]=curCol;
             for(y=0; y<curHeight; y++)
-                pix[(curWidth/2)+(curWidth)*y]=curCol;
+                pix[(curWidth/2 + 1)+(curWidth)*y]=curCol;
 
 			Image img = createImage(new MemoryImageSource(curWidth,curHeight,pix,0,curWidth));
-            redCrossHairCursor = Toolkit.getDefaultToolkit().createCustomCursor(img,new Point(curWidth/2,curHeight/2),"red cross-hair");
+            redCrossHairCursor = Toolkit.getDefaultToolkit().createCustomCursor(img,new Point(16, 16),"red cross-hair");
 			}
         void buildClearCursor()
             {

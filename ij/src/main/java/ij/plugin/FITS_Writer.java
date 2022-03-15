@@ -22,6 +22,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Properties;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.zip.GZIPOutputStream;
 
 /**
@@ -42,6 +44,7 @@ public class FITS_Writer implements PlugIn {
     private boolean unsigned16 = false;
     private double bZero = 0.0;
     private double bScale = 1.0;
+	public static final ExecutorService savingThread = Executors.newSingleThreadExecutor();
             
 	@AstroImageJ(reason = "commented out GET FILE...file deletion iff exists, use nom.tam for export", modified = true)
     public void run(String path) {
@@ -120,6 +123,7 @@ public class FITS_Writer implements PlugIn {
 	}
 
 	public static void saveImage(ImagePlus imp, String path, int specificSlice) {
+		IJ.showStatus("Saving image...");
 		// GET PATH
 		if (path == null || path.trim().length() == 0) {
 			String title = "image.fits";
@@ -193,6 +197,8 @@ public class FITS_Writer implements PlugIn {
 			e.printStackTrace();
 			IJ.error("Failed to write file.");
 		}
+
+		IJ.showStatus("");
 	}
 
 //	/**

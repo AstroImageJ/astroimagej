@@ -3645,10 +3645,18 @@ protected ImageIcon createImageIcon(String path, String description) {
                     }
                 else if (b==saveFitsMenuItem)
                     {
-                    FITS_Writer.saveImage(imp, null, imp.getCurrentSlice());
+                    FITS_Writer.savingThread.submit(() -> {
+                        var l = imp.lockSilently();
+                        FITS_Writer.saveImage(imp, null, imp.getCurrentSlice());
+                        if (l) imp.unlock();
+                    });
                     }
                 else if (b==saveFitsStackMenuItem) {
-                    IJ.run("FITS...");
+                    FITS_Writer.savingThread.submit(() -> {
+                        var l = imp.lockSilently();
+                        IJ.run("FITS...");
+                        if (l) imp.unlock();
+                    });
                 }
                 else if (b==saveTiffMenuItem)
                     {

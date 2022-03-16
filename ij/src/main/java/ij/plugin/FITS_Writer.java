@@ -5,6 +5,7 @@ import ij.ImagePlus;
 import ij.ImageStack;
 import ij.astro.AstroImageJ;
 import ij.astro.util.ImageType;
+import ij.astro.util.ProgressTrackingOutputStream;
 import ij.io.SaveDialog;
 import ij.measure.Calibration;
 import ij.process.ByteProcessor;
@@ -134,6 +135,8 @@ public class FITS_Writer implements PlugIn {
 		var doFz = path.endsWith(".fz");
 		var doGz = path.endsWith(".gz");
 
+		var totalSize = 0L;
+
 		try (var f = new Fits()) {
 			for (int slice = 1; slice <= imp.getStackSize(); slice++) {
 				if (specificSlice != -1 && slice != specificSlice) continue;
@@ -180,18 +183,23 @@ public class FITS_Writer implements PlugIn {
 					header.deleteKey(Standard.BSCALE);
 				}
 
+				totalSize += hdu.getSize();
 				f.addHDU(hdu);
 			}
 
 			Files.createDirectories(Path.of(path).getParent());
 			if (!Path.of(path).toFile().exists()) Files.createFile(Path.of(path));
 
+			var progressTrackingOutputStream = new ProgressTrackingOutputStream(new FileOutputStream(Path.of(path).toFile()));
+			progressTrackingOutputStream.setTotalSizeInBytes(totalSize);
+
 			if (doGz) {
-				var out = new FitsOutputStream(new GZIPOutputStream(new FileOutputStream(Path.of(path).toFile())));
+				var out = new FitsOutputStream(new GZIPOutputStream(progressTrackingOutputStream));
 				f.write(out);
 				out.close();
+				IJ.showProgress(1);
 			} else {
-				f.write(Path.of(path).toFile());
+				f.write(new FitsOutputStream(progressTrackingOutputStream));
 			}
 		} catch (IOException | FitsException e) {
 			e.printStackTrace();

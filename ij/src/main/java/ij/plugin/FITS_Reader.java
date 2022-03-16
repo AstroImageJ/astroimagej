@@ -7,10 +7,7 @@ import ij.Prefs;
 import ij.astro.AstroImageJ;
 import ij.astro.logging.AIJLogger;
 import ij.astro.logging.Translation;
-import ij.astro.util.ArrayBoxingUtil;
-import ij.astro.util.ImageType;
-import ij.astro.util.LeapSeconds;
-import ij.astro.util.SkyAlgorithmsTimeUtil;
+import ij.astro.util.*;
 import ij.io.FileInfo;
 import ij.io.FileOpener;
 import ij.io.OpenDialog;
@@ -22,6 +19,8 @@ import nom.tam.util.Cursor;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.time.LocalDateTime;
@@ -161,6 +160,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			closeThing(postFitsRead.fits);
 
 			IJ.showStatus("");
+			IJ.showProgress(1);
 		} else {   // Use legacy fits reader in case of failure
 			AIJLogger.log("Failed to open image with nom.tam.fits, attempting with legacy mode...");
 
@@ -725,7 +725,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			ZipFile zip = null;
 			try {
 				zip = new ZipFile(s[0] + ".zip");
-				f = new Fits(zip.getInputStream(zip.getEntry(s[1].substring(1))));
+				f = new Fits(new ProgressTrackingInputStream(zip.getInputStream(zip.getEntry(s[1].substring(1)))));
 				return new FitsRead(f, Optional.of(zip));
 			} catch (IOException | FitsException e) {
 				closeThing(f);
@@ -735,9 +735,9 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		}
 
 		try  {
-			f = new Fits(path);
+			f = new Fits(new ProgressTrackingInputStream(Files.newInputStream(Path.of(path))));
 			return new FitsRead(f, Optional.empty());
-		} catch (FitsException e) {
+		} catch (FitsException | IOException e) {
 			closeThing(f);
 			return new FitsRead(true);
 		}

@@ -51,6 +51,7 @@ public class ProgressTrackingOutputStream extends OutputStream {
     @Override
     public void close() throws IOException {
         out.close();
+        IJ.showProgress(1);
     }
 
     private void incrementByteCount() {

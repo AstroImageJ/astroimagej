@@ -9,6 +9,7 @@ public class ProgressTrackingInputStream extends InputStream {
     private final InputStream in;
     private long inputByteCount = 0;
     private long totalSizeInBytes = 0;
+    private long markedByteCount = 0;
 
     public ProgressTrackingInputStream(InputStream inputStream) {
         in = inputStream;
@@ -88,6 +89,20 @@ public class ProgressTrackingInputStream extends InputStream {
     @Override
     public synchronized void mark(int readlimit) {
         in.mark(readlimit);
+        markedByteCount = totalSizeInBytes;
+    }
+
+    @Override
+    public void close() throws IOException {
+        in.close();
+        IJ.showProgress(1);
+    }
+
+    @Override
+    public synchronized void reset() throws IOException {
+        in.reset();
+        totalSizeInBytes = markedByteCount;
+        incrementByteCount(0);
     }
 
     private void incrementByteCount() {

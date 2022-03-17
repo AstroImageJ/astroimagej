@@ -138,7 +138,9 @@ public class FITS_Writer implements PlugIn {
 		var totalSize = 0L;
 
 		try (var f = new Fits()) {
-			for (int slice = 1; slice <= imp.getStackSize(); slice++) {
+			var maxImage = specificSlice == -1 ? imp.getStackSize() : 1;
+			IJ.showStatus("Creating FITS representation...");
+			for (int slice = 1; slice <= maxImage; slice++) {
 				if (specificSlice != -1 && slice != specificSlice) continue;
 				var stack = imp.getStack();
 				var ip = stack.getProcessor(slice);
@@ -185,6 +187,8 @@ public class FITS_Writer implements PlugIn {
 
 				totalSize += hdu.getSize();
 				f.addHDU(hdu);
+
+				if (specificSlice == -1) IJ.showProgress(slice / (float)maxImage);
 			}
 
 			Files.createDirectories(Path.of(path).getParent());
@@ -194,11 +198,13 @@ public class FITS_Writer implements PlugIn {
 			progressTrackingOutputStream.setTotalSizeInBytes(totalSize);
 
 			if (doGz) {
+				IJ.showStatus("Compressing and writing file...");
 				var out = new FitsOutputStream(new GZIPOutputStream(progressTrackingOutputStream));
 				f.write(out);
 				out.close();
 				IJ.showProgress(1);
 			} else {
+				IJ.showStatus("Writing file...");
 				f.write(new FitsOutputStream(progressTrackingOutputStream));
 			}
 		} catch (IOException | FitsException e) {

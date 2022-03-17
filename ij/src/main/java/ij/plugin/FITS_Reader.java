@@ -7,7 +7,10 @@ import ij.Prefs;
 import ij.astro.AstroImageJ;
 import ij.astro.logging.AIJLogger;
 import ij.astro.logging.Translation;
-import ij.astro.util.*;
+import ij.astro.util.ArrayBoxingUtil;
+import ij.astro.util.ImageType;
+import ij.astro.util.LeapSeconds;
+import ij.astro.util.SkyAlgorithmsTimeUtil;
 import ij.io.FileInfo;
 import ij.io.FileOpener;
 import ij.io.OpenDialog;
@@ -17,6 +20,7 @@ import nom.tam.fits.*;
 import nom.tam.image.compression.hdu.CompressedImageHDU;
 import nom.tam.util.Cursor;
 
+import javax.swing.*;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -160,7 +164,6 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			closeThing(postFitsRead.fits);
 
 			IJ.showStatus("");
-			IJ.showProgress(1);
 		} else {   // Use legacy fits reader in case of failure
 			AIJLogger.log("Failed to open image with nom.tam.fits, attempting with legacy mode...");
 
@@ -725,7 +728,9 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			ZipFile zip = null;
 			try {
 				zip = new ZipFile(s[0] + ".zip");
-				f = new Fits(new ProgressTrackingInputStream(zip.getInputStream(zip.getEntry(s[1].substring(1)))));
+				var m = new ProgressMonitorInputStream(IJ.getInstance(),
+						"Reading FITS image", zip.getInputStream(zip.getEntry(s[1].substring(1))));
+				f = new Fits(m);
 				return new FitsRead(f, Optional.of(zip));
 			} catch (IOException | FitsException e) {
 				closeThing(f);
@@ -735,7 +740,9 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		}
 
 		try  {
-			f = new Fits(new ProgressTrackingInputStream(Files.newInputStream(Path.of(path))));
+			var m = new ProgressMonitorInputStream(IJ.getInstance(),
+					"Reading FITS image", Files.newInputStream(Path.of(path)));
+			f = new Fits(m);
 			return new FitsRead(f, Optional.empty());
 		} catch (FitsException | IOException e) {
 			closeThing(f);

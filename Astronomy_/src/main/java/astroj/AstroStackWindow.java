@@ -996,7 +996,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                 saveFitsMenuItem.addActionListener(this);
                 fileMenu.add(saveFitsMenuItem);
 
-                saveFitsStackMenuItem = new MenuItem("Save image/stack as FITS...");
+                saveFitsStackMenuItem = new MenuItem("Save image/stack as 3D FITS...");
                 saveFitsStackMenuItem.addActionListener(this);
                 fileMenu.add(saveFitsStackMenuItem);
 

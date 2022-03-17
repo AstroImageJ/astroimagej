@@ -815,19 +815,21 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         displayPane.add(scrollPane);
         displayPane.add(buttons, c);//todo buttons not in scrollpane
 
-        Font font = getFont();
+        Font font = new Font("Dialog", Font.PLAIN,12);
         if (!fontSizeSet && font != null && Prefs.getGuiScale() != 1.0) {
             fontSizeSet = true;
             setFont(font.deriveFont((float) (font.getSize() * Prefs.getGuiScale())));
         }
         UIHelper.recursiveFontSetter(this, getFont());
+        UIHelper.recursiveFontSetter(rootPane, getFont());
+        UIHelper.recursiveFontSetter(scrollPane, getFont());
+        UIHelper.recursiveFontSetter(displayPane, getFont());
         if (rootPane.getComponentCount() > 0) okay.requestFocusInWindow();
         scrollPane.validate();
         setMinimumSize(getLayout().minimumLayoutSize(scrollPane));
         setMaximumSize(new Dimension(scrollPane.getPreferredSize().width, getMaximumSize().height));
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setContentPane(displayPane);
-        pack();
         displayPane.addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
@@ -846,7 +848,11 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         if (centerDialog) {
             GUI.centerOnImageJScreen(this);
         }
+        validate();
+        pack();
         setVisible(true);
+        validate();
+        pack();
     }
 
     public void centerDialog(boolean b) {

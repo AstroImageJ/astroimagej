@@ -578,6 +578,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		ImageProcessor ip = null;
 		ImageStack stack = new ImageStack();
 
+		var pm = makeMonitor(imageCount);
 		for (int i = 0; i < imageCount; i++) {
 			String header = "";
 			if (headers != null) {
@@ -595,6 +596,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			ip = twoDimensionalImageData2Processor(data[i]);
 			stack.addSlice(fileBase + "_" + (imageCount<10000 ? fourDigits.format(i+1) : (i+1))
 					+ (fileType.length() > 0 ? "." + fileType : "") + "\n" + header, ip);
+			pm.setProgress(i);
 		}
 
 		setStack(fileName, stack);
@@ -609,6 +611,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		ImageProcessor ip = null;
 		ImageStack stack = new ImageStack();
 
+		var pm = makeMonitor(hdus.length);
 		for (int i = 0; i < hdus.length; i++) {
 			// Get the Header as a String
 			var hdr = hdus[i].getHeader();
@@ -624,11 +627,16 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			ip = twoDimensionalImageData2Processor(hdus[i].getKernel());
 			stack.addSlice(fileBase + "_" + (hdus.length<10000 ? fourDigits.format(i+1) : (i+1))
 					+ (fileType.length() > 0 ? "." + fileType : "") + "\n" + header, ip);
+			pm.setProgress(i);
 		}
 
 		setStack(fileName, stack);
 
 		return ip;
+	}
+
+	private ProgressMonitor makeMonitor(int size) {
+		return new ProgressMonitor(IJ.getInstance(), "Processing HDUs in FITS image.", null, 0, size - 1);
 	}
 
 	// The following code excerpted from ij.process.FloatProcessor serves to document the layout

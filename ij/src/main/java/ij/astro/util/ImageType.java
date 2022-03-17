@@ -1,7 +1,9 @@
 package ij.astro.util;
 
+import ij.IJ;
 import ij.process.*;
 
+import javax.swing.*;
 import java.util.function.BiFunction;
 
 public enum ImageType {
@@ -11,6 +13,7 @@ public enum ImageType {
             if (rawData instanceof byte[][] values) {
                 final var pixelArray = new byte[width * height];
 
+                var pm = makeMonitor(width * height);
                 var p = 0;
                 for (int y = 0; y < height; y++) {
                     for (int x = 0; x < width; x++) {
@@ -18,6 +21,7 @@ public enum ImageType {
                         double pixelValue = bzero + bscale * Byte.toUnsignedInt(values[y][x]);
                         pixelArray[p] = (byte) pixelValue;
                         p++;
+                        pm.setProgress(p);
                     }
                 }
 
@@ -55,6 +59,7 @@ public enum ImageType {
             if (rawData instanceof short[][] values) {
                 final var pixelArray = new short[width * height];
 
+                var pm = makeMonitor(width * height);
                 var p = 0;
                 for (int y = 0; y < height; y++) {
                     for (int x = 0; x < width; x++) {
@@ -62,6 +67,7 @@ public enum ImageType {
                         double pixelValue = bzero + bscale * values[y][x];
                         pixelArray[p] = (short) pixelValue;
                         p++;
+                        pm.setProgress(p);
                     }
                 }
 
@@ -99,6 +105,7 @@ public enum ImageType {
             if (rawData instanceof int[][] values) {
                 final var pixelArray = new float[width * height];//new int[]
 
+                var pm = makeMonitor(width * height);
                 var p = 0;
                 for (int y = 0; y < height; y++) {
                     for (int x = 0; x < width; x++) {
@@ -106,6 +113,7 @@ public enum ImageType {
                         double pixelValue = bzero + bscale * values[y][x];
                         pixelArray[p] = (float) pixelValue;
                         p++;
+                        pm.setProgress(p);
                     }
                 }
 
@@ -144,6 +152,7 @@ public enum ImageType {
             if (rawData instanceof long[][] values) {
                 final var pixelArray = new float[width * height];
 
+                var pm = makeMonitor(width * height);
                 var p = 0;
                 for (int y = 0; y < height; y++) {
                     for (int x = 0; x < width; x++) {
@@ -151,6 +160,7 @@ public enum ImageType {
                         double pixelValue = bzero + bscale * values[y][x];
                         pixelArray[p] = (float) pixelValue;
                         p++;
+                        pm.setProgress(p);
                     }
                 }
 
@@ -188,6 +198,7 @@ public enum ImageType {
             if (rawData instanceof float[][] values) {
                 final var pixelArray = new float[width * height];
 
+                var pm = makeMonitor(width * height);
                 var p = 0;
                 for (int y = 0; y < height; y++) {
                     for (int x = 0; x < width; x++) {
@@ -195,6 +206,7 @@ public enum ImageType {
                         double pixelValue = bzero + bscale * values[y][x];
                         pixelArray[p] = (float) pixelValue;
                         p++;
+                        pm.setProgress(p);
                     }
                 }
 
@@ -232,6 +244,7 @@ public enum ImageType {
             if (rawData instanceof double[][] values) {
                 final var pixelArray = new double[width * height];
 
+                var pm = makeMonitor(width * height);
                 var p = 0;
                 for (int y = 0; y < height; y++) {
                     for (int x = 0; x < width; x++) {
@@ -239,6 +252,7 @@ public enum ImageType {
                         double pixelValue = bzero + bscale * values[y][x];
                         pixelArray[p] = pixelValue;
                         p++;
+                        pm.setProgress(p);
                     }
                 }
 
@@ -315,5 +329,10 @@ public enum ImageType {
 
     public double getBZero() {
         return 0;
+    }
+
+    protected ProgressMonitor makeMonitor(int pixelCount) {
+        return new ProgressMonitor(IJ.getInstance(),
+                "Converting FITS HDU into a usable in-memory one", null, 0, pixelCount);
     }
 }

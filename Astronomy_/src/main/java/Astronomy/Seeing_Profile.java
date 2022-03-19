@@ -155,9 +155,13 @@ public class Seeing_Profile implements PlugInFilter
         }
 
         public static ApRadii getRadii(ImagePlus imp, double x, double y) {
+            return getRadii(imp, x, y, Prefs.get(MultiAperture_.PREFS_AUTOMODEFLUXCUTOFF, 0.010));
+        }
+
+        public static ApRadii getRadii(ImagePlus imp, double x, double y, double cutoff) {
             var sp = new Seeing_Profile();
             sp.cal = imp.getCalibration();
-            sp.autoModeFluxCutOff = Prefs.get (MultiAperture_.PREFS_AUTOMODEFLUXCUTOFF, sp.autoModeFluxCutOff);
+            sp.autoModeFluxCutOff = cutoff;
             sp.X0 = x;
             sp.Y0 = y;
             sp.mR = Prefs.get ("aperture.radius", sp.mR);

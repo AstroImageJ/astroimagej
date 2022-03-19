@@ -653,6 +653,30 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         return new ComponentPair(tf, out);
     }
 
+    public Component addGenericComponent(Component b) {
+        if (addToSameRow) {
+            c.gridx = GridBagConstraints.RELATIVE;
+            c.insets.left = 10;
+        } else {
+            c.gridx = 0;
+            c.gridy++;
+            c.anchor = GridBagConstraints.WEST;
+            c.insets = new Insets(DialogBoxType.CHECKBOX.isPresent() ? 0 : 15, 20, 0, 0);
+        }
+        if (overridePosition) c.gridx = x;
+        useCustomPosition();
+        addLocal(b, c);
+        x++;
+        return b;
+    }
+
+    public static JRadioButton makeRadioButton(String text, Consumer<Boolean> listener, ButtonGroup group) {
+        var r = new JRadioButton(text);
+        if (group != null) r.getModel().setGroup(group);
+        r.addActionListener($ -> listener.accept(r.isSelected()));
+        return r;
+    }
+
     public void resetPositionOverride() {
         x = 0;
     }

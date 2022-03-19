@@ -95,6 +95,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     protected static String PREFS_ALWAYSFIRSTSLICE = "multiaperture.alwaysstartatfirstSlice";
     protected static String PREFS_APFWHMFACTOR = "multiaperture.apfwhmfactor";
     protected static String PREFS_AUTOMODEFLUXCUTOFF = "multiaperture.automodefluxcutoff";
+    protected static String PREFS_AUTOMODEFLUXCUTOFFFIXED = "multiaperture.automodefluxcutofffixed";
+    protected static String PREFS_APRADIUS = "multiaperture.apradius";
     //    protected static String PREFS_FOLLOW          = new String ("multiaperture.follow");
 //	protected static String PREFS_WIDETABLE       = new String ("multiaperture.widetable");
     protected static String PREFS_SHOWRATIO = "multiaperture.showratio";
@@ -220,7 +222,6 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     protected int screenX;
     protected int screenY;
     protected int modis;
-    double autoModeFluxCutOff = 0.010;
     boolean openSimbadForAbsMag = true;
     boolean verbose = true;
     boolean blocked = false;
@@ -249,7 +250,6 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     int currentToolId = 0;
     Toolbar toolbar;
     String infoMessage = "";
-    double apFWHMFactor = 1.4;
     double xFWHM = 0.0;
     double yFWHM = 0.0;
     double rRD = 0.0;
@@ -288,10 +288,11 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     DecimalFormat uptoEightPlaces = new DecimalFormat("#####0.########", IJU.dfs);
     double max = 0;
     private double gaussRadius = 3.5;
-    private boolean autoRadius = true, t1Placed = false;
+    private boolean t1Placed = false;
     private Seeing_Profile.ApRadii oldRadii;
     private int referenceStar = 1;
     private boolean suggestionRunning;
+    private static ApRadius radiusSetting = ApRadius.AUTO_FIXED;
 
 //	public static double RETRY_RADIUS = 3.0;
 
@@ -431,7 +432,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             if (hasWCS) wcs = asw.getWCS();
             asw.setDisableShiftClick(true);
         }
-        
+
         max = imp.getStatistics().max;
 
         // GET HOW MANY APERTURES WILL BE MEASURED WITH WHAT RADII
@@ -574,14 +575,20 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         debugAp = Prefs.get(PREFS_DEBUGAPERTURESUGGESTION, debugAp);
         gaussRadius = Prefs.get(PREFS_GAUSSRADIUS, gaussRadius);
         autoPeakValues = Prefs.get(PREFS_AUTOPEAKS, autoPeakValues);
-        autoRadius = Prefs.get(PREFS_AUTORADIUS, autoRadius);
         enableLog = Prefs.get(PREFS_ENABLELOG, enableLog);
         referenceStar = (int) Prefs.get(PREFS_REFERENCESTAR, referenceStar);
         oldUseVarSizeAp = useVarSizeAp;
-        apFWHMFactor = Prefs.get(MultiAperture_.PREFS_APFWHMFACTOR, apFWHMFactor);
-        oldapFWHMFactor = apFWHMFactor;
-        autoModeFluxCutOff = Prefs.get(MultiAperture_.PREFS_AUTOMODEFLUXCUTOFF, autoModeFluxCutOff);
-        oldAutoModeFluxCutOff = autoModeFluxCutOff;
+        ApRadius.AUTO_VAR_FWHM.cutoff = Prefs.get(MultiAperture_.PREFS_APFWHMFACTOR, ApRadius.AUTO_VAR_FWHM.cutoff);
+        oldapFWHMFactor = ApRadius.AUTO_VAR_FWHM.cutoff;
+        ApRadius.AUTO_VAR_RAD_PROF.cutoff = Prefs.get(MultiAperture_.PREFS_AUTOMODEFLUXCUTOFF, ApRadius.AUTO_VAR_RAD_PROF.cutoff);
+        oldAutoModeFluxCutOff = ApRadius.AUTO_VAR_RAD_PROF.cutoff;
+        ApRadius.AUTO_FIXED.cutoff = Prefs.get(PREFS_AUTOMODEFLUXCUTOFFFIXED, ApRadius.AUTO_FIXED.cutoff);
+        try {
+            radiusSetting = Enum.valueOf(ApRadius.class, Prefs.get(PREFS_APRADIUS, ApRadius.AUTO_FIXED.name()));
+        } catch (Exception e) {
+            e.printStackTrace();
+            radiusSetting = ApRadius.AUTO_FIXED;
+        }
         nAperturesMax = (int) Prefs.get(MultiAperture_.PREFS_NAPERTURESMAX, nAperturesMax);
         enableDoubleClicks = Prefs.get(MultiAperture_.PREFS_ENABLEDOUBLECLICKS, enableDoubleClicks);
         showHelp = Prefs.get(MultiAperture_.PREFS_SHOWHELP, showHelp);
@@ -961,8 +968,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         Prefs.set(PREFS_SUGGESTCOMPSTARS, suggestCompStars);
         Prefs.set(MultiAperture_.PREFS_SHOWHELP, showHelp);
         Prefs.set(MultiAperture_.PREFS_ALWAYSFIRSTSLICE, alwaysstartatfirstSlice);
-        Prefs.set(MultiAperture_.PREFS_APFWHMFACTOR, apFWHMFactor);
-        Prefs.set(MultiAperture_.PREFS_AUTOMODEFLUXCUTOFF, autoModeFluxCutOff);
+        Prefs.set(MultiAperture_.PREFS_APFWHMFACTOR, ApRadius.AUTO_VAR_FWHM.cutoff);
+        Prefs.set(MultiAperture_.PREFS_AUTOMODEFLUXCUTOFF, ApRadius.AUTO_VAR_RAD_PROF.cutoff);
+        Prefs.set(MultiAperture_.PREFS_AUTOMODEFLUXCUTOFFFIXED, ApRadius.AUTO_FIXED.cutoff);
+        Prefs.set(MultiAperture_.PREFS_APRADIUS, radiusSetting.name());
 
 //        Prefs.set (MultiAperture_.PREFS_WIDETABLE, wideTable);
         Prefs.set(MultiAperture_.PREFS_SHOWRATIO, showRatio);
@@ -1125,7 +1134,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             }
 
             // Autoradius feature
-            if (!autoMode && firstClick && autoRadius && !t1Placed && !(this instanceof Stack_Aligner)) {
+            if (!autoMode && firstClick && radiusSetting.autoRadius() && !t1Placed && !(this instanceof Stack_Aligner)) {
                 oldRadii = new Seeing_Profile.ApRadii(radius, rBack1, rBack2);
 
                 var x = xCenter;
@@ -1151,7 +1160,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     }
                 }
 
-                var rs = Seeing_Profile.getRadii(imp, x, y);
+                var rs = Seeing_Profile.getRadii(imp, x, y, ApRadius.AUTO_FIXED.cutoff);
                 if (rs.isValid()) {
                     radius = rs.r();
                     rBack1 = rs.r2();
@@ -2238,8 +2247,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         Prefs.set(Aperture_.AP_PREFS_RBACK1, rBack1);
         Prefs.set(Aperture_.AP_PREFS_RBACK2, rBack2);
         Prefs.set(MultiAperture_.PREFS_GETMAGS, getMags);
-        Prefs.set(MultiAperture_.PREFS_APFWHMFACTOR, apFWHMFactor);
-        Prefs.set(MultiAperture_.PREFS_AUTOMODEFLUXCUTOFF, autoModeFluxCutOff);
+        Prefs.set(MultiAperture_.PREFS_APFWHMFACTOR, ApRadius.AUTO_VAR_FWHM.cutoff);
+        Prefs.set(MultiAperture_.PREFS_AUTOMODEFLUXCUTOFF, ApRadius.AUTO_VAR_RAD_PROF.cutoff);
         Prefs.set(MultiAperture_.PREFS_USEVARSIZEAP, useVarSizeAp);
     }
 
@@ -2504,7 +2513,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 }
                 xWidthFixed[ap] = xWidth;
                 yWidthFixed[ap] = yWidth;
-                widthFixed[ap] = apFWHMFactor != 0.0 ? 0.5 * (xWidth + yWidth) : fwhmRD;
+                widthFixed[ap] = ApRadius.AUTO_VAR_FWHM.cutoff != 0.0 ? 0.5 * (xWidth + yWidth) : fwhmRD;
                 angleFixed[ap] = angle;
                 roundFixed[ap] = round;
             }
@@ -2520,8 +2529,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 nRD = 1;
             }
             if (!useRadialProfile) {
-                setVariableAperture(true, Math.max(xFWHM / nFWHM, yFWHM / nFWHM) * apFWHMFactor, apFWHMFactor, autoModeFluxCutOff);
-            } else { setVariableAperture(true, radiusRD / nRD, 0.0, autoModeFluxCutOff); }
+                setVariableAperture(true, Math.max(xFWHM / nFWHM, yFWHM / nFWHM) * ApRadius.AUTO_VAR_FWHM.cutoff, ApRadius.AUTO_VAR_FWHM.cutoff, ApRadius.AUTO_VAR_RAD_PROF.cutoff);
+            } else { setVariableAperture(true, radiusRD / nRD, 0.0, ApRadius.AUTO_VAR_RAD_PROF.cutoff); }
         }
 
         // This is needed when running from DP for some reason, other rois are not removed
@@ -2936,7 +2945,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     fwhmRD = 2.0 * (radii[bin - 1] + (0.5 - means[bin - 1]) / m);
                     foundFWHM = true;
                 } else if (foundFWHM && bin < nBins - 5) {
-                    if (means[bin] < autoModeFluxCutOff) {
+                    if (means[bin] < ApRadius.AUTO_VAR_RAD_PROF.cutoff) {
                         rRD = radii[bin];
                         foundR1 = true;
                         break;
@@ -3249,15 +3258,34 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             sliders[0] = gd.addSlider("           First slice ", 1, stackSize, (firstSlice == stackSize || (alwaysstartatfirstSlice && !(this instanceof Stack_Aligner))) ? 1 : firstSlice, d -> firstSlice = d.intValue());
             sliders[1] = gd.addSlider("           Last slice ", 1, stackSize, lastSlice, d -> lastSlice = d.intValue());
         }
-        var autoRadiusBox = gd.addCheckbox("Auto Radius", autoRadius, b -> autoRadius = b);
-        autoRadiusBox.addChangeListener($ -> toggleComponents(sliders, 2, !autoRadius));
-        gd.addToSameRow();
-        gd.setOverridePosition(true);
         sliders[2] = gd.addFloatSlider("Fixed/Base radius of photometric aperture", 0.01, radius > 100 ? radius : 100, false, radius, 3, 1.0, d -> radius = d);
-        gd.setOverridePosition(false);
         sliders[3] = gd.addFloatSlider("Fixed/Base radius of inner background annulus", 0.01, rBack1 > 100 ? rBack1 : 100, false, rBack1, 3, 1.0, d -> rBack1 = d);
         sliders[4] = gd.addFloatSlider("Fixed/Base radius of outer background annulus", 0.01, rBack2 > 100 ? rBack2 : 100, false, rBack2, 3, 1.0, d -> rBack2 = d);
-        toggleComponents(sliders, 2, !autoRadius);
+
+        gd.addGenericComponent(ApRadius.FIXED.setupButton());
+        gd.setOverridePosition(true);
+        gd.addGenericComponent(ApRadius.AUTO_FIXED.setupButton());
+        gd.addToSameRow();
+        gd.setLeftInset(-250);
+        gd.setNewPosition(GridBagConstraints.WEST);
+        gd.addBoundedNumericField("Normalized flux cutoff threshold:", new GenericSwingDialog.Bounds(0, false, 1, false), ApRadius.AUTO_FIXED.cutoff, .01, 6, "(0 < cutoff < 1 ; default = 0.010)", d -> ApRadius.AUTO_FIXED.cutoff = d);
+        gd.resetPositionOverride();
+        gd.addGenericComponent(ApRadius.AUTO_VAR_RAD_PROF.setupButton());
+        gd.addToSameRow();
+        gd.setLeftInset(-250);
+        gd.setNewPosition(GridBagConstraints.WEST);
+        gd.addBoundedNumericField("Normalized flux cutoff threshold:", new GenericSwingDialog.Bounds(0, false, 1, false), ApRadius.AUTO_VAR_RAD_PROF.cutoff, .01, 6, "(0 < cutoff < 1 ; default = 0.010)", d -> ApRadius.AUTO_VAR_RAD_PROF.cutoff = d);
+        gd.setOverridePosition(false);
+        gd.resetPositionOverride();
+        gd.addGenericComponent(ApRadius.AUTO_VAR_FWHM.setupButton());
+        gd.addToSameRow();
+        gd.setOverridePosition(true);
+        gd.setNewPosition(GridBagConstraints.WEST);
+        gd.addFloatSlider("FWHM factor:", 0.1, 5.0, false, ApRadius.AUTO_VAR_FWHM.cutoff, 3, 1, d -> ApRadius.AUTO_VAR_FWHM.cutoff = d);
+        gd.setOverridePosition(false);
+        gd.resetPositionOverride();
+        ApRadius.setSelected();
+
         gd.addDoubleSpaceLineSeparator();
         gd.addCheckbox("Use previous " + nAperturesStored + " apertures (1-click to set first aperture location)", previous && nAperturesStored > 0, b -> previous = b);
         gd.addCheckbox("Use RA/Dec to locate aperture positions", useWCS, b -> useWCS = b);
@@ -3277,6 +3305,50 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         gd.addMessage("CLICK 'PLACE APERTURES' AND SELECT APERTURE LOCATIONS WITH LEFT CLICKS.\nTHEN RIGHT CLICK or <ENTER> TO BEGIN PROCESSING.\n(to abort aperture selection or processing, press <ESC>)");
         if (!(this instanceof Stack_Aligner)) gd.enableYesNoCancel("Place Apertures", "Aperture Settings");
         return gd;
+    }
+
+    enum ApRadius {
+        /**
+         * Fixed based on user setting.
+         */
+        FIXED("Fixed Apertures as selected above", 0),
+        /**
+         * Auto radius based on radial profile.
+         */
+        AUTO_FIXED("Auto Fixed Aperture based on radial profile", 0.01),
+        /**
+         * Auto variable radius based on radial profile.
+         */
+        AUTO_VAR_RAD_PROF("Auto Variable Aperture based on radial profile", 0.01),
+        /**
+         * Auto variable radius based on FWHM.
+         */
+        AUTO_VAR_FWHM("Auto Variable Aperture based on FWHM", 1.4);
+
+        private final String buttonText;
+        private static final ButtonGroup group = new ButtonGroup();
+        private JRadioButton button = null;
+        public double cutoff;
+
+        ApRadius(String buttonText, double cutoff) {
+            this.buttonText = buttonText;
+            this.cutoff = cutoff;
+        }
+
+        public Component setupButton() {
+            button = GenericSwingDialog.makeRadioButton(buttonText, b -> {
+                if (b) radiusSetting = this;
+            }, group);
+            return button;
+        }
+
+        static void setSelected() {
+            MultiAperture_.radiusSetting.button.setSelected(true);
+        }
+        
+        public boolean autoRadius() {
+            return this == AUTO_FIXED;
+        }
     }
 
     /**
@@ -3428,35 +3500,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 new boolean[]{reposition, haltOnError, removeBackStars, backIsPlane}, list1);//,showRatio, showRatioError,showRatioSNR,showCompTot});
 
         gd.addDoubleSpaceLineSeparator();
-        var b1 = gd.addCheckbox("Vary aperture radius based on FWHM", useVarSizeAp, b -> useVarSizeAp = b);
-        gd.addToSameRow();
-        gd.setOverridePosition(true);
-        gd.setNewPosition(GridBagConstraints.WEST);
-        gd.addFloatSlider("FWHM factor:", 0.1, 5.0, false, apFWHMFactor, 3, 1, d -> apFWHMFactor = d);
-        gd.resetPositionOverride();
-        gd.setLeftInset(20);
-        var b2 = gd.addCheckbox("Vary aperture radius based on radial profile", useRadialProfile, b -> useRadialProfile = b);
-        gd.addToSameRow();
-        gd.setLeftInset(-250);
-        gd.setNewPosition(GridBagConstraints.WEST);
-        gd.addBoundedNumericField("Normalized flux cutoff threshold:", new GenericSwingDialog.Bounds(0, false, 1, false), autoModeFluxCutOff, .01, 6, "(0 < cutoff < 1 ; default = 0.010)", d -> autoModeFluxCutOff = d);
-        gd.setOverridePosition(false);
-        gd.resetPositionOverride();
-        gd.addDoubleSpaceLineSeparator();
         gd.addCheckbox("Prompt to enter ref star apparent magnitude (required if target star apparent mag is desired)", getMags, b -> getMags = b);
-
-        // Only 1 checkbox at a time
-        b1.addChangeListener($ -> {
-            if (b1.isSelected()) {
-                b2.setSelected(false);
-            }
-        });
-
-        b2.addChangeListener($ -> {
-            if (b2.isSelected()) {
-                b1.setSelected(false);
-            }
-        });
 
         final var list2 = new ArrayList<Consumer<Boolean>>();
         list2.add(b -> updatePlot = b);
@@ -3516,17 +3560,17 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             IJ.error("Invalid number entered");
             return false;
         }
-        if (apFWHMFactor < 0) {
+        if (ApRadius.AUTO_VAR_FWHM.cutoff < 0) {
             IJ.beep();
             IJ.error("Invalid aperture FWHM factor entered");
             return false;
         }
-        if (autoModeFluxCutOff <= 0 || autoModeFluxCutOff >= 1) {
+        if (ApRadius.AUTO_VAR_RAD_PROF.cutoff <= 0 || ApRadius.AUTO_VAR_RAD_PROF.cutoff >= 1) {
             IJ.beep();
             IJ.error("Invalid flux cutoff entered");
             return false;
         }
-        if (oldUseVarSizeAp != useVarSizeAp || oldapFWHMFactor != apFWHMFactor || oldAutoModeFluxCutOff != autoModeFluxCutOff ||
+        if (oldUseVarSizeAp != useVarSizeAp || oldapFWHMFactor != ApRadius.AUTO_VAR_FWHM.cutoff || oldAutoModeFluxCutOff != ApRadius.AUTO_VAR_RAD_PROF.cutoff ||
                 oldRemoveBackStars != removeBackStars || oldBackIsPlane != backIsPlane || oldGetMags != getMags) {
             changeAperture();
         }
@@ -3542,8 +3586,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         Prefs.set(MultiAperture_.PREFS_HALTONERROR, haltOnError);
         Prefs.set(MultiAperture_.PREFS_SHOWHELP, showHelp);
         Prefs.set(MultiAperture_.PREFS_ALWAYSFIRSTSLICE, alwaysstartatfirstSlice);
-        Prefs.set(MultiAperture_.PREFS_APFWHMFACTOR, apFWHMFactor);
-        Prefs.set(MultiAperture_.PREFS_AUTOMODEFLUXCUTOFF, autoModeFluxCutOff);
+        Prefs.set(MultiAperture_.PREFS_APFWHMFACTOR, ApRadius.AUTO_VAR_FWHM.cutoff);
+        Prefs.set(MultiAperture_.PREFS_AUTOMODEFLUXCUTOFF, ApRadius.AUTO_VAR_RAD_PROF.cutoff);
+        Prefs.set(MultiAperture_.PREFS_AUTOMODEFLUXCUTOFFFIXED, ApRadius.AUTO_FIXED.cutoff);
+        Prefs.set(MultiAperture_.PREFS_APRADIUS, radiusSetting.name());
         Prefs.set(MultiAperture_.PREFS_ENABLEDOUBLECLICKS, enableDoubleClicks);
         Prefs.set(MultiAperture_.PREFS_UPDATEPLOT, updatePlot);
         Prefs.set(MultiAperture_.PREFS_GETMAGS, getMags);
@@ -3557,7 +3603,6 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         Prefs.set(PREFS_DEBUGAPERTURESUGGESTION, debugAp);
         Prefs.set(PREFS_GAUSSRADIUS, gaussRadius);
         Prefs.set(PREFS_AUTOPEAKS, autoPeakValues);
-        Prefs.set(PREFS_AUTORADIUS, autoRadius);
         Prefs.set(PREFS_REFERENCESTAR, referenceStar);
         Prefs.set(PREFS_ENABLELOG, enableLog);
         Prefs.set(MultiAperture_.PREFS_USEVARSIZEAP, useVarSizeAp);

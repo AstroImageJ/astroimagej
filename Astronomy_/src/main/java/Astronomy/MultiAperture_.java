@@ -3253,10 +3253,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         autoRadiusBox.addChangeListener($ -> toggleComponents(sliders, 2, !autoRadius));
         gd.addToSameRow();
         gd.setOverridePosition(true);
-        sliders[2] = gd.addFloatSlider("Radius of object aperture", 0.01, radius > 100 ? radius : 100, false, radius, 3, 1.0, d -> radius = d);
+        sliders[2] = gd.addFloatSlider("Fixed/Base radius of photometric aperture", 0.01, radius > 100 ? radius : 100, false, radius, 3, 1.0, d -> radius = d);
         gd.setOverridePosition(false);
-        sliders[3] = gd.addFloatSlider("Inner radius of background annulus", 0.01, rBack1 > 100 ? rBack1 : 100, false, rBack1, 3, 1.0, d -> rBack1 = d);
-        sliders[4] = gd.addFloatSlider("Outer radius of background annulus", 0.01, rBack2 > 100 ? rBack2 : 100, false, rBack2, 3, 1.0, d -> rBack2 = d);
+        sliders[3] = gd.addFloatSlider("Fixed/Base radius of inner background annulus", 0.01, rBack1 > 100 ? rBack1 : 100, false, rBack1, 3, 1.0, d -> rBack1 = d);
+        sliders[4] = gd.addFloatSlider("Fixed/Base radius of outer background annulus", 0.01, rBack2 > 100 ? rBack2 : 100, false, rBack2, 3, 1.0, d -> rBack2 = d);
         toggleComponents(sliders, 2, !autoRadius);
         gd.addDoubleSpaceLineSeparator();
         gd.addCheckbox("Use previous " + nAperturesStored + " apertures (1-click to set first aperture location)", previous && nAperturesStored > 0, b -> previous = b);
@@ -3435,11 +3435,11 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         gd.addFloatSlider("FWHM factor:", 0.1, 5.0, false, apFWHMFactor, 3, 1, d -> apFWHMFactor = d);
         gd.resetPositionOverride();
         gd.setLeftInset(20);
-        var b2 = gd.addCheckbox("Vary aperture radius based radial profile", useRadialProfile, b -> useRadialProfile = b);
+        var b2 = gd.addCheckbox("Vary aperture radius based on radial profile", useRadialProfile, b -> useRadialProfile = b);
         gd.addToSameRow();
         gd.setLeftInset(-250);
         gd.setNewPosition(GridBagConstraints.WEST);
-        gd.addBoundedNumericField("Normalized flux cutoff threshold:", new GenericSwingDialog.Bounds(0, false, 1, false), autoModeFluxCutOff, .01, 6, "(0 < cuffoff < 1 ; default = 0.010)", d -> autoModeFluxCutOff = d);
+        gd.addBoundedNumericField("Normalized flux cutoff threshold:", new GenericSwingDialog.Bounds(0, false, 1, false), autoModeFluxCutOff, .01, 6, "(0 < cutoff < 1 ; default = 0.010)", d -> autoModeFluxCutOff = d);
         gd.setOverridePosition(false);
         gd.resetPositionOverride();
         gd.addDoubleSpaceLineSeparator();
@@ -3560,6 +3560,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         Prefs.set(PREFS_AUTORADIUS, autoRadius);
         Prefs.set(PREFS_REFERENCESTAR, referenceStar);
         Prefs.set(PREFS_ENABLELOG, enableLog);
+        Prefs.set(MultiAperture_.PREFS_USEVARSIZEAP, useVarSizeAp);
         Prefs.savePreferences();
 
         if (!(this instanceof Stack_Aligner) && !gd.wasOKed()) {

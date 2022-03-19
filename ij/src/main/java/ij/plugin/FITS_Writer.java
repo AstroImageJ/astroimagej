@@ -27,6 +27,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.zip.GZIPOutputStream;
 
+import static nom.tam.fits.header.Standard.*;
+
 /**
  * This plugin saves a 16 or 32 bit image in FITS format. It is a stripped-down version of the SaveAs_FITS 
  *	plugin from the collection of astronomical image processing plugins by Jennifer West at
@@ -138,8 +140,24 @@ public class FITS_Writer implements PlugIn {
 		var totalSize = 0L;
 
 		try (var f = new Fits()) {
+			// Setup for incremental writing
+			Files.createDirectories(Path.of(path).getParent());
+			if (!Path.of(path).toFile().exists()) Files.createFile(Path.of(path));
+
+			var progressTrackingOutputStream = new ProgressTrackingOutputStream(new FileOutputStream(Path.of(path).toFile()));
+			progressTrackingOutputStream.setTotalSizeInBytes(totalSize);
+
+			FitsOutputStream out;
+			if (doGz) {
+				IJ.showStatus("Compressing and writing file...");
+				out = new FitsOutputStream(new GZIPOutputStream(progressTrackingOutputStream));
+			} else {
+				out = new FitsOutputStream(progressTrackingOutputStream);
+			}
+
 			var maxImage = specificSlice == -1 ? imp.getStackSize() : 1;
-			IJ.showStatus("Creating FITS representation...");
+			var firstImage = true;
+			IJ.showStatus("Converting data and writing...");
 			for (int slice = 1; slice <= maxImage; slice++) {
 				if (specificSlice != -1 && slice != specificSlice) continue;
 				var stack = imp.getStack();
@@ -186,27 +204,33 @@ public class FITS_Writer implements PlugIn {
 				}
 
 				totalSize += hdu.getSize();
-				f.addHDU(hdu);
+				if (firstImage) {
+					f.addHDU(hdu);
+					firstImage = false;
+					f.write(out);
+				} else {
+					// Work around https://github.com/nom-tam-fits/nom-tam-fits/issues/266 till its resolved
+					header.setXtension(XTENSION_IMAGE);
+					header.deleteKey(EXTEND);
+					int pcount = header.getIntValue(PCOUNT, 0);
+					int gcount = header.getIntValue(GCOUNT, 1);
+					HeaderCard pcard = header.findCard(PCOUNT);
+					HeaderCard gcard = header.findCard(GCOUNT);
+					if (pcard == null) {
+						header.addValue(PCOUNT, pcount);
+					}
+					if (gcard == null) {
+						header.addValue(GCOUNT, gcount);
+					}
+
+					hdu.write(out);
+				}
 
 				if (specificSlice == -1) IJ.showProgress(slice / (float)maxImage);
 			}
 
-			Files.createDirectories(Path.of(path).getParent());
-			if (!Path.of(path).toFile().exists()) Files.createFile(Path.of(path));
-
-			var progressTrackingOutputStream = new ProgressTrackingOutputStream(new FileOutputStream(Path.of(path).toFile()));
-			progressTrackingOutputStream.setTotalSizeInBytes(totalSize);
-
-			if (doGz) {
-				IJ.showStatus("Compressing and writing file...");
-				var out = new FitsOutputStream(new GZIPOutputStream(progressTrackingOutputStream));
-				f.write(out);
-				out.close();
-				IJ.showProgress(1);
-			} else {
-				IJ.showStatus("Writing file...");
-				f.write(new FitsOutputStream(progressTrackingOutputStream));
-			}
+			out.close();
+			IJ.showProgress(1);
 		} catch (IOException | FitsException e) {
 			e.printStackTrace();
 			IJ.error("Failed to write file.");

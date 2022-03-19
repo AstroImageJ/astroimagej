@@ -1,6 +1,7 @@
 package Astronomy;// MultiAperture_.java
 
 import astroj.*;
+import flanagan.analysis.Stat;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.Prefs;
@@ -106,6 +107,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     protected static String PREFS_SHOWHELP = "multiaperture.showhelp";
     protected static String PREFS_ALWAYSFIRSTSLICE = "multiaperture.alwaysstartatfirstSlice";
     protected static String PREFS_APFWHMFACTOR = "multiaperture.apfwhmfactor";
+    protected static String PREFS_APFWHMFACTORSTACK = "multiaperture.apfwhmfactorstack";
     protected static String PREFS_AUTOMODEFLUXCUTOFF = "multiaperture.automodefluxcutoff";
     protected static String PREFS_AUTOMODEFLUXCUTOFFFIXED = "multiaperture.automodefluxcutofffixed";
     protected static String PREFS_APRADIUS = "multiaperture.apradius";
@@ -583,6 +585,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         referenceStar = (int) Prefs.get(PREFS_REFERENCESTAR, referenceStar);
         oldUseVarSizeAp = useVarSizeAp;
         ApRadius.AUTO_VAR_FWHM.cutoff = Prefs.get(MultiAperture_.PREFS_APFWHMFACTOR, ApRadius.AUTO_VAR_FWHM.cutoff);
+        ApRadius.AUTO_VAR_STACK_RAD.cutoff = Prefs.get(MultiAperture_.PREFS_APFWHMFACTORSTACK, ApRadius.AUTO_VAR_STACK_RAD.cutoff);
         oldapFWHMFactor = ApRadius.AUTO_VAR_FWHM.cutoff;
         ApRadius.AUTO_VAR_RAD_PROF.cutoff = Prefs.get(MultiAperture_.PREFS_AUTOMODEFLUXCUTOFF, ApRadius.AUTO_VAR_RAD_PROF.cutoff);
         oldAutoModeFluxCutOff = ApRadius.AUTO_VAR_RAD_PROF.cutoff;
@@ -973,6 +976,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         Prefs.set(MultiAperture_.PREFS_SHOWHELP, showHelp);
         Prefs.set(MultiAperture_.PREFS_ALWAYSFIRSTSLICE, alwaysstartatfirstSlice);
         Prefs.set(MultiAperture_.PREFS_APFWHMFACTOR, ApRadius.AUTO_VAR_FWHM.cutoff);
+        Prefs.set(MultiAperture_.PREFS_APFWHMFACTORSTACK, ApRadius.AUTO_VAR_STACK_RAD.cutoff);
         Prefs.set(MultiAperture_.PREFS_AUTOMODEFLUXCUTOFF, ApRadius.AUTO_VAR_RAD_PROF.cutoff);
         Prefs.set(MultiAperture_.PREFS_AUTOMODEFLUXCUTOFFFIXED, ApRadius.AUTO_FIXED.cutoff);
         Prefs.set(MultiAperture_.PREFS_APRADIUS, radiusSetting.name());
@@ -1178,6 +1182,12 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 // Don't focus on the seeing profile, allowing smoother access to continue MA
                 asw.requestFocus();
                 canvas.requestFocus();
+            }
+
+            // Auto stack radius feature
+            if (!autoMode && firstClick && radiusSetting == ApRadius.AUTO_VAR_STACK_RAD && !t1Placed && !(this instanceof Stack_Aligner)) {
+                oldRadii = new Seeing_Profile.ApRadii(radius, rBack1, rBack2);
+                evaluateStackForRadii();
             }
 
             // ADD APERTURE TO LIST OR SHIFT OLD APERTURE POSITIONS
@@ -1450,6 +1460,61 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
             suggestionRunning = false;
         }
+    }
+
+    private Seeing_Profile.ApRadii evaluateStackForRadii() {
+        List<Seeing_Profile.ApRadii> radii = new ArrayList<>(lastSlice - firstSlice);
+        for (int i = firstSlice; i <= lastSlice; i++) {
+            imp.setSliceWithoutUpdate(i);// Don't draw the stack update, can't use IP because SP assumes imp
+            var x = xCenter;
+            var y = yCenter;
+            // Acount for old star positions
+            if (previous && nAperturesStored > 0) {
+                x = xPosStored[0];
+                y = yPosStored[0];
+                var ra = -1000001d;
+                var dec = -1000001d;
+                if (raPosStored != null && decPosStored != null) {
+                    ra = raPosStored[0];
+                    dec = decPosStored[0];
+                }
+                if ((useMA || useAlign) && useWCS) {
+                    if (!hasWCS || (!(ra < -1000000) && !(dec < -1000000))) {
+                        if (hasWCS && ra > -1000000 && dec > -1000000) {
+                            double[] xy = wcs.wcs2pixels(new double[]{ra, dec});
+                            x = xy[0];
+                            y = xy[1];
+                        }
+                    }
+                }
+            }
+
+            var rs = Seeing_Profile.getRadii(imp, x, y, ApRadius.AUTO_VAR_STACK_RAD.cutoff, false);
+            if (!rs.centroidSuccessful()) {
+                IJ.error("Failed to centroid on slice: " + i + ". Plate-solving the image may allow this mode to be used. Otherwise, choose a different aperture mode.");
+                imp.setSliceWithoutUpdate(firstSlice);
+                return rs;
+            }
+            radii.add(rs);
+        }
+        imp.setSliceWithoutUpdate(firstSlice);
+
+        radii = radii.stream().filter(Seeing_Profile.ApRadii::isValid).toList();
+        var sr = radii.stream().mapToDouble(Seeing_Profile.ApRadii::r).toArray();
+        var br = radii.stream().mapToDouble(Seeing_Profile.ApRadii::r2).toArray();
+        var br2 = radii.stream().mapToDouble(Seeing_Profile.ApRadii::r3).toArray();
+
+        var rs = new Seeing_Profile.ApRadii(Stat.median(sr) + Stat.variance(sr), Stat.median(br) + Stat.variance(br), Stat.median(br2) + Stat.variance(br2));
+
+        if (rs.isValid()) {
+            radius = rs.r();
+            rBack1 = rs.r2();
+            rBack2 = rs.r3();
+            Prefs.set("aperture.radius", radius);
+            Prefs.set("aperture.rback1", rBack1);
+            Prefs.set("aperture.rback2", rBack2);
+        }
+        return rs;
     }
 
     private TreeSet<StarFinder.CoordinateMaxima> removeCloseStars(TreeSet<StarFinder.CoordinateMaxima> initialSet, double t1Source, double maxP) {
@@ -3319,6 +3384,13 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         gd.setOverridePosition(true);
         gd.setNewPosition(GridBagConstraints.WEST);
         gd.addFloatSlider("FWHM factor:", 0.1, 5.0, false, ApRadius.AUTO_VAR_FWHM.cutoff, 3, 1, d -> ApRadius.AUTO_VAR_FWHM.cutoff = d);
+        gd.resetPositionOverride();
+        gd.setLeftInset(20);
+        gd.addGenericComponent(ApRadius.AUTO_VAR_STACK_RAD.setupButton());
+        gd.addToSameRow();
+        gd.setLeftInset(-220);
+        gd.setNewPosition(GridBagConstraints.WEST);
+        gd.addBoundedNumericField("Normalized flux cutoff threshold:", new GenericSwingDialog.Bounds(0, false, 1, false), ApRadius.AUTO_VAR_STACK_RAD.cutoff, .01, 6, "(0 < cutoff < 1 ; default = 0.010)", d -> ApRadius.AUTO_VAR_STACK_RAD.cutoff = d);
         gd.setOverridePosition(false);
         gd.resetPositionOverride();
         ApRadius.setSelected();
@@ -3589,6 +3661,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         Prefs.set(MultiAperture_.PREFS_SHOWHELP, showHelp);
         Prefs.set(MultiAperture_.PREFS_ALWAYSFIRSTSLICE, alwaysstartatfirstSlice);
         Prefs.set(MultiAperture_.PREFS_APFWHMFACTOR, ApRadius.AUTO_VAR_FWHM.cutoff);
+        Prefs.set(MultiAperture_.PREFS_APFWHMFACTORSTACK, ApRadius.AUTO_VAR_STACK_RAD.cutoff);
         Prefs.set(MultiAperture_.PREFS_AUTOMODEFLUXCUTOFF, ApRadius.AUTO_VAR_RAD_PROF.cutoff);
         Prefs.set(MultiAperture_.PREFS_AUTOMODEFLUXCUTOFFFIXED, ApRadius.AUTO_FIXED.cutoff);
         Prefs.set(MultiAperture_.PREFS_APRADIUS, radiusSetting.name());
@@ -3786,7 +3859,11 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         /**
          * Auto variable radius based on FWHM.
          */
-        AUTO_VAR_FWHM("Auto Variable Aperture based on FWHM", 1.4);
+        AUTO_VAR_FWHM("Auto Variable Aperture based on FWHM", 1.4),
+        /**
+         * Auto variable aperture based on the entire stack.
+         */
+        AUTO_VAR_STACK_RAD("Auto Variable Aperture based on stack radial profile", 0.01);
 
         private static final ButtonGroup group = new ButtonGroup();
         private final String buttonText;

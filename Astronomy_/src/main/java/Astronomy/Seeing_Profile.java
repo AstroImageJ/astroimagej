@@ -148,7 +148,11 @@ public class Seeing_Profile implements PlugInFilter
 //        imp.changes = false;
 		}
 
-        public record ApRadii(double r, double r2, double r3) {
+        public record ApRadii(double r, double r2, double r3, boolean centroidSuccessful) {
+            public ApRadii(double r, double r2, double r3) {
+                this(r, r2, r3, true);
+            }
+
             public boolean isValid() {
                 return r != 0 && r2 != 0 && r3 != 0;
             }
@@ -159,6 +163,10 @@ public class Seeing_Profile implements PlugInFilter
         }
 
         public static ApRadii getRadii(ImagePlus imp, double x, double y, double cutoff) {
+            return getRadii(imp, x, y, cutoff, true);
+        }
+
+        public static ApRadii getRadii(ImagePlus imp, double x, double y, double cutoff, boolean show) {
             var sp = new Seeing_Profile();
             sp.cal = imp.getCalibration();
             sp.autoModeFluxCutOff = cutoff;
@@ -169,7 +177,7 @@ public class Seeing_Profile implements PlugInFilter
             sp.mR2 = Prefs.get ("aperture.rback2", sp.mR*2.0);
             sp.recenter = Prefs.get("aperture.reposition", true);
             sp.center = new Centroid();
-            sp.center.measure(imp, sp.X0, sp.Y0, sp.mR, sp.mR1, sp.mR2, sp.recenter, Prefs.get("aperture.backplane", false), Prefs.get("aperture.removebackstars", true));
+            var b = sp.center.measure(imp, sp.X0, sp.Y0, sp.mR, sp.mR1, sp.mR2, sp.recenter, Prefs.get("aperture.backplane", false), Prefs.get("aperture.removebackstars", true));
             sp.X0 = sp.center.x();
             sp.Y0 = sp.center.y();
             sp.background = sp.center.background();
@@ -178,11 +186,13 @@ public class Seeing_Profile implements PlugInFilter
             sp.low_raw = 0.0;
 
             sp.getRadialDistribution(imp.getProcessor());
-            sp.df = new DecimalFormat("#####0.00", IJU.dfs);
-            sp.imp = imp;
-            sp.createPlot(imp.getProcessor());
+            if (show) {
+                sp.df = new DecimalFormat("#####0.00", IJU.dfs);
+                sp.imp = imp;
+                sp.createPlot(imp.getProcessor());
+            }
 
-            return new ApRadii(sp.r1, sp.r2, sp.r3);
+            return new ApRadii(sp.r1, sp.r2, sp.r3, b);
         }
 
 

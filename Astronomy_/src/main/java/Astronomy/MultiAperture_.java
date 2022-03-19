@@ -71,6 +71,18 @@ import static util.GenericSwingDialog.ComponentPair.Type.C1;
  */
 @SuppressWarnings("SpellCheckingInspection")
 public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMotionListener, KeyListener {
+    protected static final String PREFS_MAXPEAKVALUE = "multiaperture.maxpeakvalue";
+    protected static final String PREFS_MINPEAKVALUE = "multiaperture.minpeakvalue";
+    protected static final String PREFS_UPPERBRIGHTNESS = "multiaperture.upperbrightness";
+    protected static final String PREFS_LOWERBRIGHTNESS = "multiaperture.lowerbrightness";
+    protected static final String PREFS_BRIGHTNESSDISTANCE = "multiaperture.brightnessdistance";
+    protected static final String PREFS_MAXSUGGESTEDSTARS = "multiaperture.maxsuggestedstars";
+    protected static final String PREFS_DEBUGAPERTURESUGGESTION = "multiaperture.debugaperturesuggestion";
+    protected static final String PREFS_GAUSSRADIUS = "multiaperture.gaussradius";
+    protected static final String PREFS_AUTOPEAKS = "multiaperture.autopeaks";
+    protected static final String PREFS_AUTORADIUS = "multiaperture.autoradius";
+    protected static final String PREFS_REFERENCESTAR = "multiaperture.referencestar";
+    protected static final String PREFS_ENABLELOG = "multiaperture.enablelog";
     public static boolean cancelled = false;
     //	double ratio = 0.0;		// FIRST APERTURE
 //	double ratioError = 0.0;
@@ -108,20 +120,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     protected static String PREFS_YAPERTURES = "multiaperture.yapertures";
     protected static String PREFS_RAAPERTURES = "multiaperture.raapertures";
     protected static String PREFS_DECAPERTURES = "multiaperture.decapertures";
-    protected static final String PREFS_MAXPEAKVALUE = "multiaperture.maxpeakvalue";
-    protected static final String PREFS_MINPEAKVALUE = "multiaperture.minpeakvalue";
-    protected static final String PREFS_UPPERBRIGHTNESS = "multiaperture.upperbrightness";
-    protected static final String PREFS_LOWERBRIGHTNESS = "multiaperture.lowerbrightness";
-    protected static final String PREFS_BRIGHTNESSDISTANCE = "multiaperture.brightnessdistance";
-    protected static final String PREFS_MAXSUGGESTEDSTARS = "multiaperture.maxsuggestedstars";
-    protected static final String PREFS_DEBUGAPERTURESUGGESTION = "multiaperture.debugaperturesuggestion";
-    protected static final String PREFS_GAUSSRADIUS = "multiaperture.gaussradius";
-    protected static final String PREFS_AUTOPEAKS = "multiaperture.autopeaks";
-    protected static final String PREFS_AUTORADIUS = "multiaperture.autoradius";
-    protected static final String PREFS_REFERENCESTAR = "multiaperture.referencestar";
-    protected static final String PREFS_ENABLELOG = "multiaperture.enablelog";
-
-//	double vx = 0.0;
+    //	double vx = 0.0;
 //	double vy = 0.0;
 //	double vxOld = 0.0;
 //	double vyOld = 0.0;
@@ -144,6 +143,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     protected static Boolean DISABLECENTROID = false;
     protected static Boolean CLEARROIS = true;
     protected static Boolean KEEPROIS = false;
+    private static ApRadius radiusSetting = ApRadius.AUTO_FIXED;
     protected int ngot = 0;
     //	protected int aperture=0;
     protected int nAperturesMax = 1000;
@@ -210,8 +210,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     protected boolean showCompTot = true;
     protected boolean debugAp = false;
     protected boolean firstRun = true;
-
-//	protected boolean follow=false;
+    //	protected boolean follow=false;
 //	protected boolean wideTable=true;
     protected boolean showRatioError = true;
     protected boolean showRatioSNR = true;
@@ -243,7 +242,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     int xAbsMagLocation = 10, yAbsMagLocation = 10;
     int firstSlice = 1;
     int initialFirstSlice = 1;
-//    DecimalFormatSymbols dfs = uptoEightPlaces.getDecimalFormatSymbols();
+    //    DecimalFormatSymbols dfs = uptoEightPlaces.getDecimalFormatSymbols();
     int initialLastSlice = 1;
     int lastSlice = 1;
     int astronomyToolId = 0;
@@ -292,7 +291,6 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     private Seeing_Profile.ApRadii oldRadii;
     private int referenceStar = 1;
     private boolean suggestionRunning;
-    private static ApRadius radiusSetting = ApRadius.AUTO_FIXED;
 
 //	public static double RETRY_RADIUS = 3.0;
 
@@ -368,7 +366,11 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         astronomyToolId = toolbar.getToolId("Astronomy_Tool");
         currentToolId = Toolbar.getToolId();
         if (currentToolId != astronomyToolId) {
-            if (astronomyToolId != -1) { IJ.setTool(astronomyToolId); } else { IJ.setTool(0); }
+            if (astronomyToolId != -1) {
+                IJ.setTool(astronomyToolId);
+            } else {
+                IJ.setTool(0);
+            }
         }
 
         IJ.register(MultiAperture_.class);
@@ -504,7 +506,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
         if (runningWCSOnlyAlignment) {
             startProcessStack();
-        } else if (autoMode) { mouseReleased(dummyClick); } else {
+        } else if (autoMode) {
+            mouseReleased(dummyClick);
+        } else {
             imp.getWindow().requestFocus();
             imp.getCanvas().requestFocusInWindow();
             if (previous && useWCS && hasWCS && raPosStored != null && decPosStored != null) {
@@ -945,7 +949,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     //IJ.log("made it 3b");
                 }
             } else {
-                IJ.runPlugIn("Astronomy.MultiPlot_", tableName+",true");  //",true" enables useAutoAstroDataUpdate
+                IJ.runPlugIn("Astronomy.MultiPlot_", tableName + ",true");  //",true" enables useAutoAstroDataUpdate
                 //if (MultiPlot_.mainFrame != null && MultiPlot_.getTable() != null) {
                 //IJ.log("made it 4");
                 //    MultiPlot_.setTable(table, false, slice == initialLastSlice);
@@ -1070,7 +1074,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     doubleClickTaskTimer = new java.util.Timer();
                     if ((modis & InputEvent.BUTTON1_MASK) != 0) {
                         doubleClickTaskTimer.schedule(doubleClickTask, 300);
-                    } else { doubleClickTaskTimer.schedule(doubleClickTask, 600); }
+                    } else {
+                        doubleClickTaskTimer.schedule(doubleClickTask, 600);
+                    }
                 } catch (Exception eee) {
                     IJ.showMessage("Error starting double click timer task : " + eee.getMessage());
                 }
@@ -1195,7 +1201,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             } else if (!apertureClicked && ngot < nApertures) {
                 if (!e.isControlDown()) {
                     addAperture((!e.isShiftDown() && ngot > 0) || (e.isShiftDown() && ngot == 0), e.isAltDown());
-                } else { addApertureAsT1(e.isAltDown()); }
+                } else {
+                    addApertureAsT1(e.isAltDown());
+                }
             } else if (apertureClicked) {
                 if (!e.isShiftDown() && !e.isControlDown() && !e.isAltDown()) {
                     if (!removeAperture()) {
@@ -1206,7 +1214,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     toggleApertureType(e.isAltDown());
                 } else if (e.isShiftDown() && e.isControlDown()) {
                     renameApertureToT1(e.isAltDown());
-                } else if (e.isAltDown()) { toggleCentroidType(); }
+                } else if (e.isAltDown()) {
+                    toggleCentroidType();
+                }
                 apertureClicked = false;
             }
 
@@ -1246,8 +1256,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     shiftLeftClickLabel.setText("");
                     shiftControlLeftClickLabel.setText("");
                     altLeftClickLabel.setText("");
-                    rightClickLabel.setText(this instanceof Stack_Aligner ? "" : "");//"Cancel Stack Aligner" : "Cancel Multi-Aperture");
-                    enterLabel.setText(this instanceof Stack_Aligner ? "" : "");//"Cancel Stack Aligner" : "Cancel Multi-Aperture");
+                    rightClickLabel.setText("");//"Cancel Stack Aligner" : "Cancel Multi-Aperture");
+                    enterLabel.setText("");//"Cancel Stack Aligner" : "Cancel Multi-Aperture");
                     leftClickDragLabel.setText("Pan image up/down/left/right");
                     altLeftClickDragLabel.setText("Measure arclength");
                 }
@@ -1314,7 +1324,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
             if (!autoMode && suggestCompStars && tempSuggestCompStars && ngot >= referenceStar && refCount < maxSuggestedStars && !(this instanceof Stack_Aligner)) {
                 suggestionRunning = true;
-                var warning = new AnnotateRoi(false, false, true, false, imp.getWidth()/2f, imp.getHeight()/2f, 2, "Searching for comparison stars...", Color.GREEN);
+                var warning = new AnnotateRoi(false, false, true, false, imp.getWidth() / 2f, imp.getHeight() / 2f, 2, "Searching for comparison stars...", Color.GREEN);
                 warning.setImage(imp);
                 ocanvas.add(warning);
 
@@ -1385,11 +1395,13 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
                 if (cancelled) return;
 
-                if (enableLog) AIJLogger.log("Number of maxima: " + NumberFormat.getInstance().format(maxima.coordinateMaximas().size()));
+                if (enableLog)
+                    AIJLogger.log("Number of maxima: " + NumberFormat.getInstance().format(maxima.coordinateMaximas().size()));
                 if (enableLog) AIJLogger.log("Filtering...");
                 var m = removeCloseStars(maxima.coordinateMaximas(), t1Source, maxP);
                 if (cancelled) return;
-                if (enableLog) AIJLogger.log("Number of maxima that met distance and brightness thresholds: " + NumberFormat.getInstance().format(m.size()));
+                if (enableLog)
+                    AIJLogger.log("Number of maxima that met distance and brightness thresholds: " + NumberFormat.getInstance().format(m.size()));
                 if (enableLog) AIJLogger.log("Weighing peaks...");
                 var set = weightAndLimitPeaks(m, t1Source);
                 if (cancelled) return;
@@ -1421,7 +1433,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     for (WeightedCoordinateMaxima coordinateMaxima : set.subList(0, Math.min(maxSuggestedStars - refCount, set.size()))) {
                         if (cancelled) return;
                         if (enableLog) AIJLogger.log(ngot + 1);
-                        if (enableLog) AIJLogger.log(coordinateMaxima);//todo apertures placing in wrong coordinates for tica image, fine for others, due to wcs
+                        if (enableLog)
+                            AIJLogger.log(coordinateMaxima);//todo apertures placing in wrong coordinates for tica image, fine for others, due to wcs
                         xCenter = coordinateMaxima.cm.x();
                         yCenter = coordinateMaxima.cm.y();
 
@@ -1441,8 +1454,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
     private TreeSet<StarFinder.CoordinateMaxima> removeCloseStars(TreeSet<StarFinder.CoordinateMaxima> initialSet, double t1Source, double maxP) {
         final var radius2 = 4 * radius * radius;
-        final var high = t1Source * (upperBrightness/100d);
-        final var low = t1Source * (lowerBrightness/100d);
+        final var high = t1Source * (upperBrightness / 100d);
+        final var low = t1Source * (lowerBrightness / 100d);
         //initialSet.removeIf(cm -> cm.squaredDistanceTo(xPos[0], yPos[0]) <= (radius2));
 
         if (debugAp) {
@@ -1542,10 +1555,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             normBrightness = 1.0 - (b - t1Source) / (t1Source * ((upperBrightness / 100.0) - 1.0));
         }
         final double normDistance = 1 - (distanceTo(xPos[referenceStar - 1], yPos[referenceStar - 1], coordinateMaxima.x(), coordinateMaxima.y()) / imageDiagonalLength);
-        return new WeightedCoordinateMaxima(coordinateMaxima, (brightness2DistanceWeight/100d) * normBrightness + (1 - brightness2DistanceWeight/100d) * normDistance);
+        return new WeightedCoordinateMaxima(coordinateMaxima, (brightness2DistanceWeight / 100d) * normBrightness + (1 - brightness2DistanceWeight / 100d) * normDistance);
     }
-
-    record WeightedCoordinateMaxima(StarFinder.CoordinateMaxima cm, double weight) {}
 
     private double distanceTo(double x1, double y1, double x2, double y2) {
         return Math.sqrt(squaredDistanceTo(x1, y1, x2, y2));
@@ -1554,7 +1565,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     private double squaredDistanceTo(double x1, double y1, double x2, double y2) {
         final var h = x2 - x1;
         final var v = y2 - y1;
-        return h*h + v*v;
+        return h * h + v * v;
     }
 
     boolean placeApertures(int start, int end, boolean enableCentroid, boolean clearRois) {
@@ -1738,7 +1749,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         }
         isRefStar[ngot] = isRef;
         isAlignStar[ngot] = true;
-        centroidStar[ngot] = altDown ? !Prefs.get("aperture.reposition", reposition) : Prefs.get("aperture.reposition", reposition);
+        centroidStar[ngot] = altDown != Prefs.get("aperture.reposition", reposition);
         if (!placeApertures(ngot, ngot, ENABLECENTROID, KEEPROIS)) return;
 
         if (hasWCS && centroidStar[ngot]) {
@@ -1809,7 +1820,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         absMag[0] = 99.999;
         isRefStar[0] = false;
         isAlignStar[0] = true;
-        centroidStar[0] = altDown ? !Prefs.get("aperture.reposition", reposition) : Prefs.get("aperture.reposition", reposition);
+        centroidStar[0] = altDown != Prefs.get("aperture.reposition", reposition);
         if (!placeApertures(0, 0, ENABLECENTROID, CLEARROIS)) return;
         if (hasWCS && centroidStar[0]) {
             double[] radec = wcs.pixels2wcs(new double[]{xCenter, yCenter});
@@ -2096,13 +2107,15 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         }
     }
 
-    public void mouseClicked(MouseEvent e) {}
+    public void mouseClicked(MouseEvent e) {
+    }
 
     public void mouseExited(MouseEvent e) {
         IJ.showStatus(infoMessage);
     }
 
-    public void mouseEntered(MouseEvent e) {}
+    public void mouseEntered(MouseEvent e) {
+    }
 
     /**
      * Handle the key typed event from the image canvas.
@@ -2110,11 +2123,6 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     public void keyTyped(KeyEvent e) {
 
     }
-
-
-    //
-    // MultiAperture_ METHODS
-    //
 
     /**
      * Handle the key-pressed event from the image canvas.
@@ -2131,6 +2139,11 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         }
     }
 
+
+    //
+    // MultiAperture_ METHODS
+    //
+
     /**
      * Handle the key-released event from the image canvas.
      */
@@ -2145,7 +2158,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         // CHECK SLICES
         firstSlice = imp.getCurrentSlice();
         lastSlice = stackSize;
-        if (singleStep) { lastSlice = firstSlice; }
+        if (singleStep) {
+            lastSlice = firstSlice;
+        }
         if (!autoMode) {
             GenericSwingDialog gd = dialog();
 
@@ -2174,9 +2189,13 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 //                Prefs.set (MultiAperture_.PREFS_NAPERTURESMAX, nAperturesMax);
             if (stackSize > 1) {
                 //firstSlice = (int) gd.getNextNumber();
-                if (gd.invalidNumber() || firstSlice < 1) { firstSlice = 1; }
+                if (gd.invalidNumber() || firstSlice < 1) {
+                    firstSlice = 1;
+                }
                 //lastSlice = (int) gd.getNextNumber();
-                if (gd.invalidNumber() || lastSlice > stackSize) { lastSlice = stackSize; }
+                if (gd.invalidNumber() || lastSlice > stackSize) {
+                    lastSlice = stackSize;
+                }
                 if (firstSlice != lastSlice) {
                     if (firstSlice > lastSlice) {
                         int i = firstSlice;
@@ -2197,22 +2216,30 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 IJ.error("Invalid aperture radius: " + radius);
                 return false;
             }
-            if (oldradius != radius) { changeAperture(); }
+            if (oldradius != radius) {
+                changeAperture();
+            }
             //rBack1 = gd.getNextNumber();
             if (gd.invalidNumber() || rBack1 < radius) {
                 IJ.beep();
                 IJ.error("Invalid background inner radius: " + rBack1);
                 return false;
             }
-            if (oldrBack1 != rBack1) { changeAperture(); }
+            if (oldrBack1 != rBack1) {
+                changeAperture();
+            }
             //rBack2 = gd.getNextNumber();
             if (gd.invalidNumber() || rBack2 < rBack1) {
                 IJ.beep();
                 IJ.error("Invalid background outer radius: " + rBack2);
                 return false;
             }
-            if (oldrBack2 != rBack2) { changeAperture(); }
-            if (singleStep) { lastSlice = firstSlice; }
+            if (oldrBack2 != rBack2) {
+                changeAperture();
+            }
+            if (singleStep) {
+                lastSlice = firstSlice;
+            }
 //                oneTable = !gd.getNextBoolean();
 //                wideTable = gd.getNextBoolean();
 
@@ -2530,7 +2557,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             }
             if (!useRadialProfile) {
                 setVariableAperture(true, Math.max(xFWHM / nFWHM, yFWHM / nFWHM) * ApRadius.AUTO_VAR_FWHM.cutoff, ApRadius.AUTO_VAR_FWHM.cutoff, ApRadius.AUTO_VAR_RAD_PROF.cutoff);
-            } else { setVariableAperture(true, radiusRD / nRD, 0.0, ApRadius.AUTO_VAR_RAD_PROF.cutoff); }
+            } else {
+                setVariableAperture(true, radiusRD / nRD, 0.0, ApRadius.AUTO_VAR_RAD_PROF.cutoff);
+            }
         }
 
         // This is needed when running from DP for some reason, other rois are not removed
@@ -2596,7 +2625,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             valueOverlay = false; // Don't show values as they will differ when measured and will be drawn over
         }
 
-        valueOverlay = Prefs.get (AP_PREFS_VALUEOVERLAY, valueOverlay);
+        valueOverlay = Prefs.get(AP_PREFS_VALUEOVERLAY, valueOverlay);
         for (int ap = 0; ap < nApertures; ap++) {
             if (!isRefStar[ap]) {
                 setApertureColor(Color.green);
@@ -2649,10 +2678,12 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
             // STORE RESULTS
 
-            suffix = (isRefStar[ap] ? "_C" : "_T") + (ap+1);
+            suffix = (isRefStar[ap] ? "_C" : "_T") + (ap + 1);
             if (ap == 0) {
                 storeResults();
-            } else { storeAdditionalResults(ap); }
+            } else {
+                storeAdditionalResults(ap);
+            }
 
             // FOLLOW MOTION FROM FRAME TO FRAME
 
@@ -2769,7 +2800,11 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         if (!isInstanceOfStackAlign && nApertures > 1) {
             if (showRatio) {
                 for (int ap = 0; ap < nApertures; ap++) {
-                    if (tot[ap] == 0) { ratio[ap] = 0; } else { ratio[ap] /= tot[ap]; }
+                    if (tot[ap] == 0) {
+                        ratio[ap] = 0;
+                    } else {
+                        ratio[ap] /= tot[ap];
+                    }
                     table.addValue("rel_flux_" + (isRefStar[ap] ? "C" : "T") + (ap + 1), ratio[ap], 6);
                     if (showRatioError) {
                         if (src[ap] == 0 || tot[ap] == 0) {
@@ -2816,7 +2851,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
 
         // UPDATE TABLE
-        if (table != null && !isInstanceOfStackAlign && ((updatePlot && !Data_Processor.active) || (Data_Processor.active))) {
+        if (table != null && !isInstanceOfStackAlign && (updatePlot || Data_Processor.active)) {
             table.show();
             tablePanel = MeasurementTable.getTextPanel(tableName);
             if (tablePanel != null) {
@@ -2864,7 +2899,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     private void waitForEventQueue() {
         try {
             // We don't actually care about what happens, we just want the blocking
-            EventQueue.invokeAndWait(() -> {});
+            EventQueue.invokeAndWait(() -> {
+            });
         } catch (InterruptedException | InvocationTargetException e) {
             e.printStackTrace();
         }
@@ -2995,11 +3031,21 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             table.addValue(AP_XWIDTH + header, xWidth, 6);
             table.addValue(AP_YWIDTH + header, yWidth, 6);
         }
-        if (showMeanWidth && calcRadProFWHM) { table.addValue(AP_FWHM + header, fwhm, 6); }
-        if (showMeanWidth) { table.addValue(AP_MEANWIDTH + header, width, 6); }
-        if (showAngle) { table.addValue(AP_ANGLE + header, angle, 6); }
-        if (showRoundness) { table.addValue(AP_ROUNDNESS + header, round, 6); }
-        if (showVariance) { table.addValue(AP_VARIANCE + header, variance, 6); }
+        if (showMeanWidth && calcRadProFWHM) {
+            table.addValue(AP_FWHM + header, fwhm, 6);
+        }
+        if (showMeanWidth) {
+            table.addValue(AP_MEANWIDTH + header, width, 6);
+        }
+        if (showAngle) {
+            table.addValue(AP_ANGLE + header, angle, 6);
+        }
+        if (showRoundness) {
+            table.addValue(AP_ROUNDNESS + header, round, 6);
+        }
+        if (showVariance) {
+            table.addValue(AP_VARIANCE + header, variance, 6);
+        }
 
 //		table.show();
     }
@@ -3231,15 +3277,6 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         return true;
     }
 
-
-    /**
-     * Add aperture number to overlay display.
-     */
-//	protected void addStringRoi (double x, double y, String text)
-//		{
-//		super.addStringRoi (x,y,"  #"+(aperture+1)+":  "+text.trim());
-//		}
-
     /**
      * Standard preferences dialog for MultiAperture_
      */
@@ -3307,49 +3344,14 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         return gd;
     }
 
-    enum ApRadius {
-        /**
-         * Fixed based on user setting.
-         */
-        FIXED("Fixed Apertures as selected above", 0),
-        /**
-         * Auto radius based on radial profile.
-         */
-        AUTO_FIXED("Auto Fixed Aperture based on radial profile", 0.01),
-        /**
-         * Auto variable radius based on radial profile.
-         */
-        AUTO_VAR_RAD_PROF("Auto Variable Aperture based on radial profile", 0.01),
-        /**
-         * Auto variable radius based on FWHM.
-         */
-        AUTO_VAR_FWHM("Auto Variable Aperture based on FWHM", 1.4);
 
-        private final String buttonText;
-        private static final ButtonGroup group = new ButtonGroup();
-        private JRadioButton button = null;
-        public double cutoff;
-
-        ApRadius(String buttonText, double cutoff) {
-            this.buttonText = buttonText;
-            this.cutoff = cutoff;
-        }
-
-        public Component setupButton() {
-            button = GenericSwingDialog.makeRadioButton(buttonText, b -> {
-                if (b) radiusSetting = this;
-            }, group);
-            return button;
-        }
-
-        static void setSelected() {
-            MultiAperture_.radiusSetting.button.setSelected(true);
-        }
-        
-        public boolean autoRadius() {
-            return this == AUTO_FIXED;
-        }
-    }
+    /**
+     * Add aperture number to overlay display.
+     */
+//	protected void addStringRoi (double x, double y, String text)
+//		{
+//		super.addStringRoi (x,y,"  #"+(aperture+1)+":  "+text.trim());
+//		}
 
     /**
      * Adds options to MultiAperture_ dialog() which aren't absolutely necessary.
@@ -3389,7 +3391,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         gd.addToSameRow();
         gd.resetPositionOverride();
         if (upperBrightness < 101.0) upperBrightness = 150.0;
-        if (lowerBrightness >  99.0 || lowerBrightness < 0.0 ) lowerBrightness = 50.0;
+        if (lowerBrightness > 99.0 || lowerBrightness < 0.0) lowerBrightness = 50.0;
         final var maxDBrightness = gd.addBoundedNumericField("Max. Comp. Brightness %", new GenericSwingDialog.Bounds(101, Double.MAX_VALUE), upperBrightness, 1, columns, null, d -> upperBrightness = d);
         gd.addToSameRow();
         final var minDBrightness = gd.addBoundedNumericField("Min. Comp. Brightness %", new GenericSwingDialog.Bounds(0, 99), lowerBrightness, 1, columns, null, d -> lowerBrightness = d);
@@ -3458,7 +3460,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         suggestionComponents.addAll(s.subComponents().subList(1, s.subComponents().size()));
 
         toggleComponents(suggestionComponents, suggestCompStars);
-        ((JCheckBox)s.subComponents().getFirst()).addActionListener($ -> {
+        ((JCheckBox) s.subComponents().getFirst()).addActionListener($ -> {
             toggleComponents(suggestionComponents, !suggestCompStars);
             var minP1 = liveStats.mean + (1 * liveStats.stdDev);
             var maxP1 = liveStats.max * 0.9;
@@ -3638,13 +3640,17 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         helpPanel.add(leftClickName);
         if (previous) {
             leftClickLabel = new JLabel("Add previous stored apertures by clicking on the star corresponding to T1/C1");
-        } else { leftClickLabel = new JLabel("Add target star aperture T1"); }
+        } else {
+            leftClickLabel = new JLabel("Add target star aperture T1");
+        }
         helpPanel.add(leftClickLabel);
 
         JLabel shiftLeftClickName = new JLabel("<Shift>left-click:");
         shiftLeftClickName.setHorizontalAlignment(JLabel.RIGHT);
         helpPanel.add(shiftLeftClickName);
-        if (previous) { shiftLeftClickLabel = new JLabel(""); } else {
+        if (previous) {
+            shiftLeftClickLabel = new JLabel("");
+        } else {
             shiftLeftClickLabel = new JLabel("Add reference star aperture C1");
         }
         helpPanel.add(shiftLeftClickLabel);
@@ -3652,7 +3658,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         JLabel shiftControlLeftClickName = new JLabel("<Shift><Ctrl>left-click:");
         shiftControlLeftClickName.setHorizontalAlignment(JLabel.RIGHT);
         helpPanel.add(shiftControlLeftClickName);
-        if (previous) { shiftControlLeftClickLabel = new JLabel(""); } else {
+        if (previous) {
+            shiftControlLeftClickLabel = new JLabel("");
+        } else {
             shiftControlLeftClickLabel = new JLabel("");
         }
         helpPanel.add(shiftControlLeftClickLabel);
@@ -3660,7 +3668,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         JLabel altLeftClickName = new JLabel("<Alt>left-click:");
         altLeftClickName.setHorizontalAlignment(JLabel.RIGHT);
         helpPanel.add(altLeftClickName);
-        if (previous) { altLeftClickLabel = new JLabel(""); } else {
+        if (previous) {
+            altLeftClickLabel = new JLabel("");
+        } else {
             altLeftClickLabel = new JLabel("Invert sense of centroid setting for new aperture");
         }
         helpPanel.add(altLeftClickLabel);
@@ -3758,6 +3768,53 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             helpFrame.dispose();
             helpFrame = null;
         }
+    }
+
+    enum ApRadius {
+        /**
+         * Fixed based on user setting.
+         */
+        FIXED("Fixed Apertures as selected above", 0),
+        /**
+         * Auto radius based on radial profile.
+         */
+        AUTO_FIXED("Auto Fixed Aperture based on radial profile", 0.01),
+        /**
+         * Auto variable radius based on radial profile.
+         */
+        AUTO_VAR_RAD_PROF("Auto Variable Aperture based on radial profile", 0.01),
+        /**
+         * Auto variable radius based on FWHM.
+         */
+        AUTO_VAR_FWHM("Auto Variable Aperture based on FWHM", 1.4);
+
+        private static final ButtonGroup group = new ButtonGroup();
+        private final String buttonText;
+        public double cutoff;
+        private JRadioButton button = null;
+
+        ApRadius(String buttonText, double cutoff) {
+            this.buttonText = buttonText;
+            this.cutoff = cutoff;
+        }
+
+        static void setSelected() {
+            MultiAperture_.radiusSetting.button.setSelected(true);
+        }
+
+        public Component setupButton() {
+            button = GenericSwingDialog.makeRadioButton(buttonText, b -> {
+                if (b) radiusSetting = this;
+            }, group);
+            return button;
+        }
+
+        public boolean autoRadius() {
+            return this == AUTO_FIXED;
+        }
+    }
+
+    record WeightedCoordinateMaxima(StarFinder.CoordinateMaxima cm, double weight) {
     }
 
 }

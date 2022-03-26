@@ -52,6 +52,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
     private int anchor = 0;
     private boolean customAnchor = false;
     private int leftInset = 0;
+    private int rightInset = 0;
 
     public GenericSwingDialog(String title) {
         this(title, guessParentFrame());
@@ -691,12 +692,18 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         this.leftInset = inset;
     }
 
+    public void setRightInset(int inset) {
+        this.rightInset = inset;
+    }
+
     private void useCustomPosition() {
         if (customAnchor) {
             customAnchor = false;
             c.anchor = this.anchor;
             c.insets.left = leftInset;
+            c.insets.right = rightInset;
             leftInset = 0;
+            rightInset = 0;
         }
     }
 

@@ -1466,11 +1466,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         }
     }
 
-    //todo
-    //  make plot for stack-scanning options' seeing profiles, or new stack window with the plots
-    //  tooltips, wording tbd
     private Seeing_Profile.ApRadii evaluateStackForRadii() {
         List<Seeing_Profile.ApRadii> radii = new ArrayList<>(lastSlice - firstSlice);
+        var sp = new Seeing_Profile(true);
         for (int i = firstSlice; i <= lastSlice; i++) {
             imp.setSliceWithoutUpdate(i);// Don't draw the stack update, can't use IP because SP assumes imp
             var x = xCenter;
@@ -1496,7 +1494,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 }
             }
 
-            var rs = Seeing_Profile.getRadii(imp, x, y, ApRadius.AUTO_VAR_STACK_RAD.cutoff, false);
+            var rs = sp.getRadiiI(imp, x, y, ApRadius.AUTO_VAR_STACK_RAD.cutoff, true);
             if (!rs.centroidSuccessful()) {
                 IJ.error("Failed to centroid on slice: " + i + ". Plate-solving the image may allow this mode to be used. Otherwise, choose a different aperture mode.");
                 imp.setSliceWithoutUpdate(firstSlice);
@@ -1505,6 +1503,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             radii.add(rs);
             IJ.showProgress(i / (float)(lastSlice - firstSlice));
         }
+        sp.plot.show();
+        sp.plot.getImagePlus().getWindow().setVisible(true);
         imp.setSliceWithoutUpdate(firstSlice);
 
         radii = radii.stream().filter(Seeing_Profile.ApRadii::isValid).toList();
@@ -3405,10 +3405,6 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         gd.resetPositionOverride();
         gd.setOverridePosition(false);
         ApRadius.setSelected();
-        //todo add message for stack radius scan (on image, like auto comp)
-        //  add progress bar for stack radius scan
-        //  make plot for stack-scanning options' seeing profiles, or new stack window with the plots
-        //  tooltips, wording tbd
 
         gd.addDoubleSpaceLineSeparator();
         gd.addCheckbox("Use previous " + nAperturesStored + " apertures (1-click to set first aperture location)", previous && nAperturesStored > 0, b -> previous = b);

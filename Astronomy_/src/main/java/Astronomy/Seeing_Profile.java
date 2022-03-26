@@ -21,7 +21,8 @@ import java.util.Locale;
  */
 public class Seeing_Profile implements PlugInFilter
 	{
-    double autoModeFluxCutOff = 0.010;
+        private final boolean isBatch;
+        double autoModeFluxCutOff = 0.010;
 	ImagePlus imp;
 	boolean canceled=false;
 	double X0;
@@ -47,7 +48,7 @@ public class Seeing_Profile implements PlugInFilter
     Calibration cal;
 	Centroid center;
 	PlotWindow pw;
-    Plot plot;
+    public Plot plot;
     double[] nullX = null;
     double[] nullY = null;
     ImageCanvas canvas;
@@ -148,6 +149,14 @@ public class Seeing_Profile implements PlugInFilter
 //        imp.changes = false;
 		}
 
+        public Seeing_Profile() {
+            this(false);
+        }
+
+        public Seeing_Profile(boolean isBatch) {
+            this.isBatch = isBatch;
+        }
+
         public record ApRadii(double r, double r2, double r3, boolean centroidSuccessful) {
             public ApRadii(double r, double r2, double r3) {
                 this(r, r2, r3, true);
@@ -168,6 +177,11 @@ public class Seeing_Profile implements PlugInFilter
 
         public static ApRadii getRadii(ImagePlus imp, double x, double y, double cutoff, boolean show) {
             var sp = new Seeing_Profile();
+            return sp.getRadiiI(imp, x, y, cutoff, show);
+        }
+
+        public ApRadii getRadiiI(ImagePlus imp, double x, double y, double cutoff, boolean show) {
+            var sp = this;
             sp.cal = imp.getCalibration();
             sp.autoModeFluxCutOff = cutoff;
             sp.X0 = x;
@@ -345,7 +359,7 @@ public class Seeing_Profile implements PlugInFilter
         plotOptions += ij.gui.Plot.Y_GRID;
         plotOptions += ij.gui.Plot.X_NUMBERS;
         plotOptions += ij.gui.Plot.Y_NUMBERS;
-        plot = new Plot ("Seeing Profile","Radius ["+cal.getUnits()+"]","ADU",nullX,nullY,plotOptions);
+        if (plot == null) plot = new Plot ("Seeing Profile","Radius ["+cal.getUnits()+"]","ADU",nullX,nullY,plotOptions);
         plot.setSize(plotWidth, plotHeight);
         plot.setLimits (xMin, xMax, yMin, yMax);
         double xPixels = plotWidth - (Plot.LEFT_MARGIN+Plot.RIGHT_MARGIN+1);
@@ -413,7 +427,11 @@ public class Seeing_Profile implements PlugInFilter
             }
 		plot.addLabel(0.5,0.0,"FWHM: "+df.format(fwhm)+" ["+cal.getUnits()+"]"+(pixScale > 0 ? " : "+df.format(fwhm*pixScale)+" [arcsec]" : ""));
         plot.setJustification(ImageProcessor.LEFT_JUSTIFY);
-        plot.show().getImagePlus().setPlot(plot);
+        if (!isBatch) {
+            plot.show().getImagePlus().setPlot(plot);
+        } else {
+            plot.appendToStack();
+        }
 		}
 
 

@@ -1187,7 +1187,11 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             // Auto stack radius feature
             if (!autoMode && firstClick && radiusSetting == ApRadius.AUTO_VAR_STACK_RAD && !t1Placed && !(this instanceof Stack_Aligner)) {
                 oldRadii = new Seeing_Profile.ApRadii(radius, rBack1, rBack2);
+                var warning = new AnnotateRoi(false, false, true, false, imp.getWidth() / 2f, imp.getHeight() / 2f, 2, "Finding radii...", Color.GREEN);
+                warning.setImage(imp);
+                ocanvas.add(warning);
                 evaluateStackForRadii();
+                ocanvas.removeRoi(warning);
             }
 
             // ADD APERTURE TO LIST OR SHIFT OLD APERTURE POSITIONS
@@ -1462,6 +1466,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         }
     }
 
+    //todo
+    //  make plot for stack-scanning options' seeing profiles, or new stack window with the plots
+    //  tooltips, wording tbd
     private Seeing_Profile.ApRadii evaluateStackForRadii() {
         List<Seeing_Profile.ApRadii> radii = new ArrayList<>(lastSlice - firstSlice);
         for (int i = firstSlice; i <= lastSlice; i++) {
@@ -1496,6 +1503,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 return rs;
             }
             radii.add(rs);
+            IJ.showProgress(i / (float)(lastSlice - firstSlice));
         }
         imp.setSliceWithoutUpdate(firstSlice);
 
@@ -1514,6 +1522,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             Prefs.set("aperture.rback1", rBack1);
             Prefs.set("aperture.rback2", rBack2);
         }
+
+        IJ.showProgress(1);
         return rs;
     }
 

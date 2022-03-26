@@ -3372,6 +3372,13 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         gd.setNewPosition(GridBagConstraints.WEST);
         gd.addBoundedNumericField("Normalized flux cutoff threshold:", new GenericSwingDialog.Bounds(0, false, 1, false), ApRadius.AUTO_FIXED.cutoff, .01, 6, "(0 < cutoff < 1 ; default = 0.010)", d -> ApRadius.AUTO_FIXED.cutoff = d);
         gd.resetPositionOverride();
+        gd.setLeftInset(20);
+        gd.addGenericComponent(ApRadius.AUTO_VAR_STACK_RAD.setupButton());
+        gd.addToSameRow();
+        gd.setLeftInset(-190);
+        gd.setNewPosition(GridBagConstraints.WEST);
+        gd.addBoundedNumericField("Normalized flux cutoff threshold:", new GenericSwingDialog.Bounds(0, false, 1, false), ApRadius.AUTO_VAR_STACK_RAD.cutoff, .01, 6, "(0 < cutoff < 1 ; default = 0.010)", d -> ApRadius.AUTO_VAR_STACK_RAD.cutoff = d);
+        gd.resetPositionOverride();
         gd.addGenericComponent(ApRadius.AUTO_VAR_RAD_PROF.setupButton());
         gd.addToSameRow();
         gd.setLeftInset(-190);
@@ -3386,14 +3393,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         gd.setRightInset(-80);
         gd.addFloatSlider("FWHM factor:", 0.1, 5.0, false, ApRadius.AUTO_VAR_FWHM.cutoff, 3, 1, d -> ApRadius.AUTO_VAR_FWHM.cutoff = d);
         gd.resetPositionOverride();
-        gd.setLeftInset(20);
-        gd.addGenericComponent(ApRadius.AUTO_VAR_STACK_RAD.setupButton());//todo make this the 3rd option
-        gd.addToSameRow();
-        gd.setLeftInset(-190);
-        gd.setNewPosition(GridBagConstraints.WEST);
-        gd.addBoundedNumericField("Normalized flux cutoff threshold:", new GenericSwingDialog.Bounds(0, false, 1, false), ApRadius.AUTO_VAR_STACK_RAD.cutoff, .01, 6, "(0 < cutoff < 1 ; default = 0.010)", d -> ApRadius.AUTO_VAR_STACK_RAD.cutoff = d);
         gd.setOverridePosition(false);
-        gd.resetPositionOverride();
         ApRadius.setSelected();
         //todo add message for stack radius scan (on image, like auto comp)
         //  add progress bar for stack radius scan

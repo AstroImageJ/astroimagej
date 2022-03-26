@@ -1,24 +1,29 @@
 package Astronomy;//package ij.plugin;
-import ij.*;
-import ij.gui.*;
-import ij.plugin.*;
-import java.io.*;
-import java.net.*;
-import java.util.*;
-import java.security.cert.X509Certificate;
 
-import javax.net.ssl.HostnameVerifier;
+import ij.IJ;
+import ij.Prefs;
+import ij.gui.GenericDialog;
+import ij.plugin.PlugIn;
+
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
-import java.security.SecureRandom; 
+import java.io.*;
+import java.net.URL;
+import java.net.URLConnection;
 import java.security.GeneralSecurityException;
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
+import java.util.Vector;
 
 
 /** This plugin implements the Help/Update AstroImageJ command. */
 public class AstroImageJ_Updater implements PlugIn {
+	public static final String DO_UPDATE_NOTIFICATION = ".aij.update";
 
     public static final String URL6 = "http://www.astro.louisville.edu/software/astroimagej/updates";
     
@@ -28,8 +33,8 @@ public class AstroImageJ_Updater implements PlugIn {
 
 	public static String URL = URL6;
     
-    String[] versionPieces = IJ.getAstroVersion().split("\\.");
-    int majorVersion = Integer.parseInt(versionPieces[0]);
+    static String[] versionPieces = IJ.getAstroVersion().split("\\.");
+    static int majorVersion = Integer.parseInt(versionPieces[0]);
     
     static {
         final TrustManager[] trustAllCertificates = new TrustManager[] {
@@ -58,16 +63,14 @@ public class AstroImageJ_Updater implements PlugIn {
         }
     }
 
-	public void run(String arg) { 
-		
-//        if (arg.equals("menus"))
-//			{updateMenus(); return;}
+	public void run(String arg) {
 		if (IJ.getApplet()!=null) return;
-		//File file = new File(Prefs.getHomeDir() + File.separator + "ij.jar");
-		//if (isMac() && !file.exists())
-		//	file = new File(Prefs.getHomeDir() + File.separator + "ImageJ.app/Contents/Resources/Java/ij.jar");
 
-        
+		if ("check".equals(arg)) {
+			autoUpdateCheck();
+			return;
+		}
+
 		URL url = getClass().getResource("/ij/IJ.class");
 		String ij_jar = url == null ? null : url.toString().replaceAll("%20", " ");
 		if (ij_jar==null || !ij_jar.startsWith("jar:file:")) {
@@ -91,7 +94,7 @@ public class AstroImageJ_Updater implements PlugIn {
 				return;
 			}
 		}
-        
+
 		url = getClass().getResource("/Astronomy/AstroImageJ_Updater.class");
 		String Astronomy_jar = url == null ? null : url.toString().replaceAll("%20", " ");
 		if (Astronomy_jar==null || !Astronomy_jar.startsWith("jar:file:")) {
@@ -114,18 +117,8 @@ public class AstroImageJ_Updater implements PlugIn {
 				error(msg);
 				return;
 			}
-		}        
-        
-//		url = getClass().getResource(file.getParent().replace('\\', '/') +"/macros/StartupMacros.txt");
-//		String Startup_Macros = url == null ? null : url.toString().replaceAll("%20", " ");
-//        IJ.showMessage(Startup_Macros);
-//		if (Startup_Macros==null || !Startup_Macros.startsWith("jar:file:")) {
-//			error("Could not determine location of StartupMacros.txt");
-//			return;
-//		}
-//		exclamation = Startup_Macros.indexOf('!');
-//		Startup_Macros = Startup_Macros.substring(9, exclamation);
-//		if (IJ.debugMode) IJ.log("Updater: "+Startup_Macros);
+		}
+
 		File file3 = new File(file2.getParent() + "/../macros/StartupMacros.txt");
 		if (!file3.exists()) {
 			error("File not found: "+file3.getPath());
@@ -139,29 +132,20 @@ public class AstroImageJ_Updater implements PlugIn {
 				error(msg);
 				return;
 			}
-		}    
-        
-        File file4=null;
-        if (IJ.isMacOSX())
-            {
-            file4 = new File(file1.getParent() + "/../../Info.plist");
-            if (!file4.exists()) 
-                {
-                file4 = new File(file1.getParent() + "/../Info.plist");
-                }
-            }
-        
-        
-        if (majorVersion==4)
-            {
-            URL = URL8;
-            }
-		if (majorVersion>4)
-		{
-			URL = URL17;
 		}
-        
-		String[] list = openUrlAsList(URL+"/versions.txt");
+
+		File file4=null;
+		if (IJ.isMacOSX())
+		{
+			file4 = new File(file1.getParent() + "/../../Info.plist");
+			if (!file4.exists())
+			{
+				file4 = new File(file1.getParent() + "/../Info.plist");
+			}
+		}
+
+		var list = getAvailableVersions();
+
         if (list == null )
             {
             IJ.showMessage("Network Error", "<html>Network Error!<br>"+
@@ -175,13 +159,12 @@ public class AstroImageJ_Updater implements PlugIn {
 		String[] urls = new String[count];
         String[] AstronomyUrls = new String[count];
         String[] StartupMacrosUrls = new String[count];
-//		String uv = getUpgradeVersion();
-//		if (uv==null) return;
+
 		versions[0] = "daily build";//"v"+uv;
 		urls[0] = URL+"/ij.jar";//"/upgrade/ij.jar";
         AstronomyUrls[0] = URL+"/Astronomy_.jar";
         StartupMacrosUrls[0] = URL+"/StartupMacros.txt";
-		if (versions[0]==null) return;
+
 		for (int i=1; i<count; i++) {
 			String version = list[i-1];
 			versions[i] = version;//.substring(0,version.length()-1); // remove letter
@@ -189,18 +172,8 @@ public class AstroImageJ_Updater implements PlugIn {
             AstronomyUrls[i] = URL+"/Astronomy_"+version+".jar";
             StartupMacrosUrls[i] = URL+"/StartupMacros"+version+".txt";
 		}
-//		versions[count-1] = "daily build";
-//		urls[count-1] = URL+"/ij.jar";
 		int choice = showDialog(versions);
 		if (choice==-1) return;
-//		if (!versions[choice].startsWith("daily") && versions[choice].compareTo("v1.39")<0
-//		&& Menus.getCommands().get("AstroImageJ Updater")==null) {
-//			String msg = "This command is not available in versions of ImageJ prior\n"+
-//			"to 1.39 so you will need to install the plugin version at\n"+
-//			"<"+URL+"/plugins/imagej-updater.html>.";
-//			if (!IJ.showMessageWithCancel("Update AstroImageJ", msg))
-//				return;
-//		}
         
        
 		byte[] jar = getFile(urls[choice], "ij"+(choice==0?"":versions[choice])+".jar");
@@ -218,10 +191,8 @@ public class AstroImageJ_Updater implements PlugIn {
 			error("Unable to download StartupMacros.txt from "+StartupMacrosUrls[choice]);
 			return;
 		}
-		//file.renameTo(new File(file.getParent()+File.separator+"ij.bak"));
-//		if (version().compareTo("1.37v")>=0)
+
 		Prefs.savePreferences();
-		// if (!renameJar(file)) return; // doesn't work on Vista
 
 		saveFile(file1, jar);
         saveFile(file2, Astro_jar);
@@ -332,6 +303,48 @@ public class AstroImageJ_Updater implements PlugIn {
 		System.exit(0);
 	}
 
+	static String[] getAvailableVersions() {
+		if (majorVersion==4) {
+			URL = URL8;
+		}
+		if (majorVersion>4) {
+			URL = URL17;
+		}
+
+		return openUrlAsList(URL+"/versions.txt");
+	}
+
+	static boolean hasUpdateAvailable() {
+		var versions = getAvailableVersions();
+
+		int majorVersionCurrent = Integer.parseInt(versionPieces[0]);
+		int minorVersionCurrent = Integer.parseInt(versionPieces[1]);
+		int patchVersionCurrent = Integer.parseInt(versionPieces[2]);
+
+		for (String version : versions) {
+			String[] versionPieces = version.split("\\.");
+			int majorVersion = Integer.parseInt(versionPieces[0]);
+			int minorVersion = Integer.parseInt(versionPieces[1]);
+			int patchVersion = Integer.parseInt(versionPieces[2]);
+
+			if (majorVersion > majorVersionCurrent ||
+					minorVersion > minorVersionCurrent ||
+					patchVersion > patchVersionCurrent) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	public static void autoUpdateCheck() {
+		if (Prefs.getBoolean(DO_UPDATE_NOTIFICATION, true)) {
+			if (hasUpdateAvailable()) {
+				new AstroImageJ_Updater().run("");
+			}
+		}
+	}
+
 	int showDialog(String[] versions) {
 		GenericDialog gd = new GenericDialog("AstroImageJ Updater");
 		gd.addChoice("Upgrade To:", versions, versions[(versions.length > 0 ? 0 : 0)]);
@@ -343,9 +356,11 @@ public class AstroImageJ_Updater implements PlugIn {
 			"Restart AstroImageJ to run the upgraded version.\n";
 
 		gd.addMessage(msg);
+		gd.addCheckbox("Allow update notifications", Prefs.getBoolean(DO_UPDATE_NOTIFICATION, true));
         gd.addHelp(URL+"/release_notes.html");
         gd.setHelpLabel("Release Notes");
 		gd.showDialog();
+		Prefs.set(DO_UPDATE_NOTIFICATION.substring(1), gd.getNextBoolean());
 		if (gd.wasCanceled())
 			return -1;
 		else
@@ -439,7 +454,7 @@ public class AstroImageJ_Updater implements PlugIn {
 		}
 	}
 
-	String[] openUrlAsList(String address) {
+	static String[] openUrlAsList(String address) {
 		IJ.showStatus("Connecting to "+URL);
 		Vector v = new Vector();
 		try {

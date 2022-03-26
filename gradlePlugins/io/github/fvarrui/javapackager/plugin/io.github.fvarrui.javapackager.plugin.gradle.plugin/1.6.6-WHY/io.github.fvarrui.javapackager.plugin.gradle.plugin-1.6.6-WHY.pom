@@ -3,13 +3,13 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.github.fvarrui.javapackager.plugin</groupId>
   <artifactId>io.github.fvarrui.javapackager.plugin.gradle.plugin</artifactId>
-  <version>1.6.19-SNAPSHOT</version>
+  <version>1.6.6-WHY</version>
   <packaging>pom</packaging>
   <dependencies>
     <dependency>
       <groupId>io.github.fvarrui</groupId>
       <artifactId>javapackager</artifactId>
-      <version>1.6.19-SNAPSHOT</version>
+      <version>1.6.6-WHY</version>
     </dependency>
   </dependencies>
 </project>

@@ -317,21 +317,14 @@ public class AstroImageJ_Updater implements PlugIn {
 	static boolean hasUpdateAvailable() {
 		var versions = getAvailableVersions();
 
-		int majorVersionCurrent = Integer.parseInt(versionPieces[0]);
-		int minorVersionCurrent = Integer.parseInt(versionPieces[1]);
-		int patchVersionCurrent = Integer.parseInt(versionPieces[2]);
-
 		for (String version : versions) {
-			String[] versionPieces = version.split("\\.");
-			int majorVersion = Integer.parseInt(versionPieces[0]);
-			int minorVersion = Integer.parseInt(versionPieces[1]);
-			int patchVersion = Integer.parseInt(versionPieces[2]);
+			String[] versionPiecesO = version.split("\\.");
 
-			if (majorVersion > majorVersionCurrent ||
-					minorVersion > minorVersionCurrent ||
-					patchVersion > patchVersionCurrent) {
-				return true;
+			for (int i = 0; i < 2; i++) {
+				var compare = Integer.compare(Integer.parseInt(versionPieces[i]), Integer.parseInt(versionPiecesO[i]));
+				if (compare > 0) return true;
 			}
+
 		}
 
 		return false;

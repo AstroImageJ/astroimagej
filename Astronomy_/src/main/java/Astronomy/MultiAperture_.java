@@ -3368,13 +3368,13 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         gd.setOverridePosition(true);
         gd.addGenericComponent(ApRadius.AUTO_FIXED.setupButton());
         gd.addToSameRow();
-        gd.setLeftInset(-250);
+        gd.setLeftInset(-190);
         gd.setNewPosition(GridBagConstraints.WEST);
         gd.addBoundedNumericField("Normalized flux cutoff threshold:", new GenericSwingDialog.Bounds(0, false, 1, false), ApRadius.AUTO_FIXED.cutoff, .01, 6, "(0 < cutoff < 1 ; default = 0.010)", d -> ApRadius.AUTO_FIXED.cutoff = d);
         gd.resetPositionOverride();
         gd.addGenericComponent(ApRadius.AUTO_VAR_RAD_PROF.setupButton());
         gd.addToSameRow();
-        gd.setLeftInset(-250);
+        gd.setLeftInset(-190);
         gd.setNewPosition(GridBagConstraints.WEST);
         gd.addBoundedNumericField("Normalized flux cutoff threshold:", new GenericSwingDialog.Bounds(0, false, 1, false), ApRadius.AUTO_VAR_RAD_PROF.cutoff, .01, 6, "(0 < cutoff < 1 ; default = 0.010)", d -> ApRadius.AUTO_VAR_RAD_PROF.cutoff = d);
         gd.setOverridePosition(false);
@@ -3382,18 +3382,23 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         gd.addGenericComponent(ApRadius.AUTO_VAR_FWHM.setupButton());
         gd.addToSameRow();
         gd.setOverridePosition(true);
-        gd.setNewPosition(GridBagConstraints.WEST);
+        gd.setNewPosition(GridBagConstraints.EAST);
+        gd.setRightInset(-80);
         gd.addFloatSlider("FWHM factor:", 0.1, 5.0, false, ApRadius.AUTO_VAR_FWHM.cutoff, 3, 1, d -> ApRadius.AUTO_VAR_FWHM.cutoff = d);
         gd.resetPositionOverride();
         gd.setLeftInset(20);
-        gd.addGenericComponent(ApRadius.AUTO_VAR_STACK_RAD.setupButton());
+        gd.addGenericComponent(ApRadius.AUTO_VAR_STACK_RAD.setupButton());//todo make this the 3rd option
         gd.addToSameRow();
-        gd.setLeftInset(-220);
+        gd.setLeftInset(-190);
         gd.setNewPosition(GridBagConstraints.WEST);
         gd.addBoundedNumericField("Normalized flux cutoff threshold:", new GenericSwingDialog.Bounds(0, false, 1, false), ApRadius.AUTO_VAR_STACK_RAD.cutoff, .01, 6, "(0 < cutoff < 1 ; default = 0.010)", d -> ApRadius.AUTO_VAR_STACK_RAD.cutoff = d);
         gd.setOverridePosition(false);
         gd.resetPositionOverride();
         ApRadius.setSelected();
+        //todo add message for stack radius scan (on image, like auto comp)
+        //  add progress bar for stack radius scan
+        //  make plot for stack-scanning options' seeing profiles, or new stack window with the plots
+        //  tooltips, wording tbd
 
         gd.addDoubleSpaceLineSeparator();
         gd.addCheckbox("Use previous " + nAperturesStored + " apertures (1-click to set first aperture location)", previous && nAperturesStored > 0, b -> previous = b);
@@ -3851,19 +3856,19 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         /**
          * Auto radius based on radial profile.
          */
-        AUTO_FIXED("Auto Fixed Aperture based on radial profile", 0.01),
+        AUTO_FIXED("Auto Fixed Apertures from first image T1 radial profile", 0.01),
         /**
          * Auto variable radius based on radial profile.
          */
-        AUTO_VAR_RAD_PROF("Auto Variable Aperture based on radial profile", 0.01),
+        AUTO_VAR_RAD_PROF("Auto Variable Apertures from each image T1 radial profile", 0.01),
         /**
          * Auto variable radius based on FWHM.
          */
-        AUTO_VAR_FWHM("Auto Variable Aperture based on FWHM", 1.4),
+        AUTO_VAR_FWHM("Auto Variable Apertures from each image T1 FWHM", 1.4),
         /**
          * Auto variable aperture based on the entire stack.
          */
-        AUTO_VAR_STACK_RAD("Auto Variable Aperture based on stack radial profile", 0.01);
+        AUTO_VAR_STACK_RAD("Auto Fixed Apertures from multi-image T1 radial profiles", 0.01);
 
         private static final ButtonGroup group = new ButtonGroup();
         private final String buttonText;

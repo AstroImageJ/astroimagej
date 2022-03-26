@@ -511,6 +511,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         c.anchor = GridBagConstraints.EAST;
         b.add(panel);
         if (overridePosition) c.gridx = x;
+        useCustomPosition();
         addLocal(b, c);
         x++;
 

@@ -827,6 +827,7 @@ public class IJ {
 	/** Displays a message in a dialog box with the specified title. If a 
 		macro or JavaScript is running, it is aborted. Writes to the
 		Java console if the ImageJ window is not present. */
+	@AstroImageJ(reason = "Default title = AIJ", modified = true)
 	public static void error(String title, String msg) {
 		if (macroInterpreter!=null) {
 			macroInterpreter.abort(msg);
@@ -835,7 +836,7 @@ public class IJ {
 		}
 		if (msg!=null && msg.endsWith(Macro.MACRO_CANCELED))
 			return;
-		String title2 = title!=null?title:"ImageJ";
+		String title2 = title!=null?title:"AstroImageJ";
 		boolean abortMacro = title!=null;
 		lastErrorMessage = msg;
 		if (redirectErrorMessages) {

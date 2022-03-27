@@ -26,6 +26,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import java.util.stream.DoubleStream;
 
 import static util.GenericSwingDialog.ComponentPair.Type.C1;
 
@@ -1517,9 +1518,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             radii.add(rs);
             IJ.showProgress(i / (float)(lastSlice - firstSlice));
         }
-        sp.plot.show();
-        sp.plot.getImagePlus().getWindow().setVisible(true);
-        imp.setSliceWithoutUpdate(firstSlice);
+        imp.setSlice(firstSlice);
 
         radii = radii.stream().filter(Seeing_Profile.ApRadii::isValid).toList();
         var sr = radii.stream().mapToDouble(Seeing_Profile.ApRadii::r).toArray();
@@ -1544,6 +1543,26 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         if (enableLog) {
             AIJLogger.multiLog("radii: ", rs);
         }
+
+        sp.plot.setXYLabels("Slice", "Radius [px]");
+        sp.plot.setLimits(0, lastSlice - firstSlice, 0, Math.max(new Stat(br2).maximum(), rBack2) + 5);
+        sp.plot.setColor(Color.RED);
+        sp.plot.add("dot", sr);
+        sp.plot.add("+", DoubleStream.generate(() -> radius).limit(lastSlice - firstSlice).toArray());
+        sp.plot.setColor(Color.GREEN);
+        sp.plot.add("dot", br);
+        sp.plot.add("+", DoubleStream.generate(() -> rBack1).limit(lastSlice - firstSlice).toArray());
+        sp.plot.setColor(Color.BLUE);
+        sp.plot.add("dot", br2);
+        sp.plot.add("+", DoubleStream.generate(() -> rBack2).limit(lastSlice - firstSlice).toArray());
+
+        sp.plot.addLegend("Aperture Radius\nMedian Radius\nInner Sky\nMedian Inner\nOuter Sky\nMedian Outer");
+
+        sp.plot.draw();
+        sp.plot.getStack().prependPlot(sp.plot);
+
+        sp.plot.show();
+        sp.plot.getImagePlus().getWindow().setVisible(true);
 
         IJ.showProgress(1);
         return rs;

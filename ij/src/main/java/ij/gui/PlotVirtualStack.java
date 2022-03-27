@@ -1,8 +1,12 @@
 package ij.gui;
-import ij.*;
-import ij.process.*;
-import java.util.*;
-import java.io.*;
+
+import ij.IJ;
+import ij.VirtualStack;
+import ij.astro.AstroImageJ;
+import ij.process.ImageProcessor;
+
+import java.io.ByteArrayInputStream;
+import java.util.Vector;
 
 /** This is a virtual stack of frozen plots. */
 public class PlotVirtualStack extends VirtualStack {
@@ -48,6 +52,13 @@ public class PlotVirtualStack extends VirtualStack {
 			}
 		}
 		return null;
+	}
+
+	@AstroImageJ(reason = "Seeing profile from MA")
+	public void prependPlot(Plot plot) {
+		plots.add(0, plot.toByteArray());
+		if (plot.isColored())
+			bitDepth = 24;
 	}
 	 
 	 /** Returns the number of slices in this stack. */

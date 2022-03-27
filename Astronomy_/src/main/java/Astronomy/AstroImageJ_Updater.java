@@ -344,7 +344,7 @@ public class AstroImageJ_Updater implements PlugIn {
 		GenericDialog gd = new GenericDialog("AstroImageJ Updater");
 		gd.addChoice("Upgrade To:", versions, versions[(versions.length > 0 ? 0 : 0)]);
 
-		String msg = "A newer AstroImageJ version is available.";
+		String msg = "** A newer AstroImageJ version is available. **";
 
 		if (hasUpdateAvailable()) gd.addMessage(msg);
 
@@ -354,7 +354,7 @@ public class AstroImageJ_Updater implements PlugIn {
 			"To upgrade or downgrade to a different version, select it above.\n"+
 			"The \"daily build\" option may contain updates since the latest numbered version.\n"+
 			"Click \"OK\" to download and install the version you have selected above.\n"+
-            "After a successful download, AstroImageJ will exit.\n"+
+            "After a successful download, AstroImageJ will close.\n"+
 			"Restart AstroImageJ to run the updated version.\n"+
 			" \n"+
 			"Click \"Cancel\" to continue using the current version.\n";

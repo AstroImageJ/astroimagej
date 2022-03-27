@@ -1495,13 +1495,14 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             decPos = -1000001;
         }
 
+        var x = xCenter;
+        var y = yCenter;
         for (int i = firstSlice; i <= lastSlice; i++) {
-            imp.setSliceWithoutUpdate(i);// Don't draw the stack update, can't use IP because SP assumes imp
-            var x = xCenter;
-            var y = yCenter;
+            asw.showSlice(i);
+            asw.updateWCS();
 
-            if (useWCS && hasWCS && raPos > -1000000 && decPos > -1000000) {
-                double[] xy = wcs.wcs2pixels(new double[]{raPos, decPos});
+            if (useWCS && asw.goodWCS && raPos > -1000000 && decPos > -1000000) {
+                double[] xy = asw.getWCS().wcs2pixels(new double[]{raPos, decPos});
                 x = xy[0];
                 y = xy[1];
             }

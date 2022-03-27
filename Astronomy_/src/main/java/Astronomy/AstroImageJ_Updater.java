@@ -322,7 +322,9 @@ public class AstroImageJ_Updater implements PlugIn {
 
 			for (int i = 0; i < 2; i++) {
 				var compare = Integer.compare(Integer.parseInt(versionPieces[i]), Integer.parseInt(versionPiecesO[i]));
-				if (compare > 0) return true;
+				if (compare != 0) {
+					if (compare > 0) return true;
+				}
 			}
 
 		}

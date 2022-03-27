@@ -329,16 +329,6 @@ public class AstroImageJ_Updater implements PlugIn {
 			}
 		}
 
-//		for (String version : versions) {
-//			String[] versionPiecesO = version.split("\\.");
-//
-//			for (int i = 0; i < 2; i++) {
-//				var compare = Integer.compare(Integer.parseInt(versionPieces[i]), Integer.parseInt(versionPiecesO[i]));
-//				if (compare > 0) return true;
-//			}
-//
-//		}
-
 		return false;
 	}
 

@@ -1529,9 +1529,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
         if (enableLog) {
             AIJLogger.multiLog("medians: ", Stat.median(sr), Stat.median(br), Stat.median(br2));
-            AIJLogger.multiLog("sigmas: ", Stat.variance(sr), Stat.variance(br), Stat.variance(br2));
         }
-        var rs = new Seeing_Profile.ApRadii(Stat.median(sr) + Stat.variance(sr), Stat.median(br) + Stat.variance(br), Stat.median(br2) + Stat.variance(br2));
+        var rs = new Seeing_Profile.ApRadii(upperMadMedian(sr), upperMadMedian(br), upperMadMedian(br2));
 
         if (rs.isValid()) {
             radius = rs.r();
@@ -1568,6 +1567,11 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
         IJ.showProgress(1);
         return rs;
+    }
+
+    private double upperMadMedian(double[] a) {
+        double med = Stat.median(a);
+        return med + Stat.median(Arrays.stream(a).filter(d -> d>= med).map(d -> d - med).toArray());
     }
 
     private TreeSet<StarFinder.CoordinateMaxima> removeCloseStars(TreeSet<StarFinder.CoordinateMaxima> initialSet, double t1Source, double maxP) {

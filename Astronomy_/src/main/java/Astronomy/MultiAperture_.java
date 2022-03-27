@@ -1515,6 +1515,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 imp.setSliceWithoutUpdate(firstSlice);
                 return rs;
             }
+            x = sp.X0;
+            y = sp.Y0;
             radii.add(rs);
             IJ.showProgress(i / (float)(lastSlice - firstSlice));
         }

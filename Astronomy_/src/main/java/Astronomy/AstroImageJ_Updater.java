@@ -315,17 +315,29 @@ public class AstroImageJ_Updater implements PlugIn {
 	}
 
 	static boolean hasUpdateAvailable() {
-		var versions = getAvailableVersions();
-
-		for (String version : versions) {
-			String[] versionPiecesO = version.split("\\.");
-
-			for (int i = 0; i < 2; i++) {
-				var compare = Integer.compare(Integer.parseInt(versionPieces[i]), Integer.parseInt(versionPiecesO[i]));
-				if (compare > 0) return true;
+		var postedVersions = getAvailableVersions();
+		String lastPostedVersion = null;
+		if (postedVersions != null && postedVersions.length > 0)
+		{
+			lastPostedVersion = postedVersions[0];
+			String[] lastPostedVersionPieces = lastPostedVersion.split("\\.");
+			if (lastPostedVersionPieces.length > 2)
+			{
+				long lastPostedVersionInt = Integer.parseInt(lastPostedVersionPieces[0])*10000 + Integer.parseInt(lastPostedVersionPieces[1])*100  + Integer.parseInt(lastPostedVersionPieces[2]);
+				long currentVersionInt = Integer.parseInt(versionPieces[0])*10000 + Integer.parseInt(versionPieces[1])*100  + Integer.parseInt(versionPieces[2]);
+				if (lastPostedVersionInt > currentVersionInt) return true;
 			}
-
 		}
+
+//		for (String version : versions) {
+//			String[] versionPiecesO = version.split("\\.");
+//
+//			for (int i = 0; i < 2; i++) {
+//				var compare = Integer.compare(Integer.parseInt(versionPieces[i]), Integer.parseInt(versionPiecesO[i]));
+//				if (compare > 0) return true;
+//			}
+//
+//		}
 
 		return false;
 	}
@@ -341,15 +353,24 @@ public class AstroImageJ_Updater implements PlugIn {
 	int showDialog(String[] versions) {
 		GenericDialog gd = new GenericDialog("AstroImageJ Updater");
 		gd.addChoice("Upgrade To:", versions, versions[(versions.length > 0 ? 0 : 0)]);
-		String msg = 
+
+		String msg = "A newer AstroImageJ version is available.";
+
+		if (hasUpdateAvailable()) gd.addMessage(msg);
+
+		msg =
 			"You are currently running AstroImageJ "+IJ.getAstroVersion()+".\n"+
 			" \n"+
-			"Click \"OK\", to download and install the selected upgrade.\n"+
+			"To upgrade or downgrade to a different version, select it above.\n"+
+			"The \"daily build\" option may contain updates since the latest numbered version.\n"+
+			"Click \"OK\" to download and install the version you have selected above.\n"+
             "After a successful download, AstroImageJ will exit.\n"+
-			"Restart AstroImageJ to run the upgraded version.\n";
+			"Restart AstroImageJ to run the updated version.\n"+
+			" \n"+
+			"Click \"Cancel\" to continue using the current version.\n";
 
 		gd.addMessage(msg);
-		gd.addCheckbox("Allow update notifications", Prefs.getBoolean(DO_UPDATE_NOTIFICATION, true));
+		gd.addCheckbox("Allow automatic update notifications at startup", Prefs.getBoolean(DO_UPDATE_NOTIFICATION, true));
         gd.addHelp(URL+"/release_notes.html");
         gd.setHelpLabel("Release Notes");
 		gd.showDialog();

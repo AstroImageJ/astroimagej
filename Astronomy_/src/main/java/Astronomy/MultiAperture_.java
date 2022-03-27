@@ -1483,29 +1483,27 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     private Seeing_Profile.ApRadii evaluateStackForRadii() {
         List<Seeing_Profile.ApRadii> radii = new ArrayList<>(lastSlice - firstSlice);
         var sp = new Seeing_Profile(true);
+
+        var raPos = 0d;
+        var decPos = 0d;
+        if (hasWCS) {
+            double[] radec = wcs.pixels2wcs(new double[]{xCenter, yCenter});
+            raPos = radec[0];
+            decPos = radec[1];
+        } else {
+            raPos = -1000001;
+            decPos = -1000001;
+        }
+
         for (int i = firstSlice; i <= lastSlice; i++) {
             imp.setSliceWithoutUpdate(i);// Don't draw the stack update, can't use IP because SP assumes imp
             var x = xCenter;
             var y = yCenter;
-            // Acount for old star positions
-            if (previous && nAperturesStored > 0) {
-                x = xPosStored[0];
-                y = yPosStored[0];
-                var ra = -1000001d;
-                var dec = -1000001d;
-                if (raPosStored != null && decPosStored != null) {
-                    ra = raPosStored[0];
-                    dec = decPosStored[0];
-                }
-                if ((useMA || useAlign) && useWCS) {
-                    if (!hasWCS || (!(ra < -1000000) && !(dec < -1000000))) {
-                        if (hasWCS && ra > -1000000 && dec > -1000000) {
-                            double[] xy = wcs.wcs2pixels(new double[]{ra, dec});
-                            x = xy[0];
-                            y = xy[1];
-                        }
-                    }
-                }
+
+            if (useWCS && hasWCS && raPos > -1000000 && decPos > -1000000) {
+                double[] xy = wcs.wcs2pixels(new double[]{raPos, decPos});
+                x = xy[0];
+                y = xy[1];
             }
 
             var rs = sp.getRadii(imp, x, y, ApRadius.AUTO_VAR_STACK_RAD.cutoff, true, true);

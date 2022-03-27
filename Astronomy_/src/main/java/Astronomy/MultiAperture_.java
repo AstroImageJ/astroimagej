@@ -1498,7 +1498,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 }
             }
 
-            var rs = sp.getRadiiI(imp, x, y, ApRadius.AUTO_VAR_STACK_RAD.cutoff, true);
+            var rs = sp.getRadii(imp, x, y, ApRadius.AUTO_VAR_STACK_RAD.cutoff, true, true);
             if (!rs.centroidSuccessful()) {
                 IJ.error("Failed to centroid on slice: " + i + ". Plate-solving the image may allow this mode to be used. Otherwise, choose a different aperture mode.");
                 imp.setSliceWithoutUpdate(firstSlice);

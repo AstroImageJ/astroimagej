@@ -177,10 +177,10 @@ public class Seeing_Profile implements PlugInFilter
 
         public static ApRadii getRadii(ImagePlus imp, double x, double y, double cutoff, boolean show) {
             var sp = new Seeing_Profile();
-            return sp.getRadiiI(imp, x, y, cutoff, show);
+            return sp.getRadii(imp, x, y, cutoff, show, Prefs.get("aperture.reposition", true));
         }
 
-        public ApRadii getRadiiI(ImagePlus imp, double x, double y, double cutoff, boolean show) {
+        public ApRadii getRadii(ImagePlus imp, double x, double y, double cutoff, boolean show, boolean centroid) {
             var sp = this;
             sp.cal = imp.getCalibration();
             sp.autoModeFluxCutOff = cutoff;
@@ -189,7 +189,7 @@ public class Seeing_Profile implements PlugInFilter
             sp.mR = Prefs.get ("aperture.radius", sp.mR);
             sp.mR1 = Prefs.get ("aperture.rback1", sp.mR*1.2);
             sp.mR2 = Prefs.get ("aperture.rback2", sp.mR*2.0);
-            sp.recenter = Prefs.get("aperture.reposition", true);
+            sp.recenter = centroid;
             sp.center = new Centroid();
             var b = sp.center.measure(imp, sp.X0, sp.Y0, sp.mR, sp.mR1, sp.mR2, sp.recenter, Prefs.get("aperture.backplane", false), Prefs.get("aperture.removebackstars", true));
             sp.X0 = sp.center.x();

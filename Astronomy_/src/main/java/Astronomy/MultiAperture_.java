@@ -1516,6 +1516,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         var br = radii.stream().mapToDouble(Seeing_Profile.ApRadii::r2).toArray();
         var br2 = radii.stream().mapToDouble(Seeing_Profile.ApRadii::r3).toArray();
 
+        if (enableLog) {
+            AIJLogger.multiLog("medians: ", Stat.median(sr), Stat.median(br), Stat.median(br2));
+            AIJLogger.multiLog("sigmas: ", Stat.variance(sr), Stat.variance(br), Stat.variance(br2));
+        }
         var rs = new Seeing_Profile.ApRadii(Stat.median(sr) + Stat.variance(sr), Stat.median(br) + Stat.variance(br), Stat.median(br2) + Stat.variance(br2));
 
         if (rs.isValid()) {
@@ -1525,6 +1529,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             Prefs.set("aperture.radius", radius);
             Prefs.set("aperture.rback1", rBack1);
             Prefs.set("aperture.rback2", rBack2);
+        }
+
+        if (enableLog) {
+            AIJLogger.multiLog("radii: ", rs);
         }
 
         IJ.showProgress(1);

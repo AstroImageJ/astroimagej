@@ -1187,11 +1187,13 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             // Auto stack radius feature
             if (!autoMode && firstClick && radiusSetting == ApRadius.AUTO_VAR_STACK_RAD && !t1Placed && !(this instanceof Stack_Aligner)) {
                 oldRadii = new Seeing_Profile.ApRadii(radius, rBack1, rBack2);
+                var d = showWarning("Finding radii...");
                 var warning = new AnnotateRoi(false, false, true, false, imp.getWidth() / 2f, imp.getHeight() / 2f, 2, "Finding radii...", Color.GREEN);
                 warning.setImage(imp);
                 ocanvas.add(warning);
                 var rs = evaluateStackForRadii();
                 ocanvas.removeRoi(warning);
+                d.dispose();
                 if (!rs.centroidSuccessful()) {
                     shutDown();
                     return;
@@ -1342,6 +1344,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
             if (!autoMode && suggestCompStars && tempSuggestCompStars && ngot >= referenceStar && refCount < maxSuggestedStars && !(this instanceof Stack_Aligner)) {
                 suggestionRunning = true;
+                var d = showWarning("Searching for comparison stars...");
                 var warning = new AnnotateRoi(false, false, true, false, imp.getWidth() / 2f, imp.getHeight() / 2f, 2, "Searching for comparison stars...", Color.GREEN);
                 warning.setImage(imp);
                 ocanvas.add(warning);
@@ -1379,10 +1382,12 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     if (g.wasCanceled()) {
                         cancelled = true;
                         ocanvas.removeRoi(warning);
+                        d.dispose();
                         shutDown();
                     } else if (!g.wasOKed()) {
                         tempSuggestCompStars = false;
                         ocanvas.removeRoi(warning);
+                        d.dispose();
                         return;
                     }
                 }
@@ -1402,11 +1407,13 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     IJ.beep();
                     if (g.wasCanceled()) {
                         ocanvas.removeRoi(warning);
+                        d.dispose();
                         cancelled = true;
                         shutDown();
                     } else if (!g.wasOKed()) {
                         tempSuggestCompStars = false;
                         ocanvas.removeRoi(warning);
+                        d.dispose();
                         return;
                     }
                 }
@@ -1437,11 +1444,13 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     IJ.beep();
                     if (g.wasCanceled()) {
                         ocanvas.removeRoi(warning);
+                        d.dispose();
                         cancelled = true;
                         shutDown();
                     } else if (!g.wasOKed()) {
                         tempSuggestCompStars = false;
                         ocanvas.removeRoi(warning);
+                        d.dispose();
                         return;
                     }
                 }
@@ -1462,6 +1471,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 }
 
                 ocanvas.removeRoi(warning);
+                d.dispose();
 
                 tempSuggestCompStars = false; // Disable suggestion for all other stars
             }
@@ -1499,6 +1509,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             }
 
             var rs = sp.getRadii(imp, x, y, ApRadius.AUTO_VAR_STACK_RAD.cutoff, true, true);
+            if (cancelled) return rs;
             if (!rs.centroidSuccessful()) {
                 IJ.error("Failed to centroid on slice: " + i + ". Plate-solving the image may allow this mode to be used. Otherwise, choose a different aperture mode.");
                 imp.setSliceWithoutUpdate(firstSlice);
@@ -1814,6 +1825,56 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             }
         }
         return true;
+    }
+
+    private JDialog showWarning(String message) {
+        var gd = new GenericSwingDialog("MultiAperture Stack/Slice processor", asw);
+        gd.addMessage(message);
+        gd.setModalityType(Dialog.ModalityType.MODELESS);
+        gd.centerDialog(true);
+
+        gd.disableNo();
+        gd.setOKLabel("Cancel");
+
+        gd.getOkay().addActionListener($ -> {
+            cancelled = true;
+            cancel();
+            shutDown();
+        });
+
+        gd.addKeyListener(new KeyListener() {
+            @Override
+            public void keyTyped(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
+                    cancelled = true;
+                    cancel();
+                    shutDown();
+                }
+            }
+
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
+                    cancelled = true;
+                    cancel();
+                    shutDown();
+                }
+            }
+
+            @Override
+            public void keyReleased(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
+                    cancelled = true;
+                    cancel();
+                    shutDown();
+                }
+            }
+        });
+
+        gd.setHideCancelButton(true);
+        gd.showDialog();
+        gd.setResizable(false);
+        return gd;
     }
 
     public boolean checkAperturesInitialized() {

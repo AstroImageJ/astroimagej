@@ -1,0 +1,147 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "io.github.fvarrui",
+    "module": "javapackager",
+    "version": "1.6.30-SNAPSHOT",
+    "attributes": {
+      "org.gradle.status": "integration"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "6.8.3",
+      "buildId": "xep34v5q3zhnzi2nwq4cslup54"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 8,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api"
+      },
+      "files": [
+        {
+          "name": "javapackager-1.6.30-SNAPSHOT.jar",
+          "url": "javapackager-1.6.30-SNAPSHOT.jar",
+          "size": 420612,
+          "sha512": "1571ad61781d0346d85b06661af941430d5006ee0b2aae022eac923b9a8072bc8f3653406e65daf096cbfee6de6d19a1ae00e6548c292b9fa8ccd290bcecf4de",
+          "sha256": "3b103b9fa3465175594209e8cf5490eee0fef0a776be2a1beca43860351b4e26",
+          "sha1": "02f90c546f84c9c478d04e8fbe3780be7d54c864",
+          "md5": "fcd8899262f61e4bac7e7884fe5c8b01"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 8,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "org.apache.maven",
+          "module": "maven-plugin-api",
+          "version": {
+            "requires": "3.6.0"
+          }
+        },
+        {
+          "group": "org.codehaus.plexus",
+          "module": "plexus-utils",
+          "version": {
+            "requires": "3.1.1"
+          }
+        },
+        {
+          "group": "org.twdata.maven",
+          "module": "mojo-executor",
+          "version": {
+            "requires": "2.3.0"
+          }
+        },
+        {
+          "group": "commons-io",
+          "module": "commons-io",
+          "version": {
+            "requires": "2.6"
+          }
+        },
+        {
+          "group": "org.apache.commons",
+          "module": "commons-lang3",
+          "version": {
+            "requires": "3.9"
+          }
+        },
+        {
+          "group": "org.apache.commons",
+          "module": "commons-collections4",
+          "version": {
+            "requires": "4.1"
+          }
+        },
+        {
+          "group": "org.apache.commons",
+          "module": "commons-compress",
+          "version": {
+            "requires": "1.21"
+          }
+        },
+        {
+          "group": "org.apache.velocity",
+          "module": "velocity-engine-core",
+          "version": {
+            "requires": "2.0"
+          }
+        },
+        {
+          "group": "io.github.fvarrui",
+          "module": "gradle-launch4j",
+          "version": {
+            "requires": "2.4.7"
+          }
+        },
+        {
+          "group": "org.vafer",
+          "module": "jdeb",
+          "version": {
+            "requires": "1.9"
+          }
+        },
+        {
+          "group": "net.jsign",
+          "module": "jsign-core",
+          "version": {
+            "requires": "3.1"
+          }
+        },
+        {
+          "group": "org.redline-rpm",
+          "module": "redline",
+          "version": {
+            "requires": "1.2.10"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "javapackager-1.6.30-SNAPSHOT.jar",
+          "url": "javapackager-1.6.30-SNAPSHOT.jar",
+          "size": 420612,
+          "sha512": "1571ad61781d0346d85b06661af941430d5006ee0b2aae022eac923b9a8072bc8f3653406e65daf096cbfee6de6d19a1ae00e6548c292b9fa8ccd290bcecf4de",
+          "sha256": "3b103b9fa3465175594209e8cf5490eee0fef0a776be2a1beca43860351b4e26",
+          "sha1": "02f90c546f84c9c478d04e8fbe3780be7d54c864",
+          "md5": "fcd8899262f61e4bac7e7884fe5c8b01"
+        }
+      ]
+    }
+  ]
+}

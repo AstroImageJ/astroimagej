@@ -1,0 +1,147 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "io.github.fvarrui",
+    "module": "javapackager",
+    "version": "1.6.20-SNAPSHOT",
+    "attributes": {
+      "org.gradle.status": "integration"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "6.8.3",
+      "buildId": "tshxfjgvi5gjffvodfouxwmxbm"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 8,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api"
+      },
+      "files": [
+        {
+          "name": "javapackager-1.6.20-SNAPSHOT.jar",
+          "url": "javapackager-1.6.20-SNAPSHOT.jar",
+          "size": 420613,
+          "sha512": "1f7f0e1a6c28ec4dcdf9cd1ca6496a8ff3b6e82d99cb12e57dbb6a66c7046aa16fabbace45fdaa4176c97d84e8199b77587664fdbce8df2c577af271e4782d53",
+          "sha256": "a4dd5ba7764b126162ee79522c551b1c644d75f04939c640a4486f466c8c18d7",
+          "sha1": "fecf1118d77774040bb06800d2219eb4b2cb4e5b",
+          "md5": "a62d3471ffda38f416458280ae594481"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 8,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "org.apache.maven",
+          "module": "maven-plugin-api",
+          "version": {
+            "requires": "3.6.0"
+          }
+        },
+        {
+          "group": "org.codehaus.plexus",
+          "module": "plexus-utils",
+          "version": {
+            "requires": "3.1.1"
+          }
+        },
+        {
+          "group": "org.twdata.maven",
+          "module": "mojo-executor",
+          "version": {
+            "requires": "2.3.0"
+          }
+        },
+        {
+          "group": "commons-io",
+          "module": "commons-io",
+          "version": {
+            "requires": "2.6"
+          }
+        },
+        {
+          "group": "org.apache.commons",
+          "module": "commons-lang3",
+          "version": {
+            "requires": "3.9"
+          }
+        },
+        {
+          "group": "org.apache.commons",
+          "module": "commons-collections4",
+          "version": {
+            "requires": "4.1"
+          }
+        },
+        {
+          "group": "org.apache.commons",
+          "module": "commons-compress",
+          "version": {
+            "requires": "1.21"
+          }
+        },
+        {
+          "group": "org.apache.velocity",
+          "module": "velocity-engine-core",
+          "version": {
+            "requires": "2.0"
+          }
+        },
+        {
+          "group": "io.github.fvarrui",
+          "module": "gradle-launch4j",
+          "version": {
+            "requires": "2.4.7"
+          }
+        },
+        {
+          "group": "org.vafer",
+          "module": "jdeb",
+          "version": {
+            "requires": "1.9"
+          }
+        },
+        {
+          "group": "net.jsign",
+          "module": "jsign-core",
+          "version": {
+            "requires": "3.1"
+          }
+        },
+        {
+          "group": "org.redline-rpm",
+          "module": "redline",
+          "version": {
+            "requires": "1.2.10"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "javapackager-1.6.20-SNAPSHOT.jar",
+          "url": "javapackager-1.6.20-SNAPSHOT.jar",
+          "size": 420613,
+          "sha512": "1f7f0e1a6c28ec4dcdf9cd1ca6496a8ff3b6e82d99cb12e57dbb6a66c7046aa16fabbace45fdaa4176c97d84e8199b77587664fdbce8df2c577af271e4782d53",
+          "sha256": "a4dd5ba7764b126162ee79522c551b1c644d75f04939c640a4486f466c8c18d7",
+          "sha1": "fecf1118d77774040bb06800d2219eb4b2cb4e5b",
+          "md5": "a62d3471ffda38f416458280ae594481"
+        }
+      ]
+    }
+  ]
+}

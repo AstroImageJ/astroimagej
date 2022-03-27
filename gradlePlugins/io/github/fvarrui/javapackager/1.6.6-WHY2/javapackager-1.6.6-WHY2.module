@@ -1,0 +1,147 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "io.github.fvarrui",
+    "module": "javapackager",
+    "version": "1.6.6-WHY2",
+    "attributes": {
+      "org.gradle.status": "release"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "6.8.3",
+      "buildId": "5jeez45d6nemfdm6a6bmrhc26i"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 8,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api"
+      },
+      "files": [
+        {
+          "name": "javapackager-1.6.6-WHY2.jar",
+          "url": "javapackager-1.6.6-WHY2.jar",
+          "size": 1452013,
+          "sha512": "87a960406da993d5d14bfba30cba277d35cd82c2090991960dcf214b7e29e9082484a4215bfe1060610b39876c679e622fb87ba098ab9a13c131dc401336aeda",
+          "sha256": "0565665a2177d341f96a2f2d33fe3947d331b5efa3b72fe8392106f6eeef8558",
+          "sha1": "94385d7bf7ad4a2300f32fc1c5c6405ec34808ba",
+          "md5": "4fc5cada63f1610cecf335e8e732c870"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 8,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "org.apache.maven",
+          "module": "maven-plugin-api",
+          "version": {
+            "requires": "3.6.0"
+          }
+        },
+        {
+          "group": "org.codehaus.plexus",
+          "module": "plexus-utils",
+          "version": {
+            "requires": "3.1.1"
+          }
+        },
+        {
+          "group": "org.twdata.maven",
+          "module": "mojo-executor",
+          "version": {
+            "requires": "2.3.0"
+          }
+        },
+        {
+          "group": "commons-io",
+          "module": "commons-io",
+          "version": {
+            "requires": "2.6"
+          }
+        },
+        {
+          "group": "org.apache.commons",
+          "module": "commons-lang3",
+          "version": {
+            "requires": "3.9"
+          }
+        },
+        {
+          "group": "org.apache.commons",
+          "module": "commons-collections4",
+          "version": {
+            "requires": "4.1"
+          }
+        },
+        {
+          "group": "org.apache.commons",
+          "module": "commons-compress",
+          "version": {
+            "requires": "1.21"
+          }
+        },
+        {
+          "group": "org.apache.velocity",
+          "module": "velocity-engine-core",
+          "version": {
+            "requires": "2.0"
+          }
+        },
+        {
+          "group": "org.vafer",
+          "module": "jdeb",
+          "version": {
+            "requires": "1.9"
+          }
+        },
+        {
+          "group": "net.jsign",
+          "module": "jsign-core",
+          "version": {
+            "requires": "3.1"
+          }
+        },
+        {
+          "group": "org.redline-rpm",
+          "module": "redline",
+          "version": {
+            "requires": "1.2.10"
+          }
+        },
+        {
+          "group": "io.github.fvarrui",
+          "module": "launch4j",
+          "version": {
+            "requires": "2.5.2"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "javapackager-1.6.6-WHY2.jar",
+          "url": "javapackager-1.6.6-WHY2.jar",
+          "size": 1452013,
+          "sha512": "87a960406da993d5d14bfba30cba277d35cd82c2090991960dcf214b7e29e9082484a4215bfe1060610b39876c679e622fb87ba098ab9a13c131dc401336aeda",
+          "sha256": "0565665a2177d341f96a2f2d33fe3947d331b5efa3b72fe8392106f6eeef8558",
+          "sha1": "94385d7bf7ad4a2300f32fc1c5c6405ec34808ba",
+          "md5": "4fc5cada63f1610cecf335e8e732c870"
+        }
+      ]
+    }
+  ]
+}

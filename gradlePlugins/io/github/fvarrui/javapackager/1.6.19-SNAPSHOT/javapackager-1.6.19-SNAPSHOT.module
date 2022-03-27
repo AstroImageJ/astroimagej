@@ -1,0 +1,147 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "io.github.fvarrui",
+    "module": "javapackager",
+    "version": "1.6.19-SNAPSHOT",
+    "attributes": {
+      "org.gradle.status": "integration"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "6.8.3",
+      "buildId": "6dtycykaczfnzbfvs3ftnqoki4"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 8,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api"
+      },
+      "files": [
+        {
+          "name": "javapackager-1.6.19-SNAPSHOT.jar",
+          "url": "javapackager-1.6.19-SNAPSHOT.jar",
+          "size": 413152,
+          "sha512": "b8b89b4b9310856df9d02f39d2fc6815eab6192ae1cbdb6a4b242f0a54a1cc01e5e3698570aeeabbb2270afa1330ca0a9ce62b59394bff1913157b5368a61fc9",
+          "sha256": "ab054b9313f60d774823959d6fc94b6256559d487dbf072a082ad1922f5315a4",
+          "sha1": "36a69bb75451e56ef1067f8c6782b82143564f52",
+          "md5": "a433bc3e8aa8886acfc1ad1f77312827"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 8,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "org.apache.maven",
+          "module": "maven-plugin-api",
+          "version": {
+            "requires": "3.6.0"
+          }
+        },
+        {
+          "group": "org.codehaus.plexus",
+          "module": "plexus-utils",
+          "version": {
+            "requires": "3.1.1"
+          }
+        },
+        {
+          "group": "org.twdata.maven",
+          "module": "mojo-executor",
+          "version": {
+            "requires": "2.3.0"
+          }
+        },
+        {
+          "group": "commons-io",
+          "module": "commons-io",
+          "version": {
+            "requires": "2.6"
+          }
+        },
+        {
+          "group": "org.apache.commons",
+          "module": "commons-lang3",
+          "version": {
+            "requires": "3.9"
+          }
+        },
+        {
+          "group": "org.apache.commons",
+          "module": "commons-collections4",
+          "version": {
+            "requires": "4.1"
+          }
+        },
+        {
+          "group": "org.apache.commons",
+          "module": "commons-compress",
+          "version": {
+            "requires": "1.21"
+          }
+        },
+        {
+          "group": "org.apache.velocity",
+          "module": "velocity-engine-core",
+          "version": {
+            "requires": "2.0"
+          }
+        },
+        {
+          "group": "io.github.fvarrui",
+          "module": "gradle-launch4j",
+          "version": {
+            "requires": "2.4.7"
+          }
+        },
+        {
+          "group": "org.vafer",
+          "module": "jdeb",
+          "version": {
+            "requires": "1.9"
+          }
+        },
+        {
+          "group": "net.jsign",
+          "module": "jsign-core",
+          "version": {
+            "requires": "3.1"
+          }
+        },
+        {
+          "group": "org.redline-rpm",
+          "module": "redline",
+          "version": {
+            "requires": "1.2.10"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "javapackager-1.6.19-SNAPSHOT.jar",
+          "url": "javapackager-1.6.19-SNAPSHOT.jar",
+          "size": 413152,
+          "sha512": "b8b89b4b9310856df9d02f39d2fc6815eab6192ae1cbdb6a4b242f0a54a1cc01e5e3698570aeeabbb2270afa1330ca0a9ce62b59394bff1913157b5368a61fc9",
+          "sha256": "ab054b9313f60d774823959d6fc94b6256559d487dbf072a082ad1922f5315a4",
+          "sha1": "36a69bb75451e56ef1067f8c6782b82143564f52",
+          "md5": "a433bc3e8aa8886acfc1ad1f77312827"
+        }
+      ]
+    }
+  ]
+}

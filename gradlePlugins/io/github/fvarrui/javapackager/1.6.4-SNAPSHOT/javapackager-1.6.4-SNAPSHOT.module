@@ -1,0 +1,147 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "io.github.fvarrui",
+    "module": "javapackager",
+    "version": "1.6.4-SNAPSHOT",
+    "attributes": {
+      "org.gradle.status": "integration"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "6.8.3",
+      "buildId": "gesxs4yjmvdjri4poaw3tdugee"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 8,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api"
+      },
+      "files": [
+        {
+          "name": "javapackager-1.6.4-SNAPSHOT.jar",
+          "url": "javapackager-1.6.4-SNAPSHOT.jar",
+          "size": 931562,
+          "sha512": "ea35efbb9b5eeb8e003d5831819e5c4dba0f1cda691bd909d256529225354019bdd8525b03f46e5b306bd9d69e99f36f8857995795b4a008bf6b934a9a42e1f5",
+          "sha256": "c852faf57849de0e4af45c6242c393d85f7cc5fb692daa32be4f56d7f869ecdd",
+          "sha1": "430842a86004b98c35920316572cc93ce40f5e0d",
+          "md5": "40f39e5ce2ab849b93925e3c9e8eaa38"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 8,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "org.apache.maven",
+          "module": "maven-plugin-api",
+          "version": {
+            "requires": "3.6.0"
+          }
+        },
+        {
+          "group": "org.codehaus.plexus",
+          "module": "plexus-utils",
+          "version": {
+            "requires": "3.1.1"
+          }
+        },
+        {
+          "group": "org.twdata.maven",
+          "module": "mojo-executor",
+          "version": {
+            "requires": "2.3.0"
+          }
+        },
+        {
+          "group": "commons-io",
+          "module": "commons-io",
+          "version": {
+            "requires": "2.6"
+          }
+        },
+        {
+          "group": "org.apache.commons",
+          "module": "commons-lang3",
+          "version": {
+            "requires": "3.9"
+          }
+        },
+        {
+          "group": "org.apache.commons",
+          "module": "commons-collections4",
+          "version": {
+            "requires": "4.1"
+          }
+        },
+        {
+          "group": "org.apache.commons",
+          "module": "commons-compress",
+          "version": {
+            "requires": "1.21"
+          }
+        },
+        {
+          "group": "org.apache.velocity",
+          "module": "velocity-engine-core",
+          "version": {
+            "requires": "2.0"
+          }
+        },
+        {
+          "group": "org.vafer",
+          "module": "jdeb",
+          "version": {
+            "requires": "1.9"
+          }
+        },
+        {
+          "group": "net.jsign",
+          "module": "jsign-core",
+          "version": {
+            "requires": "3.1"
+          }
+        },
+        {
+          "group": "org.redline-rpm",
+          "module": "redline",
+          "version": {
+            "requires": "1.2.10"
+          }
+        },
+        {
+          "group": "edu.sc.seis.launch4j",
+          "module": "launch4j",
+          "version": {
+            "requires": "2.5.1"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "javapackager-1.6.4-SNAPSHOT.jar",
+          "url": "javapackager-1.6.4-SNAPSHOT.jar",
+          "size": 931562,
+          "sha512": "ea35efbb9b5eeb8e003d5831819e5c4dba0f1cda691bd909d256529225354019bdd8525b03f46e5b306bd9d69e99f36f8857995795b4a008bf6b934a9a42e1f5",
+          "sha256": "c852faf57849de0e4af45c6242c393d85f7cc5fb692daa32be4f56d7f869ecdd",
+          "sha1": "430842a86004b98c35920316572cc93ce40f5e0d",
+          "md5": "40f39e5ce2ab849b93925e3c9e8eaa38"
+        }
+      ]
+    }
+  ]
+}

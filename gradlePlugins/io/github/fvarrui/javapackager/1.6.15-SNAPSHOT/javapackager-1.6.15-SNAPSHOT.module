@@ -1,0 +1,133 @@
+{
+  "formatVersion": "1.1",
+  "component": {
+    "group": "io.github.fvarrui",
+    "module": "javapackager",
+    "version": "1.6.15-SNAPSHOT",
+    "attributes": {
+      "org.gradle.status": "integration"
+    }
+  },
+  "createdBy": {
+    "gradle": {
+      "version": "6.8.3",
+      "buildId": "jfa73p7a3jd3xh7h6qq63qb2n4"
+    }
+  },
+  "variants": [
+    {
+      "name": "apiElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 8,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-api"
+      },
+      "files": [
+        {
+          "name": "javapackager-1.6.15-SNAPSHOT.jar",
+          "url": "javapackager-1.6.15-SNAPSHOT.jar",
+          "size": 411955,
+          "sha512": "0141ac3c182b4723e9e3cb1f175040fd0b279786a6dffae6de70c54e6e790e03144e4c2138d93b99a2c1ab293fc95de072b55c0e56a495923dc19ce07d6d9fe5",
+          "sha256": "e840a390d84d20452b99dd8f366960dd91b4d9ecb72f69a044e46c33b63bc3a0",
+          "sha1": "942bd09e2f6edf5a7b63fc2c9b1309f78c76a61a",
+          "md5": "2261afcb3a376f0d061ef6467cb1277d"
+        }
+      ]
+    },
+    {
+      "name": "runtimeElements",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 8,
+        "org.gradle.libraryelements": "jar",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "org.apache.maven",
+          "module": "maven-plugin-api",
+          "version": {
+            "requires": "3.6.0"
+          }
+        },
+        {
+          "group": "org.codehaus.plexus",
+          "module": "plexus-utils",
+          "version": {
+            "requires": "3.1.1"
+          }
+        },
+        {
+          "group": "org.twdata.maven",
+          "module": "mojo-executor",
+          "version": {
+            "requires": "2.3.0"
+          }
+        },
+        {
+          "group": "org.apache.commons",
+          "module": "commons-lang3",
+          "version": {
+            "requires": "3.9"
+          }
+        },
+        {
+          "group": "commons-io",
+          "module": "commons-io",
+          "version": {
+            "requires": "2.6"
+          }
+        },
+        {
+          "group": "org.apache.commons",
+          "module": "commons-collections4",
+          "version": {
+            "requires": "4.1"
+          }
+        },
+        {
+          "group": "org.apache.velocity",
+          "module": "velocity-engine-core",
+          "version": {
+            "requires": "2.0"
+          }
+        },
+        {
+          "group": "edu.sc.seis.launch4j",
+          "module": "launch4j",
+          "version": {
+            "requires": "2.5.0"
+          }
+        },
+        {
+          "group": "com.netflix.nebula",
+          "module": "gradle-ospackage-plugin",
+          "version": {
+            "requires": "8.4.1"
+          }
+        },
+        {
+          "group": "net.jsign",
+          "module": "jsign-core",
+          "version": {
+            "requires": "3.1"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "javapackager-1.6.15-SNAPSHOT.jar",
+          "url": "javapackager-1.6.15-SNAPSHOT.jar",
+          "size": 411955,
+          "sha512": "0141ac3c182b4723e9e3cb1f175040fd0b279786a6dffae6de70c54e6e790e03144e4c2138d93b99a2c1ab293fc95de072b55c0e56a495923dc19ce07d6d9fe5",
+          "sha256": "e840a390d84d20452b99dd8f366960dd91b4d9ecb72f69a044e46c33b63bc3a0",
+          "sha1": "942bd09e2f6edf5a7b63fc2c9b1309f78c76a61a",
+          "md5": "2261afcb3a376f0d061ef6467cb1277d"
+        }
+      ]
+    }
+  ]
+}

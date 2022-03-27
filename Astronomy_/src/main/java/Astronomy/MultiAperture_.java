@@ -1190,8 +1190,12 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 var warning = new AnnotateRoi(false, false, true, false, imp.getWidth() / 2f, imp.getHeight() / 2f, 2, "Finding radii...", Color.GREEN);
                 warning.setImage(imp);
                 ocanvas.add(warning);
-                evaluateStackForRadii();
+                var rs = evaluateStackForRadii();
                 ocanvas.removeRoi(warning);
+                if (!rs.centroidSuccessful()) {
+                    shutDown();
+                    return;
+                }
             }
 
             // ADD APERTURE TO LIST OR SHIFT OLD APERTURE POSITIONS

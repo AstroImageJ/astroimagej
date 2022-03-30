@@ -462,8 +462,9 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         if (defaultValue < minValue) defaultValue = minValue;
         if (defaultValue > maxValue) defaultValue = maxValue;
 
-        var spinner = new JSpinner(new SpinnerNumberModel(defaultValue, minValue, clipMaxValue ? maxValue : Double.MAX_VALUE, Prefs.get(id, 1 / scale)));
+        var spinner = new JSpinner(new SpinnerNumberModel(defaultValue / scale, minValue / scale, clipMaxValue ? maxValue / scale : Double.MAX_VALUE, Prefs.get(id, 1 / scale)));
         if (IJ.isLinux()) spinner.setBackground(Color.white);
+        ((SpinnerNumberModel) spinner.getModel()).setStepSize(1/scale);
 
         // Remove buttons and add right-click functionality
         var f = modifySpinner(spinner, true);
@@ -471,17 +472,19 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
 
         spinner.addChangeListener($ -> {
             consumer.accept((Double) spinner.getValue());
-            s.setValue(((Double) spinner.getValue()).intValue());
+            s.setValue((int) ((Double) spinner.getValue() * scale));
         });
         s.addAdjustmentListener(e -> spinner.setValue(s.getValue() / scale));
         s.addMouseWheelListener(e -> {
             var delta = e.getPreciseWheelRotation() * s.getUnitIncrement();
-            var newValue = -delta + s.getValue();
 
-            if (newValue < s.getMinimum()) {
-                newValue = s.getMinimum();
-            } else if (newValue > s.getMaximum()) {
-                newValue = s.getMaximum();
+            var newValue = (Double) spinner.getValue() -
+                    delta * ((SpinnerNumberModel) spinner.getModel()).getStepSize().doubleValue();
+
+            if (newValue < ((Double) ((SpinnerNumberModel) spinner.getModel()).getMinimum())) {
+                newValue = ((Double) ((SpinnerNumberModel) spinner.getModel()).getMinimum());
+            } else if (newValue > ((Double) ((SpinnerNumberModel) spinner.getModel()).getMaximum())) {
+                newValue = ((Double) ((SpinnerNumberModel) spinner.getModel()).getMaximum());
             }
 
             spinner.setValue(newValue);

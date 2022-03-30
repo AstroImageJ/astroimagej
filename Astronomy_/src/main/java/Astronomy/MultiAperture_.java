@@ -594,7 +594,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         try {
             radiusSetting = Enum.valueOf(ApRadius.class, Prefs.get(PREFS_APRADIUS, ApRadius.AUTO_FIXED.name()));
         } catch (Exception e) {
-            e.printStackTrace();
+            //e.printStackTrace();
             radiusSetting = ApRadius.AUTO_FIXED;
         }
         nAperturesMax = (int) Prefs.get(MultiAperture_.PREFS_NAPERTURESMAX, nAperturesMax);
@@ -3501,9 +3501,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         gd.setOverridePosition(true);
         gd.setNewPosition(GridBagConstraints.EAST);
         gd.setRightInset(-80);
-        //todo slider/option is broken when stepsize = 0.1
-        //  make stepSize = 0.1
-        gd.addFloatSlider("FWHM factor:", 0.1, 5.0, false, ApRadius.AUTO_VAR_FWHM.cutoff, 3, 1, d -> ApRadius.AUTO_VAR_FWHM.cutoff = d);
+        gd.addFloatSlider("FWHM factor:", 0.1, 5.0, true, ApRadius.AUTO_VAR_FWHM.cutoff, 3, 0.1, d -> ApRadius.AUTO_VAR_FWHM.cutoff = d);
         gd.resetPositionOverride();
         gd.setOverridePosition(false);
         ApRadius.setSelected();

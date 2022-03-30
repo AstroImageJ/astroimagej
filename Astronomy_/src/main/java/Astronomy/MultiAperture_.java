@@ -3755,6 +3755,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             IJ.error("Invalid flux cutoff entered");
             return false;
         }
+
+        useRadialProfile = radiusSetting == ApRadius.AUTO_VAR_RAD_PROF;
+        useVarSizeAp = radiusSetting == ApRadius.AUTO_VAR_FWHM || radiusSetting == ApRadius.AUTO_VAR_RAD_PROF;
+
         if (oldUseVarSizeAp != useVarSizeAp || oldapFWHMFactor != ApRadius.AUTO_VAR_FWHM.cutoff || oldAutoModeFluxCutOff != ApRadius.AUTO_VAR_RAD_PROF.cutoff ||
                 oldRemoveBackStars != removeBackStars || oldBackIsPlane != backIsPlane || oldGetMags != getMags) {
             changeAperture();

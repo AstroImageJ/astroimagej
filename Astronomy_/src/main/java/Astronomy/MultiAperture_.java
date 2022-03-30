@@ -1855,7 +1855,6 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         var gd = new GenericSwingDialog("MultiAperture Stack/Slice processor", asw);
         gd.addMessage(message);
         gd.setModalityType(Dialog.ModalityType.MODELESS);
-        gd.centerDialog(true);
 
         gd.disableNo();
         gd.setOKLabel("Cancel");
@@ -1894,6 +1893,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 }
             }
         });
+
+        var l = asw.getLocationOnScreen();
+        l.translate(asw.getSize().width / 2, asw.getSize().height / 2);
+        gd.setLocation(l);
 
         gd.setHideCancelButton(true);
         gd.showDialog();

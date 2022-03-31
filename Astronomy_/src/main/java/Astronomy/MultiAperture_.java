@@ -294,6 +294,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     private Seeing_Profile.ApRadii oldRadii;
     private int referenceStar = 1;
     private boolean suggestionRunning;
+    private Seeing_Profile sp;
 
 //	public static double RETRY_RADIUS = 3.0;
 
@@ -2542,6 +2543,37 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 return;
             }
         }
+
+        if (sp != null) {
+            /*sp.plot.setXYLabels("Slice", "Radius [px]");
+            sp.plot.setLimits(0, lastSlice - firstSlice, 0, Math.max(new Stat(br2).maximum(), rBack2) + 5);
+            sp.plot.setColor(Color.RED);
+            sp.plot.setLineWidth(4);
+            sp.plot.add("dot", sr);
+            sp.plot.setLineWidth(1);
+            sp.plot.add("+", DoubleStream.generate(() -> radius).limit(lastSlice - firstSlice).toArray());
+            sp.plot.setColor(Color.GREEN);
+            sp.plot.setLineWidth(4);
+            sp.plot.add("dot", br);
+            sp.plot.setLineWidth(1);
+            sp.plot.add("+", DoubleStream.generate(() -> rBack1).limit(lastSlice - firstSlice).toArray());
+            sp.plot.setColor(Color.BLUE);
+            sp.plot.setLineWidth(4);
+            sp.plot.add("dot", br2);
+            sp.plot.setLineWidth(1);
+            sp.plot.add("+", DoubleStream.generate(() -> rBack2).limit(lastSlice - firstSlice).toArray());
+
+            sp.plot.addLegend("Aperture Radius\nMedian Radius\nInner Sky\nMedian Inner\nOuter Sky\nMedian Outer");
+
+            sp.plot.addLabel(0, 0, "Final radii: Source - " + radius + ", Sky (min) - " +rBack1 + ", Sky (max) - " + rBack2);
+*/
+            sp.plot.draw();
+            //sp.plot.getStack().prependPlot(sp.plot);
+
+            sp.plot.show();
+            sp.plot.getImagePlus().getWindow().setVisible(true);
+        }
+
         if (processingStack) {
             IJ.beep();
             shutDown();
@@ -2745,7 +2777,34 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             if (!useRadialProfile) {
                 setVariableAperture(true, Math.max(xFWHM / nFWHM, yFWHM / nFWHM) * ApRadius.AUTO_VAR_FWHM.cutoff, ApRadius.AUTO_VAR_FWHM.cutoff, ApRadius.AUTO_VAR_RAD_PROF.cutoff);
             } else {
-                setVariableAperture(true, radiusRD / nRD, 0.0, ApRadius.AUTO_VAR_RAD_PROF.cutoff);
+                if (sp == null) {
+                    sp = new Seeing_Profile(true);
+                }
+                double vRadSky = 0, vRadBack1 = 0, vRadBack2 = 0;
+                nRD = 0;
+                //for (int ap = 0; ap < nApertures; ap++) {
+                    var rs = sp.getRadii(imp, xPos[0], yPos[0], ApRadius.AUTO_VAR_RAD_PROF.cutoff, true, false);
+                    if (rs.isValid()) {
+                        vRadSky += rs.r();
+                        vRadBack1 += rs.r2();
+                        vRadBack2 += rs.r3();
+                        nRD++;
+                    }
+                //}
+
+                if (nRD == 0) {
+                    vRadSky = radius;
+                    vRadBack1 = rBack1;
+                    vRadBack2 = rBack2;
+                    nRD = 1;
+                }
+
+                useVariableAp = true;
+                vradius = vRadSky / nRD;
+                fwhmMult = 0;
+                radialCutoff = ApRadius.AUTO_VAR_RAD_PROF.cutoff;
+                vrBack1 = vRadBack1 / nRD;
+                vrBack2 = vRadBack2 / nRD;
             }
         }
 

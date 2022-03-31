@@ -1522,6 +1522,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         }
         imp.setSlice(firstSlice);
 
+        // Clear and redraw aperture at initical location
+        /*OverlayCanvas.getOverlayCanvas(asw.getImagePlus()).removeApertureRois();
+        drawAperture();*/
+
         radii = radii.stream().filter(Seeing_Profile.ApRadii::isValid).toList();
         var sr = radii.stream().mapToDouble(Seeing_Profile.ApRadii::r).toArray();
         var br = radii.stream().mapToDouble(Seeing_Profile.ApRadii::r2).toArray();
@@ -1548,16 +1552,24 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         sp.plot.setXYLabels("Slice", "Radius [px]");
         sp.plot.setLimits(0, lastSlice - firstSlice, 0, Math.max(new Stat(br2).maximum(), rBack2) + 5);
         sp.plot.setColor(Color.RED);
+        sp.plot.setLineWidth(4);
         sp.plot.add("dot", sr);
+        sp.plot.setLineWidth(1);
         sp.plot.add("+", DoubleStream.generate(() -> radius).limit(lastSlice - firstSlice).toArray());
         sp.plot.setColor(Color.GREEN);
+        sp.plot.setLineWidth(4);
         sp.plot.add("dot", br);
+        sp.plot.setLineWidth(1);
         sp.plot.add("+", DoubleStream.generate(() -> rBack1).limit(lastSlice - firstSlice).toArray());
         sp.plot.setColor(Color.BLUE);
+        sp.plot.setLineWidth(4);
         sp.plot.add("dot", br2);
+        sp.plot.setLineWidth(1);
         sp.plot.add("+", DoubleStream.generate(() -> rBack2).limit(lastSlice - firstSlice).toArray());
 
         sp.plot.addLegend("Aperture Radius\nMedian Radius\nInner Sky\nMedian Inner\nOuter Sky\nMedian Outer");
+
+        sp.plot.addLabel(0, 0, "Final radii: Source - " + radius + ", Sky (min) - " +rBack1 + ", Sky (max) - " + rBack2);
 
         sp.plot.draw();
         sp.plot.getStack().prependPlot(sp.plot);

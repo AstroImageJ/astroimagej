@@ -30,6 +30,8 @@ public class PlotDataBinning {
         var span = xMax - xMin;
         var nBins = (int) Math.ceil(span/binWidth);
 
+        if (nBins == 0) nBins = x.length;
+
         var binBounds = new double[nBins + 1];
         double finalBinWidth = binWidth;
         Arrays.setAll(binBounds, i -> (i * finalBinWidth) + xMin);

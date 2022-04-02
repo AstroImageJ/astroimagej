@@ -1556,21 +1556,18 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         sp.plot.add("dot", sr);
         sp.plot.setLineWidth(2);
         sp.plot.drawLine(firstSlice, radius, lastSlice, radius);
-        //sp.plot.add("+", DoubleStream.generate(() -> radius).limit(lastSlice - firstSlice).toArray());
         sp.plot.setColor(Color.GREEN);
         sp.plot.setLineWidth(4);
         sp.plot.add("dot", br);
         sp.plot.setLineWidth(2);
         sp.plot.drawLine(firstSlice, rBack1, lastSlice, rBack1);
-        //sp.plot.add("+", DoubleStream.generate(() -> rBack1).limit(lastSlice - firstSlice).toArray());
         sp.plot.setColor(Color.BLUE);
         sp.plot.setLineWidth(4);
         sp.plot.add("dot", br2);
         sp.plot.setLineWidth(2);
         sp.plot.drawLine(firstSlice, rBack2, lastSlice, rBack2);
-        //sp.plot.add("+", DoubleStream.generate(() -> rBack2).limit(lastSlice - firstSlice).toArray());
 
-        sp.plot.addLegend("Aperture Radius\nMedian Radius\nInner Sky\nMedian Inner\nOuter Sky\nMedian Outer");
+        sp.plot.addLegend("Aperture Radius\nInner Sky\nOuter Sky");
 
         sp.plot.addLabel(0, 0, "Final radii: Source - " + radius + ", Sky (min) - " +rBack1 + ", Sky (max) - " + rBack2);
 

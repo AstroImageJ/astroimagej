@@ -336,7 +336,7 @@ task aijRun(dependsOn: sync, type: JavaExec) {
         languageVersion = JavaLanguageVersion.of(shippingJava)
     }
 
-    classpath = sourceSets.main.runtimeClasspath
+    classpath = files(file("${projectDir}/AIJ-Run/ij.jar"))
     mainClass = 'ij.ImageJ'
 }
 

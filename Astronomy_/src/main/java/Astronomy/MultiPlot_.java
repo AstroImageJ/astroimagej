@@ -17283,7 +17283,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             ImagePlus image = WindowManager.getImage("Seeing Profile");
             if (image == null) {
             } else if (image.getStack() instanceof PlotVirtualStack) {
-                GifWriter.save(image, imagepath);
+                GifWriter.save(image, outBase + seeingProfileSuffix + ".gif");
             } else if (format.equalsIgnoreCase("png")) {
                 IJ.runPlugIn(image, "ij.plugin.PNG_Writer", imagepath);
             } else if (format.equalsIgnoreCase("jpg")) {

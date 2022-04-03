@@ -846,7 +846,7 @@ public class FolderOpener implements PlugIn {
 		}
 
 		var increment = safeParse(((TextField) gd.getNumericFields().get(1)).getText(), 1);
-		var count = safeParse(((TextField) gd.getStringFields().get(2)).getText(), list.length);
+		var count = Math.min(safeParse(((TextField) gd.getStringFields().get(2)).getText(), list.length), list.length);
 		var start = safeParse(((TextField) gd.getNumericFields().get(0)).getText(), 1);
 
 		sizeInBytes = (long) bitDepth * width * height * ((long) ((count - start + 1) / increment) * stackCountPerImage);

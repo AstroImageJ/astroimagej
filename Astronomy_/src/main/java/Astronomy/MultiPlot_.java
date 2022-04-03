@@ -17282,6 +17282,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             String imagepath = outBase + seeingProfileSuffix + "." + format;
             ImagePlus image = WindowManager.getImage("Seeing Profile");
             if (image == null) {
+            } else if (image.getStack() instanceof PlotVirtualStack) {
+                GifWriter.save(image, fimagepath);
             } else if (format.equalsIgnoreCase("png")) {
                 IJ.runPlugIn(image, "ij.plugin.PNG_Writer", imagepath);
             } else if (format.equalsIgnoreCase("jpg")) {
@@ -17319,14 +17321,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 saveDataSubset(outBase + dataSubsetSuffix + ".dat");
             }
         }
-
-        if (saveAll) {
-            String finalOutBase = outBase;
-            Arrays.stream(WindowManager.getImageTitles()).filter("Seeing Profile"::equals).findAny().ifPresent(
-                    s -> GifWriter.save(WindowManager.getImage(s), finalOutBase + "seeing_profile.gif")
-            );
-        }
-
     }
 
     static void saveLogToFile(String path) {

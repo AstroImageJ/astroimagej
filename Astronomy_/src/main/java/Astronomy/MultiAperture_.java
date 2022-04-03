@@ -1569,7 +1569,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
         sp.plot.addLegend("Aperture Radius\nInner Sky\nOuter Sky");
 
-        sp.plot.addLabel(0, 0, "Final radii: Source - " + radius + ", Sky (min) - " +rBack1 + ", Sky (max) - " + rBack2);
+        sp.plot.addLabel(0, 0, "Final aperture: " + radius + " - " + rBack1 + " - " + rBack2 + " pixels");
 
         sp.plot.draw();
         sp.plot.getStack().prependPlot(sp.plot);

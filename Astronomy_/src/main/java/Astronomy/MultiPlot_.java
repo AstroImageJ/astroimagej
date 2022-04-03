@@ -13,6 +13,7 @@ import ij.gui.*;
 import ij.io.OpenDialog;
 import ij.io.SaveDialog;
 import ij.measure.ResultsTable;
+import ij.plugin.GifWriter;
 import ij.plugin.PlugIn;
 import ij.process.ImageProcessor;
 import ij.text.TextPanel;
@@ -17317,6 +17318,13 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             } else {
                 saveDataSubset(outBase + dataSubsetSuffix + ".dat");
             }
+        }
+
+        if (saveAll) {
+            String finalOutBase = outBase;
+            Arrays.stream(WindowManager.getImageTitles()).filter("Seeing Profile"::equals).findAny().ifPresent(
+                    s -> GifWriter.save(WindowManager.getImage(s), finalOutBase + "seeing_profile.gif")
+            );
         }
 
     }

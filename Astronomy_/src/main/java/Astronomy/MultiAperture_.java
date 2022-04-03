@@ -1523,8 +1523,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         imp.setSlice(firstSlice);
 
         // Clear and redraw aperture at initical location
-        /*OverlayCanvas.getOverlayCanvas(asw.getImagePlus()).removeApertureRois();
-        drawAperture();*/
+        OverlayCanvas.getOverlayCanvas(asw.getImagePlus()).clearRois();
+        measureAperture();
 
         radii = radii.stream().filter(Seeing_Profile.ApRadii::isValid).toList();
         var sr = radii.stream().mapToDouble(Seeing_Profile.ApRadii::r).toArray();

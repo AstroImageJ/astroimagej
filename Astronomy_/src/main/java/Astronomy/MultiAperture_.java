@@ -3550,7 +3550,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         sliders[2] = gd.addFloatSlider("Fixed/Base radius of photometric aperture", 0.01, radius > 100 ? radius : 100, false, radius, 3, 1.0, d -> radius = d);
         sliders[3] = gd.addFloatSlider("Fixed/Base radius of inner background annulus", 0.01, rBack1 > 100 ? rBack1 : 100, false, rBack1, 3, 1.0, d -> rBack1 = d);
         sliders[4] = gd.addFloatSlider("Fixed/Base radius of outer background annulus", 0.01, rBack2 > 100 ? rBack2 : 100, false, rBack2, 3, 1.0, d -> rBack2 = d);
-
+        gd.addLineSeparator();
         gd.addGenericComponent(ApRadius.FIXED.setupButton());
         gd.setOverridePosition(true);
         gd.addGenericComponent(ApRadius.AUTO_FIXED.setupButton());
@@ -3633,9 +3633,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         listb.add(b -> debugAp = b);
         var s = gd.addCheckboxGroup(1, 3, new String[]{"Auto comparison stars", "Enable log", "Show peaks"}, new boolean[]{suggestCompStars, enableLog, debugAp}, listb);
         var boxes = s.subComponents();
-        ((JComponent) boxes.get(0)).setToolTipText("If enabled, uses the following settings to generate a set of comparison stars based on the references star.");
+        ((JComponent) boxes.get(0)).setToolTipText("If enabled, uses the following settings to generate a set of comparison stars based on the star in the specified Base Aperture below.");
         ((JComponent) boxes.get(1)).setToolTipText("Enable log output for comparison star selection.");
-        ((JComponent) boxes.get(2)).setToolTipText("Draw dummy apertures to show peak values comp. star selection is considering.");
+        ((JComponent) boxes.get(2)).setToolTipText("Draw dummy apertures to indicate image peaks that comp. star selection is considering.");
 
         final var gauss = gd.addBoundedNumericField("Smoothing Filter Radius", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), gaussRadius, 1, 10, "pixels", d -> gaussRadius = d);
         final var autoPeaks = gd.addCheckbox("Auto Thresholds", autoPeakValues, b -> autoPeakValues = b);

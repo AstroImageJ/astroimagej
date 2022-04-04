@@ -4039,32 +4039,33 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         /**
          * Fixed based on user setting.
          */
-        FIXED("Fixed Apertures as selected above", 0),
+        FIXED("Fixed Apertures as selected above", 0, ""),
         /**
          * Auto radius based on radial profile.
          */
-        AUTO_FIXED("Auto Fixed Apertures from first image T1 radial profile", 0.01),
+        AUTO_FIXED("Auto Fixed Apertures from first image T1 radial profile", 0.01, ""),
         /**
          * Auto variable radius based on radial profile.
          */
-        AUTO_VAR_RAD_PROF("Auto Variable Apertures from each image T1 radial profile", 0.01),
+        AUTO_VAR_RAD_PROF("Auto Variable Apertures from each image T1 radial profile", 0.01, ""),
         /**
          * Auto variable radius based on FWHM.
          */
-        AUTO_VAR_FWHM("Auto Variable Apertures from each image T1 FWHM", 1.4),
+        AUTO_VAR_FWHM("Auto Variable Apertures from each image T1 FWHM", 1.4, ""),
         /**
          * Auto variable aperture based on the entire stack.
          */
-        AUTO_FIXED_STACK_RAD("Auto Fixed Apertures from multi-image T1 radial profiles", 0.01);
+        AUTO_FIXED_STACK_RAD("Auto Fixed Apertures from multi-image T1 radial profiles", 0.01, "");
 
         private static final ButtonGroup group = new ButtonGroup();
-        private final String buttonText;
+        private final String buttonText, tooltip;
         public double cutoff;
         private JRadioButton button = null;
 
-        ApRadius(String buttonText, double cutoff) {
+        ApRadius(String buttonText, double cutoff, String tooltip) {
             this.buttonText = buttonText;
             this.cutoff = cutoff;
+            this.tooltip = tooltip;
         }
 
         static void setSelected() {
@@ -4075,6 +4076,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             button = GenericSwingDialog.makeRadioButton(buttonText, b -> {
                 if (b) radiusSetting = this;
             }, group);
+
+            button.setToolTipText(tooltip);
+
             return button;
         }
 

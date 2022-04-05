@@ -1499,9 +1499,11 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
         var x = xCenter;
         var y = yCenter;
+        var oc = OverlayCanvas.getOverlayCanvas(asw.getImagePlus());
         for (int i = firstSlice; i <= lastSlice; i++) {
             asw.showSlice(i);
             asw.updateWCS();
+            oc.clearRois();
 
             if (useWCS && asw.goodWCS && raPos > -1000000 && decPos > -1000000) {
                 double[] xy = asw.getWCS().wcs2pixels(new double[]{raPos, decPos});
@@ -1518,13 +1520,21 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             }
             x = sp.X0;
             y = sp.Y0;
+
+            var ap = new ApertureRoi(x, y, rs.r(), rs.r2(), rs.r3(), Double.NaN, true);
+            ap.setApColor(Color.BLUE);
+            ap.setShowValues(false);
+            ap.setImage(asw.getImagePlus());
+            oc.add(ap);
+            oc.repaint();
+
             radii.add(rs);
             IJ.showProgress(i / (float)(lastSlice - firstSlice));
         }
         imp.setSlice(firstSlice);
 
         // Clear and redraw aperture at initical location
-        OverlayCanvas.getOverlayCanvas(asw.getImagePlus()).clearRois();
+        oc.clearRois();
         measureAperture();
 
         radii = radii.stream().filter(Seeing_Profile.ApRadii::isValid).toList();

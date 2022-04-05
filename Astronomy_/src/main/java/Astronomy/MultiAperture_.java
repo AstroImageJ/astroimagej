@@ -2560,27 +2560,31 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             var br = stackRadii.stream().mapToDouble(Seeing_Profile.ApRadii::r2).toArray();
             var br2 = stackRadii.stream().mapToDouble(Seeing_Profile.ApRadii::r3).toArray();
 
+            var mr = Stat.median(sr);
+            var mbr = Stat.median(br);
+            var mbr2 = Stat.median(br2);
+
             sp.plot.setXYLabels("Slice", "Radius [px]");
             sp.plot.setLimits(0, lastSlice - firstSlice, 0, Math.max(new Stat(br2).maximum(), rBack2) + 5);
             sp.plot.setColor(Color.RED);
             sp.plot.setLineWidth(4);
             sp.plot.add("dot", sr);
             sp.plot.setLineWidth(2);
-            sp.plot.drawLine(firstSlice, radius, lastSlice, radius);
+            sp.plot.drawLine(firstSlice, mr, lastSlice, mr);
             sp.plot.setColor(Color.GREEN);
             sp.plot.setLineWidth(4);
             sp.plot.add("dot", br);
             sp.plot.setLineWidth(2);
-            sp.plot.drawLine(firstSlice, rBack1, lastSlice, rBack1);
+            sp.plot.drawLine(firstSlice, mbr, lastSlice, mbr);
             sp.plot.setColor(Color.BLUE);
             sp.plot.setLineWidth(4);
             sp.plot.add("dot", br2);
             sp.plot.setLineWidth(2);
-            sp.plot.drawLine(firstSlice, rBack2, lastSlice, rBack2);
+            sp.plot.drawLine(firstSlice, mbr2, lastSlice, mbr2);
 
             sp.plot.addLegend("Aperture Radius\nInner Sky\nOuter Sky");
 
-            sp.plot.addLabel(0, 0, "Median aperture: " + radius + " - " + rBack1 + " - " + rBack2 + " pixels");
+            sp.plot.addLabel(0, 0, "Median aperture: " + mr + " - " + mbr + " - " + mbr2 + " pixels");
 
             sp.plot.draw();
             sp.plot.getStack().prependPlot(sp.plot);

@@ -1485,6 +1485,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     private Seeing_Profile.ApRadii evaluateStackForRadii() {
         List<Seeing_Profile.ApRadii> radii = new ArrayList<>(lastSlice - firstSlice);
         var sp = new Seeing_Profile(true);
+        sp.setRoundRadii(false);
 
         var raPos = 0d;
         var decPos = 0d;
@@ -1580,7 +1581,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
         sp.plot.addLegend("Aperture Radius\nInner Sky\nOuter Sky");
 
-        sp.plot.addLabel(0, 0, "Final aperture: " + radius + " - " + rBack1 + " - " + rBack2 + " pixels");
+
+        sp.plot.addLabel(0, 0, "Final aperture: " + IJ.d2s(radius, 3) + " - " + IJ.d2s(rBack1, 3) + " - " + IJ.d2s(rBack2, 3) + " pixels");
 
         sp.plot.draw();
         sp.plot.getStack().prependPlot(sp.plot);
@@ -2584,7 +2586,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
             sp.plot.addLegend("Aperture Radius\nInner Sky\nOuter Sky");
 
-            sp.plot.addLabel(0, 0, "Median aperture: " + mr + " - " + mbr + " - " + mbr2 + " pixels");
+            sp.plot.addLabel(0, 0, "Median aperture: " + IJ.d2s(mr, 3) + " - " + IJ.d2s(mbr, 3) + " - " + IJ.d2s(mbr2, 3) + " pixels");
 
             sp.plot.draw();
             sp.plot.getStack().prependPlot(sp.plot);
@@ -2798,6 +2800,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             } else {
                 if (sp == null) {
                     sp = new Seeing_Profile(true);
+                    sp.setRoundRadii(false);
                 }
                 double vRadSky = 0, vRadBack1 = 0, vRadBack2 = 0;
                 nRD = 0;
@@ -3564,7 +3567,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         sliders[2] = gd.addFloatSlider("Fixed/Base radius of photometric aperture", 0.01, radius > 100 ? radius : 100, false, radius, 3, 1.0, d -> radius = d);
         sliders[3] = gd.addFloatSlider("Fixed/Base radius of inner background annulus", 0.01, rBack1 > 100 ? rBack1 : 100, false, rBack1, 3, 1.0, d -> rBack1 = d);
         sliders[4] = gd.addFloatSlider("Fixed/Base radius of outer background annulus", 0.01, rBack2 > 100 ? rBack2 : 100, false, rBack2, 3, 1.0, d -> rBack2 = d);
-        gd.addLineSeparator();
+        gd.addLineSeparator();//todo spacing
         gd.addGenericComponent(ApRadius.FIXED.setupButton());
         gd.setOverridePosition(true);
         gd.addGenericComponent(ApRadius.AUTO_FIXED.setupButton());

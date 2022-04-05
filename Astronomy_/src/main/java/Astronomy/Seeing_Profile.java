@@ -59,6 +59,7 @@ public class Seeing_Profile implements PlugInFilter
 	boolean estimate = true;
 	boolean recenter = true;
 	boolean subtract = false;
+    boolean roundRadii = true;
 
 	static public double SEEING_RADIUS1 = 1.7;	// IN UNITS OF fwhm
 	static public double SEEING_RADIUS2 = 1.9;
@@ -255,7 +256,7 @@ public class Seeing_Profile implements PlugInFilter
 
             for (int bin=0; bin<nBins; bin++)
                 {
-                if (count[bin]>0 && (means[bin]/count[bin]) > meanPeak) meanPeak = means[bin]/count[bin];
+                if (count[bin]>0 && (means[bin]/count[bin]) > meanPeak) meanPeak = means[bin]/(double) count[bin];
                 }
             meanPeakRaw = meanPeak;
             meanPeak -= background;
@@ -270,9 +271,9 @@ public class Seeing_Profile implements PlugInFilter
                 {
                 if (count[bin] > 0)
                     {
-                    means_raw[bin] = means[bin] / count[bin];
-                    means[bin]  =  ((means[bin] / count[bin]) - background)/meanPeak;
-                    radii[bin] /= count[bin];
+                    means_raw[bin] = means[bin] / (double) count[bin];
+                    means[bin]  =  ((means[bin] / (double) count[bin]) - background)/meanPeak;
+                    radii[bin] /= (double) count[bin];
                     }
                 else
                     {
@@ -310,9 +311,9 @@ public class Seeing_Profile implements PlugInFilter
                     {
                     if (means[bin] < autoModeFluxCutOff) 
                         {
-                        r1 = Math.ceil(radii[bin]);
-                        r2 = Math.ceil(r1*1.75);
-                        r3 = Math.ceil(r2*1.5);
+                        r1 = radii[bin];
+                        r2 = r1*1.75;
+                        r3 = r2*1.5;
                         foundR1 = true;
                         break;
                         }
@@ -326,14 +327,27 @@ public class Seeing_Profile implements PlugInFilter
                 }
             iterations++;
             }
+
+        if (roundRadii) {
+            r1 = Math.ceil(r1);
+            r2 = Math.ceil(r2);
+            r3 = Math.ceil(r3);
+        }
         
         
         if (!foundR1)
             {
-    		r1 = (int)(fwhm*SEEING_RADIUS1);
-            r2 = (int)(fwhm*SEEING_RADIUS2);
-            r3 = (int)(fwhm*SEEING_RADIUS3);
+    		r1 = (fwhm*SEEING_RADIUS1);
+            r2 = (fwhm*SEEING_RADIUS2);
+            r3 = (fwhm*SEEING_RADIUS3);
             }
+
+        if (roundRadii) {
+            r1 = (int)(r1);
+            r2 = (int)(r2);
+            r3 = (int)(r3);
+        }
+
         Prefs.set("seeingprofile.radius", r1);
         Prefs.set("seeingprofile.rback1", r2);
         Prefs.set("seeingprofile.rback2", r3);
@@ -434,6 +448,9 @@ public class Seeing_Profile implements PlugInFilter
         }
 		}
 
+        public void setRoundRadii(boolean roundRadii) {
+            this.roundRadii = roundRadii;
+        }
 
 	/**
 	 * Plots all the points in the ROI versus radius as points (not binned).

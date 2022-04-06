@@ -1485,7 +1485,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     private Seeing_Profile.ApRadii evaluateStackForRadii() {
         List<Seeing_Profile.ApRadii> radii = new ArrayList<>(lastSlice - firstSlice);
         var sp = new Seeing_Profile(true);
-        sp.setRoundRadii(false);
+        //sp.setRoundRadii(false);
 
         var raPos = 0d;
         var decPos = 0d;
@@ -2800,7 +2800,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             } else {
                 if (sp == null) {
                     sp = new Seeing_Profile(true);
-                    sp.setRoundRadii(false);
+                    //sp.setRoundRadii(false);
                 }
                 double vRadSky = 0, vRadBack1 = 0, vRadBack2 = 0;
                 nRD = 0;

@@ -32,6 +32,7 @@ import java.text.DecimalFormatSymbols;
 import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.*;
+import java.util.function.Function;
 import java.util.zip.GZIPOutputStream;
 
 import static java.lang.Math.*;
@@ -1645,6 +1646,10 @@ public class IJU {
     }
 
     public static double getTcPhase(double e, double omega) {
+        return getTcPhase(e, omega, TransitLocation.PRIMARY);
+    }
+
+    public static double getTcPhase(double e, double omega, TransitLocation tl) {
         // 2014/05/07 Transcoded from exofast_getphase.pro by Karen Collins (University of Louisville)
         // NAME:
         //   EXOFAST_GETPHASE
@@ -1663,9 +1668,12 @@ public class IJU {
         // Modification History:
         //  2010/06 - Rewritten by Jason Eastman (OSU)
 
-        double trueanom = PI / 2.0 - omega; //Primary Transit
+        double trueanom = tl.trueAnon(omega);
         double eccenanom = 2.0 * atan(sqrt((1.0 - e) / (1.0 + e)) * tan((trueanom) / 2.0));
-        return (eccenanom - e * sin(eccenanom)) / (2.0 * PI);
+        var M = eccenanom - e * sin(e);
+        var phase = M / (2*PI);
+        if (phase < 0) phase += 1;
+        return phase;
     }
 
 
@@ -2125,6 +2133,46 @@ public class IJU {
 
     public static int parseInteger(String s) {
         return parseInteger(s, -1);
+    }
+
+    public enum TransitLocation {
+        /**
+         * Primary Transit
+         */
+        PRIMARY(omega -> PI/2d - omega),
+        /**
+         * Secondary eclipse
+         */
+        SECONDARY(omega -> 3*PI/2d - omega),
+        /**
+         * L5 Point (trailing)
+         */
+        L5(omega -> 5*PI/6d - omega),
+        /**
+         * L4 Point (leading)
+         */
+        L4(omega -> PI/6d - omega),
+        /**
+         * Periastron
+         */
+        PERIASTRON(omega -> 0d),
+        /**
+         * Ascending Node of primary (max RV)
+         */
+        ASCENDING_NODE(omega -> -omega),
+        /**
+         * Descending Node of primary (min RV)
+         */
+        DESCENDING_NODE(omega -> PI - omega);
+
+        private Function<Double, Double> trueAnomCalc;
+        TransitLocation(Function<Double, Double> trueAnomCalc) {
+            this.trueAnomCalc = trueAnomCalc;
+        }
+
+        public double trueAnon(double omega) {
+            return trueAnomCalc.apply(omega);
+        }
     }
 
 }

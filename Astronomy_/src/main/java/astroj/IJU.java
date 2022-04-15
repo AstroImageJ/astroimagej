@@ -1434,6 +1434,14 @@ public class IJU {
     }
 
     public static double[] transitModel(double[] bjd, double f0, double inclination, double p0, double ar, double tc, double P,
+                                        double e, double omega, double u1, double u2, boolean useLonAscNode, double lonAscNode) {
+        return transitModelV1(bjd, f0, inclination, p0, ar, tc, P, e, omega, u1, u2, useLonAscNode, lonAscNode);
+    }
+
+    /**
+     * Based on EXOFASTv1.
+     */
+    private static double[] transitModelV1(double[] bjd, double f0, double inclination, double p0, double ar, double tc, double P,
                                                 double e, double omega, double u1, double u2, boolean useLonAscNode, double lonAscNode) {
         // This routine computes the lightcurve for occultation of a
         // quadratically limb-darkened source and was derived from the EXOFAST

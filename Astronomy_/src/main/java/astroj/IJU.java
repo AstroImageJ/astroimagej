@@ -2,11 +2,13 @@
 
 package astroj;
 
+import astroj.modeling.TransitModelV2;
 import flanagan.interpolation.LinearInterpolation;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.Prefs;
 import ij.WindowManager;
+import ij.astro.logging.AIJLogger;
 import ij.gui.ImageWindow;
 import ij.io.FileInfo;
 import ij.io.OpenDialog;
@@ -1435,6 +1437,15 @@ public class IJU {
 
     public static double[] transitModel(double[] bjd, double f0, double inclination, double p0, double ar, double tc, double P,
                                         double e, double omega, double u1, double u2, boolean useLonAscNode, double lonAscNode) {
+        if (true) {
+            try {
+                return TransitModelV2.modelTransit(bjd, f0, inclination, p0, ar, tc, P, e, omega, u1, u2, useLonAscNode, lonAscNode);
+            } catch (Exception r) {
+                AIJLogger.log(r);
+                r.printStackTrace();
+            }
+        }
+        AIJLogger.log(1);
         return transitModelV1(bjd, f0, inclination, p0, ar, tc, P, e, omega, u1, u2, useLonAscNode, lonAscNode);
     }
 

@@ -118,12 +118,11 @@ public class TransitModelV2 {
         var secondary = t.second();
 
         if (primary.length > 0) {
-            AIJLogger.log(7);//todo here
+            AIJLogger.log(7);
             var x = occultQuadCel(takeIndices(z, primary), u1, u2, p);
             //x.1 = mu1
-            var c = 0;
-            for (int i : primary) {
-                modelFlux[i] = x.first()[c++];
+            for (int i = 0; i < primary.length; i++) {
+                modelFlux[primary[i]] = x.first()[i];
             }
         }
 
@@ -131,7 +130,8 @@ public class TransitModelV2 {
         // calculate the fraction of the planet that is visible for each time
         if (optionals.thermal() != 0 || optionals.reflect() != 0) {
             AIJLogger.log(6);
-            var x = occultQuadCel(takeIndices(z, secondary), u1, u2, 1/p);
+            Arrays.fill(planetVisible, 1);
+            var x = occultQuadCel(Arrays.stream(takeIndices(z, secondary)).map(d -> d/p).toArray(), 0, 0, 1/p);
             //x.1 = mu1
             var c = 0;
             for (int i : secondary) {
@@ -163,12 +163,11 @@ public class TransitModelV2 {
         }
 
         // normalization and dilution due to neighboring star
-
         for (int i = 0; i < modelFlux.length; i++) {
             if (optionals.dilute() != 0) {
                 AIJLogger.log(3);
                 modelFlux[i] = f0*(modelFlux[i]*(1-optionals.dilute())+optionals.dilute());
-            } else {//todo here
+            } else {
                 modelFlux[i] *= f0;
             }
         }
@@ -326,7 +325,7 @@ public class TransitModelV2 {
                 var ndxuse = takeIndices(notUsedYet, ingressUni);
                 var zNdx = takeIndices(z, ndxuse);
                 var sqArea = sqAreaTriangle(zNdx, p);
-                for (int i = 0; i < ndxuse.length; i++) {//todo when this IoBs, transit is half depth, when this suceeds, transit is broken
+                for (int i = 0; i < ndxuse.length; i++) {
                     var kiteArea2 = sqrt(sqArea[i]);
                     var kap1 = atan2(kiteArea2, (1-p)*(p+1)+z[ndxuse[i]]*z[ndxuse[i]]);
                     var kap0 = atan2(kiteArea2, (p-1)*(p+1)+z[ndxuse[i]]*z[ndxuse[i]]);
@@ -502,7 +501,7 @@ public class TransitModelV2 {
             }
         }
 
-        // Final, todo goto here, loop/codeblock breaks?
+        // Final
         var omega = 1 - u1/3D - u2/6D;
 
         // avoid Lutz-Kelker bias (negative values of p0 allowed)
@@ -546,7 +545,7 @@ public class TransitModelV2 {
      */
     private static TripleDoubleArray celBulirschVec(double[] k2, double[] kc, double[] p, double[] a1, double[] a2, double[] a3, double[] b1, double[] b2, double[] b3) {
         // This assumes the first value of a and b uses p,m the rest have p=1
-        var ca = Arrays.stream(k2).map(Math::sqrt).toArray();
+        var ca = Arrays.stream(k2).map(d -> sqrt(d * 2.2e-16)).toArray();
 
         // Avoid undefined k2=1 case
         var t = where(k2, d -> d == 1 || d == 0);
@@ -663,9 +662,9 @@ public class TransitModelV2 {
 
         for (int i = 0; i < f1.length; i++) {
             double v = m[i] * (m[i] + p1[i]);
-            f1[i] = 0.5*PI*(a1[i]*m[i]+b1[i])/v;
-            f2[i] = 0.5*PI*(a2[i]*m[i]+b2[i])/ v;
-            f3[i] = 0.5*PI*(a3[i]*m[i]+b3[i])/ v;
+            f1[i] = 0.5*PI*(a1[i]*m[i]+b1[i])/(m[i] * (m[i] + p[i]));
+            f2[i] = 0.5*PI*(a2[i]*m[i]+b2[i])/v;
+            f3[i] = 0.5*PI*(a3[i]*m[i]+b3[i])/v;
         }
 
         return new TripleDoubleArray(f1, f2, f3);
@@ -759,17 +758,17 @@ public class TransitModelV2 {
         var sqArea = new double[z0.length];
         // There are six cases to consider
         for (int i = 0; i < z0.length; i++) {
-            if (p0 < z0[i] && z0[i] <= 1) {
+            if ((p0 <= z0[i]) && (z0[i] <= 1)) {
                 sqArea[i] = (p0+(z0[i]+1))*(1-(p0-z0[i]))*(1+(p0-z0[i]))*(p0+(z0[i]-1));
-            } else if (p0 > z0[i] && p0 <= 1) {
+            } else if ((z0[i] <= p0) && (p0 <= 1)) {
                 sqArea[i] = (z0[i]+(p0+1))*(1-(z0[i]-p0))*(1+(z0[i]-p0))*(z0[i]+(p0-1));
-            } else if (p0 < 1 && z0[i] > 1) {
+            } else if ((p0 <= 1) && (1 <= z0[i])) {
                 sqArea[i] = (p0+(1+z0[i]))*(z0[i]-(p0-1))*(z0[i]+(p0-1))*(p0+(1-z0[i]));
-            } else if (1 <= p0 && z0[i] <= 1) {
+            } else if ((z0[i] <= 1) && (1 <= p0)) {
                 sqArea[i] = (z0[i]+(1+p0))*(p0-(z0[i]-1))*(p0+(z0[i]-1))*(z0[i]+(1-p0));
-            } else if (1 <= p0 && z0[i] > p0) {
+            } else if ((1 <= p0) && (p0 <= z0[i])) {
                 sqArea[i] = (1+(p0+z0[i]))*(z0[i]-(1-p0))*(z0[i]+(1-p0))*(1+(p0-z0[i]));
-            } else if (p0 < z0[i] && z0[i] > 1) {
+            } else if (1 <= z0[i] && z0[i] <= p0) {
                 sqArea[i] = (1+(z0[i]+p0))*(p0-(1-z0[i]))*(p0+(1-z0[i]))*(1+(z0[i]-p0));
             }
         }

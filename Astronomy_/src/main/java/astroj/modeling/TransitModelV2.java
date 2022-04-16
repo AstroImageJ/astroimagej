@@ -413,7 +413,7 @@ public class TransitModelV2 {
                 if (origin.length > 0) {
                     // lambda_6
                     for (int i : takeIndices(ndxuse, origin)) {
-                        lambdaD[i] = pow(-2./3.*(1.-p*p), 1.5);
+                        lambdaD[i] = -2./3D*pow((1.-p*p), 1.5);
                     }
                     if (notUsed7.length == 0) break first;
                     ndxuse = takeIndices(ndxuse, notUsed7);
@@ -436,9 +436,9 @@ public class TransitModelV2 {
                     onembmr2[i] = (p-z[ndxuse[i]]+1)*(1-p+z[ndxuse[i]]);
                     fourbr[i] = 4*z[ndxuse[i]]*p;
                     fourbrinv[i] = 1/fourbr[i];
+                    k2[i] = onembpr2[i]*fourbrinv[i]+1;
                     onembmr2inv[i] = 1/onembmr2[i];
                     k2inv[i] = 1/k2[i];
-                    k2[i] = onembpr2[i]*fourbrinv[i]+1;
                     kc2[i] = onembpr2[i]*onembmr2inv[i];
                     kc[i] = sqrt(kc2[i]);
                     bmrdpr[i] = (z[ndxuse[i]]-p)/(z[ndxuse[i]]+p);

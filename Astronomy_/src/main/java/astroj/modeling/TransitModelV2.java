@@ -339,7 +339,7 @@ public class TransitModelV2 {
             var ocltor = t.first();
             var notUsed3 = t.second();
             if (ocltor.length > 0) {
-                var ndxuse = takeIndices(notUsedYet, ingressUni);
+                var ndxuse = takeIndices(notUsedYet, ocltor);
                 if (p < 0.5) {
                     // Case 5
                     var q = 2*p;
@@ -376,7 +376,7 @@ public class TransitModelV2 {
             zNotUsed = takeIndices(z, notUsedYet);
 
             // Case 3, 4, 9, 10 - planet completely inside star
-            t = where(zNotUsed, d -> d < 1-p && p < 1);
+            t = where(zNotUsed, d -> d <= 1-p && p < 1);
             var inside = t.first();
             var notUsed5 = t.second();
             if (inside.length > 0) {

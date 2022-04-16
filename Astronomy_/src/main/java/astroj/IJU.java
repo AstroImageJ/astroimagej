@@ -1822,7 +1822,7 @@ public class IJU {
         // set default values
         double thresh = 1e-10;
 
-        if (ecc < 0.0 || ecc > 1.0)
+        if (ecc < 0.0 || ecc >= 1.0)
             return m;
 
         double mx = m;

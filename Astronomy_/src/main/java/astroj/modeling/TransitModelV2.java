@@ -548,8 +548,10 @@ public class TransitModelV2 {
         var ca = Arrays.stream(k2).map(d -> sqrt(d * 2.2e-16)).toArray();
 
         // Avoid undefined k2=1 case
-        var t = where(k2, d -> d == 1 || d == 0);
+        var t = where(k2, d -> d == 1);
         var indx = t.first();
+        t = where(kc, d -> d == 0);
+        indx = concatWithArray(indx, t.first());
         for (int i : indx) {
             kc[i] = 2.22e-16;
         }
@@ -668,6 +670,12 @@ public class TransitModelV2 {
         }
 
         return new TripleDoubleArray(f1, f2, f3);
+    }
+
+    static int[] concatWithArray(int[] array1, int[] array2) {
+        int[] result = Arrays.copyOf(array1, array1.length + array2.length);
+        System.arraycopy(array2, 0, result, array1.length, array2.length);
+        return result;
     }
 
     private static double[] copy(double[] a) {//todo needed elsehwere?

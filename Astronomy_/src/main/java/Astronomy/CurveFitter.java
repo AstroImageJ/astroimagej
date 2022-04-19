@@ -871,7 +871,7 @@ public class CurveFitter {
             if (compSum == 0) continue;
             rel_flux[i] = source[ap2reference][i] / compSum;
             var inverseFactor = 0D;
-            if (source[curve][i] == 0) {
+            if (source[ap2reference][i] == 0) {
                 rel_flux[i] = Double.POSITIVE_INFINITY;
             } else {
                 var factor = Math.sqrt(srcvar[ap2reference][i] / (source[ap2reference][i] * source[ap2reference][i]) + compVar / (compSum * compSum));

@@ -16,13 +16,15 @@ import static java.lang.Math.*;
 //todo javadoc, rmeove massive comments copied from exofast
 public class TransitModelV2 {
 
-    public static double[] modelTransit(double[] bjd, double f0, double inclination, double p0, double ar, double tc, double P,
+    public static double[] modelTransit(double[] bjd, double f0, double inclination, double p, double ar, double tc, double period,
                                         double e, double omega, double u1, double u2, boolean useLonAscNode, double lonAscNode) {
         var m = new ModelOptionals();
         m.setTc(tc);
         m.lonAscNode = useLonAscNode ? lonAscNode : null;
         //todo handle lon, check params - tp, p, etc
-        var a = transitModelV2(bjd, inclination, ar, tc - P * IJU.getTcPhase(e, omega), P, e, omega, p0, u1, u2, f0, m);
+        //  something wrong with tp?
+        //  check period, does it need to be in bjd?
+        var a = transitModelV2(bjd, inclination, ar, tc - period * IJU.getTcPhase(e, omega), period, e, omega, p, u1, u2, f0, m);
         return a;
     }
 
@@ -102,7 +104,7 @@ public class TransitModelV2 {
         var timeOptions = new TimeOptionals(optionals.q, null, null, optionals.c);
 
         // If we have the stellar radius, we can convert time to the target's barycentric frame
-        var transitBjd = optionals.rStar() != 0 ? bjd2target(time, inc, ar*optionals.rStar(), tp, period, e, omega, timeOptions) : time;
+        var transitBjd = optionals.rStar != null ? bjd2target(time, inc, ar*optionals.rStar(), tp, period, e, omega, timeOptions) : time;
 
         // Impact parameter
         //todo check - z2/depth, x2/x, y2/y are passed to this
@@ -117,13 +119,19 @@ public class TransitModelV2 {
         var primary = t.first();
         var secondary = t.second();
 
-        if (primary.length > 0) {
+        /*if (primary.length > 0) {
             AIJLogger.log(7);
             var x = occultQuadCel(takeIndices(z, primary), u1, u2, p);
             //x.1 = mu1
             for (int i = 0; i < primary.length; i++) {
                 modelFlux[primary[i]] = x.first()[i];
             }
+        }*/
+        if (primary.length > 0) {//todo this is testing code as for some reason this gives a transit
+            AIJLogger.log(7);
+            var x = occultQuadCel(z, u1, u2, p);
+            //x.1 = mu1
+            modelFlux = x.first();
         }
 
         var planetVisible = new double[time.length];
@@ -458,7 +466,7 @@ public class TransitModelV2 {
                 var Piofk = t1.a1;
                 var Eofk = t1.a2;
                 //var Em1mKdm = t1.a3;
-                for (int i = 0; i < ndxuse.length; i++) {
+                for (int i = 0; i < ndxuse.length; i++) {//todo something wrong here?
                     lambdaD[ndxuse[i]] = 2*sqrt(onembmr2[i])*(onembpr2[i]*Piofk[i] -(4-7*p*p-z[ndxuse[i]]*z[ndxuse[i]])*Eofk[i])/(9*PI);
                 }
             }
@@ -933,7 +941,7 @@ public class TransitModelV2 {
         for (int i = 0; i < a1.length; i++) {
             if (Double.isFinite(optionals.q()[i])) {
                 a2[i] = a[i]*optionals.q()[i]/(1+optionals.q()[i]);
-                a1[i] = a2[i]/(optionals.q()[i]);//todo q =0, so a1 = NaN
+                a1[i] = a2[i]/(optionals.q()[i]);
             } else {
                 a2[i] = a[i];
             }
@@ -998,7 +1006,7 @@ public class TransitModelV2 {
 
         // now convert to stellar frame (which is relevant for transits)
         for (int i = 0; i < nPlanets; i++) {
-            for (int j = 0; j < x2[i].length; j++) {
+            for (int j = 0; j < x2[i].length; j++) {//todo x,y,z1s are 0s
                 x0[i][j] = x2[i][j] - x1[j];
                 y0[i][j] = y2[i][j] - y1[j];
                 z0[i][j] = z2[i][j] - z1[j];
@@ -1386,7 +1394,6 @@ public class TransitModelV2 {
             this(null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
         }
 
-        //todo check defaults when null
         public double rStar() {
             return rStar == null ? 0 : rStar;
         }

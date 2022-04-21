@@ -21,9 +21,6 @@ public class TransitModelV2 {
         var m = new ModelOptionals();
         m.setTc(tc);
         m.lonAscNode = useLonAscNode ? lonAscNode : null;
-        //todo handle lon, check params - tp, p, etc
-        //  something wrong with tp?
-        //  check period, does it need to be in bjd?
         var a = transitModelV2(bjd, inclination, ar, tc - period * IJU.getTcPhase(e, omega), period, e, omega, p, u1, u2, f0, m);
         return a;
     }
@@ -107,7 +104,6 @@ public class TransitModelV2 {
         var transitBjd = optionals.rStar != null ? bjd2target(time, inc, ar*optionals.rStar(), tp, period, e, omega, timeOptions) : time;
 
         // Impact parameter
-        //todo check - z2/depth, x2/x, y2/y are passed to this
         var te = impactParameter(transitBjd, inc, ar, tp, period, new ImpactOptionals(new double[]{e}, new double[]{omega}, optionals.lonAscNode == null ? new double[]{} : new double[]{optionals.lonAscNode}, optionals.q == null ? null: new double[]{optionals.q()}, 1));
         var z = te.first();
         var depth = te.second();
@@ -115,23 +111,24 @@ public class TransitModelV2 {
         // Primary transit
         var modelFlux = new double[time.length];
         Arrays.fill(modelFlux, 1);
-        var t = where(depth, d -> d < 0);
+        var t = where(depth, d -> d < 0);//todo <0 = ingress, >0 = egress - depth is wrong?
         var primary = t.first();
         var secondary = t.second();
 
-        /*if (primary.length > 0) {
-            AIJLogger.log(7);
-            var x = occultQuadCel(takeIndices(z, primary), u1, u2, p);
-            //x.1 = mu1
-            for (int i = 0; i < primary.length; i++) {
-                modelFlux[primary[i]] = x.first()[i];
+        if (true) { // todo remove, only supposed to run on z over primary indices
+            if (primary.length > 0) {//todo this is testing code as for some reason this gives a transit
+                var x = occultQuadCel(z, u1, u2, p);
+                //x.1 = mu1
+                modelFlux = x.first();
             }
-        }*/
-        if (primary.length > 0) {//todo this is testing code as for some reason this gives a transit
-            AIJLogger.log(7);
-            var x = occultQuadCel(z, u1, u2, p);
-            //x.1 = mu1
-            modelFlux = x.first();
+        } else {
+            if (primary.length > 0) {//todo why is this broken
+                var x = occultQuadCel(takeIndices(z, primary), u1, u2, p);
+                //x.1 = mu1
+                for (int i = 0; i < primary.length; i++) {
+                    modelFlux[primary[i]] = x.first()[i];
+                }
+            }
         }
 
         var planetVisible = new double[time.length];
@@ -463,7 +460,7 @@ public class TransitModelV2 {
                 var Piofk = t1.a1;
                 var Eofk = t1.a2;
                 //var Em1mKdm = t1.a3;
-                for (int i = 0; i < ndxuse.length; i++) {//todo something wrong here?
+                for (int i = 0; i < ndxuse.length; i++) {
                     lambdaD[ndxuse[i]] = 2*sqrt(onembmr2[i])*(onembpr2[i]*Piofk[i] -(4-7*p*p-z[ndxuse[i]]*z[ndxuse[i]])*Eofk[i])/(9*PI);
                 }
             }
@@ -683,7 +680,7 @@ public class TransitModelV2 {
         return result;
     }
 
-    private static double[] copy(double[] a) {//todo needed elsehwere?
+    private static double[] copy(double[] a) {
         return Arrays.copyOf(a, a.length);
     }
 
@@ -1003,7 +1000,7 @@ public class TransitModelV2 {
 
         // now convert to stellar frame (which is relevant for transits)
         for (int i = 0; i < nPlanets; i++) {
-            for (int j = 0; j < x2[i].length; j++) {//todo x,y,z1s are 0s
+            for (int j = 0; j < x2[i].length; j++) {
                 x0[i][j] = x2[i][j] - x1[j];
                 y0[i][j] = y2[i][j] - y1[j];
                 z0[i][j] = z2[i][j] - z1[j];
@@ -1179,7 +1176,6 @@ public class TransitModelV2 {
 
         var meanAnom = Arrays.stream(bjdTarget).map(targetTime -> (2*PI*(1 + targetTime - tp)/period) % (2*PI)).toArray();
 
-        //todo check kepler is updated
         var eccAnom = Arrays.stream(meanAnom).map(m -> IJU.solveKeplerEq(m, e));
 
         var trueAnom = eccAnom.map(m -> 2* atan(sqrt((1 + e)/(1 - e))* tan(0.5*m))).toArray();
@@ -1344,8 +1340,6 @@ public class TransitModelV2 {
         private Double z1;
         private Double au;
         private Double c;
-
-        //todo check if these are used, check x,y,z as they don't seem to be used
         private Double beam;
 
         private Double ellipsoidal;

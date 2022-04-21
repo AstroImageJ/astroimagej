@@ -288,7 +288,7 @@ public class TransitModelV2 {
         var lambdaE = new double[nz];
 
         var p = abs(p0);
-        var z = z0;
+        var z = copy(z0);
 
         var x1 = new double[nz];
         var x2 = new double[nz];
@@ -296,7 +296,7 @@ public class TransitModelV2 {
         for (int i = 0; i < x1.length; i++) {
             x1[i] = (p - z[i])*(p - z[i]);
             x2[i] = (p + z[i])*(p + z[i]);
-            x3[i] = p*p + z[i]*z[i];
+            x3[i] = p*p - z[i]*z[i];
         }
 
         first: { //todo this is bad, mimicing goto
@@ -326,13 +326,11 @@ public class TransitModelV2 {
             }
 
             // Case 2, 7, 8 - ingress/egress (uniform disk only)
-            var zNotUsed = takeIndices(z, notUsedYet);
-            var t = where(zNotUsed, d -> (d >= abs(1-p)) && (d < 1+p));
+            var t = where(takeIndices(z, notUsedYet), d -> (d >= abs(1-p)) && (d < 1+p));
             var ingressUni = t.first();
             if (ingressUni.length > 0) {
                 var ndxuse = takeIndices(notUsedYet, ingressUni);
-                var zNdx = takeIndices(z, ndxuse);
-                var sqArea = sqAreaTriangle(zNdx, p);
+                var sqArea = sqAreaTriangle(takeIndices(z, ndxuse), p);
                 for (int i = 0; i < ndxuse.length; i++) {
                     var kiteArea2 = sqrt(sqArea[i]);
                     var kap1 = atan2(kiteArea2, (1-p)*(p+1)+z[ndxuse[i]]*z[ndxuse[i]]);
@@ -343,7 +341,7 @@ public class TransitModelV2 {
             }
 
             // Case 5, 6, 7 - the edge of planet lies at origin of star
-            t = where(zNotUsed, d -> d == p);
+            t = where(takeIndices(z, notUsedYet), d -> d == p);
             var ocltor = t.first();
             var notUsed3 = t.second();
             if (ocltor.length > 0) {
@@ -356,9 +354,9 @@ public class TransitModelV2 {
                     var Kk = t1.second();
 
                     for (int i : ndxuse) {
-                        lambdaD[i] = 1./3.+2./9./PI*(4.*(2.*p*p-1.)*Ek+(1.-4.*p*p)*Kk);
+                        lambdaD[i] = 1D/3D+2D/9D/PI*(4.*(2.*p*p-1)*Ek+(1.-4.*p*p)*Kk);
                         // eta_2
-                        etad[i] = 3.*p*p*p*p/2.;
+                        etad[i] = 3.*p*p*p*p/2D;
                         lambdaE[i] = p*p; // uniform disk
                     }
                 } else if (p > 0.5) {
@@ -369,22 +367,21 @@ public class TransitModelV2 {
                     var Kk = t1.second();
                     // lambda_3
                     for (int i : ndxuse) {
-                        lambdaD[i] = 1./3.+16.*p/9./PI*(2.*p*p-1.)*Ek-(32.*p*p*p*p-20.*p*p+3.)/9./PI/p*Kk;
+                        lambdaD[i] = 1D/3D+16*p/9D/PI*(2D*p*p-1)*Ek-(32*p*p*p*p-20*p*p+3)/9D/PI/p*Kk;
                     }
                 } else {
                     // Case 6
                     for (int i : ndxuse) {
-                        lambdaD[i] = 1./3.-4./PI/9.;
-                        etad[i] = 3./32d;
+                        lambdaD[i] = 1D/3D-4D/PI/9D;
+                        etad[i] = 3D/32D;
                     }
                 }
             }
             if (notUsed3.length == 0) break first;
             notUsedYet = takeIndices(notUsedYet, notUsed3);
-            zNotUsed = takeIndices(z, notUsedYet);
 
             // Case 3, 4, 9, 10 - planet completely inside star
-            t = where(zNotUsed, d -> d <= 1-p && p < 1);
+            t = where(takeIndices(z, notUsedYet), d -> d <= 1-p && p < 1);
             var inside = t.first();
             var notUsed5 = t.second();
             if (inside.length > 0) {
@@ -761,7 +758,7 @@ public class TransitModelV2 {
     //todo check with IDl if this is correct implementation of 2-param IDL atan
     // https://www.l3harrisgeospatial.com/docs/atan.html
     private static double atan2(double x, double y) {
-        return Math.atan(y/x);
+        return Math.atan2(x,y);
     }
 
     /**

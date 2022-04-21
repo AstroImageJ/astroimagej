@@ -928,11 +928,11 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             //filter out B&C, Log, Errors windows if they exist
             int j = 0;
             for (String value : tables)
-                if (value.equals("B&C") || value.startsWith("Log") || value.equals("Errors")) j++;
+                if (value.equals("B&C") || value.startsWith("Log") || value.endsWith(" Log") || value.equals("Errors")) j++;
             String[] filteredTables = new String[tables.length - j];
             j = 0;
             for (String s : tables)
-                if (!s.equals("B&C") && !s.startsWith("Log") && !s.equals("Errors")) {
+                if (!s.equals("B&C") && !s.startsWith("Log") && !s.equals("Errors") && !s.endsWith(" Log")) {
                     filteredTables[j] = s;
                     j++;
                 }

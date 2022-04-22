@@ -1621,7 +1621,15 @@ public class IJU {
 //            IJ.log("transitModel: the impact parameter z = "+z+" does not fit any condition handled by the code.");
         }
 
+        var priStart = tc - P * getTcPhase(e, omega, TransitLocation.L4);
+        var priEnd = tc + P * getTcPhase(e, omega, TransitLocation.L5);
         for (int i = 0; i < nz; i++) {
+            // Only consider the primary transit, fixes short-period transit fitting, such as TESS data
+            if (bjd[i] <= priStart || bjd[i] >= priEnd) {
+                muo1[i] = f0;
+                continue;
+            }
+
             // avoid Lutz-Kelker bias (negative values of p0 allowed)
             if (p0 > 0) {
                 // limb darkened flux

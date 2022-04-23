@@ -393,17 +393,25 @@ public class FitOptimization implements AutoCloseable {
         var hasActionToUndo = false;
         var toRemove = new TreeSet<Integer>();
 
-        // Residuals are only calculated w/ transit fit
-        var med = 0d;
-        if (!useTransitFit[curve]) {
-            med = Stat.median(Arrays.copyOf(y[curve], nn[curve]));
-        }
 
         var sigma = switch (cleanMode) {
             case RMS -> MultiPlot_.sigma[curve];
             case POINT_MEDIAN -> Stat.median(Arrays.copyOf(yerr[curve], nn[curve]));
             default -> 0;
         };
+
+        // Residuals and RMS are only calculated w/ transit fit
+        var res = new double[nn[curve]];
+        if (!useTransitFit[curve]) {
+            sigma = 0;
+            var med = Stat.median(Arrays.copyOf(y[curve], nn[curve]));
+            for (int i = 0; i < nn[curve]; i++) {
+                res[i] = y[curve][i] - med;
+                sigma += res[i] * res[i];
+            }
+            sigma /= nn[curve];
+            sigma = Math.sqrt(sigma);
+        }
         for (int i = 0; i < nn[curve]; i++) {
             if (cleanMode == CleanMode.POINT) sigma = yerr[curve][i];
             var comparator = switch (cleanMode) {
@@ -411,7 +419,7 @@ public class FitOptimization implements AutoCloseable {
                 default -> {
                     // Residuals are only calculated w/ transit fit
                     if (!useTransitFit[curve]) {
-                        yield y[curve][i] - med;
+                        yield res[i];
                     } else {
                         yield residual[curve][i];
                     }

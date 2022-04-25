@@ -1434,15 +1434,15 @@ public class IJU {
     }
 
     public static double[] transitModel(double[] bjd, double f0, double inclination, double p0, double ar, double tc, double P,
-                                        double e, double omega, double u1, double u2, boolean useLonAscNode, double lonAscNode) {
-        return transitModelV1(bjd, f0, inclination, p0, ar, tc, P, e, omega, u1, u2, useLonAscNode, lonAscNode);
+                                        double e, double omega, double u1, double u2, boolean useLonAscNode, double lonAscNode, boolean fitPrimary) {
+        return transitModelV1(bjd, f0, inclination, p0, ar, tc, P, e, omega, u1, u2, useLonAscNode, lonAscNode, fitPrimary);
     }
 
     /**
      * Based on EXOFASTv1.
      */
     private static double[] transitModelV1(double[] bjd, double f0, double inclination, double p0, double ar, double tc, double P,
-                                                double e, double omega, double u1, double u2, boolean useLonAscNode, double lonAscNode) {
+                                                double e, double omega, double u1, double u2, boolean useLonAscNode, double lonAscNode, boolean fitPrimary) {
         // This routine computes the lightcurve for occultation of a
         // quadratically limb-darkened source and was derived from the EXOFAST
         // procedure exofast_occultquad (Mandel & Agol (2002); Eastman et al., (2013))
@@ -1491,9 +1491,10 @@ public class IJU {
 //        IJ.log("TcPhase="+getTcPhase(e,omega));
 //        IJ.log("tp="+tp);
 
-        double[] zArray = impactParameter(bjd, inclination, ar, tp, P, e, omega, useLonAscNode, lonAscNode); // impact parameter in units of rs
+        double[][] bzArray = impactParameter(bjd, inclination, ar, tp, P, e, omega, useLonAscNode, lonAscNode); // impact parameter in units of rs
 
-        int nz = zArray.length;
+        int nz = bjd.length;
+
         double[] lambdad = new double[nz];
         double[] etad = new double[nz];
         double[] lambdae = new double[nz];
@@ -1508,11 +1509,20 @@ public class IJU {
         double kap1, kap0, kapArg1, kapArg0, lambdaeArg, z2, x1, x2, x3, q, n;
 
         for (int i = 0; i < nz; i++) {
-            if (abs(p - zArray[i]) < tol) zArray[i] = p;
-            else if (abs((p - 1.0) - zArray[i]) < tol) zArray[i] = p - 1.0;
-            else if (abs((1.0 - p) - zArray[i]) < tol) zArray[i] = 1.0 - p;
-            else if (zArray[i] < tol) zArray[i] = 0.0;
-            z = zArray[i];
+            if (fitPrimary && bzArray[i][1] <= 0.0 || !fitPrimary && bzArray[i][1] > 0) {
+                // Only consider the part of the orbit where a primary or secondary could occur, depending on which is being modeled.
+                //(When z > 0, the planet is closer to the observer than the star.)
+                // Otherwise, the overall model returned will include identical transits at both the primary and secondary times of transit,
+                // which would cause a problem when fitting full-phase data, such as TESS or Kepler space-based data.
+                // To calculate both a primary and secondary transit model for full phase data, the model must be calculated twice using the different set
+                // of transit and eclipse shape parameters and combined separately from this function.
+                continue;
+            }
+            if (abs(p - bzArray[i][0]) < tol) bzArray[i][0] = p;
+            else if (abs((p - 1.0) - bzArray[i][0]) < tol) bzArray[i][0] = p - 1.0;
+            else if (abs((1.0 - p) - bzArray[i][0]) < tol) bzArray[i][0] = 1.0 - p;
+            else if (bzArray[i][0] < tol) bzArray[i][0] = 0.0;
+            z = bzArray[i][0];
             z2 = z * z;
             x1 = (p - z) * (p - z);
             x2 = (p + z) * (p + z);
@@ -1621,11 +1631,17 @@ public class IJU {
 //            IJ.log("transitModel: the impact parameter z = "+z+" does not fit any condition handled by the code.");
         }
 
-        var priStart = tc - P * getTcPhase(e, omega, TransitLocation.L4);
-        var priEnd = tc + P * getTcPhase(e, omega, TransitLocation.L5);
+//        var priStart = tc - P * getTcPhase(e, omega, TransitLocation.L4);
+//        var priEnd = tc + P * getTcPhase(e, omega, TransitLocation.L5);
         for (int i = 0; i < nz; i++) {
-            // Only consider the primary transit, fixes short-period transit fitting, such as TESS data
-            if (bjd[i] <= priStart || bjd[i] >= priEnd) {
+
+            if (fitPrimary && bzArray[i][1] <= 0.0 || !fitPrimary && bzArray[i][1] > 0) {
+                // Only consider the part of the orbit where a primary or secondary could occur, depending on which is being modeled.
+                //(When z > 0, the planet is closer to the observer than the star.)
+                // Otherwise, the overall model returned will include identical transits at both the primary and secondary times of transit,
+                // which would cause a problem when fitting full-phase data, such as TESS or Kepler space-based data.
+                // To calculate both a primary and secondary transit model for full phase data, the model must be calculated twice using the different set
+                // of transit and eclipse shape parameters and combined separately from this function.
                 muo1[i] = f0;
                 continue;
             }
@@ -1633,7 +1649,7 @@ public class IJU {
             // avoid Lutz-Kelker bias (negative values of p0 allowed)
             if (p0 > 0) {
                 // limb darkened flux
-                muo1[i] = (1.0 - ((1.0 - u1 - 2.0 * u2) * lambdae[i] + (u1 + 2.0 * u2) * (lambdad[i] + 2.0 / 3.0 * (p > zArray[i] ? 1 : 0)) + u2 * etad[i]) / (1.0 - u1 / 3.0 - u2 / 6.0)) * f0;
+                muo1[i] = (1.0 - ((1.0 - u1 - 2.0 * u2) * lambdae[i] + (u1 + 2.0 * u2) * (lambdad[i] + 2.0 / 3.0 * (p > bzArray[i][0] ? 1 : 0)) + u2 * etad[i]) / (1.0 - u1 / 3.0 - u2 / 6.0)) * f0;
 //                IJ.log("yModel["+i+"]="+muo1[i]);
                 // uniform disk
 //                mu0[i]=1.0-lambdae[i];
@@ -1645,7 +1661,7 @@ public class IJU {
 //                                [lambdae/2d0 - etad]])
             } else {
                 // limb darkened flux
-                muo1[i] = (1.0 + ((1.0 - u1 - 2.0 * u2) * lambdae[i] + (u1 + 2.0 * u2) * (lambdad[i] + 2.0 / 3.0 * (p > zArray[i] ? 1 : 0)) + u2 * etad[i]) / (1.0 - u1 / 3.0 - u2 / 6.0)) * f0;
+                muo1[i] = (1.0 + ((1.0 - u1 - 2.0 * u2) * lambdae[i] + (u1 + 2.0 * u2) * (lambdad[i] + 2.0 / 3.0 * (p > bzArray[i][0] ? 1 : 0)) + u2 * etad[i]) / (1.0 - u1 / 3.0 - u2 / 6.0)) * f0;
 //                IJ.log("yModel["+i+"]="+muo1[i]);
                 // uniform disk
 //                mu0[i]=1.0+lambdae[i];
@@ -1693,7 +1709,7 @@ public class IJU {
     }
 
 
-    public static double[] impactParameter(double[] bjd, double inclination, double ar, double tp,
+    public static double[][] impactParameter(double[] bjd, double inclination, double ar, double tp,
                                            double P, double e, double omega, boolean useLonAscNode, double lonAscNode) {
 //      From EXOFAST exofast_getb.pro
 //      Transcoded to Java by Karen Collins 2014/05/05 (Universty of Louisville)
@@ -1723,10 +1739,10 @@ public class IJU {
 //      result      - the impact parameter for each BJD, in units of R_* 
 
         int len = bjd.length;
-        double[] b = new double[len];
+        double[][] b = new double[len][2];
         double trueanom = 0.0;
         double meananom;
-        double x, y, r, tmp, xold, yold, eccanom;
+        double x, y, r, z, tmp, xold, yold, eccanom;
 
         for (int i = 0; i < len; i++) {
             meananom = (2.0 * PI * (1.0 + (bjd[i] - tp) / P)) % (2.0 * PI);
@@ -1746,7 +1762,7 @@ public class IJU {
             x = -r * cos(trueanom + omega);
             tmp = r * sin(trueanom + omega);
             y = -tmp * cos(inclination);
-//            double z =  tmp*sin(inclination);
+            z =  tmp*sin(inclination);
 
             //Rotate by the Longitude of Ascending Node
 //            // For transits, it is not constrained, so we assume Omega=PI)
@@ -1757,7 +1773,8 @@ public class IJU {
                 y = -xold * sin(lonAscNode) - yold * cos(lonAscNode);
             }
 
-            b[i] = sqrt(x * x + y * y);
+            b[i][0] = sqrt(x * x + y * y);
+            b[i][1] = z;
         }
 
         return b;

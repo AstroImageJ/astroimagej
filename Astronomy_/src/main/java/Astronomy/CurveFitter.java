@@ -1472,9 +1472,9 @@ public class CurveFitter {
                             }
 
 
-                            yModel1 = IJU.transitModel(xModel1, bestFit[0], bestFit[4], bestFit[1], bestFit[2], bestFit[3], orbitalPeriod[curve], forceCircularOrbit[curve] ? 0.0 : eccentricity[curve], forceCircularOrbit[curve] ? 0.0 : omega[curve], bestFit[5], bestFit[6], useLonAscNode[curve], lonAscNode[curve]);
+                            yModel1 = IJU.transitModel(xModel1, bestFit[0], bestFit[4], bestFit[1], bestFit[2], bestFit[3], orbitalPeriod[curve], forceCircularOrbit[curve] ? 0.0 : eccentricity[curve], forceCircularOrbit[curve] ? 0.0 : omega[curve], bestFit[5], bestFit[6], useLonAscNode[curve], lonAscNode[curve], true);
 
-                            yModel2 = IJU.transitModel(xModel2, bestFit[0], bestFit[4], bestFit[1], bestFit[2], bestFit[3], orbitalPeriod[curve], forceCircularOrbit[curve] ? 0.0 : eccentricity[curve], forceCircularOrbit[curve] ? 0.0 : omega[curve], bestFit[5], bestFit[6], useLonAscNode[curve], lonAscNode[curve]);
+                            yModel2 = IJU.transitModel(xModel2, bestFit[0], bestFit[4], bestFit[1], bestFit[2], bestFit[3], orbitalPeriod[curve], forceCircularOrbit[curve] ? 0.0 : eccentricity[curve], forceCircularOrbit[curve] ? 0.0 : omega[curve], bestFit[5], bestFit[6], useLonAscNode[curve], lonAscNode[curve], true);
 
                             // f0 = param[curve][0]; // baseline flux
                             // p0 = param[curve][1]; // r_p/r_*
@@ -1910,7 +1910,7 @@ public class CurveFitter {
                 u1 = lockToCenter[curve][5] ? priorCenter[5] : param[fp < nPars ? fp++ : nPars - 1];  //quadratic limb darkening parameter 1
                 u2 = lockToCenter[curve][6] ? priorCenter[6] : param[fp < nPars ? fp++ : nPars - 1];  //quadratic limb darkening parameter 2
 
-                lcModel = IJU.transitModel(detrendX, f0, incl, p0, ar, tc, orbitalPeriod[curve], e, ohm, u1, u2, useLonAscNode[curve], lonAscNode[curve]);
+                lcModel = IJU.transitModel(detrendX, f0, incl, p0, ar, tc, orbitalPeriod[curve], e, ohm, u1, u2, useLonAscNode[curve], lonAscNode[curve], true);
             }
 
             int dp = 0;

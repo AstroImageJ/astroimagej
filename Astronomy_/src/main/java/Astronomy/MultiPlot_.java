@@ -191,6 +191,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static double pixelScale;
     static double zoom;
     static double xMin;
+    static double xBase;
     static double xMax;
     static double xWidth;
     static double yMin;
@@ -372,7 +373,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static JButton[] extractPriorsButton;
     static JCheckBox[] autoUpdatePriorsCB;
     static boolean[] autoUpdatePriors;
-
+    static boolean skipPlotUpdate;
     static JMenuBar[] fitMenuBar;
     static JMenu[] fitFileMenu, autoPriorsMenu;
     static JCheckBoxMenuItem[] baselinePriorCB, depthPriorCB, arPriorCB, tcPriorCB, inclPriorCB;
@@ -1905,6 +1906,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         firstCurve = -1;
         for (int curve = 0; curve < maxCurves; curve++) {
             if (plotY[curve]) {
+                if ((firstCurve == -1)) {
+                    firstCurve = curve; //FIND THE FIRST CURVE TO DISPLAY - IT IS USED FOR THE Y-AXIS LABEL
+                    xBase=x[curve][0];
+                }
                 if (!showXAxisNormal) {
                     if (showXAxisAsPhase) {
                         for (int j = 0; j < nn[curve]; j++) {
@@ -1932,9 +1937,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 }
                 xMinimum[curve] = minOf(x[curve], nn[curve]); //FIND MIN AND MAX X OF EACH SELECTED DATASET
                 xMaximum[curve] = maxOf(x[curve], nn[curve]);
-                if ((firstCurve == -1)) {
-                    firstCurve = curve; //FIND THE FIRST CURVE TO DISPLAY - IT IS USED FOR THE Y-AXIS LABEL
-                }
                 if (ASInclude[curve])// && !force[curve])
                 {
                     if (xMinimum[curve] < xautoscalemin) xautoscalemin = xMinimum[curve];
@@ -1943,8 +1945,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             }
         }
 
-        if (firstCurve == -1)   //IF NO CURVES SELECTED FOR DISPLAY, USE THE FIRST CURVE
-        { firstCurve = 0; }
+        if (firstCurve == -1) {  //IF NO CURVES SELECTED FOR DISPLAY, USE THE FIRST CURVE
+            firstCurve = 0;
+            xBase = x[0][0];
+        }
 
         if (showVMarker1 || showVMarker2) {
             double v1 = vMarker1Value;
@@ -6063,6 +6067,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         keepFileNamesOnAppend = true;
         updatePlotRunning = false;
         autoAstroDataUpdateRunning = false;
+        skipPlotUpdate = false;
         boldedDatum = -1;
         pixelScale = 1.0;
 
@@ -6077,6 +6082,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         plotOptions = 0;
         xMin = 0.0;
+        xBase = 0.0;
         xMax = 0.0;
         xWidth = 0.3;
         yMin = 0.0;
@@ -8101,7 +8107,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             checkForUT(vmarker1spinner);
             vMarker1Value = (Double) vmarker1spinner.getValue(); //IJU.getSpinnerDoubleValue(vmarker1spinner);//
             Prefs.set("plot.vMarker1Value", vMarker1Value);
-            updatePlot(updateNoFits());
+            if (!skipPlotUpdate) updatePlot(updateNoFits());
         });
         vmarker1spinner.addMouseWheelListener(e -> vmarker1spinner.setValue((Double) vmarker1spinner.getValue() - e.getWheelRotation() * xStep));
         vmarker1panel.add(vmarker1spinner);
@@ -8155,7 +8161,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             checkForUT(vmarker2spinner);
             vMarker2Value = (Double) vmarker2spinner.getValue();
             Prefs.set("plot.vMarker2Value", vMarker2Value);
-            updatePlot(updateNoFits());
+            if (!skipPlotUpdate)  updatePlot(updateNoFits());
         });
         vmarker2spinner.addMouseWheelListener(e -> vmarker2spinner.setValue((Double) vmarker2spinner.getValue() - e.getWheelRotation() * xStep));
         vmarker2panel.add(vmarker2spinner);
@@ -9778,6 +9784,18 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         phaseradiogroup.add(hourssincetcButton);
         phaseradiogroup.add(orbitalphaseButton);
         unphasedButton.addActionListener(ae -> {
+            if (!showXAxisNormal && T0spinner != null && xBase > 0) {
+                //IJ.log("xBase="+xBase);
+                int epoch = (int)((xBase - T0)/period) + 1;
+                skipPlotUpdate = true;
+                vmarker2spinner.setValue(T0 + period * (epoch) + duration/48.0 - (int)xBase);
+                vmarker1spinner.setValue(T0 + period * (epoch) - duration/48.0 - (int)xBase);
+                dmarker3spinner.setValue(T0 + period * (epoch) + duration/48.0 - (int)xBase);
+                dmarker2spinner.setValue(T0 + period * (epoch) - duration/48.0 - (int)xBase);
+                useDMarker1CB.setSelected(false);
+                useDMarker4CB.setSelected(false);
+                skipPlotUpdate = false;
+            }
             showXAxisNormal = true;
             showXAxisAsDaysSinceTc = false;
             showXAxisAsHoursSinceTc = false;
@@ -9802,6 +9820,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             showXAxisAsHoursSinceTc = false;
             showXAxisAsPhase = false;
             vMarker1Value = -duration / 48.0;
+            skipPlotUpdate = true;
             if (vmarker1spinner != null && !showXAxisNormal) vmarker1spinner.setValue(vMarker1Value);
             vMarker2Value = duration / 48.0;
             if (vmarker1spinner != null && !showXAxisNormal) vmarker2spinner.setValue(vMarker2Value);
@@ -9809,6 +9828,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             if (vmarker1spinner != null && !showXAxisNormal) dmarker2spinner.setValue(dMarker2Value);
             dMarker3Value = duration / 48.0;
             if (vmarker1spinner != null && !showXAxisNormal) dmarker3spinner.setValue(dMarker3Value);
+            useDMarker1CB.setSelected(false);
+            useDMarker4CB.setSelected(false);
+            skipPlotUpdate = false;
             t0panel.setEnabled(true);
             periodpanel.setEnabled(true);
             durationpanel.setEnabled(true);
@@ -9838,14 +9860,18 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             durationspinner.setEnabled(true);
             twoxPeriodCB.setEnabled(true);
             oddNotEvenCB.setEnabled(twoxPeriod);
-            vMarker1Value = -duration / 48.0;
+            skipPlotUpdate = true;
+            vMarker1Value = -duration / 2.0;
             if (vmarker1spinner != null && !showXAxisNormal) vmarker1spinner.setValue(vMarker1Value);
-            vMarker2Value = duration / 48.0;
+            vMarker2Value = duration / 2.0;
             if (vmarker1spinner != null && !showXAxisNormal) vmarker2spinner.setValue(vMarker2Value);
-            dMarker2Value = -duration / 48.0;
+            dMarker2Value = -duration / 2.0;
             if (vmarker1spinner != null && !showXAxisNormal) dmarker2spinner.setValue(dMarker2Value);
-            dMarker3Value = duration / 48.0;
+            dMarker3Value = duration / 2.0;
             if (vmarker1spinner != null && !showXAxisNormal) dmarker3spinner.setValue(dMarker3Value);
+            useDMarker1CB.setSelected(false);
+            useDMarker4CB.setSelected(false);
+            skipPlotUpdate = false;
             Prefs.set("plot.showXAxisNormal", showXAxisNormal);
             Prefs.set("plot.showXAxisAsPhase", showXAxisAsPhase);
             Prefs.set("plot.showXAxisAsHoursSinceTc", showXAxisAsHoursSinceTc);
@@ -9867,14 +9893,18 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             durationspinner.setEnabled(true);
             twoxPeriodCB.setEnabled(true);
             oddNotEvenCB.setEnabled(twoxPeriod);
-            vMarker1Value = -duration / 48.0;
+            skipPlotUpdate = true;
+            vMarker1Value = -duration / 48.0 / period;
             if (vmarker1spinner != null && !showXAxisNormal) vmarker1spinner.setValue(vMarker1Value);
-            vMarker2Value = duration / 48.0;
+            vMarker2Value = duration / 48.0 / period;
             if (vmarker1spinner != null && !showXAxisNormal) vmarker2spinner.setValue(vMarker2Value);
-            dMarker2Value = -duration / 48.0;
+            dMarker2Value = -duration / 48.0 / period;
             if (vmarker1spinner != null && !showXAxisNormal) dmarker2spinner.setValue(dMarker2Value);
-            dMarker3Value = duration / 48.0;
+            dMarker3Value = duration / 48.0 / period;
             if (vmarker1spinner != null && !showXAxisNormal) dmarker3spinner.setValue(dMarker3Value);
+            useDMarker1CB.setSelected(false);
+            useDMarker4CB.setSelected(false);
+            skipPlotUpdate = false;
             Prefs.set("plot.showXAxisNormal", showXAxisNormal);
             Prefs.set("plot.showXAxisAsPhase", showXAxisAsPhase);
             Prefs.set("plot.showXAxisAsHoursSinceTc", showXAxisAsHoursSinceTc);
@@ -10118,7 +10148,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 useDMarker1 = false;
             } else if (e.getStateChange() == ItemEvent.SELECTED) useDMarker1 = true;
             dmarker1spinner.setEnabled(useDMarker1);
-            updatePlot(updateAllFits());
+            if (!skipPlotUpdate) updatePlot(updateAllFits());
         });
         useDMarker1CB.setHorizontalAlignment(JLabel.CENTER);
         dmarker1panel.add(useDMarker1CB);
@@ -10138,7 +10168,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             checkForUT(dmarker1spinner);
             dMarker1Value = (Double) dmarker1spinner.getValue();
             keepMarkersInOrder(1);
-            updatePlot(updateAllFits());
+            if (!skipPlotUpdate) updatePlot(updateAllFits());
         });
         dmarker1spinner.addMouseWheelListener(e -> {
             if (useDMarker1) {
@@ -10180,7 +10210,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 //                            ignoreUpdate = false;
 //                            }
             keepMarkersInOrder(2);
-            updatePlot(updateAllFits());
+            if (!skipPlotUpdate) updatePlot(updateAllFits());
         });
         dmarker2spinner.addMouseWheelListener(e -> {
             dmarker2spinner.setValue((Double) dmarker2spinner.getValue() - e.getWheelRotation() * xStep);
@@ -10267,7 +10297,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 //                            ignoreUpdate = false;
 //                            }
             keepMarkersInOrder(3);
-            updatePlot(updateAllFits());
+            if (!skipPlotUpdate) updatePlot(updateAllFits());
         });
         dmarker3spinner.addMouseWheelListener(e -> {
             dmarker3spinner.setValue((Double) dmarker3spinner.getValue() - e.getWheelRotation() * xStep);
@@ -10300,7 +10330,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             checkForUT(dmarker4spinner);
             dMarker4Value = (Double) dmarker4spinner.getValue();
             keepMarkersInOrder(4);
-            updatePlot(updateAllFits());
+            if (!skipPlotUpdate)  updatePlot(updateAllFits());
         });
         dmarker4spinner.addMouseWheelListener(e -> {
             if (useDMarker4) {
@@ -10316,7 +10346,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 useDMarker4 = false;
             } else if (e.getStateChange() == ItemEvent.SELECTED) useDMarker4 = true;
             dmarker4spinner.setEnabled(useDMarker4);
-            updatePlot(updateAllFits());
+            if (!skipPlotUpdate) updatePlot(updateAllFits());
         });
         useDMarker4CB.setHorizontalAlignment(JLabel.CENTER);
         dmarker4panel.add(useDMarker4CB);

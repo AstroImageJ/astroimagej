@@ -15,7 +15,6 @@ import ij.process.ShortProcessor;
 import nom.tam.fits.Fits;
 import nom.tam.fits.FitsException;
 import nom.tam.fits.HeaderCard;
-import nom.tam.fits.header.Standard;
 import nom.tam.util.FitsOutputStream;
 
 import java.io.*;
@@ -141,10 +140,11 @@ public class FITS_Writer implements PlugIn {
 
 		try (var f = new Fits()) {
 			// Setup for incremental writing
-			Files.createDirectories(Path.of(path).getParent());
-			if (!Path.of(path).toFile().exists()) Files.createFile(Path.of(path));
+			Path outPath = Path.of(path);
+			Files.createDirectories(outPath.getParent());
+			if (!outPath.toFile().exists()) Files.createFile(outPath);
 
-			var progressTrackingOutputStream = new ProgressTrackingOutputStream(new FileOutputStream(Path.of(path).toFile()));
+			var progressTrackingOutputStream = new ProgressTrackingOutputStream(new FileOutputStream(outPath.toFile()));
 			progressTrackingOutputStream.setTotalSizeInBytes(totalSize);
 
 			FitsOutputStream out;
@@ -156,7 +156,6 @@ public class FITS_Writer implements PlugIn {
 			}
 
 			var maxImage = specificSlice == -1 ? imp.getStackSize() : 1;
-			var firstImage = true;
 			IJ.showStatus("Converting data and writing...");
 			for (int slice = 1; slice <= maxImage; slice++) {
 				if (specificSlice != -1 && slice != specificSlice) continue;
@@ -170,7 +169,7 @@ public class FITS_Writer implements PlugIn {
 				if (oldHeader != null) {
 					for (String cardString : oldHeader) {
 						var card = HeaderCard.create(cardString);
-						if (Standard.BZERO.key().equals(card.getKey())) {
+						if (BZERO.key().equals(card.getKey())) {
 							useBZero = true;
 							break;
 						}
@@ -186,7 +185,7 @@ public class FITS_Writer implements PlugIn {
 					for (String cardString : oldHeader) {
 						var card = HeaderCard.create(cardString);
 						if (header.containsKey(card.getKey()) && // No overwriting of old header values
-								Arrays.stream(Standard.values()).anyMatch(s -> card.getKey().equals(s.key())) && // Use auto-genned HDU header info
+								Arrays.stream(values()).anyMatch(s -> card.getKey().equals(s.key())) && // Use auto-genned HDU header info
 								!card.isCommentStyleCard()) { // Allow duplicate comment-style cards
 							continue;
 						}
@@ -196,35 +195,15 @@ public class FITS_Writer implements PlugIn {
 
 				// Ensure scaling is correct
 				if (useBZero && !type.isFloatingPoint() && type != ImageType.BYTE) {
-					header.addValue(Standard.BZERO, (long)type.getBZero());
-					header.addValue(Standard.BSCALE, 1);
+					header.addValue(BZERO, (long)type.getBZero());
+					header.addValue(BSCALE, 1);
 				} else {
-					header.deleteKey(Standard.BZERO);
-					header.deleteKey(Standard.BSCALE);
+					header.deleteKey(BZERO);
+					header.deleteKey(BSCALE);
 				}
 
 				totalSize += hdu.getSize();
-				if (firstImage) {
-					f.addHDU(hdu);
-					firstImage = false;
-					f.write(out);
-				} else {
-					// Work around https://github.com/nom-tam-fits/nom-tam-fits/issues/266 till its resolved
-					header.setXtension(XTENSION_IMAGE);
-					header.deleteKey(EXTEND);
-					int pcount = header.getIntValue(PCOUNT, 0);
-					int gcount = header.getIntValue(GCOUNT, 1);
-					HeaderCard pcard = header.findCard(PCOUNT);
-					HeaderCard gcard = header.findCard(GCOUNT);
-					if (pcard == null) {
-						header.addValue(PCOUNT, pcount);
-					}
-					if (gcard == null) {
-						header.addValue(GCOUNT, gcount);
-					}
-
-					hdu.write(out);
-				}
+				hdu.write(out);
 
 				if (specificSlice == -1) IJ.showProgress(slice / (float)maxImage);
 			}

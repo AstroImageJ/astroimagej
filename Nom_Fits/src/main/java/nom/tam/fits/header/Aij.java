@@ -4,7 +4,7 @@ public enum Aij implements IFitsHeader {
     /**
      * Custom ANNOTATE key for AstroImageJ, where multiple ANNOTATE keys are allowed
      */
-    ANNOTATE(SOURCE.AIJ, HDU.IMAGE, VALUE.STRING, "");
+    ANNOTATE(SOURCE.AIJ, HDU.IMAGE, VALUE.STRING, null);
 
     @SuppressWarnings("CPD-START")
     private final IFitsHeader key;

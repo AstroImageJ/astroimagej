@@ -35,6 +35,7 @@ import nom.tam.fits.header.Bitpix;
 import nom.tam.fits.header.IFitsHeader;
 import nom.tam.util.ArrayDataInput;
 import nom.tam.util.ArrayDataOutput;
+import nom.tam.util.FitsOutput;
 
 import java.io.IOException;
 import java.io.PrintStream;
@@ -611,6 +612,10 @@ public abstract class BasicHDU<DataClass extends Data> implements FitsElement {
 
     @Override
     public void write(ArrayDataOutput stream) throws FitsException {
+        if (stream instanceof FitsOutput) {
+            boolean isFirst = ((FitsOutput) stream).isAtStart();
+            setPrimaryHDU(canBePrimary() && isFirst);
+        }
         if (this.myHeader != null) {
             this.myHeader.write(stream);
         }

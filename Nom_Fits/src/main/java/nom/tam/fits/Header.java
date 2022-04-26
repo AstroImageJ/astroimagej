@@ -48,6 +48,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static nom.tam.fits.header.Aij.ANNOTATE;
 import static nom.tam.fits.header.Standard.*;
 import static nom.tam.fits.header.extra.CXCExt.LONGSTRN;
 
@@ -1914,6 +1915,8 @@ public class Header implements FitsElement {
                 insertComment(nextHCard.getComment());
             } else if (nextHCard.getKey().equals(HISTORY.key())) {
                 insertHistory(nextHCard.getComment());
+            } else if (nextHCard.getKey().equals(ANNOTATE.key())) {
+                updateLine(ANNOTATE.key(), nextHCard);
             } else {
                 updateLine(nextHCard.getKey(), nextHCard);
             }
@@ -1990,7 +1993,9 @@ public class Header implements FitsElement {
         if (dup.isCommentStyleCard() || CONTINUE.key().equals(dup.getKey())) {
             return;
         }
-        LOG.log(Level.WARNING, "Multiple occurrences of key:" + dup.getKey());
+        if (isParserWarningsEnabled()) {
+            LOG.log(Level.WARNING, "Multiple occurrences of key:" + dup.getKey());
+        }
         if (this.duplicates == null) {
             this.duplicates = new ArrayList<>();
         }

@@ -565,7 +565,7 @@ public class FolderOpener implements PlugIn {
 		gd.addChoice("Type:", types, bitDepthToType(bitDepth));
 		gd.addStringField("Filter:", "", 10);
 		gd.setInsets(0,55,0);
-		gd.addMessage("enclose regex in parens", IJ.font10, Color.darkGray);
+		gd.addMessage("file name filtering text (can also enclose regex in parens)", IJ.font10, Color.darkGray);
 		gd.addNumericField("Start:", this.start, 0, 6, "");
 		gd.addStringField("Count:", countStr, 6);
 		gd.addNumericField("Step:", this.step, 0, 6, "");

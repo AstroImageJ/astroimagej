@@ -112,7 +112,7 @@ public abstract class OutputEncoder {
      * @see RandomAccess#getFilePointer()
      */
     public long getCount() {
-        return count;
+        return count + buf.buffer.position();
     }
 
     /**
@@ -144,7 +144,6 @@ public abstract class OutputEncoder {
         // should become
         // a private method of OutputBuffer, with leading 'buf.' references
         // stripped.
-        count += bytes;
         if (buf.buffer.remaining() < bytes) {
             flush();
         }
@@ -160,6 +159,7 @@ public abstract class OutputEncoder {
     protected synchronized void flush() throws IOException {
         int n = buf.buffer.position();
         out.write(buf.data, 0, n);
+        count += n;
         buf.buffer.rewind();
     }
 

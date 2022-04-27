@@ -7,6 +7,7 @@ import ij.Prefs;
 import ij.astro.AstroImageJ;
 import ij.astro.logging.AIJLogger;
 import ij.astro.logging.Translation;
+import ij.astro.types.Pair;
 import ij.astro.util.ArrayBoxingUtil;
 import ij.astro.util.ImageType;
 import ij.astro.util.LeapSeconds;
@@ -71,6 +72,8 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	// returns a float. This uses floats as there is no DoubleProcessor from imagej
 	@FunctionalInterface
 	private interface TableWrapper { double valueAt(int x, int y); }
+
+	private static HeaderCardFilter filter = null;
 
 	/**
 	 * Main processing method for the FITS_Reader object
@@ -208,6 +211,20 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 
 		}
 
+	}
+
+	public static void makeHeaderCardFilter(String k1, String v1, String k2, String v2) {
+		k1 = k1.equals("") ? null : k1;
+		v1 = v1.equals("") ? null : v1;
+		k2 = k2.equals("") ? null : k2;
+		v2 = v2.equals("") ? null : v2;
+		var kv1 = new Pair.OptionalGenericPair<>(k1, v1);
+		var kv2 = new Pair.OptionalGenericPair<>(k2, v2);
+		filter = new HeaderCardFilter(kv1, kv2);
+	}
+
+	public static void resetFilter() {
+		filter = null;
 	}
 
 	/**
@@ -353,11 +370,13 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 					AIJLogger.log("Cannot open 'table' images as a virtual stack.", false);
 				}
 
+				if (filter != null && filter.matchesFilter(hdr)) return;
 				imageProcessor = makeStackFrom3DData(data, tableHDU.getNRows(), makeHeadersTessCut(hdr, tableHDU, hdus));
 			}
 		} else if (isBasic3DImage(hdus)) {
 			imageProcessor = makeStackFromManyHDU(hdus);
 		} else if (hdu.getHeader().getIntValue(NAXIS) == 2) {
+			if (filter != null && filter.matchesFilter(hdu.getHeader())) return;
 			imageProcessor = twoDimensionalImageData2Processor(imgData.getKernel());
 		} else if (hdu.getHeader().getIntValue(NAXIS) == 3) {
 			if (FolderOpener.virtualIntended) {
@@ -615,6 +634,9 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		for (int i = 0; i < hdus.length; i++) {
 			// Get the Header as a String
 			var hdr = hdus[i].getHeader();
+
+			if (filter != null && filter.matchesFilter(hdr)) continue;
+
 			var header = "";
 			hdr.setSimple(true); // Needed for MA
 			final var baos = new ByteArrayOutputStream();
@@ -772,6 +794,18 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	}
 
 	private record PostFitsRead(Fits fits, BasicHDU<?>[] hdus) {}
+
+	public record HeaderCardFilter(Pair.OptionalGenericPair<String, String> filter1,
+								   Pair.OptionalGenericPair<String, String> filter2) {
+		public boolean matchesFilter(Header hdr) {
+			var match1 = filter1.first().map(hdr::findCard) // Maybe get the card
+					.map(v -> filter1.second().isEmpty() || filter1.second().get().equals(v.getValue()));
+			var match2 = filter2.first().map(hdr::findCard) // Maybe get the card
+					.map(v -> filter2.second().isEmpty() || filter2.second().get().equals(v.getValue()));
+
+			return match1.orElse(true) || match2.orElse(true);
+		}
+	}
 
 	private void closeThing(Closeable closeable) {
 		if (closeable == null) return;

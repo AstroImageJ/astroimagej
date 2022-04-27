@@ -488,6 +488,7 @@ public class FolderOpener implements PlugIn {
    			Recorder.recordCall("imp = FolderOpener.open(\""+dir+"\", \""+options+"\");");
 		}
 		virtualIntended = false;
+		FITS_Reader.resetFilter();
 	}
 	
 	private void openAsSeparateImages(ImagePlus imp) {
@@ -570,6 +571,16 @@ public class FolderOpener implements PlugIn {
 		gd.addStringField("Count:", countStr, 6);
 		gd.addNumericField("Step:", this.step, 0, 6, "");
 		gd.addNumericField("Scale:", this.scale, 0, 6, "%");
+
+		//todo check size and count for breakage
+		gd.addMessage("Filter based on FITS header keywords and values:");
+		gd.addStringField("Keyword 1:", "");
+		gd.addToSameRow();
+		gd.addStringField("Value 1:", "");
+		gd.addStringField("Keyword 2:", "");
+		gd.addToSameRow();
+		gd.addStringField("Value 2:", "");
+
 		gd.addCheckbox("Sort names numerically", sortFileNames);
 		gd.addCheckbox("Use virtual stack", Prefs.get("folderopener.openAsVirtualStack", openAsVirtualStack));
 		gd.addCheckbox("Open as separate images", false);		
@@ -610,6 +621,7 @@ public class FolderOpener implements PlugIn {
 		double count = Tools.parseDouble(countStr);
 		if (!Double.isNaN(count))
 			nFiles = (int)count;
+		FITS_Reader.makeHeaderCardFilter(gd.getNextString(), gd.getNextString(), gd.getNextString(), gd.getNextString());
 		this.step = (int)gd.getNextNumber();
 		if (this.step<1)
 			this.step = 1;

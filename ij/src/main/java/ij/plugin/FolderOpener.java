@@ -574,6 +574,7 @@ public class FolderOpener implements PlugIn {
 
 		//todo check size and count for breakage
 		gd.addMessage("Filter based on FITS header keywords and values:");
+		gd.addMessage("(filtering not accounted for in file count and stack size below)", IJ.font10, Color.darkGray);
 		gd.addStringField("Keyword 1:", "");
 		gd.addToSameRow();
 		gd.addStringField("Value 1:", "");

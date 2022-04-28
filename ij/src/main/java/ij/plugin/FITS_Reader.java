@@ -370,13 +370,13 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 					AIJLogger.log("Cannot open 'table' images as a virtual stack.", false);
 				}
 
-				if (filter != null && filter.matchesFilter(hdr)) return;
+				if (filter != null && !filter.matchesFilter(hdr)) return;
 				imageProcessor = makeStackFrom3DData(data, tableHDU.getNRows(), makeHeadersTessCut(hdr, tableHDU, hdus));
 			}
 		} else if (isBasic3DImage(hdus)) {
 			imageProcessor = makeStackFromManyHDU(hdus);
 		} else if (hdu.getHeader().getIntValue(NAXIS) == 2) {
-			if (filter != null && filter.matchesFilter(hdu.getHeader())) return;
+			if (filter != null && !filter.matchesFilter(hdu.getHeader())) return;
 			imageProcessor = twoDimensionalImageData2Processor(imgData.getKernel());
 		} else if (hdu.getHeader().getIntValue(NAXIS) == 3) {
 			if (FolderOpener.virtualIntended) {
@@ -635,7 +635,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			// Get the Header as a String
 			var hdr = hdus[i].getHeader();
 
-			if (filter != null && filter.matchesFilter(hdr)) continue;
+			if (filter != null && !filter.matchesFilter(hdr)) continue;
 
 			var header = "";
 			hdr.setSimple(true); // Needed for MA

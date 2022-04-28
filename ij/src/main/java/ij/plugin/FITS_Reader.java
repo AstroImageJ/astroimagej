@@ -799,11 +799,14 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 								   Pair.OptionalGenericPair<String, String> filter2) {
 		public boolean matchesFilter(Header hdr) {
 			var match1 = filter1.first().map(hdr::findCard) // Maybe get the card
-					.map(v -> filter1.second().isEmpty() || filter1.second().get().equalsIgnoreCase(v.getValue()));
+					.map(v -> (filter1.second().isPresent() && filter1.second().get().equalsIgnoreCase(v.getValue())) ||
+							filter1.second().isEmpty());
 			var match2 = filter2.first().map(hdr::findCard) // Maybe get the card
-					.map(v -> filter2.second().isEmpty() || filter2.second().get().equalsIgnoreCase(v.getValue()));
+					.map(v -> (filter2.second().isPresent() && filter2.second().get().equalsIgnoreCase(v.getValue())) ||
+							filter2.second().isEmpty());
 
-			return match1.orElse(true) || match2.orElse(true);
+			return (match1.orElse(false) || match2.orElse(false)) ||
+					(filter1.first().isEmpty() && filter2.first().isEmpty());
 		}
 	}
 

@@ -214,10 +214,10 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	}
 
 	public static void makeHeaderCardFilter(String k1, String v1, String k2, String v2) {
-		k1 = k1.equals("") ? null : k1;
-		v1 = v1.equals("") ? null : v1;
-		k2 = k2.equals("") ? null : k2;
-		v2 = v2.equals("") ? null : v2;
+		k1 = k1.equals("") ? null : k1.toUpperCase();
+		v1 = v1.equals("") ? null : v1.toLowerCase();
+		k2 = k2.equals("") ? null : k2.toUpperCase();
+		v2 = v2.equals("") ? null : v2.toLowerCase();
 		var kv1 = new Pair.OptionalGenericPair<>(k1, v1);
 		var kv2 = new Pair.OptionalGenericPair<>(k2, v2);
 		filter = new HeaderCardFilter(kv1, kv2);
@@ -799,9 +799,9 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 								   Pair.OptionalGenericPair<String, String> filter2) {
 		public boolean matchesFilter(Header hdr) {
 			var match1 = filter1.first().map(hdr::findCard) // Maybe get the card
-					.map(v -> filter1.second().isEmpty() || filter1.second().get().equals(v.getValue()));
+					.map(v -> filter1.second().isEmpty() || filter1.second().get().equalsIgnoreCase(v.getValue()));
 			var match2 = filter2.first().map(hdr::findCard) // Maybe get the card
-					.map(v -> filter2.second().isEmpty() || filter2.second().get().equals(v.getValue()));
+					.map(v -> filter2.second().isEmpty() || filter2.second().get().equalsIgnoreCase(v.getValue()));
 
 			return match1.orElse(true) || match2.orElse(true);
 		}

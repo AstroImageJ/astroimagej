@@ -572,12 +572,14 @@ public class FolderOpener implements PlugIn {
 		gd.addNumericField("Step:", this.step, 0, 6, "");
 		gd.addNumericField("Scale:", this.scale, 0, 6, "%");
 
-		//todo check size and count for breakage
 		gd.addMessage("Filter based on FITS header keywords and values:");
 		gd.addMessage("(filtering not accounted for in file count and stack size below)", IJ.font10, Color.darkGray);
 		gd.addStringField("Keyword 1:", "");
 		gd.addToSameRow();
 		gd.addStringField("Value 1:", "");
+		gd.addRadioButtonGroup("", new String[]{"AND", "OR"}, 1, 2, "AND");
+		gd.addToSameRow();
+		gd.addMessage("(blank Keyword and Value boxes are ignored)");
 		gd.addStringField("Keyword 2:", "");
 		gd.addToSameRow();
 		gd.addStringField("Value 2:", "");
@@ -622,7 +624,7 @@ public class FolderOpener implements PlugIn {
 		double count = Tools.parseDouble(countStr);
 		if (!Double.isNaN(count))
 			nFiles = (int)count;
-		FITS_Reader.makeHeaderCardFilter(gd.getNextString(), gd.getNextString(), gd.getNextString(), gd.getNextString());
+		FITS_Reader.makeHeaderCardFilter(gd.getNextString(), gd.getNextString(), gd.getNextString(), gd.getNextString(), gd.getNextRadioButton());
 		this.step = (int)gd.getNextNumber();
 		if (this.step<1)
 			this.step = 1;

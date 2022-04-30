@@ -167,6 +167,8 @@ public class FolderOpener implements PlugIn {
 				directory = parent;
 			else {
 				IJ.error("File>Import>Image Sequence", "Directory not found: "+directory);
+				virtualIntended = false;
+				FITS_Reader.resetFilter();
 				return;
 			}
 		}
@@ -195,7 +197,11 @@ public class FolderOpener implements PlugIn {
 			title = title.substring(0, title.length()-1);
 		
 		list = trimFileList(list);
-		if (list==null) return;
+		if (list==null) {
+			virtualIntended = false;
+			FITS_Reader.resetFilter();
+			return;
+		}
 		if (IJ.debugMode) IJ.log("FolderOpener: "+directory+" ("+list.length+" files)");
 		int width=0, height=0, stackSize=1;
 		ImageStack stack = null;
@@ -232,6 +238,8 @@ public class FolderOpener implements PlugIn {
 				IJ.error("Sequence Reader", "This folder does not appear to contain\n"
 				+ "any TIFF, JPEG, BMP, DICOM, GIF, FITS or PGM files that match the specified filters.\n \n"
 				+ "   \""+directory+"\"");
+				virtualIntended = false;
+				FITS_Reader.resetFilter();
 				return;
 			}
 			String pluginName = "Sequence Reader";

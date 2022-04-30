@@ -213,14 +213,14 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 
 	}
 
-	public static void makeHeaderCardFilter(String k1, String v1, String k2, String v2) {
+	public static void makeHeaderCardFilter(String k1, String v1, String k2, String v2, String useAnd) {
 		k1 = k1.equals("") ? null : k1.toUpperCase();
 		v1 = v1.equals("") ? null : v1.toLowerCase();
 		k2 = k2.equals("") ? null : k2.toUpperCase();
 		v2 = v2.equals("") ? null : v2.toLowerCase();
 		var kv1 = new Pair.OptionalGenericPair<>(k1, v1);
 		var kv2 = new Pair.OptionalGenericPair<>(k2, v2);
-		filter = new HeaderCardFilter(kv1, kv2);
+		filter = new HeaderCardFilter(kv1, kv2, useAnd.equals("AND"));
 	}
 
 	public static void resetFilter() {
@@ -796,7 +796,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	private record PostFitsRead(Fits fits, BasicHDU<?>[] hdus) {}
 
 	public record HeaderCardFilter(Pair.OptionalGenericPair<String, String> filter1,
-								   Pair.OptionalGenericPair<String, String> filter2) {
+								   Pair.OptionalGenericPair<String, String> filter2, boolean useAnd) {
 		public boolean matchesFilter(Header hdr) {
 			var match1 = filter1.first().map(hdr::findCard) // Maybe get the card
 					.map(v -> (filter1.second().isPresent() && filter1.second().get().equalsIgnoreCase(v.getValue())) ||
@@ -805,8 +805,12 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 					.map(v -> (filter2.second().isPresent() && filter2.second().get().equalsIgnoreCase(v.getValue())) ||
 							filter2.second().isEmpty());
 
-			return (match1.orElse(false) || match2.orElse(false)) ||
-					(filter1.first().isEmpty() && filter2.first().isEmpty());
+			var noFilter = filter1.first().isEmpty() && filter2.first().isEmpty();
+			var matchesFilterAnd = match1.orElse(filter1.first().isEmpty()) && match2.orElse(filter2.first().isEmpty());
+			var matchesFilterOr = match1.orElse(false) || match2.orElse(false);
+
+			return (useAnd ? matchesFilterAnd : matchesFilterOr) ||
+					(noFilter);
 		}
 	}
 

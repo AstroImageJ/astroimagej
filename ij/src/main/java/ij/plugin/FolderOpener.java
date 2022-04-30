@@ -230,7 +230,7 @@ public class FolderOpener implements PlugIn {
 			}
 			if (width==0) {
 				IJ.error("Sequence Reader", "This folder does not appear to contain\n"
-				+ "any TIFF, JPEG, BMP, DICOM, GIF, FITS or PGM files.\n \n"
+				+ "any TIFF, JPEG, BMP, DICOM, GIF, FITS or PGM files that match the specified filters.\n \n"
 				+ "   \""+directory+"\"");
 				return;
 			}

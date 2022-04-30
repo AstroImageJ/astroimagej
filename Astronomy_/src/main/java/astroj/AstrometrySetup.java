@@ -137,7 +137,7 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
     boolean showSexagesimal = true;
     
     boolean useAlternateAstrometryServer = false;
-    String defaultAstrometryUrlBase = "http://nova.astrometry.net";
+    String defaultAstrometryUrlBase = "https://nova.astrometry.net";
     String alternateAstrometryUrlBase = "http://127.0.0.1:8080";
         
     public JFrame astrometrySetupFrame;

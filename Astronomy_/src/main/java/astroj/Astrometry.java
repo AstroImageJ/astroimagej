@@ -43,7 +43,7 @@ public class Astrometry { //implements KeyListener
     public AstrometrySetup astrometrySetup;
     ImagePlus imp, imp2, impOriginal, impRaw;
     int width, height;
-    String defaultAstrometryUrlBase = "http://nova.astrometry.net";
+    String defaultAstrometryUrlBase = "https://nova.astrometry.net";
     //    String urlBase = "http://supernova.astrometry.net/";
     boolean useAlternateAstrometryServer = false;
     String alternateAstrometryUrlBase = "http://127.0.0.1:8080";

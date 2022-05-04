@@ -1,6 +1,7 @@
 package ij;
 
 import ij.astro.AstroImageJ;
+import ij.astro.logging.ConsoleLogging;
 import ij.gui.*;
 import ij.macro.Interpreter;
 import ij.plugin.GelAnalyzer;
@@ -148,6 +149,7 @@ public class ImageJ extends Frame implements ActionListener,
 			"Make MacAdapter look in plugins folder; set mac to use screen menubar; update keymapping on mac for copy/paste", modified = true)
 	public ImageJ(java.applet.Applet applet, int mode) {
 		super("AstroImageJ");
+		ConsoleLogging.duplicateConsole2File();
 		System.setProperty("apple.laf.useScreenMenuBar", "true");
 		if ((mode&DEBUG)!=0)
 			IJ.setDebugMode(true);

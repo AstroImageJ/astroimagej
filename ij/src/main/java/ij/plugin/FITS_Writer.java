@@ -138,7 +138,7 @@ public class FITS_Writer implements PlugIn {
 
 		var totalSize = 0L;
 
-		try (var f = new Fits()) {
+		try {
 			// Setup for incremental writing
 			Path outPath = Path.of(path);
 			Files.createDirectories(outPath.getParent());

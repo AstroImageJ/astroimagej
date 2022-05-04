@@ -1,9 +1,6 @@
 package ij.astro.logging;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.PrintStream;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -15,10 +12,17 @@ public class ConsoleLogging {
 
         try {
             Files.deleteIfExists(p);
-            var duplicatingOut = new DuplicatingPrintStream(p.toFile(), System.out);
-            var duplicatingErr = new DuplicatingPrintStream(p.toFile(), System.err);
+            var os = Files.newOutputStream(p);
+            var duplicatingOut = new DuplicatingPrintStream(os, System.out);
+            var duplicatingErr = new DuplicatingPrintStream(os, System.err);
+
             System.setErr(duplicatingErr);
             System.setOut(duplicatingOut);
+
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                duplicatingErr.close();
+                duplicatingOut.close();
+            }));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -35,22 +39,42 @@ public class ConsoleLogging {
             }
         }
 
+        public DuplicatingPrintStream(OutputStream outputStream, PrintStream... streams) {
+            super(outputStream);
+
+            if (streams != null) {
+                Collections.addAll(output, streams);
+            }
+        }
+
         @Override
         public void write(byte[] buf, int off, int len) {
-            super.write(buf, off, len);
-            output.forEach(o -> o.write(buf, off, len));
+            synchronized (this) {
+                super.write(buf, off, len);
+                output.forEach(o -> o.write(buf, off, len));
+            }
         }
 
         @Override
         public void write(int b) {
-            super.write(b);
-            output.forEach(o -> o.write(b));
+            synchronized (this) {
+                super.write(b);
+                output.forEach(o -> o.write(b));
+            }
         }
 
         @Override
         public void flush() {
-            super.flush();
-            output.forEach(PrintStream::flush);
+            synchronized (this) {
+                super.flush();
+                output.forEach(PrintStream::flush);
+            }
+        }
+
+        @Override
+        public void close() {
+            flush();
+            super.close();
         }
     }
 

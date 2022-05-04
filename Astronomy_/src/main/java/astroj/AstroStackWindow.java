@@ -3654,7 +3654,7 @@ protected ImageIcon createImageIcon(String path, String description) {
                 else if (b==saveFitsStackMenuItem) {
                     FITS_Writer.savingThread.submit(() -> {
                         var l = imp.lockSilently();
-                        IJ.run("FITS...");
+                        FITS_Writer.saveImage(imp, null);
                         if (l) imp.unlock();
                     });
                 }

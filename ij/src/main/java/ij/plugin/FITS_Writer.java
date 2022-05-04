@@ -53,7 +53,7 @@ public class FITS_Writer implements PlugIn {
 		ImagePlus imp = IJ.getImage();
 
 		if (true) { // AIJ uses nom.tam for fits export
-			saveImage(imp, path);
+			saveImage(imp, path, imp.getCurrentSlice());
 			return;
 		}
 
@@ -158,7 +158,7 @@ public class FITS_Writer implements PlugIn {
 			var maxImage = specificSlice == -1 ? imp.getStackSize() : 1;
 			IJ.showStatus("Converting data and writing...");
 			for (int slice = 1; slice <= maxImage; slice++) {
-				if (specificSlice != -1 && slice != specificSlice) continue;
+				if (specificSlice != -1 && slice != specificSlice) slice = specificSlice;
 				var stack = imp.getStack();
 				var ip = stack.getProcessor(slice);
 				var type = ImageType.getType(ip);

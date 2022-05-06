@@ -3527,48 +3527,44 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     // Bin data
                     var binnedData = PlotDataBinning.binDataErr(Arrays.copyOf(x[curve], nn[curve]), Arrays.copyOf(y[curve], nn[curve]), Arrays.copyOf(yerr[curve], nn[curve]), binWidth);
 
-                    // Update bin width as the minimum was calculated at the same time
-                    minutes.get(curve).second().setValue(binnedData.second() * 24D * 60D);
+                    if (binnedData != null) {
+                        // Update bin width as the minimum was calculated at the same time
+                        minutes.get(curve).second().setValue(binnedData.second() * 24D * 60D);
 
-                    var pts = binnedData.first();
+                        var pts = binnedData.first();
 
-                    plot.setColor(color[curve]);
-                    if (marker[curve] == ij.gui.Plot.DOT) { plot.setLineWidth(8); } else plot.setLineWidth(2);
-                    plot.addPoints(pts.x(), pts.y(), marker[curve]);
+                        plot.setColor(color[curve]);
+                        if (marker[curve] == ij.gui.Plot.DOT) { plot.setLineWidth(8); } else plot.setLineWidth(2);
+                        plot.addPoints(pts.x(), pts.y(), marker[curve]);
 
-                    // Calculate binned RMS
-                    if (detrendFitIndex[curve] == 9 && useTransitFit[curve]) {
-                        // Undo shift so the model works
-                        var xModelBin = Arrays.copyOf(pts.x(), pts.x().length);
-                        for (int nnn = 0; nnn < xModelBin.length; nnn++) {
-                            xModelBin[nnn] += xOffset;
-                        }
-                        var modelBin = IJU.transitModel(xModelBin, bestFit[curve][0], bestFit[curve][4], bestFit[curve][1], bestFit[curve][2], bestFit[curve][3], orbitalPeriod[curve], forceCircularOrbit[curve] ? 0.0 : eccentricity[curve], forceCircularOrbit[curve] ? 0.0 : omega[curve], bestFit[curve][5], bestFit[curve][6], useLonAscNode[curve], lonAscNode[curve], true);
-
-                        // I don't know why this is needed, but with htis RMS behaves as expected
-                        for (int nnn = 0; nnn < modelBin.length; nnn++) {
-                            modelBin[nnn] /= bestFit[curve][0];
-                            if (normIndex[curve] != 0 && !mmag[curve] && !force[curve]) {
-                                modelBin[nnn] = 1 + totalScaleFactor[curve] * (modelBin[nnn] - 1.0) + subtotalShiftFactor[curve];
-                            } else {
-                                modelBin[nnn] = totalScaleFactor[curve] * modelBin[nnn] + subtotalShiftFactor[curve];
+                        // Calculate binned RMS
+                        if (detrendFitIndex[curve] == 9 && useTransitFit[curve]) {
+                            // Undo shift so the model works
+                            var xModelBin = Arrays.copyOf(pts.x(), pts.x().length);
+                            for (int nnn = 0; nnn < xModelBin.length; nnn++) {
+                                xModelBin[nnn] += xOffset;
                             }
-                        }
+                            var modelBin = IJU.transitModel(xModelBin, bestFit[curve][0], bestFit[curve][4], bestFit[curve][1], bestFit[curve][2], bestFit[curve][3], orbitalPeriod[curve], forceCircularOrbit[curve] ? 0.0 : eccentricity[curve], forceCircularOrbit[curve] ? 0.0 : omega[curve], bestFit[curve][5], bestFit[curve][6], useLonAscNode[curve], lonAscNode[curve], true);
 
-                        outBinRms[curve] = 1000*CurveFitter.calculateRms(curve, modelBin, pts.err(), pts.err(), pts.x(), pts.x(), pts.y(), pts.err(), bestFit[curve]);
-                        outBinRms[curve] *= bestFit[curve][0];
-                        /*AIJLogger.log(outBinRms[curve]);
-                        AIJLogger.log(Arrays.equals(modelBin, yModel1[curve]));
+                            // I don't know why this is needed, but with this RMS behaves as expected
+                            for (int nnn = 0; nnn < modelBin.length; nnn++) {
+                                modelBin[nnn] /= bestFit[curve][0];
+                                if (normIndex[curve] != 0 && !mmag[curve] && !force[curve]) {
+                                    modelBin[nnn] = 1 + totalScaleFactor[curve] * (modelBin[nnn] - 1.0) + subtotalShiftFactor[curve];
+                                } else {
+                                    modelBin[nnn] = totalScaleFactor[curve] * modelBin[nnn] + subtotalShiftFactor[curve];
+                                }
+                            }
 
-                        plot.setColor(Color.BLACK);
-                        plot.setLineWidth(2);
-                        plot.addPoints(pts.x(), modelBin, Plot.LINE);*/
-                    } else {
-                        var xModelBin = Arrays.copyOf(pts.x(), pts.x().length);
-                        for (int nnn = 0; nnn < xModelBin.length; nnn++) {
-                            xModelBin[nnn] += xOffset;
+                            outBinRms[curve] = 1000*CurveFitter.calculateRms(curve, modelBin, pts.err(), pts.err(), pts.x(), pts.x(), pts.y(), pts.err(), bestFit[curve]);
+                            outBinRms[curve] *= bestFit[curve][0];
+                        } else {
+                            var xModelBin = Arrays.copyOf(pts.x(), pts.x().length);
+                            for (int nnn = 0; nnn < xModelBin.length; nnn++) {
+                                xModelBin[nnn] += xOffset;
+                            }
+                            outBinRms[curve] = 1000*CurveFitter.calculateRms(curve, null, pts.err(), pts.err(), xModelBin, xModelBin, pts.y(), pts.err(), bestFit[curve]);
                         }
-                        outBinRms[curve] = 1000*CurveFitter.calculateRms(curve, null, pts.err(), pts.err(), xModelBin, xModelBin, pts.y(), pts.err(), bestFit[curve]);
                     }
                 }
 

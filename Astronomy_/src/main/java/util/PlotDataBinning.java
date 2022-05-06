@@ -15,57 +15,73 @@ public class PlotDataBinning {
     }
 
     public static Pair.GenericPair<DoubleArrayTriple, Double> binDataErr(double[] x, double[] y, double[] err, double binWidth) {
-        if (x.length != y.length) throw new IllegalArgumentException("Arrays must be of the same length");
-
-        var withErr = err != null;
-        if (!withErr) err = new double[x.length];
-
-        var t = new ArrayMaths(x);
-        var xMin = t.minimum();
-        var xMax = t.maximum();
-
-        var minBinWidth = new ArrayMaths(IntStream.range(1, x.length).parallel().mapToDouble(i -> x[i] - x[i-1]).toArray()).minimum();
-        if (minBinWidth > binWidth) binWidth = minBinWidth;
-
-        var span = xMax - xMin;
-        var nBins = (int) Math.ceil(span/binWidth);
-
-        if (nBins == 0) nBins = x.length;
-
-        var binBounds = new double[nBins + 1];
-        double finalBinWidth = binWidth;
-        Arrays.setAll(binBounds, i -> (i * finalBinWidth) + xMin);
-
-        var bins = new DataBin[nBins];
-        Arrays.setAll(bins, i -> new DataBin(x.length, i));
-
-        for (int i = 0; i < x.length; i++) {
-            var p = 0;
-            var accepted = false;
-            while (!accepted) {
-                accepted = bins[p].accept(binBounds, x[i], y[i], err[i]);
-                p++;
-                if (p == bins.length) break;
+        try {
+            if (x.length != y.length) {
+                System.err.println("Binning arrays do match");
+                return null;
             }
 
-            if (!accepted) throw new RuntimeException("data did not fit into a bin");
+            if (x.length == 0) {
+                return null;
+            }
+
+            var withErr = err != null;
+            if (!withErr) err = new double[x.length];
+
+            var t = new ArrayMaths(x);
+            var xMin = t.minimum();
+            var xMax = t.maximum();
+
+            var l = IntStream.range(1, x.length).parallel().mapToDouble(i -> x[i] - x[i-1]).toArray();
+            if (l.length == 0) {
+                return null;
+            }
+            var minBinWidth = new ArrayMaths(l).minimum();
+            if (minBinWidth > binWidth) binWidth = minBinWidth;
+
+            var span = xMax - xMin;
+            var nBins = (int) Math.ceil(span/binWidth);
+
+            if (nBins == 0) nBins = x.length;
+
+            var binBounds = new double[nBins + 1];
+            double finalBinWidth = binWidth;
+            Arrays.setAll(binBounds, i -> (i * finalBinWidth) + xMin);
+
+            var bins = new DataBin[nBins];
+            Arrays.setAll(bins, i -> new DataBin(x.length, i));
+
+            for (int i = 0; i < x.length; i++) {
+                var p = 0;
+                var accepted = false;
+                while (!accepted) {
+                    accepted = bins[p].accept(binBounds, x[i], y[i], err[i]);
+                    p++;
+                    if (p == bins.length) break;
+                }
+
+                if (!accepted) throw new RuntimeException("data did not fit into a bin");
+            }
+
+            var binCompleted = Arrays.asList(Arrays.stream(bins).parallel().filter(DataBin::hasData)
+                    .map(withErr ? DataBin::binnedDatumErr : DataBin::binnedDatum).toArray(DoubleTriple[]::new));
+            var outX = new double[binCompleted.size()];
+            var outY = new double[binCompleted.size()];
+            var outErr = new double[binCompleted.size()];
+
+            // Order the elements by time
+            binCompleted.sort(Comparator.comparingDouble(c -> c.x));
+            for (int i = 0; i < binCompleted.size(); i++) {
+                outX[i] = binCompleted.get(i).x();
+                outY[i] = binCompleted.get(i).y();
+                outErr[i] = binCompleted.get(i).err();
+            }
+
+            return new Pair.GenericPair<>(new DoubleArrayTriple(outX, outY, outErr), binWidth);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
         }
-
-        var binCompleted = Arrays.asList(Arrays.stream(bins).parallel().filter(DataBin::hasData)
-                .map(withErr ? DataBin::binnedDatumErr : DataBin::binnedDatum).toArray(DoubleTriple[]::new));
-        var outX = new double[binCompleted.size()];
-        var outY = new double[binCompleted.size()];
-        var outErr = new double[binCompleted.size()];
-
-        // Order the elements by time
-        binCompleted.sort(Comparator.comparingDouble(c -> c.x));
-        for (int i = 0; i < binCompleted.size(); i++) {
-            outX[i] = binCompleted.get(i).x();
-            outY[i] = binCompleted.get(i).y();
-            outErr[i] = binCompleted.get(i).err();
-        }
-
-        return new Pair.GenericPair<>(new DoubleArrayTriple(outX, outY, outErr), binWidth);
     }
 
     private record DataBin(double[] x, double[] y, double[] err, Holder lastIndex, int binIndex) {

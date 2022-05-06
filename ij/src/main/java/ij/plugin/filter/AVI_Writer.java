@@ -1,14 +1,25 @@
 package ij.plugin.filter;
-import ij.*;
-import ij.process.*;
-import ij.gui.*;
-import ij.io.*;
+
+import ij.IJ;
+import ij.ImagePlus;
+import ij.Macro;
+import ij.astro.AstroImageJ;
+import ij.astro.types.Pair;
+import ij.gui.GenericDialog;
+import ij.io.FileInfo;
+import ij.io.SaveDialog;
 import ij.plugin.Animator;
-import java.awt.*;
-import java.awt.image.*;
-import java.io.*;
-import java.util.*;
+import ij.process.ColorProcessor;
+import ij.process.ImageProcessor;
+
 import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.awt.image.IndexColorModel;
+import java.io.File;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.RandomAccessFile;
 
 /**
 This plugin implements the File/Save As/AVI command.
@@ -136,6 +147,7 @@ public class AVI_Writer implements PlugInFilter {
     }
 
     /** Writes an ImagePlus (stack) as AVI file. */
+    @AstroImageJ(reason = "Fraction FPS support", modified = true)
     public void writeImage (ImagePlus imp, String path, int compression, int jpegQuality)
             throws IOException {
         if (compression!=NO_COMPRESSION && compression!=JPEG_COMPRESSION && compression!=PNG_COMPRESSION)
@@ -234,8 +246,11 @@ public class AVI_Writer implements PlugInFilter {
         writeInt(0);            // dwFlags
         writeInt(0);            // wPriority, wLanguage
         writeInt(0);            // dwInitialFrames
-        writeInt(1);            // dwScale
-        writeInt((int)Math.round(getFrameRate(imp))); //  dwRate - frame rate for video streams
+
+        var fps = fps2Fraction(getFrameRate(imp));
+        writeInt(fps.second());            // dwScale
+        writeInt(fps.first()); //  dwRate - frame rate for video streams
+
         writeInt(0);            // dwStart - this field is usually set to zero
         writeInt(zDim);         // dwLength - playing time of AVI file as defined by scale and rate
                                 // Set equal to the number of frames
@@ -436,6 +451,34 @@ public class AVI_Writer implements PlugInFilter {
         IJ.showProgress(1.0);
 		if (isComposite || isHyperstack)
 			imp.setPosition(channel, slice, frame);
+    }
+
+    /**
+     * AVI standard takes framerate as dwRate / dwScale.
+     * <p>
+     * <a href="https://cdn.hackaday.io/files/274271173436768/avi.pdf">https://cdn.hackaday.io/files/274271173436768/avi.pdf</a>
+     * <p>
+     * <a href="https://docs.microsoft.com/en-us/windows/win32/directshow/dv-data-in-the-avi-file-format">https://docs.microsoft.com/en-us/windows/win32/directshow/dv-data-in-the-avi-file-format</a>
+     * @return framerate fraction, numerator then denominator
+     */
+    @AstroImageJ(reason = "Fraction AVI FPS")
+    private Pair.IntPair fps2Fraction(double fps) {
+        if (fps == (int) fps) return new Pair.IntPair((int) fps, 1);
+
+        int denominator = (int) (1 / (Math.abs(fps - (int) fps - 0.0001)));
+        int units = (int) fps;
+
+        int numerator = units * denominator + 1;
+
+        int gcd = (int) gcd(numerator, denominator);
+
+        return new Pair.IntPair(numerator / gcd, denominator / gcd);
+    }
+
+    /** @return the greatest common denominator */
+    @AstroImageJ(reason = "Fraction AVI FPS")
+    private static long gcd(long a, long b) {
+        return b == 0 ? a : gcd(b, a % b);
     }
 
     /** Reserve space to write the size of chunk and remember the position

@@ -3560,8 +3560,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
         var sliders = new JPanel[5];
         if (stackSize > 1) {
-            firstSlice = (alwaysstartatfirstSlice && !(this instanceof Stack_Aligner)) ? 1 : firstSlice;
-            sliders[0] = gd.addSlider("           First slice ", 1, stackSize, (firstSlice == stackSize || (alwaysstartatfirstSlice && !(this instanceof Stack_Aligner))) ? 1 : firstSlice, d -> firstSlice = d.intValue());
+            firstSlice = (firstSlice == stackSize || (alwaysstartatfirstSlice && !(this instanceof Stack_Aligner))) ? 1 : firstSlice;
+            sliders[0] = gd.addSlider("           First slice ", 1, stackSize, firstSlice, d -> firstSlice = d.intValue());
             sliders[1] = gd.addSlider("           Last slice ", 1, stackSize, lastSlice, d -> lastSlice = d.intValue());
         }
         sliders[2] = gd.addFloatSlider("Fixed/Base radius of photometric aperture", 0.01, radius > 100 ? radius : 100, false, radius, 3, 1.0, d -> radius = d);

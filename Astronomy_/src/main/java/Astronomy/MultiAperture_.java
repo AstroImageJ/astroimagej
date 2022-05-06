@@ -1728,6 +1728,11 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             ocanvas.removeAstrometryAnnotateRois();
         }
 
+        // Make sure WCS is updated
+        asw.updateWCS();
+        hasWCS = asw.hasWCS();
+        if (hasWCS) wcs = asw.getWCS();
+
         if (!autoMode && previous && firstClick && nAperturesStored > 0) {
             dx = xCenter - xPosStored[0];
             dy = yCenter - yPosStored[0];

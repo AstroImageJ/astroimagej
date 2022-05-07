@@ -29,6 +29,7 @@ import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.Locale;
@@ -312,10 +313,13 @@ public class Opener {
 	
 	/** Opens the specified file and adds it to the File/Open Recent menu.
 		Returns true if the file was opened successfully.  */
+	@AstroImageJ(reason = "Update default path when AIJ launches from file association", modified = true)
 	public boolean openAndAddToRecent(String path) {
 		open(path);
-		if (!error)
+		if (!error) {
 			Menus.addOpenRecentItem(path);
+			OpenDialog.setDefaultDirectory(Path.of(path).getParent().toString());
+		}
 		return error;
 	}
 

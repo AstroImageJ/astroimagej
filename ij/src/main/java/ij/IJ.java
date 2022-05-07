@@ -28,6 +28,7 @@ import java.math.RoundingMode;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.ByteBuffer;
+import java.nio.file.Path;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.*;
@@ -1923,6 +1924,7 @@ public class IJ {
 		is not in one of the supported formats, or if it is not found.
 		With 1.41k or later, opens images specified by a URL.
 		*/
+	@AstroImageJ(reason = "Update default path when AIJ launches from file association", modified = true)
 	public static void open(String path) {
 		if (ij==null && Menus.getCommands()==null)
 			init();
@@ -1930,8 +1932,10 @@ public class IJ {
 		macroRunning = true;
 		if (path==null || path.equals(""))		
 			o.open();
-		else
+		else {
 			o.open(path);
+			OpenDialog.setDefaultDirectory(Path.of(path).getParent().toString());
+		}
 		macroRunning = false;
 	}
 		

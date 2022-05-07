@@ -1,22 +1,25 @@
 package ij;
+
 import ij.astro.AstroImageJ;
-import ij.util.Java2;
-import java.io.*;
-import java.util.*;
-import java.applet.*;
-import java.net.URL;
-import java.awt.*;
-import java.applet.Applet;
-import ij.io.*;
-import ij.util.Tools;
 import ij.gui.*;
-import ij.plugin.filter.*;
-import ij.process.ImageConverter;
+import ij.io.FileSaver;
+import ij.io.ImportDialog;
+import ij.io.OpenDialog;
 import ij.plugin.Animator;
-import ij.process.FloatBlitter;
-import ij.plugin.GelAnalyzer;
+import ij.plugin.filter.Analyzer;
+import ij.plugin.filter.Filters;
+import ij.plugin.filter.ParticleAnalyzer;
 import ij.process.ColorProcessor;
+import ij.process.FloatBlitter;
 import ij.text.TextWindow;
+import ij.util.Tools;
+
+import java.applet.Applet;
+import java.awt.*;
+import java.io.*;
+import java.net.URL;
+import java.util.Enumeration;
+import java.util.Properties;
 
 /**
 This class contains the ImageJ preferences, which are 
@@ -696,9 +699,10 @@ public class Prefs {
 	public static Properties getControlPanelProperties() {
 		return ijPrefs;
 	}
-	
+
+	@AstroImageJ(reason = "Set default extension to .tbl", modified = true)
 	public static String defaultResultsExtension() {
-		return get("options.ext", ".csv");
+		return get("options.ext", ".tbl");
 	}
 		
 	/** Sets the GenericDialog and Command Finder text scale (0.5 to 3.0). */

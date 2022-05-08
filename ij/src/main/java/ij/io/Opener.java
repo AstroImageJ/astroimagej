@@ -2,6 +2,7 @@ package ij.io;
 
 import ij.*;
 import ij.astro.AstroImageJ;
+import ij.astro.util.FileAssociationHandler;
 import ij.astro.util.ZipOpenerUtil;
 import ij.gui.Roi;
 import ij.macro.Interpreter;
@@ -96,8 +97,12 @@ public class Opener {
 	 * @see ij.IJ#open(String)
 	 * @see ij.IJ#openImage(String)
 	*/
+	@AstroImageJ(reason = "Handle file associations", modified = true)
 	public void open(String path) {
 		boolean isURL = path.indexOf("://")>0;
+
+		FileAssociationHandler.handleFile(path);
+
 		if (isURL && isText(path)) {
 			openTextURL(path);
 			return;

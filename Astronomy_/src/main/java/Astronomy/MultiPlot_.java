@@ -15748,7 +15748,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         subFrame = null;
     }
 
-    static synchronized void openDragAndDropFiles(java.io.File[] files) {
+    public static synchronized void openDragAndDropFiles(java.io.File[] files) {
         int errorCode;
         dragAndDropFiles = files;
         errorCode = 1;

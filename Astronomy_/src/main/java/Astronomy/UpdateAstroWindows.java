@@ -1,7 +1,6 @@
 package Astronomy;// UpdateAstroWindows.java
 
-import ij.plugin.*;
-import ij.*;
+import ij.plugin.PlugIn;
 
 public class UpdateAstroWindows implements PlugIn
 	{
@@ -9,7 +8,7 @@ public class UpdateAstroWindows implements PlugIn
 		{
         try
             {
-            if (MultiPlot_.mainFrame != null && MultiPlot_.useUpdateStack)
+            if (MultiPlot_.isRunning() && MultiPlot_.useUpdateStack)
                 {
                 MultiPlot_.updateStack();
                 }

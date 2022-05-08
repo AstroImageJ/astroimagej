@@ -942,7 +942,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         }
         if (table != null) table.setLock(false);
         if (processingStack && table != null && !isInstanceOfStackAlign && !updatePlot && !Data_Processor.active) {
-            if (MultiPlot_.mainFrame != null) {
+            if (MultiPlot_.isRunning()) {
                 //IJ.log("made it 1");
                 if (MultiPlot_.getTable() != null && MultiPlot_.getTable().equals(table)) {
                     //IJ.log("made it 2");
@@ -3137,7 +3137,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             table.setLock(false);
 
             if ((updatePlot && !Data_Processor.active) || (Data_Processor.active && Data_Processor.runMultiPlot)) {
-                if (MultiPlot_.mainFrame != null) {
+                if (MultiPlot_.isRunning()) {
                     if (MultiPlot_.getTable() != null && MultiPlot_.getTable().equals(table)) {
 //                        IJ.log("update plot");
 //                        while (MultiPlot_.updatePlotRunning)
@@ -3154,7 +3154,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     }
                 } else {
                     IJ.runPlugIn("Astronomy.MultiPlot_", tableName);
-                    if (MultiPlot_.mainFrame != null && MultiPlot_.getTable() != null) {
+                    if (MultiPlot_.isRunning() && MultiPlot_.getTable() != null) {
 //                        IJ.log("setTable first time");
                         MultiPlot_.setTable(table, false);
 //                        IJ.log("setTable first time complete");
@@ -3339,7 +3339,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
         if (isInstanceOfStackAlign) return true;
         MeasurementTable plotTable = MultiPlot_.getTable();
-        if (MultiPlot_.mainFrame != null && plotTable != null && MeasurementTable.shorterName(plotTable.shortTitle()).equals("Measurements")) {
+        if (MultiPlot_.isRunning() && plotTable != null && MeasurementTable.shorterName(plotTable.shortTitle()).equals("Measurements")) {
             table = plotTable;
         }
 

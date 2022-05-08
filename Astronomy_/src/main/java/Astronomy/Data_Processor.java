@@ -3675,7 +3675,7 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
             }
         else if(source == clearTableButton)
             {
-            if (MultiPlot_.mainFrame!=null)
+            if (MultiPlot_.isRunning())
                 {
                 MultiPlot_.clearPlot();
                 }            

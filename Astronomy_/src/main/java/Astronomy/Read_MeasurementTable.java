@@ -1,10 +1,9 @@
 package Astronomy;// Read_MeasurementTable.java
 
-import ij.*;
-import ij.io.*;
-import ij.plugin.*;
-
 import astroj.MeasurementTable;
+import ij.IJ;
+import ij.io.OpenDialog;
+import ij.plugin.PlugIn;
 
 public class Read_MeasurementTable implements PlugIn
 	{
@@ -28,8 +27,7 @@ public class Read_MeasurementTable implements PlugIn
 		else
             {
 			table.show();
-            if (MultiPlot_.mainFrame!=null) // && !arg.equals("MultiPlot_"))
-                {
+            if (MultiPlot_.isRunning()) {
                 MultiPlot_.loadDataOpenConfig(table, path);
                 }
             }

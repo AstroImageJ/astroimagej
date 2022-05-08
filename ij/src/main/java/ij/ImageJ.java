@@ -147,7 +147,7 @@ public class ImageJ extends Frame implements ActionListener,
 		(non-standalone) version of ImageJ. */
 	@AstroImageJ(reason = "Change title to AstroImageJ; disable setting of jFileChooser to true; update notification;" +
 			"Make MacAdapter look in plugins folder; set mac to use screen menubar; " +
-			"update keymapping on mac for copy/paste; run AIJ startup handler", modified = true)
+			"update keymapping on mac for copy/paste;", modified = true)
 	public ImageJ(java.applet.Applet applet, int mode) {
 		super("AstroImageJ");
 		ConsoleLogging.duplicateConsole2File();
@@ -246,7 +246,6 @@ public class ImageJ extends Frame implements ActionListener,
 			loadCursors();
 		(new ij.macro.StartupRunner()).run(batchMode); // run RunAtStartup and AutoRun macros
 		IJ.showStatus(version()+ m.getPluginCount() + " commands; " + m.getMacroCount() + str);
-		IJ.runPlugIn("util.AIJStartupHandler", "");
  	}
 
 	@AstroImageJ(reason = "Use astronomy_icon", modified = true)
@@ -720,6 +719,7 @@ public class ImageJ extends Frame implements ActionListener,
 		prefs.put(IJ_Y, Integer.toString(loc.y));
 	}
 
+	@AstroImageJ(reason = "Run AIJ startup", modified = true)
 	public static void main(String args[]) {
 		boolean noGUI = false;
 		int mode = STANDALONE;
@@ -762,6 +762,7 @@ public class ImageJ extends Frame implements ActionListener,
 			ij.exitWhenQuitting = true;
 		} else if (batchMode && noGUI)
 			Prefs.load(null, null);
+		IJ.runPlugIn("util.AIJStartupHandler", "");
 		int macros = 0;
 		for (int i=0; i<nArgs; i++) {
 			String arg = args[i];

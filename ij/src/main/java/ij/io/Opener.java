@@ -101,7 +101,7 @@ public class Opener {
 	public void open(String path) {
 		boolean isURL = path.indexOf("://")>0;
 
-		FileAssociationHandler.handleFile(path);
+		if (FileAssociationHandler.handleFile(path)) return;
 
 		if (isURL && isText(path)) {
 			openTextURL(path);

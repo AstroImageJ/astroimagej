@@ -230,13 +230,13 @@ public enum ImageType {
         @Override
         public Object processImageData(Object rawData, int width, int height, double bzero, double bscale) {
             if (rawData instanceof double[][] values) {
-                final var pixelArray = new double[width * height];
+                final var pixelArray = new float[width * height];//todo make double when we have a DoubleProcessor
 
                 var p = 0;
                 for (int y = 0; y < height; y++) {
                     for (int x = 0; x < width; x++) {
                         // y and x are inverted because of the implementations of ImageProcessor#getPixelValue
-                        double pixelValue = bzero + bscale * values[y][x];
+                        float pixelValue = (float) (bzero + bscale * values[y][x]);
                         pixelArray[p] = pixelValue;
                         p++;
                     }

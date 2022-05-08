@@ -66,7 +66,7 @@ public final class FileAssociationHandler {
                     return ps.endsWith(fileExtension);
                 }
                 return false;
-            }, opener);
+            }, opener, matchComplete);
         }
 
         public AssociationMapper(Consumer<Path> opener, final String... fileExtensions) {

@@ -10480,10 +10480,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         subFrame = new JFrame("Multi-plot Y-data");
         subFrame.setIconImage(plotIcon.getImage());
-        mainsubpanel = new JPanel(new SpringLayout());
+        var mainsubpanel = new JPanel(new SpringLayout());
         mainsubpanel.addMouseMotionListener(panelMouseMotionListener);
 
-        subscrollpane = new JScrollPane(mainsubpanel);
+        var subscrollpane = new JScrollPane(mainsubpanel);
         subFrame.setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         subFrame.addWindowListener(new WindowAdapter() {
             @Override
@@ -10579,6 +10579,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         FileDrop fileDrop = new FileDrop(mainsubpanel, BorderFactory.createEmptyBorder(), MultiPlot_::openDragAndDropFiles);
     }
 
+    public static boolean isRunning() {
+        return mainFrame != null;
+    }
 
     static void constructTopGroupBottomLabels(JPanel mainsubpanelgroup) {
         JLabel dummylabel20 = new JLabel("<HTML><CENTER>Data<BR><CENTER>Set</HTML>");

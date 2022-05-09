@@ -70,13 +70,7 @@ public final class FileAssociationHandler {
         }
 
         public AssociationMapper(Consumer<Path> opener, final String... fileExtensions) {
-            this(p -> {
-                var ps = p.toString();
-                for (String fileExtension : fileExtensions) {
-                    return ps.endsWith(fileExtension);
-                }
-                return false;
-            }, opener);
+            this(opener, false, fileExtensions);
         }
 
         public AssociationMapper(Predicate<Path> associationPredicate, Consumer<Path> opener) {

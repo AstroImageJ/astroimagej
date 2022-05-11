@@ -1167,8 +1167,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 subFrameHeight = subFrame.getHeight();
                 Prefs.set("plot2.subFrameLocationX", subFrameLocationX);
                 Prefs.set("plot2.subFrameLocationY", subFrameLocationY);
+                subscrollpane.removeAll();
+                subFrame.remove(subscrollpane);
             }
-            subFrame.dispose();
             if (refStarFrame != null) {
                 refStarPanelWasShowing = refStarFrame.isVisible();
                 closeRefStarFrame();
@@ -1190,10 +1191,18 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             mainFrameHeight = mainFrame.getHeight();
             Prefs.set("plot2.mainFrameLocationX", mainFrameLocationX);
             Prefs.set("plo2.mainFrameLocationY", mainFrameLocationY);
-            mainFrame.dispose();
+            mainFrame.remove(mainscrollpane);
         }
         showMainJPanel();
+        repaintFrame(mainFrame);
+        repaintFrame(subFrame);
         oldUnfilteredColumns = unfilteredColumns.clone();
+    }
+
+    static void repaintFrame(Frame frame) {
+        frame.pack();
+        frame.validate();
+        frame.repaint();
     }
 
     static public void setPlotAutoMode(boolean mode) {
@@ -7142,7 +7151,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static void showMainJPanel() {
 // DISPLAY MAIN PANEL
         panelsUpdating = true;
-        mainFrame = new JFrame("Multi-plot Main");
+        if (mainFrame == null) {
+            mainFrame = new JFrame("Multi-plot Main");
+        }
         plotIcon = createImageIcon("astroj/images/plot.png", "Plot Icon");
         mainFrame.setIconImage(plotIcon.getImage());
         mainFrame.setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
@@ -10477,13 +10488,17 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
 
     static void showMoreCurvesJPanel() {
-
-        subFrame = new JFrame("Multi-plot Y-data");
+        if (subFrame == null) {
+            subFrame = new JFrame("Multi-plot Y-data");
+        }
         subFrame.setIconImage(plotIcon.getImage());
         var mainsubpanel = new JPanel(new SpringLayout());
         mainsubpanel.addMouseMotionListener(panelMouseMotionListener);
 
-        var subscrollpane = new JScrollPane(mainsubpanel);
+        subscrollpane = new JScrollPane(mainsubpanel);
+        if (subscrollpane == null) {
+            subscrollpane = new JScrollPane(mainsubpanel);
+        }
         subFrame.setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         subFrame.addWindowListener(new WindowAdapter() {
             @Override
@@ -14425,7 +14440,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     }
 
     static void showRefStarJPanel() {
-        refStarFrame = new JFrame("Multi-plot Reference Star Settings");
+        if (refStarFrame == null) {
+            refStarFrame = new JFrame("Multi-plot Reference Star Settings");
+        }
         refStarFrame.setIconImage(plotIcon.getImage());
         refStarMainPanel = new JPanel(new SpringLayout());
 //                mainsubpanel.addMouseListener(panelMouseListener);

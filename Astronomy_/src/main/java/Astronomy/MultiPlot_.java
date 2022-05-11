@@ -1172,7 +1172,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             }
             if (refStarFrame != null) {
                 refStarPanelWasShowing = refStarFrame.isVisible();
-                closeRefStarFrame();
+                refStarScrollPane.removeAll();
+                rebuildRefStarJPanel();
             } else {
                 refStarPanelWasShowing = false;
             }

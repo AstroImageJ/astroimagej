@@ -615,7 +615,8 @@ public class FitOptimization implements AutoCloseable {
         // Fixes weird y-data selection changes
         MultiPlot_.subFrame.repaint();
         MultiPlot_.mainsubpanel.repaint();
-        if (ipsExecutorService != null) ipsExecutorService.shutdown();
+        if (ipsExecutorService != null) ipsExecutorService.shutdownNow();
+        ipsExecutorService = null;
         IJ.showStatus("");
         IJ.showProgress(1);
     }
@@ -703,6 +704,14 @@ public class FitOptimization implements AutoCloseable {
     }
 
     private void setupThreadedSpace() {
+        if (completionService != null) {
+            completionService = null;
+            if (pool != null) {
+                pool.shutdownNow();
+                pool = null;
+            }
+        }
+
         pool = new ThreadPoolExecutor(0, MAX_THREADS,
                 10L, TimeUnit.SECONDS, new SynchronousQueue<>());
         completionService = new ExecutorCompletionService<>(pool);

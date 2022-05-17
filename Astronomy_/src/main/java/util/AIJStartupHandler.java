@@ -18,7 +18,9 @@ public class AIJStartupHandler implements PlugIn {
     private static final AssociationMapper multiplotTableHandler =
             new AssociationMapper(p -> {
                 if (!MultiPlot_.isRunning()) {
-                    IJ.runPlugIn("Astronomy.MultiPlot_", "");
+                    //IJ.runPlugIn("Astronomy.MultiPlot_", "");
+                    // Fixes NPE when opening via file association
+                    new MultiPlot_().run("");
                 }
                 //todo why does DnD cause second instance to open?
                 //MultiPlot_.openDragAndDropFiles(new File[]{p.toFile()});

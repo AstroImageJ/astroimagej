@@ -114,6 +114,7 @@ public class FitOptimization implements AutoCloseable {
     public void clearHistory() {
         undoBuffer.clear();
         cleanNumTF.setText("0");
+        difNumTF.setText("0");
     }
 
     public void setSelectable(boolean[] selectable) {

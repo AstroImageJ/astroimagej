@@ -15,6 +15,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Vector;
 
 
@@ -33,6 +34,7 @@ public class MeasurementTable extends ResultsTable
     protected boolean locked = false;
 	public static int DEFAULT_DECIMALS = 6;
     protected String filePath = "";
+    private HashSet<Runnable> listeners = new HashSet<>();
 
 	/**
 	 * Creates an empty default MeasurementTable.
@@ -858,7 +860,21 @@ IJ.log(heading+" "+val);
 		return result;
 		}
 
-	/**
+        @Override
+        public synchronized void reset() {
+            super.reset();
+            listeners.forEach(Runnable::run);
+        }
+
+        public synchronized void addListener(Runnable r) {
+            listeners.add(r);
+        }
+
+        public synchronized void removeListener(Runnable r) {
+            listeners.remove(r);
+        }
+
+        /**
 	 * Checks to see if a string contains a hh:mm:ss.sss representation of an angle/time.
 	 */
 	static boolean isHMS (String s)

@@ -3606,10 +3606,14 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         ApRadius.setSelected();
 
         gd.addDoubleSpaceLineSeparator();
-        gd.addCheckbox("Use previous " + nAperturesStored + " apertures (1-click to set first aperture location)", previous && nAperturesStored > 0, b -> previous = b);
-        gd.addCheckbox("Use RA/Dec to locate aperture positions", useWCS, b -> useWCS = b);
-        gd.addCheckbox("Use single step mode (1-click to set first aperture location in each image)", singleStep, b -> singleStep = b);
-        gd.addCheckbox("Allow aperture changes between slices in single step mode (right click to advance image)", allowSingleStepApChanges, b -> allowSingleStepApChanges = b);
+        gd.addCheckbox("Use previous " + nAperturesStored + " apertures (1-click to set first aperture location)", previous && nAperturesStored > 0, b -> previous = b)
+                .setToolTipText("");
+        gd.addCheckbox("Use RA/Dec to locate aperture positions", useWCS, b -> useWCS = b)
+                .setToolTipText("");
+        gd.addCheckbox("Use single step mode (1-click to set first aperture location in each image)", singleStep, b -> singleStep = b)
+                .setToolTipText("");
+        gd.addCheckbox("Allow aperture changes between slices in single step mode (right click to advance image)", allowSingleStepApChanges, b -> allowSingleStepApChanges = b)
+                .setToolTipText("");
         gd.addDoubleSpaceLineSeparator();
 
         // Make all sliders the same size
@@ -3777,20 +3781,28 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         gd.addDoubleSpaceLineSeparator();
 
         // GET NON-REQUIRED DIALOGUE FIELDS:
-        gd.addCheckboxGroup(2, 2, new String[]{"Centroid apertures (initial setting)", "Halt processing on WCS or centroid error",
+        var penultimateBoxes = gd.addCheckboxGroup(2, 2, new String[]{"Centroid apertures (initial setting)", "Halt processing on WCS or centroid error",
                         "Remove stars from background", "Assume background is a plane"},
 //                                                "Compute relative flux", "Compute relative flux error",
 //                                                "Compute relative flux signal-to-noise", "Compute total comparison star counts"},
                 new boolean[]{reposition, haltOnError, removeBackStars, backIsPlane}, list1);//,showRatio, showRatioError,showRatioSNR,showCompTot});
 
+        penultimateBoxes.subComponents().get(0).setToolTipText("");
+        penultimateBoxes.subComponents().get(1).setToolTipText("");
+        penultimateBoxes.subComponents().get(2).setToolTipText("");
+        penultimateBoxes.subComponents().get(3).setToolTipText("");
+
         gd.addDoubleSpaceLineSeparator();
-        gd.addCheckbox("Prompt to enter ref star apparent magnitude (required if target star apparent mag is desired)", getMags, b -> getMags = b);
+        gd.addCheckbox("Prompt to enter ref star apparent magnitude (required if target star apparent mag is desired)", getMags, b -> getMags = b)
+                .setToolTipText("");
 
         final var list2 = new ArrayList<Consumer<Boolean>>();
         list2.add(b -> updatePlot = b);
         list2.add(b -> showHelp = b);
-        gd.addCheckboxGroup(1, 2, new String[]{"Update table and plot while running", "Show help panel during aperture selection"},
+        var bottomChecks = gd.addCheckboxGroup(1, 2, new String[]{"Update table and plot while running", "Show help panel during aperture selection"},
                 new boolean[]{updatePlot, showHelp}, list2);
+        bottomChecks.subComponents().get(0).setToolTipText("");
+        bottomChecks.subComponents().get(1).setToolTipText("");
     }
 
     private void toggleComponents(Component[] components, int offset, boolean toggle) {

@@ -235,7 +235,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
             }
         }
         int i1 = 0;
-        var boxes = new LinkedList<Component>();
+        var boxes = new LinkedList<JComponent>();
         //int[] index = new int[labels.length];
         for (int row = 0; row < rows; row++) {
             for (int col = 0; col < columns; col++) {
@@ -1288,7 +1288,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         }
     }
 
-    public record ComponentPair(Component c1, JComponent c2, LinkedList<Component> subComponents) {
+    public record ComponentPair(Component c1, JComponent c2, LinkedList<JComponent> subComponents) {
         public ComponentPair(JComponent c1, JComponent c2) {
             this(c1, c2, null);
         }

@@ -685,6 +685,9 @@ public class FitOptimization implements AutoCloseable {
         if (showOptLog) AIJLogger.log(setArrayToState(minimumState.state));
         if (showOptLog && minimumState.outState != null) AIJLogger.log(minimumState.outState);
 
+        IJ.showStatus("");
+        IJ.showProgress(1);
+
         return new OutPair(setArrayToState(minimumState.state), minimumState.outState);
     }
 
@@ -768,6 +771,9 @@ public class FitOptimization implements AutoCloseable {
     }
 
     private void scheduleIpsCounter(int minimizing) {
+        if (ipsExecutorService != null) {
+            ipsExecutorService.shutdownNow();
+        }
         ipsExecutorService = Executors.newSingleThreadScheduledExecutor();
         rollingAvg = new RollingAvg();
         ipsExecutorService.scheduleAtFixedRate(() -> updateIpsCounter(minimizing), 1L, 1L, TimeUnit.SECONDS);

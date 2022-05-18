@@ -13,14 +13,17 @@
 //  Comments or questions may be directed to the macro's author:
 //  Dennis Conti, email: dennis@astrodennis.com
 //
-//  REVISION 2.25
-var REVISION = "2.25";
+//  REVISION 2.26
+var REVISION = "2.26";
 //
 //  The following are diagnostic flags
 var STARtoDiagnose = "";
 var FORCEbinning = 0;
 //
 //  Revision Notes:
+//	 2.26 Increase the number of measurement table rows from 3,000 to 10,000; make lenMeasurementTable a
+//            global variable and use it to later define array lengths where needed; initialize nBinEntries=0 in
+//            "Calculate Binned Time Stamps" section
 //       2.25 Round the predicted ingress and egress values obtained from Multi-plotMain to 8 decimal digits.
 //            In the description of Option 5, put "or" after "df"
 //       2.24 Get ingress and egress from values last set in the V.Markers in the user's Multi-plot Main
@@ -194,6 +197,7 @@ var success=false;
 var useBJD = true;
 //
 //  Define other global variables
+var lenMeasurementTable = 10000;
 var xfitsTARGET = 0;
 var yfitsTARGET = 0;
 var prevTimeMeas = getTime();
@@ -206,8 +210,8 @@ var cumProgress = 0.0;
 //
 //  Define globals used in the binRelFluxData function
 //  Create arrays for temporarily holding cumulative binned data
-var STARtempBinFlux = newArray(3000);
-var STARtempBinErr = newArray(3000);
+var STARtempBinFlux = newArray(lenMeasurementTable);
+var STARtempBinErr = newArray(lenMeasurementTable);
 //
 //   Define globals used in the normalizeRelFluxData function
 var STARweightedFluxAvg = newArray(1000);
@@ -1184,7 +1188,6 @@ function plotPAandOverlay (k) {
 //
 //  The following are the valid lengths of user entries.
 //  These are later used to perform range checks.
-lenMeasurementTable = 3000;
 lenTargetStar = 4;
 lenRadius = 6;
 lenCadence = 3;
@@ -1883,8 +1886,8 @@ successPrint = debugPrint(message,1);
 //******************  COMPUTE THE WEIGHTED AVERAGES FOR SOURCE-SKY AND DMAG
 //
 //  Create arrays for Source-Sky and Dmag
-STARSourceSky = newArray(3000);
-STARdmag = newArray(3000);
+STARSourceSky = newArray(lenMeasurementTable);
+STARdmag = newArray(lenMeasurementTable);
 //  For each star, cycle through all the observations
 for (k=0;k<STARlistIndex;k++) {
     avgSource = STARsourceAvg[k];

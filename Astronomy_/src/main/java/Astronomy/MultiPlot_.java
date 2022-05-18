@@ -976,6 +976,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     }
 
     static public void setTable(MeasurementTable inTable, boolean forceUpdate, boolean useAutoAstroDataUpdate) {
+        if (table != null) {
+            table.removeListeners();
+        }
         table = inTable;
         FitOptimization.clearCleanHistory();
 

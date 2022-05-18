@@ -874,6 +874,10 @@ IJ.log(heading+" "+val);
             listeners.remove(r);
         }
 
+        public synchronized void removeListeners() {
+            listeners.clear();
+        }
+
         /**
 	 * Checks to see if a string contains a hh:mm:ss.sss representation of an angle/time.
 	 */

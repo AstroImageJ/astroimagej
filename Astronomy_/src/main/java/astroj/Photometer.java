@@ -2,15 +2,13 @@
 
 package astroj;
 
-import ij.*;
-import ij.gui.*;
-import ij.measure.*;
-import ij.process.*;
+import ij.ImagePlus;
+import ij.Prefs;
+import ij.measure.Calibration;
+import ij.process.ColorProcessor;
+import ij.process.ImageProcessor;
 
 import java.awt.*;
-import java.awt.event.*;
-import java.util.*;
-import java.math.*;
 
 /**
  * Simple aperture photometer using a circular aperture and a background annulus with
@@ -135,7 +133,7 @@ public class Photometer
 	/**
 	 * Performs aperture photometry on the current image using given center and aperture radii.  
 	 *
-	 *	@param ip		ImageProcessor
+	 *	@param imp		ImageProcessor
 	 *	@param x		x-position of aperture center (pixels)
 	 *	@param y		y-position of aperture center (pixels)
 	 *	@param rad		radius of source aperture (pixels)
@@ -597,7 +595,7 @@ double chord(double x, double y0, double y1)
 	/**
 	 * Performs aperture photometry on the current image given a pre-calculated center and standard radii.
 	 *
-	 *	@param ip		ImageProcessor
+	 *	@param imp		ImageProcessor
 	 *	@param x		x-position of aperture center (pixels)
 	 *	@param y		y-position of aperture center (pixels)
 	 */
@@ -633,9 +631,6 @@ double chord(double x, double y0, double y1)
 
 	/**
 	 * Sets the CCD gain [e- per ADU] and RON [e-] and dark current [e-/pix] (!! note, not e-/pix/sec)
-	 *
-	 * @param r1		the minimum background aperture radius.
-	 * @param r2		the maximum background aperture radius.
 	 */
 	public void setCCD (double g, double n, double d)
 		{

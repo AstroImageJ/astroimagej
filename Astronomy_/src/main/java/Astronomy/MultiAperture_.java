@@ -3607,13 +3607,23 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
         gd.addDoubleSpaceLineSeparator();
         gd.addCheckbox("Use previous " + nAperturesStored + " apertures (1-click to set first aperture location)", previous && nAperturesStored > 0, b -> previous = b)
-                .setToolTipText("");
+                .setToolTipText("<html>Use the same starting apertures as the previous Multi-Aperture run, or apertures that were previously loaded from an apertures or radec file.<br>" +
+                        "NOTE: If comp stars are already included in the set, you may want to disable the 'Auto comparison stars' option below.</html>");
         gd.addCheckbox("Use RA/Dec to locate aperture positions", useWCS, b -> useWCS = b)
-                .setToolTipText("");
+                .setToolTipText("<html>If enabled, apertures will first be placed according to their RA and DEC location.<br>"+
+                        "If centroid is also enabled for an aperture, the centroid operation will start from the RA and Dec position.<br>"+
+                        "If 'Halt on WCS error' below is disabled, mixed mode RA-Dec and X-Y placement is possible.<br>" +
+                        "Mixed-mode is useful if plate solving is slow. In this mode, only the first image and any subsequent image<br>"+
+                        "with a large shift on the detector, such as a meridian flip, need to be plate solved.</html>");
         gd.addCheckbox("Use single step mode (1-click to set first aperture location in each image)", singleStep, b -> singleStep = b)
-                .setToolTipText("");
+                .setToolTipText("<html>Single step mode allows apertures to be placed in the first image, and then after each image is processed,<br>"+
+                        "Multi-Aperture will pause to allow the user to click near the T1 star location in the next image. This mode of operation is useful with<br>"+
+                        "image sequences that are not plate solved and that have image shifts too large for centroid to track.</html>");
         gd.addCheckbox("Allow aperture changes between slices in single step mode (right click to advance image)", allowSingleStepApChanges, b -> allowSingleStepApChanges = b)
-                .setToolTipText("");
+                .setToolTipText("<html>This mode works the same as Single Step mode, except that Multi-Aperture does not automatically advance<br>"+
+                        "to the next image when the T1 location is selected. Instead, the user has the choice to tweak the aperture locations<br>" +
+                        "using drag and drop. After the new locations are optionally set, press Enter or right-click to advance to the next image.<br>" +
+                        "This mode can be helpful for image sequences with moving objects, or apertures that jump to incorrect stars.</html>");
         gd.addDoubleSpaceLineSeparator();
 
         // Make all sliders the same size
@@ -3787,22 +3797,27 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 //                                                "Compute relative flux signal-to-noise", "Compute total comparison star counts"},
                 new boolean[]{reposition, haltOnError, removeBackStars, backIsPlane}, list1);//,showRatio, showRatioError,showRatioSNR,showCompTot});
 
-        penultimateBoxes.subComponents().get(0).setToolTipText("");
-        penultimateBoxes.subComponents().get(1).setToolTipText("");
-        penultimateBoxes.subComponents().get(2).setToolTipText("");
-        penultimateBoxes.subComponents().get(3).setToolTipText("");
+        penultimateBoxes.subComponents().get(0).setToolTipText("<html>Enable to set the initial state of the 'Centroid' icon when aperture placement starts.<br>" +
+                "NOTE: The centroid setting of 'Previous apertures' will not be affected by this setting.<br>" +
+                "The centroid setting of 'Previous apertures' can be changed by an alt-left-click inside the aperture.</html>");
+        penultimateBoxes.subComponents().get(1).setToolTipText("Enable to halt Multi-aperture if centroid fails, or if 'Use RA-Dec' is selected, but an image is not plate solved.");
+        penultimateBoxes.subComponents().get(2).setToolTipText("<html>Enable to use an interative 2-sigma outlier removal technique to ignore pixels in the background region<br>"+
+                "that are statistically brighter or darker than other pixels. This mode is generally recommended and<br>"+
+                "effectively causes Multi-aperture to ignore pixels containing stars within the background region.</html>");
+        penultimateBoxes.subComponents().get(3).setToolTipText("Enable to fit a plane to the background pixels to attempt to account for large background gradients in the images.");
 
         gd.addDoubleSpaceLineSeparator();
         gd.addCheckbox("Prompt to enter ref star apparent magnitude (required if target star apparent mag is desired)", getMags, b -> getMags = b)
-                .setToolTipText("");
+                .setToolTipText("Apparent magntiudes are not needed for standard differential photometry.");
 
         final var list2 = new ArrayList<Consumer<Boolean>>();
         list2.add(b -> updatePlot = b);
         list2.add(b -> showHelp = b);
         var bottomChecks = gd.addCheckboxGroup(1, 2, new String[]{"Update table and plot while running", "Show help panel during aperture selection"},
                 new boolean[]{updatePlot, showHelp}, list2);
-        bottomChecks.subComponents().get(0).setToolTipText("");
-        bottomChecks.subComponents().get(1).setToolTipText("");
+        bottomChecks.subComponents().get(0).setToolTipText("<html>Multi-aperture will run faster with this option disabled,<br>" +
+                "but the table and plot displays will only update once when the Multi-Aperture run has finished.</html>");
+        bottomChecks.subComponents().get(1).setToolTipText("This extra panel is useful to new users that need additional keyboard/mouse help when placing apertures.");
     }
 
     private void toggleComponents(Component[] components, int offset, boolean toggle) {
@@ -4073,23 +4088,46 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         /**
          * Fixed based on user setting.
          */
-        FIXED("Fixed Apertures as selected above", 0, ""),
+        FIXED("Fixed Apertures as selected above", 0, "<html>Use standard fixed aperture photometry based on the user selected aperture radius and background annulus radii above.</html>"),
         /**
          * Auto radius based on radial profile.
          */
-        AUTO_FIXED("Auto Fixed Apertures from first image T1 radial profile", 0.01, ""),
+        AUTO_FIXED("Auto Fixed Apertures from first image T1 radial profile", 0.01, "<html>Use automatically sized fixed aperture photometry.<br>" +
+                "The aperture and background radii are extracted using a radial profile<br>" +
+                "measurement from the T1 aperture in the first image only.<br>" +
+                "The user selected fixed aperture radii above are used to perform the initial radial profile measurement,<br>" +
+                "so they should be set to reasonable aperture radii guesses for your images (e.g. 10-20-30).<br>" +
+                "To make the auto aperture radii generally larger, use a smaller cutoff threshold value and vice versa.</html>"),
         /**
          * Auto variable radius based on radial profile.
          */
-        AUTO_VAR_RAD_PROF("Auto Variable Apertures from each image T1 radial profile", 0.01, ""),
+        AUTO_VAR_RAD_PROF("Auto Variable Apertures from each image T1 radial profile", 0.01, "<html>Use automatically sized variable aperture photometry.<br>" +
+                "The aperture and background radii are extracted using a radial profile measurement from the T1 aperture in each image.<br>" +
+                "All apertures within a single image will be the same size, but aperture sizes may vary from image to image if the PSF size changes.<br>" +
+                "The user selected fixed aperture radii above are used to perform the initial radial profile measurement in each image,<br>" +
+                "so they should be set to reasonable aperture radii guesses for your images (e.g. 10-20-30).<br>" +
+                "To make the auto aperture radii generally larger, use a smaller cutoff threshold value and vice versa.</html>"),
         /**
          * Auto variable radius based on FWHM.
          */
-        AUTO_VAR_FWHM("Auto Variable Apertures from each image T1 FWHM", 1.4, ""),
+        AUTO_VAR_FWHM("Auto Variable Apertures from each image T1 FWHM", 1.4, "<html>Use variable aperture photometry based on FWHM estimated from centroid function.<br>" +
+                "The aperture radius in each image is the FWHM estimated by the AIJ centroid function<br>" +
+                "from the T1 aperture in each image, multiplied by the FWHM Factor setting.<br>" +
+                "All apertures within a single image will be the same size, but aperture sizes may vary from image to image if the FWHM changes.<br>" +
+                "The user selected fixed aperture radius above is used to perform the centroid measurement and should be set<br>" +
+                "to at least the FWHM (in pixels) that you expect in the worst image in the stack.<br>"+
+                "The user selected background radii are used directly, so should be set larger than the largest expected aperture radius.<br>" +
+                "To make the auto aperture radii generally larger, set the FWHM factor multiplier to a larger value and vice versa.</html>"),
         /**
          * Auto variable aperture based on the entire stack.
          */
-        AUTO_FIXED_STACK_RAD("Auto Fixed Apertures from multi-image T1 radial profiles", 0.01, "");
+        AUTO_FIXED_STACK_RAD("Auto Fixed Apertures from multi-image T1 radial profiles", 0.01, "<html>Use automatically sized fixed aperture photometry based on all images.<br>" +
+                "The aperture and background radii are extracted using a radial profile measurements from the T1 aperture in ALL images.<br>" +
+                "This mode will require two passes through the stack, so will take longer than a standard fixed aperture run.<br>" +
+                "Plate solved images are recommended. Un-plate solved images are OK as long as the apertures can track the image shifts.<br>" +
+                "The user selected fixed aperture radii above are used to perform the radial profile measurements,<br>" +
+                "so they should be set to reasonable aperture radii guesses for your images (e.g. 10-20-30).<br>" +
+                "To make the auto aperture radii generally larger, use a smaller cutoff threshold value and vice versa.</html>");
 
         private static final ButtonGroup group = new ButtonGroup();
         private final String buttonText, tooltip;

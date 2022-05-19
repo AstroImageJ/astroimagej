@@ -577,8 +577,17 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	 * Take 3D fits data and open it as an {@link ImageStack}.
 	 */
 	private ImageProcessor process3DimensionalImage(BasicHDU<?> hdu, Data imgData) throws FitsException {
+		// Get the Header as a String
+		List<String> headers = new ArrayList<>(hdu.getHeader().getIntValue(NAXISn.n(3).key()));
+		final var baos = new ByteArrayOutputStream();
+		final var utf8 = StandardCharsets.UTF_8.name();
+		try (PrintStream ps = new PrintStream(baos, true, utf8)) {
+			hdu.getHeader().dumpHeader(ps);
+			headers.add(baos.toString(utf8));
+		} catch (Exception ignored) {}
+
 		return makeStackFrom3DData((Object[]) imgData.getKernel(),
-				hdu.getHeader().getIntValue(NAXISn.n(3).key()));
+				hdu.getHeader().getIntValue(NAXISn.n(3).key()), headers);
 	}
 
 	/**
@@ -600,17 +609,18 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		var pm = makeMonitor(imageCount);
 		for (int i = 0; i < imageCount; i++) {
 			String header = "";
-			if (headers != null) {
-				if (headers.get(i).contains("AIJ_Q")) { // For TESScut, skip bad images
+			if (headers != null && headers.size() > 0) {
+				var headerIndex = headers.size() == 1 ? 0 : i;
+				if (headers.get(headerIndex).contains("AIJ_Q")) { // For TESScut, skip bad images
 					AIJLogger.log("     Skipping an image due to quality flag: " + (i+1));
 					continue;
-				} else if (headers.get(i).contains("AIJ_Q2")) { // For Postage stamp, skip null images
+				} else if (headers.get(headerIndex).contains("AIJ_Q2")) { // For Postage stamp, skip null images
 					continue;
-				} else if (headers.get(i).contains("NO_BJD")) { // For TESScut, skip if no BJD available
+				} else if (headers.get(headerIndex).contains("NO_BJD")) { // For TESScut, skip if no BJD available
 					AIJLogger.log("     Skipping an image due to a missing or invalid BJD time: " + (i+1));
 					continue;
 				}
-				header = headers.get(i) + "\n";
+				header = headers.get(headerIndex) + "\n";
 			}
 			ip = twoDimensionalImageData2Processor(data[i]);
 			stack.addSlice(fileBase + "_" + (imageCount<10000 ? fourDigits.format(i+1) : (i+1))

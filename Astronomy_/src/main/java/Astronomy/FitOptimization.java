@@ -615,7 +615,7 @@ public class FitOptimization implements AutoCloseable {
 
         // Fixes weird y-data selection changes
         MultiPlot_.subFrame.repaint();
-        MultiPlot_.mainsubpanel.repaint();
+        mainpanel.repaint();
         if (ipsExecutorService != null) ipsExecutorService.shutdownNow();
         ipsExecutorService = null;
         IJ.showStatus("");
@@ -638,6 +638,7 @@ public class FitOptimization implements AutoCloseable {
         // Update table data - here we use full data, while on first open of a table MP will use truncated data
         MultiPlot_.updateTotals();
         MultiPlot_.updateGUI();
+        MultiPlot_.waitForPlotUpdateToFinish();
 
         if (showOptLog) AIJLogger.log(String.format("Using at most %d threads", MAX_THREADS));
 

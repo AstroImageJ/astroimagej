@@ -1566,16 +1566,16 @@ public class CurveFitter {
             }
         }
 
-        var rms = calculateRms(curve, yModel1, yModel1Err, detrendYE, detrendX, x[curve], y, yerr, bestFit);
+        var rms = calculateRms(curve, yModel1, yModel1Err, detrendYE, detrendX, x[curve], y, yerr, bestFit, detrendYAverage);
         return new OptimizerResults(rms, bic);
     }
 
     public static double calculateRms(int curve, double[] yModel1, double[] yModel1Err,
                                       double[] detrendYE, double[] detrendX, double[] x, double[] y,
-                                      double[] yerr, double[] bestFit) {
-        double[] residual = MultiPlot_.residual[curve];
-        double sigma = 0;
-        double detrendYAverage = 0;
+                                      double[] yerr, double[] bestFit, double detrendYAverage) {
+        var residual = MultiPlot_.residual[curve];
+        var sigma = 0D;
+
         if (detrendFitIndex[curve] == 9 && useTransitFit[curve] && yModel1 != null) {
             int cnt = 0;
             int len = yModel1.length;

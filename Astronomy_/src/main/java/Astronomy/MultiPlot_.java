@@ -188,6 +188,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static int maxSubsetColumns;
     static boolean silenceAbsMagTF;
 
+    private static boolean awaitingScheduledPlotUpdate = false;
+    private static final Object lock = new Object();
+
     static double pixelScale;
     static double zoom;
     static double xMin;
@@ -1258,6 +1261,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
      */
     static protected void startDelayedUpdateTimer(final boolean[] updateFit, final boolean useAutoAstroDataUpdate) {
         try {
+            setWaitingForPlot(true);
             if (delayedUpdateTimer != null) {
                 delayedUpdateTimer.cancel();
 
@@ -1268,7 +1272,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
             delayedUpdateTask = new TimerTask() {
                 public void run() {
-                    updatePlot(updateFit, useAutoAstroDataUpdate);
+                    if (!updatePlotRunning && !awaitingScheduledPlotUpdate) updatePlot(updateFit, useAutoAstroDataUpdate);
+                    setWaitingForPlot(false);
                 }
 
             };
@@ -1276,6 +1281,12 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             delayedUpdateTimer.schedule(delayedUpdateTask, 200);
         } catch (Exception e) {
             //IJ.showMessage ("Error starting delayed plot update timer : "+e.getMessage());
+        }
+    }
+
+    public static void setWaitingForPlot(boolean b) {
+        synchronized (lock) {
+            awaitingScheduledPlotUpdate = b;
         }
     }
 
@@ -3572,14 +3583,14 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                 }
                             }
 
-                            outBinRms[curve] = 1000*CurveFitter.calculateRms(curve, modelBin, pts.err(), pts.err(), pts.x(), pts.x(), pts.y(), pts.err(), bestFit[curve]);
+                            outBinRms[curve] = 1000*CurveFitter.calculateRms(curve, modelBin, pts.err(), pts.err(), pts.x(), pts.x(), pts.y(), pts.err(), bestFit[curve], detrendYAverage[curve]);
                             outBinRms[curve] *= bestFit[curve][0];
                         } else {
                             var xModelBin = Arrays.copyOf(pts.x(), pts.x().length);
                             for (int nnn = 0; nnn < xModelBin.length; nnn++) {
                                 xModelBin[nnn] += xOffset;
                             }
-                            outBinRms[curve] = 1000*CurveFitter.calculateRms(curve, null, pts.err(), pts.err(), xModelBin, xModelBin, pts.y(), pts.err(), bestFit[curve]);
+                            outBinRms[curve] = 1000*CurveFitter.calculateRms(curve, null, pts.err(), pts.err(), xModelBin, xModelBin, pts.y(), pts.err(), bestFit[curve], detrendYAverage[curve]);
                         }
                     }
                 }
@@ -15519,7 +15530,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
     public static void waitForPlotUpdateToFinish() {
         int cnt = 0;  //timeout after 1 second
-        while (cnt < 10 && updatePlotRunning) {
+        while (cnt < 10 && (updatePlotRunning || awaitingScheduledPlotUpdate)) {
             IJ.wait(100);
             cnt++;
 //                if (cnt == 10)

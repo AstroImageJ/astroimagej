@@ -1261,7 +1261,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
      */
     static protected void startDelayedUpdateTimer(final boolean[] updateFit, final boolean useAutoAstroDataUpdate) {
         try {
-            setWaitingForPlot(true);
             if (delayedUpdateTimer != null) {
                 delayedUpdateTimer.cancel();
 
@@ -1313,6 +1312,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 //                IJ.log("Plot update is "+(updatePlotRunning?"running":"not running"));
         if ((table != null && table.isLocked()) || !updatePlotEnabled || updatePlotRunning) {
 //                    IJ.log("starting delayed updatePlot() timer");
+            setWaitingForPlot(true);
             startDelayedUpdateTimer(updateFit, false);
             return;
         }
@@ -14961,6 +14961,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             }
             updatePlotEnabled = true;
             if (table != null) table.setLock(false);
+            setWaitingForPlot(false);
         });
     }
 

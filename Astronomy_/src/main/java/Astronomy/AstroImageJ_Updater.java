@@ -12,6 +12,8 @@ import javax.net.ssl.X509TrustManager;
 import java.io.*;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
@@ -154,7 +156,7 @@ public class AstroImageJ_Updater implements PlugIn {
                                                   "In that case, try the update at a later time.</html>");
             return;
             }
-		int count = list.length + 1;
+		int count = list.length + (IJ.isWindows() ? 2 : 1);
 		String[] versions = new String[count];
 		String[] urls = new String[count];
         String[] AstronomyUrls = new String[count];
@@ -165,8 +167,10 @@ public class AstroImageJ_Updater implements PlugIn {
         AstronomyUrls[0] = URL+"/Astronomy_.jar";
         StartupMacrosUrls[0] = URL+"/StartupMacros.txt";
 
-		for (int i=1; i<count; i++) {
-			String version = list[i-1];
+		versions[1] = "launcher";
+
+		for (int i=(IJ.isWindows() ? 2 : 1); i<count; i++) {
+			String version = list[i-(IJ.isWindows() ? 2 : 1)];
 			versions[i] = version;//.substring(0,version.length()-1); // remove letter
 			urls[i] = URL+"/ij"+version+".jar";//.substring(1,2)+version.substring(3,6)+".jar";
             AstronomyUrls[i] = URL+"/Astronomy_"+version+".jar";
@@ -174,8 +178,28 @@ public class AstroImageJ_Updater implements PlugIn {
 		}
 		int choice = showDialog(versions);
 		if (choice==-1) return;
-        
-       
+
+		if (IJ.isWindows() && choice == 1) {
+			var cfg = getFile("https://github.com/AstroImageJ/astroimagej/releases/download/v0/launcher.ini", "launcher config");
+			var lnchr = getFile("https://github.com/AstroImageJ/astroimagej/releases/download/v0/AstroImageJ.exe", "launcher");
+
+			if (cfg == null) {
+				error("Unable to download launcher config");
+				return;
+			}
+
+			if (lnchr == null) {
+				error("Unable to download new launcher");
+				return;
+			}
+
+			if (Files.exists(Path.of("launcher.ini"))) saveFile(new File("launcher.ini"), cfg);
+			saveFile(new File("AstroImageJ.exe"), lnchr);
+
+			System.exit(0);
+			return;
+		}
+
 		byte[] jar = getFile(urls[choice], "ij"+(choice==0?"":versions[choice])+".jar");
 		if (jar==null) {
 			error("Unable to download ij.jar from "+urls[choice]);

@@ -15260,9 +15260,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 }
                 if (goodErrData) {
                     errcol = table.getColumnIndex("rel_flux_err_" + (isRefStar[ap] ? "C" : "T") + (ap + 1));
-                    if (col == ResultsTable.COLUMN_NOT_FOUND) {
-                        col = table.getFreeColumn("rel_flux_err_" + (isRefStar[ap] ? "C" : "T") + (ap + 1));
-                        if (col == ResultsTable.COLUMN_NOT_FOUND) {
+                    if (errcol == ResultsTable.COLUMN_NOT_FOUND) {
+                        errcol = table.getFreeColumn("rel_flux_err_" + (isRefStar[ap] ? "C" : "T") + (ap + 1));
+                        if (errcol == ResultsTable.COLUMN_NOT_FOUND) {
                             IJ.beep();
                             IJ.showMessage("Error: could not create data column 'rel_flux_err_" + (isRefStar[ap] ? "C" : "T") + (ap + 1) + "'");
                             return;

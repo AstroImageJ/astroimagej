@@ -1,9 +1,12 @@
 package ij.plugin;
-import ij.*;
+
+import ij.IJ;
+import ij.Prefs;
 import ij.astro.AstroImageJ;
-import ij.gui.*;
-import java.io.*;
+import ij.gui.GenericDialog;
 import ij.util.Tools;
+
+import java.io.*;
 
 
 /** This plugin implements the Edit/Options/Memory command. */
@@ -21,6 +24,7 @@ public class Memory implements PlugIn {
 		//IJ.log("maxMemory="+maxMemory()/(1024*1024)+"MB");
 	}
 
+	@AstroImageJ(reason = "Allow setting of memory when the option isn't present", modified = true)
 	void changeMemoryAllocation() {
 		IJ.maxMemory(); // forces IJ to cache old limit
 		int max = (int)(getMemorySetting()/1048576L);
@@ -45,8 +49,8 @@ public class Memory implements PlugIn {
 			IJ.showMessage("Memory", "The number entered was invalid.");
 			return;
 		}
-		if (unableToSet && max2!=max)
-			{showError(); return;}
+		/*if (unableToSet && max2!=max)
+			{showError(); return;}*/
 		if (max2<256 && IJ.isMacOSX()) max2 = 256;
 		if (max2<32 && IJ.isWindows()) max2 = 32;
 		if (max2==max) return;
@@ -91,7 +95,7 @@ public class Memory implements PlugIn {
 			String s2 = s.substring(index2);
 			if (s2.startsWith("g"))
 				s2 = "m"+s2.substring(1);
-			String s3 = s.substring(0, index1) + max2 + s2;
+			String s3 = unableToSet ? "-Xmx" + max2 + s2 : s.substring(0, index1) + max2 + s2;
 			FileOutputStream fos = new FileOutputStream(f);
 			PrintWriter pw = new PrintWriter(fos);
 			pw.print(s3);

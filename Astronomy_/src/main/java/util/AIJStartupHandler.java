@@ -33,6 +33,7 @@ public class AIJStartupHandler implements PlugIn {
 
     @Override
     public void run(String arg) {
+        IJ.runPlugIn(AstroImageJ_Updater.class.getCanonicalName(), "launcher");
         IJ.runPlugIn(AstroImageJ_Updater.class.getCanonicalName(), "check");
         FileAssociationHandler.registerAssociation(multiplotTableHandler);
     }

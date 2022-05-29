@@ -73,27 +73,6 @@ public class AstroImageJ_Updater implements PlugIn {
 			return;
 		}
 
-		if ("launcher".equals(arg)) {
-			if (IJ.isWindows() && !Files.exists(Path.of("launcher.ini"))) {
-				var cfg = getFile("https://github.com/AstroImageJ/astroimagej/releases/download/v0/launcher.ini", "launcher config");
-				var lnchr = getFile("https://github.com/AstroImageJ/astroimagej/releases/download/v0/AstroImageJ.exe", "launcher");
-
-				if (cfg == null) {
-					error("Unable to download launcher config");
-					return;
-				}
-
-				if (lnchr == null) {
-					error("Unable to download new launcher");
-					return;
-				}
-
-				if (Files.exists(Path.of("launcher.ini"))) saveFile(new File("launcher.ini"), cfg);
-				saveFile(new File("AstroImageJ.exe"), lnchr);
-				return;
-			}
-		}
-
 		URL url = getClass().getResource("/ij/IJ.class");
 		String ij_jar = url == null ? null : url.toString().replaceAll("%20", " ");
 		if (ij_jar==null || !ij_jar.startsWith("jar:file:")) {
@@ -212,6 +191,24 @@ public class AstroImageJ_Updater implements PlugIn {
 		if (StartupMacro==null) {
 			error("Unable to download StartupMacros.txt from "+StartupMacrosUrls[choice]);
 			return;
+		}
+
+		if (IJ.isWindows() && !Files.exists(Path.of("launcher.ini"))) {
+			var cfg = getFile("https://github.com/AstroImageJ/astroimagej/releases/download/v0/launcher.ini", "launcher config");
+			var lnchr = getFile("https://github.com/AstroImageJ/astroimagej/releases/download/v0/AstroImageJ.exe", "launcher");
+
+			if (cfg == null) {
+				error("Unable to download launcher config");
+				return;
+			}
+
+			if (lnchr == null) {
+				error("Unable to download new launcher");
+				return;
+			}
+
+			if (Files.exists(Path.of("launcher.ini"))) saveFile(new File("launcher.ini"), cfg);
+			saveFile(new File("AstroImageJ.exe"), lnchr);
 		}
 
 		Prefs.savePreferences();

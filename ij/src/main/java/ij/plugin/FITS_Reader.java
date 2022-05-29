@@ -19,7 +19,6 @@ import ij.measure.Calibration;
 import ij.process.ImageProcessor;
 import nom.tam.fits.*;
 import nom.tam.image.compression.hdu.CompressedImageHDU;
-import nom.tam.util.Cursor;
 
 import javax.swing.*;
 import java.io.*;
@@ -232,15 +231,15 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	 */
 	private String getHeaderInfo(BasicHDU<?> displayHdu) {
 		Header header = displayHdu.getHeader();
-		header.setSimple(true);
-		StringBuilder info = new StringBuilder();
-		Cursor<String, HeaderCard> iter = header.iterator();
-		while (iter.hasNext()) {
-			info.append(iter.next());
-			info.append('\n');
-		}
-		//IJ.log(info.toString());  //print header
-		return info.toString();
+
+		// Get the Header as a String
+		final var baos = new ByteArrayOutputStream();
+		final var utf8 = StandardCharsets.UTF_8.name();
+		try (PrintStream ps = new PrintStream(baos, true, utf8)) {
+			header.dumpHeader(ps);
+		} catch (Exception ignored) {}
+
+		return baos.toString();
 	}
 
 	/**
@@ -566,7 +565,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 					hmsms[2]).toInstant(ZoneOffset.ofTotalSeconds(0));
 			dateTime = dateTime.plusMillis(hmsms[3]);
 			hdu.addValue("DATE-OBS", FitsDate.getFitsDateString(Date.from(dateTime)),
-					"[UTC] Start date and time of the observation");
+					"[UTC] Start date and time of obs.");
 
 			// Copy exposure time
 			hdu.addValue("TELAPSE", header.getIntValue("INT_TIME"), "Integration time (s)");

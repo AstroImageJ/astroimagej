@@ -281,9 +281,9 @@ def commonDist = project.copySpec {
 project.copy {
     with commonDist
     into "${buildDir}/commonFiles"
-    if (Os.isFamily(Os.FAMILY_MAC) && file("${buildDir}/commonFiles/AstroImageJ.l4j.ini").exists()) {
+    if (Os.isFamily(Os.FAMILY_MAC) && file("${buildDir}/commonFiles/AstroImageJ.cfg").exists()) {
         project.exec {
-            commandLine('chmod',  'a=rw', "${buildDir}/commonFiles/AstroImageJ.l4j.ini")
+            commandLine('chmod',  'a=rw', "${buildDir}/commonFiles/AstroImageJ.cfg")
         }
     }
 }
@@ -300,9 +300,9 @@ task commonFiles(type: Copy) {
     with commonDist
     into "${buildDir}/commonFiles"
     doLast {
-        if (Os.isFamily(Os.FAMILY_MAC) && file("${buildDir}/commonFiles/AstroImageJ.l4j.ini").exists()) {
+        if (Os.isFamily(Os.FAMILY_MAC) && file("${buildDir}/commonFiles/AstroImageJ.cfg").exists()) {
             project.exec {
-                commandLine('chmod',  'a=rw', "${buildDir}/commonFiles/AstroImageJ.l4j.ini")
+                commandLine('chmod',  'a=rw', "${buildDir}/commonFiles/AstroImageJ.cfg")
             }
         }
     }
@@ -317,7 +317,7 @@ task sync(dependsOn: jar, type: Sync) {
     with {
         from(file("${projectDir}/devLaunchOptions.txt")) {
             duplicatesStrategy = DuplicatesStrategy.INCLUDE
-            rename {String name -> return "AstroImageJ.l4j.ini"}
+            rename {String name -> return "AstroImageJ.cfg"}
         }
     }
     destinationDir(file("${projectDir}/AIJ-Run"))
@@ -342,7 +342,7 @@ task aijRun(dependsOn: sync, type: JavaExec) {
 
 List<String> readConfigFile() {
     List<String> args = new ArrayList<>()
-    File cfg = file("${projectDir}/AIJ-Run/AstroImageJ.l4j.ini") as File
+    File cfg = file("${projectDir}/AIJ-Run/AstroImageJ.cfg") as File
     if (!cfg.exists()) return args
 
     File devCfg = file("${projectDir}/devLaunchOptions.txt") as File
@@ -391,7 +391,7 @@ javapackager {
     linuxConfig.wrapJar = false
 
     organizationName  "AstroImageJ"
-    vmArgs  [] //['-Xmx3000m', '-Xms256m'] // Launch parameters are set in AstroImageJ.l4j.ini
+    vmArgs  [] //['-Xmx3000m', '-Xms256m'] // Launch parameters are set in AstroImageJ.cfg
     version = 'dev-x86' // Dummy version to keep it from saying "unspecified"
 
     // Set to true to enable installer generation. Needs to be on the target OS and needs special tooling

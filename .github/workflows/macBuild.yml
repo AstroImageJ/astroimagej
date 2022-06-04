@@ -25,7 +25,7 @@ jobs:
       - name: Make Common Files
         run: ./gradlew commonFiles
       - name: Make ini writable I hope
-        run: chmod u=rwx build/commonFiles/AstroImageJ.l4j.ini
+        run: chmod u=rwx build/commonFiles/AstroImageJ.cfg
       - name: Package AIJ
         run: ./gradlew packageAijForMacos_x86 packageAijForMacos_arm
       - uses: actions/upload-artifact@v2

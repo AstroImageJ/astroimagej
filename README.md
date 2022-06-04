@@ -21,7 +21,7 @@ The tasks `copyBuiltJars` and `runAij` are configured through text files in the 
 medium-term basis without using Gradle or and IDE to update it each time. When developing in Intellij Idea, if this file
 is present, the `copyBuiltJars` task will be run automatically when the hammer icon is clicked.
 
-`devLaunchOptions.txt` contains the Java launch arguments, eg. `-Xmx5000m -Xms256m`, the same as the config file `AstroImageJ.l4j.ini` does for 
+`devLaunchOptions.txt` contains the Java launch arguments, eg. `-Xmx5000m -Xms256m`, the same as the config file `AstroImageJ.cfg` does for 
 normal installations of AIJ. If present, these options are used in place of the defaults for `runAij`.
 
 ### Use in Intellij Idea:

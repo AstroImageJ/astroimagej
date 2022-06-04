@@ -2,7 +2,7 @@ Preferences can be propagated forward by copying the hidden file
 HOME/.image/IJ_Prefs.txt to HOME/.astroimage/AIJ_Prefs.txt 
 
 To propagate memory and java virtual machine settings forward, copy the
-ImageJ.cfg file from your old installation directory to AstroImageJ.l4j.ini in your
+ImageJ.cfg file from your old installation directory to AstroImageJ.cfg in your
 new installation directory.
 
 

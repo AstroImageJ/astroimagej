@@ -207,7 +207,13 @@ public class AstroImageJ_Updater implements PlugIn {
 				return;
 			}
 
-			if (Files.exists(Path.of("launcher.ini"))) saveFile(new File("launcher.ini"), cfg);
+			saveFile(new File("launcher.ini"), cfg);
+			var source = Path.of("AstroImageJ.l4j.ini");
+			try {
+				Files.move(source, source.resolveSibling("AstroImageJ.cfg"));
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
 			saveFile(new File("AstroImageJ.exe"), lnchr);
 		}
 

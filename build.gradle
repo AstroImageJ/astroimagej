@@ -278,7 +278,7 @@ def commonDist = project.copySpec {
 }
 
 // Create commonFiles directory for use in runAij and distribution generation
-project.copy {
+project.sync {
     with commonDist
     into "${buildDir}/commonFiles"
     if (Os.isFamily(Os.FAMILY_MAC) && file("${buildDir}/commonFiles/AstroImageJ.cfg").exists()) {
@@ -293,7 +293,7 @@ project.copy {
  *
  * This is run when building a distribution to refresh the files in case of a change.
  */
-task commonFiles(type: Copy) {
+task commonFiles(type: Sync) {
     outputs.upToDateWhen {false}
     dependsOn ':ij:build', ':Astronomy_:build'
     mustRunAfter ':ij:build', ':Astronomy_:build'

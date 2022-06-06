@@ -15,7 +15,7 @@ Some JVM arguments of note:
 - Change the display size of AIJ
   -Dsun.java2d.uiScale=1.0
   This option differs from the GUI version of display scaling in that it effects all of AIJ's windows.
- - You may find a full list available here: https://docs.oracle.com/en/java/javase/17/docs/specs/man/java.html#overview-of-java-options
+- You may find a more complete list available here: https://docs.oracle.com/en/java/javase/17/docs/specs/man/java.html#overview-of-java-options
 
 AstroImageJ is distributed with a 64-bit version of Java.
 

@@ -1,14 +1,23 @@
+# This is used to start the application. It should not be changed.
 mainclass=$info.mainClass
+# This is used to start the application. It should not be changed.
 classpath=$info.jarName
 #foreach ($cp in $info.classpaths)
 classpath=;$!{cp}
 #end
 #if ($info.bundleJre)
+# The path to the Java runtime directory. Can be relative to the launcher or an absolute path.
+# The path must be no more than 3 levels above the jvm.dll
 jvm_path=${info.jreDirectoryName}
 #end
 #if (!$info.bundleJre && $info.jreMinVersion)
+# The minimum Java version this program supports. Older JVMs will be ignored during discovery.
 min_java=${info.jreMinVersion}
 #end
+# The name of the file to read Java launch arguments from. These are used to control JVM behavior.
 launch_options_file=${info.name}.cfg
+# The value used to specify the maximum memory percentage of the program.
+# If the option Xmx is in the launch options file, this option is ignored.
 maximum_heap_percentage=75
+# When true, the previous instance of the JVM will be used to run this application.
 use_previous_jvm=true

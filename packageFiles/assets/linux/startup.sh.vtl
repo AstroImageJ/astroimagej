@@ -67,6 +67,18 @@ JVMDefaultOptions="${vmArgs}"
 JVMOptionsFile="$SCRIPTPATH/${info.name}.cfg"
 [ -f $JVMOptionsFile ] && while read -r option; do JVMDefaultOptions+=" $option"; done <<< $(sed "/^#.*$/d" $JVMOptionsFile)
 
+if [[ "$JVMDefaultOptions" != *"-Xmx"* ]]; then
+  # Ram size in kb
+  totalram=$(cat /proc/meminfo | grep -i 'memtotal' | grep -o '[[:digit:]]*')
+
+  # Ram size in mb
+  ram_size=$((totalram/1024))
+
+  # Percentage Memory
+  mem=$(( ram_size*75/100 ))
+  JVMDefaultOptions+=" -Xmx$((mem))m";
+fi
+
 JVMClassPath="$BINARY"
 #foreach ($classpath in $info.classpaths)
 JVMClassPath+=":${classpath}"

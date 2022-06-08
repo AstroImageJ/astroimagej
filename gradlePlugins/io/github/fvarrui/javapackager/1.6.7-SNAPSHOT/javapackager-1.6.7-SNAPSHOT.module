@@ -3,15 +3,15 @@
   "component": {
     "group": "io.github.fvarrui",
     "module": "javapackager",
-    "version": "1.6.6-WHY4",
+    "version": "1.6.7-SNAPSHOT",
     "attributes": {
-      "org.gradle.status": "release"
+      "org.gradle.status": "integration"
     }
   },
   "createdBy": {
     "gradle": {
       "version": "6.8.3",
-      "buildId": "o6dq3fncobhpthtnlep5mep2ua"
+      "buildId": "emfgbxil5fhnjl3gufv2b57rlq"
     }
   },
   "variants": [
@@ -26,13 +26,13 @@
       },
       "files": [
         {
-          "name": "javapackager-1.6.6-WHY4.jar",
-          "url": "javapackager-1.6.6-WHY4.jar",
-          "size": 1455718,
-          "sha512": "ed7d08798e8e2764ac94f0fa572ee572413d848dfd37e90797a2a30e706c58f1c3ae3a45669d99d28cb0c1d565d2ea98cda77cb94f2875e7a3ea501e637c05d2",
-          "sha256": "a27bcd06bf03b2e2601ca03ff22575b04bdc3d2dec4aada101e4c9d8a0d9dde7",
-          "sha1": "6a5970db199b2b5728f36ceed16a504504c11977",
-          "md5": "66e39ce250ec8d8581730825e34d7c5d"
+          "name": "javapackager-1.6.7-SNAPSHOT.jar",
+          "url": "javapackager-1.6.7-SNAPSHOT.jar",
+          "size": 1456037,
+          "sha512": "37e2b373942f9d39cf0b51c77b5d8a7d3048d077fdd56234ffa5e86002832416122847f9f303c9a05e9bc31d5f74aed157dcad7f6435fca5e786548187dbeb09",
+          "sha256": "98550ff91ba4114385acf0fb92ff3b4a0e8ff1aedf59e64772fedeb890d698f3",
+          "sha1": "f56ed60d1417564baef8b869fa241e40165aa6ed",
+          "md5": "7d0dcd8bc743a04ffa532d9291d3f10b"
         }
       ]
     },
@@ -133,13 +133,13 @@
       ],
       "files": [
         {
-          "name": "javapackager-1.6.6-WHY4.jar",
-          "url": "javapackager-1.6.6-WHY4.jar",
-          "size": 1455718,
-          "sha512": "ed7d08798e8e2764ac94f0fa572ee572413d848dfd37e90797a2a30e706c58f1c3ae3a45669d99d28cb0c1d565d2ea98cda77cb94f2875e7a3ea501e637c05d2",
-          "sha256": "a27bcd06bf03b2e2601ca03ff22575b04bdc3d2dec4aada101e4c9d8a0d9dde7",
-          "sha1": "6a5970db199b2b5728f36ceed16a504504c11977",
-          "md5": "66e39ce250ec8d8581730825e34d7c5d"
+          "name": "javapackager-1.6.7-SNAPSHOT.jar",
+          "url": "javapackager-1.6.7-SNAPSHOT.jar",
+          "size": 1456037,
+          "sha512": "37e2b373942f9d39cf0b51c77b5d8a7d3048d077fdd56234ffa5e86002832416122847f9f303c9a05e9bc31d5f74aed157dcad7f6435fca5e786548187dbeb09",
+          "sha256": "98550ff91ba4114385acf0fb92ff3b4a0e8ff1aedf59e64772fedeb890d698f3",
+          "sha1": "f56ed60d1417564baef8b869fa241e40165aa6ed",
+          "md5": "7d0dcd8bc743a04ffa532d9291d3f10b"
         }
       ]
     }

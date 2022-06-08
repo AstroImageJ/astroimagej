@@ -3,10 +3,10 @@
   <groupId>io.github.fvarrui</groupId>
   <artifactId>javapackager</artifactId>
   <versioning>
-    <latest>1.6.6-WHY4</latest>
-    <release>1.6.6-WHY4</release>
+    <latest>1.6.7-SNAPSHOT</latest>
+    <release>1.6.7-SNAPSHOT</release>
     <versions>
-	  <version>1.6.6-WHY4</version>
+	  <version>1.6.7-SNAPSHOT</version>
     </versions>
     <lastUpdated>20220330082440</lastUpdated>
   </versioning>

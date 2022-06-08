@@ -1,11 +1,16 @@
 AstroImageJ
 
+User settings are stored in <userhome>/.astroimagej/AIJ_Prefs.txt, unless a file named AIJ_Prefs.txt is present in
+AstroImageJ's directory (the same folder as ij.jar. For Mac, this will be in AstroImageJ.app/resources. For Windows and
+Linux this is the same directory as the application).
+
 The AstroImageJ.cfg file is where Java arguments may be specified to control JVM behavior, such as maximum memory.
 Some JVM arguments of note:
  - Max memory usage (consider using the GUI to set this option!)
    Specifies the maximum size (in bytes) of the heap. This value must be a multiple of 1024 and greater than 2 MB.
    Append the letter k or K to indicate kilobytes, m or M to indicate megabytes, or g or G to indicate gigabytes.
-   The default value is chosen at runtime based on system configuration, the default for AIJ on Windows is 75% (set in launcher.ini) of physical memory.
+   The default value is chosen at runtime based on system configuration, the default for AIJ 75% of physical memory.
+   The value in AstroImageJ.cfg takes precedent over the default value.
    For server deployments, -Xms and -Xmx are often set to the same value.
    The following examples show how to set the maximum allowed size of allocated memory to 80 MB using various units:
    -Xmx83886080
@@ -24,7 +29,6 @@ Running with a system installation of Java:
     In launcher.ini, delete the line that starts with "jvm_path."
   - Linux
     Open AstroImageJ as a text file/shell script, and change "JAVA" to be "$JAVA_HOME."
-  - Mac
 
 Running with a specific Java installation:
   Java 17+ is required.

@@ -807,6 +807,7 @@ public class FolderOpener implements PlugIn {
 
 		var directory = this.directory;
 		directory = ((TextField) gd.getStringFields().get(0)).getText();
+		if (directory == null) directory = "";
 		File file = new File(directory);
 		String[] list = file.list();
 		// Zip as folder
@@ -819,6 +820,7 @@ public class FolderOpener implements PlugIn {
 
 		if (list==null) {
 			String parent = file.getParent();
+			if (parent == null) parent = "";
 			file = new File(parent);
 			list = file.list();
 			if (list!=null)

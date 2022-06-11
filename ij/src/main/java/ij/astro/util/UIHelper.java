@@ -64,7 +64,6 @@ public class UIHelper {
                     ((width / 2) - (window.getSize().width / 2)) + gd[screen].getDefaultConfiguration().getBounds().x,
                     ((height / 2) - (window.getSize().height / 2)) + gd[screen].getDefaultConfiguration().getBounds().y
             );
-            window.setVisible(true);
         } else {
             throw new RuntimeException( "No Screens Found" );
         }

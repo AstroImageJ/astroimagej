@@ -3,6 +3,7 @@ package Astronomy;
 
 import astroj.*;
 import ij.*;
+import ij.astro.util.UIHelper;
 import ij.gui.GenericDialog;
 import ij.gui.ImageCanvas;
 import ij.gui.ImageWindow;
@@ -12,7 +13,6 @@ import ij.io.OpenDialog;
 import ij.plugin.Macro_Runner;
 import ij.plugin.PlugIn;
 import ij.process.ImageProcessor;
-import util.UIHelper;
 
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;

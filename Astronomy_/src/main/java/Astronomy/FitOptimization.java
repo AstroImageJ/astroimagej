@@ -9,7 +9,7 @@ import flanagan.analysis.Stat;
 import ij.IJ;
 import ij.Prefs;
 import ij.astro.logging.AIJLogger;
-import util.UIHelper;
+import ij.astro.util.UIHelper;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;

@@ -4,8 +4,8 @@ package astroj;
 
 import ij.IJ;
 import ij.Prefs;
+import ij.astro.util.UIHelper;
 import ij.util.Tools;
-import util.UIHelper;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;

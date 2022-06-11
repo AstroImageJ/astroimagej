@@ -9,6 +9,7 @@ import flanagan.math.MinimizationFunction;
 import ij.*;
 import ij.astro.types.Pair;
 import ij.astro.util.PdfPlotOutput;
+import ij.astro.util.UIHelper;
 import ij.gui.*;
 import ij.io.OpenDialog;
 import ij.io.SaveDialog;
@@ -20,7 +21,6 @@ import ij.text.TextPanel;
 import ij.util.Tools;
 import util.GenericSwingDialog;
 import util.PlotDataBinning;
-import util.UIHelper;
 
 import javax.swing.*;
 import javax.swing.border.Border;

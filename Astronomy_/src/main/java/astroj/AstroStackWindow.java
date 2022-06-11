@@ -6,6 +6,7 @@ import Astronomy.postprocess.PhotometricDebayer;
 import bislider.com.visutools.nav.bislider.*;
 import ij.*;
 import ij.astro.logging.AIJLogger;
+import ij.astro.util.UIHelper;
 import ij.gui.GenericDialog;
 import ij.gui.Roi;
 import ij.gui.StackWindow;
@@ -24,7 +25,6 @@ import ij.process.StackProcessor;
 import ij.text.TextPanel;
 import ij.util.Tools;
 import util.PdfRasterWriter;
-import util.UIHelper;
 
 import javax.swing.*;
 import java.awt.*;

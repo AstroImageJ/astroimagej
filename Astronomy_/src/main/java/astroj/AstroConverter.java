@@ -1,13 +1,12 @@
 // AstroConvertor.java
 package astroj;
 
-import ij.IJ;
 import ij.Prefs;
 import ij.astro.util.LeapSeconds;
+import ij.astro.util.UIHelper;
 import ij.gui.MultiLineLabel;
 import ij.util.Tools;
 import util.BrowserOpener;
-import util.UIHelper;
 
 import javax.swing.*;
 import javax.swing.border.Border;

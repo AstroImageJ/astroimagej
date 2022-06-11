@@ -1,13 +1,18 @@
 package ij.io;
-import ij.*;
-import ij.gui.*;
+
+import ij.IJ;
+import ij.ImageJ;
+import ij.Macro;
+import ij.Prefs;
+import ij.astro.AstroImageJ;
+import ij.astro.util.AIJFileChooser;
+import ij.macro.Interpreter;
 import ij.plugin.frame.Recorder;
 import ij.util.Java2;
-import ij.macro.Interpreter;
-import java.awt.*;
-import java.io.*;
+
 import javax.swing.*;
-import javax.swing.filechooser.*;
+import java.awt.*;
+import java.io.File;
 
 /** This class displays a dialog window from 
 	which the user can select an input file. */ 
@@ -98,8 +103,9 @@ import javax.swing.filechooser.*;
 		
 	// Uses the JFileChooser class to display the dialog box.
 	// Assumes we are running on the event dispatch thread
+	@AstroImageJ(reason = "Use AIJFileChooser", modified = true)
 	void jOpenDispatchThread(String title, String path, final String fileName) {
-		JFileChooser fc = new JFileChooser();
+		JFileChooser fc = new AIJFileChooser();
 		fc.setDialogTitle(title);
 		File fdir = null;
 		if (path!=null)
@@ -119,12 +125,13 @@ import javax.swing.filechooser.*;
 	}
 
 	// Run JFileChooser on event dispatch thread to avoid deadlocks
+	@AstroImageJ(reason = "Use AIJFileChooser", modified = true)
 	void jOpenInvokeAndWait(final String title, final String path, final String fileName) {
 		final boolean isMacro = Thread.currentThread().getName().endsWith("Macro$");
 		try {
 			EventQueue.invokeAndWait(new Runnable() {
 				public void run() {
-				JFileChooser fc = new JFileChooser();
+				JFileChooser fc = new AIJFileChooser();
 				fc.setDialogTitle(title);
 				File fdir = null;
 				if (path!=null)

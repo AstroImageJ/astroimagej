@@ -4,6 +4,7 @@ import ij.IJ;
 import ij.ImageJ;
 import ij.Prefs;
 import ij.WindowManager;
+import ij.astro.util.UIHelper;
 import ij.gui.GUI;
 import ij.gui.HTMLDialog;
 import ij.gui.MultiLineLabel;

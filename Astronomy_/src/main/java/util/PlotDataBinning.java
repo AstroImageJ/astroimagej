@@ -128,7 +128,8 @@ public class PlotDataBinning {
         }
 
         public boolean accept(double[] binBounds, double x, double y, double err) {
-            if (x>=binBounds[binIndex] && x<binBounds[binIndex+1]) {
+            // As the bins are populated in order, the upper bound can be <=
+            if (x>=binBounds[binIndex] && x<=binBounds[binIndex+1]) {
                 addData(x, y, err);
                 return true;
             }

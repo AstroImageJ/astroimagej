@@ -2,6 +2,7 @@ package ij.gui;
 
 import ij.*;
 import ij.astro.AstroImageJ;
+import ij.io.DirectoryChooser;
 import ij.io.OpenDialog;
 import ij.macro.Interpreter;
 import ij.macro.MacroRunner;
@@ -1937,13 +1938,16 @@ FocusListener, ItemListener, KeyListener, AdjustmentListener, WindowListener {
 			this.textField = textField;
 			this.mode = mode;
 		}
-	
+
+		@AstroImageJ(reason = "Allow for OD to be relative", modified = true)
 		public void actionPerformed(ActionEvent e) {
 			String path = null;
 			if (mode.equals("dir")) {
-				path = IJ.getDir("Select a Folder");
+				DirectoryChooser dc = new DirectoryChooser("dir", GenericDialog.this);
+				path = dc.getDirectory();
+				if (path==null) Macro.abort();
 			} else {
-				OpenDialog od = new OpenDialog("Select a File", null);
+				OpenDialog od = OpenDialog.makeRelativeDialog("Select a File", null, GenericDialog.this);
 				String directory = od.getDirectory();
 				String name = od.getFileName();
 				if (name!=null)

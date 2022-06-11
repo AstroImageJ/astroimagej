@@ -18,6 +18,7 @@ import java.io.File;
 	which the user can select an input file. */ 
  public class OpenDialog {
 
+	private Container parent = null;
 	private String dir;
 	private String name;
 	private boolean recordPath;
@@ -33,11 +34,24 @@ import java.io.File;
 		this(title, null);
 	}
 
+	/**
+     * Displays a file open dialog with 'title' as
+     * the title. If 'path' is non-blank, it is
+     * used and the dialog is not displayed. Uses
+     * and updates the ImageJ default directory.
+     */
+	@AstroImageJ(reason = "Allow for parent to be passed")
+	public OpenDialog(String title, String path) {
+		this(title, path, (Container) null);
+	}
+
 	/** Displays a file open dialog with 'title' as
 		the title. If 'path' is non-blank, it is
 		used and the dialog is not displayed. Uses
 		and updates the ImageJ default directory. */
-	public OpenDialog(String title, String path) {
+	@AstroImageJ(reason = "Allow for parent to be passed", modified = true)
+	private OpenDialog(String title, String path, Container parent) {
+		this.parent = parent;
 		String macroOptions = Macro.getOptions();
 		if (macroOptions!=null && (path==null||path.equals(""))) {
 			path = Macro.getValue(macroOptions, title, path);
@@ -81,6 +95,10 @@ import java.io.File;
 			recordPath = true;
 		}
 	}
+
+	public static OpenDialog makeRelativeDialog(String title, String path, Container parent) {
+		return new OpenDialog(title, path, (Container) parent);
+	}
 	
 	public static String lookupPathVariable(String path) {
 		if (path!=null && path.indexOf(".")==-1 && !((new File(path)).exists())) {
@@ -105,7 +123,8 @@ import java.io.File;
 	// Assumes we are running on the event dispatch thread
 	@AstroImageJ(reason = "Use AIJFileChooser", modified = true)
 	void jOpenDispatchThread(String title, String path, final String fileName) {
-		JFileChooser fc = new AIJFileChooser();
+		AIJFileChooser fc = new AIJFileChooser();
+		fc.setReferenceWindow(parent);
 		fc.setDialogTitle(title);
 		File fdir = null;
 		if (path!=null)
@@ -131,7 +150,8 @@ import java.io.File;
 		try {
 			EventQueue.invokeAndWait(new Runnable() {
 				public void run() {
-				JFileChooser fc = new AIJFileChooser();
+				AIJFileChooser fc = new AIJFileChooser();
+				fc.setReferenceWindow(parent);
 				fc.setDialogTitle(title);
 				File fdir = null;
 				if (path!=null)

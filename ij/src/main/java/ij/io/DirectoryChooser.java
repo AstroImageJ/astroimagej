@@ -16,7 +16,7 @@ import java.io.File;
  public class DirectoryChooser {
  	private String directory;
  	private String title;
-	private final Frame parent;
+	private final Container parent;
 
 	/**
      * Display a dialog using the specified title.
@@ -28,7 +28,7 @@ import java.io.File;
 
 	/** Display a dialog using the specified title. */
 	@AstroImageJ(reason = "Add parent", modified = true)
- 	public DirectoryChooser(String title, Frame parent) {
+ 	public DirectoryChooser(String title, Container parent) {
  		this.title = title;
 		this.parent = parent;
 		if (IJ.isMacOSX() && !Prefs.useJFileChooser)

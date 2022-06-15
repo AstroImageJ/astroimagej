@@ -5520,7 +5520,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
 //		}
 //		int xloc = (int)(maxWidth-wWidth)/2;
 //		if (xloc<0) xloc = 0;
-        return maxWindow;
+        return null;//todo revert to maxWindow?
     }
 
 

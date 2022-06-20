@@ -11,7 +11,7 @@
   "createdBy": {
     "gradle": {
       "version": "6.8.3",
-      "buildId": "emfgbxil5fhnjl3gufv2b57rlq"
+      "buildId": "4jcctph37vhkxc6p3x46okwisy"
     }
   },
   "variants": [
@@ -28,11 +28,11 @@
         {
           "name": "javapackager-1.6.7-SNAPSHOT.jar",
           "url": "javapackager-1.6.7-SNAPSHOT.jar",
-          "size": 1456037,
-          "sha512": "37e2b373942f9d39cf0b51c77b5d8a7d3048d077fdd56234ffa5e86002832416122847f9f303c9a05e9bc31d5f74aed157dcad7f6435fca5e786548187dbeb09",
-          "sha256": "98550ff91ba4114385acf0fb92ff3b4a0e8ff1aedf59e64772fedeb890d698f3",
-          "sha1": "f56ed60d1417564baef8b869fa241e40165aa6ed",
-          "md5": "7d0dcd8bc743a04ffa532d9291d3f10b"
+          "size": 1420369,
+          "sha512": "e120b0fc6247db0cf6c2b696134d997a549a65b16649e5d32cfe052f34e3617c2835d9a059da42b565c7884e265bff7cabd4a24342e482150bd7a204107063db",
+          "sha256": "d45e9bbad1d8cee44fdaef83371682079532d844d8f63fc445d4396b1645684e",
+          "sha1": "8b3be457cd5768812639a18664483467f34b84ce",
+          "md5": "b1345aec98280f75bc592839482ff928"
         }
       ]
     },
@@ -135,11 +135,11 @@
         {
           "name": "javapackager-1.6.7-SNAPSHOT.jar",
           "url": "javapackager-1.6.7-SNAPSHOT.jar",
-          "size": 1456037,
-          "sha512": "37e2b373942f9d39cf0b51c77b5d8a7d3048d077fdd56234ffa5e86002832416122847f9f303c9a05e9bc31d5f74aed157dcad7f6435fca5e786548187dbeb09",
-          "sha256": "98550ff91ba4114385acf0fb92ff3b4a0e8ff1aedf59e64772fedeb890d698f3",
-          "sha1": "f56ed60d1417564baef8b869fa241e40165aa6ed",
-          "md5": "7d0dcd8bc743a04ffa532d9291d3f10b"
+          "size": 1420369,
+          "sha512": "e120b0fc6247db0cf6c2b696134d997a549a65b16649e5d32cfe052f34e3617c2835d9a059da42b565c7884e265bff7cabd4a24342e482150bd7a204107063db",
+          "sha256": "d45e9bbad1d8cee44fdaef83371682079532d844d8f63fc445d4396b1645684e",
+          "sha1": "8b3be457cd5768812639a18664483467f34b84ce",
+          "md5": "b1345aec98280f75bc592839482ff928"
         }
       ]
     }

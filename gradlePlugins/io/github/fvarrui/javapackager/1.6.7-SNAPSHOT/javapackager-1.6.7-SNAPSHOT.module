@@ -11,7 +11,7 @@
   "createdBy": {
     "gradle": {
       "version": "6.8.3",
-      "buildId": "4jcctph37vhkxc6p3x46okwisy"
+      "buildId": "uggmc53npbe3lcpzf6d64svk3m"
     }
   },
   "variants": [
@@ -28,11 +28,11 @@
         {
           "name": "javapackager-1.6.7-SNAPSHOT.jar",
           "url": "javapackager-1.6.7-SNAPSHOT.jar",
-          "size": 1420369,
-          "sha512": "e120b0fc6247db0cf6c2b696134d997a549a65b16649e5d32cfe052f34e3617c2835d9a059da42b565c7884e265bff7cabd4a24342e482150bd7a204107063db",
-          "sha256": "d45e9bbad1d8cee44fdaef83371682079532d844d8f63fc445d4396b1645684e",
-          "sha1": "8b3be457cd5768812639a18664483467f34b84ce",
-          "md5": "b1345aec98280f75bc592839482ff928"
+          "size": 1420585,
+          "sha512": "4a1139799c6285cc74c5665f20f7e2588ffeb527c5235654ac3ce17bae201eceac4a06371c8d67337404ea5a007e60a254bcb9bafcadc916d18bf402c2950fe5",
+          "sha256": "bed4841f1d49f67611224b15ca81d5ac60fe8a2326628cf2ccae4f8f925b2500",
+          "sha1": "61637c2b17092e948ac59f7142f442632d2da99e",
+          "md5": "81f1c45717e91a5aff58138c217270a4"
         }
       ]
     },
@@ -135,11 +135,11 @@
         {
           "name": "javapackager-1.6.7-SNAPSHOT.jar",
           "url": "javapackager-1.6.7-SNAPSHOT.jar",
-          "size": 1420369,
-          "sha512": "e120b0fc6247db0cf6c2b696134d997a549a65b16649e5d32cfe052f34e3617c2835d9a059da42b565c7884e265bff7cabd4a24342e482150bd7a204107063db",
-          "sha256": "d45e9bbad1d8cee44fdaef83371682079532d844d8f63fc445d4396b1645684e",
-          "sha1": "8b3be457cd5768812639a18664483467f34b84ce",
-          "md5": "b1345aec98280f75bc592839482ff928"
+          "size": 1420585,
+          "sha512": "4a1139799c6285cc74c5665f20f7e2588ffeb527c5235654ac3ce17bae201eceac4a06371c8d67337404ea5a007e60a254bcb9bafcadc916d18bf402c2950fe5",
+          "sha256": "bed4841f1d49f67611224b15ca81d5ac60fe8a2326628cf2ccae4f8f925b2500",
+          "sha1": "61637c2b17092e948ac59f7142f442632d2da99e",
+          "md5": "81f1c45717e91a5aff58138c217270a4"
         }
       ]
     }

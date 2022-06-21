@@ -384,6 +384,8 @@ javapackager {
     macConfig.setEntitlements(project.file('packageFiles/aij_entitlements.txt'))
     macConfig.setAppId("AstroImageJ")
     winConfig.exeCreationTool = WindowsExeCreationTool.why
+    winConfig.productVersion = "1.1.1"
+    winConfig.productName = "Why Java Launcher"
 
     // Don't copy deps into a "libs" folder - we bundle them into ij.jar or Astronomy_.jar and the plugins folder
     copyDependencies = false

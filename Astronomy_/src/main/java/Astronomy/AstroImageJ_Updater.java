@@ -4,6 +4,7 @@ import ij.IJ;
 import ij.Prefs;
 import ij.gui.GenericDialog;
 import ij.plugin.PlugIn;
+import util.EXEFileInfo;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
@@ -14,13 +15,11 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
-import java.util.Vector;
+import java.util.*;
 
 
 /** This plugin implements the Help/Update AstroImageJ command. */
@@ -69,6 +68,7 @@ public class AstroImageJ_Updater implements PlugIn {
 		if (IJ.getApplet()!=null) return;
 
 		if ("check".equals(arg)) {
+			System.out.println("Using launcher version: "+Arrays.toString(EXEFileInfo.getVersionInfo("AstroImageJ.exe")));
 			autoUpdateCheck();
 			return;
 		}
@@ -144,6 +144,8 @@ public class AstroImageJ_Updater implements PlugIn {
 			{
 				file4 = new File(file1.getParent() + "/../Info.plist");
 			}
+		} else if (IJ.isWindows()) {
+			file4 = new File("AstroImageJ.exe");
 		}
 
 		var list = getAvailableVersions();
@@ -161,11 +163,13 @@ public class AstroImageJ_Updater implements PlugIn {
 		String[] urls = new String[count];
         String[] AstronomyUrls = new String[count];
         String[] StartupMacrosUrls = new String[count];
+        String[] WinExeUrls = new String[count];
 
 		versions[0] = "daily build";//"v"+uv;
 		urls[0] = URL+"/ij.jar";//"/upgrade/ij.jar";
         AstronomyUrls[0] = URL+"/Astronomy_.jar";
         StartupMacrosUrls[0] = URL+"/StartupMacros.txt";
+        WinExeUrls[0] = URL+"/AstroImageJ.exe";
 
 		for (int i=1; i<count; i++) {
 			String version = list[i-1];
@@ -173,6 +177,7 @@ public class AstroImageJ_Updater implements PlugIn {
 			urls[i] = URL+"/ij"+version+".jar";//.substring(1,2)+version.substring(3,6)+".jar";
             AstronomyUrls[i] = URL+"/Astronomy_"+version+".jar";
             StartupMacrosUrls[i] = URL+"/StartupMacros"+version+".txt";
+			WinExeUrls[i] = URL+"/AstroImageJ"+version+".exe";
 		}
 		int choice = showDialog(versions);
 		if (choice==-1) return;
@@ -190,6 +195,11 @@ public class AstroImageJ_Updater implements PlugIn {
         byte[] StartupMacro = getFile(StartupMacrosUrls[choice], "StartupMacros"+(choice==0?"":versions[choice])+".txt");
 		if (StartupMacro==null) {
 			error("Unable to download StartupMacros.txt from "+StartupMacrosUrls[choice]);
+			return;
+		}
+		byte[] WinExe = getFile(WinExeUrls[choice], "WinExe"+(choice==0?"":versions[choice])+".exe");
+		if (IJ.isWindows() && WinExe==null) {
+			error("Unable to download AstroImageJ.exe from "+WinExeUrls[choice]);
 			return;
 		}
 
@@ -222,7 +232,26 @@ public class AstroImageJ_Updater implements PlugIn {
 		saveFile(file1, jar);
         saveFile(file2, Astro_jar);
         saveFile(file3, StartupMacro);
-        
+
+		if (IJ.isWindows() && file4 != null) {
+			var tempExe = new File("temp.exe");
+			saveFile(tempExe, WinExe);
+			var currentVersion = EXEFileInfo.getVersionInfo("AstroImageJ.exe");
+			var newVersion = EXEFileInfo.getVersionInfo("temp.exe");
+
+			long newVersionN = newVersion[0]* 10000L + newVersion[1]* 100L + newVersion[2];
+			long currentVersionInt = currentVersion[0]* 10000L + currentVersion[1]* 100L + currentVersion[2];
+			if (newVersionN > currentVersionInt) {
+				try {
+					Files.move(tempExe.toPath(), file4.toPath(), StandardCopyOption.REPLACE_EXISTING);
+				} catch (IOException e) {
+					throw new RuntimeException(e);
+				}
+			} else {
+				tempExe.delete();
+			}
+		}
+
         if (IJ.isMacOSX() && file4!=null)
             {
             if (!file4.exists()) {

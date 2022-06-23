@@ -6,6 +6,7 @@ dependencies {
     implementation project(':Nom_Fits')
     implementation 'org.openjdk.nashorn:nashorn-core:15.3'
     api 'de.rototor.pdfbox:graphics2d:0.34'
+    api 'net.java.dev.jna:jna-platform:5.11.0'
 }
 
 def mainClassName = 'ij.ImageJ'

@@ -2821,10 +2821,20 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 //}
 
                 if (nRD == 0) {
-                    vRadSky = radius;
-                    vRadBack1 = rBack1;
-                    vRadBack2 = rBack2;
-                    nRD = 1;
+                    var x = new Seeing_Profile(true);
+                    rs= x.getRadii(imp, xPos[0], yPos[0], ApRadius.AUTO_VAR_RAD_PROF.cutoff, true, false);
+                    if (rs.isValid()) {
+                        vRadSky += rs.r();
+                        vRadBack1 += rs.r2();
+                        vRadBack2 += rs.r3();
+                        nRD++;
+                        stackRadii.add(rs);
+                    } else {
+                        vRadSky = radius;
+                        vRadBack1 = rBack1;
+                        vRadBack2 = rBack2;
+                        nRD = 1;
+                    }
                 }
 
                 useVariableAp = true;

@@ -199,6 +199,7 @@ public class Seeing_Profile implements PlugInFilter
             sp.peak = sp.center.peak();
             sp.peak_raw = sp.peak;
             sp.low_raw = 0.0;
+            sp.meanPeak = Double.MIN_VALUE;
 
             sp.getRadialDistribution(imp.getProcessor());
             if (show) {

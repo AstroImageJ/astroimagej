@@ -7964,7 +7964,12 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             }
             setupArrays();
             getPreferences();
-            if (subframeWasShowing) showMoreCurvesJPanel();
+            if (subframeWasShowing) {
+                subscrollpane.removeAll();
+                subFrame.remove(subscrollpane);
+                repaintFrame(subFrame);
+                showMoreCurvesJPanel();
+            }
             updatePlot(updateAllFits());
         });
         maxcurvesspinner.addMouseWheelListener(e -> {
@@ -8010,7 +8015,12 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             }
             setupArrays();
             getPreferences();
-            if (subframeWasShowing) showMoreCurvesJPanel();
+            if (subframeWasShowing) {
+                subscrollpane.removeAll();
+                subFrame.remove(subscrollpane);
+                repaintFrame(subFrame);
+                showMoreCurvesJPanel();
+            }
             updatePlot(updateAllFits());
         });
         maxdetrendvarsspinner.addMouseWheelListener(e -> {

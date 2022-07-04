@@ -16404,10 +16404,17 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         gd.addMessage("             Column                          Enabled");
         gd.setOverridePosition(true);
         gd.resetPositionOverride();
+        var size = new Dimension(180, 20);
         for (int i = 0; i < maxSubsetColumns; i++) {
             int finalI = i;
             gd.setNewPosition(GridBagConstraints.WEST);
-            gd.addChoice(IJ.pad((i + 1) + ":", 3), saveColumns, subsetColumn[i], b -> subsetColumn[finalI] = b);
+            var x = gd.addChoice(IJ.pad((i + 1) + ":", 3), saveColumns, subsetColumn[i], b -> subsetColumn[finalI] = b);
+            x.c1().setMaximumSize(size);
+            x.c1().setPreferredSize(size);
+            x.c1().setSize(size);
+            x.c2().setMaximumSize(size);
+            x.c2().setPreferredSize(size);
+            x.c2().setSize(size);
             gd.resetPositionOverride();
             gd.setNewPosition(GridBagConstraints.CENTER);
             gd.addToSameRow();

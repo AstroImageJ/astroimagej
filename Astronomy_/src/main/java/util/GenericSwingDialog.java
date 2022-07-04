@@ -280,7 +280,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         return new ComponentPair(panel, null, boxes);
     }
 
-    public JComboBox<String> addChoice(String label, String[] items, String defaultItem, Consumer<String> consumer) {
+    public ComponentPair addChoice(String label, String[] items, String defaultItem, Consumer<String> consumer) {
         Box b = Box.createHorizontalBox();
         Label fieldLabel = makeLabel(label.replaceAll("_", " "));
         if (addToSameRow) {
@@ -313,7 +313,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         addLocal(b, c);
         x++;
 
-        return thisChoice;
+        return new ComponentPair(b, thisChoice);
     }
 
     public Component addMessage(String text) {

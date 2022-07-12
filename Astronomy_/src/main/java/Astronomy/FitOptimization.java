@@ -609,7 +609,7 @@ public class FitOptimization implements AutoCloseable {
     }
 
     private void finishOptimization(JPanel button) {
-        MultiPlot_.updatePlot(curve);
+        MultiPlot_.updatePlot();
         CardLayout cl = (CardLayout) button.getLayout();
         cl.first(button);
 

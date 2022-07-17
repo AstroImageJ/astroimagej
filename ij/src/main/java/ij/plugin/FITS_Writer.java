@@ -183,6 +183,7 @@ public class FITS_Writer implements PlugIn {
 				// Duplicate header for new image
 				if (oldHeader != null) {
 					for (String cardString : oldHeader) {
+						if (cardString.startsWith("NAXIS")) continue;
 						var card = HeaderCard.create(cardString);
 						if (header.containsKey(card.getKey()) && // No overwriting of old header values
 								Arrays.stream(values()).anyMatch(s -> card.getKey().equals(s.key())) && // Use auto-genned HDU header info

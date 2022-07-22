@@ -1,17 +1,22 @@
 // FITS_Header_Editor.java
 package astroj;
 
-import ij.*;
+import ij.IJ;
+import ij.ImagePlus;
+import ij.Prefs;
 import ij.io.SaveDialog;
 
+import javax.swing.*;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.table.AbstractTableModel;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.TableColumn;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
-import javax.swing.*;
-import javax.swing.event.*;
-import javax.swing.table.*;
 
 public class FitsHeaderEditor implements ListSelectionListener, ActionListener, ItemListener
 	{
@@ -602,12 +607,12 @@ public class FitsHeaderEditor implements ListSelectionListener, ActionListener, 
                 header[i][4].trim().equals("C") || header[i][4].trim().equals("E")))
 				{
 				key = header[i][1].trim();
-                if (key.length() > 8)
+                /*if (key.length() > 8)
                     {
                     IJ.showMessage("Row "+(i+1)+" 'Keyword' entry is too long: length must be <= 8 characters!");
                     table.changeSelection(i,0,false,false);
                     return null;
-                    }
+                    }*/
 				while (key.length() < 8)
                     {
                     key += " ";
@@ -776,7 +781,7 @@ public class FitsHeaderEditor implements ListSelectionListener, ActionListener, 
                         keyword =  header[row][1] != null ? header[row][1].trim() : "";
                         }
                     else
-                        keyword = keyword.substring(0, keyword.length() < 8 ? keyword.length() : 8).toUpperCase();
+                        keyword = keyword.substring(0, keyword.length() < 8 ? keyword.length() : 8).toUpperCase();//todo test
                     }
                 getType();
 				header[row][1] = keyword;

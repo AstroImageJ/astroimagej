@@ -295,8 +295,8 @@ project.sync {
  */
 task commonFiles(type: Sync) {
     outputs.upToDateWhen {false}
-    dependsOn ':ij:build', ':Astronomy_:build'
-    mustRunAfter ':ij:build', ':Astronomy_:build'
+    dependsOn ':ij:shadowJar', ':Astronomy_:build'
+    mustRunAfter ':ij:shadowJar', ':Astronomy_:build'
     with commonDist
     into "${buildDir}/commonFiles"
     doLast {
@@ -309,9 +309,7 @@ task commonFiles(type: Sync) {
 }
 
 // Generate AIJ-Run directory and set it up for usage
-task sync(dependsOn: jar, type: Sync) {
-    dependsOn ':ij:build', ':Astronomy_:build'
-
+task sync(dependsOn: commonFiles, type: Sync) {
     with commonDist
     //noinspection GroovyAssignabilityCheck
     with {
@@ -485,7 +483,7 @@ javaRuntimeSystems.each {sys, sysInfo ->
 }
 
 // Task to copy built jars into a certain folder, for use with testing
-task copyBuiltJars(dependsOn: build, type: Copy) {
+task copyBuiltJars(dependsOn: commonFiles, type: Copy) {
     group 'AstroImageJ Development'
 
     onlyIf {

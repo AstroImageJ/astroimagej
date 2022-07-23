@@ -1,12 +1,13 @@
 plugins {
     id 'java-library'
+    id "com.github.johnrengelman.shadow" version "7.1.2"
 }
 
 dependencies {
     implementation project(':Nom_Fits')
-    implementation 'org.openjdk.nashorn:nashorn-core:15.3'
-    api 'de.rototor.pdfbox:graphics2d:0.34'
-    api 'net.java.dev.jna:jna-platform:5.11.0'
+    implementation 'org.openjdk.nashorn:nashorn-core:15.4'
+    api 'de.rototor.pdfbox:graphics2d:0.38'
+    api 'net.java.dev.jna:jna-platform:5.12.1'
 }
 
 def mainClassName = 'ij.ImageJ'
@@ -23,17 +24,20 @@ jar {
     FileTree m = fileTree("${rootProject.projectDir}/src/main/resources/plugins/")
     Collection n = m.include("**/*.jar").grep()
 
-    archiveFileName = 'ij.jar'
+    archiveFileName = 'ij-standalone.jar'
 
     manifest {
         attributes("Main-Class": mainClassName,
                    "Class-Path": "plugins/ ${n.collect {'plugins/' + ((File)it).getName()}.join(' ')}")
     }
+}
 
-    // Ship nom.tam.fits
-    dependsOn configurations.runtimeClasspath
-    from {
-        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
-    }
+shadowJar {
+    outputs.upToDateWhen {false}
+    archiveFileName = 'ij.jar'
+
+    // Don't ship non-windows binaries
+    exclude "**/*.jnilib"
+    exclude "**/*.so"
+    exclude "**/*.a"
 }

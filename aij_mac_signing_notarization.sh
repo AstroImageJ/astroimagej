@@ -206,17 +206,14 @@ submit_image_for_notarization() {
     printf "\n\n*** Submitting dmg file to Apple for notarizing... ***\n\n"
     # Capture output to a variable as well as sending to screen:
     notary_status_text=$(xcrun notarytool submit "$DMG" --keychain-profile "AC_PASSWORD" --wait 2>&1 | tee /dev/tty )
-    #printf "** DEBUG Notary status text is *{$notary_status_text}*\n"
     # Get the final status so we can decide what to do next:
     notary_status=$(echo "$notary_status_text" | perl -ne 'if (/^ *status: ([a-zA-Z]+)$/) {print $1}')
-    #printf "** DEBUG Notary status  is *{$notary_status}*\n"
     if [[ $notary_status != "Accepted" ]]
     then
         printf "\n\n*** Unsuccessful notarization, not stapling. ***\n"
         logfile="${DMG_PATH}/notarization_log.json"
         printf "*** Fetching notarization log... ***\n"
         notary_request_id=$(echo "$notary_status_text" | perl -ne 'if (/^ *id: ([\w-]+)$/) {print $1;exit}')
-        #printf "** DEBUG Notary request id is *{$notary_request_id}*\n"
         xcrun notarytool log "$notary_request_id" --keychain-profile "AC_PASSWORD" "$logfile"
         printf "*** See $logfile for details of notarization errors. ***\n"
         # Exit script with an error

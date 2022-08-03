@@ -101,11 +101,12 @@ dependencies {
  * The file's name (name), major Java version (version), and MD5 hash (md5) are also added to this map. Those entries
  * are excluded from the definition for brevity.
  */
-def javaRuntimeSystems = [ mac: [ext: "zip", arch: "x86", os: "macos"]
-           , armMac: [ext: "zip", arch: "arm", os: "macos"]
-           , linux: [ext: "tar.gz", arch: "x86", os: "linux"]
-           , windows: [ext: "zip", arch: "x86", os: "windows"]
-           , armWindows: [ext: "zip", arch: "arm", os: "windows"]
+def javaRuntimeSystems =
+           [ mac: [ext: "zip", arch: "x86", os: "macos", hw_bitness: "64"]
+           , armMac: [ext: "zip", arch: "arm", os: "macos", hw_bitness: "64"]
+           , linux: [ext: "tar.gz", arch: "x86", os: "linux", hw_bitness: "64"]
+           , windows: [ext: "zip", arch: "x86", os: "windows", hw_bitness: "64"]
+           , armWindows: [ext: "zip", arch: "arm", os: "windows", hw_bitness: "64"]
            ]
 
 boolean canConnectToAzul = true
@@ -122,7 +123,7 @@ task downloadJavaRuntimes(type: Download) {
             // Other parameters of note:
             // &support_term=lts/mts/sts &release_status=ga/ea/both &bundle_type=${sysInfo.type}
             String url = "https://api.azul.com/zulu/download/community/v1.0/bundles/latest/?" +
-                    "os=${sysInfo.os}&arch=${sysInfo.arch}&hw_bitness=64" +
+                    "os=${sysInfo.os}&arch=${sysInfo.arch}&hw_bitness=${sysInfo.hw_bitness}" +
                     "&ext=${sysInfo.ext}&java_version=${shippingJava}"
 
             // Ensure Azul is responding to API requests
@@ -408,7 +409,8 @@ javaRuntimeSystems.each {sys, sysInfo ->
         logger.error("Skipping system creation, failed to connect to Azul!")
         return
     }
-    String taskName = "packageAijFor" + (sysInfo.os as String).capitalize() + "_" + sysInfo.arch
+    String taskName = "packageAijFor" + (sysInfo.os as String).capitalize() + "_" + sysInfo.arch +
+            "_" + sysInfo.hw_bitness + "Bit_" + "Java" + sysInfo.version
 
     //noinspection GroovyAssignabilityCheck
     tasks.register(taskName, PackageTask) {

@@ -105,8 +105,12 @@ def javaRuntimeSystems =
            [ mac: [ext: "zip", arch: "x86", os: "macos", hw_bitness: "64"]
            , armMac: [ext: "zip", arch: "arm", os: "macos", hw_bitness: "64"]
            , linux: [ext: "tar.gz", arch: "x86", os: "linux", hw_bitness: "64"]
+           //, linuxArm: [ext: "tar.gz", arch: "arm", os: "linux", hw_bitness: "64"]
+           //, linux32: [ext: "tar.gz", arch: "x86", os: "linux", hw_bitness: "32"]
+           //, alpineLinux: [ext: "tar.gz", arch: "x86", os: "linux_musl", hw_bitness: "64"]
            , windows: [ext: "zip", arch: "x86", os: "windows", hw_bitness: "64"]
            , armWindows: [ext: "zip", arch: "arm", os: "windows", hw_bitness: "64"]
+           //, windows32: [ext: "zip", arch: "x86", os: "windows", hw_bitness: "32"]
            ]
 
 boolean canConnectToAzul = true

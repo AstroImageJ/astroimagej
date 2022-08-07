@@ -1,12 +1,14 @@
 package ij.gui;
+
 import ij.*;
 import ij.astro.AstroImageJ;
-import ij.measure.Calibration;
+import ij.astro.util.PdfPlotOutput;
+import ij.io.SaveDialog;
+import ij.plugin.GifWriter;
 import ij.plugin.frame.SyncWindows;
-import ij.process.ImageProcessor;
 
+import javax.swing.*;
 import java.awt.*;
-import java.awt.image.*;
 import java.awt.event.*;
 
 /** This class is an extended ImageWindow that displays stacks and hyperstacks. */
@@ -27,13 +29,14 @@ public class StackWindow extends ImageWindow implements Runnable, AdjustmentList
 		this(imp, null);
 	}
 
-	@AstroImageJ(reason = "Add check for autoConvert pref before calling show()", modified = true)
+	@AstroImageJ(reason = "Add check for autoConvert pref before calling show(); add draw call", modified = true)
     public StackWindow(ImagePlus imp, ImageCanvas ic) {
 		super(imp, ic);
 		addScrollbars(imp);
 		addMouseWheelListener(this);
 		if (sliceSelector==null && this.getClass().getName().indexOf("Image5D")!=-1)
 			sliceSelector = new Scrollbar(); // prevents Image5D from crashing
+		draw();
 		pack();
 		ic = imp.getCanvas();
 		if (ic!=null) ic.setMaxBounds();
@@ -45,6 +48,71 @@ public class StackWindow extends ImageWindow implements Runnable, AdjustmentList
 			imp.setSlice(1);
 		thread = new Thread(this, "zSelector");
 		thread.start();
+	}
+
+	@AstroImageJ(reason = "Add various save buttons to SP stack plot")
+	void draw() {
+		if (!getTitle().startsWith("Seeing Profile")) {
+			return;
+		}
+		Panel bottomPanel = new Panel();
+		int hgap = IJ.isMacOSX()?1:5;
+
+		var pdf = new JButton(" PDF ");
+		pdf.setToolTipText("Save summary image as PDF");
+		bottomPanel.add(pdf);
+
+		var png = new JButton(" PNG ");
+		png.setToolTipText("Save summary image as PNG");
+		bottomPanel.add(png);
+
+		var stackPdf = new JButton(" Stack PDF ");
+		stackPdf.setToolTipText("Save full stack as PDF");
+		bottomPanel.add(stackPdf);
+
+		var gif = new JButton(" GIF ");
+		gif.setToolTipText("Save full stack as GIF");
+		bottomPanel.add(gif);
+
+		var listener = new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				Object b = e.getSource();
+				Plot currentPlot = null;
+				if (imp.getStack() instanceof PlotVirtualStack plotVirtualStack) {
+					currentPlot = plotVirtualStack.getPlot(imp.getCurrentSlice());
+				}
+				if (b == pdf) {
+					String fileName = getTitle().replace("Plot of ","").replace("Measurements in ", "");
+					SaveDialog sf = new SaveDialog("Save current plot as vector PDF", fileName, ".pdf");
+					if (sf.getDirectory() == null || sf.getFileName() == null) return;
+					PdfPlotOutput.savePlot(currentPlot, sf.getDirectory()+sf.getFileName());
+				} else if (b == png) {
+					String fileName = getTitle().replace("Plot of ","").replace("Measurements in ", "");
+					SaveDialog sf = new SaveDialog("Save current plot as PNG",fileName, ".png");
+					if (sf.getDirectory() == null || sf.getFileName() == null) return;
+					IJ.runPlugIn(imp, "ij.plugin.PNG_Writer", sf.getDirectory()+sf.getFileName());
+				} else if (b == gif) {
+					String fileName = getTitle().replace("Plot of ","").replace("Measurements in ", "");
+					SaveDialog sf = new SaveDialog("Save plot stack as GIF", fileName, ".gif");
+					if (sf.getDirectory() == null || sf.getFileName() == null) return;
+					GifWriter.save(imp, sf.getDirectory()+sf.getFileName());
+				} else if (b == stackPdf) {
+					String fileName = getTitle().replace("Plot of ","").replace("Measurements in ", "");
+					SaveDialog sf = new SaveDialog("Save plot stack as vector PDF", fileName, ".pdf");
+					if (sf.getDirectory() == null || sf.getFileName() == null) return;
+					PdfPlotOutput.savePlot(currentPlot, sf.getDirectory()+sf.getFileName());
+					//todo stack pdf saving
+				}
+			}
+		};
+		stackPdf.setEnabled(false);//todo remove
+		png.addActionListener(listener);
+		pdf.addActionListener(listener);
+		stackPdf.addActionListener(listener);
+		gif.addActionListener(listener);
+
+		bottomPanel.setLayout(new FlowLayout(FlowLayout.RIGHT,hgap,0));
+		add(bottomPanel);
 	}
 
 	void addScrollbars(ImagePlus imp) {

@@ -60,6 +60,20 @@ public class PlotVirtualStack extends VirtualStack {
 		if (plot.isColored())
 			bitDepth = 24;
 	}
+
+	@AstroImageJ(reason = "Get the nth plot from the stack")
+	public Plot getPlot(int n) {
+		byte[] bytes = (byte[])plots.get(n-1);
+		if (bytes!=null) {
+			try {
+				Plot plot = new Plot(null, new ByteArrayInputStream(bytes));
+				return plot;
+			} catch (Exception e) {
+				IJ.handleException(e);
+			}
+		}
+		return null;
+	}
 	 
 	 /** Returns the number of slices in this stack. */
 	public int getSize() {

@@ -100,12 +100,12 @@ public class StackWindow extends ImageWindow implements Runnable, AdjustmentList
 					String fileName = getTitle().replace("Plot of ","").replace("Measurements in ", "");
 					SaveDialog sf = new SaveDialog("Save plot stack as vector PDF", fileName, ".pdf");
 					if (sf.getDirectory() == null || sf.getFileName() == null) return;
-					PdfPlotOutput.savePlot(currentPlot, sf.getDirectory()+sf.getFileName());
-					//todo stack pdf saving
+					if (imp.getStack() instanceof PlotVirtualStack plotVirtualStack) {
+						PdfPlotOutput.savePlotStack(plotVirtualStack, sf.getDirectory()+sf.getFileName());
+					}
 				}
 			}
 		};
-		stackPdf.setEnabled(false);//todo remove
 		png.addActionListener(listener);
 		pdf.addActionListener(listener);
 		stackPdf.addActionListener(listener);

@@ -6,6 +6,7 @@ import ij.WindowManager;
 import ij.astro.accessors.IPlotObject;
 import ij.astro.accessors.IPlotProperties;
 import ij.gui.Plot;
+import ij.gui.PlotVirtualStack;
 import ij.io.SaveDialog;
 import ij.process.ImageProcessor;
 import ij.util.Java2;
@@ -95,8 +96,43 @@ public class PdfPlotOutput {
         IJ.showStatus("");
     }
 
+    public static void savePlotStack(PlotVirtualStack plotStack, String path) {
+        var imp = WindowManager.getCurrentImage();
+        if (imp==null) {
+            IJ.noImage();
+            return;
+        }
+        if (path.equals("")) {
+            SaveDialog sd = new SaveDialog("Save as PDF...", imp.getTitle(), ".pdf");
+            String name = sd.getFileName();
+            if (name==null)
+                return;
+            String dir = sd.getDirectory();
+            path = dir + name;
+        }
+        try {
+            var document = new PDDocument();
+            for (int i = 0; i < plotStack.getSize(); i++) {
+                new PdfPlotOutput(plotStack.getPlot(i + 1)).writePdf(document, path, (i+1) == plotStack.getSize());
+            }
+        } catch (IOException e) {
+            String msg = e.getMessage();
+            if (msg==null || msg.equals(""))
+                msg = ""+e;
+            msg = "An error occurred writing the file.\n \n" + msg;
+            if (msg.contains("NullPointerException"))
+                msg = "Incorrect file path:";
+            msg += "\n \n"+path;
+            IJ.error("Vector PDF Writer", msg);
+        }
+        IJ.showStatus("");
+    }
+
     private void writePdf(String path) throws IOException {
-        PDDocument document = new PDDocument();
+        writePdf(new PDDocument(), path, true);
+    }
+
+    private void writePdf(PDDocument document, String path, boolean done) throws IOException {
         PDPage page = new PDPage(new PDRectangle(plot.getSize().width, plot.getSize().height));
         document.addPage(page);
 
@@ -143,8 +179,11 @@ public class PdfPlotOutput {
         contentStream.drawForm(xform);
 
         contentStream.close();
-        document.save(new File(path));
-        document.close();
+
+        if (done) {
+            document.save(new File(path));
+            document.close();
+        }
     }
 
     private void initPlotDrawing(Graphics2D g) {

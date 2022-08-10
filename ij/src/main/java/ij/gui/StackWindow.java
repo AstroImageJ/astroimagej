@@ -58,11 +58,11 @@ public class StackWindow extends ImageWindow implements Runnable, AdjustmentList
 		Panel bottomPanel = new Panel();
 		int hgap = IJ.isMacOSX()?1:5;
 
-		var pdf = new JButton(" PDF ");
+		var pdf = new JButton(" Summary PDF ");
 		pdf.setToolTipText("Save summary image as PDF");
 		bottomPanel.add(pdf);
 
-		var png = new JButton(" PNG ");
+		var png = new JButton(" Summary PNG ");
 		png.setToolTipText("Save summary image as PNG");
 		bottomPanel.add(png);
 
@@ -70,7 +70,7 @@ public class StackWindow extends ImageWindow implements Runnable, AdjustmentList
 		stackPdf.setToolTipText("Save full stack as PDF");
 		bottomPanel.add(stackPdf);
 
-		var gif = new JButton(" GIF ");
+		var gif = new JButton(" Stack GIF ");
 		gif.setToolTipText("Save full stack as GIF");
 		bottomPanel.add(gif);
 

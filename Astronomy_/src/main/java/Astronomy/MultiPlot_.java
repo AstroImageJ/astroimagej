@@ -17380,7 +17380,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 image.setSlice(1);
                 if (image.getStack() instanceof PlotVirtualStack && saveSeeingProfileStack) {
                     GifWriter.save(image, outBase + seeingProfileStackSuffix + ".gif");
-                } else if (format.equalsIgnoreCase("png")) {
+                }
+
+                if (format.equalsIgnoreCase("png")) {
                     IJ.runPlugIn(image, "ij.plugin.PNG_Writer", imagepath);
                 } else if (format.equalsIgnoreCase("jpg")) {
                     IJ.runPlugIn(image, "ij.plugin.JpegWriter", imagepath);

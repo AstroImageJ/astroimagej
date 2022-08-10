@@ -77,20 +77,22 @@ public class StackWindow extends ImageWindow implements Runnable, AdjustmentList
 		var listener = new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				Object b = e.getSource();
-				Plot currentPlot = null;
+				Plot summaryPlot = null;
 				if (imp.getStack() instanceof PlotVirtualStack plotVirtualStack) {
-					currentPlot = plotVirtualStack.getPlot(imp.getCurrentSlice());
+					summaryPlot = plotVirtualStack.getPlot(1);
 				}
 				if (b == pdf) {
 					String fileName = getTitle().replace("Plot of ","").replace("Measurements in ", "");
-					SaveDialog sf = new SaveDialog("Save current plot as vector PDF", fileName, ".pdf");
+					SaveDialog sf = new SaveDialog("Save summary plot as vector PDF", fileName, ".pdf");
 					if (sf.getDirectory() == null || sf.getFileName() == null) return;
-					PdfPlotOutput.savePlot(currentPlot, sf.getDirectory()+sf.getFileName());
+					PdfPlotOutput.savePlot(summaryPlot, sf.getDirectory()+sf.getFileName());
 				} else if (b == png) {
 					String fileName = getTitle().replace("Plot of ","").replace("Measurements in ", "");
-					SaveDialog sf = new SaveDialog("Save current plot as PNG",fileName, ".png");
+					SaveDialog sf = new SaveDialog("Save summary plot as PNG",fileName, ".png");
 					if (sf.getDirectory() == null || sf.getFileName() == null) return;
-					IJ.runPlugIn(imp, "ij.plugin.PNG_Writer", sf.getDirectory()+sf.getFileName());
+					var imp2 = imp.duplicate();
+					imp2.setSlice(1);
+					IJ.runPlugIn(imp2, "ij.plugin.PNG_Writer", sf.getDirectory()+sf.getFileName());
 				} else if (b == gif) {
 					String fileName = getTitle().replace("Plot of ","").replace("Measurements in ", "");
 					SaveDialog sf = new SaveDialog("Save plot stack as GIF", fileName, ".gif");

@@ -1000,6 +1000,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         Prefs.set("plot2.helpFrameLocationX", helpFrameLocationX);
         Prefs.set("plot2.helpFrameLocationY", helpFrameLocationY);
         if (!(Prefs.get(MultiAperture_.PREFS_AUTOMODE, autoMode) || Data_Processor.active)) resetRadii();
+
+        if (MultiPlot_.isRunning()) {
+            MultiPlot_.saveCompEnsemble();
+        }
     }
 
     /**

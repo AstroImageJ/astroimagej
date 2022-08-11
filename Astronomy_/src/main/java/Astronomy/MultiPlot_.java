@@ -17374,9 +17374,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         if (saveSeeingProfile) {
             ImagePlus image = WindowManager.getImage("Seeing Profile");
             if (image != null) {
-                String imagepath = outBase +
-                        ((image.getStack() instanceof PlotVirtualStack && saveSeeingProfileStack) ? seeingProfileStackSuffix : seeingProfileSuffix)
-                        + "." + format;
+                String imagepath = outBase + seeingProfileSuffix + "." + format;
                 image.setSlice(1);
                 if (image.getStack() instanceof PlotVirtualStack && saveSeeingProfileStack) {
                     GifWriter.save(image, outBase + seeingProfileStackSuffix + ".gif");

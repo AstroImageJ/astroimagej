@@ -301,7 +301,7 @@ public class Set_Aperture implements PlugIn
 		GenericDialog gd = new GenericDialog ("More Aperture Photometry Settings");
         
 		gd.addMessage ("Select single aperture items to display in measurements table:");
-        gd.addCheckboxGroup(5, 4, new String[]{"Filename (Label)", "Slice Number (slice)", "Julian Date (J.D.-2400000)","World Coordinates (RA, DEC)",
+        gd.addCheckboxGroup(5, 4, new String[]{"Filename (Label)", "Slice Number (slice)", "Time Stamps (JD_UTC, etc)","World Coordinates (RA, DEC)",
                                                "FITS Coords (X(FITS), Y(FITS))", "IJ Coords (X(IJ), Y(IJ))", "Aperture Radii", "Aperture variance (Variance)",
                                                "Source Counts (Source-Sky)","Source Peak (Peak)*","Source Mean (Mean)","Sky Background (Sky/Pixel)",
                                                "Source FWHM (Width)", "Moment Widths (X-Width, Y-Width)", "Orientation Angle (Angle)","Roundness (Roundness)",

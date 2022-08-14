@@ -40,6 +40,7 @@ import java.text.DecimalFormat;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.DoubleStream;
+import java.util.stream.IntStream;
 
 /**
  * This plugin plots any number of columns from a Results or MeasurementTable.  This plugin
@@ -1932,6 +1933,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         xautoscalemin = Double.POSITIVE_INFINITY;
         xautoscalemax = Double.NEGATIVE_INFINITY;
 
+        var hasXDatasetToScaleAgainst = IntStream.range(0, ASInclude.length)
+                .mapToObj(i -> ASInclude[i]).filter(b -> b).findAny().isPresent();
+
         firstCurve = -1;
         for (int curve = 0; curve < maxCurves; curve++) {
             if (plotY[curve]) {
@@ -1966,7 +1970,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 }
                 xMinimum[curve] = minOf(x[curve], nn[curve]); //FIND MIN AND MAX X OF EACH SELECTED DATASET
                 xMaximum[curve] = maxOf(x[curve], nn[curve]);
-                if (ASInclude[curve])// && !force[curve])
+
+                var scalingCurve = hasXDatasetToScaleAgainst ? curve : table.getColumnIndex(xlabeldefault);//todo default dataset;
+                if (ASInclude[curve] || !hasXDatasetToScaleAgainst)// && !force[curve])
                 {
                     if (xMinimum[curve] < xautoscalemin) xautoscalemin = xMinimum[curve];
                     if (xMaximum[curve] > xautoscalemax) xautoscalemax = xMaximum[curve];

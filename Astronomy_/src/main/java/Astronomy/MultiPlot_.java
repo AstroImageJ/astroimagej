@@ -1971,19 +1971,15 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 xMinimum[curve] = minOf(x[curve], nn[curve]); //FIND MIN AND MAX X OF EACH SELECTED DATASET
                 xMaximum[curve] = maxOf(x[curve], nn[curve]);
 
-                var scalingCurve = hasXDatasetToScaleAgainst ? curve : table.getColumnIndex(xlabeldefault);//todo default dataset;
+
                 if (ASInclude[curve]) {
                     if (xMinimum[curve] < xautoscalemin) xautoscalemin = xMinimum[curve];
                     if (xMaximum[curve] > xautoscalemax) xautoscalemax = xMaximum[curve];
                 }
+
                 if (!hasXDatasetToScaleAgainst) {
-                    if (xlabel[curve].trim().length() == 0 || (xlabel[curve].equalsIgnoreCase("default") && xlabeldefault.trim().length() == 0)) {
-                        if (xMinimum[curve] < xautoscalemin) xautoscalemin = xMinimum[curve];
-                        if (xMaximum[curve] > xautoscalemax) xautoscalemax = xMaximum[curve];
-                    } else {
-                        if (xMinimum[curve] < xautoscalemin) xautoscalemin = xMinimum[curve];
-                        if (xMaximum[curve] > xautoscalemax) xautoscalemax = xMaximum[curve];
-                    }
+                    if (xMinimum[curve] < xautoscalemin) xautoscalemin = xMinimum[curve];
+                    if (xMaximum[curve] > xautoscalemax) xautoscalemax = xMaximum[curve];
                 }
             }
         }

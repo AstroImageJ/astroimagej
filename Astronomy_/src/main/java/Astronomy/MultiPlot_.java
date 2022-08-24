@@ -397,7 +397,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static boolean[] useTransitFit, bpLock, showLTranParams, showLResidual, autoUpdateFit, showModel, showResidual, showResidualError;
     static JCheckBox[] forceCircularOrbitCB, useTransitFitCB, showLTranParamsCB, bpLockCB, showLResidualCB, showResidualErrorCB, autoUpdateFitCB, showModelCB, showResidualCB;
 
-    static boolean[][] lockToCenter, isFitted;
+    static boolean[][] lockToCenter, isFitted, detrendVarAllNaNs;
     static JCheckBox[][] lockToCenterCB;
     static double[][] priorCenter;
 
@@ -1851,6 +1851,27 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                             y[curve][j] = (usePixelScale ? pixelScale : 1.0) * Math.sqrt(((xc1[curve][j] - xc2[curve][j]) * (xc1[curve][j] - xc2[curve][j])) + ((yc1[curve][j] - yc2[curve][j]) * (yc1[curve][j] - yc2[curve][j])));
                         }
                     }
+
+                    if (plotY[curve]) {
+                        for (int v = 0; v < maxDetrendVars; v++) {
+                            detrendVarAllNaNs[curve][v] = true;
+                        }
+                        for (int j = 0; j < nn[curve]; j++) {
+                            for (int v = 0; v < maxDetrendVars; v++) {
+                                if (!Double.isNaN(detrend[curve][v][j])) detrendVarAllNaNs[curve][v] = false;
+                            }
+                        }
+                        for (int v = 0; v < maxDetrendVars; v++) {
+                            if (detrendVarAllNaNs[curve][v]) {
+                                detrendIndex[curve][v] = 0;
+                                //turn off detrend par in GUI without causing a plot update
+                                //make sure both MP and CF work
+                                //issue a log message saying that the detrend parameter has been disable because it contains all NaNs
+                            }
+                        }
+
+                    }
+
                     if (ylabel[curve].trim().startsWith("J.D.-2400000")) {
                         for (int j = 0; j < nn[curve]; j++) {
                             y[curve][j] += 2400000;
@@ -6334,6 +6355,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         useCustomFitStep = new boolean[maxCurves][maxFittedVars];
         useCustomFitStepCB = new JCheckBox[maxCurves][maxFittedVars];
         isFitted = new boolean[maxCurves][maxFittedVars];
+        detrendVarAllNaNs = new boolean[maxCurves][maxDetrendVars];
         lockToCenter = new boolean[maxCurves][maxFittedVars];
         lockToCenterCB = new JCheckBox[maxCurves][maxFittedVars];
         copyAndLockButton = new JButton[maxCurves][maxFittedVars];

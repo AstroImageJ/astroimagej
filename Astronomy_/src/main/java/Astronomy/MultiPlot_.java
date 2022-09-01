@@ -1576,7 +1576,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     }
                     if (detrendFitIndex[curve] != 0) {
                         for (int v = 0; v < maxDetrendVars; v++) {
-                            if (detrendIndex[curve][v] > 1) {
+                            if (detrendIndex[curve][v] > 1 || (!detrendVarAllNaNs[curve][v] && detrendIndex[curve][v] != 1)) {
                                 detrendcolumn[curve][v] = table.getColumnIndex(detrendlabel[curve][v]);
 
                                 if (detrendcolumn[curve][v] == ResultsTable.COLUMN_NOT_FOUND) {
@@ -1726,7 +1726,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                     if (operatorIndex[curve] != 0) yop[curve][j] = Double.NaN;
                                     if (detrendFitIndex[curve] != 0) {
                                         for (int v = 0; v < maxDetrendVars; v++) {
-                                            if (detrendIndex[curve][v] != 0) {
+                                            if (detrendIndex[curve][v] != 0 || detrendVarAllNaNs[curve][v]) {
                                                 detrend[curve][v][j] = Double.NaN;
                                             }
                                         }
@@ -1765,7 +1765,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                 }
                                 if (detrendFitIndex[curve] != 0) {
                                     for (int v = 0; v < maxDetrendVars; v++) {
-                                        if (detrendIndex[curve][v] > 1) {
+                                        if (detrendIndex[curve][v] > 1 || detrendVarAllNaNs[curve][v]) {
                                             detrend[curve][v][j] += table.getValueAsDouble(detrendcolumn[curve][v], j * inputAverageOverSize[curve] + k);
                                         }
                                     }
@@ -1794,7 +1794,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         } else { yerr[curve][j] = 1.0; }
                         if (detrendFitIndex[curve] != 0) {
                             for (int v = 0; v < maxDetrendVars; v++) {
-                                if (detrendIndex[curve][v] != 0) {
+                                if (detrendIndex[curve][v] != 0 || detrendVarAllNaNs[curve][v]) {
                                     detrend[curve][v][j] /= bucketSize;
                                 }
                             }
@@ -1864,9 +1864,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         for (int v = 0; v < maxDetrendVars; v++) {
                             if (detrendVarAllNaNs[curve][v]) {
                                 detrendIndex[curve][v] = 0;
-                                //turn off detrend par in GUI without causing a plot update
-                                //make sure both MP and CF work
-                                //issue a log message saying that the detrend parameter has been disable because it contains all NaNs
                             }
                         }
 
@@ -2474,9 +2471,13 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                                 bestFitLabel[curve][p].setText(ninePlaces.format(bestFit[curve][p] * 180 / Math.PI));
                                             } else if (!Double.isNaN(bestFit[curve][p])) {
                                                 bestFitLabel[curve][p].setText(p < 7 ? ninePlaces.format(bestFit[curve][p]) : detrendParameterFormat.format(bestFit[curve][p]));
+                                            } else if (p >= 7 && p < 7 + maxDetrendVars && detrendVarAllNaNs[curve][p - 7]) {
+                                                bestFitLabel[curve][p].setText("all NaNs");
                                             } else if (p >= 7 && p < 7 + maxDetrendVars && detrendIndex[curve][p - 7] != 0 && !detrendYDNotConstant[p - 7]) {
                                                 bestFitLabel[curve][p].setText("constant var");
-                                            } else { bestFitLabel[curve][p].setText(""); }
+                                            } else {
+                                                bestFitLabel[curve][p].setText("");
+                                            }
                                         }
                                         if (useTransitFit[curve]) {
                                             //Winn 2010 eqautions 14, 15, 16
@@ -14355,6 +14356,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 if (bestFitLabel[c][p].getText() == null || lockToCenter[c][p] || bestFitLabel[c][p].getText().equals("")) {
                     bestFitLabel[c][p].setBorder(grayBorder);
                 } else if (bestFitLabel[c][p].getText().equals("constant var")) {
+                    bestFitLabel[c][p].setBorder(failedBorder);
+                } else if (bestFitLabel[c][p].getText().equals("all NaNs")) {
                     bestFitLabel[c][p].setBorder(failedBorder);
                 } else { bestFitLabel[c][p].setBorder(border); }
 //                    bestFitLabel[c][p].paint(bestFitLabel[c][p].getGraphics());

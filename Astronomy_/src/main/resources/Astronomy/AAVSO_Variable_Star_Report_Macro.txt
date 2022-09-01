@@ -1,0 +1,704 @@
+//  The purpose of this AstroImageJ (AIJ) macro is to produce a correctly formatted output file that can be
+//  input to the AAVSO Variable Star Database (i.e., the AID). The output file format (also called a "report") follows the
+//  specification described in the Documentation tab of the following AAVSO website:
+//  https://www.aavso.org/aavso-extended-file-format. In addition, a user guide to this macro can be found at:
+//  http://astrodennis.com/AAVSOReportAIDHelp.pdf
+//
+//  The input to this macrois assumed to be an AIJ Measurements file.  AIJ's log
+//  window will show the progress of the macro, as well as any error messages
+//
+//  REVISION 1.4
+var REVISION = "1.4";
+//
+//  Release Notes:
+//  1.4 Add internal comment re dateLabel
+//  1.3 Corrected checkstarAmag to checkstarAMag
+//  1.2 Add ability to have only one comp star; make preferences unique to this macro
+//  1.1 Included only 3 significant digits for all magnitude fields
+//  1.0 Initial Version
+//
+//                                     SET DEBUG MODE
+//   0 = Logfile only contains status messages
+//   1 = Debug values are used for all entries and Logfile contains detailed, intermittent information  
+var debugMode = 0;                   
+//
+//                                   DEFINE GLOBAL VARIABLES
+//
+// Define special characters as global variables
+var TAB = "\t";
+var COMMA = ",";
+var CR=fromCharCode(13)
+var LF=fromCharCode(10);
+
+// Define the output file  and path name as a global variable
+var outputFile="";
+var pathOutputFile="";
+
+// Since functions only return a data value, globalValue is
+// a global variable that can convey character strings from
+// functions
+var globalValue="";
+var success = false;
+//
+//                                    DEFINE FUNCTIONS
+//
+//
+//  This function will output a message to the logfile if the
+//  debugLevel passed to it is greater than or equal to the
+//  debugMode that is set for this macro run
+//
+function debugPrint (message,debugLevel) {
+    n=d2s(debugLevel,0);
+    if (debugLevel <= debugMode) {print (message);};
+    return(true);
+};
+
+//  This function posts an error message in a dialog window,
+//  closes and deletes the open outputFile, and then exits
+//
+function errorHandling (message) {
+    Dialog.create("");
+    Dialog.addMessage(message);
+    Dialog.show();
+//  if the output file was opened, then close and delete it
+    if (outputFile!="") {
+        File.close(outputFile);
+        success=File.delete (pathOutputFile);
+        if (success) {
+            print ("Temporary output file successfully deleted");
+        };
+    }
+    exit();
+}
+
+// This function validates that a string for a specified parameter
+//  is less than or equal to a certain length.  If the length of the string
+//  is valid, the function returns true; otherwise, the function produces
+//  an error message and the macro is terminated.
+//
+function checkStringLength (parameter,string,length) {
+    lenString=lengthOf(string);
+    if (lenString<length+1) {
+        return(true);
+        } else {
+        errorHandling ("**** ERROR: "+ parameter + " with a value of" + "'" + string + "'" + "is longer than allowded");
+        }
+};
+
+// This function validates that a number for a specified parameter
+//  is within a certain lower and upper range.  If the number
+//  is valid, the function returns true; otherwise, the function produces
+//  an error message and the macro is terminated.
+//
+function checkRange (parameter,number,lower,upper) {
+    if ((number>lower||number==lower) && (number<upper||number==upper)) {
+        return(true);
+        } else {
+       errorHandling ("**** ERROR: "+ parameter + " with a value of" + number + "is out of allowable range");
+     };
+}
+
+//  This function finds the position of a substring in a string
+//   where items in the string are separated by
+//   a delimiter.  If flag is true, then there is a non-empty
+//   first position. If the substring is not found, then
+//   the macro is terminated with an error message.
+//   If flag is true, then there is a label in the first column.
+//
+function findPositionInHeader (string,substr,delimiter,flag) {
+//  Find the beginning character position of a substring
+//  in a string
+    indexOfSubString=indexOf(string,substr);
+    lastDelim=1;
+    stringLength=lengthOf(string);
+//  Set initial position
+    if (flag) {
+        position=0;
+         } else {
+        position=1;
+    }
+//  Loop through all instances of the delimiter in the string
+//  until the one immediately after the substring is found
+    for (i = 1; i<stringLength; i++) {
+         nextDelim=indexOf(string,delimiter,lastDelim);
+         if (nextDelim+1==indexOfSubString) {
+             position=i+1;
+             success = true;
+             return(position);
+         };
+         lastDelim=nextDelim+1;
+     }
+    success = false;
+    errorHandling ("****ERROR: Label " + "'" + substr + "'" + " not found");
+    return (0);
+}
+
+//  This function finds the value at a certain position in a string
+//   where the values are separated by a delimiter. This function
+//   relies on the above findPosition function to having found the correct
+//   position of the value being searched for. The value is stored in
+//   the global variable globalValue. The function returns false if this
+//   is the last value found in the string
+//
+function findValue (string,position,Delimiter) {
+    nextDelim=-1;
+    for (i = 0; i<position; i++) {
+         lastDelim=nextDelim+1; 
+         nextDelim=indexOf(string,Delimiter,lastDelim);
+//  Check if this is the last item in the string
+         if (nextDelim==-1) {
+              globalValue=substring(string,lastDelim,lengthOf(string));
+              return(false);
+         }
+    }
+   globalValue=substring(string,lastDelim,nextDelim);
+   return(true)
+}
+
+//  This function gets the value in a row of the user's data,
+//   which value is associated with a particular parameter
+//   (i.e., substring) in a header row. The position of the
+//   parameter in the header row is first found, then the the corresponding
+//   value in that position in the data row is found and returned. If column
+//   flag (colflag) is true, then there is a label in col. 1
+//   of the header row, otherwise there is not. If the parameter
+//   is not found in the header, then success is returned as false.
+//
+function getData (searchString,headerString,rowString,delimiter,colflag) {
+    position=findPositionInHeader(headerString,searchString,delimiter,colflag);
+//  if the parameter was not found, then success is false and this is
+//  returned by this function also as false.
+    success=findValue(rowString,position,delimiter);
+    return(success);
+}
+//
+// The following are the valid lengths of user entries.
+//  These are later used to perform range checks.
+lenObscode=5;
+lenSoftwareName=255;
+lenTargetName=20;
+lenTargetTDesig = 5;
+lenCheckstarLabel=20;
+lenCheckstarTDesig = 5;
+lenCheckstarChartNumber = 20;
+lenCheckstarCatMag = 8;
+lenCheckstarCatMagErr = 8;
+lenCompstarLabel=20;
+lenCompstarCDesig = 5;
+lenCompstarCatMag = 8;
+lenCompstarCatMagErr = 8;
+lenRA=8;
+lenDEC=8;
+lenNotes=1000;
+lenDate=15;
+lenError=15;
+//
+//                               BEGIN USER DIALOGUES
+//
+//****************** CREATE THE FIRST PAGE OF USER DIALOGUES
+//
+Dialog.create("Create AAVSO Variable Star Report");
+Dialog.addMessage("Macro Revision: " + REVISION);
+
+Dialog.addMessage("***Help for use of this macro can be found at http://astrodennis.com/AAVSOReportAIDHelp.pdf");
+
+Dialog.addMessage("***Report file format specifications can be found at: https://www.aavso.org/aavso-extended-file-format")
+
+Dialog.addMessage("* Indicates a required parameter");
+
+//  Clear the user's AIJ log window
+print("\\Clear");
+//
+// Fix the TYPE and SOFTWARE values
+TYPE="Extended";
+SOFTWARE="AstroImageJ" + " AAVSO Variable Star Report Macro Rev. " + REVISION;
+//  Request the AAVSO observer code
+//
+OBSCODE = call("ij.Prefs.get","AAVSOReportAID.OBSCODE","");
+Dialog.addString("AAVSO Observer Code*",OBSCODE,lenObscode);
+//
+//  Fix the delimiter to be used in the data rows of the report
+DELIM=COMMA;
+debugPrint("#DELIM=" + DELIM,1);
+//
+//  Request the type of date used, either of which should be the mid-point of the
+//  observation represented by the label JD_UTC or HJD_UTC in the AIJ measurement table
+DateTypes=newArray("JD","HJD");
+DATE_TYPE = call("ij.Prefs.get","AAVSOReportAID.DATE_TYPE","JD");
+Dialog.addChoice("Date Type:*",DateTypes,DATE_TYPE);
+//  Add UTC to JD or HJD to get AIJ-computed mid-observation time
+dateLabel =DATE_TYPE  + "_UTC";
+//
+//  Request the type of camera used
+ObsTypes=newArray("CCD","DSLR");
+OBSTYPE = call("ij.Prefs.get","AAVSOReportAID.OBSTYPE","CCD");
+Dialog.addChoice("Select Camera Used (select CCD for CMOS cameras)*",ObsTypes,OBSTYPE);
+//
+//  Request the target star name
+TARGET_NAME = call("ij.Prefs.get","AAVSOReportAID.TARGET_NAME","");
+Dialog.addString("Enter Name of Target Star (must be known by VSX)*",TARGET_NAME,20);
+//
+//  Request the T designation of the target star
+TARGET_TDESIG = call("ij.Prefs.get","AAVSOReportAID.TARGET_TDESIG","");
+Dialog.addString("Enter which T star is the target (e.g., T1)*",TARGET_TDESIG,5);
+//
+//  Request the name or label of the check star
+CHECKSTAR_LABEL = call("ij.Prefs.get","AAVSOReportAID.CHECKSTAR_LABEL","");
+Dialog.addString("Enter the name or label of the check star (e.g., 105)*",CHECKSTAR_LABEL,20);
+//
+//  Request the T designaton of the check star
+CHECKSTAR_TDESIG = call("ij.Prefs.get","AAVSOReportAID.CHECKSTAR_TDESIG","");
+Dialog.addString("Enter which T star is the check star (e.g., T20)*",CHECKSTAR_TDESIG,5);
+//
+//  Request the chart number of the check star
+CHECKSTAR_CHARTNUMBER = call("ij.Prefs.get","AAVSOReportAID.CHECKSTAR_CHARTNUMBER","");
+Dialog.addString("Enter the chart number of the check star (e.g., X28101FZL)*",CHECKSTAR_CHARTNUMBER,20);
+//
+//  Request the catalog magnitude of the check star
+CHECKSTAR_CATMAG = call("ij.Prefs.get","AAVSOReportAID.CHECKSTAR_CATMAG","");
+Dialog.addString("Enter the catalog magnitude of the check star*",CHECKSTAR_CATMAG,8);
+//
+//  Request the catalog magnitude error of the check star
+CHECKSTAR_CATMAGERR = call("ij.Prefs.get","AAVSOReportAID.CHECKSTAR_CATMAGERR","");
+Dialog.addString("Enter the catalog magnitude error of the check star*",CHECKSTAR_CATMAGERR,8);
+//
+//  Request the filter used - must be a valid AAVSO-known filter from the following list:
+// "U  : Johnson U",
+// "B  : Johnson B",
+// "V  : Johnson V",
+// "R  : Cousins R",
+// "I  : Cousins I",
+// "J  : NIR 1.2 micron",
+// "H  : NIR 1.6 micron",
+// "K  : NIR 2.2 micron",
+// "TG : Green Filter (or Tri-color green). This is commonly the 'green-channel' in a DSLR or color CCD camera.",
+// "TB : Blue Filter (or Tri-color blue). This is commonly the 'blue-channel' in a DSLR or color CCD camera.",
+// "TR : Red Filter (or Tri-color red). This is commonly the 'red-channel' in a DSLR or color CCD camera.",
+// "CV : Clear (unfiltered) using V-band comp star magnitudes; also use this for exoplanet Clear Blue Blocking Filters",
+// "CR   Clear (unfiltered) using R-band comp star magnitudes",
+// "SZ : Sloan z",
+// "SU : Sloan u",
+// "SG : Sloan g",
+// "SR : Sloan r",
+// "SI : Sloan i",
+// "STU: Stromgren u",
+// "STV: Stromgren v",
+// "STB: Stromgren b",
+// "STY: Stromgren y",
+// "STHBW: Stromgren Hbw",
+// "STHBN: Stromgren Hbn",
+// "MA : Optec Wing A",
+// "MB : Optec Wing B",
+// "MI : Optec Wing C",
+// "ZS : PanSTARRS z-short (APASS)",
+// "Y  : PanSTARRS y (APASS)",
+// "HA : H-alpha",
+// "HAC: H-alpha continuum",
+// "O  : Other filter not listed above, must describe in Notes"
+FilterChoices=newArray(
+   "U",
+   "B",
+   "V",
+   "R",
+   "I",
+   "J",
+   "H ",
+   "K",
+   "TG",
+   "TB",
+   "TR",
+   "CV",
+   "CR",
+   "SZ",
+   "SU",
+   "SG",
+   "SR",
+   "SI",
+   "STU",
+   "STV",
+   "STB",
+   "STY",
+   "STHBW",
+   "STHBN",
+   "MA",
+   "MB",
+   "MI",
+   "ZS",
+   "Y",
+   "HA",
+   "HAC",
+   "O"
+);
+filter_type = call("ij.Prefs.get","AAVSOReportAID.filter_type","CV : Clear (unfiltered) filter using V-band comp star magnitudes");
+Dialog.addChoice("Select filter Used*",FilterChoices,filter_type);
+//
+//  Request Notes
+NOTES = call("ij.Prefs.get","AAVSOReportAID.NOTES","");
+Dialog.addString("Notes - observing conditions",NOTES,100);
+//
+//**********
+//  If only one comp star, request its name/label, C designation, catalog magnitude, and magnitude error
+Dialog.addMessage("If only one comparison star, enter the following information (* required if a name/label entered):");
+//
+//  Request the name or label of the comp star
+COMPSTAR_LABEL = call("ij.Prefs.get","AAVSOReportAID.COMPSTAR_LABEL","");
+Dialog.addString("Enter the name or label of the comp star (e.g., 112)",COMPSTAR_LABEL,20);
+//
+//  Request the C designaton of the comp star
+COMPSTAR_CDESIG = call("ij.Prefs.get","AAVSOReportAID.COMPSTAR_CDESIG","");
+Dialog.addString("Enter which C star is the comp star (e.g., C2)*",COMPSTAR_CDESIG,5);
+//
+//  Request the catalog magnitude of the comp star
+COMPSTAR_CATMAG = call("ij.Prefs.get","AAVSOReportAID.COMPSTAR_CATMAG","");
+Dialog.addString("Enter the catalog magnitude of the comp star*",COMPSTAR_CATMAG,8);
+//
+//  Request the catalog magnitude error of the comp star
+COMPSTAR_CATMAGERR = call("ij.Prefs.get","AAVSOReportAID.COMPSTAR_CATMAGERR","");
+Dialog.addString("Enter the catalog magnitude error of the comp star*",COMPSTAR_CATMAGERR,8);
+//
+Dialog.addMessage(" ");
+//  Request the delimiter in the Measurements table
+DelimChoices=newArray("Tab","Comma");
+DelimChoice = call("ij.Prefs.get","AAVSOReportAID.DelimiterChoice","Tab");
+Dialog.addChoice("Delimiter in Measurements Table (for AIJ files: Tab for *.tbl,*.txt,and *.xls files; Comma for *.csv files)",DelimChoices,DelimChoice);
+//
+//  Ask for Measurements file
+Dialog.addMessage("Next, after clicking OK, select the measurement file from which the report will be generated.");
+//
+Dialog.show();
+//
+//*****************  GET THE FIRST PAGE OF USE INPUTS
+//
+
+debugPrint("#TYPE=" + TYPE,1);
+
+debugPrint("#SOFTWARE=" + SOFTWARE,1);
+//
+//  Get the primary observer code
+OBSCODE=Dialog.getString();
+call("ij.Prefs.set","AAVSOReportAID.OBSCODE",OBSCODE);
+if (OBSCODE=="") {
+     errorHandling("*** ERROR: No Obscode was entered");
+};
+debugPrint("#OBSCODE=" + OBSCODE,1);
+checkStringLength("OBSCODE",OBSCODE,lenObscode);
+//
+//  Get the type of date used
+DATE_TYPE=Dialog.getChoice();
+call("ij.Prefs.set","AAVSOReportAID.DATE_TYPE",DATE_TYPE);
+debugPrint("#DATE_TYPE=" + DATE_TYPE,1);
+//
+//  Get the type of camera used
+OBSTYPE=Dialog.getChoice();
+call("ij.Prefs.set","AAVSOReportAID.OBSTYPE",OBSTYPE);
+debugPrint("#OBSTYPE=" + OBSTYPE,1);
+//
+//  Get the target star name
+TARGET_NAME=Dialog.getString();
+call("ij.Prefs.set","AAVSOReportAID.TARGET_NAME",TARGET_NAME);
+if (TARGET_NAME=="") {
+     errorHandling("*** ERROR: No target star name was entered");
+};
+debugPrint("TARGET_NAME=" + TARGET_NAME,1);
+checkStringLength("Target Star Name",TARGET_NAME,lenTargetName);
+//
+//  Get the T designation of the target star
+TARGET_TDESIG=Dialog.getString();
+call("ij.Prefs.set","AAVSOReportAID.TARGET_TDESIG",TARGET_TDESIG);
+if (TARGET_TDESIG=="") {
+     errorHandling("*** ERROR: No target star T designation was entered");
+};
+debugPrint("TARGET_TDESIG=" + TARGET_TDESIG,1);
+checkStringLength("Target Star T Designation",TARGET_TDESIG,lenTargetTDesig);
+TargetAmagLabel =      "Source_AMag_" + TARGET_TDESIG;
+TargetAmagErrLabel =   "Source_AMag_Err_" + TARGET_TDESIG;
+TargetSourceSkyLabel = "Source-Sky_" + TARGET_TDESIG; 
+//
+//  Get the check star name or label
+CHECKSTAR_LABEL=Dialog.getString();
+call("ij.Prefs.set","AAVSOReportAID.CHECKSTAR_LABEL",CHECKSTAR_LABEL);
+if (CHECKSTAR_LABEL=="") {
+     errorHandling("*** ERROR: No check star name or label was entered");
+};
+debugPrint("CHECKSTAR_LABEL=" + CHECKSTAR_LABEL,1);
+checkStringLength("CHECKSTAR_LABEL",CHECKSTAR_LABEL,lenCheckstarLabel);
+//
+//  Get the T designation of the check star
+CHECKSTAR_TDESIG=Dialog.getString();
+call("ij.Prefs.set","AAVSOReportAID.CHECKSTAR_TDESIG",CHECKSTAR_TDESIG);
+if (CHECKSTAR_TDESIG=="") {
+     errorHandling("*** ERROR: No check star T designation was entered");
+};
+debugPrint("CHECKSTAR_TDESIG=" + CHECKSTAR_TDESIG,1);
+checkStringLength("Check Star T Designation",CHECKSTAR_TDESIG,lenCheckstarTDesig);
+CheckStarAmagLabel =      "Source_AMag_" + CHECKSTAR_TDESIG;
+CheckStarSourceSkyLabel = "Source-Sky_"  +  CHECKSTAR_TDESIG; 
+//
+//  Get the chart number check star
+CHECKSTAR_CHARTNUMBER=Dialog.getString();
+call("ij.Prefs.set","AAVSOReportAID.CHECKSTAR_CHARTNUMBER",CHECKSTAR_CHARTNUMBER);
+if (CHECKSTAR_CHARTNUMBER=="") {
+     errorHandling("*** ERROR: No check star chart number was entered");
+};
+debugPrint("CHECKSTAR_CHARTNUMBER=" + CHECKSTAR_CHARTNUMBER,1);
+checkStringLength("Check Star Chart Number",CHECKSTAR_CHARTNUMBER,lenCheckstarChartNumber);
+//
+//  Get the check star catalog magnitude
+CHECKSTAR_CATMAG=Dialog.getString();
+call("ij.Prefs.set","AAVSOReportAID.CHECKSTAR_CATMAG",CHECKSTAR_CATMAG);
+if (CHECKSTAR_CATMAG=="") {
+     errorHandling("*** ERROR: No check star catalog magnitude was entered");
+};
+debugPrint("CHECKSTAR_CATMAG=" + CHECKSTAR_CATMAG,1);
+checkStringLength("Check Star Catolog Magnitude",CHECKSTAR_CATMAG,lenCheckstarCatMag);
+//
+//  Get the check star catalog magnitude error
+CHECKSTAR_CATMAGERR=Dialog.getString();
+call("ij.Prefs.set","AAVSOReportAID.CHECKSTAR_CATMAGERR",CHECKSTAR_CATMAGERR);
+if (CHECKSTAR_CATMAGERR=="") {
+     errorHandling("*** ERROR: No check star catalog magnitude error was entered");
+};
+debugPrint("CHECKSTAR_CATMAGERR=" + CHECKSTAR_CATMAGERR,1);
+checkStringLength("Check Star Catolog Magnitude Error",CHECKSTAR_CATMAGERR,lenCheckstarCatMagErr);
+//
+//  Get the filter used
+filter_type=Dialog.getChoice();
+call("ij.Prefs.set","AAVSOReportAID.filter_type",filter_type);
+//  Get first 4 letters of filter and then eliminate trailing spaces
+FILTER=filter_type;
+debugPrint("#FILTER=" + FILTER,1);
+//
+//  Get any notes
+NOTES=Dialog.getString();
+call("ij.Prefs.set","AAVSOReport.NOTES",NOTES);
+debugPrint("#NOTES=" + NOTES,1);
+checkStringLength("Notes",NOTES,lenNotes);
+//
+//*********
+//  If there is only one comp star, get its name/label, C designation, catalog magnitude, and magnitude error
+//
+//  Get the comp star name or label
+COMPSTAR_LABEL=Dialog.getString();
+call("ij.Prefs.set","AAVSOReportAID.COMPSTAR_LABEL",COMPSTAR_LABEL);
+debugPrint("COMPSTAR_LABEL=" + COMPSTAR_LABEL,1);
+checkStringLength("COMPTAR_LABEL",COMPSTAR_LABEL,lenCompstarLabel);
+//
+//  Get the C designation of the check star
+COMPSTAR_CDESIG=Dialog.getString();
+call("ij.Prefs.set","AAVSOReportAID.COMPSTAR_CDESIG",COMPSTAR_CDESIG);
+if (COMPSTAR_CDESIG=="" && COMPSTAR_LABEL != "") {
+     errorHandling("*** ERROR: No comp star C designation was entered");
+};
+debugPrint("COMPSTAR_CDESIG=" + COMPSTAR_CDESIG,1);
+checkStringLength("Comp Star C Designation",COMPSTAR_CDESIG,lenCompstarCDesig);
+CompStarAmagLabel =      "Source_AMag_" + COMPSTAR_CDESIG;
+CompStarSourceSkyLabel = "Source-Sky_"  +  COMPSTAR_CDESIG; 
+//
+//  Get the comp star catalog magnitude
+COMPSTAR_CATMAG=Dialog.getString();
+call("ij.Prefs.set","AAVSOReportAID.COMPSTAR_CATMAG",COMPSTAR_CATMAG);
+if (COMPSTAR_CATMAG=="" && COMPSTAR_LABEL != "") {
+     errorHandling("*** ERROR: No comp star catalog magnitude was entered");
+};
+debugPrint("COMPSTAR_CATMAG=" + COMPSTAR_CATMAG,1);
+checkStringLength("Comp Star Catolog Magnitude",COMPSTAR_CATMAG,lenCompstarCatMag);
+//
+//  Get the comp star catalog magnitude error
+COMPSTAR_CATMAGERR=Dialog.getString();
+call("ij.Prefs.set","AAVSOReportAID.COMPSTAR_CATMAGERR",COMPSTAR_CATMAGERR);
+if (COMPSTAR_CATMAGERR=="" && COMPSTAR_LABEL != "") {
+     errorHandling("*** ERROR: No comp star catalog magnitude error was entered");
+};
+debugPrint("COMPSTAR_CATMAGERR=" + COMPSTAR_CATMAGERR,1);
+checkStringLength("Comp Star Catolog Magnitude Error",COMPSTAR_CATMAGERR,lenCompstarCatMagErr);
+//
+//
+//  Get the user-specified delimiter (tab or comma) used in the
+//  input measurement table and set inputFileDelim
+//  to this.
+//
+DelimiterChoice=Dialog.getChoice();
+call("ij.Prefs.set","AAVSOReportAID.DelimiterChoice",DelimiterChoice);
+if (DelimiterChoice=="Tab") {
+    inputFileDelimiter=TAB;
+    } else {
+    inputFileDelimiter=COMMA;
+};
+//
+//  Set firstMeasTableColFlag to false
+firstMeasTableColFlag = false;   
+//
+//
+//---------------BEGIN OUTPUTING REPORT KEYWORDS AND DATA ROWS TO OUPUT FILE
+//
+//  Open a user-specified measurement file
+//
+filepath = File.openDialog("Select Measurements Table");
+measurementFile=File.openAsString(filepath);
+//  Put the file into an array by rows
+fileArray=split(measurementFile,"\n");
+header=fileArray[0];
+//
+//
+//  If a single comp star is specified, verify that there are no other comp stars
+//  and if in debug mode, print out measurment file labels to the log
+debugPrint("",1);
+debugPrint("Labels in measurement file header are:",1);
+success=true;
+compStarTest = "rel_flux_" + COMPSTAR_CDESIG;
+print(COMPSTAR_CDESIG);
+for (i=1; i<lengthOf(header)&&success;i++) {
+     success=findValue(header,i,inputFileDelimiter);
+//  If a C star exists other than the user-designated one, issue an error
+    if (COMPSTAR_CDESIG != "") {
+          firstPart = startsWith(globalValue,"rel_flux_C");
+//  If current measurement table label is rel_flux_Cxx, but not that of the
+//  user-designated comp star, issue an error
+          if (firstPart && globalValue != compStarTest) {
+             errorHandling("*** ERROR: A comp star other than the user-designated one exists");
+             };
+     };
+     debugPrint(globalValue,1);
+};
+debugPrint("",1);
+nRows=lengthOf(fileArray)-1;
+//
+//  Create output file
+//
+//  First, get directory of the user's measurement file
+fileDir= File.directory;
+message = "Output file to be stored in: " + fileDir;
+debugPrint(message,1);
+
+//  Get current date and time
+//
+getDateAndTime(year,month,dayOfWeek,dayOfMonth,hour,minute,second,msec);
+//  Convert year, month, day, month, hour, and second to strings
+yearString=d2s(year,0);
+monthString=d2s(month+1,0);
+// if month+1 is less than 10, append 0 as prefix - note month=0 is January
+if (month+1<10) {
+    monthString="0"+d2s(month+1,0);
+    } else {
+    monthString=d2s(month+1,0);
+};
+// if day is less than 10, append 0 as prefix
+if (dayOfMonth<10) {
+    dayString="0"+d2s(dayOfMonth,0);
+    } else {
+    dayString=d2s(dayOfMonth,0);
+ };
+hourString=d2s(hour,0);
+minuteString=d2s(minute,0);
+secondString=d2s(second,0);
+datetime=yearString + monthString + dayString + "-" + hourString + "h" + minuteString + "m" + secondString + "s";
+//  Create the full output file name
+//
+pathOutputFile=fileDir + "AAVSO_AID_Report_"  + OBSCODE + "_" + TARGET_NAME + "_" + DATE_TYPE + "_" + datetime + ".txt";
+//
+//  Open the output file as a new file
+//
+outputFile=File.open(pathOutputFile);
+//
+//  Add to file each report header keyword and user value
+//
+File.append("#TYPE=" + TYPE + CR,pathOutputFile);
+File.append("#OBSCODE=" + OBSCODE + CR,pathOutputFile);
+File.append("#SOFTWARE=" + SOFTWARE + CR,pathOutputFile);
+File.append("#DELIM=" + DELIM + CR,pathOutputFile);
+File.append("#DATE=" + DATE_TYPE + CR,pathOutputFile);
+File.append("#OBSTYPE=" + OBSTYPE + CR,pathOutputFile);
+//
+//  Construct the header to the data rows of the report
+dataHeaderString = "#NAME,DATE,MAG,MERR,FILT,TRANS,MTYPE,CNAME,CMAG,KNAME,KMAG,AMASS,GROUP,CHART,NOTES";
+File.append(dataHeaderString + CR,pathOutputFile);
+//
+//  Get the value in the user's file associated with each of the following:
+//   1.  Date/Time
+//   2.  Target Apparent Magnitude (e.g., Source_AMag_Tx)
+//   3.  Target Apparent Magnitude error (e.g., Source_Amag_Err_Tx)
+//   4.  Check Star Apparent Magnitude (e.g., Source_Amag_T20)
+//   5.  Target Source-Sky (for use in computing the target star's instrumental magnitude KMAGINS)
+//   6.  Check Star Source-Sky (for use in computing the check star's instrumental magnitude VMAGINS)
+//   7.  Exposure time
+//   8.  Airmass
+//   9.  If there is a single comp star, get the comp star's Source-Sky (for use in computing the comp
+//       star's instrumental magnitude CMAGINS)
+//  Assume that such values are separated by the 
+//  user-specified delimiter inputFileDelimiter
+//
+//  Cycle through each of the data rows in the user's file for the above values
+for (k=1; k<nRows+1; k++) {
+     rowString=fileArray[k];
+     success=getData(dateLabel,header,rowString,inputFileDelimiter,firstMeasTableColFlag);
+     date_time=d2s(globalValue,6);
+//
+     success=getData(TargetAmagLabel,header,rowString,inputFileDelimiter,firstMeasTableColFlag);
+     targetAMag = d2s(globalValue,3);
+
+     success=getData(TargetAmagErrLabel,header,rowString,inputFileDelimiter,firstMeasTableColFlag);
+     targetAMagErr = d2s(globalValue,3);
+
+     success=getData(CheckStarAmagLabel,header,rowString,inputFileDelimiter,firstMeasTableColFlag);
+     checkstarAMag = d2s(globalValue,3);
+
+     success=getData("EXPTIME",header,rowString,inputFileDelimiter,firstMeasTableColFlag);
+     exposureTime = globalValue;
+
+     success=getData("AIRMASS",header,rowString,inputFileDelimiter,firstMeasTableColFlag);
+     airmass = d2s(globalValue,6);
+
+     success=getData(TargetSourceSkyLabel,header,rowString,inputFileDelimiter,firstMeasTableColFlag);
+     targetSourceSky = -2.5*log(globalValue/exposureTime)/log(10);
+     targetInsMag = d2s(targetSourceSky,3);
+
+     success=getData(CheckStarSourceSkyLabel,header,rowString,inputFileDelimiter,firstMeasTableColFlag);
+     checkstarSourceSky = -2.5*log(globalValue/exposureTime)/log(10);
+     checkstarInsMag = d2s(checkstarSourceSky,3);
+
+//  Create Notes section
+    notesSection = NOTES + "|KMAG="+ checkstarAMag + "|KMAGINS=" + checkstarInsMag + "|KREFMAG=" + CHECKSTAR_CATMAG +"|KREFERR=" + CHECKSTAR_CATMAGERR +  "|VMAGINS=" + targetInsMag;
+//
+//  If there is a single comp star:
+//      CNAME = the comp star's label
+//      CMAG = instrumental mag of comp star
+//      KMAG = instrumental mag of check star
+//      CMAGINS in the Notes section equals the comp star's instrumental mag.
+//  For an ensemble of comp stars:
+//      CNAME = ENSEMBLE
+//      CMAG = na
+//      KMAG = the apparent mag of the check star.
+//   
+    if (COMPSTAR_LABEL != "") {
+//     For a single comp star:
+         success=getData(CompStarSourceSkyLabel,header,rowString,inputFileDelimiter,firstMeasTableColFlag);
+         compstarSourceSky = -2.5*log(globalValue/exposureTime)/log(10);
+         compstarInsMag = d2s(compstarSourceSky,3);
+         CNAME = COMPSTAR_LABEL;
+         CMAG =  compstarInsMag;
+         KMAG =  checkstarInsMag;
+         notesSection = notesSection +
+                        "|CMAGINS=" + CMAG + "|CREFMAG=" + COMPSTAR_CATMAG + "|CREFERR=" + COMPSTAR_CATMAGERR;
+         } else {CNAME = "ENSEMBLE"; CMAG = "na"; KMAG = checkstarAMag;};
+//
+//  Print to the log window and output file the appropriate data rows, where each item is separated by DELIM and the row ends with a CR
+//
+    rowData=TARGET_NAME + DELIM + date_time + DELIM + targetAMag + DELIM + targetAMagErr + DELIM + FILTER + DELIM + "NO" + DELIM + "STD" + DELIM + CNAME + DELIM + CMAG + DELIM + CHECKSTAR_LABEL + DELIM + KMAG + DELIM + airmass + DELIM + "1" + DELIM + CHECKSTAR_CHARTNUMBER + DELIM + notesSection;
+    debugPrint(rowData,1);
+    File.append(rowData + CR,pathOutputFile);
+};
+//
+//  Print success message to dialogue
+Dialog.create("");
+debugPrint("",1);
+debugPrint("AAVSO Variabel Star Report Successfully Created",1);
+message = "Filename= " + pathOutputFile;
+debugPrint(message,1);
+Dialog.addMessage("AAVSO Report Successfully Created");
+Dialog.addMessage("Filename= " + pathOutputFile);
+Dialog.show();
+//
+//  Close the output file
+File.close(outputFile);
+
+exit();

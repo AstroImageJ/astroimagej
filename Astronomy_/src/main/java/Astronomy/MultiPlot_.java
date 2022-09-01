@@ -7360,6 +7360,15 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         });
         filemenu.add(createAAVSOReportMenuItem);
 
+        JMenuItem createAAVSOVarStarReportMenuItem = new JMenuItem("Create AAVSO Variable Star Report...");
+        createAAVSOVarStarReportMenuItem.setToolTipText("<html>" + "Create AAVSO formatted data for submission to the AAVSO Variable Star Database.</html>");
+        createAAVSOVarStarReportMenuItem.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                ij.plugin.Macro_Runner.runMacroFromJar(getClass().getClassLoader(), "Astronomy/AAVSO_Variable_Star_Report_Macro.txt", "");
+            }
+        });
+        filemenu.add(createAAVSOVarStarReportMenuItem);
+
 //                JMenuItem createDmagVsRMSPlotMenuItem = new JMenuItem("Create Delta-magnitude vs. RMS plot...");
 //                createDmagVsRMSPlotMenuItem.setToolTipText("<html>"+"Create a Delta-magnitude vs. RMS plot for all apertures.<br>");
 //                createDmagVsRMSPlotMenuItem.addActionListener(new ActionListener() {

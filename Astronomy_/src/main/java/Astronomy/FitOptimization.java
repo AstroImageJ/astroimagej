@@ -637,7 +637,7 @@ public class FitOptimization implements AutoCloseable {
                                       BiFunction<BigInteger, BigInteger, Optimizer> optimizerBiFunction, boolean multithreaded) {
         // Update table data - here we use full data, while on first open of a table MP will use truncated data
         MultiPlot_.updateTotals();
-        MultiPlot_.updateGUI();
+        //MultiPlot_.updateGUI();
         MultiPlot_.waitForPlotUpdateToFinish();
 
         if (showOptLog) AIJLogger.log(String.format("Using at most %d threads", MAX_THREADS));

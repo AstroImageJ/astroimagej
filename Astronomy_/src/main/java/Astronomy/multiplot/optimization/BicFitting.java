@@ -34,10 +34,19 @@ public class BicFitting extends Optimizer {
 
     private FitOptimization.MinimumState plotUpdater() {
         var state0 = newState(BigInteger.ZERO);
-        Arrays.fill(state0, 0);
+
+        // This resets the state for CF to function properly with all NaN detrend columns
+        MultiPlot_.detrendIndex[curve] = state0;
+        MultiPlot_.updatePlot(curve);
+
+        var cf = CurveFitter.getInstance(curve, fitOptimization.getTargetStar());
+        CurveFitter.detrendIndex = state0;//initialDetrendIndex;
+        CurveFitter.detrendlabel = detrendlabel;
+        cf.setupData();
+
         var b = CurveFitter.getInstance(curve, fitOptimization.getTargetStar()).fitCurveAndGetResults(state0);
 
-        CurveFitter.detrendIndex = initialDetrendIndex;
+        CurveFitter.detrendIndex = new int[initialDetrendIndex.length];
         CurveFitter.detrendlabel = detrendlabel;
         CurveFitter.getInstance(curve, fitOptimization.getTargetStar()).setupData();
 
@@ -46,7 +55,7 @@ public class BicFitting extends Optimizer {
         final var epsilon = FitOptimization.EPSILON;
         final var maxParams = (int) fitOptimization.detrendParamCount.getValue();
         BigInteger counter = BigInteger.ZERO;
-        for (BigInteger state = startState; state.compareTo(endState) < 0; state = state.add(BigInteger.ONE)) {
+        for (BigInteger state = startState; state.compareTo(endState) <= 0; state = state.add(BigInteger.ONE)) {
             fitOptimization.detrendCounter.dynamicSet(counter);
             counter = counter.add(BigInteger.ONE);
 
@@ -59,7 +68,13 @@ public class BicFitting extends Optimizer {
             // Ensure param count is <= max params
             if (paramCount > maxParams) continue;
 
-            var r = CurveFitter.getInstance(curve, fitOptimization.getTargetStar()).fitCurveAndGetResults(x);
+            // todo revert to previous, detrend with NaN columns present screws up the init. state too much
+            cf = CurveFitter.getInstance(curve, fitOptimization.getTargetStar());
+            CurveFitter.detrendIndex = x;
+            CurveFitter.detrendlabel = detrendlabel;
+            cf.setupData();
+            var r = cf.fitCurveAndGetResults(x);
+            CurveFitter.invalidateInstance();
 
             if (Double.isNaN(r.rms()) || Double.isNaN(r.bic())) continue;
 

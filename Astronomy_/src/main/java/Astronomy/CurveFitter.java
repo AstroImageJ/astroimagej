@@ -737,6 +737,8 @@ public class CurveFitter {
                 double[] detrendX = new double[nn[curve]];
                 double[] detrendY = new double[nn[curve]];
                 double[] detrendYE = new double[nn[curve]];
+                double[] detrendConstantComparator = new double[nn[curve]];
+                Arrays.fill(detrendConstantComparator, Double.NaN);
                 if (detrendFitIndex[curve] != 1) {
                     double[][] detrendYD = new double[maxDetrendVars][nn[curve]];
                     boolean noNaNs = true;
@@ -763,7 +765,11 @@ public class CurveFitter {
                                     if (detrendY[0] != detrendY[detrendCount]) detrendYNotConstant = true;
                                     for (int v = 0; v < maxDetrendVars; v++) {
                                         detrendYD[v][detrendCount] = detrend[curve][v][j];
-                                        if (detrendYD[v][0] != detrendYD[v][detrendCount]) {
+
+                                        if (Double.isNaN(detrendConstantComparator[v]) && !Double.isNaN(detrendYD[v][detrendCount])) {
+                                            detrendConstantComparator[v] = detrendYD[v][detrendCount];
+                                        }
+                                        if (!Double.isNaN(detrendConstantComparator[v]) && detrendConstantComparator[v] != detrendYD[v][detrendCount]) {
                                             detrendYDNotConstant[v] = true;
                                         }
                                     }
@@ -811,7 +817,10 @@ public class CurveFitter {
                                         if (detrendY[0] != detrendY[detrendCount]) detrendYNotConstant = true;
                                         for (int v = 0; v < maxDetrendVars; v++) {
                                             detrendYD[v][detrendCount] = detrend[curve][v][j];
-                                            if (detrendYD[v][0] != detrendYD[v][detrendCount]) {
+                                            if (Double.isNaN(detrendConstantComparator[v]) && !Double.isNaN(detrendYD[v][detrendCount])) {
+                                                detrendConstantComparator[v] = detrendYD[v][detrendCount];
+                                            }
+                                            if (!Double.isNaN(detrendConstantComparator[v]) && detrendConstantComparator[v] != detrendYD[v][detrendCount]) {
                                                 detrendYDNotConstant[v] = true;
                                             }
                                         }
@@ -974,7 +983,7 @@ public class CurveFitter {
             }
         }
 
-        return Arrays.stream(workingSource2).filter(Double::isFinite).toArray();
+        return workingSource2;//Arrays.stream(workingSource2).filter(Double::isFinite).toArray();
     }
 
     private CurveData preprocessData(boolean[] localIsRefStar) {
@@ -1087,6 +1096,26 @@ public class CurveFitter {
         detrendY = trimData(y);
 
         curveData.instancedParamData.forEach((columnInfo, data) -> detrend[columnInfo.detrendColumn] = data);
+
+        /*var detrendVarAllNaNs = new boolean[maxDetrendVars];
+        for (int v = 0; v < maxDetrendVars; v++) {
+            detrendVarAllNaNs[v] = true;
+            for (int j = 0; j < nn[curve]; j++) {
+                if (!Double.isNaN(detrend[v][j])) {
+                    detrendVarAllNaNs[v] = false;
+                    break;
+                }
+            }
+        }*/
+
+        /*for (int v = 0; v < maxDetrendVars; v++) {
+            if (detrendVarAllNaNs[v]) {
+                //detrendIndex[v] = 0;
+                detrendYDNotConstant[v] = false;
+                //detrend[detrendIndex[v]] = new double[nn[curve]];
+            }
+            detrendYDNotConstant[v] = !detrendVarAllNaNs[v];
+        }*/
 
         if (atLeastOne || detrendFitIndex[curve] == 9) {
             double[] detrendAverage = new double[maxDetrendVars];

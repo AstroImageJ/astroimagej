@@ -52,6 +52,10 @@ public class FitsHeaderImpl implements IFitsHeader, Serializable {
     
     private static HashSet<String> commentStyleKeys = new HashSet<>();
 
+    static {
+        commentStyleKeys.add("ANNOTATE");
+    }
+
     public FitsHeaderImpl(String headerName, SOURCE status, HDU hdu, VALUE valueType, String comment) {
         this.key = headerName;
         this.status = status;

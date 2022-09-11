@@ -65,15 +65,15 @@ public class CompressedImageHDU extends BinaryTableHDU {
 
     /**
      * Prepare a compressed image hdu for the specified image. the tile axis
-     * that are specified with -1 are set to the corresponding axis of the
-     * image. The image will be compressed in "sqaures" that ar defined by the
-     * tile size. Next step would be to set the compression options into the hdu
-     * and then compress it.
+     * that are specified with -1 default to tiling by rows.
      *
      * @param imageHDU
      *            the image to compress
      * @param tileAxis
-     *            the axis of the tiles in the image
+     *            the requested tile sizes in pixels in x, y, z... order (i.e. opposite of the Java array
+     *            indexing order!). The actual tile sizes that are set might be different, e.g. to fit
+     *            within the image bounds and/or to conform to tiling conventions (esp. in more than
+     *            2 dimensions).
      * @return the prepared compressed image hdu.
      * @throws FitsException
      *             if the image could not be used to create a compressed image.
@@ -81,10 +81,26 @@ public class CompressedImageHDU extends BinaryTableHDU {
     public static CompressedImageHDU fromImageHDU(ImageHDU imageHDU, int... tileAxis) throws FitsException {
         Header header = new Header();
         CompressedImageData compressedData = new CompressedImageData();
-        compressedData.setAxis(imageHDU.getAxes());
-        if (tileAxis.length > 0) {
-            compressedData.setTileSize(tileAxis);
+        int[] size = imageHDU.getAxes();
+        int[] tileSize = new int[size.length];
+    
+        compressedData.setAxis(size);
+        
+        // Start with the default tile size.
+        int nm1 = size.length - 1;
+        Arrays.fill(tileSize, 1);
+        tileSize[nm1] = size[nm1];
+        
+        // Check and apply the requested tile sizes.
+        int n = Math.min(size.length, tileAxis.length);
+        for (int i = 0; i < n; i++) {
+            if (tileAxis[i] > 0) { 
+                tileSize[nm1 - i] = Math.min(tileAxis[i], size[nm1 - i]);
+            }
         }
+
+        compressedData.setTileSize(tileSize);
+        
         compressedData.fillHeader(header);
         Cursor<String, HeaderCard> iterator = header.iterator();
         Cursor<String, HeaderCard> imageIterator = imageHDU.getHeader().iterator();

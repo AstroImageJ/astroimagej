@@ -31,12 +31,12 @@ package nom.tam.fits;
  * #L%
  */
 
-import nom.tam.util.FitsEncoder;
+import static nom.tam.fits.header.Standard.NAXIS;
+import static nom.tam.fits.header.Standard.XTENSION;
 
 import java.io.PrintStream;
 
-import static nom.tam.fits.header.Standard.NAXIS;
-import static nom.tam.fits.header.Standard.XTENSION;
+import nom.tam.util.FitsEncoder;
 
 /**
  * Holder for unknown data types.

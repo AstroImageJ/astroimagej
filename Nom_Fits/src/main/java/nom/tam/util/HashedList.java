@@ -50,6 +50,8 @@ package nom.tam.util;
  *
  */
 
+import nom.tam.fits.header.FitsHeaderImpl;
+
 import java.util.*;
 
 /**
@@ -191,7 +193,7 @@ public class HashedList<VALUE extends CursorValue<String>> implements Collection
      */
     private void add(int pos, VALUE entry) {     
         String key = entry.getKey();
-        if (this.keyed.containsKey(key) && !unkeyedKey(key)) {
+        if (this.keyed.containsKey(key) && !FitsHeaderImpl.isCommentStyleKey(key)) {
             int oldPos = indexOf(entry);
             internalRemove(oldPos, entry);
             if (oldPos < pos) {
@@ -222,10 +224,6 @@ public class HashedList<VALUE extends CursorValue<String>> implements Collection
         }
     }
 
-    private static boolean unkeyedKey(String key) {
-        return "COMMENT".equals(key) || "HISTORY".equals(key) || key.trim().isEmpty() || "ANNOTATE".equals(key);
-    }
-
     @Override
     public boolean add(VALUE e) {
         add(this.ordered.size(), e);
@@ -243,7 +241,7 @@ public class HashedList<VALUE extends CursorValue<String>> implements Collection
      *            The element to add to the list.
      */
     public void update(String key, VALUE entry) {
-        if (this.keyed.containsKey(key) && !unkeyedKey(key)) {
+        if (this.keyed.containsKey(key) && !FitsHeaderImpl.isCommentStyleKey(key)) {
             int index = indexOf(get(key));
             remove(index);
             add(index, entry);

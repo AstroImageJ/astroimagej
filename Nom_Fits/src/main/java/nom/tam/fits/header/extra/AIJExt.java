@@ -1,4 +1,4 @@
-package nom.tam.util;
+package nom.tam.fits.header.extra;
 
 /*-
  * #%L
@@ -31,28 +31,50 @@ package nom.tam.util;
  * #L%
  */
 
-/**
- * Interface for FITS-specific output. It mainly just provides an #isAtStart()
- * method that can be used to determine whether or not we are at the head of the
- * file or stream, in order to decide if an HDU here should be written as
- * primary or as a FITS extension. The decision is made by
- * {@link nom.tam.fits.BasicHDU#write(ArrayDataOutput)} and there is no need for
- * any user interaction beyond it.
- * 
- * @author Attila Kovacs
- * @since 1.17
- */
-public interface FitsOutput extends ArrayDataOutput {
+import nom.tam.fits.header.FitsHeaderImpl;
+import nom.tam.fits.header.IFitsHeader;
 
+public enum AIJExt implements IFitsHeader {
     /**
-     * Checks whether we are currently at the start of this output file or
-     * stream.
-     * 
-     * @return <code>true</code> if we are currently at the start of stream
-     *         (where a primary HDU is to be written), or <code>false</code> if
-     *         we are further along, where HDUs should be written as extensions.
-     * @see RandomAccess#position()
-     * @see FitsEncoder#getCount()
+     * Custom ANNOTATE key for AstroImageJ, where multiple ANNOTATE keys are allowed
      */
-    boolean isAtStart();
+    ANNOTATE(SOURCE.AIJ);
+
+    @SuppressWarnings("CPD-START")
+    private final IFitsHeader key;
+
+    AIJExt(SOURCE status) {
+        this.key = new FitsHeaderImpl(name(), status, HDU.IMAGE, VALUE.STRING, "");
+    }
+
+    @Override
+    public String comment() {
+        return this.key.comment();
+    }
+
+    @Override
+    public HDU hdu() {
+        return this.key.hdu();
+    }
+
+    @Override
+    public String key() {
+        return this.key.key();
+    }
+
+    @Override
+    public IFitsHeader n(int... number) {
+        return this.key.n(number);
+    }
+
+    @Override
+    public SOURCE status() {
+        return this.key.status();
+    }
+
+    @Override
+    @SuppressWarnings("CPD-END")
+    public VALUE valueType() {
+        return this.key.valueType();
+    }
 }

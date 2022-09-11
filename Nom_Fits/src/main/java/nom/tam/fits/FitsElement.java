@@ -75,7 +75,7 @@ public interface FitsElement {
      */
     @Deprecated
     void read(ArrayDataInput in) throws FitsException, IOException;
-
+    
     /**
      * Reset the input stream to point to the beginning of this element
      * 
@@ -98,12 +98,12 @@ public interface FitsElement {
     /**
      * @return <code>true</code> if this element can be rewritten?
      */
-    boolean rewriteable();    
+    boolean rewriteable();
     
     /**
      * @deprecated This method is poorly conceived as we cannot really write FITS content to 
-     *              just any <code>ArrayDataOutput</code> but only to ones that utilize
-     *              {@link nom.tam.util.FitsEncoder} to convert Java types to FITS binary
+     *              just any <code>ArrayDataOutput</code> but only to {@link nom.tam.util.FitsOutput}, 
+     *              which utilize {@link nom.tam.util.FitsEncoder} to convert Java types to FITS binary
      *              format. As such, this
      *              method is inherently unsafe as it can be used to create unreadable FITS files.
      *              It will be removed from the public API in a future release of this library,
@@ -116,9 +116,7 @@ public interface FitsElement {
      *            The data sink.
      * @throws FitsException
      *             if the write was unsuccessful.
-     * @throws IOException
-     *             if the write was unsuccessful.
      */
     @Deprecated
-    void write(ArrayDataOutput out) throws FitsException, IOException;
+    void write(ArrayDataOutput out) throws FitsException;
 }

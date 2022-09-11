@@ -116,6 +116,11 @@ public class RandomGroupsData extends Data {
     }
 
     @Override
+    public boolean isDeferred() {
+        return false;
+    }
+    
+    @Override
     @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "intended exposure of mutable data")
     public Object getData() {
         return this.dataArray;

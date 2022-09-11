@@ -33,6 +33,7 @@ package nom.tam.fits;
 
 import nom.tam.fits.header.Bitpix;
 import nom.tam.fits.header.IFitsHeader;
+import nom.tam.fits.utilities.FitsCheckSum;
 import nom.tam.util.ArrayDataInput;
 import nom.tam.util.ArrayDataOutput;
 import nom.tam.util.FitsOutput;
@@ -345,7 +346,86 @@ public abstract class BasicHDU<DataClass extends Data> implements FitsElement {
     public int getGroupCount() {
         return this.myHeader.getIntValue(GCOUNT, 1);
     }
+    
+    /**
+     * Returns the decoded checksum that is stored in the header of this HDU under the <code>CHECKSUM</code>
+     * keyword.
+     * 
+     * @return      the decoded FITS checksum value recorded in the HDU 
+     * @throws FitsException    if the HDU's header does not contain a <code>CHECKSUM</code> keyword.
+     * 
+     * @see #calcChecksum()
+     * @see Fits#calcChecksum(int)
+     * @see #getStoredDatasum()
+     * @see FitsCheckSum#getStoredDatasum(Header)
+     * 
+     * @since 1.17
+     */
+    public long getStoredChecksum() throws FitsException {
+        return FitsCheckSum.getStoredChecksum(myHeader);
+    }
 
+    /**
+     * Returns the FITS checksum for the HDU's data that is stored in the header of this HDU under 
+     * the <code>DATASUM</code> keyword.
+     * 
+     * @return      the FITS <code>DATASUM</code> value recorded in the HDU 
+     * @throws FitsException    if the HDU's header does not contain a <code>DATASUM</code> keyword.
+     * 
+     * @see Data#calcChecksum()
+     * @see Fits#calcDatasum(int)
+     * @see #getStoredChecksum()
+     * @see FitsCheckSum#getStoredChecksum(Header)
+     * 
+     * @since 1.17
+     */
+    public long getStoredDatasum() throws FitsException {
+        return FitsCheckSum.getStoredDatasum(myHeader);
+    }
+    
+    /**
+     * <p>
+     * Computes the checksums for this HDU and stores the <code>CHECKSUM</code> and <code>DATASUM</code> 
+     * values in the header. This should be the last modification to the HDU before writing it.
+     * </p>
+     * <p>
+     * Note, that this method will always calculate the checksum in memory. As a result it will load
+     * data in deferred read mode into RAM for performaing the calculation. If you prefer to keep
+     * deferred read mode data unloaded, you should use {@link Fits#setChecksum(int)} instead.
+     * 
+     * @throws FitsException  if there was an error serializing the HDU for the checksum computation.
+     * 
+     * @see Fits#setChecksum(int)
+     * @see FitsCheckSum#setChecksum(BasicHDU)
+     * @see #getStoredChecksum()
+     * @see #getStoredDatasum()
+     * 
+     * @since 1.17
+     */
+    public void setChecksum() throws FitsException {
+        FitsCheckSum.setChecksum(this);
+    }
+    
+    /**
+     * Computes and returns the FITS checksum for this HDU, e.g. to compare agains the 
+     * stored <code>CHECKSUM</code> in the FITS header. This method always computes the
+     * checksum from data fully loaded in memory. As such it will load deferred read mode 
+     * data into RAM to perform the calculation. If you prefer to leave the data in deferred 
+     * read mode, you can use {@link Fits#calcChecksum(int)} instead.
+     * 
+     * @return      the computed HDU checksum (in memory).
+     * @throws FitsException    if there was an error while calculating the checksum
+     * 
+     * @see Data#calcChecksum()
+     * @see Fits#calcChecksum(int)
+     * @see FitsCheckSum#checksum(BasicHDU)
+     * 
+     * @since 1.17
+     */
+    public long calcChecksum() throws FitsException {
+        return FitsCheckSum.checksum(this);
+    }
+    
     /**
      * @return the associated header
      */
@@ -507,11 +587,7 @@ public abstract class BasicHDU<DataClass extends Data> implements FitsElement {
      *         stripped.
      */
     public String getTrimmedString(IFitsHeader keyword) {
-        String s = this.myHeader.getStringValue(keyword);
-        if (s != null) {
-            s = s.trim();
-        }
-        return s;
+        return getTrimmedString(keyword.key());
     }
 
     /**
@@ -537,10 +613,11 @@ public abstract class BasicHDU<DataClass extends Data> implements FitsElement {
 
     @Override
     public void rewrite() throws FitsException, IOException {
-
         if (rewriteable()) {
-            this.myHeader.rewrite();
-            this.myData.rewrite();
+            myHeader.rewrite();
+            if (!myData.isDeferred()) {
+                myData.rewrite();
+            }
         } else {
             throw new FitsException("Invalid attempt to rewrite HDU");
         }
@@ -548,7 +625,7 @@ public abstract class BasicHDU<DataClass extends Data> implements FitsElement {
 
     @Override
     public boolean rewriteable() {
-        return this.myHeader.rewriteable() && this.myData.rewriteable();
+        return myHeader.rewriteable() && myData.rewriteable();
     }
 
     /**
@@ -560,67 +637,29 @@ public abstract class BasicHDU<DataClass extends Data> implements FitsElement {
      *             if the operation failed
      */
     void setPrimaryHDU(boolean newPrimary) throws FitsException {
-
         if (newPrimary && !canBePrimary()) {
             throw new FitsException("Invalid attempt to make HDU of type:" + this.getClass().getName() + " primary.");
         } 
         
+        myHeader.editRequiredKeys(newPrimary);
         this.isPrimary = newPrimary;
-       
-        // Some FITS readers don't like the PCOUNT and GCOUNT keywords
-        // in a primary array or they EXTEND keyword in extensions.
-
-        if (this.isPrimary && !this.myHeader.getBooleanValue(GROUPS, false)) {
-            this.myHeader.deleteKey(PCOUNT);
-            this.myHeader.deleteKey(GCOUNT);
-        }
-
-        if (this.isPrimary) {
-            HeaderCard card = this.myHeader.findCard(EXTEND);
-            if (card == null) {
-                getAxes(); // Leaves the iterator pointing to the last NAXISn
-                           // card.
-                this.myHeader.nextCard();
-                this.myHeader.addValue(EXTEND, true);
-            }
-        }
-
-        if (!this.isPrimary) {
-
-            this.myHeader.iterator();
-
-            int pcount = this.myHeader.getIntValue(PCOUNT, 0);
-            int gcount = this.myHeader.getIntValue(GCOUNT, 1);
-            int naxis = this.myHeader.getIntValue(NAXIS, 0);
-            this.myHeader.deleteKey(EXTEND);
-            HeaderCard pcard = this.myHeader.findCard(PCOUNT);
-            HeaderCard gcard = this.myHeader.findCard(GCOUNT);
-
-            //this.myHeader.getCard(2 + naxis);
-            this.myHeader.findCard(NAXIS.key() + naxis);
-            
-            if (pcard == null) {
-                this.myHeader.addValue(PCOUNT, pcount);
-            }
-            if (gcard == null) {
-                this.myHeader.addValue(GCOUNT, gcount);
-            }
-            this.myHeader.iterator();
-        }
-
     }
 
     @Override
     public void write(ArrayDataOutput stream) throws FitsException {
+        if (myHeader == null) {
+            myHeader = new Header();
+        }
+        
         if (stream instanceof FitsOutput) {
             boolean isFirst = ((FitsOutput) stream).isAtStart();
             setPrimaryHDU(canBePrimary() && isFirst);
         }
-        if (this.myHeader != null) {
-            this.myHeader.write(stream);
-        }
+        
+        this.myHeader.write(stream);
+        
         if (this.myData != null) {
-            this.myData.write(stream);
+            myData.write(stream);
         }
         try {
             stream.flush();

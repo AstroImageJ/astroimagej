@@ -1,5 +1,6 @@
 package nom.tam.fits;
 
+import nom.tam.fits.utilities.FitsCheckSum;
 import nom.tam.util.ArrayDataInput;
 import nom.tam.util.ArrayDataOutput;
 import nom.tam.util.RandomAccess;
@@ -60,6 +61,42 @@ public abstract class Data implements FitsElement {
     abstract void fillHeader(Header head) throws FitsException;
 
     /**
+     * Checks if the data should be assumed to be in deferred read mode. The default
+     * implementation is to return <code>false</code>, but concrete subclasses should override
+     * this as appropriate.
+     * 
+     * @return      <code>true</code> if it is set for deferred reading at a later time, or else
+     *              <code>false</code> if this data is currently loaded into RAM. 
+     * 
+     * @since 1.17  
+     */
+    public boolean isDeferred() {
+        return false;
+    }
+
+    /**
+     * Computes and returns the FITS checksum for this data, e.g. to compare agains the 
+     * stored <code>DATASUM</code> in the FITS header. This method always computes the
+     * checksum from data in into memory. As such it will fully load deferred read mode data 
+     * into RAM to perform the calculation. If you prefer to leave the data in deferred read 
+     * mode, you can use {@link FitsCheckSum#checksum(RandomAccess, long, long)} instead 
+     * directly on the input with this data's {@link #getFileOffset()} and {@link #getSize()} 
+     * arguments; or equivalently use {@link Fits#calcDatasum(int)}.
+     * 
+     * @return      the computed FITS checksum from the data (fully loaded in memory).
+     * @throws FitsException    if there was an error while calculating the checksum
+     * 
+     * @see Fits#calcDatasum(int)
+     * @see FitsCheckSum#checksum(RandomAccess, long, long)
+     * @see FitsCheckSum#checksum(Data)
+     * 
+     * @since 1.17
+     */
+    public long calcChecksum() throws FitsException {
+        return FitsCheckSum.checksum(this);
+    }
+    
+    /**
      * @return the data array object.
      * @throws FitsException
      *             if the data could not be gathered .
@@ -95,7 +132,7 @@ public abstract class Data implements FitsElement {
 
     @Override
     public abstract void read(ArrayDataInput in) throws FitsException;
-
+    
     @Override
     public boolean reset() {
         try {
@@ -109,11 +146,14 @@ public abstract class Data implements FitsElement {
 
     @Override
     public void rewrite() throws FitsException {
-
+        if (isDeferred()) {
+            return;             // Nothing to do...
+        }
+        
         if (!rewriteable()) {
             throw new FitsException("Illegal attempt to rewrite data");
         }
-
+        
         FitsUtil.reposition(this.input, this.fileOffset);
         write((ArrayDataOutput) this.input);
         try {

@@ -87,8 +87,10 @@ public class FitOptimization implements AutoCloseable {
     }
 
     private static void setFinalState(String minimizationTarget, boolean[] state, JCheckBox[] selectables) {
+        multiUpdate = true;
         for (int r = 0; r < state.length; r++) {
             selectables[r].setSelected(state[r]);
+            multiUpdate = r < state.length - 1;
         }
         if (showOptLog) AIJLogger.log("Found minimum " + minimizationTarget + " state, reference stars set.");
         IJ.beep();

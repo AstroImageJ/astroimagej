@@ -14114,7 +14114,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     useFitDetrendCB[c][row - 7].setEnabled(true);
                 }
                 enableTransitComponents(c);
-                if (autoUpdateFit[c]) updatePlot(updateOneFit(c));
+                if (autoUpdateFit[c] && !multiUpdate) updatePlot(updateOneFit(c));
             });
             parentPanel.add(useFitDetrendCB[c][row - 7]);
 

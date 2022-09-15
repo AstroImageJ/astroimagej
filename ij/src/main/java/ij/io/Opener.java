@@ -1355,7 +1355,7 @@ public class Opener {
 		// FITS ("SIMP")
 		if ((b0==83 && b1==73 && b2==77 && b3==80) || name.endsWith(".fts.gz") || name.endsWith(".fits.gz") ||
 				name.endsWith(".fit.gz") || name.endsWith(".fts.fz") || name.endsWith(".fits.fz") ||
-				name.endsWith(".fit.fz") || name.endsWith(".fits"))
+				name.endsWith(".fit.fz") || name.endsWith(".fits") || name.endsWith(".fz.gz"))
 			return FITS;
 			
 		// Java source file, text file or macro

@@ -15,6 +15,9 @@ import ij.process.ShortProcessor;
 import nom.tam.fits.Fits;
 import nom.tam.fits.FitsException;
 import nom.tam.fits.HeaderCard;
+import nom.tam.fits.ImageHDU;
+import nom.tam.fits.header.Compression;
+import nom.tam.image.compression.hdu.CompressedImageHDU;
 import nom.tam.util.FitsOutputStream;
 
 import java.io.*;
@@ -133,8 +136,11 @@ public class FITS_Writer implements PlugIn {
 			path = sd.getDirectory()+sd.getFileName();
 		}
 
-		var doFz = path.endsWith(".fz");
+		// Fix save dialog overwriting the path
+		path = path.replaceFirst("\\.fz\\.fits", ".fz.gz");
+
 		var doGz = path.endsWith(".gz");
+		var doFz = (doGz && path.endsWith(".fz.gz")) || path.endsWith(".fz");
 
 		var totalSize = 0L;
 
@@ -156,6 +162,13 @@ public class FITS_Writer implements PlugIn {
 			}
 
 			var maxImage = specificSlice == -1 ? imp.getStackSize() : 1;
+
+			if (doFz && maxImage > 1) {
+				IJ.error("FPACKing of 3D images is currently not supported");
+				IJ.showStatus("");
+				return;
+			}
+
 			IJ.showStatus("Converting data and writing...");
 			for (int slice = 1; slice <= maxImage; slice++) {
 				if (specificSlice != -1 && slice != specificSlice) slice = specificSlice;
@@ -204,6 +217,22 @@ public class FITS_Writer implements PlugIn {
 				}
 
 				totalSize += hdu.getSize();
+
+				if (doFz) {
+					CompressedImageHDU compressedHdu = CompressedImageHDU.fromImageHDU((ImageHDU) hdu);
+
+					// To have lossless compression, we must handle floating point and integer separately
+					// See https://arxiv.org/ftp/arxiv/papers/1112/1112.2671.pdf
+					if (type.isFloatingPoint()) {
+						compressedHdu.setCompressAlgorithm(Compression.ZCMPTYPE_GZIP_2);
+					} else {
+						compressedHdu.setCompressAlgorithm(Compression.ZCMPTYPE_HCOMPRESS_1);
+					}
+
+					compressedHdu.compress();
+					hdu = compressedHdu;
+				}
+
 				hdu.write(out);
 
 				if (specificSlice == -1) IJ.showProgress(slice / (float)maxImage);

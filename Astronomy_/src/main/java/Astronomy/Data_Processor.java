@@ -5856,17 +5856,19 @@ protected ImageIcon createImageIcon(String path, String description) {
             {
             String fileName;
             File[] files = sDir.listFiles();
-            if (files.length > 0)
-                {
-                for (int i=0; i < files.length; i++)
+                if (files != null) {
+                    if (files.length > 0)
                     {
-                    fileName = files[i].getName();
-                    if (matchWildCard(filenamePattern, fileName))
+                        for (int i=0; i < files.length; i++)
                         {
-                        validTextFilteredFiles++;
-                        if (enableFileNumberFiltering && stringLongVal(fileName) >= minFileNumber && stringLongVal(fileName) <= maxFileNumber)
+                            fileName = files[i].getName();
+                            if (matchWildCard(filenamePattern, fileName))
                             {
-                            validNumFilteredFiles++;
+                                validTextFilteredFiles++;
+                                if (enableFileNumberFiltering && stringLongVal(fileName) >= minFileNumber && stringLongVal(fileName) <= maxFileNumber)
+                                {
+                                    validNumFilteredFiles++;
+                                }
                             }
                         }
                     }

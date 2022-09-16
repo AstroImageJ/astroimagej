@@ -229,7 +229,7 @@ public class ImageJ extends Frame implements ActionListener,
 		if (IJ.isMacintosh()&&applet==null) {
 			try {
 				if (IJ.javaVersion()>8) // newer JREs use different drag-drop, about mechanism
-					IJ.runPlugIn("MacAdapter9", "");
+					IJ.runPlugIn("ij.plugin.MacAdapter9", "");
 				else
 					IJ.runPlugIn("MacAdapter", "");
 			} catch(Throwable e) {}

@@ -539,6 +539,7 @@ public class FitOptimization implements AutoCloseable {
                 (start, end) -> new CompStarFitting(start, end, this));
 
         setFinalState("RMS", finalState.stateArray, MultiPlot_.refStarCB);
+        compCounter.setBasis(BigInteger.ZERO);
         finishOptimization(compOptiCards);
     }
 
@@ -682,12 +683,20 @@ public class FitOptimization implements AutoCloseable {
             }
         }
 
-        if (hasErrored) IJ.error("Error occurred during minimization, proceeding with lowest RMS found.");
+        if (hasErrored || ipsExecutorService.isShutdown()) {
+            if (showOptLog) AIJLogger.log("Optimization canceled.");
+            minimumState = initState;
+        } else {
+            if (showOptLog) {
+                AIJLogger.log("Found global minimum:");
+                AIJLogger.log(minimumState.comparator);
+                AIJLogger.log(setArrayToState(minimumState.state));
 
-        if (showOptLog) AIJLogger.log("Found global minimum:");
-        if (showOptLog) AIJLogger.log(minimumState.comparator);
-        if (showOptLog) AIJLogger.log(setArrayToState(minimumState.state));
-        if (showOptLog && minimumState.outState != null) AIJLogger.log(minimumState.outState);
+                if (minimumState.outState != null) {
+                    AIJLogger.log(minimumState.outState);
+                }
+            }
+        }
 
         IJ.showStatus("");
         IJ.showProgress(1);

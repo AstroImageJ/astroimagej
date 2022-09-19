@@ -90,8 +90,21 @@ public class FitOptimization implements AutoCloseable {
         multiUpdate = true;
         for (int r = 0; r < state.length; r++) {
             selectables[r].setSelected(state[r]);
-            multiUpdate = r < state.length - 1;
         }
+        multiUpdate = false;
+        cycleEnabledStarsLess1PressedConsecutive = false;
+        updatePlotEnabled = false;
+        waitForPlotUpdateToFinish();
+        checkAndLockTable();
+        updateTotals();
+        updateGUI();
+        updatePlotEnabled = true;
+        if (table != null) {
+            table.setLock(false);
+            table.show();
+        }
+        updatePlot(updateAllFits());
+
         if (showOptLog) AIJLogger.log("Found minimum " + minimizationTarget + " state, reference stars set.");
         IJ.beep();
     }

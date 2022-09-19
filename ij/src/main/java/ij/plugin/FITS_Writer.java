@@ -12,10 +12,7 @@ import ij.process.ByteProcessor;
 import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
 import ij.process.ShortProcessor;
-import nom.tam.fits.Fits;
-import nom.tam.fits.FitsException;
-import nom.tam.fits.HeaderCard;
-import nom.tam.fits.ImageHDU;
+import nom.tam.fits.*;
 import nom.tam.fits.header.Compression;
 import nom.tam.image.compression.hdu.CompressedImageHDU;
 import nom.tam.util.FitsOutputStream;
@@ -164,9 +161,9 @@ public class FITS_Writer implements PlugIn {
 			var maxImage = specificSlice == -1 ? imp.getStackSize() : 1;
 
 			if (doFz && maxImage > 1) {
-				IJ.error("FPACKing of 3D images is currently not supported");
-				IJ.showStatus("");
-				return;
+				// Write a primary HDU with the minimum required header
+				// The first HDU cannot be compressed when adding multiple HDUs
+				new ImageHDU(new Header(), null).write(out);
 			}
 
 			IJ.showStatus("Converting data and writing...");

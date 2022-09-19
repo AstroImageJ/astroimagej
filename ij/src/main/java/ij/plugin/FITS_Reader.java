@@ -374,6 +374,8 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			}
 		} else if (isBasic3DImage(hdus)) {
 			imageProcessor = makeStackFromManyHDU(hdus);
+		} else if (hdus[0].getHeader().getIntValue(NAXIS) == 0) {
+			imageProcessor = makeStackFromManyHDU(hdus);
 		} else if (hdu.getHeader().getIntValue(NAXIS) == 2) {
 			if (filter != null && !filter.matchesFilter(hdu.getHeader())) return;
 			imageProcessor = twoDimensionalImageData2Processor(imgData.getKernel());
@@ -635,14 +637,25 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	/**
 	 * Create a stack from a fits file that only contains multiple images
 	 */
-	private ImageProcessor makeStackFromManyHDU(BasicHDU<?>[] hdus) {
+	private ImageProcessor makeStackFromManyHDU(BasicHDU<?>[] hdus) throws FitsException {
 		ImageProcessor ip = null;
 		ImageStack stack = new ImageStack();
 
 		var pm = makeMonitor(hdus.length);
+		BasicHDU<?> hdu;
 		for (int i = 0; i < hdus.length; i++) {
+			// Handle compressed HDUs
+			if (isCompressedFormat(hdus, i)) {
+				// A side effect of this call is that wi, he, and de are set
+				hdu = getCompressedImageData((CompressedImageHDU) hdus[i]);
+			} else {
+				hdu = hdus[i];
+			}
+			// Skip null header
+			if (hdu.getHeader().getIntValue(NAXIS) == 0) continue;
+
 			// Get the Header as a String
-			var hdr = hdus[i].getHeader();
+			var hdr = hdu.getHeader();
 
 			if (filter != null && !filter.matchesFilter(hdr)) continue;
 
@@ -655,7 +668,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 				header = baos.toString(utf8);
 			} catch (Exception ignored) {}
 
-			ip = twoDimensionalImageData2Processor(hdus[i].getKernel());
+			ip = twoDimensionalImageData2Processor(hdu.getKernel());
 			stack.addSlice(fileBase + "_" + (hdus.length<10000 ? fourDigits.format(i+1) : (i+1))
 					+ (fileType.length() > 0 ? "." + fileType : "") + "\n" + header, ip);
 			pm.setProgress(i);

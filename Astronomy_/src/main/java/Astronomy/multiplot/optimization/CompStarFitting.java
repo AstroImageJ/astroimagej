@@ -30,7 +30,7 @@ public class CompStarFitting extends Optimizer {
             var x = fitOptimization.setArrayToState(state);
             var r = CurveFitter.getInstance(curve, fitOptimization.getTargetStar()).fitCurveAndGetResults(x);
 
-            if (Double.isNaN(r.rms()) || Double.isNaN(r.bic())) continue;
+            if (Double.isNaN(r.rms()) || r.rms() <= 0 || Double.isNaN(r.bic())) continue;
 
             //AIJLogger.log(state.toString(2));
             //AIJLogger.log(r);

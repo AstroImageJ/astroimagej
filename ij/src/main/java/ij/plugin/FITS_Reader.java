@@ -374,8 +374,6 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			}
 		} else if (isBasic3DImage(hdus)) {
 			imageProcessor = makeStackFromManyHDU(hdus);
-		} else if (hdus[0].getHeader().getIntValue(NAXIS) == 0) {
-			imageProcessor = makeStackFromManyHDU(hdus);
 		} else if (hdu.getHeader().getIntValue(NAXIS) == 2) {
 			if (filter != null && !filter.matchesFilter(hdu.getHeader())) return;
 			imageProcessor = twoDimensionalImageData2Processor(imgData.getKernel());
@@ -384,6 +382,8 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 				AIJLogger.log("Cannot open 3D images as a virtual stack.", false);
 			}
 			imageProcessor = process3DimensionalImage(hdu, imgData);
+		} else if (hdus[0].getHeader().getIntValue(NAXIS) == 0) {
+			imageProcessor = makeStackFromManyHDU(hdus);
 		}
 
 		if (imageProcessor == null) {

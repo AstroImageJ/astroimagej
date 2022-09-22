@@ -1036,14 +1036,15 @@ public class PdfPlotOutput {
     }
 
     void drawDot(Graphics2D g, double xcenter, double ycenter) {
-        double r = lineWidth / 2.0;
+        // Create dummy object to get sizing right
+        var s = g.getStroke().createStrokedShape(new Ellipse2D.Double(0, 0, 1, 1));
+        double r = s.getBounds().height;
         double xmin = xcenter - r + 0.5, ymin = ycenter - r + 0.5;
         double xmax = xmin + lineWidth, ymax = ymin + lineWidth;
-        // draw edge dot
-        double r2 = r * r;
+
         r -= 0.5;
-        if (((int) r2) == 0) r2 = 1;
-        g.fill(new Ellipse2D.Double(xmin, ymin, r2, r2));
+        if (((int) r) == 0) r = 1;
+        g.fill(new Ellipse2D.Double(xmin, ymin, r, r));
     }
 
     void drawCircle(Graphics2D g, double xcenter, double ycenter, double radius, boolean fill) {

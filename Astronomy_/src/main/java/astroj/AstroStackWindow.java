@@ -388,12 +388,12 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
     JPanel canvasPanel;
     JTextField lengthLabel, peakLabel, infoTextField;
 
-    Menu fileMenu, preferencesMenu, scaleMenu, viewMenu, annotateMenu, measureMenu, editMenu, processMenu, colorMenu, analyzeMenu, wcsMenu;
+    Menu fileMenu, preferencesMenu, scaleMenu, saveFitsMenuItem, saveFitsStackMenuItem, viewMenu, annotateMenu, measureMenu, editMenu, processMenu, colorMenu, analyzeMenu, wcsMenu;
 
     MenuItem exitMenuItem, flipDataXMenuItem, flipDataYMenuItem, rotateDataCWMenuItem, rotateDataCCWMenuItem, simbadSearchRadiusMenuItem;
     MenuItem openMenuItem, openInNewWindowMenuItem, openSeqMenuItem, openSeqInNewWindowMenuItem;
     MenuItem saveDisplayAsJpgMenuItem, saveDisplayAsPngMenuItem, saveDisplayAsPdfMenuItem, saveStatePNGMenuItem, saveStateJPGMenuItem, setSaveStateMenuItem;
-    MenuItem openAperturesMenuItem, saveAperturesMenuItem, saveMenuItem, saveFitsMenuItem, saveFitsStackMenuItem, saveStackSequenceMenuItem, clearOverlayMenuItem;
+    MenuItem openAperturesMenuItem, saveAperturesMenuItem, saveMenuItem, saveStackSequenceMenuItem, clearOverlayMenuItem;
     MenuItem openRaDecAperturesMenuItem, saveRaDecAperturesMenuItem;
     MenuItem saveTiffMenuItem, saveJpegMenuItem, savePdfMenuItem, savePngMenuItem, saveBmpMenuItem, saveGifMenuItem, saveAviMenuItem;
     MenuItem dirAngleMenuItem, saveWCStoPrefsMenuItem, astrometryMenuItem, astrometrySetupMenuItem;
@@ -960,13 +960,91 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         saveMenuItem.addActionListener(this);
         fileMenu.add(saveMenuItem);
 
-        saveFitsMenuItem = new MenuItem("Save image/slice as FITS...");
-        saveFitsMenuItem.addActionListener(this);
-        fileMenu.add(saveFitsMenuItem);
+        // FITS saving
+        var fitsMenu = new Menu("Save as FITS...");
+        fileMenu.add(fitsMenu);
 
-        saveFitsStackMenuItem = new MenuItem("Save image/stack as 3D FITS...");
+        // Slice saving
+        saveFitsMenuItem = new Menu("Save image/slice as FITS...");
+        saveFitsMenuItem.addActionListener(this);
+
+        var sliceSaveNC = new MenuItem("No compression");
+        sliceSaveNC.addActionListener($ ->
+                FITS_Writer.savingThread.submit(() -> {
+                    var l = imp.lockSilently();
+                    FITS_Writer.saveImage(imp, null, imp.getCurrentSlice());
+                    if (l) imp.unlock();
+                }));
+        saveFitsMenuItem.add(sliceSaveNC);
+
+        var sliceSaveFz = new MenuItem("FPACK");
+        sliceSaveFz.addActionListener($ ->
+                FITS_Writer.savingThread.submit(() -> {
+                    var l = imp.lockSilently();
+                    FITS_Writer.saveImage(imp, null, imp.getCurrentSlice(), ".fits.fz");
+                    if (l) imp.unlock();
+                }));
+        saveFitsMenuItem.add(sliceSaveFz);
+
+        var sliceSaveGz = new MenuItem("GZip");
+        sliceSaveGz.addActionListener($ ->
+                FITS_Writer.savingThread.submit(() -> {
+                    var l = imp.lockSilently();
+                    FITS_Writer.saveImage(imp, null, imp.getCurrentSlice(), ".fits.gz");
+                    if (l) imp.unlock();
+                }));
+        saveFitsMenuItem.add(sliceSaveGz);
+
+        var sliceSaveFzGz = new MenuItem("FPACK and GZip");
+        sliceSaveFzGz.addActionListener($ ->
+                FITS_Writer.savingThread.submit(() -> {
+                    var l = imp.lockSilently();
+                    FITS_Writer.saveImage(imp, null, imp.getCurrentSlice(), ".fits.fz.gz");//todo this is doubled
+                    if (l) imp.unlock();
+                }));
+        saveFitsMenuItem.add(sliceSaveFzGz);
+        fitsMenu.add(saveFitsMenuItem);
+
+        // Stack Saving
+        saveFitsStackMenuItem = new Menu("Save image/stack as 3D FITS...");
         saveFitsStackMenuItem.addActionListener(this);
-        fileMenu.add(saveFitsStackMenuItem);
+
+        var stackSaveNC = new MenuItem("No compression");
+        stackSaveNC.addActionListener($ ->
+                FITS_Writer.savingThread.submit(() -> {
+                    var l = imp.lockSilently();
+                    FITS_Writer.saveImage(imp, null);
+                    if (l) imp.unlock();
+                }));
+        saveFitsStackMenuItem.add(stackSaveNC);
+
+        var stackSaveFz = new MenuItem("FPACK");
+        stackSaveFz.addActionListener($ ->
+                FITS_Writer.savingThread.submit(() -> {
+                    var l = imp.lockSilently();
+                    FITS_Writer.saveImage(imp, null,".fits.fz");
+                    if (l) imp.unlock();
+                }));
+        saveFitsStackMenuItem.add(stackSaveFz);
+
+        var stackSaveGz = new MenuItem("GZip");
+        stackSaveGz.addActionListener($ ->
+                FITS_Writer.savingThread.submit(() -> {
+                    var l = imp.lockSilently();
+                    FITS_Writer.saveImage(imp, null, ".fits.gz");
+                    if (l) imp.unlock();
+                }));
+        saveFitsStackMenuItem.add(stackSaveGz);
+
+        var stackSaveFzGz = new MenuItem("FPACK and GZip");
+        stackSaveFzGz.addActionListener($ ->
+                FITS_Writer.savingThread.submit(() -> {
+                    var l = imp.lockSilently();
+                    FITS_Writer.saveImage(imp, null, ".fits.fz.gz");
+                    if (l) imp.unlock();
+                }));
+        saveFitsStackMenuItem.add(stackSaveFzGz);
+        fitsMenu.add(saveFitsStackMenuItem);
 
         saveTiffMenuItem = new MenuItem("Save image/stack as TIFF...");
         saveTiffMenuItem.addActionListener(this);

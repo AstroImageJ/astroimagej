@@ -121,20 +121,29 @@ public class FITS_Writer implements PlugIn {
     }
 
 	public static void saveImage(ImagePlus imp, String path) {
-		saveImage(imp, path, -1);
+		saveImage(imp, path, ".fits");
+	}
+
+	public static void saveImage(ImagePlus imp, String path, String extension) {
+		saveImage(imp, path, -1, extension);
 	}
 
 	public static void saveImage(ImagePlus imp, String path, int specificSlice) {
+		saveImage(imp, path, specificSlice, ".fits");
+	}
+
+	public static void saveImage(ImagePlus imp, String path, int specificSlice, String extension) {
 		IJ.showStatus("Saving image...");
 		// GET PATH
 		if (path == null || path.trim().length() == 0) {
 			String title = "image.fits";
-			SaveDialog sd = new SaveDialog("Write FITS image",title,".fits");
+			SaveDialog sd = new SaveDialog("Write FITS image",title,extension);
 			path = sd.getDirectory()+sd.getFileName();
 		}
 
-		// Fix save dialog overwriting the path
+		// Fix save dialog screwing with the extensions
 		path = path.replaceFirst("\\.fz\\.fits", ".fz.gz");
+		path = path.replaceFirst("\\.fits\\.fz\\.gz\\.fz\\.gz", ".fits.fz.gz");
 
 		var doGz = path.endsWith(".gz");
 		var doFz = (doGz && path.endsWith(".fz.gz")) || path.endsWith(".fz");

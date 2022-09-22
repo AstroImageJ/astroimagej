@@ -321,6 +321,8 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
     final static int SKIPPED = 2;
     final static int CANCELED = 3;  
     final static boolean CONVERTTOFLOAT = true;
+    private boolean fpack = false;
+    private JCheckBox fpackBox;
 
     public void mouseClicked(MouseEvent e) {
     int x = e.getX();
@@ -2421,7 +2423,13 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
         compressBox.setFont(p12);
         compressBox.setToolTipText("Compress outfile file in GZIP format (compresses FITS header information also).");
 		compressBox.addItemListener (this);
-        outputPanel.add(compressBox);        
+        outputPanel.add(compressBox);
+
+        fpackBox = new JCheckBox("FPACK",fpack);
+        fpackBox.setFont(p12);
+        fpackBox.setToolTipText("Compress outfile file with FPACK format (compresses FITS data).");
+        fpackBox.addItemListener (this);
+        outputPanel.add(fpackBox);
 
         JPanel outputNumPanel = new JPanel(new SpringLayout());
         outputNumPanel.setPreferredSize(validFilesSize);
@@ -2998,7 +3006,9 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
         else if (source == saveProcessedDataBox)
             saveProcessedData = selectedState;
         else if (source == compressBox)
-            compress = selectedState;            
+            compress = selectedState;
+        else if (source == fpackBox)
+            fpack = selectedState;
         else if (source == showMasterImagesCB)
             showMasters = selectedState;
         else if (source == showRawCalsCB)
@@ -5744,7 +5754,7 @@ protected ImageIcon createImageIcon(String path, String description) {
 
             if (filePath.toLowerCase().endsWith(".fits") || filePath.toLowerCase().endsWith(".fit") || filePath.toLowerCase().endsWith(".fts"))
                 {
-                IJ.runPlugIn(impLocal, "ij.plugin.FITS_Writer", filePath + (compress ? ".gz" : ""));
+                IJ.runPlugIn(impLocal, "ij.plugin.FITS_Writer", filePath + (fpack ? ".fz" : "") + (compress ? ".gz" : ""));
                 }
             else
                 {
@@ -6921,6 +6931,7 @@ ImageProcessor removeGradient(ImageProcessor ip) { //Removes the average gradien
         removeDarkOutliers = Prefs.get ("dataproc.removeDarkOutliers",removeDarkOutliers);
         useScienceProcessing  = Prefs.get ("dataproc.useScienceProcessing",useScienceProcessing);
         compress  = Prefs.get ("dataproc.compress",compress);
+        fpack  = Prefs.get ("dataproc.fpack",fpack);
         useBias = Prefs.get ("dataproc.useBias",useBias);
         useDark = Prefs.get ("dataproc.useDark",useDark);
         useFlat = Prefs.get ("dataproc.useFlat",useFlat);
@@ -7053,6 +7064,7 @@ ImageProcessor removeGradient(ImageProcessor ip) { //Removes the average gradien
         Prefs.set ("dataproc.removeDarkOutliers",removeDarkOutliers);
         Prefs.set ("dataproc.useScienceProcessing",useScienceProcessing);
         Prefs.set ("dataproc.compress",compress);
+        Prefs.set ("dataproc.fpack",fpack);
         Prefs.set ("dataproc.useBias",useBias);
         Prefs.set ("dataproc.useDark",useDark);
         Prefs.set ("dataproc.useFlat",useFlat);

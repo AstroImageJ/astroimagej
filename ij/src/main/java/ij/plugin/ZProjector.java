@@ -1,13 +1,17 @@
-package ij.plugin; 
-import ij.*; 
-import ij.gui.*; 
-import ij.process.*;
-import ij.plugin.filter.*; 
+package ij.plugin;
+
+import ij.*;
+import ij.astro.AstroImageJ;
+import ij.astro.util.HeaderMerger;
+import ij.gui.GenericDialog;
+import ij.gui.Overlay;
+import ij.gui.Roi;
 import ij.plugin.frame.Recorder;
-import ij.measure.Measurements;
-import java.lang.*; 
-import java.awt.*; 
-import java.awt.event.*; 
+import ij.process.ByteProcessor;
+import ij.process.FloatProcessor;
+import ij.process.ImageProcessor;
+import ij.process.ShortProcessor;
+
 import java.util.Arrays;
 
 /** This plugin performs a z-projection of the input stack. Type of
@@ -286,6 +290,7 @@ public class ZProjector implements PlugIn {
     }
 
     /** Performs actual projection using specified method. */
+	@AstroImageJ(reason = "Merge FITS headers as well", modified = true)
     public void doProjection() {
 		if (imp==null)
 			return;
@@ -328,12 +333,14 @@ public class ZProjector implements PlugIn {
 
 		// Do the projection
 		int sliceCount = 0;
+		var merger = new HeaderMerger(method);
 		for (int n=startSlice; n<=stopSlice; n+=increment) {
 			if (!isHyperstack) {
 	    		IJ.showStatus("ZProjection " + color +": " + n + "/" + stopSlice);
 	    		IJ.showProgress(n-startSlice, stopSlice-startSlice);
 	    	}
 	    	projectSlice(stack.getPixels(n), rayFunc, ptype);
+			merger.addHeader(imp);
 	    	sliceCount++;
 		}
 
@@ -351,6 +358,8 @@ public class ZProjector implements PlugIn {
 			rayFunc.postProcess(); 
 			projImage = makeOutputImage(imp, fp, ptype);
 		}
+
+		merger.addHeader(projImage);
 
 		if(projImage==null)
 	    	IJ.error("Z Project", "Error computing projection.");

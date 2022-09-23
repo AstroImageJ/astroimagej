@@ -36,8 +36,10 @@ public class BicFitting extends Optimizer {
         var state0 = newState(BigInteger.ZERO);
 
         // This resets the state for CF to function properly with all NaN detrend columns
-        MultiPlot_.detrendIndex[curve] = state0;
-        MultiPlot_.updatePlot(curve);
+        if (!Arrays.equals(MultiPlot_.detrendIndex[curve], state0)) {
+            MultiPlot_.detrendIndex[curve] = state0;
+            MultiPlot_.updatePlot(curve);
+        }
 
         var cf = CurveFitter.getInstance(curve, fitOptimization.getTargetStar());
         CurveFitter.detrendIndex = state0;//initialDetrendIndex;

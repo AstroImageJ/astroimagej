@@ -2,6 +2,7 @@ package ij.gui;
 
 import ij.*;
 import ij.astro.AstroImageJ;
+import ij.astro.accessors.TransferablePlot;
 import ij.astro.util.PdfPlotOutput;
 import ij.io.SaveDialog;
 import ij.measure.ResultsTable;
@@ -12,12 +13,9 @@ import ij.util.Tools;
 import java.awt.*;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.ClipboardOwner;
-import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.Transferable;
 import java.awt.event.*;
-import java.io.CharArrayWriter;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.Properties;
 
 /** This class implements the Analyze/Plot Profile command.
@@ -80,8 +78,11 @@ public class PlotWindow extends ImageWindow implements ActionListener, ItemListe
 	private static String moreButtonLabel = "More "+'\u00bb';
 	@AstroImageJ(reason = "Convert data button to PNG button", modified = true)
 	private static String dataButtonLabel = "PNG";
-	@AstroImageJ(reason = "Seeing profile apertures")
-	private Button copy = new Button(getTitle().startsWith("Seeing Profile")?"Save Aperture":"Copy...");
+
+	private Button copy = new Button("Copy...");
+
+	@AstroImageJ(reason = "Save Seeing profile apertures")
+	private Button aps = new Button("Save Aperture");
 
 	boolean wasActivated;			// true after window has been activated once, needed by PlotCanvas
 
@@ -231,7 +232,7 @@ public class PlotWindow extends ImageWindow implements ActionListener, ItemListe
 	}
 
 	/** Displays the plot. */
-	@AstroImageJ(reason = "Disable 'More' plot option by setting it invisiblel List -> PDF; add copy button", modified = true)
+	@AstroImageJ(reason = "Disable 'More' plot option by setting it invisiblel List -> PDF; add aps button", modified = true)
 	public void draw() {
 		Panel bottomPanel = new Panel();
 		int hgap = IJ.isMacOSX()?1:5;
@@ -239,9 +240,11 @@ public class PlotWindow extends ImageWindow implements ActionListener, ItemListe
 		list = new Button(" PDF ");
 		list.addActionListener(this);
 		if (getTitle().startsWith("Seeing Profile")) {
-			copy.addActionListener(this);
-			bottomPanel.add(copy);
+			aps.addActionListener(this);
+			bottomPanel.add(aps);
 		}
+		copy.addActionListener(this);
+		bottomPanel.add(copy);
 		bottomPanel.add(list);
 		bottomPanel.setLayout(new FlowLayout(FlowLayout.RIGHT,hgap,0));
 		data = new Button(dataButtonLabel);
@@ -447,14 +450,12 @@ public class PlotWindow extends ImageWindow implements ActionListener, ItemListe
 			if (sf.getDirectory() == null || sf.getFileName() == null) return;
 			IJ.runPlugIn(imp, "ij.plugin.PNG_Writer", sf.getDirectory()+sf.getFileName());
 		} else if (b==copy) {
-			if (getTitle().startsWith("Seeing Profile")) {
-				Prefs.set("aperture.radius",Prefs.get("seeingprofile.radius", 20));
-				Prefs.set("aperture.rback1",Prefs.get("seeingprofile.rback1", 30));
-				Prefs.set("aperture.rback2",Prefs.get("seeingprofile.rback2", 40));
-				Prefs.set("setaperture.aperturechanged",true);
-			} else {
-				copyToClipboard(false);
-			}
+			copyToClipboard(true);
+		} else if (b==aps) {
+			Prefs.set("aperture.radius",Prefs.get("seeingprofile.radius", 20));
+			Prefs.set("aperture.rback1",Prefs.get("seeingprofile.rback1", 30));
+			Prefs.set("aperture.rback2",Prefs.get("seeingprofile.rback2", 40));
+			Prefs.set("setaperture.aperturechanged",true);
 		}
 		else if (b==menuItems[COPY])
 			copyToClipboard(false);
@@ -756,6 +757,7 @@ public class PlotWindow extends ImageWindow implements ActionListener, ItemListe
 	}
 
 	/** Copy the first dataset or all values to the clipboard */
+	@AstroImageJ(reason = "Enhanced Plot Copy", modified = true)
 	void copyToClipboard(boolean writeAllColumns) {
 		float[] xValues = plot.getXValues();
 		float[] yValues = plot.getYValues();
@@ -766,7 +768,7 @@ public class PlotWindow extends ImageWindow implements ActionListener, ItemListe
 		if (systemClipboard==null)
 			{IJ.error("Unable to copy to Clipboard."); return;}
 		IJ.showStatus("Copying plot values...");
-		CharArrayWriter aw = new CharArrayWriter(10*xValues.length);
+		/*CharArrayWriter aw = new CharArrayWriter(10*xValues.length);
 		PrintWriter pw = new PrintWriter(aw); //uses platform's line termination characters
 
 		if (writeAllColumns) {
@@ -793,7 +795,8 @@ public class PlotWindow extends ImageWindow implements ActionListener, ItemListe
 		pw.close();
 		StringSelection contents = new StringSelection(text);
 		systemClipboard.setContents(contents, this);
-		IJ.showStatus(text.length() + " characters copied to Clipboard");
+		IJ.showStatus(text.length() + " characters copied to Clipboard");*/
+		systemClipboard.setContents(new TransferablePlot(plot), this);
 		if (autoClose)
 			{imp.changes=false; close();}
 	}

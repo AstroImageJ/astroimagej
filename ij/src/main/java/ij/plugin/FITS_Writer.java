@@ -4,6 +4,7 @@ import ij.IJ;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.astro.AstroImageJ;
+import ij.astro.util.FitsExtensionUtil;
 import ij.astro.util.ImageType;
 import ij.astro.util.ProgressTrackingOutputStream;
 import ij.io.SaveDialog;
@@ -12,7 +13,11 @@ import ij.process.ByteProcessor;
 import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
 import ij.process.ShortProcessor;
-import nom.tam.fits.*;
+import nom.tam.fits.Fits;
+import nom.tam.fits.Header;
+import nom.tam.fits.HeaderCard;
+import nom.tam.fits.ImageHDU;
+import nom.tam.fits.compression.algorithm.hcompress.HCompressorOption;
 import nom.tam.fits.header.Compression;
 import nom.tam.image.compression.hdu.CompressedImageHDU;
 import nom.tam.util.FitsOutputStream;
@@ -134,9 +139,10 @@ public class FITS_Writer implements PlugIn {
 
 	public static void saveImage(ImagePlus imp, String path, int specificSlice, String extension) {
 		IJ.showStatus("Saving image...");
+
 		// GET PATH
 		if (path == null || path.trim().length() == 0) {
-			String title = "image.fits";
+			String title = FitsExtensionUtil.fileNameWithoutExt(imp.getShortTitle());
 			SaveDialog sd = new SaveDialog("Write FITS image",title,extension);
 			path = sd.getDirectory()+sd.getFileName();
 		}
@@ -232,7 +238,8 @@ public class FITS_Writer implements PlugIn {
 					if (type.isFloatingPoint()) {
 						compressedHdu.setCompressAlgorithm(Compression.ZCMPTYPE_GZIP_2);
 					} else {
-						compressedHdu.setCompressAlgorithm(Compression.ZCMPTYPE_HCOMPRESS_1);
+						compressedHdu.setCompressAlgorithm(Compression.ZCMPTYPE_HCOMPRESS_1)
+								.getCompressOption(HCompressorOption.class);
 					}
 
 					compressedHdu.compress();
@@ -246,7 +253,7 @@ public class FITS_Writer implements PlugIn {
 
 			out.close();
 			IJ.showProgress(1);
-		} catch (IOException | FitsException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 			IJ.error("Failed to write file.");
 		}

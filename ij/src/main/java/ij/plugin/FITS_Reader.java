@@ -394,10 +394,10 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 
 	private boolean isBasic3DImage(BasicHDU<?>[] hdus) {
 		return hdus.length > 1 &&
-				Arrays.stream(hdus).filter(hdu ->
-						(hdu instanceof ImageHDU ||
-								hdu instanceof CompressedImageHDU)
-								&& hdu.getKernel() != null).count() >= hdus.length - 1;
+				(Arrays.stream(hdus).allMatch(hdu -> (hdu instanceof ImageHDU) && hdu.getKernel() != null) ||
+						(hdus[0].getHeader().getIntValue(NAXIS) == 0 && Arrays.stream(hdus).skip(1)
+								.allMatch(hdu -> (hdu instanceof ImageHDU ||
+										hdu instanceof CompressedImageHDU) && hdu.getKernel() != null)));
 	}
 
 	/**

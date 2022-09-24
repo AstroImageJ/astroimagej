@@ -18,6 +18,9 @@ public class FitsExtensionUtil {
                 UNCOMPRESSED_FITS_EXTENSION.matcher(path).find();
     }
 
+    /**
+     * @return the file name or path without the FITS extension, or the unmodified {@param file}.
+     */
     public static String fileNameWithoutExt(String file) {
         var matcher = COMPRESSED_FITS_EXTENSION.matcher(file);
 

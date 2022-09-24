@@ -31,6 +31,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.zip.GZIPOutputStream;
 
+import static ij.astro.util.FitsExtensionUtil.CompressionMode.FPACK;
+import static ij.astro.util.FitsExtensionUtil.CompressionMode.GZIP;
 import static nom.tam.fits.header.Standard.*;
 
 /**
@@ -151,8 +153,7 @@ public class FITS_Writer implements PlugIn {
 		path = path.replaceFirst("\\.fz\\.fits", ".fz.gz");
 		path = path.replaceFirst("\\.fits\\.fz\\.gz\\.fz\\.gz", ".fits.fz.gz");
 
-		var doGz = path.endsWith(".gz");
-		var doFz = (doGz && path.endsWith(".fz.gz")) || path.endsWith(".fz");
+		var compressionModes = FitsExtensionUtil.compressionModes(path);
 
 		var totalSize = 0L;
 
@@ -166,7 +167,7 @@ public class FITS_Writer implements PlugIn {
 			progressTrackingOutputStream.setTotalSizeInBytes(totalSize);
 
 			FitsOutputStream out;
-			if (doGz) {
+			if (compressionModes.contains(GZIP)) {
 				IJ.showStatus("Compressing and writing file...");
 				out = new FitsOutputStream(new GZIPOutputStream(progressTrackingOutputStream));
 			} else {
@@ -175,7 +176,7 @@ public class FITS_Writer implements PlugIn {
 
 			var maxImage = specificSlice == -1 ? imp.getStackSize() : 1;
 
-			if (doFz && maxImage > 1) {
+			if (compressionModes.contains(FPACK) && maxImage > 1) {
 				// Write a primary HDU with the minimum required header
 				// The first HDU cannot be compressed when adding multiple HDUs
 				new ImageHDU(new Header(), null).write(out);
@@ -230,7 +231,8 @@ public class FITS_Writer implements PlugIn {
 
 				totalSize += hdu.getSize();
 
-				if (doFz) {
+				if (compressionModes.contains(FPACK)) {
+					if (maxImage > 1) IJ.showStatus("FPACKing: " + slice);
 					CompressedImageHDU compressedHdu = CompressedImageHDU.fromImageHDU((ImageHDU) hdu);
 
 					// To have lossless compression, we must handle floating point and integer separately
@@ -246,10 +248,13 @@ public class FITS_Writer implements PlugIn {
 					hdu = compressedHdu;
 				}
 
+				if (maxImage > 1) IJ.showStatus("!Writing multiHDU FITS image: " + slice);
 				hdu.write(out);
 
 				if (specificSlice == -1) IJ.showProgress(slice / (float)maxImage);
 			}
+
+			IJ.showStatus("!Finishing FITS export...");
 
 			out.close();
 			IJ.showProgress(1);
@@ -258,7 +263,7 @@ public class FITS_Writer implements PlugIn {
 			IJ.error("Failed to write file.");
 		}
 
-		IJ.showStatus("");
+		IJ.showStatus("!");
 	}
 
 //	/**

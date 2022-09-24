@@ -3,6 +3,7 @@ package Astronomy;
 
 import astroj.*;
 import ij.*;
+import ij.astro.util.FitsExtensionUtil;
 import ij.astro.util.UIHelper;
 import ij.gui.GenericDialog;
 import ij.gui.ImageCanvas;
@@ -5219,8 +5220,8 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
                 filePath = updateExtension(filePath, format);
             }
 
-            if (filePath.toLowerCase().endsWith(".fits") || filePath.toLowerCase().endsWith(".fit") || filePath.toLowerCase().endsWith(".fts")) {
-                IJ.runPlugIn(impLocal, "ij.plugin.FITS_Writer", filePath + (fpack ? ".fz" : "") + (compress ? ".gz" : ""));
+            if (FitsExtensionUtil.isFitsFile(filePath)) {
+                IJ.runPlugIn(impLocal, "ij.plugin.FITS_Writer", FitsExtensionUtil.fileNameWithoutExt(filePath) + (fpack ? ".fz" : "") + (compress ? ".gz" : ""));
             } else {
                 IJ.save((ImagePlus) impLocal.clone(), filePath);
             }

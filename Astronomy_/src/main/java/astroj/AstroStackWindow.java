@@ -6,6 +6,7 @@ import Astronomy.postprocess.PhotometricDebayer;
 import bislider.com.visutools.nav.bislider.*;
 import ij.*;
 import ij.astro.logging.AIJLogger;
+import ij.astro.util.FitsExtensionUtil;
 import ij.astro.util.UIHelper;
 import ij.gui.GenericDialog;
 import ij.gui.Roi;
@@ -4934,8 +4935,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                     IJ.beep();
                     IJ.showMessage("Error reading RA/Dec file with drag and drop operation");
                 }
-            } else if (files[0].getName().toLowerCase().endsWith(".fits") ||
-                    files[0].getName().toLowerCase().endsWith(".fit") ||
+            } else if (FitsExtensionUtil.isFitsFile(files[0].getName()) ||
                     files[0].getName().toLowerCase().endsWith(".tif") ||
                     files[0].getName().toLowerCase().endsWith(".tiff") ||
                     files[0].getName().toLowerCase().endsWith(".jpeg") ||

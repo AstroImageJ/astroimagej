@@ -3,6 +3,7 @@ package ij.io;
 import ij.*;
 import ij.astro.AstroImageJ;
 import ij.astro.util.FileAssociationHandler;
+import ij.astro.util.FitsExtensionUtil;
 import ij.astro.util.ZipOpenerUtil;
 import ij.gui.Roi;
 import ij.macro.Interpreter;
@@ -1050,7 +1051,7 @@ public class Opener {
 				DICOM dcm = new DICOM(zis);
 				dcm.run(name);
 				imp = dcm;
-			} else if (name.endsWith(".fts") || name.endsWith(".fits") || name.endsWith(".fit") || name.endsWith("fts.fz") || name.endsWith(".fits.fz") || name.endsWith(".fit.fz")) {
+			} else if (FitsExtensionUtil.isFitsFile(name)) {
 				imp = (ImagePlus)IJ.runPlugIn("ij.plugin.FITS_Reader", path+'\\'+name.replace('/', '\\'));
 				if (imp.getWidth()!=0) return imp; else return null;
 			} else {
@@ -1353,9 +1354,7 @@ public class Opener {
 			return ZIP;
 
 		// FITS ("SIMP")
-		if ((b0==83 && b1==73 && b2==77 && b3==80) || name.endsWith(".fts.gz") || name.endsWith(".fits.gz") ||
-				name.endsWith(".fit.gz") || name.endsWith(".fts.fz") || name.endsWith(".fits.fz") ||
-				name.endsWith(".fit.fz") || name.endsWith(".fits") || name.endsWith(".fz.gz"))
+		if ((b0==83 && b1==73 && b2==77 && b3==80) || FitsExtensionUtil.isFitsFile(name))
 			return FITS;
 			
 		// Java source file, text file or macro

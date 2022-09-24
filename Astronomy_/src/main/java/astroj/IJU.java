@@ -7,6 +7,7 @@ import ij.IJ;
 import ij.ImagePlus;
 import ij.Prefs;
 import ij.WindowManager;
+import ij.astro.util.FitsExtensionUtil;
 import ij.gui.ImageWindow;
 import ij.io.FileInfo;
 import ij.io.OpenDialog;
@@ -1131,8 +1132,9 @@ public class IJU {
         }
 
         if (imp != null) {
-            if (path.toLowerCase().endsWith(".fits") || path.toLowerCase().endsWith(".fit") || path.toLowerCase().endsWith(".fts")) {
-                IJ.runPlugIn(imp, "ij.plugin.FITS_Writer", path);
+            if (FitsExtensionUtil.isFitsFile(path)) {
+                IJ.runPlugIn(imp, "ij.plugin.FITS_Writer", path + ".gz");
+                compress = false; // FITS_Writer already compresses
             } else {
                 IJ.save(imp, path);
             }

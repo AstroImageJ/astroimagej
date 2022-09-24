@@ -160,6 +160,12 @@ public class FITS_Writer implements PlugIn {
 		try {
 			// Setup for incremental writing
 			Path outPath = Path.of(path);
+
+			// Saving canceled
+			if (outPath.getParent() == null) {
+				return;
+			}
+
 			Files.createDirectories(outPath.getParent());
 			if (!outPath.toFile().exists()) Files.createFile(outPath);
 

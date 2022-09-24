@@ -144,7 +144,7 @@ public class FITS_Writer implements PlugIn {
 
 		// GET PATH
 		if (path == null || path.trim().length() == 0) {
-			String title = FitsExtensionUtil.fileNameWithoutExt(imp.getShortTitle());
+			String title = FitsExtensionUtil.fileNameWithoutExt(imp.getTitle());
 			SaveDialog sd = new SaveDialog("Write FITS image",title,extension);
 			path = sd.getDirectory()+sd.getFileName();
 		}

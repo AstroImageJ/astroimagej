@@ -5221,7 +5221,7 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
             }
 
             if (FitsExtensionUtil.isFitsFile(filePath)) {
-                IJ.runPlugIn(impLocal, "ij.plugin.FITS_Writer", FitsExtensionUtil.fileNameWithoutExt(filePath) + (fpack ? ".fz" : "") + (compress ? ".gz" : ""));
+                IJ.runPlugIn(impLocal, "ij.plugin.FITS_Writer", FitsExtensionUtil.fileNameWithoutExt(filePath) + ".fits" + (fpack ? ".fz" : "") + (compress ? ".gz" : ""));
             } else {
                 IJ.save((ImagePlus) impLocal.clone(), filePath);
             }

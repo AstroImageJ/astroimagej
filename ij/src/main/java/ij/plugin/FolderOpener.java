@@ -537,7 +537,7 @@ public class FolderOpener implements PlugIn {
 	}
 
 	@AstroImageJ(reason = "Save preference option to open as virtual stack; widen access; support zip files as folder;" +
-			"Add filter count",
+			"Add filter count; Make Prefs defaultDirectory use parent folder",
 			modified = true)
 	public boolean showDialog() {
 		String options = Macro.getOptions();
@@ -620,6 +620,7 @@ public class FolderOpener implements PlugIn {
 			return false;
 		directory = gd.getNextString();
 		Prefs.set(DIR_KEY, directory);
+		OpenDialog.setDefaultDirectory(directory);
 		gd.setSmartRecording(true);
 		int index = gd.getNextChoiceIndex();
 		bitDepth = typeToBitDepth(types[index]);

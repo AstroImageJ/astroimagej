@@ -20,6 +20,7 @@ import ij.util.Tools;
 import java.awt.*;
 import java.awt.image.ColorModel;
 import java.io.File;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Properties;
 
@@ -620,7 +621,7 @@ public class FolderOpener implements PlugIn {
 			return false;
 		directory = gd.getNextString();
 		Prefs.set(DIR_KEY, directory);
-		OpenDialog.setDefaultDirectory(directory);
+		OpenDialog.setDefaultDirectory(Path.of(directory).getParent().toString());
 		gd.setSmartRecording(true);
 		int index = gd.getNextChoiceIndex();
 		bitDepth = typeToBitDepth(types[index]);

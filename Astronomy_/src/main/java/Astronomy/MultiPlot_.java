@@ -4110,6 +4110,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 //                    }
         table.setLock(false);
         plotWindow.getImagePlus().setPlot(plot);
+        ((PlotWindow) plotWindow).setPlot(plot);
         updatePlotRunning = false;
     }
 

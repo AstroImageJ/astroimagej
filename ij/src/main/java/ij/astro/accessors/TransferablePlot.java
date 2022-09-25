@@ -23,7 +23,7 @@ public record TransferablePlot(Plot plot) implements Transferable {
         }
     }
 
-    public TransferablePlot {
+    public TransferablePlot {//todo Can the copy button be added to the seeing profile stack display as well (would copy the currently displayed image)?
         if (plot == null) {
             throw new IllegalArgumentException("Plot may not be null");
         }
@@ -48,7 +48,7 @@ public record TransferablePlot(Plot plot) implements Transferable {
     public Object getTransferData(DataFlavor flavor) throws UnsupportedFlavorException, IOException {
         if (flavor.equals(DataFlavor.imageFlavor)) {
             plot.updateImage();
-            return plot.getProcessor().getBufferedImage();
+            return plot.getImagePlus().getBufferedImage();
         } else if (flavor.equals(flavors[1]) || flavor.equals(flavors[2])) {
             ResultsTable rt = plot.getResultsTableWithLabels();
             if (rt == null) return "";

@@ -2,6 +2,7 @@ package ij.gui;
 
 import ij.*;
 import ij.astro.AstroImageJ;
+import ij.astro.accessors.TransferablePlot;
 import ij.astro.util.PdfPlotOutput;
 import ij.io.SaveDialog;
 import ij.plugin.GifWriter;
@@ -9,6 +10,7 @@ import ij.plugin.frame.SyncWindows;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.datatransfer.Clipboard;
 import java.awt.event.*;
 
 /** This class is an extended ImageWindow that displays stacks and hyperstacks. */
@@ -74,6 +76,12 @@ public class StackWindow extends ImageWindow implements Runnable, AdjustmentList
 		gif.setToolTipText("Save full stack as GIF");
 		bottomPanel.add(gif);
 
+		var copy = new JButton(" Copy... ");
+		copy.setToolTipText("Copy plot image or data");
+		if (imp.getStack() instanceof PlotVirtualStack) {
+			bottomPanel.add(copy);
+		}
+
 		var listener = new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				Object b = e.getSource();
@@ -112,6 +120,17 @@ public class StackWindow extends ImageWindow implements Runnable, AdjustmentList
 		pdf.addActionListener(listener);
 		stackPdf.addActionListener(listener);
 		gif.addActionListener(listener);
+		copy.addActionListener($ -> {
+			if (imp.getStack() instanceof PlotVirtualStack plotVirtualStack) {
+				Clipboard systemClipboard = null;
+				try {systemClipboard = getToolkit().getSystemClipboard();}
+				catch (Exception e) {systemClipboard = null; }
+				if (systemClipboard==null)
+				{IJ.error("Unable to copy to Clipboard."); return;}
+				IJ.showStatus("Copying plot values...");
+				systemClipboard.setContents(new TransferablePlot(plotVirtualStack.getPlot(imp.getCurrentSlice())), ($1, $2) -> {});
+			}
+		});
 
 		bottomPanel.setLayout(new FlowLayout(FlowLayout.RIGHT,hgap,0));
 		add(bottomPanel);

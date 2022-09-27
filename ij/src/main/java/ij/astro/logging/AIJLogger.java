@@ -84,6 +84,7 @@ public class AIJLogger {
      */
     public static synchronized void log(String msg, boolean useNewWindow) {
         if ("".equals(msg)) return;
+        if (msg == null) msg = "null";
 
         var caller = getCallerName();
         var callerTitle = caller.split(separator)[0];

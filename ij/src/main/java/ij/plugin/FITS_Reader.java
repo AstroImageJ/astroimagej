@@ -395,9 +395,16 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	private boolean isBasic3DImage(BasicHDU<?>[] hdus) {
 		return hdus.length > 1 &&
 				(Arrays.stream(hdus).allMatch(hdu -> (hdu instanceof ImageHDU) && hdu.getKernel() != null) ||
+						// For compressed multiHDU files, the first HDU likely has no data as it
+						// was added to allow for compression.
 						(hdus[0].getHeader().getIntValue(NAXIS) == 0 && Arrays.stream(hdus).skip(1)
-								.allMatch(hdu -> (hdu instanceof ImageHDU ||
-										hdu instanceof CompressedImageHDU) && hdu.getKernel() != null)));
+								// Fix LCO images that have many image HDUs that may trigger this (we only need 1)
+								.filter(s -> Objects.equals(hdus[1].getHeader().getStringValue(EXTNAME),
+										s.getHeader().getStringValue(EXTNAME)))
+								// We only care about images
+								.filter(hdu -> (hdu instanceof ImageHDU ||
+										hdu instanceof CompressedImageHDU) && hdu.getKernel() != null)
+								.count() > 1));
 	}
 
 	/**

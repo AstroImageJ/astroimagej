@@ -1599,6 +1599,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     }
 
     private double upperMadMedian(double[] a) {
+        if (a.length == 1) {
+            return a[0];
+        }
+
         double med = Stat.median(a);
         return med + Stat.median(Arrays.stream(a).filter(d -> d>= med).map(d -> d - med).toArray());
     }

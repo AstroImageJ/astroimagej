@@ -924,7 +924,7 @@ public class FitsJ
 	/**
 	 * Extracts the FITS value from a card
 	 *
-	 * @param card		The FITS card image from which the comment should be extracted.
+	 * @param card		The FITS card image from which the value should be extracted.
 	 */
 	public static String getCardValue (String card)
 		{
@@ -1412,7 +1412,7 @@ public class FitsJ
 		}
 
 	/**
-	 * Separates a string into segements of a given length.
+	 * Separates a string into segments of a given length.
 	 *
 	 * @param s		The input string.
 	 * @param length	The desired maximum length
@@ -2069,7 +2069,7 @@ public class FitsJ
 		}
 
 	/**
-	 * Returns MJD from a FITS heaader stored in a String array.
+	 * Returns MJD from a FITS header stored in a String array.
 	 */
 	public static double getMJD (String[] cards)
 		{

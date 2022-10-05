@@ -2,7 +2,6 @@ package ij.plugin;
 
 import ij.*;
 import ij.astro.AstroImageJ;
-import ij.astro.util.HeaderMerger;
 import ij.gui.GenericDialog;
 import ij.gui.Overlay;
 import ij.gui.Roi;
@@ -12,6 +11,8 @@ import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
 import ij.process.ShortProcessor;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 
 /** This plugin performs a z-projection of the input stack. Type of
@@ -333,14 +334,12 @@ public class ZProjector implements PlugIn {
 
 		// Do the projection
 		int sliceCount = 0;
-		var merger = new HeaderMerger(method);
 		for (int n=startSlice; n<=stopSlice; n+=increment) {
 			if (!isHyperstack) {
 	    		IJ.showStatus("ZProjection " + color +": " + n + "/" + stopSlice);
 	    		IJ.showProgress(n-startSlice, stopSlice-startSlice);
 	    	}
 	    	projectSlice(stack.getPixels(n), rayFunc, ptype);
-			merger.addHeader(imp, n);
 	    	sliceCount++;
 		}
 
@@ -359,9 +358,24 @@ public class ZProjector implements PlugIn {
 			projImage = makeOutputImage(imp, fp, ptype);
 		}
 
-		merger.setHeader(projImage);
+		// Merge the headers
+		try {
+			String name = getClass().getCanonicalName();
+			Class<?> clazz = Class.forName("astroj.FitsHeaderMerger", true, IJ.getClassLoader());
+			Method jMethod = clazz.getMethod("mergeHeaders", int.class, int.class, int.class, int.class,
+					ImagePlus.class, ImagePlus.class);
+			jMethod.invoke(null, method, startSlice, stopSlice, increment, imp, projImage);
+		} catch (ClassNotFoundException e)  {
+			System.out.println(e);
+		} catch (NoSuchMethodException e)  {
+			System.out.println(e);
+		} catch (InvocationTargetException e) {
+			System.out.println(e);
+		} catch (IllegalAccessException e) {
+			System.out.println(e);
+		};
 
-		if(projImage==null)
+		if (projImage==null)
 	    	IJ.error("Z Project", "Error computing projection.");
     }
 

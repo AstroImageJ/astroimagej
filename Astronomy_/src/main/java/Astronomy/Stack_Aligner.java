@@ -133,6 +133,8 @@ public class Stack_Aligner extends MultiAperture_
         }
 		GenericSwingDialog gd = new GenericSwingDialog("Stack Aligner", xLocation, yLocation);
 
+        if (nAperturesStored == 0) previous = false;
+
 		// REQUIRED FIELDS
             //GenericSwingDialog.setSliderSpinnerColumns(3);
 		if (stackSize > 1)
@@ -145,7 +147,7 @@ public class Stack_Aligner extends MultiAperture_
         sliders.add(gd.addSlider("Inner radius of background annulus", 1, rBack1>100?rBack1:100, false, rBack1, d -> rBack1 = d.intValue()));
         sliders.add(gd.addSlider("Outer radius of background annulus", 1, rBack2>100?rBack2:100, false, rBack2, d -> rBack2 = d.intValue()));
 
-		gd.addCheckbox ("Use previous "+nAperturesStored+" apertures (1-click to set first aperture location)",previous && nAperturesStored > 0, b -> previous = b);
+        gd.addCheckbox ("Use previous "+nAperturesStored+" apertures (1-click to set first aperture location)", previous, b -> previous = b).setEnabled(nAperturesStored > 0);
         gd.addCheckbox ("Use RA/Dec to locate initial aperture positions", useWCS, b -> useWCS = b);
 		gd.addCheckbox ("Use single step mode (1-click to set first aperture location in each image)",singleStep, b -> singleStep = b);
         gd.addCheckbox ("Allow aperture changes between slices in single step mode (right click to advance image)",allowSingleStepApChanges, b -> allowSingleStepApChanges = b);

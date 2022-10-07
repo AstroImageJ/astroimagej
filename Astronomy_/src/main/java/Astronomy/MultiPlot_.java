@@ -16396,6 +16396,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 Prefs.ijPrefs.load(is);
                 is.close();
             } catch (Exception e) {
+                e.printStackTrace();
                 IJ.beep();
                 IJ.showMessage("Load Data and Open Config: Error loading plot config file: " + cfgPath);
             }

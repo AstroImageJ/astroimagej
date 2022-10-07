@@ -360,6 +360,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			}
 		}
 
+		AIJLogger.multiLog(isLco(hdus), isBasic3DImage(hdus));
 		if (hdu instanceof TableHDU<?> tableHDU) {
 			if (isTessCut(tableHDU) || isTessPostageStamp(hdus)) {
 				var data = (Object[]) tableHDU.getColumn("FLUX");
@@ -393,18 +394,14 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	}
 
 	private boolean isBasic3DImage(BasicHDU<?>[] hdus) {
-		return hdus.length > 1 &&
+		return (hdus.length > 1 && !isLco(hdus)) &&
 				(Arrays.stream(hdus).allMatch(hdu -> (hdu instanceof ImageHDU) && hdu.getKernel() != null) ||
 						// For compressed multiHDU files, the first HDU likely has no data as it
 						// was added to allow for compression.
 						(hdus[0].getHeader().getIntValue(NAXIS) == 0 && Arrays.stream(hdus).skip(1)
-								// Fix LCO images that have many image HDUs that may trigger this (we only need 1)
-								.filter(s -> Objects.equals(hdus[1].getHeader().getStringValue(EXTNAME),
-										s.getHeader().getStringValue(EXTNAME)))
 								// We only care about images
-								.filter(hdu -> (hdu instanceof ImageHDU ||
-										hdu instanceof CompressedImageHDU) && hdu.getKernel() != null)
-								.count() > 1));
+								.allMatch(hdu -> (hdu instanceof ImageHDU ||
+										hdu instanceof CompressedImageHDU) && hdu.getKernel() != null)));
 	}
 
 	/**
@@ -412,6 +409,19 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	 */
 	private boolean isTessCut(TableHDU<?> tableHDU) {
 		return "astrocut".equals(tableHDU.getHeader().getStringValue("CREATOR"));
+	}
+
+	/**
+	 * Determine if an image is from LCO.
+	 * <p>
+	 * Most LCO images contain 3 image HDUs, with the science image separated from the others by a table HDU.
+	 * In some cases, this table is missing, which would make LCO images be treated as a multiHDU FITS file,
+	 * opening an image stack. This behavior is not desired.
+	 */
+	private boolean isLco(BasicHDU<?>[] hdus) {
+		if (hdus.length == 1) return false;
+		var x = hdus[1].getHeader().getStringValue("ORIGIN");
+		return "LCOGT".equals(x == null ? null : x.trim());
 	}
 
 	/**

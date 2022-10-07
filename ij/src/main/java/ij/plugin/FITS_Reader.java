@@ -360,7 +360,6 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			}
 		}
 
-		AIJLogger.multiLog(isLco(hdus), isBasic3DImage(hdus));
 		if (hdu instanceof TableHDU<?> tableHDU) {
 			if (isTessCut(tableHDU) || isTessPostageStamp(hdus)) {
 				var data = (Object[]) tableHDU.getColumn("FLUX");

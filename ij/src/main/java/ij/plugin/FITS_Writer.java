@@ -18,6 +18,7 @@ import nom.tam.fits.Header;
 import nom.tam.fits.HeaderCard;
 import nom.tam.fits.ImageHDU;
 import nom.tam.fits.compression.algorithm.hcompress.HCompressorOption;
+import nom.tam.fits.compression.algorithm.rice.RiceQuantizeCompressOption;
 import nom.tam.fits.header.Compression;
 import nom.tam.image.compression.hdu.CompressedImageHDU;
 import nom.tam.util.FitsOutputStream;
@@ -244,7 +245,12 @@ public class FITS_Writer implements PlugIn {
 					// To have lossless compression, we must handle floating point and integer separately
 					// See https://arxiv.org/ftp/arxiv/papers/1112/1112.2671.pdf
 					if (type.isFloatingPoint()) {
-						compressedHdu.setCompressAlgorithm(Compression.ZCMPTYPE_GZIP_2);
+						//compressedHdu.setCompressAlgorithm(Compression.ZCMPTYPE_GZIP_2);
+
+						// Lossy compression
+						compressedHdu.setCompressAlgorithm(Compression.ZCMPTYPE_RICE_1)
+								.getCompressOption(RiceQuantizeCompressOption.class)
+								.setQlevel(4);
 					} else {
 						compressedHdu.setCompressAlgorithm(Compression.ZCMPTYPE_HCOMPRESS_1)
 								.getCompressOption(HCompressorOption.class);

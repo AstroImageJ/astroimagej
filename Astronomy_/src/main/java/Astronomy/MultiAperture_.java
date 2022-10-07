@@ -3634,10 +3634,13 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         gd.setOverridePosition(false);
         ApRadius.setSelected();
 
+        if (nAperturesStored == 0) previous = false;
+
         gd.addDoubleSpaceLineSeparator();
-        gd.addCheckbox("Use previous " + nAperturesStored + " apertures (1-click to set first aperture location)", previous && nAperturesStored > 0, b -> previous = b)
-                .setToolTipText("<html>Use the same starting apertures as the previous Multi-Aperture run, or apertures that were previously loaded from an apertures or radec file.<br>" +
+        var a = gd.addCheckbox("Use previous " + nAperturesStored + " apertures (1-click to set first aperture location)", previous, b -> previous = b);
+                a.setToolTipText("<html>Use the same starting apertures as the previous Multi-Aperture run, or apertures that were previously loaded from an apertures or radec file.<br>" +
                         "NOTE: If comp stars are already included in the set, you may want to disable the 'Auto comparison stars' option below.</html>");
+                a.setEnabled(nAperturesStored > 0);
         gd.addCheckbox("Use RA/Dec to locate aperture positions", useWCS, b -> useWCS = b)
                 .setToolTipText("<html>If enabled, apertures will first be placed according to their RA and DEC location.<br>"+
                         "If centroid is also enabled for an aperture, the centroid operation will start from the RA and Dec position.<br>"+

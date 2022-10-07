@@ -359,6 +359,7 @@ public class ZProjector implements PlugIn {
 		}
 
 		// Merge the headers
+		// BT: Might move this into a method for cleanliness
 		try {
 			String name = getClass().getCanonicalName();
 			Class<?> clazz = Class.forName("astroj.FitsHeaderMerger", true, IJ.getClassLoader());

@@ -360,7 +360,7 @@ public class ZProjector implements PlugIn {
 
 		// Merge Fits headers
 		mergeFitsHeaders(method, startSlice, stopSlice, increment, imp, projImage);
-		
+
 		if (projImage==null)
 	    	IJ.error("Z Project", "Error computing projection.");
     }
@@ -395,6 +395,7 @@ public class ZProjector implements PlugIn {
 			jMethod.invoke(null, method, startSlice, stopSlice, increment, originalImage, projectedImage);
 		} catch (ClassNotFoundException | NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
 			System.out.println(e);
+			IJ.error("Z Project", "Error merging the FITS headers while combining slices. No header was produced.");
 		}
 	}
 	

@@ -1,6 +1,7 @@
 import groovy.json.JsonSlurper
 import io.github.fvarrui.javapackager.gradle.PackageTask
 import io.github.fvarrui.javapackager.model.WindowsExeCreationTool
+import org.ajoberstar.grgit.Grgit
 import org.apache.tools.ant.taskdefs.condition.Os
 
 buildscript {
@@ -26,6 +27,9 @@ plugins {
     id "org.jetbrains.gradle.plugin.idea-ext" version "1.0.+"
 
     id 'net.nemerosa.versioning' version '2.8.2'
+
+    // Used to download test data
+    id 'org.ajoberstar.grgit' version '5.+' apply false
 }
 
 apply plugin: 'io.github.fvarrui.javapackager.plugin'
@@ -89,7 +93,48 @@ dependencies {
     implementation project(':Astronomy_')
 
     // Use JUnit test framework
-    //testImplementation 'junit:junit:4.13'
+    testImplementation(platform('org.junit:junit-bom:5.9.1'))
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.9.0'
+    testImplementation 'org.awaitility:awaitility:4.2.0'
+    testImplementation 'org.assertj:assertj-core:3.23.1'
+    testImplementation 'org.assertj:assertj-swing-junit:3.17.1'
+}
+
+test {
+    useJUnitPlatform()
+    testLogging {
+        events "passed", "skipped", "failed"
+    }
+
+    //forkEvery = 1
+
+    systemProperty "enforceEDTValidation", "false"
+
+    //noinspection GroovyAssignabilityCheck, GroovyAccessibility
+    javaLauncher = javaToolchains.launcherFor {// Force it to use the toolchain java version
+        languageVersion = JavaLanguageVersion.of(shippingJava)
+    }
+
+    jvmArgs(readConfigFile())
+    workingDir(file("${projectDir}/AIJ-Run/"))
+
+    classpath += files(file("${projectDir}/AIJ-Run/ij.jar"))
+}
+
+tasks.test.dependsOn("preTest")
+
+task preTest {
+    def testDataPath = "${projectDir}/repos/aijtestdata"
+    doLast {
+        def targetRepo = file(testDataPath)
+        if(!targetRepo.exists()) {
+            def gitRepo = Grgit.clone(dir: testDataPath, uri: 'https://github.com/AstroImageJ/AijTestData')
+        } else {
+            def gitRepo = Grgit.open(dir: testDataPath)
+            gitRepo.fetch()
+            gitRepo.pull()
+        }
+    }
 }
 
 /**

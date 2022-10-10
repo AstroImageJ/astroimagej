@@ -290,7 +290,7 @@ public class ZProjector implements PlugIn {
     }
 
     /** Performs actual projection using specified method. */
-	@AstroImageJ(reason = "Merge FITS headers as well", modified = true)
+	@AstroImageJ(reason = "Merge FITS headers as well; Force makeOutputImage to always return a FloatProcessor", modified = true)
     public void doProjection() {
 		if (imp==null)
 			return;
@@ -355,8 +355,9 @@ public class ZProjector implements PlugIn {
 			fp.resetMinAndMax();
 			projImage = new ImagePlus(makeTitle(), fp); 
 		} else {
-			rayFunc.postProcess(); 
-			projImage = makeOutputImage(imp, fp, ptype);
+			rayFunc.postProcess();
+			// Force to use FLOAT_TYPE as some methods use it
+			projImage = makeOutputImage(imp, fp, FLOAT_TYPE);
 		}
 
 		merger.setHeader(projImage);

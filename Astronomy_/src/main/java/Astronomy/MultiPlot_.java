@@ -2183,7 +2183,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     double[] detrendX = new double[nn[curve]];
                     double[] detrendY = new double[nn[curve]];
                     double[] detrendYE = new double[nn[curve]];
-                    double[] detrendConstantComparator = new double[nn[curve]];
+                    double[] detrendConstantComparator = new double[Math.max(nn[curve], maxDetrendVars)];
                     Arrays.fill(detrendConstantComparator, Double.NaN);
                     if (detrendFitIndex[curve] != 1) {
                         double[][] detrendYD = new double[maxDetrendVars][nn[curve]];

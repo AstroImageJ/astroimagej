@@ -122,6 +122,7 @@ test {
 }
 
 tasks.test.dependsOn("preTest")
+test.onlyIf { project.hasProperty('runTest') }
 
 task preTest {
     def testDataPath = "${projectDir}/repos/aijtestdata"
@@ -519,7 +520,7 @@ javaRuntimeSystems.each {sys, sysInfo ->
 
     tasks.named(taskName) {
         //noinspection GroovyAssignabilityCheck
-        dependsOn build, unZipJresTask, commonFiles
+        dependsOn unZipJresTask, commonFiles
         //noinspection GroovyAssignabilityCheck
         mustRunAfter commonFiles, deleteDecompressedJres, unZipJresTask
     }

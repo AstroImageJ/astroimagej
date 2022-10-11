@@ -2,7 +2,6 @@ package ij.plugin;
 
 import ij.*;
 import ij.astro.AstroImageJ;
-import ij.astro.util.HeaderMerger;
 import ij.gui.GenericDialog;
 import ij.gui.Overlay;
 import ij.gui.Roi;
@@ -12,6 +11,8 @@ import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
 import ij.process.ShortProcessor;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 
 /** This plugin performs a z-projection of the input stack. Type of
@@ -333,14 +334,12 @@ public class ZProjector implements PlugIn {
 
 		// Do the projection
 		int sliceCount = 0;
-		var merger = new HeaderMerger(method);
 		for (int n=startSlice; n<=stopSlice; n+=increment) {
 			if (!isHyperstack) {
 	    		IJ.showStatus("ZProjection " + color +": " + n + "/" + stopSlice);
 	    		IJ.showProgress(n-startSlice, stopSlice-startSlice);
 	    	}
 	    	projectSlice(stack.getPixels(n), rayFunc, ptype);
-			merger.addHeader(imp, n);
 	    	sliceCount++;
 		}
 
@@ -360,9 +359,10 @@ public class ZProjector implements PlugIn {
 			projImage = makeOutputImage(imp, fp, FLOAT_TYPE);
 		}
 
-		merger.setHeader(projImage);
+		// Merge Fits headers
+		mergeFitsHeaders(method, startSlice, stopSlice, increment, imp, projImage);
 
-		if(projImage==null)
+		if (projImage==null)
 	    	IJ.error("Z Project", "Error computing projection.");
     }
 
@@ -383,6 +383,21 @@ public class ZProjector implements PlugIn {
 		}
 		if (projImage!=null)
 			projImage.setCalibration(imp.getCalibration());
+	}
+
+
+	@AstroImageJ(reason = "Merge FITS headers", modified = true)
+	void mergeFitsHeaders(int method, int startSlice, int stopSlice, int increment, ImagePlus originalImage, ImagePlus projectedImage) {
+		try {
+			String name = getClass().getCanonicalName();
+			Class<?> clazz = Class.forName("astroj.FitsHeaderMerger", true, IJ.getClassLoader());
+			Method jMethod = clazz.getMethod("mergeHeaders", int.class, int.class, int.class, int.class,
+					ImagePlus.class, ImagePlus.class);
+			jMethod.invoke(null, method, startSlice, stopSlice, increment, originalImage, projectedImage);
+		} catch (ClassNotFoundException | NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
+			System.out.println(e);
+			IJ.error("Z Project", "Error merging the FITS headers while combining slices. No header was produced.");
+		}
 	}
 	
 	//Added by Marcel Boeglin 2013.09.23

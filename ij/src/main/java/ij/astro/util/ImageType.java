@@ -48,6 +48,11 @@ public enum ImageType {
         public double getBZero() {
             return -(double)Byte.MIN_VALUE; // Not really needed as java bytes are already unsigned
         }
+
+        @Override
+        public int getExpectedBitpix() {
+            return 8;
+        }
     },
     SHORT(ShortProcessor::new, short[][].class) {
         @Override
@@ -92,6 +97,11 @@ public enum ImageType {
         public double getBZero() {
             return -(double)Short.MIN_VALUE;
         }
+
+        @Override
+        public int getExpectedBitpix() {
+            return 16;
+        }
     },
     INT(FloatProcessor::new/*IntProcessor::new*/, int[][].class) {//todo when using int processor, fits_reader displays invalid values
         @Override
@@ -135,6 +145,11 @@ public enum ImageType {
         @Override
         public double getBZero() {
             return -(double)Integer.MIN_VALUE;
+        }
+
+        @Override
+        public int getExpectedBitpix() {
+            return 32;
         }
     },
     //this loses accuracy for some values
@@ -181,6 +196,11 @@ public enum ImageType {
         public double getBZero() {
             return -(double)Long.MIN_VALUE;
         }
+
+        @Override
+        public int getExpectedBitpix() {
+            return 64;
+        }
     },
     FLOAT(FloatProcessor::new, float[][].class) {
         @Override
@@ -223,6 +243,11 @@ public enum ImageType {
         @Override
         public boolean isFloatingPoint() {
             return true;
+        }
+
+        @Override
+        public int getExpectedBitpix() {
+            return -32;
         }
     },
     //this loses accuracy for some values
@@ -268,6 +293,11 @@ public enum ImageType {
         @Override
         public boolean isFloatingPoint() {
             return true;
+        }
+
+        @Override
+        public int getExpectedBitpix() {
+            return -64;
         }
     };
 
@@ -316,4 +346,6 @@ public enum ImageType {
     public double getBZero() {
         return 0;
     }
+
+    public abstract int getExpectedBitpix();
 }

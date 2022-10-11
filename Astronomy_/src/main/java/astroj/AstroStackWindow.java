@@ -38,6 +38,7 @@ import java.net.*;
 import java.text.DecimalFormat;
 import java.util.List;
 import java.util.*;
+import java.util.function.Consumer;
 
 
 /**
@@ -445,6 +446,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
     Rectangle defaultScreenBounds = defaultScreen.getDefaultConfiguration().getBounds();
 
     private boolean hasNotified;
+    private final Set<Consumer<Void>> stackListeners = new HashSet<>();
 
     public AstroStackWindow(ImagePlus imp, AstroCanvas ac, boolean refresh, boolean resize) {
 
@@ -2653,6 +2655,14 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             oldSubtitle = sub;
             drawInfo(g);
         }
+    }
+
+    public void registerStackListener(Consumer<Void> listener) {
+        stackListeners.add(listener);
+    }
+
+    public void removeStackListener(Consumer<Void> listener) {
+        stackListeners.remove(listener);
     }
 
     void updateMinMaxValueTextFields() {
@@ -5394,6 +5404,10 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
 
         if (autoDisplayAnnotationsFromHeader && (requestUpdateAnnotationsFromHeader || oldSlice != slice)) {
             displayAnnotationsFromHeader(true, false, false);
+        }
+
+        if (oldSlice != slice) {
+            stackListeners.forEach(l -> l.accept(null));
         }
 
         oldSlice = slice;

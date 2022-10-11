@@ -17,6 +17,7 @@ import java.awt.event.*;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.function.Consumer;
 
 public class FitsHeaderEditor implements ListSelectionListener, ActionListener, ItemListener {
     public static final String NL = System.getProperty("line.separator");
@@ -40,6 +41,7 @@ public class FitsHeaderEditor implements ListSelectionListener, ActionListener, 
     JTextField searchTF;
     boolean keywordLock = true;
     boolean changed = false;
+    private boolean trackSlice = true;
 
     int frameX = -999999;
     int frameY = -999999;
@@ -48,18 +50,50 @@ public class FitsHeaderEditor implements ListSelectionListener, ActionListener, 
     int lastGoodSearchCol = -1;
     int lastGoodSearchRow = -1;
 
+    Consumer<Void> stackListener = this::updateGui;
+
     public FitsHeaderEditor(ImagePlus imagePlus) {
         // PLACE FITS HEADER IN A STRING ARRAY
         imp = imagePlus;
-        slice = imp.getCurrentSlice();
         getPrefs();
 
+        updateHeaderInfoFromSlice();
+
+        if (header == null) {
+            return;
+        }
+
+        /*if (imp.getWindow() instanceof AstroStackWindow asw) {
+            asw.registerStackListener(stackListener);
+        }*/
+
+        // CREATE GUI
+
+        frame = new JFrame("FITS Header Editor (" + IJU.getSliceFilename(imp, slice) + ")");
+        frame.setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
+        frame.setIconImage(Toolkit.getDefaultToolkit().getImage(getClass().getClassLoader().getResource("images/header.png")));
+        frame.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                savePrefs();
+            }
+        });
+
+//		frame.add (new JLabel("Image: "+imp.getShortTitle()));
+
+        buildTable();
+
+    }
+
+    private void updateHeaderInfoFromSlice() {
+        slice = imp.getCurrentSlice();
         String[] hdr = FitsJ.getHeader(imp);
         if (hdr == null) {
             IJ.beep();
             IJ.showMessage("No valid FITS header");
             return;
         }
+
         int l = hdr.length;
         header = new String[l][5];
         for (int i = 0; i < l; i++) {
@@ -88,21 +122,46 @@ public class FitsHeaderEditor implements ListSelectionListener, ActionListener, 
             }
         }
 
-        // CREATE GUI
+        if (frame != null) {
+            frame.setTitle("FITS Header Editor (" + IJU.getSliceFilename(imp, slice) + ")");
+        }
+    }
 
-        frame = new JFrame("FITS Header Editor (" + IJU.getSliceFilename(imp, slice) + ")");
-        frame.setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
-        frame.addWindowListener(new WindowAdapter() {
-            @Override
-            public void windowClosing(WindowEvent e) {
-                savePrefs();
-            }
-        });
+    private void updateGui(Void unused) {
+        updateHeaderInfoFromSlice();
+        table.setModel(new FITSTableModel());
+        int col1size = 100;
+        int col2size = 100;
+        int col3size = 100;
+        int col4size = 100;
+        int col5size = 100;
 
-//		frame.add (new JLabel("Image: "+imp.getShortTitle()));
+        FontMetrics metrics = table.getFontMetrics(table.getFont());
 
-        buildTable();
+        int w = metrics.stringWidth("M");
 
+        col1size = 5 * w;
+        col2size = 9 * w;
+        col3size = 50 * w;
+        col4size = 50 * w;
+        col5size = 5 * w;
+
+        TableColumn col = table.getColumnModel().getColumn(0);
+        col.setPreferredWidth(col1size);
+        col = table.getColumnModel().getColumn(1);
+        col.setPreferredWidth(col2size);
+        col = table.getColumnModel().getColumn(2);
+        col.setPreferredWidth(col3size);
+        col = table.getColumnModel().getColumn(3);
+        col.setPreferredWidth(col4size);
+        col = table.getColumnModel().getColumn(4);
+        col.setPreferredWidth(col5size);
+        DefaultTableCellRenderer renderer = new DefaultTableCellRenderer();
+        renderer.setToolTipText("<html>B = boolean<br>C = comment<br>E = end<br>H = history<br>I = integer<br>R = real<br>S = string<br>? = unknown</html>");
+        col.setCellRenderer(renderer);
+        table.setPreferredScrollableViewportSize(new Dimension(col1size + col2size + col3size + col4size + col5size, Math.min(table.getRowHeight() * header.length, 600)));
+        table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        table.getTableHeader().setReorderingAllowed(false);
     }
 
 
@@ -161,7 +220,7 @@ public class FitsHeaderEditor implements ListSelectionListener, ActionListener, 
         DefaultTableCellRenderer renderer = new DefaultTableCellRenderer();
         renderer.setToolTipText("<html>B = boolean<br>C = comment<br>E = end<br>H = history<br>I = integer<br>R = real<br>S = string<br>? = unknown</html>");
         col.setCellRenderer(renderer);
-        table.setPreferredScrollableViewportSize(new Dimension(col1size + col2size + col3size + col4size + col5size, table.getRowHeight() * header.length > 600 ? 600 : table.getRowHeight() * header.length));
+        table.setPreferredScrollableViewportSize(new Dimension(col1size + col2size + col3size + col4size + col5size, Math.min(table.getRowHeight() * header.length, 600)));
         table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         table.getTableHeader().setReorderingAllowed(false);
         scrollPane = new JScrollPane(table);
@@ -170,6 +229,26 @@ public class FitsHeaderEditor implements ListSelectionListener, ActionListener, 
         // ADD BUTTONS
 
         JPanel gui = new JPanel();
+
+        var trackSliceCB = new JCheckBox("Track Slice", trackSlice);
+        trackSliceCB.setToolTipText("Header Editor updates to match the currently selected slice");
+        trackSliceCB.addItemListener(e -> {
+            if (e.getStateChange() == ItemEvent.SELECTED) {
+                if (imp.getWindow() instanceof AstroStackWindow asw) {
+                    asw.registerStackListener(stackListener);
+                }
+            } else {
+                if (imp.getWindow() instanceof AstroStackWindow asw) {
+                    asw.removeStackListener(stackListener);
+                }
+            }
+        });
+        if (trackSlice) {
+            if (imp.getWindow() instanceof AstroStackWindow asw) {
+                asw.registerStackListener(stackListener);
+            }
+        }
+        gui.add(trackSliceCB);
 
 
         keywordLockCB = new JCheckBox("Lock keywords", keywordLock);
@@ -598,12 +677,14 @@ public class FitsHeaderEditor implements ListSelectionListener, ActionListener, 
         frameX = (int) Prefs.get("fitsedit.frameX", frameX);
         frameY = (int) Prefs.get("fitsedit.frameY", frameY);
         keywordLock = Prefs.get("fitsedit.editKeys", keywordLock);
+        trackSlice = Prefs.get("fitsedit.trackSlice", trackSlice);
     }
 
     void savePrefs() {
         Prefs.set("fitsedit.frameX", frame.getLocation().x);
         Prefs.set("fitsedit.frameY", frame.getLocation().y);
         Prefs.set("fitsedit.editKeys", keywordLock);
+        Prefs.set("fitsedit.trackSlice", trackSlice);
     }
 
     /**

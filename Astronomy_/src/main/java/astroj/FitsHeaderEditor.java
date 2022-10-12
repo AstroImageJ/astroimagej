@@ -242,6 +242,8 @@ public class FitsHeaderEditor implements ListSelectionListener, ActionListener, 
                     asw.removeStackListener(stackListener);
                 }
             }
+            trackSlice = e.getStateChange() == ItemEvent.SELECTED;
+            Prefs.set("fitsedit.trackSlice", trackSlice);
         });
         if (trackSlice) {
             if (imp.getWindow() instanceof AstroStackWindow asw) {

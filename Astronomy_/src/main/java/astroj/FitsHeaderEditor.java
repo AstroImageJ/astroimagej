@@ -236,6 +236,7 @@ public class FitsHeaderEditor implements ListSelectionListener, ActionListener, 
             if (e.getStateChange() == ItemEvent.SELECTED) {
                 if (imp.getWindow() instanceof AstroStackWindow asw) {
                     asw.registerStackListener(stackListener);
+                    updateGui(null);
                 }
             } else {
                 if (imp.getWindow() instanceof AstroStackWindow asw) {

@@ -36,6 +36,7 @@ import java.awt.event.*;
 import java.awt.geom.GeneralPath;
 import java.awt.image.BufferedImage;
 import java.io.*;
+import java.nio.file.Path;
 import java.text.DecimalFormat;
 import java.util.*;
 import java.util.function.Consumer;
@@ -2182,7 +2183,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     double[] detrendX = new double[nn[curve]];
                     double[] detrendY = new double[nn[curve]];
                     double[] detrendYE = new double[nn[curve]];
-                    double[] detrendConstantComparator = new double[nn[curve]];
+                    double[] detrendConstantComparator = new double[Math.max(nn[curve], maxDetrendVars)];
                     Arrays.fill(detrendConstantComparator, Double.NaN);
                     if (detrendFitIndex[curve] != 1) {
                         double[][] detrendYD = new double[maxDetrendVars][nn[curve]];
@@ -16384,18 +16385,19 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             return;
         }
 
-        String cfgPath = "";
+        var cfgPath = Path.of("");
 
         int lastDot = path.lastIndexOf('.');
-        cfgPath = lastDot > 0 ? path.substring(0, lastDot) + ".plotcfg" : path + ".plotcfg";
+        cfgPath = Path.of(lastDot > 0 ? path.substring(0, lastDot) + ".plotcfg" : path + ".plotcfg");
         File cfgFile = null;
-        try {cfgFile = new File(cfgPath);} catch (Exception ignored) {}
+        try {cfgFile = cfgPath.toFile();} catch (Exception ignored) {}
         if (cfgFile != null && cfgFile.isFile()) {
             try {
-                InputStream is = new BufferedInputStream(new FileInputStream(cfgPath));
+                var is = new BufferedInputStream(new FileInputStream(cfgFile));
                 Prefs.ijPrefs.load(is);
                 is.close();
             } catch (Exception e) {
+                e.printStackTrace();
                 IJ.beep();
                 IJ.showMessage("Load Data and Open Config: Error loading plot config file: " + cfgPath);
             }

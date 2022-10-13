@@ -1,6 +1,7 @@
 package astroj;
 
 import ij.ImagePlus;
+import ij.astro.util.ImageType;
 import ij.plugin.ZProjector;
 
 import java.util.ArrayList;
@@ -8,6 +9,9 @@ import java.util.ArrayList;
 public class FitsHeaderMerger {
 
 
+     /**
+     * @see ZProjector#mergeFitsHeaders(int, int, int, int, ImagePlus, ImagePlus)
+     */
     public static void mergeHeaders(int method, int startSlice, int stopSlice, int increment, ImagePlus origImage, ImagePlus projImage) {
         // Get all the headers
         int stackCnt = 0;
@@ -72,8 +76,11 @@ public class FitsHeaderMerger {
         newHeader = FitsJ.set("JD-AVG", String.valueOf(avgJD), "Julian Day of the observation mid-point.", newHeader);
         newHeader = FitsJ.set("DATE-AVG", JulianDate.dateTime(avgJD), "", newHeader);
 
+        // Update BITPIX
+        var newBitpix = ImageType.getType(projImage.getProcessor()).getExpectedBitpix();
+        newHeader[FitsJ.findCardWithKey("BITPIX", newHeader)] = FitsJ.createCard("BITBIX", String.valueOf(newBitpix), "bits per data value");
+        
         // Add new header to the projected image.
         FitsJ.putHeader(projImage, newHeader);
     }
-
 }

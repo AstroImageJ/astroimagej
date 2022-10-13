@@ -1604,7 +1604,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         }
 
         double med = Stat.median(a);
-        return med + Stat.median(Arrays.stream(a).filter(d -> d>= med).map(d -> d - med).toArray());
+        return med + Stat.median(Arrays.stream(a).filter(d -> d> med).map(d -> d - med).toArray());
     }
 
     private TreeSet<StarFinder.CoordinateMaxima> removeCloseStars(TreeSet<StarFinder.CoordinateMaxima> initialSet, double t1Source, double maxP) {

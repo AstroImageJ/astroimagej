@@ -386,7 +386,7 @@ public class ZProjector implements PlugIn {
 	}
 
 
-	@AstroImageJ(reason = "Merge FITS headers")
+  @AstroImageJ(reason = "Merge FITS headers")
 	void mergeFitsHeaders(int method, int startSlice, int stopSlice, int increment, ImagePlus originalImage, ImagePlus projectedImage) {
 		try {
 			String name = getClass().getCanonicalName();

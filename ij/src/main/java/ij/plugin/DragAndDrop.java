@@ -1,16 +1,29 @@
 package ij.plugin;
-import ij.*;
-import ij.gui.*;
-import ij.io.*;
-import ij.process.ImageProcessor;
+
+import ij.IJ;
+import ij.ImageJ;
+import ij.ImagePlus;
+import ij.Macro;
+import ij.astro.AstroImageJ;
+import ij.gui.Toolbar;
+import ij.io.OpenDialog;
+import ij.io.Opener;
 import ij.plugin.frame.Recorder;
-import java.io.*;
-import java.awt.Point;
-import java.awt.datatransfer.*;
+import ij.process.ImageProcessor;
+
+import java.awt.*;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
 import java.awt.dnd.*;
-import java.util.*;
-import java.util.Iterator;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.StringReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 /** This class opens images, roi's, luts and text files dragged and dropped on  the "ImageJ" window.
      It is based on the Draw_And_Drop plugin by Eric Kischell (keesh@ieee.org).
@@ -204,7 +217,8 @@ public class DragAndDrop implements PlugIn, DropTargetListener, Runnable {
 				IJ.handleException(e);
 		}
 	}
-	
+
+	@AstroImageJ(reason = "Show warning and abort if folder has no images", modified = true)
 	private void openDirectory(File f, String path) {
 		if (path==null) return;
 		path = IJ.addSeparator(path);
@@ -212,6 +226,28 @@ public class DragAndDrop implements PlugIn, DropTargetListener, Runnable {
 		names = (new FolderOpener()).trimFileList(names);
 		if (names==null)
 			return;
+
+		try (var ds = Files.newDirectoryStream(f.toPath())) {
+			var o = new Opener();
+			var hasImage = false;
+			for (Path p : ds) {
+				var isImage = switch (o.getFileType(p.toAbsolutePath().toString(), false)) {
+					case Opener.AVI, Opener.BMP, Opener.DICOM, Opener.FITS, Opener.GIF, Opener.JPEG, Opener.PGM,
+							Opener.PNG, Opener.RAW, Opener.TIFF, Opener.TIFF_AND_DICOM -> true;
+					default -> false;
+				};
+				hasImage = isImage;
+				if (isImage) break;
+			}
+
+			if (!hasImage) {
+				IJ.error("Folder contains no images.");
+				return;
+			}
+		} catch (IOException ignored) {
+
+		}
+
 		FolderOpener fo = new FolderOpener();
 		fo.setDirectory(path);
 		fo.run("");

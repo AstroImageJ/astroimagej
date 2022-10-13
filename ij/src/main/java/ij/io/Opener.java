@@ -346,6 +346,7 @@ public class Opener {
 		OpenDialog.setLastDirectory(directory);
 		OpenDialog.setLastName(name);
 		String path = directory+name;
+		//AIJLogger.log(path);
 		this.fileType = getFileType(path, !(path.contains(".zip") && !path.endsWith(".zip")));
 		if (IJ.debugMode) IJ.log("openImage: \""+types[this.fileType]+"\", "+path);
 		switch (this.fileType) {
@@ -1282,8 +1283,8 @@ public class Opener {
 	 */
 	@AstroImageJ(reason = "Add more file types; extend how fits file is checked; " +
 			"skip read check for files within a zip; add option to ignore unopenable file; " +
-			"add extension check for pngs", modified = true)
-	private int getFileType(String path, boolean checkOpenable) {
+			"add extension check for pngs; widen access", modified = true)
+	public int getFileType(String path, boolean checkOpenable) {
 		if (openUsingPlugins && !path.endsWith(".txt") &&  !path.endsWith(".java"))
 			return UNKNOWN;
 		File file = new File(path);

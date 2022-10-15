@@ -319,7 +319,7 @@ public class Set_Aperture implements PlugIn
         
         gd.addMessage ("Multi-Aperture settings:");
         gd.addCheckbox ("Allow left/right double click for fast zoom-in/out (adds slight delay to aperture placement)", enableDoubleClicks);
-        gd.addCheckbox ("Always default Multi-Aperture first slice to slice 1", alwaysstartatfirstSlice);
+        gd.addCheckbox ("Always default Multi-Aperture and Stack Aligner first slice to slice 1", alwaysstartatfirstSlice);
         gd.addNumericField ("Maximum number of apertures per image :", nAperturesMax,0,6,"");
 	
 		gd.addMessage ("Select aperture items to display (or clear) in image overlay:");

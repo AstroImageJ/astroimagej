@@ -139,7 +139,8 @@ public class Stack_Aligner extends MultiAperture_
             //GenericSwingDialog.setSliderSpinnerColumns(3);
 		if (stackSize > 1)
 			{
-            sliders.add(gd.addSlider("           First slice ", 1, stackSize, firstSlice == stackSize ? 1 : firstSlice, d -> firstSlice = d.intValue()));
+            firstSlice = (firstSlice == stackSize || alwaysstartatfirstSlice) ? 1 : firstSlice;
+            sliders.add(gd.addSlider("           First slice ", 1, stackSize, firstSlice, d -> firstSlice = d.intValue()));
             sliders.add(gd.addSlider("           Last slice ", 1, stackSize, lastSlice, d -> lastSlice = d.intValue()));
 	        }
         gd.addMessage("");

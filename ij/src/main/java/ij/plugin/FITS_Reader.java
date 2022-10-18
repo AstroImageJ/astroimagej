@@ -393,14 +393,28 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	}
 
 	private boolean isBasic3DImage(BasicHDU<?>[] hdus) {
-		return (hdus.length > 1 && !isLco(hdus)) &&
-				(Arrays.stream(hdus).allMatch(hdu -> (hdu instanceof ImageHDU) && hdu.getKernel() != null) ||
-						// For compressed multiHDU files, the first HDU likely has no data as it
-						// was added to allow for compression.
-						(hdus[0].getHeader().getIntValue(NAXIS) == 0 && Arrays.stream(hdus).skip(1)
-								// We only care about images
-								.allMatch(hdu -> (hdu instanceof ImageHDU ||
-										hdu instanceof CompressedImageHDU) && hdu.getKernel() != null)));
+		// For compressed multiHDU files, the first HDU likely has no data as it
+		// was added to allow for compression.
+		var firstValidHdu = hdus[0].getHeader().getIntValue(NAXIS) == 0 ? 1 : 0;
+
+		var isImages = (hdus.length > 1 && !isLco(hdus)) &&
+				(Arrays.stream(hdus).skip(firstValidHdu)
+						// We only care about images
+						.allMatch(hdu -> (hdu instanceof ImageHDU || hdu instanceof CompressedImageHDU) &&
+								hdu.getKernel() != null));
+
+		var imagesAreSameSize = Arrays.stream(hdus)
+				.skip(hdus[0].getHeader().getIntValue(NAXIS) == 0 ? 1 : 0)
+				.allMatch(hdu -> {
+					try {
+						return Arrays.equals(hdus[firstValidHdu].getAxes(), hdu.getAxes());
+					} catch (FitsException e) {
+						e.printStackTrace();
+						return false;
+					}
+				});
+
+		return isImages && imagesAreSameSize;
 	}
 
 	/**

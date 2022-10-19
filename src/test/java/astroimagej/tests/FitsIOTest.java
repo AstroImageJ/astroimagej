@@ -47,6 +47,17 @@ public class FitsIOTest {
         assertEquals(1, stack.size());
     }
 
+    /**
+     * Ensure that all images platesolved by PixInsight open as one image
+     * (PixInsight adds other HDUs when platesolving).
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {"PixinsightWCSFile.fits"})
+    void canReadPixInsight(String filename) {
+        var stack = readStack(filename);
+        assertEquals(1, stack.size());
+    }
+
     //todo compressed options test
 
     //todo @RepeatedTest for compressed writing to stress the compression

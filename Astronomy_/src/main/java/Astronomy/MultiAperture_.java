@@ -1201,8 +1201,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 ocanvas.removeRoi(warning);
                 d.dispose();
                 if (!rs.centroidSuccessful()) {
-                    shutDown();
-                    return;
+                    showWarning("Failed to retrieve radii for one or more images.\nDo you wish to continue?", true);
                 }
             }
 
@@ -1502,6 +1501,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             decPos = -1000001;
         }
 
+        var hasErrored = false;
         var x = xCenter;
         var y = yCenter;
         var oc = OverlayCanvas.getOverlayCanvas(asw.getImagePlus());
@@ -1519,9 +1519,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             var rs = sp.getRadii(imp, x, y, ApRadius.AUTO_FIXED_STACK_RAD.cutoff, true, true);
             if (cancelled) return rs;
             if (!rs.centroidSuccessful()) {
-                IJ.error("Failed to centroid on slice: " + i + ". Plate-solving the image may allow this mode to be used. Otherwise, choose a different aperture mode.");
-                imp.setSliceWithoutUpdate(firstSlice);
-                return rs;
+                AIJLogger.log("Failed to centroid on slice: " + i + ".");
+                hasErrored = true;
+                continue;
             }
             x = sp.X0;
             y = sp.Y0;
@@ -1595,7 +1595,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         sp.plot.getImagePlus().getWindow().setVisible(true);
 
         IJ.showProgress(1);
-        return rs;
+        return rs.setSuccess(!hasErrored);
     }
 
     private double upperMadMedian(double[] a) {
@@ -1890,11 +1890,23 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     }
 
     private JDialog showWarning(String message) {
+        return showWarning(message, false);
+    }
+
+    private JDialog showWarning(String message, boolean hasProceed) {
         var gd = new GenericSwingDialog("MultiAperture Stack/Slice processor", asw);
         gd.addMessage(message);
         gd.setModalityType(Dialog.ModalityType.MODELESS);
 
-        gd.disableNo();
+        if (hasProceed) {
+            gd.enableYesNoCancel("Cancel", "Proceed");
+            gd.getNo().addActionListener($ -> {
+                gd.dispose();
+            });
+        } else {
+            gd.disableNo();
+        }
+
         gd.setOKLabel("Cancel");
 
         gd.getOkay().addActionListener($ -> {

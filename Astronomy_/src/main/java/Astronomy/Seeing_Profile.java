@@ -166,6 +166,10 @@ public class Seeing_Profile implements PlugInFilter
             public boolean isValid() {
                 return r != 0 && r2 != 0 && r3 != 0;
             }
+
+            public ApRadii setSuccess(boolean success) {
+                return new ApRadii(r, r2, r3, success);
+            }
         }
 
         public static ApRadii getRadii(ImagePlus imp, double x, double y) {

@@ -1538,10 +1538,6 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         }
         imp.setSlice(firstSlice);
 
-        // Clear and redraw aperture at initical location
-        oc.clearRois();
-        measureAperture();
-
         radii = radii.stream().filter(Seeing_Profile.ApRadii::isValid).toList();
         var sr = radii.stream().mapToDouble(Seeing_Profile.ApRadii::r).toArray();
         var br = radii.stream().mapToDouble(Seeing_Profile.ApRadii::r2).toArray();
@@ -1560,6 +1556,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             Prefs.set("aperture.rback1", rBack1);
             Prefs.set("aperture.rback2", rBack2);
         }
+
+        // Clear and redraw aperture at initial location
+        oc.clearRois();
+        measureAperture();
 
         if (enableLog) {
             AIJLogger.multiLog("radii: ", rs);

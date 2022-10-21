@@ -1490,20 +1490,37 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         var sp = new Seeing_Profile(true);
         //sp.setRoundRadii(false);
 
-        var raPos = 0d;
-        var decPos = 0d;
-        if (hasWCS) {
-            double[] radec = wcs.pixels2wcs(new double[]{xCenter, yCenter});
-            raPos = radec[0];
-            decPos = radec[1];
+        var x = xCenter;
+        var y = yCenter;
+        var raPos = -1000001d;
+        var decPos = -1000001d;
+
+        // Acount for old star positions
+        if (previous && nAperturesStored > 0) {
+            x = xPosStored[0];
+            y = yPosStored[0];
+            if (raPosStored != null && decPosStored != null) {
+                raPos = raPosStored[0];
+                decPos = decPosStored[0];
+            }
+            if ((useMA || useAlign) && useWCS) {
+                if (!hasWCS || (!(raPos < -1000000) && !(decPos < -1000000))) {
+                    if (hasWCS && raPos > -1000000 && decPos > -1000000) {
+                        double[] xy = wcs.wcs2pixels(new double[]{raPos, decPos});
+                        x = xy[0];
+                        y = xy[1];
+                    }
+                }
+            }
         } else {
-            raPos = -1000001;
-            decPos = -1000001;
+            if (hasWCS) {
+                double[] radec = wcs.pixels2wcs(new double[]{xCenter, yCenter});
+                raPos = radec[0];
+                decPos = radec[1];
+            }
         }
 
         var hasErrored = false;
-        var x = xCenter;
-        var y = yCenter;
         var oc = OverlayCanvas.getOverlayCanvas(asw.getImagePlus());
         for (int i = firstSlice; i <= lastSlice; i++) {
             asw.showSlice(i);

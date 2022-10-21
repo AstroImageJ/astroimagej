@@ -1601,10 +1601,20 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     private double upperMadMedian(double[] a) {
         if (a.length == 1) {
             return a[0];
+        } else if (a.length == 0) {
+            return 0;
         }
 
         double med = Stat.median(a);
-        return med + Stat.median(Arrays.stream(a).filter(d -> d> med).map(d -> d - med).toArray());
+        var distanceAboveMed = Arrays.stream(a).filter(d -> d> med).map(d -> d - med).toArray();
+
+        if (distanceAboveMed.length == 1) {
+            return med + distanceAboveMed[0];
+        } else if (distanceAboveMed.length == 0) {
+            return med;
+        }
+
+        return med + Stat.median(distanceAboveMed);
     }
 
     private TreeSet<StarFinder.CoordinateMaxima> removeCloseStars(TreeSet<StarFinder.CoordinateMaxima> initialSet, double t1Source, double maxP) {

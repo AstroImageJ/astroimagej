@@ -1561,7 +1561,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         var br2 = radii.stream().mapToDouble(Seeing_Profile.ApRadii::r3).toArray();
 
         if (enableLog) {
-            AIJLogger.multiLog("medians: ", Stat.median(sr), Stat.median(br), Stat.median(br2));
+            AIJLogger.multiLog("medians: ", upperMadMedian(sr), upperMadMedian(br), upperMadMedian(br2));
         }
         var rs = new Seeing_Profile.ApRadii(upperMadMedian(sr), upperMadMedian(br), upperMadMedian(br2));
 

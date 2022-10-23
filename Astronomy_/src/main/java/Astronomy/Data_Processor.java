@@ -2351,17 +2351,17 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
         saveFormatField.getDocument().addDocumentListener(new thisDocumentListener());
         outputPanel.add(saveFormatField);
 
-        compressBox = new JCheckBox("GZIP", compress);
-        compressBox.setFont(p12);
-        compressBox.setToolTipText("Compress outfile file in GZIP format (compresses FITS header information also).");
-        compressBox.addItemListener(this);
-        outputPanel.add(compressBox);
-
         fpackBox = new JCheckBox("FPACK", fpack);
         fpackBox.setFont(p12);
         fpackBox.setToolTipText("Compress outfile file with FPACK format (compresses FITS data).");
         fpackBox.addItemListener(this);
         outputPanel.add(fpackBox);
+
+        compressBox = new JCheckBox("GZIP", compress);
+        compressBox.setFont(p12);
+        compressBox.setToolTipText("Compress outfile file in GZIP format (compresses FITS header information also).");
+        compressBox.addItemListener(this);
+        outputPanel.add(compressBox);
 
         JPanel outputNumPanel = new JPanel(new SpringLayout());
         outputNumPanel.setPreferredSize(validFilesSize);

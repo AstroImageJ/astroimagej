@@ -5,6 +5,7 @@ import astroj.json.simple.parser.JSONParser;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.Prefs;
+import ij.astro.util.FitsExtensionUtil;
 import ij.gui.Roi;
 import ij.process.ByteProcessor;
 import ij.process.FloatProcessor;
@@ -118,6 +119,7 @@ public class Astrometry { //implements KeyListener
     private int[] dirOffset;                        // pixel offsets of neighbor pixels for direct addressing
     private final Color colorWCS = new Color(255, 190, 0);//(226,105,11);
     private final Color sourceColor = new Color(33, 120, 181);
+    private boolean compress = false, fpack = false;
 
     public Astrometry() {
         Locale.setDefault(IJU.locale);
@@ -866,7 +868,7 @@ public class Astrometry { //implements KeyListener
                 saveActive = true;
                 impOriginal.setSlice(slice);
                 String imageDirname = impOriginal.getOriginalFileInfo().directory;
-                String imageFilename = IJU.getSliceFilename(impOriginal, slice);
+                String imageFilename = FitsExtensionUtil.makeFitsSave(IJU.getSliceFilename(impOriginal, slice), fpack, compress);
 
                 if (impOriginal.getStack().isVirtual()) {
 //                    imp2 = new ImagePlus(impOriginal.getStack().getSliceLabel(slice), impOriginal.getStack().getProcessor(slice) ); 
@@ -1334,6 +1336,8 @@ public class Astrometry { //implements KeyListener
         autoSave = Prefs.get("astrometry.autoSave", autoSave);
         DPSaveRawWithWCS = Prefs.get("astrometry.DPSaveRawWithWCS", DPSaveRawWithWCS);
         skipIfHasWCS = Prefs.get("astrometry.skipIfHasWCS", skipIfHasWCS);
+        compress = Prefs.get ("astrometry.gzip", compress);
+        fpack = Prefs.get ("astrometry.fpack", fpack);
 
         annotate = Prefs.get("astrometry.annotate", annotate);
         annotateRadius = Prefs.get("astrometry.annotateRadius", annotateRadius);

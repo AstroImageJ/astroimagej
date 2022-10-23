@@ -1,5 +1,6 @@
 package ij.astro.util;
 
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.regex.Pattern;
 
@@ -29,6 +30,18 @@ public class FitsExtensionUtil {
         }
 
         return file;
+    }
+
+    public static String makeFitsSave(String file, boolean fpack, boolean gzip) {
+        return makeFitsSave(file, fpack ? CompressionMode.FPACK : null, gzip ? CompressionMode.GZIP : null);
+    }
+
+    public static String makeFitsSave(String file, CompressionMode... modes) {
+        var modeSet = EnumSet.copyOf(Arrays.asList(modes));
+        var s = fileNameWithoutExt(file);
+
+        return s + ".fits" + (modeSet.contains(CompressionMode.FPACK) ? ".fz" : "") +
+                (modeSet.contains(CompressionMode.GZIP) ? ".gz" : "");
     }
 
     public static EnumSet<CompressionMode> compressionModes(String file) {

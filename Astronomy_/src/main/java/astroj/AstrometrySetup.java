@@ -147,7 +147,7 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
     JButton startButton, cancelButton;
     JLabel keyLabel3, keyLabel4;
     JCheckBox autoSaveCB, skipIfHasWCSCB, processStackCB, annotateCB, addAnnotationsToHeaderCB, useMedianFilterCB, useMaxPeakFindValueCB,
-              centroidCB, scaleCB, raDecCB, showLogCB, useDistortionOrderCB, useAlternateAstrometryServerCB;
+              centroidCB, scaleCB, raDecCB, showLogCB, useDistortionOrderCB, useAlternateAstrometryServerCB, compressBox, fpackBox;
     SpinnerNumberModel startSliceNumberModel, endSliceNumberModel, medianFilterRadiusNumberModel, distortionOrderNumberModel,
                        noiseTolNumberModel, maxPeakFindNumberModel, maxNumStarsNumberModel,
                        annotateRadiusNumberModel, apertureRadiusNumberModel, apertureBack1NumberModel,apertureBack2NumberModel,
@@ -161,10 +161,11 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
     static int MIN_MAX_STARS = 10;
     
     Rectangle defaultScreenBounds;
-    GraphicsDevice defaultScreen;    
+    GraphicsDevice defaultScreen;
+    private boolean fpack = false, compress = false;
 
-    
-	public AstrometrySetup ()
+
+    public AstrometrySetup ()
 		{
         Locale.setDefault(IJU.locale);
 		}
@@ -368,14 +369,17 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
         skipIfHasWCSCB.addItemListener (this);
         astrometrySetupPanel.add(skipIfHasWCSCB);
 
-        JLabel skipLabel3 = new JLabel ("");
-//        skipLabel3.setPreferredSize(fitsDummySize);
-        skipLabel3.setHorizontalAlignment(JLabel.RIGHT);
-        astrometrySetupPanel.add (skipLabel3);
+        fpackBox = new JCheckBox("FPACK", fpack);
+        fpackBox.setFont(p12);
+        fpackBox.setToolTipText("Compress outfile file with FPACK format (compresses FITS data).");
+        fpackBox.addItemListener(this);
+        astrometrySetupPanel.add(fpackBox);
 
-        JLabel skipLabel4 = new JLabel ("");
-//        skipLabel4.setPreferredSize(fitsDummySize);
-        astrometrySetupPanel.add (skipLabel4);  
+        compressBox = new JCheckBox("GZIP", compress);
+        compressBox.setFont(p12);
+        compressBox.setToolTipText("Compress outfile file in GZIP format (compresses FITS header information also).");
+        compressBox.addItemListener(this);
+        astrometrySetupPanel.add(compressBox);
 
         JLabel skipLabel5 = new JLabel ("");
 //        skipLabel5.setPreferredSize(fitsDummySize);
@@ -1428,7 +1432,7 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
 //        fitsDummyLabel5.setPreferredSize(fitsDummySize);
 		astrometrySetupPanel.add (fitsDummyLabel5);
        
-        SpringUtil.makeCompactGrid (astrometrySetupPanel, nlines, astrometrySetupPanel.getComponentCount()/nlines, 2,2,2,2);
+        SpringUtil.makeCompactGrid (astrometrySetupPanel, nlines, 5, 2,2,2,2);
         scrollPane = new JScrollPane(astrometrySetupPanel);
         astrometrySetupFrame.add(scrollPane);
 		astrometrySetupFrame.pack();
@@ -1479,7 +1483,15 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
         else if (source.equals(skipIfHasWCSCB))
             {
             skipIfHasWCS = selected;
-            }        
+            }
+        else if (source.equals(compressBox))
+        {
+            compress = selected;
+        }
+        else if (source.equals(fpackBox))
+        {
+            fpack = selected;
+        }
         else if (source.equals(processStackCB))
             {
             processStack = selected;
@@ -2060,6 +2072,9 @@ double[] processCoordinatePair(JTextField textFieldA, int decimalPlacesA, int ba
         DPSaveRawWithWCS = Prefs.get ("astrometry.DPSaveRawWithWCS", DPSaveRawWithWCS);
         skipIfHasWCS = Prefs.get ("astrometry.skipIfHasWCS", skipIfHasWCS);
 
+        compress = Prefs.get ("astrometry.gzip", compress);
+        fpack = Prefs.get ("astrometry.fpack", fpack);
+
         annotate = Prefs.get ("astrometry.annotate", annotate);
         annotateRadius = Prefs.get ("astrometry.annotateRadius",annotateRadius);
         annotateRadiusStep = Prefs.get ("astrometry.annotateRadiusStep",annotateRadiusStep);
@@ -2115,6 +2130,9 @@ double[] processCoordinatePair(JTextField textFieldA, int decimalPlacesA, int ba
         Prefs.set ("astrometry.autoSave", autoSave);
         Prefs.set ("astrometry.DPSaveRawWithWCS", DPSaveRawWithWCS);
         Prefs.set ("astrometry.skipIfHasWCS", skipIfHasWCS);
+
+        Prefs.set ("astrometry.gzip", compress);
+        Prefs.set ("astrometry.fpack", fpack);
 
         Prefs.set ("astrometry.annotate", annotate);
         Prefs.set ("astrometry.annotateRadius",annotateRadius);

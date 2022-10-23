@@ -1133,7 +1133,7 @@ public class IJU {
 
         if (imp != null) {
             if (FitsExtensionUtil.isFitsFile(path)) {
-                IJ.runPlugIn(imp, "ij.plugin.FITS_Writer", path + ".gz");
+                IJ.runPlugIn(imp, "ij.plugin.FITS_Writer", path + (compress ? ".gz" : ""));
                 compress = false; // FITS_Writer already compresses
             } else {
                 IJ.save(imp, path);

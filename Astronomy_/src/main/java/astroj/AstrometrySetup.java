@@ -336,18 +336,32 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
         autoSaveCB.addItemListener (this);
         astrometrySetupPanel.add(autoSaveCB);
 
+        var panel = new JPanel();
+        fpackBox = new JCheckBox("FPACK", fpack);
+        fpackBox.setFont(p12);
+        fpackBox.setToolTipText("Compress outfile file with FPACK format (compresses FITS data).");
+        fpackBox.addItemListener(this);
+        panel.add(fpackBox);
+
+        compressBox = new JCheckBox("GZIP", compress);
+        compressBox.setFont(p12);
+        compressBox.setToolTipText("Compress outfile file in GZIP format (compresses FITS header information also).");
+        compressBox.addItemListener(this);
+        panel.add(compressBox);
+        astrometrySetupPanel.add(panel);
+
         JLabel autoSaveLabel3 = new JLabel ("<html><b>IMPORTANT WARNING: </b></html>");
 //        autoSaveLabel3.setPreferredSize(fitsDummySize);
         autoSaveLabel3.setHorizontalAlignment(JLabel.RIGHT);
         astrometrySetupPanel.add (autoSaveLabel3);
 
-        JLabel autoSaveLabel4 = new JLabel (notDP?"<html><b>overwrites original image</b></html>":"<html><b>re-writes raw science file</b></html>");
+        JLabel autoSaveLabel4 = new JLabel (notDP?"<html><b>may overwrite original image</b></html>":"<html><b>re-writes raw science file</b></html>");
 //        autoSaveLabel4.setPreferredSize(fitsDummySize);
         astrometrySetupPanel.add (autoSaveLabel4);  
 
-        JLabel autoSaveLabel5 = new JLabel (notDP?"":"<html><b>(with WCS headers)</b></html>");
+        /*JLabel autoSaveLabel5 = new JLabel (notDP?"":"<html><b>(with WCS headers)</b></html>");
 //        autoSaveLabel4.setPreferredSize(fitsDummySize);
-        astrometrySetupPanel.add (autoSaveLabel5);             
+        astrometrySetupPanel.add (autoSaveLabel5); */
 
         
         
@@ -369,22 +383,14 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
         skipIfHasWCSCB.addItemListener (this);
         astrometrySetupPanel.add(skipIfHasWCSCB);
 
-        fpackBox = new JCheckBox("FPACK", fpack);
-        fpackBox.setFont(p12);
-        fpackBox.setToolTipText("Compress outfile file with FPACK format (compresses FITS data).");
-        fpackBox.addItemListener(this);
-        astrometrySetupPanel.add(fpackBox);
 
-        compressBox = new JCheckBox("GZIP", compress);
-        compressBox.setFont(p12);
-        compressBox.setToolTipText("Compress outfile file in GZIP format (compresses FITS header information also).");
-        compressBox.addItemListener(this);
-        astrometrySetupPanel.add(compressBox);
 
         JLabel skipLabel5 = new JLabel ("");
 //        skipLabel5.setPreferredSize(fitsDummySize);
         astrometrySetupPanel.add (skipLabel5);             
-     
+        astrometrySetupPanel.add (new JLabel (""));
+        astrometrySetupPanel.add (new JLabel (""));
+
         
 //-------------------------------------------------------------------
 

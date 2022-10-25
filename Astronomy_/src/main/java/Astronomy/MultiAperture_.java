@@ -1523,7 +1523,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         var hasErrored = false;
         var oc = OverlayCanvas.getOverlayCanvas(asw.getImagePlus());
         for (int i = firstSlice; i <= lastSlice; i++) {
+            imp.unlock();
             asw.showSlice(i);
+            imp.lockSilently();
             asw.updateWCS();
             oc.clearRois();
 

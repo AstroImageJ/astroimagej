@@ -112,6 +112,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			if (firstImageIndex<0)
 			{
 				IJ.error("Failed to find an image HDU");
+				postFitsRead.close();
 				return;
 			}
 
@@ -127,6 +128,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 				}
 			} catch (FitsException e) {
 				IJ.error("AIJ does not recognized this file as a FITS file: " + e.getMessage());
+				postFitsRead.close();
 				return;
 			}
 			//IJ.log("Opened with nom.tam.fits");
@@ -140,6 +142,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 				setFileInfo(fileInfo);
 			} catch (FitsException e) {
 				IJ.error("Failed to decode fileInfo: " + e.getMessage());
+				postFitsRead.close();
 				return;
 			}
 
@@ -147,6 +150,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 
 			if ((wi < 0) || (he < 0)) {
 				IJ.error("This does not appear to be a FITS file. " + wi + " " + he);
+				postFitsRead.close();
 				return;
 			}
 
@@ -163,7 +167,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 
 			setProperty("Info", getHeaderInfo(displayHdu));
 
-			closeThing(postFitsRead.fits);
+			postFitsRead.close();
 
 			IJ.showStatus("");
 		} else {   // Use legacy fits reader in case of failure
@@ -792,7 +796,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		try {
 			f = fr.fits;
 			var hdus = f.read();
-			fr.zipFile.ifPresent(this::closeThing);
+			fr.close();
 
 			return new PostFitsRead(f, hdus);
 		} catch (FitsException e) {
@@ -845,9 +849,18 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		public FitsRead(boolean hasErrored) {
 			this(null, Optional.empty(), hasErrored);
 		}
+
+		public void close() {
+			closeThing(fits);
+			zipFile.ifPresent(FITS_Reader::closeThing);
+		}
 	}
 
-	private record PostFitsRead(Fits fits, BasicHDU<?>[] hdus) {}
+	private record PostFitsRead(Fits fits, BasicHDU<?>[] hdus) {
+		public void close() {
+			closeThing(fits);
+		}
+	}
 
 	public record HeaderCardFilter(Pair.OptionalGenericPair<String, String> filter1,
 								   Pair.OptionalGenericPair<String, String> filter2, boolean useAnd) {
@@ -868,7 +881,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		}
 	}
 
-	private void closeThing(Closeable closeable) {
+	protected static void closeThing(Closeable closeable) {
 		if (closeable == null) return;
 		try {
 			closeable.close();

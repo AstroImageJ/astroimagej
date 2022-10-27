@@ -1797,6 +1797,33 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             end = size - 1;
         }
 
+        if (firstClick) {
+            switch (radiusSetting) {
+                case AUTO_VAR_FWHM -> {
+                    var x = adjustAperture(imp, xCenter, yCenter, radius, rBack1, rBack2, reposition);
+                    var center = x.center();
+                    var xFWHM = center.width();
+                    var yFWHM = center.height();
+
+                    radius = Math.max(xFWHM, yFWHM) * ApRadius.AUTO_VAR_FWHM.cutoff;
+                    Prefs.set("aperture.radius", radius);
+                    Prefs.set("aperture.rback1", rBack1);
+                    Prefs.set("aperture.rback2", rBack2);
+                }
+                case AUTO_VAR_RAD_PROF -> {
+                    var rs = new Seeing_Profile(true).getRadii(imp, xPos[0], yPos[0], ApRadius.AUTO_VAR_RAD_PROF.cutoff, true, true);
+                    if (rs.isValid()) {
+                        radius = rs.r();
+                        rBack1 = rs.r2();
+                        rBack2 = rs.r3();
+                        Prefs.set("aperture.radius", radius);
+                        Prefs.set("aperture.rback1", rBack1);
+                        Prefs.set("aperture.rback2", rBack2);
+                    }
+                }
+            }
+        }
+
         for (int ap = start; ap <= end; ap++) {
             setAbsMag(99.999);
             if (!isRefStar[ap]) {

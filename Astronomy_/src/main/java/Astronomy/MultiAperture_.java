@@ -1200,8 +1200,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 var rs = evaluateStackForRadii();
                 ocanvas.removeRoi(warning);
                 d.dispose();
-                if (!rs.centroidSuccessful()) {
-                    showWarning("Failed to retrieve radii for one or more images.\nDo you wish to continue?", true);
+                if (!rs.success()) {
+                    showWarning("Failed to retrieve radii for %1$d/%2$d images.\nDo you wish to continue?".formatted(rs.count, lastSlice - firstSlice), true);
                 }
             }
 
@@ -1485,7 +1485,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         }
     }
 
-    private Seeing_Profile.ApRadii evaluateStackForRadii() {
+    private Output evaluateStackForRadii() {
         List<Seeing_Profile.ApRadii> radii = new ArrayList<>(lastSlice - firstSlice);
         var sp = new Seeing_Profile(true);
         //sp.setRoundRadii(false);
@@ -1520,7 +1520,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             }
         }
 
-        var hasErrored = false;
+        var hasErrored = 0;
         var oc = OverlayCanvas.getOverlayCanvas(asw.getImagePlus());
         for (int i = firstSlice; i <= lastSlice; i++) {
             imp.unlock();
@@ -1536,10 +1536,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             }
 
             var rs = sp.getRadii(imp, x, y, ApRadius.AUTO_FIXED_STACK_RAD.cutoff, true, true);
-            if (cancelled) return rs;
+            if (cancelled) return new Output(rs.r(), rs.r2(), rs.r3(), 0);
             if (!rs.centroidSuccessful()) {
                 AIJLogger.log("Failed to centroid on slice: " + i + ".");
-                hasErrored = true;
+                hasErrored++;
                 continue;
             }
             x = sp.X0;
@@ -1614,7 +1614,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         sp.plot.getImagePlus().getWindow().setVisible(true);
 
         IJ.showProgress(1);
-        return rs.setSuccess(!hasErrored);
+
+        return new Output(rs.r(), rs.r2(), rs.r3(), hasErrored);
     }
 
     private double upperMadMedian(double[] a) {
@@ -4260,6 +4261,12 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     }
 
     record WeightedCoordinateMaxima(StarFinder.CoordinateMaxima cm, double weight) {
+    }
+
+    record Output(double r, double r1, double r2, int count) {
+        public boolean success() {
+            return Output.this.count == 0;
+        }
     }
 
 }

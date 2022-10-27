@@ -38,6 +38,7 @@ import java.net.*;
 import java.text.DecimalFormat;
 import java.util.List;
 import java.util.*;
+import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
 
@@ -3665,7 +3666,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
 
 
         else if (b == multiApertureMenuItem) {
-            IJ.runPlugIn("Astronomy.MultiAperture_", "");
+            Executors.newSingleThreadExecutor().submit(() -> IJ.runPlugIn("Astronomy.MultiAperture_", ""));
         } else if (b == multiPlotMenuItem) {
             IJ.runPlugIn("Astronomy.MultiPlot_", "");
         } else if (b == measurementMenuItem) {
@@ -3845,7 +3846,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             imp.unlock();
         } else if (b == buttonMultiAperture) {
             reenterAstronomyTool();
-            IJ.runPlugIn("Astronomy.MultiAperture_", "");
+            Executors.newSingleThreadExecutor().submit(() -> IJ.runPlugIn("Astronomy.MultiAperture_", ""));
         } else if (b == buttonAlign) {
             reenterAstronomyTool();
             IJ.runPlugIn("Astronomy.Stack_Aligner", "");
@@ -5390,9 +5391,27 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         ImageProcessor ip = imp.getProcessor();
         slice = imp.getCurrentSlice();
         cal = imp.getCalibration();
+        /*getStatistics();
+        minValue = stats.min;
+        maxValue = stats.max;
+        min = minValue;
+        max = maxValue;
+        if (imp.getType() == ImagePlus.COLOR_256 || imp.getType() == ImagePlus.COLOR_RGB || imp.getType() == ImagePlus.GRAY8) {
+            useFixedMinMaxValues = false;
+            minValue = cal.getCValue(0);
+            maxValue = cal.getCValue(255);
+            if (min < minValue) min = minValue;
+            if (max > maxValue) max = maxValue;
+        } else {
+            maxValue = useFixedMinMaxValues ? fixedMaxValue : stats.max;
+            minValue = useFixedMinMaxValues ? fixedMinValue : stats.min;
+            if (imp.getType() == ImagePlus.GRAY16 && maxValue - minValue < 256)
+                maxValue = minValue + 255;
+        }*/
         if (imp.getType() == ImagePlus.COLOR_RGB) {
-            ip.reset();
-            ip.snapshot();
+            var oldIp = imp.getStack().getProcessor(slice);
+            /*oldIp.reset();
+            ip.snapshot();*/
             cp = (ColorProcessor) (ip.duplicate());
         }
         impTitle = imp.getTitle();

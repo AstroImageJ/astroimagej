@@ -7,7 +7,7 @@ public class FitsExtensionUtil {
     public static final Pattern UNCOMPRESSED_FITS_EXTENSION =
             Pattern.compile(".*(\\.[Ff][Ii]?[Tt][Ss]?$)");
     public static final Pattern COMPRESSED_FITS_EXTENSION =
-            Pattern.compile("(?<FILENAME>.*)(\\.[Ff][Ii]?[Tt][Ss]?(?<FPACK>\\.[Ff][Zz])?(?<GZIP>\\.[Gg][Zz])?$)");
+            Pattern.compile("(?<FILENAME>.*)(?<EXT>\\.[Ff][Ii]?[Tt][Ss]?(?<FPACK>\\.[Ff][Zz])?(?<GZIP>\\.[Gg][Zz])?$)");
 
     public static boolean isFitsFile(String path) {
         return isFitsFile(path, true);
@@ -44,10 +44,41 @@ public class FitsExtensionUtil {
             }
         }
 
-        var s = fileNameWithoutExt(file);
+        var name = fileNameWithoutExt(file);
+        var ext = ".fits";
+        var fpack = ".fz";
+        var gzip = ".gz";
 
-        return s + ".fits" + (modeSet.contains(CompressionMode.FPACK) ? ".fz" : "") +
-                (modeSet.contains(CompressionMode.GZIP) ? ".gz" : "");
+        var matcher = COMPRESSED_FITS_EXTENSION.matcher(file);
+
+        if (matcher.matches()) {
+            var s = matcher.group("FILENAME");
+            if (s != null) {
+                name = s;
+            }
+            s = matcher.group("EXT");
+            if (s != null) {
+                ext = s;
+            }
+            s = matcher.group("FPACK");
+            if (s != null) {
+                fpack = s;
+            }
+            s = matcher.group("GZIP");
+            if (s != null) {
+                gzip = s;
+            }
+        }
+
+        if (!modeSet.contains(CompressionMode.FPACK)) {
+            fpack = "";
+        }
+
+        if (!modeSet.contains(CompressionMode.GZIP)) {
+            gzip = "";
+        }
+
+        return name + ext + fpack + gzip;
     }
 
     public static EnumSet<CompressionMode> compressionModes(String file) {

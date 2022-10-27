@@ -5391,7 +5391,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         ImageProcessor ip = imp.getProcessor();
         slice = imp.getCurrentSlice();
         cal = imp.getCalibration();
-        /*getStatistics();
+        getStatistics();
         minValue = stats.min;
         maxValue = stats.max;
         min = minValue;
@@ -5407,11 +5407,11 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             minValue = useFixedMinMaxValues ? fixedMinValue : stats.min;
             if (imp.getType() == ImagePlus.GRAY16 && maxValue - minValue < 256)
                 maxValue = minValue + 255;
-        }*/
+        }
         if (imp.getType() == ImagePlus.COLOR_RGB) {
             var oldIp = imp.getStack().getProcessor(slice);
-            /*oldIp.reset();
-            ip.snapshot();*/
+            oldIp.reset();
+            ip.snapshot();
             cp = (ColorProcessor) (ip.duplicate());
         }
         impTitle = imp.getTitle();

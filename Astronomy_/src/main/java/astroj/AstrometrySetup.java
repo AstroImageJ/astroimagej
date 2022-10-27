@@ -350,7 +350,7 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
         panel.add(compressBox);
         astrometrySetupPanel.add(panel);
 
-        JLabel autoSaveLabel3 = new JLabel ("<html><b>IMPORTANT WARNING: </b></html>");
+        JLabel autoSaveLabel3 = new JLabel ("<html><b>WARNING: </b></html>");
 //        autoSaveLabel3.setPreferredSize(fitsDummySize);
         autoSaveLabel3.setHorizontalAlignment(JLabel.RIGHT);
         astrometrySetupPanel.add (autoSaveLabel3);

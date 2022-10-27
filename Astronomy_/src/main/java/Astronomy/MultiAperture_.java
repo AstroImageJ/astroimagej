@@ -1556,6 +1556,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             IJ.showProgress(i / (float)(lastSlice - firstSlice));
         }
         imp.setSlice(firstSlice);
+        imp.unlock();
 
         radii = radii.stream().filter(Seeing_Profile.ApRadii::isValid).toList();
         var sr = radii.stream().mapToDouble(Seeing_Profile.ApRadii::r).toArray();

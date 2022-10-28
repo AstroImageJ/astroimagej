@@ -788,7 +788,6 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		//IJ.log("Opening: " + directory + fileName);
 
 		FitsFactory.setAllowHeaderRepairs(true);
-		fileName = fileName.endsWith(".fz") ? fileName.substring(0, fileName.length() - 3) : fileName;
 
 		var fr = getFitsFile(path);
 		if (fr.hasErrored) return null;

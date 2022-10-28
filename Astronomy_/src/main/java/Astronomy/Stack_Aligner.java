@@ -348,7 +348,6 @@ public class Stack_Aligner extends MultiAperture_
             }
         
         imageFilename = IJU.getSliceFilename(imp, slice);
-        if (imageFilename.endsWith(".fz")) imageFilename = imageFilename.substring(0, imageFilename.length() - 3);
         if (isVirtual)
             {
             

@@ -144,6 +144,11 @@ public class Astrometry { //implements KeyListener
         setupActive = false;
         if (runSetup) {
             setupActive = true;
+
+            var modes = FitsExtensionUtil.compressionModes(IJU.getSliceFilename(impOriginal, startSlice));
+            Prefs.set("astrometry.gzip", modes.contains(FitsExtensionUtil.CompressionMode.GZIP));
+            Prefs.set("astrometry.fpack", modes.contains(FitsExtensionUtil.CompressionMode.FPACK));
+
             astrometrySetup = new AstrometrySetup();
             setupCanceled = astrometrySetup.start(1, impOriginal.getCurrentSlice(), impOriginal.getStackSize(), "START", acc, useSexagesimal);
             if (setupCanceled) {

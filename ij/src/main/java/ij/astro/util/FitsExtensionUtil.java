@@ -7,7 +7,7 @@ public class FitsExtensionUtil {
     public static final Pattern UNCOMPRESSED_FITS_EXTENSION =
             Pattern.compile(".*(\\.[Ff][Ii]?[Tt][Ss]?$)");
     public static final Pattern COMPRESSED_FITS_EXTENSION =
-            Pattern.compile("(?<FILENAME>.*)(?<EXT>\\.[Ff][Ii]?[Tt][Ss]?(?<FPACK>\\.[Ff][Zz])?(?<GZIP>\\.[Gg][Zz])?$)");
+            Pattern.compile("(?<FILENAME>.*)(?<EXT>(?<PRIMEXT>\\.[Ff][Ii]?[Tt][Ss]?)(?<FPACK>\\.[Ff][Zz])?(?<GZIP>\\.[Gg][Zz])?$)");
 
     public static boolean isFitsFile(String path) {
         return isFitsFile(path, true);
@@ -56,7 +56,7 @@ public class FitsExtensionUtil {
             if (s != null) {
                 name = s;
             }
-            s = matcher.group("EXT");
+            s = matcher.group("PRIMEXT");
             if (s != null) {
                 ext = s;
             }

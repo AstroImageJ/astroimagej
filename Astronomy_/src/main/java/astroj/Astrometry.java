@@ -18,6 +18,9 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -898,7 +901,14 @@ public class Astrometry { //implements KeyListener
                                 return FAILED;
                             }
                         }
-                        saveSuccess = IJU.saveFile(imp2, wcsPath + slash + imageFilename, showLog, showLogDateTime, "");
+                        var p = Path.of(wcsPath).resolve(imageFilename);
+                        var pn = Path.of(imageDirname).resolve(imageFilename);
+                        saveSuccess = IJU.saveFile(imp2, p.toString(), showLog, showLogDateTime, "");
+                        try {
+                            Files.move(p, pn, StandardCopyOption.REPLACE_EXISTING);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
                     }
                 } else {
 //                    IJ.saveAs(impOriginal,""+imageFilename.substring(imageFilename.lastIndexOf('.')),imageDirname+imageFilename);

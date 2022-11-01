@@ -404,8 +404,15 @@ public class Aperture_ implements PlugInFilter {
      * Performs exact measurement of object position and integrated brightness.
      */
     protected boolean measureAperture() {
+        return measureAperture(true);
+    }
+
+    /**
+     * Performs exact measurement of object position and integrated brightness.
+     */
+    protected boolean measureAperture(boolean refetchPrefs) {
         boolean returnVal = true;
-        if (!adjustAperture(false)) {
+        if (!adjustAperture(false, true, refetchPrefs)) {
             if (this instanceof MultiAperture_ && !(this instanceof Stack_Aligner) && !(Prefs.get(MultiAperture_.PREFS_HALTONERROR, true))) {
                 returnVal = false;
             } else {
@@ -505,10 +512,14 @@ public class Aperture_ implements PlugInFilter {
     }
 
     protected boolean adjustAperture(boolean updatePhotometry) {
-        return adjustAperture(updatePhotometry, showAsCentered);
+        return adjustAperture(updatePhotometry, true);
     }
 
     protected boolean adjustAperture(boolean updatePhotometry, boolean centroid) {
+        return adjustAperture(updatePhotometry, centroid, true);
+    }
+
+    protected boolean adjustAperture(boolean updatePhotometry, boolean centroid, boolean refetchPrefs) {
         ip = imp.getProcessor();
         if (stackSize > 1) {
             ImageStack stack = imp.getImageStack();
@@ -516,8 +527,8 @@ public class Aperture_ implements PlugInFilter {
         }
 
         // GET MEASURMENT PARAMETERS AGAIN IN CASE THEY HAVE CHANGED
+        if (refetchPrefs) getMeasurementPrefs();
 
-        getMeasurementPrefs();
         if (!(this instanceof MultiAperture_)) {
             showAsCentered = reposition;
         } else {

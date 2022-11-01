@@ -1678,7 +1678,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         initialSet.removeIf(cm -> cm.value() >= maxP);
 
         TreeSet<StarFinder.CoordinateMaxima> n;
-        getMeasurementPrefs();
+        //getMeasurementPrefs();
 
         n = initialSet.parallelStream().map(m -> {
             // Centroid for all stars
@@ -1808,19 +1808,17 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     var yFWHM = center.height();
 
                     radius = Math.max(xFWHM, yFWHM) * ApRadius.AUTO_VAR_FWHM.cutoff;
-                    Prefs.set("aperture.radius", radius);
-                    Prefs.set("aperture.rback1", rBack1);
-                    Prefs.set("aperture.rback2", rBack2);
+                    vradius = radius;
                 }
                 case AUTO_VAR_RAD_PROF -> {
                     var rs = new Seeing_Profile(true).getRadii(imp, xPos[0], yPos[0], ApRadius.AUTO_VAR_RAD_PROF.cutoff, true, true);
                     if (rs.isValid()) {
                         radius = rs.r();
+                        vradius = rs.r();
                         rBack1 = rs.r2();
+                        vrBack1 = rs.r2();
                         rBack2 = rs.r3();
-                        Prefs.set("aperture.radius", radius);
-                        Prefs.set("aperture.rback1", rBack1);
-                        Prefs.set("aperture.rback2", rBack2);
+                        vrBack2 = rs.r3();
                     }
                 }
             }
@@ -1877,7 +1875,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 if (ap == 0) {
                     boolean holdReposition = Prefs.get("aperture.reposition", reposition);
                     Prefs.set("aperture.reposition", centroidStar[0]);
-                    if (!adjustAperture(false)) {
+                    if (!adjustAperture(false, true, false)) {
                         if (!autoMode || (autoMode && haltOnError)) {
                             Prefs.set("aperture.reposition", holdReposition);
                             centerROI();
@@ -1913,7 +1911,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             Prefs.set("aperture.reposition", centroidStar[ap] && (enableCentroid || ((useMA || useAlign) && useWCS)));
             setShowAsCentered(centroidStar[ap]);
             Prefs.set(MultiAperture_.PREFS_HALTONERROR, false);
-            if (!measureAperture()) {
+            if (!measureAperture(false)) {
                 if (autoMode && holdHaltOnError) {
                     Prefs.set(MultiAperture_.PREFS_HALTONERROR, holdHaltOnError);
                     haltOnError = holdHaltOnError;

@@ -259,13 +259,13 @@ public class FITS_Writer implements PlugIn {
 					hdu = compressedHdu;
 				}
 
-				if (maxImage > 1) IJ.showStatus("!Writing multiHDU FITS image: " + slice);
+				if (maxImage > 1) IJ.showStatus("Writing multiHDU FITS image: " + slice);
 				hdu.write(out);
 
 				if (specificSlice == -1) IJ.showProgress(slice / (float)maxImage);
 			}
 
-			IJ.showStatus("!Finishing FITS export...");
+			IJ.showStatus("Finishing FITS export...");
 
 			out.close();
 			IJ.showProgress(1);
@@ -274,7 +274,7 @@ public class FITS_Writer implements PlugIn {
 			IJ.error("Failed to write file.");
 		}
 
-		IJ.showStatus("!");
+		IJ.showStatus("");
 	}
 
 //	/**

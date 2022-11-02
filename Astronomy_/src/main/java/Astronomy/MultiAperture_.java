@@ -1772,6 +1772,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         hasWCS = asw.hasWCS();
         if (hasWCS) wcs = asw.getWCS();
 
+        var radii = new Seeing_Profile.ApRadii(radius, rBack1, rBack2);
+
         if (!autoMode && previous && firstClick && nAperturesStored > 0) {
             dx = xCenter - xPosStored[0];
             dy = yCenter - yPosStored[0];
@@ -1944,6 +1946,11 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 decPos[ap] = radec[1];
             }
         }
+
+        Prefs.set("aperture.radius", radii.r());
+        Prefs.set("aperture.rback1", radii.r2());
+        Prefs.set("aperture.rback2", radii.r3());
+
         return true;
     }
 

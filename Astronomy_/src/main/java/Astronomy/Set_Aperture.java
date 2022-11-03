@@ -209,7 +209,7 @@ public class Set_Aperture implements PlugIn
                             // We don't actually care about what happens, we just want the blocking
                             EventQueue.invokeAndWait(() -> {
                             });
-                            SwingUtilities.invokeLater(() -> {});
+                            SwingUtilities.invokeAndWait(() -> {});
                         } catch (InterruptedException | InvocationTargetException e) {
                             e.printStackTrace();
                         }

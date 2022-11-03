@@ -24,6 +24,7 @@ import java.text.NumberFormat;
 import java.util.List;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -4036,8 +4037,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
         if (!(this instanceof Stack_Aligner) && !gd.wasOKed()) {
             cancel();
-            Thread t2 = new Thread(() -> IJ.runPlugIn("Astronomy.Set_Aperture", "from_MA"));
-            t2.start();
+            Executors.newSingleThreadExecutor().submit(() -> {IJ.runPlugIn("Astronomy.Set_Aperture", "from_MA");});
             return false;
         }
 

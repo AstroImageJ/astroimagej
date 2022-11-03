@@ -5,9 +5,7 @@ import ij.Prefs;
 import ij.gui.GenericDialog;
 import ij.plugin.PlugIn;
 
-import javax.swing.*;
 import java.awt.*;
-import java.lang.reflect.InvocationTargetException;
 
 /**
  * Setup plug-in for Aperture_ which sets the following characteristics:
@@ -201,22 +199,7 @@ public class Set_Aperture implements PlugIn
             }
         if (startedFromMA) 
             {
-            Thread t2 = new Thread()
-                {
-                public void run()
-                    {
-                        try {
-                            // We don't actually care about what happens, we just want the blocking
-                            EventQueue.invokeAndWait(() -> {
-                            });
-                            SwingUtilities.invokeAndWait(() -> {});
-                        } catch (InterruptedException | InvocationTargetException e) {
-                            e.printStackTrace();
-                        }
-                    IJ.runPlugIn("Astronomy.MultiAperture_", "");
-                    }
-                };
-            t2.start();         
+            EventQueue.invokeLater(() -> IJ.runPlugIn("Astronomy.MultiAperture_", ""));
             }
 		}
 

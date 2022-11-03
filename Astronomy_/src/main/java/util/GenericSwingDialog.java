@@ -787,110 +787,108 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
     }
 
     public void displayDialog(boolean show) {
-        SwingUtilities.invokeLater(() -> {
-            if (!show) return;
-            //setupPaneLayout();
-            setResizable(true);
-            //todo limit max size to some fraction of screen size?
-            setMaximumSize(Toolkit.getDefaultToolkit().getScreenSize());
-            var displayPane = new JPanel();
-            displayPane.setLayout(new GridBagLayout());
-            if (no != null) {
-                scrollPane.validate();
-                scrollPane.setMinimumSize(getLayout().minimumLayoutSize(scrollPane));
-            }
-            setLayout(new GridBagLayout());
-            Panel buttons = new Panel();
-            buttons.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 0));
-            okay.addActionListener($ -> {
-                wasOKed = true;
+        if (!show) return;
+        //setupPaneLayout();
+        setResizable(true);
+        //todo limit max size to some fraction of screen size?
+        setMaximumSize(Toolkit.getDefaultToolkit().getScreenSize());
+        var displayPane = new JPanel();
+        displayPane.setLayout(new GridBagLayout());
+        if (no != null) {
+            scrollPane.validate();
+            scrollPane.setMinimumSize(getLayout().minimumLayoutSize(scrollPane));
+        }
+        setLayout(new GridBagLayout());
+        Panel buttons = new Panel();
+        buttons.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 0));
+        okay.addActionListener($ -> {
+            wasOKed = true;
+            dispose();
+        });
+        okay.addKeyListener(this);
+        if (!hideCancelButton) {
+            cancel.addActionListener($ -> {
+                wasCanceled = true;
                 dispose();
             });
-            okay.addKeyListener(this);
-            if (!hideCancelButton) {
-                cancel.addActionListener($ -> {
-                    wasCanceled = true;
-                    dispose();
-                });
-                cancel.addKeyListener(this);
-            }
-            if (no != null) {
-                no.addActionListener($ -> dispose());
-                no.addKeyListener(this);
-            }
-            boolean addHelp = helpURL != null;
-            if (addHelp) {
-                help = new JButton(helpLabel);
-                help.addActionListener($ -> {
-                    if (hideCancelButton && (helpURL == null || helpURL.equals(""))) {
-                        wasOKed = true;
-                    }
-                    showHelp();
-                });
-                help.addKeyListener(this);
-            }
-            if (IJ.isWindows() || Prefs.dialogCancelButtonOnRight) {
-                buttons.add(okay);
-                if (no != null) buttons.add(no);
-                if (!hideCancelButton) buttons.add(cancel);
-                if (addHelp) buttons.add(help);
-            } else {
-                if (addHelp) buttons.add(help);
-                if (no != null) buttons.add(no);
-                if (!hideCancelButton) buttons.add(cancel);
-                buttons.add(okay);
-            }
-            if (addToSameRow) {
-                c.gridx = GridBagConstraints.RELATIVE;
-            } else {
-                c.gridx = 0;
-                c.gridy++;
-            }
-            c.anchor = GridBagConstraints.SOUTHEAST;
-            c.gridwidth = addToSameRowCalled ? GridBagConstraints.REMAINDER : 2;
-            c.insets = new Insets(15, 0, 0, 0);
-            displayPane.add(scrollPane);
-            displayPane.add(buttons, c);//todo buttons not in scrollpane
-
-            Font font = new Font("Dialog", Font.PLAIN,12);
-            if (!fontSizeSet && font != null && Prefs.getGuiScale() != 1.0) {
-                fontSizeSet = true;
-                setFont(font.deriveFont((float) (font.getSize() * Prefs.getGuiScale())));
-            }
-            UIHelper.recursiveFontSetter(this, getFont());
-            UIHelper.recursiveFontSetter(rootPane, getFont());
-            UIHelper.recursiveFontSetter(scrollPane, getFont());
-            UIHelper.recursiveFontSetter(displayPane, getFont());
-            if (rootPane.getComponentCount() > 0) okay.requestFocusInWindow();
-            scrollPane.validate();
-            setMinimumSize(getLayout().minimumLayoutSize(scrollPane));
-            setMaximumSize(new Dimension(scrollPane.getPreferredSize().width, getMaximumSize().height));
-            setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-            setContentPane(displayPane);
-            displayPane.addComponentListener(new ComponentAdapter() {
-                @Override
-                public void componentResized(ComponentEvent e) {
-                    super.componentResized(e);
-                    var currentBorders = displayPane.getSize();
-                    var buttonPanelSize = buttons.getSize();
-
-                    var h = currentBorders.height - buttonPanelSize.height - 25;
-                    var w = currentBorders.width;
-                    scrollPane.setSize(new Dimension(w, h));
-                    scrollPane.setMinimumSize(new Dimension(w, h));
-                    repaint();
-                    revalidate();
+            cancel.addKeyListener(this);
+        }
+        if (no != null) {
+            no.addActionListener($ -> dispose());
+            no.addKeyListener(this);
+        }
+        boolean addHelp = helpURL != null;
+        if (addHelp) {
+            help = new JButton(helpLabel);
+            help.addActionListener($ -> {
+                if (hideCancelButton && (helpURL == null || helpURL.equals(""))) {
+                    wasOKed = true;
                 }
+                showHelp();
             });
-            if (centerDialog) {
-                GUI.centerOnImageJScreen(this);
+            help.addKeyListener(this);
+        }
+        if (IJ.isWindows() || Prefs.dialogCancelButtonOnRight) {
+            buttons.add(okay);
+            if (no != null) buttons.add(no);
+            if (!hideCancelButton) buttons.add(cancel);
+            if (addHelp) buttons.add(help);
+        } else {
+            if (addHelp) buttons.add(help);
+            if (no != null) buttons.add(no);
+            if (!hideCancelButton) buttons.add(cancel);
+            buttons.add(okay);
+        }
+        if (addToSameRow) {
+            c.gridx = GridBagConstraints.RELATIVE;
+        } else {
+            c.gridx = 0;
+            c.gridy++;
+        }
+        c.anchor = GridBagConstraints.SOUTHEAST;
+        c.gridwidth = addToSameRowCalled ? GridBagConstraints.REMAINDER : 2;
+        c.insets = new Insets(15, 0, 0, 0);
+        displayPane.add(scrollPane);
+        displayPane.add(buttons, c);//todo buttons not in scrollpane
+
+        Font font = new Font("Dialog", Font.PLAIN,12);
+        if (!fontSizeSet && font != null && Prefs.getGuiScale() != 1.0) {
+            fontSizeSet = true;
+            setFont(font.deriveFont((float) (font.getSize() * Prefs.getGuiScale())));
+        }
+        UIHelper.recursiveFontSetter(this, getFont());
+        UIHelper.recursiveFontSetter(rootPane, getFont());
+        UIHelper.recursiveFontSetter(scrollPane, getFont());
+        UIHelper.recursiveFontSetter(displayPane, getFont());
+        if (rootPane.getComponentCount() > 0) okay.requestFocusInWindow();
+        scrollPane.validate();
+        setMinimumSize(getLayout().minimumLayoutSize(scrollPane));
+        setMaximumSize(new Dimension(scrollPane.getPreferredSize().width, getMaximumSize().height));
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setContentPane(displayPane);
+        displayPane.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                super.componentResized(e);
+                var currentBorders = displayPane.getSize();
+                var buttonPanelSize = buttons.getSize();
+
+                var h = currentBorders.height - buttonPanelSize.height - 25;
+                var w = currentBorders.width;
+                scrollPane.setSize(new Dimension(w, h));
+                scrollPane.setMinimumSize(new Dimension(w, h));
+                repaint();
+                revalidate();
             }
-            validate();
-            pack();
-            setVisible(true);
-            validate();
-            pack();
         });
+        if (centerDialog) {
+            GUI.centerOnImageJScreen(this);
+        }
+        validate();
+        pack();
+        setVisible(true);
+        validate();
+        pack();
     }
 
     public void centerDialog(boolean b) {

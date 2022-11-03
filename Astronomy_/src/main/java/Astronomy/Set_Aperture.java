@@ -5,6 +5,10 @@ import ij.Prefs;
 import ij.gui.GenericDialog;
 import ij.plugin.PlugIn;
 
+import javax.swing.*;
+import java.awt.*;
+import java.lang.reflect.InvocationTargetException;
+
 /**
  * Setup plug-in for Aperture_ which sets the following characteristics:
  *	- aperture radii (object=AP_PREFS_RADIUS and background=AP_PREFS_RBACK1,2)
@@ -201,6 +205,14 @@ public class Set_Aperture implements PlugIn
                 {
                 public void run()
                     {
+                        try {
+                            // We don't actually care about what happens, we just want the blocking
+                            EventQueue.invokeAndWait(() -> {
+                            });
+                            SwingUtilities.invokeLater(() -> {});
+                        } catch (InterruptedException | InvocationTargetException e) {
+                            e.printStackTrace();
+                        }
                     IJ.runPlugIn("Astronomy.MultiAperture_", "");
                     }
                 };

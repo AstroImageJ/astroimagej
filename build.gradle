@@ -15,6 +15,11 @@ buildscript {
     dependencies {
         classpath 'io.github.fvarrui:javapackager:1.6.7-SNAPSHOT'
     }
+
+    // Needed for GrGit 5+
+    if (!JavaVersion.current().java11Compatible) {
+        throw new GradleException("Gradle daemon must be running on Java 11 or greater.")
+    }
 }
 
 plugins {

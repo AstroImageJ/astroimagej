@@ -3057,6 +3057,7 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
         saveFormatLabel.setEnabled(useScienceProcessing && saveProcessedData);
         saveFormatField.setEnabled(useScienceProcessing && saveProcessedData);
         compressBox.setEnabled(useScienceProcessing && saveProcessedData);
+        fpackBox.setEnabled(useScienceProcessing && saveProcessedData);
 
         runMultiApertureBox.setEnabled(useScienceProcessing && showScience);
         saveImageBox.setEnabled(useScienceProcessing && showScience);

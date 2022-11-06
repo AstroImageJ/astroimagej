@@ -509,6 +509,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 //        imp.getWindow().requestFocus();
 //        imp.getCanvas().requestFocusInWindow();
 
+        if (radiusSetting == ApRadius.AUTO_VAR_FWHM || radiusSetting == ApRadius.AUTO_VAR_RAD_PROF) {
+            oldRadii = new Seeing_Profile.ApRadii(radius, rBack1, rBack2);
+        }
+
         if (runningWCSOnlyAlignment) {
             startProcessStack();
         } else if (autoMode) {
@@ -2597,10 +2601,6 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         canvas = imp.getCanvas();
         stackRadii = new ArrayList<>();
         ocanvas = null;
-
-        if (radiusSetting == ApRadius.AUTO_VAR_FWHM || radiusSetting == ApRadius.AUTO_VAR_RAD_PROF) {
-            oldRadii = new Seeing_Profile.ApRadii(radius, rBack1, rBack2);
-        }
 
         long timeStart = System.currentTimeMillis();
 //        IJ.log("firstSlice="+firstSlice+"   lastSlice="+lastSlice);

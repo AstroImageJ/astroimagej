@@ -1180,8 +1180,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 subFrameHeight = subFrame.getHeight();
                 Prefs.set("plot2.subFrameLocationX", subFrameLocationX);
                 Prefs.set("plot2.subFrameLocationY", subFrameLocationY);
-                subscrollpane.removeAll();
-                subFrame.remove(subscrollpane);
             }
             if (refStarFrame != null) {
                 refStarPanelWasShowing = refStarFrame.isVisible();
@@ -10580,9 +10578,11 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         var mainsubpanel = new JPanel(new SpringLayout());
         mainsubpanel.addMouseMotionListener(panelMouseMotionListener);
 
-        subscrollpane = new JScrollPane(mainsubpanel);
         if (subscrollpane == null) {
             subscrollpane = new JScrollPane(mainsubpanel);
+        } else {
+            mainsubpanel = (JPanel) subscrollpane.getViewport().getView();
+            mainsubpanel.removeAll();
         }
         subFrame.setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         subFrame.addWindowListener(new WindowAdapter() {

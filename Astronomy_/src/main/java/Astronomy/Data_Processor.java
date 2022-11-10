@@ -5196,13 +5196,13 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
         return true;
     }
 
-    boolean saveProcessedFile(ImagePlus impLocal, String dirPath, String filePath, String name, String format) {
-        boolean localCompress = compress;
-        if (filePath.endsWith(".gz") || filePath.endsWith(".fz") || filePath.endsWith(".zip")) {
+    boolean saveProcessedFile(ImagePlus impLocal, String dirPath, String filePath, String type, String format) {
+        boolean isScienceImage = "processed science".equals(type);
+        if (filePath.endsWith(".zip")) {
             int dotIndex = filePath.lastIndexOf(".");
             filePath = filePath.substring(0, dotIndex);
-            if (!name.equals("processed science")) localCompress = true;
         }
+
         File saveDirectory;
         if (impLocal != null) {
             saveDirectory = new File(dirPath);
@@ -5217,18 +5217,23 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
                 }
 
             }
-            if (!format.trim().equals("") && !format.trim().equals(null)) {
+
+            if (format != null && !format.trim().equals("")) {
                 filePath = updateExtension(filePath, format);
             }
 
             if (FitsExtensionUtil.isFitsFile(filePath)) {
-                IJ.runPlugIn(impLocal, "ij.plugin.FITS_Writer", FitsExtensionUtil.makeFitsSave(filePath, fpack, compress));
+                if (isScienceImage) {
+                    IJ.runPlugIn(impLocal, "ij.plugin.FITS_Writer", FitsExtensionUtil.makeFitsSave(filePath, fpack, compress));
+                } else {
+                    IJ.runPlugIn(impLocal, "ij.plugin.FITS_Writer", FitsExtensionUtil.makeFitsSave(filePath));
+                }
             } else {
                 IJ.save((ImagePlus) impLocal.clone(), filePath);
             }
-            log("    Saved " + name + " file \"" + filePath + "\"");
+            log("    Saved " + type + " file \"" + filePath + "\"");
         } else {
-            error("ERROR: " + name + " image was null prior to save. Save aborted.");
+            error("ERROR: " + type + " image was null prior to save. Save aborted.");
             return false;
         }
         return true;

@@ -31,6 +31,14 @@ public class FitsExtensionUtil {
         return file;
     }
 
+    public static String makeFitsSave(String file) {
+        if (isFitsFile(file, true)) {
+            return file;
+        }
+
+        return makeFitsSave(file, null, null);
+    }
+
     public static String makeFitsSave(String file, boolean fpack, boolean gzip) {
         return makeFitsSave(file, fpack ? CompressionMode.FPACK : null, gzip ? CompressionMode.GZIP : null);
     }

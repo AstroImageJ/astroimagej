@@ -21,6 +21,7 @@ public class Memory implements PlugIn {
 	boolean sixtyFourBit;
 
 	public void run(String arg) {
+		getMemorySetting();
 		changeMemoryAllocation();
 		//IJ.log("setting="+getMemorySetting()/(1024*1024)+"MB");
 		//IJ.log("maxMemory="+maxMemory()/(1024*1024)+"MB");

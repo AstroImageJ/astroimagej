@@ -9,6 +9,10 @@ import ij.astro.util.FileAssociationHandler;
 import ij.astro.util.FileAssociationHandler.AssociationMapper;
 import ij.plugin.PlugIn;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 /**
  * Handle tasks on AIJ startup that need to reference code outside of the IJ package.
  * <p>
@@ -34,6 +38,18 @@ public class AIJStartupHandler implements PlugIn {
     @Override
     public void run(String arg) {
         IJ.runPlugIn(AstroImageJ_Updater.class.getCanonicalName(), "check");
+        ensureConfigFileExists();
         FileAssociationHandler.registerAssociation(multiplotTableHandler);
+    }
+
+    private void ensureConfigFileExists() {
+        var p = Path.of("AstroImageJ.cfg");
+        try {
+            if (Files.notExists(p)) {
+                Files.createFile(p);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

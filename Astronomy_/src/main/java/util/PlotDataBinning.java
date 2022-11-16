@@ -64,6 +64,7 @@ public class PlotDataBinning {
             }
 
             var binCompleted = Arrays.asList(Arrays.stream(bins).parallel().filter(DataBin::hasData)
+                    // Converts to array first as Stream#toList returns unmodifiable list, and we need to sort it
                     .map(withErr ? DataBin::binnedDatumErr : DataBin::binnedDatum).toArray(DoubleTriple[]::new));
             var outX = new double[binCompleted.size()];
             var outY = new double[binCompleted.size()];

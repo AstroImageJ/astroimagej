@@ -930,7 +930,7 @@ public class CurveFitter {
         return workingSource;
     }
 
-    private double[] trimData(double[] workingSource) {
+    private double[] markersTrimData(double[] workingSource) {
         fitMin[curve] = (useDMarker1 ? dMarker1Value : Double.NEGATIVE_INFINITY) + xOffset;
         fitMax[curve] = (useDMarker4 ? dMarker4Value : Double.POSITIVE_INFINITY) + xOffset;
         fitLeft[curve] = dMarker2Value + xOffset;
@@ -966,7 +966,7 @@ public class CurveFitter {
         var workingSource2 = new double[nn[curve]];
 
         //todo check on Source-Sky, Source_Error values, and detrend parameters for NaNs. If a NaN is found, bail out and give an appropriate error.
-        for (int j = 0; j < workingSource.length; j++) {
+        for (int j = 0; j < workingSource2.length; j++) {
             workingSource2[j] = Double.NaN;
             if (detrendFitIndex[curve] != 1) {
                 if (detrendFitIndex[curve] == 4) {
@@ -1092,8 +1092,8 @@ public class CurveFitter {
             yerr[i] = curveData.err[i];
             yAverage += y[i];
         }
-        detrendYE = trimData(curveData.err);
-        detrendY = trimData(y);
+        detrendYE = markersTrimData(curveData.err);
+        detrendY = markersTrimData(y);
 
         curveData.instancedParamData.forEach((columnInfo, data) -> detrend[columnInfo.detrendColumn] = data);
 
@@ -1182,6 +1182,9 @@ public class CurveFitter {
                         }
                     }
                 }
+
+                // Apply left/right marker trim
+                detrend[v] = markersTrimData(detrend[v]);
             }
 
             if (detrendFitIndex[curve] != 1) {

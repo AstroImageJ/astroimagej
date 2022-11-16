@@ -983,7 +983,7 @@ public class CurveFitter {
             }
         }
 
-        return workingSource2;//Arrays.stream(workingSource2).filter(Double::isFinite).toArray();
+        return Arrays.copyOf(Arrays.stream(workingSource2).filter(Double::isFinite).toArray(), nn[curve]);
     }
 
     private CurveData preprocessData(boolean[] localIsRefStar) {

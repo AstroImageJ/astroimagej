@@ -3659,9 +3659,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 if (detrendFitIndex[curve] == 9 && useTransitFit[curve] && showResidual[curve] && showLResidual[curve] && residualShift[curve] > 0.0) {
                     llab = new StringBuilder(ylabel[curve] + " Residuals");
                     llab.append(" (RMS=").append(sigma[curve] >= 1.0 ? uptoThreePlaces.format(sigma[curve]) : uptoFivePlaces.format(sigma[curve])).append(") (chi^2/dof=").append(uptoTwoPlaces.format(chi2dof[curve])).append(")");
-                    drawLegendSymbol(residualSymbol[curve], residualSymbol[curve] == ij.gui.Plot.DOT ? 4 : 1, residualColor[curve], legPosY, llab.toString());
-                    plot.addLabel(legendPosX, legPosY, llab.toString());
-                    legPosY += 18. / plotSizeY;
+                    if (drawLegendSymbol(residualSymbol[curve], residualSymbol[curve] == Plot.DOT ? 4 : 1, residualColor[curve], legPosY, llab.toString())) {
+                        plot.addLabel(legendPosX, legPosY, llab.toString());
+                        legPosY += 18. / plotSizeY;
+                    }
                 }
 
                 llab = new StringBuilder();
@@ -3782,9 +3783,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 }
 
                 if (useColumnName[curve] || useLegend[curve]) {
-                    drawLegendSymbol(marker[curve], (marker[curve] == ij.gui.Plot.DOT) ? 4 : 1, color[curve], legPosY, llab.toString());
-                    plot.addLabel(legendPosX, legPosY, llab.toString());
-                    legPosY += 18. / plotSizeY;
+                    if (drawLegendSymbol(marker[curve], (marker[curve] == Plot.DOT) ? 4 : 1, color[curve], legPosY, llab.toString())) {
+                        plot.addLabel(legendPosX, legPosY, llab.toString());
+                        legPosY += 18. / plotSizeY;
+                    }
                 }
 
                 if (detrendFitIndex[curve] == 9 && useTransitFit[curve] && showModel[curve] && showLTranParams[curve]) {
@@ -3795,17 +3797,19 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     llab.append(", ").append(lockToCenter[curve][3] ? "[" : "").append("Tc=").append(uptoSixPlaces.format(bestFit[curve][3])).append(lockToCenter[curve][3] ? "]" : "");
                     llab.append(", ").append(lockToCenter[curve][5] ? "[" : "").append("u1=").append(uptoTwoPlaces.format(bestFit[curve][5])).append(lockToCenter[curve][5] ? "]" : "");
                     llab.append(", ").append(lockToCenter[curve][6] ? "[" : "").append("u2=").append(uptoTwoPlaces.format(bestFit[curve][6])).append(lockToCenter[curve][6] ? "]" : "").append(")");
-                    drawLegendSymbol(ij.gui.Plot.LINE, modelLineWidth[curve] + ((showErrors[curve] || operatorIndex[curve] == 6) && (hasErrors[curve] || hasOpErrors[curve]) ? 1 : 0), modelColor[curve], legPosY, llab.toString());
-                    plot.addLabel(legendPosX, legPosY, llab.toString());
-                    legPosY += 18. / plotSizeY;
+                    if (drawLegendSymbol(Plot.LINE, modelLineWidth[curve] + ((showErrors[curve] || operatorIndex[curve] == 6) && (hasErrors[curve] || hasOpErrors[curve]) ? 1 : 0), modelColor[curve], legPosY, llab.toString())) {
+                        plot.addLabel(legendPosX, legPosY, llab.toString());
+                        legPosY += 18. / plotSizeY;
+                    }
                 }
 
                 if (detrendFitIndex[curve] == 9 && useTransitFit[curve] && showResidual[curve] && showLResidual[curve] && residualShift[curve] <= 0.0) {
                     llab = new StringBuilder(ylabel[curve] + " Residuals");
                     llab.append(" (RMS=").append(sigma[curve] >= 1.0 ? uptoThreePlaces.format(sigma[curve]) : uptoFivePlaces.format(sigma[curve])).append(") (chi^2/dof=").append(uptoTwoPlaces.format(chi2dof[curve])).append(")");
-                    drawLegendSymbol(residualSymbol[curve], residualSymbol[curve] == ij.gui.Plot.DOT ? 4 : 1, residualColor[curve], legPosY, llab.toString());
-                    plot.addLabel(legendPosX, legPosY, llab.toString());
-                    legPosY += 18. / plotSizeY;
+                    if (drawLegendSymbol(residualSymbol[curve], residualSymbol[curve] == Plot.DOT ? 4 : 1, residualColor[curve], legPosY, llab.toString())) {
+                        plot.addLabel(legendPosX, legPosY, llab.toString());
+                        legPosY += 18. / plotSizeY;
+                    }
                 }
 
             }
@@ -4161,7 +4165,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         plot.addLabel((vMarkerValue - plotMinX) / (plotMaxX - plotMinX), 1 + 33.0 / plotSizeY, threePlaces.format(vMarkerValue));
     }
 
-    static void drawLegendSymbol(int marker, int width, Color color, double legPosY, String llab) {
+    static boolean drawLegendSymbol(int marker, int width, Color color, double legPosY, String llab) {
+        if (color.getAlpha() == 0) return false;
         double xShift = 6.0;
         double yShift = 6.0;
         Font font = new Font("Dialog", Font.PLAIN, 12);
@@ -4197,6 +4202,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             plot.drawLine(x, y, x + (plotMaxX - plotMinX) * 6.0 / (s.getWidth()), y);
         }
         plot.setLineWidth(1);
+        return true;
     }
 
     public static boolean[] updateAllFits() {
@@ -6212,7 +6218,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         delayedUpdateTimer = null;
 
         markers = new String[]{"box", "circle", "cross", "dot", "line", "triangle", "X"};
-        colors = new String[]{"black", "dark gray", "gray", "light gray", "green", "dark green", "light blue", "blue", "magenta", "pink", "red", "orange", "yellow", "brown", "purple", "teal"};
+        colors = new String[]{"black", "dark gray", "gray", "light gray", "green", "dark green", "light blue", "blue", "magenta", "pink", "red", "orange", "yellow", "brown", "purple", "teal", "transparent"};
         fitFrameIcon = createImageIcon("astroj/images/detrend_fit_transit.png", "Fit exoplanet transit to all data");
         normiconlist = new ImageIcon[]{createImageIcon("astroj/images/norm_off.png", "Do not use normalization"),                                // 0
                 createImageIcon("astroj/images/norm_left.png", "Normalize based on data left of vertical marker 1"),      // 1
@@ -6973,6 +6979,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             case 15:
                 cmkr = new Color(3, 148, 163);
                 break;   //teal
+            case 16:
+                cmkr = new Color(0, 0, 0, 0);
+                break;
             default:
                 cmkr = java.awt.Color.black;
                 break;
@@ -11215,7 +11224,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 //                        markercolorselection[c].setPreferredSize(new Dimension(100, 25));
         markercolorselection[c].setSelectedIndex(colorIndex[c]);
         markercolorselection[c].setFont(new Font("Dialog", Font.BOLD, 12));
-        markercolorselection[c].setForeground(color[c]);
+        markercolorselection[c].setForeground(withoutAlpha(color[c]));
         markercolorselection[c].setMaximumRowCount(16);
         markercolorselection[c].setPrototypeDisplayValue("12345678");
         markercolorselection[c].addActionListener(ae -> {
@@ -11223,8 +11232,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             color[c] = colorOf(colorIndex[c]);
             curvelabel[c].setBorder(BorderFactory.createLineBorder(color[c], 2));
             othercurvelabel[c].setBorder(BorderFactory.createLineBorder(color[c], 2));
-            markercolorselection[c].setForeground(color[c]);
-            markersymbolselection[c].setForeground(color[c]);
+            markercolorselection[c].setForeground(withoutAlpha(color[c]));
+            markersymbolselection[c].setForeground(withoutAlpha(color[c]));
             if (fitPanel != null && fitPanel[c] != null) {
                 fitPanel[c].setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(color[c], 2), table == null ? "No Table Selected" : ylabel[c].trim().equals("") ? "No Data Column Selected" : ylabel[c], TitledBorder.CENTER, TitledBorder.TOP, b12, Color.darkGray));
             }
@@ -11236,7 +11245,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         markersymbolselection[c] = new JComboBox<>(markers);
         markersymbolselection[c].setFont(p11);
 //                        markersymbolselection[c].setPreferredSize(new Dimension(100, 25));
-        markersymbolselection[c].setForeground(color[c]);
+        markersymbolselection[c].setForeground(withoutAlpha(color[c]));
         markersymbolselection[c].setFont(new Font("Dialog", Font.BOLD, 12));
         markersymbolselection[c].setSelectedIndex(markerIndex[c]);
         markersymbolselection[c].setPrototypeDisplayValue("12345");
@@ -13653,13 +13662,13 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         modelColorSelection[c].setSelectedIndex(modelColorIndex[c]);
         modelColorSelection[c].setFont(new Font("Dialog", Font.BOLD, 12));
         modelColor[c] = colorOf(modelColorIndex[c]);
-        modelColorSelection[c].setForeground(modelColor[c]);
+        modelColorSelection[c].setForeground(withoutAlpha(modelColor[c]));
         modelColorSelection[c].setMaximumRowCount(16);
         modelColorSelection[c].setPrototypeDisplayValue("12345678");
         modelColorSelection[c].addActionListener(ae -> {
             modelColorIndex[c] = modelColorSelection[c].getSelectedIndex();
             modelColor[c] = colorOf(modelColorIndex[c]);
-            modelColorSelection[c].setForeground(modelColor[c]);
+            modelColorSelection[c].setForeground(withoutAlpha(modelColor[c]));
             updatePlot(updateNoFits());
         });
         modelColorPanel.add(modelColorSelection[c]);
@@ -13770,13 +13779,13 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         residualModelColorSelection[c].setSelectedIndex(residualModelColorIndex[c]);
         residualModelColorSelection[c].setFont(new Font("Dialog", Font.BOLD, 12));
         residualModelColor[c] = colorOf(residualModelColorIndex[c]);
-        residualModelColorSelection[c].setForeground(residualModelColor[c]);
+        residualModelColorSelection[c].setForeground(withoutAlpha(residualModelColor[c]));
         residualModelColorSelection[c].setMaximumRowCount(16);
         residualModelColorSelection[c].setPrototypeDisplayValue("12345678");
         residualModelColorSelection[c].addActionListener(ae -> {
             residualModelColorIndex[c] = residualModelColorSelection[c].getSelectedIndex();
             residualModelColor[c] = colorOf(residualModelColorIndex[c]);
-            residualModelColorSelection[c].setForeground(residualModelColor[c]);
+            residualModelColorSelection[c].setForeground(withoutAlpha(residualModelColor[c]));
             updatePlot(updateNoFits());
         });
         residualModelColorPanel.add(residualModelColorSelection[c]);
@@ -13820,7 +13829,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         residualSymbolSelection[c].setFont(p11);
         residualSymbolSelection[c].setToolTipText("<html>The symbol used to plot the transit model residuals.</html>");
         residualColor[c] = colorOf(residualColorIndex[c]);
-        residualSymbolSelection[c].setForeground(residualColor[c]);
+        residualSymbolSelection[c].setForeground(withoutAlpha(residualColor[c]));
         residualSymbolSelection[c].setFont(new Font("Dialog", Font.BOLD, 12));
         residualSymbolSelection[c].setSelectedIndex(residualSymbolIndex[c]);
         residualSymbolSelection[c].setPrototypeDisplayValue("12345");
@@ -13846,15 +13855,15 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         residualColorSelection[c].setSelectedIndex(residualColorIndex[c]);
         residualColorSelection[c].setFont(new Font("Dialog", Font.BOLD, 12));
         residualColor[c] = colorOf(residualColorIndex[c]);
-        residualColorSelection[c].setForeground(residualColor[c]);
-        residualSymbolSelection[c].setForeground(residualColor[c]);
+        residualColorSelection[c].setForeground(withoutAlpha(residualColor[c]));
+        residualSymbolSelection[c].setForeground(withoutAlpha(residualColor[c]));
         residualColorSelection[c].setMaximumRowCount(16);
         residualColorSelection[c].setPrototypeDisplayValue("12345678");
         residualColorSelection[c].addActionListener(ae -> {
             residualColorIndex[c] = residualColorSelection[c].getSelectedIndex();
             residualColor[c] = colorOf(residualColorIndex[c]);
-            residualColorSelection[c].setForeground(residualColor[c]);
-            residualSymbolSelection[c].setForeground(residualColor[c]);
+            residualColorSelection[c].setForeground(withoutAlpha(residualColor[c]));
+            residualSymbolSelection[c].setForeground(withoutAlpha(residualColor[c]));
             updatePlot(updateNoFits());
         });
         residualColorPanel.add(residualColorSelection[c]);
@@ -16634,6 +16643,13 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             pw.close();
         }
 
+    }
+
+    /**
+     * Strip alpha component from color
+     */
+    static Color withoutAlpha(Color color) {
+        return new Color(color.getRGB() | 0xFF000000);
     }
 
     static void createMpcFormatDialog() {

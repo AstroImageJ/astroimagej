@@ -3028,11 +3028,12 @@ public class Plot implements Cloneable {
 		return n==Math.round(n);
 	}
 
-	@AstroImageJ(reason = "widen access", modified = true)
+	@AstroImageJ(reason = "widen access; don't draw transparent objects", modified = true)
 	protected void drawPlotObject(PlotObject plotObject, ImageProcessor ip) {
 		//var plotObject = (PlotObject) iPlotObject;
 		//IJ.log("DRAWING type="+plotObject.type+" lineWidth="+plotObject.lineWidth+" shape="+plotObject.shape);
 		if (plotObject.hasFlag(PlotObject.HIDDEN)) return;
+		if (plotObject.color.getAlpha() == 0) return;
 		ip.setColor(plotObject.color);
 		ip.setLineWidth(sc(plotObject.lineWidth));
 		int type = plotObject.type;

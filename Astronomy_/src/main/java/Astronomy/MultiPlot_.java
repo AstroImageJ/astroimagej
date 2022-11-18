@@ -3625,7 +3625,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                 }
                             }
 
-                            outBinRms[curve] = 1000*CurveFitter.calculateRms(curve, modelBin, pts.err(), pts.err(), pts.x(), pts.x(), pts.y(), pts.err(), bestFit[curve], detrendYAverage[curve]);
+                            outBinRms[curve] = 1000*CurveFitter.calculateRms(curve, modelBin, pts.err(), pts.err(), xModelBin, xModelBin, pts.y(), pts.err(), bestFit[curve], detrendYAverage[curve]);
                             outBinRms[curve] *= bestFit[curve][0];
                         } else {
                             var xModelBin = Arrays.copyOf(pts.x(), pts.x().length);

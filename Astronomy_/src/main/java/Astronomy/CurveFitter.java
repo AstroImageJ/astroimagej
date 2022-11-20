@@ -983,11 +983,7 @@ public class CurveFitter {
             }
         }
 
-        var m = Arrays.copyOf(Arrays.stream(workingSource2).filter(Double::isFinite).toArray(), nn[curve]);
-        if (Arrays.equals(workingSource, m)) {
-            throw new IllegalStateException("bad arrays");
-        }
-        return m;
+        return Arrays.copyOf(Arrays.stream(workingSource2).filter(Double::isFinite).toArray(), nn[curve]);
     }
 
     private CurveData preprocessData(boolean[] localIsRefStar) {
@@ -1119,11 +1115,6 @@ public class CurveFitter {
                 //detrend[detrendIndex[v]] = new double[nn[curve]];
             }
             detrendYDNotConstant[v] = !detrendVarAllNaNs[v];
-        }*/
-
-        /*for (int v = 0; v < maxDetrendVars; v++) {
-            // Apply left/right marker trim
-            detrend[v] = markersTrimData(detrend[v]);
         }*/
 
         if (atLeastOne || detrendFitIndex[curve] == 9) {

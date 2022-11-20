@@ -983,7 +983,11 @@ public class CurveFitter {
             }
         }
 
-        return Arrays.copyOf(Arrays.stream(workingSource2).filter(Double::isFinite).toArray(), nn[curve]);
+        var m = Arrays.copyOf(Arrays.stream(workingSource2).filter(Double::isFinite).toArray(), nn[curve]);
+        if (Arrays.equals(workingSource, m)) {
+            throw new IllegalStateException("bad arrays");
+        }
+        return m;
     }
 
     private CurveData preprocessData(boolean[] localIsRefStar) {
@@ -1117,6 +1121,11 @@ public class CurveFitter {
             detrendYDNotConstant[v] = !detrendVarAllNaNs[v];
         }*/
 
+        /*for (int v = 0; v < maxDetrendVars; v++) {
+            // Apply left/right marker trim
+            detrend[v] = markersTrimData(detrend[v]);
+        }*/
+
         if (atLeastOne || detrendFitIndex[curve] == 9) {
             double[] detrendAverage = new double[maxDetrendVars];
             int[] detrendPower = new int[maxDetrendVars];
@@ -1184,7 +1193,7 @@ public class CurveFitter {
                 }
 
                 // Apply left/right marker trim
-                detrend[v] = markersTrimData(detrend[v]);
+                detrendYD[v] = markersTrimData(detrend[v]);
             }
 
             if (detrendFitIndex[curve] != 1) {
@@ -1230,7 +1239,7 @@ public class CurveFitter {
                     int varCount = 0;
                     for (int v = 0; v < maxDetrendVars; v++) {
                         if (detrendIndex[v] != 0 && detrendYDNotConstant[v]) {
-                            detrendVars[varCount] = Arrays.copyOf(detrend[v] /*detrendYD[v]*/, detrendCount); // Changed to fix issues with comp. min
+                            detrendVars[varCount] = Arrays.copyOf(detrendYD[v], detrendCount);
                             varCount++;
                         }
                     }

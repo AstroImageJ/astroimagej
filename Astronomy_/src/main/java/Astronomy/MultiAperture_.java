@@ -1618,14 +1618,14 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
         sp.plot.show();
         var pw = sp.plot.getImagePlus().getWindow();
-        var p = Prefs.getLocation(".multiaperture.multisp.loc");
+        var p = Prefs.getLocation("multiaperture.multisp.loc");
         if (p != null) {
             pw.setLocation(p);
         }
         pw.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
-                Prefs.saveLocation(".multiaperture.multisp.loc", pw.getLocation());
+                Prefs.saveLocation("multiaperture.multisp.loc", pw.getLocation());
             }
         });
         pw.setVisible(true);
@@ -2700,14 +2700,14 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
             sp.plot.show();
             var pw = sp.plot.getImagePlus().getWindow();
-            var p = Prefs.getLocation(".multiaperture.multisp.loc");
+            var p = Prefs.getLocation("multiaperture.multisp.loc");
             if (p != null) {
                 pw.setLocation(p);
             }
             pw.addWindowListener(new WindowAdapter() {
                 @Override
                 public void windowClosing(WindowEvent e) {
-                    Prefs.saveLocation(".multiaperture.multisp.loc", pw.getLocation());
+                    Prefs.saveLocation("multiaperture.multisp.loc", pw.getLocation());
                 }
             });
             pw.setVisible(true);

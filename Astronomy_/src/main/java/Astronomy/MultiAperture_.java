@@ -4042,6 +4042,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
         if (!(this instanceof Stack_Aligner) && !gd.wasOKed()) {
             cancel();
+            gd.dispose();
             Executors.newSingleThreadExecutor().submit(() -> {IJ.runPlugIn("Astronomy.Set_Aperture", "from_MA");});
             return false;
         }

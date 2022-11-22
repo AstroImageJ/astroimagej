@@ -233,6 +233,7 @@ public class Set_Aperture implements PlugIn
 		gd.showDialog();
 		if (gd.wasCanceled())
             {
+                gd.dispose();
             return false;
             }
 
@@ -288,6 +289,7 @@ public class Set_Aperture implements PlugIn
 
         if (!gd.wasOKed()) return otherPanel();
 
+        gd.dispose();
         return true;
 		}
     
@@ -329,6 +331,7 @@ public class Set_Aperture implements PlugIn
         
 		if (gd.wasCanceled())
             {
+                gd.dispose();
             return false;
             }
         
@@ -372,6 +375,8 @@ public class Set_Aperture implements PlugIn
 		clearOverlay = gd.getNextBoolean();
 
         if (!gd.wasOKed()) return mainPanel();
+
+        gd.dispose();
         return true;
 		}
     

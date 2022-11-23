@@ -182,9 +182,10 @@ public class FITS_Writer implements PlugIn {
 
 			var maxImage = specificSlice == -1 ? imp.getStackSize() : 1;
 
-			if (compressionModes.contains(FPACK) && maxImage > 1) {
+			if (compressionModes.contains(FPACK)) {
 				// Write a primary HDU with the minimum required header
-				// The first HDU cannot be compressed when adding multiple HDUs
+				// The first HDU cannot be compressed when adding multiple HDUs.
+				// Some programs cannot handle compressed-first HDUs
 				new ImageHDU(new Header(), null).write(out);
 			}
 
@@ -251,8 +252,7 @@ public class FITS_Writer implements PlugIn {
 								.getCompressOption(RiceQuantizeCompressOption.class)
 								.setQlevel(4);*/
 					} else {
-						compressedHdu.setCompressAlgorithm(Compression.ZCMPTYPE_HCOMPRESS_1)
-								.getCompressOption(HCompressorOption.class);
+						compressedHdu.setCompressAlgorithm(Compression.ZCMPTYPE_RICE_1);
 					}
 
 					compressedHdu.compress();

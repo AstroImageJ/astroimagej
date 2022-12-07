@@ -13,8 +13,8 @@
 //  Comments or questions may be directed to the macro's author:
 //  Dennis Conti, email: dennis@astrodennis.com
 //
-//  REVISION 3.06
-var REVISION = "3.06";
+//  REVISION 3.07
+var REVISION = "3.07";
 //
 //  The following are diagnostic flags
 var STARtoDiagnose = "";
@@ -22,10 +22,10 @@ var FORCEbinning = 0;
 //
 //  Revision Notes:
 //	   3.00 Add ability to analyze multiple, user-defined measurement tables containing different apertures.
-//            If so, produce a NEB table showing the apertures with the hightest "priority" and NEBdepth/RMS ratio
-//		  (referred to here as the "best apertures"), and create a folder with the plots representing
-//		  the "best" apertures:
-//			- Print to the log file the name(s) of the measurment file(s) being processed
+//            If so, produce a NEB table showing the apertures with the hightest "priority" disposition and
+//            the highest NEBdepth/RMS ratio within that disposition (referred to here as the "best apertures"),
+//            and create a folder with the plots representing the "best" apertures:
+//			- Print to the log file the name(s) of the measurment file(s) being input and then being processed
 //		  	- In the code prior to executing any of the OPTIONS, if there were multiple observation runs,
 //                      store data related to the best aperture into the "Best" arrays
 //            	- Move the execution of Option 1 ahead of the other options
@@ -1781,7 +1781,7 @@ while (moreFiles) {
 //  Next, append to the TIC name, the next 3 positions - date, observatory, filter
         for (k=2; k<5; k++) {
           success = findValue(measurementFileNameArray[i],k,"_");
-          BestFileNamePrefix = BestFileNamePrefix + " _" + globalValue;
+          BestFileNamePrefix = BestFileNamePrefix + "_" + globalValue;
           };
 //  Check that the file name prefix for this file is the same as the previous ones -
 //  if not, issue an error message. However, initially save it, if this is the first file

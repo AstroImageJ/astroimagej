@@ -22,16 +22,16 @@ w\:* {behavior:url(#default#VML);}
  <o:DocumentProperties>
   <o:Author>Karen</o:Author>
   <o:LastAuthor>Karen Collins</o:LastAuthor>
-  <o:Revision>332</o:Revision>
-  <o:TotalTime>6595</o:TotalTime>
+  <o:Revision>335</o:Revision>
+  <o:TotalTime>6605</o:TotalTime>
   <o:Created>2013-01-20T06:33:00Z</o:Created>
-  <o:LastSaved>2022-11-21T05:39:00Z</o:LastSaved>
+  <o:LastSaved>2022-12-07T08:33:00Z</o:LastSaved>
   <o:Pages>35</o:Pages>
-  <o:Words>11041</o:Words>
-  <o:Characters>62937</o:Characters>
-  <o:Lines>524</o:Lines>
-  <o:Paragraphs>147</o:Paragraphs>
-  <o:CharactersWithSpaces>73831</o:CharactersWithSpaces>
+  <o:Words>11115</o:Words>
+  <o:Characters>63358</o:Characters>
+  <o:Lines>527</o:Lines>
+  <o:Paragraphs>148</o:Paragraphs>
+  <o:CharactersWithSpaces>74325</o:CharactersWithSpaces>
   <o:Version>16.00</o:Version>
  </o:DocumentProperties>
  <o:OfficeDocumentSettings>
@@ -1882,22 +1882,63 @@ mso-border-bottom-themecolor:accent1;padding:0in 0in 4.0pt 0in'>
 normal'>AstroImageJ is open-source software and is distributed under the terms
 of the GNU General Public License.<o:p></o:p></b></p>
 
-<p class=MsoSubtitle>Daily Build Version 5.1.3.07 (with ImageJ 1.53k and Java
+<p class=MsoSubtitle>Daily Build Version 5.2.0.00 (with ImageJ 1.53k and Java
 18)<span style='mso-spacerun:yes'>   </span><br>
-(Last Updated: 11/21/2022)</p>
+(Last Updated: 12/07/2022)</p>
+
+<p class=MsoNormal><b><i><span style='font-size:12.0pt;line-height:115%'>No
+daily build updates yet.<o:p></o:p></span></i></b></p>
+
+<p class=MsoSubtitle>Version 5.2.0.00 (with ImageJ 1.53k and Java 18)<span
+style='mso-spacerun:yes'>   </span><br>
+(Last Updated: 12/07/2022)</p>
 
 <h3 style='margin-left:1.0in;mso-list:l0 level2 lfo2;tab-stops:list 1.0in'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
 Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</span></span></span><![endif]>General,</h3>
+</span></span></span><![endif]>NEBcheck process</h3>
 
 <h3 style='margin-left:1.5in;mso-list:l0 level3 lfo2;tab-stops:list 1.5in'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
 Symbol;mso-bidi-font-weight:normal'><span style='mso-list:Ignore'>·<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</span></span></span><![endif]><b style='mso-bidi-font-weight:normal'>It AstroImageJ.cfg
-does not exist, it is created when a memory change is specified in Toolbar &gt;
-Edit &gt; Options &gt; Memory &amp; Threads<o:p></o:p></b></h3>
+</span></span></span><![endif]><b style='mso-bidi-font-weight:normal'>Now
+supports sorting the best results from multiple AIJ runs using different
+aperture sizes and selected the best result from all apertures for the merged
+results. (Many, many thanks to Dennis Conti and Bob Massey of the AAVSO for
+designing, developing, and test this new significant feature.)<o:p></o:p></b></h3>
+
+<h3 style='margin-left:1.0in;mso-list:l0 level2 lfo2;tab-stops:list 1.0in'><![if !supportLists]><span
+style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
+Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]>Fits Writer</h3>
+
+<h3 style='margin-left:1.5in;mso-list:l0 level3 lfo2;tab-stops:list 1.5in'><![if !supportLists]><span
+style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
+Symbol;mso-bidi-font-weight:normal'><span style='mso-list:Ignore'>·<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]><b style='mso-bidi-font-weight:normal'>Fixed a
+bug that causes AIJ’s fpack written files to only be readable by AIJ.<o:p></o:p></b></h3>
+
+<h3 style='margin-left:1.5in;mso-list:l0 level3 lfo2;tab-stops:list 1.5in'><![if !supportLists]><span
+style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
+Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]>FPACK (.fz) compression temporarily reverted to
+lossless fpacking. The previous compression settings were too lossy. We will
+later revert to a compressed version that matches LCOGT compression.</h3>
+
+<h3 style='margin-left:1.0in;mso-list:l0 level2 lfo2;tab-stops:list 1.0in'><![if !supportLists]><span
+style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
+Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]>General</h3>
+
+<h3 style='margin-left:1.5in;mso-list:l0 level3 lfo2;tab-stops:list 1.5in'><![if !supportLists]><span
+style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
+Symbol;mso-bidi-font-weight:normal'><span style='mso-list:Ignore'>·<span
+style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+</span></span></span><![endif]><b style='mso-bidi-font-weight:normal'>It
+AstroImageJ.cfg does not exist, it is created when a memory change is specified
+in Toolbar &gt; Edit &gt; Options &gt; Memory &amp; Threads<o:p></o:p></b></h3>
 
 <h3 style='margin-left:1.5in;mso-list:l0 level3 lfo2;tab-stops:list 1.5in'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
@@ -2087,21 +2128,9 @@ Pixinsight</h3>
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
 Symbol;mso-bidi-font-weight:normal'><span style='mso-list:Ignore'>·<span
 style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</span></span></span><![endif]><b style='mso-bidi-font-weight:normal'>Now maintains
-full file suffixes, including compression type to allow saving to those
-compression formats by default.<o:p></o:p></b></h3>
-
-<h3 style='margin-left:1.0in;mso-list:l0 level2 lfo2;tab-stops:list 1.0in'><![if !supportLists]><span
-style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
-Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</span></span></span><![endif]>Fits Writer</h3>
-
-<h3 style='margin-left:1.5in;mso-list:l0 level3 lfo2;tab-stops:list 1.5in'><![if !supportLists]><span
-style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
-Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</span></span></span><![endif]>FPACK (.fz) compression temporarily reverted to
-lossless fpacking. The previous compression settings were too lossy. We will
-later revert to a compressed version that matches LCOGT compression.</h3>
+</span></span></span><![endif]><b style='mso-bidi-font-weight:normal'>Now
+maintains full file suffixes, including compression type to allow saving to
+those compression formats by default.<o:p></o:p></b></h3>
 
 <h3 style='margin-left:.75in;text-indent:0in;mso-list:none'><o:p>&nbsp;</o:p></h3>
 
@@ -2205,8 +2234,8 @@ style='color:red'>Critical bug fix<o:p></o:p></span></b></h3>
 <h3 style='margin-left:1.5in;mso-list:l0 level3 lfo2;tab-stops:list 1.5in'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
 Symbol;color:red'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</span></span></span><![endif]><span style='color:red'>Fixed plot not updating when
-comp star optimization finishes<o:p></o:p></span></h3>
+</span></span></span><![endif]><span style='color:red'>Fixed plot not updating
+when comp star optimization finishes<o:p></o:p></span></h3>
 
 <h3 style='margin-left:1.0in;mso-list:l0 level2 lfo2;tab-stops:list 1.0in'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
@@ -2279,8 +2308,8 @@ Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"
 <h3 style='margin-left:1.5in;mso-list:l0 level3 lfo2;tab-stops:list 1.5in'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
 Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</span></span></span><![endif]>Fixed a detrend optimization bug caused by specific
-BIC initial condition.</h3>
+</span></span></span><![endif]>Fixed a detrend optimization bug caused by
+specific BIC initial condition.</h3>
 
 <h3 style='margin-left:1.5in;mso-list:l0 level3 lfo2;tab-stops:list 1.5in'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
@@ -2619,8 +2648,8 @@ transit location is not fitted with primary transit model</h3>
 <h3 style='margin-left:1.5in;mso-list:l0 level3 lfo2;tab-stops:list 1.5in'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
 Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</span></span></span><![endif]>Cleaning and optimization now allowed with transit
-model disabled</h3>
+</span></span></span><![endif]>Cleaning and optimization now allowed with
+transit model disabled</h3>
 
 <h3 style='margin-left:1.0in;mso-list:l0 level2 lfo2;tab-stops:list 1.0in'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
@@ -2649,8 +2678,8 @@ usage (sometimes failed and defaulted to user settings)</h3>
 <h3 style='margin-left:1.5in;mso-list:l0 level3 lfo2;tab-stops:list 1.5in'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
 Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</span></span></span><![endif]>In radial profile variable aperture, a stack of
-radial profile images is created.</h3>
+</span></span></span><![endif]>In radial profile variable aperture, a stack of radial
+profile images is created.</h3>
 
 <p class=MsoNormal><o:p>&nbsp;</o:p></p>
 
@@ -3449,9 +3478,9 @@ item Table-&gt;”Add new astronomical data columns to table”.</h3>
 <h3 style='margin-left:1.0in;mso-list:l0 level2 lfo2;tab-stops:list 1.0in'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
 Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</span></span></span><![endif]>The “Add astronomical data to table” and “MP
-Coordinate Converter” panels will remain open across sessions if left open when
-multi-plot is closed.</h3>
+</span></span></span><![endif]>The “Add astronomical data to table” and “MP Coordinate
+Converter” panels will remain open across sessions if left open when multi-plot
+is closed.</h3>
 
 <h3 style='margin-left:1.0in;mso-list:l0 level2 lfo2;tab-stops:list 1.0in'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
@@ -3629,13 +3658,13 @@ style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
 Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 </span></span></span><![endif]>When the “Use RA/Dec to locate aperture
 positions” option is enabled, and “Halt processing on WCS or centroid error” is
-disabled, if a stack image without WCS is encountered, multi-aperture will attempt
-to centroid on the last know RA/Dec pixel locations. This allows the RA/Dec
-aperture placement option to be used with stacks where all images have not been
-plate-solved. In this mode, only the images after a shift larger than the
-aperture radius need to be plate solved for a successful photometry run. This
-will also allow the apertures to be adjusted after a meridian flip by plate
-solving only the first image in the stack and the first image after the
+disabled, if a stack image without WCS is encountered, multi-aperture will
+attempt to centroid on the last know RA/Dec pixel locations. This allows the
+RA/Dec aperture placement option to be used with stacks where all images have
+not been plate-solved. In this mode, only the images after a shift larger than
+the aperture radius need to be plate solved for a successful photometry run.
+This will also allow the apertures to be adjusted after a meridian flip by
+plate solving only the first image in the stack and the first image after the
 meridian flip (assuming telescope tracking is otherwise good).</h3>
 
 <h3 style='margin-left:1.0in;mso-list:l0 level1 lfo2;tab-stops:list 1.0in'><![if !supportLists]><span
@@ -3684,8 +3713,8 @@ style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
 Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 </span></span></span><![endif]>The legend for curves plotted in “Page Rel” mode
 now display the light curves raw RMS values if RMS display is enabled in the
-legend settings. The value displayed is the actual raw RMS and is not arbitrarily
-scaled with the light curve display.</h3>
+legend settings. The value displayed is the actual raw RMS and is not
+arbitrarily scaled with the light curve display.</h3>
 
 <h3 style='margin-left:1.0in;mso-list:l0 level1 lfo2;tab-stops:list 1.0in'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
@@ -3782,15 +3811,15 @@ contrast.</h3>
 <h3 style='margin-left:1.0in;mso-list:l0 level1 lfo2;tab-stops:list 1.0in'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
 Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</span></span></span><![endif]>Added an option that automatically updates
-manual image scale and directional arrows when a new image with WCS headers
-(i.e. has been plate-solved) has been opened (or solved). The default is
-enable. With the option enabled, if the first one or more images in a stack are
-plate-solved, the other non-plate-solved images will automatically show the
-same pixel scale and sky orientation. Not that if you change the image rotation
-(e.g. as a result of a meridian flip), the first image after the change will
-also need to be plate solved to enable the correct display of scale and
-orientation for the remainder of the image sequence.</h3>
+</span></span></span><![endif]>Added an option that automatically updates manual
+image scale and directional arrows when a new image with WCS headers (i.e. has
+been plate-solved) has been opened (or solved). The default is enable. With the
+option enabled, if the first one or more images in a stack are plate-solved,
+the other non-plate-solved images will automatically show the same pixel scale
+and sky orientation. Not that if you change the image rotation (e.g. as a
+result of a meridian flip), the first image after the change will also need to
+be plate solved to enable the correct display of scale and orientation for the
+remainder of the image sequence.</h3>
 
 <h3 style='margin-left:1.0in;mso-list:l0 level1 lfo2;tab-stops:list 1.0in'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
@@ -4078,9 +4107,9 @@ Ferran Casarramona for the example macro from which the feature was created).</h
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
 Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 </span></span></span><![endif]>Optionally handles the entry of reference star
-apparent magnitude in the reference star panel. New table columns are created or
-overwritten when changes to ref star apparent magnitudes are changed. The new
-columns are Source_AMag_Xxx and Source_AMag_Err_Xxx. The error values are
+apparent magnitude in the reference star panel. New table columns are created
+or overwritten when changes to ref star apparent magnitudes are changed. The
+new columns are Source_AMag_Xxx and Source_AMag_Err_Xxx. The error values are
 calculated based on the target and ref star photometric error and do not
 include errors in the ref star magnitudes that are entered. The Source_AMag_Xxx
 columns are ideal for submitting to the Minor Planet Center.</h3>
@@ -4135,12 +4164,12 @@ and dragging them to a new location</h3>
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
 Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 </span></span></span><![endif]>Single step now supports two modes of operation
-after defining apertures. (Option 1) a single click on T1/C1 in each image
-applies all apertures, performs photometry, and advances to the next image.
-(Option 2) allows changes to apertures between images but requires a left-click
-on the T1/C1 star to place apertures. Then after making any aperture
-corrections,<span style='mso-spacerun:yes'>  </span>a right click (or Enter)
-performs photometry and advances to the next image.</h3>
+after defining apertures. (Option 1) a single click on T1/C1 in each image applies
+all apertures, performs photometry, and advances to the next image. (Option 2)
+allows changes to apertures between images but requires a left-click on the
+T1/C1 star to place apertures. Then after making any aperture corrections,<span
+style='mso-spacerun:yes'>  </span>a right click (or Enter) performs photometry
+and advances to the next image.</h3>
 
 <h3 style='mso-list:l0 level1 lfo2;tab-stops:list 1.0in'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
@@ -4192,9 +4221,9 @@ new error column as part of “New Column” creation</h3>
 <h3 style='margin-left:1.0in;mso-list:l0 level1 lfo2;tab-stops:list 1.0in'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
 Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</span></span></span><![endif]>Auto legend and custom legend can now be displayed
-at the same time (the custom legend is appended to the auto legend if both are
-enabled)</h3>
+</span></span></span><![endif]>Auto legend and custom legend can now be
+displayed at the same time (the custom legend is appended to the auto legend if
+both are enabled)</h3>
 
 <h3 style='margin-left:1.0in;mso-list:l0 level1 lfo2;tab-stops:list 1.0in'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
@@ -4227,14 +4256,14 @@ Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"
 <h3 style='margin-left:1.0in;mso-list:l0 level1 lfo2;tab-stops:list 1.0in'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
 Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</span></span></span><![endif]>Fixed image “stretching” display problem characteristic
-of OSX 10.10 (Yosemite)</h3>
+</span></span></span><![endif]>Fixed image “stretching” display problem
+characteristic of OSX 10.10 (Yosemite)</h3>
 
 <h3 style='margin-left:1.0in;mso-list:l0 level1 lfo2;tab-stops:list 1.0in'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
 Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</span></span></span><![endif]>Fixed reversed characters in vertical plate
-scale display characteristic of OSX 10.10 (Yosemite)</h3>
+</span></span></span><![endif]>Fixed reversed characters in vertical plate scale
+display characteristic of OSX 10.10 (Yosemite)</h3>
 
 <h3 style='margin-left:1.0in;mso-list:l0 level1 lfo2;tab-stops:list 1.0in'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
@@ -4245,8 +4274,9 @@ for OSX 10.10 (Yosemite) </h3>
 <h3 style='margin-left:1.0in;mso-list:l0 level1 lfo2;tab-stops:list 1.0in'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
 Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</span></span></span><![endif]>Added “Combine stack slices into single image” option
-to Image-&gt;Process menu (same as Toolbar-&gt;Image-&gt;Stacks-&gt;Z Project)</h3>
+</span></span></span><![endif]>Added “Combine stack slices into single image”
+option to Image-&gt;Process menu (same as Toolbar-&gt;Image-&gt;Stacks-&gt;Z
+Project)</h3>
 
 <h3 style='margin-left:1.0in;mso-list:l0 level1 lfo2;tab-stops:list 1.0in'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
@@ -4277,10 +4307,9 @@ Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"
 <h3 style='margin-left:1.0in;mso-list:l0 level1 lfo2;tab-stops:list 1.0in'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
 Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</span></span></span><![endif]>Dark current should now be specified in
-Set_Aperture in units of [e-/pix/sec] (was previously in [e-/pix/exposure]).
-The value will now be multiplied by the exposure time (if available in FITS
-header).</h3>
+</span></span></span><![endif]>Dark current should now be specified in Set_Aperture
+in units of [e-/pix/sec] (was previously in [e-/pix/exposure]). The value will
+now be multiplied by the exposure time (if available in FITS header).</h3>
 
 <h3 style='margin-left:1.0in;mso-list:l0 level1 lfo2;tab-stops:list 1.0in'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
@@ -4591,9 +4620,9 @@ clicking inside an existing aperture</h3>
 <h3 style='margin-left:1.0in;mso-list:l0 level1 lfo2;tab-stops:list 1.0in'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
 Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</span></span></span><![endif]>Added Multi-Aperture option to set variable
-aperture based on radial profile of PSF (to use, select variable aperture and
-set FHWM factor to 0.00)</h3>
+</span></span></span><![endif]>Added Multi-Aperture option to set variable aperture
+based on radial profile of PSF (to use, select variable aperture and set FHWM
+factor to 0.00)</h3>
 
 <h3 style='margin-left:1.0in;mso-list:l0 level1 lfo2;tab-stops:list 1.0in'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
@@ -4647,10 +4676,10 @@ is open that has apertures displayed</h3>
 <h3 style='margin-left:1.0in;mso-list:l0 level1 lfo2;tab-stops:list 1.0in'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
 Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</span></span></span><![endif]><span style='mso-spacerun:yes'> </span>“Add new
-astronomical data” can now optionally extract RA/Dec values from the
-measurements table. These values can be added to the table using Set Aperture’s
-comma separated list of FITS header keywords.</h3>
+</span></span></span><![endif]><span style='mso-spacerun:yes'> </span>“Add new astronomical
+data” can now optionally extract RA/Dec values from the measurements table.
+These values can be added to the table using Set Aperture’s comma separated
+list of FITS header keywords.</h3>
 
 <h3 style='margin-left:1.0in;mso-list:l0 level1 lfo2;tab-stops:list 1.0in'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
@@ -4713,9 +4742,9 @@ style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
 Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 </span></span></span><![endif]>Settings not applicable due of the state of
 other settings are now “grayed-out” (disabled in the GUI). For example, dark
-scaling based on exposure time requires both Bias Subtraction and Dark Subtraction
-to be enabled, so the “scale” checkbox in the Dark Subtraction section is
-disabled unless both subtractions are selected.</h3>
+scaling based on exposure time requires both Bias Subtraction and Dark
+Subtraction to be enabled, so the “scale” checkbox in the Dark Subtraction
+section is disabled unless both subtractions are selected.</h3>
 
 <h3 style='margin-left:1.0in;mso-list:l0 level1 lfo2;tab-stops:list 1.0in'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
@@ -4758,9 +4787,9 @@ Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
 Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 </span></span></span><![endif]>Added outlier removal (e.g. cosmic rays/hot
-pixels) to the “Image Correction” section. Outlier removal will likely affect photometry
-and should probably not be used in combination with photometry. This feature is
-primarily intended for “pretty picture” data reduction. </h3>
+pixels) to the “Image Correction” section. Outlier removal will likely affect
+photometry and should probably not be used in combination with photometry. This
+feature is primarily intended for “pretty picture” data reduction. </h3>
 
 <h3 style='margin-left:1.0in;mso-list:l0 level1 lfo2;tab-stops:list 1.0in'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
@@ -4823,8 +4852,8 @@ from FITS header when image is displayed</h3>
 <h3 style='margin-left:1.5in;mso-list:l0 level1 lfo2;tab-stops:list 1.5in'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
 Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</span></span></span><![endif]>New “Annotate” menu above images to allow FITS
-header storage and annotation display management</h3>
+</span></span></span><![endif]>New “Annotate” menu above images to allow FITS header
+storage and annotation display management</h3>
 
 <h3 style='margin-left:1.5in;mso-list:l0 level1 lfo2;tab-stops:list 1.5in'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
@@ -5242,8 +5271,8 @@ so they fit on a laptop screen as small as 768 pixels tall.</h3>
 <h3 style='mso-list:l0 level1 lfo2'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
 Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</span></span></span><![endif]>Fixed several issues with display of RGB images related
-to brightness and contrast control</h3>
+</span></span></span><![endif]>Fixed several issues with display of RGB images
+related to brightness and contrast control</h3>
 
 <h3 style='mso-list:l0 level1 lfo2'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
@@ -5319,8 +5348,8 @@ Y-axis tick mark spacing</h3>
 <h3 style='mso-list:l0 level1 lfo2'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
 Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</span></span></span><![endif]>Fixed error message for images with RA and DEC FITS
-header keywords that do not contain other required WCS keywords</h3>
+</span></span></span><![endif]>Fixed error message for images with RA and DEC
+FITS header keywords that do not contain other required WCS keywords</h3>
 
 <h1>New Features</h1>
 
@@ -5507,9 +5536,9 @@ case the keyword is missing in the FITS file</h3>
 <h3 style='mso-list:l0 level1 lfo2'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
 Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</span></span></span><![endif]>Added support for automatically setting north
-and east arrow orientation and x- and y-direction pixel scales, if WCS
-information is found in FITS header</h3>
+</span></span></span><![endif]>Added support for automatically setting north and
+east arrow orientation and x- and y-direction pixel scales, if WCS information
+is found in FITS header</h3>
 
 <h3 style='mso-list:l0 level1 lfo2'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
@@ -5521,10 +5550,10 @@ JD_MOBS to JD_UTC, changed HJD_MOBS to HJD_UTC, and BJD_MOBS to BJD_TDB</h3>
 
 <p class=MsoSubtitle>Version 2.0.0 (with ImageJ 1.47a1)</p>
 
-<p class=MsoNormal style='margin-left:0in;text-indent:0in'>Version 2.0.0 is a major
-release that supports many new GUI features, saving of aperture settings, plot
-settings, image displays (including aperture overlay), interactive target vs.
-comparison star selection, interactive multivariate lightcurve detrending,
+<p class=MsoNormal style='margin-left:0in;text-indent:0in'>Version 2.0.0 is a
+major release that supports many new GUI features, saving of aperture settings,
+plot settings, image displays (including aperture overlay), interactive target
+vs. comparison star selection, interactive multivariate lightcurve detrending,
 table column additions, and table manipulation. AstroCC coordinate converter is
 a new module that provides time and coordinate conversions, resolves target
 names using SIMBAD, and displays finder field images using sky-map.org. </p>
@@ -5771,8 +5800,8 @@ Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"
 <h3 style='mso-list:l0 level1 lfo2'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
 Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</span></span></span><![endif]>‘Save All’ menu item for saving image display,
-plot image, plot configuration, data table, apertures, and log files with one
+</span></span></span><![endif]>‘Save All’ menu item for saving image display, plot
+image, plot configuration, data table, apertures, and log files with one
 command, based on user defined file name suffixes. </h3>
 
 <h3 style='mso-list:l0 level1 lfo2'><![if !supportLists]><span
@@ -6640,8 +6669,8 @@ Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
 Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 </span></span></span><![endif]>Added a new set of “Zoom” buttons above the
-image. “Fit” fits the image to the window, “Out” zooms out, “In” zooms in, “In
-x8” zooms in fast. Click at the point on the image where the zoom should be
+image. “Fit” fits the image to the window, “Out” zooms out, “In” zooms in, “In x8”
+zooms in fast. Click at the point on the image where the zoom should be
 centered before using zooming in, otherwise, the zoom will operate on the
 center of the image. The image data rotation features are now available in the
 “Process” menu.</h3>
@@ -6922,8 +6951,8 @@ color</h3>
 <h3 style='mso-list:l0 level1 lfo2'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:
 Symbol'><span style='mso-list:Ignore'>·<span style='font:7.0pt "Times New Roman"'>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-</span></span></span><![endif]>ROI resizing may require the View options to be set
-to “Invert None” and “0 degrees” rotation to work properly</h3>
+</span></span></span><![endif]>ROI resizing may require the View options to be
+set to “Invert None” and “0 degrees” rotation to work properly</h3>
 
 <h3 style='mso-list:l0 level1 lfo2'><![if !supportLists]><span
 style='font-family:Symbol;mso-fareast-font-family:Symbol;mso-bidi-font-family:

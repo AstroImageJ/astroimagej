@@ -13,15 +13,32 @@
 //  Comments or questions may be directed to the macro's author:
 //  Dennis Conti, email: dennis@astrodennis.com
 //
-//  REVISION 2.26
-var REVISION = "2.26";
+//  REVISION 3.06
+var REVISION = "3.06";
 //
 //  The following are diagnostic flags
 var STARtoDiagnose = "";
 var FORCEbinning = 0;
 //
 //  Revision Notes:
-//	 2.26 Increase the number of measurement table rows from 3,000 to 10,000; make lenMeasurementTable a
+//	   3.00 Add ability to analyze multiple, user-defined measurement tables containing different apertures.
+//            If so, produce a NEB table showing the apertures with the hightest "priority" and NEBdepth/RMS ratio
+//		  (referred to here as the "best apertures"), and create a folder with the plots representing
+//		  the "best" apertures:
+//			- Print to the log file the name(s) of the measurment file(s) being processed
+//		  	- In the code prior to executing any of the OPTIONS, if there were multiple observation runs,
+//                      store data related to the best aperture into the "Best" arrays
+//            	- Move the execution of Option 1 ahead of the other options
+//		  	- Turn the original Option 1 code into a createNEBTable function
+//		  	- Modify the savePlot function to add average aperture to output file name
+//			- At the end of the table and plot processing, if multiple measurement files, create
+//				a "best aperture" NEB table and move all of the "best aperture" plots to a new
+//				directory
+//			- Selectively display closing messages depending on whether or not there were multiple
+//				measurement files analyzed
+//			- Include file name in progress bar
+//			- Include dispostion summary counts at the end of the NEB table
+//	   2.26 Increase the number of measurement table rows from 3,000 to 10,000; make lenMeasurementTable a
 //            global variable and use it to later define array lengths where needed; initialize nBinEntries=0 in
 //            "Calculate Binned Time Stamps" section
 //       2.25 Round the predicted ingress and egress values obtained from Multi-plotMain to 8 decimal digits.
@@ -34,8 +51,8 @@ var FORCEbinning = 0;
 //
 //            Make dmag vs. RMS plot screen larger
 //
-//	      Add a beep at the end of the analysis run.
-
+//	        Add a beep at the end of the analysis run.
+//
 //       2.20 Add "Likely Cleared" and "Cleared boundary lines to the dmag vs. RMS plots.
 //
 //            If the NEB plot option is selected and therefore nearest neighbors are determined
@@ -201,12 +218,12 @@ var lenMeasurementTable = 10000;
 var xfitsTARGET = 0;
 var yfitsTARGET = 0;
 var prevTimeMeas = getTime();
-var title = "[Progress]";
-//]
+//
 //  Define variables used for progress bar
 var bar = "|";
 var totalBars = 200;
 var cumProgress = 0.0;
+var progressTitle;
 //
 //  Define globals used in the binRelFluxData function
 //  Create arrays for temporarily holding cumulative binned data
@@ -226,6 +243,7 @@ var rmsLimitValue;
 var STARlist = newArray(1000);
 var STARdist = newArray(1000);
 var STARpa = newArray(1000);
+//
 //   Setup various other variables
 var STARlistIndex;
 var nObservations;
@@ -271,6 +289,12 @@ var usePlateSolvedImage;
 var neighborLimitValue;
 var overlayStartTime;
 var overlayEndTIme;
+//
+//  Define globals used in the new CreateNEBtable function
+var usePlateSolveImage;
+var BestFileNamePrefix;
+var dispCount = newArray(5);
+var dispNotation = newArray(5);
 //
 //
 //******************************* BEGIN FUNCTION DEFINITIONS ********************
@@ -403,7 +427,7 @@ function findPositionInHeader (string,substr,delimiter,flag) {
      };
 //  If have reached the end of the string and have not found the
 //  substring, then see if the substring is one with the delimiter
-//  as it's last letter. If so, then see if the substring without
+//  as its last letter. If so, then see if the substring without
 //  the delimiter matches the last part of the string
     if (endsWith(substr,delimiter)) {
        position = lengthOf(string) - lengthOf(substr) + 1;
@@ -430,7 +454,7 @@ function findPositionInHeader (string,substr,delimiter,flag) {
 //
 //  This function finds the value at a certain position in a string
 //   where the values are separated by a delimiter. This function
-//   can be used in conjuntion with the above findPosition function
+//   can be used in conjunction with the above findPosition function
 //   to having found the correct position of the value being searched for.
 //   The value is stored in the global variable globalValue. The function
 //   returns false if this is the last value found in the string.
@@ -611,7 +635,7 @@ function progress (percent) {
     if (percent>1.0) {percent  = 0.99;};
     showProgress(percent);
     percentProgress = round(percent * 100);
-    print(title,"\\Update:" + percentProgress + "%\n" + progressBar(percentProgress,100));
+    print(progressTitle,"\\Update:" + percentProgress + "%\n" + progressBar(percentProgress,100));
     success = true;
     return(success);
 };
@@ -997,6 +1021,8 @@ function plotData (plotTitle, yAxisTitle, iBeginValue, iEndValue, xValuesArray, 
 //  Create the plot and define its size
     Plot.create(plotTitle,timeName + " - " + d2s(beginTimeLeft,0),yAxisTitle);
     Plot.setFrameSize(widthPlot,heightPlot);
+// Set plot justification to left
+    Plot.setJustification("left");
 //
 // Load time and flux values for the k'th star into X and Y values
 // and keep track of min and max flux; first initialize some variables used below
@@ -1071,9 +1097,9 @@ function savePlot (starName, plotFilenameSuffix) {
        firstPlot = false;
        } else {Plot.update();};
 //  If plots are to be saved, create the full output file name of the plot file;
-//  include the measurement file name as the prefix
+//  include the first four standard fields in the measurement file name as the prefix
     if (savePlots || saveOnlyPlots) {
-       pathOutputFile=subDirectoryPath + measurementFileName + "_" + starName + plotFilenameSuffix;
+       pathOutputFile=subDirectoryPath + BestFileNamePrefix + "_" + starName + "_" + averageAPERTURE + "px" + plotFilenameSuffix;
        save(pathOutputFile);
         };
 //
@@ -1184,6 +1210,234 @@ function plotPAandOverlay (k) {
 };
 //
 //
+//
+//*************** FUNCTION:  createNEBTable
+//
+//  This function creates the NEB table for the measurement file associated with an
+//  aperture run. In addition, in the case of multiple aperture files being analyzed,
+//  the function creates a NEB table that lists for each star the aperture that
+//  results in the "best" disposition, namely the highest NEBdepth/RMS ratio
+//
+function createNEBTable (createBestTableFlag,pathOutputFile) {
+//
+//  Open the output file as a new file
+//
+  outputFile=File.open(pathOutputFile);
+//
+//  Create report title with date created and subject information
+  File.append("                       TFOP NEB Search Table for:" + CR,pathOutputFile);
+  File.append(CR,pathOutputFile);
+//  If the table with the "best" apertures is being created, show all files that are being analyzed,
+//  else only show the current file
+  if (createBestTableFlag == true) {
+  	for (i=0;i<numberMeasurementFiles;++i) {
+		filePath = filepathArray[i];
+  		File.append(filePath + CR,pathOutputFile);
+          };
+      } else {
+		 File.append(filePath + CR,pathOutputFile);
+		 };
+  File.append(CR,pathOutputFile);
+  File.append("                 Created by AIJ macro Revision " + REVISION + CR,pathOutputFile);
+  File.append("                          on " + datetime + CR,pathOutputFile);
+  File.append("          ------------------------------------------------" + CR,pathOutputFile);
+  scaleString = d2s(nScale,2);
+  File.append("                    Pixel Scale (arc-seconds/pixel): " + scaleString + CR,pathOutputFile);
+  File.append("                    Predicted ingress time: " + INGRESS + CR,pathOutputFile);
+  File.append("                    Predicted egress time:  " + EGRESS + CR,pathOutputFile);
+  File.append("                    Target predicted depth: " + DEPTH + CR,pathOutputFile);
+  File.append("                    Target Star: " + TARGET + CR,pathOutputFile);
+  File.append("                    Search Radius: " + RADIUS + CR,pathOutputFile);
+  obsDurString = d2s(observationDuration,1);
+  File.append("                    Duration of Observation (min.): " + obsDurString + CR,pathOutputFile);
+  numObsString = d2s(nObservations,0);
+  File.append("                    Number of Images: " + numObsString + CR,pathOutputFile);
+  expString = d2s(averageExpPlusDelay,1);
+  File.append("                    Average Exposure Plus Delay Time (sec.): " + expString + CR,pathOutputFile);
+  cadenceString = d2s(requestedCadence,1);
+  File.append("                    Cadence Requested When Calculating RMS (sec.): " + cadenceString + CR,pathOutputFile);
+  binningString = d2s(binning,0);
+  File.append("                    Binning Used When Calculating RMS: " + binningString + CR,pathOutputFile);
+//	Include information about the aperture if the "best" aperture combined table is not being created
+  if (createBestTableFlag == false) {
+  	apertureString = d2s(averageAPERTURE,1) + " (pixels); " + d2s(averageAPERTUREarcseconds,1) + " (arc-seconds)";
+  	File.append("                    Average Aperture Radius: " + apertureString + CR,pathOutputFile);
+      };
+  File.append("                    Dmag correction factor to account for difference with TESS band:" + d2s(dmagBuffer,1) + CR,pathOutputFile);
+  File.append(CR,pathOutputFile);
+  tableHeader ="      Separation             Uncorr.";
+  File.append(tableHeader + CR,pathOutputFile);
+  tableHeader1 = "Star  from target  PA (deg.)  dmag   RMS(ppt)  NEBdepth(ppt)  NEBdepth/RMS";
+//  If the table with the "best" apertures is being created, add an additional table heading column name
+        if (createBestTableFlag == true) {
+		tableHeader1 = tableHeader1 + " Aperture(px)" + "  Disposition";
+		} else {
+			 tableHeader1 = tableHeader1 + "    Disposition";
+			 };
+  File.append(tableHeader1 + CR,pathOutputFile);
+  debugPrint(tableHeader,1);
+  debugPrint(tableHeader1,1);
+//
+//  Clear disposition count array, which accumulates counts for each disposition type
+//  as follows (see corresponding dispNotation array)
+//    dispCount(0) = counts of Likely cleared
+//    dispCount(1) = counts of Cleared
+//    dispCount(2) = counts of Cleared-too faint
+//    dispCount(3) = counts of ***Not Cleared-flux too low***
+//    dispCount(4) = counts of ***Not Cleared***
+  for (i=0; i<5; i++) {
+	dispCount[i] = 0;
+      };
+//
+//  Cycle through all stars in STARlist
+  for (i=0; i<STARlistIndex; i++) {
+//  Create NEB table entries for all stars except the target star
+      if (STARlist[i] != TARGET) {
+//  Get minute part and seconds part of distance
+         minutePart = floor(STARdist[i]/60);
+         secondsPart = round(STARdist[i] - floor(STARdist[i]/60)*60);
+//  If the seconds part = 60, make it 0 and add one to minute part
+         if (secondsPart == 60) {secondsPart = 0; minutePart = minutePart + 1;};
+         distanceMinutePart = d2s(minutePart,0);
+         distanceSecondsPart = d2s(secondsPart,0);
+//  If the seconds part is <10, add a "0" prefix to its character string equivalent
+         if (secondsPart < 10) {distanceSecondsPart = "0" + distanceSecondsPart;};
+         successPrint = debugPrint("For " + STARlist[i] + ": minute part=" + distanceMinutePart + " second part=" + distanceSecondsPart,1);
+         separation = distanceMinutePart + singleQuote + distanceSecondsPart + doubleQuote;
+
+//  If the name of the NEB is two characters, append a space to the front so its row lines up
+//  with NEBs of three characters
+         lenSTARlist = lengthOf(STARlist[i]);
+         if (lenSTARlist == 2) {
+             STARname = " " + STARlist[i];
+             } else {STARname = STARlist[i];};
+//  Get PA value, convert it to a character string, and right justify it
+         STARpaValue = STARpa[i];
+         if (usePlateSolvedImage) {
+             rightJustify(STARpaValue,0);
+             STARpastring = globalValue;
+             } else {
+                     STARpastring ="  NA";
+                     };
+//  If the "best" aperture table is being created, pull values for dmag,
+//  RMS, NEBdepth, and dispostion from their respective "best" arrays,
+//  or else get thesevalues from the current aperture star values
+	   if (createBestTableFlag == true) {
+         		STARdmagValue = Bestdmag[i];
+			NEBrmsPPT = BestRMS[i] *1000;
+			NEBdepthPPT = BestNEBdepth[i];
+			notation = BestDisposition[i];
+            } else{
+//  Convert RMS to ppt and compute NEBdepthRMS
+         		STARdmagValue = STARdmag[i];
+         		NEBrmsPPT = STARrms[i]*1000;
+         		NEBdepthPPT = STARpredDepth[i];
+         		notation = STARdisp[i];
+			};
+//  STARdmag, NEBrmsPPT,  and NEBdepthPPT to character strings
+//  and then right justify them
+         rightJustify(STARdmagValue,3);
+         STARdmagstring = globalValue;
+         NEBdepthRMS = NEBdepthPPT / NEBrmsPPT;
+         rightJustify(NEBrmsPPT,2);
+         NEBrmsPPTstring = globalValue;
+         rightJustify(NEBdepthPPT,1);
+         NEBdepthPPTstring = globalValue;
+         rightJustify(NEBdepthRMS,1);
+         NEBdepthRMSstring = globalValue;
+//
+//  If star disposition is ***Not Cleared-flux too low***", set NEBdepthPPTstring and NEBdepthRMSstring to N/A
+        if (notation == "***Not Cleared-flux too low***") {
+           NEBdepthPPTstring = "     N/A";
+           NEBdepthRMSstring = "     N/A";
+           };
+//  Update the disposition count for the current disposition type
+        for (j=0; j<5; j++){
+            if (notation == dispNotation[j]) {
+               dispCount[j] = dispCount[j] + 1;
+               };
+             };
+//  Construct the table row
+        tableRow = STARname + "      " + separation + "     " + STARpastring + " " + STARdmagstring + " " + NEBrmsPPTstring + "       " + NEBdepthPPTstring + "  " + NEBdepthRMSstring + "      ";
+//  If the table with the "best" apertures is being created, add the best APERTURE for this star
+        if (createBestTableFlag == true) {
+		tableRow = tableRow + "     " + BestAverageAPERTURE[i] + "    " + notation;
+            } else{tableRow = tableRow + "   " + notation;
+			};
+        File.append(tableRow + CR,pathOutputFile);
+        debugPrint (tableRow,1);
+   };
+  };
+//
+//  Output explanations of the various dispositions
+  File.append(CR,pathOutputFile);
+  File.append("Possible dispositions of the star being the source of the target predicted depth:" + CR,pathOutputFile);
+  File.append("   Likely cleared (NEBdepth/RMS is between 3 and 5)" + CR,pathOutputFile);
+  File.append("   Cleared (NEBdepth/RMS is >= 5)" + CR,pathOutputFile);
+  File.append("   Cleared-too faint (NEBdepth >= 1000ppt)" + CR,pathOutputFile);
+  File.append("   ***Not Cleared-flux too low*** (weighted average of Source-Sky counts per aperture pixel < 2)" + CR,pathOutputFile);
+  File.append("   ***Not Cleared*** (none of the above conditions are met)" + CR,pathOutputFile);
+  File.append(CR,pathOutputFile);
+//
+//  Output a summary count and list of stars for each disposition
+  File.append("Summary count of  dispositions:" + CR,pathOutputFile);
+  for (i=0; i<5; i++) {
+      rightJustify(dispCount[i],0);
+      dispCountjustified = globalValue;
+	sumDisp = "    " + dispCountjustified + " " + dispNotation[i];
+      File.append(sumDisp + CR,pathOutputFile);
+      };
+  File.append(CR,pathOutputFile);
+//
+//  If the table with the "best" apertures is being created, or if there is only one
+//  measurement file, include the the image shift calculations in the NEB table
+if (createBestTableFlag || numberMeasurementFiles == 1) {
+//
+//  Deterimine image shift statistics
+//
+//  Get the value in the user's file associated with each of the user-specified labels for:
+//   1.  X(FITS)_TARGET
+//   2.  Y(FITS)_TARGET
+//  Assume that such labels and values are separated by the
+//  user-specified delimiter inputFileDelimiter
+//
+//  Cycle through each of the data rows in the user's file for the above values
+//  Sum X(FITS)'s and Y(FITS)'s
+  	XFITS = newArray(nObservations);
+  	YFITS = newArray(nObservations);
+  	for (i=1; i<nObservations+1; i++) {
+   	  rowString=fileArray[i];
+   	  success=getData("X(FITS)_" + TARGET,header,rowString,inputFileDelimiter,firstMeasTableColFlag);
+    	 XFITS[i-1] = globalValue;
+//
+    	 success=getData("Y(FITS)_" + TARGET,header,rowString,inputFileDelimiter,firstMeasTableColFlag);
+    	 YFITS[i-1] = globalValue;
+  	};
+  	Array.getStatistics(XFITS,minXFITS,maxXFITS,meanXFITS,stdDevXFITS);
+ 	successPrint = debugPrint("min X(FITS)= " + minXFITS + " " + "max X(FITS)= " + maxXFITS + " " + "stdev X(FITS)=" +   stdDevXFITS,1);
+  	Array.getStatistics(YFITS,minYFITS,maxYFITS,meanYFITS,stdDevYFITS);
+ 	successPrint = debugPrint("min Y(FITS)= " + minYFITS + " " + "max Y(FITS)= " + maxYFITS + " " + "stdev Y(FITS)=" +   stdDevYFITS,1);
+//  Convert stdev's in pixels to arc-seconds based on SCALE;
+	stdevX = nScale * stdDevXFITS;
+ 	stdevY = nScale * stdDevYFITS;
+ 	maxDevInX = maxXFITS-minXFITS;
+  	maxDevInY = maxYFITS-minYFITS;
+//
+//  Output image shift information
+ 	shiftMessage1 = "Image shift statistics:";
+ 	shiftMessage2 = "             stdev.(arc-seconds): " + stdevX + " in X and " + stdevY + " in Y";
+ 	shiftMessage3 = "             max. deviation (pixels): " + maxDevInX + " in X and " + maxDevInY + " in Y";
+//  nCount=nCount+1; sCount=d2s(nCount,0) + ".  ";
+	File.append(shiftMessage1 + CR,pathOutputFile);
+ 	File.append(shiftMessage2 + CR,pathOutputFile);
+	File.append(shiftMessage3,pathOutputFile);
+   };
+//
+//  Close the output file
+File.close(outputFile);
+};
+//
+//
 //******************************* END FUNCTION DEFINITIONS ********************
 //
 //  The following are the valid lengths of user entries.
@@ -1206,6 +1460,15 @@ newlineChar = fromCharCode(10);
 //  The following is the TESS bandwidth correction factor
 dmagBuffer = -0.5;
 
+//  The following support the user dialog asking whether there
+//  are move files to be processed
+moreFileslabels = newArray(2);
+moreFileslabels[0] = "Yes";
+moreFileslabels[1] = "No";
+moreFilesdefaults = newArray(2);
+//  Set defaults to no
+moreFilesdefaults[0] = 0;
+moreFilesdefaults[1] = 0;
 //
 //
 //****************** GET CURRENT DATE AND TIME FOR POSSIBLE FUTURE USE
@@ -1233,6 +1496,14 @@ datetime=yearString + "-" + monthString + "-" + dayString;
 //
 debugModeString = d2s(debugMode,0);
 successPrint = debugPrint("Debug Mode="+ debugModeString,1);
+//
+//  Initialize dispNotation array
+dispNotation[0] = "Likely cleared";
+dispNotation[1] = "Cleared";
+dispNotation[2] = "Cleared-too faint";
+dispNotation[3] = "***Not Cleared-flux too low***";
+dispNotation[4] = "***Not Cleared***";
+
 //
 //                               BEGIN USER DIALOGUES
 //
@@ -1455,42 +1726,113 @@ infChoice = Dialog.getCheckbox();
 call("ij.Prefs.set","nebcheck.infChoice",infChoice);
 //
 //
-//****************** GET MEASUREMENT TABLE
+//****************** GET MEASUREMENT TABLE(S)
 //
 // Set firstMeasTableColFlag to false indicating that the first column of the measurement
-// table header does not contains a label
+// tables header does not contains a label
 firstMeasTableColFlag = false;
 successPrint = debugPrint("First measurement table col. flag: " + firstMeasTableColFlag,1);
 //
-//  Open the user-specified measurement file and then put the file into an array by rows
+//  Open the user-specified measurement files and then put the file into an array by rows
 //
-filepath = File.openDialog("Select AIJ Measurements Table");
-measurementFile = File.openAsString(filepath);
-measurementFileName = File.nameWithoutExtension;
-fileSeparator = File.separator;
-successPrint = debugPrint("Successfully retrieved measurement file" + measurementFileName + " with a file separator of: " + fileSeparator,1);
+//  Setup various file path and name arrays
+maxnumberFiles = 12;
+filepathArray = newArray(maxnumberFiles);
+measurementFileArray = newArray(maxnumberFiles);
+measurementFileNameArray = newArray(maxnumberFiles);
+fileDirArray = newArray(maxnumberFiles);
+fullFileNameArray = newArray(maxnumberFiles);
 //
-//  Get directory of the user's measurement file
-fileDir= File.directory;
-success = debugPrint("Output file for any NEB table to be stored in: ",fileDir);
+//   Get all of user's measurement files
+Dialog.create("Select Measurement File(s)");
+moreFiles = true;
+i=0;
+while (moreFiles) {
+     filepathArray[i] = File.openDialog("Select AIJ Measurements Table");
+//  Print to the log file the file to be processed
+     print("Input file: ",filepathArray[i]);
+     measurementFileArray[i] = File.openAsString(filepathArray[i]);
+     measurementFileNameArray[i] = File.nameWithoutExtension;
+     if (i==1) {
+//   if i=1 then there is at least one additional measurement file to analyze, and if so,
+//   create arrays for storing the "best" aperture-related values for later use, namely:
+//   the best aperture's PA, dmag, RMS, predicted depth, NEBdepth/RMS ratio, dispostion, aperture size,
+//   the current name of the measurement file, and plot file directories.
+	  Bestdist = newArray(1000);
+	  Bestpa = newArray(1000);
+	  Bestdmag = newArray(1000);
+   	  BestRMS = newArray(1000);
+   	  BestNEBdepth = newArray(1000);
+   	  BestNEBdepthRMS = newArray(1000);
+   	  BestDisposition = newArray(1000);
+	  BestDispositionPriority = newArray(1000);
+   	  BestAverageAPERTURE = newArray(1000);
+        BestMeasurementFileName = newArray(1000);
+        if (savePlots || saveOnlyPlots) {
+            BestPlotDirectory = newArray(1000);
+            };
+//   Also, extract the TIC name, date, observatory and filter from the measurement file name
+//   and then create the prefix that will later be used to name the plot subfolder, the plots, and
+//   the consoldiated NEB table containing the "best" aperture results.
+//   Note: his assumes that the user's file name follows the conventional TFOP format.
+//   First, get the TIC name
+        success = findValue(measurementFileNameArray[i],1,"_");
+        BestFileNamePrefix = globalValue;
+//  Next, append to the TIC name, the next 3 positions - date, observatory, filter
+        for (k=2; k<5; k++) {
+          success = findValue(measurementFileNameArray[i],k,"_");
+          BestFileNamePrefix = BestFileNamePrefix + " _" + globalValue;
+          };
+//  Check that the file name prefix for this file is the same as the previous ones -
+//  if not, issue an error message. However, initially save it, if this is the first file
+        if (i == 1) {previousBestFileNamePrefix = BestFileNamePrefix;};
+        if (i !=1 && BestFileNamePrefix != previousBestFileNamePrefix) {
+             errorHandling("**** ERROR: TIC name, date, observatory, and/or filter are not the same for all measurement files.");
+             } else {
+                 previousBestFileNamePrefix = BestFileNamePrefix;
+                    };
+//
+        };
+//
+//
+     fileSeparator = File.separator;
+     successPrint = debugPrint("Successfully retrieved measurement file" + measurementFileNameArray[i] + " with a file separator of: " + fileSeparator,1);
+//
+//  Get directory path of the user's measurement file and retrieve the
+//  parent directory for later use
+     fileDirArray[i]= File.directory;
+     fileParentDirectory = File.getParent(fileDirArray[i]);
+     success = debugPrint("Output file for any NEB table to be stored in: ",fileDirArray[i]);
 //
 //  Determine delimiter (tab or comma) used in the
 //  input measurement table and set inputFileDelimiter
 //  to this.
 //
-fullFileName = File.name;
-indexOfperiod = lastIndexOf(fullFileName,".");
-extension = substring(fullFileName,indexOfperiod+1);
-message = "Extension= " + extension;
-debugPrint(message,1);
-if (extension == "tbl" || extension == "txt" || extension == "xls") {
-    inputFileDelimiter = TAB;
-    } else {
-           if (extension == "csv") {
-               inputFileDelimiter = COMMA;
-               } else {errorHandling("*** ERROR: file extension is not .tbl, .txt, .xls, or .csv");};
-           };
-
+     fullFileNameArray[i] = File.name;
+     indexOfperiod = lastIndexOf(fullFileNameArray[i],".");
+     extension = substring(fullFileNameArray[i],indexOfperiod+1);
+     message = "Extension= " + extension;
+     debugPrint(message,1);
+     if (extension == "tbl" || extension == "txt" || extension == "xls") {
+         inputFileDelimiter = TAB;
+         } else {
+                if (extension == "csv") {
+                    inputFileDelimiter = COMMA;
+                    } else {errorHandling("*** ERROR: file extension is not .tbl, .txt, .xls, or .csv");};
+                };
+//  Ask user if there are any more files to process
+//
+//****************** CREATE A DIALOGUE TO SEE IF THE USER HAS MORE MEASUREMENT FILES
+//
+     Dialog.addMessage("Are there more measurement files to process?");
+     Dialog.addCheckboxGroup(1,2,moreFileslabels,moreFilesdefaults);
+     Dialog.show();
+     moreFiles = Dialog.getCheckbox();
+     Dialog.create("");
+     i = i+1;
+};
+numberMeasurementFiles = i;
+//
 //  Define the number of optional cases for plotting
 nCases = 5;
 case = newArray(nCases);
@@ -1505,24 +1847,6 @@ case[1] = "dn";
 case[2] = "fn";
 case[3] = "df" + inputFileDelimiter;
 case[4] = "dfn";
-
-//  Split the measurement file into an array
-fileArray=split(measurementFile,"\n");
-nRows=lengthOf(fileArray);
-//  Calculate number of observations
-nObservations = nRows - 1;
-success = debugPrint("No. of observations: " + d2s(nObservations,0),1);
-//  Check if size of measurment table is less than 3,000 rows
-if (nRows > lenMeasurementTable) {
-     errorHandling("*** ERROR: Measurement table exceeds 3,000 rows")};
-//  Get header row
-header=fileArray[0];
-//
-//
-//  If the first col. of the header does not contain a label,
-//  then set iStart =2
-if (firstMeasTableColFlag) {
-     iStart = 1;} else {iStart = 2;};
 //
 //
 //****************** OPTIONALLY, CREATE THE DIALOGUE PAGE THAT REQUESTS THE PLATE-SOLVED IMAGE
@@ -1650,6 +1974,37 @@ if (usePlateSolvedImage) {
 //
 //************ BEGIN PROCESSING OF MEASUREMENT TABLE DATA
 //
+//Loop through all observation meaurement files
+//
+print(" ");
+for (nFiles=0;nFiles<numberMeasurementFiles;++nFiles) {
+//
+filePath = filepathArray[nFiles];
+//  Print to the log file the measurement file being processed
+print("Processing: ",filePath);
+measurementFile = measurementFileArray[nFiles];
+measurementFileName = measurementFileNameArray[nFiles];
+fileDir = fileDirArray[nFiles];
+fullFileName = fullFileNameArray[nFiles];
+//  Create the progress bar title that includes the file name
+progressTitle = "[" + "Progress: " + measurementFileName  + "]";
+//  Split the measurement file into an array
+fileArray=split(measurementFile,"\n");
+nRows=lengthOf(fileArray);
+//  Calculate number of observation rows
+nObservations = nRows - 1;
+success = debugPrint("No. of observations: " + d2s(nObservations,0),1);
+//  Check if size of measurment table is less than lenMeasurementTable rows
+if (nRows > lenMeasurementTable) {
+     errorHandling("*** ERROR: Measurement table exceeds " + lenMeasurementTable + "rows")};
+//  Get header row
+header=fileArray[0];
+//
+//
+//  If the first col. of the header does not contain a label,
+//  then set iStart =2
+if (firstMeasTableColFlag) {
+     iStart = 1;} else {iStart = 2;};
 //
 //  Create progress bar title
 //  To overcome potential issue with showProgress, which updates the status bar on the AIJ main toolbar,
@@ -1659,7 +2014,7 @@ wait(500);
 showProgress(0.002);
 //  Initiate text window with progress bar
 cumProgress = 0.0;
-run("Text Window...", "name=" + title + " width=71 height=3 monospaced");
+run("Text Window...", "name=" + progressTitle + " width=80 height=3 monospaced");
 progress(cumProgress);
 //
 //************ Get a list of all stars in the measurement table
@@ -1778,6 +2133,9 @@ for (j = 0; j<xfitsListIndex; j++) {
       };
 };
 //
+//!! Force StarlistIndex=4 for debug purposes
+//STARlistIndex = 4;
+//
 //  Time Checkpoint 2
 if (measMode == 1) {timeCheckpoint(2,"total stars","",xfitsListIndex,1);};
 //  Force cumulative progress to be 20% at this point
@@ -1873,7 +2231,7 @@ cumProgress = 0.50;
 progress (cumProgress);
 //
 //
-//  Finish computing the average aperture and convert to arc-seconds
+//  Finish computing the average aperture for this observation and convert to arc-seconds
 averageAPERTURE = averageAPERTURE / nObservations;
 averageAPERTUREarcseconds = averageAPERTURE * nScale;
 //  Area of average aperture
@@ -2133,7 +2491,7 @@ if (measMode == 1) {timeCheckpoint(11,"selected stars","bins",STARlistIndex,nBin
 //
 //
 //
-//****************** EXECUTE THE OPTIONS IN THIS ORDER: OPTION 2 & 5 PLOTS, OPTION 3 PLOT, OPTION 1
+//****************** EXECUTE THE OPTIONS IN THIS ORDER: OPTION 1, OPTION 2 & 5 PLOTS, OPTION 3 & 4 PLOTS
 //
 //
 //                   FIRST, EXECUTE THIS CODE FOR ALL OPTIONS
@@ -2141,6 +2499,10 @@ message = "STARlistindex: " + d2s(STARlistIndex,1);
 debugPrint(message,1);
 STARpredDepth = newArray(STARlistIndex);
 STARdisp = newArray(STARlistIndex);
+//  If plots are to be saved, create a subdirectory name for the plots
+if (savePlots || saveOnlyPlots) {
+  subDirectoryPath = fileDir + measurementFileName + "_" + averageAPERTURE + "px" + "_NEBcheck" + fileSeparator;
+  };
 //  Get the first row of observations for later use in getting
 //  each star's Source-Sky count
 index = indexArray[0];
@@ -2159,32 +2521,80 @@ for (k=0; k<STARlistIndex; k++) {
      NEBrmsPPT = STARrms[k]*1000;
      NEBdepthRMS = NEBdepthPPT / NEBrmsPPT;
 //  Determine if star's Source-Sky count per pixel within the average aperature area
-//  is less than 10; if so, the disposition should be ***Not Cleared-flux too low***
+//  is less than 2; if so, the disposition should be ***Not Cleared-flux too low***
 //  Get the weighted average Source-Sky count
     sourceSkyValue = STARSourceSky[k];
-//  Determine notation indicating disposition and store disposition in STARdisp array
+//
+//  Determine disposition and disposition priority and store disposition in STARdisp array.
+//  Higher priority disposition indicate a more likely cleared results. These priorities are used
+//  in multi-measurement file runs to determine the "best aperture" results.  Priorites associated with
+//  each disposition are:
+//     1=***Not Cleared-flux too low***
+//     2=***Not Cleared***
+//     3=Cleared-too faint
+//     4=Likely cleared
+//     5=Cleared
     STARdisp[k] = "***Not Cleared***";
+    dispPriority = 2;
      if (sourceSkyValue/apertureArea < 2) {
         STARdisp[k] = "***Not Cleared-flux too low***";
+        dispPrority = 1;
        } else {
                if (NEBdepthPPT >= 1000) {
                   STARdisp[k] = "Cleared-too faint";
+			dispPriority = 3;
                   } else {
                          if (NEBdepthRMS >= 5) {
                             STARdisp[k] = "Cleared";
+				    dispPriority = 5;
                             } else {
                                    if (NEBdepthRMS <5 && NEBdepthRMS >= 3) {
                                       STARdisp[k] = "Likely cleared";
+						  dispPriority = 4;
                                       };
                                    };
                          };
                };
+//  If this is a multi-observation run see if the "best aperture" arrays need to be updated
+   if (numberMeasurementFiles > 1) {
+//  If this is either the first run of a multi-observation run OR the current disp. priority
+//  is greater than the previous best OR the current disp. priority is equal to the previous
+//  best and its NEBdepthRMS is greater than the previous ration, then update the Best arrays
+//  for this star
+        if (nFiles == 0 || dispPriority > BestDispositionPriority[k] ||
+        (dispPriority == BestDispositionPriority[k] && NEBdepthRMS > BestNEBdepthRMS[k])) {
+	    Bestdist[k] = STARdist[k];
+	    Bestpa[k] = STARpa[k];
+	    Bestdmag[k] = STARdmag[k];
+	    BestRMS[k] = STARrms[k];
+	    BestNEBdepth[k] = STARpredDepth[k];
+          BestNEBdepthRMS[k] = NEBdepthRMS;
+	    BestDisposition[k] = STARdisp[k];
+	    BestDispositionPriority[k] = dispPriority;
+          BestAverageAPERTURE[k] = averageAPERTURE;
+	    BestMeasurementFileName[k] = measurementFileName;
+          if (savePlots || saveOnlyPlots) {
+	    	  BestPlotDirectory[k] = subDirectoryPath;
+              };
+          };
+       };
 };
 //
 //### Time Checkpoint 12
 if (measMode == 1) {timeCheckpoint(12,"selected stars","",STARlistIndex,1);};
 //Close the progress text window
   run("Close");
+//
+//
+//****************** CODE FOR OPTION 1
+//
+if (nebTableOption){
+//  Create a NEB table for this aperture run
+      pathOut = fileDir + measurementFileName + "_" + d2s(averageAPERTURE,0) + "px" + "_NEBtable" + ".txt";
+	createNEBTable(false,pathOut);
+//
+//  END OF OPTION 1 PROCESSING
+};
 //
 //
 //****************** CODE FOR OPTIONS 2 and 5
@@ -2220,10 +2630,10 @@ if (nebPlotOption) {
 //      b.  For Cases 2, 3, and 5. Apply the appropriate macro binning and outlier cleaning.
 //
 //
-//  Create subdirectory name for plots that are to be saved as .png files
-//
-  subDirectoryPath = fileDir + measurementFileName + "_NEBcheck" + fileSeparator;
-  File.makeDirectory(subDirectoryPath);
+//  If plots are to be saved, create the subdirectory where they will be saved as .png files
+    if (savePlots || saveOnlyPlots) {
+        File.makeDirectory(subDirectoryPath);
+        };
 //
 //  Initialize variables used for all the plots
 //
@@ -2236,8 +2646,8 @@ if (nebPlotOption) {
   if (overlayEndTime > endTimeRight) {timeMAX = overlayEndTime;} else {timeMAX = endTimeRight;};
 //
 // Adjust min and max X values with 1% of X-range for better readability of the plot
-    xMAX = timeMAX + 0.01*(timeMAX-timeMIN);
-    xMIN = timeMIN - 0.01*(timeMAX-timeMIN);
+  xMAX = timeMAX + 0.01*(timeMAX-timeMIN);
+  xMIN = timeMIN - 0.01*(timeMAX-timeMIN);
 //
 // First Create color array and corresponding disposition cases
   colorChoice = newArray(5);
@@ -2266,9 +2676,9 @@ if (nebPlotOption) {
 // Create the the correct time name for the x-axis legend
     if (useBJD) {timeName = "BJD_TDB";} else {timeName = "JD_UTC";};
 //
-firstPlot = true;
+    firstPlot = true;
 // Get first row of data for later use in computing distances from each star
-rowString = fileArray[1];
+    rowString = fileArray[1];
 //
 //  Set mStars to be the lesser of the user-defined neighborhood limit value
 //      (i.e., neighborLimitValue) and the number of stars in the initial radius
@@ -2283,7 +2693,7 @@ rowString = fileArray[1];
 // Cycle through each star to create the appropriate plots
 //
 // First create an array to later store true or false depending on whether the
-// nearest neighbor was <3 times the aperture radisu
+// nearest neighbor was <3 times the aperture radius
   neighborCheck = newArray(STARlistIndex);
 //
   for (k=STARlistIndex-1;k>=0; k--) {
@@ -2417,12 +2827,12 @@ rowString = fileArray[1];
             neighborCheck[k]=true;} else { neighborCheck[k]=false;};
 //
 //    Save the plot for the normal relative flux case
-      savePlot (STARlist[k], "-NEBdepth-plot.png");
+      savePlot (STARlist[k], "_NEBdepth-plot.png");
 //
 //
 //******** Next, if Option 5 is selected, run through each Case 0-4 below to see what other
 //******** optional plots are needed
-//      Case 0: rel_flux_T/Cnn_d
+//    Case 0: rel_flux_T/Cnn_d
 //	Case 1: rel_flux_T/Cnn_dn
 //	Case 2: rel_flux_T/Cnn_fn
 //	Case 3: rel_flux_T/Cnn_df
@@ -2496,7 +2906,7 @@ rowString = fileArray[1];
                if (endsWith(suffix,inputFileDelimiter)) {
                   fileSuffix = substring(suffix,0,lengthOf(suffix)-1);
                };
-               savePlot (STARlist[k], "-NEBdepth-plot-" + fileSuffix+ ".png");
+               savePlot (STARlist[k], "-NEBdepth-plot-" + fileSuffix + ".png");
                };
         };
      };
@@ -2504,7 +2914,10 @@ rowString = fileArray[1];
   if (saveOnlyPlots) {
    close();
    };
+//
+//  END OF OPTION 2 AND 5 PROCESSING
 };
+//
 //
 //
 //****************** CODE FOR OPTIONS 3 AND 4
@@ -2645,171 +3058,73 @@ if (dmagRMSOption) {
 //
     pathOutputFile=fileDir + measurementFileName + "_dmagRMS-plot.png";
     save(pathOutputFile);
-};
-
 //
-//
-//****************** CODE FOR OPTION 1
-//
-if (nebTableOption){
-//  Create the full output file name of the NEB Search Table file;
-//  include the measurement file name as the prefix
-  pathOutputFile=fileDir + measurementFileName + "_NEB-table" + ".txt";
-//
-//  Open the output file as a new file
-//
-  outputFile=File.open(pathOutputFile);
-//
-//  Create report title with date created and subject information
-  File.append("                       TFOP NEB Search Table for:" + CR,pathOutputFile);
-  File.append(CR,pathOutputFile);
-  File.append("           " + fullFileName + CR,pathOutputFile);
-  File.append(CR,pathOutputFile);
-  File.append("                 Created by AIJ macro Revision " + REVISION + CR,pathOutputFile);
-  File.append("                          on " + datetime + CR,pathOutputFile);
-  File.append("          ------------------------------------------------" + CR,pathOutputFile);
-  scaleString = d2s(nScale,2);
-  File.append("                    Pixel Scale (arc-seconds/pixel): " + scaleString + CR,pathOutputFile);
-  File.append("                    Predicted ingress time: " + INGRESS + CR,pathOutputFile);
-  File.append("                    Predicted egress time:  " + EGRESS + CR,pathOutputFile);
-  File.append("                    Target predicted depth: " + DEPTH + CR,pathOutputFile);
-  File.append("                    Target Star: " + TARGET + CR,pathOutputFile);
-  File.append("                    Search Radius: " + RADIUS + CR,pathOutputFile);
-  obsDurString = d2s(observationDuration,1);
-  File.append("                    Duration of Observation (min.): " + obsDurString + CR,pathOutputFile);
-  numObsString = d2s(nObservations,0);
-  File.append("                    Number of Images: " + numObsString + CR,pathOutputFile);
-  expString = d2s(averageExpPlusDelay,1);
-  File.append("                    Average Exposure Plus Delay Time (sec.): " + expString + CR,pathOutputFile);
-  cadenceString = d2s(requestedCadence,1);
-  File.append("                    Cadence Requested When Calculating RMS (sec.): " + cadenceString + CR,pathOutputFile);
-  binningString = d2s(binning,0);
-  File.append("                    Binning Used When Calculating RMS: " + binningString + CR,pathOutputFile);
-  apertureString = d2s(averageAPERTURE,1) + " (pixels); " + d2s(averageAPERTUREarcseconds,1) + " (arc-seconds)";
-  File.append("                    Average Aperture Radius: " + apertureString + CR,pathOutputFile);
-  File.append("                    Dmag correction factor to account for difference with TESS band:" + d2s(dmagBuffer,1) + CR,pathOutputFile);
-  File.append(CR,pathOutputFile);
-  tableHeader ="      Separation             Uncorr.";
-  File.append(tableHeader + CR,pathOutputFile);
-  tableHeader1 = "Star  from target  PA (deg.)  dmag   RMS(ppt)  NEBdepth(ppt)  NEBdepth/RMS    Disposition";
-  File.append(tableHeader1 + CR,pathOutputFile);
-  debugPrint(tableHeader,1);
-  debugPrint(tableHeader1,1);
-//
-//  Cycle through all stars in STARlist
-  for (i=0; i<STARlistIndex; i++) {
-//  Create NEB table entries for all stars except the target star
-      if (STARlist[i] != TARGET) {
-//  Get dmag value
-         STARdmagValue = STARdmag[i];
-//  Get minute part and seconds part of distance
-         minutePart = floor(STARdist[i]/60);
-         secondsPart = round(STARdist[i] - floor(STARdist[i]/60)*60);
-//  If the seconds part = 60, make it 0 and add one to minute part
-         if (secondsPart == 60) {secondsPart = 0; minutePart = minutePart + 1;};
-         distanceMinutePart = d2s(minutePart,0);
-         distanceSecondsPart = d2s(secondsPart,0);
-//  If the seonds part is <10, add a "0" prefix to its character string equivalent
-         if (secondsPart < 10) {distanceSecondsPart = "0" + distanceSecondsPart;};
-         successPrint = debugPrint("For " + STARlist[i] + ": minute part=" + distanceMinutePart + " second part=" + distanceSecondsPart,1);
-         separation = distanceMinutePart + singleQuote + distanceSecondsPart + doubleQuote;
-         STARpaValue = STARpa[i];
-//  If the name of the NEB is two characters, append a space to the front so its row lines up
-//  with NEBs of three characters
-         lenSTARlist = lengthOf(STARlist[i]);
-         if (lenSTARlist == 2) {STARlist[i] = " " + STARlist[i];};
-//  Convert STARpaValue, STARdmag, NEBrmsPPT, NEBdepthPPT to character strings
-//  and then right justify them
-         if (usePlateSolvedImage) {
-             rightJustify(STARpaValue,0);
-             STARpastring = globalValue;
-             } else {
-                     STARpastring ="  NA";
-                     };
-         rightJustify(STARdmagValue,3);
-         STARdmagstring = globalValue;
-         NEBdepthPPT = STARpredDepth[i];
-//  Convert RMS to ppt and compute NEBdepthRMS
-         NEBrmsPPT = STARrms[i]*1000;
-         NEBdepthRMS = NEBdepthPPT / NEBrmsPPT;
-         rightJustify(NEBrmsPPT,2);
-         NEBrmsPPTstring = globalValue;
-         rightJustify(NEBdepthPPT,1);
-         NEBdepthPPTstring = globalValue;
-         rightJustify(NEBdepthRMS,1);
-         NEBdepthRMSstring = globalValue;
-         notation = STARdisp[i];
-//  If star disposition is ***Not Cleared-flux too low***", set NEBdepthPPTstring and NEBdepthRMSstring to N/A
-         if (notation == "***Not Cleared-flux too low***") {
-             NEBdepthPPTstring = "     N/A";
-             NEBdepthRMSstring = "     N/A";
-             };
-         tableRow = STARlist[i] + "      " + separation + "     " + STARpastring + " " + STARdmagstring + " " + NEBrmsPPTstring + "       " + NEBdepthPPTstring + "  " + NEBdepthRMSstring + "      " + notation;
-        File.append(tableRow + CR,pathOutputFile);
-        debugPrint (tableRow,1);
-   };
+//  END OF OPTONS 3 AND 4 PROCESSING
   };
 //
-//  Output explanation of various dispositions
-  File.append(CR,pathOutputFile);
-  File.append("Possible dispositions of the star being the source of the target predicted depth:" + CR,pathOutputFile);
-  File.append("   Likely cleared (NEBdepth/RMS is between 3 and 5)" + CR,pathOutputFile);
-  File.append("   Cleared (NEBdepth/RMS is >= 5)" + CR,pathOutputFile);
-  File.append("   Cleared-too faint (NEBdepth >= 1000ppt)" + CR,pathOutputFile);
-  File.append("   ***Not Cleared-flux too low*** (weighted average of Source-Sky counts per aperture pixel < 2)" + CR,pathOutputFile);
-  File.append("   ***Not Cleared*** (none of the above conditions are met)" + CR,pathOutputFile);
-  File.append(CR,pathOutputFile);
 //
-//   Create rest of output file, namely the image shift calculations
-//
-//  Deterimine image shift statistics
-//
-//  Get the value in the user's file associated with each of the user-specified labels for:
-//   1.  X(FITS)_TARGET
-//   2.  Y(FITS)_TARGET
-//  Assume that such labels and values are separated by the
-//  user-specified delimiter inputFileDelimiter
-//
-//  Cycle through each of the data rows in the user's file for the above values
-//  Sum X(FITS)'s and Y(FITS)'s
-  XFITS = newArray(nObservations);
-  YFITS = newArray(nObservations);
-  for (i=1; i<nObservations+1; i++) {
-     rowString=fileArray[i];
-     success=getData("X(FITS)_" + TARGET,header,rowString,inputFileDelimiter,firstMeasTableColFlag);
-     XFITS[i-1] = globalValue;
-//
-     success=getData("Y(FITS)_" + TARGET,header,rowString,inputFileDelimiter,firstMeasTableColFlag);
-     YFITS[i-1] = globalValue;
-  };
-  Array.getStatistics(XFITS,minXFITS,maxXFITS,meanXFITS,stdDevXFITS);
-  successPrint = debugPrint("min X(FITS)= " + minXFITS + " " + "max X(FITS)= " + maxXFITS + " " + "stdev X(FITS)=" +   stdDevXFITS,1);
-  Array.getStatistics(YFITS,minYFITS,maxYFITS,meanYFITS,stdDevYFITS);
-  successPrint = debugPrint("min Y(FITS)= " + minYFITS + " " + "max Y(FITS)= " + maxYFITS + " " + "stdev Y(FITS)=" +   stdDevYFITS,1);
-//  Convert stdev's in pixels to arc-seconds based on SCALE;
-  stdevX = nScale * stdDevXFITS;
-  stdevY = nScale * stdDevYFITS;
-  maxDevInX = maxXFITS-minXFITS;
-  maxDevInY = maxYFITS-minYFITS;
-//
-//  Output image shift information
-  shiftMessage1 = "Image shift statistics:";
-  shiftMessage2 = "             stdev.(arc-seconds): " + stdevX + " in X and " + stdevY + " in Y";
-  shiftMessage3 = "             max. deviation (pixels): " + maxDevInX + " in X and " + maxDevInY + " in Y";
-//  nCount=nCount+1; sCount=d2s(nCount,0) + ".  ";
-  File.append(shiftMessage1 + CR,pathOutputFile);
-  File.append(shiftMessage2 + CR,pathOutputFile);
-  File.append(shiftMessage3,pathOutputFile);
-//
-//  Close the output file
-  File.close(outputFile);
+//  END OF MUTIPLE FILE LOOP
 };
 //
-beep();
-//  If user opted for it, display appropriate dialogue message informing
-//  user of location of saved files
+//  If there are multiple observation runs and either nebTableOption or saving plots is true, create a new
+//  directory under the current parent directory. This new directory is where a NEB table will be stored that lists
+//  the best aperture results for each star and, if savePlots or saveOnlyPlots is true, where a subdirectory
+//  will be created where the plots associated with the corresponding best aperture runs will be stored
+if (numberMeasurementFiles > 1) {
+//
+//  Create a new directory under the current parent directory for storing the
+//  summary NEB table and/or the subdirectory for the corresponding NEB plots
+    if (nebTableOption || savePlots || saveOnlyPlots) {
+      bestDir = fileParentDirectory + fileSeparator + "Best-Aperture-Results" + fileSeparator;
+      File.makeDirectory(bestDir);
+      };
+//
+    if (nebTableOption){
+//  Create a NEB table with the best aperture results
+      pathOut = bestDir + BestFileNamePrefix + "_NEBtable" + ".txt";
+	createNEBTable(true,pathOut);
+      };
+//
+    if (savePlots || saveOnlyPlots) {
+//  Create a directory and plots of observations for the best apertures
+      newPlotPath = bestDir + BestFileNamePrefix + "_NEBcheck" + fileSeparator;
+      File.makeDirectory(newPlotPath);
+      plotFilenameSuffix = "_NEBdepth-plot.png";
+//  For each star,store in the new directory the plot associated with the its "best" aperture run
+      Dialog.create("");
+      Dialog.addMessage("Click OK to begin moving best aperture plots to the Best-Aperture-Results_NEBplots folder");
+      Dialog.show();
+      print(" ");
+      for (k=STARlistIndex-1;k>=0; k--) {
+        starName = STARlist[k];
+//  Bypass target
+        if (starName != TARGET) {
+//  Create the subDirectoryPath pointing to the directory that has the plot associated with the
+//  "best" aperture run for this star
+         aperture = BestAverageAPERTURE[k];
+         fullFileName = BestFileNamePrefix + "_" + starName + "_" + aperture + "px" + plotFilenameSuffix;
+         oldsubDirectoryPath = BestPlotDirectory[k];
+         oldpath = oldsubDirectoryPath + fullFileName;
+//  Open plot and save it to the new directory
+         print("Moving: ",fullFileName);
+         open(oldpath);
+	   selectWindow(fullFileName);
+         newpath = newPlotPath + fullFileName;
+         save(newpath);
+//  Resave due to macro's infrequent saving misbehaviour!
+         save(newpath);
+	   close();
+       };
+      };
+    };
+};
+//
+//  If user opted for it, display appropriate dialogue messages informing
+//  the user of the location of saved files
   if (infChoice) {
-       Dialog.create("");
+   Dialog.create("");
+     if (numberMeasurementFiles == 1) {
+//   Display appropriate messages if only a single measurement file was analyzed
        if (nebTableOption && !dmagRMSOption) {
           Dialog.addMessage("The NEB Search Table can be found in:");
           Dialog.addMessage(fileDir);
@@ -2833,7 +3148,21 @@ beep();
        if (nebTableOption || dmagRMSOption || (nebPlotOption && (savePlots || saveOnlyPlots)) ) {
           Dialog.addMessage("                            NEB analysis completed!");
           } else {Dialog.addMessage("NEB analysis completed!");};
-       Dialog.show();
-     };
+     } else {
+//   Display appropriate messages if multiple measurement files were analyzed
+       	if (nebTableOption) {
+          	    Dialog.addMessage("The " + doubleQuote + "best aperture" + doubleQuote + " NEB Search Table can be found in:");
+          	    Dialog.addMessage(pathOut);
+                Dialog.addMessage("");
+          	    };
+       	if (savePlots || saveOnlyPlots) {
+               Dialog.addMessage("The " + doubleQuote + "best aperture" + doubleQuote + " NEB plots can be found in:");
+               Dialog.addMessage(newPlotPath);
+               Dialog.addMessage("");
+               };
+		Dialog.addMessage("NEB analysis completed!");
+            };
+   Dialog.show();
+   };
 //
 exit();

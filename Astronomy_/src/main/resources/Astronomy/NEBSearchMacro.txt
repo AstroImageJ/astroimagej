@@ -13,14 +13,20 @@
 //  Comments or questions may be directed to the macro's author:
 //  Dennis Conti, email: dennis@astrodennis.com
 //
-//  REVISION 3.09
-var REVISION = "3.09";
+//  REVISION 3.11
+var REVISION = "3.11";
 //
 //  The following are diagnostic flags
 var STARtoDiagnose = "";
 var FORCEbinning = 0;
 //
 //  Revision Notes:
+//	   3.11 Change checkbox selection message on user dialogue to:
+//               "Select this box to include NEB analysis progress updates in the log window."
+//            Always include NEB analysis informational messages at the end of each run.
+//            Include version number in the title on user dialogue page.
+//	   3.10 Correct the suffix name of the NEBtable file to NEB-table.
+//		  Delete an extra space in the NEBtable summary disposition title.
 //	   3.09 For detrend plots, compute the "Disposition" on the plot based on the detrend's data vs. using
 //			the disposition from the undetrended data for that star.
 //		  In creating "Best Aperture" NEB table, pull star seperation and PA from the Best Aperture values
@@ -1411,7 +1417,7 @@ function createNEBTable (createBestTableFlag,pathOutputFile) {
   File.append(CR,pathOutputFile);
 //
 //  Output a summary count and list of stars for each disposition
-  File.append("Summary count of  dispositions:" + CR,pathOutputFile);
+  File.append("Summary count of dispositions:" + CR,pathOutputFile);
   for (i=0; i<5; i++) {
       rightJustify(dispCount[i],0);
       dispCountjustified = globalValue;
@@ -1564,7 +1570,7 @@ dispNotation[4] = "***Not Cleared***";
 //
 Dialog.create("TFOP SG1 NEB Analysis Macro");
 
-Dialog.addMessage("                                                      NEB Analysis Macro");
+Dialog.addMessage("                                                      NEB Analysis Macro V" + REVISION);
 //
 //  Option 1:
 //  Get Option 1 preference, if one exists, otherwise nebTableOption will be returned by ij.Prefs.get as true
@@ -1648,10 +1654,10 @@ userString(string,DEPTH,lenTargetDepth);
 RMSlimit = call("ij.Prefs.get","nebcheck.RMSlimit","5");
 userString("For Option 2: multiple of RMS used to eliminate outliers from plots",RMSlimit,lenRMSLimit);
 //
-//  Ask if the user would like to enable informational messages at the end of the run
-message = "Select this box if you would like informational messages at the end of the run";
+//  Ask if the user would like to include progress messages in the log window
+message = "Select this box to include NEB analysis progress updates in the log window.";
 Dialog.addMessage("");
-debugChoice = call("ij.Prefs.get","nebcheck.infChoice",true);
+debugChoice = call("ij.Prefs.get","nebcheck.progressChoice",false);
 Dialog.addCheckbox(message,debugChoice);
 Dialog.addMessage("Note 1: Defaults to last V.Marker1 value. Use decimal part only; however, add 1 if day rolls over from beginning of data");
 Dialog.addMessage("Note 2: Defaults to last V.Marker2 value. Use decimal part only; however, add 1 if day rolls over from ingress time");
@@ -1774,9 +1780,11 @@ call("ij.Prefs.set","nebcheck.RMSlimit",RMSlimit);
 if ((nebTableOption || nebPlotOption || dmagRMSOption) && RMSlimit == "") {errorHandling("**** ERROR: Option 1, 2, 3, or 4 was selected, but no multiple of RMS was entered");};
 if ((nebTableOption || nebPlotOption || dmagRMSOption) && RMSlimit != "") {rmsLimitValue = parseFloat(RMSlimit);};
 //
-//  Get choice of whether informational messages are to be displayed
-infChoice = Dialog.getCheckbox();
-call("ij.Prefs.set","nebcheck.infChoice",infChoice);
+//  Get choice of whether
+progressChoice = Dialog.getCheckbox();
+call("ij.Prefs.set","nebcheck.progressChoice",progressChoice);
+//  Force informational messages to always be displayed at the end of the run
+infChoice = true;
 //
 //
 //****************** GET MEASUREMENT TABLE(S)
@@ -1802,9 +1810,11 @@ moreFiles = true;
 i=0;
 while (moreFiles) {
      filepathArray[i] = File.openDialog("Select AIJ Measurements Table");
-//  Print to the log file the file to be processed
-     getTimeStamp();
-     print(globalValue + "  Input file: ",filepathArray[i]);
+//  If user selection, print to the log window the file to be processed
+     if (progressChoice) {
+                         getTimeStamp();
+                         print(globalValue + "  Input file: ",filepathArray[i]);
+				 };
      measurementFileArray[i] = File.openAsString(filepathArray[i]);
      measurementFileNameArray[i] = File.nameWithoutExtension;
      if (i==1) {
@@ -2028,13 +2038,15 @@ if (usePlateSolvedImage) {
 //
 //Loop through all observation meaurement files
 //
-print(" ");
+if (progressChoice) {print(" ");};
 for (nFiles=0;nFiles<numberMeasurementFiles;++nFiles) {
 //
 filePath = filepathArray[nFiles];
-//  Print to the log file the measurement file being processed
-getTimeStamp();
-print(globalValue + "  Processing: ",filePath);
+//  If user selection, print to the log window the measurement file being processed
+if (progressChoice) {
+			  getTimeStamp();
+			  print(globalValue + "  Processing: ",filePath);
+			  };
 measurementFile = measurementFileArray[nFiles];
 measurementFileName = measurementFileNameArray[nFiles];
 fileDir = fileDirArray[nFiles];
@@ -2662,7 +2674,7 @@ if (measMode == 1) {timeCheckpoint(12,"selected stars","",STARlistIndex,1);};
 //
 if (nebTableOption){
 //  Create a NEB table for this aperture run
-      pathOut = fileDir + measurementFileName + "_" + d2s(averageAPERTURE,0) + "px" + "_NEBtable" + ".txt";
+      pathOut = fileDir + measurementFileName + "_" + d2s(averageAPERTURE,0) + "px" + "_NEB-table" + ".txt";
 	createNEBTable(false,pathOut);
 //
 //  END OF OPTION 1 PROCESSING
@@ -3179,12 +3191,15 @@ if (numberMeasurementFiles > 1) {
 //
     if (nebTableOption){
 //  Create a NEB table with the best aperture results
-      pathOut = bestDir + BestFileNamePrefix + "_NEBtable" + ".txt";
+      pathOut = bestDir + BestFileNamePrefix + "_NEB-table" + ".txt";
 	createNEBTable(true,pathOut);
       };
-    print(" ");
-    getTimeStamp();
-    print(globalValue + "  Finished creating best aperture NEB table.");
+//  If user selection, print best aperture completion message to log window
+    if (progressChoice) {
+    				print(" ");
+    				getTimeStamp();
+    				print(globalValue + "  Finished creating best aperture NEB table.");
+				};
 //
 //  Begin moving plots if either save plots option is true
     if (savePlots || saveOnlyPlots) {
@@ -3205,7 +3220,7 @@ if (numberMeasurementFiles > 1) {
       File.makeDirectory(newPlotPath);
       plotFilenameSuffix = "_NEBdepth-plot.png";
 //  For each star,store in the new directory the plot associated with the its "best" aperture run
-      print(" ");
+      if (progressChoice) {print(" ");};
       incrProgress = 1.0/STARlistIndex;
       for (k=STARlistIndex-1;k>=0; k--) {
         starName = STARlist[k];
@@ -3218,8 +3233,11 @@ if (numberMeasurementFiles > 1) {
          oldsubDirectoryPath = BestPlotDirectory[k];
          oldpath = oldsubDirectoryPath + fullFileName;
 //  Open plot and save it to the new directory
-         getTimeStamp();
-         print(globalValue + "  Moving: ",fullFileName);
+//  If user selection, print to the log window the file being moved
+	   if (progressChoice) {
+         				getTimeStamp();
+         				print(globalValue + "  Moving: ",fullFileName);
+				     };
          open(oldpath);
 	   selectWindow(fullFileName);
          newpath = newPlotPath + fullFileName;
@@ -3232,19 +3250,26 @@ if (numberMeasurementFiles > 1) {
 	   close();
        };
       };
-      print(" ");
-      getTimeStamp();
-      print(globalValue + "  Finished moving best aperture plot files to NEBcheck folder.");
+//  If user selection, print move completion message to log window
+      if (progressChoice) {
+      			  print(" ");
+      			  getTimeStamp();
+      			  print(globalValue + "  Finished moving best aperture plot files to NEBcheck folder.");
+				  };
       progress (1.0);
     };
 };
 //
-print(" ");
-getTimeStamp();
-print(globalValue + "  NEB analysis completed.");
+//  If user selection, print completion message to log window
+if (progressChoice) {
+			  print(" ");
+			  getTimeStamp();
+			  print(globalValue + "  NEB analysis completed.");
+			  };
 //
-//  If user opted for it, display appropriate dialogue messages informing
+//  Display appropriate dialogue messages informing
 //  the user of the location of saved files
+//  Note: in V3.09, infChoice was forced to true
   if (infChoice) {
    Dialog.create("");
      if (numberMeasurementFiles == 1) {

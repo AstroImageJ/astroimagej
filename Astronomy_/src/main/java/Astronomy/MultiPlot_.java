@@ -39,6 +39,7 @@ import java.io.*;
 import java.nio.file.Path;
 import java.text.DecimalFormat;
 import java.util.*;
+import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
@@ -7356,7 +7357,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         createNEBReportMenuItem.setToolTipText("<html>" + "Create NEB search reports and plots.<br>");
         createNEBReportMenuItem.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                ij.plugin.Macro_Runner.runMacroFromJar(getClass().getClassLoader(), "Astronomy/NEBSearchMacro.txt", "");
+                Executors.newSingleThreadExecutor().submit(() -> ij.plugin.Macro_Runner.runMacroFromJar(getClass().getClassLoader(), "Astronomy/NEBSearchMacro.txt", ""));
             }
         });
         filemenu.add(createNEBReportMenuItem);

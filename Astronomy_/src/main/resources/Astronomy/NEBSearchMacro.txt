@@ -3234,28 +3234,34 @@ if (numberMeasurementFiles > 1) {
          fullFileName = BestFileNamePrefix + "_" + starName + "_" + aperture + "px" + plotFilenameSuffix;
          oldsubDirectoryPath = BestPlotDirectory[k];
          oldpath = oldsubDirectoryPath + fullFileName;
-//  Open plot and save it to the new directory
+//  Copy plot to the new directory
 //  If user selection, print to the log window the file being moved
 	   if (progressChoice) {
          				getTimeStamp();
          				print(globalValue + "  Copying: ",fullFileName);
 				     };
          newpath = newPlotPath + fullFileName;
+         if (File.exists(newpath)) {
+            successfulDelete = File.delete(newpath);
+         }
          File.copy (oldpath,newpath);
          cumProgress = cumProgress + incrProgress;
          progress(cumProgress);
        };
       };
+progress(1.0);
+run("Close");
+
 //  If user selection, print copy completion message to log window
       if (progressChoice) {
       			  print(" ");
       			  getTimeStamp();
       			  print(globalValue + "  Finished creating folder with best NEBcheck plot results.");
 				  };
-      progress (1.0);
     };
 };
- run("Close");
+
+
 //
 //  If user selection, print completion message to log window
 if (progressChoice) {

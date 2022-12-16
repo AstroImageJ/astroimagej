@@ -13,14 +13,16 @@
 //  Comments or questions may be directed to the macro's author:
 //  Dennis Conti, email: dennis@astrodennis.com
 //
-//  REVISION 3.11
-var REVISION = "3.11";
+//  REVISION 3.13
+var REVISION = "3.13";
 //
 //  The following are diagnostic flags
 var STARtoDiagnose = "";
 var FORCEbinning = 0;
 //
 //  Revision Notes:
+//       3.13 Updated some user interface wording, and closed last progress bar when finished.
+//       3.12 When saving the "best" plots, replace the previous open/save sequence with the new File.copy macro function
 //	   3.11 Change checkbox selection message on user dialogue to:
 //               "Select this box to include NEB analysis progress updates in the log window."
 //            Always include NEB analysis informational messages at the end of each run.
@@ -32,7 +34,7 @@ var FORCEbinning = 0;
 //		  In creating "Best Aperture" NEB table, pull star seperation and PA from the Best Aperture values
 //			rather than assuming these values are the same for a given star across all apertures.
 //		  Add timestamps to log messages.
-//	   3.08 Delete user dialogue to begin moving best aperture plots.
+//	   3.08 Delete user dialogue to begin selecting best aperture plots.
 //		  Add log messages when consolidated NEB table is created and when movement of best aperture plots
 //            	to the best aperture plot folder begins and ends.
 //		  Add a progress bar when the best aperture plots are being found and moved.
@@ -44,7 +46,7 @@ var FORCEbinning = 0;
 //			If the files do have different parent folders, then store the Best-Aperture-Results folder at the
 //			same level as these parent folders.
 //        Simplify the user dialog asking if there is another file to be processed. Since the more common case is only one
-//           file vs. multiple files, the user only has to click OK in that case.
+//          file vs. multiple files, the user only has to click OK in that case.
 //	   3.00 Add ability to analyze multiple, user-defined measurement tables containing different apertures. If so,
 //      -3.07 produce a NEB table showing the apertures with the hightest "priority" disposition and
 //            the highest NEBdepth/RMS ratio within that disposition (referred to here as the "best apertures"),
@@ -1568,9 +1570,9 @@ dispNotation[4] = "***Not Cleared***";
 //
 //****************** CREATE THE FIRST PAGE OF USER DIALOGUES
 //
-Dialog.create("TFOP SG1 NEB Analysis Macro");
+Dialog.create("NEB Analysis Macro (v"+REVISION+")");
 
-Dialog.addMessage("                                                      NEB Analysis Macro V" + REVISION);
+//Dialog.addMessage("                                                      NEB Analysis Macro V" + REVISION);
 //
 //  Option 1:
 //  Get Option 1 preference, if one exists, otherwise nebTableOption will be returned by ij.Prefs.get as true
@@ -1655,7 +1657,7 @@ RMSlimit = call("ij.Prefs.get","nebcheck.RMSlimit","5");
 userString("For Option 2: multiple of RMS used to eliminate outliers from plots",RMSlimit,lenRMSLimit);
 //
 //  Ask if the user would like to include progress messages in the log window
-message = "Select this box to include NEB analysis progress updates in the log window.";
+message = "Include NEB analysis progress updates in the log window.";
 Dialog.addMessage("");
 debugChoice = call("ij.Prefs.get","nebcheck.progressChoice",false);
 Dialog.addCheckbox(message,debugChoice);
@@ -1884,7 +1886,7 @@ while (moreFiles) {
 //
 //****************** CREATE A DIALOGUE TO SEE IF THE USER HAS MORE MEASUREMENT FILES
 //
-     Dialog.addCheckbox ("<-Click here if there are additional files are to be processed;",false);
+     Dialog.addCheckbox ("Include another measurements table and merge results;",false);
      Dialog.addMessage (" ");
      Dialog.addMessage (" ");
      Dialog.addMessage (" ");
@@ -3173,7 +3175,7 @@ if (dmagRMSOption) {
   };
 //
 //
-//  END OF MUTIPLE FILE LOOP
+//  END OF MULTIPLE FILE LOOP
 };
 //
 //  If there are multiple observation runs and either nebTableOption or saving plots is true, create a new
@@ -3201,7 +3203,7 @@ if (numberMeasurementFiles > 1) {
     				print(globalValue + "  Finished creating best aperture NEB table.");
 				};
 //
-//  Begin moving plots if either save plots option is true
+//  Begin copying plots if either save plots option is true
     if (savePlots || saveOnlyPlots) {
 //
 //  First, create a progress bar title
@@ -3212,7 +3214,7 @@ if (numberMeasurementFiles > 1) {
       showProgress(0.002);
 //  then initiate a text window with progress bar
       cumProgress = 0.0;
-      progressTitle = "[" + "Progress: Moving Best Aperture Plots"  + "]";
+      progressTitle = "[" + "Progress: Copying Best Aperture Plots"  + "]";
       run("Text Window...", "name=" + progressTitle + " width=80 height=3 monospaced");
       progress(cumProgress);
 //  Create a directory and plots of observations for the best apertures
@@ -3236,35 +3238,30 @@ if (numberMeasurementFiles > 1) {
 //  If user selection, print to the log window the file being moved
 	   if (progressChoice) {
          				getTimeStamp();
-         				print(globalValue + "  Moving: ",fullFileName);
+         				print(globalValue + "  Copying: ",fullFileName);
 				     };
-         open(oldpath);
-	   selectWindow(fullFileName);
          newpath = newPlotPath + fullFileName;
-         save(newpath);
-//  Resave due to ImageJ's frequent saving misbehaviour!
-         save(newpath);
-//  Update progress at the rate of incrProgress (see above)
+         File.copy (oldpath,newpath);
          cumProgress = cumProgress + incrProgress;
          progress(cumProgress);
-	   close();
        };
       };
-//  If user selection, print move completion message to log window
+//  If user selection, print copy completion message to log window
       if (progressChoice) {
       			  print(" ");
       			  getTimeStamp();
-      			  print(globalValue + "  Finished moving best aperture plot files to NEBcheck folder.");
+      			  print(globalValue + "  Finished creating folder with best NEBcheck plot results.");
 				  };
       progress (1.0);
     };
 };
+ run("Close");
 //
 //  If user selection, print completion message to log window
 if (progressChoice) {
 			  print(" ");
 			  getTimeStamp();
-			  print(globalValue + "  NEB analysis completed.");
+			  print(globalValue + "  NEBcheck analysis completed.");
 			  };
 //
 //  Display appropriate dialogue messages informing

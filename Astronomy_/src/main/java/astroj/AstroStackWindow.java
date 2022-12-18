@@ -153,8 +153,8 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
     double prevMag, prevImageX = 0, prevImageY = 0;
     double startMinDisplayValue, startMaxDisplayValue;
     double imageMedian;
-    public double min;
-    double max;
+    public double blackValue;
+    double whiteValue;
     double minValue;
     public double maxValue;
     double meanValue;
@@ -167,8 +167,8 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
     double annotateCircleRadius = 20;
 
     double savedMag = 1.0;
-    double savedMin = 0.0;
-    double savedMax = 255.0;
+    double savedBlackValue = 0.0;
+    double savedWhiteValue = 255.0;
     public double pixelScaleX = 0.0, pixelScaleY = 0.0;
     int wcsSlice = 0;
     int savedICHeight = 600;
@@ -202,12 +202,12 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
     boolean startupPrevSize = true;
     boolean showPhotometer = true;
     boolean prevShiftDownState = false;
-    public boolean startupAutoLevel = true;
+    public boolean autoContrast = true;
     public boolean isReady = false;
     boolean startupPrevPan = false;
     boolean startupPrevZoom = false;
-    boolean startupPrevLevels = false;
-    boolean startupPrevLevelsPerSlice = false;
+    boolean fixedContrast = false;
+    boolean fixedContrastPerSlice = false;
     boolean tempAutoLevel = false;
     boolean tempPrevLevels = false;
     boolean tempPrevLevelsPerSlice = false;
@@ -420,7 +420,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
     CheckboxMenuItem showMeasureSexCB, showMeasureCircleCB, showMeasureCrosshairCB, showMeasureLengthCB, showMeasurePACB, showMeasureDelMagCB, showMeasureFluxRatioCB,
             showMeasureMultiLinesCB, negateMeasureDelMagCB, writeMeasureLengthLogCB, writeMeasureLengthTableDegCB, writeMeasureLengthTableMinCB, writeMeasureLengthTableSecCB,
             writeMeasurePACB, writeMeasureDelMagCB, writeMeasureFluxRatioCB, writePhotometricDataTableCB;
-    CheckboxMenuItem startupAutoLevelRB, usePreviousLevelsRB, usePreviousLevelsPerSliceRB, useFullRangeRB, negativeDisplayRB;
+    CheckboxMenuItem autoContrastRB, fixedContrastRB, fixedContrastPerSliceRB, useFullRangeRB, negativeDisplayRB;
     CheckboxMenuItem autoNupEleftRB, invertNoneRB, invertXRB, invertYRB, invertXYRB;
     CheckboxMenuItem rotate0RB, rotate90RB, rotate180RB, rotate270RB, useSIPAllProjectionsCB;
     CheckboxMenuItem showZoomCB, showDirCB, showXYCB, showScaleXCB, showScaleYCB, useFixedMinMaxValuesCB;
@@ -436,7 +436,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
     JButton buttonBroom, buttonShowAll, buttonMultiAperture, buttonAlign, buttonSetAperture, buttonDeleteSlice;
     JToggleButton buttonShowSky, buttonSourceID, buttonSourceCounts, buttonCentroid, buttonNegative, buttonAstrometry, buttonShowAnnotations;
     JSlider minSlider, maxSlider;
-    JTextField minValueTextField, maxValueTextField, minTextField, maxTextField, meanTextField;
+    JTextField minValueTextField, maxValueTextField, blackTextfield, whiteTextfield, meanTextField;
     JTextField valueTextField, RATextField, DecTextField, peakTextField;
     JTextField fitsXTextField, fitsYTextField, lengthTextField;
     JTextField ijXTextField, ijYTextField;
@@ -492,8 +492,8 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         getStatistics();
         minValue = stats.min;
         maxValue = stats.max;
-        min = minValue;
-        max = maxValue;
+        blackValue = minValue;
+        whiteValue = maxValue;
 
         ImageProcessor ip = imp.getProcessor();
 
@@ -507,8 +507,8 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         sliceMin = new double[stackSize];
         sliceMax = new double[stackSize];
         for (int i = 0; i < stackSize; i++) {
-            sliceMin[i] = min;
-            sliceMax[i] = max;
+            sliceMin[i] = blackValue;
+            sliceMax[i] = whiteValue;
         }
 
         getPrefs();
@@ -541,8 +541,8 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             useFixedMinMaxValues = false;
             minValue = cal.getCValue(0);
             maxValue = cal.getCValue(255);
-            if (min < minValue) min = minValue;
-            if (max > maxValue) max = maxValue;
+            if (blackValue < minValue) blackValue = minValue;
+            if (whiteValue > maxValue) whiteValue = maxValue;
         } else {
             maxValue = useFixedMinMaxValues ? fixedMaxValue : stats.max;
             minValue = useFixedMinMaxValues ? fixedMinValue : stats.min;
@@ -687,27 +687,27 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         if (autoDisplayAnnotationsFromHeader) {
             displayAnnotationsFromHeader(true, true, true);
         }
-        if (startupAutoLevel) {
+        if (autoContrast) {
             setAutoLevels(null);
-        } else if (startupPrevLevels || startupPrevLevelsPerSlice) {
+        } else if (fixedContrast || fixedContrastPerSlice) {
             if (imp.getType() == ImagePlus.COLOR_256 || imp.getType() == ImagePlus.COLOR_RGB || imp.getType() == ImagePlus.GRAY8) {
-                min = savedMin < minValue ? minValue : savedMin;
-                max = savedMax > maxValue ? maxValue : savedMax;
+                blackValue = savedBlackValue < minValue ? minValue : savedBlackValue;
+                whiteValue = savedWhiteValue > maxValue ? maxValue : savedWhiteValue;
             } else {
-                min = savedMin;
-                max = savedMax;
+                blackValue = savedBlackValue;
+                whiteValue = savedWhiteValue;
             }
             for (int i = 0; i < stackSize; i++) {
-                sliceMin[i] = min;
-                sliceMax[i] = max;
+                sliceMin[i] = blackValue;
+                sliceMax[i] = whiteValue;
             }
             updatePanelValues();
         } else {
-            min = minValue;
-            max = maxValue;
+            blackValue = minValue;
+            whiteValue = maxValue;
             for (int i = 0; i < stackSize; i++) {
-                sliceMin[i] = min;
-                sliceMax[i] = max;
+                sliceMin[i] = blackValue;
+                sliceMax[i] = whiteValue;
             }
             updatePanelValues();
         }
@@ -1189,19 +1189,19 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
 
         scaleMenu.add("--When an image is opened or modified use:--");
 
-        startupAutoLevelRB = new CheckboxMenuItem("auto brightness & contrast", startupAutoLevel);
-        startupAutoLevelRB.addItemListener(this);
-        scaleMenu.add(startupAutoLevelRB);
+        autoContrastRB = new CheckboxMenuItem("auto brightness & contrast", autoContrast);
+        autoContrastRB.addItemListener(this);
+        scaleMenu.add(autoContrastRB);
 
-        usePreviousLevelsRB = new CheckboxMenuItem("fixed brightness & contrast", !startupAutoLevel && startupPrevLevels);
-        usePreviousLevelsRB.addItemListener(this);
-        scaleMenu.add(usePreviousLevelsRB);
+        fixedContrastRB = new CheckboxMenuItem("fixed brightness & contrast", !autoContrast && fixedContrast);
+        fixedContrastRB.addItemListener(this);
+        scaleMenu.add(fixedContrastRB);
 
-        usePreviousLevelsPerSliceRB = new CheckboxMenuItem("fixed brightness & contrast (per image slice)", !startupAutoLevel && !startupPrevLevels && startupPrevLevelsPerSlice);
-        usePreviousLevelsPerSliceRB.addItemListener(this);
-        scaleMenu.add(usePreviousLevelsPerSliceRB);
+        fixedContrastPerSliceRB = new CheckboxMenuItem("fixed brightness & contrast (per image slice)", !autoContrast && !fixedContrast && fixedContrastPerSlice);
+        fixedContrastPerSliceRB.addItemListener(this);
+        scaleMenu.add(fixedContrastPerSliceRB);
 
-        useFullRangeRB = new CheckboxMenuItem("full dynamic range", !startupAutoLevel && !startupPrevLevels && !startupPrevLevelsPerSlice);
+        useFullRangeRB = new CheckboxMenuItem("full dynamic range", !autoContrast && !fixedContrast && !fixedContrastPerSlice);
         useFullRangeRB.addItemListener(this);
         scaleMenu.add(useFullRangeRB);
 
@@ -2309,16 +2309,16 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
 
         bottomPanelB.add(Box.createHorizontalStrut(10));
 
-        minTextField = new JTextField(fourPlaces.format(min));
-        minTextField.setFont(b12);
-        minTextField.setPreferredSize(new Dimension(70, 17));
-        minTextField.setHorizontalAlignment(JTextField.RIGHT);
-        minTextField.setBorder(BorderFactory.createLineBorder(Color.RED));
-        minTextField.setEditable(true);
-        minTextField.addActionListener(this);
-        writeNumericPanelField(min, minTextField);
+        blackTextfield = new JTextField(fourPlaces.format(blackValue));
+        blackTextfield.setFont(b12);
+        blackTextfield.setPreferredSize(new Dimension(70, 17));
+        blackTextfield.setHorizontalAlignment(JTextField.RIGHT);
+        blackTextfield.setBorder(BorderFactory.createLineBorder(Color.RED));
+        blackTextfield.setEditable(true);
+        blackTextfield.addActionListener(this);
+        writeNumericPanelField(blackValue, blackTextfield);
 //                minTextField.getDocument().addDocumentListener(new thisDocumentListener());
-        bottomPanelB.add(minTextField);
+        bottomPanelB.add(blackTextfield);
 
         JTextField lowlabelTextField = new JTextField(":black");
         lowlabelTextField.setFont(p12);
@@ -2357,16 +2357,16 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         highlabelTextField.setEditable(false);
         bottomPanelB.add(highlabelTextField);
 
-        maxTextField = new JTextField(fourPlaces.format(max));
-        maxTextField.setFont(b12);
-        maxTextField.setPreferredSize(new Dimension(70, 17));
-        maxTextField.setHorizontalAlignment(JTextField.RIGHT);
-        maxTextField.setBorder(BorderFactory.createLineBorder(Color.RED));
-        maxTextField.setEditable(true);
-        maxTextField.addActionListener(this);
-        writeNumericPanelField(max, maxTextField);
+        whiteTextfield = new JTextField(fourPlaces.format(whiteValue));
+        whiteTextfield.setFont(b12);
+        whiteTextfield.setPreferredSize(new Dimension(70, 17));
+        whiteTextfield.setHorizontalAlignment(JTextField.RIGHT);
+        whiteTextfield.setBorder(BorderFactory.createLineBorder(Color.RED));
+        whiteTextfield.setEditable(true);
+        whiteTextfield.addActionListener(this);
+        writeNumericPanelField(whiteValue, whiteTextfield);
 //                maxTextField.getDocument().addDocumentListener(new thisDocumentListener());
-        bottomPanelB.add(maxTextField);
+        bottomPanelB.add(whiteTextfield);
 
         bottomPanelB.add(Box.createHorizontalStrut(10));
 
@@ -2411,8 +2411,8 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
 //                minMaxBiSlider.setUI((BiSliderPresentation) metal);
         minMaxBiSlider.setVisible(true);
         minMaxBiSlider.setValues(minValue, maxValue);
-        minMaxBiSlider.setMinimumColoredValue(min);
-        minMaxBiSlider.setMaximumColoredValue(max);
+        minMaxBiSlider.setMinimumColoredValue(blackValue);
+        minMaxBiSlider.setMaximumColoredValue(whiteValue);
         minMaxBiSlider.setMinimumValue(minValue);
         minMaxBiSlider.setMaximumValue(maxValue);
         minMaxBiSlider.setSegmentSize((maxValue - minValue) / (double) BISLIDER_SEGMENTS);
@@ -2420,7 +2420,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
 
         minMaxBiSlider.setMiddleColor(Color.BLACK);
         minMaxBiSlider.setMaximumColor(Color.BLACK);
-        minMaxBiSlider.setColoredValues(min, max);
+        minMaxBiSlider.setColoredValues(blackValue, whiteValue);
         minMaxBiSlider.setUnit("  ");
         minMaxBiSlider.setSliderBackground(Color.LIGHT_GRAY);
         minMaxBiSlider.setForeground(Color.BLACK);
@@ -2493,10 +2493,10 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             /**  min or max colored values changed  */
             public void newValues(BiSliderEvent BiSliderEvent_Arg) {
                 if (updatesEnabled) {
-                    min = minMaxBiSlider.getMinimumColoredValue();
-                    max = minMaxBiSlider.getMaximumColoredValue();
-                    sliceMin[imp.getCurrentSlice() - 1] = min;
-                    sliceMax[imp.getCurrentSlice() - 1] = max;
+                    blackValue = minMaxBiSlider.getMinimumColoredValue();
+                    whiteValue = minMaxBiSlider.getMaximumColoredValue();
+                    sliceMin[imp.getCurrentSlice() - 1] = blackValue;
+                    sliceMax[imp.getCurrentSlice() - 1] = whiteValue;
                     //
                     //                            if (min < minValue)
                     //                                    {
@@ -2519,13 +2519,13 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                     //                                    minMaxBiSlider.setMaximumColoredValue(max);
                     //                                    }
 
-                    imp.setDisplayRange(cal.getRawValue(min), cal.getRawValue(max));
+                    imp.setDisplayRange(cal.getRawValue(blackValue), cal.getRawValue(whiteValue));
                     minMaxChanged = true;
-                    writeNumericPanelField(min, minTextField);
-                    writeNumericPanelField(max, maxTextField);
-                    savedMin = min;
-                    savedMax = max;
-                    if (startupAutoLevel && autoGrabBandCFromHistogram) grabAutoScaleParameters();
+                    writeNumericPanelField(blackValue, blackTextfield);
+                    writeNumericPanelField(whiteValue, whiteTextfield);
+                    savedBlackValue = blackValue;
+                    savedWhiteValue = whiteValue;
+                    if (autoContrast && autoGrabBandCFromHistogram) grabAutoScaleParameters();
                     //                            Prefs.set("Astronomy_Tool.savedMin", savedMin);
                     //                            Prefs.set("Astronomy_Tool.savedMax", savedMax);
                     imp.updateAndDraw();
@@ -2690,52 +2690,52 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             if (source == autoConvertCB) {
                 autoConvert = true;
                 Prefs.set("Astronomy_Tool.autoConvert", autoConvert);
-            } else if (source == startupAutoLevelRB) {
-                startupAutoLevel = true;
-                startupPrevLevels = false;
-                startupPrevLevelsPerSlice = false;
-                usePreviousLevelsRB.setState(false);
-                usePreviousLevelsPerSliceRB.setState(false);
+            } else if (source == autoContrastRB) {
+                autoContrast = true;
+                fixedContrast = false;
+                fixedContrastPerSlice = false;
+                fixedContrastRB.setState(false);
+                fixedContrastPerSliceRB.setState(false);
                 useFullRangeRB.setState(false);
-                Prefs.set("Astronomy_Tool.startupAutoLevel", startupAutoLevel);
-                Prefs.set("Astronomy_Tool.startupPrevLevels", startupPrevLevels);
-                Prefs.set("Astronomy_Tool.startupPrevLevelsPerSlice", startupPrevLevelsPerSlice);
+                Prefs.set("Astronomy_Tool.startupAutoLevel", autoContrast);
+                Prefs.set("Astronomy_Tool.startupPrevLevels", fixedContrast);
+                Prefs.set("Astronomy_Tool.startupPrevLevelsPerSlice", fixedContrastPerSlice);
                 setAutoLevels(null);
-            } else if (source == usePreviousLevelsRB) {
-                startupAutoLevel = false;
-                startupPrevLevels = true;
-                startupPrevLevelsPerSlice = false;
-                startupAutoLevelRB.setState(false);
-                usePreviousLevelsPerSliceRB.setState(false);
+            } else if (source == fixedContrastRB) {
+                autoContrast = false;
+                fixedContrast = true;
+                fixedContrastPerSlice = false;
+                autoContrastRB.setState(false);
+                fixedContrastPerSliceRB.setState(false);
                 useFullRangeRB.setState(false);
-                Prefs.set("Astronomy_Tool.startupAutoLevel", startupAutoLevel);
-                Prefs.set("Astronomy_Tool.startupPrevLevels", startupPrevLevels);
-                Prefs.set("Astronomy_Tool.startupPrevLevelsPerSlice", startupPrevLevelsPerSlice);
-            } else if (source == usePreviousLevelsPerSliceRB) {
-                startupAutoLevel = false;
-                startupPrevLevels = false;
-                startupPrevLevelsPerSlice = true;
-                startupAutoLevelRB.setState(false);
-                usePreviousLevelsRB.setState(false);
+                Prefs.set("Astronomy_Tool.startupAutoLevel", autoContrast);
+                Prefs.set("Astronomy_Tool.startupPrevLevels", fixedContrast);
+                Prefs.set("Astronomy_Tool.startupPrevLevelsPerSlice", fixedContrastPerSlice);
+            } else if (source == fixedContrastPerSliceRB) {
+                autoContrast = false;
+                fixedContrast = false;
+                fixedContrastPerSlice = true;
+                autoContrastRB.setState(false);
+                fixedContrastRB.setState(false);
                 useFullRangeRB.setState(false);
-                Prefs.set("Astronomy_Tool.startupAutoLevel", startupAutoLevel);
-                Prefs.set("Astronomy_Tool.startupPrevLevels", startupPrevLevels);
-                Prefs.set("Astronomy_Tool.startupPrevLevelsPerSlice", startupPrevLevelsPerSlice);
-                min = sliceMin[imp.getCurrentSlice() - 1];
-                max = sliceMax[imp.getCurrentSlice() - 1];
+                Prefs.set("Astronomy_Tool.startupAutoLevel", autoContrast);
+                Prefs.set("Astronomy_Tool.startupPrevLevels", fixedContrast);
+                Prefs.set("Astronomy_Tool.startupPrevLevelsPerSlice", fixedContrastPerSlice);
+                blackValue = sliceMin[imp.getCurrentSlice() - 1];
+                whiteValue = sliceMax[imp.getCurrentSlice() - 1];
                 updatePanelValues();
             } else if (source == useFullRangeRB) {
-                startupAutoLevel = false;
-                startupPrevLevels = false;
-                startupPrevLevelsPerSlice = false;
-                startupAutoLevelRB.setState(false);
-                usePreviousLevelsRB.setState(false);
-                usePreviousLevelsPerSliceRB.setState(false);
-                Prefs.set("Astronomy_Tool.startupAutoLevel", startupAutoLevel);
-                Prefs.set("Astronomy_Tool.startupPrevLevels", startupPrevLevels);
-                Prefs.set("Astronomy_Tool.startupPrevLevelsPerSlice", startupPrevLevelsPerSlice);
-                min = minValue;
-                max = maxValue;
+                autoContrast = false;
+                fixedContrast = false;
+                fixedContrastPerSlice = false;
+                autoContrastRB.setState(false);
+                fixedContrastRB.setState(false);
+                fixedContrastPerSliceRB.setState(false);
+                Prefs.set("Astronomy_Tool.startupAutoLevel", autoContrast);
+                Prefs.set("Astronomy_Tool.startupPrevLevels", fixedContrast);
+                Prefs.set("Astronomy_Tool.startupPrevLevelsPerSlice", fixedContrastPerSlice);
+                blackValue = minValue;
+                whiteValue = maxValue;
                 updatePanelValues();
             } else if (source == useFixedMinMaxValuesCB) {
                 if (imp.getType() == ImagePlus.COLOR_256 || imp.getType() == ImagePlus.COLOR_RGB || imp.getType() == ImagePlus.GRAY8) {
@@ -2749,7 +2749,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                         fixedMaxValue = fixedMinValue + 255;
                     maxValue = fixedMaxValue;
                     minValue = fixedMinValue;
-                    updateMinMaxValues(false);
+                    updateHistogramValues(false);
                     updateMinMaxValueTextFields();
                 }
             } else if (source == autoGrabBandCFromHistogramCB) {
@@ -2999,7 +2999,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                     Prefs.set("Astronomy_Tool.useFixedMinMaxValues", useFixedMinMaxValues);
                 }
                 updateMinMaxValueTextFields();
-                updateMinMaxValues(false);
+                updateHistogramValues(false);
             } else if (source == autoGrabBandCFromHistogramCB) {
                 autoGrabBandCFromHistogram = false;
                 Prefs.set("Astronomy_Tool.autoGrabBandCFromHistogram", autoGrabBandCFromHistogram);
@@ -3179,15 +3179,15 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                 rotate180RB.setState(true);
             } else if (source == rotate270RB) {
                 rotate270RB.setState(true);
-            } else if (source == startupAutoLevelRB) {
-                startupAutoLevelRB.setState(true);
+            } else if (source == autoContrastRB) {
+                autoContrastRB.setState(true);
                 setAutoLevels(null);
-            } else if (source == usePreviousLevelsRB) {
-                usePreviousLevelsRB.setState(true);
+            } else if (source == fixedContrastRB) {
+                fixedContrastRB.setState(true);
             } else if (source == useFullRangeRB) {
                 useFullRangeRB.setState(true);
-                min = minValue;
-                max = maxValue;
+                blackValue = minValue;
+                whiteValue = maxValue;
                 updatePanelValues();
             } else if (source == useSIPAllProjectionsCB) {
                 useSIPAllProjections = false;
@@ -3704,25 +3704,25 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
 
 //-----TEXT fields ------------------------------------------------------------------
 
-        else if (b == minTextField || b == maxTextField || b == minValueTextField || b == maxValueTextField) {
-            if (minTextField.isEditable()) {
-                min = Double.parseDouble(minTextField.getText().replaceAll(",", ""));
-                sliceMin[imp.getCurrentSlice() - 1] = min;
-                savedMin = min;
-                Prefs.set("Astronomy_Tool.savedMin", savedMin);
+        else if (b == blackTextfield || b == whiteTextfield || b == minValueTextField || b == maxValueTextField) {
+            if (blackTextfield.isEditable()) {
+                blackValue = Double.parseDouble(blackTextfield.getText().replaceAll(",", ""));
+                sliceMin[imp.getCurrentSlice() - 1] = blackValue;
+                savedBlackValue = blackValue;
+                Prefs.set("Astronomy_Tool.savedMin", savedBlackValue);
             }
-            if (maxTextField.isEditable()) {
-                max = Double.parseDouble(maxTextField.getText().replaceAll(",", ""));
-                sliceMax[imp.getCurrentSlice() - 1] = max;
-                savedMax = max;
-                Prefs.set("Astronomy_Tool.savedMax", savedMax);
+            if (whiteTextfield.isEditable()) {
+                whiteValue = Double.parseDouble(whiteTextfield.getText().replaceAll(",", ""));
+                sliceMax[imp.getCurrentSlice() - 1] = whiteValue;
+                savedWhiteValue = whiteValue;
+                Prefs.set("Astronomy_Tool.savedMax", savedWhiteValue);
             }
             if (minValueTextField.isEditable()) {
                 minValue = Double.parseDouble(minValueTextField.getText().replaceAll(",", ""));
                 if (imp.getType() == ImagePlus.GRAY16 && maxValue - minValue < 256)
                     minValue = maxValue - 255;
                 if (minValue > maxValue) minValue = maxValue;
-                if (min < minValue) min = minValue;
+                if (blackValue < minValue) blackValue = minValue;
                 fixedMinValue = minValue;
                 Prefs.set("Astronomy_Tool.fixedMinValue", fixedMinValue);
             }
@@ -3731,12 +3731,12 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                 if (imp.getType() == ImagePlus.GRAY16 && maxValue - minValue < 256)
                     maxValue = minValue + 255;
                 if (maxValue < minValue) maxValue = minValue;
-                if (max > maxValue) max = maxValue;
+                if (whiteValue > maxValue) whiteValue = maxValue;
                 fixedMaxValue = maxValue;
                 Prefs.set("Astronomy_Tool.fixedMaxValue", fixedMaxValue);
             }
-            updateMinMaxValues(b == minTextField || b == maxTextField);
-            if (startupAutoLevel && autoGrabBandCFromHistogram) grabAutoScaleParameters();
+            updateHistogramValues(b == blackTextfield || b == whiteTextfield);
+            if (autoContrast && autoGrabBandCFromHistogram) grabAutoScaleParameters();
         } else if (b == RATextField || b == DecTextField) {
             double[] coords = processCoordinatePair(RATextField, 3, 24, false, DecTextField, 2, 90, true, b == RATextField ? true : false, true);
             if (!Double.isNaN(coords[0]) && !Double.isNaN(coords[1])) {
@@ -4095,33 +4095,33 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
     }
 
     void setTempFullDynamicRange() {
-        tempAutoLevel = startupAutoLevel;
-        tempPrevLevels = startupPrevLevels;
-        tempPrevLevelsPerSlice = startupPrevLevelsPerSlice;
-        startupAutoLevel = false;
-        startupPrevLevels = false;
-        startupPrevLevelsPerSlice = false;
-        startupAutoLevelRB.setState(false);
-        usePreviousLevelsRB.setState(false);
-        usePreviousLevelsPerSliceRB.setState(false);
+        tempAutoLevel = autoContrast;
+        tempPrevLevels = fixedContrast;
+        tempPrevLevelsPerSlice = fixedContrastPerSlice;
+        autoContrast = false;
+        fixedContrast = false;
+        fixedContrastPerSlice = false;
+        autoContrastRB.setState(false);
+        fixedContrastRB.setState(false);
+        fixedContrastPerSliceRB.setState(false);
         useFullRangeRB.setState(true);
-        Prefs.set("Astronomy_Tool.startupAutoLevel", startupAutoLevel);
-        Prefs.set("Astronomy_Tool.startupPrevLevels", startupPrevLevels);
-        Prefs.set("Astronomy_Tool.startupPrevLevelsPerSlice", startupPrevLevelsPerSlice);
+        Prefs.set("Astronomy_Tool.startupAutoLevel", autoContrast);
+        Prefs.set("Astronomy_Tool.startupPrevLevels", fixedContrast);
+        Prefs.set("Astronomy_Tool.startupPrevLevelsPerSlice", fixedContrastPerSlice);
         setAutoLevels(null);
     }
 
     void clearTempFullDynamicRange() {
-        startupAutoLevel = tempAutoLevel;
-        startupPrevLevels = tempPrevLevels;
-        startupPrevLevelsPerSlice = tempPrevLevelsPerSlice;
-        startupAutoLevelRB.setState(startupAutoLevel);
-        usePreviousLevelsRB.setState(startupPrevLevels);
-        usePreviousLevelsPerSliceRB.setState(startupPrevLevelsPerSlice);
-        useFullRangeRB.setState(!startupAutoLevel && !startupPrevLevels && !startupPrevLevelsPerSlice);
-        Prefs.set("Astronomy_Tool.startupAutoLevel", startupAutoLevel);
-        Prefs.set("Astronomy_Tool.startupPrevLevels", startupPrevLevels);
-        Prefs.set("Astronomy_Tool.startupPrevLevelsPerSlice", startupPrevLevelsPerSlice);
+        autoContrast = tempAutoLevel;
+        fixedContrast = tempPrevLevels;
+        fixedContrastPerSlice = tempPrevLevelsPerSlice;
+        autoContrastRB.setState(autoContrast);
+        fixedContrastRB.setState(fixedContrast);
+        fixedContrastPerSliceRB.setState(fixedContrastPerSlice);
+        useFullRangeRB.setState(!autoContrast && !fixedContrast && !fixedContrastPerSlice);
+        Prefs.set("Astronomy_Tool.startupAutoLevel", autoContrast);
+        Prefs.set("Astronomy_Tool.startupPrevLevels", fixedContrast);
+        Prefs.set("Astronomy_Tool.startupPrevLevelsPerSlice", fixedContrastPerSlice);
         setAutoLevels(null);
     }
 
@@ -4280,7 +4280,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         autoScaleFactorLowRGB = gd.getNextNumber();
         autoScaleFactorHighRGB = gd.getNextNumber();
 
-        if (startupAutoLevel) setAutoLevels(null);
+        if (autoContrast) setAutoLevels(null);
 
         Prefs.set("Astronomy_Tool.autoScaleFactorLow", autoScaleFactorLow);
         Prefs.set("Astronomy_Tool.autoScaleFactorHigh", autoScaleFactorHigh);
@@ -4292,17 +4292,17 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         getStatistics();
         if (imp.getType() != ImagePlus.COLOR_RGB) {
             if (stats.stdDev == 0) {
-                autoScaleFactorLow = (stats.mean - min);
-                autoScaleFactorHigh = (max - stats.mean);
+                autoScaleFactorLow = (stats.mean - blackValue);
+                autoScaleFactorHigh = (whiteValue - stats.mean);
                 return;
             }
-            autoScaleFactorLow = (stats.mean - min) / stats.stdDev;
-            autoScaleFactorHigh = (max - stats.mean) / stats.stdDev;
+            autoScaleFactorLow = (stats.mean - blackValue) / stats.stdDev;
+            autoScaleFactorHigh = (whiteValue - stats.mean) / stats.stdDev;
             Prefs.set("Astronomy_Tool.autoScaleFactorLow", autoScaleFactorLow);
             Prefs.set("Astronomy_Tool.autoScaleFactorHigh", autoScaleFactorHigh);
         } else {
-            autoScaleFactorLowRGB = (stats.mean - min) / stats.stdDev;
-            autoScaleFactorHighRGB = (max - stats.mean) / stats.stdDev;
+            autoScaleFactorLowRGB = (stats.mean - blackValue) / stats.stdDev;
+            autoScaleFactorHighRGB = (whiteValue - stats.mean) / stats.stdDev;
             Prefs.set("Astronomy_Tool.autoScaleFactorLowRGB", autoScaleFactorLowRGB);
             Prefs.set("Astronomy_Tool.autoScaleFactorHighRGB", autoScaleFactorHighRGB);
         }
@@ -4324,16 +4324,16 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         setAstroProcessor(false);
     }
 
-    void updateMinMaxValues(boolean minOrMaxChanged) {
-        if (minOrMaxChanged) {
+    void updateHistogramValues(boolean blackOrWhiteChanged) {
+        if (blackOrWhiteChanged) {
             updatePanelValues();
-        } else if (startupAutoLevel) {
-            setAutoLevels(null);
-        } else if (startupPrevLevels || startupPrevLevelsPerSlice) {
+        } else if (autoContrast) {
+            setAutoLevels(null);//todo mark
+        } else if (fixedContrast || fixedContrastPerSlice) {
             updatePanelValues();
-        } else {
-            min = minValue;
-            max = maxValue;
+        } else {//full dyn. range
+            blackValue = minValue;
+            whiteValue = maxValue;
             updatePanelValues();
         }
     }
@@ -5345,27 +5345,27 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             useFixedMinMaxValuesCB.setState(false);
             minValue = cal.getCValue(0);
             maxValue = cal.getCValue(255);
-            if (min < minValue) min = minValue;
-            if (max > maxValue) max = maxValue;
+            if (blackValue < minValue) blackValue = minValue;
+            if (whiteValue > maxValue) whiteValue = maxValue;
         } else {
-            maxValue = useFixedMinMaxValues ? fixedMaxValue : (startupPrevLevels ? Math.max(max, stats.max) : stats.max);
-            minValue = useFixedMinMaxValues ? fixedMinValue : (startupPrevLevels ? Math.min(min, stats.min) : stats.min);
+            maxValue = useFixedMinMaxValues ? fixedMaxValue : (fixedContrast ? Math.max(whiteValue, stats.max) : stats.max);
+            minValue = useFixedMinMaxValues ? fixedMinValue : (fixedContrast ? Math.min(blackValue, stats.min) : stats.min);
             if (imp.getType() == ImagePlus.GRAY16 && maxValue - minValue < 256)
                 maxValue = minValue + 255;
         }
 
-        if (startupAutoLevel || autoScaleIconClicked) {
+        if (autoContrast || autoScaleIconClicked) {
             if (imp.getType() == ImagePlus.COLOR_RGB) {
-                min = Math.max(stats.mean - autoScaleFactorLowRGB * stats.stdDev, minValue);
-                max = Math.min(stats.mean + autoScaleFactorHighRGB * stats.stdDev, maxValue);
+                blackValue = Math.max(stats.mean - autoScaleFactorLowRGB * stats.stdDev, minValue);
+                whiteValue = Math.min(stats.mean + autoScaleFactorHighRGB * stats.stdDev, maxValue);
             } else {
                 var sd = stats.stdDev == 0 ? 1 : stats.stdDev;
-                min = Math.max(stats.mean - autoScaleFactorLow * sd, minValue);
-                max = Math.min(stats.mean + autoScaleFactorHigh * sd, maxValue);
+                blackValue = Math.max(stats.mean - autoScaleFactorLow * sd, minValue);
+                whiteValue = Math.min(stats.mean + autoScaleFactorHigh * sd, maxValue);
             }
-        } else if (!startupPrevLevels && !startupPrevLevelsPerSlice) {
-            min = minValue;
-            max = maxValue;
+        } else if (!fixedContrast && !fixedContrastPerSlice) {
+            blackValue = minValue;
+            whiteValue = maxValue;
         }
     }
 
@@ -5394,14 +5394,14 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         getStatistics();
         minValue = stats.min;
         maxValue = stats.max;
-        min = minValue;
-        max = maxValue;
+        blackValue = minValue;
+        whiteValue = maxValue;
         if (imp.getType() == ImagePlus.COLOR_256 || imp.getType() == ImagePlus.COLOR_RGB || imp.getType() == ImagePlus.GRAY8) {
             useFixedMinMaxValues = false;
             minValue = cal.getCValue(0);
             maxValue = cal.getCValue(255);
-            if (min < minValue) min = minValue;
-            if (max > maxValue) max = maxValue;
+            if (blackValue < minValue) blackValue = minValue;
+            if (whiteValue > maxValue) whiteValue = maxValue;
         } else {
             maxValue = useFixedMinMaxValues ? fixedMaxValue : stats.max;
             minValue = useFixedMinMaxValues ? fixedMinValue : stats.min;
@@ -5436,8 +5436,8 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         sliceMin = new double[stackSize];
         sliceMax = new double[stackSize];
         for (int i = 0; i < stackSize; i++) {
-            sliceMin[i] = i < oldSliceMin.length ? oldSliceMin[i] : min;
-            sliceMax[i] = i < oldSliceMax.length ? oldSliceMax[i] : max;
+            sliceMin[i] = i < oldSliceMin.length ? oldSliceMin[i] : blackValue;
+            sliceMax[i] = i < oldSliceMax.length ? oldSliceMax[i] : whiteValue;
         }
 
         //infoTextField.setText(""+super.createSubtitle());
@@ -5488,26 +5488,26 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             //ImageProcessor ip = imp.getProcessor();
             getBiSliderStatistics();
 
-            if (startupPrevLevelsPerSlice) {
+            if (fixedContrastPerSlice) {
                 if (!autoScaleIconClicked) {
-                    min = sliceMin[imp.getCurrentSlice() - 1];
-                    max = sliceMax[imp.getCurrentSlice() - 1];
+                    blackValue = sliceMin[imp.getCurrentSlice() - 1];
+                    whiteValue = sliceMax[imp.getCurrentSlice() - 1];
                 } else {
-                    sliceMin[imp.getCurrentSlice() - 1] = min;
-                    sliceMax[imp.getCurrentSlice() - 1] = max;
+                    sliceMin[imp.getCurrentSlice() - 1] = blackValue;
+                    sliceMax[imp.getCurrentSlice() - 1] = whiteValue;
                 }
             }
             autoScaleIconClicked = false;
 
-            if (startupPrevLevels || startupPrevLevelsPerSlice) {
-                if (max < min) max = min;
-                if (min < minValue) minValue = min;
-                if (max > maxValue) maxValue = max;
-            } else {
-                if (min < minValue) min = minValue;
-                if (min > maxValue) min = maxValue;
-                if (max > maxValue) max = maxValue;
-                if (max < min) max = min;
+            if (fixedContrast || fixedContrastPerSlice) {
+                if (whiteValue < blackValue) whiteValue = blackValue;
+                if (blackValue < minValue) minValue = blackValue;
+                if (whiteValue > maxValue) maxValue = whiteValue;
+            } else {//autoContrast=true
+                if (blackValue < minValue) blackValue = minValue;
+                if (blackValue > maxValue) blackValue = maxValue;
+                if (whiteValue > maxValue) whiteValue = maxValue;
+                if (whiteValue < blackValue) whiteValue = blackValue;
             }
 
             histogram = stats.histogram;
@@ -5523,12 +5523,12 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
 
             minMaxBiSlider.setParameters(BiSlider.RGB, false,
                     ((maxValue - minValue) / (double) BISLIDER_SEGMENTS),
-                    Color.BLACK, Color.BLACK, minValue, maxValue, min, max);
+                    Color.BLACK, Color.BLACK, minValue, maxValue, blackValue, whiteValue);
             writeNumericPanelField(minValue, minValueTextField);
             writeNumericPanelField(maxValue, maxValueTextField);
 
-            writeNumericPanelField(min, minTextField);
-            writeNumericPanelField(max, maxTextField);
+            writeNumericPanelField(blackValue, blackTextfield);
+            writeNumericPanelField(whiteValue, whiteTextfield);
 
             writeNumericPanelField(stats.mean, meanTextField);
             setValueTextField();
@@ -5545,7 +5545,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                 RATextField.setText("");
                 DecTextField.setText("");
             }
-            imp.setDisplayRange(cal.getRawValue(min), cal.getRawValue(max));
+            imp.setDisplayRange(cal.getRawValue(blackValue), cal.getRawValue(whiteValue));
             //minMaxChanged = true;
             if (updateImage) {
                 synchronized (imp) {
@@ -6959,11 +6959,11 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
     void adjustMinAndMax(int xSteps, int ySteps) {
         double low, high;
 //                min = ip.getMin();
-        min = imp.getDisplayRangeMin();
+        blackValue = imp.getDisplayRangeMin();
 //                max = ip.getMax();
-        max = imp.getDisplayRangeMax();
-        brightness = (max + min) / 2.0;
-        contrast = (max - min) / 2.0;
+        whiteValue = imp.getDisplayRangeMax();
+        brightness = (whiteValue + blackValue) / 2.0;
+        contrast = (whiteValue - blackValue) / 2.0;
 
         if (imp.getType() == ImagePlus.COLOR_RGB || imp.getType() == ImagePlus.COLOR_256 ||
                 imp.getType() == ImagePlus.GRAY8) brightstepsize = 1.0;
@@ -6999,7 +6999,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         if (high > maxValue) high = maxValue;
 //                ip.setMinAndMax(low, high);
         Calibration cal = imp.getCalibration();
-        imp.setDisplayRange(cal.getRawValue(min), cal.getRawValue(max));
+        imp.setDisplayRange(cal.getRawValue(blackValue), cal.getRawValue(whiteValue));
         minMaxChanged = true;
 //                minSlider.setValue((int)((low + sliderShift)*(double)sliderMultiplier));
 //                maxSlider.setValue((int)((high + sliderShift)*(double)sliderMultiplier));
@@ -7946,13 +7946,13 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         savedIpWidth = (int) Prefs.get("Astronomy_Tool.savedIpWidth", savedIpWidth);
         showMeanNotPeak = Prefs.get("Astronomy_Tool.showMeanNotPeak", showMeanNotPeak);
         useSexagesimal = Prefs.get("Astronomy_Tool.useSexagesimal", useSexagesimal);
-        startupAutoLevel = Prefs.get("Astronomy_Tool.startupAutoLevel", startupAutoLevel);
+        autoContrast = Prefs.get("Astronomy_Tool.startupAutoLevel", autoContrast);
         ac.showRedCrossHairCursor = Prefs.get("Astronomy_Tool.showRedCrossHairCursor", ac.showRedCrossHairCursor);
         startupPrevSize = Prefs.get("Astronomy_Tool.startupPrevSize", startupPrevSize);
         startupPrevPan = Prefs.get("Astronomy_Tool.startupPrevPan", startupPrevPan);
         startupPrevZoom = Prefs.get("Astronomy_Tool.startupPrevZoom", startupPrevZoom);
-        startupPrevLevels = Prefs.get("Astronomy_Tool.startupPrevLevels", startupPrevLevels);
-        startupPrevLevelsPerSlice = Prefs.get("Astronomy_Tool.startupPrevLevelsPerSlice", startupPrevLevelsPerSlice);
+        fixedContrast = Prefs.get("Astronomy_Tool.startupPrevLevels", fixedContrast);
+        fixedContrastPerSlice = Prefs.get("Astronomy_Tool.startupPrevLevelsPerSlice", fixedContrastPerSlice);
         writeMiddleClickValuesTable = Prefs.get("Astronomy_Tool.writeMiddleClickValuesTable", writeMiddleClickValuesTable);
         writeMiddleDragValuesTable = Prefs.get("Astronomy_Tool.writeMiddleDragValuesTable", writeMiddleDragValuesTable);
         writeMiddleClickValuesLog = Prefs.get("Astronomy_Tool.writeMiddleClickValuesLog", writeMiddleClickValuesLog);
@@ -7996,8 +7996,8 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         savedPanY = (int) Prefs.get("Astronomy_Tool.savedPanY", savedPanY);
         savedPanHeight = (int) Prefs.get("Astronomy_Tool.savedPanHeight", savedPanHeight);
         savedPanWidth = (int) Prefs.get("Astronomy_Tool.savedPanWidth", savedPanWidth);
-        savedMin = Prefs.get("Astronomy_Tool.savedMin", savedMin);
-        savedMax = Prefs.get("Astronomy_Tool.savedMax", savedMax);
+        savedBlackValue = Prefs.get("Astronomy_Tool.savedMin", savedBlackValue);
+        savedWhiteValue = Prefs.get("Astronomy_Tool.savedMax", savedWhiteValue);
         frameLocationX = (int) Prefs.get("Astronomy_Tool.frameLocationX", frameLocationX);
         frameLocationY = (int) Prefs.get("Astronomy_Tool.frameLocationY", frameLocationY);
         rememberWindowLocation = Prefs.get("Astronomy_Tool.rememberWindowLocation", rememberWindowLocation);
@@ -8062,11 +8062,11 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         Prefs.set("Astronomy_Tool.savedIpWidth", savedIpWidth);
         Prefs.set("Astronomy_Tool.useSexagesimal", useSexagesimal);
         Prefs.set("Astronomy_Tool.showMeanNotPeak", showMeanNotPeak);
-        Prefs.set("Astronomy_Tool.startupAutoLevel", startupAutoLevel);
+        Prefs.set("Astronomy_Tool.startupAutoLevel", autoContrast);
         Prefs.set("Astronomy_Tool.startupPrevPan", startupPrevPan);
         Prefs.set("Astronomy_Tool.startupPrevZoom", startupPrevZoom);
-        Prefs.set("Astronomy_Tool.startupPrevLevels", startupPrevLevels);
-        Prefs.set("Astronomy_Tool.startupPrevLevelsPerSlice", startupPrevLevelsPerSlice);
+        Prefs.set("Astronomy_Tool.startupPrevLevels", fixedContrast);
+        Prefs.set("Astronomy_Tool.startupPrevLevelsPerSlice", fixedContrastPerSlice);
         Prefs.set("Astronomy_Tool.middleClickCenter", middleClickCenter);
         Prefs.set("Astronomy_Tool.showRedCrossHairCursor", ac.showRedCrossHairCursor);
         Prefs.set("Astronomy_Tool.writeMiddleClickValuesTable", writeMiddleClickValuesTable);
@@ -8094,8 +8094,8 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         Prefs.set("Astronomy_Tool.savedPanY", savedPanY);
         Prefs.set("Astronomy_Tool.savedPanHeight", savedPanHeight);
         Prefs.set("Astronomy_Tool.savedPanWidth", savedPanWidth);
-        Prefs.set("Astronomy_Tool.savedMin", savedMin);
-        Prefs.set("Astronomy_Tool.savedMax", savedMax);
+        Prefs.set("Astronomy_Tool.savedMin", savedBlackValue);
+        Prefs.set("Astronomy_Tool.savedMax", savedWhiteValue);
         Prefs.set("Astronomy_Tool.zoomIndicatorSize", ac.zoomIndicatorSize);
         Prefs.set("Astronomy_Tool.NdirAngle", ac.NdirAngle);
         Prefs.set("Astronomy_Tool.EdirAngle", ac.EdirAngle);

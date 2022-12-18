@@ -5391,26 +5391,8 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         ImageProcessor ip = imp.getProcessor();
         slice = imp.getCurrentSlice();
         cal = imp.getCalibration();
-        getStatistics();
-        minValue = stats.min;
-        maxValue = stats.max;
-        blackValue = minValue;
-        whiteValue = maxValue;
-        if (imp.getType() == ImagePlus.COLOR_256 || imp.getType() == ImagePlus.COLOR_RGB || imp.getType() == ImagePlus.GRAY8) {
-            useFixedMinMaxValues = false;
-            minValue = cal.getCValue(0);
-            maxValue = cal.getCValue(255);
-            if (blackValue < minValue) blackValue = minValue;
-            if (whiteValue > maxValue) whiteValue = maxValue;
-        } else {
-            maxValue = useFixedMinMaxValues ? fixedMaxValue : stats.max;
-            minValue = useFixedMinMaxValues ? fixedMinValue : stats.min;
-            if (imp.getType() == ImagePlus.GRAY16 && maxValue - minValue < 256)
-                maxValue = minValue + 255;
-        }
         if (imp.getType() == ImagePlus.COLOR_RGB) {
-            var oldIp = imp.getStack().getProcessor(slice);
-            oldIp.reset();
+            ip.reset();
             ip.snapshot();
             cp = (ColorProcessor) (ip.duplicate());
         }

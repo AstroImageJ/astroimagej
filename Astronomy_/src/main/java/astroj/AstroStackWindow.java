@@ -3652,7 +3652,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             IJ.runPlugIn("Astronomy.Debayer_Image_FITS", "");
         } else if (b == photoDebayerMenuItem) {
             if (imp.getType() == ImagePlus.COLOR_RGB) imp.getProcessor().reset();
-            IJ.runPlugIn(PhotometricDebayer.class.getName(), "");
+            Executors.newSingleThreadExecutor().submit(() -> IJ.runPlugIn(PhotometricDebayer.class.getName(), ""));
         } else if (b == makeCompositeMenuItem) {
             if (imp.getType() == ImagePlus.COLOR_RGB) imp.getProcessor().reset();
             IJ.doCommand("Make Composite");

@@ -197,34 +197,58 @@ public class AstroImageJ_Updater implements PlugIn {
 			error("Unable to download StartupMacros.txt from "+StartupMacrosUrls[choice]);
 			return;
 		}
-		byte[] WinExe = getFile(WinExeUrls[choice], "WinExe"+(choice==0?"":versions[choice])+".exe");
-		if (IJ.isWindows() && WinExe==null) {
-			error("Unable to download AstroImageJ.exe from "+WinExeUrls[choice]);
-			return;
-		}
 
-		if (IJ.isWindows() && !Files.exists(Path.of("launcher.ini"))) {
-			var cfg = getFile("https://github.com/AstroImageJ/astroimagej/releases/download/v0/launcher.ini", "launcher config");
-			var lnchr = getFile("https://github.com/AstroImageJ/astroimagej/releases/download/v0/AstroImageJ.exe", "launcher");
+		// Handle Window's specific files
+		if (IJ.isWindows()) {
+			// Update from older launcher that used old config file
+			if (!Files.exists(Path.of("launcher.ini"))) {
+				var cfg = getFile("https://github.com/AstroImageJ/astroimagej/releases/download/v0/launcher.ini", "launcher config");
+				var lnchr = getFile("https://github.com/AstroImageJ/astroimagej/releases/download/v0/AstroImageJ.exe", "launcher");
 
-			if (cfg == null) {
-				error("Unable to download launcher config");
+				if (cfg == null) {
+					error("Unable to download launcher config");
+					return;
+				}
+
+				if (lnchr == null) {
+					error("Unable to download new launcher");
+					return;
+				}
+
+				saveFile(new File("launcher.ini"), cfg);
+				var source = Path.of("AstroImageJ.l4j.ini");
+				try {
+					Files.move(source, source.resolveSibling("AstroImageJ.cfg"));
+				} catch (IOException e) {
+					throw new RuntimeException(e);
+				}
+				saveFile(new File("AstroImageJ.exe"), lnchr);
+			}
+
+			byte[] WinExe = getFile(WinExeUrls[choice], "WinExe"+(choice==0?"":versions[choice])+".exe");
+			if (IJ.isWindows() && WinExe==null) {
+				error("Unable to download AstroImageJ.exe from "+WinExeUrls[choice]);
 				return;
 			}
 
-			if (lnchr == null) {
-				error("Unable to download new launcher");
-				return;
-			}
+			if (file4 != null) {
+				var tempExe = new File("temp.exe");
+				saveFile(tempExe, WinExe);
+				var currentVersion = EXEFileInfo.getVersionInfo("AstroImageJ.exe");
+				var newVersion = EXEFileInfo.getVersionInfo("temp.exe");
 
-			saveFile(new File("launcher.ini"), cfg);
-			var source = Path.of("AstroImageJ.l4j.ini");
-			try {
-				Files.move(source, source.resolveSibling("AstroImageJ.cfg"));
-			} catch (IOException e) {
-				throw new RuntimeException(e);
+				long newVersionN = newVersion[0]* 10000L + newVersion[1]* 100L + newVersion[2];
+				long currentVersionInt = currentVersion[0]* 10000L + currentVersion[1]* 100L + currentVersion[2];
+				if (newVersionN > currentVersionInt) {
+					try {
+						Files.move(tempExe.toPath(), file4.toPath(), StandardCopyOption.REPLACE_EXISTING);
+					} catch (IOException e) {
+						throw new RuntimeException(e);
+					}
+				} else {
+					tempExe.delete();
+				}
 			}
-			saveFile(new File("AstroImageJ.exe"), lnchr);
 		}
 
 		Prefs.savePreferences();
@@ -232,25 +256,6 @@ public class AstroImageJ_Updater implements PlugIn {
 		saveFile(file1, jar);
         saveFile(file2, Astro_jar);
         saveFile(file3, StartupMacro);
-
-		if (IJ.isWindows() && file4 != null) {
-			var tempExe = new File("temp.exe");
-			saveFile(tempExe, WinExe);
-			var currentVersion = EXEFileInfo.getVersionInfo("AstroImageJ.exe");
-			var newVersion = EXEFileInfo.getVersionInfo("temp.exe");
-
-			long newVersionN = newVersion[0]* 10000L + newVersion[1]* 100L + newVersion[2];
-			long currentVersionInt = currentVersion[0]* 10000L + currentVersion[1]* 100L + currentVersion[2];
-			if (newVersionN > currentVersionInt) {
-				try {
-					Files.move(tempExe.toPath(), file4.toPath(), StandardCopyOption.REPLACE_EXISTING);
-				} catch (IOException e) {
-					throw new RuntimeException(e);
-				}
-			} else {
-				tempExe.delete();
-			}
-		}
 
         if (IJ.isMacOSX() && file4!=null)
             {

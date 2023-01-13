@@ -1945,14 +1945,15 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
             if (plotY[curve] && smooth[curve] && nn[curve] > 4 && useNewSmoother) {
                 var ks = KeplerSpline.chooseKeplerSplineV2(MatrixUtils.createRealVector(Arrays.copyOf(x[curve], nn[curve])),
-                        MatrixUtils.createRealVector(Arrays.copyOf(y[curve], nn[curve])));
+                        MatrixUtils.createRealVector(Arrays.copyOf(y[curve], nn[curve])), 0.64, 0.66, 3, null, 0.1, true);
                 Arrays.setAll(y[curve], i -> {
                     if (i < ks.first().getDimension()) {
-                        return ks.first().getEntry(i);
+                        return y[0][i]/ks.first().getEntry(i);
                     }
-
+                    //IJ.log(""+ks.second());
                     return Double.NaN;
                 });
+
             }
         }
 
@@ -7670,6 +7671,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 useNewSmoother = false;
             } else if (e.getStateChange() == ItemEvent.SELECTED) useNewSmoother = true;
             Prefs.set("plot.useNewSmoother", useNewSmoother);
+            updatePlot(updateAllFits());
         });
         preferencesmenu.add(useNewSmootherCB);
 

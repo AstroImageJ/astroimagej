@@ -2,6 +2,7 @@
 package Astronomy;
 
 import astroj.*;
+import com.astroimagej.bspline.KeplerSpline;
 import flanagan.analysis.Regression;
 import flanagan.analysis.Smooth;
 import flanagan.math.Minimization;
@@ -19,6 +20,7 @@ import ij.plugin.PlugIn;
 import ij.process.ImageProcessor;
 import ij.text.TextPanel;
 import ij.util.Tools;
+import org.hipparchus.linear.MatrixUtils;
 import util.GenericSwingDialog;
 import util.PlotDataBinning;
 
@@ -850,6 +852,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     private static double[] outBinRms;
     private static boolean saveSeeingProfileStack;
     private static String seeingProfileStackSuffix;
+    public static boolean useNewSmoother;
 
     public void run(String inTableNamePlusOptions) {
         boolean useAutoAstroDataUpdate = false;
@@ -1877,7 +1880,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 }
             }
 
-            if (plotY[curve] && smooth[curve] && nn[curve] > 2 * smoothLen[curve]) {
+            if (plotY[curve] && smooth[curve] && nn[curve] > 2 * smoothLen[curve] && !useNewSmoother) {
                 double[] xl = new double[nn[curve]];
                 double[] yl = new double[nn[curve]];
                 double[] xphase = new double[nn[curve]];
@@ -1939,7 +1942,18 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 }
                 //y[curve]=smoothed.getMovingAverageValues();
             }
-            //IJ.log(""+y[curve]);
+
+            if (plotY[curve] && smooth[curve] && nn[curve] > 4 && useNewSmoother) {
+                var ks = KeplerSpline.chooseKeplerSplineV2(MatrixUtils.createRealVector(Arrays.copyOf(x[curve], nn[curve])),
+                        MatrixUtils.createRealVector(Arrays.copyOf(y[curve], nn[curve])));
+                Arrays.setAll(y[curve], i -> {
+                    if (i < ks.first().getDimension()) {
+                        return ks.first().getEntry(i);
+                    }
+
+                    return Double.NaN;
+                });
+            }
         }
 
         // PERFORM X-AUTOSCALING TO ONE OR MORE CURVES
@@ -6030,6 +6044,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         savePlot = true;
         saveSeeingProfile = true;
         saveSeeingProfileStack = false;
+        useNewSmoother = false;
         saveConfig = true;
         saveTable = true;
         saveApertures = true;
@@ -7648,6 +7663,15 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             Prefs.set("plot2.useDefaultSettings", useDefaultSettings);
         });
         preferencesmenu.add(usedefaultsettingsCB);
+
+        var useNewSmootherCB = new JCheckBoxMenuItem("Use KeplerSplineV2 Smoothing", useNewSmoother);
+        useNewSmootherCB.addItemListener(e -> {
+            if (e.getStateChange() == ItemEvent.DESELECTED) {
+                useNewSmoother = false;
+            } else if (e.getStateChange() == ItemEvent.SELECTED) useNewSmoother = true;
+            Prefs.set("plot.useNewSmoother", useNewSmoother);
+        });
+        preferencesmenu.add(useNewSmootherCB);
 
         mainmenubar.add(preferencesmenu);
 
@@ -17792,6 +17816,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         priorityColumns = Prefs.get("plot.priorityColumns", priorityColumns);
         priorityDetrendColumns = Prefs.get("plot.priorityDetrendColumns", priorityDetrendColumns);
         prioritizeColumns = Prefs.get("plot.prioritizeColumns", prioritizeColumns);
+        useNewSmoother = Prefs.get("plot.useNewSmoother", useNewSmoother);
         maxColumnLength = (int) Prefs.get("plot.maxColumnLength", 1000);
 
         saveImage = Prefs.get("Astronomy_Tool.saveImage", saveImage);
@@ -17996,6 +18021,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         Prefs.set("plot2.modifyCurvesBelow", modifyCurvesBelow);
         Prefs.set("plot2.maxSubsetColumns", maxSubsetColumns);
         Prefs.set("plot2.forceAbsMagDisplay", forceAbsMagDisplay);
+        Prefs.set("plot.useNewSmoother", useNewSmoother);
         saveAstroPanelPrefs();
         Prefs.set("plot.maxDetrendVars", maxDetrendVars);
         Prefs.set("plot2.useDefaultSettings", useDefaultSettings);

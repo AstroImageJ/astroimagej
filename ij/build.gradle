@@ -8,6 +8,7 @@ dependencies {
     implementation 'org.openjdk.nashorn:nashorn-core:15.4'
     api 'de.rototor.pdfbox:graphics2d:0.38'
     api 'net.java.dev.jna:jna-platform:5.12.1'
+    api fileTree(dir: "${rootDir}/aijLibs", include: '*.jar')
 }
 
 def mainClassName = 'ij.ImageJ'

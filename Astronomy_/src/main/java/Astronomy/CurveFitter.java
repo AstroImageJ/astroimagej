@@ -1,6 +1,7 @@
 package Astronomy;
 
 import astroj.IJU;
+import com.astroimagej.bspline.KeplerSpline;
 import flanagan.analysis.Regression;
 import flanagan.analysis.Smooth;
 import flanagan.math.Minimization;
@@ -9,6 +10,7 @@ import ij.IJ;
 import ij.Prefs;
 import ij.astro.logging.AIJLogger;
 import ij.measure.ResultsTable;
+import org.hipparchus.linear.MatrixUtils;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -505,7 +507,7 @@ public class CurveFitter {
             }
         }
 
-        if (plotY[curve] && smooth[curve] && nn[curve] > 2 * smoothLen[curve]) {
+        if (plotY[curve] && smooth[curve] && nn[curve] > 2 * smoothLen[curve] && !useNewSmoother) {
             double[] xl = new double[nn[curve]];
             double[] yl = new double[nn[curve]];
             double[] xphase = new double[nn[curve]];
@@ -563,6 +565,18 @@ public class CurveFitter {
                     y[curve][xx] = y[curve][xx] - smoothVal + yave;
                 }
             }
+        }
+
+        if (plotY[curve] && smooth[curve] && nn[curve] > 4 && useNewSmoother) {
+            var ks = KeplerSpline.chooseKeplerSplineV2(MatrixUtils.createRealVector(Arrays.copyOf(x[curve], nn[curve])),
+                    MatrixUtils.createRealVector(Arrays.copyOf(y[curve], nn[curve])));
+            Arrays.setAll(y[curve], i -> {
+                if (i < ks.first().getDimension()) {
+                    return ks.first().getEntry(i);
+                }
+
+                return Double.NaN;
+            });
         }
 
         dx = 0.0;

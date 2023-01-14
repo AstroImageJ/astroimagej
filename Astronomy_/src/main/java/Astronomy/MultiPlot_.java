@@ -1966,7 +1966,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     }
                 }
                 var ks = KeplerSpline.chooseKeplerSplineV2(MatrixUtils.createRealVector(Arrays.copyOf(x[curve], nn[curve])),
-                        MatrixUtils.createRealVector(Arrays.copyOf(y[curve], nn[curve])), 0.04, 0.2, 20, useNewSmootherMask ? yMask : null, null, true);
+                        MatrixUtils.createRealVector(Arrays.copyOf(y[curve], nn[curve])), 0.5, 20.0, 20, useNewSmootherMask ? yMask : null, null, true);
 
                 for (int xx = 0; xx < nn[curve]; xx++) {
                     y[curve][xx] /= ks.first().getEntry(xx);
@@ -7693,8 +7693,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         });
         preferencesmenu.add(useNewSmootherCB);
 
-        var useNewSmootherMaskCB = new JCheckBoxMenuItem("Use KeplerSplineV2 Transit Mask", useNewSmoother);
-        useNewSmootherCB.addItemListener(e -> {
+        var useNewSmootherMaskCB = new JCheckBoxMenuItem("Use KeplerSplineV2 Transit Mask", useNewSmootherMask);
+        useNewSmootherMaskCB.addItemListener(e -> {
             if (e.getStateChange() == ItemEvent.DESELECTED) {
                 useNewSmootherMask = false;
             } else if (e.getStateChange() == ItemEvent.SELECTED) useNewSmootherMask = true;

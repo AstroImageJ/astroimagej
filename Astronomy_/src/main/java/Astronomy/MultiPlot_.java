@@ -8,6 +8,7 @@ import flanagan.analysis.Smooth;
 import flanagan.math.Minimization;
 import flanagan.math.MinimizationFunction;
 import ij.*;
+import ij.astro.logging.AIJLogger;
 import ij.astro.types.Pair;
 import ij.astro.util.PdfPlotOutput;
 import ij.astro.util.UIHelper;
@@ -1968,6 +1969,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 var ks = KeplerSpline.chooseKeplerSplineV2(MatrixUtils.createRealVector(Arrays.copyOf(x[curve], nn[curve])),
                         MatrixUtils.createRealVector(Arrays.copyOf(y[curve], nn[curve])), 0.5, 20.0, 20, useNewSmootherMask ? yMask : null, null, true);
 
+                AIJLogger.log("BKSpace for curve " + curve + " is " + ks.second().bkSpace);
+                AIJLogger.log("BIC for curve " + curve + " is " + ks.second().bic);
                 for (int xx = 0; xx < nn[curve]; xx++) {
                     y[curve][xx] /= ks.first().getEntry(xx);
                 }

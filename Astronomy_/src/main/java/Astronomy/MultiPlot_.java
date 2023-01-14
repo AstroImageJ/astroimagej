@@ -853,6 +853,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     private static boolean saveSeeingProfileStack;
     private static String seeingProfileStackSuffix;
     public static boolean useNewSmoother;
+    public static boolean useNewSmootherMask;
 
     public void run(String inTableNamePlusOptions) {
         boolean useAutoAstroDataUpdate = false;
@@ -1937,7 +1938,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                             smoothVal = csm.interpolateSavitzkyGolay(x[curve][xx] - (int) x[curve][0]);
                         }
                         //y[1][xx] = csm.interpolateMovingAverage(xl[xx]);
-                        y[curve][xx] = y[curve][xx] - smoothVal + yave;
+                        y[curve][xx] = y[curve][xx]/smoothVal; // + yave;
                     }
                 }
                 //y[curve]=smoothed.getMovingAverageValues();
@@ -1946,6 +1947,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             if (plotY[curve] && smooth[curve] && nn[curve] > 4 && useNewSmoother) {
                 double[] xl = new double[nn[curve]];
                 double[] yl = new double[nn[curve]];
+                var yMask = MatrixUtils.createRealVector(nn[curve]);
                 double[] xphase = new double[nn[curve]];
                 double[] yphase = new double[nn[curve]];
                 double xfold;
@@ -1962,8 +1964,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         xfold = ((x[curve][xx] - netT0) % netPeriod);
                         if (xfold > halfPeriod) { xfold -= netPeriod; } else if (xfold < -halfPeriod) xfold += netPeriod;
                         if (Math.abs(xfold) < duration / 48.0) {
+                            yMask.setEntry(xx,0.0);
                             nskipped++;
                         } else {
+                            yMask.setEntry(xx,1.0);
                             yphase[xx - nskipped] = y[curve][xx];
                             xphase[xx - nskipped] = x[curve][xx] - (int) x[curve][0];
                             if (x[curve][xx] > xmax) xmax = x[curve][xx];
@@ -1982,7 +1986,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 }
 
                 var ks = KeplerSpline.chooseKeplerSplineV2(MatrixUtils.createRealVector(Arrays.copyOf(x[curve], nn[curve])),
-                        MatrixUtils.createRealVector(Arrays.copyOf(y[curve], nn[curve])), 0.5, 20.0, 20, null, 0.2, true);
+                        MatrixUtils.createRealVector(Arrays.copyOf(y[curve], nn[curve])), 0.5, 20.0, 20, useNewSmootherMask ? yMask : null, null, true);
 
                 if (nn[curve] - nskipped > 2 * smoothLen[curve]) {
                     double smoothVal;
@@ -1993,7 +1997,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     yave /= (nn[curve] - nskipped);
                     for (int xx = 0; xx < nn[curve]; xx++) {
                         smoothVal =ks.first().getEntry(xx);
-                        y[curve][xx] = y[curve][xx] - smoothVal + yave;
+                        y[curve][xx] = y[curve][xx]/smoothVal;// + yave;
                     }
 
 
@@ -6100,6 +6104,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         saveSeeingProfile = true;
         saveSeeingProfileStack = false;
         useNewSmoother = false;
+        useNewSmootherMask = true;
         saveConfig = true;
         saveTable = true;
         saveApertures = true;
@@ -7728,6 +7733,16 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             updatePlot(updateAllFits());
         });
         preferencesmenu.add(useNewSmootherCB);
+
+        var useNewSmootherMaskCB = new JCheckBoxMenuItem("Use KeplerSplineV2 Transit Mask", useNewSmoother);
+        useNewSmootherCB.addItemListener(e -> {
+            if (e.getStateChange() == ItemEvent.DESELECTED) {
+                useNewSmootherMask = false;
+            } else if (e.getStateChange() == ItemEvent.SELECTED) useNewSmootherMask = true;
+            Prefs.set("plot.useNewSmootherMask", useNewSmootherMask);
+            updatePlot(updateAllFits());
+        });
+        preferencesmenu.add(useNewSmootherMaskCB);
 
         mainmenubar.add(preferencesmenu);
 
@@ -17873,6 +17888,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         priorityDetrendColumns = Prefs.get("plot.priorityDetrendColumns", priorityDetrendColumns);
         prioritizeColumns = Prefs.get("plot.prioritizeColumns", prioritizeColumns);
         useNewSmoother = Prefs.get("plot.useNewSmoother", useNewSmoother);
+        useNewSmootherMask = Prefs.get("plot.useNewSmootherMask", useNewSmootherMask);
         maxColumnLength = (int) Prefs.get("plot.maxColumnLength", 1000);
 
         saveImage = Prefs.get("Astronomy_Tool.saveImage", saveImage);
@@ -18078,6 +18094,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         Prefs.set("plot2.maxSubsetColumns", maxSubsetColumns);
         Prefs.set("plot2.forceAbsMagDisplay", forceAbsMagDisplay);
         Prefs.set("plot.useNewSmoother", useNewSmoother);
+        Prefs.set("plot.useNewSmootherMask", useNewSmootherMask);
         saveAstroPanelPrefs();
         Prefs.set("plot.maxDetrendVars", maxDetrendVars);
         Prefs.set("plot2.useDefaultSettings", useDefaultSettings);

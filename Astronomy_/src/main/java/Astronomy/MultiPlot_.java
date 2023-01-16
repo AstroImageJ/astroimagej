@@ -1,14 +1,13 @@
 // MultiPlot_.java
 package Astronomy;
 
+import Astronomy.multiplot.KeplerSplineControl;
 import astroj.*;
-import com.astroimagej.bspline.KeplerSpline;
 import flanagan.analysis.Regression;
 import flanagan.analysis.Smooth;
 import flanagan.math.Minimization;
 import flanagan.math.MinimizationFunction;
 import ij.*;
-import ij.astro.logging.AIJLogger;
 import ij.astro.types.Pair;
 import ij.astro.util.PdfPlotOutput;
 import ij.astro.util.UIHelper;
@@ -1966,14 +1965,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         }
                     }
                 }
-                var ks = KeplerSpline.chooseKeplerSplineV2(MatrixUtils.createRealVector(Arrays.copyOf(x[curve], nn[curve])),
-                        MatrixUtils.createRealVector(Arrays.copyOf(y[curve], nn[curve])), 0.5, 20.0, 20, useNewSmootherMask ? yMask : null, null, true);
 
-                AIJLogger.log("BKSpace for curve " + curve + " is " + ks.second().bkSpace);
-                AIJLogger.log("BIC for curve " + curve + " is " + ks.second().bic);
-                for (int xx = 0; xx < nn[curve]; xx++) {
-                    y[curve][xx] /= ks.first().getEntry(xx);
-                }
+                KeplerSplineControl.getInstance(curve).transformData(x[curve], y[curve], nn[curve], yMask);
             }
         }
 
@@ -10896,6 +10889,14 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         smoothlabel.setMaximumSize(new Dimension(35, 25));
         mainsubpanelgroup.add(smoothlabel);
 
+        JLabel smoothGear = new JLabel("<HTML><CENTER>KS</HTML>");
+        smoothGear.setFont(b11);
+        smoothGear.setForeground(Color.DARK_GRAY);
+        smoothGear.setToolTipText("Smooth long time-series by removing long-term variations");
+        smoothGear.setHorizontalAlignment(JLabel.CENTER);
+        smoothGear.setMaximumSize(new Dimension(35, 25));
+        mainsubpanelgroup.add(smoothGear);
+
         JLabel smoothlenlabel = new JLabel("<HTML><CENTER>Len-<BR><CENTER>gth</HTML>");
         smoothlenlabel.setFont(b11);
         smoothlenlabel.setForeground(Color.DARK_GRAY);
@@ -11348,6 +11349,14 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         });
         usesmoothbox[c].setHorizontalAlignment(JLabel.CENTER);
         mainsubpanelgroup.add(usesmoothbox[c]);
+
+        var smoothGear = new JButton("⛭");
+        smoothGear.addActionListener(e -> {
+            KeplerSplineControl.getInstance(c).displayDialog();
+            updatePlot(updateOneFit(c));
+        });
+        smoothGear.setHorizontalAlignment(JLabel.CENTER);
+        mainsubpanelgroup.add(smoothGear);
 
         smoothlenspinnermodel[c] = new SpinnerNumberModel(smoothLen[c], 1, null, 1);
         smoothlenspinner[c] = new JSpinner(smoothlenspinnermodel[c]);

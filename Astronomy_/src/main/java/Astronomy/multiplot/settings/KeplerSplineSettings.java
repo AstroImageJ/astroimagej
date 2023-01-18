@@ -3,7 +3,7 @@ package Astronomy.multiplot.settings;
 public class KeplerSplineSettings {
     private DisplayType displayType = DisplayType.FLATTENED_LIGHT_CURVE;
     private KnotDensity knotDensity = KnotDensity.AUTO;
-    private double fixedKnotDensity = 5;
+    private double fixedKnotDensity = 1.5;
     private double minKnotDensity = 0.5;
     private double maxKnotDensity = 20;
     private int knotDensitySteps = 20;

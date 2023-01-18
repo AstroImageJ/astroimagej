@@ -11352,7 +11352,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         var smoothGear = new JButton("⛭");
         smoothGear.addActionListener(e -> {
-            KeplerSplineControl.getInstance(c).displayDialog();
+            KeplerSplineControl.getInstance(c).displayPanel();
             updatePlot(updateOneFit(c));
         });
         smoothGear.setHorizontalAlignment(JLabel.CENTER);

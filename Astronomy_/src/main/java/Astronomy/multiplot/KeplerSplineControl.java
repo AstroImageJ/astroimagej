@@ -2,6 +2,7 @@ package Astronomy.multiplot;
 
 import Astronomy.MultiPlot_;
 import Astronomy.multiplot.settings.KeplerSplineSettings;
+import astroj.IJU;
 import com.astroimagej.bspline.KeplerSpline;
 import org.hipparchus.linear.MatrixUtils;
 import org.hipparchus.linear.RealVector;
@@ -9,6 +10,7 @@ import util.GenericSwingDialog;
 
 import javax.swing.*;
 import java.awt.*;
+import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.concurrent.ExecutorService;
@@ -20,10 +22,21 @@ public class KeplerSplineControl {
     private KeplerSpline.SplineMetadata lastSplineFit = null;
     private static final LinkedList<KeplerSplineControl> INSTANCES = new LinkedList<>();
     private static final ExecutorService RUNNER = Executors.newSingleThreadExecutor();
+    private JTextField bicDisplay;
+    private JTextField bkSpaceDisplay;
+    static DecimalFormat FORMATTER = new DecimalFormat("######0.00", IJU.dfs);
 
     public KeplerSplineControl(int curve) {
         this.curve = curve;
         settings = new KeplerSplineSettings(curve);
+        bkSpaceDisplay = new JTextField("N/A");
+        bicDisplay = new JTextField("N/A");
+        bicDisplay.setEnabled(false);
+        bkSpaceDisplay.setEnabled(false);
+        bkSpaceDisplay.setHorizontalAlignment(JTextField.CENTER);
+        bicDisplay.setHorizontalAlignment(JTextField.CENTER);
+        bkSpaceDisplay.setColumns(8);
+        bicDisplay.setColumns(8);
     }
 
     public static KeplerSplineControl getInstance(int curve) {
@@ -49,6 +62,7 @@ public class KeplerSplineControl {
         var c = new GridBagConstraints();
         c.anchor = GridBagConstraints.WEST;
 
+        c.gridwidth = GridBagConstraints.REMAINDER;
         var doMask = new JCheckBox("Ignore transit data in spline fit");
         doMask.setToolTipText("");
         doMask.setSelected(settings.getMaskTransit());
@@ -57,6 +71,7 @@ public class KeplerSplineControl {
             updatePlot();
         });
         panel.add(doMask, c);
+        c.gridwidth = 1;
         c.gridy++;
 
         // Display type
@@ -75,6 +90,13 @@ public class KeplerSplineControl {
             panel.add(radio, c);
         }
         c.gridy++;
+        c.fill = GridBagConstraints.BOTH;
+        c.gridwidth = GridBagConstraints.REMAINDER;
+        c.weighty = 1;
+        panel.add(new JSeparator(), c);
+        c.fill = GridBagConstraints.NONE;
+        c.gridwidth = 1;
+        c.weighty = 0;
         c.gridy++;
 
         // Knot density
@@ -145,6 +167,34 @@ public class KeplerSplineControl {
 
         c.gridx = 0;
         c.gridy++;
+        c.fill = GridBagConstraints.BOTH;
+        c.gridwidth = GridBagConstraints.REMAINDER;
+        c.weighty = 1;
+        panel.add(new JSeparator(), c);
+        c.fill = GridBagConstraints.NONE;
+        c.gridwidth = 1;
+        c.weighty = 0;
+
+        // Metadata display
+        var box = Box.createHorizontalBox();
+        box.add(new JLabel("Knot Spacing: "));
+        box.add(bkSpaceDisplay);
+        panel.add(box, c);
+        box = Box.createHorizontalBox();
+        c.gridx = 1;
+        box.add(new JLabel("BIC: "));
+        box.add(bicDisplay);
+        panel.add(box, c);
+        c.gridy++;
+        c.gridx = 0;
+
+        c.fill = GridBagConstraints.BOTH;
+        c.gridwidth = GridBagConstraints.REMAINDER;
+        c.weighty = 1;
+        panel.add(new JSeparator(), c);
+        c.fill = GridBagConstraints.NONE;
+        c.gridwidth = 1;
+        c.weighty = 0;
         c.gridy++;
         label = new JLabel("Minimum Gap Width");
         panel.add(label, c);
@@ -158,6 +208,14 @@ public class KeplerSplineControl {
         panel.add(control4, c);
         label = new JLabel(" (days)");
         panel.add(label, c);
+        c.gridy++;
+        c.fill = GridBagConstraints.BOTH;
+        c.gridwidth = GridBagConstraints.REMAINDER;
+        c.weighty = 1;
+        panel.add(new JSeparator(), c);
+        c.fill = GridBagConstraints.NONE;
+        c.gridwidth = 1;
+        c.weighty = 0;
         c.gridy++;
         c.gridx = 0;
         label = new JLabel("Data Cleaning");
@@ -197,6 +255,14 @@ public class KeplerSplineControl {
                 var ks = makeKs().fit(x, y, size, mask);
 
                 lastSplineFit = ks.second();
+                if (lastSplineFit.bic == null) {
+                    bkSpaceDisplay.setText("N/A");
+                    bicDisplay.setText("N/A");
+                    Arrays.fill(y, Double.NaN);
+                    return;
+                }
+                bkSpaceDisplay.setText(FORMATTER.format(lastSplineFit.bkSpace));
+                bicDisplay.setText(FORMATTER.format(lastSplineFit.bic));
 
                 for (int xx = 0; xx < size; xx++) {
                     y[xx] = ks.first().getEntry(xx);
@@ -206,6 +272,14 @@ public class KeplerSplineControl {
                 var ks = makeKs().fit(x, y, size, mask);
 
                 lastSplineFit = ks.second();
+                if (lastSplineFit.bic == null) {
+                    bkSpaceDisplay.setText("N/A");
+                    bicDisplay.setText("N/A");
+                    Arrays.fill(y, Double.NaN);
+                    return;
+                }
+                bkSpaceDisplay.setText(FORMATTER.format(lastSplineFit.bkSpace));
+                bicDisplay.setText(FORMATTER.format(lastSplineFit.bic));
 
                 for (int xx = 0; xx < size; xx++) {
                     y[xx] /= ks.first().getEntry(xx);

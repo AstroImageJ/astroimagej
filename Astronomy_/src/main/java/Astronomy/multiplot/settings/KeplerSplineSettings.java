@@ -10,6 +10,7 @@ public class KeplerSplineSettings {
     private double minGapWidth = 0.2;
     private double dataCleaningCoeff = 3;
     private int dataCleaningTries = 5;
+    private int smoothLength = 31;
     private boolean maskTransit = true;
     private final int curve;
 
@@ -97,9 +98,18 @@ public class KeplerSplineSettings {
         this.maskTransit = maskTransit;
     }
 
+    public int getSmoothLength() {
+        return smoothLength;
+    }
+
+    public void setSmoothLength(int smoothLength) {
+        this.smoothLength = smoothLength;
+    }
+
     public enum KnotDensity {
         AUTO,
         FIXED,
+        LEGACY_SMOOTHER,
     }
 
     public enum DisplayType {

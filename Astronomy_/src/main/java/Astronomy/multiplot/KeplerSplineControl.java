@@ -4,6 +4,8 @@ import Astronomy.MultiPlot_;
 import Astronomy.multiplot.settings.KeplerSplineSettings;
 import astroj.IJU;
 import com.astroimagej.bspline.KeplerSpline;
+import com.astroimagej.bspline.util.Pair;
+import flanagan.analysis.Smooth;
 import org.hipparchus.linear.MatrixUtils;
 import org.hipparchus.linear.RealVector;
 import util.GenericSwingDialog;
@@ -16,14 +18,16 @@ import java.util.LinkedList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import static Astronomy.MultiPlot_.*;
+
 public class KeplerSplineControl {
-    private int curve;
-    private KeplerSplineSettings settings;
+    private final int curve;
+    private final KeplerSplineSettings settings;
     private KeplerSpline.SplineMetadata lastSplineFit = null;
     private static final LinkedList<KeplerSplineControl> INSTANCES = new LinkedList<>();
     private static final ExecutorService RUNNER = Executors.newSingleThreadExecutor();
-    private JTextField bicDisplay;
-    private JTextField bkSpaceDisplay;
+    private final JTextField bicDisplay;
+    private final JTextField bkSpaceDisplay;
     static DecimalFormat FORMATTER = new DecimalFormat("######0.00", IJU.dfs);
 
     public KeplerSplineControl(int curve) {
@@ -164,6 +168,28 @@ public class KeplerSplineControl {
         label = new JLabel(" Spline iterations");
         c.gridx++;
         panel.add(label, c);
+        c.gridx = 0;
+        c.gridy++;
+        radio = new JRadioButton("Legacy Smoother:");
+        densityGroup.add(radio);
+        radio.addActionListener($ -> {
+            settings.setKnotDensity(KeplerSplineSettings.KnotDensity.LEGACY_SMOOTHER);
+            updatePlot();
+        });
+        radio.setSelected(settings.getKnotDensity() == KeplerSplineSettings.KnotDensity.LEGACY_SMOOTHER);
+        panel.add(radio, c);
+        c.gridx = 1;
+        var control7 = new JSpinner(new SpinnerNumberModel(settings.getSmoothLength(), 1, Integer.MAX_VALUE, 1));
+        control7.addChangeListener($ -> {
+            settings.setSmoothLength(((Integer) control7.getValue()));
+            updatePlot();
+        });
+        GenericSwingDialog.getTextFieldFromSpinner(control7).ifPresent(f -> f.setColumns(5));
+        panel.add(control7, c);
+        label = new JLabel(" N points");
+        c.gridx++;
+        panel.add(label, c);
+        c.gridx--;
 
         c.gridx = 0;
         c.gridy++;
@@ -252,16 +278,21 @@ public class KeplerSplineControl {
     public void transformData(double[] x, double[] y, int size, RealVector mask) {
         var ks = makeKs().fit(x, y, size, mask);
 
-        lastSplineFit = ks.second();
-        if (lastSplineFit.bic == null) {
+        if (settings.getKnotDensity() == KeplerSplineSettings.KnotDensity.LEGACY_SMOOTHER) {
             bkSpaceDisplay.setText("N/A");
             bicDisplay.setText("N/A");
-            Arrays.fill(y, Double.NaN);
-            return;
-        }
+        } else {
+            lastSplineFit = ks.second();
+            if (lastSplineFit.bic == null) {
+                bkSpaceDisplay.setText("N/A");
+                bicDisplay.setText("N/A");
+                Arrays.fill(y, Double.NaN);
+                return;
+            }
 
-        bkSpaceDisplay.setText(FORMATTER.format(lastSplineFit.bkSpace));
-        bicDisplay.setText(FORMATTER.format(lastSplineFit.bic));
+            bkSpaceDisplay.setText(FORMATTER.format(lastSplineFit.bkSpace));
+            bicDisplay.setText(FORMATTER.format(lastSplineFit.bic));
+        }
 
         switch (settings.getDisplayType()) {
             case FITTED_SPLINE -> {
@@ -289,6 +320,60 @@ public class KeplerSplineControl {
                     MatrixUtils.createRealVector(Arrays.copyOf(ys, size)), settings.getMinKnotDensity(),
                     settings.getMaxKnotDensity(), settings.getKnotDensitySteps(), mask,
                     settings.getMinGapWidth(), settings.getDataCleaningTries(), settings.getDataCleaningCoeff(),true);
+            case LEGACY_SMOOTHER -> (xs, ys, size, mask) -> {
+                if (size <= 2*settings.getSmoothLength()) {
+                    var o = MatrixUtils.createRealVector(size);
+                    o.set(Double.NaN);
+                    return new Pair<>(o, null);
+                }
+                double[] xphase = new double[size];
+                double[] yphase = new double[size];
+                double xfold;
+                int nskipped = 0;
+                double xmax = Double.NEGATIVE_INFINITY;
+                double xmin = Double.POSITIVE_INFINITY;
+                double halfPeriod = netPeriod / 2.0;
+                for (int xx = 0; xx < size; xx++) {
+                    xfold = ((xs[xx] - netT0) % netPeriod);
+                    if (xfold > halfPeriod) { xfold -= netPeriod; } else if (xfold < -halfPeriod) xfold += netPeriod;
+                    if (Math.abs(xfold) < duration / 48.0) {
+                        nskipped++;
+                    } else {
+                        yphase[xx - nskipped] = ys[xx];
+                        xphase[xx - nskipped] = xs[xx] - (int) xs[0];
+                        if (xs[xx] > xmax) xmax = xs[xx];
+                        if (xs[xx] < xmin) xmin = xs[xx];
+                    }
+                }
+
+                var xl = new double[size - nskipped];
+                var yl = new double[size - nskipped];
+                for (int xx = 0; xx < size - nskipped; xx++) {
+                    yl[xx] = yphase[xx];
+                    xl[xx] = xphase[xx];
+                }
+
+                if (size - nskipped > 2 * settings.getSmoothLength()) {
+                    Smooth csm = new Smooth(xl, yl);
+                    csm.savitzkyGolay(settings.getSmoothLength());
+                    csm.setSGpolyDegree(2);
+
+                    double finalXmax = xmax;
+                    double finalXmin = xmin;
+
+                    return new Pair<>(MatrixUtils.createRealVector(Arrays.stream(xs).limit(size).map(x -> {
+                        if (x > finalXmax) {
+                            return csm.interpolateSavitzkyGolay(finalXmax - (int) xs[0]);
+                        } else if (x < finalXmin) {
+                            return csm.interpolateSavitzkyGolay(finalXmin - (int) xs[0]);
+                        } else {
+                            return csm.interpolateSavitzkyGolay(x - (int) xs[0]);
+                        }
+                    }).toArray()), null);
+                }
+
+                return new Pair<>(null, null);
+            };
         };
     }
 

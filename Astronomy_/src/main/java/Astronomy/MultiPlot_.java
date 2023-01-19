@@ -4,7 +4,6 @@ package Astronomy;
 import Astronomy.multiplot.KeplerSplineControl;
 import astroj.*;
 import flanagan.analysis.Regression;
-import flanagan.analysis.Smooth;
 import flanagan.math.Minimization;
 import flanagan.math.MinimizationFunction;
 import ij.*;
@@ -129,9 +128,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static boolean showXAxisAsDaysSinceTc;
     static double T0;
     static double period;
-    static double duration;
-    static double netT0;
-    static double netPeriod;
+    public static double duration;
+    public static double netT0;
+    public static double netPeriod;
     static boolean twoxPeriod;
     static boolean oddNotEven;
     static int[] smoothLen;
@@ -1881,70 +1880,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 }
             }
 
-            if (plotY[curve] && smooth[curve] && nn[curve] > 2 * smoothLen[curve] && !useNewSmoother) {
-                double[] xl = new double[nn[curve]];
-                double[] yl = new double[nn[curve]];
-                double[] xphase = new double[nn[curve]];
-                double[] yphase = new double[nn[curve]];
-                double xfold;
-                int nskipped = 0;
-                double xmax = Double.NEGATIVE_INFINITY;
-                double xmin = Double.POSITIVE_INFINITY;
-                double halfPeriod = netPeriod / 2.0;
-                for (int xx = 0; xx < nn[curve]; xx++) {
-                    if (false) //showXAxisNormal
-                    {
-                        yl[xx] = y[curve][xx];
-                        xl[xx] = x[curve][xx] - (int) x[curve][0];
-                    } else {
-                        xfold = ((x[curve][xx] - netT0) % netPeriod);
-                        if (xfold > halfPeriod) { xfold -= netPeriod; } else if (xfold < -halfPeriod) xfold += netPeriod;
-                        if (Math.abs(xfold) < duration / 48.0) {
-                            nskipped++;
-                        } else {
-                            yphase[xx - nskipped] = y[curve][xx];
-                            xphase[xx - nskipped] = x[curve][xx] - (int) x[curve][0];
-                            if (x[curve][xx] > xmax) xmax = x[curve][xx];
-                            if (x[curve][xx] < xmin) xmin = x[curve][xx];
-                        }
-                    }
-                }
-                if (true) //!showXAxisNormal
-                {
-                    xl = new double[nn[curve] - nskipped];
-                    yl = new double[nn[curve] - nskipped];
-                    for (int xx = 0; xx < nn[curve] - nskipped; xx++) {
-                        yl[xx] = yphase[xx];
-                        xl[xx] = xphase[xx];
-                    }
-                }
-                if (nn[curve] - nskipped > 2 * smoothLen[curve]) {
-                    double smoothVal;
-                    Smooth csm = new Smooth(xl, yl);
-                    //csm.movingAverage(csmwidth);
-                    csm.savitzkyGolay(smoothLen[curve]);
-                    csm.setSGpolyDegree(2);
-                    double yave = 0.0;
-                    for (int xx = 0; xx < nn[curve] - nskipped; xx++) {
-                        yave += yl[xx];
-                    }
-                    yave /= (nn[curve] - nskipped);
-                    for (int xx = 0; xx < nn[curve]; xx++) {
-                        if (x[curve][xx] > xmax) {
-                            smoothVal = csm.interpolateSavitzkyGolay(xmax - (int) x[curve][0]);
-                        } else if (x[curve][xx] < xmin) {
-                            smoothVal = csm.interpolateSavitzkyGolay(xmin - (int) x[curve][0]);
-                        } else {
-                            smoothVal = csm.interpolateSavitzkyGolay(x[curve][xx] - (int) x[curve][0]);
-                        }
-                        //y[1][xx] = csm.interpolateMovingAverage(xl[xx]);
-                        y[curve][xx] = y[curve][xx]/smoothVal; // + yave;
-                    }
-                }
-                //y[curve]=smoothed.getMovingAverageValues();
-            }
-
-            if (plotY[curve] && smooth[curve] && nn[curve] > 4 && useNewSmoother) {
+            if (plotY[curve] && smooth[curve] && nn[curve] > 4) {
                 var yMask = MatrixUtils.createRealVector(nn[curve]);
                 double xfold;
                 double halfPeriod = netPeriod / 2.0;
@@ -6058,8 +5994,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         savePlot = true;
         saveSeeingProfile = true;
         saveSeeingProfileStack = false;
-        useNewSmoother = false;
-        useNewSmootherMask = true;
         saveConfig = true;
         saveTable = true;
         saveApertures = true;
@@ -7678,26 +7612,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             Prefs.set("plot2.useDefaultSettings", useDefaultSettings);
         });
         preferencesmenu.add(usedefaultsettingsCB);
-
-        var useNewSmootherCB = new JCheckBoxMenuItem("Use KeplerSplineV2 Smoothing", useNewSmoother);
-        useNewSmootherCB.addItemListener(e -> {
-            if (e.getStateChange() == ItemEvent.DESELECTED) {
-                useNewSmoother = false;
-            } else if (e.getStateChange() == ItemEvent.SELECTED) useNewSmoother = true;
-            Prefs.set("plot.useNewSmoother", useNewSmoother);
-            updatePlot(updateAllFits());
-        });
-        preferencesmenu.add(useNewSmootherCB);
-
-        var useNewSmootherMaskCB = new JCheckBoxMenuItem("Use KeplerSplineV2 Transit Mask", useNewSmootherMask);
-        useNewSmootherMaskCB.addItemListener(e -> {
-            if (e.getStateChange() == ItemEvent.DESELECTED) {
-                useNewSmootherMask = false;
-            } else if (e.getStateChange() == ItemEvent.SELECTED) useNewSmootherMask = true;
-            Prefs.set("plot.useNewSmootherMask", useNewSmootherMask);
-            updatePlot(updateAllFits());
-        });
-        preferencesmenu.add(useNewSmootherMaskCB);
 
         mainmenubar.add(preferencesmenu);
 
@@ -10896,14 +10810,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         smoothGear.setHorizontalAlignment(JLabel.CENTER);
         smoothGear.setMaximumSize(new Dimension(35, 25));
         mainsubpanelgroup.add(smoothGear);
-
-        JLabel smoothlenlabel = new JLabel("<HTML><CENTER>Len-<BR><CENTER>gth</HTML>");
-        smoothlenlabel.setFont(b11);
-        smoothlenlabel.setForeground(Color.DARK_GRAY);
-        smoothlenlabel.setToolTipText("Set smoothing length (number data points)");
-        smoothlenlabel.setHorizontalAlignment(JLabel.CENTER);
-        smoothlenlabel.setMaximumSize(new Dimension(35, 25));
-        mainsubpanelgroup.add(smoothlenlabel);
     }
 
 
@@ -11358,22 +11264,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         });
         smoothGear.setHorizontalAlignment(JLabel.CENTER);
         mainsubpanelgroup.add(smoothGear);
-
-        smoothlenspinnermodel[c] = new SpinnerNumberModel(smoothLen[c], 1, null, 1);
-        smoothlenspinner[c] = new JSpinner(smoothlenspinnermodel[c]);
-        smoothlenspinner[c].setFont(p11);
-        smoothlenspinner[c].setMaximumSize(new Dimension(50, 25));
-        smoothlenspinner[c].setPreferredSize(new Dimension(50, 25));
-        smoothlenspinner[c].addChangeListener(ev -> {
-            smoothLen[c] = (Integer) smoothlenspinner[c].getValue();
-            Prefs.set("plot.smoothLen" + c, smoothLen[c]);
-            updatePlot(updateOneFit(c));
-        });
-        smoothlenspinner[c].addMouseWheelListener(e -> {
-            int newValue = (Integer) smoothlenspinner[c].getValue() - e.getWheelRotation();
-            if (newValue > 0) smoothlenspinner[c].setValue(newValue);
-        });
-        mainsubpanelgroup.add(smoothlenspinner[c]);
     }
 
     static void constructOtherGroup(JPanel mainsubpanelgroup, final int c) {
@@ -17859,8 +17749,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         priorityColumns = Prefs.get("plot.priorityColumns", priorityColumns);
         priorityDetrendColumns = Prefs.get("plot.priorityDetrendColumns", priorityDetrendColumns);
         prioritizeColumns = Prefs.get("plot.prioritizeColumns", prioritizeColumns);
-        useNewSmoother = Prefs.get("plot.useNewSmoother", useNewSmoother);
-        useNewSmootherMask = Prefs.get("plot.useNewSmootherMask", useNewSmootherMask);
         maxColumnLength = (int) Prefs.get("plot.maxColumnLength", 1000);
 
         saveImage = Prefs.get("Astronomy_Tool.saveImage", saveImage);
@@ -18065,8 +17953,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         Prefs.set("plot2.modifyCurvesBelow", modifyCurvesBelow);
         Prefs.set("plot2.maxSubsetColumns", maxSubsetColumns);
         Prefs.set("plot2.forceAbsMagDisplay", forceAbsMagDisplay);
-        Prefs.set("plot.useNewSmoother", useNewSmoother);
-        Prefs.set("plot.useNewSmootherMask", useNewSmootherMask);
         saveAstroPanelPrefs();
         Prefs.set("plot.maxDetrendVars", maxDetrendVars);
         Prefs.set("plot2.useDefaultSettings", useDefaultSettings);

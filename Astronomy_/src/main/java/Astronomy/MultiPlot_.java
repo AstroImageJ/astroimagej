@@ -11351,6 +11351,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         mainsubpanelgroup.add(usesmoothbox[c]);
 
         var smoothGear = new JButton("⛭");
+        smoothGear.setFont(smoothGear.getFont().deriveFont(18F));
         smoothGear.addActionListener(e -> {
             KeplerSplineControl.getInstance(c).displayPanel();
             updatePlot(updateOneFit(c));

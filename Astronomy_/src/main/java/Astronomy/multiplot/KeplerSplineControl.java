@@ -250,37 +250,26 @@ public class KeplerSplineControl {
     }
 
     public void transformData(double[] x, double[] y, int size, RealVector mask) {
+        var ks = makeKs().fit(x, y, size, mask);
+
+        lastSplineFit = ks.second();
+        if (lastSplineFit.bic == null) {
+            bkSpaceDisplay.setText("N/A");
+            bicDisplay.setText("N/A");
+            Arrays.fill(y, Double.NaN);
+            return;
+        }
+
+        bkSpaceDisplay.setText(FORMATTER.format(lastSplineFit.bkSpace));
+        bicDisplay.setText(FORMATTER.format(lastSplineFit.bic));
+
         switch (settings.getDisplayType()) {
             case FITTED_SPLINE -> {
-                var ks = makeKs().fit(x, y, size, mask);
-
-                lastSplineFit = ks.second();
-                if (lastSplineFit.bic == null) {
-                    bkSpaceDisplay.setText("N/A");
-                    bicDisplay.setText("N/A");
-                    Arrays.fill(y, Double.NaN);
-                    return;
-                }
-                bkSpaceDisplay.setText(FORMATTER.format(lastSplineFit.bkSpace));
-                bicDisplay.setText(FORMATTER.format(lastSplineFit.bic));
-
                 for (int xx = 0; xx < size; xx++) {
                     y[xx] = ks.first().getEntry(xx);
                 }
             }
             case FLATTENED_LIGHT_CURVE -> {
-                var ks = makeKs().fit(x, y, size, mask);
-
-                lastSplineFit = ks.second();
-                if (lastSplineFit.bic == null) {
-                    bkSpaceDisplay.setText("N/A");
-                    bicDisplay.setText("N/A");
-                    Arrays.fill(y, Double.NaN);
-                    return;
-                }
-                bkSpaceDisplay.setText(FORMATTER.format(lastSplineFit.bkSpace));
-                bicDisplay.setText(FORMATTER.format(lastSplineFit.bic));
-
                 for (int xx = 0; xx < size; xx++) {
                     y[xx] /= ks.first().getEntry(xx);
                 }
@@ -293,12 +282,13 @@ public class KeplerSplineControl {
             case FIXED -> (xs, ys, size, mask) ->
                     KeplerSpline.keplerSplineV2(MatrixUtils.createRealVector(Arrays.copyOf(xs,size)),
                     MatrixUtils.createRealVector(Arrays.copyOf(ys, size)), settings.getFixedKnotDensity(),
-                    mask, settings.getMinGapWidth(), true);
+                    mask, settings.getMinGapWidth(), settings.getDataCleaningTries(),
+                            settings.getDataCleaningCoeff(),true);
             case AUTO -> (xs, ys, size, mask) ->
                     KeplerSpline.chooseKeplerSplineV2(MatrixUtils.createRealVector(Arrays.copyOf(xs,size)),
                     MatrixUtils.createRealVector(Arrays.copyOf(ys, size)), settings.getMinKnotDensity(),
                     settings.getMaxKnotDensity(), settings.getKnotDensitySteps(), mask,
-                    settings.getMinGapWidth(), true);
+                    settings.getMinGapWidth(), settings.getDataCleaningTries(), settings.getDataCleaningCoeff(),true);
         };
     }
 

@@ -357,7 +357,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static Plot plot;
     static ImagePlus iplus;
     static int sliceCol;
-    static JFrame mainFrame;
+    public static JFrame mainFrame;
     static JFrame subFrame, refStarFrame, addAstroDataFrame;
     static JFrame getMaxCurvesFrame;
     static Panel plotpanel;

@@ -2,6 +2,9 @@ package Astronomy.multiplot.settings;
 
 import ij.astro.io.prefs.Property;
 
+import java.awt.*;
+import java.lang.reflect.Field;
+
 public class KeplerSplineSettings {
     public Property<DisplayType> displayType;
     public Property<KnotDensity> knotDensity;
@@ -14,6 +17,7 @@ public class KeplerSplineSettings {
     public Property<Integer> dataCleaningTries;
     public Property<Integer> smoothLength;
     public Property<Boolean> maskTransit;
+    public Property<Point> windowLocation;
     private final int curve;
 
     public KeplerSplineSettings(int curve) {
@@ -29,6 +33,23 @@ public class KeplerSplineSettings {
         dataCleaningTries = makeProperty(5);
         smoothLength = makeProperty(31);
         maskTransit = makeProperty(true);
+        windowLocation = makeProperty(new Point());
+    }
+
+    public void duplicateSettings(KeplerSplineSettings from) {
+        for (Field field : getClass().getDeclaredFields()) {
+            if (field.getType() != Property.class) {
+                continue;
+            }
+            if (field.getName().equals("displayType") || field.getName().equals("windowLocation")) {
+                continue;
+            }
+            try {
+                ((Property) field.get(this)).set(((Property) field.get(from)).get());
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     private <T> Property<T> makeProperty(T defaultValue) {

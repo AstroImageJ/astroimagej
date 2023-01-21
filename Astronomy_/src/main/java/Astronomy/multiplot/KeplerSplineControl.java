@@ -14,7 +14,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.text.DecimalFormat;
 import java.util.Arrays;
-import java.util.LinkedList;
+import java.util.LinkedHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -23,8 +23,7 @@ import static Astronomy.MultiPlot_.*;
 public class KeplerSplineControl {
     private final int curve;
     private final KeplerSplineSettings settings;
-    private KeplerSpline.SplineMetadata lastSplineFit = null;
-    private static final LinkedList<KeplerSplineControl> INSTANCES = new LinkedList<>();
+    private static final LinkedHashMap<Integer, KeplerSplineControl> INSTANCES = new LinkedHashMap<>();
     private static final ExecutorService RUNNER = Executors.newSingleThreadExecutor();
     private final JTextField bicDisplay;
     private final JTextField bkSpaceDisplay;
@@ -44,9 +43,7 @@ public class KeplerSplineControl {
     }
 
     public static KeplerSplineControl getInstance(int curve) {
-        if (INSTANCES.size() <= curve) {
-            INSTANCES.add(new KeplerSplineControl(curve));
-        }
+        INSTANCES.putIfAbsent(curve, new KeplerSplineControl(curve));
 
         return INSTANCES.get(curve);
     }
@@ -61,7 +58,7 @@ public class KeplerSplineControl {
     }
 
     private JFrame makePanel() {
-        var window = new JFrame("Curve " + curve + " Smoothing Settings");
+        var window = new JFrame("Curve " + (curve + 1) + " Smoothing Settings");
         var panel = new JPanel(new GridBagLayout());
         var c = new GridBagConstraints();
         c.anchor = GridBagConstraints.WEST;
@@ -69,9 +66,9 @@ public class KeplerSplineControl {
         c.gridwidth = GridBagConstraints.REMAINDER;
         var doMask = new JCheckBox("Ignore transit data in spline fit");
         doMask.setToolTipText("");
-        doMask.setSelected(settings.getMaskTransit());
+        doMask.setSelected(settings.maskTransit.get());
         doMask.addActionListener($ -> {
-            settings.setMaskTransit(doMask.isSelected());
+            settings.maskTransit.set(doMask.isSelected());
             updatePlot();
         });
         panel.add(doMask, c);
@@ -83,10 +80,10 @@ public class KeplerSplineControl {
         for (KeplerSplineSettings.DisplayType displayType : KeplerSplineSettings.DisplayType.values()) {
             var radio = new JRadioButton(displayType.name());
             radio.addActionListener($ -> {
-                settings.setDisplayType(displayType);
+                settings.displayType.set(displayType);
                 updatePlot();
             });
-            if (settings.getDisplayType() == displayType) {
+            if (settings.displayType.get() == displayType) {
                 radio.setSelected(true);
             }
             displayGroup.add(radio);
@@ -108,14 +105,14 @@ public class KeplerSplineControl {
         var radio = new JRadioButton("Fixed knot spacing:");
         densityGroup.add(radio);
         radio.addActionListener($ -> {
-            settings.setKnotDensity(KeplerSplineSettings.KnotDensity.FIXED);
+            settings.knotDensity.set(KeplerSplineSettings.KnotDensity.FIXED);
             updatePlot();
         });
-        radio.setSelected(settings.getKnotDensity() == KeplerSplineSettings.KnotDensity.FIXED);
+        radio.setSelected(settings.knotDensity.get() == KeplerSplineSettings.KnotDensity.FIXED);
         panel.add(radio, c);
-        var control = new JSpinner(new SpinnerNumberModel(settings.getFixedKnotDensity(), 0.01, Double.MAX_VALUE, 1));
+        var control = new JSpinner(new SpinnerNumberModel(settings.fixedKnotDensity.get().doubleValue(), 0.01, Double.MAX_VALUE, 1));
         control.addChangeListener($ -> {
-            settings.setFixedKnotDensity(((Double) control.getValue()));
+            settings.fixedKnotDensity.set(((Double) control.getValue()));
             updatePlot();
         });
         c.gridx = GridBagConstraints.RELATIVE;
@@ -128,15 +125,15 @@ public class KeplerSplineControl {
         radio = new JRadioButton("Auto knot spacing");
         densityGroup.add(radio);
         radio.addActionListener($ -> {
-            settings.setKnotDensity(KeplerSplineSettings.KnotDensity.AUTO);
+            settings.knotDensity.set(KeplerSplineSettings.KnotDensity.AUTO);
             updatePlot();
         });
-        radio.setSelected(settings.getKnotDensity() == KeplerSplineSettings.KnotDensity.AUTO);
+        radio.setSelected(settings.knotDensity.get() == KeplerSplineSettings.KnotDensity.AUTO);
         panel.add(radio, c);
         c.gridx = 1;
-        var control1 = new JSpinner(new SpinnerNumberModel(settings.getMinKnotDensity(), 0.01, Double.MAX_VALUE, 1));
+        var control1 = new JSpinner(new SpinnerNumberModel(settings.minKnotDensity.get().doubleValue(), 0.01, Double.MAX_VALUE, 1));
         control1.addChangeListener($ -> {
-            settings.setMinKnotDensity(((Double) control1.getValue()));
+            settings.minKnotDensity.set(((Double) control1.getValue()));
             updatePlot();
         });
         GenericSwingDialog.getTextFieldFromSpinner(control1).ifPresent(f -> f.setColumns(5));
@@ -145,9 +142,9 @@ public class KeplerSplineControl {
         c.gridx++;
         panel.add(label, c);
         c.gridx--;
-        var control2 = new JSpinner(new SpinnerNumberModel(settings.getMaxKnotDensity(), 0.01, Double.MAX_VALUE, 1));
+        var control2 = new JSpinner(new SpinnerNumberModel(settings.maxKnotDensity.get().doubleValue(), 0.01, Double.MAX_VALUE, 1));
         control2.addChangeListener($ -> {
-            settings.setMaxKnotDensity(((Double) control2.getValue()));
+            settings.maxKnotDensity.set(((Double) control2.getValue()));
             updatePlot();
         });
         c.gridy++;
@@ -157,9 +154,9 @@ public class KeplerSplineControl {
         c.gridx++;
         panel.add(label, c);
         c.gridx--;
-        var control3 = new JSpinner(new SpinnerNumberModel(settings.getKnotDensitySteps(), 1, Integer.MAX_VALUE, 1));
+        var control3 = new JSpinner(new SpinnerNumberModel(settings.knotDensitySteps.get().intValue(), 1, Integer.MAX_VALUE, 1));
         control3.addChangeListener($ -> {
-            settings.setKnotDensitySteps(((Integer) control3.getValue()));
+            settings.knotDensitySteps.set(((Integer) control3.getValue()));
             updatePlot();
         });
         c.gridy++;
@@ -173,15 +170,15 @@ public class KeplerSplineControl {
         radio = new JRadioButton("Legacy Smoother:");
         densityGroup.add(radio);
         radio.addActionListener($ -> {
-            settings.setKnotDensity(KeplerSplineSettings.KnotDensity.LEGACY_SMOOTHER);
+            settings.knotDensity.set(KeplerSplineSettings.KnotDensity.LEGACY_SMOOTHER);
             updatePlot();
         });
-        radio.setSelected(settings.getKnotDensity() == KeplerSplineSettings.KnotDensity.LEGACY_SMOOTHER);
+        radio.setSelected(settings.knotDensity.get() == KeplerSplineSettings.KnotDensity.LEGACY_SMOOTHER);
         panel.add(radio, c);
         c.gridx = 1;
-        var control7 = new JSpinner(new SpinnerNumberModel(settings.getSmoothLength(), 1, Integer.MAX_VALUE, 1));
+        var control7 = new JSpinner(new SpinnerNumberModel(settings.smoothLength.get().intValue(), 1, Integer.MAX_VALUE, 1));
         control7.addChangeListener($ -> {
-            settings.setSmoothLength(((Integer) control7.getValue()));
+            settings.smoothLength.set(((Integer) control7.getValue()));
             updatePlot();
         });
         GenericSwingDialog.getTextFieldFromSpinner(control7).ifPresent(f -> f.setColumns(5));
@@ -225,9 +222,9 @@ public class KeplerSplineControl {
         label = new JLabel("Minimum Gap Width");
         panel.add(label, c);
         c.gridx = GridBagConstraints.RELATIVE;
-        var control4 = new JSpinner(new SpinnerNumberModel(settings.getMinGapWidth(), 0.01, Double.MAX_VALUE, 1));
+        var control4 = new JSpinner(new SpinnerNumberModel(settings.minKnotDensity.get().doubleValue(), 0.01, Double.MAX_VALUE, 1));
         control4.addChangeListener($ -> {
-            settings.setMinGapWidth(((Double) control4.getValue()));
+            settings.minGapWidth.set(((Double) control4.getValue()));
             updatePlot();
         });
         GenericSwingDialog.getTextFieldFromSpinner(control4).ifPresent(f -> f.setColumns(5));
@@ -247,9 +244,9 @@ public class KeplerSplineControl {
         label = new JLabel("Data Cleaning");
         panel.add(label, c);
         c.gridx = GridBagConstraints.RELATIVE;
-        var control5 = new JSpinner(new SpinnerNumberModel(settings.getDataCleaningCoeff(), 0.01, Double.MAX_VALUE, 1));
+        var control5 = new JSpinner(new SpinnerNumberModel(settings.dataCleaningCoeff.get().doubleValue(), 0.01, Double.MAX_VALUE, 1));
         control5.addChangeListener($ -> {
-            settings.setDataCleaningCoeff(((Double) control5.getValue()));
+            settings.dataCleaningCoeff.set(((Double) control5.getValue()));
             updatePlot();
         });
         GenericSwingDialog.getTextFieldFromSpinner(control5).ifPresent(f -> f.setColumns(5));
@@ -261,9 +258,9 @@ public class KeplerSplineControl {
         label = new JLabel("Data Cleaning Iterations");
         panel.add(label, c);
         c.gridx = GridBagConstraints.RELATIVE;
-        var control6 = new JSpinner(new SpinnerNumberModel(settings.getDataCleaningTries(), 1, Integer.MAX_VALUE, 1));
+        var control6 = new JSpinner(new SpinnerNumberModel(settings.dataCleaningTries.get().intValue(), 1, Integer.MAX_VALUE, 1));
         control6.addChangeListener($ -> {
-            settings.setDataCleaningTries(((Integer) control6.getValue()));
+            settings.dataCleaningTries.set(((Integer) control6.getValue()));
             updatePlot();
         });
         GenericSwingDialog.getTextFieldFromSpinner(control6).ifPresent(f -> f.setColumns(5));
@@ -278,11 +275,11 @@ public class KeplerSplineControl {
     public void transformData(double[] x, double[] y, int size, RealVector mask) {
         var ks = makeKs().fit(x, y, size, mask);
 
-        if (settings.getKnotDensity() == KeplerSplineSettings.KnotDensity.LEGACY_SMOOTHER) {
+        if (settings.knotDensity.get() == KeplerSplineSettings.KnotDensity.LEGACY_SMOOTHER) {
             bkSpaceDisplay.setText("N/A");
             bicDisplay.setText("N/A");
         } else {
-            lastSplineFit = ks.second();
+            var lastSplineFit = ks.second();
             if (lastSplineFit.bic == null) {
                 bkSpaceDisplay.setText("N/A");
                 bicDisplay.setText("N/A");
@@ -294,7 +291,7 @@ public class KeplerSplineControl {
             bicDisplay.setText(FORMATTER.format(lastSplineFit.bic));
         }
 
-        switch (settings.getDisplayType()) {
+        switch (settings.displayType.get()) {
             case FITTED_SPLINE -> {
                 for (int xx = 0; xx < size; xx++) {
                     y[xx] = ks.first().getEntry(xx);
@@ -309,19 +306,19 @@ public class KeplerSplineControl {
     }
 
     private KeplerSplineApplicator makeKs() {
-        return switch (settings.getKnotDensity()) {
+        return switch (settings.knotDensity.get()) {
             case FIXED -> (xs, ys, size, mask) ->
                     KeplerSpline.keplerSplineV2(MatrixUtils.createRealVector(Arrays.copyOf(xs,size)),
-                    MatrixUtils.createRealVector(Arrays.copyOf(ys, size)), settings.getFixedKnotDensity(),
-                    mask, settings.getMinGapWidth(), settings.getDataCleaningTries(),
-                            settings.getDataCleaningCoeff(),true);
+                    MatrixUtils.createRealVector(Arrays.copyOf(ys, size)), settings.fixedKnotDensity.get(),
+                    mask, settings.minGapWidth.get(), settings.dataCleaningTries.get(),
+                            settings.dataCleaningCoeff.get(), true);
             case AUTO -> (xs, ys, size, mask) ->
                     KeplerSpline.chooseKeplerSplineV2(MatrixUtils.createRealVector(Arrays.copyOf(xs,size)),
-                    MatrixUtils.createRealVector(Arrays.copyOf(ys, size)), settings.getMinKnotDensity(),
-                    settings.getMaxKnotDensity(), settings.getKnotDensitySteps(), mask,
-                    settings.getMinGapWidth(), settings.getDataCleaningTries(), settings.getDataCleaningCoeff(),true);
+                    MatrixUtils.createRealVector(Arrays.copyOf(ys, size)), settings.minKnotDensity.get(),
+                    settings.maxKnotDensity.get(), settings.knotDensitySteps.get(), mask,
+                    settings.minGapWidth.get(), settings.dataCleaningTries.get(), settings.dataCleaningCoeff.get(), true);
             case LEGACY_SMOOTHER -> (xs, ys, size, mask) -> {
-                if (size <= 2*settings.getSmoothLength()) {
+                if (size <= 2*settings.smoothLength.get()) {
                     var o = MatrixUtils.createRealVector(size);
                     o.set(Double.NaN);
                     return new Pair<>(o, null);
@@ -353,9 +350,9 @@ public class KeplerSplineControl {
                     xl[xx] = xphase[xx];
                 }
 
-                if (size - nskipped > 2 * settings.getSmoothLength()) {
+                if (size - nskipped > 2 * settings.smoothLength.get()) {
                     Smooth csm = new Smooth(xl, yl);
-                    csm.savitzkyGolay(settings.getSmoothLength());
+                    csm.savitzkyGolay(settings.smoothLength.get());
                     csm.setSGpolyDegree(2);
 
                     double finalXmax = xmax;

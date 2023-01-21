@@ -16289,6 +16289,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             is.close();
             setupArrays();
             getPreferences();
+            getPreferences();
             setTable(table, true);
             if (plotWindow != null && table != null) plotWindow.setVisible(true);
         } catch (Exception e) {

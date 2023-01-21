@@ -1,109 +1,38 @@
 package Astronomy.multiplot.settings;
 
+import ij.astro.io.prefs.Property;
+
 public class KeplerSplineSettings {
-    private DisplayType displayType = DisplayType.FLATTENED_LIGHT_CURVE;
-    private KnotDensity knotDensity = KnotDensity.AUTO;
-    private double fixedKnotDensity = 1.5;
-    private double minKnotDensity = 0.5;
-    private double maxKnotDensity = 20;
-    private int knotDensitySteps = 20;
-    private double minGapWidth = 0.2;
-    private double dataCleaningCoeff = 3;
-    private int dataCleaningTries = 5;
-    private int smoothLength = 31;
-    private boolean maskTransit = true;
+    public Property<DisplayType> displayType;
+    public Property<KnotDensity> knotDensity;
+    public Property<Double> fixedKnotDensity;
+    public Property<Double> minKnotDensity;
+    public Property<Double> maxKnotDensity;
+    public Property<Integer> knotDensitySteps;
+    public Property<Double> minGapWidth;
+    public Property<Double> dataCleaningCoeff;
+    public Property<Integer> dataCleaningTries;
+    public Property<Integer> smoothLength;
+    public Property<Boolean> maskTransit;
     private final int curve;
 
     public KeplerSplineSettings(int curve) {
         this.curve = curve;
+        displayType = makeProperty(DisplayType.FLATTENED_LIGHT_CURVE);
+        knotDensity = makeProperty(KnotDensity.AUTO);
+        fixedKnotDensity = makeProperty(1.5);
+        minKnotDensity = makeProperty(0.5);
+        maxKnotDensity = makeProperty(20D);
+        knotDensitySteps = makeProperty(20);
+        minGapWidth = makeProperty(0.2);
+        dataCleaningCoeff = makeProperty(3D);
+        dataCleaningTries = makeProperty(5);
+        smoothLength = makeProperty(31);
+        maskTransit = makeProperty(true);
     }
 
-    public DisplayType getDisplayType() {
-        return displayType;
-    }
-
-    public void setDisplayType(DisplayType displayType) {
-        this.displayType = displayType;
-    }
-
-    public KnotDensity getKnotDensity() {
-        return knotDensity;
-    }
-
-    public void setKnotDensity(KnotDensity knotDensity) {
-        this.knotDensity = knotDensity;
-    }
-
-    public double getFixedKnotDensity() {
-        return fixedKnotDensity;
-    }
-
-    public void setFixedKnotDensity(double fixedKnotDensity) {
-        this.fixedKnotDensity = fixedKnotDensity;
-    }
-
-    public double getMinKnotDensity() {
-        return minKnotDensity;
-    }
-
-    public void setMinKnotDensity(double minKnotDensity) {
-        this.minKnotDensity = minKnotDensity;
-    }
-
-    public double getMaxKnotDensity() {
-        return maxKnotDensity;
-    }
-
-    public void setMaxKnotDensity(double maxKnotDensity) {
-        this.maxKnotDensity = maxKnotDensity;
-    }
-
-    public int getKnotDensitySteps() {
-        return knotDensitySteps;
-    }
-
-    public void setKnotDensitySteps(int knotDensitySteps) {
-        this.knotDensitySteps = knotDensitySteps;
-    }
-
-    public double getMinGapWidth() {
-        return minGapWidth;
-    }
-
-    public void setMinGapWidth(double minGapWidth) {
-        this.minGapWidth = minGapWidth;
-    }
-
-    public double getDataCleaningCoeff() {
-        return dataCleaningCoeff;
-    }
-
-    public void setDataCleaningCoeff(double dataCleaningCoeff) {
-        this.dataCleaningCoeff = dataCleaningCoeff;
-    }
-
-    public int getDataCleaningTries() {
-        return dataCleaningTries;
-    }
-
-    public void setDataCleaningTries(int dataCleaningTries) {
-        this.dataCleaningTries = dataCleaningTries;
-    }
-
-    public boolean getMaskTransit() {
-        return maskTransit;
-    }
-
-    public void setMaskTransit(boolean maskTransit) {
-        this.maskTransit = maskTransit;
-    }
-
-    public int getSmoothLength() {
-        return smoothLength;
-    }
-
-    public void setSmoothLength(int smoothLength) {
-        this.smoothLength = smoothLength;
+    private <T> Property<T> makeProperty(T defaultValue) {
+        return new Property<>(defaultValue, "plot.", String.valueOf(curve), this);
     }
 
     public enum KnotDensity {

@@ -47,7 +47,7 @@ public class LeapSeconds {
             try {
                 getIERSLeapSecTable();
             } catch (IOException e) {
-                AIJLogger.log("Failed to connect to IERS.");
+                e.printStackTrace();
             }
             return false;
         }

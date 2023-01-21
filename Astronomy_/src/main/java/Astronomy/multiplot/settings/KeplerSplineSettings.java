@@ -33,7 +33,7 @@ public class KeplerSplineSettings {
         dataCleaningTries = makeProperty(5);
         smoothLength = makeProperty(31);
         maskTransit = makeProperty(true);
-        windowLocation = makeProperty(new Point());
+        windowLocation = new Property<>(new Point(), "", String.valueOf(curve), this);
     }
 
     public void duplicateSettings(KeplerSplineSettings from) {

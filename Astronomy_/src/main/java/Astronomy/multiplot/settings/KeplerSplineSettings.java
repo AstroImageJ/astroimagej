@@ -63,8 +63,25 @@ public class KeplerSplineSettings {
     }
 
     public enum DisplayType {
-        FLATTENED_LIGHT_CURVE,
-        FITTED_SPLINE,
-        RAW_DATA,
+        FLATTENED_LIGHT_CURVE {
+            @Override
+            public String displayName() {
+                return "Plot smoothed light curve";
+            }
+        },
+        FITTED_SPLINE {
+            @Override
+            public String displayName() {
+                return "Plot spline fit";
+            }
+        },
+        RAW_DATA {
+            @Override
+            public String displayName() {
+                return "Plot original data";
+            }
+        };
+
+        public abstract String displayName();
     }
 }

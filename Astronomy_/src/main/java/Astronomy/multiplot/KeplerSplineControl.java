@@ -90,6 +90,9 @@ public class KeplerSplineControl {
             settings.maskTransit.set(doMask.isSelected());
             updatePlot();
         });
+        doMask.setToolTipText("Causes the spline fit to ignore the data between the left and right marker. " +
+                "This option is useful when the location of the transit is known to prevent the transit from " +
+                "biasing the spline fit.");
         panel.add(doMask, c);
         c.gridy++;
         c.fill = GridBagConstraints.BOTH;
@@ -104,7 +107,7 @@ public class KeplerSplineControl {
         // Display type
         var displayGroup = new ButtonGroup();
         for (KeplerSplineSettings.DisplayType displayType : KeplerSplineSettings.DisplayType.values()) {
-            var radio = new JRadioButton(displayType.name());
+            var radio = new JRadioButton(displayType.displayName());
             radio.addActionListener($ -> {
                 settings.displayType.set(displayType);
                 updatePlot();
@@ -134,6 +137,7 @@ public class KeplerSplineControl {
             settings.knotDensity.set(KeplerSplineSettings.KnotDensity.FIXED);
             updatePlot();
         });
+        radio.setToolTipText("Fits a spline using a fixed user selected fitting length. Default = 5.0");
         radio.setSelected(settings.knotDensity.get() == KeplerSplineSettings.KnotDensity.FIXED);
         panel.add(radio, c);
         var controlBox = Box.createHorizontalBox();
@@ -156,6 +160,8 @@ public class KeplerSplineControl {
             settings.knotDensity.set(KeplerSplineSettings.KnotDensity.AUTO);
             updatePlot();
         });
+        radio.setToolTipText("Finds the best spline fitting length between Min and Max using N equally spaced steps. " +
+                "Defaults are Min = 0.5, Max = 20.0, N = 20.");
         radio.setSelected(settings.knotDensity.get() == KeplerSplineSettings.KnotDensity.AUTO);
         panel.add(radio, c);
         c.gridx = 1;
@@ -257,6 +263,8 @@ public class KeplerSplineControl {
             settings.minGapWidth.set(((Double) control4.getValue()));
             updatePlot();
         });
+        control4.setToolTipText("Smoothing chops the light curve into multiple segments if there are breaks in the data. " +
+                "This value sets the minimum gap width that is considered a break in the data. The default is 0.2 days");
         GenericSwingDialog.getTextFieldFromSpinner(control4).ifPresent(f -> f.setColumns(5));
         controlBox.add(control4);
         label = new JLabel(" (days)");
@@ -281,6 +289,8 @@ public class KeplerSplineControl {
             settings.dataCleaningCoeff.set(((Double) control5.getValue()));
             updatePlot();
         });
+        control5.setToolTipText("Smoothing masks “bad” data points from the spline fit that are more than the " +
+                "N sigma from the fitted spline. The default is N = 3 sigma.");
         GenericSwingDialog.getTextFieldFromSpinner(control5).ifPresent(f -> f.setColumns(5));
         controlBox.add(control5);
         label = new JLabel(" (sigma)");
@@ -297,6 +307,8 @@ public class KeplerSplineControl {
             settings.dataCleaningTries.set(((Integer) control6.getValue()));
             updatePlot();
         });
+        control6.setToolTipText("Cleaning iterates spline fitting and data cleaning up to a maximum number of " +
+                "iterations. The default is a maximum of N = 5 iterations");
         GenericSwingDialog.getTextFieldFromSpinner(control6).ifPresent(f -> f.setColumns(5));
         controlBox.add(control6);
         panel.add(controlBox, c);

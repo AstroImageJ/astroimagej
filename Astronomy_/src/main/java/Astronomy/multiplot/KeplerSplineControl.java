@@ -91,7 +91,14 @@ public class KeplerSplineControl {
             updatePlot();
         });
         panel.add(doMask, c);
+        c.gridy++;
+        c.fill = GridBagConstraints.BOTH;
+        c.gridwidth = GridBagConstraints.REMAINDER;
+        c.weighty = 1;
+        panel.add(new JSeparator(), c);
+        c.fill = GridBagConstraints.NONE;
         c.gridwidth = 1;
+        c.weighty = 0;
         c.gridy++;
 
         // Display type
@@ -129,16 +136,18 @@ public class KeplerSplineControl {
         });
         radio.setSelected(settings.knotDensity.get() == KeplerSplineSettings.KnotDensity.FIXED);
         panel.add(radio, c);
-        var control = new JSpinner(new SpinnerNumberModel(settings.fixedKnotDensity.get().doubleValue(), 0.01, Double.MAX_VALUE, 1));
+        var controlBox = Box.createHorizontalBox();
+        var control = new JSpinner(new SpinnerNumberModel(settings.fixedKnotDensity.get().doubleValue(), 0.01, Double.MAX_VALUE, 0.1));
         control.addChangeListener($ -> {
             settings.fixedKnotDensity.set(((Double) control.getValue()));
             updatePlot();
         });
         c.gridx = GridBagConstraints.RELATIVE;
         GenericSwingDialog.getTextFieldFromSpinner(control).ifPresent(f -> f.setColumns(5));
-        panel.add(control, c);
+        controlBox.add(control);
         var label = new JLabel(" (days)");
-        panel.add(label, c);
+        controlBox.add(label);
+        panel.add(controlBox, c);
         c.gridx = 0;
         c.gridy++;
         radio = new JRadioButton("Auto knot spacing");
@@ -150,29 +159,30 @@ public class KeplerSplineControl {
         radio.setSelected(settings.knotDensity.get() == KeplerSplineSettings.KnotDensity.AUTO);
         panel.add(radio, c);
         c.gridx = 1;
-        var control1 = new JSpinner(new SpinnerNumberModel(settings.minKnotDensity.get().doubleValue(), 0.01, Double.MAX_VALUE, 1));
+        controlBox = Box.createHorizontalBox();
+        var control1 = new JSpinner(new SpinnerNumberModel(settings.minKnotDensity.get().doubleValue(), 0.01, Double.MAX_VALUE, 0.1));
         control1.addChangeListener($ -> {
             settings.minKnotDensity.set(((Double) control1.getValue()));
             updatePlot();
         });
         GenericSwingDialog.getTextFieldFromSpinner(control1).ifPresent(f -> f.setColumns(5));
-        panel.add(control1, c);
+        controlBox.add(control1);
         label = new JLabel(" Min (days)");
-        c.gridx++;
-        panel.add(label, c);
-        c.gridx--;
-        var control2 = new JSpinner(new SpinnerNumberModel(settings.maxKnotDensity.get().doubleValue(), 0.01, Double.MAX_VALUE, 1));
+        controlBox.add(label);
+        panel.add(controlBox, c);
+        controlBox = Box.createHorizontalBox();
+        var control2 = new JSpinner(new SpinnerNumberModel(settings.maxKnotDensity.get().doubleValue(), 0.01, Double.MAX_VALUE, 0.1));
         control2.addChangeListener($ -> {
             settings.maxKnotDensity.set(((Double) control2.getValue()));
             updatePlot();
         });
         c.gridy++;
         GenericSwingDialog.getTextFieldFromSpinner(control2).ifPresent(f -> f.setColumns(5));
-        panel.add(control2, c);
+        controlBox.add(control2);
         label = new JLabel(" Max (days)");
-        c.gridx++;
-        panel.add(label, c);
-        c.gridx--;
+        controlBox.add(label);
+        panel.add(controlBox, c);
+        controlBox = Box.createHorizontalBox();
         var control3 = new JSpinner(new SpinnerNumberModel(settings.knotDensitySteps.get().intValue(), 1, Integer.MAX_VALUE, 1));
         control3.addChangeListener($ -> {
             settings.knotDensitySteps.set(((Integer) control3.getValue()));
@@ -180,10 +190,10 @@ public class KeplerSplineControl {
         });
         c.gridy++;
         GenericSwingDialog.getTextFieldFromSpinner(control3).ifPresent(f -> f.setColumns(5));
-        panel.add(control3, c);
+        controlBox.add(control3);
         label = new JLabel(" Spline iterations");
-        c.gridx++;
-        panel.add(label, c);
+        controlBox.add(label);
+        panel.add(controlBox, c);
         c.gridx = 0;
         c.gridy++;
         radio = new JRadioButton("Legacy Smoother:");
@@ -195,17 +205,17 @@ public class KeplerSplineControl {
         radio.setSelected(settings.knotDensity.get() == KeplerSplineSettings.KnotDensity.LEGACY_SMOOTHER);
         panel.add(radio, c);
         c.gridx = 1;
+        controlBox = Box.createHorizontalBox();
         var control7 = new JSpinner(new SpinnerNumberModel(settings.smoothLength.get().intValue(), 1, Integer.MAX_VALUE, 1));
         control7.addChangeListener($ -> {
             settings.smoothLength.set(((Integer) control7.getValue()));
             updatePlot();
         });
         GenericSwingDialog.getTextFieldFromSpinner(control7).ifPresent(f -> f.setColumns(5));
-        panel.add(control7, c);
+        controlBox.add(control7);
         label = new JLabel(" N points");
-        c.gridx++;
-        panel.add(label, c);
-        c.gridx--;
+        controlBox.add(label);
+        panel.add(controlBox, c);
 
         c.gridx = 0;
         c.gridy++;
@@ -241,15 +251,17 @@ public class KeplerSplineControl {
         label = new JLabel("Minimum Gap Width");
         panel.add(label, c);
         c.gridx = GridBagConstraints.RELATIVE;
-        var control4 = new JSpinner(new SpinnerNumberModel(settings.minKnotDensity.get().doubleValue(), 0.01, Double.MAX_VALUE, 1));
+        controlBox = Box.createHorizontalBox();
+        var control4 = new JSpinner(new SpinnerNumberModel(settings.minGapWidth.get().doubleValue(), 0.01, Double.MAX_VALUE, 0.1));
         control4.addChangeListener($ -> {
             settings.minGapWidth.set(((Double) control4.getValue()));
             updatePlot();
         });
         GenericSwingDialog.getTextFieldFromSpinner(control4).ifPresent(f -> f.setColumns(5));
-        panel.add(control4, c);
+        controlBox.add(control4);
         label = new JLabel(" (days)");
-        panel.add(label, c);
+        controlBox.add(label);
+        panel.add(controlBox, c);
         c.gridy++;
         c.fill = GridBagConstraints.BOTH;
         c.gridwidth = GridBagConstraints.REMAINDER;
@@ -263,34 +275,42 @@ public class KeplerSplineControl {
         label = new JLabel("Data Cleaning");
         panel.add(label, c);
         c.gridx = GridBagConstraints.RELATIVE;
+        controlBox = Box.createHorizontalBox();
         var control5 = new JSpinner(new SpinnerNumberModel(settings.dataCleaningCoeff.get().doubleValue(), 0.01, Double.MAX_VALUE, 1));
         control5.addChangeListener($ -> {
             settings.dataCleaningCoeff.set(((Double) control5.getValue()));
             updatePlot();
         });
         GenericSwingDialog.getTextFieldFromSpinner(control5).ifPresent(f -> f.setColumns(5));
-        panel.add(control5, c);
+        controlBox.add(control5);
         label = new JLabel(" (sigma)");
-        panel.add(label, c);
+        controlBox.add(label);
+        panel.add(controlBox, c);
         c.gridx = 0;
         c.gridy++;
         label = new JLabel("Data Cleaning Iterations");
         panel.add(label, c);
         c.gridx = GridBagConstraints.RELATIVE;
+        controlBox = Box.createHorizontalBox();
         var control6 = new JSpinner(new SpinnerNumberModel(settings.dataCleaningTries.get().intValue(), 1, Integer.MAX_VALUE, 1));
         control6.addChangeListener($ -> {
             settings.dataCleaningTries.set(((Integer) control6.getValue()));
             updatePlot();
         });
         GenericSwingDialog.getTextFieldFromSpinner(control6).ifPresent(f -> f.setColumns(5));
-        panel.add(control6, c);
+        controlBox.add(control6);
+        panel.add(controlBox, c);
         c.gridy++;
-        c.gridx = GridBagConstraints.RELATIVE;
 
         c.gridx = 0;
         var button = new JButton("Apply current settings for all curves");
         button.addActionListener($ -> duplicateSettings(settings));
         panel.add(button, c);
+
+        c.gridx++;
+        var button1 = new JButton("Ok");
+        button1.addActionListener($ -> window.setVisible(false));
+        panel.add(button1, c);
 
         window.add(panel);
         return window;

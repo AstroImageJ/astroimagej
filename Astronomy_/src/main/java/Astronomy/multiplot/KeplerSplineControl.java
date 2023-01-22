@@ -26,6 +26,7 @@ import static Astronomy.MultiPlot_.*;
 public class KeplerSplineControl {
     private final int curve;
     private final KeplerSplineSettings settings;
+    private Window window = null;
     private static final LinkedHashMap<Integer, KeplerSplineControl> INSTANCES = new LinkedHashMap<>();
     private static final ExecutorService RUNNER = Executors.newSingleThreadExecutor();
     private final JTextField bicDisplay;
@@ -54,9 +55,19 @@ public class KeplerSplineControl {
     public void displayPanel() {
         //todo save location
         SwingUtilities.invokeLater(() -> {
+            if (window != null) {
+                if (window.isShowing()) {
+                    window.requestFocus();
+                } else {
+                    window.setVisible(true);
+                    window.requestFocus();
+                }
+                return;
+            }
             var p = makePanel();
             p.pack();
             p.setVisible(true);
+            window = p;
         });
     }
 

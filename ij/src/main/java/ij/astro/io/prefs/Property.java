@@ -37,7 +37,7 @@ public class Property<T> {
         this.deserializer = deserializer;
         this.keySuffix = keySuffix;
         this.keyPrefix = keyPrefix;
-        this.type = (Class<T>) defaultValue.getClass();
+        this.type = (Class<T>) getType(defaultValue);
         value = defaultValue;
     }
 
@@ -61,7 +61,8 @@ public class Property<T> {
             value = handleLoad();
 
             if (!type.isInstance(value)) {
-                throw new IllegalStateException("Expected type: %s, received type %s".formatted(type, value.getClass()));
+                throw new IllegalStateException("Expected type: %s, received type %s"
+                        .formatted(type, value == null ? null : value.getClass()));
             }
 
             hasLoaded = true;
@@ -113,9 +114,25 @@ public class Property<T> {
         if (type == Point.class) {
             Prefs.saveLocation(getPropertyKey(), (Point) value);
             return;
+        } else if (type.isEnum()) {
+            Prefs.set(getPropertyKey(), ((Enum<?>) value).name());
         }
 
         Prefs.set(getPropertyKey(), value.toString());
+    }
+
+    private static Class<?> getType(Object o) {
+        if (o == null) {
+            throw new IllegalArgumentException("default value may not be null");
+        }
+
+        var c = o.getClass();
+        var s = c.getSuperclass();
+        if (s != null && s.isEnum()) {
+            return s;
+        }
+
+        return c;
     }
 
     @FunctionalInterface
@@ -126,9 +143,9 @@ public class Property<T> {
     @Override
     public String toString() {
         return "Property{" +
-                "owner=" + owner +
-                ", value=" + value +
-                ", propertyKey='" + getPropertyKey() + '\'' +
+                "propertyKey='" + getPropertyKey() + '\'' +
+                ", owner=" + owner +
+                ", heldValue=" + value +
                 ", type=" + type +
                 '}';
     }

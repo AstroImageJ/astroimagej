@@ -6,7 +6,6 @@ import astroj.IJU;
 import com.astroimagej.bspline.KeplerSpline;
 import com.astroimagej.bspline.util.Pair;
 import flanagan.analysis.Smooth;
-import ij.astro.util.UIHelper;
 import org.hipparchus.linear.MatrixUtils;
 import org.hipparchus.linear.RealVector;
 import util.GenericSwingDialog;
@@ -53,7 +52,6 @@ public class KeplerSplineControl {
     }
 
     public void displayPanel() {
-        //todo save location
         SwingUtilities.invokeLater(() -> {
             if (window != null) {
                 if (window.isShowing()) {
@@ -73,14 +71,13 @@ public class KeplerSplineControl {
 
     private JFrame makePanel() {
         var window = new JFrame("Curve " + (curve + 1) + " Smoothing Settings");
-        UIHelper.setCenteredOnScreen(window, MultiPlot_.mainFrame);
+        window.setLocation(settings.windowLocation.get());
         window.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
                 settings.windowLocation.set(e.getWindow().getLocation());
             }
         });
-        UIHelper.setLocationOnScreen(window, UIHelper.getScreen(mainFrame), settings.windowLocation.get().x, settings.windowLocation.get().y);
         var panel = new JPanel(new GridBagLayout());
         var c = new GridBagConstraints();
         c.anchor = GridBagConstraints.WEST;

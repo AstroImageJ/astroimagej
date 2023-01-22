@@ -1,6 +1,7 @@
 package ij.astro.io.prefs;
 
 import ij.Prefs;
+import ij.astro.logging.AIJLogger;
 
 import java.awt.*;
 import java.lang.reflect.Field;
@@ -43,6 +44,7 @@ public class Property<T> {
 
     public T get() {
         loadProperty();
+        AIJLogger.log(this);
         return value;
     }
 
@@ -121,5 +123,15 @@ public class Property<T> {
     @FunctionalInterface
     public interface PropertyChangeListener<T> {
         void valueChanged(String key, T newValue);
+    }
+
+    @Override
+    public String toString() {
+        return "Property{" +
+                "owner=" + owner +
+                ", value=" + value +
+                ", propertyKey='" + getPropertyKey() + '\'' +
+                ", type=" + type +
+                '}';
     }
 }

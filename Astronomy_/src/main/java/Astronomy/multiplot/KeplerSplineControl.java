@@ -12,6 +12,8 @@ import util.GenericSwingDialog;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.text.DecimalFormat;
@@ -146,8 +148,12 @@ public class KeplerSplineControl {
             settings.fixedKnotDensity.set(((Double) control.getValue()));
             updatePlot();
         });
+        modifySpinner(control);
         c.gridx = GridBagConstraints.RELATIVE;
         GenericSwingDialog.getTextFieldFromSpinner(control).ifPresent(f -> f.setColumns(5));
+        control.addChangeListener($ -> {
+
+        });
         controlBox.add(control);
         var label = new JLabel(" (days)");
         controlBox.add(label);
@@ -171,6 +177,7 @@ public class KeplerSplineControl {
             settings.minKnotDensity.set(((Double) control1.getValue()));
             updatePlot();
         });
+        modifySpinner(control1);
         GenericSwingDialog.getTextFieldFromSpinner(control1).ifPresent(f -> f.setColumns(5));
         controlBox.add(control1);
         label = new JLabel(" Min (days)");
@@ -182,6 +189,8 @@ public class KeplerSplineControl {
             settings.maxKnotDensity.set(((Double) control2.getValue()));
             updatePlot();
         });
+        modifySpinner(control2);
+        clampingSpinners(control1, control2);
         c.gridy++;
         GenericSwingDialog.getTextFieldFromSpinner(control2).ifPresent(f -> f.setColumns(5));
         controlBox.add(control2);
@@ -196,6 +205,7 @@ public class KeplerSplineControl {
         });
         c.gridy++;
         GenericSwingDialog.getTextFieldFromSpinner(control3).ifPresent(f -> f.setColumns(5));
+        modifySpinner(control3);
         controlBox.add(control3);
         label = new JLabel(" Spline iterations");
         controlBox.add(label);
@@ -214,9 +224,10 @@ public class KeplerSplineControl {
         controlBox = Box.createHorizontalBox();
         var control7 = new JSpinner(new SpinnerNumberModel(settings.smoothLength.get().intValue(), 1, Integer.MAX_VALUE, 1));
         control7.addChangeListener($ -> {
-            settings.smoothLength.set(((Integer) control7.getValue()));
+            settings.smoothLength.set(((Number) control7.getValue()).intValue());
             updatePlot();
         });
+        modifySpinner(control7);
         GenericSwingDialog.getTextFieldFromSpinner(control7).ifPresent(f -> f.setColumns(5));
         controlBox.add(control7);
         label = new JLabel(" N points");
@@ -263,6 +274,7 @@ public class KeplerSplineControl {
             settings.minGapWidth.set(((Double) control4.getValue()));
             updatePlot();
         });
+        modifySpinner(control4);
         control4.setToolTipText("Smoothing chops the light curve into multiple segments if there are breaks in the data. " +
                 "This value sets the minimum gap width that is considered a break in the data. The default is 0.2 days");
         GenericSwingDialog.getTextFieldFromSpinner(control4).ifPresent(f -> f.setColumns(5));
@@ -289,6 +301,7 @@ public class KeplerSplineControl {
             settings.dataCleaningCoeff.set(((Double) control5.getValue()));
             updatePlot();
         });
+        modifySpinner(control5);
         control5.setToolTipText("Smoothing masks “bad” data points from the spline fit that are more than the " +
                 "N sigma from the fitted spline. The default is N = 3 sigma.");
         GenericSwingDialog.getTextFieldFromSpinner(control5).ifPresent(f -> f.setColumns(5));
@@ -304,9 +317,10 @@ public class KeplerSplineControl {
         controlBox = Box.createHorizontalBox();
         var control6 = new JSpinner(new SpinnerNumberModel(settings.dataCleaningTries.get().intValue(), 1, Integer.MAX_VALUE, 1));
         control6.addChangeListener($ -> {
-            settings.dataCleaningTries.set(((Integer) control6.getValue()));
+            settings.dataCleaningTries.set(((Number) control6.getValue()).intValue());
             updatePlot();
         });
+        modifySpinner(control6);
         control6.setToolTipText("Cleaning iterates spline fitting and data cleaning up to a maximum number of " +
                 "iterations. The default is a maximum of N = 5 iterations");
         GenericSwingDialog.getTextFieldFromSpinner(control6).ifPresent(f -> f.setColumns(5));
@@ -428,6 +442,64 @@ public class KeplerSplineControl {
                 return new Pair<>(null, null);
             };
         };
+    }
+
+    private void modifySpinner(JSpinner spinner) {
+        for (Component component : spinner.getComponents()) {
+            if (component instanceof JSpinner.DefaultEditor editor) {
+                editor.addMouseWheelListener(e -> {
+                    if (spinner.getModel() instanceof SpinnerNumberModel spin) {
+                        var delta = e.getPreciseWheelRotation() * spin.getStepSize().doubleValue();
+                        var newValue = -delta + ((Number) spinner.getValue()).doubleValue();
+
+                        if (newValue < ((Number) spin.getMinimum()).doubleValue()) {
+                            newValue = ((Number) spin.getMinimum()).doubleValue();
+                        } else if (newValue > ((Number) spin.getMaximum()).doubleValue()) {
+                            newValue = ((Number) spin.getMaximum()).doubleValue();
+                        }
+
+                        spinner.setValue(spin.getMaximum() instanceof Integer ? (int) newValue : newValue);
+                    }
+                });
+
+                editor.addKeyListener(new KeyAdapter() {
+                    @Override
+                    public void keyTyped(KeyEvent e) {
+                        super.keyTyped(e);
+                        if (e.getKeyCode() == KeyEvent.VK_UP) {
+                            getModel(spinner).setValue(spinner.getNextValue());
+                        }
+
+                        if (e.getKeyCode() == KeyEvent.VK_DOWN) {
+                            getModel(spinner).setValue(spinner.getPreviousValue());
+                        }
+                    }
+                });
+            }
+        }
+    }
+
+    private void clampingSpinners(JSpinner min, JSpinner max) {
+        var maxModel = getModel(max);
+        var minModel = getModel(min);
+        min.addChangeListener($ -> {
+            if (minModel.getNumber().doubleValue() >= maxModel.getNumber().doubleValue()) {
+                minModel.setValue(minModel.getPreviousValue());
+            }
+        });
+        max.addChangeListener($ -> {
+            if (minModel.getNumber().doubleValue() >= maxModel.getNumber().doubleValue()) {
+                maxModel.setValue(maxModel.getNextValue());
+            }
+        });
+    }
+
+    private SpinnerNumberModel getModel(JSpinner spinner) {
+        if (spinner.getModel() instanceof SpinnerNumberModel spin) {
+            return spin;
+        }
+
+        return null;
     }
 
     private void duplicateSettings(KeplerSplineSettings from) {

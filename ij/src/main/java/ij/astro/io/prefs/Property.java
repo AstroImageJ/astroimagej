@@ -1,7 +1,6 @@
 package ij.astro.io.prefs;
 
 import ij.Prefs;
-import ij.astro.logging.AIJLogger;
 
 import java.awt.*;
 import java.lang.reflect.Field;
@@ -44,7 +43,6 @@ public class Property<T> {
 
     public T get() {
         loadProperty();
-        AIJLogger.log(this);
         return value;
     }
 

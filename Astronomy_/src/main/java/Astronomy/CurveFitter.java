@@ -1,9 +1,8 @@
 package Astronomy;
 
+import Astronomy.multiplot.KeplerSplineControl;
 import astroj.IJU;
-import com.astroimagej.bspline.KeplerSpline;
 import flanagan.analysis.Regression;
-import flanagan.analysis.Smooth;
 import flanagan.math.Minimization;
 import flanagan.math.MinimizationFunction;
 import ij.IJ;
@@ -507,76 +506,29 @@ public class CurveFitter {
             }
         }
 
-        if (plotY[curve] && smooth[curve] && nn[curve] > 2 * smoothLen[curve] && !useNewSmoother) {
-            double[] xl = new double[nn[curve]];
-            double[] yl = new double[nn[curve]];
-            double[] xphase = new double[nn[curve]];
-            double[] yphase = new double[nn[curve]];
+        if (plotY[curve] && smooth[curve] && nn[curve] > 4) {
+            var yMask = MatrixUtils.createRealVector(nn[curve]);
             double xfold;
-            int nskipped = 0;
-            double xmax = Double.NEGATIVE_INFINITY;
-            double xmin = Double.POSITIVE_INFINITY;
             double halfPeriod = netPeriod / 2.0;
             for (int xx = 0; xx < nn[curve]; xx++) {
-                if (false) {//showXAxisNormal
-                    yl[xx] = y[curve][xx];
-                    xl[xx] = x[curve][xx] - (int) x[curve][0];
+                if (showXAxisNormal) {
+                    if (x[curve][xx] > dMarker2Value + xOffset && x[curve][xx] < dMarker3Value + xOffset){
+                        yMask.setEntry(xx,0.0);
+                    } else {
+                        yMask.setEntry(xx,1.0);
+                    }
                 } else {
                     xfold = ((x[curve][xx] - netT0) % netPeriod);
-                    if (xfold > halfPeriod) {
-                        xfold -= netPeriod;
-                    } else if (xfold < -halfPeriod) xfold += netPeriod;
+                    if (xfold > halfPeriod) { xfold -= netPeriod; } else if (xfold < -halfPeriod) xfold += netPeriod;
                     if (Math.abs(xfold) < duration / 48.0) {
-                        nskipped++;
+                        yMask.setEntry(xx,0.0);
                     } else {
-                        yphase[xx - nskipped] = y[curve][xx];
-                        xphase[xx - nskipped] = x[curve][xx] - (int) x[curve][0];
-                        if (x[curve][xx] > xmax) xmax = x[curve][xx];
-                        if (x[curve][xx] < xmin) xmin = x[curve][xx];
+                        yMask.setEntry(xx,1.0);
                     }
                 }
             }
-            if (true) { //!showXAxisNormal
-                xl = new double[nn[curve] - nskipped];
-                yl = new double[nn[curve] - nskipped];
-                for (int xx = 0; xx < nn[curve] - nskipped; xx++) {
-                    yl[xx] = yphase[xx];
-                    xl[xx] = xphase[xx];
-                }
-            }
-            if (nn[curve] - nskipped > 2 * smoothLen[curve]) {
-                double smoothVal;
-                Smooth csm = new Smooth(xl, yl);
-                csm.savitzkyGolay(smoothLen[curve]);
-                csm.setSGpolyDegree(2);
-                double yave = 0.0;
-                for (int xx = 0; xx < nn[curve] - nskipped; xx++) {
-                    yave += yl[xx];
-                }
-                yave /= (nn[curve] - nskipped);
-                for (int xx = 0; xx < nn[curve]; xx++) {
-                    if (x[curve][xx] > xmax) {
-                        smoothVal = csm.interpolateSavitzkyGolay(xmax - (int) x[curve][0]);
-                    } else if (x[curve][xx] < xmin) {
-                        smoothVal = csm.interpolateSavitzkyGolay(xmin - (int) x[curve][0]);
-                    } else {
-                        smoothVal = csm.interpolateSavitzkyGolay(x[curve][xx] - (int) x[curve][0]);
-                    }
-                    y[curve][xx] = y[curve][xx] - smoothVal + yave;
-                }
-            }
-        }
 
-        if (plotY[curve] && smooth[curve] && nn[curve] > 4 && useNewSmoother) {
-            var ks = KeplerSpline.chooseKeplerSplineV2(MatrixUtils.createRealVector(Arrays.copyOf(x[curve], nn[curve])),
-                    MatrixUtils.createRealVector(Arrays.copyOf(y[curve], nn[curve])));
-            Arrays.setAll(y[curve], i -> {
-                if (i < ks.first().getDimension()) {
-                    return ks.first().getEntry(i);
-                }
-
-                return Double.NaN;
-            });
+            KeplerSplineControl.getInstance(curve).transformData(x[curve], y[curve], nn[curve], yMask);
         }
 
         dx = 0.0;

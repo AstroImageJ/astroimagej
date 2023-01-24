@@ -851,8 +851,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     private static double[] outBinRms;
     private static boolean saveSeeingProfileStack;
     private static String seeingProfileStackSuffix;
-    public static boolean useNewSmoother;
-    public static boolean useNewSmootherMask;
 
     public void run(String inTableNamePlusOptions) {
         boolean useAutoAstroDataUpdate = false;

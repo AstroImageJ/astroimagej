@@ -6,18 +6,18 @@ import java.awt.*;
 import java.lang.reflect.Field;
 
 public class KeplerSplineSettings {
-    public Property<DisplayType> displayType;
-    public Property<KnotDensity> knotDensity;
-    public Property<Double> fixedKnotDensity;
-    public Property<Double> minKnotDensity;
-    public Property<Double> maxKnotDensity;
-    public Property<Integer> knotDensitySteps;
-    public Property<Double> minGapWidth;
-    public Property<Double> dataCleaningCoeff;
-    public Property<Integer> dataCleaningTries;
-    public Property<Integer> smoothLength;
-    public Property<Boolean> maskTransit;
-    public Property<Point> windowLocation;
+    public final Property<DisplayType> displayType;
+    public final Property<KnotDensity> knotDensity;
+    public final Property<Double> fixedKnotDensity;
+    public final Property<Double> minKnotDensity;
+    public final Property<Double> maxKnotDensity;
+    public final Property<Integer> knotDensitySteps;
+    public final Property<Double> minGapWidth;
+    public final Property<Double> dataCleaningCoeff;
+    public final Property<Integer> dataCleaningTries;
+    public final Property<Integer> smoothLength;
+    public final Property<Boolean> maskTransit;
+    public final Property<Point> windowLocation;
     private final int curve;
 
     public KeplerSplineSettings(int curve) {
@@ -36,6 +36,7 @@ public class KeplerSplineSettings {
         windowLocation = new Property<>(new Point(), "", String.valueOf(curve), this);
     }
 
+    @SuppressWarnings({"unchecked", "rawtypes"})
     public void duplicateSettings(KeplerSplineSettings from) {
         for (Field field : getClass().getDeclaredFields()) {
             if (field.getType() != Property.class) {

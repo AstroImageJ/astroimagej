@@ -9,6 +9,7 @@ import java.util.function.Function;
 
 public class Property<T> {
     private final Object owner;
+    private final Class<?> ownerClass;
     private T value;
 
     private String propertyKey;
@@ -32,13 +33,20 @@ public class Property<T> {
         this(defaultValue, keyPrefix, keySuffix, $ -> null, owner);
     }
 
+    @SuppressWarnings({"unchecked"})
     public Property(T defaultValue, String keyPrefix, String keySuffix, Function<String, T> deserializer, Object owner) {
-        this.owner = owner;
         this.deserializer = deserializer;
         this.keySuffix = keySuffix;
         this.keyPrefix = keyPrefix;
         this.type = (Class<T>) getType(defaultValue);
         value = defaultValue;
+        if (owner instanceof Class<?> clazz) {
+            this.ownerClass = clazz;
+            this.owner = null;
+        } else {
+            this.owner = owner;
+            this.ownerClass = owner.getClass();
+        }
     }
 
     public T get() {
@@ -85,7 +93,7 @@ public class Property<T> {
 
     private String getOrCreatePropertyKey() {
         if (!hasBuiltKey) {
-            for (Field declaredField : owner.getClass().getDeclaredFields()) {
+            for (Field declaredField : ownerClass.getDeclaredFields()) {
                 if (declaredField.getType().equals(getClass())) {
                     try {
                         if (this.equals(declaredField.get(owner))) {
@@ -103,6 +111,7 @@ public class Property<T> {
         return propertyKey;
     }
 
+    @SuppressWarnings({"unchecked", "rawtypes"})
     private T handleLoad() {
         //todo add safeties for failed to parse, Optional?
         var nv = Prefs.get(getPropertyKey(), String.valueOf(value));

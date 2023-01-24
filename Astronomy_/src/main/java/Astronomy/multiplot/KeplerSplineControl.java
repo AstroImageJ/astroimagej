@@ -151,9 +151,6 @@ public class KeplerSplineControl {
         modifySpinner(control);
         c.gridx = GridBagConstraints.RELATIVE;
         GenericSwingDialog.getTextFieldFromSpinner(control).ifPresent(f -> f.setColumns(5));
-        control.addChangeListener($ -> {
-
-        });
         controlBox.add(control);
         var label = new JLabel(" (days)");
         controlBox.add(label);
@@ -380,12 +377,12 @@ public class KeplerSplineControl {
             case FIXED -> (xs, ys, size, mask) ->
                     KeplerSpline.keplerSplineV2(MatrixUtils.createRealVector(Arrays.copyOf(xs,size)),
                     MatrixUtils.createRealVector(Arrays.copyOf(ys, size)), settings.fixedKnotDensity.get(),
-                    mask, settings.minGapWidth.get(), settings.dataCleaningTries.get(),
+                            settings.maskTransit.ifProp(mask), settings.minGapWidth.get(), settings.dataCleaningTries.get(),
                             settings.dataCleaningCoeff.get(), true);
             case AUTO -> (xs, ys, size, mask) ->
                     KeplerSpline.chooseKeplerSplineV2(MatrixUtils.createRealVector(Arrays.copyOf(xs,size)),
                     MatrixUtils.createRealVector(Arrays.copyOf(ys, size)), settings.minKnotDensity.get(),
-                    settings.maxKnotDensity.get(), settings.knotDensitySteps.get(), mask,
+                    settings.maxKnotDensity.get(), settings.knotDensitySteps.get(), settings.maskTransit.ifProp(mask),
                     settings.minGapWidth.get(), settings.dataCleaningTries.get(), settings.dataCleaningCoeff.get(), true);
             case LEGACY_SMOOTHER -> (xs, ys, size, mask) -> {
                 if (size <= 2*settings.smoothLength.get()) {

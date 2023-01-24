@@ -56,6 +56,20 @@ public class Property<T> {
         return getOrCreatePropertyKey();
     }
 
+    public <X> X ifProp(X truthy) {
+        return ifProp(truthy, null);
+    }
+
+    public <X> X ifProp(X truthy, X falsy) {
+        if (type == Boolean.TYPE || type == Boolean.class) {
+            if (((Boolean) get())) {
+                return truthy;
+            }
+        }
+
+        return falsy;
+    }
+
     private void loadProperty() {
         if (!hasLoaded) {
             value = handleLoad();

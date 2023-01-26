@@ -160,7 +160,7 @@ def javaRuntimeSystems =
            //, linux32: [ext: "tar.gz", arch: "x86", os: "linux", hw_bitness: "32"]
            //, alpineLinux: [ext: "tar.gz", arch: "x86", os: "linux_musl", hw_bitness: "64"]
            , windows: [ext: "zip", arch: "x86", os: "windows", hw_bitness: "64"]
-           , armWindows: [ext: "zip", arch: "arm", os: "windows", hw_bitness: "64"]
+           //, armWindows: [ext: "zip", arch: "arm", os: "windows", hw_bitness: "64"]
            //, windows32: [ext: "zip", arch: "x86", os: "windows", hw_bitness: "32"]
            ]
 
@@ -179,7 +179,7 @@ task downloadJavaRuntimes(type: Download) {
             // &support_term=lts/mts/sts &release_status=ga/ea/both &bundle_type=${sysInfo.type}
             String url = "https://api.azul.com/zulu/download/community/v1.0/bundles/latest/?" +
                     "os=${sysInfo.os}&arch=${sysInfo.arch}&hw_bitness=${sysInfo.hw_bitness}" +
-                    "&ext=${sysInfo.ext}&java_version=${shippingJava}"
+                    "&ext=${sysInfo.ext}&jdk_version=${shippingJava}"
 
             // Ensure Azul is responding to API requests
             def testUrl = new URL(url)
@@ -199,9 +199,9 @@ task downloadJavaRuntimes(type: Download) {
     javaRuntimeSystems.each {sys, sysInfo ->
         // Other parameters of note:
         // &support_term=lts/mts/sts &release_status=ga/ea/both &bundle_type=${sysInfo.type}
-        String url ="https://api.azul.com/zulu/download/community/v1.0/bundles/latest/?" +
-                "os=${sysInfo.os}&arch=${sysInfo.arch}&hw_bitness=64" +
-                "&ext=${sysInfo.ext}&java_version=${shippingJava}"
+        String url = "https://api.azul.com/zulu/download/community/v1.0/bundles/latest/?" +
+                "os=${sysInfo.os}&arch=${sysInfo.arch}&hw_bitness=${sysInfo.hw_bitness}" +
+                "&ext=${sysInfo.ext}&jdk_version=${shippingJava}"
         def meta
         try {
             meta = new JsonSlurper().parse(new URL(url)) // Pull the data from Azul

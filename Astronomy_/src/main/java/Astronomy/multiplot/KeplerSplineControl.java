@@ -109,6 +109,7 @@ public class KeplerSplineControl {
                 "biasing the spline fit.");
         panel.add(doMask, c);
         c.gridy++;
+        c.gridy++;
         c.fill = GridBagConstraints.BOTH;
         c.gridwidth = GridBagConstraints.REMAINDER;
         c.weighty = 1;

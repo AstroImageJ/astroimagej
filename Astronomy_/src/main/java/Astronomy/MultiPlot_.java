@@ -10979,7 +10979,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         //displayBinningGroup.add(Box.createGlue());
 
-        JLabel displayBinSizeLabel = new JLabel("<HTML><CENTER>Bin Size<br><CENTER>(min)</HTML>");
+        JLabel displayBinSizeLabel = new JLabel("<HTML><CENTER>Bin Size<CENTER>(min)</HTML>");
         displayBinSizeLabel.setFont(b11);
         displayBinSizeLabel.setForeground(Color.DARK_GRAY);
         displayBinSizeLabel.setHorizontalAlignment(JLabel.CENTER);
@@ -11826,7 +11826,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             binDisplay[c] = binCB.isSelected();
             updatePlot(c);
         });
-        binCB.setToolTipText("Enable data binning");
+        binCB.setToolTipText("Enable data binning for display");
         displayBinningPanel[c].add(binCB);
         displayBinningPanel[c].add(Box.createHorizontalStrut(10));
         var binSpin = new JSpinner(new SpinnerNumberModel(5, 0, Double.MAX_VALUE, 1d));
@@ -11855,7 +11855,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 binSpin.setValue(newValue);
             }
         });
-        binSpin.setToolTipText("Side of bin in minutes");
+        binSpin.setToolTipText("Size of bin in minutes");
         displayBinningPanel[c].add(binSpin);
 
         mainsubpanelgroup.add(displayBinningPanel[c]);

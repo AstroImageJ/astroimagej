@@ -388,7 +388,7 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
                 return "R+G₁+G₂+B";
             }
         },
-        GAV_LUM {
+        G_AVE_LUM {
             @Override
             public String toString() {
                 return "R+½(G₁+G₂)+B";

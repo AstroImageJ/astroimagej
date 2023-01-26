@@ -374,7 +374,7 @@ public class KeplerSplineControl {
     }
 
     public void transformData(double[] x, double[] y, int size, RealVector mask) {
-        var ks = makeKs().fit(x, y, size, mask);
+        var ks = makeSplineGenerator().fit(x, y, size, mask);
 
         if (settings.knotDensity.get() == KeplerSplineSettings.KnotDensity.LEGACY_SMOOTHER) {
             bkSpaceDisplay.setText("N/A");
@@ -409,7 +409,7 @@ public class KeplerSplineControl {
         }
     }
 
-    private KeplerSplineApplicator makeKs() {
+    private KeplerSplineApplicator makeSplineGenerator() {
         return switch (settings.knotDensity.get()) {
             case FIXED -> (xs, ys, size, mask) ->
                     KeplerSpline.keplerSplineV2(MatrixUtils.createRealVector(Arrays.copyOf(xs,size)),

@@ -2373,7 +2373,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                             } else {
                                                 if (index[curve][fp] == 0) minimization.addConstraint(fp, -1, 0.0);
                                                 if (index[curve][fp] == 2) minimization.addConstraint(fp, -1, 2.0);
-                                                if (index[curve][fp] == 3) minimization.addConstraint(fp, -1, 0.0);
+                                                //if (index[curve][fp] == 3) minimization.addConstraint(fp, -1, 0.0);
                                                 if (index[curve][fp] == 5) {
                                                     minimization.addConstraint(fp, 1, 1.0);
                                                     minimization.addConstraint(fp, -1, -1.0);

@@ -1388,7 +1388,7 @@ public class CurveFitter {
                                 } else {
                                     if (index[fp] == 0) minimization.addConstraint(fp, -1, 0.0);
                                     if (index[fp] == 2) minimization.addConstraint(fp, -1, 2.0);
-                                    if (index[fp] == 3) minimization.addConstraint(fp, -1, 0.0);
+                                    //if (index[fp] == 3) minimization.addConstraint(fp, -1, 0.0);
                                     if (index[fp] == 5) {
                                         minimization.addConstraint(fp, 1, 1.0);
                                         minimization.addConstraint(fp, -1, -1.0);

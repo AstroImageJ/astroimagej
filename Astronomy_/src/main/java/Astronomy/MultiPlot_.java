@@ -11840,7 +11840,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             minutes.set(c, new Pair.GenericPair<>((Double) binSpin.getValue(), binSpin));
             updatePlot(c);
         });
-        GenericSwingDialog.getTextFieldFromSpinner(binSpin).ifPresent(s -> s.setColumns(5));
+        GenericSwingDialog.getTextFieldFromSpinner(binSpin).ifPresent(s -> s.setColumns(3));
         binSpin.addMouseWheelListener(e -> {
             if (binSpin.getModel() instanceof SpinnerNumberModel spin) {
                 var delta = e.getPreciseWheelRotation() * spin.getStepSize().doubleValue();

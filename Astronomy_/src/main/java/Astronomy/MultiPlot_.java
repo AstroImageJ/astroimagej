@@ -1900,7 +1900,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     }
                 }
 
-                KeplerSplineControl.getInstance(curve).transformData(x[curve], y[curve], nn[curve], yMask);
+                KeplerSplineControl.getInstance(curve).smoothData(x[curve], y[curve], nn[curve], yMask);
             }
         }
 

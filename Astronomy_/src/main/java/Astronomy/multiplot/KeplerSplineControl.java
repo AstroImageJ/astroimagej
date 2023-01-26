@@ -373,7 +373,7 @@ public class KeplerSplineControl {
         return window;
     }
 
-    public void transformData(double[] x, double[] y, int size, RealVector mask) {
+    public void smoothData(double[] x, double[] y, int size, RealVector mask) {
         var ks = makeSplineGenerator().fit(x, y, size, mask);
 
         if (settings.knotDensity.get() == KeplerSplineSettings.KnotDensity.LEGACY_SMOOTHER) {

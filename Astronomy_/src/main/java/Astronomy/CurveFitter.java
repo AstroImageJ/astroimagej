@@ -528,7 +528,7 @@ public class CurveFitter {
                 }
             }
 
-            KeplerSplineControl.getInstance(curve).transformData(x[curve], y[curve], nn[curve], yMask);
+            KeplerSplineControl.getInstance(curve).smoothData(x[curve], y[curve], nn[curve], yMask);
         }
 
         dx = 0.0;

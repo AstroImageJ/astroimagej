@@ -12,10 +12,7 @@ import util.GenericSwingDialog;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+import java.awt.event.*;
 import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -71,6 +68,15 @@ public class KeplerSplineControl {
         });
     }
 
+    public static void closePanels() {
+        SwingUtilities.invokeLater(() -> INSTANCES.forEach(($, s) -> {
+            if (s.window != null) {
+                s.window.setVisible(false);
+                s.window.dispose();
+            }
+        }));
+    }
+
     private JFrame makePanel() {
         var window = new JFrame("Curve " + (curve + 1) + " Smoothing Settings");
         window.setLocation(settings.windowLocation.get());
@@ -78,6 +84,12 @@ public class KeplerSplineControl {
             @Override
             public void windowClosing(WindowEvent e) {
                 settings.windowLocation.set(e.getWindow().getLocation());
+            }
+        });
+        window.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentMoved(ComponentEvent e) {
+                settings.windowLocation.set(e.getComponent().getLocationOnScreen());
             }
         });
         var panel = new JPanel(new GridBagLayout());
@@ -105,6 +117,7 @@ public class KeplerSplineControl {
         c.gridwidth = 1;
         c.weighty = 0;
         c.gridy++;
+        c.gridx = 0;
 
         // Display type
         var displayGroup = new ButtonGroup();

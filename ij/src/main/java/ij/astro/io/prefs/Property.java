@@ -128,7 +128,9 @@ public class Property<T> {
         } else if (type == Point.class) {
             var v = Prefs.getLocation(getPropertyKey());
             return v == null ? value : (T) v;
-        }
+        } /*else if (type == EnumSet.class) {
+            //todo handle Serializable objects? byte array to string? will it have special chars that break things?
+        }*/
 
         return deserializer.apply(nv);
     }

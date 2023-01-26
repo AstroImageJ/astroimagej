@@ -15773,6 +15773,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         panelsUpdating = false;
         if (table != null) table.setLock(false);
         closeFitFrames();
+        KeplerSplineControl.closePanels();
         if (mainFrame != null) {
             mainFrameLocationX = mainFrame.getLocation().x;
             mainFrameLocationY = mainFrame.getLocation().y;

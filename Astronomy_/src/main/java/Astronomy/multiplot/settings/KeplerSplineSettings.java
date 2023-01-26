@@ -6,33 +6,22 @@ import java.awt.*;
 import java.lang.reflect.Field;
 
 public class KeplerSplineSettings {
-    public final Property<DisplayType> displayType;
-    public final Property<KnotDensity> knotDensity;
-    public final Property<Double> fixedKnotDensity;
-    public final Property<Double> minKnotDensity;
-    public final Property<Double> maxKnotDensity;
-    public final Property<Integer> knotDensitySteps;
-    public final Property<Double> minGapWidth;
-    public final Property<Double> dataCleaningCoeff;
-    public final Property<Integer> dataCleaningTries;
-    public final Property<Integer> smoothLength;
-    public final Property<Boolean> maskTransit;
+    public final Property<DisplayType> displayType = makePlotProperty(DisplayType.FLATTENED_LIGHT_CURVE);
+    public final Property<KnotDensity> knotDensity = makePlotProperty(KnotDensity.AUTO);
+    public final Property<Double> fixedKnotDensity = makePlotProperty(1.5);
+    public final Property<Double> minKnotDensity = makePlotProperty(0.5);
+    public final Property<Double> maxKnotDensity = makePlotProperty(20D);
+    public final Property<Integer> knotDensitySteps = makePlotProperty(20);
+    public final Property<Double> minGapWidth = makePlotProperty(0.2);
+    public final Property<Double> dataCleaningCoeff = makePlotProperty(3D);
+    public final Property<Integer> dataCleaningTries = makePlotProperty(5);
+    public final Property<Integer> smoothLength = makePlotProperty(31);
+    public final Property<Boolean> maskTransit = makePlotProperty(true);
     public final Property<Point> windowLocation;
     private final int curve;
 
     public KeplerSplineSettings(int curve) {
         this.curve = curve;
-        displayType = makeProperty(DisplayType.FLATTENED_LIGHT_CURVE);
-        knotDensity = makeProperty(KnotDensity.AUTO);
-        fixedKnotDensity = makeProperty(1.5);
-        minKnotDensity = makeProperty(0.5);
-        maxKnotDensity = makeProperty(20D);
-        knotDensitySteps = makeProperty(20);
-        minGapWidth = makeProperty(0.2);
-        dataCleaningCoeff = makeProperty(3D);
-        dataCleaningTries = makeProperty(5);
-        smoothLength = makeProperty(31);
-        maskTransit = makeProperty(true);
         windowLocation = new Property<>(new Point(), "", String.valueOf(curve), this);
     }
 
@@ -53,8 +42,8 @@ public class KeplerSplineSettings {
         }
     }
 
-    private <T> Property<T> makeProperty(T defaultValue) {
-        return new Property<>(defaultValue, "plot.", String.valueOf(curve), this);
+    private <T> Property<T> makePlotProperty(T defaultValue) {
+        return new Property<>(defaultValue, () -> "plot.", () -> String.valueOf(curve), this);
     }
 
     public enum KnotDensity {

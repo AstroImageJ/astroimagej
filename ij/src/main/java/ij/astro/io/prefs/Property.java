@@ -6,6 +6,7 @@ import java.awt.*;
 import java.lang.reflect.Field;
 import java.util.HashSet;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 public class Property<T> {
     private final Object owner;
@@ -16,8 +17,8 @@ public class Property<T> {
     private boolean hasBuiltKey = false;
     private boolean hasLoaded = false;
     private final Function<String, T> deserializer;
-    private final String keySuffix;
-    private final String keyPrefix;
+    private final Supplier<String> keySuffix;
+    private final Supplier<String> keyPrefix;
     private final Class<T> type;
     final HashSet<PropertyChangeListener<T>> listeners = new HashSet<>();
 
@@ -33,8 +34,17 @@ public class Property<T> {
         this(defaultValue, keyPrefix, keySuffix, $ -> null, owner);
     }
 
-    @SuppressWarnings({"unchecked"})
+    public Property(T defaultValue, Supplier<String> keyPrefix, Supplier<String> keySuffix, Object owner) {
+        this(defaultValue, keyPrefix, keySuffix, $ -> null, owner);
+    }
+
     public Property(T defaultValue, String keyPrefix, String keySuffix, Function<String, T> deserializer, Object owner) {
+        this(defaultValue, () -> keyPrefix, () -> keySuffix, deserializer, owner);
+    }
+
+    @SuppressWarnings({"unchecked"})
+    public Property(T defaultValue, Supplier<String> keyPrefix, Supplier<String> keySuffix,
+                    Function<String, T> deserializer, Object owner) {
         this.deserializer = deserializer;
         this.keySuffix = keySuffix;
         this.keyPrefix = keyPrefix;
@@ -56,7 +66,7 @@ public class Property<T> {
 
     public void set(T value) {
         updatePrefs(value);
-        listeners.forEach(l -> l.valueChanged(getOrCreatePropertyKey(), value));
+        listeners.forEach(l -> l.valueChanged(getPropertyKey(), value));
         this.value = value;
     }
 
@@ -76,6 +86,10 @@ public class Property<T> {
         }
 
         return falsy;
+    }
+
+    public void addListener(PropertyChangeListener<T> listener) {
+        listeners.add(listener);
     }
 
     private void loadProperty() {
@@ -98,7 +112,7 @@ public class Property<T> {
                     try {
                         if (this.equals(declaredField.get(owner))) {
                             var gs = declaredField.toGenericString().split(" ");
-                            propertyKey = keyPrefix + gs[gs.length - 1] + keySuffix;
+                            propertyKey = keyPrefix.get() + gs[gs.length - 1] + keySuffix.get();
                             hasBuiltKey = true;
                         }
                     } catch (IllegalAccessException e) {

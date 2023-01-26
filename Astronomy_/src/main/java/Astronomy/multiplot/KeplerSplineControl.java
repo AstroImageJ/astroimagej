@@ -345,10 +345,14 @@ public class KeplerSplineControl {
         panel.add(button, c);
 
         c.gridx++;
+        c.anchor = GridBagConstraints.CENTER;
         var button1 = new JButton("Ok");
         button1.addActionListener($ -> window.setVisible(false));
         panel.add(button1, c);
 
+        panel.getInsets().set(15, 15 ,15, 15);
+
+        window.setIconImage(createImageIcon("astroj/images/plot.png", "Plot Icon").getImage());
         window.add(panel);
         return window;
     }
@@ -503,6 +507,7 @@ public class KeplerSplineControl {
                 maxModel.setValue(maxModel.getNextValue());
             }
         });
+        //todo right click
     }
 
     private SpinnerNumberModel getModel(JSpinner spinner) {

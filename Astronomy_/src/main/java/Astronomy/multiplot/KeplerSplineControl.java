@@ -385,11 +385,13 @@ public class KeplerSplineControl {
                 bkSpaceDisplay.setText("N/A");
                 bicDisplay.setText("N/A");
                 errorDisplay.setText("Fit failed");
+                errorDisplay.setForeground(Color.RED);
                 Arrays.fill(y, Double.NaN);
                 return;
             }
 
             errorDisplay.setText("Fit success");
+            errorDisplay.setForeground(Color.BLACK);
             bkSpaceDisplay.setText(FORMATTER.format(lastSplineFit.bkSpace));
             bicDisplay.setText(FORMATTER.format(lastSplineFit.bic));
         }

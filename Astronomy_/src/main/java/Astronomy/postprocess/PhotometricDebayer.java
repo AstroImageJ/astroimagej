@@ -49,11 +49,13 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
             }
         }
 
+        gd.addMessage("Output images:");
+
         var options = new String[Color.values().length];
         var defaults = new boolean[Color.values().length];
         var settings = new ArrayList<Consumer<Boolean>>();
         for (int i = 0; i < Color.values().length; i++) {
-            options[i] = Color.values()[i].name();
+            options[i] = Color.values()[i].toString();
             defaults[i] = enabledColors.getOrDefault(Color.values()[i], true);
             int finalI = i;
             settings.add(b -> enabledColors.put(Color.values()[finalI], b));
@@ -324,6 +326,7 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
                     case BLUE -> metaPixel.topLeftAsInt();
                     case GREEN -> avgGreen(metaPixel.topRight, metaPixel.bottomLeft);
                     case LUMINOSITY -> sum(metaPixel);
+                    case LUMINOSITY2 -> avgGreen(metaPixel.topRight, metaPixel.bottomLeft) + metaPixel.bottomRight + metaPixel.topLeft;
                 };
             }
         },
@@ -334,6 +337,7 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
                     case BLUE -> metaPixel.topRightAsInt();
                     case GREEN -> avgGreen(metaPixel.topLeft, metaPixel.bottomRight);
                     case LUMINOSITY -> sum(metaPixel);
+                    case LUMINOSITY2 -> avgGreen(metaPixel.topLeft, metaPixel.bottomRight) + metaPixel.bottomLeft + metaPixel.topRight;
                 };
             }
         },
@@ -344,6 +348,7 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
                     case BLUE -> metaPixel.bottomLeftAsInt();
                     case GREEN -> avgGreen(metaPixel.topLeft, metaPixel.bottomRight);
                     case LUMINOSITY -> sum(metaPixel);
+                    case LUMINOSITY2 -> avgGreen(metaPixel.topLeft, metaPixel.bottomRight) + metaPixel.bottomLeft + metaPixel.topRight;
                 };
             }
         },
@@ -354,6 +359,7 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
                     case BLUE -> metaPixel.bottomRightAsInt();
                     case GREEN -> avgGreen(metaPixel.topRight, metaPixel.bottomLeft);
                     case LUMINOSITY -> sum(metaPixel);
+                    case LUMINOSITY2 -> avgGreen(metaPixel.topRight, metaPixel.bottomLeft) + metaPixel.bottomRight + metaPixel.topLeft;
                 };
             }
         };
@@ -377,7 +383,18 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
         RED,
         GREEN,
         BLUE,
-        LUMINOSITY;
+        LUMINOSITY {
+            @Override
+            public String toString() {
+                return "R+G₁+G₂+B";
+            }
+        },
+        LUMINOSITY2 {
+            @Override
+            public String toString() {
+                return "R+½(G₁+G₂)+B";
+            }
+        };
 
         public BiFunction<Integer, Integer, ImageProcessor>
         makeImageProcessor(BiFunction<Integer, Integer, ImageProcessor> ipMaker) {

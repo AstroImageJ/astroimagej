@@ -8,6 +8,11 @@ import java.util.HashSet;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+/**
+ * @see PropertyKey for more control over the property key.
+ *
+ * @param <T> the type of the property.
+ */
 public class Property<T> {
     private final Object owner;
     private final Class<?> ownerClass;
@@ -111,9 +116,20 @@ public class Property<T> {
                 if (Property.class.isAssignableFrom(declaredField.getType())) {
                     try {
                         if (this.equals(declaredField.get(owner))) {
+                            var pk = declaredField.getAnnotation(PropertyKey.class);
                             var gs = declaredField.toGenericString().split(" ");
-                            propertyKey = keyPrefix.get() + gs[gs.length - 1] + keySuffix.get();
+                            if (pk != null) {
+                                if (pk.ignoreAffixes()) {
+                                    propertyKey = pk.value();
+                                } else {
+                                    propertyKey = keyPrefix.get() + pk.value() + keySuffix.get();
+                                }
+                            } else {
+                                propertyKey = keyPrefix.get() + gs[gs.length - 1] + keySuffix.get();
+                            }
+
                             hasBuiltKey = true;
+                            break;
                         }
                     } catch (IllegalAccessException e) {
                         e.printStackTrace();

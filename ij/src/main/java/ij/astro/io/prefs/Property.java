@@ -99,7 +99,11 @@ public class Property<T> {
 
     private void loadProperty() {
         if (!hasLoaded) {
-            value = handleLoad();
+            try {
+                value = handleLoad();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
 
             if (!type.isInstance(value)) {
                 throw new IllegalStateException("Expected type: %s, received type %s"

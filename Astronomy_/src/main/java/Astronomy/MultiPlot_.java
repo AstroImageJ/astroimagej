@@ -10794,21 +10794,13 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         forceIcon = createImageIcon("astroj/images/grab.png", "Transfer 'Page Rel' settings to absolute settings");
         insertColumnIcon = createImageIcon("astroj/images/insertcolumn.png", "Save curve as new table column");
 
-        JLabel smoothlabel = new JLabel("<HTML><CENTER>Smo-<BR><CENTER>oth</HTML>");
+        JLabel smoothlabel = new JLabel("<HTML>Smooth</HTML>");
         smoothlabel.setFont(b11);
         smoothlabel.setForeground(Color.DARK_GRAY);
         smoothlabel.setToolTipText("Smooth long time-series by removing long-term variations");
         smoothlabel.setHorizontalAlignment(JLabel.CENTER);
         smoothlabel.setMaximumSize(new Dimension(35, 25));
         mainsubpanelgroup.add(smoothlabel);
-
-        JLabel smoothGear = new JLabel("<HTML><CENTER>KS</HTML>");
-        smoothGear.setFont(b11);
-        smoothGear.setForeground(Color.DARK_GRAY);
-        smoothGear.setToolTipText("Smooth long time-series by removing long-term variations");
-        smoothGear.setHorizontalAlignment(JLabel.CENTER);
-        smoothGear.setMaximumSize(new Dimension(35, 25));
-        mainsubpanelgroup.add(smoothGear);
     }
 
 
@@ -11245,6 +11237,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         });
         mainsubpanelgroup.add(inputAverageOverSizespinner[c]);
 
+        var smoothP = Box.createHorizontalBox();
         usesmoothbox[c] = new JCheckBox("", smooth[c]);
         usesmoothbox[c].addItemListener(e -> {
             if (e.getStateChange() == ItemEvent.DESELECTED) {
@@ -11253,7 +11246,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             updatePlot(updateOneFit(c));
         });
         usesmoothbox[c].setHorizontalAlignment(JLabel.CENTER);
-        mainsubpanelgroup.add(usesmoothbox[c]);
+        smoothP.add(usesmoothbox[c]);
 
         var smoothGear = new JButton("⛭");
         smoothGear.setFont(smoothGear.getFont().deriveFont(18F));
@@ -11262,7 +11255,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             updatePlot(updateOneFit(c));
         });
         smoothGear.setHorizontalAlignment(JLabel.CENTER);
-        mainsubpanelgroup.add(smoothGear);
+        smoothGear.setMargin(new Insets(0, 0, 0, 0));
+        smoothP.add(smoothGear);
+        mainsubpanelgroup.add(smoothP);
     }
 
     static void constructOtherGroup(JPanel mainsubpanelgroup, final int c) {

@@ -325,7 +325,7 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
                     case BLUE -> metaPixel.topLeftAsInt();
                     case GREEN -> avgGreen(metaPixel.topRight, metaPixel.bottomLeft);
                     case LUMINOSITY -> sum(metaPixel);
-                    case GAV_LUM -> avgGreen(metaPixel.topRight, metaPixel.bottomLeft) + metaPixel.bottomRight + metaPixel.topLeft;
+                    case G_AVE_LUM -> avgGreen(metaPixel.topRight, metaPixel.bottomLeft) + metaPixel.bottomRight + metaPixel.topLeft;
                 };
             }
         },
@@ -336,7 +336,7 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
                     case BLUE -> metaPixel.topRightAsInt();
                     case GREEN -> avgGreen(metaPixel.topLeft, metaPixel.bottomRight);
                     case LUMINOSITY -> sum(metaPixel);
-                    case GAV_LUM -> avgGreen(metaPixel.topLeft, metaPixel.bottomRight) + metaPixel.bottomLeft + metaPixel.topRight;
+                    case G_AVE_LUM -> avgGreen(metaPixel.topLeft, metaPixel.bottomRight) + metaPixel.bottomLeft + metaPixel.topRight;
                 };
             }
         },
@@ -347,7 +347,7 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
                     case BLUE -> metaPixel.bottomLeftAsInt();
                     case GREEN -> avgGreen(metaPixel.topLeft, metaPixel.bottomRight);
                     case LUMINOSITY -> sum(metaPixel);
-                    case GAV_LUM -> avgGreen(metaPixel.topLeft, metaPixel.bottomRight) + metaPixel.bottomLeft + metaPixel.topRight;
+                    case G_AVE_LUM -> avgGreen(metaPixel.topLeft, metaPixel.bottomRight) + metaPixel.bottomLeft + metaPixel.topRight;
                 };
             }
         },
@@ -358,7 +358,7 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
                     case BLUE -> metaPixel.bottomRightAsInt();
                     case GREEN -> avgGreen(metaPixel.topRight, metaPixel.bottomLeft);
                     case LUMINOSITY -> sum(metaPixel);
-                    case GAV_LUM -> avgGreen(metaPixel.topRight, metaPixel.bottomLeft) + metaPixel.bottomRight + metaPixel.topLeft;
+                    case G_AVE_LUM -> avgGreen(metaPixel.topRight, metaPixel.bottomLeft) + metaPixel.bottomRight + metaPixel.topLeft;
                 };
             }
         };

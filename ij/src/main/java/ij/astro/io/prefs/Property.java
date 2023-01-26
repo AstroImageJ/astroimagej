@@ -108,7 +108,7 @@ public class Property<T> {
     private String getOrCreatePropertyKey() {
         if (!hasBuiltKey) {
             for (Field declaredField : ownerClass.getDeclaredFields()) {
-                if (declaredField.getType().equals(getClass())) {
+                if (Property.class.isAssignableFrom(declaredField.getType())) {
                     try {
                         if (this.equals(declaredField.get(owner))) {
                             var gs = declaredField.toGenericString().split(" ");

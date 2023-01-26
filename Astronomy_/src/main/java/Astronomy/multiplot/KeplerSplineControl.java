@@ -29,6 +29,7 @@ public class KeplerSplineControl {
     private static final ExecutorService RUNNER = Executors.newSingleThreadExecutor();
     private final JTextField bicDisplay;
     private final JTextField bkSpaceDisplay;
+    private final JTextField errorDisplay;
     static DecimalFormat FORMATTER = new DecimalFormat("######0.00", IJU.dfs);
 
     public KeplerSplineControl(int curve) {
@@ -36,12 +37,15 @@ public class KeplerSplineControl {
         settings = new KeplerSplineSettings(curve);
         bkSpaceDisplay = new JTextField("N/A");
         bicDisplay = new JTextField("N/A");
+        errorDisplay = new JTextField("Spline fit");
         bicDisplay.setEnabled(false);
         bkSpaceDisplay.setEnabled(false);
+        errorDisplay.setEnabled(false);
         bkSpaceDisplay.setHorizontalAlignment(JTextField.CENTER);
         bicDisplay.setHorizontalAlignment(JTextField.CENTER);
         bkSpaceDisplay.setColumns(8);
         bicDisplay.setColumns(8);
+        errorDisplay.setColumns(8);
     }
 
     public static KeplerSplineControl getInstance(int curve) {
@@ -214,6 +218,9 @@ public class KeplerSplineControl {
             settings.knotDensitySteps.set(((Integer) control3.getValue()));
             updatePlot();
         });
+        c.gridx = 0;
+        panel.add(errorDisplay, c);
+        c.gridx++;
         c.gridy++;
         GenericSwingDialog.getTextFieldFromSpinner(control3).ifPresent(f -> f.setColumns(5));
         modifySpinner(control3);
@@ -368,10 +375,12 @@ public class KeplerSplineControl {
             if (lastSplineFit.bic == null) {
                 bkSpaceDisplay.setText("N/A");
                 bicDisplay.setText("N/A");
+                errorDisplay.setText("Fit failed");
                 Arrays.fill(y, Double.NaN);
                 return;
             }
 
+            errorDisplay.setText("Fit success");
             bkSpaceDisplay.setText(FORMATTER.format(lastSplineFit.bkSpace));
             bicDisplay.setText(FORMATTER.format(lastSplineFit.bic));
         }

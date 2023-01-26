@@ -401,8 +401,9 @@ public class KeplerSplineControl {
                 }
             }
             case FLATTENED_LIGHT_CURVE -> {
+                var avg = Arrays.stream(y).limit(size).summaryStatistics().getAverage();
                 for (int xx = 0; xx < size; xx++) {
-                    y[xx] /= ks.first().getEntry(xx);
+                    y[xx] = (y[xx] - ks.first().getEntry(xx)) + avg;
                 }
             }
         }

@@ -17,12 +17,14 @@ public class KeplerSplineSettings {
     public final Property<Integer> dataCleaningTries = makePlotProperty(5);
     public final Property<Integer> smoothLength = makePlotProperty(31);
     public final Property<Boolean> maskTransit = makePlotProperty(true);
+    public final Property<Boolean> windowOpened;
     public final Property<Point> windowLocation;
     private final int curve;
 
     public KeplerSplineSettings(int curve) {
         this.curve = curve;
         windowLocation = new Property<>(new Point(), "", String.valueOf(curve), this);
+        windowOpened = new Property<>(false, "", String.valueOf(curve), this);
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})

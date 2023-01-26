@@ -72,6 +72,12 @@ public class KeplerSplineControl {
         });
     }
 
+    public void recallOpenState() {
+        if (settings.windowOpened.get()) {
+            displayPanel();
+        }
+    }
+
     public static void closePanels() {
         SwingUtilities.invokeLater(() -> INSTANCES.forEach(($, s) -> {
             if (s.window != null) {
@@ -88,6 +94,7 @@ public class KeplerSplineControl {
             @Override
             public void windowClosing(WindowEvent e) {
                 settings.windowLocation.set(e.getWindow().getLocation());
+                settings.windowOpened.set(false);
             }
         });
         window.addComponentListener(new ComponentAdapter() {
@@ -361,6 +368,8 @@ public class KeplerSplineControl {
 
         window.setIconImage(createImageIcon("astroj/images/plot.png", "Plot Icon").getImage());
         window.add(panel);
+
+        settings.windowOpened.set(true);
         return window;
     }
 

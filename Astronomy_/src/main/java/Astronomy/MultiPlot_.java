@@ -10640,6 +10640,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         for (int c = 0; c < maxCurves; c++) {
             createFitPanel(c);
             fitPanel[c].setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(color[c], 2), table == null ? "No Table Selected" : ylabel[c].trim().equals("") ? "No Data Column Selected" : ylabel[c], TitledBorder.CENTER, TitledBorder.TOP, b12, Color.darkGray));
+            KeplerSplineControl.getInstance(c).recallOpenState();
         }
 //                if (table != null)
 //                    {

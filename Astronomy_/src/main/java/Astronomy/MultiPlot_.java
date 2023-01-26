@@ -10970,7 +10970,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         displayBinningLabel.setForeground(Color.DARK_GRAY);
         displayBinningLabel.setHorizontalAlignment(JLabel.CENTER);
         displayBinningLabel.setComponentPopupMenu(legendpopup);
-        displayBinningLabel.setToolTipText("Whether the display should bin datum together.");
+        displayBinningLabel.setToolTipText("Enable data binning");
         displayBinningLabel.setMaximumSize(new Dimension(75, 45));
         displayBinningLabel.setPreferredSize(new Dimension(75, 45));
         //displayBinningLabel.setMinimumSize(new Dimension(75, 25));
@@ -10979,7 +10979,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         //displayBinningGroup.add(Box.createGlue());
 
-        JLabel displayBinSizeLabel = new JLabel("<HTML><CENTER>Bin Size<br><CENTER>(minutes)</HTML>");
+        JLabel displayBinSizeLabel = new JLabel("<HTML><CENTER>Bin Size<br><CENTER>(min)</HTML>");
         displayBinSizeLabel.setFont(b11);
         displayBinSizeLabel.setForeground(Color.DARK_GRAY);
         displayBinSizeLabel.setHorizontalAlignment(JLabel.CENTER);
@@ -11246,6 +11246,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             updatePlot(updateOneFit(c));
         });
         usesmoothbox[c].setHorizontalAlignment(JLabel.CENTER);
+        usesmoothbox[c].setToolTipText("Enable smoothing");
         smoothP.add(usesmoothbox[c]);
 
         var smoothGear = new JButton("⛭");
@@ -11256,6 +11257,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         });
         smoothGear.setHorizontalAlignment(JLabel.CENTER);
         smoothGear.setMargin(new Insets(0, 0, 0, 0));
+        smoothGear.setToolTipText("Smoothing Settings");
         smoothP.add(smoothGear);
         mainsubpanelgroup.add(smoothP);
     }
@@ -11824,6 +11826,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             binDisplay[c] = binCB.isSelected();
             updatePlot(c);
         });
+        binCB.setToolTipText("Enable data binning");
         displayBinningPanel[c].add(binCB);
         displayBinningPanel[c].add(Box.createHorizontalStrut(10));
         var binSpin = new JSpinner(new SpinnerNumberModel(5, 0, Double.MAX_VALUE, 1d));
@@ -11852,6 +11855,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 binSpin.setValue(newValue);
             }
         });
+        binSpin.setToolTipText("Side of bin in minutes");
         displayBinningPanel[c].add(binSpin);
 
         mainsubpanelgroup.add(displayBinningPanel[c]);

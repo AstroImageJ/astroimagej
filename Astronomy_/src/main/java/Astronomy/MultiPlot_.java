@@ -10979,7 +10979,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         //displayBinningGroup.add(Box.createGlue());
 
-        JLabel displayBinSizeLabel = new JLabel("<HTML><CENTER>Bin Size<CENTER>(min)</HTML>");
+        JLabel displayBinSizeLabel = new JLabel("<HTML><CENTER>BinSize<BR><CENTER>(min)</HTML>");
         displayBinSizeLabel.setFont(b11);
         displayBinSizeLabel.setForeground(Color.DARK_GRAY);
         displayBinSizeLabel.setHorizontalAlignment(JLabel.CENTER);

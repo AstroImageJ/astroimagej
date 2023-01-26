@@ -862,6 +862,33 @@ public class CurveFitter {
             }
         }
 
+        /*
+        //todo This fixes CF not respecting smoothing
+        if (plotY[curve] && smooth[curve] && nn[curve] > 4) {
+            var yMask = MatrixUtils.createRealVector(nn[curve]);
+            double xfold;
+            double halfPeriod = netPeriod / 2.0;
+            for (int xx = 0; xx < nn[curve]; xx++) {
+                if (showXAxisNormal) {
+                    if (x[curve][xx] > dMarker2Value + xOffset && x[curve][xx] < dMarker3Value + xOffset){
+                        yMask.setEntry(xx,0.0);
+                    } else {
+                        yMask.setEntry(xx,1.0);
+                    }
+                } else {
+                    xfold = ((x[curve][xx] - netT0) % netPeriod);
+                    if (xfold > halfPeriod) { xfold -= netPeriod; } else if (xfold < -halfPeriod) xfold += netPeriod;
+                    if (Math.abs(xfold) < duration / 48.0) {
+                        yMask.setEntry(xx,0.0);
+                    } else {
+                        yMask.setEntry(xx,1.0);
+                    }
+                }
+            }
+
+            KeplerSplineControl.getInstance(curve).transformData(x[curve], rel_flux, nn[curve], yMask);
+        }*/
+
         return new FluxData(averageAndTrimData(rel_flux), averageAndTrimData(rel_flux_err, true),
                 averageAndTrimData(rel_flux_snr), averageAndTrimData(tot_C_cnts), averageAndTrimData(tot_C_err));
     }

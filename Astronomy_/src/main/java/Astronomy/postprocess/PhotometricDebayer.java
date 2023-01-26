@@ -62,7 +62,7 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
         gd.addChoice("Subpixel arrangement", Pallete.names(), pallet.get().name(),
                 (s) -> pallet.set(Pallete.valueOf(s)));
         gd.addMessage("Output images:");
-        gd.addCheckboxGroup(Color.values().length/2, 2, options, defaults, settings);
+        gd.addCheckboxGroup((Color.values().length/2) + 1, 2, options, defaults, settings);
         gd.centerDialog(true);
         gd.showDialog();
 

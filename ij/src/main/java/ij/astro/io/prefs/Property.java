@@ -93,6 +93,20 @@ public class Property<T> {
         return falsy;
     }
 
+    public void ifProp(Runnable truthy) {
+        ifProp(truthy, () -> {});
+    }
+
+    public void ifProp(Runnable truthy, Runnable falsy) {
+        if (type == Boolean.TYPE || type == Boolean.class) {
+            if (((Boolean) get())) {
+                truthy.run();
+            }
+        }
+
+        falsy.run();
+    }
+
     public void addListener(PropertyChangeListener<T> listener) {
         listeners.add(listener);
     }
@@ -119,6 +133,9 @@ public class Property<T> {
             for (Field declaredField : ownerClass.getDeclaredFields()) {
                 if (Property.class.isAssignableFrom(declaredField.getType())) {
                     try {
+                        if (!declaredField.canAccess(owner)) {
+                            declaredField.trySetAccessible();
+                        }
                         if (this.equals(declaredField.get(owner))) {
                             var pk = declaredField.getAnnotation(PropertyKey.class);
                             var gs = declaredField.toGenericString().split(" ");

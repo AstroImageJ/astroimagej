@@ -37,7 +37,7 @@ public class KeplerSplineControl {
         settings = new KeplerSplineSettings(curve);
         bkSpaceDisplay = new JTextField("N/A");
         bicDisplay = new JTextField("N/A");
-        errorDisplay = new JTextField("Spline fit");
+        errorDisplay = new JTextField("N/A");
         bicDisplay.setEnabled(false);
         bkSpaceDisplay.setEnabled(false);
         errorDisplay.setEnabled(false);
@@ -209,7 +209,6 @@ public class KeplerSplineControl {
         controlBox.add(label);
         panel.add(controlBox, c);
         controlBox = Box.createHorizontalBox();
-        controlBox.setToolTipText("Indicates the success or failure of the spline fit. If failed, try a different knot spacing.");
         var control2 = new JSpinner(new SpinnerNumberModel(settings.maxKnotDensity.get().doubleValue(), 0.01, Double.MAX_VALUE, 0.1));
         control2.setToolTipText("The maximum spline knot spacing considered for the fit.");
         control2.addChangeListener($ -> {
@@ -233,7 +232,11 @@ public class KeplerSplineControl {
             updatePlot();
         });
         c.gridx = 0;
-        panel.add(errorDisplay, c);
+        var b = Box.createHorizontalBox();
+        errorDisplay.setToolTipText("Indicates the success or failure of the spline fit. If failed, try a different knot spacing.");
+        b.add(new JLabel("Fit Success: "));
+        b.add(errorDisplay);
+        panel.add(b, c);
         c.gridx++;
         c.gridy++;
         GenericSwingDialog.getTextFieldFromSpinner(control3).ifPresent(f -> f.setColumns(5));
@@ -283,14 +286,16 @@ public class KeplerSplineControl {
         // Metadata display
         var box = Box.createHorizontalBox();
         box.add(new JLabel("Knot Spacing: "));
-        box.setToolTipText("Indicates the fitted or fixed spline knot spacing.");
         box.add(bkSpaceDisplay);
+        box.setToolTipText("Indicates the fitted or fixed spline knot spacing.");
+        bkSpaceDisplay.setToolTipText("Indicates the fitted or fixed spline knot spacing.");
         panel.add(box, c);
         box = Box.createHorizontalBox();
         c.gridx = 1;
         box.add(new JLabel("BIC: "));
-        box.setToolTipText("Indicates the BIC of the spline fit.");
         box.add(bicDisplay);
+        box.setToolTipText("Indicates the BIC of the spline fit.");
+        bicDisplay.setToolTipText("Indicates the BIC of the spline fit.");
         panel.add(box, c);
         c.gridy++;
         c.gridx = 0;
@@ -385,7 +390,8 @@ public class KeplerSplineControl {
         button1.addActionListener($ -> window.setVisible(false));
         panel.add(button1, c);
 
-        panel.getInsets().set(15, 15 ,15, 15);
+        //var border = new BevelBorder(BevelBorder.LOWERED, MultiPlot_.color[curve], MultiPlot_.color[curve]);
+        panel.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
 
         window.setIconImage(createImageIcon("astroj/images/plot.png", "Plot Icon").getImage());
         window.add(panel);
@@ -400,19 +406,21 @@ public class KeplerSplineControl {
         if (settings.knotDensity.get() == KeplerSplineSettings.KnotDensity.LEGACY_SMOOTHER) {
             bkSpaceDisplay.setText("N/A");
             bicDisplay.setText("N/A");
+            errorDisplay.setText("N/A");
+            errorDisplay.setDisabledTextColor(Color.BLACK);
         } else {
             var lastSplineFit = ks.second();
             if (lastSplineFit.bic == null) {
                 bkSpaceDisplay.setText("N/A");
                 bicDisplay.setText("N/A");
-                errorDisplay.setText("Fit failed");
-                errorDisplay.setForeground(Color.RED);
+                errorDisplay.setText("failed");
+                errorDisplay.setDisabledTextColor(Color.RED);
                 Arrays.fill(y, Double.NaN);
                 return;
             }
 
-            errorDisplay.setText("Fit success");
-            errorDisplay.setForeground(Color.BLACK);
+            errorDisplay.setText("success");
+            errorDisplay.setDisabledTextColor(darkGreen);
             bkSpaceDisplay.setText(FORMATTER.format(lastSplineFit.bkSpace));
             bicDisplay.setText(FORMATTER.format(lastSplineFit.bic));
         }

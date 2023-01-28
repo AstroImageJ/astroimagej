@@ -469,7 +469,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static double xPlotMinRaw;
     static Color defaultBackground;
     static Color defaultOKForeground;
-    static Color darkGreen = new Color(0, 155, 0);
+    public static Color darkGreen = new Color(0, 155, 0);
     static Color darkYellow = new Color(255, 190, 0);
     static Border defaultSpinnerBorder;
     static Border grayBorder2 = new CompoundBorder(BorderFactory.createLineBorder(Color.GRAY, 2), new EmptyBorder(2, 2, 2, 2));
@@ -621,7 +621,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static boolean[] smooth;
     static boolean shiftIsDown;
     static int[] marker, residualSymbol;
-    static Color[] color, modelColor, residualModelColor, residualColor;
+    public static Color[] color, modelColor, residualModelColor, residualColor;
     static int[] markerIndex;
     static int[] residualSymbolIndex;
     static int[] colorIndex;

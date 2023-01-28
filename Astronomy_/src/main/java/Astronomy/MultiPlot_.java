@@ -133,6 +133,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     public static double netPeriod;
     static boolean twoxPeriod;
     static boolean oddNotEven;
+    static boolean periodSync;
     static int[] smoothLen;
     static boolean showXScaleInfo;
     static boolean showYScaleInfo, showYNormInfo;
@@ -562,7 +563,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
     //        static JCheckBox usextickscheckbox, useytickscheckbox, usexgridcheckbox;
 //        static JCheckBox useygridcheckbox, usexnumberscheckbox, useynumberscheckbox;
-    static JCheckBox showVMarker1CB, showVMarker2CB, twoxPeriodCB, oddNotEvenCB;
+    static JCheckBox showVMarker1CB, showVMarker2CB, twoxPeriodCB, oddNotEvenCB, periodSyncCB;
     static JCheckBox showMFMarkersCB, showDMarkersCB, useDMarker1CB, useDMarker4CB;
 
     static JButton moreybutton, closebutton, grabautoxbutton, grabautoybutton, updateplotbutton, addastrodatabutton, refStarButton, OKbutton;
@@ -591,7 +592,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static int[] detrendVarDisplayed;
     static int[] nFitTrim;
     static int maxColumnLength;
-    static double vMarker1Value = 0.5, vMarker2Value = 0.7;
+    static double vMarker1Value = 0.5, vMarker2Value = 0.7,defaultTcFitStep = 0.1;
     static double xStep = 0.001;
     static double T0Step = 0.001, periodStep = 0.0001, durationStep = 0.01;
     static double dMarker1Value = 0.3, dMarker2Value = 0.5, dMarker3Value = 0.7, dMarker4Value = 0.9;
@@ -1408,6 +1409,17 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         netT0 = (twoxPeriod && oddNotEven) ? T0 - period : T0;
         netPeriod = twoxPeriod ? 2 * period : period;
+        if (!showXAxisNormal && periodSync) {
+            for (int c = 0; c < maxCurves; c++) {
+                boolean holdUpdateFit;
+                if (detrendFitIndex[c]==9) {
+                    holdUpdateFit = autoUpdateFit[c];
+                    autoUpdateFit[c] = false;
+                    orbitalPeriodSpinner[c].setValue(netPeriod);
+                    autoUpdateFit[c] = holdUpdateFit;
+                }
+            }
+        }
 
         int magSign = negateMag ? 1 : -1;
         for (int i = 0; i < maxCurves; i++) {
@@ -3142,13 +3154,13 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         for (int curve = 0; curve < maxCurves; curve++) {
             double resMin, resMax;
             if (plotY[curve]) {
-                yMn[curve] = (showErrors[curve] && (hasErrors[curve] || hasOpErrors[curve])) ? minOf(y[curve], yerr[curve], nn[curve]) : minOf(y[curve], nn[curve]); //FIND MIN AND MAX Y OF EACH SELECTED DATASET
-                yMx[curve] = (showErrors[curve] && (hasErrors[curve] || hasOpErrors[curve])) ? maxOf(y[curve], yerr[curve], nn[curve]) : maxOf(y[curve], nn[curve]);
+                yMn[curve] = (showErrors[curve] && (hasErrors[curve] || hasOpErrors[curve])) ? minOf(x[curve], y[curve], yerr[curve], nn[curve]) : minOf(x[curve], y[curve], nn[curve]); //FIND MIN AND MAX Y OF EACH SELECTED DATASET
+                yMx[curve] = (showErrors[curve] && (hasErrors[curve] || hasOpErrors[curve])) ? maxOf(x[curve], y[curve], yerr[curve], nn[curve]) : maxOf(x[curve], y[curve], nn[curve]);
                 yWidthOrig[curve] = yMx[curve] - yMn[curve];
                 if (showResidual[curve] && residual[curve] != null && useTransitFit[curve] && detrendFitIndex[curve] == 9) {
-                    resMin = (showResidualError[curve] && yModel1Err[curve] != null) ? resMinOf(residual[curve], yModel1Err[curve], residual[curve].length, detrendYAverage[curve] + (force[curve] ? yWidthOrig[curve] * autoResidualShift[curve] / autoScaleFactor[curve] : residualShift[curve] / (normIndex[curve] != 0 && !mmag[curve] && !force[curve] ? 1.0 : yMultiplierFactor))) : resMinOf(residual[curve], residual[curve].length, detrendYAverage[curve] + (force[curve] ? yWidthOrig[curve] * autoResidualShift[curve] / autoScaleFactor[curve] : residualShift[curve] / (normIndex[curve] != 0 && !mmag[curve] && !force[curve] ? 1.0 : yMultiplierFactor)));
+                    resMin = (showResidualError[curve] && yModel1Err[curve] != null) ? resMinOf(x[curve], residual[curve], yModel1Err[curve], residual[curve].length, detrendYAverage[curve] + (force[curve] ? yWidthOrig[curve] * autoResidualShift[curve] / autoScaleFactor[curve] : residualShift[curve] / (normIndex[curve] != 0 && !mmag[curve] && !force[curve] ? 1.0 : yMultiplierFactor))) : resMinOf(x[curve], residual[curve], residual[curve].length, detrendYAverage[curve] + (force[curve] ? yWidthOrig[curve] * autoResidualShift[curve] / autoScaleFactor[curve] : residualShift[curve] / (normIndex[curve] != 0 && !mmag[curve] && !force[curve] ? 1.0 : yMultiplierFactor)));
 
-                    resMax = (showResidualError[curve] && yModel1Err[curve] != null) ? resMaxOf(residual[curve], yModel1Err[curve], residual[curve].length, detrendYAverage[curve] + (force[curve] ? yWidthOrig[curve] * autoResidualShift[curve] / autoScaleFactor[curve] : residualShift[curve] / (normIndex[curve] != 0 && !mmag[curve] && !force[curve] ? 1.0 : yMultiplierFactor))) : resMaxOf(residual[curve], residual[curve].length, detrendYAverage[curve] + (force[curve] ? yWidthOrig[curve] * autoResidualShift[curve] / autoScaleFactor[curve] : residualShift[curve] / (normIndex[curve] != 0 && !mmag[curve] && !force[curve] ? 1.0 : yMultiplierFactor)));
+                    resMax = (showResidualError[curve] && yModel1Err[curve] != null) ? resMaxOf(x[curve], residual[curve], yModel1Err[curve], residual[curve].length, detrendYAverage[curve] + (force[curve] ? yWidthOrig[curve] * autoResidualShift[curve] / autoScaleFactor[curve] : residualShift[curve] / (normIndex[curve] != 0 && !mmag[curve] && !force[curve] ? 1.0 : yMultiplierFactor))) : resMaxOf(x[curve], residual[curve], residual[curve].length, detrendYAverage[curve] + (force[curve] ? yWidthOrig[curve] * autoResidualShift[curve] / autoScaleFactor[curve] : residualShift[curve] / (normIndex[curve] != 0 && !mmag[curve] && !force[curve] ? 1.0 : yMultiplierFactor)));
                     if (resMin < yMn[curve]) yMn[curve] = resMin;
                     if (resMax > yMx[curve]) yMx[curve] = resMax;
                 }
@@ -6063,6 +6075,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         netPeriod = 1;
         twoxPeriod = false;
         oddNotEven = false;
+        periodSync = true;
         showXScaleInfo = true;
         showYScaleInfo = true;
         showYNormInfo = true;
@@ -6583,7 +6596,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         defaultFitStep[0] = 0.1;
         defaultFitStep[1] = 0.1;
         defaultFitStep[2] = 1.0;
-        defaultFitStep[3] = 0.01;
+        defaultFitStep[3] = defaultTcFitStep;
         defaultFitStep[4] = 1.0;
         defaultFitStep[5] = 0.1;
         defaultFitStep[6] = 0.1;
@@ -6683,11 +6696,11 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
             priorCenter[i][3] = 2456500;  // tc = transit center time
             priorCenterStep[3] = 0.001;
-            priorWidth[i][3] = 0.015;
+            priorWidth[i][3] = 0.04;
             priorWidthStep[3] = 0.001;
             usePriorWidth[i][3] = false;
             useCustomFitStep[i][3] = false;
-            fitStep[i][3] = 0.01;
+            fitStep[i][3] = defaultTcFitStep;
             fitStepStep[3] = 0.01;
 
             priorCenter[i][4] = 88.0;  // inclination
@@ -6788,6 +6801,19 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     }
 
     /**
+     * Returns minimum of double array over range xPlotMin and xPlotMax.
+     */
+    static double minOf(double[] xarr, double[] yarr, int n) {
+        double mn = Double.POSITIVE_INFINITY;
+        for (int i = 0; i < n; i++) {
+            if (xarr[i] >= xPlotMin && xarr[i] <= xPlotMax && !Double.isNaN(yarr[i])) {
+                mn = Math.min(yarr[i], mn);
+            }
+        }
+        return mn;
+    }
+
+    /**
      * Returns maximum of double array.
      */
     static double maxOf(double[] arr, int n) {
@@ -6801,14 +6827,28 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     }
 
     /**
-     * Returns minimum of double array including error.
+     * Returns maximum of double array over range xPlotMin and xPlotMax.
      */
-    static double minOf(double[] arr, double[] err, int n) {
+    static double maxOf(double[] xarr, double[] yarr, int n) {
+        double mx = Double.NEGATIVE_INFINITY;
+        for (int i = 0; i < n; i++) {
+            if (xarr[i] >= xPlotMin && xarr[i] <= xPlotMax && !Double.isNaN(yarr[i])) {
+                mx = Math.max(yarr[i], mx);
+            }
+        }
+        return mx;
+    }
+
+
+    /**
+     * Returns minimum of double array including error over range xPlotMin and xPlotMax.
+     */
+    static double minOf(double[] xarr, double[] yarr, double[] yerr, int n) {
         double mn = Double.POSITIVE_INFINITY;
         double value;
         for (int i = 0; i < n; i++) {
-            if (!Double.isNaN(arr[i]) && !Double.isNaN(err[i])) {
-                value = arr[i] - err[i];
+            if (xarr[i] >= xPlotMin && xarr[i] <= xPlotMax && !Double.isNaN(yarr[i]) && !Double.isNaN(yerr[i])) {
+                value = yarr[i] - yerr[i];
                 mn = Math.min(value, mn);
             }
         }
@@ -6816,14 +6856,14 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     }
 
     /**
-     * Returns maximum of double array including.
+     * Returns maximum of double array including error over range xPlotMin and xPlotMax.
      */
-    static double maxOf(double[] arr, double[] err, int n) {
+    static double maxOf(double[] xarr, double[] yarr, double[] yerr, int n) {
         double mx = Double.NEGATIVE_INFINITY;
         double value;
         for (int i = 0; i < n; i++) {
-            if (!Double.isNaN(arr[i]) && !Double.isNaN(err[i])) {
-                value = arr[i] + err[i];
+            if (xarr[i] >= xPlotMin && xarr[i] <= xPlotMax && !Double.isNaN(yarr[i]) && !Double.isNaN(yerr[i])) {
+                value = yarr[i] + yerr[i];
                 mx = Math.max(value, mx);
             }
         }
@@ -6831,14 +6871,14 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     }
 
     /**
-     * Returns minimum of double array.
+     * Returns minimum of double residual array over range xPlotMin and xPlotMax.
      */
-    static double resMinOf(double[] arr, int n, double shift) {
+    static double resMinOf(double[] xarr, double[] yarr, int n, double shift) {
         double mn = Double.POSITIVE_INFINITY;
         double value;
         for (int i = 0; i < n; i++) {
-            if (!Double.isNaN(arr[i])) {
-                value = arr[i] + shift;
+            if (xarr[i] >= xPlotMin && xarr[i] <= xPlotMax && !Double.isNaN(yarr[i])) {
+                value = yarr[i] + shift;
                 mn = Math.min(value, mn);
             }
         }
@@ -6846,14 +6886,14 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     }
 
     /**
-     * Returns maximum of double array.
+     * Returns residual maximum of double array over range xPlotMin and xPlotMax.
      */
-    static double resMaxOf(double[] arr, int n, double shift) {
+    static double resMaxOf(double[] xarr, double[] yarr, int n, double shift) {
         double mx = Double.NEGATIVE_INFINITY;
         double value;
         for (int i = 0; i < n; i++) {
-            if (!Double.isNaN(arr[i])) {
-                value = arr[i] + shift;
+            if (xarr[i] >= xPlotMin && xarr[i] <= xPlotMax && !Double.isNaN(yarr[i])) {
+                value = yarr[i] + shift;
                 mx = Math.max(value, mx);
             }
         }
@@ -6861,14 +6901,14 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     }
 
     /**
-     * Returns minimum of double array including error.
+     * Returns minimum of double residual array including error over range xPlotMin and xPlotMax.
      */
-    static double resMinOf(double[] arr, double[] err, int n, double shift) {
+    static double resMinOf(double[] xarr, double[] yarr, double[] yerr, int n, double shift) {
         double mn = Double.POSITIVE_INFINITY;
         double value;
         for (int i = 0; i < n; i++) {
-            if (!Double.isNaN(arr[i]) && !Double.isNaN(err[i])) {
-                value = arr[i] - err[i] + shift;
+            if (xarr[i] >= xPlotMin && xarr[i] <= xPlotMax && !Double.isNaN(yarr[i]) && !Double.isNaN(yerr[i])) {
+                value = yarr[i] - yerr[i] + shift;
                 mn = Math.min(value, mn);
             }
         }
@@ -6876,14 +6916,14 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     }
 
     /**
-     * Returns maximum of double array including.
+     * Returns maximum of residual double array including error over range xPlotMin and xPlotMax.
      */
-    static double resMaxOf(double[] arr, double[] err, int n, double shift) {
+    static double resMaxOf(double[] xarr, double[] yarr, double[] yerr, int n, double shift) {
         double mx = Double.NEGATIVE_INFINITY;
         double value;
         for (int i = 0; i < n; i++) {
-            if (!Double.isNaN(arr[i]) && !Double.isNaN(err[i])) {
-                value = arr[i] + err[i] + shift;
+            if (xarr[i] >= xPlotMin && xarr[i] <= xPlotMax && !Double.isNaN(yarr[i]) && !Double.isNaN(yerr[i])) {
+                value = yarr[i] + yerr[i] + shift;
                 mx = Math.max(value, mx);
             }
         }
@@ -9863,6 +9903,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             showXAxisAsHoursSinceTc = false;
             showXAxisAsPhase = false;
             T0spinner.setEnabled(false);
+            periodSyncCB.setEnabled(false);
             periodspinner.setEnabled(false);
             durationspinner.setEnabled(false);
             twoxPeriodCB.setEnabled(false);
@@ -9897,6 +9938,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             periodpanel.setEnabled(true);
             durationpanel.setEnabled(true);
             T0spinner.setEnabled(true);
+            periodSyncCB.setEnabled(true);
             periodspinner.setEnabled(true);
             durationspinner.setEnabled(true);
             twoxPeriodCB.setEnabled(true);
@@ -9918,6 +9960,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             periodpanel.setEnabled(true);
             durationpanel.setEnabled(true);
             T0spinner.setEnabled(true);
+            periodSyncCB.setEnabled(true);
             periodspinner.setEnabled(true);
             durationspinner.setEnabled(true);
             twoxPeriodCB.setEnabled(true);
@@ -9951,6 +9994,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             periodpanel.setEnabled(true);
             durationpanel.setEnabled(true);
             T0spinner.setEnabled(true);
+            periodSyncCB.setEnabled(true);
             periodspinner.setEnabled(true);
             durationspinner.setEnabled(true);
             twoxPeriodCB.setEnabled(true);
@@ -10005,6 +10049,18 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         periodpanel = new JPanel(new SpringLayout());
         TitledBorder periodborder = BorderFactory.createTitledBorder(BorderFactory.createLineBorder(subBorderColor, 1), "Period (Days)", TitledBorder.CENTER, TitledBorder.TOP, p11);
         periodpanel.setBorder(periodborder);
+
+        periodSyncCB = new JCheckBox("Sync", periodSync);
+        periodSyncCB.setToolTipText("Select to sync all fit panels with the phase folding period.");
+        periodSyncCB.setEnabled(true);
+        periodSyncCB.addItemListener(e -> {
+            if (e.getStateChange() == ItemEvent.DESELECTED) {
+                periodSync = false;
+            } else if (e.getStateChange() == ItemEvent.SELECTED) periodSync = true;
+            Prefs.set("plot.periodSync", periodSync);
+            updatePlot(updateAllFits());
+        });
+        periodpanel.add(periodSyncCB);
 
         periodspinnermodel = new SpinnerNumberModel(period, 0.0001, null, periodStep);
 
@@ -10086,6 +10142,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         if (showXAxisNormal) {
             T0spinner.setEnabled(false);
+            periodSyncCB.setEnabled(false);
             periodspinner.setEnabled(false);
             durationspinner.setEnabled(false);
             twoxPeriodCB.setEnabled(false);
@@ -10794,10 +10851,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         forceIcon = createImageIcon("astroj/images/grab.png", "Transfer 'Page Rel' settings to absolute settings");
         insertColumnIcon = createImageIcon("astroj/images/insertcolumn.png", "Save curve as new table column");
 
-        JLabel smoothlabel = new JLabel("<HTML>Smooth</HTML>");
+        JLabel smoothlabel = new JLabel("<HTML>Spline<br>Smooth</HTML>");
         smoothlabel.setFont(b11);
         smoothlabel.setForeground(Color.DARK_GRAY);
-        smoothlabel.setToolTipText("Smooth long time-series by removing long-term variations");
+        smoothlabel.setToolTipText("<HTML>Spline smooth long time-series by removing long-term variations.<br>Typically used with continuous space-based data.<HTML>");
         smoothlabel.setHorizontalAlignment(JLabel.CENTER);
         smoothlabel.setMaximumSize(new Dimension(35, 25));
         mainsubpanelgroup.add(smoothlabel);
@@ -11246,7 +11303,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             updatePlot(updateOneFit(c));
         });
         usesmoothbox[c].setHorizontalAlignment(JLabel.CENTER);
-        usesmoothbox[c].setToolTipText("Enable smoothing");
+        usesmoothbox[c].setToolTipText("Enable spline smoothing. Typically used with continuous space-based data.");
         smoothP.add(usesmoothbox[c]);
 
         var smoothGear = new JButton("⛭");
@@ -11257,7 +11314,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         });
         smoothGear.setHorizontalAlignment(JLabel.CENTER);
         smoothGear.setMargin(new Insets(0, 0, 0, 0));
-        smoothGear.setToolTipText("Smoothing Settings");
+        smoothGear.setToolTipText("Spline smoothing settings. Typically used with continuous space-based data.");
         smoothP.add(smoothGear);
         mainsubpanelgroup.add(smoothP);
     }
@@ -17679,6 +17736,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         durationStep = Prefs.get("plot.durationStep", durationStep);
         twoxPeriod = Prefs.get("plot.twoxPeriod", twoxPeriod);
         oddNotEven = Prefs.get("plot.oddNotEven", oddNotEven);
+        periodSync = Prefs.get("plot.periodSync", periodSync);
         yMaxStep = Prefs.get("plot.yMaxStep", yMaxStep);
         yMinStep = Prefs.get("plot.yMinStep", yMinStep);
         vMarker1Value = Prefs.get("plot.vMarker1Value", vMarker1Value);
@@ -18045,6 +18103,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         Prefs.set("plot.durationStep", durationStep);
         Prefs.set("plot.twoxPeriod", twoxPeriod);
         Prefs.set("plot.oddNotEven", oddNotEven);
+        Prefs.set("plot.periodSync", periodSync);
         Prefs.set("plot.showXScaleInfo", showXScaleInfo);
         Prefs.set("plot.showYScaleInfo", showYScaleInfo);
         Prefs.set("plot.showYShiftInfo", showYShiftInfo);

@@ -8,7 +8,7 @@ import java.lang.reflect.Field;
 public class KeplerSplineSettings {
     public final Property<DisplayType> displayType = makePlotProperty(DisplayType.FLATTENED_LIGHT_CURVE);
     public final Property<KnotDensity> knotDensity = makePlotProperty(KnotDensity.AUTO);
-    public final Property<Double> fixedKnotDensity = makePlotProperty(1.5);
+    public final Property<Double> fixedKnotDensity = makePlotProperty(0.5);
     public final Property<Double> minKnotDensity = makePlotProperty(0.5);
     public final Property<Double> maxKnotDensity = makePlotProperty(20D);
     public final Property<Integer> knotDensitySteps = makePlotProperty(20);

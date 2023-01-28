@@ -87,6 +87,15 @@ public class KeplerSplineControl {
         }));
     }
 
+    public String ifTransitSmoothed(String s) {
+        if (MultiPlot_.smooth[curve] &&
+                settings.displayType.get() == KeplerSplineSettings.DisplayType.FLATTENED_LIGHT_CURVE) {
+            return s;
+        }
+
+        return "";
+    }
+
     private JFrame makePanel() {
         var window = new JFrame("Curve " + (curve + 1) + " Spline Smoothing");
         window.setLocation(settings.windowLocation.get());

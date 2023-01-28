@@ -618,7 +618,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 //        static boolean[] showOpErrors;
     static boolean[] hasOpErrors;  //indicates operator error is available for a curve
     static boolean[] lines;
-    static boolean[] smooth;
+    public static boolean[] smooth;
     static boolean shiftIsDown;
     static int[] marker, residualSymbol;
     public static Color[] color, modelColor, residualModelColor, residualColor;
@@ -3664,7 +3664,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                             }
                         } else {
                             if (detrendFitIndex[curve] == 9 && useTransitFit[curve]) {
-                                llab.append(" (transit fit)");
+                                llab.append(KeplerSplineControl.getInstance(curve).ifTransitSmoothed(" (Spline Smoothed)"))
+                                        .append(" (transit fit)");
+                            } else {
+                                llab.append(KeplerSplineControl.getInstance(curve).ifTransitSmoothed("(Spline Smoothed)"));
                             }
                         }
                         if (showLnormInfo && normIndex[curve] != 0 && !mmag[curve] && !force[curve]) {
@@ -3690,7 +3693,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                             for (int v = 0; v < maxDetrendVars; v++) {
                                 if (detrendIndex[curve][v] != 0) {
                                     if (atLeastOne) { llab.append("+").append(detrendlabel[curve][v]); } else {
-                                        llab.append(" (").append(detrendlabel[curve][v]);
+                                        llab.append(" (")
+                                                .append(KeplerSplineControl.getInstance(curve).ifTransitSmoothed("Spline+"))
+                                                .append(detrendlabel[curve][v]);
                                     }
                                     atLeastOne = true;
                                 }
@@ -3704,7 +3709,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                             }
                         } else {
                             if (detrendFitIndex[curve] == 9 && useTransitFit[curve]) {
-                                llab.append(" (transit fit)");
+                                llab.append(KeplerSplineControl.getInstance(curve).ifTransitSmoothed(" (Spline Smoothed)"))
+                                        .append(" (transit fit)");
+                            } else {
+                                llab.append(KeplerSplineControl.getInstance(curve).ifTransitSmoothed("(Spline Smoothed)"));
                             }
                         }
                         if (showLnormInfo && normIndex[curve] != 0 && !mmag[curve] && !force[curve]) {

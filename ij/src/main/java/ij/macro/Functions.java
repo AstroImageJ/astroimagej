@@ -3645,7 +3645,11 @@ public class Functions implements MacroConstants, Measurements {
 		if (interp.nextToken()==',') {
 			if (s.startsWith("[") && s.endsWith("]")) {
 				String finalS = s;
-				SwingUtilities.invokeLater(() -> printToWindow(finalS));
+				try {
+					SwingUtilities.invokeAndWait(() -> printToWindow(finalS));
+				} catch (InterruptedException | InvocationTargetException e) {
+					e.printStackTrace();
+				}
 				return;
 			} else if (s.equals("~0~")) {
 				if (writer==null)

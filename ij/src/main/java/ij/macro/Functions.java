@@ -1,24 +1,39 @@
 package ij.macro;
+
 import ij.*;
 import ij.astro.AstroImageJ;
-import ij.process.*;
 import ij.gui.*;
-import ij.measure.*;
-import ij.plugin.*;
-import ij.plugin.filter.*;
-import ij.plugin.frame.*;
-import ij.text.*;
 import ij.io.*;
-import ij.util.*;
+import ij.measure.Calibration;
+import ij.measure.CurveFitter;
+import ij.measure.Measurements;
+import ij.measure.ResultsTable;
+import ij.plugin.*;
+import ij.plugin.filter.Analyzer;
+import ij.plugin.filter.MaximumFinder;
+import ij.plugin.filter.Rotator;
+import ij.plugin.frame.*;
+import ij.process.*;
+import ij.text.TextPanel;
+import ij.text.TextWindow;
+import ij.util.IJMath;
+import ij.util.Tools;
+import ij.util.WildcardMatch;
+
+import javax.swing.*;
 import java.awt.*;
-import java.awt.image.*;
-import java.util.*;
-import java.io.*;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.StringSelection;
+import java.awt.datatransfer.Transferable;
 import java.awt.event.KeyEvent;
-import java.lang.reflect.*;
-import java.net.URL;
-import java.awt.datatransfer.*;
-import java.awt.geom.*;
+import java.awt.geom.Ellipse2D;
+import java.awt.geom.GeneralPath;
+import java.awt.geom.Rectangle2D;
+import java.awt.image.IndexColorModel;
+import java.io.*;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.*;
 
 
 /** This class implements the built-in macro functions. */
@@ -3623,12 +3638,18 @@ public class Functions implements MacroConstants, Measurements {
 		return n;
 	}
 
+	@AstroImageJ(reason = "Move printToWindow invocation to the render thread", modified = true)
 	void print() {
 		interp.inPrint = true;
 		String s = getFirstString();
 		if (interp.nextToken()==',') {
 			if (s.startsWith("[") && s.endsWith("]")) {
-				printToWindow(s);
+				String finalS = s;
+				try {
+					SwingUtilities.invokeAndWait(() -> printToWindow(finalS));
+				} catch (InterruptedException | InvocationTargetException e) {
+					e.printStackTrace();
+				}
 				return;
 			} else if (s.equals("~0~")) {
 				if (writer==null)

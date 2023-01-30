@@ -107,6 +107,10 @@ public class Property<T> {
         falsy.run();
     }
 
+    public boolean hasSaved() {
+        return Prefs.ijPrefs.containsKey(Prefs.KEY_PREFIX+getPropertyKey());
+    }
+
     public void addListener(PropertyChangeListener<T> listener) {
         listeners.add(listener);
     }

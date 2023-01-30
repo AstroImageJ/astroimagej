@@ -6,6 +6,7 @@ import astroj.IJU;
 import com.astroimagej.bspline.KeplerSpline;
 import com.astroimagej.bspline.util.Pair;
 import flanagan.analysis.Smooth;
+import ij.astro.util.UIHelper;
 import org.hipparchus.linear.MatrixUtils;
 import org.hipparchus.linear.RealVector;
 import util.GenericSwingDialog;
@@ -98,7 +99,6 @@ public class KeplerSplineControl {
 
     private JFrame makePanel() {
         var window = new JFrame("Curve " + (curve + 1) + " Spline Smoothing");
-        window.setLocation(settings.windowLocation.get());
         window.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
@@ -244,6 +244,7 @@ public class KeplerSplineControl {
         var b = Box.createHorizontalBox();
         errorDisplay.setToolTipText("Indicates the success or failure of the spline fit. If failed, try a different knot spacing.");
         b.add(new JLabel("Fit Success: "));
+        b.setToolTipText(errorDisplay.getToolTipText());
         b.add(errorDisplay);
         panel.add(b, c);
         c.gridx++;
@@ -406,6 +407,14 @@ public class KeplerSplineControl {
         window.add(panel);
 
         settings.windowOpened.set(true);
+        window.pack();
+
+        if (settings.windowLocation.hasSaved()) {
+            window.setLocation(settings.windowLocation.get());
+        } else {
+            UIHelper.setCenteredOnScreen(window, mainFrame);
+        }
+
         return window;
     }
 

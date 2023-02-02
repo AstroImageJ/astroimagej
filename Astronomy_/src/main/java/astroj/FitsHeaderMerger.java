@@ -72,9 +72,9 @@ public class FitsHeaderMerger {
 
         newHeader = FitsJ.addHistory("Stack of " + stackCnt + " images using method: " + ZProjector.METHODS[method], newHeader);
         newHeader = FitsJ.set("EXPTIME", String.valueOf(totalExposure), "Total luminance exposure time in seconds", newHeader);
-        newHeader = FitsJ.set("DATE-OBS", JulianDate.dateTime(lastJD), "DATE_OBS of last exposure in stack", newHeader);
+        newHeader = FitsJ.set("DATE-OBS", "'" + JulianDate.dateTime(lastJD) + "'", "DATE_OBS of last exposure in stack", newHeader);
         newHeader = FitsJ.set("JD-AVG", String.valueOf(avgJD), "Julian Day of the observation mid-point.", newHeader);
-        newHeader = FitsJ.set("DATE-AVG", JulianDate.dateTime(avgJD), "", newHeader);
+        newHeader = FitsJ.set("DATE-AVG", "'" + JulianDate.dateTime(avgJD) + "'", "", newHeader);
 
         // Update BITPIX
         var newBitpix = ImageType.getType(projImage.getProcessor()).getExpectedBitpix();

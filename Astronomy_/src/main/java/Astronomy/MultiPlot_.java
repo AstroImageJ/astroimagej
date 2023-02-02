@@ -7,6 +7,7 @@ import flanagan.analysis.Regression;
 import flanagan.math.Minimization;
 import flanagan.math.MinimizationFunction;
 import ij.*;
+import ij.astro.io.prefs.Property;
 import ij.astro.types.Pair;
 import ij.astro.util.PdfPlotOutput;
 import ij.astro.util.UIHelper;
@@ -852,6 +853,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     private static double[] outBinRms;
     private static boolean saveSeeingProfileStack;
     private static String seeingProfileStackSuffix;
+    private static Property<Integer> dotSize = new Property<>(4, "plot.", "", MultiPlot_.class);
+    private static Property<Integer> binnedDotSize = new Property<>(8, "plot.", "", MultiPlot_.class);
 
     public void run(String inTableNamePlusOptions) {
         boolean useAutoAstroDataUpdate = false;
@@ -3544,7 +3547,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
                 plot.setColor(binDisplay[curve] ? Color.GRAY : color[curve]);
 
-                if (binDisplay[curve] || marker[curve] == ij.gui.Plot.DOT) { plot.setLineWidth(4); } else plot.setLineWidth(1);
+                if (binDisplay[curve] || marker[curve] == ij.gui.Plot.DOT) { plot.setLineWidth(dotSize.get()); } else plot.setLineWidth(1);
 
                 plot.addPoints(Arrays.copyOf(x[curve], nn[curve]), Arrays.copyOf(y[curve], nn[curve]), binDisplay[curve] ? Plot.DOT : marker[curve]);
 
@@ -3578,7 +3581,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         var pts = binnedData.first();
 
                         plot.setColor(color[curve]);
-                        if (marker[curve] == ij.gui.Plot.DOT) { plot.setLineWidth(8); } else plot.setLineWidth(2);
+                        if (marker[curve] == ij.gui.Plot.DOT) { plot.setLineWidth(binnedDotSize.get()); } else plot.setLineWidth(2);
                         plot.addPoints(pts.x(), pts.y(), marker[curve]);
 
                         // Calculate binned RMS
@@ -3804,7 +3807,11 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             for (int curve = 0; curve < maxCurves; curve++) {
                 if (plotY[curve]) {
                     plot.setColor(color[curve]);
-                    if (marker[curve] == ij.gui.Plot.DOT) { plot.setLineWidth(8); } else plot.setLineWidth(2);
+                    if (marker[curve] == Plot.DOT) {
+                        plot.setLineWidth(4 * dotSize.get());
+                    } else {
+                        plot.setLineWidth(dotSize.get());
+                    }
                     if (curve == firstCurve) {
                         xx[0] = x[curve][boldedDatum];
                         yy[0] = y[curve][boldedDatum];
@@ -7898,6 +7905,12 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
 //                preferencesmenu.addSeparator();
         mainmenubar.add(yaxismenu);
+
+        var display = new JMenu("Style");
+        var size = new JMenuItem("Symbol size");
+        size.addActionListener($ -> changeDisplaySettings());
+        display.add(size);
+        mainmenubar.add(display);
 
         JMenu helpmenu = new JMenu("Help");
         JMenuItem helpmenuitem = new JMenuItem("General help...");
@@ -17379,6 +17392,38 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         if (gd.wasOKed()) {
             if (saveAllPNG) { saveAll("png", true); } else saveAll("jpg", true);
         }
+    }
+
+    static void changeDisplaySettings() {
+        var win = new JFrame("Display settings");
+        var panel = new JPanel(new GridBagLayout());
+        var c = new GridBagConstraints();
+
+        var label = new JLabel("Unbinned dot size");
+        var control = new JSpinner(new SpinnerNumberModel(dotSize.get().intValue(), 1, 15, 1));
+        control.addChangeListener($ -> {
+            dotSize.set(((Integer) control.getValue()));
+            updatePlot();
+        });
+        panel.add(label, c);
+        panel.add(control, c);
+        c.gridy++;
+        c.gridy++;
+
+        label = new JLabel("Binned dot size");
+        var control2 = new JSpinner(new SpinnerNumberModel(binnedDotSize.get().intValue(), 1, 15, 1));
+        control2.addChangeListener($ -> {
+            binnedDotSize.set(((Integer) control2.getValue()));
+            updatePlot();
+        });
+        panel.add(label, c);
+        panel.add(control2, c);
+
+        panel.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
+
+        win.add(panel);
+        win.pack();
+        win.setVisible(true);
     }
 
 

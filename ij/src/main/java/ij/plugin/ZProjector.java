@@ -306,6 +306,8 @@ public class ZProjector implements PlugIn {
     		sliceCount++;
 		if (method==MEDIAN_METHOD) {
 			projImage = doMedianProjection();
+			// Merge Fits headers
+			mergeFitsHeaders(method, startSlice, stopSlice, increment, imp, projImage);
 			return;
 		} 
 		

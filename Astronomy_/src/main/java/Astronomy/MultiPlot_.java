@@ -3808,7 +3808,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 if (plotY[curve]) {
                     plot.setColor(color[curve]);
                     if (marker[curve] == Plot.DOT) {
-                        plot.setLineWidth(4 * dotSize.get());
+                        plot.setLineWidth(2 * dotSize.get());
                     } else {
                         plot.setLineWidth(dotSize.get());
                     }
@@ -17419,7 +17419,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         panel.add(label, c);
         panel.add(control2, c);
 
-        panel.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
+        panel.setBorder(BorderFactory.createEmptyBorder(20,30,20,30));
 
         win.add(panel);
         win.pack();

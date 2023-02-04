@@ -855,6 +855,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     private static String seeingProfileStackSuffix;
     private static Property<Integer> dotSize = new Property<>(4, "plot.", "", MultiPlot_.class);
     private static Property<Integer> binnedDotSize = new Property<>(8, "plot.", "", MultiPlot_.class);
+    private static Property<Integer> boldedDotSize = new Property<>(6, "plot.", "", MultiPlot_.class);
 
     public void run(String inTableNamePlusOptions) {
         boolean useAutoAstroDataUpdate = false;
@@ -3808,7 +3809,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 if (plotY[curve]) {
                     plot.setColor(color[curve]);
                     if (marker[curve] == Plot.DOT) {
-                        plot.setLineWidth(2 * dotSize.get());
+                        plot.setLineWidth(boldedDotSize.get());
                     } else {
                         plot.setLineWidth(dotSize.get());
                     }
@@ -10702,6 +10703,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         }
 
         subFrame.add(subscrollpane);
+        subFrame.revalidate();
         subFrame.pack();
         subFrame.setResizable(true);
 
@@ -17418,6 +17420,17 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         });
         panel.add(label, c);
         panel.add(control2, c);
+        c.gridy++;
+        c.gridy++;
+
+        label = new JLabel("Bolded dot size");
+        var control3 = new JSpinner(new SpinnerNumberModel(boldedDotSize.get().intValue(), 1, 15, 1));
+        control3.addChangeListener($ -> {
+            boldedDotSize.set(((Integer) control3.getValue()));
+            updatePlot();
+        });
+        panel.add(label, c);
+        panel.add(control3, c);
 
         panel.setBorder(BorderFactory.createEmptyBorder(20,30,20,30));
 

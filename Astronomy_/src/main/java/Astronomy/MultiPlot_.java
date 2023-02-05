@@ -17436,6 +17436,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         win.add(panel);
         win.pack();
+        UIHelper.setCenteredOnScreen(win, mainFrame);
         win.setVisible(true);
     }
 

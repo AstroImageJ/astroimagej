@@ -855,7 +855,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     private static String seeingProfileStackSuffix;
     private static Property<Integer> dotSize = new Property<>(4, "plot.", "", MultiPlot_.class);
     private static Property<Integer> binnedDotSize = new Property<>(8, "plot.", "", MultiPlot_.class);
-    private static Property<Integer> boldedDotSize = new Property<>(6, "plot.", "", MultiPlot_.class);
+    private static Property<Integer> boldedDotSize = new Property<>(12, "plot.", "", MultiPlot_.class);
 
     public void run(String inTableNamePlusOptions) {
         boolean useAutoAstroDataUpdate = false;

@@ -71,6 +71,7 @@ import java.util.stream.IntStream;
  */
 @SuppressWarnings("SpellCheckingInspection")
 public class MultiPlot_ implements PlugIn, KeyListener {
+    static double defaultTcFitStep = 0.04;
     static boolean panelsUpdating;
     static String title;
     static double titlePosX;
@@ -593,7 +594,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static int[] detrendVarDisplayed;
     static int[] nFitTrim;
     static int maxColumnLength;
-    static double vMarker1Value = 0.5, vMarker2Value = 0.7,defaultTcFitStep = 0.1;
+    static double vMarker1Value = 0.5, vMarker2Value = 0.7;
     static double xStep = 0.001;
     static double T0Step = 0.001, periodStep = 0.0001, durationStep = 0.01;
     static double dMarker1Value = 0.3, dMarker2Value = 0.5, dMarker3Value = 0.7, dMarker4Value = 0.9;

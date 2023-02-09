@@ -6580,6 +6580,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                     stackPixelPlotWin = stackPixelPlot.show();
                     stackPlotWindowLocation.locationSavingWindow(stackPixelPlotWin);
                 }
+                stackPixelPlotWin.getImagePlus().setPlot(stackPixelPlot);
                 stackPixelPlot.update();
             }
         }

@@ -291,7 +291,7 @@ public class PdfPlotOutput {
                     i2 = (int) Math.floor(Math.max(plot.xMin, plot.xMax) / mstep + 1.e-10);
                     for (int i = i1; i <= i2; i++) {
                         double v = i * mstep;
-                        double x = Math.round((v - plot.xMin) * plot.xScale) + leftMargin;
+                        double x = /*Math.round*/((v - plot.xMin) * plot.xScale) + leftMargin;
                         g.draw(new Line2D.Double(x, y1, x, y1 + plot.sc(plot.minorTickLength)));
                         g.draw(new Line2D.Double(x, y2, x, y2 - plot.sc(plot.minorTickLength)));
                     }
@@ -303,7 +303,7 @@ public class PdfPlotOutput {
                         for (int m = 2; m < 10; m++) {
                             double v = i + Math.log10(m);
                             if (v > Math.min(plot.xMin, plot.xMax) && v < Math.max(plot.xMin, plot.xMax)) {
-                                double x = Math.round((v - plot.xMin) * plot.xScale) + leftMargin;
+                                double x = /*Math.round*/((v - plot.xMin) * plot.xScale) + leftMargin;
                                 g.draw(new Line2D.Double(x, y1, x, y1 + plot.sc(plot.minorTickLength)));
                                 g.draw(new Line2D.Double(x, y2, x, y2 - plot.sc(plot.minorTickLength)));
                                 if (m <= minorNumberLimit)
@@ -414,7 +414,7 @@ public class PdfPlotOutput {
                     i2 = (int) Math.floor(Math.max(plot.yMin, plot.yMax) / mstep + 1.e-10);
                     for (int i = i1; i <= i2; i++) {
                         double v = i * mstep;
-                        double y = topMargin + frameHeight - (int) Math.round((v - plot.yMin) * plot.yScale);
+                        double y = topMargin + frameHeight - /*(int) Math.round*/((v - plot.yMin) * plot.yScale);
                         g.draw(new Line2D.Double(x1, y, x1 + plot.sc(plot.minorTickLength), y));
                         g.draw(new Line2D.Double(x2, y, x2 - plot.sc(plot.minorTickLength), y));
                     }
@@ -427,7 +427,7 @@ public class PdfPlotOutput {
                         for (int m = 2; m < 10; m++) {
                             double v = i + Math.log10(m);
                             if (v > Math.min(plot.yMin, plot.yMax) && v < Math.max(plot.yMin, plot.yMax)) {
-                                double y = topMargin + frameHeight - (int) Math.round((v - plot.yMin) * plot.yScale);
+                                double y = topMargin + frameHeight - /*(int) Math.round*/((v - plot.yMin) * plot.yScale);
                                 g.draw(new Line2D.Double(x1, y, x1 + plot.sc(plot.minorTickLength), y));
                                 g.draw(new Line2D.Double(x2, y, x2 - plot.sc(plot.minorTickLength), y));
                                 if (m <= minorNumberLimit) {
@@ -639,9 +639,11 @@ public class PdfPlotOutput {
         g.setStroke(stroke);
         setLineWidth(plot.sc(plotObject.getLineWidth()));
         final var type = plotObject.getType();
+        var mask = (Rectangle)plot.frame.clone();
+        mask.grow(-1, -1);
         switch (type) {
             case IPlotObject.XY_DATA:
-                g.setClip(plot.frame);
+                g.setClip(mask);
                 int nPoints = Math.min(plotObject.getxValues().length, plotObject.getyValues().length);
 
                 if (plotObject.getShape() == BAR || plotObject.getShape() == SEPARATED_BAR)
@@ -691,7 +693,7 @@ public class PdfPlotOutput {
                 g.setClip(null);
                 break;
             case IPlotObject.LINE:
-                g.setClip(plot.frame);
+                g.setClip(mask);
                 g.draw(new Line2D.Double(plot.scaleXtoPxl(plotObject.getX()),
                         plot.scaleYtoPxl(plotObject.getY()),
                         plot.scaleXtoPxl(plotObject.getxEnd()),
@@ -699,7 +701,7 @@ public class PdfPlotOutput {
                 g.setClip(null);
                 break;
             case IPlotObject.NORMALIZED_LINE:
-                g.setClip(plot.frame);
+                g.setClip(mask);
                 double ix1 = leftMargin + (int) (plotObject.getX() * frameWidth);
                 double iy1 = topMargin + (int) (plotObject.getY() * frameHeight);
                 double ix2 = leftMargin + (int) (plotObject.getxEnd() * frameWidth);
@@ -708,7 +710,7 @@ public class PdfPlotOutput {
                 g.setClip(null);
                 break;
             case IPlotObject.DOTTED_LINE:
-                g.setClip(plot.frame);
+                g.setClip(mask);
                 ix1 = plot.scaleXtoPxl(plotObject.getX());
                 iy1 = plot.scaleYtoPxl(plotObject.getY());
                 ix2 = plot.scaleXtoPxl(plotObject.getxEnd());

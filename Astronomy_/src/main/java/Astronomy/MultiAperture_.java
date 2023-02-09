@@ -831,7 +831,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         return true;
     }
 
-    public static void addApertureAsOld(String ra, String dec, double x, double y) {
+    public static void addApertureAsOld(String ra, String dec, double x, double y, boolean centroid) {
         var xS = Double.toString(x);
         var yS = Double.toString(y);
 
@@ -842,7 +842,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         addOption(MultiAperture_.PREFS_ABSMAGAPERTURES, Double.toString(0));
         addOption(MultiAperture_.PREFS_ISREFSTAR, "false");
         addOption(MultiAperture_.PREFS_ISALIGNSTAR, "false");
-        addOption(MultiAperture_.PREFS_CENTROIDSTAR, "false");
+        addOption(MultiAperture_.PREFS_CENTROIDSTAR, Boolean.toString(centroid));
     }
 
     private static void addOption(String opt, String addition) {

@@ -243,7 +243,7 @@ public class PdfPlotOutput {
 
                 for (int i = 0; i <= (i2 - i1); i++) {
                     double v = (i + i1) * step;
-                    double x = Math.round((v - plot.xMin) * plot.xScale) + leftMargin;
+                    double x = /*Math.round*/((v - plot.xMin) * plot.xScale) + leftMargin;
 
                     if (xCats != null) {
                         int index = (int) v;
@@ -364,7 +364,7 @@ public class PdfPlotOutput {
                 }
                 for (int i = i1; i <= i2; i++) {
                     double v = step == 0 ? plot.yMin : i * step;
-                    double y = topMargin + frameHeight - (int) Math.round((v - plot.yMin) * plot.yScale);
+                    double y = topMargin + frameHeight - /*(int) Math.round*/((v - plot.yMin) * plot.yScale);
 
                     if (yCats != null) {
                         int index = (int) v;
@@ -1039,28 +1039,21 @@ public class PdfPlotOutput {
         // Create dummy object to get sizing right
         var s = g.getStroke().createStrokedShape(new Ellipse2D.Double(0, 0, 1, 1));
         double r = s.getBounds().height;
-        double xmin = xcenter - r + 0.5, ymin = ycenter - r + 0.5;
+        double xmin = xcenter - (r/2d) /*+ 0.5*/, ymin = ycenter - (r/2d) /*+ 0.5*/;
         double xmax = xmin + lineWidth, ymax = ymin + lineWidth;
-
-        r -= 0.5;
         if (((int) r) == 0) r = 1;
         g.fill(new Ellipse2D.Double(xmin, ymin, r, r));
     }
 
     void drawCircle(Graphics2D g, double xcenter, double ycenter, double radius, boolean fill) {
         double r = radius;
-        int xmin = (int) (xcenter - r + 0.5), ymin = (int) (ycenter - r + 0.5);
-        int xmax = xmin + lineWidth, ymax = ymin + lineWidth;
-        // draw edge dot
-        double r2 = r * r;
-        r -= 0.5;
-        double xoffset = xmin + r, yoffset = ymin + r;
-        double xx, yy;
-        if (((int) r2) == 0) r2 = 1;
+        if (((int) r) == 0) r = 0.5;
+        double xmin =  (xcenter - r), ymin = (ycenter - r);
+        double r2 = 2 * r;
         if (fill) {
-            g.fillOval(xmin, ymin, (int) (r2), (int) (r2));
+            g.fill(new Ellipse2D.Double(xmin, ymin, r2, r2));
         } else {
-            g.drawOval(xmin, ymin, (int) (r2), (int) (r2));
+            g.draw(new Ellipse2D.Double(xmin, ymin, r2, r2));
         }
     }
 

@@ -847,10 +847,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
     private static void addOption(String opt, String addition) {
         var old = Prefs.get(opt, "");
-        if (!"".equals(old)) {
+        /*if (!"".equals(old)) {
             addition = ","+addition;
-        }
-        Prefs.set(opt, old + addition);
+        }*/
+        Prefs.set(opt, /*old + */addition);
     }
 
     /**

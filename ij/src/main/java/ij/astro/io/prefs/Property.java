@@ -1,8 +1,14 @@
 package ij.astro.io.prefs;
 
+import ij.IJ;
 import ij.Prefs;
+import ij.astro.util.UIHelper;
 
 import java.awt.*;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.lang.reflect.Field;
 import java.util.HashSet;
 import java.util.function.Function;
@@ -113,6 +119,28 @@ public class Property<T> {
 
     public void addListener(PropertyChangeListener<T> listener) {
         listeners.add(listener);
+    }
+
+    public void locationSavingWindow(Frame window) {
+        if (type != Point.class) {
+            return;
+        }
+        window.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                set((T) e.getWindow().getLocation());
+            }});
+        window.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentMoved(ComponentEvent e) {
+                set((T) e.getComponent().getLocationOnScreen());
+            }
+        });
+        if (hasSaved()) {
+            window.setLocation((Point) get());
+        } else {
+            UIHelper.setCenteredOnScreen(window, IJ.getInstance());
+        }
     }
 
     private void loadProperty() {

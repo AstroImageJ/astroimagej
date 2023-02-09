@@ -857,6 +857,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     private static Property<Integer> dotSize = new Property<>(4, "plot.", "", MultiPlot_.class);
     private static Property<Integer> binnedDotSize = new Property<>(8, "plot.", "", MultiPlot_.class);
     private static Property<Integer> boldedDotSize = new Property<>(12, "plot.", "", MultiPlot_.class);
+    private static Property<Boolean> drawAijVersion = new Property<>(true, "plot.", "", MultiPlot_.class);
 
     public void run(String inTableNamePlusOptions) {
         boolean useAutoAstroDataUpdate = false;
@@ -4074,12 +4075,14 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             plotImageCanvas.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
         }
 
-        plot.changeFont(new java.awt.Font("Dialog", java.awt.Font.PLAIN, 12));
-        plot.setJustification(Plot.BOTTOM_RIGHT);
-        var wid = plotImage.getImage().getGraphics().getFontMetrics(plot.getCurrentFont()).stringWidth("AIJ " + IJ.getAstroVersion().split("[+]")[0]);
-        var pWid = plot.getSize().getWidth();
-        var h = plot.getSize().getHeight();
-        plot.addLabel((pWid - wid - 10)/pWid, (h + 43)/h, "AIJ " + IJ.getAstroVersion().split("[+]")[0]);
+        drawAijVersion.ifProp(() -> {
+            plot.changeFont(new java.awt.Font("Dialog", java.awt.Font.PLAIN, 12));
+            plot.setJustification(Plot.BOTTOM_RIGHT);
+            var wid = plotImage.getImage().getGraphics().getFontMetrics(plot.getCurrentFont()).stringWidth("AIJ " + IJ.getAstroVersion().split("[+]")[0]);
+            var pWid = plot.getSize().getWidth();
+            var h = plot.getSize().getHeight();
+            plot.addLabel((pWid - wid - 10)/pWid, (h + 43)/h, "AIJ " + IJ.getAstroVersion().split("[+]")[0]);
+        });
 
         updatePlotPos();
 
@@ -17432,6 +17435,16 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         });
         panel.add(label, c);
         panel.add(control3, c);
+
+        c.gridy++;
+        c.gridy++;
+
+        var control4 = new JCheckBox("Add AIJ version to plot", drawAijVersion.get());
+        control4.addChangeListener($ -> {
+            drawAijVersion.set(control4.isSelected());
+            updatePlot();
+        });
+        panel.add(control4, c);
 
         panel.setBorder(BorderFactory.createEmptyBorder(20,30,20,30));
 

@@ -9,10 +9,7 @@ import ij.astro.io.prefs.Property;
 import ij.astro.logging.AIJLogger;
 import ij.astro.util.FitsExtensionUtil;
 import ij.astro.util.UIHelper;
-import ij.gui.GenericDialog;
-import ij.gui.Roi;
-import ij.gui.StackWindow;
-import ij.gui.Toolbar;
+import ij.gui.*;
 import ij.io.OpenDialog;
 import ij.io.SaveDialog;
 import ij.measure.Calibration;
@@ -3769,6 +3766,11 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                 }
 //                        IJ.log(label);
                 addAnnotateRoi(imp, true, false, true, false, pixel[0], pixel[1], radius, label, colorWCS, false);
+
+                if ((e.getModifiers() & MouseEvent.SHIFT_MASK) != 0) {
+                    MultiAperture_.addApertureAsOld(RATextField.getText(), DecTextField.getText(), pixel[0], pixel[1]);
+                }
+
                 imp.draw();
             }
         }

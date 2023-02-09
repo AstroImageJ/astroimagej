@@ -6,6 +6,7 @@ import ij.IJ;
 import ij.ImagePlus;
 import ij.Prefs;
 import ij.WindowManager;
+import ij.astro.io.prefs.Property;
 import ij.astro.logging.AIJLogger;
 import ij.gui.GenericDialog;
 import ij.gui.PlotWindow;
@@ -296,6 +297,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     private boolean suggestionRunning;
     private Seeing_Profile sp;
     private List<Seeing_Profile.ApRadii> stackRadii = new ArrayList<>();
+    private static final Property<Boolean> updateImageDisplay = new Property<>(true, MultiAperture_.class);
 
 //	public static double RETRY_RADIUS = 3.0;
 
@@ -827,6 +829,28 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         ip = imp.getProcessor();
         imp.killRoi();
         return true;
+    }
+
+    public static void addApertureAsOld(String ra, String dec, double x, double y) {
+        var xS = Double.toString(x);
+        var yS = Double.toString(y);
+
+        addOption(MultiAperture_.PREFS_XAPERTURES, xS);
+        addOption(MultiAperture_.PREFS_YAPERTURES, yS);
+        addOption(MultiAperture_.PREFS_RAAPERTURES, ra);
+        addOption(MultiAperture_.PREFS_DECAPERTURES, dec);
+        addOption(MultiAperture_.PREFS_ABSMAGAPERTURES, Double.toString(0));
+        addOption(MultiAperture_.PREFS_ISREFSTAR, "false");
+        addOption(MultiAperture_.PREFS_ISALIGNSTAR, "false");
+        addOption(MultiAperture_.PREFS_CENTROIDSTAR, "false");
+    }
+
+    private static void addOption(String opt, String addition) {
+        var old = Prefs.get(opt, "");
+        if ("".equals(old)) {
+            addition = ","+addition;
+        }
+        Prefs.set(opt, old + addition);
     }
 
     /**
@@ -2628,19 +2652,25 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 asw = (AstroStackWindow) imp.getWindow();
                 ac = (AstroCanvas) imp.getCanvas();
 
-                // This fixes the counter subtitle of the stack window not updating as the images progress
-                asw.update(asw.getGraphics());
+                updateImageDisplay.ifProp(() -> {
+                    // This fixes the counter subtitle of the stack window not updating as the images progress
+                    asw.update(asw.getGraphics());
 
-                // This fixes histogram not updating
-                asw.updatePanelValues(false);
+                    // This fixes histogram not updating
+                    asw.updatePanelValues(false);
+                });
+
                 asw.updateWCS();
-                asw.updateCalibration();
+                updateImageDisplay.ifProp(() -> {
+                    asw.updateCalibration();
+                    asw.setAstroProcessor(false);
 
-                asw.setAstroProcessor(false);
-
-                // Fixes apertures not properly being drawn/cleared when autoNupEleft is disabled
-                //KC: but I don't understand why
-                asw.repaintAstroCanvas();
+                    // Fixes apertures not properly being drawn/cleared when autoNupEleft is disabled
+                    //KC: but I don't understand why
+                    asw.repaintAstroCanvas();
+                }, () -> {
+                    asw.updateWCS();
+                });
 
                 //waitForEventQueue();
 
@@ -2653,7 +2683,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 hasWCS = false;
                 wcs = null;
             }
-            ip = imp.getProcessor();
+            ip = imp.getStack().getProcessor(slice);
 
             processImage();
             if (cancelled || IJ.escapePressed()) {
@@ -3940,8 +3970,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         final var list2 = new ArrayList<Consumer<Boolean>>();
         list2.add(b -> updatePlot = b);
         list2.add(b -> showHelp = b);
-        var bottomChecks = gd.addCheckboxGroup(1, 2, new String[]{"Update table and plot while running", "Show help panel during aperture selection"},
-                new boolean[]{updatePlot, showHelp}, list2);
+        list2.add(updateImageDisplay::set);
+        var bottomChecks = gd.addCheckboxGroup(2, 2, new String[]{"Update table and plot while running", "Show help panel during aperture selection", "Update image display while running"},
+                new boolean[]{updatePlot, showHelp, updateImageDisplay.get()}, list2);
         bottomChecks.subComponents().get(0).setToolTipText("<html>Multi-aperture will run faster with this option disabled,<br>" +
                 "but the table and plot displays will only update once when the Multi-Aperture run has finished.</html>");
         bottomChecks.subComponents().get(1).setToolTipText("This extra panel is useful to new users that need additional keyboard/mouse help when placing apertures.");

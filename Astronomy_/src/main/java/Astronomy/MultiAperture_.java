@@ -288,7 +288,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     boolean doubleClick = false;
     TimerTask doubleClickTask = null;
     java.util.Timer doubleClickTaskTimer = null;
-    DecimalFormat uptoEightPlaces = new DecimalFormat("#####0.########", IJU.dfs);
+    static DecimalFormat uptoEightPlaces = new DecimalFormat("#####0.########", IJU.dfs);
     double max = 0;
     private double gaussRadius = 3.5;
     private boolean t1Placed = false;
@@ -831,14 +831,14 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         return true;
     }
 
-    public static void addApertureAsOld(String ra, String dec, double x, double y, boolean centroid) {
+    public static void addApertureAsOld(double ra, double dec, double x, double y, boolean centroid) {
         var xS = Double.toString(x);
         var yS = Double.toString(y);
 
         addOption(MultiAperture_.PREFS_XAPERTURES, xS);
         addOption(MultiAperture_.PREFS_YAPERTURES, yS);
-        addOption(MultiAperture_.PREFS_RAAPERTURES, ra);
-        addOption(MultiAperture_.PREFS_DECAPERTURES, dec);
+        addOption(MultiAperture_.PREFS_RAAPERTURES, uptoEightPlaces.format(ra));
+        addOption(MultiAperture_.PREFS_DECAPERTURES, uptoEightPlaces.format(dec));
         addOption(MultiAperture_.PREFS_ABSMAGAPERTURES, Double.toString(0));
         addOption(MultiAperture_.PREFS_ISREFSTAR, "false");
         addOption(MultiAperture_.PREFS_ISALIGNSTAR, "false");

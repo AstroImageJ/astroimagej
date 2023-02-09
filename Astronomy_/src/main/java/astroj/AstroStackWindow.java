@@ -1869,6 +1869,14 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         RATextField.setMinimumSize(valueDimMin);
         RATextField.setEditable(goodWCS);
         RATextField.addActionListener(this);
+        RATextField.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_ENTER && ((e.getModifiers() & MouseEvent.SHIFT_MASK) != 0 || (e.getModifiers() & MouseEvent.CTRL_MASK) != 0)) {
+                    RATextField.postActionEvent();
+                }
+            }
+        });
         topPanelBC.add(RATextField);
 
         JLabel DecLabel = new JLabel("DEC:");
@@ -3768,8 +3776,8 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
 //                        IJ.log(label);
                 addAnnotateRoi(imp, true, false, true, false, pixel[0], pixel[1], radius, label, colorWCS, false);
 
-                if ((e.getModifiers() & MouseEvent.SHIFT_MASK) != 0) {
-                    MultiAperture_.addApertureAsOld(RATextField.getText(), DecTextField.getText(), pixel[0], pixel[1]);
+                if ((e.getModifiers() & MouseEvent.SHIFT_MASK) != 0 || (e.getModifiers() & MouseEvent.CTRL_MASK) != 0) {
+                    MultiAperture_.addApertureAsOld(RATextField.getText(), DecTextField.getText(), pixel[0], pixel[1], (e.getModifiers() & MouseEvent.CTRL_MASK) != 0);
                 }
 
                 imp.draw();

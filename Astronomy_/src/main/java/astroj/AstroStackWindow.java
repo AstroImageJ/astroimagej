@@ -450,6 +450,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
     private final static Property<Boolean> plotStackPixelValues = new Property<>(false, AstroStackWindow.class);
     private Plot stackPixelPlot = null;
     private PlotWindow stackPixelPlotWin = null;
+    private Property<Point> stackPlotWindowLocation = new Property<>(new Point(), AstroStackWindow.class);
 
     public AstroStackWindow(ImagePlus imp, AstroCanvas ac, boolean refresh, boolean resize) {
 
@@ -6550,6 +6551,22 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                 stackPixelPlot.setLimitsToFit(true);
                 if (stackPixelPlotWin == null) {
                     stackPixelPlotWin = stackPixelPlot.show();
+                    stackPixelPlotWin.addWindowListener(new WindowAdapter() {
+                        @Override
+                        public void windowClosing(WindowEvent e) {
+                            stackPlotWindowLocation.set(e.getWindow().getLocation());
+                        }});
+                    stackPixelPlotWin.addComponentListener(new ComponentAdapter() {
+                        @Override
+                        public void componentMoved(ComponentEvent e) {
+                            stackPlotWindowLocation.set(e.getComponent().getLocationOnScreen());
+                        }
+                    });
+                    if (stackPlotWindowLocation.hasSaved()) {
+                        stackPixelPlotWin.setLocation(stackPlotWindowLocation.get());
+                    } else {
+                        UIHelper.setCenteredOnScreen(stackPixelPlotWin, this);
+                    }
                 }
                 stackPixelPlot.update();
             });

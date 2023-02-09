@@ -6543,7 +6543,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                 if (stackPixelPlot == null) {
                     stackPixelPlot = new Plot("Pixel Values", "Slice", "Value");
                 }
-                stackPixelPlot.setXYLabels("Slice", "Value at (.%f, .2%f)".formatted(imageX + Centroid.PIXELCENTER, (double) imp.getHeight() - imageY + Centroid.PIXELCENTER));
+                stackPixelPlot.setXYLabels("Slice", "Value at (x= %,.2f, y= %,.2f)".formatted(imageX + Centroid.PIXELCENTER, (double) imp.getHeight() - imageY + Centroid.PIXELCENTER));
                 stackPixelPlot.allPlotObjects.clear();
                 stackPixelPlot.add("dot", IntStream.range(1, stack.size() + 1)
                         .mapToDouble(n -> stack.getProcessor(n).getf((int) imageX, (int) imageY)).toArray());

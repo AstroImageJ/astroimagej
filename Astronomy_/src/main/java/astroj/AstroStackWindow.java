@@ -5,6 +5,7 @@ import Astronomy.MultiPlot_;
 import Astronomy.postprocess.PhotometricDebayer;
 import bislider.com.visutools.nav.bislider.*;
 import ij.*;
+import ij.astro.io.prefs.Property;
 import ij.astro.logging.AIJLogger;
 import ij.astro.util.FitsExtensionUtil;
 import ij.astro.util.UIHelper;
@@ -40,6 +41,7 @@ import java.util.List;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
+import java.util.stream.IntStream;
 
 
 /**
@@ -448,6 +450,9 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
 
     private boolean hasNotified;
     private final Set<Consumer<Void>> stackListeners = new HashSet<>();
+    private final static Property<Boolean> plotStackPixelValues = new Property<>(false, AstroStackWindow.class);
+    private Plot stackPixelPlot = null;
+    private PlotWindow stackPixelPlotWin = null;
 
     public AstroStackWindow(ImagePlus imp, AstroCanvas ac, boolean refresh, boolean resize) {
 
@@ -1180,6 +1185,11 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         logAutoClose.addItemListener(e -> Prefs.set(AIJLogger.CERTAIN_LOGS_AUTO_CLOSE.substring(1), e.getStateChange() == ItemEvent.SELECTED));
         preferencesMenu.add(logInNewWindows);
         preferencesMenu.add(logAutoClose);
+
+        preferencesMenu.addSeparator();
+        var plotPixelVals = new CheckboxMenuItem("Plot pixel values of the stack", plotStackPixelValues.get());
+        plotPixelVals.addItemListener(e -> plotStackPixelValues.set(plotPixelVals.getState()));
+        preferencesMenu.add(plotPixelVals);
 
         mainMenuBar.add(preferencesMenu);
 
@@ -6525,6 +6535,22 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             }
             lengthLabel.setText("Int Cnts:");
             writeNumericPanelField(photom.sourceBrightness(), lengthTextField);
+
+            var stack = imp.getStack();
+            plotStackPixelValues.ifProp(() -> {
+                if (stackPixelPlot == null) {
+                    stackPixelPlot = new Plot("Pixel Values", "Slice", "Value");
+                }
+                stackPixelPlot.setXYLabels("Slice", "Value at (.%f, .2%f)".formatted(imageX + Centroid.PIXELCENTER, (double) imp.getHeight() - imageY + Centroid.PIXELCENTER));
+                stackPixelPlot.allPlotObjects.clear();
+                stackPixelPlot.add("dot", IntStream.range(1, stack.size() + 1)
+                        .mapToDouble(n -> stack.getProcessor(n).getf((int) imageX, (int) imageY)).toArray());
+                stackPixelPlot.setLimitsToFit(true);
+                if (stackPixelPlotWin == null) {
+                    stackPixelPlotWin = stackPixelPlot.show();
+                }
+                stackPixelPlot.update();
+            });
         }
     }
 

@@ -8109,9 +8109,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             setupArrays();
             getPreferences();
             if (subframeWasShowing) {
-                subscrollpane.removeAll();
-                subscrollpane = null;
-                subFrame.remove(subscrollpane);
                 showMoreCurvesJPanel();
                 repaintFrame(subFrame);
             }

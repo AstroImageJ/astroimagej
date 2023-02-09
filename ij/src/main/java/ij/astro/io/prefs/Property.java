@@ -122,6 +122,10 @@ public class Property<T> {
     }
 
     public void locationSavingWindow(Frame window) {
+        locationSavingWindow(window, IJ.getInstance());
+    }
+
+    public void locationSavingWindow(Frame window, Frame reference) {
         if (type != Point.class) {
             return;
         }
@@ -139,7 +143,7 @@ public class Property<T> {
         if (hasSaved()) {
             window.setLocation((Point) get());
         } else {
-            UIHelper.setCenteredOnScreen(window, IJ.getInstance());
+            UIHelper.setCenteredOnScreen(window, reference);
         }
     }
 

@@ -1157,6 +1157,10 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         showRedCrossHairCursorCB.addItemListener(this);
         preferencesMenu.add(showRedCrossHairCursorCB);
 
+        var plotPixelVals = new CheckboxMenuItem("Plot pixel values from all stack slices at mouse cursor (or hold <Control>)", plotStackPixelValues.get());
+        plotPixelVals.addItemListener(e -> plotStackPixelValues.set(plotPixelVals.getState()));
+        preferencesMenu.add(plotPixelVals);
+
         removeBackStarsCB = new CheckboxMenuItem("Ignore pixels > 2 sigma from mean in photometer background region", removeBackStars);
         removeBackStarsCB.addItemListener(this);
         preferencesMenu.add(removeBackStarsCB);
@@ -1183,11 +1187,6 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         logAutoClose.addItemListener(e -> Prefs.set(AIJLogger.CERTAIN_LOGS_AUTO_CLOSE.substring(1), e.getStateChange() == ItemEvent.SELECTED));
         preferencesMenu.add(logInNewWindows);
         preferencesMenu.add(logAutoClose);
-
-        preferencesMenu.addSeparator();
-        var plotPixelVals = new CheckboxMenuItem("Plot pixel values of the stack", plotStackPixelValues.get());
-        plotPixelVals.addItemListener(e -> plotStackPixelValues.set(plotPixelVals.getState()));
-        preferencesMenu.add(plotPixelVals);
 
         mainMenuBar.add(preferencesMenu);
 
@@ -1858,6 +1857,10 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         RALabel.setPreferredSize(labelDim);
         RALabel.setMaximumSize(labelDim);
         RALabel.setMinimumSize(labelDimMin);
+        RALabel.setToolTipText("<html>Shows Right Ascension (RA) at mouse pointer for images with WCS headers.<br>"+
+                "Type or paste RA and Dec values and press <Enter> to draw an ROI at the corresponding location in the image.<br>"+
+                "Hold <Shift> when pressing <Enter> to also create a centroided T1 aperture for Multi-Aperture.<br>"+
+                "Hold <Control> when pressing <Enter> to also create an uncentroided T1 aperture for Multi-Aperture.<br></html>");
         RALabel.setLabelFor(RATextField);
         topPanelBC.add(RALabel);
 
@@ -1867,6 +1870,10 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         RATextField.setPreferredSize(valueDim);
         RATextField.setMaximumSize(valueDim);
         RATextField.setMinimumSize(valueDimMin);
+        RATextField.setToolTipText("<html>Shows Right Ascension (RA) at mouse pointer for images with WCS headers.<br>"+
+                "Type or paste RA and Dec values and press <Enter> to draw an ROI at the corresponding location in the image.<br>"+
+                "Hold <Shift> when pressing <Enter> to also create a centroided T1 aperture for Multi-Aperture.<br>"+
+                "Hold <Control> when pressing <Enter> to also create an uncentroided T1 aperture for Multi-Aperture.<br></html>");
         RATextField.setEditable(goodWCS);
         RATextField.addActionListener(this);
         RATextField.addKeyListener(new KeyAdapter() {
@@ -1885,6 +1892,10 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         DecLabel.setPreferredSize(labelDim);
         DecLabel.setMaximumSize(labelDim);
         DecLabel.setMinimumSize(labelDimMin);
+        DecLabel.setToolTipText("<html>Shows Declination (Dec) at mouse pointer for images with WCS headers.<br>"+
+                "Type or paste RA and Dec values and press <Enter> to draw an ROI at the corresponding location in the image.<br>"+
+                "Hold <Shift> when pressing <Enter> to also create a centroided T1 aperture for Multi-Aperture.<br>"+
+                "Hold <Control> when pressing <Enter> to also create an uncentroided T1 aperture for Multi-Aperture.<br></html>");
         DecLabel.setLabelFor(DecTextField);
         topPanelBC.add(DecLabel);
 
@@ -1894,6 +1905,10 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         DecTextField.setPreferredSize(valueDim);
         DecTextField.setMaximumSize(valueDim);
         DecTextField.setMinimumSize(valueDimMin);
+        DecTextField.setToolTipText("<html>Shows Declination (Dec) at mouse pointer for images with WCS headers.<br>"+
+                "Type or paste RA and Dec values and press <Enter> to draw an ROI at the corresponding location in the image.<br>"+
+                "Hold <Shift> when pressing <Enter> to also create a centroided T1 aperture for Multi-Aperture.<br>"+
+                "Hold <Control> when pressing <Enter> to also create an uncentroided T1 aperture for Multi-Aperture.<br></html>");
         DecTextField.setEditable(goodWCS);
         DecTextField.addActionListener(this);
         topPanelBC.add(DecTextField);
@@ -6288,7 +6303,6 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         double imageY = ac.offScreenYD(e.getY());
         lastImageX = imageX;
         lastImageY = imageY;
-
         String lab;
         xy[0] = imageX;
         xy[1] = imageY;
@@ -6310,7 +6324,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         } else {
             lab = "";
         }
-        updateXYValue(imageX, imageY, NOT_DRAGGING);
+        updateXYValue(imageX, imageY, NOT_DRAGGING, e.isControlDown());
         prevImageX = lastImageX;
         prevImageY = lastImageY;
     }
@@ -6489,8 +6503,11 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         }
     }
 
-
     void updateXYValue(double imageX, double imageY, boolean dragging) {
+        updateXYValue(imageX, imageY, dragging, false);
+    }
+
+    void updateXYValue(double imageX, double imageY, boolean dragging, boolean controlKeyDown) {
         drawSubtitle();
         setValueTextField();
         ijXTextField.setText(fourPlaces.format(imageX));
@@ -6548,7 +6565,9 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             writeNumericPanelField(photom.sourceBrightness(), lengthTextField);
 
             var stack = imp.getStack();
-            plotStackPixelValues.ifProp(() -> {
+
+
+            if (controlKeyDown || plotStackPixelValues.get()) {
                 if (stackPixelPlot == null) {
                     stackPixelPlot = new Plot("Pixel Values", "Slice", "Value");
                 }
@@ -6562,7 +6581,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                     stackPlotWindowLocation.locationSavingWindow(stackPixelPlotWin);
                 }
                 stackPixelPlot.update();
-            });
+            }
         }
     }
 

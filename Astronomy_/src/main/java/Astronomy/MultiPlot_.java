@@ -8110,9 +8110,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             getPreferences();
             if (subframeWasShowing) {
                 subscrollpane.removeAll();
+                subscrollpane = null;
                 subFrame.remove(subscrollpane);
-                repaintFrame(subFrame);
                 showMoreCurvesJPanel();
+                repaintFrame(subFrame);
             }
             updatePlot(updateAllFits());
         });
@@ -10633,12 +10634,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         var mainsubpanel = new JPanel(new SpringLayout());
         mainsubpanel.addMouseMotionListener(panelMouseMotionListener);
 
-        if (subscrollpane == null) {
-            subscrollpane = new JScrollPane(mainsubpanel);
-        } else {
-            mainsubpanel = (JPanel) subscrollpane.getViewport().getView();
-            mainsubpanel.removeAll();
+        if (subscrollpane != null) {
+            subFrame.remove(subscrollpane);
         }
+        subscrollpane = new JScrollPane(mainsubpanel);
         subFrame.setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         subFrame.addWindowListener(new WindowAdapter() {
             @Override
@@ -10707,7 +10706,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         }
 
         subFrame.add(subscrollpane);
-        subFrame.revalidate();
         subFrame.pack();
         subFrame.setResizable(true);
 

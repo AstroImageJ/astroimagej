@@ -1157,7 +1157,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         showRedCrossHairCursorCB.addItemListener(this);
         preferencesMenu.add(showRedCrossHairCursorCB);
 
-        var plotPixelVals = new CheckboxMenuItem("Plot pixel values from all stack slices at mouse cursor (or hold <Control>)", plotStackPixelValues.get());
+        var plotPixelVals = new CheckboxMenuItem("Plot pixel values from all stack slices at mouse cursor (or hold <Shift><Contol>)", plotStackPixelValues.get());
         plotPixelVals.addItemListener(e -> plotStackPixelValues.set(plotPixelVals.getState()));
         preferencesMenu.add(plotPixelVals);
 
@@ -6324,7 +6324,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         } else {
             lab = "";
         }
-        updateXYValue(imageX, imageY, NOT_DRAGGING, e.isControlDown());
+        updateXYValue(imageX, imageY, NOT_DRAGGING, e.isShiftDown(), e.isControlDown());
         prevImageX = lastImageX;
         prevImageY = lastImageY;
     }
@@ -6504,10 +6504,10 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
     }
 
     void updateXYValue(double imageX, double imageY, boolean dragging) {
-        updateXYValue(imageX, imageY, dragging, false);
+        updateXYValue(imageX, imageY, dragging, false, false);
     }
 
-    void updateXYValue(double imageX, double imageY, boolean dragging, boolean controlKeyDown) {
+    void updateXYValue(double imageX, double imageY, boolean dragging, boolean shiftKeyDown, boolean controlKeyDown) {
         drawSubtitle();
         setValueTextField();
         ijXTextField.setText(fourPlaces.format(imageX));
@@ -6567,7 +6567,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             var stack = imp.getStack();
 
 
-            if (controlKeyDown || plotStackPixelValues.get()) {
+            if ((shiftKeyDown && controlKeyDown) || plotStackPixelValues.get()) {
                 if (stackPixelPlot == null) {
                     stackPixelPlot = new Plot("Pixel Values", "Slice", "Value");
                 }

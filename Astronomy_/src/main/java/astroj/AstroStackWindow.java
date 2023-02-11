@@ -914,10 +914,8 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         fileMenu.addSeparator();
 
         MenuItem createNEBReportMenuItem = new MenuItem("Create NEB search reports and plots...");
-        createNEBReportMenuItem.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                Macro_Runner.runMacroFromJar(getClass().getClassLoader(), "Astronomy/NEBSearchMacro.txt", "");
-            }
+        createNEBReportMenuItem.addActionListener(e -> {
+            Executors.newSingleThreadExecutor().submit(() -> Macro_Runner.runMacroFromJar(getClass().getClassLoader(), "Astronomy/NEBSearchMacro.txt", ""));
         });
         fileMenu.add(createNEBReportMenuItem);
 

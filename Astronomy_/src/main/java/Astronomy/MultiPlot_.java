@@ -3531,22 +3531,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     }
 
                 }
-                if (((showErrors[curve] || operatorIndex[curve] == 6) && (hasErrors[curve] || hasOpErrors[curve]))) {
-                    plot.setLineWidth(2);
-                } else { plot.setLineWidth(1); }
-                plot.setColor(color[curve]);
-                if (xModel1[curve] != null && yModel1[curve] != null && xModel1[curve].length == yModel1[curve].length && detrendFitIndex[curve] != 9) {
-                    plot.addPoints(Arrays.copyOf(xModel1[curve], xModel1[curve].length), Arrays.copyOf(yModel1[curve], yModel1[curve].length), ij.gui.Plot.LINE);
-                }
-                if (xModel2[curve] != null && yModel2[curve] != null && xModel2[curve].length == yModel2[curve].length && (detrendFitIndex[curve] != 9 || showModel[curve])) {
-                    if (detrendFitIndex[curve] == 9) {
-                        plot.setLineWidth(((showErrors[curve] || operatorIndex[curve] == 6) && (hasErrors[curve] || hasOpErrors[curve])) ? modelLineWidth[curve] + 1 : modelLineWidth[curve]);
-                        plot.setColor(modelColor[curve]);
-                    }
-//                            IJ.log("xModel2["+curve+"].length="+xModel2[curve].length);
-//                            IJ.log("yModel2["+curve+"].length="+yModel2[curve].length);
-                    plot.addPoints(Arrays.copyOf(xModel2[curve], xModel2[curve].length), Arrays.copyOf(yModel2[curve], yModel2[curve].length), ij.gui.Plot.LINE);
-                }
 
                 plot.setColor(binDisplay[curve] ? Color.GRAY : color[curve]);
 
@@ -3616,6 +3600,21 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                             outBinRms[curve] = 1000*CurveFitter.calculateRms(curve, null, pts.err(), pts.err(), xModelBin, xModelBin, pts.y(), pts.err(), bestFit[curve], detrendYAverage[curve]);
                         }
                     }
+                }
+
+                if (((showErrors[curve] || operatorIndex[curve] == 6) && (hasErrors[curve] || hasOpErrors[curve]))) {
+                    plot.setLineWidth(2);
+                } else { plot.setLineWidth(1); }
+                plot.setColor(color[curve]);
+                if (xModel1[curve] != null && yModel1[curve] != null && xModel1[curve].length == yModel1[curve].length && detrendFitIndex[curve] != 9) {
+                    plot.addPoints(Arrays.copyOf(xModel1[curve], xModel1[curve].length), Arrays.copyOf(yModel1[curve], yModel1[curve].length), ij.gui.Plot.LINE);
+                }
+                if (xModel2[curve] != null && yModel2[curve] != null && xModel2[curve].length == yModel2[curve].length && (detrendFitIndex[curve] != 9 || showModel[curve])) {
+                    if (detrendFitIndex[curve] == 9) {
+                        plot.setLineWidth(((showErrors[curve] || operatorIndex[curve] == 6) && (hasErrors[curve] || hasOpErrors[curve])) ? modelLineWidth[curve] + 1 : modelLineWidth[curve]);
+                        plot.setColor(modelColor[curve]);
+                    }
+                    plot.addPoints(Arrays.copyOf(xModel2[curve], xModel2[curve].length), Arrays.copyOf(yModel2[curve], yModel2[curve].length), ij.gui.Plot.LINE);
                 }
 
                 if (lines[curve] && !(marker[curve] == ij.gui.Plot.LINE)) {

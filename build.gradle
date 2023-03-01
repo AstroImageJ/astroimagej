@@ -96,6 +96,7 @@ dependencies {
     implementation project(':Nom_Fits')
     implementation project(':ij')
     implementation project(':Astronomy_')
+    implementation project(':fitsio')
 
     // Use JUnit test framework
     testImplementation(platform('org.junit:junit-bom:5.9.1'))
@@ -416,6 +417,8 @@ List<String> readConfigFile() {
     args.add('-Daij.dev') // Always show full version metadata when running via dev
 
     logger.lifecycle("Launching with the following arguments: " + args as String)
+
+    //args.add("-Dsun.java2d.opengl=True")
 
     return args
 }

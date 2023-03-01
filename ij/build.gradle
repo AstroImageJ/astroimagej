@@ -9,6 +9,7 @@ dependencies {
     api 'de.rototor.pdfbox:graphics2d:0.38'
     api 'net.java.dev.jna:jna-platform:5.12.1'
     api fileTree(dir: "${rootDir}/aijLibs", include: '*.jar')
+    api project(path: ":fitsio"/*, configuration: 'minimizedJar'*/)//todo why are classes missing with minjar?
 }
 
 def mainClassName = 'ij.ImageJ'

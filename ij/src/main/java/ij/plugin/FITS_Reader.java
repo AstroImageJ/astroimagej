@@ -85,6 +85,31 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 
 		AIJLogger.setLogAutoCloses(Prefs.getBoolean(AIJLogger.CERTAIN_LOGS_AUTO_CLOSE, true));
 
+		if (true) {
+			try (com.astroimagej.fitsio.fits.Fits f = new com.astroimagej.fitsio.fits.Fits(Path.of(path))) {
+				f.hdus.stream().filter(h -> h instanceof com.astroimagej.fitsio.fits.ImageHDU)
+						.map(h -> (com.astroimagej.fitsio.fits.ImageHDU) h)
+						.filter(com.astroimagej.fitsio.fits.ImageHDU::hasImages)
+						.skip(0).findFirst().ifPresent(h -> {
+							de = 1;
+							wi = (int) h.getNAxis(1);
+							he = (int) h.getNAxis(2);
+							//twoDimensionalImageData2Processor(h.readImages());
+							var is = h.readImages();
+							fileType = "fit";
+							makeStackFrom3DData(is, is.length);//todo make this generic, capable of handling single image
+							var d = "";
+							for (String s : h.getHeader()) {//todo allsky missing date
+								d += s + "\n";
+							}
+							setProperty("Info", d);
+						});
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
+			return;
+		}
+
 		/*
 		 * Extract array of HDU from FITS file using nom.tam.fits
 		 * This also uses the old style FITS decoder to create a FileInfo.
@@ -231,7 +256,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	}
 
 	/**
-	 * Returns a newline-delimited concatenation of the header lines.
+	 * Returns a newline-delimited concatenation of the label lines.
 	 */
 	private String getHeaderInfo(BasicHDU<?> displayHdu) {
 		Header header = displayHdu.getHeader();
@@ -365,7 +390,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		}
 
 		if (hdu instanceof TableHDU<?> tableHDU) {
-			if (isTessCut(tableHDU) || isTessPostageStamp(hdus)) {
+			if (isTessCut(tableHDU) || isTessPostageStamp(hdus)) {//todo provide options to users for which col to use?
 				var data = (Object[]) tableHDU.getColumn("FLUX");
 				var hdr = convertHeaderForFfi(hdus[2].getHeader(), tableHDU);
 
@@ -451,7 +476,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	}
 
 	/**
-	 * Convert base image header for TESScut images to a 3D FITS image.
+	 * Convert base image label for TESScut images to a 3D FITS image.
 	 * <p>
 	 * Updates {@link FITS_Reader#wi}, {@link FITS_Reader#he}, and {@link FITS_Reader#de}
 	 */
@@ -488,7 +513,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			var hasErrors = false;
 
 			for (int i = 0; i < tableHDU.getNRows(); i++) {
-				hdr.setSimple(true); // Needed for MA to read the header data
+				hdr.setSimple(true); // Needed for MA to read the label data
 
 				// Delete previously added keys as hdr object is not a copy and is shared for all images
 				hdr.deleteKey("BJD_TDB");
@@ -687,7 +712,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			} else {
 				hdu = hdus[i];
 			}
-			// Skip null header
+			// Skip null label
 			if (hdu.getHeader().getIntValue(NAXIS) == 0) continue;
 
 			// Get the Header as a String
@@ -749,8 +774,8 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		var type = ImageType.getType(imageData);
 
 		var imgtmp = type.makeProcessor(wi, he);
-		var imgtab = type.processImageData(imageData, wi, he, bzero, bscale);
-		ip = conditionImageProcessor(imgtab, imgtmp);
+		//var imgtab = type.processImageData(imageData, wi, he, bzero, bscale);
+		ip = conditionImageProcessor(imageData, imgtmp);
 		this.setProcessor(fileName, ip);
 		return ip;
 	}

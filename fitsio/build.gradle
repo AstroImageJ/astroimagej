@@ -1,0 +1,40 @@
+plugins {
+    id 'java-library'
+    id "com.github.johnrengelman.shadow" version "7.1.2"
+}
+
+group 'com.astroimagej'
+version '1.0.0'
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
+    implementation 'com.github.jnr:jnr-ffi:2.2.13'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+configurations {
+    minimizedJar {
+        canBeConsumed = true
+        canBeResolved = false
+        // If you want this configuration to share the same dependencies, otherwise omit this line
+        extendsFrom implementation, runtimeOnly
+    }
+}
+
+// Minimizing an shadow JAR
+shadowJar {
+    minimize()
+}
+
+artifacts {
+    minimizedJar(shadowJar)
+}

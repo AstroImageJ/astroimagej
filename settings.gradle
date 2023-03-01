@@ -2,4 +2,5 @@ rootProject.name = 'AstroImageJ'
 include 'ij'
 include 'Astronomy_'
 include 'Nom_Fits'
+include 'fitsio'
 

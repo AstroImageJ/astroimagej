@@ -5,8 +5,8 @@ import ij.process.*;
 import java.util.function.BiFunction;
 
 public enum ImageType {
-    BYTE(ByteProcessor::new, byte[][].class) {
-        @Override
+    BYTE(ByteProcessor::new, byte[].class) {
+        /*@Override
         public Object processImageData(Object rawData, int width, int height, double bzero, double bscale) {
             if (rawData instanceof byte[][] values) {
                 final var pixelArray = new byte[width * height];
@@ -25,7 +25,7 @@ public enum ImageType {
             }
 
             throw new IllegalStateException("Incorrect raw data given to make an ImageProcessor");
-        }
+        }*/
 
         @Override
         public Object make2DArray(ImageProcessor ip, boolean useBZero) {
@@ -54,8 +54,8 @@ public enum ImageType {
             return 8;
         }
     },
-    SHORT(ShortProcessor::new, short[][].class) {
-        @Override
+    SHORT(ShortProcessor::new, short[].class) {
+        /*@Override
         public Object processImageData(Object rawData, int width, int height, double bzero, double bscale) {
             if (rawData instanceof short[][] values) {
                 final var pixelArray = new short[width * height];
@@ -74,7 +74,7 @@ public enum ImageType {
             }
 
             throw new IllegalStateException("Incorrect raw data given to make an ImageProcessor");
-        }
+        }*/
 
         @Override
         public Object make2DArray(ImageProcessor ip, boolean useBZero) {//todo support 3d images? (write entire stack as one layered image, with option to disable?)
@@ -103,8 +103,8 @@ public enum ImageType {
             return 16;
         }
     },
-    INT(FloatProcessor::new/*IntProcessor::new*/, int[][].class) {//todo when using int processor, fits_reader displays invalid values
-        @Override
+    INT(FloatProcessor::new/*IntProcessor::new*/, int[].class) {//todo when using int processor, fits_reader displays invalid values
+        /*@Override
         public Object processImageData(Object rawData, int width, int height, double bzero, double bscale) {
             if (rawData instanceof int[][] values) {
                 final var pixelArray = new float[width * height];//new int[]
@@ -123,7 +123,7 @@ public enum ImageType {
             }
 
             throw new IllegalStateException("Incorrect raw data given to make an ImageProcessor");
-        }
+        }*/
 
         @Override
         public Object make2DArray(ImageProcessor ip, boolean useBZero) {
@@ -153,8 +153,8 @@ public enum ImageType {
         }
     },
     //this loses accuracy for some values
-    LONG(FloatProcessor::new, long[][].class) {
-        @Override
+    LONG(FloatProcessor::new, long[].class) {
+        /*@Override
         public Object processImageData(Object rawData, int width, int height, double bzero, double bscale) {
             if (rawData instanceof long[][] values) {
                 final var pixelArray = new float[width * height];
@@ -173,7 +173,7 @@ public enum ImageType {
             }
 
             throw new IllegalStateException("Incorrect raw data given to make an ImageProcessor");
-        }
+        }*/
 
         @Override
         public Object make2DArray(ImageProcessor ip, boolean useBZero) {
@@ -202,8 +202,8 @@ public enum ImageType {
             return 64;
         }
     },
-    FLOAT(FloatProcessor::new, float[][].class) {
-        @Override
+    FLOAT(FloatProcessor::new, float[].class) {
+        /*@Override
         public Object processImageData(Object rawData, int width, int height, double bzero, double bscale) {
             if (rawData instanceof float[][] values) {
                 final var pixelArray = new float[width * height];
@@ -222,7 +222,7 @@ public enum ImageType {
             }
 
             throw new IllegalStateException("Incorrect raw data given to make an ImageProcessor");
-        }
+        }*/
 
         @Override
         public Object make2DArray(ImageProcessor ip, boolean useBZero) {
@@ -251,8 +251,8 @@ public enum ImageType {
         }
     },
     //this loses accuracy for some values
-    DOUBLE(FloatProcessor::new, double[][].class) {
-        @Override
+    DOUBLE(FloatProcessor::new, double[].class) {
+        /*@Override
         public Object processImageData(Object rawData, int width, int height, double bzero, double bscale) {
             if (rawData instanceof double[][] values) {
                 final var pixelArray = new float[width * height];//todo make double when we have a DoubleProcessor
@@ -271,7 +271,7 @@ public enum ImageType {
             }
 
             throw new IllegalStateException("Incorrect raw data given to make an ImageProcessor");
-        }
+        }*/
 
         @Override
         public Object make2DArray(ImageProcessor ip, boolean useBZero) {
@@ -339,7 +339,9 @@ public enum ImageType {
         return factory.apply(width, height);
     }
 
-    public abstract Object processImageData(Object rawData, int width, int height, double bzero, double bscale);
+    public Object processImageData(Object rawData, int width, int height, double bzero, double bscale) {
+        return rawData;//todo stubbed method, we don't need scaling anymore - what about transpose?
+    }
 
     public abstract Object make2DArray(ImageProcessor ip, boolean useBZero);
 

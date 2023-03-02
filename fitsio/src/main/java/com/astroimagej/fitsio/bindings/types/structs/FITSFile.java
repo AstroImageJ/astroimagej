@@ -2,12 +2,17 @@ package com.astroimagej.fitsio.bindings.types.structs;
 
 import jnr.ffi.Runtime;
 import jnr.ffi.Struct;
+import jnr.ffi.byref.IntByReference;
 import jnr.ffi.byref.LongLongByReference;
+import jnr.ffi.byref.NativeLongByReference;
 import jnr.ffi.byref.PointerByReference;
 
 import static com.astroimagej.fitsio.bindings.Constants.MAX_COMPRESS_DIM;
 import static com.astroimagej.fitsio.bindings.Constants.NIOBUF;
 
+/**
+ * FITSfile, fitsio.h
+ */
 public class FITSFile extends Struct {
     /** handle returned by the file open function */
     public Signed32 filehandle = new Signed32();
@@ -24,15 +29,15 @@ public class FITSFile extends Struct {
     /** flag for file opened with request to ignore extended syntax */
     public Signed32 noextsyntax = new Signed32();
     /** current size of the physical disk file in bytes */
-    public SignedLong filesize = new SignedLong();
+    public Signed64 filesize = new Signed64();
     /** logical size of file, including unflushed buffers */
-    public SignedLong logfilesize = new SignedLong();
+    public Signed64 logfilesize = new Signed64();
     /** is this the last HDU in the file? 0 = no, else yes */
     public Signed32 lasthdu = new Signed32();
     /** current logical I/O pointer position in file */
-    public SignedLong bytepos = new SignedLong();
+    public Signed64 bytepos = new Signed64();
     /** current I/O pointer position in the physical file */
-    public SignedLong io_pos = new SignedLong();
+    public Signed64 io_pos = new Signed64();
     /** number of I/O buffer currently in use */
     public Signed32 curbuf = new Signed32();
     /** current HDU number; 0 = primary array */
@@ -46,35 +51,35 @@ public class FITSFile extends Struct {
     /** dynamically allocated dimension of headstart array */
     public Signed32 MAXHDU = new Signed32();
     /** byte offset in file to start of each HDU */
-    public SignedLong headstart = new SignedLong();
+    public LongLongByReference headstart = new LongLongByReference();
     /** byte offest in file to end of the current HDU label */
-    public SignedLong headend = new SignedLong();
+    public Signed64 headend = new Signed64();
     /** byte offest to where the END keyword was last written */
-    public SignedLong ENDpos = new SignedLong();
+    public Signed64 ENDpos = new Signed64();
     /** byte offset in file to beginning of next keyword */
-    public SignedLong nextkey = new SignedLong();
+    public Signed64 nextkey = new Signed64();
     /** byte offset in file to start of the current data unit */
-    public SignedLong datastart = new SignedLong();
+    public Signed64 datastart = new Signed64();
     /** dimension of image; cached for fast access */
     public Signed32 imgdim = new Signed32();
     /** length of each axis; cached for fast access */
-    public SignedLong[] imgnaxis = array(new SignedLong[99]);
+    public Signed64[] imgnaxis = array(new Signed64[99]);
     /** number of fields in the table (primary array has 2 */
     public Signed32 tfield = new Signed32();
     /** used by ffgcnn to record starting column number */
     public Signed32 startcol = new Signed32();
     /** original number of rows (value of NAXIS2 keyword)  */
-    public SignedLong origrows = new SignedLong();
+    public Signed64 origrows = new Signed64();
     /** number of rows in the table (dynamically updated) */
-    public SignedLong numrows = new SignedLong();
+    public Signed64 numrows = new Signed64();
     /** length of a table row or image size (bytes) */
-    public SignedLong rowlength = new SignedLong();
+    public Signed64 rowlength = new Signed64();
     /** pointer to the table structure */
     public StructRef<tcolumn> tableptr = new StructRef<>(tcolumn.class);
     /** heap start byte relative to start of data unit */
-    public SignedLong heapstart = new SignedLong();
+    public Signed64 heapstart = new Signed64();
     /** size of the heap, in bytes */
-    public SignedLong heapsize = new SignedLong();
+    public Signed64 heapsize = new Signed64();
 
     /* the following elements are related to compressed images */
 
@@ -164,17 +169,17 @@ public class FITSFile extends Struct {
     public Signed32 hcomp_smooth = new Signed32();
 
     /** row number of the array of uncompressed tiledata */
-    public Signed32 tilerow = new Signed32();
+    public IntByReference tilerow = new IntByReference();
     /** length of the array of tile data in bytes */
-    public LongLongByReference tiledatasize = new LongLongByReference();
+    public NativeLongByReference tiledatasize = new NativeLongByReference();
     /** datatype of the array of tile (TINT, TSHORT, etc) */
-    public Signed32 tiletype = new Signed32();
+    public IntByReference tiletype = new IntByReference();
     /** array of uncompressed tile of data, for row *tilerow */
     public PointerByReference tiledata = new PointerByReference();
     /** array of optional array of null value flags */
     public PointerByReference tilenullarray = new PointerByReference();
     /** anynulls in the array of tile? */
-    public Signed32 tileanynull = new Signed32();
+    public IntByReference tileanynull = new IntByReference();
 
     /** pointer to FITS file I/O buffers. Originally of type char* */
     public Pointer iobuffer = new Pointer();

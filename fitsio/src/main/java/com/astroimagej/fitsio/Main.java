@@ -27,12 +27,12 @@ public class Main {
     //todo build with thread safety
     //https://www.praj.in/posts/2021/exploring-jnr-part-1/
     public static void main(String[] args) {
-        test3();
-        /*try {
+        //test3();
+        try {
             openMemfile2();
         } catch (Exception e) {
             e.printStackTrace();
-        }*/
+        }
     }
 
     private static void test3() {
@@ -68,7 +68,7 @@ public class Main {
         var status = new IntByReference();
         var fptr = new FitsFileHolder(runtime);
         var adr = new PointerByReference();
-        var size = new NativeLongByReference(file.length*2L);
+        var size = new NativeLongByReference(file.length);
 
         var p = Memory.allocateDirect(runtime, file.length*8);
         p.put(0, file, 0, file.length);
@@ -78,11 +78,13 @@ public class Main {
         //is it an issue with sbyte->byte, or is the memory getting freed somewhere?
         //todo giving it the tess name crashes
 
+        //System.out.println(file.length);
         var bp = new PointerByReference(p);
         var rt = lib.ffomem(adr, "meh", 1, bp, size, 0, /*NativeCalling::resize, */null, status);
         if (rt == 0) {
             fptr.useMemory(adr.getValue());
-
+            System.out.println(fptr.Fptr.get().headstart.longValue());
+            System.out.println(fptr.Fptr.get().logfilesize.longValue());
             var hduCount = new IntByReference();
             lib.ffthdu(fptr, hduCount, status);
             Logger.logFitsio(status);
@@ -100,6 +102,8 @@ public class Main {
         //System.out.println(status.intValue());
         Logger.logFitsio(status);
     }
+
+    //todo try writing ffmahd in java and using with memopen
 
     // Read file from memory
     private static void openMemfile() throws IOException {

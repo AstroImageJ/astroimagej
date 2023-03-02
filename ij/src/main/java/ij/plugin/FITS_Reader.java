@@ -546,9 +546,8 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	private boolean isTessFfi(BasicHDU<?> hdu) {
 		var telescope = hdu.getHeader().findCard("TELESCOP");
 		var imageType = hdu.getHeader().findCard("IMAGTYPE");
-		var spoc = hdu.getHeader().findCard("CRSPOC");
 
-		if (telescope == null || imageType == null || spoc == null) {
+		if (telescope == null || imageType == null) {
 			return false;
 		}
 

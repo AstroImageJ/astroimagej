@@ -546,8 +546,9 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	private boolean isTessFfi(BasicHDU<?> hdu) {
 		var telescope = hdu.getHeader().findCard("TELESCOP");
 		var imageType = hdu.getHeader().findCard("IMAGTYPE");
+		var spoc = hdu.getHeader().findCard("CRSPOC");
 
-		if (telescope == null || imageType == null) {
+		if (telescope == null || imageType == null || spoc == null) {
 			return false;
 		}
 
@@ -599,6 +600,15 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 
 			var dt = SkyAlgorithmsTimeUtil.UTDateFromJD(jdUtc);
 			var hmsms = SkyAlgorithmsTimeUtil.ut2Array(dt[3]);
+
+			// Check time
+			if (!(isInRangeInc(dt[1], 1, 12) && isInRangeInc(dt[2], 1, 31) &&
+					isInRangeInc(hmsms[0], 0, 23) && isInRangeInc(hmsms[1], 0, 59) &&
+					isInRangeInc(hmsms[2], 0, 59))) {
+				AIJLogger.log("Failed to extract timing data.");
+				return;
+			}
+
 			var dateTime = LocalDateTime.of((int) dt[0], (int) dt[1], (int) dt[2], hmsms[0], hmsms[1],
 					hmsms[2]).toInstant(ZoneOffset.ofTotalSeconds(0));
 			dateTime = dateTime.plusMillis(hmsms[3]);
@@ -608,6 +618,10 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			// Copy exposure time
 			hdu.addValue("TELAPSE", header.getIntValue("INT_TIME"), "Integration time (s)");
 		}
+	}
+
+	private boolean isInRangeInc(double v, double min, double max) {
+		return v >= min && v <= max;
 	}
 
 	/**

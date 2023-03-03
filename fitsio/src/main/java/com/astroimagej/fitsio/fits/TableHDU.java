@@ -65,7 +65,7 @@ public class TableHDU extends HDU {
             col = colA;
         }
 
-        return new ColHolder<>(col, ci.dataType(), ci.isColOfImages());
+        return new ColHolder<>(col, ci, ci.isColOfImages());
     }
 
 

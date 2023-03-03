@@ -1,6 +1,4 @@
 package com.astroimagej.fitsio.fits;
 
-import com.astroimagej.fitsio.bindings.Constants;
-
-public record ColHolder<T>(T colArray, Constants.DataType dataType, boolean isImageArray) {
+public record ColHolder<T>(T colArray, ColInfo colInfo, boolean isImageArray) {
 }

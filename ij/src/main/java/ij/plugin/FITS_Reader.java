@@ -87,6 +87,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 
 		if (true) {
 			try (com.astroimagej.fitsio.fits.Fits f = new com.astroimagej.fitsio.fits.Fits(Path.of(path))) {
+				// ImageHDU reading
 				f.hdus.stream().filter(h -> h instanceof com.astroimagej.fitsio.fits.ImageHDU)
 						.map(h -> (com.astroimagej.fitsio.fits.ImageHDU) h)
 						.filter(com.astroimagej.fitsio.fits.ImageHDU::hasImages)
@@ -104,6 +105,22 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 							}
 							setProperty("Info", d);
 						});
+				// Table reading
+				/*f.hdus.stream().filter(h -> h instanceof com.astroimagej.fitsio.fits.TableHDU)
+						.map(h -> (com.astroimagej.fitsio.fits.TableHDU) h)
+						//todo don't hardcode column
+						.map(h -> h.readCol("FLUX")).filter(ColHolder::isImageArray)
+						.skip(0).findFirst().ifPresent(h -> {
+							de = 1;
+							wi = (int) h.colInfo().axes()[0];
+							he = (int) h.colInfo().axes()[1];
+							var is = (Object[]) h.colArray();
+							fileType = "fit";
+							makeStackFrom3DData(is, is.length);//todo make this generic, capable of handling single image
+							var d = "";
+							//todo build header
+							setProperty("Info", d);
+						});*/
 			} catch (Exception e) {
 				throw new RuntimeException(e);
 			}

@@ -48,6 +48,7 @@ public class Main {
             System.out.println(((TableHDU) f.hdus.get(1)).readCol(0));
             System.out.println(((TableHDU) f.hdus.get(1)).readCol(3));
             System.out.println(((TableHDU) f.hdus.get(1)).readCol(4));
+            System.out.println(((TableHDU) f.hdus.get(1)).readCol("FFI_FILE"));//todo broken
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

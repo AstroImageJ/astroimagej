@@ -57,9 +57,11 @@ public class Main {
         var lib = LibraryLoader.create(CFitsIo.class)
                 .failImmediately()
                 .option(LibraryOption.PreferCustomPaths, true)
-                .search("packageFiles/common/cfitsio/windows")
+                .search("D:\\Programming\\Astro\\cfitsio jdk19\\cfitdebug\\Debug")
+                .search("packageFiles/common/cfitsio/windows/")
                 .library("zlib")//dep of cfitsio - todo handle bundling of this
-                .load("packageFiles/common/cfitsio/windows/cfitsio");//todo need relative path to get precedence over system
+                //.load("packageFiles/common/cfitsio/windows/cfitsio");
+                .load("D:\\Programming\\Astro\\cfitsio jdk19\\cfitdebug\\Debug\\cfitsio");
 
         var runtime = Runtime.getRuntime(lib);
 

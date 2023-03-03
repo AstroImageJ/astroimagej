@@ -502,7 +502,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 				bjd1 = bjds[i].doubleValue();
 				if (!Double.isNaN(bjd0 + bjd1)) hdr.addValue("BJD_TDB", bjd0 + bjd1, "Calc. BJD_TDB");
 
-				if (isTessCut(tableHDU)) {
+				if (isTessCut(tableHDU) || isTicaImage(tableHDU)) {
 					// If the image should be skipped add this card, string check for 'AIJ_Q' to skip image
 					// Based on TESS Cut code by John Kielkopf
 					if ((!skipTessQualCheck && quality[i].intValue() != 0)) {

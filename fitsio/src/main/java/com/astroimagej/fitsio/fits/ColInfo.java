@@ -25,6 +25,6 @@ public record ColInfo(String label, DataType dataType, long[] axes) {
 
     @Override
     public DataType dataType() {
-        return isColOfImages() ? TypeHandler.toIJImageType(dataType) : dataType;
+        return isColOfImages() ? TypeHandler.toIJImageType(dataType) : TypeHandler.toIJNonImageType(dataType);
     }
 }

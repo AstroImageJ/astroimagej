@@ -5,6 +5,7 @@ import com.astroimagej.fitsio.util.Logger;
 import com.astroimagej.fitsio.util.NativeCalling;
 import jnr.ffi.Memory;
 import jnr.ffi.ObjectReferenceManager;
+import jnr.ffi.Pointer;
 import jnr.ffi.byref.IntByReference;
 import jnr.ffi.byref.LongLongByReference;
 import jnr.ffi.byref.NativeLongByReference;
@@ -27,6 +28,7 @@ public class Fits extends NativeCalling implements AutoCloseable {
     protected final FitsFileHolder fptr;
     public final LinkedList<HDU> hdus;
     private final ObjectReferenceManager<Object> referenceManager;
+    private Pointer fileDataPointer;
     private ByteBuffer buffer;
     protected IntByReference status;
 
@@ -51,7 +53,7 @@ public class Fits extends NativeCalling implements AutoCloseable {
     public Fits(byte[] fileMemory) throws IOException {
         this();
         buffer = ByteBuffer.wrap(fileMemory);//field to try and keep memory alive?
-        var fileDataPointer = Memory.allocateDirect(RUNTIME, fileMemory.length * Integer.BYTES);
+        fileDataPointer = Memory.allocateDirect(RUNTIME, fileMemory.length * Integer.BYTES);
 
         referenceManager.add(fileMemory);
 
@@ -62,6 +64,8 @@ public class Fits extends NativeCalling implements AutoCloseable {
         var rt = 0;
 
         var maxHdus = 10;
+        //todo store the byte array pointer, maybe reference manager can do things- ask
+        // store adr and filememory, make fptr use it again in reading?
 
         for (int i = maxHdus; i >= 0; i--) {
             System.out.println("Try opening memory with: " + i);
@@ -70,6 +74,7 @@ public class Fits extends NativeCalling implements AutoCloseable {
                 fptr.useMemory(adr.getValue());
                 System.out.println("Opening memory with: " + i);
                 buildFitsStructure();
+                System.out.println(((TableHDU) hdus.get(1)).readCol(0));//this also fails
                 return;
             } else if (status.intValue() != END_OF_FILE) {
                 //todo improve failure modes, get from err stack

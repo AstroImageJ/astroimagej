@@ -1,6 +1,5 @@
 package com.astroimagej.fitsio.fits;
 
-import com.astroimagej.fitsio.Main;
 import com.astroimagej.fitsio.bindings.types.structs.FitsFileHolder;
 import com.astroimagej.fitsio.util.Logger;
 import com.astroimagej.fitsio.util.NativeCalling;
@@ -69,9 +68,8 @@ public class Fits extends NativeCalling implements AutoCloseable {
             rt = FITS_IO.ffomem(adr, "memOpen.fits+"+i, 0, bp, size, 0, null, status);
             if (rt == 0) {
                 fptr.useMemory(adr.getValue());
-                //buildFitsStructure();
-                System.out.println(Main.buildFitsStructure(FITS_IO, fptr, RUNTIME));
                 System.out.println("Opening memory with: " + i);
+                buildFitsStructure();
                 return;
             } else if (status.intValue() != END_OF_FILE) {
                 //todo improve failure modes, get from err stack
@@ -141,6 +139,12 @@ public class Fits extends NativeCalling implements AutoCloseable {
 
         FITS_IO.ffghdn(fptr, hduPosR);
         var hduPos = hduPosR.intValue();
+
+        // Ensure we are at the first HDU
+        if (hduPos != 1) {
+            FITS_IO.ffmahd(fptr, 1, hduType, status);
+            hduPos = 1;
+        }
         while (status.intValue() == 0) {
             switch (HDUType.fromInt(hduType.intValue())) {
                 case IMAGE_HDU -> {
@@ -180,8 +184,6 @@ public class Fits extends NativeCalling implements AutoCloseable {
 
             hduPos++;
             FITS_IO.ffmrhd(fptr, 1, hduType, status);//todo don't do this for files with 1 HDU, just break
-            System.out.println("Move forward:");
-            logStatus();
         }
 
         System.out.println("Read structures finish:");

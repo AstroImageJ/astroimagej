@@ -26,23 +26,23 @@ public class Main {
     //todo build with thread safety
     //https://www.praj.in/posts/2021/exploring-jnr-part-1/
     public static void main(String[] args) {
-        //test3();
-        try {
+        test3();
+        /*try {
             openMemfile2();
         } catch (Exception e) {
             e.printStackTrace();
-        }
+        }*/
     }
 
     private static void test3() {
-        //todo memopen sometimes works, sometimes fails - maybe test if fail is already open?
-        try (Fits f = new Fits(Files.readAllBytes(Path.of("M13_DSS_1.fits.fz")))) {
+        try (Fits f = new Fits(Files.readAllBytes(Path.of("tess-s0012-2-3_245.267484_-59.510528_51x51_astrocut.fits")))) {
             /*f.hdus.stream().filter(h -> h instanceof ImageHDU)
                     .map(h -> (ImageHDU) h).peek(h -> h.readImages());*/
             System.out.println(f.hdus);
-            if (true)return;
-            f.hdus.stream().filter(h -> h instanceof TableHDU).peek(h -> System.out.println(h instanceof TableHDU))
-                    .map(h -> (TableHDU) h).peek(TableHDU::toString).peek(h -> h.readCol(4)).findFirst();//todo must have terminal operation
+            //if (true)return;
+            //todo reading values from w/ memopen crashes, possibly a memory issue
+            f.hdus.stream().filter(h -> h instanceof TableHDU)
+                    .map(h -> (TableHDU) h).peek(h -> h.readCol(4)).findFirst();//todo must have terminal operation
             System.out.println(((TableHDU) f.hdus.get(1)).colInfos);
             System.out.println(((TableHDU) f.hdus.get(1)).readCol(0));
             System.out.println(((TableHDU) f.hdus.get(1)).readCol(3));

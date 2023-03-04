@@ -1,9 +1,11 @@
 package com.astroimagej.fitsio.fits;
 
+import com.astroimagej.fitsio.Main;
 import com.astroimagej.fitsio.bindings.types.structs.FitsFileHolder;
 import com.astroimagej.fitsio.util.Logger;
 import com.astroimagej.fitsio.util.NativeCalling;
 import jnr.ffi.Memory;
+import jnr.ffi.ObjectReferenceManager;
 import jnr.ffi.byref.IntByReference;
 import jnr.ffi.byref.LongLongByReference;
 import jnr.ffi.byref.NativeLongByReference;
@@ -25,6 +27,7 @@ public class Fits extends NativeCalling implements AutoCloseable {
 
     protected final FitsFileHolder fptr;
     public final LinkedList<HDU> hdus;
+    private final ObjectReferenceManager<Object> referenceManager;
     private ByteBuffer buffer;
     protected IntByReference status;
 
@@ -51,31 +54,35 @@ public class Fits extends NativeCalling implements AutoCloseable {
         buffer = ByteBuffer.wrap(fileMemory);//field to try and keep memory alive?
         var fileDataPointer = Memory.allocateDirect(RUNTIME, fileMemory.length * Integer.BYTES);
 
-        /*ObjectReferenceManager.newInstance(RUNTIME);
-        RUNTIME.newObjectReferenceManager().add()*/
+        referenceManager.add(fileMemory);
 
         fileDataPointer.put(0, fileMemory, 0, fileMemory.length);
-        System.out.println("Buf: " + buffer.capacity());
-        System.out.println(fileMemory.length);
-        var size = new NativeLongByReference(buffer.capacity()* 8L);
+        var size = new NativeLongByReference(buffer.capacity());
         var bp = new PointerByReference(fileDataPointer);
         var adr = new PointerByReference();
         var rt = 0;
-        if ((rt = FITS_IO.ffomem(adr, "meh"/*todo improve name*/, 0, bp, size, 3000, /*todo improve deltaSize*/
-                /*NativeCalling::resize*/null, status)) == 0) {
-            fptr.useMemory(adr.getValue());
-            var n = new IntByReference();
-            System.out.println(fptr.Fptr.get().headstart);
-            //System.out.println(FITS_IO.ffthdu(fptr, n, status));//todo for some reason you need a call here otherwise crash
-            //System.out.println("memr hdu count: " + n.intValue());//todo wrong number of hdus
-            /*System.out.println(fptr.Fptr.get().ENDpos);
-            System.out.println(fptr.Fptr.get().heapsize);*/
-            buildFitsStructure();
-        } else {
-            //todo improve failure modes, get from err stack
+
+        var maxHdus = 10;
+
+        for (int i = maxHdus; i >= 0; i--) {
+            System.out.println("Try opening memory with: " + i);
+            rt = FITS_IO.ffomem(adr, "memOpen.fits+"+i, 0, bp, size, 0, null, status);
+            if (rt == 0) {
+                fptr.useMemory(adr.getValue());
+                //buildFitsStructure();
+                System.out.println(Main.buildFitsStructure(FITS_IO, fptr, RUNTIME));
+                System.out.println("Opening memory with: " + i);
+                break;
+            } else if (status.intValue() != END_OF_FILE) {
+                //todo improve failure modes, get from err stack
+                Logger.logFitsio(status);
+                throw new IOException("Failed to open fits file: %s".formatted(rt));
+            }
             Logger.logFitsio(status);
-            throw new IOException("Failed to open fits file: %s".formatted(rt));
         }
+
+        Logger.logFitsio(status);
+        throw new IOException("Failed to open fits file: %s".formatted(rt));
     }
 
     //todo fits reopen method to change open method to readwrite/readonly
@@ -86,6 +93,7 @@ public class Fits extends NativeCalling implements AutoCloseable {
         fptr = new FitsFileHolder(RUNTIME);
         status = new IntByReference();
         hdus = new LinkedList<>();
+        referenceManager = ObjectReferenceManager.newInstance(RUNTIME);
     }
 
     public int currentHdu() {

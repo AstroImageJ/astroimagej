@@ -14,4 +14,10 @@ public class Logger extends NativeCalling {
         FITS_IO.ffgerr(status, errText);
         System.out.println(errText);
     }
+
+    public static void logErrMsg() {
+        var s = new StringBuffer(1000);
+        FITS_IO.ffgmsg(s);
+        System.out.println(s.toString());
+    }
 }

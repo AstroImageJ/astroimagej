@@ -1,23 +1,22 @@
 package com.astroimagej.fitsio;
 
 import com.astroimagej.fitsio.bindings.CFitsIo;
+import com.astroimagej.fitsio.bindings.Constants;
 import com.astroimagej.fitsio.bindings.types.structs.FitsFileHolder;
-import com.astroimagej.fitsio.fits.Fits;
-import com.astroimagej.fitsio.fits.TableHDU;
+import com.astroimagej.fitsio.fits.*;
 import com.astroimagej.fitsio.util.Logger;
 import jnr.ffi.Runtime;
 import jnr.ffi.*;
-import jnr.ffi.byref.FloatByReference;
-import jnr.ffi.byref.IntByReference;
-import jnr.ffi.byref.NativeLongByReference;
-import jnr.ffi.byref.PointerByReference;
+import jnr.ffi.byref.*;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedList;
 
 import static com.astroimagej.fitsio.bindings.Constants.ErrorCodes.END_OF_FILE;
 
@@ -76,6 +75,13 @@ public class Main {
         var p = Memory.allocateDirect(runtime, file.length*8);
         p.put(0, file, 0, file.length);
 
+        if (size.intValue() != file.length) {
+            throw new IllegalStateException("bad size");
+        }
+
+        var beforeFromPointer = new byte[size.intValue()];
+        p.get(0, beforeFromPointer, 0, size.intValue());
+
         //todo mem read isn't getting all hdus
         //it hits end of file, but sometimes complains about first key
         //is it an issue with sbyte->byte, or is the memory getting freed somewhere?
@@ -83,9 +89,16 @@ public class Main {
 
         //System.out.println(file.length);
         var bp = new PointerByReference(p);
-        var rt = lib.ffomem(adr, "meh", 1, bp, size, 0, /*NativeCalling::resize, */null, status);
+        //todo +2/3 at end of file name fixes the bug?! +1 crashes?
+        // or not, +1 works - use this to workround the bug?
+        //  no, with +1 it is only finding 2 HDUs (n+1?).
+        //       what is going on with the memory? to cause this?
+        //   bad workaround: do +n, then keep trying till with +n-1 no longer "past end of file" code
+        //todo this works, Fits needs works, likely an issue with the memory being freed
+        var rt = lib.ffomem(adr, "meh.fits+1", 0, bp, size, 0, /*NativeCalling::resize, */null, status);
         if (rt == 0) {
             fptr.useMemory(adr.getValue());
+            Logger.logErrMsg();
             System.out.println(fptr.Fptr.get().headstart.longValue());
             System.out.println(fptr.Fptr.get().logfilesize.longValue());
             var hduCount = new IntByReference();
@@ -93,9 +106,11 @@ public class Main {
             Logger.logFitsio(status);
             System.out.println("HDU Count: " + hduCount.intValue());
             if (hduCount.intValue() != 3) {
-                throw new IllegalStateException("Missing some HDUs! %s".formatted(hduCount.intValue()));
+                //throw new IllegalStateException("Missing some HDUs! %s".formatted(hduCount.intValue()));
             }
 
+            var hdus = buildFitsStructure(lib, fptr, runtime);
+            System.out.println(hdus);
             if (status.intValue() == END_OF_FILE) status = new IntByReference();
 
             lib.ffclos(fptr, status);
@@ -104,6 +119,20 @@ public class Main {
         Logger.logFitsio(rt);
         //System.out.println(status.intValue());
         Logger.logFitsio(status);
+
+        var afterFromPointer = new byte[size.intValue()];
+        p.get(0, afterFromPointer, 0, size.intValue());
+
+        Logger.logErrMsg();
+        if (!Arrays.equals(file, beforeFromPointer)) {
+            throw new IllegalStateException("file and before from pointer do not match");
+        }
+
+        //todo io mode = 0 now crashes (was from debug stuff)
+        System.err.println(Arrays.compare(file, afterFromPointer));
+        if (!Arrays.equals(file, afterFromPointer)) {//todo this is triggered (was from debug stuff?)
+            throw new IllegalStateException("file and after from pointer do not match");
+        }
     }
 
     //todo try writing ffmahd in java and using with memopen
@@ -187,5 +216,74 @@ public class Main {
         System.out.println(rt);
         System.out.println(status.intValue());
         Logger.logFitsio(status);
+    }
+
+    public static LinkedList<HDU> buildFitsStructure(CFitsIo FITS_IO, FitsFileHolder fptr, Runtime RUNTIME) {
+        var hduCount = new IntByReference();
+        var status = new IntByReference();
+        FITS_IO.ffthdu(fptr, hduCount, status);
+        System.out.println("HDU Count: " + hduCount.intValue());//todo is this 1 indexed?
+        System.out.println("HDU Get:");
+
+        var hduPosR = new IntByReference();
+        var hduType = new IntByReference();
+        var nAxis = new IntByReference();
+        var bitpix = new IntByReference();
+        var axes = new long[10];//todo handle more?
+        var nCols = new IntByReference();
+        var nRows = new LongLongByReference();
+        var colNum = new IntByReference();
+        var typeCode = new IntByReference();
+        var repeat = new LongLongByReference();
+        var width = new LongLongByReference();
+        var axisPointer = Memory.allocate(RUNTIME, Long.BYTES*10);
+
+        FITS_IO.ffmahd(fptr, 1, new IntByReference(), status);//todo forcing back for memopen testing
+        FITS_IO.ffghdn(fptr, hduPosR);
+        var hduPos = hduPosR.intValue();
+        var hdus = new LinkedList<HDU>();
+        while (status.intValue() == 0) {
+            switch (Constants.HDUType.fromInt(hduType.intValue())) {
+                case IMAGE_HDU -> {
+                    FITS_IO.ffgiet(fptr, bitpix, status);//eq. type
+
+                    FITS_IO.ffgipr(fptr, 10, bitpix, nAxis, axes, status);
+                    //todo check status - if bad, don't add HDU or a bad hdu type?
+                    hdus.add(hduPos-1, new ImageHDU(null, Constants.BitPixDataTypes.fromInt(bitpix.intValue()), Arrays.copyOfRange(axes, 0, nAxis.intValue())));
+                }
+                case ASCII_TBL, BINARY_TBL -> {
+                    //todo use fits iterator? rec. by docs
+                    FITS_IO.ffgnrwll(fptr, nRows, status);
+                    FITS_IO.ffgncl(fptr, nCols, status);
+
+                    var colInfos = new LinkedList<ColInfo>();
+
+                    for (int i = 0; i < nCols.intValue(); i++) {
+                        var s = new StringBuffer(30);//todo what size? don't make in loop
+                        FITS_IO.ffgcnn(fptr, Constants.CaseSensitivity.CASE_INSEN, "" + (i+1), s, colNum, status);
+                        //todo what to do if there is no col. heading? what is reported from this method?
+                        FITS_IO.ffeqtyll(fptr, i+1, typeCode, repeat, width, status);//todo null on repeat/width?
+
+                        //todo only get axis if repeat/width is >1 && binary table?
+                        FITS_IO.ffgtdmll(fptr, i+1, 10, nAxis, axisPointer, status);
+                        var a = new long[nAxis.intValue()];
+                        axisPointer.get(0, a, 0, a.length);
+
+                        colInfos.add(new ColInfo(s.toString(), Constants.DataType.fromInt(typeCode.intValue()), a));
+                    }
+
+                    hdus.add(hduPos-1, new TableHDU(null, Constants.HDUType.fromInt(hduType.intValue()), nRows.longValue(), colInfos));
+                }
+                case ANY_HDU -> {
+                    throw new IllegalStateException("Why are we here when reading?");
+                }
+            }
+
+            hduPos++;
+            FITS_IO.ffmrhd(fptr, 1, hduType, status);//todo don't do this for files with 1 HDU, just break
+            System.out.println("Move forward:");
+        }
+
+        return hdus;
     }
 }

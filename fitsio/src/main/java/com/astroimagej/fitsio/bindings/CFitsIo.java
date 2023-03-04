@@ -6,9 +6,6 @@ import jnr.ffi.annotations.Delegate;
 import jnr.ffi.annotations.In;
 import jnr.ffi.annotations.Out;
 import jnr.ffi.byref.*;
-import jnr.ffi.types.size_t;
-
-import java.nio.ByteBuffer;
 
 //todo properly decorate these methods
 //todo how to name them something sensible
@@ -69,6 +66,8 @@ public interface CFitsIo {
     /**fits_read_col*/
     int ffgcv(FitsFileHolder fptr, Constants.DataType dataType, int colNum, long firstRow, long firstElem, long nElements,
               Pointer nulVal, Pointer dataArray, IntByReference anyNull, IntByReference status);
+    /**fits_read_errmsg*/
+    void ffgmsg(StringBuffer errmsg);
 
     interface MemRealloc {
         @Delegate

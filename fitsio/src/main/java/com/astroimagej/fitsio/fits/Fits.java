@@ -72,16 +72,16 @@ public class Fits extends NativeCalling implements AutoCloseable {
                 //buildFitsStructure();
                 System.out.println(Main.buildFitsStructure(FITS_IO, fptr, RUNTIME));
                 System.out.println("Opening memory with: " + i);
-                break;
+                return;
             } else if (status.intValue() != END_OF_FILE) {
                 //todo improve failure modes, get from err stack
                 Logger.logFitsio(status);
                 throw new IOException("Failed to open fits file: %s".formatted(rt));
             }
             Logger.logFitsio(status);
+            status = new IntByReference();
         }
 
-        Logger.logFitsio(status);
         throw new IOException("Failed to open fits file: %s".formatted(rt));
     }
 

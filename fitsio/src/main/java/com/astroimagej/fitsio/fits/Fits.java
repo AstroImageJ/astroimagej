@@ -82,7 +82,7 @@ public class Fits extends NativeCalling implements AutoCloseable {
             status = new IntByReference();
         }
 
-        throw new IOException("Failed to open fits file: %s".formatted(rt));
+        throw new IOException("Failed to open fits file");
     }
 
     //todo fits reopen method to change open method to readwrite/readonly

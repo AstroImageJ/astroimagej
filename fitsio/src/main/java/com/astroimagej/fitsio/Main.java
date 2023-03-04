@@ -39,7 +39,7 @@ public class Main {
             /*f.hdus.stream().filter(h -> h instanceof ImageHDU)
                     .map(h -> (ImageHDU) h).peek(h -> h.readImages());*/
             System.out.println(f.hdus);
-            //if (true)return;
+            if (true)return;
             //todo reading values from w/ memopen crashes, possibly a memory issue
             f.hdus.stream().filter(h -> h instanceof TableHDU)
                     .map(h -> (TableHDU) h).peek(h -> h.readCol(4)).findFirst();//todo must have terminal operation
@@ -50,6 +50,82 @@ public class Main {
             System.out.println(((TableHDU) f.hdus.get(1)).readCol("FFI_FILE"));//todo broken
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private static void openMemfile3() throws IOException {
+        var lib = LibraryLoader.create(CFitsIo.class)
+                .failImmediately()
+                .option(LibraryOption.PreferCustomPaths, true)
+                .search("D:\\Programming\\Astro\\cfitsio jdk19\\cfitdebug\\Debug")
+                .search("packageFiles/common/cfitsio/windows/")
+                .library("zlib")//dep of cfitsio - todo handle bundling of this
+                //.load("packageFiles/common/cfitsio/windows/cfitsio");
+                .load("D:\\Programming\\Astro\\cfitsio jdk19\\cfitdebug\\Debug\\cfitsio");
+
+        var runtime = Runtime.getRuntime(lib);
+
+        var file = Files.readAllBytes(Path.of("tess-s0012-2-3_245.267484_-59.510528_51x51_astrocut.fits"));
+
+        var status = new IntByReference();
+        var fptr = new FitsFileHolder(runtime);
+        var adr = new PointerByReference();
+        var size = new NativeLongByReference(file.length);
+
+        var p = Memory.allocateDirect(runtime, file.length*8);
+        p.put(0, file, 0, file.length);
+
+        if (size.intValue() != file.length) {
+            throw new IllegalStateException("bad size");
+        }
+
+        var beforeFromPointer = new byte[size.intValue()];
+        p.get(0, beforeFromPointer, 0, size.intValue());
+
+        //todo mem read isn't getting all hdus
+        //it hits end of file, but sometimes complains about first key
+        //is it an issue with sbyte->byte, or is the memory getting freed somewhere?
+        //todo giving it the tess name crashes
+
+        //System.out.println(file.length);
+        var bp = new PointerByReference(p);
+        var rt = lib.ffomem(adr, "meh.fits", 0, bp, size, 0, /*NativeCalling::resize, */null, status);
+        if (rt == 0) {
+            fptr.useMemory(adr.getValue());
+            Logger.logErrMsg();
+            System.out.println(fptr.Fptr.get().headstart.longValue());
+            System.out.println(fptr.Fptr.get().logfilesize.longValue());
+            var hduCount = new IntByReference();
+            lib.ffthdu(fptr, hduCount, status);
+            Logger.logFitsio(status);
+            System.out.println("HDU Count: " + hduCount.intValue());
+            if (hduCount.intValue() != 3) {
+                //throw new IllegalStateException("Missing some HDUs! %s".formatted(hduCount.intValue()));
+            }
+
+            var hdus = buildFitsStructure(lib, fptr, runtime);
+            System.out.println(hdus);
+            if (status.intValue() == END_OF_FILE) status = new IntByReference();
+
+            lib.ffclos(fptr, status);
+        }
+
+        Logger.logFitsio(rt);
+        //System.out.println(status.intValue());
+        Logger.logFitsio(status);
+
+        var afterFromPointer = new byte[size.intValue()];
+        p.get(0, afterFromPointer, 0, size.intValue());
+
+        Logger.logErrMsg();
+        if (!Arrays.equals(file, beforeFromPointer)) {
+            throw new IllegalStateException("file and before from pointer do not match");
+        }
+
+        //todo io mode = 0 now crashes (was from debug stuff)
+        System.err.println(Arrays.compare(file, afterFromPointer));
+        if (!Arrays.equals(file, afterFromPointer)) {//todo this is triggered (was from debug stuff?)
+            throw new IllegalStateException("file and after from pointer do not match");
         }
     }
 

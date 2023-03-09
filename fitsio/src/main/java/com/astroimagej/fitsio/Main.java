@@ -39,7 +39,7 @@ public class Main {
             /*f.hdus.stream().filter(h -> h instanceof ImageHDU)
                     .map(h -> (ImageHDU) h).peek(h -> h.readImages());*/
             System.out.println(f.hdus);
-            if (true)return;
+            //if (true)return;
             //todo reading values from w/ memopen crashes, possibly a memory issue
             f.hdus.stream().filter(h -> h instanceof TableHDU)
                     .map(h -> (TableHDU) h).peek(h -> h.readCol(4)).findFirst();//todo must have terminal operation

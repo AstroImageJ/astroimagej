@@ -67,6 +67,7 @@ public class Fits extends NativeCalling implements AutoCloseable {
         //todo store the byte array pointer, maybe reference manager can do things- ask
         // store adr and filememory, make fptr use it again in reading?
 
+        //todo proper search algorithm
         for (int i = maxHdus; i >= 0; i--) {
             System.out.println("Try opening memory with: " + i);
             rt = FITS_IO.ffomem(adr, "memOpen.fits+"+i, 0, bp, size, 0, null, status);
@@ -74,7 +75,39 @@ public class Fits extends NativeCalling implements AutoCloseable {
                 fptr.useMemory(adr.getValue());
                 System.out.println("Opening memory with: " + i);
                 buildFitsStructure();
-                System.out.println(((TableHDU) hdus.get(1)).readCol(0));//this also fails
+
+
+                // TESTING----------------
+
+                /*setCurrentHdu(1);
+
+                var ci = ((TableHDU) hdus.get(1)).colInfos.get(i);
+                var nulVal = Memory.allocate(NativeCalling.RUNTIME, ci.dataType().byteSize());
+                var array = Memory.allocateDirect(NativeCalling.RUNTIME, ci.byteSize()*((TableHDU) hdus.get(1)).rows);
+                var anyNull = new IntByReference();
+                FITS_IO.ffgcv(fptr, ci.dataType(), i+1, 1, 1, ci.len()*((TableHDU) hdus.get(1)).rows,
+                        nulVal, array, anyNull, status);
+
+                Object col;
+                if (ci.axes().length == 1) {
+                    col = TypeHandler.arrayFromDataType(array, ci.dataType(), 0L, (int) ((TableHDU) hdus.get(1)).rows);
+                } else {
+                    var colA = new Object[(int) ((TableHDU) hdus.get(1)).rows];
+                    for (int r = 0; r < ((TableHDU) hdus.get(1)).rows; r++) {
+                        colA[r] = TypeHandler.arrayFromDataType(array, ci.dataType(), r * ci.byteSize(),
+                                (int) ci.len());
+                    }
+                    col = colA;
+                }
+
+                System.out.println(new ColHolder<>(col, ci, ci.isColOfImages()));*/
+
+                //TESTING-----------------
+
+
+
+
+                //System.out.println(((TableHDU) hdus.get(1)).readCol(0));//this also fails
                 return;
             } else if (status.intValue() != END_OF_FILE) {
                 //todo improve failure modes, get from err stack
@@ -105,6 +138,7 @@ public class Fits extends NativeCalling implements AutoCloseable {
 
     public void setCurrentHdu(int hdu) {
         FITS_IO.ffmahd(fptr, hdu, new IntByReference(HDUType.ANY_HDU.intValue()), status);
+        logStatus();
     }
 
     @Override

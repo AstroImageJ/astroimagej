@@ -24,7 +24,7 @@ public class HDU extends NativeCalling {
         if (owner == null || (hduPos = owner.hdus.indexOf(this)) == -1) {
             throw new IllegalStateException("Trying to read image of orphaned HDU");
         }
-        owner.setCurrentHdu(hduPos/*+1*/);//todo +1 breaks memopen, what about ffopen?
+        owner.setCurrentHdu(hduPos+1);
     }
 
     public ArrayList<String> getHeader() {

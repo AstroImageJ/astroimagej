@@ -26,9 +26,13 @@ public class TableHDU extends HDU {
     }
 
     public ColHolder<?> readCol(String ofLabel) {
+        return readCol(findCol(ofLabel));
+    }
+
+    public int findCol(String ofLabel) {
         for (int i = 0; i < colInfos.size(); i++) {
             if (ofLabel.equalsIgnoreCase(colInfos.get(i).label())) {
-                return readCol(i);
+                return i;
             }
         }
 
@@ -52,6 +56,7 @@ public class TableHDU extends HDU {
         var anyNull = new IntByReference();
         NativeCalling.FITS_IO.ffgcv(owner.fptr, ci.dataType(), i+1, 1, 1, ci.len()*rows,
                 nulVal, array, anyNull, owner.status);
+        //todo handle BAD_COL_NUM
 
         Object col;
         if (ci.axes().length == 1) {

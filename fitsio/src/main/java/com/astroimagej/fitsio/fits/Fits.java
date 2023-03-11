@@ -8,13 +8,13 @@ import jnr.ffi.ObjectReferenceManager;
 import jnr.ffi.Pointer;
 import jnr.ffi.byref.IntByReference;
 import jnr.ffi.byref.LongLongByReference;
-import jnr.ffi.byref.NativeLongByReference;
 import jnr.ffi.byref.PointerByReference;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -31,10 +31,20 @@ public class Fits extends NativeCalling implements AutoCloseable {
     private Pointer fileDataPointer;
     private ByteBuffer buffer;
     protected IntByReference status;
+    private Path tmpFile = null;
 
     //todo how to handle failure to open/status failure?
     public Fits(Path file) throws FileNotFoundException {
+        this(file, false);
+    }
+
+    private Fits(Path file, boolean isTemp) throws FileNotFoundException {
         this();
+
+        if (isTemp) {
+            tmpFile = file;
+        }
+
         var adr = new PointerByReference();
         if (FITS_IO.ffopen(adr, file.toString(), 0, status) == 0) {
             fptr.useMemory(adr.getValue());
@@ -51,8 +61,10 @@ public class Fits extends NativeCalling implements AutoCloseable {
     }
 
     public Fits(byte[] fileMemory) throws IOException {
-        this();
-        buffer = ByteBuffer.wrap(fileMemory);//field to try and keep memory alive?
+        //todo use ffomem, not temp files
+        this(Files.write(Files.createTempFile("aij" + Arrays.hashCode(fileMemory), null), fileMemory), true);
+
+        /*buffer = ByteBuffer.wrap(fileMemory);//field to try and keep memory alive?
         fileDataPointer = Memory.allocateDirect(RUNTIME, fileMemory.length * Integer.BYTES);
 
         referenceManager.add(fileMemory);
@@ -75,39 +87,6 @@ public class Fits extends NativeCalling implements AutoCloseable {
                 fptr.useMemory(adr.getValue());
                 System.out.println("Opening memory with: " + i);
                 buildFitsStructure();
-
-
-                // TESTING----------------
-
-                /*setCurrentHdu(1);
-
-                var ci = ((TableHDU) hdus.get(1)).colInfos.get(i);
-                var nulVal = Memory.allocate(NativeCalling.RUNTIME, ci.dataType().byteSize());
-                var array = Memory.allocateDirect(NativeCalling.RUNTIME, ci.byteSize()*((TableHDU) hdus.get(1)).rows);
-                var anyNull = new IntByReference();
-                FITS_IO.ffgcv(fptr, ci.dataType(), i+1, 1, 1, ci.len()*((TableHDU) hdus.get(1)).rows,
-                        nulVal, array, anyNull, status);
-
-                Object col;
-                if (ci.axes().length == 1) {
-                    col = TypeHandler.arrayFromDataType(array, ci.dataType(), 0L, (int) ((TableHDU) hdus.get(1)).rows);
-                } else {
-                    var colA = new Object[(int) ((TableHDU) hdus.get(1)).rows];
-                    for (int r = 0; r < ((TableHDU) hdus.get(1)).rows; r++) {
-                        colA[r] = TypeHandler.arrayFromDataType(array, ci.dataType(), r * ci.byteSize(),
-                                (int) ci.len());
-                    }
-                    col = colA;
-                }
-
-                System.out.println(new ColHolder<>(col, ci, ci.isColOfImages()));*/
-
-                //TESTING-----------------
-
-
-
-
-                //System.out.println(((TableHDU) hdus.get(1)).readCol(0));//this also fails
                 return;
             } else if (status.intValue() != END_OF_FILE) {
                 //todo improve failure modes, get from err stack
@@ -118,7 +97,7 @@ public class Fits extends NativeCalling implements AutoCloseable {
             status = new IntByReference();
         }
 
-        throw new IOException("Failed to open fits file");
+        throw new IOException("Failed to open fits file");*/
     }
 
     //todo fits reopen method to change open method to readwrite/readonly
@@ -145,6 +124,9 @@ public class Fits extends NativeCalling implements AutoCloseable {
     public void close() throws Exception {
         FITS_IO.ffclos(fptr, status);
         hdus.clear();
+        if (tmpFile != null) {
+            Files.deleteIfExists(tmpFile);
+        }
     }
 
     public void logStatus() {

@@ -25,14 +25,26 @@ public class PlotDataBinning {
                 return null;
             }
 
+            double[] finalX = x;
+            var idx = IntStream.range(0, x.length).filter(i -> Double.isFinite(finalX[i])).toArray();
+            x = takeIndices(x, idx);
+            y = takeIndices(y, idx);
+
+
             var withErr = err != null;
-            if (!withErr) err = new double[x.length];
+            if (!withErr) {
+                err = new double[x.length];
+            } else {
+                err = takeIndices(err, idx);
+            }
+
 
             var t = new ArrayMaths(x);
             var xMin = t.minimum();
             var xMax = t.maximum();
 
-            var l = IntStream.range(1, x.length).parallel().mapToDouble(i -> x[i] - x[i-1]).toArray();
+            double[] finalX1 = x;
+            var l = IntStream.range(1, x.length).parallel().mapToDouble(i -> finalX1[i] - finalX1[i-1]).toArray();
             if (l.length == 0) {
                 return null;
             }
@@ -49,7 +61,8 @@ public class PlotDataBinning {
             Arrays.setAll(binBounds, i -> (i * finalBinWidth) + xMin);
 
             var bins = new DataBin[nBins];
-            Arrays.setAll(bins, i -> new DataBin(x.length, i));
+            double[] finalX2 = x;
+            Arrays.setAll(bins, i -> new DataBin(finalX2.length, i));
 
             for (int i = 0; i < x.length; i++) {
                 var p = 0;
@@ -83,6 +96,16 @@ public class PlotDataBinning {
             e.printStackTrace();
             return null;
         }
+    }
+
+    private static double[] takeIndices(double[] in, int[] idx) {
+        var o = new double[idx.length];
+        var  p = 0;
+        for (int i : idx) {
+            o[p++] = in[i];
+        }
+
+        return o;
     }
 
     private record DataBin(double[] x, double[] y, double[] err, Holder lastIndex, int binIndex) {

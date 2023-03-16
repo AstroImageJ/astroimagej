@@ -18026,7 +18026,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             }
             if (i < minutes.size()) {
                 minutes.set(i, minutes.get(i).setFirst(Prefs.get("plot.displayBinMinutes[" + i +"]", minutes.get(i).first())));
-                minutes.get(i).second().setValue(minutes.get(i).first());
+                if (minutes.get(i).second() != null) {
+                    minutes.get(i).second().setValue(minutes.get(i).first());
+                }
             } else {
                 minutes.add(new Pair.GenericPair<>(Prefs.get("plot.displayBinMinutes[" + i +"]", 5), null));
             }

@@ -858,6 +858,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     private static Property<Integer> binnedDotSize = new Property<>(8, "plot.", "", MultiPlot_.class);
     private static Property<Integer> boldedDotSize = new Property<>(12, "plot.", "", MultiPlot_.class);
     private static Property<Boolean> drawAijVersion = new Property<>(true, "plot.", "", MultiPlot_.class);
+    private static Property<Boolean> drawBinnErrBars = new Property<>(true, "plot.", "", MultiPlot_.class);
 
     public void run(String inTableNamePlusOptions) {
         boolean useAutoAstroDataUpdate = false;
@@ -3532,7 +3533,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
                 }
 
-                plot.setColor(binDisplay[curve] ? Color.GRAY : color[curve]);
+                plot.setColor(binDisplay[curve] ? Color.LIGHT_GRAY : color[curve]);
 
                 if (binDisplay[curve] || marker[curve] == ij.gui.Plot.DOT) { plot.setLineWidth(dotSize.get()); } else plot.setLineWidth(1);
 
@@ -3570,6 +3571,15 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         plot.setColor(color[curve]);
                         if (marker[curve] == ij.gui.Plot.DOT) { plot.setLineWidth(binnedDotSize.get()); } else plot.setLineWidth(2);
                         plot.addPoints(pts.x(), pts.y(), marker[curve]);
+
+                        if (drawBinnErrBars.get()) {
+                            plot.setLineWidth(1);
+                            for (int j = 0; j < pts.x().length; j++) {
+                                plot.drawLine(pts.x()[j], pts.y()[j] - pts.err()[j], pts.x()[j], pts.y()[j] + pts.err()[j]);
+                                plot.drawLine(pts.x()[j] - (3.0 * (plotMaxX - plotMinX) / plotSizeX), pts.y()[j] + pts.err()[j], pts.x()[j] + (3.0 * (plotMaxX - plotMinX) / plotSizeX), pts.y()[j] + pts.err()[j]);
+                                plot.drawLine(pts.x()[j] - (3.0 * (plotMaxX - plotMinX) / plotSizeX), pts.y()[j] - pts.err()[j], pts.x()[j] + (3.0 * (plotMaxX - plotMinX) / plotSizeX), pts.y()[j] - pts.err()[j]);
+                            }
+                        }
 
                         // Calculate binned RMS
                         if (detrendFitIndex[curve] == 9 && useTransitFit[curve]) {
@@ -17438,6 +17448,13 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             updatePlot();
         });
         panel.add(control4, c);
+
+        var control5 = new JCheckBox("Draw binned error bars", drawBinnErrBars.get());
+        control5.addChangeListener($ -> {
+            drawBinnErrBars.set(control5.isSelected());
+            updatePlot();
+        });
+        panel.add(control5, c);
 
         panel.setBorder(BorderFactory.createEmptyBorder(20,30,20,30));
 

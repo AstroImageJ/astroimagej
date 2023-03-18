@@ -98,7 +98,7 @@ public class PlotDataBinning {
         }
     }
 
-    private static double[] takeIndices(double[] in, int[] idx) {
+    public static double[] takeIndices(double[] in, int[] idx) {
         var o = new double[idx.length];
         var  p = 0;
         for (int i : idx) {

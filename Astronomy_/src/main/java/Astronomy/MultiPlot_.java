@@ -3583,11 +3583,22 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
                         // Calculate binned RMS
                         if (detrendFitIndex[curve] == 9 && useTransitFit[curve]) {
+                            int finalCurve = curve;
                             // Undo shift so the model works
                             var xModelBin = Arrays.copyOf(pts.x(), pts.x().length);
                             for (int nnn = 0; nnn < xModelBin.length; nnn++) {
                                 xModelBin[nnn] += xOffset;
                             }
+
+                            // Adjust for left/right markers
+                            //todo recalc. fit min/max for this
+                            var xB = xModelBin;
+                            double[] finalXB = xB;
+                            var idx = IntStream.range(0, xB.length).filter(j -> (finalXB[j] > fitMin[finalCurve]) || (finalXB[j] < fitMax[finalCurve])).toArray();
+                            xB = PlotDataBinning.takeIndices(xB, idx);
+                            var yB = PlotDataBinning.takeIndices(pts.y(), idx);
+                            var errB = PlotDataBinning.takeIndices(pts.err(), idx);
+
                             var modelBin = IJU.transitModel(xModelBin, bestFit[curve][0], bestFit[curve][4], bestFit[curve][1], bestFit[curve][2], bestFit[curve][3], orbitalPeriod[curve], forceCircularOrbit[curve] ? 0.0 : eccentricity[curve], forceCircularOrbit[curve] ? 0.0 : omega[curve], bestFit[curve][5], bestFit[curve][6], useLonAscNode[curve], lonAscNode[curve], true);
 
                             // I don't know why this is needed, but with this RMS behaves as expected
@@ -3600,7 +3611,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                 }
                             }
 
-                            outBinRms[curve] = 1000*CurveFitter.calculateRms(curve, modelBin, pts.err(), pts.err(), xModelBin, xModelBin, pts.y(), pts.err(), bestFit[curve], detrendYAverage[curve]);
+                            outBinRms[curve] = 1000*CurveFitter.calculateRms(curve, modelBin, errB, errB, xModelBin, xModelBin, yB, errB, bestFit[curve], detrendYAverage[curve]);
                             outBinRms[curve] *= bestFit[curve][0];
                         } else {
                             var xModelBin = Arrays.copyOf(pts.x(), pts.x().length);

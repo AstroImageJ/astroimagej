@@ -31,13 +31,13 @@
 
 package nom.tam.util;
 
-import nom.tam.fits.FitsFactory;
-import nom.tam.util.type.ElementType;
-
 import java.io.IOException;
 import java.lang.reflect.Array;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import nom.tam.fits.FitsFactory;
+import nom.tam.util.type.ElementType;
 
 /**
  * Class for encoding select Java arrays into FITS binary format.

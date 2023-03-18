@@ -31,14 +31,20 @@ package nom.tam.fits.compression.algorithm.gzip2;
  * #L%
  */
 
+import java.io.IOException;
+import java.nio.Buffer;
+import java.nio.ByteBuffer;
+import java.nio.DoubleBuffer;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+import java.nio.LongBuffer;
+import java.nio.ShortBuffer;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
+
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import nom.tam.fits.compression.algorithm.gzip.GZipCompressor;
 import nom.tam.util.type.ElementType;
-
-import java.io.IOException;
-import java.nio.*;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.GZIPOutputStream;
 
 public abstract class GZip2Compressor<T extends Buffer> extends GZipCompressor<T> {
 

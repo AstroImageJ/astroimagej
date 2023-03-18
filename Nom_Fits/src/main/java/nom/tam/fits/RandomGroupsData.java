@@ -31,6 +31,14 @@ package nom.tam.fits;
  * #L%
  */
 
+import static nom.tam.fits.header.Standard.GCOUNT;
+import static nom.tam.fits.header.Standard.GROUPS;
+import static nom.tam.fits.header.Standard.NAXISn;
+import static nom.tam.fits.header.Standard.PCOUNT;
+
+import java.io.EOFException;
+import java.io.IOException;
+
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import nom.tam.fits.header.Bitpix;
 import nom.tam.fits.header.Standard;
@@ -38,11 +46,6 @@ import nom.tam.util.ArrayDataInput;
 import nom.tam.util.ArrayDataOutput;
 import nom.tam.util.ArrayFuncs;
 import nom.tam.util.FitsEncoder;
-
-import java.io.EOFException;
-import java.io.IOException;
-
-import static nom.tam.fits.header.Standard.*;
 
 /**
  * This class instantiates FITS Random Groups data. Random groups are

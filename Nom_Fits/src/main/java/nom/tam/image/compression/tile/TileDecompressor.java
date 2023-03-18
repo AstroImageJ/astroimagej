@@ -31,12 +31,12 @@ package nom.tam.image.compression.tile;
  * #L%
  */
 
+import java.nio.Buffer;
+import java.util.logging.Logger;
+
 import nom.tam.image.compression.tile.mask.ImageNullPixelMask;
 import nom.tam.image.compression.tile.mask.NullPixelMaskRestorer;
 import nom.tam.image.tile.operation.TileArea;
-
-import java.nio.Buffer;
-import java.util.logging.Logger;
 
 public class TileDecompressor extends TileCompressionOperation {
 
@@ -59,13 +59,17 @@ public class TileDecompressor extends TileCompressionOperation {
 
     private void decompress() {
         initTileOptions();
-        this.tileOptions.getCompressionParameters().getValuesFromColumn(getTileIndex());
+
+        this.tileOptions.getCompressionParameters().setTileIndex(getTileIndex());
+
         if (this.compressionType == TileCompressionType.COMPRESSED) {
+            this.tileOptions.getCompressionParameters().getValuesFromColumn(getTileIndex());
             getCompressorControl().decompress(this.compressedData, getTileBuffer().getBuffer(), this.tileOptions);
             if (this.nullPixelMaskRestorer != null) {
                 this.nullPixelMaskRestorer.restoreNulls();
             }
         } else if (this.compressionType == TileCompressionType.GZIP_COMPRESSED) {
+            this.tileOptions.getCompressionParameters().getValuesFromColumn(getTileIndex());
             getGzipCompressorControl().decompress(this.compressedData, getTileBuffer().getBuffer(), null);
         } else if (this.compressionType == TileCompressionType.UNCOMPRESSED) {
             Buffer typedBuffer = getBaseType().asTypedBuffer(this.compressedData);

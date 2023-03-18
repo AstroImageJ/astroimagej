@@ -31,12 +31,12 @@ package nom.tam.fits;
  * #L%
  */
 
-import nom.tam.fits.header.Bitpix;
-import nom.tam.fits.header.Standard;
-import nom.tam.image.StandardImageTiler;
-import nom.tam.util.*;
-import nom.tam.util.array.MultiArrayIterator;
-import nom.tam.util.type.ElementType;
+import static nom.tam.fits.header.Standard.EXTEND;
+import static nom.tam.fits.header.Standard.GCOUNT;
+import static nom.tam.fits.header.Standard.NAXIS;
+import static nom.tam.fits.header.Standard.NAXISn;
+import static nom.tam.fits.header.Standard.PCOUNT;
+import static nom.tam.util.LoggerHelper.getLogger;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -44,8 +44,16 @@ import java.nio.Buffer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static nom.tam.fits.header.Standard.*;
-import static nom.tam.util.LoggerHelper.getLogger;
+import nom.tam.fits.header.Bitpix;
+import nom.tam.fits.header.Standard;
+import nom.tam.image.StandardImageTiler;
+import nom.tam.util.ArrayDataInput;
+import nom.tam.util.ArrayDataOutput;
+import nom.tam.util.ArrayFuncs;
+import nom.tam.util.FitsEncoder;
+import nom.tam.util.RandomAccess;
+import nom.tam.util.array.MultiArrayIterator;
+import nom.tam.util.type.ElementType;
 
 /**
  * This class instantiates FITS primary HDU and IMAGE extension data.
@@ -207,7 +215,7 @@ public class ImageData extends Data {
             this.tiler = new ImageDataTiler(null, 0, this.dataDescription);
         }
 
-        int pad = FitsUtil.padding(getTrueSize());
+        long pad = FitsUtil.padding(getTrueSize());
         try {
             i.skipAllBytes(pad);
         } catch (EOFException e) {

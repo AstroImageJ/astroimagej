@@ -1,9 +1,12 @@
 package nom.tam.fits;
 
+import static nom.tam.fits.header.Standard.NAXISn;
+import static nom.tam.fits.header.Standard.TFIELDS;
+import static nom.tam.fits.header.Standard.TFORMn;
+import static nom.tam.fits.header.Standard.TTYPEn;
+
 import nom.tam.fits.header.GenericKey;
 import nom.tam.fits.header.IFitsHeader;
-
-import static nom.tam.fits.header.Standard.*;
 
 /*
  * #%L

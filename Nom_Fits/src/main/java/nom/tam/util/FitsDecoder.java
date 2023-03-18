@@ -31,13 +31,13 @@
 
 package nom.tam.util;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import nom.tam.fits.FitsFactory;
-import nom.tam.util.type.ElementType;
-
 import java.io.EOFException;
 import java.io.IOException;
 import java.lang.reflect.Array;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import nom.tam.fits.FitsFactory;
+import nom.tam.util.type.ElementType;
 
 /**
  * Class for decoding FITS-formatted binary data into Java arrays.

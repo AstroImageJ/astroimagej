@@ -1,10 +1,10 @@
 package nom.tam.fits.compression.algorithm.plio;
 
-import nom.tam.fits.compression.algorithm.api.ICompressor;
-
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
+
+import nom.tam.fits.compression.algorithm.api.ICompressor;
 
 /*
  * #%L

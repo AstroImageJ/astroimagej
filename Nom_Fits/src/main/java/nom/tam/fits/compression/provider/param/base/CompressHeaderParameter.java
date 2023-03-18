@@ -31,12 +31,12 @@ package nom.tam.fits.compression.provider.param.base;
  * #L%
  */
 
+import static nom.tam.fits.header.Compression.ZNAMEn;
+import static nom.tam.fits.header.Compression.ZVALn;
+
 import nom.tam.fits.HeaderCard;
 import nom.tam.fits.compression.provider.param.api.ICompressHeaderParameter;
 import nom.tam.fits.compression.provider.param.api.IHeaderAccess;
-
-import static nom.tam.fits.header.Compression.ZNAMEn;
-import static nom.tam.fits.header.Compression.ZVALn;
 
 public abstract class CompressHeaderParameter<OPTION> extends CompressParameter<OPTION> implements ICompressHeaderParameter {
 

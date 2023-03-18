@@ -1,10 +1,10 @@
 package nom.tam.image.compression.tile.mask;
 
+import java.nio.ByteBuffer;
+
 import nom.tam.fits.compression.algorithm.api.ICompressorControl;
 import nom.tam.fits.compression.provider.CompressorProvider;
 import nom.tam.image.tile.operation.buffer.TileBuffer;
-
-import java.nio.ByteBuffer;
 
 /*
  * #%L

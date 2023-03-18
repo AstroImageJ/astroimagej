@@ -31,6 +31,18 @@ package nom.tam.fits;
  * #L%
  */
 
+import static nom.tam.fits.header.Standard.EXTEND;
+import static nom.tam.fits.header.Standard.GCOUNT;
+import static nom.tam.fits.header.Standard.NAXIS;
+import static nom.tam.fits.header.Standard.NAXISn;
+import static nom.tam.fits.header.Standard.PCOUNT;
+import static nom.tam.util.LoggerHelper.getLogger;
+
+import java.io.EOFException;
+import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import nom.tam.fits.header.Bitpix;
 import nom.tam.fits.header.Standard;
@@ -38,14 +50,6 @@ import nom.tam.util.ArrayDataInput;
 import nom.tam.util.ArrayDataOutput;
 import nom.tam.util.ArrayFuncs;
 import nom.tam.util.FitsEncoder;
-
-import java.io.EOFException;
-import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import static nom.tam.fits.header.Standard.*;
-import static nom.tam.util.LoggerHelper.getLogger;
 
 /**
  * This class provides a simple holder for data which is not handled by other

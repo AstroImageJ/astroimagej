@@ -31,10 +31,10 @@ package nom.tam.util;
  * #L%
  */
 
-import nom.tam.fits.FitsFactory;
-
 import java.io.Closeable;
 import java.io.IOException;
+
+import nom.tam.fits.FitsFactory;
 
 /**
  * super closable interface for all fits reader/writers. It defines the

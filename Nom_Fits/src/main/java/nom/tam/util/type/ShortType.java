@@ -31,10 +31,10 @@ package nom.tam.util.type;
  * #L%
  */
 
-import nom.tam.fits.header.Bitpix;
-
 import java.nio.ByteBuffer;
 import java.nio.ShortBuffer;
+
+import nom.tam.fits.header.Bitpix;
 
 class ShortType extends ElementType<ShortBuffer> {
 

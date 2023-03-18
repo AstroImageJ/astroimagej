@@ -31,11 +31,10 @@
 
 package nom.tam.fits;
 
-import nom.tam.fits.FitsFactory.FitsSettings;
-import nom.tam.fits.header.IFitsHeader;
-import nom.tam.fits.header.IFitsHeader.VALUE;
-import nom.tam.fits.header.NonStandard;
-import nom.tam.util.*;
+import static nom.tam.fits.header.Standard.BLANKS;
+import static nom.tam.fits.header.Standard.COMMENT;
+import static nom.tam.fits.header.Standard.CONTINUE;
+import static nom.tam.fits.header.Standard.HISTORY;
 
 import java.io.ByteArrayInputStream;
 import java.io.EOFException;
@@ -46,7 +45,17 @@ import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static nom.tam.fits.header.Standard.*;
+import nom.tam.fits.FitsFactory.FitsSettings;
+import nom.tam.fits.header.IFitsHeader;
+import nom.tam.fits.header.IFitsHeader.VALUE;
+import nom.tam.fits.header.NonStandard;
+import nom.tam.util.ArrayDataInput;
+import nom.tam.util.AsciiFuncs;
+import nom.tam.util.FitsInputStream;
+import nom.tam.util.ComplexValue;
+import nom.tam.util.CursorValue;
+import nom.tam.util.FlexFormat;
+import nom.tam.util.InputReader;
 
 
 /**

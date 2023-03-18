@@ -31,8 +31,6 @@ package nom.tam.fits;
  * #L%
  */
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-
 import java.text.DecimalFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -41,6 +39,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * Fits date object parsed from the different type of date combinations

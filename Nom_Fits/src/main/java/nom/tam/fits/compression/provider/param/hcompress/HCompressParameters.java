@@ -34,7 +34,6 @@ package nom.tam.fits.compression.provider.param.hcompress;
 import nom.tam.fits.compression.algorithm.api.ICompressOption;
 import nom.tam.fits.compression.algorithm.hcompress.HCompressorOption;
 import nom.tam.fits.compression.provider.param.api.ICompressHeaderParameter;
-import nom.tam.fits.compression.provider.param.api.ICompressParameters;
 import nom.tam.fits.compression.provider.param.base.CompressParameters;
 
 public class HCompressParameters extends CompressParameters {
@@ -49,8 +48,11 @@ public class HCompressParameters extends CompressParameters {
     }
 
     @Override
-    public ICompressParameters copy(ICompressOption clone) {
-        return new HCompressParameters((HCompressorOption) clone);
+    public HCompressParameters copy(ICompressOption option) {
+        if (option instanceof HCompressorOption) {
+            return new HCompressParameters((HCompressorOption) option);
+        }
+        return null;
     }
 
     @Override

@@ -31,12 +31,20 @@ package nom.tam.fits;
  * #L%
  */
 
-import nom.tam.fits.header.Bitpix;
-import nom.tam.util.ArrayFuncs;
+import static nom.tam.fits.header.Standard.BITPIX;
+import static nom.tam.fits.header.Standard.GCOUNT;
+import static nom.tam.fits.header.Standard.GROUPS;
+import static nom.tam.fits.header.Standard.NAXIS;
+import static nom.tam.fits.header.Standard.NAXISn;
+import static nom.tam.fits.header.Standard.PCOUNT;
+import static nom.tam.fits.header.Standard.SIMPLE;
+import static nom.tam.fits.header.Standard.XTENSION;
+import static nom.tam.fits.header.Standard.XTENSION_IMAGE;
 
 import java.io.PrintStream;
 
-import static nom.tam.fits.header.Standard.*;
+import nom.tam.fits.header.Bitpix;
+import nom.tam.util.ArrayFuncs;
 
 /**
  * Random groups HDUs. Note that the internal storage of random groups is a

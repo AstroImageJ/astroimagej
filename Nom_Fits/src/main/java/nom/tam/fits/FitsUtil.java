@@ -31,10 +31,6 @@ package nom.tam.fits;
  * #L%
  */
 
-import nom.tam.util.ArrayDataOutput;
-import nom.tam.util.AsciiFuncs;
-import nom.tam.util.RandomAccess;
-
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
@@ -45,6 +41,10 @@ import java.net.URLConnection;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import nom.tam.util.ArrayDataOutput;
+import nom.tam.util.AsciiFuncs;
+import nom.tam.util.RandomAccess;
 
 /**
  * This class comprises static utility functions used throughout the FITS

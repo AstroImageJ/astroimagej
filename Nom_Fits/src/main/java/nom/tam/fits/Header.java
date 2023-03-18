@@ -31,24 +31,50 @@ package nom.tam.fits;
  * #L%
  */
 
-import nom.tam.fits.FitsFactory.FitsSettings;
-import nom.tam.fits.header.Bitpix;
-import nom.tam.fits.header.IFitsHeader;
-import nom.tam.fits.header.IFitsHeader.VALUE;
-import nom.tam.util.RandomAccess;
-import nom.tam.util.*;
+import static nom.tam.fits.header.Standard.BITPIX;
+import static nom.tam.fits.header.Standard.BLANKS;
+import static nom.tam.fits.header.Standard.COMMENT;
+import static nom.tam.fits.header.Standard.END;
+import static nom.tam.fits.header.Standard.EXTEND;
+import static nom.tam.fits.header.Standard.GCOUNT;
+import static nom.tam.fits.header.Standard.GROUPS;
+import static nom.tam.fits.header.Standard.HISTORY;
+import static nom.tam.fits.header.Standard.NAXIS;
+import static nom.tam.fits.header.Standard.NAXISn;
+import static nom.tam.fits.header.Standard.PCOUNT;
+import static nom.tam.fits.header.Standard.SIMPLE;
+import static nom.tam.fits.header.Standard.TFIELDS;
+import static nom.tam.fits.header.Standard.XTENSION;
+import static nom.tam.fits.header.Standard.XTENSION_BINTABLE;
+import static nom.tam.fits.header.extra.CXCExt.LONGSTRN;
 
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static nom.tam.fits.header.Standard.*;
-import static nom.tam.fits.header.extra.CXCExt.LONGSTRN;
+import nom.tam.fits.FitsFactory.FitsSettings;
+import nom.tam.fits.header.Bitpix;
+import nom.tam.fits.header.IFitsHeader;
+import nom.tam.fits.header.IFitsHeader.VALUE;
+import nom.tam.util.ArrayDataInput;
+import nom.tam.util.ArrayDataOutput;
+import nom.tam.util.AsciiFuncs;
+import nom.tam.util.ComplexValue;
+import nom.tam.util.Cursor;
+import nom.tam.util.FitsIO;
+import nom.tam.util.FitsOutput;
+import nom.tam.util.HashedList;
+import nom.tam.util.RandomAccess;
 
 /**
  * This class describes methods to access and manipulate the header for a FITS
@@ -91,7 +117,7 @@ public class Header implements FitsElement {
      */
     public static final int MAX_COMMENT_ALIGN = 70;
 
-    /**
+    /** 
      * The alignment position of card comments for a more pleasing visual experience. Comments will be
      * aligned to this position, provided the lengths of all fields allow for it.
      */
@@ -286,7 +312,7 @@ public class Header implements FitsElement {
      *             If the parameters cannot build a valid FITS card.
      * @throws IllegalArgumentException
      *             If the keyword is invalid
-     *
+     *             
      * @see #addValue(String, Boolean, String)
      */
     public HeaderCard addValue(IFitsHeader key, Boolean val) throws HeaderCardException, IllegalArgumentException {
@@ -311,7 +337,7 @@ public class Header implements FitsElement {
      *             If the parameters cannot build a valid FITS card.
      * @throws IllegalArgumentException
      *             If the keyword is invalid
-     *
+     * 
      * @see #addValue(String, Number, String)
      */
     public HeaderCard addValue(IFitsHeader key, Number val) throws HeaderCardException, IllegalArgumentException {
@@ -321,7 +347,7 @@ public class Header implements FitsElement {
     }
 
     /**
-     * Add or replace a key with the given string value and its standardized comment.
+     * Add or replace a key with the given string value and its standardized comment. 
      * If the value is not compatible with the convention of the keyword, a warning message is
      * logged but no exception is thrown (at this point).
      *
@@ -334,7 +360,7 @@ public class Header implements FitsElement {
      *             If the parameters cannot build a valid FITS card.
      * @throws IllegalArgumentException
      *             If the keyword is invalid
-     *
+     *             
      * @see #addValue(String, String, String)
      */
     public HeaderCard addValue(IFitsHeader key, String val) throws HeaderCardException, IllegalArgumentException {
@@ -357,9 +383,9 @@ public class Header implements FitsElement {
      *             If the parameters cannot build a valid FITS card.
      * @throws IllegalArgumentException
      *             If the keyword is invalid
-     *
+     *             
      * @see #addValue(String, ComplexValue, String)
-     *
+     * 
      * @since 1.17
      */
     public HeaderCard addValue(IFitsHeader key, ComplexValue val) throws HeaderCardException, IllegalArgumentException {
@@ -952,7 +978,7 @@ public class Header implements FitsElement {
     /**
      * <p>
      * Returns the list of duplicate cards in the order they appeared in the parsed header.
-     * You can access the first occurence of each of every duplicated FITS keyword
+     * You can access the first occurence of each of every duplicated FITS keyword 
      * using the usual <code>Header.getValue()</code>, and find further occurrences
      * in the list returned here.
      * </p>
@@ -967,15 +993,15 @@ public class Header implements FitsElement {
      * keywords to a header. If you must used the same keyword multiple times in your
      * header, you should consider using comment-style entries instead.
      * </p>
-     *
-     *
+     * 
+     * 
      * @return the list of duplicate cards. Note that when the header is read
      *         in, only the last entry for a given keyword is retained in the
      *         active header. This method returns earlier cards that have been
      *         discarded in the order in which they were encountered in the
      *         header. It is possible for there to be many cards with the same
      *         keyword in this list.
-     *
+     *         
      * @see #hadDuplicates()
      * @see #getDuplicateKeySet()
      */
@@ -986,13 +1012,13 @@ public class Header implements FitsElement {
     /**
      * Returns the set of keywords that had more than one value assignment in the parsed
      * header.
-     *
+     * 
      * @return  the set of header keywords that were assigned more than once in the
      *          same header, or <code>null</code> if there were no duplicate assignments.
-     *
+     *          
      * @see #hadDuplicates()
      * @see #getDuplicates()
-     *
+     * 
      * @since 1.17
      */
     public Set<String> getDuplicateKeySet() {
@@ -1964,8 +1990,8 @@ public class Header implements FitsElement {
     }
 
     /**
-     * Update a valued entry in the header, or adds a new header entry. If the header does not
-     * contain a prior entry for the specific keyword, or if the keyword is a comment-style key,
+     * Update a valued entry in the header, or adds a new header entry. If the header does not 
+     * contain a prior entry for the specific keyword, or if the keyword is a comment-style key, 
      * a new entry is added at the current editing position. Otherwise, the matching existing
      * entry is updated in situ.
      *
@@ -2048,12 +2074,12 @@ public class Header implements FitsElement {
     /**
      * Add required keywords, and removes conflicting ones depending on whether it is designated
      * as a primary header or not.
-     *
+     * 
      * @param isPrimary         <code>true</code> if this is to be a primary header, otherwise <code>false</code>
      * @throws FitsException    if there was an error trying to edit the header.
-     *
+     * 
      * @since 1.17
-     *
+     * 
      * @see #validate(FitsOutput)
      */
     void editRequiredKeys(boolean isPrimary) throws FitsException {
@@ -2104,23 +2130,23 @@ public class Header implements FitsElement {
      * <p>
      * Validates this header by making it a proper primary or extension header. In both cases it means adding
      * required keywords if missing, and removing conflicting cards. Then ordering is checked and
-     * corrected as necessary and ensures that the <code>END</code> card is at the tail.
-     *
-     *
+     * corrected as necessary and ensures that the <code>END</code> card is at the tail. 
+     * 
+     * 
      * @param asPrimary         <code>true</code> if this header is to be a primary FITS header
      * @throws FitsException    If there was an issue getting the header into proper form.
-     *
+     * 
      * @since 1.17
      */
     public void validate(boolean asPrimary) throws FitsException {
         editRequiredKeys(asPrimary);
         validate();
-    }
+    }   
 
     /**
      * Validates the header making sure it has the required keywords and that the essential
      * keywords appeat in the in the required order
-     *
+     * 
      * @throws FitsException    If there was an issue getting the header into proper form.
      */
     private void validate() throws FitsException {
@@ -2392,7 +2418,7 @@ public class Header implements FitsElement {
 
     /**
      * Replace the key with a new key. Typically this is used when deleting or
-     * inserting columns. If the convention of the new keyword is not compatible with the existing value
+     * inserting columns. If the convention of the new keyword is not compatible with the existing value 
      * a warning message is logged but no exception is thrown (at this point).
      *
      * @param oldKey
@@ -2401,7 +2427,7 @@ public class Header implements FitsElement {
      *            the new header keyword.
      * @return <CODE>true</CODE> if the card was replaced.
      * @throws HeaderCardException
-     *                If <CODE>newKey</CODE> is not a valid FITS keyword.
+     *                If <CODE>newKey</CODE> is not a valid FITS keyword.           
      */
     boolean replaceKey(IFitsHeader oldKey, IFitsHeader newKey) throws HeaderCardException {
 
@@ -2567,16 +2593,16 @@ public class Header implements FitsElement {
      * 
      * @since 1.16
      */
-    public static boolean isParserWarningsEnabled() {
+    public static boolean isParserWarningsEnabled() {        
         return !HeaderCardParser.getLogger().getLevel().equals(Level.SEVERE);
     }
 
     /**
      * Returns the current preferred alignment character position of inline header comments.
      * This is the position at which the '/' is placed for the inline comment.
-     *
+     * 
      * @return  The current alignment position for inline comments.
-     *
+     * 
      * @see #setCommentAlignPosition(int)
      */
     public static int getCommentAlignPosition() {
@@ -2585,11 +2611,11 @@ public class Header implements FitsElement {
 
     /**
      * Sets a new alignment position for inline header comments.
-     *
-     *
+     * 
+     * 
      * @param pos   [20:70] The character position to which inline comments should be aligned if possible.
      * @throws IllegalArgumentException     if the position is outside of the allowed range.
-     *
+     * 
      * @see #getCommentAlignPosition()
      */
     public static void setCommentAlignPosition(int pos) throws IllegalArgumentException {

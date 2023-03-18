@@ -31,14 +31,20 @@ package nom.tam.util.type;
  * #L%
  */
 
-import nom.tam.fits.FitsException;
-import nom.tam.fits.header.Bitpix;
-
 import java.lang.reflect.Array;
-import java.nio.*;
+import java.nio.Buffer;
+import java.nio.ByteBuffer;
+import java.nio.DoubleBuffer;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+import java.nio.LongBuffer;
+import java.nio.ShortBuffer;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+
+import nom.tam.fits.FitsException;
+import nom.tam.fits.header.Bitpix;
 
 /**
  * A base data element type in a FITS image or table column, with associated functions.

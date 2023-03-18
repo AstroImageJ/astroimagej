@@ -31,11 +31,17 @@
 
 package nom.tam.util;
 
-import java.io.*;
+import static nom.tam.util.LoggerHelper.getLogger;
+
+
+// What do we use in here?
+import java.io.DataInput;
+import java.io.DataInputStream;
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import static nom.tam.util.LoggerHelper.getLogger;
 
 /**
  * This class is intended for high performance reading FITS files or blocks 

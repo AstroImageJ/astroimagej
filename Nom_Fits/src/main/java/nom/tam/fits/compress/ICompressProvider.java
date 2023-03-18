@@ -31,10 +31,10 @@ package nom.tam.fits.compress;
  * #L%
  */
 
-import nom.tam.fits.FitsException;
-
 import java.io.IOException;
 import java.io.InputStream;
+
+import nom.tam.fits.FitsException;
 
 public interface ICompressProvider {
 

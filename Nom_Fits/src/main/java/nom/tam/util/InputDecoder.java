@@ -31,13 +31,13 @@
 
 package nom.tam.util;
 
-import nom.tam.fits.FitsFactory;
-
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+
+import nom.tam.fits.FitsFactory;
 
 /**
  * Efficient base class for decoding of binary input into Java arrays.

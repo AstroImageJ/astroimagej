@@ -31,16 +31,22 @@ package nom.tam.fits;
  * #L%
  */
 
-import nom.tam.image.StandardImageTiler;
-import nom.tam.util.ArrayFuncs;
-import nom.tam.util.type.ElementType;
+import static nom.tam.fits.header.Standard.BITPIX;
+import static nom.tam.fits.header.Standard.GROUPS;
+import static nom.tam.fits.header.Standard.NAXIS;
+import static nom.tam.fits.header.Standard.NAXISn;
+import static nom.tam.fits.header.Standard.SIMPLE;
+import static nom.tam.fits.header.Standard.XTENSION;
+import static nom.tam.fits.header.Standard.XTENSION_IMAGE;
+import static nom.tam.util.LoggerHelper.getLogger;
 
 import java.io.PrintStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static nom.tam.fits.header.Standard.*;
-import static nom.tam.util.LoggerHelper.getLogger;
+import nom.tam.image.StandardImageTiler;
+import nom.tam.util.ArrayFuncs;
+import nom.tam.util.type.ElementType;
 
 /**
  * FITS image header/data unit

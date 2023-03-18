@@ -1,10 +1,10 @@
-package nom.tam.image.tile.operation;
+package nom.tam.image;
 
-/*
+/*-
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2021 nom-tam-fits
+ * Copyright (C) 1996 - 2022 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,25 +31,51 @@ package nom.tam.image.tile.operation;
  * #L%
  */
 
-import java.nio.Buffer;
-import java.nio.ByteBuffer;
+/**
+ * Provides 2D tiling support for images.
+ * 
+ * @author Attila Kovacs #since 1.18
+ */
+public interface ITileOption {
 
-import nom.tam.fits.compression.algorithm.api.ICompressOption;
-import nom.tam.fits.compression.algorithm.api.ICompressorControl;
-import nom.tam.util.type.ElementType;
+    /**
+     * Returns the current tile height for the implementing class.
+     * 
+     * @return (pixels) the current tile height.
+     * @see #setTileHeight(int)
+     * @see #getTileWidth()
+     */
+    int getTileHeight();
 
-public interface ITiledImageOperation {
-    ICompressOption compressOptions();
-    
-    ElementType<Buffer> getBaseType();
-    
-    ByteBuffer getCompressedWholeArea();
+    /**
+     * Returns the current tile width for the implementing class.
+     * 
+     * @return (pixels) the current tile width.
+     * @see #setTileWidth(int)
+     * @see #getTileHeight()
+     */
+    int getTileWidth();
 
-    ICompressorControl getCompressorControl();
+    /**
+     * Sets a new tile height for the implementing class.
+     * 
+     * @param value
+     *            (pixels) the new tile height.
+     * @return itself
+     * @see #getTileHeight()
+     * @see #setTileWidth(int)
+     */
+    ITileOption setTileHeight(int value);
 
-    ICompressorControl getGzipCompressorControl();
+    /**
+     * Sets a new tile width for the implementing class.
+     * 
+     * @param value
+     *            (pixels) the new tile width.
+     * @return itself
+     * @see #getTileWidth()
+     * @see #setTileHeight(int)
+     */
+    ITileOption setTileWidth(int value);
 
-    int getImageWidth();
-
-    ITileOperation getTileOperation(int i);
 }

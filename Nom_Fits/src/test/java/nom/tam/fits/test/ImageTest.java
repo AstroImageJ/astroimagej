@@ -52,7 +52,7 @@ import static nom.tam.fits.header.Standard.*;
 import static org.junit.Assert.assertEquals;
 
 /**
- * Test the ImageHDU, ImageData and ImageTiler classes. - multiple HDU's in a
+ * Test the ImageHDU, ImageData and ImageTiler classes. - multiple HDUs in a
  * single file - deferred input of HDUs - creating and reading arrays of all
  * permitted types. - Tiles of 1, 2 and 3 dimensions - from a file - from
  * internal data - Multiple tiles extracted from an image.

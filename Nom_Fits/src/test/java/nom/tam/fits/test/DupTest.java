@@ -39,6 +39,11 @@ import org.junit.Test;
 import java.io.DataOutputStream;
 import java.io.FileOutputStream;
 import java.util.List;
+import java.util.Set;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
 import static org.junit.Assert.*;
 
@@ -50,6 +55,26 @@ import static org.junit.Assert.*;
  */
 public class DupTest {
 
+    class LogCounter extends Handler {
+        private int count = 0;
+        
+        @Override
+        public void close() throws SecurityException {}
+
+        @Override
+        public void flush() {}
+
+        @Override
+        public synchronized void publish(LogRecord arg0) { 
+            count++; 
+            System.err.println("### MESSAGE: " + arg0.getMessage());
+        }
+        
+        public synchronized int getCount() { 
+            return count; 
+        }
+    };
+    
     @Test
     public void test() throws Exception {
 
@@ -80,4 +105,59 @@ public class DupTest {
         assertFalse("No duplicates", hdr.hadDuplicates());
         assertTrue("Dups is null", hdr.getDuplicates() == null);
     }
+    
+    private Logger getParserLogger() {
+        return Logger.getLogger("nom.tam.fits.HeaderCardParser");
+    }
+    
+    @Test
+    public void dupesWarningsOn() throws Exception {
+        Logger l = getParserLogger();
+        l.setLevel(Level.WARNING);                      // Make sure we log warnings to Header
+        
+        LogCounter counter = new LogCounter();
+        l.addHandler(counter);
+        
+        int initCount = counter.getCount();
+        
+        Header.setParserWarningsEnabled(true);
+        assertTrue(Header.isParserWarningsEnabled());   // Check that warings are enabled
+        
+        Fits f = new Fits("src/test/resources/nom/tam/fits/test/test_dup.fits");
+        Header h = f.readHDU().getHeader();
+        
+        assertTrue("Has dups:", h.hadDuplicates());     // Check that we did indeed have duplicates
+        assertNotEquals(initCount, counter.getCount()); // Check that logger was called on them
+    }
+    
+    @Test
+    public void dupesWarningsOff() throws Exception {
+        Logger l = getParserLogger();
+        l.setLevel(Level.WARNING);                      // Make sure we log warnings to Header
+        LogCounter counter = new LogCounter();
+        l.addHandler(counter);
+        
+        int initCount = counter.getCount();
+        
+        Header.setParserWarningsEnabled(false);
+        assertFalse(Header.isParserWarningsEnabled());  // Check that warings are enabled
+        
+        Fits f = new Fits("src/test/resources/nom/tam/fits/test/test_dup.fits");
+        Header h = f.readHDU().getHeader();
+        
+        assertTrue("Has dups:", h.hadDuplicates());     // Check that we did indeed have duplicates
+        assertEquals(initCount, counter.getCount());    // Check that logger was NOT called on them
+        
+        l.removeHandler(counter);
+    }
+    
+    @Test
+    public void dupesSetTest() throws Exception {
+        Fits f = new Fits("src/test/resources/nom/tam/fits/test/test_dup.fits");
+        Header h = f.readHDU().getHeader();
+        
+        Set<?> keys = h.getDuplicateKeySet(); 
+        assertTrue(keys.contains("CARD"));
+    }
+    
 }

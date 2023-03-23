@@ -1,0 +1,133 @@
+import groovy.json.JsonSlurper
+import org.apache.tools.ant.taskdefs.condition.Os
+
+import java.nio.file.Files
+
+plugins {
+    id "de.undercouch.download" version "5.4.0"
+}
+
+group 'com.astroimagej'
+version '5.2.0.11'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+
+}
+
+tasks.withType(Exec) {
+    doFirst {
+        println "Executing command for $name:"
+        println commandLine
+    }
+}
+
+def zigVersion = "master"
+
+def zigFolder = projectDir.toPath().resolve('zig').toFile()
+
+task downloadZig(type: Download) {
+    src getZigUrlForSystem(zigVersion)
+    dest new File(zigFolder, 'zig.pack')
+}
+
+task installZig(dependsOn: downloadZig, type: Sync) {
+    def isZip = getZigUrlForSystem(zigVersion).endsWith(".zip")
+    if (isZip) {
+        from zipTree(downloadZig.dest)
+    } else {
+        from(tarTree(resources.gzip(downloadZig.dest)))
+    }
+    into zigFolder.toPath().resolve('unpacked')
+}
+
+task buildHello(type: Exec) {
+    if (!zigExe().exists()) {
+        dependsOn(installZig)
+    }
+
+    executable zigExe()
+    args 'build'
+    workingDir 'modules/hello'
+}
+
+task runHello(type: Exec) {
+    if (!zigExe().exists()) {
+        dependsOn(installZig)
+    }
+
+    executable zigExe()
+    args 'build', 'run'
+    workingDir 'modules/hello'
+    println(argumentProviders)
+}
+
+
+String getZigUrlForSystem(String version) {
+    def zigMeta = new JsonSlurper().parse(new URL('https://ziglang.org/download/index.json'))
+    def system = architecture(System.getProperty("os.arch").toLowerCase(Locale.ENGLISH))+"-"+osName()
+    def systemMeta = zigMeta."$version"."$system"
+    def url = systemMeta.tarball
+    def hash = systemMeta.shasum
+
+    return url
+}
+
+String architecture(String arch) {
+    switch (arch) {
+        // --- 32 bit ---
+        case ["x86", "i386", "ia-32", "i686"]: return "x86" // Intel x86
+        case "ppc": return "powerpc" // Power PC
+        //case "sparc", "sparc32", "sparc-v8": return "sparc" // Sparc
+        //case "arm", "arm-v7", "armv7", "arm32": return "arm" // ARM
+
+        // --- 64 bit ---
+        case ["x86_64", "amd64", "x64", "x86-64"]: return "x86_64" // Intel x86
+        case ["ia-64", "ia64"]: return "ia64" // Intel Itanium
+        case "ppc64": return "powerpc64le" // Power PC
+        //case "sparc64", "ultrasparc", "sparc-v9": return "x86" // Sparc
+        case ["aarch64", "arm64", "arm-v8"]: return "aarch64" // ARM
+
+        default: throw new IllegalFormatException("Unknown architecture")
+    }
+}
+
+String osName() {
+    if (Os.isFamily(Os.FAMILY_MAC)) {
+        return "macos"
+    } else if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+        return "windows"
+    } else if (Os.isFamily(Os.FAMILY_UNIX)) {
+        return "linux"
+    } else {
+        throw new IllegalStateException("Unknown OS Family")
+    }
+}
+
+File zigExe() {
+    def unpacked = projectDir.toPath().resolve('zig').resolve('unpacked')
+    if (!Files.exists(unpacked)) {
+        return unpacked.resolve('doesNotExist').toFile()
+    }
+
+    def exe= 'zig'
+    if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+        exe = 'zig.exe'
+    }
+
+    def o
+    unpacked.toFile().eachFileRecurse {
+        if (it.name == exe) {
+            o = it
+        }
+    }
+
+    if (o == null) {
+        return unpacked.resolve('doesNotExist').toFile()
+    }
+
+    return o
+}

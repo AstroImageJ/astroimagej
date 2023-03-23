@@ -294,7 +294,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
     static String[] xlabel2;
     static int selectedRowStart, selectedRowEnd;
-    static java.util.List<String> deletedRowList;
     static java.io.File[] dragAndDropFiles;
     static double[][] x;
     static double[][] xModel1;
@@ -5576,12 +5575,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 {
                     if (e.isShiftDown() && !e.isAltDown() && !e.isControlDown())  //shift+left-click (remove selected table row)
                     {
-                        selectedRowStart = tpanel.getSelectionStart();
-                        selectedRowEnd = tpanel.getSelectionEnd();
-                        for (int i = selectedRowEnd; i >= selectedRowStart; i--) {
-                            deletedRowList.add(tpanel.getLine(i));
-                        }
-                        tpanel.clearSelection();
+                        FitOptimization.cleanOutliers(FitOptimization.CleanMode.PRECISION, null, 0);
                         table = MeasurementTable.getTable(tableName);
 //                                if (Data_Processor.running) Data_Processor.setTable(table);
                         table.show();
@@ -5603,55 +5597,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 } else if (e.getButton() == MouseEvent.BUTTON2)                     //middle mouse click release
                 {
                     IJ.log("x=" + fourPlaces.format(xval) + ", y=" + fourPlaces.format(yval));
-                } else if (e.getButton() == MouseEvent.BUTTON3 && e.isShiftDown() && !e.isControlDown() && !e.isAltDown() && !deletedRowList.isEmpty()) //shift + right mouse click release
+                } else if (e.getButton() == MouseEvent.BUTTON3 && e.isShiftDown() && !e.isControlDown() && !e.isAltDown()) //shift + right mouse click release
                 {                                                                                     //undo delete selected table row
-                    int lastRow = tpanel.getLineCount() - 1;
-                    if (selectedRowEnd <= lastRow - inputAverageOverSize[firstCurve]) {  //restore all rows other than the last one OR next to last one when when inputAverageOverSize > 1
-                        String[] lines = new String[lastRow - selectedRowStart + 1];
-                        for (int i = 0; i < lines.length; i++) {
-                            lines[i] = tpanel.getLine(selectedRowStart + i);
-                        }
-                        tpanel.setSelection(selectedRowStart, lastRow);
-                        tpanel.clearSelection();
-                        for (int i = 0; i < inputAverageOverSize[firstCurve]; i++) {
-                            if (!deletedRowList.isEmpty()) {
-                                tpanel.appendWithoutUpdate(deletedRowList.remove(deletedRowList.size() - 1));
-                            }
-                        }
-                        for (String line : lines) {
-                            tpanel.appendWithoutUpdate(line);
-                        }
-                    } else if (selectedRowEnd < lastRow) { //restore next to last row when inputAverageOverSize > 1
-                        selectedRowStart -= inputAverageOverSize[firstCurve];
-                        selectedRowEnd -= inputAverageOverSize[firstCurve];
-                        String[] lines = new String[lastRow - selectedRowEnd];
-                        for (int i = 0; i < lines.length; i++) {
-                            lines[i] = tpanel.getLine(selectedRowEnd + 1 + i);
-                        }
-                        tpanel.setSelection(selectedRowEnd + 1, lastRow);
-                        tpanel.clearSelection();
-                        for (int i = 0; i < inputAverageOverSize[firstCurve]; i++) {
-                            if (!deletedRowList.isEmpty()) {
-                                tpanel.appendWithoutUpdate(deletedRowList.remove(deletedRowList.size() - 1));
-                            }
-                        }
-                        for (String line : lines) {
-                            tpanel.appendWithoutUpdate(line);
-                        }
-                        selectedRowStart += inputAverageOverSize[firstCurve];
-                        selectedRowEnd += inputAverageOverSize[firstCurve];
-
-                    } else { //restore last row in table
-                        for (int i = 0; i < inputAverageOverSize[firstCurve]; i++) {
-                            if (!deletedRowList.isEmpty()) {
-                                tpanel.appendWithoutUpdate(deletedRowList.remove(deletedRowList.size() - 1));
-                            }
-                        }
-                        selectedRowStart += inputAverageOverSize[firstCurve];
-                    }
-                    table = MeasurementTable.getTable(tableName);
-                    table.show();
-                    tpanel = MeasurementTable.getTextPanel(MeasurementTable.longerName(tableName));
+                    FitOptimization.undoOutlierClean(null);
                     selectedRowEnd = selectedRowStart + inputAverageOverSize[firstCurve] - 1;
                     tpanel.setSelection(selectedRowStart, selectedRowEnd);
                     boldedDatum = (selectedRowStart - excludedHeadSamples) / inputAverageOverSize[firstCurve];
@@ -6146,7 +6094,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         refStarPanelWasShowing = false;
         addAstroDataFrameWasShowing = false;
         usePixelScale = true;
-        deletedRowList = new ArrayList<>();
         useBoldedDatum = true;
         useUpdateStack = false;
         multiUpdate = false;

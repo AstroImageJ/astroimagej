@@ -151,7 +151,7 @@ public class FitOptimization implements AutoCloseable {
         outlierRemoval.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(MultiPlot_.subBorderColor, 1), "Outlier Removal", TitledBorder.CENTER, TitledBorder.TOP, MultiPlot_.p11, Color.darkGray));
         var undoButton = new JButton("⟲");
         var undoFont = undoButton.getFont();
-        undoButton.addActionListener($ -> undoOutlierClean());
+        undoButton.addActionListener($ -> undoOutlierClean(FitOptimization.this));
         undoButton.setFont(undoButton.getFont().deriveFont(15f));
         undoButton.setToolTipText("<html>Undo clean<br>(up to 5 levels)</html>");
         outlierRemoval.add(undoButton);
@@ -160,12 +160,12 @@ public class FitOptimization implements AutoCloseable {
             @Override
             public void mouseClicked(MouseEvent e) {
                 if (SwingUtilities.isRightMouseButton(e)) {
-                    cleanOutliers(CleanMode.RMS);
+                    cleanOutliers(CleanMode.RMS, FitOptimization.this, FitOptimization.this.curve);
                     return;
                 }
 
                 if (e.isAltDown()) {
-                    cleanOutliers(CleanMode.POINT_MEDIAN);
+                    cleanOutliers(CleanMode.POINT_MEDIAN, FitOptimization.this, FitOptimization.this.curve);
                     return;
                 }
             }
@@ -187,7 +187,7 @@ public class FitOptimization implements AutoCloseable {
             }
         });
         //noinspection deprecation
-        cleanButton.addActionListener(ae -> cleanOutliers(CleanMode.getMode(ae)));
+        cleanButton.addActionListener(ae -> cleanOutliers(CleanMode.getMode(ae), FitOptimization.this, FitOptimization.this.curve));
         cleanButton.setToolTipText("""
                 <html>
                 Left-click to remove all data points that are outliers from the transit model by more than N times the per-point photometric error.<br>
@@ -376,8 +376,8 @@ public class FitOptimization implements AutoCloseable {
         return fitOptimizationPanel;
     }
 
-    private void cleanOutliers(CleanMode cleanMode) {
-        if (!plotY[curve]) {
+    public static void cleanOutliers(CleanMode cleanMode, FitOptimization fo, int curve) {
+        if (fo != null && !plotY[curve]) {
             IJ.error("The 'Plot' check box for this data set must be enabled in Multi-Plot Y-data panel for optimization.");
             return;
         }
@@ -429,6 +429,7 @@ public class FitOptimization implements AutoCloseable {
             sigma = Math.sqrt(sigma);
         }
         for (int i = 0; i < nn[curve]; i++) {
+            if (cleanMode == CleanMode.PRECISION) break;
             if (cleanMode == CleanMode.POINT) sigma = yerr[curve][i];
             var comparator = switch (cleanMode) {
                 case POINT_MEDIAN -> yerr[curve][i];
@@ -448,12 +449,24 @@ public class FitOptimization implements AutoCloseable {
             }
         }
 
+        if (cleanMode == CleanMode.PRECISION) {
+            var selectedRowStart = tpanel.getSelectionStart();
+            var selectedRowEnd = tpanel.getSelectionEnd();
+            for (int i = selectedRowEnd; i >= selectedRowStart; i--) {
+                toRemove.add(i);
+                hasActionToUndo = true;
+            }
+        }
+
         if (hasActionToUndo) {
             for (Integer i : toRemove.descendingSet()) {
                 //if (showOptLog) AIJLogger.log("row["+i+"] removed");
                 table.deleteRow(i);
             }
-            cleanNumTF.setText("-" + toRemove.size());
+
+            if (fo != null) {
+                fo.cleanNumTF.setText("-" + toRemove.size());
+            }
             undoBuffer.addFirst(oldTable);
             if (undoBuffer.size() > 10) undoBuffer.removeLast();
             // If the table is empty MP proceeds with no errors and doesn't update the plot
@@ -462,7 +475,9 @@ public class FitOptimization implements AutoCloseable {
             MultiPlot_.updatePlot(MultiPlot_.updateAllFits());
         } else {
             IJ.beep();
-            cleanNumTF.setText("0");
+            if (fo != null) {
+                fo.cleanNumTF.setText("0");
+            }
         }
 
         if (showOptLog) AIJLogger.log("" + toRemove.size() + " new outliers removed");
@@ -483,23 +498,29 @@ public class FitOptimization implements AutoCloseable {
         table.show();
         tpanel = MeasurementTable.getTextPanel(MeasurementTable.longerName(tableName));
 
-        difNumTF.setText("" + (undoBuffer.size() > 0 ? table.size() - undoBuffer.getLast().size() : "0"));
+        if (fo != null) {
+            fo.difNumTF.setText("" + (undoBuffer.size() > 0 ? table.size() - undoBuffer.getLast().size() : "0"));
+        }
 
         savePrefs();
     }
 
-    private void undoOutlierClean() {
+    public static void undoOutlierClean(FitOptimization fo) {
         if (!undoBuffer.isEmpty()) {
             var rs = table.size();
             table = undoBuffer.pop();
-            cleanNumTF.setText("+" + (table.size() - rs));
+            if (fo != null) {
+                fo.cleanNumTF.setText("+" + (table.size() - rs));
+            }
             MultiPlot_.updatePlot(MultiPlot_.updateAllFits());
             table.show();
             tpanel = MeasurementTable.getTextPanel(MeasurementTable.longerName(tableName));
         } else {
             IJ.beep();
         }
-        difNumTF.setText("" + (undoBuffer.size() > 0 ? table.size() - undoBuffer.getLast().size() : "0"));
+        if (fo != null) {
+            fo.difNumTF.setText("" + (undoBuffer.size() > 0 ? table.size() - undoBuffer.getLast().size() : "0"));
+        }
     }
 
     private void testCompMin() {
@@ -854,7 +875,8 @@ public class FitOptimization implements AutoCloseable {
     enum CleanMode {
         RMS,
         POINT_MEDIAN,
-        POINT;
+        POINT,
+        PRECISION;
 
         static CleanMode getMode(ActionEvent ae) {
             if ((ae.getModifiers() & InputEvent.SHIFT_MASK) != 0) return RMS;

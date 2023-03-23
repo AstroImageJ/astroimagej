@@ -466,7 +466,7 @@ public class FitOptimization implements AutoCloseable {
 
             cleanNumTF.setText("-" + toRemove.size());
             undoBuffer.addFirst(new CleanTracker(cleanMode, oldTable, toRemove));
-            if (undoBuffer.size() > 10) undoBuffer.removeLast();
+            if (undoBuffer.size() > 10) undoBuffer.remove(9);
             // If the table is empty MP proceeds with no errors and doesn't update the plot
             if (table.size() == 0) IJ.error("Cleaning", "Removed all points in the table, " +
                     "please undo and increase the number of sigma being used");

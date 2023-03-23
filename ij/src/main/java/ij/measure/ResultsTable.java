@@ -840,8 +840,9 @@ public class ResultsTable implements Cloneable {
 
 	/** Sets the decimal places (digits to the right of decimal point)
 		that are used when this table is displayed. */
+	@AstroImageJ(reason = "Max precision of 16")
 	public synchronized void setPrecision(int precision) {
-		if (precision>9) precision=9;
+		if (precision>16) precision=16;
 		this.precision = (short)precision;
 		for (int i=0; i<decimalPlaces.length; i++) {
 			if (decimalPlaces[i]!=AUTO_FORMAT)
@@ -903,7 +904,7 @@ public class ResultsTable implements Cloneable {
 		if ((np<0.001 && np!=0.0 && np<1.0/Math.pow(10,decimalPlaces)) || np>999999999999d || decimalPlaces<0) {
 			if (decimalPlaces<0) {
 				decimalPlaces = -decimalPlaces;
-				if (decimalPlaces>9) decimalPlaces=9;
+				if (decimalPlaces>16) decimalPlaces=16;
 			} else
 				decimalPlaces = 3;
 			if (sf==null) {

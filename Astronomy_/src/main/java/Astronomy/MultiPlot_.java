@@ -5599,7 +5599,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     IJ.log("x=" + fourPlaces.format(xval) + ", y=" + fourPlaces.format(yval));
                 } else if (e.getButton() == MouseEvent.BUTTON3 && e.isShiftDown() && !e.isControlDown() && !e.isAltDown()) //shift + right mouse click release
                 {                                                                                     //undo delete selected table row
-                    FitOptimization.undoOutlierClean(null);
+                    FitOptimization.undoOutlierClean();
                     selectedRowEnd = selectedRowStart + inputAverageOverSize[firstCurve] - 1;
                     tpanel.setSelection(selectedRowStart, selectedRowEnd);
                     boldedDatum = (selectedRowStart - excludedHeadSamples) / inputAverageOverSize[firstCurve];

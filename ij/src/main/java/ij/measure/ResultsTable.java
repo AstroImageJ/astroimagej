@@ -884,12 +884,15 @@ public class ResultsTable implements Cloneable {
 		saveColumnHeaders = save;
 	}
 
-	private static DecimalFormat[] df;
-	private static DecimalFormat[] sf;
+	@AstroImageJ(reason = "Change from array")
+	private static HashMap<Integer, DecimalFormat> df;
+	@AstroImageJ(reason = "Change from array")
+	private static HashMap<Integer, DecimalFormat> sf;
 	private static DecimalFormatSymbols dfs;
 
 	/** This is a version of IJ.d2s() that uses scientific notation for
 		small numbes that would otherwise display as zero. */
+	@AstroImageJ(reason = "Change max output precision to 16; don't 0-pad")
 	public static String d2s(double n, int decimalPlaces) {
 		if (Double.isNaN(n)||Double.isInfinite(n))
 			return ""+n;
@@ -906,37 +909,29 @@ public class ResultsTable implements Cloneable {
 			if (sf==null) {
 				if (dfs==null)
 					dfs = new DecimalFormatSymbols(Locale.US);
-				sf = new DecimalFormat[10];
-				sf[1] = new DecimalFormat("0.0E0",dfs);
-				sf[2] = new DecimalFormat("0.00E0",dfs);
-				sf[3] = new DecimalFormat("0.000E0",dfs);
-				sf[4] = new DecimalFormat("0.0000E0",dfs);
-				sf[5] = new DecimalFormat("0.00000E0",dfs);
-				sf[6] = new DecimalFormat("0.000000E0",dfs);
-				sf[7] = new DecimalFormat("0.0000000E0",dfs);
-				sf[8] = new DecimalFormat("0.00000000E0",dfs);
-				sf[9] = new DecimalFormat("0.000000000E0",dfs);
+				sf = new HashMap<>(10);
+				sf.put(1, new DecimalFormat("0.0E0",dfs));
 			}
-			return sf[decimalPlaces].format(n); // use scientific notation
+			return sf.computeIfAbsent(decimalPlaces, i -> {
+				var start = "0.";
+				var end = "E0";
+				var mid = "#".repeat(i);
+				return new DecimalFormat(start+mid+end, dfs);
+			}).format(n); // use scientific notation
 		}
 		if (decimalPlaces<0) decimalPlaces = 0;
-		if (decimalPlaces>9) decimalPlaces = 9;
+		if (decimalPlaces>16) decimalPlaces = 16;// double's only go to ~16 anyways
 		if (df==null) {
 			dfs = new DecimalFormatSymbols(Locale.US);
-			df = new DecimalFormat[10];
-			df[0] = new DecimalFormat("0", dfs);
-			df[1] = new DecimalFormat("0.0", dfs);
-			df[2] = new DecimalFormat("0.00", dfs);
-			df[3] = new DecimalFormat("0.000", dfs);
-			df[4] = new DecimalFormat("0.0000", dfs);
-			df[5] = new DecimalFormat("0.00000", dfs);
-			df[6] = new DecimalFormat("0.000000", dfs);
-			df[7] = new DecimalFormat("0.0000000", dfs);
-			df[8] = new DecimalFormat("0.00000000", dfs);
-			df[9] = new DecimalFormat("0.000000000", dfs);
-			df[0].setRoundingMode(RoundingMode.HALF_UP);
+			df = new HashMap<>();
+			df.put(0, new DecimalFormat("0", dfs));
+			df.get(0).setRoundingMode(RoundingMode.HALF_UP);
 		}
-		return df[decimalPlaces].format(n);
+		return df.computeIfAbsent(decimalPlaces, i -> {
+			var start = "0.";
+			var mid = "#".repeat(i);
+			return new DecimalFormat(start+mid, dfs);
+		}).format(n);
 	}
 
 	/** Deletes the specified row. */

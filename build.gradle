@@ -27,7 +27,7 @@ plugins {
     id 'java'
 
     // Plugin to download files
-    id "de.undercouch.download" version "4.1.1"
+    id "de.undercouch.download" version "5.4.0"
 
     id "org.jetbrains.gradle.plugin.idea-ext" version "1.0.+"
 

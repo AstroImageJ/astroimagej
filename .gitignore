@@ -19,3 +19,6 @@ Research
 /Nom Fits Module/target/
 /Nom_Fits/target/
 /repos/
+/native/zig/
+/native/modules/*/zig-cache/
+/native/modules/*/zig-out/

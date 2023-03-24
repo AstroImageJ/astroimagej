@@ -1,15 +1,15 @@
 package util;
 
-import ij.IJ;
-import ij.ImageJ;
-import ij.Prefs;
-import ij.WindowManager;
+import com.astroimagej.bspline.util.Triple;
+import ij.*;
 import ij.astro.util.UIHelper;
 import ij.gui.GUI;
 import ij.gui.HTMLDialog;
 import ij.gui.MultiLineLabel;
+import ij.macro.Interpreter;
 import ij.macro.MacroRunner;
 import ij.plugin.ScreenGrabber;
+import ij.plugin.frame.Recorder;
 
 import javax.swing.*;
 import javax.swing.text.DefaultFormatter;
@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.text.NumberFormat;
 import java.text.ParseException;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
@@ -38,6 +39,8 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
     private final JButton okay = new JButton("  OK  ");
     private final JButton cancel = new JButton("Cancel");
     private final JPanel basePanel = new JPanel(new GridBagLayout());
+    private final String macroOptions;
+    private final boolean macro;
     private int x = 0;
     private JButton no, help;
     private boolean wasOKed = false, wasCanceled = false;
@@ -54,6 +57,9 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
     private boolean customAnchor = false;
     private int leftInset = 0;
     private int rightInset = 0;
+    private LinkedHashMap<Component, Triple<String, Consumer<String>, Runnable>> labels;
+    private boolean optionsRecorded;     // have dialogListeners been called to record options?
+    private boolean recorderOn;          // whether recording is allowed (after the dialog is closed)
 
     public GenericSwingDialog(String title) {
         this(title, guessParentFrame());
@@ -69,6 +75,9 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         setupPaneLayout();
         UIHelper.setLookAndFeel();
         setIcon();
+        macroOptions = Macro.getOptions();
+        macro = macroOptions!=null;
+        recorderOn = Recorder.record;
     }
 
     /**
@@ -183,6 +192,16 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         x++;
         c.insets.left = 0;
 
+        if (Recorder.record || macro)
+            saveLabel(box, label, s -> {
+                box.setSelected(Boolean.parseBoolean(s));
+                consumer.accept(Boolean.parseBoolean(s));
+            }, () -> {
+                if (recorderOn) {
+                    recordOption(box, Boolean.toString(box.isSelected()));
+                }
+            });
+
         return box;
     }
 
@@ -255,7 +274,19 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
                 var cb = new JCheckBox(label);
                 cb.setSelected(defaultValues[i1]);
                 final int finalI = i1;
-                cb.addActionListener($ -> consumers.get(finalI).accept(cb.isSelected()));
+                cb.addActionListener($ -> {
+                    consumers.get(finalI).accept(cb.isSelected());
+                });
+                if (Recorder.record || macro) {
+                    saveLabel(cb, labels[i1], s -> {
+                        cb.setSelected(Boolean.parseBoolean(s));
+                        consumers.get(finalI).accept(Boolean.parseBoolean(s));
+                    }, () -> {
+                        if (recorderOn) {
+                            recordOption(cb, Boolean.toString(cb.isSelected()));
+                        }
+                    });
+                }
                 boxes.add(cb);
                 if (IJ.isLinux()) {
                     Panel panel2 = new Panel();
@@ -312,6 +343,16 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         b.add(thisChoice);
         addLocal(b, c);
         x++;
+
+        if (Recorder.record || macro)
+            saveLabel(thisChoice, label, s -> {
+                thisChoice.setSelectedItem(s);
+                consumer.accept(s);
+            }, () -> {
+                if (recorderOn) {
+                    recordOption(thisChoice, ((String) thisChoice.getSelectedItem()));//todo use index?
+                }
+            });
 
         return new ComponentPair(b, thisChoice);
     }
@@ -520,8 +561,20 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         addLocal(b, c);
         x++;
 
+        if (Recorder.record || macro)
+            saveLabel(spinner, label, s3 -> {
+                getTextFieldFromSpinner(spinner).ifPresent(c -> c.setText(s3));
+                consumer.accept(Double.parseDouble(s3));
+            }, () -> {
+                if (recorderOn) {
+                    recordOption(spinner, getTextFieldFromSpinner(spinner).get().getText());
+                }
+            });
+
         return panel;
     }
+
+    //todo macro support for button group
 
     private String stepSizeId(String label) {
         var classOptional = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE)
@@ -656,6 +709,16 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         addLocal(b, c);
         x++;
 
+        if (Recorder.record || macro)
+            saveLabel(tf, label, s -> {
+                getTextFieldFromSpinner(tf).ifPresent(c -> c.setText(s));
+                consumer.accept(Double.parseDouble(s));
+            }, () -> {
+                if (recorderOn) {
+                    recordOption(tf, getTextFieldFromSpinner(tf).get().getText());
+                }
+            });
+
         return new ComponentPair(tf, out);
     }
 
@@ -676,10 +739,21 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         return b;
     }
 
-    public static JRadioButton makeRadioButton(String text, Consumer<Boolean> listener, ButtonGroup group) {
+    //todo figure out, only use the group
+    public static JRadioButton makeRadioButton(GenericSwingDialog gd, String text, Consumer<Boolean> listener, ButtonGroup group) {
         var r = new JRadioButton(text);
         if (group != null) r.getModel().setGroup(group);
-        r.addActionListener($ -> listener.accept(r.isSelected()));
+        r.addActionListener($ -> {
+            listener.accept(r.isSelected());
+            /*if (gd.recorderOn) {
+                gd.recordOption(text, );
+            }*/
+        });
+
+        /*if (Recorder.record || gd.macro)
+            saveLabel(text, s -> {
+                group.;
+            });*/
         return r;
     }
 
@@ -771,7 +845,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
     }
 
     public boolean wasOKed() {
-        return wasOKed;
+        return wasOKed || macro;
     }
 
     public void showDialog() {
@@ -788,6 +862,29 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
 
     public void displayDialog(boolean show) {
         if (!show) return;
+        if (labels != null) {
+            labels.forEach(($, p) -> p.c().run());
+        }
+        if (macro) {
+            labels.forEach(($, p) -> {
+                var nv = Macro.getValue(macroOptions, p.a(), null);
+                if (nv != null) {
+                    if (nv.startsWith("&")) {
+                        nv = nv.substring(1);
+                    }
+                    Interpreter interp = Interpreter.getInstance();
+                    var s = interp!=null?interp.getVariableAsString(nv):null;
+                    if (s != null) {
+                        nv = s;
+                    }
+                    //AIJLogger.log("Setting option from macro: %s = %s".formatted(p.a(), nv));
+                    p.b().accept(nv);//todo better error handling
+                }
+            });
+
+            dispose();
+            return;
+        }
         //setupPaneLayout();
         setResizable(true);
         //todo limit max size to some fraction of screen size?
@@ -1015,6 +1112,41 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
     public void setFont(Font font) {
         super.setFont(!fontSizeSet && Prefs.getGuiScale() != 1.0 && font != null ? font.deriveFont((float) (font.getSize() * Prefs.getGuiScale())) : font);
         fontSizeSet = true;
+    }
+
+    /** Saves the label for given component, for macro recording and for accessing the component in macros. */
+    private void saveLabel(Component component, String label, Consumer<String> consumer, Runnable finalizer) {
+        if (labels==null)
+            labels = new LinkedHashMap<>();
+        if (label.length()>0)
+            label = Macro.trimKey(label.trim());
+        if (label.length()>0 && hasLabel(label)) {                      // not a unique label?
+            label += "_0";
+            for (int n=1; hasLabel(label); n++) {   // while still not a unique label
+                label = label.substring(0, label.lastIndexOf('_')); //remove counter
+                label += "_"+n;
+            }
+        }
+        labels.put(component, new Triple<>(label, consumer, finalizer));
+    }
+
+    /** Returns whether the list of labels for macro recording or macro creation contains a given label. */
+    private boolean hasLabel(String label) {
+        return labels.values().stream().anyMatch(p -> p.a().equals(label));
+    }
+
+    private String trim(String value) {
+        if (value.endsWith(".0"))
+            value = value.substring(0, value.length()-2);
+        if (value.endsWith(".00"))
+            value = value.substring(0, value.length()-3);
+        return value;
+    }
+
+    private void recordOption(Component c, String value) {
+        var label = labels.get(c).a();
+        if (value.equals("")) value = "[]";
+        Recorder.recordOption(label, trim(value));
     }
 
     /**

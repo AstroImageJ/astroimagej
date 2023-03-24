@@ -3727,29 +3727,29 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         sliders[3] = gd.addFloatSlider("Fixed/Base radius of inner background annulus", 0.01, rBack1 > 100 ? rBack1 : 100, false, rBack1, 3, 1.0, d -> rBack1 = d);
         sliders[4] = gd.addFloatSlider("Fixed/Base radius of outer background annulus", 0.01, rBack2 > 100 ? rBack2 : 100, false, rBack2, 3, 1.0, d -> rBack2 = d);
         gd.addLineSeparator();//todo spacing
-        gd.addGenericComponent(ApRadius.FIXED.setupButton());
+        gd.addGenericComponent(ApRadius.FIXED.setupButton(gd));
         gd.setOverridePosition(true);
-        gd.addGenericComponent(ApRadius.AUTO_FIXED.setupButton());
+        gd.addGenericComponent(ApRadius.AUTO_FIXED.setupButton(gd));
         gd.addToSameRow();
         gd.setLeftInset(-190);
         gd.setNewPosition(GridBagConstraints.WEST);
         gd.addBoundedNumericField("Normalized flux cutoff threshold:", new GenericSwingDialog.Bounds(0, false, 1, false), ApRadius.AUTO_FIXED.cutoff, .01, 6, "(0 < cutoff < 1 ; default = 0.010)", d -> ApRadius.AUTO_FIXED.cutoff = d);
         gd.resetPositionOverride();
         gd.setLeftInset(20);
-        gd.addGenericComponent(ApRadius.AUTO_FIXED_STACK_RAD.setupButton());
+        gd.addGenericComponent(ApRadius.AUTO_FIXED_STACK_RAD.setupButton(gd));
         gd.addToSameRow();
         gd.setLeftInset(-190);
         gd.setNewPosition(GridBagConstraints.WEST);
         gd.addBoundedNumericField("Normalized flux cutoff threshold:", new GenericSwingDialog.Bounds(0, false, 1, false), ApRadius.AUTO_FIXED_STACK_RAD.cutoff, .01, 6, "(0 < cutoff < 1 ; default = 0.010)", d -> ApRadius.AUTO_FIXED_STACK_RAD.cutoff = d);
         gd.resetPositionOverride();
-        gd.addGenericComponent(ApRadius.AUTO_VAR_RAD_PROF.setupButton());
+        gd.addGenericComponent(ApRadius.AUTO_VAR_RAD_PROF.setupButton(gd));
         gd.addToSameRow();
         gd.setLeftInset(-190);
         gd.setNewPosition(GridBagConstraints.WEST);
         gd.addBoundedNumericField("Normalized flux cutoff threshold:", new GenericSwingDialog.Bounds(0, false, 1, false), ApRadius.AUTO_VAR_RAD_PROF.cutoff, .01, 6, "(0 < cutoff < 1 ; default = 0.010)", d -> ApRadius.AUTO_VAR_RAD_PROF.cutoff = d);
         gd.setOverridePosition(false);
         gd.resetPositionOverride();
-        gd.addGenericComponent(ApRadius.AUTO_VAR_FWHM.setupButton());
+        gd.addGenericComponent(ApRadius.AUTO_VAR_FWHM.setupButton(gd));
         gd.addToSameRow();
         gd.setOverridePosition(true);
         gd.setNewPosition(GridBagConstraints.EAST);
@@ -4302,8 +4302,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             MultiAperture_.radiusSetting.button.setSelected(true);
         }
 
-        public Component setupButton() {
-            button = GenericSwingDialog.makeRadioButton(buttonText, b -> {
+        public Component setupButton(GenericSwingDialog gd) {
+            button = GenericSwingDialog.makeRadioButton(gd, buttonText, b -> {
                 if (b) radiusSetting = this;
             }, group);
 

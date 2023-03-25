@@ -50,7 +50,7 @@ public class FitOptimization implements AutoCloseable {
     public DynamicCounter compCounter;
     public DynamicCounter detrendCounter;
     public JSpinner detrendParamCount;
-    public static JTextField cleanNumTF = new JTextField("0");
+    public JTextField cleanNumTF = new JTextField("0");
     CompletionService<MinimumState> completionService;
     private ScheduledExecutorService ipsExecutorService;
     private BigInteger iterRemainingOld = BigInteger.ZERO;
@@ -67,7 +67,7 @@ public class FitOptimization implements AutoCloseable {
     private JPanel compOptiCards;
     private RollingAvg rollingAvg = new RollingAvg();
     private JSpinner detrendEpsilon;
-    private final static JTextField difNumTF = new JTextField("0");
+    private final JTextField difNumTF = new JTextField("0");
 
     // Init. after numAps is set
     public FitOptimization(int curve, int epsilon) {
@@ -128,8 +128,10 @@ public class FitOptimization implements AutoCloseable {
 
     public void clearHistory() {
         undoBuffer.clear();
-        cleanNumTF.setText("0");
-        difNumTF.setText("0");
+        INSTANCES.forEach(f -> {
+            f.cleanNumTF.setText("0");
+            f.difNumTF.setText("0");
+        });
     }
 
     public void setSelectable(boolean[] selectable) {
@@ -464,7 +466,7 @@ public class FitOptimization implements AutoCloseable {
                 table.deleteRow(i);
             }
 
-            cleanNumTF.setText("-" + toRemove.size());
+            INSTANCES.forEach(f -> f.cleanNumTF.setText("-" + toRemove.size()));
             undoBuffer.addFirst(new CleanTracker(cleanMode, oldTable, toRemove));
             if (undoBuffer.size() > 10) undoBuffer.remove(9);
             // If the table is empty MP proceeds with no errors and doesn't update the plot
@@ -473,7 +475,7 @@ public class FitOptimization implements AutoCloseable {
             MultiPlot_.updatePlot(MultiPlot_.updateAllFits());
         } else {
             IJ.beep();
-            cleanNumTF.setText("0");
+            INSTANCES.forEach(f -> f.cleanNumTF.setText("0"));
         }
 
         if (showOptLog) AIJLogger.log("" + toRemove.size() + " new outliers removed");
@@ -494,7 +496,7 @@ public class FitOptimization implements AutoCloseable {
         table.show();
         tpanel = MeasurementTable.getTextPanel(MeasurementTable.longerName(tableName));
 
-        difNumTF.setText("" + (undoBuffer.size() > 0 ? table.size() - undoBuffer.getLast().table.size() : "0"));
+        INSTANCES.forEach(f -> f.difNumTF.setText("" + (undoBuffer.size() > 0 ? table.size() - undoBuffer.getLast().table.size() : "0")));
 
         savePrefs();
     }
@@ -504,7 +506,7 @@ public class FitOptimization implements AutoCloseable {
             var rs = table.size();
             var t = undoBuffer.pop();
             table = t.table;
-            cleanNumTF.setText("+" + (table.size() - rs));
+            INSTANCES.forEach(f -> f.cleanNumTF.setText("+" + (table.size() - rs)));
             MultiPlot_.updatePlot(MultiPlot_.updateAllFits());
             table.show();
             tpanel = MeasurementTable.getTextPanel(MeasurementTable.longerName(tableName));
@@ -516,7 +518,7 @@ public class FitOptimization implements AutoCloseable {
         } else {
             IJ.beep();
         }
-        difNumTF.setText("" + (undoBuffer.size() > 0 ? table.size() - undoBuffer.getLast().table.size() : "0"));
+        INSTANCES.forEach(f -> f.difNumTF.setText("" + (undoBuffer.size() > 0 ? table.size() - undoBuffer.getLast().table.size() : "0")));
     }
 
     private void testCompMin() {

@@ -794,7 +794,7 @@ public class FitsHeaderEditor implements ListSelectionListener, ActionListener, 
             } else if (value.equalsIgnoreCase("T") || value.equalsIgnoreCase("F")) {
                 value = value.toUpperCase();
                 type = "B";
-            } else if (parseInteger(value) != Integer.MIN_VALUE) {
+            } else if (parseInteger(value) != Integer.MIN_VALUE && !value.endsWith(".")) {
                 type = "I";
             } else if (!Double.isNaN(parseDouble(value.toUpperCase().replace("D", "E")))) {
                 value = value.toUpperCase();

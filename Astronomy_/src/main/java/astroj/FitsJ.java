@@ -1179,6 +1179,9 @@ public class FitsJ
 		{
 		int i = 0;
 		String s = getCardValue (card);
+		if (s.endsWith(".")) {
+			s = s.substring(0, s.length() - 1);
+		}
 		i = Integer.parseInt(s);
 		return i;
 		}

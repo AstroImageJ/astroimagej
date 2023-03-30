@@ -512,6 +512,10 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 						hasErrors = true;
 						hdr.addValue("NO_BJD", 0, "Skipped due to invalid or missing BJD time");
 					}
+					if (isTicaCut(hdus[0])) {
+						hdr.deleteKey("DATE-OBS");
+						hdr.deleteKey("DATE-END");
+					}
 				} else if (isTessPostageStamp(hdus)) {
 					hdr.addValue("OBJECT", hdus[0].getHeader().getStringValue("OBJECT"), "Object ID");
 					if (quality[i].intValue() == 8) {

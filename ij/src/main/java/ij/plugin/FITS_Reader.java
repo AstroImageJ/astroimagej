@@ -512,6 +512,10 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 						hasErrors = true;
 						hdr.addValue("NO_BJD", 0, "Skipped due to invalid or missing BJD time");
 					}
+					if (isTicaCut(hdus[0])) {
+						hdr.addLine(hdus[0].getHeader().findCard("DATE-OBS"));
+						hdr.addLine(hdus[0].getHeader().findCard("DATE-END"));
+					}
 				} else if (isTessPostageStamp(hdus)) {
 					hdr.addValue("OBJECT", hdus[0].getHeader().getStringValue("OBJECT"), "Object ID");
 					if (quality[i].intValue() == 8) {
@@ -566,6 +570,13 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	}
 
 	/**
+	 * Determine if the image is a TICA image from astrocut
+	 */
+	private boolean isTicaCut(BasicHDU<?> hdu) {
+		return null != hdu.getHeader().findCard("TICAVER") && "astrocut".equals(hdu.getHeader().findCard("CREATOR").getValue().trim());
+	}
+
+	/**
 	 * Calculate BJD_TDB for TESS or TICA FFIs as they are missing it.
 	 * <p>
 	 * Note: Assumes all needed cards are present.
@@ -583,7 +594,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			hdu.addValue("BJD_TDB", bjdTdb, "Calc by AIJ as BJDREFI+BJDREFF+TSTART+TELAPSE/2.0");
 		}
 
-		if (isTicaImage(hdu)) {
+		if (isTicaImage(hdu) && !isTicaCut(hdu)) {
 			var tjdZero = header.getDoubleValue("TJD_ZERO");
 			var startTjd = header.getDoubleValue("STARTTJD");
 			var jdTdb = tjdZero + startTjd;

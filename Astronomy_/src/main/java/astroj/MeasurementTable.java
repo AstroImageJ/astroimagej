@@ -107,7 +107,7 @@ IJ.log(heading+" "+val);
 	 */
 	public void addValue (String column, double value, int places)
 		{
-		setPrecision(places);
+		setPrecision(16);
 		super.addValue (column,value);
 		// setPrecision (DEFAULT_DECIMALS);
 		// PRESENT ResultsTable DOESN'T KEEP TRACK OF INDIVIDUAL PRECISIONS!!!

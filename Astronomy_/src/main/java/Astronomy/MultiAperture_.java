@@ -12,6 +12,7 @@ import ij.gui.GenericDialog;
 import ij.gui.PlotWindow;
 import ij.gui.Toolbar;
 import ij.measure.ResultsTable;
+import ij.plugin.frame.Recorder;
 import ij.process.ImageProcessor;
 import ij.util.Tools;
 import util.GenericSwingDialog;
@@ -389,6 +390,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
      * and registers the routine for mouse clicks.
      */
     public void run(ImageProcessor ip) {
+        if (Recorder.record) {
+            Recorder.setCommand(getClass().getName());
+        }
 //        if (table==null)
 //            IJ.log("Table is null");
 //        else
@@ -451,6 +455,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             imp.unlock();
             shutDown();
             return;
+        }
+
+        if (Recorder.record) {
+            Recorder.saveCommand();
         }
 
         imp.setSlice(firstSlice);

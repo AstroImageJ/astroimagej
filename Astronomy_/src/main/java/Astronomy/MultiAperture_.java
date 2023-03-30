@@ -457,10 +457,6 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             return;
         }
 
-        if (Recorder.record) {
-            Recorder.saveCommand();
-        }
-
         imp.setSlice(firstSlice);
 
         // START ESCAPE ABORTION POSSIBILITY

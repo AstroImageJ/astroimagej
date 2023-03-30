@@ -862,9 +862,6 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
 
     public void displayDialog(boolean show) {
         if (!show) return;
-        if (labels != null) {
-            labels.forEach(($, p) -> p.c().run());
-        }
         if (macro) {
             labels.forEach(($, p) -> {
                 var nv = Macro.getValue(macroOptions, p.a(), null);
@@ -1309,6 +1306,15 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
     public void dispose() {
         super.dispose();
         Prefs.savePreferences();
+        if (wasOKed) {
+            if (labels != null) {
+                labels.forEach(($, p) -> p.c().run());
+            }
+
+            if (Recorder.record) {
+                Recorder.saveCommand();
+            }
+        }
     }
 
     /**

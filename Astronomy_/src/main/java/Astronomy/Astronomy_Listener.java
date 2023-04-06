@@ -24,8 +24,7 @@ public class Astronomy_Listener implements PlugIn, ImageListener
     public static final boolean RESIZE = true;
     public static final boolean NORESIZE = false;
 
-    public void run (String arg)
-		{
+    public void run (String arg) {
         if (IJ.versionLessThan("1.35l")) return;
         ImagePlus.addImageListener(this);
         }
@@ -44,8 +43,12 @@ public class Astronomy_Listener implements PlugIn, ImageListener
 //            Class<?> mainComponentClass = openFrame.getClass();
             if (!(openFrame instanceof astroj.AstroStackWindow))//(mainComponentClass.getName() != "astroj.AstroStackWindow")
                 {
-                AstroCanvas ac = new AstroCanvas(imp);
-                new AstroStackWindow(imp, ac, NEW, RESIZE);
+                    var o = imp.getWindow();
+                    AstroCanvas ac = new AstroCanvas(imp);
+                    imp.setWindow(new AstroStackWindow(imp, ac, NEW, RESIZE));
+                    if (o != null) {
+                        o.close();
+                    }
                 }
             }
 
@@ -69,7 +72,11 @@ public class Astronomy_Listener implements PlugIn, ImageListener
                 {
 //                IJ.log("Actually Updating Image: "+imp.getTitle());
                 ;
-                ex.execute(() -> asw.setAstroProcessor(false));
+                ex.execute(() -> {
+                    if (IJ.isMacro())
+                        imp.waitTillActivated();
+                    asw.setAstroProcessor(false);
+                });
                 }
             else
                 {

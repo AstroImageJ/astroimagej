@@ -455,6 +455,9 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
     public AstroStackWindow(ImagePlus imp, AstroCanvas ac, boolean refresh, boolean resize) {
 
         super(imp, ac);
+        isReady = false;
+        if (IJ.isMacro() && !isVisible()) //'super' may have called show()
+            imp.setDeactivated(); //prepare for waitTillActivated (imp may have been activated before)
 
         // Fixes the menu bar being overridden on macs
         // See ImageWindow#setImageJMenuBar(ImageWindow)
@@ -729,6 +732,10 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
 //                IJ.log("Start setVisible");
         setVisible(true);
 //                IJ.log("Finished displaying astro window");
+        if (IJ.isMacro())
+            imp.waitTillActivated();
+
+        isReady = true;
 
     }
 
@@ -5350,7 +5357,10 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         imp.setRoi(roi);
     }
 
-    protected void getBiSliderStatistics() {
+    protected synchronized void getBiSliderStatistics() {
+        if (closed) {
+            return;
+        }
         Roi roi = imp.getRoi();
         imp.killRoi();
         if (imp.getType() == ImagePlus.COLOR_RGB) {

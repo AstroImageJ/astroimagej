@@ -3021,12 +3021,13 @@ public class Functions implements MacroConstants, Measurements {
 		}
 	}
 
+	@AstroImageJ(reason = "Move interactions that need the EventQueue to that thread", modified = true)
 	void open() {
 		File f = null;
 		interp.getLeftParen();
 		if (interp.nextToken()==')') {
 			interp.getRightParen();
-			IJ.open();
+			eventCallWait(IJ::open);
 		} else {
 			double n = Double.NaN;
 			String options = null;
@@ -3042,7 +3043,8 @@ public class Functions implements MacroConstants, Measurements {
 			interp.getRightParen();
 			if (!Double.isNaN(n)) {
 				try {
-					IJ.open(path, (int)n);
+					double finalN = n;
+					eventCallWait(() -> IJ.open(path, (int) finalN));
 				} catch (Exception e) {
 					String msg = e.getMessage();
 					if (msg!=null&&msg.indexOf("canceled")==-1)
@@ -3272,6 +3274,7 @@ public class Functions implements MacroConstants, Measurements {
 		notFound(title);
 	}
 
+	@AstroImageJ(reason = "Move interactions that need the EventQueue to that thread", modified = true)
 	void close() {
 		String pattern = null;
 		boolean keep = false;
@@ -3292,7 +3295,7 @@ public class Functions implements MacroConstants, Measurements {
 			ImageWindow win = imp.getWindow();
 			if (win != null) {
 				imp.changes = false;
-				win.close();
+				eventCallWait(win::close);
 			} else {
 				imp.saveRoi();
 				WindowManager.setTempCurrentImage(null);
@@ -3324,17 +3327,17 @@ public class Functions implements MacroConstants, Measurements {
 						Window thisWin = windows[win];
 						if (thisWin instanceof ContrastAdjuster) {//B&C
 							if (pattern.equalsIgnoreCase("b&c")) {
-								((ContrastAdjuster) thisWin).close();
+								eventCallWait(() -> ((ContrastAdjuster) thisWin).close());
 							}
 						}
 						if (thisWin instanceof ColorPicker) {//CP
 							if (pattern.equalsIgnoreCase("cp")) {
-								((ColorPicker) thisWin).close();
+								eventCallWait(() -> ((ColorPicker) thisWin).close());
 							}
 						}
 						if (thisWin instanceof ThresholdAdjuster) {//Threshold
 							if (pattern.equalsIgnoreCase("Threshold")) {
-								((ThresholdAdjuster) thisWin).close();
+								eventCallWait(() -> ((ThresholdAdjuster) thisWin).close());
 							}
 						}
 						if (thisWin instanceof Editor) {//macros editor, loaded text files
@@ -3346,7 +3349,7 @@ public class Functions implements MacroConstants, Measurements {
 								leaveIt = leaveIt || !isTextPattern;
 								leaveIt = leaveIt || ed == Editor.currentMacroEditor;
 								if (!leaveIt) {
-									ed.close();
+									eventCallWait(ed::close);
 								}
 							}
 						}
@@ -3357,13 +3360,13 @@ public class Functions implements MacroConstants, Measurements {
 							if (wm.match(title, pattern)) {
 								if (title.equals("Results"))
 									IJ.run("Clear Results");
-								txtWin.close();
+								eventCallWait(txtWin::close);
 							}
 
 						}
 						if (thisWin instanceof RoiManager && pattern.equalsIgnoreCase("roi manager")) {//ROI Manager
 							RoiManager rm = (RoiManager) thisWin;
-							rm.close();
+							eventCallWait(rm::close);
 						}
 					}
 				}
@@ -3412,14 +3415,14 @@ public class Functions implements MacroConstants, Measurements {
 					ImageWindow win = imp.getWindow();
 					if (win != null) {
 						imp.changes = false;
-						win.close();
+						eventCallWait(win::close);
 					} else {
 						imp.saveRoi();
 						WindowManager.setTempCurrentImage(null);
 						interp.removeBatchModeImage(imp);
 					}
 					imp.changes = false;
-					imp.close();
+					eventCallWait(imp::close);
 					if (imp == frontImp) {
 						currentImpClosed = true;
 					}
@@ -3429,6 +3432,15 @@ public class Functions implements MacroConstants, Measurements {
 				IJ.selectWindow(frontImp.getID());
 			}
 			resetImage();
+		}
+	}
+
+	@AstroImageJ(reason = "Ensure actions that effect the GUI occur on the proper thread to prevent blocking the macro")
+	private void eventCallWait(Runnable run) {
+		try {
+			SwingUtilities.invokeAndWait(run);
+		} catch (InterruptedException | InvocationTargetException e) {
+			throw new RuntimeException(e);
 		}
 	}
 
@@ -3661,11 +3673,7 @@ public class Functions implements MacroConstants, Measurements {
 		if (interp.nextToken()==',') {
 			if (s.startsWith("[") && s.endsWith("]")) {
 				String finalS = s;
-				try {
-					SwingUtilities.invokeAndWait(() -> printToWindow(finalS));
-				} catch (InterruptedException | InvocationTargetException e) {
-					e.printStackTrace();
-				}
+				eventCallWait(() -> printToWindow(finalS));
 				return;
 			} else if (s.equals("~0~")) {
 				if (writer==null)

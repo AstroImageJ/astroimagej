@@ -1,9 +1,10 @@
 package ij.plugin;
+
 import ij.*;
+import ij.gui.GenericDialog;
+import ij.gui.Roi;
+import ij.measure.Measurements;
 import ij.process.*;
-import ij.gui.*;
-import ij.measure.*;
-import java.awt.*;
 
 /** Implements ImageJ's Process/Enhance Contrast command. */
 public class ContrastEnhancer implements PlugIn, Measurements {
@@ -55,7 +56,7 @@ public class ContrastEnhancer implements PlugIn, Measurements {
 		Roi roi = imp.getRoi();
 		boolean areaRoi = roi!=null && roi.isArea() && !composite;
 		GenericDialog gd = new GenericDialog("Enhance Contrast");
-		gd.addNumericField("Saturated pixels:", saturated, 1, 4, "%");
+		gd.addNumericField("Saturated pixels:", saturated, 2, 5, "%");
 		if (bitDepth!=24 && !composite)
 			gd.addCheckbox("Normalize", normalize);
 		if (areaRoi) {
@@ -68,7 +69,7 @@ public class ContrastEnhancer implements PlugIn, Measurements {
 				gd.addCheckbox("Process_all "+stackSize+" slices", processStack);
 			gd.addCheckbox("Use stack histogram", useStackHistogram);
 		}
-        gd.addHelp(IJ.URL+"/docs/menus/process.html#enhance");
+        gd.addHelp(IJ.URL2+"/docs/menus/process.html#enhance");
 		gd.showDialog();
 		if (gd.wasCanceled())
 			return false;
@@ -168,24 +169,6 @@ public class ContrastEnhancer implements PlugIn, Measurements {
 			}
 			imp.setDisplayRange(min, max);
 		}
-		/*
-		int channels = imp.getNChannels();b
-		int channel = imp.getChannel();
-		int slice = imp.getSlice();
-		int frame = imp.getFrame();
-		for (int c=1; c<=channels; c++) {
-			imp.setPosition(c, slice, frame);
-			ImageProcessor ip = imp.getProcessor();
-			int[] a = getMinAndMax(ip, saturated, stats);
-			int hmin=a[0], hmax=a[1];
-			if (hmax>hmin) {
-				double min = stats.histMin+hmin*stats.binSize;
-				double max = stats.histMin+hmax*stats.binSize;
-				imp.setDisplayRange(min, max);
-			}
-		}
-		imp.setPosition(channel, slice, frame);
-		*/
 	}
 
 	int[] getMinAndMax(ImageProcessor ip, double saturated, ImageStatistics stats) {

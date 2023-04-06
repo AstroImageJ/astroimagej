@@ -35,6 +35,7 @@ public class Editor extends PlugInFrame implements ActionListener, ItemListener,
 		"importPackage(Packages.ij.macro);"+
 		"importPackage(Packages.ij.plugin);"+
 		"importPackage(Packages.ij.io);"+
+		"importPackage(Packages.ij.text);"+
 		"importPackage(Packages.ij.plugin.filter);"+
 		"importPackage(Packages.ij.plugin.frame);"+
 		"importPackage(Packages.ij.plugin.tool);"+
@@ -138,8 +139,9 @@ public class Editor extends PlugInFrame implements ActionListener, ItemListener,
 	public Editor(int rows, int columns, int fontSize, int options) {
 		super("Editor");
 		WindowManager.addWindow(this);
-		addMenuBar(options);	
-		if ((options&RUN_BAR)!=0) {
+		addMenuBar(options);
+		boolean addRunBar = (options&RUN_BAR)!=0;	
+		if (addRunBar) {
 			Panel panel = new Panel(new FlowLayout(FlowLayout.LEFT, 0, 0));
 			runButton = new Button("Run");
 			runButton.addActionListener(this);
@@ -167,6 +169,8 @@ public class Editor extends PlugInFrame implements ActionListener, ItemListener,
 		pack();
 		setFont();
 		positionWindow();
+		if (addRunBar)
+			ta.requestFocus(); // needed for selections to show
 		if (!IJ.isJava18() && !IJ.isLinux())
 			insertSpaces = false;
 	}
@@ -511,9 +515,42 @@ public class Editor extends PlugInFrame implements ActionListener, ItemListener,
 			checkForCurlyQuotes = false;
 		}
 		currentMacroEditor = this;
-		new MacroRunner(text, debug?this:null);
+		text = doInclude(text);		
+		MacroRunner mr = new MacroRunner();
+		if (debug)
+			mr.setEditor(this);
+		mr.run(text);
 	}
 	
+	/** Process optional #include statment at begining of macro. */
+	public static String doInclude(String code) {
+		if (code.startsWith("#include ")||code.startsWith("// include ")) {
+			if (IJ.isWindows())
+				code = code.replaceAll("\r\n", "\n");
+			int offset = code.startsWith("#include ")?9:11;
+			int eol = code.indexOf("\n");
+			String path = code.substring(offset, eol);
+			boolean isURL = path.startsWith("http://") || path.startsWith("https://");
+			if (!isURL) {
+				boolean fullPath = path.startsWith("/") || path.startsWith("\\") || path.indexOf(":\\")==1 || path.indexOf(":/")==1;
+				if (!fullPath) {
+					String macrosDir = Menus.getMacrosPath();
+					if (macrosDir!=null)
+						path = Menus.getMacrosPath() + path;
+				}
+				File f = new File(path);
+				if (!f.exists())
+					IJ.error("Include file not found:\n"+path);
+			}
+			code = code.substring(eol+1,code.length());
+			if (isURL)
+				code = "//\n"+code + IJ.openUrlAsString(path);
+			else
+				code = "//\n"+code + IJ.openAsString(path);
+		}
+		return code;
+	}
+
 	void evaluateMacro() {
 		String title = getTitle();
 		if (title.endsWith(".js")||title.endsWith(".bsh")||title.endsWith(".py"))
@@ -965,7 +1002,7 @@ public class Editor extends PlugInFrame implements ActionListener, ItemListener,
 		String[] selectedWords = Tools.split(selText, "/,(,[\"\'&+");
 		if (selectedWords.length==1 && selectedWords[0].length()>0) 
 			url += "#" +selectedWords[0];//append selection as hash tag
-		IJ.runPlugIn("ij.plugin.BrowserLauncher", IJ.URL+url);
+		IJ.runPlugIn("ij.plugin.BrowserLauncher", IJ.URL2+url);
 	}
 
 	final void runToInsertionPoint() {
@@ -1172,7 +1209,7 @@ public class Editor extends PlugInFrame implements ActionListener, ItemListener,
 				if (imp!=null)
 					imp.updateAndDraw();
 			}
-		} else if (!code.startsWith("[Macro ")) {
+		} else if (!code.startsWith("[Macro ") && !code.contains("waitForUser")) {
 			String rtn = interpreter.eval(code);
 			if (rtn!=null)
 				insertText(rtn);
@@ -1376,8 +1413,7 @@ public class Editor extends PlugInFrame implements ActionListener, ItemListener,
 		searchString = s2;
 		if (index<0)
 			{IJ.beep(); return;}
-		ta.setSelectionStart(index);
-		ta.setSelectionEnd(index+s.length());
+		ta.select(index, index+s.length());
 	}
 	
 	boolean isWholeWordMatch(String text, String word, int index) {

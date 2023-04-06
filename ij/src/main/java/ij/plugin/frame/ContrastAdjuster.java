@@ -1,12 +1,13 @@
 package ij.plugin.frame;
+
+import ij.*;
+import ij.gui.*;
+import ij.measure.Calibration;
+import ij.measure.ResultsTable;
+import ij.process.*;
+
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.image.*;
-import ij.*;
-import ij.plugin.*;
-import ij.process.*;
-import ij.gui.*;
-import ij.measure.*;
 
 /** This plugin implements the Brightness/Contrast, Window/level and
 	Color Balance commands, all in the Image/Adjust sub-menu. It
@@ -55,8 +56,8 @@ public class ContrastAdjuster extends PlugInDialog implements Runnable,
 	Font sanFont = IJ.font12;
 	int channels = 7; // RGB
 	Choice choice;
-	private String blankMinLabel = "-------";
-	private String blankMaxLabel = "--------";
+	private String blankLabel8 = "--------";
+	private String blankLabel12 = "------------";
 	private double scale = Prefs.getGuiScale();
 	private int digits;
 
@@ -115,17 +116,16 @@ public class ContrastAdjuster extends PlugInDialog implements Runnable,
 			c.insets = new Insets(0, 10, 0, 10);
 			gridbag.setConstraints(panel, c);
 			panel.setLayout(new BorderLayout());
-			minLabel = new Label(blankMinLabel, Label.LEFT);
+			minLabel = new Label(blankLabel8, Label.LEFT);
 			minLabel.setFont(monoFont);
 			if (IJ.debugMode) minLabel.setBackground(Color.yellow);
 			panel.add("West", minLabel);
-			maxLabel = new Label(blankMaxLabel, Label.RIGHT);
+			maxLabel = new Label(blankLabel8, Label.RIGHT);
 			maxLabel.setFont(monoFont);
 			if (IJ.debugMode) maxLabel.setBackground(Color.yellow);
 			panel.add("East", maxLabel);
 			add(panel);
-			blankMinLabel = "       ";
-			blankMaxLabel = "        ";
+			blankLabel8 = "        ";
 		}
 
 		// min slider
@@ -170,7 +170,7 @@ public class ContrastAdjuster extends PlugInDialog implements Runnable,
 		brightnessSlider.setUnitIncrement(1);
 		brightnessSlider.setFocusable(false);
 		if (windowLevel)
-			addLabel("Level: ", levelLabel=new TrimmedLabel("        "));
+			addLabel("Level: ", levelLabel=new TrimmedLabel(blankLabel12));
 		else
 			addLabel("Brightness", null);
 
@@ -187,7 +187,7 @@ public class ContrastAdjuster extends PlugInDialog implements Runnable,
 			contrastSlider.setUnitIncrement(1);
 			contrastSlider.setFocusable(false);
 			if (windowLevel)
-				addLabel("Window: ", windowLabel=new TrimmedLabel("        "));
+				addLabel("Window: ", windowLabel=new TrimmedLabel(blankLabel12));
 			else
 				addLabel("Contrast", null);
 		}
@@ -437,11 +437,11 @@ public class ContrastAdjuster extends PlugInDialog implements Runnable,
 			realValue = true;
 		}
 		if (windowLevel) {
-			digits = realValue?2:0;
+			digits = realValue?3:0;
 			double window = max-min;
 			double level = min+(window)/2.0;
-			windowLabel.setText(IJ.d2s(window, digits));
-			levelLabel.setText(IJ.d2s(level, digits));
+			windowLabel.setText(ResultsTable.d2s(window, digits));
+			levelLabel.setText(ResultsTable.d2s(level, digits));
 		} else {
 			digits = realValue?4:0;
 			if (realValue) {
@@ -453,11 +453,12 @@ public class ContrastAdjuster extends PlugInDialog implements Runnable,
 				if (amin>9999.0*s||amax>9999.0*s) digits = 1;
 				if (amin>99999.0*s||amax>99999.0*s) digits = 0;
 				if (amin>9999999.0*s||amax>9999999.0*s) digits = -2;
+				if ((amin>0&&amin<0.001)||(amax>0&&amax<0.001)) digits = -2;
 			}
-			String minString = IJ.d2s(min, min==0.0?0:digits) + blankMinLabel;
-			minLabel.setText(minString.substring(0,blankMinLabel.length()));
-			String maxString = blankMaxLabel + IJ.d2s(max, digits);
-			maxString = maxString.substring(maxString.length()-blankMaxLabel.length(), maxString.length());
+			String minString = IJ.d2s(min, min==0.0?0:digits) + blankLabel8;
+			minLabel.setText(minString.substring(0,blankLabel8.length()));
+			String maxString = blankLabel8 + IJ.d2s(max, digits);
+			maxString = maxString.substring(maxString.length()-blankLabel8.length(), maxString.length());
 			maxLabel.setText(maxString);
 		}
 	}
@@ -873,8 +874,8 @@ public class ContrastAdjuster extends PlugInDialog implements Runnable,
 		double maxValue = cal.getCValue(max);
 		int channels = imp.getNChannels();
 		GenericDialog gd = new GenericDialog("Set Display Range");
-		gd.addNumericField("Minimum displayed value: ", minValue, digits, 7, "");
-		gd.addNumericField("Maximum displayed value: ", maxValue, digits, 7, "");
+		gd.addNumericField("Minimum displayed value: ", minValue, digits, 9, "");
+		gd.addNumericField("Maximum displayed value: ", maxValue, digits, 9, "");
 		gd.addChoice("Unsigned 16-bit range:", sixteenBitRanges, sixteenBitRanges[get16bitRangeIndex()]);
 		String label = "Propagate to all other ";
 		label = imp.isComposite()?label+channels+" channel images":label+"open images";
@@ -1071,15 +1072,17 @@ public class ContrastAdjuster extends PlugInDialog implements Runnable,
 	public static void recordSetMinAndMax(double min, double max) {
 		if ((int)min==min && (int)max==max) {
 			int imin=(int)min, imax = (int)max;
-			if (Recorder.scriptMode())
+			if (Recorder.scriptMode()) {
 				Recorder.recordCall("imp.setDisplayRange("+imin+", "+imax+");");
-			else
+				Recorder.recordCall("imp.updateAndDraw();");
+			} else
 				Recorder.record("setMinAndMax", imin, imax);
 		} else {
-			if (Recorder.scriptMode())
-				Recorder.recordCall("imp.setDisplayRange("+IJ.d2s(min,2)+", "+IJ.d2s(max,2)+");");
-			else
-				Recorder.record("setMinAndMax", IJ.d2s(min,2), IJ.d2s(max,2));
+			if (Recorder.scriptMode()) {
+				Recorder.recordCall("imp.setDisplayRange("+ResultsTable.d2s(min,2)+", "+ResultsTable.d2s(max,2)+");");
+				Recorder.recordCall("imp.updateAndDraw();");
+			} else
+				Recorder.recordString("setMinAndMax("+ResultsTable.d2s(min,2)+", "+ResultsTable.d2s(max,2)+");");
 		}
 	}
 

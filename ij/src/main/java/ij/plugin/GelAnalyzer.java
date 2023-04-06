@@ -1,14 +1,17 @@
 package ij.plugin;
+
 import ij.*;
 import ij.gui.*;
-import ij.process.*;
-import ij.measure.*;
-import ij.plugin.filter.Analyzer;
+import ij.measure.Calibration;
+import ij.measure.ResultsTable;
+import ij.process.ByteProcessor;
+import ij.process.ImageConverter;
+import ij.process.ImageProcessor;
+import ij.process.ImageStatistics;
 
 import java.awt.*;
-import java.awt.image.*;
-import java.awt.event.*;
-import java.util.*;
+import java.awt.event.MouseEvent;
+import java.awt.image.IndexColorModel;
 
 /** This plugin generates gel profile plots that can be analyzed using
 the wand tool. It is similar to the "Gel Plotting Macros" in NIH Image. */
@@ -147,7 +150,7 @@ public class GelAnalyzer implements PlugIn {
 		gd.addCheckbox("Uncalibrated OD", uncalibratedOD);
 		gd.addCheckbox("Label with percentages", labelWithPercentages);
 		gd.addCheckbox("Invert peaks", invertPeaks);
-		gd.addHelp(IJ.URL+"/docs/menus/analyze.html#gels");
+		gd.addHelp(IJ.URL2+"/docs/menus/analyze.html#gels");
 		gd.showDialog();
 		if (gd.wasCanceled())
 			return;

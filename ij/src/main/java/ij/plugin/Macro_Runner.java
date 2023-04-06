@@ -1,14 +1,15 @@
 package ij.plugin;
+
 import ij.*;
 import ij.astro.AstroImageJ;
-import ij.io.*;
-import ij.macro.*;
-import ij.text.*;
-import ij.util.*;
-import ij.plugin.frame.*;
 import ij.gui.GenericDialog;
+import ij.io.OpenDialog;
+import ij.macro.Interpreter;
+import ij.plugin.frame.Editor;
+import ij.plugin.frame.Recorder;
+
 import java.io.*;
-import java.lang.reflect.*;
+import java.lang.reflect.Method;
 
 /** This class runs macros and scripts installed in the Plugins menu as well as
 	macros and scripts opened using the Plugins/Macros/Run command. */
@@ -144,8 +145,10 @@ public class Macro_Runner implements PlugIn {
 				return runBeanShell(macro, arg);
 			else if (name.endsWith(".py"))
 				return runPython(macro, arg);
-			else
+			else {
+				macro = Editor.doInclude(macro);
 				return runMacro(macro, arg);
+			}
 		}
 		catch (Exception e) {
 			if (!Macro.MACRO_CANCELED.equals(e.getMessage()))
@@ -217,7 +220,6 @@ public class Macro_Runner implements PlugIn {
 		String macro = null;
         try {
 			InputStream is = c .getResourceAsStream("/macros/"+name+".txt");
-			//IJ.log(is+"  "+("/macros/"+name+".txt"));
 			if (is==null)
 				return runMacroFile(name, arg);
             InputStreamReader isr = new InputStreamReader(is);
@@ -336,9 +338,9 @@ public class Macro_Runner implements PlugIn {
 		gd.addMessage(msg);
 		gd.showDialog();
 		if (!gd.wasCanceled()) {
-			ok = (new PluginInstaller()).install(IJ.URL+url);
+			ok = (new PluginInstaller()).install(IJ.URL2+url);
 			if (!ok)
-				IJ.error("Unable to download "+name+" from "+IJ.URL+url);
+				IJ.error("Unable to download "+name+" from "+IJ.URL2+url);
 		}
 		return ok;
 	}

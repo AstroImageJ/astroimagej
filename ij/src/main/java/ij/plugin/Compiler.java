@@ -1,16 +1,25 @@
 package ij.plugin;
-import ij.*;
-import ij.gui.*;
-import ij.io.*;
-import ij.plugin.frame.Editor;
-import ij.plugin.Macro_Runner;
+
+import ij.IJ;
+import ij.ImageJ;
+import ij.Menus;
+import ij.Prefs;
+import ij.gui.GenericDialog;
+import ij.io.OpenDialog;
 import ij.plugin.filter.PlugInFilter;
 import ij.plugin.filter.PlugInFilterRunner;
-import java.awt.Font;
-import java.lang.reflect.Method;
-import java.io.*;
-import java.util.*;
+import ij.plugin.frame.Editor;
+
 import javax.tools.*;
+import java.awt.*;
+import java.io.File;
+import java.io.FilenameFilter;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.lang.reflect.Method;
+import java.util.List;
+import java.util.Locale;
+import java.util.Vector;
 
 /** Compiles and runs plugins using the javac compiler. */
 public class Compiler implements PlugIn, FilenameFilter {
@@ -20,15 +29,13 @@ public class Compiler implements PlugIn, FilenameFilter {
 		+"be located in either plugins/jars or plugins/lib.\n \n"
 		+"The javac command line will be displayed in\n"
 		+"the Log window if ImageJ is in debug mode.";
-	private static final int TARGET14=0, TARGET15=1, TARGET16=2,  TARGET17=3,  TARGET18=4, TARGET19=5;
-	private static final String[] targets = {"1.4", "1.5", "1.6", "1.7", "1.8", "1.9"};
 	private static final String TARGET_KEY = "javac.target";
 	private static CompilerTool compilerTool;
 	private static String dir, name;
 	private static Editor errors;
 	private static boolean generateDebuggingInfo;
-	private static int target = (int)Prefs.get(TARGET_KEY, TARGET18);	
 	private static boolean checkForUpdateDone;
+	private static int target = (int)Prefs.get(TARGET_KEY, 8);	
 
 	public void run(String arg) {
 		if (arg.equals("edit"))
@@ -119,9 +126,9 @@ public class Compiler implements PlugIn, FilenameFilter {
 			options.addElement("-g");
 		validateTarget();
 		options.addElement("-source");
-		options.addElement(targets[target]);
+		options.addElement(getTargetAsString());
 		options.addElement("-target");
-		options.addElement(targets[target]);
+		options.addElement(getTargetAsString());
 		options.addElement("-Xlint:unchecked");
 		options.addElement("-deprecation");
 		options.addElement("-classpath");
@@ -229,8 +236,8 @@ public class Compiler implements PlugIn, FilenameFilter {
 						IJ.error("File name must end with \".java\" or \".class\".");
 						okay = false;
 					}
-				} else if (!(lcName.endsWith(".java")||lcName.endsWith(".txt")||lcName.endsWith(".ijm")||lcName.endsWith(".js"))) {
-					IJ.error("File name must end with \".java\", \".txt\" or \".js\".");
+				} else if (!(lcName.endsWith(".java")||lcName.endsWith(".txt")||lcName.endsWith(".ijm")||lcName.endsWith(".js")||lcName.endsWith(".py")||lcName.endsWith(".bsh"))) {
+					IJ.error("File name must end with \".java\", \".txt\", \".ijm\", \".js\" or \".py\"");
 					okay = false;
 				}
 			}
@@ -270,31 +277,36 @@ public class Compiler implements PlugIn, FilenameFilter {
 	public void showDialog() {
 		validateTarget();
 		GenericDialog gd = new GenericDialog("Compile and Run");
-		gd.addChoice("Target: ", targets, targets[target]);
+		gd.addNumericField("Target: ", target, 0, 3, "");
 		gd.setInsets(15,5,0);
 		gd.addCheckbox("Generate debugging info (javac -g)", generateDebuggingInfo);
-		gd.addHelp(IJ.URL+"/docs/menus/edit.html#compiler");
+		gd.addHelp(IJ.URL2+"/docs/menus/edit.html#compiler");
 		Font font = IJ.font10;
 		gd.addMessage(info, font);
 		gd.showDialog();
 		if (gd.wasCanceled()) return;
-		target = gd.getNextChoiceIndex();		
+		target = (int)gd.getNextNumber();		
 		generateDebuggingInfo = gd.getNextBoolean();
 		validateTarget();
 	}
 	
 	void validateTarget() {
-		if (target>TARGET19)
-			target = TARGET19;
-		if (target<TARGET16)
-			target = TARGET16;
-		if (target>TARGET16 && IJ.javaVersion()<7)
-			target = TARGET16;
-		if (target>TARGET17 && IJ.javaVersion()<8)
-			target = TARGET17;
-		if (target>TARGET18 && IJ.javaVersion()<9)
-			target = TARGET18;
+		if (target==4 || target==5) //Java 8 or 9
+			target = 8;
+		if (target<6)
+			target = 6;
+		if (target>IJ.javaVersion())
+			target = IJ.javaVersion();
 		Prefs.set(TARGET_KEY, target);
+	}
+	
+	private static String getTargetAsString() {
+		if (target<8)
+			return "1.6";
+		else if (target==8)
+			return "1.8";
+		else
+			return ""+target;
 	}
 	
 }

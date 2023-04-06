@@ -1,16 +1,32 @@
 package ij.plugin.filter;
-import ij.*;
-import ij.gui.*;
-import ij.process.*;
-import ij.measure.*;
-import ij.util.*;
-import ij.io.*;
+
+import ij.IJ;
+import ij.ImagePlus;
+import ij.WindowManager;
+import ij.gui.GenericDialog;
+import ij.gui.Plot;
+import ij.gui.PlotWindow;
+import ij.io.FileOpener;
+import ij.io.OpenDialog;
+import ij.io.SaveDialog;
+import ij.measure.Calibration;
+import ij.measure.CurveFitter;
+import ij.measure.Measurements;
+import ij.measure.Minimizer;
 import ij.plugin.TextReader;
 import ij.plugin.frame.Fitter;
+import ij.process.ImageProcessor;
+import ij.process.ImageStatistics;
+import ij.util.Tools;
+
 import java.awt.*;
-import java.util.*;
-import java.awt.event.*;
-import java.io.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.BufferedOutputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.StringTokenizer;
 
 
 /** Implements the Analyze/Calibrate command. */
@@ -101,7 +117,7 @@ public class Calibrator implements PlugInFilter, Measurements, ActionListener {
 		gd.addCheckbox("Global calibration", IJ.isMacro()?false:global1);
 		gd.addCheckbox("Show plot", IJ.isMacro()?false:showPlotFlagSaved);
 		//gd.addCheckbox("Show Simplex Settings", showSettings);
-		gd.addHelp(IJ.URL+"/docs/menus/analyze.html#cal");
+		gd.addHelp(IJ.URL2+"/docs/menus/analyze.html#cal");
 		gd.showDialog();
 		if (gd.wasCanceled())
 			return false;

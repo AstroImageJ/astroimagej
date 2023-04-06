@@ -1,12 +1,20 @@
 package ij.plugin;
-import java.io.*;
-import java.util.*;
-import java.net.URL;
-import ij.*;
-import ij.io.*;
-import ij.process.*;
-import ij.util.Tools;
+
+import ij.IJ;
+import ij.ImagePlus;
+import ij.Macro;
+import ij.Prefs;
+import ij.io.FileInfo;
+import ij.io.FileOpener;
+import ij.io.OpenDialog;
 import ij.measure.Calibration;
+import ij.process.ImageProcessor;
+import ij.process.ImageStatistics;
+import ij.util.Tools;
+
+import java.io.*;
+import java.net.URL;
+import java.util.Properties;
 
 /** This plugin decodes DICOM files. If 'arg' is empty, it
 	displays a file open dialog and opens and displays the 
@@ -110,7 +118,10 @@ public class DICOM extends ImagePlus implements PlugIn {
 		if (fi!=null && fi.width>0 && fi.height>0 && fi.offset>0) {
 			FileOpener fo = new FileOpener(fi);
 			ImagePlus imp = fo.openImage();
-			boolean openAsFloat = (dd.rescaleSlope!=1.0&&!Prefs.ignoreRescaleSlope) || Prefs.openDicomsAsFloat;		
+			// Avoid opening as float even if slope != 1.0 in case ignoreRescaleSlope or fixedDicomScaling
+			// were checked in the DICOM preferences.
+			boolean openAsFloat = (dd.rescaleSlope!=1.0 && !(Prefs.ignoreRescaleSlope || Prefs.fixedDicomScaling)) 
+				|| Prefs.openDicomsAsFloat;
 			String options = Macro.getOptions();
 			if (openAsFloat) {
 				IJ.run(imp, "32-bit", "");
@@ -124,13 +135,14 @@ public class DICOM extends ImagePlus implements PlugIn {
 					imp.setDisplayRange(stats.min,stats.max);
 				}
 			} else if (fi.fileType==FileInfo.GRAY16_SIGNED) {
-				if (dd.rescaleIntercept!=0.0 && dd.rescaleSlope==1.0) {
+				if (dd.rescaleIntercept!=0.0 && (dd.rescaleSlope==1.0||Prefs.fixedDicomScaling)) {
 					double[] coeff = new double[2];
-					coeff[0] = -32768 + dd.rescaleIntercept;
-					coeff[1] = 1.0;
+					coeff[0] = dd.rescaleSlope*(-32768) + dd.rescaleIntercept;
+					coeff[1] = dd.rescaleSlope;
 					imp.getCalibration().setFunction(Calibration.STRAIGHT_LINE, coeff, "Gray Value");
 				}
-			} else if (dd.rescaleIntercept!=0.0 && (dd.rescaleSlope==1.0||fi.fileType==FileInfo.GRAY8)) {
+			} else if (dd.rescaleIntercept!=0.0 && 
+					  (dd.rescaleSlope==1.0||Prefs.fixedDicomScaling||fi.fileType==FileInfo.GRAY8)) {
 				double[] coeff = new double[2];
 				coeff[0] = dd.rescaleIntercept;
 				coeff[1] = dd.rescaleSlope;

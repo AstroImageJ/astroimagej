@@ -1,11 +1,12 @@
 package ij.process;
 
-import java.awt.*;
-import java.awt.image.*;
 import ij.*;
-import ij.gui.*;
-import ij.measure.*;
+import ij.gui.ImageWindow;
+import ij.measure.Calibration;
 import ij.plugin.frame.Recorder;
+
+import java.awt.*;
+import java.awt.image.ColorModel;
 
 /** This class converts an ImagePlus object to a different type. */
 public class ImageConverter {
@@ -66,13 +67,13 @@ public class ImageConverter {
 		imp.setCalibration(imp.getCalibration()); //update calibration
 	}
 	
-	private void record() {
+	public static void record() {
 		if (Recorder.record) {
 			Boolean state = ImageConverter.getDoScaling();
 			if (Recorder.scriptMode())
 				Recorder.recordCall("ImageConverter.setDoScaling("+state+");", true);
 			else
-				Recorder.	recordString("setOption(\"ScaleConversions\", "+state+");\n");
+				Recorder.recordString("setOption(\"ScaleConversions\", "+state+");\n");
 		}
 	}
 

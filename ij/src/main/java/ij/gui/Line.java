@@ -1,16 +1,24 @@
 package ij.gui;
-import ij.*;
-import ij.process.*;
-import ij.measure.*;
+
+import ij.IJ;
+import ij.ImagePlus;
+import ij.Prefs;
+import ij.WindowManager;
+import ij.measure.Calibration;
+import ij.plugin.CalibrationBar;
 import ij.plugin.Straightener;
 import ij.plugin.frame.Recorder;
-import ij.plugin.CalibrationBar;
+import ij.process.FloatPolygon;
+import ij.process.FloatProcessor;
+import ij.process.ImageProcessor;
+
 import java.awt.*;
-import java.awt.image.*;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
+import java.awt.geom.Line2D;
+import java.awt.geom.Rectangle2D;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-import java.awt.event.*;
-import java.awt.geom.*;
 
 /** This class represents a straight line selection. */
 public class Line extends Roi {
@@ -449,8 +457,10 @@ public class Line extends Roi {
 				ImageProcessor ip = imp.getProcessor();
 				profile = ip.getLine(x1d, y1d, x2d, y2d);
 			} else {
-				ImageProcessor ip2 = (new Straightener()).rotateLine(imp,(int)getStrokeWidth());
-				if (ip2==null) return new double[0];
+				Straightener s = new Straightener();
+				ImageProcessor ip2 = s.straightenLine(imp,this,0);
+				if (ip2==null)
+					return new double[0];
 				int width = ip2.getWidth();
 				int height = ip2.getHeight();
 				if (ip2 instanceof FloatProcessor)
@@ -507,6 +517,7 @@ public class Line extends Roi {
 		return getFloatPolygon(getStrokeWidth());
 	}
 
+	/** Obsolete */
 	public FloatPolygon getFloatPolygon(double strokeWidth) {
 		FloatPolygon p = new FloatPolygon();
 		if (strokeWidth <= 1) {
@@ -590,10 +601,18 @@ public class Line extends Roi {
 		return -1;
 	}
 
+	/** Returns the default line width. Use getStrokeWidth()to
+	 * get the width of a Line instance.
+	 * @see #getStrokeWidth
+	*/
 	public static int getWidth() {
 		return lineWidth;
 	}
 
+	/** Sets the default line width. Use setStrokeWidth()
+	 * to set the width of a Line instance.
+	 * @see #setStrokeWidth
+	*/
 	public static void setWidth(int w) {
 		if (w<1) w = 1;
 		int max = 500;
@@ -609,6 +628,7 @@ public class Line extends Roi {
 		widthChanged = true;
 	}
 
+	/* Sets the width of this line. */
 	public void setStrokeWidth(float width) {
 		super.setStrokeWidth(width);
 		if (getStrokeColor()==Roi.getColor())

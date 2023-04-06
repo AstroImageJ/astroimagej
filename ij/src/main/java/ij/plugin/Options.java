@@ -1,12 +1,18 @@
 package ij.plugin;
+
 import ij.*;
-import ij.gui.*;
-import ij.process.*;
-import ij.io.*;
-import ij.plugin.filter.*;
-import ij.plugin.frame.*;
+import ij.gui.GenericDialog;
+import ij.gui.Line;
+import ij.gui.Roi;
+import ij.io.FileSaver;
 import ij.measure.ResultsTable;
-import java.awt.*;
+import ij.plugin.filter.Analyzer;
+import ij.plugin.frame.LineWidthAdjuster;
+import ij.plugin.frame.RoiManager;
+import ij.process.ColorProcessor;
+import ij.process.FloatBlitter;
+import ij.process.ImageConverter;
+import ij.process.ImageProcessor;
 
 /** This plugin implements most of the commands
 	in the Edit/Options sub-menu. */
@@ -49,7 +55,7 @@ public class Options implements PlugIn {
 		gd.addCheckbox("Non-blocking filter dialogs", Prefs.nonBlockingFilterDialogs);
 		gd.addCheckbox("Debug mode", IJ.debugMode);
 		//gd.addCheckbox("Modern mode", Prefs.modernMode);
-		gd.addHelp(IJ.URL+"/docs/menus/edit.html#misc");
+		gd.addHelp(IJ.URL2+"/docs/menus/edit.html#misc");
 		gd.showDialog();
 		if (gd.wasCanceled())
 			return;
@@ -88,8 +94,14 @@ public class Options implements PlugIn {
 	}
 
 	void lineWidth() {
-		int width = (int)IJ.getNumber("Line Width:", Line.getWidth());
-		if (width==IJ.CANCELED) return;
+		GenericDialog gd = new GenericDialog("Default Line Width");
+		gd.addNumericField("Line width: ", Line.getWidth(), 0);
+		gd.setInsets(5,2,0);
+		gd.addMessage("Sets the default line selection width.\nPress 'y' (Edit>Selection>Properties)\nto change the width of the current\nline selection.");
+		gd.showDialog();
+		if (gd.wasCanceled())
+			return;
+		int width = (int)gd.getNextNumber();
 		Line.setWidth(width);
 		LineWidthAdjuster.update();
 		ImagePlus imp = WindowManager.getCurrentImage();
@@ -97,7 +109,8 @@ public class Options implements PlugIn {
 			ImageProcessor ip = imp.getProcessor();
 			ip.setLineWidth(Line.getWidth());
             Roi roi = imp.getRoi();
-            if (roi!=null && roi.isLine()) imp.draw();
+            if (roi!=null && roi.isLine())
+            	imp.draw();
 		}
 	}
 
@@ -164,11 +177,14 @@ public class Options implements PlugIn {
 		if (weighted)
 			prompt += " (" + IJ.d2s(weights[0]) + "," + IJ.d2s(weights[1]) + ","+ IJ.d2s(weights[2]) + ")";
 		gd.addCheckbox(prompt, weighted);
+		gd.addCheckbox("Full range 16-bit inversions", Prefs.fullRange16bitInversions);
+		gd.addHelp(IJ.URL2+"/docs/menus/edit.html#conversions");
 		gd.showDialog();
 		if (gd.wasCanceled())
 			return;
 		ImageConverter.setDoScaling(gd.getNextBoolean());
 		Prefs.weightedColor = gd.getNextBoolean();
+		Prefs.fullRange16bitInversions = gd.getNextBoolean();
 		if (!Prefs.weightedColor)
 			ColorProcessor.setWeightingFactors(1d/3d, 1d/3d, 1d/3d);
 		else if (Prefs.weightedColor && !weighted)
@@ -184,8 +200,9 @@ public class Options implements PlugIn {
 	void dicom() {
 		GenericDialog gd = new GenericDialog("DICOM Options");
 		gd.addCheckbox("Open as 32-bit float", Prefs.openDicomsAsFloat);
-		gd.addCheckbox("Ignore Rescale Slope", Prefs.ignoreRescaleSlope);
-		gd.addMessage("Orthogonal Views");
+		gd.addCheckbox("Ignore rescale slope", Prefs.ignoreRescaleSlope);
+		gd.addCheckbox("Fixed Z slope and intercept", Prefs.fixedDicomScaling);
+		gd.addMessage("Orthogonal views");
 		gd.setInsets(5, 40, 0);
 		gd.addCheckbox("Rotate YZ", Prefs.rotateYZ);
 		gd.setInsets(0, 40, 0);
@@ -195,6 +212,7 @@ public class Options implements PlugIn {
 			return;
 		Prefs.openDicomsAsFloat = gd.getNextBoolean();
 		Prefs.ignoreRescaleSlope = gd.getNextBoolean();
+		Prefs.fixedDicomScaling = gd.getNextBoolean();
 		Prefs.rotateYZ = gd.getNextBoolean();
 		Prefs.flipXZ = gd.getNextBoolean();
 	}

@@ -15,7 +15,6 @@ public class PlotVirtualStack extends VirtualStack {
 	
 	public PlotVirtualStack(int width, int height) {
 		super(width, height);
-		this.bitDepth = bitDepth;
 	}
 	
 	/** Adds a plot to the end of the stack. */
@@ -25,7 +24,7 @@ public class PlotVirtualStack extends VirtualStack {
 			bitDepth = 24;
 	}
 	   
-   /** Returns the pixel array for the specified slice, were 1<=n<=nslices. */
+   /** Returns the pixel array for the specified slice, where {@literal 1<=n<=nslices}. */
 	public Object getPixels(int n) {
 		ImageProcessor ip = getProcessor(n);
 		if (ip!=null)
@@ -35,7 +34,7 @@ public class PlotVirtualStack extends VirtualStack {
 	}		
 	
 	/** Returns an ImageProcessor for the specified slice,
-		were 1<=n<=nslices. Returns null if the stack is empty. */
+		where {@literal 1<=n<=nslices}. Returns null if the stack is empty. */
 	public ImageProcessor getProcessor(int n) {
 		byte[] bytes = (byte[])plots.get(n-1);
 		if (bytes!=null) {
@@ -96,7 +95,7 @@ public class PlotVirtualStack extends VirtualStack {
 	public void setPixels(Object pixels, int n) {
 	}
 	
-	/** Deletes the specified slice, were 1<=n<=nslices. */
+	/** Deletes the specified slice, where {@literal 1<=n<=nslices}. */
 	public void deleteSlice(int n) {
 		if (n<1 || n>plots.size())
 			throw new IllegalArgumentException("Argument out of range: "+n);

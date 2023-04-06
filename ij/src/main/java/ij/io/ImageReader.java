@@ -1,13 +1,19 @@
 package ij.io;
-import ij.*;
+
+import ij.IJ;
 import ij.astro.AstroImageJ;
-import ij.process.*;
-import java.io.*;
-import java.net.*;
-import java.awt.image.BufferedImage;
+import ij.process.ColorProcessor;
+import ij.process.ImageProcessor;
+
 import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.zip.Inflater;
-import java.util.zip.DataFormatException;
 
 
 /** Reads raw 8-bit, 16-bit or 32-bit (float or RGB)
@@ -85,7 +91,7 @@ public class ImageReader {
 			byteArray = uncompress(byteArray);
 			int length = byteArray.length;
 			length = length - (length%fi.width);
-			if (fi.compression==FileInfo.LZW_WITH_DIFFERENCING) {
+			if (fi.compression==FileInfo.LZW_WITH_DIFFERENCING||fi.compression==FileInfo.ZIP_WITH_DIFFERENCING) {
 				for (int b=0; b<length; b++) {
 					byteArray[b] += last;
 					last = b % fi.width == fi.width - 1 ? 0 : byteArray[b];
@@ -182,7 +188,7 @@ public class ImageReader {
 				for (int i=base,j=0; i<pmax; i++,j+=2)
 					pixels[i] = (short)(((byteArray[j]&0xff)<<8) | (byteArray[j+1]&0xff));
 			}
-			if (fi.compression==FileInfo.LZW_WITH_DIFFERENCING) {
+			if (fi.compression==FileInfo.LZW_WITH_DIFFERENCING||fi.compression==FileInfo.ZIP_WITH_DIFFERENCING) {
 				for (int b=base; b<pmax; b++) {
 					pixels[b] += last;
 					last = b % fi.width == fi.width - 1 ? 0 : pixels[b];
@@ -305,7 +311,7 @@ public class ImageReader {
 						pixels[i] = tmp;
 				}
 			}
-			if (fi.compression==FileInfo.LZW_WITH_DIFFERENCING) {
+			if (fi.compression==FileInfo.LZW_WITH_DIFFERENCING||fi.compression==FileInfo.ZIP_WITH_DIFFERENCING) {
 				for (int b=base; b<pmax; b++) {
 					pixels[b] += last;
 					last = b % fi.width == fi.width - 1 ? 0 : pixels[b];
@@ -446,7 +452,7 @@ public class ImageReader {
 		int red=0, green=0, blue=0, alpha = 0;
 		boolean bgr = fi.fileType==FileInfo.BGR;
 		boolean cmyk = fi.fileType==FileInfo.CMYK;
-		boolean differencing = fi.compression == FileInfo.LZW_WITH_DIFFERENCING;
+		boolean differencing = fi.compression==FileInfo.LZW_WITH_DIFFERENCING||fi.compression==FileInfo.ZIP_WITH_DIFFERENCING;
 		for (int i=0; i<fi.stripOffsets.length; i++) {
 			if (in instanceof RandomAccessStream)
 				((RandomAccessStream)in).seek(fi.stripOffsets[i]);
@@ -603,8 +609,10 @@ public class ImageReader {
 					value = ((buffer[base+1]&0xff)<<8) | (buffer[base]&0xff);
 				else
 					value = ((buffer[base]&0xff)<<8) | (buffer[base+1]&0xff);
-				if (value<min) min = value;
-				if (value>max) max = value;
+				if (value<min)
+					min = value;
+				if (value>max)
+					max = value;
 				stack[channel][pixel] = (short)(value);
 				channel++;
 				if (channel==channels) {
@@ -619,8 +627,8 @@ public class ImageReader {
 	}
 
 	Object readCompressedRGB48(InputStream in) throws IOException {
-		if (fi.compression==FileInfo.LZW_WITH_DIFFERENCING)
-			throw new IOException("ImageJ cannot open 48-bit LZW compressed TIFFs with predictor");
+		if (fi.compression==FileInfo.LZW_WITH_DIFFERENCING||fi.compression==FileInfo.ZIP_WITH_DIFFERENCING)
+			throw new IOException("ImageJ cannot open 48-bit compressed TIFFs with predictors");
 		int channels = 3;
 		short[][] stack = new short[channels][nPixels];
 		DataInputStream dis = new DataInputStream(in);
@@ -645,8 +653,10 @@ public class ImageReader {
 					value = ((buffer[base+1]&0xff)<<8) | (buffer[base]&0xff);
 				else
 					value = ((buffer[base]&0xff)<<8) | (buffer[base+1]&0xff);
-				if (value<min) min = value;
-				if (value>max) max = value;
+				if (value<min)
+					min = value;
+				if (value>max)
+					max = value;
 				stack[channel][pixel] = (short)(value);
 				channel++;
 				if (channel==channels) {
@@ -669,7 +679,65 @@ public class ImageReader {
 		return stack;
 	}
 
-	short[] read12bitImage(InputStream in) throws IOException {
+	/**
+ 	 * Reads in the contents of a 10-bit TIFF grayscale
+ 	 * image file and converts to a 16-bit image.
+ 	 * 5 bytes are read-in at a time and produces 4 pixels.
+ 	 * @param in
+ 	 * @return the pixels of the 10-bit image
+ 	 * @throws IOException
+ 	*/
+ 	short[] read10bitImage(InputStream in) throws IOException {
+ 		int bytesPerLine = (int)(width*1.25); // there are 1.25 bytes of data for each pixel (5 bytes per 4 pixels)
+ 		if ((width&1)==1) bytesPerLine++; // add 1 if odd
+ 		byte[] buffer = new byte[bytesPerLine*height];
+ 		short[] pixels = new short[nPixels];
+ 		DataInputStream dis = new DataInputStream(in);
+ 		dis.readFully(buffer);
+ 		for (int y=0; y<height; y++) {
+ 			int index1 = y*bytesPerLine;
+ 			int index2 = y*width;
+ 			int count = 0;
+			while (count<width) {
+ 				if (index1 + 4 < buffer.length) {
+ 					final short B0 = (short) (buffer[index1] & 0xFF);
+ 					final short B1 = (short) (buffer[index1 + 1] & 0xFF);
+ 					final short B2 = (short) (buffer[index1 + 2] & 0xFF);
+ 					final short B3 = (short) (buffer[index1 + 3] & 0xFF);
+ 					final short B4 = (short) (buffer[index1 + 4] & 0xFF);
+ 					short b0, b1, b2, b3;
+
+ 					// Set pixel 1
+ 					b0 = (short) (B0 << 2);
+ 					b1 = (short) (B1 >> 6);
+ 					pixels[index2 + count] = (short) (b0 | b1);
+ 					count++;
+
+ 					// set pixel 2
+ 					b1 = (short) ((B1 & (0xFF >> 2)) << 4);
+ 					b2 = (short) (B2 >> 4);
+ 					pixels[index2 + count] = (short) (b1 | b2);
+ 					count++;
+
+ 					// set pixel 3
+ 					b2 = (short) ((B2 & (0xFF >> 4)) << 6);
+ 					b3 = (short) (B3 >> 2);
+ 					pixels[index2 + count] = (short) (b2 | b3);
+ 					count++;
+
+ 					// set pixel 4
+ 					b3 = (short) ((B3 & (0xFF >> 6)) << 8);
+ 					pixels[index2 + count] = (short) (b3 | B4);
+ 					count++;
+ 					index1 += 5;
+ 				} else
+ 					break;
+ 			}
+ 		}
+ 		return pixels;
+ 	}
+ 	
+ 	short[] read12bitImage(InputStream in) throws IOException {
 		int bytesPerLine = (int)(width*1.5);
 		if ((width&1)==1) bytesPerLine++; // add 1 if odd
 		byte[] buffer = new byte[bytesPerLine*height];
@@ -831,7 +899,12 @@ public class ImageReader {
 					short[] data = read12bitImage(in);
 					pixels = (Object)data;
 					break;
-				case FileInfo.GRAY24_UNSIGNED:
+				case FileInfo.GRAY10_UNSIGNED:
+ 					skip(in);
+ 					data = read10bitImage(in);
+ 					pixels = (Object)data;
+ 					break;
+ 				case FileInfo.GRAY24_UNSIGNED:
 					skip(in);
 					pixels = (Object)read24bitImage(in);
 					break;
@@ -882,7 +955,7 @@ public class ImageReader {
 			return packBitsUncompress(input, fi.rowsPerStrip*fi.width*fi.getBytesPerPixel());
 		else if (fi.compression==FileInfo.LZW || fi.compression==FileInfo.LZW_WITH_DIFFERENCING)
 			return lzwUncompress(input);
-		else if (fi.compression==FileInfo.ZIP)
+		else if (fi.compression==FileInfo.ZIP || fi.compression==FileInfo.ZIP_WITH_DIFFERENCING)
 			return zipUncompress(input);
 		else
 			return input;
@@ -899,7 +972,7 @@ public class ImageReader {
 				int rlen = decompressor.inflate(buffer);
 				imageBuffer.write(buffer, 0, rlen);
 			}
-		} catch(DataFormatException e){
+		} catch(Exception e){
 			IJ.log(e.toString());
 		}
 		decompressor.end();

@@ -103,9 +103,8 @@ public class Projector implements PlugIn {
 
 	private boolean showDialog() {
 		ImageProcessor ip = imp.getProcessor();
-		double lower = ip.getMinThreshold();
-		if (lower!=ImageProcessor.NO_THRESHOLD) {
-			transparencyLower = (int)lower;
+		if (ip.isThreshold()) {
+			transparencyLower = (int)ip.getMinThreshold();
 			transparencyUpper = (int)ip.getMaxThreshold();
 		}
 		Calibration cal = imp.getCalibration();
@@ -129,7 +128,7 @@ public class Projector implements PlugIn {
 			gd.addCheckbox("All time points", allTimePoints);
 		//gd.addCheckbox("Debug Mode:", debugMode);
 
-		gd.addHelp(IJ.URL+"/docs/menus/image.html#project");
+		gd.addHelp(IJ.URL2+"/docs/menus/image.html#project");
 		gd.showDialog();
 		if (gd.wasCanceled())
 			return false;;

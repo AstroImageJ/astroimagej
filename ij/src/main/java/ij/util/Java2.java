@@ -14,8 +14,6 @@ here to prevent errors when ImageJ is running on Java 1.1 JVMs.
 */
 public class Java2 {
 
-	private static boolean lookAndFeelSet;
-
 	public static void setAntialiased(Graphics g, boolean antialiased) {
 			Graphics2D g2d = (Graphics2D)g;
 			if (antialiased)
@@ -26,9 +24,12 @@ public class Java2 {
 
 	public static void setAntialiasedText(Graphics g, boolean antialiasedText) {
 			Graphics2D g2d = (Graphics2D)g;
-			if (antialiasedText)
-				g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
-			else
+			if (antialiasedText) {
+				if (IJ.isMacOSX())
+					g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+		   		else
+					g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB);
+			  } else
 				g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
 	}
 
@@ -48,20 +49,36 @@ public class Java2 {
 	/** Sets the Swing look and feel to the system look and feel (Windows only). */
 	@AstroImageJ(reason = "update keymapping on mac for copy/paste", modified = true)
 	public static void setSystemLookAndFeel() {
-		if (lookAndFeelSet || !IJ.isWindows()) return;
+		if (!IJ.isWindows())
+			return;
 		try {
 			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 		} catch(Throwable t) {}
-		lookAndFeelSet = true;
-		IJ.register(Java2.class);
+	}
 
+	/** Sets the Swing look and feel. */
+	@AstroImageJ(reason = "update keymapping on mac for copy/paste", modified = true)
+	public static void setLookAndFeel(LookAndFeel newLookAndFeel) {
 		if (IJ.isMacOSX()) {
 			InputMap im = (InputMap) UIManager.get("TextField.focusInputMap");
 			im.put(KeyStroke.getKeyStroke(KeyEvent.VK_C, KeyEvent.META_DOWN_MASK), DefaultEditorKit.copyAction);
 			im.put(KeyStroke.getKeyStroke(KeyEvent.VK_V, KeyEvent.META_DOWN_MASK), DefaultEditorKit.pasteAction);
 			im.put(KeyStroke.getKeyStroke(KeyEvent.VK_X, KeyEvent.META_DOWN_MASK), DefaultEditorKit.cutAction);
 		}
+		if (!IJ.isWindows() || newLookAndFeel==null)
+			return;
+		try {
+			UIManager.setLookAndFeel(newLookAndFeel);
+		} catch(Throwable t) {}
 	}
+
+	/** Returns the current Swing look and feel or null. */
+	public static LookAndFeel getLookAndFeel() {
+		if (!IJ.isWindows())
+			return null;
+		return UIManager.getLookAndFeel();
+	}
+
 
 }
 

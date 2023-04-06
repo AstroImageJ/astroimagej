@@ -37,15 +37,16 @@ import static nom.tam.fits.header.Standard.*;
 
 
 /** Opens and displays FITS images. The FITS format is 
-	described at "http://fits.gsfc.nasa.gov/fits_standard.html".
-	Add setOption("FlipFitsImages",true) to the
-	Edit/Options/Startup dialog to have images flipped vertically.
+ * described at "http://fits.gsfc.nasa.gov/fits_standard.html".
+ * Add setOption("FlipFitsImages",false) to the
+ * Edit/Options/Startup dialog to have FITS images not
+ * flipped vertically.
 */
 @AstroImageJ(reason = "Support for compressed FITS files via nom.tam.fits, invert flipImages to fix inverted aperture display",
 		modified = true)
 @Translation("Fits Reader")
 public class FITS_Reader extends ImagePlus implements PlugIn {
-	private static boolean flipImages;
+	private static boolean flipImages = true;
 	// private WCS wcs;
 	private ImagePlus imagePlus;
 	private String directory;
@@ -1057,17 +1058,17 @@ class FitsDecoder {
 				bscale = parseDouble ( value );
 			else if (key.equals("BZERO"))
 				bzero = parseDouble ( value );
-			/*else if (key.equals("CDELT1"))
+			else if (key.equals("CDELT1"))
 				fi.pixelWidth = parseDouble ( value );
 			else if (key.equals("CDELT2"))
 				fi.pixelHeight = parseDouble ( value );
 			else if (key.equals("CDELT3"))
 				fi.pixelDepth = parseDouble ( value );
 			else if (key.equals("CTYPE1"))
-				fi.unit = value;*/
+				fi.unit = value;
 
 			if (count>360 && fi.width==0)
-			{f.close(); return null;}
+				{f.close(); return null;}
 		}
 		if (fi.pixelWidth==1.0 && fi.pixelDepth==1)
 			fi.unit = "pixel";

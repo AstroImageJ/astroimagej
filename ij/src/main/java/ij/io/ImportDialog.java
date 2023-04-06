@@ -1,16 +1,17 @@
 package ij.io;
 
-import java.awt.*;
-import java.awt.image.*;
-import java.io.*;
-import java.util.*;
 import ij.*;
-import ij.gui.*;
-import ij.process.*;
-import ij.util.*;
-import ij.plugin.frame.Recorder;
-import ij.plugin.*;
+import ij.gui.GenericDialog;
 import ij.measure.Calibration;
+import ij.plugin.FileInfoVirtualStack;
+import ij.plugin.FolderOpener;
+import ij.plugin.Raw;
+import ij.plugin.frame.Recorder;
+import ij.process.ImageProcessor;
+import ij.util.Tools;
+
+import java.io.File;
+import java.util.Properties;
 
 
 /** This is a dialog box used to imports raw 8, 16, 24 and 32-bit images. */
@@ -92,7 +93,7 @@ public class ImportDialog {
 		gd.addCheckbox("Little-endian byte order", intelByteOrder);
 		gd.addCheckbox("Open all files in folder", openAll);
 		gd.addCheckbox("Use virtual stack", virtual);
-		gd.addHelp(IJ.URL+"/docs/menus/file.html#raw");
+		gd.addHelp(IJ.URL2+"/docs/menus/file.html#raw");
 		gd.showDialog();
 		if (gd.wasCanceled())
 			return false;
@@ -157,8 +158,10 @@ public class ImportDialog {
 					}
 					for (int n=1; n<=slices; n++) {
 						ImageProcessor ip = stack2.getProcessor(n);
-						if (ip.getMin()<min) min = ip.getMin();
-						if (ip.getMax()>max) max = ip.getMax();
+						if (ip.getMin()<min)
+							min = ip.getMin();
+						if (ip.getMax()>max)
+							max = ip.getMax();
 						String label = list[i];
 						if (slices>1) label += "-" + IJ.pad(n,digits);
 						stack.addSlice(label, ip);

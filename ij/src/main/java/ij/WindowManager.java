@@ -164,13 +164,17 @@ public class WindowManager {
 		if ((nWindows+nBatchImages)==0)
 			return null;
 		int[] list = new int[nWindows+nBatchImages];
-		for (int i=0; i<nBatchImages; i++)
-			list[i] = batchModeImages[i];
-		int index = 0;
-		for (int i=nBatchImages; i<nBatchImages+nWindows; i++) {
-			ImageWindow win = (ImageWindow)imageList.get(index++);
+		for (int i=0; i<nWindows; i++) {
+			ImageWindow win = (ImageWindow)imageList.get(i);
 			list[i] = win.getImagePlus().getID();
 		}
+		int index = 0;
+		for (int i=nWindows; i<nWindows+nBatchImages; i++)
+			list[i] = batchModeImages[index++];
+		//IJ.log("getIDList");
+		//for (int i=0; i<list.length; i++) {
+		//IJ.log("  "+i+" "+nWindows+" "+nBatchImages+" "+list[i]+" "+getImage((list[i])));
+		//}
 		return list;
 	}
 
@@ -333,6 +337,21 @@ public class WindowManager {
 		}
 		return false;
 	}
+	
+	/*
+	static boolean isDuplicateBatchModeName(String name) {
+		int[] list = getIDList();
+		for (int i=0; i<list.length; i++) {
+			ImagePlus imp = getImage(list[i]);
+
+			if (imp==null) return false;
+			String name2 = imp.getTitle();
+			if (name.equals(name2))
+				return true;
+		}
+		return false;
+	}
+	*/
 
 	/** Returns a unique name by adding, before the extension,  -1, -2, etc. as needed. */
 	public static String getUniqueName(String name) {

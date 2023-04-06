@@ -1,16 +1,17 @@
 package ij.gui;
-import ij.*;
-import ij.plugin.URLOpener;
+
+import ij.IJ;
+import ij.WindowManager;
 import ij.macro.MacroRunner;
+import ij.util.Java2;
+
+import javax.swing.*;
+import javax.swing.event.HyperlinkEvent;
+import javax.swing.event.HyperlinkListener;
+import javax.swing.text.html.HTMLEditorKit;
+import javax.swing.text.html.StyleSheet;
 import java.awt.*;
 import java.awt.event.*;
-import javax.swing.*;
-import javax.swing.text.*;
-import javax.swing.text.html.*;
-import javax.swing.event.HyperlinkListener;
-import javax.swing.event.HyperlinkEvent;
-import javax.swing.event.HyperlinkEvent.EventType;
-import java.net.URL;
 
 /** This is modal or non-modal dialog box that displays HTML formated text. */
 public class HTMLDialog extends JDialog implements ActionListener, KeyListener, HyperlinkListener, WindowListener {
@@ -35,7 +36,8 @@ public class HTMLDialog extends JDialog implements ActionListener, KeyListener, 
 	}
 	
 	private void init(String message) {
-		ij.util.Java2.setSystemLookAndFeel();
+		LookAndFeel saveLookAndFeel = Java2.getLookAndFeel();
+		Java2.setSystemLookAndFeel();
 		Container container = getContentPane();
 		container.setLayout(new BorderLayout());
 		if (message==null) message = "";
@@ -70,7 +72,9 @@ public class HTMLDialog extends JDialog implements ActionListener, KeyListener, 
 		int maxWidth = (int)(Math.min(0.70*screenD.width, 800)); //max 70% of screen width, but not more than 800 pxl
 		if (maxWidth>400 && dialogD.width>maxWidth)
 			dialogD.width = maxWidth;
-		if (dialogD.height > 0.80*screenD.height && screenD.height>400)  //max 80% of screen height
+		if ("Channels".equals(getTitle()))
+			dialogD.height = 1000;
+		if (dialogD.height>0.80*screenD.height && screenD.height>400)  //max 80% of screen height
 			dialogD.height = (int)(0.80*screenD.height);
 		setSize(dialogD);
 		GUI.centerOnImageJScreen(this);		
@@ -87,6 +91,7 @@ public class HTMLDialog extends JDialog implements ActionListener, KeyListener, 
 			});
 		}
 		if (modal) show();
+		Java2.setLookAndFeel(saveLookAndFeel);
 	}
 
 	public void actionPerformed(ActionEvent e) {

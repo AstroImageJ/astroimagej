@@ -1,8 +1,15 @@
 package ij.plugin.filter;
-import ij.*;
-import ij.gui.*;
-import ij.process.*;
+
+import ij.IJ;
+import ij.ImagePlus;
+import ij.Prefs;
+import ij.gui.DialogListener;
+import ij.gui.GenericDialog;
 import ij.plugin.frame.ThresholdAdjuster;
+import ij.process.ByteProcessor;
+import ij.process.FloodFiller;
+import ij.process.ImageProcessor;
+
 import java.awt.*;
 
 /** Implements the Erode, Dilate, Open, Close, Outline, Skeletonize
@@ -16,10 +23,11 @@ public class Binary implements ExtendedPlugInFilter, DialogListener {
     static final String NO_OPERATION = "Nothing";
     static final String[] outputTypes = {"Overwrite", "8-bit", "16-bit", "32-bit"};
     static final String[] operations = {NO_OPERATION, "Erode", "Dilate", "Open", "Close", "Outline", "Fill Holes", "Skeletonize"};
+	static final String COUNT_KEY = "binary.count";
 
     //parameters / options
     static int iterations = 1;      //iterations for erode, dilate, open, close
-    static int count = 1;           //nearest neighbor count for erode, dilate, open, close
+    static int count = (int)Prefs.get(COUNT_KEY, 1); //nearest neighbor count for erode, dilate, open, close
     String operation = NO_OPERATION;  //for dialog; will be copied to 'arg' for actual previewing
 
     String arg;
@@ -31,6 +39,7 @@ public class Binary implements ExtendedPlugInFilter, DialogListener {
     int foreground, background;
     int flags = DOES_8G | DOES_8C | SUPPORTS_MASKING | PARALLELIZE_STACKS | KEEP_PREVIEW | KEEP_THRESHOLD;
     int nPasses;
+    static double medianRadius = 3;
 
     public int setup(String arg, ImagePlus imp) {
         this.arg = arg;
@@ -42,6 +51,8 @@ public class Binary implements ExtendedPlugInFilter, DialogListener {
             if (!(ip instanceof ByteProcessor)) return NO_IMAGE_REQUIRED;
             if (!((ByteProcessor)ip).isBinary()) return NO_IMAGE_REQUIRED;
         }
+        if (arg.equals("median"))
+			medianRadius = IJ.getNumber("Radius:", medianRadius);
         return flags;
     }
 
@@ -49,22 +60,26 @@ public class Binary implements ExtendedPlugInFilter, DialogListener {
         if (doOptions) {
             this.imp = imp;
             this.pfr = pfr;
+            if (count<1) count=1;
+            if (count>8) count=8;
             GenericDialog gd = new GenericDialog("Binary Options");
             gd.addNumericField("Iterations (1-"+MAX_ITERATIONS+"):", iterations, 0, 3, "");
             gd.addNumericField("Count (1-8):", count, 0, 3, "");
             gd.addCheckbox("Black background", Prefs.blackBackground);
             gd.addCheckbox("Pad edges when eroding", Prefs.padEdges);
             gd.addChoice("EDM output:", outputTypes, outputTypes[EDM.getOutputType()]);
-            if (imp != null) {
+            if (imp!=null) {
                 gd.addChoice("Do:", operations, operation);
                 gd.addPreviewCheckbox(pfr);
                 gd.addDialogListener(this);
                 previewing = true;
             }
-            gd.addHelp(IJ.URL+"/docs/menus/process.html#options");
+            gd.addHelp(IJ.URL2+"/docs/menus/process.html#options");
             gd.showDialog();
             previewing = false;
-            if (gd.wasCanceled()) return DONE;
+            if (gd.wasCanceled())
+            	return DONE;
+            Prefs.set(COUNT_KEY, count);
             if (imp==null) {                 //options dialog only, no do/preview
                 dialogItemChanged(gd, null); //read dialog result
                 return DONE;
@@ -72,7 +87,7 @@ public class Binary implements ExtendedPlugInFilter, DialogListener {
             return operation.equals(NO_OPERATION) ? DONE : IJ.setupDialog(imp, flags);
         } else {   //no dialog, 'arg' is operation type
             if (!((ByteProcessor)imp.getProcessor()).isBinary()) {
-                IJ.error("8-bit binary (black and white only) image required.");
+                IJ.error("8-bit binary (0 and 255 only) image required.");
                 return DONE;
             }
             return IJ.setupDialog(imp, flags);
@@ -82,9 +97,9 @@ public class Binary implements ExtendedPlugInFilter, DialogListener {
     public boolean dialogItemChanged (GenericDialog gd, AWTEvent e) {
         iterations = (int)gd.getNextNumber();
         count = (int)gd.getNextNumber();
-        boolean bb = Prefs.blackBackground;
+		boolean bb = Prefs.blackBackground;
         Prefs.blackBackground = gd.getNextBoolean();
-        if ( Prefs.blackBackground!=bb)
+        if (Prefs.blackBackground!=bb)
         	ThresholdAdjuster.update();
         Prefs.padEdges = gd.getNextBoolean();
         gd.setSmartRecording(EDM.getOutputType()==0);
@@ -112,7 +127,9 @@ public class Binary implements ExtendedPlugInFilter, DialogListener {
         foreground = ip.isInvertedLut() ? 255-fg : fg;
         background = 255 - foreground;
         ip.setSnapshotCopyMode(true);
-        if (arg.equals("outline"))
+        if (arg.equals("median"))
+            median(ip);
+        else if (arg.equals("outline"))
             outline(ip);
         else if (arg.startsWith("fill"))
             fill(ip, foreground, background);
@@ -155,6 +172,12 @@ public class Binary implements ExtendedPlugInFilter, DialogListener {
         ((ByteProcessor)ip).outline();
         if (Prefs.blackBackground) ip.invert();
     }
+
+    void median(ImageProcessor ip) {
+    	ip.resetThreshold();
+		new RankFilters().rank(ip, medianRadius, RankFilters.MEAN);
+		ip.threshold(128,255);
+	}
 
 	void skeletonize(ImageProcessor ip) {
 		int fg = Prefs.blackBackground?255:0;

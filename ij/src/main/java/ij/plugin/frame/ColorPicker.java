@@ -1,12 +1,21 @@
 package ij.plugin.frame;
-import ij.*;
-import ij.plugin.*;
+
+import ij.IJ;
+import ij.IJEventListener;
+import ij.Prefs;
+import ij.WindowManager;
+import ij.gui.ColorChooser;
+import ij.gui.GUI;
+import ij.gui.Toolbar;
+import ij.plugin.Colors;
+import ij.process.ColorProcessor;
+
+import javax.swing.*;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
 import java.util.Vector;
-import javax.swing.BoxLayout;
-import ij.process.*;
-import ij.gui.*;
 
 /** Implements the Image/Color/Color Picker command. */
 public class ColorPicker extends PlugInDialog {
@@ -290,25 +299,29 @@ class ColorCanvas extends Canvas implements MouseListener, MouseMotionListener {
 			Color c = Toolbar.getBackgroundColor();
 			Toolbar.setBackgroundColor(Toolbar.getForegroundColor());
 			Toolbar.setForegroundColor(c);
+			Recorder.setForegroundColor(Toolbar.getForegroundColor());
+			Recorder.setBackgroundColor(Toolbar.getBackgroundColor());
 		} else if (resetRect.contains(x,y)) {
 			Toolbar.setForegroundColor(Color.white);
-			Toolbar.setBackgroundColor(Color.black); 
+			Toolbar.setBackgroundColor(Color.black);
+			Recorder.setForegroundColor(Color.white);
+			Recorder.setBackgroundColor(Color.black);
 		} else if ((background1Rect.contains(x,y)) || (background2Rect.contains(x,y))) {
 			background = true;
 			if (doubleClick) editColor();
-			ip.refreshForeground(background);
-			ip.refreshBackground(background);
+			//ip.refreshForeground(background);
+			//ip.refreshBackground(background);
 		} else if ((foreground1Rect.contains(x,y)) || (foreground2Rect.contains(x,y))) {
 			background = false;
 			if (doubleClick) editColor();
-			ip.refreshBackground(background);
-			ip.refreshForeground(background);
+			//ip.refreshBackground(background);
+			//ip.refreshForeground(background);
 		} else {
 			if (doubleClick)
 				editColor();
 			else {
 				setDrawingColor(x, y, background);
-			showStatus(" ", Toolbar.getForegroundColor().getRGB());
+				showStatus(" ", Toolbar.getForegroundColor().getRGB());
 			} 
 		}
 		Color color;

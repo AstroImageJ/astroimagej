@@ -1,17 +1,21 @@
 package ij.plugin.filter;
-import java.awt.*;
-import java.util.Vector;
-import java.util.Properties;
+
 import ij.*;
 import ij.gui.*;
-import ij.process.*;
-import ij.measure.*;
-import ij.text.*;
-import ij.plugin.MeasurementsWriter;
-import ij.plugin.Straightener;
-import ij.plugin.frame.RoiManager;
-import ij.util.Tools;
 import ij.macro.Interpreter;
+import ij.measure.Calibration;
+import ij.measure.Measurements;
+import ij.measure.ResultsTable;
+import ij.plugin.MeasurementsWriter;
+import ij.plugin.frame.RoiManager;
+import ij.process.FloatPolygon;
+import ij.process.FloatProcessor;
+import ij.process.ImageProcessor;
+import ij.process.ImageStatistics;
+import ij.text.TextPanel;
+
+import java.awt.*;
+import java.util.Properties;
 
 /** This plugin implements ImageJ's Analyze/Measure and Analyze/Set Measurements commands. */
 public class Analyzer implements PlugInFilter, Measurements {
@@ -46,13 +50,13 @@ public class Analyzer implements PlugInFilter, Measurements {
 	private static String redirectTitle = "";
 	private static ImagePlus redirectImage; // non-displayed images
 	static int firstParticle, lastParticle;
-	private static boolean summarized;
 	private static boolean switchingModes;
 	private static boolean showMin = true;
 	private static boolean showAngle = true;
 	
 	public Analyzer() {
 		rt = systemRT;
+		rt.setIsResultsTable(true);
 		rt.showRowNumbers(true);
 		rt.setPrecision((systemMeasurements&SCIENTIFIC_NOTATION)!=0?-precision:precision);
 		rt.setNaNEmptyCells((systemMeasurements&NaN_EMPTY_CELLS)!=0);
@@ -201,7 +205,7 @@ public class Analyzer implements PlugInFilter, Measurements {
         gd.addChoice("Redirect to:", titles, target);
 		gd.setInsets(5, 0, 0);
 		gd.addNumericField("Decimal places (0-9):", precision, 0, 2, "");
-		gd.addHelp(IJ.URL+"/docs/menus/analyze.html#set");
+		gd.addHelp(IJ.URL2+"/docs/menus/analyze.html#set");
 		gd.showDialog();
 		if (gd.wasCanceled())
 			return;
@@ -261,12 +265,12 @@ public class Analyzer implements PlugInFilter, Measurements {
 			measurePoint(roi);
 			return;
 		}
-		if (roi!=null && roi.isLine()) {
-			measureLength(roi);
-			return;
-		}
 		if (roi!=null && roi.getType()==Roi.ANGLE) {
 			measureAngle(roi);
+			return;
+		}
+		if (roi!=null && roi.isLine()) {
+			measureLength(roi);
 			return;
 		}
 		ImageStatistics stats;
@@ -390,7 +394,7 @@ public class Analyzer implements PlugInFilter, Measurements {
 		PointRoi pointRoi = roi instanceof PointRoi?(PointRoi)roi:null;
 		for (int i=0; i<p.npoints; i++) {
 			int position = 0;
-			if (pointRoi!=null)
+			if (pointRoi!=null && p.npoints>1)
 				position = pointRoi.getPointPosition(i);
 			ImageProcessor ip = null;
 			if (stack!=null && position>0 && position<=stack.size())
@@ -680,16 +684,16 @@ public class Analyzer implements PlugInFilter, Measurements {
 				rt.update(measurements, imp, roi);
 		}
 		if (roi!=null) {
-			if (roi.isLine()) {
+			if (roi.getType()==Roi.ANGLE) {
+				double angle = ((PolygonRoi)roi).getAngle();
+				if (Prefs.reflexAngle) angle = 360.0-angle;
+				rt.addValue("Angle", angle);
+			} else if (roi.isLine()) {
 				rt.addValue("Length", roi.getLength());
 				if (roi.getType()==Roi.LINE && showAngle) {
 					Line line = (Line)roi;
 					rt.addValue("Angle", line.getFloatAngle(line.x1d,line.y1d,line.x2d,line.y2d));
 				}
-			} else if (roi.getType()==Roi.ANGLE) {
-				double angle = ((PolygonRoi)roi).getAngle();
-				if (Prefs.reflexAngle) angle = 360.0-angle;
-				rt.addValue("Angle", angle);
 			} else if (roi instanceof PointRoi)
 				savePoints((PointRoi)roi);
 		}
@@ -719,11 +723,10 @@ public class Analyzer implements PlugInFilter, Measurements {
 	}
 	
 	private void clearSummary() {
-		if (summarized && rt.size()>=4 && "Max".equals(rt.getLabel(rt.size()-1))) {
+		if (rt.size()>=4 && "Max".equals(rt.getLabel(rt.size()-1))) {
 			for (int i=0; i<4; i++)
 				rt.deleteRow(rt.size()-1);
 			rt.show("Results");
-			summarized = false;
 		}
 	}
 		
@@ -882,7 +885,7 @@ public class Analyzer implements PlugInFilter, Measurements {
 	}
 	
 	public void summarize() {
-		if (summarized)
+		if (rt==null || "Max".equals(rt.getLabel(rt.size()-1)))
 			return;
 		int n = rt.size();
 		if (n<2)
@@ -919,8 +922,7 @@ public class Analyzer implements PlugInFilter, Measurements {
 			rt.setValue(headings[col], n+2, min[col]);
 			rt.setValue(headings[col], n+3, max[col]);
 		}
-		rt.show("Results");
-		summarized = true;
+		rt.show(rt.getTitle());
 	}
 
 	/** Returns the current measurement count. */
@@ -953,7 +955,6 @@ public class Analyzer implements PlugInFilter, Measurements {
 		RoiManager.resetMultiMeasureResults();
 		unsavedMeasurements = false;
 		if (tp!=null) tp.clear();
-		summarized = false;
 		return true;
 	}
 	
@@ -1052,7 +1053,6 @@ public class Analyzer implements PlugInFilter, Measurements {
 		rt.setPrecision((systemMeasurements&SCIENTIFIC_NOTATION)!=0?-precision:precision);
 		rt.setNaNEmptyCells((systemMeasurements&NaN_EMPTY_CELLS)!=0);
 		systemRT = rt;
-		summarized = false;
 		umeans = null;
 		unsavedMeasurements = false;
 	}

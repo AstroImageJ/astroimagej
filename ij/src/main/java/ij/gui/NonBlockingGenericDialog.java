@@ -1,9 +1,11 @@
 package ij.gui;
-import ij.*;
+
+import ij.IJ;
+import ij.ImagePlus;
+import ij.WindowManager;
+
+import java.awt.*;
 import java.awt.event.*;
-import java.awt.EventQueue;
-import java.awt.GraphicsEnvironment;
-import java.awt.Frame;
 
 /** This is an extension of GenericDialog that is non-modal.
  *	@author Johannes Schindelin
@@ -16,6 +18,7 @@ public class NonBlockingGenericDialog extends GenericDialog {
 		super(title, null);
 		setModal(false);
 		IJ.protectStatusBar(false);
+		instance = this;
 	}
 
 	public synchronized void showDialog() {

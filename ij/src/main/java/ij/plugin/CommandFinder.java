@@ -25,19 +25,20 @@
 package ij.plugin;
 
 import ij.*;
-import ij.text.*;
-import ij.plugin.frame.Editor;
-import ij.process.ImageProcessor;
 import ij.gui.GUI;
 import ij.gui.HTMLDialog;
+import ij.plugin.frame.Editor;
+import ij.process.ImageProcessor;
+
+import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.table.AbstractTableModel;
+import javax.swing.table.TableColumnModel;
 import java.awt.*;
 import java.awt.event.*;
-import java.util.*;
 import java.io.File;
-import javax.swing.*;
-import javax.swing.table.*;
-import javax.swing.event.*;
-import javax.swing.event.DocumentEvent;
+import java.util.*;
 
 public class CommandFinder implements PlugIn, ActionListener, WindowListener, KeyListener, ItemListener, MouseListener {
 
@@ -210,7 +211,7 @@ public class CommandFinder implements PlugIn, ActionListener, WindowListener, Ke
 		}
 		if (className.startsWith("ij.")) {
 			className = className.replaceAll("\\.", "/");
-			IJ.runPlugIn("ij.plugin.BrowserLauncher", IJ.URL + "/source/" + className + ".java");
+			IJ.runPlugIn("ij.plugin.BrowserLauncher", IJ.URL2 + "/source/" + className + ".java");
 			return;
 		}
 		className = IJ.getDirectory("plugins") + className.replaceAll("\\.", "/");

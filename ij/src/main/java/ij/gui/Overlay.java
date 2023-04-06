@@ -1,13 +1,19 @@
 package ij.gui;
-import java.awt.*;
-import java.util.Vector;
-import java.awt.geom.Rectangle2D;
-import java.util.*;
-import ij.*;
-import ij.process.ImageProcessor;
-import ij.plugin.filter.*;
-import ij.plugin.*;
+
+import ij.IJ;
+import ij.ImagePlus;
 import ij.measure.ResultsTable;
+import ij.plugin.Colors;
+import ij.plugin.RoiRotator;
+import ij.plugin.RoiScaler;
+import ij.plugin.filter.Analyzer;
+import ij.plugin.filter.Rotator;
+import ij.process.ImageProcessor;
+
+import java.awt.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.Vector;
 
 /** An Overlay is a list of ROIs that can be drawn non-destructively on an Image. */
 public class Overlay implements Iterable<Roi> {
@@ -44,6 +50,13 @@ public class Overlay implements Iterable<Roi> {
 	public void add(Roi roi, String name) {
 		roi.setName(name);
 		add(roi);
+	}
+
+    /** Adds the ROIs in 'overlay2' to this overlay. */
+	public Overlay add(Overlay overlay2) {
+		for (int i=0; i<overlay2.size(); i++)
+			add(overlay2.get(i));
+		return this;
 	}
 
     /** Adds an ROI to this Overlay. */
@@ -179,33 +192,16 @@ public class Overlay implements Iterable<Roi> {
 
 	/** Moves all the ROIs in this overlay. */
 	public void translate(int dx, int dy) {
-		for (int i=0; i<size(); i++) {
-			Roi roi = get(i);
-			if (roi.subPixelResolution()) {
-				Rectangle2D r = roi.getFloatBounds();
-				roi.setLocation(r.getX()+dx, r.getY()+dy);
-			} else {
-				Rectangle r = roi.getBounds();
-				roi.setLocation(r.x+dx, r.y+dy);
-			}
-		}
+		for (int i=0; i<size(); i++)
+			get(i).translate(dx,dy);
 	}
 
 	/** Moves all the ROIs in this overlay.
 	* Marcel Boeglin, October 2013
 	*/
 	public void translate(double dx, double dy) {
-		boolean intArgs = (int)dx==dx && (int)dy==dy;
-		for (int i=0; i<size(); i++) {
-			Roi roi = get(i);
-			if (roi.subPixelResolution() || !intArgs) {
-				Rectangle2D r = roi.getFloatBounds();
-				roi.setLocation(r.getX()+dx, r.getY()+dy);
-			} else {
-				Rectangle r = roi.getBounds();
-				roi.setLocation(r.x+(int)dx, r.y+(int)dy);
-			}
-		}
+		for (int i=0; i<size(); i++)
+			get(i).translate(dx,dy);
 	}
 	
 	/** Measures the ROIs in this overlay on the specified image

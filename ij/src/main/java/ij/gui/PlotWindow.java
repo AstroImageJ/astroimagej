@@ -285,6 +285,8 @@ public class PlotWindow extends ImageWindow implements ActionListener, ItemListe
 			showList(/*useLabels=*/false);
 		else
 			ic.requestFocus();	//have focus on the canvas, not the button, so that pressing the space bar allows panning
+		if (Prefs.autoLivePlots && bgThread==null)
+			enableLivePlot();
 	}
 
 	@Override
@@ -678,7 +680,7 @@ public class PlotWindow extends ImageWindow implements ActionListener, ItemListe
         rangeArrowsVisible = true;
     }
 
-	void hideRangeArrows() {
+	public void hideRangeArrows() {
 		if (imp == null || rangeArrowRois==null) return;
 		Overlay ovly = imp.getOverlay();
 		if (ovly == null) return;

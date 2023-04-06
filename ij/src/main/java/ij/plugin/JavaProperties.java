@@ -1,11 +1,17 @@
 package ij.plugin;
-import ij.*;
-import ij.text.*;
-import ij.io.OpenDialog;
+
+import ij.IJ;
+import ij.Menus;
+import ij.Prefs;
 import ij.gui.GUI;
-import java.awt.*;
-import java.util.*;
+import ij.io.OpenDialog;
+import ij.text.TextWindow;
+
 import java.applet.Applet;
+import java.awt.*;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.Properties;
 
 /** Displays the Java system properties in a text window. */
 public class JavaProperties implements PlugIn {
@@ -90,6 +96,7 @@ public class JavaProperties implements PlugIn {
 		list.add("  IJ.getDir(\"temp\"): "+ IJ.getDir("temp"));
 		list.add("  IJ.getDir(\"default\"): "+ IJ.getDir("default"));
 		list.add("  IJ.getDir(\"image\"): "+ IJ.getDir("image"));
+		list.add("  IJ.getDir(\"preferences\"): "+ IJ.getDir("preferences"));
 		list.add("");
 		
 		list.add("  Menus.getPlugInsPath: "+Menus.getPlugInsPath());

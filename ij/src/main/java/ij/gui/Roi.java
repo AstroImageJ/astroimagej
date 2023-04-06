@@ -5,6 +5,7 @@ import ij.process.*;
 import ij.measure.*;
 import ij.plugin.*;
 import ij.plugin.frame.Recorder;
+import ij.plugin.frame.RoiManager;
 import ij.plugin.filter.Analyzer;
 import ij.plugin.filter.ThresholdToSelection;
 import ij.macro.Interpreter;
@@ -287,6 +288,17 @@ public class Roi extends Object implements Cloneable, java.io.Serializable, Iter
 		subPixel = true;
 	}
 
+	public void translate(double dx, double dy) {
+		boolean intArgs = (int)dx==dx && (int)dy==dy;
+		if (subPixelResolution() || !intArgs) {
+			Rectangle2D r = getFloatBounds();
+			setLocation(r.getX()+dx, r.getY()+dy);
+		} else {
+			Rectangle r = getBounds();
+			setLocation(r.x+(int)dx, r.y+(int)dy);
+		}
+	}
+
 	/** Sets the ImagePlus associated with this ROI.
 	 *  <code>imp</code> may be null to remove the association to an image. */
 	public void setImage(ImagePlus imp) {
@@ -310,6 +322,7 @@ public class Roi extends Object implements Cloneable, java.io.Serializable, Iter
 
 	/** Returns the ID of the image associated with this ROI. */
 	public int getImageID() {
+		ImagePlus imp = this.imp;
 		return imp!=null?imp.getID():imageID;
 	}
 
@@ -519,7 +532,7 @@ public class Roi extends Object implements Cloneable, java.io.Serializable, Iter
 			y = (int)Math.floor(bounds.y + 0.5);
 			width  = (int)Math.floor(bounds.x + bounds.width + 1.5)  - x;
 			height = (int)Math.floor(bounds.y + bounds.height + 1.5) - y;
-		} else {                           //for area Rois, the subpixel bounds must be enclosed in the int bounds
+		} else {  //for area Rois, the subpixel bounds must be enclosed in the int bounds
 			x = (int)Math.floor(bounds.x);
 			y = (int)Math.floor(bounds.y);
 			width  = (int)Math.ceil(bounds.x + bounds.width)  - x;
@@ -535,8 +548,7 @@ public class Roi extends Object implements Cloneable, java.io.Serializable, Iter
 		return getBounds();
 	}
 
-	/** Returns the outline of this selection as a Polygon, or
-		null if this is a straight line selection.
+	/** Returns the outline of this selection as a Polygon.
 		@see ij.process.ImageProcessor#setRoi
 		@see ij.process.ImageProcessor#drawPolygon
 		@see ij.process.ImageProcessor#fillPolygon
@@ -555,7 +567,7 @@ public class Roi extends Object implements Cloneable, java.io.Serializable, Iter
 		return new Polygon(xpoints, ypoints, 4);
 	}
 
-	/** Returns the outline (in image pixel coordinates) as a FloatPolygon */
+	/** Returns the outline of this selection as a FloatPolygon */
 	public FloatPolygon getFloatPolygon() {
 		if (cornerDiameter>0) {  // Rounded Rectangle
 			ShapeRoi s = new ShapeRoi(this);
@@ -629,6 +641,13 @@ public class Roi extends Object implements Cloneable, java.io.Serializable, Iter
 		double length = p.getLength(isLine);
 
 		int npoints = p.npoints;
+		if (npoints<2)
+			return p;
+		if (Math.abs(interval)<0.01) {
+			IJ.error("Interval must be >= 0.01");
+			return p;
+		}
+		
 		if (!isLine) {//**append (and later remove) closing point to end of array
 			npoints++;
 			p.xpoints = java.util.Arrays.copyOf(p.xpoints, npoints);
@@ -1159,7 +1178,7 @@ public class Roi extends Object implements Cloneable, java.io.Serializable, Iter
 
 	/** Nudge ROI one pixel on arrow key press. */
 	public void nudge(int key) {
-		if (WindowManager.getActiveWindow() instanceof ij.plugin.frame.RoiManager)
+		if (WindowManager.getActiveWindow() instanceof RoiManager)
 			return;
 		if (bounds != null && (!isInteger(bounds.x) || !isInteger(bounds.y)))
 			cachedMask = null;
@@ -1604,6 +1623,7 @@ public class Roi extends Object implements Cloneable, java.io.Serializable, Iter
 				subtractPoints();
 			return;
 		}
+		Roi originalRoi = (Roi)previousRoi.clone();
 		Roi previous = (Roi)previousRoi.clone();
 		previous.modState = NO_MODS;
 		ShapeRoi s1	 = null;
@@ -1626,6 +1646,12 @@ public class Roi extends Object implements Cloneable, java.io.Serializable, Iter
 		if (roi2!=null)
 			roi2.copyAttributes(previousRoi);
 		imp.setRoi(roi2);
+		RoiManager rm = RoiManager.getRawInstance();		
+		if (rm!=null && rm.getCount()>0) {
+			Roi[] rois = rm.getSelectedRoisAsArray();
+			if (rois!=null && rois.length==1 && rois[0].equals(originalRoi))
+				rm.runCommand("update");
+		}
 		setPreviousRoi(previous);
 	}
 
@@ -1711,7 +1737,7 @@ public class Roi extends Object implements Cloneable, java.io.Serializable, Iter
 			ImageProcessor ip = imp.getProcessor();
 			ip.reset();
 			int xoffset=0, yoffset=0;
-			Roi croi = clipboard.getRoi();
+			Roi croi = clipboard!=null?clipboard.getRoi():null;
 			if (croi!=null) {
 				Rectangle r = croi.getBounds();
 				if (r.x<0) xoffset=-r.x;
@@ -1911,7 +1937,7 @@ public class Roi extends Object implements Cloneable, java.io.Serializable, Iter
 	public void setStrokeColor(Color c) {
 		 strokeColor = c;
 	}
-
+	
 	/** Returns the the color used to draw the ROI outline or null if the default color is being used.
 	 * @see #setStrokeColor(Color)
 	 */
@@ -1964,7 +1990,7 @@ public class Roi extends Object implements Cloneable, java.io.Serializable, Iter
 	/** Copy the attributes (outline color, fill color, outline width)
 		of	'roi2' to the this selection. */
 	public void copyAttributes(Roi roi2) {
-		this. strokeColor = roi2. strokeColor;
+		this. strokeColor = roi2.strokeColor;
 		this.fillColor = roi2.fillColor;
 		this.setStrokeWidth(roi2.getStrokeWidth());
 		this.setName(roi2.getName());
@@ -2008,6 +2034,7 @@ public class Roi extends Object implements Cloneable, java.io.Serializable, Iter
 	 * the width to 0.0 and the ROI will be drawn using a
 	 * a 1 pixel stroke width regardless of the magnification.
 	 * @see #setDefaultStrokeWidth(double)
+	 * @see #setUnscalableStrokeWidth(double)	 
 	 * @see #setStrokeColor(Color)
 	 * @see ij.ImagePlus#setOverlay(ij.gui.Overlay)
 	 */
@@ -2038,13 +2065,17 @@ public class Roi extends Object implements Cloneable, java.io.Serializable, Iter
 		setStrokeWidth((float)strokeWidth);
 	}
 
+	/** Sets the width of the line used to draw this ROI and
+	 * prevents the width from increasing when the image
+	 * is zoomed.
+	*/
 	public void setUnscalableStrokeWidth(double strokeWidth) {
 		setStrokeWidth((float)strokeWidth);
 		scaleStrokeWidth = false;
 
 	}
 
-	/** Returns the lineWidth. */
+	/** Returns the line width. */
 	public float getStrokeWidth() {
 		return (stroke!=null&&!usingDefaultStroke)?stroke.getLineWidth():0f;
 	}
@@ -2241,12 +2272,12 @@ public class Roi extends Object implements Cloneable, java.io.Serializable, Iter
 
 	/** Returns 'true' if this is a line selection. */
 	public boolean isLine() {
-		return type>=LINE && type<=FREELINE;
+		return type>=LINE && type<=ANGLE;
 	}
 
 
 	/** Return 'true' if this is a line or point selection. */
-	protected boolean isLineOrPoint() {
+	public boolean isLineOrPoint() {
 		return isLine() || type==POINT;
 	}
 
@@ -2684,16 +2715,14 @@ public class Roi extends Object implements Cloneable, java.io.Serializable, Iter
 		if (line==null || !line.isLine())
 			throw new IllegalArgumentException("Line selection required");
 		double lineWidth = line.getStrokeWidth();
+		if (lineWidth<1.0)
+			lineWidth = 1.0;
 		Roi roi2 = null;
 		if (line.getType()==Roi.LINE) {
-			if (lineWidth<=1.0)
-				lineWidth = 1.0000001;
-			FloatPolygon p = ((Line)line).getFloatPolygon(lineWidth);
-			roi2 = new PolygonRoi(p, Roi.POLYGON);
+			FloatPolygon p = ((Line)line).getFloatPoints();
+			roi2 = new RotatedRectRoi(p.xpoints[0],p.ypoints[0],p.xpoints[1],p.ypoints[1],lineWidth);
 			line.setStrokeWidth(lineWidth);
 		} else {
-			if (lineWidth<1)
-				lineWidth = 1;
 			Rectangle bounds = line.getBounds();
 			double width = bounds.x+bounds.width + lineWidth;
 			double height = bounds.y+bounds.height + lineWidth;

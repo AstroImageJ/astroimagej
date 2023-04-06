@@ -1,12 +1,18 @@
 package ij.plugin.filter;
-import ij.*;
-import ij.process.*;
-import ij.gui.*;
-import ij.measure.*;
+
+import ij.IJ;
+import ij.ImagePlus;
+import ij.WindowManager;
+import ij.gui.GenericDialog;
+import ij.measure.Measurements;
 import ij.plugin.ContrastEnhancer;
 import ij.plugin.frame.Recorder;
+import ij.process.ColorProcessor;
+import ij.process.FHT;
+import ij.process.FloatProcessor;
+import ij.process.ImageProcessor;
+
 import java.awt.*;
-import java.util.*;
 
 
 /** This class implements the Process/FFT/Custom Filter command. */
@@ -147,7 +153,7 @@ public class FFTCustomFilter implements  PlugInFilter, Measurements {
 		gd.addChoice("Filter:", titles, titles[filterIndex]);
 		if (stackSize>1)
 			gd.addCheckbox("Process entire stack", processStack);
-		gd.addHelp(IJ.URL+"/docs/menus/process.html#fft-filter");
+		gd.addHelp(IJ.URL2+"/docs/menus/process.html#fft-filter");
 		gd.showDialog();
 		if (gd.wasCanceled())
 			return null;

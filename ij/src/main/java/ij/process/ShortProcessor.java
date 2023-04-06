@@ -72,15 +72,17 @@ public class ShortProcessor extends ImageProcessor {
 			return;
 		int size = width*height;
 		int value;
-		min = 65535;
-		max = 0;
-		for (int i=0; i<size; i++) {
+		int min = pixels[0]&0xffff;
+		int max = pixels[0]&0xffff;
+		for (int i=1; i<size; i++) {
 			value = pixels[i]&0xffff;
 			if (value<min)
 				min = value;
-			if (value>max)
+			else if (value>max)
 				max = value;
 		}
+		this.min = min;
+		this.max = max;
 		minMaxSet = true;
 	}
 
@@ -267,12 +269,8 @@ public class ShortProcessor extends ImageProcessor {
 			resetMinAndMax();
 			return;
 		}
-		if (minimum<0.0)
-			minimum = 0.0;
-		if (maximum>65535.0)
-			maximum = 65535.0;
-		min = (int)minimum;
-		max = (int)maximum;
+		min = (int)Math.round(minimum);
+		max = (int)Math.round(maximum);
 		fixedScale = true;
 		minMaxSet = true;
 		resetThreshold();
@@ -495,7 +493,6 @@ public class ShortProcessor extends ImageProcessor {
 				switch(op) {
 					case INVERT:
 						v2 = max2 - (v1 - min2);
-						//v2 = 65535 - (v1+offset);
 						break;
 					case FILL:
 						v2 = fgColor2;
@@ -568,14 +565,36 @@ public class ShortProcessor extends ImageProcessor {
 		}
     }
     
+	/** If "Full range 16-bit inversions"
+	 * (Prefs.fullRange16bitInversions) is set in 
+	 * Edit/Options/Conversions, the image
+	 * or ROI is inverted using the full pixel
+	 * value range (0-65535) or, if set, using the
+	 * "Unsigned 16-bit range" in the "Set" option
+	 * of the Image&gt;Adjust&gt;Brightness/Contrast
+	 * dialog.<br>
+	 * Otherwise, each pixel in the
+	 * image or ROI is inverted using v2=max-(v1-min),
+	 * where 'min' and 'max' are the image's minimum
+	 * and maximum pixel values.
+	 * @see ij.ImagePlus#setDefault16bitRange
+	*/
 	public void invert() {
-		int range = 65536;
-		int defaultRange = ij.ImagePlus.getDefault16bitRange();
-		if (defaultRange>0 && !isSigned16Bit())
-			range = (int)Math.pow(2,defaultRange);
-		setMinAndMax(0, range-1);
-		process(INVERT, 0.0);
-		resetMinAndMax();
+		if (ij.Prefs.fullRange16bitInversions) {
+			int range = 65536;
+			int defaultRange = ij.ImagePlus.getDefault16bitRange();
+			if (defaultRange>0 && !isSigned16Bit())
+				range = (int)Math.pow(2,defaultRange);
+			setMinAndMax(0, range-1);
+			process(INVERT, 0.0);
+			resetMinAndMax();
+		} else {
+			double min2 = getMin();
+			double max2 = getMax();
+			resetMinAndMax();
+			process(INVERT, 0.0);
+			setMinAndMax(min2,max2);
+		}
 	}
 
 	public void add(int value) {process(ADD, value);}
@@ -981,6 +1000,13 @@ public class ShortProcessor extends ImageProcessor {
 		fillValueSet = true;
 	}
 	
+	/** Sets the background fill/draw color. */
+	public void setBackgroundColor(Color color) {
+		int bestIndex = getBestIndex(color);
+		int value = (int)(getMin() + (getMax()-getMin())*(bestIndex/255.0));
+		setBackgroundValue(value);
+	}
+
 	/** Sets the default fill/draw value, where 0<=value<=65535). */
 	public void setValue(double value) {
 			fgColor = (int)value;

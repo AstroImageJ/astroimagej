@@ -56,6 +56,9 @@ public class SimpleCommands implements PlugIn {
 			showDirectory(arg.replace("showdir", ""));
 		else if (arg.equals("measure"))
 			measureStack();
+		else if (arg.equals("invert"))
+			IJ.runMacroFile("ij.jar:InvertAllLuts", null);
+
 	}
 	
 	private synchronized void showFonts() {
@@ -114,7 +117,7 @@ public class SimpleCommands implements PlugIn {
 	}
 		
 	private void installation() {
-		String url = IJ.URL+"/docs/install/";
+		String url = IJ.URL2+"/docs/install/";
 		if (IJ.isMacintosh())
 			url += "osx.html";
 		else if (IJ.isWindows())
@@ -128,7 +131,7 @@ public class SimpleCommands implements PlugIn {
 		IJ.showMessage("\"About Plugins\" Submenu", 
 			"Plugins packaged as JAR files can add entries\n"+
 			"to this submenu. There is an example at\n \n"+
-			IJ.URL+"/plugins/jar-demo.html");
+			IJ.URL2+"/plugins/jar-demo.html");
 	}
 	
 	private void setSliceLabel() {
@@ -144,11 +147,11 @@ public class SimpleCommands implements PlugIn {
 		gd.showDialog();
 		if (!gd.wasCanceled()) {
 			label2 = gd.getNextString();
-			if (label2!=label) {
+			if (label2!=null && !label2.equals(label)) {
 				if (label2.length()==0)
 					label2 = null;
 				stack.setSliceLabel(label2, n);
-				imp.setProperty("Label", label2);	
+				imp.setProp("Slice_Label", label2);	
 				imp.repaintWindow();
 			}
 		}
@@ -161,7 +164,7 @@ public class SimpleCommands implements PlugIn {
 		for (int i=1; i<=size; i++)
 			stack.setSliceLabel(null, i);
 		if (size==1)
-			imp.setProperty("Label", null);				
+			imp.setProp("Slice_Label", null);				
 		imp.repaintWindow();
 	}
 	
@@ -194,7 +197,7 @@ public class SimpleCommands implements PlugIn {
 			"Plugins were not loaded due to macOS Path Randomization.\n"+
 			"To work around this problem, move ImageJ.app out of the\n"+
 			"ImageJ folder and then copy it back. More information is at\n \n"+
-			IJ.URL+"/docs/install/osx.html#randomization");
+			IJ.URL2+"/docs/install/osx.html#randomization");
 	}
 	
 	private void installMagicMontageTools() {

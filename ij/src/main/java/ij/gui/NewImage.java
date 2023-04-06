@@ -1,12 +1,10 @@
 package ij.gui;
 
-import java.awt.*;
-import java.awt.image.*;
-import java.io.*;
-import java.awt.event.*;
-import java.util.*;
 import ij.*;
 import ij.process.*;
+
+import java.util.Properties;
+import java.util.Random;
 
 /** New image dialog box plus several static utility methods for creating images.*/
 public class NewImage {
@@ -63,7 +61,7 @@ public class NewImage {
 					+ "Memory in use: "+IJ.freeMemory()+"\n \n"	
 					+ "More information can be found in the \"Memory\"\n"
 					+ "sections of the ImageJ installation notes at\n"
-					+ "\""+IJ.URL+"/docs/install/\".");
+					+ "\""+IJ.URL2+"/docs/install/\".");
 					return false;
 				}
 			}
@@ -98,14 +96,14 @@ public class NewImage {
 						break;
 					case RGB: pixels2 = new int[width*height];
 						if (fill==FILL_NOISE) {
-						 if (signedInt)
-							fillNoiseInt(new IntProcessor(width,height,(int[])pixels2));
-						else
-							fillNoiseRGB(new ColorProcessor(width,height,(int[])pixels2), false);
+							if (signedInt)
+								fillNoiseInt(new IntProcessor(width,height,(int[])pixels2));
+							else
+								fillNoiseRGB(new ColorProcessor(width,height,(int[])pixels2), false);
 						}
 						break;
 				}
-				if (signedInt && (fill==FILL_WHITE||fill==FILL_RAMP) || ((type==RGB)&&(fill!=FILL_NOISE)))
+				if (fill==FILL_WHITE||fill==FILL_RAMP)
 					System.arraycopy(ip.getPixels(), 0, pixels2, 0, width*height);
 				stack.addSlice(null, pixels2);
 				if (IJ.escapePressed()) {IJ.beep(); break;};

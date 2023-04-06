@@ -1,13 +1,25 @@
 package ij.plugin;
-import ij.*;
-import ij.process.*;
-import ij.gui.*;
-import ij.util.Tools;
+
+import ij.IJ;
+import ij.ImagePlus;
+import ij.ImageStack;
+import ij.Macro;
+import ij.gui.GenericDialog;
+import ij.gui.HistogramPlot;
+import ij.gui.HistogramWindow;
+import ij.gui.YesNoCancelDialog;
+import ij.measure.Calibration;
 import ij.plugin.filter.PlugInFilter;
 import ij.plugin.frame.Recorder;
-import ij.measure.Calibration;
+import ij.process.ImageProcessor;
+import ij.process.ImageStatistics;
+import ij.process.StackStatistics;
+import ij.util.Tools;
+
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.KeyEvent;
+import java.awt.event.TextEvent;
+import java.awt.event.TextListener;
 import java.util.Vector;
 
 
@@ -109,19 +121,18 @@ public class Histogram implements PlugIn, TextListener {
 		gd.addCheckbox("Use pixel value range", useImageMinAndMax);
 		gd.setInsets(5, 40, 10);
 		gd.addMessage("or use:");
-		int fwidth = 6;
+		int fwidth = 8;
 		int nwidth = Math.max(IJ.d2s(xMin,2).length(), IJ.d2s(xMax,2).length());
 		if (nwidth>fwidth) fwidth = nwidth;
-		int digits = 2;
+		int digits = -2;  // use scientific notation if needed
 		if (xMin==(int)xMin && xMax==(int)xMax)
 			digits = 0;
 		gd.addNumericField("X_min:", xMin, digits, fwidth, null);
 		gd.addNumericField("X_max:", xMax, digits, fwidth, null);
 		gd.setInsets(15, 0, 10);
-		gd.addStringField("Y_max:", yMax, 6);
+		gd.addStringField("Y_max:", yMax, fwidth);
 		if (stackSize>1)
 			gd.addCheckbox("Stack histogram", stackHistogram);
-		
 		Vector numbers = gd.getNumericFields();
 		if (numbers!=null) {
 			minField = (TextField)numbers.elementAt(1);

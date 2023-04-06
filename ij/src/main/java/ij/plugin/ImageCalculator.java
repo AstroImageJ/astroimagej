@@ -1,11 +1,13 @@
 package ij.plugin;
+
 import ij.*;
-import ij.gui.*;
-import ij.process.*;
-import ij.plugin.filter.*;
-import ij.measure.Calibration;
-import ij.plugin.frame.Recorder;
+import ij.gui.GenericDialog;
+import ij.gui.ImageWindow;
 import ij.macro.Interpreter;
+import ij.measure.Calibration;
+import ij.plugin.filter.PlugInFilter;
+import ij.plugin.frame.Recorder;
+import ij.process.*;
 
 /** This plugin implements the Process/Image Calculator command.
 <pre>
@@ -59,7 +61,7 @@ public class ImageCalculator implements PlugIn {
 		//gd.addStringField("Result:", "Result", 10);
 		gd.addCheckbox("Create new window", createWindow);
 		gd.addCheckbox("32-bit (float) result", floatResult);
-		gd.addHelp(IJ.URL+"/docs/menus/process.html#calculator");
+		gd.addHelp(IJ.URL2+"/docs/menus/process.html#calculator");
 		gd.showDialog();
 		if (gd.wasCanceled())
 			return;

@@ -13,7 +13,9 @@ import java.awt.event.KeyEvent;
 import java.util.*;
 import java.awt.geom.*;
 
-/** This class represents a collection of points that can be associated with counters.
+/** This class represents a collection of points that can be associated 
+ * with counters. Use the getPolygon() or getFloatPolygon() methods
+ * to retrieve the coordinates of the points. 
  * @see <a href="http://wsr.imagej.net/macros/js/PointProperties.js">PointProperties.js</a>
 */
 public class PointRoi extends PolygonRoi {
@@ -66,14 +68,12 @@ public class PointRoi extends PolygonRoi {
 	/** Creates a new PointRoi using the specified int arrays of offscreen coordinates. */
 	public PointRoi(int[] ox, int[] oy, int points) {
 		super(itof(ox), itof(oy), points, POINT);
-		width+=1; height+=1;
 		updateCounts();
 	}
 
 	/** Creates a new PointRoi using the specified float arrays of offscreen coordinates. */
 	public PointRoi(float[] ox, float[] oy, int points) {
 		super(ox, oy, points, POINT);
-		width+=1; height+=1;
 		updateCounts();
 	}
 
@@ -369,8 +369,10 @@ public class PointRoi extends PolygonRoi {
 	/** Adds a point at the specified stack position. */
 	public void addPoint(double x, double y, int position) {
 		if (counters==null) {
-			counters = new short[100];
-			positions = new int[100];
+			int size = nPoints*2;
+			if (size<100) size=100;
+			counters = new short[size];
+			positions = new int[size];
 		}
 		addPoint(null, x, y);
 		positions[nPoints-1] = position;	
@@ -395,15 +397,12 @@ public class PointRoi extends PolygonRoi {
 		boolean isStack = imp!=null && imp.getStackSize()>1;
 		if (counter!=0 || isStack || counters!=null) {
 			if (counters==null) {
-				counters = new short[nPoints*2];
-				positions = new int[nPoints*2];
+				int size = nPoints*2;
+				if (size<100) size=100;
+				counters = new short[size];
+				positions = new int[size];
 			}
-			counters[nPoints-1] = (short)counter;
-			if (imp!=null)
-					positions[nPoints-1] = imp.getStackSize()>1 ? imp.getCurrentSlice() : 0;
-			//if (positions[nPoints-1]==0 || positions[nPoints-1]==1 || counters[nPoints-1]==0)
-			//	IJ.log("incrementCounter: "+nPoints+" "+" "+positions[nPoints-1]+" "+counters[nPoints-1]+" "+imp);
-			if (nPoints+1==counters.length) {
+			if (nPoints>=counters.length) {
 				short[] temp = new short[counters.length*2];
 				System.arraycopy(counters, 0, temp, 0, counters.length);
 				counters = temp;
@@ -411,6 +410,11 @@ public class PointRoi extends PolygonRoi {
 				System.arraycopy(positions, 0, temp1, 0, positions.length);
 				positions = temp1;
 			}
+			counters[nPoints-1] = (short)counter;
+			if (imp!=null)
+					positions[nPoints-1] = imp.getStackSize()>1 ? imp.getCurrentSlice() : 0;
+			//if (positions[nPoints-1]==0 || positions[nPoints-1]==1 || counters[nPoints-1]==0)
+			//IJ.log("incrementCounter: "+nPoints+" "+counters.length+" "+counters[nPoints-1]+"   "+positions[nPoints-1]+" "+imp);
 		}
 		if (rt!=null && WindowManager.getFrame(getCountsTitle())!=null)
 			displayCounts();

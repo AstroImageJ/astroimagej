@@ -41,11 +41,18 @@ public class IJ {
 	public static Font font10 = new Font("SansSerif", Font.PLAIN, 10);
 	/** SansSerif, plain, 12-point font */
 	public static Font font12 = ImageJ.SansSerif12;
+	/** SansSerif, plain, 14-point font */
+	public static Font font14 = ImageJ.SansSerif14;
 	
 	/** Image display modes */
 	public static final int COMPOSITE=1, COLOR=2, GRAYSCALE=3;
 	
+	/** @deprecated */
 	public static final String URL = "http://imagej.nih.gov/ij";
+	
+	/** ImageJ website */
+	public static final String URL2 = "http://imagej.net/ij";
+
 	public static final int ALL_KEYS = -1;
 	
 	/** Use setDebugMode(boolean) to enable/disable debug mode. */
@@ -68,7 +75,6 @@ public class IJ {
 	private static boolean macroRunning;
 	private static Thread previousThread;
 	private static TextPanel logPanel;
-	private static boolean checkForDuplicatePlugins = true;		
 	private static ClassLoader classLoader;
 	private static boolean memMessageDisplayed;
 	private static long maxMemory;
@@ -227,11 +233,6 @@ public class IJ {
 		if (IJ.debugMode)
 			IJ.log("runUserPlugIn: "+className+", arg="+argument(arg));
 		if (applet!=null) return null;
-		if (checkForDuplicatePlugins) {
-			// check for duplicate classes and jars in the plugins folder
-			IJ.runPlugIn("ij.plugin.ClassChecker", "");
-			checkForDuplicatePlugins = false;
-		}
 		if (createNewLoader)
 			classLoader = null;
 		ClassLoader loader = getClassLoader();
@@ -385,8 +386,8 @@ public class IJ {
 			commandTable.put("Line Graph (21K)", "Line Graph");			
 			commandTable.put("Mitosis (26MB, 5D stack)", "Mitosis (5D stack)");
 			commandTable.put("MRI Stack (528K)", "MRI Stack");
-			commandTable.put("M51 Galaxy (177K, 16-bits)", "M51 Galaxy (16-bits))");
-			commandTable.put("Neuron (1.6M, 5 channels", "Neuron (5 channels");
+			commandTable.put("M51 Galaxy (177K, 16-bits)", "M51 Galaxy (16-bits)");
+			commandTable.put("Neuron (1.6M, 5 channels)", "Neuron (5 channels)");
 			commandTable.put("Nile Bend (1.9M)", "Nile Bend");			
 			commandTable.put("Organ of Corti (2.8M, 4D stack)", "Organ of Corti (4D stack)");
 			commandTable.put("Particles (75K)", "Particles");
@@ -1063,9 +1064,7 @@ public class IJ {
 		return str;
 	}
 
-	/** Adds the specified class to a Vector to keep it from being garbage
-	collected, which would cause the classes static fields to be reset. 
-	Probably not needed with Java 1.2 or later. */
+	/** Obsolete */
 	public static void register(Class c) {
 		if (ij!=null) ij.register(c);
 	}
@@ -1090,6 +1089,11 @@ public class IJ {
 		return shiftDown;
 	}
 	
+	/* Sets the specified key "down", where 'key'
+	 * is KeyEvent.VK_CONTROL, KeyEvent.VK_META, 
+	 * KeyEvent.VK_ALT, KeyEvent.VK_SHIFT,
+	 * KeyEvent.VK_SPACE or KeyEvent.VK_ESCAPE.
+	*/
 	public static void setKeyDown(int key) {
 		switch (key) {
 			case KeyEvent.VK_CONTROL:
@@ -1119,6 +1123,11 @@ public class IJ {
 		}
 	}
 
+	/* Sets the specified key "up", where 'key'
+	 * is KeyEvent.VK_CONTROL, KeyEvent.VK_META, 
+	 * KeyEvent.VK_ALT, KeyEvent.VK_SHIFT,
+	 * KeyEvent.VK_SPACE or IJ.ALL_KEYS (-1).
+	*/
 	public static void setKeyUp(int key) {
 		switch (key) {
 			case KeyEvent.VK_CONTROL: controlDown=false; break;
@@ -1448,8 +1457,17 @@ public class IJ {
 		setRawThreshold(img, lowerThreshold, upperThreshold, displayMode);
 	}
 
+	/** This is a version of setThreshold() that uses raw (uncalibrated)
+	 * values in the range 0-255 for 8-bit images and 0-65535 for 16-bit
+	 * images and the "Red" LUT display mode.
+	*/
+	public static void setRawThreshold(ImagePlus img, double lowerThreshold, double upperThreshold) {
+		setRawThreshold(img, lowerThreshold, upperThreshold, null);
+	}
+
 	/** This is a version of setThreshold() that always uses raw (uncalibrated) values
-		 in the range 0-255 for 8-bit images and 0-65535 for 16-bit images. */
+	 * in the range 0-255 for 8-bit images and 0-65535 for 16-bit images.
+	*/
 	public static void setRawThreshold(ImagePlus img, double lowerThreshold, double upperThreshold, String displayMode) {
 		int mode = ImageProcessor.RED_LUT;
 		if (displayMode!=null) {
@@ -1700,12 +1718,12 @@ public class IJ {
 				
 		}
 		Wand w = new Wand(ip);
-		double t1 = ip.getMinThreshold();
-		if (t1==ImageProcessor.NO_THRESHOLD || (ip.getLutUpdateMode()==ImageProcessor.NO_LUT_UPDATE&& tolerance>0.0)) {
+		if (!ip.isThreshold() || (ip.getLutUpdateMode()==ImageProcessor.NO_LUT_UPDATE&& tolerance>0.0)) {
 			w.autoOutline(x, y, tolerance, imode);
 			smooth = false;
-		} else
-			w.autoOutline(x, y, t1, ip.getMaxThreshold(), imode);
+		} else {
+			w.autoOutline(x, y, ip.getMinThreshold(), ip.getMaxThreshold(), imode);
+		}
 		if (w.npoints>0) {
 			Roi previousRoi = img.getRoi();
 			Roi roi = new PolygonRoi(w.xpoints, w.ypoints, w.npoints, Roi.TRACED_ROI);
@@ -1834,8 +1852,9 @@ public class IJ {
 		"home" ("user.home"), "downloads", "startup",  "imagej" (ImageJ directory),
 		"plugins", "macros", "luts", "temp", "current", "default",
 		"image" (directory active image was loaded from), "file" 
-		(directory most recently used to open or save a file) or "cwd"
-		(current working directory), otherwise displays a dialog and
+		(directory most recently used to open or save a file), "cwd"
+		(current working directory) or "preferences" (location of
+		"IJ_Prefs.txt" file), otherwise displays a dialog and
 		returns the path to the directory selected by the user. Returns
 		null if the specified directory is not found or the user cancels the
 		dialog box. Also aborts the macro if the user cancels the
@@ -1863,6 +1882,8 @@ public class IJ {
 			dir = Prefs.getImageJDir();
 		else if (title2.equals("current") || title2.equals("default"))
 			dir = OpenDialog.getDefaultDirectory();
+		else if (title2.equals("preferences"))
+			dir = Prefs.getPrefsDir();
 		else if (title2.equals("temp")) {
 			dir = System.getProperty("java.io.tmpdir");
 			if (isMacintosh()) dir = "/tmp/";
@@ -1948,12 +1969,13 @@ public class IJ {
 	}
 
 	/** Opens the specified file as a tiff, bmp, dicom, fits, pgm, gif, jpeg 
-		or text image and returns an ImagePlus object if successful.
-		Calls HandleExtraFileTypes plugin if the file type is not recognised.
-		Displays a file open dialog if 'path' is null or an empty string.
-		Note that 'path' can also be a URL. Some reader plugins, including
-		the Bio-Formats plugin, display the image and return null.
-		Use IJ.open() to display a file open dialog box.
+	 * or text image and returns an ImagePlus object if successful.
+	 * Calls HandleExtraFileTypes plugin if the file type is not recognised.
+	 * Displays a file open dialog if 'path' is null or an empty string.
+	 * Note that 'path' can also be a URL. Some reader plugins, including
+	 * the Bio-Formats plugin, display the image and return null.
+	 * Use IJ.open() to display a file open dialog box.
+	 * @see ij.io.Opener#openUsingBioFormats(String)
 	*/
 	public static ImagePlus openImage(String path) {
 		macroRunning = true;
@@ -1994,7 +2016,7 @@ public class IJ {
 			if (len>5242880L)
 				return "<Error: file is larger than 5MB>";
 			InputStream in = u.openStream();
-			BufferedReader br = new BufferedReader(new InputStreamReader(in));
+			BufferedReader br = new BufferedReader(new InputStreamReader(in,"UTF-8"));
 			sb = new StringBuffer() ;
 			String line;
 			while ((line=br.readLine()) != null)
@@ -2007,50 +2029,7 @@ public class IJ {
 			return new String(sb);
 		else
 			return "";
-	}
-	
-	/* 
-	public static void addRootCA() throws Exception {
-		String path = "/Users/wayne/Downloads/Certificates/lets-encrypt-x1-cross-signed.pem";
-		InputStream fis = new BufferedInputStream(new FileInputStream(path));
-		Certificate ca = CertificateFactory.getInstance("X.509").generateCertificate(fis);
-		KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
-		ks.load(null, null);
-		ks.setCertificateEntry(Integer.toString(1), ca);
-		TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-		tmf.init(ks);
-		SSLContext ctx = SSLContext.getInstance("TLS");
-		ctx.init(null, tmf.getTrustManagers(), null); 
-		HttpsURLConnection.setDefaultSSLSocketFactory(ctx.getSocketFactory());
-	}
-	*/
-	
-	/*
-	// Create a new trust manager that trust all certificates
-	// http://stackoverflow.com/questions/10135074/download-file-from-https-server-using-java
-	private static void trustAllCerts() {
-		trustManagerCreated = true;
-		TrustManager[] trustAllCerts = new TrustManager[] {
-			new X509TrustManager() {
-				public java.security.cert.X509Certificate[] getAcceptedIssuers() {
-					return null;
-				}
-				public void checkClientTrusted (java.security.cert.X509Certificate[] certs, String authType) {
-				}
-				public void checkServerTrusted (java.security.cert.X509Certificate[] certs, String authType) {
-				}
-			}
-		};
-		// Activate the new trust manager
-		try {
-			SSLContext sc = SSLContext.getInstance("SSL");
-			sc.init(null, trustAllCerts, new java.security.SecureRandom());
-			HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
-		} catch (Exception e) {
-			IJ.log(""+e);
-		}
-	}
-	*/
+	}	
 
 	/** Saves the current image, lookup table, selection or text window to the specified file path. 
 		The path must end in ".tif", ".jpg", ".gif", ".zip", ".raw", ".avi", ".bmp", ".fits", ".pgm", ".png", ".lut", ".roi" or ".txt".  */
@@ -2466,7 +2445,7 @@ public class IJ {
 	
 	/** Returns, as an array of strings, a list of the LUTs in the 
 	 * Image/Lookup Tables menu.
-	 * @see ij.plugin#LutLoader.getLut
+	 * @see ij.plugin.LutLoader#getLut
 	 * See also: Help>Examples>JavaScript/Show all LUTs
 	 * and Image/Color/Display LUTs
 	*/
@@ -2514,10 +2493,14 @@ public class IJ {
 		PrintWriter pw = new PrintWriter(caw);
 		e.printStackTrace(pw);
 		String s = caw.toString();
+		String lineNumber = "";
 		if (s!=null && s.contains("ThreadDeath"))
 			return;
+		Interpreter interpreter = Thread.currentThread().getName().endsWith("Macro$") ? Interpreter.getInstance() : null;
+		if (interpreter!=null)
+			lineNumber = "\nMacro line number: " + interpreter.getLineNumber();
 		if (getInstance()!=null) {
-			s = IJ.getInstance().getInfo()+"\n \n"+s;
+			s = IJ.getInstance().getInfo()+lineNumber+"\n \n"+s;
 			new TextWindow("Exception", s, 500, 340);
 		} else
 			log(s);

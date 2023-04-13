@@ -8,7 +8,9 @@ import ij.ImagePlus;
 import ij.Prefs;
 import ij.plugin.PlugIn;
 
+import javax.swing.*;
 import java.awt.*;
+import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -63,6 +65,18 @@ public class Astronomy_Listener implements PlugIn, ImageListener {
 
         if (openFrame instanceof AstroStackWindow asw) {
             if (asw.isReady && !asw.minMaxChanged) {
+                if (IJ.isMacro()) {
+                    if (!SwingUtilities.isEventDispatchThread()) {
+                        try {
+                            SwingUtilities.invokeAndWait(() -> asw.setAstroProcessor(false));
+                        } catch (InterruptedException | InvocationTargetException e) {
+                            throw new RuntimeException(e);
+                        }
+                    } else {
+                        asw.setAstroProcessor(false);
+                    }
+                    return;
+                }
                 EXECUTOR_SERVICE.execute(() -> {
                     if (IJ.isMacro()) imp.waitTillActivated();
                     asw.setAstroProcessor(false);

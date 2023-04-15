@@ -31,38 +31,7 @@ package nom.tam.image.compression.tile;
  * #L%
  */
 
-import static nom.tam.fits.header.Compression.COMPRESSED_DATA_COLUMN;
-import static nom.tam.fits.header.Compression.GZIP_COMPRESSED_DATA_COLUMN;
-import static nom.tam.fits.header.Compression.NULL_PIXEL_MASK_COLUMN;
-import static nom.tam.fits.header.Compression.UNCOMPRESSED_DATA_COLUMN;
-import static nom.tam.fits.header.Compression.ZBITPIX;
-import static nom.tam.fits.header.Compression.ZCMPTYPE;
-import static nom.tam.fits.header.Compression.ZCMPTYPE_GZIP_1;
-import static nom.tam.fits.header.Compression.ZMASKCMP;
-import static nom.tam.fits.header.Compression.ZNAXIS;
-import static nom.tam.fits.header.Compression.ZNAXISn;
-import static nom.tam.fits.header.Compression.ZQUANTIZ;
-import static nom.tam.fits.header.Compression.ZSCALE_COLUMN;
-import static nom.tam.fits.header.Compression.ZTILEn;
-import static nom.tam.fits.header.Compression.ZZERO_COLUMN;
-import static nom.tam.fits.header.Standard.TFIELDS;
-import static nom.tam.fits.header.Standard.TTYPEn;
-import static nom.tam.image.compression.tile.TileCompressionType.COMPRESSED;
-import static nom.tam.image.compression.tile.TileCompressionType.GZIP_COMPRESSED;
-import static nom.tam.image.compression.tile.TileCompressionType.UNCOMPRESSED;
-
-import java.lang.reflect.Array;
-import java.nio.Buffer;
-import java.nio.ByteBuffer;
-import java.util.concurrent.ExecutorService;
-
-import nom.tam.fits.BinaryTable;
-import nom.tam.fits.BinaryTableHDU;
-import nom.tam.fits.FitsException;
-import nom.tam.fits.FitsFactory;
-import nom.tam.fits.Header;
-import nom.tam.fits.HeaderCard;
-import nom.tam.fits.HeaderCardBuilder;
+import nom.tam.fits.*;
 import nom.tam.fits.compression.algorithm.api.ICompressOption;
 import nom.tam.fits.compression.algorithm.api.ICompressorControl;
 import nom.tam.fits.compression.provider.CompressorProvider;
@@ -73,6 +42,17 @@ import nom.tam.image.compression.tile.mask.ImageNullPixelMask;
 import nom.tam.image.tile.operation.AbstractTiledImageOperation;
 import nom.tam.image.tile.operation.TileArea;
 import nom.tam.util.type.ElementType;
+
+import java.lang.reflect.Array;
+import java.nio.Buffer;
+import java.nio.ByteBuffer;
+import java.util.concurrent.ExecutorService;
+import java.util.logging.Logger;
+
+import static nom.tam.fits.header.Compression.*;
+import static nom.tam.fits.header.Standard.TFIELDS;
+import static nom.tam.fits.header.Standard.TTYPEn;
+import static nom.tam.image.compression.tile.TileCompressionType.*;
 
 /**
  * This class represents a complete tiledImageOperation of tileOperations describing an image ordered from left to right
@@ -284,12 +264,37 @@ public class TiledImageCompressionOperation extends AbstractTiledImageOperation<
         return this;
     }
 
+    /**
+     * Returns the name of the currently configured quantization algorithm.
+     * 
+     * @return The name of the standard quantization algorithm (i.e. a FITS standard value for the <code>ZQUANTIZ</code>
+     *             keyword), or <code>null</code> if not quantization is currently defined, possibly because an invalid
+     *             value was set before.
+     * 
+     * @see #setQuantAlgorithm(HeaderCard)
+     * 
+     * @since 1.18
+     */
+    public String getQuantAlgorithm() {
+        return this.quantAlgorithm;
+    }
+
     public synchronized TiledImageCompressionOperation setQuantAlgorithm(HeaderCard quantAlgorithmCard) {
-        if (quantAlgorithmCard != null) {
-            this.quantAlgorithm = quantAlgorithmCard.getValue();
-        } else {
-            this.quantAlgorithm = null;
+        this.quantAlgorithm = null;
+
+        if (quantAlgorithmCard == null) {
+            return this;
         }
+
+        String algo = quantAlgorithmCard.getValue().toUpperCase();
+
+        if (algo.equals(Compression.ZQUANTIZ_NO_DITHER) || algo.equals(Compression.ZQUANTIZ_SUBTRACTIVE_DITHER_1)
+                || algo.equals(Compression.ZQUANTIZ_SUBTRACTIVE_DITHER_2)) {
+            this.quantAlgorithm = algo;
+        } else {
+            Logger.getLogger(Header.class.getName()).warning("Ignored invalid ZQUANTIZ value: " + algo);
+        }
+
         return this;
     }
 

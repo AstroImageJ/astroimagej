@@ -109,8 +109,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			 */
 			BasicHDU<?> displayHdu;
 			int firstImageIndex = firstImageHDU(hdus);
-			if (firstImageIndex<0)
-			{
+			if (firstImageIndex<0) {
 				IJ.error("Failed to find an image HDU");
 				postFitsRead.close();
 				return;
@@ -311,10 +310,8 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	 * Find first HDU from the provided array with NAXIS > 1, assume it is an image.
 	 */
 	private int firstImageHDU(BasicHDU<?>[] basicHDUs) {
-		for (int i=0; i < basicHDUs.length; i++)
-		{
-			if (basicHDUs[i].getHeader().getIntValue(NAXIS) > 1)
-			{
+		for (int i=0; i < basicHDUs.length; i++) {
+			if (basicHDUs[i].getHeader().getIntValue(NAXIS) > 1) {
 				return i;
 			}
 		}
@@ -362,6 +359,14 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 				IJ.error("Skipped TICA image as QUAL_BIT is nonzero.");
 				return;
 			}
+		}
+
+		if (isHyperSup(hdus[0])) {
+			var primaryH = hdus[0].getHeader();
+			hdu.getHeader().deleteKey("MJD-OBS");
+			hdu.getHeader().findCard("DATE-OBS")
+					.setValue(primaryH.getStringValue("DATE-OBS") + "T" + primaryH.getStringValue("UT-STR"));
+			hdu.getHeader().addLine(primaryH.findCard("EXPTIME"));
 		}
 
 		if (hdu instanceof TableHDU<?> tableHDU) {
@@ -426,6 +431,10 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	 */
 	private boolean isTessCut(TableHDU<?> tableHDU) {
 		return "astrocut".equals(tableHDU.getHeader().getStringValue("CREATOR"));
+	}
+
+	private boolean isHyperSup(BasicHDU<?> hdu) {
+		return "Hyper Suprime-Cam".equals(hdu.getHeader().getStringValue("INSTRUME"));
 	}
 
 	/**
@@ -999,8 +1008,7 @@ class FitsDecoder {
 		f = new DataInputStream(is);
 		String line = getString(80);
 		info.append(line+"\n");
-		if (!line.startsWith("SIMPLE"))
-		{f.close(); return null;}
+		if (!line.startsWith("SIMPLE")) {f.close(); return null;}
 		int count = 1;
 		while ( true ) {
 			count++;
@@ -1067,7 +1075,7 @@ class FitsDecoder {
 				fi.unit = value;*/
 
 			if (count>360 && fi.width==0)
-			{f.close(); return null;}
+				{f.close(); return null;}
 		}
 		if (fi.pixelWidth==1.0 && fi.pixelDepth==1)
 			fi.unit = "pixel";

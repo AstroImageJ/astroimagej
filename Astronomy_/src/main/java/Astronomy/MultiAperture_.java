@@ -2643,10 +2643,16 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
         long timeStart = System.currentTimeMillis();
 //        IJ.log("firstSlice="+firstSlice+"   lastSlice="+lastSlice);
+        updateImageDisplay.ifProp(() -> {}, () -> {
+            if (imp.getCanvas() instanceof AstroCanvas a) {
+                a.setPerformDraw(false);
+            }
+        });
         for (int i = firstSlice; i <= lastSlice; i++) {
             slice = i;
             imp.setSliceWithoutUpdate(i); //fixes scroll sync issue
-            waitForEventQueue(); // Fixes scrollbar not updating on mac
+            // Fixes scrollbar not updating on mac
+            updateImageDisplay.ifProp(this::waitForEventQueue);
             if (starOverlay || skyOverlay || valueOverlay || nameOverlay) {
                 ocanvas = OverlayCanvas.getOverlayCanvas(imp);
                 canvas = ocanvas;
@@ -2664,7 +2670,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     asw.updatePanelValues(false);
                 });
 
-                asw.updateWCS();
+                //asw.updateWCS();
                 updateImageDisplay.ifProp(() -> {
                     asw.updateCalibration();
                     asw.setAstroProcessor(false);
@@ -2676,7 +2682,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     asw.updateWCS();
                 });
 
-                //waitForEventQueue();
+                updateImageDisplay.ifProp(this::waitForEventQueue);
 
                 hasWCS = asw.hasWCS();
                 if (hasWCS) wcs = asw.getWCS();
@@ -2696,6 +2702,11 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 shutDown();
                 return;
             }
+        }
+
+        // Reset drawing state
+        if (imp.getCanvas() instanceof AstroCanvas a) {
+            a.setPerformDraw(true);
         }
 
         if (sp != null) {
@@ -3159,18 +3170,20 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         }
 
         // Increase chance of aperture actually rendering on mac
-        if (IJ.isMacOSX()) {
-            ocanvas.update(ocanvas.getGraphics());
-            canvas.update(canvas.getGraphics());
-            //ocanvas.repaint();//renders extra apertures?!
-        } else {
-            // This is broken on mac.
-            // Causes apertures to render in wrong location, if they render at all
-            ocanvas.drawOverlayCanvas(ocanvas.getGraphics());
-        }
+        updateImageDisplay.ifProp(() -> {
+            if (IJ.isMacOSX()) {
+                ocanvas.update(ocanvas.getGraphics());
+                canvas.update(canvas.getGraphics());
+                //ocanvas.repaint();//renders extra apertures?!
+            } else {
+                // This is broken on mac.
+                // Causes apertures to render in wrong location, if they render at all
+                ocanvas.drawOverlayCanvas(ocanvas.getGraphics());
+            }
 
-        canvas.repaintOverlay();
-        canvas.repaint();
+            canvas.repaintOverlay();
+            canvas.repaint();
+        });
 
         if (!isInstanceOfStackAlign && showMeanWidth && calcRadProFWHM) {
             if (nFWHM > 0) {

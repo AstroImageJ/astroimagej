@@ -86,6 +86,8 @@ public class AstroCanvas extends OverlayCanvas {
     private final Color axisIndicatorColor = new Color(0, 175, 0);
     private final Color dirIndicatorColor = new Color(238, 0, 28);
     private final Color dirIndicatorColorWCS = new Color(255, 190, 0);//(255,129,35);
+    private boolean performDraw = true;
+
     public AstroCanvas(ImagePlus imp) {
         super(imp);
         Locale.setDefault(IJU.locale);
@@ -473,6 +475,9 @@ public class AstroCanvas extends OverlayCanvas {
 
     @Override
     public synchronized void paint(Graphics g) {
+        if (!performDraw) {
+            return;
+        }
         if (g != null) {
             invCanvTrans = ((Graphics2D) g).getTransform();
             canvTrans = ((Graphics2D) g).getTransform();
@@ -1071,5 +1076,11 @@ public class AstroCanvas extends OverlayCanvas {
     }
 
 
+    public boolean doesPerformDraw() {
+        return performDraw;
+    }
 
+    public void setPerformDraw(boolean performDraw) {
+        this.performDraw = performDraw;
+    }
 } // AstroCanvas class

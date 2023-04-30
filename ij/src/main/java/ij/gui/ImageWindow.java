@@ -10,8 +10,10 @@ import ij.plugin.frame.Channels;
 import ij.util.Java2;
 import ij.util.Tools;
 
+import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.lang.reflect.InvocationTargetException;
 
 /** A frame for displaying images. */
 public class ImageWindow extends Frame implements FocusListener, WindowListener, WindowStateListener, MouseWheelListener {
@@ -70,7 +72,7 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 		this(imp, null);
    }
 
-	@AstroImageJ(reason = "Add checks for AIJ windows to control their positioning", modified = true)
+	@AstroImageJ(reason = "Add checks for AIJ windows to control their positioning; Move window close to EventQueue", modified = true)
     public ImageWindow(ImagePlus imp, ImageCanvas ic) {
 		super(imp.getTitle());
 		if (SCALE>1.0) {
@@ -135,7 +137,15 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 			boolean unlocked = imp.lockSilently();
 			boolean changes = imp.changes;
 			imp.changes = false;
-			previousWindow.close();
+			if (SwingUtilities.isEventDispatchThread()) {
+				previousWindow.close();
+			} else {
+				try {
+					SwingUtilities.invokeAndWait(previousWindow::close);
+				} catch (InterruptedException | InvocationTargetException e) {
+					e.printStackTrace();
+				}
+			}
 			imp.changes = changes;
 			if (unlocked)
 				imp.unlock();

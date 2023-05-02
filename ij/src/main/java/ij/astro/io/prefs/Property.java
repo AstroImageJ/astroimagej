@@ -107,6 +107,7 @@ public class Property<T> {
         if (type == Boolean.TYPE || type == Boolean.class) {
             if (((Boolean) get())) {
                 truthy.run();
+                return;
             }
         }
 

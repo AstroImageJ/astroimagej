@@ -958,6 +958,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
      * Finishes whole process.
      */
     public void shutDown() {
+        // Reset drawing state
+        if (imp.getCanvas() instanceof AstroCanvas a) {
+            a.setPerformDraw(true);
+        }
         noMoreInput();
         closeHelpPanel();
         super.shutDown();
@@ -2668,10 +2672,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
                     // This fixes histogram not updating
                     asw.updatePanelValues(false);
-                });
 
-                //asw.updateWCS();
-                updateImageDisplay.ifProp(() -> {
+                    asw.updateWCS();
+
                     asw.updateCalibration();
                     asw.setAstroProcessor(false);
 

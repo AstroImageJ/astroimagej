@@ -479,7 +479,12 @@ public class Aperture_ implements PlugInFilter {
         double darkPerPix = ccdDark;
         if (hdr != null) {
             isFITS = true;
-            wcs = new WCS(hdr);
+            if (imp.getWindow() instanceof AstroStackWindow asw) {
+                wcs = asw.getWCS();
+            } else {
+                wcs = new WCS(hdr);
+            }
+
             double exptime = FitsJ.getExposureTime(hdr);
             if (Double.isNaN(exptime)) exptime = 1.0;
             darkPerPix *= exptime;

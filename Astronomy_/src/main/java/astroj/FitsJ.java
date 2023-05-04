@@ -8,10 +8,7 @@ import ij.ImageStack;
 import ij.WindowManager;
 import ij.util.Tools;
 
-import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.Properties;
+import java.util.*;
 
 /**
  * A collection of helpful static methods to read, manipulate, write, and query FITS-based images within ImageJ.
@@ -123,11 +120,7 @@ public class FitsJ
 			if ( s.equals("END") || s.startsWith ("END ") ) break;
 			}
 		if (iend >= lines.length) return null;
-		int l = iend-istart+1;
-		String header = "";
-		for (int i=0; i < l; i++)
-			header += lines[istart+i]+"\n";
-		return header.split("\n");
+		return Arrays.copyOfRange(lines, istart, iend+1);
 		}
 
 	/**

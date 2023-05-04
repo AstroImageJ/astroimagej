@@ -962,6 +962,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         if (imp.getCanvas() instanceof AstroCanvas a) {
             a.setPerformDraw(true);
         }
+        SwingUtilities.invokeLater(() -> imp.setSlice(imp.getCurrentSlice()));
         noMoreInput();
         closeHelpPanel();
         super.shutDown();

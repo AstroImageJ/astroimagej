@@ -433,14 +433,12 @@ public class KeplerSplineControl {
                 bicDisplay.setText("N/A");
                 errorDisplay.setText("failed");
                 errorDisplay.setDisabledTextColor(Color.RED);
-                Arrays.fill(y, Double.NaN);
-                return;
+            } else {
+                errorDisplay.setText("success");
+                errorDisplay.setDisabledTextColor(darkGreen);
+                bkSpaceDisplay.setText(FORMATTER.format(lastSplineFit.bkSpace));
+                bicDisplay.setText(FORMATTER.format(lastSplineFit.bic));
             }
-
-            errorDisplay.setText("success");
-            errorDisplay.setDisabledTextColor(darkGreen);
-            bkSpaceDisplay.setText(FORMATTER.format(lastSplineFit.bkSpace));
-            bicDisplay.setText(FORMATTER.format(lastSplineFit.bic));
         }
 
         switch (settings.displayType.get()) {
@@ -454,6 +452,9 @@ public class KeplerSplineControl {
                 for (int xx = 0; xx < size; xx++) {
                     y[xx] = (y[xx] - ks.first().getEntry(xx)) + avg;
                 }
+            }
+            case RAW_DATA -> {
+                Arrays.fill(y, Double.NaN);
             }
         }
     }

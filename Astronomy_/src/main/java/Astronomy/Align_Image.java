@@ -2,15 +2,20 @@ package Astronomy;// Align_Image.java
 
 import Jama.LUDecomposition;
 import Jama.Matrix;
-import ij.*;
-import ij.gui.*;
+import astroj.*;
+import ij.IJ;
+import ij.ImagePlus;
+import ij.Prefs;
+import ij.WindowManager;
+import ij.gui.GenericDialog;
+import ij.gui.ImageCanvas;
+import ij.gui.PlotWindow;
+import ij.gui.Roi;
 import ij.measure.Calibration;
 import ij.plugin.filter.PlugInFilter;
-import ij.process.*;
+import ij.process.ImageProcessor;
 
-import java.util.*;
-
-import astroj.*;
+import java.util.Properties;
 
 /**
  * Aligns two images using one or more fiduciary positions in the OverlayCanvas's of the images, either using
@@ -115,7 +120,7 @@ public class Align_Image implements PlugInFilter
 		// CREATE REBINNED IMAGE
 
 		rebinImage();
-		String[] hdr = FitsJ.getHeader(resultImage);
+		var hdr = FitsJ.getHeader(resultImage);
 		if (hdr != null)
 			{
 			hdr = FitsJ.addHistory("Rebinned to match "+refImage.getShortTitle(),hdr);

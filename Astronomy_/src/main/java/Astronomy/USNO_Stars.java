@@ -1,14 +1,20 @@
 package Astronomy;// USNO_Stars.java
 
-import ij.*;
-import ij.gui.*;
-import ij.plugin.filter.*;
-import ij.process.*;
+import astroj.FitsJ;
+import astroj.MeasurementTable;
+import astroj.OverlayCanvas;
+import astroj.WCS;
+import ij.IJ;
+import ij.ImagePlus;
+import ij.gui.GenericDialog;
+import ij.gui.ImageCanvas;
+import ij.gui.OvalRoi;
+import ij.plugin.filter.PlugInFilter;
+import ij.process.ImageProcessor;
 
-import java.io.*;
-import java.net.*;
-
-import astroj.*;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.URL;
 
 public class USNO_Stars implements PlugInFilter
 	{
@@ -17,7 +23,7 @@ public class USNO_Stars implements PlugInFilter
 	protected OverlayCanvas ocanvas;
 	protected WCS wcs = null;
 
-	protected String[] header = null;
+	protected FitsJ.Header header = null;
 	protected String ra = "12:34:56.7";
 	protected String dec = "+76:54:32.1";
 	protected double radius = 10.0;		// ARCMINUTES
@@ -62,7 +68,7 @@ public class USNO_Stars implements PlugInFilter
 	protected boolean getRaDecRadius ()
 		{
 		header = FitsJ.getHeader(img);
-		if (header == null || header.length == 0)
+		if (header == null || header.cards().length == 0)
 			return false;
 		else	{
 			int ny = this.img.getHeight();	// PIXELS
@@ -70,7 +76,7 @@ public class USNO_Stars implements PlugInFilter
 			int card = FitsJ.findCardWithKey("CDELT2",header);
 			if (card > 0)
 				{
-				scale = FitsJ.getCardDoubleValue(header[card])*60.;
+				scale = FitsJ.getCardDoubleValue(header.cards()[card])*60.;
 				radius = 1.5*ny*scale;
 				}
 
@@ -78,8 +84,8 @@ public class USNO_Stars implements PlugInFilter
 			int deccard = FitsJ.findCardWithKey("DEC",header);
 			if (racard > 0 && deccard > 0)
 				{
-				ra = FitsJ.getCardStringValue(header[racard]).trim();
-				dec = FitsJ.getCardStringValue(header[deccard]).trim();
+				ra = FitsJ.getCardStringValue(header.cards()[racard]).trim();
+				dec = FitsJ.getCardStringValue(header.cards()[deccard]).trim();
 				}
 			else	{
 				racard = FitsJ.findCardWithKey("CRVAL1",header);
@@ -87,9 +93,9 @@ public class USNO_Stars implements PlugInFilter
 				int typcard = FitsJ.findCardWithKey("CTYPE1",header);
 				if (racard > 0 && deccard > 0 && typcard > 0)
 					{
-					ra = FitsJ.getCardStringValue(header[racard]).trim();
-					dec = FitsJ.getCardStringValue(header[deccard]).trim();
-					String typ = FitsJ.getCardStringValue(header[typcard]).trim();
+					ra = FitsJ.getCardStringValue(header.cards()[racard]).trim();
+					dec = FitsJ.getCardStringValue(header.cards()[deccard]).trim();
+					String typ = FitsJ.getCardStringValue(header.cards()[typcard]).trim();
 					if (typ.startsWith("RA"))
 						{
 						try	{

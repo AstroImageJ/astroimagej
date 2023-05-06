@@ -1,16 +1,20 @@
 package Astronomy;// CCD_Calibration.java
 
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
-import javax.swing.JCheckBox;
-
+import astroj.FitsJ;
+import astroj.IJU;
+import astroj.SpringUtil;
 import ij.*;
-import ij.io.*;
-import ij.process.*;
-import ij.plugin.*;
+import ij.io.OpenDialog;
+import ij.plugin.PlugIn;
+import ij.process.FloatProcessor;
+import ij.process.ImageProcessor;
 
-import astroj.*;
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 
 /**
  * Facilitates the calibration of CCD (or similar) grayscale images/stacks by noting standard calibration images 
@@ -80,7 +84,7 @@ public class CCD_Calibration implements PlugIn, ActionListener, ItemListener
 	JButton rawButton, biasButton, darkButton, flatButton, okButton, cancelButton;
 	JComboBox imageSelector = null;
 
-	String[] header = null;
+	FitsJ.Header header = null;
 
 	public void run (String arg)
 		{

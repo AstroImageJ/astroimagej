@@ -1,12 +1,13 @@
 package Astronomy;// Create_Mean_PSF.java
 
-import ij.*;
-import ij.gui.*;
+import astroj.FitsJ;
+import astroj.MeasurementTable;
+import ij.IJ;
+import ij.ImagePlus;
+import ij.gui.GenericDialog;
 import ij.measure.ResultsTable;
 import ij.plugin.filter.PlugInFilter;
-import ij.process.*;
-
-import astroj.*;
+import ij.process.ImageProcessor;
 
 
 /**
@@ -180,7 +181,7 @@ public class Create_Mean_PSF implements PlugInFilter
 		// COPY FITS HEADER
 
 		FitsJ.copyHeader (workImage,psfImage);
-		String[] hdr = FitsJ.getHeader(psfImage);
+		var hdr = FitsJ.getHeader(psfImage);
 		FitsJ.makeConsistent (psfImage,hdr);
 		FitsJ.putHeader(psfImage,hdr);
 

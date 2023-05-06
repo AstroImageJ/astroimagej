@@ -100,7 +100,7 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
     File scienceDir, biasDirectory, darkDirectory, flatDirectory, biasMasterFile, darkMasterFile, flatMasterFile;
     File saveFile, biasMasterDirectory, darkMasterDirectory, flatMasterDirectory;
     ImagePlus scienceImp, rawScienceImp, mbiasImp, mdarkImp, mflatImp;
-    String[] darkHeader = null, flatHeader = null, scienceHeader = null;
+    FitsJ.Header darkHeader = null, flatHeader = null, scienceHeader = null;
     double darkExpTime = 0, flatExpTime = 0, scienceExpTime = 0;
     int validTextFilteredFiles = 0, validNumFilteredFiles = 0, validBiasFiles = 0, validDarkFiles = 0, validFlatFiles = 0;
     int validMasterBiasFiles = 0, validMasterDarkFiles = 0, validMasterFlatFiles = 0;
@@ -3979,7 +3979,7 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
                 return false;
             }
             File[] files = biasDirectory.listFiles();
-            String[] mbiasHeader = null;
+            FitsJ.Header mbiasHeader = null;
             String[] filenames = new String[files.length];
             String[] validFilenames = new String[files.length];
 
@@ -4139,7 +4139,7 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
                 return false;
             }
             File[] files = darkDirectory.listFiles();
-            String[] mdarkHeader = null;
+            FitsJ.Header mdarkHeader = null;
             String[] filenames = new String[files.length];
             String[] validFilenames = new String[files.length];
 
@@ -4341,9 +4341,9 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
                 return false;
             }
             File[] files = flatDirectory.listFiles();
-            String[] mflatHeader = null;
-            String[] fHeader = null;
-            String[] dHeader = null;
+            FitsJ.Header mflatHeader = null;
+            FitsJ.Header fHeader = null;
+            FitsJ.Header dHeader = null;
             String[] filenames = new String[files.length];
             String[] validFilenames = new String[files.length];
             double[] expTimeFactor = new double[files.length];
@@ -4693,11 +4693,11 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
         if (convertToFloat)
             ip = ip.convertToFloat();
 
-        String[] header = FitsJ.getHeader(imp);
+        var header = FitsJ.getHeader(imp);
         if ((header != null) && removePedestal) {
             int cardnum = FitsJ.findCardWithKey("PEDESTAL", header);
             if (cardnum != -1) {
-                double pedestal = FitsJ.getCardDoubleValue(header[cardnum]);
+                double pedestal = FitsJ.getCardDoubleValue(header.cards()[cardnum]);
                 if (!Double.isNaN(pedestal) && pedestal != 0.0) {
                     float fpedestal = (float) pedestal;
                     int ipedestal = (int) pedestal;
@@ -4800,13 +4800,13 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
                             "\" of science image \"" + sciencePath + "\".");
                     return false;
                 }
-                String cardtype = FitsJ.getCardType(scienceHeader[cardnum]);
+                String cardtype = FitsJ.getCardType(scienceHeader.cards()[cardnum]);
                 if (cardtype != "S") {
                     error("ERROR: OBSERVATORY NAME FITS header keyword \"" + observatoryNameReadKeyword +
                             "\" of science image \"" + sciencePath + "\" is not of type String.");
                     return false;
                 }
-                String observatoryName = FitsJ.getCardStringValue(scienceHeader[cardnum]).trim();
+                String observatoryName = FitsJ.getCardStringValue(scienceHeader.cards()[cardnum]).trim();
                 boolean newName = oldObservatoryName.equals("") || !observatoryName.equals(oldObservatoryName);
                 if (newName && !acc.setObservatory(observatoryName)) {
                     error("ERROR: Failed to find observatory containing \"" + observatoryName + "\".");
@@ -4829,8 +4829,8 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
                             "\" of science image \"" + sciencePath + "\".");
                     return false;
                 }
-                String latCardtype = FitsJ.getCardType(scienceHeader[latCardNum]);
-                String lonCardtype = FitsJ.getCardType(scienceHeader[lonCardNum]);
+                String latCardtype = FitsJ.getCardType(scienceHeader.cards()[latCardNum]);
+                String lonCardtype = FitsJ.getCardType(scienceHeader.cards()[lonCardNum]);
                 if (!(latCardtype.equals("S") || latCardtype.equals("R"))) {
                     error("ERROR: Observatory latitude FITS header keyword \"" + observatoryLatReadKeyword +
                             "\" of science image \"" + sciencePath + "\" is not of type String or Real.");
@@ -4846,7 +4846,7 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
                 double lat = 0.0;
                 double lon = 0.0;
                 if (latCardtype.equals("S")) {
-                    latString = FitsJ.getCardStringValue(scienceHeader[latCardNum]).trim();
+                    latString = FitsJ.getCardStringValue(scienceHeader.cards()[latCardNum]).trim();
                     if (latString == null || latString.equals("")) {
                         error("ERROR: Observatory latitude FITS header keyword \"" + observatoryLatReadKeyword +
                                 "\" of science image \"" + sciencePath + "\" does not contain a number.");
@@ -4859,7 +4859,7 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
                         return false;
                     }
                 } else {
-                    lat = FitsJ.getCardDoubleValue(scienceHeader[latCardNum]);
+                    lat = FitsJ.getCardDoubleValue(scienceHeader.cards()[latCardNum]);
                     if (Double.isNaN(lat)) {
                         error("ERROR:  Observatory latitude FITS header keyword \"" + observatoryLatReadKeyword +
                                 "\" of science image \"" + sciencePath + "\" does not contain a number.");
@@ -4867,7 +4867,7 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
                     }
                 }
                 if (lonCardtype.equals("S")) {
-                    lonString = FitsJ.getCardStringValue(scienceHeader[lonCardNum]).trim();
+                    lonString = FitsJ.getCardStringValue(scienceHeader.cards()[lonCardNum]).trim();
                     if (lonString == null || lonString.equals("")) {
                         error("ERROR: Observatory longitude FITS header keyword \"" + observatoryLonReadKeyword +
                                 "\" of science image \"" + sciencePath + "\" does not contain a number.");
@@ -4880,7 +4880,7 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
                         return false;
                     }
                 } else {
-                    lon = FitsJ.getCardDoubleValue(scienceHeader[lonCardNum]);
+                    lon = FitsJ.getCardDoubleValue(scienceHeader.cards()[lonCardNum]);
                     if (Double.isNaN(lon)) {
                         error("ERROR: Observatory longitude FITS header keyword \"" + observatoryLonReadKeyword +
                                 "\" of science image \"" + sciencePath + "\" does not contain a number.");
@@ -4910,13 +4910,13 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
                             "\" of science image \"" + sciencePath + "\".");
                     return false;
                 }
-                String cardtype = FitsJ.getCardType(scienceHeader[cardnum]);
+                String cardtype = FitsJ.getCardType(scienceHeader.cards()[cardnum]);
                 if (cardtype != "S") {
                     error("ERROR: TARGET NAME FITS header keyword \"" + objectNameReadKeyword +
                             "\" of science image \"" + sciencePath + "\" is not of type String.");
                     return false;
                 }
-                String targetName = FitsJ.getCardStringValue(scienceHeader[cardnum]).trim();
+                String targetName = FitsJ.getCardStringValue(scienceHeader.cards()[cardnum]).trim();
 
                 if (selectedObjectCoordinateSource == 2 && targetName.substring(targetName.length() - 1).matches("[a-zA-Z]")) {
                     targetName = targetName.substring(0, targetName.length() - 1);
@@ -4954,8 +4954,8 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
                             "\" of science image \"" + sciencePath + "\".");
                     return false;
                 }
-                String raCardtype = FitsJ.getCardType(scienceHeader[raCardNum]);
-                String decCardtype = FitsJ.getCardType(scienceHeader[decCardNum]);
+                String raCardtype = FitsJ.getCardType(scienceHeader.cards()[raCardNum]);
+                String decCardtype = FitsJ.getCardType(scienceHeader.cards()[decCardNum]);
                 if (!(raCardtype.equals("S") || raCardtype.equals("R"))) {
                     error("ERROR: TARGET RA FITS header keyword \"" + objectRAJ2000ReadKeyword +
                             "\" of science image \"" + sciencePath + "\" is not of type String or Real.");
@@ -4971,7 +4971,7 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
                 double ra = 0.0;
                 double dec = 0.0;
                 if (raCardtype.equals("S")) {
-                    raString = FitsJ.getCardStringValue(scienceHeader[raCardNum]).trim();
+                    raString = FitsJ.getCardStringValue(scienceHeader.cards()[raCardNum]).trim();
                     if (raString == null || raString.equals("")) {
                         error("ERROR: TARGET RA FITS header keyword \"" + objectRAJ2000ReadKeyword +
                                 "\" of science image \"" + sciencePath + "\" does not contain a number.");
@@ -4984,7 +4984,7 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
                         return false;
                     }
                 } else {
-                    ra = FitsJ.getCardDoubleValue(scienceHeader[raCardNum]);
+                    ra = FitsJ.getCardDoubleValue(scienceHeader.cards()[raCardNum]);
                     if (Double.isNaN(ra)) {
                         error("ERROR: TARGET RA FITS header keyword \"" + objectRAJ2000ReadKeyword +
                                 "\" of science image \"" + sciencePath + "\" does not contain a number.");
@@ -4993,7 +4993,7 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
                 }
                 if (raInDegrees) ra /= 15.0;
                 if (decCardtype.equals("S")) {
-                    decString = FitsJ.getCardStringValue(scienceHeader[decCardNum]).trim();
+                    decString = FitsJ.getCardStringValue(scienceHeader.cards()[decCardNum]).trim();
                     if (decString == null || decString.equals("")) {
                         error("ERROR: TARGET DEC FITS header keyword \"" + objectDecJ2000ReadKeyword +
                                 "\" of science image \"" + sciencePath + "\" does not contain a number.");
@@ -5006,7 +5006,7 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
                         return false;
                     }
                 } else {
-                    dec = FitsJ.getCardDoubleValue(scienceHeader[decCardNum]);
+                    dec = FitsJ.getCardDoubleValue(scienceHeader.cards()[decCardNum]);
                     if (Double.isNaN(dec)) {
                         error("ERROR: TARGET DEC FITS header keyword \"" + objectDecJ2000ReadKeyword +
                                 "\" of science image \"" + sciencePath + "\" does not contain a number.");

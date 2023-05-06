@@ -2,7 +2,9 @@
 
 package astroj;
 
-import ij.*;
+import ij.IJ;
+import ij.ImagePlus;
+
 import java.text.DecimalFormat;
 
 /**
@@ -136,19 +138,19 @@ public class WCS
 	public WCS (ImagePlus img)
 		{
 		NAXIS=2;
-		String[] hdr = FitsJ.getHeader (img);
+		var hdr = FitsJ.getHeader (img);
 		if (hdr == null) return;
 		process(img.getShortTitle(),img.getWidth(),img.getHeight(),img.getStackSize(),hdr);
 		}
 
-	public WCS (String[] hdr)
+	public WCS (FitsJ.Header hdr)
 		{
 		NAXIS=2;
 		if (hdr == null) return;
 		process(null,-1,-1,-1, hdr);
 		}
 
-	protected void process (String title, int nx, int ny, int nz, String[] hdr)
+	protected void process (String title, int nx, int ny, int nz, FitsJ.Header hdr)
 		{
 		// FITS HEADER PRESENT?
 
@@ -164,7 +166,7 @@ public class WCS
         int nax = -1;
 		icard = FitsJ.findCardWithKey ("NAXIS",hdr);  
 		if (icard >= 0)
-			nax = FitsJ.getCardIntValue (hdr[icard]);
+			nax = FitsJ.getCardIntValue (hdr.cards()[icard]);
 		if (nax <= 0)
 			{
 			logInfo += "Can not read NAXIS keyword in FITS header of "+title+"\n";
@@ -178,7 +180,7 @@ public class WCS
 		icard = FitsJ.findCardWithKey ("WCSAXES",hdr);
 		if (icard >= 0)
 			{
-			WCSAXES = FitsJ.getCardIntValue (hdr[icard]);  //retain to create CD/PC matrix subscripts for WCSAXES > AIJ AXES (NAXIS)
+			WCSAXES = FitsJ.getCardIntValue (hdr.cards()[icard]);  //retain to create CD/PC matrix subscripts for WCSAXES > AIJ AXES (NAXIS)
 			}
         if (WCSAXES < NAXIS) NAXIS = WCSAXES;
 		if (NAXIS < 1)
@@ -202,7 +204,7 @@ public class WCS
 //              writeLog();
 //				return;
 //				}
-//			NAXES[j-1] = FitsJ.getCardIntValue (hdr[icard]);
+//			NAXES[j-1] = FitsJ.getCardIntValue (hdr.cards()[icard]);
 //			}
         
         // GET SIZES OF AXES
@@ -218,7 +220,7 @@ public class WCS
                 return;
                 }
             }
-        NAXES[0] = FitsJ.getCardIntValue (hdr[icard]);  
+        NAXES[0] = FitsJ.getCardIntValue (hdr.cards()[icard]);  
         
         icard = FitsJ.findCardWithKey ("IMAGEH", hdr);
         if (icard < 0)
@@ -231,7 +233,7 @@ public class WCS
                 return;
                 }
             }
-        NAXES[1] = FitsJ.getCardIntValue (hdr[icard]);        
+        NAXES[1] = FitsJ.getCardIntValue (hdr.cards()[icard]);        
 
 		// MAKE SURE THEY AGREE WITH THE ImageJ NUMBERS
 
@@ -268,7 +270,7 @@ public class WCS
 			icard = FitsJ.findCardWithKey ("CTYPE1"+abc[k], hdr);
 			if (icard > 0)
 				{
-				typ = FitsJ.getCardStringValue(hdr[icard]);
+				typ = FitsJ.getCardStringValue(hdr.cards()[icard]);
 				if (typ != null && (typ.startsWith("RA--")))
 					{
 					CTYPE[0] = typ;
@@ -290,7 +292,7 @@ public class WCS
                 {
                 icard = FitsJ.findCardWithKey ("CTYPE"+k+prefix, hdr);
                 if (icard > 0)
-                    CTYPE[k-1] = FitsJ.getCardStringValue(hdr[icard]);
+                    CTYPE[k-1] = FitsJ.getCardStringValue(hdr.cards()[icard]);
                 }
 
             // CHECK IF CTYPE2n IS "DEC" AND COORDINATE SYSTEMS MATCH
@@ -306,21 +308,21 @@ public class WCS
             icard = FitsJ.findCardWithKey ("CDELT"+k+prefix, hdr);
             if (icard > 0)
                 {
-                CDELT[k-1] = FitsJ.getCardDoubleValue(hdr[icard]);
+                CDELT[k-1] = FitsJ.getCardDoubleValue(hdr.cards()[icard]);
                 if (!Double.isNaN(CDELT[k-1])) hasCDELT[k-1] = true;
                 }
             icard = FitsJ.findCardWithKey ("CROTA"+k+prefix, hdr);
             if (icard > 0)
                 {
-                CROTA[k-1] = FitsJ.getCardDoubleValue(hdr[icard]);
+                CROTA[k-1] = FitsJ.getCardDoubleValue(hdr.cards()[icard]);
                 if (!Double.isNaN(CROTA[k-1])) hasCROTA[k-1] = true;
                 }            
             icard = FitsJ.findCardWithKey ("CRPIX"+k+prefix, hdr);
             if (icard > 0)
-                CRPIX[k-1] = FitsJ.getCardDoubleValue(hdr[icard]);
+                CRPIX[k-1] = FitsJ.getCardDoubleValue(hdr.cards()[icard]);
             icard = FitsJ.findCardWithKey ("CRVAL"+k+prefix, hdr);
             if (icard > 0)
-                CRVAL[k-1] = FitsJ.getCardDoubleValue(hdr[icard]);
+                CRVAL[k-1] = FitsJ.getCardDoubleValue(hdr.cards()[icard]);
             else
                 {
                 if (k==1)
@@ -328,7 +330,7 @@ public class WCS
                     icard = FitsJ.findCardWithKey ("RA", hdr);
                     if (icard > 0)
                         {
-                        double val = 15 * FitsJ.getCardDoubleValueFromSexagesimal(hdr[icard], 24);  
+                        double val = 15 * FitsJ.getCardDoubleValueFromSexagesimal(hdr.cards()[icard], 24);  
                         if (!Double.isNaN(val))
                             {
                             CRVAL[k-1] = val;
@@ -341,7 +343,7 @@ public class WCS
                     icard = FitsJ.findCardWithKey ("DEC", hdr);
                     if (icard > 0)
                         {
-                        double val = FitsJ.getCardDoubleValueFromSexagesimal(hdr[icard], 90);  
+                        double val = FitsJ.getCardDoubleValueFromSexagesimal(hdr.cards()[icard], 90);  
                         if (!Double.isNaN(val)) 
                             {
                             CRVAL[k-1] = val;  
@@ -357,7 +359,7 @@ public class WCS
         icard = FitsJ.findCardWithKey ("EPOCH"+prefix, hdr);
         if (icard > 0)
             {
-            double EPOCH = FitsJ.getCardDoubleValue(hdr[icard]);
+            double EPOCH = FitsJ.getCardDoubleValue(hdr.cards()[icard]);
             if (!Double.isNaN(EPOCH)) 
                 {
                 epoch = EPOCH;
@@ -373,7 +375,7 @@ public class WCS
 //        icard = FitsJ.findCardWithKey ("WCS_MSEP", hdr);
 //        if (icard > 0)
 //            {
-//            String comment = FitsJ.getCardComment (hdr[icard]);
+//            String comment = FitsJ.getCardComment (hdr.cards()[icard]);
 //            if (comment.contains("FFI")) FFIScale=0.35;
 //            }
 //        
@@ -388,7 +390,7 @@ public class WCS
 					if (icard > 0)
 						{
 						hasCD=true;
-						CD[i-1][k-1] = FitsJ.getCardDoubleValue(hdr[icard]);
+						CD[i-1][k-1] = FitsJ.getCardDoubleValue(hdr.cards()[icard]);
 						} 
                     if (!hasCD)
                         {
@@ -396,7 +398,7 @@ public class WCS
                         if (icard > 0)
                             {
                             hasPC=true;
-                            PC[i-1][k-1] = FitsJ.getCardDoubleValue(hdr[icard]);
+                            PC[i-1][k-1] = FitsJ.getCardDoubleValue(hdr.cards()[icard]);
                             }
                         if (!hasPC)
                             {
@@ -404,7 +406,7 @@ public class WCS
                             if (icard > 0)
                                 {
                                 hasOldPC=true;
-                                oldPC[i-1][k-1] = FitsJ.getCardDoubleValue(hdr[icard]);
+                                oldPC[i-1][k-1] = FitsJ.getCardDoubleValue(hdr.cards()[icard]);
                                 }                            
                             
                             }
@@ -436,7 +438,7 @@ public class WCS
 					icard = FitsJ.findCardWithKey ("A_ORDER",hdr);
 					if (icard >= 0)
 						{
-						A_ORDER = FitsJ.getCardIntValue (hdr[icard]);
+						A_ORDER = FitsJ.getCardIntValue (hdr.cards()[icard]);
 						if (A_ORDER < 2 || A_ORDER > 9)
 							{
 							A_ORDER = -1;
@@ -450,7 +452,7 @@ public class WCS
 					icard = FitsJ.findCardWithKey ("B_ORDER",hdr);
 					if (icard >= 0)
 						{
-						B_ORDER = FitsJ.getCardIntValue (hdr[icard]);
+						B_ORDER = FitsJ.getCardIntValue (hdr.cards()[icard]);
 						if (B_ORDER < 2 || B_ORDER > 9)
 							{
 							B_ORDER = -1;
@@ -464,7 +466,7 @@ public class WCS
 					icard = FitsJ.findCardWithKey ("AP_ORDER",hdr);
 					if (icard >= 0)
 						{
-						AP_ORDER = FitsJ.getCardIntValue (hdr[icard]);
+						AP_ORDER = FitsJ.getCardIntValue (hdr.cards()[icard]);
 						if (AP_ORDER < 2 || AP_ORDER > 9)
 							{
 							A_ORDER = -1;
@@ -478,7 +480,7 @@ public class WCS
 					icard = FitsJ.findCardWithKey ("BP_ORDER",hdr);
 					if (icard >= 0)
 						{
-						BP_ORDER = FitsJ.getCardIntValue (hdr[icard]);
+						BP_ORDER = FitsJ.getCardIntValue (hdr.cards()[icard]);
 						if (BP_ORDER < 2 || BP_ORDER > 9)
 							{
 							BP_ORDER = -1;
@@ -560,7 +562,7 @@ public class WCS
 								icard = FitsJ.findCardWithKey ("A_"+p+"_"+q+prefix, hdr);
 								if (icard > 0)
 									{
-									A[p][q] = FitsJ.getCardDoubleValue(hdr[icard]);
+									A[p][q] = FitsJ.getCardDoubleValue(hdr.cards()[icard]);
 //									IJ.write("A["+p+"]["+q+"] = "+A[p][q]);
 									hasSIP[0]=true;
 									}
@@ -589,7 +591,7 @@ public class WCS
 								icard = FitsJ.findCardWithKey ("B_"+p+"_"+q+prefix, hdr);
 								if (icard > 0)
 									{
-									B[p][q] = FitsJ.getCardDoubleValue(hdr[icard]);
+									B[p][q] = FitsJ.getCardDoubleValue(hdr.cards()[icard]);
 //									IJ.write("B["+p+"]["+q+"] = "+B[p][q]);
 									hasSIP[1]=true;
 									}
@@ -620,7 +622,7 @@ public class WCS
 								icard = FitsJ.findCardWithKey ("AP_"+p+"_"+q+prefix, hdr);
 								if (icard > 0)
 									{
-									AP[p][q] = FitsJ.getCardDoubleValue(hdr[icard]);
+									AP[p][q] = FitsJ.getCardDoubleValue(hdr.cards()[icard]);
 //									IJ.write("AP["+p+"]["+q+"] = "+AP[p][q]);
 									hasSIPinv[0]=true;
 									}
@@ -649,7 +651,7 @@ public class WCS
 								icard = FitsJ.findCardWithKey ("BP_"+p+"_"+q+prefix, hdr);
 								if (icard > 0)
 									{
-									BP[p][q] = FitsJ.getCardDoubleValue(hdr[icard]);
+									BP[p][q] = FitsJ.getCardDoubleValue(hdr.cards()[icard]);
 //									IJ.write("BP["+p+"]["+q+"] = "+BP[p][q]);
 									hasSIPinv[1]=true;
 									}
@@ -669,15 +671,15 @@ public class WCS
         if (projection.equals("SIN")) 
             {
             icard = FitsJ.findCardWithKey ("PV2_1"+prefix, hdr);
-            if (icard > 0) PV[1][1] = FitsJ.getCardDoubleValue(hdr[icard]);
+            if (icard > 0) PV[1][1] = FitsJ.getCardDoubleValue(hdr.cards()[icard]);
             icard = FitsJ.findCardWithKey ("PV2_2"+prefix, hdr);
-            if (icard > 0) PV[1][2] = FitsJ.getCardDoubleValue(hdr[icard]);           
+            if (icard > 0) PV[1][2] = FitsJ.getCardDoubleValue(hdr.cards()[icard]);           
             }
         
 		LONPOLE = 180.0;// DEGS
 		icard = FitsJ.findCardWithKey ("LONPOLE"+prefix, hdr);
 		if (icard > 0)
-			LONPOLE = FitsJ.getCardDoubleValue(hdr[icard]);
+			LONPOLE = FitsJ.getCardDoubleValue(hdr.cards()[icard]);
 
         // CALCULATE ROTATION, SCALE, AND INVERSE MATRICES
         if (NAXIS==2)
@@ -708,7 +710,7 @@ public class WCS
                     icard = FitsJ.findCardWithKey ("BPA", hdr);
                     if (icard > 0)
                         {
-                        CROTA[1] = FitsJ.getCardDoubleValue(hdr[icard]);
+                        CROTA[1] = FitsJ.getCardDoubleValue(hdr.cards()[icard]);
                         if (!Double.isNaN(CROTA[1])) hasPAkeyword = true;
                         }
                     if (!hasPAkeyword)
@@ -716,7 +718,7 @@ public class WCS
                         icard = FitsJ.findCardWithKey ("PA", hdr);
                         if (icard > 0)
                             {
-                            CROTA[1] = -FitsJ.getCardDoubleValue(hdr[icard])+180.0;
+                            CROTA[1] = -FitsJ.getCardDoubleValue(hdr.cards()[icard])+180.0;
                             if (!Double.isNaN(CROTA[1])) hasPAkeyword = true;
                             } 
                         }
@@ -733,13 +735,13 @@ public class WCS
                         icard = FitsJ.findCardWithKey ("XPIXSZ", hdr);
                         if (icard > 0)
                             {
-                            PIXSZ[0] = FitsJ.getCardDoubleValue(hdr[icard]);
+                            PIXSZ[0] = FitsJ.getCardDoubleValue(hdr.cards()[icard]);
                             if (!Double.isNaN(PIXSZ[0])) hasPIXSZ[0] = true;
                             }
                         icard = FitsJ.findCardWithKey ("YPIXSZ", hdr);
                         if (icard > 0)
                             {
-                            PIXSZ[1] = FitsJ.getCardDoubleValue(hdr[icard]);
+                            PIXSZ[1] = FitsJ.getCardDoubleValue(hdr.cards()[icard]);
                             if (!Double.isNaN(PIXSZ[1])) hasPIXSZ[1] = true;
                             }   
                         if (hasPIXSZ[0] && !hasPIXSZ[1]) PIXSZ[1] = PIXSZ[0];
@@ -747,7 +749,7 @@ public class WCS
                         icard = FitsJ.findCardWithKey ("FOCALLEN", hdr);
                         if (icard > 0)
                             {
-                            FOCALLEN = FitsJ.getCardDoubleValue(hdr[icard]);
+                            FOCALLEN = FitsJ.getCardDoubleValue(hdr.cards()[icard]);
                             if (!Double.isNaN(FOCALLEN)) hasFOCALLEN = true;
                             }
                         if ((hasPIXSZ[0] || hasPIXSZ[1]) && hasFOCALLEN)
@@ -1669,7 +1671,7 @@ public class WCS
 	public void repair (ImagePlus img, double[] crpix, double[][] cd)
 		{
 		NAXIS=0;
-		String[] hdr = FitsJ.getHeader (img);
+		var hdr = FitsJ.getHeader (img);
 		if (hdr == null) return;
 
 		// FIX CTYPEn KEYWORDS
@@ -1691,8 +1693,8 @@ public class WCS
 			if (icard > 0 && jcard > 0)
 				{
 				try	{
-					double ra = DmsFormat.unformat(FitsJ.getCardStringValue(hdr[icard]));
-					double dec = DmsFormat.unformat(FitsJ.getCardStringValue(hdr[jcard]));
+					double ra = DmsFormat.unformat(FitsJ.getCardStringValue(hdr.cards()[icard]));
+					double dec = DmsFormat.unformat(FitsJ.getCardStringValue(hdr.cards()[jcard]));
 					hdr = FitsJ.setCard("CRVAL1",ra*15.0,"Right Ascension in decimal degrees (WCS repair)",hdr);
 					hdr = FitsJ.setCard("CRVAL2",dec,"Declination in decimal degrees (WCS repair)",hdr);
 					}

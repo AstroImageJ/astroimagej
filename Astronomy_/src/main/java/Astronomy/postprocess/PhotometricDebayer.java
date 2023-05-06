@@ -43,8 +43,8 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
             var cardId = FitsJ.findCardWithKey("BAYERPAT", header);
 
             if (cardId != -1) {
-                if (Arrays.asList(Pallete.names()).contains(FitsJ.getCardStringValue(header[cardId]))) {
-                    pallet.set(Pallete.valueOf(FitsJ.getCardStringValue(header[cardId])));
+                if (Arrays.asList(Pallete.names()).contains(FitsJ.getCardStringValue(header.cards()[cardId]))) {
+                    pallet.set(Pallete.valueOf(FitsJ.getCardStringValue(header.cards()[cardId])));
                 }
             }
         }
@@ -144,7 +144,7 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
                     ImagePlus imp2 = new ImagePlus(imp.getStack().getSliceLabel(slice), mim.makeImageProcessor(pallete, color, transform));
                     imp2.setCalibration(imp.getCalibration());
                     imp2.setFileInfo(imp.getFileInfo());
-                    String[] scienceHeader = FitsJ.getHeader(imp);
+                    var scienceHeader = FitsJ.getHeader(imp);
                     if (scienceHeader != null) {
                         scienceHeader = headerUpdate(scienceHeader, imp2);
                         FitsJ.putHeader(imp2, scienceHeader);
@@ -163,7 +163,7 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
         }
     }
 
-    private String[] headerUpdate(String[] header, ImagePlus imp) {
+    private FitsJ.Header headerUpdate(FitsJ.Header header, ImagePlus imp) {
         if (header == null) return null;
         header = FitsJ.setCard("NAXIS1", imp.getWidth()/2, "Width", header);
         header = FitsJ.setCard("NAXIS2", imp.getHeight()/2, "Height", header);
@@ -241,12 +241,12 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
     }
 
     // The extra identity functions could be removed, but are left in for clarity
-    Function<MetaPixel, MetaPixel> buildTransforms(String[] header) {
+    Function<MetaPixel, MetaPixel> buildTransforms(FitsJ.Header header) {
         Function<MetaPixel, MetaPixel> transform = Function.identity();
 
         var orderI = FitsJ.findCardWithKey("ROWORDER", header);
         if (orderI != -1) {
-            var s = FitsJ.getCardStringValue(header[orderI]);
+            var s = FitsJ.getCardStringValue(header.cards()[orderI]);
             if ("BOTTOM-UP".equals(s)) {
                 transform = transform.andThen(Function.identity());
             } else {
@@ -260,12 +260,12 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
         var bayerShiftYI = FitsJ.findCardWithKey("YBAYROFF", header);
 
         if (bayerShiftXI != -1) {
-            var xs = FitsJ.getCardIntValue(header[bayerShiftXI]);
+            var xs = FitsJ.getCardIntValue(header.cards()[bayerShiftXI]);
             transform = transform.andThen(xs % 2 == 0 ? Function.identity() : MetaPixel::flipX);
         }
 
         if (bayerShiftYI != -1) {
-            var ys = FitsJ.getCardIntValue(header[bayerShiftYI]);
+            var ys = FitsJ.getCardIntValue(header.cards()[bayerShiftYI]);
             transform = transform.andThen(ys % 2 == 0 ? Function.identity() : MetaPixel::flipY);
         }
 

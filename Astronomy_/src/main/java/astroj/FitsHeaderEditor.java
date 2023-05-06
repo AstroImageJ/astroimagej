@@ -87,17 +87,17 @@ public class FitsHeaderEditor implements ListSelectionListener, ActionListener, 
 
     private void updateHeaderInfoFromSlice() {
         slice = imp.getCurrentSlice();
-        String[] hdr = FitsJ.getHeader(imp);
+        var hdr = FitsJ.getHeader(imp);
         if (hdr == null) {
             IJ.beep();
             IJ.showMessage("No valid FITS header");
             return;
         }
 
-        int l = hdr.length;
+        int l = hdr.cards().length;
         header = new String[l][5];
         for (int i = 0; i < l; i++) {
-            String card = hdr[i];
+            String card = hdr.cards()[i];
             String ctype = FitsJ.getCardType(card);
 
             header[i][0] = "" + (i + 1);
@@ -423,7 +423,7 @@ public class FitsHeaderEditor implements ListSelectionListener, ActionListener, 
             }
 
             imp.setSlice(slice);
-            FitsJ.putHeader(imp, hdr);
+            FitsJ.putHeader(imp, FitsJ.Header.build(hdr));
 
             frame.setVisible(false);
             savePrefs();
@@ -485,7 +485,7 @@ public class FitsHeaderEditor implements ListSelectionListener, ActionListener, 
                 imp2.setCalibration(imp.getCalibration());
                 imp2.setFileInfo(imp.getFileInfo());
                 imp2.setProcessor("WCS_" + IJU.getSliceFilename(imp, slice), imp.getStack().getProcessor(slice));
-                FitsJ.putHeader(imp2, hdr);
+                FitsJ.putHeader(imp2, FitsJ.Header.build(hdr));
                 IJU.saveFile(imp2, imageDirname + imageFilename);
                 if (slice < imp.getStackSize()) {
                     imp.setSlice(slice + 1);
@@ -496,7 +496,7 @@ public class FitsHeaderEditor implements ListSelectionListener, ActionListener, 
                 }
 
             } else {
-                FitsJ.putHeader(imp, hdr);
+                FitsJ.putHeader(imp, FitsJ.Header.build(hdr));
                 IJU.saveFile(imp, imageDirname + imageFilename);
             }
             frame.setVisible(false);
@@ -527,11 +527,11 @@ public class FitsHeaderEditor implements ListSelectionListener, ActionListener, 
             if (imp.getStack().isVirtual()) {
                 ImagePlus imp2 = null;
                 imp2 = imp.duplicate();
-                FitsJ.putHeader(imp2, hdr);
+                FitsJ.putHeader(imp2, FitsJ.Header.build(hdr));
                 IJU.saveFile(imp2, path);
 //                IJ.run(imp2, "FITS...", path);
             } else {
-                FitsJ.putHeader(imp, hdr);
+                FitsJ.putHeader(imp, FitsJ.Header.build(hdr));
                 IJU.saveFile(imp, path);
 //                IJ.run(imp, "FITS...", path);
             }

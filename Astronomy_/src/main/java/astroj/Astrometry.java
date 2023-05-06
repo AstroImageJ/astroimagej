@@ -566,7 +566,7 @@ public class Astrometry { //implements KeyListener
 
             if (canceled) return CANCELED;
             int len = 0;
-            String[] wcsHeader = null;
+            FitsJ.Header wcsHeader = null;
             try {
                 //            getFileURL = new URL("http://nova.astrometry.net/api/jobs/"+jobID+"/annotations");
                 getFileURL = new URL((useAlternateAstrometryServer ? alternateAstrometryUrlBase : defaultAstrometryUrlBase) + "/wcs_file/" + jobID);
@@ -580,13 +580,13 @@ public class Astrometry { //implements KeyListener
                 String inputLine = in.readLine();
 
                 len = inputLine.length() / 80;
-                wcsHeader = new String[len];
+                wcsHeader = FitsJ.Header.build(new String[len]);
                 if (inputLine != null && !inputLine.equals("")) {
                     for (int i = 0; i < len; i++) {
-                        wcsHeader[i] = inputLine.substring(i * 80, (i + 1) * 80);
+                        wcsHeader.cards()[i] = inputLine.substring(i * 80, (i + 1) * 80);
                     }
 //                    for (int i=0; i<len; i++)
-//                        log(wcsHeader[i]);
+//                        log(wcsHeader.cards()[i]);
                 } else {
                     log("Failed to retrieve WCS headers for " + (impOriginal.getStackSize() == 1 ? impOriginal.getTitle() + "." : "slice " + slice + "."));
                     if (impOriginal.getStackSize() > 1)
@@ -600,25 +600,25 @@ public class Astrometry { //implements KeyListener
             }
             if (canceled) return CANCELED;
             impOriginal.setSlice(slice);
-            String[] header = FitsJ.getHeader(impOriginal);
+            FitsJ.Header header = FitsJ.getHeader(impOriginal);
             if (header == null) {
-                header = new String[5];
-                header[0] = FitsJ.createCard("SIMPLE", "T", "Created by AIJ");
-                header[1] = FitsJ.createCard("NAXIS", "2", "number of data axes");
-                header[2] = FitsJ.createCard("NAXIS1", "" + width, "length of data axis 1");
-                header[3] = FitsJ.createCard("NAXIS2", "" + height, "length of data axis 2");
-                header[4] = FitsJ.createCard("END", "", "");
+                header = FitsJ.Header.build(new String[5]);
+                header.cards()[0] = FitsJ.createCard("SIMPLE", "T", "Created by AIJ");
+                header.cards()[1] = FitsJ.createCard("NAXIS", "2", "number of data axes");
+                header.cards()[2] = FitsJ.createCard("NAXIS1", "" + width, "length of data axis 1");
+                header.cards()[3] = FitsJ.createCard("NAXIS2", "" + height, "length of data axis 2");
+                header.cards()[4] = FitsJ.createCard("END", "", "");
             }
-            String[] headerRaw = null;
+            FitsJ.Header headerRaw = null;
             if (resaveRaw) {
                 headerRaw = FitsJ.getHeader(impRaw);
                 if (headerRaw == null) {
-                    headerRaw = new String[5];
-                    headerRaw[0] = FitsJ.createCard("SIMPLE", "T", "Created by AIJ");
-                    headerRaw[1] = FitsJ.createCard("NAXIS", "2", "number of data axes");
-                    headerRaw[2] = FitsJ.createCard("NAXIS1", "" + width, "length of data axis 1");
-                    headerRaw[3] = FitsJ.createCard("NAXIS2", "" + height, "length of data axis 2");
-                    headerRaw[4] = FitsJ.createCard("END", "", "");
+                    headerRaw = FitsJ.Header.build(new String[5]);
+                    header.cards()[0] = FitsJ.createCard("SIMPLE", "T", "Created by AIJ");
+                    header.cards()[1] = FitsJ.createCard("NAXIS", "2", "number of data axes");
+                    header.cards()[2] = FitsJ.createCard("NAXIS1", "" + width, "length of data axis 1");
+                    header.cards()[3] = FitsJ.createCard("NAXIS2", "" + height, "length of data axis 2");
+                    header.cards()[4] = FitsJ.createCard("END", "", "");
                 }
             }
 //            if (header == null) header = new String[]{FitsJ.pad("END", 80)};
@@ -672,9 +672,9 @@ public class Astrometry { //implements KeyListener
                 }
                 wcsCardNum = FitsJ.findCardWithKey(keywords[i], wcsHeader);
                 if (wcsCardNum != -1) {
-                    header = FitsJ.addCard(wcsHeader[wcsCardNum], header);
+                    header = FitsJ.addCard(wcsHeader.cards()[wcsCardNum], header);
                     if (resaveRaw) {
-                        headerRaw = FitsJ.addCard(wcsHeader[wcsCardNum], headerRaw);
+                        headerRaw = FitsJ.addCard(wcsHeader.cards()[wcsCardNum], headerRaw);
                     }
                 }
             }
@@ -728,9 +728,9 @@ public class Astrometry { //implements KeyListener
                 for (int j = 0; j < 10; j++) {
                     wcsCardNum = FitsJ.findCardWithKey("A_" + i + "_" + j, wcsHeader);
                     if (wcsCardNum != -1) {
-                        header = FitsJ.addCard(wcsHeader[wcsCardNum], header);
+                        header = FitsJ.addCard(wcsHeader.cards()[wcsCardNum], header);
                         if (resaveRaw) {
-                            headerRaw = FitsJ.addCard(wcsHeader[wcsCardNum], headerRaw);
+                            headerRaw = FitsJ.addCard(wcsHeader.cards()[wcsCardNum], headerRaw);
                         }
                     }
                 }
@@ -740,9 +740,9 @@ public class Astrometry { //implements KeyListener
                 for (int j = 0; j < 10; j++) {
                     wcsCardNum = FitsJ.findCardWithKey("B_" + i + "_" + j, wcsHeader);
                     if (wcsCardNum != -1) {
-                        header = FitsJ.addCard(wcsHeader[wcsCardNum], header);
+                        header = FitsJ.addCard(wcsHeader.cards()[wcsCardNum], header);
                         if (resaveRaw) {
-                            headerRaw = FitsJ.addCard(wcsHeader[wcsCardNum], headerRaw);
+                            headerRaw = FitsJ.addCard(wcsHeader.cards()[wcsCardNum], headerRaw);
                         }
                     }
                 }
@@ -752,9 +752,9 @@ public class Astrometry { //implements KeyListener
                 for (int j = 0; j < 10; j++) {
                     wcsCardNum = FitsJ.findCardWithKey("AP_" + i + "_" + j, wcsHeader);
                     if (wcsCardNum != -1) {
-                        header = FitsJ.addCard(wcsHeader[wcsCardNum], header);
+                        header = FitsJ.addCard(wcsHeader.cards()[wcsCardNum], header);
                         if (resaveRaw) {
-                            headerRaw = FitsJ.addCard(wcsHeader[wcsCardNum], headerRaw);
+                            headerRaw = FitsJ.addCard(wcsHeader.cards()[wcsCardNum], headerRaw);
                         }
                     }
                 }
@@ -764,9 +764,9 @@ public class Astrometry { //implements KeyListener
                 for (int j = 0; j < 10; j++) {
                     wcsCardNum = FitsJ.findCardWithKey("BP_" + i + "_" + j, wcsHeader);
                     if (wcsCardNum != -1) {
-                        header = FitsJ.addCard(wcsHeader[wcsCardNum], header);
+                        header = FitsJ.addCard(wcsHeader.cards()[wcsCardNum], header);
                         if (resaveRaw) {
-                            headerRaw = FitsJ.addCard(wcsHeader[wcsCardNum], headerRaw);
+                            headerRaw = FitsJ.addCard(wcsHeader.cards()[wcsCardNum], headerRaw);
                         }
                     }
                 }

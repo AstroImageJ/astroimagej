@@ -15,9 +15,9 @@ public class FitsHeaderMerger {
     public static void mergeHeaders(int method, int startSlice, int stopSlice, int increment, ImagePlus origImage, ImagePlus projImage) {
         // Get all the headers
         int stackCnt = 0;
-        ArrayList<String[]> headers = new ArrayList<>();
+        ArrayList<FitsJ.Header> headers = new ArrayList<>();
         for (int slice = startSlice; slice <= stopSlice; slice += increment) {
-            String[] header = FitsJ.getHeader(origImage, slice);
+            FitsJ.Header header = FitsJ.getHeader(origImage, slice);
             if (header != null) {
                 headers.add(header);
             }
@@ -34,7 +34,7 @@ public class FitsHeaderMerger {
         double lastJD = 0.0;
         double totalExposure = 0.0;
         double lastExposure = 0.0;
-        for (String[] header : headers) {
+        for (FitsJ.Header header : headers) {
             double jd = FitsJ.getJD(header);
             if (!Double.isNaN(jd)) {
                 if (jd < firstJD)
@@ -52,7 +52,7 @@ public class FitsHeaderMerger {
 
         // Update the new header
         // Go through all the cards and delete any that are not in the list of cards to save
-        String[] newHeader = headers.get(0).clone();
+        FitsJ.Header newHeader = headers.get(0).clone();
 
         String[] keysToSave = {
                 "SIMPLE", "BITPIX", "NAXIS", "NAXIS1", "NAXIS2", "EXTEND", "BZERO", "BSCALE",
@@ -60,7 +60,7 @@ public class FitsHeaderMerger {
                 "SITELAT", "SITELONG", "OBJCTRA", "OBJCTDEC", "FILTER", "SET-TEMP", "OBJECT", "EQUINOX"
         };
         ArrayList<String> newHeaderList = new ArrayList<>();
-        for (String card : newHeader) {
+        for (String card : newHeader.cards()) {
             for (String key : keysToSave) {
                 if (card.startsWith(key)) {
                     newHeaderList.add(card);
@@ -68,7 +68,7 @@ public class FitsHeaderMerger {
                 }
             }
         }
-        newHeader = newHeaderList.toArray(new String[0]);
+        newHeader = FitsJ.Header.build(newHeaderList.toArray(new String[0]));
 
         newHeader = FitsJ.addHistory("Combined stack of " + stackCnt + " images using: " + ZProjector.METHODS[method], newHeader);
         newHeader = FitsJ.set("EXPTIME", String.valueOf(totalExposure), "Total luminance exposure time in seconds", newHeader);
@@ -78,7 +78,7 @@ public class FitsHeaderMerger {
 
         // Update BITPIX
         var newBitpix = ImageType.getType(projImage.getProcessor()).getExpectedBitpix();
-        newHeader[FitsJ.findCardWithKey("BITPIX", newHeader)] = FitsJ.createCard("BITBIX", String.valueOf(newBitpix), "bits per data value");
+        newHeader.cards()[FitsJ.findCardWithKey("BITPIX", newHeader)] = FitsJ.createCard("BITBIX", String.valueOf(newBitpix), "bits per data value");
         
         // Add new header to the projected image.
         FitsJ.putHeader(projImage, newHeader);

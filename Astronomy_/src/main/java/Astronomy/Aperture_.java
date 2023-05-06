@@ -413,9 +413,10 @@ public class Aperture_ implements PlugInFilter {
             }
         }
 
-        measurePhotometry();
+        var hdr = FitsJ.getHeader(imp);
 
-        String[] hdr = FitsJ.getHeader(imp);
+        measurePhotometry(hdr);
+
         // GET MJD
         mjd = 0.0;
         if (hdr != null && isFITS && showTimes) {
@@ -464,7 +465,11 @@ public class Aperture_ implements PlugInFilter {
     }
 
     protected void measurePhotometry() {
-        photom = measurePhotometry(imp, xCenter, yCenter, radius, rBack1, rBack2);
+        measurePhotometry(FitsJ.getHeader(imp));
+    }
+
+    protected void measurePhotometry(FitsJ.Header hdr) {
+        photom = measurePhotometry(imp, hdr, xCenter, yCenter, radius, rBack1, rBack2);
 
         back = photom.backgroundBrightness();
         source = photom.sourceBrightness();
@@ -475,7 +480,10 @@ public class Aperture_ implements PlugInFilter {
     }
 
     protected Photometer measurePhotometry(ImagePlus imp, double x, double y, double r, double r2, double r3) {
-        String[] hdr = FitsJ.getHeader(imp);
+        return measurePhotometry(imp, FitsJ.getHeader(imp), x, y, r, r2, r3);
+    }
+
+    protected Photometer measurePhotometry(ImagePlus imp, FitsJ.Header hdr, double x, double y, double r, double r2, double r3) {
         double darkPerPix = ccdDark;
         if (hdr != null) {
             isFITS = true;

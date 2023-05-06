@@ -85,7 +85,7 @@ public class FitsJ
 	 *
  * @param img		The ImagePlus image which has the FITS header in it's "Info" property.
 	 */
-	public static String[] getHeader(ImagePlus img) {
+	public static Header getHeader(ImagePlus img) {
 		return getHeader(img, img.getCurrentSlice());
 	}
 
@@ -96,7 +96,7 @@ public class FitsJ
 	 *
 	 * @param img		The ImagePlus image which has the FITS header in it's "Info" property.
 	 */
-	public static String[] getHeader(ImagePlus img, int slice)
+	public static Header getHeader(ImagePlus img, int slice)
 		{
 		String content = getHeaderString(img, slice);
 		if (content == null) return null;
@@ -120,7 +120,7 @@ public class FitsJ
 			if ( s.equals("END") || s.startsWith ("END ") ) break;
 			}
 		if (iend >= lines.length) return null;
-		return Arrays.copyOfRange(lines, istart, iend+1);
+		return Header.build(Arrays.copyOfRange(lines, istart, iend+1));
 		}
 
 	/**
@@ -129,7 +129,7 @@ public class FitsJ
 	 * @param img			The ImagePlus image.
 	 * @param hdr			The FITS header stored in a String array.
 	 */
-	public static boolean isConsistent (ImagePlus img, String[] hdr)
+	public static boolean isConsistent (ImagePlus img, Header hdr)
 		{
 		int nx = img.getWidth();
 		int ny = img.getHeight();
@@ -163,7 +163,7 @@ public class FitsJ
 	 * @param img			The ImagePlus image.
 	 * @param hdr			The FITS header stored in a String array.
 	 */
-	public static void makeConsistent (ImagePlus img, String[] hdr)
+	public static void makeConsistent (ImagePlus img, Header hdr)
 		{
 		int nx = img.getWidth();
 		int ny = img.getHeight();
@@ -201,9 +201,9 @@ public class FitsJ
 	 * @param comment		The FITS comment string for this keyword.
 	 * @param cards			The FITS header as an array of Strings.
 	 */
-	public static String[] setCard (String key, int property, String comment, String[] cards)
+	public static Header setCard (String key, int property, String comment, Header hdr)
 		{
-		return set (key,""+property,comment, cards);
+		return set (key,""+property,comment, hdr);
 		}
 
 	/**
@@ -214,9 +214,9 @@ public class FitsJ
 	 * @param comment		The FITS comment string for this keyword.
 	 * @param cards			The FITS header as an array of Strings.
 	 */
-	public static String[] setCard (String key, double property, String comment, String[] cards)
+	public static Header setCard (String key, double property, String comment, Header hdr)
 		{
-		return set (key,""+property,comment, cards);
+		return set (key,""+property,comment, hdr);
 		}
 
 	/**
@@ -227,12 +227,12 @@ public class FitsJ
 	 * @param comment		The FITS comment string for this keyword.
 	 * @param cards			The FITS header as an array of Strings.
 	 */
-	public static String[] setCard (String key, boolean property, String comment, String[] cards)
+	public static Header setCard (String key, boolean property, String comment, Header hdr)
 		{
 		if (property)
-			return set (key,"T       ",comment, cards);
+			return set (key,"T       ",comment, hdr);
 		else
-			return set (key,"F       ",comment, cards);
+			return set (key,"F       ",comment, hdr);
 		}
 
 	/**
@@ -243,9 +243,9 @@ public class FitsJ
 	 * @param comment		The FITS comment string for this keyword.
 	 * @param cards			The FITS header as an array of Strings.
 	 */
-	public static String[] setCard (String key, String property, String comment, String[] cards)
+	public static Header setCard (String key, String property, String comment, Header hdr)
 		{
-		return set (key,"'"+property+"'",comment, cards);
+		return set (key,"'"+property+"'",comment, hdr);
 		}
 
 	/**
@@ -276,17 +276,17 @@ public class FitsJ
 	 * @param comment		The FITS comment string for this keyword.
 	 * @param cards			The FITS header as an Array of strings.
 	 */
-	protected static String[] set (String key, String val, String comment, String[] cards)
+	protected static Header set (String key, String val, String comment, Header hdr)
 		{
-		if (cards == null) return null;
+		if (hdr == null) return null;
 		String k = key.trim();
 		String card = null;
 
 		// GET OLD VALUE AND COMMENT FROM CARD CONTAINING KEYWORD
 
-		int icard = findCardWithKey (k,cards);
+		int icard = findCardWithKey (k,hdr);
 		if (icard >= 0)
-			card = cards[icard];
+			card = hdr.cards[icard];
 		String old = getCardValue(card);
 		String comm = getCardComment (card);
 
@@ -304,10 +304,10 @@ public class FitsJ
 		// SAVE NEW HEADER
 
 		if (icard >= 0)
-			cards[icard] = v;
+			hdr.cards[icard] = v;
 		else
-			cards = addCard (v,cards);
-		return cards;
+			hdr = addCard (v,hdr);
+		return hdr;
 		}
     
 	/**
@@ -317,9 +317,9 @@ public class FitsJ
 	 * @param comment		The FITS comment string for this keyword.
 	 * @param cards			The FITS header as an Array of strings.
 	 */
-	protected static String[] addAnnotateCard (String val, String comment, String[] cards)
+	protected static Header addAnnotateCard (String val, String comment, Header hdr)
 		{
-		if (cards == null) cards = new String[1];
+		if (hdr == null) hdr = Header.build(new String[1]);
 		String k = "ANNOTATE";
 
 		String v = k+"= "+val;
@@ -382,8 +382,8 @@ public class FitsJ
                 else v +="?";
                 }
             }
-    	cards = addCard (v, cards);
-		return cards;
+    	hdr = addCard (v, hdr);
+		return hdr;
 		}  
  
     
@@ -398,17 +398,17 @@ public class FitsJ
 	 * @param key		A FITS card keyword for those cards to be removed from the FITS header String array.
 	 * @param cards		A String array holding the contents of a FITS header.
 	 */
-	public static String[] setAnnotateCard (double x, double y, String val, String comment, String[] cards)
+	public static Header setAnnotateCard (double x, double y, String val, String comment, Header hdr)
 		{
-		int l = cards.length;
+		int l = hdr.cards.length;
         int i;
         String cardkey = null;
 		for (i=0; i < l; i++)
 			{
-            cardkey = getCardKey(cards[i]);
+            cardkey = getCardKey(hdr.cards[i]);
 			if (cardkey != null && cardkey.equals("ANNOTATE"))
                 {
-                String[] pieces = getCardStringValue(cards[i]).split(",");
+                String[] pieces = getCardStringValue(hdr.cards[i]).split(",");
                 if (pieces.length > 2)
                     {
                     double xx = Tools.parseDouble(pieces[0]);
@@ -420,13 +420,13 @@ public class FitsJ
                 		String v = k+"= "+val;
                         if (comment != null)
                             v += " / "+comment.trim();
-                        cards[i] = v;
-                        return cards;
+						hdr.cards[i] = v;
+                        return hdr;
                         }
                     }
                 }
 			}
-		return addAnnotateCard(val, comment, cards);
+		return addAnnotateCard(val, comment, hdr);
 		}
 
 	/**
@@ -435,17 +435,17 @@ public class FitsJ
 	 * @param key		A FITS card keyword for those cards to be removed from the FITS header String array.
 	 * @param cards		A String array holding the contents of a FITS header.
 	 */
-	public static String[] removeAnnotateCard (double x, double y, String[] cards)
+	public static Header removeAnnotateCard (double x, double y, Header hdr)
 		{
-		int l = cards.length;
+		int l = hdr.cards.length;
         int i;
         String cardkey = null;
 		for (i=0; i < l; i++)
 			{
-            cardkey = getCardKey(cards[i]);
+            cardkey = getCardKey(hdr.cards[i]);
 			if (cardkey != null && cardkey.equals("ANNOTATE"))
                 {
-                String[] pieces = getCardStringValue(cards[i]).split(",");
+                String[] pieces = getCardStringValue(hdr.cards[i]).split(",");
                 if (pieces.length >2)
                     {
                     double xx = Tools.parseDouble(pieces[0]);
@@ -453,22 +453,22 @@ public class FitsJ
                     double rr = Tools.parseDouble(pieces[2]);  
                     if (!Double.isNaN(xx) && !Double.isNaN(yy) && !Double.isNaN(rr) && (x-xx)*(x-xx) + (y-yy)*(y-yy) < rr * rr)
                         {
-                        String[] hdr = new String[l-1];
+                        String[] hdr2 = new String[l-1];
                         int cnt = 0;
                         for (int j=0; j < l; j++)
                             {
                             if (j != i)
                                 {
-                                hdr[cnt] = new String(cards[j]);
+                                hdr2[cnt] = new String(hdr.cards[j]);
                                 cnt++;
                                 }
                             }
-                        return hdr;
+                        return Header.build(hdr2);
                         }
                     }
                 }
 			}
-		return cards;
+		return hdr;
 		}    
     
 	/**
@@ -476,17 +476,17 @@ public class FitsJ
 	 *
 	 * @param cards		A String array holding the contents of a FITS header.
 	 */
-	public static String[] removeAstrometryAnnotateCards (String[] cards)
+	public static Header removeAstrometryAnnotateCards (Header hdr)
 		{
-		int l = cards.length;
+		int l = hdr.cards.length;
         String cardkey = null;
         int cnt = 0;
 		for (int i=0; i < l; i++)
 			{
-            cardkey = getCardKey(cards[i]);
+            cardkey = getCardKey(hdr.cards[i]);
 			if (cardkey != null && cardkey.equals("ANNOTATE"))
                 {
-                String[] pieces = getCardStringValue(cards[i]).split(",");
+                String[] pieces = getCardStringValue(hdr.cards[i]).split(",");
                 if (pieces.length > 6 && pieces[6].equals("1"))
                     {
                      cnt++;
@@ -495,31 +495,31 @@ public class FitsJ
 			}
         if (cnt > 0)
             {
-            String[] hdr = new String[l-cnt];
+            String[] hdr2 = new String[l-cnt];
             cnt = 0;
             for (int i=0; i < l; i++)
                 {
-                cardkey = getCardKey(cards[i]);
+                cardkey = getCardKey(hdr.cards[i]);
                 if (cardkey != null && cardkey.equals("ANNOTATE"))
                     {
-                    String[] pieces = getCardStringValue(cards[i]).split(",");
+                    String[] pieces = getCardStringValue(hdr.cards[i]).split(",");
                     if (!(pieces.length > 6 && pieces[6].equals("1")))
                         {
-                        hdr[cnt] = new String(cards[i]);
+                        hdr2[cnt] = new String(hdr.cards[i]);
                         cnt++;
                         }
                     }
                 else
                     {
-                    hdr[cnt] = new String(cards[i]);
+                    hdr2[cnt] = new String(hdr.cards[i]);
                     cnt++;                    
                     }
                 }  
-            return hdr;            
+            return Header.build(hdr2);
             }
         else
             {
-            return cards;
+            return hdr;
             }
 		}     
     
@@ -529,18 +529,18 @@ public class FitsJ
 	 *
 	 * @param cards		A String array holding the contents of a FITS header.
 	 */
-	public static String[] removeAnnotateCards (String[] cards)
+	public static Header removeAnnotateCards (Header hdr)
 		{ 
-        return removeCards("ANNOTATE", cards);
+        return removeCards("ANNOTATE", hdr);
         }
    
     
 	/**
 	 * Saves a FITS header in an array of Strings back into an ImagePlus's "Info" property.
 	 */
-	public static void putHeader (ImagePlus img, String[] cards)
+	public static void putHeader (ImagePlus img, Header hdr)
 		{
-		String s = unsplit(cards,"\n");
+		String s = unsplit(hdr.cards,"\n");
 		
 		int depth = img.getStackSize();
 		if (depth == 1)
@@ -567,10 +567,10 @@ public class FitsJ
 	/**
 	 * Saves a FITS header in an array of Strings back into an ImageStack's current slice.
 	 */
-	public static void putHeader (ImageStack stack, String[] cards, int slice)
+	public static void putHeader (ImageStack stack, Header hdr, int slice)
 		{
-        if (cards==null) return;
-		String s = unsplit(cards,"\n");
+        if (hdr==null) return;
+		String s = unsplit(hdr.cards,"\n");
 		String label = stack.getSliceLabel(slice);
         if (label == null)
             {
@@ -591,15 +591,15 @@ public class FitsJ
 	 * @param card		A FITS card image to be added to the FITS header String array.
 	 * @param cards		A String array holding the contents of a FITS header.
 	 */
-	public static String[] addCard (String card, String[] cards)
+	public static Header addCard (String card, Header hdr)
 		{
-		int l = cards.length;
-		String[] hdr = new String[l+1];
+		int l = hdr.cards.length;
+		String[] hdr2 = new String[l+1];
 		for (int i=0; i < l; i++)
-			hdr[i] = new String (cards[i]);
-		hdr[l-1] = new String (card);
-		hdr[l] = "END";
-		return hdr;
+			hdr2[i] = new String (hdr.cards[i]);
+		hdr2[l-1] = new String (card);
+		hdr2[l] = "END";
+		return Header.build(hdr2);
 		}
 
 
@@ -609,19 +609,19 @@ public class FitsJ
 	 * @param cards			The array of strings containing the FITS header.
 	 * @param pos			The card position where a new blank card should be inserted.
 	 */
-	public static String[] insertBlankCard (String[] cards, int pos)
+	public static Header insertBlankCard (Header hdr, int pos)
 		{
-		int l = cards.length;
-		if (pos == l-1 && cards[l-1].equals("END"))
-			return addCard ("",cards);
+		int l = hdr.cards.length;
+		if (pos == l-1 && hdr.cards[l-1].equals("END"))
+			return addCard ("",hdr);
 
-		String[] hdr = new String[l+1];
+		String[] hdr2 = new String[l+1];
 		for (int i=0; i < pos; i++)
-			hdr[i] = new String (cards[i]);
-		hdr[pos] = "";
+			hdr2[i] = new String (hdr.cards[i]);
+		hdr2[pos] = "";
 		for (int i=pos+1; i <= l; i++)
-			hdr[i] = new String (cards[i-1]);
-		return hdr;
+			hdr2[i] = new String (hdr.cards[i-1]);
+		return Header.build(hdr2);
 		}
 
 	/**
@@ -630,31 +630,31 @@ public class FitsJ
 	 * @param key		A FITS card keyword for those cards to be removed from the FITS header String array.
 	 * @param cards		A String array holding the contents of a FITS header.
 	 */
-	public static String[] removeCards (String key, String[] cards)
+	public static Header removeCards (String key, Header hdr)
 		{
-		int l = cards.length;
+		int l = hdr.cards.length;
         int num = 0;
         String cardkey = null;
 		for (int i=0; i < l; i++)
 			{
-            cardkey = getCardKey(cards[i]);
+            cardkey = getCardKey(hdr.cards[i]);
 			if (cardkey != null && cardkey.equals(key))
                 {
 				num++;
                 }
 			}
-		String[] hdr = new String[l-num];
+		String[] hdr2 = new String[l-num];
         int cnt = 0;
 		for (int i=0; i < l; i++)
 			{
-            cardkey = getCardKey(cards[i]);
+            cardkey = getCardKey(hdr.cards[i]);
 			if (cardkey == null || !cardkey.equals(key))
                 {
-				hdr[cnt] = new String(cards[i]);
+				hdr2[cnt] = new String(hdr.cards[i]);
                 cnt++;
                 }
 			}
-		return hdr;
+		return Header.build(hdr2);
 		}
 
 	/**
@@ -663,16 +663,18 @@ public class FitsJ
 	 * @param header	A String array holding the contents of a FITS header.
 	 * @param key		A String containing the FITS keyword to be searched for.
 	 */
-	public static int findCardWithKey (String key, String[] header)
+	public static int findCardWithKey (String key, Header header)
 		{
 		if (key == null) return -1;
 		if (header == null) return -1;
-		int n=header.length;
+
+		header.ensureValidity();
+
+		int n=header.cards.length;
 		String k = key.trim();
 		for (int i=0; i < n; i++)
 			{
-			String[] l = header[i].trim().split("=");
-			if (l.length > 0 && l[0].trim().equals(k)) return i;
+			if (header.maybeKeys[i].equals(k)) return i;
 			}
 
 		return -1;
@@ -684,16 +686,16 @@ public class FitsJ
 	 * @param img			The image whose comments are to be extended.
 	 * @param comment		The FITS comment string.
 	 */
-	public static String[] addComment (String comment, String[] cards)
+	public static Header addComment (String comment, Header hdr)
 		{
-		if (cards == null) return null;
+		if (hdr.cards == null) return null;
 
 		String[] parts = segmentString(comment,68);
 		if (parts.length > 0)
-			cards = addCard (pad("COMMENT "+parts[0],80),cards);
+			hdr = addCard (pad("COMMENT "+parts[0],80),hdr);
 		for (int i=1; i < parts.length; i++)
-			cards = addCard (pad("COMMENT ... "+parts[i],80),cards);
-		return cards;
+			hdr = addCard (pad("COMMENT ... "+parts[i],80),hdr);
+		return hdr;
 		}
 
 	/**
@@ -703,19 +705,19 @@ public class FitsJ
 	 * @param comment		The FITS comment string.
 	 * @param pos			The card number of the previous card.
 	 */
-	public static String[] addCommentAfter (String comment, String[] cards, int pos)
+	public static Header addCommentAfter (String comment, Header hdr, int pos)
 		{
-		if (cards == null || pos < 0 || pos >= cards.length) return null;
+		if (hdr == null || pos < 0 || pos >= hdr.cards.length) return null;
 
 		String[] parts = segmentString(comment,68);	// len("COMMENT ... ")+68=80
-		String[] hdr = insertBlankCard (cards, pos+1);
-		hdr[pos+1] = pad("COMMENT "+parts[0],80);
+		Header hdr2 = insertBlankCard (hdr, pos+1);
+		hdr2.cards[pos+1] = pad("COMMENT "+parts[0],80);
 		for (int i=1; i < parts.length; i++)
 			{
-			hdr = insertBlankCard (hdr, pos+1+i);
-			hdr[pos+1+i] = pad("COMMENT ... "+parts[i],80);
+			hdr2 = insertBlankCard (hdr, pos+1+i);
+			hdr2.cards[pos+1+i] = pad("COMMENT ... "+parts[i],80);
 			}
-		return hdr;
+		return hdr2;
 		}
 
 	/**
@@ -724,22 +726,22 @@ public class FitsJ
 	 * @param img			The ImagePlus whose history entries are to be extended.
 	 * @param comment		The FITS history string.
 	 */
-	public static String[] addHistory (String history, String[] cards)
+	public static Header addHistory (String history, Header hdr)
 		{
-		if (cards == null) return null;
+		if (hdr == null) return null;
 
 		String[] parts = segmentString(history,68);	// len("HISTORY ... ")+68 = 80
 		if (parts.length > 0)
 			{
 			// IJ.log(parts[0]);
-			cards = addCard (pad("HISTORY "+parts[0],80),cards);
+				hdr = addCard (pad("HISTORY "+parts[0],80),hdr);
 			}
 		for (int i=1; i < parts.length; i++)
 			{
 			// IJ.log(parts[i]);
-			cards = addCard (pad("HISTORY ... "+parts[i],80),cards);
+				hdr = addCard (pad("HISTORY ... "+parts[i],80),hdr);
 			}
-		return cards;
+		return hdr;
 		}
 
 	/**
@@ -825,21 +827,21 @@ public class FitsJ
 			return null;
 			}
 
-		String[] cards = FitsJ.getHeader(img);
-		if (cards == null)
+		Header hdr = FitsJ.getHeader(img);
+		if (hdr == null)
 			{
 			IJ.log("FitsJ.getCardValueFromFile: no FITS header for "+image);
 			return null;
 			}
 
-		int icard = FitsJ.findCardWithKey (key, cards);
+		int icard = FitsJ.findCardWithKey (key, hdr);
 		if (icard < 0) return null;
 
-		String ctype = getCardType(cards[icard]);
+		String ctype = getCardType(hdr.cards[icard]);
 		if (ctype.equals("S"))
-			return getCardStringValue(cards[icard]);
+			return getCardStringValue(hdr.cards[icard]);
 		else
-			return getCardValue(cards[icard]);
+			return getCardValue(hdr.cards[icard]);
 		}
 
 	/**
@@ -864,25 +866,25 @@ public class FitsJ
 			return;
 			}
 
-		String[] cards = FitsJ.getHeader(img);
-		if (cards == null)
+		Header hdr = FitsJ.getHeader(img);
+		if (hdr == null)
 			{
 			IJ.log("FitsJ.setCardOfImage: no FITS header for "+image);
 			return;
 			}
 		if (typ.equals("string"))
-			setCard(key,val,comment,cards);
+			setCard(key,val,comment,hdr);
 		else if (typ.equals("boolean"))
 			{
 			if (val.startsWith("T") || val.startsWith("t"))
-				setCard(key,true,comment,cards);
+				setCard(key,true,comment,hdr);
 			else if (val.startsWith("F") || val.startsWith("f"))
-				setCard(key,false,comment,cards);
+				setCard(key,false,comment,hdr);
 			}
 		else if (typ.equals("integer"))
 			{
 			try	{
-				setCard(key,Integer.parseInt(val),comment,cards);
+				setCard(key,Integer.parseInt(val),comment,hdr);
 				}
 			catch (NumberFormatException e)
 				{
@@ -891,13 +893,13 @@ public class FitsJ
 		else if (typ.equals("double") || typ.equals("float") || typ.startsWith("real"))
 			{
 			try	{
-				setCard(key,Double.parseDouble(val),comment,cards);
+				setCard(key,Double.parseDouble(val),comment,hdr);
 				}
 			catch (NumberFormatException e)
 				{
 				}
 			}
-		putHeader(img,cards);
+		putHeader(img,hdr);
 		}
 
 	/**
@@ -1199,12 +1201,12 @@ public class FitsJ
 	 * @param key		The FITS keyword that should be found and parsed.
 	 * @param cards		The FITS header.
 	 */
-	public static double findDoubleValue (String key, String[] cards) throws NumberFormatException
+	public static double findDoubleValue (String key, Header hdr) throws NumberFormatException
 		{
 		double d = Double.NaN;
-		int icard = findCardWithKey (key, cards);
+		int icard = findCardWithKey (key, hdr);
 		if (icard < 0) return d;
-		return getCardDoubleValue (cards[icard]);
+		return getCardDoubleValue (hdr.cards[icard]);
 		}
 
 	/**
@@ -1213,11 +1215,11 @@ public class FitsJ
 	 * @param key		The FITS keyword that should be found and parsed.
 	 * @param cards		The FITS header.
 	 */
-	public static int findIntValue (String key, String[] cards) throws NumberFormatException
+	public static int findIntValue (String key, Header hdr) throws NumberFormatException
 		{
-		int icard = findCardWithKey (key, cards);
+		int icard = findCardWithKey (key, hdr);
 		if (icard < 0) throw new NumberFormatException();
-		return getCardIntValue (cards[icard]);
+		return getCardIntValue (hdr.cards[icard]);
 		}
 
 	/**
@@ -1356,7 +1358,7 @@ public class FitsJ
 	 */
 	public static void copyHeader (ImagePlus imFrom, ImagePlus imTo)
 		{
-		String[] hdrFrom = getHeader (imFrom);
+		Header hdrFrom = getHeader (imFrom);
 		if (hdrFrom != null)
 			{
 			hdrFrom = addHistory ("Complete FITS header copied from image "+imFrom.getShortTitle()+", slice "+imFrom.getCurrentSlice(), hdrFrom);
@@ -1371,8 +1373,8 @@ public class FitsJ
 		{
 		// GET HEADERS
 
-		String[] hdrFrom = getHeader (imFrom);
-		String[] hdrTo = getHeader (imTo);
+		Header hdrFrom = getHeader (imFrom);
+		Header hdrTo = getHeader (imTo);
 
 		// TRANSFER CARDS WITH THE SELECTED KEYWORDS
 
@@ -1381,7 +1383,7 @@ public class FitsJ
 			{
 			int icard = findCardWithKey (keys[i], hdrFrom);
 			if (icard >= 0)
-				hdrTo = addCard (hdrFrom[icard], hdrTo);
+				hdrTo = addCard (hdrFrom.cards[icard], hdrTo);
 			}
 
 		// SAVE RESULTING HEADER
@@ -1457,14 +1459,14 @@ public class FitsJ
 	 * Extracts a DateTime string either from an explicit DateTime entry or builds one from
 	 * separate date and time entries.
 	 */
-	public static String getDateTime (String[] cards)
+	public static String getDateTime (Header hdr)
 		{
-		String dt = getExplicitDateTime (cards);
+		String dt = getExplicitDateTime (hdr);
 		if (dt != null) return dt;
 
-		String date = getDate (cards);
+		String date = getDate (hdr);
 		if (date == null) return null;
-		String time = getTime (cards);
+		String time = getTime (hdr);
 		if (time == null) return null;
 		dt = date+"T"+time;
 		return dt;
@@ -1473,9 +1475,9 @@ public class FitsJ
 	/**
 	 * Extracts explicit DateTime string from the FITS "DATE-OBS" entry.
 	 */
-	public static String getExplicitDateTime (String[] cards)
+	public static String getExplicitDateTime (Header hdr)
 		{
-		String datum = getDateObs(cards);
+		String datum = getDateObs(hdr);
 		if (datum == null) return null;
 
 		// MAKE SURE IT'S REALLY AN ISO DATETIME WITH yyyy-{m}m-{d}dT{hh:mm:ss}
@@ -1492,41 +1494,41 @@ public class FitsJ
 	/**
 	 * Extracts calendar date from the FITS header stored in a String array.
 	 */
-	public static String getDateObs (String[] cards)
+	public static String getDateObs (Header hdr)
 		{
 		String dateobs = null;
 
 		// TRY "DATE-OBS"
 
-		int icard = findCardWithKey ("DATE-OBS", cards);
+		int icard = findCardWithKey ("DATE-OBS", hdr);
 		if (icard > 0)
-			dateobs = getCardStringValue (cards[icard]);
+			dateobs = getCardStringValue (hdr.cards[icard]);
 
 		// TRY "DATEOBS"
 
 		if (dateobs == null)
 			{
-			icard = findCardWithKey ("DATEOBS", cards);
+			icard = findCardWithKey ("DATEOBS", hdr);
 			if (icard > 0)
-				dateobs = getCardStringValue (cards[icard]);
+				dateobs = getCardStringValue (hdr.cards[icard]);
 			}
 
 		// TRY "DATE_OBS"
 
 		if (dateobs == null)
 			{
-			icard = findCardWithKey ("DATE_OBS", cards);
+			icard = findCardWithKey ("DATE_OBS", hdr);
 			if (icard > 0)
-				dateobs = getCardStringValue (cards[icard]);
+				dateobs = getCardStringValue (hdr.cards[icard]);
 			}
         
  		// TRY "UT_DATE"
 
 		if (dateobs == null)
 			{
-			icard = findCardWithKey ("UT_DATE", cards);
+			icard = findCardWithKey ("UT_DATE", hdr);
 			if (icard > 0)
-				dateobs = getCardStringValue (cards[icard]);
+				dateobs = getCardStringValue (hdr.cards[icard]);
 			}       
 
 		return dateobs;
@@ -1535,9 +1537,9 @@ public class FitsJ
 	/**
 	 * Extracts calendar date from the FITS header stored in a String array.
 	 */
-	public static String getDate (String[] cards)
+	public static String getDate (Header hdr)
 		{
-		String datum = getDateObs (cards);
+		String datum = getDateObs (hdr);
 		if (datum == null) return null;
 
 		// RE-ARRANGE INTO ISO FORMAT
@@ -1577,122 +1579,122 @@ public class FitsJ
 	/**
 	 * Extracts UT Time from a FITS header in the form of a String array.
 	 */
-	public static String getTimeObs (String[] cards)
+	public static String getTimeObs (Header hdr)
 		{
 		String timeobs = null;
 
 		// TRY "TIME-OBS"
 
-		int icard = findCardWithKey ("TIME-OBS", cards);
+		int icard = findCardWithKey ("TIME-OBS", hdr);
 		if (icard > 0)
-			timeobs = getCardStringValue (cards[icard]);
+			timeobs = getCardStringValue (hdr.cards[icard]);
 
 		// TRY "TIMEOBS"
 
 		if (timeobs == null)
 			{
-			icard = findCardWithKey ("TIMEOBS", cards);
+			icard = findCardWithKey ("TIMEOBS", hdr);
 			if (icard > 0)
-				timeobs = getCardStringValue (cards[icard]);
+				timeobs = getCardStringValue (hdr.cards[icard]);
 			}
 
 		// TRY "TIME_OBS"
 
 		if (timeobs == null)
 			{
-			icard = findCardWithKey ("TIME_OBS", cards);
+			icard = findCardWithKey ("TIME_OBS", hdr);
 			if (icard > 0)
-				timeobs = getCardStringValue (cards[icard]);
+				timeobs = getCardStringValue (hdr.cards[icard]);
 			}
 
 		// OR EXTRACT FROM "TM-START"
 
 		if (timeobs == null)
 			{
-			icard = findCardWithKey ("TM-START", cards);
+			icard = findCardWithKey ("TM-START", hdr);
 			if (icard > 0)
-				timeobs = getCardStringValue (cards[icard]);
+				timeobs = getCardStringValue (hdr.cards[icard]);
 			}
 
 		// OR EXTRACT FROM "TM_START"
 
 		if (timeobs == null)
 			{
-			icard = findCardWithKey ("TM_START", cards);
+			icard = findCardWithKey ("TM_START", hdr);
 			if (icard > 0)
-				timeobs = getCardStringValue (cards[icard]);
+				timeobs = getCardStringValue (hdr.cards[icard]);
 			}
 
 		// OR EXTRACT FROM "UT"
 
 		if (timeobs == null)
 			{
-			icard = findCardWithKey ("UT", cards);
+			icard = findCardWithKey ("UT", hdr);
 			if (icard > 0)
-				timeobs = getCardStringValue (cards[icard]);
+				timeobs = getCardStringValue (hdr.cards[icard]);
 			}
 
 		// OR EXTRACT FROM "UTC"
 
 		if (timeobs == null)
 			{
-			icard = findCardWithKey ("UTC", cards);
+			icard = findCardWithKey ("UTC", hdr);
 			if (icard > 0)
-				timeobs = getCardStringValue (cards[icard]);
+				timeobs = getCardStringValue (hdr.cards[icard]);
 			}
 
 		// OR EXTRACT FROM "UTSTART"
 
 		if (timeobs == null)
 			{
-			icard = findCardWithKey ("UTSTART", cards);
+			icard = findCardWithKey ("UTSTART", hdr);
 			if (icard > 0)
-				timeobs = getCardStringValue (cards[icard]);
+				timeobs = getCardStringValue (hdr.cards[icard]);
 			}
 
 		// OR EXTRACT FROM "UT-START"
 
 		if (timeobs == null)
 			{
-			icard = findCardWithKey ("UT-START", cards);
+			icard = findCardWithKey ("UT-START", hdr);
 			if (icard > 0)
-				timeobs = getCardStringValue (cards[icard]);
+				timeobs = getCardStringValue (hdr.cards[icard]);
 			}
 
 		// OR EXTRACT FROM "UT_START"
 
 		if (timeobs == null)
 			{
-			icard = findCardWithKey ("UT_START", cards);
+			icard = findCardWithKey ("UT_START", hdr);
 			if (icard > 0)
-				timeobs = getCardStringValue (cards[icard]);
+				timeobs = getCardStringValue (hdr.cards[icard]);
 			}
         
 		// OR EXTRACT FROM "UT_TIME"
 
 		if (timeobs == null)
 			{
-			icard = findCardWithKey ("UT_TIME", cards);
+			icard = findCardWithKey ("UT_TIME", hdr);
 			if (icard > 0)
-				timeobs = getCardStringValue (cards[icard]);
+				timeobs = getCardStringValue (hdr.cards[icard]);
 			}    
         
 		// OR EXTRACT FROM "TAIHMS"
 
 		if (timeobs == null)
 			{
-			icard = findCardWithKey ("TAIHMS", cards);
+			icard = findCardWithKey ("TAIHMS", hdr);
 			if (icard > 0)
-				timeobs = getCardStringValue (cards[icard]);
+				timeobs = getCardStringValue (hdr.cards[icard]);
 			}  
         
         // OR EXTRACT FROM "UTCSTART" (SOFIA)
         
 		if (timeobs == null)
 			{
-			icard = findCardWithKey ("UTCSTART", cards);
+			icard = findCardWithKey ("UTCSTART", hdr);
 			if (icard > 0)
-				timeobs = getCardStringValue (cards[icard]);
+				timeobs = getCardStringValue (hdr.cards[icard]);
 			}        
 
 		return timeobs;
@@ -1701,9 +1703,9 @@ public class FitsJ
 	/**
 	 * Extracts UT Time in format hh:mm:ss from a FITS header in a String array.
 	 */
-	public static String getTime (String[] cards)
+	public static String getTime (Header hdr)
 		{
-		String datum = getTimeObs (cards);
+		String datum = getTimeObs (hdr);
         if (datum == null) return null;
         
 		String dt="";
@@ -1748,10 +1750,10 @@ public class FitsJ
 	/**
 	 * Returns time of day in seconds.
 	 */
-	public static double getDecimalTime (String[] cards)
+	public static double getDecimalTime (Header hdr)
 		{
 		double t = Double.NaN;
-		String time = getTime(cards);
+		String time = getTime(hdr);
 		if (time == null) return Double.NaN;
 
 		try	{
@@ -1773,7 +1775,7 @@ public class FitsJ
 	 *
 	 * Version 2009-01-10: accepts double values in strings via new getCardDoubleValue().
 	 */
-	public static double getExposureTime (String[] cards)
+	public static double getExposureTime (Header hdr)
 		{
 		double tstart=0.0;
 		double tend=0.0;
@@ -1786,12 +1788,12 @@ public class FitsJ
 
             // CHECK FOR KEYWORD "TELAPSE" (e.g. TESS)
 
-			icard = findCardWithKey ("TELAPSE",cards);
+			icard = findCardWithKey ("TELAPSE",hdr);
 			if (icard >= 0)
 				{
-				tstart = getCardDoubleValue (cards[icard]);
+				tstart = getCardDoubleValue (hdr.cards[icard]);
 				if (! Double.isNaN(tstart)) {
-					tcomment = getCardComment(cards[icard]);
+					tcomment = getCardComment(hdr.cards[icard]);
 					if (tcomment != null && tcomment.contains("[d]")) tstart = tstart * 24.0 * 3600.0;
 					}
 				return tstart;
@@ -1800,12 +1802,12 @@ public class FitsJ
 			// CHECK FOR STANDARD KEYWORD "EXPTIME" (SECS)
 
 
-			icard = findCardWithKey ("EXPTIME",cards);
+			icard = findCardWithKey ("EXPTIME",hdr);
 			if (icard >= 0)
 				{
-				tstart = getCardDoubleValue (cards[icard]);
+				tstart = getCardDoubleValue (hdr.cards[icard]);
 				if (! Double.isNaN(tstart)) {
-					tcomment = getCardComment(cards[icard]);
+					tcomment = getCardComment(hdr.cards[icard]);
 					if (tcomment != null && tcomment.contains("[d]")) tstart = tstart * 24.0 * 3600.0;
 					}
 				return tstart;
@@ -1813,12 +1815,12 @@ public class FitsJ
 
 			// CHECK FOR KEYWORD "EXPOSURE" (e.g. Mount Stromlo)
 
-			icard = findCardWithKey ("EXPOSURE",cards);
+			icard = findCardWithKey ("EXPOSURE",hdr);
 			if (icard >= 0)
 				{
-				tstart = getCardDoubleValue (cards[icard]);
+				tstart = getCardDoubleValue (hdr.cards[icard]);
 				if (! Double.isNaN(tstart)) {
-					tcomment = getCardComment(cards[icard]);
+					tcomment = getCardComment(hdr.cards[icard]);
 					if (tcomment != null && tcomment.contains("[d]")) tstart = tstart * 24.0 * 3600.0;
 					}
 				return tstart;
@@ -1826,12 +1828,12 @@ public class FitsJ
             
             // CHECK FOR KEYWORD "EXP_TIME" (e.g. Mt. Laguna)
             
-            icard = findCardWithKey ("EXP_TIME",cards);
+            icard = findCardWithKey ("EXP_TIME",hdr);
 			if (icard >= 0)
 				{
-				tstart = getCardDoubleValue (cards[icard]);
+				tstart = getCardDoubleValue (hdr.cards[icard]);
 				if (! Double.isNaN(tstart)) {
-					tcomment = getCardComment(cards[icard]);
+					tcomment = getCardComment(hdr.cards[icard]);
 					if (tcomment != null && tcomment.contains("[d]")) tstart = tstart * 24.0 * 3600.0;
 					}
 				return tstart;
@@ -1839,31 +1841,31 @@ public class FitsJ
 
 			// OR CHECK FOR 'TM-START' AND 'TM-END' (SECS)
 
-			icard = findCardWithKey ("TM-START",cards);
-			icard2 = findCardWithKey ("TM-END",cards);
+			icard = findCardWithKey ("TM-START",hdr);
+			icard2 = findCardWithKey ("TM-END",hdr);
 
 			// OR CHECK FOR 'TM_START' AND 'TM_END' (SECS)
 
 			if (icard < 0 || icard2 < 0)
 				{
-				icard  = findCardWithKey ("TM_START",cards);
-				icard2 = findCardWithKey ("TM_END",cards);
+				icard  = findCardWithKey ("TM_START",hdr);
+				icard2 = findCardWithKey ("TM_END",hdr);
 				}
 
 			// OR CHECK FOR 'UT-START' AND 'UT-END' (SECS)
 
 			if (icard < 0 || icard2 < 0)
 				{
-				icard  = findCardWithKey ("UT-START",cards);
-				icard2 = findCardWithKey ("UT-END",cards);
+				icard  = findCardWithKey ("UT-START",hdr);
+				icard2 = findCardWithKey ("UT-END",hdr);
 				}
 
 			// OR CHECK FOR 'UT_START' AND 'UT_END' (SECS)
 
 			if (icard < 0 || icard2 < 0)
 				{
-				icard  = findCardWithKey ("UT_START",cards);
-				icard2 = findCardWithKey ("UT_END",cards);
+				icard  = findCardWithKey ("UT_START",hdr);
+				icard2 = findCardWithKey ("UT_END",hdr);
 				}
 
 			// OR GIVE UP
@@ -1871,8 +1873,8 @@ public class FitsJ
 			if (icard < 0 || icard2 < 0)
 				return Double.NaN;
 
-			tstart = getCardDoubleValue (cards[icard]);
-			tend   = getCardDoubleValue (cards[icard2]);
+			tstart = getCardDoubleValue (hdr.cards[icard]);
+			tend   = getCardDoubleValue (hdr.cards[icard2]);
 			if (Double.isNaN(tstart) || Double.isNaN(tend))
 				return Double.NaN;
 			}
@@ -1894,10 +1896,10 @@ public class FitsJ
 	/**
 	 * Returns mid-exposure dateTime using a Properties list.
 	 */
-	public static String getMeanDateTime (String[] cards)
+	public static String getMeanDateTime (Header hdr)
 		{
-		String dt = getDateTime (cards);
-		double t = getExposureTime (cards);
+		String dt = getDateTime (hdr);
+		double t = getExposureTime (hdr);
 		if (dt == null || Double.isNaN(t)) return null;
 
 		t *= 0.5;
@@ -1929,20 +1931,20 @@ public class FitsJ
 
 /**************************************** JD METHODS **************************************************/
 
-    public static boolean isTESS(String[] cards)
+    public static boolean isTESS(Header hdr)
         {
 		Boolean isTess = true;
         String value = "";
-		int icard = findCardWithKey ("TELESCOP", cards);
+		int icard = findCardWithKey ("TELESCOP", hdr);
 		if (icard > 0)
             {
-			value = getCardStringValue (cards[icard]);
+			value = getCardStringValue (hdr.cards[icard]);
             if (!value.toLowerCase().contains("tess")) isTess = false;
             }
-        icard = findCardWithKey ("INSTRUME", cards);
+        icard = findCardWithKey ("INSTRUME", hdr);
 		if (icard > 0)
             {
-			value = getCardStringValue (cards[icard]);
+			value = getCardStringValue (hdr.cards[icard]);
             if (!value.toLowerCase().contains("tess photometer")) isTess = false;
             }
         return isTess;
@@ -1952,47 +1954,47 @@ public class FitsJ
 	 * Returns BJD_TDB_MID_OBS from a TESS FITS headers.
 	 */
     
-    public static double getMeanTESSBJD (String[] cards)
+    public static double getMeanTESSBJD (Header hdr)
         {
         double tstart=0, tstop=0, bjdreff=0, bjdtdb=0;
         int bjdrefi=0, icard=0;
         boolean checkBJDTDB=false;
         String value = "";
         
-        icard = findCardWithKey ("TSTART", cards);
+        icard = findCardWithKey ("TSTART", hdr);
 		if (icard > 0)
             {
-            tstart = findDoubleValue ("TSTART", cards);
+            tstart = findDoubleValue ("TSTART", hdr);
             }
         else
             {
             checkBJDTDB=true;
             }
         
-        icard = findCardWithKey ("TSTOP", cards);
+        icard = findCardWithKey ("TSTOP", hdr);
 		if (icard > 0)
             {
-            tstop = findDoubleValue ("TSTOP", cards);
+            tstop = findDoubleValue ("TSTOP", hdr);
             }
         else
             {
             checkBJDTDB=true;
             } 
         
-        icard = findCardWithKey ("BJDREFI", cards);
+        icard = findCardWithKey ("BJDREFI", hdr);
 		if (icard > 0)
             {
-            bjdrefi = findIntValue ("BJDREFI", cards);
+            bjdrefi = findIntValue ("BJDREFI", hdr);
             }
         else
             {
             checkBJDTDB=true;
             }
         
-        icard = findCardWithKey ("BJDREFF", cards);
+        icard = findCardWithKey ("BJDREFF", hdr);
 		if (icard > 0)
             {
-            bjdreff = findDoubleValue ("BJDREFF", cards);
+            bjdreff = findDoubleValue ("BJDREFF", hdr);
             }
         else
             {
@@ -2004,10 +2006,10 @@ public class FitsJ
             return tstart + ((tstop-tstart)/2.0) + bjdrefi + bjdreff;
             }
 
-        icard = findCardWithKey ("BJD_TDB", cards);
+        icard = findCardWithKey ("BJD_TDB", hdr);
 		if (icard > 0)
             {
-            bjdtdb = findDoubleValue ("BJD_TDB", cards);
+            bjdtdb = findDoubleValue ("BJD_TDB", hdr);
             return bjdtdb;
             }
         return Double.NaN;
@@ -2017,29 +2019,29 @@ public class FitsJ
 	/**
 	 * Returns JD from a FITS header stored in a String array.
 	 */
-	public static double getJD (String[] cards)
+	public static double getJD (Header hdr)
 		{
 		boolean modified = false;
 		double julian = Double.NaN;
 
 		// TRY TO GET JD FROM FITS HEADER
 
-    	String dt = getDateTime (cards);
+    	String dt = getDateTime (hdr);
 		if (dt != null) julian = JulianDate.JD (dt);
         
         if (Double.isNaN(julian))
-		    julian = findDoubleValue ("JD-OBS", cards);
+		    julian = findDoubleValue ("JD-OBS", hdr);
 		if (Double.isNaN(julian))
-			julian = findDoubleValue ("JD", cards);
+			julian = findDoubleValue ("JD", hdr);
 		if (Double.isNaN(julian))
 			{
-			julian = findDoubleValue ("MJD-OBS", cards);
+			julian = findDoubleValue ("MJD-OBS", hdr);
 			if (!Double.isNaN(julian))
 				modified = true;
 			}
 		if (Double.isNaN(julian))
 			{
-			julian = findDoubleValue ("MJD", cards);
+			julian = findDoubleValue ("MJD", hdr);
 			if (!Double.isNaN(julian))
 				modified = true;
 			}
@@ -2054,10 +2056,10 @@ public class FitsJ
 	/**
 	 * Returns mid-exposure Julian Date from a FITS header stored in a String array.
 	 */
-	public static double getMeanJD (String[] cards)
+	public static double getMeanJD (Header hdr)
 		{
-		double jd = getJD (cards);
-		double texp = getExposureTime (cards);
+		double jd = getJD (hdr);
+		double texp = getExposureTime (hdr);
 		if (Double.isNaN(jd) || Double.isNaN(texp))
 			return Double.NaN;
 		else
@@ -2067,9 +2069,9 @@ public class FitsJ
 	/**
 	 * Returns MJD from a FITS header stored in a String array.
 	 */
-	public static double getMJD (String[] cards)
+	public static double getMJD (Header hdr)
 		{
-		double jd = getJD (cards);
+		double jd = getJD (hdr);
 		if (!Double.isNaN(jd)) jd -= 2400000.0;
 		return jd;
 		}
@@ -2077,11 +2079,63 @@ public class FitsJ
 	/**
 	 * Returns mid-exposure MJD from a FITS header stored in a String array.
 	 */
-	public static double getMeanMJD (String[] cards)
+	public static double getMeanMJD (Header hdr)
 		{
-		double jd = getMeanJD(cards);
+		double jd = getMeanJD(hdr);
 		if (!Double.isNaN(jd))
 			jd -= 2400000.0;
 		return jd;
 		}
+
+	public record Header(String[] cards, String[] maybeKeys, String[] maybeValues, IntHolder hash) {
+		public static Header build(String[] cards) {
+			var mk = new String[cards.length];
+			var mv = new String[cards.length];
+
+			var p = 0;
+			for (String card : cards) {
+				if (card == null) {
+					p++;
+					continue;
+				}
+				var l = card.trim().split("=");
+				mk[p] = l[0].trim();
+				mv[p++] = l.length > 1 ? l[1].trim() : "";
+			}
+
+			return new Header(cards, mk, mv, new IntHolder(Arrays.hashCode(cards)));
+		}
+
+		public void ensureValidity() {
+			var currentHash = Arrays.hashCode(cards);
+			if (currentHash != hash.i) {
+				var p = 0;
+				for (String card : cards) {
+					if (card == null) {
+						p++;
+						continue;
+					}
+					var l = card.trim().split("=");
+					maybeKeys[p] = l[0].trim();
+					maybeValues[p++] = l.length > 1 ? l[1].trim() : "";
+				}
+			}
+
+			hash.i = currentHash;
+		}
+
+		static class IntHolder {
+			int i = 0;
+
+			public IntHolder(int i) {
+				this.i = i;
+			}
+		}
+
+		@Override
+		public Header clone() {
+			return Header.build(cards);
+		}
+	}
+
 	}

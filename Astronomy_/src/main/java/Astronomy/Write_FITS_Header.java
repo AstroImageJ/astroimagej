@@ -1,10 +1,13 @@
 package Astronomy;// Write_FITS_Header.java
 
-import ij.*;
-import ij.gui.*;
-import ij.plugin.*;
-
-import astroj.*;
+import astroj.FitsJ;
+import astroj.IJU;
+import ij.IJ;
+import ij.ImagePlus;
+import ij.ImageStack;
+import ij.WindowManager;
+import ij.gui.GenericDialog;
+import ij.plugin.PlugIn;
 
 /**
  * Writes a FITS card value to an image given a keyword, value, comment, and type.
@@ -24,7 +27,7 @@ public class Write_FITS_Header implements PlugIn
 
 		ImageStack stack = null;
 		int slice = 1;
-		String[] hdr = null;
+		FitsJ.Header hdr = null;
 
 		GenericDialog gd = new GenericDialog ("Write FITS Header Entry");
 		gd.addChoice      ("Image", IJU.listOfOpenImages(title), title);
@@ -64,7 +67,7 @@ public class Write_FITS_Header implements PlugIn
 			}
 
 		hdr = FitsJ.getHeader(img);
-		if (hdr == null || hdr.length == 0)
+		if (hdr == null || hdr.cards().length == 0)
 			{
 			IJ.error("No FITS header for the image "+title+"!");
 			return;

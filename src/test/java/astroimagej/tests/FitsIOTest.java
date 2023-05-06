@@ -32,8 +32,8 @@ public class FitsIOTest {
 
         assertThat(imp).has(new Condition<>(imagePlus -> {
             var header = FitsJ.getHeader(imagePlus);
-            var oldLength = header.length;
-            return FitsJ.removeAnnotateCards(header).length == oldLength - 4;
+            var oldLength = header.cards().length;
+            return FitsJ.removeAnnotateCards(header).cards().length == oldLength - 4;
         }, "4 annotations"));
     }
 

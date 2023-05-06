@@ -1,10 +1,12 @@
 package Astronomy;// Copy_FITS_Header.java
 
-import ij.*;
-import ij.gui.*;
-import ij.plugin.*;
-
-import astroj.*;
+import astroj.FitsJ;
+import astroj.IJU;
+import ij.IJ;
+import ij.ImagePlus;
+import ij.WindowManager;
+import ij.gui.GenericDialog;
+import ij.plugin.PlugIn;
 
 /**
  * Copies the FITS header from one image to another.  Optionally, a FITS HISTORY entry can be made.
@@ -19,7 +21,7 @@ public class Copy_FITS_Header implements PlugIn
 
 	public void run (String copyTo_ImageName)
 		{
-		String[] header = null;
+		FitsJ.Header header = null;
         
 		// GET LIST OF CURRENT IMAGES
 
@@ -61,7 +63,7 @@ public class Copy_FITS_Header implements PlugIn
 			}
 
 		header = FitsJ.getHeader(img1);
-		if (header == null || header.length == 0)
+		if (header == null || header.cards().length == 0)
 			{
 			IJ.showMessage ("Unable to access FITS header from image "+image1);
 			return;

@@ -1,11 +1,13 @@
 package Astronomy;// Process_Images.java
 
+import astroj.FitsJ;
+import astroj.IJU;
 import ij.*;
-import ij.gui.*;
-import ij.plugin.*;
-import ij.process.*;
-
-import astroj.*;
+import ij.gui.GenericDialog;
+import ij.plugin.PlugIn;
+import ij.process.ImageConverter;
+import ij.process.ImageProcessor;
+import ij.process.StackConverter;
 
 /**
  * Plugin that processes/calibrates CCD images.
@@ -50,7 +52,7 @@ public class Process_Images implements PlugIn
 	public static String PREFS_CCD_DARK = "DARK";
 	public static String PREFS_CCD_FLAT = "FLATFIELD";
 
-	String[] hdr = null;
+	FitsJ.Header hdr = null;
 
 	float darktime = 1.0f;
 	float[] rawtimes;

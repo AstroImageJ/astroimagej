@@ -6915,7 +6915,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         if (showNBackPixels)
             table.addValue("NBackPixels_" + suffix, phot.numberOfBackgroundAperturePixels(), 6);
         if (showTimes) {
-            String[] hdr = FitsJ.getHeader(imp);
+            var hdr = FitsJ.getHeader(imp);
             if (hdr != null) {
                 double mjd = FitsJ.getMeanMJD(hdr);
                 if (Double.isNaN(mjd)) mjd = FitsJ.getMJD(hdr);
@@ -7906,7 +7906,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
     }
 
     protected void addDisplayedAnnotationsToHeader() {
-        String[] header = FitsJ.getHeader(imp);
+        var header = FitsJ.getHeader(imp);
         Roi[] rois = OverlayCanvas.getOverlayCanvas(imp).getRois();
         int len = 0;
         if (rois != null) len = rois.length;
@@ -7929,13 +7929,13 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
     public void displayAnnotationsFromHeader(boolean clearFirst, boolean redraw, boolean forceShow) {
         String key;
         String colorName = defaultAnnotationColor;
-        String[] hdr = FitsJ.getHeader(imp);
+        var hdr = FitsJ.getHeader(imp);
         if (clearFirst) OverlayCanvas.getOverlayCanvas(imp).removeAnnotateRois();
-        if (hdr != null && hdr.length > 0) {
-            for (int i = 0; i < hdr.length; i++) {
-                key = FitsJ.getCardKey(hdr[i]);
-                if (hdr[i] != null && key != null && key.equals("ANNOTATE")) {
-                    String[] pieces = FitsJ.getCardStringValue(hdr[i]).trim().split(",");
+        if (hdr != null && hdr.cards().length > 0) {
+            for (int i = 0; i < hdr.cards().length; i++) {
+                key = FitsJ.getCardKey(hdr.cards()[i]);
+                if (hdr.cards()[i] != null && key != null && key.equals("ANNOTATE")) {
+                    String[] pieces = FitsJ.getCardStringValue(hdr.cards()[i]).trim().split(",");
                     if (pieces.length > 1) {
                         double x = Tools.parseDouble(pieces[0]);
                         double y = Tools.parseDouble(pieces[1]);
@@ -7954,7 +7954,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                             boolean isFromAstrometry = false;
                             if (pieces.length > 6 && pieces[6].equals("1")) isFromAstrometry = true;
                             if (pieces.length > 7) colorName = pieces[7].trim();
-                            String labText = FitsJ.getCardComment(hdr[i]);
+                            String labText = FitsJ.getCardComment(hdr.cards()[i]);
                             if (labText == null) labText = new String("");
                             labText.trim();
                             addAnnotateRoi(imp, showCir, showCen, showLab, isFromAstrometry, IJU.fitsX2ijX(x), IJU.fitsY2ijY(imp.getHeight(), y), rad, labText, IJU.colorOf(colorName), true);

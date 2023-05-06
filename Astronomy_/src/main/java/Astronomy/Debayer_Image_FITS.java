@@ -1,10 +1,13 @@
 package Astronomy;
 
 import astroj.FitsJ;
-import ij.*;
-import ij.plugin.filter.*;
-import ij.process.*;
-import ij.gui.*;
+import ij.IJ;
+import ij.ImagePlus;
+import ij.ImageStack;
+import ij.gui.GenericDialog;
+import ij.plugin.filter.PlugInFilter;
+import ij.process.ImageProcessor;
+import ij.process.ShortProcessor;
 
 //A version of the Debayer plugin that is FITS header aware
 //The original header is copied to each slice of the RGB stack 
@@ -88,8 +91,8 @@ public class Debayer_Image_FITS implements PlugInFilter {
 		ImagePlus rgb_imp = imp.createImagePlus();
 		rgb_imp.setStack("RGB Stack", rgb);
 		rgb_imp.setCalibration(imp.getCalibration());
-        String[] cards = FitsJ.getHeader(imp);
-        if (cards != null && cards.length > 0)
+        var cards = FitsJ.getHeader(imp);
+        if (cards != null && cards.cards().length > 0)
             {
             for (int slice = 1; slice < 4; slice++)
                 {

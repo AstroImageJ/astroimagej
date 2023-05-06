@@ -357,7 +357,7 @@ public class Stack_Aligner extends MultiAperture_
             imp2.setCalibration(imp.getCalibration());  
             imp2.setFileInfo(imp.getFileInfo());
             imp2.setProcessor ("Aligned_"+imageFilename, imp.getType()==ImagePlus.COLOR_RGB ? shiftedRGBImage(dx,dy) : shiftedImage(dx,dy));
-            String[] scienceHeader = FitsJ.getHeader(imp);
+            var scienceHeader = FitsJ.getHeader(imp);
             if (scienceHeader != null)
                 {
                 scienceHeader = updateHeaders(scienceHeader, dx, dy);
@@ -368,7 +368,7 @@ public class Stack_Aligner extends MultiAperture_
         else
             {
             imp.setProcessor ("Aligned_"+imageFilename, imp.getType()==ImagePlus.COLOR_RGB ? shiftedRGBImage(dx,dy) : shiftedImage(dx,dy));
-            String[] scienceHeader = FitsJ.getHeader(imp);
+            var scienceHeader = FitsJ.getHeader(imp);
             if (scienceHeader != null)
                 {
                 scienceHeader = updateHeaders(scienceHeader, dx, dy);
@@ -385,7 +385,7 @@ public class Stack_Aligner extends MultiAperture_
         firstImage = false;
 		}
     
-    protected String[] updateHeaders(String[] header, double dx, double dy)
+    protected FitsJ.Header updateHeaders(FitsJ.Header header, double dx, double dy)
         { 
         if (whole)
             {
@@ -402,20 +402,20 @@ public class Stack_Aligner extends MultiAperture_
         return header;
         }
     
-    protected String[] updateCRPIX(String[] header, double dx, double dy)
+    protected FitsJ.Header updateCRPIX(FitsJ.Header header, double dx, double dy)
         {
         double crpix1, crpix2;
         int index;
         index = FitsJ.findCardWithKey("CRPIX1", header);
         if (index >= 0)
             {
-            crpix1 = FitsJ.getCardDoubleValue(header[index]);
+            crpix1 = FitsJ.getCardDoubleValue(header.cards()[index]);
             header = FitsJ.setCard("CRPIX1", crpix1+dx, "Adjusted by AIJ Stack_Aligner", header);
             }
         index = FitsJ.findCardWithKey("CRPIX2", header);
         if (index >= 0)
             {
-            crpix2 = FitsJ.getCardDoubleValue(header[index]);
+            crpix2 = FitsJ.getCardDoubleValue(header.cards()[index]);
             header = FitsJ.setCard("CRPIX2", crpix2-dy, "Adjusted by AIJ Stack_Aligner", header);
             } 
         
@@ -425,15 +425,15 @@ public class Stack_Aligner extends MultiAperture_
         String label;
         String[] pieces;
         double x, y;
-        for (int i=0; i<header.length; i++)
+        for (int i=0; i<header.cards().length; i++)
             {
-            key = FitsJ.getCardKey(header[i]);
+            key = FitsJ.getCardKey(header.cards()[i]);
             if (key != null && key.equals("ANNOTATE")) 
                 {
-                pieces = FitsJ.getCardStringValue(header[i]).split(",");
+                pieces = FitsJ.getCardStringValue(header.cards()[i]).split(",");
                 if (pieces.length > 1)
                     {
-                    label = FitsJ.getCardComment(header[i]);
+                    label = FitsJ.getCardComment(header.cards()[i]);
                     x = Tools.parseDouble(pieces[0], 0);
                     y = Tools.parseDouble(pieces[1], 0);
                     value = "'"+uptoTwoPlaces.format(x+dx)+","+uptoTwoPlaces.format(y-dy);
@@ -445,7 +445,7 @@ public class Stack_Aligner extends MultiAperture_
                             }
                         }
                     value += "'";
-                    header[i] = FitsJ.createCard("ANNOTATE", value, label);
+                    header.cards()[i] = FitsJ.createCard("ANNOTATE", value, label);
                     }
                 }
             }

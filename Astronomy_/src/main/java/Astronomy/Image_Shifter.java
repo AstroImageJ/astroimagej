@@ -1,11 +1,14 @@
 package Astronomy;// Image_Shifter.java
 
-import ij.*;
-import ij.gui.*;
+import astroj.Centroid;
+import astroj.FitsJ;
+import ij.IJ;
+import ij.ImagePlus;
+import ij.WindowManager;
+import ij.gui.GenericDialog;
 import ij.plugin.filter.PlugInFilter;
-import ij.process.*;
-
-import astroj.*;
+import ij.process.ColorProcessor;
+import ij.process.ImageProcessor;
 
 /**
  * Shifts an image by a simple amount in x and y.
@@ -200,7 +203,7 @@ public class Image_Shifter implements PlugInFilter
 
 		// COPY FITS HEADER
 
-		String[] hdr = FitsJ.getHeader(refImage);
+		var hdr = FitsJ.getHeader(refImage);
 		if (createNew)
 			{
 			String prefix = new String("Shifted_");
@@ -305,7 +308,7 @@ public class Image_Shifter implements PlugInFilter
 			return;
 			}
 
-		String[] hdr = FitsJ.getHeader(refImage);
+		var hdr = FitsJ.getHeader(refImage);
 		if (createNew)
 			{
 			String prefix = new String("Shifted_");

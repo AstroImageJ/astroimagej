@@ -79,14 +79,37 @@ public class FitsJ
 		}
 
 		/**
+     * Extracts the original FITS header from the Properties object of the
+     * ImagePlus image (or from the slice label in the case of an ImageStack)
+     * and returns it as an array of String objects representing each card.
+     *
+     * @param img The ImagePlus image which has the FITS header in it's "Info" property.
+     */
+	public static Header getHeader(ImagePlus img) {
+		return getHeader(img, true);
+	}
+
+		/**
 	 * Extracts the original FITS header from the Properties object of the
 	 * ImagePlus image (or from the slice label in the case of an ImageStack)
 	 * and returns it as an array of String objects representing each card.
 	 *
  * @param img		The ImagePlus image which has the FITS header in it's "Info" property.
 	 */
-	public static Header getHeader(ImagePlus img) {
-		return getHeader(img, img.getCurrentSlice());
+	public static Header getHeader(ImagePlus img, boolean writable) {
+		return getHeader(img, img.getCurrentSlice(), writable);
+	}
+
+		/**
+     * Extracts the original FITS header from the Properties object of the
+     * ImagePlus image (or from the slice label in the case of an ImageStack)
+     * and returns it as an array of String objects representing each card.
+     *
+     * @param img   The ImagePlus image which has the FITS header in it's "Info" property.
+     * @param slice
+     */
+	public static Header getHeader(ImagePlus img, int slice) {
+		return getHeader(img, slice, true);
 	}
 
 		/**
@@ -96,7 +119,7 @@ public class FitsJ
 	 *
 	 * @param img		The ImagePlus image which has the FITS header in it's "Info" property.
 	 */
-	public static Header getHeader(ImagePlus img, int slice)
+	public static Header getHeader(ImagePlus img, int slice, boolean writable)
 		{
 		String content = getHeaderString(img, slice);
 		if (content == null) return null;
@@ -120,7 +143,9 @@ public class FitsJ
 			if ( s.equals("END") || s.startsWith ("END ") ) break;
 			}
 		if (iend >= lines.length) return null;
-		return Header.build(Arrays.copyOfRange(lines, istart, iend+1));
+		var h = Header.build(Arrays.copyOfRange(lines, istart, iend+1));
+		h.holder.setWritable(writable);
+		return h;
 		}
 
 	/**
@@ -2087,7 +2112,7 @@ public class FitsJ
 		return jd;
 		}
 
-	public record Header(String[] cards, String[] maybeKeys, String[] maybeValues, IntHolder hash) {
+	public record Header(String[] cards, String[] maybeKeys, String[] maybeValues, Holder holder) {
 		public static Header build(String[] cards) {
 			var mk = new String[cards.length];
 			var mv = new String[cards.length];
@@ -2103,12 +2128,15 @@ public class FitsJ
 				mv[p++] = l.length > 1 ? l[1].trim() : "";
 			}
 
-			return new Header(cards, mk, mv, new IntHolder(Arrays.hashCode(cards)));
+			return new Header(cards, mk, mv, new Holder(Arrays.hashCode(cards)));
 		}
 
 		public void ensureValidity() {
+			if (!holder.writable) {
+				return;
+			}
 			var currentHash = Arrays.hashCode(cards);
-			if (currentHash != hash.i) {
+			if (currentHash != holder.i) {
 				var p = 0;
 				for (String card : cards) {
 					if (card == null) {
@@ -2121,14 +2149,19 @@ public class FitsJ
 				}
 			}
 
-			hash.i = currentHash;
+			holder.i = currentHash;
 		}
 
-		static class IntHolder {
+		static class Holder {
 			int i = 0;
+			boolean writable = true;
 
-			public IntHolder(int i) {
+			public Holder(int i) {
 				this.i = i;
+			}
+
+			public void setWritable(boolean writable) {
+				this.writable = writable;
 			}
 		}
 

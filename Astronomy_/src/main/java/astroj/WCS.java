@@ -138,7 +138,7 @@ public class WCS
 	public WCS (ImagePlus img)
 		{
 		NAXIS=2;
-		var hdr = FitsJ.getHeader (img);
+		var hdr = FitsJ.getHeader (img, false);
 		if (hdr == null) return;
 		process(img.getShortTitle(),img.getWidth(),img.getHeight(),img.getStackSize(),hdr);
 		}

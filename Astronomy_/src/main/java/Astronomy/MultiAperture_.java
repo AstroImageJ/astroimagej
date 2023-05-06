@@ -2667,7 +2667,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 asw = (AstroStackWindow) imp.getWindow();
                 ac = (AstroCanvas) imp.getCanvas();
 
-                updateImageDisplay.ifProp(() -> {
+                if (updateImageDisplay.get()) {
                     // This fixes the counter subtitle of the stack window not updating as the images progress
                     asw.update(asw.getGraphics());
 
@@ -2682,11 +2682,13 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     // Fixes apertures not properly being drawn/cleared when autoNupEleft is disabled
                     //KC: but I don't understand why
                     asw.repaintAstroCanvas();
-                }, () -> {
-                    asw.updateWCS();
-                });
 
-                updateImageDisplay.ifProp(this::waitForEventQueue);
+                    waitForEventQueue();
+                } else {
+                    if (useWCS) {
+                        asw.updateWCS();
+                    }
+                }
 
                 hasWCS = asw.hasWCS();
                 if (hasWCS) wcs = asw.getWCS();

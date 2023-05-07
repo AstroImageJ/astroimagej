@@ -1560,11 +1560,24 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
         var hasErrored = 0;
         var oc = OverlayCanvas.getOverlayCanvas(asw.getImagePlus());
+        updateImageDisplay.ifProp(() -> {}, () -> {
+            if (imp.getCanvas() instanceof AstroCanvas a) {
+                a.setPerformDraw(false);
+            }
+        });
         for (int i = firstSlice; i <= lastSlice; i++) {
-            imp.unlock();
-            asw.showSlice(i);
-            imp.lockSilently();
-            asw.updateWCS();
+            int finalI = i;
+            updateImageDisplay.ifProp(() -> {
+                imp.unlock();
+                asw.showSlice(finalI);
+                imp.lockSilently();
+            }, () -> {
+                imp.setSliceWithoutUpdate(finalI);
+            });
+
+            if (useWCS) {
+                asw.updateWCS();
+            }
             oc.clearRois();
 
             if (useWCS && asw.goodWCS && raPos > -1000000 && decPos > -1000000) {
@@ -1592,6 +1605,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
             radii.add(rs);
             IJ.showProgress(i / (float)(lastSlice - firstSlice));
+        }
+        if (imp.getCanvas() instanceof AstroCanvas a) {
+            a.setPerformDraw(true);
         }
         imp.setSlice(firstSlice);
         imp.unlock();

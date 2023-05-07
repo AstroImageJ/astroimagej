@@ -23,7 +23,6 @@ public class Straightener implements PlugIn {
 		}
 		if (!imp.lock()) return;
 		int width = (int)Math.round(roi.getStrokeWidth());
-		int originalWidth = width;
 		boolean isMacro = IJ.macroRunning() && Macro.getOptions()!=null;
 		int stackSize = imp.getStackSize();
 		if (stackSize==1) processStack = false;
@@ -39,7 +38,7 @@ public class Straightener implements PlugIn {
 			if (gd.wasCanceled()) {imp.unlock(); return;}
 			newTitle = gd.getNextString();
 			width = (int)gd.getNextNumber();
-			Line.setWidth(width);
+			roi.setStrokeWidth(width);
 			if (stackSize>1)
 				processStack = gd.getNextBoolean();
 		}
@@ -63,7 +62,6 @@ public class Straightener implements PlugIn {
 		if (cal.pixelWidth==cal.pixelHeight)
 			imp2.setCalibration(cal);
 		imp2.show();
-		if (isMacro) Line.setWidth(originalWidth);
 	}
 
 	public ImageProcessor straighten(ImagePlus imp, Roi roi, int width) {
@@ -97,10 +95,19 @@ public class Straightener implements PlugIn {
 		imp.setSlice(current);
 		return stack2;
 	}
-
+	
 	public ImageProcessor straightenLine(ImagePlus imp, int width) {
+		return straightenLine(imp, null, width);
+	}
+
+	public ImageProcessor straightenLine(ImagePlus imp, Line line, int width) {
 		Roi tempRoi = imp.getRoi();
-		if (tempRoi == null) return null;	//roi may have changed asynchronously
+		if (line!=null) {
+			tempRoi = line;
+			width = (int)line.getStrokeWidth();
+		}
+		if (tempRoi == null)
+			return null;	//roi may have changed asynchronously
 		if (tempRoi instanceof Line) {
 			FloatPolygon fp = ((Line)tempRoi).getFloatPoints();
 			tempRoi = new PolygonRoi(fp.xpoints, fp.ypoints, 2, Roi.POLYLINE);
@@ -175,7 +182,7 @@ public class Straightener implements PlugIn {
 		Roi roi = imp.getRoi();
 		if (roi==null || roi.getType()!=Roi.LINE)
 			throw new IllegalArgumentException("Straight line selection expected");
-		ImageProcessor ip2 = imp.getBitDepth()==24?straightenRGB(imp, width):straightenLine(imp, width);
+		ImageProcessor ip2 = imp.getBitDepth()==24?straightenRGB(imp,width):straightenLine(imp,width);
 		return ip2;
 	}
 

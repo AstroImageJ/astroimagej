@@ -1,10 +1,9 @@
 package ij.process;
 
-import java.util.*;
+import ij.ImageStack;
+
 import java.awt.*;
 import java.awt.image.*;
-import ij.gui.*;
-import ij.ImageStack;
 
 /**
 This is an 32-bit RGB image and methods that operate on that image.. Based on the ImageProcessor class from
@@ -73,6 +72,7 @@ public class ColorProcessor extends ImageProcessor {
 			rgbRaster = Raster.createWritableRaster(rgbSampleModel, dataBuffer, null);
 		}
 		if (image==null) {
+			if (cm==null) createColorModel();
 			image = new BufferedImage(cm, rgbRaster, false, null);
 		}
 		return image;
@@ -113,6 +113,11 @@ public class ColorProcessor extends ImageProcessor {
 		fgColor = color.getRGB();
 		drawingColor = color;
 		fillValueSet = true;
+	}
+	
+	/** Sets the background fill/draw color. */
+	public void setBackgroundColor(Color color) {
+		setBackgroundValue(color.getRGB());
 	}
 
 	/** Sets the fill/draw color, where <code>color</code> is an RGB int. */

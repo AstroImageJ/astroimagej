@@ -1,5 +1,9 @@
 package ij.gui;
-import ij.*;
+
+import ij.IJ;
+import ij.ImageJ;
+import ij.Prefs;
+
 import java.awt.*;
 import java.awt.event.*;
 
@@ -28,7 +32,7 @@ public class MessageDialog extends Dialog implements ActionListener, KeyListener
 		if (font!=null)
 			label.setFont(font);
 		else if (!IJ.isLinux())
-			label.setFont(new Font("SansSerif", Font.PLAIN, 14));
+			label.setFont(ImageJ.SansSerif14);
 		Panel panel = new Panel();
 		panel.setLayout(new FlowLayout(FlowLayout.CENTER, 15, 15));
 		panel.add(label);

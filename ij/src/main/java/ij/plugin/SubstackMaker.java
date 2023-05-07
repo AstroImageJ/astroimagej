@@ -65,6 +65,7 @@ public class SubstackMaker implements PlugIn {
 	}
 
 	public ImagePlus makeSubstack(ImagePlus imp, String userInput) {
+		boolean hasFrames = imp.getNFrames()==imp.getStackSize();
 		String stackTitle = "Substack ("+userInput+")";
 		if (stackTitle.length()>25) {
 			int idxA = stackTitle.indexOf(",",18);
@@ -120,6 +121,8 @@ public class SubstackMaker implements PlugIn {
 		} catch (Exception e) {
 			IJ.error("Substack Maker", "Invalid input string:  \n \n  \""+userInput+"\"");
 		}
+		if (hasFrames && imp2!=null)
+			imp2.setDimensions(1, 1, imp2.getStackSize());
 		return imp2;
 	}
 	
@@ -159,6 +162,7 @@ public class SubstackMaker implements PlugIn {
 		double min = imp.getDisplayRangeMin();
 		double max = imp.getDisplayRangeMax();
 		Roi roi = imp.getRoi();
+		boolean dup = imp.getWindow()!=null && !delete;
 		for (int i=0, j=0; i<count; i++) {
 			int currSlice = numList[i]-j;
 			ImageProcessor ip2 = stack.getProcessor(currSlice);
@@ -167,7 +171,7 @@ public class SubstackMaker implements PlugIn {
 				ip2 = ip2.crop();
 			if (stack2==null)
 				stack2 = new ImageStack(ip2.getWidth(), ip2.getHeight());
-			stack2.addSlice(stack.getSliceLabel(currSlice), ip2);
+			stack2.addSlice(stack.getSliceLabel(currSlice), dup?ip2.duplicate():ip2);
 			if (delete) {
 				stack.deleteSlice(currSlice);
 				j++;
@@ -197,6 +201,7 @@ public class SubstackMaker implements PlugIn {
 		double max = imp.getDisplayRangeMax();
 		Roi roi = imp.getRoi();
 		boolean showProgress = stack.size()>400 || stack.isVirtual();
+		boolean dup = imp.getWindow()!=null && !delete;
 		for (int i= first, j=0; i<= last; i+=inc) {
 			if (showProgress) IJ.showProgress(i,last);
 			int currSlice = i-j;
@@ -205,7 +210,7 @@ public class SubstackMaker implements PlugIn {
 			ip2 = ip2.crop();
 			if (stack2==null)
 				stack2 = new ImageStack(ip2.getWidth(), ip2.getHeight());
-			stack2.addSlice(stack.getSliceLabel(currSlice), ip2);
+			stack2.addSlice(stack.getSliceLabel(currSlice), dup?ip2.duplicate():ip2);
 			if (delete) {
 				stack.deleteSlice(currSlice);
 				j++;

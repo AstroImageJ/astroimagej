@@ -1,10 +1,17 @@
 package ij.plugin;
-import ij.*;
+
+import ij.CompositeImage;
+import ij.IJ;
+import ij.ImagePlus;
+import ij.VirtualStack;
+import ij.io.FileInfo;
+import ij.io.FileOpener;
+import ij.io.OpenDialog;
+import ij.io.TiffDecoder;
 import ij.process.*;
-import ij.gui.*;
-import ij.io.*;
-import java.awt.*;
-import java.io.*;
+
+import java.io.File;
+import java.io.IOException;
 import java.util.Properties;
 
 /** This plugin opens a multi-page TIFF file, or a set of raw images, as a 
@@ -81,9 +88,9 @@ public class FileInfoVirtualStack extends VirtualStack implements PlugIn {
 		try {
 			info = td.getTiffInfo();
 		} catch (IOException e) {
-			String msg = e.getMessage();
-			if (msg==null||msg.equals("")) msg = ""+e;
-			IJ.error("TiffDecoder", msg);
+			// try opening using bio-formats 
+			dir = IJ.addSeparator(dir);
+			IJ.open(dir+name);
 			return;
 		}
 		if (info==null || info.length==0) {
@@ -98,55 +105,61 @@ public class FileInfoVirtualStack extends VirtualStack implements PlugIn {
 		FileInfo fi = info[0];
 		int n = fi.nImages;
 		if (info.length==1 && n>1) {
-			n = validateNImages(fi);
+			long bytesPerImage = fi.width*fi.height*fi.getBytesPerPixel();
+			if (fi.fileType==FileInfo.GRAY12_UNSIGNED)
+				bytesPerImage = (int)(1.5*fi.width)*fi.height;
+			else if (fi.fileType==FileInfo.GRAY10_UNSIGNED)
+				bytesPerImage = (int)(1.25*fi.width)*fi.height;
+			n = validateNImages(fi, bytesPerImage);
 			info = new FileInfo[n];
-			long size = fi.width*fi.height*fi.getBytesPerPixel();
 			for (int i=0; i<n; i++) {
 				info[i] = (FileInfo)fi.clone();
 				info[i].nImages = 1;
-				info[i].longOffset = fi.getOffset() + i*(size + fi.getGap());
+				info[i].longOffset = fi.getOffset() + i*(bytesPerImage + fi.getGap());
 			}
 		}
 		nImages = info.length;
-		FileOpener fo = new FileOpener(info[0] );
+		FileOpener fo = new FileOpener(info[0]);
 		ImagePlus imp = fo.openImage();
 		if (nImages==1 && fi.fileType==FileInfo.RGB48)
 			return imp;
 		Properties props = fo.decodeDescriptionString(fi);
 		ImagePlus imp2 = new ImagePlus(fi.fileName, this);
+		imp2.setDisplayRange(imp.getDisplayRangeMin(),imp.getDisplayRangeMax());
 		imp2.setFileInfo(fi);
-		if (imp!=null && props!=null) {
+		if (imp!=null) {
 			setBitDepth(imp.getBitDepth());
 			imp2.setCalibration(imp.getCalibration());
 			imp2.setOverlay(imp.getOverlay());
 			if (fi.info!=null)
 				imp2.setProperty("Info", fi.info);
-			int channels = getInt(props,"channels");
-			int slices = getInt(props,"slices");
-			int frames = getInt(props,"frames");
-			if (channels*slices*frames==nImages) {
-				imp2.setDimensions(channels, slices, frames);
-				if (getBoolean(props, "hyperstack"))
-					imp2.setOpenAsHyperStack(true);
-			}
-			if (channels>1 && fi.description!=null) {
-				int mode = IJ.COMPOSITE;
-				if (fi.description.indexOf("mode=color")!=-1)
-					mode = IJ.COLOR;
-				else if (fi.description.indexOf("mode=gray")!=-1)
-					mode = IJ.GRAYSCALE;
-				imp2 = new CompositeImage(imp2, mode);
+			if (props!=null) {
+				int channels = getInt(props,"channels");
+				int slices = getInt(props,"slices");
+				int frames = getInt(props,"frames");
+				if (channels*slices*frames==nImages) {
+					imp2.setDimensions(channels, slices, frames);
+					if (getBoolean(props, "hyperstack"))
+						imp2.setOpenAsHyperStack(true);
+				}
+				if (channels>1 && fi.description!=null) {
+					int mode = IJ.COMPOSITE;
+					if (fi.description.indexOf("mode=color")!=-1)
+						mode = IJ.COLOR;
+					else if (fi.description.indexOf("mode=gray")!=-1)
+						mode = IJ.GRAYSCALE;
+					imp2 = new CompositeImage(imp2, mode);
+				}
 			}
 		}
 		return imp2;
 	}
 	
-	private int validateNImages(FileInfo fi) {
+	private int validateNImages(FileInfo fi, long bytesPerImage) {
 		File f = new File(fi.getFilePath());
 		if (!f.exists())
 			return fi.nImages;
 		long fileLength = f.length();
-		long bytesPerImage = fi.width*fi.height*fi.getBytesPerPixel();
 		for (int i=fi.nImages-1; i>=0; i--) {
 			long offset =  fi.getOffset() + i*(bytesPerImage+fi.getGap());
 			if (offset+bytesPerImage<=fileLength)
@@ -175,7 +188,7 @@ public class FileInfoVirtualStack extends VirtualStack implements PlugIn {
 		return s!=null&&s.equals("true")?true:false;
 	}
 
-	/** Deletes the specified image, were 1<=n<=nImages. */
+	/** Deletes the specified image, where {@literal 1<=n<=nImages}. */
 	public void deleteSlice(int n) {
 		if (n<1 || n>nImages)
 			throw new IllegalArgumentException("Argument out of range: "+n);
@@ -187,7 +200,7 @@ public class FileInfoVirtualStack extends VirtualStack implements PlugIn {
 	}
 	
 	/** Returns an ImageProcessor for the specified image,
-		were 1<=n<=nImages. Returns null if the stack is empty.
+		where {@literal 1<=n<=nImages}. Returns null if the stack is empty.
 	*/
 	public ImageProcessor getProcessor(int n) {
 		n = translate(n);  // update n for hyperstacks not in default CZT order
@@ -195,21 +208,27 @@ public class FileInfoVirtualStack extends VirtualStack implements PlugIn {
 			throw new IllegalArgumentException("Argument out of range: "+n);
 		//if (n>1) IJ.log("  "+(info[n-1].getOffset()-info[n-2].getOffset()));
 		info[n-1].nImages = 1; // why is this needed?
-		ImagePlus imp = null;
+		ImageProcessor ip = null;
 		if (IJ.debugMode) {
 			long t0 = System.currentTimeMillis();
 			FileOpener fo = new FileOpener(info[n-1]);
-			imp = fo.openImage();
+			ip = fo.openProcessor();
 			IJ.log("FileInfoVirtualStack: "+n+", offset="+info[n-1].getOffset()+", "+(System.currentTimeMillis()-t0)+"ms");
 		} else {
 			FileOpener fo = new FileOpener(info[n-1]);
-			imp = fo.openImage();
-			if (info[n-1].fileType==FileInfo.RGB48 && info[n-1].sliceNumber>0)
-				imp.setSlice(info[n-1].sliceNumber);
+			if (info[n-1].fileType==FileInfo.RGB48) {
+				ImagePlus imp = fo.openImage();
+				if (info[n-1].sliceNumber>0)
+					imp.setSlice(info[n-1].sliceNumber);
+				ip = imp.getProcessor();
+			} else
+				ip = fo.openProcessor();
 		}
-		if (imp!=null)
-			return imp.getProcessor();
-		else {
+		if (ip!=null) {
+			if (cTable!=null)
+				ip.setCalibrationTable(cTable);
+			return ip;
+		} else {
 			int w=getWidth(), h=getHeight();
 			IJ.log("Read error or file not found ("+n+"): "+info[n-1].directory+info[n-1].fileName);
 			switch (getBitDepth()) {
@@ -252,7 +271,6 @@ public class FileInfoVirtualStack extends VirtualStack implements PlugIn {
 	/** Adds an image to this stack. */
 	public synchronized  void addImage(FileInfo fileInfo) {
 		nImages++;
-		//IJ.log("addImage: "+nImages+"	"+fileInfo);
 		if (info==null)
 			info = new FileInfo[250];
 		if (nImages==info.length) {

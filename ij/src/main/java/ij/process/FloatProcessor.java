@@ -1,9 +1,8 @@
 package ij.process;
 
-import java.util.*;
 import java.awt.*;
 import java.awt.image.*;
-import ij.gui.*;
+import java.util.Random;
 
 /** This is an 32-bit floating-point image and methods that operate on that image. */
 public class FloatProcessor extends ImageProcessor {
@@ -92,17 +91,26 @@ public class FloatProcessor extends ImageProcessor {
 	public void findMinAndMax() {
 		if (fixedScale)
 			return;
-		min = Float.MAX_VALUE;
-		max = -Float.MAX_VALUE;
-		for (int i=0; i < width*height; i++) {
-			float value = pixels[i];
-			if (!Float.isInfinite(value)) {
-				if (value<min)
-					min = value;
-				if (value>max)
-					max = value;
-			}
+		float min = Float.NaN;
+		float max = Float.NaN;
+		int len = width*height;
+		int i=0;
+		for (; i<len; i++)
+			if (!Float.isNaN(pixels[i]))
+				break;
+		if (i<len) {
+			min = pixels[i];
+			max = pixels[i];
 		}
+		for (; i<len; i++) {
+			float value = pixels[i];
+			if (value<min)
+				min = value;
+			else if (value>max)
+				max = value;
+		}
+		this.min = min;
+		this.max = max;
 		minMaxSet = true;
 	}
 
@@ -436,7 +444,6 @@ public class FloatProcessor extends ImageProcessor {
 
 	private void process(int op, double value) {
 		float c, v1, v2;
-		//boolean resetMinMax = roiWidth==width && roiHeight==height && !(op==FILL);
 		c = (float)value;
 		float min2=0f, max2=0f;
 		if (op==INVERT)
@@ -505,8 +512,14 @@ public class FloatProcessor extends ImageProcessor {
 		}
 	}
 
-	/** Each pixel in the image is inverted using p=max-(p-min), where 'min'
-		and 'max' are the display range limits set using setMinAndMax(). */
+	/** Each pixel in the image or ROI is inverted using
+	 * p=max-(p-min), where 'min' and 'max' are the minimum
+	 * and maximum displayed pixel values.
+	 * @see #getMin
+	 * @see #getMax
+	 * @see #setMinAndMax
+	 * @see #resetMinAndMax
+	*/
 	public void invert() {
 		process(INVERT, 0.0);
 	}
@@ -667,6 +680,7 @@ public class FloatProcessor extends ImageProcessor {
 		int index, ixs, iys;
 		
 		if (interpolationMethod==BICUBIC) {
+			ip2.setBackgroundValue(getBackgroundValue());
 			for (int y=roiY; y<(roiY + roiHeight); y++) {
 				index = y*width + roiX;
 				tmp3 = tmp1 - y*sa + centerX;
@@ -1015,6 +1029,13 @@ public class FloatProcessor extends ImageProcessor {
 		fillValueSet = true;
 	}
 	
+	/** Sets the background fill/draw color. */
+	public void setBackgroundColor(Color color) {
+		int bestIndex = getBestIndex(color);
+		double value = getMin() + (getMax()-getMin())*(bestIndex/255.0);
+		setBackgroundValue(value);
+	}
+
 	/** Sets the default fill/draw value. */
 	public void setValue(double value) {
 		fillColor = (float)value;

@@ -1,13 +1,20 @@
 package ij.plugin;
-import ij.*;
-import ij.gui.*;
-import ij.process.*;
-import ij.plugin.PlugIn;
-import ij.measure.*;
+
+import ij.IJ;
+import ij.ImagePlus;
+import ij.gui.GenericDialog;
+import ij.gui.HistogramWindow;
+import ij.measure.ResultsTable;
+import ij.process.FloatProcessor;
+import ij.process.ImageProcessor;
+import ij.process.ImageStatistics;
+import ij.process.StackStatistics;
 import ij.util.Tools;
-import java.util.*;
+
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.TextEvent;
+import java.awt.event.TextListener;
+import java.util.StringTokenizer;
 import java.util.Vector;
 
 /**
@@ -26,12 +33,18 @@ public class Distribution implements PlugIn, TextListener {
 
 	public void run(String arg) {
 		ResultsTable rt=ResultsTable.getResultsTable();
-		int count = rt.size();
-		if (count==0) {
+		if (rt.size()==0) {
 			IJ.error("Distribution", "The \"Results\" table is empty");
 			return;
 		}
-		String head= rt.getColumnHeadings();
+		run(rt);
+	}
+	
+	public void run(ResultsTable rt) {
+		if (rt==null)
+			return;
+		int count = rt.size();
+		String head = rt.getColumnHeadings();
 		//IJ.log(head);
 
 		StringTokenizer t = new StringTokenizer(head, "\t");

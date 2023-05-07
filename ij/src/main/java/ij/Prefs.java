@@ -63,7 +63,7 @@ public class Prefs {
 		REVERSE_NEXT_PREVIOUS_ORDER=1<<5, AUTO_RUN_EXAMPLES=1<<6, SHOW_ALL_POINTS=1<<7,
 		DO_NOT_SAVE_WINDOW_LOCS=1<<8, JFILE_CHOOSER_CHANGED=1<<9,
 		CANCEL_BUTTON_ON_RIGHT=1<<10, IGNORE_RESCALE_SLOPE=1<<11,
-		NON_BLOCKING_DIALOGS=1<<12, MODERN_MODE=1<<13;
+		NON_BLOCKING_DIALOGS=1<<12, FIXED_DICOM_SCALINGg=1<<13;
 	public static final String OPTIONS2 = "prefs.options2";
     
 	/** file.separator system property */
@@ -95,7 +95,7 @@ public class Prefs {
 	/** Draw tool icons using antialiasing (always true). */
 	public static boolean antialiasedTools = true;
 	/** Export TIFF and Raw using little-endian byte order. */
-	public static boolean intelByteOrder;
+	public static boolean intelByteOrder = true;
 	/** No longer used */
 	public static boolean doubleBuffer = true;
 	/** Do not label multiple points created using point tool. */
@@ -127,6 +127,8 @@ public class Prefs {
 	public static boolean openDicomsAsFloat;
 	/** Ignore Rescale Slope when opening DICOMs */
 	public static boolean ignoreRescaleSlope;
+	/** Assume DICOM volumes use identical RescaleSlope and RescaleIntercept across all slices */	
+	public static boolean fixedDicomScaling;
 	/** Plot rectangular selectons vertically */
 	public static boolean verticalProfile;
 	/** Rotate YZ orthogonal views 90 degrees */
@@ -192,8 +194,11 @@ public class Prefs {
 	public static boolean supportMacroUndo;
 	/** Use NonBlockingGenericDialogs in filters */	
 	public static boolean nonBlockingFilterDialogs;
-	/** Currently not used */	
-	public static boolean modernMode;
+	/** Turn live display on plots automatically */
+	public static boolean autoLivePlots;
+	/** Use full range for 16-bit inversions */
+	public static boolean fullRange16bitInversions;
+
 	//Save location of moved image windows */	
 	//public static boolean saveImageLocation = true;
 
@@ -204,6 +209,7 @@ public class Prefs {
 	static String prefsDir;
 	static String imagesURL;
 	static String ImageJDir;
+	static String pluginsDirProperty;
 	static int threads;
 	static int transparentIndex = -1;
 	private static boolean resetPreferences;
@@ -374,25 +380,55 @@ public class Prefs {
 	/** Returns the path, ending in File.separator, to the ImageJ directory. */
 	public static String getImageJDir() {
 		String path = Menus.getImageJPath();
-		if (path==null)
-			return ImageJDir + File.separator;
-		else
+		if (path==null) {
+			String ijPath = getPluginsDirProperty();
+			//if (ijPath==null)
+			//	ijPath = ImageJDir;
+			if (ijPath==null)
+				ijPath = System.getProperty("user.dir");
+			return ijPath + File.separator;
+		} else
 			return path;
+	}
+	
+	public static String getPluginsDirProperty() {
+		if (pluginsDirProperty==null) {
+			String ijDir = System.getProperty("plugins.dir");
+			if (ijDir!=null) {
+				if (ijDir.endsWith("/")||ijDir.endsWith("\\"))
+					ijDir = ijDir.substring(0, ijDir.length()-1);
+				if (ijDir.endsWith("/plugins")||ijDir.endsWith("\\plugins"))
+					ijDir = ijDir.substring(0, ijDir.length()-8);
+				pluginsDirProperty = ijDir;
+			} else
+				pluginsDirProperty = "";
+		}
+		return pluginsDirProperty.length()>0?pluginsDirProperty:null;
 	}
 
 	/** Returns the path to the directory where the 
 		preferences file (IJPrefs.txt) is saved. */
 	@AstroImageJ(reason = "rename for AIJ", modified = true)
 	public static String getPrefsDir() {
+		// look in current directory
 		if (prefsDir==null) {
-			if (ImageJDir==null)
-				ImageJDir = System.getProperty("user.dir");
-			File f = new File(ImageJDir+File.separator+PREFS_NAME);
+			String cwd = System.getProperty("user.dir");
+			File f = new File(cwd+File.separator+PREFS_NAME);
 			if (f.exists()) {
-				prefsDir = ImageJDir;
-				preferencesPath = ImageJDir+"/"+PREFS_NAME;
+				prefsDir = cwd;
+				preferencesPath = cwd+"/"+PREFS_NAME;
 			}
-			//System.out.println("getPrefsDir: "+f+"  "+prefsDir);
+			// look in ImageJ directory
+			if (prefsDir==null) {
+				String ijDir = getImageJDir();
+				ijDir = ijDir.substring(0, ijDir.length()-1);
+				f = new File(ijDir+File.separator+PREFS_NAME);
+				if (f.exists()) {
+					prefsDir = ijDir;
+					preferencesPath = ijDir+"/"+PREFS_NAME;
+				}
+			}
+			// use home directory
 			if (prefsDir==null) {
 				String dir = System.getProperty("user.home");
 				if (IJ.isMacOSX())
@@ -401,7 +437,7 @@ public class Prefs {
 					dir += File.separator+".astroimagej";
 				prefsDir = dir;
 			}
-		}
+		}		
 		return prefsDir;
 	}
 
@@ -524,7 +560,7 @@ public class Prefs {
 		antialiasedText = false;
 		interpolateScaledImages = (options&INTERPOLATE)!=0;
 		open100Percent = (options&ONE_HUNDRED_PERCENT)!=0;
-		//blackBackground = (options&BLACK_BACKGROUND)!=0;
+		blackBackground = (options&BLACK_BACKGROUND)!=0;
 		useJFileChooser = (options&JFILE_CHOOSER)!=0;
 		weightedColor = (options&WEIGHTED)!=0;
 		if (weightedColor)
@@ -563,7 +599,7 @@ public class Prefs {
 		dialogCancelButtonOnRight = (options2&CANCEL_BUTTON_ON_RIGHT)!=0;
 		ignoreRescaleSlope = (options2&IGNORE_RESCALE_SLOPE)!=0;
 		nonBlockingFilterDialogs = (options2&NON_BLOCKING_DIALOGS)!=0;
-		modernMode = (options2&MODERN_MODE)!=0;
+		fixedDicomScaling = (options2&FIXED_DICOM_SCALINGg)!=0;
 	}
 
 	static void saveOptions(Properties prefs) {
@@ -595,7 +631,7 @@ public class Prefs {
 			+ (dialogCancelButtonOnRight?CANCEL_BUTTON_ON_RIGHT:0)
 			+ (ignoreRescaleSlope?IGNORE_RESCALE_SLOPE:0)
 			+ (nonBlockingFilterDialogs?NON_BLOCKING_DIALOGS:0)
-			+ (modernMode?MODERN_MODE:0);
+			+ (fixedDicomScaling?FIXED_DICOM_SCALINGg:0);
 		prefs.put(OPTIONS2, Integer.toString(options2));
 	}
 

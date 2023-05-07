@@ -49,20 +49,25 @@ import java.io.File;
 	// runs JFileChooser on event dispatch thread to avoid possible thread deadlocks
 	@AstroImageJ(reason = "Don't duplicate implementation", modified = true)
  	void getDirectoryUsingJFileChooser(final String title) {
+ 		LookAndFeel saveLookAndFeel = Java2.getLookAndFeel();
 		Java2.setSystemLookAndFeel();
 		try {
 			EventQueue.invokeAndWait(() -> getDirectoryUsingJFileChooserOnThisThread(title));
 		} catch (Exception e) {}
+		Java2.setLookAndFeel(saveLookAndFeel);
 	}
  
 	// Choose a directory using JFileChooser on the current thread
 	@AstroImageJ(reason = "make use of parent; allow dialog to be on different screens", modified = true)
  	void getDirectoryUsingJFileChooserOnThisThread(final String title) {
+		LookAndFeel saveLookAndFeel = Java2.getLookAndFeel();
 		Java2.setSystemLookAndFeel();
 		try {
 			AIJFileChooser chooser = new AIJFileChooser();
 			chooser.setDialogTitle(title);
 			chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+			chooser.setDragEnabled(true);
+			chooser.setTransferHandler(new DragAndDropHandler(chooser));
 			String defaultDir = OpenDialog.getDefaultDirectory();
 			if (defaultDir!=null) {
 				File f = new File(defaultDir);
@@ -78,6 +83,7 @@ import java.io.File;
 				OpenDialog.setDefaultDirectory(directory);
 			}
 		} catch (Exception e) {}
+		Java2.setLookAndFeel(saveLookAndFeel);
 	}
 
  	// On Mac OS X, we can select directories using the native file open dialog
@@ -120,11 +126,5 @@ import java.io.File;
     	if (dir==null || (new File(dir)).isDirectory())
 			OpenDialog.setDefaultDirectory(dir);
     }
-
-	//private void setSystemLookAndFeel() {
-	//	try {
-	//		UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-	//	} catch(Throwable t) {}
-	//}
 
 }

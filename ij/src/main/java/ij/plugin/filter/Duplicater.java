@@ -1,11 +1,12 @@
 package ij.plugin.filter;
-import ij.*;
-import ij.process.*;
+
+import ij.ImagePlus;
 import ij.plugin.Duplicator;
+import ij.process.ImageProcessor;
 
 /**
 * @deprecated
-* replaced by Duplicator class
+* replaced by ij.plugin.Duplicator class
 */
 public class Duplicater implements PlugInFilter {
 	ImagePlus imp;

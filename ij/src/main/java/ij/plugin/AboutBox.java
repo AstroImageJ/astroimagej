@@ -1,12 +1,18 @@
 package ij.plugin;
-import ij.*;
+
+import ij.IJ;
+import ij.ImageJ;
+import ij.ImagePlus;
 import ij.astro.AstroImageJ;
-import ij.process.*;
-import ij.gui.*;
+import ij.gui.ImageWindow;
+import ij.gui.Overlay;
+import ij.gui.TextRoi;
+import ij.process.ColorProcessor;
+import ij.process.ImageProcessor;
+
 import java.awt.*;
-import ij.io.*;
+import java.awt.image.ImageProducer;
 import java.net.URL;
-import java.awt.image.*;
 
 	/** This plugin implements the Help/About AstroImageJ command by opening
 	 * about.jpg in ij.jar, scaling it 600% and adding text to an overlay.
@@ -23,7 +29,7 @@ import java.awt.image.*;
 		text[0] = "ImageJ "+ImageJ.VERSION+ImageJ.BUILD;
 		text[1] = "Wayne Rasband and contributors";
 		text[2] = "National Institutes of Health, USA";
-		text[3] = IJ.URL;
+		text[3] = "http://imagej.org";
 		text[4] = "Java "+System.getProperty("java.version")+(IJ.is64Bit()?" (64-bit)":" (32-bit)");
 		text[5] = IJ.freeMemory();
 		text[6] = "ImageJ is in the public domain";

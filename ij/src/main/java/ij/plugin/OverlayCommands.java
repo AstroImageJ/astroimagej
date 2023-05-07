@@ -1,15 +1,16 @@
 package ij.plugin;
+
 import ij.*;
-import ij.process.*;
 import ij.gui.*;
-import ij.plugin.frame.RoiManager;
-import ij.plugin.frame.Recorder;
-import ij.macro.Interpreter;
-import ij.io.RoiDecoder;
+import ij.measure.Measurements;
+import ij.measure.ResultsTable;
 import ij.plugin.filter.PlugInFilter;
-import ij.measure.*;
+import ij.plugin.frame.Recorder;
+import ij.plugin.frame.RoiManager;
+import ij.process.ImageProcessor;
+import ij.process.ImageStatistics;
+
 import java.awt.*;
-import java.util.ArrayList;
 import java.awt.geom.Rectangle2D;
 
 /** This plugin implements the commands in the Image/Overlay menu. */
@@ -312,7 +313,7 @@ public class OverlayCommands implements PlugIn {
 		int flags = IJ.setupDialog(imp, 0);
 		if (flags==PlugInFilter.DONE)
 			return;
-		else if (flags==PlugInFilter.DOES_STACKS) {
+		else if (flags==PlugInFilter.DOES_STACKS && !(imp.isComposite()&&overlay==null)) {
 			//Added by Marcel Boeglin 2014.01.24
 			if (overlay==null && roiManagerOverlay==null && !imp.isComposite()) {
 				IJ.error("Flatten", "Overlay or multi-channel image required");
@@ -427,10 +428,6 @@ public class OverlayCommands implements PlugIn {
 			int c = rois[i].getCPosition();
 			int z = rois[i].getZPosition();
 			int t = rois[i].getTPosition();
-			if (imp!=null && imp.getNChannels()==1 && imp.getNSlices()==1 && imp.getNFrames()>1) {
-				t = z;
-				z = 0;
-			}
 			rt.setValue("Index", i, i);
 			rt.setValue("Name", i, rois[i].getName());
 			rt.setValue("Type", i, rois[i].getTypeAsString());

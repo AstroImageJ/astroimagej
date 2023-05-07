@@ -186,7 +186,7 @@ public class ScrollbarWithLabel extends Panel implements Adjustable, AdjustmentL
 
 		@AstroImageJ(reason = "synchronized to improve responsiveness of play/pause button in AIJ")
 		private synchronized void drawLetter(Graphics g) {
-			Font font = new Font("SansSerif", Font.PLAIN, 14);
+			Font font = ImageJ.SansSerif14;
 			if (SCALE>1.0)
 				font = font.deriveFont((float)(font.getSize()*SCALE));
 			g.setFont(font);

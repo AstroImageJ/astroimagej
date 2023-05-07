@@ -1,18 +1,22 @@
 package ij.plugin;
-import ij.*;
-import ij.process.*;
+
+import ij.IJ;
+import ij.ImagePlus;
+import ij.WindowManager;
 import ij.io.FileSaver;
 import ij.io.SaveDialog;
-import java.awt.image.*;
-import java.awt.*;
-import java.io.*;
-import java.util.Iterator;
-import javax.imageio.*;
-import javax.imageio.stream.*;
+import ij.process.ImageProcessor;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import javax.imageio.*;
 import javax.imageio.metadata.IIOMetadata;
+import javax.imageio.stream.ImageOutputStream;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.util.Iterator;
 
 
 /** The File/Save As/Jpeg command (FileSaver.saveAsJpeg() method) 
@@ -48,7 +52,7 @@ public class JpegWriter implements PlugIn {
 		int biType = BufferedImage.TYPE_INT_RGB;
 		boolean overlay = imp.getOverlay()!=null && !imp.getHideOverlay();
 		ImageProcessor ip = imp.getProcessor();
-		if (ip.isDefaultLut() && !imp.isComposite() && !overlay && ip.getMinThreshold()==ImageProcessor.NO_THRESHOLD)
+		if (ip.isDefaultLut() && !imp.isComposite() && !overlay && !ip.isThreshold())
 			biType = BufferedImage.TYPE_BYTE_GRAY;
 		BufferedImage bi = new BufferedImage(width, height, biType);
 		String error = null;

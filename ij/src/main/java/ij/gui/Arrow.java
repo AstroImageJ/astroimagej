@@ -1,8 +1,13 @@
 package ij.gui;
-import ij.*;
-import ij.process.*;
+
+import ij.ImagePlus;
+import ij.Prefs;
+import ij.process.ImageProcessor;
+
 import java.awt.*;
-import java.awt.geom.*;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Area;
+import java.awt.geom.GeneralPath;
 
 
 /** This is an Roi subclass for creating and displaying arrows. */
@@ -57,6 +62,8 @@ public class Arrow extends Line {
 			flipEnds();
 		}
 		Shape shape = getShape();
+		if (shape==null)
+			return;
 		Color color =  strokeColor!=null? strokeColor:ROIColor;
 		if (fillColor!=null) color = fillColor;
 		g.setColor(color);
@@ -214,29 +221,36 @@ public class Arrow extends Line {
  	}
  	
 	private Shape getShape() {
-		Shape arrow = getPath();
-		BasicStroke stroke = new BasicStroke((float)getStrokeWidth(), BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER);
-		Shape outlineShape = stroke.createStrokedShape(arrow);
-		Area a1 = new Area(arrow);
-		Area a2 = new Area(outlineShape);
-		try {a1.add(a2);} catch(Exception e) {};
-		return a1;
+		try {
+			Shape arrow = getPath();
+			BasicStroke stroke = new BasicStroke((float)getStrokeWidth(), BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER);
+			Shape outlineShape = stroke.createStrokedShape(arrow);
+			Area a1 = new Area(arrow);
+			Area a2 = new Area(outlineShape);
+			a1.add(a2);
+			return a1;
+		} catch(Exception e) {};
+		return null;
 	}
 
 	private ShapeRoi getShapeRoi() {
-		Shape arrow = getPath();
-		BasicStroke stroke = new BasicStroke(getStrokeWidth(), BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER);
-		ShapeRoi sroi = new ShapeRoi(arrow);
-		Shape outlineShape = stroke.createStrokedShape(arrow);
-		sroi.or(new ShapeRoi(outlineShape));
-		return sroi;
+		try {
+			Shape arrow = getPath();
+			BasicStroke stroke = new BasicStroke(getStrokeWidth(), BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER);
+			ShapeRoi sroi = new ShapeRoi(arrow);
+			Shape outlineShape = stroke.createStrokedShape(arrow);
+			sroi.or(new ShapeRoi(outlineShape));
+			return sroi;
+		} catch(Exception e) {};
+		return null;
 	}
 
 	public ImageProcessor getMask() {
-		if (width==0 && height==0)
+		Roi roi = getShapeRoi();
+		if ((width==0 && height==0) || roi==null)
 			return null;
 		else
-			return getShapeRoi().getMask();
+			return roi.getMask();
 	}
 
 	private double getOutlineWidth() {
@@ -252,6 +266,8 @@ public class Arrow extends Line {
 	
 	public void drawPixels(ImageProcessor ip) {
 		ShapeRoi shapeRoi = getShapeRoi();
+		if (shapeRoi==null)
+			return;
 		ShapeRoi shapeRoi2 = null;
 		if (doubleHeaded) {
 			flipEnds();
@@ -271,12 +287,17 @@ public class Arrow extends Line {
 	}
 	
 	public boolean contains(int x, int y) {
-		return getShapeRoi().contains(x, y);
+		Roi roi = getShapeRoi();
+		return roi!=null?roi.contains(x,y):false;
 	}
 
 	/** Return the bounding rectangle of this arrow. */
 	public Rectangle getBounds() {
-		return getShapeRoi().getBounds();
+		Roi roi = getShapeRoi();
+		if (roi!=null)
+			return roi.getBounds();
+		else
+			return super.getBounds();
 	}
 
 	protected void handleMouseDown(int sx, int sy) {

@@ -1,12 +1,18 @@
 package ij.plugin.filter;
-import ij.plugin.filter.*;
+
 import ij.*;
 import ij.gui.*;
-import ij.measure.*;
-import ij.process.*;
+import ij.measure.Calibration;
+import ij.measure.Measurements;
+import ij.measure.ResultsTable;
+import ij.process.ByteProcessor;
+import ij.process.FloatProcessor;
+import ij.process.ImageProcessor;
 import ij.util.Tools;
+
 import java.awt.*;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Vector;
 
 /** This ImageJ plug-in filter finds the maxima (or minima) of an image.
  * It can create a mask where the local maxima of the current image are
@@ -120,7 +126,7 @@ public class MaximumFinder implements ExtendedPlugInFilter, DialogListener {
     public int showDialog(ImagePlus imp, String command, PlugInFilterRunner pfr) {
         ImageProcessor ip = imp.getProcessor();
         ip.resetBinaryThreshold(); // remove any invisible threshold set by Make Binary or Convert to Mask
-        thresholded = ip.getMinThreshold()!=ImageProcessor.NO_THRESHOLD;
+        thresholded = ip.isThreshold();
         String options = Macro.getOptions();
         if  (options!=null && options.indexOf("noise=") >= 0) { // ensure compatibility with old macros
             oldMacro = true;                                    // specifying "noise=", not "prominence="
@@ -143,7 +149,7 @@ public class MaximumFinder implements ExtendedPlugInFilter, DialogListener {
         gd.addDialogListener(this);
         checkboxes = gd.getCheckboxes();
         previewing = true;
-		gd.addHelp(IJ.URL+"/docs/menus/process.html#find-maxima");
+		gd.addHelp(IJ.URL2+"/docs/menus/process.html#find-maxima");
         gd.showDialog();          //input by the user (or macro) happens here
         if (gd.wasCanceled())
             return DONE;
@@ -223,7 +229,8 @@ public class MaximumFinder implements ExtendedPlugInFilter, DialogListener {
         }
         ByteProcessor outIp = null;
         boolean strictMode = oldMacro ? excludeOnEdges : strict;
-        outIp = findMaxima(ip, tolerance, strictMode, threshold, outputType, excludeOnEdges, false); //process the image
+		boolean isEDM = imp!=null && imp.getBitDepth()==32 && imp.getTitle().startsWith("EDM of ");
+        outIp = findMaxima(ip, tolerance, strictMode, threshold, outputType, excludeOnEdges, isEDM); //process the image
         if (outIp == null) return;              //cancelled by user or previewing or no output image
         if (!Prefs.blackBackground)             //normally, output has an inverted LUT, "active" pixels black (255) - like a mask
             outIp.invertLut();

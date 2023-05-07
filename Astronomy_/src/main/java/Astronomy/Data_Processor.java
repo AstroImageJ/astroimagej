@@ -5853,6 +5853,7 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
             }
         } catch (Exception e) {
             IJ.showMessage("Error starting timer : " + e.getMessage());
+            e.printStackTrace();
         }
     }
 

@@ -164,7 +164,7 @@ public class DragAndDrop implements PlugIn, DropTargetListener, Runnable {
 			String str = ""+obj;
 			if (str!=null && str.startsWith("https:/")) {
 				if (!str.startsWith("https://"))
-					str = str.replace("https:/", "http://");
+					str = str.replace("https:/", "https://");
 				obj = str;
 			}
 			if (obj!=null && (obj instanceof String))
@@ -194,7 +194,7 @@ public class DragAndDrop implements PlugIn, DropTargetListener, Runnable {
 					else
 						openDirectory(f, path);
 				} else {
-					if (openAsVirtualStack && (path.endsWith(".tif")||path.endsWith(".TIF")))
+					if (openAsVirtualStack && (path.endsWith(".tif")||path.endsWith(".TIF")||path.endsWith(".tiff")))
 						(new FileInfoVirtualStack()).run(path);
 					else if (openAsVirtualStack && (path.endsWith(".avi")||path.endsWith(".AVI")))
 						IJ.run("AVI...", "open=["+path+"] use");
@@ -208,6 +208,7 @@ public class DragAndDrop implements PlugIn, DropTargetListener, Runnable {
 					}
 					OpenDialog.setLastDirectory(f.getParent()+File.separator);
 					OpenDialog.setLastName(f.getName());
+					OpenDialog.setDefaultDirectory(f.getParent());
 				}
 			} else {
 				IJ.log("File not found: " + path);

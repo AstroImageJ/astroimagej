@@ -1,11 +1,13 @@
 package ij.plugin.filter;
-import ij.*;
-import ij.process.*;
-import ij.gui.*;
-import ij.measure.*;
+
+import ij.IJ;
+import ij.ImagePlus;
+import ij.gui.GenericDialog;
+import ij.measure.Measurements;
 import ij.plugin.ContrastEnhancer;
+import ij.process.*;
+
 import java.awt.*;
-import java.util.*;
 
 /** 
 This class implements the Process/FFT/Bandpass Filter command. It is based on 
@@ -417,7 +419,7 @@ public class FFTFilter implements  PlugInFilter, Measurements {
 		gd.addCheckbox("Display filter", displayFilter);
 		if (stackSize>1)
 			gd.addCheckbox("Process entire stack", processStack);	
-		gd.addHelp(IJ.URL+"/docs/menus/process.html#fft-bandpass");
+		gd.addHelp(IJ.URL2+"/docs/menus/process.html#fft-bandpass");
 		gd.showDialog();
 		if(gd.wasCanceled())
 			return false;

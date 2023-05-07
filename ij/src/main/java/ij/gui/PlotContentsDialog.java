@@ -1,18 +1,19 @@
 package ij.gui;
-import ij.*;
-import ij.process.*;
+
+import ij.IJ;
+import ij.ImagePlus;
+import ij.WindowManager;
 import ij.measure.CurveFitter;
 import ij.measure.Minimizer;
-import ij.text.TextWindow;
 import ij.measure.ResultsTable;
 import ij.plugin.Colors;
 import ij.plugin.frame.Recorder;
+import ij.text.TextWindow;
 import ij.util.Tools;
+
 import java.awt.*;
-import java.awt.event.*;
-import java.util.Arrays;
-import java.util.Vector;
 import java.util.ArrayList;
+import java.util.Vector;
 
 /** This class implements the Plot Window's Data>"Add from Plot", "Add form Table", "Add Fit" and
  *  "More>Contents Style" dialogs
@@ -267,7 +268,8 @@ public class PlotContentsDialog implements DialogListener {
 	}
 
 	public boolean dialogItemChanged(GenericDialog gd, AWTEvent e) {
-		if (e == null) return true;	//gets called with e=null upon OK
+		if (e==null)
+			return true;	//gets called with e=null upon OK
 		boolean setStyle = false;
 		if (dialogType == STYLE) {
 			int objectIndex = objectChoice.getSelectedIndex();  // no getNextChoice since Choices depend on dialog type
@@ -442,7 +444,7 @@ public class PlotContentsDialog implements DialogListener {
 		for (int i=0; i<allTables.length; i++) {
 			TextWindow tw = tableWindows.get(i);
 			allTables[i] = tw.getResultsTable();
-			if (allTableNames[i] == previousTableName)
+			if (allTableNames[i]!=null && allTableNames[i].equals(previousTableName))
 				defaultTableIndex = i;
 			allTableNames[i] = tw.getTitle();
 		}

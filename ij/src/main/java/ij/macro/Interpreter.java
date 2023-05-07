@@ -1,16 +1,22 @@
 package ij.macro;
+
 import ij.*;
-import ij.process.*;
-import ij.gui.*;
-import ij.plugin.Macro_Runner;
-import ij.plugin.frame.*;
-import ij.util.Tools;
-import ij.text.*;
+import ij.gui.GenericDialog;
+import ij.gui.ImageWindow;
 import ij.measure.ResultsTable;
+import ij.plugin.frame.Recorder;
+import ij.plugin.frame.RoiManager;
+import ij.process.ColorProcessor;
+import ij.text.TextPanel;
+import ij.text.TextWindow;
+import ij.util.Tools;
+
 import java.awt.*;
-import java.util.*;
 import java.awt.event.KeyEvent;
-import java.io.PrintWriter;
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.Locale;
+import java.util.Vector;
 
 
 /** This is the recursive descent parser/interpreter for the ImageJ macro language. */
@@ -94,7 +100,10 @@ public class Interpreter implements MacroConstants {
 	}
 	
 	/** Runs the specified macro, passing it a string 
-		argument and returning a string value. */
+	 * argument and returning a string value.
+	 * @see ij.IJ#runMacro(String,String)
+	 * @see ij.IJ#runMacroFile(String,String)
+	*/
 	public String run(String macro, String arg) {
 		argument = arg;
 		calledMacro = true;
@@ -975,6 +984,25 @@ public class Interpreter implements MacroConstants {
 				if (token==ARRAY_FUNCTION)
 					array[index].setArray(func.getArrayFunction(pgm.table[tokenAddress].type));
 				break;
+			case USER_FUNCTION:
+				int savePC = pc;
+				getToken(); // the function
+				boolean simpleFunctionCall = isSimpleFunctionCall(true);
+				pc = savePC;
+				if (simpleFunctionCall) {
+					getToken(); // the function
+					Variable v2 = runUserFunction();
+					if (v2==null)
+						error("No return value");
+					if (done) return;
+					int type = v2.getType();
+					if (type==Variable.VALUE)
+						array[index].setValue(v2.getValue());
+					else
+						array[index].setString(v2.getString());
+				} else
+					array[index].setValue(getExpression());
+				break;
 			default:
 				switch (op) {
 					case '=': array[index].setValue(getExpression()); break;
@@ -1026,7 +1054,6 @@ public class Interpreter implements MacroConstants {
 		int count = 0;
 		do {
 			getToken();
-			//IJ.log(pgm.decodeToken(token, tokenAddress));
 			if (token=='(')
 				count++;
 			else if (token==')')
@@ -2245,7 +2272,7 @@ public class Interpreter implements MacroConstants {
 		return imp2;
 	} 
  
- 	/** The specified string, if not null, is added to strings passed to the run() method. */
+ 	/** Obsolete; replaced by the #include statement. */
  	public static void setAdditionalFunctions(String functions) {
  		additionalFunctions = functions;
 	} 

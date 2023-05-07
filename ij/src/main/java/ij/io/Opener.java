@@ -59,6 +59,7 @@ public class Opener {
 	private static boolean openUsingPlugins;
 	private static boolean bioformats;
 	private String url;
+	private boolean useHandleExtraFileTypes;
 
 	static {
 		Hashtable commands = Menus.getCommands();
@@ -74,9 +75,9 @@ public class Opener {
 	 * the user. Displays an error message if the selected file is not
 	 * in a supported format. This is the method that
 	 * ImageJ's File/Open command uses to open files.
-	 * @see ij.IJ#open()
+	 * @see ij.IJ#open
 	 * @see ij.IJ#open(String)
-	 * @see ij.IJ#openImage()
+	 * @see ij.IJ#openImage
 	 * @see ij.IJ#openImage(String)
 	*/
 	public void open() {
@@ -100,7 +101,7 @@ public class Opener {
 	*/
 	@AstroImageJ(reason = "Handle file associations", modified = true)
 	public void open(String path) {
-		boolean isURL = path.indexOf("://")>0;
+		boolean isURL = path.contains("://") || path.contains("file:/");
 
 		if (FileAssociationHandler.handleFile(path)) return;
 
@@ -119,8 +120,10 @@ public class Opener {
 		ImagePlus imp = null;
 		if (path.endsWith(".txt"))
 			this.fileType = JAVA_OR_TEXT;
-		else
+		else {
+			useHandleExtraFileTypes = true;
 			imp = openImage(path);
+		}
 		if (imp==null && isURL)
 			return;
 		if (imp!=null) {
@@ -196,6 +199,7 @@ public class Opener {
 		that ImageJ's File/Open command uses to open files if
 		"Open/Save Using JFileChooser" is checked in EditOptions/Misc. */
 	public void openMultiple() {
+		LookAndFeel saveLookAndFeel = Java2.getLookAndFeel();
 		Java2.setSystemLookAndFeel();
 		// run JFileChooser in a separate thread to avoid possible thread deadlocks
 		try {
@@ -203,6 +207,8 @@ public class Opener {
 				public void run() {
 					JFileChooser fc = new JFileChooser();
 					fc.setMultiSelectionEnabled(true);
+					fc.setDragEnabled(true);
+					fc.setTransferHandler(new DragAndDropHandler(fc));
 					File dir = null;
 					String sdir = OpenDialog.getDefaultDirectory();
 					if (sdir!=null)
@@ -232,6 +238,7 @@ public class Opener {
 			if (i==0 && !error)
 				Menus.addOpenRecentItem(path);
 		}
+		Java2.setLookAndFeel(saveLookAndFeel);
 	}
 	
 	/**
@@ -241,14 +248,15 @@ public class Opener {
 	 * or is not found. Displays a file open dialog if 'path'
 	 * is null or an empty string.
 	 * @see ij.IJ#openImage(String)
-	 * @see ij.IJ#openImage()
+	 * @see ij.IJ#openImage
+	 * @see #openUsingBioFormats
 	*/
 	public ImagePlus openImage(String path) {
 		if (path==null || path.equals(""))
 			path = getPath();
 		if (path==null) return null;
 		ImagePlus img = null;
-		if (path.indexOf("://")>0)
+		if (path.contains("://") || path.contains("file:/")) // path is a URL
 			img = openURL(path);
 		else
 			img = openImage(getDir(path), getName(path));
@@ -393,23 +401,42 @@ public class Opener {
 				else
 					return null;
 			case UNKNOWN: case TEXT:
-				return openUsingHandleExtraFileTypes(path);
+				imp = null;
+				if (name.endsWith(".lsm"))
+					useHandleExtraFileTypes = true; // use LSM_Reader to opem .lsm files
+				if (!useHandleExtraFileTypes)
+					imp = openUsingBioFormats(path);
+				useHandleExtraFileTypes = false;
+				if (imp!=null)
+					return imp;
+				else
+					return openUsingHandleExtraFileTypes(path);
 			default:
 				return null;
 		}
 	}
 	
+	public ImagePlus openTempImage(String directory, String name) {
+		ImagePlus imp = openImage(directory, name);
+		if (imp!=null)
+			imp.setTemporary();
+		return imp;
+	}
+
 	// Call HandleExtraFileTypes plugin to see if it can handle unknown formats
 	// or files in TIFF format that the built in reader is unable to open.
 	private ImagePlus openUsingHandleExtraFileTypes(String path) {
 		File f = new File(path);
 		if (!f.exists())
 			return null;
+		int nImages = WindowManager.getImageCount();
 		int[] wrap = new int[] {this.fileType};
 		ImagePlus imp = openWithHandleExtraFileTypes(path, wrap);
 		if (imp!=null && imp.getNChannels()>1)
 			imp = new CompositeImage(imp, IJ.COLOR);
 		this.fileType = wrap[0];
+		if (imp==null && (this.fileType==UNKNOWN||this.fileType==TIFF) && WindowManager.getImageCount()==nImages)
+			IJ.error("Opener", "Unsupported format or file not found:\n"+path);
 		return imp;
 	}
 	
@@ -507,7 +534,7 @@ public class Opener {
 	}
 	
 	private ImagePlus openCachedImage(String url) {
-		if (url==null || !url.contains("/images"))
+		if (url==null)
 			return null;
 		String ijDir = IJ.getDirectory("imagej");
 		if (ijDir==null)
@@ -552,8 +579,14 @@ public class Opener {
 			fileTypes[0] = CUSTOM;
 			return null;
 		}
-		imp = (ImagePlus)IJ.runPlugIn("HandleExtraFileTypes", path);
-		if (imp==null) return null;
+		try {
+			imp = (ImagePlus)IJ.runPlugIn("HandleExtraFileTypes", path);
+		} catch(Exception e) {
+			if (IJ.debugMode) IJ.log("openWithHandleExtraFileTypes:\n"+path+"\n"+e);
+			imp = null;
+		}
+		if (imp==null)
+			return null;
 		FileInfo fi = imp.getOriginalFileInfo();
 		if (fi==null) {
 			fi = new FileInfo();
@@ -723,7 +756,7 @@ public class Opener {
 	}
 
 	@AstroImageJ(reason = "Open pngs in zip as folder", modified = true)
-	ImagePlus openUsingImageIO(String path) {
+	public static ImagePlus openUsingImageIO(String path) {
 		ImagePlus imp = null;
 		BufferedImage img = null;
 		File f = new File(path);
@@ -734,10 +767,13 @@ public class Opener {
 		} 
 		if (img==null)
 			return null;
+		if (IJ.debugMode) IJ.log("type="+img.getType()+", alpha="+img.getColorModel().hasAlpha()+", bands="+img.getSampleModel().getNumBands());
+		int nBands = 1;
 		if (img.getColorModel().hasAlpha()) {
 			int width = img.getWidth();
 			int height = img.getHeight();
 			BufferedImage bi = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+			nBands = bi.getSampleModel().getNumBands();
 			Graphics g = bi.getGraphics();
 			g.setColor(Color.white);
 			g.fillRect(0,0,width,height);
@@ -745,6 +781,8 @@ public class Opener {
 			img = bi;
 		}
 		imp = new ImagePlus(f.getName(), img);
+		if (imp.getBitDepth()==16)
+			imp = new CompositeImage(imp, IJ.COMPOSITE);
 		FileInfo fi = new FileInfo();
 		fi.fileFormat = fi.IMAGEIO;
 		fi.fileName = f.getName();
@@ -759,7 +797,7 @@ public class Opener {
 	 * Get image from the path. If it is in a zip file, it will open the zip
 	 */
 	@AstroImageJ(reason = "Open zip of pngs as folder")
-	private BufferedImage getImageFromPath(String path) throws IOException {
+	private static BufferedImage getImageFromPath(String path) throws IOException {
 		if (path.contains(".zip")) {
 			var s = path.split("\\.zip");
 			var zip = new ZipFile(s[0] + ".zip");
@@ -818,7 +856,10 @@ public class Opener {
 			if (info[0].fileType==FileInfo.GRAY12_UNSIGNED) {
 				imageSize = (int)(fi.width*fi.height*1.5);
 				if ((imageSize&1)==1) imageSize++; // add 1 if odd
-			} if (info[0].fileType==FileInfo.BITMAP) {
+			} else if (info[0].fileType==FileInfo.GRAY10_UNSIGNED) {
+				imageSize = (int)(fi.width*fi.height*1.25);
+                if ((imageSize&1)==1) imageSize++; // add 1 if odd
+			} else if (info[0].fileType==FileInfo.BITMAP) {
 				int scan=(int)Math.ceil(fi.width/8.0);
 				imageSize = scan*fi.height;
 			}
@@ -889,7 +930,8 @@ public class Opener {
 			if (stack.size()==0)
 				return null;
 			if (fi.fileType==FileInfo.GRAY16_UNSIGNED||fi.fileType==FileInfo.GRAY12_UNSIGNED
-			||fi.fileType==FileInfo.GRAY32_FLOAT||fi.fileType==FileInfo.RGB48) {
+			||fi.fileType==FileInfo.GRAY32_FLOAT||fi.fileType==FileInfo.RGB48
+			||fi.fileType==FileInfo.GRAY10_UNSIGNED) {
 				ImageProcessor ip = stack.getProcessor(1);
 				ip.resetMinAndMax();
 				stack.update(ip);
@@ -924,6 +966,7 @@ public class Opener {
 		try {
 			info = td.getTiffInfo();
 		} catch (IOException e) {
+			// try opening using bio-formats
 			this.fileType = TIFF;
 			directory = IJ.addSeparator(directory);
 			return openUsingHandleExtraFileTypes(directory+name);
@@ -1155,8 +1198,12 @@ public class Opener {
 		if (imp==null)
 			return null;
 		int[] offsets = info[0].stripOffsets;
-		if (offsets!=null&&offsets.length>1 && offsets[offsets.length-1]<offsets[0])
-			ij.IJ.run(imp, "Flip Vertically", "stack");
+		if (offsets!=null&&offsets.length>1) {
+			long firstOffset = (long)offsets[0]&0xffffffffL;
+			long lastOffset = (long)offsets[offsets.length-1]&0xffffffffL;
+			if (lastOffset<firstOffset)
+				ij.IJ.run(imp, "Flip Vertically", "stack");
+		}
 		imp = makeComposite(imp, info[0]);
 		if (imp.getBitDepth()==32 && imp.getTitle().startsWith("FFT of"))
 			return openFFT(imp);
@@ -1209,13 +1256,41 @@ public class Opener {
 			if (images==null || images.length==0)
 				return null;
 			ImagePlus imp = images[0];
-			if (imp.getStackSize()==3 && imp.getNChannels()==3 && imp.getBitDepth()==8)
-				imp = imp.flatten();
 			return imp;
-		} catch(Exception e) {
-		}
+		} catch(Exception e) {}
 		return null;
 	}
+
+	/*
+	public static boolean isRGBStack(ImagePlus imp) {
+		if (imp==null)
+			return false;
+		boolean rgb = imp.getStackSize()==3 && imp.getNChannels()==3 && imp.getBitDepth()==8;
+		if (!rgb)
+			return false;
+		for (int i=1; i<=3; i++) {
+			imp.setSlice(i);
+			LUT lut = imp.getProcessor().getLut();
+			if (lut==null) {
+				rgb = false;
+				break;
+			}
+			byte[] bytes = lut.getBytes();
+			if (bytes==null) {
+				rgb = false;
+				break;
+			}
+			if (!((i==0 && (bytes[255]&255)==255 && (bytes[511]&255)==0 && (bytes[767]&255)==0)
+			|| (i==1 && (bytes[255]&255)==0 && (bytes[511]&255)==255 && (bytes[767]&255)==0)
+			|| (i==2 && (bytes[255]&255)==0 && (bytes[511]&255)==0 && (bytes[767]&255)==255))) {
+				rgb = false;
+				break;
+			}
+		}
+		imp.setSlice(1);
+		return rgb;
+	}
+	*/
 
 	/** Opens a lookup table (LUT) and returns it as a LUT object, or returns null if there is an error.
 	 * @see ij.ImagePlus#setLut
@@ -1228,9 +1303,10 @@ public class Opener {
 	public static void openResultsTable(String path) {
 		try {
 			ResultsTable rt = ResultsTable.open(path);
-			rt.showRowNumbers(true);
-			if (rt!=null)
+			if (rt!=null) {
+				rt.showRowNumbers(true);
 				rt.show("Results");
+			}
 		} catch(IOException e) {
 			IJ.error("Open Results", e.getMessage());
 		}

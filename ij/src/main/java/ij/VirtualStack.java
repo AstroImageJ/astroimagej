@@ -21,7 +21,7 @@ public class VirtualStack extends ImageStack {
 	private String[] labels;
 	private int bitDepth;
 	private int delay;
-	private Properties  properties;
+	private Properties properties;
 	private boolean generateData;
 	private int[] indexes;  // used to translate non-CZT hyperstack slice numbers
 
@@ -108,7 +108,7 @@ public class VirtualStack extends ImageStack {
 	public void addSlice(String sliceLabel, ImageProcessor ip, int n) {
 	}
 
-	/** Deletes the specified slice, were 1<=n<=nslices. */
+	/** Deletes the specified slice, where {@literal 1<=n<=nslices}. */
 	public void deleteSlice(int n) {
 		if (n<1 || n>nSlices)
 			throw new IllegalArgumentException("Argument out of range: "+n);
@@ -127,7 +127,7 @@ public class VirtualStack extends ImageStack {
 			deleteSlice(n);
 	}
 	   
-   /** Returns the pixel array for the specified slice, were 1<=n<=nslices. */
+   /** Returns the pixel array for the specified slice, where {@literal 1<=n<=nslices}. */
 	public Object getPixels(int n) {
 		ImageProcessor ip = getProcessor(n);
 		if (ip!=null)
@@ -136,15 +136,15 @@ public class VirtualStack extends ImageStack {
 			return null;
 	}		
 	
-	 /** Assigns a pixel array to the specified slice,
-		were 1<=n<=nslices. */
+	/** Assigns a pixel array to the specified slice, where {@literal 1<=n<=nslices}. */
 	public void setPixels(Object pixels, int n) {
 	}
 
-   /** Returns an ImageProcessor for the specified slice,
-		were 1<=n<=nslices. Returns null if the stack is empty.
+	/** Returns an ImageProcessor for the specified slice,
+	 * where {@literal 1<=n<=nslices}. Returns null if
+	 * the stack is empty.
 	*/
-	public ImageProcessor getProcessor(int n) {
+     public ImageProcessor getProcessor(int n) {
 		if (path==null) {  //Help>Examples?JavaScript>Terabyte VirtualStack
 			ImageProcessor ip = null;
 			int w=getWidth(), h=getHeight();
@@ -180,7 +180,7 @@ public class VirtualStack extends ImageStack {
 		Opener opener = new Opener();
 		opener.setSilentMode(true);
 		IJ.redirectErrorMessages(true);
-		ImagePlus imp = opener.openImage(path+names[n-1]);
+		ImagePlus imp = opener.openTempImage(path, names[n-1]);
 		IJ.redirectErrorMessages(false);
 		ImageProcessor ip = null;
 		int depthThisImage = 0;
@@ -223,6 +223,8 @@ public class VirtualStack extends ImageStack {
 			ip2.insert(ip, 0, 0);
 			ip = ip2;
 		}
+		if (cTable!=null)
+			ip.setCalibrationTable(cTable);
 		return ip;
 	 }
 	 	 
@@ -288,7 +290,7 @@ public class VirtualStack extends ImageStack {
 		return IJ.addSeparator(path);
 	}
 		
-	/** Returns the file name of the specified slice, were 1<=n<=nslices. */
+	/** Returns the file name of the specified slice, where {@literal 1<=n<=nslices}. */
 	public String getFileName(int n) {
 		return names[n-1];
 	}
@@ -332,6 +334,22 @@ public class VirtualStack extends ImageStack {
 		int n2 = (indexes!=null&&indexes.length==getSize()) ? indexes[n-1]+1 : n;
 		//IJ.log("translate: "+n+" "+n2+" "+getSize()+" "+(indexes!=null?indexes.length:null));
 		return n2;
+	}
+	
+	/** Reduces the number of slices in this stack by a factor. */
+	public void reduce(int factor) {
+		if (factor<2 || nSlices/factor<1 || names==null)
+			return;
+		nSlices = nSlices/factor;
+		for (int i=0; i<nSlices; i++) {
+			names[i] = names[i*factor];
+			labels[i] = labels[i*factor];
+		}
+		ImagePlus imp = WindowManager.getCurrentImage();
+		if (imp!=null) {
+			imp.setSlice(1);
+			imp.updateAndRepaintWindow();
+		}
 	}
 
 } 

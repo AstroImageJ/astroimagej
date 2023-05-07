@@ -1,14 +1,21 @@
 package ij.plugin.filter;
-import ij.*;
-import ij.process.*;
-import ij.gui.*;
-import ij.util.Tools;
+
+import ij.IJ;
+import ij.ImagePlus;
+import ij.Macro;
+import ij.WindowManager;
+import ij.gui.GenericDialog;
 import ij.io.FileOpener;
-import java.awt.*;
-import java.awt.event.*;
-import java.util.*;
 import ij.measure.Calibration;
 import ij.plugin.frame.Recorder;
+import ij.process.ImageProcessor;
+import ij.util.Tools;
+
+import java.awt.*;
+import java.awt.event.TextEvent;
+import java.awt.event.TextListener;
+import java.util.Locale;
+import java.util.Vector;
 
 public class ImageProperties implements PlugInFilter, TextListener {
 	private final String SAME = "-";
@@ -57,6 +64,11 @@ public class ImageProperties implements PlugInFilter, TextListener {
 		String xunit = cal.getXUnit();
 		String yunit = cal.getYUnit();
 		String zunit = cal.getZUnit();
+		String project = imp.getProp("CompositeProjection");
+		if (project==null) project="";
+		if (project.contains("Min")||project.contains("min")) project="Min";
+		if (project.contains("Max")||project.contains("max")) project="Max";
+		if (!(project.equals("Min")||project.equals("Max"))) project="Sum";
 		GenericDialog gd = new GenericDialog(imp.getTitle());
 		gd.addNumericField("Channels (c):", channels, 0);
 		gd.addNumericField("Slices (z):", slices, 0);
@@ -184,6 +196,7 @@ public class ImageProperties implements PlugInFilter, TextListener {
 		cal.xOrigin= Double.isNaN(x)?0.0:x;
 		cal.yOrigin= Double.isNaN(y)?cal.xOrigin:y;
 		cal.zOrigin= Double.isNaN(z)?0.0:z;
+		
  		cal.setInvertY(gd.getNextBoolean());
  		global2 = gd.getNextBoolean();
 		if (!cal.equals(calOrig))
@@ -194,7 +207,7 @@ public class ImageProperties implements PlugInFilter, TextListener {
 		else
 			imp.repaintWindow();
 		if (global2 && global2!=global1)
-			FileOpener.setShowConflictMessage(true);
+			FileOpener.setShowConflictMessage(true);			
 			
 		if (Recorder.record) {
 			if (Recorder.scriptMode()) {

@@ -1,18 +1,20 @@
 package ij.io;
-import java.awt.*;
-import java.io.*;
-import java.util.zip.*;
+
 import ij.*;
-import ij.process.*;
+import ij.gui.*;
 import ij.measure.Calibration;
-import ij.plugin.filter.Analyzer;
-import ij.plugin.frame.Recorder;
+import ij.measure.Measurements;
 import ij.plugin.JpegWriter;
 import ij.plugin.Orthogonal_Views;
-import ij.gui.*;
-import ij.measure.Measurements;
+import ij.plugin.filter.Analyzer;
+import ij.process.FHT;
+import ij.process.ImageProcessor;
+import ij.process.LUT;
 import ij.util.Tools;
-import javax.imageio.*;
+
+import java.io.*;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 /** Saves images in tiff, gif, jpeg, raw, zip and text format. */
 public class FileSaver {
@@ -101,15 +103,18 @@ public class FileSaver {
 		if (imp.getProperty("FHT")!=null && path.contains("FFT of "))
 			setupFFTSave();
 		fi.info = imp.getInfoProperty();
-		Object label = imp.getProperty("Label");
-		if (label!=null && (label instanceof String)) {
+		String label = imp.hasImageStack()?imp.getStack().getSliceLabel(1):null;
+		if (label!=null) {
 			fi.sliceLabels = new String[1];
-			fi.sliceLabels[0] = (String)label;
+			fi.sliceLabels[0] = label;
 		}
 		fi.description = getDescriptionString();
 		if (imp.getProperty(Plot.PROPERTY_KEY) != null) {
 			Plot plot = (Plot)(imp.getProperty(Plot.PROPERTY_KEY));
 			fi.plot = plot.toByteArray();
+			ImageWindow win = imp.getWindow();
+			if (win!=null && (win instanceof PlotWindow))
+				((PlotWindow)win).hideRangeArrows();
 		}
 		fi.roi = RoiEncoder.saveAsByteArray(imp.getRoi());
 		fi.overlay = getOverlay(imp);
@@ -161,6 +166,8 @@ public class FileSaver {
 			return null;
 		if (Orthogonal_Views.isOrthoViewsImage(imp))
 			return null;
+		if (n==1 && overlay.get(0).isCursor())
+			return null; // don't save red sync windows cursor
 		byte[][] array = new byte[n][];
 		for (int i=0; i<overlay.size(); i++) {
 			Roi roi = overlay.get(i);

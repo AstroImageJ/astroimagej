@@ -1,8 +1,11 @@
 package ij.plugin.filter;
-import ij.*;
-import ij.gui.*;
-import ij.process.*;
-import java.awt.*;
+
+import ij.IJ;
+import ij.ImagePlus;
+import ij.Prefs;
+import ij.gui.GenericDialog;
+import ij.gui.Roi;
+import ij.process.ImageProcessor;
 
 /** This plugin implements the Invert, Smooth, Sharpen, Find Edges, 
 	and Add Noise commands. */
@@ -20,10 +23,6 @@ public class Filters implements PlugInFilter {
 		this.imp = imp;
 		if (imp!=null) {
 			Roi roi = imp.getRoi();
-			if (imp.getType()==ImagePlus.GRAY16 && arg.equals("invert")) {
-				imp.resetRoi();
-				roi = null;
-			}
 			if (roi!=null && !roi.isArea())
 				noRoi = true;
 		}

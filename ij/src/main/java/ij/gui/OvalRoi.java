@@ -1,10 +1,13 @@
 package ij.gui;
-import java.awt.*;
-import java.awt.image.*;
-import java.awt.geom.*;
-import ij.*;
-import ij.process.*;
+
+import ij.ImagePlus;
 import ij.measure.Calibration;
+import ij.process.ByteProcessor;
+import ij.process.FloatPolygon;
+import ij.process.ImageProcessor;
+
+import java.awt.*;
+import java.awt.geom.Ellipse2D;
 
 /** Oval region of interest */
 public class OvalRoi extends Roi {
@@ -334,6 +337,11 @@ public class OvalRoi extends Roi {
 		return sr.getFloatPolygon();
 	}
 
+	/** Returns this OvalRoi as a 4 point FloatPolygon (x,y,w,h). */
+	public FloatPolygon getFloatPolygon4() {
+		return super.getFloatPolygon();
+	}
+
 	/** Returns the number of corner points in the mask of this selection; equivalent to getPolygon().npoints. */
 	public int size() {
 		return getPolygon().npoints;
@@ -406,7 +414,7 @@ public class OvalRoi extends Roi {
 			for (int x=0; x<width; x++) {
 				xx = x - a;
 				yy = y - b;   
-				if ((xx*xx/a2+yy*yy/b2)<=1.0)
+				if ((xx*xx/a2+yy*yy/b2)<=1.0 && offset+x<pixels.length)
 					pixels[offset+x] = -1;
 			}
 		}

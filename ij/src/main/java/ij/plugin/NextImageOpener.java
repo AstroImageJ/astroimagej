@@ -10,9 +10,16 @@ This code was modified from Image_Browser by Albert Cardona
 */
 
 package ij.plugin;
-import ij.*;
-import ij.io.*;
-import ij.gui.*;
+
+import ij.CompositeImage;
+import ij.IJ;
+import ij.ImagePlus;
+import ij.WindowManager;
+import ij.gui.YesNoCancelDialog;
+import ij.io.FileInfo;
+import ij.io.FileSaver;
+import ij.io.Opener;
+
 import java.io.File;
 
 public class NextImageOpener implements PlugIn {
@@ -42,10 +49,7 @@ public class NextImageOpener implements PlugIn {
 			IJ.error("Next Image", "Directory information for \""+imp0.getTitle()+"\" not found.");
 			return;
 		}
-		// get the next name (full path)
-		//long start = System.currentTimeMillis();
 		String nextPath = getNext(currentPath, getName(imp0), forward);
-		//IJ.log("time: "+(System.currentTimeMillis()-start));
 		if (IJ.debugMode) IJ.log("OpenNext.nextPath:" + nextPath);
 		// open
 		if (nextPath != null) {
@@ -76,8 +80,14 @@ public class NextImageOpener implements PlugIn {
 	}
 	
 	String open(String nextPath) {
-		ImagePlus imp2 = IJ.openImage(nextPath);
-		if (imp2==null) return null;
+		int nImages = WindowManager.getImageCount();
+		ImagePlus imp2 = IJ.openImage(nextPath);		
+		if (imp2==null) {
+			if (WindowManager.getImageCount()>nImages)
+				return "ok";
+			else
+				return null;
+		}
 		String newTitle = imp2.getTitle();
 		if (imp0.changes) {
 			String msg;
@@ -109,8 +119,13 @@ public class NextImageOpener implements PlugIn {
 	/** gets the next image name in a directory list */
 	String getNext(String path, String imageName, boolean forward) {
 		File dir = new File(path);
-		if (!dir.isDirectory()) return null;
+		if (!dir.isDirectory())
+			return null;
 		String[] names = dir.list();
+		if (names==null) {
+			IJ.log("getNext directory empty: "+path);
+			return null;
+		}
 		ij.util.StringSorter.sort(names);
 		int thisfile = -1;
 		for (int i=0; i<names.length; i++) {
@@ -138,7 +153,7 @@ public class NextImageOpener implements PlugIn {
 			if (canOpen) {
 				Opener o = new Opener();
 				int type = o.getFileType(nextPath);
-				if (type==Opener.UNKNOWN || type==Opener.JAVA_OR_TEXT
+				if (type==Opener.JAVA_OR_TEXT
 				||  type==Opener.ROI ||  type==Opener.TEXT)
 					canOpen = false;
 			}

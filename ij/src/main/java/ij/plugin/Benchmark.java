@@ -1,8 +1,13 @@
 package ij.plugin;
-import ij.*;
-import ij.process.*;
-import ij.gui.*;
+
+import ij.IJ;
+import ij.ImagePlus;
+import ij.Prefs;
+import ij.WindowManager;
+import ij.gui.Overlay;
 import ij.measure.ResultsTable;
+import ij.process.ImageProcessor;
+import ij.process.ImageStatistics;
 import ij.util.Tools;
 
 /** Implements the Plugins/Utilities/Run Benchmark command.
@@ -13,6 +18,7 @@ import ij.util.Tools;
 */
 public class Benchmark implements PlugIn {
     private String[] results = {
+        " 9.5|MacBook Pro (M1 Max, 2021)",
         "10.9|MacBook Air (M1, 2020, Native)",
         "17.2|iMac Pro (2017)",
         "18.1|MacBook Air (M1, 2020, Rosetta)",

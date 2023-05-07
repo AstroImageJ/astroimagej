@@ -270,7 +270,6 @@ public class Zoom implements PlugIn {
 			ic.fitToWindow();
 			IJ.showStatus("Resize window to scale (use 'alt' key as shortcut)");
 		}
-
 	}
 	
 }

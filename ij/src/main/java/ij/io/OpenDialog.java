@@ -15,8 +15,9 @@ import java.awt.*;
 import java.io.File;
 
 /** This class displays a dialog window from 
-	which the user can select an input file. */ 
- public class OpenDialog {
+ * which the user can select an input file.
+*/ 
+public class OpenDialog {
 
 	private Container parent = null;
 	private String dir;
@@ -112,11 +113,13 @@ import java.io.File;
 
 	// Uses JFileChooser to display file open dialog box.
 	void jOpen(String title, String path, String fileName) {
+		LookAndFeel saveLookAndFeel = Java2.getLookAndFeel();
 		Java2.setSystemLookAndFeel();
 		if (EventQueue.isDispatchThread())
 			jOpenDispatchThread(title, path, fileName);
 		else
 			jOpenInvokeAndWait(title, path, fileName);
+		Java2.setLookAndFeel(saveLookAndFeel);
 	}
 		
 	// Uses the JFileChooser class to display the dialog box.
@@ -126,6 +129,8 @@ import java.io.File;
 		AIJFileChooser fc = new AIJFileChooser();
 		fc.setReferenceWindow(parent);
 		fc.setDialogTitle(title);
+		fc.setDragEnabled(true);
+		fc.setTransferHandler(new DragAndDropHandler(fc));
 		File fdir = null;
 		if (path!=null)
 			fdir = new File(path);
@@ -153,6 +158,8 @@ import java.io.File;
 				AIJFileChooser fc = new AIJFileChooser();
 				fc.setReferenceWindow(parent);
 				fc.setDialogTitle(title);
+				fc.setDragEnabled(true);
+				fc.setTransferHandler(new DragAndDropHandler(fc));
 				File fdir = null;
 				if (path!=null)
 					fdir = new File(path);
@@ -242,9 +249,12 @@ import java.io.File;
 			getDirectory() + getFileName();
 	}
 
-	/** Returns the current working directory as a string
-		ending in the separator character ("/" or "\"), or
-		an empty or null string. */
+	/** Returns the default directory as a string
+	 * ending in the separator character ("/" or "\"),
+	 * or a null string. Returns the current working
+	 * directory if called from a command line macro
+	 * and setDefaultDirectory() has not been called.
+	*/
 	public static String getDefaultDirectory() {
 		if (Prefs.commandLineMacro() && !defaultDirectorySet)
 			return IJ.getDir("cwd");
@@ -253,7 +263,7 @@ import java.io.File;
 		return defaultDirectory;
 	}
 
-	/** Sets the current working directory.
+	/** Sets the default directory.
 	 * @see ij.plugin.frame.Editor#setDefaultDirectory
 	*/
 	public static void setDefaultDirectory(String dir) {

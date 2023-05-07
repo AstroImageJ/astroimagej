@@ -18,8 +18,10 @@ import javax.swing.text.DefaultEditorKit;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.ImageProducer;
+import java.io.CharArrayWriter;
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.URL;
 import java.util.*;
 
@@ -82,11 +84,13 @@ public class ImageJ extends Frame implements ActionListener,
 	MouseListener, KeyListener, WindowListener, ItemListener, Runnable {
 
 	/** Plugins should call IJ.getVersion() or IJ.getFullVersion() to get the version string. */
-	public static final String VERSION = "1.53k";
-	public static final String BUILD = "";  //19
+	public static final String VERSION = "1.54d";
+	public static final String BUILD = ""; //25
 	public static Color backgroundColor = new Color(237,237,237);
 	/** SansSerif, 12-point, plain font. */
 	public static final Font SansSerif12 = new Font("SansSerif", Font.PLAIN, 12);
+	/** SansSerif, 14-point, plain font. */
+	public static final Font SansSerif14 = new Font("SansSerif", Font.PLAIN, 14);
 	/** Address of socket where Image accepts commands */
 	public static final int DEFAULT_PORT = 57294;
 	@AstroImageJ(reason = "Add astroversion")
@@ -101,6 +105,9 @@ public class ImageJ extends Frame implements ActionListener,
 	/** Run embedded and invisible in another application. */
 	public static final int NO_SHOW = 2;
 	
+	/** Run as the ImageJ application. */
+	public static final int IMAGEJ_APP = 3;
+
 	/** Run ImageJ in debug mode. */
 	public static final int DEBUG = 256;
 
@@ -155,6 +162,11 @@ public class ImageJ extends Frame implements ActionListener,
 		if ((mode&DEBUG)!=0)
 			IJ.setDebugMode(true);
 		mode = mode & 255;
+		boolean useExceptionHandler = false;
+		if (mode==IMAGEJ_APP) {
+			mode = STANDALONE;
+			useExceptionHandler = true;
+		}
 		if (IJ.debugMode) IJ.log("ImageJ starting in debug mode: "+mode);
 		embedded = applet==null && (mode==EMBEDDED||mode==NO_SHOW);
 		this.applet = applet;
@@ -224,7 +236,7 @@ public class ImageJ extends Frame implements ActionListener,
 			IJ.error(err1);
 		if (err2!=null) {
 			IJ.error(err2);
-			IJ.runPlugIn("ij.plugin.ClassChecker", "");
+			//IJ.runPlugIn("ij.plugin.ClassChecker", "");
 		}
 		if (IJ.isMacintosh()&&applet==null) {
 			try {
@@ -237,9 +249,13 @@ public class ImageJ extends Frame implements ActionListener,
 			im.put(KeyStroke.getKeyStroke(KeyEvent.VK_C, KeyEvent.META_DOWN_MASK), DefaultEditorKit.copyAction);
 			im.put(KeyStroke.getKeyStroke(KeyEvent.VK_V, KeyEvent.META_DOWN_MASK), DefaultEditorKit.pasteAction);
 			im.put(KeyStroke.getKeyStroke(KeyEvent.VK_X, KeyEvent.META_DOWN_MASK), DefaultEditorKit.cutAction);
-		} 
+		}
 		if (applet==null)
 			IJ.runPlugIn("ij.plugin.DragAndDrop", "");
+		if (!getTitle().contains("Fiji") && useExceptionHandler) {
+			Thread.setDefaultUncaughtExceptionHandler(new ExceptionHandler());
+			System.setProperty("sun.awt.exception.handler",ExceptionHandler.class.getName());
+		}
 		String str = m.getMacroCount()==1?" macro":" macros";
 		configureProxy();
 		if (applet==null)
@@ -323,6 +339,11 @@ public class ImageJ extends Frame implements ActionListener,
 
 	public Panel getStatusBar() {
         return statusBar;
+	}
+
+	public static String getStatusBarText() {
+		ImageJ ij = IJ.getInstance();
+		return ij!=null?ij.statusLine.getText():"";
 	}
 
     /** Starts executing a menu command in a separate thread. */
@@ -614,6 +635,11 @@ public class ImageJ extends Frame implements ActionListener,
 		// Control Panel?
 		if (frame!=null && frame instanceof javax.swing.JFrame)
 			return true;
+		// Channels dialog?
+		Window window = WindowManager.getActiveWindow();
+		title = window!=null&&(window instanceof Dialog)?((Dialog)window).getTitle():null;
+		if (title!=null && title.equals("Channels"))
+			return true;
 		ImageWindow win = imp.getWindow();
 		// LOCI Data Browser window?
 		if (imp.getStackSize()>1 && win!=null && win.getClass().getName().startsWith("loci"))
@@ -675,7 +701,7 @@ public class ImageJ extends Frame implements ActionListener,
 			if (mb!=null && mb!=getMenuBar()) {
 				setMenuBar(mb);
 				Menus.setMenuBarCount++;
-				if (IJ.debugMode) IJ.log("setMenuBar: "+Menus.setMenuBarCount);
+				//if (IJ.debugMode) IJ.log("setMenuBar: "+Menus.setMenuBarCount);
 			}
 		}
 	}
@@ -722,7 +748,7 @@ public class ImageJ extends Frame implements ActionListener,
 	@AstroImageJ(reason = "Run AIJ startup", modified = true)
 	public static void main(String args[]) {
 		boolean noGUI = false;
-		int mode = STANDALONE;
+		int mode = IMAGEJ_APP;
 		arguments = args;
 		int nArgs = args!=null?args.length:0;
 		boolean commandLine = false;
@@ -751,7 +777,7 @@ public class ImageJ extends Frame implements ActionListener,
 			} 
 		}
   		// If existing ImageJ instance, pass arguments to it and quit.
-  		boolean passArgs = mode==STANDALONE && !noGUI;
+  		boolean passArgs = (mode==IMAGEJ_APP||mode==STANDALONE) && !noGUI;
 		if (IJ.isMacOSX() && !commandLine)
 			passArgs = false;
 		if (passArgs && isRunning(args)) 
@@ -792,7 +818,7 @@ public class ImageJ extends Frame implements ActionListener,
 				IJ.open(file.getAbsolutePath());
 			}
 		}
-		if (IJ.debugMode && IJ.getInstance()==null)
+		if (IJ.debugMode && IJ.getInstance()==null && !GraphicsEnvironment.isHeadless())
 			new JavaProperties().run("");
 		if (noGUI) System.exit(0);
 	}
@@ -941,4 +967,32 @@ public class ImageJ extends Frame implements ActionListener,
 		return System.getProperty("aij.dev") != null;
 	}
 
+  /** Handles exceptions on the EDT. */
+  public static class ExceptionHandler implements Thread.UncaughtExceptionHandler {
+
+    // for EDT exceptions
+    public void handle(Throwable thrown) {
+      handleException(Thread.currentThread().getName(), thrown);
+    }
+
+    // for other uncaught exceptions
+    public void uncaughtException(Thread thread, Throwable thrown) {
+      handleException(thread.getName(), thrown);
+    }
+
+    protected void handleException(String tname, Throwable e) {
+    	if (Macro.MACRO_CANCELED.equals(e.getMessage()))
+			return;
+		CharArrayWriter caw = new CharArrayWriter();
+		PrintWriter pw = new PrintWriter(caw);
+		e.printStackTrace(pw);
+		String s = caw.toString();
+		if (s!=null && s.contains("ij.")) {
+			if (IJ.getInstance()!=null)
+				s = IJ.getInstance().getInfo()+"\n"+s;
+			IJ.log(s);
+		}
+    }
+
+  } // inner class ExceptionHandler
 }

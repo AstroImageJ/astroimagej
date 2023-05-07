@@ -1,11 +1,15 @@
 package ij.plugin;
-import ij.plugin.frame.Recorder;
+
 import ij.*;
-import ij.gui.*;
-import ij.process.*;
-import ij.measure.Calibration;
-import ij.macro.Interpreter;
+import ij.gui.GenericDialog;
+import ij.gui.Overlay;
+import ij.gui.Roi;
 import ij.io.FileInfo;
+import ij.measure.Calibration;
+import ij.plugin.frame.Recorder;
+import ij.process.*;
+
+import java.awt.*;
 
 
 /** Implements the Image/Stacks/Images to Stack" command. */
@@ -31,6 +35,7 @@ public class ImagesToStack implements PlugIn {
 	private int stackType;
 	private ImagePlus[] images;
 	private String name = "Stack";
+	private Color fillColor;
 	
 	/** Converts the images in 'images' to a stack, using the 
 		default settings ("copy center" and "titles as labels"). */
@@ -91,8 +96,10 @@ public class ImagesToStack implements PlugIn {
 				gd.addMessage(msg);
 				gd.addChoice("Method:", methods, methods[staticMethod]);
 			}
+			gd.setSmartRecording(true);
 			gd.addStringField("Name:", name, 12);
 			gd.addStringField("Title contains:", "", 12);
+			gd.addStringField("Fill color:", "", 12);
 			if (sizesDiffer)
 				gd.addCheckbox("Bicubic interpolation", staticBicubic);
 			gd.addCheckbox("Use titles as labels", staticTitlesAsLabels);
@@ -103,6 +110,8 @@ public class ImagesToStack implements PlugIn {
 				method = gd.getNextChoiceIndex();
 			name = gd.getNextString();
 			filter = gd.getNextString();
+			String fillc = gd.getNextString();
+			fillColor = Colors.decode(fillc, null);
 			if (sizesDiffer)
 				bicubic = gd.getNextBoolean();
 			titlesAsLabels = gd.getNextBoolean();
@@ -151,7 +160,7 @@ public class ImagesToStack implements PlugIn {
 			if (ip.getMax()>max) max = ip.getMax();
 			String label = titlesAsLabels?images[i].getTitle():null;
 			if (label==null)
-				label = (String)images[i].getProperty("Label");
+				label = images[i].getProp("Slice_Label");
 			if (label!=null) {
 				String info = (String)images[i].getProperty("Info");
 				if (info!=null) label += "\n" + info;
@@ -182,6 +191,10 @@ public class ImagesToStack implements PlugIn {
 							case 32: ip2 = new FloatProcessor(width, height); break;
 							case rgb: ip2 = new ColorProcessor(width, height); break;
 						}
+						if (fillColor!=null) {
+							ip2.setColor(fillColor);
+							ip2.fill();
+						}							
 						int xoff=0, yoff=0;
 						if (method==COPY_CENTER) {
 							xoff = (width-ip.getWidth())/2;

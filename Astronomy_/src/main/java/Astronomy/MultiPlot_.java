@@ -857,7 +857,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     private static Property<Integer> binnedDotSize = new Property<>(8, "plot.", "", MultiPlot_.class);
     private static Property<Integer> boldedDotSize = new Property<>(12, "plot.", "", MultiPlot_.class);
     private static Property<Boolean> drawAijVersion = new Property<>(true, "plot.", "", MultiPlot_.class);
-    private static Property<Boolean> drawBinnErrBars = new Property<>(true, "plot.", "", MultiPlot_.class);
+    private static Property<Boolean> drawBinErrBars = new Property<>(false, "plot.", "", MultiPlot_.class);
 
     public void run(String inTableNamePlusOptions) {
         boolean useAutoAstroDataUpdate = false;
@@ -3571,7 +3571,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         if (marker[curve] == ij.gui.Plot.DOT) { plot.setLineWidth(binnedDotSize.get()); } else plot.setLineWidth(2);
                         plot.addPoints(pts.x(), pts.y(), marker[curve]);
 
-                        if (drawBinnErrBars.get()) {
+                        if (drawBinErrBars.get()) {
                             plot.setLineWidth(1);
                             for (int j = 0; j < pts.x().length; j++) {
                                 plot.drawLine(pts.x()[j], pts.y()[j] - pts.err()[j], pts.x()[j], pts.y()[j] + pts.err()[j]);
@@ -17407,9 +17407,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         });
         panel.add(control4, c);
 
-        var control5 = new JCheckBox("Draw binned error bars", drawBinnErrBars.get());
+        var control5 = new JCheckBox("Draw binned error bars", drawBinErrBars.get());
         control5.addChangeListener($ -> {
-            drawBinnErrBars.set(control5.isSelected());
+            drawBinErrBars.set(control5.isSelected());
             updatePlot();
         });
         panel.add(control5, c);

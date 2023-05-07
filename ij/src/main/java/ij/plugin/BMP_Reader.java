@@ -1,10 +1,18 @@
 package ij.plugin;
 
+import ij.IJ;
+import ij.ImagePlus;
+import ij.io.FileInfo;
+import ij.io.OpenDialog;
+import ij.io.Opener;
+
 import java.awt.*;
-import java.awt.image.*;
-import java.io.*;
-import ij.*;
-import ij.io.*;
+import java.awt.image.ColorModel;
+import java.awt.image.IndexColorModel;
+import java.awt.image.MemoryImageSource;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 
 
 /** This plugin reads BMP files. If 'arg' is empty, it
@@ -33,7 +41,15 @@ public class BMP_Reader extends ImagePlus implements PlugIn {
                         String msg = e.getMessage();
                         if (msg==null || msg.equals(""))
                                 msg = ""+e;
-                        IJ.error("BMP Reader", msg);
+                        if (msg.equals("Compression not supported")) {
+                        	ImagePlus imp = Opener.openUsingImageIO(path);
+                        	if (imp!=null) {
+                				setProcessor(name, imp.getProcessor());
+								if (arg.equals(""))
+									show();
+							}
+                        } else
+                        	IJ.error("BMP Reader", msg);
                         return;
                 } finally {
 					if (is!=null) {

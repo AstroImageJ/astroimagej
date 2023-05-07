@@ -448,7 +448,10 @@ public class Plot implements Cloneable {
 
 	/** Sets the current limits from an array xMin, xMax, yMin, yMax
 	 *  The array may be also longer or shorter, but should not contain NaN values.
-	 *  Does not update the plot, does not save the old limits. */
+	 *  This method should be used after the plot has been displayed.
+	 *  Does not update the plot; use updateImage() thereafter.
+	 *  Does not save the previous limits, i.e., leaves the default limits (for reset via the 'R' field) untouched.
+	*/
 	public void setLimits(double[] limits) {
 		System.arraycopy(limits, 0, currentMinMax, 0, Math.min(limits.length, defaultMinMax.length));
 	}
@@ -644,12 +647,12 @@ public class Plot implements Cloneable {
 	/** Sets the length of the major tick in pixels.
 	 *	Call update() thereafter to make the change visible (if the image is shown already). */
 	public void setTickLength(int tickLength) {
-			tickLength = tickLength;
+			this.tickLength = tickLength;
 	}
 
 	/** Sets the length of the minor tick in pixels. */
 	public void setMinorTickLength(int minorTickLength) {
-			minorTickLength = minorTickLength;
+			this.minorTickLength = minorTickLength;
 	}
 
 	/** Sets the flags that control the axes format.
@@ -971,38 +974,48 @@ public class Plot implements Cloneable {
 	}
 
 	/** Adds a legend at the position given in 'options', where 'labels' can be tab-delimited or
-		newline-delimited list of curve or point labels in the sequence these data were added.
-		Hidden data sets are ignored.
-		If 'labels' is null or empty, the labels of the data set previously (if any) are used.
+	 *  newline-delimited list of curve or point labels in the sequence these data were added.
+	 *  Hidden data sets are ignored; no labels (and no delimiters) should be provided for these.
+	 *  Apart from top to bottom and bottom to top (controlled by "bottom-to-top" in the options),
+	 *  the sequence may be altered by preceding numbers followed by double underscores, such as
+	 *  "1__Other Data Set\t0__First Data Set" (the number and double underscore won't be displayed).
+	 *  When this possibility is used, only items with double underscores will be shown in the legend
+	 *  (preceding double underscores without a number make the item appear in the legend without altering the sequence).
+	 * 	If 'labels' is null or empty, the labels of the data set previously (if any) are used.
 		To modify the legend's style, call 'setFont' and 'setLineWidth' before 'addLegend'. */
-		public void addLegend(String labels, String options) {
-			int flags = 0;
-			if (options!=null) {
-				options = options.toLowerCase();
-				if (options.contains("top-left"))
-					flags |= Plot.TOP_LEFT;
-				else if (options.contains("top-right"))
-					flags |= Plot.TOP_RIGHT;
-				else if (options.contains("bottom-left"))
-					flags |= Plot.BOTTOM_LEFT;
-				else if (options.contains("bottom-right"))
-					flags |= Plot.BOTTOM_RIGHT;
-				else if (!options.contains("off") && !options.contains("no"))
-					flags |= Plot.AUTO_POSITION;
-				if (options.contains("bottom-to-top"))
-					flags |= Plot.LEGEND_BOTTOM_UP;
-				if (options.contains("transparent"))
-					flags |= Plot.LEGEND_TRANSPARENT;
-			}
-			setLegend(labels, flags);
+	public void addLegend(String labels, String options) {
+		int flags = 0;
+		if (options!=null) {
+			options = options.toLowerCase();
+			if (options.contains("top-left"))
+				flags |= Plot.TOP_LEFT;
+			else if (options.contains("top-right"))
+				flags |= Plot.TOP_RIGHT;
+			else if (options.contains("bottom-left"))
+				flags |= Plot.BOTTOM_LEFT;
+			else if (options.contains("bottom-right"))
+				flags |= Plot.BOTTOM_RIGHT;
+			else if (!options.contains("off") && !options.contains("no"))
+				flags |= Plot.AUTO_POSITION;
+			if (options.contains("bottom-to-top"))
+				flags |= Plot.LEGEND_BOTTOM_UP;
+			if (options.contains("transparent"))
+				flags |= Plot.LEGEND_TRANSPARENT;
 		}
+		setLegend(labels, flags);
+	}
 
 	/** Adds a legend. The legend will be always drawn last (on top of everything).
 	 *	To modify the legend's style, call 'setFont' and 'setLineWidth' before 'addLegend'
 	 *	@param labels labels of the points or curves in the sequence of the data were added, tab-delimited or linefeed-delimited.
 	 *	The labels of the datasets will be set to these values. If null or not given, the labels set
 	 *	previously (if any) will be used.
-	 *  Hidden data sets are ignored.
+	 *	Hidden data sets are ignored; no labels (and no delimiters) should be provided for these.
+	 *	Apart from top to bottom and bottom to top (controlled by the LEGEND_BOTTOM_UP flag),
+	 *  the sequence may be altered by preceding numbers followed by double underscores, such as
+	 *  "1__Other Data Set\t0__First Data Set" (the number and double underscore won't be displayed).
+	 *  When this possibility is used, only items with double underscores will be shown in the legend
+	 *  (preceding double underscores without a number make the item appear in the legend without altering the sequence).
 	 *	@param flags  Bitwise or of position (AUTO_POSITION, TOP_LEFT etc.), LEGEND_TRANSPARENT, and LEGEND_BOTTOM_UP if desired.
 	 *	Updates the image (if it is shown already). */
 	public void setLegend(String labels, int flags) {
@@ -1030,7 +1043,7 @@ public class Plot implements Cloneable {
 		if (index < 0) index = allPlotObjects.size() + index;
 		allPlotObjects.get(index).label = label;
 	}
-	
+
 	/** Removes NaNs from the xValues and yValues arrays of all plot objects. */ 
 	public void removeNaNs() {
 		for (PlotObject plotObj : allPlotObjects){
@@ -1137,15 +1150,19 @@ public class Plot implements Cloneable {
 		allPlotObjects.add(new PlotObject(x1, y1, x2, y2, currentLineWidth, step, currentColor, PlotObject.DOTTED_LINE));
 	}
 
-	/** Sets the font size for all following addLabel() etc. operations. */
+	/** Sets the font size for all following addLabel() etc. operations. The currently set font when
+	 *	displaying the plot determines the font of all labels & numbers.
+	 *  After the plot has been shown, sets the font for the numbers and the legend (if present).
+	 *	If the plot is hown already, call update() thereafter to make the change visible. */
 	public void setFontSize(int size) {
 		setFont(-1, (float)size);
 	}
 
 	/** Sets the font for all following addLabel() etc. operations. The currently set font when
 	 *	displaying the plot determines the font of all labels & numbers.
-	 *  After the plot has been shown, sets the font for the numbers and the legend (if present).
-	 *	Call update() thereafter to make the change visible (if the image is shown already). */
+	 *  After the plot has been shown, sets the font for the numbers and the legend (if present);
+	 *  use setFont(char, Font) to set these fonts individually.
+	 *	If the plot is hown already, call update() thereafter to make the change visible. */
 	public void setFont(Font font) {
 		if (font == null) font = defaultFont;
 		currentFont = font;
@@ -1161,7 +1178,8 @@ public class Plot implements Cloneable {
 	 *	when displaying the plot determines the font of the numbers at the axes.
 	 *	That font also sets the default label font size, which may be overridden by
 	 *	setAxisLabelFontSize or setXLabelFont, setYLabelFont.
-	 *  After the plot has been shown, sets the font for the numbers and the legend (if present).
+	 *  After the plot has been shown, sets the font for the numbers and the legend (if present);
+	 *  use setFont(char, Font) to set these fonts individually.
 	 *	Styles are defined in the Font class, e.g. Font.PLAIN, Font.BOLD.
 	 *	Set <code>style</code> to -1 to leave the style unchanged.
 	 *	Call update() thereafter to make the change visible (if the image is shown already). */
@@ -1215,7 +1233,7 @@ public class Plot implements Cloneable {
 
 	/** Gets the font for xLabel ('x'), yLabel('y'), numbers ('f' for 'frame') or the legend ('l').
 	 *	Returns null if the given PlotObject does not exist or its font is null */
-	Font getFont(char c) {
+	public Font getFont(char c) {
 		PlotObject plotObject = pp.getPlotObject(c);
 		if (plotObject != null)
 			return plotObject.getFont();
@@ -1224,7 +1242,7 @@ public class Plot implements Cloneable {
 	}
 
 	/** Sets the font for xLabel ('x'), yLabel('y'), numbers ('f' for 'frame') or the legend ('l') */
-	void setFont(char c, Font font) {
+	public void setFont(char c, Font font) {
 		PlotObject plotObject = pp.getPlotObject(c);
 		if (plotObject != null)
 			plotObject.setFont(font);
@@ -1313,7 +1331,8 @@ public class Plot implements Cloneable {
 		return nObjects;
 	}
 
-	/** Gets an array with human-readable designations of the PlotObjects with types fitting the mask */
+	/** Gets an array with human-readable designations of the PlotObjects with types fitting the mask
+	 *  (i.e., 'mask' should be a bitwise or of the types desired) */
 	String[] getPlotObjectDesignations(int mask, boolean includeHidden) {
 		int nObjects = getNumPlotObjects(mask, includeHidden);
 		String[] names = new String[nObjects];
@@ -1362,9 +1381,10 @@ public class Plot implements Cloneable {
 	}
 
 	/** Add the i-th PlotObject (in the sequence how they were added, including hidden ones)
-	 *  from another plot to this one.
+	 *  from another plot to this one. PlotObjects here refers to curves, arrows, labels etc.
+	 *  (not legend, axes and frame, though implemented as PlotObjects)
 	 *  Use 'update' to update the plot thereafter.
-	 *  @return Index of the plotObject added in the sequence they were added **/
+	 *  @return Index of the plotObject added in the sequence they were added */
 	public int addObjectFromPlot(Plot plot, int i) {
 		PlotObject plotObject = plot.getPlotObjectDeepClone(i);
 		plotObject.unsetFlag(PlotObject.CONSTRUCTOR_DATA);
@@ -1375,7 +1395,9 @@ public class Plot implements Cloneable {
 
 	/** Get the style of the i-th PlotObject (curve, label, ...) in the sequence
 	 *	they were added (including hidden ones), as String with comma delimiters:
-	 *	Main Color, Secondary Color (or "none"), Line Width [, Symbol shape for XY_DATA] [,hidden] **/
+	 *	Main Color, Secondary Color (or "none"), Line Width [, Symbol shape for XY_DATA] [,hidden]
+	 *  PlotObjects here refers to curves, arrows, labels etc.
+	 *  (not legend, exes and frame, though implemented as PlotObjects) */
 	public String getPlotObjectStyle(int i) {
 		return getPlotObjectStyle(allPlotObjects.get(i));
 	}
@@ -1392,20 +1414,24 @@ public class Plot implements Cloneable {
 	}
 
 	/** Get the label the i-th PlotObject (in the sequence how they were added, including hidden ones).
-	 *  Returns null if no label **/
+	 *  Returns null if no label. PlotObjects here refers to curves, arrows, labels etc.
+	 *  (not legend, exes and frame, though implemented as PlotObjects) */
 	public String getPlotObjectLabel(int i) {
 		return allPlotObjects.get(i).label;
 	}
 
-	/** Set the label the i-th PlotObject (in the sequence how they were added, including hidden ones) **/
+	/** Set the label the i-th PlotObject (in the sequence how they were added, including hidden ones)
+	 *  PlotObjects here refers to curves, arrows, labels etc.
+	 *  (not legend, exes and frame, though implemented as PlotObjects) */
 	public void setPlotObjectLabel(int i, String label) {
 		allPlotObjects.get(i).label = label;
 	}
 
 	/** Sets the style of the specified PlotObject (curve, label, etc.) from a
 	 *	comma-delimited string ("color1,color2,lineWidth[,symbol][,hidden]"),
-	 * where "color2" can be "none" and "symbol" and "hidden" are optional.
-	*/
+	 *  where "color2" can be "none" and "symbol" and "hidden" are optional.
+	 *  PlotObjects here refers to curves, arrows, labels etc.
+	 *  (not legend, exes and frame, though implemented as PlotObjects) */
 	public void setStyle(int index, String style) {
 		if (index<0 || index>=allPlotObjects.size())
 			throw new IllegalArgumentException("Index out of range");
@@ -1446,6 +1472,7 @@ public class Plot implements Cloneable {
 	}
 
 	/** Returns the index of the first plot object fitting the type mask and with all data equal to those given.
+	 *  ('mask' should be a bitwise or of the types desired)
 	 *  Returns or -1 is no such plot object exists.
 	 *  The array 'values' should contain the x, y, x error bar, yerror bar data. The 'values' array may have any size;
 	 *  only the data given are compared (e.g. for an array with length 2, there is no check for erro bars).
@@ -1529,6 +1556,9 @@ public class Plot implements Cloneable {
 	public void setLimitsToFit(boolean updateImg) {
 		saveMinMax();
 		currentMinMax = getMinAndMax(true, ALL_AXES_RANGE);
+		if (Double.isNaN(defaultMinMax[0]) && Double.isNaN(defaultMinMax[2])) //no range at all so far
+			System.arraycopy(currentMinMax, 0, defaultMinMax, 0, Math.min(currentMinMax.length, defaultMinMax.length));
+
 		enlargeRange(currentMinMax);              //avoid points exactly at the border
 		//System.arraycopy(currentMinMax, 0, defaultMinMax, 0, currentMinMax.length);
 		if (plotDrawn && updateImg) updateImage();
@@ -1832,6 +1862,7 @@ public class Plot implements Cloneable {
 
 	/** Calibrated coordinates to integer pixel coordinates */
 	private int scaleX(double x) {
+		if (Double.isNaN(x)) return -1;
 		if (xMin == xMax) {
 			if (x==xMin) return xBasePxl;
 			else return x>xMin ? Integer.MAX_VALUE : Integer.MIN_VALUE;
@@ -1845,6 +1876,7 @@ public class Plot implements Cloneable {
 	/** Converts calibrated coordinates to pixel coordinates. In contrast to the image calibration, also
 	 *	works with log axes */
 	private int scaleY(double y) {
+		if (Double.isNaN(y)) return -1;
 		if (yMin == yMax) {
 			if (y==yMin) return yBasePxl;
 			else return y>yMin ? Integer.MAX_VALUE : Integer.MIN_VALUE;
@@ -3081,7 +3113,7 @@ public class Plot implements Cloneable {
 					for (int i=0; i<Math.min(plotObject.xValues.length, plotObject.yValues.length); i++) {
 						if ((!logXAxis || plotObject.xValues[i]>0) && (!logYAxis || plotObject.yValues[i]>0)
 						&& !Double.isNaN(plotObject.xValues[i]) && !Double.isNaN(plotObject.yValues[i]))
-							drawShape(plotObject, scaleX(plotObject.xValues[i]), scaleY(plotObject.yValues[i]), markSize, i);
+							drawShape(plotObject, scaleX(plotObject.xValues[i]), scaleY(plotObject.yValues[i]), plotObject.shape, markSize, i);
 					}
 					if (plotObject.shape==CUSTOM)
 						ip.setFont(saveFont);
@@ -3217,6 +3249,7 @@ public class Plot implements Cloneable {
 					break;
 				}
 			case PlotObject.LINE:
+				if (Double.isNaN(plotObject.x) || Double.isNaN(plotObject.y)) break;
 				ip.setClipRect(frame);
 				ip.drawLine(scaleX(plotObject.x), scaleY(plotObject.y), scaleX(plotObject.xEnd), scaleY(plotObject.yEnd));
 				ip.setClipRect(null);
@@ -3310,15 +3343,22 @@ public class Plot implements Cloneable {
 	}
 
 	/** Draw the symbol for the data point number 'pointIndex' (pointIndex < 0 when drawing the legend) */
-	void drawShape(PlotObject plotObject, int x, int y, int size, int pointIndex) {
-		int shape = plotObject.shape;
-		if (shape == DIAMOND) size = (int)(size*1.21);
+	@AstroImageJ(reason = "Restore lineWidth for dots to support bolded datum and MP style", modified = true)
+	void drawShape(PlotObject plotObject, int x, int y, int shape, int size, int pointIndex) {
+		if (ip==null)
+			return;
+		int lineWidth = ip.getLineWidth();
+		if (shape == DIAMOND)
+			size = (int)(size*1.21);
 		int xbase = x-sc(size/2);
 		int ybase = y-sc(size/2);
 		int xend = x+sc(size/2);
 		int yend = y+sc(size/2);
-		if (ip==null)
-			return;
+		if (lineWidth>3) {
+			int newLineWidth = 3;
+			ip.setLineWidth(newLineWidth);
+		}
+		//IJ.log("drawShape: "+size+" "+size);
 		switch(shape) {
 			case X:
 				ip.drawLine(xbase,ybase,xend,yend);
@@ -3346,6 +3386,7 @@ public class Plot implements Cloneable {
 				ip.drawLine(x,yend,xbase,y);
 				break;
 			case DOT:
+				ip.setLineWidth(lineWidth);
 				ip.drawDot(x, y); //uses current line width
 				break;
 			case CUSTOM:
@@ -3392,6 +3433,7 @@ public class Plot implements Cloneable {
 				}
 				break;
 		}
+		ip.setLineWidth(lineWidth);
 	}
 
 	/** Fill the area of the symbols for data points (except for shape=DOT)
@@ -3487,20 +3529,26 @@ public class Plot implements Cloneable {
 	void drawFloatPolyline(ImageProcessor ip, float[] x, float[] y, int n) {
 		if (x==null || x.length==0) return;
 		int x1, y1;
-		boolean isNaN1;
+		boolean isNaN0;
+		boolean isNaN1 = true; //no previous point
 		int x2 = scaleX(x[0]);
 		int y2 = scaleY(y[0]);
-		boolean isNaN2 = Float.isNaN(x[0]) || Float.isNaN(y[0]) || (logXAxis && x[0]<=0) || (logYAxis && y[0]<=0);;
+		boolean isNaN2 = Float.isNaN(x[0]) || Float.isNaN(y[0]) || (logXAxis && x[0]<=0) || (logYAxis && y[0]<=0);
 		for (int i=1; i<n; i++) {
 			x1 = x2;
 			y1 = y2;
+			isNaN0 = isNaN1;
 			isNaN1 = isNaN2;
 			x2 = scaleX(x[i]);
 			y2 = scaleY(y[i]);
 			isNaN2 = Float.isNaN(x[i]) || Float.isNaN(y[i]) || (logXAxis && x[i]<=0) || (logYAxis && y[i]<=0);
 			if (!isNaN1 && !isNaN2)
 				ip.drawLine(x1, y1, x2, y2);
+			else if (isNaN0 && !isNaN1 && isNaN2) // an isolated point
+				ip.drawLine(x1, y1, x1, y1);
 		}
+		if (isNaN1 && !isNaN2)
+			ip.drawLine(x2, y2, x2, y2);          // the last (isolated) point
 	}
 
 	/**
@@ -3633,26 +3681,39 @@ public class Plot implements Cloneable {
 		if (bottomUp) y += (nLabels-1) * lineHeight;
 		int xText = x0 + frameThickness/2 + sc(2f*LEGEND_PADDING + LEGEND_LINELENGTH + maxLineThickness);
 		int xMarker = x0 + frameThickness/2 + sc(LEGEND_PADDING + 0.5f*(LEGEND_LINELENGTH + maxLineThickness));
+		int xLine0 = x0 + frameThickness/2 + sc(LEGEND_PADDING) + 1;
 		for (PlotObject plotObject : usedPlotObjects)
 			if (plotObject.type == PlotObject.XY_DATA && !plotObject.hasFlag(PlotObject.HIDDEN) && plotObject.label != null) {		//label exists: was set now or previously
-				if (plotObject.hasFilledMarker()) {
+				int shape = plotObject.shape;
+				if (shape == SEPARATED_BAR) shape = BOX; //for bar plots, draw a square in the legend
+				int yShiftLine = 0;
+				if (shape == FILLED || shape == BAR && plotObject.color2 != null)  //shift line up to make space for fill pattern
+					yShiftLine = sc(0.1f*legendObject.getFontSize() + 0.3f*plotObject.lineWidth);
+				int markerSize = plotObject.getMarkerSize();
+				if (plotObject.shape == SEPARATED_BAR && markerSize < 0.6*legendObject.getFontSize())
+					markerSize = 2*(int)(0.3*legendObject.getFontSize()) + 1; // for 'separated bar', a larger box (an odd number, to have it centered)
+				if (plotObject.hasFilledMarker() || (plotObject.shape == SEPARATED_BAR && plotObject.color2 != null)) {
 					ip.setColor(plotObject.color2);
-					fillShape(plotObject.shape, xMarker, y, plotObject.getMarkerSize());
+					fillShape(shape, xMarker, y, markerSize);
+				} else if (yShiftLine != 0) {  //fill area below line (shape=FILLED or BAR)
+					ip.setColor(plotObject.color2 == null ? plotObject.color : plotObject.color2);
+					ip.fillRect(xLine0, y-yShiftLine, 2*(xMarker - xLine0)+1, yShiftLine+(int)(0.3*legendObject.getFontSize()));
 				}
 				int lineWidth = sc(plotObject.lineWidth);
+				if (lineWidth < 1) lineWidth = 1;
 				ip.setLineWidth(lineWidth);
-				if (plotObject.hasMarker()) {
-					Font saveFont = ip.getFont();
-					ip.setColor(plotObject.color);
-					drawShape(plotObject, xMarker, y, plotObject.getMarkerSize(), -1);
-					if (plotObject.shape==CUSTOM) ip.setFont(saveFont);
-				}
 				if (plotObject.hasCurve() || plotObject.shape==BAR) {
 					Color c = plotObject.shape == CONNECTED_CIRCLES ?
 							(plotObject.color2 == null ? Color.black : plotObject.color2) :
 							plotObject.color;
 					ip.setColor(c);
-					ip.drawLine(x0+frameThickness/2+sc(LEGEND_PADDING)+lineWidth, y, xText-sc(LEGEND_PADDING)-lineWidth, y);
+					ip.fillRect(xLine0, y-lineWidth/2-yShiftLine, 2*(xMarker - xLine0)+1, lineWidth); //draw line as a rectangle
+				}
+				if (plotObject.hasMarker() || plotObject.shape == SEPARATED_BAR) {
+					Font saveFont = ip.getFont();
+					ip.setColor(plotObject.color);
+					drawShape(plotObject, xMarker, y, shape, markerSize, -1);
+					if (plotObject.shape==CUSTOM) ip.setFont(saveFont);
 				}
 				ip.setColor(plotObject.color);
 				ip.setLineWidth(frameThickness);
@@ -4366,7 +4427,12 @@ class PlotObject implements Cloneable, Serializable, IPlotObject {
 	/** Size of the markers for an XY_DATA object with markers */
 	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving", modified = true)
 	public int getMarkerSize () {
-		return lineWidth<=1 ? 5 : 7;
+		if (lineWidth<=1)
+			return 5;
+		else if (lineWidth<=3)
+			return 7;
+		else
+			return (int)(lineWidth+4);
 	}
 
 	/** Sets the font. Also writes font properties for serialization. */
@@ -4389,6 +4455,12 @@ class PlotObject implements Cloneable, Serializable, IPlotObject {
 		if (font == null && fontFamily != null)     //after recovery from serialization, create the font from its description
 			font = FontUtil.getFont(fontFamily, flags&FONT_STYLE_MASK, fontSize);
 		return font;
+	}
+
+	/** Returns the font size */
+	@AstroImageJ(reason = "Widen Access to implement IPlotObject for Vector Plot saving")
+	public float getFontSize() {
+		return fontSize;
 	}
 
 	/** Returns all data xValues, yValues, xEValues, yEValues as a float[][] array. Note that future versions may have more data. */
@@ -4662,11 +4734,6 @@ class PlotObject implements Cloneable, Serializable, IPlotObject {
 	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving")
 	public void setFontFamily(String fontFamily) {
 		this.fontFamily = fontFamily;
-	}
-
-	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving")
-	public float getFontSize() {
-		return fontSize;
 	}
 
 	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving")

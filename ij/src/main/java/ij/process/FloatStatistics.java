@@ -1,5 +1,7 @@
 package ij.process;
+
 import ij.measure.Calibration;
+
 import java.util.Arrays;
 
 /** 32-bit (float) image statistics, including histogram. */
@@ -67,8 +69,10 @@ public class FloatStatistics extends ImageStatistics {
 				if (mask==null || mask[mi++]!=0) {
 					v = pixels[i];
 					if (v>=minThreshold && v<=maxThreshold) {
-						if (v<roiMin) roiMin = v;
-						if (v>roiMax) roiMax = v;
+						if (v<roiMin)
+							roiMin = v;
+						if (v>roiMax)
+							roiMax = v;
 					}
 				}
 				i++;
@@ -79,8 +83,10 @@ public class FloatStatistics extends ImageStatistics {
 			histMin = min; 
 			histMax = max;
 		} else {
-			if (min<histMin) min = histMin;
-			if (max>histMax) max = histMax;
+			if (min<histMin)
+				min = histMin;
+			if (max>histMax)
+				max = histMax;
 		}
 		binSize = (histMax-histMin)/nBins;
 

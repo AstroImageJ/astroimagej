@@ -225,12 +225,7 @@ public class ImageCanvas extends Canvas implements MouseListener, MouseMotionLis
 
 	public void update(Graphics g) {
 		paint(g);
-	}//todo mark
-	
-	//public void repaint() {
-	//	super.repaint();
-	//	//if (IJ.debugMode) IJ.log("repaint: "+imp);
-	//}
+	}
 
 	@AstroImageJ(reason = "Set interpolation to fix rendering at higher UI scales", modified = true)
     public void paint(Graphics g) {
@@ -306,7 +301,7 @@ public class ImageCanvas extends Canvas implements MouseListener, MouseMotionLis
 			roi.setFillColor(fillColor);
 			currentRoi = null;
 		} else
-			roi.draw(g);//todo mark
+			roi.draw(g);
     }
            
 	public int getSliceNumber(String label) {
@@ -362,10 +357,10 @@ public class ImageCanvas extends Canvas implements MouseListener, MouseMotionLis
 			if (overlay==null) break;
 			Roi roi = overlay.get(i);
 			if (roi==null) break;
+			int c = roi.getCPosition();
+			int z = roi.getZPosition();
+			int t = roi.getTPosition();
 			if (hyperstack) {
-				int c = roi.getCPosition();
-				int z = roi.getZPosition();
-				int t = roi.getTPosition();
 				int position = roi.getPosition();
 				//IJ.log(c+" "+z+" "+t+"  "+position+" "+roiManagerShowAllMode);
 				if (position>0) {
@@ -377,12 +372,17 @@ public class ImageCanvas extends Canvas implements MouseListener, MouseMotionLis
 				if (((c==0||c==channel) && (z==0||z==slice) && (t==0||t==frame)) || roiManagerShowAllMode)
 					drawRoi(g, roi, drawLabels?i+LIST_OFFSET:-1);
 			} else {
-				int position =  stackSize>1?roi.getPosition():0;
+				int position = stackSize>1?roi.getPosition():0;
+				if (stackSize>1 && position==0 && c==1) {
+					if (z==1)
+						position = t;
+					else if (t==1)
+						position = z;
+				}
 				if (position==0 && stackSize>1)
 					position = getSliceNumber(roi.getName());
 				if (position>0 && imp.getCompositeMode()==IJ.COMPOSITE)
 					position = 0;
-				//IJ.log(position+"  "+currentImage+" "+roiManagerShowAllMode);
 				if (position==0 || position==currentImage || roiManagerShowAllMode)
 					drawRoi(g, roi, drawLabels?i+LIST_OFFSET:-1);
 			}
@@ -1284,7 +1284,8 @@ public class ImageCanvas extends Canvas implements MouseListener, MouseMotionLis
 					//IJ.log(size2+" "+empty+" "+unchanged+" "+state+" "+roi1+"  "+roi2);			
 					if ((roi1==null && (size2<=1||empty)) || unchanged) {
 						if (roi1==null) imp.deleteRoi();
-						if (!cursorMoved) handlePopupMenu(e);
+						if (!cursorMoved && Toolbar.getToolId()!=Toolbar.HAND)
+							handlePopupMenu(e);
 					}
 				}
 			}, longClickDelay);
@@ -1330,6 +1331,8 @@ public class ImageCanvas extends Canvas implements MouseListener, MouseMotionLis
 		int ox = offScreenX(sx);
 		int oy = offScreenY(sy);
 		Roi roi = imp.getRoi();
+		if (roi!=null && roi.getType()==Roi.COMPOSITE && Toolbar.getToolId()==Toolbar.OVAL && Toolbar.getBrushSize()>0)
+			return; // selection brush tool
 		if (roi!=null && (roi.getType()==Roi.POLYGON || roi.getType()==Roi.POLYLINE || roi.getType()==Roi.ANGLE)
 		&& roi.getState()==roi.CONSTRUCTING) {
 			roi.handleMouseUp(sx, sy); // simulate double-click to finalize
@@ -1713,8 +1716,8 @@ public class ImageCanvas extends Canvas implements MouseListener, MouseMotionLis
 				if (!IJ.altKeyDown() && roi.getType()==Roi.COMPOSITE
 				&& roi.getBounds().width==imp.getWidth() && roi.getBounds().height==imp.getHeight())
 					return false;
-				if (Toolbar.getToolId()==Toolbar.OVAL && Toolbar.getBrushSize()>0)
-					Toolbar.getInstance().setTool(Toolbar.RECTANGLE);
+				//if (Toolbar.getToolId()==Toolbar.OVAL && Toolbar.getBrushSize()>0)
+				//	Toolbar.getInstance().setTool(Toolbar.RECTANGLE);
 				roi.setImage(null);
 				imp.setRoi(roi);
 				roi.handleMouseDown(sx, sy);

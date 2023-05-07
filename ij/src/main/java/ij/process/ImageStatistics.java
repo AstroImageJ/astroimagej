@@ -1,5 +1,8 @@
 package ij.process;
-import ij.measure.*;
+
+import ij.measure.Calibration;
+import ij.measure.Measurements;
+
 import java.awt.*;
 
 /** Statistics, including the histogram, of an image or selection. */
@@ -208,7 +211,7 @@ public class ImageStatistics implements Measurements {
 	
 	void fitEllipse(ImageProcessor ip, int mOptions) {
 		ImageProcessor originalMask = null;
-		boolean limitToThreshold = (mOptions&LIMIT)!=0 && ip.getMinThreshold()!=ImageProcessor.NO_THRESHOLD;
+		boolean limitToThreshold = (mOptions&LIMIT)!=0 && ip.isThreshold();
 		if (limitToThreshold) {
 			ImageProcessor mask = ip.getMask();
 			Rectangle r = ip.getRoi();

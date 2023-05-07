@@ -1,13 +1,19 @@
 package ij.plugin;
-import java.awt.*;
-import java.awt.event.*;
-import java.util.Vector;
+
 import ij.*;
-import ij.process.*;
 import ij.gui.*;
-import ij.util.Tools;
-import ij.plugin.frame.Recorder;
 import ij.measure.Calibration;
+import ij.plugin.frame.Recorder;
+import ij.process.ImageProcessor;
+import ij.process.LUT;
+import ij.util.Tools;
+
+import java.awt.*;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.awt.event.TextEvent;
+import java.awt.event.TextListener;
+import java.util.Vector;
 
 /** This plugin implements the Image/Duplicate command.
 <pre>
@@ -61,9 +67,8 @@ public class Duplicator implements PlugIn, TextListener, ItemListener {
 		if (!IJ.altKeyDown()||stackSize>1) {
 			if (imp.isHyperStack() || imp.isComposite()) {
 				duplicateHyperstack(imp, newTitle);			
-				if (isRotatedRect) {
-					straightenRotatedRect(impA, roiA, IJ.getImage());	
-				}								
+				if (isRotatedRect)
+					straightenRotatedRect(impA, roiA, IJ.getImage());								
 				return;
 			} else
 				newTitle = showDialog(imp, "Duplicate...", "Title: ");
@@ -96,7 +101,10 @@ public class Duplicator implements PlugIn, TextListener, ItemListener {
 		imp2.setTitle(newTitle);
 		imp2.setProp("UniqueName","true");
 		if (roi!=null && roi.isArea() && roi.getType()!=Roi.RECTANGLE) {
-			Roi roi2 = (Roi)cropRoi(imp, roi).clone();
+			Roi roi2 = cropRoi(imp, roi);
+			if (roi2==null)
+				return;
+			roi2 = (Roi)roi2.clone();
 			roi2.setLocation(0, 0);
 			imp2.setRoi(roi2);
 		}
@@ -240,6 +248,10 @@ public class Duplicator implements PlugIn, TextListener, ItemListener {
 				IJ.showProgress(i,n);
 			}
 			ImageProcessor ip2 = stack.getProcessor(i);
+			if (ip2==null) { // work around for Fiji Import>Movie (FFMPEG) bug
+				imp.setSlice(i);
+				ip2 = imp.getProcessor();
+			}
 			ip2.setRoi(rect);
 			ip2 = ip2.crop();
 			if (stack2==null)
@@ -296,14 +308,14 @@ public class Duplicator implements PlugIn, TextListener, ItemListener {
 		if (info!=null)
 			imp2.setProperty("Info", info);
 		imp2.setProperties(imp.getPropertiesAsArray());
-		if (imp.isStack()) {
+		if (imp.hasImageStack()) {
 			ImageStack stack = imp.getStack();
 			String label = stack.getSliceLabel(imp.getCurrentSlice());
 			if (label!=null) {
 				if (label.length()>250 && label.indexOf('\n')>0 && label.contains("0002,"))
 					imp2.setProperty("Info", label); // DICOM metadata
 				else
-					imp2.setProperty("Label", label);					
+					imp2.setProp("Slice_Label", label);					
 			}
 			if (imp.isComposite()) {
 				LUT lut = ((CompositeImage)imp).getChannelLut();
@@ -313,9 +325,9 @@ public class Duplicator implements PlugIn, TextListener, ItemListener {
 					imp2.getProcessor().setColorModel(lut);
 			}
 		} else {
-			String label = (String)imp.getProperty("Label");
+			String label = imp.getProp("Slice_Label");
 			if (label!=null)
-				imp2.setProperty("Label", label);
+				imp2.setProp("Slice_Label", label);
 		}
 		Overlay overlay = imp.getOverlay();
 		if (overlay!=null && !imp.getHideOverlay()) {
@@ -497,8 +509,11 @@ public class Duplicator implements PlugIn, TextListener, ItemListener {
 			duplicateStack = gd.getNextBoolean();
 			if (duplicateStack) {
 				String[] range = Tools.split(gd.getNextString(), " -");
-				double d1 = gd.parseDouble(range[0]);
-				double d2 = range.length==2?gd.parseDouble(range[1]):Double.NaN;
+				double d1=1, d2=stackSize;
+				if (range!=null && range.length>0) {
+					d1 = gd.parseDouble(range[0]);
+					d2 = range.length==2?gd.parseDouble(range[1]):Double.NaN;
+				}
 				first = Double.isNaN(d1)?1:(int)d1;
 				last = Double.isNaN(d2)?stackSize:(int)d2;
 				if (first<1) first = 1;
@@ -662,6 +677,8 @@ public class Duplicator implements PlugIn, TextListener, ItemListener {
 		if (imp==null)
 			return roi;
 		Rectangle b = roi.getBounds();
+		if (b.width==0 || b.height==0)
+			return null; // zero area
 		int w = imp.getWidth();
 		int h = imp.getHeight();
 		if (b.x<0 || b.y<0 || b.x+b.width>w || b.y+b.height>h) {

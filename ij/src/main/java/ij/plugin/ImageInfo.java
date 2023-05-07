@@ -1,18 +1,20 @@
 package ij.plugin;
+
 import ij.*;
 import ij.gui.*;
-import ij.process.*;
-import ij.measure.*;
-import ij.io.*;
-import ij.util.Tools;
-import ij.plugin.frame.Editor;
-import ij.plugin.filter.Analyzer;
-import ij.text.TextWindow;
+import ij.io.FileInfo;
 import ij.macro.Interpreter;
+import ij.measure.Calibration;
+import ij.measure.CurveFitter;
+import ij.plugin.filter.Analyzer;
+import ij.process.ImageProcessor;
+import ij.process.LUT;
+import ij.text.TextWindow;
+import ij.util.Tools;
+
 import java.awt.*;
-import java.util.*;
-import java.lang.reflect.*;
 import java.awt.geom.Rectangle2D;
+import java.lang.reflect.Method;
 
 /** This plugin implements the Image/Show Info command. */
 public class ImageInfo implements PlugIn {
@@ -60,13 +62,14 @@ public class ImageInfo implements PlugIn {
 	public String getImageInfo(ImagePlus imp) {
 		ImageProcessor ip = imp.getProcessor();
 		String infoProperty = null;
-		if (imp.getStackSize()>1) {
+		boolean isStack = imp.getStackSize()>1;
+		if (isStack || imp.hasImageStack()) {
 			ImageStack stack = imp.getStack();
 			String label = stack.getSliceLabel(imp.getCurrentSlice());
 			if (label!=null && label.indexOf('\n')>0)
 				infoProperty = label;
 		}
-		if (infoProperty==null) {
+		if (infoProperty==null || (isStack && (imp.getStack() instanceof ListVirtualStack))) {
 			infoProperty = (String)imp.getProperty("Info");
 			if (infoProperty==null)
 				infoProperty = getExifData(imp);
@@ -188,13 +191,7 @@ public class ImageInfo implements PlugIn {
     	switch (type) {
 	    	case ImagePlus.GRAY8:
 	    		s += "Bits per pixel: 8 ";
-	    		String lut = "LUT";
-	    		if (imp.getProcessor().isColorLut())
-	    			lut = "color " + lut;
-	    		else
-	    			lut = "grayscale " + lut;
-	    		if (imp.isInvertedLut())
-	    			lut = "inverting " + lut;
+	    		String lut = getLutInfo(imp);
 				s += "(" + lut + ")\n";
 				if (imp.getNChannels()>1)
 					s += displayRanges(imp);
@@ -203,10 +200,10 @@ public class ImageInfo implements PlugIn {
 				break;
 	    	case ImagePlus.GRAY16: case ImagePlus.GRAY32:
 	    		if (type==ImagePlus.GRAY16) {
-	    			String sign = cal.isSigned16Bit()?"signed":"unsigned";
-	    			s += "Bits per pixel: 16 ("+sign+")\n";
+	    			String sign = cal.isSigned16Bit()?"signed, ":"unsigned, ";
+	    			s += "Bits per pixel: 16 ("+sign+getLutInfo(imp)+")\n";
 	    		} else
-	    			s += "Bits per pixel: 32 (float)\n";
+	    			s += "Bits per pixel: 32 (float, "+getLutInfo(imp)+")\n";
 				if (imp.getNChannels()>1)
 					s += displayRanges(imp);
 				else {
@@ -243,13 +240,12 @@ public class ImageInfo implements PlugIn {
     			label = " (" + label + ")";
     		else
     			label = "";
-			if (interval>0.0 || fps!=0.0) {
+			if (imp.getNFrames()>1 || interval>0.0 || fps!=0.0) {
 				s += "Frame: " + number + label + "\n";
 				if (fps!=0.0) {
 					String sRate = Math.abs(fps-Math.round(fps))<0.00001?IJ.d2s(fps,0):IJ.d2s(fps,5);
 					s += "Frame rate: " + sRate + " fps\n";
-				}
-				if (interval!=0.0)
+				} else
 					s += "Frame interval: " + ((int)interval==interval?IJ.d2s(interval,0):IJ.d2s(interval,5)) + " " + cal.getTimeUnit() + "\n";
 			} else
 				s += "Image: " + number + label + "\n";
@@ -277,7 +273,7 @@ public class ImageInfo implements PlugIn {
 					stackType += " (ListVirtualStack)";
 				s += "Stack type: " + stackType+ "\n";
 			}
-		} else if (imp.isStack()) { // one image stack
+		} else if (imp.hasImageStack()) { // one image stack
     		String label = imp.getStack().getShortSliceLabel(1);
     		if (label!=null && label.length()>0)
 				s += "Image: 1/1 (" + label + ")\n";
@@ -285,7 +281,7 @@ public class ImageInfo implements PlugIn {
 
 		if (imp.isLocked())
 			s += "**Locked**\n";
-		if (ip.getMinThreshold()==ImageProcessor.NO_THRESHOLD)
+		if (!ip.isThreshold())
 			s += "No threshold\n";
 	    else {
 	    	double lower = ip.getMinThreshold();
@@ -466,6 +462,17 @@ public class ImageInfo implements PlugIn {
 
 		return s;
 	}
+	
+	private String getLutInfo(ImagePlus imp) {
+		String lut = "LUT";
+		if (imp.getProcessor().isColorLut())
+			lut = "color " + lut;
+		else
+			lut = "grayscale " + lut;
+		if (imp.isInvertedLut())
+			lut = "inverting " + lut;
+		return lut;
+	}
 
 	private String displayRanges(ImagePlus imp) {
 		LUT[] luts = imp.getLuts();
@@ -513,7 +520,7 @@ public class ImageInfo implements PlugIn {
 			String value = props[i+1];
 			if (LUT.nameKey.equals(key) || "UniqueName".equals(key))
 				continue;
-			if (key!=null && value!=null && !key.equals("ShowInfo")) {
+			if (key!=null && value!=null && !(key.equals("ShowInfo")||key.equals("Slice_Label"))) {
 				if (value.length()<80)
 					s += key + ": " + value + "\n";
 				else

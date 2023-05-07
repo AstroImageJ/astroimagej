@@ -1,14 +1,19 @@
 package ij.gui;
-import java.awt.*;
-import java.awt.event.*;
+
 import ij.*;
 import ij.astro.AstroImageJ;
-import ij.io.*;
-import ij.measure.*;
-import ij.plugin.frame.*;
-import ij.plugin.PointToolOptions;
+import ij.io.FileSaver;
 import ij.macro.Interpreter;
-import ij.util.*;
+import ij.measure.Calibration;
+import ij.plugin.PointToolOptions;
+import ij.plugin.frame.Channels;
+import ij.util.Java2;
+import ij.util.Tools;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.lang.reflect.InvocationTargetException;
 
 /** A frame for displaying images. */
 public class ImageWindow extends Frame implements FocusListener, WindowListener, WindowStateListener, MouseWheelListener {
@@ -46,28 +51,28 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 	private static int count;
 	private static boolean centerOnScreen;
 	private static Point nextLocation;
-	public static long setMenuBarTime;	
+	public static long setMenuBarTime;
 	private int textGap = centerOnScreen?0:TEXT_GAP;
 	private Point initialLoc;
 	private int screenHeight, screenWidth;
 
-	
+
 	/** This variable is set false if the user presses the escape key or closes the window. */
 	public boolean running;
-	
+
 	/** This variable is set false if the user clicks in this
-		window, presses the escape key, or closes the window. */
+	 window, presses the escape key, or closes the window. */
 	public boolean running2;
-	
+
 	public ImageWindow(String title) {
 		super(title);
 	}
 
     public ImageWindow(ImagePlus imp) {
-    	this(imp, null);
+		this(imp, null);
    }
 
-   @AstroImageJ(reason = "Add checks for AIJ windows to control their positioning", modified = true)
+	@AstroImageJ(reason = "Add checks for AIJ windows to control their positioning; Move window close to EventQueue", modified = true)
     public ImageWindow(ImagePlus imp, ImageCanvas ic) {
 		super(imp.getTitle());
 		if (SCALE>1.0) {
@@ -78,12 +83,12 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 			setForeground(Color.white);
 			setBackground(Color.black);
 		} else {
-        	setForeground(Color.black);
-        	if (IJ.isLinux())
-        		setBackground(ImageJ.backgroundColor);
-        	else
-        		setBackground(Color.white);
-        }
+			setForeground(Color.black);
+			if (IJ.isLinux())
+				setBackground(ImageJ.backgroundColor);
+			else
+				setBackground(Color.white);
+		}
 		boolean openAsHyperStack = imp.getOpenAsHyperStack();
 		ij = IJ.getInstance();
 		this.imp = imp;
@@ -95,10 +100,10 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 		ImageWindow previousWindow = imp.getWindow();
 		setLayout(new ImageLayout(ic));
 		add(ic);
- 		addFocusListener(this);
- 		addWindowListener(this);
- 		addWindowStateListener(this);
- 		addKeyListener(ij);
+		addFocusListener(this);
+		addWindowListener(this);
+		addWindowStateListener(this);
+		addKeyListener(ij);
 		setFocusTraversalKeysEnabled(false);
 		if (!(this instanceof StackWindow))
 			addMouseWheelListener(this);
@@ -119,14 +124,28 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 				setLocation(loc.x, loc.y);
 			if (!(this instanceof StackWindow || this instanceof PlotWindow)) { //layout now unless components will be added later
 				pack();
-				if (!Prefs.get("Astronomy_Tool.autoConvert", false) || (this instanceof HistogramWindow) || this.getTitle().startsWith("Profile of") || this.getTitle().startsWith("About")) show();
+				if (IJ.isMacro())
+					imp.setDeactivated(); //prepare for waitTillActivated (imp may have been activated before if it gets a new Window now)
+				if (!Prefs.get("Astronomy_Tool.autoConvert", false) ||
+						(this instanceof HistogramWindow) || this.getTitle().startsWith("Profile of") ||
+						this.getTitle().startsWith("About")) {
+					show();//todo does the macro check need to be in here too?
+				}
 			}
 			if (ic.getMagnification()!=0.0)
 				imp.setTitle(imp.getTitle());
 			boolean unlocked = imp.lockSilently();
 			boolean changes = imp.changes;
 			imp.changes = false;
-			previousWindow.close();
+			if (SwingUtilities.isEventDispatchThread()) {
+				previousWindow.close();
+			} else {
+				try {
+					SwingUtilities.invokeAndWait(previousWindow::close);
+				} catch (InterruptedException | InvocationTargetException e) {
+					e.printStackTrace();
+				}
+			}
 			imp.changes = changes;
 			if (unlocked)
 				imp.unlock();
@@ -150,32 +169,38 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 			if (Interpreter.isBatchMode() || (IJ.getInstance()==null&&this instanceof HistogramWindow)) {
 				WindowManager.setTempCurrentImage(imp);
 				Interpreter.addBatchModeImage(imp);
-			} else
-			if (!Prefs.get("Astronomy_Tool.autoConvert", false) || (this instanceof PlotWindow) ||
-					(this instanceof HistogramWindow) || this.getTitle().startsWith("Profile of") || this.getTitle().startsWith("About")) show();
+			} else {
+				if (IJ.isMacro())
+					imp.setDeactivated(); //prepare for waitTillActivated (imp may have been activated previously and gets a new Window now)
+				if (!Prefs.get("Astronomy_Tool.autoConvert", false) || (this instanceof PlotWindow) ||
+						(this instanceof HistogramWindow) || this.getTitle().startsWith("Profile of") ||
+						this.getTitle().startsWith("About")) {
+					show();//todo macro check here?
+				}
+			}
 		}
      }
 
-     @AstroImageJ(reason = "Add checks for AIJ windows to control their positioning", modified = true)
+	@AstroImageJ(reason = "Add checks for AIJ windows to control their positioning", modified = true)
 	private void setLocationAndSize(boolean updating) {
 		if (imp==null)
 			return;
 		int width = imp.getWidth();
 		int height = imp.getHeight();
-		
+
 		// load prefernces file location
 		Point loc = Prefs.getLocation(LOC_KEY);
 		Rectangle bounds = null;
 		if (loc!=null) {
 			bounds = GUI.getMaxWindowBounds(loc);
 			if (bounds!=null && (loc.x>bounds.x+bounds.width/3||loc.y>bounds.y+bounds.height/3)
-			&& (loc.x+width>bounds.x+bounds.width||loc.y+height>bounds.y+bounds.height)) {
+					&& (loc.x+width>bounds.x+bounds.width||loc.y+height>bounds.y+bounds.height)) {
 				loc = null;
 				bounds = null;
 			}
-		}		
+		}
 		// if loc not valid, use screen bounds of visible window (this) or of main window (ij) if not visible yet (updating == false)
-		Rectangle maxWindow = bounds!=null?bounds:GUI.getMaxWindowBounds(updating?this: ij);  
+		Rectangle maxWindow = bounds!=null?bounds:GUI.getMaxWindowBounds(updating?this: ij);
 
 		if (WindowManager.getWindowCount()<=1)
 			xbase = -1;
@@ -206,7 +231,7 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 			}
 			xbase = Math.max(xbase, maxWindow.x);
 			ybase = Math.max(ybase, maxWindow.y);
-			if (IJ.debugMode) IJ.log("ImageWindow.xbase: "+xbase);
+			//if (IJ.debugMode) IJ.log("ImageWindow.xbase: "+xbase);
 			xloc = xbase;
 			yloc = ybase;
 		}
@@ -230,7 +255,7 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 				mag = mag2;
 			}
 		}
-		
+
 		if (mag<1.0) {
 			initialMagnification = mag;
 			ic.setSize((int)(width*mag), (int)(height*mag));
@@ -246,7 +271,7 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 				ic.zoomIn(0, 0);
 			setSize(Math.min(width, screenWidth-x), Math.min(height, screenHeight-y));
 			validate();
-		} else 
+		} else
 			pack();
 		if (!updating) {
 			setLocation(x, y);
@@ -262,7 +287,7 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 	public double getInitialMagnification() {
 		return initialMagnification;
 	}
-	
+
 	/** Override Container getInsets() to make room for some text above the image. */
 	@AstroImageJ(reason = "Remove textgap from plot window as the subtitle ius disabled for it.", modified = true)
 	public Insets getInsets() {
@@ -286,46 +311,50 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
     	if (this instanceof PlotWindow) return;
         if (textGap!=0) {
 			Insets insets = super.getInsets();
+			Color savec = null;
 			if (imp.isComposite()) {
 				CompositeImage ci = (CompositeImage)imp;
 				if (ci.getMode()==IJ.COMPOSITE) {
+					savec = g.getColor();
 					Color c = ci.getChannelColor();
 					if (Color.green.equals(c))
 						c = new Color(0,180,0);
 					g.setColor(c);
 				}
 			}
-			Java2.setAntialiasedText(g, true);			
+			Java2.setAntialiasedText(g, true);
 			if (SCALE>1.0) {
 				Font font = new Font("SansSerif", Font.PLAIN, (int)(12*SCALE));
 				g.setFont(font);
 			}
 			g.drawString(createSubtitle(), insets.left+5, insets.top+TEXT_GAP);
+			if (savec!=null)
+				g.setColor(savec);
 		}
-    }
-    
-    /** Creates the subtitle. */
-    public String createSubtitle() {
-    	String s="";
-    	if (imp==null)
-    		return s;
-    	int stackSize = imp.getStackSize();
-    	if (stackSize>1) {
-    		ImageStack stack = imp.getStack();
-    		int currentSlice = imp.getCurrentSlice();
-    		s += currentSlice+"/"+stackSize;
-    		String label = stack.getShortSliceLabel(currentSlice);
-    		if (label!=null && label.length()>0) {
-    			if (imp.isHyperStack()) label = label.replace(';', ' ');
-    			s += " (" + label + ")";
-    		}
+	}
+
+	/** Creates the subtitle. */
+	public String createSubtitle() {
+		String s="";
+		if (imp==null)
+			return s;
+		int stackSize = imp.getStackSize();
+		if (stackSize>1) {
+			ImageStack stack = imp.getStack();
+			int currentSlice = imp.getCurrentSlice();
+			s += currentSlice+"/"+stackSize;
+			String label = stack.getShortSliceLabel(currentSlice);
+			if (label!=null && label.length()>0) {
+				if (imp.isHyperStack()) label = label.replace(';', ' ');
+				s += " (" + label + ")";
+			}
 			if ((this instanceof StackWindow) && running2) {
 				return s;
 			}
-    		s += "; ";
+			s += "; ";
 		} else {
-			String label = (String)imp.getProperty("Label");
-			if (label==null && imp.isStack())
+			String label = imp.getProp("Slice_Label");
+			if (label==null && imp.hasImageStack())
 				label = imp.getStack().getSliceLabel(1);
 			if (label!=null && label.length()>0) {
 				int newline = label.indexOf('\n');
@@ -339,9 +368,9 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 				s = "\""+label + "\"; ";
 			}
 		}
-    	int type = imp.getType();
-    	Calibration cal = imp.getCalibration();
-    	if (cal.scaled()) {
+		int type = imp.getType();
+		Calibration cal = imp.getCalibration();
+		if (cal.scaled()) {
 			boolean unitsMatch = cal.getXUnit().equals(cal.getYUnit());
 			double cwidth = imp.getWidth()*cal.pixelWidth;
 			double cheight = imp.getHeight()*cal.pixelHeight;
@@ -349,50 +378,43 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 			if (digits>2) digits=2;
 			if (unitsMatch) {
 				s += IJ.d2s(cwidth,digits) + "x" + IJ.d2s(cheight,digits)
-					+ " " + cal.getUnits() + " (" + imp.getWidth() + "x" + imp.getHeight() + "); ";
+						+ " " + cal.getUnits() + " (" + imp.getWidth() + "x" + imp.getHeight() + "); ";
 			} else {
 				s += d2s(cwidth) + " " + cal.getXUnit() + " x "
-					+ d2s(cheight) + " " + cal.getYUnit()
-					+ " (" + imp.getWidth() + "x" + imp.getHeight() + "); ";
+						+ d2s(cheight) + " " + cal.getYUnit()
+						+ " (" + imp.getWidth() + "x" + imp.getHeight() + "); ";
 			}
-    	} else
-    		s += imp.getWidth() + "x" + imp.getHeight() + " pixels; ";
-    	switch (type) {
-	    	case ImagePlus.GRAY8:
-	    	case ImagePlus.COLOR_256:
-	    		s += "8-bit";
-	    		break;
-	    	case ImagePlus.GRAY16:
-	    		s += "16-bit";
-	    		break;
-	    	case ImagePlus.GRAY32:
-	    		s += "32-bit";
-	    		break;
-	    	case ImagePlus.COLOR_RGB:
-	    		s += imp.isRGB() ? "RGB" :  "32-bit (int)";
-	    		break;
-    	}
-    	if (imp.isInvertedLut())
-    		s += " (inverting LUT)";
-		return s+"; "+getImageSize(imp);
-    }
-    
-    public static String getImageSize(ImagePlus imp) {
-    	if (imp==null)
-    		return null;
-    	double size = imp.getSizeInBytes()/1024.0;
-   		String s2=null, s3=null;
-    	if (size<1024.0)
-    		{s2=IJ.d2s(size,0); s3="K";}
-    	else if (size<10000.0)
-     		{s2=IJ.d2s(size/1024.0,1); s3="MB";}
-    	else if (size<1048576.0)
-    		{s2=IJ.d2s(Math.round(size/1024.0),0); s3="MB";}
-	   	else
-    		{s2=IJ.d2s(size/1048576.0,1); s3="GB";}
-    	if (s2.endsWith(".0")) s2 = s2.substring(0, s2.length()-2);
-    	return s2+s3;
-    }
+		} else
+			s += imp.getWidth() + "x" + imp.getHeight() + " pixels; ";
+		switch (type) {
+			case ImagePlus.GRAY8:
+			case ImagePlus.COLOR_256:
+				s += "8-bit";
+				break;
+			case ImagePlus.GRAY16:
+				s += "16-bit";
+				break;
+			case ImagePlus.GRAY32:
+				s += "32-bit";
+				break;
+			case ImagePlus.COLOR_RGB:
+				s += imp.isRGB() ? "RGB" :  "32-bit (int)";
+				break;
+		}
+		if (imp.isInvertedLut())
+			s += " (inverting LUT)";
+	 	return s+"; "+getImageSize(imp);
+	}
+
+	public static String getImageSize(ImagePlus imp) {
+		if (imp==null)
+			return null;
+		double size = imp.getSizeInBytes()/1024.0;
+		String s2=null, s3=null;
+		if (size<1024.0) {s2=IJ.d2s(size,0); s3="K";} else if (size<10000.0) {s2=IJ.d2s(size/1024.0,1); s3="MB";} else if (size<1048576.0) {s2=IJ.d2s(Math.round(size/1024.0),0); s3="MB";} else {s2=IJ.d2s(size/1048576.0,1); s3="GB";}
+		if (s2.endsWith(".0")) s2 = s2.substring(0, s2.length()-2);
+		return s2+s3;
+	}
     
     private String d2s(double n) {
 		int digits = Tools.getDecimalPlaces(n);
@@ -406,12 +428,12 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 		Rectangle r = ic.getBounds();
 		int extraWidth = MIN_WIDTH - r.width;
 		int extraHeight = MIN_HEIGHT - r.height;
-		/*if (extraWidth<=0 && extraHeight<=0 && !Prefs.noBorder && !IJ.isLinux())
+        /*if (extraWidth<=0 && extraHeight<=0 && !Prefs.noBorder && !IJ.isLinux())
 			g.drawRect(r.x-1, r.y-1, r.width+1, r.height+1);*/
     }
-    
+
 	/** Removes this window from the window list and disposes of it.
-		Returns false if the user cancels the "save changes" dialog. */
+	 Returns false if the user cancels the "save changes" dialog. */
 	@AstroImageJ(reason = "Save AIJ plot window location", modified = true)
 	public boolean close() {
 		if (this instanceof PlotWindow) {
@@ -458,8 +480,8 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 			return true;
 		Rectangle bounds = getBounds();
 		if (initialLoc!=null && !bounds.equals(initialLoc) && !IJ.isMacro()
-		&& bounds.y<screenHeight/3 && (bounds.y+bounds.height)<=screenHeight
-		&& (bounds.x+bounds.width)<=screenWidth) {
+				&& bounds.y<screenHeight/3 && (bounds.y+bounds.height)<=screenHeight
+				&& (bounds.x+bounds.width)<=screenWidth) {
 			Prefs.saveLocation(LOC_KEY, new Point(bounds.x,bounds.y));
 			xbase = -1;
 		}
@@ -469,7 +491,7 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 		imp = null;
 		return true;
 	}
-	
+
 	public ImagePlus getImagePlus() {
 		return imp;
 	}
@@ -485,7 +507,7 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 		ic.repaint();
 		repaint();
 	}
-	
+
 	public void updateImage(ImagePlus imp) {
         if (imp!=this.imp)
             throw new IllegalArgumentException("imp!=this.imp");
@@ -493,13 +515,13 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
         ic.updateImage(imp);
         setLocationAndSize(true);
         if (this instanceof StackWindow) {
-        	StackWindow sw = (StackWindow)this;
-        	int stackSize = imp.getStackSize();
-        	int nScrollbars = sw.getNScrollbars();
-        	if (stackSize==1 && nScrollbars>0)
-        		sw.removeScrollbars();
-        	else if (stackSize>1 && nScrollbars==0)
-        		sw.addScrollbars(imp);
+			StackWindow sw = (StackWindow)this;
+			int stackSize = imp.getStackSize();
+			int nScrollbars = sw.getNScrollbars();
+			if (stackSize==1 && nScrollbars>0)
+				sw.removeScrollbars();
+			else if (stackSize>1 && nScrollbars==0)
+				sw.addScrollbars(imp);
         }
         pack();
 		repaint();
@@ -511,12 +533,12 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 	public ImageCanvas getCanvas() {
 		return ic;
 	}
-	
+
 
 	static ImagePlus getClipboard() {
 		return ImagePlus.getClipboard();
 	}
-	
+
 	public Rectangle getMaximumBounds() {
 		Rectangle maxWindow = GUI.getMaxWindowBounds(this);
 		if (imp==null)
@@ -545,7 +567,10 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 			wWidth = (int)(width*mag+extraSize.width);
 		}
 		int xloc = (int)(maxWidth-wWidth)/2;
-		if (xloc<maxWindow.x) xloc = maxWindow.x;
+		if (xloc<maxWindow.x)
+			xloc = maxWindow.x;
+		if (xloc>maxWindow.x+maxWindow.width-wWidth)
+			xloc = maxWindow.x;
 		wWidth = Math.min(wWidth, maxWindow.x-xloc+maxWindow.width);
 		wHeight = Math.min(wHeight, maxWindow.height);
 		return new Rectangle(xloc, maxWindow.y, wWidth, wHeight);
@@ -559,8 +584,8 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 		if (extraHeight==20) extraHeight = 42;
 		int members = getComponentCount();
 		for (int i=1; i<members; i++) {
-		    Component m = getComponent(i);
-		    Dimension d = m.getPreferredSize();
+			Component m = getComponent(i);
+			Dimension d = m.getPreferredSize();
 			extraHeight += d.height + 5;
 			if (IJ.debugMode) IJ.log(i+"  "+d.height+" "+extraHeight);
 		}
@@ -574,15 +599,15 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 		setMaxBoundsTime = System.currentTimeMillis();
 		return comp;
 	}
-	
+
 	public void maximize() {
-		if (GenericDialog.getInstance()!=null)
-			return; // workaround for OSX/Java 8 maximize bug 
+		if (GenericDialog.getInstance()!=null && IJ.isMacOSX() && IJ.isJava18())
+			return; // workaround for OSX/Java 8 maximize bug
 		Rectangle rect = getMaximumBounds();
 		if (IJ.debugMode) IJ.log("maximize: "+rect);
 		setLocationAndSize(rect.x, rect.y, rect.width, rect.height);
 	}
-	
+
 	public void minimize() {
 		if (IJ.debugMode) IJ.log("minimize: "+unzoomWhenMinimizing);
 		if (unzoomWhenMinimizing)
@@ -594,10 +619,10 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 	public boolean isClosed() {
 		return closed;
 	}
-	
+
 	public void focusGained(FocusEvent e) {
 		if (!Interpreter.isBatchMode() && ij!=null && !ij.quitting() && imp!=null) {
-			if (IJ.debugMode) IJ.log("focusGained: "+imp);
+			//if (IJ.debugMode) IJ.log("focusGained: "+imp);
 			WindowManager.setCurrentWindow(this);
 		}
 	}
@@ -618,7 +643,7 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 			Channels.updateChannels();
 		imp.setActivated(); // notify ImagePlus that image has been activated
 	}
-	
+
 	public void windowClosing(WindowEvent e) {
 		if (closed)
 			return;
@@ -637,27 +662,32 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 		int newState = e.getNewState();
 		if (IJ.debugMode) IJ.log("windowStateChanged: "+oldState+" "+newState);
 		//if ((oldState&Frame.MAXIMIZED_BOTH)==0 && (newState&Frame.MAXIMIZED_BOTH)!=0)
-			maximize();
+		maximize();
 	}
 
 	public void windowClosed(WindowEvent e) {}
+
 	public void windowDeactivated(WindowEvent e) {}
+
 	public void focusLost(FocusEvent e) {}
+
 	public void windowDeiconified(WindowEvent e) {}
-	public void windowIconified(WindowEvent e) {}	
+
+	public void windowIconified(WindowEvent e) {}
+
 	public void windowOpened(WindowEvent e) {}
-	
+
 	public synchronized void mouseWheelMoved(MouseWheelEvent e) {
 		int rotation = e.getWheelRotation();
 		int amount = e.getScrollAmount();
 		boolean ctrl = (e.getModifiers()&Event.CTRL_MASK)!=0;
-		if (IJ.debugMode) {
-			IJ.log("mouseWheelMoved: "+e);
-			IJ.log("  type: "+e.getScrollType());
-			IJ.log("  ctrl: "+ctrl);
-			IJ.log("  rotation: "+rotation);
-			IJ.log("  amount: "+amount);
-		}
+		//if (IJ.debugMode) {
+		//	IJ.log("mouseWheelMoved: "+e);
+		//	IJ.log("  type: "+e.getScrollType());
+		//	IJ.log("  ctrl: "+ctrl);
+		//	IJ.log("  rotation: "+rotation);
+		//	IJ.log("  amount: "+amount);
+		//}
 		if (amount<1) amount=1;
 		if (rotation==0)
 			return;
@@ -689,69 +719,69 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 	}
 
 	/** Copies the current ROI to the clipboard. The entire
-	    image is copied if there is no ROI. */
+	 image is copied if there is no ROI. */
 	public void copy(boolean cut) {
 		imp.copy(cut);
     }
-                
+
 
 	public void paste() {
 		imp.paste();
     }
                 
     /** This method is called by ImageCanvas.mouseMoved(MouseEvent). 
-    	@see ij.gui.ImageCanvas#mouseMoved
+	 @see ij.gui.ImageCanvas#mouseMoved
     */
     public void mouseMoved(int x, int y) {
-    	imp.mouseMoved(x, y);
+		imp.mouseMoved(x, y);
     }
     
     public String toString() {
-    	return imp!=null?imp.getTitle():"";
+		return imp!=null?imp.getTitle():"";
     }
     
     /** Causes the next image to be opened to be centered on the screen
-    	and displayed without informational text above the image. */
+	 and displayed without informational text above the image. */
     public static void centerNextImage() {
-    	centerOnScreen = true;
+		centerOnScreen = true;
     }
     
     /** Causes the next image to be displayed at the specified location. */
     public static void setNextLocation(Point loc) {
-    	nextLocation = loc;
+		nextLocation = loc;
     }
 
     /** Causes the next image to be displayed at the specified location. */
     public static void setNextLocation(int x, int y) {
-    	nextLocation = new Point(x, y);
+		nextLocation = new Point(x, y);
     }
 
     /** Moves and resizes this window. Changes the 
-    	 magnification so the image fills the window. */
+	 magnification so the image fills the window. */
     public void setLocationAndSize(int x, int y, int width, int height) {
 		setBounds(x, y, width, height);
 		getCanvas().fitToWindow();
 		initialLoc = null;
 		pack();
 	}
-	
-    @Override
+
+	@Override
     public void setLocation(int x, int y) {
-    	super.setLocation(x, y);
+		super.setLocation(x, y);
 		initialLoc = null;
 	}
 
 	public void setSliderHeight(int height) {
 		sliderHeight = height;
 	}
-	
+
 	public int getSliderHeight() {
 		return sliderHeight;
 	}
 
 	@AstroImageJ(modified = true, reason = "Don't run for AstroStackWindow")
 	public static void setImageJMenuBar(ImageWindow win) {
-    	if (win.getClass().getName().contains("AstroStackWindow")) return;
+		if (win.getClass().getName().contains("AstroStackWindow")) return;
 		ImageJ ij = IJ.getInstance();
 		boolean setMenuBar = true;
 		ImagePlus imp = win.getImagePlus();
@@ -768,11 +798,11 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 			long time = System.currentTimeMillis()-t0;
 			setMenuBarTime = time;
 			Menus.setMenuBarCount++;
-			if (IJ.debugMode) IJ.log("setMenuBar: "+time+"ms ("+Menus.setMenuBarCount+")");
+			//if (IJ.debugMode) IJ.log("setMenuBar: "+time+"ms ("+Menus.setMenuBarCount+")");
 			if (time>2000L)
 				Prefs.setIJMenuBar = false;
 		}
 		if (imp!=null) imp.setIJMenuBar(true);
 	}
-			
+
 } //class ImageWindow

@@ -1,6 +1,6 @@
 package ij.process;
+
 import ij.IJ;
-import java.util.Arrays;
 
 /** Autothresholding methods (limited to 256 bin histograms) from the Auto_Threshold plugin 
     (http://fiji.sc/Auto_Threshold) by G.Landini at bham dot ac dot uk). */
@@ -44,7 +44,9 @@ public class AutoThresholder {
 			throw new IllegalArgumentException("Histogram is null");
 		if (histogram.length!=256)
 			throw new IllegalArgumentException("Histogram length not 256");
-		int threshold = 0;
+		int threshold = bilevel(histogram);
+		if (threshold>=0)
+			return threshold;
 		switch (method) {
 			case Default: threshold =  defaultIsoData(histogram); break;
 			case IJ_IsoData: threshold =  IJIsoData(histogram); break;
@@ -320,6 +322,27 @@ public class AutoThresholder {
 			data2[mode] = hmax;
 		}
 		return IJIsoData(data2);
+	}
+	
+	int bilevel(int[] hist) {
+		int nonZeroBins = 0;
+		int nonZeroBin1=-1, nonZeroBin2=-1;
+		for (int i=0; i<hist.length; i++) {
+			int count = hist[i];
+			if (count>0) {
+				nonZeroBins++;
+				if (nonZeroBins>2)
+					return -1;
+				if (nonZeroBin1==-1)
+					nonZeroBin1 = i;
+				else
+					nonZeroBin2 = i;
+			}
+		}
+		if (nonZeroBins==2)
+			return nonZeroBin2-1;
+		else
+			return -1;
 	}
 
 	int IJIsoData(int[] data) {

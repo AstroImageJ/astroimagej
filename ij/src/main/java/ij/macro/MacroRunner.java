@@ -1,11 +1,13 @@
 package ij.macro;
+
 import ij.*;
-import ij.text.*;
-import ij.util.*;
 import ij.gui.ImageCanvas;
-import java.io.*;
-import java.awt.*;
 import ij.plugin.frame.Editor;
+
+import java.awt.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
 																																																																																																																																																					   
 
 /** This class runs macros in a separate thread. */
@@ -25,13 +27,7 @@ public class MacroRunner implements Runnable {
 
 	/** Create a new object that interprets macro source in a separate thread. */
 	public MacroRunner(String macro) {
-		this(macro, (Editor)null);
-	}
-
-	/** Create a new object that interprets macro source in debug mode if 'editor' is not null. */
-	public MacroRunner(String macro, Editor editor) {
 		this.macro = macro;
-		this.editor = editor;
 		thread = new Thread(this, "Macro$"); 
 		thread.setPriority(Math.max(thread.getPriority()-2, Thread.MIN_PRIORITY));
 		thread.start();
@@ -90,6 +86,14 @@ public class MacroRunner implements Runnable {
 		thread.start();
 	}
 
+	/** Runs the specified macro code. */
+	public void run(String macro) {
+		this.macro = macro;
+		thread = new Thread(this, "Macro$"); 
+		thread.setPriority(Math.max(thread.getPriority()-2, Thread.MIN_PRIORITY));
+		thread.start();
+	}
+
 	/** Runs a tokenized macro in debug mode if 'editor' is not null. */
 	public MacroRunner(Program pgm, int address, String name, Editor editor) {
 		this.pgm = pgm;
@@ -126,6 +130,11 @@ public class MacroRunner implements Runnable {
 
 	public Thread getThread() {
 		return thread;
+	}
+	
+	/** Use the specified Editor to run the macro in debug mode. */
+	public void setEditor(Editor editor) {
+		this.editor = editor;
 	}
 
 	/** Used to run the macro code in 'macro' on a separate thread. */

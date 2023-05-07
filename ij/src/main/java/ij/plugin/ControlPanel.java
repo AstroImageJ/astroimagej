@@ -1,22 +1,20 @@
 package ij.plugin;
+
+import ij.*;
+import ij.gui.GUI;
+import ij.util.StringSorter;
+
+import javax.swing.*;
+import javax.swing.event.TreeExpansionEvent;
+import javax.swing.event.TreeExpansionListener;
+import javax.swing.event.TreeWillExpandListener;
+import javax.swing.tree.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.image.*;
-import java.io.*;
+import java.awt.image.DataBuffer;
+import java.awt.image.IndexColorModel;
+import java.awt.image.MemoryImageSource;
 import java.util.*;
-import java.net.*;
-import java.net.URL;
-import javax.swing.*;
-import javax.swing.tree.*;
-import javax.swing.event.*;
-import ij.*;
-import ij.gui.*;
-import ij.io.*;
-import ij.plugin.*;
-import ij.plugin.filter.*;
-import ij.plugin.frame.PlugInFrame;
-import ij.util.*;
-import ij.text.TextWindow;
 
 /**ControlPanel.
  * This plugin displays a panel with ImageJ commands in a hierarchical tree structure.
@@ -56,7 +54,7 @@ public class ControlPanel implements PlugIn {
 
 	public ControlPanel() {
 		//requireDoubleClick = !(IJ.isWindows() || IJ.isMacintosh());
-		Java2.setSystemLookAndFeel();
+		//Java2.setSystemLookAndFeel();
 	}
 
 

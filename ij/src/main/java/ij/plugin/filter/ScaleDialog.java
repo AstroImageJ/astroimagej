@@ -5,8 +5,10 @@ import ij.process.*;
 import ij.measure.*;
 import ij.util.Tools;
 import ij.io.FileOpener;
+import ij.plugin.frame.Recorder;
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.geom.Rectangle2D;
 
 /** Implements the Analyze/Set Scale command. */
 public class ScaleDialog implements PlugInFilter {
@@ -34,10 +36,17 @@ public class ScaleDialog implements PlugInFilter {
 		String scale = "<no scale>";
 		int digits = 2;
 		Roi roi = imp.getRoi();
-		if (roi!=null && (roi instanceof Line)) {
-			measured = ((Line)roi).getRawLength();
-			length = IJ.d2s(measured, 2);
+		if (roi!=null) {
+			if (roi instanceof Line) {
+				measured = ((Line)roi).getRawLength();
+				length = IJ.d2s(measured, 2);
+			} else if (roi.getType()==Roi.RECTANGLE) {
+				Rectangle2D r = roi.getFloatBounds();
+				measured = Math.max(r.getWidth(),r.getHeight());
+				length = IJ.d2s(measured, 2);
+			}
 		}
+
 		if (isCalibrated) {
 			if (measured!=0.0)
 				known = measured*cal.pixelWidth;
@@ -64,7 +73,7 @@ public class ScaleDialog implements PlugInFilter {
 		gd.addCheckbox("Global", global1);
 		gd.setInsets(10, 0, 0);
 		gd.addMessage("Scale: "+"12345.789 pixels per centimeter");
-		gd.addHelp(IJ.URL+"/docs/menus/analyze.html#scale");
+		gd.addHelp(IJ.URL2+"/docs/menus/analyze.html#scale");
 		gd.showDialog();
 		if (gd.wasCanceled())
 			return;
@@ -179,8 +188,17 @@ class SetScaleDialog extends GenericDialog {
 			((TextField)stringField.elementAt(0)).setText("pixel");
 			setScale(NO_SCALE);
 			scaleChanged = true;
-			if (IJ.isMacOSX())
-				{setVisible(false); setVisible(true);}
+			if (IJ.isMacOSX() && false){
+				setVisible(false);
+				setVisible(true);
+			}
+			if (Recorder.record) {
+				Recorder.disableCommandRecording();				
+				if (Recorder.scriptMode())
+					Recorder.recordCall("imp.removeScale();");
+				else
+					Recorder.record("Image.removeScale");
+			}
 		}
 	}
 

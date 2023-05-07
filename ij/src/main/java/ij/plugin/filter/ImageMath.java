@@ -1,15 +1,23 @@
 package ij.plugin.filter;
+
 import ij.*;
-import ij.gui.*;
-import ij.process.*;
-import ij.macro.*;
+import ij.gui.DialogListener;
+import ij.gui.GUI;
+import ij.gui.GenericDialog;
+import ij.macro.Interpreter;
+import ij.macro.Program;
+import ij.macro.Tokenizer;
+import ij.process.ByteProcessor;
+import ij.process.FloatProcessor;
+import ij.process.ImageProcessor;
+
 import java.awt.*;
 
 /** This plugin implements ImageJ's Process/Math submenu. */
 public class ImageMath implements ExtendedPlugInFilter, DialogListener {
 	
 	public static final String MACRO_KEY = "math.macro";
-	private int flags = DOES_ALL|SUPPORTS_MASKING|KEEP_PREVIEW;
+	private int flags = DOES_ALL|SUPPORTS_MASKING|KEEP_PREVIEW|PARALLELIZE_STACKS;
 	private String arg;
 	private ImagePlus imp;
 	private boolean canceled;	
@@ -46,8 +54,6 @@ public class ImageMath implements ExtendedPlugInFilter, DialogListener {
 		this.arg = arg;
 		this.imp = imp;
 		IJ.register(ImageMath.class);
-		if (!arg.equals("macro") || Interpreter.getInstance()==null)
-			flags |= PARALLELIZE_STACKS;
 		return flags;
 	}
 
@@ -155,10 +161,11 @@ public class ImageMath implements ExtendedPlugInFilter, DialogListener {
 	
 	void getValue (String title, String prompt, double defaultValue, int digits) {
 		int places = Analyzer.getPrecision();
+		if (places>7) places=7;
 		if (digits>0 || (int)defaultValue!=defaultValue)
 			digits = Math.max(places, 1);
 		gd = GUI.newNonBlockingDialog(title, imp);
-		gd.addNumericField(prompt, defaultValue, digits, 8, null);
+		gd.addNumericField(prompt, defaultValue, digits, 12, null);
 		gd.addPreviewCheckbox(pfr);
 		gd.addDialogListener(this);
 		gd.showDialog();
@@ -256,7 +263,9 @@ public class ImageMath implements ExtendedPlugInFilter, DialogListener {
 			"function dummy() {}\n"+
 			macro+";\n"; // code starts at program counter location 'PCStart'
 		Interpreter interp = new Interpreter();
-		interp.run(code, null);
+		synchronized(ImageMath.class) {
+			interp.run(code, null);
+		}
 		if (interp.wasError()) {
 			WindowManager.setTempCurrentImage(temp);
 			return;
@@ -424,7 +433,7 @@ public class ImageMath implements ExtendedPlugInFilter, DialogListener {
 		gd.setInsets(5,40,0);
 		gd.addPreviewCheckbox(pfr);
 		gd.addDialogListener(this);
-		gd.addHelp(IJ.URL+"/docs/menus/process.html#math-macro");
+		gd.addHelp(IJ.URL2+"/docs/menus/process.html#math-macro");
 		gd.showDialog();
 	}
 
@@ -477,7 +486,7 @@ public class ImageMath implements ExtendedPlugInFilter, DialogListener {
 				lastMaxValue = maxValue;
 				lastAndValue = andValue;
 				lastGammaValue = gammaValue;
-				lastMacro = macro;
+				lastMacro = macro2;
 			}
 			return IJ.setupDialog(imp, flags);
 		}

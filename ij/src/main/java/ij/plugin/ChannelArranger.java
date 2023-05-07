@@ -1,11 +1,17 @@
 package ij.plugin;
-import ij.*;
-import ij.process.*;
-import ij.gui.*;
+
+import ij.CompositeImage;
+import ij.IJ;
+import ij.ImagePlus;
+import ij.gui.GenericDialog;
+import ij.gui.ImageWindow;
+import ij.gui.Overlay;
+import ij.gui.Roi;
+import ij.process.ImageProcessor;
+
 import java.awt.*;
-import ij.plugin.ChannelSplitter;
-import java.awt.image.BufferedImage;
 import java.awt.event.*;
+import java.awt.image.BufferedImage;
 import java.util.Vector;
 
 /**
@@ -44,7 +50,7 @@ public class ChannelArranger implements PlugIn, TextListener {
 		Vector v = gd.getStringFields();
 		orderField = (TextField)v.elementAt(0);
 		orderField.addTextListener(this);
-		gd.addHelp(IJ.URL+"/docs/menus/image.html#arrange");
+		gd.addHelp(IJ.URL2+"/docs/menus/image.html#arrange");
 		gd.showDialog();
 		if (gd.wasCanceled())
 			return;

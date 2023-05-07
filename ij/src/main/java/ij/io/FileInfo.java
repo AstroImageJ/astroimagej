@@ -1,8 +1,9 @@
 package ij.io;
-import ij.VirtualStack;
+
 import ij.IJ;
-import java.io.*;
-import java.util.Properties;
+import ij.VirtualStack;
+
+import java.io.InputStream;
 
 /** This class consists of public fields that describe an image file. */
 public class FileInfo implements Cloneable {
@@ -69,6 +70,9 @@ public class FileInfo implements Cloneable {
 
 	/** 32-bit interleaved CMYK. Import only. */
 	public static final int CMYK = 19;
+	
+	/** 10-bit unsigned integer (0-1023). Import only. */
+	public static final int GRAY10_UNSIGNED = 20;
 
 	// File formats
 	public static final int UNKNOWN = 0;
@@ -90,6 +94,7 @@ public class FileInfo implements Cloneable {
 	public static final int JPEG = 4;
 	public static final int PACK_BITS = 5;
 	public static final int ZIP = 6;
+	public static final int ZIP_WITH_DIFFERENCING = 7;
 	
 	/* File format (TIFF, GIF_OR_JPG, BMP, etc.). Used by the File/Revert command */
 	public int fileFormat;
@@ -107,7 +112,7 @@ public class FileInfo implements Cloneable {
     public boolean whiteIsZero;
     public boolean intelByteOrder;
 	public int compression;
-    public int[] stripOffsets; 
+    public int[] stripOffsets;  
     public int[] stripLengths;
     public int rowsPerStrip;
 	public int lutSize;
@@ -184,7 +189,7 @@ public class FileInfo implements Cloneable {
 	public int getBytesPerPixel() {
 		switch (fileType) {
 			case GRAY8: case COLOR8: case BITMAP: return 1;
-			case GRAY16_SIGNED: case GRAY16_UNSIGNED: return 2;
+			case GRAY16_SIGNED: case GRAY16_UNSIGNED: case GRAY12_UNSIGNED: case GRAY10_UNSIGNED: return 2;
 			case GRAY32_INT: case GRAY32_UNSIGNED: case GRAY32_FLOAT: case ARGB: case GRAY24_UNSIGNED: case BARG: case ABGR: case CMYK: return 4;
 			case RGB: case RGB_PLANAR: case BGR: return 3;
 			case RGB48: case RGB48_PLANAR: return 6;
@@ -242,7 +247,7 @@ public class FileInfo implements Cloneable {
     	switch (fileType) {
 			case GRAY8: return "byte";
 			case GRAY16_SIGNED: return "short";
-			case GRAY16_UNSIGNED: return "ushort";
+			case GRAY10_UNSIGNED: case GRAY12_UNSIGNED: GRAY16_UNSIGNED: return "ushort";
 			case GRAY32_INT: return "int";
 			case GRAY32_UNSIGNED: return "uint";
 			case GRAY32_FLOAT: return "float";

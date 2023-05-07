@@ -1,18 +1,23 @@
 package ij.plugin.filter;
+
+import ij.*;
+import ij.gui.*;
+import ij.macro.Interpreter;
+import ij.measure.Calibration;
+import ij.measure.Measurements;
+import ij.measure.ResultsTable;
+import ij.plugin.Colors;
+import ij.plugin.LutLoader;
+import ij.plugin.frame.Recorder;
+import ij.plugin.frame.RoiManager;
+import ij.process.*;
+import ij.text.TextPanel;
+import ij.text.TextWindow;
+import ij.util.Tools;
+
 import java.awt.*;
 import java.awt.image.IndexColorModel;
 import java.util.Properties;
-import ij.*;
-import ij.gui.*;
-import ij.process.*;
-import ij.measure.*;
-import ij.text.*;
-import ij.plugin.filter.Analyzer;
-import ij.plugin.frame.*;
-import ij.plugin.Colors;
-import ij.plugin.LutLoader;
-import ij.macro.Interpreter;
-import ij.util.Tools;
 
 /** Implements ImageJ's Analyze Particles command.
 	<p>
@@ -173,13 +178,24 @@ public class ParticleAnalyzer implements PlugInFilter, Measurements {
 
 			
 	/** Constructs a ParticleAnalyzer.
-		@param options	a flag word created by Oring SHOW_RESULTS, EXCLUDE_EDGE_PARTICLES, etc.
-		@param measurements a flag word created by ORing constants defined in the Measurements interface
-		@param rt		a ResultsTable where the measurements will be stored
-		@param minSize	the smallest particle size in pixels
-		@param maxSize	the largest particle size in pixels
-		@param minCirc	minimum circularity
-		@param maxCirc	maximum circularity
+	 * @param options	a flag word created by Oring SHOW_RESULTS, EXCLUDE_EDGE_PARTICLES, etc.
+	 * @param measurements a flag word created by ORing constants defined in the Measurements interface
+	 * @param rt		a ResultsTable where the measurements will be stored
+	 * @param minSize	the smallest particle size in pixels
+	 * @param maxSize	the largest particle size in pixels
+	 * @param minCirc	minimum circularity
+	 * @param maxCirc	maximum circularity
+	 * <pre>
+	 * // JavaScript example
+	 * imp = IJ.openImage("https://imagej.net/images/blobs.gif");
+	 * IJ.setAutoThreshold(imp, "Default"); 
+	 * rt = new ResultsTable();
+	 * options = ParticleAnalyzer.SHOW_NONE;
+	 * measurements = Measurements.AREA + Measurements.PERIMETER;
+	 * pa = new ParticleAnalyzer(options, measurements, rt, 0, Double.MAX_VALUE, 0, 1);
+	 * pa.analyze(imp);
+	 * rt.show("Results");
+  	 * </pre>
 	*/
 	public ParticleAnalyzer(int options, int measurements, ResultsTable rt, double minSize, double maxSize, double minCirc, double maxCirc) {
 		this.options = options;
@@ -289,6 +305,8 @@ public class ParticleAnalyzer implements PlugInFilter, Measurements {
 				inSituShow = true;
 			if (mOptions.contains("record"))
 				recordStarts = true;
+			if (mOptions.contains("four"))
+				wandMode = Wand.FOUR_CONNECTED;
 			staticMinSize = 0.0; staticMaxSize = DEFAULT_MAX_SIZE;
 			staticMinCircularity=0.0; staticMaxCircularity=1.0;
 			staticShowChoice = NOTHING;
@@ -344,7 +362,7 @@ public class ParticleAnalyzer implements PlugInFilter, Measurements {
 		labels[6]="Add to Manager"; states[6]=(options&ADD_TO_MANAGER)!=0;
 		labels[7]="Composite ROIs"; states[7]=(options&COMPOSITE_ROIS)!=0;
 		gd.addCheckboxGroup(4, 2, labels, states);
-		gd.addHelp(IJ.URL+"/docs/menus/analyze.html#ap");
+		gd.addHelp(IJ.URL2+"/docs/menus/analyze.html#ap");
 		gd.showDialog();
 		if (gd.wasCanceled())
 			return false;
@@ -410,6 +428,8 @@ public class ParticleAnalyzer implements PlugInFilter, Measurements {
 		options |= SHOW_PROGRESS;
 		if ((options&DISPLAY_SUMMARY)!=0)
 			Analyzer.setMeasurements(Analyzer.getMeasurements()|AREA);
+		if (wandMode==Wand.FOUR_CONNECTED)
+			options |= INCLUDE_HOLES;
 		return true;
 	}
 	
@@ -441,8 +461,10 @@ public class ParticleAnalyzer implements PlugInFilter, Measurements {
 		return true;
 	}
 
-	/** Performs particle analysis on the specified image. Returns
-		false if there is an error. */
+	/** Performs particle analysis on the current slice
+	 * of the specified image. Returns false if there
+	 * is an error.
+	*/
 	public boolean analyze(ImagePlus imp) {
 		return analyze(imp, imp.getProcessor());
 	}
@@ -810,13 +832,18 @@ public class ParticleAnalyzer implements PlugInFilter, Measurements {
 			level1 = 255;
 			level2 = 255;
 			fillColor = 64;
-			if (!Prefs.blackBackground && !imp.isInvertedLut() && stats.histogram[0]<(imp.getWidth()*imp.getHeight())/2) {
+			if (!Prefs.blackBackground && !invertedLut) {
 				level1 = 0;
 				level2 = 0;
 				fillColor = 192;
 			}
-			if (!IJ.isMacro())
-				IJ.log("ParticleAnalyzer: threshold not set; assumed to be "+(int)level1+"-"+(int)level2);
+			if (!IJ.isMacro()) {
+				boolean blackBackground = imageType==BYTE && Prefs.blackBackground && level1==255 && level1==level2;
+				if (!blackBackground) {
+					String suffix = !Prefs.blackBackground?" (\"Black background\" not set)":"";
+					IJ.log("ParticleAnalyzer: threshold not set; assumed to be "+(int)level1+"-"+(int)level2+suffix);
+				}
+			}
 		} else {
 			level1 = t1;
 			level2 = t2;

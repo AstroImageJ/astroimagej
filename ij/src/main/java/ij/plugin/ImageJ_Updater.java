@@ -1,11 +1,15 @@
 package ij.plugin;
-import ij.*;
-import ij.gui.*;
-import ij.util.Tools;
+
+import ij.IJ;
+import ij.ImageJ;
+import ij.Menus;
+import ij.Prefs;
+import ij.gui.GenericDialog;
+
 import java.io.*;
-import java.net.*;
-import java.util.*;
-import java.lang.reflect.*;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.Vector;
 
 
 /** This plugin implements the Help/Update ImageJ command. */
@@ -119,7 +123,7 @@ public class ImageJ_Updater implements PlugIn {
 		byte[] data;
 		try {
 			URL url = new URL(address);
-			IJ.showStatus("Connecting to "+IJ.URL);
+			IJ.showStatus("Connecting to "+IJ.URL2);
 			URLConnection uc = url.openConnection();
 			int len = uc.getContentLength();
 			if (IJ.debugMode) IJ.log("Updater (url): "+ address + " "+ len);
@@ -156,7 +160,7 @@ public class ImageJ_Updater implements PlugIn {
 	}
 
 	String[] openUrlAsList(String address) {
-		IJ.showStatus("Connecting to "+IJ.URL);
+		IJ.showStatus("Connecting to "+IJ.URL2);
 		Vector v = new Vector();
 		try {
 			URL url = new URL(address);

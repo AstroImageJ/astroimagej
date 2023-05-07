@@ -3,6 +3,7 @@ import java.io.*;
 import ij.*;
 import ij.astro.AstroImageJ;
 import ij.text.*;
+import javax.swing.SwingUtilities;
 
 /**
 * Displays thread information in a text window.
@@ -22,6 +23,18 @@ public class ThreadLister implements PlugIn {
 			new TextWindow("Threads", caw.toString(), 420, 420);
 		} catch
 			(Exception e) {}
+
+		// cause an exception on the EDT
+		if (IJ.altKeyDown()) {
+			SwingUtilities.invokeLater(new Runnable() {
+			  public void run() {
+				((Object) null).toString();
+			  }
+			});
+		}
+		// cause an exception off the EDT
+		//((Object) null).toString();
+
 	}
 
 
@@ -37,7 +50,7 @@ public class ThreadLister implements PlugIn {
     
     // Display info about a thread group and its threads and groups
     @AstroImageJ(reason = "Remove deprecated isDaemon check", modified = true)
-    private static void list_group(PrintWriter out, ThreadGroup g, 
+    private static void list_group(PrintWriter out, ThreadGroup g,
                        String indent) {
         if (g == null) return;
         int num_threads = g.activeCount();
@@ -49,8 +62,7 @@ public class ThreadLister implements PlugIn {
         g.enumerate(groups, false);
         
         out.println(indent + "Thread Group: " + g.getName() + 
-                "  Max Priority: " + g.getMaxPriority() +
-                "\n");
+            "  Max Priority: " + g.getMaxPriority() + "\n");
         
         for(int i = 0; i < num_threads; i++)
             print_thread_info(out, threads[i], indent + "    ");

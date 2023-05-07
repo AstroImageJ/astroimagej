@@ -1,15 +1,20 @@
 package ij.plugin;
+
 import ij.*;
-import ij.process.*;
-import ij.gui.*;
-import ij.io.*;
-import ij.plugin.frame.*;
-import ij.text.TextWindow;
+import ij.gui.GenericDialog;
+import ij.gui.ImageWindow;
+import ij.gui.NewImage;
+import ij.io.FileSaver;
+import ij.io.Opener;
 import ij.macro.Interpreter;
-import ij.plugin.Compiler;
-import java.awt.Window;
-import java.io.File;
+import ij.plugin.frame.PlugInDialog;
+import ij.plugin.frame.PlugInFrame;
+import ij.plugin.frame.Recorder;
+import ij.text.TextWindow;
+
 import java.applet.Applet;
+import java.awt.*;
+import java.io.File;
 	
 /**	Runs miscellaneous File and Window menu commands. */
 public class Commands implements PlugIn {
@@ -149,7 +154,7 @@ public class Commands implements PlugIn {
 	void openStartupMacros() {
 		Applet applet = IJ.getApplet();
 		if (applet!=null)
-			IJ.run("URL...", "url="+IJ.URL+"/applet/StartupMacros.txt");
+			IJ.run("URL...", "url="+IJ.URL2+"/applet/StartupMacros.txt");
 		else {
 			String path = IJ.getDirectory("macros")+"StartupMacros.txt";
 			File f = new File(path);

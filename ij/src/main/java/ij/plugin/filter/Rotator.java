@@ -9,7 +9,7 @@ import java.awt.geom.*;
 /** This plugin implements the Image/Rotate/Arbitrarily command. */
 public class Rotator implements ExtendedPlugInFilter, DialogListener {
 	public static final String GRID = "|GRID|";
-	private int flags = DOES_ALL|SUPPORTS_MASKING|PARALLELIZE_STACKS;
+	private int flags = DOES_ALL|SUPPORTS_MASKING;
 	private static double angle = 15.0;
 	private static boolean fillWithBackground;
 	private static boolean enlarge;
@@ -32,13 +32,19 @@ public class Rotator implements ExtendedPlugInFilter, DialogListener {
 			Roi roi = imp.getRoi();
 			if (roi!=null && roi.isLine())
 				roi = null;
+			overlay = imp.getOverlay();
+			if (roi!=null && overlay!=null && Macro.getOptions()==null) {
+				String msg = "This image has an overlay so the\nselection will be removed.";
+				if (!IJ.showMessageWithCancel("Rotator", msg))
+					return DONE;
+				imp.deleteRoi();
+			}
 			Rectangle r = roi!=null?roi.getBounds():null;
 			canEnlarge = r==null || (r.x==0&&r.y==0&&r.width==imp.getWidth()&&r.height==imp.getHeight());
 			if (imp.getDisplayMode()==IJ.COMPOSITE) { // setup Undo for composite color stacks
 				Undo.setup(Undo.TRANSFORM, imp);
 				flags = flags | NO_UNDO_RESET;
 			}
-			overlay = imp.getOverlay();
 			Undo.saveOverlay(imp);
 			if (overlay==null)
 				overlay = new Overlay();
@@ -61,13 +67,9 @@ public class Rotator implements ExtendedPlugInFilter, DialogListener {
 				ip = imp.getStack().getProcessor(slice);
 		}
 		ip.setInterpolationMethod(interpolationMethod);
-		if (fillWithBackground) {
-			Color bgc = Toolbar.getBackgroundColor();
-			if (bitDepth==8)
-				ip.setBackgroundValue(ip.getBestIndex(bgc));
-			else if (bitDepth==24)
-				ip.setBackgroundValue(bgc.getRGB());
-		} else
+		if (fillWithBackground)
+			ip.setBackgroundColor(Toolbar.getBackgroundColor());
+		else
 			ip.setBackgroundValue(0);
 		ip.rotate(angle);
 		if (!gd.wasOKed())
@@ -96,7 +98,9 @@ public class Rotator implements ExtendedPlugInFilter, DialogListener {
 		IJ.run(imp, "Select All", "");
 		IJ.run(imp, "Rotate...", "angle="+angle);
 		Roi roi = imp.getRoi();
-		Rectangle r = roi.getBounds();
+		imp.deleteRoi();
+		Rectangle2D.Double fb = roi.getFloatBounds();
+		Rectangle r = new Rectangle((int)Math.round(fb.x),(int)Math.round(fb.y),(int)Math.round(fb.width),(int)Math.round(fb.height));
 		if (r.width<imp.getWidth()) r.width = imp.getWidth();
 		if (r.height<imp.getHeight()) r.height = imp.getHeight();
 		IJ.showStatus("Rotate: Enlarging...");
@@ -145,8 +149,7 @@ public class Rotator implements ExtendedPlugInFilter, DialogListener {
 		gd.addSlider("Angle:", -90, 90, angle, 0.1);
 		gd.addNumericField("Grid lines:", gridLines, 0);
 		gd.addChoice("Interpolation:", methods, methods[interpolationMethod]);
-		if (bitDepth==8 || bitDepth==24)
-			gd.addCheckbox("Fill with background color", fillWithBackground);
+		gd.addCheckbox("Fill with background color", fillWithBackground);
 		if (canEnlarge)
 			gd.addCheckbox("Enlarge image", enlarge);
 		else
@@ -183,8 +186,7 @@ public class Rotator implements ExtendedPlugInFilter, DialogListener {
 		}
 		gridLines = (int)gd.getNextNumber();
 		interpolationMethod = gd.getNextChoiceIndex();
-		if (bitDepth==8 || bitDepth==24)
-			fillWithBackground = gd.getNextBoolean();
+		fillWithBackground = gd.getNextBoolean();
 		if (canEnlarge)
 			enlarge = gd.getNextBoolean();
 		return true;

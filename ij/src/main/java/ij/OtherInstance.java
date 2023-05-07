@@ -1,27 +1,13 @@
 package ij;
 
-import ij.IJ;
-import ij.ImageJ;
-import ij.Prefs;
-
 import ij.io.OpenDialog;
 import ij.io.Opener;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-
+import java.io.*;
 import java.lang.reflect.Method;
-
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
-
 import java.util.Properties;
 
 /*
@@ -64,8 +50,10 @@ public class OtherInstance {
 				String rtn = IJ.runMacro(cmd.substring(5));
 				if (rtn!=null)
 					System.out.print(rtn);
-			} else if (cmd.startsWith("user.dir "))
+			} else if (cmd.startsWith("user.dir ")) {
 				OpenDialog.setDefaultDirectory(cmd.substring(9));
+				System.setProperty("user.dir", cmd.substring(9));
+			}
 		}
 	}
 

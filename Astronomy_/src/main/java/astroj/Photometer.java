@@ -486,7 +486,7 @@ public class Photometer {
 
 
     /** Compute the area of overlap between a circle and a rectangle. */
-    double intarea(double xc, double yc, double r, double xin0, double xin1, double yin0, double yin1) { //todo see if these call can be reduced
+    double intarea(double xc, double yc, double r, double xin0, double xin1, double yin0, double yin1) {
         // xc,yc = Center of the circle
         // r     = Radius of the circle
         // x0,y0 = Corner of the rectangle

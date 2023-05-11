@@ -583,7 +583,11 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	 * Determine if the image is a TICA image from astrocut
 	 */
 	private boolean isTicaCut(BasicHDU<?> hdu) {
-		return null != hdu.getHeader().findCard("TICAVER") && "astrocut".equals(hdu.getHeader().findCard("CREATOR").getValue().trim());
+		var card = hdu.getHeader().findCard("CREATOR");
+		if (card == null) {
+			return false;
+		}
+		return null != hdu.getHeader().findCard("TICAVER") && "astrocut".equals(card.getValue().trim());
 	}
 
 	/**

@@ -519,6 +519,7 @@ public class Photometer {
             return 0;
         }
 
+        //return o;
         return (oneside(x1, y0, y1, r) + oneside(y1, -x1, -x0, r) + oneside(-x0, -y1, -y0, r) + oneside(-y0, x0, x1, r));
     }
 

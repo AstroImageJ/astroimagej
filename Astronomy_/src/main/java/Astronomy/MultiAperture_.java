@@ -2075,7 +2075,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         });
 
         var l = asw.getLocationOnScreen();
-        l.translate(asw.getSize().width / 2, asw.getSize().height / 2);
+        gd.pack();
+        l.translate(asw.getSize().width / 2 - gd.getWidth()/2, asw.getSize().height / 2 - gd.getHeight()/2);
         gd.setLocation(l);
 
         gd.setHideCancelButton(true);
@@ -2664,11 +2665,14 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
         long timeStart = System.currentTimeMillis();
 //        IJ.log("firstSlice="+firstSlice+"   lastSlice="+lastSlice);
-        updateImageDisplay.ifProp(() -> {}, () -> {
+        JDialog win = null;
+        if (!updateImageDisplay.get()) {
             if (imp.getCanvas() instanceof AstroCanvas a) {
                 a.setPerformDraw(false);
             }
-        });
+
+            win = showWarning("Processing stack without image update, please wait.");
+        }
         for (int i = firstSlice; i <= lastSlice; i++) {
             slice = i;
             imp.setSliceWithoutUpdate(i); //fixes scroll sync issue
@@ -2781,6 +2785,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         }
 
         if (processingStack) {
+            if (win != null) {
+                win.setVisible(false);
+            }
             IJ.beep();
             shutDown();
             //AIJLogger.log("Multiaperture photometry took " + (System.currentTimeMillis() - timeStart) / 1000D + " seconds");

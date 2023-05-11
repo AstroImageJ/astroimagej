@@ -421,6 +421,7 @@ public class KeplerSplineControl {
     public void smoothData(double[] x, double[] y, int size, RealVector mask) {
         var ks = makeSplineGenerator().fit(x, y, size, mask);
 
+        var errorState = false;
         if (settings.knotDensity.get() == KeplerSplineSettings.KnotDensity.LEGACY_SMOOTHER) {
             bkSpaceDisplay.setText("N/A");
             bicDisplay.setText("N/A");
@@ -433,6 +434,7 @@ public class KeplerSplineControl {
                 bicDisplay.setText("N/A");
                 errorDisplay.setText("failed");
                 errorDisplay.setDisabledTextColor(Color.RED);
+                errorState = true;
             } else {
                 errorDisplay.setText("success");
                 errorDisplay.setDisabledTextColor(darkGreen);
@@ -454,7 +456,9 @@ public class KeplerSplineControl {
                 }
             }
             case RAW_DATA -> {
-                Arrays.fill(y, Double.NaN);
+                if (errorState) {
+                    Arrays.fill(y, Double.NaN);
+                }
             }
         }
     }

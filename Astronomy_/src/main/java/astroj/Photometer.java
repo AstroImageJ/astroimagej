@@ -496,6 +496,8 @@ public class Photometer {
         double x1 = xin1 - xc;
         double y1 = yin1 - yc;
 
+        //var o = (oneside(x1, y0, y1, r) + oneside(y1, -x1, -x0, r) + oneside(-x0, -y1, -y0, r) + oneside(-y0, x0, x1, r));
+
         var r2 = r*r;
         var x02 = x0*x0;
         var y02 = y0*y0;
@@ -503,11 +505,17 @@ public class Photometer {
         var y12 = y1*y1;
         if (r2 > (x02+y02) && r2 > (x12+y12) &&
                 r2 > (x12+y02) && r2 > (x02+y12)) {
+            /*if (o != 1) {
+                System.out.println(o);
+            }*/
             return 1;
         }
 
         if (r2 < (x02+y02) && r2 < (x12+y12) &&
                 r2 < (x12+y02) && r2 < (x02+y12)) {
+            /*if (Math.abs(o) >= 10e-13) {
+                System.out.println(o);
+            }*/
             return 0;
         }
 

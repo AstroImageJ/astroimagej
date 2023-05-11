@@ -132,8 +132,8 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 				return;
 			}
 			//IJ.log("Opened with nom.tam.fits");
-			bzero = (float) displayHdu.getBZero();
-			bscale = (float) displayHdu.getBScale();
+			bzero = displayHdu.getBZero();
+			bscale = displayHdu.getBScale();
 
 			// Create the fileInfo.
 			try {

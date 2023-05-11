@@ -355,7 +355,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 
 		generateTimings(hdu);
 
-		if (isTicaImage(hdu)) {
+		if (isTessTicaFfiFull(hdu)) {
 			if (hdu.getHeader().getIntValue("QUAL_BIT") != 0) {
 				IJ.error("Skipped TICA image as QUAL_BIT is nonzero.");
 				return;
@@ -371,7 +371,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		}
 
 		if (hdu instanceof TableHDU<?> tableHDU) {
-			if (isTessCut(tableHDU) || isTessPostageStamp(hdus)) {
+			if (isTessSpocFfiCut(tableHDU) || isTessPostageStamp(hdus)) {
 				var data = (Object[]) tableHDU.getColumn("FLUX");
 				var hdr = convertHeaderForFfi(hdus[2].getHeader(), tableHDU);
 
@@ -430,8 +430,9 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	/**
 	 * Determine if a table is a TESS cut.
 	 */
-	private boolean isTessCut(TableHDU<?> tableHDU) {
-		return "astrocut".equals(tableHDU.getHeader().getStringValue("CREATOR"));
+	private boolean isTessSpocFfiCut(TableHDU<?> tableHDU) {
+		return "astrocut".equals(tableHDU.getHeader().getStringValue("CREATOR")) &&
+				tableHDU.getHeader().findCard("TICAVER") == null;
 	}
 
 	private boolean isHyperSup(BasicHDU<?> hdu) {
@@ -512,7 +513,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 				bjd1 = bjds[i].doubleValue();
 				if (!Double.isNaN(bjd0 + bjd1)) hdr.addValue("BJD_TDB", bjd0 + bjd1, "Calc. BJD_TDB");
 
-				if (isTessCut(tableHDU) || isTicaImage(tableHDU)) {
+				if (isTessSpocFfiCut(tableHDU) || isTessTicaFfiFull(tableHDU)) {
 					// If the image should be skipped add this card, string check for 'AIJ_Q' to skip image
 					// Based on TESS Cut code by John Kielkopf
 					if ((!skipTessQualCheck && quality[i].intValue() != 0)) {
@@ -522,7 +523,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 						hasErrors = true;
 						hdr.addValue("NO_BJD", 0, "Skipped due to invalid or missing BJD time");
 					}
-					if (isTicaCut(hdus[0])) {
+					if (isTessTicaFfiCut(hdus[0])) {
 						hdr.deleteKey("DATE-OBS");
 						hdr.deleteKey("DATE-END");
 					}
@@ -557,7 +558,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	/**
 	 * Determine if the image is a TESS FFI.
 	 */
-	private boolean isTessFfi(BasicHDU<?> hdu) {
+	private boolean isTessSpocFfiFull(BasicHDU<?> hdu) {
 		var telescope = hdu.getHeader().findCard("TELESCOP");
 		var imageType = hdu.getHeader().findCard("IMAGTYPE");
 
@@ -575,19 +576,15 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	/**
 	 * Determine if the image is a TICA image
 	 */
-	private boolean isTicaImage(BasicHDU<?> hdu) {
-		return null != hdu.getHeader().findCard("TICAVER");
+	private boolean isTessTicaFfiFull(BasicHDU<?> hdu) {
+		return null != hdu.getHeader().findCard("TICAVER") && hdu.getHeader().findCard("CREATOR") == null;
 	}
 
 	/**
 	 * Determine if the image is a TICA image from astrocut
 	 */
-	private boolean isTicaCut(BasicHDU<?> hdu) {
-		var card = hdu.getHeader().findCard("CREATOR");
-		if (card == null) {
-			return false;
-		}
-		return null != hdu.getHeader().findCard("TICAVER") && "astrocut".equals(card.getValue().trim());
+	private boolean isTessTicaFfiCut(BasicHDU<?> hdu) {
+		return null != hdu.getHeader().findCard("TICAVER") && "astrocut".equals(hdu.getHeader().getStringValue("CREATOR"));
 	}
 
 	/**
@@ -598,7 +595,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	private void generateTimings(BasicHDU<?> hdu) throws HeaderCardException {
 		var header = hdu.getHeader();
 
-		if (isTessFfi(hdu)) {
+		if (isTessSpocFfiFull(hdu)) {
 			var bjdRefi = header.getIntValue("BJDREFI");
 			var bjdReff = header.getDoubleValue("BJDREFF");
 			var tStart = header.getDoubleValue("TSTART");
@@ -608,7 +605,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			hdu.addValue("BJD_TDB", bjdTdb, "Calc by AIJ as BJDREFI+BJDREFF+TSTART+TELAPSE/2.0");
 		}
 
-		if (isTicaImage(hdu) && !isTicaCut(hdu)) {
+		if (isTessTicaFfiFull(hdu) && !isTessTicaFfiCut(hdu)) {
 			var tjdZero = header.getDoubleValue("TJD_ZERO");
 			var startTjd = header.getDoubleValue("STARTTJD");
 			var jdTdb = tjdZero + startTjd;

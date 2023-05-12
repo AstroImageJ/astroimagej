@@ -67,6 +67,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	private DecimalFormat fourDigits = new DecimalFormat("0000", dfs);
 
 	public static boolean skipTessQualCheck = Prefs.getBoolean(".aij.skipTessQualCheck", false);
+	private static final LeapSeconds LEAP_SECONDS = new LeapSeconds();
 
 	// The image data comes in different types, but in the end, we turn them all into floats.
 	// So no matter what type the data is, we wrap it with a lambda that takes two indices and
@@ -649,7 +650,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			var startTjd = header.getDoubleValue("STARTTJD");
 			var jdTdb = tjdZero + startTjd;
 
-			var leapSeconds = (new LeapSeconds()).getLeapSeconds(jdTdb);
+			var leapSeconds = LEAP_SECONDS.getLeapSeconds(jdTdb);
 
 			// JD_TDB -> JD_UTC, see "Achieving Better Than 1 Minute Accuracy in the Heliocentric and Barycentric
 			// Julian Dates" Eastman et al. 2010

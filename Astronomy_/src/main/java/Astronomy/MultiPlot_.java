@@ -7629,6 +7629,12 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         });
         preferencesmenu.add(changemaxdatalengthmenuitem);
 
+        var optiThreadPrefs = new JMenuItem("Optimization Threading Preferences");
+        optiThreadPrefs.addActionListener(e -> {
+            FitOptimization.showThreadingPanel(mainFrame);
+        });
+        preferencesmenu.add(optiThreadPrefs);
+
         usedefaultsettingsCB = new JCheckBoxMenuItem("Reset preferences to default settings (restart required)", useDefaultSettings);
         usedefaultsettingsCB.addItemListener(e -> {
             if (e.getStateChange() == ItemEvent.DESELECTED) {

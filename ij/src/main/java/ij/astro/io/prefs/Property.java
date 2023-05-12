@@ -148,6 +148,10 @@ public class Property<T> {
         }
     }
 
+    public void clearListeners() {
+        listeners.clear();
+    }
+
     private void loadProperty() {
         if (!hasLoaded) {
             try {
@@ -207,6 +211,8 @@ public class Property<T> {
             return (T) Double.valueOf(nv);
         } else if (type == Integer.TYPE || type == Integer.class) {
             return (T) Integer.valueOf(nv);
+        }else if (type == Long.TYPE || type == Long.class) {
+            return (T) Long.valueOf(nv);
         } else if (type == Boolean.TYPE || type == Boolean.class) {
             return (T) Boolean.valueOf(nv);
         } else if (type == String.class) {

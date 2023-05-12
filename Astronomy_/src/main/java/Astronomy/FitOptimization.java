@@ -8,8 +8,10 @@ import astroj.SpringUtil;
 import flanagan.analysis.Stat;
 import ij.IJ;
 import ij.Prefs;
+import ij.astro.io.prefs.Property;
 import ij.astro.logging.AIJLogger;
 import ij.astro.util.UIHelper;
+import util.GenericSwingDialog;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
@@ -33,8 +35,9 @@ public class FitOptimization implements AutoCloseable {
     protected static final String PREFS_NSIGMA = "fitoptimization.nsigma";
     protected static final String PREFS_MAX_DETREND = "fitoptimization.maxdetrend";
     protected static final String PREFS_BIC_THRESHOLD = "fitoptimization.bict";
-    private static final int MAX_THREADS = getThreadCount();
-    private static final BigInteger MIN_CHUNK_SIZE = BigInteger.valueOf(512L);
+    private static Property<Integer> maxThreads = new Property<>(getThreadCount(), FitOptimization.class);
+    private static Property<Long> minChunkSize = new Property<>(512L, FitOptimization.class);
+    private static Property<Boolean> autoMaxThreads = new Property<>(true, FitOptimization.class);
     private final static Pattern apGetter = Pattern.compile("rel_flux_[ct]([0-9]+)");
     private static final HashSet<FitOptimization> INSTANCES = new HashSet<>();
     /**
@@ -378,6 +381,32 @@ public class FitOptimization implements AutoCloseable {
         return fitOptimizationPanel;
     }
 
+    public static void showThreadingPanel(Frame owner) {
+        var gd = new GenericSwingDialog("Optimization Threading Preferences", owner);
+        gd.addCheckbox("Auto max threads", autoMaxThreads.get(), b -> autoMaxThreads.set(b));
+        var x = gd.addBoundedNumericField("Max Threads:", new GenericSwingDialog.Bounds(1, 256),
+                maxThreads.get(), 1, 7, "", true, d -> maxThreads.set(d.intValue()));
+        gd.addBoundedNumericField("Minimum Chunk Size:", new GenericSwingDialog.Bounds(1, Integer.MAX_VALUE),
+                minChunkSize.get(), 1, 7, "", true, d -> minChunkSize.set(d.longValue()));
+        gd.addMessage("Default: " + 512);
+        autoMaxThreads.addListener((k, b) -> {
+            if (b) {
+                ((JSpinner) x.c1()).setValue((double)getThreadCount());
+                x.c1().setEnabled(false);
+            } else {
+                x.c1().setEnabled(true);
+            }
+        });
+        if (autoMaxThreads.get()) {
+            x.c1().setEnabled(false);
+        } else {
+            x.c1().setEnabled(true);
+        }
+        gd.centerDialog(true);
+        gd.showDialog();
+        autoMaxThreads.clearListeners();
+    }
+
     public static void cleanOutliers(CleanMode cleanMode, FitOptimization fo, int curve) {
         if (fo != null && !plotY[curve]) {
             IJ.error("The 'Plot' check box for this data set must be enabled in Multi-Plot Y-data panel for optimization.");
@@ -675,7 +704,7 @@ public class FitOptimization implements AutoCloseable {
         //MultiPlot_.updateGUI();
         MultiPlot_.waitForPlotUpdateToFinish();
 
-        if (showOptLog) AIJLogger.log(String.format("Using at most %d threads", MAX_THREADS));
+        if (showOptLog) AIJLogger.log(String.format("Using at most %d threads", maxThreads));
 
         setupThreadedSpace();
         iterRemainingOld = BigInteger.ZERO;
@@ -684,7 +713,8 @@ public class FitOptimization implements AutoCloseable {
         var count = 0;
 
         if (multithreaded) {
-            var CHUNK_SIZE = state.divide(BigInteger.valueOf(MAX_THREADS)).max(MIN_CHUNK_SIZE).add(BigInteger.ONE);
+            var CHUNK_SIZE = state.divide(BigInteger.valueOf(maxThreads.get()))
+                    .max(BigInteger.valueOf(minChunkSize.get())).add(BigInteger.ONE);
             for (BigInteger start = BigInteger.ONE; start.compareTo(state) < 0; ) {
                 var end = state.add(BigInteger.ONE).min(start.add(CHUNK_SIZE)).min(state);
                 evaluateStatesInRange(optimizerBiFunction.apply(start, end));
@@ -760,7 +790,7 @@ public class FitOptimization implements AutoCloseable {
             }
         }
 
-        pool = new ThreadPoolExecutor(0, MAX_THREADS,
+        pool = new ThreadPoolExecutor(0, maxThreads.get(),
                 10L, TimeUnit.SECONDS, new SynchronousQueue<>());
         completionService = new ExecutorCompletionService<>(pool);
     }

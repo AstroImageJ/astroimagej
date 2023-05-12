@@ -19,6 +19,7 @@ import ij.measure.Calibration;
 import ij.process.ImageProcessor;
 import nom.tam.fits.*;
 import nom.tam.image.compression.hdu.CompressedImageHDU;
+import nom.tam.util.Cursor;
 
 import javax.swing.*;
 import java.io.*;
@@ -371,7 +372,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		}
 
 		if (hdu instanceof TableHDU<?> tableHDU) {
-			if (isTessSpocFfiCut(tableHDU) || isTessPostageStamp(hdus)) {
+			if (isTessSpocFfiCut(tableHDU) || isTessSpocPostageStamp(hdus) || isTessTicaFfiCut(tableHDU)) {
 				var data = (Object[]) tableHDU.getColumn("FLUX");
 				var hdr = convertHeaderForFfi(hdus[2].getHeader(), tableHDU);
 
@@ -424,41 +425,46 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 					}
 				});
 
-		return isImages && imagesAreSameSize;
+		return isImages && imagesAreSameSize && processBasic3DImage(hdus, hdus[firstValidHdu]);
 	}
 
-	/**
-	 * Determine if a table is a TESS cut.
-	 */
-	private boolean isTessSpocFfiCut(TableHDU<?> tableHDU) {
-		return "astrocut".equals(tableHDU.getHeader().getStringValue("CREATOR")) &&
-				tableHDU.getHeader().findCard("TICAVER") == null;
-	}
+	private boolean processBasic3DImage(BasicHDU<?>[] hdus, BasicHDU<?> displayHdu) {
+		if (isTessSpocFfiFull(displayHdu)) {
+			var isCalImage = "cal".equals(displayHdu.getHeader().findCard("IMAGTYPE").getValue().trim());
+			if (isCalImage) {
+				// Copy primary header to displayHDU
+				//todo improve merging
+				if (displayHdu.getHeader().getBooleanValue("INHERIT", false)) {
+					Cursor<String, HeaderCard> j = hdus[0].getHeader().iterator();
 
-	private boolean isHyperSup(BasicHDU<?> hdu) {
-		return "Hyper Suprime-Cam".equals(hdu.getHeader().getStringValue("INSTRUME"));
-	}
+					while (j.hasNext()) {
+						HeaderCard card = j.next();
 
-	/**
-	 * Determine if an image is from LCO.
-	 * <p>
-	 * Most LCO images contain 3 image HDUs, with the science image separated from the others by a table HDU.
-	 * In some cases, this table is missing, which would make LCO images be treated as a multiHDU FITS file,
-	 * opening an image stack. This behavior is not desired.
-	 */
-	private boolean isLco(BasicHDU<?>[] hdus) {
-		if (hdus.length == 1) return false;
-		var x = hdus[1].getHeader().getStringValue("ORIGIN");
-		return "LCOGT".equals(x == null ? null : x.trim());
-	}
+						if (card.isCommentStyleCard()) {
+							if (card.getKey().startsWith("COMMENT") ||
+									card.getKey().startsWith("HISTORY") ||
+									card.getKey().startsWith("END")) {
+								continue;
+							}
+							displayHdu.getHeader().insertCommentStyle(card.getKey(), card.getComment());
+						} else {
+							if (!displayHdu.getHeader().containsKey(card.getKey()) && !"SIMPLE".equals(card.getKey())) {
+								try {
+									displayHdu.getHeader().updateLine(card.getKey(), card);
+								} catch (HeaderCardException e) {
+									throw new RuntimeException(e);
+								}
+							}
+						}
+					}
+					// Force SIMPLE at the top of the header for header processing such as WCS
+					displayHdu.getHeader().setSimple(true);
+				}
+			}
+			return !isCalImage;
+		}
 
-	/**
-	 * Determine if a table is a TESS 2-minute postage stamp.
-	 */
-	private boolean isTessPostageStamp(BasicHDU<?>[] hdus) {
-		var hdu = hdus[0];
-		return ("TESS").equals(hdu.getTelescope()) && hdu.getHeader().containsKey("CREATOR") &&
-				hdu.getHeader().getStringValue("CREATOR").contains("TargetPixelExporterPipelineModule");
+		return true;
 	}
 
 	/**
@@ -527,7 +533,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 						hdr.deleteKey("DATE-OBS");
 						hdr.deleteKey("DATE-END");
 					}
-				} else if (isTessPostageStamp(hdus)) {
+				} else if (isTessSpocPostageStamp(hdus)) {
 					hdr.addValue("OBJECT", hdus[0].getHeader().getStringValue("OBJECT"), "Object ID");
 					if (quality[i].intValue() == 8) {
 						hdr.addValue("AIJ_Q2", quality[i].intValue() != 0, "Null image");
@@ -555,6 +561,32 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		return headers;
 	}
 
+	private boolean isHyperSup(BasicHDU<?> hdu) {
+		return "Hyper Suprime-Cam".equals(hdu.getHeader().getStringValue("INSTRUME"));
+	}
+
+	/**
+	 * Determine if an image is from LCO.
+	 * <p>
+	 * Most LCO images contain 3 image HDUs, with the science image separated from the others by a table HDU.
+	 * In some cases, this table is missing, which would make LCO images be treated as a multiHDU FITS file,
+	 * opening an image stack. This behavior is not desired.
+	 */
+	private boolean isLco(BasicHDU<?>[] hdus) {
+		if (hdus.length == 1) return false;
+		var x = hdus[1].getHeader().getStringValue("ORIGIN");
+		return "LCOGT".equals(x == null ? null : x.trim());
+	}
+
+	/**
+	 * Determine if a table is a TESS 2-minute postage stamp.
+	 */
+	private boolean isTessSpocPostageStamp(BasicHDU<?>[] hdus) {
+		var hdu = hdus[0];
+		return ("TESS").equals(hdu.getTelescope()) && hdu.getHeader().containsKey("CREATOR") &&
+				hdu.getHeader().getStringValue("CREATOR").contains("TargetPixelExporterPipelineModule");
+	}
+
 	/**
 	 * Determine if the image is a TESS FFI.
 	 */
@@ -572,6 +604,13 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		return tVal.strip().equals("TESS") && iCom.contains("FFI image type");
 	}
 
+	/**
+	 * Determine if a table is a TESS cut.
+	 */
+	private boolean isTessSpocFfiCut(TableHDU<?> tableHDU) {
+		return "astrocut".equals(tableHDU.getHeader().getStringValue("CREATOR")) &&
+				tableHDU.getHeader().findCard("TICAVER") == null;
+	}
 
 	/**
 	 * Determine if the image is a TICA image
@@ -784,8 +823,8 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		var type = ImageType.getType(imageData);
 
 		var imgtmp = type.makeProcessor(wi, he);
-		var imgtab = type.processImageData(imageData, wi, he, bzero, bscale);
-		ip = conditionImageProcessor(imgtab, imgtmp);
+		var pixels = type.processImageData(imageData, wi, he, bzero, bscale);
+		ip = conditionImageProcessor(pixels, imgtmp);
 		this.setProcessor(fileName, ip);
 		return ip;
 	}
@@ -793,9 +832,9 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	/**
 	 * Set pixel and scaling data of the ImageProcessor, flip the image vertically.
 	 */
-	private ImageProcessor conditionImageProcessor(Object imgtab, ImageProcessor imgtmp) {
+	private ImageProcessor conditionImageProcessor(Object pixels, ImageProcessor imgtmp) {
 		ImageProcessor ip;
-		imgtmp.setPixels(imgtab);
+		imgtmp.setPixels(pixels);
 		imgtmp.resetMinAndMax();
 
 		if (he == 1) {
@@ -805,7 +844,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			imgtmp = imgtmp.resize(100, he);
 		}
 		ip = imgtmp;
-		ip.flipVertical();
+		//ip.flipVertical();
 		return ip;
 	}
 

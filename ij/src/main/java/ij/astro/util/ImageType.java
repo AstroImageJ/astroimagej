@@ -13,11 +13,15 @@ public enum ImageType {
 
                 var p = 0;
                 for (int y = 0; y < height; y++) {
+                    // We extract the x-values from the y-array early to avoid extra array accesses in the inner loop
+                    var xValues = values[height - 1 - y];
                     for (int x = 0; x < width; x++) {
                         // y and x are inverted because of the implementations of ImageProcessor#getPixelValue
-                        double pixelValue = bzero + bscale * Byte.toUnsignedInt(values[y][x]);
-                        pixelArray[p] = (byte) pixelValue;
-                        p++;
+                        if (USE_FMA) {
+                            pixelArray[(y * width) + x] = (byte) Math.fma(bscale, Byte.toUnsignedInt(xValues[x]), bzero);
+                        } else {
+                            pixelArray[(y * width) + x] = (byte) (bzero + bscale * Byte.toUnsignedInt(xValues[x]));
+                        }
                     }
                 }
 
@@ -62,11 +66,15 @@ public enum ImageType {
 
                 var p = 0;
                 for (int y = 0; y < height; y++) {
+                    // We extract the x-values from the y-array early to avoid extra array accesses in the inner loop
+                    var xValues = values[height - 1 - y];
                     for (int x = 0; x < width; x++) {
                         // y and x are inverted because of the implementations of ImageProcessor#getPixelValue
-                        double pixelValue = bzero + bscale * values[y][x];
-                        pixelArray[p] = (short) pixelValue;
-                        p++;
+                        if (USE_FMA) {
+                            pixelArray[(y * width) + x] = (short) Math.fma(bscale, xValues[x], bzero);
+                        } else {
+                            pixelArray[(y * width) + x] = (short) (bzero + bscale * xValues[x]);
+                        }
                     }
                 }
 
@@ -111,11 +119,15 @@ public enum ImageType {
 
                 var p = 0;
                 for (int y = 0; y < height; y++) {
+                    // We extract the x-values from the y-array early to avoid extra array accesses in the inner loop
+                    var xValues = values[height - 1 - y];
                     for (int x = 0; x < width; x++) {
                         // y and x are inverted because of the implementations of ImageProcessor#getPixelValue
-                        double pixelValue = bzero + bscale * values[y][x];
-                        pixelArray[p] = (float) pixelValue;
-                        p++;
+                        if (USE_FMA) {
+                            pixelArray[(y * width) + x] = (float) Math.fma(bscale, xValues[x], bzero);
+                        } else {
+                            pixelArray[(y * width) + x] = (float) (bzero + bscale * xValues[x]);
+                        }
                     }
                 }
 
@@ -161,11 +173,15 @@ public enum ImageType {
 
                 var p = 0;
                 for (int y = 0; y < height; y++) {
+                    // We extract the x-values from the y-array early to avoid extra array accesses in the inner loop
+                    var xValues = values[height - 1 - y];
                     for (int x = 0; x < width; x++) {
                         // y and x are inverted because of the implementations of ImageProcessor#getPixelValue
-                        double pixelValue = bzero + bscale * values[y][x];
-                        pixelArray[p] = (float) pixelValue;
-                        p++;
+                        if (USE_FMA) {
+                            pixelArray[(y * width) + x] = (float) Math.fma(bscale, xValues[x], bzero);
+                        } else {
+                            pixelArray[(y * width) + x] = (float) (bzero + bscale * xValues[x]);
+                        }
                     }
                 }
 
@@ -189,7 +205,7 @@ public enum ImageType {
                 }
             }
 
-            return outArray;//todo flag that this is a 32-bit conversion by way of floats
+            return outArray;
         }
 
         @Override
@@ -210,11 +226,15 @@ public enum ImageType {
 
                 var p = 0;
                 for (int y = 0; y < height; y++) {
+                    // We extract the x-values from the y-array early to avoid extra array accesses in the inner loop
+                    var xValues = values[height - 1 - y];
                     for (int x = 0; x < width; x++) {
                         // y and x are inverted because of the implementations of ImageProcessor#getPixelValue
-                        double pixelValue = bzero + bscale * values[y][x];
-                        pixelArray[p] = (float) pixelValue;
-                        p++;
+                        if (USE_FMA) {
+                            pixelArray[(y * width) + x] = (float) Math.fma(bscale, xValues[x], bzero);
+                        } else {
+                            pixelArray[(y * width) + x] = (float) (bzero + bscale * xValues[x]);
+                        }
                     }
                 }
 
@@ -259,11 +279,15 @@ public enum ImageType {
 
                 var p = 0;
                 for (int y = 0; y < height; y++) {
+                    // We extract the x-values from the y-array early to avoid extra array accesses in the inner loop
+                    var xValues = values[height - 1 - y];
                     for (int x = 0; x < width; x++) {
                         // y and x are inverted because of the implementations of ImageProcessor#getPixelValue
-                        float pixelValue = (float) (bzero + bscale * values[y][x]);
-                        pixelArray[p] = pixelValue;
-                        p++;
+                        if (USE_FMA) {
+                            pixelArray[(y * width) + x] = (float) Math.fma(bscale, xValues[x], bzero);
+                        } else {
+                            pixelArray[(y * width) + x] = (float) (bzero + bscale * xValues[x]);
+                        }
                     }
                 }
 
@@ -287,7 +311,7 @@ public enum ImageType {
                 }
             }
 
-            return outArray;//todo flag that this is a 32-bit conversion
+            return outArray;
         }
 
         @Override
@@ -300,6 +324,8 @@ public enum ImageType {
             return -64;
         }
     };
+
+    private static final boolean USE_FMA = true;
 
     private final BiFunction<Integer, Integer, ? extends ImageProcessor> factory;
     private final Class<?> rawDataType;

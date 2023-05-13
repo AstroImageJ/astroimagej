@@ -10,8 +10,14 @@ public enum ImageType {
         public Object processImageData(Object rawData, int width, int height, double bzero, double bscale) {
             if (rawData instanceof byte[][] values) {
                 final var pixelArray = new byte[width * height];
+                if (bscale == 1 && bzero == 0) {
+                    for (int y = 0; y < height; y++) {
+                        System.arraycopy(values[height - 1 - y], 0, pixelArray, y * width, width);
+                    }
 
-                var p = 0;
+                    return pixelArray;
+                }
+
                 for (int y = 0; y < height; y++) {
                     // We extract the x-values from the y-array early to avoid extra array accesses in the inner loop
                     var xValues = values[height - 1 - y];
@@ -63,8 +69,14 @@ public enum ImageType {
         public Object processImageData(Object rawData, int width, int height, double bzero, double bscale) {
             if (rawData instanceof short[][] values) {
                 final var pixelArray = new short[width * height];
+                if (bscale == 1 && bzero == 0) {
+                    for (int y = 0; y < height; y++) {
+                        System.arraycopy(values[height - 1 - y], 0, pixelArray, y * width, width);
+                    }
 
-                var p = 0;
+                    return pixelArray;
+                }
+
                 for (int y = 0; y < height; y++) {
                     // We extract the x-values from the y-array early to avoid extra array accesses in the inner loop
                     var xValues = values[height - 1 - y];
@@ -116,8 +128,15 @@ public enum ImageType {
         public Object processImageData(Object rawData, int width, int height, double bzero, double bscale) {
             if (rawData instanceof int[][] values) {
                 final var pixelArray = new float[width * height];//new int[]
+                //todo reenable when IntProcessor output functions
+                /*if (bscale == 1 && bzero == 0) {
+                    for (int y = 0; y < height; y++) {
+                        System.arraycopy(values[height - 1 - y], 0, pixelArray, y * width, width);
+                    }
 
-                var p = 0;
+                    return pixelArray;
+                }*/
+
                 for (int y = 0; y < height; y++) {
                     // We extract the x-values from the y-array early to avoid extra array accesses in the inner loop
                     var xValues = values[height - 1 - y];
@@ -170,8 +189,15 @@ public enum ImageType {
         public Object processImageData(Object rawData, int width, int height, double bzero, double bscale) {
             if (rawData instanceof long[][] values) {
                 final var pixelArray = new float[width * height];
+                //Disabled as we have no LongProcessor
+                /*if (bscale == 1 && bzero == 0) {
+                    for (int y = 0; y < height; y++) {
+                        System.arraycopy(values[height - 1 - y], 0, pixelArray, y * width, width);
+                    }
 
-                var p = 0;
+                    return pixelArray;
+                }*/
+
                 for (int y = 0; y < height; y++) {
                     // We extract the x-values from the y-array early to avoid extra array accesses in the inner loop
                     var xValues = values[height - 1 - y];
@@ -224,7 +250,14 @@ public enum ImageType {
             if (rawData instanceof float[][] values) {
                 final var pixelArray = new float[width * height];
 
-                var p = 0;
+                if (bscale == 1 && bzero == 0) {
+                    for (int y = 0; y < height; y++) {
+                        System.arraycopy(values[height - 1 - y], 0, pixelArray, y * width, width);
+                    }
+
+                    return pixelArray;
+                }
+
                 for (int y = 0; y < height; y++) {
                     // We extract the x-values from the y-array early to avoid extra array accesses in the inner loop
                     var xValues = values[height - 1 - y];
@@ -276,8 +309,15 @@ public enum ImageType {
         public Object processImageData(Object rawData, int width, int height, double bzero, double bscale) {
             if (rawData instanceof double[][] values) {
                 final var pixelArray = new float[width * height];//todo make double when we have a DoubleProcessor
+                //Disabled as we have no DoubleProcessor
+                /*if (bscale == 1 && bzero == 0) {
+                    for (int y = 0; y < height; y++) {
+                        System.arraycopy(values[height - 1 - y], 0, pixelArray, y * width, width);
+                    }
 
-                var p = 0;
+                    return pixelArray;
+                }*/
+
                 for (int y = 0; y < height; y++) {
                     // We extract the x-values from the y-array early to avoid extra array accesses in the inner loop
                     var xValues = values[height - 1 - y];

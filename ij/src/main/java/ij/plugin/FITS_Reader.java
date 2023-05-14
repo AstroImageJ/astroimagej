@@ -16,6 +16,7 @@ import ij.io.FileInfo;
 import ij.io.FileOpener;
 import ij.io.OpenDialog;
 import ij.measure.Calibration;
+import ij.measure.ResultsTable;
 import ij.process.ImageProcessor;
 import nom.tam.fits.*;
 import nom.tam.image.compression.hdu.CompressedImageHDU;
@@ -23,6 +24,7 @@ import nom.tam.util.Cursor;
 
 import javax.swing.*;
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -31,6 +33,7 @@ import java.text.DecimalFormatSymbols;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
+import java.util.stream.IntStream;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipFile;
 
@@ -383,6 +386,9 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 
 				if (filter != null && !filter.matchesFilter(hdr)) return;
 				imageProcessor = makeStackFrom3DData(data, tableHDU.getNRows(), makeHeadersTessCut(hdr, tableHDU, hdus));
+			} else {
+				fitsTable2MeasurementsTable(tableHDU);
+				return;
 			}
 		} else if (isBasic3DImage(hdus)) {
 			imageProcessor = makeStackFromManyHDU(hdus);
@@ -466,6 +472,42 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		}
 
 		return true;
+	}
+
+	private void fitsTable2MeasurementsTable(TableHDU<?> tableHDU) throws FitsException {
+		ResultsTable mt;
+		try {
+			// Work around access issues
+			var cl = IJ.getClassLoader().loadClass("astroj.MeasurementTable");
+			mt = (ResultsTable) cl.getConstructor(String.class).newInstance(fileName);
+		} catch (ClassNotFoundException | InvocationTargetException | InstantiationException | IllegalAccessException |
+				 NoSuchMethodException e) {
+			e.printStackTrace();
+			mt = new ResultsTable(tableHDU.getNRows());
+		}
+		ResultsTable finalMt = mt;
+		for (int c = 0; c < tableHDU.getNCols(); c++) {
+			//todo check listed column type, skip image columns, or open them as stacks?
+			//todo add other columns, but as NaN?
+			var o = tableHDU.getColumn(c);
+			var cName = tableHDU.getColumnName(c) == null ? "C" + c : tableHDU.getColumnName(c);
+			if (o instanceof byte[] arr) {
+				IntStream.range(0, arr.length).forEachOrdered(i -> finalMt.setValue(cName, i, Byte.toUnsignedInt(arr[i])));
+			} else if (o instanceof short[] arr) {
+				IntStream.range(0, arr.length).forEachOrdered(i -> finalMt.setValue(cName, i, arr[i]));
+			} else if (o instanceof int[] arr) {
+				IntStream.range(0, arr.length).forEachOrdered(i -> finalMt.setValue(cName, i, arr[i]));
+			} else if (o instanceof long[] arr) {
+				IntStream.range(0, arr.length).forEachOrdered(i -> finalMt.setValue(cName, i, arr[i]));
+			} else if (o instanceof float[] arr) {
+				IntStream.range(0, arr.length).forEachOrdered(i -> finalMt.setValue(cName, i, arr[i]));
+			} else if (o instanceof double[] arr) {
+				IntStream.range(0, arr.length).forEachOrdered(i -> finalMt.setValue(cName, i, arr[i]));
+			} else if (o instanceof String[] arr) {
+				IntStream.range(0, arr.length).forEachOrdered(i -> finalMt.setValue(cName, i, arr[i]));
+			}
+		}
+		mt.show(fileName);
 	}
 
 	/**

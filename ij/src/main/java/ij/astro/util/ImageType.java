@@ -45,10 +45,9 @@ public enum ImageType {
             var height = ip.getHeight();
             // y and x are inverted because of the implementations of ImageProcessor#getPixelValue
             var outArray = new byte[height][width];
-            for (int x = 0; x < width; x++) {
-                for (int y = 0; y < height; y++) {
-                    outArray[height - 1 - y][x] = (byte) (lip.get(x, y));
-                }
+            var values = (byte[]) lip.getPixels();
+            for (int y = 0; y < height; y++) {
+                System.arraycopy(values, y * width, outArray[height - 1 - y], 0, width);
             }
 
             return outArray;
@@ -104,9 +103,16 @@ public enum ImageType {
             var height = lip.getHeight();
             // y and x are inverted because of the implementations of ImageProcessor#getPixelValue
             var outArray = new short[height][width];
-            for (int x = 0; x < width; x++) {
+            if (useBZero) {
+                for (int x = 0; x < width; x++) {
+                    for (int y = 0; y < height; y++) {
+                        outArray[height - 1 - y][x] = (short) (lip.get(x, y) + Short.MIN_VALUE); // Subtract BZERO
+                    }
+                }
+            } else {
+                var values = (short[]) lip.getPixels();
                 for (int y = 0; y < height; y++) {
-                    outArray[height - 1 - y][x] = (short) (lip.get(x, y) + (useBZero ? Short.MIN_VALUE : 0)); // Subtract BZERO
+                    System.arraycopy(values, y * width, outArray[height - 1 - y], 0, width);
                 }
             }
 
@@ -164,9 +170,16 @@ public enum ImageType {
             var height = ip.getHeight();
             // y and x are inverted because of the implementations of ImageProcessor#getPixelValue
             var outArray = new int[height][width];
-            for (int x = 0; x < width; x++) {
+            if (useBZero) {
+                for (int x = 0; x < width; x++) {
+                    for (int y = 0; y < height; y++) {
+                        outArray[height - 1 - y][x] = lip.get(x, y) + Integer.MIN_VALUE; // Subtract BZERO
+                    }
+                }
+            } else {
+                var values = (int[]) lip.getPixels();
                 for (int y = 0; y < height; y++) {
-                    outArray[height - 1 - y][x] = lip.get(x, y) + (useBZero ? Integer.MIN_VALUE : 0); // Subtract BZERO
+                    System.arraycopy(values, y * width, outArray[height - 1 - y], 0, width);
                 }
             }
 
@@ -285,9 +298,16 @@ public enum ImageType {
             var height = ip.getHeight();
             // y and x are inverted because of the implementations of ImageProcessor#getPixelValue
             var outArray = new float[height][width];
-            for (int x = 0; x < width; x++) {
+            if (useBZero) {
+                for (int x = 0; x < width; x++) {
+                    for (int y = 0; y < height; y++) {
+                        outArray[height - 1 - y][x] = lip.getf(x, y);
+                    }
+                }
+            } else {
+                var values = (float[]) lip.getPixels();
                 for (int y = 0; y < height; y++) {
-                    outArray[height - 1 - y][x] = lip.getf(x, y);
+                    System.arraycopy(values, y * width, outArray[height - 1 - y], 0, width);
                 }
             }
             return outArray;

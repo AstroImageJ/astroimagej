@@ -253,8 +253,10 @@ public class Stack_Aligner extends MultiAperture_
 
 		// RENAME RESULTING ALIGNED STACK
 
-		imp.setTitle(label);
-        imp.updateAndDraw();
+		SwingUtilities.invokeLater(() -> {
+            imp.updateAndDraw();
+            imp.setTitle(label);
+        });
         Prefs.set (AP_PREFS_REPOSITION, startingRepositionSetting);
         Prefs.set (MultiAperture_.PREFS_USEVARSIZEAP, startingUseVarApSetting);
         if (isVirtual && slice >= stackSize) IJ.showMessage("Virtual stack alignment complete.\nAligned images are saved in subdirectory 'aligned'."); 

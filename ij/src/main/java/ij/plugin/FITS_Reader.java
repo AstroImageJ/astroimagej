@@ -598,7 +598,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 
 				headers.add(baos.toString(utf8));
 			}
-			if (hasErrors) AIJLogger.log("Encountered an issue opening: " + fileName);
+			if (hasErrors) AIJLogger.log("Opening: " + fileName);
 		} catch (Exception ignored) {}
 
 		return headers;

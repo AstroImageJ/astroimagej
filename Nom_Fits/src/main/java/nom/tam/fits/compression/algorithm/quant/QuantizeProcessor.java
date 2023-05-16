@@ -31,12 +31,12 @@ package nom.tam.fits.compression.algorithm.quant;
  * #L%
  */
 
-import nom.tam.fits.compression.algorithm.api.ICompressor;
-
 import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
+
+import nom.tam.fits.compression.algorithm.api.ICompressor;
 
 public class QuantizeProcessor {
 
@@ -154,14 +154,15 @@ public class QuantizeProcessor {
 
         private static final double RANDOM_START_VALUE = 16807.0;
 
-        private static final double[] RANDOM_VALUES = initRandoms();
-
         private int iseed = 0;
 
         private int nextRandom = 0;
 
+        private final double[] randomValues;
+
         DitherFilter(long seed) {
             super(null);
+            this.randomValues = initRandoms();
             initialize(seed);
         }
 
@@ -171,14 +172,14 @@ public class QuantizeProcessor {
         }
 
         private void initI1() {
-            this.nextRandom = (int) (RANDOM_VALUES[this.iseed] * RANDOM_MULTIPLICATOR);
+            this.nextRandom = (int) (this.randomValues[this.iseed] * RANDOM_MULTIPLICATOR);
         }
 
         public double nextRandom() {
-            return RANDOM_VALUES[this.nextRandom];
+            return this.randomValues[this.nextRandom];
         }
 
-        private static double[] initRandoms() {
+        private double[] initRandoms() {
 
             /* initialize an tiledImageOperation of random numbers */
 

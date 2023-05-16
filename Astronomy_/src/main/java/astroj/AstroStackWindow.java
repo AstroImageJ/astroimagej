@@ -4038,7 +4038,10 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             autoScaleIconClicked = true;
             setAutoLevels(null);
         }
-        imp.getCanvas().requestFocusInWindow();
+
+        if (imp != null) {
+            imp.getCanvas().requestFocusInWindow();
+        }
     }
 
     void handleAstrometry(boolean showSetupPanel) {

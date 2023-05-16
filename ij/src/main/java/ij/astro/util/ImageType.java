@@ -385,7 +385,7 @@ public enum ImageType {
         }
     };
 
-    private static final boolean USE_FMA = true;
+    private static final boolean USE_FMA = testForFma();
 
     private final BiFunction<Integer, Integer, ? extends ImageProcessor> factory;
     private final Class<?> rawDataType;
@@ -415,6 +415,24 @@ public enum ImageType {
             //todo how to handle? use complex?
         }
         throw new IllegalStateException("Tried to get an image type that was not known: " + ip.getClass());
+    }
+
+    private static boolean testForFma() {
+        var t = System.nanoTime();
+        var i = (float)2*3+1;
+        var tn = System.nanoTime() - t;
+        // Run it a few times for the jit
+        for (int j = 0; j < 10; j++) {
+            i = Math.fma(2, 3, 1);
+        }
+        var t2 = System.nanoTime();
+        var j = Math.fma(2, 3, 1);
+        var tf = System.nanoTime() - t2;
+        var isFmaFaster = tf <= tn;
+        System.out.println("Is FMA faster?: " + isFmaFaster);
+        System.out.println("FMA time: " + tf);
+        System.out.println("Normal time " + tn);
+        return isFmaFaster;
     }
 
     public boolean isFloatingPoint() {

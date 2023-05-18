@@ -298,6 +298,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     private boolean suggestionRunning;
     private Seeing_Profile sp;
     private List<Seeing_Profile.ApRadii> stackRadii = new ArrayList<>();
+    private final HashSet<Component> singleStepListeners = new HashSet<>();
     private static final Property<Boolean> updateImageDisplay = new Property<>(true, MultiAperture_.class);
 
 //	public static double RETRY_RADIUS = 3.0;
@@ -3821,15 +3822,29 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                         "If 'Halt on WCS error' below is disabled, mixed mode RA-Dec and X-Y placement is possible.<br>" +
                         "Mixed-mode is useful if plate solving is slow. In this mode, only the first image and any subsequent image<br>"+
                         "with a large shift on the detector, such as a meridian flip, need to be plate solved.</html>");
-        gd.addCheckbox("Use single step mode (1-click to set first aperture location in each image)", singleStep, b -> singleStep = b)
+        gd.addCheckbox("Use single step mode (1-click to set first aperture location in each image)", singleStep, b -> {
+                    singleStep = b;
+                    singleStepListeners.forEach(c -> {
+                        if ("with".equals(c.getName())) {
+                            c.setEnabled(b);
+                        } else {
+                            c.setEnabled(!b);
+                        }
+                    });
+                })
                 .setToolTipText("<html>Single step mode allows apertures to be placed in the first image, and then after each image is processed,<br>"+
                         "Multi-Aperture will pause to allow the user to click near the T1 star location in the next image. This mode of operation is useful with<br>"+
                         "image sequences that are not plate solved and that have image shifts too large for centroid to track.</html>");
-        gd.addCheckbox("Allow aperture changes between slices in single step mode (right click to advance image)", allowSingleStepApChanges, b -> allowSingleStepApChanges = b)
-                .setToolTipText("<html>This mode works the same as Single Step mode, except that Multi-Aperture does not automatically advance<br>"+
+        var c1 = gd.addCheckbox("Allow aperture changes between slices in single step mode (right click to advance image)", allowSingleStepApChanges, b -> {
+                    allowSingleStepApChanges = b;
+                });
+        c1.setName("with");
+        c1.setToolTipText("<html>This mode works the same as Single Step mode, except that Multi-Aperture does not automatically advance<br>"+
                         "to the next image when the T1 location is selected. Instead, the user has the choice to tweak the aperture locations<br>" +
                         "using drag and drop. After the new locations are optionally set, press Enter or right-click to advance to the next image.<br>" +
                         "This mode can be helpful for image sequences with moving objects, or apertures that jump to incorrect stars.</html>");
+        singleStepListeners.add(c1);
+        c1.setEnabled(singleStep);
         gd.addDoubleSpaceLineSeparator();
 
         // Make all sliders the same size
@@ -4025,6 +4040,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         bottomChecks.subComponents().get(0).setToolTipText("<html>Multi-aperture will run faster with this option disabled,<br>" +
                 "but the table and plot displays will only update once when the Multi-Aperture run has finished.</html>");
         bottomChecks.subComponents().get(1).setToolTipText("This extra panel is useful to new users that need additional keyboard/mouse help when placing apertures.");
+        singleStepListeners.add(bottomChecks.subComponents().get(2));
+        bottomChecks.subComponents().get(2).setEnabled(!singleStep);
     }
 
     private void toggleComponents(Component[] components, int offset, boolean toggle) {

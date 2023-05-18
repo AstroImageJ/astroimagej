@@ -1359,12 +1359,14 @@ public class Opener {
 	 */
 	@AstroImageJ(reason = "Add more file types; extend how fits file is checked; " +
 			"skip read check for files within a zip; add option to ignore unopenable file; " +
-			"add extension check for pngs; widen access", modified = true)
+			"add extension check for pngs; widen access; move fits check by extension to head", modified = true)
 	public int getFileType(String path, boolean checkOpenable) {
 		if (openUsingPlugins && !path.endsWith(".txt") &&  !path.endsWith(".java"))
 			return UNKNOWN;
 		File file = new File(path);
 		String name = file.getName();
+		if (FitsExtensionUtil.isFitsFile(name))
+			return FITS;
 		InputStream is;
 		byte[] buf = new byte[132];
 		try {

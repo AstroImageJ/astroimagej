@@ -239,11 +239,11 @@ public class Stack_Aligner extends MultiAperture_
                     xRef[i] = xPos[i];
                     yRef[i] = yPos[i];
                     }
+                }
                 String titl = imp.getShortTitle();
                 if (titl == null)
                     titl = imp.getTitle();
                 label += titl;
-                }
             }
 
 
@@ -358,7 +358,7 @@ public class Stack_Aligner extends MultiAperture_
             ImagePlus imp2 = new ImagePlus(imp.getStack().getSliceLabel(slice), imp.getStack().getProcessor(slice)); 
             imp2.setCalibration(imp.getCalibration());  
             imp2.setFileInfo(imp.getFileInfo());
-            imp2.setProcessor ("Aligned_"+imageFilename, imp.getType()==ImagePlus.COLOR_RGB ? shiftedRGBImage(dx,dy) : shiftedImage(dx,dy));
+            imp2.setProcessor (null, imp.getType()==ImagePlus.COLOR_RGB ? shiftedRGBImage(dx,dy) : shiftedImage(dx,dy));
             var scienceHeader = FitsJ.getHeader(imp);
             if (scienceHeader != null)
                 {
@@ -369,7 +369,8 @@ public class Stack_Aligner extends MultiAperture_
             }
         else
             {
-            imp.setProcessor ("Aligned_"+imageFilename, imp.getType()==ImagePlus.COLOR_RGB ? shiftedRGBImage(dx,dy) : shiftedImage(dx,dy));
+            imp.setProcessor (null, imp.getType()==ImagePlus.COLOR_RGB ? shiftedRGBImage(dx,dy) : shiftedImage(dx,dy));
+            //imp.getStack().setSliceLabel("aligned_" + imageFilename, slice);
             var scienceHeader = FitsJ.getHeader(imp);
             if (scienceHeader != null)
                 {

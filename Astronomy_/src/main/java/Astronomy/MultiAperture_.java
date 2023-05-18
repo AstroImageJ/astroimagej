@@ -393,6 +393,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         if (Recorder.record) {
             Recorder.setCommand(getClass().getName());
         }
+
+        Prefs.set(MultiAperture_.PREFS_FINISHED, "false");
+
 //        if (table==null)
 //            IJ.log("Table is null");
 //        else

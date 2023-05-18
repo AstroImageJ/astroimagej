@@ -17,7 +17,6 @@ import nom.tam.fits.Fits;
 import nom.tam.fits.Header;
 import nom.tam.fits.HeaderCard;
 import nom.tam.fits.ImageHDU;
-import nom.tam.fits.compression.algorithm.hcompress.HCompressorOption;
 import nom.tam.fits.header.Compression;
 import nom.tam.image.compression.hdu.CompressedImageHDU;
 import nom.tam.util.FitsOutputStream;
@@ -144,7 +143,18 @@ public class FITS_Writer implements PlugIn {
 
 		// GET PATH
 		if (path == null || path.trim().length() == 0) {
-			String title = FitsExtensionUtil.fileNameWithoutExt(imp.getTitle());
+			var nm = imp.getTitle();
+			if (specificSlice != -1) {
+				String filename = imp.getStack().getSliceLabel(specificSlice);
+				if (filename == null) {
+					filename = imp.getTitle().trim();
+				} else {
+					int newline = filename.indexOf('\n');
+					if (newline != -1) filename = filename.substring(0, newline);
+				}
+				nm = filename.trim();
+			}
+			String title = FitsExtensionUtil.fileNameWithoutExt(nm);
 			SaveDialog sd = new SaveDialog("Write FITS image",title,extension);
 			path = sd.getDirectory()+sd.getFileName();
 		}

@@ -5444,7 +5444,6 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             cp = (ColorProcessor) (ip.duplicate());
         }
         impTitle = imp.getTitle();
-        this.setTitle(impTitle);
         stackSize = imp.getStackSize();
 
         updateWCS();
@@ -5473,7 +5472,9 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
 
         if (useInvertingLut != ip.isInvertedLut() && !ip.isColorLut())
             ip.invertLut();
-        layoutContainer(this);
+        SwingUtilities.invokeLater(() -> {
+            layoutContainer(this);
+        });
         ac.updateZoomBoxParameters();
         updatePanelValues(updateImage);//todo this lags the cursor aperture, especially during multiaperture
         setImageEdges();

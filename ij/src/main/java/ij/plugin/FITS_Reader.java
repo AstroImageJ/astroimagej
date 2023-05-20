@@ -479,7 +479,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		try {
 			// Work around access issues
 			var cl = IJ.getClassLoader().loadClass("astroj.MeasurementTable");
-			mt = (ResultsTable) cl.getConstructor(String.class).newInstance(fileName);
+			mt = (ResultsTable) cl.getConstructor(String.class).newInstance(fileName + " Measurements");
 		} catch (ClassNotFoundException | InvocationTargetException | InstantiationException | IllegalAccessException |
 				 NoSuchMethodException e) {
 			e.printStackTrace();
@@ -507,7 +507,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 				IntStream.range(0, arr.length).forEachOrdered(i -> finalMt.setValue(cName, i, arr[i]));
 			}
 		}
-		mt.show(fileName);
+		mt.show("Measurements in " + fileName);
 	}
 
 	/**

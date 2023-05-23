@@ -1006,6 +1006,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         cancelled = true;
         processingStack = false;
         processingImage = false;
+        imp = null;
+        asw = null;
         Prefs.set(MultiAperture_.PREFS_NAPERTURESMAX, nAperturesMax);
         Prefs.set(MultiAperture_.PREFS_PREVIOUS, previous);
         Prefs.set("plot2.openSimbadForAbsMag", openSimbadForAbsMag);

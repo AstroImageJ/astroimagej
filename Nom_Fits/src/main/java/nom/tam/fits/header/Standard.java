@@ -1,12 +1,6 @@
 package nom.tam.fits.header;
 
-import nom.tam.fits.AsciiTable;
-import nom.tam.fits.BasicHDU;
-import nom.tam.fits.BinaryTable;
-import nom.tam.fits.ImageData;
-import nom.tam.fits.RandomGroupsData;
-import nom.tam.fits.TableData;
-import nom.tam.fits.UndefinedData;
+import nom.tam.fits.*;
 
 /*
  * #%L
@@ -537,6 +531,11 @@ public enum Standard implements IFitsHeader {
 
     private static final ThreadLocal<Class<?>> COMMENT_CONTEXT = new ThreadLocal<>();
 
+    /**
+     * The value of the XTENSION keword in case of a binary table.
+     */
+    public static final String XTENSION_ASCIITABLE = "TABLE";
+    
     /**
      * The value of the XTENSION keword in case of a binary table.
      */

@@ -31,8 +31,7 @@ package nom.tam.fits.test;
  * #L%
  */
 
-import nom.tam.fits.Fits;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -41,7 +40,9 @@ import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static org.junit.Assert.assertEquals;
+import nom.tam.fits.Fits;
+
+import org.junit.Test;
 
 public class MiscTest {
 

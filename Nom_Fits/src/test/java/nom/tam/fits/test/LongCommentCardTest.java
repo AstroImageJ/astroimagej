@@ -31,15 +31,23 @@ package nom.tam.fits.test;
  * #L%
  */
 
-import nom.tam.fits.*;
-import nom.tam.fits.header.Standard;
-import nom.tam.util.Cursor;
-import nom.tam.util.FitsOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+
+import javax.xml.stream.events.EndDocument;
+
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.File;
-import java.io.FileOutputStream;
+import nom.tam.fits.Fits;
+import nom.tam.fits.FitsException;
+import nom.tam.fits.FitsFactory;
+import nom.tam.fits.Header;
+import nom.tam.fits.HeaderCard;
+import nom.tam.fits.LongValueException;
+import nom.tam.fits.header.Standard;
+import nom.tam.util.FitsOutputStream;
+import nom.tam.util.Cursor;
 
 public class LongCommentCardTest {
 

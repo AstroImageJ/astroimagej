@@ -33,14 +33,10 @@ package nom.tam.fits;
  * #L%
  */
 
-import java.io.IOException;
-
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import nom.tam.util.ArrayDataInput;
-import nom.tam.util.ArrayDataOutput;
-import nom.tam.util.FitsDecoder;
-import nom.tam.util.FitsEncoder;
-import nom.tam.util.ByteArrayIO;
+import nom.tam.util.*;
+
+import java.io.IOException;
 
 /**
  * This class supports the FITS heap. This is currently used for variable length

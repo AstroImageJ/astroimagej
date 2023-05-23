@@ -31,7 +31,23 @@ package nom.tam.fits.compression.algorithm.quant;
  * #L%
  */
 
-import nom.tam.fits.*;
+import java.io.RandomAccessFile;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.nio.ByteBuffer;
+import java.nio.DoubleBuffer;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+import java.util.Arrays;
+
+import org.junit.Assert;
+import org.junit.Test;
+
+import nom.tam.fits.BinaryTableHDU;
+import nom.tam.fits.FitsFactory;
+import nom.tam.fits.Header;
+import nom.tam.fits.HeaderCard;
+import nom.tam.fits.HeaderCardException;
 import nom.tam.fits.compression.algorithm.hcompress.HCompressorOption;
 import nom.tam.fits.compression.algorithm.quant.QuantizeProcessor.FloatQuantCompressor;
 import nom.tam.fits.compression.algorithm.rice.RiceCompressOption;
@@ -47,17 +63,6 @@ import nom.tam.fits.header.Compression;
 import nom.tam.util.ArrayFuncs;
 import nom.tam.util.Cursor;
 import nom.tam.util.SafeClose;
-import org.junit.Assert;
-import org.junit.Test;
-
-import java.io.RandomAccessFile;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.nio.ByteBuffer;
-import java.nio.DoubleBuffer;
-import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
-import java.util.Arrays;
 
 public class QuantizeTest {
 
@@ -783,4 +788,15 @@ public class QuantizeTest {
         p.copy(new QuantizeOption());
     }
 
+    @Test
+    public void testDitherSequence() throws Exception {
+
+        /*
+         * IMPORTANT NOTE: the 10000th seed value must have the value 1043618065 if the algorithm has been implemented
+         * correctly
+         */
+        final double LAST_RANDOM_VALUE = 1043618065.0 / Integer.MAX_VALUE;
+
+        Assert.assertEquals(RandomSequence.get(RandomSequence.length() - 1), LAST_RANDOM_VALUE, 0.1);
+    }
 }

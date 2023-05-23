@@ -31,17 +31,26 @@ package nom.tam.util;
  * #L%
  */
 
-import nom.tam.util.type.ElementType;
-import nom.tam.util.type.PrimitiveTypeHandler;
-import nom.tam.util.type.PrimitiveTypes;
-import org.junit.Assert;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
-import java.nio.*;
+import java.nio.Buffer;
+import java.nio.ByteBuffer;
+import java.nio.DoubleBuffer;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+import java.nio.LongBuffer;
+import java.nio.ShortBuffer;
 
-import static org.junit.Assert.*;
+import nom.tam.util.type.ElementType;
+import nom.tam.util.type.PrimitiveTypeHandler;
+import nom.tam.util.type.PrimitiveTypes;
+
+import org.junit.Assert;
+import org.junit.Test;
 
 public class PrimitiveTypeTest {
 

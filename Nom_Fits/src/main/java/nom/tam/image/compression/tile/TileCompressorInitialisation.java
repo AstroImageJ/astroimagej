@@ -31,10 +31,10 @@ package nom.tam.image.compression.tile;
  * #L%
  */
 
-import java.nio.Buffer;
-
 import nom.tam.image.tile.operation.ITileOperationInitialisation;
 import nom.tam.image.tile.operation.TileArea;
+
+import java.nio.Buffer;
 
 final class TileCompressorInitialisation implements ITileOperationInitialisation<TileCompressionOperation> {
 

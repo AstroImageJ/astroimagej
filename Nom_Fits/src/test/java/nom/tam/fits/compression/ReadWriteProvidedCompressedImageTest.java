@@ -1,6 +1,72 @@
 package nom.tam.fits.compression;
 
-import nom.tam.fits.*;
+import static org.junit.Assert.*;
+
+/*
+ * #%L
+ * nom.tam FITS library
+ * %%
+ * Copyright (C) 1996 - 2021 nom-tam-fits
+ * %%
+ * This is free and unencumbered software released into the public domain.
+ * 
+ * Anyone is free to copy, modify, publish, use, compile, sell, or
+ * distribute this software, either in source code form or as a compiled
+ * binary, for any purpose, commercial or non-commercial, and by any
+ * means.
+ * 
+ * In jurisdictions that recognize copyright laws, the author or authors
+ * of this software dedicate any and all copyright interest in the
+ * software to the public domain. We make this dedication for the benefit
+ * of the public at large and to the detriment of our heirs and
+ * successors. We intend this dedication to be an overt act of
+ * relinquishment in perpetuity of all present and future rights to this
+ * software under copyright law.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+ * OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ * OTHER DEALINGS IN THE SOFTWARE.
+ * #L%
+ */
+
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.Array;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+import java.nio.ShortBuffer;
+import java.util.Random;
+import java.util.stream.IntStream;
+
+import javax.swing.ImageIcon;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+
+import nom.tam.fits.BasicHDU;
+import nom.tam.fits.Fits;
+import nom.tam.fits.FitsException;
+import nom.tam.fits.FitsFactory;
+import nom.tam.fits.Header;
+import nom.tam.fits.HeaderCard;
+import nom.tam.fits.ImageData;
+import nom.tam.fits.ImageHDU;
 import nom.tam.fits.compression.algorithm.hcompress.HCompressorOption;
 import nom.tam.fits.compression.algorithm.quant.QuantizeOption;
 import nom.tam.fits.compression.algorithm.rice.RiceCompressOption;
@@ -12,21 +78,6 @@ import nom.tam.image.compression.hdu.CompressedImageHDU;
 import nom.tam.util.ArrayFuncs;
 import nom.tam.util.FitsOutputStream;
 import nom.tam.util.SafeClose;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
-import javax.swing.*;
-import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.io.*;
-import java.lang.reflect.Array;
-import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
-import java.nio.ShortBuffer;
-import java.util.Random;
-
-import static org.junit.Assert.assertEquals;
 
 public class ReadWriteProvidedCompressedImageTest {
 
@@ -42,25 +93,27 @@ public class ReadWriteProvidedCompressedImageTest {
 
     private static int assertionCounter = 1;
 
+    @Before
+    public void setDefaults() {
+        FitsFactory.setDefaults();
+    }
+
     private void assert_float_image(float[][] actual, float[][] expected, float delta) {
         Assert.assertEquals(expected.length, actual.length);
-        for (int axis0 = 0; axis0 < expected.length; axis0++) {
-            Assert.assertArrayEquals(expected[axis0], actual[axis0], delta);
-        }
+        IntStream.range(0, expected.length).parallel()
+                .forEach(axis0 -> Assert.assertArrayEquals(expected[axis0], actual[axis0], delta));
     }
 
     private void assert_int_image(int[][] actual, int[][] expected) {
         Assert.assertEquals(expected.length, actual.length);
-        for (int axis0 = 0; axis0 < expected.length; axis0++) {
-            Assert.assertArrayEquals(expected[axis0], actual[axis0]);
-        }
+        IntStream.range(0, expected.length).parallel()
+                .forEach(axis0 -> Assert.assertArrayEquals(expected[axis0], actual[axis0]));
     }
 
     private void assert_short_image(short[][] actual, short[][] expected) {
         Assert.assertEquals(expected.length, actual.length);
-        for (int axis0 = 0; axis0 < expected.length; axis0++) {
-            Assert.assertArrayEquals(expected[axis0], actual[axis0]);
-        }
+        IntStream.range(0, expected.length).parallel()
+                .forEach(axis0 -> Assert.assertArrayEquals(expected[axis0], actual[axis0]));
     }
 
     /**
@@ -76,7 +129,6 @@ public class ReadWriteProvidedCompressedImageTest {
                 if (checkNaN) {
                     Assert.assertTrue(Double.isNaN(d1) == Double.isNaN(d2)); //
                 }
-                Assert.assertTrue(true); // ;-)
             } else {
                 Assert.assertEquals(d1, d2, delta);
             }
@@ -182,8 +234,7 @@ public class ReadWriteProvidedCompressedImageTest {
     @Test
     public void blackboxTest_c4s_060126_182642_zri() throws Exception {
         assertCompressedToUncompressedImage(resolveLocalOrRemoteFileName("c4s_060126_182642_zri.fits.fz"), //
-                resolveLocalOrRemoteFileName("c4s_060126_182642_zri.fits"), short[][].class,
-                new IHDUAsserter<short[][]>() {
+                resolveLocalOrRemoteFileName("c4s_060126_182642_zri.fits"), short[][].class, new IHDUAsserter<short[][]>() {
 
                     @Override
                     public void assertData(short[][] expected, short[][] actual) {
@@ -195,8 +246,7 @@ public class ReadWriteProvidedCompressedImageTest {
     @Test
     public void blackboxTest_c4s_060127_070751_cri() throws Exception {
         assertCompressedToUncompressedImage(resolveLocalOrRemoteFileName("c4s_060127_070751_cri.fits.fz"), //
-                resolveLocalOrRemoteFileName("c4s_060127_070751_cri.fits"), short[][].class,
-                new IHDUAsserter<short[][]>() {
+                resolveLocalOrRemoteFileName("c4s_060127_070751_cri.fits"), short[][].class, new IHDUAsserter<short[][]>() {
 
                     @Override
                     public void assertData(short[][] expected, short[][] actual) {
@@ -208,8 +258,7 @@ public class ReadWriteProvidedCompressedImageTest {
     @Test
     public void blackboxTest_kwi_041217_212603_fri() throws Exception {
         assertCompressedToUncompressedImage(resolveLocalOrRemoteFileName("kwi_041217_212603_fri.fits.fz"), //
-                resolveLocalOrRemoteFileName("kwi_041217_212603_fri.fits"), short[][].class,
-                new IHDUAsserter<short[][]>() {
+                resolveLocalOrRemoteFileName("kwi_041217_212603_fri.fits"), short[][].class, new IHDUAsserter<short[][]>() {
 
                     @Override
                     public void assertData(short[][] expected, short[][] actual) {
@@ -221,8 +270,7 @@ public class ReadWriteProvidedCompressedImageTest {
     @Test
     public void blackboxTest_kwi_041217_213100_fri() throws Exception {
         assertCompressedToUncompressedImage(resolveLocalOrRemoteFileName("kwi_041217_213100_fri.fits.fz"), //
-                resolveLocalOrRemoteFileName("kwi_041217_213100_fri.fits"), short[][].class,
-                new IHDUAsserter<short[][]>() {
+                resolveLocalOrRemoteFileName("kwi_041217_213100_fri.fits"), short[][].class, new IHDUAsserter<short[][]>() {
 
                     @Override
                     public void assertData(short[][] expected, short[][] actual) {
@@ -234,8 +282,7 @@ public class ReadWriteProvidedCompressedImageTest {
     @Test
     public void blackboxTest_psa_140305_191552_zri() throws Exception {
         assertCompressedToUncompressedImage(resolveLocalOrRemoteFileName("psa_140305_191552_zri.fits.fz"), //
-                resolveLocalOrRemoteFileName("psa_140305_191552_zri.fits"), short[][].class,
-                new IHDUAsserter<short[][]>() {
+                resolveLocalOrRemoteFileName("psa_140305_191552_zri.fits"), short[][].class, new IHDUAsserter<short[][]>() {
 
                     @Override
                     public void assertData(short[][] expected, short[][] actual) {
@@ -247,8 +294,7 @@ public class ReadWriteProvidedCompressedImageTest {
     @Test
     public void blackboxTest_psa_140305_194520_fri() throws Exception {
         assertCompressedToUncompressedImage(resolveLocalOrRemoteFileName("psa_140305_194520_fri.fits.fz"), //
-                resolveLocalOrRemoteFileName("psa_140305_194520_fri.fits"), short[][].class,
-                new IHDUAsserter<short[][]>() {
+                resolveLocalOrRemoteFileName("psa_140305_194520_fri.fits"), short[][].class, new IHDUAsserter<short[][]>() {
 
                     @Override
                     public void assertData(short[][] expected, short[][] actual) {
@@ -284,18 +330,16 @@ public class ReadWriteProvidedCompressedImageTest {
 
     @Test
     public void blackboxTest1_1() throws Exception {
-        FloatBuffer result = (FloatBuffer) readAll(
-                resolveLocalOrRemoteFileName("DECam_00149774_40_DESX0332-2742.fits.fz"), 1);
-        float[][] expected = (float[][]) readAll(resolveLocalOrRemoteFileName("DECam_00149774_40_DESX0332-2742.fits"),
-                0);
+        FloatBuffer result = (FloatBuffer) readAll(resolveLocalOrRemoteFileName("DECam_00149774_40_DESX0332-2742.fits.fz"),
+                1);
+        float[][] expected = (float[][]) readAll(resolveLocalOrRemoteFileName("DECam_00149774_40_DESX0332-2742.fits"), 0);
         result.rewind();
         assertFloatImage(result, expected, 6f);
     }
 
     @Test
     public void blackboxTest1_2() throws Exception {
-        IntBuffer result = (IntBuffer) readAll(resolveLocalOrRemoteFileName("DECam_00149774_40_DESX0332-2742.fits.fz"),
-                2);
+        IntBuffer result = (IntBuffer) readAll(resolveLocalOrRemoteFileName("DECam_00149774_40_DESX0332-2742.fits.fz"), 2);
         int[][] expected = (int[][]) readAll(resolveLocalOrRemoteFileName("DECam_00149774_40_DESX0332-2742.fits"), 1);
         result.rewind();
         assertIntImage(result, expected);
@@ -303,10 +347,9 @@ public class ReadWriteProvidedCompressedImageTest {
 
     @Test
     public void blackboxTest1_3() throws Exception {
-        FloatBuffer result = (FloatBuffer) readAll(
-                resolveLocalOrRemoteFileName("DECam_00149774_40_DESX0332-2742.fits.fz"), 3);
-        float[][] expected = (float[][]) readAll(resolveLocalOrRemoteFileName("DECam_00149774_40_DESX0332-2742.fits"),
-                2);
+        FloatBuffer result = (FloatBuffer) readAll(resolveLocalOrRemoteFileName("DECam_00149774_40_DESX0332-2742.fits.fz"),
+                3);
+        float[][] expected = (float[][]) readAll(resolveLocalOrRemoteFileName("DECam_00149774_40_DESX0332-2742.fits"), 2);
         result.rewind();
         assertFloatImage(result, expected, 0.0005f);
     }
@@ -368,7 +411,7 @@ public class ReadWriteProvidedCompressedImageTest {
         }
     }
 
-    private boolean isEmptyImage(BasicHDU<?> result) {
+    private boolean isEmptyImage(BasicHDU<?> result) throws FitsException {
         return result instanceof ImageHDU && ((ImageHDU) result).getData().getData() == null;
     }
 
@@ -894,8 +937,7 @@ public class ReadWriteProvidedCompressedImageTest {
             expectedIntData = (int[][]) uncompressed.getData().getData();
             f.close();
             f = new Fits();
-            CompressedImageHDU compressedHdu = CompressedImageHDU.fromImageHDU(uncompressed, uncompressed.getAxes()[0],
-                    4);
+            CompressedImageHDU compressedHdu = CompressedImageHDU.fromImageHDU(uncompressed, uncompressed.getAxes()[0], 4);
             compressedHdu.setCompressAlgorithm(Compression.ZCMPTYPE_RICE_1)//
                     .setQuantAlgorithm((String) null)//
                     .getCompressOption(RiceCompressOption.class)//
@@ -1154,30 +1196,18 @@ public class ReadWriteProvidedCompressedImageTest {
 
     @Test
     public void testImagePlusCompressedImage1() throws Exception {
-        FitsFactory.setAllowHeaderRepairs(true);
+        // Test using a FITS file with junk at the end...
         testImagePlusCompressedImage(
                 resolveLocalOrRemoteFileName("03h-80dec--C_CVT_2013-12-29-MW1-03h_Light_600SecISO200_000042.fit"));
+        // No exception thrown
     }
 
     @Test
     public void testImagePlusCompressedImage2() throws Exception {
-        FitsFactory.setAllowHeaderRepairs(true);
+        // Test using a FITS file with junk at the end...
         testImagePlusCompressedImage(
                 resolveLocalOrRemoteFileName("17h-75dec--BINT_C_CVT_2014-06-25-MW1-17h_Light_600SecISO200_000031.fit"));
-    }
-
-    @Test(expected = FitsException.class)
-    public void testImagePlusCompressedImage1A() throws Exception {
-        FitsFactory.setAllowHeaderRepairs(false);
-        testImagePlusCompressedImage(
-                resolveLocalOrRemoteFileName("03h-80dec--C_CVT_2013-12-29-MW1-03h_Light_600SecISO200_000042.fit"));
-    }
-
-    @Test(expected = FitsException.class)
-    public void testImagePlusCompressedImage2A() throws Exception {
-        FitsFactory.setAllowHeaderRepairs(false);
-        testImagePlusCompressedImage(
-                resolveLocalOrRemoteFileName("17h-75dec--BINT_C_CVT_2014-06-25-MW1-17h_Light_600SecISO200_000031.fit"));
+        // No exception thrown
     }
 
     private void testImagePlusCompressedImage(String imageFile) throws Exception {
@@ -1185,8 +1215,6 @@ public class ReadWriteProvidedCompressedImageTest {
         InputStream fileStream = new BufferedInputStream(new FileInputStream(imageFile));
         Fits fitsFile = new Fits(fileStream);
         fitsFileHDU = fitsFile.read();
-        fitsFile.close();
-        fileStream.close();
         for (int i = 0; i < fitsFileHDU.length; i++) {
             if (fitsFileHDU[i].getHeader().containsKey("ZIMAGE")) {
                 if (fitsFileHDU[i].getHeader().getBooleanValue("ZIMAGE")) {
@@ -1196,6 +1224,8 @@ public class ReadWriteProvidedCompressedImageTest {
                 }
             }
         }
+        fitsFile.close();
+        fileStream.close();
     }
 
     @Test

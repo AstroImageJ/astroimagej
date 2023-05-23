@@ -65,7 +65,37 @@ public final class ArrayFuncs {
         }
         return rev;
     }
-    
+
+    /**
+     * Perform an array copy with an API similar to System.arraycopy(), specifying the number of values to jump to the
+     * next read.
+     * @param src       The source array.
+     * @param srcPos    Starting position in the source array.
+     * @param dest      The destination array.
+     * @param destPos   Starting position in the destination data.
+     * @param length    The number of array elements to be read.
+     * @param step      The number of jumps to the next read.
+     * @since 1.18
+     */
+    public static void copy(Object src, int srcPos, Object dest, int destPos, int length, int step) {
+        if (src instanceof Object[] && dest instanceof Object[]) {
+            final Object[] from = (Object[]) src;
+            final Object[] to = (Object[]) dest;
+            int toIndex = 0;
+            for (int index = srcPos; index < srcPos + length; index += step) {
+                ArrayFuncs.copy(from[index], srcPos, to[toIndex++], destPos, length, step);
+            }
+        } else if (step == 1) {
+            System.arraycopy(src, srcPos, dest, destPos, length);
+        } else {
+            final int srcLength = Array.getLength(src);
+            final int loopLength = Math.min(srcLength, srcPos + length);
+            for (int i = srcPos; i < loopLength; i += step) {
+                Array.set(dest, destPos++, Array.get(src, i));
+            }
+        }
+    }
+
     /**
      * @return a description of an array (presumed rectangular).
      * @param o
@@ -76,9 +106,7 @@ public final class ArrayFuncs {
         if (base == Void.TYPE) {
             return "NULL";
         }
-        return new StringBuffer(base.getSimpleName())//
-                .append(Arrays.toString(getDimensions(o)))//
-                .toString();
+        return base.getSimpleName() + Arrays.toString(getDimensions(o));
     }
 
     /**
@@ -459,6 +487,8 @@ public final class ArrayFuncs {
      * Convenience method to check a generic Array object.
      * @param o     The Array to check.
      * @return      True if it's empty, False otherwise.
+     *
+     * @since 1.18
      */
     public static boolean isEmpty(final Object o) {
         return (o == null || Array.getLength(o) == 0);

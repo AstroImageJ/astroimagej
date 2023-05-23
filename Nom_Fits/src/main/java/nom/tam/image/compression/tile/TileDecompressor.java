@@ -31,12 +31,12 @@ package nom.tam.image.compression.tile;
  * #L%
  */
 
-import java.nio.Buffer;
-import java.util.logging.Logger;
-
 import nom.tam.image.compression.tile.mask.ImageNullPixelMask;
 import nom.tam.image.compression.tile.mask.NullPixelMaskRestorer;
 import nom.tam.image.tile.operation.TileArea;
+
+import java.nio.Buffer;
+import java.util.logging.Logger;
 
 public class TileDecompressor extends TileCompressionOperation {
 

@@ -31,11 +31,11 @@ package nom.tam.fits.compress;
  * #L%
  */
 
+import nom.tam.fits.FitsException;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.logging.Logger;
-
-import nom.tam.fits.FitsException;
 
 public class ExternalBZip2CompressionProvider implements ICompressProvider {
 

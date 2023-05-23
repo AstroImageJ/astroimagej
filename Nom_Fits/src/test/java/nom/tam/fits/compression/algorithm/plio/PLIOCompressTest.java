@@ -31,18 +31,19 @@ package nom.tam.fits.compression.algorithm.plio;
  * #L%
  */
 
-import nom.tam.fits.compression.algorithm.plio.PLIOCompress.BytePLIOCompressor;
-import nom.tam.fits.compression.algorithm.plio.PLIOCompress.IntPLIOCompressor;
-import nom.tam.fits.compression.algorithm.plio.PLIOCompress.ShortPLIOCompressor;
-import nom.tam.util.SafeClose;
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
 import java.util.Arrays;
+
+import nom.tam.fits.compression.algorithm.plio.PLIOCompress.BytePLIOCompressor;
+import nom.tam.fits.compression.algorithm.plio.PLIOCompress.IntPLIOCompressor;
+import nom.tam.fits.compression.algorithm.plio.PLIOCompress.ShortPLIOCompressor;
+import nom.tam.util.SafeClose;
+
+import org.junit.Assert;
+import org.junit.Test;
 
 public class PLIOCompressTest {
 

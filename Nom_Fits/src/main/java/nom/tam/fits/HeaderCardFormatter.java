@@ -31,9 +31,9 @@
 
 package nom.tam.fits;
 
-import static nom.tam.fits.header.Standard.CONTINUE;
-
 import nom.tam.fits.FitsFactory.FitsSettings;
+
+import static nom.tam.fits.header.Standard.CONTINUE;
 
 /**
  * Converts {@link HeaderCard}s into one or more 80-character wide FITS header records. It is a

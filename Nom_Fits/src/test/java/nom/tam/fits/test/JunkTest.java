@@ -31,16 +31,18 @@ package nom.tam.fits.test;
  * #L%
  */
 
+import static org.junit.Assert.assertTrue;
+
+import org.junit.After;
+import org.junit.Before;
+
 import nom.tam.fits.Fits;
 import nom.tam.fits.FitsFactory;
 import nom.tam.fits.Header;
 import nom.tam.util.FitsFile;
 import nom.tam.util.SafeClose;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 
-import static org.junit.Assert.assertTrue;
+import org.junit.Test;
 
 /**
  * Test adding a little junk after a valid image. We wish to test three

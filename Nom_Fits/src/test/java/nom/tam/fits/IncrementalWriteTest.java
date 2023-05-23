@@ -31,16 +31,21 @@ package nom.tam.fits;
  * #L%
  */
 
-import nom.tam.util.FitsFile;
-import nom.tam.util.FitsOutputStream;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
+
+import org.junit.Test;
+
+import nom.tam.util.FitsFile;
+import nom.tam.util.FitsOutputStream;
 
 import static nom.tam.fits.header.Standard.EXTEND;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 public class IncrementalWriteTest {
     

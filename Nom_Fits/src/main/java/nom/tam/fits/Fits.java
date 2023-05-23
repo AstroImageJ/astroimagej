@@ -1,8 +1,5 @@
 package nom.tam.fits;
 
-import static nom.tam.fits.header.Standard.EXTNAME;
-import static nom.tam.fits.header.Standard.EXTVER;
-
 /*
  * #%L
  * nom.tam FITS library
@@ -34,13 +31,12 @@ import static nom.tam.fits.header.Standard.EXTVER;
  * #L%
  */
 
-import java.io.Closeable;
-import java.io.DataOutput;
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import nom.tam.fits.compress.CompressionManager;
+import nom.tam.fits.utilities.FitsCheckSum;
+import nom.tam.util.*;
+
+import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -50,17 +46,8 @@ import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import nom.tam.fits.compress.CompressionManager;
-import nom.tam.fits.utilities.FitsCheckSum;
-import nom.tam.util.ArrayDataInput;
-import nom.tam.util.ArrayDataOutput;
-import nom.tam.util.FitsFile;
-import nom.tam.util.FitsInputStream;
-import nom.tam.util.FitsOutputStream;
-import nom.tam.util.RandomAccess;
-import nom.tam.util.RandomAccessFileIO;
-import nom.tam.util.SafeClose;
+import static nom.tam.fits.header.Standard.EXTNAME;
+import static nom.tam.fits.header.Standard.EXTVER;
 
 /**
  * This class provides access to routines to allow users to read and write FITS files. <br>
@@ -163,19 +150,19 @@ public class Fits implements Closeable {
      * the container.
      * </p>
      * 
-     * @param myFile The File object. The content of this file will not be read into the Fits object until the user
-     *            makes some explicit request. * @throws FitsException if the operation failed
+     * @param  myFile        The File object. The content of this file will not be read into the Fits object until the
+     *                           user makes some explicit request. * @throws FitsException if the operation failed
      * 
      * @throws FitsException if the operation failed
      * 
-     * @see #Fits(File, boolean)
-     * @see #Fits(RandomAccessFileIO)
-     * @see #Fits(String)
-     * @see #read()
-     * @see #getHDU(int)
-     * @see #readHDU()
-     * @see #skipHDU()
-     * @see #addHDU(BasicHDU)
+     * @see                  #Fits(File, boolean)
+     * @see                  #Fits(RandomAccessFileIO)
+     * @see                  #Fits(String)
+     * @see                  #read()
+     * @see                  #getHDU(int)
+     * @see                  #readHDU()
+     * @see                  #skipHDU()
+     * @see                  #addHDU(BasicHDU)
      */
     public Fits(File myFile) throws FitsException {
         this(myFile, CompressionManager.isCompressed(myFile));
@@ -192,19 +179,19 @@ public class Fits implements Closeable {
      * the container.
      * </p>
      * 
-     * @param myFile The File object. The content of this file will not be read into the Fits object until the user
-     *            makes some explicit request.
-     * @param compressed Is the data compressed?
+     * @param  myFile        The File object. The content of this file will not be read into the Fits object until the
+     *                           user makes some explicit request.
+     * @param  compressed    Is the data compressed?
      * 
      * @throws FitsException if the operation failed
      * 
-     * @see #Fits(File)
-     * @see #Fits(String, boolean)
-     * @see #read()
-     * @see #getHDU(int)
-     * @see #readHDU()
-     * @see #skipHDU()
-     * @see #addHDU(BasicHDU)
+     * @see                  #Fits(File)
+     * @see                  #Fits(String, boolean)
+     * @see                  #read()
+     * @see                  #getHDU(int)
+     * @see                  #readHDU()
+     * @see                  #skipHDU()
+     * @see                  #addHDU(BasicHDU)
      */
     public Fits(File myFile, boolean compressed) throws FitsException {
         fileInit(myFile, compressed);
@@ -215,30 +202,63 @@ public class Fits implements Closeable {
      * Creates a new (empty) FITS container associated with an input that supports generalized random access.
      * </p>
      * <p>
-     * While the FITS object is associated with the specified input, it is initialized as an empty container with
+     * While the FITS object is associated with the specified input, it is initialized as an empty container with no
+     * data loaded from the input automatically. You may want to call {@link #read()} to load all data from the input
+     * and/or {@link #readHDU()}/{@link #getHDU(int)} for select HDUs, which you can then add via
+     * {@link #addHDU(BasicHDU)} to the container.
+     * </p>
+     *
+     * @param  src           the random access input. The content of this input will not be read into the Fits object
+     *                           until the user makes some explicit request.
+     * 
+     * @throws FitsException if the operation failed
+     *
+     * @see                  #Fits(File, boolean)
+     * @see                  #read()
+     * @see                  #getHDU(int)
+     * @see                  #readHDU()
+     * @see                  #skipHDU()
+     * @see                  #addHDU(BasicHDU)
+     */
+    public Fits(RandomAccessFileIO src) throws FitsException {
+        randomInit(src);
+    }
+
+    /**
+     * <p>
+     * Creates a new (empty) FITS container associated with {@link FitsFile} input.
+     * </p>
+     * <p>
+     * While the FITS object is associated with the specified file input, it is initialized as an empty container with
      * no data loaded from the input automatically. You may want to call {@link #read()} to load all data from the input
      * and/or {@link #readHDU()}/{@link #getHDU(int)} for select HDUs, which you can then add via
      * {@link #addHDU(BasicHDU)} to the container.
      * </p>
      *
-     * @param src
-     *              the random access input. The content of this input will not be read into the Fits object until the 
-     *               user makes some explicit request.
-     *  
-     * @throws FitsException
-     *              if the operation failed
+     * @param  src           the random access input. The content of this input will not be read into the Fits object
+     *                           until the user makes some explicit request.
+     * 
+     * @throws FitsException if the input could not bew repositions to its beginning
      *
-     * @see #Fits(File, boolean)
-     * @see #read()
-     * @see #getHDU(int)
-     * @see #readHDU()
-     * @see #skipHDU()
-     * @see #addHDU(BasicHDU)
+     * @see                  #Fits(File, boolean)
+     * @see                  #Fits(RandomAccessFileIO)
+     * @see                  #read()
+     * @see                  #getHDU(int)
+     * @see                  #readHDU()
+     * @see                  #skipHDU()
+     * @see                  #addHDU(BasicHDU)
+     * 
+     * @since                1.18
      */
-    public Fits(RandomAccessFileIO src) throws FitsException {
-        randomInit(src);
+    public Fits(FitsFile src) throws FitsException {
+        this.dataStr = src;
+        try {
+            src.seek(0);
+        } catch (Exception e) {
+            throw new FitsException("Could not create Fits: " + e.getMessage(), e);
+        }
     }
-    
+
     /**
      * <p>
      * Creates a new (empty) FITS container associated with the given input stream. Compression is determined from the
@@ -251,17 +271,17 @@ public class Fits implements Closeable {
      * {@link #addHDU(BasicHDU)} to the container.
      * </p>
      * 
-     * @param str The data stream. The content of this stream will not be read into the Fits object until the user makes
-     *            some explicit request.
+     * @param  str           The data stream. The content of this stream will not be read into the Fits object until the
+     *                           user makes some explicit request.
      * 
      * @throws FitsException if the operation failed
      * 
-     * @see #Fits(InputStream, boolean)
-     * @see #read()
-     * @see #getHDU(int)
-     * @see #readHDU()
-     * @see #skipHDU()
-     * @see #addHDU(BasicHDU)
+     * @see                  #Fits(InputStream, boolean)
+     * @see                  #read()
+     * @see                  #getHDU(int)
+     * @see                  #readHDU()
+     * @see                  #skipHDU()
+     * @see                  #addHDU(BasicHDU)
      */
     public Fits(InputStream str) throws FitsException {
         streamInit(str);
@@ -278,21 +298,21 @@ public class Fits implements Closeable {
      * {@link #addHDU(BasicHDU)} to the container.
      * </p>
      * 
-     * @param str The data stream. The content of this stream will not be read into the Fits object until the user makes
-     *            some explicit request.
-     * @param compressed Is the stream compressed? This is currently ignored. Compression is determined from the first
-     *            two bytes in the stream.
+     * @param      str           The data stream. The content of this stream will not be read into the Fits object until
+     *                               the user makes some explicit request.
+     * @param      compressed    Is the stream compressed? This is currently ignored. Compression is determined from the
+     *                               first two bytes in the stream.
      * 
-     * @throws FitsException if the operation failed
+     * @throws     FitsException if the operation failed
      * 
-     * @deprecated use {@link #Fits(InputStream)} compression is auto detected.
+     * @deprecated               use {@link #Fits(InputStream)} compression is auto detected.
      * 
-     * @see #Fits(InputStream)
-     * @see #read()
-     * @see #getHDU(int)
-     * @see #readHDU()
-     * @see #skipHDU()
-     * @see #addHDU(BasicHDU)
+     * @see                      #Fits(InputStream)
+     * @see                      #read()
+     * @see                      #getHDU(int)
+     * @see                      #readHDU()
+     * @see                      #skipHDU()
+     * @see                      #addHDU(BasicHDU)
      */
     @Deprecated
     public Fits(InputStream str, boolean compressed) throws FitsException {
@@ -313,19 +333,19 @@ public class Fits implements Closeable {
      * the container.
      * </p>
      * 
-     * @param filename The name of the file or URL to be processed. The content of this file will not be read into the
-     *            Fits object until the user makes some explicit request.
+     * @param  filename      The name of the file or URL to be processed. The content of this file will not be read into
+     *                           the Fits object until the user makes some explicit request.
      * 
      * @throws FitsException Thrown if unable to find or open a file or URL from the string given.
      * 
-     * @see #Fits(String, boolean)
-     * @see #Fits(File)
-     * @see #Fits(URL)
-     * @see #read()
-     * @see #getHDU(int)
-     * @see #readHDU()
-     * @see #skipHDU()
-     * @see #addHDU(BasicHDU)
+     * @see                  #Fits(String, boolean)
+     * @see                  #Fits(File)
+     * @see                  #Fits(URL)
+     * @see                  #read()
+     * @see                  #getHDU(int)
+     * @see                  #readHDU()
+     * @see                  #skipHDU()
+     * @see                  #addHDU(BasicHDU)
      **/
     public Fits(String filename) throws FitsException {
         this(filename, CompressionManager.isCompressed(filename));
@@ -344,20 +364,20 @@ public class Fits implements Closeable {
      * the container.
      * </p>
      * 
-     * @param filename The name of the file or URL to be processed. The content of this file will not be read into the
-     *            Fits object until the user makes some explicit request.
-     * @param compressed is the file compressed?
+     * @param  filename      The name of the file or URL to be processed. The content of this file will not be read into
+     *                           the Fits object until the user makes some explicit request.
+     * @param  compressed    is the file compressed?
      * 
      * @throws FitsException Thrown if unable to find or open a file or URL from the string given.
      * 
-     * @see #Fits(String)
-     * @see #Fits(File, boolean)
-     * @see #Fits(URL, boolean)
-     * @see #read()
-     * @see #getHDU(int)
-     * @see #readHDU()
-     * @see #skipHDU()
-     * @see #addHDU(BasicHDU)
+     * @see                  #Fits(String)
+     * @see                  #Fits(File, boolean)
+     * @see                  #Fits(URL, boolean)
+     * @see                  #read()
+     * @see                  #getHDU(int)
+     * @see                  #readHDU()
+     * @see                  #skipHDU()
+     * @see                  #addHDU(BasicHDU)
      **/
     @SuppressWarnings("resource")
     public Fits(String filename, boolean compressed) throws FitsException {
@@ -406,19 +426,19 @@ public class Fits implements Closeable {
      * the container.
      * </p>
      * 
-     * @param myURL The URL to be read. The content of this URL will not be read into the Fits object until the user
-     *            makes some explicit request.
+     * @param  myURL         The URL to be read. The content of this URL will not be read into the Fits object until the
+     *                           user makes some explicit request.
      * 
      * @throws FitsException Thrown if unable to find or open a file or URL from the string given.
      * 
-     * @see #Fits(URL, boolean)
-     * @see #Fits(String)
-     * @see #Fits(File)
-     * @see #read()
-     * @see #getHDU(int)
-     * @see #readHDU()
-     * @see #skipHDU()
-     * @see #addHDU(BasicHDU)
+     * @see                  #Fits(URL, boolean)
+     * @see                  #Fits(String)
+     * @see                  #Fits(File)
+     * @see                  #read()
+     * @see                  #getHDU(int)
+     * @see                  #readHDU()
+     * @see                  #skipHDU()
+     * @see                  #addHDU(BasicHDU)
      */
     @SuppressWarnings("resource")
     public Fits(URL myURL) throws FitsException {
@@ -440,22 +460,22 @@ public class Fits implements Closeable {
      * the container.
      * </p>
      * 
-     * @param myURL The URL to be associated with the FITS file. The content of this URL will not be read into the Fits
-     *            object until the user makes some explicit request.
-     * @param compressed Compression flag, ignored.
+     * @param      myURL         The URL to be associated with the FITS file. The content of this URL will not be read
+     *                               into the Fits object until the user makes some explicit request.
+     * @param      compressed    Compression flag, ignored.
      * 
-     * @throws FitsException Thrown if unable to use the specified URL.
+     * @throws     FitsException Thrown if unable to use the specified URL.
      * 
-     * @deprecated use {@link #Fits(InputStream)} compression is auto detected.
+     * @deprecated               use {@link #Fits(InputStream)} compression is auto detected.
      * 
-     * @see #Fits(URL)
-     * @see #Fits(String, boolean)
-     * @see #Fits(File, boolean)
-     * @see #read()
-     * @see #getHDU(int)
-     * @see #readHDU()
-     * @see #skipHDU()
-     * @see #addHDU(BasicHDU)
+     * @see                      #Fits(URL)
+     * @see                      #Fits(String, boolean)
+     * @see                      #Fits(File, boolean)
+     * @see                      #read()
+     * @see                      #getHDU(int)
+     * @see                      #readHDU()
+     * @see                      #skipHDU()
+     * @see                      #addHDU(BasicHDU)
      */
     @Deprecated
     public Fits(URL myURL, boolean compressed) throws FitsException {
@@ -464,10 +484,10 @@ public class Fits implements Closeable {
     }
 
     /**
-     * @return a newly created HDU from the given Data.
+     * @return               a newly created HDU from the given Data.
      * 
-     * @param data The data to be described in this HDU.
-     * @param <DataClass> the class of the HDU
+     * @param  data          The data to be described in this HDU.
+     * @param  <DataClass>   the class of the HDU
      * 
      * @throws FitsException if the operation failed
      */
@@ -478,9 +498,9 @@ public class Fits implements Closeable {
     }
 
     /**
-     * @return a newly created HDU from the given header.
+     * @return               a newly created HDU from the given header.
      * 
-     * @param h The header which describes the FITS extension
+     * @param  h             The header which describes the FITS extension
      * 
      * @throws FitsException if the header could not be converted to a HDU.
      */
@@ -490,9 +510,9 @@ public class Fits implements Closeable {
     }
 
     /**
-     * @return a newly created HDU from the given data kernel.
+     * @return               a newly created HDU from the given data kernel.
      * 
-     * @param o The data to be described in this HDU.
+     * @param  o             The data to be described in this HDU.
      * 
      * @throws FitsException if the parameter could not be converted to a HDU.
      */
@@ -528,11 +548,11 @@ public class Fits implements Closeable {
      * Add an HDU to the Fits object. Users may intermix calls to functions which read HDUs from an associated input
      * stream with the addHDU and insertHDU calls, but should be careful to understand the consequences.
      * 
-     * @param myHDU The HDU to be added to the end of the FITS object.
+     * @param  myHDU         The HDU to be added to the end of the FITS object.
      * 
      * @throws FitsException if the HDU could not be inserted.
      * 
-     * @see #readHDU()
+     * @see                  #readHDU()
      */
     public void addHDU(BasicHDU<?> myHDU) throws FitsException {
         insertHDU(myHDU, getNumberOfHDUs());
@@ -541,7 +561,7 @@ public class Fits implements Closeable {
     /**
      * Get the current number of HDUs in the Fits object.
      * 
-     * @return The number of HDU's in the object.
+     * @return     The number of HDU's in the object.
      * 
      * @deprecated use {@link #getNumberOfHDUs()} instead
      */
@@ -553,9 +573,9 @@ public class Fits implements Closeable {
     /**
      * Delete an HDU from the HDU list.
      * 
-     * @param n The index of the HDU to be deleted. If n is 0 and there is more than one HDU present, then the next HDU
-     *            will be converted from an image to primary HDU if possible. If not a dummy header HDU will then be
-     *            inserted.
+     * @param  n             The index of the HDU to be deleted. If n is 0 and there is more than one HDU present, then
+     *                           the next HDU will be converted from an image to primary HDU if possible. If not a dummy
+     *                           header HDU will then be inserted.
      * 
      * @throws FitsException if the HDU could not be deleted.
      */
@@ -576,13 +596,16 @@ public class Fits implements Closeable {
     }
 
     /**
-     * Get a stream from the file and then use the stream initialization.
+     * @deprecated               Will be private in 2.0. Get a stream from the file and then use the stream
+     *                               initialization.
      * 
-     * @param myFile The File to be associated.
-     * @param compressed Is the data compressed?
+     * @param      myFile        The File to be associated.
+     * @param      compressed    Is the data compressed?
      * 
-     * @throws FitsException if the opening of the file failed.
+     * @throws     FitsException if the opening of the file failed.
      */
+    // TODO Make private
+    @Deprecated
     @SuppressWarnings("resource")
     @SuppressFBWarnings(value = "OBL_UNSATISFIED_OBLIGATION", justification = "stream stays open, and will be read when nessesary.")
     protected void fileInit(File myFile, boolean compressed) throws FitsException {
@@ -601,15 +624,15 @@ public class Fits implements Closeable {
      * Returns the n'th HDU. If the HDU is already read simply return a pointer to the cached data. Otherwise read the
      * associated stream until the n'th HDU is read.
      * 
-     * @param n The index of the HDU to be read. The primary HDU is index 0.
+     * @param  n             The index of the HDU to be read. The primary HDU is index 0.
      * 
-     * @return The n'th HDU or null if it could not be found.
+     * @return               The n'th HDU or null if it could not be found.
      * 
      * @throws FitsException if the header could not be read
-     * @throws IOException if the underlying buffer threw an error
+     * @throws IOException   if the underlying buffer threw an error
      * 
-     * @see #getHDU(String)
-     * @see #getHDU(String, int)
+     * @see                  #getHDU(String)
+     * @see                  #getHDU(String, int)
      */
     public BasicHDU<?> getHDU(int n) throws FitsException, IOException {
         for (int i = getNumberOfHDUs(); i <= n; i++) {
@@ -624,13 +647,13 @@ public class Fits implements Closeable {
     /**
      * Checks if the value of the EXTNAME keyword of the specified HDU matches the specified name.
      * 
-     * @param hdu The HDU whose EXTNAME to check
-     * @param name The expected name
+     * @param  hdu  The HDU whose EXTNAME to check
+     * @param  name The expected name
      * 
-     * @return <code>true</code> if the HDU has an EXTNAME keyword whose value matches the specified name (case
-     *             sensitive!), otherwise <code>false</code>
+     * @return      <code>true</code> if the HDU has an EXTNAME keyword whose value matches the specified name (case
+     *                  sensitive!), otherwise <code>false</code>
      * 
-     * @see #getHDU(String)
+     * @see         #getHDU(String)
      */
     private boolean isNameMatch(BasicHDU<?> hdu, String name) {
         Header h = hdu.getHeader();
@@ -643,15 +666,15 @@ public class Fits implements Closeable {
     /**
      * Checks if the value of the EXTNAME and EXTVER keywords of the specified HDU match the specified name and version.
      * 
-     * @param hdu The HDU whose EXTNAME to check
-     * @param name The expected name
-     * @param version The expected extension version
+     * @param  hdu     The HDU whose EXTNAME to check
+     * @param  name    The expected name
+     * @param  version The expected extension version
      * 
-     * @return <code>true</code> if the HDU has an EXTNAME keyword whose value matches the specified name (case
-     *             sensitive!) AND has an EXTVER keyword whose value matches the specified integer version. In all other
-     *             cases <code>false</code> is returned.
+     * @return         <code>true</code> if the HDU has an EXTNAME keyword whose value matches the specified name (case
+     *                     sensitive!) AND has an EXTVER keyword whose value matches the specified integer version. In
+     *                     all other cases <code>false</code> is returned.
      * 
-     * @see #getHDU(String, int)
+     * @see            #getHDU(String, int)
      */
     private boolean isNameVersionMatch(BasicHDU<?> hdu, String name, int version) {
         Header h = hdu.getHeader();
@@ -672,18 +695,18 @@ public class Fits implements Closeable {
      * ignore the version (defined by EXTVER). If multiple HDUs have the same matching EXTNAME, this method will return
      * the first match only.
      * 
-     * @param name The name of the HDU as defined by EXTNAME (case sensitive)
+     * @param  name          The name of the HDU as defined by EXTNAME (case sensitive)
      * 
-     * @return The first HDU that matches the specified extension name and version, or <code>null</code> if the FITS
-     *             does not contain a matching HDU.
+     * @return               The first HDU that matches the specified extension name and version, or <code>null</code>
+     *                           if the FITS does not contain a matching HDU.
      * 
      * @throws FitsException if the header could not be read
-     * @throws IOException if the underlying buffer threw an error
+     * @throws IOException   if the underlying buffer threw an error
      * 
-     * @since 1.17.0
+     * @since                1.17.0
      * 
-     * @see #getHDU(String, int)
-     * @see #getHDU(int)
+     * @see                  #getHDU(String, int)
+     * @see                  #getHDU(int)
      */
     public BasicHDU<?> getHDU(String name) throws FitsException, IOException {
         // Check HDUs we already read...
@@ -708,19 +731,19 @@ public class Fits implements Closeable {
      * Returns the HDU by the given extension name and version (defined by EXTNAME and EXTVER keywords). If multiple
      * HDUs have the same matching name and version, this method will return the first match only.
      * 
-     * @param name The name of the HDU as defined by EXTNAME (case sensitive)
-     * @param version The extension version as defined by EXTVER in the matching HDU.
+     * @param  name          The name of the HDU as defined by EXTNAME (case sensitive)
+     * @param  version       The extension version as defined by EXTVER in the matching HDU.
      * 
-     * @return The first HDU that matches the specified extension name and version, or <code>null</code> if the FITS
-     *             does not contain a matching HDU.
+     * @return               The first HDU that matches the specified extension name and version, or <code>null</code>
+     *                           if the FITS does not contain a matching HDU.
      * 
      * @throws FitsException if the header could not be read
-     * @throws IOException if the underlying buffer threw an error
+     * @throws IOException   if the underlying buffer threw an error
      * 
-     * @since 1.17.0
+     * @since                1.17.0
      * 
-     * @see #getHDU(String)
-     * @see #getHDU(int)
+     * @see                  #getHDU(String)
+     * @see                  #getHDU(int)
      */
     public BasicHDU<?> getHDU(String name, int version) throws FitsException, IOException {
         // Check HDUs we already read...
@@ -763,8 +786,8 @@ public class Fits implements Closeable {
     /**
      * Insert a FITS object into the list of HDUs.
      * 
-     * @param myHDU The HDU to be inserted into the list of HDUs.
-     * @param position The location at which the HDU is to be inserted.
+     * @param  myHDU         The HDU to be inserted into the list of HDUs.
+     * @param  position      The location at which the HDU is to be inserted.
      * 
      * @throws FitsException if the HDU could not be inserted.
      */
@@ -804,12 +827,14 @@ public class Fits implements Closeable {
     /**
      * Initialize using buffered random access. This implies that the data is uncompressed.
      * 
-     * @param file the file to open
+     * @param  file          the file to open
      * 
      * @throws FitsException if the file could not be read
      *
-     * @see #randomInit(RandomAccessFileIO)
+     * @see                  #randomInit(RandomAccessFileIO)
      */
+    // TODO make private
+    @Deprecated
     protected void randomInit(File file) throws FitsException {
 
         String permissions = "r";
@@ -828,15 +853,13 @@ public class Fits implements Closeable {
     }
 
     /**
-     * Initialize using buffered random access. This implies that the data is
-     * uncompressed.
+     * Initialize using buffered random access. This implies that the data is uncompressed.
      *
-     * @param src
-     *          the random access data
-     * @throws FitsException
-     * `        if the data is not readable
+     * @param  src           the random access data
+     * 
+     * @throws FitsException ` if the data is not readable
      *
-     * @see #randomInit(File)
+     * @see                  #randomInit(File)
      */
     protected void randomInit(RandomAccessFileIO src) throws FitsException {
         try {
@@ -851,7 +874,8 @@ public class Fits implements Closeable {
      * Return all HDUs for the Fits object. If the FITS file is associated with an external stream make sure that we
      * have exhausted the stream.
      * 
-     * @return an array of all HDUs in the Fits object. Returns null if there are no HDUs associated with this object.
+     * @return               an array of all HDUs in the Fits object. Returns null if there are no HDUs associated with
+     *                           this object.
      * 
      * @throws FitsException if the reading failed.
      */
@@ -867,7 +891,7 @@ public class Fits implements Closeable {
     /**
      * Read a FITS file from an InputStream object.
      * 
-     * @param is The InputStream stream whence the FITS information is found.
+     * @param  is            The InputStream stream whence the FITS information is found.
      * 
      * @throws FitsException if the data read could not be interpreted
      */
@@ -883,15 +907,15 @@ public class Fits implements Closeable {
     /**
      * Read the next HDU on the default input stream.
      * 
-     * @return The HDU read, or null if an EOF was detected. Note that null is only returned when the EOF is detected
-     *             immediately at the beginning of reading the HDU.
+     * @return               The HDU read, or null if an EOF was detected. Note that null is only returned when the EOF
+     *                           is detected immediately at the beginning of reading the HDU.
      * 
      * @throws FitsException if the header could not be read
-     * @throws IOException if the underlying buffer threw an error
+     * @throws IOException   if the underlying buffer threw an error
      * 
-     * @see #skipHDU()
-     * @see #getHDU(int)
-     * @see #addHDU(BasicHDU)
+     * @see                  #skipHDU()
+     * @see                  #getHDU(int)
+     * @see                  #addHDU(BasicHDU)
      */
     public BasicHDU<?> readHDU() throws FitsException, IOException {
         if (this.dataStr == null || this.atEOF) {
@@ -910,22 +934,17 @@ public class Fits implements Closeable {
             return null;
         }
 
-        Data data = hdr.makeData();
+        Data data = FitsFactory.dataFactory(hdr);
         try {
             data.read(this.dataStr);
+            if (Fits.checkTruncated(this.dataStr)) {
+                // Check for truncation even if we successfully skipped to the expected
+                // end since skip may allow going beyond the EOF.
+                LOG.warning("Missing padding after data segment");
+            }
         } catch (PaddingException e) {
             // Stream end before required padding after data...
-            e.updateHeader(hdr);
-            LOG.warning("Missing padding after data segment.");
-        }
-
-        // Check for truncation even if we successfully skipped to the expected end
-        // since skip may allow going beyond the EOF.
-        if (Fits.checkTruncated(this.dataStr)) {
-            // File ends before required padding after data...
-            // (files allow skipping beyond the end, which is why we don't
-            // catch it above)
-            LOG.warning("Missing padding after data segment.");
+            LOG.warning(e.getMessage());
         }
 
         this.lastFileOffset = FitsUtil.findOffset(this.dataStr);
@@ -951,7 +970,7 @@ public class Fits implements Closeable {
                 }
             }
         } catch (IOException e) {
-            throw new FitsException("Corrupted FITS file.", e);
+            throw new FitsException("Corrupted FITS file: " + e, e);
         }
     }
 
@@ -962,16 +981,16 @@ public class Fits implements Closeable {
      * loading the entire (potentially huge) data into RAM for the calculation.
      * </p>
      * 
-     * @param hduIndex The index of the HDU for which to compute and set the <code>CHECKSUM</code> and
-     *            <code>DATASUM</code> header values.
+     * @param  hduIndex      The index of the HDU for which to compute and set the <code>CHECKSUM</code> and
+     *                           <code>DATASUM</code> header values.
      * 
      * @throws FitsException if there was a problem computing the checksum for the HDU
-     * @throws IOException if there was an I/O error while accessing the data from the input
+     * @throws IOException   if there was an I/O error while accessing the data from the input
      * 
-     * @see #calcChecksum(int)
-     * @see #setChecksum()
+     * @see                  #calcChecksum(int)
+     * @see                  #setChecksum()
      * 
-     * @since 1.17
+     * @since                1.17
      */
     public void setChecksum(int hduIndex) throws FitsException, IOException {
         FitsCheckSum.setDatasum(getHDU(hduIndex).getHeader(), calcDatasum(hduIndex));
@@ -990,24 +1009,26 @@ public class Fits implements Closeable {
      * </p>
      * 
      * @throws FitsException if there was an error during the checksumming operation
-     * @throws IOException if there was an I/O error while accessing the data from the input
+     * @throws IOException   if there was an I/O error while accessing the data from the input
      * 
-     * @author R J Mather, Attila Kovacs
+     * @author               R J Mather, Attila Kovacs
      * 
-     * @see #setChecksum(int)
-     * @see BasicHDU#getStoredChecksum()
-     * @see BasicHDU#getStoredDatasum()
-     * @see #rewrite()
+     * @see                  #setChecksum(int)
+     * @see                  BasicHDU#getStoredChecksum()
+     * @see                  BasicHDU#getStoredDatasum()
+     * @see                  #rewrite()
      */
     public void setChecksum() throws FitsException, IOException {
         int i = 0;
 
-        // Start with HDU's already loaded, leaving deferred data in unloaded state
+        // Start with HDU's already loaded, leaving deferred data in unloaded
+        // state
         for (; i < getNumberOfHDUs(); i++) {
             setChecksum(i);
         }
 
-        // Check if Fits is read from an input of sorts, with potentially more HDUs there...
+        // Check if Fits is read from an input of sorts, with potentially more
+        // HDUs there...
         if (dataStr == null) {
             return;
         }
@@ -1023,20 +1044,20 @@ public class Fits implements Closeable {
      * disk (in deferred read mode), the method will calculate the checksum directly from disk. Otherwise, it will
      * calculate the datasim from the data in memory.
      * 
-     * @param hduIndex The index of the HDU for which to calculate the data checksum
+     * @param  hduIndex      The index of the HDU for which to calculate the data checksum
      * 
-     * @return The data checksum, e.g. for comparing against {@link BasicHDU#getStoredDatasum()}
+     * @return               The data checksum, e.g. for comparing against {@link BasicHDU#getStoredDatasum()}
      * 
      * @throws FitsException if there was an error processing the HDU.
-     * @throws IOException if there was an I/O error accessing the input.
+     * @throws IOException   if there was an I/O error accessing the input.
      * 
-     * @see Data#calcChecksum()
-     * @see #calcChecksum(int)
-     * @see #setChecksum(int)
-     * @see BasicHDU#getStoredDatasum()
-     * @see FitsCheckSum#setDatasum(Header, long)
+     * @see                  Data#calcChecksum()
+     * @see                  #calcChecksum(int)
+     * @see                  #setChecksum(int)
+     * @see                  BasicHDU#getStoredDatasum()
+     * @see                  FitsCheckSum#setDatasum(Header, long)
      * 
-     * @since 1.17
+     * @since                1.17
      */
     public long calcDatasum(int hduIndex) throws FitsException, IOException {
         BasicHDU<?> hdu = getHDU(hduIndex);
@@ -1053,33 +1074,34 @@ public class Fits implements Closeable {
      * disk (i.e. in deferred read mode), the method will compute the checksum directly from disk. Otherwise, it will
      * calculate the checksum from the data in memory.
      * 
-     * @param hduIndex The index of the HDU for which to calculate the HDU checksum
+     * @param  hduIndex      The index of the HDU for which to calculate the HDU checksum
      * 
-     * @return The HDU's checksum, e.g. for comparing against {@link BasicHDU#getStoredChecksum()}
+     * @return               The HDU's checksum, e.g. for comparing against {@link BasicHDU#getStoredChecksum()}
      * 
      * @throws FitsException if there was an error processing the HDU.
-     * @throws IOException if there was an I/O error accessing the input.
+     * @throws IOException   if there was an I/O error accessing the input.
      * 
-     * @see BasicHDU#calcChecksum()
-     * @see #calcDatasum(int)
-     * @see #setChecksum(int)
-     * @see BasicHDU#getStoredChecksum()
+     * @see                  BasicHDU#calcChecksum()
+     * @see                  #calcDatasum(int)
+     * @see                  #setChecksum(int)
+     * @see                  BasicHDU#getStoredChecksum()
      * 
-     * @since 1.17
+     * @since                1.17
      */
     public long calcChecksum(int hduIndex) throws FitsException, IOException {
         return FitsCheckSum.sumOf(FitsCheckSum.checksum(getHDU(hduIndex).getHeader()), calcDatasum(hduIndex));
     }
 
     /**
-     * @deprecated This method is poorly conceived as we cannot really read FITS from just any
-     *                 <code>ArrayDataInput</code> but only those, which utilize {@link nom.tam.util.FitsDecoder} to
-     *                 convert Java types to FITS binary format, such as {@link FitsInputStream} or {@link FitsFile} (or
-     *                 else a wrapped <code>DataInputStream</code>). As such, this method is inherently unsafe as it can
-     *                 be used to parse FITS content iscorrectly. It will be removed from the public API in a future
-     *                 major release. Set the data stream to be used for future input.
+     * @deprecated        This method is poorly conceived as we cannot really read FITS from just any
+     *                        <code>ArrayDataInput</code> but only those, which utilize {@link nom.tam.util.FitsDecoder}
+     *                        to convert Java types to FITS binary format, such as {@link FitsInputStream} or
+     *                        {@link FitsFile} (or else a wrapped <code>DataInputStream</code>). As such, this method is
+     *                        inherently unsafe as it can be used to parse FITS content iscorrectly. It will be removed
+     *                        from the public API in a future major release. Set the data stream to be used for future
+     *                        input.
      * 
-     * @param stream The data stream to be used.
+     * @param      stream The data stream to be used.
      */
     @Deprecated
     public void setStream(ArrayDataInput stream) {
@@ -1092,17 +1114,18 @@ public class Fits implements Closeable {
      * Return the number of HDUs in the Fits object. If the FITS file is associated with an external stream make sure
      * that we have exhausted the stream.
      * 
-     * @return number of HDUs.
+     * @return                   number of HDUs.
      * 
-     * @deprecated The meaning of size of ambiguous. Use {@link #getNumberOfHDUs()} instead. Note size() will read the
-     *                 input file/stream to the EOF before returning the number of HDUs which {@link #getNumberOfHDUs()}
-     *                 does not. If you wish to duplicate this behavior and ensure that the input has been exhausted
-     *                 before getting the number of HDUs then use the sequence: <code>
+     * @deprecated               The meaning of size of ambiguous. Use {@link #getNumberOfHDUs()} instead. Note size()
+     *                               will read the input file/stream to the EOF before returning the number of HDUs
+     *                               which {@link #getNumberOfHDUs()} does not. If you wish to duplicate this behavior
+     *                               and ensure that the input has been exhausted before getting the number of HDUs then
+     *                               use the sequence: <code>
      *    read(); 
      *    getNumberOfHDUs();
      * </code>
      * 
-     * @throws FitsException if the file could not be read.
+     * @throws     FitsException if the file could not be read.
      */
     @Deprecated
     public int size() throws FitsException {
@@ -1114,10 +1137,10 @@ public class Fits implements Closeable {
      * Skip the next HDU on the default input stream.
      * 
      * @throws FitsException if the HDU could not be skipped
-     * @throws IOException if the underlying stream failed
+     * @throws IOException   if the underlying stream failed
      * 
-     * @see #skipHDU(int)
-     * @see #readHDU()
+     * @see                  #skipHDU(int)
+     * @see                  #readHDU()
      */
     public void skipHDU() throws FitsException, IOException {
         if (this.atEOF) {
@@ -1135,12 +1158,12 @@ public class Fits implements Closeable {
     /**
      * Skip HDUs on the associate input stream.
      * 
-     * @param n The number of HDUs to be skipped.
+     * @param  n             The number of HDUs to be skipped.
      * 
      * @throws FitsException if the HDU could not be skipped
-     * @throws IOException if the underlying stream failed
+     * @throws IOException   if the underlying stream failed
      * 
-     * @see #skipHDU()
+     * @see                  #skipHDU()
      */
     public void skipHDU(int n) throws FitsException, IOException {
         for (int i = 0; i < n; i += 1) {
@@ -1154,7 +1177,7 @@ public class Fits implements Closeable {
      * should probably not supply a BufferedDataInputStream themselves, but should allow the Fits class to do the
      * wrapping.
      * 
-     * @param inputStream stream to initialize
+     * @param  inputStream   stream to initialize
      * 
      * @throws FitsException if the initialization failed
      */
@@ -1167,14 +1190,14 @@ public class Fits implements Closeable {
      * Writes the contents to a designated FITS file. It is up to the caller to close the file as appropriate after
      * writing to it.
      * 
-     * @param file a file that support FITS encoding
+     * @param  file          a file that support FITS encoding
      * 
      * @throws FitsException if there were any errors writing the contents themselves.
-     * @throws IOException if the underlying file could not be trimmed or closed.
+     * @throws IOException   if the underlying file could not be trimmed or closed.
      * 
-     * @since 1.16
+     * @since                1.16
      * 
-     * @see #write(FitsOutputStream)
+     * @see                  #write(FitsOutputStream)
      */
     public void write(FitsFile file) throws IOException, FitsException {
         write((ArrayDataOutput) file);
@@ -1185,16 +1208,16 @@ public class Fits implements Closeable {
      * Writes the contents to a designated FITS output stream. It is up to the caller to close the stream as appropriate
      * after writing to it.
      * 
-     * @param out an output stream that supports FITS encoding.
+     * @param  out           an output stream that supports FITS encoding.
      * 
      * @throws FitsException if there were any errors writing the contents themselves.
-     * @throws IOException if the underlying file could not be flushed or closed.
+     * @throws IOException   if the underlying file could not be flushed or closed.
      *
-     * @since 1.16
+     * @since                1.16
      * 
-     * @see #write(FitsFile)
-     * @see #write(File)
-     * @see #write(String)
+     * @see                  #write(FitsFile)
+     * @see                  #write(File)
+     * @see                  #write(String)
      */
     public void write(FitsOutputStream out) throws IOException, FitsException {
         write((ArrayDataOutput) out);
@@ -1204,17 +1227,17 @@ public class Fits implements Closeable {
     /**
      * Writes the contents to a new file.
      * 
-     * @param file a file to which the FITS is to be written.
+     * @param  file          a file to which the FITS is to be written.
      * 
      * @throws FitsException if there were any errors writing the contents themselves.
-     * @throws IOException if the underlying output stream could not be created or closed.
+     * @throws IOException   if the underlying output stream could not be created or closed.
      * 
-     * @see #write(FitsOutputStream)
+     * @see                  #write(FitsOutputStream)
      */
     public void write(File file) throws IOException, FitsException {
         try (FileOutputStream o = new FileOutputStream(file)) {
             write(new FitsOutputStream(o));
-            o.close();
+            o.flush();
         }
     }
 
@@ -1225,12 +1248,12 @@ public class Fits implements Closeable {
      * and data segments remain the same as before.
      * 
      * @throws FitsException If one or more of the HDUs cannot be re-written, or if there was some other error
-     *             serializing the HDUs to disk.
-     * @throws IOException If there was an I/O error accessing the output file.
+     *                           serializing the HDUs to disk.
+     * @throws IOException   If there was an I/O error accessing the output file.
      * 
-     * @since 1.17
+     * @since                1.17
      * 
-     * @see BasicHDU#rewriteable()
+     * @see                  BasicHDU#rewriteable()
      */
     public void rewrite() throws FitsException, IOException {
         for (int i = 0; i < getNumberOfHDUs(); i++) {
@@ -1247,20 +1270,21 @@ public class Fits implements Closeable {
     /**
      * Writes the contents to the specified file. It simply wraps {@link #write(File)} for convenience.
      * 
-     * @param fileName the file name/path
+     * @param  fileName      the file name/path
      * 
      * @throws FitsException if there were any errors writing the contents themselves.
-     * @throws IOException if the underlying stream could not be created or closed.
+     * @throws IOException   if the underlying stream could not be created or closed.
      * 
-     * @since 1.16
+     * @since                1.16
      * 
-     * @see #write(File)
+     * @see                  #write(File)
      */
     public void write(String fileName) throws IOException, FitsException {
         write(new File(fileName));
     }
 
-    // TODO For DataOutputStream this one conflicts with write(DataOutput). However
+    // TODO For DataOutputStream this one conflicts with write(DataOutput).
+    // However
     // once that one is deprecated, this one can be exposed safely.
     // public void write(OutputStream os) throws IOException, FitsException {
     // write(new FitsOutputStream(os));
@@ -1270,7 +1294,7 @@ public class Fits implements Closeable {
      * Writes the contents to the specified output. This should not be exposed outside of this class, since the output
      * object must have FITS-specific encoding, and we can only make sure of that if this is called locally only.
      * 
-     * @param out the output with a FITS-specific encoding.
+     * @param  out           the output with a FITS-specific encoding.
      * 
      * @throws FitsException if the operation failed
      */
@@ -1281,23 +1305,24 @@ public class Fits implements Closeable {
     }
 
     /**
-     * @deprecated This method is poorly conceived as we cannot really write FITS to just any <code>DataOutput</code>
-     *                 but only to specific {@link ArrayDataOutput}, which utilize {@link nom.tam.util.FitsEncoder} to
-     *                 convert Java types to FITS binary format, such as {@link FitsOutputStream} or {@link FitsFile}
-     *                 (or else a wrapped <code>DataOutputStream</code>). As such, this method is inherently unsafe as
-     *                 it can be used to create unreadable FITS files. It will be removed from a future major release.
-     *                 Use one of the more appropriate other <code>write()</code> methods instead. Writes the contents
-     *                 to an external file or stream. The file or stream remains open and it is up to the caller to
-     *                 close it as appropriate.
+     * @deprecated               This method is poorly conceived as we cannot really write FITS to just any
+     *                               <code>DataOutput</code> but only to specific {@link ArrayDataOutput}, which utilize
+     *                               {@link nom.tam.util.FitsEncoder} to convert Java types to FITS binary format, such
+     *                               as {@link FitsOutputStream} or {@link FitsFile} (or else a wrapped
+     *                               <code>DataOutputStream</code>). As such, this method is inherently unsafe as it can
+     *                               be used to create unreadable FITS files. It will be removed from a future major
+     *                               release. Use one of the more appropriate other <code>write()</code> methods
+     *                               instead. Writes the contents to an external file or stream. The file or stream
+     *                               remains open and it is up to the caller to close it as appropriate.
      * 
-     * @param os A <code>DataOutput</code> stream.
+     * @param      os            A <code>DataOutput</code> stream.
      * 
-     * @throws FitsException if the operation failed
+     * @throws     FitsException if the operation failed
      * 
-     * @see #write(FitsFile)
-     * @see #write(FitsOutputStream)
-     * @see #write(File)
-     * @see #write(String)
+     * @see                      #write(FitsFile)
+     * @see                      #write(FitsOutputStream)
+     * @see                      #write(File)
+     * @see                      #write(String)
      */
     @Deprecated
     public void write(DataOutput os) throws FitsException {
@@ -1340,11 +1365,11 @@ public class Fits implements Closeable {
     /**
      * set the checksum of a HDU.
      * 
-     * @param hdu the HDU to add a checksum
+     * @param      hdu           the HDU to add a checksum
      * 
-     * @throws FitsException the checksum could not be added to the header
+     * @throws     FitsException the checksum could not be added to the header
      * 
-     * @deprecated use {@link FitsCheckSum#setChecksum(BasicHDU)}
+     * @deprecated               use {@link FitsCheckSum#setChecksum(BasicHDU)}
      */
     @Deprecated
     public static void setChecksum(BasicHDU<?> hdu) throws FitsException {
@@ -1354,11 +1379,11 @@ public class Fits implements Closeable {
     /**
      * calculate the checksum for the block of data
      * 
-     * @param data the data to create the checksum for
+     * @param      data the data to create the checksum for
      * 
-     * @return the checksum
+     * @return          the checksum
      * 
-     * @deprecated use {@link FitsCheckSum#checksum(byte[])}
+     * @deprecated      use {@link FitsCheckSum#checksum(byte[])}
      */
     @Deprecated
     public static long checksum(final byte[] data) {
@@ -1370,17 +1395,18 @@ public class Fits implements Closeable {
      * {@link FitsFile} where the contract of {@link RandomAccess} allows for skipping ahead beyond the end of file,
      * since expanding the file is allowed when writing. Only a subsequent read call would fail.
      *
-     * @param in the input from which the FITS content was read.
+     * @param  in          the input from which the FITS content was read.
      * 
-     * @return <code>true</code> if the current read position is beyond the end-of-file, otherwise <code>false</code>.
+     * @return             <code>true</code> if the current read position is beyond the end-of-file, otherwise
+     *                         <code>false</code>.
      * 
      * @throws IOException if there was an IO error accessing the file or stream.
      * 
-     * @see ArrayDataInput#skip(long)
-     * @see ArrayDataInput#skipBytes(int)
-     * @see ArrayDataInput#skipAllBytes(long)
+     * @see                ArrayDataInput#skip(long)
+     * @see                ArrayDataInput#skipBytes(int)
+     * @see                ArrayDataInput#skipAllBytes(long)
      * 
-     * @since 1.16
+     * @since              1.16
      */
     static boolean checkTruncated(ArrayDataInput in) throws IOException {
         if (!(in instanceof RandomAccess)) {

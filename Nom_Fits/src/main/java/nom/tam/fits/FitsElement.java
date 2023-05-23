@@ -31,10 +31,10 @@ package nom.tam.fits;
  * #L%
  */
 
-import java.io.IOException;
-
 import nom.tam.util.ArrayDataInput;
 import nom.tam.util.ArrayDataOutput;
+
+import java.io.IOException;
 
 /**
  * This interface allows to easily perform basic I/O operations on a FITS

@@ -31,9 +31,9 @@ package nom.tam.image.tile.operation.buffer;
  * #L%
  */
 
-import java.nio.Buffer;
-
 import nom.tam.util.type.ElementType;
+
+import java.nio.Buffer;
 
 /**
  * This subclass of the row based view, will abstract the problems that occur

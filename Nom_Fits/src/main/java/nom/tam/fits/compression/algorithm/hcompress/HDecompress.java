@@ -31,13 +31,9 @@ package nom.tam.fits.compression.algorithm.hcompress;
  * #L%
  */
 
-import static nom.tam.fits.compression.algorithm.hcompress.HCompress.BITS_OF_1_BYTE;
-import static nom.tam.fits.compression.algorithm.hcompress.HCompress.BITS_OF_1_NYBBLE;
-import static nom.tam.fits.compression.algorithm.hcompress.HCompress.BYTE_MASK;
-import static nom.tam.fits.compression.algorithm.hcompress.HCompress.NYBBLE_MASK;
-import static nom.tam.fits.compression.algorithm.hcompress.HCompress.ROUNDING_HALF;
-
 import java.nio.ByteBuffer;
+
+import static nom.tam.fits.compression.algorithm.hcompress.HCompress.*;
 
 /**
  * <p>

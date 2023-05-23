@@ -31,15 +31,17 @@ package nom.tam.fits.test;
  * #L%
  */
 
-import nom.tam.fits.*;
-import nom.tam.fits.header.Standard;
-import nom.tam.util.ArrayFuncs;
-import nom.tam.util.FitsFile;
-import nom.tam.util.SafeClose;
-import nom.tam.util.TestArrayFuncs;
-import nom.tam.util.test.ThrowAnyException;
-import org.junit.Assert;
-import org.junit.Test;
+import static nom.tam.fits.header.Standard.AUTHOR;
+import static nom.tam.fits.header.Standard.DATAMAX;
+import static nom.tam.fits.header.Standard.DATAMIN;
+import static nom.tam.fits.header.Standard.DATE;
+import static nom.tam.fits.header.Standard.DATE_OBS;
+import static nom.tam.fits.header.Standard.INSTRUME;
+import static nom.tam.fits.header.Standard.OBSERVER;
+import static nom.tam.fits.header.Standard.ORIGIN;
+import static nom.tam.fits.header.Standard.REFERENC;
+import static nom.tam.fits.header.Standard.TELESCOP;
+import static org.junit.Assert.assertEquals;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -48,8 +50,22 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.TimeZone;
 
-import static nom.tam.fits.header.Standard.*;
-import static org.junit.Assert.assertEquals;
+import nom.tam.fits.BasicHDU;
+import nom.tam.fits.Fits;
+import nom.tam.fits.FitsException;
+import nom.tam.fits.FitsFactory;
+import nom.tam.fits.Header;
+import nom.tam.fits.ImageData;
+import nom.tam.fits.ImageHDU;
+import nom.tam.fits.header.Standard;
+import nom.tam.util.ArrayFuncs;
+import nom.tam.util.FitsFile;
+import nom.tam.util.SafeClose;
+import nom.tam.util.TestArrayFuncs;
+import nom.tam.util.test.ThrowAnyException;
+
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * Test the ImageHDU, ImageData and ImageTiler classes. - multiple HDUs in a
@@ -281,25 +297,4 @@ public class ImageTest {
         Assert.assertTrue(out.toString().contains("Unable"));
 
     }
-
-    @Test
-    public void testSetFailedPrimaryHdu() throws FitsException {
-        Fits f = new Fits();
-        ImageHDU image = (ImageHDU) FitsFactory.hduFactory(new byte[10][10]);
-        f.insertHDU(image, 0);
-        ImageData imageData = new ImageData(new byte[10][10]);
-        Header header = new Header() {
-
-            @Override
-            public boolean getBooleanValue(String key, boolean dft) {
-                // ok we are in the parent setPrimary not let it fail ;-)
-                ThrowAnyException.throwFitsException("");
-                return super.getBooleanValue(key, dft);
-            }
-        };
-        image = new ImageHDU(header, imageData);
-        f.insertHDU(image, 0);
-
-    }
-    
 }

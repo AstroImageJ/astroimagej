@@ -31,19 +31,26 @@ package nom.tam.image.compression.tile.mask;
  * #L%
  */
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+
+import java.lang.reflect.Constructor;
+import java.nio.Buffer;
+import java.nio.ByteBuffer;
+import java.nio.DoubleBuffer;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+import java.nio.LongBuffer;
+import java.nio.ShortBuffer;
+import java.util.Arrays;
+
 import nom.tam.image.tile.operation.buffer.TileBuffer;
 import nom.tam.image.tile.operation.buffer.TileBufferFactory;
 import nom.tam.util.type.ElementType;
 import nom.tam.util.type.PrimitiveTypes;
+
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.lang.reflect.Constructor;
-import java.nio.*;
-import java.util.Arrays;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 
 public class ImageMaskTest {
 

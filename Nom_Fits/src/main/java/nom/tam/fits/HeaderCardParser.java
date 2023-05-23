@@ -31,8 +31,8 @@
 
 package nom.tam.fits;
 
-import static nom.tam.fits.header.Standard.CONTINUE;
-import static nom.tam.fits.header.NonStandard.HIERARCH;
+import nom.tam.util.ComplexValue;
+import nom.tam.util.FlexFormat;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -42,8 +42,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
-import nom.tam.util.ComplexValue;
-import nom.tam.util.FlexFormat;
+import static nom.tam.fits.header.NonStandard.HIERARCH;
+import static nom.tam.fits.header.Standard.CONTINUE;
 
 /**
  * <p>

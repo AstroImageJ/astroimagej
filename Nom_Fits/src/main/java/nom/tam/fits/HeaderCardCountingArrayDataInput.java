@@ -31,9 +31,9 @@ package nom.tam.fits;
  * #L%
  */
 
-import java.io.IOException;
-
 import nom.tam.util.ArrayDataInput;
+
+import java.io.IOException;
 
 /**
  * 

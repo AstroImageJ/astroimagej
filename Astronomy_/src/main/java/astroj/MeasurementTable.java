@@ -443,6 +443,9 @@ IJ.log(heading+" "+val);
             }
         if (panel != null)
             {
+            if (panel.getResultsTable() instanceof MeasurementTable m) {
+                return m;
+            }
             lines = panel.getText().split("\n");
 //            for (int i=0; i<lines.length; i++)
 //                {

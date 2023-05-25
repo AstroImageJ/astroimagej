@@ -31,10 +31,10 @@ package nom.tam.util.type;
  * #L%
  */
 
+import nom.tam.fits.header.Bitpix;
+
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
-
-import nom.tam.fits.header.Bitpix;
 
 class FloatType extends ElementType<FloatBuffer> {
 
@@ -70,8 +70,8 @@ class FloatType extends ElementType<FloatBuffer> {
     }
 
     @Override
-    public void putArray(FloatBuffer buffer, Object array, int length) {
-        buffer.put((float[]) array, 0, length);
+    public void putArray(FloatBuffer buffer, Object array, int offset, int length) {
+        buffer.put((float[]) array, offset, length);
     }
 
     @Override

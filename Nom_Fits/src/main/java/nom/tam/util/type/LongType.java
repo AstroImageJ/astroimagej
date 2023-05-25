@@ -31,10 +31,10 @@ package nom.tam.util.type;
  * #L%
  */
 
+import nom.tam.fits.header.Bitpix;
+
 import java.nio.ByteBuffer;
 import java.nio.LongBuffer;
-
-import nom.tam.fits.header.Bitpix;
 
 class LongType extends ElementType<LongBuffer> {
 
@@ -70,8 +70,8 @@ class LongType extends ElementType<LongBuffer> {
     }
 
     @Override
-    public void putArray(LongBuffer buffer, Object array, int length) {
-        buffer.put((long[]) array, 0, length);
+    public void putArray(LongBuffer buffer, Object array, int offset, int length) {
+        buffer.put((long[]) array, offset, length);
     }
 
     @Override

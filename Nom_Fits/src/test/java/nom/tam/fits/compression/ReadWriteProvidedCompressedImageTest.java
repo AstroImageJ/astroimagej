@@ -25,6 +25,7 @@ import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
 import java.util.Random;
+import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertEquals;
 
@@ -44,23 +45,20 @@ public class ReadWriteProvidedCompressedImageTest {
 
     private void assert_float_image(float[][] actual, float[][] expected, float delta) {
         Assert.assertEquals(expected.length, actual.length);
-        for (int axis0 = 0; axis0 < expected.length; axis0++) {
-            Assert.assertArrayEquals(expected[axis0], actual[axis0], delta);
-        }
+        IntStream.range(0, expected.length).parallel()
+                .forEach(axis0 -> Assert.assertArrayEquals(expected[axis0], actual[axis0], delta));
     }
 
     private void assert_int_image(int[][] actual, int[][] expected) {
         Assert.assertEquals(expected.length, actual.length);
-        for (int axis0 = 0; axis0 < expected.length; axis0++) {
-            Assert.assertArrayEquals(expected[axis0], actual[axis0]);
-        }
+        IntStream.range(0, expected.length).parallel()
+                .forEach(axis0 -> Assert.assertArrayEquals(expected[axis0], actual[axis0]));
     }
 
     private void assert_short_image(short[][] actual, short[][] expected) {
         Assert.assertEquals(expected.length, actual.length);
-        for (int axis0 = 0; axis0 < expected.length; axis0++) {
-            Assert.assertArrayEquals(expected[axis0], actual[axis0]);
-        }
+        IntStream.range(0, expected.length).parallel()
+                .forEach(axis0 -> Assert.assertArrayEquals(expected[axis0], actual[axis0]));
     }
 
     /**
@@ -76,7 +74,6 @@ public class ReadWriteProvidedCompressedImageTest {
                 if (checkNaN) {
                     Assert.assertTrue(Double.isNaN(d1) == Double.isNaN(d2)); //
                 }
-                Assert.assertTrue(true); // ;-)
             } else {
                 Assert.assertEquals(d1, d2, delta);
             }

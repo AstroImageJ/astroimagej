@@ -1992,6 +1992,27 @@ public class BinaryTableTest {
         new BinaryTableHDU(BinaryTableHDU.manufactureHeader(btab), btab).encapsulate(Integer.valueOf(1));
     }
 
+    @Test(expected = FitsException.class)
+    public void testReadByRowEOF() throws Exception {
+        String fileName = "target/bte.fits";
+        FitsFile ff = new FitsFile(fileName, "rw");
+        Object[] data = new Object[] {this.bytes, this.bits, this.bools, this.shorts, this.ints, this.floats, this.doubles,
+                this.longs, this.strings};
+
+        Fits f = new Fits();
+
+        // Add two identical HDUs
+        f.addHDU(Fits.makeHDU(data));
+        f.write(ff);
+
+        f = new Fits(ff);
+        BinaryTableHDU hdu = (BinaryTableHDU) f.getHDU(1);
+
+        ff.setLength(hdu.getData().getFileOffset() + 10);
+
+        hdu.getData().getRow(0);
+    }
+
     private BinaryTable createTestTable() throws FitsException {
         BinaryTable btab = new BinaryTable();
 

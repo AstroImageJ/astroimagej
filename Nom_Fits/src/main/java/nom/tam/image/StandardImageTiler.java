@@ -31,14 +31,14 @@ package nom.tam.image;
  * #L%
  */
 
-import java.io.IOException;
-import java.lang.reflect.Array;
-
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import nom.tam.util.ArrayDataOutput;
 import nom.tam.util.ArrayFuncs;
 import nom.tam.util.RandomAccess;
 import nom.tam.util.type.ElementType;
+
+import java.io.IOException;
+import java.lang.reflect.Array;
 
 /**
  * This class provides a subset of an N-dimensional image. Modified May 2, 2000
@@ -51,7 +51,8 @@ public abstract class StandardImageTiler implements ImageTiler {
 
     /**
      * @param dims The dimensions of the array.
-     * @param pos  The index requested.
+     * @param pos The index requested.
+     *
      * @return the offset of a given position.
      */
     public static long getOffset(int[] dims, int[] pos) {
@@ -67,13 +68,13 @@ public abstract class StandardImageTiler implements ImageTiler {
     }
 
     /**
-     * Increment the offset within the position array. Note that we never look
-     * at the last index since we copy data a block at a time and not byte by
-     * byte.
+     * Increment the offset within the position array. Note that we never look at
+     * the last index since we copy data a block at a time and not byte by byte.
      *
-     * @param start   The starting corner values.
+     * @param start The starting corner values.
      * @param current The current offsets.
      * @param lengths The desired dimensions of the subset.
+     *
      * @return <code>true</code> if the current array was changed
      */
     protected static boolean incrementPosition(int[] start, int[] current, int[] lengths) {
@@ -101,13 +102,12 @@ public abstract class StandardImageTiler implements ImageTiler {
     /**
      * Create a tiler.
      *
-     * @param f          The random access device from which image data may be read.
-     *                   This may be null if the tile information is available from
-     *                   memory.
-     * @param fileOffset The file offset within the RandomAccess device at which the
-     *                   data begins.
-     * @param dims       The actual dimensions of the image.
-     * @param base       The base class (should be a primitive type) of the image.
+     * @param f The random access device from which image data may be read. This
+     *            may be null if the tile information is available from memory.
+     * @param fileOffset The file offset within the RandomAccess device at which
+     *            the data begins.
+     * @param dims The actual dimensions of the image.
+     * @param base The base class (should be a primitive type) of the image.
      */
     @SuppressFBWarnings(value = "EI_EXPOSE_REP", justification = "intended exposure of mutable data")
     public StandardImageTiler(RandomAccess f, long fileOffset, int[] dims, Class<?> base) {
@@ -120,9 +120,10 @@ public abstract class StandardImageTiler implements ImageTiler {
     /**
      * File a tile segment from a file.
      *
-     * @param output       The output to send data.  This can be an ArrayDataOutput to stream data to and prevent
-     *                     memory consumption of a tile being in memory.
-     * @param delta        The offset from the beginning of the image in bytes.
+     * @param output The output to send data. This can be an ArrayDataOutput to
+     *            stream data to and prevent memory consumption of a tile being
+     *            in memory.
+     * @param delta The offset from the beginning of the image in bytes.
      * @param outputOffset The index into the output array.
      * @param segment      The number of elements to be read for this segment.
      * @throws IOException if the underlying stream failed
@@ -153,14 +154,16 @@ public abstract class StandardImageTiler implements ImageTiler {
     }
 
     /**
-     * File a tile segment from a file into the given stream.  This will deal only with bytes to avoid having to check
-     * the base type and calling a specific method.  Converting the base type to a byte is a simple multiplication
+     * File a tile segment from a file into the given stream. This will deal only
+     * with bytes to avoid having to check the base type and calling a specific
+     * method. Converting the base type to a byte is a simple multiplication
      * operation anyway.
      *
      * @param output       The output tile.
      * @param delta        The offset from the beginning of the image in bytes.
      * @param outputOffset The index into the output array.
-     * @param segment      The number of elements to be read for this segment.
+     * @param segment The number of elements to be read for this segment.
+     *
      * @throws IOException if the underlying stream failed
      */
     @SuppressFBWarnings(value = "RR_NOT_CHECKED", justification = "this read will never return less than the requested length")
@@ -186,10 +189,10 @@ public abstract class StandardImageTiler implements ImageTiler {
      * will recurse two levels until we get a call with a single dimensional
      * datum. At that point the appropriate data will be copied into the output.
      *
-     * @param data         The in-memory image data.
-     * @param posits       The current position for which data is requested.
-     * @param length       The size of the segments.
-     * @param output       The output tile.
+     * @param data The in-memory image data.
+     * @param posits The current position for which data is requested.
+     * @param length The size of the segments.
+     * @param output The output tile.
      * @param outputOffset The current offset into the output tile.
      * @param dim          The current dimension being
      * @throws IOException If the output is a stream and there is an I/O error.
@@ -219,7 +222,8 @@ public abstract class StandardImageTiler implements ImageTiler {
             }
 
             if (output instanceof ArrayDataOutput) {
-                // Intentionally missing char and boolean here as they are not valid BITPIX values.
+                // Intentionally missing char and boolean here as they are not
+                // valid BITPIX values.
                 final ArrayDataOutput arrayDataOutput = ((ArrayDataOutput) output);
                 for (int i = startFrom; i < startFrom + copyLength; i++) {
                     if (this.base == float.class) {
@@ -248,10 +252,11 @@ public abstract class StandardImageTiler implements ImageTiler {
     /**
      * Fill the subset.
      *
-     * @param data    The memory-resident data image. This may be null if the image
-     *                is to be read from a file. This should be a multidimensional
-     *                primitive array.
-     * @param o       The tile to be filled. This is a simple primitive array, or an ArrayDataOutput instance.
+     * @param data The memory-resident data image. This may be null if the image
+     *            is to be read from a file. This should be a multidimensional
+     *            primitive array.
+     * @param o The tile to be filled. This is a simple primitive array, or an
+     *            ArrayDataOutput instance.
      * @param newDims The dimensions of the full image.
      * @param corners The indices of the corner of the image.
      * @param lengths The dimensions of the subset.
@@ -263,7 +268,8 @@ public abstract class StandardImageTiler implements ImageTiler {
         int[] posits = new int[n];
         final boolean isStreaming = (o instanceof ArrayDataOutput);
 
-        // TODO: When streaming out to an ArrayDataOutput, use this tiler's base class to determine the element size.
+        // TODO: When streaming out to an ArrayDataOutput, use this tiler's base
+        // class to determine the element size.
         // TODO: If that is not sufficient, then maybe it needs to be passed in?
         // TODO: jenkinsd 2022.12.21
         //
@@ -279,7 +285,8 @@ public abstract class StandardImageTiler implements ImageTiler {
 
         int outputOffset = 0;
 
-        // Flag to indicate something was written out.  This is only relevant if the output is an ArrayDataOutput.
+        // Flag to indicate something was written out. This is only relevant if
+        // the output is an ArrayDataOutput.
         boolean hasNoOverlap = true;
 
         do {

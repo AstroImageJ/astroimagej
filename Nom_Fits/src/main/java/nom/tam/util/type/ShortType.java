@@ -31,10 +31,10 @@ package nom.tam.util.type;
  * #L%
  */
 
+import nom.tam.fits.header.Bitpix;
+
 import java.nio.ByteBuffer;
 import java.nio.ShortBuffer;
-
-import nom.tam.fits.header.Bitpix;
 
 class ShortType extends ElementType<ShortBuffer> {
 
@@ -68,8 +68,8 @@ class ShortType extends ElementType<ShortBuffer> {
     }
 
     @Override
-    public void putArray(ShortBuffer buffer, Object array, int length) {
-        buffer.put((short[]) array, 0, length);
+    public void putArray(ShortBuffer buffer, Object array, int offset, int length) {
+        buffer.put((short[]) array, offset, length);
     }
 
     @Override

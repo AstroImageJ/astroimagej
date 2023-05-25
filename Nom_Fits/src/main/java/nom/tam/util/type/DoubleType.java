@@ -31,10 +31,10 @@ package nom.tam.util.type;
  * #L%
  */
 
+import nom.tam.fits.header.Bitpix;
+
 import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
-
-import nom.tam.fits.header.Bitpix;
 
 class DoubleType extends ElementType<DoubleBuffer> {
 
@@ -70,8 +70,8 @@ class DoubleType extends ElementType<DoubleBuffer> {
     }
 
     @Override
-    public void putArray(DoubleBuffer buffer, Object array, int length) {
-        buffer.put((double[]) array, 0, length);
+    public void putArray(DoubleBuffer buffer, Object array, int offset, int length) {
+        buffer.put((double[]) array, offset, length);
     }
 
     @Override

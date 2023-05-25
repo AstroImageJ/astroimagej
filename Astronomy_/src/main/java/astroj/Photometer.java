@@ -109,6 +109,7 @@ public class Photometer {
      * Calibration object of client.
      */
     Calibration calib;
+    private static final double FUDGE_CONST = 2*Math.sqrt(2);
 
     /**
      * Initializes Photometer without the client's Calibration.
@@ -503,18 +504,19 @@ public class Photometer {
         var y02 = y0*y0;
         var x12 = x1*x1;
         var y12 = y1*y1;
+        var d = Math.min(Math.abs(x1-x0), Math.abs(y1-y0));
         if (r2 > (x02+y02) && r2 > (x12+y12) &&
                 r2 > (x12+y02) && r2 > (x02+y12)) {
             /*if (o != 1) {
-                System.out.println(o);
+                System.out.printf("1: %s;%n", o);
             }*/
-            return 1;
+            return /*2*r <= d ? 0 :*/ 1;
         }
 
-        if (r2 < (x02+y02) && r2 < (x12+y12) &&
+        if (r * FUDGE_CONST < d && r2 < (x02+y02) && r2 < (x12+y12) &&
                 r2 < (x12+y02) && r2 < (x02+y12)) {
-            /*if (Math.abs(o) >= 10e-13) {
-                System.out.println(o);
+            /*if (Math.abs(o) *//*>= 10e-13*//* != 0) {
+                System.out.printf("0: %s;%n", o);
             }*/
             return 0;
         }

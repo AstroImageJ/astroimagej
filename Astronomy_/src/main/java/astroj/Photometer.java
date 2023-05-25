@@ -492,7 +492,7 @@ public class Photometer {
         // r     = Radius of the circle
         // x0,y0 = Corner of the rectangle
         // x1,y1 = Opposite corner of the rectangle
-        double x0 = xin0 - xc;  /* Shift the objects so that circle is at the orgin. */
+        double x0 = xin0 - xc;  /* Shift the objects so that circle is at the origin. */
         double y0 = yin0 - yc;
         double x1 = xin1 - xc;
         double y1 = yin1 - yc;

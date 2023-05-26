@@ -1508,6 +1508,7 @@ public class FitsJ
 		// MAKE SURE IT'S REALLY AN ISO DATETIME WITH yyyy-{m}m-{d}dT{hh:mm:ss}
 
         if (datum.endsWith("Z")) datum=datum.substring(0, datum.length()-1);
+		datum = datum.replaceFirst("(\\d)(\\s)(\\d)", "$1T$3"); // accomate tessTicaFfiCut
 		int i = datum.indexOf("T");
         datum = datum.replace('/', '-');  //accomodate / instead of - for Lowell telescopes
 		int j = datum.indexOf("-");

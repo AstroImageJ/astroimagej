@@ -68,7 +68,11 @@ public class Astronomy_Listener implements PlugIn, ImageListener {
                 if (IJ.isMacro()) {
                     if (!SwingUtilities.isEventDispatchThread()) {
                         try {
-                            SwingUtilities.invokeAndWait(() -> asw.setAstroProcessor(false));
+                            SwingUtilities.invokeAndWait(() -> {
+                                if (asw.isReady) {
+                                    asw.setAstroProcessor(false);
+                                }
+                            });
                         } catch (InterruptedException | InvocationTargetException e) {
                             throw new RuntimeException(e);
                         }

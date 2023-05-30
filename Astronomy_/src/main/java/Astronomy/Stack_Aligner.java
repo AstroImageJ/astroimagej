@@ -455,7 +455,13 @@ public class Stack_Aligner extends MultiAperture_
         return header;
         }
 
-	/**
+        @Override
+        public void shutDown() {
+            super.shutDown();
+            Prefs.set("stackaligner.finished", true);
+        }
+
+        /**
 	 * Shifts image linearly by an amount (dx,dy).
 	 */
 	protected ImageProcessor shiftedImage (double dx, double dy)

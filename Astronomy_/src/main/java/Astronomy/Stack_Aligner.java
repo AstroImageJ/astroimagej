@@ -179,7 +179,7 @@ public class Stack_Aligner extends MultiAperture_
 		gd.addCheckbox ("Align only to whole pixels (no interpolation)",whole, b -> whole = b);
         gd.addMessage ("");
         gd.addCheckbox ("Show help panel during aperture selection.", showHelp, b -> showHelp = b);
-        gd.addCheckbox("Update diaplay while running", updateImageDisplay.get(), updateImageDisplay::set);
+        gd.addCheckbox("Update display while running", updateImageDisplay.get(), updateImageDisplay::set);
         gd.addMessage ("");
         if (imp.getStack().isVirtual())
             {

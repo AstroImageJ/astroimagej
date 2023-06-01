@@ -758,6 +758,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         ac.removeMouseListener(this);
         ac.removeMouseMotionListener(this);
         ac.removeKeyListener(this);
+        WindowManager.removeWindow(this);
 
         return super.close();
     }

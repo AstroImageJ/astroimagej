@@ -5839,7 +5839,6 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
                         firstRun = false;
                         unlock();
                     }
-                    Prefs.set("dataprocessor.finished", true);
                     if (autoRunAndClose) {
                         saveAndClose();
                     }

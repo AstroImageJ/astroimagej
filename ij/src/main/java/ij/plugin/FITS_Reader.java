@@ -540,6 +540,8 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	 */
 	private List<String> makeHeadersTessCut(final Header hdr, final TableHDU<?> tableHDU, BasicHDU<?>[] hdus) {
 		List<String> headers = new ArrayList<>(tableHDU.getNRows());
+		hdr.deleteKey("DATE-OBS");
+		hdr.deleteKey("DATE-END");
 
 		try {
 			var bjds = (Number[]) ArrayBoxingUtil.boxArray(tableHDU.getColumn("TIME"));

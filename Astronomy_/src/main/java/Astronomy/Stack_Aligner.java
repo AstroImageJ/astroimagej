@@ -165,10 +165,6 @@ public class Stack_Aligner extends MultiAperture_
         buttons.add(gd.addCheckbox ("Allow aperture changes between slices in single step mode (right click to advance image)",allowSingleStepApChanges, b -> allowSingleStepApChanges = b));
 		gd.addMessage ("");
 
-        if (hasWCS) {
-            buttons.forEach(j -> j.setEnabled(!useWCSOnly));
-        }
-
         sliders.forEach(s -> GenericSwingDialog.getTextFieldFromSlider(s).ifPresent(tf -> tf.setColumns(5)));
 
 		// NON-REQUIRED FIELDS (mirrored in finishFancyDialog())
@@ -178,9 +174,12 @@ public class Stack_Aligner extends MultiAperture_
 		gd.addCheckbox ("Remove background and scale to common level", normalize, b -> normalize = b);
 		gd.addCheckbox ("Align only to whole pixels (no interpolation)",whole, b -> whole = b);
         gd.addMessage ("");
-        gd.addCheckbox ("Show help panel during aperture selection.", showHelp, b -> showHelp = b);
+        buttons.add(gd.addCheckbox ("Show help panel during aperture selection.", showHelp, b -> showHelp = b));
         gd.addCheckbox("Update display while running", updateImageDisplay.get(), updateImageDisplay::set);
         gd.addMessage ("");
+        if (hasWCS) {
+            buttons.forEach(j -> j.setEnabled(!useWCSOnly));
+        }
         if (imp.getStack().isVirtual())
             {
             gd.addMessage ("NOTE: ***THIS IS A VIRTUAL STACK***\nAligned images will be placed in the sub-directory 'aligned'.\n"+ 

@@ -68,6 +68,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	private Locale locale = Locale.US;
 	private DecimalFormatSymbols dfs = new DecimalFormatSymbols(locale);
 	private DecimalFormat fourDigits = new DecimalFormat("0000", dfs);
+	private DecimalFormat fiveDigits = new DecimalFormat("00000", dfs);
 
 	public static boolean skipTessQualCheck = Prefs.getBoolean(".aij.skipTessQualCheck", false);
 	private static final LeapSeconds LEAP_SECONDS = new LeapSeconds();
@@ -777,7 +778,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 				header = headers.get(headerIndex) + "\n";
 			}
 			ip = twoDimensionalImageData2Processor(data[i]);
-			stack.addSlice(fileBase + "_" + (imageCount<10000 ? fourDigits.format(i+1) : (i+1))
+			stack.addSlice(fileBase + "_" + (imageCount<10000 ? fourDigits.format(i+1) : (imageCount > 10000) ? fiveDigits.format(i+1) : i+1)
 					+ (fileType.length() > 0 ? "." + fileType : "") + "\n" + header, ip);
 			pm.setProgress(i);
 		}

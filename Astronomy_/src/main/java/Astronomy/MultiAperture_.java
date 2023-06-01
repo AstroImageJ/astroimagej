@@ -299,7 +299,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     private Seeing_Profile sp;
     private List<Seeing_Profile.ApRadii> stackRadii = new ArrayList<>();
     private final HashSet<Component> singleStepListeners = new HashSet<>();
-    private static final Property<Boolean> updateImageDisplay = new Property<>(true, MultiAperture_.class);
+    protected static final Property<Boolean> updateImageDisplay = new Property<>(true, MultiAperture_.class);
 
 //	public static double RETRY_RADIUS = 3.0;
 

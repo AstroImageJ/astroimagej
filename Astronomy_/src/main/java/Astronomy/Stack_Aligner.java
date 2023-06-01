@@ -148,24 +148,39 @@ public class Stack_Aligner extends MultiAperture_
         sliders.add(gd.addSlider("Inner radius of background annulus", 1, rBack1>100?rBack1:100, false, rBack1, d -> rBack1 = d.intValue()));
         sliders.add(gd.addSlider("Outer radius of background annulus", 1, rBack2>100?rBack2:100, false, rBack2, d -> rBack2 = d.intValue()));
 
-        gd.addCheckbox ("Use previous "+nAperturesStored+" apertures (1-click to set first aperture location)", previous, b -> previous = b).setEnabled(nAperturesStored > 0);
-        gd.addCheckbox ("Use RA/Dec to locate initial aperture positions", useWCS, b -> useWCS = b);
-		gd.addCheckbox ("Use single step mode (1-click to set first aperture location in each image)",singleStep, b -> singleStep = b);
-        gd.addCheckbox ("Allow aperture changes between slices in single step mode (right click to advance image)",allowSingleStepApChanges, b -> allowSingleStepApChanges = b);
+        useWCSOnly = Prefs.get ("stackAligner.useWCSOnly", useWCSOnly);
+        var buttons = new ArrayList<JCheckBox>();
+        if (hasWCS) {
+            gd.addCheckbox("Use only WCS headers for alignment (no apertures required)", useWCSOnly, b -> {
+                useWCSOnly = b;
+                buttons.forEach(j -> j.setEnabled(!useWCSOnly));
+            });
+        }
+
+        var b1 = gd.addCheckbox ("Use previous "+nAperturesStored+" apertures (1-click to set first aperture location)", previous, b -> previous = b);
+        buttons.add(b1);
+        b1.setEnabled(nAperturesStored > 0);
+        buttons.add(gd.addCheckbox ("Use RA/Dec to locate initial aperture positions", useWCS, b -> useWCS = b));
+		buttons.add(gd.addCheckbox ("Use single step mode (1-click to set first aperture location in each image)",singleStep, b -> singleStep = b));
+        buttons.add(gd.addCheckbox ("Allow aperture changes between slices in single step mode (right click to advance image)",allowSingleStepApChanges, b -> allowSingleStepApChanges = b));
 		gd.addMessage ("");
+
+        if (hasWCS) {
+            buttons.forEach(j -> j.setEnabled(!useWCSOnly));
+        }
 
         sliders.forEach(s -> GenericSwingDialog.getTextFieldFromSlider(s).ifPresent(tf -> tf.setColumns(5)));
 
 		// NON-REQUIRED FIELDS (mirrored in finishFancyDialog())
 
-        useWCSOnly = Prefs.get ("stackAligner.useWCSOnly", useWCSOnly);
         normalize = Prefs.get ("stackAligner.normalize", normalize);
         whole = Prefs.get ("stackAligner.whole", whole);
-        if (hasWCS) gd.addCheckbox ("Use only WCS headers for alignment (no apertures required)", useWCSOnly, b -> useWCSOnly = b);
 		gd.addCheckbox ("Remove background and scale to common level", normalize, b -> normalize = b);
 		gd.addCheckbox ("Align only to whole pixels (no interpolation)",whole, b -> whole = b);
         gd.addMessage ("");
         gd.addCheckbox ("Show help panel during aperture selection.", showHelp, b -> showHelp = b);
+        gd.addCheckbox("Update diaplay while running", updateImageDisplay.get(), updateImageDisplay::set);
+        gd.addMessage ("");
         if (imp.getStack().isVirtual())
             {
             gd.addMessage ("NOTE: ***THIS IS A VIRTUAL STACK***\nAligned images will be placed in the sub-directory 'aligned'.\n"+ 

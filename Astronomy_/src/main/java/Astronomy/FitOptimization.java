@@ -1062,7 +1062,7 @@ public class FitOptimization implements AutoCloseable {
         }
     }
 
-    public class DynamicCounter {
+    public static class DynamicCounter {
         JTextField textField;
         BigInteger basis, sum;
         Hashtable<Long, BigInteger> counters = new Hashtable<>(getThreadCount());
@@ -1072,10 +1072,10 @@ public class FitOptimization implements AutoCloseable {
             textField = field;
         }
 
-        public synchronized void dynamicSet(BigInteger integer) {
+        public void dynamicSet(BigInteger integer) {
             if (integer == null) return;
             setCounter(integer);
-            textField.setText(getTotalCount().toString());
+            SwingUtilities.invokeLater(() -> textField.setText(getTotalCount().toString()));
         }
 
         public synchronized BigInteger getSum() {
@@ -1086,11 +1086,11 @@ public class FitOptimization implements AutoCloseable {
             return basis;
         }
 
-        public synchronized void setBasis(BigInteger integer) {
+        public void setBasis(BigInteger integer) {
             basis = integer;
             sum = BigInteger.ZERO;
             counters.clear();
-            textField.setText(integer.toString());
+            SwingUtilities.invokeLater(() -> textField.setText(integer.toString()));
         }
 
         private synchronized BigInteger getTotalCount() {

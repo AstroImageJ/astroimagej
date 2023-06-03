@@ -231,7 +231,7 @@ public class FitOptimization implements AutoCloseable {
         compOptimizationSelection.setEditable(false);
         compOptimizationSelection.setRenderer(new ToolTipRenderer());
         var compBruteForce = new ToolTipWrapper("Exhaustive Optimize", "Exhaustive search of comparison star combinations for minimize RMS of the fit. Only comparison stars selected at the start of this run are searched.");
-        var compQuickOpti = new ToolTipWrapper("Quick Optimize", ". Only comparison stars selected at the start of this run are searched.");
+        var compQuickOpti = new ToolTipWrapper("Quick Optimize", "Search for ensemble by testing the toggling of individual stars. Completes when the RMS converges. Only comparison stars selected at the start of this run are searched.");
         var compTest = new ToolTipWrapper("Debug", "Debug a single run.");
         compOptimizationSelection.addItem(compBruteForce);
         compOptimizationSelection.addItem(compQuickOpti);

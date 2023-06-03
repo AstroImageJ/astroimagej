@@ -56,11 +56,11 @@ public class CompStarFitting extends Optimizer {
 
         BigInteger state = startState;
 
-        AIJLogger.log(state.toString(2));
-        AIJLogger.log(getOnBits(state));
-
         // The startState is a compressed representation of all 1s
         var iterRemaining = getOnBits(state);
+
+        fitOptimization.compCounter.setBasis(fitOptimization.compCounter.getBasis().multiply(BigInteger.valueOf(iterRemaining)));
+
         var itersOfUnchangedState = 0;
         var improvedState = state;
         var rmsChanged = false;
@@ -75,6 +75,8 @@ public class CompStarFitting extends Optimizer {
             if (Double.isNaN(results.rms()) || results.rms() <= 0 || Double.isNaN(results.bic())) continue;
 
             minimumState = new FitOptimization.MinimumState(state, results.rms());
+
+            fitOptimization.compCounter.dynamicSet(counter);
 
             for (int i = 0; i < state.bitLength() + 1; i++) {
                 if (state.testBit(i)) {
@@ -91,6 +93,7 @@ public class CompStarFitting extends Optimizer {
                     }
 
                     state = state.flipBit(i);
+                    counter = counter.add(BigInteger.ONE);
                 }
             }
 

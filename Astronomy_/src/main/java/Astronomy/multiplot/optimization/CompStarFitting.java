@@ -2,7 +2,6 @@ package Astronomy.multiplot.optimization;
 
 import Astronomy.CurveFitter;
 import Astronomy.FitOptimization;
-import ij.astro.logging.AIJLogger;
 import ij.astro.logging.Translation;
 
 import java.math.BigInteger;
@@ -78,8 +77,8 @@ public class CompStarFitting extends Optimizer {
 
             fitOptimization.compCounter.dynamicSet(counter);
 
-            for (int i = 0; i < state.bitLength() + 1; i++) {
-                if (state.testBit(i)) {
+            for (int i = 0; i < startState.bitLength() + 1; i++) {
+                if (startState.testBit(i)) {
                     state = state.flipBit(i);
                     stateArray = fitOptimization.setArrayToState(state);
                     results = CurveFitter.getInstance(curve, fitOptimization.getTargetStar()).fitCurveAndGetResults(stateArray);
@@ -120,9 +119,8 @@ public class CompStarFitting extends Optimizer {
         return new FitOptimization.MinimumState(state, results.rms());
     }
 
-    //todo test
     private int getOnBits(BigInteger i) {
         // bitCount ignores the sign bit, but we make use of it for representing state
-        return i.bitCount() + (i.testBit(0) ? 1 : 0);
+        return i.bitCount() /*+ (i.testBit(0) ? 1 : 0)*/;
     }
 }

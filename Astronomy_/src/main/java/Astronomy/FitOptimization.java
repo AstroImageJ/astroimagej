@@ -231,8 +231,10 @@ public class FitOptimization implements AutoCloseable {
         compOptimizationSelection.setEditable(false);
         compOptimizationSelection.setRenderer(new ToolTipRenderer());
         var compBruteForce = new ToolTipWrapper("Exhaustive Optimize", "Exhaustive search of comparison star combinations for minimize RMS of the fit. Only comparison stars selected at the start of this run are searched.");
+        var compQuickOpti = new ToolTipWrapper("Quick Optimize", ". Only comparison stars selected at the start of this run are searched.");
         var compTest = new ToolTipWrapper("Debug", "Debug a single run.");
         compOptimizationSelection.addItem(compBruteForce);
+        compOptimizationSelection.addItem(compQuickOpti);
         if (IJ.isAijDev()) compOptimizationSelection.addItem(compTest);
 
         compOptiCards = new JPanel(new CardLayout());
@@ -249,7 +251,9 @@ public class FitOptimization implements AutoCloseable {
                 testCompMin();
                 MultiPlot_.updatePlot(curve);
             } else if (Objects.equals(compOptimizationSelection.getSelectedItem(), compBruteForce)) {
-                Executors.newSingleThreadExecutor().submit(this::minimizeCompStars);
+                Executors.newSingleThreadExecutor().submit(this::minimizeCompStarsByBruteForce);
+            } else if (Objects.equals(compOptimizationSelection.getSelectedItem(), compQuickOpti)) {
+                Executors.newSingleThreadExecutor().submit(this::minimizeCompStarsByQuickOpti);
             }
         });
 
@@ -570,7 +574,7 @@ public class FitOptimization implements AutoCloseable {
         finishOptimization(compOptiCards);
     }
 
-    private void minimizeCompStars() {
+    private void minimizeCompStarsByBruteForce() {
         selectable = null;
         selectable2PrimaryIndex = null;
         CurveFitter.invalidateInstance();
@@ -598,6 +602,40 @@ public class FitOptimization implements AutoCloseable {
 
         var finalState = divideTasksAndRun(new MinimumState(initState, Double.MAX_VALUE),
                 (start, end) -> new CompStarFitting(start, end, this));
+
+        setFinalState("RMS", finalState.stateArray, MultiPlot_.refStarCB);
+        compCounter.setBasis(BigInteger.ZERO);
+        finishOptimization(compOptiCards);
+    }
+
+    private void minimizeCompStarsByQuickOpti() {
+        selectable = null;
+        selectable2PrimaryIndex = null;
+        CurveFitter.invalidateInstance();
+        if (MultiPlot_.refStarFrame == null) MultiPlot_.showRefStarJPanel();
+        if (MultiPlot_.isRefStar != null) {
+            setSelectable(MultiPlot_.isRefStar);
+        } else {
+            if (showOptLog) AIJLogger.log("Open ref. star panel.");
+            return;
+        }
+
+        if (!plotY[curve]) {
+            IJ.error("The 'Plot' check box for this data set must be enabled in Multi-Plot Y-data panel for optimization.");
+            CardLayout cl = (CardLayout) compOptiCards.getLayout();
+            cl.next(compOptiCards);
+            return;
+        }
+
+        setTargetStar();
+
+        BigInteger initState = createBinaryRepresentation(selectable); //numAps has number of apertures
+
+        compCounter.setBasis(initState.subtract(BigInteger.ONE)); // Subtract 1 as 0-state is skipped
+        scheduleIpsCounter(0);
+
+        var finalState = divideTasksAndRun(new MinimumState(initState, Double.MAX_VALUE),
+                ($, end) -> new CompStarFitting(end, this), false);
 
         setFinalState("RMS", finalState.stateArray, MultiPlot_.refStarCB);
         compCounter.setBasis(BigInteger.ZERO);

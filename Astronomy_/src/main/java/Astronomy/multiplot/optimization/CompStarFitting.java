@@ -58,54 +58,67 @@ public class CompStarFitting extends Optimizer {
         // The startState is a compressed representation of all 1s
         var iterRemaining = getOnBits(state);
 
-        fitOptimization.compCounter.setBasis(fitOptimization.compCounter.getBasis().multiply(BigInteger.valueOf(iterRemaining)));
+        fitOptimization.compCounter.setBasis(fitOptimization.compCounter.getBasis().multiply(BigInteger.valueOf(iterRemaining * 2L)));
 
-        var itersOfUnchangedState = 0;
-        var improvedState = state;
-        var rmsChanged = false;
-        while (iterRemaining > 0 && itersOfUnchangedState <= 10) {
+        var convergence = 0;
+        var convergenceTries = 0;
+        while (convergence < 2 && convergenceTries < 3) {
             if (Thread.interrupted()) break;
-            rmsChanged = false;
 
-            // Evaluate state for the current set of stars
-            var stateArray = fitOptimization.setArrayToState(state);
-            var results = CurveFitter.getInstance(curve, fitOptimization.getTargetStar()).fitCurveAndGetResults(stateArray);
+            var itersOfUnchangedState = 0;
+            var improvedState = state;
+            var rmsChanged = false;
+            while (iterRemaining > 0 && itersOfUnchangedState <= 1) {
+                if (Thread.interrupted()) break;
+                rmsChanged = false;
 
-            if (Double.isNaN(results.rms()) || results.rms() <= 0 || Double.isNaN(results.bic())) continue;
+                // Evaluate state for the current set of stars
+                var stateArray = fitOptimization.setArrayToState(state);
+                var results = CurveFitter.getInstance(curve, fitOptimization.getTargetStar()).fitCurveAndGetResults(stateArray);
 
-            minimumState = new FitOptimization.MinimumState(state, results.rms());
+                if (Double.isNaN(results.rms()) || results.rms() <= 0 || Double.isNaN(results.bic())) continue;
 
-            fitOptimization.compCounter.dynamicSet(counter);
+                minimumState = new FitOptimization.MinimumState(state, results.rms());
 
-            for (int i = 0; i < startState.bitLength() + 1; i++) {
-                if (startState.testBit(i)) {
-                    state = state.flipBit(i);
-                    stateArray = fitOptimization.setArrayToState(state);
-                    results = CurveFitter.getInstance(curve, fitOptimization.getTargetStar()).fitCurveAndGetResults(stateArray);
+                fitOptimization.compCounter.dynamicSet(counter);
 
-                    if (Double.isNaN(results.rms()) || results.rms() <= 0 || Double.isNaN(results.bic())) continue;
+                for (int i = 0; i < (convergence > 0 ? startState.bitLength() : state.bitLength()) + 1; i++) {
+                    if (convergence > 0 ? startState.testBit(i) : state.testBit(i)) {
+                        state = state.flipBit(i);
+                        stateArray = fitOptimization.setArrayToState(state);
+                        results = CurveFitter.getInstance(curve, fitOptimization.getTargetStar()).fitCurveAndGetResults(stateArray);
 
-                    var newState = new FitOptimization.MinimumState(state, results.rms());
-                    if (newState.lessThan(minimumState)) {
-                        improvedState = improvedState.flipBit(i);
-                        rmsChanged = true;
+                        if (Double.isNaN(results.rms()) || results.rms() <= 0 || Double.isNaN(results.bic())) continue;
+
+                        var newState = new FitOptimization.MinimumState(state, results.rms());
+                        if (newState.lessThan(minimumState)) {
+                            improvedState = improvedState.flipBit(i);
+                            rmsChanged = true;
+                        }
+
+                        state = state.flipBit(i);
+                        counter = counter.add(BigInteger.ONE);
                     }
-
-                    state = state.flipBit(i);
-                    counter = counter.add(BigInteger.ONE);
                 }
+
+                state = improvedState;
+
+                var newRemaining = getOnBits(state);
+                if (iterRemaining == newRemaining && !rmsChanged) {
+                    itersOfUnchangedState++;
+                    continue;
+                }
+
+                iterRemaining = newRemaining;
+                itersOfUnchangedState = 0;
             }
 
-            state = improvedState;
-
-            var newRemaining = getOnBits(state);
-            if (iterRemaining == newRemaining && !rmsChanged) {
-                itersOfUnchangedState++;
-                continue;
+            if (!rmsChanged && convergence > 0) {
+                break;
             }
 
-            iterRemaining = newRemaining;
-            itersOfUnchangedState = 0;
+            convergence++;
+            convergenceTries++;
         }
 
         // Reevaluate results for final state to ensure RMS is up to date

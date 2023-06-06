@@ -48,18 +48,16 @@ public class CompStarFitting extends Optimizer {
         return minimumState;
     }
 
-    //todo don't go through BigInt for state as it isn't needed here
     private FitOptimization.MinimumState quickOptiSolver() {
         var minimumState = new FitOptimization.MinimumState();
         BigInteger counter = BigInteger.ZERO;
 
+        // The startState is a compressed representation of all 1s
         BigInteger state = startState;
 
-        // The startState is a compressed representation of all 1s
+        fitOptimization.compCounter.setBasis(fitOptimization.compCounter.getBasis().multiply(BigInteger.valueOf(2L)));
+
         var iterRemaining = getOnBits(state);
-
-        fitOptimization.compCounter.setBasis(fitOptimization.compCounter.getBasis().multiply(BigInteger.valueOf(iterRemaining * 2L)));
-
         var convergence = 0;
         var convergenceTries = 0;
         while (convergence < 2 && convergenceTries < 3) {

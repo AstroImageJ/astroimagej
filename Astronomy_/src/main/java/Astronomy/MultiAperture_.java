@@ -1033,7 +1033,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         Prefs.set(MultiAperture_.PREFS_ENABLEDOUBLECLICKS, enableDoubleClicks);
 //        Prefs.set (MultiAperture_.PREFS_FOLLOW, follow);
         Prefs.set(MultiAperture_.PREFS_AUTOMODE, "false");
-        Prefs.set(MultiAperture_.PREFS_FINISHED, "true");
+        if (!(this instanceof Stack_Aligner)) {
+            Prefs.set(MultiAperture_.PREFS_FINISHED, "true");
+        }
         Prefs.set(MultiAperture_.PREFS_USEMACROIMAGE, "false");
         Prefs.set(MultiAperture_.PREFS_XLOCATION, xLocation);
         Prefs.set(MultiAperture_.PREFS_YLOCATION, yLocation);
@@ -1424,8 +1426,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     g.getNo().setToolTipText("Cancel the automatic comp star extraction, " +
                             "but continue with manual aperture placement");
                     g.getCancel().setToolTipText("Cancel both automatic and manual aperture placement");
-                    g.showDialog();
                     IJ.beep();
+                    g.showDialog();
                     if (g.wasCanceled()) {
                         cancelled = true;
                         ocanvas.removeRoi(warning);

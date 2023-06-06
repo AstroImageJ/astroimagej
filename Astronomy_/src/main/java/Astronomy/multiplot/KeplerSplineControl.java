@@ -144,13 +144,13 @@ public class KeplerSplineControl {
         var displayGroup = new ButtonGroup();
         for (KeplerSplineSettings.DisplayType displayType : KeplerSplineSettings.DisplayType.values()) {
             var radio = new JRadioButton(displayType.displayName());
+            if (settings.displayType.get() == displayType) {
+                radio.setSelected(true);
+            }
             radio.addActionListener($ -> {
                 settings.displayType.set(displayType);
                 updatePlot();
             });
-            if (settings.displayType.get() == displayType) {
-                radio.setSelected(true);
-            }
             displayGroup.add(radio);
             c.gridy++;
             panel.add(radio, c);

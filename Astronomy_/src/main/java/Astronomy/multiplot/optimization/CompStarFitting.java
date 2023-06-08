@@ -175,6 +175,8 @@ public class CompStarFitting extends Optimizer {
                 var newState = new FitOptimization.MinimumState(state, results.rms());
                 if (!newState.lessThan(minimumState)) {
                     state = state.flipBit(i);
+                } else {
+                    minimumState = newState;
                 }
 
                 counter = counter.add(BigInteger.ONE);

@@ -74,7 +74,8 @@ public class CompStarFitting extends Optimizer {
             var itersOfUnchangedState = 0;
             var improvedState = state;
             var rmsChanged = false;
-            while (iterRemaining > 0 && itersOfUnchangedState <= 1) {
+            var convergenceTries = 0;
+            while (iterRemaining > 0 && itersOfUnchangedState <= 1 && (convergenceTries < 3 || convergence < 1)) {
                 if (Thread.interrupted()) break;
                 rmsChanged = false;
 
@@ -117,6 +118,7 @@ public class CompStarFitting extends Optimizer {
 
                 iterRemaining = newRemaining;
                 itersOfUnchangedState = 0;
+                convergenceTries++;
             }
 
             if (!rmsChanged && convergence > 0) {

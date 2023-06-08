@@ -3781,7 +3781,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         llab.append(" (input average=").append(inputAverageOverSize[curve]).append(")");
                     }
                     if (showOutBinRms && binDisplay[curve]) {
-                        llab.append(" (RMS=").append(uptoTwoPlaces.format(outBinRms[curve])).append("/").append(uptoTwoPlaces.format(minutes.get(curve).first())).append(" min)");
+                        llab.append(" (RMS=").append(uptoTwoPlaces.format(outBinRms[curve])).append(" ppt/").append(uptoTwoPlaces.format(minutes.get(curve).first())).append(" min)");
                     }
                     if (showLSymbolInfo) llab.append(" (").append(markers[markerIndex[curve]]).append(")");
                 }

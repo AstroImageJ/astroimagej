@@ -422,6 +422,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         Prefs.set(MultiAperture_.PREFS_CANCELED, "false");
         cancelled = false;
         firstRun = true;
+        if (this instanceof Stack_Aligner) {
+            autoMode = false;
+        }
         this.getMeasurementPrefs();
         suffix = "_T1";
         if (!autoMode) {

@@ -1026,7 +1026,7 @@ public class FitOptimization implements AutoCloseable {
         }
     }
 
-    public class ToolTipWrapper implements ToolTipProvider {
+    public static class ToolTipWrapper implements ToolTipProvider {
         final Object value;
         final String toolTip;
 
@@ -1046,7 +1046,7 @@ public class FitOptimization implements AutoCloseable {
         }
     }
 
-    public class ToolTipRenderer extends DefaultListCellRenderer {
+    public static class ToolTipRenderer extends DefaultListCellRenderer {
 
         @Override
         public Component getListCellRendererComponent(JList list, Object value,

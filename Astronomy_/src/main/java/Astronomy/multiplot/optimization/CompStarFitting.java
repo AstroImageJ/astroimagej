@@ -64,6 +64,7 @@ public class CompStarFitting extends Optimizer {
         fitOptimization.compCounter.setBasis(fitOptimization.compCounter.getBasis().multiply(BigInteger.valueOf(2L)));
 
         var iterRemaining = getOnBits(state);
+        var maxCompStars = iterRemaining;
 
         fitOptimization.compCounter.setBasis(fitOptimization.compCounter.getBasis().multiply(BigInteger.valueOf(iterRemaining * 2L)));
 
@@ -75,7 +76,7 @@ public class CompStarFitting extends Optimizer {
             var improvedState = state;
             var rmsChanged = false;
             var convergenceTries = 0;
-            while (iterRemaining > 0 && itersOfUnchangedState <= 1 && (convergenceTries < 3 || convergence < 1)) {
+            while (iterRemaining > 0 && itersOfUnchangedState <= 1 && (convergenceTries < maxCompStars || convergence < 1)) {
                 if (Thread.interrupted()) break;
                 rmsChanged = false;
 

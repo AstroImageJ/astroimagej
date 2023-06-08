@@ -2,6 +2,7 @@
 package Astronomy;
 
 import Astronomy.multiplot.KeplerSplineControl;
+import Astronomy.multiplot.settings.KeplerSplineSettings;
 import astroj.*;
 import flanagan.analysis.Regression;
 import flanagan.math.Minimization;
@@ -10106,6 +10107,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             if (vmarker1spinner != null && !showXAxisNormal) dmarker3spinner.setValue(dMarker3Value);
             Prefs.set("plot.vMarker1Value", vMarker1Value);
             Prefs.set("plot.vMarker2Value", vMarker2Value);
+            for (int i = 0; i < maxCurves; i++) {
+                new KeplerSplineSettings(i).fixedKnotDensity.set(4*duration);
+            }
             updatePlot(updateAllFits());
         });
         durationspinner.addMouseWheelListener(e -> durationspinner.setValue((Double) durationspinner.getValue() - e.getWheelRotation() * durationStep));

@@ -29,6 +29,7 @@ public class CompStarFitting extends Optimizer {
     private FitOptimization.MinimumState bruteForceSolver() {
         var minimumState = new FitOptimization.MinimumState();
         BigInteger counter = BigInteger.ZERO;
+        fitOptimization.compCounter.setSpinner(false);
         for (BigInteger state = startState; state.compareTo(endState) <= 0; state = state.add(BigInteger.ONE)) {
             if (state.equals(BigInteger.ZERO)) continue;
             if (Thread.interrupted()) break;
@@ -55,9 +56,13 @@ public class CompStarFitting extends Optimizer {
         // The startState is a compressed representation of all 1s
         BigInteger state = startState;
 
+        fitOptimization.compCounter.setSpinner(true);
         fitOptimization.compCounter.setBasis(fitOptimization.compCounter.getBasis().multiply(BigInteger.valueOf(2L)));
 
         var iterRemaining = getOnBits(state);
+
+        fitOptimization.compCounter.setBasis(fitOptimization.compCounter.getBasis().multiply(BigInteger.valueOf(iterRemaining * 2L)));
+
         var convergence = 0;
         var convergenceTries = 0;
         while (convergence < 2 && convergenceTries < 3) {

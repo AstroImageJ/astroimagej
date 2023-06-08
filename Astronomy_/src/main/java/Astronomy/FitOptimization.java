@@ -11,6 +11,7 @@ import ij.Prefs;
 import ij.astro.io.prefs.Property;
 import ij.astro.logging.AIJLogger;
 import ij.astro.util.UIHelper;
+import ij.util.FontUtil;
 import util.GenericSwingDialog;
 
 import javax.swing.*;
@@ -1066,6 +1067,9 @@ public class FitOptimization implements AutoCloseable {
         JTextField textField;
         BigInteger basis, sum;
         Hashtable<Long, BigInteger> counters = new Hashtable<>(getThreadCount());
+        boolean isSpinner= false;
+        private static final String[] spinner = new String[]{"⠋","⠙","⠚","⠓"/*,"⠖","⠛"*/};
+        private static Font oldFont;
 
         public DynamicCounter(JTextField field) {
             super();
@@ -1075,7 +1079,9 @@ public class FitOptimization implements AutoCloseable {
         public void dynamicSet(BigInteger integer) {
             if (integer == null) return;
             setCounter(integer);
-            SwingUtilities.invokeLater(() -> textField.setText(getTotalCount().toString()));
+            SwingUtilities.invokeLater(() ->
+                    textField.setText(isSpinner ? spinner[(int)(integer.longValue() % spinner.length)] :
+                            getTotalCount().toString()));
         }
 
         public synchronized BigInteger getSum() {
@@ -1091,6 +1097,20 @@ public class FitOptimization implements AutoCloseable {
             sum = BigInteger.ZERO;
             counters.clear();
             SwingUtilities.invokeLater(() -> textField.setText(integer.toString()));
+        }
+
+        public void setSpinner(boolean spinner) {
+            isSpinner = spinner;
+
+            if (oldFont == null) {
+                oldFont = textField.getFont();
+            }
+
+            if (isSpinner) {
+                textField.setFont(FontUtil.getFont("Serif", Font.PLAIN, 12));
+            } else {
+                textField.setFont(oldFont);
+            }
         }
 
         private synchronized BigInteger getTotalCount() {

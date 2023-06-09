@@ -10,6 +10,7 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.HashSet;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -174,6 +175,9 @@ public class Property<T> {
             for (Field declaredField : ownerClass.getDeclaredFields()) {
                 if (Property.class.isAssignableFrom(declaredField.getType())) {
                     try {
+                        if (Modifier.isStatic(declaredField.getModifiers()) && owner != null) {
+                            continue;
+                        }
                         if (!declaredField.canAccess(owner)) {
                             declaredField.trySetAccessible();
                         }

@@ -151,7 +151,7 @@ public class CompStarFitting extends Optimizer {
 
         var compStarCount = getOnBits(state);
 
-        fitOptimization.compCounter.setBasis(BigInteger.valueOf(compStarCount));
+        fitOptimization.compCounter.setBasis(BigInteger.valueOf(compStarCount*compStarCount));
 
         var oldState = state;
         for (int $ = 0; $ < compStarCount; $++) {

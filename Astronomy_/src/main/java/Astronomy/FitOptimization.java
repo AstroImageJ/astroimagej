@@ -72,6 +72,7 @@ public class FitOptimization implements AutoCloseable {
     private RollingAvg rollingAvg = new RollingAvg();
     private JSpinner detrendEpsilon;
     private final JTextField difNumTF = new JTextField("0");
+    private static final Property<CompStarFitting.Mode> compStarMode = new Property<>(CompStarFitting.Mode.EXHAUSTIVE, FitOptimization.class);
 
     // Init. after numAps is set
     public FitOptimization(int curve, int epsilon) {
@@ -247,6 +248,12 @@ public class FitOptimization implements AutoCloseable {
         compOptiCards.add(compOptiButtonStart);
         compOptiCards.add(compOptiButtonCancel);
 
+        switch (compStarMode.get()) {
+            case EXHAUSTIVE -> compOptimizationSelection.setSelectedItem(compBruteForce);
+            case MODERATE -> compOptimizationSelection.setSelectedItem(compQuickOpti);
+            case QUICK -> compOptimizationSelection.setSelectedItem(simpleQuickOpti);
+        }
+
         compOptiButtonStart.addActionListener($ -> {
             CardLayout cl = (CardLayout) compOptiCards.getLayout();
             cl.next(compOptiCards);
@@ -254,10 +261,13 @@ public class FitOptimization implements AutoCloseable {
                 testCompMin();
                 MultiPlot_.updatePlot(curve);
             } else if (Objects.equals(compOptimizationSelection.getSelectedItem(), compBruteForce)) {
+                compStarMode.set(CompStarFitting.Mode.EXHAUSTIVE);
                 Executors.newSingleThreadExecutor().submit(this::minimizeCompStarsByBruteForce);
             } else if (Objects.equals(compOptimizationSelection.getSelectedItem(), compQuickOpti)) {
+                compStarMode.set(CompStarFitting.Mode.MODERATE);
                 Executors.newSingleThreadExecutor().submit(this::minimizeCompStarsByQuickOpti);
             } else if (Objects.equals(compOptimizationSelection.getSelectedItem(), simpleQuickOpti)) {
+                compStarMode.set(CompStarFitting.Mode.QUICK);
                 Executors.newSingleThreadExecutor().submit(this::minimizeCompStarsBySimpleOpti);
             }
         });
@@ -640,7 +650,7 @@ public class FitOptimization implements AutoCloseable {
         scheduleIpsCounter(0);
 
         var finalState = divideTasksAndRun(new MinimumState(initState, Double.MAX_VALUE),
-                ($, end) -> new CompStarFitting(end, this, CompStarFitting.Mode.QUICK), false);
+                ($, end) -> new CompStarFitting(end, this, CompStarFitting.Mode.MODERATE), false);
 
         setFinalState("RMS", finalState.stateArray, MultiPlot_.refStarCB);
         compCounter.setBasis(BigInteger.ZERO);
@@ -674,7 +684,7 @@ public class FitOptimization implements AutoCloseable {
         scheduleIpsCounter(0);
 
         var finalState = divideTasksAndRun(new MinimumState(initState, Double.MAX_VALUE),
-                ($, end) -> new CompStarFitting(end, this, CompStarFitting.Mode.SIMPLE), false);
+                ($, end) -> new CompStarFitting(end, this, CompStarFitting.Mode.QUICK), false);
 
         setFinalState("RMS", finalState.stateArray, MultiPlot_.refStarCB);
         compCounter.setBasis(BigInteger.ZERO);

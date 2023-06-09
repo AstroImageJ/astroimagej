@@ -25,8 +25,8 @@ public class CompStarFitting extends Optimizer {
     public FitOptimization.MinimumState call() throws Exception {
         return switch (mode) {
             case EXHAUSTIVE -> bruteForceSolver();
-            case QUICK -> quickOptiSolver();
-            case SIMPLE -> simpleOptiSolver();
+            case MODERATE -> quickOptiSolver();
+            case QUICK -> simpleOptiSolver();
         };
     }
 
@@ -209,7 +209,7 @@ public class CompStarFitting extends Optimizer {
 
     public enum Mode {
         EXHAUSTIVE,
-        QUICK,
-        SIMPLE
+        MODERATE,
+        QUICK
     }
 }

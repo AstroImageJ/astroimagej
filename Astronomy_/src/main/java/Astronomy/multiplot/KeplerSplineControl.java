@@ -24,7 +24,7 @@ import static Astronomy.MultiPlot_.*;
 
 public class KeplerSplineControl {
     private final int curve;
-    private final KeplerSplineSettings settings;
+    public final KeplerSplineSettings settings;
     private Window window = null;
     private static final LinkedHashMap<Integer, KeplerSplineControl> INSTANCES = new LinkedHashMap<>();
     private static final ExecutorService RUNNER = Executors.newSingleThreadExecutor();
@@ -84,6 +84,7 @@ public class KeplerSplineControl {
             if (s.window != null) {
                 s.window.setVisible(false);
                 s.window.dispose();
+                s.settings.fixedKnotDensity.clearListeners();
             }
         }));
     }
@@ -178,6 +179,7 @@ public class KeplerSplineControl {
         panel.add(radio, c);
         var controlBox = Box.createHorizontalBox();
         var control = new JSpinner(new SpinnerNumberModel(settings.fixedKnotDensity.get().doubleValue(), 0.01, Double.MAX_VALUE, 0.1));
+        settings.fixedKnotDensity.addListener(($, d) -> control.setValue(d));
         control.addChangeListener($ -> {
             settings.fixedKnotDensity.set(((Double) control.getValue()));
             updatePlot();

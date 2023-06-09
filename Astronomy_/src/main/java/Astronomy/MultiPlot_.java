@@ -10108,7 +10108,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             Prefs.set("plot.vMarker1Value", vMarker1Value);
             Prefs.set("plot.vMarker2Value", vMarker2Value);
             for (int i = 0; i < maxCurves; i++) {
-                new KeplerSplineSettings(i).fixedKnotDensity.set(4*duration);
+                KeplerSplineControl.getInstance(i).settings.fixedKnotDensity.set(4*duration);
             }
             updatePlot(updateAllFits());
         });

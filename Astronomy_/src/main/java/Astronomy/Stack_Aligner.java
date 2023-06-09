@@ -472,7 +472,7 @@ public class Stack_Aligner extends MultiAperture_
         @Override
         public void shutDown() {
             super.shutDown();
-            Prefs.set("stackaligner.finished", true);
+            Prefs.set("stackAligner.finished", true);
         }
 
         /**

@@ -2752,7 +2752,7 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
 
     public void saveAndClose() {
         Prefs.set("multiaperture.canceled", true);
-        Prefs.set("dataprocessor.finished", true);
+        Prefs.set("dataproc.finished", true);
         if (timer != null) timer.cancel();
         if (task != null) task.cancel();
         running = false;

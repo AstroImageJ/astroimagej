@@ -2,7 +2,6 @@
 package Astronomy;
 
 import Astronomy.multiplot.KeplerSplineControl;
-import Astronomy.multiplot.settings.KeplerSplineSettings;
 import astroj.*;
 import flanagan.analysis.Regression;
 import flanagan.math.Minimization;
@@ -22,6 +21,7 @@ import ij.process.ImageProcessor;
 import ij.text.TextPanel;
 import ij.util.Tools;
 import org.hipparchus.linear.MatrixUtils;
+import util.ColorUtil;
 import util.GenericSwingDialog;
 import util.PlotDataBinning;
 
@@ -3533,7 +3533,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
                 }
 
-                plot.setColor(binDisplay[curve] ? Color.LIGHT_GRAY : color[curve]);
+                plot.setColor(binDisplay[curve] ? lighter(color[curve]) : color[curve]);
 
                 if (binDisplay[curve] || marker[curve] == ij.gui.Plot.DOT) { plot.setLineWidth(dotSize.get()); } else plot.setLineWidth(1);
 
@@ -3541,7 +3541,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
                 plot.setLineWidth(1);
 
-                if (binDisplay[curve]) plot.setColor(Color.gray);
+                if (binDisplay[curve]) plot.setColor(lighter(color[curve]));
                 if ((showErrors[curve] || operatorIndex[curve] == 6) && (hasErrors[curve] || hasOpErrors[curve]))     //code to replace plot.addErrorBars
                 {               //since plot.addErrorBars only plots with lines enabled
                     for (int j = 0; j < nn[curve]; j++) {
@@ -16663,6 +16663,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
      */
     static Color withoutAlpha(Color color) {
         return new Color(color.getRGB() | 0xFF000000);
+    }
+
+    static Color lighter(Color color) {
+        return ColorUtil.makeBrighter(color);
     }
 
     static void createMpcFormatDialog() {

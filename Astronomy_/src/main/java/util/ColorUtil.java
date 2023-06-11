@@ -4,10 +4,10 @@ import java.awt.*;
 
 public class ColorUtil {
     public static Color makeBrighter(Color color) {
-        return mixColorsWithContrast(color, Color.WHITE);
+        var c = mixColorsWithContrast(color, Color.WHITE);
+        return new Color(c.getRed(), c.getGreen(), c.getBlue(), color.getAlpha());
     }
 
-    //todo fix black and white mixing returning white
     public static Color mixColorsWithContrast(Color color1, Color color2) {
         double brightness1 = calculatePerceivedBrightness(color1);
         double brightness2 = calculatePerceivedBrightness(color2);
@@ -16,7 +16,7 @@ public class ColorUtil {
         double ratio = brightness1 / (brightness1 + brightness2);
 
         // Force black to behave
-        if (ratio == 0 || ratio == 1) {
+        if (ratio == 0 || ratio == 1) {//todo use midpoint instead of radio?
             ratio = 0.6;
         } /*else {
             ratio *= 1.055; // Bias towards the first (non-white) color

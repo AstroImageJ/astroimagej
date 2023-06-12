@@ -1,10 +1,15 @@
-package nom.tam.image;
+/**
+ * (<i>for internal use</i>) Finding the right compression classes for every occasion. It's weird that it is in its own
+ * package, rather than being part of hte base compression package, but that's life.
+ */
+
+package nom.tam.fits.compression.provider;
 
 /*-
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2022 nom-tam-fits
+ * Copyright (C) 1996 - 2023 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -30,52 +35,3 @@ package nom.tam.image;
  * OTHER DEALINGS IN THE SOFTWARE.
  * #L%
  */
-
-/**
- * Provides 2D tiling support for images.
- * 
- * @author Attila Kovacs #since 1.18
- */
-public interface ITileOption {
-
-    /**
-     * Returns the current tile height for the implementing class.
-     * 
-     * @return (pixels) the current tile height.
-     * @see #setTileHeight(int)
-     * @see #getTileWidth()
-     */
-    int getTileHeight();
-
-    /**
-     * Returns the current tile width for the implementing class.
-     * 
-     * @return (pixels) the current tile width.
-     * @see #setTileWidth(int)
-     * @see #getTileHeight()
-     */
-    int getTileWidth();
-
-    /**
-     * Sets a new tile height for the implementing class.
-     * 
-     * @param value
-     *            (pixels) the new tile height.
-     * @return itself
-     * @see #getTileHeight()
-     * @see #setTileWidth(int)
-     */
-    ITileOption setTileHeight(int value);
-
-    /**
-     * Sets a new tile width for the implementing class.
-     * 
-     * @param value
-     *            (pixels) the new tile width.
-     * @return itself
-     * @see #getTileWidth()
-     * @see #setTileHeight(int)
-     */
-    ITileOption setTileWidth(int value);
-
-}

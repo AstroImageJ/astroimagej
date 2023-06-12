@@ -4,17 +4,22 @@ import nom.tam.fits.header.Bitpix;
 import nom.tam.util.ArrayDataInput;
 import nom.tam.util.ArrayDataOutput;
 
+import java.nio.Buffer;
+
 import static nom.tam.fits.header.Standard.*;
 
 /**
- * A subclass of <code>Data</code> containing no actual Data. It wraps an underlying data of <code>null</code>.
- * 
+ * A subclass of <code>Data</code> containing no actual data. It wraps an underlying data of <code>null</code>.
+ *
  * @author Attila Kovacs
+ *
+ * @since  1.18
  * 
- * @since 1.18
+ * @see    NullDataHDU
  */
-public final class NullData extends Data {
+public final class NullData extends ImageData {
 
+    @SuppressWarnings("deprecation")
     @Override
     protected void fillHeader(Header head) {
         head.setSimple(true);
@@ -52,6 +57,11 @@ public final class NullData extends Data {
 
     @Override
     public void write(ArrayDataOutput o) {
+    }
+
+    @Override
+    public void setBuffer(Buffer data) {
+        // Nothing to do.
     }
 
 }

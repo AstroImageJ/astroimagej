@@ -66,7 +66,7 @@ public class ArrayDataFile extends BufferedFileIO {
      * @see #setDecoder(InputDecoder)
      */
     protected void setEncoder(OutputEncoder java2bin) {
-        this.encoder = java2bin;
+        encoder = java2bin;
     }
 
     /**
@@ -79,7 +79,7 @@ public class ArrayDataFile extends BufferedFileIO {
      * @see #setEncoder(OutputEncoder)
      * @see #getDecoder()
      */
-    protected OutputEncoder getEncoder() {
+    public OutputEncoder getEncoder() {
         return encoder;
     }
 
@@ -94,7 +94,7 @@ public class ArrayDataFile extends BufferedFileIO {
      * @see #setEncoder(OutputEncoder)
      */
     protected void setDecoder(InputDecoder bin2java) {
-        this.decoder = bin2java;
+        decoder = bin2java;
     }
 
     /**
@@ -107,7 +107,7 @@ public class ArrayDataFile extends BufferedFileIO {
      * @see #setDecoder(InputDecoder)
      * @see #getEncoder()
      */
-    protected InputDecoder getDecoder() {
+    public InputDecoder getDecoder() {
         return decoder;
     }
 

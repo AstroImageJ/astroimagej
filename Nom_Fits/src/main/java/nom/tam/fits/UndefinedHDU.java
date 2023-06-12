@@ -1,10 +1,10 @@
 package nom.tam.fits;
 
-/*
+/*-
  * #%L
- * nom.tam FITS library
+ * nom.tam.fits
  * %%
- * Copyright (C) 2004 - 2021 nom-tam-fits
+ * Copyright (C) 1996 - 2023 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  * 
@@ -31,15 +31,16 @@ package nom.tam.fits;
  * #L%
  */
 
-import nom.tam.util.FitsEncoder;
+import nom.tam.fits.header.Standard;
 
 import java.io.PrintStream;
 
-import static nom.tam.fits.header.Standard.NAXIS;
 import static nom.tam.fits.header.Standard.XTENSION;
 
 /**
- * Holder for unknown data types.
+ * A HDU that holds a type of data we don't recognise.
+ * 
+ * @see UndefinedData
  */
 public class UndefinedHDU extends BasicHDU<UndefinedData> {
 
@@ -49,13 +50,13 @@ public class UndefinedHDU extends BasicHDU<UndefinedData> {
     }
 
     /**
-     * @deprecated This should be for internal use only. Will reduce visibility in the future
-     * 
-     * @return Encapsulate an object as an UndefinedHDU.
-     * 
-     * @param o the object to encapsulate
-     * 
-     * @throws FitsException if the operation failed
+     * @deprecated               (<i>for internal use</i>) Will reduce visibility in the future
+     *
+     * @return                   Encapsulate an object as an UndefinedHDU.
+     *
+     * @param      o             the object to encapsulate
+     *
+     * @throws     FitsException if the operation failed
      */
     @Deprecated
     public static UndefinedData encapsulate(Object o) throws FitsException {
@@ -63,51 +64,56 @@ public class UndefinedHDU extends BasicHDU<UndefinedData> {
     }
 
     /**
-     * Check if we can use the following object as in an Undefined FITS block. We allow this so long as computeLSize can
-     * get a size. Note that computeLSize may be wrong!
-     * 
-     * @deprecated This should be for internal use only. Will reduce visibility in the future
-     * 
-     * @param o The Object being tested.
-     * 
-     * @return true if o can be an Undefined FITS block.
+     * Checks if we can use the following object as in an Undefined FITS block. Only <code>byte[]</code> arrays can be
+     * represented in undefined HDUs.
+     *
+     * @deprecated   (<i>for internal use</i>) Will reduce visibility in the future
+     *
+     * @param      o a data object
+     *
+     * @return       <code>true</code> if the object is a raw <code>byte[]</code> array, otherwise <code>false</code>.
+     *                   We cannot wrap arbitrary data objects since we do not have a generic recipe for converting
+     *                   these into binary form.
      */
     @Deprecated
     public static boolean isData(Object o) {
-        try {
-            return FitsEncoder.computeSize(o) > 0;
-        } catch (IllegalArgumentException e) {
-            return false;
-        }
+        return o instanceof byte[];
     }
 
     /**
-     * Check if we can find the length of the data for this header.
-     * 
-     * @deprecated This should be for internal use only. Will reduce visibility in the future
-     * 
-     * @param hdr header to check.
-     * 
-     * @return <CODE>true</CODE> if this HDU has a valid header.
+     * Checks if the header is for a HDU we don't really know how to handle. We can still retrieve and store the binary
+     * tata of the HDU as a raw <code>byte[]</code> image.
+     *
+     * @deprecated     (<i>for internal use</i>) Will reduce visibility in the future
+     *
+     * @param      hdr header to check.
+     *
+     * @return         <CODE>true</CODE> if this HDU has a valid header.
      */
     @Deprecated
     public static boolean isHeader(Header hdr) {
-        if (hdr.getStringValue(XTENSION) != null && hdr.getIntValue(NAXIS, -1) >= 0) {
-            return true;
+        if (ImageHDU.isHeader(hdr)) {
+            return false;
         }
-        return false;
+        if (BinaryTableHDU.isHeader(hdr)) {
+            return false;
+        }
+        if (AsciiTableHDU.isHeader(hdr)) {
+            return false;
+        }
+        return hdr.containsKey(Standard.XTENSION);
     }
 
     /**
      * Prepares a data object into which the actual data can be read from an input subsequently or at a later time.
-     * 
-     * @deprecated This should be for internal use only. Will reduce visibility in the future
-     * 
-     * @param hdr The FITS header that describes the data
-     * 
-     * @return A data object that support reading content from a stream.
-     * 
-     * @throws FitsException if the data could not be prepared to prescriotion.
+     *
+     * @deprecated               (<i>for internal use</i>) Will reduce visibility in the future
+     *
+     * @param      hdr           The FITS header that describes the data
+     *
+     * @return                   A data object that support reading content from a stream.
+     *
+     * @throws     FitsException if the data could not be prepared to prescriotion.
      */
     @Deprecated
     public static Data manufactureData(Header hdr) throws FitsException {
@@ -115,13 +121,13 @@ public class UndefinedHDU extends BasicHDU<UndefinedData> {
     }
 
     /**
-     * @deprecated This should be for internal use only. Will reduce visibility in the future
-     * 
-     * @return Create a header that describes the given image data.
-     * 
-     * @param d The image to be described.
-     * 
-     * @throws FitsException if the object does not contain valid image data.
+     * @deprecated               (<i>for internal use</i>) Will reduce visibility in the future
+     *
+     * @return                   Create a header that describes the given image data.
+     *
+     * @param      d             The image to be described.
+     *
+     * @throws     FitsException if the object does not contain valid image data.
      */
     @Deprecated
     public static Header manufactureHeader(Data d) throws FitsException {
@@ -135,20 +141,22 @@ public class UndefinedHDU extends BasicHDU<UndefinedData> {
     /**
      * Build an image HDU using the supplied data.
      * 
-     * @param h the header for this HDU
-     * @param d the data used to build the image.
-     * 
-     * @throws FitsException if there was a problem with the data.
+     * @deprecated               (<i>for internal use</i>) Its visibility should be reduced to package level in the
+     *                               future.
+     *
+     * @param      h             the header for this HDU
+     * @param      d             the data used to build the image.
+     *
+     * @throws     FitsException if there was a problem with the data.
      */
     public UndefinedHDU(Header h, UndefinedData d) throws FitsException {
         super(h, d);
-
     }
 
     @Override
     public void info(PrintStream stream) {
         stream.println("  Unhandled/Undefined/Unknown Type");
-        stream.println("  XTENSION=" + this.myHeader.getStringValue(XTENSION).trim());
-        stream.println("  Apparent size:" + this.myData.getTrueSize());
+        stream.println("  XTENSION=" + myHeader.getStringValue(XTENSION).trim());
+        stream.println("  Apparent size:" + myData.getTrueSize());
     }
 }

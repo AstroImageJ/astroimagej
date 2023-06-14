@@ -6,6 +6,7 @@ import astroj.IJU;
 import com.astroimagej.bspline.KeplerSpline;
 import com.astroimagej.bspline.util.Pair;
 import flanagan.analysis.Smooth;
+import ij.astro.util.EmojiIcon;
 import ij.astro.util.UIHelper;
 import org.hipparchus.linear.MatrixUtils;
 import org.hipparchus.linear.RealVector;
@@ -168,15 +169,15 @@ public class KeplerSplineControl {
 
         // Knot density
         var densityGroup = new ButtonGroup();
-        var radio = new JRadioButton("KeplerSpline fixed knot spacing:");
-        densityGroup.add(radio);
-        radio.addActionListener($ -> {
+        var radioFixedKnot = new JRadioButton("KeplerSpline fixed knot spacing:");
+        densityGroup.add(radioFixedKnot);
+        radioFixedKnot.addActionListener($ -> {
             settings.knotDensity.set(KeplerSplineSettings.KnotDensity.FIXED);
             updatePlot();
         });
-        radio.setToolTipText("Uses keplerspline to fit a spline using a fixed user selected knot spacing. Default = 0.5");
-        radio.setSelected(settings.knotDensity.get() == KeplerSplineSettings.KnotDensity.FIXED);
-        panel.add(radio, c);
+        radioFixedKnot.setToolTipText("Uses keplerspline to fit a spline using a fixed user selected knot spacing. Default = 0.5");
+        radioFixedKnot.setSelected(settings.knotDensity.get() == KeplerSplineSettings.KnotDensity.FIXED);
+        panel.add(radioFixedKnot, c);
         var controlBox = Box.createHorizontalBox();
         var control = new JSpinner(new SpinnerNumberModel(settings.fixedKnotDensity.get().doubleValue(), 0.01, Double.MAX_VALUE, 0.1));
         settings.fixedKnotDensity.addListener(($, d) -> control.setValue(d));
@@ -194,7 +195,7 @@ public class KeplerSplineControl {
         panel.add(controlBox, c);
         c.gridx = 0;
         c.gridy++;
-        radio = new JRadioButton("KeplerSpline auto knot spacing");
+        var radio = new JRadioButton("KeplerSpline auto knot spacing");
         densityGroup.add(radio);
         radio.addActionListener($ -> {
             settings.knotDensity.set(KeplerSplineSettings.KnotDensity.AUTO);
@@ -254,6 +255,24 @@ public class KeplerSplineControl {
         GenericSwingDialog.getTextFieldFromSpinner(control3).ifPresent(f -> f.setColumns(5));
         modifySpinner(control3);
         controlBox.add(control3);
+        c.gridx = 0;
+        b = Box.createHorizontalBox();
+        b.add(new JLabel("Knot Spacing: "));
+        b.add(bkSpaceDisplay);
+        b.setToolTipText("Indicates the fitted or fixed spline knot spacing.");
+        bkSpaceDisplay.setToolTipText("Indicates the fitted or fixed spline knot spacing.");
+        var copyButton = new JButton(new EmojiIcon("\uD83D\uDDAC", 18));
+        copyButton.setMargin(new Insets(0, 0, 0, 0));
+        copyButton.addActionListener($ -> {
+            settings.fixedKnotDensity.set(Double.valueOf(bkSpaceDisplay.getText()));
+            radioFixedKnot.setSelected(true);
+        });
+        copyButton.setToolTipText("Save auto knot spacing to fixed.");
+        b.add(copyButton);
+        c.gridwidth = 3;
+        panel.add(b, c);
+        c.gridwidth = 1;
+        c.gridx++;
         label = new JLabel(" Spline iterations");
         label.setToolTipText("The number of knot spacings between min and max that are considered when finding the best spline fit.");
         controlBox.add(label);
@@ -294,21 +313,6 @@ public class KeplerSplineControl {
         c.fill = GridBagConstraints.NONE;
         c.gridwidth = 1;
         c.weighty = 0;
-
-        // Metadata display
-        var box = Box.createHorizontalBox();
-        box.add(new JLabel("Knot Spacing: "));
-        box.add(bkSpaceDisplay);
-        box.setToolTipText("Indicates the fitted or fixed spline knot spacing.");
-        bkSpaceDisplay.setToolTipText("Indicates the fitted or fixed spline knot spacing.");
-        panel.add(box, c);
-        box = Box.createHorizontalBox();
-        c.gridx = 1;
-        box.add(new JLabel("BIC: "));
-        box.add(bicDisplay);
-        box.setToolTipText("Indicates the BIC of the spline fit.");
-        bicDisplay.setToolTipText("Indicates the BIC of the spline fit.");
-        panel.add(box, c);
         c.gridy++;
         c.gridx = 0;
 

@@ -72,7 +72,7 @@ public class FitOptimization implements AutoCloseable {
     private RollingAvg rollingAvg = new RollingAvg();
     private JSpinner detrendEpsilon;
     private final JTextField difNumTF = new JTextField("0");
-    private static final Property<CompStarFitting.Mode> compStarMode = new Property<>(CompStarFitting.Mode.EXHAUSTIVE, FitOptimization.class);
+    private static final Property<CompStarFitting.Mode> compStarMode = new Property<>(CompStarFitting.Mode.QUICK, FitOptimization.class);
 
     // Init. after numAps is set
     public FitOptimization(int curve, int epsilon) {

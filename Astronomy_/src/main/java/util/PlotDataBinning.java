@@ -62,12 +62,24 @@ public class PlotDataBinning {
             var bins = new DataBin[nBins];
             Arrays.setAll(bins, DataBin::new);
 
+            var lastUsedBin = 0;
             for (int i = 0; i < x.length; i++) {
-                var p = 0;
                 var accepted = false;
-                while (!accepted && p < bins.length) {
+
+                for (int p = lastUsedBin; p < bins.length; p++) {
                     accepted = bins[p].accept(binBounds, x[i], y[i], err[i]);
-                    p++;
+                    if (accepted) {
+                        lastUsedBin = p;
+                        break;
+                    }
+                }
+
+                for (int p = lastUsedBin; p >= 0; p--) {
+                    accepted = bins[p].accept(binBounds, x[i], y[i], err[i]);
+                    if (accepted) {
+                        lastUsedBin = p;
+                        break;
+                    }
                 }
 
                 if (!accepted) throw new RuntimeException("data did not fit into a bin");

@@ -14,7 +14,6 @@ import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
 import ij.process.ShortProcessor;
 import nom.tam.fits.Fits;
-import nom.tam.fits.Header;
 import nom.tam.fits.HeaderCard;
 import nom.tam.fits.ImageHDU;
 import nom.tam.fits.header.Compression;
@@ -196,7 +195,7 @@ public class FITS_Writer implements PlugIn {
 				// Write a primary HDU with the minimum required header
 				// The first HDU cannot be compressed when adding multiple HDUs.
 				// Some programs cannot handle compressed-first HDUs
-				new ImageHDU(new Header(), null).write(out);
+				Fits.makeHDU((Object) null).write(out);
 			}
 
 			IJ.showStatus("Converting data and writing...");
@@ -430,6 +429,7 @@ public class FITS_Writer implements PlugIn {
 	 *
 	 * @param img		The ImagePlus image which has the FITS header in it's "Info" property.
 	 */
+	@AstroImageJ(reason = "Don't assume headers start with SIMPLE", modified = true)
 	public static String[] getHeader (ImagePlus img, int slice) {
 		String content = null;
 
@@ -461,9 +461,10 @@ public class FITS_Writer implements PlugIn {
 
 		int istart = 0;
 		for (; istart < lines.length; istart++) {
-			if (lines[istart].startsWith("SIMPLE") ) break;
+			if (lines[istart].trim().startsWith("AIJ-HEADER-MARKER")) break;
 		}
 		if (istart == lines.length) return null;
+		istart++;
 
 		int iend = istart+1;
 		for (; iend < lines.length; iend++) {

@@ -8,7 +8,6 @@ import ij.astro.AstroImageJ;
 import ij.astro.logging.AIJLogger;
 import ij.astro.logging.Translation;
 import ij.astro.types.Pair;
-import ij.astro.util.ArrayBoxingUtil;
 import ij.astro.util.ImageType;
 import ij.astro.util.LeapSeconds;
 import ij.astro.util.SkyAlgorithmsTimeUtil;
@@ -246,6 +245,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		final var baos = new ByteArrayOutputStream();
 		final var utf8 = StandardCharsets.UTF_8.name();
 		try (PrintStream ps = new PrintStream(baos, true, utf8)) {
+			ps.println("AIJ-HEADER-MARKER");
 			header.dumpHeader(ps);
 		} catch (Exception ignored) {}
 
@@ -466,7 +466,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 						}
 					}
 					// Force SIMPLE at the top of the header for header processing such as WCS
-					displayHdu.getHeader().setSimple(true);
+					//displayHdu.getHeader().setSimple(true);
 				}
 			}
 			return !isCalImage;
@@ -544,14 +544,16 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		hdr.deleteKey("DATE-END");
 
 		try {
-			var bjds = (Number[]) ArrayBoxingUtil.boxArray(tableHDU.getColumn("TIME"));
-			var quality = (Number[]) ArrayBoxingUtil.boxArray(tableHDU.getColumn("QUALITY"));
+			//todo not sure this is a big improvement or not
+			var bjdColumn = tableHDU.findColumn("TIME");
+			var qualityColumn = tableHDU.findColumn("QUALITY");
 
 			// Control for logging data
 			var hasErrors = false;
 
 			for (int i = 0; i < tableHDU.getNRows(); i++) {
-				hdr.setSimple(true); // Needed for MA to read the header data
+				//todo mark, test tessCut tables
+				//hdr.setSimple(true); // Needed for MA to read the header data
 
 				// Delete previously added keys as hdr object is not a copy and is shared for all images
 				hdr.deleteKey("BJD_TDB");
@@ -562,15 +564,16 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 
 				var bjd0 = 2457000d;
 				var bjd1 = 0d;
-				bjd1 = bjds[i].doubleValue();
+				bjd1 = ((double[])tableHDU.getElement(i, bjdColumn))[0];
 				if (!Double.isNaN(bjd0 + bjd1)) hdr.addValue("BJD_TDB", bjd0 + bjd1, "Calc. BJD_TDB");
 
+				var quality = ((int[])tableHDU.getElement(i, qualityColumn))[0];
 				if (isTessSpocFfiCut(tableHDU) || isTessTicaFfiFull(tableHDU)) {
 					// If the image should be skipped add this card, string check for 'AIJ_Q' to skip image
 					// Based on TESS Cut code by John Kielkopf
-					if ((!skipTessQualCheck && quality[i].intValue() != 0)) {
+					if ((!skipTessQualCheck && quality != 0)) {
 						hasErrors = true;
-						hdr.addValue("AIJ_Q", quality[i].intValue() != 0, "Skipped due to quality flag");
+						hdr.addValue("AIJ_Q", true, "Skipped due to quality flag");
 					} else if (Double.isNaN(bjd1)) {
 						hasErrors = true;
 						hdr.addValue("NO_BJD", 0, "Skipped due to invalid or missing BJD time");
@@ -581,11 +584,11 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 					}
 				} else if (isTessSpocPostageStamp(hdus)) {
 					hdr.addValue("OBJECT", hdus[0].getHeader().getStringValue("OBJECT"), "Object ID");
-					if (quality[i].intValue() == 8) {
-						hdr.addValue("AIJ_Q2", quality[i].intValue() != 0, "Null image");
-					} else if ((!skipTessQualCheck && quality[i].intValue() != 0)) {
+					if (quality == 8) {
+						hdr.addValue("AIJ_Q2", true, "Null image");
+					} else if ((!skipTessQualCheck && quality != 0)) {
 						hasErrors = true;
-						hdr.addValue("AIJ_Q", quality[i].intValue() != 0, "Skipped due to quality flag");
+						hdr.addValue("AIJ_Q", true, "Skipped due to quality flag");
 					} else if (Double.isNaN(bjd1)) {
 						hasErrors = true;
 						hdr.addValue("NO_BJD", 0, "Skipped due to invalid or missing BJD time");
@@ -596,6 +599,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 				final var baos = new ByteArrayOutputStream();
 				final var utf8 = StandardCharsets.UTF_8.name();
 				try (PrintStream ps = new PrintStream(baos, true, utf8)) {
+					ps.println("AIJ-HEADER-MARKER");
 					hdr.dumpHeader(ps);
 				} catch (Exception ignored) {}
 
@@ -739,6 +743,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		final var baos = new ByteArrayOutputStream();
 		final var utf8 = StandardCharsets.UTF_8.name();
 		try (PrintStream ps = new PrintStream(baos, true, utf8)) {
+			ps.println("AIJ-HEADER-MARKER");
 			hdu.getHeader().dumpHeader(ps);
 			headers.add(baos.toString(utf8));
 		} catch (Exception ignored) {}
@@ -816,10 +821,10 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			if (filter != null && !filter.matchesFilter(hdr)) continue;
 
 			var header = "";
-			hdr.setSimple(true); // Needed for MA
 			final var baos = new ByteArrayOutputStream();
 			final var utf8 = StandardCharsets.UTF_8.name();
 			try (PrintStream ps = new PrintStream(baos, true, utf8)) {
+				ps.println("AIJ-HEADER-MARKER");
 				hdr.dumpHeader(ps);
 				header = baos.toString(utf8);
 			} catch (Exception ignored) {}

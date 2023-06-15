@@ -132,9 +132,10 @@ public class FitsJ
 		int istart = 0;
 		for (; istart < lines.length; istart++)
 			{
-			if (lines[istart].trim().startsWith("SIMPLE") ) break;
+			if (lines[istart].trim().startsWith("AIJ-HEADER-MARKER")) break;
 			}
 		if (istart == lines.length) return null;
+		istart++;
 
 		int iend = istart+1;
 		for (; iend < lines.length; iend++)

@@ -153,10 +153,7 @@ public class WCS
 	protected void process (String title, int nx, int ny, int nz, FitsJ.Header hdr)
 		{
 		// FITS HEADER PRESENT?
-
-		int icard = FitsJ.findCardWithKey ("SIMPLE",hdr);
-		int jcard = FitsJ.findCardWithKey ("END",hdr);
-		if (icard < 0 || jcard < 0) return;
+		if (hdr == null) return;
 
 //		int naxis=-1;
 		hasRADEC = false;
@@ -164,7 +161,7 @@ public class WCS
 		// GET NUMBER OF AXES
         
         int nax = -1;
-		icard = FitsJ.findCardWithKey ("NAXIS",hdr);  
+		int icard = FitsJ.findCardWithKey ("NAXIS",hdr);
 		if (icard >= 0)
 			nax = FitsJ.getCardIntValue (hdr.cards()[icard]);
 		if (nax <= 0)

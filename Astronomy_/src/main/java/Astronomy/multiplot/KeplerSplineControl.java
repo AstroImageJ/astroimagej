@@ -426,10 +426,18 @@ public class KeplerSplineControl {
     }
 
     public void smoothData(double[] x, double[] y, int size, RealVector mask) {
-        var ks = makeSplineGenerator().fit(x, y, size, mask);
+        Pair<RealVector, KeplerSpline.SplineMetadata> ks = null;
+        if (settings.displayType.get() != KeplerSplineSettings.DisplayType.RAW_DATA) {
+            ks = makeSplineGenerator().fit(x, y, size, mask);
+        }
 
         var errorState = false;
-        if (settings.knotDensity.get() == KeplerSplineSettings.KnotDensity.LEGACY_SMOOTHER) {
+        if (settings.displayType.get() == KeplerSplineSettings.DisplayType.RAW_DATA || ks == null) {
+            bkSpaceDisplay.setText("N/A");
+            bicDisplay.setText("N/A");
+            errorDisplay.setText("N/A");
+            errorDisplay.setDisabledTextColor(Color.BLACK);
+        } else if (settings.knotDensity.get() == KeplerSplineSettings.KnotDensity.LEGACY_SMOOTHER) {
             bkSpaceDisplay.setText("N/A");
             bicDisplay.setText("N/A");
             errorDisplay.setText("N/A");
@@ -439,11 +447,11 @@ public class KeplerSplineControl {
             if (lastSplineFit.bic == null) {
                 bkSpaceDisplay.setText("N/A");
                 bicDisplay.setText("N/A");
-                errorDisplay.setText("failed");
+                errorDisplay.setText("Failed");
                 errorDisplay.setDisabledTextColor(Color.RED);
                 errorState = true;
             } else {
-                errorDisplay.setText("success");
+                errorDisplay.setText("Success");
                 errorDisplay.setDisabledTextColor(darkGreen);
                 bkSpaceDisplay.setText(FORMATTER.format(lastSplineFit.bkSpace));
                 bicDisplay.setText(FORMATTER.format(lastSplineFit.bic));
@@ -452,14 +460,18 @@ public class KeplerSplineControl {
 
         switch (settings.displayType.get()) {
             case FITTED_SPLINE -> {
-                for (int xx = 0; xx < size; xx++) {
-                    y[xx] = ks.first().getEntry(xx);
+                if (ks != null) {
+                    for (int xx = 0; xx < size; xx++) {
+                        y[xx] = ks.first().getEntry(xx);
+                    }
                 }
             }
             case FLATTENED_LIGHT_CURVE -> {
-                var avg = Arrays.stream(y).limit(size).summaryStatistics().getAverage();
-                for (int xx = 0; xx < size; xx++) {
-                    y[xx] = (y[xx] - ks.first().getEntry(xx)) + avg;
+                if (ks != null) {
+                    var avg = Arrays.stream(y).limit(size).summaryStatistics().getAverage();
+                    for (int xx = 0; xx < size; xx++) {
+                        y[xx] = (y[xx] - ks.first().getEntry(xx)) + avg;
+                    }
                 }
             }
             case RAW_DATA -> {
@@ -604,6 +616,9 @@ public class KeplerSplineControl {
     }
 
     private void updatePlot() {
+        bkSpaceDisplay.setText("---");
+        errorDisplay.setDisabledTextColor(Color.BLACK);
+        errorDisplay.setText("Running...");
         RUNNER.submit(() -> MultiPlot_.updatePlot());
     }
 

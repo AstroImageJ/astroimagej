@@ -74,11 +74,13 @@ public class PlotDataBinning {
                     }
                 }
 
-                for (int p = lastUsedBin; p >= 0; p--) {
-                    accepted = bins[p].accept(binBounds, x[i], y[i], err[i]);
-                    if (accepted) {
-                        lastUsedBin = p;
-                        break;
+                if (!accepted) {
+                    for (int p = lastUsedBin; p >= 0; p--) {
+                        accepted = bins[p].accept(binBounds, x[i], y[i], err[i]);
+                        if (accepted) {
+                            lastUsedBin = p;
+                            break;
+                        }
                     }
                 }
 

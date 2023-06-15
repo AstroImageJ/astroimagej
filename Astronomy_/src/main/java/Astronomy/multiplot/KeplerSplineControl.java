@@ -398,6 +398,7 @@ public class KeplerSplineControl {
         c.gridx = 0;
         var button = new JButton("Apply current spline settings to all curves");
         button.addActionListener($ -> duplicateSettings(settings));
+        c.gridwidth = 2;
         panel.add(button, c);
 
         c.gridx++;

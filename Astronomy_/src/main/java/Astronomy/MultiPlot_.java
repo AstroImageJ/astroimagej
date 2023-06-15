@@ -687,7 +687,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static JComboBox<ImageIcon>[] detrendtypecombobox;
     static JComboBox<String> jdcolumnbox, racolumnbox, deccolumnbox;
     static JCheckBox[] uselinesbox;
-    static JCheckBox[] usesmoothbox;
     static JCheckBox[] autoscaleincludebox;
     static JCheckBox[] forcebox, shiftAboveBox, shiftBelowBox;
 
@@ -6492,7 +6491,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         normtypecombobox = new JComboBox[maxCurves];
         detrendtypecombobox = new JComboBox[maxCurves];
         uselinesbox = new JCheckBox[maxCurves];
-        usesmoothbox = new JCheckBox[maxCurves];
         forcebox = new JCheckBox[maxCurves];
         shiftAboveBox = new JCheckBox[maxCurves];
         shiftBelowBox = new JCheckBox[maxCurves];
@@ -11294,16 +11292,16 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         mainsubpanelgroup.add(inputAverageOverSizespinner[c]);
 
         var smoothP = Box.createHorizontalBox();
-        usesmoothbox[c] = new JCheckBox("", smooth[c]);
-        usesmoothbox[c].addItemListener(e -> {
+        var usesmoothbox = new JCheckBox("", smooth[c]);//new TristateCheckBox()
+        usesmoothbox.addItemListener(e -> {
             if (e.getStateChange() == ItemEvent.DESELECTED) {
                 smooth[c] = false;
             } else if (e.getStateChange() == ItemEvent.SELECTED) smooth[c] = true;
             updatePlot(updateOneFit(c));
         });
-        usesmoothbox[c].setHorizontalAlignment(JLabel.CENTER);
-        usesmoothbox[c].setToolTipText("Enable spline smoothing. Typically used with continuous space-based data.");
-        smoothP.add(usesmoothbox[c]);
+        usesmoothbox.setHorizontalAlignment(JLabel.CENTER);
+        usesmoothbox.setToolTipText("Enable spline smoothing. Typically used with continuous space-based data.");
+        smoothP.add(usesmoothbox);
 
         var smoothGear = new JButton("⛭");
         smoothGear.setFont(smoothGear.getFont().deriveFont(18F));

@@ -65,10 +65,9 @@ public class PlotDataBinning {
             for (int i = 0; i < x.length; i++) {
                 var p = 0;
                 var accepted = false;
-                while (!accepted) {
+                while (!accepted && p < bins.length) {
                     accepted = bins[p].accept(binBounds, x[i], y[i], err[i]);
                     p++;
-                    if (p == bins.length) break;
                 }
 
                 if (!accepted) throw new RuntimeException("data did not fit into a bin");

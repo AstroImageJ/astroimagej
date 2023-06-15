@@ -10506,7 +10506,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             leftDragReleased = false;
             zoom = 0.0;
             updatePlot(updateAllFits());
-            plotWindow.toFront();
+            if (plotWindow != null) {
+                plotWindow.toFront();
+            }
         });
         line1morepanelspanel.add(updateplotbutton);
 

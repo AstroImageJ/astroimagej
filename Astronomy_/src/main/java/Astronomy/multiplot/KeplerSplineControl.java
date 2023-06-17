@@ -17,6 +17,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.text.DecimalFormat;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -33,6 +34,7 @@ public class KeplerSplineControl {
     private final JTextField bkSpaceDisplay;
     private final JTextField errorDisplay;
     static DecimalFormat FORMATTER = new DecimalFormat("######0.00", IJU.dfs);
+    private final HashSet<FitListener> fitListeners = new HashSet<>();
 
     public KeplerSplineControl(int curve) {
         this.curve = curve;
@@ -86,6 +88,7 @@ public class KeplerSplineControl {
                 s.window.setVisible(false);
                 s.window.dispose();
                 s.settings.fixedKnotDensity.clearListeners();
+                s.settings.displayType.clearListeners();
             }
         }));
     }
@@ -149,14 +152,25 @@ public class KeplerSplineControl {
             if (settings.displayType.get() == displayType) {
                 radio.setSelected(true);
             }
+            settings.displayType.addListener((k, d) -> {
+                if (d == displayType) {
+                    radio.setSelected(true);
+                }
+            });
             radio.addActionListener($ -> {
                 settings.displayType.set(displayType);
-                updatePlot();
+                if (displayType == KeplerSplineSettings.DisplayType.RAW_DATA) {
+                    bkSpaceDisplay.setText("N/A");
+                    bicDisplay.setText("N/A");
+                    errorDisplay.setText("N/A");
+                    errorDisplay.setDisabledTextColor(Color.BLACK);
+                }
             });
             displayGroup.add(radio);
             c.gridy++;
             panel.add(radio, c);
         }
+
         c.gridy++;
         c.fill = GridBagConstraints.BOTH;
         c.gridwidth = GridBagConstraints.REMAINDER;
@@ -183,7 +197,9 @@ public class KeplerSplineControl {
         settings.fixedKnotDensity.addListener(($, d) -> control.setValue(d));
         control.addChangeListener($ -> {
             settings.fixedKnotDensity.set(((Double) control.getValue()));
-            updatePlot();
+            if (settings.knotDensity.get() == KeplerSplineSettings.KnotDensity.FIXED) {
+                updatePlot();
+            }
         });
         control.setToolTipText("The user selected knot spacing of the spline fit.");
         modifySpinner(control);
@@ -211,7 +227,9 @@ public class KeplerSplineControl {
         control1.setToolTipText("The minimum spline knot spacing considered for the fit.");
         control1.addChangeListener($ -> {
             settings.minKnotDensity.set(((Double) control1.getValue()));
-            updatePlot();
+            if (settings.knotDensity.get() == KeplerSplineSettings.KnotDensity.AUTO) {
+                updatePlot();
+            }
         });
         modifySpinner(control1);
         GenericSwingDialog.getTextFieldFromSpinner(control1).ifPresent(f -> f.setColumns(5));
@@ -225,7 +243,9 @@ public class KeplerSplineControl {
         control2.setToolTipText("The maximum spline knot spacing considered for the fit.");
         control2.addChangeListener($ -> {
             settings.maxKnotDensity.set(((Double) control2.getValue()));
-            updatePlot();
+            if (settings.knotDensity.get() == KeplerSplineSettings.KnotDensity.AUTO) {
+                updatePlot();
+            }
         });
         modifySpinner(control2);
         clampingSpinners(control1, control2);
@@ -241,7 +261,9 @@ public class KeplerSplineControl {
         control3.setToolTipText("The number of knot spacings between min and max that are considered when finding the best spline fit.");
         control3.addChangeListener($ -> {
             settings.knotDensitySteps.set(((Integer) control3.getValue()));
-            updatePlot();
+            if (settings.knotDensity.get() == KeplerSplineSettings.KnotDensity.AUTO) {
+                updatePlot();
+            }
         });
         c.gridx = 0;
         var b = Box.createHorizontalBox();
@@ -294,7 +316,9 @@ public class KeplerSplineControl {
         control7.setToolTipText("<html>This is the smoothing length in units if data samples (not time).<br> Default is 31 for 30 min TESS FFIs, 93 for 10 min FFIs, and 279 for 200 sec FFIs.<br>Multiple sectors with breaks in the data and mixed FFI exposure times are not handled properly by legacy smoother.</html>");
         control7.addChangeListener($ -> {
             settings.smoothLength.set(((Number) control7.getValue()).intValue());
-            updatePlot();
+            if (settings.knotDensity.get() == KeplerSplineSettings.KnotDensity.LEGACY_SMOOTHER) {
+                updatePlot();
+            }
         });
         modifySpinner(control7);
         GenericSwingDialog.getTextFieldFromSpinner(control7).ifPresent(f -> f.setColumns(5));
@@ -425,9 +449,15 @@ public class KeplerSplineControl {
         return window;
     }
 
+    public void addFitListener(FitListener listener) {
+        fitListeners.add(listener);
+    }
+
     public void smoothData(double[] x, double[] y, int size, RealVector mask) {
+        fitListeners.forEach(l -> l.accept(FitState.NO_FIT));
         Pair<RealVector, KeplerSpline.SplineMetadata> ks = null;
         if (settings.displayType.get() != KeplerSplineSettings.DisplayType.RAW_DATA) {
+            fitListeners.forEach(l -> l.accept(FitState.FITTING));
             ks = makeSplineGenerator().fit(x, y, size, mask);
         }
 
@@ -458,6 +488,11 @@ public class KeplerSplineControl {
             }
         }
 
+        if (errorState) {
+            fitListeners.forEach(l -> l.accept(FitState.FAILED));
+            return;
+        }
+
         switch (settings.displayType.get()) {
             case FITTED_SPLINE -> {
                 if (ks != null) {
@@ -480,6 +515,8 @@ public class KeplerSplineControl {
                 }
             }
         }
+
+        fitListeners.forEach(l -> l.accept(FitState.SUCCESS));
     }
 
     private KeplerSplineApplicator makeSplineGenerator() {
@@ -625,5 +662,23 @@ public class KeplerSplineControl {
     @FunctionalInterface
     interface KeplerSplineApplicator {
         com.astroimagej.bspline.util.Pair<org.hipparchus.linear.RealVector, KeplerSpline.SplineMetadata> fit(double[] xs, double[] ys, int size, RealVector mask);
+    }
+
+    @FunctionalInterface
+    public interface FitListener {
+        void accept(FitState fitState);
+    }
+
+    public enum FitState {
+        NO_FIT(Color.BLACK),
+        FITTING(Color.CYAN),
+        FAILED(Color.RED),
+        SUCCESS(Color.GREEN);
+
+        public final Color color;
+
+        FitState(Color color) {
+            this.color = color;
+        }
     }
 }

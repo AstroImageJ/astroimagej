@@ -2,11 +2,13 @@
 package Astronomy;
 
 import Astronomy.multiplot.KeplerSplineControl;
+import Astronomy.multiplot.settings.KeplerSplineSettings;
 import astroj.*;
 import flanagan.analysis.Regression;
 import flanagan.math.Minimization;
 import flanagan.math.MinimizationFunction;
 import ij.*;
+import ij.astro.gui.TriStateCheckBox;
 import ij.astro.io.prefs.Property;
 import ij.astro.types.Pair;
 import ij.astro.util.PdfPlotOutput;
@@ -1018,7 +1020,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 //                }
                 if (table != null) {
                     loadConfigOfOpenTable(table.getFilePath());
-                    table.show();
+                    table.show();//todo don't call when table is open
                     WindowManager.getFrame(table.shortTitle()).setVisible(true);
                     forceUpdate = true;
                 }
@@ -3545,8 +3547,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 {               //since plot.addErrorBars only plots with lines enabled
                     for (int j = 0; j < nn[curve]; j++) {
                         plot.drawLine(x[curve][j], y[curve][j] - yerr[curve][j], x[curve][j], y[curve][j] + yerr[curve][j]);
-                        plot.drawLine(x[curve][j] - (3.0 * (plotMaxX - plotMinX) / plotSizeX), y[curve][j] + yerr[curve][j], x[curve][j] + (3.0 * (plotMaxX - plotMinX) / plotSizeX), y[curve][j] + yerr[curve][j]);
-                        plot.drawLine(x[curve][j] - (3.0 * (plotMaxX - plotMinX) / plotSizeX), y[curve][j] - yerr[curve][j], x[curve][j] + (3.0 * (plotMaxX - plotMinX) / plotSizeX), y[curve][j] - yerr[curve][j]);
+                        //plot.drawLine(x[curve][j] - (3.0 * (plotMaxX - plotMinX) / plotSizeX), y[curve][j] + yerr[curve][j], x[curve][j] + (3.0 * (plotMaxX - plotMinX) / plotSizeX), y[curve][j] + yerr[curve][j]);
+                        //plot.drawLine(x[curve][j] - (3.0 * (plotMaxX - plotMinX) / plotSizeX), y[curve][j] - yerr[curve][j], x[curve][j] + (3.0 * (plotMaxX - plotMinX) / plotSizeX), y[curve][j] - yerr[curve][j]);
                     }
                 }
 
@@ -11294,12 +11296,18 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         mainsubpanelgroup.add(inputAverageOverSizespinner[c]);
 
         var smoothP = Box.createHorizontalBox();
-        var usesmoothbox = new JCheckBox("", smooth[c]);//new TristateCheckBox()
-        usesmoothbox.addItemListener(e -> {
-            if (e.getStateChange() == ItemEvent.DESELECTED) {
-                smooth[c] = false;
-            } else if (e.getStateChange() == ItemEvent.SELECTED) smooth[c] = true;
-            updatePlot(updateOneFit(c));
+        var usesmoothbox = new TriStateCheckBox(KeplerSplineControl.getInstance(c).settings.getTriStateDisplay());
+        usesmoothbox.addActionListener($ -> {
+            smooth[c] = usesmoothbox.isNotDisabled();
+            switch (usesmoothbox.getState()) {
+                case DISABLED -> KeplerSplineControl.getInstance(c).settings.displayType.set(KeplerSplineSettings.DisplayType.RAW_DATA);
+                case ENABLED -> KeplerSplineControl.getInstance(c).settings.displayType.set(KeplerSplineSettings.DisplayType.FLATTENED_LIGHT_CURVE);
+                case INTERMEDIATE -> KeplerSplineControl.getInstance(c).settings.displayType.set(KeplerSplineSettings.DisplayType.FITTED_SPLINE);
+            }
+        });
+        KeplerSplineControl.getInstance(c).settings.displayType.addListener((k, d) -> {
+            usesmoothbox.setState(KeplerSplineControl.getInstance(c).settings.getTriStateDisplay());
+            updatePlot(c);
         });
         usesmoothbox.setHorizontalAlignment(JLabel.CENTER);
         usesmoothbox.setToolTipText("Enable spline smoothing. Typically used with continuous space-based data.");
@@ -11309,8 +11317,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         smoothGear.setFont(smoothGear.getFont().deriveFont(18F));
         smoothGear.addActionListener(e -> {
             KeplerSplineControl.getInstance(c).displayPanel();
-            updatePlot(updateOneFit(c));
         });
+        KeplerSplineControl.getInstance(c).addFitListener(s -> smoothGear.setForeground(s.color));
+        KeplerSplineControl.getInstance(c).settings.displayType.addListener((k, d) -> smoothGear.setForeground(Color.BLACK));
         smoothGear.setHorizontalAlignment(JLabel.CENTER);
         smoothGear.setMargin(new Insets(0, 0, 0, 0));
         smoothGear.setToolTipText("Spline smoothing settings. Typically used with continuous space-based data.");

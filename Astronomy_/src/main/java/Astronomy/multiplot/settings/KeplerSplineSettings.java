@@ -1,12 +1,13 @@
 package Astronomy.multiplot.settings;
 
+import ij.astro.gui.TriStateCheckBox;
 import ij.astro.io.prefs.Property;
 
 import java.awt.*;
 import java.lang.reflect.Field;
 
 public class KeplerSplineSettings {
-    public final Property<DisplayType> displayType = makePlotProperty(DisplayType.FLATTENED_LIGHT_CURVE);
+    public final Property<DisplayType> displayType = makePlotProperty(DisplayType.RAW_DATA);
     public final Property<KnotDensity> knotDensity = makePlotProperty(KnotDensity.FIXED);
     public final Property<Double> fixedKnotDensity = makePlotProperty(0.5);
     public final Property<Double> minKnotDensity = makePlotProperty(0.5);
@@ -42,6 +43,14 @@ public class KeplerSplineSettings {
                 e.printStackTrace();
             }
         }
+    }
+
+    public TriStateCheckBox.TriState getTriStateDisplay() {
+        return switch (displayType.get()) {
+            case RAW_DATA -> TriStateCheckBox.TriState.DISABLED;
+            case FITTED_SPLINE -> TriStateCheckBox.TriState.INTERMEDIATE;
+            case FLATTENED_LIGHT_CURVE -> TriStateCheckBox.TriState.ENABLED;
+        };
     }
 
     private <T> Property<T> makePlotProperty(T defaultValue) {

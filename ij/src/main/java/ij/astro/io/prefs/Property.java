@@ -23,7 +23,7 @@ import java.util.function.Supplier;
 public class Property<T> {
     private final Object owner;
     private final Class<?> ownerClass;
-    private T value;
+    private volatile T value;
 
     private String propertyKey;
     private boolean hasBuiltKey = false;
@@ -78,7 +78,12 @@ public class Property<T> {
 
     public void set(T value) {
         updatePrefs(value);
+        this.value = value;
         listeners.forEach(l -> l.valueChanged(getPropertyKey(), value));
+    }
+
+    public void setWithoutNotify(T value) {
+        updatePrefs(value);
         this.value = value;
     }
 

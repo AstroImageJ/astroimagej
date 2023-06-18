@@ -78,10 +78,13 @@ public class Property<T> {
         return value;
     }
 
+    @SuppressWarnings("unchecked")
     public void set(T value) {
         updatePrefs(value);
         this.value = value;
-        listeners.forEach(l -> l.valueChanged(getPropertyKey(), value));
+        for (PropertyChangeListener<T> l : listeners.toArray(PropertyChangeListener[]::new)) {
+            l.valueChanged(getPropertyKey(), value);
+        }
     }
 
     public void setWithoutNotify(T value) {

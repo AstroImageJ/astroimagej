@@ -18037,7 +18037,12 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             } else if ("false".equals(bd)) {
                 bd = TriStateCheckBox.TriState.DISABLED.name();
             }
-            binDisplay[i] = TriStateCheckBox.TriState.valueOf(bd);
+            try {
+                binDisplay[i] = TriStateCheckBox.TriState.valueOf(bd);
+            } catch (Exception e) {
+                e.printStackTrace();
+                binDisplay[i] = TriStateCheckBox.TriState.DISABLED;
+            }
         }
     }
 

@@ -17969,8 +17969,13 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             ylabel[i] = Prefs.get("plot.ylabel" + i, ylabel[i]);
             lines[i] = Prefs.get("plot.lines" + i, lines[i]);
             smooth[i] = Prefs.get("plot.smooth" + i, smooth[i]);
-            smoothLen[i] = (int) Prefs.get("plot.smoothLen" + i, smoothLen[i]);
-            if (smoothLen[i] < 1) smoothLen[i] = 31;
+            if (Prefs.containsKey("plot.smooth" + i)) {
+                if (!smooth[i]) {
+                    KeplerSplineControl.getInstance(i).settings.displayType.set(KeplerSplineSettings.DisplayType.RAW_DATA);
+                }
+            }
+            smooth[i] = false;
+            Prefs.remove("plot.smooth" + i);
             markerIndex[i] = (int) Prefs.get("plot.markerIndex" + i, markerIndex[i]);
             residualSymbolIndex[i] = (int) Prefs.get("plot.residualSymbolIndex" + i, residualSymbolIndex[i]);
             colorIndex[i] = (int) Prefs.get("plot.colorIndex" + i, colorIndex[i]);
@@ -18295,8 +18300,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             Prefs.set("plot.ylabel" + i, ylabel[i]);
             Prefs.set("plot.oplabel" + i, oplabel[i]);
             Prefs.set("plot.lines" + i, lines[i]);
-            Prefs.set("plot.smooth" + i, smooth[i]);
-            Prefs.set("plot.smoothLen" + i, smoothLen[i]);
             Prefs.set("plot.markerIndex" + i, markerIndex[i]);
             Prefs.set("plot.residualSymbolIndex" + i, residualSymbolIndex[i]);
             Prefs.set("plot.colorIndex" + i, colorIndex[i]);
@@ -18340,8 +18343,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 Prefs.set("plot.useCustomFitStep[" + i + "][" + v + "]", useCustomFitStep[i][v]);
                 Prefs.set("plot.fitStep[" + i + "][" + v + "]", fitStep[i][v]);
             }
-            Prefs.set("plot.displayBinMinutes[" + i +"]", minutes.get(i).first());
-            Prefs.set("plot.displayBin[" + i +"]", binDisplay[i].name());
+            if (i < minutes.size()) {
+                Prefs.set("plot.displayBinMinutes[" + i +"]", minutes.get(i).first());
+                Prefs.set("plot.displayBin[" + i +"]", binDisplay[i].name());
+            }
         }
     }
 }

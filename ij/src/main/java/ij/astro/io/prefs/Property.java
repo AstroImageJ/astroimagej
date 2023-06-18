@@ -11,7 +11,9 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -32,7 +34,7 @@ public class Property<T> {
     private final Supplier<String> keySuffix;
     private final Supplier<String> keyPrefix;
     private final Class<T> type;
-    final HashSet<PropertyChangeListener<T>> listeners = new HashSet<>();
+    final Set<PropertyChangeListener<T>> listeners = Collections.synchronizedSet(new HashSet<>());
 
     public Property(T defaultValue, Object owner) {
         this(defaultValue, "", "", $ -> null, owner);

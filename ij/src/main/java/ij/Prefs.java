@@ -295,6 +295,16 @@ public class Prefs {
 		else
 			return value.equals("true");
 	}
+
+	@AstroImageJ(reason = "Update preferences to new formats")
+	public static void remove(String key) {
+		ijPrefs.remove(KEY_PREFIX+key);
+	}
+
+	@AstroImageJ(reason = "Update preferences to new formats")
+	public static boolean containsKey(String key) {
+		return ijPrefs.containsKey(KEY_PREFIX+key);
+	}
 	
 	/** Finds and loads the configuration file ("IJ_Props.txt")
 	 * and the preferences file ("IJ_Prefs.txt").

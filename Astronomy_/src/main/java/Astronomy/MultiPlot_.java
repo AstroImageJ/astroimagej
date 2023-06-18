@@ -848,7 +848,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static DecimalFormat threePlaces = new DecimalFormat("######0.000", IJU.dfs);
     static DecimalFormat sixPlaces = new DecimalFormat("######0.000000", IJU.dfs);
     static DecimalFormat detrendParameterFormat = new DecimalFormat("######0.000000000000", IJU.dfs);
-    private static boolean[] binDisplay = new boolean[maxCurves];//todo preferences
+    private static TriStateCheckBox.TriState[] binDisplay = new TriStateCheckBox.TriState[maxCurves];
     private static JPanel[] displayBinningPanel = new JPanel[maxCurves];
     private static ArrayList<Pair.GenericPair<Double, JSpinner>> minutes = new ArrayList<>(maxCurves);
     private static boolean showOutBinRms = true;
@@ -3534,15 +3534,17 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
                 }
 
-                plot.setColor(binDisplay[curve] ? lighter(color[curve]) : color[curve]);
+                plot.setColor(binDisplay[curve] != TriStateCheckBox.TriState.DISABLED ? lighter(color[curve]) : color[curve]);
 
-                if (binDisplay[curve] || marker[curve] == ij.gui.Plot.DOT) { plot.setLineWidth(dotSize.get()); } else plot.setLineWidth(1);
+                if (binDisplay[curve] != TriStateCheckBox.TriState.DISABLED || marker[curve] == ij.gui.Plot.DOT) { plot.setLineWidth(dotSize.get()); } else plot.setLineWidth(1);
 
-                plot.addPoints(Arrays.copyOf(x[curve], nn[curve]), Arrays.copyOf(y[curve], nn[curve]), binDisplay[curve] ? Plot.DOT : marker[curve]);
+                if (binDisplay[curve] != TriStateCheckBox.TriState.INTERMEDIATE) {
+                    plot.addPoints(Arrays.copyOf(x[curve], nn[curve]), Arrays.copyOf(y[curve], nn[curve]), binDisplay[curve] != TriStateCheckBox.TriState.DISABLED ? Plot.DOT : marker[curve]);
+                }
 
                 plot.setLineWidth(1);
 
-                if (binDisplay[curve]) plot.setColor(lighter(color[curve]));
+                if (binDisplay[curve] != TriStateCheckBox.TriState.DISABLED) plot.setColor(lighter(color[curve]));
                 if ((showErrors[curve] || operatorIndex[curve] == 6) && (hasErrors[curve] || hasOpErrors[curve]))     //code to replace plot.addErrorBars
                 {               //since plot.addErrorBars only plots with lines enabled
                     for (int j = 0; j < nn[curve]; j++) {
@@ -3552,7 +3554,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     }
                 }
 
-                if (binDisplay[curve]) {
+                if (binDisplay[curve] != TriStateCheckBox.TriState.DISABLED) {
                     // Convert to JD
                     var binWidth = minutes.get(curve).first() / (24D * 60D);
 
@@ -3782,7 +3784,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     if ((inputAverageOverSize[curve] != 1) && showLAvgInfo) {
                         llab.append(" (input average=").append(inputAverageOverSize[curve]).append(")");
                     }
-                    if (showOutBinRms && binDisplay[curve]) {
+                    if (showOutBinRms && binDisplay[curve] != TriStateCheckBox.TriState.DISABLED) {
                         llab.append(" (RMS=").append(uptoTwoPlaces.format(outBinRms[curve])).append(" ppt/").append(uptoTwoPlaces.format(minutes.get(curve).first())).append(" min)");
                     }
                     if (showLSymbolInfo) llab.append(" (").append(markers[markerIndex[curve]]).append(")");
@@ -6246,7 +6248,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         residual = new double[maxCurves][];
         plottedResidual = new double[maxCurves][];
 
-        binDisplay = new boolean[maxCurves];
+        binDisplay = new TriStateCheckBox.TriState[maxCurves];
+        Arrays.fill(binDisplay, TriStateCheckBox.TriState.DISABLED);
 
         start = new double[maxCurves][];
         width = new double[maxCurves][];
@@ -11885,10 +11888,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         displayBinningPanel[c] = new JPanel();
         displayBinningPanel[c].setLayout(new BoxLayout(displayBinningPanel[c], BoxLayout.X_AXIS));
         displayBinningPanel[c].add(Box.createHorizontalStrut(10));
-        var binCB = new JCheckBox();
-        binCB.setSelected(binDisplay[c]);
+        var binCB = new TriStateCheckBox(binDisplay[c]);
         binCB.addActionListener($ -> {
-            binDisplay[c] = binCB.isSelected();
+            binDisplay[c] = binCB.getState();
             updatePlot(c);
         });
         binCB.setToolTipText("Enable data binning for display");
@@ -18029,7 +18031,13 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             } else {
                 minutes.add(new Pair.GenericPair<>(Prefs.get("plot.displayBinMinutes[" + i +"]", 5), null));
             }
-            binDisplay[i] = Prefs.get("plot.displayBin[" + i +"]", binDisplay[i]);
+            var bd = Prefs.get("plot.displayBin[" + i +"]", binDisplay[i].name());
+            if ("true".equals(bd)) {
+                bd = TriStateCheckBox.TriState.ENABLED.name();
+            } else if ("false".equals(bd)) {
+                bd = TriStateCheckBox.TriState.DISABLED.name();
+            }
+            binDisplay[i] = TriStateCheckBox.TriState.valueOf(bd);
         }
     }
 
@@ -18328,7 +18336,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 Prefs.set("plot.fitStep[" + i + "][" + v + "]", fitStep[i][v]);
             }
             Prefs.set("plot.displayBinMinutes[" + i +"]", minutes.get(i).first());
-            Prefs.set("plot.displayBin[" + i +"]", binDisplay[i]);
+            Prefs.set("plot.displayBin[" + i +"]", binDisplay[i].name());
         }
     }
 }

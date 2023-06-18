@@ -71,7 +71,7 @@ public class TriStateCheckBox extends JButton {
         return state != TriState.DISABLED;
     }
 
-    //⍻☐☑☒🗵🗷🗸🗹⮽
+    //⍻☐☑☒■□▣◽◾🗵🗷🗸◻◼🗹⮽█
     public enum TriState {
         DISABLED("☐"),
         INTERMEDIATE("☒"),

@@ -75,13 +75,18 @@ public class TriStateCheckBox extends JButton {
     public enum TriState {
         DISABLED("☐", false),
         ENABLED("☑", true),
-        ALT_ENABLED("◼", true);
+        ALT_ENABLED("■", "☑", true);
 
-        private final EmojiIcon icon;
+        private final Icon icon;
         private final boolean isOn;
 
         TriState(String icon, boolean isOn) {
             this.icon = new EmojiIcon(icon, 19);
+            this.isOn = isOn;
+        }
+
+        TriState(String icon1, String icon2, boolean isOn) {
+            this.icon = new MergedIcon(new EmojiIcon(icon1, 19, Color.LIGHT_GRAY), new EmojiIcon(icon2, 19), -3, 2, true);
             this.isOn = isOn;
         }
 

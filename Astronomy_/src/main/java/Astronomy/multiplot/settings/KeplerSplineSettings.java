@@ -48,7 +48,7 @@ public class KeplerSplineSettings {
     public TriStateCheckBox.TriState getTriStateDisplay() {
         return switch (displayType.get()) {
             case RAW_DATA -> TriStateCheckBox.TriState.DISABLED;
-            case FITTED_SPLINE -> TriStateCheckBox.TriState.INTERMEDIATE;
+            case FITTED_SPLINE -> TriStateCheckBox.TriState.ALT_ENABLED;
             case FLATTENED_LIGHT_CURVE -> TriStateCheckBox.TriState.ENABLED;
         };
     }

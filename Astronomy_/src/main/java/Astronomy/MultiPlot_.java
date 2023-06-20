@@ -3538,7 +3538,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
                 if (binDisplay[curve] != TriStateCheckBox.TriState.DISABLED || marker[curve] == ij.gui.Plot.DOT) { plot.setLineWidth(dotSize.get()); } else plot.setLineWidth(1);
 
-                if (binDisplay[curve] != TriStateCheckBox.TriState.INTERMEDIATE) {
+                if (binDisplay[curve] != TriStateCheckBox.TriState.ALT_ENABLED) {
                     plot.addPoints(Arrays.copyOf(x[curve], nn[curve]), Arrays.copyOf(y[curve], nn[curve]), binDisplay[curve] != TriStateCheckBox.TriState.DISABLED ? Plot.DOT : marker[curve]);
                 }
 
@@ -11305,7 +11305,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             switch (usesmoothbox.getState()) {
                 case DISABLED -> KeplerSplineControl.getInstance(c).settings.displayType.set(KeplerSplineSettings.DisplayType.RAW_DATA);
                 case ENABLED -> KeplerSplineControl.getInstance(c).settings.displayType.set(KeplerSplineSettings.DisplayType.FLATTENED_LIGHT_CURVE);
-                case INTERMEDIATE -> KeplerSplineControl.getInstance(c).settings.displayType.set(KeplerSplineSettings.DisplayType.FITTED_SPLINE);
+                case ALT_ENABLED -> KeplerSplineControl.getInstance(c).settings.displayType.set(KeplerSplineSettings.DisplayType.FITTED_SPLINE);
             }
         });
         KeplerSplineControl.getInstance(c).settings.displayType.addListener((k, d) -> {

@@ -7,14 +7,21 @@ import java.awt.*;
 import java.awt.font.FontRenderContext;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
+import java.util.Objects;
 
 public class EmojiIcon implements Icon {
     private final String text;
     private final int fontSize;
+    private final Color color;
 
     public EmojiIcon(String text, int fontSize) {
-        this.text = text;
+        this(text, fontSize, Color.BLACK);
+    }
+
+    public EmojiIcon(String text, int fontSize, Color color) {
+        this.text = Objects.requireNonNull(text);
         this.fontSize = fontSize;
+        this.color = Objects.requireNonNull(color);
     }
 
     @Override
@@ -24,7 +31,7 @@ public class EmojiIcon implements Icon {
         Font defaultFont = UIManager.getFont("Button.font");
         Font iconFont = defaultFont.deriveFont(Font.PLAIN, fontSize);
         g2d.setFont(iconFont);
-        g2d.setColor(Color.BLACK);
+        g2d.setColor(color);
 
         FontRenderContext frc = g2d.getFontRenderContext();
 

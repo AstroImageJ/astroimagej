@@ -1,7 +1,7 @@
 package Astronomy.multiplot.settings;
 
-import ij.astro.gui.TriStateCheckBox;
 import ij.astro.io.prefs.Property;
+import ij.astro.util.TriState;
 
 import java.awt.*;
 import java.lang.reflect.Field;
@@ -45,11 +45,11 @@ public class KeplerSplineSettings {
         }
     }
 
-    public TriStateCheckBox.TriState getTriStateDisplay() {
+    public TriState getTriStateDisplay() {
         return switch (displayType.get()) {
-            case RAW_DATA -> TriStateCheckBox.TriState.DISABLED;
-            case FITTED_SPLINE -> TriStateCheckBox.TriState.ALT_ENABLED;
-            case FLATTENED_LIGHT_CURVE -> TriStateCheckBox.TriState.ENABLED;
+            case RAW_DATA -> TriState.DISABLED;
+            case FITTED_SPLINE -> TriState.ALT_ENABLED;
+            case FLATTENED_LIGHT_CURVE -> TriState.ENABLED;
         };
     }
 

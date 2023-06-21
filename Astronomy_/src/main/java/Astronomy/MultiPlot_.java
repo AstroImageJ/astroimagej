@@ -11302,7 +11302,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         var smoothP = Box.createHorizontalBox();
         var usesmoothbox = new TriStateCheckBox(KeplerSplineControl.getInstance(c).settings.getTriStateDisplay());
         usesmoothbox.addActionListener($ -> {
-            smooth[c] = usesmoothbox.isNotDisabled();
+            smooth[c] = usesmoothbox.getState().isOn();
             switch (usesmoothbox.getState()) {
                 case DISABLED -> KeplerSplineControl.getInstance(c).settings.displayType.set(KeplerSplineSettings.DisplayType.RAW_DATA);
                 case ENABLED -> KeplerSplineControl.getInstance(c).settings.displayType.set(KeplerSplineSettings.DisplayType.FLATTENED_LIGHT_CURVE);
@@ -11311,7 +11311,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         });
         KeplerSplineControl.getInstance(c).settings.displayType.addListener((k, d) -> {
             usesmoothbox.setState(KeplerSplineControl.getInstance(c).settings.getTriStateDisplay());
-            updatePlot(c);
+            smooth[c] = KeplerSplineControl.getInstance(c).settings.getTriStateDisplay().isOn();
+            KeplerSplineControl.getInstance(c).updatePlot();
         });
         usesmoothbox.setHorizontalAlignment(JLabel.CENTER);
         usesmoothbox.setToolTipText("Enable spline smoothing. Typically used with continuous space-based data.");

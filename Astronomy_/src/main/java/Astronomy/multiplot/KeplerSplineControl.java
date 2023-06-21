@@ -649,14 +649,22 @@ public class KeplerSplineControl {
 
     private void duplicateSettings(KeplerSplineSettings from) {
         INSTANCES.forEach((integer, keplerSplineControl) -> keplerSplineControl.settings.duplicateSettings(from));
-        updatePlot();
+        updatePlot(true);
     }
 
-    private void updatePlot() {
+    public void updatePlot() {
+        updatePlot(false);
+    }
+
+    public void updatePlot(boolean updateAll) {
         bkSpaceDisplay.setText("---");
         errorDisplay.setDisabledTextColor(Color.BLACK);
         errorDisplay.setText("Running...");
-        RUNNER.submit(() -> MultiPlot_.updatePlot());
+        if (updateAll) {
+            RUNNER.submit(() -> MultiPlot_.updatePlot());
+        } else {
+            RUNNER.submit(() -> MultiPlot_.updatePlot(curve));
+        }
     }
 
     @FunctionalInterface

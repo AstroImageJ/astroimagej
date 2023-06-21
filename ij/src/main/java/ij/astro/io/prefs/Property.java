@@ -13,6 +13,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -80,10 +81,13 @@ public class Property<T> {
 
     @SuppressWarnings("unchecked")
     public void set(T value) {
+        var valueChanged = !Objects.equals(value, this.value);
         updatePrefs(value);
         this.value = value;
-        for (PropertyChangeListener<T> l : listeners.toArray(PropertyChangeListener[]::new)) {
-            l.valueChanged(getPropertyKey(), value);
+        if (valueChanged) {
+            for (PropertyChangeListener<T> l : listeners.toArray(PropertyChangeListener[]::new)) {
+                l.valueChanged(getPropertyKey(), value);
+            }
         }
     }
 

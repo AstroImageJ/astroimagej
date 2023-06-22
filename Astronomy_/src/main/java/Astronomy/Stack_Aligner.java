@@ -385,7 +385,7 @@ public class Stack_Aligner extends MultiAperture_
             {
             imp.setProcessor (null, imp.getType()==ImagePlus.COLOR_RGB ? shiftedRGBImage(dx,dy) : shiftedImage(dx,dy));
             //imp.getStack().setSliceLabel("aligned_" + imageFilename, slice);
-            var scienceHeader = FitsJ.getHeader(imp);
+            var scienceHeader = FitsJ.getHeader(imp, true);
             if (scienceHeader != null)
                 {
                 scienceHeader = updateHeaders(scienceHeader, dx, dy);

@@ -387,7 +387,7 @@ public class Astrometry { //implements KeyListener
                     IJ.showStatus("Upload status: " + stat);
                     subid_int = result.get("subid");
                     IJ.showStatus("Submision ID: " + subid_int.toString());
-                    log("Submision ID: " + subid_int.toString());
+                    log("Submision ID: " + subid_int.toString() + " for slice: " + slice);
 //                    log("Astrometry.net submision ID: "+subid_int.toString());
                 }
             } catch (IOException ioe) {

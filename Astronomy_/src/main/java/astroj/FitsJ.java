@@ -135,6 +135,7 @@ public class FitsJ
 			if (lines[istart].trim().startsWith("AIJ-HEADER-MARKER")) break;
 			}
 		if (istart == lines.length) return null;
+		istart++;
 
 		int iend = istart+1;
 		for (; iend < lines.length; iend++)
@@ -565,7 +566,7 @@ public class FitsJ
 	 */
 	public static void putHeader (ImagePlus img, Header hdr)
 		{
-		String s = unsplit(hdr.cards,"\n");
+		String s = "AIJ-HEADER-MARKER\n" + unsplit(hdr.cards,"\n");
 		
 		int depth = img.getStackSize();
 		if (depth == 1)
@@ -595,7 +596,7 @@ public class FitsJ
 	public static void putHeader (ImageStack stack, Header hdr, int slice)
 		{
         if (hdr==null) return;
-		String s = unsplit(hdr.cards,"\n");
+		String s = "AIJ-HEADER-MARKER\n" + unsplit(hdr.cards,"\n");
 		String label = stack.getSliceLabel(slice);
         if (label == null)
             {

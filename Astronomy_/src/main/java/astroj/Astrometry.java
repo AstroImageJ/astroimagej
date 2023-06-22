@@ -387,7 +387,7 @@ public class Astrometry { //implements KeyListener
                     IJ.showStatus("Upload status: " + stat);
                     subid_int = result.get("subid");
                     IJ.showStatus("Submision ID: " + subid_int.toString());
-                    log("Submision ID: " + subid_int.toString() + " for slice: " + slice);
+                    //log("Submision ID: " + subid_int.toString() + " for slice: " + slice);
 //                    log("Astrometry.net submision ID: "+subid_int.toString());
                 }
             } catch (IOException ioe) {
@@ -513,10 +513,10 @@ public class Astrometry { //implements KeyListener
                         if (jobStatus.equals("success")) {
                             IJ.showStatus("Astrometry job " + jobID + ": SOLVED");
                             if (notDP)
-                                log("Astrometry job " + jobID + " for " + (impOriginal.getStackSize() == 1 ? impOriginal.getTitle() : "slice " + slice) + ": SOLVED");
+                                log("Astrometry submission ID "+subid_int.toString()+" job ID " + jobID + " for " + (impOriginal.getStackSize() == 1 ? impOriginal.getTitle() : "slice " + slice) + ": SOLVED");
                             still_processing = false;
                         } else if (jobStatus.equals("failure") || jobStatus.equals("error")) {
-                            log("Astrometry job " + jobID + " for " + (impOriginal.getStackSize() == 1 ? impOriginal.getTitle() : "slice " + slice) + ": " + jobStatus + ". Resubmitting.");
+                            log("Astrometry submission ID "+subid_int.toString()+" job ID " + jobID + " for " + (impOriginal.getStackSize() == 1 ? impOriginal.getTitle() : "slice " + slice) + ": " + jobStatus + ". Resubmitting.");
                             gotFailedResponse = true;
                             break;
                         } else if (jobStatus.equals("processing")) {
@@ -535,10 +535,10 @@ public class Astrometry { //implements KeyListener
                             IJ.wait(1000);
                         }
                     } catch (IOException ioe) {
-                        log("Astrometry job (" + jobID + ") check error for " + (impOriginal.getStackSize() == 1 ? impOriginal.getTitle() : "slice " + slice) + " : " + ioe.getLocalizedMessage());
+                        log("Astrometry submission ID "+subid_int.toString()+" job ID " + jobID + " check error for " + (impOriginal.getStackSize() == 1 ? impOriginal.getTitle() : "slice " + slice) + " : " + ioe.getLocalizedMessage());
                         return FAILED;
                     } catch (astroj.json.simple.parser.ParseException pe) {
-                        log("JSON Parse Exception during astrometry.net job (" + jobID + ") status check for " + (impOriginal.getStackSize() == 1 ? impOriginal.getTitle() : "slice " + slice) + " : " + pe);
+                        log("JSON Parse Exception during astrometry.net submission ID "+subid_int.toString()+" job ID " + jobID + " status check for " + (impOriginal.getStackSize() == 1 ? impOriginal.getTitle() : "slice " + slice) + " : " + pe);
                         return FAILED;
                     }
                 }
@@ -547,7 +547,7 @@ public class Astrometry { //implements KeyListener
                     if (retries < maxRetries) {
                         slice -= 1;
                     } else {
-                        log("Astrometry job " + jobID + " for " + (impOriginal.getStackSize() == 1 ? impOriginal.getTitle() : "slice " + slice) + " was unsuccessful after " + (maxRetries + 1) + " tries. Skipping Image.");
+                        log("Astrometry submission ID "+subid_int.toString()+" job ID " + jobID + " for " + (impOriginal.getStackSize() == 1 ? impOriginal.getTitle() : "slice " + slice) + " was unsuccessful after " + (maxRetries + 1) + " tries. Skipping Image.");
                         if (slice >= endSlice) return FAILED;
                     }
                     continue;
@@ -555,14 +555,14 @@ public class Astrometry { //implements KeyListener
 
                 if (n_failed_attempts >= maxWaitTime) {
                     IJ.showStatus("Astrometry job " + jobID + " has timed out for slice " + slice + ".");
-                    log("Astrometry job " + jobID + " has timed out for  " + (impOriginal.getStackSize() == 1 ? impOriginal.getTitle() + "." : "slice " + slice + ".") + " Skipping Image.");
+                    log("Astrometry submission ID "+subid_int.toString()+" job ID " + jobID + " has timed out for  " + (impOriginal.getStackSize() == 1 ? impOriginal.getTitle() + "." : "slice " + slice + ".") + " Skipping Image.");
                     if (impOriginal.getStackSize() > 1)
                         continue;
                     else
                         return FAILED;
                 }
             } catch (IOException ioe) {
-                log("IO Exception during astrometry job (" + jobID + ") status check for " + (impOriginal.getStackSize() == 1 ? impOriginal.getTitle() + "." : "slice " + slice + ".") + " : " + ioe.getLocalizedMessage());
+                log("IO Exception during astrometry submission ID "+subid_int.toString()+" job ID " + jobID + " status check for " + (impOriginal.getStackSize() == 1 ? impOriginal.getTitle() + "." : "slice " + slice + ".") + " : " + ioe.getLocalizedMessage());
                 return FAILED;
             }
 

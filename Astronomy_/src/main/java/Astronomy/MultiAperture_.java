@@ -1492,8 +1492,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     g.disableNo();
                     g.getOkay().setToolTipText("Continue to manually place comp. stars");
                     g.getCancel().setToolTipText("Cancel Multi-Aperture");
-                    g.showDialog();
                     IJ.beep();
+                    g.showDialog();
                     if (g.wasCanceled()) {
                         ocanvas.removeRoi(warning);
                         d.dispose();

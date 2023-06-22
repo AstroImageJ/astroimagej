@@ -3807,10 +3807,27 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                         label += sixPlaces.format(coords[1]);
                 }
 //                        IJ.log(label);
-                addAnnotateRoi(imp, true, false, true, false, pixel[0], pixel[1], radius, label, colorWCS, false);
 
                 if ((e.getModifiers() & MouseEvent.SHIFT_MASK) != 0 || (e.getModifiers() & MouseEvent.CTRL_MASK) != 0) {
+                    photom.setSourceApertureRadius(radius);
+                    photom.setBackgroundApertureRadii(rBack1, rBack2);
+                    photom.setRemoveBackStars(removeBackStars);
+
+                    Photometer phot = new Photometer(imp.getCalibration());
+                    phot.setRemoveBackStars(removeBackStars);
+                    phot.setMarkRemovedPixels(false);
+                    phot.measure(imp, exact, pixel[0], pixel[1], radius, rBack1, rBack2);
+                    var centroid = (e.getModifiers() & MouseEvent.SHIFT_MASK) != 0;
+                    var isRef = false;
+                    ApertureRoi roi = new ApertureRoi(pixel[0], pixel[1], radius, rBack1, rBack2, phot.source, centroid);
+                    roi.setAppearance(true, centroid, showSkyOverlay, nameOverlay, valueOverlay, !isRef ? new Color(196, 222, 155) : Color.PINK, (!isRef ? "T" : "C") + 1, phot.source);
+                    roi.setAMag(99.999);
+                    roi.setImage(imp);
+                    ac.add(roi);
+                    ac.paint(ac.getGraphics());
                     MultiAperture_.addApertureAsOld(coords[0], coords[1], pixel[0], pixel[1], (e.getModifiers() & MouseEvent.SHIFT_MASK) != 0);
+                } else {
+                    addAnnotateRoi(imp, true, false, true, false, pixel[0], pixel[1], radius, label, colorWCS, false);
                 }
 
                 imp.draw();
@@ -4795,6 +4812,13 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                 Prefs.set("multiaperture.isalignstar", "");
                 Prefs.set("multiaperture.centroidstar", "");
                 Prefs.set("multiaperture.absmagapertures", "");
+                Prefs.set("multiaperture.import.xapertures", "");
+                Prefs.set("multiaperture.import.yapertures", "");
+                Prefs.set("multiaperture.import.raapertures", "");
+                Prefs.set("multiaperture.import.decapertures", "");
+                Prefs.set("multiaperture.import.isrefstar", "");
+                Prefs.set("multiaperture.import.isalignstar", "");
+                Prefs.set("multiaperture.import.centroidstar", "");
                 InputStream is = new BufferedInputStream(new FileInputStream(apsPath));
                 Prefs.ijPrefs.load(is);
                 is.close();

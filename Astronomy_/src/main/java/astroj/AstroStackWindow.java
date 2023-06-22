@@ -3823,6 +3823,8 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                     roi.setAppearance(true, centroid, showSkyOverlay, nameOverlay, valueOverlay, !isRef ? new Color(196, 222, 155) : Color.PINK, (!isRef ? "T" : "C") + 1, phot.source);
                     roi.setAMag(99.999);
                     roi.setImage(imp);
+                    roi.setPhantom(true);
+                    ac.removePhantomApertureRois();
                     ac.add(roi);
                     ac.paint(ac.getGraphics());
                     MultiAperture_.addApertureAsOld(coords[0], coords[1], pixel[0], pixel[1], (e.getModifiers() & MouseEvent.SHIFT_MASK) != 0);
@@ -4927,6 +4929,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                 roi.setAppearance(true, isCentroid[i], showSkyOverlay, nameOverlay, valueOverlay, !isRef[i] ? new Color(196, 222, 155) : Color.PINK, (!isRef[i] ? "T" : "C") + (i + 1), phot.source);
                 roi.setAMag(absMagStored[i]);
                 roi.setImage(imp);
+                roi.setPhantom(true);
                 ac.add(roi);
                 ac.paint(ac.getGraphics());
             }

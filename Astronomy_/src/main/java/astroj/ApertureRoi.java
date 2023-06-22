@@ -2,13 +2,10 @@
 
 package astroj;
 
-import ij.*;
-import ij.process.*;
-import ij.gui.*;
+import ij.IJ;
+import ij.gui.Roi;
+
 import java.awt.*;
-import ij.plugin.*;
-import ij.util.Tools;
-import java.awt.geom.*;
 import java.text.DecimalFormat;
 
 /**
@@ -39,6 +36,7 @@ public class ApertureRoi extends Roi
 	protected boolean showValues = false;
     AstroCanvas ac = null;
     boolean netFlipX=false, netFlipY=false, netRotate=false, showMag=true, showIntCntWithMag = true;
+    boolean isPhantom = false;
 
 	public ApertureRoi (double x, double y, double rad1, double rad2, double rad3, double integratedCnts, boolean isCentered)
 		{
@@ -85,7 +83,15 @@ public class ApertureRoi extends Roi
         {
 		r3 = rad3;
         }
-    
+
+    public boolean isPhantom() {
+        return isPhantom;
+    }
+
+    public void setPhantom(boolean phantom) {
+        isPhantom = phantom;
+    }
+
     public void move(double dx, double dy)
         {
 		xPos -= dx;

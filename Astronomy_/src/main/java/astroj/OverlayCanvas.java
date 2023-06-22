@@ -207,6 +207,10 @@ public class OverlayCanvas extends ImageCanvas {
         rois.removeIf(roi -> roi instanceof astroj.ApertureRoi);
     }
 
+    public void removePhantomApertureRois() {
+        rois.removeIf(roi -> roi instanceof astroj.ApertureRoi && ((astroj.ApertureRoi) roi).isPhantom());
+    }
+
     /**
      * Moves all aperture rois in the overlay list.
      */

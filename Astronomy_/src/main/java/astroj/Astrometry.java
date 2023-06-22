@@ -5,6 +5,7 @@ import astroj.json.simple.parser.JSONParser;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.Prefs;
+import ij.astro.logging.AIJLogger;
 import ij.astro.util.FitsExtensionUtil;
 import ij.gui.Roi;
 import ij.process.ByteProcessor;
@@ -387,6 +388,7 @@ public class Astrometry { //implements KeyListener
                     IJ.showStatus("Upload status: " + stat);
                     subid_int = result.get("subid");
                     IJ.showStatus("Submision ID: " + subid_int.toString());
+                    log("Submision ID: " + subid_int.toString());
 //                    log("Astrometry.net submision ID: "+subid_int.toString());
                 }
             } catch (IOException ioe) {
@@ -509,6 +511,8 @@ public class Astrometry { //implements KeyListener
                         //                    log(resultText);
                         result3 = (JSONObject) parser.parse(resultText);
                         jobStatus = (String) result3.get("status");
+                        AIJLogger.log(resultText);
+                        AIJLogger.log(jobStatus);
                         if (jobStatus.equals("success")) {
                             IJ.showStatus("Astrometry job " + jobID + ": SOLVED");
                             if (notDP)
@@ -519,9 +523,9 @@ public class Astrometry { //implements KeyListener
                             gotFailedResponse = true;
                             break;
                         } else if (jobStatus.equals("processing")) {
-                            log("Astrometry job " + jobID + " for " + (impOriginal.getStackSize() == 1 ? impOriginal.getTitle() : "slice " + slice) + ": " + jobStatus + ". Resubmitting.");
+                            log("Astrometry job " + jobID + " for " + (impOriginal.getStackSize() == 1 ? impOriginal.getTitle() : "slice " + slice) + ": " + jobStatus + ". Waiting.");
                             gotProcessingResponse = true;
-                            break;
+                            //break;
                         } else {
                             String status = "Astrometry job " + jobID + " " + jobStatus;
 //                            log("Astrometry status: "+jobStatus);
@@ -541,7 +545,7 @@ public class Astrometry { //implements KeyListener
                     }
                 }
 
-                if (gotProcessingResponse || gotFailedResponse) {
+                if (/*gotProcessingResponse || */gotFailedResponse) {
                     if (retries < maxRetries) {
                         slice -= 1;
                     } else {

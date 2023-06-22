@@ -288,6 +288,8 @@ public class KeplerSplineControl {
         copyButton.addActionListener($ -> {
             settings.fixedKnotDensity.set(Double.valueOf(bkSpaceDisplay.getText()));
             radioFixedKnot.setSelected(true);
+            settings.knotDensity.set(KeplerSplineSettings.KnotDensity.FIXED);
+            updatePlot();
         });
         copyButton.setToolTipText("Copy auto knot spacing to fixed.");
         b.add(copyButton);

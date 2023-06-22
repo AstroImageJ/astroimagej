@@ -11314,8 +11314,14 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             smooth[c] = KeplerSplineControl.getInstance(c).settings.getTriStateDisplay().isOn();
             KeplerSplineControl.getInstance(c).updatePlot();
         });
+        usesmoothbox.setTooltips(d -> {
+            return switch (d) {
+                case DISABLED -> "<html>Smoothing Tristate.<br>Left-Click to advance state, right click to reduce.<br>No smoothing; displaying raw data</html>";
+                case ENABLED -> "<html>Smoothing Tristate.<br>Left-Click to advance state, right click to reduce.<br>Smoothing enabled; displaying flattened lightcurve.</html>";
+                case ALT_ENABLED -> "<html>Smoothing Tristate.<br>Left-Click to advance state, right click to reduce.<br>Smoothing enabled; displaying fitted lightcurve.</html>";
+            };
+        });
         usesmoothbox.setHorizontalAlignment(JLabel.CENTER);
-        usesmoothbox.setToolTipText("Enable spline smoothing. Typically used with continuous space-based data.");
         smoothP.add(usesmoothbox);
 
         var smoothGear = new JButton("⛭");
@@ -11895,7 +11901,13 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             binDisplay[c] = binCB.getState();
             updatePlot(c);
         });
-        binCB.setToolTipText("Enable data binning for display");
+        binCB.setTooltips(d -> {
+            return switch (d) {
+                case DISABLED -> "<html>Binning Tristate.<br>Left-Click to advance state, right click to reduce.<br>No binning; displaying raw data</html>";
+                case ENABLED -> "<html>Binning Tristate.<br>Left-Click to advance state, right click to reduce.<br>Binning enabled; displaying binned and raw data.</html>";
+                case ALT_ENABLED -> "<html>Binning Tristate.<br>Left-Click to advance state, right click to reduce.<br>Binning enabled; displaying binned data only.</html>";
+            };
+        });
         displayBinningPanel[c].add(binCB);
         displayBinningPanel[c].add(Box.createHorizontalStrut(10));
         var binSpin = new JSpinner(new SpinnerNumberModel(5, 0, Double.MAX_VALUE, 1d));

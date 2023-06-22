@@ -7,9 +7,12 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.HashMap;
+import java.util.function.Function;
 
 public class TriStateCheckBox extends JButton {
     TriState state;
+    private final HashMap<TriState, String> tooltip = new HashMap<>();
 
     public TriStateCheckBox() {
         this(TriState.DISABLED);
@@ -56,6 +59,7 @@ public class TriStateCheckBox extends JButton {
         var newState = this.state != state;
         this.state = state;
         setIcon(this.state.icon);
+        //setToolTipText(tooltip.getOrDefault(state, null));
 
         if (newState) {
             fireStateChanged();
@@ -65,6 +69,19 @@ public class TriStateCheckBox extends JButton {
     public void setStateWithoutUpdate(TriState state) {
         this.state = state;
         setIcon(this.state.icon);
+        //setToolTipText(tooltip.getOrDefault(state, null));
+    }
+
+    public void setTooltips(Function<TriState, String> supplier) {
+        for (TriState value : TriState.values()) {
+            tooltip.put(value, supplier.apply(value));
+        }
+    }
+
+    @Override
+    public void paint(Graphics g) {
+        super.paint(g);
+        setToolTipText(tooltip.getOrDefault(state, null));
     }
 
     public boolean isNotDisabled() {

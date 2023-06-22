@@ -5,7 +5,6 @@ import astroj.json.simple.parser.JSONParser;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.Prefs;
-import ij.astro.logging.AIJLogger;
 import ij.astro.util.FitsExtensionUtil;
 import ij.gui.Roi;
 import ij.process.ByteProcessor;
@@ -511,8 +510,6 @@ public class Astrometry { //implements KeyListener
                         //                    log(resultText);
                         result3 = (JSONObject) parser.parse(resultText);
                         jobStatus = (String) result3.get("status");
-                        AIJLogger.log(resultText);
-                        AIJLogger.log(jobStatus);
                         if (jobStatus.equals("success")) {
                             IJ.showStatus("Astrometry job " + jobID + ": SOLVED");
                             if (notDP)
@@ -523,9 +520,10 @@ public class Astrometry { //implements KeyListener
                             gotFailedResponse = true;
                             break;
                         } else if (jobStatus.equals("processing")) {
-                            log("Astrometry job " + jobID + " for " + (impOriginal.getStackSize() == 1 ? impOriginal.getTitle() : "slice " + slice) + ": " + jobStatus + ". Waiting.");
+                            //log("Astrometry job " + jobID + " for " + (impOriginal.getStackSize() == 1 ? impOriginal.getTitle() : "slice " + slice) + ": " + jobStatus + ". Waiting.");
                             gotProcessingResponse = true;
-                            //break;
+                            n_failed_attempts++;
+                            IJ.wait(1000);
                         } else {
                             String status = "Astrometry job " + jobID + " " + jobStatus;
 //                            log("Astrometry status: "+jobStatus);
@@ -545,7 +543,7 @@ public class Astrometry { //implements KeyListener
                     }
                 }
 
-                if (/*gotProcessingResponse || */gotFailedResponse) {
+                if (gotFailedResponse) {
                     if (retries < maxRetries) {
                         slice -= 1;
                     } else {

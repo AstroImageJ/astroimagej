@@ -6,6 +6,8 @@ import ij.IJ;
 import ij.ImagePlus;
 import ij.Prefs;
 import ij.WindowManager;
+import ij.astro.gui.GenericSwingDialog;
+import ij.astro.gui.RadioEnum;
 import ij.astro.io.prefs.Property;
 import ij.astro.logging.AIJLogger;
 import ij.gui.GenericDialog;
@@ -15,7 +17,6 @@ import ij.measure.ResultsTable;
 import ij.plugin.frame.Recorder;
 import ij.process.ImageProcessor;
 import ij.util.Tools;
-import util.GenericSwingDialog;
 
 import javax.swing.*;
 import java.awt.*;
@@ -30,7 +31,7 @@ import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import static util.GenericSwingDialog.ComponentPair.Type.C1;
+import static ij.astro.gui.GenericSwingDialog.ComponentPair.Type.C1;
 
 
 /**

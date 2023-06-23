@@ -1,6 +1,5 @@
-package util;
+package ij.astro.gui;
 
-import com.astroimagej.bspline.util.Triple;
 import ij.*;
 import ij.astro.util.UIHelper;
 import ij.gui.GUI;
@@ -21,10 +20,8 @@ import java.io.IOException;
 import java.net.URL;
 import java.text.NumberFormat;
 import java.text.ParseException;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
@@ -57,7 +54,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
     private boolean customAnchor = false;
     private int leftInset = 0;
     private int rightInset = 0;
-    private LinkedHashMap<Component, Triple<String, Consumer<String>, Runnable>> labels;
+    private LinkedHashMap<Object, Triple<String, Consumer<String>, Runnable>> labels;
     private boolean optionsRecorded;     // have dialogListeners been called to record options?
     private boolean recorderOn;          // whether recording is allowed (after the dialog is closed)
 
@@ -1112,7 +1109,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
     }
 
     /** Saves the label for given component, for macro recording and for accessing the component in macros. */
-    private void saveLabel(Component component, String label, Consumer<String> consumer, Runnable finalizer) {
+    private void saveLabel(Object component, String label, Consumer<String> consumer, Runnable finalizer) {
         if (labels==null)
             labels = new LinkedHashMap<>();
         if (label.length()>0)
@@ -1140,7 +1137,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         return value;
     }
 
-    private void recordOption(Component c, String value) {
+    private void recordOption(Object c, String value) {
         var label = labels.get(c).a();
         if (value.equals("")) value = "[]";
         Recorder.recordOption(label, trim(value));
@@ -1473,5 +1470,8 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         @Override
         public void mouseExited(MouseEvent e) {
         }
+    }
+
+    public record Triple<T1, T2, T3>(T1 a, T2 b, T3 c) {
     }
 }

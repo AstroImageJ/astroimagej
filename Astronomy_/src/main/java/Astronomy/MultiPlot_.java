@@ -8,6 +8,7 @@ import flanagan.analysis.Regression;
 import flanagan.math.Minimization;
 import flanagan.math.MinimizationFunction;
 import ij.*;
+import ij.astro.gui.GenericSwingDialog;
 import ij.astro.gui.TriStateCheckBox;
 import ij.astro.io.prefs.Property;
 import ij.astro.types.Pair;
@@ -25,7 +26,6 @@ import ij.text.TextPanel;
 import ij.util.Tools;
 import org.hipparchus.linear.MatrixUtils;
 import util.ColorUtil;
-import util.GenericSwingDialog;
 import util.PlotDataBinning;
 
 import javax.swing.*;

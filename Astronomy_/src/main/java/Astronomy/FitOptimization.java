@@ -8,11 +8,11 @@ import astroj.SpringUtil;
 import flanagan.analysis.Stat;
 import ij.IJ;
 import ij.Prefs;
+import ij.astro.gui.GenericSwingDialog;
 import ij.astro.io.prefs.Property;
 import ij.astro.logging.AIJLogger;
 import ij.astro.util.UIHelper;
 import ij.util.FontUtil;
-import util.GenericSwingDialog;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;

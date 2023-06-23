@@ -6,6 +6,7 @@ import ij.IJ;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.Prefs;
+import ij.astro.gui.GenericSwingDialog;
 import ij.plugin.FITS_Writer;
 import ij.plugin.filter.ExtendedPlugInFilter;
 import ij.plugin.filter.PlugInFilterRunner;
@@ -13,7 +14,6 @@ import ij.process.ByteProcessor;
 import ij.process.ImageProcessor;
 import ij.process.IntProcessor;
 import ij.process.ShortProcessor;
-import util.GenericSwingDialog;
 
 import java.io.File;
 import java.nio.file.Path;

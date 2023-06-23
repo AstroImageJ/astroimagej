@@ -7,10 +7,10 @@ import astroj.IJU;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.Prefs;
+import ij.astro.gui.GenericSwingDialog;
 import ij.process.ColorProcessor;
 import ij.process.ImageProcessor;
 import ij.util.Tools;
-import util.GenericSwingDialog;
 
 import javax.swing.*;
 import java.awt.*;

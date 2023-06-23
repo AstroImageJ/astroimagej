@@ -6,11 +6,11 @@ import astroj.IJU;
 import com.astroimagej.bspline.KeplerSpline;
 import com.astroimagej.bspline.util.Pair;
 import flanagan.analysis.Smooth;
+import ij.astro.gui.GenericSwingDialog;
 import ij.astro.util.EmojiIcon;
 import ij.astro.util.UIHelper;
 import org.hipparchus.linear.MatrixUtils;
 import org.hipparchus.linear.RealVector;
-import util.GenericSwingDialog;
 
 import javax.swing.*;
 import java.awt.*;

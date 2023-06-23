@@ -3782,30 +3782,32 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         sliders[2] = gd.addFloatSlider("Fixed/Base radius of photometric aperture", 0.01, radius > 100 ? radius : 100, false, radius, 3, 1.0, d -> radius = d);
         sliders[3] = gd.addFloatSlider("Fixed/Base radius of inner background annulus", 0.01, rBack1 > 100 ? rBack1 : 100, false, rBack1, 3, 1.0, d -> rBack1 = d);
         sliders[4] = gd.addFloatSlider("Fixed/Base radius of outer background annulus", 0.01, rBack2 > 100 ? rBack2 : 100, false, rBack2, 3, 1.0, d -> rBack2 = d);
-        gd.addLineSeparator();//todo spacing
-        gd.addGenericComponent(ApRadius.FIXED.setupButton(gd));
+        gd.addLineSeparator();
+        //todo gd auto-adds, rather than going by ordinal
+        var apRadiiButtons = gd.addRadioOptions(ApRadius.class, r -> MultiAperture_.radiusSetting = r, false);
+        gd.addGenericComponent(apRadiiButtons.get(0));
         gd.setOverridePosition(true);
-        gd.addGenericComponent(ApRadius.AUTO_FIXED.setupButton(gd));
+        gd.addGenericComponent(apRadiiButtons.get(1));
         gd.addToSameRow();
         gd.setLeftInset(-190);
         gd.setNewPosition(GridBagConstraints.WEST);
         gd.addBoundedNumericField("Normalized flux cutoff threshold:", new GenericSwingDialog.Bounds(0, false, 1, false), ApRadius.AUTO_FIXED.cutoff, .01, 6, "(0 < cutoff < 1 ; default = 0.010)", d -> ApRadius.AUTO_FIXED.cutoff = d);
         gd.resetPositionOverride();
         gd.setLeftInset(20);
-        gd.addGenericComponent(ApRadius.AUTO_FIXED_STACK_RAD.setupButton(gd));
+        gd.addGenericComponent(apRadiiButtons.get(2));
         gd.addToSameRow();
         gd.setLeftInset(-190);
         gd.setNewPosition(GridBagConstraints.WEST);
         gd.addBoundedNumericField("Normalized flux cutoff threshold:", new GenericSwingDialog.Bounds(0, false, 1, false), ApRadius.AUTO_FIXED_STACK_RAD.cutoff, .01, 6, "(0 < cutoff < 1 ; default = 0.010)", d -> ApRadius.AUTO_FIXED_STACK_RAD.cutoff = d);
         gd.resetPositionOverride();
-        gd.addGenericComponent(ApRadius.AUTO_VAR_RAD_PROF.setupButton(gd));
+        gd.addGenericComponent(apRadiiButtons.get(3));
         gd.addToSameRow();
         gd.setLeftInset(-190);
         gd.setNewPosition(GridBagConstraints.WEST);
         gd.addBoundedNumericField("Normalized flux cutoff threshold:", new GenericSwingDialog.Bounds(0, false, 1, false), ApRadius.AUTO_VAR_RAD_PROF.cutoff, .01, 6, "(0 < cutoff < 1 ; default = 0.010)", d -> ApRadius.AUTO_VAR_RAD_PROF.cutoff = d);
         gd.setOverridePosition(false);
         gd.resetPositionOverride();
-        gd.addGenericComponent(ApRadius.AUTO_VAR_FWHM.setupButton(gd));
+        gd.addGenericComponent(apRadiiButtons.get(4));
         gd.addToSameRow();
         gd.setOverridePosition(true);
         gd.setNewPosition(GridBagConstraints.EAST);
@@ -3813,7 +3815,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         gd.addFloatSlider("FWHM factor:", 0.1, 5.0, true, ApRadius.AUTO_VAR_FWHM.cutoff, 3, 0.1, d -> ApRadius.AUTO_VAR_FWHM.cutoff = d);
         gd.resetPositionOverride();
         gd.setOverridePosition(false);
-        ApRadius.setSelected();
+        apRadiiButtons.get(radiusSetting.ordinal()).setSelected(true);
 
         if (nAperturesStored == 0) previous = false;
 
@@ -4314,7 +4316,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         }
     }
 
-    enum ApRadius {
+    enum ApRadius implements RadioEnum {
         /**
          * Fixed based on user setting.
          */
@@ -4331,6 +4333,16 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         /**
          * Auto variable radius based on radial profile.
          */
+        /**
+         * Auto variable aperture based on the entire stack.
+         */
+        AUTO_FIXED_STACK_RAD("Auto Fixed Apertures from multi-image T1 radial profiles", 0.01, "<html>Use automatically sized fixed aperture photometry based on all images.<br>" +
+                "The aperture and background radii are extracted using a radial profile measurements from the T1 aperture in ALL images.<br>" +
+                "This mode will require two passes through the stack, so will take longer than a standard fixed aperture run.<br>" +
+                "Plate solved images are recommended. Un-plate solved images are OK as long as the apertures can track the image shifts.<br>" +
+                "The user selected fixed aperture radii above are used to perform the radial profile measurements,<br>" +
+                "so they should be set to reasonable aperture radii guesses for your images (e.g. 10-20-30).<br>" +
+                "To make the auto aperture radii generally larger, use a smaller cutoff threshold value and vice versa.</html>"),
         AUTO_VAR_RAD_PROF("Auto Variable Apertures from each image T1 radial profile", 0.01, "<html>Use automatically sized variable aperture photometry.<br>" +
                 "The aperture and background radii are extracted using a radial profile measurement from the T1 aperture in each image.<br>" +
                 "All apertures within a single image will be the same size, but aperture sizes may vary from image to image if the PSF size changes.<br>" +
@@ -4348,17 +4360,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 "to at least the FWHM (in pixels) that you expect in the worst image in the stack.<br>"+
                 "The user selected background radii are used directly, so should be set larger than the largest expected aperture radius.<br>" +
                 "To make the auto aperture radii generally larger, set the FWHM factor multiplier to a larger value and vice versa.</html>"),
-        /**
-         * Auto variable aperture based on the entire stack.
-         */
-        AUTO_FIXED_STACK_RAD("Auto Fixed Apertures from multi-image T1 radial profiles", 0.01, "<html>Use automatically sized fixed aperture photometry based on all images.<br>" +
-                "The aperture and background radii are extracted using a radial profile measurements from the T1 aperture in ALL images.<br>" +
-                "This mode will require two passes through the stack, so will take longer than a standard fixed aperture run.<br>" +
-                "Plate solved images are recommended. Un-plate solved images are OK as long as the apertures can track the image shifts.<br>" +
-                "The user selected fixed aperture radii above are used to perform the radial profile measurements,<br>" +
-                "so they should be set to reasonable aperture radii guesses for your images (e.g. 10-20-30).<br>" +
-                "To make the auto aperture radii generally larger, use a smaller cutoff threshold value and vice versa.</html>");
-
+        ;
         private static final ButtonGroup group = new ButtonGroup();
         private final String buttonText, tooltip;
         public double cutoff;
@@ -4370,18 +4372,14 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             this.tooltip = tooltip;
         }
 
-        static void setSelected() {
-            MultiAperture_.radiusSetting.button.setSelected(true);
+        @Override
+        public String optionText() {
+            return buttonText;
         }
 
-        public Component setupButton(GenericSwingDialog gd) {
-            button = GenericSwingDialog.makeRadioButton(gd, buttonText, b -> {
-                if (b) radiusSetting = this;
-            }, group);
-
-            button.setToolTipText(tooltip);
-
-            return button;
+        @Override
+        public String tooltip() {
+            return tooltip;
         }
 
         public boolean autoRadius() {

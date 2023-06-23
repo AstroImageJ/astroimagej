@@ -736,6 +736,58 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         return b;
     }
 
+    public <T extends Enum<T> & RadioEnum> List<JRadioButton> addRadioOptions(Class<T> tClass, Consumer<T> consumer, boolean addToGui) {
+        var group = new ButtonGroup();
+        var buttons = new ArrayList<JRadioButton>();
+
+        var values = tClass.getEnumConstants();
+
+        AtomicReference<T> val = new AtomicReference<>();
+        for (T value : values) {
+            var button = new JRadioButton(value.optionText());
+            buttons.add(button);
+            button.getModel().setGroup(group);
+            button.setToolTipText(value.tooltip());
+
+            button.addActionListener($ -> {
+                if (button.isSelected()) {
+                    consumer.accept(value);
+                    val.set(value);
+                }
+            });
+
+            if (addToGui) {
+                if (addToSameRow) {
+                    c.gridx = GridBagConstraints.RELATIVE;
+                    c.insets.left = 10;
+                } else {
+                    c.gridx = 0;
+                    c.gridy++;
+                    c.anchor = GridBagConstraints.WEST;
+                    c.insets = new Insets(DialogBoxType.CHECKBOX.isPresent() ? 0 : 15, 20, 0, 0);
+                }
+                if (overridePosition) c.gridx = x;
+                useCustomPosition();
+                addLocal(button, c);
+                x++;
+            }
+        }
+
+        if (Recorder.record || macro) {
+            saveLabel(group, tClass.getName(), s -> {
+                var d = Enum.valueOf(tClass, s);
+                buttons.get(d.ordinal()).setSelected(true);
+                consumer.accept(d);
+            }, () -> {
+                if (recorderOn) {
+                    recordOption(group, val.get().name());
+                }
+            });
+        }
+
+        return buttons;
+    }
+
     //todo figure out, only use the group
     public static JRadioButton makeRadioButton(GenericSwingDialog gd, String text, Consumer<Boolean> listener, ButtonGroup group) {
         var r = new JRadioButton(text);

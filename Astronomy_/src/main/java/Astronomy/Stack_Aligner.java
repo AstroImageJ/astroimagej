@@ -133,8 +133,6 @@ public class Stack_Aligner extends MultiAperture_
         }
 		GenericSwingDialog gd = new GenericSwingDialog("Stack Aligner", xLocation, yLocation);
 
-        if (nAperturesStored == 0) previous = false;
-
 		// REQUIRED FIELDS
             //GenericSwingDialog.setSliderSpinnerColumns(3);
 		if (stackSize > 1)
@@ -157,9 +155,19 @@ public class Stack_Aligner extends MultiAperture_
             });
         }
 
-        var b1 = gd.addCheckbox ("Use previous "+nAperturesStored+" apertures (1-click to set first aperture location)", previous, b -> previous = b);
-        buttons.add(b1);
-        b1.setEnabled(nAperturesStored > 0);
+        gd.addLineSeparator();
+        var apLoadingButtons = gd.addRadioOptions(ApLoading.class, apLoading::set, true);
+        for (int i = 0; i < ApLoading.values().length; i++) {
+            apLoadingButtons.get(i).setEnabled(ApLoading.values()[i].isEnabled());
+            if (ApLoading.values()[i].isSelected()) {
+                apLoadingButtons.get(i).setSelected(true);
+            }
+            if (!apLoadingButtons.get(i).isEnabled() && apLoadingButtons.get(i).isSelected()) {
+                apLoadingButtons.get(0).setSelected(true);
+                apLoading.set(ApLoading.ALL_NEW);
+            }
+        }
+        gd.addLineSeparator();
         buttons.add(gd.addCheckbox ("Use RA/Dec to locate initial aperture positions", useWCS, b -> useWCS = b));
 		buttons.add(gd.addCheckbox ("Use single step mode (1-click to set first aperture location in each image)",singleStep, b -> singleStep = b));
         buttons.add(gd.addCheckbox ("Allow aperture changes between slices in single step mode (right click to advance image)",allowSingleStepApChanges, b -> allowSingleStepApChanges = b));

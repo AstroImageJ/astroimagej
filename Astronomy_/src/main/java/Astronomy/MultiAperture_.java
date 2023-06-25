@@ -3830,25 +3830,20 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         gd.setOverridePosition(false);
         apRadiiButtons.get(radiusSetting.ordinal()).setSelected(true);
 
-        //if (nAperturesStored == 0) previous = false;
-
         gd.addDoubleSpaceLineSeparator();
-        //previous;
 
-        //todo name needs to add ap count, handle in method with formated strings
         var apLoadingButtons = gd.addRadioOptions(ApLoading.class, apLoading::set, true);
         for (int i = 0; i < ApLoading.values().length; i++) {
             apLoadingButtons.get(i).setEnabled(ApLoading.values()[i].isEnabled());
             if (ApLoading.values()[i].isSelected()) {
-                apLoadingButtons.get(i).setSelected(true);//todo only if enabled
+                apLoadingButtons.get(i).setSelected(true);
+            }
+            if (!apLoadingButtons.get(i).isEnabled() && apLoadingButtons.get(i).isSelected()) {
+                apLoadingButtons.get(0).setSelected(true);
+                apLoading.set(ApLoading.ALL_NEW);
             }
         }
-
-        /*var a = gd.addCheckbox("Use previous " + nAperturesStored + " apertures (1-click to set first aperture location)", previous, b -> previous = b);
-        a.setToolTipText("<html>Use the same starting apertures as the previous Multi-Aperture run, or apertures that were previously loaded from an apertures or radec file.<br>" +
-                "NOTE: If comp stars are already included in the set, you may want to disable the 'Auto comparison stars' option below.</html>");
-        a.setEnabled(nAperturesStored > 0);*/
-
+        gd.addLineSeparator();
 
         gd.addCheckbox("Use RA/Dec to locate aperture positions", useWCS, b -> useWCS = b)
                 .setToolTipText("<html>If enabled, apertures will first be placed according to their RA and DEC location.<br>"+
@@ -4343,17 +4338,19 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     }
 
     enum ApLoading implements RadioEnum {
-        ALL_NEW(() -> "Place all new apertures", null),
-        FIRST_PREVIOUS(() -> "Place first previously used aperture", null),
-        ALL_PREVIOUS(() -> "Place %s previously used apertures".formatted(MultiAperture_.nAperturesStored), null),
-        IMPORTED(null, null),
+        ALL_NEW(() -> "Place all new apertures", null, () -> true),
+        FIRST_PREVIOUS(() -> "Place first previously used aperture", null, () -> nAperturesStored > 0),
+        ALL_PREVIOUS(() -> "Place %s previously used apertures".formatted(MultiAperture_.nAperturesStored), null, () -> nAperturesStored > 0),
+        IMPORTED(null, null, () -> false),
         ;
         private final String tooltip;
         private final Supplier<String> buttonText;
+        private final Supplier<Boolean> isEnabled;
 
-        ApLoading(Supplier<String> buttonText, String tooltip) {
+        ApLoading(Supplier<String> buttonText, String tooltip, Supplier<Boolean> isEnabled) {
             this.buttonText = buttonText;
             this.tooltip = tooltip;
+            this.isEnabled = isEnabled;
         }
 
         @Override
@@ -4370,7 +4367,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         }
 
         public boolean isEnabled() {
-            return true;//todo not this
+            return isEnabled.get();
         }
 
         public boolean isSelected() {

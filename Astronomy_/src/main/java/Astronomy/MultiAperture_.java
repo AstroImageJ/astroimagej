@@ -155,7 +155,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     //	protected int aperture=0;
     protected int nAperturesMax = 1000;
     protected int nApertures = 2;
-    protected static int nAperturesStored = 0;
+    protected static int nAperturesStored = 0, nImportedApStored = 0;
     protected int startDragScreenX;
     protected int startDragScreenY;
     protected int currentScreenX;
@@ -430,7 +430,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         }
         this.getMeasurementPrefs();
         suffix = "_T1";
-        if (!autoMode) {
+        if (!autoMode) {//todo mark
             String[] apsX = xOldApertures.split(",");
             double[] xStored = extract(true, apsX);
             nAperturesStored = xStored == null ? 0 : xStored.length;
@@ -438,6 +438,15 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             double[] yStored = extract(false, apsY);
             if (yStored == null || xStored == null || yStored.length == 0 || xStored.length != yStored.length) {
                 nAperturesStored = 0;
+            }
+            // Load imported aps
+            apsX = Prefs.get("multiaperture.import.xapertures", "").split(",");
+            xStored = extract(true, apsX);
+            nImportedApStored = xStored == null ? 0 : xStored.length;
+            apsY = Prefs.get("multiaperture.import.yapertures", "").split(",");
+            yStored = extract(false, apsY);
+            if (yStored == null || xStored == null || yStored.length == 0 || xStored.length != yStored.length) {
+                nImportedApStored = 0;
             }
         }
         if (useMacroImage) {
@@ -653,7 +662,18 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         centroidStar = new boolean[nAperturesMax];
         absMag = new double[nAperturesMax];
         if (apLoading.get().isPrevious()) {
-//            List<String> aps = new ArrayList<String>(Arrays.asList(xOldApertures.split(",")));
+            // Load imported aps
+            if (apLoading.get() == ApLoading.IMPORTED) {
+                xOldApertures = Prefs.get("multiaperture.import.xapertures", "");
+                yOldApertures = Prefs.get("multiaperture.import.yapertures", "");
+                raOldApertures = Prefs.get("multiaperture.import.raapertures", "");
+                decOldApertures = Prefs.get("multiaperture.import.decapertures", "");
+                absMagOldApertures = Prefs.get("multiaperture.import.absmagapertures", "");
+                isOldRefStar = Prefs.get("multiaperture.import.isrefstar", "");
+                isOldAlignStar = Prefs.get("multiaperture.import.isalignstar", "");
+                oldCentroidStar = Prefs.get("multiaperture.import.centroidstar", "");
+            }
+
             String[] aps = xOldApertures.split(",");
             xPosStored = extract(true, aps);
             nAperturesStored = xPosStored == null ? 0 : xPosStored.length;
@@ -4341,7 +4361,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         ALL_NEW(() -> "Place all new apertures", null, () -> true),
         FIRST_PREVIOUS(() -> "Place first previously used aperture", null, () -> nAperturesStored > 0),
         ALL_PREVIOUS(() -> "Place %s previously used apertures".formatted(MultiAperture_.nAperturesStored), null, () -> nAperturesStored > 0),
-        IMPORTED(null, null, () -> false),
+        IMPORTED(() -> "Place %s imported apertures".formatted(nImportedApStored), null, () -> nImportedApStored > 0),
         ;
         private final String tooltip;
         private final Supplier<String> buttonText;

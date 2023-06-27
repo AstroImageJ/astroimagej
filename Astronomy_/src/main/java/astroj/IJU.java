@@ -549,7 +549,14 @@ public class IJU {
         Prefs.set("multiaperture.centroidstar", centroidStarString);
         Prefs.set("multiaperture.isalignstar", isAlignStarString);
         Prefs.set("multiaperture.absmagapertures", absMagString);
-        Prefs.set("multiaperture.previous", true);
+        Prefs.set("multiaperture.import.xapertures", xapertureString);
+        Prefs.set("multiaperture.import.yapertures", yapertureString);
+        Prefs.set("multiaperture.import.raapertures", raapertureString);
+        Prefs.set("multiaperture.import.decapertures", decapertureString);
+        Prefs.set("multiaperture.import.isrefstar", isRefStarString);
+        Prefs.set("multiaperture.import.centroidstar", centroidStarString);
+        Prefs.set("multiaperture.import.isalignstar", isAlignStarString);
+        Prefs.set("multiaperture.import.absmagapertures", absMagString);
         Prefs.set("multiaperture.usewcs", true);
 
         if (ac != null) {

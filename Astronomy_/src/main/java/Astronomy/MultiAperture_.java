@@ -885,9 +885,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         addOption("multiaperture.import.raapertures", uptoEightPlaces.format(ra));
         addOption("multiaperture.import.decapertures", uptoEightPlaces.format(dec));
         addOption("multiaperture.import.isrefstar", Double.toString(0));
-        addOption("multiaperture.import.centroidstar", "false");
+        addOption("multiaperture.import.centroidstar", Boolean.toString(centroid));
         addOption("multiaperture.import.isalignstar", "false");
-        addOption("multiaperture.import.absmagapertures", Boolean.toString(centroid));
+        addOption("multiaperture.import.absmagapertures", Double.toString(0));
     }
 
     private static void addOption(String opt, String addition) {

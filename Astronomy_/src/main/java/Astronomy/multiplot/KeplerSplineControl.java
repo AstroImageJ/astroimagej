@@ -456,43 +456,48 @@ public class KeplerSplineControl {
     }
 
     public void smoothData(double[] x, double[] y, int size, RealVector mask) {
-        fitListeners.forEach(l -> l.accept(FitState.NO_FIT));
+        smoothData(x, y, size, mask, true);
+    }
+
+    public void smoothData(double[] x, double[] y, int size, RealVector mask, boolean notify) {
+        if (notify) {
+            fitListeners.forEach(l -> l.accept(FitState.NO_FIT));
+        }
         Pair<RealVector, KeplerSpline.SplineMetadata> ks = null;
         if (settings.displayType.get() != KeplerSplineSettings.DisplayType.RAW_DATA) {
-            fitListeners.forEach(l -> l.accept(FitState.FITTING));
+            if (notify) {
+                fitListeners.forEach(l -> l.accept(FitState.FITTING));
+            }
             ks = makeSplineGenerator().fit(x, y, size, mask);
         }
 
-        var errorState = false;
-        if (settings.displayType.get() == KeplerSplineSettings.DisplayType.RAW_DATA || ks == null) {
-            bkSpaceDisplay.setText("N/A");
-            bicDisplay.setText("N/A");
-            errorDisplay.setText("N/A");
-            errorDisplay.setDisabledTextColor(Color.BLACK);
-        } else if (settings.knotDensity.get() == KeplerSplineSettings.KnotDensity.LEGACY_SMOOTHER) {
-            bkSpaceDisplay.setText("N/A");
-            bicDisplay.setText("N/A");
-            errorDisplay.setText("N/A");
-            errorDisplay.setDisabledTextColor(Color.BLACK);
-        } else {
-            var lastSplineFit = ks.second();
-            if (lastSplineFit.bic == null) {
+        if (notify) {
+            if (settings.displayType.get() == KeplerSplineSettings.DisplayType.RAW_DATA || ks == null) {
                 bkSpaceDisplay.setText("N/A");
                 bicDisplay.setText("N/A");
-                errorDisplay.setText("Failed");
-                errorDisplay.setDisabledTextColor(Color.RED);
-                errorState = true;
+                errorDisplay.setText("N/A");
+                errorDisplay.setDisabledTextColor(Color.BLACK);
+            } else if (settings.knotDensity.get() == KeplerSplineSettings.KnotDensity.LEGACY_SMOOTHER) {
+                bkSpaceDisplay.setText("N/A");
+                bicDisplay.setText("N/A");
+                errorDisplay.setText("N/A");
+                errorDisplay.setDisabledTextColor(Color.BLACK);
             } else {
-                errorDisplay.setText("Success");
-                errorDisplay.setDisabledTextColor(darkGreen);
-                bkSpaceDisplay.setText(FORMATTER.format(lastSplineFit.bkSpace));
-                bicDisplay.setText(FORMATTER.format(lastSplineFit.bic));
+                var lastSplineFit = ks.second();
+                if (lastSplineFit.bic == null) {
+                    bkSpaceDisplay.setText("N/A");
+                    bicDisplay.setText("N/A");
+                    errorDisplay.setText("Failed");
+                    errorDisplay.setDisabledTextColor(Color.RED);
+                    fitListeners.forEach(l -> l.accept(FitState.FAILED));
+                    return;
+                } else {
+                    errorDisplay.setText("Success");
+                    errorDisplay.setDisabledTextColor(darkGreen);
+                    bkSpaceDisplay.setText(FORMATTER.format(lastSplineFit.bkSpace));
+                    bicDisplay.setText(FORMATTER.format(lastSplineFit.bic));
+                }
             }
-        }
-
-        if (errorState) {
-            fitListeners.forEach(l -> l.accept(FitState.FAILED));
-            return;
         }
 
         switch (settings.displayType.get()) {
@@ -512,13 +517,13 @@ public class KeplerSplineControl {
                 }
             }
             case RAW_DATA -> {
-                if (errorState) {
-                    Arrays.fill(y, Double.NaN);
-                }
+                // Return the raw data as-is
             }
         }
 
-        fitListeners.forEach(l -> l.accept(FitState.SUCCESS));
+        if (notify) {
+            fitListeners.forEach(l -> l.accept(FitState.SUCCESS));
+        }
     }
 
     private KeplerSplineApplicator makeSplineGenerator() {

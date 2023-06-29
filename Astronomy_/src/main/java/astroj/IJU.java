@@ -2,6 +2,7 @@
 
 package astroj;
 
+import Astronomy.MultiAperture_;
 import flanagan.interpolation.LinearInterpolation;
 import ij.IJ;
 import ij.ImagePlus;
@@ -557,6 +558,7 @@ public class IJU {
         Prefs.set("multiaperture.import.centroidstar", centroidStarString);
         Prefs.set("multiaperture.import.isalignstar", isAlignStarString);
         Prefs.set("multiaperture.import.absmagapertures", absMagString);
+        MultiAperture_.apLoading.set(MultiAperture_.ApLoading.IMPORTED);
         Prefs.set("multiaperture.usewcs", true);
 
         if (ac != null) {

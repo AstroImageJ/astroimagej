@@ -3828,6 +3828,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                     ac.add(roi);
                     ac.paint(ac.getGraphics());
                     MultiAperture_.addApertureAsOld(coords[0], coords[1], pixel[0], pixel[1], (e.getModifiers() & MouseEvent.SHIFT_MASK) != 0);
+                    MultiAperture_.apLoading.set(MultiAperture_.ApLoading.IMPORTED);
                 } else {
                     addAnnotateRoi(imp, true, false, true, false, pixel[0], pixel[1], radius, label, colorWCS, false);
                 }
@@ -4915,6 +4916,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             }
 
             Prefs.set("multiaperture.previous", true);
+            MultiAperture_.apLoading.set(MultiAperture_.ApLoading.IMPORTED);
             GFormat g = new GFormat("2.1");
             photom.setSourceApertureRadius(radius);
             photom.setBackgroundApertureRadii(rBack1, rBack2);

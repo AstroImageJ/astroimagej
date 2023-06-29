@@ -302,7 +302,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     private List<Seeing_Profile.ApRadii> stackRadii = new ArrayList<>();
     private final HashSet<Component> singleStepListeners = new HashSet<>();
     protected static final Property<Boolean> updateImageDisplay = new Property<>(true, MultiAperture_.class);
-    protected static final Property<ApLoading> apLoading = new Property<>(ApLoading.ALL_NEW, MultiAperture_.class);
+    public static final Property<ApLoading> apLoading = new Property<>(ApLoading.ALL_NEW, MultiAperture_.class);
 
 //	public static double RETRY_RADIUS = 3.0;
 
@@ -4370,7 +4370,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         }
     }
 
-    enum ApLoading implements RadioEnum {
+    public enum ApLoading implements RadioEnum {
         ALL_NEW(() -> "Place all new apertures", null, () -> true),
         FIRST_PREVIOUS(() -> "Place first previously used aperture", null, () -> nAperturesStored > 0),
         ALL_PREVIOUS(() -> "Place %s previously used apertures".formatted(MultiAperture_.nAperturesStored), null, () -> nAperturesStored > 0),

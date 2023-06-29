@@ -13,6 +13,7 @@ import java.util.function.Function;
 public class TriStateCheckBox extends JButton {
     TriState state;
     private final HashMap<TriState, String> tooltip = new HashMap<>();
+    private final HashMap<TriState, Icon> iconOverrides = new HashMap<>();
 
     public TriStateCheckBox() {
         this(TriState.DISABLED);
@@ -58,8 +59,7 @@ public class TriStateCheckBox extends JButton {
     public void setState(TriState state) {
         var newState = this.state != state;
         this.state = state;
-        setIcon(this.state.icon);
-        //setToolTipText(tooltip.getOrDefault(state, null));
+        setIcon(iconOverrides.getOrDefault(this.state, this.state.icon));
 
         if (newState) {
             fireStateChanged();
@@ -68,14 +68,23 @@ public class TriStateCheckBox extends JButton {
 
     public void setStateWithoutUpdate(TriState state) {
         this.state = state;
-        setIcon(this.state.icon);
-        //setToolTipText(tooltip.getOrDefault(state, null));
+        setIcon(iconOverrides.getOrDefault(this.state, this.state.icon));
     }
 
     public void setTooltips(Function<TriState, String> supplier) {
         for (TriState value : TriState.values()) {
             tooltip.put(value, supplier.apply(value));
         }
+    }
+
+    public void setIconOverrides(Function<TriState, Icon> supplier) {
+        for (TriState value : TriState.values()) {
+            var v = supplier.apply(value);
+            if (v != null) {
+                iconOverrides.put(value, supplier.apply(value));
+            }
+        }
+        setIcon(iconOverrides.getOrDefault(this.state, this.state.icon));
     }
 
     @Override

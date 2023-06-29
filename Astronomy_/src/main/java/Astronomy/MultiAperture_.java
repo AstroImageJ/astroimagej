@@ -1935,7 +1935,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     Prefs.set("aperture.rback2", rBack2);
                 }
                 case AUTO_VAR_RAD_PROF -> {
-                    var rs = new Seeing_Profile(true).getRadii(imp, xPos[0], yPos[0], ApRadius.AUTO_VAR_RAD_PROF.cutoff, true, true);
+                    var x = adjustAperture(imp, xCenter, yCenter, radius, rBack1, rBack2, reposition);
+                    var center = x.center();
+                    var rs = new Seeing_Profile(true).getRadii(imp, center.x(), center.y(), ApRadius.AUTO_VAR_RAD_PROF.cutoff, true, true);
                     if (rs.isValid()) {
                         radius = rs.r();
                         rBack1 = rs.r2();

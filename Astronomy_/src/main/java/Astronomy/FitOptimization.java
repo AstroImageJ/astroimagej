@@ -791,7 +791,7 @@ public class FitOptimization implements AutoCloseable {
         //MultiPlot_.updateGUI();
         MultiPlot_.waitForPlotUpdateToFinish();
 
-        if (showOptLog) AIJLogger.log(String.format("Using at most %d threads", maxThreads));
+        if (showOptLog) AIJLogger.log(String.format("Using at most %d threads", maxThreads.get()));
 
         setupThreadedSpace();
         iterRemainingOld = BigInteger.ZERO;

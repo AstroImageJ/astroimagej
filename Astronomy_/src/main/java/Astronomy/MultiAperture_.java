@@ -3848,7 +3848,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         gd.addFloatSlider("FWHM factor:", 0.1, 5.0, true, ApRadius.AUTO_VAR_FWHM.cutoff, 3, 0.1, d -> ApRadius.AUTO_VAR_FWHM.cutoff = d);
         gd.resetPositionOverride();
         gd.setOverridePosition(false);
-        apRadiiButtons.get(radiusSetting.ordinal()).setSelected(true);
+        apRadiiButtons.get(radiusSetting).setSelected(true);
 
         gd.addDoubleSpaceLineSeparator();
 

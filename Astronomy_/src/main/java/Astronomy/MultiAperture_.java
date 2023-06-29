@@ -750,6 +750,18 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             }
             if (apLoading.get() == ApLoading.FIRST_PREVIOUS) {
                 nAperturesStored = 1;
+                centroidStarStored = Arrays.copyOfRange(centroidStarStored, 0, 1);
+                isAlignStarStored = Arrays.copyOfRange(isAlignStarStored, 0, 1);
+                isRefStarStored = Arrays.copyOfRange(isRefStarStored, 0, 1);
+                absMagStored = Arrays.copyOfRange(absMagStored, 0, 1);
+                if (decPosStored != null) {
+                    decPosStored = Arrays.copyOfRange(decPosStored, 0, 1);
+                }
+                if (raPosStored != null) {
+                    raPosStored = Arrays.copyOfRange(raPosStored, 0, 1);
+                }
+                yPosStored = Arrays.copyOfRange(yPosStored, 0, 1);
+                xPosStored = Arrays.copyOfRange(xPosStored, 0, 1);
             }
         }
         if (autoMode) {

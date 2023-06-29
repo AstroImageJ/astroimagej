@@ -3853,6 +3853,16 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         gd.addDoubleSpaceLineSeparator();
 
         var apLoadingButtons = gd.addRadioOptions(ApLoading.class, apLoading::set, true);
+        for (ApLoading value : ApLoading.values()) {
+            apLoadingButtons.get(value).setEnabled(value.isEnabled());
+            if (value.isSelected()) {
+                apLoadingButtons.get(value).setSelected(true);
+            }
+            if (!apLoadingButtons.get(value).isEnabled() && apLoadingButtons.get(value).isSelected()) {
+                apLoadingButtons.get(value).setSelected(true);
+                apLoading.set(ApLoading.ALL_NEW);
+            }
+        }
         for (int i = 0; i < ApLoading.values().length; i++) {
             apLoadingButtons.get(i).setEnabled(ApLoading.values()[i].isEnabled());
             if (ApLoading.values()[i].isSelected()) {

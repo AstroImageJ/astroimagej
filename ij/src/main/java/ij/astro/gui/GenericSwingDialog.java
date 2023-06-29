@@ -736,16 +736,16 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         return b;
     }
 
-    public <T extends Enum<T> & RadioEnum> List<JRadioButton> addRadioOptions(Class<T> tClass, Consumer<T> consumer, boolean addToGui) {
+    public <T extends Enum<T> & RadioEnum> Map<T, JRadioButton> addRadioOptions(Class<T> tClass, Consumer<T> consumer, boolean addToGui) {
         var group = new ButtonGroup();
-        var buttons = new ArrayList<JRadioButton>();
+        var buttons = new HashMap<T, JRadioButton>();
 
         var values = tClass.getEnumConstants();
 
         AtomicReference<T> val = new AtomicReference<>();
         for (T value : values) {
             var button = new JRadioButton(value.optionText());
-            buttons.add(button);
+            buttons.put(value, button);
             button.getModel().setGroup(group);
             button.setToolTipText(value.tooltip());
 
@@ -776,7 +776,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         if (Recorder.record || macro) {
             saveLabel(group, tClass.getName(), s -> {
                 var d = Enum.valueOf(tClass, s);
-                buttons.get(d.ordinal()).setSelected(true);
+                buttons.get(d).setSelected(true);
                 consumer.accept(d);
             }, () -> {
                 if (recorderOn) {

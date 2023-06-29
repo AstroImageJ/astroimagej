@@ -3930,11 +3930,6 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         list1.add(b -> removeBackStars = b);
         list1.add(b -> backIsPlane = b);
 
-        // Disable auto. comp. stars for ALL_PREV.
-        if (apLoading.get() == ApLoading.ALL_PREVIOUS) {
-            suggestCompStars = false;
-        }
-
         // Suggestion of comp. stars
         final var columns = Math.max(10, Math.max(Double.toString(max).length(), Double.toString(maxPeakValue).length()));
 

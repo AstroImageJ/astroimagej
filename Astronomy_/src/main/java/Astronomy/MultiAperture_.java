@@ -3863,16 +3863,6 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 apLoading.set(ApLoading.ALL_NEW);
             }
         }
-        for (int i = 0; i < ApLoading.values().length; i++) {
-            apLoadingButtons.get(i).setEnabled(ApLoading.values()[i].isEnabled());
-            if (ApLoading.values()[i].isSelected()) {
-                apLoadingButtons.get(i).setSelected(true);
-            }
-            if (!apLoadingButtons.get(i).isEnabled() && apLoadingButtons.get(i).isSelected()) {
-                apLoadingButtons.get(0).setSelected(true);
-                apLoading.set(ApLoading.ALL_NEW);
-            }
-        }
         gd.addLineSeparator();
 
         gd.addCheckbox("Use RA/Dec to locate aperture positions", useWCS, b -> useWCS = b)

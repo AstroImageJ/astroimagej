@@ -1,17 +1,18 @@
-package ij.astro.util;
+package ij.astro.gui.nstate;
 
 import ij.astro.gui.MergedIcon;
+import ij.astro.util.EmojiIcon;
 
 import javax.swing.*;
 import java.awt.*;
 
 //⍻☐☑☒■□▣◽◾🗵🗷🗸◻◼🗹⮽█
-public enum TriState {
+public enum TriState implements NState<TriState> {
     DISABLED("■", "☐", false, Color.WHITE),
     ENABLED("■", "☑", true, Color.WHITE),
     ALT_ENABLED("■", "☑", true, Color.LIGHT_GRAY);
 
-    public final Icon icon;
+    private final Icon icon;
     private final boolean isOn;
 
     TriState(String icon1, String icon2, boolean isOn, Color color) {
@@ -19,25 +20,17 @@ public enum TriState {
         this.isOn = isOn;
     }
 
-    public TriState next() {
-        var o = ordinal() + 1;
-        if (o >= values().length) {
-            o = 0;
-        }
-
-        return values()[o];
-    }
-
-    public TriState previous() {
-        var o = ordinal() - 1;
-        if (o < 0) {
-            o = values().length - 1;
-        }
-
-        return values()[o];
+    @Override
+    public Icon icon() {
+        return icon;
     }
 
     public boolean isOn() {
         return isOn;
+    }
+
+    @Override
+    public TriState[] values0() {
+        return TriState.values();
     }
 }

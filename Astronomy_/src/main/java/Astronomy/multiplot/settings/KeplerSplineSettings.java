@@ -1,7 +1,7 @@
 package Astronomy.multiplot.settings;
 
+import ij.astro.gui.nstate.TriState;
 import ij.astro.io.prefs.Property;
-import ij.astro.util.TriState;
 
 import java.awt.*;
 import java.lang.reflect.Field;

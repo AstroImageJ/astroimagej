@@ -1,6 +1,4 @@
-package ij.astro.gui;
-
-import ij.astro.util.TriState;
+package ij.astro.gui.nstate;
 
 import javax.swing.*;
 import java.awt.*;
@@ -8,19 +6,19 @@ import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.HashMap;
+import java.util.Objects;
 import java.util.function.Function;
 
-public class TriStateCheckBox extends JButton {
-    TriState state;
-    private final HashMap<TriState, String> tooltip = new HashMap<>();
-    private final HashMap<TriState, Icon> iconOverrides = new HashMap<>();
+//todo not abstract? use directly, instead of subclasses?
+public abstract class NStateButton<STATE extends Enum<STATE> & NState<STATE>> extends JButton {
+    private final HashMap<STATE, String> tooltip = new HashMap<>();
+    private final HashMap<STATE, Icon> iconOverrides = new HashMap<>();
+    private final STATE[] values;
+    private STATE state;
 
-    public TriStateCheckBox() {
-        this(TriState.DISABLED);
-    }
-
-    public TriStateCheckBox(TriState state) {
-        super(state.icon);
+    public NStateButton(STATE state) {
+        super(Objects.requireNonNull(state).icon());
+        values = state.getDeclaringClass().getEnumConstants();
         this.state = state;
         setMargin(new Insets(0, 0, 0, 4));
         setBackground(new Color(0, 0, 0, 0));
@@ -34,7 +32,7 @@ public class TriStateCheckBox extends JButton {
             @Override
             public void mouseClicked(MouseEvent e) {
                 if (SwingUtilities.isRightMouseButton(e)) {
-                    fireActionPerformed(new ActionEvent(TriStateCheckBox.this, ActionEvent.ACTION_FIRST, "decrement"));
+                    fireActionPerformed(new ActionEvent(NStateButton.this, ActionEvent.ACTION_FIRST, "decrement"));
                 }
                 super.mouseClicked(e);
             }
@@ -44,47 +42,47 @@ public class TriStateCheckBox extends JButton {
     @Override
     protected void fireActionPerformed(ActionEvent e) {
         if ("decrement".equals(e.getActionCommand())) {
-            setStateWithoutUpdate(TriStateCheckBox.this.state.previous());
+            setStateWithoutUpdate(this.state.previous());
         } else {
-            setStateWithoutUpdate(TriStateCheckBox.this.state.next());
+            setStateWithoutUpdate(this.state.next());
         }
 
         super.fireActionPerformed(e);
     }
 
-    public TriState getState() {
+    public STATE getState() {
         return state;
     }
 
-    public void setState(TriState state) {
+    public void setState(STATE state) {
         var newState = this.state != state;
         this.state = state;
-        setIcon(iconOverrides.getOrDefault(this.state, this.state.icon));
+        setIcon();
 
         if (newState) {
             fireStateChanged();
         }
     }
 
-    public void setStateWithoutUpdate(TriState state) {
+    public void setStateWithoutUpdate(STATE state) {
         this.state = state;
-        setIcon(iconOverrides.getOrDefault(this.state, this.state.icon));
+        setIcon();
     }
 
-    public void setTooltips(Function<TriState, String> supplier) {
-        for (TriState value : TriState.values()) {
+    public void setTooltips(Function<STATE, String> supplier) {
+        for (STATE value : values) {
             tooltip.put(value, supplier.apply(value));
         }
     }
 
-    public void setIconOverrides(Function<TriState, Icon> supplier) {
-        for (TriState value : TriState.values()) {
+    public void setIconOverrides(Function<STATE, Icon> supplier) {
+        for (STATE value : values) {
             var v = supplier.apply(value);
             if (v != null) {
                 iconOverrides.put(value, supplier.apply(value));
             }
         }
-        setIcon(iconOverrides.getOrDefault(this.state, this.state.icon));
+        setIcon();
     }
 
     @Override
@@ -93,8 +91,7 @@ public class TriStateCheckBox extends JButton {
         setToolTipText(tooltip.getOrDefault(state, null));
     }
 
-    public boolean isNotDisabled() {
-        return state != TriState.DISABLED;
+    private void setIcon() {
+        setIcon(iconOverrides.getOrDefault(state, state.icon()));
     }
-
 }

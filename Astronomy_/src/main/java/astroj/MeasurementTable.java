@@ -128,7 +128,7 @@ public class MeasurementTable extends ResultsTable {
 
             // OPEN NEW MeasurementTable
             String previousLine = null;
-            table = new MeasurementTable(file.getName().equals("") || file.getName() == null ?
+            table = new MeasurementTable(file.getName().equals("") ?
                     "Measurements" :
                     file.getName());    // SHOULD USE filename); BUT CAN'T BECAUSE OF PRIVATE WindowManager.getNonImageWindows() METHOD
 
@@ -149,14 +149,13 @@ public class MeasurementTable extends ResultsTable {
 
 
             String[] labels = line.split(delimiter);
-            String[] labels1 = line.split(delimiter);
             int n = labels.length;
             if (n < 2 || (n == 2 && labels[0].trim().equals("") && !labels[1].trim().equals(""))) {
                 delimiter = "\\s+";
                 labels = line.split(delimiter);
-                labels1 = line.split(delimiter);
                 n = labels.length;
             }
+            String[] labels1 = labels.clone();
 
             int row = 0;
             boolean hasLabels = false;

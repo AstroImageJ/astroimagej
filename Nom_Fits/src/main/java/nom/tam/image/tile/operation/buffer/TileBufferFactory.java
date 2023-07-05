@@ -31,9 +31,9 @@ package nom.tam.image.tile.operation.buffer;
  * #L%
  */
 
-import nom.tam.util.type.ElementType;
-
 import java.nio.Buffer;
+
+import nom.tam.util.type.ElementType;
 
 /**
  * (<i>for internal use</i>) Creates linear buffers for storing data of 2D image tiles.

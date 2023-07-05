@@ -31,18 +31,26 @@ package nom.tam.fits;
  * #L%
  */
 
+import java.io.IOException;
+import java.nio.Buffer;
+
 import nom.tam.fits.header.Bitpix;
 import nom.tam.fits.header.Standard;
 import nom.tam.image.ImageTiler;
 import nom.tam.image.StandardImageTiler;
-import nom.tam.util.*;
+import nom.tam.util.ArrayDataInput;
+import nom.tam.util.ArrayDataOutput;
+import nom.tam.util.ArrayFuncs;
+import nom.tam.util.FitsEncoder;
+import nom.tam.util.RandomAccess;
 import nom.tam.util.array.MultiArrayIterator;
 import nom.tam.util.type.ElementType;
 
-import java.io.IOException;
-import java.nio.Buffer;
-
-import static nom.tam.fits.header.Standard.*;
+import static nom.tam.fits.header.Standard.EXTEND;
+import static nom.tam.fits.header.Standard.GCOUNT;
+import static nom.tam.fits.header.Standard.NAXIS;
+import static nom.tam.fits.header.Standard.NAXISn;
+import static nom.tam.fits.header.Standard.PCOUNT;
 
 /**
  * <p>
@@ -189,6 +197,7 @@ public class ImageData extends Data {
         tiler = new ImageDataTiler(null, 0, dataDescription);
     }
 
+    @SuppressWarnings({"resource", "deprecation"})
     @Override
     public void write(ArrayDataOutput o) throws FitsException {
 
@@ -197,7 +206,9 @@ public class ImageData extends Data {
             return;
         }
 
-        ensureData();
+        if (o != getRandomAccessInput()) {
+            ensureData();
+        }
 
         try {
             o.writeArray(dataArray);
@@ -230,7 +241,8 @@ public class ImageData extends Data {
         // make it a primary header
         head.setSimple(true);
         head.setBitpix(Bitpix.forArrayID(classname.charAt(dimens.length)));
-        head.setNaxes(dimens.length);
+
+        overrideHeaderAxes(head, dimens);
 
         for (int i = 1; i <= dimens.length; i++) {
             if (dimens[i - 1] == -1) {
@@ -291,5 +303,34 @@ public class ImageData extends Data {
 
     void setTiler(StandardImageTiler tiler) {
         this.tiler = tiler;
+    }
+
+    /**
+     * (<i>for expert users</i>) Overrides the image size description in the header to the specified Java array
+     * dimensions. Typically users would not call this method, unless one want to change a header without the image
+     * object being actually available in its entirety. For example, when using low-level writes of an image row-by-row
+     * without ever having to hold the entire image in memory through a complete object that would automatically
+     * descrive the dimensions correctly.
+     * 
+     * @param  header                   A FITS image header
+     * @param  sizes                    The array dimensions in Java order (fastest varying index last)
+     * 
+     * @throws FitsException            if the size has negative values
+     * @throws IllegalArgumentException should not actually happen
+     * 
+     * @since                           1.18
+     * 
+     * @see                             #fillHeader(Header)
+     */
+    public static void overrideHeaderAxes(Header header, int... sizes) throws FitsException, IllegalArgumentException {
+        header.addValue(Standard.NAXIS, sizes.length);
+
+        for (int i = 1; i < sizes.length; i++) {
+            int l = sizes[sizes.length - i];
+            if (l < 0) {
+                throw new FitsException("Invalid size[ " + i + "] = " + l);
+            }
+            header.addValue(Standard.NAXISn.n(i), l);
+        }
     }
 }

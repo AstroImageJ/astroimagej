@@ -31,9 +31,9 @@ package nom.tam.image.tile.operation.buffer;
  * #L%
  */
 
-import nom.tam.util.type.ElementType;
-
 import java.nio.Buffer;
+
+import nom.tam.util.type.ElementType;
 
 /**
  * (<i>for internal use</i>) A linear buffer that contains data for a single 2D image tile, in row-major format. You can

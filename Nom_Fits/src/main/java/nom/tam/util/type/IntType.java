@@ -31,10 +31,10 @@ package nom.tam.util.type;
  * #L%
  */
 
-import nom.tam.fits.header.Bitpix;
-
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
+
+import nom.tam.fits.header.Bitpix;
 
 /**
  * A FITS 32-bit integer element (signed).

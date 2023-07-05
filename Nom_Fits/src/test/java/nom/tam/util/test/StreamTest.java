@@ -7,12 +7,12 @@ package nom.tam.util.test;
  * Copyright (C) 1996 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
- * 
+ *
  * Anyone is free to copy, modify, publish, use, compile, sell, or
  * distribute this software, either in source code form or as a compiled
  * binary, for any purpose, commercial or non-commercial, and by any
  * means.
- * 
+ *
  * In jurisdictions that recognize copyright laws, the author or authors
  * of this software dedicate any and all copyright interest in the
  * software to the public domain. We make this dedication for the benefit
@@ -20,7 +20,7 @@ package nom.tam.util.test;
  * successors. We intend this dedication to be an overt act of
  * relinquishment in perpetuity of all present and future rights to this
  * software under copyright law.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
  * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
@@ -31,6 +31,20 @@ package nom.tam.util.test;
  * #L%
  */
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PipedInputStream;
+import java.io.PipedOutputStream;
+
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
 import nom.tam.fits.Fits;
 import nom.tam.fits.FitsException;
 import nom.tam.fits.FitsFactory;
@@ -38,9 +52,6 @@ import nom.tam.util.AsciiFuncs;
 import nom.tam.util.FitsInputStream;
 import nom.tam.util.FitsOutputStream;
 import nom.tam.util.SafeClose;
-import org.junit.*;
-
-import java.io.*;
 
 public class StreamTest {
 
@@ -48,29 +59,28 @@ public class StreamTest {
 
     private static FitsInputStream in;
 
+    // @Rule
+    // public TestRule watcher = new TestWatcher() {
+    // protected void starting(Description description) {
+    // System.out.println("Starting test: " + description.getMethodName());
+    // }
+    // };
 
-//    @Rule
-//    public TestRule watcher = new TestWatcher() {
-//        protected void starting(Description description) {
-//            System.out.println("Starting test: " + description.getMethodName());
-//        }
-//    };
-    
     @Before
     @After
     public void setDefaults() {
         FitsFactory.setDefaults();
-        
+
         try {
             while (in.available() > 0) {
                 in.read();
             }
         } catch (IOException e) {
-            
+
         }
-        
+
     }
-    
+
     @BeforeClass
     public static void setup() throws Exception {
         PipedInputStream pipeInput = new PipedInputStream(10240);
@@ -108,7 +118,7 @@ public class StreamTest {
     @Test
     public void testCharArrayAscii() throws Exception {
         FitsFactory.setUseUnicodeChars(false);
-        
+
         char[] chars = new char[10];
         char[] expectedChars = new char[10];
         for (int index = 0; index < expectedChars.length; index++) {
@@ -129,11 +139,11 @@ public class StreamTest {
         }
         Assert.assertEquals(0, in.available());
     }
-    
+
     @Test
     public void testCharArrayUnicode() throws Exception {
         FitsFactory.setUseUnicodeChars(true);
-        
+
         char[] chars = new char[10];
         char[] expectedChars = new char[10];
         for (int index = 0; index < expectedChars.length; index++) {
@@ -161,7 +171,7 @@ public class StreamTest {
         double[] doubles = new double[10];
         double[] expectedDoubles = new double[10];
         for (int index = 0; index < expectedDoubles.length; index++) {
-            expectedDoubles[index] = (double) index * 3.1415d;
+            expectedDoubles[index] = index * 3.1415d;
         }
         ou.writePrimitiveArray(expectedDoubles);
         ou.write(expectedDoubles);
@@ -184,7 +194,7 @@ public class StreamTest {
         float[] values = new float[10];
         float[] expectedValues = new float[10];
         for (int index = 0; index < expectedValues.length; index++) {
-            expectedValues[index] = (float) index * 3.1415f;
+            expectedValues[index] = index * 3.1415f;
         }
         ou.writePrimitiveArray(expectedValues);
         ou.write(expectedValues);
@@ -207,7 +217,7 @@ public class StreamTest {
         int[] values = new int[10];
         int[] expectedValues = new int[10];
         for (int index = 0; index < expectedValues.length; index++) {
-            expectedValues[index] = (int) index * 3;
+            expectedValues[index] = index * 3;
         }
         ou.writePrimitiveArray(expectedValues);
         ou.write(expectedValues);
@@ -314,8 +324,7 @@ public class StreamTest {
             SafeClose.close(input);
         }
     }
-    
-    
+
     @Test(expected = EOFException.class)
     public void testSkipBytesWithException1() throws Exception {
         int total = 256;
@@ -341,7 +350,7 @@ public class StreamTest {
                 @Override
                 public synchronized long skip(long n) {
                     throw new UnsupportedOperationException("skip not supported");
-                }                
+                }
             };
             myIn = new FitsInputStream(input);
             myIn.skipAllBytes(1000L);
@@ -350,8 +359,6 @@ public class StreamTest {
             SafeClose.close(myIn);
         }
     }
-
-  
 
     @Test
     public void testBoolean() throws Exception {
@@ -379,7 +386,7 @@ public class StreamTest {
     @Test
     public void testCharAscii() throws Exception {
         FitsFactory.setUseUnicodeChars(false);
-        
+
         char[] value = new char[10];
         char[] expectedValue = new char[10];
         for (int index = 0; index < expectedValue.length; index++) {
@@ -396,11 +403,11 @@ public class StreamTest {
         }
         Assert.assertEquals(0, in.available());
     }
-    
+
     @Test
     public void testCharUnicode() throws Exception {
         FitsFactory.setUseUnicodeChars(true);
-        
+
         char[] value = new char[10];
         char[] expectedValue = new char[10];
         for (int index = 0; index < expectedValue.length; index++) {
@@ -423,7 +430,7 @@ public class StreamTest {
         double[] doubles = new double[10];
         double[] expectedDoubles = new double[10];
         for (int index = 0; index < expectedDoubles.length; index++) {
-            expectedDoubles[index] = (double) index * 3.1415d;
+            expectedDoubles[index] = index * 3.1415d;
             ou.writeDouble(expectedDoubles[index]);
         }
         ou.flush();
@@ -442,7 +449,7 @@ public class StreamTest {
         float[] values = new float[10];
         float[] expectedValues = new float[10];
         for (int index = 0; index < expectedValues.length; index++) {
-            expectedValues[index] = (float) index * 3.1415f;
+            expectedValues[index] = index * 3.1415f;
             ou.writeFloat(expectedValues[index]);
         }
         ou.flush();
@@ -461,7 +468,7 @@ public class StreamTest {
         int[] values = new int[10];
         int[] expectedValues = new int[10];
         for (int index = 0; index < expectedValues.length; index++) {
-            expectedValues[index] = (int) index * 3;
+            expectedValues[index] = index * 3;
             ou.writeInt(expectedValues[index]);
         }
         ou.flush();
@@ -537,7 +544,7 @@ public class StreamTest {
         int[][] expectedValues = new int[10][10];
         for (int index = 0; index < expectedValues.length; index++) {
             for (int index2 = 0; index2 < expectedValues[index].length; index2++) {
-                expectedValues[index][index2] = (int) index * 3;
+                expectedValues[index][index2] = index * 3;
             }
         }
         ou.writePrimitiveArray(expectedValues);
@@ -547,14 +554,16 @@ public class StreamTest {
         Assert.assertEquals(expectedValues.length, values.length);
         for (int index = 0; index < expectedValues.length; index++) {
             for (int index2 = 0; index2 < expectedValues[index].length; index2++) {
-                Assert.assertEquals("int[" + index + "][" + index2 + "]", expectedValues[index][index2], values[index][index2]);
+                Assert.assertEquals("int[" + index + "][" + index2 + "]", expectedValues[index][index2],
+                        values[index][index2]);
                 values[index][index2] = 0;
             }
         }
         in.readPrimitiveArray(values);
         for (int index = 0; index < expectedValues.length; index++) {
             for (int index2 = 0; index2 < expectedValues[index].length; index2++) {
-                Assert.assertEquals("int[" + index + "][" + index2 + "]", expectedValues[index][index2], values[index][index2]);
+                Assert.assertEquals("int[" + index + "][" + index2 + "]", expectedValues[index][index2],
+                        values[index][index2]);
             }
         }
         Assert.assertEquals(0, in.available());
@@ -729,6 +738,5 @@ public class StreamTest {
     public void testReadWithoutSource() throws FitsException, IOException {
         Assert.assertNull(new Fits().readHDU());
     }
-    
-   
+
 }

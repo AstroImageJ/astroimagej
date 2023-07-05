@@ -1,10 +1,10 @@
 package nom.tam.fits.header;
 
+import java.util.Arrays;
+
 import nom.tam.fits.header.extra.NOAOExt;
 import nom.tam.fits.header.extra.SBFitsExt;
 import nom.tam.fits.header.extra.STScIExt;
-
-import java.util.Arrays;
 
 /*
  * #%L

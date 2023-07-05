@@ -164,7 +164,7 @@ public class BaseFitsTest {
 
         float[] realCol = new float[50];
 
-        for (int i = 0; i < realCol.length; i += 1) {
+        for (int i = 0; i < realCol.length; i++) {
             realCol[i] = base * i * i * i + 1;
         }
 
@@ -174,7 +174,7 @@ public class BaseFitsTest {
 
         String[] strCol = new String[realCol.length];
 
-        for (int i = 0; i < realCol.length; i += 1) {
+        for (int i = 0; i < realCol.length; i++) {
             strCol[i] = "ABC" + String.valueOf(realCol[i]) + "CDE";
         }
         return new Object[] {realCol, intCol, longCol, doubleCol, strCol};
@@ -214,7 +214,7 @@ public class BaseFitsTest {
         Fits fits2 = new Fits("target/UndefindedHDU.fits");
         BasicHDU<?>[] hdus = fits2.read();
 
-        byte[] rereadUndefinedData = (byte[]) ((UndefinedData) hdus[hdus.length - 1].getData()).getData();
+        byte[] rereadUndefinedData = ((UndefinedData) hdus[hdus.length - 1].getData()).getData();
         Assert.assertArrayEquals(undefinedData, rereadUndefinedData);
     }
 
@@ -237,7 +237,7 @@ public class BaseFitsTest {
         Fits fits2 = new Fits("target/UndefindedHDU2.fits");
         BasicHDU<?>[] hdus = fits2.read();
 
-        byte[] rereadUndefinedData = (byte[]) ((UndefinedData) hdus[hdus.length - 1].getData()).getData();
+        byte[] rereadUndefinedData = ((UndefinedData) hdus[hdus.length - 1].getData()).getData();
         Assert.assertArrayEquals(undefinedData, rereadUndefinedData);
     }
 
@@ -303,7 +303,7 @@ public class BaseFitsTest {
         Fits fits2 = new Fits("target/UndefindedHDU4.fits");
         BasicHDU<?>[] hdus = fits2.read();
 
-        byte[] rereadUndefinedData = (byte[]) ((UndefinedData) hdus[hdus.length - 1].getData()).getData();
+        byte[] rereadUndefinedData = ((UndefinedData) hdus[hdus.length - 1].getData()).getData();
         Assert.assertArrayEquals(undefinedData, rereadUndefinedData);
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -324,7 +324,7 @@ public class BaseFitsTest {
         head.addValue("PCOUNT", 0, null);
         head.addValue("GCOUNT", 2, null);
         UndefinedHDU hdu = (UndefinedHDU) FitsFactory.hduFactory(head);
-        byte[] data = (byte[]) hdu.getData().getData();
+        byte[] data = hdu.getData().getData();
         Assert.assertEquals(2000, data.length);
         Arrays.fill(data, (byte) 1);
         FitsFile buf = new FitsFile("target/testFitsUndefinedHdu5", "rw");
@@ -334,7 +334,7 @@ public class BaseFitsTest {
 
         buf = new FitsFile("target/testFitsUndefinedHdu5", "rw");
         hdu.read(buf);
-        data = (byte[]) hdu.getData().getData();
+        data = hdu.getData().getData();
         buf.close();
         Assert.assertEquals((byte) 1, data[0]);
 
@@ -355,9 +355,10 @@ public class BaseFitsTest {
         try {
             os = new FitsOutputStream(new ByteArrayOutputStream()) {
 
+                @Override
                 public void write(byte[] b) throws IOException {
                     ThrowAnyException.throwIOException("could not write");
-                };
+                }
             };
             hdu.getData().write(os);
         } catch (FitsException io) {
@@ -455,7 +456,7 @@ public class BaseFitsTest {
         FitsFactory.setAllowHeaderRepairs(false);
         header.card(Standard.NAXIS).value(2)//
                 .card(NAXISn.n(2)).value(2)//
-                .card(Standard.NAXIS.BITPIX).value(22);
+                .card(Standard.BITPIX).value(22);
         actual = null;
         try {
             RandomGroupsHDU.manufactureData(header);
@@ -465,7 +466,7 @@ public class BaseFitsTest {
         Assert.assertNotNull(actual);
         Assert.assertTrue(actual.getMessage().contains("BITPIX"));
         header.card(NAXISn.n(2)).value(-2)//
-                .card(Standard.NAXIS.BITPIX).value(32);
+                .card(Standard.BITPIX).value(32);
         actual = null;
         try {
             RandomGroupsHDU.manufactureData(header);
@@ -486,7 +487,7 @@ public class BaseFitsTest {
                 .card(Standard.NAXIS).value(2)//
                 .card(NAXISn.n(1)).value(0)//
                 .card(NAXISn.n(2)).value(2)//
-                .card(Standard.NAXIS.BITPIX).value(32)//
+                .card(Standard.BITPIX).value(32)//
                 .header();
         RandomGroupsData data = RandomGroupsHDU.manufactureData(header);
         Assert.assertEquals(0, data.getData().length);
@@ -587,7 +588,7 @@ public class BaseFitsTest {
     }
 
     @Test
-    public void testreadWriteHdu() throws Exception {
+    public void testReadWriteHdu() throws Exception {
         byte[] undefinedData = new byte[1000];
         for (int index = 0; index < undefinedData.length; index++) {
             undefinedData[index] = (byte) index;
@@ -616,7 +617,7 @@ public class BaseFitsTest {
         hdu.read(stream);
         hdu.getHeader().getStringValue("TESTER");
 
-        byte[] rereadUndefinedData = (byte[]) hdu.getData().getData();
+        byte[] rereadUndefinedData = hdu.getData().getData();
         Assert.assertArrayEquals(undefinedData, rereadUndefinedData);
     }
 
@@ -1104,6 +1105,7 @@ public class BaseFitsTest {
     @Test(expected = FitsException.class)
     public void testWriteToFitsStreamAsDataOutputException() throws Exception {
         FitsOutputStream o = new FitsOutputStream(new FileOutputStream(new File(TMP_FITS_NAME))) {
+            @Override
             public void flush() throws IOException {
                 throw new IOException("flush disabled.");
             }
@@ -1135,6 +1137,22 @@ public class BaseFitsTest {
     public void emptyHDUTest() throws Exception {
         BasicHDU<?> hdu = new ImageHDU(null, null);
         assertEquals(0, hdu.getSize());
+    }
+
+    @Test
+    public void trimmedStringTest() throws Exception {
+        Header h = new Header();
+        h.addValue(Standard.OBJECT, " blah ");
+        BasicHDU<?> hdu = new ImageHDU(h, null);
+        assertEquals(" blah", h.getStringValue(Standard.OBJECT));
+        assertEquals("blah", hdu.getTrimmedString(Standard.OBJECT));
+    }
+
+    @Test
+    public void trimmedStringTestNull() throws Exception {
+        Header h = new Header();
+        BasicHDU<?> hdu = new ImageHDU(h, null);
+        assertNull(hdu.getTrimmedString(Standard.OBJECT));
     }
 
     @Test
@@ -1253,6 +1271,34 @@ public class BaseFitsTest {
     @Test(expected = FitsException.class)
     public void createFitsFileExceptionTest() throws Exception {
         new Fits((FitsFile) null);
+    }
+
+    @Test
+    public void testIsUndefinedData() throws Exception {
+        assertTrue(UndefinedHDU.isData(new byte[10]));
+        assertFalse(UndefinedHDU.isData(null));
+        assertFalse(UndefinedHDU.isData(new int[10]));
+        assertFalse(UndefinedHDU.isData(new byte[10][10]));
+        assertFalse(UndefinedHDU.isData(new File("blah")));
+    }
+
+    @Test
+    public void testIsUndefinedHeader() throws Exception {
+        Header h = new Header();
+        h.addValue(Standard.XTENSION, Standard.XTENSION_IMAGE);
+        assertFalse(UndefinedHDU.isHeader(h));
+        h.addValue(Standard.XTENSION, Standard.XTENSION_BINTABLE);
+        assertFalse(UndefinedHDU.isHeader(h));
+        h.addValue(Standard.XTENSION, Standard.XTENSION_ASCIITABLE);
+        assertFalse(UndefinedHDU.isHeader(h));
+        h.addValue(Standard.XTENSION, "BLAH");
+        assertTrue(UndefinedHDU.isHeader(h));
+    }
+
+    @Test(expected = FitsException.class)
+    public void testImageBlankException() throws Exception {
+        ImageHDU hdu = (ImageHDU) Fits.makeHDU(new float[10][10]);
+        hdu.getBlankValue(); // throws FitsException
     }
 
     private static class TestRandomAccessFileIO extends java.io.RandomAccessFile implements RandomAccessFileIO {

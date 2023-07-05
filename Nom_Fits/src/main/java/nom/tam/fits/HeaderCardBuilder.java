@@ -31,9 +31,9 @@ package nom.tam.fits;
  * #L%
  */
 
-import nom.tam.fits.header.IFitsHeader;
-
 import java.util.Date;
+
+import nom.tam.fits.header.IFitsHeader;
 
 /**
  * Builder pattern implementation for easy readable header card creation.

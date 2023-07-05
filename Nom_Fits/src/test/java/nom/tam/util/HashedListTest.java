@@ -7,12 +7,12 @@ package nom.tam.util;
  * Copyright (C) 2004 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
- * 
+ *
  * Anyone is free to copy, modify, publish, use, compile, sell, or
  * distribute this software, either in source code form or as a compiled
  * binary, for any purpose, commercial or non-commercial, and by any
  * means.
- * 
+ *
  * In jurisdictions that recognize copyright laws, the author or authors
  * of this software dedicate any and all copyright interest in the
  * software to the public domain. We make this dedication for the benefit
@@ -20,7 +20,7 @@ package nom.tam.util;
  * successors. We intend this dedication to be an overt act of
  * relinquishment in perpetuity of all present and future rights to this
  * software under copyright law.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
  * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
@@ -40,24 +40,19 @@ import java.util.NoSuchElementException;
 import static org.junit.Assert.*;
 
 /**
- * This class tests and illustrates the use of the HashedList class. Tests are
- * in four parts.
+ * This class tests and illustrates the use of the HashedList class. Tests are in four parts.
  * <p>
- * The first section (in testCollection) tests the methods that are present in
- * the Collection interface. All of the optional methods of that interface are
- * supported. This involves tests of the HashedClass interface directly.
+ * The first section (in testCollection) tests the methods that are present in the Collection interface. All of the
+ * optional methods of that interface are supported. This involves tests of the HashedClass interface directly.
  * <p>
- * The second set of tests uses the Iterator (in testIterator) returned by the
- * iterator() method and tests the standard Iterator methods to display and
- * remove rows from the HashedList.
+ * The second set of tests uses the Iterator (in testIterator) returned by the iterator() method and tests the standard
+ * Iterator methods to display and remove rows from the HashedList.
  * <p>
- * The third set of tests (in testCursor) tests the extended capabilities of the
- * HashedListIterator to add rows to the table, and to work as a cursor to move
- * in a non-linear fashion through the list.
+ * The third set of tests (in testCursor) tests the extended capabilities of the HashedListIterator to add rows to the
+ * table, and to work as a cursor to move in a non-linear fashion through the list.
  * <p>
- * The fourth set consists of all other test methods that test special cases of
- * the implementation of the various methods of HashedList - to obtain 100% code
- * coverage for HashedList.
+ * The fourth set consists of all other test methods that test special cases of the implementation of the various
+ * methods of HashedList - to obtain 100% code coverage for HashedList.
  */
 public class HashedListTest {
 
@@ -68,7 +63,7 @@ public class HashedListTest {
         final String value;
 
         public TestCursorValue(String value) {
-            this.key = value;
+            key = value;
             this.value = value;
         }
 
@@ -80,19 +75,19 @@ public class HashedListTest {
         @Override
         public boolean equals(Object obj) {
             if (obj instanceof TestCursorValue) {
-                return ((TestCursorValue) obj).value.equals(this.value);
+                return ((TestCursorValue) obj).value.equals(value);
             }
             return false;
         }
 
         @Override
         public String getKey() {
-            return this.key;
+            return key;
         }
 
         @Override
         public int hashCode() {
-            return this.value.hashCode();
+            return value.hashCode();
         }
     }
 
@@ -107,8 +102,8 @@ public class HashedListTest {
     @Test
     public void testCollection() {
 
-        HashedList<TestCursorValue> h1 = new HashedList<TestCursorValue>();
-        HashedList<TestCursorValue> h2 = new HashedList<TestCursorValue>();
+        HashedList<TestCursorValue> h1 = new HashedList<>();
+        HashedList<TestCursorValue> h2 = new HashedList<>();
 
         // Add a few unkeyed rows.
 
@@ -206,7 +201,7 @@ public class HashedListTest {
 
     @Test
     public void testCursor() {
-        HashedList<TestCursorValue> h1 = new HashedList<TestCursorValue>();
+        HashedList<TestCursorValue> h1 = new HashedList<>();
 
         h1.add(new TestCursorValue("key 1", "Row 1"));
         h1.add(new TestCursorValue("Row 3"));
@@ -255,7 +250,7 @@ public class HashedListTest {
     @Test
     public void testIterator() {
 
-        HashedList<TestCursorValue> h1 = new HashedList<TestCursorValue>();
+        HashedList<TestCursorValue> h1 = new HashedList<>();
 
         h1.add(new TestCursorValue("key 4", "Row 4"));
         h1.add(new TestCursorValue("key 5", "Row 5"));
@@ -292,7 +287,7 @@ public class HashedListTest {
 
     @Test(expected = NoSuchElementException.class)
     public void testIndexOfWhenNotInList() {
-        HashedList<TestCursorValue> h = new HashedList<TestCursorValue>();
+        HashedList<TestCursorValue> h = new HashedList<>();
 
         h.indexOf(new TestCursorValue("K", "R"));
     }
@@ -300,7 +295,7 @@ public class HashedListTest {
     @Deprecated
     @Test
     public void testIteratorAddWithKeyAndValue() {
-        HashedList<TestCursorValue> h = new HashedList<TestCursorValue>();
+        HashedList<TestCursorValue> h = new HashedList<>();
         h.iterator(0).add("OtherK", new TestCursorValue("K", "R"));
 
         assertFalse(h.containsKey("OtherK"));
@@ -309,21 +304,21 @@ public class HashedListTest {
 
     @Test(expected = NoSuchElementException.class)
     public void testIteratorWithNegativeIndex() {
-        HashedList<TestCursorValue> h = new HashedList<TestCursorValue>();
+        HashedList<TestCursorValue> h = new HashedList<>();
 
         h.iterator(-1);
     }
 
     @Test(expected = NoSuchElementException.class)
     public void testIteratorWithTooBigIndex() {
-        HashedList<TestCursorValue> h = new HashedList<TestCursorValue>();
+        HashedList<TestCursorValue> h = new HashedList<>();
 
         h.iterator(h.size() + 1);
     }
 
     @Test(expected = NoSuchElementException.class)
     public void testIteratorForNonPresentKey() {
-        HashedList<TestCursorValue> h = new HashedList<TestCursorValue>();
+        HashedList<TestCursorValue> h = new HashedList<>();
         h.add(new TestCursorValue("K", "R"));
 
         h.iterator("K1");
@@ -331,7 +326,7 @@ public class HashedListTest {
 
     @Test
     public void testIteratorNextWithCount() {
-        HashedList<TestCursorValue> h = new HashedList<TestCursorValue>();
+        HashedList<TestCursorValue> h = new HashedList<>();
         h.add(new TestCursorValue("K1", "R1"));
         h.add(new TestCursorValue("K2", "R2"));
         h.add(new TestCursorValue("K3", "R3"));
@@ -342,21 +337,21 @@ public class HashedListTest {
 
     @Test(expected = NoSuchElementException.class)
     public void testIteratorNextWhenNone() {
-        HashedList<TestCursorValue> h = new HashedList<TestCursorValue>();
+        HashedList<TestCursorValue> h = new HashedList<>();
 
         h.iterator(0).next();
     }
 
     @Test(expected = NoSuchElementException.class)
     public void testIteratorPrevWhenNone() {
-        HashedList<TestCursorValue> h = new HashedList<TestCursorValue>();
+        HashedList<TestCursorValue> h = new HashedList<>();
 
         h.iterator(0).prev();
     }
 
     @Test
     public void testRemoveWhenIndexOutsideBounds() {
-        HashedList<TestCursorValue> h = new HashedList<TestCursorValue>();
+        HashedList<TestCursorValue> h = new HashedList<>();
         h.add(new TestCursorValue("K", "R"));
 
         assertFalse(h.remove(-1));
@@ -365,7 +360,7 @@ public class HashedListTest {
 
     @Test
     public void testRemoveWhenNotPresent() {
-        HashedList<TestCursorValue> h = new HashedList<TestCursorValue>();
+        HashedList<TestCursorValue> h = new HashedList<>();
         h.add(new TestCursorValue("K", "R"));
 
         assertFalse(h.remove("R1"));
@@ -373,7 +368,7 @@ public class HashedListTest {
 
     @Test
     public void testRemoveKeyWhenNotPresent() {
-        HashedList<TestCursorValue> h = new HashedList<TestCursorValue>();
+        HashedList<TestCursorValue> h = new HashedList<>();
         h.add(new TestCursorValue("K", "R"));
 
         assertFalse(h.removeKey("K1"));
@@ -381,7 +376,7 @@ public class HashedListTest {
 
     @Test
     public void testReplaceKeySpecialCases() {
-        HashedList<TestCursorValue> h = new HashedList<TestCursorValue>();
+        HashedList<TestCursorValue> h = new HashedList<>();
         h.add(new TestCursorValue("K", "R"));
 
         assertFalse(h.replaceKey("K1", "K2"));

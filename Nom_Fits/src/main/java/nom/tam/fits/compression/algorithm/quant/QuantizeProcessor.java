@@ -31,12 +31,12 @@ package nom.tam.fits.compression.algorithm.quant;
  * #L%
  */
 
-import nom.tam.fits.compression.algorithm.api.ICompressor;
-
 import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
+
+import nom.tam.fits.compression.algorithm.api.ICompressor;
 
 /**
  * (<i>for internal use</i>) Qunatization step processor as part of compression.

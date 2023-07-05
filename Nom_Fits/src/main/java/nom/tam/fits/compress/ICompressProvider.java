@@ -31,13 +31,13 @@ package nom.tam.fits.compress;
  * #L%
  */
 
-import nom.tam.fits.FitsException;
-
 import java.io.IOException;
 import java.io.InputStream;
 
+import nom.tam.fits.FitsException;
+
 /**
- * Input stream decompression interface.
+ * (<i>for internal use</i>) Input stream decompression interface.
  */
 public interface ICompressProvider {
 

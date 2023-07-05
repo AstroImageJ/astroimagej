@@ -7,12 +7,12 @@ package nom.tam.fits.test;
  * Copyright (C) 2004 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
- * 
+ *
  * Anyone is free to copy, modify, publish, use, compile, sell, or
  * distribute this software, either in source code form or as a compiled
  * binary, for any purpose, commercial or non-commercial, and by any
  * means.
- * 
+ *
  * In jurisdictions that recognize copyright laws, the author or authors
  * of this software dedicate any and all copyright interest in the
  * software to the public domain. We make this dedication for the benefit
@@ -20,7 +20,7 @@ package nom.tam.fits.test;
  * successors. We intend this dedication to be an overt act of
  * relinquishment in perpetuity of all present and future rights to this
  * software under copyright law.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
  * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
@@ -47,6 +47,7 @@ import nom.tam.fits.Header;
 import nom.tam.fits.RandomGroupsData;
 import nom.tam.fits.RandomGroupsHDU;
 import nom.tam.fits.header.Bitpix;
+import nom.tam.fits.header.Standard;
 import nom.tam.util.ArrayFuncs;
 import nom.tam.util.FitsFile;
 import nom.tam.util.SafeClose;
@@ -71,18 +72,18 @@ public class RandomGroupsTest {
             data[0][1] = fa;
 
             // First lets write out the file painfully group by group.
-            BasicHDU<?> hdu = Fits.makeHDU(data);
+            BasicHDU<?> hdu = RandomGroupsHDU.createFrom(data);
             Header hdr = hdu.getHeader();
             // Change the number of groups
             hdr.addValue("GCOUNT", 20, "Number of groups");
             hdr.write(bf);
 
-            for (int i = 0; i < 20; i += 1) {
+            for (int i = 0; i < 20; i++) {
 
-                for (int j = 0; j < pa.length; j += 1) {
+                for (int j = 0; j < pa.length; j++) {
                     pa[j] = i + j;
                 }
-                for (int j = 0; j < fa.length; j += 1) {
+                for (int j = 0; j < fa.length; j++) {
                     fa[j][j] = i * j;
                 }
                 // Write a group
@@ -106,14 +107,14 @@ public class RandomGroupsTest {
             data = (Object[][]) hdus[0].getKernel();
             System.err.println("### [1] " + data.length);
 
-            for (int i = 0; i < data.length; i += 1) {
+            for (int i = 0; i < data.length; i++) {
 
                 pa = (float[]) data[i][0];
                 fa = (float[][]) data[i][1];
-                for (int j = 0; j < pa.length; j += 1) {
+                for (int j = 0; j < pa.length; j++) {
                     assertEquals("paramTest:" + i + " " + j, i + j, pa[j], 0);
                 }
-                for (int j = 0; j < fa.length; j += 1) {
+                for (int j = 0; j < fa.length; j++) {
                     assertEquals("dataTest:" + i + " " + j, i * j, fa[j][j], 0);
                 }
             }
@@ -128,7 +129,7 @@ public class RandomGroupsTest {
             bf = new FitsFile("target/rg2.fits", "rw");
             // Generate a FITS HDU from the kernel.
             System.err.println("### [2] " + data.length);
-            f.addHDU(Fits.makeHDU(data));
+            f.addHDU(RandomGroupsHDU.createFrom(data));
             f.write(bf);
 
             bf.flush();
@@ -141,14 +142,14 @@ public class RandomGroupsTest {
             f = new Fits("target/rg2.fits");
             BasicHDU<?> groupHDU = f.read()[0];
             data = (Object[][]) groupHDU.getKernel();
-            for (int i = 0; i < data.length; i += 1) {
+            for (int i = 0; i < data.length; i++) {
 
                 pa = (float[]) data[i][0];
                 fa = (float[][]) data[i][1];
-                for (int j = 0; j < pa.length; j += 1) {
+                for (int j = 0; j < pa.length; j++) {
                     assertEquals("paramTest:" + i + " " + j, i + j, pa[j], 0);
                 }
-                for (int j = 0; j < fa.length; j += 1) {
+                for (int j = 0; j < fa.length; j++) {
                     assertEquals("dataTest:" + i + " " + j, i * j, fa[j][j], 0);
                 }
             }
@@ -192,7 +193,7 @@ public class RandomGroupsTest {
             Object[][] data = new Object[1][2];
             data[0][0] = pa;
             data[0][1] = fa;
-            groups = (RandomGroupsData) Fits.makeHDU(data).getData();
+            groups = RandomGroupsHDU.createFrom(data).getData();
             bf.writeLong(1);
             groups.write(bf);
         } finally {
@@ -215,13 +216,12 @@ public class RandomGroupsTest {
         }
     }
 
-    private void testGroupCreationAndRecreationByType(Object fa, Object pa, int bipix, String typeName)
-            throws Exception {
+    private void testGroupCreationAndRecreationByType(Object fa, Object pa, int bipix, String typeName) throws Exception {
         Object[][] data = new Object[1][2];
         data[0][0] = pa;
         data[0][1] = fa;
 
-        BasicHDU<?> hdu = Fits.makeHDU(data);
+        BasicHDU<?> hdu = RandomGroupsHDU.createFrom(data);
         Header hdr = hdu.getHeader();
         Assert.assertEquals(0, hdr.getIntValue("NAXIS1"));
         Assert.assertEquals(20, hdr.getIntValue("NAXIS2"));
@@ -297,5 +297,63 @@ public class RandomGroupsTest {
     public void testNullDataWrite() throws Exception {
         new RandomGroupsData(null).write(null);
         // No exception should be throwm.
+    }
+
+    @Test
+    public void testCreateFromData() throws Exception {
+        RandomGroupsHDU.createFrom(new Object[][] {{new float[5], new float[10][10]}});
+        // No exception
+    }
+
+    @Test(expected = FitsException.class)
+    public void testCreateWrongDataType1() throws Exception {
+        RandomGroupsHDU.createFrom(new Object[][] {{new float[5], new float[10][10], new float[3]}});
+    }
+
+    @Test(expected = FitsException.class)
+    public void testCreateWrongDataType2() throws Exception {
+        RandomGroupsHDU.createFrom(new Object[][] {{new float[5], new int[10][10]}});
+    }
+
+    @Test
+    public void testQuantHeaderExists() throws Exception {
+        RandomGroupsHDU hdu = RandomGroupsHDU.createFrom(new Object[][] {{new int[5], new int[10][10]}});
+        Header h = hdu.getHeader();
+
+        h.addValue(Standard.BZERO, 1.0);
+        Assert.assertEquals(1.0, hdu.getBZero(), 1e-6);
+
+        h.addValue(Standard.BSCALE, -10.0);
+        Assert.assertEquals(-10.0, hdu.getBScale(), 1e-6);
+
+        h.addValue(Standard.BLANK, -999);
+        Assert.assertEquals(-999L, hdu.getBlankValue());
+    }
+
+    @Test
+    public void testQuantHeaderDefault() throws Exception {
+        RandomGroupsHDU hdu = RandomGroupsHDU.createFrom(new Object[][] {{new int[5], new int[10][10]}});
+        Assert.assertEquals(0.0, hdu.getBZero(), 1e-6);
+        Assert.assertEquals(1.0, hdu.getBScale(), 1e-6);
+    }
+
+    @Test(expected = FitsException.class)
+    public void testNoHeaderBlank() throws Exception {
+        RandomGroupsHDU hdu = RandomGroupsHDU.createFrom(new Object[][] {{new int[5], new int[10][10]}});
+        hdu.getBlankValue(); // throws FitsException
+    }
+
+    @Test(expected = FitsException.class)
+    public void testBlankException() throws Exception {
+        RandomGroupsHDU hdu = RandomGroupsHDU.createFrom(new Object[][] {{new float[5], new float[10][10]}});
+        hdu.getBlankValue(); // throws FitsException
+    }
+
+    @Test
+    public void testBUnit() throws Exception {
+        RandomGroupsHDU hdu = RandomGroupsHDU.createFrom(new Object[][] {{new int[5], new int[10][10]}});
+        Header h = hdu.getHeader();
+        h.addValue(Standard.BUNIT, "m/s");
+        Assert.assertEquals("m/s", hdu.getBUnit());
     }
 }

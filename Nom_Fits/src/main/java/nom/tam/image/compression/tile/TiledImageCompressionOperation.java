@@ -1,6 +1,19 @@
 package nom.tam.image.compression.tile;
 
-import nom.tam.fits.*;
+import java.lang.reflect.Array;
+import java.nio.Buffer;
+import java.nio.ByteBuffer;
+import java.util.Locale;
+import java.util.concurrent.ExecutorService;
+import java.util.logging.Logger;
+
+import nom.tam.fits.BinaryTable;
+import nom.tam.fits.BinaryTableHDU;
+import nom.tam.fits.FitsException;
+import nom.tam.fits.FitsFactory;
+import nom.tam.fits.Header;
+import nom.tam.fits.HeaderCard;
+import nom.tam.fits.HeaderCardBuilder;
 import nom.tam.fits.compression.algorithm.api.ICompressOption;
 import nom.tam.fits.compression.algorithm.api.ICompressorControl;
 import nom.tam.fits.compression.provider.CompressorProvider;
@@ -12,17 +25,56 @@ import nom.tam.image.tile.operation.AbstractTiledImageOperation;
 import nom.tam.image.tile.operation.TileArea;
 import nom.tam.util.type.ElementType;
 
-import java.lang.reflect.Array;
-import java.nio.Buffer;
-import java.nio.ByteBuffer;
-import java.util.Locale;
-import java.util.concurrent.ExecutorService;
-import java.util.logging.Logger;
+/*
+ * #%L
+ * nom.tam FITS library
+ * %%
+ * Copyright (C) 1996 - 2021 nom-tam-fits
+ * %%
+ * This is free and unencumbered software released into the public domain.
+ *
+ * Anyone is free to copy, modify, publish, use, compile, sell, or
+ * distribute this software, either in source code form or as a compiled
+ * binary, for any purpose, commercial or non-commercial, and by any
+ * means.
+ *
+ * In jurisdictions that recognize copyright laws, the author or authors
+ * of this software dedicate any and all copyright interest in the
+ * software to the public domain. We make this dedication for the benefit
+ * of the public at large and to the detriment of our heirs and
+ * successors. We intend this dedication to be an overt act of
+ * relinquishment in perpetuity of all present and future rights to this
+ * software under copyright law.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+ * OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ * OTHER DEALINGS IN THE SOFTWARE.
+ * #L%
+ */
 
-import static nom.tam.fits.header.Compression.*;
+import static nom.tam.fits.header.Compression.COMPRESSED_DATA_COLUMN;
+import static nom.tam.fits.header.Compression.GZIP_COMPRESSED_DATA_COLUMN;
+import static nom.tam.fits.header.Compression.NULL_PIXEL_MASK_COLUMN;
+import static nom.tam.fits.header.Compression.UNCOMPRESSED_DATA_COLUMN;
+import static nom.tam.fits.header.Compression.ZBITPIX;
+import static nom.tam.fits.header.Compression.ZCMPTYPE;
+import static nom.tam.fits.header.Compression.ZCMPTYPE_GZIP_1;
+import static nom.tam.fits.header.Compression.ZMASKCMP;
+import static nom.tam.fits.header.Compression.ZNAXIS;
+import static nom.tam.fits.header.Compression.ZNAXISn;
+import static nom.tam.fits.header.Compression.ZQUANTIZ;
+import static nom.tam.fits.header.Compression.ZSCALE_COLUMN;
+import static nom.tam.fits.header.Compression.ZTILEn;
+import static nom.tam.fits.header.Compression.ZZERO_COLUMN;
 import static nom.tam.fits.header.Standard.TFIELDS;
 import static nom.tam.fits.header.Standard.TTYPEn;
-import static nom.tam.image.compression.tile.TileCompressionType.*;
+import static nom.tam.image.compression.tile.TileCompressionType.COMPRESSED;
+import static nom.tam.image.compression.tile.TileCompressionType.GZIP_COMPRESSED;
+import static nom.tam.image.compression.tile.TileCompressionType.UNCOMPRESSED;
 
 /**
  * (<i>for internal use</i>) Compresseses an entire image, by parallel processing image tiles. This class represents a
@@ -325,6 +377,7 @@ public class TiledImageCompressionOperation extends AbstractTiledImageOperation<
         return compressAlgorithm;
     }
 
+    @SuppressWarnings("deprecation")
     private <T> T getNullableColumn(Header header, Class<T> class1, String columnName) throws FitsException {
         for (int i = 1; i <= binaryTable.getNCols(); i++) {
             String val = header.getStringValue(TTYPEn.n(i));

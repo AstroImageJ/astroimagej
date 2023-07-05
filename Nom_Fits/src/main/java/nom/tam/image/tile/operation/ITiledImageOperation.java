@@ -31,12 +31,12 @@ package nom.tam.image.tile.operation;
  * #L%
  */
 
+import java.nio.Buffer;
+import java.nio.ByteBuffer;
+
 import nom.tam.fits.compression.algorithm.api.ICompressOption;
 import nom.tam.fits.compression.algorithm.api.ICompressorControl;
 import nom.tam.util.type.ElementType;
-
-import java.nio.Buffer;
-import java.nio.ByteBuffer;
 
 /**
  * 2D image tile compression interface. FITS tiles are always 2-dimentional, but really images of any dimensions may be

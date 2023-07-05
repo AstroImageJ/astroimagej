@@ -1,6 +1,8 @@
 package nom.tam.fits;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import java.io.IOException;
+import java.lang.reflect.Array;
+
 import nom.tam.fits.header.Bitpix;
 import nom.tam.fits.header.Standard;
 import nom.tam.util.ArrayDataInput;
@@ -8,10 +10,43 @@ import nom.tam.util.ArrayDataOutput;
 import nom.tam.util.ArrayFuncs;
 import nom.tam.util.FitsEncoder;
 
-import java.io.IOException;
-import java.lang.reflect.Array;
+/*-
+ * #%L
+ * nom.tam FITS library
+ * %%
+ * Copyright (C) 1996 - 2023 nom-tam-fits
+ * %%
+ * This is free and unencumbered software released into the public domain.
+ *
+ * Anyone is free to copy, modify, publish, use, compile, sell, or
+ * distribute this software, either in source code form or as a compiled
+ * binary, for any purpose, commercial or non-commercial, and by any
+ * means.
+ *
+ * In jurisdictions that recognize copyright laws, the author or authors
+ * of this software dedicate any and all copyright interest in the
+ * software to the public domain. We make this dedication for the benefit
+ * of the public at large and to the detriment of our heirs and
+ * successors. We intend this dedication to be an overt act of
+ * relinquishment in perpetuity of all present and future rights to this
+ * software under copyright law.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+ * OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ * OTHER DEALINGS IN THE SOFTWARE.
+ * #L%
+ */
 
-import static nom.tam.fits.header.Standard.*;
+import static nom.tam.fits.header.Standard.GCOUNT;
+import static nom.tam.fits.header.Standard.GROUPS;
+import static nom.tam.fits.header.Standard.NAXISn;
+import static nom.tam.fits.header.Standard.PCOUNT;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * Random Groups data. The use of random groups is discouraged, even by the FITS standard. Some old radio data may be
@@ -189,13 +224,16 @@ public class RandomGroupsData extends Data {
         return (Object[][]) super.getData();
     }
 
+    @SuppressWarnings({"resource", "deprecation"})
     @Override
     public void write(ArrayDataOutput str) throws FitsException {
         if (getTrueSize() <= 0) {
             return;
         }
 
-        ensureData();
+        if (str != getRandomAccessInput()) {
+            ensureData();
+        }
 
         try {
             str.writeArray(dataArray);

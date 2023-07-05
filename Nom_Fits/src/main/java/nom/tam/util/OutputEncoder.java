@@ -31,14 +31,14 @@
 
 package nom.tam.util;
 
-import nom.tam.fits.FitsFactory;
-import nom.tam.util.type.ElementType;
-
 import java.io.EOFException;
 import java.io.IOException;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+
+import nom.tam.fits.FitsFactory;
+import nom.tam.util.type.ElementType;
 
 /**
  * Efficient base class for encoding Java arrays into binary output (<i>primarily for internal use</i>)

@@ -1,16 +1,16 @@
 package nom.tam.fits.compression.algorithm.rice;
 
-import nom.tam.fits.compression.algorithm.api.ICompressor;
-import nom.tam.fits.compression.algorithm.quant.QuantizeProcessor.DoubleQuantCompressor;
-import nom.tam.fits.compression.algorithm.quant.QuantizeProcessor.FloatQuantCompressor;
-import nom.tam.util.FitsIO;
-import nom.tam.util.type.ElementType;
-
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
 import java.util.logging.Logger;
+
+import nom.tam.fits.compression.algorithm.api.ICompressor;
+import nom.tam.fits.compression.algorithm.quant.QuantizeProcessor.DoubleQuantCompressor;
+import nom.tam.fits.compression.algorithm.quant.QuantizeProcessor.FloatQuantCompressor;
+import nom.tam.util.FitsIO;
+import nom.tam.util.type.ElementType;
 
 /*
  * #%L

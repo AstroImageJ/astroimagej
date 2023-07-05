@@ -31,11 +31,16 @@ package nom.tam.image.compression.tile.mask;
  * #L%
  */
 
+import java.nio.ByteBuffer;
+import java.nio.DoubleBuffer;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+import java.nio.LongBuffer;
+import java.nio.ShortBuffer;
+
 import nom.tam.fits.compression.algorithm.api.ICompressorControl;
 import nom.tam.image.tile.operation.buffer.TileBuffer;
 import nom.tam.util.type.ElementType;
-
-import java.nio.*;
 
 /**
  * (<i>for internal use</i>) Preserves blank (<code>null</code>) values in

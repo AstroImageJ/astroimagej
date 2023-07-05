@@ -31,9 +31,9 @@ package nom.tam.fits;
  * #L%
  */
 
-import nom.tam.fits.header.Standard;
-
 import java.io.PrintStream;
+
+import nom.tam.fits.header.Standard;
 
 import static nom.tam.fits.header.Standard.XTENSION;
 
@@ -116,7 +116,7 @@ public class UndefinedHDU extends BasicHDU<UndefinedData> {
      * @throws     FitsException if the data could not be prepared to prescriotion.
      */
     @Deprecated
-    public static Data manufactureData(Header hdr) throws FitsException {
+    public static UndefinedData manufactureData(Header hdr) throws FitsException {
         return new UndefinedData(hdr);
     }
 

@@ -48,7 +48,8 @@ public class CompressedTableBlackBoxTest {
         uncompressTableAndAssert(compressedfileName, originalFileName);
     }
 
-    private void uncompressTableAndAssert(String compressedfileName, String originalFileName) throws FitsException, IOException {
+    private void uncompressTableAndAssert(String compressedfileName, String originalFileName)
+            throws FitsException, IOException {
         String tableFile;
         if (new File(compressedfileName).exists()) {
             tableFile = compressedfileName;

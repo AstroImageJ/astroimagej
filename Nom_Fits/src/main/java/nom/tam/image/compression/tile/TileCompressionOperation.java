@@ -31,6 +31,9 @@ package nom.tam.image.compression.tile;
  * #L%
  */
 
+import java.lang.reflect.Array;
+import java.nio.ByteBuffer;
+
 import nom.tam.fits.compression.algorithm.api.ICompressOption;
 import nom.tam.fits.compression.algorithm.api.ICompressorControl;
 import nom.tam.image.compression.tile.mask.AbstractNullPixelMask;
@@ -39,9 +42,6 @@ import nom.tam.image.tile.operation.AbstractTileOperation;
 import nom.tam.image.tile.operation.ITileOperation;
 import nom.tam.image.tile.operation.TileArea;
 import nom.tam.util.type.ElementType;
-
-import java.lang.reflect.Array;
-import java.nio.ByteBuffer;
 
 /**
  * (<i>for internal use</i>) An abstract compression operation on an image tile.

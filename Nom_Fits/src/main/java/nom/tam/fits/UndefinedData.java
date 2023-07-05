@@ -1,6 +1,9 @@
 package nom.tam.fits;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import nom.tam.fits.header.Bitpix;
 import nom.tam.fits.header.Standard;
 import nom.tam.util.ArrayDataInput;
@@ -8,12 +11,45 @@ import nom.tam.util.ArrayDataOutput;
 import nom.tam.util.ArrayFuncs;
 import nom.tam.util.FitsEncoder;
 
-import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+/*
+ * #%L
+ * nom.tam FITS library
+ * %%
+ * Copyright (C) 2004 - 2021 nom-tam-fits
+ * %%
+ * This is free and unencumbered software released into the public domain.
+ *
+ * Anyone is free to copy, modify, publish, use, compile, sell, or
+ * distribute this software, either in source code form or as a compiled
+ * binary, for any purpose, commercial or non-commercial, and by any
+ * means.
+ *
+ * In jurisdictions that recognize copyright laws, the author or authors
+ * of this software dedicate any and all copyright interest in the
+ * software to the public domain. We make this dedication for the benefit
+ * of the public at large and to the detriment of our heirs and
+ * successors. We intend this dedication to be an overt act of
+ * relinquishment in perpetuity of all present and future rights to this
+ * software under copyright law.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+ * OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ * OTHER DEALINGS IN THE SOFTWARE.
+ * #L%
+ */
 
-import static nom.tam.fits.header.Standard.*;
+import static nom.tam.fits.header.Standard.EXTEND;
+import static nom.tam.fits.header.Standard.GCOUNT;
+import static nom.tam.fits.header.Standard.NAXIS;
+import static nom.tam.fits.header.Standard.NAXISn;
+import static nom.tam.fits.header.Standard.PCOUNT;
 import static nom.tam.util.LoggerHelper.getLogger;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * A container for unknown binary data types. We can still retrieve the data as a <code>byte[]</code> array, we just
@@ -116,9 +152,12 @@ public class UndefinedData extends Data {
         in.readFully(data);
     }
 
+    @SuppressWarnings({"resource", "deprecation"})
     @Override
     public void write(ArrayDataOutput o) throws FitsException {
-        ensureData();
+        if (o != getRandomAccessInput()) {
+            ensureData();
+        }
         try {
             o.write(data);
         } catch (IOException e) {

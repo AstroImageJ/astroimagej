@@ -1,6 +1,12 @@
 package nom.tam.fits.header;
 
-import nom.tam.fits.*;
+import nom.tam.fits.AsciiTable;
+import nom.tam.fits.BasicHDU;
+import nom.tam.fits.BinaryTable;
+import nom.tam.fits.ImageData;
+import nom.tam.fits.RandomGroupsData;
+import nom.tam.fits.TableData;
+import nom.tam.fits.UndefinedData;
 
 /*
  * #%L

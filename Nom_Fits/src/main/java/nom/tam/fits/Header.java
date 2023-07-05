@@ -1,22 +1,79 @@
 package nom.tam.fits;
 
-import nom.tam.fits.FitsFactory.FitsSettings;
-import nom.tam.fits.header.Bitpix;
-import nom.tam.fits.header.IFitsHeader;
-import nom.tam.fits.header.IFitsHeader.VALUE;
-import nom.tam.util.RandomAccess;
-import nom.tam.util.*;
-
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static nom.tam.fits.header.Standard.*;
+import nom.tam.fits.FitsFactory.FitsSettings;
+import nom.tam.fits.header.Bitpix;
+import nom.tam.fits.header.IFitsHeader;
+import nom.tam.fits.header.IFitsHeader.VALUE;
+import nom.tam.util.ArrayDataInput;
+import nom.tam.util.ArrayDataOutput;
+import nom.tam.util.AsciiFuncs;
+import nom.tam.util.ComplexValue;
+import nom.tam.util.Cursor;
+import nom.tam.util.FitsIO;
+import nom.tam.util.FitsOutput;
+import nom.tam.util.HashedList;
+import nom.tam.util.RandomAccess;
+
+/*
+ * #%L
+ * nom.tam FITS library
+ * %%
+ * Copyright (C) 2004 - 2021 nom-tam-fits
+ * %%
+ * This is free and unencumbered software released into the public domain.
+ *
+ * Anyone is free to copy, modify, publish, use, compile, sell, or
+ * distribute this software, either in source code form or as a compiled
+ * binary, for any purpose, commercial or non-commercial, and by any
+ * means.
+ *
+ * In jurisdictions that recognize copyright laws, the author or authors
+ * of this software dedicate any and all copyright interest in the
+ * software to the public domain. We make this dedication for the benefit
+ * of the public at large and to the detriment of our heirs and
+ * successors. We intend this dedication to be an overt act of
+ * relinquishment in perpetuity of all present and future rights to this
+ * software under copyright law.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+ * OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ * OTHER DEALINGS IN THE SOFTWARE.
+ * #L%
+ */
+
+import static nom.tam.fits.header.Standard.BITPIX;
+import static nom.tam.fits.header.Standard.BLANKS;
+import static nom.tam.fits.header.Standard.COMMENT;
+import static nom.tam.fits.header.Standard.END;
+import static nom.tam.fits.header.Standard.EXTEND;
+import static nom.tam.fits.header.Standard.GCOUNT;
+import static nom.tam.fits.header.Standard.GROUPS;
+import static nom.tam.fits.header.Standard.HISTORY;
+import static nom.tam.fits.header.Standard.NAXIS;
+import static nom.tam.fits.header.Standard.NAXISn;
+import static nom.tam.fits.header.Standard.PCOUNT;
+import static nom.tam.fits.header.Standard.SIMPLE;
+import static nom.tam.fits.header.Standard.TFIELDS;
+import static nom.tam.fits.header.Standard.XTENSION;
+import static nom.tam.fits.header.Standard.XTENSION_BINTABLE;
 import static nom.tam.fits.header.extra.CXCExt.LONGSTRN;
 
 /**
@@ -68,7 +125,7 @@ import static nom.tam.fits.header.extra.CXCExt.LONGSTRN;
 public class Header implements FitsElement {
 
     /**
-     * The default character position to which comments should be aligned if possible (0-based). The fITS standard
+     * The default character position to which comments should be aligned if possible (zero-based). The fITS standard
      * requires that 'fixed-format' values are right-justified to byte 30 (index 29 in Java), and recommends a space
      * after that before the comment. As such, comments should normally start at byte 30 (counted from 0). (We will add
      * a space at that position before the '/' indicating the comment start)
@@ -76,7 +133,7 @@ public class Header implements FitsElement {
     public static final int DEFAULT_COMMENT_ALIGN = 30;
 
     /**
-     * The earliest position (0-based) at which a comment may start for a regular key/value entry.
+     * The earliest position (zero-based) at which a comment may start for a regular key/value entry.
      * 
      * @deprecated We will disable changing alignment in the future because it may violate the standard for
      *                 'fixed-format' header entries, and result in files that are unreadable by some other software.
@@ -85,7 +142,7 @@ public class Header implements FitsElement {
     public static final int MIN_COMMENT_ALIGN = 20;
 
     /**
-     * The largest (0-based) comment alignment allowed that can still contain some meaningful comment (word)
+     * The largest (zero-based) comment alignment allowed that can still contain some meaningful comment (word)
      * 
      * @deprecated We will disable changing alignment in the future because it may violate the standard for
      *                 'fixed-format' header entries, and result in files that are unreadable by some other software.
@@ -1920,10 +1977,7 @@ public class Header implements FitsElement {
      * @throws HeaderCardException if the operation failed
      */
     public void updateLine(IFitsHeader key, HeaderCard card) throws HeaderCardException {
-        if (key.valueType() != VALUE.NONE) {
-            deleteKey(key);
-        }
-        cursor().add(card);
+        updateLine(key.key(), card);
     }
 
     /**

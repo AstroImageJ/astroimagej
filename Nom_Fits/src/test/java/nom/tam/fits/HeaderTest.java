@@ -1,5 +1,43 @@
 package nom.tam.fits;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.Arrays;
+
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+
+import nom.tam.fits.header.GenericKey;
+import nom.tam.fits.header.IFitsHeader;
+import nom.tam.fits.header.Standard;
+import nom.tam.fits.header.hierarch.BlanksDotHierarchKeyFormatter;
+import nom.tam.util.ArrayDataOutput;
+import nom.tam.util.AsciiFuncs;
+import nom.tam.util.ComplexValue;
+import nom.tam.util.Cursor;
+import nom.tam.util.FitsFile;
+import nom.tam.util.FitsInputStream;
+import nom.tam.util.FitsOutputStream;
+import nom.tam.util.SafeClose;
+import nom.tam.util.test.ThrowAnyException;
+
 /*
  * #%L
  * nom.tam FITS library
@@ -7,12 +45,12 @@ package nom.tam.fits;
  * Copyright (C) 2004 - 2021 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
- * 
+ *
  * Anyone is free to copy, modify, publish, use, compile, sell, or
  * distribute this software, either in source code form or as a compiled
  * binary, for any purpose, commercial or non-commercial, and by any
  * means.
- * 
+ *
  * In jurisdictions that recognize copyright laws, the author or authors
  * of this software dedicate any and all copyright interest in the
  * software to the public domain. We make this dedication for the benefit
@@ -20,7 +58,7 @@ package nom.tam.fits;
  * successors. We intend this dedication to be an overt act of
  * relinquishment in perpetuity of all present and future rights to this
  * software under copyright law.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
  * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
  * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
@@ -31,25 +69,21 @@ package nom.tam.fits;
  * #L%
  */
 
-import nom.tam.fits.header.GenericKey;
-import nom.tam.fits.header.IFitsHeader;
-import nom.tam.fits.header.Standard;
-import nom.tam.fits.header.hierarch.BlanksDotHierarchKeyFormatter;
-import nom.tam.util.*;
-import nom.tam.util.test.ThrowAnyException;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.io.*;
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.util.Arrays;
-
-import static nom.tam.fits.header.Standard.*;
-import static nom.tam.fits.header.extra.NOAOExt.*;
-import static org.junit.Assert.*;
+import static nom.tam.fits.header.Standard.BITPIX;
+import static nom.tam.fits.header.Standard.BLOCKED;
+import static nom.tam.fits.header.Standard.END;
+import static nom.tam.fits.header.Standard.EXTEND;
+import static nom.tam.fits.header.Standard.NAXIS;
+import static nom.tam.fits.header.Standard.NAXISn;
+import static nom.tam.fits.header.Standard.SIMPLE;
+import static nom.tam.fits.header.Standard.XTENSION;
+import static nom.tam.fits.header.Standard.XTENSION_BINTABLE;
+import static nom.tam.fits.header.extra.NOAOExt.CRPIX1;
+import static nom.tam.fits.header.extra.NOAOExt.CRPIX2;
+import static nom.tam.fits.header.extra.NOAOExt.CRVAL1;
+import static nom.tam.fits.header.extra.NOAOExt.CRVAL2;
+import static nom.tam.fits.header.extra.NOAOExt.CTYPE1;
+import static nom.tam.fits.header.extra.NOAOExt.CTYPE2;
 
 public class HeaderTest {
 
@@ -102,21 +136,21 @@ public class HeaderTest {
             assertEquals(CRPIX2.key(), 0., hdr.getDoubleValue(CRPIX2, -2.), 0);
 
             c.setKey(CRVAL1.key());
-            HeaderCard hc = (HeaderCard) c.next();
+            HeaderCard hc = c.next();
             assertEquals("CRVAL1_c", CRVAL1.key(), hc.getKey());
-            hc = (HeaderCard) c.next();
+            hc = c.next();
             assertEquals("CRPIX1_c", CRPIX1.key(), hc.getKey());
-            hc = (HeaderCard) c.next();
+            hc = c.next();
             assertEquals("CTYPE1_c", CTYPE1.key(), hc.getKey());
-            hc = (HeaderCard) c.next();
+            hc = c.next();
             assertEquals("CRVAL2_c", CRVAL2.key(), hc.getKey());
-            hc = (HeaderCard) c.next();
+            hc = c.next();
             assertEquals("CRPIX2_c", CRPIX2.key(), hc.getKey());
-            hc = (HeaderCard) c.next();
+            hc = c.next();
             assertEquals("INV2_c", "INV2", hc.getKey());
-            hc = (HeaderCard) c.next();
+            hc = c.next();
             assertEquals("SYM2_c", "SYM2", hc.getKey());
-            hc = (HeaderCard) c.next();
+            hc = c.next();
             assertEquals("CTYPE2_c", CTYPE2.key(), hc.getKey());
 
             hdr.findCard(CRPIX1.key());
@@ -128,18 +162,18 @@ public class HeaderTest {
             hdr.insertComment("Comment after flt2");
 
             c.setKey("INTVAL1");
-            hc = (HeaderCard) c.next();
+            hc = c.next();
             assertEquals("INTVAL1", "INTVAL1", hc.getKey());
-            hc = (HeaderCard) c.next();
+            hc = c.next();
             assertEquals("LOG1", "LOG1", hc.getKey());
-            hc = (HeaderCard) c.next();
+            hc = c.next();
             assertEquals("LOGB1", "LOGB1", hc.getKey());
-            hc = (HeaderCard) c.next();
+            hc = c.next();
             assertEquals("FLT1", "FLT1", hc.getKey());
-            hc = (HeaderCard) c.next();
+            hc = c.next();
             assertEquals("FLT2", "FLT2", hc.getKey());
             c.next(); // Skip comment
-            hc = (HeaderCard) c.next();
+            hc = c.next();
             assertEquals("CRPIX1x", CRPIX1.key(), hc.getKey());
 
             assertEquals("FLT1", 1.34, hdr.getDoubleValue("FLT1", 0), 0);
@@ -150,11 +184,11 @@ public class HeaderTest {
             assertEquals("FLT1", BigDecimal.valueOf(0.).doubleValue(), hdr.getBigDecimalValue("FLT1").doubleValue(),
                     0.00000000001);
             c.setKey("LOGB1");
-            hc = (HeaderCard) c.next();
+            hc = c.next();
             assertEquals("AftDel1", "LOGB1", hc.getKey());
-            hc = (HeaderCard) c.next();
+            hc = c.next();
             assertEquals("AftDel2", "FLT2", hc.getKey());
-            hc = (HeaderCard) c.next();
+            hc = c.next();
             assertEquals("AftDel3", "Comment after flt2", hc.getComment());
         } finally {
             SafeClose.close(f);
@@ -201,7 +235,7 @@ public class HeaderTest {
         String lng = "";
         String sixty = seq + seq + seq + seq + seq + seq;
 
-        for (int i = 0; i < 20; i += 1) {
+        for (int i = 0; i < 20; i++) {
             lng += seq;
         }
         Fits f = null;
@@ -210,8 +244,7 @@ public class HeaderTest {
             Header hdr = f.getHDU(0).getHeader();
 
             assertEquals("Set state:", true, FitsFactory.isLongStringsEnabled());
-            hdr.addValue("LONG1", lng,
-                    "Here is a comment that is also very long and will be truncated at least a little");
+            hdr.addValue("LONG1", lng, "Here is a comment that is also very long and will be truncated at least a little");
             hdr.addValue("LONG2", "xx'yy'zz" + lng, "Another comment");
             hdr.addValue("LONG3", "xx'yy'zz" + lng, null);
             hdr.addValue("SHORT", "A STRING ENDING IN A &", null);
@@ -357,10 +390,10 @@ public class HeaderTest {
 
     /**
      * split in own method, for debugging (drop to frame)
-     * 
-     * @param cardValue
-     * @param cardComment
-     * 
+     *
+     * @param  cardValue
+     * @param  cardComment
+     *
      * @throws Exception
      */
     private void checkOneCombination(String cardValue, String cardComment) throws Exception {
@@ -513,8 +546,7 @@ public class HeaderTest {
         keyword = HeaderCard.create("HIERARCH..ESO INS OPTI-3 ID = 'ESO#427 ' / Optical element identifier").getKey();
         assertEquals("HIERARCH.ESO.INS.OPTI-3.ID", keyword);
 
-        keyword = HeaderCard.create("HIERARCH    ESO INS   OPTI-3 ID= 'ESO#427 ' / Optical element identifier")
-                .getKey();
+        keyword = HeaderCard.create("HIERARCH    ESO INS   OPTI-3 ID= 'ESO#427 ' / Optical element identifier").getKey();
         assertEquals("HIERARCH.ESO.INS.OPTI-3.ID", keyword);
 
         // AK: The old test expected "" here, but that's inconsistent behavior for the same type of
@@ -566,8 +598,7 @@ public class HeaderTest {
         }
         // now one char less.
         card = new HeaderCard("TESTKEY", "random value just for testing purpose - random value just for testin", "");
-        assertEquals("TESTKEY = 'random value just for testing purpose - random value just for testin'",
-                card.toString());
+        assertEquals("TESTKEY = 'random value just for testing purpose - random value just for testin'", card.toString());
     }
 
     @Test
@@ -1105,7 +1136,8 @@ public class HeaderTest {
                 int result = super.compare(c1, c2);
                 if (c1.equals("VOTMETA")) {
                     return c2.equals(Standard.EXTEND.key()) ? -1 : 1;
-                } else if (c2.equals("VOTMETA")) {
+                }
+                if (c2.equals("VOTMETA")) {
                     return c1.equals(Standard.EXTEND.key()) ? 1 : -1;
                 }
                 return result;

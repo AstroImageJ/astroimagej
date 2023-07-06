@@ -17461,13 +17461,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         });
         panel.add(control4, c);
 
-        var control5 = new JCheckBox("Draw binned error bars", drawBinErrBars.get());
-        control5.addChangeListener($ -> {
-            drawBinErrBars.set(control5.isSelected());
-            updatePlot();
-        });
-        panel.add(control5, c);
-
         panel.setBorder(BorderFactory.createEmptyBorder(20,30,20,30));
 
         win.add(panel);

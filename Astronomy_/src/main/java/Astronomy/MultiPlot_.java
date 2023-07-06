@@ -10,8 +10,9 @@ import flanagan.math.MinimizationFunction;
 import ij.*;
 import ij.astro.gui.GenericSwingDialog;
 import ij.astro.gui.MergedIcon;
+import ij.astro.gui.nstate.BiState;
+import ij.astro.gui.nstate.NStateButton;
 import ij.astro.gui.nstate.TriState;
-import ij.astro.gui.nstate.TriStateCheckBox;
 import ij.astro.io.prefs.Property;
 import ij.astro.types.Pair;
 import ij.astro.util.EmojiIcon;
@@ -11302,7 +11303,13 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         mainsubpanelgroup.add(inputAverageOverSizespinner[c]);
 
         var smoothP = Box.createHorizontalBox();
-        var usesmoothbox = new TriStateCheckBox(KeplerSplineControl.getInstance(c).settings.getTriStateDisplay());
+        var usesmoothbox = new NStateButton<TriState>(KeplerSplineControl.getInstance(c).settings.getTriStateDisplay());
+        usesmoothbox.setIconOverrides(d -> {
+            return switch (d) {
+                case ALT_ENABLED -> new MergedIcon(new EmojiIcon("■", 19, Color.YELLOW), new EmojiIcon("\uD83C\uDD42", 19), -5, 1, true);
+                default -> null;
+            };
+        });
         usesmoothbox.addActionListener($ -> {
             smooth[c] = usesmoothbox.getState().isOn();
             switch (usesmoothbox.getState()) {
@@ -11897,8 +11904,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 //
         displayBinningPanel[c] = new JPanel();
         displayBinningPanel[c].setLayout(new BoxLayout(displayBinningPanel[c], BoxLayout.X_AXIS));
-        displayBinningPanel[c].add(Box.createHorizontalStrut(10));
-        var binCB = new TriStateCheckBox(binDisplay[c]);
+        displayBinningPanel[c].add(Box.createHorizontalStrut(0));
+        var binCB = new NStateButton<TriState>(binDisplay[c]);
         binCB.addActionListener($ -> {
             binDisplay[c] = binCB.getState();
             updatePlot(c);

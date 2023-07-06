@@ -9,8 +9,7 @@ import java.util.HashMap;
 import java.util.Objects;
 import java.util.function.Function;
 
-//todo not abstract? use directly, instead of subclasses?
-public abstract class NStateButton<STATE extends Enum<STATE> & NState<STATE>> extends JButton {
+public class NStateButton<STATE extends Enum<STATE> & NState<STATE>> extends JButton {//todo try reduce padding
     private final HashMap<STATE, String> tooltip = new HashMap<>();
     private final HashMap<STATE, Icon> iconOverrides = new HashMap<>();
     private final STATE[] values;

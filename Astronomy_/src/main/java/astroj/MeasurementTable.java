@@ -10,7 +10,10 @@ import ij.text.TextPanel;
 import ij.text.TextWindow;
 import ij.util.Tools;
 
+import javax.swing.*;
 import java.awt.*;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -34,6 +37,7 @@ public class MeasurementTable extends ResultsTable {
     protected boolean locked = false;
     protected String filePath = "";
     private final HashSet<Runnable> listeners = new HashSet<>();
+    private KeyAdapter gotoListener;
 
     /**
      * Creates an empty default MeasurementTable.
@@ -700,7 +704,62 @@ public class MeasurementTable extends ResultsTable {
      * Displays/Refreshes a MeasurementTable with long name.
      */
     public void show() {
-        super.show(MeasurementTable.longerName(shortName));
+        super.show(MeasurementTable.longerName(shortName)/*, false*/);
+        if (window != null && window.get() != null) {
+            window.get().getTextPanel().removeKeyListener(getOrCreateGotoListener()); // show is called multiple times
+            window.get().getTextPanel().addKeyListener(getOrCreateGotoListener());
+        }
+    }
+
+    private KeyAdapter getOrCreateGotoListener() {
+        if (gotoListener == null) {
+            gotoListener = new KeyAdapter() {
+                @Override
+                public void keyPressed(KeyEvent e) {
+                    e.consume();
+                    int modifiers = e.getModifiersEx();
+                    boolean isCtrlPressed = true;//(modifiers & KeyEvent.CTRL_DOWN_MASK) != 0;
+                    boolean isCommandPressed = (modifiers & KeyEvent.META_DOWN_MASK) != 0;
+                    //Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()
+                    boolean isF3Pressed = e.getKeyCode() == KeyEvent.VK_F3;
+
+                    if ((isCtrlPressed && isF3Pressed) || (isCommandPressed && isF3Pressed)) {
+                        // Create the dropdown menu with column headings
+                        JComboBox<String> columnDropdown = new JComboBox<>(MeasurementTable.this.getHeadings());
+
+                        // Display the dialog with the dropdown menu and input field for row
+                        JPanel panel = new JPanel(new GridLayout(2, 2));
+                        panel.add(new JLabel("Column:"));
+                        panel.add(columnDropdown);
+                        panel.add(new JLabel("Row:"));
+                        JTextField rowField = new JTextField("0");
+                        panel.add(rowField);
+
+                        int result = JOptionPane.showConfirmDialog(MeasurementTable.this.window.get(), panel, "Go To Cell", JOptionPane.OK_CANCEL_OPTION);
+                        if (result == JOptionPane.OK_OPTION) {
+                            // Retrieve the selected column index and row input
+                            int column = columnDropdown.getSelectedIndex();
+                            String rowInput = rowField.getText();
+
+                            if (!rowInput.isEmpty()) {
+                                int row = Integer.parseInt(rowInput.trim());
+
+                                if (row >= 0 && row < MeasurementTable.this.size() && column >= 0 && column < MeasurementTable.this.getLastColumn()) {
+                                    if (MeasurementTable.this.window != null && MeasurementTable.this.window.get() != null) {
+                                        MeasurementTable.this.window.get().getTextPanel().showCell(row, (String) columnDropdown.getSelectedItem());
+                                    }
+                                } else {
+                                    IJ.beep();
+                                    JOptionPane.showMessageDialog(null, "Invalid cell coordinates.");
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+        }
+
+        return gotoListener;
     }
 
     /**

@@ -20,6 +20,7 @@ import ij.util.Tools;
 
 import java.awt.*;
 import java.io.*;
+import java.lang.ref.WeakReference;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
@@ -80,6 +81,8 @@ public class ResultsTable implements Cloneable {
 	private boolean renameWhenSaving;
 	private boolean saveColumnHeaders = !Prefs.dontSaveHeaders;
 	public boolean isResultsTable;
+	@AstroImageJ(reason = "Store window for access")
+	protected WeakReference<TextWindow> window;
 
 
 	/** Constructs an empty ResultsTable with the counter=0, no columns
@@ -1045,14 +1048,28 @@ public class ResultsTable implements Cloneable {
 			textPanel.updateDisplay();
 		}
 	}
-	
-	/** Displays the contents of this ResultsTable in a window with 
+
+	/**
+     * Displays the contents of this ResultsTable in a window with
+     * the specified title, or updates an existing results window. Opens
+     * a new window if there is no open text window with this title.
+     * The title must be "Results" if this table was obtained using
+     * ResultsTable.getResultsTable() or Analyzer.getResultsTable .
+     *
+     * @param windowTitle
+     */
+	@AstroImageJ(reason = "Overload to match default configuration")
+	public void show(String windowTitle) {
+		show(windowTitle, true);
+	}
+
+	/** Displays the contents of this ResultsTable in a window with
 		the specified title, or updates an existing results window. Opens
 		a new window if there is no open text window with this title. 
 		The title must be "Results" if this table was obtained using 
 		ResultsTable.getResultsTable() or Analyzer.getResultsTable . */
-	@AstroImageJ(reason = "Disable bringing table to the front when it updates", modified = true)
-	public void show(String windowTitle) {
+	@AstroImageJ(reason = "Disable bringing table to the front when it updates; add option to not populate rows", modified = true)
+	public void show(String windowTitle, boolean populateRows) {
 		if  (GraphicsEnvironment.isHeadless())
 			return; // Tables can't be displayed in headless mode
 		if (windowTitle==null)
@@ -1074,7 +1091,7 @@ public class ResultsTable implements Cloneable {
 			if (tp==null) return;
 			newWindow = tp.getLineCount()==0;
 			if (!newWindow && tp.getLineCount()==size()-1 && ResultsTable.getResultsTable()==this
-			&& tp.getColumnHeadings().equals(tableHeadings)) {
+			&& tp.getColumnHeadings().equals(tableHeadings)  && populateRows) {
 				String s = getRowAsString(size()-1);
 				tp.append(s);
 				return;
@@ -1110,10 +1127,11 @@ public class ResultsTable implements Cloneable {
 			tp = win.getTextPanel();
 			tp.setColumnHeadings(tableHeadings);
 			newWindow = tp.getLineCount()==0;
+			window = new WeakReference<>(win);
 		}
 		tp.setResultsTable(cloneNeeded?(ResultsTable)this.clone():this);
 		int n = size();
-		if (n>0) {
+		if (n>0 && populateRows) {
 			if (tp.getLineCount()>0) tp.clear();
 			for (int i=0; i<n; i++)
 				tp.appendWithoutUpdate(getRowAsString(i));

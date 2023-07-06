@@ -10796,7 +10796,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 //                legendslabelgroup.add(Box.createGlue());
         mainsubpanelgroup.add(ycolumnlabelgroup);
 
-        JLabel useerrorlabel = new JLabel("<HTML><CENTER>Auto<BR><CENTER>Error</HTML>");
+        JLabel useerrorlabel = new JLabel("<HTML><CENTER>Show<BR><CENTER>Error</HTML>");
         useerrorlabel.setFont(b11);
         useerrorlabel.setForeground(Color.DARK_GRAY);
         useerrorlabel.setToolTipText("<HTML>Show automatic Y-error bars when dataset has predefined error available.<BR>" + "Compatible datasets are: Source-Sky_XX, rel_flux_XX, tot_C_cnts.</HTML>");
@@ -11030,7 +11030,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         displayBinningGroup.add(Box.createHorizontalStrut(1));
 
-        JLabel displayBinningLabel = new JLabel("<HTML><CENTER>Out<BR><CENTER>Bin</HTML>");
+        JLabel displayBinningLabel = new JLabel("<HTML><CENTER>Out<BR><CENTER>Bin Err</HTML>");
         displayBinningLabel.setFont(b11);
         displayBinningLabel.setForeground(Color.DARK_GRAY);
         displayBinningLabel.setHorizontalAlignment(JLabel.CENTER);

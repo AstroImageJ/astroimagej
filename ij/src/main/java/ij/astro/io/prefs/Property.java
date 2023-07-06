@@ -11,10 +11,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -36,6 +33,7 @@ public class Property<T> {
     private final Supplier<String> keyPrefix;
     private final Class<T> type;
     final Set<PropertyChangeListener<T>> listeners = Collections.synchronizedSet(new HashSet<>());
+    private final Map<String, Property<T>> variants = new HashMap<>();
 
     public Property(T defaultValue, Object owner) {
         this(defaultValue, "", "", $ -> null, owner);
@@ -72,6 +70,18 @@ public class Property<T> {
             this.owner = owner;
             this.ownerClass = owner.getClass();
         }
+    }
+
+    private Property(String key, Property<T> base) {
+        this.deserializer = base.deserializer;
+        this.keySuffix = base.keySuffix;
+        this.keyPrefix = base.keyPrefix;
+        this.type = base.type;
+        value = base.value;
+        this.ownerClass = base.ownerClass;
+        this.owner = base.owner;
+        this.hasBuiltKey = true;
+        this.propertyKey = key;
     }
 
     public T get() {
@@ -165,6 +175,14 @@ public class Property<T> {
 
     public void clearListeners() {
         listeners.clear();
+    }
+
+    public Property<T> getOrCreateVariant(Object suffix) {
+        return getOrCreateVariant(String.valueOf(suffix));
+    }
+
+    public Property<T> getOrCreateVariant(String suffix) {
+        return variants.computeIfAbsent(getPropertyKey() + "?" + suffix, s -> new Property<>(s, this));
     }
 
     private void loadProperty() {

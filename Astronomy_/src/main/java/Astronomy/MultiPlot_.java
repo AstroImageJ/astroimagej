@@ -863,7 +863,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     private static Property<Integer> binnedDotSize = new Property<>(8, "plot.", "", MultiPlot_.class);
     private static Property<Integer> boldedDotSize = new Property<>(12, "plot.", "", MultiPlot_.class);
     private static Property<Boolean> drawAijVersion = new Property<>(true, "plot.", "", MultiPlot_.class);
-    private static Property<Boolean> drawBinErrBars = new Property<>(false, "plot.", "", MultiPlot_.class);
+    private static Property<BiState> drawBinErrBarsBase = new Property<>(BiState.FALSE, "plot.", "", MultiPlot_.class);
 
     public void run(String inTableNamePlusOptions) {
         boolean useAutoAstroDataUpdate = false;
@@ -3579,7 +3579,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         if (marker[curve] == ij.gui.Plot.DOT) { plot.setLineWidth(binnedDotSize.get()); } else plot.setLineWidth(2);
                         plot.addPoints(pts.x(), pts.y(), marker[curve]);
 
-                        if (drawBinErrBars.get()) {
+                        if (drawBinErrBarsBase.getOrCreateVariant(curve).get().isOn()) {
                             plot.setLineWidth(1);
                             for (int j = 0; j < pts.x().length; j++) {
                                 plot.drawLine(pts.x()[j], pts.y()[j] - pts.err()[j], pts.x()[j], pts.y()[j] + pts.err()[j]);
@@ -11918,7 +11918,13 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             };
         });
         displayBinningPanel[c].add(binCB);
-        displayBinningPanel[c].add(Box.createHorizontalStrut(10));
+        var binErrCB = new NStateButton<BiState>(drawBinErrBarsBase.getOrCreateVariant(c).get());
+        binErrCB.addActionListener($ -> {
+            drawBinErrBarsBase.getOrCreateVariant(c).set(binErrCB.getState());
+            updatePlot(c);
+        });
+        displayBinningPanel[c].add(binErrCB);
+        displayBinningPanel[c].add(Box.createHorizontalStrut(0));
         var binSpin = new JSpinner(new SpinnerNumberModel(5, 0, Double.MAX_VALUE, 1d));
         if (minutes.size() == c) {
             minutes.add(new Pair.GenericPair<>((Double) binSpin.getValue(), binSpin));

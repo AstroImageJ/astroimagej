@@ -27,6 +27,14 @@ public interface NState<STATE extends Enum<STATE> & NState<STATE>> {
         return values0()[o];
     }
 
+    default STATE fromString(String s) {
+        try {
+            return Enum.valueOf((Class<STATE>) getClass(), s);
+        } catch (IllegalArgumentException e) {
+            return values0()[0];
+        }
+    }
+
     /**
      * Not needed, but better to override to skip cloning the array each call
      */

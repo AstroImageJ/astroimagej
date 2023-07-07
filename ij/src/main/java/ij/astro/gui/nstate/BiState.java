@@ -7,8 +7,8 @@ import javax.swing.*;
 import java.awt.*;
 
 public enum BiState implements NState<BiState> {
-    FALSE("■", "☐", Color.WHITE),
-    TRUE("■", "☑", Color.WHITE);
+    DISABLED("■", "☐", Color.WHITE),
+    ENABLED("■", "☑", Color.WHITE);
 
     private final Icon icon;
 
@@ -23,7 +23,17 @@ public enum BiState implements NState<BiState> {
 
     @Override
     public boolean isOn() {
-        return this == TRUE;
+        return this == ENABLED;
+    }
+
+    @Override
+    public BiState fromString(String s) {
+        if ("false".equalsIgnoreCase(s)) {
+            return DISABLED;
+        } else if ("true".equalsIgnoreCase(s)) {
+            return ENABLED;
+        }
+        return NState.super.fromString(s);
     }
 
     @Override

@@ -2,6 +2,7 @@ package ij.astro.io.prefs;
 
 import ij.IJ;
 import ij.Prefs;
+import ij.astro.gui.nstate.NState;
 import ij.astro.util.UIHelper;
 
 import java.awt.*;
@@ -77,7 +78,7 @@ public class Property<T> {
         this.keySuffix = base.keySuffix;
         this.keyPrefix = base.keyPrefix;
         this.type = base.type;
-        value = base.value;
+        value = base.get();
         this.ownerClass = base.ownerClass;
         this.owner = base.owner;
         this.hasBuiltKey = true;
@@ -254,6 +255,11 @@ public class Property<T> {
         } else if (type == String.class) {
             return (T) nv;
         } else if (type.isEnum()) {
+            if (NState.class.isAssignableFrom(type)) {
+                if (value != null) {
+                    return (T) ((NState<?>) value).fromString(nv);
+                }
+            }
             return (T) Enum.valueOf((Class<? extends Enum>) type, nv);
         } else if (type == Point.class) {
             var v = Prefs.getLocation(getPropertyKey());

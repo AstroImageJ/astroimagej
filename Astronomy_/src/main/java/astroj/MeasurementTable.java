@@ -284,6 +284,22 @@ public class MeasurementTable extends ResultsTable {
         return table;
     }
 
+    public static boolean isMeasurementsTable(String tableName) {
+        var s = MeasurementTable.longerName(tableName);
+        TextPanel panel = getTextPanel(s);
+
+        if (panel == null) {
+            s = MeasurementTable.shorterName(s);
+            panel = getTextPanel(s);
+        }
+
+        if (panel != null) {
+            return panel.getResultsTable() instanceof MeasurementTable;
+        }
+
+        return false;
+    }
+
     /**
      * Returns an existing MeasurementTable reconstructed from the TextWindow with the appropriate name.
      */

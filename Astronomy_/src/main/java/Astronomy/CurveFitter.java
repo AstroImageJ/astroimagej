@@ -1,6 +1,7 @@
 package Astronomy;
 
 import Astronomy.multiplot.KeplerSplineControl;
+import Astronomy.multiplot.settings.MPOperator;
 import astroj.IJU;
 import flanagan.analysis.Regression;
 import flanagan.math.Minimization;
@@ -300,7 +301,7 @@ public class CurveFitter {
                 }
 
                 errcolumn[curve] = ResultsTable.COLUMN_NOT_FOUND;
-                if (operatorIndex[curve] == 6) {  //custom error
+                if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.CUSTOM_ERROR) {  //custom error
                     errcolumn[curve] = table.getColumnIndex(oplabel[curve]);
                 } else if (ylabel[curve].startsWith("rel_flux_T") || ylabel[curve].startsWith("rel_flux_C")) {
                     errcolumn[curve] = table.getColumnIndex("rel_flux_err_" + ylabel[curve].substring(9));
@@ -313,14 +314,14 @@ public class CurveFitter {
                 }
                 hasErrors[curve] = errcolumn[curve] != ResultsTable.COLUMN_NOT_FOUND;
 
-                if (operatorIndex[curve] != 0) {
+                if (operatorBase.getOrCreateVariant(curve).get() != MPOperator.NONE) {
                     opcolumn[curve] = table.getColumnIndex(oplabel[curve]);
                     if (opcolumn[curve] == ResultsTable.COLUMN_NOT_FOUND) {
-                        operatorIndex[curve] = 0;
+                        operatorBase.getOrCreateVariant(curve).set(MPOperator.NONE);
                     }
                 }
 
-                if (operatorIndex[curve] > 0 && operatorIndex[curve] < 5)// && showErrors[curve] == true)
+                if (operatorBase.getOrCreateVariant(curve).get().isNormalOperator())// && showErrors[curve] == true)
                 {
                     operrcolumn[curve] = ResultsTable.COLUMN_NOT_FOUND;
                     if (oplabel[curve].startsWith("rel_flux_T") || oplabel[curve].startsWith("rel_flux_C")) {
@@ -366,7 +367,7 @@ public class CurveFitter {
                                 bucketSize = 1;
                                 y[curve][j] = Double.NaN;
                                 if (hasErrors[curve]) yerr[curve][j] = Double.NaN;
-                                if (operatorIndex[curve] != 0) yop[curve][j] = Double.NaN;
+                                if (operatorBase.getOrCreateVariant(curve).get() != MPOperator.NONE) yop[curve][j] = Double.NaN;
                                 if (detrendFitIndex[curve] != 0) {
                                     for (int v = 0; v < maxDetrendVars; v++) {
                                         if (detrendIndex[v] != 0) {
@@ -375,7 +376,7 @@ public class CurveFitter {
                                     }
                                 }
 
-                                if (operatorIndex[curve] == 5) //calculate distance
+                                if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.CENTROID_DISTANCE) //calculate distance
                                 {
                                     xc1[curve][j] = Double.NaN;
                                     xc2[curve][j] = Double.NaN;
@@ -399,7 +400,7 @@ public class CurveFitter {
                                 }
                                 yerr[curve][j] += errin * errin;
                             }
-                            if (operatorIndex[curve] != 0) {
+                            if (operatorBase.getOrCreateVariant(curve).get() != MPOperator.NONE) {
                                 opin = table.getValueAsDouble(opcolumn[curve], j * inputAverageOverSize[curve] + k);
                                 if (fromMag[curve]) {
                                     opin = Math.pow(10, -opin / 2.5);
@@ -413,7 +414,7 @@ public class CurveFitter {
                                     }
                                 }
                             }
-                            if (operatorIndex[curve] == 5) //calculate distance
+                            if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.CENTROID_DISTANCE) //calculate distance
                             {
                                 xc1[curve][j] += table.getValueAsDouble(xc1column[curve], j * inputAverageOverSize[curve] + k);
                                 xc2[curve][j] += table.getValueAsDouble(xc2column[curve], j * inputAverageOverSize[curve] + k);
@@ -444,9 +445,9 @@ public class CurveFitter {
                             }
                         }
                     }
-                    if (operatorIndex[curve] != 0) {
+                    if (operatorBase.getOrCreateVariant(curve).get() != MPOperator.NONE) {
                         yop[curve][j] = yop[curve][j] / bucketSize; //*yMultiplierFactor
-                        if (operatorIndex[curve] == 5) {
+                        if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.CENTROID_DISTANCE) {
                             xc1[curve][j] = xc1[curve][j] / bucketSize;  //*yMultiplierFactor
                             xc2[curve][j] = xc2[curve][j] / bucketSize;  //*yMultiplierFactor
                             yc1[curve][j] = yc1[curve][j] / bucketSize;  //*yMultiplierFactor
@@ -461,10 +462,10 @@ public class CurveFitter {
 
                     //APPLY OPERATOR/OPERROR FUNCTIONS TO YDATA AND YERROR
 
-                    if (operatorIndex[curve] == 0)  //no operator
+                    if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.NONE)  //no operator
                     {
 
-                    } else if (operatorIndex[curve] == 1)  //divide by
+                    } else if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.DIVIDE_BY)  //divide by
                     {
                         if (yop[curve][j] == 0) {
                             yerr[curve][j] = 1.0e+100;
@@ -475,25 +476,25 @@ public class CurveFitter {
                             }
                             y[curve][j] = y[curve][j] / yop[curve][j];  //*yMultiplierFactor
                         }
-                    } else if (operatorIndex[curve] == 2)  //multiply by
+                    } else if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.MULTIPLY_BY)  //multiply by
                     {
                         if (hasErrors[curve] || hasOpErrors[curve]) {
                             yerr[curve][j] = Math.sqrt(yop[curve][j] * yop[curve][j] * yerr[curve][j] * yerr[curve][j] + y[curve][j] * y[curve][j] * yoperr[curve][j] * yoperr[curve][j]); // /yMultiplierFactor;
                         }
                         y[curve][j] = y[curve][j] * yop[curve][j];  // /yMultiplierFactor;
-                    } else if (operatorIndex[curve] == 3)  //subtract
+                    } else if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.SUBTRACT)  //subtract
                     {
                         if (hasErrors[curve] || hasOpErrors[curve]) {
                             yerr[curve][j] = Math.sqrt(yerr[curve][j] * yerr[curve][j] + yoperr[curve][j] * yoperr[curve][j]);
                         }
                         y[curve][j] = y[curve][j] - yop[curve][j];
-                    } else if (operatorIndex[curve] == 4)  //add
+                    } else if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.ADD)  //add
                     {
                         if (hasErrors[curve] || hasOpErrors[curve]) {
                             yerr[curve][j] = Math.sqrt(yerr[curve][j] * yerr[curve][j] + yoperr[curve][j] * yoperr[curve][j]);
                         }
                         y[curve][j] = y[curve][j] + yop[curve][j];
-                    } else if (operatorIndex[curve] == 5)  //distance from x1,y1 to x2,y2
+                    } else if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.CENTROID_DISTANCE)  //distance from x1,y1 to x2,y2
                     {
                         y[curve][j] = (usePixelScale ? pixelScale : 1.0) * Math.sqrt(((xc1[curve][j] - xc2[curve][j]) * (xc1[curve][j] - xc2[curve][j])) + ((yc1[curve][j] - yc2[curve][j]) * (yc1[curve][j] - yc2[curve][j])));
                     }
@@ -1069,7 +1070,7 @@ public class CurveFitter {
             }
         }
 
-        if (operatorIndex[curve] != 0) {
+        if (operatorBase.getOrCreateVariant(curve).get() != MPOperator.NONE) {
             IJ.error("Operator must be 0");
             return new OptimizerResults(Double.NaN, Double.NaN);
         }

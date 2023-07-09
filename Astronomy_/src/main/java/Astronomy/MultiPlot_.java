@@ -3,6 +3,7 @@ package Astronomy;
 
 import Astronomy.multiplot.KeplerSplineControl;
 import Astronomy.multiplot.settings.KeplerSplineSettings;
+import Astronomy.multiplot.settings.MPOperator;
 import astroj.*;
 import flanagan.analysis.Regression;
 import flanagan.math.Minimization;
@@ -14,6 +15,7 @@ import ij.astro.gui.nstate.BiState;
 import ij.astro.gui.nstate.NStateButton;
 import ij.astro.gui.nstate.TriState;
 import ij.astro.io.prefs.Property;
+import ij.astro.io.prefs.PropertyKey;
 import ij.astro.types.Pair;
 import ij.astro.util.EmojiIcon;
 import ij.astro.util.PdfPlotOutput;
@@ -636,7 +638,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static int[] modelColorIndex;
     static int[] residualModelColorIndex;
     static int[] residualColorIndex;
-    static int[] operatorIndex;
+    @PropertyKey(value = "plot.operatorIndex", ignoreAffixes = true)
+    static Property<MPOperator> operatorBase = new Property<>(MPOperator.NONE, MultiPlot_.class);
     static String[] cblabels;
     static boolean[] moreOptions;
     static double[] autoScaleFactor;
@@ -716,7 +719,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
     static JComboBox<Object>[] xdatacolumn;
     static JComboBox<Object>[] ydatacolumn;
-    static JComboBox<Object>[] operatorselection;
+    static JComboBox<MPOperator>[] operatorselection;
     static JComboBox<Object>[] operatorcolumn;
     static JComboBox<Object>[] detrendbox;
     static JComboBox<String>[] markersymbolselection;
@@ -800,10 +803,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static String[] colors;
     static ImageIcon[] normiconlist;
     static ImageIcon[] detrendiconlist;
-
-    static String[] operators;
-
-    static String[] opSymbol;
 
     static String[] spinnerscalelist;
 
@@ -1573,7 +1572,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         plotY[curve] = false;
                         usecurvebox[curve].setSelected(false);
                         savecolumnbutton[curve].setEnabled(plotY[curve]);
-                    } else if (operatorIndex[curve] == 5)  //calculate distance
+                    } else if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.CENTROID_DISTANCE)  //calculate distance
                     {
                         xc1column[curve] = table.getColumnIndex(getPositionColumn(ylabel[curve], "X"));
                         yc1column[curve] = table.getColumnIndex(getPositionColumn(ylabel[curve], "Y"));
@@ -1582,7 +1581,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                             if (getPositionColumn(ylabel[curve], "X").trim().length() != 0) {
                                 IJ.showMessage("Cannot access " + getPositionColumn(ylabel[curve], "X") + " source position data column for distance calculation !");
                             }
-                            operatorIndex[curve] = 0;
+                            operatorBase.getOrCreateVariant(curve).set(MPOperator.NONE);
                             //operatorselection[curve].setSelectedIndex(operatorIndex[curve]);
                             plotY[curve] = false;
                             usecurvebox[curve].setSelected(false);
@@ -1592,7 +1591,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                             if (getPositionColumn(ylabel[curve], "Y").trim().length() != 0) {
                                 IJ.showMessage("Cannot access " + getPositionColumn(ylabel[curve], "Y") + " source position data column for distance calculation !");
                             }
-                            operatorIndex[curve] = 0;
+                            operatorBase.getOrCreateVariant(curve).set(MPOperator.NONE);
                             //operatorselection[curve].setSelectedIndex(operatorIndex[curve]);
                             plotY[curve] = false;
                             usecurvebox[curve].setSelected(false);
@@ -1619,7 +1618,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 //                                        if (showErrors[curve] == true || operatorIndex[curve] == 6)
 //                                                {
                     errcolumn[curve] = ResultsTable.COLUMN_NOT_FOUND;
-                    if (operatorIndex[curve] == 6)   //custom error
+                    if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.CUSTOM_ERROR)   //custom error
                     {
                         errcolumn[curve] = table.getColumnIndex(oplabel[curve]);
 //                                            showErrors[curve] = true;
@@ -1654,14 +1653,14 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 //                                                showErrors[curve] = false;
 
 
-                    if (operatorIndex[curve] != 0) {
+                    if (operatorBase.getOrCreateVariant(curve).get() != MPOperator.NONE) {
                         opcolumn[curve] = table.getColumnIndex(oplabel[curve]);
                         if (opcolumn[curve] == ResultsTable.COLUMN_NOT_FOUND) {
 //                                                        if (oplabel[curve].trim().length() != 0)
 //                                                            IJ.showMessage ("Cannot access Y"+curve+" operator data column "+oplabel[curve]+" !");
-                            operatorIndex[curve] = 0;
+                            operatorBase.getOrCreateVariant(curve).set(MPOperator.NONE);
                             //operatorselection[curve].setSelectedIndex(operatorIndex[curve]);
-                        } else if (operatorIndex[curve] == 5) //calculate distance
+                        } else if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.CENTROID_DISTANCE) //calculate distance
                         {
                             xc2column[curve] = table.getColumnIndex(getPositionColumn(oplabel[curve], "X"));
                             yc2column[curve] = table.getColumnIndex(getPositionColumn(oplabel[curve], "Y"));
@@ -1670,14 +1669,14 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                 if (getPositionColumn(oplabel[curve], "X").trim().length() != 0) {
                                     IJ.showMessage("Cannot access " + getPositionColumn(oplabel[curve], "X") + " source position data column for distance calculation !");
                                 }
-                                operatorIndex[curve] = 0;
+                                operatorBase.getOrCreateVariant(curve).set(MPOperator.NONE);
                                 //operatorselection[curve].setSelectedIndex(operatorIndex[curve]);
                             }
                             if (yc2column[curve] == ResultsTable.COLUMN_NOT_FOUND) {
                                 if (getPositionColumn(oplabel[curve], "Y").trim().length() != 0) {
                                     IJ.showMessage("Cannot access " + getPositionColumn(oplabel[curve], "Y") + " source position data column for distance calculation !");
                                 }
-                                operatorIndex[curve] = 0;
+                                operatorBase.getOrCreateVariant(curve).set(MPOperator.NONE);
                                 //operatorselection[curve].setSelectedIndex(operatorIndex[curve]);
                             }
                         }
@@ -1699,7 +1698,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 //                                        else
 //                                                showOpErrors[curve] = false;
 
-                    if (operatorIndex[curve] > 0 && operatorIndex[curve] < 5)// && showErrors[curve] == true)
+                    if (operatorBase.getOrCreateVariant(curve).get().isNormalOperator())// && showErrors[curve] == true)
                     {
                         operrcolumn[curve] = ResultsTable.COLUMN_NOT_FOUND;
                         if (oplabel[curve].startsWith("rel_flux_T") || oplabel[curve].startsWith("rel_flux_C")) {
@@ -1748,7 +1747,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                     bucketSize = 1;
                                     y[curve][j] = Double.NaN;
                                     if (hasErrors[curve]) yerr[curve][j] = Double.NaN;
-                                    if (operatorIndex[curve] != 0) yop[curve][j] = Double.NaN;
+                                    if (operatorBase.getOrCreateVariant(curve).get() != MPOperator.NONE) yop[curve][j] = Double.NaN;
                                     if (detrendFitIndex[curve] != 0) {
                                         for (int v = 0; v < maxDetrendVars; v++) {
                                             if (detrendIndex[curve][v] != 0 || detrendVarAllNaNs[curve][v]) {
@@ -1757,7 +1756,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                         }
                                     }
 
-                                    if (operatorIndex[curve] == 5) //calculate distance
+                                    if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.CENTROID_DISTANCE) //calculate distance
                                     {
                                         xc1[curve][j] = Double.NaN;
                                         xc2[curve][j] = Double.NaN;
@@ -1781,7 +1780,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                     }
                                     yerr[curve][j] += errin * errin;
                                 }
-                                if (operatorIndex[curve] != 0) {
+                                if (operatorBase.getOrCreateVariant(curve).get() != MPOperator.NONE) {
                                     opin = table.getValueAsDouble(opcolumn[curve], j * inputAverageOverSize[curve] + k);
                                     if (fromMag[curve]) {
                                         opin = Math.pow(10, -opin / 2.5);
@@ -1795,7 +1794,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                         }
                                     }
                                 }
-                                if (operatorIndex[curve] == 5) //calculate distance
+                                if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.CENTROID_DISTANCE) //calculate distance
                                 {
                                     xc1[curve][j] += table.getValueAsDouble(xc1column[curve], j * inputAverageOverSize[curve] + k);
                                     xc2[curve][j] += table.getValueAsDouble(xc2column[curve], j * inputAverageOverSize[curve] + k);
@@ -1824,9 +1823,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                 }
                             }
                         }
-                        if (operatorIndex[curve] != 0) {
+                        if (operatorBase.getOrCreateVariant(curve).get() != MPOperator.NONE) {
                             yop[curve][j] = yop[curve][j] / bucketSize; //*yMultiplierFactor
-                            if (operatorIndex[curve] == 5) {
+                            if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.CENTROID_DISTANCE) {
                                 xc1[curve][j] = xc1[curve][j] / bucketSize;  //*yMultiplierFactor
                                 xc2[curve][j] = xc2[curve][j] / bucketSize;  //*yMultiplierFactor
                                 yc1[curve][j] = yc1[curve][j] / bucketSize;  //*yMultiplierFactor
@@ -1839,10 +1838,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
                         //APPLY OPERATOR/OPERROR FUNCTIONS TO YDATA AND YERROR
 
-                        if (operatorIndex[curve] == 0)  //no operator
+                        if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.NONE)  //no operator
                         {
 
-                        } else if (operatorIndex[curve] == 1)  //divide by
+                        } else if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.DIVIDE_BY)  //divide by
                         {
                             if (yop[curve][j] == 0) {
                                 yerr[curve][j] = 1.0e+100;
@@ -1853,25 +1852,25 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                 }
                                 y[curve][j] = y[curve][j] / yop[curve][j];  //*yMultiplierFactor
                             }
-                        } else if (operatorIndex[curve] == 2)  //multiply by
+                        } else if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.MULTIPLY_BY)  //multiply by
                         {
                             if (hasErrors[curve] || hasOpErrors[curve]) {
                                 yerr[curve][j] = Math.sqrt(yop[curve][j] * yop[curve][j] * yerr[curve][j] * yerr[curve][j] + y[curve][j] * y[curve][j] * yoperr[curve][j] * yoperr[curve][j]); // /yMultiplierFactor;
                             }
                             y[curve][j] = y[curve][j] * yop[curve][j];  // /yMultiplierFactor;
-                        } else if (operatorIndex[curve] == 3)  //subtract
+                        } else if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.SUBTRACT)  //subtract
                         {
                             if (hasErrors[curve] || hasOpErrors[curve]) {
                                 yerr[curve][j] = Math.sqrt(yerr[curve][j] * yerr[curve][j] + yoperr[curve][j] * yoperr[curve][j]);
                             }
                             y[curve][j] = y[curve][j] - yop[curve][j];
-                        } else if (operatorIndex[curve] == 4)  //add
+                        } else if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.ADD)  //add
                         {
                             if (hasErrors[curve] || hasOpErrors[curve]) {
                                 yerr[curve][j] = Math.sqrt(yerr[curve][j] * yerr[curve][j] + yoperr[curve][j] * yoperr[curve][j]);
                             }
                             y[curve][j] = y[curve][j] + yop[curve][j];
-                        } else if (operatorIndex[curve] == 5)  //distance from x1,y1 to x2,y2
+                        } else if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.CENTROID_DISTANCE)  //distance from x1,y1 to x2,y2
                         {
                             y[curve][j] = (usePixelScale ? pixelScale : 1.0) * Math.sqrt(((xc1[curve][j] - xc2[curve][j]) * (xc1[curve][j] - xc2[curve][j])) + ((yc1[curve][j] - yc2[curve][j]) * (yc1[curve][j] - yc2[curve][j])));
                         }
@@ -3301,7 +3300,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 //                                    yOffset = (double)jd;
                         yPlotMin -= yOffset;
                         yPlotMax -= yOffset;
-                        if (useYColumnName && operatorIndex[curve] != 5) {
+                        if (useYColumnName && operatorBase.getOrCreateVariant(curve).get() != MPOperator.CENTROID_DISTANCE) {
                             if (ylabel[curve].trim().startsWith("J.D.-2400000")) {
                                 ylab = "Geocentric Julian Date (UTC) - " + yJD;
                             } else if (ylabel[curve].trim().startsWith("BJD_TDB")) {
@@ -3327,7 +3326,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         } else if (useYCustomName) {
                             ylab = yLegend;
                             yGoodLabel = true;
-                        } else if (useYColumnName && operatorIndex[curve] == 5) {
+                        } else if (useYColumnName && operatorBase.getOrCreateVariant(curve).get() == MPOperator.CENTROID_DISTANCE) {
                             ylab = xyc1label[curve] + " - " + xyc2label[curve] + " centroid distance";
                             ylab += usePixelScale ? " (arcsecs)" : " (pixels)";
                             yGoodLabel = true;
@@ -3336,10 +3335,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     for (int j = 0; j < nn[curve]; j++)
                         y[curve][j] -= yOffset;
                 } else if (useYColumnName && curve == firstCurve) {
-                    if (operatorIndex[curve] != 5) {
+                    if (operatorBase.getOrCreateVariant(curve).get() != MPOperator.CENTROID_DISTANCE) {
                         ylab = ylabel[firstCurve];
-                        if (operatorIndex[firstCurve] != 0) {
-                            ylab += opSymbol[operatorIndex[firstCurve]] + oplabel[firstCurve];
+                        if (operatorBase.getOrCreateVariant(firstCurve).get() != MPOperator.NONE) {
+                            ylab += operatorBase.getOrCreateVariant(firstCurve).get().getSymbol() + oplabel[firstCurve];
                         }
                     } else {
                         ylab = xyc1label[firstCurve] + " - " + xyc2label[firstCurve] + " centroid distance";
@@ -3549,7 +3548,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 plot.setLineWidth(1);
 
                 if (binDisplay[curve].isOn()) plot.setColor(lighter(color[curve]));
-                if ((showErrors[curve] || operatorIndex[curve] == 6) && (hasErrors[curve] || hasOpErrors[curve]) && binDisplay[curve] != TriState.ALT_ENABLED)     //code to replace plot.addErrorBars
+                if ((showErrors[curve] || operatorBase.getOrCreateVariant(curve).get() == MPOperator.CUSTOM_ERROR) && (hasErrors[curve] || hasOpErrors[curve]) && binDisplay[curve] != TriState.ALT_ENABLED)     //code to replace plot.addErrorBars
                 {               //since plot.addErrorBars only plots with lines enabled
                     for (int j = 0; j < nn[curve]; j++) {
                         plot.drawLine(x[curve][j], y[curve][j] - yerr[curve][j], x[curve][j], y[curve][j] + yerr[curve][j]);
@@ -3630,7 +3629,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     }
                 }
 
-                if (((showErrors[curve] || operatorIndex[curve] == 6) && (hasErrors[curve] || hasOpErrors[curve]))) {
+                if (((showErrors[curve] || operatorBase.getOrCreateVariant(curve).get() == MPOperator.CUSTOM_ERROR) && (hasErrors[curve] || hasOpErrors[curve]))) {
                     plot.setLineWidth(2);
                 } else { plot.setLineWidth(1); }
                 plot.setColor(color[curve]);
@@ -3639,7 +3638,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 }
                 if (xModel2[curve] != null && yModel2[curve] != null && xModel2[curve].length == yModel2[curve].length && (detrendFitIndex[curve] != 9 || showModel[curve])) {
                     if (detrendFitIndex[curve] == 9) {
-                        plot.setLineWidth(((showErrors[curve] || operatorIndex[curve] == 6) && (hasErrors[curve] || hasOpErrors[curve])) ? modelLineWidth[curve] + 1 : modelLineWidth[curve]);
+                        plot.setLineWidth(((showErrors[curve] || operatorBase.getOrCreateVariant(curve).get() == MPOperator.CUSTOM_ERROR) && (hasErrors[curve] || hasOpErrors[curve])) ? modelLineWidth[curve] + 1 : modelLineWidth[curve]);
                         plot.setColor(modelColor[curve]);
                     }
                     plot.addPoints(Arrays.copyOf(xModel2[curve], xModel2[curve].length), Arrays.copyOf(yModel2[curve], yModel2[curve].length), ij.gui.Plot.LINE);
@@ -3676,7 +3675,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 llab = new StringBuilder();
 
                 if (useColumnName[curve]) {
-                    if (operatorIndex[curve] == 5) {
+                    if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.CENTROID_DISTANCE) {
                         llab = new StringBuilder(xyc1label[curve] + " - " + xyc2label[curve] + " centroid distance");
                         boolean atLeastOne = false;
                         if (showLdetrendInfo && detrendFitIndex[curve] != 0) {
@@ -3718,8 +3717,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         }
                     } else {
                         llab = new StringBuilder(ylabel[curve]);
-                        if (operatorIndex[curve] != 0) {
-                            llab.append(opSymbol[operatorIndex[curve]]).append(oplabel[curve]);
+                        if (operatorBase.getOrCreateVariant(curve).get() != MPOperator.NONE) {
+                            llab.append(operatorBase.getOrCreateVariant(curve).get().getSymbol()).append(oplabel[curve]);
                         }
                         boolean atLeastOne = false;
                         if (showLdetrendInfo && detrendFitIndex[curve] != 0) {
@@ -3813,7 +3812,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     llab.append(", ").append(lockToCenter[curve][3] ? "[" : "").append("Tc=").append(uptoSixPlaces.format(bestFit[curve][3])).append(lockToCenter[curve][3] ? "]" : "");
                     llab.append(", ").append(lockToCenter[curve][5] ? "[" : "").append("u1=").append(uptoTwoPlaces.format(bestFit[curve][5])).append(lockToCenter[curve][5] ? "]" : "");
                     llab.append(", ").append(lockToCenter[curve][6] ? "[" : "").append("u2=").append(uptoTwoPlaces.format(bestFit[curve][6])).append(lockToCenter[curve][6] ? "]" : "").append(")");
-                    if (drawLegendSymbol(Plot.LINE, modelLineWidth[curve] + ((showErrors[curve] || operatorIndex[curve] == 6) && (hasErrors[curve] || hasOpErrors[curve]) ? 1 : 0), modelColor[curve], legPosY, llab.toString())) {
+                    if (drawLegendSymbol(Plot.LINE, modelLineWidth[curve] + ((showErrors[curve] || operatorBase.getOrCreateVariant(curve).get() == MPOperator.CUSTOM_ERROR) && (hasErrors[curve] || hasOpErrors[curve]) ? 1 : 0), modelColor[curve], legPosY, llab.toString())) {
                         plot.addLabel(legendPosX, legPosY, llab.toString());
                         legPosY += 18. / plotSizeY;
                     }
@@ -5171,14 +5170,14 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         String modelHeading = "";
         String residualHeading = "";
         String residualErrHeading = "";
-        if (operatorIndex[c] == 5) {
+        if (operatorBase.getOrCreateVariant(c).get() == MPOperator.CENTROID_DISTANCE) {
             yHeading = "Centroid_Dist_" + xyc1label[c] + "-" + xyc2label[c];
         } else {
             yHeading = ylabel[c];
             yErrHeading = (errcolumn[c] < 0 || table.getColumnHeading(errcolumn[c]) == null ? "" : table.getColumnHeading(errcolumn[c]));
-            if (operatorIndex[c] != 0 && operatorIndex[c] != 6) {
-                yHeading += opSymbol[operatorIndex[c]] + oplabel[c];
-                yErrHeading += opSymbol[operatorIndex[c]] + (operrcolumn[c] < 0 || table.getColumnHeading(operrcolumn[c]) == null ? "" : table.getColumnHeading(operrcolumn[c]));
+            if (operatorBase.getOrCreateVariant(c).get() != MPOperator.NONE && operatorBase.getOrCreateVariant(c).get() != MPOperator.CUSTOM_ERROR) {
+                yHeading += operatorBase.getOrCreateVariant(c).get().getSymbol() + oplabel[c];
+                yErrHeading += operatorBase.getOrCreateVariant(c).get().getSymbol() + (operrcolumn[c] < 0 || table.getColumnHeading(operrcolumn[c]) == null ? "" : table.getColumnHeading(operrcolumn[c]));
             }
         }
         boolean atLeastOne = false;
@@ -5200,7 +5199,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         residualHeading = yHeading + "_residual";
         residualErrHeading = yErrHeading + "_residual";
 
-        if (operatorIndex[c] == 5) {
+        if (operatorBase.getOrCreateVariant(c).get() == MPOperator.CENTROID_DISTANCE) {
             yHeading += usePixelScale ? "(arcsecs)" : "(pixels)";
             modelHeading += usePixelScale ? "(arcsecs)" : "(pixels)";
             residualHeading += usePixelScale ? "(arcsecs)" : "(pixels)";
@@ -6213,10 +6212,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 createImageIcon("astroj/images/detrend_fit_transit.png", "Fit exoplanet transit to all data"),                 // 9
         };
 
-        operators = new String[]{"none", "divide by", "multiply by", "subtract", "add", "centroid distance", "custom error"};
-
-        opSymbol = new String[]{"", " / ", " * ", " - ", " + ", " -> ", " (with error) "};
-
         spinnerscalelist = new String[]{"      0.0000000001", "        0.000000001", "          0.00000001", "            0.0000001", "              0.000001", "                0.00001", "                  0.0001", "                    0.001", "                    0.005", "                    0.010", "                    0.100", "                    0.500", "                    1.000", "                  10.000", "                100.000", "              1000.000", "            10000.000", "          100000.000", "        1000000.000", "      10000000.000", "    100000000.000", "1000000000.000",};
 
         integerspinnerscalelist = new String[]{"                    1", "                    2", "                    3", "                    4", "                    5", "                    6", "                    7", "                    8", "                    9", "                  10", "                  25", "                  50", "                100", "                250", "                500", "              1000"};
@@ -6447,7 +6442,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         modelColorIndex = new int[maxCurves];
         residualModelColorIndex = new int[maxCurves];
         residualColorIndex = new int[maxCurves];
-        operatorIndex = new int[maxCurves];
         cblabels = new String[maxCurves];
         moreOptions = new boolean[maxCurves];
         autoScaleFactor = new double[maxCurves];
@@ -11200,9 +11194,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             if (e.getStateChange() == ItemEvent.DESELECTED) {
                 showErrors[c] = false;
             } else if (e.getStateChange() == ItemEvent.SELECTED) {
-                if (operatorIndex[c] == 6) {
-                    operatorIndex[c] = 0;
-                    operatorselection[c].setSelectedIndex(operatorIndex[c]);
+                if (operatorBase.getOrCreateVariant(c).get() == MPOperator.CUSTOM_ERROR) {
+                    operatorBase.getOrCreateVariant(c).set(MPOperator.NONE);
+                    operatorselection[c].setSelectedItem(operatorBase.getOrCreateVariant(c).get());
                 }
                 showErrors[c] = true;
             }
@@ -11211,13 +11205,13 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         errorcolumnbox[c].setHorizontalAlignment(JLabel.CENTER);
         mainsubpanelgroup.add(errorcolumnbox[c]);
 
-        operatorselection[c] = new JComboBox<>(operators);
+        operatorselection[c] = new JComboBox<>(MPOperator.values());
         operatorselection[c].setFont(p11);
-        operatorselection[c].setSelectedIndex(operatorIndex[c]);
-        operatorselection[c].setPrototypeDisplayValue("123456789012");
+        operatorselection[c].setSelectedItem(operatorBase.getOrCreateVariant(c).get());
+        operatorselection[c].setPrototypeDisplayValue(MPOperator.CENTROID_DISTANCE);
         operatorselection[c].addActionListener(ae -> {
-            operatorIndex[c] = operatorselection[c].getSelectedIndex();
-            if (operatorIndex[c] == 6) {
+            operatorBase.getOrCreateVariant(c).set((MPOperator) operatorselection[c].getSelectedItem());
+            if (operatorBase.getOrCreateVariant(c).get() == MPOperator.CUSTOM_ERROR) {
                 showErrors[c] = false;
                 errorcolumnbox[c].setSelected(false);
             }
@@ -11233,7 +11227,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 //                else
 //                    operatorcolumn[c].setPrototypeDisplayValue("1234567890123456");
         operatorcolumn[c].addActionListener(ae -> {
-            operatorIndex[c] = operatorselection[c].getSelectedIndex();
+            operatorBase.getOrCreateVariant(c).set((MPOperator) operatorselection[c].getSelectedItem());
             oplabel[c] = (String) operatorcolumn[c].getSelectedItem();
             updatePlot(updateOneFit(c));
         });
@@ -17719,6 +17713,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     }
 
     public static void getPreferences() {
+        Property.resetLoadStatus();
         tableName = Prefs.get("plot2.tableName", tableName);
         keepFileNamesOnAppend = Prefs.get("plot2.keepFileNamesOnAppend", keepFileNamesOnAppend);
         templateDir = Prefs.get("plot2.templateDir", templateDir);
@@ -18014,7 +18009,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             useColumnName[i] = Prefs.get("plot.useColumnName" + i, useColumnName[i]);
             useLegend[i] = Prefs.get("plot.useLegend" + i, useLegend[i]);
             legend[i] = Prefs.get("plot.legend" + i, legend[i]);
-            operatorIndex[i] = (int) Prefs.get("plot.operatorIndex" + i, operatorIndex[i]);
             inputAverageOverSize[i] = (int) Prefs.get("plot.inputAverageOverSize" + i, inputAverageOverSize[i]);
             plotY[i] = Prefs.get("plot.plotY" + i, plotY[i]);
             force[i] = Prefs.get("plot.force" + i, force[i]);
@@ -18336,7 +18330,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             Prefs.set("plot.useColumnName" + i, useColumnName[i]);
             Prefs.set("plot.useLegend" + i, useLegend[i]);
             Prefs.set("plot.legend" + i, legend[i]);
-            Prefs.set("plot.operatorIndex" + i, operatorIndex[i]);
             Prefs.set("plot.moreOptions" + i, moreOptions[i]);
             Prefs.set("plot.inputAverageOverSize" + i, inputAverageOverSize[i]);
             Prefs.set("plot.plotY" + i, plotY[i]);

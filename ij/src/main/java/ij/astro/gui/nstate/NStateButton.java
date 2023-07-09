@@ -25,6 +25,7 @@ public class NStateButton<STATE extends Enum<STATE> & NState<STATE>> extends JBu
         setContentAreaFilled(false);
         setFocusPainted(false);
         setOpaque(false);
+        setTooltips(state.getDefaultTooltips());
 
         // Allow for right click to go to the previous state
         addMouseListener(new MouseAdapter() {

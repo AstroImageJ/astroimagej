@@ -1,6 +1,7 @@
 package ij.astro.gui.nstate;
 
 import javax.swing.*;
+import java.util.function.Function;
 
 public interface NState<STATE extends Enum<STATE> & NState<STATE>> {
     Icon icon();
@@ -42,5 +43,9 @@ public interface NState<STATE extends Enum<STATE> & NState<STATE>> {
     @Deprecated()
     default STATE[] values0() {
         return (STATE[]) this.getClass().getEnumConstants();
+    }
+
+    default Function<STATE, String> getDefaultTooltips() {
+        return state -> null;
     }
 }

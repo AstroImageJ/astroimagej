@@ -3,6 +3,7 @@ package Astronomy.multiplot.settings;
 import ij.astro.gui.nstate.NState;
 
 import javax.swing.*;
+import java.util.function.Function;
 
 public enum MPOperator implements NState<MPOperator> {
     NONE("astroj/images/icons/none.png", "", false),
@@ -67,6 +68,11 @@ public enum MPOperator implements NState<MPOperator> {
 
     public boolean isNormalOperator() {
         return normalOperator;
+    }
+
+    @Override
+    public Function<MPOperator, String> getDefaultTooltips() {
+        return Enum::name;
     }
 
     private ImageIcon makeIcon(String path) {

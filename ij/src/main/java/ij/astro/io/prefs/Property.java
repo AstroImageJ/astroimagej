@@ -10,6 +10,7 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.*;
@@ -25,6 +26,7 @@ public class Property<T> {
     private final Object owner;
     private final Class<?> ownerClass;
     private volatile T value;
+    private final T defaultValue;
 
     private String propertyKey;
     private boolean hasBuiltKey = false;
@@ -35,6 +37,7 @@ public class Property<T> {
     private final Class<T> type;
     final Set<PropertyChangeListener<T>> listeners = Collections.synchronizedSet(new HashSet<>());
     private final Map<String, Property<T>> variants = new HashMap<>();
+    private static final HashSet<WeakReference<Property<?>>> propertyCache = new HashSet<>();
 
     public Property(T defaultValue, Object owner) {
         this(defaultValue, "", "", $ -> null, owner);
@@ -71,6 +74,8 @@ public class Property<T> {
             this.owner = owner;
             this.ownerClass = owner.getClass();
         }
+        this.defaultValue = defaultValue;
+        propertyCache.add(new WeakReference<>(this));
     }
 
     private Property(String key, Property<T> base) {
@@ -83,6 +88,8 @@ public class Property<T> {
         this.owner = base.owner;
         this.hasBuiltKey = true;
         this.propertyKey = key;
+        this.defaultValue = base.defaultValue;
+        propertyCache.add(new WeakReference<>(this));
     }
 
     public T get() {
@@ -183,7 +190,25 @@ public class Property<T> {
     }
 
     public Property<T> getOrCreateVariant(String suffix) {
-        return variants.computeIfAbsent(getPropertyKey() + "?" + suffix, s -> new Property<>(s, this));
+        return getOrCreateVariant(suffix, "");
+    }
+
+    public Property<T> getOrCreateVariant(String suffix, String separator) {
+        return variants.computeIfAbsent(getPropertyKey() + separator + suffix, s -> new Property<>(s, this));
+    }
+
+    public static void resetLoadStatus() {
+        for (WeakReference<Property<?>> propertyWeakReference : propertyCache) {
+            var p = propertyWeakReference.get();
+            if (p != null) {
+                p.resetProperty();
+            }
+        }
+    }
+
+    private void resetProperty() {
+        hasLoaded = false;
+        value = defaultValue;
     }
 
     private void loadProperty() {

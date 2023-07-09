@@ -719,7 +719,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
     static JComboBox<Object>[] xdatacolumn;
     static JComboBox<Object>[] ydatacolumn;
-    static JComboBox<MPOperator>[] operatorselection;
+    static NStateButton<MPOperator>[] operatorselection;
     static JComboBox<Object>[] operatorcolumn;
     static JComboBox<Object>[] detrendbox;
     static JComboBox<String>[] markersymbolselection;
@@ -6499,7 +6499,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         shiftBelowBox = new JCheckBox[maxCurves];
         xdatacolumn = new JComboBox[maxCurves];
         ydatacolumn = new JComboBox[maxCurves];
-        operatorselection = new JComboBox[maxCurves];
+        operatorselection = new NStateButton[maxCurves];
         operatorcolumn = new JComboBox[maxCurves];
         detrendbox = new JComboBox[maxCurves];
         markersymbolselection = new JComboBox[maxCurves];
@@ -11196,7 +11196,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             } else if (e.getStateChange() == ItemEvent.SELECTED) {
                 if (operatorBase.getOrCreateVariant(c).get() == MPOperator.CUSTOM_ERROR) {
                     operatorBase.getOrCreateVariant(c).set(MPOperator.NONE);
-                    operatorselection[c].setSelectedItem(operatorBase.getOrCreateVariant(c).get());
+                    operatorselection[c].setState(operatorBase.getOrCreateVariant(c).get());
                 }
                 showErrors[c] = true;
             }
@@ -11205,12 +11205,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         errorcolumnbox[c].setHorizontalAlignment(JLabel.CENTER);
         mainsubpanelgroup.add(errorcolumnbox[c]);
 
-        operatorselection[c] = new JComboBox<>(MPOperator.values());
-        operatorselection[c].setFont(p11);
-        operatorselection[c].setSelectedItem(operatorBase.getOrCreateVariant(c).get());
-        operatorselection[c].setPrototypeDisplayValue(MPOperator.CENTROID_DISTANCE);
+        operatorselection[c] = new NStateButton<>(operatorBase.getOrCreateVariant(c).get());
         operatorselection[c].addActionListener(ae -> {
-            operatorBase.getOrCreateVariant(c).set((MPOperator) operatorselection[c].getSelectedItem());
+            operatorBase.getOrCreateVariant(c).set(operatorselection[c].getState());
             if (operatorBase.getOrCreateVariant(c).get() == MPOperator.CUSTOM_ERROR) {
                 showErrors[c] = false;
                 errorcolumnbox[c].setSelected(false);
@@ -11227,7 +11224,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 //                else
 //                    operatorcolumn[c].setPrototypeDisplayValue("1234567890123456");
         operatorcolumn[c].addActionListener(ae -> {
-            operatorBase.getOrCreateVariant(c).set((MPOperator) operatorselection[c].getSelectedItem());
+            operatorBase.getOrCreateVariant(c).set(operatorselection[c].getState());
             oplabel[c] = (String) operatorcolumn[c].getSelectedItem();
             updatePlot(updateOneFit(c));
         });

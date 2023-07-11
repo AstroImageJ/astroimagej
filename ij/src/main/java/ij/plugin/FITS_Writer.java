@@ -195,7 +195,9 @@ public class FITS_Writer implements PlugIn {
 				// Write a primary HDU with the minimum required header
 				// The first HDU cannot be compressed when adding multiple HDUs.
 				// Some programs cannot handle compressed-first HDUs
-				Fits.makeHDU((Object) null).write(out);
+				var nullHdu = Fits.makeHDU((Object) null);
+				nullHdu.addValue(EXTEND, true);
+				nullHdu.write(out);
 			}
 
 			IJ.showStatus("Converting data and writing...");

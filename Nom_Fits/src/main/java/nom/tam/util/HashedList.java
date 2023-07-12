@@ -49,10 +49,15 @@ package nom.tam.util;
  * referenced objects.
  *
  */
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.NoSuchElementException;
 
 import nom.tam.fits.header.FitsHeaderImpl;
-
-import java.util.*;
 
 /**
  * An ordered hash map implementation.

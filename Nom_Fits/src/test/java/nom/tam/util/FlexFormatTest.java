@@ -31,13 +31,14 @@ package nom.tam.util;
  * #L%
  */
 
-import nom.tam.fits.LongValueException;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.math.BigInteger;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import org.junit.Test;
+
+import nom.tam.fits.LongValueException;
 
 public class FlexFormatTest {
 

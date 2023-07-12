@@ -35,6 +35,7 @@ import nom.tam.fits.FitsFactory;
 import nom.tam.fits.HeaderCard;
 import nom.tam.fits.HeaderCardException;
 import nom.tam.fits.LongValueException;
+import nom.tam.fits.header.hierarch.Hierarch;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -350,8 +351,8 @@ public class ComplexValueTest {
     @Test(expected = HeaderCardException.class)
     public void testNoSpaceComplexCard() throws Exception {
         FitsFactory.setUseHierarch(true);
-        new HeaderCard("HIERARCH.SOME.VERY.LONG.COMPLEX.KEYWORD.TAKING.UP.THE.SPACE", new ComplexValue(Math.PI, -Math.PI),
-                16, "comment");
+        new HeaderCard(Hierarch.key("SOME.VERY.LONG.COMPLEX.KEYWORD.TAKING.UP.THE.SPACE"),
+                new ComplexValue(Math.PI, -Math.PI), 16, "comment");
     }
 
     @Test
@@ -360,7 +361,7 @@ public class ComplexValueTest {
         HeaderCard hc = null;
 
         try {
-            hc = new HeaderCard("HIERARCH.SOME.VERY.LONG.COMPLEX.KEYWORD.TAKING.UP.ALL.THE.SPACE", true, "comment");
+            hc = new HeaderCard(Hierarch.key("SOME.VERY.LONG.COMPLEX.KEYWORD.TAKING.UP.ALL.THE.SPACE"), true, "comment");
             hc.setValue(new ComplexValue(0.0, 0.0));
         } catch (HeaderCardException e) {
 

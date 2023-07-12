@@ -74,9 +74,6 @@ public class BinaryTable extends AbstractTableData implements Cloneable {
     /** The substring convention marker */
     private static final String SUBSTRING_MARKER = ":SSTR";
 
-    /** Whether we should read out older variable-length complex data with incorrect length in the array descriptor */
-    private static boolean readVarComplexRealCount = false;
-
     /**
      * Describes the data type and shape stored in a binary table column.
      */
@@ -1257,7 +1254,7 @@ public class BinaryTable extends AbstractTableData implements Cloneable {
     private FitsEncoder encoder;
 
     /**
-     * Create a null binary table data segment.
+     * Creates an empty binary table, which can be populated with columns / rows as desired.
      */
     public BinaryTable() {
         table = new ColumnTable<>();
@@ -1268,9 +1265,9 @@ public class BinaryTable extends AbstractTableData implements Cloneable {
     }
 
     /**
-     * Create a binary table from an existing column table. <b>WARNING!</b>, as of 1.18 we no longer use the column data
-     * extra state to carry information about an enclosing class, because it is horribly bad practice. You should not
-     * use this constructor to create imperfect copies of binary tables. Rather, use {@link #copy()} if you want to
+     * Creates a binary table from an existing column table. <b>WARNING!</b>, as of 1.18 we no longer use the column
+     * data extra state to carry information about an enclosing class, because it is horribly bad practice. You should
+     * not use this constructor to create imperfect copies of binary tables. Rather, use {@link #copy()} if you want to
      * create a new binary table, which properly inherits <b>ALL</b> of the properties of an original one. As for this
      * constructor, you should assume that it will not use anything beyond what's available in any generic vanilla
      * column table.
@@ -1312,11 +1309,24 @@ public class BinaryTable extends AbstractTableData implements Cloneable {
     }
 
     /**
-     * Create a binary table from given header information.
+     * Creates a binary table from a given FITS header description. The table columns are initialized but no data will
+     * be available, at least initially. Data may be loaded later (e.g. deferred read mode), provided the table is
+     * associated to an input (usually only if this constructor is called from a {@link Fits} object reading an input).
+     * When the table has an input configured via a {@link Fits} object, the table entries may be accessed in-situ in
+     * the file while in deferred read mode, but operations affecting significant portions of the table (e.g. retrieving
+     * all data via {@link #getData()} or accessing entire columns) may load the data in memory. You can also call
+     * {@link #detach()} any time to force loading the data into memory, so that alterations after that will not be
+     * reflected in the original file, at least not unitl {@link #rewrite()} is called explicitly.
+     * 
+     * @param      myHeader      A FITS header describing what the binary table should look like.
      *
-     * @param  myHeader      A header describing what the binary table should look like.
-     *
-     * @throws FitsException if the specified header is not usable for a binary table
+     * @throws     FitsException if the specified header is not usable for a binary table
+     * 
+     * @deprecated               (<i>for internal use</i>) This constructor should only be called from a {@link Fits}
+     *                               object reading an input; visibility may be reduced to the package level in the
+     *                               future.
+     * 
+     * @see                      #isDeferred()
      */
     public BinaryTable(Header myHeader) throws FitsException {
         long paramSizeL = myHeader.getLongValue(PCOUNT);
@@ -1359,7 +1369,7 @@ public class BinaryTable extends AbstractTableData implements Cloneable {
     }
 
     /**
-     * Create a binary table from existing table data int row-major format. That is the first array index is the row
+     * Creates a binary table from existing table data int row-major format. That is the first array index is the row
      * index while the second array index is the column index.
      *
      * @param      rowColTable   Row / column array. Scalars elements are wrapped in arrays of 1, s.t. a single
@@ -1370,7 +1380,7 @@ public class BinaryTable extends AbstractTableData implements Cloneable {
      * 
      * @deprecated               The constructor is ambiguous, use {@link #fromRowMajor(Object[][])} instead. You can
      *                               have a column-major array that has no scalar primitives which would also be an
-     *                               <code>Object[][]</code> and could be passed.
+     *                               <code>Object[][]</code> and could be passed erroneously.
      */
     public BinaryTable(Object[][] rowColTable) throws FitsException {
         this();
@@ -3157,8 +3167,6 @@ public class BinaryTable extends AbstractTableData implements Cloneable {
             }
         }
 
-        // System.out.println("### put len " + len);
-
         h.putData(o, off);
 
         return c.hasLongPointers() ? new long[] {len, off} : new int[] {len, off};
@@ -3182,8 +3190,6 @@ public class BinaryTable extends AbstractTableData implements Cloneable {
         long len = getPointerCount(p);
         long off = getPointerOffset(p);
 
-        // System.err.println("### get len " + len);
-
         if (off > Integer.MAX_VALUE || len > Integer.MAX_VALUE) {
             throw new FitsException("Data located beyond 32-bit accessible heap limit");
         }
@@ -3191,11 +3197,6 @@ public class BinaryTable extends AbstractTableData implements Cloneable {
         Object e = null;
 
         if (c.isComplex()) {
-            if (readVarComplexRealCount) {
-                // Read out own variable-length complex data produced before 1.18
-                // with the incorrect length in the array descriptor...
-                len >>>= 1;
-            }
             e = Array.newInstance(c.getFitsBase(), (int) len, 2);
         } else {
             e = Array.newInstance(c.getFitsBase(), c.getFitsBaseCount((int) len));
@@ -3786,7 +3787,7 @@ public class BinaryTable extends AbstractTableData implements Cloneable {
      * </p>
      * <p>
      * For best squential read performance, you should defragment all tables that have been built column-by-column
-     * before writing them to a FITS file. The only time defragmentation is really not needed is is a table was built
+     * before writing them to a FITS file. The only time defragmentation is really not needed is if the table was built
      * row-by-row, with no modifications to variable-length content after the fact.
      * </p>
      * 
@@ -3853,34 +3854,5 @@ public class BinaryTable extends AbstractTableData implements Cloneable {
 
         heap = compact;
         return oldSize - compact.size();
-    }
-
-    /**
-     * <p>
-     * Changes how we interpret variable-length complex array descriptors. According to the FITS standard, array
-     * descritors specify the number of FITS elements stored, but prior to 1.18 we have used (and stored) the number of
-     * real-valued components, which is a factor of 2 higher than what FITS expects. As such, our older files containing
-     * variable-length complex data are not correctly described, and are expected to be unreadable by tools not based on
-     * this library.
-     * </p>
-     * <p>
-     * We have fixed the deviation from the standard in 1.18, so we read/write variable-length complex columns with the
-     * correct FITS array descriptors. However, as a result, we cannot any longer read our older files now either by
-     * default. Which is the reason for the introduction of this static method. When set to <code>true</code> we will
-     * read variable-length complex columns with the incorrect element counts of the past.
-     * </p>
-     * 
-     * @param value <code>true</code> to read out older files in which we incorrectly stored the number of real
-     *                  components (instead of the number of complex values) for variable-length complex columns.
-     * 
-     * @since       1.18
-     * 
-     * @see         #get(int, int)
-     * @see         #getElement(int, int)
-     * @see         #getRow(int)
-     * @see         #getColumn(int)
-     */
-    public static void setReadVarComplexRealCount(boolean value) {
-        readVarComplexRealCount = value;
     }
 }

@@ -31,13 +31,13 @@ package nom.tam.fits.header;
  * #L%
  */
 
-import nom.tam.fits.header.IFitsHeader.HDU;
-import nom.tam.fits.header.IFitsHeader.SOURCE;
-import nom.tam.fits.header.IFitsHeader.VALUE;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+
+import nom.tam.fits.header.IFitsHeader.HDU;
+import nom.tam.fits.header.IFitsHeader.SOURCE;
+import nom.tam.fits.header.IFitsHeader.VALUE;
 
 /**
  * generic key interface, create an IFitsHeader from a key.

@@ -31,10 +31,10 @@ package nom.tam.util.type;
  * #L%
  */
 
-import nom.tam.fits.header.Bitpix;
-
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
+
+import nom.tam.fits.header.Bitpix;
 
 /**
  * A FITS single-precision floating point element. It is the same as the standard IEEE 32-bit floating-point value,

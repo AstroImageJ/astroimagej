@@ -77,6 +77,7 @@ import nom.tam.fits.compression.algorithm.rice.RiceCompressOption;
 import nom.tam.fits.compression.provider.param.rice.RiceCompressParameters;
 import nom.tam.fits.header.Compression;
 import nom.tam.fits.header.Standard;
+import nom.tam.image.StreamingTileImageData;
 import nom.tam.image.compression.hdu.CompressedImageHDU;
 import nom.tam.util.*;
 import nom.tam.util.type.ElementType;

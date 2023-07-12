@@ -31,21 +31,33 @@ package nom.tam.fits.compression.algorithm.gzip2;
  * #L%
  */
 
-import nom.tam.fits.compression.algorithm.gzip2.GZip2Compressor.*;
-import nom.tam.util.ArrayFuncs;
-import nom.tam.util.ByteBufferInputStream;
-import nom.tam.util.ByteBufferOutputStream;
-import nom.tam.util.SafeClose;
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
-import java.nio.*;
+import java.nio.BufferOverflowException;
+import java.nio.ByteBuffer;
+import java.nio.DoubleBuffer;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+import java.nio.LongBuffer;
+import java.nio.ShortBuffer;
 import java.util.Random;
 import java.util.zip.GZIPOutputStream;
+
+import org.junit.Assert;
+import org.junit.Test;
+
+import nom.tam.fits.compression.algorithm.gzip2.GZip2Compressor.ByteGZip2Compressor;
+import nom.tam.fits.compression.algorithm.gzip2.GZip2Compressor.DoubleGZip2Compressor;
+import nom.tam.fits.compression.algorithm.gzip2.GZip2Compressor.FloatGZip2Compressor;
+import nom.tam.fits.compression.algorithm.gzip2.GZip2Compressor.IntGZip2Compressor;
+import nom.tam.fits.compression.algorithm.gzip2.GZip2Compressor.LongGZip2Compressor;
+import nom.tam.fits.compression.algorithm.gzip2.GZip2Compressor.ShortGZip2Compressor;
+import nom.tam.util.ArrayFuncs;
+import nom.tam.util.ByteBufferInputStream;
+import nom.tam.util.ByteBufferOutputStream;
+import nom.tam.util.SafeClose;
 
 public class GZip2CompressTest {
 

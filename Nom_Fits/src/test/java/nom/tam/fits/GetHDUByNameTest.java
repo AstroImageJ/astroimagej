@@ -31,18 +31,23 @@ package nom.tam.fits;
  * #L%
  */
 
-import nom.tam.fits.header.Bitpix;
-import nom.tam.util.FitsOutputStream;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 import java.io.File;
 import java.io.FileOutputStream;
 
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import nom.tam.fits.header.Bitpix;
+import nom.tam.util.FitsOutputStream;
+
 import static nom.tam.fits.header.Standard.EXTNAME;
 import static nom.tam.fits.header.Standard.EXTVER;
-import static org.junit.Assert.*;
 
 public class GetHDUByNameTest {
 

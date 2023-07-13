@@ -3441,11 +3441,13 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             setSaveStateDialog();
         } else if (b == saveMenuItem) {
             if (imp.getType() == ImagePlus.COLOR_RGB) imp.getProcessor().reset();
-            String imageDirname = imp.getOriginalFileInfo().directory;
-            String imageFilename = IJU.getSliceFilename(imp);
-//                    IJ.log(imageDirname+imageFilename);
-//                    IJ.saveAs(imageFilename.substring(imageFilename.lastIndexOf('.')),imageDirname+imageFilename);
-            IJU.saveFile(imp, imageDirname + imageFilename);
+            String p = null;
+            if (imp.getOriginalFileInfo() != null) {
+                String imageDirname = imp.getOriginalFileInfo().directory;
+                String imageFilename = IJU.getSliceFilename(imp);
+                p = imageDirname + imageFilename;
+            }
+            IJU.saveFile(imp, p);
         } else if (b == saveFitsMenuItem) {
             FITS_Writer.savingThread.submit(() -> {
                 var l = imp.lockSilently();

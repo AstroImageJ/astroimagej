@@ -75,7 +75,7 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
                 if (!isVirtual) {
                     for (Color color : Color.values()) {
                         if (!enabledColors.get(color)) continue;
-                        var impC = color.makeStackDisplayable(imp.getTitle());
+                        var impC = color.makeStackDisplayable(imp);
                         header = headerUpdate(header, impC);
                         FitsJ.putHeader(impC, header);
                         impC.show();
@@ -403,10 +403,11 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
 
         public ImageStack stack = new ImageStack();
 
-        public ImagePlus makeStackDisplayable(String title) {
+        public ImagePlus makeStackDisplayable(ImagePlus imp) {
             if (this == LUMINOSITY) stack.setOptions("32-bit int");
-            var impC = new ImagePlus(title + " (" + name() + ")", stack);
+            var impC = new ImagePlus(imp.getTitle() + " (" + name() + ")", stack);
             if (this == Color.LUMINOSITY) impC.setType(ImagePlus.GRAY32);
+            impC.setFileInfo(imp.getFileInfo());
             return impC;
         }
 

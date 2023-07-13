@@ -1,12 +1,15 @@
 package Astronomy.multiplot.settings;
 
+import ij.astro.gui.MergedIcon;
 import ij.astro.gui.nstate.NState;
+import ij.astro.util.EmojiIcon;
 
 import javax.swing.*;
+import java.awt.*;
 import java.util.function.Function;
 
 public enum MPOperator implements NState<MPOperator> {
-    NONE("astroj/images/icons/none.png", "", false),
+    NONE(null, "", false),
     DIVIDE_BY("astroj/images/icons/divide.png", " / ", true),
     MULTIPLY_BY("astroj/images/icons/multiply.png", " * ", true),
     SUBTRACT("astroj/images/icons/subtract.png", " - ", true),
@@ -72,10 +75,21 @@ public enum MPOperator implements NState<MPOperator> {
 
     @Override
     public Function<MPOperator, String> getDefaultTooltips() {
-        return Enum::name;
+        return o -> switch (o) {
+            case NONE -> "No Operation, [Divide, Multiply, Subtract, Add, Centroid Distance, Custom Error]";
+            case DIVIDE_BY -> "Divide";
+            case MULTIPLY_BY -> "Multiply";
+            case SUBTRACT -> "Subtract";
+            case ADD -> "Add";
+            case CENTROID_DISTANCE -> "Centroid Distance";
+            case CUSTOM_ERROR -> "Custom Error";
+        };
     }
 
-    private ImageIcon makeIcon(String path) {
+    private Icon makeIcon(String path) {
+        if (path == null) {
+            return new MergedIcon(new EmojiIcon("■", 19, Color.WHITE), new EmojiIcon("☐", 19), -3, 2, true);
+        }
         var i = new ImageIcon(getClass().getClassLoader().getResource(path), this.name());
         return new ImageIcon(i.getImage().getScaledInstance(14, 14,  java.awt.Image.SCALE_SMOOTH), this.name());
     }

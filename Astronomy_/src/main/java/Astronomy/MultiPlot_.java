@@ -10790,19 +10790,11 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         ycolumnlabelgroup.add(Box.createHorizontalGlue());
 //                legendslabelgroup.add(Box.createGlue());
         mainsubpanelgroup.add(ycolumnlabelgroup);
-
-        JLabel useerrorlabel = new JLabel("<HTML><CENTER>Show<BR><CENTER>Error</HTML>");
-        useerrorlabel.setFont(b11);
-        useerrorlabel.setForeground(Color.DARK_GRAY);
-        useerrorlabel.setToolTipText("<HTML>Show automatic Y-error bars when dataset has predefined error available.<BR>" + "Compatible datasets are: Source-Sky_XX, rel_flux_XX, tot_C_cnts.</HTML>");
-        useerrorlabel.setHorizontalAlignment(JLabel.CENTER);
-        useerrorlabel.setMaximumSize(new Dimension(45, 25));
-        mainsubpanelgroup.add(useerrorlabel);
 //                JLabel errorlabel = new JLabel ("Y-error");
 //                errorlabel.setHorizontalAlignment(JLabel.CENTER);
 //                errorlabel.setToolTipText("Error associated with Y-data");
 //                mainsubpanelgroup.add (errorlabel);
-        operatorlabelsub = new JLabel("Function");
+        operatorlabelsub = new JLabel("<HTML><CENTER>Func-<BR><CENTER>tion</HTML>");
         operatorlabelsub.setFont(b11);
         operatorlabelsub.setForeground(Color.DARK_GRAY);
         operatorlabelsub.setHorizontalAlignment(JLabel.CENTER);
@@ -10822,6 +10814,14 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 //                JLabel operrorlabel = new JLabel ("Y-op Error");
 //                operrorlabel.setHorizontalAlignment(JLabel.CENTER);
 //                mainsubpanelgroup.add (operrorlabel);
+
+        JLabel useerrorlabel = new JLabel("<HTML><CENTER>Show<BR><CENTER>Error</HTML>");
+        useerrorlabel.setFont(b11);
+        useerrorlabel.setForeground(Color.DARK_GRAY);
+        useerrorlabel.setToolTipText("<HTML>Show automatic Y-error bars when dataset has predefined error available.<BR>" + "Compatible datasets are: Source-Sky_XX, rel_flux_XX, tot_C_cnts.</HTML>");
+        useerrorlabel.setHorizontalAlignment(JLabel.CENTER);
+        useerrorlabel.setMaximumSize(new Dimension(45, 25));
+        mainsubpanelgroup.add(useerrorlabel);
 
         markerlabelsub = new JLabel("Color");
         markerlabelsub.setFont(b11);
@@ -11189,23 +11189,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         });
         mainsubpanelgroup.add(ydatacolumn[c]);
 
-        errorcolumnbox[c] = new JCheckBox("", showErrors[c]);
-        errorcolumnbox[c].setToolTipText("<HTML>Show automatic Y-error bars when data has predefined error available.<BR>" + "Compatible data columns are: Source-Sky_XX, rel_flux_XX, tot_C_cnts, tot_C_cnts-XX.<BR>" + "To display custom user defined error, select the column containing the desired error<BR>" + "under 'Y-operand' and then select 'custom error' under 'Function'.</HTML>");
-        errorcolumnbox[c].addItemListener(e -> {
-            if (e.getStateChange() == ItemEvent.DESELECTED) {
-                showErrors[c] = false;
-            } else if (e.getStateChange() == ItemEvent.SELECTED) {
-                if (operatorBase.getOrCreateVariant(c).get() == MPOperator.CUSTOM_ERROR) {
-                    operatorBase.getOrCreateVariant(c).set(MPOperator.NONE);
-                    operatorselection[c].setState(operatorBase.getOrCreateVariant(c).get());
-                }
-                showErrors[c] = true;
-            }
-            updatePlot(updateNoFits());
-        });
-        errorcolumnbox[c].setHorizontalAlignment(JLabel.CENTER);
-        mainsubpanelgroup.add(errorcolumnbox[c]);
-
         operatorselection[c] = new NStateButton<>(operatorBase.getOrCreateVariant(c).get());
         operatorselection[c].addActionListener(ae -> {
             operatorBase.getOrCreateVariant(c).set(operatorselection[c].getState());
@@ -11230,6 +11213,23 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             updatePlot(updateOneFit(c));
         });
         mainsubpanelgroup.add(operatorcolumn[c]);
+
+        errorcolumnbox[c] = new JCheckBox("", showErrors[c]);
+        errorcolumnbox[c].setToolTipText("<HTML>Show automatic Y-error bars when data has predefined error available.<BR>" + "Compatible data columns are: Source-Sky_XX, rel_flux_XX, tot_C_cnts, tot_C_cnts-XX.<BR>" + "To display custom user defined error, select the column containing the desired error<BR>" + "under 'Y-operand' and then select 'custom error' under 'Function'.</HTML>");
+        errorcolumnbox[c].addItemListener(e -> {
+            if (e.getStateChange() == ItemEvent.DESELECTED) {
+                showErrors[c] = false;
+            } else if (e.getStateChange() == ItemEvent.SELECTED) {
+                if (operatorBase.getOrCreateVariant(c).get() == MPOperator.CUSTOM_ERROR) {
+                    operatorBase.getOrCreateVariant(c).set(MPOperator.NONE);
+                    operatorselection[c].setState(operatorBase.getOrCreateVariant(c).get());
+                }
+                showErrors[c] = true;
+            }
+            updatePlot(updateNoFits());
+        });
+        errorcolumnbox[c].setHorizontalAlignment(JLabel.CENTER);
+        mainsubpanelgroup.add(errorcolumnbox[c]);
 
 
         markercolorselection[c] = new JComboBox<>(colors);

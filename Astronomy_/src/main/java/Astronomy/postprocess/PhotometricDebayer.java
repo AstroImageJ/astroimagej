@@ -79,8 +79,11 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
                     for (Color color : Color.values()) {
                         if (!enabledColors.get(color)) continue;
                         var impC = color.makeStackDisplayable(imp);
-                        header = headerUpdate(FitsJ.getHeader(imp), impC);
-                        FitsJ.putHeader(impC, header);
+                        for (int slice = 1; slice <= imp.getStackSize(); slice++) {
+                            header = headerUpdate(FitsJ.getHeader(imp, slice), impC);
+                            FitsJ.putHeader(impC.getStack(), header, slice);
+                        }
+
                         impC.show();
                         if (impC.getWindow() != null && impC.getWindow() instanceof AstroStackWindow asw) {
                             asw.setAstroProcessor(true);

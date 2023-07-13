@@ -1,5 +1,6 @@
 package Astronomy.postprocess;
 
+import astroj.AstroStackWindow;
 import astroj.FitsJ;
 import astroj.IJU;
 import astroj.WCS;
@@ -80,6 +81,9 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
                         header = headerUpdate(header, impC);
                         FitsJ.putHeader(impC, header);
                         impC.show();
+                        if (impC.getWindow() != null && impC.getWindow() instanceof AstroStackWindow asw) {
+                            asw.updateWCS();
+                        }
                     }
                 } else {
                     IJ.showMessage("Virtual stack debayering complete.\nAligned images are saved in subdirectory 'debayered'.");
@@ -180,27 +184,27 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
         if (wcs.hasWCS()) {
             if (FitsJ.hasCard("CRPIX1", header)) {
                 var d = FitsJ.findDoubleValue("CRPIX1", header);
-                header = FitsJ.setCard("CRPIX1", d*2, "", header);
+                header = FitsJ.setCard("CRPIX1", d/2, "", header);
             }
             if (FitsJ.hasCard("CRPIX2", header)) {
                 var d = FitsJ.findDoubleValue("CRPIX2", header);
-                header = FitsJ.setCard("CRPIX2", d*2, "", header);
+                header = FitsJ.setCard("CRPIX2", d/2, "", header);
             }
             if (FitsJ.hasCard("CD1_1", header)) {
                 var d = FitsJ.findDoubleValue("CD1_1", header);
-                header = FitsJ.setCard("CD1_1", d/2, "", header);
+                header = FitsJ.setCard("CD1_1", d*2, "", header);
             }
             if (FitsJ.hasCard("CD1_2", header)) {
                 var d = FitsJ.findDoubleValue("CD1_2", header);
-                header = FitsJ.setCard("CD1_2", d/2, "", header);
+                header = FitsJ.setCard("CD1_2", d*2, "", header);
             }
             if (FitsJ.hasCard("CD2_1", header)) {
                 var d = FitsJ.findDoubleValue("CD2_1", header);
-                header = FitsJ.setCard("CD2_1", d/2, "", header);
+                header = FitsJ.setCard("CD2_1", d*2, "", header);
             }
             if (FitsJ.hasCard("CD2_2", header)) {
                 var d = FitsJ.findDoubleValue("CD2_2", header);
-                header = FitsJ.setCard("CD2_2", d/2, "", header);
+                header = FitsJ.setCard("CD2_2", d*2, "", header);
             }
             header = FitsJ.removeCardsWithKeyPrefix("A_", header);
             header = FitsJ.removeCardsWithKeyPrefix("B_", header);

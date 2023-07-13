@@ -133,6 +133,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 				}
 			} catch (FitsException e) {
 				IJ.error("AIJ does not recognized this file as a FITS file: " + e.getMessage());
+				e.printStackTrace();
 				postFitsRead.close();
 				return;
 			}

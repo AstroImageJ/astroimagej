@@ -14,6 +14,9 @@ import ij.util.Tools;
 
 import java.awt.*;
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Locale;
 import java.util.Properties;
 
@@ -27,7 +30,8 @@ public class StackWriter implements PlugIn {
 	@AstroImageJ(reason = "Change default file type to FITS", modified = true)
 	private String fileType = "FITS";
 	private int ndigits = 4;
-	private boolean useLabels;
+	@AstroImageJ(reason = "Default on", modified = true)
+	private boolean useLabels = true;
 	private boolean firstTime = true;
 	private int startAt;
 	private boolean hyperstack;
@@ -50,6 +54,7 @@ public class StackWriter implements PlugIn {
 	}
 
 
+	@AstroImageJ(reason = "Create missing directories if they don't exist", modified = true)
 	public void run(String arg) {
 		if (imp==null)
 			imp = WindowManager.getCurrentImage();
@@ -151,6 +156,11 @@ public class StackWriter implements PlugIn {
 				path = directory+name+digits+extension;
 			else
 				path = directory+label+extension;
+			try {
+				Files.createDirectories(Path.of(path).getParent());
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 			if (i==1) {
 				File f = new File(path);
 				if (f.exists()) {

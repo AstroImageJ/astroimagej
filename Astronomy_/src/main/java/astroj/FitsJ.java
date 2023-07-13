@@ -683,6 +683,28 @@ public class FitsJ
 		return Header.build(hdr2);
 		}
 
+		public static Header removeCardsWithKeyPrefix (String key, Header hdr) {
+			int l = hdr.cards.length;
+			int num = 0;
+			String cardkey = null;
+			for (int i=0; i < l; i++) {
+				cardkey = getCardKey(hdr.cards[i]);
+				if (cardkey != null && cardkey.startsWith(key)) {
+					num++;
+				}
+			}
+			String[] hdr2 = new String[l-num];
+			int cnt = 0;
+			for (int i=0; i < l; i++) {
+				cardkey = getCardKey(hdr.cards[i]);
+				if (cardkey == null || !cardkey.startsWith(key)) {
+					hdr2[cnt] = hdr.cards[i];
+					cnt++;
+				}
+			}
+			return Header.build(hdr2);
+		}
+
 	/**
 	 * Finds the location of a FITS card in a String array having the FITS keyword "key".
 	 *
@@ -2114,7 +2136,12 @@ public class FitsJ
 		return jd;
 		}
 
-	public record Header(String[] cards, String[] maybeKeys, String[] maybeValues, Holder holder) {
+		public static boolean hasCard(String key, Header header) {
+			header.ensureValidity();
+			return Arrays.asList(header.maybeKeys).contains(key);
+		}
+
+		public record Header(String[] cards, String[] maybeKeys, String[] maybeValues, Holder holder) {
 		public static Header build(String[] cards) {
 			var mk = new String[cards.length];
 			var mv = new String[cards.length];

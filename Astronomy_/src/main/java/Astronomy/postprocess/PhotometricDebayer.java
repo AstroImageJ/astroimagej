@@ -2,6 +2,7 @@ package Astronomy.postprocess;
 
 import astroj.FitsJ;
 import astroj.IJU;
+import astroj.WCS;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.ImageStack;
@@ -173,6 +174,39 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
         header = FitsJ.removeCards("YBAYROFF", header);
         header = FitsJ.removeCards("IMAGEW", header);
         header = FitsJ.removeCards("IMAGEH", header);
+
+        // Try adjust WCS
+        var wcs = new WCS(header);
+        if (wcs.hasWCS()) {
+            if (FitsJ.hasCard("CRPIX1", header)) {
+                var d = FitsJ.findDoubleValue("CRPIX1", header);
+                header = FitsJ.setCard("CRPIX1", d*2, "", header);
+            }
+            if (FitsJ.hasCard("CRPIX2", header)) {
+                var d = FitsJ.findDoubleValue("CRPIX2", header);
+                header = FitsJ.setCard("CRPIX2", d*2, "", header);
+            }
+            if (FitsJ.hasCard("CD1_1", header)) {
+                var d = FitsJ.findDoubleValue("CD1_1", header);
+                header = FitsJ.setCard("CD1_1", d/2, "", header);
+            }
+            if (FitsJ.hasCard("CD1_2", header)) {
+                var d = FitsJ.findDoubleValue("CD1_2", header);
+                header = FitsJ.setCard("CD1_2", d/2, "", header);
+            }
+            if (FitsJ.hasCard("CD2_1", header)) {
+                var d = FitsJ.findDoubleValue("CD2_1", header);
+                header = FitsJ.setCard("CD2_1", d/2, "", header);
+            }
+            if (FitsJ.hasCard("CD2_2", header)) {
+                var d = FitsJ.findDoubleValue("CD2_2", header);
+                header = FitsJ.setCard("CD2_2", d/2, "", header);
+            }
+            header = FitsJ.removeCardsWithKeyPrefix("A_", header);
+            header = FitsJ.removeCardsWithKeyPrefix("B_", header);
+            header = FitsJ.removeCardsWithKeyPrefix("AP_", header);
+            header = FitsJ.removeCardsWithKeyPrefix("BP_", header);
+        }
 
         return header;
     }

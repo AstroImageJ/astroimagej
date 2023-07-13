@@ -9,6 +9,7 @@ import ij.ImagePlus;
 import ij.ImageStack;
 import ij.Prefs;
 import ij.astro.gui.GenericSwingDialog;
+import ij.astro.util.FitsExtensionUtil;
 import ij.plugin.FITS_Writer;
 import ij.plugin.filter.ExtendedPlugInFilter;
 import ij.plugin.filter.PlugInFilterRunner;
@@ -142,10 +143,15 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
                 if (!enabledColors.get(color)) continue;
                 var transform = buildTransforms(FitsJ.getHeader(imp, slice));
 
+                var imageFilename = IJU.getSliceFilename(imp, slice);
                 if (!isVirtual) {
-                    color.stack.addSlice(stack.getSliceLabel(slice), mim.makeImageProcessor(pallete, color, transform));
+                    var label = stack.getSliceLabel(slice);
+                    if (FitsExtensionUtil.isFitsFile(imageFilename)) {
+                        label = label.replace(imageFilename, FitsExtensionUtil.makeFitsSave(FitsExtensionUtil.fileNameWithoutExt(imageFilename) + color.appendage,
+                                FitsExtensionUtil.compressionModes(imageFilename).toArray(FitsExtensionUtil.CompressionMode[]::new)));
+                    }
+                    color.stack.addSlice(label, mim.makeImageProcessor(pallete, color, transform));
                 } else {
-                    var imageFilename = IJU.getSliceFilename(imp, slice);
                     ImagePlus imp2 = new ImagePlus(imp.getStack().getSliceLabel(slice), mim.makeImageProcessor(pallete, color, transform));
                     imp2.setCalibration(imp.getCalibration());
                     imp2.setFileInfo(imp.getFileInfo());
@@ -417,21 +423,27 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
     }
 
     enum Color {
-        RED,
-        GREEN,
-        BLUE,
-        LUMINOSITY {
+        RED("_TR"),
+        GREEN("_TG"),
+        BLUE("_TB"),
+        LUMINOSITY("_TL") {
             @Override
             public String toString() {
                 return "R+G₁+G₂+B";
             }
         },
-        G_AVE_LUM {
+        G_AVE_LUM("_TA") {
             @Override
             public String toString() {
                 return "R+½(G₁+G₂)+B";
             }
         };
+
+        public final String appendage;
+
+        Color(String appendage) {
+            this.appendage = appendage;
+        }
 
         public BiFunction<Integer, Integer, ImageProcessor>
         makeImageProcessor(BiFunction<Integer, Integer, ImageProcessor> ipMaker) {

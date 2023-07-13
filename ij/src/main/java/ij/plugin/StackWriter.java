@@ -87,7 +87,12 @@ public class StackWriter implements PlugIn {
 		else {		
 			if (!showDialog(imp))
 				return;
-		}		
+		}
+		try {
+			Files.createDirectories(Path.of(directory));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 		File d = new File(directory);
 		if (d==null || !d.isDirectory()) {
 			IJ.error("File>Save As>Image Sequence", "Directory not found: "+directory);

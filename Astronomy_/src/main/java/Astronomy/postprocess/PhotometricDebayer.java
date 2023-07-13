@@ -82,7 +82,7 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
                         FitsJ.putHeader(impC, header);
                         impC.show();
                         if (impC.getWindow() != null && impC.getWindow() instanceof AstroStackWindow asw) {
-                            asw.updateWCS();
+                            asw.setAstroProcessor(true);
                         }
                     }
                 } else {
@@ -170,8 +170,8 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
 
     private FitsJ.Header headerUpdate(FitsJ.Header header, ImagePlus imp) {
         if (header == null) return null;
-        header = FitsJ.setCard("NAXIS1", imp.getWidth()/2, "Width", header);
-        header = FitsJ.setCard("NAXIS2", imp.getHeight()/2, "Height", header);
+        header = FitsJ.setCard("NAXIS1", imp.getWidth(), "Width", header);
+        header = FitsJ.setCard("NAXIS2", imp.getHeight(), "Height", header);
         header = FitsJ.removeCards("BAYERPAT", header);
         header = FitsJ.removeCards("ROWORDER", header);
         header = FitsJ.removeCards("XBAYROFF", header);

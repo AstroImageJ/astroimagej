@@ -75,7 +75,7 @@ public class FitOptimization implements AutoCloseable {
     private static final Property<CompStarFitting.Mode> compStarMode = new Property<>(CompStarFitting.Mode.QUICK, FitOptimization.class);
 
     // Init. after numAps is set
-    public FitOptimization(int curve, int epsilon) {
+    private FitOptimization(int curve, int epsilon) {
         this.curve = curve;
         EPSILON = epsilon;
         setupThreadedSpace();
@@ -84,6 +84,11 @@ public class FitOptimization implements AutoCloseable {
         showOptLog = Prefs.get(PREFS_ENABLELOG, showOptLog);
         bict = Prefs.get(PREFS_BIC_THRESHOLD, bict);
         maxDetrend = (int) Prefs.get(PREFS_MAX_DETREND, maxDetrend);
+    }
+
+    public static FitOptimization getOrCreateInstance(int curve, int epsilon) {
+        var m = INSTANCES.stream().filter(f -> f.curve == curve).findFirst();
+        return m.orElseGet(() -> new FitOptimization(curve, epsilon));
     }
 
     public static void clearCleanHistory() {

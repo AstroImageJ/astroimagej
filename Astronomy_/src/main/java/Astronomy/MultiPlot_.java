@@ -12600,6 +12600,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
     static void createFitPanel(final int c) {
         if (fitFrame[c] != null && fitFrame[c].isShowing()) return;
+        if (fitFrame[c] != null) {
+            fitFrame[c].dispose();
+        }
         int nlines = 1;
         fitFrame[c] = new JFrame("Data Set " + (c + 1) + " Fit Settings");
         fitFrame[c].setIconImage(fitFrameIcon.getImage());
@@ -13658,7 +13661,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         fitPanel[c].add(fitStatisticsPanel);
 
         // Fit Optimizations
-        var opti = new FitOptimization(c, 0);
+        var opti = FitOptimization.getOrCreateInstance(c, 0);
         fitPanel[c].add(opti.makeFitOptimizationPanel());
 
         JPanel plotPanel = new JPanel(new SpringLayout());

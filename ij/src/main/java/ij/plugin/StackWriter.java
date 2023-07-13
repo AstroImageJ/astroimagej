@@ -1,24 +1,31 @@
 package ij.plugin;
-import java.awt.*;
-import java.io.*;
-import java.text.DecimalFormat;	
-import java.util.*;
+
 import ij.*;
-import ij.io.*;
-import ij.gui.*;
+import ij.astro.AstroImageJ;
+import ij.gui.GenericDialog;
+import ij.gui.Overlay;
+import ij.gui.Roi;
+import ij.io.FileSaver;
 import ij.measure.Calibration;
-import ij.process.*;
 import ij.plugin.frame.Recorder;
-import ij.macro.Interpreter;
+import ij.process.ImageProcessor;
+import ij.process.LUT;
 import ij.util.Tools;
+
+import java.awt.*;
+import java.io.File;
+import java.util.Locale;
+import java.util.Properties;
 
 /** This plugin, which saves the images in a stack as separate files, 
 	implements the File/Save As/Image Sequence command. */
 public class StackWriter implements PlugIn {
 	private static final String DIR_KEY = "save.sequence.dir";
 	private static String[] choices = {"BMP",  "FITS", "GIF", "JPEG", "PGM", "PNG", "Raw", "Text", "TIFF",  "ZIP"};
-	private static String staticFileType = "TIFF";
-	private String fileType = "TIFF";
+	@AstroImageJ(reason = "Change default file type to FITS", modified = true)
+	private static String staticFileType = "FITS";
+	@AstroImageJ(reason = "Change default file type to FITS", modified = true)
+	private String fileType = "FITS";
 	private int ndigits = 4;
 	private boolean useLabels;
 	private boolean firstTime = true;
@@ -27,7 +34,8 @@ public class StackWriter implements PlugIn {
 	private int[] dim;
 	private ImagePlus imp;
 	private String directory;
-	private String format = "tiff";
+	@AstroImageJ(reason = "Change default file type to FITS", modified = true)
+	private String format = "fits";
 	private String name;
 	
 	/** Saves the specified image as a sequence of images. */
@@ -177,12 +185,13 @@ public class StackWriter implements PlugIn {
 		if (isOverlay) imp.setSlice(1);
 		IJ.showStatus("");
 	}
-	
+
+	@AstroImageJ(reason = "Correct file separator; Change default directory", modified = true)
 	private boolean showDialog(ImagePlus imp) {
 		String options = Macro.getOptions();
 		if (options!=null && options.contains("save="))  //macro
 			Macro.setOptions(options.replaceAll("save=", "dir="));
-		directory = Prefs.get(DIR_KEY, IJ.getDir("downloads")+"stack2/");
+		directory = Prefs.get("import.sequence.dir", IJ.getDir("downloads")+"stack2"+Prefs.getFileSeparator());
 		GenericDialog gd = new GenericDialog("Save Image Sequence");
 		if (!IJ.isMacro())
 			fileType = staticFileType;

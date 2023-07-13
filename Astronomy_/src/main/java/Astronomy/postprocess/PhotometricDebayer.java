@@ -457,7 +457,7 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
             if (this == LUMINOSITY) stack.setOptions("32-bit int");
             var impC = new ImagePlus(imp.getTitle() + " (" + name() + ")", stack);
             if (this == Color.LUMINOSITY) impC.setType(ImagePlus.GRAY32);
-            impC.setFileInfo(imp.getFileInfo());
+            impC.setFileInfo(imp.getOriginalFileInfo());
             return impC;
         }
 

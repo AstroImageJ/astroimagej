@@ -49,7 +49,7 @@ public final class HeaderCommentsMap {
     @SuppressWarnings("javadoc")
     @Deprecated
     public static void deleteComment(String key) {
-        key = simplyfyKey(key);
+        key = simplifyKey(key);
         for (Standard value : Standard.values()) {
             value.setCommentByKey(key, "");
         }
@@ -58,7 +58,7 @@ public final class HeaderCommentsMap {
     @SuppressWarnings("javadoc")
     @Deprecated
     public static String getComment(String key) {
-        key = simplyfyKey(key);
+        key = simplifyKey(key);
         for (Standard value : Standard.values()) {
             String comment = value.getCommentByKey(key);
             if (comment != null) {
@@ -68,7 +68,7 @@ public final class HeaderCommentsMap {
         return null;
     }
 
-    private static String simplyfyKey(String key) {
+    private static String simplifyKey(String key) {
         int firstDbPoint = key.indexOf(':');
         if (firstDbPoint > 0) {
             int secondDoublePoint = key.indexOf(':', firstDbPoint + 1);
@@ -82,7 +82,7 @@ public final class HeaderCommentsMap {
     @SuppressWarnings("javadoc")
     @Deprecated
     public static void updateComment(String key, String comment) {
-        key = simplyfyKey(key);
+        key = simplifyKey(key);
         for (Standard value : Standard.values()) {
             value.setCommentByKey(key, comment);
         }

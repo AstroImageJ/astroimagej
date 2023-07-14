@@ -16,7 +16,6 @@ import ij.process.ShortProcessor;
 import nom.tam.fits.Fits;
 import nom.tam.fits.HeaderCard;
 import nom.tam.fits.ImageHDU;
-import nom.tam.fits.compression.algorithm.rice.RiceCompressOption;
 import nom.tam.fits.header.Compression;
 import nom.tam.image.compression.hdu.CompressedImageHDU;
 import nom.tam.util.FitsOutputStream;
@@ -264,8 +263,7 @@ public class FITS_Writer implements PlugIn {
 								.getCompressOption(RiceQuantizeCompressOption.class)
 								.setQlevel(4);*/
 					} else {
-						compressedHdu.setCompressAlgorithm(Compression.ZCMPTYPE_RICE_1)
-								.getCompressOption(RiceCompressOption.class).setBytePix(type.getExpectedBitpix()/Byte.SIZE);
+						compressedHdu.setCompressAlgorithm(Compression.ZCMPTYPE_RICE_1);
 					}
 
 					compressedHdu.compress();

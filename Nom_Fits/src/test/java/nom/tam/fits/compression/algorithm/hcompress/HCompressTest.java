@@ -31,23 +31,9 @@ package nom.tam.fits.compression.algorithm.hcompress;
  * #L%
  */
 
-import java.io.RandomAccessFile;
-import java.nio.ByteBuffer;
-import java.nio.DoubleBuffer;
-import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
-import java.nio.ShortBuffer;
-
-import org.junit.Assert;
-import org.junit.Test;
-
 import nom.tam.fits.Header;
 import nom.tam.fits.HeaderCardException;
-import nom.tam.fits.compression.algorithm.hcompress.HCompressor.ByteHCompressor;
-import nom.tam.fits.compression.algorithm.hcompress.HCompressor.DoubleHCompressor;
-import nom.tam.fits.compression.algorithm.hcompress.HCompressor.FloatHCompressor;
-import nom.tam.fits.compression.algorithm.hcompress.HCompressor.IntHCompressor;
-import nom.tam.fits.compression.algorithm.hcompress.HCompressor.ShortHCompressor;
+import nom.tam.fits.compression.algorithm.hcompress.HCompressor.*;
 import nom.tam.fits.compression.algorithm.rice.RiceCompressOption;
 import nom.tam.fits.compression.provider.param.api.HeaderAccess;
 import nom.tam.fits.compression.provider.param.hcompress.HCompressParameters;
@@ -55,6 +41,11 @@ import nom.tam.fits.compression.provider.param.rice.RiceCompressParameters;
 import nom.tam.fits.header.Compression;
 import nom.tam.util.ArrayFuncs;
 import nom.tam.util.SafeClose;
+import org.junit.Assert;
+import org.junit.Test;
+
+import java.io.RandomAccessFile;
+import java.nio.*;
 
 public class HCompressTest {
 
@@ -548,5 +539,18 @@ public class HCompressTest {
         o.setSmooth(false);
         o.setScale(2);
         Assert.assertTrue(o.isLossyCompression());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testWrongScale() throws Exception {
+        new HCompressorOption().setScale(-1);
+    }
+
+    @Test
+    public void testLossy() throws Exception {
+        Assert.assertFalse(new HCompressorOption().setScale(0).setSmooth(false).isLossyCompression());
+        Assert.assertTrue(new HCompressorOption().setScale(1).setSmooth(false).isLossyCompression());
+        Assert.assertTrue(new HCompressorOption().setScale(0).setSmooth(true).isLossyCompression());
+        Assert.assertTrue(new HCompressorOption().setScale(1).setSmooth(true).isLossyCompression());
     }
 }

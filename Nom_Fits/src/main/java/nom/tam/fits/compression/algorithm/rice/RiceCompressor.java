@@ -1,16 +1,16 @@
 package nom.tam.fits.compression.algorithm.rice;
 
-import java.nio.Buffer;
-import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
-import java.nio.ShortBuffer;
-import java.util.logging.Logger;
-
 import nom.tam.fits.compression.algorithm.api.ICompressor;
 import nom.tam.fits.compression.algorithm.quant.QuantizeProcessor.DoubleQuantCompressor;
 import nom.tam.fits.compression.algorithm.quant.QuantizeProcessor.FloatQuantCompressor;
 import nom.tam.util.FitsIO;
 import nom.tam.util.type.ElementType;
+
+import java.nio.Buffer;
+import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
+import java.nio.ShortBuffer;
+import java.util.logging.Logger;
 
 /*
  * #%L
@@ -231,7 +231,7 @@ public abstract class RiceCompressor<T extends Buffer> implements ICompressor<T>
 
     private final int fsMax;
 
-    private RiceCompressor(RiceCompressOption option) {
+    private RiceCompressor(RiceCompressOption option) throws UnsupportedOperationException {
         blockSize = option.getBlockSize();
         if (option.getBytePix() == ElementType.BYTE.size()) {
             fsBits = FS_BITS_FOR_BYTE;
@@ -246,7 +246,7 @@ public abstract class RiceCompressor<T extends Buffer> implements ICompressor<T>
             fsMax = FS_MAX_FOR_INT;
             bitsPerPixel = FitsIO.BITS_OF_4_BYTES;
         } else {
-            throw new UnsupportedOperationException("Rice only supports 1/2/4 type per pixel");
+            throw new UnsupportedOperationException("Implemented for 1/2/4 bytes only");
         }
         /*
          * From bsize derive: FSBITS = # bits required to store FS FSMAX = maximum value for FS BBITS = bits/pixel for

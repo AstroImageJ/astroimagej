@@ -1578,7 +1578,16 @@ public class FitsJ
 			icard = findCardWithKey ("UT_DATE", hdr);
 			if (icard > 0)
 				dateobs = getCardStringValue (hdr.cards[icard]);
-			}       
+			}
+
+		// TRY "SHUTOPEN"
+
+		if (dateobs == null)
+			{
+			icard = findCardWithKey ("SHUTOPEN", hdr);
+			if (icard > 0)
+				dateobs = getCardStringValue (hdr.cards[icard]);
+			}
 
 		return dateobs;
 		}

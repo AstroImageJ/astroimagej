@@ -238,13 +238,13 @@ public class WCS
 			{
 			logInfo += "Horizontal axis size="+nx+" does not match FITS header! ("+NAXES[0]+")\n";
             writeLog();
-			return;
+			NAXES[0] = nx;
 			}
 		if (NAXIS >= 2 && ny >= 1 && NAXES[1] != ny)
 			{
 			logInfo += "Vertial axis size="+ny+" does not match FITS header! ("+NAXES[1]+")\n";
             writeLog();
-			return;
+			NAXES[1] = ny;
 			}
 		if (NAXIS >= 3 && nz >= 1 && NAXES[2] != nz)
 			{

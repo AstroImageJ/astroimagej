@@ -134,7 +134,8 @@ public class FolderOpener implements PlugIn, TextListener {
 
 	@AstroImageJ(reason = "When opening images that individually go to a stack, preserve stack title. This allows" +
 			" MultiAperture to run on a folder of 3D fits images, otherwise WCS and other information is lost;" +
-			" If filter fails to match any files, after closing the error reopen dialog.",
+			" If filter fails to match any files, after closing the error reopen dialog;" +
+			" resize images to open into single stack.",
 			modified = true)
 	public void run(String arg) {
 		boolean isMacro = Macro.getOptions()!=null;
@@ -250,6 +251,10 @@ public class FolderOpener implements PlugIn, TextListener {
 				if (imp!=null) {
 					width = imp.getWidth();
 					height = imp.getHeight();
+					// AIJ use
+					stackWidth = width;
+					stackHeight = height;
+					// AIJ use
 					if (this.bitDepth==0) {
 						this.bitDepth = imp.getBitDepth();
 						this.defaultBitDepth = bitDepth;
@@ -340,8 +345,14 @@ public class FolderOpener implements PlugIn, TextListener {
 						ImagePlus imp2 = imp.createImagePlus();
 						ImageProcessor ip = imp.getProcessor();
 						ImageProcessor ip2 = ip.createProcessor(width,height);
-						ip2.insert(ip, 0, 0);
+						// AIJ change
+						ip2.insert(ip, 0, stackHeight - imp.getHeight());
 						imp2.setProcessor(ip2);
+						// AIJ use
+						imp2.getProperties().putAll(imp.getProperties());
+						imp2.setFileInfo(imp.getOriginalFileInfo());
+						imp2.setTitle(imp.getTitle());
+						// AIJ use
 						imp = imp2;
 					} else {
 						IJ.log(list[i] + ": wrong size; "+width+"x"+height+" expected, "+imp.getWidth()+"x"+imp.getHeight()+" found");

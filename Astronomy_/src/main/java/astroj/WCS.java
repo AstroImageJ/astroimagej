@@ -809,7 +809,7 @@ public class WCS
         eul[3] = cosdeg(90.0 - CRVAL[1]);
         eul[4] = sindeg(90.0 - CRVAL[1]);  
         
-        if (projection.equals("TAN")||projection.equals("SIN")) zenithal = true;
+        if (projection.equals("TAN") || projection.equals("TPV")||projection.equals("SIN")) zenithal = true;
           
         if (hasCD || hasPC || hasDELROT || hasCDELTOnly)
             {
@@ -857,7 +857,8 @@ public class WCS
             {
             coordsys = (hasRADEC?"WCS=RA"+(hasSIP[0]?"-SIP":"")+",DEC"+(hasSIP[1]?"-SIP":""):"WCS RA/DEC not found")+
                     (!projection.equals("")?","+(zenithal?projection:projection+" projection not supported"):"")+
-                    (hasCD?",CD matrix":(hasPC?",PC matrix":(hasDELROT?",PA+Scale":(hasCDELTOnly?",CDELT Only":""))));
+                    (hasCD?",CD matrix":(hasPC?",PC matrix":(hasDELROT?",PA+Scale":(hasCDELTOnly?",CDELT Only":""))))+
+					("TPV".equals(projection) ? "PV distort not supported" : "");
             }
         else
             {
@@ -918,7 +919,7 @@ public class WCS
 //				}
 //			p[0] += xCorrection;
 //			}
-		if (hasSIP[0] && (useSIPAlways || projection.equals("TAN")))  //transcoded from WCSTools - avoids Math.pow operation
+		if (hasSIP[0] && (useSIPAlways || projection.equals("TAN") || projection.equals("TPV")))  //transcoded from WCSTools - avoids Math.pow operation
 			{
             for (int j = 0; j <= A_ORDER; j++) 
                 {
@@ -953,7 +954,7 @@ public class WCS
 //			p[1] += yCorrection;
 //			}
         
-		if (hasSIP[1] && (useSIPAlways || projection.equals("TAN")))  //transcoded from WCSTools - avoids Math.pow operation
+		if (hasSIP[1] && (useSIPAlways || projection.equals("TAN") || projection.equals("TPV")))  //transcoded from WCSTools - avoids Math.pow operation
 			{
             for (int j=0; j<=B_ORDER; j++)
                 {
@@ -987,7 +988,7 @@ public class WCS
 		double[] s = new double[n];	// IN PSEUDO DEGREES
 		for (int j=0; j < n; j++)
 			s[j] = x[j];
-		if (projection.equals("TAN"))
+		if (projection.equals("TAN") || projection.equals("TPV"))
 			{
 			double Rtheta = Math.sqrt(x[0]*x[0]+x[1]*x[1]);
             if (Rtheta == 0.0)
@@ -1285,7 +1286,7 @@ public class WCS
 		double[] x = new double[n];
 		for (int j=0; j < n; j++)
 			x[j] = s[j];				// IN DEGS
-		if (projection.equals("TAN"))
+		if (projection.equals("TAN") || projection.equals("TPV"))
 			{
 			double Rtheta = R2D/Math.tan(s[1]/R2D);	// IN DEGS (EQN. 54)
 			x[0] =  Rtheta*Math.sin(s[0]/R2D);		// IN DEGS (EQN. 12)
@@ -1332,7 +1333,7 @@ public class WCS
         
 		// NON-LINEAR DISTORTION CORRECTION USING SIP INVERSE CORRECTION MATRICES (SEE SHUPE, D.L. ET AL. 2008)
 
-		if (hasSIPinv[0] && (useSIPAlways || projection.equals("TAN")))  //transcoded from WCSTools - avoids Math.pow operation
+		if (hasSIPinv[0] && (useSIPAlways || projection.equals("TAN") || projection.equals("TPV")))  //transcoded from WCSTools - avoids Math.pow operation
 			{
             for (int j = 0; j <= AP_ORDER; j++) 
                 {
@@ -1351,7 +1352,7 @@ public class WCS
 			//IJ.log("AP_ORDER="+AP_ORDER);
             }
 
-		if (hasSIPinv[1] && (useSIPAlways || projection.equals("TAN")))  //transcoded from WCSTools - avoids Math.pow operation
+		if (hasSIPinv[1] && (useSIPAlways || projection.equals("TAN") || projection.equals("TPV")))  //transcoded from WCSTools - avoids Math.pow operation
 			{
             for (int j=0; j<=BP_ORDER; j++)
                 {

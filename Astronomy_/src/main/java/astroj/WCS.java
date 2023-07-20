@@ -858,7 +858,7 @@ public class WCS
             coordsys = (hasRADEC?"WCS=RA"+(hasSIP[0]?"-SIP":"")+",DEC"+(hasSIP[1]?"-SIP":""):"WCS RA/DEC not found")+
                     (!projection.equals("")?","+(zenithal?projection:projection+" projection not supported"):"")+
                     (hasCD?",CD matrix":(hasPC?",PC matrix":(hasDELROT?",PA+Scale":(hasCDELTOnly?",CDELT Only":""))))+
-					("TPV".equals(projection) ? "PV distort not supported" : "");
+					("TPV".equals(projection) ? ",PV distort not supported" : "");
             }
         else
             {

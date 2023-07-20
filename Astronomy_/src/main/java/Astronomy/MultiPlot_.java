@@ -5893,7 +5893,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         zoomControl(screenX, screenY, magChangeSteps, e.isAltDown());
     };
 
-    static public void zoomControl(int screenX, int screenY, int magChangeSteps, boolean yOnly) {
+    static public void zoomControl(int screenX, int screenY, int magChangeSteps, boolean xOnly) {
         if (plot.getDrawingFrame().contains(screenX, screenY)) {
             if (zoomX == 0.0 || zoomY == 0.0) {
                 mouseX = screenX - plot.getDrawingFrame().x;
@@ -5903,12 +5903,14 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 //                        newPanOffsetX=0.0;
 //                        newPanOffsetY=0.0;
             }
-            if (!yOnly) {
-                zoomX -= (1 - zoomX) * magChangeSteps / 25.0;
-                zoomX = Math.min(Math.max(zoomX, 0.0), 0.99);
+            zoomX -= (1 - zoomX) * magChangeSteps / 25.0;
+            zoomX = Math.min(Math.max(zoomX, 0.0), 0.99);
+            if (!xOnly) {
+                zoomY -= (1 - zoomY) * magChangeSteps / 25.0;
+                zoomY = Math.min(Math.max(zoomY, 0.0), 0.99);
             }
-            zoomY -= (1 - zoomY) * magChangeSteps / 25.0;
-            zoomY = Math.min(Math.max(zoomY, 0.0), 0.99);
+
+
             updatePlot(updateNoFits());
         }
     }

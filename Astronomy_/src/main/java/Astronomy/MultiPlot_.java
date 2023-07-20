@@ -208,7 +208,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     private static final Object lock = new Object();
 
     static double pixelScale;
-    static double zoom;
+    static double zoomX, zoomY;
     static double xMin;
     static double xBase;
     static double xMax;
@@ -3483,16 +3483,17 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         if (plotImageCanvas != null) //zoom != 0.0 &&
         {
             Rectangle s = plot.getDrawingFrame();
-            plotMinX = totalPanOffsetX + newPanOffsetX + pltMinX + (pltMaxX - pltMinX) * ((mouseX - 1)/ s.width) * zoom;
-            plotMaxX = totalPanOffsetX + newPanOffsetX + pltMaxX - (pltMaxX - pltMinX) * ((s.width - mouseX - 15) / (s.width)) * zoom;
-            plotMinY = totalPanOffsetY + newPanOffsetY + pltMinY + (pltMaxY - pltMinY) * ((s.height - 15 - mouseY) / (s.height)) * zoom;
-            plotMaxY = totalPanOffsetY + newPanOffsetY + pltMaxY - (pltMaxY - pltMinY) * (mouseY / (s.height)) * zoom;
+            plotMinX = totalPanOffsetX + newPanOffsetX + pltMinX + (pltMaxX - pltMinX) * ((mouseX - 1)/ s.width) * zoomX;
+            plotMaxX = totalPanOffsetX + newPanOffsetX + pltMaxX - (pltMaxX - pltMinX) * ((s.width - mouseX - 15) / (s.width)) * zoomX;
+            plotMinY = totalPanOffsetY + newPanOffsetY + pltMinY + (pltMaxY - pltMinY) * ((s.height - 15 - mouseY) / (s.height)) * zoomY;
+            plotMaxY = totalPanOffsetY + newPanOffsetY + pltMaxY - (pltMaxY - pltMinY) * (mouseY / (s.height)) * zoomY;
         } else {
             plotMinX = pltMinX;
             plotMaxX = pltMaxX;
             plotMinY = pltMinY;
             plotMaxY = pltMaxY;
-            zoom = 0.0;
+            zoomX = 0.0;
+            zoomY = 0.0;
             totalPanOffsetX = 0.0;
             totalPanOffsetY = 0.0;
             newPanOffsetX = 0.0;
@@ -4092,7 +4093,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             plotImageCanvas.addMouseMotionListener(plotMouseMotionListener);
             plotImageCanvas.addMouseListener(plotMouseListener);
             plotImageCanvas.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-            zoom = 0.0;
+            zoomX = 0.0;
+            zoomY = 0.0;
         } else {
             plotWindow = plotImage.getWindow();
 //                    plotFrame = (Frame)plotWindow;
@@ -5600,7 +5602,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         updatePlot(updateAllFits());
                     } else if (!e.isControlDown() && !e.isShiftDown() && !e.isAltDown()) // left mouse click release (zoom in)
                     {
-                        zoomControl(e.getX(), e.getY(), -5);
+                        zoomControl(e.getX(), e.getY(), -5, !e.isAltDown());
                     }
                 } else if (e.getButton() == MouseEvent.BUTTON2)                     //middle mouse click release
                 {
@@ -5620,7 +5622,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     totalPanOffsetY = 0.0;
                     newPanOffsetX = 0.0;
                     newPanOffsetY = 0.0;
-                    zoomControl(screenX, screenY, 10000);
+                    zoomControl(screenX, screenY, 10000, e.isAltDown());
                 }
             } else                                                                      //complete drag operations
             {
@@ -5888,12 +5890,12 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         int screenX = e.getX();
         int screenY = e.getY();
         int magChangeSteps = e.getWheelRotation();
-        zoomControl(screenX, screenY, magChangeSteps);
+        zoomControl(screenX, screenY, magChangeSteps, e.isAltDown());
     };
 
-    static public void zoomControl(int screenX, int screenY, int magChangeSteps) {
+    static public void zoomControl(int screenX, int screenY, int magChangeSteps, boolean yOnly) {
         if (plot.getDrawingFrame().contains(screenX, screenY)) {
-            if (zoom == 0.0) {
+            if (zoomX == 0.0 || zoomY == 0.0) {
                 mouseX = screenX - plot.getDrawingFrame().x;
                 mouseY = screenY - plot.getDrawingFrame().y;
 //                        totalPanOffsetX=0.0;
@@ -5901,8 +5903,12 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 //                        newPanOffsetX=0.0;
 //                        newPanOffsetY=0.0;
             }
-            zoom -= (1 - zoom) * magChangeSteps / 25.0;
-            zoom = Math.min(Math.max(zoom, 0.0), 0.99);
+            if (!yOnly) {
+                zoomX -= (1 - zoomX) * magChangeSteps / 25.0;
+                zoomX = Math.min(Math.max(zoomX, 0.0), 0.99);
+            }
+            zoomY -= (1 - zoomY) * magChangeSteps / 25.0;
+            zoomY = Math.min(Math.max(zoomY, 0.0), 0.99);
             updatePlot(updateNoFits());
         }
     }
@@ -6137,7 +6143,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         yautoscalemin = 0.0;
         yautoscalemax = 0.0;
         yRange = 0.0;
-        zoom = 0.0;
+        zoomX = 0.0;
+        zoomY = 0.0;
 
         mainFrameLocationX = 40;
         mainFrameLocationY = 40;
@@ -10508,7 +10515,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             newPanOffsetX = 0.0;
             newPanOffsetY = 0.0;
             leftDragReleased = false;
-            zoom = 0.0;
+            zoomX = 0.0;
+            zoomY = 0.0;
             updatePlot(updateAllFits());
             if (plotWindow != null) {
                 plotWindow.toFront();

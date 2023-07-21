@@ -157,13 +157,13 @@ public class Stack_Aligner extends MultiAperture_
 
         gd.addLineSeparator();
         var apLoadingButtons = gd.addRadioOptions(ApLoading.class, apLoading::set, true);
-        for (int i = 0; i < ApLoading.values().length; i++) {
-            apLoadingButtons.get(i).setEnabled(ApLoading.values()[i].isEnabled());
-            if (ApLoading.values()[i].isSelected()) {
-                apLoadingButtons.get(i).setSelected(true);
+        for (ApLoading value : ApLoading.values()) {
+            apLoadingButtons.get(value).setEnabled(value.isEnabled());
+            if (value.isSelected()) {
+                apLoadingButtons.get(value).setSelected(true);
             }
-            if (!apLoadingButtons.get(i).isEnabled() && apLoadingButtons.get(i).isSelected()) {
-                apLoadingButtons.get(0).setSelected(true);
+            if (!apLoadingButtons.get(value).isEnabled() && apLoadingButtons.get(value).isSelected()) {
+                apLoadingButtons.get(value).setSelected(true);
                 apLoading.set(ApLoading.ALL_NEW);
             }
         }

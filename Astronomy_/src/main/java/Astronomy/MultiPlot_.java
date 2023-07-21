@@ -3550,7 +3550,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 plot.setLineWidth(1);
 
                 if (binDisplay[curve].isOn()) plot.setColor(lighter(color[curve]));
-                if ((showErrors[curve] || operatorBase.getOrCreateVariant(curve).get() == MPOperator.CUSTOM_ERROR) && (hasErrors[curve] || hasOpErrors[curve]) && binDisplay[curve] != TriState.ALT_ENABLED)     //code to replace plot.addErrorBars
+                if (showErrors[curve] && (hasErrors[curve] || hasOpErrors[curve]) && binDisplay[curve] != TriState.ALT_ENABLED)     //code to replace plot.addErrorBars
                 {               //since plot.addErrorBars only plots with lines enabled
                     for (int j = 0; j < nn[curve]; j++) {
                         plot.drawLine(x[curve][j], y[curve][j] - yerr[curve][j], x[curve][j], y[curve][j] + yerr[curve][j]);
@@ -3631,7 +3631,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     }
                 }
 
-                if (((showErrors[curve] || operatorBase.getOrCreateVariant(curve).get() == MPOperator.CUSTOM_ERROR) && (hasErrors[curve] || hasOpErrors[curve]))) {
+                if ((showErrors[curve] && (hasErrors[curve] || hasOpErrors[curve]))) {
                     plot.setLineWidth(2);
                 } else { plot.setLineWidth(1); }
                 plot.setColor(color[curve]);
@@ -3640,7 +3640,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 }
                 if (xModel2[curve] != null && yModel2[curve] != null && xModel2[curve].length == yModel2[curve].length && (detrendFitIndex[curve] != 9 || showModel[curve])) {
                     if (detrendFitIndex[curve] == 9) {
-                        plot.setLineWidth(((showErrors[curve] || operatorBase.getOrCreateVariant(curve).get() == MPOperator.CUSTOM_ERROR) && (hasErrors[curve] || hasOpErrors[curve])) ? modelLineWidth[curve] + 1 : modelLineWidth[curve]);
+                        plot.setLineWidth((showErrors[curve] && (hasErrors[curve] || hasOpErrors[curve])) ? modelLineWidth[curve] + 1 : modelLineWidth[curve]);
                         plot.setColor(modelColor[curve]);
                     }
                     plot.addPoints(Arrays.copyOf(xModel2[curve], xModel2[curve].length), Arrays.copyOf(yModel2[curve], yModel2[curve].length), ij.gui.Plot.LINE);
@@ -3814,7 +3814,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     llab.append(", ").append(lockToCenter[curve][3] ? "[" : "").append("Tc=").append(uptoSixPlaces.format(bestFit[curve][3])).append(lockToCenter[curve][3] ? "]" : "");
                     llab.append(", ").append(lockToCenter[curve][5] ? "[" : "").append("u1=").append(uptoTwoPlaces.format(bestFit[curve][5])).append(lockToCenter[curve][5] ? "]" : "");
                     llab.append(", ").append(lockToCenter[curve][6] ? "[" : "").append("u2=").append(uptoTwoPlaces.format(bestFit[curve][6])).append(lockToCenter[curve][6] ? "]" : "").append(")");
-                    if (drawLegendSymbol(Plot.LINE, modelLineWidth[curve] + ((showErrors[curve] || operatorBase.getOrCreateVariant(curve).get() == MPOperator.CUSTOM_ERROR) && (hasErrors[curve] || hasOpErrors[curve]) ? 1 : 0), modelColor[curve], legPosY, llab.toString())) {
+                    if (drawLegendSymbol(Plot.LINE, modelLineWidth[curve] + (showErrors[curve] && (hasErrors[curve] || hasOpErrors[curve]) ? 1 : 0), modelColor[curve], legPosY, llab.toString())) {
                         plot.addLabel(legendPosX, legPosY, llab.toString());
                         legPosY += 18. / plotSizeY;
                     }
@@ -11202,10 +11202,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         operatorselection[c] = new NStateButton<>(operatorBase.getOrCreateVariant(c).get());
         operatorselection[c].addActionListener(ae -> {
             operatorBase.getOrCreateVariant(c).set(operatorselection[c].getState());
-            if (operatorBase.getOrCreateVariant(c).get() == MPOperator.CUSTOM_ERROR) {
-                showErrors[c] = false;
-                errorcolumnbox[c].setSelected(false);
-            }
             updatePlot(updateOneFit(c));
         });
         mainsubpanelgroup.add(operatorselection[c]);
@@ -11230,10 +11226,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             if (e.getStateChange() == ItemEvent.DESELECTED) {
                 showErrors[c] = false;
             } else if (e.getStateChange() == ItemEvent.SELECTED) {
-                if (operatorBase.getOrCreateVariant(c).get() == MPOperator.CUSTOM_ERROR) {
-                    operatorBase.getOrCreateVariant(c).set(MPOperator.NONE);
-                    operatorselection[c].setState(operatorBase.getOrCreateVariant(c).get());
-                }
                 showErrors[c] = true;
             }
             updatePlot(updateNoFits());

@@ -10726,6 +10726,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         return mainFrame != null;
     }
 
+    public static boolean hasRefStars() {
+        return isRefStar != null && lastRefStar > 0;
+    }
+
     static void constructTopGroupBottomLabels(JPanel mainsubpanelgroup) {
         JLabel dummylabel20 = new JLabel("<HTML><CENTER>Data<BR><CENTER>Set</HTML>");
         dummylabel20.setFont(b11);

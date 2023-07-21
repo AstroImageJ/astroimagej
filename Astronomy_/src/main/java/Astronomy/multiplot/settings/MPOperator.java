@@ -1,5 +1,6 @@
 package Astronomy.multiplot.settings;
 
+import Astronomy.MultiPlot_;
 import ij.astro.gui.MergedIcon;
 import ij.astro.gui.nstate.NState;
 import ij.astro.util.EmojiIcon;
@@ -36,6 +37,24 @@ public enum MPOperator implements NState<MPOperator> {
     @Override
     public boolean isOn() {
         return this != NONE;
+    }
+
+    @Override
+    public MPOperator next() {
+        var n = NState.super.next();
+        if (n == CENTROID_DISTANCE && !MultiPlot_.hasRefStars()) {
+            n = CENTROID_DISTANCE.next();
+        }
+        return n;
+    }
+
+    @Override
+    public MPOperator previous() {
+        var n = NState.super.previous();
+        if (n == CENTROID_DISTANCE && !MultiPlot_.hasRefStars()) {
+            n = CENTROID_DISTANCE.previous();
+        }
+        return n;
     }
 
     @Override

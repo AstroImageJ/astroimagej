@@ -2,6 +2,7 @@
 package Astronomy;
 
 import Astronomy.multiplot.KeplerSplineControl;
+import Astronomy.multiplot.PlotDraggableShape;
 import Astronomy.multiplot.settings.KeplerSplineSettings;
 import Astronomy.multiplot.settings.MPOperator;
 import astroj.*;
@@ -858,6 +859,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     private static double[] outBinRms;
     private static boolean saveSeeingProfileStack;
     private static String seeingProfileStackSuffix;
+    private static PlotDraggableShape draggableShape = new PlotDraggableShape();
     private static Property<Integer> dotSize = new Property<>(4, "plot.", "", MultiPlot_.class);
     private static Property<Integer> binnedDotSize = new Property<>(8, "plot.", "", MultiPlot_.class);
     private static Property<Integer> boldedDotSize = new Property<>(12, "plot.", "", MultiPlot_.class);
@@ -5537,7 +5539,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         }
     };
 
-
     static MouseListener plotMouseListener = new MouseListener() {
         public void mouseClicked(MouseEvent e) {
 
@@ -5554,11 +5555,18 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             button2Drag = false;
             if (e.isControlDown())  //handle control click to move trend lines
             {
-                if ((e.getModifiers() & MouseEvent.BUTTON1_MASK) != 0) {
+                if (SwingUtilities.isLeftMouseButton(e)) {
                     handleControlLeftClickDrag(e, startDragX, startDragY);
-                } else if ((e.getModifiers() & MouseEvent.BUTTON3_MASK) != 0) {
+                } else if (SwingUtilities.isRightMouseButton(e)) {
                     handleControlRightClickDrag(e, startDragX, startDragY);
                 }
+            } else if (SwingUtilities.isLeftMouseButton(e) && e.isAltDown()) {
+                draggableShape.setStart(plotImageCanvas, e);
+            }
+
+            if (!e.isControlDown() && !e.isShiftDown() && !e.isAltDown() &&
+                    (SwingUtilities.isRightMouseButton(e) || SwingUtilities.isMiddleMouseButton(e))) {
+                draggableShape.setStart(plotImageCanvas, e);
             }
         }
 
@@ -5569,19 +5577,28 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             int imageX = plotImageCanvas.offScreenX(screenX);
             int imageY = plotImageCanvas.offScreenY(screenY);
 
-            double xval = plotMinX + (double) (startDragX - Plot.LEFT_MARGIN) * (plotMaxX - plotMinX) / (double) (plot.getDrawingFrame().width);
-            double yval = plotMaxY - (double) (startDragY - Plot.TOP_MARGIN) * (plotMaxY - plotMinY) / (double) (plot.getDrawingFrame().height);
-            double dxval = (double) (imageX - startDragX) * (plotMaxX - plotMinX) / (double) (plot.getDrawingFrame().width);
-            double dyval = (double) (imageY - startDragY) * (-1.0) * (plotMaxY - plotMinY) / (double) (plot.getDrawingFrame().height);
+            if ((!e.isControlDown() && !e.isShiftDown() && !e.isAltDown() &&
+                         (SwingUtilities.isRightMouseButton(e) || SwingUtilities.isMiddleMouseButton(e))) ||
+                    (SwingUtilities.isLeftMouseButton(e) && e.isAltDown())) {
+                draggableShape.setEnd(plotImageCanvas, e);
+                draggableShape.removeSelection(plotImageCanvas);
+                if (SwingUtilities.isLeftMouseButton(e) && e.isAltDown()) {
+                    draggableShape.updatePlotBounds(plot);
+                }
+            }
 
+            double xval = draggableShape.getEndX(plot);
+            double yval = draggableShape.getEndY(plot);
+            double dxval = draggableShape.getDX(plot);
+            double dyval = draggableShape.getDY(plot);
 
-            if (((e.getModifiers() & MouseEvent.BUTTON2_MASK) != 0) && button2Drag && !e.isShiftDown() && !e.isControlDown() && !e.isAltDown()) {                                                          // measure distance and report in Results Table
+            if (SwingUtilities.isMiddleMouseButton(e) && button2Drag && !e.isShiftDown() && !e.isControlDown() && !e.isAltDown()) {                                                          // measure distance and report in Results Table
                 button2Drag = false;
                 IJ.log("x=" + fourPlaces.format(xval) + ", y=" + fourPlaces.format(yval) + ", dx=" + fourPlaces.format(dxval) + ", dy=" + fourPlaces.format(dyval));
             }
             if (Math.sqrt((screenX - startDragScreenX) * (screenX - startDragScreenX) +      //check mouse click/drag threshold
                     (screenY - startDragScreenY) * (screenY - startDragScreenY)) < 4.0) {
-                if (e.getButton() == MouseEvent.BUTTON1)       //left mouse click release
+                if (SwingUtilities.isLeftMouseButton(e))       //left mouse click release
                 {
                     if (e.isShiftDown() && !e.isAltDown() && !e.isControlDown())  //shift+left-click (remove selected table row)
                     {
@@ -5624,9 +5641,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     newPanOffsetY = 0.0;
                     zoomControl(screenX, screenY, 10000, e.isAltDown());
                 }
-            } else                                                                      //complete drag operations
-            {
-                if (e.getButton() == MouseEvent.BUTTON1 && !e.isShiftDown() && !e.isControlDown() && !e.isAltDown())                             //left mouse drag release
+            } else {                                                                     //complete drag operations
+                if (SwingUtilities.isLeftMouseButton(e) && !e.isShiftDown() && !e.isControlDown() && !e.isAltDown())                             //left mouse drag release
                 {
                     totalPanOffsetX += newPanOffsetX;
                     totalPanOffsetY += newPanOffsetY;
@@ -5654,48 +5670,31 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             int imageY = plotImageCanvas.offScreenY(e.getY());
             if (Math.sqrt((screenX - startDragScreenX) * (screenX - startDragScreenX) +  //check mouse click/drag threshold
                     (screenY - startDragScreenY) * (screenY - startDragScreenY)) >= 4.0) {
-                if ((e.getModifiers() & MouseEvent.BUTTON3_MASK) != 0)    // dragging with right mouse button
-                {
-                    if (!e.isControlDown() && !e.isShiftDown() && !e.isAltDown()) {                                                 // measure distance, show on plot and status bar and save to results window
-                        list.clear();
-                        path.reset();
-                        path.moveTo(startDragX, startDragY);
-                        path.lineTo(imageX, imageY);
+                if (SwingUtilities.isLeftMouseButton(e) && e.isAltDown()) {
+                    draggableShape.setEnd(plotImageCanvas, e);
+                    draggableShape.drawRectangle(plotImageCanvas);
+                }
 
-                        addElement(list, path, Color.red, 2);
-                        plotImageCanvas.setDisplayList(list);
-                        double x = plotMinX + (double) (imageX - (Plot.LEFT_MARGIN)) * (plotMaxX - plotMinX) / (double) (plot.getDrawingFrame().width);
-                        double y = plotMaxY - (double) (imageY - (Plot.TOP_MARGIN)) * (plotMaxY - plotMinY) / (double) (plot.getDrawingFrame().height);
-                        double dx = (double) (imageX - startDragX) * (plotMaxX - plotMinX) / (double) (plot.getDrawingFrame().width);
-                        double dy = (double) (imageY - startDragY) * (-1.0) * (plotMaxY - plotMinY) / (double) (plot.getDrawingFrame().height);
-                        plotbottompanel = (Panel) plotWindow.getComponent(1);
-                        plotbottompanel.setSize(600, 30);
-                        plotcoordlabel = (Label) plotbottompanel.getComponent(4);
-                        plotcoordlabel.setSize(400, 20);
-                        plotcoordlabel.setText("x=" + fourPlaces.format(x) + ", y=" + fourPlaces.format(y) + ", dx=" + fourPlaces.format(dx) + ", dy=" + fourPlaces.format(dy));
-                        IJ.showStatus("plot coordinates: x=" + fourPlaces.format(x) + ", y=" + fourPlaces.format(y) + ", dx=" + fourPlaces.format(dx) + ", dy=" + fourPlaces.format(dy));
-                    } else if (e.isControlDown()) // control right-drag (update vertical marker 3 or 4 position)
-                    {
-                        handleControlRightClickDrag(e, imageX, imageY);
-                    }
-                } else if ((e.getModifiers() & MouseEvent.BUTTON2_MASK) != 0)        // dragging with middle mouse button
-                {                                                          // measure distance, show on plot and status bar
-                    button2Drag = true;                                        // and save to results window when mouse released
-                    list.clear();
-                    path.reset();
-                    path.moveTo(startDragX, startDragY);
-                    path.lineTo(imageX, imageY);
-
-                    addElement(list, path, Color.red, 2);
-                    plotImageCanvas.setDisplayList(list);
-                    double x = plotMinX + (double) (imageX - (Plot.LEFT_MARGIN)) * (plotMaxX - plotMinX) / (double) plot.getDrawingFrame().width;
-                    double y = plotMaxY - (double) (imageY - (Plot.TOP_MARGIN)) * (plotMaxY - plotMinY) / (double) (plot.getDrawingFrame().height);
-                    double dx = (double) (imageX - startDragX) * (plotMaxX - plotMinX) / (double) (plot.getDrawingFrame().width);
-                    double dy = (double) (imageY - startDragY) * (-1.0) * (plotMaxY - plotMinY) / (double) (plot.getDrawingFrame().height);
+                if (!e.isControlDown() && !e.isShiftDown() && !e.isAltDown() &&
+                        (SwingUtilities.isRightMouseButton(e) || SwingUtilities.isMiddleMouseButton(e))) { // measure distance, show on plot and status bar and save to results window
+                    draggableShape.setEnd(plotImageCanvas, e);
+                    draggableShape.drawLine(plotImageCanvas);
+                    double x = draggableShape.getEndX(plot);
+                    double y = draggableShape.getEndY(plot);
+                    double dx = draggableShape.getDX(plot);
+                    double dy = draggableShape.getDY(plot);
+                    button2Drag = SwingUtilities.isMiddleMouseButton(e); // and save to results window when mouse released
+                    plotbottompanel = (Panel) plotWindow.getComponent(1);
+                    plotbottompanel.setSize(600, 30);
+                    plotcoordlabel = (Label) plotbottompanel.getComponent(4);
+                    plotcoordlabel.setSize(400, 20);
                     plotcoordlabel.setText("x=" + fourPlaces.format(x) + ", y=" + fourPlaces.format(y) + ", dx=" + fourPlaces.format(dx) + ", dy=" + fourPlaces.format(dy));
                     IJ.showStatus("plot coordinates: x=" + fourPlaces.format(x) + ", y=" + fourPlaces.format(y) + ", dx=" + fourPlaces.format(dx) + ", dy=" + fourPlaces.format(dy));
-                } else if ((e.getModifiers() & MouseEvent.BUTTON1_MASK) != 0)            // dragging with left mouse button (pan image)
-                {
+                } else if (e.isControlDown() && SwingUtilities.isRightMouseButton(e)) { // control right-drag (update vertical marker 3 or 4 position)
+                    handleControlRightClickDrag(e, imageX, imageY);
+                }
+
+                if (SwingUtilities.isLeftMouseButton(e)) { // dragging with left mouse button (pan image)
                     if (!e.isControlDown() && !e.isAltDown()) {
 //                                    if (true)//(zoom != 0.0)
 //                                        {

@@ -11,6 +11,9 @@ public class PlotDraggableShape {
     private double startY;
     private double endX;
     private double endY;
+    private boolean plotScaleDirty;
+    private boolean plotScaleChanged;
+    public Scale scale;
 
     public void drawRectangle(ImageCanvas canvas) {
         var x0 = Math.min(startX, endX);
@@ -96,8 +99,27 @@ public class PlotDraggableShape {
         return getEndY(plot) - getStartY(plot);
     }
 
-    public void updatePlotBounds(Plot plot) {
-        plot.setLimits(Math.min(getStartX(plot), getEndX(plot)), Math.max(getStartX(plot), getEndX(plot)),
+    public boolean isPlotScaleDirty() {
+        return plotScaleDirty;
+    }
+
+    public void markPlotScaleDirty(Plot plot) {
+        this.plotScaleDirty = true;
+        plotScaleChanged = true;
+        scale = new Scale(Math.min(getStartX(plot), getEndX(plot)), Math.max(getStartX(plot), getEndX(plot)),
                 Math.min(getStartY(plot), getEndY(plot)), Math.max(getStartY(plot), getEndY(plot)));
     }
+
+    public void unmarkPlotScale() {
+        plotScaleDirty = false;
+        plotScaleChanged = false;
+    }
+
+    public boolean scaleChanged() {
+        var b = plotScaleChanged;
+        plotScaleChanged = false;
+        return b;
+    }
+
+    public record Scale(double xMin, double xMax, double yMin, double yMax) {}
 }

@@ -3476,6 +3476,21 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         pltMinY = yPlotMin - 5. * dy;
         pltMaxY = yPlotMax + 5. * dy;
 
+        if (draggableShape.isPlotScaleDirty()) {
+            pltMinX = draggableShape.scale.xMin();
+            pltMaxX = draggableShape.scale.xMax();
+            pltMinY = draggableShape.scale.yMin();
+            pltMaxY = draggableShape.scale.yMax();
+            if (draggableShape.scaleChanged()) {
+                zoomX = 0.0;
+                zoomY = 0.0;
+                totalPanOffsetX = 0.0;
+                totalPanOffsetY = 0.0;
+                newPanOffsetX = 0.0;
+                newPanOffsetY = 0.0;
+            }
+        }
+
         if (invertYAxis) {
             double yMaxTemp = pltMaxY;
             pltMaxY = pltMinY;
@@ -5583,7 +5598,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 draggableShape.setEnd(plotImageCanvas, e);
                 draggableShape.removeSelection(plotImageCanvas);
                 if (SwingUtilities.isLeftMouseButton(e) && e.isAltDown()) {
-                    draggableShape.updatePlotBounds(plot);
+                    draggableShape.markPlotScaleDirty(plot);
+                    updatePlot(updateNoFits());
                 }
             }
 
@@ -5639,6 +5655,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     totalPanOffsetY = 0.0;
                     newPanOffsetX = 0.0;
                     newPanOffsetY = 0.0;
+                    draggableShape.unmarkPlotScale();
                     zoomControl(screenX, screenY, 10000, e.isAltDown());
                 }
             } else {                                                                     //complete drag operations

@@ -22,6 +22,7 @@ import java.io.CharArrayWriter;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.util.*;
 
@@ -745,83 +746,91 @@ public class ImageJ extends Frame implements ActionListener,
 		prefs.put(IJ_Y, Integer.toString(loc.y));
 	}
 
-	@AstroImageJ(reason = "Run AIJ startup", modified = true)
+	@AstroImageJ(reason = "Run AIJ startup; Load on EventQueue", modified = true)
 	public static void main(String args[]) {
-		boolean noGUI = false;
-		int mode = IMAGEJ_APP;
-		arguments = args;
-		int nArgs = args!=null?args.length:0;
-		boolean commandLine = false;
-		for (int i=0; i<nArgs; i++) {
-			String arg = args[i];
-			if (arg==null) continue;
-			if (arg.startsWith("-batch")) {
-				noGUI = true;
-				batchMode = true;
-			} else if (arg.startsWith("-macro") || arg.endsWith(".ijm") || arg.endsWith(".txt"))
-				batchMode = true;
-			else if (arg.startsWith("-debug"))
-				IJ.setDebugMode(true);
-			else if (arg.startsWith("-ijpath") && i+1<nArgs) {
-				if (IJ.debugMode) IJ.log("-ijpath: "+args[i+1]);
-				Prefs.setHomeDir(args[i+1]);
-				commandLine = true;
-				args[i+1] = null;
-			} else if (arg.startsWith("-port")) {
-				int delta = (int)Tools.parseDouble(arg.substring(5, arg.length()), 0.0);
-				commandLine = true;
-				if (delta==0)
-					mode = EMBEDDED;
-				else if (delta>0 && DEFAULT_PORT+delta<65536)
-					port = DEFAULT_PORT+delta;
-			} 
-		}
-  		// If existing ImageJ instance, pass arguments to it and quit.
-  		boolean passArgs = (mode==IMAGEJ_APP||mode==STANDALONE) && !noGUI;
-		if (IJ.isMacOSX() && !commandLine)
-			passArgs = false;
-		if (passArgs && isRunning(args)) 
-  			return;
- 		ImageJ ij = IJ.getInstance();    	
-		if (!noGUI && (ij==null || (ij!=null && !ij.isShowing()))) {
-			ij = new ImageJ(null, mode);
-			ij.exitWhenQuitting = true;
-		} else if (batchMode && noGUI)
-			Prefs.load(null, null);
-		IJ.runPlugIn("util.AIJStartupHandler", "");
-		int macros = 0;
-		for (int i=0; i<nArgs; i++) {
-			String arg = args[i];
-			if (arg==null) continue;
-			if (arg.startsWith("-")) {
-				if ((arg.startsWith("-macro") || arg.startsWith("-batch")) && i+1<nArgs) {
-					String arg2 = i+2<nArgs?args[i+2]:null;
-					Prefs.commandLineMacro = true;
-					if (noGUI && args[i+1].endsWith(".js"))
-						Interpreter.batchMode = true;
-					IJ.runMacroFile(args[i+1], arg2);
-					break;
-				} else if (arg.startsWith("-eval") && i+1<nArgs) {
-					String rtn = IJ.runMacro(args[i+1]);
-					if (rtn!=null)
-						System.out.print(rtn);
-					args[i+1] = null;
-				} else if (arg.startsWith("-run") && i+1<nArgs) {
-					IJ.run(args[i+1]);
-					args[i+1] = null;
+		try {
+			SwingUtilities.invokeAndWait(() ->{
+				boolean noGUI = false;
+				int mode = IMAGEJ_APP;
+				arguments = args;
+				int nArgs = args!=null?args.length:0;
+				boolean commandLine = false;
+				for (int i=0; i<nArgs; i++) {
+					String arg = args[i];
+					if (arg==null) continue;
+					if (arg.startsWith("-batch")) {
+						noGUI = true;
+						batchMode = true;
+					} else if (arg.startsWith("-macro") || arg.endsWith(".ijm") || arg.endsWith(".txt"))
+						batchMode = true;
+					else if (arg.startsWith("-debug"))
+						IJ.setDebugMode(true);
+					else if (arg.startsWith("-ijpath") && i+1<nArgs) {
+						if (IJ.debugMode) IJ.log("-ijpath: "+args[i+1]);
+						Prefs.setHomeDir(args[i+1]);
+						commandLine = true;
+						args[i+1] = null;
+					} else if (arg.startsWith("-port")) {
+						int delta = (int)Tools.parseDouble(arg.substring(5, arg.length()), 0.0);
+						commandLine = true;
+						if (delta==0)
+							mode = EMBEDDED;
+						else if (delta>0 && DEFAULT_PORT+delta<65536)
+							port = DEFAULT_PORT+delta;
+					}
 				}
-			} else if (macros==0 && (arg.endsWith(".ijm") || arg.endsWith(".txt"))) {
-				IJ.runMacroFile(arg);
-				macros++;
-			} else if (arg.length()>0 && arg.indexOf("ij.ImageJ")==-1) {
-				File file = new File(arg);
-				IJ.open(file.getAbsolutePath());
-			}
+				// If existing ImageJ instance, pass arguments to it and quit.
+				boolean passArgs = (mode==IMAGEJ_APP||mode==STANDALONE) && !noGUI;
+				if (IJ.isMacOSX() && !commandLine)
+					passArgs = false;
+				if (passArgs && isRunning(args))
+					return;
+				ImageJ ij = IJ.getInstance();
+				if (!noGUI && (ij==null || (ij!=null && !ij.isShowing()))) {
+					ij = new ImageJ(null, mode);
+					ij.exitWhenQuitting = true;
+				} else if (batchMode && noGUI)
+					Prefs.load(null, null);
+				IJ.runPlugIn("util.AIJStartupHandler", "");
+				int macros = 0;
+				for (int i=0; i<nArgs; i++) {
+					String arg = args[i];
+					if (arg==null) continue;
+					if (arg.startsWith("-")) {
+						if ((arg.startsWith("-macro") || arg.startsWith("-batch")) && i+1<nArgs) {
+							String arg2 = i+2<nArgs?args[i+2]:null;
+							Prefs.commandLineMacro = true;
+							if (noGUI && args[i+1].endsWith(".js"))
+								Interpreter.batchMode = true;
+							IJ.runMacroFile(args[i+1], arg2);
+							break;
+						} else if (arg.startsWith("-eval") && i+1<nArgs) {
+							String rtn = IJ.runMacro(args[i+1]);
+							if (rtn!=null)
+								System.out.print(rtn);
+							args[i+1] = null;
+						} else if (arg.startsWith("-run") && i+1<nArgs) {
+							IJ.run(args[i+1]);
+							args[i+1] = null;
+						}
+					} else if (macros==0 && (arg.endsWith(".ijm") || arg.endsWith(".txt"))) {
+						IJ.runMacroFile(arg);
+						macros++;
+					} else if (arg.length()>0 && arg.indexOf("ij.ImageJ")==-1) {
+						File file = new File(arg);
+						IJ.open(file.getAbsolutePath());
+					}
+				}
+				if (IJ.debugMode && IJ.getInstance()==null && !GraphicsEnvironment.isHeadless())
+					new JavaProperties().run("");
+				if (noGUI) System.exit(0);
+
+			});
+		} catch (InterruptedException | InvocationTargetException e) {
+			e.printStackTrace();
+			throw new RuntimeException(e);
 		}
-		if (IJ.debugMode && IJ.getInstance()==null && !GraphicsEnvironment.isHeadless())
-			new JavaProperties().run("");
-		if (noGUI) System.exit(0);
-	}
+    }
 		
 	// Is there another instance of ImageJ? If so, send it the arguments and quit.
 	static boolean isRunning(String args[]) {

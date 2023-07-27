@@ -5572,7 +5572,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             startDragSubImageX = plotImageCanvas.getSrcRect().x;
             startDragSubImageY = plotImageCanvas.getSrcRect().y;
             button2Drag = false;
-            if (e.isControlDown() && !e.isAltDown())  //handle control click to move trend lines
+            if (e.isControlDown())  //handle control click to move trend lines
             {
                 if (SwingUtilities.isLeftMouseButton(e)) {
                     handleControlLeftClickDrag(e, startDragX, startDragY);

@@ -22,6 +22,7 @@ public class PlotDraggableShape {
         var xh = Math.abs(endY - startY);
 
         var roi = new Roi(x0, y0, xw, xh);
+        roi.setStrokeColor(Color.RED);
         roi.setName("selectionRoi");
         canvas.setOverlay(new Overlay(roi));
     }

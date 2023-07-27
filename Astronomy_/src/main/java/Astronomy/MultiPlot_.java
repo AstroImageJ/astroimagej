@@ -7940,6 +7940,13 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         helpdatamenuitem.addActionListener(e -> openDataHelpPanel());
         helpmenu.add(helpdatamenuitem);
 
+        JMenuItem helphelpPlotWindowmenuitem = new JMenuItem("Plot Window Help...");
+        helphelpPlotWindowmenuitem.addActionListener(e -> {
+            String filename = "help/plotwindow_help.html";
+            new HelpPanel(filename, "Plot");
+        });
+        helpmenu.add(helphelpPlotWindowmenuitem);
+
         mainmenubar.add(helpmenu);
 
 

@@ -5917,6 +5917,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     };
 
     static public void zoomControl(int screenX, int screenY, Integer magChangeSteps, boolean xOnly, boolean yOnly) {
+        if (updatePlotRunning) {
+            return;
+        }
         if (magChangeSteps == null) {
             zoomY = 0;
             zoomX = 0;

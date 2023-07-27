@@ -5572,7 +5572,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             startDragSubImageX = plotImageCanvas.getSrcRect().x;
             startDragSubImageY = plotImageCanvas.getSrcRect().y;
             button2Drag = false;
-            if (e.isControlDown())  //handle control click to move trend lines
+            if (e.isControlDown() && !e.isAltDown())  //handle control click to move trend lines
             {
                 if (SwingUtilities.isLeftMouseButton(e)) {
                     handleControlLeftClickDrag(e, startDragX, startDragY);
@@ -5596,14 +5596,17 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             int imageX = plotImageCanvas.offScreenX(screenX);
             int imageY = plotImageCanvas.offScreenY(screenY);
 
-            if ((!e.isControlDown() && !e.isShiftDown() && !e.isAltDown() &&
-                         (SwingUtilities.isRightMouseButton(e) || SwingUtilities.isMiddleMouseButton(e))) ||
-                    (SwingUtilities.isLeftMouseButton(e) && e.isAltDown())) {
-                draggableShape.setEnd(plotImageCanvas, e);
-                draggableShape.removeSelection(plotImageCanvas);
-                if (SwingUtilities.isLeftMouseButton(e) && e.isAltDown()) {
-                    draggableShape.markPlotScaleDirty(plot);
-                    updatePlot(updateNoFits());
+            if (Math.sqrt((screenX - startDragScreenX) * (screenX - startDragScreenX) +
+                    (screenY - startDragScreenY) * (screenY - startDragScreenY)) >= 4.0) {
+                if ((!e.isControlDown() && !e.isShiftDown() && !e.isAltDown() &&
+                             (SwingUtilities.isRightMouseButton(e) || SwingUtilities.isMiddleMouseButton(e))) ||
+                        (SwingUtilities.isLeftMouseButton(e) && e.isAltDown())) {
+                    draggableShape.setEnd(plotImageCanvas, e);
+                    draggableShape.removeSelection(plotImageCanvas);
+                    if (SwingUtilities.isLeftMouseButton(e) && e.isAltDown()) {
+                        draggableShape.markPlotScaleDirty(plot);
+                        updatePlot(updateNoFits());
+                    }
                 }
             }
 
@@ -5740,7 +5743,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                             plotcoordlabel.setText("x=" + fourPlaces.format(x) + ", y=" + fourPlaces.format(y));
                             IJ.showStatus("plot coordinates: x=" + fourPlaces.format(x) + ", y=" + fourPlaces.format(y));
                         }
-                    } else if (e.isControlDown()) // control left-drag (update left detrend position)
+                    } else if (e.isControlDown() && !e.isAltDown()) // control left-drag (update left detrend position)
                     {
                         handleControlLeftClickDrag(e, imageX, imageY);
                     }

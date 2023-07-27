@@ -4055,6 +4055,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 Prefs.set("plot2.plotFrameLocationY", plotFrameLocationY);
             }
             plotWindow = plot.show();
+            ((PlotWindow) plotWindow).getHelpButton().addActionListener(e -> {
+                String filename = "help/plotwindow_help.html";
+                new HelpPanel(filename, "Plot");
+            });
             plotWindow.setIconImage(plotIcon.getImage());
             plotImage = plotWindow.getImagePlus();//WindowManager.getImage("Plot of "+tableName);
 

@@ -111,6 +111,8 @@ public class PlotWindow extends ImageWindow implements ActionListener, ItemListe
 	private static Color inactiveRangeRectColor = new Color(0x20404040, true); //transparent gray
 	private static Color activeRangeArrowColor = Color.RED;
 	private static Color activeRangeRectColor = new Color(0x18ff0000, true); //transparent red
+	@AstroImageJ(reason = "Add help button to plot window")
+	private Button helpButton;
 
 	// static initializer
 	static {
@@ -244,6 +246,8 @@ public class PlotWindow extends ImageWindow implements ActionListener, ItemListe
 			bottomPanel.add(aps);
 		}
 		copy.addActionListener(this);
+		helpButton = new Button("Help");
+		bottomPanel.add(helpButton);
 		bottomPanel.add(copy);
 		bottomPanel.add(list);
 		bottomPanel.setLayout(new FlowLayout(FlowLayout.RIGHT,hgap,0));
@@ -287,6 +291,11 @@ public class PlotWindow extends ImageWindow implements ActionListener, ItemListe
 			ic.requestFocus();	//have focus on the canvas, not the button, so that pressing the space bar allows panning
 		if (Prefs.autoLivePlots && bgThread==null)
 			enableLivePlot();
+	}
+
+	@AstroImageJ(reason = "Modify help button")
+	public Button getHelpButton() {
+		return helpButton;
 	}
 
 	@Override

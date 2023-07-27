@@ -5656,7 +5656,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     newPanOffsetX = 0.0;
                     newPanOffsetY = 0.0;
                     draggableShape.unmarkPlotScale();
-                    zoomControl(screenX, screenY, 10000, e.isAltDown());
+                    zoomControl(screenX, screenY, null, e.isAltDown());
                 }
             } else {                                                                     //complete drag operations
                 if (SwingUtilities.isLeftMouseButton(e) && !e.isShiftDown() && !e.isControlDown() && !e.isAltDown())                             //left mouse drag release
@@ -5909,7 +5909,14 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         zoomControl(screenX, screenY, magChangeSteps, e.isAltDown());
     };
 
-    static public void zoomControl(int screenX, int screenY, int magChangeSteps, boolean xOnly) {
+    static public void zoomControl(int screenX, int screenY, Integer magChangeSteps, boolean xOnly) {
+        if (magChangeSteps == null) {
+            zoomY = 0;
+            zoomX = 0;
+            updatePlot(updateNoFits());
+            return;
+        }
+
         if (plot.getDrawingFrame().contains(screenX, screenY)) {
             if (zoomX == 0.0 || zoomY == 0.0) {
                 mouseX = screenX - plot.getDrawingFrame().x;
@@ -5920,10 +5927,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 //                        newPanOffsetY=0.0;
             }
             zoomX -= (1 - zoomX) * magChangeSteps / 25.0;
-            zoomX = Math.min(Math.max(zoomX, 0.0), 0.99);
+            zoomX = Math.min(Math.max(zoomX, -0.99), 0.99);
             if (!xOnly) {
                 zoomY -= (1 - zoomY) * magChangeSteps / 25.0;
-                zoomY = Math.min(Math.max(zoomY, 0.0), 0.99);
+                zoomY = Math.min(Math.max(zoomY, -0.99), 0.99);
             }
 
 

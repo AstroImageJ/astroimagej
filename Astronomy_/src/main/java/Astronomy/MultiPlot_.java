@@ -5913,13 +5913,11 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         int screenX = e.getX();
         int screenY = e.getY();
         int magChangeSteps = e.getWheelRotation();
+        if (magChangeSteps == 0 || updatePlotRunning) return;
         zoomControl(screenX, screenY, magChangeSteps, e.isControlDown(), e.isAltDown());
     };
 
     static public void zoomControl(int screenX, int screenY, Integer magChangeSteps, boolean xOnly, boolean yOnly) {
-        if (updatePlotRunning) {
-            return;
-        }
         if (magChangeSteps == null) {
             zoomY = 0;
             zoomX = 0;

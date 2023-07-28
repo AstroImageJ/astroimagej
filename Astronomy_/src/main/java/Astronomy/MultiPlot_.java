@@ -3476,6 +3476,11 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         pltMinY = yPlotMin - 5. * dy;
         pltMaxY = yPlotMax + 5. * dy;
 
+        var minX = pltMinX;
+        var maxX = pltMaxX;
+        var minY = pltMinY;
+        var maxY = pltMaxY;
+
         if (draggableShape.isPlotScaleDirty()) {
             pltMinX = draggableShape.scale.xMin();
             pltMaxX = draggableShape.scale.xMax();
@@ -3504,6 +3509,11 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             plotMaxX = totalPanOffsetX + newPanOffsetX + pltMaxX - (pltMaxX - pltMinX) * ((s.width - mouseX - 15) / (s.width)) * zoomX;
             plotMinY = totalPanOffsetY + newPanOffsetY + pltMinY + (pltMaxY - pltMinY) * ((s.height - 15 - mouseY) / (s.height)) * zoomY;
             plotMaxY = totalPanOffsetY + newPanOffsetY + pltMaxY - (pltMaxY - pltMinY) * (mouseY / (s.height)) * zoomY;
+            // Limit zoom out
+            plotMinX = Math.max(minX, plotMinX);
+            plotMaxX = Math.min(maxX, plotMaxX);
+            plotMinY = Math.max(minY, plotMinY);
+            plotMaxY = Math.min(maxY, plotMaxY);
         } else {
             plotMinX = pltMinX;
             plotMaxX = pltMaxX;

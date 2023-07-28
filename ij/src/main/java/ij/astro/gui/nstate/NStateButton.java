@@ -9,7 +9,7 @@ import java.util.HashMap;
 import java.util.Objects;
 import java.util.function.Function;
 
-public class NStateButton<STATE extends Enum<STATE> & NState<STATE>> extends JButton {//todo try reduce padding
+public class NStateButton<STATE extends Enum<STATE> & NState<STATE>> extends JButton {
     private final HashMap<STATE, String> tooltip = new HashMap<>();
     private final HashMap<STATE, Icon> iconOverrides = new HashMap<>();
     private final STATE[] values;
@@ -27,12 +27,15 @@ public class NStateButton<STATE extends Enum<STATE> & NState<STATE>> extends JBu
         setOpaque(false);
         setTooltips(state.getDefaultTooltips());
 
-        // Allow for right click to go to the previous state
+        // Handle other mouse actions
         addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 if (SwingUtilities.isRightMouseButton(e)) {
                     fireActionPerformed(new ActionEvent(NStateButton.this, ActionEvent.ACTION_FIRST, "decrement"));
+                }
+                if (SwingUtilities.isMiddleMouseButton(e)) {//todo option to flip this with left click
+                    showModal();
                 }
                 super.mouseClicked(e);
             }
@@ -43,7 +46,7 @@ public class NStateButton<STATE extends Enum<STATE> & NState<STATE>> extends JBu
     protected void fireActionPerformed(ActionEvent e) {
         if ("decrement".equals(e.getActionCommand())) {
             setStateWithoutUpdate(this.state.previous());
-        } else {
+        } else if (!"modal".equals(e.getActionCommand())){
             setStateWithoutUpdate(this.state.next());
         }
 
@@ -93,5 +96,37 @@ public class NStateButton<STATE extends Enum<STATE> & NState<STATE>> extends JBu
 
     private void setIcon() {
         setIcon(iconOverrides.getOrDefault(state, state.icon()));
+    }
+
+    private void showModal() {
+        var panel = new JPanel(new GridLayout(values.length, 1));
+        var group = new ButtonGroup();
+        var map = new HashMap<ButtonModel, STATE>();
+        for (STATE value : values) {
+            var b = Box.createHorizontalBox();
+            var r = new JRadioButton("",value == state);
+            b.add(r);
+            b.add(new JLabel(iconOverrides.getOrDefault(value, value.icon())));
+            b.add(Box.createHorizontalStrut(7));
+            b.add(new JLabel(value.name()));
+            b.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    if (SwingUtilities.isLeftMouseButton(e)) {
+                        r.setSelected(true);
+                    }
+                }
+            });
+            group.add(r);
+            b.setToolTipText(tooltip.getOrDefault(value, null));
+            panel.add(b);
+            map.put(r.getModel(), value);
+        }
+
+        if (JOptionPane.showConfirmDialog(getParent(), panel, "Specify Value", JOptionPane.YES_NO_OPTION) ==
+                JOptionPane.OK_OPTION) {
+            setState(map.get(group.getSelection()));
+            fireActionPerformed(new ActionEvent(NStateButton.this, ActionEvent.ACTION_FIRST, "modal"));
+        }
     }
 }

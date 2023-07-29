@@ -5946,11 +5946,11 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             }
             if (!yOnly) {
                 zoomX -= (1 - zoomX) * magChangeSteps / 25.0;
-                zoomX = Math.min(Math.max(zoomX, -0.99), 0.99);
+                zoomX = Math.min(zoomX, 0.99);
             }
             if (!xOnly) {
                 zoomY -= (1 - zoomY) * magChangeSteps / 25.0;
-                zoomY = Math.min(Math.max(zoomY, -0.99), 0.99);
+                zoomY = Math.min(zoomY, 0.99);
             }
 
 

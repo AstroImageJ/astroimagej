@@ -11253,7 +11253,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         });
         mainsubpanelgroup.add(ydatacolumn[c]);
 
-        operatorselection[c] = new NStateButton<>(operatorBase.getOrCreateVariant(c).get());
+        operatorselection[c] = new NStateButton<>(operatorBase.getOrCreateVariant(c).get(), true);
         operatorselection[c].addActionListener(ae -> {
             operatorBase.getOrCreateVariant(c).set(operatorselection[c].getState());
             updatePlot(updateOneFit(c));

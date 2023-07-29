@@ -16,6 +16,10 @@ public class NStateButton<STATE extends Enum<STATE> & NState<STATE>> extends JBu
     private STATE state;
 
     public NStateButton(STATE state) {
+        this(state, false);
+    }
+
+    public NStateButton(STATE state, boolean swapMiddleAndLeft) {
         super(Objects.requireNonNull(state).icon());
         values = state.getDeclaringClass().getEnumConstants();
         this.state = state;
@@ -27,6 +31,11 @@ public class NStateButton<STATE extends Enum<STATE> & NState<STATE>> extends JBu
         setOpaque(false);
         setTooltips(state.getDefaultTooltips());
 
+        // Remove normal left-click behavior
+        if (swapMiddleAndLeft) {
+            removeMouseListener(getMouseListeners()[0]);
+        }
+
         // Handle other mouse actions
         addMouseListener(new MouseAdapter() {
             @Override
@@ -34,9 +43,17 @@ public class NStateButton<STATE extends Enum<STATE> & NState<STATE>> extends JBu
                 if (SwingUtilities.isRightMouseButton(e)) {
                     fireActionPerformed(new ActionEvent(NStateButton.this, ActionEvent.ACTION_FIRST, "decrement"));
                 }
-                if (SwingUtilities.isMiddleMouseButton(e)) {//todo option to flip this with left click
+                if ((swapMiddleAndLeft && SwingUtilities.isLeftMouseButton(e)) ||
+                        (!swapMiddleAndLeft && SwingUtilities.isMiddleMouseButton(e))) {
                     showModal();
+                    return;
                 }
+
+                if (swapMiddleAndLeft && SwingUtilities.isMiddleMouseButton(e)) {
+                    fireActionPerformed(new ActionEvent(NStateButton.this, ActionEvent.ACTION_FIRST, ""));
+                    return;
+                }
+
                 super.mouseClicked(e);
             }
         });

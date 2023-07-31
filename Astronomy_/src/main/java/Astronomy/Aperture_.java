@@ -1,5 +1,6 @@
 package Astronomy;// Aperture_.java
 
+import Astronomy.multiplot.table.MeasurementsWindow;
 import astroj.*;
 import ij.IJ;
 import ij.ImagePlus;
@@ -11,7 +12,6 @@ import ij.measure.Calibration;
 import ij.measure.ResultsTable;
 import ij.plugin.filter.PlugInFilter;
 import ij.process.ImageProcessor;
-import ij.text.TextPanel;
 
 import java.awt.*;
 import java.util.Locale;
@@ -157,7 +157,7 @@ public class Aperture_ implements PlugInFilter {
     ImageProcessor ip;
     ImageCanvas canvas;
     OverlayCanvas ocanvas;
-    TextPanel tablePanel;
+    MeasurementsWindow measurementsWindow;
     double xCenter = 0, yCenter = 0, radius = 25, rBack1 = 40, rBack2 = 60, back, source, mean, serror;
     double xWidth, yWidth, width, fwhm, saturationWarningLevel = 55000, linearityWarningLevel = 30000, vradius, vrBack1, vrBack2, fradius = 25, fwhmMult = 1.0, radialCutoff = 0.010;
     double angle, round, variance;
@@ -775,9 +775,9 @@ public class Aperture_ implements PlugInFilter {
      */
     protected boolean checkResultsTable() {
 
-        tablePanel = MeasurementTable.getTextPanel(tableName);
+        measurementsWindow = MeasurementTable.getMeasurementsWindow(tableName);
 
-        if (isInstanceOfStackAlign || this instanceof MultiAperture_ || (table != null && tablePanel != null && table.getCounter() > 0))
+        if (isInstanceOfStackAlign || this instanceof MultiAperture_ || (table != null && measurementsWindow != null && table.getCounter() > 0))
             return true;
 
 //		if (oneTable)

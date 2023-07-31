@@ -505,8 +505,8 @@ public class FitOptimization implements AutoCloseable {
         }
 
         if (cleanMode == CleanMode.PRECISION) {
-            selectedRowStart = tpanel.getSelectionStart();
-            selectedRowEnd = tpanel.getSelectionEnd();
+            selectedRowStart = measurementsWindow.getSelectionStart();
+            selectedRowEnd = measurementsWindow.getSelectionEnd();
             for (int i = selectedRowEnd; i >= selectedRowStart; i--) {
                 toRemove.add(i);
                 hasActionToUndo = true;
@@ -547,9 +547,9 @@ public class FitOptimization implements AutoCloseable {
             }
         }
         table.show();
-        tpanel = MeasurementTable.getTextPanel(MeasurementTable.longerName(tableName));
+        measurementsWindow = MeasurementTable.getMeasurementsWindow(MeasurementTable.longerName(tableName));
 
-        INSTANCES.forEach(f -> f.difNumTF.setText("" + (undoBuffer.size() > 0 ? table.size() - undoBuffer.getLast().table.size() : "0")));
+        INSTANCES.forEach(f -> f.difNumTF.setText("" + (!undoBuffer.isEmpty() ? table.size() - undoBuffer.getLast().table.size() : "0")));
 
         savePrefs();
     }
@@ -562,16 +562,16 @@ public class FitOptimization implements AutoCloseable {
             INSTANCES.forEach(f -> f.cleanNumTF.setText("+" + (table.size() - rs)));
             MultiPlot_.updatePlot(MultiPlot_.updateAllFits());
             table.show();
-            tpanel = MeasurementTable.getTextPanel(MeasurementTable.longerName(tableName));
-            if (t.mode == CleanMode.PRECISION) {
+            measurementsWindow = MeasurementTable.getMeasurementsWindow(MeasurementTable.longerName(tableName));
+            if (t.mode == CleanMode.PRECISION && measurementsWindow != null) {
                 selectedRowEnd = t.removedRows.last();
                 selectedRowStart = t.removedRows.first();
-                tpanel.setSelection(t.removedRows.first(), t.removedRows.last());
+                measurementsWindow.setSelection(t.removedRows.first(), t.removedRows.last());
             }
         } else {
             IJ.beep();
         }
-        INSTANCES.forEach(f -> f.difNumTF.setText("" + (undoBuffer.size() > 0 ? table.size() - undoBuffer.getLast().table.size() : "0")));
+        INSTANCES.forEach(f -> f.difNumTF.setText("" + (!undoBuffer.isEmpty() ? table.size() - undoBuffer.getLast().table.size() : "0")));
     }
 
     private void testCompMin() {

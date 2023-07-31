@@ -317,7 +317,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     }
 
     static public void clearTable() {
-        if (table != null && MeasurementTable.getTextPanel(tableName) != null) {
+        //todo clearing table, then running MA again doesn't add rows to table, broken when update plot is running
+        //todo update table while running does not occur until after plot is done
+        if (table != null && MeasurementTable.getMeasurementsWindow(tableName) != null) {
             //table.deleteRows(0,table.size()-1);
             //table = MeasurementTable.getTable(tableName);
             //MultiPlot_.setTable(table, false);
@@ -3383,11 +3385,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         // UPDATE TABLE
         if (table != null && !isInstanceOfStackAlign && (updatePlot || Data_Processor.active)) {
             table.show();
-            tablePanel = MeasurementTable.getTextPanel(tableName);
-            if (tablePanel != null) {
-                int lastLine = tablePanel.getLineCount() - 1;
-                tablePanel.setSelection(lastLine, lastLine);
-                tablePanel.resetSelection();
+            measurementsWindow = MeasurementTable.getMeasurementsWindow(tableName);
+            if (measurementsWindow != null) {
+                measurementsWindow.scrollToBottom();
             }
 
             table.setLock(false);
@@ -3600,8 +3600,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             table = plotTable;
         }
 
-        tablePanel = MeasurementTable.getTextPanel(tableName);
-        if (table != null && tablePanel != null && (table.getCounter() > 0 || (!updatePlot && !firstRun))) {
+        measurementsWindow = MeasurementTable.getMeasurementsWindow(tableName);
+        if (table != null && measurementsWindow != null && (table.getCounter() > 0 || (!updatePlot && !firstRun))) {
             return true;  //!autoMode && ()
         }
         firstRun = false;
@@ -3616,7 +3616,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
         int i = 0;
 
-        tablePanel = MeasurementTable.getTextPanel(tableName);
+        measurementsWindow = MeasurementTable.getMeasurementsWindow(tableName);
 //        IJ.log("setting up headings");
         hasAbsMag = false;
         for (int ap = 0; ap < nApertures; ap++) {

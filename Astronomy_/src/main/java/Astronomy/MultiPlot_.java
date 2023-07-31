@@ -5,6 +5,7 @@ import Astronomy.multiplot.KeplerSplineControl;
 import Astronomy.multiplot.PlotDraggableShape;
 import Astronomy.multiplot.settings.KeplerSplineSettings;
 import Astronomy.multiplot.settings.MPOperator;
+import Astronomy.multiplot.table.MeasurementsWindow;
 import astroj.*;
 import flanagan.analysis.Regression;
 import flanagan.math.Minimization;
@@ -28,7 +29,6 @@ import ij.measure.ResultsTable;
 import ij.plugin.GifWriter;
 import ij.plugin.PlugIn;
 import ij.process.ImageProcessor;
-import ij.text.TextPanel;
 import ij.util.Tools;
 import org.hipparchus.linear.MatrixUtils;
 import util.ColorUtil;
@@ -583,7 +583,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static String[] columnswd, columnsDetrend;
 
     static MeasurementTable table;
-    static TextPanel tpanel;
+    static MeasurementsWindow measurementsWindow;
     static JLabel dummylabel1, inputAverageOverSizespinnerlabel, mmagrefsspinnerlabel, dummylabel4;
 
     static ImageWindow plotWindow;
@@ -1012,7 +1012,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             makeDummyTable();
         } else {
             tableName = table.shortTitle();
-            tpanel = MeasurementTable.getTextPanel(MeasurementTable.longerName(tableName));
+            measurementsWindow = MeasurementTable.getMeasurementsWindow(MeasurementTable.longerName(tableName));
             dataSectionBorder.setTitle("Data (" + MeasurementTable.shorterName(tableName) + ")");
             unfilteredColumns = table.getColumnHeadings().split("\t");
             if (unfilteredColumns.length == 0) {
@@ -1026,8 +1026,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 //                }
                 if (table != null) {
                     loadConfigOfOpenTable(table.getFilePath());
-                    table.show();//todo don't call when table is open
-                    WindowManager.getFrame(table.shortTitle()).setVisible(true);
+                    table.show();
                     forceUpdate = true;
                 }
                 finishSetup(forceUpdate, useAutoAstroDataUpdate);
@@ -5035,7 +5034,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         int tableLength = table.getCounter();
         if (tableLength < 1) return false;
         if (row < 0) {
-            row = tpanel.getSelectionStart();
+            row = measurementsWindow.getSelectionStart();
             if (row < 0 || row >= tableLength) row = 0;
         }
 
@@ -5639,13 +5638,13 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         table = MeasurementTable.getTable(tableName);
 //                                if (Data_Processor.running) Data_Processor.setTable(table);
                         table.show();
-                        tpanel = MeasurementTable.getTextPanel(MeasurementTable.longerName(tableName));
-                        int lineCount = tpanel.getLineCount();
+                        measurementsWindow = MeasurementTable.getMeasurementsWindow(MeasurementTable.longerName(tableName));
+                        int lineCount = measurementsWindow.getLineCount();
                         if (selectedRowEnd >= lineCount - excludedTailSamples) {
                             selectedRowStart = inputAverageOverSize[firstCurve] * ((lineCount - excludedHeadSamples - excludedTailSamples) / inputAverageOverSize[firstCurve]) - inputAverageOverSize[firstCurve];
                             selectedRowEnd = selectedRowStart + inputAverageOverSize[firstCurve] - 1;
                         }
-                        tpanel.setSelection(selectedRowStart, selectedRowEnd);
+                        measurementsWindow.setSelection(selectedRowStart, selectedRowEnd);
                         boldedDatum = (selectedRowStart - excludedHeadSamples) / inputAverageOverSize[firstCurve];
                         plotcoordlabel.setText("DATA: x=" + fourPlaces.format(x[firstCurve][boldedDatum]) + ", y=" + fourPlaces.format(y[firstCurve][boldedDatum]));
                         IJ.showStatus("data values: x=" + fourPlaces.format(x[firstCurve][boldedDatum]) + ", y=" + fourPlaces.format(y[firstCurve][boldedDatum]));
@@ -5661,7 +5660,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 {                                                                                     //undo delete selected table row
                     FitOptimization.undoOutlierClean();
                     selectedRowEnd = selectedRowStart + inputAverageOverSize[firstCurve] - 1;
-                    tpanel.setSelection(selectedRowStart, selectedRowEnd);
+                    measurementsWindow.setSelection(selectedRowStart, selectedRowEnd);
                     boldedDatum = (selectedRowStart - excludedHeadSamples) / inputAverageOverSize[firstCurve];
                     plotcoordlabel.setText("DATA: x=" + fourPlaces.format(x[firstCurve][boldedDatum]) + ", y=" + fourPlaces.format(y[firstCurve][boldedDatum]));
                     IJ.showStatus("data values: x=" + fourPlaces.format(x[firstCurve][boldedDatum]) + ", y=" + fourPlaces.format(y[firstCurve][boldedDatum]));
@@ -5783,7 +5782,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         }
                     }
                 }
-                tpanel.setSelection(excludedHeadSamples + nearestLine * inputAverageOverSize[firstCurve], excludedHeadSamples + (nearestLine + 1) * inputAverageOverSize[firstCurve] - 1);
+                measurementsWindow.setSelection(excludedHeadSamples + nearestLine * inputAverageOverSize[firstCurve], excludedHeadSamples + (nearestLine + 1) * inputAverageOverSize[firstCurve] - 1);
                 boldedDatum = nearestLine;
                 plotcoordlabel.setText("DATA: x=" + fourPlaces.format(x[firstCurve][nearestLine]) + ", y=" + fourPlaces.format(y[firstCurve][nearestLine]));
                 IJ.showStatus("data values: x=" + fourPlaces.format(x[firstCurve][nearestLine]) + ", y=" + fourPlaces.format(y[firstCurve][nearestLine]));
@@ -5904,7 +5903,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         Thread t = new Thread(() -> {
             Thread.yield();
             ImageStack imstack = iplus.getStack();
-            selectedRow = tpanel.getSelectionStart();
+            selectedRow = measurementsWindow.getSelectionStart();
             if (selectedRow < 0) { selectedRow = 0; } else if (selectedRow >= imstack.getSize()) selectedRow = imstack.getSize() - 1;
             int newSlice = 0;
             if (sliceCol != MeasurementTable.COLUMN_NOT_FOUND) {

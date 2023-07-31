@@ -21,7 +21,6 @@ import ij.process.ColorProcessor;
 import ij.process.ImageProcessor;
 import ij.process.ImageStatistics;
 import ij.process.StackProcessor;
-import ij.text.TextPanel;
 import ij.util.Tools;
 import util.PdfRasterWriter;
 
@@ -378,7 +377,6 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
     MeasurementRoi measRoi = new MeasurementRoi(-1000.0, -1000.0);
     String tableName = "Measure_Tool";
     MeasurementTable table;
-    TextPanel tablePanel;
 
     MenuBar mainMenuBar = new MenuBar();
     Panel mainPanel;
@@ -6753,25 +6751,13 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
     void updateResultsTable(double imageX, double imageY, double value, boolean dragging) {
         getMeasPrefs();
         if ((writeMiddleClickValuesTable && !dragging) || (writeMiddleDragValuesTable && dragging)) {
-            tablePanel = MeasurementTable.getTextPanel(tableName);
-            if (tablePanel != null) {
-                //IJ.log("tablePanel != null");
+            if (table == null) {
+                table = MeasurementTable.getTable(tableName);
                 if (table == null) {
-                    //IJ.log("tablePanel != null && table == null -- get existing table");
-                    table = MeasurementTable.getTable(tableName);
-                    table.show(tableName);
-                } else {
-                    //IJ.log("tablePanel != null && table != null -- refresh table");
-                    table = MeasurementTable.getTable(tableName);
-                    table.show(tableName);
+                    table = new MeasurementTable(tableName);;
                 }
-            } else {
-                //IJ.log("tablePanel == null && table == null -- create new table");
-                table = new MeasurementTable(tableName);
-
-                table.show(tableName);
             }
-            //IJ.log("increment table counter");
+            table.show();
             table.incrementCounter();
         }
         String lab = IJU.getSliceFilename(imp) + ",  Slice: " + imp.getSlice();

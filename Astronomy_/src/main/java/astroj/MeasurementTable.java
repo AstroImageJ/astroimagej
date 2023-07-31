@@ -2,24 +2,22 @@
 
 package astroj;
 
+import Astronomy.multiplot.table.MeasurementsWindow;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.WindowManager;
 import ij.measure.ResultsTable;
-import ij.text.TextPanel;
-import ij.text.TextWindow;
 import ij.util.Tools;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.HashSet;
-import java.util.Vector;
+import java.util.Map;
+import java.util.WeakHashMap;
 
 
 /**
@@ -37,7 +35,8 @@ public class MeasurementTable extends ResultsTable {
     protected boolean locked = false;
     protected String filePath = "";
     private final HashSet<Runnable> listeners = new HashSet<>();
-    private KeyAdapter gotoListener;
+    private static final Map<String, MeasurementTable> INSTANCES = new WeakHashMap<>();
+    private MeasurementsWindow window;
 
     /**
      * Creates an empty default MeasurementTable.
@@ -53,18 +52,6 @@ public class MeasurementTable extends ResultsTable {
     public MeasurementTable(String tableName) {
         setPrecision(DEFAULT_DECIMALS);
         shortName = MeasurementTable.shorterName(tableName);
-    }
-
-    /**
-     * Creates a MeasurementTable object from a TextWindow.
-     */
-    public MeasurementTable(TextWindow w) {
-        super();
-        setPrecision(DEFAULT_DECIMALS);
-        TextPanel panel = w.getTextPanel();
-        shortName = MeasurementTable.shorterName(w.getTitle());
-        int count = panel.getLineCount();
-        // IJ.showMessage(panel.getText());
     }
 
     /**
@@ -89,25 +76,37 @@ public class MeasurementTable extends ResultsTable {
     }
 
     /**
-     * Class method for extracting a TextPanel from a MeasurementTable with a given name.
+     * Class method for extracting a MeasurementsWindow from a MeasurementTable with a given name.
      */
-    public static TextPanel getTextPanel(String tableName) {
-        Frame frame = WindowManager.getFrame(tableName);
-        if (frame == null || !(frame instanceof TextWindow win)) {
-            // IJ.error ("Unable to access "+tableName+"!");
-            return null;
-        } else {
-            return win.getTextPanel();
+    public static MeasurementsWindow getMeasurementsWindow(String tableName) {
+        var t = INSTANCES.get(tableName);
+        if (t != null) {
+            return t.window;
         }
+
+        t = INSTANCES.get(shorterName(tableName));
+        if (t != null) {
+            return t.window;
+        }
+
+        t = INSTANCES.get(longerName(tableName));
+        if (t != null) {
+            return t.window;
+        }
+
+        return null;
+    }
+
+    public void clearTable() {
+        INSTANCES.remove(shortName);
     }
 
     /**
      * Indicates whether a MeasurementTable exists with the given name.
      */
     public static boolean exists(String tableName) {
-        TextPanel tp = getTextPanel(tableName);
-        TextPanel tp2 = getTextPanel(MeasurementTable.shorterName(tableName));
-        return tp != null || tp2 != null;
+        var tp = getMeasurementsWindow(tableName);
+        return tp != null;
     }
 
     /**
@@ -286,18 +285,9 @@ public class MeasurementTable extends ResultsTable {
 
     public static boolean isMeasurementsTable(String tableName) {
         var s = MeasurementTable.longerName(tableName);
-        TextPanel panel = getTextPanel(s);
+        var panel = getMeasurementsWindow(s);
 
-        if (panel == null) {
-            s = MeasurementTable.shorterName(s);
-            panel = getTextPanel(s);
-        }
-
-        if (panel != null) {
-            return panel.getResultsTable() instanceof MeasurementTable;
-        }
-
-        return false;
+        return panel != null;
     }
 
     /**
@@ -330,36 +320,29 @@ public class MeasurementTable extends ResultsTable {
         // GET CONTENTS OF EXISTING DATA
 
         inputPanelName = sourceName;
-        TextPanel panel = getTextPanel(inputPanelName);
-        if (panel == null) {
-            inputPanelName = MeasurementTable.shorterName(sourceName);
-            panel = getTextPanel(inputPanelName);
-        }
+        var panel = getMeasurementsWindow(inputPanelName);
+
         if (panel != null) {
-            if (panel.getResultsTable() instanceof MeasurementTable m) {
-                return m;
-            }
-            lines = panel.getText().split("\n");
-            goodPanel = true;
-        } else {
-            inputPanelName = sourceName;
-            TextArea textArea = null;
-            Frame inframe = WindowManager.getFrame(inputPanelName);
+            return panel.getTable();
+        }
+
+        inputPanelName = sourceName;
+        TextArea textArea = null;
+        Frame inframe = WindowManager.getFrame(inputPanelName);
+        if (inframe != null) {
+            textArea = (TextArea) inframe.getComponent(0);
+        }
+        if (textArea == null) {
+            inputPanelName = MeasurementTable.shorterName(sourceName);
+            inframe = WindowManager.getFrame(inputPanelName);
             if (inframe != null) {
                 textArea = (TextArea) inframe.getComponent(0);
             }
-            if (textArea == null) {
-                inputPanelName = MeasurementTable.shorterName(sourceName);
-                inframe = WindowManager.getFrame(inputPanelName);
-                if (inframe != null) {
-                    textArea = (TextArea) inframe.getComponent(0);
-                }
-            }
-            if (textArea == null) {
-                return table;
-            }
-            lines = textArea.getText().split("\n");
         }
+        if (textArea == null) {
+            return table;
+        }
+        lines = textArea.getText().split("\n");
 
         if (lines.length < 1 || lines[0] == null || lines[0].equals("")) {
             //IJ.showMessage ("Error: no lines to process in "+sourceName);
@@ -563,57 +546,7 @@ public class MeasurementTable extends ResultsTable {
      * This method desperately attempts to replace the private functionality of WindowManager.getNonImageWindows() (before ImageJ Version 1.38q)
      */
     public static String[] getMeasurementTableNames() {
-        Vector frames = new Vector();
-
-        // FIND MEASUREMENT TABLES ASSOCIATED WITH IMAGES
-
-        if (IJ.versionLessThan("1.40")) {
-            Frame std = WindowManager.getFrame("Results");
-            if (std != null) {
-                frames.addElement("Results");
-            }
-            std = WindowManager.getFrame(PREFIX);
-            if (std != null) {
-                frames.addElement(PREFIX);
-            }
-            String[] openImages = IJU.listOfOpenImages(null);
-            if (openImages != null && openImages.length > 0) {
-                for (int i = 0; i < openImages.length; i++) {
-                    String longName = longerName(openImages[i]);
-                    if (WindowManager.getFrame(longName) != null) {
-                        frames.addElement(longName);
-                    }
-                }
-            }
-        } else {
-            Frame[] windows = WindowManager.getNonImageWindows();
-            if (windows != null && windows.length > 0) {
-                Frame std = WindowManager.getFrame("Results");
-                if (std != null) {
-                    frames.addElement("Results");
-                }
-                for (int i = 0; i < windows.length; i++) {
-                    String title = windows[i].getTitle();
-                    // if (title.startsWith("Measurement"))
-                    frames.addElement(title);
-                }
-            }
-        }
-
-        // ANYTHING AT ALL?
-
-        int n = frames.size();
-        if (n == 0) {
-            return null;
-        }
-
-        // THEN GATHER INTO STRING ARRAY
-
-        String[] result = new String[n];
-        for (int i = 0; i < n; i++) {
-            result[i] = (String) frames.elementAt(i);
-        }
-        return result;
+        return INSTANCES.keySet().toArray(String[]::new);
     }
 
     /**
@@ -712,6 +645,7 @@ public class MeasurementTable extends ResultsTable {
     public void addValue(String column, double value, int places) {
         setPrecision(16);
         super.addValue(column, value);
+        updateView();
         // setPrecision (DEFAULT_DECIMALS);
         // PRESENT ResultsTable DOESN'T KEEP TRACK OF INDIVIDUAL PRECISIONS!!!
     }
@@ -720,62 +654,41 @@ public class MeasurementTable extends ResultsTable {
      * Displays/Refreshes a MeasurementTable with long name.
      */
     public void show() {
-        super.show(MeasurementTable.longerName(shortName)/*, false*/);
-        if (window != null && window.get() != null) {
-            window.get().getTextPanel().removeKeyListener(getOrCreateGotoListener()); // show is called multiple times
-            window.get().getTextPanel().addKeyListener(getOrCreateGotoListener());
-        }
+        INSTANCES.putIfAbsent(shortName, this);
+        SwingUtilities.invokeLater(() -> {
+            if (window == null) {
+                // Fetch previous window and update it
+                window = getMeasurementsWindow(shortName);
+
+                if (window == null) {
+                    window = new MeasurementsWindow(this);
+                }
+            }
+            if (window.getTable() != this) {
+                window.setTable(this);
+                INSTANCES.put(shortName, this);
+            } else {
+                updateView();
+            }
+            window.setVisible(true);
+        });
     }
 
-    private KeyAdapter getOrCreateGotoListener() {
-        if (gotoListener == null) {
-            gotoListener = new KeyAdapter() {
-                @Override
-                public void keyPressed(KeyEvent e) {
-                    e.consume();
-                    int modifiers = e.getModifiersEx();
-                    boolean isCtrlPressed = true;//(modifiers & KeyEvent.CTRL_DOWN_MASK) != 0;
-                    boolean isCommandPressed = (modifiers & KeyEvent.META_DOWN_MASK) != 0;
-                    //Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()
-                    boolean isF3Pressed = e.getKeyCode() == KeyEvent.VK_F3;
+    @Override
+    public void show(String name) {
+        show();
+    }
 
-                    if ((isCtrlPressed && isF3Pressed) || (isCommandPressed && isF3Pressed)) {
-                        // Create the dropdown menu with column headings
-                        JComboBox<String> columnDropdown = new JComboBox<>(MeasurementTable.this.getHeadings());
+    public void updateView() {
+        updateView(false);
+    }
 
-                        // Display the dialog with the dropdown menu and input field for row
-                        JPanel panel = new JPanel(new GridLayout(2, 2));
-                        panel.add(new JLabel("Column:"));
-                        panel.add(columnDropdown);
-                        panel.add(new JLabel("Row:"));
-                        JTextField rowField = new JTextField("0");
-                        panel.add(rowField);
-
-                        int result = JOptionPane.showConfirmDialog(MeasurementTable.this.window.get(), panel, "Go To Cell", JOptionPane.OK_CANCEL_OPTION);
-                        if (result == JOptionPane.OK_OPTION) {
-                            // Retrieve the selected column index and row input
-                            int column = columnDropdown.getSelectedIndex();
-                            String rowInput = rowField.getText();
-
-                            if (!rowInput.isEmpty()) {
-                                int row = Integer.parseInt(rowInput.trim());
-
-                                if (row >= 0 && row < MeasurementTable.this.size() && column >= 0 && column < MeasurementTable.this.getLastColumn()) {
-                                    if (MeasurementTable.this.window != null && MeasurementTable.this.window.get() != null) {
-                                        MeasurementTable.this.window.get().getTextPanel().showCell(row, (String) columnDropdown.getSelectedItem());
-                                    }
-                                } else {
-                                    IJ.beep();
-                                    JOptionPane.showMessageDialog(null, "Invalid cell coordinates.");
-                                }
-                            }
-                        }
-                    }
-                }
-            };
-        }
-
-        return gotoListener;
+    public void updateView(boolean columnChanged) {
+        SwingUtilities.invokeLater(() -> {
+            if (window != null) {
+                window.update(columnChanged);
+            }
+        });
     }
 
     /**
@@ -862,4 +775,25 @@ public class MeasurementTable extends ResultsTable {
     public synchronized void removeListeners() {
         listeners.clear();
     }
+
+    @Override
+    public void setHeading(int column, String heading) {
+        super.setHeading(column, heading);
+        updateView(true);
+    }
+
+    @Override
+    public synchronized void deleteRow(int rowIndex) {
+        super.deleteRow(rowIndex);
+        updateView();
+    }
+
+    @Override
+    public int getFreeColumn(String heading) {
+        var i = super.getFreeColumn(heading);
+        updateView(true);
+        return i;
+    }
+
+
 }

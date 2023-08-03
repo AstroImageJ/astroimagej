@@ -5146,17 +5146,21 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
         saveFileName = "Processed_" + s;
 
         if (saveProcessedData && (saveSuffix.trim().length() != 0 || saveDir.trim().length() != 0)) {
-            int dotIndex = s.lastIndexOf(".");
-            if (s.endsWith(".gz") || s.endsWith(".fz") || s.endsWith(".zip")) {
-                s = s.substring(0, dotIndex);
-                dotIndex = s.lastIndexOf(".");
+            if (FitsExtensionUtil.isFitsFile(saveFileName)) {
+                saveFileName = FitsExtensionUtil.makeFitsSave(FitsExtensionUtil.fileNameWithoutExt(saveFileName) + saveSuffix.trim(), FitsExtensionUtil.compressionModes(saveFileName).toArray(FitsExtensionUtil.CompressionMode[]::new));
+            } else {
+                int dotIndex = s.lastIndexOf(".");
+                if (s.endsWith(".gz") || s.endsWith(".fz") || s.endsWith(".zip")) {
+                    s = s.substring(0, dotIndex);
+                    dotIndex = s.lastIndexOf(".");
+                }
+                if (dotIndex != -1) //a filetype exists
+                {
+                    String filetype = s.substring(dotIndex);
+                    saveFileName = s.replace(filetype, "" + saveSuffix.trim() + filetype);
+                } else
+                    saveFileName = s.concat("" + saveSuffix.trim() + ".fits");
             }
-            if (dotIndex != -1) //a filetype exists
-            {
-                String filetype = s.substring(dotIndex);
-                saveFileName = s.replace(filetype, "" + saveSuffix.trim() + filetype);
-            } else
-                saveFileName = s.concat("" + saveSuffix.trim() + ".fits");
         }
         savePath += saveFileName;
         if (scienceHeader != null) scienceHeader = FitsJ.addHistory("Previous Filename = " + s, scienceHeader);
@@ -5565,18 +5569,21 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
                                                     saveFileName = "Processed_" + s;
 
                                                     if (saveProcessedData && (saveSuffix.trim().length() != 0 || saveDir.trim().length() != 0)) {
-                                                        int dotIndex = s.lastIndexOf(".");
-                                                        if (s.endsWith(".gz") || s.endsWith(".zip")) {
-                                                            s = s.substring(0, dotIndex);
-                                                            dotIndex = s.lastIndexOf(".");
+                                                        if (FitsExtensionUtil.isFitsFile(saveFileName)) {
+                                                            saveFileName = FitsExtensionUtil.makeFitsSave(FitsExtensionUtil.fileNameWithoutExt(saveFileName) + saveSuffix.trim(), FitsExtensionUtil.compressionModes(saveFileName).toArray(FitsExtensionUtil.CompressionMode[]::new));
+                                                        } else {
+                                                            int dotIndex = s.lastIndexOf(".");
+                                                            if (s.endsWith(".gz") || s.endsWith(".zip")) {
+                                                                s = s.substring(0, dotIndex);
+                                                                dotIndex = s.lastIndexOf(".");
+                                                            }
+                                                            if (dotIndex != -1) //a filetype exists
+                                                            {
+                                                                String filetype = s.substring(dotIndex);
+                                                                saveFileName = s.replace(filetype, "" + saveSuffix.trim() + filetype);
+                                                            } else
+                                                                saveFileName = s.concat("" + saveSuffix.trim() + ".fits");
                                                         }
-                                                        if (dotIndex != -1) //a filetype exists
-                                                        {
-                                                            String filetype = s.substring(dotIndex);
-                                                            saveFileName = s.replace(filetype, "" + saveSuffix.trim() + filetype);
-                                                        } else
-                                                            saveFileName = s.concat("" + saveSuffix.trim() + ".fits");
-
                                                     }
 
                                                     savePath += saveFileName;

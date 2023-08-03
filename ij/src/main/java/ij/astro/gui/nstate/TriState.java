@@ -16,7 +16,7 @@ public enum TriState implements NState<TriState> {
     private final boolean isOn;
 
     TriState(String icon1, String icon2, boolean isOn, Color color) {
-        this.icon = new MergedIcon(new EmojiIcon(icon1, 19, color), new EmojiIcon(icon2, 19), -3, 2, true);
+        this.icon = new MergedIcon(new EmojiIcon(icon1, 23, color), new EmojiIcon(icon2, 23), -3, 2, true);
         this.isOn = isOn;
     }
 

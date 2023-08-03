@@ -11,16 +11,17 @@ import java.util.Objects;
 
 public class EmojiIcon implements Icon {
     private final String text;
-    private final int fontSize;
+    private final int iconHeight;
     private final Color color;
+    private float cachedFontSize = -1;
 
-    public EmojiIcon(String text, int fontSize) {
-        this(text, fontSize, Color.BLACK);
+    public EmojiIcon(String text, int iconHeight) {
+        this(text, iconHeight, Color.BLACK);
     }
 
-    public EmojiIcon(String text, int fontSize, Color color) {
+    public EmojiIcon(String text, int iconHeight, Color color) {
         this.text = Objects.requireNonNull(text);
-        this.fontSize = fontSize;
+        this.iconHeight = iconHeight;
         this.color = Objects.requireNonNull(color);
     }
 
@@ -29,6 +30,7 @@ public class EmojiIcon implements Icon {
         Graphics2D g2d = (Graphics2D) g.create();
 
         Font defaultFont = UIManager.getFont("Button.font");
+        float fontSize = getCachedFontSize(defaultFont);
         Font iconFont = defaultFont.deriveFont(Font.PLAIN, fontSize);
         g2d.setFont(iconFont);
         g2d.setColor(color);
@@ -56,6 +58,7 @@ public class EmojiIcon implements Icon {
     public int getIconWidth() {
         Graphics2D g2d = createGraphics2D();
         Font defaultFont = UIManager.getFont("Button.font");
+        float fontSize = getCachedFontSize(defaultFont);
         Font iconFont = defaultFont.deriveFont(Font.PLAIN, fontSize);
         g2d.setFont(iconFont);
 
@@ -71,9 +74,10 @@ public class EmojiIcon implements Icon {
 
     @Override
     public int getIconHeight() {
+        //return iconHeight;
         Graphics2D g2d = createGraphics2D();
         Font defaultFont = UIManager.getFont("Button.font");
-        Font iconFont = defaultFont.deriveFont(Font.PLAIN, fontSize);
+        Font iconFont = defaultFont.deriveFont(Font.PLAIN, getCachedFontSize(defaultFont));
         g2d.setFont(iconFont);
 
         FontRenderContext frc = g2d.getFontRenderContext();
@@ -82,6 +86,37 @@ public class EmojiIcon implements Icon {
         g2d.dispose();
 
         return (int) Math.ceil(textBounds.getHeight());
+    }
+
+    private float getCachedFontSize(Font defaultFont) {
+        if (cachedFontSize == -1) {
+            Graphics2D g2d = createGraphics2D();
+            cachedFontSize = findFontSize(defaultFont, iconHeight, text, g2d);
+            g2d.dispose();
+        }
+        return cachedFontSize;
+    }
+
+    private float findFontSize(Font defaultFont, int iconHeight, String text, Graphics2D g2d) {
+        float fontSize = 1.0f;
+        float step = 1.0f;
+
+        FontRenderContext frc = g2d.getFontRenderContext();
+        Rectangle2D textBounds;
+
+        do {
+            fontSize += step;
+            Font iconFont = defaultFont.deriveFont(Font.PLAIN, fontSize);
+            g2d.setFont(iconFont);
+            textBounds = iconFont.getStringBounds(text, frc);
+
+            if (textBounds.getHeight() > iconHeight) {
+                fontSize -= step;
+                step /= 2.0f;
+            }
+        } while (step >= 0.1f);
+
+        return fontSize;
     }
 
     private Graphics2D createGraphics2D() {
@@ -96,6 +131,6 @@ public class EmojiIcon implements Icon {
         }
         int charCount = Character.charCount(codePoint);
 
-        return new Pair.GenericPair<>(text.substring(i, i+charCount), charCount);
+        return new Pair.GenericPair<>(text.substring(i, i + charCount), charCount);
     }
 }

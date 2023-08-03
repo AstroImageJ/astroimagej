@@ -14,6 +14,7 @@ public class EmojiIcon implements Icon {
     private final int iconHeight;
     private final Color color;
     private float cachedFontSize = -1;
+    private Font cachedFont;
 
     public EmojiIcon(String text, int iconHeight) {
         this(text, iconHeight, Color.BLACK);
@@ -29,7 +30,7 @@ public class EmojiIcon implements Icon {
     public void paintIcon(Component c, Graphics g, int x, int y) {
         Graphics2D g2d = (Graphics2D) g.create();
 
-        Font defaultFont = UIManager.getFont("Button.font");
+        Font defaultFont = getCachedFont();
         float fontSize = getCachedFontSize(defaultFont);
         Font iconFont = defaultFont.deriveFont(Font.PLAIN, fontSize);
         g2d.setFont(iconFont);
@@ -57,7 +58,7 @@ public class EmojiIcon implements Icon {
     @Override
     public int getIconWidth() {
         Graphics2D g2d = createGraphics2D();
-        Font defaultFont = UIManager.getFont("Button.font");
+        Font defaultFont = getCachedFont();
         float fontSize = getCachedFontSize(defaultFont);
         Font iconFont = defaultFont.deriveFont(Font.PLAIN, fontSize);
         g2d.setFont(iconFont);
@@ -76,7 +77,7 @@ public class EmojiIcon implements Icon {
     public int getIconHeight() {
         //return iconHeight;
         Graphics2D g2d = createGraphics2D();
-        Font defaultFont = UIManager.getFont("Button.font");
+        Font defaultFont = getCachedFont();
         Font iconFont = defaultFont.deriveFont(Font.PLAIN, getCachedFontSize(defaultFont));
         g2d.setFont(iconFont);
 
@@ -117,6 +118,28 @@ public class EmojiIcon implements Icon {
         } while (step >= 0.1f);
 
         return fontSize;
+    }
+
+    private Font getCachedFont() {
+        if (cachedFont == null) {
+            cachedFont = findFontWithSymbolSupport();
+        }
+        return cachedFont;
+    }
+
+    private Font findFontWithSymbolSupport() {
+        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        Font[] allFonts = ge.getAllFonts();
+        //String targetSymbol = getCodepointString(text, 0).first();
+
+        for (Font font : allFonts) {
+            if (font.canDisplayUpTo(text) == -1) {
+                return font.deriveFont(Font.PLAIN);
+            }
+        }
+
+        // If no appropriate font is found, return the default font
+        return UIManager.getFont("Button.font");
     }
 
     private Graphics2D createGraphics2D() {

@@ -13,6 +13,7 @@ import ij.io.FileInfo;
 import ij.io.OpenDialog;
 import ij.plugin.Macro_Runner;
 import ij.plugin.PlugIn;
+import ij.plugin.filter.PlugInFilterRunner;
 import ij.process.ImageProcessor;
 
 import javax.imageio.IIOImage;
@@ -5415,6 +5416,8 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
     protected void startTimer() {
         try {
             task = new TimerTask() {
+                private MultiAperture_ maInst;
+
                 public void run() {
                     Prefs.set("multiaperture.canceled", false);
                     countValidFiles();
@@ -5778,7 +5781,11 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
                                                         Prefs.set("multiaperture.automode", false);
                                                     } else
                                                         Prefs.set("multiaperture.automode", true);
-                                                    IJ.runPlugIn("Astronomy.MultiAperture_", "");
+                                                    if (maInst == null) {
+                                                        maInst = (MultiAperture_) IJ.runPlugIn("Astronomy.MultiAperture_", "");
+                                                    } else {
+                                                        new PlugInFilterRunner(maInst, "", "");
+                                                    }
                                                     Prefs.set("multiaperture.automode", false);
                                                     Prefs.set("multiaperture.useMacroImage", false);
                                                     boolean finished = Prefs.get("multiaperture.finished", true);

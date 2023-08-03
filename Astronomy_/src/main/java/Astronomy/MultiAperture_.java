@@ -1202,7 +1202,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 //            }
 
         //Right mouse click or <Enter> finalizes aperture selection
-        if (enterPressed || (!mouseDrag && (modis & InputEvent.BUTTON3_MASK) != 0 && !e.isShiftDown() && !e.isControlDown() && !e.isAltDown())) {
+        if (enterPressed || (!(e == dummyClick) && (!mouseDrag && (modis & InputEvent.BUTTON3_MASK) != 0 && !e.isShiftDown() && !e.isControlDown() && !e.isAltDown()))) {
             enterPressed = false;
             if (!aperturesInitialized) {
                 if ((!apLoading.get().isPrevious() && ngot > 0) || allStoredAperturesPlaced) {

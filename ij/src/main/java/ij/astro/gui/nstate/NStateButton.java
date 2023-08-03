@@ -39,7 +39,7 @@ public class NStateButton<STATE extends Enum<STATE> & NState<STATE>> extends JBu
         // Handle other mouse actions
         addMouseListener(new MouseAdapter() {
             @Override
-            public void mouseClicked(MouseEvent e) {
+            public void mousePressed(MouseEvent e) {
                 if (SwingUtilities.isRightMouseButton(e)) {
                     fireActionPerformed(new ActionEvent(NStateButton.this, ActionEvent.ACTION_FIRST, "decrement"));
                 }
@@ -54,7 +54,7 @@ public class NStateButton<STATE extends Enum<STATE> & NState<STATE>> extends JBu
                     return;
                 }
 
-                super.mouseClicked(e);
+                super.mousePressed(e);
             }
         });
     }

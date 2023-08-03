@@ -283,7 +283,7 @@ public class KeplerSplineControl {
         b.add(bkSpaceDisplay);
         b.setToolTipText("Indicates the fitted or fixed spline knot spacing.");
         bkSpaceDisplay.setToolTipText("Indicates the fitted or fixed spline knot spacing.");
-        var copyButton = new JButton(new EmojiIcon("⮭", 15));
+        var copyButton = new JButton(new EmojiIcon("⮭", 19));
         copyButton.setMargin(new Insets(0, 3, 0, 3));
         copyButton.addActionListener($ -> {
             settings.fixedKnotDensity.set(Double.valueOf(bkSpaceDisplay.getText()));

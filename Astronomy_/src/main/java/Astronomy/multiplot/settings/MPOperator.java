@@ -107,7 +107,7 @@ public enum MPOperator implements NState<MPOperator> {
 
     private Icon makeIcon(String path) {
         if (path == null) {
-            return new MergedIcon(new EmojiIcon("■", 19, Color.WHITE), new EmojiIcon("☐", 19), -3, 2, true);
+            return new MergedIcon(new EmojiIcon("■", 23, Color.WHITE), new EmojiIcon("☐", 23), -3, 2, true);
         }
         var i = new ImageIcon(getClass().getClassLoader().getResource(path), this.name());
         return new ImageIcon(i.getImage().getScaledInstance(14, 14,  java.awt.Image.SCALE_SMOOTH), this.name());

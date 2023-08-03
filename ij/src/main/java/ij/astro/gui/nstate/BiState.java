@@ -13,7 +13,7 @@ public enum BiState implements NState<BiState> {
     private final Icon icon;
 
     BiState(String icon1, String icon2, Color color) {
-        this.icon = new MergedIcon(new EmojiIcon(icon1, 19, color), new EmojiIcon(icon2, 19), -3, 2, true);
+        this.icon = new MergedIcon(new EmojiIcon(icon1, 23, color), new EmojiIcon(icon2, 23), -3, 2, true);
     }
 
     @Override

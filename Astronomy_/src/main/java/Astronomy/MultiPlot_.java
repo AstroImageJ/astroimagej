@@ -11353,7 +11353,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         var usesmoothbox = new NStateButton<TriState>(KeplerSplineControl.getInstance(c).settings.getTriStateDisplay());
         usesmoothbox.setIconOverrides(d -> {
             return switch (d) {
-                case ALT_ENABLED -> new MergedIcon(new EmojiIcon("■", 19, Color.YELLOW), new EmojiIcon("\uD83C\uDD42", 19), -5, 1, true);
+                case ALT_ENABLED -> new MergedIcon(new EmojiIcon("■", 23, Color.YELLOW), new EmojiIcon("\uD83C\uDD42", 23), -5, 1, true);
                 default -> null;
             };
         });
@@ -11380,8 +11380,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         usesmoothbox.setHorizontalAlignment(JLabel.CENTER);
         smoothP.add(usesmoothbox);
 
-        var smoothGear = new JButton("⛭");
-        smoothGear.setFont(smoothGear.getFont().deriveFont(18F));
+        var smoothGear = new JButton(new EmojiIcon("⛭", 22));
         smoothGear.addActionListener(e -> {
             KeplerSplineControl.getInstance(c).displayPanel();
         });

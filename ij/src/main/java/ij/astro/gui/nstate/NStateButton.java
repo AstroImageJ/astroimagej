@@ -5,7 +5,9 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 
@@ -14,6 +16,7 @@ public class NStateButton<STATE extends Enum<STATE> & NState<STATE>> extends JBu
     private final HashMap<STATE, Icon> iconOverrides = new HashMap<>();
     private final STATE[] values;
     private STATE state;
+    private final EnumSet<STATE> skippableStates;
 
     public NStateButton(STATE state) {
         this(state, false);
@@ -30,6 +33,7 @@ public class NStateButton<STATE extends Enum<STATE> & NState<STATE>> extends JBu
         setFocusPainted(false);
         setOpaque(false);
         setTooltips(state.getDefaultTooltips());
+        skippableStates = EnumSet.noneOf(state.getDeclaringClass());
 
         // Remove normal left-click behavior
         if (swapMiddleAndLeft) {
@@ -62,9 +66,17 @@ public class NStateButton<STATE extends Enum<STATE> & NState<STATE>> extends JBu
     @Override
     protected void fireActionPerformed(ActionEvent e) {
         if ("decrement".equals(e.getActionCommand())) {
-            setStateWithoutUpdate(this.state.previous());
+            var s = state.previous();
+            while (skippableStates.contains(s)) {
+                s = s.previous();
+            }
+            setStateWithoutUpdate(s);
         } else if (!"modal".equals(e.getActionCommand())){
-            setStateWithoutUpdate(this.state.next());
+            var s = state.next();
+            while (skippableStates.contains(s)) {
+                s = s.next();
+            }
+            setStateWithoutUpdate(s);
         }
 
         super.fireActionPerformed(e);
@@ -82,6 +94,10 @@ public class NStateButton<STATE extends Enum<STATE> & NState<STATE>> extends JBu
         if (newState) {
             fireStateChanged();
         }
+    }
+
+    public void setSkippableStates(STATE... states) {
+        skippableStates.addAll(List.of(states));
     }
 
     public void setStateWithoutUpdate(STATE state) {

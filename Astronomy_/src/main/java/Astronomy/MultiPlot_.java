@@ -11356,6 +11356,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 default -> null;
             };
         });*/
+        usesmoothbox.setSkippableStates(TriState.ALT_ENABLED);
         usesmoothbox.addActionListener($ -> {
             smooth[c] = usesmoothbox.getState().isOn();
             switch (usesmoothbox.getState()) {

@@ -273,7 +273,9 @@ public class Property<T> {
             return (T) Double.valueOf(nv);
         } else if (type == Integer.TYPE || type == Integer.class) {
             return (T) Integer.valueOf(nv);
-        }else if (type == Long.TYPE || type == Long.class) {
+        }else if (type == Float.TYPE || type == Float.class) {
+            return (T) Float.valueOf(nv);
+        } else if (type == Long.TYPE || type == Long.class) {
             return (T) Long.valueOf(nv);
         } else if (type == Boolean.TYPE || type == Boolean.class) {
             return (T) Boolean.valueOf(nv);

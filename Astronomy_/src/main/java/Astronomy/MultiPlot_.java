@@ -11,7 +11,6 @@ import flanagan.math.Minimization;
 import flanagan.math.MinimizationFunction;
 import ij.*;
 import ij.astro.gui.GenericSwingDialog;
-import ij.astro.gui.MergedIcon;
 import ij.astro.gui.nstate.BiState;
 import ij.astro.gui.nstate.NStateButton;
 import ij.astro.gui.nstate.TriState;
@@ -11352,12 +11351,12 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         var smoothP = Box.createHorizontalBox();
         var usesmoothbox = new NStateButton<TriState>(KeplerSplineControl.getInstance(c).settings.getTriStateDisplay());
-        usesmoothbox.setIconOverrides(d -> {
+        /*usesmoothbox.setIconOverrides(d -> {
             return switch (d) {
                 case ALT_ENABLED -> new MergedIcon(new EmojiIcon("■", 23, Color.YELLOW), new EmojiIcon("\uD83C\uDD42", 23), -5, 1, true);
                 default -> null;
             };
-        });
+        });*/
         usesmoothbox.addActionListener($ -> {
             smooth[c] = usesmoothbox.getState().isOn();
             switch (usesmoothbox.getState()) {

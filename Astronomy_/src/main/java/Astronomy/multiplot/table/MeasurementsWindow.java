@@ -28,6 +28,9 @@ public class MeasurementsWindow extends JFrame {
         jTable.setColumnSelectionAllowed(true);
         jTable.setRowSelectionAllowed(true);
 
+        jTable.setFont(jTable.getFont().deriveFont(14f));
+        jTable.getTableHeader().setFont(jTable.getTableHeader().getFont().deriveFont(14f));
+
         jTable.getTableHeader().setReorderingAllowed(false);
         jTable.getTableHeader().setResizingAllowed(true);
 

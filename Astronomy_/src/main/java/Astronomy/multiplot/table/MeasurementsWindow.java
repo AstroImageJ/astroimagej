@@ -174,34 +174,56 @@ public class MeasurementsWindow extends JFrame {
 
         @Override
         public int getColumnCount() {
-            return table.getLastColumn() + 1;
+            return table.getLastColumn() + (table.showRowNumbers() ? 2 : 1);
         }
 
         @Override
         public Object getValueAt(int rowIndex, int columnIndex) {
-            columnIndex--;
-            if (columnIndex == -1) {
+            if (isLabelCol(columnIndex)) {
                 return table.getLabel(rowIndex);
             }
-            return table.getValue(table.getColumnHeading(columnIndex), rowIndex);
+            if (isRowNumCol(columnIndex)) {
+                return rowIndex+table.getBaseRowNumber();
+            }
+            return table.getValue(table.getColumnHeading(offsetCol(columnIndex)), rowIndex);
         }
 
         @Override
         public String getColumnName(int column) {
-            column--;
-            if (column == -1) {
+            if (isLabelCol(column)) {
                 return "Labels";
             }
-            return table.getColumnHeading(column);
+            if (isRowNumCol(column)) {
+                return "";
+            }
+            return table.getColumnHeading(offsetCol(column));
         }
 
         @Override
         public Class<?> getColumnClass(int columnIndex) {
-            columnIndex--;
-            if (columnIndex == -1) {
+            if (isLabelCol(columnIndex)) {
                 return String.class;
             }
+            if (isRowNumCol(columnIndex)) {
+                return Integer.class;
+            }
             return Double.class;
+        }
+
+        public boolean isLabelCol(int c) {
+            return offsetCol(c) == -1;
+        }
+
+        public boolean isRowNumCol(int c) {
+            return offsetCol(c) == -2;
+        }
+
+        public int offsetCol(int c) {
+            if (table.showRowNumbers()) {
+                return c-2;
+            }
+
+            return --c;
         }
     }
 }

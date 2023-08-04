@@ -896,6 +896,11 @@ public class ResultsTable implements Cloneable {
 		return showRowNumbers;
 	}
 
+	@AstroImageJ(reason = "Get offset for MeasurementsWindow")
+	public int getBaseRowNumber() {
+		return baseRowNumber;
+	}
+
 	public void showRowIndexes(boolean showIndexes) {
 		showRowNumbers = showIndexes;
 		baseRowNumber = showIndexes?0:1;

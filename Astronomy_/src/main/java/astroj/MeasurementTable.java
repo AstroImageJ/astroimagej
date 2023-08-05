@@ -98,7 +98,8 @@ public class MeasurementTable extends ResultsTable {
     }
 
     public void clearTable() {
-        INSTANCES.remove(shortName);
+        reset();
+        updateView(true);
     }
 
     /**
@@ -650,6 +651,25 @@ public class MeasurementTable extends ResultsTable {
         // PRESENT ResultsTable DOESN'T KEEP TRACK OF INDIVIDUAL PRECISIONS!!!
     }
 
+    public void rename(String newName) {
+        var oldName = shortName;
+        if (INSTANCES.containsKey(oldName)) {
+            INSTANCES.put(newName, INSTANCES.remove(oldName));
+            if (window != null) {
+                window.setTitle(newName);
+            }
+        }
+
+        shortName = newName;
+    }
+
+    /**
+     * @see #rename(String)
+     */
+    public void setShortName(String shortName) {
+        this.shortName = shortName;
+    }
+
     /**
      * Displays/Refreshes a MeasurementTable with long name.
      */
@@ -795,5 +815,10 @@ public class MeasurementTable extends ResultsTable {
         return i;
     }
 
-
+    @Override
+    public synchronized MeasurementTable clone() {
+        var n = (MeasurementTable) super.clone();
+        n.window = null;
+        return n;
+    }
 }

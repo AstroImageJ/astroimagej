@@ -4,6 +4,7 @@ import astroj.MeasurementTable;
 import ij.IJ;
 import ij.Menus;
 import ij.astro.io.prefs.Property;
+import ij.astro.io.prefs.PropertyKey;
 import ij.astro.logging.AIJLogger;
 import ij.gui.GenericDialog;
 import ij.gui.PlotContentsDialog;
@@ -29,6 +30,8 @@ public class MeasurementsWindow extends JFrame {
     private final MeasurementsTableView tableView;
     private MeasurementTable table;
     private final TableRowSorter<MeasurementsTableView> rowSorter;
+    @PropertyKey(ignoreAffixes = true, value = "results.loc")
+    private static final Property<Point> windowLocation = new Property<>(new Point(), MeasurementsWindow.class);
     private static final Property<Boolean> monospaced = new Property<>(false, MeasurementsWindow.class);
     private static final Property<Boolean> antialiased = new Property<>(false, MeasurementsWindow.class);
     private static final Property<Float> fontSize = new Property<>(14f, MeasurementsWindow.class);
@@ -37,6 +40,8 @@ public class MeasurementsWindow extends JFrame {
         super(MeasurementTable.longerName(table.shortTitle()));
         this.table = table;
         tableView = new MeasurementsTableView();
+
+        windowLocation.locationSavingWindow(this, null);
 
         // Create a JTable instance
         jTable = new JTable(tableView/*, */);

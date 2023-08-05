@@ -103,6 +103,7 @@ public class MeasurementsWindow extends JFrame {
     }
 
     public void setSelection(int row1, int row2) {
+        rowSorter.setRowFilter(null);
         row1 = jTable.convertRowIndexToView(row1);
         row2 = jTable.convertRowIndexToView(row2);
         jTable.setRowSelectionInterval(row1, row2);

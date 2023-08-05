@@ -174,7 +174,7 @@ public class Property<T> {
                 set((T) e.getComponent().getLocationOnScreen());
             }
         });
-        if (hasSaved()) {
+        if (hasSaved() || reference == null) {
             window.setLocation((Point) get());
         } else {
             UIHelper.setCenteredOnScreen(window, reference);

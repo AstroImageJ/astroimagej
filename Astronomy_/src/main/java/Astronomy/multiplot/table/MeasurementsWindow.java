@@ -6,7 +6,6 @@ import ij.IJ;
 import ij.Menus;
 import ij.astro.io.prefs.Property;
 import ij.astro.io.prefs.PropertyKey;
-import ij.astro.logging.AIJLogger;
 import ij.gui.GenericDialog;
 import ij.gui.PlotContentsDialog;
 import ij.measure.ResultsTableMacros;
@@ -20,10 +19,7 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.KeyEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.event.*;
 import java.text.DecimalFormat;
 
 public class MeasurementsWindow extends JFrame {
@@ -124,33 +120,7 @@ public class MeasurementsWindow extends JFrame {
                                 columnIndex = (e.getPoint().x < midPoint) ? i : i - 1;
                             }
 
-                            if (columnIndex < 0) {
-                                return;
-                            }
-
-                            TableColumn c = jTable.getColumnModel().getColumn(columnIndex);
-
-                            if (c == null) {
-                                return;
-                            }
-
-                            // Fit the header, adapted from TableColumn#sizeWidthToFit
-                            var headerRenderer = c.getHeaderRenderer();
-                            if (headerRenderer == null) {
-                                headerRenderer = jTable.getTableHeader().getDefaultRenderer();
-                            }
-                            Component headerBox = headerRenderer.getTableCellRendererComponent(null,
-                                    c.getHeaderValue(), false, false, 0, 0);
-
-                            // Find best width based on first 10 rows if they exist
-                            var width = headerBox.getPreferredSize().width;
-                            for (int row = 0; row < Math.min(jTable.getRowCount(), 10); row++) {
-                                var ren = jTable.getCellRenderer(row, columnIndex);
-                                var comp = jTable.prepareRenderer(ren, row, columnIndex);
-                                width = Math.max(width, comp.getPreferredSize().width + 2);
-                            }
-
-                            c.setPreferredWidth(width);
+                            adjustWidth(columnIndex);
                         });
                     }
                 }
@@ -181,6 +151,18 @@ public class MeasurementsWindow extends JFrame {
                 handleGotoEvent();
             }
         });
+
+        pack();
+
+        // Adjust widths on open
+        for (int c = 0; c < jTable.getColumnCount(); c++) {
+            adjustWidth(c);
+        }
+
+        scrollPane.getRowHeader()
+                .setPreferredSize(new Dimension(adjustWidth(rowHeadings, 0, true), 0));
+        firstColumnView.addTableModelListener(e -> scrollPane.getRowHeader()
+                .setPreferredSize(new Dimension(adjustWidth(rowHeadings, 0, true), 0)));
     }
 
     @Override
@@ -246,8 +228,82 @@ public class MeasurementsWindow extends JFrame {
             case ROW_DELETED -> tableView.fireTableRowsDeleted(i1, i2);
             case ROW_INSERTED -> tableView.fireTableRowsInserted(i1, i2);
             case ROW_UPDATED -> tableView.fireTableRowsUpdated(i1, i2);
-            case CELL_UPDATED -> tableView.fireTableCellUpdated(i1, i2);
+            case CELL_UPDATED -> {
+                adjustWidthOnRow(i1, i2);
+                tableView.fireTableCellUpdated(i1, i2);
+            }
         }
+    }
+
+    private void adjustWidthOnRow(int rowIndex, int columnIndex) {
+        if (rowIndex >= 10 || columnIndex < 0 || rowIndex < 0 || rowIndex >= jTable.getRowCount()) {
+            return;
+        }
+
+        TableColumn c = jTable.getColumnModel().getColumn(columnIndex);
+
+        if (c == null) {
+            return;
+        }
+
+        // Fit the header, adapted from TableColumn#sizeWidthToFit
+        var headerRenderer = c.getHeaderRenderer();
+        if (headerRenderer == null) {
+            headerRenderer = jTable.getTableHeader().getDefaultRenderer();
+        }
+        Component headerBox = headerRenderer.getTableCellRendererComponent(null,
+                c.getHeaderValue(), false, false, 0, 0);
+
+        // Find best width based on first 10 rows if they exist
+        var width = headerBox.getPreferredSize().width;
+        var ren = jTable.getCellRenderer(rowIndex, columnIndex);
+        var comp = jTable.prepareRenderer(ren, rowIndex, columnIndex);
+        width = Math.max(width, comp.getPreferredSize().width + 2);
+
+        c.setPreferredWidth(width);
+    }
+
+    private void adjustWidth(int columnIndex) {
+        adjustWidth(jTable, columnIndex, false);
+    }
+
+    private int adjustWidth(JTable table, int columnIndex, boolean reverse) {
+        if (columnIndex < 0) {
+            return 0;
+        }
+
+        TableColumn c = table.getColumnModel().getColumn(columnIndex);
+
+        if (c == null) {
+            return 0;
+        }
+
+        // Fit the header, adapted from TableColumn#sizeWidthToFit
+        var headerRenderer = c.getHeaderRenderer();
+        if (headerRenderer == null) {
+            headerRenderer = table.getTableHeader().getDefaultRenderer();
+        }
+        Component headerBox = headerRenderer.getTableCellRendererComponent(null,
+                c.getHeaderValue(), false, false, 0, 0);
+
+        // Find best width based on first 10 rows if they exist
+        var width = headerBox.getPreferredSize().width;
+        if (reverse) {
+            for (int row = table.getRowCount()-1; row > Math.max(table.getRowCount() - 10, 0); row--) {
+                var ren = table.getCellRenderer(row, columnIndex);
+                var comp = table.prepareRenderer(ren, row, columnIndex);
+                width = Math.max(width, comp.getPreferredSize().width + 2);
+            }
+        } else {
+            for (int row = 0; row < Math.min(table.getRowCount(), 10); row++) {
+                var ren = table.getCellRenderer(row, columnIndex);
+                var comp = table.prepareRenderer(ren, row, columnIndex);
+                width = Math.max(width, comp.getPreferredSize().width + 2);
+            }
+        }
+
+        c.setPreferredWidth(width);
+        return width;
     }
 
     private void addMenuBar() {

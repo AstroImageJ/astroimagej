@@ -59,6 +59,63 @@ public class MeasurementsWindow extends JFrame {
         jTable.getTableHeader().setReorderingAllowed(false);
         jTable.getTableHeader().setResizingAllowed(true);
 
+        // Double click to fit width
+        jTable.getTableHeader().addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() >= 2 && SwingUtilities.isLeftMouseButton(e)) {
+                    if (jTable.getTableHeader().getResizingAllowed()) {
+                        SwingUtilities.invokeLater(() -> {
+                            var i = jTable.getTableHeader().columnAtPoint(e.getPoint());
+                            var r = jTable.getTableHeader().getHeaderRect(i);
+
+                            // Make sure we are on the edge of the column
+                            r.grow(-3, 0);
+                            if (r.contains(e.getPoint())) {
+                                return;
+                            }
+
+                            int midPoint = r.x + r.width / 2;
+                            int columnIndex;
+                            if (getComponentOrientation().isLeftToRight()) {
+                                columnIndex = (e.getPoint().x < midPoint) ? i - 1 : i;
+                            } else {
+                                columnIndex = (e.getPoint().x < midPoint) ? i : i - 1;
+                            }
+
+                            if (columnIndex < 0) {
+                                return;
+                            }
+
+                            TableColumn c = jTable.getColumnModel().getColumn(columnIndex);
+
+                            if (c == null) {
+                                return;
+                            }
+
+                            // Fit the header, adapted from TableColumn#sizeWidthToFit
+                            var headerRenderer = c.getHeaderRenderer();
+                            if (headerRenderer == null) {
+                                headerRenderer = jTable.getTableHeader().getDefaultRenderer();
+                            }
+                            Component headerBox = headerRenderer.getTableCellRendererComponent(null,
+                                    c.getHeaderValue(), false, false, 0, 0);
+
+                            // Find best width based on first 10 rows if they exist
+                            var width = headerBox.getPreferredSize().width;
+                            for (int row = 0; row < Math.min(jTable.getRowCount(), 10); row++) {
+                                var ren = jTable.getCellRenderer(row, columnIndex);
+                                var comp = jTable.prepareRenderer(ren, row, columnIndex);
+                                width = Math.max(width, comp.getPreferredSize().width + 2);
+                            }
+
+                            c.setPreferredWidth(width);
+                        });
+                    }
+                }
+            }
+        });
+
         jTable.doLayout();
 
         // Create a JScrollPane to add the table to

@@ -264,7 +264,7 @@ public class MeasurementsWindow extends JFrame {
         mb.add(m);
 
         m = new Menu("Results");
-        i = new MenuItem("Clear Results");
+        i = new MenuItem("Clear All");
         i.addActionListener($ -> table.clearTable());
         m.add(i);
         i = new MenuItem("Summarize");

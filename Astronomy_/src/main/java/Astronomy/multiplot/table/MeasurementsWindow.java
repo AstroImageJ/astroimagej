@@ -1,5 +1,6 @@
 package Astronomy.multiplot.table;
 
+import Astronomy.multiplot.table.util.SynchronizedSelectionModel;
 import astroj.MeasurementTable;
 import ij.IJ;
 import ij.Menus;
@@ -27,6 +28,7 @@ import java.text.DecimalFormat;
 
 public class MeasurementsWindow extends JFrame {
     private final JTable jTable;
+    private final JTable rowHeadings;
     private final MeasurementsTableView tableView;
     private MeasurementTable table;
     private final TableRowSorter<MeasurementsTableView> rowSorter;
@@ -40,6 +42,9 @@ public class MeasurementsWindow extends JFrame {
         super(MeasurementTable.longerName(table.shortTitle()));
         this.table = table;
         tableView = new MeasurementsTableView();
+        var firstColumnView = new FirstColumnView(tableView);
+        rowHeadings = new JTable(firstColumnView);
+        tableView.addTableModelListener(firstColumnView::fireTableChanged);
 
         windowLocation.locationSavingWindow(this, null);
 
@@ -58,6 +63,42 @@ public class MeasurementsWindow extends JFrame {
 
         jTable.getTableHeader().setReorderingAllowed(false);
         jTable.getTableHeader().setResizingAllowed(true);
+
+        // Align row numbers to the center
+        rowHeadings.setDefaultRenderer(Integer.class, new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                setHorizontalAlignment(CENTER);
+                if (!isSelected) {
+                    setBackground(Color.LIGHT_GRAY);
+                    setForeground(Color.BLACK);
+                }
+                return this;
+            }
+        });
+
+        // Make sure table rows are copied, not the headings
+        rowHeadings.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                jTable.requestFocusInWindow();
+            }
+        });
+
+        // Sync row selection, make entire rows selectable
+        var smp = SynchronizedSelectionModel.createPair();
+        jTable.setSelectionModel(smp.first());
+        rowHeadings.setSelectionModel(smp.second());
+        var sm = rowHeadings.getSelectionModel();
+        sm.addListSelectionListener(e -> {
+            if (e instanceof SynchronizedSelectionModel.OwnedListSelectionEvent o) {
+                if (o.getOwner() == SynchronizedSelectionModel.Owner.ROW_HEADING) {
+                    jTable.addColumnSelectionInterval(0, jTable.getColumnCount()-1);
+                    //todo fire scroll event?
+                }
+            }
+        });
 
         // Double click to fit width
         jTable.getTableHeader().addMouseListener(new MouseAdapter() {
@@ -121,6 +162,9 @@ public class MeasurementsWindow extends JFrame {
         // Create a JScrollPane to add the table to
         JScrollPane scrollPane = new JScrollPane(jTable);
         scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+
+        //todo selecting rows and dragging offscreen only scrolls the header, not the main table. The inverse works
+        scrollPane.setRowHeaderView(rowHeadings);
 
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
@@ -278,6 +322,7 @@ public class MeasurementsWindow extends JFrame {
             if (f > 1) {
                 fontSize.set(f);
                 jTable.setFont(jTable.getFont().deriveFont(fontSize.get()));
+                rowHeadings.setFont(jTable.getFont());
             }
         });
         m.add(i);
@@ -286,6 +331,7 @@ public class MeasurementsWindow extends JFrame {
             var f = fontSize.get() + 2;
             fontSize.set(f);
             jTable.setFont(jTable.getFont().deriveFont(fontSize.get()));
+            rowHeadings.setFont(jTable.getFont());
         });
         m.add(i);
         m.addSeparator();
@@ -299,6 +345,7 @@ public class MeasurementsWindow extends JFrame {
                 monospaced.set(false);
                 jTable.setFont(new Font("SansSerif", Font.PLAIN, fontSize.get().intValue()));
             }
+            rowHeadings.setFont(jTable.getFont());
         });
         m.add(i);
         i = new CheckboxMenuItem("Antialiasing");
@@ -316,6 +363,7 @@ public class MeasurementsWindow extends JFrame {
             antialiased.set(false);
             Java2.setAntialiasedText(getGraphics(), antialiased.get());
             jTable.setFont(new Font("SansSerif", Font.PLAIN, fontSize.get().intValue()));
+            rowHeadings.setFont(jTable.getFont());
         });
         m.add(i);
         mb.add(m);
@@ -409,6 +457,34 @@ public class MeasurementsWindow extends JFrame {
                 value = decimalFormat.format(value);
             }
             super.setValue(value);
+        }
+    }
+
+    public static class FirstColumnView extends AbstractTableModel {
+        private final MeasurementsTableView view;
+
+        public FirstColumnView(MeasurementsTableView view) {
+            this.view = view;
+        }
+
+        @Override
+        public int getRowCount() {
+            return view.getRowCount();
+        }
+
+        @Override
+        public int getColumnCount() {
+            return 1;
+        }
+
+        @Override
+        public Object getValueAt(int rowIndex, int columnIndex) {
+            return rowIndex + 1;
+        }
+
+        @Override
+        public Class<?> getColumnClass(int columnIndex) {
+            return Integer.class;
         }
     }
 

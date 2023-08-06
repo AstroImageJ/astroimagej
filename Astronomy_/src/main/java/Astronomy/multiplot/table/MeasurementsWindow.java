@@ -37,6 +37,10 @@ public class MeasurementsWindow extends JFrame {
     public MeasurementsWindow(MeasurementTable table) {
         super(MeasurementTable.longerName(table.shortTitle()));
         this.table = table;
+
+        // Ensure row numbers are not shown, the table always displays them
+        table.showRowNumbers(false);
+
         tableView = new MeasurementsTableView();
         var firstColumnView = new FirstColumnView(tableView);
         rowHeadings = new JTable(firstColumnView);

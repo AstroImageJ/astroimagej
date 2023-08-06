@@ -99,7 +99,7 @@ public class MeasurementTable extends ResultsTable {
 
     public void clearTable() {
         reset();
-        updateView(true);
+        updateView(MeasurementsWindow.UpdateEvent.REBUILD);
     }
 
     /**
@@ -640,13 +640,20 @@ public class MeasurementTable extends ResultsTable {
 //		return table;
 //		}
 
+
+    @Override
+    public synchronized void incrementCounter() {
+        super.incrementCounter();
+        updateView(MeasurementsWindow.UpdateEvent.ROW_INSERTED, getCounter()-1, getCounter()-1);
+    }
+
     /**
      * Stores a number using a temporary different number of decimal places.
      */
     public void addValue(String column, double value, int places) {
         setPrecision(16);
         super.addValue(column, value);
-        updateView();
+        updateView(MeasurementsWindow.UpdateEvent.CELL_UPDATED, getColumnIndex(column), getCounter()-1);
         // setPrecision (DEFAULT_DECIMALS);
         // PRESENT ResultsTable DOESN'T KEEP TRACK OF INDIVIDUAL PRECISIONS!!!
     }
@@ -688,7 +695,7 @@ public class MeasurementTable extends ResultsTable {
                 window.setTable(this);
                 INSTANCES.put(shortName, this);
             } else {
-                updateView();
+                updateView(MeasurementsWindow.UpdateEvent.DATA_CHANGED);
             }
             window.setVisible(true);
         });
@@ -699,14 +706,14 @@ public class MeasurementTable extends ResultsTable {
         show();
     }
 
-    public void updateView() {
-        updateView(false);
+    public void updateView(MeasurementsWindow.UpdateEvent event) {
+        updateView(event, 0, 0);
     }
 
-    public void updateView(boolean columnChanged) {
+    public void updateView(MeasurementsWindow.UpdateEvent event, int i1, int i2) {
         SwingUtilities.invokeLater(() -> {
             if (window != null) {
-                window.update(columnChanged);
+                window.update(event, i1, i2);
             }
         });
     }
@@ -799,19 +806,19 @@ public class MeasurementTable extends ResultsTable {
     @Override
     public void setHeading(int column, String heading) {
         super.setHeading(column, heading);
-        updateView(true);
+        updateView(MeasurementsWindow.UpdateEvent.REBUILD);
     }
 
     @Override
     public synchronized void deleteRow(int rowIndex) {
         super.deleteRow(rowIndex);
-        updateView();
+        updateView(MeasurementsWindow.UpdateEvent.ROW_DELETED, rowIndex, rowIndex);
     }
 
     @Override
     public int getFreeColumn(String heading) {
         var i = super.getFreeColumn(heading);
-        updateView(true);
+        updateView(MeasurementsWindow.UpdateEvent.REBUILD);
         return i;
     }
 

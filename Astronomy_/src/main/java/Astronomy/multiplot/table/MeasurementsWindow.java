@@ -100,7 +100,7 @@ public class MeasurementsWindow extends JFrame {
 
     public void setTable(MeasurementTable table) {
         this.table = table;
-        update(true);
+        update(UpdateEvent.REBUILD);
     }
 
     public void scrollToBottom() {
@@ -129,14 +129,23 @@ public class MeasurementsWindow extends JFrame {
         return a.length > 0 ? jTable.convertRowIndexToModel(a[a.length-1]) : -1;
     }
 
-    public void update() {
-        update(false);
+
+    public void update(UpdateEvent event) {
+        if (event == UpdateEvent.REBUILD || event == UpdateEvent.DATA_CHANGED) {
+            update(event, 0, 0);
+        } else {
+            throw new IllegalArgumentException("Given even requires coordinates");
+        }
     }
 
-    public void update(boolean columnChanged) {
-        tableView.fireTableDataChanged();
-        if (columnChanged) {
-            tableView.fireTableStructureChanged();
+    public void update(UpdateEvent event, int i1, int i2) {
+        switch (event) {
+            case REBUILD -> tableView.fireTableStructureChanged();
+            case DATA_CHANGED -> tableView.fireTableDataChanged();
+            case ROW_DELETED -> tableView.fireTableRowsDeleted(i1, i2);
+            case ROW_INSERTED -> tableView.fireTableRowsInserted(i1, i2);
+            case ROW_UPDATED -> tableView.fireTableRowsUpdated(i1, i2);
+            case CELL_UPDATED -> tableView.fireTableCellUpdated(i1, i2);
         }
     }
 
@@ -318,6 +327,15 @@ public class MeasurementsWindow extends JFrame {
                 }
             }
         }
+    }
+
+    public enum UpdateEvent {
+        REBUILD,
+        DATA_CHANGED,
+        ROW_DELETED,
+        ROW_INSERTED,
+        ROW_UPDATED,
+        CELL_UPDATED,
     }
 
     private static class DoubleCellRenderer extends DefaultTableCellRenderer {

@@ -653,7 +653,7 @@ public class MeasurementTable extends ResultsTable {
     public void addValue(String column, double value, int places) {
         setPrecision(16);
         super.addValue(column, value);
-        updateView(MeasurementsWindow.UpdateEvent.CELL_UPDATED, getColumnIndex(column), getCounter()-1);
+        updateView(MeasurementsWindow.UpdateEvent.CELL_UPDATED, getCounter()-1, getColumnIndex(column));
         // setPrecision (DEFAULT_DECIMALS);
         // PRESENT ResultsTable DOESN'T KEEP TRACK OF INDIVIDUAL PRECISIONS!!!
     }

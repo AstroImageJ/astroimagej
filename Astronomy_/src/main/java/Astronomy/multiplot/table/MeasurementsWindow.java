@@ -352,11 +352,20 @@ public class MeasurementsWindow extends JFrame {
             }
         });
         m.add(i);
-        /*i = new MenuItem("Clear");
+        i = new MenuItem("Clear");
         i.addActionListener($ -> {
-            //todo disabled as it deletes rows, can't select them currently
+            // Entire row selected
+            if (jTable.getSelectedColumns().length == jTable.getColumnCount()) {
+                var idx = jTable.getSelectedRows();
+                for (int i1 = idx.length - 1; i1 >= 0; i1--) {
+                    table.deleteRow(jTable.convertRowIndexToModel(idx[i1]));
+                }
+                if (idx.length > 0) {
+                    table.updateRelatedPlot();
+                }
+            }
         });
-        m.add(i);*/
+        m.add(i);
         i = new MenuItem("Select All", new MenuShortcut(KeyEvent.VK_A));
         i.addActionListener($ -> jTable.selectAll());
         m.add(i);

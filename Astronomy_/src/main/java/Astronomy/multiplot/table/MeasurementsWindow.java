@@ -21,6 +21,7 @@ import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.event.*;
 import java.text.DecimalFormat;
+import java.util.Arrays;
 
 public class MeasurementsWindow extends JFrame {
     private final JTable jTable;
@@ -357,8 +358,10 @@ public class MeasurementsWindow extends JFrame {
             // Entire row selected
             if (jTable.getSelectedColumns().length == jTable.getColumnCount()) {
                 var idx = jTable.getSelectedRows();
+                // Needs to be sorted as we are removing rows in descending order
+                idx = Arrays.stream(idx).map(jTable::convertRowIndexToModel).sorted().toArray();
                 for (int i1 = idx.length - 1; i1 >= 0; i1--) {
-                    table.deleteRow(jTable.convertRowIndexToModel(idx[i1]));
+                    table.deleteRow(idx[i1]);
                 }
                 if (idx.length > 0) {
                     table.updateRelatedPlot();

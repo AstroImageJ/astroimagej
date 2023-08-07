@@ -712,11 +712,19 @@ public class MeasurementTable extends ResultsTable {
     }
 
     public void updateView(MeasurementsWindow.UpdateEvent event, int i1, int i2) {
-        SwingUtilities.invokeLater(() -> {
+        // If coming from the event thread, it may be the table -
+        // in which case delaying the update can cause the view and the model to desync
+        if (SwingUtilities.isEventDispatchThread()) {
             if (window != null) {
                 window.update(event, i1, i2);
             }
-        });
+        } else {
+            SwingUtilities.invokeLater(() -> {
+                if (window != null) {
+                    window.update(event, i1, i2);
+                }
+            });
+        }
     }
 
     /**

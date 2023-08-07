@@ -2,6 +2,7 @@
 
 package astroj;
 
+import Astronomy.MultiPlot_;
 import Astronomy.multiplot.table.MeasurementsWindow;
 import ij.IJ;
 import ij.ImagePlus;
@@ -813,6 +814,12 @@ public class MeasurementTable extends ResultsTable {
     public synchronized void deleteRow(int rowIndex) {
         super.deleteRow(rowIndex);
         updateView(MeasurementsWindow.UpdateEvent.ROW_DELETED, rowIndex, rowIndex);
+    }
+
+    public synchronized void updateRelatedPlot() {
+        if (MultiPlot_.isRunning() && MultiPlot_.getTable() == this) {
+            MultiPlot_.updatePlot();
+        }
     }
 
     @Override

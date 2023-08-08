@@ -1,10 +1,12 @@
 package Astronomy.multiplot.table;
 
+import Astronomy.Aperture_;
 import Astronomy.multiplot.table.util.FilterHandler;
 import Astronomy.multiplot.table.util.SynchronizedSelectionModel;
 import astroj.MeasurementTable;
 import ij.IJ;
 import ij.Menus;
+import ij.Prefs;
 import ij.astro.io.prefs.Property;
 import ij.astro.io.prefs.PropertyKey;
 import ij.gui.GenericDialog;
@@ -34,6 +36,7 @@ public class MeasurementsWindow extends JFrame {
     private static final Property<Point> windowLocation = new Property<>(new Point(), MeasurementsWindow.class);
     private static final Property<Boolean> monospaced = new Property<>(false, MeasurementsWindow.class);
     private static final Property<Boolean> antialiased = new Property<>(false, MeasurementsWindow.class);
+    private static final Property<Boolean> showSatWarning = new Property<>(false, MeasurementsWindow.class);
     private static final Property<Float> fontSize = new Property<>(14f, MeasurementsWindow.class);
     private FilterHandler filterWindow;
 
@@ -492,6 +495,13 @@ public class MeasurementsWindow extends JFrame {
         i = new MenuItem("Options...");
         i.addActionListener($ -> IJ.doCommand("Input/Output..."));
         m.add(i);
+        cbi = new CheckboxMenuItem("Show saturation warning", showSatWarning.get());
+        CheckboxMenuItem finalCbi2 = cbi;
+        cbi.addItemListener($ -> {
+            showSatWarning.set(finalCbi2.getState());
+            jTable.repaint();
+        });
+        m.add(cbi);
         mb.add(m);
 
         setMenuBar(mb);
@@ -543,6 +553,8 @@ public class MeasurementsWindow extends JFrame {
     }
 
     private static class DoubleCellRenderer extends DefaultTableCellRenderer {
+        private final double saturationWarningLevel = Prefs.get(Aperture_.AP_PREFS_SATWARNLEVEL, 55000);
+        private final double linearityWarningLevel = Prefs.get(Aperture_.AP_PREFS_LINWARNLEVEL, 30000);
         private final DecimalFormat decimalFormat;
 
         public DoubleCellRenderer(int decimalPlaces) {
@@ -556,6 +568,26 @@ public class MeasurementsWindow extends JFrame {
                 value = decimalFormat.format(value);
             }
             super.setValue(value);
+        }
+
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+            super.getTableCellRendererComponent(table, value, isSelected, hasFocus,
+                    row, column);
+            if (!isSelected && showSatWarning.get()) {
+                setBackground(table.getBackground());
+                if (table.getColumnName(column).startsWith("Peak_")) {
+                    if (value instanceof Double d) {
+                        if (d >=saturationWarningLevel) {
+                            setBackground(Color.RED);
+                        } else if (d >= linearityWarningLevel) {
+                            setBackground(Color.YELLOW);
+                        }
+                    }
+                }
+            }
+
+            return this;
         }
     }
 

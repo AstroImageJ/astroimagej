@@ -171,7 +171,9 @@ public class Property<T> {
         window.addComponentListener(new ComponentAdapter() {
             @Override
             public void componentMoved(ComponentEvent e) {
-                set((T) e.getComponent().getLocationOnScreen());
+                if (e.getComponent().isVisible()) {
+                    set((T) e.getComponent().getLocationOnScreen());
+                }
             }
         });
         if (hasSaved() || reference == null) {

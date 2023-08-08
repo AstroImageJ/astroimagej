@@ -1,5 +1,6 @@
 package Astronomy.multiplot.table;
 
+import Astronomy.multiplot.table.util.FilterHandler;
 import Astronomy.multiplot.table.util.SynchronizedSelectionModel;
 import astroj.MeasurementTable;
 import ij.IJ;
@@ -34,6 +35,7 @@ public class MeasurementsWindow extends JFrame {
     private static final Property<Boolean> monospaced = new Property<>(false, MeasurementsWindow.class);
     private static final Property<Boolean> antialiased = new Property<>(false, MeasurementsWindow.class);
     private static final Property<Float> fontSize = new Property<>(14f, MeasurementsWindow.class);
+    private FilterHandler filterWindow;
 
     public MeasurementsWindow(MeasurementTable table) {
         super(MeasurementTable.longerName(table.shortTitle()));
@@ -403,9 +405,10 @@ public class MeasurementsWindow extends JFrame {
         m.add(i);
         i = new MenuItem("Filter...", new MenuShortcut(KeyEvent.VK_G));
         i.addActionListener($ -> {
-            //todo impl
-            //rowSorter.setRowFilter(RowFilter.numberFilter());
-            //new FilterWindow(this).setVisible(true);
+            if (filterWindow == null) {
+                filterWindow = new FilterHandler(this);
+            }
+            filterWindow.setVisible(true);
         });
         m.add(i);
         mb.add(m);

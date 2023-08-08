@@ -195,13 +195,36 @@ public class MeasurementsWindow extends JFrame {
         jTable.scrollRectToVisible(jTable.getCellRect(tableView.getRowCount(), 0, true));
     }
 
-    public void setSelection(int row1, int row2) {
+    public void setSelection(int rowStart, int rowEnd) {
+        // Remove filter so all rows are visible
         rowSorter.setRowFilter(null);
-        row1 = jTable.convertRowIndexToView(row1);
-        row2 = jTable.convertRowIndexToView(row2);
-        jTable.setRowSelectionInterval(row1, row2);
+
+        if (rowStart > rowEnd) {
+            rowEnd = rowStart;
+        }
+        if (rowStart < 0) {
+            rowStart = 0;
+        }
+        if (rowEnd < 0) {
+            rowEnd = 0;
+        }
+        if (rowStart >= jTable.getRowCount()) {
+            rowStart = jTable.getRowCount() - 1;
+        }
+        if (rowEnd >= jTable.getRowCount()) {
+            rowEnd = jTable.getRowCount() - 1;
+        }
+
+        // Accommodate tables sorted such that the interval is no longer continuous
+        jTable.clearSelection();
+        for (int r = rowStart; r <= rowEnd; r++) {
+            var rowToSelect = jTable.convertRowIndexToView(r);
+            if (rowToSelect >= 0) {
+                jTable.addRowSelectionInterval(rowToSelect, rowToSelect);
+            }
+        }
+        jTable.scrollRectToVisible(jTable.getCellRect(jTable.convertRowIndexToView(rowStart), 0, true));
         jTable.setColumnSelectionInterval(0, jTable.getColumnCount()-1);
-        jTable.scrollRectToVisible(jTable.getCellRect(row1, 0, true));
     }
 
     public int getLineCount() {

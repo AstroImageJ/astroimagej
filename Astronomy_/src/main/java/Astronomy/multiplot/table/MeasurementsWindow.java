@@ -446,7 +446,7 @@ public class MeasurementsWindow extends JFrame {
             rowHeadings.setFont(jTable.getFont());
         });
         m.add(i);
-        i = new CheckboxMenuItem("Antialiasing");
+        i = new CheckboxMenuItem("Antialiasing", antialiased.get());
         MenuItem finalI1 = i;
         i.addActionListener($ -> {
             antialiased.set(((CheckboxMenuItem) finalI1).getState());

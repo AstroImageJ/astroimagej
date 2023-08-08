@@ -433,10 +433,10 @@ public class MeasurementsWindow extends JFrame {
         });
         m.add(i);
         m.addSeparator();
-        i = new CheckboxMenuItem("Monospaced", monospaced.get());
-        MenuItem finalI = i;
-        i.addActionListener($ -> {
-            if (((CheckboxMenuItem) finalI).getState()) {
+        var cbi = new CheckboxMenuItem("Monospaced", monospaced.get());
+        CheckboxMenuItem finalCbi = cbi;
+        cbi.addItemListener($ -> {
+            if (finalCbi.getState()) {
                 monospaced.set(true);
                 jTable.setFont(new Font("Monospaced", Font.PLAIN, fontSize.get().intValue()));
             } else {
@@ -445,14 +445,15 @@ public class MeasurementsWindow extends JFrame {
             }
             rowHeadings.setFont(jTable.getFont());
         });
-        m.add(i);
-        i = new CheckboxMenuItem("Antialiasing", antialiased.get());
-        MenuItem finalI1 = i;
-        i.addActionListener($ -> {
-            antialiased.set(((CheckboxMenuItem) finalI1).getState());
+        m.add(cbi);
+        cbi = new CheckboxMenuItem("Antialiasing", antialiased.get());
+        CheckboxMenuItem finalCbi1 = cbi;
+        cbi.addItemListener($ -> {
+            antialiased.set(finalCbi1.getState());
             Java2.setAntialiasedText(getGraphics(), antialiased.get());
+            jTable.repaint();
         });
-        m.add(i);
+        m.add(cbi);
         m.addSeparator();
         i = new MenuItem("Default Settings");
         i.addActionListener($ -> {

@@ -9,6 +9,7 @@ import ij.Menus;
 import ij.Prefs;
 import ij.astro.io.prefs.Property;
 import ij.astro.io.prefs.PropertyKey;
+import ij.astro.logging.AIJLogger;
 import ij.gui.GenericDialog;
 import ij.gui.PlotContentsDialog;
 import ij.measure.ResultsTableMacros;
@@ -646,6 +647,31 @@ public class MeasurementsWindow extends JFrame {
                 return rowIndex+table.getBaseRowNumber();
             }
             return table.getValue(table.getColumnHeading(offsetCol(columnIndex)), rowIndex);
+        }
+
+        @Override
+        public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
+            if (isLabelCol(columnIndex)) {
+                if (aValue instanceof String s) {
+                    table.setLabel(s, rowIndex);
+                } else {
+                    AIJLogger.log("Tried to write %s, which is not a string, to the label".formatted(aValue));
+                    return;
+                }
+            } else {
+                if (aValue instanceof Number n) {
+                    table.setValue(offsetCol(columnIndex), rowIndex, n.doubleValue());
+                } else {
+                    AIJLogger.log("Tried to write %s, which is not a number, to a cell".formatted(aValue));
+                    return;
+                }
+            }
+            table.updateRelatedPlot();
+        }
+
+        @Override
+        public boolean isCellEditable(int rowIndex, int columnIndex) {
+            return !isRowNumCol(columnIndex);
         }
 
         @Override

@@ -656,7 +656,13 @@ public class MeasurementsWindow extends JFrame {
             if (isRowNumCol(column)) {
                 return "";
             }
-            return table.getColumnHeading(offsetCol(column));
+
+            var h = table.getColumnHeading(offsetCol(column));
+            if (h != null) {
+                return h;
+            }
+
+            return super.getColumnName(column);
         }
 
         @Override

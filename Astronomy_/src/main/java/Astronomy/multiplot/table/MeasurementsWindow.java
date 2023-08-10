@@ -550,7 +550,7 @@ public class MeasurementsWindow extends JFrame {
             if (!rowInput.isEmpty()) {
                 int row = Integer.parseInt(rowInput.trim());
 
-                if (row >= 0 && row < table.size() && column >= 0 && column < table.getLastColumn()) {
+                if (row >= 0 && row <= jTable.getRowCount() && column >= 0 && column <= jTable.getColumnCount()) {
                     // Scroll to the specified cell
                     Rectangle cellRect = jTable.getCellRect(row, column, true);
                     jTable.scrollRectToVisible(cellRect);

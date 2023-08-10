@@ -235,7 +235,12 @@ public class MeasurementsWindow extends JFrame {
                 jTable.addRowSelectionInterval(rowToSelect, rowToSelect);
             }
         }
-        jTable.scrollRectToVisible(jTable.getCellRect(jTable.convertRowIndexToView(rowStart), 0, true));
+
+        // Scroll vertically only
+        var cellRect = jTable.getCellRect(jTable.convertRowIndexToView(rowStart), 0, true);
+        var visibleRect = jTable.getVisibleRect();
+        cellRect.x = visibleRect.x;
+        jTable.scrollRectToVisible(cellRect);
         jTable.setColumnSelectionInterval(0, jTable.getColumnCount()-1);
     }
 

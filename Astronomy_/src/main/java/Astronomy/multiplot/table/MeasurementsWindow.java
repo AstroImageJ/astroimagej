@@ -2,6 +2,7 @@ package Astronomy.multiplot.table;
 
 import Astronomy.Aperture_;
 import Astronomy.multiplot.table.util.FilterHandler;
+import Astronomy.multiplot.table.util.FindHandler;
 import Astronomy.multiplot.table.util.SynchronizedSelectionModel;
 import astroj.MeasurementTable;
 import ij.IJ;
@@ -40,6 +41,7 @@ public class MeasurementsWindow extends JFrame {
     private static final Property<Boolean> showSatWarning = new Property<>(false, MeasurementsWindow.class);
     private static final Property<Float> fontSize = new Property<>(14f, MeasurementsWindow.class);
     private FilterHandler filterWindow;
+    private FindHandler findWindow;
 
     public MeasurementsWindow(MeasurementTable table) {
         super(MeasurementTable.longerName(table.shortTitle()));
@@ -186,6 +188,10 @@ public class MeasurementsWindow extends JFrame {
 
     public MeasurementTable getTable() {
         return table;
+    }
+
+    public JTable getJTable() {
+        return jTable;
     }
 
     public TableRowSorter<MeasurementsTableView> getRowSorter() {
@@ -404,7 +410,10 @@ public class MeasurementsWindow extends JFrame {
         m.addSeparator();
         i = new MenuItem("Find...", new MenuShortcut(KeyEvent.VK_F));
         i.addActionListener($ -> {
-            //todo imp
+            if (findWindow == null) {
+                findWindow = new FindHandler(this);
+            }
+            findWindow.setVisible(true);
         });
         m.add(i);
         i = new MenuItem("Filter...", new MenuShortcut(KeyEvent.VK_G));

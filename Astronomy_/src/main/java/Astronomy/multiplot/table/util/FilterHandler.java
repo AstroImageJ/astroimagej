@@ -25,19 +25,24 @@ public class FilterHandler extends JDialog {
     //todo  add another group that handles basic regex input
     private static final Pattern FILTER_PATTERN =
             Pattern.compile("(\\((?<COLUMN>c(?:[0-9]+|[a-zA-Z0-9_]+))?\\s*(?<FILTER>(?:r[\\w\\d]+|[<>=!][0-9.]+))\\)\\s*(?<AND>&)?)");
-    private final MeasurementsWindow window;
+    final MeasurementsWindow window;
 
     public FilterHandler(MeasurementsWindow window) {
         super(window, "Filter...", false);
         this.window = window;
 
+        addComponents();
+
+        pack();
+    }
+
+    protected void addComponents() {
         var input = new JTextField(30);
         input.addActionListener($ -> {
             window.getRowSorter().setRowFilter(buildFilterFromInput(input.getText()));
         });
+        //input.getDocument().addDocumentListener($ -> {});
         add(input);
-
-        pack();
     }
 
     // todo should default be AND?

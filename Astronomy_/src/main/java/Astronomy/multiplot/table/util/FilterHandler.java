@@ -30,6 +30,7 @@ public class FilterHandler extends JDialog {
     public FilterHandler(MeasurementsWindow window) {
         super(window, "Filter...", false);
         this.window = window;
+        setModalityType(ModalityType.MODELESS);
 
         addComponents();
 

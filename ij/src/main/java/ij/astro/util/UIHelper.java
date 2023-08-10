@@ -76,6 +76,13 @@ public class UIHelper {
         }
     }
 
+    public static void setCenteredOnWindow(Container window, Container referenceWindow) {
+        var ref = referenceWindow.getLocationOnScreen();
+        ref.translate(referenceWindow.getWidth()/2, referenceWindow.getHeight()/2);
+        ref.translate(-window.getWidth()/2, -window.getHeight()/2);
+        window.setLocation(ref);
+    }
+
     public static void setLocationOnScreen(Window window, int screen, double x, double y) {
         GraphicsEnvironment g = GraphicsEnvironment.getLocalGraphicsEnvironment();
         GraphicsDevice[]    d = g.getScreenDevices();

@@ -1,6 +1,7 @@
 package Astronomy.multiplot.table.util;
 
 import Astronomy.multiplot.table.MeasurementsWindow;
+import ij.astro.util.UIHelper;
 import ij.measure.ResultsTable;
 
 import javax.swing.*;
@@ -35,6 +36,15 @@ public class FilterHandler extends JDialog {
         addComponents();
 
         pack();
+        UIHelper.setCenteredOnWindow(this, window);
+    }
+
+    @Override
+    public void setVisible(boolean b) {
+        if (b && !isVisible()) {
+            UIHelper.setCenteredOnWindow(this, window);
+        }
+        super.setVisible(b);
     }
 
     protected void addComponents() {

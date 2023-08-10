@@ -552,7 +552,9 @@ public class MeasurementsWindow extends JFrame {
 
                 if (row >= 0 && row <= jTable.getRowCount() && column >= 0 && column <= jTable.getColumnCount()) {
                     // Scroll to the specified cell
-                    Rectangle cellRect = jTable.getCellRect(row, column, true);
+                    var cellRect = jTable.getCellRect(row, column, true);
+                    var visibleRect = jTable.getVisibleRect();
+                    cellRect.x += visibleRect.width - cellRect.width;
                     jTable.scrollRectToVisible(cellRect);
 
                     jTable.setRowSelectionInterval(row, row);

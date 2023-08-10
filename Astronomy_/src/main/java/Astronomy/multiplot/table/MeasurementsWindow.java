@@ -27,6 +27,9 @@ import java.awt.*;
 import java.awt.event.*;
 import java.text.DecimalFormat;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.regex.Pattern;
 
 public class MeasurementsWindow extends JFrame {
     private final JTable jTable;
@@ -574,6 +577,8 @@ public class MeasurementsWindow extends JFrame {
     private static class DoubleCellRenderer extends DefaultTableCellRenderer {
         private final double saturationWarningLevel = Prefs.get(Aperture_.AP_PREFS_SATWARNLEVEL, 55000);
         private final double linearityWarningLevel = Prefs.get(Aperture_.AP_PREFS_LINWARNLEVEL, 30000);
+        private static final Pattern AP_PATTERN = Pattern.compile(".+_(?<AP>[CT][0-9]+)");
+        private final Map<String, Integer> apColMap = new HashMap<>();
         private final DecimalFormat decimalFormat;
 
         public DoubleCellRenderer(int decimalPlaces) {
@@ -601,6 +606,33 @@ public class MeasurementsWindow extends JFrame {
                             setBackground(Color.RED);
                         } else if (d >= linearityWarningLevel) {
                             setBackground(Color.YELLOW);
+                        }
+                    }
+                } else {
+                    var m = AP_PATTERN.matcher(table.getColumnName(column));
+                    if (m.matches()) {
+                        var ap = m.group("AP");
+                        if (ap != null) {
+                            apColMap.computeIfAbsent(ap, s -> {
+                                var c = table.getColumn("Peak_" + s);
+                                if (c != null) {
+                                    return c.getModelIndex();
+                                }
+                                return -1;
+                            });
+
+                            var c = apColMap.get(ap);
+                            if (c > -1) {
+                                if (table.getValueAt(row, apColMap.get(ap)) instanceof Double d) {
+                                    if (d >=saturationWarningLevel) {
+                                        setBackground(Color.RED);
+                                    } else if (d >= linearityWarningLevel) {
+                                        setBackground(Color.YELLOW);
+                                    }
+                                }
+                            } else {
+                                AIJLogger.log("Failed to find matching Peak column for ap " + ap);
+                            }
                         }
                     }
                 }

@@ -429,6 +429,10 @@ public class MeasurementsWindow extends JFrame {
             filterWindow.setVisible(true);
         });
         m.add(i);
+        //todo this shows as (and works with) Ctrl+F3, while F3 on its own is sufficient (and preferred)
+        i = new MenuItem("Goto...", new MenuShortcut(KeyEvent.VK_F3));
+        i.addActionListener($ -> handleGotoEvent());
+        m.add(i);
         mb.add(m);
 
         m = new Menu("Font");

@@ -16,6 +16,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -688,29 +689,39 @@ public class MeasurementTable extends ResultsTable {
      * Displays/Refreshes a MeasurementTable with long name.
      */
     public void show() {
-        INSTANCES.putIfAbsent(shortName, this);
-        SwingUtilities.invokeLater(() -> {
-            if (window == null) {
-                // Fetch previous window and update it
-                window = getMeasurementsWindow(shortName);
-
-                if (window == null) {
-                    window = new MeasurementsWindow(this);
-                }
+        if (SwingUtilities.isEventDispatchThread()) {
+            threadlessShow();
+        } else {
+            try {
+                SwingUtilities.invokeAndWait(this::threadlessShow);
+            } catch (InterruptedException | InvocationTargetException e) {
+                e.printStackTrace();
             }
-            if (window.getTable() != this) {
-                window.setTable(this);
-                INSTANCES.put(shortName, this);
-            } else {
-                updateView(MeasurementsWindow.UpdateEvent.DATA_CHANGED);
-            }
-            window.setVisible(true);
-        });
+        }
     }
 
     @Override
     public void show(String name) {
         show();
+    }
+
+    private void threadlessShow() {
+        INSTANCES.putIfAbsent(shortName, this);
+        if (window == null) {
+            // Fetch previous window and update it
+            window = getMeasurementsWindow(shortName);
+
+            if (window == null) {
+                window = new MeasurementsWindow(this);
+            }
+        }
+        if (window.getTable() != this) {
+            window.setTable(this);
+            INSTANCES.put(shortName, this);
+        } else {
+            updateView(MeasurementsWindow.UpdateEvent.DATA_CHANGED);
+        }
+        window.setVisible(true);
     }
 
     public void updateView(MeasurementsWindow.UpdateEvent event) {

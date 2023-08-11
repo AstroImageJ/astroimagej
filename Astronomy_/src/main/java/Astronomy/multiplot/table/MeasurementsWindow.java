@@ -19,6 +19,7 @@ import ij.plugin.filter.Analyzer;
 import ij.util.Java2;
 
 import javax.swing.*;
+import javax.swing.border.Border;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableColumn;
@@ -65,6 +66,7 @@ public class MeasurementsWindow extends JFrame {
         rowSorter = new TableRowSorter<>(tableView);
         jTable.setRowSorter(rowSorter);
         jTable.setDefaultRenderer(Double.class, new DoubleCellRenderer(6));
+        jTable.setDefaultRenderer(String.class, new PaddedRenderer());
         jTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 
         jTable.setColumnSelectionAllowed(true);
@@ -581,7 +583,7 @@ public class MeasurementsWindow extends JFrame {
         CELL_UPDATED,
     }
 
-    private static class DoubleCellRenderer extends DefaultTableCellRenderer {
+    private static class DoubleCellRenderer extends PaddedRenderer {
         private final double saturationWarningLevel = Prefs.get(Aperture_.AP_PREFS_SATWARNLEVEL, 55000);
         private final double linearityWarningLevel = Prefs.get(Aperture_.AP_PREFS_LINWARNLEVEL, 30000);
         private static final Pattern AP_PATTERN = Pattern.compile(".+_(?<AP>[CT][0-9]+)");
@@ -644,6 +646,21 @@ public class MeasurementsWindow extends JFrame {
                     }
                 }
             }
+
+            return this;
+        }
+    }
+
+    private static class PaddedRenderer extends DefaultTableCellRenderer {
+        final Border padding = BorderFactory.createEmptyBorder(1, 3, 1, 3);
+
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+            super.getTableCellRendererComponent(table, value, isSelected, hasFocus,
+                    row, column);
+
+            setHorizontalAlignment(CENTER);
+            setBorder(BorderFactory.createCompoundBorder(getBorder(), padding));
 
             return this;
         }

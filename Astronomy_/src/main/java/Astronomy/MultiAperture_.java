@@ -4097,10 +4097,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         list2.add(b -> updatePlot = b);
         list2.add(b -> showHelp = b);
         list2.add(updateImageDisplay::set);
-        var bottomChecks = gd.addCheckboxGroup(2, 2, new String[]{"Update table and plot while running", "Show help panel during aperture selection", "Update image display while running"},
+        var bottomChecks = gd.addCheckboxGroup(2, 2, new String[]{"Update plot while running", "Show help panel during aperture selection", "Update image display while running"},
                 new boolean[]{updatePlot, showHelp, updateImageDisplay.get()}, list2);
         bottomChecks.subComponents().get(0).setToolTipText("<html>Multi-aperture will run faster with this option disabled,<br>" +
-                "but the table and plot displays will only update once when the Multi-Aperture run has finished.</html>");
+                "but the plot displays will only update once when the Multi-Aperture run has finished.</html>");
         bottomChecks.subComponents().get(1).setToolTipText("This extra panel is useful to new users that need additional keyboard/mouse help when placing apertures.");
         singleStepListeners.add(bottomChecks.subComponents().get(2));
         bottomChecks.subComponents().get(2).setEnabled(!singleStep);

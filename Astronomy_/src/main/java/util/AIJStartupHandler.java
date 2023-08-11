@@ -9,6 +9,7 @@ import ij.astro.util.FileAssociationHandler;
 import ij.astro.util.FileAssociationHandler.AssociationMapper;
 import ij.plugin.PlugIn;
 
+import javax.swing.*;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -30,8 +31,10 @@ public class AIJStartupHandler implements PlugIn {
                 //MultiPlot_.openDragAndDropFiles(new File[]{p.toFile()});
                 MeasurementTable table = MeasurementTable.getTableFromFile(p.toString());
                 if (table != null) {
-                    table.show();
-                    MultiPlot_.loadDataOpenConfig(table, p.toString());
+                    SwingUtilities.invokeLater(() -> {
+                        table.show();
+                        MultiPlot_.loadDataOpenConfig(table, p.toString());
+                    });
                 }
             }, true, Prefs.defaultResultsExtension());
 

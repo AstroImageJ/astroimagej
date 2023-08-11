@@ -275,6 +275,7 @@ public class MeasurementsWindow extends JFrame {
         switch (event) {
             case REBUILD -> {
                 tableView.fireTableStructureChanged();
+                jTable.clearSelection();
                 for (int i = 0; i < jTable.getColumnCount(); i++) {
                     adjustWidth(i);
                 }

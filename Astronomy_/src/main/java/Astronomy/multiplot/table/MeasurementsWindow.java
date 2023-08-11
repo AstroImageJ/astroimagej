@@ -602,9 +602,9 @@ public class MeasurementsWindow extends JFrame {
 
         @Override
         protected void setValue(Object value) {
-            if (value instanceof Double) {
+            /*if (value instanceof Double) {
                 value = decimalFormat.format(value);
-            }
+            }*/
             super.setValue(value);
         }
 
@@ -612,6 +612,13 @@ public class MeasurementsWindow extends JFrame {
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
             super.getTableCellRendererComponent(table, value, isSelected, hasFocus,
                     row, column);
+            setHorizontalAlignment(LEFT);
+            if (value instanceof Double d) {
+                if (d.intValue() == d) {
+                    setHorizontalAlignment(RIGHT);
+                    setText(String.valueOf(d.intValue()));
+                }
+            }
             if (!isSelected && showSatWarning.get()) {
                 setBackground(table.getBackground());
                 if (table.getColumnName(column).startsWith("Peak_")) {

@@ -659,6 +659,12 @@ public class MeasurementTable extends ResultsTable {
         // PRESENT ResultsTable DOESN'T KEEP TRACK OF INDIVIDUAL PRECISIONS!!!
     }
 
+    @Override
+    public void setValue(int column, int row, double value) {
+        super.setValue(column, row, value);
+        updateView(MeasurementsWindow.UpdateEvent.CELL_UPDATED, row, column);
+    }
+
     public void rename(String newName) {
         var oldName = shortName;
         if (INSTANCES.containsKey(oldName)) {

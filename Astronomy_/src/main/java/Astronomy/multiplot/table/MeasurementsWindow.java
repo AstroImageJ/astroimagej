@@ -271,14 +271,19 @@ public class MeasurementsWindow extends JFrame {
 
     public void update(UpdateEvent event, int i1, int i2) {
         switch (event) {
-            case REBUILD -> tableView.fireTableStructureChanged();
+            case REBUILD -> {
+                tableView.fireTableStructureChanged();
+                for (int i = 0; i < jTable.getColumnCount(); i++) {
+                    adjustWidth(i);
+                }
+            }
             case DATA_CHANGED -> tableView.fireTableDataChanged();
             case ROW_DELETED -> tableView.fireTableRowsDeleted(i1, i2);
             case ROW_INSERTED -> tableView.fireTableRowsInserted(i1, i2);
             case ROW_UPDATED -> tableView.fireTableRowsUpdated(i1, i2);
             case CELL_UPDATED -> {
-                adjustWidthOnRow(i1, i2);
                 tableView.fireTableCellUpdated(i1, i2);
+                adjustWidthOnRow(i1, jTable.convertColumnIndexToView(i2));
             }
         }
     }

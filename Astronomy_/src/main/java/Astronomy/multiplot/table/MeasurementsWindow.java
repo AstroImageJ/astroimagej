@@ -254,7 +254,11 @@ public class MeasurementsWindow extends JFrame {
     }
 
     public int getSelectionStart() {
-        return jTable.convertRowIndexToModel(jTable.getSelectedRow());
+        var i = jTable.getSelectedRow();
+        if (i > -1) {
+            return jTable.convertRowIndexToModel(i);
+        }
+        return -1;
     }
 
     public int getSelectionEnd() {

@@ -18046,7 +18046,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     KeplerSplineControl.getInstance(i).settings.displayType.set(KeplerSplineSettings.DisplayType.RAW_DATA);
                 }
             }
-            smooth[i] = false;
+            smooth[i] = KeplerSplineControl.getInstance(i).settings.getTriStateDisplay().isOn();
             Prefs.remove("plot.smooth" + i);
             markerIndex[i] = (int) Prefs.get("plot.markerIndex" + i, markerIndex[i]);
             residualSymbolIndex[i] = (int) Prefs.get("plot.residualSymbolIndex" + i, residualSymbolIndex[i]);

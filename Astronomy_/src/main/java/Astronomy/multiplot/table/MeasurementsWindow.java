@@ -721,6 +721,9 @@ public class MeasurementsWindow extends JFrame {
 
         @Override
         public int getColumnCount() {
+            if (table.getLastColumn() == -1) {
+                return 0;
+            }
             return table.getLastColumn() + (table.showRowNumbers() ? 2 : 1) + 1;
         }
 

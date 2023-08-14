@@ -48,16 +48,31 @@ public class FilterHandler extends JDialog {
     }
 
     protected void addComponents() {
-        var input = new JTextField(30);
-        input.addActionListener($ -> {
-            window.getRowSorter().setRowFilter(buildFilterFromInput(input.getText()));
+        var p = new JPanel();
+        var rowInput = new JTextField(30);
+        rowInput.addActionListener($ -> {
+            window.getRowSorter().setRowFilter(buildRowFilterFromInput(rowInput.getText()));
+        });
+        p.add(rowInput);
+        var columnInput = new JTextField(30);
+        columnInput.addActionListener($ -> {
+            if (window.getJTable().getColumnModel() instanceof HiddenColumnModel cm) {
+                cm.filterColumns(c -> {
+                    if (c.getIdentifier() instanceof String name) {
+                        return name.contains(columnInput.getText());
+                    }
+
+                    return false;
+                });
+            }
         });
         //input.getDocument().addDocumentListener($ -> {});
-        add(input);
+        p.add(columnInput);
+        add(p);
     }
 
     // todo should default be AND?
-    private RowFilter<? super MeasurementsWindow.MeasurementsTableView, ? super Integer> buildFilterFromInput(String input) {
+    private RowFilter<? super MeasurementsWindow.MeasurementsTableView, ? super Integer> buildRowFilterFromInput(String input) {
         var matcher = FILTER_PATTERN.matcher(input);
 
         var andSet = new HashSet<RowFilter<? super MeasurementsWindow.MeasurementsTableView, ? super Integer>>();

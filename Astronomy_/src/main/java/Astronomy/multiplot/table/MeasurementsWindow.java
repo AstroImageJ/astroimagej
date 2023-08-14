@@ -3,6 +3,7 @@ package Astronomy.multiplot.table;
 import Astronomy.Aperture_;
 import Astronomy.multiplot.table.util.FilterHandler;
 import Astronomy.multiplot.table.util.FindHandler;
+import Astronomy.multiplot.table.util.HiddenColumnModel;
 import Astronomy.multiplot.table.util.SynchronizedSelectionModel;
 import astroj.MeasurementTable;
 import ij.IJ;
@@ -63,7 +64,8 @@ public class MeasurementsWindow extends JFrame {
         windowLocation.locationSavingWindow(this, null);
 
         // Create a JTable instance
-        jTable = new JTable(tableView/*, */);
+        jTable = new JTable(tableView, new HiddenColumnModel());
+        jTable.setAutoCreateColumnsFromModel(true);
         rowSorter = new TableRowSorter<>(tableView);
         jTable.setRowSorter(rowSorter);
         jTable.setDefaultRenderer(Double.class, new DoubleCellRenderer(6));

@@ -662,7 +662,11 @@ public class MeasurementTable extends ResultsTable {
 
     @Override
     public void setValue(int column, int row, double value) {
+        var newColNeeded = column > getLastColumn();
         super.setValue(column, row, value);
+        if (newColNeeded) {
+            updateView(MeasurementsWindow.UpdateEvent.COL_ADDED, getLastColumn(), getLastColumn());
+        }
         updateView(MeasurementsWindow.UpdateEvent.CELL_UPDATED, row, column);
     }
 
@@ -850,7 +854,9 @@ public class MeasurementTable extends ResultsTable {
     @Override
     public int getFreeColumn(String heading) {
         var i = super.getFreeColumn(heading);
-        updateView(MeasurementsWindow.UpdateEvent.REBUILD);
+        if (COLUMN_IN_USE != i) {
+            updateView(MeasurementsWindow.UpdateEvent.COL_ADDED, i, i);
+        }
         return i;
     }
 

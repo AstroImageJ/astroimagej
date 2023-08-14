@@ -20,6 +20,7 @@ import ij.util.Java2;
 
 import javax.swing.*;
 import javax.swing.border.Border;
+import javax.swing.event.TableModelEvent;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableColumn;
@@ -290,7 +291,16 @@ public class MeasurementsWindow extends JFrame {
             case ROW_UPDATED -> tableView.fireTableRowsUpdated(i1, i2);
             case CELL_UPDATED -> {
                 tableView.fireTableCellUpdated(i1, i2);
-                adjustWidthOnRow(i1, jTable.convertColumnIndexToView(i2));
+                adjustWidthOnRow(i1, i2);
+            }
+            case COL_ADDED -> {
+                tableView.fireTableChanged(new TableModelEvent(tableView, TableModelEvent.HEADER_ROW,
+                        TableModelEvent.HEADER_ROW, i1, TableModelEvent.INSERT));
+                if (jTable.getColumnModel() instanceof HiddenColumnModel hcm) {
+                    // This is a terrible hack
+                    SwingUtilities.invokeLater(hcm::refilter);
+                }
+                adjustWidth(i1);
             }
         }
     }
@@ -586,6 +596,7 @@ public class MeasurementsWindow extends JFrame {
         ROW_INSERTED,
         ROW_UPDATED,
         CELL_UPDATED,
+        COL_ADDED,
     }
 
     private static class DoubleCellRenderer extends PaddedRenderer {

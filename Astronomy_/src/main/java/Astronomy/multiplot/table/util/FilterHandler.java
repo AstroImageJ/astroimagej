@@ -5,6 +5,7 @@ import ij.astro.util.UIHelper;
 import ij.measure.ResultsTable;
 
 import javax.swing.*;
+import java.awt.*;
 import java.util.HashSet;
 import java.util.regex.Pattern;
 
@@ -48,17 +49,28 @@ public class FilterHandler extends JDialog {
     }
 
     protected void addComponents() {
-        var p = new JPanel();
+        var c = new GridBagConstraints();
+        var p = new JPanel(new GridBagLayout());
+        p.setFont(new Font("Monospaced", Font.PLAIN, 14));
+        var l = new JLabel("Row Filter:");
+        l.setFont(p.getFont());
+        p.add(l, c);
         var rowInput = new JTextField(30);
         rowInput.addActionListener($ -> {
             window.getRowSorter().setRowFilter(buildRowFilterFromInput(rowInput.getText()));
         });
-        p.add(rowInput);
+        p.add(rowInput, c);
+        c.gridy = 1;
+        c.gridx = 0;
+        l = new JLabel("Col Filter:");
+        l.setFont(p.getFont());
+        p.add(l, c);
+        c.gridx++;
         var columnInput = new JTextField(30);
         columnInput.addActionListener($ -> {
             if (window.getJTable().getColumnModel() instanceof HiddenColumnModel cm) {
-                cm.filterColumns(c -> {
-                    if (c.getIdentifier() instanceof String name) {
+                cm.filterColumns(column -> {
+                    if (column.getIdentifier() instanceof String name) {
                         return name.contains(columnInput.getText());
                     }
 
@@ -66,9 +78,69 @@ public class FilterHandler extends JDialog {
                 });
             }
         });
+        p.add(columnInput, c);
+        c.gridx++;
+
+        var b = new JButton(UIHelper.createImageIcon(FilterHandler.class, "astroj/images/help.png", "Help_Icon"));
+        b.addActionListener($ -> showHelpWindow());
+        p.add(b, c);
+
         //input.getDocument().addDocumentListener($ -> {});
-        p.add(columnInput);
         add(p);
+    }
+
+    private void showHelpWindow() {
+        var f = new JFrame("Filter Help");
+        var tp = new JTextPane();
+        tp.setFocusable(false);
+        tp.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        tp.replaceSelection(
+                """
+                Row Filtering:
+                    Each filter is wrapped in (). Consecutive filters are ORed together,
+                while filters separated by an & will be ANDed together. Must press <Enter> to apply filter.
+                Some actions in MultiPlot, such as hover selection, will remove the filter.
+                
+                    A filter can apply to a specific column by beginning the filter with "c",
+                followed by the column name or number. Case sensitive.
+                
+                    Values are filters by the following: > (greater than), < (less than),
+                = (equals), and ! (not equals). Regex is also supported by starting the filter with "r",
+                followed by the expression.
+                
+                    Eg.
+                [(<10)                                       ]
+                    Filters rows such that only rows containing a value less than 10 are displayed.
+                    
+                [(cslice<10)                                 ]
+                    Filters rows such that only rows where values in the column "slice" are less
+                than 10 are displayed.
+                
+                [(cslice<10)(cslice=10)                      ]
+                    Filters rows such that only rows where values in the column "slice" are less
+                than 10, OR values in the column "slice" are 10 are displayed.
+                
+                [cSaturated!0                                ]
+                    Filters rows such that only rows where values in the column "Saturated" that
+                are not equal to 0 are displayed.
+                
+                [(crel_flux_T1<.48)&(crel_flux_err_T1>.0006) ]
+                    Filters columns such that only rows containing values in "rel_flux_T1" that are less than 0.48,
+                AND values in "rel_flux_err_T1" that are greater than 0.0006 are displayed.
+                
+                Column Filtering:
+                    Column filtering is a basic case sensitive text search of the column headers. Must press <Enter> to apply filter.
+                    
+                    Eg.
+                [T1                                           ]
+                    Show only columns whose name contains "T1"
+                """);
+        var s = new JScrollPane(tp);
+        s.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        f.add(s);
+        UIHelper.setCenteredOnScreen(f, this);
+        f.pack();
+        f.setVisible(true);
     }
 
     // todo should default be AND?

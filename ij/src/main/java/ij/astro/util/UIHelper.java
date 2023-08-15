@@ -8,6 +8,8 @@ import javax.swing.text.DefaultEditorKit;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 
+import static ij.IJ.showMessage;
+
 public class UIHelper {
     private static boolean lookAndFeelSet = false;
 
@@ -122,5 +124,21 @@ public class UIHelper {
             }
         }
         return screen;
+    }
+
+    /** Returns an ImageIcon, or null if the path was invalid. */
+    public static ImageIcon createImageIcon(String path, String description) {
+        return createImageIcon(UIHelper.class, path, description);
+    }
+
+    /** Returns an ImageIcon, or null if the path was invalid. */
+    public static ImageIcon createImageIcon(Class<?> ref, String path, String description) {
+        java.net.URL imgURL = ref.getClassLoader().getResource(path);
+        if (imgURL != null) {
+            return new ImageIcon(imgURL, description);
+        } else {
+            showMessage("Couldn't find icon file: " + path);
+            return null;
+        }
     }
 }

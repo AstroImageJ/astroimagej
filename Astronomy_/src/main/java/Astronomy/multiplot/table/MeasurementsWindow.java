@@ -681,6 +681,7 @@ public class MeasurementsWindow extends JFrame {
             super.getTableCellRendererComponent(table, value, isSelected, hasFocus,
                     row, column);
             setHorizontalAlignment(LEFT);
+            setToolTipText(null);
             if (value instanceof Double d) {
                 if (d.intValue() == d) {
                     setHorizontalAlignment(RIGHT);
@@ -693,8 +694,10 @@ public class MeasurementsWindow extends JFrame {
                     if (value instanceof Double d) {
                         if (d >=saturationWarningLevel) {
                             setBackground(Color.RED);
+                            setToolTipText("Saturated aperture based on aperture settings");
                         } else if (d >= linearityWarningLevel) {
                             setBackground(Color.YELLOW);
+                            setToolTipText("Nonlinear aperture based on aperture settings");
                         }
                     }
                 } else {
@@ -715,8 +718,10 @@ public class MeasurementsWindow extends JFrame {
                                 if (table.getValueAt(row, apColMap.get(ap)) instanceof Double d) {
                                     if (d >=saturationWarningLevel) {
                                         setBackground(Color.RED);
+                                        setToolTipText("Saturated aperture based on aperture settings and the value in " + "Peak_" + ap);
                                     } else if (d >= linearityWarningLevel) {
                                         setBackground(Color.YELLOW);
+                                        setToolTipText("Nonlinear aperture based on aperture settings and the value in " + "Peak_" + ap);
                                     }
                                 }
                             } else {

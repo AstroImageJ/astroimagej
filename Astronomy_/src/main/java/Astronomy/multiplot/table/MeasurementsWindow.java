@@ -87,7 +87,6 @@ public class MeasurementsWindow extends JFrame {
         jTable.setFont(jTable.getFont().deriveFont(fontSize.get()));
         jTable.getTableHeader().setFont(jTable.getTableHeader().getFont().deriveFont(fontSize.get()));
 
-        jTable.getTableHeader().setReorderingAllowed(false);
         jTable.getTableHeader().setResizingAllowed(true);
 
         // Align row numbers to the center

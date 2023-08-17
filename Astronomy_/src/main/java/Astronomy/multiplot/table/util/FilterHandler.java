@@ -6,6 +6,7 @@ import ij.measure.ResultsTable;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionListener;
 import java.util.HashSet;
 import java.util.regex.Pattern;
 
@@ -26,8 +27,9 @@ public class FilterHandler extends JDialog {
     //todo add support for quotes to allow whitespace in col. name
     //todo  add another group that handles basic regex input
     private static final Pattern FILTER_PATTERN =
-            Pattern.compile("(\\((?<COLUMN>c(?:[0-9]+|[a-zA-Z0-9_]+))?\\s*(?<FILTER>(?:r[\\w\\d]+|[<>=!][0-9.]+))\\)\\s*(?<AND>&)?)");
+            Pattern.compile("(\\((?<COLUMN>c(?:[0-9]+|[a-zA-Z0-9_\\.\\-\\/\\(\\)]+))?\\s*(?<FILTER>(?:r[\\w\\d]+|[<>=!][0-9.]+))\\)\\s*(?<AND>&)?)");
     final MeasurementsWindow window;
+    private boolean regex;
 
     public FilterHandler(MeasurementsWindow window) {
         super(window, "Filter...", false);
@@ -67,27 +69,48 @@ public class FilterHandler extends JDialog {
         p.add(l, c);
         c.gridx++;
         var columnInput = new JTextField(30);
-        columnInput.addActionListener($ -> {
+        ActionListener cFilterL = $ -> {
             if (window.getJTable().getColumnModel() instanceof HiddenColumnModel cm) {
                 if (columnInput.getText().isBlank()) {
                     cm.restoreColumns();
                     return;
                 }
+                var pattern = Pattern.compile(columnInput.getText());
                 cm.filterColumns(column -> {
                     if (column.getIdentifier() instanceof String name) {
-                        return name.contains(columnInput.getText());
+                        return regex ? pattern.matcher(name).find() : name.contains(columnInput.getText());
                     }
 
                     return false;
                 });
             }
-        });
+        };
+        columnInput.addActionListener(cFilterL);
         p.add(columnInput, c);
         c.gridx++;
+
+        var regexButton = new JCheckBox("Regex");
+        regexButton.addActionListener(e -> {
+            regex = !regex;
+            cFilterL.actionPerformed(e);
+        });
+        p.add(regexButton, c);
+
+        c.gridx = 0;
+        c.gridy++;
 
         var b = new JButton(UIHelper.createImageIcon(FilterHandler.class, "astroj/images/help.png", "Help_Icon"));
         b.addActionListener($ -> showHelpWindow());
         p.add(b, c);
+        c.gridx++;
+        var b2 = new JButton("Clear");
+        b2.addActionListener($ -> {
+            if (window.getJTable().getColumnModel() instanceof HiddenColumnModel cm) {
+                cm.restoreColumns();
+            }
+            window.getRowSorter().setRowFilter(null);
+        });
+        p.add(b2, c);
 
         //input.getDocument().addDocumentListener($ -> {});
         add(p);
@@ -100,6 +123,8 @@ public class FilterHandler extends JDialog {
         tp.setFont(new Font("Monospaced", Font.PLAIN, 12));
         tp.replaceSelection(
                 """
+                Filtering only effects the display of the table, it has no effect on the plot or the actual table data.
+                
                 Row Filtering:
                     Each filter is wrapped in (). Consecutive filters are ORed together,
                 while filters separated by an & will be ANDed together. Must press <Enter> to apply filter.
@@ -108,7 +133,7 @@ public class FilterHandler extends JDialog {
                     A filter can apply to a specific column by beginning the filter with "c",
                 followed by the column name or number. Case sensitive.
                 
-                    Values are filters by the following: > (greater than), < (less than),
+                    Values are filtered by the following: > (greater than), < (less than),
                 = (equals), and ! (not equals). Regex is also supported by starting the filter with "r",
                 followed by the expression.
                 

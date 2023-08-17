@@ -3429,9 +3429,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     private void waitForEventQueue() {
         try {
             // We don't actually care about what happens, we just want the blocking
-            EventQueue.invokeAndWait(() -> {
-            });
-            SwingUtilities.invokeAndWait(() -> {});
+            if (!SwingUtilities.isEventDispatchThread()) {
+                SwingUtilities.invokeAndWait(() -> {});
+            }
         } catch (InterruptedException | InvocationTargetException e) {
             e.printStackTrace();
         }

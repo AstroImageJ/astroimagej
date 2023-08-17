@@ -3,13 +3,17 @@ package Astronomy.multiplot.table.util;
 import javax.swing.event.TableColumnModelEvent;
 import javax.swing.table.DefaultTableColumnModel;
 import javax.swing.table.TableColumn;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.Vector;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 public class HiddenColumnModel extends DefaultTableColumnModel {
     private Predicate<TableColumn> lastPredicate;
     private boolean columnsModified = false;
     private final TrackingModel trackingModel = new TrackingModel();
+    private final Set<Consumer<Boolean>> listeners = new HashSet<>();
 
     public HiddenColumnModel() {
         super();
@@ -17,7 +21,7 @@ public class HiddenColumnModel extends DefaultTableColumnModel {
 
     public void filterColumns(Predicate<TableColumn> predicate) {
         if (columnsModified || !predicate.equals(lastPredicate)) {
-            restoreColumns();
+            restoreColumns(false);
             if (predicate == null) {
                 return;
             }
@@ -26,8 +30,15 @@ public class HiddenColumnModel extends DefaultTableColumnModel {
                 selectionModel.clearSelection();
             }
 
+            var hasFiltered = false;
             for (TableColumn tableColumn : tableColumns.stream().filter(predicate.negate()).toList()) {
                 removeColumn0(tableColumn);
+                hasFiltered = true;
+            }
+
+            var ls = listeners.toArray();
+            for (Object l : ls) {
+                ((Consumer<Boolean>)l).accept(hasFiltered);
             }
 
             //tableColumns = new Vector<>();
@@ -37,8 +48,18 @@ public class HiddenColumnModel extends DefaultTableColumnModel {
     }
 
     public void restoreColumns() {
+        restoreColumns(true);
+    }
+
+    public void restoreColumns(boolean update) {
         tableColumns = trackingModel.getTableColumns();
-        fireColumnAdded(new TableColumnModelEvent(this, 0, 0));
+        if (update) {
+            fireColumnAdded(new TableColumnModelEvent(this, 0, 0));
+            var ls = listeners.toArray();
+            for (Object l : ls) {
+                ((Consumer<Boolean>)l).accept(false);
+            }
+        }
     }
 
     public void refilter() {
@@ -69,6 +90,14 @@ public class HiddenColumnModel extends DefaultTableColumnModel {
         trackingModel.moveColumn(columnIndex, newIndex);
         super.moveColumn(columnIndex, newIndex);
         columnsModified = true;
+    }
+
+    public void addFilterListener(Consumer<Boolean> l) {
+        listeners.add(l);
+    }
+
+    public void removeFilterListener(Consumer<Boolean> l) {
+        listeners.remove(l);
     }
 
     private static class TrackingModel extends DefaultTableColumnModel {

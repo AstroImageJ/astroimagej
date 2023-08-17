@@ -21,6 +21,7 @@ import ij.util.Java2;
 
 import javax.swing.*;
 import javax.swing.border.Border;
+import javax.swing.event.RowSorterEvent;
 import javax.swing.event.TableModelEvent;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -48,6 +49,7 @@ public class MeasurementsWindow extends JFrame {
     private static final Property<Float> fontSize = new Property<>(14f, MeasurementsWindow.class);
     private FilterHandler filterWindow;
     private FindHandler findWindow;
+    private final Notification notification = new Notification();
 
     public MeasurementsWindow(MeasurementTable table) {
         super(MeasurementTable.longerName(table.shortTitle()));
@@ -64,9 +66,16 @@ public class MeasurementsWindow extends JFrame {
         windowLocation.locationSavingWindow(this, null);
 
         // Create a JTable instance
-        jTable = new JTable(tableView, new HiddenColumnModel());
+        var hcm = new HiddenColumnModel();
+        hcm.addFilterListener(notification::updateCol);
+        jTable = new JTable(tableView, hcm);
         jTable.setAutoCreateColumnsFromModel(true);
         rowSorter = new TableRowSorter<>(tableView);
+        rowSorter.addRowSorterListener(s -> {
+            if (s.getType() == RowSorterEvent.Type.SORTED) {
+                notification.updateRow(jTable.getRowCount() < table.size());
+            }
+        });
         jTable.setRowSorter(rowSorter);
         jTable.setDefaultRenderer(Double.class, new DoubleCellRenderer(6));
         jTable.setDefaultRenderer(String.class, new PaddedRenderer());
@@ -156,6 +165,7 @@ public class MeasurementsWindow extends JFrame {
 
         //todo selecting rows and dragging offscreen only scrolls the header, not the main table. The inverse works
         scrollPane.setRowHeaderView(rowHeadings);
+        scrollPane.setCorner(ScrollPaneConstants.UPPER_LEFT_CORNER, notification);
 
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
@@ -599,6 +609,51 @@ public class MeasurementsWindow extends JFrame {
         ROW_UPDATED,
         CELL_UPDATED,
         COL_ADDED,
+    }
+
+    public static class Notification extends JComponent {
+        private boolean isColumnFiltered;
+        private boolean isRowFiltered;
+
+        public Notification() {
+            ToolTipManager.sharedInstance().registerComponent(this);
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            if (isColumnFiltered && isRowFiltered) {
+                g.setColor(Color.RED);
+                g.fillRect(0, 0, getWidth()/2, getHeight()/2);
+                g.setColor(Color.YELLOW);
+                g.fillRect(getWidth()/2, getHeight()/2, getWidth(), getHeight());
+            } else if (isColumnFiltered || isRowFiltered) {
+                g.setColor(isColumnFiltered ? Color.RED : Color.YELLOW);
+                g.fillRect(0, 0, getWidth(), getHeight());
+            }
+        }
+
+        public void updateCol(boolean b) {
+            isColumnFiltered = b;
+            repaint();
+        }
+
+        public void updateRow(boolean b) {
+            isRowFiltered = b;
+            repaint();
+        }
+
+        @Override
+        public String getToolTipText() {
+            var s = """
+                    <html>
+                    %s
+                    %s
+                    </html>
+                    """.formatted((isColumnFiltered ? "Columns Filtered" + (isRowFiltered ? "<br>" : "") : ""), (isRowFiltered ? "Rows Filtered" : ""));
+
+            return !s.contains("Filtered") ? "No filters active" : s;
+        }
     }
 
     private static class DoubleCellRenderer extends PaddedRenderer {

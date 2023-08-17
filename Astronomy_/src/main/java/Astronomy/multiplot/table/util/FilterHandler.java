@@ -89,7 +89,7 @@ public class FilterHandler extends JDialog {
         p.add(columnInput, c);
         c.gridx++;
 
-        var regexButton = new JCheckBox(".*");
+        var regexButton = new JCheckBox("Regex");
         regexButton.setToolTipText("Use Regex for column filtering.");
         regexButton.addActionListener(e -> {
             regex = !regex;

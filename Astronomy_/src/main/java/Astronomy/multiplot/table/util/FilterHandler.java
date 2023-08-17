@@ -69,6 +69,10 @@ public class FilterHandler extends JDialog {
         var columnInput = new JTextField(30);
         columnInput.addActionListener($ -> {
             if (window.getJTable().getColumnModel() instanceof HiddenColumnModel cm) {
+                if (columnInput.getText().isBlank()) {
+                    cm.restoreColumns();
+                    return;
+                }
                 cm.filterColumns(column -> {
                     if (column.getIdentifier() instanceof String name) {
                         return name.contains(columnInput.getText());

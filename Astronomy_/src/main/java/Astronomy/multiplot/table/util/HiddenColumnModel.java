@@ -56,11 +56,11 @@ public class HiddenColumnModel extends DefaultTableColumnModel {
     @Override
     public void removeColumn(TableColumn column) {
         removeColumn0(column);
+        trackingModel.removeColumn(column);
         columnsModified = true;
     }
 
     public void removeColumn0(TableColumn column) {
-        trackingModel.removeColumn(column);
         super.removeColumn(column);
     }
 

@@ -45,7 +45,7 @@ public class MeasurementsWindow extends JFrame {
     private static final Property<Point> windowLocation = new Property<>(new Point(), MeasurementsWindow.class);
     private static final Property<Boolean> monospaced = new Property<>(false, MeasurementsWindow.class);
     private static final Property<Boolean> antialiased = new Property<>(false, MeasurementsWindow.class);
-    private static final Property<Boolean> showSatWarning = new Property<>(false, MeasurementsWindow.class);
+    private static final Property<Boolean> showSatWarning = new Property<>(true, MeasurementsWindow.class);
     private static final Property<Float> fontSize = new Property<>(14f, MeasurementsWindow.class);
     private FilterHandler filterWindow;
     private FindHandler findWindow;

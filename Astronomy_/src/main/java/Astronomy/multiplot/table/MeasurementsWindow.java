@@ -153,6 +153,17 @@ public class MeasurementsWindow extends JFrame {
                         });
                     }
                 }
+
+                if (SwingUtilities.isRightMouseButton(e)) {
+                    var i = jTable.getTableHeader().columnAtPoint(e.getPoint());
+                    if (i < 0) {
+                        return;
+                    }
+
+                    var c = jTable.getColumnModel().getColumn(i);
+                    table.sort(((String) c.getIdentifier()));
+                    tableView.fireTableDataChanged();
+                }
             }
         });
 

@@ -24,10 +24,17 @@ public class FilterHandler extends JDialog {
      * 	(?<AND>&)?
      * 	if the filter should be ANDed with the next one
      */
-    //todo add support for quotes to allow whitespace in col. name
-    //todo  add another group that handles basic regex input
+    //(?:&)?\s*((?<COLUMN>(?:[0-9]+|[a-zA-Z0-9_\.\-\/\(\)]+|(?=["'])(?:"[^"\\]*(?:\\[\s\S][^"\\]*)*"|'[^'\\]*(?:\\[\s\S][^'\\]*)*')))?\s*(?<FILTER>(?:\*[\w\d]+|[<>=!]\s*[0-9.]+))\s*(?<AND>&)?)
     private static final Pattern FILTER_PATTERN =
-            Pattern.compile("(\\((?<COLUMN>c(?:[0-9]+|[a-zA-Z0-9_\\.\\-\\/\\(\\)]+))?\\s*(?<FILTER>(?:r[\\w\\d]+|[<>=!][0-9.]+))\\)\\s*(?<AND>&)?)");
+            Pattern.compile("(?:&)?\\s*" + // Needed to prevent second filter seeing the column as the filter
+                    // Match the column
+                    "((?<COLUMN>(?:[0-9]+|" + // Column number
+                    "[a-zA-Z0-9_\\.\\-\\/\\(\\)]+|" + // Column name, restricted characters
+                    "(?=[\"'])(?:\"[^\"\\\\]*(?:\\\\[\\s\\S][^\"\\\\]*)*\"|'[^'\\\\]*(?:\\\\[\\s\\S][^'\\\\]*)*')))?\\s*" + // Column name, in escapable quotes, allows any character
+                    // Match the filter
+                    "(?<FILTER>(?:\\*[\\w\\d]+|" + // Regex filter
+                    "[<>=!]\\s*[0-9.]+))\\s*" + // Numerical filter
+                    "(?<AND>&)?)"); // And this with the next filter
     final MeasurementsWindow window;
     private boolean regex;
     private String lastRowInput;
@@ -130,34 +137,34 @@ public class FilterHandler extends JDialog {
                 Filtering only effects the display of the table, it has no effect on the plot or the actual table data.
                 
                 Row Filtering:
-                    Each filter is wrapped in (). Consecutive filters are ORed together,
+                    Each filter is wrapped is separated by whitespace. Consecutive filters are ORed together,
                 while filters separated by an & will be ANDed together. Must press <Enter> to apply filter.
                 Some actions in MultiPlot, such as hover selection, will remove the filter.
                 
-                    A filter can apply to a specific column by beginning the filter with "c",
-                followed by the column name or number. Case sensitive.
+                    A filter can apply to a specific column by beginning the filter with the column name or number.
+                Case sensitive. Column names containing whitespace or other odd characters must be surrounded by quotes.
+                Some whitespace is allowed between filter elements.
                 
                     Values are filtered by the following: > (greater than), < (less than),
-                = (equals), and ! (not equals). Regex is also supported by starting the filter with "r",
-                followed by the expression.
+                = (equals), and ! (not equals). Regex is also supported by supplying the expression, starting with an *.
                 
                     Eg.
-                [(<10)                                       ]
+                [<10                                     ]
                     Filters rows such that only rows containing a value less than 10 are displayed.
                     
-                [(cslice<10)                                 ]
+                [slice<10                                ]
                     Filters rows such that only rows where values in the column "slice" are less
                 than 10 are displayed.
                 
-                [(cslice<10)(cslice=10)                      ]
+                [slice<10 slice=10                       ]
                     Filters rows such that only rows where values in the column "slice" are less
                 than 10, OR values in the column "slice" are 10 are displayed.
                 
-                [cSaturated!0                                ]
+                [Saturated!0                             ]
                     Filters rows such that only rows where values in the column "Saturated" that
                 are not equal to 0 are displayed.
                 
-                [(crel_flux_T1<.48)&(crel_flux_err_T1>.0006) ]
+                [rel_flux_T1<.48 & rel_flux_err_T1>.0006 ]
                     Filters columns such that only rows containing values in "rel_flux_T1" that are less than 0.48,
                 AND values in "rel_flux_err_T1" that are greater than 0.0006 are displayed.
                 
@@ -165,7 +172,7 @@ public class FilterHandler extends JDialog {
                     Column filtering is a basic case sensitive text search of the column headers. Must press <Enter> to apply filter.
                     
                     Eg.
-                [T1                                           ]
+                [T1                                       ]
                     Show only columns whose name contains "T1"
                 """);
         var s = new JScrollPane(tp);
@@ -198,7 +205,7 @@ public class FilterHandler extends JDialog {
             String filterValue = matcher.group("FILTER");
             String andValue = matcher.group("AND");
 
-            var f = makeFilter(columnValue, filterValue);
+            var f = makeFilter(columnValue.trim(), filterValue.trim());
             if (anding || andValue != null) {
                 andSet.add(f);
                 if (andValue == null) {
@@ -237,10 +244,14 @@ public class FilterHandler extends JDialog {
 
         var cols = new int[0];
         if (col != null) {
-            col = col.substring(1);
             try {
                 cols = new int[]{Integer.parseInt(col)};
             } catch (NumberFormatException e) {
+                // Unwrap quoted column
+                if (col.startsWith("\"") && col.endsWith("\"")) {//todo handle escaped quotes
+                    col = col.substring(1, col.length()-1);
+                }
+
                 var i = window.getTable().getColumnIndex(col);
                 if (i != ResultsTable.COLUMN_NOT_FOUND) {
                     // Add one to index as label is not a real col. in MT
@@ -249,29 +260,32 @@ public class FilterHandler extends JDialog {
             }
         }
 
-        if (filter.startsWith("r")) {
-            filter = filter.substring(1);
-            //System.out.printf("Regex filter: %s, %s%n", filter, Arrays.toString(cols));
-            return RowFilter.regexFilter(filter, cols);
-        } else {
-            var type = switch (filter.substring(0, 1)) {
-                case ">" -> RowFilter.ComparisonType.AFTER;
-                case "<" -> RowFilter.ComparisonType.BEFORE;
-                case "=" -> RowFilter.ComparisonType.EQUAL;
-                case "!" -> RowFilter.ComparisonType.NOT_EQUAL;
-                default -> throw new IllegalStateException("Unexpected value in type: " + filter.charAt(0));
-            };
-
-            var d = 0D;
-
-            try {
-                d = Double.parseDouble(filter.substring(1));
-            } catch (NumberFormatException e) {
-                throw new IllegalStateException("Unexpected value in double: " + filter.substring(1));
+        var notNumeric = false;
+        var type = switch (filter.substring(0, 1)) {
+            case ">" -> RowFilter.ComparisonType.AFTER;
+            case "<" -> RowFilter.ComparisonType.BEFORE;
+            case "=" -> RowFilter.ComparisonType.EQUAL;
+            case "!" -> RowFilter.ComparisonType.NOT_EQUAL;
+            case "*" -> {
+                notNumeric = true;
+                yield null;
             }
+            default -> throw new IllegalStateException("Unexpected value in type: " + filter.charAt(0));
+        };
 
-            //System.out.printf("Number filter: %s, %s, %s%n", type, d, Arrays.toString(cols));
-            return RowFilter.numberFilter(type, d, cols);
+        if (notNumeric) {
+            filter = filter.substring(1); // Remove preceding *
+            return RowFilter.regexFilter(filter, cols);
         }
+
+        var d = 0D;
+
+        try {
+            d = Double.parseDouble(filter.substring(1).trim());
+        } catch (NumberFormatException e) {
+            throw new IllegalStateException("Unexpected value in double: " + filter.substring(1));
+        }
+
+        return RowFilter.numberFilter(type, d, cols);
     }
 }

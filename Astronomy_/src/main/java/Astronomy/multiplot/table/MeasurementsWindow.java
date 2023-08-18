@@ -326,7 +326,9 @@ public class MeasurementsWindow extends JFrame {
                     // This is a terrible hack
                     SwingUtilities.invokeLater(hcm::refilter);
                 }
-                adjustWidth(i1);
+                for (int i = 0; i < jTable.getColumnCount(); i++) {
+                    adjustWidth(i);
+                }
             }
         }
     }

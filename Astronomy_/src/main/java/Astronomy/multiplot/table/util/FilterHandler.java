@@ -209,6 +209,8 @@ public class FilterHandler extends JDialog {
         var orSet = new HashSet<RowFilter<? super MeasurementsWindow.MeasurementsTableView, ? super Integer>>();
 
         var anding = false;
+
+        StringBuilder debug = new StringBuilder("Filtering rows on: (");
         while (matcher.find()) {
             String columnValue = matcher.group("COLUMN");
             String filterValue = matcher.group("FILTER");

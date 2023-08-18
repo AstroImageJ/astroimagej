@@ -119,7 +119,9 @@ public class FilterHandler extends JDialog {
         var b2 = new JButton("Clear");
         b2.addActionListener($ -> {
             if (window.getJTable().getColumnModel() instanceof HiddenColumnModel cm) {
-                cm.restoreColumns();
+                if (window.getJTable().getModel().getColumnCount() > 0) {
+                    cm.restoreColumns();
+                }
             }
             lastRowInput = null;
             window.getRowSorter().setRowFilter(window.getLinearityFilter());

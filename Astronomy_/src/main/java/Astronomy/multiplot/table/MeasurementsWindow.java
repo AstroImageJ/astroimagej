@@ -310,6 +310,10 @@ public class MeasurementsWindow extends JFrame {
                 for (int i = 0; i < jTable.getColumnCount(); i++) {
                     adjustWidth(i);
                 }
+                if (jTable.getColumnModel() instanceof HiddenColumnModel hcm) {
+                    // This is a terrible hack
+                    SwingUtilities.invokeLater(hcm::refilter);
+                }
             }
             case DATA_CHANGED -> tableView.fireTableDataChanged();
             case ROW_DELETED -> tableView.fireTableRowsDeleted(i1, i2);

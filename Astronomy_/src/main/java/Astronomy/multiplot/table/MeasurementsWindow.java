@@ -32,8 +32,6 @@ import java.awt.*;
 import java.awt.event.*;
 import java.text.DecimalFormat;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
@@ -708,7 +706,6 @@ public class MeasurementsWindow extends JFrame {
         private final double saturationWarningLevel = Prefs.get(Aperture_.AP_PREFS_SATWARNLEVEL, 55000);
         private final double linearityWarningLevel = Prefs.get(Aperture_.AP_PREFS_LINWARNLEVEL, 30000);
         private static final Pattern AP_PATTERN = Pattern.compile(".+_(?<AP>[CT][0-9]+)");
-        private final Map<String, Integer> apColMap = new HashMap<>();
         private final DecimalFormat decimalFormat;
 
         public DoubleCellRenderer(int decimalPlaces) {
@@ -753,17 +750,9 @@ public class MeasurementsWindow extends JFrame {
                     if (m.matches()) {
                         var ap = m.group("AP");
                         if (ap != null) {
-                            apColMap.computeIfAbsent(ap, s -> {
-                                var c = table.getColumn("Peak_" + s);
-                                if (c != null) {
-                                    return c.getModelIndex();
-                                }
-                                return -1;
-                            });
-
-                            var c = apColMap.get(ap);
+                            var c = table.getColumnModel().getColumnIndex("Peak_" + ap);
                             if (c > -1) {
-                                if (table.getValueAt(row, apColMap.get(ap)) instanceof Double d) {
+                                if (table.getValueAt(row, c) instanceof Double d) {
                                     if (d >=saturationWarningLevel) {
                                         setBackground(Color.RED);
                                         setToolTipText("Saturated aperture based on aperture settings and the value in " + "Peak_" + ap);

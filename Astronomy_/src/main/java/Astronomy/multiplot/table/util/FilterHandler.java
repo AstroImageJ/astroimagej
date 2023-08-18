@@ -1,6 +1,8 @@
 package Astronomy.multiplot.table.util;
 
 import Astronomy.multiplot.table.MeasurementsWindow;
+import ij.astro.logging.AIJLogger;
+import ij.astro.types.Pair;
 import ij.astro.util.UIHelper;
 import ij.measure.ResultsTable;
 
@@ -37,6 +39,7 @@ public class FilterHandler extends JDialog {
                     "(?<AND>&)?)"); // And this with the next filter
     final MeasurementsWindow window;
     private boolean regex;
+    private boolean showDebug;
     private String lastRowInput;
 
     public FilterHandler(MeasurementsWindow window) {
@@ -122,6 +125,13 @@ public class FilterHandler extends JDialog {
             window.getRowSorter().setRowFilter(window.getLinearityFilter());
         });
         p.add(b2, c);
+        c.gridx++;
+        var debug = new JCheckBox("Debug");
+        debug.setToolTipText("Log used row filters after parsing.");
+        debug.addActionListener(e -> {
+            showDebug = !showDebug;
+        });
+        p.add(debug, c);
 
         //input.getDocument().addDocumentListener($ -> {});
         add(p);
@@ -187,7 +197,6 @@ public class FilterHandler extends JDialog {
         window.getRowSorter().setRowFilter(buildRowFilterFromInput(lastRowInput));
     }
 
-    // todo should default be AND?
     private RowFilter<? super MeasurementsWindow.MeasurementsTableView, ? super Integer> buildRowFilterFromInput(String input) {
         if (input == null) {
             return window.getLinearityFilter();
@@ -207,21 +216,33 @@ public class FilterHandler extends JDialog {
 
             var f = makeFilter(columnValue.trim(), filterValue.trim());
             if (anding || andValue != null) {
-                andSet.add(f);
+                andSet.add(f.first());
                 if (andValue == null) {
                     orSet.add(RowFilter.andFilter(andSet));
                     andSet.clear();
+                    debug.append(f.second());
+                    debug.append("]");
+                }
+
+                if (!anding) {
+                    debug.append("[");
+                    debug.append(f.second()).append(" AND ");
+                }
+
+                if (andValue != null && anding) {
+                    debug.append(" AND ");
+                    debug.append(f.second());
                 }
             } else {
-                orSet.add(f);
+                if (!orSet.isEmpty()) {
+                    debug.append(" OR ");
+                }
+                debug.append(f.second());
+
+                orSet.add(f.first());
             }
 
             anding = andValue != null;
-
-            /*System.out.println("Column: " + (columnValue != null ? columnValue : "N/A"));
-            System.out.println("Filter: " + (filterValue != null ? filterValue : "N/A"));
-            System.out.println("AND: " + (andValue != null ? andValue : "N/A"));
-            System.out.println();*/
         }
 
         if (orSet.isEmpty()) {
@@ -234,10 +255,17 @@ public class FilterHandler extends JDialog {
         andSet.add(window.getLinearityFilter());
         andSet.add(out);
 
+        debug.append(")").append(window.getLinearityFilter() != null ? " AND linearity filter" : "");
+
+        if (showDebug) {
+            AIJLogger.log(debug.toString());
+        }
+
         return window.getLinearityFilter() != null ? RowFilter.andFilter(andSet) : out;
     }
 
-    private RowFilter<? super MeasurementsWindow.MeasurementsTableView, ? super Integer> makeFilter(String col, String filter) {
+    private Pair.GenericPair<RowFilter<? super MeasurementsWindow.MeasurementsTableView, ? super Integer>, String>
+    makeFilter(String col, String filter) {
         if (filter == null) {
             throw new IllegalArgumentException("Filter must be present");
         }
@@ -256,6 +284,9 @@ public class FilterHandler extends JDialog {
                 if (i != ResultsTable.COLUMN_NOT_FOUND) {
                     // Add one to index as label is not a real col. in MT
                     cols = new int[]{i+1};
+                } else {
+                    // For debug logging
+                    col = "COLUMN NOT FOUND ('%s')".formatted(col);
                 }
             }
         }
@@ -273,9 +304,12 @@ public class FilterHandler extends JDialog {
             default -> throw new IllegalStateException("Unexpected value in type: " + filter.charAt(0));
         };
 
+        var debug = "{%s %s %s, in " + (cols.length == 0 ? "all columns}" : "column '%s' (#%s)}");
+
         if (notNumeric) {
             filter = filter.substring(1); // Remove preceding *
-            return RowFilter.regexFilter(filter, cols);
+            return new Pair.GenericPair<>(RowFilter.regexFilter(filter, cols),
+                    debug.formatted("Text", "matching", "regex of '" + filter + "'", col, cols[0]));
         }
 
         var d = 0D;
@@ -286,6 +320,12 @@ public class FilterHandler extends JDialog {
             throw new IllegalStateException("Unexpected value in double: " + filter.substring(1));
         }
 
-        return RowFilter.numberFilter(type, d, cols);
+        return new Pair.GenericPair<>(RowFilter.numberFilter(type, d, cols),
+                debug.formatted("Values", switch (type) {
+                    case BEFORE -> "less than";
+                    case AFTER -> "greater than";
+                    case EQUAL -> "equal to";
+                    case NOT_EQUAL -> "not equal to";
+                }, d, col, cols[0]));
     }
 }

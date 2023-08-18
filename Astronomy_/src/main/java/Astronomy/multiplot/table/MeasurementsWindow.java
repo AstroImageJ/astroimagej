@@ -12,6 +12,7 @@ import ij.Prefs;
 import ij.astro.io.prefs.Property;
 import ij.astro.io.prefs.PropertyKey;
 import ij.astro.logging.AIJLogger;
+import ij.astro.util.UIHelper;
 import ij.gui.GenericDialog;
 import ij.gui.PlotContentsDialog;
 import ij.measure.ResultsTableMacros;
@@ -204,6 +205,8 @@ public class MeasurementsWindow extends JFrame {
                 .setPreferredSize(new Dimension(adjustWidth(rowHeadings, 0, true), 0));
         firstColumnView.addTableModelListener(e -> scrollPane.getRowHeader()
                 .setPreferredSize(new Dimension(adjustWidth(rowHeadings, 0, true), 0)));
+
+        setIconImage(UIHelper.createImage("Astronomy/images/icons/table/table.png"));
     }
 
     @Override
@@ -585,7 +588,9 @@ public class MeasurementsWindow extends JFrame {
         JTextField rowField = new JTextField("0");
         panel.add(rowField);
 
-        int result = JOptionPane.showConfirmDialog(MeasurementsWindow.this, panel, "Go To Cell", JOptionPane.OK_CANCEL_OPTION);
+        int result = JOptionPane.showConfirmDialog(MeasurementsWindow.this, panel, "Go To Cell",
+                JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE,
+                UIHelper.createImageIcon("Astronomy/images/icons/table/goto.png", ""));
         if (result == JOptionPane.OK_OPTION) {
             // Retrieve the selected column index and row input
             int column = columnDropdown.getSelectedIndex();

@@ -1,0 +1,4 @@
+Icons in this folder and its subfolder are sourced from Google Fonts Material Symbols, licensed under Apache-2.0.
+
+https://fonts.google.com/icons
+https://developers.google.com/fonts/docs/material_symbols

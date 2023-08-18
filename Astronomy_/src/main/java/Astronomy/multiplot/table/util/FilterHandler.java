@@ -40,6 +40,7 @@ public class FilterHandler extends JDialog {
 
         pack();
         UIHelper.setCenteredOnWindow(this, window);
+        setIconImage(UIHelper.createImage("Astronomy/images/icons/table/filter.png"));
     }
 
     @Override

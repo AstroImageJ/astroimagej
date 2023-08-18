@@ -2,11 +2,13 @@ package ij.astro.util;
 
 import ij.IJ;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import javax.swing.text.DefaultEditorKit;
 import java.awt.*;
 import java.awt.event.KeyEvent;
+import java.io.IOException;
 
 import static ij.IJ.showMessage;
 
@@ -128,12 +130,16 @@ public class UIHelper {
 
     /** Returns an ImageIcon, or null if the path was invalid. */
     public static ImageIcon createImageIcon(String path, String description) {
-        return createImageIcon(UIHelper.class, path, description);
+        return createImageIcon(IJ.getClassLoader(), path, description);
     }
 
     /** Returns an ImageIcon, or null if the path was invalid. */
     public static ImageIcon createImageIcon(Class<?> ref, String path, String description) {
-        java.net.URL imgURL = ref.getClassLoader().getResource(path);
+        return createImageIcon(ref.getClassLoader(), path, description);
+    }
+
+    private static ImageIcon createImageIcon(ClassLoader loader, String path, String description) {
+        java.net.URL imgURL = loader.getResource(path);
         if (imgURL != null) {
             return new ImageIcon(imgURL, description);
         } else {
@@ -141,4 +147,30 @@ public class UIHelper {
             return null;
         }
     }
+
+    /** Returns an Image, or null if the path was invalid. */
+    public static Image createImage(String path) {
+        return createImage(IJ.getClassLoader(), path);
+    }
+
+    /** Returns an ImageIcon, or null if the path was invalid. */
+    public static Image createImage(Class<?> ref, String path) {
+        return createImage(ref.getClassLoader(), path);
+    }
+
+    /** Returns an ImageIcon, or null if the path was invalid. */
+    private static Image createImage(ClassLoader loader, String path) {
+        java.net.URL imgURL = loader.getResource(path);
+        if (imgURL != null) {
+            try {
+                return ImageIO.read(imgURL);
+            } catch (IOException e) {
+                return null;
+            }
+        } else {
+            showMessage("Couldn't find icon file: " + path);
+            return null;
+        }
+    }
+
 }

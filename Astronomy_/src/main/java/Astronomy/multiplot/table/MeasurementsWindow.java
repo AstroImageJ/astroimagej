@@ -15,6 +15,7 @@ import ij.astro.logging.AIJLogger;
 import ij.astro.util.UIHelper;
 import ij.gui.GenericDialog;
 import ij.gui.PlotContentsDialog;
+import ij.measure.ResultsTable;
 import ij.measure.ResultsTableMacros;
 import ij.plugin.Distribution;
 import ij.plugin.filter.Analyzer;
@@ -331,7 +332,7 @@ public class MeasurementsWindow extends JFrame {
     }
 
     private void adjustWidthOnRow(int rowIndex, int columnIndex) {
-        if (rowIndex >= 10 || columnIndex < 0 || rowIndex < 0 || rowIndex >= jTable.getRowCount()) {
+        if (rowIndex >= 10 || columnIndex < 0 || rowIndex >= jTable.getRowCount()) {
             return;
         }
 
@@ -347,13 +348,15 @@ public class MeasurementsWindow extends JFrame {
             headerRenderer = jTable.getTableHeader().getDefaultRenderer();
         }
         Component headerBox = headerRenderer.getTableCellRendererComponent(null,
-                c.getHeaderValue(), false, false, 0, 0);
+                c.getHeaderValue(), false, false, -1, 0);
 
         // Find best width based on first 10 rows if they exist
         var width = headerBox.getPreferredSize().width;
-        var ren = jTable.getCellRenderer(rowIndex, columnIndex);
-        var comp = jTable.prepareRenderer(ren, rowIndex, columnIndex);
-        width = Math.max(width, comp.getPreferredSize().width + 2);
+        if (rowIndex >= 0) {
+            var ren = jTable.getCellRenderer(rowIndex, columnIndex);
+            var comp = jTable.prepareRenderer(ren, rowIndex, columnIndex);
+            width = Math.max(width, comp.getPreferredSize().width + 2);
+        }
 
         c.setPreferredWidth(width);
     }
@@ -702,7 +705,7 @@ public class MeasurementsWindow extends JFrame {
         }
     }
 
-    private static class DoubleCellRenderer extends PaddedRenderer {
+    private class DoubleCellRenderer extends PaddedRenderer {
         private final double saturationWarningLevel = Prefs.get(Aperture_.AP_PREFS_SATWARNLEVEL, 55000);
         private final double linearityWarningLevel = Prefs.get(Aperture_.AP_PREFS_LINWARNLEVEL, 30000);
         private static final Pattern AP_PATTERN = Pattern.compile(".+_(?<AP>[CT][0-9]+)");
@@ -750,19 +753,24 @@ public class MeasurementsWindow extends JFrame {
                     if (m.matches()) {
                         var ap = m.group("AP");
                         if (ap != null) {
-                            var c = table.getColumnModel().getColumnIndex("Peak_" + ap);
-                            if (c > -1) {
-                                if (table.getValueAt(row, c) instanceof Double d) {
-                                    if (d >=saturationWarningLevel) {
-                                        setBackground(Color.RED);
-                                        setToolTipText("Saturated aperture based on aperture settings and the value in " + "Peak_" + ap);
-                                    } else if (d >= linearityWarningLevel) {
-                                        setBackground(Color.YELLOW);
-                                        setToolTipText("Nonlinear aperture based on aperture settings and the value in " + "Peak_" + ap);
-                                    }
+                            var i = MeasurementsWindow.this.table.getColumnIndex("Peak_" + ap);
+                            if (i == ResultsTable.COLUMN_NOT_FOUND) {
+                                if (ap.startsWith("C")) {
+                                    ap = ap.replace("C", "T");
+                                } else {
+                                    ap = ap.replace("T", "C");
                                 }
-                            } else {
-                                AIJLogger.log("Failed to find matching Peak column for ap " + ap);
+                                i = MeasurementsWindow.this.table.getColumnIndex("Peak_" + ap);
+                            }
+                            if (i != ResultsTable.COLUMN_NOT_FOUND) {
+                                var d = MeasurementsWindow.this.table.getValueAsDouble(i, table.convertRowIndexToModel(row));
+                                if (d >=saturationWarningLevel) {
+                                    setBackground(Color.RED);
+                                    setToolTipText("Saturated aperture based on aperture settings and the value in " + "Peak_" + ap);
+                                } else if (d >= linearityWarningLevel) {
+                                    setBackground(Color.YELLOW);
+                                    setToolTipText("Nonlinear aperture based on aperture settings and the value in " + "Peak_" + ap);
+                                }
                             }
                         }
                     }

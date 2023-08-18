@@ -676,11 +676,17 @@ public class MeasurementsWindow extends JFrame {
         }
 
         public void updateCol(boolean b) {
+            if (b == isColumnFiltered) {
+                return;
+            }
             isColumnFiltered = b;
             repaint();
         }
 
         public void updateRow(boolean b) {
+            if (b == isRowFiltered) {
+                return;
+            }
             isRowFiltered = b;
             repaint();
         }

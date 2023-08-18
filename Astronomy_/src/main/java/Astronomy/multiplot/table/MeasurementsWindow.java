@@ -35,6 +35,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
+import java.util.stream.IntStream;
 
 public class MeasurementsWindow extends JFrame {
     private final JTable jTable;
@@ -51,6 +52,7 @@ public class MeasurementsWindow extends JFrame {
     private FilterHandler filterWindow;
     private FindHandler findWindow;
     private final Notification notification = new Notification();
+    private RowFilter<? super MeasurementsWindow.MeasurementsTableView, ? super Integer> linearityFilter;
 
     public MeasurementsWindow(MeasurementTable table) {
         super(MeasurementTable.longerName(table.shortTitle()));
@@ -471,14 +473,6 @@ public class MeasurementsWindow extends JFrame {
             findWindow.setVisible(true);
         });
         m.add(i);
-        i = new MenuItem("Filter...", new MenuShortcut(KeyEvent.VK_G));
-        i.addActionListener($ -> {
-            if (filterWindow == null) {
-                filterWindow = new FilterHandler(this);
-            }
-            filterWindow.setVisible(true);
-        });
-        m.add(i);
         //todo this shows as (and works with) Ctrl+F3, while F3 on its own is sufficient (and preferred)
         i = new MenuItem("Goto...", new MenuShortcut(KeyEvent.VK_F3));
         i.addActionListener($ -> handleGotoEvent());
@@ -573,7 +567,40 @@ public class MeasurementsWindow extends JFrame {
         m.add(cbi);
         mb.add(m);
 
+        m = new Menu("Filter");
+        i = new MenuItem("Filter...", new MenuShortcut(KeyEvent.VK_G));
+        i.addActionListener($ -> {
+            if (filterWindow == null) {
+                filterWindow = new FilterHandler(this);
+            }
+            filterWindow.setVisible(true);
+        });
+        m.add(i);
+        cbi = new CheckboxMenuItem("Show only rows with linearity warning");
+        CheckboxMenuItem finalCbi3 = cbi;
+        cbi.addItemListener($ -> {
+            if (finalCbi3.getState()) {
+                // Find Peak_AP columns
+                var cols = IntStream.range(0, table.getLastColumn())
+                        .filter(c -> table.getColumnHeading(c).startsWith("Peak_")).map(v -> v+1).toArray();
+                linearityFilter = RowFilter.numberFilter(RowFilter.ComparisonType.AFTER,
+                        Prefs.get(Aperture_.AP_PREFS_LINWARNLEVEL, 30000), cols);
+            } else {
+                linearityFilter = null;
+            }
+            if (filterWindow == null) {
+                filterWindow = new FilterHandler(this);
+            }
+            filterWindow.rebuildRowFilter();
+        });
+        m.add(cbi);
+        mb.add(m);
+
         setMenuBar(mb);
+    }
+
+    public RowFilter<? super MeasurementsTableView, ? super Integer> getLinearityFilter() {
+        return linearityFilter;
     }
 
     private void handleGotoEvent() {

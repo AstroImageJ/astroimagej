@@ -30,6 +30,7 @@ public class FilterHandler extends JDialog {
             Pattern.compile("(\\((?<COLUMN>c(?:[0-9]+|[a-zA-Z0-9_\\.\\-\\/\\(\\)]+))?\\s*(?<FILTER>(?:r[\\w\\d]+|[<>=!][0-9.]+))\\)\\s*(?<AND>&)?)");
     final MeasurementsWindow window;
     private boolean regex;
+    private String lastRowInput;
 
     public FilterHandler(MeasurementsWindow window) {
         super(window, "Filter...", false);
@@ -110,7 +111,8 @@ public class FilterHandler extends JDialog {
             if (window.getJTable().getColumnModel() instanceof HiddenColumnModel cm) {
                 cm.restoreColumns();
             }
-            window.getRowSorter().setRowFilter(null);
+            lastRowInput = null;
+            window.getRowSorter().setRowFilter(window.getLinearityFilter());
         });
         p.add(b2, c);
 
@@ -174,8 +176,17 @@ public class FilterHandler extends JDialog {
         f.setVisible(true);
     }
 
+    public void rebuildRowFilter() {
+        window.getRowSorter().setRowFilter(buildRowFilterFromInput(lastRowInput));
+    }
+
     // todo should default be AND?
     private RowFilter<? super MeasurementsWindow.MeasurementsTableView, ? super Integer> buildRowFilterFromInput(String input) {
+        if (input == null) {
+            return window.getLinearityFilter();
+        }
+
+        lastRowInput = input;
         var matcher = FILTER_PATTERN.matcher(input);
 
         var andSet = new HashSet<RowFilter<? super MeasurementsWindow.MeasurementsTableView, ? super Integer>>();
@@ -207,10 +218,16 @@ public class FilterHandler extends JDialog {
         }
 
         if (orSet.isEmpty()) {
-            return null;
+            return window.getLinearityFilter();
         }
 
-        return RowFilter.orFilter(orSet);
+        var out = RowFilter.orFilter(orSet);
+
+        andSet = new HashSet<>();
+        andSet.add(window.getLinearityFilter());
+        andSet.add(out);
+
+        return window.getLinearityFilter() != null ? RowFilter.andFilter(andSet) : out;
     }
 
     private RowFilter<? super MeasurementsWindow.MeasurementsTableView, ? super Integer> makeFilter(String col, String filter) {

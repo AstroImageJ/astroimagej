@@ -280,7 +280,8 @@ public class FilterHandler extends JDialog {
                 cols = new int[]{Integer.parseInt(col)};
             } catch (NumberFormatException e) {
                 // Unwrap quoted column
-                if (col.startsWith("\"") && col.endsWith("\"")) {//todo handle escaped quotes
+                if ((col.startsWith("\"") && col.endsWith("\"")) ||
+                        (col.startsWith("'") && col.endsWith("'"))) {//todo handle escaped quotes
                     col = col.substring(1, col.length()-1);
                 }
 

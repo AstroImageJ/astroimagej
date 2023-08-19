@@ -12,6 +12,8 @@ import ij.util.Tools;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -717,6 +719,13 @@ public class MeasurementTable extends ResultsTable {
 
             if (window == null) {
                 window = new MeasurementsWindow(this);
+                window.addWindowListener(new WindowAdapter() {
+                    @Override
+                    public void windowClosed(WindowEvent e) {
+                        window.getTable().window = null;
+                        INSTANCES.remove(shortName);
+                    }
+                });
             }
         }
         if (window.getTable() != this) {

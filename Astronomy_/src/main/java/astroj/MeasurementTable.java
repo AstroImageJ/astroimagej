@@ -331,6 +331,10 @@ public class MeasurementTable extends ResultsTable {
             return panel.getTable();
         }
 
+        // THIS CODE DOESN'T USUALLY RUN, IT JUST RETURNS THE NEW TABLE
+        // since MeasurementsWindow is not part of the window manager,
+        // no textArea is found
+
         inputPanelName = sourceName;
         TextArea textArea = null;
         Frame inframe = WindowManager.getFrame(inputPanelName);
@@ -708,6 +712,9 @@ public class MeasurementTable extends ResultsTable {
 
     @Override
     public void show(String name) {
+        if (shortName == null) {
+            shortName = name;
+        }
         show();
     }
 

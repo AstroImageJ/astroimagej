@@ -317,6 +317,11 @@ public class ResultsTable implements Cloneable {
 		if (rowLabelHeading.equals("Label"))
 			rowLabels = null;
 	}
+
+	@AstroImageJ(reason = "Check for row label presence to handle in MeasurementsWindow")
+	public boolean hasRowLabels() {
+		return rowLabels != null;
+	}
 	
 	/** Returns a copy of the given column as a double array,
 		or null if the column is not found. */

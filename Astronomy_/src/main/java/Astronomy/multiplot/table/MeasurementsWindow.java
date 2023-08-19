@@ -57,6 +57,8 @@ public class MeasurementsWindow extends JFrame {
         super(MeasurementTable.longerName(table.shortTitle()));
         this.table = table;
 
+        UIHelper.setLookAndFeel();
+
         // Ensure row numbers are not shown, the table always displays them
         table.showRowNumbers(false);
 
@@ -848,7 +850,7 @@ public class MeasurementsWindow extends JFrame {
             if (table.getLastColumn() == -1) {
                 return 0;
             }
-            return table.getLastColumn() + (table.showRowNumbers() ? 2 : 1) + 1;
+            return table.getLastColumn() + (offsetForRowNumbers()) + 1;
         }
 
         @Override
@@ -916,19 +918,28 @@ public class MeasurementsWindow extends JFrame {
         }
 
         public boolean isLabelCol(int c) {
-            return offsetCol(c) == -1;
+            return offsetForLabel() != 0 && offsetCol(c) == -offsetForLabel();
         }
 
         public boolean isRowNumCol(int c) {
-            return offsetCol(c) == -2;
+            return offsetForRowNumbers() != 0 && offsetCol(c) == -offsetForRowNumbers();
         }
 
         public int offsetCol(int c) {
+            var o = offsetForLabel();
             if (table.showRowNumbers()) {
-                return c-2;
+                o += 1;
             }
 
-            return --c;
+            return c - o;
+        }
+
+        private int offsetForLabel() {
+            return table.hasRowLabels() ? 1 : 0;
+        }
+
+        private int offsetForRowNumbers() {
+            return offsetForLabel() + (table.showRowNumbers() ? 1 : 0);
         }
     }
 }

@@ -1238,7 +1238,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
     static public void clearPlot() {
         checkAndLockTable();
-        table = new MeasurementTable(tableName);
+        table.clearTable();
         FitOptimization.clearCleanHistory();
         table.setLock(false);
 //        table.show();

@@ -320,12 +320,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         //todo clearing table, then running MA again doesn't add rows to table, broken when update plot is running
         //todo update table while running does not occur until after plot is done
         if (table != null && MeasurementTable.getMeasurementsWindow(tableName) != null) {
-            //table.deleteRows(0,table.size()-1);
-            //table = MeasurementTable.getTable(tableName);
-            //MultiPlot_.setTable(table, false);
-            //table = null;
-            table = new MeasurementTable(tableName);
-            table.show();
+            table.clearTable();
         } else {
             IJ.showStatus("No table to clear");
         }

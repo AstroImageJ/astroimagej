@@ -217,6 +217,12 @@ public class MeasurementsWindow extends JFrame {
         if (!isVisible() && b) {
             pack();
         }
+
+        // Don't focus the window again, its already showing
+        if (isVisible() && b) {
+            return;
+        }
+
         super.setVisible(b);
     }
 

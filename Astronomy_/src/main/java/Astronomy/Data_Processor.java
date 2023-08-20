@@ -5791,6 +5791,9 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
                                                     if (maInst == null) {
                                                         maInst = (MultiAperture_) IJ.runPlugIn("Astronomy.MultiAperture_", "");
                                                     } else {
+                                                        if (MultiAperture_.apLoading.get() == MultiAperture_.ApLoading.IMPORTED) {
+                                                            MultiAperture_.apLoading.set(MultiAperture_.ApLoading.ALL_PREVIOUS);
+                                                        }
                                                         new PlugInFilterRunner(maInst, "", "");
                                                     }
                                                     Prefs.set("multiaperture.automode", false);

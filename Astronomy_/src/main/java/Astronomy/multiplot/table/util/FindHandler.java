@@ -63,7 +63,7 @@ public class FindHandler extends FilterHandler {
         });
         panel.add(input);
 
-        var up = new JButton("^");
+        var up = new JButton("˄");
         up.addActionListener($ -> {
             var next = matches.higher(new Coordinate(window.getJTable().getSelectedRow(), window.getJTable().getSelectedColumn()));
             if (next != null) {
@@ -75,7 +75,7 @@ public class FindHandler extends FilterHandler {
         });
         panel.add(up);
 
-        var down = new JButton("v");
+        var down = new JButton("˅");
         down.addActionListener($ -> {
             var next = matches.lower(new Coordinate(window.getJTable().getSelectedRow(), window.getJTable().getSelectedColumn()));
             if (next != null) {

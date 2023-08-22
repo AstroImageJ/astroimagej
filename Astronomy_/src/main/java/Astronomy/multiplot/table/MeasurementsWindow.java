@@ -165,8 +165,22 @@ public class MeasurementsWindow extends JFrame {
                     }
 
                     var c = jTable.getColumnModel().getColumn(i);
+                    if (((String) c.getIdentifier()).equals("Labels")) {
+                        IJ.error("Cannot sort on Labels column");
+                        return;
+                    }
                     table.sort(((String) c.getIdentifier()));
                     tableView.fireTableDataChanged();
+                }
+
+                if (SwingUtilities.isMiddleMouseButton(e)) {
+                    var i = jTable.getTableHeader().columnAtPoint(e.getPoint());
+                    if (i < 0) {
+                        return;
+                    }
+
+                    jTable.setColumnSelectionInterval(i, i);
+                    jTable.setRowSelectionInterval(0, jTable.getRowCount()-1);
                 }
             }
         });

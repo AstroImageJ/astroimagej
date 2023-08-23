@@ -129,6 +129,14 @@ public class MeasurementsWindow extends JFrame {
             }
         });
 
+        jTable.getTableHeader().setToolTipText("""
+                <html>
+                Left-click to toggle sort view based on column.<br>
+                Right-click to sort table based on column and update plot.<br>
+                Middle click to select entire column.
+                </html>
+                """);
+
         // Double click to fit width
         jTable.getTableHeader().addMouseListener(new MouseAdapter() {
             @Override
@@ -170,7 +178,8 @@ public class MeasurementsWindow extends JFrame {
                         return;
                     }
                     table.sort(((String) c.getIdentifier()));
-                    tableView.fireTableDataChanged();
+                    jTable.getRowSorter().setSortKeys(null);
+                    table.updateRelatedPlot();
                 }
 
                 if (SwingUtilities.isMiddleMouseButton(e)) {

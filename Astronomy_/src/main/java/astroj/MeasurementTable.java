@@ -882,4 +882,10 @@ public class MeasurementTable extends ResultsTable {
         n.window = null;
         return n;
     }
+
+    @Override
+    public void sort(String column) {
+        super.sort(column);
+        updateView(MeasurementsWindow.UpdateEvent.DATA_CHANGED);
+    }
 }

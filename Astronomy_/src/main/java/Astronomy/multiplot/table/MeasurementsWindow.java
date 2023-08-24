@@ -730,7 +730,7 @@ public class MeasurementsWindow extends JFrame {
             setHorizontalAlignment(LEFT);
             setToolTipText(null);
             if (value instanceof Double d) {
-                if (d.intValue() == d) {
+                if (table.getColumnName(column).equals("slice")) {
                     setHorizontalAlignment(RIGHT);
                     setText(String.valueOf(d.intValue()));
                 }

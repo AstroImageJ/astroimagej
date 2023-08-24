@@ -628,6 +628,16 @@ public class MeasurementsWindow extends JFrame {
             filterWindow.rebuildRowFilter();
         });
         m.add(cbi);
+        i = new MenuItem("Clear Filters");
+        i.addActionListener($ -> {
+            if (filterWindow == null) {
+                filterWindow = new FilterHandler(this);
+            }
+            finalCbi3.setState(false);
+            filterWindow.reset();
+            rowSorter.setRowFilter(null);
+        });
+        m.add(i);
         mb.add(m);
 
         setMenuBar(mb);

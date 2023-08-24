@@ -117,15 +117,7 @@ public class FilterHandler extends JDialog {
         p.add(b, c);
         c.gridx++;
         var b2 = new JButton("Clear");
-        b2.addActionListener($ -> {
-            if (window.getJTable().getColumnModel() instanceof HiddenColumnModel cm) {
-                if (window.getJTable().getModel().getColumnCount() > 0) {
-                    cm.restoreColumns();
-                }
-            }
-            lastRowInput = null;
-            window.getRowSorter().setRowFilter(window.getLinearityFilter());
-        });
+        b2.addActionListener($ -> reset());
         p.add(b2, c);
         c.gridx++;
         var debug = new JCheckBox("Debug");
@@ -137,6 +129,16 @@ public class FilterHandler extends JDialog {
 
         //input.getDocument().addDocumentListener($ -> {});
         add(p);
+    }
+
+    public void reset() {
+        if (window.getJTable().getColumnModel() instanceof HiddenColumnModel cm) {
+            if (window.getJTable().getModel().getColumnCount() > 0) {
+                cm.restoreColumns();
+            }
+        }
+        lastRowInput = null;
+        window.getRowSorter().setRowFilter(window.getLinearityFilter());
     }
 
     private void showHelpWindow() {

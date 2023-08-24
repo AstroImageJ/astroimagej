@@ -24,16 +24,14 @@ public class AIJStartupHandler implements PlugIn {
                 MeasurementTable table = MeasurementTable.getTableFromFile(p.toString());
                 if (table != null) {
                     table.show();
-                }
 
-                if (!MultiPlot_.isRunning()) {
-                    //IJ.runPlugIn("Astronomy.MultiPlot_", "");
-                    // Fixes NPE when opening via file association
-                    new MultiPlot_().run(table.shortTitle());
-                    return;
-                }
+                    if (!MultiPlot_.isRunning()) {
+                        //IJ.runPlugIn("Astronomy.MultiPlot_", "");
+                        // Fixes NPE when opening via file association
+                        new MultiPlot_().run(table.shortTitle());
+                        return;
+                    }
 
-                if (table != null) {
                     MultiPlot_.loadDataOpenConfig(table, p.toString());
                 }
             }, true, Prefs.defaultResultsExtension());

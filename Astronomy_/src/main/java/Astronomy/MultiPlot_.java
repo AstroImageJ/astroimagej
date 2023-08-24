@@ -961,13 +961,12 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 }
             filteredTables = Arrays.stream(filteredTables).filter(MeasurementTable::isMeasurementsTable).toArray(String[]::new);
             if (requestedTableName != null) {
-                for (String filteredTable : filteredTables) {
-                    if (requestedTableName.equals(filteredTable)) {
-                        tableName = requestedTableName;
-                        requestedTableName = null;
-                        setTable(MeasurementTable.getTable(tableName), forceUpdate, useAutoAstroDataUpdate);
-                        break;
-                    }
+                var t = MeasurementTable.getTable(requestedTableName);
+                if (t != null) {
+                    tableName = t.shortTitle();
+                    requestedTableName = null;
+                    setTable(MeasurementTable.getTable(tableName), forceUpdate, useAutoAstroDataUpdate);
+                    return;
                 }
                 if (requestedTableName != null) {
                     requestedTableName = null;

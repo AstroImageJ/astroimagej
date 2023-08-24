@@ -38,7 +38,7 @@ public class FilterHandler extends JDialog {
                     "[<>=!]\\s*[0-9.]+))\\s*" + // Numerical filter
                     "(?<AND>&)?)"); // And this with the next filter
     final MeasurementsWindow window;
-    private boolean regex;
+    private boolean regex = true;
     private boolean showDebug;
     private String lastRowInput;
 
@@ -101,7 +101,7 @@ public class FilterHandler extends JDialog {
         p.add(columnInput, c);
         c.gridx++;
 
-        var regexButton = new JCheckBox("Regex");
+        var regexButton = new JCheckBox("Regex", regex);
         regexButton.setToolTipText("Use Regex for column filtering.");
         regexButton.addActionListener(e -> {
             regex = !regex;

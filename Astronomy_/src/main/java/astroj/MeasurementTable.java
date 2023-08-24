@@ -4,6 +4,7 @@ package astroj;
 
 import Astronomy.MultiPlot_;
 import Astronomy.multiplot.table.MeasurementsWindow;
+import Astronomy.multiplot.table.util.UpdateEvent;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.WindowManager;
@@ -103,7 +104,7 @@ public class MeasurementTable extends ResultsTable {
 
     public void clearTable() {
         reset();
-        updateView(MeasurementsWindow.UpdateEvent.REBUILD);
+        updateView(UpdateEvent.REBUILD);
     }
 
     /**
@@ -652,7 +653,7 @@ public class MeasurementTable extends ResultsTable {
     @Override
     public synchronized void incrementCounter() {
         super.incrementCounter();
-        updateView(MeasurementsWindow.UpdateEvent.ROW_INSERTED, getCounter()-1, getCounter()-1);
+        updateView(UpdateEvent.ROW_INSERTED, getCounter()-1, getCounter()-1);
     }
 
     /**
@@ -661,7 +662,7 @@ public class MeasurementTable extends ResultsTable {
     public void addValue(String column, double value, int places) {
         setPrecision(16);
         super.addValue(column, value);
-        updateView(MeasurementsWindow.UpdateEvent.CELL_UPDATED, getCounter()-1, getColumnIndex(column));
+        updateView(UpdateEvent.CELL_UPDATED, getCounter()-1, getColumnIndex(column));
         // setPrecision (DEFAULT_DECIMALS);
         // PRESENT ResultsTable DOESN'T KEEP TRACK OF INDIVIDUAL PRECISIONS!!!
     }
@@ -671,9 +672,9 @@ public class MeasurementTable extends ResultsTable {
         var newColNeeded = column > getLastColumn();
         super.setValue(column, row, value);
         if (newColNeeded) {
-            updateView(MeasurementsWindow.UpdateEvent.COL_ADDED, getLastColumn(), getLastColumn());
+            updateView(UpdateEvent.COL_ADDED, getLastColumn(), getLastColumn());
         }
-        updateView(MeasurementsWindow.UpdateEvent.CELL_UPDATED, row, column);
+        updateView(UpdateEvent.CELL_UPDATED, row, column);
     }
 
     public void rename(String newName) {
@@ -739,16 +740,16 @@ public class MeasurementTable extends ResultsTable {
             window.setTable(this);
             INSTANCES.put(shortName, this);
         } else {
-            updateView(MeasurementsWindow.UpdateEvent.DATA_CHANGED);
+            updateView(UpdateEvent.DATA_CHANGED);
         }
         window.setVisible(true);
     }
 
-    public void updateView(MeasurementsWindow.UpdateEvent event) {
+    public void updateView(UpdateEvent event) {
         updateView(event, 0, 0);
     }
 
-    public void updateView(MeasurementsWindow.UpdateEvent event, int i1, int i2) {
+    public void updateView(UpdateEvent event, int i1, int i2) {
         // If coming from the event thread, it may be the table -
         // in which case delaying the update can cause the view and the model to desync
         if (SwingUtilities.isEventDispatchThread()) {
@@ -850,15 +851,16 @@ public class MeasurementTable extends ResultsTable {
     }
 
     @Override
+    @Deprecated
     public void setHeading(int column, String heading) {
         super.setHeading(column, heading);
-        updateView(MeasurementsWindow.UpdateEvent.REBUILD);
+        updateView(UpdateEvent.REBUILD);
     }
 
     @Override
     public synchronized void deleteRow(int rowIndex) {
         super.deleteRow(rowIndex);
-        updateView(MeasurementsWindow.UpdateEvent.ROW_DELETED, rowIndex, rowIndex);
+        updateView(UpdateEvent.ROW_DELETED, rowIndex, rowIndex);
     }
 
     public synchronized void updateRelatedPlot() {
@@ -871,7 +873,7 @@ public class MeasurementTable extends ResultsTable {
     public int getFreeColumn(String heading) {
         var i = super.getFreeColumn(heading);
         if (COLUMN_IN_USE != i) {
-            updateView(MeasurementsWindow.UpdateEvent.COL_ADDED, i, i);
+            updateView(UpdateEvent.COL_ADDED, i, i);
         }
         return i;
     }
@@ -886,6 +888,6 @@ public class MeasurementTable extends ResultsTable {
     @Override
     public void sort(String column) {
         super.sort(column);
-        updateView(MeasurementsWindow.UpdateEvent.DATA_CHANGED);
+        updateView(UpdateEvent.DATA_CHANGED);
     }
 }

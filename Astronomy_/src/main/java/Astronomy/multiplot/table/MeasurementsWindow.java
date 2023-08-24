@@ -1,10 +1,7 @@
 package Astronomy.multiplot.table;
 
 import Astronomy.Aperture_;
-import Astronomy.multiplot.table.util.FilterHandler;
-import Astronomy.multiplot.table.util.FindHandler;
-import Astronomy.multiplot.table.util.HiddenColumnModel;
-import Astronomy.multiplot.table.util.SynchronizedSelectionModel;
+import Astronomy.multiplot.table.util.*;
 import astroj.MeasurementTable;
 import ij.IJ;
 import ij.Menus;
@@ -22,7 +19,6 @@ import ij.plugin.filter.Analyzer;
 import ij.util.Java2;
 
 import javax.swing.*;
-import javax.swing.border.Border;
 import javax.swing.event.RowSorterEvent;
 import javax.swing.event.TableModelEvent;
 import javax.swing.table.AbstractTableModel;
@@ -74,7 +70,7 @@ public class MeasurementsWindow extends JFrame {
         hcm.addFilterListener(notification::updateCol);
         jTable = new JTable(tableView, hcm);
         jTable.setAutoCreateColumnsFromModel(true);
-        rowSorter = new TableRowSorter<>(tableView);
+        rowSorter = new TriSortStateMeasurementsSorter(tableView);
         rowSorter.addRowSorterListener(s -> {
             if (s.getType() == RowSorterEvent.Type.SORTED) {
                 notification.updateRow(jTable.getRowCount() < table.size());
@@ -681,67 +677,6 @@ public class MeasurementsWindow extends JFrame {
         }
     }
 
-    public enum UpdateEvent {
-        REBUILD,
-        DATA_CHANGED,
-        ROW_DELETED,
-        ROW_INSERTED,
-        ROW_UPDATED,
-        CELL_UPDATED,
-        COL_ADDED,
-    }
-
-    public static class Notification extends JComponent {
-        private boolean isColumnFiltered;
-        private boolean isRowFiltered;
-
-        public Notification() {
-            ToolTipManager.sharedInstance().registerComponent(this);
-        }
-
-        @Override
-        protected void paintComponent(Graphics g) {
-            super.paintComponent(g);
-            if (isColumnFiltered && isRowFiltered) {
-                g.setColor(Color.RED);
-                g.fillRect(0, 0, getWidth()/2, getHeight()/2);
-                g.setColor(Color.YELLOW);
-                g.fillRect(getWidth()/2, getHeight()/2, getWidth(), getHeight());
-            } else if (isColumnFiltered || isRowFiltered) {
-                g.setColor(isColumnFiltered ? Color.RED : Color.YELLOW);
-                g.fillRect(0, 0, getWidth(), getHeight());
-            }
-        }
-
-        public void updateCol(boolean b) {
-            if (b == isColumnFiltered) {
-                return;
-            }
-            isColumnFiltered = b;
-            repaint();
-        }
-
-        public void updateRow(boolean b) {
-            if (b == isRowFiltered) {
-                return;
-            }
-            isRowFiltered = b;
-            repaint();
-        }
-
-        @Override
-        public String getToolTipText() {
-            var s = """
-                    <html>
-                    %s
-                    %s
-                    </html>
-                    """.formatted((isColumnFiltered ? "Columns Filtered" + (isRowFiltered ? "<br>" : "") : ""), (isRowFiltered ? "Rows Filtered" : ""));
-
-            return !s.contains("Filtered") ? "No filters active" : s;
-        }
-    }
-
     private class DoubleCellRenderer extends PaddedRenderer {
         private final double saturationWarningLevel = Prefs.get(Aperture_.AP_PREFS_SATWARNLEVEL, 55000);
         private final double linearityWarningLevel = Prefs.get(Aperture_.AP_PREFS_LINWARNLEVEL, 30000);
@@ -813,21 +748,6 @@ public class MeasurementsWindow extends JFrame {
                     }
                 }
             }
-
-            return this;
-        }
-    }
-
-    private static class PaddedRenderer extends DefaultTableCellRenderer {
-        final Border padding = BorderFactory.createEmptyBorder(1, 3, 1, 3);
-
-        @Override
-        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-            super.getTableCellRendererComponent(table, value, isSelected, hasFocus,
-                    row, column);
-
-            setHorizontalAlignment(CENTER);
-            setBorder(BorderFactory.createCompoundBorder(getBorder(), padding));
 
             return this;
         }

@@ -471,6 +471,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             return;
         }
 
+        imp.unlock();
         imp.setSlice(firstSlice);
 
         // START ESCAPE ABORTION POSSIBILITY

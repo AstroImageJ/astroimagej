@@ -20,7 +20,7 @@ public class HiddenColumnModel extends DefaultTableColumnModel {
     }
 
     public void filterColumns(Predicate<TableColumn> predicate) {
-        if (columnsModified || !predicate.equals(lastPredicate)) {
+        if (columnsModified || (predicate != null && !predicate.equals(lastPredicate))) {
             restoreColumns(false);
             if (predicate == null) {
                 return;
@@ -49,6 +49,11 @@ public class HiddenColumnModel extends DefaultTableColumnModel {
 
     public void restoreColumns() {
         restoreColumns(true);
+    }
+
+    public void removeFilter() {
+        lastPredicate = null;
+        refilter();
     }
 
     public void restoreColumns(boolean update) {

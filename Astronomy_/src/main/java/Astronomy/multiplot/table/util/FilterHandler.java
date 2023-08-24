@@ -134,6 +134,7 @@ public class FilterHandler extends JDialog {
     public void reset() {
         if (window.getJTable().getColumnModel() instanceof HiddenColumnModel cm) {
             if (window.getJTable().getModel().getColumnCount() > 0) {
+                cm.removeFilter();
                 cm.restoreColumns();
             }
         }

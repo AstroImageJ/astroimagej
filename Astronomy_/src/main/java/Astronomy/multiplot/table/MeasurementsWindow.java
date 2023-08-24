@@ -189,6 +189,7 @@ public class MeasurementsWindow extends JFrame {
                 }
             }
         });
+        jTable.setAutoscrolls(true);
 
         jTable.doLayout();
 
@@ -263,7 +264,10 @@ public class MeasurementsWindow extends JFrame {
     }
 
     public void scrollToBottom() {
-        jTable.scrollRectToVisible(jTable.getCellRect(tableView.getRowCount(), 0, true));
+        var cellRect = jTable.getCellRect(tableView.getRowCount(), 0, true);
+        var visibleRect = jTable.getVisibleRect();
+        cellRect.x = visibleRect.x;
+        jTable.scrollRectToVisible(cellRect);
     }
 
     public void setSelection(int rowStart, int rowEnd) {

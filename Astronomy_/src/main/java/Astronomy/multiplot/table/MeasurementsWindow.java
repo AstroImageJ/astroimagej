@@ -346,7 +346,12 @@ public class MeasurementsWindow extends JFrame {
                     SwingUtilities.invokeLater(hcm::refilter);
                 }
             }
-            case DATA_CHANGED -> tableView.fireTableDataChanged();
+            case DATA_CHANGED -> {
+                tableView.fireTableDataChanged();
+                for (int i = 0; i < jTable.getColumnCount(); i++) {
+                    adjustWidth(i);
+                }
+            }
             case ROW_DELETED -> tableView.fireTableRowsDeleted(i1, i2);
             case ROW_INSERTED -> tableView.fireTableRowsInserted(i1, i2);
             case ROW_UPDATED -> tableView.fireTableRowsUpdated(i1, i2);
@@ -389,6 +394,7 @@ public class MeasurementsWindow extends JFrame {
 
         // Find best width based on first 10 rows if they exist
         var width = headerBox.getPreferredSize().width;
+        width = Math.max(width, headerBox.getWidth());
         if (rowIndex >= 0) {
             var ren = jTable.getCellRenderer(rowIndex, columnIndex);
             var comp = jTable.prepareRenderer(ren, rowIndex, columnIndex);
@@ -423,6 +429,7 @@ public class MeasurementsWindow extends JFrame {
 
         // Find best width based on first 10 rows if they exist
         var width = headerBox.getPreferredSize().width;
+        width = Math.max(width, headerBox.getWidth());
         if (reverse) {
             for (int row = table.getRowCount()-1; row > Math.max(table.getRowCount() - 10, 0); row--) {
                 var ren = table.getCellRenderer(row, columnIndex);

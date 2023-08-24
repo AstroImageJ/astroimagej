@@ -186,8 +186,10 @@ public class FilterHandler extends JDialog {
                     Column filtering is a basic case sensitive text search of the column headers. Must press <Enter> to apply filter.
                     
                     Eg.
-                [T1                                       ]
+                [T1                                       ] Regex ☐
                     Show only columns whose name contains "T1"
+                [BJD_TDB|AIRMASS                          ] Regex ☑
+                    Show column names matching BJD_TDB OR AIRMASS.
                 """);
         var s = new JScrollPane(tp);
         s.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);

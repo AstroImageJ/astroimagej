@@ -425,7 +425,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         }
         this.getMeasurementPrefs();
         suffix = "_T1";
-        if (!autoMode) {//todo mark
+        if (!autoMode) {
             String[] apsX = xOldApertures.split(",");
             double[] xStored = extract(true, apsX);
             nAperturesStored = xStored == null ? 0 : xStored.length;
@@ -479,6 +479,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         // REGISTER FOR MOUSE CLICKS
 
         if (imp.getWindow() instanceof astroj.AstroStackWindow) {
+            asw.showSlice(firstSlice);
             asw = (AstroStackWindow) imp.getWindow();
             ac = (AstroCanvas) imp.getCanvas();
             hasWCS = asw.hasWCS();

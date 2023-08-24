@@ -1577,6 +1577,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         List<Seeing_Profile.ApRadii> radii = new ArrayList<>(lastSlice - firstSlice);
         var sp = new Seeing_Profile(true);
         //sp.setRoundRadii(false);
+        imp.unlock();
 
         var x = xCenter;
         var y = yCenter;

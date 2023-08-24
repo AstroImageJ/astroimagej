@@ -1,5 +1,6 @@
 package ij.measure;
 
+import com.astroimagej.bspline.util.Pair;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.Prefs;
@@ -18,6 +19,7 @@ import ij.text.TextPanel;
 import ij.text.TextWindow;
 import ij.util.Tools;
 
+import javax.swing.*;
 import java.awt.*;
 import java.io.*;
 import java.lang.ref.WeakReference;
@@ -83,6 +85,10 @@ public class ResultsTable implements Cloneable {
 	public boolean isResultsTable;
 	@AstroImageJ(reason = "Store window for access")
 	protected WeakReference<TextWindow> window;
+	@AstroImageJ(reason = "Support different sort orders for doubles")
+	Pair<Integer, SortOrder> lastSort;
+	@AstroImageJ(reason = "Support different sort orders for doubles")
+	SortOrder order = SortOrder.ASCENDING;
 
 
 	/** Constructs an empty ResultsTable with the counter=0, no columns
@@ -1635,10 +1641,21 @@ public class ResultsTable implements Cloneable {
 	/** Sorts this table on the specified column, with string support.
 	 * Author: 'mountain_man', 8 April 2019
 	*/
+	@AstroImageJ(reason = "Support different sort orders for doubles", modified = true)
 	public void sort(String column) {
 		int col = getColumnIndex(column);
 		if (col==COLUMN_NOT_FOUND)
 			throw new IllegalArgumentException("Column not found");
+
+		if (lastSort != null) {
+			if (lastSort.first() == col) {
+				order = lastSort.second() == SortOrder.ASCENDING ? SortOrder.DESCENDING : SortOrder.ASCENDING;
+			} else {
+				order = SortOrder.ASCENDING;
+			}
+		}
+
+		lastSort = new Pair<>(col, order);
 
 		// pad short string columns with "NaN" to avoid "holes" after sorting
 		if (stringColumns!=null) {
@@ -1692,7 +1709,8 @@ public class ResultsTable implements Cloneable {
 		boolean isStr() {
 			return  Double.isNaN (dValue)  &&  sValue != null  &&  !sValue.equals ("NaN");
 		}
-		
+
+		@AstroImageJ(reason = "Support different sort orders for doubles", modified = true)
 		public int compareTo (ComparableEntry e) {
 			if (isStr() && e.isStr())
 				return sValue.compareTo (e.sValue);
@@ -1700,7 +1718,7 @@ public class ResultsTable implements Cloneable {
 				return -1;
 			if (e.isStr())
 				return +1;
-			return  (dValue < e.dValue) ? -1 : ( (dValue > e.dValue) ? 1 : 0 );
+			return order == SortOrder.ASCENDING ? Double.compare(dValue, e.dValue) : Double.compare(e.dValue, dValue);
 		}
 	}
 	

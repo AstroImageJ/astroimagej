@@ -189,7 +189,13 @@ public class MeasurementsWindow extends JFrame {
                 }
             }
         });
-        jTable.setAutoscrolls(true);
+        MouseMotionListener doScrollRectToVisible = new MouseMotionAdapter() {
+            public void mouseDragged(MouseEvent e) {
+                Rectangle r = new Rectangle(e.getX(), e.getY(), 1, 1);
+                jTable.scrollRectToVisible(r);
+            }
+        };
+        jTable.getTableHeader().addMouseMotionListener(doScrollRectToVisible);
 
         jTable.doLayout();
 

@@ -1,6 +1,7 @@
 package Astronomy.multiplot.table.util;
 
 import Astronomy.multiplot.table.MeasurementsWindow;
+import ij.astro.util.UIHelper;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -24,6 +25,7 @@ public class FindHandler extends FilterHandler {
                 window.getJTable().getModel().removeTableModelListener(listener);
             }
         });*/
+        setIconImage(UIHelper.createImage("Astronomy/images/icons/table/find.png"));
 
         pack();
     }

@@ -36,6 +36,7 @@ public class MeasurementsWindow extends JFrame {
     private final JTable jTable;
     private final JTable rowHeadings;
     private final MeasurementsTableView tableView;
+    private final JScrollPane scrollPane;
     private MeasurementTable table;
     private final TableRowSorter<MeasurementsTableView> rowSorter;
     @PropertyKey(ignoreAffixes = true, value = "results.loc")
@@ -200,7 +201,7 @@ public class MeasurementsWindow extends JFrame {
         jTable.doLayout();
 
         // Create a JScrollPane to add the table to
-        JScrollPane scrollPane = new JScrollPane(jTable);
+        scrollPane = new JScrollPane(jTable);
         scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 
         //todo selecting rows and dragging offscreen only scrolls the header, not the main table. The inverse works
@@ -537,7 +538,16 @@ public class MeasurementsWindow extends JFrame {
             if (f > 1) {
                 fontSize.set(f);
                 jTable.setFont(jTable.getFont().deriveFont(fontSize.get()));
+                jTable.getTableHeader().setFont(jTable.getTableHeader().getFont().deriveFont(fontSize.get()));
                 rowHeadings.setFont(jTable.getFont());
+                for (int c = 0; c < jTable.getColumnCount(); c++) {
+                    adjustWidth(c);
+                }
+                scrollPane.getRowHeader()
+                    .setPreferredSize(new Dimension(adjustWidth(rowHeadings, 0, true), 0));
+                var s = jTable.prepareRenderer(jTable.getCellRenderer(0, 0), 0, 0).getPreferredSize();
+                jTable.setRowHeight(s.height);
+                rowHeadings.setRowHeight(s.height);
             }
         });
         m.add(i);
@@ -546,14 +556,22 @@ public class MeasurementsWindow extends JFrame {
             var f = fontSize.get() + 2;
             fontSize.set(f);
             jTable.setFont(jTable.getFont().deriveFont(fontSize.get()));
+            jTable.getTableHeader().setFont(jTable.getTableHeader().getFont().deriveFont(fontSize.get()));
             rowHeadings.setFont(jTable.getFont());
+            for (int c = 0; c < jTable.getColumnCount(); c++) {
+                adjustWidth(c);
+            }
+            scrollPane.getRowHeader()
+                    .setPreferredSize(new Dimension(adjustWidth(rowHeadings, 0, true), 0));
+            var s = jTable.prepareRenderer(jTable.getCellRenderer(0, 0), 0, 0).getPreferredSize();
+            jTable.setRowHeight(s.height);
+            rowHeadings.setRowHeight(s.height);
         });
         m.add(i);
         m.addSeparator();
-        var cbi = new CheckboxMenuItem("Monospaced", monospaced.get());
-        CheckboxMenuItem finalCbi = cbi;
-        cbi.addItemListener($ -> {
-            if (finalCbi.getState()) {
+        final var monospaced1 = new CheckboxMenuItem("Monospaced", monospaced.get());
+        monospaced1.addItemListener($ -> {
+            if (monospaced1.getState()) {
                 monospaced.set(true);
                 jTable.setFont(new Font("Monospaced", Font.PLAIN, fontSize.get().intValue()));
             } else {
@@ -561,25 +579,44 @@ public class MeasurementsWindow extends JFrame {
                 jTable.setFont(new Font("SansSerif", Font.PLAIN, fontSize.get().intValue()));
             }
             rowHeadings.setFont(jTable.getFont());
+            jTable.getTableHeader().setFont(jTable.getTableHeader().getFont().deriveFont(fontSize.get()));
+            for (int c = 0; c < jTable.getColumnCount(); c++) {
+                adjustWidth(c);
+            }
+            scrollPane.getRowHeader()
+                    .setPreferredSize(new Dimension(adjustWidth(rowHeadings, 0, true), 0));
+            var s = jTable.prepareRenderer(jTable.getCellRenderer(0, 0), 0, 0).getPreferredSize();
+            jTable.setRowHeight(s.height);
+            rowHeadings.setRowHeight(s.height);
         });
-        m.add(cbi);
-        cbi = new CheckboxMenuItem("Antialiasing", antialiased.get());
-        CheckboxMenuItem finalCbi1 = cbi;
-        cbi.addItemListener($ -> {
-            antialiased.set(finalCbi1.getState());
+        m.add(monospaced1);
+        final var antialiasing = new CheckboxMenuItem("Antialiasing", antialiased.get());
+        antialiasing.addItemListener($ -> {
+            antialiased.set(antialiasing.getState());
             Java2.setAntialiasedText(getGraphics(), antialiased.get());
             jTable.repaint();
         });
-        m.add(cbi);
+        m.add(antialiasing);
         m.addSeparator();
         i = new MenuItem("Default Settings");
         i.addActionListener($ -> {
             monospaced.set(false);
+            monospaced1.setState(false);
             fontSize.set(14f);
             antialiased.set(false);
+            antialiasing.setState(false);
             Java2.setAntialiasedText(getGraphics(), antialiased.get());
             jTable.setFont(new Font("SansSerif", Font.PLAIN, fontSize.get().intValue()));
             rowHeadings.setFont(jTable.getFont());
+            jTable.getTableHeader().setFont(jTable.getTableHeader().getFont().deriveFont(fontSize.get()));
+            for (int c = 0; c < jTable.getColumnCount(); c++) {
+                adjustWidth(c);
+            }
+            scrollPane.getRowHeader()
+                    .setPreferredSize(new Dimension(adjustWidth(rowHeadings, 0, true), 0));
+            var s = jTable.prepareRenderer(jTable.getCellRenderer(0, 0), 0, 0).getPreferredSize();
+            jTable.setRowHeight(s.height);
+            rowHeadings.setRowHeight(s.height);
         });
         m.add(i);
         mb.add(m);
@@ -609,7 +646,7 @@ public class MeasurementsWindow extends JFrame {
         i = new MenuItem("Options...");
         i.addActionListener($ -> IJ.doCommand("Input/Output..."));
         m.add(i);
-        cbi = new CheckboxMenuItem("Show saturation warning", showSatWarning.get());
+        var cbi = new CheckboxMenuItem("Show saturation warning", showSatWarning.get());
         CheckboxMenuItem finalCbi2 = cbi;
         cbi.addItemListener($ -> {
             showSatWarning.set(finalCbi2.getState());

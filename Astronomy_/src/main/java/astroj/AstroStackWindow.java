@@ -5824,6 +5824,9 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
      */
     @Override
     public void layoutContainer(Container target) {
+        if (imp == null) {
+            return;
+        }
         if (!redrawing) {
             redrawing = true;
 //		Insets insets = target.getInsets();

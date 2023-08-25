@@ -190,13 +190,12 @@ public class MeasurementsWindow extends JFrame {
                 }
             }
         });
-        MouseMotionListener doScrollRectToVisible = new MouseMotionAdapter() {
-            public void mouseDragged(MouseEvent e) {
-                Rectangle r = new Rectangle(e.getX(), e.getY(), 1, 1);
+        jTable.getTableHeader().addMouseMotionListener(new MouseMotionAdapter() {
+            public void mouseDragged(MouseEvent e1) {
+                Rectangle r = new Rectangle(e1.getX(), e1.getY(), 1, 1);
                 jTable.scrollRectToVisible(r);
             }
-        };
-        jTable.getTableHeader().addMouseMotionListener(doScrollRectToVisible);
+        });
 
         jTable.doLayout();
 
@@ -533,40 +532,10 @@ public class MeasurementsWindow extends JFrame {
 
         m = new Menu("Font");
         i = new MenuItem("Make Text Smaller");
-        i.addActionListener($ -> {
-            var f = fontSize.get() - 2;
-            if (f > 1) {
-                fontSize.set(f);
-                jTable.setFont(jTable.getFont().deriveFont(fontSize.get()));
-                jTable.getTableHeader().setFont(jTable.getTableHeader().getFont().deriveFont(fontSize.get()));
-                rowHeadings.setFont(jTable.getFont());
-                for (int c = 0; c < jTable.getColumnCount(); c++) {
-                    adjustWidth(c);
-                }
-                scrollPane.getRowHeader()
-                    .setPreferredSize(new Dimension(adjustWidth(rowHeadings, 0, true), 0));
-                var s = jTable.prepareRenderer(jTable.getCellRenderer(0, 0), 0, 0).getPreferredSize();
-                jTable.setRowHeight(s.height);
-                rowHeadings.setRowHeight(s.height);
-            }
-        });
+        i.addActionListener($ -> zoomTable(-2));
         m.add(i);
         i = new MenuItem("Make Text Larger");
-        i.addActionListener($ -> {
-            var f = fontSize.get() + 2;
-            fontSize.set(f);
-            jTable.setFont(jTable.getFont().deriveFont(fontSize.get()));
-            jTable.getTableHeader().setFont(jTable.getTableHeader().getFont().deriveFont(fontSize.get()));
-            rowHeadings.setFont(jTable.getFont());
-            for (int c = 0; c < jTable.getColumnCount(); c++) {
-                adjustWidth(c);
-            }
-            scrollPane.getRowHeader()
-                    .setPreferredSize(new Dimension(adjustWidth(rowHeadings, 0, true), 0));
-            var s = jTable.prepareRenderer(jTable.getCellRenderer(0, 0), 0, 0).getPreferredSize();
-            jTable.setRowHeight(s.height);
-            rowHeadings.setRowHeight(s.height);
-        });
+        i.addActionListener($ -> zoomTable(2));
         m.add(i);
         m.addSeparator();
         final var monospaced1 = new CheckboxMenuItem("Monospaced", monospaced.get());
@@ -578,16 +547,7 @@ public class MeasurementsWindow extends JFrame {
                 monospaced.set(false);
                 jTable.setFont(new Font("SansSerif", Font.PLAIN, fontSize.get().intValue()));
             }
-            rowHeadings.setFont(jTable.getFont());
-            jTable.getTableHeader().setFont(jTable.getTableHeader().getFont().deriveFont(fontSize.get()));
-            for (int c = 0; c < jTable.getColumnCount(); c++) {
-                adjustWidth(c);
-            }
-            scrollPane.getRowHeader()
-                    .setPreferredSize(new Dimension(adjustWidth(rowHeadings, 0, true), 0));
-            var s = jTable.prepareRenderer(jTable.getCellRenderer(0, 0), 0, 0).getPreferredSize();
-            jTable.setRowHeight(s.height);
-            rowHeadings.setRowHeight(s.height);
+            zoomTable(0);
         });
         m.add(monospaced1);
         final var antialiasing = new CheckboxMenuItem("Antialiasing", antialiased.get());
@@ -607,16 +567,7 @@ public class MeasurementsWindow extends JFrame {
             antialiasing.setState(false);
             Java2.setAntialiasedText(getGraphics(), antialiased.get());
             jTable.setFont(new Font("SansSerif", Font.PLAIN, fontSize.get().intValue()));
-            rowHeadings.setFont(jTable.getFont());
-            jTable.getTableHeader().setFont(jTable.getTableHeader().getFont().deriveFont(fontSize.get()));
-            for (int c = 0; c < jTable.getColumnCount(); c++) {
-                adjustWidth(c);
-            }
-            scrollPane.getRowHeader()
-                    .setPreferredSize(new Dimension(adjustWidth(rowHeadings, 0, true), 0));
-            var s = jTable.prepareRenderer(jTable.getCellRenderer(0, 0), 0, 0).getPreferredSize();
-            jTable.setRowHeight(s.height);
-            rowHeadings.setRowHeight(s.height);
+            zoomTable(0);
         });
         m.add(i);
         mb.add(m);
@@ -695,6 +646,25 @@ public class MeasurementsWindow extends JFrame {
         mb.add(m);
 
         setMenuBar(mb);
+    }
+
+    private void zoomTable(float delta) {
+        var f = fontSize.get() + delta;
+        if (f <= 1) {
+            return;
+        }
+        fontSize.set(f);
+        jTable.setFont(jTable.getFont().deriveFont(fontSize.get()));
+        jTable.getTableHeader().setFont(jTable.getTableHeader().getFont().deriveFont(fontSize.get()));
+        rowHeadings.setFont(jTable.getFont());
+        for (int c = 0; c < jTable.getColumnCount(); c++) {
+            adjustWidth(c);
+        }
+        scrollPane.getRowHeader()
+                .setPreferredSize(new Dimension(adjustWidth(rowHeadings, 0, true), 0));
+        var s = jTable.prepareRenderer(jTable.getCellRenderer(0, 0), 0, 0).getPreferredSize();
+        jTable.setRowHeight(s.height);
+        rowHeadings.setRowHeight(s.height);
     }
 
     public RowFilter<? super MeasurementsTableView, ? super Integer> getLinearityFilter() {

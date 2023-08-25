@@ -19,6 +19,7 @@ import ij.plugin.filter.Analyzer;
 import ij.util.Java2;
 
 import javax.swing.*;
+import javax.swing.border.Border;
 import javax.swing.event.RowSorterEvent;
 import javax.swing.event.TableModelEvent;
 import javax.swing.table.AbstractTableModel;
@@ -29,6 +30,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.text.DecimalFormat;
 import java.util.Arrays;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
@@ -712,9 +714,6 @@ public class MeasurementsWindow extends JFrame {
     }
 
     private class DoubleCellRenderer extends PaddedRenderer {
-        private final double saturationWarningLevel = Prefs.get(Aperture_.AP_PREFS_SATWARNLEVEL, 55000);
-        private final double linearityWarningLevel = Prefs.get(Aperture_.AP_PREFS_LINWARNLEVEL, 30000);
-        private static final Pattern AP_PATTERN = Pattern.compile(".+_(?<AP>[CT][0-9]+)");
         private final DecimalFormat decimalFormat;
 
         public DoubleCellRenderer(int decimalPlaces) {
@@ -743,7 +742,6 @@ public class MeasurementsWindow extends JFrame {
                 }
             }
             if (!isSelected && showSatWarning.get()) {
-                setBackground(table.getBackground());
                 if (table.getColumnName(column).startsWith("Peak_")) {
                     if (value instanceof Double d) {
                         if (d >=saturationWarningLevel) {
@@ -779,6 +777,52 @@ public class MeasurementsWindow extends JFrame {
                                 }
                             }
                         }
+                    }
+                }
+            }
+
+            return this;
+        }
+    }
+
+    public class PaddedRenderer extends DefaultTableCellRenderer {
+        final double saturationWarningLevel = Prefs.get(Aperture_.AP_PREFS_SATWARNLEVEL, 55000);
+        final double linearityWarningLevel = Prefs.get(Aperture_.AP_PREFS_LINWARNLEVEL, 30000);
+        final Border padding = BorderFactory.createEmptyBorder(1, 3, 1, 3);
+        static final Pattern AP_PATTERN = Pattern.compile(".+_(?<AP>[CT][0-9]+)");
+
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+            super.getTableCellRendererComponent(table, value, isSelected, hasFocus,
+                    row, column);
+
+            setHorizontalAlignment(CENTER);
+            setBorder(BorderFactory.createCompoundBorder(getBorder(), padding));
+
+            if (!isSelected && showSatWarning.get()) {
+                setBackground(table.getBackground());
+                if (table.getColumnName(column).equals("Labels") || table.getColumnName(column).equals("slice")) {
+                    var isLin = false;
+                    var isSat = false;
+                    for (String heading : MeasurementsWindow.this.table.getHeadings()) {
+                        Matcher m;
+                        String ap;
+                        if (heading.startsWith("Peak_") && (m = AP_PATTERN.matcher(heading)).matches() && (ap = m.group("AP")) != null) {
+                            var d = MeasurementsWindow.this.table.getValue("Peak_" + ap, table.convertRowIndexToModel(row));
+                            if (d >= saturationWarningLevel) {
+                                isSat = true;
+                                break;
+                            } else if (d >= linearityWarningLevel) {
+                                isLin = true;
+                            }
+                        }
+                    }
+                    if (isSat) {
+                        setBackground(Color.RED);
+                        setToolTipText("Slice contains a saturated aperture based on aperture settings and the peak value(s)");
+                    } else if (isLin) {
+                        setBackground(Color.YELLOW);
+                        setToolTipText("Slice contains a nonlinear aperture based on aperture settings and the peak value(s)");
                     }
                 }
             }

@@ -5824,9 +5824,6 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
      */
     @Override
     public void layoutContainer(Container target) {
-        if (imp == null) {
-            return;
-        }
         if (!redrawing) {
             redrawing = true;
 //		Insets insets = target.getInsets();
@@ -5880,6 +5877,10 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             int newCanvasHeight = newCanvasHeight();
             ac.setDrawingSize(newCanvasWidth, newCanvasHeight);
             Rectangle r = new Rectangle(ac.getSrcRect());
+
+            if (imp == null) {
+                return;
+            }
 //            double xmag = (double)newCanvasWidth/(double)(ac.getSrcRect().width);
 //            double ymag = (double)newCanvasHeight/(double)(ac.getSrcRect().height);
 //            if (IJ.altKeyDown() || (r.x <= 12 && r.y <= 12 && r.x+r.width > imp.getWidth()- 12 && r.x+r.height>imp.getHeight() - 12))

@@ -1558,6 +1558,7 @@ public class IJ {
 	
 	/** For IDs less than zero, activates the image with the specified ID.
 		For IDs greater than zero, activates the Nth image. */
+	@AstroImageJ(reason = "make sure infinite loop will bail out", modified = true)
 	public static void selectWindow(int id) {
 		if (id>0)
 			id = WindowManager.getNthImageID(id);
@@ -1595,6 +1596,17 @@ public class IJ {
 				if ((System.currentTimeMillis()-start)>timeout && win!=null) {
 					WindowManager.setCurrentWindow(win);
 					return;
+				}
+				if (win == null && imp != null) {
+					win = imp.getWindow();
+					if (win!=null) {
+						win.toFront();
+						win.setState(Frame.NORMAL);
+						WindowManager.setWindow(win);
+					}
+				}
+				if ((System.currentTimeMillis()-start)>timeout) {
+					error("Macro Error", "Image "+id+" could not find open window.");
 				}
 			}
 		}

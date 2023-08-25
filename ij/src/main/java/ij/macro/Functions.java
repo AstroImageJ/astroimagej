@@ -3438,7 +3438,11 @@ public class Functions implements MacroConstants, Measurements {
 	@AstroImageJ(reason = "Ensure actions that effect the GUI occur on the proper thread to prevent blocking the macro")
 	private void eventCallWait(Runnable run) {
 		try {
-			SwingUtilities.invokeAndWait(run);
+			if (SwingUtilities.isEventDispatchThread()) {
+				run.run();
+			} else {
+				SwingUtilities.invokeAndWait(run);
+			}
 		} catch (InterruptedException | InvocationTargetException e) {
 			throw new RuntimeException(e);
 		}

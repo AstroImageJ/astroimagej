@@ -6,6 +6,7 @@ import astroj.MeasurementTable;
 import ij.IJ;
 import ij.Menus;
 import ij.Prefs;
+import ij.WindowManager;
 import ij.astro.io.prefs.Property;
 import ij.astro.io.prefs.PropertyKey;
 import ij.astro.logging.AIJLogger;
@@ -238,6 +239,19 @@ public class MeasurementsWindow extends JFrame {
                 .setPreferredSize(new Dimension(adjustWidth(rowHeadings, 0, true), 0)));
 
         setIconImage(UIHelper.createImage("Astronomy/images/icons/table/table.png"));
+
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                WindowManager.removeWindow(MeasurementsWindow.this);
+            }
+
+            @Override
+            public void windowClosed(WindowEvent e) {
+                WindowManager.removeWindow(MeasurementsWindow.this);
+            }
+        });
+        WindowManager.addWindow(this);
     }
 
     @Override

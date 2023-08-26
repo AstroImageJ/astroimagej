@@ -3507,10 +3507,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             plotMinY = totalPanOffsetY + newPanOffsetY + pltMinY + (pltMaxY - pltMinY) * ((s.height - 15 - mouseY) / (s.height)) * zoomY;
             plotMaxY = totalPanOffsetY + newPanOffsetY + pltMaxY - (pltMaxY - pltMinY) * (mouseY / (s.height)) * zoomY;
             // Limit zoom out
-            plotMinX = Math.max(minX, plotMinX);
-            plotMaxX = Math.min(maxX, plotMaxX);
-            plotMinY = Math.max(minY, plotMinY);
-            plotMaxY = Math.min(maxY, plotMaxY);
+            plotMinX = Math.max(minX + totalPanOffsetX + newPanOffsetX, plotMinX);
+            plotMaxX = Math.min(maxX + totalPanOffsetX + newPanOffsetX, plotMaxX);
+            plotMinY = Math.max(minY + totalPanOffsetY + newPanOffsetY, plotMinY);
+            plotMaxY = Math.min(maxY + totalPanOffsetY + newPanOffsetY, plotMaxY);
         } else {
             plotMinX = pltMinX;
             plotMaxX = pltMaxX;

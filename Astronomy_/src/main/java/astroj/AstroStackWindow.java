@@ -715,6 +715,17 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             }
             updatePanelValues();
         }
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                WindowManager.removeWindow(AstroStackWindow.this);
+            }
+
+            @Override
+            public void windowClosed(WindowEvent e) {
+                WindowManager.removeWindow(AstroStackWindow.this);
+            }
+        });
 
 //                IJ.log("Start useInvertingLut");
         if (useInvertingLut != ip.isInvertedLut() && !ip.isColorLut())

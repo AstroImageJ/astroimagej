@@ -1,15 +1,22 @@
 package ij;
-import ij.plugin.Converter;
-import ij.plugin.frame.Recorder;
-import ij.plugin.frame.Editor; 
-import ij.text.TextWindow;
-import ij.plugin.frame.PlugInFrame;
-import ij.plugin.frame.Commands;
-import ij.util.Tools;
+
+import ij.astro.AstroImageJ;
+import ij.astro.accessors.ITableWindow;
+import ij.gui.HistogramWindow;
+import ij.gui.ImageWindow;
+import ij.gui.PlotWindow;
 import ij.macro.Interpreter;
+import ij.plugin.frame.Commands;
+import ij.plugin.frame.Editor;
+import ij.plugin.frame.PlugInFrame;
+import ij.plugin.frame.Recorder;
+import ij.text.TextWindow;
+import ij.util.Tools;
+
 import java.awt.*;
-import java.util.*;
-import ij.gui.*;
+import java.util.ArrayList;
+import java.util.Hashtable;
+import java.util.Vector;
 
 /** This class consists of static methods used to manage ImageJ's windows. */
 public class WindowManager {
@@ -441,10 +448,12 @@ public class WindowManager {
     }
 
 	/** The specified frame becomes the front window, the one returnd by getFrontWindow(). */
+	@AstroImageJ(reason = "Support MeasurementsWindow", modified = true)
 	public static void setWindow(Frame win) {
 		frontWindow = win;
 		frontFrame = win;
-		if (win!=null && win instanceof TextWindow && !(win instanceof Editor) && !"Log".equals(((TextWindow)win).getTitle()))
+		if (win!=null && ((win instanceof TextWindow && !(win instanceof Editor) && !"Log".equals(((TextWindow)win).getTitle())) ||
+								  win instanceof ITableWindow))
 			frontTable = win;
 		//System.out.println("Set window(F): "+(win!=null?win.getTitle():"null"));
     }

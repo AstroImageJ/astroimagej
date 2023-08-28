@@ -7,6 +7,7 @@ import ij.IJ;
 import ij.Menus;
 import ij.Prefs;
 import ij.WindowManager;
+import ij.astro.accessors.ITableWindow;
 import ij.astro.io.prefs.Property;
 import ij.astro.io.prefs.PropertyKey;
 import ij.astro.logging.AIJLogger;
@@ -35,7 +36,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
-public class MeasurementsWindow extends JFrame {
+public class MeasurementsWindow extends JFrame implements ITableWindow {
     private final JTable jTable;
     private final JTable rowHeadings;
     private final MeasurementsTableView tableView;
@@ -268,12 +269,18 @@ public class MeasurementsWindow extends JFrame {
         super.setVisible(b);
     }
 
+    @Override
     public MeasurementTable getTable() {
         return table;
     }
 
     public JTable getJTable() {
         return jTable;
+    }
+
+    @Override
+    public void rename(String name) {
+        table.rename(name);
     }
 
     public TableRowSorter<MeasurementsTableView> getRowSorter() {

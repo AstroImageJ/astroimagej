@@ -1,21 +1,28 @@
 package ij.text;
+
 import ij.*;
 import ij.astro.AstroImageJ;
-import ij.io.*;
-import ij.gui.*;
-import ij.plugin.filter.Analyzer;
-import ij.plugin.frame.Recorder;
+import ij.astro.accessors.ITableWindow;
+import ij.gui.GUI;
+import ij.gui.YesNoCancelDialog;
+import ij.io.OpenDialog;
 import ij.macro.Interpreter;
 import ij.measure.ResultsTable;
+import ij.plugin.filter.Analyzer;
+import ij.plugin.frame.Recorder;
+
 import java.awt.*;
-import java.io.*;
 import java.awt.event.*;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 
 /** Uses a TextPanel to displays text in a window.
 	@see TextPanel
 */
-public class TextWindow extends Frame implements ActionListener, FocusListener, ItemListener {
+@AstroImageJ(reason = "Make support MeasurementsWindow easier, impl. ITableWindow", modified = true)
+public class TextWindow extends Frame implements ActionListener, FocusListener, ItemListener, ITableWindow {
 
 	public static final String LOC_KEY = "results.loc";
 	public static final String WIDTH_KEY = "results.width";
@@ -264,6 +271,11 @@ public class TextWindow extends Frame implements ActionListener, FocusListener, 
 		return textPanel!=null?textPanel.getResultsTable():null;
 	}
 
+	@Override
+	@AstroImageJ(reason = "Support MeasurementsWindow")
+	public ResultsTable getTable() {
+		return getResultsTable();
+	}
 
 	/** Appends the text in the specified file to the end of this TextWindow. */
 	public void load(BufferedReader in) throws IOException {

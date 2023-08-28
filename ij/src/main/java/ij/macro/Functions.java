@@ -2,6 +2,7 @@ package ij.macro;
 
 import ij.*;
 import ij.astro.AstroImageJ;
+import ij.astro.accessors.ITableWindow;
 import ij.gui.*;
 import ij.io.*;
 import ij.measure.Calibration;
@@ -1310,6 +1311,7 @@ public class Functions implements MacroConstants, Measurements {
 		}
 	}
 
+	@AstroImageJ(reason = "Support MeasurementsWindow", modified = true)
 	private ResultsTable getResultsTable(boolean reportErrors) {
 		ResultsTable rt = Analyzer.getResultsTable();
 		int size = rt.size();
@@ -1322,6 +1324,10 @@ public class Functions implements MacroConstants, Measurements {
 				rt = tp.getOrCreateResultsTable();
 				size = rt!=null?rt.size():0;
 			}
+			if (frame != null && frame instanceof ITableWindow tw) {
+				rt = tw.getTable();
+				size = rt.size();
+			}
 		}
 		if (size==0) {
 			Window win = WindowManager.getActiveTable();
@@ -1329,6 +1335,10 @@ public class Functions implements MacroConstants, Measurements {
 				TextPanel tp = ((TextWindow)win).getTextPanel();
 				rt = tp.getOrCreateResultsTable();
 				size = rt!=null?rt.size():0;
+			}
+			if (win != null && win instanceof ITableWindow tw) {
+				rt = tw.getTable();
+				size = rt.size();
 			}
 		}
 		if (size==0 && reportErrors)
@@ -7578,6 +7588,7 @@ public class Functions implements MacroConstants, Measurements {
 		return rt;
 	}
 
+	@AstroImageJ(reason = "Support MeasurementsWindow", modified = true)
 	private ResultsTable getRT(String title) {
 		if (interp.applyMacroTable!=null && title==null)
 			return interp.applyMacroTable;
@@ -7585,10 +7596,10 @@ public class Functions implements MacroConstants, Measurements {
 		Frame frame = null;
 		if (title==null) {
 			frame = WindowManager.getFrontWindow();
-			if (!(frame instanceof TextWindow))
+			if (!(frame instanceof ITableWindow))
 				frame = null;
 			if (frame!=null) {
-				rt = ((TextWindow)frame).getResultsTable();
+				rt = ((ITableWindow)frame).getTable();
 				if (rt==null) {
 					if (currentTable!=null)
 						return currentTable;
@@ -7605,7 +7616,7 @@ public class Functions implements MacroConstants, Measurements {
 			title="Results";
 		if (frame==null) {
 			frame = WindowManager.getFrame(title);
-			if (!(frame instanceof TextWindow))
+			if (!(frame instanceof ITableWindow))
 				frame = null;
 		}
 		if (frame==null) {
@@ -7614,9 +7625,9 @@ public class Functions implements MacroConstants, Measurements {
 			Frame[] frames = WindowManager.getNonImageWindows();
 			if (frames==null) return null;
 			for (int i=0; i<frames.length; i++) {
-				if (frames[i]!=null && (frames[i] instanceof TextWindow) &&
+				if (frames[i]!=null && (frames[i] instanceof ITableWindow) &&
 				!("Results".equals(frames[i].getTitle())||"Log".equals(frames[i].getTitle())))
-					rt = ((TextWindow)frames[i]).getResultsTable();
+					rt = ((ITableWindow)frames[i]).getTable();
 				if (rt!=null)
 					break;
 			}
@@ -7624,9 +7635,9 @@ public class Functions implements MacroConstants, Measurements {
 				currentTable = rt;
 			return rt;
 		}
-		if (frame==null || !(frame instanceof TextWindow))
+		if (frame==null || !(frame instanceof ITableWindow))
 			return null;
-		rt = ((TextWindow)frame).getResultsTable();
+		rt = ((ITableWindow)frame).getTable();
 		currentTable = rt;
 		return rt;
 	}

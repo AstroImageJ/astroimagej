@@ -1,6 +1,7 @@
 package ij;
 
 import ij.astro.AstroImageJ;
+import ij.astro.accessors.ITableWindow;
 import ij.gui.*;
 import ij.io.*;
 import ij.macro.Interpreter;
@@ -640,11 +641,12 @@ public class IJ {
 	}
 	
 	/** Renames a results window. */
+	@AstroImageJ(reason = "Support MeasurementsWindow", modified = true)
 	public static void renameResults(String title) {
 		Frame frame = WindowManager.getFrontWindow();
-		if (frame!=null && (frame instanceof TextWindow)) {
-			TextWindow tw = (TextWindow)frame;
-			if (tw.getResultsTable()==null) {
+		if (frame!=null && (frame instanceof ITableWindow)) {
+			ITableWindow tw = (ITableWindow)frame;
+			if (tw.getTable()==null) {
 				IJ.error("Rename", "\""+tw.getTitle()+"\" is not a results table");
 				return;
 			}
@@ -657,14 +659,15 @@ public class IJ {
 	}
 
 	/** Changes the name of a table window from 'oldTitle' to 'newTitle'. */
+	@AstroImageJ(reason = "Support MeasurementsWindow", modified = true)
 	public static void renameResults(String oldTitle, String newTitle) {
 		Frame frame = WindowManager.getFrame(oldTitle);
 		if (frame==null) {
 			error("Rename", "\""+oldTitle+"\" not found");
 			return;
-		} else if (frame instanceof TextWindow) {
-			TextWindow tw = (TextWindow)frame;
-			if (tw.getResultsTable()==null) {
+		} else if (frame instanceof ITableWindow) {
+			ITableWindow tw = (ITableWindow)frame;
+			if (tw.getTable()==null) {
 				error("Rename", "\""+oldTitle+"\" is not a table");
 				return;
 			}

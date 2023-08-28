@@ -561,6 +561,11 @@ task copyBuiltJars(dependsOn: commonFiles, type: Copy) {
         into 'plugins'
     }
 
+    // Copy release notes
+    from(file("packageFiles/common/release_notes.html")) {
+        into 'packageFiles/common'
+    }
+
     // Copy ij.jar to correct place in distribution
     from(file("${project(':ij').buildDir}/libs/ij.jar")) {
         into ''

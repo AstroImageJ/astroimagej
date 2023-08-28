@@ -26,6 +26,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -2042,19 +2043,46 @@ public class IJU {
      * Returns a list of currently displayed images, in reversed order (presumably latest most interesting)
      */
     public static String[] listOfOpenImages(String def) {
-        int off = 0;
-        int[] imageList = WindowManager.getIDList();
-        if (imageList == null)
-            return null;
-        int n = imageList.length;
-        if (def != null) off = 1;
-        String[] images = new String[n + off];
-        for (int i = n - 1; i >= 0; i--) {
-            ImagePlus im = WindowManager.getImage(imageList[i]);
-            images[i + off] = im.getTitle();
+        if (SwingUtilities.isEventDispatchThread()) {
+            int off = 0;
+            int[] imageList = WindowManager.getIDList();
+            if (imageList == null)
+                return null;
+            int n = imageList.length;
+            if (def != null) off = 1;
+            String[] images = new String[n + off];
+            for (int i = n - 1; i >= 0; i--) {
+                ImagePlus im = WindowManager.getImage(imageList[i]);
+                images[i + off] = im.getTitle();
+            }
+            if (def != null) images[0] = def;
+            return images;
+        } else {
+            var o = new String[1][];
+            try {
+                SwingUtilities.invokeAndWait(() -> {
+                    int off = 0;
+                    int[] imageList = WindowManager.getIDList();
+                    if (imageList == null) {
+                        o[0] = null;
+                        return;
+                    }
+                    int n = imageList.length;
+                    if (def != null) off = 1;
+                    String[] images = new String[n + off];
+                    for (int i = n - 1; i >= 0; i--) {
+                        ImagePlus im = WindowManager.getImage(imageList[i]);
+                        images[i + off] = im.getTitle();
+                    }
+                    if (def != null) images[0] = def;
+                    o[0] = images;
+                });
+            } catch (InterruptedException | InvocationTargetException e) {
+                e.printStackTrace();
+                return null;
+            }
+            return o[0];
         }
-        if (def != null) images[0] = def;
-        return images;
     }
 
     /**

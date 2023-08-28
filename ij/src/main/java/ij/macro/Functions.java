@@ -3284,7 +3284,8 @@ public class Functions implements MacroConstants, Measurements {
 		notFound(title);
 	}
 
-	@AstroImageJ(reason = "Move interactions that need the EventQueue to that thread", modified = true)
+	@AstroImageJ(reason = "Move interactions that need the EventQueue to that thread;" +
+			"Remove from window manager immediately;", modified = true)
 	void close() {
 		String pattern = null;
 		boolean keep = false;
@@ -3305,6 +3306,7 @@ public class Functions implements MacroConstants, Measurements {
 			ImageWindow win = imp.getWindow();
 			if (win != null) {
 				imp.changes = false;
+				WindowManager.removeWindow(win);
 				eventCallWait(win::close);
 			} else {
 				imp.saveRoi();
@@ -3337,16 +3339,19 @@ public class Functions implements MacroConstants, Measurements {
 						Window thisWin = windows[win];
 						if (thisWin instanceof ContrastAdjuster) {//B&C
 							if (pattern.equalsIgnoreCase("b&c")) {
+								WindowManager.removeWindow(thisWin);
 								eventCallWait(() -> ((ContrastAdjuster) thisWin).close());
 							}
 						}
 						if (thisWin instanceof ColorPicker) {//CP
 							if (pattern.equalsIgnoreCase("cp")) {
+								WindowManager.removeWindow(thisWin);
 								eventCallWait(() -> ((ColorPicker) thisWin).close());
 							}
 						}
 						if (thisWin instanceof ThresholdAdjuster) {//Threshold
 							if (pattern.equalsIgnoreCase("Threshold")) {
+								WindowManager.removeWindow(thisWin);
 								eventCallWait(() -> ((ThresholdAdjuster) thisWin).close());
 							}
 						}
@@ -3359,6 +3364,7 @@ public class Functions implements MacroConstants, Measurements {
 								leaveIt = leaveIt || !isTextPattern;
 								leaveIt = leaveIt || ed == Editor.currentMacroEditor;
 								if (!leaveIt) {
+									WindowManager.removeWindow(thisWin);
 									eventCallWait(ed::close);
 								}
 							}
@@ -3370,12 +3376,14 @@ public class Functions implements MacroConstants, Measurements {
 							if (wm.match(title, pattern)) {
 								if (title.equals("Results"))
 									IJ.run("Clear Results");
+								WindowManager.removeWindow(thisWin);
 								eventCallWait(txtWin::close);
 							}
 
 						}
 						if (thisWin instanceof RoiManager && pattern.equalsIgnoreCase("roi manager")) {//ROI Manager
 							RoiManager rm = (RoiManager) thisWin;
+							WindowManager.removeWindow(thisWin);
 							eventCallWait(rm::close);
 						}
 					}
@@ -3425,6 +3433,7 @@ public class Functions implements MacroConstants, Measurements {
 					ImageWindow win = imp.getWindow();
 					if (win != null) {
 						imp.changes = false;
+						WindowManager.removeWindow(win);
 						eventCallWait(win::close);
 					} else {
 						imp.saveRoi();

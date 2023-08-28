@@ -235,6 +235,7 @@ public class Stack_Aligner extends MultiAperture_
 	 */
 	protected void processStack ()
 		{
+        Prefs.set("stackAligner.finished", false);
 		// GET MEAN APERTURE BRIGHTNESS
         if (firstImage)
             {
@@ -480,7 +481,7 @@ public class Stack_Aligner extends MultiAperture_
         @Override
         public void shutDown() {
             super.shutDown();
-            Prefs.set("stackAligner.finished", true);
+            SwingUtilities.invokeLater(() -> Prefs.set("stackAligner.finished", true));
         }
 
         /**

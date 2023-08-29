@@ -585,7 +585,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static MeasurementsWindow measurementsWindow;
     static JLabel dummylabel1, inputAverageOverSizespinnerlabel, mmagrefsspinnerlabel, dummylabel4;
 
-    static ImageWindow plotWindow;
+    static PlotWindow plotWindow;
     static ImagePlus plotImage;
     //        static ImageProcessor ip;
     static ImageCanvas plotImageCanvas;
@@ -4062,6 +4062,15 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 Prefs.set("plot2.plotFrameLocationY", plotFrameLocationY);
             }
             plotWindow = plot.show();
+            plotWindow.addComponentListener(new ComponentAdapter() {
+                @Override
+                public void componentResized(ComponentEvent e) {
+                    updatePlotEnabled = false;
+                    plotheightspinner.setValue(plot.getSize().height);
+                    updatePlotEnabled = true;
+                    plotwidthspinner.setValue(plot.getSize().width);
+                }
+            });
             ((PlotWindow) plotWindow).getHelpButton().addActionListener(e -> {
                 String filename = "help/plotwindow_help.html";
                 new HelpPanel(filename, "Plot");
@@ -4124,7 +4133,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             zoomX = 0.0;
             zoomY = 0.0;
         } else {
-            plotWindow = plotImage.getWindow();
+            plotWindow = (PlotWindow) plotImage.getWindow();
 //                    plotFrame = (Frame)plotWindow;
             ImageProcessor ip = plot.getProcessor();
             plotImage.setProcessor("Plot of " + tableName, ip);
@@ -15943,7 +15952,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         }
 
         if (plotImage != null) {
-            plotWindow = plotImage.getWindow();
+            plotWindow = (PlotWindow) plotImage.getWindow();
             if (plotWindow != null) {
                 plotFrameLocationX = plotWindow.getLocation().x;
                 plotFrameLocationY = plotWindow.getLocation().y;

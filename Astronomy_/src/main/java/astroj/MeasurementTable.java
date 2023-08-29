@@ -890,4 +890,16 @@ public class MeasurementTable extends ResultsTable {
         super.sort(column);
         updateView(UpdateEvent.DATA_CHANGED);
     }
+
+    @Override
+    public void showRowNumbers(boolean showNumbers) {
+        super.showRowNumbers(showNumbers);
+        updateView(UpdateEvent.REBUILD);
+    }
+
+    @Override
+    public void showRowIndexes(boolean showIndexes) {
+        super.showRowIndexes(showIndexes);
+        updateView(UpdateEvent.REBUILD);
+    }
 }

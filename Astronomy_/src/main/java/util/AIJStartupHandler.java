@@ -12,6 +12,7 @@ import ij.plugin.PlugIn;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.concurrent.Executors;
 
 /**
  * Handle tasks on AIJ startup that need to reference code outside of the IJ package.
@@ -40,7 +41,8 @@ public class AIJStartupHandler implements PlugIn {
     public void run(String arg) {
         FileAssociationHandler.registerAssociation(multiplotTableHandler);
         ensureConfigFileExists();
-        IJ.runPlugIn(AstroImageJ_Updater.class.getCanonicalName(), "check");
+        Executors.newSingleThreadExecutor()
+                .execute(() -> IJ.runPlugIn(AstroImageJ_Updater.class.getCanonicalName(), "check"));
     }
 
     private void ensureConfigFileExists() {

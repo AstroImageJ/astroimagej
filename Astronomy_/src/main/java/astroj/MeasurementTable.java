@@ -836,6 +836,7 @@ public class MeasurementTable extends ResultsTable {
     public synchronized void reset() {
         super.reset();
         listeners.forEach(Runnable::run);
+        updateView(UpdateEvent.REBUILD);
     }
 
     public synchronized void addListener(Runnable r) {

@@ -4,6 +4,7 @@ import ij.IJ;
 import ij.Prefs;
 import ij.WindowManager;
 import ij.astro.AstroImageJ;
+import ij.astro.accessors.ITableWindow;
 import ij.io.SaveDialog;
 import ij.measure.ResultsTable;
 import ij.text.TextPanel;
@@ -18,12 +19,18 @@ public class MeasurementsWriter implements PlugIn {
 		save(path);
 	}
 
-	@AstroImageJ(reason = "Save table with 16 decimal places, not 6", modified = true)
+	@AstroImageJ(reason = "Save table with 16 decimal places, not 6;" +
+			"Support MeasurementsWindow", modified = true)
 	public boolean save(String path) {
 		Frame frame = WindowManager.getFrontWindow();
-		if (frame!=null && (frame instanceof TextWindow) && !"Log".equals(frame.getTitle())) {
-			TextWindow tw = (TextWindow)frame;
-			return tw.getTextPanel().saveAs(path);
+		if (frame!=null && (frame instanceof ITableWindow tw) && tw.getTable() != null && !"Log".equals(frame.getTitle())) {
+			try {
+				tw.getTable().saveAs(path);
+			} catch (Exception e) {
+				e.printStackTrace();
+				return false;
+			}
+			return true;
 		} else if (IJ.isResultsWindow()) {
 			TextPanel tp = IJ.getTextPanel();
 			if (tp!=null) {

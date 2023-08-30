@@ -8,4 +8,6 @@ public interface ITableWindow {
     void rename(String name);
 
     String getTitle();
+
+    void close();
 }

@@ -283,6 +283,12 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
         table.rename(name);
     }
 
+    @Override
+    public void close() {
+        setVisible(false);
+        dispose();
+    }
+
     public TableRowSorter<MeasurementsTableView> getRowSorter() {
         return rowSorter;
     }

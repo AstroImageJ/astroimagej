@@ -3285,7 +3285,8 @@ public class Functions implements MacroConstants, Measurements {
 	}
 
 	@AstroImageJ(reason = "Move interactions that need the EventQueue to that thread;" +
-			"Remove from window manager immediately;", modified = true)
+			"Remove from window manager immediately;" +
+			"Support MeasurementsWindow;", modified = true)
 	void close() {
 		String pattern = null;
 		boolean keep = false;
@@ -3380,6 +3381,15 @@ public class Functions implements MacroConstants, Measurements {
 								eventCallWait(txtWin::close);
 							}
 
+						}
+						if (thisWin instanceof ITableWindow tw && tw.getTable() != null) {
+							String title = tw.getTitle();
+							if (wm.match(title, pattern)) {
+								if (title.equals("Results"))
+									IJ.run("Clear Results");
+								WindowManager.removeWindow(thisWin);
+								eventCallWait(tw::close);
+							}
 						}
 						if (thisWin instanceof RoiManager && pattern.equalsIgnoreCase("roi manager")) {//ROI Manager
 							RoiManager rm = (RoiManager) thisWin;

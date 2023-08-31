@@ -45,6 +45,7 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
     private final TableRowSorter<MeasurementsTableView> rowSorter;
     @PropertyKey(ignoreAffixes = true, value = "results.loc")
     private static final Property<Point> windowLocation = new Property<>(new Point(), MeasurementsWindow.class);
+    private static final Property<Dimension> windowSize = new Property<>(new Dimension(), MeasurementsWindow.class);
     private static final Property<Boolean> monospaced = new Property<>(false, MeasurementsWindow.class);
     private static final Property<Boolean> antialiased = new Property<>(false, MeasurementsWindow.class);
     private static final Property<Boolean> showSatWarning = new Property<>(true, MeasurementsWindow.class);
@@ -134,7 +135,7 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
                 <html>
                 Left-click to toggle sort view based on column.<br>
                 Right-click to sort table based on column and update plot.<br>
-                Middle-click or Right-click+alt to select entire column.
+                Middle-click or Right-click+alt/opt to select entire column.
                 </html>
                 """);
 
@@ -259,6 +260,7 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
     public void setVisible(boolean b) {
         if (!isVisible() && b) {
             pack();
+            windowSize.sizeSavingWindow(this);
         }
 
         // Don't focus the window again, its already showing

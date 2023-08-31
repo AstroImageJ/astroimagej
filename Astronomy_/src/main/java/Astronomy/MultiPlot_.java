@@ -8132,6 +8132,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         maxdetrendvarsspinner.addChangeListener(ev -> {
             savePreferences();
             closeFitFrames();
+            var old = maxDetrendVars;
             maxDetrendVars = (Integer) maxdetrendvarsspinner.getValue();
             Prefs.set("plot.maxDetrendVars", maxDetrendVars);
             for (int c = 0; c < maxCurves; c++) {
@@ -8148,7 +8149,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 subFrameHeight = subFrame.getHeight();
                 Prefs.set("plot2.subFrameLocationX", subFrameLocationX);
                 Prefs.set("plot2.subFrameLocationY", subFrameLocationY);
-                subFrame.dispose();
+                if (subFrame.isDisplayable()) {
+                    subFrame.dispose();//todo this locks up when many changes are made to the value
+                }
                 subframeWasShowing = true;
             }
             setupArrays();
@@ -8157,7 +8160,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 showMoreCurvesJPanel();
                 repaintFrame(subFrame);
             }
-            updatePlot(updateAllFits());
+            if (old <= maxDetrendVars) {
+                updatePlot(updateAllFits());
+            }
         });
         maxdetrendvarsspinner.addMouseWheelListener(e -> {
             int newValue = (Integer) maxdetrendvarsspinner.getValue() - e.getWheelRotation();
@@ -10676,7 +10681,15 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
     static void showMoreCurvesJPanel() {
         if (subFrame == null) {
-            subFrame = new JFrame("Multi-plot Y-data");
+            subFrame = new JFrame("Multi-plot Y-data") {
+                @Override
+                public void setVisible(boolean b) {
+                    if (!isVisible() && b) {
+                        pack();
+                    }
+                    super.setVisible(b);
+                }
+            };
         }
         subFrame.setIconImage(plotIcon.getImage());
         var mainsubpanel = new JPanel(new SpringLayout());
@@ -10754,7 +10767,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         }
 
         subFrame.add(subscrollpane);
-        subFrame.pack();
         subFrame.setResizable(true);
 
         if (rememberWindowLocations) {
@@ -12670,7 +12682,15 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             fitFrame[c].dispose();
         }
         int nlines = 1;
-        fitFrame[c] = new JFrame("Data Set " + (c + 1) + " Fit Settings");
+        fitFrame[c] = new JFrame("Data Set " + (c + 1) + " Fit Settings") {
+            @Override
+            public void setVisible(boolean b) {
+                if (!isVisible() && b) {
+                    pack();
+                }
+                super.setVisible(b);
+            }
+        };
         fitFrame[c].setIconImage(fitFrameIcon.getImage());
         fitFrame[c].addWindowListener(new WindowAdapter() {
             @Override
@@ -14168,7 +14188,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 break;
             }
         }
-        fitFrame[c].pack();
+
         if (rememberWindowLocations) {
             if (keepSeparateLocationsForFitWindows) {
                 IJU.setFrameSizeAndLocation(fitFrame[c], fitFrameLocationX[c], fitFrameLocationY[c], 0, 0);
@@ -15782,7 +15802,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         Prefs.set("plot2.fitFrameLocationY" + c, fitFrameLocationY[c]);
                     }
                     //                    IJ.log("Disposing fitFrame["+c+"]");
-                    fitFrame[c].dispose();
+                    if (fitFrame[c].isDisplayable()) {
+                        fitFrame[c].dispose();
+                    }
                     //                    IJ.log("Disposed fitFrame["+c+"]");
                     fitFrame[c] = null;
                     //                    IJ.log("fitFrame["+c+"] is null");

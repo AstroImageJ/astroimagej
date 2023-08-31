@@ -3835,7 +3835,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     llab.append(fourPlaces.format(bestFit[curve][1] * bestFit[curve][1])).append(lockToCenter[curve][1] ? "]" : "");
                     llab.append(", ").append(lockToCenter[curve][2] ? "[" : "").append("a/R*=").append(onePlaces.format(bestFit[curve][2])).append(lockToCenter[curve][2] ? "]" : "");
                     if (bpLock[curve]) {
-                        llab.append(", ").append("[").append("b=").append(twoDigits.format(((Number) bpSpinner[curve].getValue()).doubleValue())).append("]");
+                        llab.append(", ").append("[").append("b=").append(twoPlaces.format(((Number) bpSpinner[curve].getValue()).doubleValue())).append("]");
                     } else {
                         llab.append(", ").append(lockToCenter[curve][4] ? "[" : "").append("i=").append(onePlaces.format(bestFit[curve][4] * 180 / Math.PI)).append(lockToCenter[curve][4] ? "]" : "");
                     }

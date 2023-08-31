@@ -3834,7 +3834,11 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     llab = new StringBuilder(ylabel[curve] + " Transit Model ([P=" + uptoTwoPlaces.format(orbitalPeriod[curve]) + "], " + (lockToCenter[curve][1] ? "[" : "") + "(Rp/R*)^2=");
                     llab.append(fourPlaces.format(bestFit[curve][1] * bestFit[curve][1])).append(lockToCenter[curve][1] ? "]" : "");
                     llab.append(", ").append(lockToCenter[curve][2] ? "[" : "").append("a/R*=").append(onePlaces.format(bestFit[curve][2])).append(lockToCenter[curve][2] ? "]" : "");
-                    llab.append(", ").append(lockToCenter[curve][4] ? "[" : "").append("i=").append(onePlaces.format(bestFit[curve][4] * 180 / Math.PI)).append(lockToCenter[curve][4] ? "]" : "");
+                    if (bpLock[curve]) {
+                        llab.append(", ").append("[").append("b=").append(onePlaces.format(((Number) bpSpinner[curve].getValue()).doubleValue())).append("]");
+                    } else {
+                        llab.append(", ").append(lockToCenter[curve][4] ? "[" : "").append("i=").append(onePlaces.format(bestFit[curve][4] * 180 / Math.PI)).append(lockToCenter[curve][4] ? "]" : "");
+                    }
                     llab.append(", ").append(lockToCenter[curve][3] ? "[" : "").append("Tc=").append(uptoSixPlaces.format(bestFit[curve][3])).append(lockToCenter[curve][3] ? "]" : "");
                     llab.append(", ").append(lockToCenter[curve][5] ? "[" : "").append("u1=").append(uptoTwoPlaces.format(bestFit[curve][5])).append(lockToCenter[curve][5] ? "]" : "");
                     llab.append(", ").append(lockToCenter[curve][6] ? "[" : "").append("u2=").append(uptoTwoPlaces.format(bestFit[curve][6])).append(lockToCenter[curve][6] ? "]" : "").append(")");
@@ -13398,8 +13402,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 //double inclination = (180/Math.PI)*Math.acos((1.0 + (forceCircularOrbit[c] ? 0.0 : eccentricity[c]) * Math.sin(forceCircularOrbit[c] ? 0.0 : omega[c])) / (bestFit[c][2] * (1.0 - (forceCircularOrbit[c] ? 0.0 : eccentricity[c] * eccentricity[c]))));
                 priorCenterSpinner[c][4].setValue(inclination);
                 priorCenter[c][4] = inclination;
-                if (autoUpdateFit[c]) updatePlot(updateOneFit(c));
             }
+            if (autoUpdateFit[c]) updatePlot(updateOneFit(c));
         });
         bpPanel.add(bpLockCB[c]);
 

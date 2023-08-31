@@ -134,7 +134,7 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
                 <html>
                 Left-click to toggle sort view based on column.<br>
                 Right-click to sort table based on column and update plot.<br>
-                Middle click to select entire column.
+                Middle-click or Right-click+alt to select entire column.
                 </html>
                 """);
 
@@ -167,7 +167,7 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
                     }
                 }
 
-                if (SwingUtilities.isRightMouseButton(e)) {
+                if (SwingUtilities.isRightMouseButton(e) && !e.isAltDown()) {
                     var i = jTable.getTableHeader().columnAtPoint(e.getPoint());
                     if (i < 0) {
                         return;
@@ -183,7 +183,7 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
                     table.updateRelatedPlot();
                 }
 
-                if (SwingUtilities.isMiddleMouseButton(e)) {
+                if (SwingUtilities.isMiddleMouseButton(e) || (SwingUtilities.isRightMouseButton(e) && e.isAltDown())) {
                     var i = jTable.getTableHeader().columnAtPoint(e.getPoint());
                     if (i < 0) {
                         return;

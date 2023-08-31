@@ -183,6 +183,28 @@ public class Property<T> {
         }
     }
 
+    public void sizeSavingWindow(Frame window) {
+        if (type != Dimension.class) {
+            return;
+        }
+        window.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                set((T) e.getWindow().getSize());
+            }});
+        window.addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                if (e.getComponent().isVisible()) {
+                    set((T) e.getComponent().getSize());
+                }
+            }
+        });
+        if (hasSaved()) {
+            window.setSize((Dimension) get());
+        }
+    }
+
     public void clearListeners() {
         listeners.clear();
     }
@@ -293,6 +315,12 @@ public class Property<T> {
         } else if (type == Point.class) {
             var v = Prefs.getLocation(getPropertyKey());
             return v == null ? value : (T) v;
+        } else if (type == Dimension.class) {
+            var v = Prefs.getLocation(getPropertyKey());
+            if (v != null) {
+                return (T) new Dimension(v.x, v.y);
+            }
+            return value;
         } /*else if (type == EnumSet.class) {
             //todo handle Serializable objects? byte array to string? will it have special chars that break things?
         }*/
@@ -303,6 +331,9 @@ public class Property<T> {
     private void updatePrefs(T value) {
         if (type == Point.class) {
             Prefs.saveLocation(getPropertyKey(), (Point) value);
+            return;
+        } else if (type == Dimension.class) {
+            Prefs.saveLocation(getPropertyKey(), new Point(((Dimension) value).width, ((Dimension) value).height));
             return;
         } else if (type.isEnum()) {
             Prefs.set(getPropertyKey(), ((Enum<?>) value).name());

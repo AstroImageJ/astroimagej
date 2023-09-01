@@ -77,11 +77,9 @@ public class PlotNameResolver {
             if (p instanceof JSONObject o) {
                 var regex = o.get("regex");
                 if (regex instanceof String r) {
-                    r = r.replaceAll("\\\\", "\\\\\\\\");
                     var src = o.get("src");
                     if (src instanceof String s) {
                         var m = SIMPLE_VARIABLE.matcher(s);
-                        //todo some special chars like \w don't work?
                         var matcher = Pattern.compile(r).matcher(table.getLabel(0));//todo allow specifying src in the json?
                         return m.replaceAll(matchResult -> {
                             matcher.reset();

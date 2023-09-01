@@ -149,7 +149,11 @@ public class PlotNameResolver {
                 }
 
                 if (o.get("lab") instanceof String lab) {
-                    var s = table.getLabel(0).split("_");
+                    var split = "_";
+                    if (o.get("split") instanceof String s) {
+                        split = s;
+                    }
+                    var s = table.getLabel(0).split(split);
                     return Pattern.compile("(f[0-9]+)").matcher(lab).replaceAll(matchResult -> {
                         var v = matchResult.group(1).substring(1).trim(); // trim preceding f
 

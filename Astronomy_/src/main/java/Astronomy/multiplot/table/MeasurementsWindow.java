@@ -175,8 +175,8 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
                     }
 
                     var c = jTable.getColumnModel().getColumn(i);
-                    if (((String) c.getIdentifier()).equals("Labels")) {
-                        IJ.error("Cannot sort on Labels column");
+                    if (((String) c.getIdentifier()).equals("Label")) {
+                        IJ.error("Cannot sort on Label column");
                         return;
                     }
                     table.sort(((String) c.getIdentifier()));
@@ -830,7 +830,7 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
 
             if (!isSelected && showSatWarning.get()) {
                 setBackground(table.getBackground());
-                if (table.getColumnName(column).equals("Labels") || table.getColumnName(column).equals("slice")) {
+                if (table.getColumnName(column).equals("Label") || table.getColumnName(column).equals("slice")) {
                     var isLin = false;
                     var isSat = false;
                     for (String heading : MeasurementsWindow.this.table.getHeadings()) {

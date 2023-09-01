@@ -22,6 +22,7 @@ public class PlotNameResolver {
             // json with some depth, https://stackoverflow.com/a/68188893/8753755 with subroutines replaced to depth ~3
             "(\\{(?:[^{}]|(\\{(?:[^{}]|\\{(?:[^{}]|\\{(?:[^{}])*\\})*\\}))*\\})*\\})" +
             "))");
+    private static final Pattern LABEL_VARIABLE = Pattern.compile("(f[0-9]+)");
 
     private PlotNameResolver() {
     }
@@ -154,7 +155,7 @@ public class PlotNameResolver {
                         split = s;
                     }
                     var s = table.getLabel(0).split(split);
-                    return Pattern.compile("(f[0-9]+)").matcher(lab).replaceAll(matchResult -> {
+                    return LABEL_VARIABLE.matcher(lab).replaceAll(matchResult -> {
                         var v = matchResult.group(1).substring(1).trim(); // trim preceding f
 
                         try {

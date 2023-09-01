@@ -2764,6 +2764,13 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
         acc.saveAndClose();
         fitsHeaderFrame.dispose();
         dialogFrame.dispose();
+        if (autoRunAndClose && lastImageName != null) {
+            var i = WindowManager.getImage(lastImageName);
+            if (i != null) {
+                i.close();
+                WindowManager.removeWindow(i.getWindow());
+            }
+        }
     }
 
     public void stateChanged(ChangeEvent ev) {

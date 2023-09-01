@@ -51,7 +51,7 @@ public class PlotNameResolver {
                     v = v.substring(1, v.length()-1);
                 }
 
-                if ("Labels".equals(v)) {
+                if ("Label".equals(v)) {
                     return table.getLabel(0);
                 }
 

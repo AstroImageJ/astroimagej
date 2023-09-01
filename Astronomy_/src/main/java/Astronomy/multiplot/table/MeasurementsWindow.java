@@ -902,7 +902,7 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
         }
 
         @Override
-        public int getColumnCount() {
+        public int getColumnCount() {//todo support string columns
             if (table.getLastColumn() == -1) {
                 return 0;
             }
@@ -917,6 +917,7 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
             if (isRowNumCol(columnIndex)) {
                 return rowIndex+table.getBaseRowNumber();
             }
+            //table.getStringValue() //todo if double == nan, try get string. What to do with col. type? check first value? not safe
             return table.getValue(table.getColumnHeading(offsetCol(columnIndex)), rowIndex);
         }
 
@@ -948,7 +949,7 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
         @Override
         public String getColumnName(int column) {
             if (isLabelCol(column)) {
-                return "Labels";
+                return "Label";
             }
             if (isRowNumCol(column)) {
                 return "";

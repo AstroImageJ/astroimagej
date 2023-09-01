@@ -77,10 +77,16 @@ public class PlotNameResolver {
             if (p instanceof JSONObject o) {
                 var regex = o.get("regex");
                 if (regex instanceof String r) {
-                    var src = o.get("src");
-                    if (src instanceof String s) {
+                    var replace = o.get("replace");
+                    if (replace instanceof String s) {
                         var m = SIMPLE_VARIABLE.matcher(s);
-                        var matcher = Pattern.compile(r).matcher(table.getLabel(0));//todo allow specifying src in the json?
+                        var l = table.getLabel(0);
+                        if (o.get("src") instanceof String src) {
+                            if (table.columnExists(src)) {
+                                l = table.getStringValue(src, 0);
+                            }
+                        }
+                        var matcher = Pattern.compile(r).matcher(l);
                         return m.replaceAll(matchResult -> {
                             matcher.reset();
                             var v = matchResult.group(1).substring(1).trim(); // trim preceding $
@@ -109,7 +115,7 @@ public class PlotNameResolver {
                             }
                         });
                     }
-                    return "<Regex mode match failed, missing 'src' text>";
+                    return "<Regex mode match failed, missing 'replace' text>";
                 }
 
                 var header = o.get("hdr");

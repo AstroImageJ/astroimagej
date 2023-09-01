@@ -3,6 +3,7 @@ package Astronomy;
 
 import Astronomy.multiplot.KeplerSplineControl;
 import Astronomy.multiplot.PlotDraggableShape;
+import Astronomy.multiplot.PlotNameResolver;
 import Astronomy.multiplot.settings.KeplerSplineSettings;
 import Astronomy.multiplot.settings.MPOperator;
 import Astronomy.multiplot.table.MeasurementsWindow;
@@ -863,6 +864,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     private static Property<Integer> binnedDotSize = new Property<>(8, "plot.", "", MultiPlot_.class);
     private static Property<Integer> boldedDotSize = new Property<>(12, "plot.", "", MultiPlot_.class);
     private static Property<Boolean> drawAijVersion = new Property<>(true, "plot.", "", MultiPlot_.class);
+    private static Property<Boolean> useMacroTitle = new Property<>(false, MultiPlot_.class);
+    private static Property<Boolean> useMacroSubtitle = new Property<>(false, MultiPlot_.class);
     private static Property<BiState> drawBinErrBarsBase = new Property<>(BiState.DISABLED, "plot.", "", MultiPlot_.class);
 
     public void run(String inTableNamePlusOptions) {
@@ -8364,20 +8367,38 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         titleradiopanelgroup.add(noTitleButton);
         JRadioButton useTitleButton = new JRadioButton("Custom");
         useTitleButton.setFont(p11);
-        useTitleButton.setSelected(useTitle);
+        useTitleButton.setSelected(useTitle && !useMacroTitle.get());
         titleradiopanelgroup.add(useTitleButton);
+        JRadioButton useMacroTitleButton = new JRadioButton("Macro?");
+        useMacroTitleButton.setFont(p11);
+        useMacroTitleButton.setSelected(useTitle && useMacroTitle.get());//todo don't go into macro mode when loading plotcfg
+        titleradiopanelgroup.add(useMacroTitleButton);
         ButtonGroup titleRadioGroup = new ButtonGroup();
         titleRadioGroup.add(noTitleButton);
         titleRadioGroup.add(useTitleButton);
+        titleRadioGroup.add(useMacroTitleButton);
         noTitleButton.addActionListener(ae -> {
             useTitle = false;
+            useMacroTitle.set(false);
             updatePlot(updateNoFits());
         });
         useTitleButton.addActionListener(ae -> {
             useTitle = true;
+            useMacroTitle.set(false);
+            if (titleField != null) {
+                titleField.setText(title);
+            }
             updatePlot(updateNoFits());
         });
-        SpringUtil.makeCompactGrid(titleradiopanelgroup, 1, 2, 0, 0, 0, 0);
+        useMacroTitleButton.addActionListener(ae -> {
+            useTitle = true;
+            useMacroTitle.set(true);
+            if (titleField != null) {
+                titleField.setText(PlotNameResolver.TITLE_MACRO.get());
+            }
+            updatePlot(updateNoFits());
+        });
+        SpringUtil.makeCompactGrid(titleradiopanelgroup, 1, 3, 0, 0, 0, 0);
         titlegroup.add(titleradiopanelgroup);
 
         // TITLE TEXT FIELD
@@ -8386,17 +8407,32 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         titleField.setFont(p11);
         titleField.getDocument().addDocumentListener(new DocumentListener() {
             public void insertUpdate(DocumentEvent ev) {
-                title = titleField.getText();
+                if (useMacroTitle.get()) {
+                    PlotNameResolver.TITLE_MACRO.set(titleField.getText());
+                    title = PlotNameResolver.resolvePlotTitle(table);
+                } else {
+                    title = titleField.getText();
+                }
                 updatePlot(updateNoFits());
             }
 
             public void removeUpdate(DocumentEvent ev) {
-                title = titleField.getText();
+                if (useMacroTitle.get()) {
+                    PlotNameResolver.TITLE_MACRO.set(titleField.getText());
+                    title = PlotNameResolver.resolvePlotTitle(table);
+                } else {
+                    title = titleField.getText();
+                }
                 updatePlot(updateNoFits());
             }
 
             public void changedUpdate(DocumentEvent ev) {
-                title = titleField.getText();
+                if (useMacroTitle.get()) {
+                    PlotNameResolver.TITLE_MACRO.set(titleField.getText());
+                    title = PlotNameResolver.resolvePlotTitle(table);
+                } else {
+                    title = titleField.getText();
+                }
                 updatePlot(updateNoFits());
             }
         });
@@ -8485,20 +8521,38 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         subtitleradiopanelgroup.add(noSubtitleButton);
         JRadioButton useSubtitleButton = new JRadioButton("Custom");
         useSubtitleButton.setFont(p11);
-        useSubtitleButton.setSelected(useSubtitle);
+        useSubtitleButton.setSelected(useSubtitle && !useMacroSubtitle.get());
         subtitleradiopanelgroup.add(useSubtitleButton);
+        JRadioButton useMacroSubtitleButton = new JRadioButton("Macro?");
+        useMacroSubtitleButton.setFont(p11);
+        useMacroSubtitleButton.setSelected(useSubtitle && useMacroSubtitle.get()); //todo don't when loading plot config
+        subtitleradiopanelgroup.add(useMacroSubtitleButton);
         ButtonGroup subtitleRadioGroup = new ButtonGroup();
         subtitleRadioGroup.add(noSubtitleButton);
         subtitleRadioGroup.add(useSubtitleButton);
+        subtitleRadioGroup.add(useMacroSubtitleButton);
         noSubtitleButton.addActionListener(ae -> {
             useSubtitle = false;
+            useMacroSubtitle.set(false);
             updatePlot(updateNoFits());
         });
         useSubtitleButton.addActionListener(ae -> {
             useSubtitle = true;
+            useMacroSubtitle.set(false);
+            if (subtitleField != null) {
+                subtitleField.setText(subtitle);
+            }
             updatePlot(updateNoFits());
         });
-        SpringUtil.makeCompactGrid(subtitleradiopanelgroup, 1, 2, 0, 0, 0, 0);
+        useMacroSubtitleButton.addActionListener(ae -> {
+            useSubtitle = true;
+            useMacroSubtitle.set(true);
+            if (subtitleField != null) {
+                subtitleField.setText(PlotNameResolver.SUBTITLE_MACRO.get());
+            }
+            updatePlot(updateNoFits());
+        });
+        SpringUtil.makeCompactGrid(subtitleradiopanelgroup, 1, 3, 0, 0, 0, 0);
         subtitlegroup.add(subtitleradiopanelgroup);
 
         // SUBTITLE TEXT FIELD
@@ -8507,17 +8561,32 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         subtitleField.setBorder(BorderFactory.createLineBorder(subBorderColor));
         subtitleField.getDocument().addDocumentListener(new DocumentListener() {
             public void insertUpdate(DocumentEvent ev) {
-                subtitle = subtitleField.getText();
+                if (useMacroSubtitle.get()) {
+                    PlotNameResolver.SUBTITLE_MACRO.set(subtitleField.getText());
+                    subtitle = PlotNameResolver.resolvePlotSubtitle(table);
+                } else {
+                    subtitle = subtitleField.getText();
+                }
                 updatePlot(updateNoFits());
             }
 
             public void removeUpdate(DocumentEvent ev) {
-                subtitle = subtitleField.getText();
+                if (useMacroSubtitle.get()) {
+                    PlotNameResolver.SUBTITLE_MACRO.set(subtitleField.getText());
+                    subtitle = PlotNameResolver.resolvePlotSubtitle(table);
+                } else {
+                    subtitle = subtitleField.getText();
+                }
                 updatePlot(updateNoFits());
             }
 
             public void changedUpdate(DocumentEvent ev) {
-                subtitle = subtitleField.getText();
+                if (useMacroSubtitle.get()) {
+                    PlotNameResolver.SUBTITLE_MACRO.set(subtitleField.getText());
+                    subtitle = PlotNameResolver.resolvePlotSubtitle(table);
+                } else {
+                    subtitle = subtitleField.getText();
+                }
                 updatePlot(updateNoFits());
             }
         });

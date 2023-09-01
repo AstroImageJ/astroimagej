@@ -4071,8 +4071,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 public void componentResized(ComponentEvent e) {
                     updatePlotEnabled = false;
                     plotheightspinner.setValue(plot.getSize().height);
-                    updatePlotEnabled = true;
                     plotwidthspinner.setValue(plot.getSize().width);
+                    updatePlotEnabled = true;
+                    updatePlot(updateNoFits());
                 }
             });
             ((PlotWindow) plotWindow).getHelpButton().addActionListener(e -> {

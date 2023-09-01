@@ -75,18 +75,16 @@ public class PlotNameResolver {
         try {
             var p = new JSONParser().parse(function);
             if (p instanceof JSONObject o) {
-                var regex = o.get("regex");
-                if (regex instanceof String r) {
-                    var replace = o.get("replace");
-                    if (replace instanceof String s) {
-                        var m = SIMPLE_VARIABLE.matcher(s);
+                if (o.get("regex") instanceof String regex) {
+                    if (o.get("replace") instanceof String replace) {
+                        var m = SIMPLE_VARIABLE.matcher(replace);
                         var l = table.getLabel(0);
                         if (o.get("src") instanceof String src) {
                             if (table.columnExists(src)) {
                                 l = table.getStringValue(src, 0);
                             }
                         }
-                        var matcher = Pattern.compile(r).matcher(l);
+                        var matcher = Pattern.compile(regex).matcher(l);
                         return m.replaceAll(matchResult -> {
                             matcher.reset();
                             var v = matchResult.group(1).substring(1).trim(); // trim preceding $
@@ -118,8 +116,7 @@ public class PlotNameResolver {
                     return "<Regex mode match failed, missing 'replace' text>";
                 }
 
-                var header = o.get("hdr");
-                if (header instanceof String hdr) {
+                if (o.get("hdr") instanceof String card) {
                     var l = table.getLabel(0);
                     var ids = WindowManager.getIDList();
                     if (ids != null) {
@@ -135,10 +132,10 @@ public class PlotNameResolver {
                                     if (l.equals(sliceLabel.split("\n")[0])) {
                                         var h = FitsJ.getHeader(i);
                                         int c;
-                                        if (h != null && h.cards() != null && ((c = FitsJ.findCardWithKey(hdr, h)) > -1)) {
+                                        if (h != null && h.cards() != null && ((c = FitsJ.findCardWithKey(card, h)) > -1)) {
                                             return FitsJ.getCardValue(h.cards()[c]).trim();
                                         }
-                                        return "<Failed to find card with key '%s'>".formatted(hdr);
+                                        return "<Failed to find card with key '%s'>".formatted(card);
                                     }
                                 }
                             }
@@ -149,10 +146,9 @@ public class PlotNameResolver {
                     }
                 }
 
-                var lab = o.get("lab");
-                if (lab instanceof String l) {
+                if (o.get("lab") instanceof String lab) {
                     var s = table.getLabel(0).split("_");
-                    return Pattern.compile("(f[0-9]+)").matcher(l).replaceAll(matchResult -> {
+                    return Pattern.compile("(f[0-9]+)").matcher(lab).replaceAll(matchResult -> {
                         var v = matchResult.group(1).substring(1).trim(); // trim preceding f
 
                         try {

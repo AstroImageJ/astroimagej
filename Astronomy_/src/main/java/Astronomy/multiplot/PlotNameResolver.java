@@ -13,7 +13,7 @@ import java.util.regex.Pattern;
 public class PlotNameResolver {
     public static final Property<String> TITLE_MACRO = new Property<>("", PlotNameResolver.class);
     public static final Property<String> SUBTITLE_MACRO = new Property<>("", PlotNameResolver.class);
-    private static final Pattern SIMPLE_VARIABLE = Pattern.compile("(\\$\\w+)");
+    private static final Pattern SIMPLE_VARIABLE = Pattern.compile("(\\$\\S+)");
     private static final Pattern VARIABLE = Pattern.compile("(\\$(" + // Variables start with $
             // simple word
             "\\w+|" +
@@ -89,13 +89,23 @@ public class PlotNameResolver {
 
                             try {
                                 var g = Integer.parseInt(v);
+                                if (g < 0) {
+                                    return "<Invalid group index: '%s'. Must be > 0>".formatted(g);
+                                }
                                 if (matcher.find()) {
-                                    return matcher.group(g);//todo handle missing group
+                                    if (g <= matcher.groupCount()) {
+                                        return matcher.group(g);
+                                    }
+                                    return "<Invalid group index: '%s'>".formatted(g);
                                 }
                                 return "<Failed to match '%s'>".formatted(matcher.pattern().pattern());
                             } catch (NumberFormatException e) {
                                 if (matcher.find()) {
-                                    return matcher.group(v);
+                                    try {
+                                        return matcher.group(v);
+                                    } catch (IllegalArgumentException ignored) {
+                                        return "<Invalid group name: '%s'>".formatted(v);
+                                    }
                                 }
                                 return "<Failed to match '%s'>".formatted(matcher.pattern().pattern());
                             }

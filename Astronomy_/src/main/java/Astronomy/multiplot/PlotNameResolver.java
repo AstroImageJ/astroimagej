@@ -324,6 +324,18 @@ public class PlotNameResolver {
                                     Example:
                                         Macro: MA: ${"pref": "APMODE"}, Radius: ${"pref": "APRADIUS"}px
                                         Output: MA: FIXED, Radius: 15px
+                                Regex. Allows applying a regex find and replace on text, including the output of other functions.
+                                    It has 3 parts:
+                                        - regex: the regex expression to match with
+                                        - replace: the text that will be returned, including any group references
+                                        - src: Optional. Can be a column name, in which case it will extract the first
+                                            value from it, or a function, in which case it will run that function first.
+                                    Examples:
+                                        Header: CCDTEMP = 23.5
+                                        Table: Column Label, first value processed_altair_21.fits
+                                        Macro: Regex with ${"regex": "_(\\w+)_", "replace": "$1"} and
+                                                ${"regex": "([0-9]+)", "replace": "$1C", "src":{"hdr":"CCDTEMP"}}
+                                        Output: Regex with altair and 23
                         """);
         var s = new JScrollPane(tp);
         s.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);

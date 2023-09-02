@@ -227,9 +227,9 @@ public class PlotNameResolver {
     private static String keyResolver(String key) {
         return switch (key) {
             case "APLOADING" -> MultiAperture_.apLoading.getPropertyKey();
-            case "APRADIUS1" -> "aperture.lastradius";
-            case "APRADIUS2" -> "aperture.lastrback1";
-            case "APRADIUS3" -> "aperture.lastrback2";
+            case "APRADIUS" -> "aperture.lastradius";
+            case "APSKYINNER" -> "aperture.lastrback1";
+            case "APSKYOUTER" -> "aperture.lastrback2";
             case "APMODE" -> "multiaperture.apradius";
             case "APVARFWHM" -> "multiaperture.apfwhmfactor";
             case "APVARFLUXCUT" -> "multiaperture.automodefluxcutoff";

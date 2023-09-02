@@ -22,7 +22,7 @@ public class PlotNameResolver {
             // json with some depth, https://stackoverflow.com/a/68188893/8753755 with subroutines replaced to depth ~3
             "(\\{(?:[^{}]|(\\{(?:[^{}]|\\{(?:[^{}]|\\{(?:[^{}])*\\})*\\}))*\\})*\\})" +
             "))");
-    private static final Pattern LABEL_VARIABLE = Pattern.compile("(f[0-9]+)");
+    private static final Pattern LABEL_VARIABLE = Pattern.compile("(\\$[0-9]+)");
 
     private PlotNameResolver() {
     }
@@ -76,6 +76,7 @@ public class PlotNameResolver {
         try {
             var p = new JSONParser().parse(function);
             if (p instanceof JSONObject o) {
+                // Regex function
                 if (o.get("regex") instanceof String regex) {
                     if (o.get("replace") instanceof String replace) {
                         var m = SIMPLE_VARIABLE.matcher(replace);
@@ -121,6 +122,7 @@ public class PlotNameResolver {
                     return "<Regex mode match failed, missing 'replace' text>";
                 }
 
+                // Header function
                 if (o.get("hdr") instanceof String card) {
                     var l = table.getLabel(0);
                     var ids = WindowManager.getIDList();
@@ -161,7 +163,7 @@ public class PlotNameResolver {
                         var v = matchResult.group(1).substring(1).trim(); // trim preceding f
 
                         try {
-                            var g = Integer.parseInt(v);
+                            var g = Integer.parseInt(v) - 1;
                             if (g > -1) {
                                 if (g >= s.length) {
                                     return "<Label group greater than possible: '%s'>".formatted(g);

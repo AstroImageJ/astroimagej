@@ -340,8 +340,8 @@ public class PlotNameResolver {
         var s = new JScrollPane(tp);
         s.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         f.add(s);
-        UIHelper.setCenteredOnScreen(f, MultiPlot_.mainFrame);
         f.pack();
+        UIHelper.setCenteredOnScreen(f, MultiPlot_.mainFrame);
         f.setVisible(true);
     }
 }

@@ -195,8 +195,8 @@ public class FilterHandler extends JDialog {
         var s = new JScrollPane(tp);
         s.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         f.add(s);
-        UIHelper.setCenteredOnScreen(f, this);
         f.pack();
+        UIHelper.setCenteredOnScreen(f, this);
         f.setVisible(true);
     }
 

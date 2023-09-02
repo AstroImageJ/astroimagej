@@ -82,13 +82,7 @@ public class PlotNameResolver {
                         var m = SIMPLE_VARIABLE.matcher(replace);
                         var l = table.getLabel(0);
                         if (o.get("src") instanceof String src) {
-                            if (src.startsWith("{")) {
-                                l = parseFunction(src, table);
-                            } else if (table.columnExists(src)) {
-                                l = table.getStringValue(src, 0);
-                            } else {
-                                return "<Invalid col. name for src: '%s'>".formatted(src);
-                            }
+                            l = resolve(table, src);//todo is this good?
                         }
                         var matcher = Pattern.compile(regex).matcher(l);
                         return m.replaceAll(matchResult -> {

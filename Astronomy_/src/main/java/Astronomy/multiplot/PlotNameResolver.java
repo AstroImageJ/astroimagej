@@ -5,6 +5,7 @@ import astroj.MeasurementTable;
 import astroj.json.simple.JSONObject;
 import astroj.json.simple.parser.JSONParser;
 import astroj.json.simple.parser.ParseException;
+import ij.ImagePlus;
 import ij.WindowManager;
 import ij.astro.io.prefs.Property;
 
@@ -124,35 +125,20 @@ public class PlotNameResolver {
 
                 // Header function
                 if (o.get("hdr") instanceof String card) {
-                    var l = table.getLabel(0);
-                    var ids = WindowManager.getIDList();
-                    if (ids != null) {
-                        for (int id : ids) {
-                            var i = WindowManager.getImage(id);
-                            if (i != null) {
-                                var s = i.getImageStack();
-                                //var n = s.getShortSliceLabel(0, 500);
-                                for (String sliceLabel : s.getSliceLabels()) {
-                                    if (sliceLabel == null) {
-                                        break;
-                                    }
-                                    if (l.equals(sliceLabel.split("\n")[0])) {
-                                        var h = FitsJ.getHeader(i);
-                                        int c;
-                                        if (h != null && h.cards() != null && ((c = FitsJ.findCardWithKey(card, h)) > -1)) {
-                                            return FitsJ.getCardValue(h.cards()[c]).trim();
-                                        }
-                                        return "<Failed to find card with key '%s'>".formatted(card);
-                                    }
-                                }
-                            }
+                    var label = table.getLabel(0);
+                    var i = getImpForSlice(label);
+                    if (i != null) {
+                        var h = FitsJ.getHeader(i);
+                        int c;
+                        if (h != null && h.cards() != null && ((c = FitsJ.findCardWithKey(card, h)) > -1)) {
+                            return FitsJ.getCardValue(h.cards()[c]).trim();
                         }
-                        return "<Found no matching image for '%s'>".formatted(l);
-                    } else {
-                        return "<No open images>";
+                        return "<Failed to find card with key '%s'>".formatted(card);
                     }
+                    return "<Found no matching image for '%s'>".formatted(label);
                 }
 
+                // Label function
                 if (o.get("lab") instanceof String lab) {
                     var split = "_";
                     if (o.get("split") instanceof String s) {
@@ -160,7 +146,7 @@ public class PlotNameResolver {
                     }
                     var s = table.getLabel(0).split(split);
                     return LABEL_VARIABLE.matcher(lab).replaceAll(matchResult -> {
-                        var v = matchResult.group(1).substring(1).trim(); // trim preceding f
+                        var v = matchResult.group(1).substring(1).trim(); // trim preceding $
 
                         try {
                             var g = Integer.parseInt(v) - 1;
@@ -177,6 +163,43 @@ public class PlotNameResolver {
                         }
                     });
                 }
+
+                // Title match
+                if (o.get("title") instanceof String title) {
+                    var split = "_";
+                    if (o.get("split") instanceof String s) {
+                        split = s;
+                    }
+
+                    var label = table.getLabel(0);
+                    var i = getImpForSlice(label);
+                    if (i != null) {
+                        var t = i.getTitle();
+                        if (!t.isEmpty()) {
+                            var s = t.split(split);
+                            return LABEL_VARIABLE.matcher(title).replaceAll(matchResult -> {
+                                var v = matchResult.group(1).substring(1).trim(); // trim preceding $
+
+                                try {
+                                    var g = Integer.parseInt(v) - 1;
+                                    if (g > -1) {
+                                        if (g >= s.length) {
+                                            return "<Title group greater than possible: '%s'>".formatted(g);
+                                        }
+                                        return s[g];
+                                    } else {
+                                        return "<Title group must be greater than 0: '%s'>".formatted(g);
+                                    }
+                                } catch (NumberFormatException e) {
+                                    return "<Failed to get title match number: '%s'>".formatted(v);
+                                }
+                            });
+                        }
+                        return "<Stack title was empty>";
+                    }
+                    return "<Found no matching image for '%s'>".formatted(label);
+
+                }
             }
 
             return "<Failed to identify script mode>";
@@ -187,5 +210,28 @@ public class PlotNameResolver {
             e.printStackTrace();
             return "<An error occurred running script match>";
         }
+    }
+
+    private static ImagePlus getImpForSlice(String label) {
+        var ids = WindowManager.getIDList();
+        if (ids != null) {
+            for (int id : ids) {
+                var i = WindowManager.getImage(id);
+                if (i != null) {
+                    var s = i.getImageStack();
+                    //var n = s.getShortSliceLabel(0, 500);
+                    for (String sliceLabel : s.getSliceLabels()) {
+                        if (sliceLabel == null) {
+                            break;
+                        }
+                        if (label.equals(sliceLabel.split("\n")[0])) {
+                            return i;
+                        }
+                    }
+                }
+            }
+        }
+
+        return null;
     }
 }

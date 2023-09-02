@@ -1,11 +1,14 @@
 package Astronomy.multiplot;
 
+import Astronomy.Aperture_;
+import Astronomy.MultiAperture_;
 import astroj.FitsJ;
 import astroj.MeasurementTable;
 import astroj.json.simple.JSONObject;
 import astroj.json.simple.parser.JSONParser;
 import astroj.json.simple.parser.ParseException;
 import ij.ImagePlus;
+import ij.Prefs;
 import ij.WindowManager;
 import ij.astro.io.prefs.Property;
 
@@ -214,7 +217,23 @@ public class PlotNameResolver {
             return "<Found no matching image for '%s'>".formatted(label);
         }
 
+        if (o.get("pref") instanceof String key) {
+            var mappedKey = keyResolver(key);
+            return Prefs.get(mappedKey, "<Missing value for '%s' (%s)>".formatted(mappedKey, key));
+        }
+
         return "<Failed to identify script mode>";
+    }
+
+    private static String keyResolver(String key) {
+        return switch (key) {
+            case "APLOADING" -> MultiAperture_.apLoading.getPropertyKey();
+            case "APRADIUS1" -> Aperture_.AP_PREFS_RADIUS;
+            case "APRADIUS2" -> Aperture_.AP_PREFS_RBACK1;
+            case "APRADIUS3" -> Aperture_.AP_PREFS_RBACK2;
+            case "APMODE" -> "multiaperture.apradius";
+            default -> key;
+        };
     }
 
     private static ImagePlus getImpForSlice(String label) {

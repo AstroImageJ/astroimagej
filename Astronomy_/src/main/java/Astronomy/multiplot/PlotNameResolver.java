@@ -21,7 +21,7 @@ public class PlotNameResolver {
             // word in quotes
             "((?=[\"'])(?:\"[^\"\\\\]*(?:\\\\[\\s\\S][^\"\\\\]*)*\"|'[^'\\\\]*(?:\\\\[\\s\\S][^'\\\\]*)*'))|" +
             // json with some depth, https://stackoverflow.com/a/68188893/8753755 with subroutines replaced to depth ~3
-            "(\\{(?:[^{}]|(\\{(?:[^{}]|\\{(?:[^{}]|\\{(?:[^{}])*\\})*\\}))*\\})*\\})" +
+            "(\\{(?:[^{}]|((\\{(?:[^{}]|((\\{(?:[^{}]|((\\{(?:[^{}]|((\\{(?:[^{}]|((\\{(?:[^{}])*\\})))*\\})))*\\})))*\\})))*\\})))*\\})" +
             "))");
     private static final Pattern LABEL_VARIABLE = Pattern.compile("(\\$[0-9]+)");
 
@@ -77,132 +77,9 @@ public class PlotNameResolver {
         try {
             var p = new JSONParser().parse(function);
             if (p instanceof JSONObject o) {
-                // Regex function
-                if (o.get("regex") instanceof String regex) {
-                    if (o.get("replace") instanceof String replace) {
-                        var m = SIMPLE_VARIABLE.matcher(replace);
-                        var l = table.getLabel(0);
-                        if (o.get("src") instanceof String src) {
-                            if (src.startsWith("{")) {
-                                l = parseFunction(src, table);
-                            } else if (table.columnExists(src)) {
-                                l = table.getStringValue(src, 0);
-                            } else {
-                                return "<Invalid col. name for src: '%s'>".formatted(src);
-                            }
-                        }
-                        var matcher = Pattern.compile(regex).matcher(l);
-                        return m.replaceAll(matchResult -> {
-                            matcher.reset();
-                            var v = matchResult.group(1).substring(1).trim(); // trim preceding $
-
-                            try {
-                                var g = Integer.parseInt(v);
-                                if (g < 0) {
-                                    return "<Invalid group index: '%s'. Must be > 0>".formatted(g);
-                                }
-                                if (matcher.find()) {
-                                    if (g <= matcher.groupCount()) {
-                                        return matcher.group(g);
-                                    }
-                                    return "<Invalid group index: '%s'>".formatted(g);
-                                }
-                                return "<Failed to match '%s'>".formatted(matcher.pattern().pattern());
-                            } catch (NumberFormatException e) {
-                                if (matcher.find()) {
-                                    try {
-                                        return matcher.group(v);
-                                    } catch (IllegalArgumentException ignored) {
-                                        return "<Invalid group name: '%s'>".formatted(v);
-                                    }
-                                }
-                                return "<Failed to match '%s'>".formatted(matcher.pattern().pattern());
-                            }
-                        });
-                    }
-                    return "<Regex mode match failed, missing 'replace' text>";
-                }
-
-                // Header function
-                if (o.get("hdr") instanceof String card) {
-                    var label = table.getLabel(0);
-                    var i = getImpForSlice(label);
-                    if (i != null) {
-                        var h = FitsJ.getHeader(i);
-                        int c;
-                        if (h != null && h.cards() != null && ((c = FitsJ.findCardWithKey(card, h)) > -1)) {
-                            return FitsJ.getCardValue(h.cards()[c]).trim();
-                        }
-                        return "<Failed to find card with key '%s'>".formatted(card);
-                    }
-                    return "<Found no matching image for '%s'>".formatted(label);
-                }
-
-                // Label function
-                if (o.get("lab") instanceof String lab) {
-                    var split = "_";
-                    if (o.get("split") instanceof String s) {
-                        split = s;
-                    }
-                    var s = table.getLabel(0).split(split);
-                    return LABEL_VARIABLE.matcher(lab).replaceAll(matchResult -> {
-                        var v = matchResult.group(1).substring(1).trim(); // trim preceding $
-
-                        try {
-                            var g = Integer.parseInt(v) - 1;
-                            if (g > -1) {
-                                if (g >= s.length) {
-                                    return "<Label group greater than possible: '%s'>".formatted(g);
-                                }
-                                return s[g];
-                            } else {
-                                return "<Label group must be greater than 0: '%s'>".formatted(g);
-                            }
-                        } catch (NumberFormatException e) {
-                            return "<Failed to get label match number: '%s'>".formatted(v);
-                        }
-                    });
-                }
-
-                // Title match
-                if (o.get("title") instanceof String title) {
-                    var split = "_";
-                    if (o.get("split") instanceof String s) {
-                        split = s;
-                    }
-
-                    var label = table.getLabel(0);
-                    var i = getImpForSlice(label);
-                    if (i != null) {
-                        var t = i.getTitle();
-                        if (!t.isEmpty()) {
-                            var s = t.split(split);
-                            return LABEL_VARIABLE.matcher(title).replaceAll(matchResult -> {
-                                var v = matchResult.group(1).substring(1).trim(); // trim preceding $
-
-                                try {
-                                    var g = Integer.parseInt(v) - 1;
-                                    if (g > -1) {
-                                        if (g >= s.length) {
-                                            return "<Title group greater than possible: '%s'>".formatted(g);
-                                        }
-                                        return s[g];
-                                    } else {
-                                        return "<Title group must be greater than 0: '%s'>".formatted(g);
-                                    }
-                                } catch (NumberFormatException e) {
-                                    return "<Failed to get title match number: '%s'>".formatted(v);
-                                }
-                            });
-                        }
-                        return "<Stack title was empty>";
-                    }
-                    return "<Found no matching image for '%s'>".formatted(label);
-
-                }
+                return functionRunner(o, table);
             }
-
-            return "<Failed to identify script mode>";
+            return "<Parse went wrong>";
         } catch (ParseException e) {
             e.printStackTrace();//todo don't log this
             return "<JSON Parse Error>";
@@ -210,6 +87,134 @@ public class PlotNameResolver {
             e.printStackTrace();
             return "<An error occurred running script match>";
         }
+    }
+
+    private static String functionRunner(JSONObject o, MeasurementTable table) {
+        // Regex function
+        if (o.get("regex") instanceof String regex) {
+            if (o.get("replace") instanceof String replace) {
+                var m = SIMPLE_VARIABLE.matcher(replace);
+                var l = table.getLabel(0);
+                if (o.get("src") instanceof String src) {
+                    if (table.columnExists(src)) {
+                        l = table.getStringValue(src, 0);
+                    } else {
+                        return "<Invalid col. name for src: '%s'>".formatted(src);
+                    }
+                } else if (o.get("src") instanceof JSONObject s) {
+                    l = functionRunner(s, table);
+                }
+
+                var matcher = Pattern.compile(regex).matcher(l);
+                return m.replaceAll(matchResult -> {
+                    matcher.reset();
+                    var v = matchResult.group(1).substring(1).trim(); // trim preceding $
+
+                    try {
+                        var g = Integer.parseInt(v);
+                        if (g < 0) {
+                            return "<Invalid group index: '%s'. Must be > 0>".formatted(g);
+                        }
+                        if (matcher.find()) {
+                            if (g <= matcher.groupCount()) {
+                                return matcher.group(g);
+                            }
+                            return "<Invalid group index: '%s'>".formatted(g);
+                        }
+                        return "<Failed to match '%s'>".formatted(matcher.pattern().pattern());
+                    } catch (NumberFormatException e) {
+                        if (matcher.find()) {
+                            try {
+                                return matcher.group(v);
+                            } catch (IllegalArgumentException ignored) {
+                                return "<Invalid group name: '%s'>".formatted(v);
+                            }
+                        }
+                        return "<Failed to match '%s'>".formatted(matcher.pattern().pattern());
+                    }
+                });
+            }
+            return "<Regex mode match failed, missing 'replace' text>";
+        }
+
+        // Header function
+        if (o.get("hdr") instanceof String card) {
+            var label = table.getLabel(0);
+            var i = getImpForSlice(label);
+            if (i != null) {
+                var h = FitsJ.getHeader(i);
+                int c;
+                if (h != null && h.cards() != null && ((c = FitsJ.findCardWithKey(card, h)) > -1)) {
+                    return FitsJ.getCardValue(h.cards()[c]).trim();
+                }
+                return "<Failed to find card with key '%s'>".formatted(card);
+            }
+            return "<Found no matching image for '%s'>".formatted(label);
+        }
+
+        // Label function
+        if (o.get("lab") instanceof String lab) {
+            var split = "_";
+            if (o.get("split") instanceof String s) {
+                split = s;
+            }
+            var s = table.getLabel(0).split(split);
+            return LABEL_VARIABLE.matcher(lab).replaceAll(matchResult -> {
+                var v = matchResult.group(1).substring(1).trim(); // trim preceding $
+
+                try {
+                    var g = Integer.parseInt(v) - 1;
+                    if (g > -1) {
+                        if (g >= s.length) {
+                            return "<Label group greater than possible: '%s'>".formatted(g);
+                        }
+                        return s[g];
+                    } else {
+                        return "<Label group must be greater than 0: '%s'>".formatted(g);
+                    }
+                } catch (NumberFormatException e) {
+                    return "<Failed to get label match number: '%s'>".formatted(v);
+                }
+            });
+        }
+
+        // Title match
+        if (o.get("title") instanceof String title) {
+            var split = "_";
+            if (o.get("split") instanceof String s) {
+                split = s;
+            }
+
+            var label = table.getLabel(0);
+            var i = getImpForSlice(label);
+            if (i != null) {
+                var t = i.getTitle();
+                if (!t.isEmpty()) {
+                    var s = t.split(split);
+                    return LABEL_VARIABLE.matcher(title).replaceAll(matchResult -> {
+                        var v = matchResult.group(1).substring(1).trim(); // trim preceding $
+
+                        try {
+                            var g = Integer.parseInt(v) - 1;
+                            if (g > -1) {
+                                if (g >= s.length) {
+                                    return "<Title group greater than possible: '%s'>".formatted(g);
+                                }
+                                return s[g];
+                            } else {
+                                return "<Title group must be greater than 0: '%s'>".formatted(g);
+                            }
+                        } catch (NumberFormatException e) {
+                            return "<Failed to get title match number: '%s'>".formatted(v);
+                        }
+                    });
+                }
+                return "<Stack title was empty>";
+            }
+            return "<Found no matching image for '%s'>".formatted(label);
+        }
+
+        return "<Failed to identify script mode>";
     }
 
     private static ImagePlus getImpForSlice(String label) {

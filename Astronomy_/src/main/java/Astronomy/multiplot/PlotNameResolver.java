@@ -335,7 +335,7 @@ public class PlotNameResolver {
                                         Table: Column Label, first value processed_altair_21.fits
                                         Macro: Regex with ${"regex": "_(\\w+)_", "replace": "$1"} and
                                                 ${"regex": "([0-9]+)", "replace": "$1C", "src":{"hdr":"CCDTEMP"}}
-                                        Output: Regex with altair and 23
+                                        Output: Regex with altair and 23C
                         """);
         var s = new JScrollPane(tp);
         s.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);

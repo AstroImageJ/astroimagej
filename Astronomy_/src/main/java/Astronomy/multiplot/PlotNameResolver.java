@@ -81,7 +81,9 @@ public class PlotNameResolver {
                         var m = SIMPLE_VARIABLE.matcher(replace);
                         var l = table.getLabel(0);
                         if (o.get("src") instanceof String src) {
-                            if (table.columnExists(src)) {
+                            if (src.startsWith("{")) {
+                                l = parseFunction(src, table);
+                            } else if (table.columnExists(src)) {
                                 l = table.getStringValue(src, 0);
                             } else {
                                 return "<Invalid col. name for src: '%s'>".formatted(src);

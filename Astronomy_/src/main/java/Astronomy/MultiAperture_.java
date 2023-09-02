@@ -551,6 +551,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     }
 
     private void resetRadii() {
+        Prefs.set("aperture.lastradius", radius);
+        Prefs.set("aperture.lastrback1", rBack1);
+        Prefs.set("aperture.lastrback2", rBack2);
         if (oldRadii == null) return;
         radius = oldRadii.r();
         rBack1 = oldRadii.r2();

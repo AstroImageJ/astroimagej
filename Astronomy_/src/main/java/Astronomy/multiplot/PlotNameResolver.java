@@ -1,6 +1,5 @@
 package Astronomy.multiplot;
 
-import Astronomy.Aperture_;
 import Astronomy.MultiAperture_;
 import astroj.FitsJ;
 import astroj.MeasurementTable;
@@ -228,10 +227,12 @@ public class PlotNameResolver {
     private static String keyResolver(String key) {
         return switch (key) {
             case "APLOADING" -> MultiAperture_.apLoading.getPropertyKey();
-            case "APRADIUS1" -> Aperture_.AP_PREFS_RADIUS;
-            case "APRADIUS2" -> Aperture_.AP_PREFS_RBACK1;
-            case "APRADIUS3" -> Aperture_.AP_PREFS_RBACK2;
+            case "APRADIUS1" -> "aperture.lastradius";
+            case "APRADIUS2" -> "aperture.lastrback1";
+            case "APRADIUS3" -> "aperture.lastrback2";
             case "APMODE" -> "multiaperture.apradius";
+            case "APVARFWHM" -> "multiaperture.apfwhmfactor";
+            case "APVARFLUXCUT" -> "multiaperture.automodefluxcutoff";
             default -> key;
         };
     }

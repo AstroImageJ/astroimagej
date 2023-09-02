@@ -1,6 +1,7 @@
 package Astronomy.multiplot;
 
 import Astronomy.MultiAperture_;
+import Astronomy.MultiPlot_;
 import astroj.FitsJ;
 import astroj.MeasurementTable;
 import astroj.json.simple.JSONObject;
@@ -10,7 +11,10 @@ import ij.ImagePlus;
 import ij.Prefs;
 import ij.WindowManager;
 import ij.astro.io.prefs.Property;
+import ij.astro.util.UIHelper;
 
+import javax.swing.*;
+import java.awt.*;
 import java.util.regex.Pattern;
 
 public class PlotNameResolver {
@@ -258,5 +262,74 @@ public class PlotNameResolver {
         }
 
         return null;
+    }
+
+    public static void showHelpWindow() {
+        var f = new JFrame("Title Macro Help");
+        var tp = new JTextPane();
+        tp.setFocusable(false);
+        tp.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        tp.replaceSelection(
+                """
+                        Title macros work to dynamically create plot title and subtitle based on available information.
+                        The macro is stored separately from the final finished title, allowing you to switch between them to
+                        make any necessary edits. Errors that occur will be displayed in the title. All names are case sensitive.
+                                        
+                        Macros consist of 3 parts that can be combined in any way:
+                            - Normal text. This text will appear as-is when rendered.
+                            - Variables, that start with $. These variables will be substituted by the the first value in
+                                the column specified.
+                            - Functions, that start with $. They take the form of a JSON object to perform various operation on
+                                text.
+                                        
+                        Variables
+                            They must begin with a $, followed by the column name. The column name may be wrapped in "",
+                            which is required for columns whose name carries whitespace or non-standard characters.
+                            Examples:
+                                Table: Column AIRMASS, first value -1
+                                Macro: Hello $AIRMASS
+                                Output: Hello -1
+                                
+                                Table: Column Label, first value processed_altair_21.fits
+                                Macro: Hello $Label
+                                Output: Hello processed_altair_21.fits
+                            
+                        Functions
+                            They must begin with $, and take the form of a JSON object. Several function are available.
+                            
+                            Functions:
+                                Label. Splits the first value in the Label column and allows selective inclusion of those parts.
+                                    Indexing begins at 1, and counts from the left.
+                                    By default splits on _, but optionally can specify any character sequence.
+                                    Example:
+                                        Table: Column Label, first value processed_altair_21.fits
+                                        Macro: Hello ${"lab":"Reversed: $3 $2$1", "split":"_"} // Split entry is optional
+                                        Output: Hello Reversed: 21.fits altairprocessed
+                                Title. Same format and behavior as Label, but acts on the stack title. Stack must be open.
+                                Header. Extracts values from the image header of the first slice. Image must be open.
+                                    Example:
+                                        Header: CCDTEMP = 23.5
+                                        Macro: Hello ${"hdr":"CCDTEMP"}C
+                                        Output: Hello 23.5C
+                                Preferences. Read values from the preferences file. Some keywords are provided to aid in value
+                                    extraction.
+                                    Keywords:
+                                        - "APLOADING": The method in which MA loaded apertures
+                                        - "APRADIUS": The last used aperture radius
+                                        - "APSKYINNER": The last used inner sky radius
+                                        - "APSKYOUTER": The last used outer sky radius
+                                        - "APMODE": The method MA used to calculate ap. radius
+                                        - "APVARFWHM": The FWHM value used by var. ap.
+                                        - "APVARFLUXCUT": The flux cutoff used by var. ap.
+                                    Example:
+                                        Macro: MA: ${"pref": "APMODE"}, Radius: ${"pref": "APRADIUS"}px
+                                        Output: MA: FIXED, Radius: 15px
+                        """);
+        var s = new JScrollPane(tp);
+        s.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        f.add(s);
+        UIHelper.setCenteredOnScreen(f, MultiPlot_.mainFrame);
+        f.pack();
+        f.setVisible(true);
     }
 }

@@ -8398,7 +8398,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             }
             updatePlot(updateNoFits());
         });
-        SpringUtil.makeCompactGrid(titleradiopanelgroup, 1, 3, 0, 0, 0, 0);
+        var titleMacroHelpButton = new JButton(createImageIcon("astroj/images/help.png", "Multi-plot Help"));
+        titleMacroHelpButton.addActionListener($ -> PlotNameResolver.showHelpWindow());
+        titleradiopanelgroup.add(titleMacroHelpButton);
+        SpringUtil.makeCompactGrid(titleradiopanelgroup, 1, 4, 0, 0, 0, 0);
         titlegroup.add(titleradiopanelgroup);
 
         // TITLE TEXT FIELD
@@ -8552,7 +8555,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             }
             updatePlot(updateNoFits());
         });
-        SpringUtil.makeCompactGrid(subtitleradiopanelgroup, 1, 3, 0, 0, 0, 0);
+        titleMacroHelpButton = new JButton(createImageIcon("astroj/images/help.png", "Multi-plot Help"));
+        titleMacroHelpButton.addActionListener($ -> PlotNameResolver.showHelpWindow());
+        subtitleradiopanelgroup.add(titleMacroHelpButton);
+        SpringUtil.makeCompactGrid(subtitleradiopanelgroup, 1, 4, 0, 0, 0, 0);
         subtitlegroup.add(subtitleradiopanelgroup);
 
         // SUBTITLE TEXT FIELD

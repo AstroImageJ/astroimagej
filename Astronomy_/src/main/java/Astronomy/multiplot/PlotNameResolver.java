@@ -140,6 +140,23 @@ public class PlotNameResolver {
             return new Pair.GenericPair<>("<Missing value for '%s' (%s)>".formatted(mappedKey, key), true);
         }
 
+        // Lable function
+        if (o.get("lab") instanceof String lab) {
+            var j = new JSONObject();
+            j.put("split", lab);
+            j.put("splitter", o.getOrDefault("splitter", "_"));
+            return functionRunner(j, table);
+        }
+
+        // Title function
+        if (o.get("title") instanceof String lab) {
+            var j = new JSONObject();
+            j.put("split", lab);
+            j.put("splitter", o.getOrDefault("splitter", "_"));
+            j.put("src", "title");
+            return functionRunner(j, table);
+        }
+
         // Header function
         if (o.get("hdr") instanceof String card) {
             var label = table.getLabel(0);
@@ -310,7 +327,6 @@ public class PlotNameResolver {
     public static void showHelpWindow() {
         var f = new JFrame("Title Macro Help");
         var tp = new JTextPane();
-        tp.setFocusable(false);
         tp.setFont(new Font("Monospaced", Font.PLAIN, 12));
         tp.replaceSelection(
                 """
@@ -355,6 +371,8 @@ public class PlotNameResolver {
                                         Table: Stack title = Altair 23/14/01
                                         Macro: ${"split":"Observed on $2", "splitter":" ", "src": "title"}
                                         Output: Observed on 23/14/01
+                                Title. A special case of split the automatically specifies the src as "title".
+                                Lab. A special case of split that automatically specifies the src as "Label".
                                 Header. Extracts values from the image header of the first slice. Image must be open.
                                     Example:
                                         Header: CCDTEMP = 23.5

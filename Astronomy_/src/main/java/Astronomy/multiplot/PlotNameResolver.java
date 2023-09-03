@@ -35,11 +35,19 @@ public class PlotNameResolver {
     }
 
     public static String resolvePlotTitle(MeasurementTable table) {
-        return resolve(table, TITLE_MACRO.get());
+        try {
+            return resolve(table, TITLE_MACRO.get());
+        } catch (Exception e) {
+            return TITLE_MACRO.get();
+        }
     }
 
     public static String resolvePlotSubtitle(MeasurementTable table) {
-        return resolve(table, SUBTITLE_MACRO.get());
+        try {
+            return resolve(table, SUBTITLE_MACRO.get());
+        } catch (Exception e) {
+            return SUBTITLE_MACRO.get();
+        }
     }
 
     private static String resolve(MeasurementTable table, String pattern) {
@@ -48,6 +56,9 @@ public class PlotNameResolver {
             if (table == null) {
                 return "<ERROR NO TABLE>";
             }
+
+            // Escape $ with nothing following it
+            pattern = pattern.replaceAll("(\\$[^\\w{]+)", "\\\\\\$");
 
             var m = VARIABLE.matcher(pattern);
             return m.replaceAll(matchResult -> {

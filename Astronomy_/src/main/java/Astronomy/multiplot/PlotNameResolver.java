@@ -80,6 +80,7 @@ public class PlotNameResolver {
             // Escape $ with nothing following it
             pattern = pattern.replaceAll("(\\$[^\\w{]+)", "\\\\\\$");
 
+            // Perform the variable substitution
             var m = VARIABLE.matcher(pattern);
             var errorState = new AtomicBoolean(false);
             return new Pair.GenericPair<>(m.replaceAll(matchResult -> {
@@ -91,6 +92,7 @@ public class PlotNameResolver {
                     v = v.substring(1, v.length()-1);
                 }
 
+                // Label isn't a real column
                 if ("Label".equals(v)) {
                     return table.getLabel(0);
                 }
@@ -119,7 +121,7 @@ public class PlotNameResolver {
             if (p instanceof JSONObject o) {
                 return functionRunner(o, table);
             }
-            return new Pair.GenericPair("<Parse went wrong>", true);
+            return new Pair.GenericPair<>("<Parse went wrong>", true);
         } catch (ParseException e) {
             return new Pair.GenericPair<>("<Not a function: JSON parse error>", true);
         } catch (Exception e) {
@@ -128,6 +130,7 @@ public class PlotNameResolver {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private static Pair.GenericPair<String, Boolean> functionRunner(JSONObject o, MeasurementTable table) {
         var lastError = false;
 
@@ -141,6 +144,7 @@ public class PlotNameResolver {
         }
 
         // Lable function
+        // This is a special case of the split function
         if (o.get("lab") instanceof String lab) {
             var j = new JSONObject();
             j.put("split", lab);
@@ -149,6 +153,7 @@ public class PlotNameResolver {
         }
 
         // Title function
+        // This is a special case of the split function
         if (o.get("title") instanceof String lab) {
             var j = new JSONObject();
             j.put("split", lab);
@@ -174,8 +179,11 @@ public class PlotNameResolver {
 
         // Regex function
         if (o.get("regex") instanceof String regex) {
+            // The string that will be output, containing any group references
             if (o.get("replace") instanceof String replace) {
                 var m = SIMPLE_VARIABLE.matcher(replace);
+
+                // Find the src to pull the initial string to perform the regex match on
                 var l = table.getLabel(0);
                 if (o.get("src") instanceof String src) {
                     if (table.columnExists(src)) {
@@ -189,6 +197,7 @@ public class PlotNameResolver {
                     lastError = true;
                 }
 
+                // The final output
                 var matcher = Pattern.compile(regex).matcher(l);
                 var errorState = new AtomicBoolean(lastError);
                 return new Pair.GenericPair<>(m.replaceAll(matchResult -> {
@@ -233,6 +242,7 @@ public class PlotNameResolver {
                 splitter = s;
             }
 
+            // Find the src to pull the initial string to perform the split with
             var l = table.getLabel(0);
             if (o.get("src") instanceof String src) {
                 if (src.equals("title")) {
@@ -256,6 +266,7 @@ public class PlotNameResolver {
                 lastError = true;
             }
 
+            // The final output
             final var src = l;
             var s = src.split(splitter);
             var errorState = new AtomicBoolean(lastError);
@@ -287,6 +298,9 @@ public class PlotNameResolver {
         return new Pair.GenericPair<>("<Failed to identify script mode>", true);
     }
 
+    /**
+     * Allows for easier access to pref. values without the user needing to know the key.
+     */
     private static String keyResolver(String key) {
         return switch (key) {
             case "APLOADING" -> MultiAperture_.apLoading.getPropertyKey();
@@ -301,6 +315,9 @@ public class PlotNameResolver {
         };
     }
 
+    /**
+     * Find an open stack that contains a slice that matches the label.
+     */
     private static ImagePlus getImpForSlice(String label) {
         var ids = WindowManager.getIDList();
         if (ids != null) {
@@ -388,6 +405,7 @@ public class PlotNameResolver {
                                         - "APMODE": The method MA used to calculate ap. radius
                                         - "APVARFWHM": The FWHM value used by var. ap.
                                         - "APVARFLUXCUT": The flux cutoff used by var. ap.
+                                        - "LASTMA": The last MA run's settings including radii
                                     Example:
                                         Macro: MA: ${"pref": "APMODE"}, Radius: ${"pref": "APRADIUS"}px
                                         Output: MA: FIXED, Radius: 15px

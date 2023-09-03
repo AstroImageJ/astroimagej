@@ -238,6 +238,7 @@ public class PlotNameResolver {
             case "APMODE" -> "multiaperture.apradius";
             case "APVARFWHM" -> "multiaperture.apfwhmfactor";
             case "APVARFLUXCUT" -> "multiaperture.automodefluxcutoff";
+            case "LASTMA" -> "multiaperture.lastrun";
             default -> key;
         };
     }

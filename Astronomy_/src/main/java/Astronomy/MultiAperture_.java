@@ -303,6 +303,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     private final HashSet<Component> singleStepListeners = new HashSet<>();
     protected static final Property<Boolean> updateImageDisplay = new Property<>(true, MultiAperture_.class);
     public static final Property<ApLoading> apLoading = new Property<>(ApLoading.ALL_NEW, MultiAperture_.class);
+    private static String lastRun = "<Not yet run>";
 
 //	public static double RETRY_RADIUS = 3.0;
 
@@ -572,6 +573,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         Prefs.set(MultiAperture_.PREFS_FINISHED, "true");
         Prefs.set(MultiAperture_.PREFS_USEMACROIMAGE, "false");
         Prefs.set(MultiAperture_.PREFS_CANCELED, "true");
+        Prefs.set("multiaperture.lastrun", lastRun);
     }
 
     /**
@@ -1018,6 +1020,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         SwingUtilities.invokeLater(() -> imp.setSlice(imp.getCurrentSlice()));
         noMoreInput();
         closeHelpPanel();
+        Prefs.set("multiaperture.lastrun", lastRun);
         super.shutDown();
         if (asw != null && asw.autoDisplayAnnotationsFromHeader) asw.displayAnnotationsFromHeader(true, true, false);
 
@@ -2796,6 +2799,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             a.setPerformDraw(true);
         }
 
+        Seeing_Profile.ApRadii m = null;
         if (sp != null) {
             var sr = stackRadii.stream().mapToDouble(Seeing_Profile.ApRadii::r).toArray();
             var br = stackRadii.stream().mapToDouble(Seeing_Profile.ApRadii::r2).toArray();
@@ -2804,6 +2808,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             var mr = Stat.median(sr);
             var mbr = Stat.median(br);
             var mbr2 = Stat.median(br2);
+            m = new Seeing_Profile.ApRadii(mr, mbr, mbr2);
 
             sp.plot.setXYLabels("Slice", "Radius [px]");
             sp.plot.setLimits(0, lastSlice - firstSlice, 0, Math.max(new Stat(br2).maximum(), rBack2) + 5);
@@ -2844,6 +2849,32 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             });
             pw.setVisible(true);
         }
+
+        lastRun = switch (radiusSetting) {
+            case FIXED -> {
+                yield "FApUser: %s-%s-%s".formatted(radius, rBack1, rBack2);
+            }
+            case AUTO_FIXED -> {
+                yield "FApRadP1(%s): %s-%s-%s".formatted(ApRadius.AUTO_FIXED.cutoff, radius, rBack1, rBack2);
+            }
+            case AUTO_FIXED_STACK_RAD -> {
+                yield "FApRadPAll(%s): %s-%s-%s".formatted(ApRadius.AUTO_FIXED_STACK_RAD.cutoff, radius, rBack1, rBack2);
+            }
+            case AUTO_VAR_RAD_PROF -> {
+                if (m == null) {
+                    m = new Seeing_Profile.ApRadii(-1, -1, -1);
+                }
+                yield "ApRadP(%s): %s-%s-%s".formatted(ApRadius.AUTO_VAR_RAD_PROF.cutoff, m.r(), m.r2(), m.r3());
+            }
+            case AUTO_VAR_FWHM -> {
+                var sr = stackRadii.stream().mapToDouble(Seeing_Profile.ApRadii::r).toArray();
+                var br = stackRadii.stream().mapToDouble(Seeing_Profile.ApRadii::r2).toArray();
+                var br2 = stackRadii.stream().mapToDouble(Seeing_Profile.ApRadii::r3).toArray();
+
+                yield "VApFWHM(%s): %s-%s-%s".formatted(ApRadius.AUTO_VAR_FWHM.cutoff, Stat.median(sr), Stat.median(br), Stat.median(br2));
+            }
+            default -> "<Invalid state>";
+        };
 
         if (processingStack) {
             if (win != null) {
@@ -3050,6 +3081,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             }
             if (!useRadialProfile) {
                 setVariableAperture(true, Math.max(xFWHM / nFWHM, yFWHM / nFWHM) * ApRadius.AUTO_VAR_FWHM.cutoff, ApRadius.AUTO_VAR_FWHM.cutoff, ApRadius.AUTO_VAR_RAD_PROF.cutoff);
+                stackRadii.add(new Seeing_Profile.ApRadii(vradius, vrBack1, vrBack2));
             } else {
                 if (sp == null) {
                     sp = new Seeing_Profile(true);

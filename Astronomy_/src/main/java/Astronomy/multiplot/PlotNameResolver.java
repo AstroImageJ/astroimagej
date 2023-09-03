@@ -11,10 +11,12 @@ import ij.ImagePlus;
 import ij.Prefs;
 import ij.WindowManager;
 import ij.astro.io.prefs.Property;
+import ij.astro.types.Pair;
 import ij.astro.util.UIHelper;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 
 public class PlotNameResolver {
@@ -30,38 +32,57 @@ public class PlotNameResolver {
             "(\\{(?:[^{}]|((\\{(?:[^{}]|((\\{(?:[^{}]|((\\{(?:[^{}]|((\\{(?:[^{}]|((\\{(?:[^{}])*\\})))*\\})))*\\})))*\\})))*\\})))*\\})" +
             "))");
     private static final Pattern LABEL_VARIABLE = Pattern.compile("(\\$[0-9]+)");
+    private static Pair.GenericPair<String, Boolean> lastTitleState;
+    private static Pair.GenericPair<String, Boolean> lastSubtitleState;
 
     private PlotNameResolver() {
     }
 
-    public static String resolvePlotTitle(MeasurementTable table) {
+    public static Pair.GenericPair<String, Boolean> resolvePlotTitle(MeasurementTable table) {
         try {
-            return resolve(table, TITLE_MACRO.get());
+            return (lastTitleState = resolve(table, TITLE_MACRO.get()));
         } catch (Exception e) {
-            return TITLE_MACRO.get();
+            return new Pair.GenericPair<>(TITLE_MACRO.get(), true);
         }
     }
 
-    public static String resolvePlotSubtitle(MeasurementTable table) {
+    public static Pair.GenericPair<String, Boolean> resolvePlotSubtitle(MeasurementTable table) {
         try {
-            return resolve(table, SUBTITLE_MACRO.get());
+            return (lastSubtitleState = resolve(table, SUBTITLE_MACRO.get()));
         } catch (Exception e) {
-            return SUBTITLE_MACRO.get();
+            return new Pair.GenericPair<>(SUBTITLE_MACRO.get(), true);
         }
     }
 
-    private static String resolve(MeasurementTable table, String pattern) {
+    public static Pair.GenericPair<String, Boolean> lastTitle() {
+        if (lastTitleState == null) {
+            return new Pair.GenericPair<>(TITLE_MACRO.get(), true);
+        }
+
+        return lastTitleState;
+    }
+
+    public static Pair.GenericPair<String, Boolean> lastSubtitle() {
+        if (lastSubtitleState == null) {
+            return new Pair.GenericPair<>(SUBTITLE_MACRO.get(), true);
+        }
+
+        return lastSubtitleState;
+    }
+
+    private static Pair.GenericPair<String, Boolean> resolve(MeasurementTable table, String pattern) {
         // Variable replace
         if (pattern.contains("$")) {
             if (table == null) {
-                return "<ERROR NO TABLE>";
+                return new Pair.GenericPair<>("<ERROR NO TABLE>", true);
             }
 
             // Escape $ with nothing following it
             pattern = pattern.replaceAll("(\\$[^\\w{]+)", "\\\\\\$");
 
             var m = VARIABLE.matcher(pattern);
-            return m.replaceAll(matchResult -> {
+            var errorState = new AtomicBoolean(false);
+            return new Pair.GenericPair<>(m.replaceAll(matchResult -> {
                 var v = matchResult.group(1).substring(1); // trim preceding $
 
                 // Unwrap quoted column
@@ -76,7 +97,9 @@ public class PlotNameResolver {
 
                 // Handle functions
                 if (v.startsWith("{")) {
-                    return parseFunction(v, table);
+                    var f = parseFunction(v, table);
+                    errorState.compareAndExchange(false, f.second());
+                    return f.first();
                 }
 
                 if (!table.columnExists(v)) {
@@ -84,32 +107,37 @@ public class PlotNameResolver {
                 }
 
                 return table.getStringValue(v, 0);
-            });
+            }), errorState.get());
         }
 
-        return pattern;
+        return new Pair.GenericPair<>(pattern, false);
     }
 
-    private static String parseFunction(String function, MeasurementTable table) {
+    private static Pair.GenericPair<String, Boolean> parseFunction(String function, MeasurementTable table) {
         try {
             var p = new JSONParser().parse(function);
             if (p instanceof JSONObject o) {
                 return functionRunner(o, table);
             }
-            return "<Parse went wrong>";
+            return new Pair.GenericPair("<Parse went wrong>", true);
         } catch (ParseException e) {
-            return "<Not a function: JSON parse error>";
+            return new Pair.GenericPair<>("<Not a function: JSON parse error>", true);
         } catch (Exception e) {
             e.printStackTrace();
-            return "<An error occurred running script match>";
+            return new Pair.GenericPair<>("<An error occurred running script match>", true);
         }
     }
 
-    private static String functionRunner(JSONObject o, MeasurementTable table) {
+    private static Pair.GenericPair<String, Boolean> functionRunner(JSONObject o, MeasurementTable table) {
+        var lastError = false;
+
         // Pref function
         if (o.get("pref") instanceof String key) {
             var mappedKey = keyResolver(key);
-            return Prefs.get(mappedKey, "<Missing value for '%s' (%s)>".formatted(mappedKey, key));
+            if (Prefs.containsKey(mappedKey)) {
+                return new Pair.GenericPair<>(Prefs.get(mappedKey, "<default>"), false);
+            }
+            return new Pair.GenericPair<>("<Missing value for '%s' (%s)>".formatted(mappedKey, key), true);
         }
 
         // Header function
@@ -120,11 +148,11 @@ public class PlotNameResolver {
                 var h = FitsJ.getHeader(i);
                 int c;
                 if (h != null && h.cards() != null && ((c = FitsJ.findCardWithKey(card, h)) > -1)) {
-                    return FitsJ.getCardValue(h.cards()[c]).trim();
+                    return new Pair.GenericPair<>(FitsJ.getCardValue(h.cards()[c]).trim(), false);
                 }
-                return "<Failed to find card with key '%s'>".formatted(card);
+                return new Pair.GenericPair<>("<Failed to find card with key '%s'>".formatted(card), true);
             }
-            return "<Found no matching image for '%s'>".formatted(label);
+            return new Pair.GenericPair<>("<Found no matching image for '%s'>".formatted(label), true);
         }
 
         // Regex function
@@ -136,26 +164,31 @@ public class PlotNameResolver {
                     if (table.columnExists(src)) {
                         l = table.getStringValue(src, 0);
                     } else {
-                        return "<Invalid col. name for src: '%s'>".formatted(src);
+                        return new Pair.GenericPair<>("<Invalid col. name for src: '%s'>".formatted(src), true);
                     }
                 } else if (o.get("src") instanceof JSONObject s) {
-                    l = functionRunner(s, table);
+                    var f = functionRunner(s, table);
+                    l = f.first();
+                    lastError = true;
                 }
 
                 var matcher = Pattern.compile(regex).matcher(l);
-                return m.replaceAll(matchResult -> {
+                var errorState = new AtomicBoolean(lastError);
+                return new Pair.GenericPair<>(m.replaceAll(matchResult -> {
                     matcher.reset();
                     var v = matchResult.group(1).substring(1).trim(); // trim preceding $
 
                     try {
                         var g = Integer.parseInt(v);
                         if (g < 0) {
+                            errorState.set(true);
                             return "<Invalid group index: '%s'. Must be > 0>".formatted(g);
                         }
                         if (matcher.find()) {
                             if (g <= matcher.groupCount()) {
                                 return matcher.group(g);
                             }
+                            errorState.set(true);
                             return "<Invalid group index: '%s'>".formatted(g);
                         }
                         return "<Failed to match '%s'>".formatted(matcher.pattern().pattern());
@@ -164,14 +197,16 @@ public class PlotNameResolver {
                             try {
                                 return matcher.group(v);
                             } catch (IllegalArgumentException ignored) {
+                                errorState.set(true);
                                 return "<Invalid group name: '%s'>".formatted(v);
                             }
                         }
+                        errorState.set(true);
                         return "<Failed to match '%s'>".formatted(matcher.pattern().pattern());
                     }
-                });
+                }), errorState.get());
             }
-            return "<Regex mode match failed, missing 'replace' text>";
+            return new Pair.GenericPair<>("<Regex mode match failed, missing 'replace' text>", true);
         }
 
         // Split function
@@ -188,23 +223,26 @@ public class PlotNameResolver {
                     if (i != null) {
                         l = i.getTitle();
                         if (l.isEmpty()) {
-                            return "<Stack title was empty>";
+                            return new Pair.GenericPair<>("<Stack title was empty>", true);
                         }
                     } else {
-                        return "<Found no matching image for '%s'>".formatted(l);
+                        return new Pair.GenericPair<>("<Found no matching image for '%s'>".formatted(l), true);
                     }
                 } else if (table.columnExists(src)) {
                     l = table.getStringValue(src, 0);
                 } else {
-                    return "<Invalid col. name for src: '%s'>".formatted(src);
+                    return new Pair.GenericPair<>("<Invalid col. name for src: '%s'>".formatted(src), true);
                 }
             } else if (o.get("src") instanceof JSONObject s) {
-                l = functionRunner(s, table);
+                var f = functionRunner(s, table);
+                l = f.first();
+                lastError = true;
             }
 
             final var src = l;
             var s = src.split(splitter);
-            return LABEL_VARIABLE.matcher(split).replaceAll(matchResult -> {
+            var errorState = new AtomicBoolean(lastError);
+            return new Pair.GenericPair<>(LABEL_VARIABLE.matcher(split).replaceAll(matchResult -> {
                 var v = matchResult.group(1).substring(1).trim(); // trim preceding $
 
                 try {
@@ -214,19 +252,22 @@ public class PlotNameResolver {
                     }
                     if (g > -1) {
                         if (g >= s.length) {
+                            errorState.set(true);
                             return "<Split group greater than possible: '%s'>".formatted(g);
                         }
                         return s[g];
                     } else {
+                        errorState.set(true);
                         return "<Split group must be greater than -1: '%s'>".formatted(g);
                     }
                 } catch (NumberFormatException e) {
+                    errorState.set(true);
                     return "<Failed to get split match number: '%s'>".formatted(v);
                 }
-            });
+            }), errorState.get());
         }
 
-        return "<Failed to identify script mode>";
+        return new Pair.GenericPair<>("<Failed to identify script mode>", true);
     }
 
     private static String keyResolver(String key) {

@@ -4336,12 +4336,20 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static void renderSubtitle() {
         Dimension size = plot.getSize();
         double y = subtitlePosY / size.getHeight() > 1 ? 1 : (subtitlePosY - 38) / size.getHeight();
+        if (useMacroSubtitle.get() && PlotNameResolver.lastSubtitle().second()) {
+            plot.addLabel(subtitlePosX, y, PlotNameResolver.lastSubtitle().first());
+            return;
+        }
         plot.addLabel(subtitlePosX, y, subtitle);
     }
 
     static void renderTitle() {
         Dimension size = plot.getSize();
         double y = titlePosY / size.getHeight() > 1 ? 1 : (titlePosY - 35) / size.getHeight();
+        if (useMacroTitle.get() && PlotNameResolver.lastTitle().second()) {
+            plot.addLabel(titlePosX, y, PlotNameResolver.lastTitle().first());
+            return;
+        }
         plot.addLabel(titlePosX, y, title);
     }
 
@@ -8415,7 +8423,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             public void insertUpdate(DocumentEvent ev) {
                 if (useMacroTitle.get()) {
                     PlotNameResolver.TITLE_MACRO.set(titleField.getText());
-                    title = PlotNameResolver.resolvePlotTitle(table);
+                    var f = PlotNameResolver.resolvePlotTitle(table);
+                    if (!f.second()) {
+                        title = f.first();
+                    }
                 } else {
                     title = titleField.getText();
                 }
@@ -8425,7 +8436,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             public void removeUpdate(DocumentEvent ev) {
                 if (useMacroTitle.get()) {
                     PlotNameResolver.TITLE_MACRO.set(titleField.getText());
-                    title = PlotNameResolver.resolvePlotTitle(table);
+                    var f = PlotNameResolver.resolvePlotTitle(table);
+                    if (!f.second()) {
+                        title = f.first();
+                    }
                 } else {
                     title = titleField.getText();
                 }
@@ -8435,7 +8449,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             public void changedUpdate(DocumentEvent ev) {
                 if (useMacroTitle.get()) {
                     PlotNameResolver.TITLE_MACRO.set(titleField.getText());
-                    title = PlotNameResolver.resolvePlotTitle(table);
+                    var f = PlotNameResolver.resolvePlotTitle(table);
+                    if (!f.second()) {
+                        title = f.first();
+                    }
                 } else {
                     title = titleField.getText();
                 }
@@ -8575,7 +8592,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             public void insertUpdate(DocumentEvent ev) {
                 if (useMacroSubtitle.get()) {
                     PlotNameResolver.SUBTITLE_MACRO.set(subtitleField.getText());
-                    subtitle = PlotNameResolver.resolvePlotSubtitle(table);
+                    var f = PlotNameResolver.resolvePlotSubtitle(table);
+                    if (!f.second()) {
+                        subtitle = f.first();
+                    }
                 } else {
                     subtitle = subtitleField.getText();
                 }
@@ -8585,7 +8605,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             public void removeUpdate(DocumentEvent ev) {
                 if (useMacroSubtitle.get()) {
                     PlotNameResolver.SUBTITLE_MACRO.set(subtitleField.getText());
-                    subtitle = PlotNameResolver.resolvePlotSubtitle(table);
+                    var f = PlotNameResolver.resolvePlotSubtitle(table);
+                    if (!f.second()) {
+                        subtitle = f.first();
+                    }
                 } else {
                     subtitle = subtitleField.getText();
                 }
@@ -8595,7 +8618,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             public void changedUpdate(DocumentEvent ev) {
                 if (useMacroSubtitle.get()) {
                     PlotNameResolver.SUBTITLE_MACRO.set(subtitleField.getText());
-                    subtitle = PlotNameResolver.resolvePlotSubtitle(table);
+                    var f = PlotNameResolver.resolvePlotSubtitle(table);
+                    if (!f.second()) {
+                        subtitle = f.first();
+                    }
                 } else {
                     subtitle = subtitleField.getText();
                 }

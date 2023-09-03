@@ -2852,26 +2852,31 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
         lastRun = switch (radiusSetting) {
             case FIXED -> {
-                yield "FApUser: %s-%s-%s".formatted(radius, rBack1, rBack2);
+                yield "FApUser: %s-%s-%s".formatted(IJ.d2s(radius, 1), IJ.d2s(radialCutoff, 1),
+                        IJ.d2s(rBack2, 1));
             }
             case AUTO_FIXED -> {
-                yield "FApRadP1(%s): %s-%s-%s".formatted(ApRadius.AUTO_FIXED.cutoff, radius, rBack1, rBack2);
+                yield "FApRadP1(%s): %s-%s-%s".formatted(ApRadius.AUTO_FIXED.cutoff, IJ.d2s(radius, 1),
+                        IJ.d2s(radialCutoff, 1), IJ.d2s(rBack2, 1));
             }
             case AUTO_FIXED_STACK_RAD -> {
-                yield "FApRadPAll(%s): %s-%s-%s".formatted(ApRadius.AUTO_FIXED_STACK_RAD.cutoff, radius, rBack1, rBack2);
+                yield "FApRadPAll(%s): %s-%s-%s".formatted(ApRadius.AUTO_FIXED_STACK_RAD.cutoff, IJ.d2s(radius, 1),
+                        IJ.d2s(radialCutoff, 1), IJ.d2s(rBack2, 1));
             }
             case AUTO_VAR_RAD_PROF -> {
                 if (m == null) {
                     m = new Seeing_Profile.ApRadii(-1, -1, -1);
                 }
-                yield "ApRadP(%s): %s-%s-%s".formatted(ApRadius.AUTO_VAR_RAD_PROF.cutoff, m.r(), m.r2(), m.r3());
+                yield "ApRadP(%s): %s-%s-%s".formatted(ApRadius.AUTO_VAR_RAD_PROF.cutoff, IJ.d2s(m.r(), 1),
+                        IJ.d2s(m.r2(), 1), IJ.d2s(m.r3(), 1));
             }
             case AUTO_VAR_FWHM -> {
                 var sr = stackRadii.stream().mapToDouble(Seeing_Profile.ApRadii::r).toArray();
                 var br = stackRadii.stream().mapToDouble(Seeing_Profile.ApRadii::r2).toArray();
                 var br2 = stackRadii.stream().mapToDouble(Seeing_Profile.ApRadii::r3).toArray();
 
-                yield "VApFWHM(%s): %s-%s-%s".formatted(ApRadius.AUTO_VAR_FWHM.cutoff, Stat.median(sr), Stat.median(br), Stat.median(br2));
+                yield "VApFWHM(%s): %s-%s-%s".formatted(ApRadius.AUTO_VAR_FWHM.cutoff, IJ.d2s(Stat.median(sr), 1),
+                        IJ.d2s(Stat.median(br), 1), IJ.d2s(Stat.median(br2), 1));
             }
             default -> "<Invalid state>";
         };

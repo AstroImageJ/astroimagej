@@ -1092,6 +1092,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         Prefs.set("plot2.absMagFrameLocationY", yAbsMagLocation);
         Prefs.set("plot2.helpFrameLocationX", helpFrameLocationX);
         Prefs.set("plot2.helpFrameLocationY", helpFrameLocationY);
+        Prefs.set("aperture.lastradius", radius);
+        Prefs.set("aperture.lastrback1", rBack1);
+        Prefs.set("aperture.lastrback2", rBack2);
         if (!(Prefs.get(MultiAperture_.PREFS_AUTOMODE, autoMode) || Data_Processor.active)) resetRadii();
 
         if (MultiPlot_.isRunning()) {

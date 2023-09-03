@@ -2787,6 +2787,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
             processImage();
             if (cancelled || IJ.escapePressed()) {
+                storeLastRun();
                 IJ.beep();
                 Prefs.set(MultiAperture_.PREFS_CANCELED, "true");
                 shutDown();
@@ -2799,7 +2800,6 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             a.setPerformDraw(true);
         }
 
-        Seeing_Profile.ApRadii m = null;
         if (sp != null) {
             var sr = stackRadii.stream().mapToDouble(Seeing_Profile.ApRadii::r).toArray();
             var br = stackRadii.stream().mapToDouble(Seeing_Profile.ApRadii::r2).toArray();
@@ -2808,7 +2808,6 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             var mr = Stat.median(sr);
             var mbr = Stat.median(br);
             var mbr2 = Stat.median(br2);
-            m = new Seeing_Profile.ApRadii(mr, mbr, mbr2);
 
             sp.plot.setXYLabels("Slice", "Radius [px]");
             sp.plot.setLimits(0, lastSlice - firstSlice, 0, Math.max(new Stat(br2).maximum(), rBack2) + 5);
@@ -2850,6 +2849,20 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             pw.setVisible(true);
         }
 
+        storeLastRun();
+
+        if (processingStack) {
+            if (win != null) {
+                win.setVisible(false);
+            }
+            IJ.beep();
+            shutDown();
+            //AIJLogger.log("Multiaperture photometry took " + (System.currentTimeMillis() - timeStart) / 1000D + " seconds");
+            IJ.showStatus("Multiaperture photometry took " + (System.currentTimeMillis() - timeStart) / 1000D + " seconds");
+        }
+    }
+
+    private void storeLastRun() {
         lastRun = switch (radiusSetting) {
             case FIXED -> {
                 yield "FApUser: %s-%s-%s".formatted(IJ.d2s(radius, 1), IJ.d2s(radialCutoff, 1),
@@ -2864,11 +2877,12 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                         IJ.d2s(radialCutoff, 1), IJ.d2s(rBack2, 1));
             }
             case AUTO_VAR_RAD_PROF -> {
-                if (m == null) {
-                    m = new Seeing_Profile.ApRadii(-1, -1, -1);
-                }
-                yield "ApRadP(%s): %s-%s-%s".formatted(ApRadius.AUTO_VAR_RAD_PROF.cutoff, IJ.d2s(m.r(), 1),
-                        IJ.d2s(m.r2(), 1), IJ.d2s(m.r3(), 1));
+                var sr = stackRadii.stream().mapToDouble(Seeing_Profile.ApRadii::r).toArray();
+                var br = stackRadii.stream().mapToDouble(Seeing_Profile.ApRadii::r2).toArray();
+                var br2 = stackRadii.stream().mapToDouble(Seeing_Profile.ApRadii::r3).toArray();
+
+                yield "ApRadP(%s): %s-%s-%s".formatted(ApRadius.AUTO_VAR_RAD_PROF.cutoff, IJ.d2s(Stat.median(sr), 1),
+                        IJ.d2s(Stat.median(br), 1), IJ.d2s(Stat.median(br2), 1));
             }
             case AUTO_VAR_FWHM -> {
                 var sr = stackRadii.stream().mapToDouble(Seeing_Profile.ApRadii::r).toArray();
@@ -2880,16 +2894,6 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             }
             default -> "<Invalid state>";
         };
-
-        if (processingStack) {
-            if (win != null) {
-                win.setVisible(false);
-            }
-            IJ.beep();
-            shutDown();
-            //AIJLogger.log("Multiaperture photometry took " + (System.currentTimeMillis() - timeStart) / 1000D + " seconds");
-            IJ.showStatus("Multiaperture photometry took " + (System.currentTimeMillis() - timeStart) / 1000D + " seconds");
-        }
     }
 
     /**

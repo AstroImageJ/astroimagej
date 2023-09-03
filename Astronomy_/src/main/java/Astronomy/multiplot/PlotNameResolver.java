@@ -158,13 +158,35 @@ public class PlotNameResolver {
             return "<Found no matching image for '%s'>".formatted(label);
         }
 
-        // Label function
-        if (o.get("lab") instanceof String lab) {
+        // Split function
+        if (o.get("split") instanceof String lab) {
             var split = "_";
-            if (o.get("split") instanceof String s) {
+            if (o.get("splitter") instanceof String s) {
                 split = s;
             }
-            var s = table.getLabel(0).split(split);
+
+            var l = table.getLabel(0);
+            if (o.get("src") instanceof String src) {
+                if (src.equals("title")) {
+                    var i = getImpForSlice(l);
+                    if (i != null) {
+                        l = i.getTitle();
+                        if (l.isEmpty()) {
+                            return "<Stack title was empty>";
+                        }
+                    } else {
+                        return "<Found no matching image for '%s'>".formatted(l);
+                    }
+                } else if (table.columnExists(src)) {
+                    l = table.getStringValue(src, 0);
+                } else {
+                    return "<Invalid col. name for src: '%s'>".formatted(src);
+                }
+            } else if (o.get("src") instanceof JSONObject s) {
+                l = functionRunner(s, table);
+            }
+
+            var s = l.split(split);
             return LABEL_VARIABLE.matcher(lab).replaceAll(matchResult -> {
                 var v = matchResult.group(1).substring(1).trim(); // trim preceding $
 
@@ -172,52 +194,16 @@ public class PlotNameResolver {
                     var g = Integer.parseInt(v) - 1;
                     if (g > -1) {
                         if (g >= s.length) {
-                            return "<Label group greater than possible: '%s'>".formatted(g);
+                            return "<Split group greater than possible: '%s'>".formatted(g);
                         }
                         return s[g];
                     } else {
-                        return "<Label group must be greater than 0: '%s'>".formatted(g);
+                        return "<Split group must be greater than 0: '%s'>".formatted(g);
                     }
                 } catch (NumberFormatException e) {
-                    return "<Failed to get label match number: '%s'>".formatted(v);
+                    return "<Failed to get split match number: '%s'>".formatted(v);
                 }
             });
-        }
-
-        // Title match
-        if (o.get("title") instanceof String title) {
-            var split = "_";
-            if (o.get("split") instanceof String s) {
-                split = s;
-            }
-
-            var label = table.getLabel(0);
-            var i = getImpForSlice(label);
-            if (i != null) {
-                var t = i.getTitle();
-                if (!t.isEmpty()) {
-                    var s = t.split(split);
-                    return LABEL_VARIABLE.matcher(title).replaceAll(matchResult -> {
-                        var v = matchResult.group(1).substring(1).trim(); // trim preceding $
-
-                        try {
-                            var g = Integer.parseInt(v) - 1;
-                            if (g > -1) {
-                                if (g >= s.length) {
-                                    return "<Title group greater than possible: '%s'>".formatted(g);
-                                }
-                                return s[g];
-                            } else {
-                                return "<Title group must be greater than 0: '%s'>".formatted(g);
-                            }
-                        } catch (NumberFormatException e) {
-                            return "<Failed to get title match number: '%s'>".formatted(v);
-                        }
-                    });
-                }
-                return "<Stack title was empty>";
-            }
-            return "<Found no matching image for '%s'>".formatted(label);
         }
 
         if (o.get("pref") instanceof String key) {
@@ -298,14 +284,20 @@ public class PlotNameResolver {
                             They must begin with $, and take the form of a JSON object. Several function are available.
                             
                             Functions:
-                                Label. Splits the first value in the Label column and allows selective inclusion of those parts.
+                                Split. Splits text, by default the first value of the Label column and allows selective
+                                inclusion of those parts.
                                     Indexing begins at 1, and counts from the left.
                                     By default splits on _, but optionally can specify any character sequence.
+                                    Can optionally specify a "src" to pull the text from. "title" will fetch the stack title,\
+                                     can be any column or another function.
                                     Example:
                                         Table: Column Label, first value processed_altair_21.fits
-                                        Macro: Hello ${"lab":"Reversed: $3 $2$1", "split":"_"} // Split entry is optional
+                                        Macro: Hello ${"split":"Reversed: $3 $2$1", "splitter":"_"} // Split entry is optional
                                         Output: Hello Reversed: 21.fits altairprocessed
-                                Title. Same format and behavior as Label, but acts on the stack title. Stack must be open.
+                                        
+                                        Table: Stack title = Altair 23/14/01
+                                        Macro: ${"split":"Observed on $2", "splitter":" ", "src": "title"}
+                                        Output: Observed on 23/14/01
                                 Header. Extracts values from the image header of the first slice. Image must be open.
                                     Example:
                                         Header: CCDTEMP = 23.5

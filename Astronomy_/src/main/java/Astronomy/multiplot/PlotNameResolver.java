@@ -186,19 +186,23 @@ public class PlotNameResolver {
                 l = functionRunner(s, table);
             }
 
-            var s = l.split(split);
+            final var src = l;
+            var s = src.split(split);
             return LABEL_VARIABLE.matcher(lab).replaceAll(matchResult -> {
                 var v = matchResult.group(1).substring(1).trim(); // trim preceding $
 
                 try {
                     var g = Integer.parseInt(v) - 1;
+                    if (g == -1) {
+                        return src;
+                    }
                     if (g > -1) {
                         if (g >= s.length) {
                             return "<Split group greater than possible: '%s'>".formatted(g);
                         }
                         return s[g];
                     } else {
-                        return "<Split group must be greater than 0: '%s'>".formatted(g);
+                        return "<Split group must be greater than -1: '%s'>".formatted(g);
                     }
                 } catch (NumberFormatException e) {
                     return "<Failed to get split match number: '%s'>".formatted(v);

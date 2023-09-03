@@ -8392,7 +8392,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         titleradiopanelgroup.add(useTitleButton);
         JRadioButton useMacroTitleButton = new JRadioButton("Macro?");
         useMacroTitleButton.setFont(p11);
-        useMacroTitleButton.setSelected(useTitle && useMacroTitle.get());//todo don't go into macro mode when loading plotcfg
+        useMacroTitleButton.setSelected(useTitle && useMacroTitle.get());
         titleradiopanelgroup.add(useMacroTitleButton);
         ButtonGroup titleRadioGroup = new ButtonGroup();
         titleRadioGroup.add(noTitleButton);
@@ -8561,7 +8561,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         subtitleradiopanelgroup.add(useSubtitleButton);
         JRadioButton useMacroSubtitleButton = new JRadioButton("Macro?");
         useMacroSubtitleButton.setFont(p11);
-        useMacroSubtitleButton.setSelected(useSubtitle && useMacroSubtitle.get()); //todo don't when loading plot config
+        useMacroSubtitleButton.setSelected(useSubtitle && useMacroSubtitle.get());
         subtitleradiopanelgroup.add(useMacroSubtitleButton);
         ButtonGroup subtitleRadioGroup = new ButtonGroup();
         subtitleRadioGroup.add(noSubtitleButton);
@@ -16134,6 +16134,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 InputStream is = new BufferedInputStream(new FileInputStream(files[0].getCanonicalPath()));
                 errorCode = 4;
                 Prefs.ijPrefs.load(is);
+                useMacroSubtitle.set(false);
+                useMacroTitle.set(false);
                 errorCode = 5;
                 is.close();
                 errorCode = 6;
@@ -16154,6 +16156,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             try {
                 InputStream is = new BufferedInputStream(new FileInputStream(files[0].getCanonicalPath()));
                 Prefs.ijPrefs.load(is);
+                useMacroSubtitle.set(false);
+                useMacroTitle.set(false);
                 is.close();
             } catch (Exception e) {
                 IJ.beep();
@@ -16199,7 +16203,11 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                 IJ.beep();
                                 IJ.showMessage("DragAndDrop: Error operning input stream to read plot configuration file.");
                             }
-                            try {Prefs.ijPrefs.load(is);} catch (Exception e) {
+                            try {
+                                Prefs.ijPrefs.load(is);
+                                useMacroSubtitle.set(false);
+                                useMacroTitle.set(false);
+                            } catch (Exception e) {
                                 IJ.beep();
                                 IJ.showMessage("DragAndDrop: Error loading plot configuration file.");
                             }
@@ -16585,6 +16593,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         try {
             InputStream is = new BufferedInputStream(new FileInputStream(of.getDirectory() + of.getFileName()));
             Prefs.ijPrefs.load(is);
+            useMacroSubtitle.set(false);
+            useMacroTitle.set(false);
             is.close();
             setupArrays();
             getPreferences();
@@ -16620,6 +16630,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 try {
                     InputStream is = new BufferedInputStream(new FileInputStream(cfgPath));
                     Prefs.ijPrefs.load(is);
+                    useMacroSubtitle.set(false);
+                    useMacroTitle.set(false);
                     is.close();
                 } catch (Exception e) {
                     IJ.beep();
@@ -16661,6 +16673,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             try {
                 var is = new BufferedInputStream(new FileInputStream(cfgFile));
                 Prefs.ijPrefs.load(is);
+                useMacroSubtitle.set(false);
+                useMacroTitle.set(false);
                 is.close();
             } catch (Exception e) {
                 e.printStackTrace();

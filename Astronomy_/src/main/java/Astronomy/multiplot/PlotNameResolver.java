@@ -87,8 +87,7 @@ public class PlotNameResolver {
             }
             return "<Parse went wrong>";
         } catch (ParseException e) {
-            e.printStackTrace();//todo don't log this
-            return "<JSON Parse Error>";
+            return "<Not a function: JSON parse error>";
         } catch (Exception e) {
             e.printStackTrace();
             return "<An error occurred running script match>";
@@ -96,6 +95,27 @@ public class PlotNameResolver {
     }
 
     private static String functionRunner(JSONObject o, MeasurementTable table) {
+        // Pref function
+        if (o.get("pref") instanceof String key) {
+            var mappedKey = keyResolver(key);
+            return Prefs.get(mappedKey, "<Missing value for '%s' (%s)>".formatted(mappedKey, key));
+        }
+
+        // Header function
+        if (o.get("hdr") instanceof String card) {
+            var label = table.getLabel(0);
+            var i = getImpForSlice(label);
+            if (i != null) {
+                var h = FitsJ.getHeader(i);
+                int c;
+                if (h != null && h.cards() != null && ((c = FitsJ.findCardWithKey(card, h)) > -1)) {
+                    return FitsJ.getCardValue(h.cards()[c]).trim();
+                }
+                return "<Failed to find card with key '%s'>".formatted(card);
+            }
+            return "<Found no matching image for '%s'>".formatted(label);
+        }
+
         // Regex function
         if (o.get("regex") instanceof String regex) {
             if (o.get("replace") instanceof String replace) {
@@ -143,26 +163,11 @@ public class PlotNameResolver {
             return "<Regex mode match failed, missing 'replace' text>";
         }
 
-        // Header function
-        if (o.get("hdr") instanceof String card) {
-            var label = table.getLabel(0);
-            var i = getImpForSlice(label);
-            if (i != null) {
-                var h = FitsJ.getHeader(i);
-                int c;
-                if (h != null && h.cards() != null && ((c = FitsJ.findCardWithKey(card, h)) > -1)) {
-                    return FitsJ.getCardValue(h.cards()[c]).trim();
-                }
-                return "<Failed to find card with key '%s'>".formatted(card);
-            }
-            return "<Found no matching image for '%s'>".formatted(label);
-        }
-
         // Split function
-        if (o.get("split") instanceof String lab) {
-            var split = "_";
+        if (o.get("split") instanceof String split) {
+            var splitter = "_";
             if (o.get("splitter") instanceof String s) {
-                split = s;
+                splitter = s;
             }
 
             var l = table.getLabel(0);
@@ -187,8 +192,8 @@ public class PlotNameResolver {
             }
 
             final var src = l;
-            var s = src.split(split);
-            return LABEL_VARIABLE.matcher(lab).replaceAll(matchResult -> {
+            var s = src.split(splitter);
+            return LABEL_VARIABLE.matcher(split).replaceAll(matchResult -> {
                 var v = matchResult.group(1).substring(1).trim(); // trim preceding $
 
                 try {
@@ -208,11 +213,6 @@ public class PlotNameResolver {
                     return "<Failed to get split match number: '%s'>".formatted(v);
                 }
             });
-        }
-
-        if (o.get("pref") instanceof String key) {
-            var mappedKey = keyResolver(key);
-            return Prefs.get(mappedKey, "<Missing value for '%s' (%s)>".formatted(mappedKey, key));
         }
 
         return "<Failed to identify script mode>";

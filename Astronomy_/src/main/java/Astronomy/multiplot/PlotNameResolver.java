@@ -16,6 +16,7 @@ import ij.astro.util.UIHelper;
 
 import javax.swing.*;
 import java.awt.*;
+import java.text.DecimalFormat;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 
@@ -141,6 +142,36 @@ public class PlotNameResolver {
                 return new Pair.GenericPair<>(Prefs.get(mappedKey, "<default>"), false);
             }
             return new Pair.GenericPair<>("<Missing value for '%s' (%s)>".formatted(mappedKey, key), true);
+        }
+
+        // Format function
+        if (o.get("format") instanceof String format) {
+            String src = null;
+            lastError = false;
+            if (o.get("src") instanceof JSONObject j) {
+                var f = functionRunner(j, table);
+                src = f.first();
+                lastError = true;
+            } else if (o.get("src") instanceof String s) {
+                if (table.columnExists(s)) {
+                    src = table.getStringValue(s, 0);
+                } else {
+                    return new Pair.GenericPair<>("<Invalid col. name for src: '%s'>".formatted(s), true);
+                }
+            }
+
+            if (src == null) {
+                return new Pair.GenericPair<>("<Was not provided source>", true);
+            }
+
+            //MessageFormat.format(key, src);
+            try {
+                return new Pair.GenericPair<>(new DecimalFormat(format).format(Double.parseDouble(src.trim())), lastError);
+            } catch (NumberFormatException e) {
+                return new Pair.GenericPair<>("<Failed to convert '%s' into a double>".formatted(src), true);
+            } catch (IllegalArgumentException e) {
+                return new Pair.GenericPair<>("<Invalid format '%s'>".formatted(format), true);
+            }
         }
 
         // Lable function

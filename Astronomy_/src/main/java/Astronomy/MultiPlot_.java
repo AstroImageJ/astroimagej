@@ -4336,9 +4336,15 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static void renderSubtitle() {
         Dimension size = plot.getSize();
         double y = subtitlePosY / size.getHeight() > 1 ? 1 : (subtitlePosY - 38) / size.getHeight();
-        if (useMacroSubtitle.get() && PlotNameResolver.lastSubtitle().second()) {
-            plot.addLabel(subtitlePosX, y, PlotNameResolver.lastSubtitle().first());
-            return;
+        if (useMacroSubtitle.get()) {
+            var f = PlotNameResolver.resolvePlotSubtitle(table);
+            if (!f.second()) {
+                subtitle = f.first();
+            }
+            if (PlotNameResolver.lastSubtitle().second()) {
+                plot.addLabel(subtitlePosX, y, PlotNameResolver.lastSubtitle().first());
+                return;
+            }
         }
         plot.addLabel(subtitlePosX, y, subtitle);
     }
@@ -4346,9 +4352,16 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static void renderTitle() {
         Dimension size = plot.getSize();
         double y = titlePosY / size.getHeight() > 1 ? 1 : (titlePosY - 35) / size.getHeight();
-        if (useMacroTitle.get() && PlotNameResolver.lastTitle().second()) {
-            plot.addLabel(titlePosX, y, PlotNameResolver.lastTitle().first());
-            return;
+
+        if (useMacroTitle.get()) {
+            var f = PlotNameResolver.resolvePlotTitle(table);
+            if (!f.second()) {
+                title = f.first();
+            }
+            if (PlotNameResolver.lastTitle().second()) {
+                plot.addLabel(titlePosX, y, PlotNameResolver.lastTitle().first());
+                return;
+            }
         }
         plot.addLabel(titlePosX, y, title);
     }

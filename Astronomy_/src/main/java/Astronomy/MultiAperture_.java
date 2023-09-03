@@ -565,6 +565,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     }
 
     protected void cancel() {
+        storeLastRun();
         if (table != null) table.setLock(false);
         if (table != null) table.show();
         if (table != null) table.setLock(false);
@@ -1017,6 +1018,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         if (imp.getCanvas() instanceof AstroCanvas a) {
             a.setPerformDraw(true);
         }
+        storeLastRun();
         SwingUtilities.invokeLater(() -> imp.setSlice(imp.getCurrentSlice()));
         noMoreInput();
         closeHelpPanel();
@@ -2787,7 +2789,6 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
             processImage();
             if (cancelled || IJ.escapePressed()) {
-                storeLastRun();
                 IJ.beep();
                 Prefs.set(MultiAperture_.PREFS_CANCELED, "true");
                 shutDown();
@@ -2848,8 +2849,6 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             });
             pw.setVisible(true);
         }
-
-        storeLastRun();
 
         if (processingStack) {
             if (win != null) {

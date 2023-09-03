@@ -8394,6 +8394,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             useTitle = true;
             useMacroTitle.set(true);
             if (titleField != null) {
+                if (PlotNameResolver.TITLE_MACRO.get().isBlank()) {
+                    PlotNameResolver.TITLE_MACRO.set(title);
+                }
                 titleField.setText(PlotNameResolver.TITLE_MACRO.get());
             }
             updatePlot(updateNoFits());
@@ -8551,6 +8554,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             useSubtitle = true;
             useMacroSubtitle.set(true);
             if (subtitleField != null) {
+                if (PlotNameResolver.SUBTITLE_MACRO.get().isBlank()) {
+                    PlotNameResolver.SUBTITLE_MACRO.set(subtitle);
+                }
                 subtitleField.setText(PlotNameResolver.SUBTITLE_MACRO.get());
             }
             updatePlot(updateNoFits());

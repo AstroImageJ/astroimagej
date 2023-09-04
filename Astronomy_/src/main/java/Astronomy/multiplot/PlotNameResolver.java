@@ -148,28 +148,28 @@ public class PlotNameResolver {
 
         // Format function
         if (o.get("format") instanceof String format) {
-            String src = null;
-            if (o.get("src") instanceof JSONObject j) {
+            String input = null;
+            if (o.get("input") instanceof JSONObject j) {
                 var f = functionRunner(j, table);
-                src = f.first();
+                input = f.first();
                 lastError = f.second();
-            } else if (o.get("src") instanceof String s) {
+            } else if (o.get("input") instanceof String s) {
                 if (table.columnExists(s)) {
-                    src = table.getStringValue(s, 0);
+                    input = table.getStringValue(s, 0);
                 } else {
-                    return new Pair.GenericPair<>("<Invalid col. name for src: '%s'>".formatted(s), true);
+                    return new Pair.GenericPair<>("<Invalid col. name for input: '%s'>".formatted(s), true);
                 }
             }
 
-            if (src == null) {
+            if (input == null) {
                 return new Pair.GenericPair<>("<Was not provided source>", true);
             }
 
-            //MessageFormat.format(key, src);
+            //MessageFormat.format(key, input);
             try {
-                return new Pair.GenericPair<>(new DecimalFormat(format).format(Double.parseDouble(src.trim())), lastError);
+                return new Pair.GenericPair<>(new DecimalFormat(format).format(Double.parseDouble(input.trim())), lastError);
             } catch (NumberFormatException e) {
-                return new Pair.GenericPair<>("<Failed to convert '%s' into a double>".formatted(src), true);
+                return new Pair.GenericPair<>("<Failed to convert '%s' into a double>".formatted(input), true);
             } catch (IllegalArgumentException e) {
                 return new Pair.GenericPair<>("<Invalid format '%s'>".formatted(format), true);
             }
@@ -190,7 +190,7 @@ public class PlotNameResolver {
             var j = new JSONObject();
             j.put("split", lab);
             j.put("splitter", o.getOrDefault("splitter", "_"));
-            j.put("src", "title");
+            j.put("input", "title");
             return functionRunner(j, table);
         }
 
@@ -220,15 +220,15 @@ public class PlotNameResolver {
             if (o.get("replace") instanceof String replace) {
                 var m = SIMPLE_VARIABLE.matcher(replace);
 
-                // Find the src to pull the initial string to perform the regex match on
+                // Find the input to pull the initial string to perform the regex match on
                 var l = table.getLabel(0);
-                if (o.get("src") instanceof String src) {
-                    if (table.columnExists(src)) {
-                        l = table.getStringValue(src, 0);
+                if (o.get("input") instanceof String input) {
+                    if (table.columnExists(input)) {
+                        l = table.getStringValue(input, 0);
                     } else {
-                        return new Pair.GenericPair<>("<Invalid col. name for src: '%s'>".formatted(src), true);
+                        return new Pair.GenericPair<>("<Invalid col. name for input: '%s'>".formatted(input), true);
                     }
-                } else if (o.get("src") instanceof JSONObject s) {
+                } else if (o.get("input") instanceof JSONObject s) {
                     var f = functionRunner(s, table);
                     l = f.first();
                     lastError = f.second();
@@ -284,10 +284,10 @@ public class PlotNameResolver {
                 splitter = s;
             }
 
-            // Find the src to pull the initial string to perform the split with
+            // Find the input to pull the initial string to perform the split with
             var l = table.getLabel(0);
-            if (o.get("src") instanceof String src) {
-                if (src.equals("title")) {
+            if (o.get("input") instanceof String input) {
+                if (input.equals("title")) {
                     var i = getImpForSlice(l);
                     if (i != null) {
                         l = i.getTitle();
@@ -297,20 +297,20 @@ public class PlotNameResolver {
                     } else {
                         return new Pair.GenericPair<>("<Found no matching image for '%s'>".formatted(l), true);
                     }
-                } else if (table.columnExists(src)) {
-                    l = table.getStringValue(src, 0);
+                } else if (table.columnExists(input)) {
+                    l = table.getStringValue(input, 0);
                 } else {
-                    return new Pair.GenericPair<>("<Invalid col. name for src: '%s'>".formatted(src), true);
+                    return new Pair.GenericPair<>("<Invalid col. name for input: '%s'>".formatted(input), true);
                 }
-            } else if (o.get("src") instanceof JSONObject s) {
+            } else if (o.get("input") instanceof JSONObject s) {
                 var f = functionRunner(s, table);
                 l = f.first();
                 lastError = f.second();
             }
 
             // The final output
-            final var src = l;
-            var s = src.split(splitter);
+            final var input = l;
+            var s = input.split(splitter);
             var errorState = new AtomicBoolean(lastError);
             return new Pair.GenericPair<>(LABEL_VARIABLE.matcher(split).replaceAll(matchResult -> {
                 var v = matchResult.group(1).substring(1).trim(); // trim preceding $
@@ -318,7 +318,7 @@ public class PlotNameResolver {
                 try {
                     var g = Integer.parseInt(v) - 1;
                     if (g == -1) {
-                        return src;
+                        return input;
                     }
                     if (g > -1) {
                         if (g >= s.length) {
@@ -420,7 +420,7 @@ public class PlotNameResolver {
                                 inclusion of those parts.
                                     Indexing begins at 1, and counts from the left.
                                     By default splits on _, but optionally can specify any character sequence.
-                                    Can optionally specify a "src" to pull the text from. "title" will fetch the stack title,\
+                                    Can optionally specify a "input" to pull the text from. "title" will fetch the stack title,\
                                      can be any column or another function.
                                     Example:
                                         Table: Column Label, first value processed_altair_21.fits
@@ -428,10 +428,10 @@ public class PlotNameResolver {
                                         Output: Hello Reversed: 21.fits altairprocessed
                                         
                                         Table: Stack title = Altair 23/14/01
-                                        Macro: ${"split":"Observed on $2", "splitter":" ", "src": "title"}
+                                        Macro: ${"split":"Observed on $2", "splitter":" ", "input": "title"}
                                         Output: Observed on 23/14/01
-                                Title. A special case of split the automatically specifies the src as "title".
-                                Lab. A special case of split that automatically specifies the src as "Label".
+                                Title. A special case of split the automatically specifies the input as "title".
+                                Lab. A special case of split that automatically specifies the input as "Label".
                                 Header. Extracts values from the image header of the first slice. Image must be open.
                                     Example:
                                         Header: CCDTEMP = 23.5
@@ -455,13 +455,13 @@ public class PlotNameResolver {
                                     It has 3 parts:
                                         - regex: the regex expression to match with
                                         - replace: the text that will be returned, including any group references
-                                        - src: Optional. Can be a column name, in which case it will extract the first
+                                        - input: Optional. Can be a column name, in which case it will extract the first
                                             value from it, or a function, in which case it will run that function first.
                                     Examples:
                                         Header: CCDTEMP = 23.5
                                         Table: Column Label, first value processed_altair_21.fits
                                         Macro: Regex with ${"regex": "_(\\w+)_", "replace": "$1"} and
-                                                ${"regex": "([0-9]+)", "replace": "$1C", "src":{"hdr":"CCDTEMP"}}
+                                                ${"regex": "([0-9]+)", "replace": "$1C", "input":{"hdr":"CCDTEMP"}}
                                         Output: Regex with altair and 23C
                         """);
         var s = new JScrollPane(tp);

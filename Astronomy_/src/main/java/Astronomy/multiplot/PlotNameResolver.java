@@ -217,8 +217,8 @@ public class PlotNameResolver {
         // Regex function
         if (o.get("regex") instanceof String regex) {
             // The string that will be output, containing any group references
-            if (o.get("replace") instanceof String replace) {
-                var m = SIMPLE_VARIABLE.matcher(replace);
+            if (o.get("output") instanceof String output) {
+                var m = SIMPLE_VARIABLE.matcher(output);
 
                 // Find the input to pull the initial string to perform the regex match on
                 var l = table.getLabel(0);
@@ -274,7 +274,7 @@ public class PlotNameResolver {
                     }
                 }), errorState.get());
             }
-            return new Pair.GenericPair<>("<Regex mode match failed, missing 'replace' text>", true);
+            return new Pair.GenericPair<>("<Regex mode match failed, missing 'output' text>", true);
         }
 
         // Split function
@@ -454,14 +454,14 @@ public class PlotNameResolver {
                                 Regex. Allows applying a regex find and replace on text, including the output of other functions.
                                     It has 3 parts:
                                         - regex: the regex expression to match with
-                                        - replace: the text that will be returned, including any group references
+                                        - output: the text that will be returned, including any group references
                                         - input: Optional. Can be a column name, in which case it will extract the first
                                             value from it, or a function, in which case it will run that function first.
                                     Examples:
                                         Header: CCDTEMP = 23.5
                                         Table: Column Label, first value processed_altair_21.fits
-                                        Macro: Regex with ${"regex": "_(\\w+)_", "replace": "$1"} and
-                                                ${"regex": "([0-9]+)", "replace": "$1C", "input":{"hdr":"CCDTEMP"}}
+                                        Macro: Regex with ${"regex": "_(\\w+)_", "output": "$1"} and
+                                                ${"regex": "([0-9]+)", "output": "$1C", "input":{"hdr":"CCDTEMP"}}
                                         Output: Regex with altair and 23C
                         """);
         var s = new JScrollPane(tp);

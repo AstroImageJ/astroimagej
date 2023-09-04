@@ -18,7 +18,9 @@ import javax.swing.*;
 import java.awt.*;
 import java.text.DecimalFormat;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 public class PlotNameResolver {
     public static final Property<String> TITLE_MACRO = new Property<>("", PlotNameResolver.class);
@@ -201,7 +203,12 @@ public class PlotNameResolver {
                 var h = FitsJ.getHeader(i);
                 int c;
                 if (h != null && h.cards() != null && ((c = FitsJ.findCardWithKey(card, h)) > -1)) {
-                    return new Pair.GenericPair<>(FitsJ.getCardValue(h.cards()[c]).trim(), false);
+                    var val = FitsJ.getCardValue(h.cards()[c]).trim();
+                    // Trim ' from val
+                    if (val.startsWith("'") && val.endsWith("'")) {
+                        val = val.substring(1, val.length() - 1).trim();
+                    }
+                    return new Pair.GenericPair<>(val, false);
                 }
                 return new Pair.GenericPair<>("<Failed to find card with key '%s'>".formatted(card), true);
             }
@@ -229,7 +236,12 @@ public class PlotNameResolver {
                 }
 
                 // The final output
-                var matcher = Pattern.compile(regex).matcher(l);
+                Matcher matcher;
+                try {
+                    matcher = Pattern.compile(regex).matcher(l);
+                } catch (PatternSyntaxException e) {
+                    return new Pair.GenericPair<>("<Pattern incomplete: %s>".formatted(e.getMessage()), true);
+                }
                 var errorState = new AtomicBoolean(lastError);
                 return new Pair.GenericPair<>(m.replaceAll(matchResult -> {
                     matcher.reset();

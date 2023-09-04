@@ -162,7 +162,7 @@ public class PlotNameResolver {
             }
 
             if (input == null) {
-                return new Pair.GenericPair<>("<Was not provided source>", true);
+                return new Pair.GenericPair<>("<Was not provided input>", true);
             }
 
             //MessageFormat.format(key, input);
@@ -175,9 +175,9 @@ public class PlotNameResolver {
             }
         }
 
-        // Lable function
+        // Label function
         // This is a special case of the split function
-        if (o.get("lab") instanceof String lab) {
+        if (o.get("label") instanceof String lab) {
             var j = new JSONObject();
             j.put("output", lab);
             j.put("split", o.getOrDefault("splitter", "_"));
@@ -421,7 +421,7 @@ public class PlotNameResolver {
                                 Split. Splits text, by default the first value of the Label column and allows selective
                                 inclusion of those parts.
                                     Indexing begins at 1, and counts from the left.
-                                    Can optionally specify a "input" to pull the text from. "title" will fetch the stack title,\
+                                    Can optionally specify a "input" to pull the text from. "title" will fetch the stack title,
                                      can be any column or another function.
                                     Example:
                                         Table: Column Label, first value processed_altair_21.fits
@@ -431,8 +431,20 @@ public class PlotNameResolver {
                                         Table: Stack title = Altair 23/14/01
                                         Macro: ${"split":" ", "output":"Observed on $2", "input": "title"}
                                         Output: Observed on 23/14/01
-                                Title. A special case of split the automatically specifies the input as "title".
-                                Lab. A special case of split that automatically specifies the input as "Label".
+                                Title. A special case of split the automatically specifies the input as "title" and the split as "_".
+                                    Instead of the split keyword, "splitter" is used.
+                                    There is no input value, and the output values is specified in the title value.
+                                    Example:
+                                        Table: Stack title = Altair 23/14/01
+                                        Macro: ${"title": "Observed on $4", "splitter": " "}
+                                        Output: Observed on 23/14/01
+                                Label. A special case of split that automatically specifies the input as "Label" and the split as "_".
+                                    Instead of the split keyword, "splitter" is used.
+                                    There is no input value, and the output values is specified in the label value.
+                                    Example:
+                                        Table: Column Label, first value processed_altair_21.fits
+                                        Macro: Hello ${"label":"Reversed: $3 $2$1"}
+                                        Output: Hello Reversed: 21.fits altairprocessed
                                 Header. Extracts values from the image header of the first slice. Image must be open.
                                     Example:
                                         Header: CCDTEMP = 23.5

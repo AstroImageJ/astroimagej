@@ -2891,7 +2891,6 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 yield "VApFWHM(%s): %s-%s-%s".formatted(ApRadius.AUTO_VAR_FWHM.cutoff, IJ.d2s(Stat.median(sr), 1),
                         IJ.d2s(Stat.median(br), 1), IJ.d2s(Stat.median(br2), 1));
             }
-            default -> "<Invalid state>";
         };
     }
 

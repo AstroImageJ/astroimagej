@@ -2864,23 +2864,23 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     private void storeLastRun() {
         lastRun = switch (radiusSetting) {
             case FIXED -> {
-                yield "FApUser: %s-%s-%s".formatted(IJ.d2s(radius, 1), IJ.d2s(radialCutoff, 1),
+                yield "FApUser: %s-%s-%s".formatted(IJ.d2s(radius, 1), IJ.d2s(rBack1, 1),
                         IJ.d2s(rBack2, 1));
             }
             case AUTO_FIXED -> {
                 yield "FApRadP1(%s): %s-%s-%s".formatted(ApRadius.AUTO_FIXED.cutoff, IJ.d2s(radius, 1),
-                        IJ.d2s(radialCutoff, 1), IJ.d2s(rBack2, 1));
+                        IJ.d2s(rBack1, 1), IJ.d2s(rBack2, 1));
             }
             case AUTO_FIXED_STACK_RAD -> {
                 yield "FApRadPAll(%s): %s-%s-%s".formatted(ApRadius.AUTO_FIXED_STACK_RAD.cutoff, IJ.d2s(radius, 1),
-                        IJ.d2s(radialCutoff, 1), IJ.d2s(rBack2, 1));
+                        IJ.d2s(rBack1, 1), IJ.d2s(rBack2, 1));
             }
             case AUTO_VAR_RAD_PROF -> {
                 var sr = stackRadii.stream().mapToDouble(Seeing_Profile.ApRadii::r).toArray();
                 var br = stackRadii.stream().mapToDouble(Seeing_Profile.ApRadii::r2).toArray();
                 var br2 = stackRadii.stream().mapToDouble(Seeing_Profile.ApRadii::r3).toArray();
 
-                yield "ApRadP(%s): %s-%s-%s".formatted(ApRadius.AUTO_VAR_RAD_PROF.cutoff, IJ.d2s(Stat.median(sr), 1),
+                yield "VApRadP(%s): %s-%s-%s".formatted(ApRadius.AUTO_VAR_RAD_PROF.cutoff, IJ.d2s(Stat.median(sr), 1),
                         IJ.d2s(Stat.median(br), 1), IJ.d2s(Stat.median(br2), 1));
             }
             case AUTO_VAR_FWHM -> {

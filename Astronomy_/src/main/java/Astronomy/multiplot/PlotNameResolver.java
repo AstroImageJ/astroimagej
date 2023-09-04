@@ -179,8 +179,8 @@ public class PlotNameResolver {
         // This is a special case of the split function
         if (o.get("lab") instanceof String lab) {
             var j = new JSONObject();
-            j.put("split", lab);
-            j.put("splitter", o.getOrDefault("splitter", "_"));
+            j.put("output", lab);
+            j.put("split", o.getOrDefault("splitter", "_"));
             return functionRunner(j, table);
         }
 
@@ -188,8 +188,8 @@ public class PlotNameResolver {
         // This is a special case of the split function
         if (o.get("title") instanceof String lab) {
             var j = new JSONObject();
-            j.put("split", lab);
-            j.put("splitter", o.getOrDefault("splitter", "_"));
+            j.put("output", lab);
+            j.put("split", o.getOrDefault("splitter", "_"));
             j.put("input", "title");
             return functionRunner(j, table);
         }
@@ -278,10 +278,12 @@ public class PlotNameResolver {
         }
 
         // Split function
-        if (o.get("split") instanceof String split) {
-            var splitter = "_";
-            if (o.get("splitter") instanceof String s) {
-                splitter = s;
+        if (o.get("split") instanceof String splitter) {
+            String output;
+            if (o.get("output") instanceof String op) {
+                output = op;
+            } else {
+                return new Pair.GenericPair<>("<Split failed, missing 'output' text>", true);
             }
 
             // Find the input to pull the initial string to perform the split with
@@ -312,7 +314,7 @@ public class PlotNameResolver {
             final var input = l;
             var s = input.split(splitter);
             var errorState = new AtomicBoolean(lastError);
-            return new Pair.GenericPair<>(LABEL_VARIABLE.matcher(split).replaceAll(matchResult -> {
+            return new Pair.GenericPair<>(LABEL_VARIABLE.matcher(output).replaceAll(matchResult -> {
                 var v = matchResult.group(1).substring(1).trim(); // trim preceding $
 
                 try {
@@ -419,16 +421,15 @@ public class PlotNameResolver {
                                 Split. Splits text, by default the first value of the Label column and allows selective
                                 inclusion of those parts.
                                     Indexing begins at 1, and counts from the left.
-                                    By default splits on _, but optionally can specify any character sequence.
                                     Can optionally specify a "input" to pull the text from. "title" will fetch the stack title,\
                                      can be any column or another function.
                                     Example:
                                         Table: Column Label, first value processed_altair_21.fits
-                                        Macro: Hello ${"split":"Reversed: $3 $2$1", "splitter":"_"} // Split entry is optional
+                                        Macro: Hello ${"split":"_", "output":"Reversed: $3 $2$1"}
                                         Output: Hello Reversed: 21.fits altairprocessed
                                         
                                         Table: Stack title = Altair 23/14/01
-                                        Macro: ${"split":"Observed on $2", "splitter":" ", "input": "title"}
+                                        Macro: ${"split":" ", "output":"Observed on $2", "input": "title"}
                                         Output: Observed on 23/14/01
                                 Title. A special case of split the automatically specifies the input as "title".
                                 Lab. A special case of split that automatically specifies the input as "Label".

@@ -149,11 +149,10 @@ public class PlotNameResolver {
         // Format function
         if (o.get("format") instanceof String format) {
             String src = null;
-            lastError = false;
             if (o.get("src") instanceof JSONObject j) {
                 var f = functionRunner(j, table);
                 src = f.first();
-                lastError = true;
+                lastError = f.second();
             } else if (o.get("src") instanceof String s) {
                 if (table.columnExists(s)) {
                     src = table.getStringValue(s, 0);
@@ -232,7 +231,7 @@ public class PlotNameResolver {
                 } else if (o.get("src") instanceof JSONObject s) {
                     var f = functionRunner(s, table);
                     l = f.first();
-                    lastError = true;
+                    lastError = f.second();
                 }
 
                 // The final output
@@ -306,7 +305,7 @@ public class PlotNameResolver {
             } else if (o.get("src") instanceof JSONObject s) {
                 var f = functionRunner(s, table);
                 l = f.first();
-                lastError = true;
+                lastError = f.second();
             }
 
             // The final output

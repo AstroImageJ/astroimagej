@@ -69,7 +69,7 @@ public class Astronomy_Listener implements PlugIn, ImageListener {
                     if (!SwingUtilities.isEventDispatchThread()) {
                         try {
                             SwingUtilities.invokeAndWait(() -> {
-                                if (asw.isReady) {
+                                if (asw.isReady && (asw.running || asw.running2)) {
                                     asw.setAstroProcessor(false);
                                 }
                             });

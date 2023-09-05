@@ -1,6 +1,7 @@
 // OverlayCanvas.java
 package astroj;
 
+import ij.IJ;
 import ij.ImagePlus;
 import ij.gui.ImageCanvas;
 import ij.gui.ImageWindow;
@@ -34,6 +35,9 @@ public class OverlayCanvas extends ImageCanvas {
     public static boolean hasOverlayCanvas(ImagePlus imag) {
 		// ImageCanvas canvas = imag.getCanvas();	    // ImageJ 1.38
         ImageCanvas canvas = null;
+        if (IJ.isMacro()) {
+            imag.waitTillActivated();
+        }
         ImageWindow win = imag.getWindow();
         if (win != null) canvas = win.getCanvas();
         if (canvas == null)

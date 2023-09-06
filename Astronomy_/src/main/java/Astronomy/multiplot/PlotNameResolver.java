@@ -3,6 +3,7 @@ package Astronomy.multiplot;
 import Astronomy.MultiAperture_;
 import Astronomy.MultiPlot_;
 import astroj.FitsJ;
+import astroj.HelpPanel;
 import astroj.MeasurementTable;
 import astroj.json.simple.JSONObject;
 import astroj.json.simple.parser.JSONParser;
@@ -14,8 +15,6 @@ import ij.astro.io.prefs.Property;
 import ij.astro.types.Pair;
 import ij.astro.util.UIHelper;
 
-import javax.swing.*;
-import java.awt.*;
 import java.text.DecimalFormat;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
@@ -386,102 +385,6 @@ public class PlotNameResolver {
     }
 
     public static void showHelpWindow() {
-        var f = new JFrame("Title Macro Help");
-        var tp = new JTextPane();
-        tp.setFont(new Font("Monospaced", Font.PLAIN, 12));
-        tp.replaceSelection(
-                """
-                        Title macros work to dynamically create plot title and subtitle based on available information.
-                        The macro is stored separately from the final finished title, allowing you to switch between them to
-                        make any necessary edits. Errors that occur will be displayed in the title. All names are case sensitive.
-                                        
-                        Macros consist of 3 parts that can be combined in any way:
-                            - Normal text. This text will appear as-is when rendered.
-                            - Variables, that start with $. These variables will be substituted by the the first value in
-                                the column specified.
-                            - Functions, that start with $. They take the form of a JSON object to perform various operation on
-                                text.
-                                        
-                        Variables
-                            They must begin with a $, followed by the column name. The column name may be wrapped in "",
-                            which is required for columns whose name carries whitespace or non-standard characters.
-                            Examples:
-                                Table: Column AIRMASS, first value -1
-                                Macro: Hello $AIRMASS
-                                Output: Hello -1
-                                
-                                Table: Column Label, first value processed_altair_21.fits
-                                Macro: Hello $Label
-                                Output: Hello processed_altair_21.fits
-                            
-                        Functions
-                            They must begin with $, and take the form of a JSON object. Several function are available.
-                            
-                            Functions:
-                                Split. Splits text, by default the first value of the Label column and allows selective
-                                inclusion of those parts.
-                                    Indexing begins at 1, and counts from the left.
-                                    Can optionally specify a "input" to pull the text from. "title" will fetch the stack title,
-                                     can be any column or another function.
-                                    Example:
-                                        Table: Column Label, first value processed_altair_21.fits
-                                        Macro: Hello ${"split":"_", "output":"Reversed: $3 $2$1"}
-                                        Output: Hello Reversed: 21.fits altairprocessed
-                                        
-                                        Table: Stack title = Altair 23/14/01
-                                        Macro: ${"split":" ", "output":"Observed on $2", "input": "title"}
-                                        Output: Observed on 23/14/01
-                                Title. A special case of split the automatically specifies the input as "title" and the split as "_".
-                                    Instead of the split keyword, "splitter" is used.
-                                    There is no input value, and the output values is specified in the title value.
-                                    Example:
-                                        Table: Stack title = Altair 23/14/01
-                                        Macro: ${"title": "Observed on $4", "splitter": " "}
-                                        Output: Observed on 23/14/01
-                                Label. A special case of split that automatically specifies the input as "Label" and the split as "_".
-                                    Instead of the split keyword, "splitter" is used.
-                                    There is no input value, and the output values is specified in the label value.
-                                    Example:
-                                        Table: Column Label, first value processed_altair_21.fits
-                                        Macro: Hello ${"label":"Reversed: $3 $2$1"}
-                                        Output: Hello Reversed: 21.fits altairprocessed
-                                Header. Extracts values from the image header of the first slice. Image must be open.
-                                    Example:
-                                        Header: CCDTEMP = 23.5
-                                        Macro: Hello ${"hdr":"CCDTEMP"}C
-                                        Output: Hello 23.5C
-                                Preferences. Read values from the preferences file. Some keywords are provided to aid in value
-                                    extraction.
-                                    Keywords:
-                                        - "APLOADING": The method in which MA loaded apertures
-                                        - "APRADIUS": The last used aperture radius
-                                        - "APSKYINNER": The last used inner sky radius
-                                        - "APSKYOUTER": The last used outer sky radius
-                                        - "APMODE": The method MA used to calculate ap. radius
-                                        - "APVARFWHM": The FWHM value used by var. ap.
-                                        - "APVARFLUXCUT": The flux cutoff used by var. ap.
-                                        - "LASTMA": The last MA run's settings including radii
-                                    Example:
-                                        Macro: MA: ${"pref": "APMODE"}, Radius: ${"pref": "APRADIUS"}px
-                                        Output: MA: FIXED, Radius: 15px
-                                Regex. Allows applying a regex find and replace on text, including the output of other functions.
-                                    It has 3 parts:
-                                        - regex: the regex expression to match with
-                                        - output: the text that will be returned, including any group references
-                                        - input: Optional. Can be a column name, in which case it will extract the first
-                                            value from it, or a function, in which case it will run that function first.
-                                    Examples:
-                                        Header: CCDTEMP = 23.5
-                                        Table: Column Label, first value processed_altair_21.fits
-                                        Macro: Regex with ${"regex": "_(\\w+)_", "output": "$1"} and
-                                                ${"regex": "([0-9]+)", "output": "$1C", "input":{"hdr":"CCDTEMP"}}
-                                        Output: Regex with altair and 23C
-                        """);
-        var s = new JScrollPane(tp);
-        s.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-        f.add(s);
-        f.pack();
-        UIHelper.setCenteredOnScreen(f, MultiPlot_.mainFrame);
-        f.setVisible(true);
+        UIHelper.setCenteredOnScreen(new HelpPanel("help/plotMacroHelp.html", "Plot Macros"), MultiPlot_.mainFrame);
     }
 }

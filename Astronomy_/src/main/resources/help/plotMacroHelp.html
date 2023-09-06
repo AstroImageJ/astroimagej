@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Plot Macro Help</title>
+</head>
+<body>
+<!-- todo introduction -->
+<h1>Variables</h1>
+Variables allow for substituting values into a plot title, and begin with <code>$</code>. They have three forms:
+<ul>
+    <li>A column name consisting of only alphanumeric characters</li>
+    <li>A column name in <code>quotes</code> (<code>"</code> or <code>'</code>)</li>
+    <li>A function, in the form of a JSON object</li>
+</ul>
+
+<p></p>
+
+<h1>Functions</h1>
+<table style="text-align: center;" border="1">
+    <thead>
+    <tr>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Default Datasource</th>
+        <th>Parameters</th>
+        <th>Example</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <td>Preferences</td>
+        <td>Read values for AIJ preferences.</td>
+        <td>N/A</td>
+        <td><table border="1">
+            <thead>
+            <tr>
+                <th>Key</th>
+                <th>Description</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>pref</td>
+                <td>The preferences entry</td><!-- todo list special -->
+            </tr>
+            </tbody>
+        </table></td>
+        <td><table border="1">
+            <thead>
+            <tr>
+                <th>Macro</th>
+                <th>Output</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>MA: ${"pref": "APMODE"}, Radius: ${"pref": "APRADIUS"}px</td>
+                <td>MA: FIXED, Radius: 15px</td>
+            </tr>
+            <tr>
+                <td>${"pref":"LASTMA"}</td>
+                <td>FApRadPAll(0.01): 12.0-0.0-31.0</td>
+            </tr>
+            </tbody>
+        </table></td>
+    </tr>
+    <tr>
+        <td>Header</td>
+        <td>Read values from the FITS header.</td>
+        <td>The Header of the first slice in the table.</td>
+        <td><table border="1">
+            <thead>
+            <tr>
+                <th>Key</th>
+                <th>Description</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>hdr</td>
+                <td>The the header key to read.</td>
+            </tr>
+            </tbody>
+        </table></td>
+        <td><table border="1">
+            <thead>
+            <tr>
+                <th>Available Data</th>
+                <th>Macro</th>
+                <th>Output</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>CCDTEMP = 23.5</td>
+                <td>Hello ${"hdr":"CCDTEMP"}C</td>
+                <td>Hello 23.5C</td>
+            </tr>
+            </tbody>
+        </table></td>
+    </tr>
+    <tr>
+        <td>Format</td>
+        <td>Format a number</td>
+        <td>N/A</td>
+        <td><table border="1">
+            <thead>
+            <tr>
+                <th>Key</th>
+                <th>Description</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>format</td>
+                <td>The format to use. <code>0</code> shows as a digit, and <code>#</code> shows as a digit,
+                    except if <code>0</code>.</td>
+            </tr>
+            <tr>
+                <td>input</td>
+                <td>Can be a string, a <code>column name</code> to read the first value from that column,
+                    or another function whose output is to be matched against.</td>
+            </tr>
+            </tbody>
+        </table></td>
+        <td><table border="1">
+            <thead>
+            <tr>
+                <th>Available Data</th>
+                <th>Macro</th>
+                <th>Output</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>Header: CCDTEMP = 23.5</td>
+                <td>${"format": "##0.0", "input":{"hdr":"CCDTEMP"}}</td>
+                <td>23.5</td>
+            </tr>
+            <tr>
+                <td>Header: CCDTEMP = 23.0</td>
+                <td>${"format": "##0.#", "input":{"hdr":"CCDTEMP"}}</td>
+                <td>23</td>
+            </tr>
+            </tbody>
+        </table></td>
+    </tr>
+    <tr>
+        <td>Title split</td>
+        <td>Split the stack title into sections and combine them.</td>
+        <td>The corresponding stack's title</td>
+        <td><table border="1">
+            <thead>
+            <tr>
+                <th>Key</th>
+                <th>Description</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>title</td>
+                <td>The output string, containing references to any section. <p>References are in the form
+                    <code>$&lt;number&gt;</code>, where <code>$0</code> refers to the entire stack title.</td>
+            </tr>
+            <tr>
+                <td>split</td>
+                <td><i>Optional</i> The string to split the title on, default <code>_</code></td>
+            </tr>
+            </tbody>
+        </table></td>
+        <td><table border="1">
+            <thead>
+            <tr>
+                <th>Available Data</th>
+                <th>Macro</th>
+                <th>Output</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>Stack title: Altair 23-14-01</td>
+                <td>${"title": "Observed on $4", "splitter": " "}</td>
+                <td>Observed on 23-14-01</td>
+            </tr>
+            <tr>
+                <td>Stack title: Altair_23-14-01</td>
+                <td>Observed ${"title": "$1"}</td>
+                <td>Observed Altair</td>
+            </tr>
+            </tbody>
+        </table></td>
+    </tr>
+    <tr>
+        <td>Label split</td>
+        <td>Split the first value in the Label column into sections and combine them.</td>
+        <td>The first entry in the Label column.</td>
+        <td><table border="1">
+            <thead>
+            <tr>
+                <th>Key</th>
+                <th>Description</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>label</td>
+                <td>The output string, containing references to any section. <p>References are in the form
+                    <code>$&lt;number&gt;</code>, where <code>$0</code> refers to the entire label.</td>
+            </tr>
+            <tr>
+                <td>split</td>
+                <td><i>Optional</i> The string to split the title on, default <code>_</code>.</td>
+            </tr>
+            </tbody>
+        </table></td>
+        <td><table border="1">
+            <thead>
+            <tr>
+                <th>Available Data</th>
+                <th>Macro</th>
+                <th>Output</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>Column Label, first value processed_altair_21.fits</td>
+                <td>Hello ${"label":"Reversed: $3 $2$1"}</td>
+                <td>Hello Reversed: 21.fits altairprocessed</td>
+            </tr>
+            </tbody>
+        </table></td>
+    </tr>
+    <tr>
+        <td>Split</td>
+        <td>Split the given input into sections and combine them.</td>
+        <td>The first entry in the Label column.</td>
+        <td><table border="1">
+            <thead>
+            <tr>
+                <th>Key</th>
+                <th>Description</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>output</td>
+                <td>The output string, containing references to any section. <p>References are in the form
+                    <code>$&lt;number&gt;</code>, where <code>$0</code> refers to the entire input.</td>
+            </tr>
+            <tr>
+                <td>split</td>
+                <td><i>Optional</i> The string to split the title on, default <code>_</code>.</td>
+            </tr>
+            <tr>
+                <td>input</td>
+                <td>Can be a string, either <code>title</code> to read the stack title, or a <code>column name</code>
+                    to read the first value from that column, or another function whose output is to be split.</td>
+            </tr>
+            </tbody>
+        </table></td>
+        <td><table border="1">
+            <thead>
+            <tr>
+                <th>Available Data</th>
+                <th>Macro</th>
+                <th>Output</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>Column Label, first value processed_altair_21.fits</td>
+                <td>Hello ${"label":"Reversed: $3 $2$1"}</td>
+                <td>Hello Reversed: 21.fits altairprocessed</td>
+            </tr>
+            <tr>
+                <td>Stack title = Altair 23/14/01</td>
+                <td>${"split":" ", "output":"Observed on $2", "input": "title"}</td>
+                <td>Observed on 23/14/01</td>
+            </tr>
+            <tr>
+                <td>Header: DATE-OBS = 1996-10-14T10:14:36.123</td>
+                <td>Observed on ${"split":”T”, "input": {"hdr": "DATE-OBS"}, "output": $1}</td>
+                <td>Observed on 1996-10-14</td>
+            </tr>
+            </tbody>
+        </table></td>
+    </tr>
+    <tr>
+        <td>Regex</td>
+        <td>Match a regex expression, extract match groups and combine them into an output</td>
+        <td>The first entry in the Label column.</td>
+        <td><table border="1">
+            <thead>
+            <tr>
+                <th>Key</th>
+                <th>Description</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>regex</td>
+                <td>The regular expression to match against.</td>
+            </tr>
+            <tr>
+                <td>input</td>
+                <td>Can be a string, a <code>column name</code> to read the first value from that column,
+                    or another function whose output is to be matched against.</td>
+            </tr>
+            <tr>
+                <td>output</td>
+                <td>The output string, containing references to any match group. <p>References are in the form
+                <code>$&lt;number&gt;</code>, where <code>$0</code> refers to the entire input.
+                Named references are supported.</td>
+            </tr>
+            </tbody>
+        </table></td>
+        <td><table border="1">
+            <thead>
+            <tr>
+                <th>Available Data</th>
+                <th>Macro</th>
+                <th>Output</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>Header: CCDTEMP = 23.5; Column Label, first value processed_altair_21.fits</td>
+                <td>Regex with ${"regex": "_(\w+)_", "output": "$1"} and
+                    ${"regex": "([0-9]+)", "output": "$1C", "input":{"hdr":"CCDTEMP"}}</td>
+                <td>Regex with altair and 23C</td>
+            </tr>
+            <tr>
+                <td>Header: DATE-OBS = 1996-10-14T10:14:36.123</td>
+                <td>${"regex":"(.+)T","input":{"hdr": "DATE-OBS"}, "output": "$1"}</td>
+                <td>1996-10-14</td>
+            </tr>
+            </tbody>
+        </table></td>
+    </tr>
+    </tbody>
+</table>
+</body>
+</html>

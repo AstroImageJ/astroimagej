@@ -47,6 +47,7 @@ import java.util.concurrent.Future;
  * (<i>for internal use</i>) A table 'tile' representing a set of consecutive table rows that are compressed together as
  * a block.
  */
+@SuppressWarnings("javadoc")
 public abstract class BinaryTableTile implements Runnable {
 
     protected final ColumnTable<?> data;

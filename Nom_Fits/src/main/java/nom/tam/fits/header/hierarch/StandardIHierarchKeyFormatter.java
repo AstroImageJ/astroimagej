@@ -1,8 +1,8 @@
 package nom.tam.fits.header.hierarch;
 
-import nom.tam.fits.utilities.FitsLineAppender;
-
 import java.util.Locale;
+
+import nom.tam.fits.utilities.FitsLineAppender;
 
 /*
  * #%L

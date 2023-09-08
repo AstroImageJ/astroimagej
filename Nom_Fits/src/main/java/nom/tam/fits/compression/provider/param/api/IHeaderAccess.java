@@ -86,7 +86,9 @@ public interface IHeaderAccess {
     void addValue(IFitsHeader key, String value) throws IllegalArgumentException;
 
     /**
-     * Returns the FITS header card for the given FITS keyword.
+     * Returns the FITS header card for the given FITS keyword. It does not set
+     * a mark in the header for new additions, making it more similar to
+     * {@link Header#getCard(IFitsHeader)}.
      * 
      * @param key
      *            the standard or conventional FITS header keyword
@@ -96,7 +98,9 @@ public interface IHeaderAccess {
     HeaderCard findCard(IFitsHeader key);
 
     /**
-     * Returns the FITS header card for the given FITS keyword.
+     * Returns the FITS header card for the given FITS keyword. It does not set
+     * a mark in the header for new additions, making it more similar to
+     * {@link Header#getCard(String)}.
      * 
      * @param key
      *            the FITS header keyword

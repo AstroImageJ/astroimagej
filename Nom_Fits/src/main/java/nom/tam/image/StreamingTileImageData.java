@@ -31,15 +31,15 @@ package nom.tam.image;
  * #L%
  */
 
+import java.io.IOException;
+import java.util.Arrays;
+
 import nom.tam.fits.FitsException;
 import nom.tam.fits.FitsUtil;
 import nom.tam.fits.Header;
 import nom.tam.fits.ImageData;
 import nom.tam.util.ArrayDataOutput;
 import nom.tam.util.ArrayFuncs;
-
-import java.io.IOException;
-import java.util.Arrays;
 
 /**
  * <p>

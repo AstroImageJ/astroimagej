@@ -89,6 +89,9 @@ public final class FitsCheckSum {
     private static final String EXCLUDE = ":;<=>?@[\\]^_`";
     private static final String CHECKSUM_DEFAULT = "0000000000000000";
 
+    /** The expected checksum for a HDU that already contains a valid CHECKSUM keyword */
+    public static final long HDU_CHECKSUM = 0xffffffffL;
+
     private FitsCheckSum() {
     }
 
@@ -264,7 +267,7 @@ public final class FitsCheckSum {
      * @throws FitsException If there was an error serializing the data object
      *
      * @see                  Data#calcChecksum()
-     * @see                  nom.tam.fits.Fits#calcDatasum(int)
+     * @see                  BasicHDU#verifyDataIntegrity()
      * @see                  #checksum(RandomAccess, long, long)
      * @see                  #setDatasum(Header, long)
      * @see                  #setChecksum(BasicHDU)
@@ -290,13 +293,15 @@ public final class FitsCheckSum {
      * @since                1.17
      */
     public static long checksum(Header header) throws FitsException {
-        HeaderCard hc = header.findCard(CHECKSUM);
+        HeaderCard hc = header.getCard(CHECKSUM);
         String prior = null;
 
         if (hc != null) {
             prior = hc.getValue();
             hc.setValue(CHECKSUM_DEFAULT);
+            hc.setComment(CHECKSUM.comment()); // Reset comment in case it contained a timestamp
         } else {
+            header.seekTail();
             hc = header.addValue(CHECKSUM, CHECKSUM_DEFAULT);
         }
 
@@ -318,7 +323,7 @@ public final class FitsCheckSum {
      *
      * @throws FitsException if there was an error accessing the contents of the HDU.
      *
-     * @see                  BasicHDU#calcChecksum()
+     * @see                  BasicHDU#verifyIntegrity()
      * @see                  #checksum(Data)
      * @see                  #sumOf(long...)
      *
@@ -530,18 +535,21 @@ public final class FitsCheckSum {
      * segment from tha prior datasum, and then add the checksum of the new data segment -- without hacing to
      * recalculate the checksum for the entire data again.
      *
-     * @param  total The total checksum.
-     * @param  part  The partial checksum to be subtracted from the total.
+     * @deprecated       Not foolproof, because of the carry over handling in checksums, some additionas are not
+     *                       reversible. E.g. 0xffffffff + 0xffffffff = 0xffffffff, but 0xffffffff - 0xffffffff = 0;
      *
-     * @return       The checksum after subtracting the partial sum, as a 32-bit unsigned value.
+     * @param      total The total checksum.
+     * @param      part  The partial checksum to be subtracted from the total.
      *
-     * @see          #sumOf(long...)
+     * @return           The checksum after subtracting the partial sum, as a 32-bit unsigned value.
      *
-     * @since        1.17
+     * @see              #sumOf(long...)
+     *
+     * @since            1.17
      */
     public static long differenceOf(long total, long part) {
         Checksum sum = new Checksum(total);
-        sum.h -= (part >>> SHIFT_2_BYTES);
+        sum.h -= part >>> SHIFT_2_BYTES;
         sum.l -= part & MASK_2_BYTES;
         return sum.getChecksum();
     }
@@ -558,7 +566,6 @@ public final class FitsCheckSum {
      *                           <code>FitsException</code> when they occur.
      *
      * @see                  #setChecksum(BasicHDU)
-     * @see                  #getStoredChecksum(Header)
      * @see                  #getStoredDatasum(Header)
      *
      * @since                1.17
@@ -566,7 +573,8 @@ public final class FitsCheckSum {
     public static void setDatasum(Header header, long datasum) throws FitsException {
         // Add the freshly calculated datasum to the header, before calculating the checksum
         header.addValue(DATASUM, Long.toString(datasum));
-        header.addValue(CHECKSUM, encode(sumOf(checksum(header), datasum)));
+        long hsum = checksum(header);
+        header.getCard(CHECKSUM).setValue(encode(sumOf(hsum, datasum)));
     }
 
     /**
@@ -582,7 +590,6 @@ public final class FitsCheckSum {
      *                           <code>FitsException</code> when they occur.
      *
      * @see                  #setDatasum(Header, long)
-     * @see                  #getStoredChecksum(Header)
      * @see                  #sumOf(long...)
      * @see                  #differenceOf(long, long)
      *
@@ -609,12 +616,11 @@ public final class FitsCheckSum {
      *
      * @since                1.17
      *
-     * @see                  #getStoredChecksum(Header)
      * @see                  #setDatasum(Header, long)
      * @see                  BasicHDU#getStoredDatasum()
      */
     public static long getStoredDatasum(Header header) throws FitsException {
-        HeaderCard hc = header.findCard(DATASUM);
+        HeaderCard hc = header.getCard(DATASUM);
 
         if (hc == null) {
             throw new FitsException("Header does not have a DATASUM value.");
@@ -626,18 +632,22 @@ public final class FitsCheckSum {
     /**
      * Returns the decoded CHECKSUM value stored in a FITS header.
      *
-     * @param  header        the FITS header
+     * @deprecated               Not very useful, since it has no meaning other than ensuring that the checksum of the
+     *                               HDU yields <code>(int) -1</code> (that is <code>0xffffffff</code>) after including
+     *                               this value for the CHECKSUM keyword in the header. It will be removed in the
+     *                               future.
      *
-     * @return               The decoded <code>CHECKSUM</code> value (unsigned 32-bit integer) recorded in the header as
-     *                           a Java <code>long</code>.
+     * @param      header        the FITS header
      *
-     * @throws FitsException if the header does not contain a <code>CHECKSUM</code> entry, or it is invalid.
+     * @return                   The decoded <code>CHECKSUM</code> value (unsigned 32-bit integer) recorded in the
+     *                               header as a Java <code>long</code>.
      *
-     * @since                1.17
+     * @throws     FitsException if the header does not contain a <code>CHECKSUM</code> entry, or it is invalid.
      *
-     * @see                  #getStoredDatasum(Header)
-     * @see                  #setChecksum(BasicHDU)
-     * @see                  BasicHDU#getStoredChecksum()
+     * @since                    1.17
+     *
+     * @see                      #getStoredDatasum(Header)
+     * @see                      #setChecksum(BasicHDU)
      */
     public static long getStoredChecksum(Header header) throws FitsException {
         String encoded = header.getStringValue(CHECKSUM);

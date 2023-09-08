@@ -81,6 +81,7 @@ import static nom.tam.image.compression.tile.TileCompressionType.UNCOMPRESSED;
  * complete compression of a tiled describing an image ordered from left to right and top down. the tiles all have the
  * same geometry only the tiles at the right and bottom sides can have different (truncated) sizes.
  */
+@SuppressWarnings("deprecation")
 public class TiledImageCompressionOperation extends AbstractTiledImageOperation<TileCompressionOperation> {
 
     /**
@@ -227,7 +228,7 @@ public class TiledImageCompressionOperation extends AbstractTiledImageOperation<
     }
 
     private synchronized void setQuantAlgorithm(final Header header) {
-        setQuantAlgorithm(header.findCard(ZQUANTIZ));
+        setQuantAlgorithm(header.getCard(ZQUANTIZ));
 
         if (quantAlgorithm != null) {
             return;
@@ -259,7 +260,7 @@ public class TiledImageCompressionOperation extends AbstractTiledImageOperation<
 
     public TiledImageCompressionOperation read(final Header header) throws FitsException {
         readPrimaryHeaders(header);
-        setCompressAlgorithm(header.findCard(ZCMPTYPE));
+        setCompressAlgorithm(header.getCard(ZCMPTYPE));
         setQuantAlgorithm(header);
 
         createTiles(new TileDecompressorInitialisation(this, //
@@ -377,7 +378,6 @@ public class TiledImageCompressionOperation extends AbstractTiledImageOperation<
         return compressAlgorithm;
     }
 
-    @SuppressWarnings("deprecation")
     private <T> T getNullableColumn(Header header, Class<T> class1, String columnName) throws FitsException {
         for (int i = 1; i <= binaryTable.getNCols(); i++) {
             String val = header.getStringValue(TTYPEn.n(i));

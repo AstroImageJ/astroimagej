@@ -12,6 +12,9 @@ import org.junit.Test;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.RandomAccessFile;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 
 import static nom.tam.fits.header.Checksum.CHECKSUM;
@@ -126,23 +129,111 @@ public class ChecksumTest {
     }
 
     @Test
-    public void testCheckSumVerify() throws Exception {
+    public void testCheckSumVerifyOfficial() throws Exception {
+        Fits fits = new Fits("src/test/resources/nom/tam/fits/test/checksum.fits");
+        fits.verifyIntegrity();
+        // No exception...
+
+        int n = fits.getNumberOfHDUs();
+
+        for (int i = 0; i < n; i++) {
+            assertTrue(fits.getHDU(i).verifyDataIntegrity());
+            assertTrue(fits.getHDU(i).verifyIntegrity());
+        }
+    }
+
+    @Test(expected = FitsIntegrityException.class)
+    public void testCheckSumVerifyModifiedHeaderFail() throws Exception {
+        File copy = new File("target/checksum-modhead.fits");
+
+        Files.copy(new File("src/test/resources/nom/tam/fits/test/checksum.fits").toPath(), copy.toPath(),
+                StandardCopyOption.REPLACE_EXISTING);
+
+        RandomAccessFile rf = new RandomAccessFile(copy, "rw");
+        rf.seek(FitsFactory.FITS_BLOCK_SIZE - 1); // Guaranteed to be inside header.
+        rf.write('~');
+        rf.close();
+
+        try (Fits fits = new Fits(copy)) {
+            fits.verifyIntegrity();
+        }
+    }
+
+    @Test(expected = FitsIntegrityException.class)
+    public void testCheckSumVerifyModifiedDatasumFail() throws Exception {
+        File copy = new File("target/checksum-moddata.fits");
+
+        Files.copy(new File("src/test/resources/nom/tam/fits/test/checksum.fits").toPath(), copy.toPath(),
+                StandardCopyOption.REPLACE_EXISTING);
+
+        RandomAccessFile rf = new RandomAccessFile(copy, "rw");
+        rf.seek(rf.length() - 1);
+        rf.write('~');
+        rf.close();
+
+        try (Fits fits = new Fits(copy)) {
+            fits.verifyIntegrity();
+        }
+    }
+
+    @Test
+    public void testCheckSumVerifyNoSum() throws Exception {
         Fits fits = new Fits("src/test/resources/nom/tam/fits/test/test.fits");
-        fits.read();
-        fits.setChecksum();
+        fits.verifyIntegrity();
+        assertFalse(fits.getHDU(0).verifyIntegrity());
+        assertFalse(fits.getHDU(0).verifyDataIntegrity());
+        // No exception...
+    }
 
-        ImageHDU im = (ImageHDU) fits.getHDU(0);
-        Header h = im.getHeader();
+    @Test
+    public void testCheckSumVerifyStream() throws Exception {
+        try (Fits fits = new Fits(new FileInputStream(new File("src/test/resources/nom/tam/fits/test/checksum.fits")))) {
+            fits.verifyIntegrity();
+        }
+        /* No exception */
+    }
 
-        // Deferred read
-        assertEquals(FitsCheckSum.checksum(im.getData()), im.getStoredDatasum());
-        assertEquals(FitsCheckSum.checksum(im), im.getStoredChecksum());
-        assertEquals(fits.calcChecksum(0), im.getStoredChecksum());
+    @Test
+    public void testDatasumVerifyStream() throws Exception {
+        try (Fits fits = new Fits(new FileInputStream(new File("src/test/resources/nom/tam/fits/test/checksum.fits")))) {
+            assertTrue(fits.getHDU(0).verifyDataIntegrity());
+        }
+    }
 
-        // in-memory
-        im.setChecksum();
-        assertEquals(im.getData().calcChecksum(), im.getStoredDatasum());
-        assertEquals(im.calcChecksum(), im.getStoredChecksum());
+    @Test
+    public void testCheckSumReadHDUStream() throws Exception {
+        try (FitsInputStream in = new FitsInputStream(
+                new FileInputStream(new File("src/test/resources/nom/tam/fits/test/checksum.fits")))) {
+            ImageHDU hdu = new ImageHDU(null, null);
+            hdu.read(in);
+            hdu.verifyDataIntegrity();
+            hdu.verifyIntegrity();
+        }
+        /* No exception */
+    }
+
+    @Test
+    public void testCheckSumReadHDUFile() throws Exception {
+        try (FitsFile in = new FitsFile("src/test/resources/nom/tam/fits/test/checksum.fits", "r")) {
+            ImageHDU hdu = new ImageHDU(null, null);
+            hdu.read(in);
+            hdu.verifyDataIntegrity();
+            hdu.verifyIntegrity();
+        }
+        /* No exception */
+    }
+
+    @Test
+    public void testCStreamheckSumReads() throws Exception {
+        try (FitsInputStream in = new FitsInputStream(
+                new FileInputStream(new File("src/test/resources/nom/tam/fits/test/checksum.fits")))) {
+            assertEquals(0, in.nextChecksum());
+            for (int i = 0; i < FitsFactory.FITS_BLOCK_SIZE; i++) {
+                in.read();
+            }
+            assertNotEquals(0, in.nextChecksum());
+        }
+        /* No exception */
     }
 
     @Test
@@ -152,7 +243,6 @@ public class ChecksumTest {
         fits.setChecksum();
 
         ImageHDU im = (ImageHDU) fits.getHDU(0);
-        Header h = im.getHeader();
 
         short[][] data = (short[][]) im.getData().getData();
         data[0][0]++;

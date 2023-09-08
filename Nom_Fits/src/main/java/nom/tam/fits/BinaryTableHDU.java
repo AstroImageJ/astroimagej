@@ -89,6 +89,9 @@ public class BinaryTableHDU extends TableHDU<BinaryTable> {
      *
      * @param      o a column table object, an Object[][], or an Object[]. This routine doesn't check that the
      *                   dimensions of arrays are properly consistent.
+     * 
+     * @return       <code>true</code> if the data object can be represented as a FITS binary table, otherwise
+     *                   <code>false</code>.
      *
      * @deprecated   (<i>for internal use</i>) Will reduce visibility in the future
      */
@@ -254,7 +257,7 @@ public class BinaryTableHDU extends TableHDU<BinaryTable> {
         }
 
         // Update TFORM keyword
-        myHeader.findCard(Standard.TFORMn.n(col + 1)).setValue(getColumnDescriptor(col).getTFORM());
+        myHeader.getCard(Standard.TFORMn.n(col + 1)).setValue(getColumnDescriptor(col).getTFORM());
 
         return true;
     }
@@ -277,13 +280,13 @@ public class BinaryTableHDU extends TableHDU<BinaryTable> {
         }
 
         // Update TFORM keyword
-        myHeader.findCard(Standard.TFORMn.n(index + 1)).setValue(getColumnDescriptor(index).getTFORM());
+        myHeader.getCard(Standard.TFORMn.n(index + 1)).setValue(getColumnDescriptor(index).getTFORM());
 
         // Update or remove existing TDIM keyword
         if (myHeader.containsKey(Standard.TDIMn.n(index + 1))) {
             String tdim = getColumnDescriptor(index).getTDIM();
             if (tdim != null) {
-                myHeader.findCard(Standard.TDIMn.n(index + 1)).setValue(tdim);
+                myHeader.getCard(Standard.TDIMn.n(index + 1)).setValue(tdim);
             } else {
                 myHeader.deleteKey(Standard.TDIMn.n(index + 1));
             }

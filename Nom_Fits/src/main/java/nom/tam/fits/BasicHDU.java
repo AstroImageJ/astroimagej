@@ -1,12 +1,14 @@
 package nom.tam.fits;
 
 import nom.tam.fits.header.Bitpix;
+import nom.tam.fits.header.Checksum;
 import nom.tam.fits.header.IFitsHeader;
 import nom.tam.fits.header.Standard;
 import nom.tam.fits.utilities.FitsCheckSum;
 import nom.tam.util.ArrayDataInput;
 import nom.tam.util.ArrayDataOutput;
 import nom.tam.util.FitsOutput;
+import nom.tam.util.RandomAccess;
 
 import java.io.IOException;
 import java.io.PrintStream;
@@ -485,18 +487,25 @@ public abstract class BasicHDU<DataClass extends Data> implements FitsElement {
     }
 
     /**
-     * Returns the decoded checksum that is stored in the header of this HDU under the <code>CHECKSUM</code> keyword.
+     * Returns the decoded checksum that is stored in the header of this HDU under the <code>CHECKSUM</code> keyword. It
+     * does not have much use, and is not needed for integrity verification since the purpose of the CHECKSUM value is
+     * merely to ensure that the checksum of the HDU is always <code>(int) -1</code>.
      *
-     * @return               the decoded FITS checksum value recorded in the HDU
+     * @deprecated               Not very useful, since it has no meaning other than ensuring that the checksum of the
+     *                               HDU yields <code>(int) -1</code> (that is <code>0xffffffff</code>) after including
+     *                               this value for the CHECKSUM keyword in the header. It will be removed in the
+     *                               future. Use {@link #verifyIntegrity()} instead when appropriate.
      *
-     * @throws FitsException if the HDU's header does not contain a <code>CHECKSUM</code> keyword.
+     * @return                   the decoded FITS checksum value recorded in the HDU
      *
-     * @see                  #calcChecksum()
-     * @see                  Fits#calcChecksum(int)
-     * @see                  #getStoredDatasum()
-     * @see                  FitsCheckSum#getStoredDatasum(Header)
+     * @throws     FitsException if the HDU's header does not contain a <code>CHECKSUM</code> keyword.
      *
-     * @since                1.17
+     * @see                      #calcChecksum()
+     * @see                      Fits#calcChecksum(int)
+     * @see                      #getStoredDatasum()
+     * @see                      FitsCheckSum#getStoredDatasum(Header)
+     *
+     * @since                    1.17
      */
     public long getStoredChecksum() throws FitsException {
         return FitsCheckSum.getStoredChecksum(myHeader);
@@ -504,16 +513,18 @@ public abstract class BasicHDU<DataClass extends Data> implements FitsElement {
 
     /**
      * Returns the FITS checksum for the HDU's data that is stored in the header of this HDU under the
-     * <code>DATASUM</code> keyword.
+     * <code>DATASUM</code> keyword. This may be useful to compare against the checksum calculated from data in memory
+     * (e.g. via {@link Data#calcChecksum()}) to check changes / corruption of the in-memory data vs what was stored in
+     * the file. Note however, that this type of checkum test will fail if the file used non-standard padding at the end
+     * of the data segment, even if the data themselves are identical. Hence, for verifying data contained in a file
+     * {@link #verifyDataIntegrity()} or {@link #verifyIntegrity()} should be preferred.
      *
      * @return               the FITS <code>DATASUM</code> value recorded in the HDU
      *
      * @throws FitsException if the HDU's header does not contain a <code>DATASUM</code> keyword.
      *
+     * @see                  #verifyDataIntegrity()
      * @see                  Data#calcChecksum()
-     * @see                  Fits#calcDatasum(int)
-     * @see                  #getStoredChecksum()
-     * @see                  FitsCheckSum#getStoredChecksum(Header)
      *
      * @since                1.17
      */
@@ -535,7 +546,6 @@ public abstract class BasicHDU<DataClass extends Data> implements FitsElement {
      *
      * @see                  Fits#setChecksum(int)
      * @see                  FitsCheckSum#setChecksum(BasicHDU)
-     * @see                  #getStoredChecksum()
      * @see                  #getStoredDatasum()
      *
      * @since                1.17
@@ -545,20 +555,90 @@ public abstract class BasicHDU<DataClass extends Data> implements FitsElement {
     }
 
     /**
+     * Checks the HDU's integrity, using the recorded CHECKSUM and/or DATASUM keywords if present. In addition of
+     * performing the same checks as {@link #verifyDataIntegrity()}, it also checks the overall checksum of the HDU is
+     * possible. When the header has a CHECKSUM keyword stored, the overall checksum of the HDU overall must be
+     * <code>0xffffffff</code>, that is -1 in 32-bit representation.
+     * 
+     * @return               <code>true</code> if the HDU has a CHECKSUM and/or DATASUM record to check against,
+     *                           otherwise <code>false</code>
+     * 
+     * @throws FitsException if the HDU fails the integrity test.
+     * @throws IOException   if there was an I/O error accessing the input.
+     * 
+     * @see                  #verifyDataIntegrity()
+     * @see                  Fits#verifyIntegrity()
+     * 
+     * @since                1.18.1
+     */
+    @SuppressWarnings("resource")
+    public boolean verifyIntegrity() throws FitsException, IOException {
+        boolean result = verifyDataIntegrity();
+
+        if (myHeader.getCard(Checksum.CHECKSUM) == null) {
+            return result;
+        }
+
+        long fsum = (myHeader.getStreamChecksum() < 0) ?
+                FitsCheckSum.checksum(myHeader.getRandomAccessInput(), getFileOffset(), getSize()) :
+                FitsCheckSum.sumOf(myHeader.getStreamChecksum(), myData.getStreamChecksum());
+
+        if (fsum != FitsCheckSum.HDU_CHECKSUM) {
+            throw new FitsIntegrityException("checksum", fsum, FitsCheckSum.HDU_CHECKSUM);
+        }
+        return true;
+    }
+
+    /**
+     * Checks that the HDUs data checksum is correct. The recorded DATASUM will be used, if available, to check the
+     * integrity of the data segment.
+     * 
+     * @return               <code>true</code> if the HDU has DATASUM record to check against, otherwise
+     *                           <code>false</code>
+     * 
+     * @throws FitsException if the HDU fails the integrity test.
+     * @throws IOException   if there was an I/O error accessing the input.
+     * 
+     * @see                  #verifyIntegrity()
+     * @see                  Fits#verifyIntegrity()
+     * 
+     * @since                1.18.1
+     */
+    @SuppressWarnings("resource")
+    public boolean verifyDataIntegrity() throws FitsException, IOException {
+        if (getHeader().getCard(Checksum.DATASUM) == null) {
+            return false;
+        }
+
+        Data d = getData();
+        RandomAccess rin = myData.getRandomAccessInput();
+        long fsum = (rin != null) ? FitsCheckSum.checksum(rin, d.getFileOffset(), d.getSize()) : d.getStreamChecksum();
+
+        if (fsum != getStoredDatasum()) {
+            throw new FitsIntegrityException("datasum", fsum, getStoredDatasum());
+        }
+        return true;
+    }
+
+    /**
      * Computes and returns the FITS checksum for this HDU, e.g. to compare agains the stored <code>CHECKSUM</code> in
      * the FITS header. This method always computes the checksum from data fully loaded in memory. As such it will load
      * deferred read mode data into RAM to perform the calculation. If you prefer to leave the data in deferred read
      * mode, you can use {@link Fits#calcChecksum(int)} instead.
+     * 
+     * @deprecated               Use {@link #verifyIntegrity()} instead when appropriate. It's not particularly useful
+     *                               since integrity checking does not use or require knowledge of this sum. May be
+     *                               removed from future releases.
      *
-     * @return               the computed HDU checksum (in memory).
+     * @return                   the computed HDU checksum (in memory).
      *
-     * @throws FitsException if there was an error while calculating the checksum
+     * @throws     FitsException if there was an error while calculating the checksum
      *
-     * @see                  Data#calcChecksum()
-     * @see                  Fits#calcChecksum(int)
-     * @see                  FitsCheckSum#checksum(BasicHDU)
+     * @see                      Data#calcChecksum()
+     * @see                      Fits#calcChecksum(int)
+     * @see                      FitsCheckSum#checksum(BasicHDU)
      *
-     * @since                1.17
+     * @since                    1.17
      */
     public long calcChecksum() throws FitsException {
         return FitsCheckSum.checksum(this);

@@ -31,6 +31,17 @@ package nom.tam.fits.compression.algorithm.rice;
  * #L%
  */
 
+import java.io.RandomAccessFile;
+import java.nio.BufferUnderflowException;
+import java.nio.ByteBuffer;
+import java.nio.DoubleBuffer;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+import java.nio.ShortBuffer;
+
+import org.junit.Assert;
+import org.junit.Test;
+
 import nom.tam.fits.Fits;
 import nom.tam.fits.Header;
 import nom.tam.fits.HeaderCardException;
@@ -47,11 +58,6 @@ import nom.tam.image.compression.hdu.CompressedImageHDU;
 import nom.tam.util.ArrayFuncs;
 import nom.tam.util.SafeClose;
 import nom.tam.util.type.PrimitiveTypes;
-import org.junit.Assert;
-import org.junit.Test;
-
-import java.io.RandomAccessFile;
-import java.nio.*;
 
 public class RiceCompressTest {
 

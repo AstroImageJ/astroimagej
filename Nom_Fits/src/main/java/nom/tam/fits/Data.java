@@ -3,6 +3,7 @@ package nom.tam.fits;
 import nom.tam.fits.utilities.FitsCheckSum;
 import nom.tam.util.ArrayDataInput;
 import nom.tam.util.ArrayDataOutput;
+import nom.tam.util.FitsInputStream;
 import nom.tam.util.RandomAccess;
 
 import java.io.EOFException;
@@ -51,6 +52,9 @@ public abstract class Data implements FitsElement {
     @Deprecated
     protected RandomAccess input;
 
+    /** The data checksum calculated from the input stream */
+    private long streamSum = 0L;
+
     /**
      * Returns the random accessible input from which this data can be read, if any.
      * 
@@ -98,25 +102,43 @@ public abstract class Data implements FitsElement {
     }
 
     /**
-     * Computes and returns the FITS checksum for this data, e.g. to compare agains the stored <code>DATASUM</code> in
-     * the FITS header. This method always computes the checksum from data in into memory. As such it will fully load
-     * deferred read mode data into RAM to perform the calculation. If you prefer to leave the data in deferred read
-     * mode, you can use {@link FitsCheckSum#checksum(RandomAccess, long, long)} instead directly on the input with this
-     * data's {@link #getFileOffset()} and {@link #getSize()} arguments; or equivalently use
-     * {@link Fits#calcDatasum(int)}.
-     *
+     * Computes and returns the FITS checksum for this data, for example to compare against the stored
+     * <code>DATASUM</code> in the FITS header (e.g. via {@link BasicHDU#getStoredDatasum()}). This method always
+     * computes the checksum from data in memory. As such it will fully load deferred read mode data into RAM to perform
+     * the calculation, and use the standard padding to complete the FITS block for the calculation. As such the
+     * checksum may differ from that of the file if the file uses a non-standard padding. Hence, for verifying data
+     * integrity as stored in a file {@link BasicHDU#verifyDataIntegrity()} or {@link BasicHDU#verifyIntegrity()} should
+     * be preferred.
+     * 
      * @return               the computed FITS checksum from the data (fully loaded in memory).
      *
      * @throws FitsException if there was an error while calculating the checksum
      *
-     * @see                  Fits#calcDatasum(int)
-     * @see                  FitsCheckSum#checksum(RandomAccess, long, long)
-     * @see                  FitsCheckSum#checksum(Data)
+     * @see                  BasicHDU#getStoredDatasum()
+     * @see                  BasicHDU#verifyDataIntegrity()
+     * @see                  BasicHDU#verifyIntegrity()
      *
      * @since                1.17
      */
     public long calcChecksum() throws FitsException {
         return FitsCheckSum.checksum(this);
+    }
+
+    /**
+     * Returns the checksum value calculated duting reading from a stream. It always returns a value that is greater or
+     * equal to zero. It is only populated when reading from {@link FitsInputStream} imputs, and never from other types
+     * of inputs. The default return value is zero.
+     * 
+     * @return the checksum calculated for the data read from a stream, or else zero if the data was not read from the
+     *             stream.
+     * 
+     * @see    FitsInputStream
+     * @see    Header#getStreamChecksum()
+     * 
+     * @since  1.18.1
+     */
+    final long getStreamChecksum() {
+        return streamSum;
     }
 
     /**
@@ -268,6 +290,11 @@ public abstract class Data implements FitsElement {
             return;
         }
 
+        if (in instanceof FitsInputStream) {
+            ((FitsInputStream) in).nextChecksum();
+        }
+        streamSum = 0L;
+
         setFileOffset(in);
 
         if (getTrueSize() == 0) {
@@ -290,6 +317,10 @@ public abstract class Data implements FitsElement {
         }
 
         skipPadding(in);
+
+        if (in instanceof FitsInputStream) {
+            streamSum = ((FitsInputStream) in).nextChecksum();
+        }
     }
 
     @SuppressWarnings("resource")

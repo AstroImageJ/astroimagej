@@ -1,6 +1,8 @@
 package ij.astro.gui;
 
 import ij.*;
+import ij.astro.gui.nstate.NState;
+import ij.astro.gui.nstate.NStateButton;
 import ij.astro.util.UIHelper;
 import ij.gui.GUI;
 import ij.gui.HTMLDialog;
@@ -736,6 +738,78 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         return b;
     }
 
+    public <T extends Enum<T> & NState<T>> NStateButton<T> addNStateButton(T defaultState, boolean swapButtons, Consumer<T> consumer) {
+        var b = new NStateButton<T>(defaultState, swapButtons);
+        b.addActionListener($ -> consumer.accept(b.getState()));
+        if (addToSameRow) {
+            c.gridx = GridBagConstraints.RELATIVE;
+            c.insets.left = 10;
+            addToSameRow = false;
+        } else {
+            c.gridx = 0;
+            c.gridy++;
+            c.insets = new Insets(DialogBoxType.CHECKBOX.isPresent() ? 0 : 15, 20, 0, 0);
+        }
+        c.anchor = GridBagConstraints.WEST;
+        c.gridwidth = 1;
+        useCustomPosition();
+        if (overridePosition) c.gridx = x;
+        addLocal(b, c);
+        x++;
+        c.insets.left = 0;
+
+        if (Recorder.record || macro) {
+            saveLabel(b, defaultState.getDeclaringClass().getName(), s -> {
+                var d = defaultState.fromString(s);
+                b.setState(d);
+                consumer.accept(d);
+            }, () -> {
+                if (recorderOn) {
+                    recordOption(b, b.getState().name());
+                }
+            });
+        }
+
+        return b;
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T extends Enum<T> & NState<T>> JComboBox<T> addNStateDropdown(T defaultState, Consumer<T> consumer) {
+        var b = new JComboBox<>(defaultState.values0());
+        b.setSelectedItem(defaultState);
+        b.addActionListener($ -> consumer.accept((T) b.getSelectedItem()));
+        if (addToSameRow) {
+            c.gridx = GridBagConstraints.RELATIVE;
+            c.insets.left = 10;
+            addToSameRow = false;
+        } else {
+            c.gridx = 0;
+            c.gridy++;
+            c.insets = new Insets(DialogBoxType.CHECKBOX.isPresent() ? 0 : 15, 20, 0, 0);
+        }
+        c.anchor = GridBagConstraints.WEST;
+        c.gridwidth = 1;
+        useCustomPosition();
+        if (overridePosition) c.gridx = x;
+        addLocal(b, c);
+        x++;
+        c.insets.left = 0;
+
+        if (Recorder.record || macro) {
+            saveLabel(b, defaultState.getDeclaringClass().getName(), s -> {
+                var d = defaultState.fromString(s);
+                b.setSelectedItem(d);
+                consumer.accept(d);
+            }, () -> {
+                if (recorderOn) {
+                    recordOption(b, ((T) b.getSelectedItem()).name());
+                }
+            });
+        }
+
+        return b;
+    }
+
     public <T extends Enum<T> & RadioEnum> Map<T, JRadioButton> addRadioOptions(Class<T> tClass, Consumer<T> consumer, boolean addToGui) {
         var group = new ButtonGroup();
         var buttons = new HashMap<T, JRadioButton>();
@@ -1450,7 +1524,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
      */
     public record Bounds(double min, boolean minIsInclusive, double max, boolean maxIsInclusive) {
         public Bounds() {
-            this(Double.MIN_VALUE, Double.MAX_VALUE);
+            this(-Double.MAX_VALUE, Double.MAX_VALUE);
         }
 
         public Bounds(double min, double max) {

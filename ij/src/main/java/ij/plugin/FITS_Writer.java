@@ -4,6 +4,7 @@ import ij.IJ;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.astro.AstroImageJ;
+import ij.astro.util.FitsCompressionUtil;
 import ij.astro.util.FitsExtensionUtil;
 import ij.astro.util.ImageType;
 import ij.astro.util.ProgressTrackingOutputStream;
@@ -252,20 +253,7 @@ public class FITS_Writer implements PlugIn {
 				if (compressionModes.contains(FPACK)) {
 					if (maxImage > 1) IJ.showStatus("FPACKing: " + slice);
 					CompressedImageHDU compressedHdu = CompressedImageHDU.fromImageHDU((ImageHDU) hdu);
-
-					// To have lossless compression, we must handle floating point and integer separately
-					// See https://arxiv.org/ftp/arxiv/papers/1112/1112.2671.pdf
-					if (type.isFloatingPoint()) {
-						compressedHdu.setCompressAlgorithm(Compression.ZCMPTYPE_GZIP_2);
-
-						// Lossy compression
-						/*compressedHdu.setCompressAlgorithm(Compression.ZCMPTYPE_RICE_1)
-								.getCompressOption(RiceQuantizeCompressOption.class)
-								.setQlevel(4);*/
-					} else {
-						compressedHdu.setCompressAlgorithm(Compression.ZCMPTYPE_RICE_1);
-					}
-
+					FitsCompressionUtil.setCompression(compressedHdu, type.isFloatingPoint());
 					compressedHdu.compress();
 					hdu = compressedHdu;
 				}

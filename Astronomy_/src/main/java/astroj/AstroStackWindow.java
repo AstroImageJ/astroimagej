@@ -7,6 +7,7 @@ import bislider.com.visutools.nav.bislider.*;
 import ij.*;
 import ij.astro.io.prefs.Property;
 import ij.astro.logging.AIJLogger;
+import ij.astro.util.FitsCompressionUtil;
 import ij.astro.util.FitsExtensionUtil;
 import ij.astro.util.UIHelper;
 import ij.gui.*;
@@ -1192,6 +1193,13 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         preferencesMenu.add(showRemovedPixelsCB);
 
         preferencesMenu.addSeparator();
+
+        var fpaCkSettings = new MenuItem("FPACK Settings");
+        fpaCkSettings.addActionListener($ -> FitsCompressionUtil.dialog());
+        preferencesMenu.add(fpaCkSettings);
+
+        preferencesMenu.addSeparator();
+
         var qualCheckTess = new CheckboxMenuItem("When opening TESS images, also open images with data quality flag set",
                 FITS_Reader.skipTessQualCheck);
         qualCheckTess.addItemListener(e -> {

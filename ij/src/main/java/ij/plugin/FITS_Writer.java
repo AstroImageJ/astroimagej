@@ -17,7 +17,6 @@ import ij.process.ShortProcessor;
 import nom.tam.fits.Fits;
 import nom.tam.fits.HeaderCard;
 import nom.tam.fits.ImageHDU;
-import nom.tam.fits.header.Compression;
 import nom.tam.image.compression.hdu.CompressedImageHDU;
 import nom.tam.util.FitsOutputStream;
 
@@ -230,8 +229,8 @@ public class FITS_Writer implements PlugIn {
 					for (String cardString : oldHeader) {
 						if (cardString.startsWith("NAXIS")) continue;
 						var card = HeaderCard.create(cardString);
-						if (header.containsKey(card.getKey()) && // No overwriting of old header values
-								Arrays.stream(values()).anyMatch(s -> card.getKey().equals(s.key())) && // Use auto-genned HDU header info
+						if ((header.containsKey(card.getKey()) || // No overwriting of old header values
+								Arrays.stream(values()).anyMatch(s -> s.status() == SOURCE.MANDATORY && cardsMatch(s.key(), card.getKey()))) && // Use auto-genned HDU header info
 								!card.isCommentStyleCard()) { // Allow duplicate comment-style cards
 							continue;
 						}
@@ -274,6 +273,11 @@ public class FITS_Writer implements PlugIn {
 		}
 
 		IJ.showStatus("");
+	}
+
+	private static boolean cardsMatch(String k1, String k2) {
+		k1 = k1.replaceAll("n", "\\\\d");
+		return k2.matches(k1);
 	}
 
 //	/**

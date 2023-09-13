@@ -385,6 +385,6 @@ public class PlotNameResolver {
     }
 
     public static void showHelpWindow() {
-        UIHelper.setCenteredOnScreen(new HelpPanel("help/plotMacroHelp.html", "Plot Macros"), MultiPlot_.mainFrame);
+        UIHelper.setCenteredOnScreen(new HelpPanel("help/plotMacroHelp.html", "Programmable Plot Titles"), MultiPlot_.mainFrame);
     }
 }

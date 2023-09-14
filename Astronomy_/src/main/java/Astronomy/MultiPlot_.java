@@ -867,6 +867,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     private static Property<Boolean> useMacroTitle = new Property<>(false, MultiPlot_.class);
     private static Property<Boolean> useMacroSubtitle = new Property<>(false, MultiPlot_.class);
     private static Property<BiState> drawBinErrBarsBase = new Property<>(BiState.DISABLED, "plot.", "", MultiPlot_.class);
+    private static String lastUsedTitle, lastUsedSubtitle;
 
     public void run(String inTableNamePlusOptions) {
         boolean useAutoAstroDataUpdate = false;
@@ -8398,6 +8399,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         titleRadioGroup.add(noTitleButton);
         titleRadioGroup.add(useTitleButton);
         titleRadioGroup.add(useMacroTitleButton);
+        lastUsedTitle = title;
         noTitleButton.addActionListener(ae -> {
             useTitle = false;
             useMacroTitle.set(false);
@@ -8407,7 +8409,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             useTitle = true;
             useMacroTitle.set(false);
             if (titleField != null) {
-                titleField.setText(title);
+                titleField.setText(lastUsedTitle);
             }
             updatePlot(updateNoFits());
         });
@@ -8442,6 +8444,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     }
                 } else {
                     title = titleField.getText();
+                    lastUsedTitle = title;
                 }
                 updatePlot(updateNoFits());
             }
@@ -8455,6 +8458,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     }
                 } else {
                     title = titleField.getText();
+                    lastUsedTitle = title;
                 }
                 updatePlot(updateNoFits());
             }
@@ -8468,6 +8472,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     }
                 } else {
                     title = titleField.getText();
+                    lastUsedTitle = title;
                 }
                 updatePlot(updateNoFits());
             }
@@ -8567,6 +8572,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         subtitleRadioGroup.add(noSubtitleButton);
         subtitleRadioGroup.add(useSubtitleButton);
         subtitleRadioGroup.add(useMacroSubtitleButton);
+        lastUsedSubtitle = subtitle;
         noSubtitleButton.addActionListener(ae -> {
             useSubtitle = false;
             useMacroSubtitle.set(false);
@@ -8576,7 +8582,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             useSubtitle = true;
             useMacroSubtitle.set(false);
             if (subtitleField != null) {
-                subtitleField.setText(subtitle);
+                subtitleField.setText(lastUsedSubtitle);
             }
             updatePlot(updateNoFits());
         });
@@ -8611,6 +8617,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     }
                 } else {
                     subtitle = subtitleField.getText();
+                    lastUsedSubtitle = subtitle;
                 }
                 updatePlot(updateNoFits());
             }
@@ -8624,6 +8631,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     }
                 } else {
                     subtitle = subtitleField.getText();
+                    lastUsedSubtitle = subtitle;
                 }
                 updatePlot(updateNoFits());
             }
@@ -8637,6 +8645,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     }
                 } else {
                     subtitle = subtitleField.getText();
+                    lastUsedSubtitle = subtitle;
                 }
                 updatePlot(updateNoFits());
             }
@@ -17989,8 +17998,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         plotAutoMode = Prefs.get("plot.automode", plotAutoMode);
         xlabeldefault = Prefs.get("plot.xlabeldefault", xlabeldefault);
         title = Prefs.get("plot.title", title);
+        lastUsedTitle = title;
         useTitle = Prefs.get("plot.useTitle", useTitle);
         subtitle = Prefs.get("plot.subtitle", subtitle);
+        lastUsedTitle = title;
         useSubtitle = Prefs.get("plot.useSubtitle", useSubtitle);
         titlePosX = Prefs.get("plot.titlePosX", titlePosX);
         titlePosY = Prefs.get("plot.titlePosY", titlePosY);

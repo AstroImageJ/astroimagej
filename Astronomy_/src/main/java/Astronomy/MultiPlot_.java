@@ -8429,7 +8429,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         titlegroup.add(titleradiopanelgroup);
 
         // TITLE TEXT FIELD
-        titleField = new JTextField(title);
+        titleField = new JTextField(useMacroTitleButton.isSelected() ? PlotNameResolver.TITLE_MACRO.get() : title);
         titleField.setBorder(BorderFactory.createLineBorder(subBorderColor));
         titleField.setFont(p11);
         titleField.getDocument().addDocumentListener(new DocumentListener() {
@@ -8598,7 +8598,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         subtitlegroup.add(subtitleradiopanelgroup);
 
         // SUBTITLE TEXT FIELD
-        subtitleField = new JTextField(subtitle);
+        subtitleField = new JTextField(useMacroSubtitleButton.isSelected() ? PlotNameResolver.SUBTITLE_MACRO.get() : subtitle);
         subtitleField.setFont(p11);
         subtitleField.setBorder(BorderFactory.createLineBorder(subBorderColor));
         subtitleField.getDocument().addDocumentListener(new DocumentListener() {

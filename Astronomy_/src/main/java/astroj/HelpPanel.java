@@ -36,14 +36,15 @@ import ij.IJ;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import javax.swing.text.BadLocationException;
-import javax.swing.text.DefaultHighlighter;
-import javax.swing.text.Document;
-import javax.swing.text.Highlighter;
+import javax.swing.event.HyperlinkEvent;
+import javax.swing.text.*;
+import javax.swing.text.html.HTML;
+import javax.swing.text.html.HTMLDocument;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
+import java.net.URL;
 
 import static ij.IJ.showMessage;
 
@@ -79,6 +80,7 @@ import static ij.IJ.showMessage;
  */
 
 public class HelpPanel extends JFrame implements ActionListener, DocumentListener {
+    private final URL helpURL;
     private JFrame mainFrame;
     private JPanel mainPanel;
     private JTextField entry;
@@ -106,7 +108,7 @@ public class HelpPanel extends JFrame implements ActionListener, DocumentListene
         initComponents();
 
         textArea.setEditable(false);
-        java.net.URL helpURL = getClass().getClassLoader().getResource(filename);
+        helpURL = getClass().getClassLoader().getResource(filename);
         if (helpURL != null) {
             try {
                 textArea.setPage(helpURL);
@@ -132,6 +134,40 @@ public class HelpPanel extends JFrame implements ActionListener, DocumentListene
 
     }
 
+    /**
+     * A straight copy of {@link JEditorPane#scrollToReference(String)} that looks for id,
+     * not name to be inline with HTML5.
+     */
+    private void scrollToReference(String reference) {
+        Document d = textArea.getDocument();
+        if (d instanceof HTMLDocument) {
+            HTMLDocument doc = (HTMLDocument) d;
+            HTMLDocument.Iterator iter = doc.getIterator(HTML.Tag.A);
+            for (; iter.isValid(); iter.next()) {
+                AttributeSet a = iter.getAttributes();
+                String nm = (String) a.getAttribute(HTML.Attribute.ID);
+                if ((nm != null) && nm.equals(reference)) {
+                    // found a matching reference in the document.
+                    try {
+                        int pos = iter.getStartOffset();
+                        Rectangle r = textArea.modelToView(pos);
+                        if (r != null) {
+                            // the view is visible, scroll it to the
+                            // center of the current visible area.
+                            Rectangle vis = textArea.getVisibleRect();
+                            //r.y -= (vis.height / 2);
+                            r.height = vis.height;
+                            textArea.scrollRectToVisible(r);
+                            textArea.setCaretPosition(pos);
+                        }
+                    } catch (BadLocationException ble) {
+                        ble.printStackTrace();
+                    }
+                }
+            }
+        }
+    }
+
 
     /** This method is called from within the constructor to
      * initialize the form.
@@ -151,6 +187,14 @@ public class HelpPanel extends JFrame implements ActionListener, DocumentListene
         setTitle(callingProgramID+" Help");
         textArea.setEditable(false);
         textArea.setPreferredSize(new Dimension(750, 750));
+        textArea.addHyperlinkListener(e -> {
+            if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
+                if (e.getURL().sameFile(helpURL)) {
+                    scrollToReference(e.getURL().getRef());
+                }
+            }
+        });
+
         jScrollPanel = new JScrollPane(textArea);
 //        jScrollPanel.setPreferredSize(new Dimension(350, 750));
         jLabel1.setText("Search:");

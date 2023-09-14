@@ -75,15 +75,16 @@ public class PlotNameResolver {
         var whitespace = TOKENIZER.splitAsStream(pattern).toArray(String[]::new);
 
         var stack = new TokenStack(new Stack<>(), new Stack<>());
+        var hasErrored = false;
         for (int i = tokens.length - 1; i >= 0; i--) {
             stack.push(tokens[i], whitespace.length >= i ? " " : whitespace[i]);
-            if (OPERATOR.matcher(tokens[i]).find()) {
+            if (!hasErrored && OPERATOR.matcher(tokens[i]).find()) {
                 // Handle @ separated by whitepspace
                 if (tokens[i].equals("@")) {
                     stack.pop();
                 }
 
-                parseAndEvaluate(table, stack);
+                hasErrored = parseAndEvaluate(table, stack);
             }
         }
 
@@ -92,17 +93,16 @@ public class PlotNameResolver {
             b.append(stack.pop()).append(stack.nextWhitespace());//todo whitespace is oddly behaved
         }
 
-        return new Pair.GenericPair<>(b.toString().trim(), false);
+        return new Pair.GenericPair<>(b.toString().trim(), hasErrored);
     }
 
-    //todo when function errors and is input to another function, don't run that function
     //todo loading table from MA with macro enabled causes slowdown
 
     //todo example @ pref LASTMA @ split " " $2 @ table Labels 1
-    private static void parseAndEvaluate(MeasurementTable table, TokenStack stack) {
+    private static boolean parseAndEvaluate(MeasurementTable table, TokenStack stack) {
         if (stack.empty()) {
             stack.push("<Missing function name>");
-            return;
+            return true;
         }
 
         var func = stack.pop();
@@ -112,9 +112,10 @@ public class PlotNameResolver {
             func = func.substring(1);
         }
 
-        switch (func) {//todo handle error return
+        var errorState = new AtomicBoolean(false);
+        switch (func) {
             case "header", "hdr", "h" -> {
-                evaluate(func, stack, new String[]{"key"}, ps -> {
+                evaluate(errorState, func, stack, new String[]{"key"}, ps -> {
                     var card = ps[0];
                     var label = table.getLabel(0);
                     var i = getImpForSlice(label);
@@ -129,13 +130,15 @@ public class PlotNameResolver {
                             }
                             return val;
                         }
+                        errorState.set(true);
                         return "<Failed to find card with key '%s'>".formatted(card);
                     }
+                    errorState.set(true);
                     return "<Found no matching image for '%s'>".formatted(label);
                 });
             }
             case "comment", "cmt", "c" -> {
-                evaluate(func, stack, new String[]{"key"}, ps -> {
+                evaluate(errorState, func, stack, new String[]{"key"}, ps -> {
                     var card = ps[0];
                     var label = table.getLabel(0);
                     var i = getImpForSlice(label);
@@ -150,36 +153,41 @@ public class PlotNameResolver {
                             }
                             return val;
                         }
+                        errorState.set(true);
                         return "<Failed to find card with key '%s'>".formatted(card);
                     }
+                    errorState.set(true);
                     return "<Found no matching image for '%s'>".formatted(label);
                 });
             }
             case "title", "ttl" -> {
-                evaluate(func, stack, new String[0], ps -> {
+                evaluate(errorState, func, stack, new String[0], ps -> {
                     var i = getImpForSlice(table.getLabel(0));
                     if (i != null) {
                         var t = i.getTitle();
                         if (t.isEmpty()) {
+                            errorState.set(true);
                             return "<Stack title was empty>";
                         }
                         return t;
                     } else {
+                        errorState.set(true);
                         return "<Found no matching image for '%s'>".formatted(table.getLabel(0));
                     }
                 });
             }
             case "pref", "prf", "p" -> {
-                evaluate(func, stack, new String[]{"key"}, ps -> {
+                evaluate(errorState, func, stack, new String[]{"key"}, ps -> {
                     var mappedKey = keyResolver(ps[0]);
                     if (Prefs.containsKey(mappedKey)) {
                         return Prefs.get(mappedKey, "<default>");
                     }
+                    errorState.set(true);
                     return "<Missing value for '%s' (%s)>".formatted(mappedKey, ps[0]);
                 });
             }
             case "table", "tbl", "t" -> {
-                evaluate(func, stack, new String[]{"col", "row"}, ps -> {
+                evaluate(errorState, func, stack, new String[]{"col", "row"}, ps -> {
                     try {
                         var row = switch (ps[1]) {
                             case "$F" -> 0;
@@ -190,6 +198,7 @@ public class PlotNameResolver {
                         //todo handle special row entries
 
                         if (row < 0 || row >= table.size()) {
+                            errorState.set(true);
                             return "<Row index too large: %s>".formatted(row+1);
                         }
 
@@ -201,18 +210,19 @@ public class PlotNameResolver {
                             return String.valueOf(table.getValue(ps[0], row));
                         }
 
+                        errorState.set(true);
                         return "<Invalid col. name for input: '%s'>".formatted(ps[0]);
                     } catch (Exception e) {
+                        errorState.set(true);
                         return "<Failed to parse row: %s>".formatted(ps[1]);
                     }
                 });
             }
             case "split", "spt", "s" -> {
-                evaluate(func, stack, new String[]{"splitter", "out", "in"}, ps -> {
+                evaluate(errorState, func, stack, new String[]{"splitter", "out", "in"}, ps -> {
                     // The final output
                     final var input = ps[2];
                     var s = input.split(ps[0]);
-                    var errorState = new AtomicBoolean(false);
                     return LABEL_VARIABLE.matcher(ps[1]).replaceAll(matchResult -> {
                         var v = matchResult.group(1).substring(1).trim(); // trim preceding $
 
@@ -239,7 +249,7 @@ public class PlotNameResolver {
                 });
             }
             case "regex", "rgx", "r" -> {
-                evaluate(func, stack, new String[]{"exp", "out", "in"}, ps -> {
+                evaluate(errorState, func, stack, new String[]{"exp", "out", "in"}, ps -> {
                     var regex = ps[0];
                     var m = SIMPLE_VARIABLE.matcher(ps[1]);
                     // The final output
@@ -247,9 +257,10 @@ public class PlotNameResolver {
                     try {
                         matcher = Pattern.compile(regex).matcher(ps[2]);
                     } catch (PatternSyntaxException e) {
+                        errorState.set(true);
                         return "<Pattern incomplete: %s>".formatted(e.getMessage());
                     }
-                    var errorState = new AtomicBoolean(false);
+
                     return m.replaceAll(matchResult -> {
                         matcher.reset();
                         var v = matchResult.group(1).substring(1).trim(); // trim preceding $
@@ -284,30 +295,37 @@ public class PlotNameResolver {
                 });
             }
             case "format", "fmt", "f" -> {
-                evaluate(func, stack, new String[]{"exp", "in"}, ps -> {
+                evaluate(errorState, func, stack, new String[]{"exp", "in"}, ps -> {
                     try {
                         return new DecimalFormat(ps[0]).format(Double.parseDouble(ps[1].trim()));
                     } catch (NumberFormatException e) {
+                        errorState.set(true);
                         return "<Failed to convert '%s' into a double>".formatted(ps[1]);
                     } catch (IllegalArgumentException e) {
+                        errorState.set(true);
                         return "<Invalid format '%s'>".formatted(ps[0]);
                     }
                 });
             }
             default -> {
+                errorState.set(true);
                 stack.push("<Unknown function: %s>".formatted(func));
             }
         }
+
+        return errorState.get();
     }
 
     //todo vararg for paramNames? cleaner than needing to explictly create array
-    private static void evaluate(String fName, TokenStack stack, String[] paramNames, Function<String[], String> function) {
+    private static void evaluate(AtomicBoolean errorState, String fName, TokenStack stack, String[] paramNames, Function<String[], String> function) {
         var e = extractParams(fName, stack, paramNames);
         if (e.missingParam) {
             stack.push(e.msg);
-        } else {//todo take in error state, don't run later functions?
+        } else {
             stack.push(function.apply(e.params));
         }
+
+        errorState.compareAndExchange(false, e.missingParam);
     }
 
     private static Extraction extractParams(String function, TokenStack stack, String[] paramNames) {

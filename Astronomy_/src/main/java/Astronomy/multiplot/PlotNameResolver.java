@@ -5,9 +5,6 @@ import Astronomy.MultiPlot_;
 import astroj.FitsJ;
 import astroj.HelpPanel;
 import astroj.MeasurementTable;
-import astroj.json.simple.JSONObject;
-import astroj.json.simple.parser.JSONParser;
-import astroj.json.simple.parser.ParseException;
 import ij.ImagePlus;
 import ij.Prefs;
 import ij.WindowManager;
@@ -16,7 +13,10 @@ import ij.astro.types.Pair;
 import ij.astro.util.UIHelper;
 
 import java.text.DecimalFormat;
+import java.util.Stack;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
+import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -24,15 +24,10 @@ import java.util.regex.PatternSyntaxException;
 public class PlotNameResolver {
     public static final Property<String> TITLE_MACRO = new Property<>("", PlotNameResolver.class);
     public static final Property<String> SUBTITLE_MACRO = new Property<>("", PlotNameResolver.class);
+    private static final Pattern OPERATOR = Pattern.compile("^(?<!\\\\)@");
+    private static final Pattern TOKENIZER =
+            Pattern.compile("((?=[\"'])(?:\"[^\"\\\\]*(?:\\\\[\\s\\S][^\"\\\\]*)*\"|'[^'\\\\]*(?:\\\\[\\s\\S][^'\\\\]*)*')|\\S+)");
     private static final Pattern SIMPLE_VARIABLE = Pattern.compile("(\\$\\S+)");
-    private static final Pattern VARIABLE = Pattern.compile("(\\$(" + // Variables start with $
-            // simple word
-            "\\w+|" +
-            // word in quotes
-            "((?=[\"'])(?:\"[^\"\\\\]*(?:\\\\[\\s\\S][^\"\\\\]*)*\"|'[^'\\\\]*(?:\\\\[\\s\\S][^'\\\\]*)*'))|" +
-            // json with some depth, https://stackoverflow.com/a/68188893/8753755 with subroutines replaced to depth ~3
-            "(\\{(?:[^{}]|((\\{(?:[^{}]|((\\{(?:[^{}]|((\\{(?:[^{}]|((\\{(?:[^{}]|((\\{(?:[^{}])*\\})))*\\})))*\\})))*\\})))*\\})))*\\})" +
-            "))");
     private static final Pattern LABEL_VARIABLE = Pattern.compile("(\\$[0-9]+)");
     private static Pair.GenericPair<String, Boolean> lastTitleState;
     private static Pair.GenericPair<String, Boolean> lastSubtitleState;
@@ -73,272 +68,271 @@ public class PlotNameResolver {
     }
 
     private static Pair.GenericPair<String, Boolean> resolve(MeasurementTable table, String pattern) {
-        // Variable replace
-        if (pattern.contains("$")) {
-            if (table == null) {
-                return new Pair.GenericPair<>("<ERROR NO TABLE>", true);
+        pattern = pattern.replaceAll("\\s+$", ""); // Remove whitespace from end of string
+
+        var matcher = TOKENIZER.matcher(pattern);
+        var tokens = matcher.results().map(MatchResult::group).toArray(String[]::new);
+        var whitespace = TOKENIZER.splitAsStream(pattern).toArray(String[]::new);
+
+        var stack = new TokenStack(new Stack<>(), new Stack<>());
+        for (int i = tokens.length - 1; i >= 0; i--) {
+            stack.push(tokens[i], whitespace.length >= i ? " " : whitespace[i]);
+            if (OPERATOR.matcher(tokens[i]).find()) {
+                // Handle @ separated by whitepspace
+                if (tokens[i].equals("@")) {
+                    stack.pop();
+                }
+
+                parseAndEvaluate(table, stack);
             }
+        }
 
-            // Escape $ with nothing following it
-            pattern = pattern.replaceAll("(\\$[^\\w{]+)", "\\\\\\$");
+        var b = new StringBuilder();
+        for (int i = stack.size() - 1; i >= 0; i--) {
+            b.append(stack.pop()).append(stack.nextWhitespace());//todo whitespace is oddly behaved
+        }
 
-            // Perform the variable substitution
-            var m = VARIABLE.matcher(pattern);
-            var errorState = new AtomicBoolean(false);
-            return new Pair.GenericPair<>(m.replaceAll(matchResult -> {
-                var v = matchResult.group(1).substring(1); // trim preceding $
+        return new Pair.GenericPair<>(b.toString().trim(), false);
+    }
 
+    //todo when function errors and is input to another function, don't run that function
+    //todo loading table from MA with macro enabled causes slowdown
+
+    //todo example @ pref LASTMA @ split " " $2 @ table Labels 1
+    private static void parseAndEvaluate(MeasurementTable table, TokenStack stack) {
+        if (stack.empty()) {
+            stack.push("<Missing function name>");
+            return;
+        }
+
+        var func = stack.pop();
+
+        // Handle case where @ was part of function token
+        if (func.startsWith("@")) {
+            func = func.substring(1);
+        }
+
+        switch (func) {//todo handle error return
+            case "header", "hdr", "h" -> {
+                evaluate(func, stack, new String[]{"key"}, ps -> {
+                    var card = ps[0];
+                    var label = table.getLabel(0);
+                    var i = getImpForSlice(label);
+                    if (i != null) {
+                        var h = FitsJ.getHeader(i);
+                        int c;
+                        if (h != null && h.cards() != null && ((c = FitsJ.findCardWithKey(card, h)) > -1)) {
+                            var val = FitsJ.getCardValue(h.cards()[c]).trim();
+                            // Trim ' from val
+                            if (val.startsWith("'") && val.endsWith("'")) {
+                                val = val.substring(1, val.length() - 1).trim();
+                            }
+                            return val;
+                        }
+                        return "<Failed to find card with key '%s'>".formatted(card);
+                    }
+                    return "<Found no matching image for '%s'>".formatted(label);
+                });
+            }
+            case "comment", "cmt", "c" -> {
+                evaluate(func, stack, new String[]{"key"}, ps -> {
+                    var card = ps[0];
+                    var label = table.getLabel(0);
+                    var i = getImpForSlice(label);
+                    if (i != null) {
+                        var h = FitsJ.getHeader(i);
+                        int c;
+                        if (h != null && h.cards() != null && ((c = FitsJ.findCardWithKey(card, h)) > -1)) {
+                            var val = FitsJ.getCardComment(h.cards()[c]).trim();
+                            // Trim ' from val
+                            if (val.startsWith("'") && val.endsWith("'")) {
+                                val = val.substring(1, val.length() - 1).trim();
+                            }
+                            return val;
+                        }
+                        return "<Failed to find card with key '%s'>".formatted(card);
+                    }
+                    return "<Found no matching image for '%s'>".formatted(label);
+                });
+            }
+            case "title", "ttl" -> {
+                evaluate(func, stack, new String[0], ps -> {
+                    var i = getImpForSlice(table.getLabel(0));
+                    if (i != null) {
+                        var t = i.getTitle();
+                        if (t.isEmpty()) {
+                            return "<Stack title was empty>";
+                        }
+                        return t;
+                    } else {
+                        return "<Found no matching image for '%s'>".formatted(table.getLabel(0));
+                    }
+                });
+            }
+            case "pref", "prf", "p" -> {
+                evaluate(func, stack, new String[]{"key"}, ps -> {
+                    var mappedKey = keyResolver(ps[0]);
+                    if (Prefs.containsKey(mappedKey)) {
+                        return Prefs.get(mappedKey, "<default>");
+                    }
+                    return "<Missing value for '%s' (%s)>".formatted(mappedKey, ps[0]);
+                });
+            }
+            case "table", "tbl", "t" -> {
+                evaluate(func, stack, new String[]{"col", "row"}, ps -> {
+                    try {
+                        var row = switch (ps[1]) {
+                            case "$F" -> 0;
+                            case "$L" -> table.size() - 1;
+                            default -> Integer.parseInt(ps[1]) - 1;
+                        };
+
+                        //todo handle special row entries
+
+                        if (row < 0 || row >= table.size()) {
+                            return "<Row index too large: %s>".formatted(row+1);
+                        }
+
+                        if ("Labels".equals(ps[0])) {
+                            return table.getLabel(row);
+                        }
+
+                        if (table.columnExists(ps[0])) {
+                            return String.valueOf(table.getValue(ps[0], row));
+                        }
+
+                        return "<Invalid col. name for input: '%s'>".formatted(ps[0]);
+                    } catch (Exception e) {
+                        return "<Failed to parse row: %s>".formatted(ps[1]);
+                    }
+                });
+            }
+            case "split", "spt", "s" -> {
+                evaluate(func, stack, new String[]{"splitter", "out", "in"}, ps -> {
+                    // The final output
+                    final var input = ps[2];
+                    var s = input.split(ps[0]);
+                    var errorState = new AtomicBoolean(false);
+                    return LABEL_VARIABLE.matcher(ps[1]).replaceAll(matchResult -> {
+                        var v = matchResult.group(1).substring(1).trim(); // trim preceding $
+
+                        try {
+                            var g = Integer.parseInt(v) - 1;
+                            if (g == -1) {
+                                return input;
+                            }
+                            if (g > -1) {
+                                if (g >= s.length) {
+                                    errorState.set(true);
+                                    return "<Split group greater than possible: '%s'>".formatted(g);
+                                }
+                                return s[g];
+                            } else {
+                                errorState.set(true);
+                                return "<Split group must be greater than -1: '%s'>".formatted(g);
+                            }
+                        } catch (NumberFormatException e) {
+                            errorState.set(true);
+                            return "<Failed to get split match number: '%s'>".formatted(v);
+                        }
+                    });
+                });
+            }
+            case "regex", "rgx", "r" -> {
+                evaluate(func, stack, new String[]{"exp", "out", "in"}, ps -> {
+                    var regex = ps[0];
+                    var m = SIMPLE_VARIABLE.matcher(ps[1]);
+                    // The final output
+                    Matcher matcher;
+                    try {
+                        matcher = Pattern.compile(regex).matcher(ps[2]);
+                    } catch (PatternSyntaxException e) {
+                        return "<Pattern incomplete: %s>".formatted(e.getMessage());
+                    }
+                    var errorState = new AtomicBoolean(false);
+                    return m.replaceAll(matchResult -> {
+                        matcher.reset();
+                        var v = matchResult.group(1).substring(1).trim(); // trim preceding $
+
+                        try {
+                            var g = Integer.parseInt(v);
+                            if (g < 0) {
+                                errorState.set(true);
+                                return "<Invalid group index: '%s'. Must be > 0>".formatted(g);
+                            }
+                            if (matcher.find()) {
+                                if (g <= matcher.groupCount()) {
+                                    return matcher.group(g);
+                                }
+                                errorState.set(true);
+                                return "<Invalid group index: '%s'>".formatted(g);
+                            }
+                            return "<Failed to match '%s'>".formatted(matcher.pattern().pattern());
+                        } catch (NumberFormatException e) {
+                            if (matcher.find()) {
+                                try {
+                                    return matcher.group(v);
+                                } catch (IllegalArgumentException ignored) {
+                                    errorState.set(true);
+                                    return "<Invalid group name: '%s'>".formatted(v);
+                                }
+                            }
+                            errorState.set(true);
+                            return "<Failed to match '%s'>".formatted(matcher.pattern().pattern());
+                        }
+                    });
+                });
+            }
+            case "format", "fmt", "f" -> {
+                evaluate(func, stack, new String[]{"exp", "in"}, ps -> {
+                    try {
+                        return new DecimalFormat(ps[0]).format(Double.parseDouble(ps[1].trim()));
+                    } catch (NumberFormatException e) {
+                        return "<Failed to convert '%s' into a double>".formatted(ps[1]);
+                    } catch (IllegalArgumentException e) {
+                        return "<Invalid format '%s'>".formatted(ps[0]);
+                    }
+                });
+            }
+            default -> {
+                stack.push("<Unknown function: %s>".formatted(func));
+            }
+        }
+    }
+
+    //todo vararg for paramNames? cleaner than needing to explictly create array
+    private static void evaluate(String fName, TokenStack stack, String[] paramNames, Function<String[], String> function) {
+        var e = extractParams(fName, stack, paramNames);
+        if (e.missingParam) {
+            stack.push(e.msg);
+        } else {//todo take in error state, don't run later functions?
+            stack.push(function.apply(e.params));
+        }
+    }
+
+    private static Extraction extractParams(String function, TokenStack stack, String[] paramNames) {
+        var params = new String[paramNames.length];
+
+        StringBuilder missingParams = new StringBuilder();
+        for (int p = 0; p < params.length; p++) {
+            if (!stack.empty()) {
+                var o = stack.pop();
                 // Unwrap quoted column
                 //todo handle escaped quotes
-                if ((v.startsWith("\"") && v.endsWith("\"")) || (v.startsWith("'") && v.endsWith("'"))) {
-                    v = v.substring(1, v.length()-1);
+                if ((o.startsWith("\"") && o.endsWith("\"")) || (o.startsWith("'") && o.endsWith("'"))) {
+                    o = o.substring(1, o.length()-1);
                 }
-
-                // Label isn't a real column
-                if ("Label".equals(v)) {
-                    return table.getLabel(0);
-                }
-
-                // Handle functions
-                if (v.startsWith("{")) {
-                    var f = parseFunction(v, table);
-                    errorState.compareAndExchange(false, f.second());
-                    return f.first();
-                }
-
-                if (!table.columnExists(v)) {
-                    return "<ERROR NO COL.: '%s'>".formatted(v);
-                }
-
-                return table.getStringValue(v, 0);
-            }), errorState.get());
-        }
-
-        return new Pair.GenericPair<>(pattern, false);
-    }
-
-    private static Pair.GenericPair<String, Boolean> parseFunction(String function, MeasurementTable table) {
-        try {
-            var p = new JSONParser().parse(function);
-            if (p instanceof JSONObject o) {
-                return functionRunner(o, table);
-            }
-            return new Pair.GenericPair<>("<Parse went wrong>", true);
-        } catch (ParseException e) {
-            return new Pair.GenericPair<>("<Not a function: JSON parse error>", true);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return new Pair.GenericPair<>("<An error occurred running script match>", true);
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private static Pair.GenericPair<String, Boolean> functionRunner(JSONObject o, MeasurementTable table) {
-        var lastError = false;
-
-        // Pref function
-        if (o.get("pref") instanceof String key) {
-            var mappedKey = keyResolver(key);
-            if (Prefs.containsKey(mappedKey)) {
-                return new Pair.GenericPair<>(Prefs.get(mappedKey, "<default>"), false);
-            }
-            return new Pair.GenericPair<>("<Missing value for '%s' (%s)>".formatted(mappedKey, key), true);
-        }
-
-        // Format function
-        if (o.get("format") instanceof String format) {
-            String input = null;
-            if (o.get("input") instanceof JSONObject j) {
-                var f = functionRunner(j, table);
-                input = f.first();
-                lastError = f.second();
-            } else if (o.get("input") instanceof String s) {
-                if (table.columnExists(s)) {
-                    input = table.getStringValue(s, 0);
-                } else {
-                    return new Pair.GenericPair<>("<Invalid col. name for input: '%s'>".formatted(s), true);
-                }
-            }
-
-            if (input == null) {
-                return new Pair.GenericPair<>("<Was not provided input>", true);
-            }
-
-            //MessageFormat.format(key, input);
-            try {
-                return new Pair.GenericPair<>(new DecimalFormat(format).format(Double.parseDouble(input.trim())), lastError);
-            } catch (NumberFormatException e) {
-                return new Pair.GenericPair<>("<Failed to convert '%s' into a double>".formatted(input), true);
-            } catch (IllegalArgumentException e) {
-                return new Pair.GenericPair<>("<Invalid format '%s'>".formatted(format), true);
-            }
-        }
-
-        // Label function
-        // This is a special case of the split function
-        if (o.get("label") instanceof String lab) {
-            var j = new JSONObject();
-            j.put("output", lab);
-            j.put("split", o.getOrDefault("splitter", "_"));
-            return functionRunner(j, table);
-        }
-
-        // Title function
-        // This is a special case of the split function
-        if (o.get("title") instanceof String lab) {
-            var j = new JSONObject();
-            j.put("output", lab);
-            j.put("split", o.getOrDefault("splitter", "_"));
-            j.put("input", "title");
-            return functionRunner(j, table);
-        }
-
-        // Header function
-        if (o.get("hdr") instanceof String card) {
-            var label = table.getLabel(0);
-            var i = getImpForSlice(label);
-            if (i != null) {
-                var h = FitsJ.getHeader(i);
-                int c;
-                if (h != null && h.cards() != null && ((c = FitsJ.findCardWithKey(card, h)) > -1)) {
-                    var val = FitsJ.getCardValue(h.cards()[c]).trim();
-                    // Trim ' from val
-                    if (val.startsWith("'") && val.endsWith("'")) {
-                        val = val.substring(1, val.length() - 1).trim();
-                    }
-                    return new Pair.GenericPair<>(val, false);
-                }
-                return new Pair.GenericPair<>("<Failed to find card with key '%s'>".formatted(card), true);
-            }
-            return new Pair.GenericPair<>("<Found no matching image for '%s'>".formatted(label), true);
-        }
-
-        // Regex function
-        if (o.get("regex") instanceof String regex) {
-            // The string that will be output, containing any group references
-            if (o.get("output") instanceof String output) {
-                var m = SIMPLE_VARIABLE.matcher(output);
-
-                // Find the input to pull the initial string to perform the regex match on
-                var l = table.getLabel(0);
-                if (o.get("input") instanceof String input) {
-                    if (table.columnExists(input)) {
-                        l = table.getStringValue(input, 0);
-                    } else {
-                        return new Pair.GenericPair<>("<Invalid col. name for input: '%s'>".formatted(input), true);
-                    }
-                } else if (o.get("input") instanceof JSONObject s) {
-                    var f = functionRunner(s, table);
-                    l = f.first();
-                    lastError = f.second();
-                }
-
-                // The final output
-                Matcher matcher;
-                try {
-                    matcher = Pattern.compile(regex).matcher(l);
-                } catch (PatternSyntaxException e) {
-                    return new Pair.GenericPair<>("<Pattern incomplete: %s>".formatted(e.getMessage()), true);
-                }
-                var errorState = new AtomicBoolean(lastError);
-                return new Pair.GenericPair<>(m.replaceAll(matchResult -> {
-                    matcher.reset();
-                    var v = matchResult.group(1).substring(1).trim(); // trim preceding $
-
-                    try {
-                        var g = Integer.parseInt(v);
-                        if (g < 0) {
-                            errorState.set(true);
-                            return "<Invalid group index: '%s'. Must be > 0>".formatted(g);
-                        }
-                        if (matcher.find()) {
-                            if (g <= matcher.groupCount()) {
-                                return matcher.group(g);
-                            }
-                            errorState.set(true);
-                            return "<Invalid group index: '%s'>".formatted(g);
-                        }
-                        return "<Failed to match '%s'>".formatted(matcher.pattern().pattern());
-                    } catch (NumberFormatException e) {
-                        if (matcher.find()) {
-                            try {
-                                return matcher.group(v);
-                            } catch (IllegalArgumentException ignored) {
-                                errorState.set(true);
-                                return "<Invalid group name: '%s'>".formatted(v);
-                            }
-                        }
-                        errorState.set(true);
-                        return "<Failed to match '%s'>".formatted(matcher.pattern().pattern());
-                    }
-                }), errorState.get());
-            }
-            return new Pair.GenericPair<>("<Regex mode match failed, missing 'output' text>", true);
-        }
-
-        // Split function
-        if (o.get("split") instanceof String splitter) {
-            String output;
-            if (o.get("output") instanceof String op) {
-                output = op;
+                params[p] = o;
             } else {
-                return new Pair.GenericPair<>("<Split failed, missing 'output' text>", true);
+                missingParams.append(missingParams.isEmpty() ? "" : ", ").append(paramNames[p]);
             }
-
-            // Find the input to pull the initial string to perform the split with
-            var l = table.getLabel(0);
-            if (o.get("input") instanceof String input) {
-                if (input.equals("title")) {
-                    var i = getImpForSlice(l);
-                    if (i != null) {
-                        l = i.getTitle();
-                        if (l.isEmpty()) {
-                            return new Pair.GenericPair<>("<Stack title was empty>", true);
-                        }
-                    } else {
-                        return new Pair.GenericPair<>("<Found no matching image for '%s'>".formatted(l), true);
-                    }
-                } else if (table.columnExists(input)) {
-                    l = table.getStringValue(input, 0);
-                } else {
-                    return new Pair.GenericPair<>("<Invalid col. name for input: '%s'>".formatted(input), true);
-                }
-            } else if (o.get("input") instanceof JSONObject s) {
-                var f = functionRunner(s, table);
-                l = f.first();
-                lastError = f.second();
-            }
-
-            // The final output
-            final var input = l;
-            var s = input.split(splitter);
-            var errorState = new AtomicBoolean(lastError);
-            return new Pair.GenericPair<>(LABEL_VARIABLE.matcher(output).replaceAll(matchResult -> {
-                var v = matchResult.group(1).substring(1).trim(); // trim preceding $
-
-                try {
-                    var g = Integer.parseInt(v) - 1;
-                    if (g == -1) {
-                        return input;
-                    }
-                    if (g > -1) {
-                        if (g >= s.length) {
-                            errorState.set(true);
-                            return "<Split group greater than possible: '%s'>".formatted(g);
-                        }
-                        return s[g];
-                    } else {
-                        errorState.set(true);
-                        return "<Split group must be greater than -1: '%s'>".formatted(g);
-                    }
-                } catch (NumberFormatException e) {
-                    errorState.set(true);
-                    return "<Failed to get split match number: '%s'>".formatted(v);
-                }
-            }), errorState.get());
         }
 
-        return new Pair.GenericPair<>("<Failed to identify script mode>", true);
+        if (!missingParams.isEmpty()) {
+            return new Extraction(null, true, "<Missing parameter(s) for %s: %s>".formatted(function, missingParams.toString()));
+        }
+
+        return new Extraction(params, false, null);
     }
 
     /**
@@ -386,5 +380,40 @@ public class PlotNameResolver {
 
     public static void showHelpWindow() {
         UIHelper.setCenteredOnScreen(new HelpPanel("help/plotMacroHelp.html", "Programmable Plot Titles"), MultiPlot_.mainFrame);
+    }
+
+    record Extraction(String[] params, boolean missingParam, String msg) {}
+
+    record TokenStack(Stack<String> tokens, Stack<String> whitespace) {
+        public String peek() {
+            return tokens.peek();
+        }
+
+        public String pop() {
+            whitespace.pop();
+            return tokens.pop();
+        }
+
+        public String nextWhitespace() {
+            return whitespace.empty() ? "" : whitespace.peek();
+        }
+
+        public void push(String token) {
+            whitespace.push(" ");
+            tokens.push(token);
+        }
+
+        public void push(String token, String whitespace) {
+            this.whitespace.push(whitespace);
+            tokens.push(token);
+        }
+
+        public boolean empty() {
+            return tokens.empty();
+        }
+
+        public int size() {
+            return tokens.size();
+        }
     }
 }

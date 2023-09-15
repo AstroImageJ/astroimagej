@@ -76,15 +76,23 @@ public class PlotNameResolver {
 
         var stack = new TokenStack(new Stack<>(), new Stack<>());
         var hasErrored = false;
+        var indexLastError = 0;
         for (int i = tokens.length - 1; i >= 0; i--) {
             stack.push(tokens[i], whitespace.length >= i ? " " : whitespace[i]);
-            if (!hasErrored && OPERATOR.matcher(tokens[i]).find()) {
-                // Handle @ separated by whitepspace
+            if (OPERATOR.matcher(tokens[i]).find()) {
+                // Handle @ separated by whitespace
                 if (tokens[i].equals("@")) {
+                    indexLastError--;
                     stack.pop();
                 }
 
-                hasErrored = parseAndEvaluate(table, stack);
+                var e = parseAndEvaluate(table, stack, indexLastError - i);
+                if (e.first()) {
+                    indexLastError = i - e.second();
+                }
+                if (!hasErrored) {
+                    hasErrored = e.first();
+                }
             }
         }
 
@@ -99,13 +107,15 @@ public class PlotNameResolver {
     //todo loading table from MA with macro enabled causes slowdown
 
     //todo example @ pref LASTMA @ split " " $2 @ table Labels 1
-    private static boolean parseAndEvaluate(MeasurementTable table, TokenStack stack) {
+    private static Pair.GenericPair<Boolean, Integer> parseAndEvaluate(MeasurementTable table, TokenStack stack, int errorDelta) {
         if (stack.empty()) {
             stack.push("<Missing function name>");
-            return true;
+            return new Pair.GenericPair<>(true, 0);
         }
 
-        var func = stack.pop();
+        // Only peek, keep function name in case the input is errored,
+        // in which case we don't want to parse it
+        var func = stack.peek();
 
         // Handle case where @ was part of function token
         if (func.startsWith("@")) {
@@ -113,211 +123,206 @@ public class PlotNameResolver {
         }
 
         var errorState = new AtomicBoolean(false);
-        switch (func) {
-            case "header", "hdr", "h" -> {
-                evaluate(errorState, func, stack, new String[]{"key"}, ps -> {
-                    var card = ps[0];
-                    var label = table.getLabel(0);
-                    var i = getImpForSlice(label);
-                    if (i != null) {
-                        var h = FitsJ.getHeader(i);
-                        int c;
-                        if (h != null && h.cards() != null && ((c = FitsJ.findCardWithKey(card, h)) > -1)) {
-                            var val = FitsJ.getCardValue(h.cards()[c]).trim();
-                            // Trim ' from val
-                            if (val.startsWith("'") && val.endsWith("'")) {
-                                val = val.substring(1, val.length() - 1).trim();
-                            }
-                            return val;
+        var expectedParams = switch (func) {
+            case "header", "hdr", "h" -> evaluate(errorDelta, errorState, func, stack, new String[]{"key"}, ps -> {
+                var card = ps[0];
+                var label = table.getLabel(0);
+                var i = getImpForSlice(label);
+                if (i != null) {
+                    var h = FitsJ.getHeader(i);
+                    int c;
+                    if (h != null && h.cards() != null && ((c = FitsJ.findCardWithKey(card, h)) > -1)) {
+                        var val = FitsJ.getCardValue(h.cards()[c]).trim();
+                        // Trim ' from val
+                        if (val.startsWith("'") && val.endsWith("'")) {
+                            val = val.substring(1, val.length() - 1).trim();
                         }
-                        errorState.set(true);
-                        return "<Failed to find card with key '%s'>".formatted(card);
+                        return val;
                     }
                     errorState.set(true);
-                    return "<Found no matching image for '%s'>".formatted(label);
-                });
-            }
-            case "comment", "cmt", "c" -> {
-                evaluate(errorState, func, stack, new String[]{"key"}, ps -> {
-                    var card = ps[0];
-                    var label = table.getLabel(0);
-                    var i = getImpForSlice(label);
-                    if (i != null) {
-                        var h = FitsJ.getHeader(i);
-                        int c;
-                        if (h != null && h.cards() != null && ((c = FitsJ.findCardWithKey(card, h)) > -1)) {
-                            var val = FitsJ.getCardComment(h.cards()[c]).trim();
-                            // Trim ' from val
-                            if (val.startsWith("'") && val.endsWith("'")) {
-                                val = val.substring(1, val.length() - 1).trim();
-                            }
-                            return val;
+                    return "<Failed to find card with key '%s'>".formatted(card);
+                }
+                errorState.set(true);
+                return "<Found no matching image for '%s'>".formatted(label);
+            });
+            case "comment", "cmt", "c" -> evaluate(errorDelta, errorState, func, stack, new String[]{"key"}, ps -> {
+                var card = ps[0];
+                var label = table.getLabel(0);
+                var i = getImpForSlice(label);
+                if (i != null) {
+                    var h = FitsJ.getHeader(i);
+                    int c;
+                    if (h != null && h.cards() != null && ((c = FitsJ.findCardWithKey(card, h)) > -1)) {
+                        var val = FitsJ.getCardComment(h.cards()[c]).trim();
+                        // Trim ' from val
+                        if (val.startsWith("'") && val.endsWith("'")) {
+                            val = val.substring(1, val.length() - 1).trim();
                         }
-                        errorState.set(true);
-                        return "<Failed to find card with key '%s'>".formatted(card);
+                        return val;
                     }
                     errorState.set(true);
-                    return "<Found no matching image for '%s'>".formatted(label);
-                });
-            }
-            case "title", "ttl" -> {
-                evaluate(errorState, func, stack, new String[0], ps -> {
-                    var i = getImpForSlice(table.getLabel(0));
-                    if (i != null) {
-                        var t = i.getTitle();
-                        if (t.isEmpty()) {
-                            errorState.set(true);
-                            return "<Stack title was empty>";
-                        }
-                        return t;
-                    } else {
+                    return "<Failed to find card with key '%s'>".formatted(card);
+                }
+                errorState.set(true);
+                return "<Found no matching image for '%s'>".formatted(label);
+            });
+            case "title", "ttl" -> evaluate(errorDelta, errorState, func, stack, new String[0], ps -> {
+                var i = getImpForSlice(table.getLabel(0));
+                if (i != null) {
+                    var t = i.getTitle();
+                    if (t.isEmpty()) {
                         errorState.set(true);
-                        return "<Found no matching image for '%s'>".formatted(table.getLabel(0));
+                        return "<Stack title was empty>";
                     }
-                });
-            }
-            case "pref", "prf", "p" -> {
-                evaluate(errorState, func, stack, new String[]{"key"}, ps -> {
-                    var mappedKey = keyResolver(ps[0]);
-                    if (Prefs.containsKey(mappedKey)) {
-                        return Prefs.get(mappedKey, "<default>");
-                    }
+                    return t;
+                } else {
                     errorState.set(true);
-                    return "<Missing value for '%s' (%s)>".formatted(mappedKey, ps[0]);
-                });
-            }
-            case "table", "tbl", "t" -> {
-                evaluate(errorState, func, stack, new String[]{"col", "row"}, ps -> {
-                    try {
-                        var row = switch (ps[1]) {
-                            case "$F" -> 0;
-                            case "$L" -> table.size() - 1;
-                            default -> Integer.parseInt(ps[1]) - 1;
-                        };
+                    return "<Found no matching image for '%s'>".formatted(table.getLabel(0));
+                }
+            });
+            case "pref", "prf", "p" -> evaluate(errorDelta, errorState, func, stack, new String[]{"key"}, ps -> {
+                var mappedKey = keyResolver(ps[0]);
+                if (Prefs.containsKey(mappedKey)) {
+                    return Prefs.get(mappedKey, "<default>");
+                }
+                errorState.set(true);
+                return "<Missing value for '%s' (%s)>".formatted(mappedKey, ps[0]);
+            });
+            case "table", "tbl", "t" -> evaluate(errorDelta, errorState, func, stack, new String[]{"col", "row"}, ps -> {
+                try {
+                    var row = switch (ps[1]) {
+                        case "$F" -> 0;
+                        case "$L" -> table.size() - 1;
+                        default -> Integer.parseInt(ps[1]) - 1;
+                    };
 
-                        //todo handle special row entries
+                    //todo handle special row entries
 
-                        if (row < 0 || row >= table.size()) {
-                            errorState.set(true);
-                            return "<Row index too large: %s>".formatted(row+1);
-                        }
-
-                        if ("Labels".equals(ps[0])) {
-                            return table.getLabel(row);
-                        }
-
-                        if (table.columnExists(ps[0])) {
-                            return String.valueOf(table.getValue(ps[0], row));
-                        }
-
+                    if (row < 0 || row >= table.size()) {
                         errorState.set(true);
-                        return "<Invalid col. name for input: '%s'>".formatted(ps[0]);
-                    } catch (Exception e) {
-                        errorState.set(true);
-                        return "<Failed to parse row: %s>".formatted(ps[1]);
-                    }
-                });
-            }
-            case "split", "spt", "s" -> {
-                evaluate(errorState, func, stack, new String[]{"splitter", "out", "in"}, ps -> {
-                    // The final output
-                    final var input = ps[2];
-                    var s = input.split(ps[0]);
-                    return LABEL_VARIABLE.matcher(ps[1]).replaceAll(matchResult -> {
-                        var v = matchResult.group(1).substring(1).trim(); // trim preceding $
-
-                        try {
-                            var g = Integer.parseInt(v) - 1;
-                            if (g == -1) {
-                                return input;
-                            }
-                            if (g > -1) {
-                                if (g >= s.length) {
-                                    errorState.set(true);
-                                    return "<Split group greater than possible: '%s'>".formatted(g);
-                                }
-                                return s[g];
-                            } else {
-                                errorState.set(true);
-                                return "<Split group must be greater than -1: '%s'>".formatted(g);
-                            }
-                        } catch (NumberFormatException e) {
-                            errorState.set(true);
-                            return "<Failed to get split match number: '%s'>".formatted(v);
-                        }
-                    });
-                });
-            }
-            case "regex", "rgx", "r" -> {
-                evaluate(errorState, func, stack, new String[]{"exp", "out", "in"}, ps -> {
-                    var regex = ps[0];
-                    var m = SIMPLE_VARIABLE.matcher(ps[1]);
-                    // The final output
-                    Matcher matcher;
-                    try {
-                        matcher = Pattern.compile(regex).matcher(ps[2]);
-                    } catch (PatternSyntaxException e) {
-                        errorState.set(true);
-                        return "<Pattern incomplete: %s>".formatted(e.getMessage());
+                        return "<Row index out of bounds: %s>".formatted(row+1);
                     }
 
-                    return m.replaceAll(matchResult -> {
-                        matcher.reset();
-                        var v = matchResult.group(1).substring(1).trim(); // trim preceding $
+                    if ("Labels".equals(ps[0])) {
+                        return table.getLabel(row);
+                    }
 
-                        try {
-                            var g = Integer.parseInt(v);
-                            if (g < 0) {
-                                errorState.set(true);
-                                return "<Invalid group index: '%s'. Must be > 0>".formatted(g);
-                            }
-                            if (matcher.find()) {
-                                if (g <= matcher.groupCount()) {
-                                    return matcher.group(g);
-                                }
-                                errorState.set(true);
-                                return "<Invalid group index: '%s'>".formatted(g);
-                            }
-                            return "<Failed to match '%s'>".formatted(matcher.pattern().pattern());
-                        } catch (NumberFormatException e) {
-                            if (matcher.find()) {
-                                try {
-                                    return matcher.group(v);
-                                } catch (IllegalArgumentException ignored) {
-                                    errorState.set(true);
-                                    return "<Invalid group name: '%s'>".formatted(v);
-                                }
-                            }
-                            errorState.set(true);
-                            return "<Failed to match '%s'>".formatted(matcher.pattern().pattern());
-                        }
-                    });
-                });
-            }
-            case "format", "fmt", "f" -> {
-                evaluate(errorState, func, stack, new String[]{"exp", "in"}, ps -> {
+                    if (table.columnExists(ps[0])) {
+                        return String.valueOf(table.getValue(ps[0], row));
+                    }
+
+                    errorState.set(true);
+                    return "<Invalid col. name for input: '%s'>".formatted(ps[0]);
+                } catch (Exception e) {
+                    errorState.set(true);
+                    return "<Failed to parse row: %s>".formatted(ps[1]);
+                }
+            });
+            case "split", "spt", "s" -> evaluate(errorDelta, errorState, func, stack, new String[]{"splitter", "out", "in"}, ps -> {
+                // The final output
+                final var input = ps[2];
+                var s = input.split(ps[0]);
+                return LABEL_VARIABLE.matcher(ps[1]).replaceAll(matchResult -> {
+                    var v = matchResult.group(1).substring(1).trim(); // trim preceding $
+
                     try {
-                        return new DecimalFormat(ps[0]).format(Double.parseDouble(ps[1].trim()));
+                        var g = Integer.parseInt(v) - 1;
+                        if (g == -1) {
+                            return input;
+                        }
+                        if (g > -1) {
+                            if (g >= s.length) {
+                                errorState.set(true);
+                                return "<Split group greater than possible: '%s'>".formatted(g);
+                            }
+                            return s[g];
+                        } else {
+                            errorState.set(true);
+                            return "<Split group must be greater than -1: '%s'>".formatted(g);
+                        }
                     } catch (NumberFormatException e) {
                         errorState.set(true);
-                        return "<Failed to convert '%s' into a double>".formatted(ps[1]);
-                    } catch (IllegalArgumentException e) {
-                        errorState.set(true);
-                        return "<Invalid format '%s'>".formatted(ps[0]);
+                        return "<Failed to get split match number: '%s'>".formatted(v);
                     }
                 });
-            }
+            });
+            case "regex", "rgx", "r" -> evaluate(errorDelta, errorState, func, stack, new String[]{"exp", "out", "in"}, ps -> {
+                var regex = ps[0];
+                var m = SIMPLE_VARIABLE.matcher(ps[1]);
+                // The final output
+                Matcher matcher;
+                try {
+                    matcher = Pattern.compile(regex).matcher(ps[2]);
+                } catch (PatternSyntaxException e) {
+                    errorState.set(true);
+                    return "<Pattern incomplete: %s>".formatted(e.getMessage());
+                }
+
+                return m.replaceAll(matchResult -> {
+                    matcher.reset();
+                    var v = matchResult.group(1).substring(1).trim(); // trim preceding $
+
+                    try {
+                        var g = Integer.parseInt(v);
+                        if (g < 0) {
+                            errorState.set(true);
+                            return "<Invalid group index: '%s'. Must be > 0>".formatted(g);
+                        }
+                        if (matcher.find()) {
+                            if (g <= matcher.groupCount()) {
+                                return matcher.group(g);
+                            }
+                            errorState.set(true);
+                            return "<Invalid group index: '%s'>".formatted(g);
+                        }
+                        return "<Failed to match '%s'>".formatted(matcher.pattern().pattern());
+                    } catch (NumberFormatException e) {
+                        if (matcher.find()) {
+                            try {
+                                return matcher.group(v);
+                            } catch (IllegalArgumentException ignored) {
+                                errorState.set(true);
+                                return "<Invalid group name: '%s'>".formatted(v);
+                            }
+                        }
+                        errorState.set(true);
+                        return "<Failed to match '%s'>".formatted(matcher.pattern().pattern());
+                    }
+                });
+            });
+            case "format", "fmt", "f" -> evaluate(errorDelta, errorState, func, stack, new String[]{"exp", "in"}, ps -> {
+                try {
+                    return new DecimalFormat(ps[0]).format(Double.parseDouble(ps[1].trim()));
+                } catch (NumberFormatException e) {
+                    errorState.set(true);
+                    return "<Failed to convert '%s' into a double>".formatted(ps[1]);
+                } catch (IllegalArgumentException e) {
+                    errorState.set(true);
+                    return "<Invalid format '%s'>".formatted(ps[0]);
+                }
+            });
             default -> {
                 errorState.set(true);
+                stack.pop(); // Function name invalid, replace with error message
                 stack.push("<Unknown function: %s>".formatted(func));
+                yield 0;
             }
-        }
+        };
 
-        return errorState.get();
+        return new Pair.GenericPair<>(errorState.get(), expectedParams);
     }
 
     //todo vararg for paramNames? cleaner than needing to explictly create array
-    private static void evaluate(AtomicBoolean errorState, String fName, TokenStack stack, String[] paramNames, Function<String[], String> function) {
+    private static int evaluate(int errorDelta, AtomicBoolean errorState, String fName, TokenStack stack,
+                                String[] paramNames, Function<String[], String> function) {
+        // Don't evaluate function, the input is an error message
+        if (errorDelta <= paramNames.length+1 && errorDelta > 0) {
+            return paramNames.length;
+        }
+
+        // Remove function name
+        stack.pop();
+
         var e = extractParams(fName, stack, paramNames);
         if (e.missingParam) {
             stack.push(e.msg);
@@ -326,6 +331,8 @@ public class PlotNameResolver {
         }
 
         errorState.compareAndExchange(false, e.missingParam);
+
+        return paramNames.length;
     }
 
     private static Extraction extractParams(String function, TokenStack stack, String[] paramNames) {

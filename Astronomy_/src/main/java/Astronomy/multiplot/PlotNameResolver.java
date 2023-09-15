@@ -203,7 +203,7 @@ public class PlotNameResolver {
                         return "<Row index out of bounds: %s>".formatted(row+1);
                     }
 
-                    if ("Labe@s".equals(ps[0])) {
+                    if ("Label".equals(ps[0])) {
                         return table.getLabel(row);
                     }
 

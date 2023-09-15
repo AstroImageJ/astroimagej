@@ -5,6 +5,7 @@ import Astronomy.MultiPlot_;
 import astroj.FitsJ;
 import astroj.HelpPanel;
 import astroj.MeasurementTable;
+import flanagan.analysis.Stat;
 import ij.ImagePlus;
 import ij.Prefs;
 import ij.VirtualStack;
@@ -184,14 +185,40 @@ public class PlotNameResolver {
                 return "<Missing value for '%s' (%s)>".formatted(mappedKey, ps[0]);
             });
             case "table", "tbl", "t" -> evaluate(errorDelta, errorState, func, stack, new String[]{"col", "row"}, ps -> {
+                if (!table.columnExists(ps[0]) && !"Label".equals(ps[0])) {
+                    errorState.set(true);
+                    return "<Invalid col. name for input: '%s'>".formatted(ps[0]);
+                }
+
+                // Special processors
+                if (!"Label".equals(ps[0])) {
+                    switch (ps[1]) {
+                        case "$AVG" -> {
+                            var c = table.getColumn(ps[0]);
+                            return String.valueOf(Stat.mean(c));
+                        }
+                        case "$MIN" -> {
+                            var c = table.getColumn(ps[0]);
+                            return String.valueOf(new Stat(c).minimum());
+                        }
+                        case "$MAX" -> {
+                            var c = table.getColumn(ps[0]);
+                            return String.valueOf(new Stat(c).maximum());
+                        }
+                        case "$MED" -> {
+                            var c = table.getColumn(ps[0]);
+                            return String.valueOf(Stat.median(c));
+                        }
+                        default -> {}
+                    }
+                }
+
                 try {
                     var row = switch (ps[1]) {
                         case "$F" -> 0;
                         case "$L" -> table.size() - 1;
                         default -> Integer.parseInt(ps[1]) - 1;
                     };
-
-                    //todo handle special row entries
 
                     if (row < 0 || row >= table.size()) {
                         errorState.set(true);
@@ -202,12 +229,7 @@ public class PlotNameResolver {
                         return table.getLabel(row);
                     }
 
-                    if (table.columnExists(ps[0])) {
-                        return String.valueOf(table.getValue(ps[0], row));
-                    }
-
-                    errorState.set(true);
-                    return "<Invalid col. name for input: '%s'>".formatted(ps[0]);
+                    return String.valueOf(table.getValue(ps[0], row));
                 } catch (Exception e) {
                     errorState.set(true);
                     return "<Failed to parse row: %s>".formatted(ps[1]);

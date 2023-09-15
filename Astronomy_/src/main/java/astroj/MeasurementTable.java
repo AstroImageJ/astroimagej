@@ -903,4 +903,23 @@ public class MeasurementTable extends ResultsTable {
         super.showRowIndexes(showIndexes);
         updateView(UpdateEvent.REBUILD);
     }
+
+    @Override
+    @Deprecated
+    public void addLabel(String columnHeading, String label) {
+        var needsUpdate = super.hasRowLabels();
+        super.addLabel(columnHeading, label);
+        if (!needsUpdate) {
+            updateView(UpdateEvent.REBUILD);
+        }
+    }
+
+    @Override
+    public void setLabel(String label, int row) {
+        var needsUpdate = super.hasRowLabels();
+        super.setLabel(label, row);
+        if (!needsUpdate) {
+            updateView(UpdateEvent.REBUILD);
+        }
+    }
 }

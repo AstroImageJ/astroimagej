@@ -7,6 +7,7 @@ import astroj.HelpPanel;
 import astroj.MeasurementTable;
 import ij.ImagePlus;
 import ij.Prefs;
+import ij.VirtualStack;
 import ij.WindowManager;
 import ij.astro.io.prefs.Property;
 import ij.astro.types.Pair;
@@ -39,6 +40,7 @@ public class PlotNameResolver {
         try {
             return (lastTitleState = resolve(table, TITLE_MACRO.get()));
         } catch (Exception e) {
+            e.printStackTrace();
             return new Pair.GenericPair<>(TITLE_MACRO.get(), true);
         }
     }
@@ -126,8 +128,7 @@ public class PlotNameResolver {
         var expectedParams = switch (func) {
             case "header", "hdr", "h" -> evaluate(errorDelta, errorState, func, stack, new String[]{"key"}, ps -> {
                 var card = ps[0];
-                var label = table.getLabel(0);
-                var i = getImpForSlice(label);
+                var i = getImpForSlice(table);
                 if (i != null) {
                     var h = FitsJ.getHeader(i);
                     int c;
@@ -143,12 +144,11 @@ public class PlotNameResolver {
                     return "<Failed to find card with key '%s'>".formatted(card);
                 }
                 errorState.set(true);
-                return "<Found no matching image for '%s'>".formatted(label);
+                return "<Found no matching image for '%s'>".formatted(table.getLabel(0));
             });
             case "comment", "cmt", "c" -> evaluate(errorDelta, errorState, func, stack, new String[]{"key"}, ps -> {
                 var card = ps[0];
-                var label = table.getLabel(0);
-                var i = getImpForSlice(label);
+                var i = getImpForSlice(table);
                 if (i != null) {
                     var h = FitsJ.getHeader(i);
                     int c;
@@ -164,10 +164,10 @@ public class PlotNameResolver {
                     return "<Failed to find card with key '%s'>".formatted(card);
                 }
                 errorState.set(true);
-                return "<Found no matching image for '%s'>".formatted(label);
+                return "<Found no matching image for '%s'>".formatted(table.getLabel(0));
             });
             case "title", "ttl" -> evaluate(errorDelta, errorState, func, stack, new String[0], ps -> {
-                var i = getImpForSlice(table.getLabel(0));
+                var i = getImpForSlice(table);
                 if (i != null) {
                     var t = i.getTitle();
                     if (t.isEmpty()) {
@@ -203,7 +203,7 @@ public class PlotNameResolver {
                         return "<Row index out of bounds: %s>".formatted(row+1);
                     }
 
-                    if ("Labels".equals(ps[0])) {
+                    if ("Labe@s".equals(ps[0])) {
                         return table.getLabel(row);
                     }
 
@@ -380,20 +380,38 @@ public class PlotNameResolver {
     /**
      * Find an open stack that contains a slice that matches the label.
      */
-    private static ImagePlus getImpForSlice(String label) {
+    private static ImagePlus getImpForSlice(MeasurementTable table) {
         var ids = WindowManager.getIDList();
+        var label = table.getLabel(0).split("\n")[0];
         if (ids != null) {
             for (int id : ids) {
                 var i = WindowManager.getImage(id);
                 if (i != null) {
                     var s = i.getImageStack();
                     //var n = s.getShortSliceLabel(0, 500);
-                    for (String sliceLabel : s.getSliceLabels()) {
-                        if (sliceLabel == null) {
-                            break;
+                    var ls = s.getSliceLabels();
+                    if (ls != null) {
+                        for (String sliceLabel : s.getSliceLabels()) {
+                            if (sliceLabel == null) {
+                                break;
+                            }
+                            if (label.equals(sliceLabel.split("\n")[0])) {
+                                return i;
+                            }
                         }
-                        if (label.equals(sliceLabel.split("\n")[0])) {
-                            return i;
+                    } else if (s instanceof VirtualStack virtualStack) {
+                        var l = virtualStack.getSliceLabel(i.getCurrentSlice());
+                        if (l != null) {
+                            l = l.split("\n")[0];
+                        }
+                        for (int row = 0; row < table.size(); row++) {
+                            var sliceLabel = table.getLabel(0);
+                            if (sliceLabel == null) {
+                                continue;
+                            }
+                            if (table.getLabel(row).split("\n")[0].equals(l)) {
+                                return i;
+                            }
                         }
                     }
                 }

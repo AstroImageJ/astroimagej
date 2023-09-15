@@ -40,7 +40,6 @@ public class PlotNameResolver {
         try {
             return (lastTitleState = resolve(table, TITLE_MACRO.get()));
         } catch (Exception e) {
-            e.printStackTrace();
             return new Pair.GenericPair<>(TITLE_MACRO.get(), true);
         }
     }
@@ -74,13 +73,12 @@ public class PlotNameResolver {
 
         var matcher = TOKENIZER.matcher(pattern);
         var tokens = matcher.results().map(MatchResult::group).toArray(String[]::new);
-        var whitespace = TOKENIZER.splitAsStream(pattern).toArray(String[]::new);
 
-        var stack = new TokenStack(new Stack<>(), new Stack<>());
+        var stack = new Stack<String>();
         var hasErrored = false;
         var indexLastError = 0;
         for (int i = tokens.length - 1; i >= 0; i--) {
-            stack.push(tokens[i], whitespace.length >= i ? " " : whitespace[i]);
+            stack.push(tokens[i]);
             if (OPERATOR.matcher(tokens[i]).find()) {
                 // Handle @ separated by whitespace
                 if (tokens[i].equals("@")) {
@@ -100,16 +98,13 @@ public class PlotNameResolver {
 
         var b = new StringBuilder();
         for (int i = stack.size() - 1; i >= 0; i--) {
-            b.append(stack.pop()).append(stack.nextWhitespace());//todo whitespace is oddly behaved
+            b.append(stack.pop()).append(" ");
         }
 
         return new Pair.GenericPair<>(b.toString().trim(), hasErrored);
     }
 
-    //todo loading table from MA with macro enabled causes slowdown
-
-    //todo example @ pref LASTMA @ split " " $2 @ table Labels 1
-    private static Pair.GenericPair<Boolean, Integer> parseAndEvaluate(MeasurementTable table, TokenStack stack, int errorDelta) {
+    private static Pair.GenericPair<Boolean, Integer> parseAndEvaluate(MeasurementTable table, Stack<String> stack, int errorDelta) {
         if (stack.empty()) {
             stack.push("<Missing function name>");
             return new Pair.GenericPair<>(true, 0);
@@ -312,8 +307,7 @@ public class PlotNameResolver {
         return new Pair.GenericPair<>(errorState.get(), expectedParams);
     }
 
-    //todo vararg for paramNames? cleaner than needing to explictly create array
-    private static int evaluate(int errorDelta, AtomicBoolean errorState, String fName, TokenStack stack,
+    private static int evaluate(int errorDelta, AtomicBoolean errorState, String fName, Stack<String> stack,
                                 String[] paramNames, Function<String[], String> function) {
         // Don't evaluate function, the input is an error message
         if (errorDelta <= paramNames.length+1 && errorDelta > 0) {
@@ -335,7 +329,7 @@ public class PlotNameResolver {
         return paramNames.length;
     }
 
-    private static Extraction extractParams(String function, TokenStack stack, String[] paramNames) {
+    private static Extraction extractParams(String function, Stack<String> stack, String[] paramNames) {
         var params = new String[paramNames.length];
 
         StringBuilder missingParams = new StringBuilder();
@@ -426,37 +420,4 @@ public class PlotNameResolver {
     }
 
     record Extraction(String[] params, boolean missingParam, String msg) {}
-
-    record TokenStack(Stack<String> tokens, Stack<String> whitespace) {
-        public String peek() {
-            return tokens.peek();
-        }
-
-        public String pop() {
-            whitespace.pop();
-            return tokens.pop();
-        }
-
-        public String nextWhitespace() {
-            return whitespace.empty() ? "" : whitespace.peek();
-        }
-
-        public void push(String token) {
-            whitespace.push(" ");
-            tokens.push(token);
-        }
-
-        public void push(String token, String whitespace) {
-            this.whitespace.push(whitespace);
-            tokens.push(token);
-        }
-
-        public boolean empty() {
-            return tokens.empty();
-        }
-
-        public int size() {
-            return tokens.size();
-        }
-    }
 }

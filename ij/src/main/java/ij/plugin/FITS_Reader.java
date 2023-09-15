@@ -549,6 +549,14 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			var bjdColumn = tableHDU.findColumn("TIME");
 			var qualityColumn = tableHDU.findColumn("QUALITY");
 
+			if (bjdColumn >= 0) {
+				hdr.deleteKey("BJDREFI");
+				hdr.deleteKey("BJDREFF");
+			}
+
+			hdr.seekTail();
+			hdr.prevCard();
+
 			// Control for logging data
 			var hasErrors = false;
 

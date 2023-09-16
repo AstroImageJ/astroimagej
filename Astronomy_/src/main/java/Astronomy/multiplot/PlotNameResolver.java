@@ -41,6 +41,7 @@ public class PlotNameResolver {
         try {
             return (lastTitleState = resolve(table, TITLE_MACRO.get()));
         } catch (Exception e) {
+            e.printStackTrace();
             return new Pair.GenericPair<>(TITLE_MACRO.get(), true);
         }
     }
@@ -49,6 +50,7 @@ public class PlotNameResolver {
         try {
             return (lastSubtitleState = resolve(table, SUBTITLE_MACRO.get()));
         } catch (Exception e) {
+            e.printStackTrace();
             return new Pair.GenericPair<>(SUBTITLE_MACRO.get(), true);
         }
     }

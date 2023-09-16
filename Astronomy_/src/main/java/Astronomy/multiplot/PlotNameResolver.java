@@ -70,8 +70,6 @@ public class PlotNameResolver {
     }
 
     private static Pair.GenericPair<String, Boolean> resolve(MeasurementTable table, String pattern) {
-        pattern = pattern.replaceAll("\\s+$", ""); // Remove whitespace from end of string
-
         var matcher = TOKENIZER.matcher(pattern);
         var tokens = matcher.results().map(MatchResult::group).toArray(String[]::new);
         var whitespace = TOKENIZER.splitAsStream(pattern).toArray(String[]::new);

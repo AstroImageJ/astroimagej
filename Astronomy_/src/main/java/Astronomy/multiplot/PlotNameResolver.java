@@ -103,8 +103,7 @@ public class PlotNameResolver {
         }
 
         var b = new StringBuilder();
-        for (int i = stack.size() - 1; i >= 0; i--) {
-            b.append(stack.pop()).append(" ");
+        while (!stack.empty()) {
             var o = stack.pop();
             b.append(o);
         }

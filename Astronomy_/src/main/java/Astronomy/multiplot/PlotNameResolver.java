@@ -74,17 +74,24 @@ public class PlotNameResolver {
 
         var matcher = TOKENIZER.matcher(pattern);
         var tokens = matcher.results().map(MatchResult::group).toArray(String[]::new);
+        var whitespace = TOKENIZER.splitAsStream(pattern).toArray(String[]::new);
 
         var stack = new Stack<String>();
         var hasErrored = false;
         var indexLastError = 0;
         for (int i = tokens.length - 1; i >= 0; i--) {
+            if (i+1 < whitespace.length) {
+                stack.push(whitespace[i+1]);
+            }
             stack.push(tokens[i]);
             if (OPERATOR.matcher(tokens[i]).find()) {
                 // Handle @ separated by whitespace
                 if (tokens[i].equals("@")) {
                     indexLastError--;
                     stack.pop();
+                    if (!stack.empty()) {
+                        stack.pop();
+                    }
                 }
 
                 var e = parseAndEvaluate(table, stack, indexLastError - i);
@@ -100,9 +107,11 @@ public class PlotNameResolver {
         var b = new StringBuilder();
         for (int i = stack.size() - 1; i >= 0; i--) {
             b.append(stack.pop()).append(" ");
+            var o = stack.pop();
+            b.append(o);
         }
 
-        return new Pair.GenericPair<>(b.toString().trim(), hasErrored);
+        return new Pair.GenericPair<>(b.toString(), hasErrored);
     }
 
     private static Pair.GenericPair<Boolean, Integer> parseAndEvaluate(MeasurementTable table, Stack<String> stack, int errorDelta) {
@@ -332,7 +341,7 @@ public class PlotNameResolver {
     private static int evaluate(int errorDelta, AtomicBoolean errorState, String fName, Stack<String> stack,
                                 String[] paramNames, Function<String[], String> function) {
         // Don't evaluate function, the input is an error message
-        if (errorDelta <= paramNames.length+1 && errorDelta > 0) {
+        if (errorDelta < paramNames.length && errorDelta > 0) {
             return paramNames.length;
         }
 
@@ -356,6 +365,9 @@ public class PlotNameResolver {
 
         StringBuilder missingParams = new StringBuilder();
         for (int p = 0; p < params.length; p++) {
+            if (!stack.empty()) {
+                stack.pop(); // Remove separating whitespace
+            }
             if (!stack.empty()) {
                 var o = stack.pop();
                 // Unwrap quoted column

@@ -130,6 +130,7 @@ public class PlotNameResolver {
 
         var errorState = new AtomicBoolean(false);
         var expectedParams = switch (func) {
+            // DATA FETCH FUNCTIONS
             case "header", "hdr", "h" -> evaluate(errorDelta, errorState, func, stack, new String[]{"key"}, ps -> {
                 var card = ps[0];
                 var i = getImpForSlice(table);
@@ -243,6 +244,7 @@ public class PlotNameResolver {
                     return "<Failed to parse row: %s>".formatted(ps[1]);
                 }
             });
+            // OPERATING FUNCTIONS
             case "split", "spt", "s" -> evaluate(errorDelta, errorState, func, stack, new String[]{"splitter", "out", "in"}, ps -> {
                 // The final output
                 final var input = ps[2];
@@ -342,6 +344,15 @@ public class PlotNameResolver {
         // Don't evaluate function, the input is an error message
         if (errorDelta < paramNames.length && errorDelta > 0) {
             return paramNames.length;
+        }
+
+        // Make sure paramNames array is entered correctly
+        if (IJ.isAijDev()) {
+            for (String paramName : paramNames) {
+                if (paramName.contains(",")) {
+                    throw new IllegalArgumentException("paramNames were not array");
+                }
+            }
         }
 
         // Remove function name

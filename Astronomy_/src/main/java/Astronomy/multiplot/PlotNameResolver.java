@@ -6,15 +6,17 @@ import astroj.FitsJ;
 import astroj.HelpPanel;
 import astroj.MeasurementTable;
 import flanagan.analysis.Stat;
-import ij.ImagePlus;
-import ij.Prefs;
-import ij.VirtualStack;
-import ij.WindowManager;
+import ij.*;
 import ij.astro.io.prefs.Property;
 import ij.astro.types.Pair;
 import ij.astro.util.UIHelper;
 
 import java.text.DecimalFormat;
+import java.time.Clock;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 import java.util.Stack;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
@@ -193,6 +195,15 @@ public class PlotNameResolver {
                 errorState.set(true);
                 return "<Missing value for '%s' (%s)>".formatted(mappedKey, ps[0]);
             });
+            case "today" -> evaluate(errorDelta, errorState, func, stack, new String[]{"zoneId"}, ps -> {
+                try {
+                    var zoneId = ps[0].equals("_") ? Clock.systemDefaultZone().getZone() : ZoneId.of(ps[0]);
+                    return String.valueOf(LocalDate.now(zoneId));
+                } catch (Exception e) {
+                    errorState.set(true);
+                    return "<Invalid zoneId: '%s'>".formatted(ps[0]);
+                }
+            });
             case "table", "tbl", "t" -> evaluate(errorDelta, errorState, func, stack, new String[]{"col", "row"}, ps -> {
                 if (!table.columnExists(ps[0]) && !"Label".equals(ps[0])) {
                     errorState.set(true);
@@ -245,6 +256,49 @@ public class PlotNameResolver {
                 }
             });
             // OPERATING FUNCTIONS
+            case "datetimeformat" -> evaluate(errorDelta, errorState, func, stack,
+                    new String[]{"inFormat", "inLocale", "outFormat", "outLocale", "datetime"}, ps -> {
+                Locale inLocale;
+                Locale outLocale;
+                DateTimeFormatter inFormat;
+                DateTimeFormatter outFormat;
+                try {
+                    inLocale = ps[1].equals("_") ? Locale.getDefault() : Locale.forLanguageTag(ps[1]);
+                } catch (Exception e) {
+                    errorState.set(true);
+                    return "<Invalid inLocale: '%s'>".formatted(ps[1]);
+                }
+
+                try {
+                    outLocale = ps[3].equals("_") ? Locale.getDefault() : Locale.forLanguageTag(ps[3]);
+                } catch (Exception e) {
+                    errorState.set(true);
+                    return "<Invalid outLocale: '%s'>".formatted(ps[3]);
+                }
+
+                try {
+                    inFormat = ps[0].equals("_") ? DateTimeFormatter.ofPattern("yyyy-MM-dd", inLocale) :
+                            DateTimeFormatter.ofPattern(ps[0], inLocale);
+                } catch (Exception e) {
+                    errorState.set(true);
+                    return "<Invalid inFormat: '%s'>".formatted(ps[0]);
+                }
+
+                try {
+                    outFormat = ps[2].equals("_") ? DateTimeFormatter.ofPattern("yyyy-MM-dd", outLocale) :
+                            DateTimeFormatter.ofPattern(ps[2], outLocale);
+                } catch (Exception e) {
+                    errorState.set(true);
+                    return "<Invalid outFormat: '%s'>".formatted(ps[2]);
+                }
+
+                try {
+                    return outFormat.format(inFormat.parse(ps[4]));
+                } catch (Exception e) {
+                    errorState.set(true);
+                    return "<Failed to parse or format datetime (%s)>".formatted(ps[4]);
+                }
+            });
             case "split", "spt", "s" -> evaluate(errorDelta, errorState, func, stack, new String[]{"splitter", "out", "in"}, ps -> {
                 // The final output
                 final var input = ps[2];

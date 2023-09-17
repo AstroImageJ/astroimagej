@@ -108,8 +108,7 @@ public class PlotNameResolver {
 
         var b = new StringBuilder();
         while (!stack.empty()) {
-            var o = stack.pop();
-            b.append(o);
+            b.append(stack.pop());
         }
 
         return new Pair.GenericPair<>(b.toString(), hasErrored);
@@ -413,6 +412,13 @@ public class PlotNameResolver {
         stack.pop();
 
         var e = extractParams(fName, stack, paramNames);
+
+        // Adjust whitespace after function output
+        if (!stack.empty()) {
+            stack.push(stack.pop().replaceFirst(" ", ""));
+        }
+
+        // Put output onto stack
         if (e.missingParam) {
             stack.push(e.msg);
         } else {

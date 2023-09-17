@@ -2865,15 +2865,15 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     private void storeLastRun() {
         lastRun = switch (radiusSetting) {
             case FIXED -> {
-                yield "FApUser: %s-%s-%s".formatted(FORMAT.format(radius), FORMAT.format(rBack1),
+                yield "FA: %s-%s-%s".formatted(FORMAT.format(radius), FORMAT.format(rBack1),
                         FORMAT.format(rBack2));
             }
             case AUTO_FIXED -> {
-                yield "FApRadP1(%s): %s-%s-%s".formatted(ApRadius.AUTO_FIXED.cutoff, FORMAT.format(radius),
+                yield "FAF%s: %s-%s-%s".formatted(ApRadius.AUTO_FIXED.cutoff, FORMAT.format(radius),
                         FORMAT.format(rBack1), FORMAT.format(rBack2));
             }
             case AUTO_FIXED_STACK_RAD -> {
-                yield "FApRadPAll(%s): %s-%s-%s".formatted(ApRadius.AUTO_FIXED_STACK_RAD.cutoff, FORMAT.format(radius),
+                yield "FAM%s: %s-%s-%s".formatted(ApRadius.AUTO_FIXED_STACK_RAD.cutoff, FORMAT.format(radius),
                         FORMAT.format(rBack1), FORMAT.format(rBack2));
             }
             case AUTO_VAR_RAD_PROF -> {
@@ -2881,7 +2881,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 var br = stackRadii.stream().mapToDouble(Seeing_Profile.ApRadii::r2).toArray();
                 var br2 = stackRadii.stream().mapToDouble(Seeing_Profile.ApRadii::r3).toArray();
 
-                yield "VApRadP(%s): %s-%s-%s".formatted(ApRadius.AUTO_VAR_RAD_PROF.cutoff, FORMAT.format(Stat.median(sr)),
+                yield "VAR%s: %s-%s-%s".formatted(ApRadius.AUTO_VAR_RAD_PROF.cutoff, FORMAT.format(Stat.median(sr)),
                         FORMAT.format(Stat.median(br)), FORMAT.format(Stat.median(br2)));
             }
             case AUTO_VAR_FWHM -> {
@@ -2889,7 +2889,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 var br = stackRadii.stream().mapToDouble(Seeing_Profile.ApRadii::r2).toArray();
                 var br2 = stackRadii.stream().mapToDouble(Seeing_Profile.ApRadii::r3).toArray();
 
-                yield "VApFWHM(%s): %s-%s-%s".formatted(ApRadius.AUTO_VAR_FWHM.cutoff, FORMAT.format(Stat.median(sr)),
+                yield "VAF%s: %s-%s-%s".formatted(ApRadius.AUTO_VAR_FWHM.cutoff, FORMAT.format(Stat.median(sr)),
                         FORMAT.format(Stat.median(br)), FORMAT.format(Stat.median(br2)));
             }
         };

@@ -255,49 +255,6 @@ public class PlotNameResolver {
                 }
             });
             // OPERATING FUNCTIONS
-            case "datetimeformat" -> evaluate(errorDelta, errorState, func, stack,
-                    new String[]{"inFormat", "inLocale", "outFormat", "outLocale", "datetime"}, ps -> {
-                Locale inLocale;
-                Locale outLocale;
-                DateTimeFormatter inFormat;
-                DateTimeFormatter outFormat;
-                try {
-                    inLocale = ps[1].equals("_") ? Locale.getDefault() : Locale.forLanguageTag(ps[1]);
-                } catch (Exception e) {
-                    errorState.set(true);
-                    return "<Invalid inLocale: '%s'>".formatted(ps[1]);
-                }
-
-                try {
-                    outLocale = ps[3].equals("_") ? Locale.getDefault() : Locale.forLanguageTag(ps[3]);
-                } catch (Exception e) {
-                    errorState.set(true);
-                    return "<Invalid outLocale: '%s'>".formatted(ps[3]);
-                }
-
-                try {
-                    inFormat = ps[0].equals("_") ? DateTimeFormatter.ofPattern("yyyy-MM-dd", inLocale) :
-                            DateTimeFormatter.ofPattern(ps[0], inLocale);
-                } catch (Exception e) {
-                    errorState.set(true);
-                    return "<Invalid inFormat: '%s'>".formatted(ps[0]);
-                }
-
-                try {
-                    outFormat = ps[2].equals("_") ? DateTimeFormatter.ofPattern("yyyy-MM-dd", outLocale) :
-                            DateTimeFormatter.ofPattern(ps[2], outLocale);
-                } catch (Exception e) {
-                    errorState.set(true);
-                    return "<Invalid outFormat: '%s'>".formatted(ps[2]);
-                }
-
-                try {
-                    return outFormat.format(inFormat.parse(ps[4]));
-                } catch (Exception e) {
-                    errorState.set(true);
-                    return "<Failed to parse or format datetime (%s)>".formatted(ps[4]);
-                }
-            });
             case "split", "spt", "s" -> evaluate(errorDelta, errorState, func, stack, new String[]{"splitter", "out", "in"}, ps -> {
                 // The final output
                 final var input = ps[2];
@@ -381,6 +338,49 @@ public class PlotNameResolver {
                     return "<Invalid format '%s'>".formatted(ps[0]);
                 }
             });
+            case "datetimeformat", "dtfmt" -> evaluate(errorDelta, errorState, func, stack,
+                    new String[]{"inFormat", "inLocale", "outFormat", "outLocale", "datetime"}, ps -> {
+                        Locale inLocale;
+                        Locale outLocale;
+                        DateTimeFormatter inFormat;
+                        DateTimeFormatter outFormat;
+                        try {
+                            inLocale = ps[1].equals("_") ? Locale.getDefault() : Locale.forLanguageTag(ps[1]);
+                        } catch (Exception e) {
+                            errorState.set(true);
+                            return "<Invalid inLocale: '%s'>".formatted(ps[1]);
+                        }
+
+                        try {
+                            outLocale = ps[3].equals("_") ? Locale.getDefault() : Locale.forLanguageTag(ps[3]);
+                        } catch (Exception e) {
+                            errorState.set(true);
+                            return "<Invalid outLocale: '%s'>".formatted(ps[3]);
+                        }
+
+                        try {
+                            inFormat = ps[0].equals("_") ? DateTimeFormatter.ofPattern("yyyy-MM-dd", inLocale) :
+                                    DateTimeFormatter.ofPattern(ps[0], inLocale);
+                        } catch (Exception e) {
+                            errorState.set(true);
+                            return "<Invalid inFormat: '%s'>".formatted(ps[0]);
+                        }
+
+                        try {
+                            outFormat = ps[2].equals("_") ? DateTimeFormatter.ofPattern("yyyy-MM-dd", outLocale) :
+                                    DateTimeFormatter.ofPattern(ps[2], outLocale);
+                        } catch (Exception e) {
+                            errorState.set(true);
+                            return "<Invalid outFormat: '%s'>".formatted(ps[2]);
+                        }
+
+                        try {
+                            return outFormat.format(inFormat.parse(ps[4]));
+                        } catch (Exception e) {
+                            errorState.set(true);
+                            return "<Failed to parse or format datetime (%s)>".formatted(ps[4]);
+                        }
+                    });
             default -> {
                 errorState.set(true);
                 stack.pop(); // Function name invalid, replace with error message

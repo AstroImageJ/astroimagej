@@ -83,6 +83,7 @@ public class PlotNameResolver {
         var hasErrored = false;
         var indexLastError = 0;
         var indexLastFunctionSpan = 0;
+        var context = new ResolverContext(table, stack);
         for (int i = tokens.length - 1; i >= 0; i--) {
             if (i+1 < whitespace.length) {
                 stack.push(whitespace[i+1]);
@@ -98,7 +99,11 @@ public class PlotNameResolver {
                     }
                 }
 
-                var e = parseAndEvaluate(table, stack, indexLastError - i, indexLastFunctionSpan - i);
+                context.errorDelta = indexLastError - i;
+                context.whitespaceDelta = indexLastFunctionSpan - i;
+
+                var e = parseAndEvaluate(context);
+
                 if (e.first()) {
                     indexLastError = i - e.second();
                 }
@@ -106,6 +111,7 @@ public class PlotNameResolver {
                     hasErrored = e.first();
                 }
                 indexLastFunctionSpan = i - e.second();
+                context.errorState = false;
             }
         }
 
@@ -122,28 +128,26 @@ public class PlotNameResolver {
         return new Pair.GenericPair<>(b.toString(), hasErrored);
     }
 
-    private static Pair.GenericPair<Boolean, Integer> parseAndEvaluate(MeasurementTable table, Stack<String> stack,
-                                                                       int errorDelta, int whitespaceDelta) {
-        if (stack.empty()) {
-            stack.push("<Missing function name>");
+    private static Pair.GenericPair<Boolean, Integer> parseAndEvaluate(ResolverContext context) {
+        if (context.empty()) {
+            context.push("<Missing function name>");
             return new Pair.GenericPair<>(true, 0);
         }
 
         // Only peek, keep function name in case the input is errored,
         // in which case we don't want to parse it
-        var func = stack.peek();
+        var func = context.peek();
 
         // Handle case where @ was part of function token
         if (func.startsWith("@")) {
             func = func.substring(1);
         }
 
-        var context = new ResolverContext(errorDelta, whitespaceDelta);
         var expectedParams = switch (func) {
             // DATA FETCH FUNCTIONS
-            case "header", "hdr", "h" -> evaluate(context, func, stack, new String[]{"key"}, ps -> {
+            case "header", "hdr", "h" -> evaluate(context, func, new String[]{"key"}, ps -> {
                 var card = ps[0];
-                var i = getImpForSlice(table);
+                var i = context.getImp();
                 if (i != null) {
                     var h = FitsJ.getHeader(i);
                     int c;
@@ -159,11 +163,11 @@ public class PlotNameResolver {
                     return "<Failed to find card with key '%s'>".formatted(card);
                 }
                 context.errorState = true;
-                return "<Found no matching image for '%s'>".formatted(table.getLabel(0));
+                return "<Found no matching image for '%s'>".formatted(context.table.getLabel(0));
             });
-            case "comment", "cmt", "c" -> evaluate(context, func, stack, new String[]{"key"}, ps -> {
+            case "comment", "cmt", "c" -> evaluate(context, func, new String[]{"key"}, ps -> {
                 var card = ps[0];
-                var i = getImpForSlice(table);
+                var i = context.getImp();
                 if (i != null) {
                     var h = FitsJ.getHeader(i);
                     int c;
@@ -179,10 +183,10 @@ public class PlotNameResolver {
                     return "<Failed to find card with key '%s'>".formatted(card);
                 }
                 context.errorState = true;
-                return "<Found no matching image for '%s'>".formatted(table.getLabel(0));
+                return "<Found no matching image for '%s'>".formatted(context.table.getLabel(0));
             });
-            case "title", "ttl" -> evaluate(context, func, stack, new String[0], ps -> {
-                var i = getImpForSlice(table);
+            case "title", "ttl" -> evaluate(context, func, new String[0], ps -> {
+                var i = context.getImp();
                 if (i != null) {
                     var t = i.getTitle();
                     if (t.isEmpty()) {
@@ -192,10 +196,10 @@ public class PlotNameResolver {
                     return t;
                 } else {
                     context.errorState = true;
-                    return "<Found no matching image for '%s'>".formatted(table.getLabel(0));
+                    return "<Found no matching image for '%s'>".formatted(context.table.getLabel(0));
                 }
             });
-            case "pref", "prf", "p" -> evaluate(context, func, stack, new String[]{"key"}, ps -> {
+            case "pref", "prf", "p" -> evaluate(context, func, new String[]{"key"}, ps -> {
                 var mappedKey = keyResolver(ps[0]);
                 if (Prefs.containsKey(mappedKey)) {
                     return Prefs.get(mappedKey, "<default>");
@@ -203,7 +207,7 @@ public class PlotNameResolver {
                 context.errorState = true;
                 return "<Missing value for '%s' (%s)>".formatted(mappedKey, ps[0]);
             });
-            case "today" -> evaluate(context, func, stack, new String[]{"zoneId"}, ps -> {
+            case "today" -> evaluate(context, func, new String[]{"zoneId"}, ps -> {
                 try {
                     var zoneId = ps[0].equals("_") ? Clock.systemDefaultZone().getZone() : ZoneId.of(ps[0]);
                     return String.valueOf(LocalDate.now(zoneId));
@@ -212,8 +216,8 @@ public class PlotNameResolver {
                     return "<Invalid zoneId: '%s'>".formatted(ps[0]);
                 }
             });
-            case "table", "tbl", "t" -> evaluate(context, func, stack, new String[]{"col", "row"}, ps -> {
-                if (!table.columnExists(ps[0]) && !"Label".equals(ps[0])) {
+            case "table", "tbl", "t" -> evaluate(context, func, new String[]{"col", "row"}, ps -> {
+                if (!context.table.columnExists(ps[0]) && !"Label".equals(ps[0])) {
                     context.errorState = true;
                     return "<Invalid col. name for input: '%s'>".formatted(ps[0]);
                 }
@@ -222,19 +226,19 @@ public class PlotNameResolver {
                 if (!"Label".equals(ps[0])) {
                     switch (ps[1]) {
                         case "$AVG" -> {
-                            var c = table.getColumn(ps[0]);
+                            var c = context.table.getColumn(ps[0]);
                             return String.valueOf(Stat.mean(c));
                         }
                         case "$MIN" -> {
-                            var c = table.getColumn(ps[0]);
+                            var c = context.table.getColumn(ps[0]);
                             return String.valueOf(new Stat(c).minimum());
                         }
                         case "$MAX" -> {
-                            var c = table.getColumn(ps[0]);
+                            var c = context.table.getColumn(ps[0]);
                             return String.valueOf(new Stat(c).maximum());
                         }
                         case "$MED" -> {
-                            var c = table.getColumn(ps[0]);
+                            var c = context.table.getColumn(ps[0]);
                             return String.valueOf(Stat.median(c));
                         }
                         default -> {}
@@ -244,27 +248,27 @@ public class PlotNameResolver {
                 try {
                     var row = switch (ps[1]) {
                         case "$F" -> 0;
-                        case "$L" -> table.size() - 1;
+                        case "$L" -> context.table.size() - 1;
                         default -> Integer.parseInt(ps[1]) - 1;
                     };
 
-                    if (row < 0 || row >= table.size()) {
+                    if (row < 0 || row >= context.table.size()) {
                         context.errorState = true;
                         return "<Row index out of bounds: %s>".formatted(row+1);
                     }
 
                     if ("Label".equals(ps[0])) {
-                        return table.getLabel(row);
+                        return context.table.getLabel(row);
                     }
 
-                    return String.valueOf(table.getValue(ps[0], row));
+                    return String.valueOf(context.table.getValue(ps[0], row));
                 } catch (Exception e) {
                     context.errorState = true;
                     return "<Failed to parse row: %s>".formatted(ps[1]);
                 }
             });
             // OPERATING FUNCTIONS
-            case "split", "spt", "s" -> evaluate(context, func, stack, new String[]{"splitter", "out", "in"}, ps -> {
+            case "split", "spt", "s" -> evaluate(context, func, new String[]{"splitter", "out", "in"}, ps -> {
                 // The final output
                 final var input = ps[2];
                 var s = input.split(ps[0]);
@@ -292,7 +296,7 @@ public class PlotNameResolver {
                     }
                 });
             });
-            case "regex", "rgx", "r" -> evaluate(context, func, stack, new String[]{"exp", "out", "in"}, ps -> {
+            case "regex", "rgx", "r" -> evaluate(context, func, new String[]{"exp", "out", "in"}, ps -> {
                 var regex = ps[0];
                 var m = SIMPLE_VARIABLE.matcher(ps[1]);
                 // The final output
@@ -336,7 +340,7 @@ public class PlotNameResolver {
                     }
                 });
             });
-            case "format", "fmt", "f" -> evaluate(context, func, stack, new String[]{"exp", "in"}, ps -> {
+            case "format", "fmt", "f" -> evaluate(context, func, new String[]{"exp", "in"}, ps -> {
                 try {
                     return new DecimalFormat(ps[0]).format(Double.parseDouble(ps[1].trim()));
                 } catch (NumberFormatException e) {
@@ -347,7 +351,7 @@ public class PlotNameResolver {
                     return "<Invalid format '%s'>".formatted(ps[0]);
                 }
             });
-            case "datetimeformat", "dtfmt" -> evaluate(context, func, stack,
+            case "datetimeformat", "dtfmt" -> evaluate(context, func,
                     new String[]{"inFormat", "inLocale", "outFormat", "outLocale", "datetime"}, ps -> {
                         Locale inLocale;
                         Locale outLocale;
@@ -392,8 +396,8 @@ public class PlotNameResolver {
                     });
             default -> {
                 context.errorState = true;
-                stack.pop(); // Function name invalid, replace with error message
-                stack.push("<Unknown function: %s>".formatted(func));
+                context.pop(); // Function name invalid, replace with error message
+                context.push("<Unknown function: %s>".formatted(func));
                 yield 0;
             }
         };
@@ -401,8 +405,8 @@ public class PlotNameResolver {
         return new Pair.GenericPair<>(context.errorState, expectedParams);
     }
 
-    private static int evaluate(ResolverContext context, String fName, Stack<String> stack,
-                                String[] paramNames, Function<String[], String> function) {
+    private static int evaluate(ResolverContext context, String fName, String[] paramNames,
+                                Function<String[], String> function) {
         // Don't evaluate function, the input is an error message
         if (context.errorDelta < paramNames.length && context.errorDelta > 0) {
             return paramNames.length;
@@ -418,20 +422,20 @@ public class PlotNameResolver {
         }
 
         // Remove function name
-        stack.pop();
+        context.pop();
 
-        var e = extractParams(fName, stack, paramNames);
+        var e = extractParams(fName, context, paramNames);
 
         // Adjust whitespace after function output
-        if (!stack.empty() && (context.whitespaceDelta >= paramNames.length || context.whitespaceDelta <= 0)) {
-            stack.push(stack.pop().replaceFirst(" ", ""));
+        if (!context.empty() && (context.whitespaceDelta >= paramNames.length || context.whitespaceDelta <= 0)) {
+            context.push(context.pop().replaceFirst(" ", ""));
         }
 
         // Put output onto stack
         if (e.missingParam) {
-            stack.push(e.msg);
+            context.push(e.msg);
         } else {
-            stack.push(function.apply(e.params));
+            context.push(function.apply(e.params));
         }
 
         context.update(e.missingParam);
@@ -439,16 +443,16 @@ public class PlotNameResolver {
         return paramNames.length;
     }
 
-    private static Extraction extractParams(String function, Stack<String> stack, String[] paramNames) {
+    private static Extraction extractParams(String function, ResolverContext context, String[] paramNames) {
         var params = new String[paramNames.length];
 
         StringBuilder missingParams = new StringBuilder();
         for (int p = 0; p < params.length; p++) {
-            if (!stack.empty()) {
-                stack.pop(); // Remove separating whitespace
+            if (!context.empty()) {
+                context.pop(); // Remove separating whitespace
             }
-            if (!stack.empty()) {
-                var o = stack.pop();
+            if (!context.empty()) {
+                var o = context.pop();
                 // Unwrap quoted column
                 //todo handle escaped quotes
                 if (((o.startsWith("\"") && o.endsWith("\"")) || (o.startsWith("'") && o.endsWith("'"))) && o.length() > 1) {
@@ -461,7 +465,8 @@ public class PlotNameResolver {
         }
 
         if (!missingParams.isEmpty()) {
-            return new Extraction(null, true, "<Missing parameter(s) for %s: %s>".formatted(function, missingParams.toString()));
+            return new Extraction(null, true, "<Missing parameter(s) for %s: %s>"
+                    .formatted(function, missingParams.toString()));
         }
 
         return new Extraction(params, false, null);
@@ -538,16 +543,48 @@ public class PlotNameResolver {
         public int whitespaceDelta;
         int errorDelta;
         boolean errorState;
+        MeasurementTable table;
+        Stack<String> stack;
+        private ImagePlus imp;
+        private boolean failedImpDiscovery;
 
-        public ResolverContext(int errorDelta, int whitespaceDelta) {
-            this.whitespaceDelta = whitespaceDelta;
-            this.errorDelta = errorDelta;
+        public ResolverContext(MeasurementTable table, Stack<String> stack) {
+            this.table = table;
+            this.stack = stack;
         }
 
         public void update(boolean errorState) {
             if (!this.errorState) {
                 this.errorState = errorState;
             }
+        }
+
+        public void push(String s) {
+            stack.push(s);
+        }
+
+        public boolean empty() {
+            return stack.empty();
+        }
+
+        public String pop() {
+            return stack.pop();
+        }
+
+        public String peek() {
+            return stack.peek();
+        }
+
+        public ImagePlus getImp() {
+            if (imp != null) {
+                return imp;
+            }
+            if (!failedImpDiscovery) {
+                imp = getImpForSlice(table);
+                failedImpDiscovery = imp == null;
+            }
+
+            return imp;
         }
     }
 }

@@ -74,8 +74,10 @@ public class PlotNameResolver {
     }
 
     private static Pair.GenericPair<String, Boolean> resolve(MeasurementTable table, String pattern) {
-        var matcher = TOKENIZER.matcher(pattern);
-        var tokens = matcher.results().map(MatchResult::group).toArray(String[]::new);
+        var tokens = TOKENIZER.matcher(pattern).results().map(MatchResult::group)
+                // Allow {} to be used decorators
+                .map(s -> s.replaceAll("\\\\(?=[{}])|(?<!\\\\)[{}]", ""))
+                .toArray(String[]::new);
         var whitespace = TOKENIZER.splitAsStream(pattern).toArray(String[]::new);
 
         var stack = new Stack<String>();

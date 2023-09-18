@@ -108,6 +108,11 @@ public class PlotNameResolver {
             }
         }
 
+        // Add preceding whitespace
+        if (whitespace.length > 0) {
+            stack.push(whitespace[0]);
+        }
+
         var b = new StringBuilder();
         while (!stack.empty()) {
             b.append(stack.pop());

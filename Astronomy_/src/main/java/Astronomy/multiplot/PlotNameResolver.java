@@ -449,7 +449,7 @@ public class PlotNameResolver {
                 var o = stack.pop();
                 // Unwrap quoted column
                 //todo handle escaped quotes
-                if ((o.startsWith("\"") && o.endsWith("\"")) || (o.startsWith("'") && o.endsWith("'"))) {
+                if (((o.startsWith("\"") && o.endsWith("\"")) || (o.startsWith("'") && o.endsWith("'"))) && o.length() > 1) {
                     o = o.substring(1, o.length()-1);
                 }
                 params[p] = o;

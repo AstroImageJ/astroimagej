@@ -83,6 +83,7 @@ public class PlotNameResolver {
         var stack = new Stack<String>();
         var hasErrored = false;
         var indexLastError = 0;
+        var indexLastFunctionSpan = 0;
         for (int i = tokens.length - 1; i >= 0; i--) {
             if (i+1 < whitespace.length) {
                 stack.push(whitespace[i+1]);
@@ -98,13 +99,14 @@ public class PlotNameResolver {
                     }
                 }
 
-                var e = parseAndEvaluate(table, stack, indexLastError - i);
+                var e = parseAndEvaluate(table, stack, indexLastError - i, indexLastFunctionSpan - i);
                 if (e.first()) {
                     indexLastError = i - e.second();
                 }
                 if (!hasErrored) {
                     hasErrored = e.first();
                 }
+                indexLastFunctionSpan = i - e.second();
             }
         }
 
@@ -121,7 +123,8 @@ public class PlotNameResolver {
         return new Pair.GenericPair<>(b.toString(), hasErrored);
     }
 
-    private static Pair.GenericPair<Boolean, Integer> parseAndEvaluate(MeasurementTable table, Stack<String> stack, int errorDelta) {
+    private static Pair.GenericPair<Boolean, Integer> parseAndEvaluate(MeasurementTable table, Stack<String> stack,
+                                                                       int errorDelta, int whitespaceDelta) {
         if (stack.empty()) {
             stack.push("<Missing function name>");
             return new Pair.GenericPair<>(true, 0);
@@ -136,10 +139,12 @@ public class PlotNameResolver {
             func = func.substring(1);
         }
 
-        var errorState = new AtomicBoolean(false);
+        var state = new State();
+        state.errorDelta = errorDelta;
+        state.whitespaceDelta = whitespaceDelta;
         var expectedParams = switch (func) {
             // DATA FETCH FUNCTIONS
-            case "header", "hdr", "h" -> evaluate(errorDelta, errorState, func, stack, new String[]{"key"}, ps -> {
+            case "header", "hdr", "h" -> evaluate(state, func, stack, new String[]{"key"}, ps -> {
                 var card = ps[0];
                 var i = getImpForSlice(table);
                 if (i != null) {
@@ -153,13 +158,13 @@ public class PlotNameResolver {
                         }
                         return val;
                     }
-                    errorState.set(true);
+                    state.errorState.set(true);
                     return "<Failed to find card with key '%s'>".formatted(card);
                 }
-                errorState.set(true);
+                state.errorState.set(true);
                 return "<Found no matching image for '%s'>".formatted(table.getLabel(0));
             });
-            case "comment", "cmt", "c" -> evaluate(errorDelta, errorState, func, stack, new String[]{"key"}, ps -> {
+            case "comment", "cmt", "c" -> evaluate(state, func, stack, new String[]{"key"}, ps -> {
                 var card = ps[0];
                 var i = getImpForSlice(table);
                 if (i != null) {
@@ -173,46 +178,46 @@ public class PlotNameResolver {
                         }
                         return val;
                     }
-                    errorState.set(true);
+                    state.errorState.set(true);
                     return "<Failed to find card with key '%s'>".formatted(card);
                 }
-                errorState.set(true);
+                state.errorState.set(true);
                 return "<Found no matching image for '%s'>".formatted(table.getLabel(0));
             });
-            case "title", "ttl" -> evaluate(errorDelta, errorState, func, stack, new String[0], ps -> {
+            case "title", "ttl" -> evaluate(state, func, stack, new String[0], ps -> {
                 var i = getImpForSlice(table);
                 if (i != null) {
                     var t = i.getTitle();
                     if (t.isEmpty()) {
-                        errorState.set(true);
+                        state.errorState.set(true);
                         return "<Stack title was empty>";
                     }
                     return t;
                 } else {
-                    errorState.set(true);
+                    state.errorState.set(true);
                     return "<Found no matching image for '%s'>".formatted(table.getLabel(0));
                 }
             });
-            case "pref", "prf", "p" -> evaluate(errorDelta, errorState, func, stack, new String[]{"key"}, ps -> {
+            case "pref", "prf", "p" -> evaluate(state, func, stack, new String[]{"key"}, ps -> {
                 var mappedKey = keyResolver(ps[0]);
                 if (Prefs.containsKey(mappedKey)) {
                     return Prefs.get(mappedKey, "<default>");
                 }
-                errorState.set(true);
+                state.errorState.set(true);
                 return "<Missing value for '%s' (%s)>".formatted(mappedKey, ps[0]);
             });
-            case "today" -> evaluate(errorDelta, errorState, func, stack, new String[]{"zoneId"}, ps -> {
+            case "today" -> evaluate(state, func, stack, new String[]{"zoneId"}, ps -> {
                 try {
                     var zoneId = ps[0].equals("_") ? Clock.systemDefaultZone().getZone() : ZoneId.of(ps[0]);
                     return String.valueOf(LocalDate.now(zoneId));
                 } catch (Exception e) {
-                    errorState.set(true);
+                    state.errorState.set(true);
                     return "<Invalid zoneId: '%s'>".formatted(ps[0]);
                 }
             });
-            case "table", "tbl", "t" -> evaluate(errorDelta, errorState, func, stack, new String[]{"col", "row"}, ps -> {
+            case "table", "tbl", "t" -> evaluate(state, func, stack, new String[]{"col", "row"}, ps -> {
                 if (!table.columnExists(ps[0]) && !"Label".equals(ps[0])) {
-                    errorState.set(true);
+                    state.errorState.set(true);
                     return "<Invalid col. name for input: '%s'>".formatted(ps[0]);
                 }
 
@@ -247,7 +252,7 @@ public class PlotNameResolver {
                     };
 
                     if (row < 0 || row >= table.size()) {
-                        errorState.set(true);
+                        state.errorState.set(true);
                         return "<Row index out of bounds: %s>".formatted(row+1);
                     }
 
@@ -257,12 +262,12 @@ public class PlotNameResolver {
 
                     return String.valueOf(table.getValue(ps[0], row));
                 } catch (Exception e) {
-                    errorState.set(true);
+                    state.errorState.set(true);
                     return "<Failed to parse row: %s>".formatted(ps[1]);
                 }
             });
             // OPERATING FUNCTIONS
-            case "split", "spt", "s" -> evaluate(errorDelta, errorState, func, stack, new String[]{"splitter", "out", "in"}, ps -> {
+            case "split", "spt", "s" -> evaluate(state, func, stack, new String[]{"splitter", "out", "in"}, ps -> {
                 // The final output
                 final var input = ps[2];
                 var s = input.split(ps[0]);
@@ -276,21 +281,21 @@ public class PlotNameResolver {
                         }
                         if (g > -1) {
                             if (g >= s.length) {
-                                errorState.set(true);
+                                state.errorState.set(true);
                                 return "<Split group greater than possible: '%s'>".formatted(g);
                             }
                             return s[g];
                         } else {
-                            errorState.set(true);
+                            state.errorState.set(true);
                             return "<Split group must be greater than -1: '%s'>".formatted(g);
                         }
                     } catch (NumberFormatException e) {
-                        errorState.set(true);
+                        state.errorState.set(true);
                         return "<Failed to get split match number: '%s'>".formatted(v);
                     }
                 });
             });
-            case "regex", "rgx", "r" -> evaluate(errorDelta, errorState, func, stack, new String[]{"exp", "out", "in"}, ps -> {
+            case "regex", "rgx", "r" -> evaluate(state, func, stack, new String[]{"exp", "out", "in"}, ps -> {
                 var regex = ps[0];
                 var m = SIMPLE_VARIABLE.matcher(ps[1]);
                 // The final output
@@ -298,7 +303,7 @@ public class PlotNameResolver {
                 try {
                     matcher = Pattern.compile(regex).matcher(ps[2]);
                 } catch (PatternSyntaxException e) {
-                    errorState.set(true);
+                    state.errorState.set(true);
                     return "<Pattern incomplete: %s>".formatted(e.getMessage());
                 }
 
@@ -309,14 +314,14 @@ public class PlotNameResolver {
                     try {
                         var g = Integer.parseInt(v);
                         if (g < 0) {
-                            errorState.set(true);
+                            state.errorState.set(true);
                             return "<Invalid group index: '%s'. Must be > 0>".formatted(g);
                         }
                         if (matcher.find()) {
                             if (g <= matcher.groupCount()) {
                                 return matcher.group(g);
                             }
-                            errorState.set(true);
+                            state.errorState.set(true);
                             return "<Invalid group index: '%s'>".formatted(g);
                         }
                         return "<Failed to match '%s'>".formatted(matcher.pattern().pattern());
@@ -325,27 +330,27 @@ public class PlotNameResolver {
                             try {
                                 return matcher.group(v);
                             } catch (IllegalArgumentException ignored) {
-                                errorState.set(true);
+                                state.errorState.set(true);
                                 return "<Invalid group name: '%s'>".formatted(v);
                             }
                         }
-                        errorState.set(true);
+                        state.errorState.set(true);
                         return "<Failed to match '%s'>".formatted(matcher.pattern().pattern());
                     }
                 });
             });
-            case "format", "fmt", "f" -> evaluate(errorDelta, errorState, func, stack, new String[]{"exp", "in"}, ps -> {
+            case "format", "fmt", "f" -> evaluate(state, func, stack, new String[]{"exp", "in"}, ps -> {
                 try {
                     return new DecimalFormat(ps[0]).format(Double.parseDouble(ps[1].trim()));
                 } catch (NumberFormatException e) {
-                    errorState.set(true);
+                    state.errorState.set(true);
                     return "<Failed to convert '%s' into a double>".formatted(ps[1]);
                 } catch (IllegalArgumentException e) {
-                    errorState.set(true);
+                    state.errorState.set(true);
                     return "<Invalid format '%s'>".formatted(ps[0]);
                 }
             });
-            case "datetimeformat", "dtfmt" -> evaluate(errorDelta, errorState, func, stack,
+            case "datetimeformat", "dtfmt" -> evaluate(state, func, stack,
                     new String[]{"inFormat", "inLocale", "outFormat", "outLocale", "datetime"}, ps -> {
                         Locale inLocale;
                         Locale outLocale;
@@ -354,14 +359,14 @@ public class PlotNameResolver {
                         try {
                             inLocale = ps[1].equals("_") ? Locale.getDefault() : Locale.forLanguageTag(ps[1]);
                         } catch (Exception e) {
-                            errorState.set(true);
+                            state.errorState.set(true);
                             return "<Invalid inLocale: '%s'>".formatted(ps[1]);
                         }
 
                         try {
                             outLocale = ps[3].equals("_") ? Locale.getDefault() : Locale.forLanguageTag(ps[3]);
                         } catch (Exception e) {
-                            errorState.set(true);
+                            state.errorState.set(true);
                             return "<Invalid outLocale: '%s'>".formatted(ps[3]);
                         }
 
@@ -369,7 +374,7 @@ public class PlotNameResolver {
                             inFormat = ps[0].equals("_") ? DateTimeFormatter.ofPattern("yyyy-MM-dd", inLocale) :
                                     DateTimeFormatter.ofPattern(ps[0], inLocale);
                         } catch (Exception e) {
-                            errorState.set(true);
+                            state.errorState.set(true);
                             return "<Invalid inFormat: '%s'>".formatted(ps[0]);
                         }
 
@@ -377,32 +382,32 @@ public class PlotNameResolver {
                             outFormat = ps[2].equals("_") ? DateTimeFormatter.ofPattern("yyyy-MM-dd", outLocale) :
                                     DateTimeFormatter.ofPattern(ps[2], outLocale);
                         } catch (Exception e) {
-                            errorState.set(true);
+                            state.errorState.set(true);
                             return "<Invalid outFormat: '%s'>".formatted(ps[2]);
                         }
 
                         try {
                             return outFormat.format(inFormat.parse(ps[4]));
                         } catch (Exception e) {
-                            errorState.set(true);
+                            state.errorState.set(true);
                             return "<Failed to parse or format datetime (%s)>".formatted(ps[4]);
                         }
                     });
             default -> {
-                errorState.set(true);
+                state.errorState.set(true);
                 stack.pop(); // Function name invalid, replace with error message
                 stack.push("<Unknown function: %s>".formatted(func));
                 yield 0;
             }
         };
 
-        return new Pair.GenericPair<>(errorState.get(), expectedParams);
+        return new Pair.GenericPair<>(state.errorState.get(), expectedParams);
     }
 
-    private static int evaluate(int errorDelta, AtomicBoolean errorState, String fName, Stack<String> stack,
+    private static int evaluate(State state, String fName, Stack<String> stack,
                                 String[] paramNames, Function<String[], String> function) {
         // Don't evaluate function, the input is an error message
-        if (errorDelta < paramNames.length && errorDelta > 0) {
+        if (state.errorDelta < paramNames.length && state.errorDelta > 0) {
             return paramNames.length;
         }
 
@@ -421,7 +426,7 @@ public class PlotNameResolver {
         var e = extractParams(fName, stack, paramNames);
 
         // Adjust whitespace after function output
-        if (!stack.empty()) {
+        if (!stack.empty() && (state.whitespaceDelta >= paramNames.length || state.whitespaceDelta <= 0)) {
             stack.push(stack.pop().replaceFirst(" ", ""));
         }
 
@@ -432,7 +437,7 @@ public class PlotNameResolver {
             stack.push(function.apply(e.params));
         }
 
-        errorState.compareAndExchange(false, e.missingParam);
+        state.errorState.compareAndExchange(false, e.missingParam);
 
         return paramNames.length;
     }
@@ -530,5 +535,11 @@ public class PlotNameResolver {
         UIHelper.setCenteredOnScreen(new HelpPanel("help/plotMacroHelp.html", "Programmable Plot Titles"), MultiPlot_.mainFrame);
     }
 
-    record Extraction(String[] params, boolean missingParam, String msg) {}
+    private record Extraction(String[] params, boolean missingParam, String msg) {}
+    
+    private static class State {
+        public int whitespaceDelta;
+        int errorDelta;
+        AtomicBoolean errorState = new AtomicBoolean();//todo regular bool?
+    } 
 }

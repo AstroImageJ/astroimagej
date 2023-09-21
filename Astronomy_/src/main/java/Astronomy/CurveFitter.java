@@ -1037,7 +1037,7 @@ public class CurveFitter {
         var dof = MultiPlot_.dof[curve];
         int[] index;
         boolean[] isFitted = Arrays.copyOf(MultiPlot_.isFitted[curve], MultiPlot_.isFitted[curve].length);
-        double[] coeffs = Arrays.copyOf(MultiPlot_.coeffs[curve], MultiPlot_.coeffs[curve].length);
+        double[] coeffs;
         var detrendVars = Arrays.copyOf(MultiPlot_.detrendVars, MultiPlot_.detrendVars.length);
         var xModel1 = MultiPlot_.xModel1[curve] != null ? Arrays.copyOf(MultiPlot_.xModel1[curve], MultiPlot_.xModel1[curve].length) : null;
         var xModel2 = MultiPlot_.xModel2[curve];
@@ -1318,7 +1318,7 @@ public class CurveFitter {
                     }
                     // End update
 
-                    if ((detrendVarsUsed[curve] > 0 || detrendFitIndex[curve] == 9 && useTransitFit[curve]) && detrendYNotConstant && detrendCount > (detrendFitIndex[curve] == 9 && useTransitFit[curve] ? 7 : 0) + detrendVarsUsed[curve] + 2) { //need enough data to provide degrees of freedom for successful fit
+                    if ((detrendVarsUsed[curve] >= 0 || detrendFitIndex[curve] == 9 && useTransitFit[curve]) && detrendYNotConstant && detrendCount > (detrendFitIndex[curve] == 9 && useTransitFit[curve] ? 7 : 0) + detrendVarsUsed[curve] + 2) { //need enough data to provide degrees of freedom for successful fit
                         detrendX = Arrays.copyOf(detrendX, detrendCount);
                         detrendY = Arrays.copyOf(detrendY, detrendCount);
                         detrendYE = Arrays.copyOf(detrendYE, detrendCount);
@@ -1334,7 +1334,7 @@ public class CurveFitter {
                                     isFitted[p] = true;
                                     nFitted++;
                                 } else {
-                                    isFitted[p] = false;//todo mark
+                                    isFitted[p] = false;
                                 }
                             }
 
@@ -1484,7 +1484,7 @@ public class CurveFitter {
                         }
 
 
-                        if (detrendFitIndex[curve] == 9 && useTransitFit[curve]) {//todo mark
+                        if (detrendFitIndex[curve] == 9 && useTransitFit[curve]) {
                             createDetrendModel = false;
                             xModel1 = detrendX;
                             int xModel2Len = plotSizeX + 1;

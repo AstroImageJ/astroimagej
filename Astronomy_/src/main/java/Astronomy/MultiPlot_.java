@@ -2332,8 +2332,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                 }
                             }
 //                                    IJ.log("varCount="+varCount);
-                            if ((detrendVarsUsed[curve] > 0 || detrendFitIndex[curve] == 9 && useTransitFit[curve]) && detrendYNotConstant && detrendCount > (detrendFitIndex[curve] == 9 && useTransitFit[curve] ? 7 : 0) + detrendVarsUsed[curve] + 2) //need enough data to provide degrees of freedom for successful fit
-                            {
+                            if ((detrendVarsUsed[curve] >= 0 || detrendFitIndex[curve] == 9 && useTransitFit[curve]) && detrendYNotConstant && detrendCount > (detrendFitIndex[curve] == 9 && useTransitFit[curve] ? 7 : 0) + detrendVarsUsed[curve] + 2) { //need enough data to provide degrees of freedom for successful fit
                                 detrendXs[curve] = Arrays.copyOf(detrendX, detrendCount);
                                 detrendYs[curve] = Arrays.copyOf(detrendY, detrendCount);
                                 detrendYEs[curve] = Arrays.copyOf(detrendYE, detrendCount);
@@ -4312,6 +4311,13 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 sd += residual * residual;
             }
             return Math.sqrt(sd / (double) numData);
+        }
+    }
+
+    public static class NoTransitFit implements MinimizationFunction {
+        @Override
+        public double function(double[] param) {
+            return 0;
         }
     }
 

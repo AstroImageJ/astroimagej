@@ -4094,7 +4094,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             });
             ((PlotWindow) plotWindow).getHelpButton().addActionListener(e -> {
                 String filename = "help/plotwindow_help.html";
-                new HelpPanel(filename, "Plot");
+                new HelpPanel(filename, "Plot").setVisible(true);
             });
             plotWindow.setIconImage(plotIcon.getImage());
             plotImage = plotWindow.getImagePlus();//WindowManager.getImage("Plot of "+tableName);
@@ -8015,7 +8015,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         JMenuItem helphelpPlotWindowmenuitem = new JMenuItem("Plot Window Help...");
         helphelpPlotWindowmenuitem.addActionListener(e -> {
             String filename = "help/plotwindow_help.html";
-            new HelpPanel(filename, "Plot");
+            new HelpPanel(filename, "Plot").setVisible(true);
         });
         helpmenu.add(helphelpPlotWindowmenuitem);
 
@@ -17938,12 +17938,12 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
     static void openHelpPanel() {
         String filename = "help/multiplot_help.htm";
-        new HelpPanel(filename, "Multi-plot");
+        new HelpPanel(filename, "Multi-plot").setVisible(true);
     }
 
     static void openDataHelpPanel() {
         String filename = "help/multiplot_data_help.htm";
-        new HelpPanel(filename, "Data Naming Convention");
+        new HelpPanel(filename, "Data Naming Convention").setVisible(true);
     }
 
 

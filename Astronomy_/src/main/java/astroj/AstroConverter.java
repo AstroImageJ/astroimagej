@@ -3884,7 +3884,7 @@ void processObservatories(String line, BufferedReader in)
     protected void openHelpPanel()
         {
         String filename = "help/coord_conv_help.htm";
-        new HelpPanel(filename, "Coordinate Converter");
+        new HelpPanel(filename, "Coordinate Converter").setVisible(true);
 //        helpPanel.setVisible(true);
         }
 

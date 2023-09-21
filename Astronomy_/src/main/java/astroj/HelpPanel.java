@@ -81,7 +81,6 @@ import static ij.IJ.showMessage;
 
 public class HelpPanel extends JFrame implements ActionListener, DocumentListener {
     private final URL helpURL;
-    private JFrame mainFrame;
     private JPanel mainPanel;
     private JTextField entry;
     private JLabel jLabel1;
@@ -199,9 +198,8 @@ public class HelpPanel extends JFrame implements ActionListener, DocumentListene
 //        jScrollPanel.setPreferredSize(new Dimension(350, 750));
         jLabel1.setText("Search:");
 
-		mainFrame = new JFrame (callingProgramID+" Help");
-        mainFrame.setIconImage(dialogFrameIcon.getImage());
-        mainFrame.setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
+        setIconImage(dialogFrameIcon.getImage());
+        setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
 //        mainFrame.addWindowListener(new WindowAdapter(){
 //            @Override
 //            public void windowClosing(WindowEvent e){
@@ -217,11 +215,10 @@ public class HelpPanel extends JFrame implements ActionListener, DocumentListene
         mainPanel.add(status);
         SpringUtil.makeCompactGrid (mainPanel,mainPanel.getComponentCount(),1, 2,2,2,2);
 
-		mainFrame.add (mainPanel);
-		mainFrame.pack();
-		mainFrame.setResizable (true);
+		add(mainPanel);
+		pack();
+		setResizable(true);
 //        mainFrame.setLocation(dialogFrameLocationX, dialogFrameLocationY);
-		mainFrame.setVisible (true);
     }
 
     public void search() {

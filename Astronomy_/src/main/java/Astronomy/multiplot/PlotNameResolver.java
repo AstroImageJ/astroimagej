@@ -32,6 +32,7 @@ public class PlotNameResolver {
             Pattern.compile("((?=[\"'])(?:\"[^\"\\\\]*(?:\\\\[\\s\\S][^\"\\\\]*)*\"|'[^'\\\\]*(?:\\\\[\\s\\S][^'\\\\]*)*')|\\S+)");
     private static final Pattern SIMPLE_VARIABLE = Pattern.compile("(\\$\\S+)");
     private static final Pattern LABEL_VARIABLE = Pattern.compile("(\\$[0-9]+)");
+    private static final HelpPanel helpPanel = new HelpPanel("help/plotMacroHelp.html", "Programmable Plot Titles");
     private static Pair.GenericPair<String, Boolean> lastTitleState;
     private static Pair.GenericPair<String, Boolean> lastSubtitleState;
 
@@ -351,7 +352,7 @@ public class PlotNameResolver {
                     return "<Invalid format '%s'>".formatted(ps[0]);
                 }
             });
-            case "datetimeformat", "dtfmt" -> evaluate(context, func,
+            case "datetimeformat", "dtf" -> evaluate(context, func,
                     new String[]{"inFormat", "inLocale", "outFormat", "outLocale", "datetime"}, ps -> {
                         Locale inLocale;
                         Locale outLocale;
@@ -534,7 +535,10 @@ public class PlotNameResolver {
     }
 
     public static void showHelpWindow() {
-        UIHelper.setCenteredOnScreen(new HelpPanel("help/plotMacroHelp.html", "Programmable Plot Titles"), MultiPlot_.mainFrame);
+        if (!helpPanel.isVisible()) {
+            UIHelper.setCenteredOnScreen(helpPanel, MultiPlot_.mainFrame);
+        }
+        helpPanel.setVisible(true);
     }
 
     private record Extraction(String[] params, boolean missingParam, String msg) {}

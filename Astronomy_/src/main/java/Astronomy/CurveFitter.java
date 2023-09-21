@@ -4,6 +4,7 @@ import Astronomy.multiplot.KeplerSplineControl;
 import Astronomy.multiplot.settings.MPOperator;
 import astroj.IJU;
 import flanagan.analysis.Regression;
+import flanagan.analysis.Stat;
 import flanagan.math.Minimization;
 import flanagan.math.MinimizationFunction;
 import ij.IJ;
@@ -1362,7 +1363,18 @@ public class CurveFitter {
                             }
 
 
-                            dof = detrendX.length - start.length;
+                            dof = detrendX.length - nFitted;
+
+                            // Fit against yAvg when no transit and no params
+                            if (nFitted == 0 && !useTransitFit[curve]) {
+                                start = new double[1];
+                                width = new double[1];
+                                step = new double[1];
+
+                                index = new int[1];
+                                start[0] = Stat.mean(detrendYs[curve]);
+                                minimization.addConstraint(0, -1, 0.0);
+                            }
 
                             // 0 = f0 = baseline flux
                             // 1 = p0 = r_p/r_*
@@ -1439,7 +1451,7 @@ public class CurveFitter {
                             }
 
                             chi2dof = minimization.getMinimum();
-                            bic = chi2dof * (detrendX.length - bestFit.length) + bestFit.length * Math.log(detrendX.length);
+                            bic = (chi2dof * dof) + nFitted * Math.log(detrendX.length);
 
                             fp = fittedDetrendParStart;
                             for (int p = 7; p < maxFittedVars; p++) {
@@ -1974,6 +1986,9 @@ public class CurveFitter {
                     residual = detrendY[j];// - param[0];
                     for (int i = 0; i < numDetrendVars; i++) {
                         residual -= detrendVars[i][j] * dPars[i];
+                    }
+                    if (numDetrendVars == 0 && param.length == 1) {
+                        residual -= param[0];
                     }
                     chi2 += ((residual * residual) / (detrendYE[j] * detrendYE[j]));
                 }

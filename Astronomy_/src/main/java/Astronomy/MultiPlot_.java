@@ -9,6 +9,7 @@ import Astronomy.multiplot.settings.MPOperator;
 import Astronomy.multiplot.table.MeasurementsWindow;
 import astroj.*;
 import flanagan.analysis.Regression;
+import flanagan.analysis.Stat;
 import flanagan.math.Minimization;
 import flanagan.math.MinimizationFunction;
 import ij.*;
@@ -2374,7 +2375,18 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                             }
                                         }
 
-                                        dof[curve] = detrendXs[curve].length - start[curve].length;
+                                        dof[curve] = detrendXs[curve].length - nFitted;
+
+                                        // Fit against yMedian when no transit and no params
+                                        if (nFitted == 0 && !useTransitFit[curve]) {
+                                            start[curve] = new double[1];
+                                            width[curve] = new double[1];
+                                            step[curve] = new double[1];
+
+                                            index[curve] = new int[1];
+                                            start[curve][0] = Stat.mean(detrendYs[curve]);
+                                            minimization.addConstraint(0, -1, 0.0);
+                                        }
 
                                         // 0 = f0 = baseline flux
                                         // 1 = p0 = r_p/r_*
@@ -2503,7 +2515,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                             transitDepthLabel[curve].setText("");
                                         }
                                         chi2dof[curve] = minimization.getMinimum();
-                                        bic[curve] = chi2dof[curve] * (detrendXs[curve].length - bestFit[curve].length) + bestFit[curve].length * Math.log(detrendXs[curve].length);
+                                        //chi2 + p * log(n)
+                                        bic[curve] = (chi2dof[curve] * dof[curve]) + nFitted * Math.log(detrendXs[curve].length);
                                         chi2dofLabel[curve].setText(sixPlaces.format(chi2dof[curve]));
                                         bicLabel[curve].setText(fourPlaces.format(bic[curve]));
                                         dofLabel[curve].setText("" + dof[curve]);
@@ -4453,6 +4466,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     residual = detrendYs[curve][j];// - param[0];
                     for (int i = 0; i < numDetrendVars; i++) {
                         residual -= detrendVars[i][j] * dPars[i];
+                    }
+                    if (numDetrendVars == 0 && param.length == 1) {
+                        residual -= param[0];
                     }
                     chi2[curve] += ((residual * residual) / (detrendYEs[curve][j] * detrendYEs[curve][j]));
                 }

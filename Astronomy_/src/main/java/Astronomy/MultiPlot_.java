@@ -2384,7 +2384,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                             step[curve] = new double[1];
 
                                             index[curve] = new int[1];
-                                            start[curve][0] = Stat.mean(detrendYs[curve]);
+                                            start[curve][0] = Stat.median(detrendYs[curve]);
                                             minimization.addConstraint(0, -1, 0.0);
                                         }
 

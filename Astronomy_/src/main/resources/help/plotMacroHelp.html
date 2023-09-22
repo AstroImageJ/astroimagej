@@ -1,28 +1,56 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Plot Macro Help</title>
+<meta charset="UTF-8">
+<title>Plot Macro Help</title>
 </head>
 <body>
-<!-- todo introduction -->
-<h1>Variables</h1>
-Variables allow for substituting values into a plot title, and begin with <code>$</code>. They have three forms:
-<ul>
-    <li>A column name consisting of only alphanumeric characters</li>
-    <li>A column name in <code>quotes</code> (<code>"</code> or <code>'</code>)</li>
-    <li>A function, in the form of a JSON object</li>
-</ul>
 
-<p></p>
+<h1>Overview</h1>
 
-<h1>Functions</h1>
+The programmable titling capability allows the user to programmatically retrieve plot titling information from:
+<ol>
+    <li>stack window titles (i.e. the stack title at the very top of the image stack display).</li>
+    <li>fits header values and comments,</li>
+    <li>measurements table text values, text, or column statistics, and</li>
+    <li>AIJ preferences.</li>
+</ol>
+<p>In addition to retrieving the titling information, substrings can be extracted from text strings based on any
+    defined separator character (or string), or more complex extraction of substrings can be achieved using
+    regular expressions (regex). Also, numeric values can be formatted.
+
+<p>To use the programmable titling capability, select the "Programmable" option in either or both of
+    the Multi-Plot Main Title and Subtitle subpanels. Start typing fixed text that should be included
+    as would be done in the "Custom" title mode. Insert the syntax described below to automatically extract
+    the variable information that is desired from the various available information sources.
+
+<p>A simple example is as follows:
+    With a stack display title name "TIC144193715-01_20230825_LCO-SSO-1m0_zs_33s",
+    and the following syntax in the plot title box in programmable mode:
+    <code>@split _ $1 @ title from Telescope @split _ $3 @ title</code> the following plot title is created:
+    <code>TIC144193715-01 from Telescope LCO-SSO-1m0</code>
+
+<p>One space (" ") is removed after a function returns, use double space if a space is required.
+
+<p>Any function parameter that contains whitespace or multiple single or double quotes must be wrapped in quotes.
+
+<p><code>@</code> defines a function, and must precede a function name. If the symbol is required in the
+    plot title, it must be escaped with a slash eg. <code>\@</code>.
+
+<p>Squiggly brackets (<code>{}</code>) are ignored and will be removed from the output. This is done to allow users
+    to wrap their functions in brackets for improved readability. The brackets may be escaped to include them in the
+    title or use them in regular expressions eg. <code>\{</code>.
+
+<h1>Extracting Strings and Numeric Values</h1>
+
+<p>String and numeric values can be extracted from different sources using the following functions:
+
 <table style="text-align: center;" border="1">
     <thead>
     <tr>
         <th>Name</th>
+        <th>Function name</th>
         <th>Description</th>
-        <th>Default Datasource</th>
         <th>Parameters</th>
         <th>Example</th>
     </tr>
@@ -30,8 +58,8 @@ Variables allow for substituting values into a plot title, and begin with <code>
     <tbody>
     <tr>
         <td>Preferences</td>
-        <td>Read values for AIJ preferences.</td>
-        <td>N/A</td>
+        <td>pref, prf, p</td>
+        <td>Read values for AIJ preferences by name.</td>
         <td><table border="1">
             <thead>
             <tr>
@@ -41,7 +69,7 @@ Variables allow for substituting values into a plot title, and begin with <code>
             </thead>
             <tbody>
             <tr>
-                <td>pref</td>
+                <td>key</td>
                 <td><a id="SPECIAL_RETURN">The preferences entry.</a><br>
                     <a href="#PREF_SPECIAL">Some special values are provided for ease of use.</a>
                 </td>
@@ -57,11 +85,11 @@ Variables allow for substituting values into a plot title, and begin with <code>
             </thead>
             <tbody>
             <tr>
-                <td>MA: ${"pref": "APMODE"}, Radius: ${"pref": "APRADIUS"}px</td>
+                <td>MA: @ pref APMODE, Radius: @p APRADIUS px</td>
                 <td>MA: FIXED, Radius: 15px</td>
             </tr>
             <tr>
-                <td>${"pref":"LASTMA"}</td>
+                <td>@pref LASTMA</td>
                 <td>FApRadPAll(0.01): 12.0-0.0-31.0</td>
             </tr>
             </tbody>
@@ -69,8 +97,8 @@ Variables allow for substituting values into a plot title, and begin with <code>
     </tr>
     <tr>
         <td>Header</td>
-        <td>Read values from the FITS header.</td>
-        <td>The Header of the first slice in the table.</td>
+        <td>header, hdr, h</td>
+        <td>Read values from the FITS header. Requires the stack to be open.</td>
         <td><table border="1">
             <thead>
             <tr>
@@ -80,7 +108,7 @@ Variables allow for substituting values into a plot title, and begin with <code>
             </thead>
             <tbody>
             <tr>
-                <td>hdr</td>
+                <td>key</td>
                 <td>The the header key to read.</td>
             </tr>
             </tbody>
@@ -96,16 +124,16 @@ Variables allow for substituting values into a plot title, and begin with <code>
             <tbody>
             <tr>
                 <td>CCDTEMP = 23.5</td>
-                <td>Hello ${"hdr":"CCDTEMP"}C</td>
+                <td>Hello @header CCDTEMP C</td>
                 <td>Hello 23.5C</td>
             </tr>
             </tbody>
         </table></td>
     </tr>
     <tr>
-        <td>Format</td>
-        <td>Format a number</td>
-        <td>N/A</td>
+        <td>Comment</td>
+        <td>comment, cmt, c</td>
+        <td>Read comments from the FITS header. Requires the stack to be open.</td>
         <td><table border="1">
             <thead>
             <tr>
@@ -115,14 +143,8 @@ Variables allow for substituting values into a plot title, and begin with <code>
             </thead>
             <tbody>
             <tr>
-                <td>format</td>
-                <td>The format to use. <code>0</code> shows as a digit, and <code>#</code> shows as a digit,
-                    except if <code>0</code>.</td>
-            </tr>
-            <tr>
-                <td>input</td>
-                <td>Can be a string, a <code>column name</code> to read the first value from that column,
-                    or another function whose output is to be matched against.</td>
+                <td>key</td>
+                <td>The the header key to read.</td>
             </tr>
             </tbody>
         </table></td>
@@ -136,22 +158,17 @@ Variables allow for substituting values into a plot title, and begin with <code>
             </thead>
             <tbody>
             <tr>
-                <td>Header: CCDTEMP = 23.5</td>
-                <td>${"format": "##0.0", "input":{"hdr":"CCDTEMP"}}</td>
-                <td>23.5</td>
-            </tr>
-            <tr>
-                <td>Header: CCDTEMP = 23.0</td>
-                <td>${"format": "##0.#", "input":{"hdr":"CCDTEMP"}}</td>
-                <td>23</td>
+                <td>CCDTEMP = 23.5 // C</td>
+                <td>Hello @h CCDTEMP @ comment CCDTEMP</td>
+                <td>Hello 23.5C</td>
             </tr>
             </tbody>
         </table></td>
     </tr>
     <tr>
-        <td>Title split</td>
-        <td>Split the stack title into sections and combine them.</td>
-        <td>The corresponding stack's title</td>
+        <td>Today</td>
+        <td>today</td>
+        <td>Get today's date</td>
         <td><table border="1">
             <thead>
             <tr>
@@ -161,13 +178,8 @@ Variables allow for substituting values into a plot title, and begin with <code>
             </thead>
             <tbody>
             <tr>
-                <td>title</td>
-                <td>The output string, containing references to any section. <p>References are in the form
-                    <code>$&lt;number&gt;</code>, where <code>$0</code> refers to the entire stack title.</td>
-            </tr>
-            <tr>
-                <td>split</td>
-                <td><i>Optional</i> The string to split the title on, default <code>_</code></td>
+                <td>zoneId</td>
+                <td>The timezone to use. Use <code>_</code> for the user's timezone.</td>
             </tr>
             </tbody>
         </table></td>
@@ -181,22 +193,39 @@ Variables allow for substituting values into a plot title, and begin with <code>
             </thead>
             <tbody>
             <tr>
-                <td>Stack title: Altair 23-14-01</td>
-                <td>${"title": "Observed on $4", "splitter": " "}</td>
-                <td>Observed on 23-14-01</td>
-            </tr>
-            <tr>
-                <td>Stack title: Altair_23-14-01</td>
-                <td>Observed ${"title": "$1"}</td>
-                <td>Observed Altair</td>
+                <td>Today: 2023/09/21</td>
+                <td>@today UTC-5</td>
+                <td>2023-09-21</td>
             </tr>
             </tbody>
         </table></td>
     </tr>
     <tr>
-        <td>Label split</td>
-        <td>Split the first value in the Label column into sections and combine them.</td>
-        <td>The first entry in the Label column.</td>
+        <td>Stack title</td>
+        <td>title, ttl</td>
+        <td>Get the stack title. Stack must be open.</td>
+        <td><em>N/A</em></td>
+        <td><table border="1">
+            <thead>
+            <tr>
+                <th>Available Data</th>
+                <th>Macro</th>
+                <th>Output</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>Stack title =  observation2</td>
+                <td>@ttl</td>
+                <td>observation2</td>
+            </tr>
+            </tbody>
+        </table></td>
+    </tr>
+    <tr>
+        <td>Table</td>
+        <td>table, tbl, t</td>
+        <td>Get values and statistics from the table.</td>
         <td><table border="1">
             <thead>
             <tr>
@@ -206,13 +235,14 @@ Variables allow for substituting values into a plot title, and begin with <code>
             </thead>
             <tbody>
             <tr>
-                <td>label</td>
-                <td>The output string, containing references to any section. <p>References are in the form
-                    <code>$&lt;number&gt;</code>, where <code>$0</code> refers to the entire label.</td>
+                <td>column</td>
+                <td>The column to use</td>
             </tr>
             <tr>
-                <td>split</td>
-                <td><i>Optional</i> The string to split the title on, default <code>_</code>.</td>
+                <td>row</td>
+                <td><a id="TABLE_SPECIAL_RETURN">The row to use.</a><br>
+                    <a href="#TABLE_SPECIAL">Some special values are provided for ease of use and extracting of statistics.</a>
+                </td>
             </tr>
             </tbody>
         </table></td>
@@ -226,17 +256,36 @@ Variables allow for substituting values into a plot title, and begin with <code>
             </thead>
             <tbody>
             <tr>
-                <td>Column Label, first value processed_altair_21.fits</td>
-                <td>Hello ${"label":"Reversed: $3 $2$1"}</td>
-                <td>Hello Reversed: 21.fits altairprocessed</td>
+                <td>Table: (Label, 1) = test.fits</td>
+                <td>@tbl Label 1</td>
+                <td>test.fits</td>
             </tr>
             </tbody>
         </table></td>
     </tr>
+    </tbody>
+</table>
+
+
+<h1>Processing Extracted Data</h1>
+
+<h2>Extracting Strings and Substrings</h2>
+<p>The extracted strings can be further broken down by prefixing the above syntax with any of the following:
+<table style="text-align: center;" border="1">
+    <thead>
+    <tr>
+        <th>Name</th>
+        <th>Function name</th>
+        <th>Description</th>
+        <th>Parameters</th>
+        <th>Example</th>
+    </tr>
+    </thead>
+    <tbody>
     <tr>
         <td>Split</td>
-        <td>Split the given input into sections and combine them.</td>
-        <td>The first entry in the Label column.</td>
+        <td>split, spt, s</td>
+        <td>Split a string using a deliminator.</td>
         <td><table border="1">
             <thead>
             <tr>
@@ -246,52 +295,43 @@ Variables allow for substituting values into a plot title, and begin with <code>
             </thead>
             <tbody>
             <tr>
-                <td>output</td>
-                <td>The output string, containing references to any section. <p>References are in the form
-                    <code>$&lt;number&gt;</code>, where <code>$0</code> refers to the entire input.</td>
+                <td>splitter</td>
+                <td>The deliminator</td>
             </tr>
             <tr>
-                <td>split</td>
-                <td><i>Optional</i> The string to split the title on, default <code>_</code>.</td>
+                <td>out</td>
+                <td>The output text, containing group references such as <code>$1</code>.<br>
+                    <code>$0</code> refers to the entire input text.</td>
             </tr>
             <tr>
-                <td>input</td>
-                <td>Can be a string, either <code>title</code> to read the stack title, or a <code>column name</code>
-                    to read the first value from that column, or another function whose output is to be split.</td>
+                <td>in</td>
+                <td>The input text, may be another function.</td>
             </tr>
             </tbody>
         </table></td>
         <td><table border="1">
             <thead>
             <tr>
-                <th>Available Data</th>
                 <th>Macro</th>
                 <th>Output</th>
             </tr>
             </thead>
             <tbody>
             <tr>
-                <td>Column Label, first value processed_altair_21.fits</td>
-                <td>Hello ${"label":"Reversed: $3 $2$1"}</td>
-                <td>Hello Reversed: 21.fits altairprocessed</td>
+                <td>@split _ "$2 of $1" test_fits</td>
+                <td>fits of test</td>
             </tr>
             <tr>
-                <td>Stack title = Altair 23/14/01</td>
-                <td>${"split":" ", "output":"Observed on $2", "input": "title"}</td>
-                <td>Observed on 23/14/01</td>
-            </tr>
-            <tr>
-                <td>Header: DATE-OBS = 1996-10-14T10:14:36.123</td>
-                <td>Observed on ${"split":”T”, "input": {"hdr": "DATE-OBS"}, "output": $1}</td>
-                <td>Observed on 1996-10-14</td>
+                <td>@s _ $1 @ s - $2 lco-star_5-6</td>
+                <td>star</td>
             </tr>
             </tbody>
         </table></td>
     </tr>
     <tr>
-        <td>Regex</td>
-        <td>Match a regex expression, extract match groups and combine them into an output</td>
-        <td>The first entry in the Label column.</td>
+        <td>Regular Expression</td>
+        <td>regex, rgx, r</td>
+        <td>Process a string using regex.</td>
         <td><table border="1">
             <thead>
             <tr>
@@ -301,19 +341,20 @@ Variables allow for substituting values into a plot title, and begin with <code>
             </thead>
             <tbody>
             <tr>
-                <td>regex</td>
-                <td>The regular expression to match against.</td>
+                <td>exp</td>
+                <td>The regualr expression to use</td>
             </tr>
             <tr>
-                <td>input</td>
-                <td>Can be a string, a <code>column name</code> to read the first value from that column,
-                    or another function whose output is to be matched against.</td>
+                <td>out</td>
+                <td>
+                    The output text, containing group references such as <code>$1</code>.<br>
+                    <code>$0</code> refers to the entire input text.<br>
+                    Named groups are supported.
+                </td>
             </tr>
             <tr>
-                <td>output</td>
-                <td>The output string, containing references to any match group. <p>References are in the form
-                <code>$&lt;number&gt;</code>, where <code>$0</code> refers to the entire input.
-                Named references are supported.</td>
+                <td>in</td>
+                <td>The input text, may be another function.</td>
             </tr>
             </tbody>
         </table></td>
@@ -328,13 +369,12 @@ Variables allow for substituting values into a plot title, and begin with <code>
             <tbody>
             <tr>
                 <td>Header: CCDTEMP = 23.5; Column Label, first value processed_altair_21.fits</td>
-                <td>Regex with ${"regex": "_(\w+)_", "output": "$1"} and
-                    ${"regex": "([0-9]+)", "output": "$1C", "input":{"hdr":"CCDTEMP"}}</td>
+                <td>Regex with @rgx _(\w+)_ $1 @t Label 1 and @ rgx ([0-9]+) $1C @ h CCDTEMP</td>
                 <td>Regex with altair and 23C</td>
             </tr>
             <tr>
                 <td>Header: DATE-OBS = 1996-10-14T10:14:36.123</td>
-                <td>${"regex":"(.+)T","input":{"hdr": "DATE-OBS"}, "output": "$1"}</td>
+                <td>@regex (.+)T $1 @hdr DATE-OBS</td>
                 <td>1996-10-14</td>
             </tr>
             </tbody>
@@ -342,6 +382,130 @@ Variables allow for substituting values into a plot title, and begin with <code>
     </tr>
     </tbody>
 </table>
+
+<h2>Formatting Numeric Values</h2>
+
+<p>Extracted numeric values can be formatted by prefixing any of the above, including a split or regex of any source, by prefixing them with:
+<table style="text-align: center;" border="1">
+    <thead>
+    <tr>
+        <th>Name</th>
+        <th>Function name</th>
+        <th>Description</th>
+        <th>Parameters</th>
+        <th>Example</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <td>Number Format</td>
+        <td>format, fmt, f</td>
+        <td>Format numeric values</td>
+        <td><table border="1">
+            <thead>
+            <tr>
+                <th>Key</th>
+                <th>Description</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>exp</td>
+                <td>
+                    The formatting expression, generally use <code>#</code> to designate digits
+                    that should be output if non-zero, and <code>0</code> to designate digits
+                    that should always by output. <a href="https://docs.oracle.com/javase/tutorial/i18n/format/decimalFormat.html">See here for more information</a>
+                </td>
+            </tr>
+            <tr>
+                <td>in</td>
+                <td>The input text to format, must be a number</td>
+            </tr>
+            </tbody>
+        </table></td>
+        <td><table border="1">
+            <thead>
+            <tr>
+                <th>Available Data</th>
+                <th>Macro</th>
+                <th>Output</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>Header: CCDTEMP = 23.5</td>
+                <td>@fmt ##0.0 @ h CCDTEMP</td>
+                <td>23.5</td>
+            </tr>
+            <tr>
+                <td>Header: CCDTEMP = 23.0</td>
+                <td>@fmt ##0.# @ h CCDTEMP</td>
+                <td>23</td>
+            </tr>
+            </tbody>
+        </table></td>
+    </tr>
+    <tr>
+        <td>Date-Time Format</td>
+        <td>datetimeformat, dtf</td>
+        <td>Format dates and times.</td>
+        <td><table border="1">
+            <thead>
+            <tr>
+                <th>Key</th>
+                <th>Description</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>inFormat</td>
+                <td>
+                    The format of the input datetime. May use <code>_</code> to use <code>yyyy-MM-dd</code>. <a href="https://docs.oracle.com/javase/8/docs/api/java/text/SimpleDateFormat.html">See here for more information.</a>
+                </td>
+            </tr>
+            <tr>
+                <td>inLocale</td>
+                <td>
+                    The locale of the input datetime. May use <code>_</code> to use user's locale. <a href="https://www.oracle.com/java/technologies/javase/jdk11-suported-locales.html#compatlocales">See all locales here.</a>
+                </td>
+            </tr>
+            <tr>
+                <td>outFormat</td>
+                <td>
+                    The format of the output datetime. May use <code>_</code> to use <code>yyyy-MM-dd</code>. <a href="https://docs.oracle.com/javase/8/docs/api/java/text/SimpleDateFormat.html">See here for more information.</a>
+                </td>
+            </tr>
+            <tr>
+                <td>outLocale</td>
+                <td>
+                    The locale of the output datetime. May use <code>_</code> to use user's locale. <a href="https://www.oracle.com/java/technologies/javase/jdk11-suported-locales.html#compatlocales">See all locales here.</a>
+                </td>
+            </tr>
+            <tr>
+                <td>datetime</td>
+                <td>The datetime to format</td>
+            </tr>
+            </tbody>
+        </table></td>
+        <td><table border="1">
+            <thead>
+            <tr>
+                <th>Macro</th>
+                <th>Output</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>@ datetimeformat yyyy-MM-dd en-US "E, MMM dd yyyy" en-US @ today UTC</td>
+                <td>Mon, Sep. 21 2023</td>
+            </tr>
+            </tbody>
+        </table></td>
+    </tr>
+    </tbody>
+</table>
+
+
 
 <a id="PREF_SPECIAL">
 <h1>Special Preferences Keys<a href="#SPECIAL_RETURN">&#11189;</a></h1>
@@ -384,6 +548,43 @@ Variables allow for substituting values into a plot title, and begin with <code>
     <tr>
         <td>APLOADING</td>
         <td>How apertures were loaded in MA</td>
+    </tr>
+</table>
+</a>
+
+<a id="TABLE_SPECIAL">
+<h1>Special Table Row Keys<a href="#TABLE_SPECIAL_RETURN">&#11189;</a></h1>
+<table border="1">
+    <thead>
+    <tr>
+        <th>Key</th>
+        <th>Description</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <td><code>$F</code></td>
+        <td>The first row (same as entering <code>1</code>)</td>
+    </tr>
+    <tr>
+        <td><code>$L</code></td>
+        <td>The last row</td>
+    </tr>
+    <tr>
+        <td><code>$AVG</code></td>
+        <td>The average of the column</td>
+    </tr>
+    <tr>
+        <td><code>$MED</code></td>
+        <td>The median of the column</td>
+    </tr>
+    <tr>
+        <td><code>$MIN</code></td>
+        <td>The minimum of the column</td>
+    </tr>
+    <tr>
+        <td><code>$MAX</code></td>
+        <td>The maximum of the column</td>
     </tr>
 </table>
 </a>

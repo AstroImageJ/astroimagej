@@ -1076,6 +1076,10 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         saveFitsStackMenuItem.add(stackSaveFzGz);
         fitsMenu.add(saveFitsStackMenuItem);
 
+        var fpackSettings = new MenuItem("Fits Compression (FPACK) Settings");
+        fpackSettings.addActionListener($ -> FitsCompressionUtil.dialog());
+        fitsMenu.add(fpackSettings);
+
         saveTiffMenuItem = new MenuItem("Save image/stack as TIFF...");
         saveTiffMenuItem.addActionListener(this);
         fileMenu.add(saveTiffMenuItem);
@@ -1194,9 +1198,9 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
 
         preferencesMenu.addSeparator();
 
-        var fpaCkSettings = new MenuItem("FPACK Settings");
-        fpaCkSettings.addActionListener($ -> FitsCompressionUtil.dialog());
-        preferencesMenu.add(fpaCkSettings);
+        fpackSettings = new MenuItem("Fits Compression (FPACK) Settings");
+        fpackSettings.addActionListener($ -> FitsCompressionUtil.dialog());
+        preferencesMenu.add(fpackSettings);
 
         preferencesMenu.addSeparator();
 

@@ -10,6 +10,7 @@ import nom.tam.fits.header.Compression;
 import nom.tam.image.compression.hdu.CompressedImageHDU;
 
 import javax.swing.*;
+import java.util.Arrays;
 
 public class FitsCompressionUtil {
     private static final Property<CompressionState> INTEGER_COMPRESSION = new Property<>(CompressionState.RICE_1, FitsCompressionUtil.class);
@@ -18,6 +19,7 @@ public class FitsCompressionUtil {
     private static final Property<Dither> INTEGER_DITHER = new Property<>(Dither.NONE, FitsCompressionUtil.class);
     private static final Property<Double> INTEGER_Q = new Property<>(4d, FitsCompressionUtil.class);
     private static final Property<Double> FLOAT_Q = new Property<>(0d, FitsCompressionUtil.class);
+    private static final Property<Presets> PRESET = new Property<>(Presets.LOSSLESS, FitsCompressionUtil.class);
 
     public static void setCompression(CompressedImageHDU hdu, boolean isFloatingPoint) throws FitsException {
         Property<CompressionState> compPref;
@@ -44,19 +46,52 @@ public class FitsCompressionUtil {
 
     public static void dialog() {
         var gd = new GenericSwingDialog("FITS Compression Settings");
+        var presetBox = gd.addChoice("Preset", Arrays.stream(Presets.values()).map(Presets::getOption).toArray(String[]::new),
+                PRESET.get().name(), s -> PRESET.set(Presets.find(s)));
         gd.addMessage("Floating Point Compression");
-        gd.addNStateDropdown(FLOAT_COMPRESSION.get(), FLOAT_COMPRESSION::set);
+        var floatCompBox = gd.addNStateDropdown(FLOAT_COMPRESSION.get(), FLOAT_COMPRESSION::set);
         gd.addToSameRow();
-        gd.addNStateDropdown(FLOAT_DITHER.get(), FLOAT_DITHER::set);
+        var floatDitherBox = gd.addNStateDropdown(FLOAT_DITHER.get(), FLOAT_DITHER::set);
         gd.addToSameRow();
-        gd.addUnboundedNumericField("Q Level", FLOAT_Q.get(), 1, 5, null, FLOAT_Q::set);
+        var floatQBox = gd.addUnboundedNumericField("Q Level", FLOAT_Q.get(), 1, 5, null, FLOAT_Q::set);
         gd.addDoubleSpaceLineSeparator();
         gd.addMessage("Integer Compression");
         gd.addNStateDropdown(INTEGER_COMPRESSION.get(), INTEGER_COMPRESSION::set);
-        /*gd.addToSameRow();
-        gd.addNStateDropdown(INTEGER_DITHER.get(), INTEGER_DITHER::set);
-        gd.addToSameRow();
-        gd.addUnboundedNumericField("Q Level", INTEGER_Q.get(), 1, 5, null, INTEGER_Q::set);*/
+        gd.centerDialog(true);
+
+        PRESET.addListener((key, preset) -> {
+            var d = preset.def;
+            if (d != null) {
+                floatCompBox.setSelectedItem(d.comp);
+                floatDitherBox.setSelectedItem(d.dither);
+                ((JSpinner) floatQBox.c1()).setValue(d.q);
+            }
+        });
+
+        floatCompBox.addActionListener($ -> {
+            if (PRESET.get() != Presets.CUSTOM) {
+                if (floatCompBox.getSelectedItem() != PRESET.get().def.comp) {
+                    ((JComboBox<String>) presetBox.c2()).setSelectedItem(Presets.CUSTOM.getOption());
+                }
+            }
+        });
+
+        floatDitherBox.addActionListener($ -> {
+            if (PRESET.get() != Presets.CUSTOM) {
+                if (floatDitherBox.getSelectedItem() != PRESET.get().def.dither) {
+                    ((JComboBox<String>) presetBox.c2()).setSelectedItem(Presets.CUSTOM.getOption());
+                }
+            }
+        });
+
+        ((JSpinner) floatQBox.c1()).addChangeListener($ -> {
+            if (PRESET.get() != Presets.CUSTOM) {
+                if (((Number) ((JSpinner) floatQBox.c1()).getValue()).doubleValue() != PRESET.get().def.q) {
+                    ((JComboBox<String>) presetBox.c2()).setSelectedItem(Presets.CUSTOM.getOption());
+                }
+            }
+        });
+
         gd.showDialog();
     }
 
@@ -129,4 +164,39 @@ public class FitsCompressionUtil {
             return Dither.values();
         }
     }
+
+    public enum Presets {
+        LOSSLESS("Lossless", new FloatSettings(CompressionState.GZIP_1, Dither.DITHER_1, 0)),
+        LCO("LCO", new FloatSettings(CompressionState.RICE_1, Dither.DITHER_1, 64)),
+        CUSTOM("Custom", null)
+        ;
+
+        private String option;
+        private FloatSettings def;
+
+        Presets(String option, FloatSettings def) {
+            this.option = option;
+            this.def = def;
+        }
+
+        public String getOption() {
+            return option;
+        }
+
+        static Presets find(String option) {
+            for (Presets value : values()) {
+                if (value.option.equals(option)) {
+                    return value;
+                }
+            }
+
+            return LOSSLESS;
+        }
+
+        FloatSettings getDef() {
+            return def;
+        }
+    }
+
+    record FloatSettings(CompressionState comp, Dither dither, double q) {}
 }

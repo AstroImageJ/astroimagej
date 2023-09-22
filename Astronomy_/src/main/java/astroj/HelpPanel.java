@@ -32,6 +32,7 @@
 package astroj;
 
 import ij.IJ;
+import util.BrowserOpener;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -190,6 +191,12 @@ public class HelpPanel extends JFrame implements ActionListener, DocumentListene
             if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
                 if (e.getURL().sameFile(helpURL)) {
                     scrollToReference(e.getURL().getRef());
+                } else {
+                    try {
+                        BrowserOpener.openURL(e.getURL());
+                    } catch (IOException ex) {
+                        IJ.error("Failed to open url: " + e.getURL());
+                    }
                 }
             }
         });

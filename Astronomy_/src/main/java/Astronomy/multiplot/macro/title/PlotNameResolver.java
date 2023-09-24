@@ -1,12 +1,9 @@
-package Astronomy.multiplot;
+package Astronomy.multiplot.macro.title;
 
-import Astronomy.MultiAperture_;
 import Astronomy.MultiPlot_;
-import astroj.FitsJ;
+import Astronomy.multiplot.macro.title.parser.*;
 import astroj.HelpPanel;
 import astroj.MeasurementTable;
-import flanagan.analysis.Stat;
-import ij.*;
 import ij.astro.io.prefs.Property;
 import ij.astro.types.Pair;
 import ij.astro.util.UIHelper;
@@ -23,15 +20,20 @@ import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.event.PopupMenuEvent;
+import javax.swing.event.PopupMenuListener;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DefaultHighlighter;
+import java.awt.*;
+import java.util.List;
+import java.util.Set;
 
 public class PlotNameResolver {
     public static final Property<String> TITLE_MACRO = new Property<>("", PlotNameResolver.class);
     public static final Property<String> SUBTITLE_MACRO = new Property<>("", PlotNameResolver.class);
-    private static final Pattern OPERATOR = Pattern.compile("^(?<!\\\\)@");
-    private static final Pattern TOKENIZER =
-            Pattern.compile("((?=[\"'])(?:\"[^\"\\\\]*(?:\\\\[\\s\\S][^\"\\\\]*)*\"|'[^'\\\\]*(?:\\\\[\\s\\S][^'\\\\]*)*')|\\S+)");
-    private static final Pattern SIMPLE_VARIABLE = Pattern.compile("(\\$\\S+)");
-    private static final Pattern LABEL_VARIABLE = Pattern.compile("(\\$[0-9]+)");
     private static final HelpPanel helpPanel = new HelpPanel("help/plotMacroHelp.html", "Programmable Plot Titles");
     private static Pair.GenericPair<String, Boolean> lastTitleState;
     private static Pair.GenericPair<String, Boolean> lastSubtitleState;
@@ -41,7 +43,7 @@ public class PlotNameResolver {
 
     public static Pair.GenericPair<String, Boolean> resolvePlotTitle(MeasurementTable table) {
         try {
-            return (lastTitleState = resolve(table, TITLE_MACRO.get()));
+            return (lastTitleState = resolve(table, TITLE_MACRO.get()).state);
         } catch (Exception e) {
             e.printStackTrace();
             return new Pair.GenericPair<>(TITLE_MACRO.get(), true);
@@ -50,7 +52,7 @@ public class PlotNameResolver {
 
     public static Pair.GenericPair<String, Boolean> resolvePlotSubtitle(MeasurementTable table) {
         try {
-            return (lastSubtitleState = resolve(table, SUBTITLE_MACRO.get()));
+            return (lastSubtitleState = resolve(table, SUBTITLE_MACRO.get()).state);
         } catch (Exception e) {
             e.printStackTrace();
             return new Pair.GenericPair<>(SUBTITLE_MACRO.get(), true);
@@ -532,7 +534,17 @@ public class PlotNameResolver {
         }
 
         return null;
+    private static Meh resolve(MeasurementTable table, String input) {
+        List<Token> tokens = StringLexer.tokenize(input);
+        //System.out.println(input);
+        //System.out.println(tokens);
+        ASTHandler astHandler = new ASTHandler(tokens);
+        ASTNode ast = astHandler.buildAST();
+        var o = ASTHandler.evaluateFunction(new ResolverContext(table), ast);
+        return new Meh(new Pair.GenericPair<>(o.val(), o.isError()), ASTHandler.buildHighlightingInfo(null, ast));
     }
+
+    record Meh(Pair.GenericPair<String, Boolean> state, Set<ASTHandler.HighlightInfo> highlightInfos) {}
 
     public static void showHelpWindow() {
         if (!helpPanel.isVisible()) {

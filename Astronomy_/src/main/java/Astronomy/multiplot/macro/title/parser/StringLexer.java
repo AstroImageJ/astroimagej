@@ -8,7 +8,7 @@ import java.util.regex.Pattern;
 public class StringLexer {
     private static final String TEXT_REGEX = "(?<WORD>\\S+)";
     private static final String QUOTED_TEXT_REGEX = "(?<QUOTED>((?=[\"'])(?:\"[^\"\\\\]*(?:\\\\[\\s\\S][^\"\\\\]*)*\"|'[^'\\\\]*(?:\\\\[\\s\\S][^'\\\\]*)*')|\\S+))";
-    private static final String FUNCTION_REGEX = "(?<FUNCNAME>(?<!\\\\)@\s*[a-zA-Z]+)";
+    private static final String FUNCTION_REGEX = "(?<FUNCPREFIX>\\S+)*(?<FUNCNAME>(?<!\\\\)@\s*[\\S]+)";
     private static final String WHITESPACE_REGEX = "(?<WHITESPACE>\\s+)";
     private static final Pattern TOKENIZER_PATTERN = Pattern.compile(FUNCTION_REGEX + "|" + QUOTED_TEXT_REGEX + "|" + TEXT_REGEX + "|" + WHITESPACE_REGEX);
 
@@ -19,6 +19,10 @@ public class StringLexer {
         while (matcher.find()) {
             String tokenValue;
             if ((tokenValue = matcher.group("FUNCNAME")) != null) {
+                String pre = matcher.group("FUNCPREFIX");
+                if (pre != null) {
+                    tokens.add(new Token(Token.TokenType.TEXT, pre));
+                }
                 tokens.add(new Token(Token.TokenType.FUNCTION_HANDLE, tokenValue));
             } else if ((tokenValue = matcher.group("QUOTED")) != null) {
                 tokens.add(new Token(Token.TokenType.QUOTED_TEXT, tokenValue));

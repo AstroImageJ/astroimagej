@@ -105,8 +105,9 @@ public class ASTHandler {
             if (previousChild != null &&
                     previousChild.getToken().getType() == Token.TokenType.FUNCTION_HANDLE &&
                     child.getToken().getType() == Token.TokenType.WHITESPACE) {
-                child.getToken().setModifiedWhitespace(true);
-                sb.append(child.getToken().getValue().replaceFirst(" ", ""));
+                var whitespace = child.getToken().getValue().replaceFirst(" ", "");
+                sb.append(whitespace);
+                child.getToken().setModifiedWhitespace(whitespace.length() != child.getToken().getValue().length());
             } else {
                 var p = child.process(ctx);
                 sb.append(p.val());

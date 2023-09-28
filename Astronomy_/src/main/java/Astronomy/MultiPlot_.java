@@ -4,6 +4,7 @@ package Astronomy;
 import Astronomy.multiplot.KeplerSplineControl;
 import Astronomy.multiplot.PlotDraggableShape;
 import Astronomy.multiplot.PlotNameResolver;
+import Astronomy.multiplot.macro.title.PlotNameResolver;
 import Astronomy.multiplot.settings.KeplerSplineSettings;
 import Astronomy.multiplot.settings.MPOperator;
 import Astronomy.multiplot.table.MeasurementsWindow;

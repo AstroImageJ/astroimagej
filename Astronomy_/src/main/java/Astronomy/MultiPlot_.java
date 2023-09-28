@@ -8410,7 +8410,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         noTitleButton.setFont(p11);
         noTitleButton.setSelected(!useTitle);
         titleradiopanelgroup.add(noTitleButton);
-        JRadioButton useTitleButton = new JRadioButton("Custom");
+        JRadioButton useTitleButton = new JRadioButton("Text");
         useTitleButton.setFont(p11);
         useTitleButton.setSelected(useTitle && !useMacroTitle.get());
         titleradiopanelgroup.add(useTitleButton);
@@ -8583,7 +8583,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         noSubtitleButton.setFont(p11);
         noSubtitleButton.setSelected(!useSubtitle);
         subtitleradiopanelgroup.add(noSubtitleButton);
-        JRadioButton useSubtitleButton = new JRadioButton("Custom");
+        JRadioButton useSubtitleButton = new JRadioButton("Text");
         useSubtitleButton.setFont(p11);
         useSubtitleButton.setSelected(useSubtitle && !useMacroSubtitle.get());
         subtitleradiopanelgroup.add(useSubtitleButton);

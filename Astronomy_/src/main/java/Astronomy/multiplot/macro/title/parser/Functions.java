@@ -2,15 +2,15 @@ package Astronomy.multiplot.macro.title.parser;
 
 import Astronomy.MultiAperture_;
 import astroj.FitsJ;
+import astroj.JulianDate;
 import flanagan.analysis.Stat;
 import ij.IJ;
 import ij.Prefs;
 
 import java.text.DecimalFormat;
-import java.time.Clock;
-import java.time.LocalDate;
-import java.time.ZoneId;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.Temporal;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -23,15 +23,17 @@ import java.util.regex.PatternSyntaxException;
 
 enum Functions {
     HEADER(Functions::header, new String[]{"key"}, "header", "hdr", "h"),
+    // Data fetch options
     COMMENT(Functions::comment, new String[]{"key"}, "comment", "cmt", "c"),
     PREFERENCE(Functions::preference, new String[]{"key"}, "pref", "prf", "p"),
-    TODAY(Functions::today, new String[]{"zoneId"}, "today"),
+    DATETIME_NOW(Functions::datetimeNow, new String[]{"zoneId", "type"}, "datetimenow", "dtn"),
     TITLE(Functions::title, new String[0], "title", "ttl"),
     TABLE(Functions::table, new String[]{"column", "row"}, "table", "tbl", "t"),
-    REGEX(Functions::regex, new String[]{"exp", "out", "in"}, "regex", "rgx", "r"),
+    // Data processing
+    REGEX(Functions::regex, new String[]{"regex", "out", "in"}, "regex", "rgx", "r"),
     SPLIT(Functions::split, new String[]{"splitter", "out", "in"}, "split", "spt", "s"),
-    FORMAT(Functions::format, new String[]{"exp", "in"}, "format", "fmt", "f"),
-    DATETIME_FORMAT(Functions::datetimeformat,
+    FORMAT(Functions::format, new String[]{"format expression", "in"}, "format", "fmt", "f"),
+    DATETIME_FORMAT(Functions::datetimeFormat,
             new String[]{"inFormat", "inLocale", "outFormat", "outLocale", "datetime"}, "datetimeformat", "dtf"),
     ;
 
@@ -139,19 +141,19 @@ enum Functions {
         // Special processors
         if (!"Label".equals(ps[0])) {
             switch (ps[1]) {
-                case "$AVG" -> {
+                case "AVG" -> {
                     var c = ctx.table.getColumn(ps[0]);
                     return new FunctionReturn(String.valueOf(Stat.mean(c)));
                 }
-                case "$MIN" -> {
+                case "MIN" -> {
                     var c = ctx.table.getColumn(ps[0]);
                     return new FunctionReturn(String.valueOf(new Stat(c).minimum()));
                 }
-                case "$MAX" -> {
+                case "MAX" -> {
                     var c = ctx.table.getColumn(ps[0]);
                     return new FunctionReturn(String.valueOf(new Stat(c).maximum()));
                 }
-                case "$MED" -> {
+                case "MED" -> {
                     var c = ctx.table.getColumn(ps[0]);
                     return new FunctionReturn(String.valueOf(Stat.median(c)));
                 }
@@ -161,8 +163,8 @@ enum Functions {
 
         try {
             var row = switch (ps[1]) {
-                case "$F" -> 0;
-                case "$L" -> ctx.table.size() - 1;
+                case "FIRST", "F" -> 0;
+                case "LAST", "L" -> ctx.table.size() - 1;
                 default -> Integer.parseInt(ps[1]) - 1;
             };
 
@@ -180,10 +182,19 @@ enum Functions {
         }
     }
 
-    private static FunctionReturn today(ResolverContext resolverContext, String[] ps) {
+    private static FunctionReturn datetimeNow(ResolverContext resolverContext, String[] ps) {
         try {
             var zoneId = ps[0].equals("_") ? Clock.systemDefaultZone().getZone() : ZoneId.of(ps[0]);
-            return new FunctionReturn(String.valueOf(LocalDate.now(zoneId)));
+            Temporal dt;
+            switch (ps[1]) {
+                case "date", "d" -> dt = LocalDate.now(zoneId);
+                case "time", "t" -> dt = LocalTime.now(zoneId);
+                case "datetime", "dt", "_" -> dt = LocalDateTime.now(zoneId);
+                default -> {
+                    return FunctionReturn.error("<Invalid type: '%s'>".formatted(ps[1]));
+                }
+            }
+            return new FunctionReturn(String.valueOf(dt));
         } catch (Exception e) {
             return FunctionReturn.error("<Invalid zoneId: '%s'>".formatted(ps[0]));
         }
@@ -282,7 +293,7 @@ enum Functions {
         }
     }
 
-    private static FunctionReturn datetimeformat(ResolverContext ctx, String[] ps) {
+    private static FunctionReturn datetimeFormat(ResolverContext ctx, String[] ps) {
         Locale inLocale;
         Locale outLocale;
         DateTimeFormatter inFormat;
@@ -300,21 +311,47 @@ enum Functions {
         }
 
         try {
-            inFormat = ps[0].equals("_") ? DateTimeFormatter.ofPattern("yyyy-MM-dd", inLocale) :
-                    DateTimeFormatter.ofPattern(ps[0], inLocale);
+            inFormat = switch (ps[0]) {
+                case "date", "d" -> DateTimeFormatter.ofPattern("yyyy-MM-dd", inLocale);
+                case "time", "t" ->
+                        DateTimeFormatter.ofPattern("HH:mm:ss[.[SSSSSSSSS][SSSSSSSS][SSSSSSS][SSSSSS][SSSSS][SSSS][SSS][SS][S]]", inLocale);
+                case "datetime", "dt", "mjd", "jd", "_" ->
+                        DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss[.[SSSSSSSSS][SSSSSSSS][SSSSSSS][SSSSSS][SSSSS][SSSS][SSS][SS][S]]", inLocale);
+                default -> DateTimeFormatter.ofPattern(ps[0], inLocale);
+            };
         } catch (Exception e) {
             return FunctionReturn.error("<Invalid inFormat: '%s'>".formatted(ps[0]));
         }
 
         try {
-            outFormat = ps[2].equals("_") ? DateTimeFormatter.ofPattern("yyyy-MM-dd", outLocale) :
-                    DateTimeFormatter.ofPattern(ps[2], outLocale);
+            outFormat = switch (ps[2]) {
+                case "date", "d" -> DateTimeFormatter.ofPattern("yyyy-MM-dd", outLocale);
+                case "weekdaydate", "wd" -> DateTimeFormatter.ofPattern("E, MMM dd yyyy", outLocale);
+                case "time", "t" -> DateTimeFormatter.ofPattern("HH:mm:ss", outLocale);
+                case "datetime", "dt", "_" -> DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss", outLocale);
+                default -> DateTimeFormatter.ofPattern(ps[2], outLocale);
+            };
         } catch (Exception e) {
             return FunctionReturn.error("<Invalid outFormat: '%s'>".formatted(ps[2]));
         }
 
         try {
-            return new FunctionReturn(outFormat.format(inFormat.parse(ps[4])));
+            // Handle formatting Julian Date
+            if (ps[0].equals("mjd") || ps[0].equals("jd")) {
+                try {
+                    var time = Double.parseDouble(ps[4]);
+
+                    // Handle MJD
+                    if (ps[0].equals("mjd")) {
+                        time += 2400000;
+                    }
+
+                    return new FunctionReturn(outFormat.format(inFormat.parseBest(JulianDate.dateTime(time), ZonedDateTime::from, LocalDateTime::from, LocalDate::from, LocalTime::from)));
+                } catch (NumberFormatException e) {
+                    return FunctionReturn.error("<Failed to parse (M)JD to double (%s)>".formatted(ps[4]));
+                }
+            }
+            return new FunctionReturn(outFormat.format(inFormat.parseBest(ps[4], ZonedDateTime::from, LocalDateTime::from, LocalDate::from, LocalTime::from)));
         } catch (Exception e) {
             return FunctionReturn.error("<Failed to parse or format datetime (%s)>".formatted(ps[4]));
         }

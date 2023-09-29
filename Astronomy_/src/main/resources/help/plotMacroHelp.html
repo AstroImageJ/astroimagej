@@ -166,9 +166,9 @@ The programmable titling capability allows the user to programmatically retrieve
         </table></td>
     </tr>
     <tr>
-        <td>Today</td>
-        <td>today</td>
-        <td>Get today's date</td>
+        <td>Datetime now</td>
+        <td>datetimenow, dtn</td>
+        <td>Get today's date, time, or datetime</td>
         <td><table border="1">
             <thead>
             <tr>
@@ -180,6 +180,31 @@ The programmable titling capability allows the user to programmatically retrieve
             <tr>
                 <td>zoneId</td>
                 <td>The timezone to use. Use <code>_</code> for the user's timezone.</td>
+            </tr>
+            <tr>
+                <td>type</td>
+                <td>
+                    <table border="1">
+                        <thead>
+                        <tr>
+                            <th>Key</th>
+                            <th>Description</th>
+                        </tr>
+                        </thead>
+                        <tr>
+                            <td>date, d</td>
+                            <td>The date</td>
+                        </tr>
+                        <tr>
+                            <td>time, t</td>
+                            <td>The time</td>
+                        </tr>
+                        <tr>
+                            <td>datetime, dt, _</td>
+                            <td>The datetime</td>
+                        </tr>
+                    </table>
+                </td>
             </tr>
             </tbody>
         </table></td>
@@ -194,7 +219,7 @@ The programmable titling capability allows the user to programmatically retrieve
             <tbody>
             <tr>
                 <td>Today: 2023/09/21</td>
-                <td>@today UTC-5</td>
+                <td>@dtn UTC-5 date</td>
                 <td>2023-09-21</td>
             </tr>
             </tbody>
@@ -460,7 +485,36 @@ The programmable titling capability allows the user to programmatically retrieve
             <tr>
                 <td>inFormat</td>
                 <td>
-                    The format of the input datetime. May use <code>_</code> to use <code>yyyy-MM-dd</code>. <a href="https://docs.oracle.com/javase/8/docs/api/java/text/SimpleDateFormat.html">See here for more information.</a>
+                    The format of the input datetime. May use <code>_</code> to use <code>yyyy-MM-dd'T'HH:mm:ss[.S]</code>.  <br>
+                    Some special values are supported:
+                    <table border="1">
+                        <thead>
+                        <tr>
+                            <th>Key</th>
+                            <th>Description</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td>date, d</td>
+                            <td>A date</td>
+                        </tr>
+                        <tr>
+                            <td>time, t</td>
+                            <td>A time</td>
+                        </tr>
+                        <tr>
+                            <td>mjd, jd</td>
+                            <td>A (Modified) Julian Date</td>
+                        </tr>
+                        <tr>
+                            <td>datetime, dt</td>
+                            <td>A datetime</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                    <br>
+                    <a href="https://docs.oracle.com/javase/8/docs/api/java/text/SimpleDateFormat.html">See here for more information.</a>
                 </td>
             </tr>
             <tr>
@@ -472,7 +526,36 @@ The programmable titling capability allows the user to programmatically retrieve
             <tr>
                 <td>outFormat</td>
                 <td>
-                    The format of the output datetime. May use <code>_</code> to use <code>yyyy-MM-dd</code>. <a href="https://docs.oracle.com/javase/8/docs/api/java/text/SimpleDateFormat.html">See here for more information.</a>
+                    The format of the output datetime. May use <code>_</code> to use <code>yyyy-MM-dd HH:mm:ss</code>. <br>
+                    Some special values are supported:
+                    <table border="1">
+                        <thead>
+                        <tr>
+                            <th>Key</th>
+                            <th>Example Output</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr>
+                            <td>date, d</td>
+                            <td>2023-09-19</td>
+                        </tr>
+                        <tr>
+                            <td>weekdaydate, wd</td>
+                            <td>Mon, Sep. 21 2023</td>
+                        </tr>
+                        <tr>
+                            <td>time, t</td>
+                            <td>13:15:06</td>
+                        </tr>
+                        <tr>
+                            <td>@ datetimeformat yyyy-MM-dd en-US "E, MMM dd yyyy" en-US @ today UTC</td>
+                            <td>Mon, Sep. 21 2023</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                    <br>
+                    <a href="https://docs.oracle.com/javase/8/docs/api/java/text/SimpleDateFormat.html">See here for more information.</a>
                 </td>
             </tr>
             <tr>
@@ -563,27 +646,27 @@ The programmable titling capability allows the user to programmatically retrieve
     </thead>
     <tbody>
     <tr>
-        <td><code>$F</code></td>
+        <td><code>F</code></td>
         <td>The first row (same as entering <code>1</code>)</td>
     </tr>
     <tr>
-        <td><code>$L</code></td>
+        <td><code>L</code></td>
         <td>The last row</td>
     </tr>
     <tr>
-        <td><code>$AVG</code></td>
+        <td><code>AVG</code></td>
         <td>The average of the column</td>
     </tr>
     <tr>
-        <td><code>$MED</code></td>
+        <td><code>MED</code></td>
         <td>The median of the column</td>
     </tr>
     <tr>
-        <td><code>$MIN</code></td>
+        <td><code>MIN</code></td>
         <td>The minimum of the column</td>
     </tr>
     <tr>
-        <td><code>$MAX</code></td>
+        <td><code>MAX</code></td>
         <td>The maximum of the column</td>
     </tr>
 </table>

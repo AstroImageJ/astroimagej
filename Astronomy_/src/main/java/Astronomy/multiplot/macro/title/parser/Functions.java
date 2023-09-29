@@ -22,9 +22,9 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 enum Functions {
-    HEADER(Functions::header, new String[]{"key"}, "header", "hdr", "h"),
     // Data fetch options
-    COMMENT(Functions::comment, new String[]{"key"}, "comment", "cmt", "c"),
+    HEADER(Functions::header, new String[]{"key", "slice"}, "header", "hdr", "h"),
+    COMMENT(Functions::comment, new String[]{"key", "slice"}, "comment", "cmt", "c"),
     PREFERENCE(Functions::preference, new String[]{"key"}, "pref", "prf", "p"),
     DATETIME_NOW(Functions::datetimeNow, new String[]{"zoneId", "type"}, "datetimenow", "dtn"),
     TITLE(Functions::title, new String[0], "title", "ttl"),
@@ -76,11 +76,24 @@ enum Functions {
     // Data fetch functions
     private static FunctionReturn header(ResolverContext ctx, String... ps) {
         var card = ps[0];
-        var i = ctx.getImp();
-        if (i != null) {
-            var h = FitsJ.getHeader(i);
+        var sliceS = ps[1];
+        int slice;
+        switch (sliceS) {
+            case "_" -> slice = -1;
+            case "F" -> slice = 1;
+            case "L" -> slice = ctx.table.size();
+            default -> {
+                try {
+                    slice = Integer.parseInt(sliceS);
+                } catch (Exception e) {
+                    return FunctionReturn.error("<Found not parse slice number '%s'>".formatted(sliceS));
+                }
+            }
+        }
+        var h = ctx.getHeader(slice);
+        if (h != null) {
             int c;
-            if (h != null && h.cards() != null && ((c = FitsJ.findCardWithKey(card, h)) > -1)) {
+            if (h.cards() != null && ((c = FitsJ.findCardWithKey(card, h)) > -1)) {
                 var val = FitsJ.getCardValue(h.cards()[c]).trim();
                 // Trim ' from val
                 if (val.startsWith("'") && val.endsWith("'")) {
@@ -90,16 +103,29 @@ enum Functions {
             }
             return FunctionReturn.error("<Failed to find card with key '%s'>".formatted(card));
         }
-        return FunctionReturn.error("<Found no matching image for '%s'>".formatted(ctx.table.getLabel(0)));
+        return FunctionReturn.error("<Found no matching header for slice '%s'>".formatted(sliceS));
     }
 
     private static FunctionReturn comment(ResolverContext ctx, String... ps) {
         var card = ps[0];
-        var i = ctx.getImp();
-        if (i != null) {
-            var h = FitsJ.getHeader(i);
+        var sliceS = ps[1];
+        int slice;
+        switch (sliceS) {
+            case "_" -> slice = -1;
+            case "F" -> slice = 1;
+            case "L" -> slice = ctx.table.size();
+            default -> {
+                try {
+                    slice = Integer.parseInt(sliceS);
+                } catch (Exception e) {
+                    return FunctionReturn.error("<Found not parse slice number '%s'>".formatted(sliceS));
+                }
+            }
+        }
+        var h = ctx.getHeader(slice);
+        if (h != null) {
             int c;
-            if (h != null && h.cards() != null && ((c = FitsJ.findCardWithKey(card, h)) > -1)) {
+            if (h.cards() != null && (c = FitsJ.findCardWithKey(card, h)) > -1) {
                 var val = FitsJ.getCardComment(h.cards()[c]).trim();
                 // Trim ' from val
                 if (val.startsWith("'") && val.endsWith("'")) {
@@ -109,7 +135,7 @@ enum Functions {
             }
             return FunctionReturn.error("<Failed to find card with key '%s'>".formatted(card));
         }
-        return FunctionReturn.error("<Found no matching image for '%s'>".formatted(ctx.table.getLabel(0)));
+        return FunctionReturn.error("<Found no matching header for slice '%s'>".formatted(sliceS));
     }
 
     private static FunctionReturn preference(ResolverContext ctx, String... ps) {

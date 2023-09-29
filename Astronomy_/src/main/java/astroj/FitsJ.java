@@ -121,7 +121,28 @@ public class FitsJ
 	 */
 	public static Header getHeader(ImagePlus img, int slice, boolean writable)
 		{
-		String content = getHeaderString(img, slice);
+		return getHeader(getHeaderString(img, slice), writable);
+		}
+
+		/**
+     * Extracts the original FITS header from the Properties object of the
+     * ImagePlus image (or from the slice label in the case of an ImageStack)
+     * and returns it as an array of String objects representing each card.
+     *
+     * @param content
+     */
+	public static Header getHeader(String content) {
+		return getHeader(content, true);
+	}
+
+		/**
+	 * Extracts the original FITS header from the Properties object of the
+	 * ImagePlus image (or from the slice label in the case of an ImageStack)
+	 * and returns it as an array of String objects representing each card.
+	 *
+	 */
+	public static Header getHeader(String content, boolean writable)
+	{
 		if (content == null) return null;
 		// PARSE INTO LINES
 
@@ -131,23 +152,23 @@ public class FitsJ
 
 		int istart = 0;
 		for (; istart < lines.length; istart++)
-			{
+		{
 			if (lines[istart].trim().startsWith("AIJ-HEADER-MARKER")) break;
-			}
+		}
 		if (istart == lines.length) return null;
 		istart++;
 
 		int iend = istart+1;
 		for (; iend < lines.length; iend++)
-			{
+		{
 			String s = lines[iend].trim();
 			if ( s.equals("END") || s.startsWith ("END ") ) break;
-			}
+		}
 		if (iend >= lines.length) return null;
 		var h = Header.build(Arrays.copyOfRange(lines, istart, iend+1));
 		h.holder.setWritable(writable);
 		return h;
-		}
+	}
 
 	/**
 	 * Checks to make sure the FITS header agrees with the ImageJ image parameters.

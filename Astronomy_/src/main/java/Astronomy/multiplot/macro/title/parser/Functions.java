@@ -64,7 +64,7 @@ enum Functions {
 
     public static Functions getFunction(String string) {
         // Remove @
-        string = string.replaceAll("@\s*", "");
+        string = string.replaceAll("@ *", "");
         for (Functions function : values()) {
             if (function.functionNames.contains(string)) {
                 return function;

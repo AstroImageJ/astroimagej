@@ -17,6 +17,7 @@ import java.util.Collections;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -75,38 +76,14 @@ enum Functions {
 
     // Data fetch functions
     private static FunctionReturn header(ResolverContext ctx, String... ps) {
-        var card = ps[0];
-        var sliceS = ps[1];
-        int slice;
-        switch (sliceS) {
-            case "_" -> slice = -1;
-            case "F" -> slice = 1;
-            case "L" -> slice = ctx.table.size();
-            default -> {
-                try {
-                    slice = Integer.parseInt(sliceS);
-                } catch (Exception e) {
-                    return FunctionReturn.error("<Found not parse slice number '%s'>".formatted(sliceS));
-                }
-            }
-        }
-        var h = ctx.getHeader(slice);
-        if (h != null) {
-            int c;
-            if (h.cards() != null && ((c = FitsJ.findCardWithKey(card, h)) > -1)) {
-                var val = FitsJ.getCardValue(h.cards()[c]).trim();
-                // Trim ' from val
-                if (val.startsWith("'") && val.endsWith("'")) {
-                    val = val.substring(1, val.length() - 1).trim();
-                }
-                return new FunctionReturn(val);
-            }
-            return FunctionReturn.error("<Failed to find card with key '%s'>".formatted(card));
-        }
-        return FunctionReturn.error("<Found no matching header for slice '%s'>".formatted(sliceS));
+        return processHeaderCard(FitsJ::getCardValue, ctx, ps);
     }
 
     private static FunctionReturn comment(ResolverContext ctx, String... ps) {
+        return processHeaderCard(FitsJ::getCardComment, ctx, ps);
+    }
+
+    private static FunctionReturn processHeaderCard(Function<String, String> processor, ResolverContext ctx, String... ps) {
         var card = ps[0];
         var sliceS = ps[1];
         int slice;
@@ -126,7 +103,7 @@ enum Functions {
         if (h != null) {
             int c;
             if (h.cards() != null && (c = FitsJ.findCardWithKey(card, h)) > -1) {
-                var val = FitsJ.getCardComment(h.cards()[c]).trim();
+                var val = processor.apply(h.cards()[c]).trim();
                 // Trim ' from val
                 if (val.startsWith("'") && val.endsWith("'")) {
                     val = val.substring(1, val.length() - 1).trim();

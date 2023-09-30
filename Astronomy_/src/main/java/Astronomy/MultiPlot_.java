@@ -3,8 +3,8 @@ package Astronomy;
 
 import Astronomy.multiplot.KeplerSplineControl;
 import Astronomy.multiplot.PlotDraggableShape;
-import Astronomy.multiplot.PlotNameResolver;
 import Astronomy.multiplot.macro.title.PlotNameResolver;
+import Astronomy.multiplot.macro.title.highlighting.EditorArea;
 import Astronomy.multiplot.settings.KeplerSplineSettings;
 import Astronomy.multiplot.settings.MPOperator;
 import Astronomy.multiplot.table.MeasurementsWindow;
@@ -8457,49 +8457,21 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         titleField = new JTextField(useMacroTitleButton.isSelected() ? PlotNameResolver.TITLE_MACRO.get() : title);
         titleField.setBorder(BorderFactory.createLineBorder(subBorderColor));
         titleField.setFont(p11);
-        titleField.getDocument().addDocumentListener(new DocumentListener() {
-            public void insertUpdate(DocumentEvent ev) {
-                if (useMacroTitle.get()) {
-                    PlotNameResolver.TITLE_MACRO.set(titleField.getText());
-                    var f = PlotNameResolver.resolvePlotTitle(table);
-                    if (!f.second()) {
-                        title = f.first();
-                    }
-                } else {
-                    title = titleField.getText();
+        titleField.setComponentPopupMenu(new EditorArea(useMacroTitleButton::isSelected,
+                () -> useMacroTitleButton.isSelected() ? PlotNameResolver.TITLE_MACRO.get() : title, s -> {
+            if (useMacroTitle.get()) {
+                PlotNameResolver.TITLE_MACRO.set(s);
+                var f = PlotNameResolver.resolvePlotTitle(table);
+                if (!f.second()) {
+                    title = f.first();
                     lastUsedTitle = title;
                 }
-                updatePlot(updateNoFits());
+            } else {
+                title = s;
+                lastUsedTitle = title;
             }
-
-            public void removeUpdate(DocumentEvent ev) {
-                if (useMacroTitle.get()) {
-                    PlotNameResolver.TITLE_MACRO.set(titleField.getText());
-                    var f = PlotNameResolver.resolvePlotTitle(table);
-                    if (!f.second()) {
-                        title = f.first();
-                    }
-                } else {
-                    title = titleField.getText();
-                    lastUsedTitle = title;
-                }
-                updatePlot(updateNoFits());
-            }
-
-            public void changedUpdate(DocumentEvent ev) {
-                if (useMacroTitle.get()) {
-                    PlotNameResolver.TITLE_MACRO.set(titleField.getText());
-                    var f = PlotNameResolver.resolvePlotTitle(table);
-                    if (!f.second()) {
-                        title = f.first();
-                    }
-                } else {
-                    title = titleField.getText();
-                    lastUsedTitle = title;
-                }
-                updatePlot(updateNoFits());
-            }
-        });
+            updatePlot(updateNoFits());
+        }, titleField));
         titleField.setPreferredSize(new Dimension(250, 20));
         titleField.setHorizontalAlignment(JTextField.LEFT);
         titlegroup.add(titleField);
@@ -8629,50 +8601,22 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         // SUBTITLE TEXT FIELD
         subtitleField = new JTextField(useMacroSubtitleButton.isSelected() ? PlotNameResolver.SUBTITLE_MACRO.get() : subtitle);
         subtitleField.setFont(p11);
+        subtitleField.setComponentPopupMenu(new EditorArea(useMacroTitleButton::isSelected,
+                () -> useMacroSubtitleButton.isSelected() ? PlotNameResolver.SUBTITLE_MACRO.get() : subtitle, s -> {
+            if (useMacroSubtitle.get()) {
+                PlotNameResolver.SUBTITLE_MACRO.set(s);
+                var f = PlotNameResolver.resolvePlotSubtitle(table);
+                if (!f.second()) {
+                    subtitle = f.first();
+                    lastUsedSubtitle = subtitle;
+                }
+            } else {
+                subtitle = s;
+                lastUsedSubtitle = subtitle;
+            }
+            updatePlot(updateNoFits());
+        }, subtitleField));
         subtitleField.setBorder(BorderFactory.createLineBorder(subBorderColor));
-        subtitleField.getDocument().addDocumentListener(new DocumentListener() {
-            public void insertUpdate(DocumentEvent ev) {
-                if (useMacroSubtitle.get()) {
-                    PlotNameResolver.SUBTITLE_MACRO.set(subtitleField.getText());
-                    var f = PlotNameResolver.resolvePlotSubtitle(table);
-                    if (!f.second()) {
-                        subtitle = f.first();
-                    }
-                } else {
-                    subtitle = subtitleField.getText();
-                    lastUsedSubtitle = subtitle;
-                }
-                updatePlot(updateNoFits());
-            }
-
-            public void removeUpdate(DocumentEvent ev) {
-                if (useMacroSubtitle.get()) {
-                    PlotNameResolver.SUBTITLE_MACRO.set(subtitleField.getText());
-                    var f = PlotNameResolver.resolvePlotSubtitle(table);
-                    if (!f.second()) {
-                        subtitle = f.first();
-                    }
-                } else {
-                    subtitle = subtitleField.getText();
-                    lastUsedSubtitle = subtitle;
-                }
-                updatePlot(updateNoFits());
-            }
-
-            public void changedUpdate(DocumentEvent ev) {
-                if (useMacroSubtitle.get()) {
-                    PlotNameResolver.SUBTITLE_MACRO.set(subtitleField.getText());
-                    var f = PlotNameResolver.resolvePlotSubtitle(table);
-                    if (!f.second()) {
-                        subtitle = f.first();
-                    }
-                } else {
-                    subtitle = subtitleField.getText();
-                    lastUsedSubtitle = subtitle;
-                }
-                updatePlot(updateNoFits());
-            }
-        });
         subtitleField.setPreferredSize(new Dimension(250, 20));
         subtitleField.setHorizontalAlignment(JTextField.LEFT);
 

@@ -61,6 +61,7 @@ public class PlotNameResolver {
         //System.out.println(tokens);
         ASTHandler astHandler = new ASTHandler(tokens);
         ASTNode ast = astHandler.buildAST();
+        //printAST(ast, "");
         var o = ASTHandler.evaluateFunction(new ResolverContext(table), ast);
         return new ResolveState(new Pair.GenericPair<>(o.val(), o.isError()), ASTHandler.buildHighlightingInfo(null, ast));
     }

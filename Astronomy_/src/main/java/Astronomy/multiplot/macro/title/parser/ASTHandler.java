@@ -169,7 +169,11 @@ public class ASTHandler {
         return highlightInfo;
     }
 
-    public record HighlightInfo(int beginIndex, int endIndex, EnumSet<HighlightType> types) {}
+    public record HighlightInfo(int beginIndex, int endIndex, EnumSet<HighlightType> types) {
+        public boolean contains(HighlightInfo i2) {
+            return i2.beginIndex >= beginIndex && endIndex >= i2.endIndex;
+        }
+    }
 
     public enum HighlightType {
         ERROR,

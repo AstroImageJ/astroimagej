@@ -2,6 +2,7 @@ package Astronomy.multiplot.macro.title.highlighting;
 
 import Astronomy.MultiPlot_;
 import Astronomy.multiplot.macro.title.PlotNameResolver;
+import Astronomy.multiplot.macro.title.parser.ASTHandler;
 import ij.astro.types.Pair;
 
 import javax.swing.*;
@@ -9,10 +10,15 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
+import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultStyledDocument;
+import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -97,15 +103,24 @@ public class EditorArea extends JPopupMenu {
                 updateReceived();
             }
 
-            private void updateReceived() {//todo pasting is weird when highlighting
+            private void updateReceived() {
                 var text = input.getText();
 
                 // Handle line continuations
                 text = text.replaceAll("(?<!\\\\)\\\\\n", "");
 
                 if (isProgram.get()) {
-                    render.setText(PlotNameResolver.resolve(MultiPlot_.getTable(), text).state().first());
+                    var p = PlotNameResolver.resolve(MultiPlot_.getTable(), text);
+                    render.setText(p.state().first());
+                    try {
+                        highlight(input, p.highlightInfos());
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
+                // This repaint forces the box to correctly render the bottom face
+                input.repaint();
+
                 updateSetting.accept(text);
                 displayField.setText(text.split("\n", 2)[0]);
             }
@@ -151,5 +166,31 @@ public class EditorArea extends JPopupMenu {
         areaScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
         areaScrollPane.setPreferredSize(new Dimension(700, 150));
         return new Pair.GenericPair<>(textArea, areaScrollPane);
+    }
+
+    private void highlight(JTextComponent textArea, Set<ASTHandler.HighlightInfo> highlightInfos) {
+        var highlighter = textArea.getHighlighter();
+
+        // Reset highlighter
+        highlighter.removeAllHighlights();
+
+        // Sort highlights by length, logically shorter sections will be inside large ones
+        var sorted = highlightInfos.stream().sorted(Comparator.comparingInt(hi -> hi.endIndex()-hi.beginIndex())).toList();
+        var alreadyHighlighted = new HashSet<ASTHandler.HighlightInfo>();
+
+        for (ASTHandler.HighlightInfo info : sorted) {
+            if (info.types().contains(ASTHandler.HighlightType.WHITESPACE)) {
+                continue;
+            }
+            if (info.types().contains(ASTHandler.HighlightType.FUNCTION)) {
+                try {
+                    var c = alreadyHighlighted.stream().filter(info::contains).count();
+                    highlighter.addHighlight(info.beginIndex(), info.endIndex(), new BoxHighlightPainter(Color.BLACK, c*3, info));
+                } catch (BadLocationException e) {
+                    e.printStackTrace();
+                }
+                alreadyHighlighted.add(info);
+            }
+        }
     }
 }

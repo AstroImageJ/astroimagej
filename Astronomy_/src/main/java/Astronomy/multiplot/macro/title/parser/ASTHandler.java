@@ -112,7 +112,7 @@ public class ASTHandler {
                 var p = child.process(ctx);
                 sb.append(p.val());
                 if (!hasError) {
-                    hasError = p.isError();
+                    hasError = p.isError() || child.getToken().isErr();
                 }
             }
             previousChild = child;

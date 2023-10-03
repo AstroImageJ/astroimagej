@@ -12,7 +12,7 @@ import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultStyledDocument;
-import javax.swing.text.JTextComponent;
+import javax.swing.undo.UndoManager;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.Comparator;
@@ -31,6 +31,7 @@ public class EditorArea extends JPopupMenu {
     private JTextArea render;
     private Pair.GenericPair<JTextArea, JScrollPane> inputB;
     private Pair.GenericPair<JTextArea, JScrollPane> renderB;
+    private DocumentListener listener;
     private UndoManager undoManager;
 
     public EditorArea(Supplier<Boolean> isProgram, Supplier<String> initText, Consumer<String> updateSetting,
@@ -88,30 +89,24 @@ public class EditorArea extends JPopupMenu {
         input.setEditable(true);
         input.setText(initText.get());
 
+        // Add undo/redo controls
+        undoManager = new UndoManager();
+        input.getDocument().addUndoableEditListener(undoManager);
+        input.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_Z, InputEvent.CTRL_DOWN_MASK), "undo");
+        input.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_Y, InputEvent.CTRL_DOWN_MASK), "redo");
+        input.getActionMap().put("undo", new AbstractAction() {
             @Override
-            public void removeUpdate(DocumentEvent e) {
-                updateReceived();
+            public void actionPerformed(ActionEvent e) {
+                if (undoManager.canUndo()) {
+                    undoManager.undo();
+                }
             }
-
+        });
+        input.getActionMap().put("redo", new AbstractAction() {
             @Override
-            public void changedUpdate(DocumentEvent e) {
-                updateReceived();
-            }
-
-            private void updateReceived() {
-                var text = input.getText();
-
-                // Handle line continuations
-                text = text.replaceAll("(?<!\\\\)\\\\\n", "");
-
-                if (isProgram.get()) {
-                    var p = PlotNameResolver.resolve(MultiPlot_.getTable(), text);
-                    render.setText(p.state().first());
-                    try {
-                        highlight(input, p.highlightInfos());
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
+            public void actionPerformed(ActionEvent e) {
+                if (undoManager.canRedo()) {
+                    undoManager.redo();
                 }
             }
         });
@@ -172,8 +167,10 @@ public class EditorArea extends JPopupMenu {
     private void update() {
         if (input != null) {
             input.getDocument().removeDocumentListener(listener);
+            input.getDocument().removeUndoableEditListener(undoManager);
             input.setText(initText.get());
             input.getDocument().addDocumentListener(listener);
+            input.getDocument().addUndoableEditListener(undoManager);
         }
 
         if (!isProgram.get() && getComponentIndex(renderB.second()) >= 0) {

@@ -1,4 +1,4 @@
-package Astronomy.multiplot.macro.title.highlighting;
+package Astronomy.multiplot.macro.title;
 
 import Astronomy.MultiPlot_;
 import Astronomy.multiplot.macro.title.PlotNameResolver;
@@ -14,8 +14,7 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultStyledDocument;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.event.*;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Set;
@@ -32,6 +31,7 @@ public class EditorArea extends JPopupMenu {
     private JTextArea render;
     private Pair.GenericPair<JTextArea, JScrollPane> inputB;
     private Pair.GenericPair<JTextArea, JScrollPane> renderB;
+    private UndoManager undoManager;
 
     public EditorArea(Supplier<Boolean> isProgram, Supplier<String> initText, Consumer<String> updateSetting,
                       /*Function<String, String> processTitle,*/ JTextField displayField) {
@@ -87,11 +87,6 @@ public class EditorArea extends JPopupMenu {
 
         input.setEditable(true);
         input.setText(initText.get());
-        input.getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void insertUpdate(DocumentEvent e) {
-                updateReceived();
-            }
 
             @Override
             public void removeUpdate(DocumentEvent e) {
@@ -118,13 +113,51 @@ public class EditorArea extends JPopupMenu {
                         e.printStackTrace();
                     }
                 }
+            }
+        });
+
+        // Listener that updates the setting, is saved to avoid code update of field firing
+        listener = new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                update();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                update();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                update();
+            }
+
+            private void update() {
+                var text = input.getText();
+
+                // Handle line continuations
+                text = text.replaceAll("(?<!\\\\)\\\\\n", "");
+
+                if (isProgram.get()) {
+                    try {
+                        var p = PlotNameResolver.resolve(MultiPlot_.getTable(), text);
+                        render.setText(p.state().first());
+                        highlight(input, p.highlightInfos());
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
                 // This repaint forces the box to correctly render the bottom face
                 input.repaint();
 
                 updateSetting.accept(text);
                 displayField.setText(text.split("\n", 2)[0]);
             }
-        });
+        };
+
+        input.getDocument().addDocumentListener(listener);
+
 
         render.setEditable(false);
 
@@ -138,7 +171,9 @@ public class EditorArea extends JPopupMenu {
 
     private void update() {
         if (input != null) {
+            input.getDocument().removeDocumentListener(listener);
             input.setText(initText.get());
+            input.getDocument().addDocumentListener(listener);
         }
 
         if (!isProgram.get() && getComponentIndex(renderB.second()) >= 0) {

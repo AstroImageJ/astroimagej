@@ -100,7 +100,7 @@ public class ResolverContext {
                         }
                     } else {
                         var sliceLabel = s.getSliceLabel(slice);
-                        if (label.equals(sliceLabel.split("\n")[0])) {
+                        if (sliceLabel != null && label.equals(sliceLabel.split("\n")[0])) {
                             return FitsJ.getHeader(sliceLabel);
                         }
                     }

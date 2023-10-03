@@ -19,6 +19,10 @@ public class ResolverContext {
         this.table = table;
     }
 
+    public boolean isValid() {
+        return table != null;
+    }
+
     public ImagePlus getImp() {
         if (imp != null) {
             return imp;

@@ -40,7 +40,7 @@ enum Functions {
 
     final String[] parameters;
     final Collection<String> functionNames;
-    final BiFunction<ResolverContext, String[], FunctionReturn> function;
+    private final BiFunction<ResolverContext, String[], FunctionReturn> function;
     private static final Pattern SIMPLE_VARIABLE = Pattern.compile("(\\$\\S+)");
     private static final Pattern LABEL_VARIABLE = Pattern.compile("(\\$[0-9]+)");
 
@@ -377,6 +377,14 @@ enum Functions {
             case "LASTMA" -> "multiaperture.lastrun";
             default -> key;
         };
+    }
+
+    public FunctionReturn evaluate(ResolverContext ctx, String[] ps) {
+        if (ctx.isValid()) {
+            return function.apply(ctx, ps);
+        }
+
+        return FunctionReturn.error("<Missing table>");
     }
 
     public record FunctionReturn(String val, boolean isError) {

@@ -52,7 +52,7 @@ public class ASTNode {
                 }
 
                 if (!error) {
-                    var o = func.function.apply(ctx, ps);
+                    var o = func.evaluate(ctx, ps);
                     if (o.isError()) {
                         // Only set here, we want to highlight the function that caused the error
                         token.setErr(true);

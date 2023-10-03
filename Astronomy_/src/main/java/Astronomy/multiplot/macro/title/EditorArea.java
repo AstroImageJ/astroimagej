@@ -1,7 +1,9 @@
 package Astronomy.multiplot.macro.title;
 
 import Astronomy.MultiPlot_;
-import Astronomy.multiplot.macro.title.PlotNameResolver;
+import Astronomy.multiplot.macro.title.highlighting.BoxHighlightPainter;
+import Astronomy.multiplot.macro.title.highlighting.CircleHighlightPainter;
+import Astronomy.multiplot.macro.title.highlighting.LineHighlightPainter;
 import Astronomy.multiplot.macro.title.parser.ASTHandler;
 import ij.astro.types.Pair;
 
@@ -35,7 +37,7 @@ public class EditorArea extends JPopupMenu {
     private UndoManager undoManager;
 
     public EditorArea(Supplier<Boolean> isProgram, Supplier<String> initText, Consumer<String> updateSetting,
-                      /*Function<String, String> processTitle,*/ JTextField displayField) {
+            /*Function<String, String> processTitle,*/ JTextField displayField) {
         this.isProgram = isProgram;
         this.initText = initText;
         this.updateSetting = updateSetting;
@@ -47,10 +49,10 @@ public class EditorArea extends JPopupMenu {
             public void mouseClicked(MouseEvent e) {
                 if (SwingUtilities.isLeftMouseButton(e)) {
                     Point pt = displayField.getPopupLocation(null);
-                    if(pt == null) {
+                    if (pt == null) {
                         Rectangle vis = displayField.getVisibleRect();
-                        pt = new Point(vis.x+vis.width/2,
-                                vis.y+vis.height/2);
+                        pt = new Point(vis.x + vis.width / 2,
+                                vis.y + vis.height / 2);
                     }
                     show(displayField, pt.x, pt.y);
                 }
@@ -171,6 +173,12 @@ public class EditorArea extends JPopupMenu {
             input.setText(initText.get());
             input.getDocument().addDocumentListener(listener);
             input.getDocument().addUndoableEditListener(undoManager);
+
+            try {
+                highlight(input, null);
+            } catch (BadLocationException e) {
+                e.printStackTrace();
+            }
         }
 
         if (!isProgram.get() && getComponentIndex(renderB.second()) >= 0) {
@@ -200,29 +208,39 @@ public class EditorArea extends JPopupMenu {
         return new Pair.GenericPair<>(textArea, areaScrollPane);
     }
 
-    private void highlight(JTextComponent textArea, Set<ASTHandler.HighlightInfo> highlightInfos) {
+    private void highlight(JTextArea textArea, Set<ASTHandler.HighlightInfo> highlightInfos) throws BadLocationException {
         var highlighter = textArea.getHighlighter();
+        var removedWhitespacePainter = new CircleHighlightPainter();
+        var lineIndicator = new LineHighlightPainter();
 
         // Reset highlighter
         highlighter.removeAllHighlights();
 
-        // Sort highlights by length, logically shorter sections will be inside large ones
-        var sorted = highlightInfos.stream().sorted(Comparator.comparingInt(hi -> hi.endIndex()-hi.beginIndex())).toList();
-        var alreadyHighlighted = new HashSet<ASTHandler.HighlightInfo>();
+        if (highlightInfos != null) {
+            // Sort highlights by length, logically shorter sections will be inside large ones
+            var sorted = highlightInfos.stream().sorted(Comparator.comparingInt(hi -> hi.endIndex() - hi.beginIndex())).toList();
+            var alreadyHighlighted = new HashSet<ASTHandler.HighlightInfo>();
 
-        for (ASTHandler.HighlightInfo info : sorted) {
-            if (info.types().contains(ASTHandler.HighlightType.WHITESPACE)) {
-                continue;
-            }
-            if (info.types().contains(ASTHandler.HighlightType.FUNCTION)) {
-                try {
-                    var c = alreadyHighlighted.stream().filter(info::contains).count();
-                    highlighter.addHighlight(info.beginIndex(), info.endIndex(), new BoxHighlightPainter(Color.BLACK, c*3, info));
-                } catch (BadLocationException e) {
-                    e.printStackTrace();
+            for (ASTHandler.HighlightInfo info : sorted) {
+                if (info.types().contains(ASTHandler.HighlightType.WHITESPACE)) {
+                    if (info.types().contains(ASTHandler.HighlightType.MODIFIED_WHITESPACE)) {
+                        highlighter.addHighlight(info.beginIndex(), info.beginIndex() + 1, removedWhitespacePainter);
+                    }
+                    continue;
                 }
-                alreadyHighlighted.add(info);
+                if (info.types().contains(ASTHandler.HighlightType.FUNCTION)) {
+                    var c = alreadyHighlighted.stream().filter(info::contains).count();
+                    highlighter.addHighlight(info.beginIndex(), info.endIndex(), new BoxHighlightPainter(Color.BLACK, c * 3, info));
+                    alreadyHighlighted.add(info);
+                }
             }
         }
+
+        // Add line continuation notification
+        for (int i = 0; i < textArea.getLineCount(); i++) {
+            var s = textArea.getLineStartOffset(i);
+            highlighter.addHighlight(s, s+1, lineIndicator);
+        }
     }
+
 }

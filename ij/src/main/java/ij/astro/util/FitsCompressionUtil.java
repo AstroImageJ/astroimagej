@@ -166,8 +166,7 @@ public class FitsCompressionUtil {
     }
 
     public enum Presets {
-        LOSSLESS("Lossless", new FloatSettings(CompressionState.GZIP_1, Dither.DITHER_1, 0)),
-        LCO("LCO", new FloatSettings(CompressionState.RICE_1, Dither.DITHER_1, 64)),
+        LOSSLESS("Lossless", new FloatSettings(CompressionState.GZIP_1, Dither.NONE, 0)),
         LCO("LCO GT", new FloatSettings(CompressionState.RICE_1, Dither.DITHER_1, 64)),
         CUSTOM("Custom", null)
         ;

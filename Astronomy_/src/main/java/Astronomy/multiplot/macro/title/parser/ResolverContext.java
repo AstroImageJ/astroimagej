@@ -63,13 +63,16 @@ public class ResolverContext {
             }
         }
 
+        if (slice < 1 || imp.getStackSize() < slice) {
+            slice = imp.getStackSize();
+        }
+
         FitsJ.Header header;
         if (getImp() != null) {
             var s = imp.getImageStack();
             if (s instanceof VirtualStack) {
                 var cSlice = imp.getSlice();
 
-                // Try the specified slice
                 imp.setSliceWithoutUpdate(slice);
 
                 header = FitsJ.getHeader(imp);

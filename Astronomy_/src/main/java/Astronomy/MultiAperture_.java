@@ -1248,7 +1248,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             xCenter = e != null ? canvas.offScreenXD(e.getX()) : 0;
             yCenter = e != null ? canvas.offScreenYD(e.getY()) : 0;
             if (!autoMode && !(apLoading.get().isPrevious() && firstClick) && ngot < nApertures) {
-                apertureClicked = ocanvas.findApertureRoi((int) xCenter, (int) yCenter, 0) != null;
+                apertureClicked = ocanvas.findApertureRoi(xCenter, yCenter, 0) != null;
             }
 
             // Autoradius feature

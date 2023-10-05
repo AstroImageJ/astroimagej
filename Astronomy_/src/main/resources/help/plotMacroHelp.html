@@ -12,7 +12,7 @@ The programmable titling capability allows the user to programmatically retrieve
 <ol>
     <li>stack window titles (i.e. the stack title at the very top of the image stack display).</li>
     <li>fits header values and comments,</li>
-    <li>measurements table text values, text, or column statistics, and</li>
+    <li>measurements table values, text, or column statistics, and</li>
     <li>AIJ preferences.</li>
 </ol>
 <p>In addition to retrieving the titling information, substrings can be extracted from text strings based on any
@@ -28,18 +28,21 @@ The programmable titling capability allows the user to programmatically retrieve
     With a stack display title name "TIC144193715-01_20230825_LCO-SSO-1m0_zs_33s",
     and the following syntax in the plot title box in programmable mode:
     <code>@split _ $1 @ title from Telescope @split _ $3 @ title</code> the following plot title is created:
-    <code>TIC144193715-01 from Telescope LCO-SSO-1m0</code>
+    <code>TIC144193715-01 from Telescope LCO-SSO-1m0</code>.
 
-<p>One space (" ") is removed after a function returns, use double space if a space is required.
+<p>If a function (including formatting, splitting, and regex expressions) is to be followed by text or another
+    function, the function must be followed by a space. If a space is desired after a function, two consecutive
+    spaces must be added in the source window. Each required delimiting space will be highlighted in green
+    in the source window.
 
 <p>Any function parameter that contains whitespace or multiple single or double quotes must be wrapped in quotes.
 
-<p><code>@</code> defines a function, and must precede a function name. If the symbol is required in the
-    plot title, it must be escaped with a slash eg. <code>\@</code>.
+<p>The <code>@</code> symbol starts all functions, and must precede each function name. If the <code>@</code> character
+    is required in the fixed text of a plot title, it must be escaped (preceded) with a backslash (eg. <code>\@</code>).
 
-<p>Squiggly brackets (<code>{}</code>) are ignored and will be removed from the output. This is done to allow users
-    to wrap their functions in brackets for improved readability. The brackets may be escaped to include them in the
-    title or use them in regular expressions eg. <code>\{</code>.
+<p> The text in the source window can be wrapped for clarity by adding a backslash to the end of a
+    line and then pressing the <code>&ltEnter&gt</code> key. A backslash may otherwise be used in the title text,
+    but if the text must end with the backslash character, the backslash must be escaped using a double backslash (e.g. \\).
 
 <h1>Extracting Strings and Numeric Values</h1>
 

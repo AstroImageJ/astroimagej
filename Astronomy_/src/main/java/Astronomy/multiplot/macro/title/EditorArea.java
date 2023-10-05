@@ -13,6 +13,7 @@ import javax.swing.event.DocumentListener;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 import javax.swing.text.BadLocationException;
+import javax.swing.text.DefaultHighlighter;
 import javax.swing.text.DefaultStyledDocument;
 import javax.swing.undo.UndoManager;
 import java.awt.*;
@@ -212,6 +213,7 @@ public class EditorArea extends JPopupMenu {
         var highlighter = textArea.getHighlighter();
         var removedWhitespacePainter = new CircleHighlightPainter();
         var lineIndicator = new LineHighlightPainter();
+        var errorPainter = new DefaultHighlighter.DefaultHighlightPainter(new Color(243, 114, 114));
 
         // Reset highlighter
         highlighter.removeAllHighlights();
@@ -234,6 +236,13 @@ public class EditorArea extends JPopupMenu {
                     alreadyHighlighted.add(info);
                 }
             }
+
+            // Second loop later to ensure error highlights appear over the function boxes
+            for (ASTHandler.HighlightInfo info : sorted) {
+                if (info.types().contains(ASTHandler.HighlightType.ERROR)) {
+                    highlighter.addHighlight(info.beginIndex(), info.endIndex(), errorPainter);
+                }
+            }
         }
 
         // Add line continuation notification
@@ -242,5 +251,4 @@ public class EditorArea extends JPopupMenu {
             highlighter.addHighlight(s, s+1, lineIndicator);
         }
     }
-
 }

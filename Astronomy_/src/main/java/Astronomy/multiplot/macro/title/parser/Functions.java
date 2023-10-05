@@ -41,8 +41,8 @@ enum Functions {
     final String[] parameters;
     final Collection<String> functionNames;
     private final BiFunction<ResolverContext, String[], FunctionReturn> function;
-    private static final Pattern SIMPLE_VARIABLE = Pattern.compile("(\\$\\S+)");
-    private static final Pattern LABEL_VARIABLE = Pattern.compile("(\\$[0-9]+)");
+    private static final Pattern SIMPLE_VARIABLE = Pattern.compile("((?<!\\\\)\\$\\S+)");
+    private static final Pattern LABEL_VARIABLE = Pattern.compile("((?<!\\\\)\\$[0-9]+)");
 
     Functions(BiFunction<ResolverContext, String[], FunctionReturn> function, String[] parameters, String... functionNames) {
         this.function = function;
@@ -250,7 +250,7 @@ enum Functions {
             }
         });
         
-        return new FunctionReturn(processed, errorState.get());
+        return new FunctionReturn(processed.replaceAll("(\\\\)\\$", "\\$"), errorState.get());
     }
 
     private static FunctionReturn split(ResolverContext ctx, String[] ps) {
@@ -283,7 +283,7 @@ enum Functions {
             }
         });
 
-        return new FunctionReturn(processed, errorState.get());
+        return new FunctionReturn(processed.replaceAll("(\\\\)\\$", "\\$"), errorState.get());
     }
 
     private static FunctionReturn format(ResolverContext ctx, String[] ps) {

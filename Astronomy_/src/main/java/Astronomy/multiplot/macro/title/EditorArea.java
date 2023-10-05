@@ -47,7 +47,7 @@ public class EditorArea extends JPopupMenu {
 
         displayField.addMouseListener(new MouseAdapter() {
             @Override
-            public void mouseClicked(MouseEvent e) {
+            public void mousePressed(MouseEvent e) {
                 if (SwingUtilities.isLeftMouseButton(e)) {
                     Point pt = displayField.getPopupLocation(null);
                     if (pt == null) {

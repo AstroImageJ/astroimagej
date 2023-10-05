@@ -5,8 +5,8 @@ import java.util.Arrays;
 import java.util.List;
 
 public class ASTNode {
-    private Token token;
-    private List<ASTNode> children;
+    private final Token token;
+    private final List<ASTNode> children;
 
     public ASTNode(Token token) {
         this.token = token;
@@ -56,12 +56,12 @@ public class ASTNode {
                     if (o.isError()) {
                         // Only set here, we want to highlight the function that caused the error
                         token.setErr(true);
+                        children.stream().filter(n -> n.getToken().getType() != Token.TokenType.FUNCTION_HANDLE)
+                                .forEach(c -> c.getToken().setErr(true));
                     }
 
                     return o;
                 }
-
-                children.forEach(c -> c.getToken().setErr(true));
             } else {
                 // Unknown functions should have no children
                 return new Functions.FunctionReturn("<Unknown function: '%s'>".formatted(getToken().getValue()), true);

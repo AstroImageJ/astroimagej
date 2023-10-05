@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Set;
 
 public class ASTHandler {
-    private List<Token> tokens;
+    private final List<Token> tokens;
     private int currentIndex;
 
     public ASTHandler(List<Token> tokens) {
@@ -69,7 +69,7 @@ public class ASTHandler {
             if (highlightInfo.types.contains(HighlightType.WHITESPACE)) {
                 continue;
             }
-            System.out.println("%s : %s".formatted(input.substring(highlightInfo.beginIndex, highlightInfo.endIndex), highlightInfo.types));
+            System.out.printf("%s : %s%n", input.substring(highlightInfo.beginIndex, highlightInfo.endIndex), highlightInfo.types);
         }
     }
 
@@ -125,9 +125,7 @@ public class ASTHandler {
      * Must be run after function evaluation
      */
     public static Set<HighlightInfo> buildHighlightingInfo(StringBuilder sb, ASTNode node) {
-        //todo was treeset, cannot use as the index it was sorting with apparently prevented some highlights from being added
-        //todo need new sorting method?
-        var highlightInfo = new HashSet<HighlightInfo>(/*Comparator.comparingInt(i -> i.endIndex - i.beginIndex)*/);
+        var highlightInfo = new HashSet<HighlightInfo>();
         var isRoot = sb == null;
         var beginIndex = 0;
         if (sb == null) {

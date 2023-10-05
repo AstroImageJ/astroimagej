@@ -69,42 +69,51 @@ public class ResolverContext {
             return null;
         }
 
-
-        var ids = WindowManager.getIDList();
         var label = table.getLabel(index).split("\n")[0];
         FitsJ.Header header = null;
-        if (ids != null) {
-            for (int id : ids) {
-                var i = WindowManager.getImage(id);
-                if (i != null) {
+        if (getImp() != null) {
+            var s = imp.getImageStack();
+            if (s instanceof VirtualStack) {
+                var cSlice = imp.getSlice();
+                imp.setSliceWithoutUpdate(slice);
 
-                    var s = i.getImageStack();
+                var l = s.getSliceLabel(imp.getCurrentSlice());
+                if (l != null) {
+                    l = l.split("\n")[0];
+                }
 
-                    if (s instanceof VirtualStack) {
-                        var cSlice = i.getSlice();
-                        i.setSliceWithoutUpdate(slice);
+                if (label.equals(l)) {
+                    header = FitsJ.getHeader(imp);
+                } else {
+                    for (int i = 0; i < s.size(); i++) {
+                        imp.setSliceWithoutUpdate(slice);
 
-                        var l = s.getSliceLabel(i.getCurrentSlice());
+                        l = s.getSliceLabel(imp.getCurrentSlice());
                         if (l != null) {
                             l = l.split("\n")[0];
                         }
-
                         if (label.equals(l)) {
-                            header = FitsJ.getHeader(i);
-                        }
+                            header = FitsJ.getHeader(imp);
 
-                        i.setSliceWithoutUpdate(cSlice);
-
-                        if (header != null) {
-                            return header;
-                        }
-                    } else {
-                        if (s.size() >= 1) {
-                            for (String sliceLabel : s.getSliceLabels()) {
-                                if (sliceLabel != null && label.equals(sliceLabel.split("\n")[0])) {
-                                    return FitsJ.getHeader(sliceLabel);
-                                }
+                            if (header != null) {
+                                return header;
                             }
+                        }
+                    }
+                }
+
+                imp.setSliceWithoutUpdate(cSlice);
+
+                return header;
+            } else {
+                var sliceLabel1 = s.getSliceLabel(slice);
+                if (sliceLabel1 != null && label.equals(sliceLabel1.split("\n")[0])) {
+                    return FitsJ.getHeader(sliceLabel1);
+                }
+                if (s.size() >= 1) {
+                    for (String sliceLabel : s.getSliceLabels()) {
+                        if (sliceLabel != null && label.equals(sliceLabel.split("\n")[0])) {
+                            return FitsJ.getHeader(sliceLabel);
                         }
                     }
                 }

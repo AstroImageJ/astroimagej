@@ -132,7 +132,8 @@ public class EditorArea extends JPopupMenu {
             }
 
             private void update() {
-                var text = input.getText();
+                var originalText = input.getText();
+                var text = originalText;
 
                 // Handle line continuations
                 text = text.replaceAll("(?<!\\\\)\\\\\n", "")
@@ -150,8 +151,8 @@ public class EditorArea extends JPopupMenu {
                 // This repaint forces the box to correctly render the bottom face
                 input.repaint();
 
-                updateSetting.accept(text);
-                displayField.setText(text.split("\n", 2)[0]);
+                updateSetting.accept(originalText);
+                displayField.setText(originalText.split("\n", 2)[0]);
             }
         };
 

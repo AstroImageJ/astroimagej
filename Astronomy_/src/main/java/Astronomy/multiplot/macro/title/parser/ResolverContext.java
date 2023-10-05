@@ -83,33 +83,37 @@ public class ResolverContext {
      * Find an open stack that contains a slice that matches the label.
      */
     private static ImagePlus getImpForAnySlice(MeasurementTable table) {
-        for (int row = 0; row < table.size(); row++) {
-            var label = table.getLabel(row);
-            var ids = WindowManager.getIDList();
-            if (ids != null) {
-                for (int id : ids) {
-                    var i = WindowManager.getImage(id);
-                    if (i != null) {
-                        var s = i.getImageStack();
-                        //var n = s.getShortSliceLabel(0, 500);
-                        var ls = s.getSliceLabels();
-                        if (ls != null) {
-                            for (String sliceLabel : s.getSliceLabels()) {
-                                if (sliceLabel == null) {
-                                    break;
-                                }
+        var ids = WindowManager.getIDList();
+        if (ids != null) {
+            for (int id : ids) {
+                var i = WindowManager.getImage(id);
+                if (i != null) {
+                    var s = i.getImageStack();
+                    //var n = s.getShortSliceLabel(0, 500);
+                    var ls = s.getSliceLabels();
+                    if (ls != null) {
+                        for (String sliceLabel : s.getSliceLabels()) {
+                            if (sliceLabel == null) {
+                                break;
+                            }
+                            for (int row = 0; row < table.size(); row++) {
+                                var label = table.getLabel(row);
                                 if (label.equals(sliceLabel.split("\n")[0])) {
                                     return i;
                                 }
                             }
-                        } else if (s instanceof VirtualStack virtualStack) {
-                            var l = virtualStack.getSliceLabel(i.getCurrentSlice());
-                            if (l != null) {
-                                l = l.split("\n")[0];
+                        }
+                    } else if (s instanceof VirtualStack virtualStack) {
+                        var l = virtualStack.getSliceLabel(i.getCurrentSlice());
+                        if (l != null) {
+                            l = l.split("\n")[0];
+                            for (int row = 0; row < table.size(); row++) {
+                                var label = table.getLabel(row);
                                 if (label.equals(l)) {
                                     return i;
                                 }
                             }
+
                         }
                     }
                 }

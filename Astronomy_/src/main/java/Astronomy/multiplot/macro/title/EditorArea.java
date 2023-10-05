@@ -195,6 +195,23 @@ public class EditorArea extends JPopupMenu {
     @Override
     public void setVisible(boolean b) {
         update();
+        var text = input.getText();
+
+        // Handle line continuations
+        text = text.replaceAll("(?<!\\\\)\\\\\n", "")
+                .replaceAll("\\\\\\\\", "\\\\");
+
+        if (isProgram.get()) {
+            try {
+                var p = PlotNameResolver.resolve(MultiPlot_.getTable(), text);
+                render.setText(p.state().first());
+                highlight(input, p.highlightInfos());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        // This repaint forces the box to correctly render the bottom face
+        input.repaint();
         super.setVisible(b);
     }
 

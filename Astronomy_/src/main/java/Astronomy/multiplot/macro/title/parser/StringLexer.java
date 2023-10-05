@@ -8,7 +8,7 @@ import java.util.regex.Pattern;
 public class StringLexer {
     private static final String TEXT_REGEX = "(?<WORD>\\S+)";
     private static final String QUOTED_TEXT_REGEX = "(?<QUOTED>((?=[\"'])(?:\"[^\"\\\\]*(?:\\\\[\\s\\S][^\"\\\\]*)*\"|'[^'\\\\]*(?:\\\\[\\s\\S][^'\\\\]*)*')))";
-    private static final String FUNCTION_REGEX = "(?<FUNCPREFIX>\\S+)*(?<FUNCNAME>(?<!\\\\)@\s*[\\S]+)";
+    private static final String FUNCTION_REGEX = "(?<FUNCPREFIX>\\S+)*(?<FUNCNAME>(?<!\\\\)@ *\\S+)";
     private static final String WHITESPACE_REGEX = "(?<WHITESPACE>\\s+)";
     private static final Pattern TOKENIZER_PATTERN = Pattern.compile(QUOTED_TEXT_REGEX + "|" + FUNCTION_REGEX + "|" + TEXT_REGEX + "|" + WHITESPACE_REGEX);
 

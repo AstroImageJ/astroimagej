@@ -7,7 +7,7 @@ import java.awt.geom.Rectangle2D;
 public class FilledBoxHighlightPainter extends DefaultHighlighter.DefaultHighlightPainter {
 
     public FilledBoxHighlightPainter() {
-        super(new Color(57, 117, 49));
+        super(new Color(107, 201, 98));
     }
 
     @Override

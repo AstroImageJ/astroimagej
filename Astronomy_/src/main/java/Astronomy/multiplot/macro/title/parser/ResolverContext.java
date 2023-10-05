@@ -7,12 +7,14 @@ import ij.VirtualStack;
 import ij.WindowManager;
 
 import java.util.HashMap;
+import java.util.Map;
+import java.util.WeakHashMap;
 
 public class ResolverContext {
     MeasurementTable table;
     private ImagePlus imp;
     private boolean failedImpDiscovery;
-    private final HashMap<Integer, FitsJ.Header> headerCache = new HashMap<>();
+    private static final Map<ImagePlus, Map<Integer, FitsJ.Header>> headerCache = new WeakHashMap<>();
 
     public ResolverContext(MeasurementTable table) {
         this.table = table;
@@ -20,6 +22,13 @@ public class ResolverContext {
 
     public boolean isValid() {
         return table != null;
+    }
+
+    public static void invalidateHeaderCache(ImagePlus imp, int slice) {
+        var m = headerCache.get(imp);
+        if (m != null) {
+            m.remove(slice);
+        }
     }
 
     public ImagePlus getImp() {
@@ -35,8 +44,16 @@ public class ResolverContext {
     }
 
     public FitsJ.Header getHeader(int slice) {
-        headerCache.computeIfAbsent(slice, this::getHeaderForSlice);
-        return headerCache.get(slice);
+        if (slice == 0) {
+            return null;
+        }
+        if (getImp() != null) {
+            headerCache.computeIfAbsent(imp, $ -> new HashMap<>());
+            headerCache.get(imp).computeIfAbsent(slice, this::getHeaderForSlice);
+            return headerCache.get(imp).get(slice);
+        }
+
+        return null;
     }
 
     private FitsJ.Header getHeaderForSlice(int slice) {
@@ -46,7 +63,7 @@ public class ResolverContext {
             }
         }
 
-        var label = table.getLabel(slice).split("\n")[0];
+        var label = table.getLabel(slice-1).split("\n")[0];
         FitsJ.Header header = null;
         if (getImp() != null) {
             var s = imp.getImageStack();

@@ -1,6 +1,7 @@
 // FITS_Header_Editor.java
 package astroj;
 
+import Astronomy.multiplot.macro.title.parser.ResolverContext;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.Prefs;
@@ -432,6 +433,7 @@ public class FitsHeaderEditor implements ListSelectionListener, ActionListener, 
             if (imp.getCanvas() instanceof AstroCanvas)
                 if (((AstroStackWindow) imp.getWindow()).hasWCS())
                     ((AstroStackWindow) imp.getWindow()).setAstroProcessor(true);
+            ResolverContext.invalidateHeaderCache(imp, slice);
         } else if (cmd.equals(SAVEASTEXT)) {
             if (table.getCellEditor() != null) { //finalize the last edit if enter has not been pressed
                 table.getCellEditor().stopCellEditing();
@@ -463,6 +465,7 @@ public class FitsHeaderEditor implements ListSelectionListener, ActionListener, 
             if (imp.getCanvas() instanceof AstroCanvas)
                 if (((AstroStackWindow) imp.getWindow()).hasWCS())
                     ((AstroStackWindow) imp.getWindow()).setAstroProcessor(true);
+            ResolverContext.invalidateHeaderCache(imp, slice);
         } else if (cmd.equals(SAVEFILE)) {
             if (table.getCellEditor() != null) { //finalize the last edit if enter has not been pressed
                 table.getCellEditor().stopCellEditing();
@@ -506,6 +509,7 @@ public class FitsHeaderEditor implements ListSelectionListener, ActionListener, 
             if (imp.getCanvas() instanceof AstroCanvas)
                 if (((AstroStackWindow) imp.getWindow()).hasWCS())
                     ((AstroStackWindow) imp.getWindow()).setAstroProcessor(true);
+            ResolverContext.invalidateHeaderCache(imp, slice);
         } else if (cmd.equals(SAVEFILEAS)) {
             if (table.getCellEditor() != null) { //finalize the last edit if enter has not been pressed
                 table.getCellEditor().stopCellEditing();

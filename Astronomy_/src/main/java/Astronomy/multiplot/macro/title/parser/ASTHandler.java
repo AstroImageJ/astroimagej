@@ -118,7 +118,7 @@ public class ASTHandler {
             previousChild = child;
         }
 
-        return new Functions.FunctionReturn(sb.toString(), hasError);
+        return new Functions.FunctionReturn(sb.toString().replaceAll("\\\\@", "@"), hasError);
     }
 
     /**

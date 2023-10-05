@@ -135,7 +135,8 @@ public class EditorArea extends JPopupMenu {
                 var text = input.getText();
 
                 // Handle line continuations
-                text = text.replaceAll("(?<!\\\\)\\\\\n", "");
+                text = text.replaceAll("(?<!\\\\)\\\\\n", "")
+                        .replaceAll("\\\\\\\\", "\\\\");
 
                 if (isProgram.get()) {
                     try {

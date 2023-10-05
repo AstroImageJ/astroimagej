@@ -2,7 +2,7 @@ package Astronomy.multiplot.macro.title;
 
 import Astronomy.MultiPlot_;
 import Astronomy.multiplot.macro.title.highlighting.BoxHighlightPainter;
-import Astronomy.multiplot.macro.title.highlighting.CircleHighlightPainter;
+import Astronomy.multiplot.macro.title.highlighting.FilledBoxHighlightPainter;
 import Astronomy.multiplot.macro.title.highlighting.LineHighlightPainter;
 import Astronomy.multiplot.macro.title.parser.ASTHandler;
 import ij.astro.types.Pair;
@@ -229,7 +229,7 @@ public class EditorArea extends JPopupMenu {
 
     private void highlight(JTextArea textArea, Set<ASTHandler.HighlightInfo> highlightInfos) throws BadLocationException {
         var highlighter = textArea.getHighlighter();
-        var removedWhitespacePainter = new CircleHighlightPainter();
+        var removedWhitespacePainter = new FilledBoxHighlightPainter();
         var lineIndicator = new LineHighlightPainter();
         var errorPainter = new DefaultHighlighter.DefaultHighlightPainter(new Color(243, 114, 114));
 

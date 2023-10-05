@@ -2,13 +2,12 @@ package Astronomy.multiplot.macro.title.highlighting;
 
 import javax.swing.text.*;
 import java.awt.*;
-import java.awt.geom.Ellipse2D;
 import java.awt.geom.Rectangle2D;
 
-public class CircleHighlightPainter extends DefaultHighlighter.DefaultHighlightPainter {
+public class FilledBoxHighlightPainter extends DefaultHighlighter.DefaultHighlightPainter {
 
-    public CircleHighlightPainter() {
-        super(new Color(53, 98, 48));
+    public FilledBoxHighlightPainter() {
+        super(new Color(57, 117, 49));
     }
 
     @Override
@@ -49,11 +48,7 @@ public class CircleHighlightPainter extends DefaultHighlighter.DefaultHighlightP
             }
 
             if (r != null) {
-                var e = new Ellipse2D.Double();
-                e.setFrameFromCenter(r.getCenterX(), r.getCenterY(), r.getMaxX(), r.getMaxY());
-                e.height = e.width;
-                e.y += e.width/2;
-                g2.fill(e);
+                g2.fill(r);
             }
 
             return r;

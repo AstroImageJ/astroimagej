@@ -99,9 +99,12 @@ public class ResolverContext {
                             return header;
                         }
                     } else {
-                        var sliceLabel = s.getSliceLabel(slice);
-                        if (sliceLabel != null && label.equals(sliceLabel.split("\n")[0])) {
-                            return FitsJ.getHeader(sliceLabel);
+                        if (s.size() >= 1) {
+                            for (String sliceLabel : s.getSliceLabels()) {
+                                if (sliceLabel != null && label.equals(sliceLabel.split("\n")[0])) {
+                                    return FitsJ.getHeader(sliceLabel);
+                                }
+                            }
                         }
                     }
                 }

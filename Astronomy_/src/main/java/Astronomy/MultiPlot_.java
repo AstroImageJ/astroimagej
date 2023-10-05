@@ -8601,7 +8601,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         // SUBTITLE TEXT FIELD
         subtitleField = new JTextField(useMacroSubtitleButton.isSelected() ? PlotNameResolver.SUBTITLE_MACRO.get() : subtitle);
         subtitleField.setFont(p11);
-        subtitleField.setComponentPopupMenu(new EditorArea(useMacroTitleButton::isSelected,
+        subtitleField.setComponentPopupMenu(new EditorArea(useMacroSubtitleButton::isSelected,
                 () -> useMacroSubtitleButton.isSelected() ? PlotNameResolver.SUBTITLE_MACRO.get() : subtitle, s -> {
             if (useMacroSubtitle.get()) {
                 PlotNameResolver.SUBTITLE_MACRO.set(s);

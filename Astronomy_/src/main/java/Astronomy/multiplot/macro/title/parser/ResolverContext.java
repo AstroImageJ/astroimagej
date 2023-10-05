@@ -126,10 +126,7 @@ public class ResolverContext {
                         }
                         if (label.equals(l)) {
                             header = FitsJ.getHeader(imp);
-
-                            if (header != null) {
-                                return header;
-                            }
+                            break;
                         }
                     }
                 }

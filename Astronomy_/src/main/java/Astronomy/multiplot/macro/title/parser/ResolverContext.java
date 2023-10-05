@@ -75,9 +75,24 @@ public class ResolverContext {
             var s = imp.getImageStack();
             if (s instanceof VirtualStack) {
                 var cSlice = imp.getSlice();
+
+                // Current slice open has what we need
+                var l = s.getSliceLabel(imp.getCurrentSlice());
+                if (l != null) {
+                    l = l.split("\n")[0];
+                }
+                if (label.equals(l)) {
+                    header = FitsJ.getHeader(imp);
+
+                    if (header != null) {
+                        return header;
+                    }
+                }
+
+                // Try the specified slice
                 imp.setSliceWithoutUpdate(slice);
 
-                var l = s.getSliceLabel(imp.getCurrentSlice());
+                l = s.getSliceLabel(imp.getCurrentSlice());
                 if (l != null) {
                     l = l.split("\n")[0];
                 }

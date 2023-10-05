@@ -11,10 +11,7 @@ import java.text.DecimalFormat;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.Temporal;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Locale;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -39,15 +36,16 @@ enum Functions {
     ;
 
     final String[] parameters;
-    final Collection<String> functionNames;
+    public final List<String> functionNames;
     private final BiFunction<ResolverContext, String[], FunctionReturn> function;
+    public static final List<String> EXAMPLE_FUNCTION_NAMES = new ArrayList<>();
     private static final Pattern SIMPLE_VARIABLE = Pattern.compile("((?<!\\\\)\\$\\S+)");
     private static final Pattern LABEL_VARIABLE = Pattern.compile("((?<!\\\\)\\$[0-9]+)");
 
     Functions(BiFunction<ResolverContext, String[], FunctionReturn> function, String[] parameters, String... functionNames) {
         this.function = function;
         this.parameters = parameters;
-        this.functionNames = Collections.unmodifiableCollection(Arrays.asList(functionNames));
+        this.functionNames = Collections.unmodifiableList(Arrays.asList(functionNames));
         // Make sure paramNames array is entered correctly
         if (IJ.isAijDev()) {
             for (String paramName : parameters) {
@@ -58,13 +56,19 @@ enum Functions {
         }
     }
 
+    static {
+        for (Functions value : values()) {
+            EXAMPLE_FUNCTION_NAMES.add(value.functionNames.get(0));
+        }
+    }
+
     public int paramCount() {
         return parameters.length;
     }
 
     public static Functions getFunction(String string) {
         // Remove @
-        string = string.replaceAll("@ *", "");
+        string = string.replaceAll("@ ?", "");
         for (Functions function : values()) {
             if (function.functionNames.contains(string)) {
                 return function;

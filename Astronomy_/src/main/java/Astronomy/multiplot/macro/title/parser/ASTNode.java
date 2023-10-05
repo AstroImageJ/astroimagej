@@ -63,7 +63,11 @@ public class ASTNode {
                     return o;
                 }
             } else {
+                getToken().setErr(true);
                 // Unknown functions should have no children
+                if (getToken().getValue().matches("@ ?")) {
+                    return new Functions.FunctionReturn("<Missing function, possible: '%s'>".formatted(Functions.EXAMPLE_FUNCTION_NAMES), true);
+                }
                 return new Functions.FunctionReturn("<Unknown function: '%s'>".formatted(getToken().getValue()), true);
             }
         } else if (getToken().getType() == Token.TokenType.QUOTED_TEXT) {

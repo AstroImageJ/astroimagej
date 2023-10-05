@@ -5,7 +5,6 @@ import astroj.MeasurementTable;
 import ij.ImagePlus;
 import ij.VirtualStack;
 import ij.WindowManager;
-import ij.measure.ResultsTable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -64,88 +63,23 @@ public class ResolverContext {
             }
         }
 
-        // Find slice index for tables that are sorted differently
-        var c = table.getColumnIndex("slice");
-        var index = -1;
-        if (c != ResultsTable.COLUMN_NOT_FOUND) {
-            if (slice - 1 >= 0 && slice-1 < table.size() && table.getValueAsDouble(c, slice-1) == slice) {
-                index = slice-1;
-            } else {
-                for (int i = 0; i < table.size(); i++) {
-                    if (table.getValueAsDouble(c, i) == slice) {
-                        index = i;
-                        break;
-                    }
-                }
-            }
-        } else {
-            return null;
-        }
-
-        if (index < 0) {
-            return null;
-        }
-
-        var label = table.getLabel(index).split("\n")[0];
-        FitsJ.Header header = null;
+        FitsJ.Header header;
         if (getImp() != null) {
             var s = imp.getImageStack();
             if (s instanceof VirtualStack) {
                 var cSlice = imp.getSlice();
 
-                // Current slice open has what we need
-                var l = s.getSliceLabel(imp.getCurrentSlice());
-                if (l != null) {
-                    l = l.split("\n")[0];
-                }
-                if (label.equals(l)) {
-                    header = FitsJ.getHeader(imp);
-
-                    if (header != null) {
-                        return header;
-                    }
-                }
-
                 // Try the specified slice
                 imp.setSliceWithoutUpdate(slice);
 
-                l = s.getSliceLabel(imp.getCurrentSlice());
-                if (l != null) {
-                    l = l.split("\n")[0];
-                }
-
-                if (label.equals(l)) {
-                    header = FitsJ.getHeader(imp);
-                } else {
-                    for (int i = 0; i < s.size(); i++) {
-                        imp.setSliceWithoutUpdate(i);
-
-                        l = s.getSliceLabel(imp.getCurrentSlice());
-                        if (l != null) {
-                            l = l.split("\n")[0];
-                        }
-                        if (label.equals(l)) {
-                            header = FitsJ.getHeader(imp);
-                            break;
-                        }
-                    }
-                }
+                header = FitsJ.getHeader(imp);
 
                 imp.setSliceWithoutUpdate(cSlice);
 
                 return header;
             } else {
-                var sliceLabel1 = s.getSliceLabel(slice);
-                if (sliceLabel1 != null && label.equals(sliceLabel1.split("\n")[0])) {
-                    return FitsJ.getHeader(sliceLabel1);
-                }
-                if (s.size() >= 1) {
-                    for (String sliceLabel : s.getSliceLabels()) {
-                        if (sliceLabel != null && label.equals(sliceLabel.split("\n")[0])) {
-                            return FitsJ.getHeader(sliceLabel);
-                        }
-                    }
-                }
+                var sliceLabel = s.getSliceLabel(slice);
+                return FitsJ.getHeader(sliceLabel);
             }
         }
 

@@ -63,7 +63,9 @@ public class PlotNameResolver {
         ASTNode ast = astHandler.buildAST();
         //printAST(ast, "");
         var o = ASTHandler.evaluateFunction(new ResolverContext(table), ast);
-        return new ResolveState(new Pair.GenericPair<>(o.val(), o.isError()), ASTHandler.buildHighlightingInfo(null, ast));
+        return new ResolveState(new Pair.GenericPair<>(o.val()
+                .replaceAll("(?<!\\\\)\\\\\n", "")
+                .replaceAll("\\\\\\\\", "\\\\"), o.isError()), ASTHandler.buildHighlightingInfo(null, ast));
     }
 
     public record ResolveState(Pair.GenericPair<String, Boolean> state, Set<ASTHandler.HighlightInfo> highlightInfos) {}

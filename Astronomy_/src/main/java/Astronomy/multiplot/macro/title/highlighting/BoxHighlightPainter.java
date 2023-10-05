@@ -151,8 +151,8 @@ public class BoxHighlightPainter extends DefaultHighlighter.DefaultHighlightPain
         double newWidth = r.getWidth() + delta;
         double newHeight = r.getHeight() + delta;
 
-        double newX = centerX - newWidth / 2;
-        double newY = centerY - newHeight / 2;
+        double newX = centerX - newWidth / 2D;
+        double newY = centerY - newHeight / 2D;
 
         r.setRect(newX, newY, newWidth, newHeight);
     }

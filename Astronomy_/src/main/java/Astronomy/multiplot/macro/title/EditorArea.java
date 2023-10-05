@@ -133,15 +133,10 @@ public class EditorArea extends JPopupMenu {
 
             private void update() {
                 var originalText = input.getText();
-                var text = originalText;
-
-                // Handle line continuations
-                text = text.replaceAll("(?<!\\\\)\\\\\n", "")
-                        .replaceAll("\\\\\\\\", "\\\\");
 
                 if (isProgram.get()) {
                     try {
-                        var p = PlotNameResolver.resolve(MultiPlot_.getTable(), text);
+                        var p = PlotNameResolver.resolve(MultiPlot_.getTable(), originalText);
                         render.setText(p.state().first());
                         highlight(input, p.highlightInfos());
                     } catch (Exception e) {
@@ -198,14 +193,9 @@ public class EditorArea extends JPopupMenu {
         update();
         var text = input.getText();
 
-        // Handle line continuations
-        text = text.replaceAll("(?<!\\\\)\\\\\n", "")
-                .replaceAll("\\\\\\\\", "\\\\");
-
         if (isProgram.get()) {
             try {
                 var p = PlotNameResolver.resolve(MultiPlot_.getTable(), text);
-                render.setText(p.state().first());
                 highlight(input, p.highlightInfos());
             } catch (Exception e) {
                 e.printStackTrace();
@@ -251,7 +241,7 @@ public class EditorArea extends JPopupMenu {
                 }
                 if (info.types().contains(ASTHandler.HighlightType.FUNCTION)) {
                     var c = alreadyHighlighted.stream().filter(info::contains).count();
-                    highlighter.addHighlight(info.beginIndex(), info.endIndex(), new BoxHighlightPainter(Color.BLACK, c * 3, info));
+                    highlighter.addHighlight(info.beginIndex(), info.endIndex(), new BoxHighlightPainter(Color.BLACK, c*3, info));
                     alreadyHighlighted.add(info);
                 }
             }

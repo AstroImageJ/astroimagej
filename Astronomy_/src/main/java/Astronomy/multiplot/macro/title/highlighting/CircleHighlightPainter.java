@@ -8,7 +8,7 @@ import java.awt.geom.Rectangle2D;
 public class CircleHighlightPainter extends DefaultHighlighter.DefaultHighlightPainter {
 
     public CircleHighlightPainter() {
-        super(new Color(186,60,60));
+        super(new Color(53, 98, 48));
     }
 
     @Override

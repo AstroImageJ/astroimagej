@@ -267,7 +267,9 @@ public class EditorArea extends JPopupMenu {
         // Add line continuation notification
         for (int i = 0; i < textArea.getLineCount(); i++) {
             var s = textArea.getLineStartOffset(i);
-            highlighter.addHighlight(s, s+1, lineIndicator);
+            if (i == 0 || !textArea.getText(textArea.getLineEndOffset(i - 1) - 2, 1).equals("\\")) {
+                highlighter.addHighlight(s, s+1, lineIndicator);
+            }
         }
     }
 }

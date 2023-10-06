@@ -241,7 +241,7 @@ public class EditorArea extends JPopupMenu {
                 }
                 if (info.types().contains(ASTHandler.HighlightType.FUNCTION)) {
                     var c = alreadyHighlighted.stream().filter(info::contains).count();
-                    highlighter.addHighlight(info.beginIndex(), info.endIndex(), new BoxHighlightPainter(Color.BLACK, c*3, info));
+                    highlighter.addHighlight(info.beginIndex(), info.endIndex(), new BoxHighlightPainter(Color.BLACK, c*2, info));
                     alreadyHighlighted.add(info);
                 }
             }

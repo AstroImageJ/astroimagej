@@ -4197,7 +4197,65 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         table.setLock(false);
         plotWindow.getImagePlus().setPlot(plot);
         ((PlotWindow) plotWindow).setPlot(plot);
+        drawOffscreenDisplacementArrows();
         updatePlotRunning = false;
+    }
+
+    private static void drawOffscreenDisplacementArrows() {
+        var hasNorth = false;
+        var hasSouth = false;
+        var hasEast = false;
+        var hasWest = false;
+        for (int c = 0; c < maxCurves; c++) {
+            if (!plotY[c]) continue;
+            // Check x
+            for (int i = 0; i < nn[c] && (!hasEast || !hasWest); i++) {
+                var xi = x[c][i];
+                if (xi <= plotMinX) {
+                    hasWest = true;
+                }
+                if (xi >= plotMaxX) {
+                    hasEast = true;
+                }
+            }
+
+            // Check y
+            for (int i = 0; i < nn[c] && (!hasNorth || !hasSouth); i++) {
+                var yi = y[c][i];
+                if (yi <= plotMinY) {
+                    hasSouth = true;
+                }
+                if (yi >= plotMaxY) {
+                    hasNorth = true;
+                }
+            }
+        }
+
+        var centerX = plot.scaleXtoPxl((plotMaxX - plotMinX)/2D + plotMinX);
+        var centerY = plot.scaleYtoPxl((plotMaxY - plotMinY)/2D + plotMinY);
+        var o = new Overlay();
+
+        if (hasSouth) {
+            var r = new Arrow(centerX, plot.scaleYtoPxl((plotMaxY - plotMinY)/10D + plotMinY), centerX, plot.scaleYtoPxl(plotMinY));
+            r.setStrokeColor(Color.RED);
+            o.add(r);
+        }
+        if (hasNorth) {
+            var r = new Arrow(centerX, plot.scaleYtoPxl(-(plotMaxY - plotMinY)/10D + plotMaxY), centerX, plot.scaleYtoPxl(plotMaxY));
+            r.setStrokeColor(Color.RED);
+            o.add(r);
+        }
+        if (hasEast) {
+            var r = new Arrow(plot.scaleXtoPxl(-(plotMaxX - plotMinX)/10D + plotMaxX), centerY, plot.scaleXtoPxl(plotMaxX), centerY);
+            r.setStrokeColor(Color.RED);
+            o.add(r);
+        }
+        if (hasWest) {
+            var r = new Arrow(plot.scaleXtoPxl((plotMaxX - plotMinX)/10D + plotMinX), centerY, plot.scaleXtoPxl(plotMinX), centerY);
+            r.setStrokeColor(Color.RED);
+            o.add(r);
+        }
+        plotImageCanvas.setOverlay(o);
     }
 
     static void updatePlotPos() {

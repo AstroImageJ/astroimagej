@@ -36,7 +36,7 @@ import static ij.process.ImageProcessor.RIGHT_JUSTIFY;
  * Save a plot as a vector PDF. Drawing methods are adapted from {@link Plot}.
  */
 public class PdfPlotOutput {
-    private final Vector<IPlotObject> allPlotObjects;
+    private final Vector<? extends IPlotObject> allPlotObjects;
     private final Plot plot;
     private final double frameWidth;
     private final double frameHeight;
@@ -47,13 +47,8 @@ public class PdfPlotOutput {
     private int justification;
 
     private PdfPlotOutput(Plot plot) {
-        var allPlotObjects = (Vector<?>) plot.allPlotObjects;
-        this.allPlotObjects = new Vector<>();
+        this.allPlotObjects = plot.allPlotObjects;
         this.plot = plot;
-
-        allPlotObjects.forEach(plotObject -> {
-            this.allPlotObjects.add((IPlotObject) plotObject);
-        });
 
         var margins = plot.getMargins();
 
@@ -780,7 +775,7 @@ public class PdfPlotOutput {
     }
 
     void drawString(Graphics2D g, String s, int x, int y) {
-        if (s == null || s.equals("")) return;
+        if (s == null || s.isEmpty()) return;
         cx = x;
         cy = y;
         if (!s.contains("\n")) {
@@ -810,7 +805,8 @@ public class PdfPlotOutput {
         if (w <= 0 || h <= 0) return;
         int descent = g.getFontMetrics().getDescent();
 
-        if (cxx >= 0 && cy - h >= 0) {
+        // Removed this check as ImageProcessor#drawString2 still draws even when false
+        if (cxx >= 0 /*&& cy - h >= 0*/) {
             Java2.setAntialiasedText(g, true);
             g.drawString(s, cxx, (h - descent) + cy - h);
             cy += h;

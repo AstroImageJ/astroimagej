@@ -4202,60 +4202,121 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     }
 
     private static void drawOffscreenDisplacementArrows() {
-        var hasNorth = false;
-        var hasSouth = false;
-        var hasEast = false;
-        var hasWest = false;
         for (int c = 0; c < maxCurves; c++) {
             if (!plotY[c]) continue;
-            // Check x
-            for (int i = 0; i < nn[c] && (!hasEast || !hasWest); i++) {
+
+            var westX = new double[nn[c]];
+            var westY = new double[nn[c]];
+            var westP = 0;
+            var eastX = new double[nn[c]];
+            var eastY = new double[nn[c]];
+            var eastP = 0;
+            var northX = new double[nn[c]];
+            var northY = new double[nn[c]];
+            var northP = 0;
+            var southX = new double[nn[c]];
+            var southY = new double[nn[c]];
+            var southP = 0;
+            var northEastX = new double[nn[c]];
+            var northEastY = new double[nn[c]];
+            var northEastP = 0;
+            var northWestX = new double[nn[c]];
+            var northWestY = new double[nn[c]];
+            var northWestP = 0;
+            var southEastX = new double[nn[c]];
+            var southEastY = new double[nn[c]];
+            var southEastP = 0;
+            var southWestX = new double[nn[c]];
+            var southWestY = new double[nn[c]];
+            var southWestP = 0;
+            for (int i = 0; i < nn[c]; i++) {
                 var xi = x[c][i];
+                var yi = y[c][i];
+
+                if (!Double.isFinite(xi) && !Double.isFinite(yi)) {
+                    continue;
+                }
+
+                // Check x
                 if (xi <= plotMinX) {
-                    hasWest = true;
+                    xi = plotMinX + (plotMaxX - plotMinX)/100;
+                    if (yi >= plotMaxY - (plotMaxY - plotMinY)/100) {
+                        yi = plotMaxY - (plotMaxY - plotMinY)/100;
+                        northWestX[northWestP] = xi;
+                        northWestY[northWestP++] = yi;
+                        continue;
+                    } else if (yi <= plotMinY + (plotMaxY - plotMinY)/100) {
+                        yi = plotMinY + (plotMaxY - plotMinY)/100;
+                        southWestX[southWestP] = xi;
+                        southWestY[southWestP++] = yi;
+                        continue;
+                    }
+                    westX[westP] = xi;
+                    westY[westP++] = yi;
                 }
                 if (xi >= plotMaxX) {
-                    hasEast = true;
+                    xi = plotMaxX - (plotMaxX - plotMinX)/100;
+                    if (yi >= plotMaxY - (plotMaxY - plotMinY)/100) {
+                        yi = plotMaxY - (plotMaxY - plotMinY)/100;
+                        northEastX[northEastP] = xi;
+                        northEastY[northEastP++] = yi;
+                        continue;
+                    } else if (yi <= plotMinY + (plotMaxY - plotMinY)/100) {
+                        yi = plotMinY + (plotMaxY - plotMinY)/100;
+                        southEastX[southEastP] = xi;
+                        southEastY[southEastP++] = yi;
+                        continue;
+                    }
+                    eastX[eastP] = xi;
+                    eastY[eastP++] = yi;
                 }
-            }
 
-            // Check y
-            for (int i = 0; i < nn[c] && (!hasNorth || !hasSouth); i++) {
-                var yi = y[c][i];
+                // Check y
                 if (yi <= plotMinY) {
-                    hasSouth = true;
+                    yi = plotMinY + (plotMaxY - plotMinY)/100;
+                    if (xi <= plotMinX + (plotMaxX - plotMinX)/100) {
+                        xi = plotMinX + (plotMaxX - plotMinX)/100;
+                        southEastX[southEastP] = xi;
+                        southEastY[southEastP++] = yi;
+                        continue;
+                    } else if (xi >= plotMaxX - (plotMaxX - plotMinX)/100) {
+                        xi = plotMaxX - (plotMaxX - plotMinX)/100;
+                        southWestX[southWestP] = xi;
+                        southWestY[southWestP++] = yi;
+                        continue;
+                    }
+                    southX[southP] = xi;
+                    southY[southP++] = yi;
                 }
                 if (yi >= plotMaxY) {
-                    hasNorth = true;
+                    yi = plotMaxY - (plotMaxY - plotMinY)/100;
+                    if (xi <= plotMinX + (plotMaxX - plotMinX)/100) {
+                        xi = plotMinX + (plotMaxX - plotMinX)/100;
+                        northEastX[northEastP] = xi;
+                        northEastY[northEastP++] = yi;
+                        continue;
+                    } else if (xi >= plotMaxX - (plotMaxX - plotMinX)/100) {
+                        xi = plotMaxX - (plotMaxX - plotMinX)/100;
+                        northWestX[northWestP] = xi;
+                        northWestY[northWestP++] = yi;
+                        continue;
+                    }
+                    northX[northP] = xi;
+                    northY[northP++] = yi;
                 }
             }
-        }
 
-        var centerX = plot.scaleXtoPxl((plotMaxX - plotMinX)/2D + plotMinX);
-        var centerY = plot.scaleYtoPxl((plotMaxY - plotMinY)/2D + plotMinY);
-        var o = new Overlay();
+            plot.setColor(Color.RED);
 
-        if (hasSouth) {
-            var r = new Arrow(centerX, plot.scaleYtoPxl((plotMaxY - plotMinY)/10D + plotMinY), centerX, plot.scaleYtoPxl(plotMinY));
-            r.setStrokeColor(Color.RED);
-            o.add(r);
+            plot.add("arrow_left", Arrays.copyOf(westX, westP), Arrays.copyOf(westY, westP));
+            plot.add("arrow_right", Arrays.copyOf(eastX, eastP), Arrays.copyOf(eastY, eastP));
+            plot.add("arrow_down", Arrays.copyOf(southX, southP), Arrays.copyOf(southY, southP));
+            plot.add("arrow_up", Arrays.copyOf(northX, northP), Arrays.copyOf(northY, northP));
+            plot.add("arrow_ne", Arrays.copyOf(northEastX, northEastP), Arrays.copyOf(northEastY, northEastP));
+            plot.add("arrow_nw", Arrays.copyOf(northWestX, northWestP), Arrays.copyOf(northWestY, northWestP));
+            plot.add("arrow_se", Arrays.copyOf(southEastX, southEastP), Arrays.copyOf(southEastY, southEastP));
+            plot.add("arrow_sw", Arrays.copyOf(southWestX, southWestP), Arrays.copyOf(southWestY, southWestP));
         }
-        if (hasNorth) {
-            var r = new Arrow(centerX, plot.scaleYtoPxl(-(plotMaxY - plotMinY)/10D + plotMaxY), centerX, plot.scaleYtoPxl(plotMaxY));
-            r.setStrokeColor(Color.RED);
-            o.add(r);
-        }
-        if (hasEast) {
-            var r = new Arrow(plot.scaleXtoPxl(-(plotMaxX - plotMinX)/10D + plotMaxX), centerY, plot.scaleXtoPxl(plotMaxX), centerY);
-            r.setStrokeColor(Color.RED);
-            o.add(r);
-        }
-        if (hasWest) {
-            var r = new Arrow(plot.scaleXtoPxl((plotMaxX - plotMinX)/10D + plotMinX), centerY, plot.scaleXtoPxl(plotMinX), centerY);
-            r.setStrokeColor(Color.RED);
-            o.add(r);
-        }
-        plotImageCanvas.setOverlay(o);
     }
 
     static void updatePlotPos() {
@@ -17396,8 +17457,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             IJ.showMessage("No plot image to save");
             return;
         }
+        image.setHideOverlay(true);//todo not working
         if (path == null) return;
         IJ.runPlugIn(image, writer, path);
+        //image.setHideOverlay(false);
     }
 
     static void saveConfig(boolean template) {

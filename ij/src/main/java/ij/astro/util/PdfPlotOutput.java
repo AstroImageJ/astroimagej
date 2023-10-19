@@ -983,6 +983,46 @@ public class PdfPlotOutput {
             case DOT:
                 drawDot(g, x, y);
                 break;
+            case ARROW_UP:
+                g.draw(new Line2D.Double(x,ybase-plot.sc(1),xend+plot.sc(1),yend));
+                g.draw(new Line2D.Double(x,ybase-plot.sc(1),xbase-plot.sc(1),yend));
+                g.draw(new Line2D.Double(xend+plot.sc(1),yend,xbase-plot.sc(1),yend));
+                break;
+            case ARROW_DOWN:
+                g.draw(new Line2D.Double(xbase-plot.sc(1), ybase-plot.sc(1), xend+plot.sc(1), ybase-plot.sc(1)));
+                g.draw(new Line2D.Double(x,yend,xbase-plot.sc(1), ybase-plot.sc(1)));
+                g.draw(new Line2D.Double(x,yend,xend+plot.sc(1), ybase-plot.sc(1)));
+                break;
+            case ARROW_LEFT:
+                g.draw(new Line2D.Double(x-plot.sc(1),y,xend+plot.sc(1),yend));
+                g.draw(new Line2D.Double(x-plot.sc(1),y,xend+plot.sc(1),ybase-plot.sc(1)));
+                g.draw(new Line2D.Double(xend+plot.sc(1),yend,xend+plot.sc(1),ybase-plot.sc(1)));
+                break;
+            case ARROW_RIGHT:
+                g.draw(new Line2D.Double(x+plot.sc(1),y,xbase-plot.sc(1),yend));
+                g.draw(new Line2D.Double(x+plot.sc(1),y,xbase-plot.sc(1),ybase-plot.sc(1)));
+                g.draw(new Line2D.Double(xbase-plot.sc(1),yend,xbase-plot.sc(1),ybase-plot.sc(1)));
+                break;
+            case ARROW_NORTH_EAST:
+                g.draw(new Line2D.Double(xbase-plot.sc(1),ybase-plot.sc(1),xend+plot.sc(1),ybase-plot.sc(1)));
+                g.draw(new Line2D.Double(xend+plot.sc(1), yend,xend+plot.sc(1),ybase-plot.sc(1)));
+                g.draw(new Line2D.Double(xbase-plot.sc(1),ybase-plot.sc(1), xend+plot.sc(1), yend));
+                break;
+            case ARROW_SOUTH_EAST:
+                g.draw(new Line2D.Double(xbase-plot.sc(1),yend+plot.sc(1),xend+plot.sc(1),yend+plot.sc(1)));
+                g.draw(new Line2D.Double(xend+plot.sc(1), yend,xend+plot.sc(1),ybase-plot.sc(1)));
+                g.draw(new Line2D.Double(xbase-plot.sc(1),yend+plot.sc(1), xend+plot.sc(1),ybase-plot.sc(1)));
+                break;
+            case ARROW_NORTH_WEST:
+                g.draw(new Line2D.Double(xbase-plot.sc(1),ybase-plot.sc(1),xend+plot.sc(1),ybase-plot.sc(1)));
+                g.draw(new Line2D.Double(xbase-plot.sc(1), yend,xbase-plot.sc(1),ybase-plot.sc(1)));
+                g.draw(new Line2D.Double(xend+plot.sc(1),ybase-plot.sc(1), xbase-plot.sc(1), yend));
+                break;
+            case ARROW_SOUTH_WEST:
+                g.draw(new Line2D.Double(xbase-plot.sc(1),yend+plot.sc(1),xend+plot.sc(1),yend+plot.sc(1)));
+                g.draw(new Line2D.Double(xbase-plot.sc(1), yend,xbase-plot.sc(1),ybase-plot.sc(1)));
+                g.draw(new Line2D.Double(xend+plot.sc(1),yend+plot.sc(1), xbase-plot.sc(1), ybase-plot.sc(1)));
+                break;
             /*case CUSTOM://todo implemnt
                 if (plotObject.macroCode==null || frame==null)
                     break;

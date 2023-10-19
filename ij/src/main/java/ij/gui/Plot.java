@@ -78,11 +78,29 @@ public class Plot implements Cloneable {
 	public static final int BAR = 11;
 	/** Draw a free-standing bar for each point. x values should be equidistant and sorted (ascending or descending) */
 	public static final int SEPARATED_BAR = 12;
+	@AstroImageJ(reason = "Custom plot shape")
+	public static final int ARROW_DOWN = 13;
+	@AstroImageJ(reason = "Custom plot shape")
+	public static final int ARROW_UP = 14;
+	@AstroImageJ(reason = "Custom plot shape")
+	public static final int ARROW_LEFT = 15;
+	@AstroImageJ(reason = "Custom plot shape")
+	public static final int ARROW_RIGHT = 16;
+	@AstroImageJ(reason = "Custom plot shape")
+	public static final int ARROW_NORTH_EAST = 17;
+	@AstroImageJ(reason = "Custom plot shape")
+	public static final int ARROW_SOUTH_EAST = 18;
+	@AstroImageJ(reason = "Custom plot shape")
+	public static final int ARROW_SOUTH_WEST = 19;
+	@AstroImageJ(reason = "Custom plot shape")
+	public static final int ARROW_NORTH_WEST = 20;
 
 	/** Names for the shapes as an array */
+	@AstroImageJ(reason = "Custom plot shape", modified = true)
 	final static String[] SHAPE_NAMES = new String[] {
 			"Circle", "X", "Line", "Box", "Triangle", "+", "Dot", "Connected Circles", "Diamond",
-			"Custom", "Filled", "Bar", "Separated Bars"};
+			"Custom", "Filled", "Bar", "Separated Bars", "Arrow Down", "Arrow Up", "Arrow Left", "Arrow Right",
+			"Arrow North East", "Arrow South East", "Arrow South West", "Arrow North West"};
 	/** Names in nicely sorting order for menus */
 	final static String[] SORTED_SHAPES = new String[] {
 			SHAPE_NAMES[LINE], SHAPE_NAMES[CONNECTED_CIRCLES], SHAPE_NAMES[FILLED], SHAPE_NAMES[BAR], SHAPE_NAMES[SEPARATED_BAR],
@@ -819,6 +837,7 @@ public class Plot implements Cloneable {
 	}
 
 	/** Returns the number for a given plot symbol shape, -1 for xError and -2 for yError (all case-insensitive) */
+	@AstroImageJ(reason = "Custom plot shape", modified = true)
 	public static int toShape(String str) {
 		str = str.toLowerCase(Locale.US);
 		int shape = Plot.CIRCLE;
@@ -850,6 +869,22 @@ public class Plot implements Cloneable {
 			shape = Plot.SEPARATED_BAR;
 		else if (str.contains("bar"))
 			shape = Plot.BAR;
+		else if (str.contains("arrow_down"))
+			shape = ARROW_DOWN;
+		else if (str.contains("arrow_up"))
+			shape = ARROW_UP;
+		else if (str.contains("arrow_left"))
+			shape = ARROW_LEFT;
+		else if (str.contains("arrow_right"))
+			shape = ARROW_RIGHT;
+		else if (str.contains("arrow_se"))
+			shape = ARROW_SOUTH_EAST;
+		else if (str.contains("arrow_sw"))
+			shape = ARROW_SOUTH_WEST;
+		else if (str.contains("arrow_ne"))
+			shape = ARROW_NORTH_EAST;
+		else if (str.contains("arrow_nw"))
+			shape = ARROW_NORTH_WEST;
 		if (str.startsWith("code:"))
 			shape = CUSTOM;
 		return shape;
@@ -3343,7 +3378,7 @@ public class Plot implements Cloneable {
 	}
 
 	/** Draw the symbol for the data point number 'pointIndex' (pointIndex < 0 when drawing the legend) */
-	@AstroImageJ(reason = "Restore lineWidth for dots to support bolded datum and MP style", modified = true)
+	@AstroImageJ(reason = "Restore lineWidth for dots to support bolded datum and MP style; custom plot shapes", modified = true)
 	void drawShape(PlotObject plotObject, int x, int y, int shape, int size, int pointIndex) {
 		if (ip==null)
 			return;
@@ -3388,6 +3423,58 @@ public class Plot implements Cloneable {
 			case DOT:
 				ip.setLineWidth(lineWidth);
 				ip.drawDot(x, y); //uses current line width
+				break;
+			case ARROW_UP:
+				ip.drawLine(x,ybase-sc(1),xend+sc(1),yend);
+				ip.drawLine(x,ybase-sc(1),xbase-sc(1),yend);
+				ip.drawLine(xend+sc(1),yend,xbase-sc(1),yend);
+				/*ip.draw(new PolygonRoi(
+						new int[]{x, xend+sc(1), x, xbase-sc(1), xend+sc(1), xbase-sc(1)},
+						new int[]{ybase-sc(1), yend, ybase-sc(1), yend, yend, yend}, 5, Roi.POLYGON));*/
+				break;
+			case ARROW_DOWN:
+				ip.drawLine(xbase-sc(1), ybase-sc(1), xend+sc(1), ybase-sc(1));
+				ip.drawLine(x,yend,xbase-sc(1), ybase-sc(1));
+				ip.drawLine(x,yend,xend+sc(1), ybase-sc(1));
+				/*ip.draw(new PolygonRoi(
+						new int[]{xbase-sc(1),xend+sc(1),x,xbase-sc(1),x,xend+sc(1),},
+						new int[]{ybase-sc(1),ybase-sc(1),yend,ybase-sc(1),yend,ybase-sc(1)}, 6, Roi.POLYGON));*/
+				break;
+			case ARROW_LEFT:
+				ip.drawLine(x-sc(1),y,xend+sc(1),yend);
+				ip.drawLine(x-sc(1),y,xend+sc(1),ybase-sc(1));
+				ip.drawLine(xend+sc(1),yend,xend+sc(1),ybase-sc(1));
+				/*ip.draw(new PolygonRoi(
+						new int[]{x-sc(1), xend+sc(1), x-sc(1), xend+sc(1), xend+sc(1)},
+						new int[]{y,yend,y,ybase-sc(1),yend,ybase-sc(1)}, 5, Roi.POLYGON));*/
+				break;
+			case ARROW_RIGHT:
+				ip.drawLine(x+sc(1),y,xbase-sc(1),yend);
+				ip.drawLine(x+sc(1),y,xbase-sc(1),ybase-sc(1));
+				ip.drawLine(xbase-sc(1),yend,xbase-sc(1),ybase-sc(1));
+				/*ip.draw(new PolygonRoi(
+						new int[]{x+sc(1),xbase-sc(1),x+sc(1),xbase-sc(1),xbase-sc(1),xbase-sc(1)},
+						new int[]{y,yend,y,ybase-sc(1),yend,ybase-sc(1)}, 6, Roi.POLYGON));*/
+				break;
+			case ARROW_NORTH_EAST:
+				ip.drawLine(xbase-sc(1),ybase-sc(1),xend+sc(1),ybase-sc(1));
+				ip.drawLine(xend+sc(1), yend,xend+sc(1),ybase-sc(1));
+				ip.drawLine(xbase-sc(1),ybase-sc(1), xend+sc(1), yend);
+				break;
+			case ARROW_SOUTH_EAST:
+				ip.drawLine(xbase-sc(1),yend+sc(1),xend+sc(1),yend+sc(1));
+				ip.drawLine(xend+sc(1), yend,xend+sc(1),ybase-sc(1));
+				ip.drawLine(xbase-sc(1),yend+sc(1), xend+sc(1),ybase-sc(1));
+				break;
+			case ARROW_NORTH_WEST:
+				ip.drawLine(xbase-sc(1),ybase-sc(1),xend+sc(1),ybase-sc(1));
+				ip.drawLine(xbase-sc(1), yend,xbase-sc(1),ybase-sc(1));
+				ip.drawLine(xend+sc(1),ybase-sc(1), xbase-sc(1), yend);
+				break;
+			case ARROW_SOUTH_WEST:
+				ip.drawLine(xbase-sc(1),yend+sc(1),xend+sc(1),yend+sc(1));
+				ip.drawLine(xbase-sc(1), yend,xbase-sc(1),ybase-sc(1));
+				ip.drawLine(xend+sc(1),yend+sc(1), xbase-sc(1), ybase-sc(1));
 				break;
 			case CUSTOM:
 				if (plotObject.macroCode==null || frame==null)
@@ -4410,11 +4497,13 @@ class PlotObject implements Cloneable, Serializable, IPlotObject {
 	}
 
 	/** Whether an XY_DATA object has markers to draw */
-	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving", modified = true)
+	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving; custom plot shapes", modified = true)
 	public boolean hasMarker() {
 		return type == XY_DATA && (shape == Plot.CIRCLE || shape == Plot.X || shape == Plot.BOX || shape == Plot.TRIANGLE
 				|| shape == Plot.CROSS || shape == Plot.DIAMOND || shape == Plot.DOT || shape == Plot.CONNECTED_CIRCLES
-				|| shape == Plot.CUSTOM);
+				|| shape == Plot.CUSTOM || shape == Plot.ARROW_UP || shape == Plot.ARROW_DOWN ||
+				shape == Plot.ARROW_LEFT || shape == Plot.ARROW_RIGHT || shape == Plot.ARROW_NORTH_EAST ||
+				shape == Plot.ARROW_NORTH_WEST || shape == Plot.ARROW_SOUTH_EAST || shape == Plot.ARROW_SOUTH_WEST);
 	}
 
 	/** Whether an XY_DATA object has markers that can be filled */

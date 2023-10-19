@@ -4202,32 +4202,52 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     }
 
     private static void drawOffscreenDisplacementArrows() {
-        for (int c = 0; c < maxCurves; c++) {
+        var westX = new double[nn[firstCurve]];
+        var westY = new double[nn[firstCurve]];
+        var eastX = new double[nn[firstCurve]];
+        var eastY = new double[nn[firstCurve]];
+        var northX = new double[nn[firstCurve]];
+        var northY = new double[nn[firstCurve]];
+        var southX = new double[nn[firstCurve]];
+        var southY = new double[nn[firstCurve]];
+        var northEastX = new double[nn[firstCurve]];
+        var northEastY = new double[nn[firstCurve]];
+        var northWestX = new double[nn[firstCurve]];
+        var northWestY = new double[nn[firstCurve]];
+        var southEastX = new double[nn[firstCurve]];
+        var southEastY = new double[nn[firstCurve]];
+        var southWestX = new double[nn[firstCurve]];
+        var southWestY = new double[nn[firstCurve]];
+
+        for (int c = firstCurve; c < maxCurves; c++) {
             if (!plotY[c]) continue;
 
-            var westX = new double[nn[c]];
-            var westY = new double[nn[c]];
+            if (westY.length < nn[c]) {
+                westX = new double[nn[c]];
+                westY = new double[nn[c]];
+                eastX = new double[nn[c]];
+                eastY = new double[nn[c]];
+                northX = new double[nn[c]];
+                northY = new double[nn[c]];
+                southX = new double[nn[c]];
+                southY = new double[nn[c]];
+                northEastX = new double[nn[c]];
+                northEastY = new double[nn[c]];
+                northWestX = new double[nn[c]];
+                northWestY = new double[nn[c]];
+                southEastX = new double[nn[c]];
+                southEastY = new double[nn[c]];
+                southWestX = new double[nn[c]];
+                southWestY = new double[nn[c]];
+            }
+
             var westP = 0;
-            var eastX = new double[nn[c]];
-            var eastY = new double[nn[c]];
             var eastP = 0;
-            var northX = new double[nn[c]];
-            var northY = new double[nn[c]];
             var northP = 0;
-            var southX = new double[nn[c]];
-            var southY = new double[nn[c]];
             var southP = 0;
-            var northEastX = new double[nn[c]];
-            var northEastY = new double[nn[c]];
             var northEastP = 0;
-            var northWestX = new double[nn[c]];
-            var northWestY = new double[nn[c]];
             var northWestP = 0;
-            var southEastX = new double[nn[c]];
-            var southEastY = new double[nn[c]];
             var southEastP = 0;
-            var southWestX = new double[nn[c]];
-            var southWestY = new double[nn[c]];
             var southWestP = 0;
             for (int i = 0; i < nn[c]; i++) {
                 var xi = x[c][i];

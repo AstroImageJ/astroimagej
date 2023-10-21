@@ -3457,24 +3457,24 @@ public class Plot implements Cloneable {
 						new int[]{y,yend,y,ybase-sc(1),yend,ybase-sc(1)}, 6, Roi.POLYGON));*/
 				break;
 			case ARROW_NORTH_EAST:
-				ip.drawLine(xbase-sc(1),ybase-sc(1),xend+sc(1),ybase-sc(1));
-				ip.drawLine(xend+sc(1), yend,xend+sc(1),ybase-sc(1));
-				ip.drawLine(xbase-sc(1),ybase-sc(1), xend+sc(1), yend);
+				ip.drawLine(xbase-sc(1),ybase+sc(1),xend+sc(1),ybase+sc(1));
+				ip.drawLine(xend+sc(1), yend+sc(1),xend+sc(1),ybase+sc(1));
+				ip.drawLine(xbase-sc(1),ybase+sc(1), xend+sc(1), yend+sc(1));
 				break;
 			case ARROW_SOUTH_EAST:
-				ip.drawLine(xbase-sc(1),yend+sc(1),xend+sc(1),yend+sc(1));
-				ip.drawLine(xend+sc(1), yend,xend+sc(1),ybase-sc(1));
-				ip.drawLine(xbase-sc(1),yend+sc(1), xend+sc(1),ybase-sc(1));
+				ip.drawLine(xbase-sc(1),yend-sc(1),xend+sc(1),yend-sc(1));
+				ip.drawLine(xend+sc(1), yend+sc(1),xend+sc(1),ybase-sc(1));
+				ip.drawLine(xbase-sc(1),yend-sc(1), xend+sc(1),ybase-sc(1));
 				break;
 			case ARROW_NORTH_WEST:
-				ip.drawLine(xbase-sc(1),ybase-sc(1),xend+sc(1),ybase-sc(1));
-				ip.drawLine(xbase-sc(1), yend,xbase-sc(1),ybase-sc(1));
-				ip.drawLine(xend+sc(1),ybase-sc(1), xbase-sc(1), yend);
+				ip.drawLine(xbase-sc(1),ybase+sc(1),xend+sc(1),ybase+sc(1));
+				ip.drawLine(xbase-sc(1), yend,xbase-sc(1),ybase+sc(1));
+				ip.drawLine(xend+sc(1),ybase+sc(1), xbase-sc(1), yend+sc(1));
 				break;
 			case ARROW_SOUTH_WEST:
-				ip.drawLine(xbase-sc(1),yend+sc(1),xend+sc(1),yend+sc(1));
-				ip.drawLine(xbase-sc(1), yend,xbase-sc(1),ybase-sc(1));
-				ip.drawLine(xend+sc(1),yend+sc(1), xbase-sc(1), ybase-sc(1));
+				ip.drawLine(xbase-sc(1),yend-sc(1),xend+sc(1),yend-sc(1));
+				ip.drawLine(xbase-sc(1), yend+sc(1),xbase-sc(1),ybase-sc(1));
+				ip.drawLine(xend+sc(1),yend-sc(1), xbase-sc(1), ybase-sc(1));
 				break;
 			case CUSTOM:
 				if (plotObject.macroCode==null || frame==null)

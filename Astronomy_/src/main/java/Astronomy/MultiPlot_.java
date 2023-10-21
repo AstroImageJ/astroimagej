@@ -4249,6 +4249,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             var northWestP = 0;
             var southEastP = 0;
             var southWestP = 0;
+            final var div = 97;
             for (int i = 0; i < nn[c]; i++) {
                 var xi = x[c][i];
                 var yi = y[c][i];
@@ -4259,14 +4260,14 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
                 // Check x
                 if (xi <= plotMinX) {
-                    xi = plotMinX + (plotMaxX - plotMinX)/100;
+                    xi = plotMinX + (plotMaxX - plotMinX)/div;
                     if (yi >= plotMaxY - (plotMaxY - plotMinY)/100) {
-                        yi = plotMaxY - (plotMaxY - plotMinY)/100;
+                        yi = plotMaxY - (plotMaxY - plotMinY)/div;
                         northWestX[northWestP] = xi;
                         northWestY[northWestP++] = yi;
                         continue;
                     } else if (yi <= plotMinY + (plotMaxY - plotMinY)/100) {
-                        yi = plotMinY + (plotMaxY - plotMinY)/100;
+                        yi = plotMinY + (plotMaxY - plotMinY)/div;
                         southWestX[southWestP] = xi;
                         southWestY[southWestP++] = yi;
                         continue;
@@ -4275,14 +4276,14 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     westY[westP++] = yi;
                 }
                 if (xi >= plotMaxX) {
-                    xi = plotMaxX - (plotMaxX - plotMinX)/100;
+                    xi = plotMaxX - (plotMaxX - plotMinX)/div;
                     if (yi >= plotMaxY - (plotMaxY - plotMinY)/100) {
-                        yi = plotMaxY - (plotMaxY - plotMinY)/100;
+                        yi = plotMaxY - (plotMaxY - plotMinY)/div;
                         northEastX[northEastP] = xi;
                         northEastY[northEastP++] = yi;
                         continue;
                     } else if (yi <= plotMinY + (plotMaxY - plotMinY)/100) {
-                        yi = plotMinY + (plotMaxY - plotMinY)/100;
+                        yi = plotMinY + (plotMaxY - plotMinY)/div;
                         southEastX[southEastP] = xi;
                         southEastY[southEastP++] = yi;
                         continue;
@@ -4293,14 +4294,14 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
                 // Check y
                 if (yi <= plotMinY) {
-                    yi = plotMinY + (plotMaxY - plotMinY)/100;
+                    yi = plotMinY + (plotMaxY - plotMinY)/div;
                     if (xi <= plotMinX + (plotMaxX - plotMinX)/100) {
-                        xi = plotMinX + (plotMaxX - plotMinX)/100;
+                        xi = plotMinX + (plotMaxX - plotMinX)/div;
                         southEastX[southEastP] = xi;
                         southEastY[southEastP++] = yi;
                         continue;
                     } else if (xi >= plotMaxX - (plotMaxX - plotMinX)/100) {
-                        xi = plotMaxX - (plotMaxX - plotMinX)/100;
+                        xi = plotMaxX - (plotMaxX - plotMinX)/div;
                         southWestX[southWestP] = xi;
                         southWestY[southWestP++] = yi;
                         continue;
@@ -4309,14 +4310,14 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     southY[southP++] = yi;
                 }
                 if (yi >= plotMaxY) {
-                    yi = plotMaxY - (plotMaxY - plotMinY)/100;
+                    yi = plotMaxY - (plotMaxY - plotMinY)/div;
                     if (xi <= plotMinX + (plotMaxX - plotMinX)/100) {
-                        xi = plotMinX + (plotMaxX - plotMinX)/100;
+                        xi = plotMinX + (plotMaxX - plotMinX)/div;
                         northEastX[northEastP] = xi;
                         northEastY[northEastP++] = yi;
                         continue;
                     } else if (xi >= plotMaxX - (plotMaxX - plotMinX)/100) {
-                        xi = plotMaxX - (plotMaxX - plotMinX)/100;
+                        xi = plotMaxX - (plotMaxX - plotMinX)/div;
                         northWestX[northWestP] = xi;
                         northWestY[northWestP++] = yi;
                         continue;
@@ -4328,6 +4329,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
             plot.setColor(Color.RED);
 
+            plot.setLineWidth(Math.round(dotSize.get()*1.5));
             plot.add("arrow_left", Arrays.copyOf(westX, westP), Arrays.copyOf(westY, westP));
             plot.add("arrow_right", Arrays.copyOf(eastX, eastP), Arrays.copyOf(eastY, eastP));
             plot.add("arrow_down", Arrays.copyOf(southX, southP), Arrays.copyOf(southY, southP));
@@ -4336,6 +4338,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             plot.add("arrow_nw", Arrays.copyOf(northWestX, northWestP), Arrays.copyOf(northWestY, northWestP));
             plot.add("arrow_se", Arrays.copyOf(southEastX, southEastP), Arrays.copyOf(southEastY, southEastP));
             plot.add("arrow_sw", Arrays.copyOf(southWestX, southWestP), Arrays.copyOf(southWestY, southWestP));
+            plot.setLineWidth(dotSize.get());
         }
     }
 

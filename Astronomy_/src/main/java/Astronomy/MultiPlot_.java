@@ -868,6 +868,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     private static Property<Boolean> drawAijVersion = new Property<>(true, "plot.", "", MultiPlot_.class);
     private static Property<Boolean> useMacroTitle = new Property<>(false, MultiPlot_.class);
     private static Property<Boolean> useMacroSubtitle = new Property<>(false, MultiPlot_.class);
+    private static Property<Boolean> drawOffscreenDisplacementArrows = new Property<>(false, MultiPlot_.class);
     private static Property<BiState> drawBinErrBarsBase = new Property<>(BiState.DISABLED, "plot.", "", MultiPlot_.class);
     private static String lastUsedTitle, lastUsedSubtitle;
 
@@ -4197,7 +4198,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         table.setLock(false);
         plotWindow.getImagePlus().setPlot(plot);
         ((PlotWindow) plotWindow).setPlot(plot);
-        drawOffscreenDisplacementArrows();
+        if (drawOffscreenDisplacementArrows.get()) {
+            drawOffscreenDisplacementArrows();
+        }
         updatePlotRunning = false;
     }
 
@@ -17798,6 +17801,14 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             updatePlot();
         });
         panel.add(control4, c);
+
+        c.gridy++;
+        var control5 = new JCheckBox("Draw offscreen displacement arrows", drawOffscreenDisplacementArrows.get());
+        control5.addChangeListener($ -> {
+            drawOffscreenDisplacementArrows.set(control5.isSelected());
+            updatePlot();
+        });
+        panel.add(control5, c);
 
         panel.setBorder(BorderFactory.createEmptyBorder(20,30,20,30));
 

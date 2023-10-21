@@ -1,4 +1,3 @@
-// MultiPlot_.java
 package Astronomy;
 
 import Astronomy.multiplot.KeplerSplineControl;
@@ -164,7 +163,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static boolean showLSymbolInfo;
     static boolean showSigmaForAllCurves;
     static boolean showSigmaForDetrendedCurves;
-    //        static boolean useTwoLineLegend;
     static boolean useWideDataPanel;
     static boolean subframeWasShowing;
     static boolean newPlotWindow;
@@ -404,11 +402,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static ImageIcon copyAndLockIcon = createImageIcon("astroj/images/customlegend.png", "Lock to the current fitted value.");
     static JButton[][] copyAndLockButton;
     public static double[] sigma, prevSigma, prevBic, tolerance, residualShift, autoResidualShift;
-    //        static double residualShiftStep;
     static double[] defaultFitStep;
     static JSpinner[] toleranceSpinner, residualShiftSpinner;
-    //        static JSpinner residualShiftStepSpinner;
-//        static JPopupMenu residualShiftStepPopup;
     static int[] maxFitSteps;
     static JSpinner[] maxFitStepsSpinner, modelLineWidthSpinner, residualLineWidthSpinner;
     static boolean[] useTransitFit, bpLock, showLTranParams, showLResidual, autoUpdateFit, showModel, showResidual, showResidualError;
@@ -488,7 +483,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static Border grayBorder2 = new CompoundBorder(BorderFactory.createLineBorder(Color.GRAY, 2), new EmptyBorder(2, 2, 2, 2));
     static Border grayBorder = new CompoundBorder(BorderFactory.createLineBorder(Color.GRAY, 1), new EmptyBorder(2, 2, 2, 2));    //top,left,bottom,right
     static Border greenBorder = new CompoundBorder(BorderFactory.createLineBorder(Color.GREEN, 1), new EmptyBorder(1, 1, 1, 1));
-    //        static Border greenBorder = BorderFactory.createLineBorder(Color.GREEN, 2);
     static Border lockBorder = new CompoundBorder(BorderFactory.createLineBorder(Color.ORANGE, 2), new EmptyBorder(2, 2, 2, 2));
     static Border convergedBorder = new CompoundBorder(BorderFactory.createLineBorder(new Color(0, 200, 0), 2), new EmptyBorder(2, 2, 2, 2));
     static Border failedBorder = new CompoundBorder(BorderFactory.createLineBorder(Color.RED, 2), new EmptyBorder(2, 2, 2, 2));
@@ -574,8 +568,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static JSpinner T0stepspinner, periodstepspinner, durationstepspinner;
     static JSpinner T0spinner, periodspinner, durationspinner;
 
-    //        static JCheckBox usextickscheckbox, useytickscheckbox, usexgridcheckbox;
-//        static JCheckBox useygridcheckbox, usexnumberscheckbox, useynumberscheckbox;
     static JCheckBox showVMarker1CB, showVMarker2CB, twoxPeriodCB, oddNotEvenCB, periodSyncCB;
     static JCheckBox showMFMarkersCB, showDMarkersCB, useDMarker1CB, useDMarker4CB;
 
@@ -590,7 +582,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
     static PlotWindow plotWindow;
     static ImagePlus plotImage;
-    //        static ImageProcessor ip;
     static ImageCanvas plotImageCanvas;
     static OverlayCanvas plotOverlayCanvas;
     static Panel plotbottompanel;
@@ -623,12 +614,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static int[] xc1column, yc1column, xc2column, yc2column;
     static String[] oplabel;
     static int[] opcolumn;
-    //        static String[] errlabel;
-//        static String[] operrlabel;
     static boolean[] showErrors;  //user has requested to plot auto-error
     static boolean[] hasErrors;  //indicates error is available for a curve
-    //        static boolean[] showErr; //retains showErrors from previous plot update
-//        static boolean[] showOpErrors;
     static boolean[] hasOpErrors;  //indicates operator error is available for a curve
     static boolean[] lines;
     public static boolean[] smooth;
@@ -984,8 +971,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             } else if (filteredTables.length == 1) {
                 tableName = filteredTables[0];
                 setTable(MeasurementTable.getTable(tableName), forceUpdate, useAutoAstroDataUpdate);
-            } else                            // IF MORE THAN ONE, ASK WHICH TABLE SHOULD BE USED
-            {
+            } else { // IF MORE THAN ONE, ASK WHICH TABLE SHOULD BE USED
                 GenericDialog gd = new GenericDialog("Plot Table Columns");
                 gd.addMessage("Select table to be plotted.");
                 gd.addChoice("Table to be plotted", filteredTables, "Measurements");
@@ -1026,9 +1012,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             } else {
                 updateColumnLists();
                 Prefs.set("plot2.tableName", tableName);
-//                if (table != null && !tableName.equals("No Table Selected") && useAutoAstroDataUpdate && autoAstroDataUpdate && addAstroDataFrameWasShowing && OKbutton != null) {
-//                    OKbutton.doClick();
-//                }
                 if (table != null) {
                     loadConfigOfOpenTable(table.getFilePath());
                     table.show();
@@ -1047,19 +1030,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         finishSetup(forceUpdate, false);
     }
     static void finishSetup(boolean forceUpdate, boolean useAutoAstroDataUpdate) {
-        //if (oldUnfilteredColumns==null) IJ.log("old unfiltercolumns is null");
         if (mainFrame == null || !mainFrame.isVisible()) {
             showMainJPanel();
-        }
-//        if (!Arrays.equals(unfilteredColumns, oldUnfilteredColumns))
-//            {
-//            IJ.log("columns are different");
-//            for (int i=0; i<(oldUnfilteredColumns==null?0:oldUnfilteredColumns.length); i++)
-//                IJ.log("oldUnfilteredColumn["+i+"]="+oldUnfilteredColumns[i]);
-//            for (int i=0; i<(unfilteredColumns==null?0:unfilteredColumns.length); i++)
-//                IJ.log("unfilteredColumn["+i+"]="+unfilteredColumns[i]);
-//            }
-        else if (forceUpdate || oldUnfilteredColumns==null || !Arrays.equals(unfilteredColumns, oldUnfilteredColumns)) {
+        } else if (forceUpdate || oldUnfilteredColumns==null || !Arrays.equals(unfilteredColumns, oldUnfilteredColumns)) {
             updatePanels();
         }
         oldUnfilteredColumns = unfilteredColumns.clone();
@@ -1070,7 +1043,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
     static public void makeDummyTable() {
         tableName = "No Table Selected";
-        table = null; //MeasurementTable.getTable(tableName);
+        table = null;
         FitOptimization.clearCleanHistory();
         dataSectionBorder.setTitle("Data (" + MeasurementTable.shorterName(tableName) + ")");
         unfilteredColumns = new String[1];
@@ -1079,7 +1052,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         columnsDetrend = unfilteredColumns.clone();
         columnswd = unfilteredColumns.clone();
         finishSetup(true);
-//        Prefs.set("plot2.tableName",tableName);
     }
 
     static public void updateColumnLists() {
@@ -1118,7 +1090,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         String pcol;
         for (String value : pcols) {
             pcol = value.toLowerCase().trim();
-            if (pcol.equals("rel_flux") || pcol.equals("rel_flux_") || pcol.equals("rel_flux_t") || pcol.equals("rel_flux_c")) {     //treat rel_flux, rel_flux_T, rel_flux_C as a special cases since rel_flux matches rel_flux_err, etc.
+            if (pcol.equals("rel_flux") || pcol.equals("rel_flux_") || pcol.equals("rel_flux_t") || pcol.equals("rel_flux_c")) { //treat rel_flux, rel_flux_T, rel_flux_C as a special cases since rel_flux matches rel_flux_err, etc.
                 for (int i = 1; i < cols.length; i++) {
                     if (cols[i].toLowerCase().startsWith("rel_flux_t") || cols[i].toLowerCase().startsWith("rel_flux_c")) {
                         columns[j] = cols[i];
@@ -1247,7 +1219,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         table.clearTable();
         FitOptimization.clearCleanHistory();
         table.setLock(false);
-//        table.show();
         if (plot != null) {
             plotImage = WindowManager.getImage("Plot of " + tableName);
             if (plotImage != null) {
@@ -1270,13 +1241,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         } else {
             IJ.showStatus("No plot to clear");
         }
-//        IJ.log("deleting rows");
-//        for (int i=table.getCounter(); i>=0; i--)
-//            {
-//            IJ.log("deleting row "+i);
-//            table.deleteRow(i);
-//            }
-//        table.show();
     }
 
     /**
@@ -1329,12 +1293,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     }
 
     static public void updatePlot(boolean[] updateFit, boolean useAutoAstroDataUpdate) {
-//                IJ.log("table "+(table == null?"==":"!=")+" null");
-//                IJ.log("table "+(table != null && table.isLocked()?"is locked":"is unlocked"));
-//                IJ.log("Plot update is "+(updatePlotEnabled?"enabled":"not enabled"));
-//                IJ.log("Plot update is "+(updatePlotRunning?"running":"not running"));
         if ((table != null && table.isLocked()) || !updatePlotEnabled || updatePlotRunning) {
-//                    IJ.log("starting delayed updatePlot() timer");
             setWaitingForPlot(true);
             startDelayedUpdateTimer(updateFit, false);
             return;
@@ -1365,8 +1324,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         }
 
         checkAndLockTable();
-//                table = MeasurementTable.getTable (tableName);
-//                tpanel = MeasurementTable.getTextPanel(MeasurementTable.longerName(tableName));
 
 
 
@@ -1380,7 +1337,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         n = table.getCounter();
         if (n < 1) {
-//                        clearPlot();
             updatePlotRunning = false;
             if (table != null) table.setLock(false);
             return;
@@ -1418,8 +1374,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         holdExcludedHeadSamples = excludedHeadSamples;
         holdExcludedTailSamples = excludedTailSamples;
-        if (excludedHeadSamples + excludedTailSamples >= n)  //Handle case for more samples excluded than in dataset
-        {
+        if (excludedHeadSamples + excludedTailSamples >= n) { //Handle case for more samples excluded than in dataset
             excludedHeadSamples = excludedHeadSamples < n ? excludedHeadSamples : n - 1;
             excludedTailSamples = n - excludedHeadSamples - 1;
         }
@@ -1469,7 +1424,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             xc2 = new double[maxCurves][n];
             yc1 = new double[maxCurves][n];
             yc2 = new double[maxCurves][n];
-//                    detrendVars = new double [maxCurves][n];
             detrendXs = new double[maxCurves][n];
             detrendYs = new double[maxCurves][n];
             detrendYEs = new double[maxCurves][n];
@@ -1486,11 +1440,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             nnr[curve] = (n - excluded) % inputAverageOverSize[curve];
             if (nnr[curve] > 0) nn[curve]++;
             detrendVarsUsed[curve] = 0;
-//                        xModel1[curve] = null;
-//                        xModel2[curve] = null;
-//                        yModel1[curve] = null;
-//                        yModel2[curve] = null;
-//                        coeffs[curve] = null;
         }
 
         for (int curve = 0; curve < maxCurves; curve++) {
@@ -1506,10 +1455,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         plotY[curve] = false;
                         usecurvebox[curve].setSelected(false);
                         savecolumnbutton[curve].setEnabled(plotY[curve]);
-//                                    if (xlabeldefault.trim().length() != 0)
-//                                        IJ.showMessage ("Cannot access default X-axis table column "+xlabeldefault+" !");
-//                                    xlabeldefault = columns[0];
-//                                    return;
                     }
                     xlabel2[curve] = xlabeldefault.trim();
                 } else {
@@ -1519,11 +1464,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         plotY[curve] = false;
                         usecurvebox[curve].setSelected(false);
                         savecolumnbutton[curve].setEnabled(plotY[curve]);
-//                                        if (xlabel[curve].trim().length() != 0)
-//                                            IJ.showMessage ("Cannot access X-axis table column "+xlabel[curve]+" for dataset "+(curve+1)+"!");
-//                                        xlabel[curve] = "default";
-//                                        xdatacolumn[curve].setSelectedItem(xlabel[curve]);
-//                                        return;
                     }
                     xlabel2[curve] = xlabel[curve].trim();
                 }
@@ -1573,14 +1513,11 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 } else {
                     ycolumn[curve] = table.getColumnIndex(ylabel[curve]);
                     if (ycolumn[curve] == ResultsTable.COLUMN_NOT_FOUND) {
-//                                                if (ylabel[curve].trim().length() != 0)
-//                                                    IJ.log ("Cannot access Y"+curve+" table column "+ylabel[curve]+" !");
                         ycolumn[curve] = 0;
                         plotY[curve] = false;
                         usecurvebox[curve].setSelected(false);
                         savecolumnbutton[curve].setEnabled(plotY[curve]);
-                    } else if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.CENTROID_DISTANCE)  //calculate distance
-                    {
+                    } else if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.CENTROID_DISTANCE) { //calculate distance
                         xc1column[curve] = table.getColumnIndex(getPositionColumn(ylabel[curve], "X"));
                         yc1column[curve] = table.getColumnIndex(getPositionColumn(ylabel[curve], "Y"));
                         xyc1label[curve] = getSourceID(ylabel[curve]);
@@ -1589,7 +1526,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                 IJ.showMessage("Cannot access " + getPositionColumn(ylabel[curve], "X") + " source position data column for distance calculation !");
                             }
                             operatorBase.getOrCreateVariant(curve).set(MPOperator.NONE);
-                            //operatorselection[curve].setSelectedIndex(operatorIndex[curve]);
                             plotY[curve] = false;
                             usecurvebox[curve].setSelected(false);
                             savecolumnbutton[curve].setEnabled(plotY[curve]);
@@ -1599,7 +1535,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                 IJ.showMessage("Cannot access " + getPositionColumn(ylabel[curve], "Y") + " source position data column for distance calculation !");
                             }
                             operatorBase.getOrCreateVariant(curve).set(MPOperator.NONE);
-                            //operatorselection[curve].setSelectedIndex(operatorIndex[curve]);
                             plotY[curve] = false;
                             usecurvebox[curve].setSelected(false);
                             savecolumnbutton[curve].setEnabled(plotY[curve]);
@@ -1616,19 +1551,15 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                 } else {
                                     detrendVarsUsed[curve]++;
                                 }
-                            } else if (detrendIndex[curve][v] == 1)  //Meridian Flip Detrend Selected
-                            {
+                            } else if (detrendIndex[curve][v] == 1) { //Meridian Flip Detrend Selected
                                 detrendVarsUsed[curve]++;
                             }
                         }
                     }
-//                                        if (showErrors[curve] == true || operatorIndex[curve] == 6)
-//                                                {
+
                     errcolumn[curve] = ResultsTable.COLUMN_NOT_FOUND;
-                    if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.CUSTOM_ERROR)   //custom error
-                    {
+                    if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.CUSTOM_ERROR) { //custom error
                         errcolumn[curve] = table.getColumnIndex(oplabel[curve]);
-//                                            showErrors[curve] = true;
                     } else if (ylabel[curve].startsWith("rel_flux_T") || ylabel[curve].startsWith("rel_flux_C")) {
                         errcolumn[curve] = table.getColumnIndex("rel_flux_err_" + ylabel[curve].substring(9));
                     } else if (ylabel[curve].startsWith("Source-Sky_")) {
@@ -1638,37 +1569,15 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     } else if (ylabel[curve].startsWith("Source_AMag_")) {
                         errcolumn[curve] = table.getColumnIndex("Source_AMag_Err_" + ylabel[curve].substring(12));
                     }
-                    //                                            showErrors[curve] = false;
+
                     hasErrors[curve] = errcolumn[curve] != ResultsTable.COLUMN_NOT_FOUND;
-//                                                }
-
-
-//                                        if (!errlabel[curve].equals(""))
-//                                                {
-//                                                errcolumn[curve] = table.getColumnIndex (errlabel[curve]);
-//                                                if (errcolumn[curve] == ResultsTable.COLUMN_NOT_FOUND)
-//                                                        {
-////                                                        if (errlabel[curve].trim().length() != 0)
-////                                                            IJ.showMessage ("Cannot access Y"+curve+" error column "+errlabel[curve]+" !");
-//                                                        showErrors[curve] = false;
-////                                                        errorcolumnbox[curve].setSelected(false);
-//                                                        }
-//                                                else
-//                                                        showErrors[curve] = true;
-//                                                }
-//                                        else
-//                                                showErrors[curve] = false;
 
 
                     if (operatorBase.getOrCreateVariant(curve).get() != MPOperator.NONE) {
                         opcolumn[curve] = table.getColumnIndex(oplabel[curve]);
                         if (opcolumn[curve] == ResultsTable.COLUMN_NOT_FOUND) {
-//                                                        if (oplabel[curve].trim().length() != 0)
-//                                                            IJ.showMessage ("Cannot access Y"+curve+" operator data column "+oplabel[curve]+" !");
                             operatorBase.getOrCreateVariant(curve).set(MPOperator.NONE);
-                            //operatorselection[curve].setSelectedIndex(operatorIndex[curve]);
-                        } else if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.CENTROID_DISTANCE) //calculate distance
-                        {
+                        } else if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.CENTROID_DISTANCE) { //calculate distance
                             xc2column[curve] = table.getColumnIndex(getPositionColumn(oplabel[curve], "X"));
                             yc2column[curve] = table.getColumnIndex(getPositionColumn(oplabel[curve], "Y"));
                             xyc2label[curve] = getSourceID(oplabel[curve]);
@@ -1677,36 +1586,17 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                     IJ.showMessage("Cannot access " + getPositionColumn(oplabel[curve], "X") + " source position data column for distance calculation !");
                                 }
                                 operatorBase.getOrCreateVariant(curve).set(MPOperator.NONE);
-                                //operatorselection[curve].setSelectedIndex(operatorIndex[curve]);
                             }
                             if (yc2column[curve] == ResultsTable.COLUMN_NOT_FOUND) {
                                 if (getPositionColumn(oplabel[curve], "Y").trim().length() != 0) {
                                     IJ.showMessage("Cannot access " + getPositionColumn(oplabel[curve], "Y") + " source position data column for distance calculation !");
                                 }
                                 operatorBase.getOrCreateVariant(curve).set(MPOperator.NONE);
-                                //operatorselection[curve].setSelectedIndex(operatorIndex[curve]);
                             }
                         }
-
                     }
-//                                        if (!operrlabel[curve].equals(""))
-//                                                {
-//                                                operrcolumn[curve] = table.getColumnIndex (operrlabel[curve]);
-//                                                if (operrcolumn[curve] == ResultsTable.COLUMN_NOT_FOUND)
-//                                                        {
-////                                                        if (operrlabel[curve].trim().length() != 0)
-////                                                            IJ.showMessage ("Cannot access Y"+curve+" operator error column "+operrlabel[curve]+" !");
-//                                                        showOpErrors[curve] = false;
-////                                                        operrorcolumnbox[curve].setSelected(false);
-//                                                        }
-//                                                else
-//                                                        showOpErrors[curve] = true;
-//                                                }
-//                                        else
-//                                                showOpErrors[curve] = false;
 
-                    if (operatorBase.getOrCreateVariant(curve).get().isNormalOperator())// && showErrors[curve] == true)
-                    {
+                    if (operatorBase.getOrCreateVariant(curve).get().isNormalOperator()) { // && showErrors[curve] == true)
                         operrcolumn[curve] = ResultsTable.COLUMN_NOT_FOUND;
                         if (oplabel[curve].startsWith("rel_flux_T") || oplabel[curve].startsWith("rel_flux_C")) {
                             operrcolumn[curve] = table.getColumnIndex("rel_flux_err_" + oplabel[curve].substring(9));
@@ -1715,13 +1605,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         } else if (oplabel[curve].startsWith("tot_C_cnts")) {
                             operrcolumn[curve] = table.getColumnIndex("tot_C_err" + oplabel[curve].substring(10));
                         }
-                        //                                                showOpErrors[curve] = false;
-                        //                                                showErrors[curve] = false;
-                        //                                                hasErrors[curve] = false;
-                        //                                                showOpErrors[curve] = true;
                         hasOpErrors[curve] = operrcolumn[curve] != ResultsTable.COLUMN_NOT_FOUND;
                     } else {
-//                                            showOpErrors[curve] = false;
                         hasOpErrors[curve] = false;
                     }
 
@@ -1763,8 +1648,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                         }
                                     }
 
-                                    if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.CENTROID_DISTANCE) //calculate distance
-                                    {
+                                    if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.CENTROID_DISTANCE) { //calculate distance
                                         xc1[curve][j] = Double.NaN;
                                         xc2[curve][j] = Double.NaN;
                                         yc1[curve][j] = Double.NaN;
@@ -1801,8 +1685,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                         }
                                     }
                                 }
-                                if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.CENTROID_DISTANCE) //calculate distance
-                                {
+                                if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.CENTROID_DISTANCE) { //calculate distance
                                     xc1[curve][j] += table.getValueAsDouble(xc1column[curve], j * inputAverageOverSize[curve] + k);
                                     xc2[curve][j] += table.getValueAsDouble(xc2column[curve], j * inputAverageOverSize[curve] + k);
                                     yc1[curve][j] += table.getValueAsDouble(yc1column[curve], j * inputAverageOverSize[curve] + k);
@@ -1845,11 +1728,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
                         //APPLY OPERATOR/OPERROR FUNCTIONS TO YDATA AND YERROR
 
-                        if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.NONE)  //no operator
-                        {
+                        if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.NONE) { //no operator
 
-                        } else if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.DIVIDE_BY)  //divide by
-                        {
+                        } else if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.DIVIDE_BY) { //divide by
                             if (yop[curve][j] == 0) {
                                 yerr[curve][j] = 1.0e+100;
                                 y[curve][j] = 1.0e+100;
@@ -1859,26 +1740,22 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                 }
                                 y[curve][j] = y[curve][j] / yop[curve][j];  //*yMultiplierFactor
                             }
-                        } else if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.MULTIPLY_BY)  //multiply by
-                        {
+                        } else if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.MULTIPLY_BY) { //multiply by
                             if (hasErrors[curve] || hasOpErrors[curve]) {
                                 yerr[curve][j] = Math.sqrt(yop[curve][j] * yop[curve][j] * yerr[curve][j] * yerr[curve][j] + y[curve][j] * y[curve][j] * yoperr[curve][j] * yoperr[curve][j]); // /yMultiplierFactor;
                             }
                             y[curve][j] = y[curve][j] * yop[curve][j];  // /yMultiplierFactor;
-                        } else if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.SUBTRACT)  //subtract
-                        {
+                        } else if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.SUBTRACT) { //subtract
                             if (hasErrors[curve] || hasOpErrors[curve]) {
                                 yerr[curve][j] = Math.sqrt(yerr[curve][j] * yerr[curve][j] + yoperr[curve][j] * yoperr[curve][j]);
                             }
                             y[curve][j] = y[curve][j] - yop[curve][j];
-                        } else if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.ADD)  //add
-                        {
+                        } else if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.ADD) { //add
                             if (hasErrors[curve] || hasOpErrors[curve]) {
                                 yerr[curve][j] = Math.sqrt(yerr[curve][j] * yerr[curve][j] + yoperr[curve][j] * yoperr[curve][j]);
                             }
                             y[curve][j] = y[curve][j] + yop[curve][j];
-                        } else if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.CENTROID_DISTANCE)  //distance from x1,y1 to x2,y2
-                        {
+                        } else if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.CENTROID_DISTANCE) { //distance from x1,y1 to x2,y2
                             y[curve][j] = (usePixelScale ? pixelScale : 1.0) * Math.sqrt(((xc1[curve][j] - xc2[curve][j]) * (xc1[curve][j] - xc2[curve][j])) + ((yc1[curve][j] - yc2[curve][j]) * (yc1[curve][j] - yc2[curve][j])));
                         }
                     }
@@ -2081,12 +1958,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         detrendFitIndex[curve] = 0;
                         break;
                 }
-//                        IJ.log("");
-//                        IJ.log("fitMin[curve]="+fitMin[curve]);
-//                        IJ.log("fitMax[curve]="+fitMax[curve]);
-//                        IJ.log("fitLeft[curve]="+fitLeft[curve]);
-//                        IJ.log("fitRight[curve]="+fitRight[curve]);
-//                        IJ.log("");
 
                 boolean atLeastOne = false;
                 boolean detrendYNotConstant = false;
@@ -2153,11 +2024,13 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     }
                     double meridianFlip = mfMarker1Value + xOffset;
                     for (int v = 0; v < maxDetrendVars; v++) {
-                        if (detrendIndex[curve][v] == 1)    //Meridian Flip Detrend Selected
-                        {
+                        if (detrendIndex[curve][v] == 1) { //Meridian Flip Detrend Selected
                             for (int j = 0; j < nn[curve]; j++) {
-                                if (x[curve][j] < meridianFlip)  //meridian flip fitting data = -1.0 to left and 1.0 to right of flip
-                                { detrend[curve][v][j] = -1.0; } else { detrend[curve][v][j] = 1.0; }
+                                if (x[curve][j] < meridianFlip) { //meridian flip fitting data = -1.0 to left and 1.0 to right of flip
+                                    detrend[curve][v][j] = -1.0;
+                                } else {
+                                    detrend[curve][v][j] = 1.0;
+                                }
                             }
                         }
                     }
@@ -2185,22 +2058,16 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                 if (!Double.isNaN(y[curve][j])) {
                                     for (int v = 0; v < maxDetrendVars; v++) {
                                         if (detrendIndex[curve][v] != 0 && Double.isNaN(detrend[curve][v][j])) {
-//                                                    IJ.log("found a detrend var NaN");
                                             noNaNs = false;
                                             break;
                                         }
                                     }
                                 } else {
-//                                            IJ.log("found a Y NaN");
                                     noNaNs = false;
                                 }
                                 if (noNaNs) {
                                     avgCount++;
                                     yAverage[curve] += y[curve][j];
-//                                            for(int v = 0; v < maxDetrendVars; v++)
-//                                                {
-//                                                detrendAverage[v] += detrend[curve][v][j];
-//                                                }
                                     if ((x[curve][j] > fitMin[curve] && x[curve][j] < fitLeft[curve]) || (x[curve][j] > fitRight[curve] && x[curve][j] < fitMax[curve])) {
                                         detrendX[detrendCount] = x[curve][j];
                                         detrendY[detrendCount] = y[curve][j];
@@ -2221,8 +2088,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                     }
                                 }
                             }
-                            if (detrendVarsUsed[curve] > 0 && detrendYNotConstant && detrendCount > detrendVarsUsed[curve] + 2) //need enough data to provide degrees of freedom for successful fit
-                            {
+                            if (detrendVarsUsed[curve] > 0 && detrendYNotConstant && detrendCount > detrendVarsUsed[curve] + 2) { //need enough data to provide degrees of freedom for successful fit
                                 xModel1[curve] = new double[2];
                                 xModel2[curve] = new double[2];
                                 xModel1[curve][0] = Math.max(fitMin[curve], xPlotMin);
@@ -2231,8 +2097,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                 xModel2[curve][1] = Math.min(fitMax[curve], xPlotMax);
                                 if (xModel1[curve][0] >= xModel1[curve][1]) xModel1[curve] = null;
                                 if (xModel2[curve][0] >= xModel2[curve][1]) xModel2[curve] = null;
-//                                        IJ.log("x = "+xModel1[curve][0]+" - "+xModel1[curve][1]);
-//                                        IJ.log("x = "+xModel2[curve][0]+" - "+xModel2[curve][1]);
                             } else {
                                 for (int v = 0; v < maxDetrendVars; v++) {
                                     if (detrendIndex[curve][v] > 0) {
@@ -2256,10 +2120,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                 if (noNaNs) {
                                     avgCount++;
                                     yAverage[curve] += y[curve][j];
-//                                            for(int v = 0; v < maxDetrendVars; v++)
-//                                                {
-//                                                detrendAverage[v] += detrend[curve][v][j];
-//                                                }
                                     if (x[curve][j] > fitMin[curve]) {
                                         if (x[curve][j] < fitMax[curve]) {
                                             detrendX[detrendCount] = x[curve][j];
@@ -2292,13 +2152,11 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                     }
                                 }
                             }
-                            if (detrendVarsUsed[curve] > 0 && detrendYNotConstant && detrendCount > detrendVarsUsed[curve] + 2) //need enough data to provide degrees of freedom for successful fit
-                            {
+                            if (detrendVarsUsed[curve] > 0 && detrendYNotConstant && detrendCount > detrendVarsUsed[curve] + 2) { //need enough data to provide degrees of freedom for successful fit
                                 xModel1[curve] = new double[2];
                                 xModel1[curve][0] = Math.max(fitMin[curve], xPlotMin);
                                 xModel1[curve][1] = Math.min(fitMax[curve], xPlotMax);
                                 xModel2[curve] = null;
-//                                        IJ.log("x = "+xModel1[curve][0]+" - "+xModel1[curve][1]);
                             } else {
                                 for (int v = 0; v < maxDetrendVars; v++) {
                                     if (detrendIndex[curve][v] > 0) {
@@ -2307,7 +2165,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                 }
                             }
                         }
-//                                IJ.log("detrendCount="+detrendCount);
+
                         if (detrendCount > 0) {
                             yAverage[curve] /= avgCount; //avgCount is always >= detrendCount, so > 0 here
                             detrendYAverage[curve] /= detrendCount;
@@ -2334,7 +2192,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                     varCount++;
                                 }
                             }
-//                                    IJ.log("varCount="+varCount);
+
                             if ((detrendVarsUsed[curve] >= 0 || detrendFitIndex[curve] == 9 && useTransitFit[curve]) && detrendYNotConstant && detrendCount > (detrendFitIndex[curve] == 9 && useTransitFit[curve] ? 7 : 0) + detrendVarsUsed[curve] + 2) { //need enough data to provide degrees of freedom for successful fit
                                 detrendXs[curve] = Arrays.copyOf(detrendX, detrendCount);
                                 detrendYs[curve] = Arrays.copyOf(detrendY, detrendCount);
@@ -2413,7 +2271,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                             } else {
                                                 if (index[curve][fp] == 0) minimization.addConstraint(fp, -1, 0.0);
                                                 if (index[curve][fp] == 2) minimization.addConstraint(fp, -1, 2.0);
-                                                //if (index[curve][fp] == 3) minimization.addConstraint(fp, -1, 0.0);
                                                 if (index[curve][fp] == 5) {
                                                     minimization.addConstraint(fp, 1, 1.0);
                                                     minimization.addConstraint(fp, -1, -1.0);
@@ -2432,13 +2289,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                             }
                                         }
 
-                                        //                                                    for (int p = 0; p<start[curve].length; p++)
-                                        //                                                        {
-                                        //                                                        IJ.log(parameterFormat.format(start[curve][p])+"      "+parameterFormat.format(step[curve][p]));
-                                        //                                                        }
-                                        //                                                    IJ.log("");
-
-                                        //                                                    minimization.setScale(1);
                                         minimization.setNrestartsMax(1);
                                         minimization.nelderMead(new FitLightCurveChi2(), start[curve], step[curve], tolerance[curve], maxFitSteps[curve]);
                                         coeffs[curve] = minimization.getParamValues();
@@ -2508,7 +2358,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                             //}
                                             transitDepthLabel[curve].setText(Double.isNaN(transitDepth[curve]) ? "NaN" : threeDigitsTwoPlaces.format(transitDepth[curve]));
                                         } else {
-                                            //bpSpinner[curve].setValue(0.0);
                                             t14Label[curve].setText("");
                                             t14HoursLabel[curve].setText("");
                                             t23Label[curve].setText("");
@@ -2573,13 +2422,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                             detrendpanelgroup[curve].setBorder(BorderFactory.createLineBorder(Color.RED));
                                         }
 
-                                    } else  //use regression
-                                    {
-                                        //                                          IJ.log("Setting up Regression, Curve = "+curve+" ,VarsUsed = "+detrendVarsUsed[curve]+" ,detrendCount = "+detrendCount);
+                                    } else { //use regression
                                         Regression regression = new Regression(detrendVars, detrendYs[curve]);
-                                        //                                          IJ.log("Starting Regression");
                                         regression.linear();
-                                        //                                            IJ.log("Getting coeffs");
                                         coeffs[curve] = regression.getCoeff();
 
                                         varCount = 1;
@@ -2656,19 +2501,11 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                             }
                             if (noNaNs) {
                                 yAverage[curve] += y[curve][j];
-//                                        for(int v = 0; v < maxDetrendVars; v++)
-//                                            {
-//                                            detrendAverage[v] += detrend[curve][v][j];
-//                                            }
                                 avgCount++;
                             }
                         }
                         if (avgCount > 0) {
                             yAverage[curve] /= avgCount;
-//                                    for(int v = 0; v < maxDetrendVars; v++)
-//                                        {
-//                                        detrendAverage[v] /= avgCount;
-//                                        }
                         }
                         xModel1[curve] = new double[2];
                         xModel1[curve][0] = Math.max(fitMin[curve], xPlotMin);
@@ -2733,8 +2570,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     }
                 }
 
-                if (showSigmaForAllCurves && detrendFitIndex[curve] < 2) //calculate standard deviation using all data
-                {
+                if (showSigmaForAllCurves && detrendFitIndex[curve] < 2) { //calculate standard deviation using all data
                     int cnt = 0;
                     detrendYAverage[curve] = 0;
                     double y2Ave = 0;
@@ -2750,8 +2586,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         detrendYAverage[curve] /= cnt;
                         sigma[curve] = Math.sqrt(y2Ave - detrendYAverage[curve] * detrendYAverage[curve]);
                     } else { detrendYAverage[curve] = 1; }
-                } else if ((showSigmaForDetrendedCurves || showSigmaForAllCurves || residual[curve] != null) && detrendFitIndex[curve] > 1) //calculate standard deviation using fit/detrend region
-                {
+                } else if ((showSigmaForDetrendedCurves || showSigmaForAllCurves || residual[curve] != null) && detrendFitIndex[curve] > 1) { //calculate standard deviation using fit/detrend region
                     int cnt = 0;
                     detrendYAverage[curve] = 0;
                     double y2Ave = 0;
@@ -2793,7 +2628,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                             if (cnt > 0) {
                                 detrendYAverage[curve] /= cnt;
                             } else {
-//                                        detrendYAverage[curve]=1;
                                 detrendYAverage[curve] = 0.0;
                                 cnt = 0;
                                 for (int nnn = 0; nnn < xModel1[curve].length; nnn++) {
@@ -2901,15 +2735,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         yModel2[curve][0] = detrendYAverage[curve];
                         yModel2[curve][1] = detrendYAverage[curve];
                     }
-//                            else  //regression
-//                                {
-//                                yModel1[curve] = new double[2];
-//                                yModel1[curve][0] = detrendYAverage[curve] + coeffs[curve][0];
-//                                yModel1[curve][1] = detrendYAverage[curve] + coeffs[curve][0];
-//                                yModel2[curve] = new double[2];
-//                                yModel2[curve][0] = detrendYAverage[curve] + coeffs[curve][0];
-//                                yModel2[curve][1] = detrendYAverage[curve] + coeffs[curve][0];
-//                                }
                 }
 
 
@@ -2919,13 +2744,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     double normLeft = dMarker2Value + xOffset;
                     double normRight = dMarker3Value + xOffset;
 
-//                            if ((xlabel2[firstCurve].contains("J.D.") || xlabel2[firstCurve].contains("JD")) && showXAxisNormal)
-//                                {
-//                                normMin += (int)xPlotMin;
-//                                normMax += (int)xPlotMin;
-//                                normLeft += (int)xPlotMin;
-//                                normRight += (int)xPlotMin;
-//                                }
                     double normAverage = 0.0;
                     double normCount = 0;
                     double invVar = 0;
@@ -3048,8 +2866,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         normAverage /= normCount;
                     }
 
-//                    IJ.log("normAverage  = "+normAverage);
-//                    IJ.log("fit baseline = "+bestFit[curve][0]);
                     if (detrendFitIndex[curve] == 9 && useTransitFit[curve] && detrendXs[curve] != null && detrendYEs[curve] != null && yModel1[curve] != null) {
                         normAverage = bestFit[curve][0];
                     }
@@ -3248,9 +3064,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     xGoodLabel = true;
                 } else if (xlabel2[curve].contains("J.D.") || xlabel2[curve].contains("JD")) {
                     if (curve == firstCurve) {
-//                                    if (xExponent != 0) xmultiplierspinner.setValue(0);
-//                                    jd = (int)xPlotMin;
-//                                    xOffset = (double)jd;
                         xPlotMin -= xOffset;
                         xPlotMax -= xOffset;
                         if (useXColumnName) {
@@ -3313,9 +3126,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             if (plotY[curve]) {
                 if (ylabel[curve].contains("J.D.") || ylabel[curve].contains("JD")) {
                     if (curve == firstCurve) {
-//                                    if (yExponent != 0) ymultiplierspinner.setValue(0);
-//                                    jd = (int)yPlotMin;
-//                                    yOffset = (double)jd;
                         yPlotMin -= yOffset;
                         yPlotMax -= yOffset;
                         if (useYColumnName && operatorBase.getOrCreateVariant(curve).get() != MPOperator.CENTROID_DISTANCE) {
@@ -3517,8 +3327,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             pltMinY = yMaxTemp;
         }
 
-        if (plotImageCanvas != null) //zoom != 0.0 &&
-        {
+        if (plotImageCanvas != null) { //zoom != 0.0 &&
             Rectangle s = plot.getDrawingFrame();
             plotMinX = totalPanOffsetX + newPanOffsetX + pltMinX + (pltMaxX - pltMinX) * ((mouseX - 1)/ s.width) * zoomX;
             plotMaxX = totalPanOffsetX + newPanOffsetX + pltMaxX - (pltMaxX - pltMinX) * ((s.width - mouseX - 15) / (s.width)) * zoomX;
@@ -3569,8 +3378,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     }
                     plot.setColor(residualColor[curve]);
                     plot.addPoints(Arrays.copyOf(xModel1[curve], xModel1[curve].length), plottedResidual[curve], residualSymbol[curve]);
-                    if (showResidualError[curve] && yModel1Err[curve] != null)     //code to replace plot.addErrorBars
-                    {
+                    if (showResidualError[curve] && yModel1Err[curve] != null) { //code to replace plot.addErrorBars
                         plot.setLineWidth(1);
                         for (int nnn = 0; nnn < len; nnn++) {
                             plot.drawLine(xModel1[curve][nnn], plottedResidual[curve][nnn] - yModel1Err[curve][nnn], xModel1[curve][nnn], plottedResidual[curve][nnn] + yModel1Err[curve][nnn]);
@@ -3592,8 +3400,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 plot.setLineWidth(1);
 
                 if (binDisplay[curve].isOn()) plot.setColor(lighter(color[curve]));
-                if (showErrors[curve] && (hasErrors[curve] || hasOpErrors[curve]) && binDisplay[curve] != TriState.ALT_ENABLED)     //code to replace plot.addErrorBars
-                {               //since plot.addErrorBars only plots with lines enabled
+                if (showErrors[curve] && (hasErrors[curve] || hasOpErrors[curve]) && binDisplay[curve] != TriState.ALT_ENABLED) { //code to replace plot.addErrorBars               //since plot.addErrorBars only plots with lines enabled
                     for (int j = 0; j < nn[curve]; j++) {
                         plot.drawLine(x[curve][j], y[curve][j] - yerr[curve][j], x[curve][j], y[curve][j] + yerr[curve][j]);
                         //plot.drawLine(x[curve][j] - (3.0 * (plotMaxX - plotMinX) / plotSizeX), y[curve][j] + yerr[curve][j], x[curve][j] + (3.0 * (plotMaxX - plotMinX) / plotSizeX), y[curve][j] + yerr[curve][j]);
@@ -3794,8 +3601,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         if (showLnormInfo && normIndex[curve] != 0 && !mmag[curve] && !force[curve]) {
                             llab.append(" (normalized)");
                         }
-                        if (((detrendFitIndex[curve] > 1 && showSigmaForDetrendedCurves) || showSigmaForAllCurves))  //!force[curve] &&
-                        {
+                        if (((detrendFitIndex[curve] > 1 && showSigmaForDetrendedCurves) || showSigmaForAllCurves)) { //!force[curve] &&
                             double factor = 1000;
                             if (mmag[curve] && totalScaleFactor[curve] == 1000) {
                                 sigma[curve] *= 1000;
@@ -4026,8 +3832,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             plot.addLabel((dMarker3Value - plotMinX) / (plotMaxX - plotMinX), 1 - 16.0 / plotSizeY, "Right");
             plot.addLabel((dMarker3Value - plotMinX) / (plotMaxX - plotMinX), 1 + 4.0 / plotSizeY, threePlaces.format(dMarker3Value));
 
-            if (useDMarker1)   //plot dMarker1
-            {
+            if (useDMarker1) { //plot dMarker1
                 if (nBefore1 + nAfter1 > 0) {
                     preDmark1Ref = invertYAxis ? minOf(samples1, 10) : maxOf(samples1, 10);
                     preDmark1Ref = invertYAxis ? Math.max(preDmark1Ref, plotMaxY) : Math.min(preDmark1Ref, plotMaxY);
@@ -4040,8 +3845,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 plot.addLabel((dMarker1Value - plotMinX) / (plotMaxX - plotMinX), 1 - 7.0 / plotSizeY, "Trim");
                 plot.addLabel((dMarker1Value - plotMinX) / (plotMaxX - plotMinX), 1 + 33.0 / plotSizeY, threePlaces.format(dMarker1Value));
             }
-            if (useDMarker4)   //plot dMarker4
-            {
+            if (useDMarker4) { //plot dMarker4
                 if (nBefore4 + nAfter4 > 0) {
                     postDMarker4Ref = invertYAxis ? minOf(samples4, 10) : maxOf(samples4, 10);
                     postDMarker4Ref = invertYAxis ? Math.max(postDMarker4Ref, plotMaxY) : Math.min(postDMarker4Ref, plotMaxY);
@@ -4099,28 +3903,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 new HelpPanel(filename, "Plot").setVisible(true);
             });
             plotWindow.setIconImage(plotIcon.getImage());
-            plotImage = plotWindow.getImagePlus();//WindowManager.getImage("Plot of "+tableName);
-
-//                    plotWindow = plotImage.getWindow();
-//                    plotWindow = new PlotWindow(plot);
-//                    plotImage = plotWindow.getImagePlus();
-//                    plotFrame = WindowManager.getFrame("Plot of "+tableName);
-//                    if ((plotImage != null) && rememberWindowLocations)
-//                        {
-//                        plotFrameLocationX=(int)Prefs.get("plot2.plotFrameLocationX", plotFrameLocationX);
-//                        plotFrameLocationY=(int)Prefs.get("plot2.plotFrameLocationY", plotFrameLocationY);
-//                        if (!Prefs.isLocationOnScreen(new Point(plotFrameLocationX,plotFrameLocationY)))
-//                            {
-//                            plotFrameLocationX = 10;
-//                            plotFrameLocationY = 10;
-//                            }
-//                        plotWindow.setLocation(plotFrameLocationX, plotFrameLocationY);
-//                        }
-
-//                    plotImage = WindowManager.getImage("Plot of "+tableName);
-//                    plotFrame = WindowManager.getFrame("Plot of "+tableName);
-//                    ImageProcessor ip = plot.getProcessor();
-//                    plotImage.setProcessor("Plot of "+tableName,ip);
+            plotImage = plotWindow.getImagePlus();
 
             plotImageCanvas = plotImage.getCanvas();
             plotOverlayCanvas = new OverlayCanvas(plotImage);
@@ -4157,7 +3940,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             zoomY = 0.0;
         } else {
             plotWindow = (PlotWindow) plotImage.getWindow();
-//                    plotFrame = (Frame)plotWindow;
             ImageProcessor ip = plot.getProcessor();
             plotImage.setProcessor("Plot of " + tableName, ip);
             plotImageCanvas = plotImage.getCanvas();
@@ -4184,17 +3966,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         //Replot to clean up blank areas
 
-//                plotImage = WindowManager.getImage("Plot of "+tableName);
-//                ImageProcessor ip = plot.getProcessor();
-//                plotImage.setProcessor("Plot of "+tableName,ip);
-
         excludedHeadSamples = holdExcludedHeadSamples;
         excludedTailSamples = holdExcludedTailSamples;
-//                for (int i=0; i<maxCurves; i++)
-//                    {
-//                    showErr[i] = showErrors[i];
-//                    showErrors[i] = errorcolumnbox[i].isSelected();
-//                    }
         table.setLock(false);
         plotWindow.getImagePlus().setPlot(plot);
         ((PlotWindow) plotWindow).setPlot(plot);
@@ -5081,45 +4854,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             if (addRA2000) ra2000Col = table.getColumnIndex(ra2000Name);
             if (addDec2000) dec2000Col = table.getColumnIndex(dec2000Name);
 
-//                if ((addAirmass && airmassCol != MeasurementTable.COLUMN_NOT_FOUND) ||
-//                    (addAltitude && altitudeCol != MeasurementTable.COLUMN_NOT_FOUND) ||
-//                    (addAzimuth && azimuthCol != MeasurementTable.COLUMN_NOT_FOUND) ||
-//                    (addHourAngle && hourAngleCol != MeasurementTable.COLUMN_NOT_FOUND) ||
-//                    (addZenithDistance && zenithDistanceCol != MeasurementTable.COLUMN_NOT_FOUND) ||
-//                    (addGJD && gjdCol != MeasurementTable.COLUMN_NOT_FOUND) ||
-//                    (addHJD && hjdCol != MeasurementTable.COLUMN_NOT_FOUND) ||
-//                    (addHJDCorr && hjdCorrCol != MeasurementTable.COLUMN_NOT_FOUND) ||
-//                    (addBJD && bjdCol != MeasurementTable.COLUMN_NOT_FOUND) ||
-//                    (addBJDCorr && bjdCorrCol != MeasurementTable.COLUMN_NOT_FOUND) ||
-//                    (addRaNow && raNowCol != MeasurementTable.COLUMN_NOT_FOUND) ||
-//                    (addDecNow && decNowCol != MeasurementTable.COLUMN_NOT_FOUND) ||
-//                    (addRA2000 && ra2000Col != MeasurementTable.COLUMN_NOT_FOUND) ||
-//                    (addDec2000 && dec2000Col != MeasurementTable.COLUMN_NOT_FOUND) )
-//                    {
-//                    GenericDialog gd = new GenericDialog ("Over-write existing data?", addAstroDataFrame.getX()+100, addAstroDataFrame.getY()+100);
-//                    gd.addMessage ((airmassCol != MeasurementTable.COLUMN_NOT_FOUND?"Airmass column: "+airmassName+"\n":"")+
-//                                   (altitudeCol != MeasurementTable.COLUMN_NOT_FOUND?"Altitude column: "+altitudeName+"\n":"")+
-//                                   (azimuthCol != MeasurementTable.COLUMN_NOT_FOUND?"Azimuth column: "+azimuthName+"\n":"")+
-//                                   (hourAngleCol != MeasurementTable.COLUMN_NOT_FOUND?"Hour Angle column: "+hourAngleName+"\n":"")+
-//                                   (zenithDistanceCol != MeasurementTable.COLUMN_NOT_FOUND?"Zenith Distance column: "+zenithDistanceName+"\n":"")+
-//                                   (gjdCol != MeasurementTable.COLUMN_NOT_FOUND?"JD column: "+gjdName+"\n":"")+
-//                                   (hjdCol != MeasurementTable.COLUMN_NOT_FOUND?"HJD column: "+hjdName+"\n":"")+
-//                                   (hjdCorrCol != MeasurementTable.COLUMN_NOT_FOUND?"HJD Correction column: "+hjdCorrName+"\n":"")+
-//                                   (bjdCol != MeasurementTable.COLUMN_NOT_FOUND?"BJD column: "+bjdName+"\n":"")+
-//                                   (bjdCorrCol != MeasurementTable.COLUMN_NOT_FOUND?"BJD Correction column: "+bjdCorrName+"\n":"")+
-//                                   (raNowCol != MeasurementTable.COLUMN_NOT_FOUND?"RA OBS column: "+raNowName+"\n":"")+
-//                                   (decNowCol != MeasurementTable.COLUMN_NOT_FOUND?"DEC OBS column: "+decNowName+"\n":"")+
-//                                   (ra2000Col != MeasurementTable.COLUMN_NOT_FOUND?"RA J2000 column: "+ra2000Name+"\n":"")+
-//                                   (dec2000Col != MeasurementTable.COLUMN_NOT_FOUND?"Dec J2000 column: "+dec2000Name+"\n":"")+
-//                                    "\n"+
-//                                    "table column name(s) are already in use.\nPress OK to over-write existing data.");
-//                    gd.showDialog();
-//                    if (gd.wasCanceled())
-//                        {
-//                        astroConverterUpdating = false;
-//                        return;
-//                        }
-//                    }
             defaultOKForeground = OKbutton.getForeground();
             Thread t = new Thread(() -> {
                 if (OKbutton != null) {
@@ -5553,16 +5287,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             residualErrUsed = saveNewResidualErrColumn && (residualErrColumn == ResultsTable.COLUMN_IN_USE);
         }
 
-//        if (xUsed || yUsed || yErrUsed || modelUsed || residualUsed || residualErrUsed)
-//            {
-//            gd = new GenericDialog ("Over-write existing data?", (main?mainFrame.getX():subFrame.getX())+100, (main?mainFrame.getY():subFrame.getY())+100);
-//            gd.addMessage ((xUsed?"X-column: "+xHeading+"\n":"")+(yUsed?"Y-column: "+yHeading+"\n":"")+(yErrUsed?"Y-error column: "+yErrHeading+"\n":"")+
-//                           (modelUsed?"Model column: "+modelHeading+"\n":"")+(residualUsed?"Residual column: "+residualHeading+"\n":"")+
-//                           (residualErrUsed?"Residual Error column: "+residualErrHeading+"\n":"")+
-//                           "name(s) are already in use.\nPress OK to over-write existing data.");
-//            gd.showDialog();
-//            if (gd.wasCanceled()) return;
-//            }
         int skipNum = excludedHeadSamples < nn[c] ? excludedHeadSamples : nn[c] - 1;
         if (inputAverageOverSize[c] != 1 || skipNum < 0) skipNum = 0;
         if (saveNewXColumn) {
@@ -5786,8 +5510,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             startDragSubImageX = plotImageCanvas.getSrcRect().x;
             startDragSubImageY = plotImageCanvas.getSrcRect().y;
             button2Drag = false;
-            if (e.isControlDown())  //handle control click to move trend lines
-            {
+            if (e.isControlDown()) { //handle control click to move trend lines
                 if (SwingUtilities.isLeftMouseButton(e)) {
                     handleControlLeftClickDrag(e, startDragX, startDragY);
                 } else if (SwingUtilities.isRightMouseButton(e)) {
@@ -5835,13 +5558,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             }
             if (Math.sqrt((screenX - startDragScreenX) * (screenX - startDragScreenX) +      //check mouse click/drag threshold
                     (screenY - startDragScreenY) * (screenY - startDragScreenY)) < 4.0) {
-                if (SwingUtilities.isLeftMouseButton(e))       //left mouse click release
-                {
-                    if (e.isShiftDown() && !e.isAltDown() && !e.isControlDown())  //shift+left-click (remove selected table row)
-                    {
+                if (SwingUtilities.isLeftMouseButton(e)) { //left mouse click release
+                    if (e.isShiftDown() && !e.isAltDown() && !e.isControlDown()) { //shift+left-click (remove selected table row)
                         FitOptimization.cleanOutliers(FitOptimization.CleanMode.PRECISION, null, 0);
                         table = MeasurementTable.getTable(tableName);
-//                                if (Data_Processor.running) Data_Processor.setTable(table);
                         table.show();
                         measurementsWindow = MeasurementTable.getMeasurementsWindow(MeasurementTable.longerName(tableName));
                         int lineCount = measurementsWindow.getLineCount();
@@ -5854,15 +5574,12 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         plotcoordlabel.setText("DATA: x=" + fourPlaces.format(x[firstCurve][boldedDatum]) + ", y=" + fourPlaces.format(y[firstCurve][boldedDatum]));
                         IJ.showStatus("data values: x=" + fourPlaces.format(x[firstCurve][boldedDatum]) + ", y=" + fourPlaces.format(y[firstCurve][boldedDatum]));
                         updatePlot(updateAllFits());
-                    } else if (!e.isControlDown() && !e.isShiftDown() && !e.isAltDown()) // left mouse click release (zoom in)
-                    {
+                    } else if (!e.isControlDown() && !e.isShiftDown() && !e.isAltDown()) { // left mouse click release (zoom in)
                         zoomControl(e.getX(), e.getY(), -5, !e.isControlDown(), !e.isAltDown());
                     }
-                } else if (e.getButton() == MouseEvent.BUTTON2)                     //middle mouse click release
-                {
+                } else if (e.getButton() == MouseEvent.BUTTON2) { //middle mouse click release
                     IJ.log("x=" + fourPlaces.format(xval) + ", y=" + fourPlaces.format(yval));
-                } else if (e.getButton() == MouseEvent.BUTTON3 && e.isShiftDown() && !e.isControlDown() && !e.isAltDown()) //shift + right mouse click release
-                {                                                                                     //undo delete selected table row
+                } else if (e.getButton() == MouseEvent.BUTTON3 && e.isShiftDown() && !e.isControlDown() && !e.isAltDown()) { //shift + right mouse click release    //undo delete selected table row
                     FitOptimization.undoOutlierClean();
                     selectedRowEnd = selectedRowStart + inputAverageOverSize[firstCurve] - 1;
                     measurementsWindow.setSelection(selectedRowStart, selectedRowEnd);
@@ -5870,8 +5587,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     plotcoordlabel.setText("DATA: x=" + fourPlaces.format(x[firstCurve][boldedDatum]) + ", y=" + fourPlaces.format(y[firstCurve][boldedDatum]));
                     IJ.showStatus("data values: x=" + fourPlaces.format(x[firstCurve][boldedDatum]) + ", y=" + fourPlaces.format(y[firstCurve][boldedDatum]));
                     updatePlot(updateAllFits());
-                } else if (e.getButton() == MouseEvent.BUTTON3)                     //right mouse click release
-                {
+                } else if (e.getButton() == MouseEvent.BUTTON3) { //right mouse click release
                     totalPanOffsetX = 0.0;
                     totalPanOffsetY = 0.0;
                     newPanOffsetX = 0.0;
@@ -5880,8 +5596,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     zoomControl(screenX, screenY, null, e.isControlDown(), e.isAltDown());
                 }
             } else {                                                                     //complete drag operations
-                if (SwingUtilities.isLeftMouseButton(e) && !e.isShiftDown() && !e.isControlDown() && !e.isAltDown())                             //left mouse drag release
-                {
+                if (SwingUtilities.isLeftMouseButton(e) && !e.isShiftDown() && !e.isControlDown() && !e.isAltDown()) { //left mouse drag release
                     totalPanOffsetX += newPanOffsetX;
                     totalPanOffsetY += newPanOffsetY;
                     newPanOffsetX = 0.0;
@@ -5934,20 +5649,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
                 if (SwingUtilities.isLeftMouseButton(e)) { // dragging with left mouse button (pan image)
                     if (!e.isControlDown() && !e.isAltDown()) {
-//                                    if (true)//(zoom != 0.0)
-//                                        {
                         newPanOffsetX = -(plotMaxX - plotMinX) * (screenX - startDragScreenX) / (plot.getDrawingFrame().width);
                         newPanOffsetY = (plotMaxY - plotMinY) * (screenY - startDragScreenY) / plot.getDrawingFrame().height;
                         updatePlot(updateNoFits());
-//                                        }
-//                                    else
-//                                        {
-//                                        totalPanOffsetX=0.0;
-//                                        totalPanOffsetY=0.0;
-//                                        newPanOffsetX=0.0;
-//                                        newPanOffsetY=0.0;
-//                                        leftDragReleased=false;
-//                                        }
                         if (e.isShiftDown()) {
                             plotcoordlabel.setText("DATA: x=" + fourPlaces.format(x[firstCurve][boldedDatum]) + ", y=" + fourPlaces.format(y[firstCurve][boldedDatum]));
                             IJ.showStatus("data values: x=" + fourPlaces.format(x[firstCurve][boldedDatum]) + ", y=" + fourPlaces.format(y[firstCurve][boldedDatum]));
@@ -5957,8 +5661,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                             plotcoordlabel.setText("x=" + fourPlaces.format(x) + ", y=" + fourPlaces.format(y));
                             IJ.showStatus("plot coordinates: x=" + fourPlaces.format(x) + ", y=" + fourPlaces.format(y));
                         }
-                    } else if (e.isControlDown() && !e.isAltDown()) // control left-drag (update left detrend position)
-                    {
+                    } else if (e.isControlDown() && !e.isAltDown()) { // control left-drag (update left detrend position)
                         handleControlLeftClickDrag(e, imageX, imageY);
                     }
                 }
@@ -5974,8 +5677,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             double yval = plotMaxY - (double) (imageY - (Plot.TOP_MARGIN)) * (plotMaxY - plotMinY) / (double) (plot.getDrawingFrame().height);
 
 
-            if (e.isShiftDown() && !e.isControlDown() && !e.isAltDown())     //select table line nearest x-val of first selected curve
-            {
+            if (e.isShiftDown() && !e.isControlDown() && !e.isAltDown()) { //select table line nearest x-val of first selected curve
                 xval = plot.descaleX(e.getX()); // Fix for scaling
                 nearestLine = 0;
                 nearestX = Math.abs(xval - x[firstCurve][0]);
@@ -6034,8 +5736,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         if (!alreadyMoved) {
             showDMarkersCB.setSelected(true);
             showDMarkers = true;
-            if (e.isShiftDown())   //update vertical marker 1 position
-            {
+            if (e.isShiftDown()) { //update vertical marker 1 position
                 useDMarker1CB.setSelected(true);
                 useDMarker1 = true;
                 dmarker1spinner.setValue(x);
@@ -6054,8 +5755,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         double y = plot.descaleY(e.getY());
         showDMarkersCB.setSelected(true);
         showDMarkers = true;
-        if (e.isShiftDown()) //update vertical marker 4 position
-        {
+        if (e.isShiftDown()) { //update vertical marker 4 position
             useDMarker4CB.setSelected(true);
             useDMarker4 = true;
             dmarker4spinner.setValue(x);
@@ -6117,7 +5817,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             if (newSlice == 0) newSlice = selectedRow + 1;
             if (newSlice > imstack.getSize()) newSlice = imstack.getSize();
             iplus.setSlice(newSlice);
-//                iplus.updateAndDraw();
         });
         t.start();
     }
@@ -6143,10 +5842,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             if (zoomX == 0.0 || zoomY == 0.0) {
                 mouseX = screenX - plot.getDrawingFrame().x;
                 mouseY = screenY - plot.getDrawingFrame().y;
-//                        totalPanOffsetX=0.0;
-//                        totalPanOffsetY=0.0;
-//                        newPanOffsetX=0.0;
-//                        newPanOffsetY=0.0;
             }
             if (!yOnly) {
                 zoomX -= (1 - zoomX) * magChangeSteps / 25.0;
@@ -6347,7 +6042,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         showSigmaForDetrendedCurves = true;
         useNelderMeadChi2ForDetrend = true;
         openFitPanels = true;
-//        useTwoLineLegend = false;
         useWideDataPanel = true;
         subframeWasShowing = true;
         newPlotWindow = false;
@@ -6436,10 +6130,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         tableName = "Results";
         list = new Vector<>();
         path = new GeneralPath();
-
-//        symbols = fourPlaces.getDecimalFormatSymbols();
-//        decSep = symbols.getDecimalSeparator();
-//        thouSep = symbols.getGroupingSeparator();
 
         delayedUpdateTask = null;
         delayedUpdateTimer = null;
@@ -6675,13 +6365,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         yc2column = new int[maxCurves];
         oplabel = new String[maxCurves];
         opcolumn = new int[maxCurves];
-//                errlabel = new String[maxCurves];
-//                operrlabel = new String[maxCurves];
         showErrors = new boolean[maxCurves];
         bpLock = new boolean[maxCurves];
         hasErrors = new boolean[maxCurves];
-//////                showErr = new boolean[maxCurves];
-//                showOpErrors = new boolean[maxCurves];
         hasOpErrors = new boolean[maxCurves];
         lines = new boolean[maxCurves];
         smooth = new boolean[maxCurves];
@@ -6734,7 +6420,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         useColumnName = new boolean[maxCurves];
         useLegend = new boolean[maxCurves];
         force = new boolean[maxCurves];
-//                detrendFit = new boolean[maxCurves];
         inputAverageOverSize = new int[maxCurves];
         legend = new String[maxCurves];
         xyc1label = new String[maxCurves];
@@ -6744,7 +6429,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         usecurvebox = new JCheckBox[maxCurves];
         errorcolumnbox = new JCheckBox[maxCurves];
-//                operrorcolumnbox = new JCheckBox[maxCurves];
         useDataAvgbox = new JCheckBox[maxCurves];
         usemmagbox = new JCheckBox[maxCurves];
         fromMagBox = new JCheckBox[maxCurves];
@@ -6830,13 +6514,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         grabautobutton = new JButton[maxCurves];
         savecolumnbutton = new JButton[maxCurves];
 
-//                customscaleeditor = new JSpinner.NumberEditor[maxCurves];
-//                customscaleformat = new DecimalFormat[maxCurves];
-//                customshifteditor = new JSpinner.NumberEditor[maxCurves];
-//                customshiftformat = new DecimalFormat[maxCurves];
-//                detrendfactoreditor = new JSpinner.NumberEditor[maxCurves];
-//                detrendfactorformat = new DecimalFormat[maxCurves];
-
 
         //INITIALIZE CERTAIN ARRAYS
         defaultFitStep[0] = 0.1;
@@ -6853,27 +6530,21 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             }
         }
 
-//                residualShiftStep = 0.001;
         for (int i = 0; i < maxCurves; i++) {
             xlabel[i] = "default";
             ylabel[i] = "rel_flux_" + (i == 0 ? "T" : "C") + (i + 1);
-//                        errlabel[i] = "rel_flux_err_"+(i==0?"T":"C")+(i+1);
             oplabel[i] = "source-sky_" + (i == 0 ? "T" : "C") + (i + 1);
-//                        operrlabel[i] = "source_error_"+(i==0?"T":"C")+(i+1);
             colorIndex[i] = (7 + i) % colors.length;  //start with blue
             modelColorIndex[i] = (7 + i) % colors.length;
             residualModelColorIndex[i] = (7 + i) % colors.length;
             residualColorIndex[i] = (7 + i) % colors.length;
             markerIndex[i] = 3;   //default to dot
             residualSymbolIndex[i] = 3;
-//                        detrendFit[i] = true;
             force[i] = false;
             bpLock[i] = false;
             showErrors[i] = false;
-//                        showOpErrors[i] = false;
             hasErrors[i] = false;
             hasOpErrors[i] = false;
-//                        showErr[i] = false;
             useColumnName[i] = true;
             fitFrameLocationX[i] = 40 + i * 25;
             fitFrameLocationY[i] = 40 + i * 25;
@@ -7366,43 +7037,30 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         } else if (increment == 1000) {
             return "              1000";
         }
-//                else if (increment == 10000)      return "            10000";
-//                else if (increment == 100000)     return "          100000";
-//                else if (increment == 1000000)    return "        1000000";
-//                else if (increment == 10000000)   return "      10000000";
-//                else if (increment == 100000000)  return "    100000000";
-//                else if (increment == 1000000000) return "1000000000";
         else { return "                    1"; }
     }
 
     static void checkForUT(JSpinner spinner) {
         JSpinner.NumberEditor ed = (JSpinner.NumberEditor) spinner.getEditor();
         String text = ed.getTextField().getText();
-//                IJ.log("Original Text = "+text);
         double dValue = Tools.parseDouble(text);
         if (Double.isNaN(dValue)) {
-//                    IJ.log("Not a number");
             double value = 0.5;
             String[] pieces = text.replaceAll("[^0-9\\.]+", " ").trim().split("[^0-9\\.]+");
             if (pieces.length > 0 && !pieces[0].trim().equals("")) {
-//                        IJ.log("pieces[0]="+pieces[0]);
                 value += Tools.parseDouble(pieces[0], 0) / 24.0;
             }
             if (pieces.length > 1 && !pieces[1].trim().equals("")) {
-//                        IJ.log("pieces[1]="+pieces[1]);
                 value += Tools.parseDouble(pieces[1], 0) / 1440.0;
             }
             if (pieces.length > 2 && !pieces[2].trim().equals("")) {
-//                        IJ.log("pieces[2]="+pieces[2]);
                 value += Tools.parseDouble(pieces[2], 0) / 86400.0;
             }
-//                    IJ.log("value="+value);
             value %= 1;
             if (spinner.equals(vmarker2spinner)) {
                 double vm1Value = (Double) vmarker1spinner.getValue();
                 if (!Double.isNaN(vm1Value) && value < vm1Value) value += (int) vm1Value + 1;
             }
-//                    IJ.log("value="+value);
             if (!Double.isNaN(value)) {
                 spinner.setValue(value);
             }
@@ -7471,7 +7129,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
 
     static void showMainJPanel() {
-// DISPLAY MAIN PANEL
+        // DISPLAY MAIN PANEL
         panelsUpdating = true;
         if (mainFrame == null) {
             mainFrame = new JFrame("Multi-plot Main");
@@ -7487,7 +7145,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         });
 
         mainpanel = new JPanel(new SpringLayout());
-//                mainpanel.addMouseListener(panelMouseListener);
         mainpanel.addMouseMotionListener(panelMouseMotionListener);
 
 
@@ -7505,7 +7162,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         JPanel mainpanelgroupc = new JPanel(new SpringLayout());   //TITLE - SUBTITLE - LEGEND GROUP
         JPanel mainpanelgroupd = new JPanel(new SpringLayout());   // X & Y AXIS LEGEND GROUP
         JPanel mainpanelgroupe = new JPanel(new SpringLayout());
-//                mainpanelgroupe.setBorder(BorderFactory.createTitledBorder("Scaling Options"));
         JPanel mainpanelgroupf = new JPanel(new SpringLayout());
 
         // BUILD MENUBAR
@@ -7627,20 +7283,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             }
         });
         filemenu.add(createAAVSOVarStarReportMenuItem);
-
-//                JMenuItem createDmagVsRMSPlotMenuItem = new JMenuItem("Create Delta-magnitude vs. RMS plot...");
-//                createDmagVsRMSPlotMenuItem.setToolTipText("<html>"+"Create a Delta-magnitude vs. RMS plot for all apertures.<br>");
-//                createDmagVsRMSPlotMenuItem.addActionListener(new ActionListener() {
-//                    public void actionPerformed(ActionEvent e) {
-//                            ij.plugin.Macro_Runner.runMacroFromJar("DmagVsRMSplotMacro.txt",""); }});
-//                filemenu.add(createDmagVsRMSPlotMenuItem);
-//
-//                JMenuItem createNEBLCPlotMenuItem = new JMenuItem("Create NEB light curve plots...");
-//                createNEBLCPlotMenuItem.setToolTipText("<html>"+"Create NEB light curve plots with the predicted depth overplotted....<br>");
-//                createNEBLCPlotMenuItem.addActionListener(new ActionListener() {
-//                    public void actionPerformed(ActionEvent e) {
-//                            ij.plugin.Macro_Runner.runMacroFromJar("NEBLightCurvePlotWithPredDepth.txt",""); }});
-//                filemenu.add(createNEBLCPlotMenuItem);
 
         JMenuItem createMpcFormatMenuItem = new JMenuItem("Create Minor Planet Center (MPC) formatted data...");
         createMpcFormatMenuItem.setToolTipText("<html>" + "Create MPC formatted data for submission to the Minor Planet Center.<br>" + "Open a table into Multi-plot before creating the MPC formatted data.</html>");
@@ -7838,13 +7480,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         preferencesmenu.addSeparator();
 
-//                setverticalmarkertextmenuitem = new JMenuItem("Change vertical marker text...");
-//                setverticalmarkertextmenuitem.addActionListener(new ActionListener() {
-//                    public void actionPerformed(ActionEvent e) {
-//                            setVMarkerText();
-//                            updatePlot();}});
-//                preferencesmenu.add(setverticalmarkertextmenuitem);
-
         usePriorityColumnsCB = new JCheckBoxMenuItem("Show specified priority data names first in pulldown lists", prioritizeColumns);
         usePriorityColumnsCB.addItemListener(e -> {
             if (e.getStateChange() == ItemEvent.DESELECTED) {
@@ -7972,106 +7607,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         });
         xaxismenu.add(xNumbersCB);
 
-//                xaxismenu.addSeparator();
-//
-//                if (showXAxisNormal)
-//                    {
-//                    showXAxisAsPhase = false;
-//                    showXAxisAsDaysSinceTc = false;
-//                    showXAxisAsHoursSinceTc = false;
-//                    }
-//                else if (showXAxisAsPhase)
-//                    {
-//                    showXAxisAsDaysSinceTc = false;
-//                    showXAxisAsHoursSinceTc = false;
-//                    }
-//                else if (showXAxisAsDaysSinceTc)
-//                    {
-//                    showXAxisAsHoursSinceTc = false;
-//                    }
-//                else if (!showXAxisAsHoursSinceTc)
-//                    {
-//                    showXAxisNormal = true;
-//                    }
-//                Prefs.set("plot.showXAxisNormal",showXAxisNormal);
-//                Prefs.set("plot.showXAxisAsPhase",showXAxisAsPhase);
-//                Prefs.set("plot.showXAxisAsDaysSinceTc",showXAxisAsDaysSinceTc);
-//                Prefs.set("plot.showXAxisAsHoursSinceTc",showXAxisAsHoursSinceTc);
-//
-//                showXAxisNormalCB = new JRadioButtonMenuItem("Show x-axis unphased", showXAxisNormal);
-//                showXAxisNormalCB.addActionListener(new ActionListener(){
-//                        public void actionPerformed(ActionEvent ae) {
-//                        showXAxisNormal = true;
-//                        showXAxisAsPhase = false;
-//                        showXAxisAsDaysSinceTc = false;
-//                        showXAxisAsHoursSinceTc = false;
-//                        Prefs.set("plot.showXAxisNormal",showXAxisNormal);
-//                        Prefs.set("plot.showXAxisAsPhase",showXAxisAsPhase);
-//                        Prefs.set("plot.showXAxisAsDaysSinceTc",showXAxisAsDaysSinceTc);
-//                        Prefs.set("plot.showXAxisAsHoursSinceTc",showXAxisAsHoursSinceTc);
-//                        updatePlot(updateAllFits());}});
-//                xaxismenu.add(showXAxisNormalCB);
-//
-//                showXAxisAsPhaseCB = new JRadioButtonMenuItem("Show x-axis as orbital phase", showXAxisAsPhase);
-//                showXAxisAsPhaseCB.addActionListener(new ActionListener(){
-//                        public void actionPerformed(ActionEvent ae) {
-//                        showXAxisNormal = false;
-//                        showXAxisAsPhase = true;
-//                        showXAxisAsDaysSinceTc = false;
-//                        showXAxisAsHoursSinceTc = false;
-//                        Prefs.set("plot.showXAxisNormal",showXAxisNormal);
-//                        Prefs.set("plot.showXAxisAsPhase",showXAxisAsPhase);
-//                        Prefs.set("plot.showXAxisAsDaysSinceTc",showXAxisAsDaysSinceTc);
-//                        Prefs.set("plot.showXAxisAsHoursSinceTc",showXAxisAsHoursSinceTc);
-//                        updatePlot(updateAllFits());}});
-//                xaxismenu.add(showXAxisAsPhaseCB);
-//
-//                showXAxisAsDaysSinceTcCB = new JRadioButtonMenuItem("Show x-axis as days since Tc", showXAxisAsDaysSinceTc);
-//                showXAxisAsDaysSinceTcCB.addActionListener(new ActionListener(){
-//                        public void actionPerformed(ActionEvent ae) {
-//                        showXAxisNormal = false;
-//                        showXAxisAsPhase = false;
-//                        showXAxisAsDaysSinceTc = true;
-//                        showXAxisAsHoursSinceTc = false;
-//                        Prefs.set("plot.showXAxisNormal",showXAxisNormal);
-//                        Prefs.set("plot.showXAxisAsPhase",showXAxisAsPhase);
-//                        Prefs.set("plot.showXAxisAsDaysSinceTc",showXAxisAsDaysSinceTc);
-//                        Prefs.set("plot.showXAxisAsHoursSinceTc",showXAxisAsHoursSinceTc);
-//                        updatePlot(updateAllFits());}});
-//                xaxismenu.add(showXAxisAsDaysSinceTcCB);
-//
-//                showXAxisAsHoursSinceTcCB = new JRadioButtonMenuItem("Show x-axis as hours since Tc", showXAxisAsHoursSinceTc);
-//                showXAxisAsHoursSinceTcCB.addActionListener(new ActionListener(){
-//                        public void actionPerformed(ActionEvent ae) {
-//                        showXAxisNormal = false;
-//                        showXAxisAsPhase = false;
-//                        showXAxisAsDaysSinceTc = false;
-//                        showXAxisAsHoursSinceTc = true;
-//                        Prefs.set("plot.showXAxisNormal",showXAxisNormal);
-//                        Prefs.set("plot.showXAxisAsPhase",showXAxisAsPhase);
-//                        Prefs.set("plot.showXAxisAsDaysSinceTc",showXAxisAsDaysSinceTc);
-//                        Prefs.set("plot.showXAxisAsHoursSinceTc",showXAxisAsHoursSinceTc);
-//                        updatePlot(updateAllFits());}});
-//                xaxismenu.add(showXAxisAsHoursSinceTcCB);
-//
-//                xPhaseGroup = new ButtonGroup();
-//                xPhaseGroup.add(showXAxisNormalCB);
-//                xPhaseGroup.add(showXAxisAsPhaseCB);
-//                xPhaseGroup.add(showXAxisAsDaysSinceTcCB);
-//                xPhaseGroup.add(showXAxisAsHoursSinceTcCB);
-//
-//                xaxismenu.addSeparator();
-//
-//                setephemerismenuitem = new JMenuItem("Set epoch and period for X-axis phase calculation...");
-//                setephemerismenuitem.addActionListener(new ActionListener() {
-//                    public void actionPerformed(ActionEvent e) {
-//                            setEphemeris();
-//                            updatePlot(updateAllFits());
-//                            }});
-//                xaxismenu.add(setephemerismenuitem);
-
-//                xaxismenu.addSeparator();
-
         mainmenubar.add(xaxismenu);
 
 
@@ -8140,7 +7675,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         });
         yaxismenu.add(negateMagCB);
 
-//                preferencesmenu.addSeparator();
         mainmenubar.add(yaxismenu);
 
         var display = new JMenu("Style");
@@ -8173,10 +7707,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         xcolumnlabel.setFont(p11);
         xcolumnlabel.setHorizontalAlignment(JLabel.CENTER);
         mainpanelgroupa.add(xcolumnlabel);
-
-//                ycolumnslabel = new JLabel ("Y-data Panel");
-//                ycolumnslabel.setHorizontalAlignment(JLabel.CENTER);
-//                mainpanelgroupa.add (ycolumnslabel);
 
         JLabel dummy50label = new JLabel("Y-datasets");
         dummy50label.setFont(p11);
@@ -8318,7 +7848,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         mainpanelgroupa.add(maxcurvespanel);
 
         JPanel maxdetrendvarspanel = new JPanel(new SpringLayout());
-//                maxdetrendvarspanel.setBorder(BorderFactory.createLineBorder(Color.lightGray,1));
         maxdetrendvarsmodel = new SpinnerNumberModel(maxDetrendVars, 1, null, 1);
         maxdetrendvarsspinner = new JSpinner(maxdetrendvarsmodel);
         maxdetrendvarsspinner.setFont(p11);
@@ -8466,8 +7995,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         vmarker1spinner = new JSpinner(vmarker1spinnermodel);
         vmarker1spinner.setFont(p11);
-//                JComponent editor = new JSpinner.NumberEditor(vmarker1spinner);
-//                vmarker1spinner.setEditor(editor);
         vmarker1spinner.setEditor(new JSpinner.NumberEditor(vmarker1spinner, "########0.######"));
         vmarker1spinner.setPreferredSize(new Dimension(75, 25));
         vmarker1spinner.setComponentPopupMenu(xsteppopup);
@@ -8546,7 +8073,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         // TITLE GROUP
         JPanel titlegroup = new JPanel(new SpringLayout());
-//                        titlegroup.setBorder (BorderFactory.createEmptyBorder(10,10,10,10));
         titlegroup.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(mainBorderColor, 1), "Title", TitledBorder.CENTER, TitledBorder.TOP, b12, Color.DARK_GRAY));
 
         // TITLE RADIO BUTTON GROUP
@@ -8945,15 +8471,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             updatePlot(updateNoFits());
         });
         legendpopup.add(legendshowsymbolCB);
-//                        JMenuItem twolinelegendCB = new JCheckBoxMenuItem("Use two lines per legend",useTwoLineLegend);
-//                        twolinelegendCB.addItemListener(new ItemListener(){
-//                            public void itemStateChanged(ItemEvent e) {
-//                                if (e.getStateChange() == ItemEvent.DESELECTED)
-//                                        useTwoLineLegend = false;
-//                                else if (e.getStateChange() == ItemEvent.SELECTED)
-//                                        useTwoLineLegend = true;
-//                                updatePlot(updateNoFits());}});
-//                        legendpopup.add(twolinelegendCB);
 
 
         legendpopup.addPopupMenuListener(new PopupMenuListener() {
@@ -9018,7 +8535,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         legendconfigureButton.addActionListener(ae -> legendpopup.show(legendconfigureButton, mainpanel.getX(), mainpanel.getY() + 25));
         legendradiopanelgroup.add(legendconfigureButton);
         legendradiopanelgroup.add(Box.createHorizontalStrut(2));
-//                                SpringUtil.makeCompactGrid (legendradiopanelgroup, 1, legendradiopanelgroup.getComponentCount(), 1,1,1,1);
         leftButton.setComponentPopupMenu(legendpopup);
         leftButton.setToolTipText("Right click to set legend preferences");
         rightButton.setComponentPopupMenu(legendpopup);
@@ -9182,7 +8698,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         xlegendconfigureButton.addActionListener(ae -> xaxispopup.show(xlegendconfigureButton, mainpanel.getX(), mainpanel.getY() + 25));
         xlegendradiopanelgroup.add(xlegendconfigureButton);
         xlegendradiopanelgroup.add(Box.createHorizontalStrut(2));
-//                                SpringUtil.makeCompactGrid (xlegendradiopanelgroup, 1, xlegendradiopanelgroup.getComponentCount(), 1,1,1,1);
         xnoneButton.setComponentPopupMenu(xaxispopup);
         xnoneButton.setToolTipText("Right click to set X-axis label preferences");
         xcustomNameButton.setComponentPopupMenu(xaxispopup);
@@ -9334,7 +8849,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             useYCustomName = false;
             updatePlot(updateNoFits());
         });
-//                                SpringUtil.makeCompactGrid (ylegendradiopanelgroup, 1, 3, 0,0,0,0);
+
         ynoneButton.setComponentPopupMenu(yaxispopup);
         ynoneButton.setToolTipText("Right click to set Y-axis label preferences");
         ycustomNameButton.setComponentPopupMenu(yaxispopup);
@@ -10203,7 +9718,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         phaseradiogroup.add(orbitalphaseButton);
         unphasedButton.addActionListener(ae -> {
             if (!showXAxisNormal && T0spinner != null && xBase > 0) {
-                //IJ.log("xBase="+xBase);
                 int epoch = (int)((xBase - T0)/period) + 1;
                 skipPlotUpdate = true;
                 vmarker2spinner.setValue(T0 + period * (epoch) + duration/48.0 - (int)xBase);
@@ -10519,8 +10033,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         mfmarker1spinner = new JSpinner(mfmarker1spinnermodel);
         mfmarker1spinner.setFont(p11);
         mfmarker1spinner.setEditor(new JSpinner.NumberEditor(mfmarker1spinner, "########0.######"));
-//                JComponent editor = new JSpinner.NumberEditor(vmarker1spinner);
-//                vmarker1spinner.setEditor(editor);
         mfmarker1spinner.setPreferredSize(new Dimension(75, 25));
         mfmarker1spinner.setEnabled(true);
         mfmarker1spinner.setComponentPopupMenu(xsteppopup);
@@ -10596,8 +10108,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         dmarker1spinner = new JSpinner(dmarker1spinnermodel);
         dmarker1spinner.setFont(p11);
         dmarker1spinner.setEditor(new JSpinner.NumberEditor(dmarker1spinner, "########0.######"));
-//                JComponent editor = new JSpinner.NumberEditor(vmarker1spinner);
-//                vmarker1spinner.setEditor(editor);
         dmarker1spinner.setPreferredSize(new Dimension(75, 25));
         dmarker1spinner.setEnabled(useDMarker1);
         dmarker1spinner.setComponentPopupMenu(xsteppopup);
@@ -10619,9 +10129,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         detrendrangepanel.add(dmarker1panel);
 
         JPanel dmarker2panel = new JPanel(new SpringLayout());
-//                dmarker2panel.setBorder(BorderFactory.createLineBorder(Color.lightGray,1));
         TitledBorder dmarker2title = BorderFactory.createTitledBorder(BorderFactory.createLineBorder(subBorderColor, 1), "Left", TitledBorder.CENTER, TitledBorder.TOP, p11);
-//                dmarker2title.setTitlePosition(TitledBorder.BOTTOM);
         dmarker2panel.setBorder(dmarker2title);
 
         dmarker2spinnermodel = new SpinnerNumberModel(dMarker2Value, null, null, xStep);
@@ -10629,24 +10137,12 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         dmarker2spinner = new JSpinner(dmarker2spinnermodel);
         dmarker2spinner.setFont(p11);
         dmarker2spinner.setEditor(new JSpinner.NumberEditor(dmarker2spinner, "########0.######"));
-//                JComponent editor = new JSpinner.NumberEditor(vmarker1spinner);
-//                vmarker1spinner.setEditor(editor);
         dmarker2spinner.setPreferredSize(new Dimension(75, 25));
         dmarker2spinner.setComponentPopupMenu(xsteppopup);
         dmarker2spinner.setToolTipText("<html>" + "Enter detrend/normalize left marker location" + "<br>" + "or enter UT time in HH:MM or HH:MM:SS format and press 'Enter'" + "<br>" + "---------------------------------------------" + "<br>" + "SHORTCUT: &lt;Ctrl&gt; Left Click or Drag in plot    " + "<br>" + "---------------------------------------------" + "<br>" + "Right click to set spinner stepsize" + "</html>");
         dmarker2spinner.addChangeListener(ev -> {
             checkForUT(dmarker2spinner);
             dMarker2Value = (Double) dmarker2spinner.getValue();
-
-//                        if (shiftIsDown && !ignoreUpdate)
-//                            {
-//                            ignoreUpdate = true;
-//                            dmarker3spinner.setValue((Double)(dMarker3Value + Math.abs(vMarker2Value-vMarker1Value)));
-//                            }
-//                        else
-//                            {
-//                            ignoreUpdate = false;
-//                            }
             keepMarkersInOrder(2);
             if (!skipPlotUpdate) updatePlot(updateAllFits());
         });
@@ -10681,10 +10177,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         detrendrangepanel.add(dmarkercopypanel);
 
         JPanel dmarker3panel = new JPanel(new SpringLayout());
-//                dmarker3panel.setBorder(BorderFactory.createLineBorder(Color.lightGray,1));
         TitledBorder dmarker3title = BorderFactory.createTitledBorder(BorderFactory.createLineBorder(subBorderColor, 1), "Right", TitledBorder.CENTER, TitledBorder.TOP, p11);
         dmarker3title.setTitleJustification(TitledBorder.CENTER);
-//                dmarker3title.setTitlePosition(TitledBorder.BOTTOM);
         dmarker3panel.setBorder(dmarker3title);
 
         dmarker3spinnermodel = new SpinnerNumberModel(dMarker3Value, null, null, xStep);
@@ -10692,8 +10186,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         dmarker3spinner = new JSpinner(dmarker3spinnermodel);
         dmarker3spinner.setFont(p11);
         dmarker3spinner.setEditor(new JSpinner.NumberEditor(dmarker3spinner, "########0.######"));
-//                JComponent editor = new JSpinner.NumberEditor(vmarker1spinner);
-//                vmarker1spinner.setEditor(editor);
         dmarker3spinner.setPreferredSize(new Dimension(75, 25));
         dmarker3spinner.setComponentPopupMenu(xsteppopup);
         dmarker3spinner.setToolTipText("<html>" + "Enter detrend/normalize right marker location" + "<br>" + "or enter UT time in HH:MM or HH:MM:SS format and press 'Enter'" + "<br>" + "---------------------------------------------" + "<br>" + "SHORTCUT: &lt;Ctrl&gt; Right Click or Drag in plot   " + "<br>" + "---------------------------------------------" + "<br>" + "Right click to set spinner stepsize" + "</html>");
@@ -10703,13 +10195,11 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
             public void mousePressed(MouseEvent e) {
                 if (e.isAltDown()) shiftIsDown = true;
-                //else shiftIsDown = false;
 
             }
 
             public void mouseReleased(MouseEvent e) {
                 if (e.isAltDown()) shiftIsDown = true;
-                //else shiftIsDown = false;
 
             }
 
@@ -10717,23 +10207,11 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             }
 
             public void mouseEntered(MouseEvent e) {
-                //if (e.isAltDown()) shiftIsDown = true;
             }
         });
         dmarker3spinner.addChangeListener(ev -> {
             checkForUT(dmarker3spinner);
             dMarker3Value = (Double) dmarker3spinner.getValue();
-//                        IJ.log("D3 Shift="+shiftIsDown);
-//                        IJ.log("D3 IgnoreUpdate="+ignoreUpdate);
-//                        if (shiftIsDown && !ignoreUpdate)
-//                            {
-//                            dmarker2spinner.setValue((Double)(dMarker2Value + Math.abs(vMarker2Value-vMarker1Value)));
-//                            ignoreUpdate = true;
-//                            }
-//                        else
-//                            {
-//                            ignoreUpdate = false;
-//                            }
             keepMarkersInOrder(3);
             if (!skipPlotUpdate) updatePlot(updateAllFits());
         });
@@ -10749,10 +10227,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         detrendrangepanel.add(dmarker3panel);
 
         JPanel dmarker4panel = new JPanel(new SpringLayout());
-//                dmarker4panel.setBorder(BorderFactory.createLineBorder(Color.lightGray,1));
         TitledBorder dmarker4title = BorderFactory.createTitledBorder(BorderFactory.createLineBorder(subBorderColor, 1), "Right Trim", TitledBorder.CENTER, TitledBorder.TOP, p11);
         dmarker4title.setTitleJustification(TitledBorder.CENTER);
-//                dmarker4title.setTitlePosition(TitledBorder.BOTTOM);
         dmarker4panel.setBorder(dmarker4title);
 
         dmarker4spinnermodel = new SpinnerNumberModel(dMarker4Value, null, null, xStep);
@@ -10796,21 +10272,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         SpringUtil.makeCompactGrid(detrendrangepanel, 1, detrendrangepanel.getComponentCount(), 2, 2, 6, 2);
         mainpanelgroupf.add(detrendrangepanel);
 
-//                JPanel closebuttonpanel = new JPanel (new SpringLayout());
-//                closebutton = new JButton("        Exit        ");
-//                closebutton.setForeground(Color.RED);
-//                closebutton.addActionListener(new ActionListener() {
-//                    public void actionPerformed(ActionEvent e) {
-//                            saveAndClose(); }});
-//                closebuttonpanel.add (closebutton);
-//                SpringUtil.makeCompactGrid (closebuttonpanel, 1, 1, 6,15,0,0);
-//                mainpanelgroupf.add (closebuttonpanel);
-
 
         JPanel morepanelspanel = new JPanel(new SpringLayout());
         TitledBorder morepanelstitle = BorderFactory.createTitledBorder(BorderFactory.createLineBorder(mainBorderColor, 1), "Other Panels", TitledBorder.CENTER, TitledBorder.TOP, b12, Color.DARK_GRAY);
         morepanelspanel.setBorder(morepanelstitle);
-//                morepanelspanel.setPreferredSize(new Dimension(125, 25));
 
         JPanel line1morepanelspanel = new JPanel(new SpringLayout());
 
@@ -10905,14 +10370,11 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         }
         if (!plotAutoMode) mainFrame.setVisible(true);
         if (!plotAutoMode && table != null && (openRefStarWindow || refStarPanelWasShowing)) {
-//                    checkAndLockTable();
             showRefStarJPanel();
-//                    if (table != null) table.setLock(false);
             refStarPanelWasShowing = true;
         }
 
-        if (!plotAutoMode && (addAstroDataFrameWasShowing)) //table != null &&
-        {
+        if (!plotAutoMode && (addAstroDataFrameWasShowing)) { //table != null &&
             addNewAstroData();
             addAstroDataFrameWasShowing = true;
         }
@@ -10965,15 +10427,11 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         // SUBPANEL START
 
         if (useWideDataPanel) {
-//                        constructTopGroupTopLabels(mainsubpanelgroupa);
-//                        constructOtherGroupTopLabels(mainsubpanelgroupa);
             constructTopGroupBottomLabels(mainsubpanelgroupa);
             constructOtherGroupBottomLabels(mainsubpanelgroupa);
 
         } else {
-//                        constructTopGroupTopLabels(mainsubpanelgroupa);
             constructTopGroupBottomLabels(mainsubpanelgroupa);
-//                        constructOtherGroupTopLabels(mainsubpanelgroupb);
             constructOtherGroupBottomLabels(mainsubpanelgroupb);
         }
         for (cur = 0; cur < maxCurves; cur++) {
@@ -11026,12 +10484,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             fitPanel[c].setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(color[c], 2), table == null ? "No Table Selected" : ylabel[c].trim().equals("") ? "No Data Column Selected" : ylabel[c], TitledBorder.CENTER, TitledBorder.TOP, b12, Color.darkGray));
             KeplerSplineControl.getInstance(c).recallOpenState();
         }
-//                if (table != null)
-//                    {
-//                    table.setHeading(table.getColumnIndex("rel_flux_C2"), "rel_flux_T2");
-//                    xdatacolumndefault.removeItem("rel_flux_C2");
-//                    xdatacolumndefault.addItem("rel_flux_T2");
-//                    }
         panelsUpdating = false;
         FileDrop fileDrop = new FileDrop(mainsubpanel, BorderFactory.createEmptyBorder(), MultiPlot_::openDragAndDropFiles);
     }
@@ -11081,10 +10533,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         xcolumnlabelsub.setForeground(Color.DARK_GRAY);
         xcolumnlabelsub.setHorizontalAlignment(JLabel.CENTER);
         mainsubpanelgroup.add(xcolumnlabelsub);
-//                ycolumnlabelsub = new JLabel ("Y-data");
-//                ycolumnlabelsub.setHorizontalAlignment(JLabel.CENTER);
-//                mainsubpanelgroup.add (ycolumnlabelsub);
-
         JLabel magToFluxlabel = new JLabel("<HTML><CENTER>Input<BR><CENTER>in Mag</HTML>");
         magToFluxlabel.setFont(b11);
         magToFluxlabel.setForeground(Color.DARK_GRAY);
@@ -11096,7 +10544,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         JPanel ycolumnlabelgroup = new JPanel();
         ycolumnlabelgroup.setLayout(new BoxLayout(ycolumnlabelgroup, BoxLayout.X_AXIS));
-//                legendslabelgroup.add(Box.createGlue());
         ycolumnlabelgroup.add(Box.createHorizontalGlue());
 
         ycolumnlabelsub = new JLabel("Y-data");
@@ -11105,7 +10552,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         ycolumnlabelsub.setHorizontalAlignment(JLabel.CENTER);
         ycolumnlabelgroup.add(ycolumnlabelsub);
         ycolumnlabelgroup.add(Box.createHorizontalStrut(5));
-//                legendslabelgroup.add(Box.createGlue());
 
         helpIcon = createImageIcon("astroj/images/help.png", "Multi-plot Help");
         JButton ycolumnlabelconfigureButton = new JButton(helpIcon);
@@ -11116,12 +10562,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         ycolumnlabelconfigureButton.addActionListener(ae -> openDataHelpPanel());
         ycolumnlabelgroup.add(ycolumnlabelconfigureButton);
         ycolumnlabelgroup.add(Box.createHorizontalGlue());
-//                legendslabelgroup.add(Box.createGlue());
         mainsubpanelgroup.add(ycolumnlabelgroup);
-//                JLabel errorlabel = new JLabel ("Y-error");
-//                errorlabel.setHorizontalAlignment(JLabel.CENTER);
-//                errorlabel.setToolTipText("Error associated with Y-data");
-//                mainsubpanelgroup.add (errorlabel);
+
         operatorlabelsub = new JLabel("<HTML><CENTER>Func-<BR><CENTER>tion</HTML>");
         operatorlabelsub.setFont(b11);
         operatorlabelsub.setForeground(Color.DARK_GRAY);
@@ -11134,14 +10576,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         opcolumnlabelsub.setForeground(Color.DARK_GRAY);
         opcolumnlabelsub.setHorizontalAlignment(JLabel.CENTER);
         mainsubpanelgroup.add(opcolumnlabelsub);
-
-//                JLabel useoperrorlabel = new JLabel ("Use");
-//                useoperrorlabel.setToolTipText("Use Operator Error as error associated with Y-operator Column");
-//                useoperrorlabel.setHorizontalAlignment(JLabel.CENTER);
-//                mainsubpanelgroup.add (useoperrorlabel);
-//                JLabel operrorlabel = new JLabel ("Y-op Error");
-//                operrorlabel.setHorizontalAlignment(JLabel.CENTER);
-//                mainsubpanelgroup.add (operrorlabel);
 
         JLabel useerrorlabel = new JLabel("<HTML><CENTER>Show<BR><CENTER>Error</HTML>");
         useerrorlabel.setFont(b11);
@@ -11286,12 +10720,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         SpringUtil.makeCompactGrid(detrendlabelgroup, 1, detrendlabelgroup.getComponentCount(), 0, 0, 0, 0);
         mainsubpanelgroup.add(detrendlabelgroup);
 
-
-//                JLabel customscalelabel4 = new JLabel ("<HTML><CENTER><u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Detrend Y-data&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</u><BR>"+
-//                                                       "&nbsp;&nbsp;&nbsp;&nbsp;Fit&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" +
-//                                                       "Coefficient&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"+
-//                                                       "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Trend Data</HTML>");
-//                mainsubpanelgroup.add(customscalelabel4);
         JLabel normlabel = new JLabel("<HTML><CENTER>Norm/<BR><CENTER>Mag Ref</HTML>");
         normlabel.setFont(b11);
         normlabel.setForeground(Color.DARK_GRAY);
@@ -11312,16 +10740,12 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         customscalelabelgroup.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
         customscalelabelgroup.setLayout(new BoxLayout(customscalelabelgroup, BoxLayout.X_AXIS));
         customscalelabelgroup.setMaximumSize(new Dimension(195, 20));
-//                JLabel dummylabel39 = new JLabel ("");
-//                customscalelabelgroup.add (dummylabel39);
         customscalelabelgroup.add(Box.createHorizontalStrut(18));
-//                customscalelabelgroup.add(Box.createHorizontalGlue());
 
         JLabel customscalelabel1 = new JLabel("<HTML><CENTER>Page<BR><CENTER>Rel</HTML>");
         customscalelabel1.setFont(b11);
         customscalelabel1.setForeground(Color.DARK_GRAY);
         customscalelabel1.setToolTipText("Select to arbitrarily scale data to fit on plot (\"Scale\" and \"Shift\" by a percentage of the plot Y-range)");
-//                customscalelabel1.setHorizontalAlignment(JLabel.LEFT);
         customscalelabelgroup.add(customscalelabel1);
         customscalelabelgroup.add(Box.createHorizontalGlue());
 
@@ -11329,7 +10753,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         customscalelabel2.setFont(b11);
         customscalelabel2.setForeground(Color.DARK_GRAY);
         customscalelabel2.setToolTipText("Scale dataset by specified value or if \"Page Rel\" is selected, by specified percentage of the plot Y-range");
-//                customscalelabel2.setHorizontalAlignment(JLabel.CENTER);
         customscalelabelgroup.add(customscalelabel2);
         customscalelabelgroup.add(Box.createHorizontalStrut(25));
 
@@ -11337,7 +10760,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         customscalelabel3.setFont(b11);
         customscalelabel3.setForeground(Color.DARK_GRAY);
         customscalelabel3.setToolTipText("Add specified constant value to scaled dataset or if \"Page Rel\" is selected, add specified percentage of the plot Y-range");
-//                customscalelabel3.setHorizontalAlignment(JLabel.CENTER);
         customscalelabelgroup.add(customscalelabel3);
         customscalelabelgroup.add(Box.createHorizontalStrut(20));
         mainsubpanelgroup.add(customscalelabelgroup);
@@ -11361,11 +10783,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         displayBinningLabel.setToolTipText("Enable data binning");
         displayBinningLabel.setMaximumSize(new Dimension(75, 45));
         displayBinningLabel.setPreferredSize(new Dimension(75, 45));
-        //displayBinningLabel.setMinimumSize(new Dimension(75, 25));
         displayBinningGroup.add(displayBinningLabel);
         displayBinningGroup.add(Box.createHorizontalStrut(5));
-
-        //displayBinningGroup.add(Box.createGlue());
 
         JLabel displayBinSizeLabel = new JLabel("<HTML><CENTER>BinSize<BR><CENTER>(min)</HTML>");
         displayBinSizeLabel.setFont(b11);
@@ -11385,7 +10804,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         if (useWideDataPanel) { legendslabelgroup.setPreferredSize(new Dimension(225, 20)); } else {
             legendslabelgroup.setPreferredSize(new Dimension(325, 20));
         }
-//                legendslabelgroup.add(Box.createGlue());
         legendslabelgroup.add(Box.createHorizontalStrut(1));
 
         JLabel morelegendslabel = new JLabel("<HTML><CENTER>Legend<BR><CENTER>Type</HTML>");
@@ -11434,10 +10852,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         curvelabel[c].setHorizontalAlignment(JLabel.CENTER);
         mainsubpanelgroup.add(curvelabel[c]);
 
-//                savecolumnpanelgroup[c] = new JPanel (new SpringLayout());
-//                savecolumnpanelgroup[c].setMaximumSize(new Dimension(25,20));
-//                savecolumnpanelgroup[c].setBorder(BorderFactory.createEmptyBorder());
-
         savecolumnbutton[c] = new JButton(insertColumnIcon);
         savecolumnbutton[c].setEnabled(plotY[c]);
         savecolumnbutton[c].setMargin(new Insets(0, 0, 0, 0));
@@ -11446,9 +10860,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             addNewColumn(c, false);
             updatePlot(updateAllFits());
         });
-
-//                savecolumnpanelgroup[c].add(savecolumnbutton[c]);
-//                SpringUtil.makeCompactGrid (savecolumnpanelgroup[c], 1, savecolumnpanelgroup[c].getComponentCount(), 0,0,0,0);
 
         mainsubpanelgroup.add(savecolumnbutton[c]);
 
@@ -11476,10 +10887,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         xdatacolumn[c] = new JComboBox<>(columnswd);
         xdatacolumn[c].setFont(p11);
         xdatacolumn[c].setSelectedItem(xlabel[c]);
-//                if (!IJ.isLinux())
         xdatacolumn[c].setPrototypeDisplayValue("123456789012345678");
-//                else
-//                    xdatacolumn[c].setPrototypeDisplayValue("1234567890123456");
         xdatacolumn[c].addActionListener(ae -> {
             xlabel[c] = (String) xdatacolumn[c].getSelectedItem();
             updatePlot(updateOneFit(c));
@@ -11499,10 +10907,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         ydatacolumn[c] = new JComboBox<>(columns);
         ydatacolumn[c].setFont(p11);
         ydatacolumn[c].setSelectedItem(ylabel[c]);
-//                if (!IJ.isLinux())
         ydatacolumn[c].setPrototypeDisplayValue("123456789012345678");
-//                else
-//                    ydatacolumn[c].setPrototypeDisplayValue("1234567890123456");
         ydatacolumn[c].addActionListener(ae -> {
             ylabel[c] = (String) ydatacolumn[c].getSelectedItem();
             if (!disableUpdatePlotBox) {
@@ -11527,10 +10932,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         operatorcolumn[c] = new JComboBox<>(columns);
         operatorcolumn[c].setFont(p11);
         operatorcolumn[c].setSelectedItem(oplabel[c]);
-//                if (!IJ.isLinux())
         operatorcolumn[c].setPrototypeDisplayValue("123456789012345678");
-//                else
-//                    operatorcolumn[c].setPrototypeDisplayValue("1234567890123456");
         operatorcolumn[c].addActionListener(ae -> {
             operatorBase.getOrCreateVariant(c).set(operatorselection[c].getState());
             oplabel[c] = (String) operatorcolumn[c].getSelectedItem();
@@ -11554,7 +10956,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         markercolorselection[c] = new JComboBox<>(colors);
         markercolorselection[c].setFont(p11);
-//                        markercolorselection[c].setPreferredSize(new Dimension(100, 25));
         markercolorselection[c].setSelectedIndex(colorIndex[c]);
         markercolorselection[c].setFont(new Font("Dialog", Font.BOLD, 12));
         markercolorselection[c].setForeground(withoutAlpha(color[c]));
@@ -11577,7 +10978,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         markersymbolselection[c] = new JComboBox<>(markers);
         markersymbolselection[c].setFont(p11);
-//                        markersymbolselection[c].setPreferredSize(new Dimension(100, 25));
         markersymbolselection[c].setForeground(withoutAlpha(color[c]));
         markersymbolselection[c].setFont(new Font("Dialog", Font.BOLD, 12));
         markersymbolselection[c].setSelectedIndex(markerIndex[c]);
@@ -11674,8 +11074,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         detrendpanelgroup[c] = new JPanel(new SpringLayout());
         detrendpanelgroup[c].setMaximumSize(new Dimension(350, 20));
         detrendpanelgroup[c].setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
-//                customscalepanelgroup[c].setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(122,138,153)),BorderFactory.createLineBorder(new Color(184,207,229))));
-
 
         //DETREND MODE
 
@@ -11725,10 +11123,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             }
 
             public void mousePressed(MouseEvent e) {
-//                    if (detrendtypecombobox[c].getSelectedIndex() == 9)
-//                            {
-//                            fitFrame[c].setVisible(true);
-//                            }
             }
 
             public void mouseReleased(MouseEvent e) {
@@ -11906,17 +11300,14 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         customscalepanelgroup[c] = new JPanel(new SpringLayout());
         customscalepanelgroup[c].setMaximumSize(new Dimension(195, 20));
         customscalepanelgroup[c].setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
-//                customscalepanelgroup[c].setBorder(BorderFactory.createCompoundBorder(BorderFactory.createLineBorder(new Color(122,138,153)),BorderFactory.createLineBorder(new Color(184,207,229))));
 
         // GRAB "FORCE" SCALE AND SHIFT VALUES
-//                grabautopanel[c] = new JPanel (new SpringLayout());
 
         grabautobutton[c] = new JButton(forceIcon);
         grabautobutton[c].setMargin(buttonMargin);
         grabautobutton[c].setToolTipText("Transfer \"Page Rel\" scale and shift values to absolute values");
         grabautobutton[c].addActionListener(e -> {
             customScaleFactor[c] = autoScaleFactor[c] * yRange / yWidth[c];
-//                        customscalespinner[c].setValue(customScaleFactor[c]);
             customShiftFactor[c] = yMid + yRange * autoShiftFactor[c] - customScaleFactor[c] * yMidpoint[c];
             if (Double.isNaN(customShiftFactor[c]) || Double.isInfinite(customShiftFactor[c])) {
                 customShiftFactor[c] = 0.0;
@@ -11924,7 +11315,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             if (Double.isNaN(customScaleFactor[c]) || Double.isInfinite(customScaleFactor[c])) {
                 customScaleFactor[c] = 1.0;
             }
-//                        customshiftspinner[c].setValue(customShiftFactor[c]);
             force[c] = false;
             forcebox[c].setSelected(false);
             customscalespinner[c].setModel(new SpinnerNumberModel(customScaleFactor[c], null, null, customScaleStep[c]));
@@ -11938,9 +11328,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             updatePlot(updateNoFits());
         });
         customscalepanelgroup[c].add(grabautobutton[c]);
-//                SpringUtil.makeCompactGrid (grabautopanel[c],1,1, 0,0,0,0);
-//                mainsubpanelgroup.add (grabautopanel[c]);
-//                customscalepanelgroup[c].add (grabautopanel[c]);
 
         //FORCE CHECKBOX
 
@@ -11970,7 +11357,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             Prefs.set("plot.force" + c, force[c]);
             updatePlot(updateNoFits());
         });
-//                forcebox[c].setHorizontalAlignment(JLabel.CENTER);
         customscalepanelgroup[c].add(forcebox[c]);
 
         //SCALE SPINNER
@@ -11981,10 +11367,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         customscalespinner[c].setEditor(new JSpinner.NumberEditor(customscalespinner[c], "########0.#########"));
         customscalespinner[c].setToolTipText("<HTML>If 'Page Rel' is deselected, the Y-dataset values are multiplied by this factor<BR>" + "(and by the factor of 10 specified in the 'Y-axis' box of the 'Multi-plot Main' panel).<BR>" + "If 'Page Rel' is selected, the dataset values are arbitrarily scaled to fit on a 'Scale' percentage of the Y-axis range.<BR>" + "Right click to set spinner stepsize.</HTML>");
         customscalespinner[c].setPreferredSize(new Dimension(75, 25));
-
-//                customscaleeditor[c] = (JSpinner.NumberEditor)customscalespinner[c].getEditor();
-//                customscaleformat[c] = customscaleeditor[c].getFormat();
-//                customscaleformat[c].setMaximumFractionDigits(9);
 
         customscalespinner[c].addChangeListener(ev -> {
             if (force[c]) { autoScaleFactor[c] = (Double) customscalespinner[c].getValue() / 100.0; } else {
@@ -12030,9 +11412,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             }
             customscalespinner[c].setModel(new SpinnerNumberModel(force[c] ? autoScaleFactor[c] * 100 : customScaleFactor[c], null, null, force[c] ? autoScaleStep[c] : customScaleStep[c]));
             customscalespinner[c].setEditor(new JSpinner.NumberEditor(customscalespinner[c], "########0.#########"));
-//                        customscaleeditor[c] = (JSpinner.NumberEditor)customscalespinner[c].getEditor();
-//                        customscaleformat[c] = customscaleeditor[c].getFormat();
-//                        customscaleformat[c].setMaximumFractionDigits(9);
         });
         customscalesteplabel[c] = new JLabel("Stepsize:");
         customscalesteppanel[c].add(customscalesteplabel[c]);
@@ -12054,17 +11433,13 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         if (c == 0) defaultSpinnerBorder = customshiftspinner[0].getBorder();
         customshiftspinner[c].setFont(p11);
         customshiftspinner[c].setEditor(new JSpinner.NumberEditor(customshiftspinner[c], "########0.#########"));
-//                customshifteditor[c] = (JSpinner.NumberEditor)customshiftspinner[c].getEditor();
-//                customshiftformat[c] = customshifteditor[c].getFormat();
-//                customshiftformat[c].setMaximumFractionDigits(6);
 
 
         customshiftspinner[c].setPreferredSize(new Dimension(75, 25));
         customshiftspinner[c].setToolTipText("<HTML>If 'Page Rel' is deselected, the 'Shift' value is added to the scaled Y-dataset values before plotting.<BR>" + "If 'Page Rel' is selected, the dataset values are arbitrarily shifted by 'Shift' percentage of the Y-axis plot range.<BR>" + "Use 'CONTROL' and 'SHIFT' click modifiers to select and shift multiple curves simultaneously.<BR>" + "Right click to set spinner stepsize.</HTML>");
         customshiftspinner[c].addChangeListener(ev -> {
             if (customshiftspinner[c].isEnabled()) {
-                if (force[c]) //work around java bug that sometimes causes two click detections rather than one
-                {
+                if (force[c]) { //work around java bug that sometimes causes two click detections rather than one
                     double a = Double.parseDouble(uptoNinePlaces.format(autoShiftFactor[c]));
                     double b = Double.parseDouble(uptoNinePlaces.format((Double) customshiftspinner[c].getValue() / 100.0));
                     if (a == b) return;
@@ -12208,9 +11583,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             public void popupMenuWillBecomeVisible(PopupMenuEvent popupMenuEvent) { }
         });
         customshiftspinner[c].setComponentPopupMenu(customshiftsteppopup[c]);
-//                SpringUtil.makeCompactGrid (autoscalepanelgroup[c], 1, 3, 0,0,0,0);
         SpringUtil.makeCompactGrid(customscalepanelgroup[c], 1, customscalepanelgroup[c].getComponentCount(), 0, 0, 0, 0);
-//                mainsubpanelgroup.add (autoscalepanelgroup[c]);
         mainsubpanelgroup.add(customscalepanelgroup[c]);
 
 //
@@ -12276,7 +11649,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         if (useWideDataPanel) { morelegendradiopanelgroup[c].setPreferredSize(new Dimension(225, 20)); } else {
             morelegendradiopanelgroup[c].setPreferredSize(new Dimension(325, 20));
         }
-//                legendslabelgroup.add(Box.createGlue());
+
         morelegendradiopanelgroup[c].add(Box.createHorizontalStrut(1));
         morelegendradiopanelgroup[c].setBorder(BorderFactory.createLineBorder(Color.lightGray));
         ImageIcon noneLegendIcon = createImageIcon("astroj/images/nonelegend.png", "Disable legend for this data set");
@@ -12377,7 +11750,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         morelegendField[c].setToolTipText("Right click to set legend preferences");
         morelegendradiopanelgroup[c].add(morelegendField[c]);
 
-//                SpringUtil.makeCompactGrid (morelegendradiopanelgroup[c], 1, morelegendradiopanelgroup[c].getComponentCount(), 0,0,0,0);
         mainsubpanelgroup.add(morelegendradiopanelgroup[c]);
 
         if (useWideDataPanel) {
@@ -12397,8 +11769,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         detrendVarButton[c][v].setToolTipText(detrendlabel[c][v].trim().equals("") ? (detrendlabelhold[c][v].trim().equals("") ? "unused" : "[" + detrendlabelhold[c][v] + "]") : detrendlabel[c][v]);
         detrendVarButton[c][v].addActionListener(ae -> {
             int mods = ae.getModifiers();
-            if ((mods & ActionEvent.CTRL_MASK) != 0 && (mods & ActionEvent.SHIFT_MASK) == 0) //copy this column name to all rows
-            {
+            if ((mods & ActionEvent.CTRL_MASK) != 0 && (mods & ActionEvent.SHIFT_MASK) == 0) { //copy this column name to all rows
                 for (int cc = 0; cc < maxCurves; cc++) {
                     detrendVarDisplayed[cc] = v;
                     detrendVarButton[cc][v].setSelected(true);
@@ -12407,20 +11778,15 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     detrendfactorstepspinner[cc].setValue(convertToText(detrendFactorStep[cc][detrendVarDisplayed[cc]]));
                     if (!detrendlabel[cc][detrendVarDisplayed[cc]].equals("Meridian_Flip") && (detrendlabel[cc][detrendVarDisplayed[cc]].trim().equals("") || (table != null && table.getColumnIndex(detrendlabel[cc][detrendVarDisplayed[cc]]) == MeasurementTable.COLUMN_NOT_FOUND))) {
                         detrendbox[cc].setSelectedIndex(0);
-//                                fitDetrendComboBox[cc][v].setSelectedIndex(0);
-//                                useFitDetrendCB[cc][v].setSelected(false);
                         detrendIndex[cc][detrendVarDisplayed[cc]] = 0;
                         detrendlabel[cc][detrendVarDisplayed[cc]] = "";
                     } else {
                         detrendbox[cc].setSelectedItem(detrendlabel[cc][detrendVarDisplayed[cc]]);
-//                                fitDetrendComboBox[cc][v].setSelectedItem(detrendlabel[cc][v]);
-//                                useFitDetrendCB[cc][v].setSelected(true);
                         detrendIndex[cc][detrendVarDisplayed[cc]] = detrendbox[cc].getSelectedIndex();
                     }
                     detrendfactorspinner[cc].setValue(detrendFactor[cc][detrendVarDisplayed[cc]]);
                 }
-            } else if ((mods & ActionEvent.CTRL_MASK) == 0 && (mods & ActionEvent.SHIFT_MASK) != 0) //select this variable for display on all rows
-            {
+            } else if ((mods & ActionEvent.CTRL_MASK) == 0 && (mods & ActionEvent.SHIFT_MASK) != 0) { //select this variable for display on all rows
                 for (int cc = 0; cc < maxCurves; cc++) {
                     detrendVarDisplayed[cc] = v;
                     detrendVarButton[cc][v].setSelected(true);
@@ -12465,8 +11831,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         detrendlabel[c][v] = "";
                     } else {
                         detrendbox[c].setSelectedItem(detrendlabel[c][v]);
-//                                fitDetrendComboBox[c][v].setSelectedItem(detrendlabel[c][v]);
-//                                useFitDetrendCB[c][v].setSelected(true);
                         detrendIndex[c][v] = detrendbox[c].getSelectedIndex();
                     }
                 }
@@ -12946,7 +12310,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         });
 
         fitPanel[c] = new JPanel(new SpringLayout());
-//            fitPanel[c].setBorder(BorderFactory.createLineBorder(color[c], 2));
         fitPanel[c].setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(color[c], 2), table == null ? "No Table Selected" : ylabel[c].trim().equals("") ? "No Data Column Selected" : ylabel[c], TitledBorder.CENTER, TitledBorder.TOP, b12, Color.darkGray));
 
         fitMenuBar[c] = new JMenuBar();
@@ -13056,15 +12419,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         JPanel orbitalParmetersPanel = new JPanel(new SpringLayout());
         orbitalParmetersPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(mainBorderColor, 1), "Orbital Parameters", TitledBorder.LEFT, TitledBorder.TOP, b12, Color.darkGray));
 
-//            JLabel periodLabel = new JLabel("Orbital Parameters");
-//            periodLabel.setFont(p12);
-//            periodLabel.setPreferredSize(labelSize);
-//            periodLabel.setMaximumSize(labelSize);
-//            specifiedParmetersPanel.add(periodLabel);
-
-//            JLabel periodDummyLabel1 = new JLabel("");
-//            specifiedParmetersPanel.add(periodDummyLabel1);
-
         JPanel orbitalPeriodPanel = new JPanel(new SpringLayout());
         orbitalPeriodPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(subBorderColor, 1), "Period (days)", TitledBorder.CENTER, TitledBorder.TOP, p11, Color.darkGray));
 
@@ -13095,17 +12449,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         periodDummyLabel2.setPreferredSize(new Dimension(10, 25));
         periodDummyLabel2.setMaximumSize(new Dimension(10, 25));
         orbitalParmetersPanel.add(periodDummyLabel2);
-//
-//            nlines++;
-
-//            JLabel eccentricityLabel = new JLabel("Eccentricity");
-//            eccentricityLabel.setFont(b12);
-//            eccentricityLabel.setToolTipText("<html>Enter eccentricity of eclipsing object's orbit.<br>"+
-//                "The eccentricity of a transiting planet's orbit is not well constrained by<br>"+
-//                "a transit light curve and must be specified from prior data.<br>"+
-//                "---------------------------------------------<br>"+
-//                "Right click to set spinner stepsize</html>");
-//            specifiedParmetersPanel.add(eccentricityLabel);
 
         JPanel forceCircularOrbitPanel = new JPanel(new SpringLayout());
         forceCircularOrbitPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(subBorderColor, 1), "Cir", TitledBorder.CENTER, TitledBorder.TOP, p11, Color.darkGray));
@@ -13191,10 +12534,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         spectralTypeSelectionPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(subBorderColor, 1), "Sp.T.", TitledBorder.CENTER, TitledBorder.TOP, p11, Color.darkGray));
         spectralTypeSelection[c] = new JComboBox<>(IJU.spType);
         spectralTypeSelection[c].setFont(b11);
-//                        markercolorselection[c].setPreferredSize(new Dimension(100, 25));
         spectralTypeSelection[c].setSelectedItem(IJU.getSpTFromTeff(teff[c]));
-//            spectralTypeSelection[c].setFont(new Font("Dialog", Font.BOLD, 12));
-//            spectralTypeSelection[c].setForeground(color[c]);
         spectralTypeSelection[c].setPreferredSize(new Dimension(60, 25));
         spectralTypeSelection[c].setMaximumSize(new Dimension(60, 25));
         spectralTypeSelection[c].setToolTipText("<html>Select the host star spectral type to calculate the other<br>" + "stellar parameters and the planet radius.<br>" + "This setting is required only if a planetary radius estimation<br>" + "is to be calculated from the light curve fit.</html>");
@@ -13412,11 +12752,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         SpringUtil.makeCompactGrid(useTransitFitCBPanel, 1, useTransitFitCBPanel.getComponentCount(), 0, 0, 0, 0);
         fittedParametersPanel1.add(useTransitFitCBPanel);
 
-//            JLabel fittedParametersPanel1Label0 = new JLabel("");
-//            fittedParametersPanel1Label0.setPreferredSize(new Dimension(25, 25));
-//            fittedParametersPanel1Label0.setMaximumSize(new Dimension(25, 25));
-//            fittedParametersPanel1.add(fittedParametersPanel1Label0);
-
         JPanel extractPriorsPanel = new JPanel(new SpringLayout());
         extractPriorsPanel.setBorder(BorderFactory.createLineBorder(subBorderColor, 1));
 
@@ -13628,7 +12963,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         }
         bpSpinner[c].setPreferredSize(bpSize);
         bpSpinner[c].setMaximumSize(bpSize);
-        //bpSpinner[c].setComponentPopupMenu(priorCenterStepPopup[row]);
         bpSpinner[c].setToolTipText("\"<html>Impact parameter of the transit model.<br>" + "For circular orbits, b = (a/R*)cos(inclination)<br>" + "Green Border: fit converged<br>" + "Red Border: fit did not converge<br>" + "Gray Border: no fit in this session</html>");
         bpSpinner[c].addChangeListener(ev -> {
             if (bpLock[c]) {
@@ -13661,7 +12995,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             priorCenterSpinner[c][4].setEnabled(!bpLock[c] && (lockToCenterCB[c][4].isSelected() || !autoUpdatePrior[c][4]) && useTransitFit[c]);
             if (bpLock[c]) {
                 double inclination = (180.0/Math.PI)*Math.acos(bp[c]/bestFit[c][2]);
-                //double inclination = (180/Math.PI)*Math.acos((1.0 + (forceCircularOrbit[c] ? 0.0 : eccentricity[c]) * Math.sin(forceCircularOrbit[c] ? 0.0 : omega[c])) / (bestFit[c][2] * (1.0 - (forceCircularOrbit[c] ? 0.0 : eccentricity[c] * eccentricity[c]))));
                 priorCenterSpinner[c][4].setValue(inclination);
                 priorCenter[c][4] = inclination;
             }
@@ -13784,10 +13117,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         nlines = 1;
 
-//            JPanel detrendVariableNamePanel = new JPanel(new SpringLayout());
-//            detrendVariableNamePanel.setPreferredSize(labelSize);
-//            detrendVariableNamePanel.setMaximumSize(labelSize);
-
         JLabel detrendEnableLabel = new JLabel("Use");
         detrendEnableLabel.setFont(b11);
         detrendEnableLabel.setHorizontalAlignment(JLabel.LEFT);
@@ -13801,9 +13130,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         detrendVariableNameLabel.setPreferredSize(choiceBoxSize);
         detrendVariableNameLabel.setMaximumSize(choiceBoxSize);
         detrendParametersPanel.add(detrendVariableNameLabel);
-
-//            SpringUtil.makeCompactGrid (detrendVariableNamePanel, 1, detrendVariableNamePanel.getComponentCount(), 0,0,0,0);
-//            detrendParametersPanel.add(detrendVariableNamePanel);
 
         JLabel bestFitLabel = new JLabel("Best Fit");
         bestFitLabel.setFont(b11);
@@ -13825,7 +13151,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         detrendLockLabel.setMaximumSize(checkBoxSize);
         detrendLockLabel.setHorizontalAlignment(JLabel.CENTER);
         detrendLockLabel.setToolTipText("Lock detrend parameter to prior center value.");
-//            fittedColumnNameLabel2a.setPreferredSize(spinnerSize);
         detrendParametersPanel.add(detrendLockLabel);
 
         JLabel detrendCenterLabel = new JLabel("Prior Center");
@@ -13849,7 +13174,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         detrendUseWidthLabel.setMaximumSize(checkBoxSize);
         detrendUseWidthLabel.setHorizontalAlignment(JLabel.CENTER);
         detrendUseWidthLabel.setToolTipText("Enable to restrict the fitting range allowed from the prior center start value).");
-//            fittedColumnNameLabel3a.setPreferredSize(spinnerSize);
         detrendParametersPanel.add(detrendUseWidthLabel);
 
         JLabel detrendWidthLabel = new JLabel("Prior Width");
@@ -13871,7 +13195,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         detrendUseCustomStepLabel.setMaximumSize(checkBoxSize);
         detrendUseCustomStepLabel.setHorizontalAlignment(JLabel.CENTER);
         detrendUseCustomStepLabel.setToolTipText("<html>Enable to enter a custom minimization stepsize.<br>" + "Disable for automatic determination of minimizer stepsize.<br>" + "The minimizer is used to find the best light curve fit.</html>");
-//            fittedColumnNameLabel3a.setPreferredSize(spinnerSize);
         detrendParametersPanel.add(detrendUseCustomStepLabel);
 
         JLabel detrendStepSizeLabel = new JLabel("StepSize");
@@ -14340,18 +13663,15 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         toleranceSpinner[c].setBorder(grayBorder);
         toleranceSpinner[c].setPreferredSize(controlSpinnerSize);
         toleranceSpinner[c].setMaximumSize(controlSpinnerSize);
-//            toleranceSpinner[c].setComponentPopupMenu(priorCenterStepPopup[row]);
         toleranceSpinner[c].setToolTipText("<html>The minimization tolerance for the fit.<br>" + "The default value is 1.0E-10.</html>");
         toleranceSpinner[c].addChangeListener(ev -> {
             double newValue = (Double) toleranceSpinner[c].getValue();
             if (newValue < tolerance[c] - tolerance[c] * 0.0009 && newValue > tolerance[c] - tolerance[c] * 0.0011) {
                 tolerance[c] /= 10.0;
-//                        toleranceSpinner[c].setValue(tolerance[c]);
                 toleranceSpinner[c].setModel(new SpinnerNumberModel(tolerance[c], Double.MIN_NORMAL, Double.MAX_VALUE, tolerance[c] * 0.0010));
                 if (autoUpdateFit[c]) updatePlot(updateOneFit(c));
             } else if (newValue < tolerance[c] + tolerance[c] * 0.0011 && newValue > tolerance[c] + tolerance[c] * 0.0009) {
                 tolerance[c] *= 10.0;
-//                        toleranceSpinner[c].setValue(tolerance[c]);
                 toleranceSpinner[c].setModel(new SpinnerNumberModel(tolerance[c], Double.MIN_NORMAL, Double.MAX_VALUE, tolerance[c] * 0.0010));
                 if (autoUpdateFit[c]) updatePlot(updateOneFit(c));
             } else if (newValue < 0.99999 * tolerance[c] || newValue > 1.00001 * tolerance[c]) {
@@ -14374,11 +13694,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         maxFitStepsSpinner[c] = new JSpinner(new SpinnerNumberModel(Math.max(maxFitSteps[c], 1000), 1000, Integer.MAX_VALUE, 1000));
         maxFitStepsSpinner[c].setFont(p11);
-//            toleranceSpinner[c].setEditor(new JSpinner.NumberEditor(toleranceSpinner[c], "0.0E0"));
         maxFitStepsSpinner[c].setBorder(grayBorder);
         maxFitStepsSpinner[c].setPreferredSize(controlSpinnerSize);
         maxFitStepsSpinner[c].setMaximumSize(controlSpinnerSize);
-//            toleranceSpinner[c].setComponentPopupMenu(priorCenterStepPopup[row]);
         maxFitStepsSpinner[c].setToolTipText("<html>The maximum number of steps allowed to reach the minimization tolerance for the fit.<br>" + "The default value is 20,000 steps.</html>");
         maxFitStepsSpinner[c].addChangeListener(ev -> {
             maxFitSteps[c] = (Integer) maxFitStepsSpinner[c].getValue();
@@ -14410,7 +13728,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         controlPanel.add(stepsTakenPanel);
 
         JLabel controlDummyLabel2 = new JLabel("");
-//            controlDummyLabel2.setPreferredSize(labelSize);
         controlPanel.add(controlDummyLabel2);
 
         SpringUtil.makeCompactGrid(controlPanel, 1, controlPanel.getComponentCount(), 0, 0, 0, 0);
@@ -14454,8 +13771,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         }
 
         double rpOrstarEst = Math.abs((yBaselineAverage[c] - yDepthEstimate[c]) / yBaselineAverage[c]);
-//                IJ.log("yBaselineAverage["+c+"]="+yBaselineAverage[c]);
-//                IJ.log("yCenterAverage["+c+"]="+yDepthEstimate[c]);
         if (!lockToCenter[c][1] && autoUpdatePrior[c][1]) {
             priorCenterSpinner[c][1].setValue(rpOrstarEst);          // depth = (r_p/r_*)^2
             priorWidthSpinner[c][1].setValue(Math.abs(rpOrstarEst / 2.0));
@@ -14547,11 +13862,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         bestFitLabel[c][row].setMaximumSize(bestFitSize);
         parentPanel.add(bestFitLabel[c][row]);
 
-//        JLabel dummyLabel3 = new JLabel();
-//        dummyLabel3.setFont(p12);
-//        dummyLabel3.setPreferredSize(spacerSize);
-//        dummyLabel3.setMaximumSize(spacerSize);
-//        parentPanel.add(dummyLabel3);
         copyAndLockButton[c][row] = new JButton(copyAndLockIcon);
         copyAndLockButton[c][row].setMaximumSize(new Dimension(18, 25));
         copyAndLockButton[c][row].setPreferredSize(new Dimension(18, 25));
@@ -14594,11 +13904,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         if (Double.isNaN(priorCenter[c][row]) || Double.isInfinite(priorCenter[c][row])) priorCenter[c][row] = 0.0;
         if (priorCenter[c][row] < min) priorCenter[c][row] = min;
         if (priorCenter[c][row] > max) priorCenter[c][row] = max;
-//            IJ.log("priorCenter["+c+"]["+row+"]="+priorCenter[c][row]);
-//            IJ.log("min="+min);
-//            IJ.log("max="+max);
-//            IJ.log("priorCenterStep["+row+"]="+priorCenterStep[row]);
-//            IJ.log("");
         priorCenterSpinner[c][row] = new JSpinner(new SpinnerNumberModel(Double.valueOf(priorCenter[c][row]), Double.valueOf(min), Double.valueOf(max), Double.valueOf(priorCenterStep[row])));
         priorCenterSpinner[c][row].setEnabled(isDetrend ? useFitDetrendCB[c][row - 7].isSelected() : (row == 4 && bpLock[c] ? false : useTransitFit[c]));
         priorCenterSpinner[c][row].setFont(p11);
@@ -14628,7 +13933,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         JLabel dummyLabel = new JLabel();
         dummyLabel.setFont(p12);
-//            rowNameLabel.setToolTipText(rowNameToolTipText);
         dummyLabel.setPreferredSize(spacerSize);
         dummyLabel.setMaximumSize(spacerSize);
         parentPanel.add(dummyLabel);
@@ -14684,7 +13988,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         JLabel dummyLabel2 = new JLabel();
         dummyLabel2.setFont(p12);
-//            rowNameLabel.setToolTipText(rowNameToolTipText);
         dummyLabel2.setPreferredSize(spacerSize);
         dummyLabel2.setMaximumSize(spacerSize);
         parentPanel.add(dummyLabel2);
@@ -14745,33 +14048,24 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     bestFitLabel[c][p].setBorder(failedBorder);
                 } else if (bestFitLabel[c][p].getText().equals("all NaNs")) {
                     bestFitLabel[c][p].setBorder(failedBorder);
-                } else { bestFitLabel[c][p].setBorder(border); }
-//                    bestFitLabel[c][p].paint(bestFitLabel[c][p].getGraphics());
+                } else {
+                    bestFitLabel[c][p].setBorder(border);
+                }
             }
             t14Label[c].setBorder(useTransitFit[c] ? border : grayBorder);
-//                t14Label[c].paint(t14Label[c].getGraphics());
             t14HoursLabel[c].setBorder(useTransitFit[c] ? border : grayBorder);
-//                t14HoursLabel[c].paint(t14HoursLabel[c].getGraphics());
             t23Label[c].setBorder(useTransitFit[c] ? border : grayBorder);
-//                t23Label[c].paint(t23Label[c].getGraphics());
             tauLabel[c].setBorder(useTransitFit[c] ? border : grayBorder);
             stellarDensityLabel[c].setBorder(useTransitFit[c] ? border : grayBorder);
             bpSpinner[c].setBorder(useTransitFit[c] && bpLock[c] ? border : grayBorder);
             planetRadiusLabel[c].setBorder(useTransitFit[c] ? border : grayBorder);
             transitDepthLabel[c].setBorder(useTransitFit[c] ? border : grayBorder);
-//                tauLabel[c].paint(tauLabel[c].getGraphics());
             chi2dofLabel[c].setBorder(border);
-//                chi2dofLabel[c].paint(chi2dofLabel[c].getGraphics());
             bicLabel[c].setBorder(border);
-//                bicLabel[c].paint(bicLabel[c].getGraphics());
             sigmaLabel[c].setBorder(border);
-//                sigmaLabel[c].paint(sigmaLabel[c].getGraphics());
             dofLabel[c].setBorder(border);
-//                dofLabel[c].paint(dofLabel[c].getGraphics());
             chi2Label[c].setBorder(border);
-//                chi2Label[c].paint(chi2Label[c].getGraphics());
             stepsTakenLabel[c].setBorder(border);
-            //sigmaLabel[c].setBackground(defaultBackgroundColor);
         }
     }
 
@@ -14783,7 +14077,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
     static void setRMSBICBackground(final int c) {
         if (bestFitLabel[c][0] != null) {
-            //IJ.log("refStarChanged="+refStarChanged+"   detrendParChanged="+detrendParChanged);
             if (refStarChanged && (sigma[c] < prevSigma[c])) {
                 sigmaLabel[c].setBackground(new Color(0, 235, 0));  //light green
             }
@@ -14916,14 +14209,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         }
         refStarFrame.setIconImage(plotIcon.getImage());
         refStarMainPanel = new JPanel(new SpringLayout());
-//                mainsubpanel.addMouseListener(panelMouseListener);
-//                refStarMainPanel.addMouseMotionListener(panelMouseMotionListener);
-//                FileDrop fileDrop = new FileDrop(refStarMainPanel, BorderFactory.createEmptyBorder(),new FileDrop.Listener()
-//                    {   public void filesDropped( java.io.File[] files )
-//                        {
-//                        openDragAndDropFiles(files);
-//                        }
-//                    });
 
         refStarScrollPane = new JScrollPane(refStarMainPanel);
         refStarFrame.setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
@@ -15272,7 +14557,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             reminderPanel.add(Box.createHorizontalStrut(10));
 
             JButton saveApsButton = new JButton("Save Apertures");
-//                    sendApsButton.setForeground(Color.RED);
             saveApsButton.setToolTipText("Save new aperture configuration to file");
             saveApsButton.addActionListener(e -> saveApertures());
             reminderPanel.add(saveApsButton);
@@ -15280,7 +14564,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             reminderPanel.add(Box.createHorizontalStrut(10));
 
             JButton sendApsButton = new JButton("Send to Multi-aperture");
-//                    sendApsButton.setForeground(Color.RED);
             sendApsButton.setToolTipText("Send new aperture configuration to Multi-aperture");
             sendApsButton.addActionListener(e -> storeApertures());
             reminderPanel.add(sendApsButton);
@@ -15288,13 +14571,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             reminderPanel.add(Box.createHorizontalStrut(10));
 
             JButton showApsButton = new JButton("Show Apertures");
-//                    sendApsButton.setForeground(Color.RED);
             showApsButton.setToolTipText("Show apertures in active image");
             showApsButton.addActionListener(e -> showApertures());
             reminderPanel.add(showApsButton);
-//                    JLabel reminderlabel= new JLabel("   ***** Save table to retain reference star configuration *****");
-//                    reminderlabel.setForeground(Color.RED);
-//                    reminderPanel.add (reminderlabel);
 
             reminderPanel.add(Box.createGlue());
             updateSaturatedStars();
@@ -15575,7 +14854,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     aRoi.setApColor(Color.GREEN);
                     int col = table.getColumnIndex("Source_AMag_T" + (r + 1));
                     if (col != ResultsTable.COLUMN_NOT_FOUND && hasAbsMag) {
-                        //IJ.log("Setting ROI "+(selected?"C":"T")+(r+1)+" = "+table.getValueAsDouble(col, 0));
                         aRoi.setAMag(table.getValueAsDouble(col, 0));
                     } else {
                         aRoi.setAMag(99.999);
@@ -15741,7 +15019,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                             oneOverFactor = 0;
                         } else {
                             factor = Math.sqrt(srcvar[ap][row] / (source[ap][row] * source[ap][row]) + totvar[ap][row] / (total[ap][row] * total[ap][row]));
-                            //ratio[ap]*Math.sqrt(srcVar[ap]/(src[ap]*src[ap])+ totVar[ap]/(tot[ap]*tot[ap]))
                             oneOverFactor = 1.0 / factor;
                         }
                         table.setValue(errcol, row, ratio * factor);
@@ -15987,10 +15264,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         while (cnt < 10 && (updatePlotRunning || awaitingScheduledPlotUpdate)) {
             IJ.wait(100);
             cnt++;
-//                if (cnt == 10)
-//                    {
-//                    IJ.log("NOTICE: timed out waiting on plot to finish update");
-//                    }
         }
         updatePlotRunning = false;
     }
@@ -16001,16 +15274,11 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         while (table != null && table.isLocked() && cnt < 10) {
             IJ.wait(100);
             cnt++;
-//                if (cnt == 10)
-//                    {
-//                    IJ.log("NOTICE: timed out waiting on table to unlock");
-//                    }
         }
         if (table != null) table.setLock(true);
     }
 
     static void closeRefStarFrame() {
-//            updatePlotEnabled = true;
         if (refStarFrame.isShowing()) {
             refStarFrameLocationX = refStarFrame.getLocation().x;
             refStarFrameLocationY = refStarFrame.getLocation().y;
@@ -16018,7 +15286,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             Prefs.set("plot2.refStarFrameLocationX", refStarFrameLocationX);
             Prefs.set("plot2.refStarFrameLocationY", refStarFrameLocationY);
         }
-//            if (table != null) table.setLock(false);
 
         refStarFrame.dispose();
         refStarFrame = null;
@@ -16030,12 +15297,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             IJ.wait(1000);
             waitCnt--;
         }
-//            IJ.log("Start Close Fit Frames");
         if (fitFrame != null) {
             for (int c = 0; c < fitFrame.length; c++) {
-                //                IJ.log("Start close of fitFrame["+c+"]");
                 if (fitFrame[c] != null) {
-                    //                    IJ.log("fitFrame["+c+"] != null");
                     if (fitFrame[c].isVisible()) {
                         fitFrameLocationX[c] = fitFrame[c].getLocation().x;
                         fitFrameLocationY[c] = fitFrame[c].getLocation().y;
@@ -16043,13 +15307,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         Prefs.set("plot2.fitFrameLocationX" + c, fitFrameLocationX[c]);
                         Prefs.set("plot2.fitFrameLocationY" + c, fitFrameLocationY[c]);
                     }
-                    //                    IJ.log("Disposing fitFrame["+c+"]");
                     if (fitFrame[c].isDisplayable()) {
                         fitFrame[c].dispose();
                     }
-                    //                    IJ.log("Disposed fitFrame["+c+"]");
                     fitFrame[c] = null;
-                    //                    IJ.log("fitFrame["+c+"] is null");
                 }
             }
         }
@@ -16228,10 +15489,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 Prefs.set("plot2.plotFrameLocationY", plotFrameLocationY);
             }
         }
-
-//                plotImageCanvas.removeMouseMotionListener(plotMouseMotionListener);
-//                plotImageCanvas.removeMouseWheelListener(plotMouseWheelListener);
-//                plotImageCanvas.removeMouseListener(plotMouseListener);
 
         savePreferences();
         if (delayedUpdateTimer != null) delayedUpdateTimer.cancel();
@@ -16678,8 +15935,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
             if (filteredTables.length == 0) {
                 return null;
-            } else                            // IF MORE THAN ONE, ASK WHICH TABLE SHOULD BE USED
-            {
+            } else { // IF MORE THAN ONE, ASK WHICH TABLE SHOULD BE USED
                 GenericDialog gd = new GenericDialog((firstTableName.equals("") ? "Select table" : "Select table to append"), mainFrame.getX() + mainFrame.getWidth() / 2 - 165, mainFrame.getY() + mainFrame.getHeight() / 2 - 77);
                 gd.addChoice((firstTableName.equals("") ? "Select table" : "Select table to append"), filteredTables, "Measurements");
                 gd.showDialog();
@@ -16697,7 +15953,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
     static void openConfig(boolean template) {
         String startingDir = OpenDialog.getDefaultDirectory();
-//            String dir = OpenDialog.getLastDirectory();
         if (template && templateDir != null && !templateDir.equals("")) {
             OpenDialog.setDefaultDirectory(templateDir);
         }
@@ -16978,9 +16233,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         for (int i = 0; i < MeasurementTable.DEFAULT_DECIMALS; i++)
             formatString.append("0");
         DecimalFormat output = new DecimalFormat(formatString.toString(), IJU.dfs);
-//            DecimalFormatSymbols dfs = output.getDecimalFormatSymbols();
-//            dfs.setDecimalSeparator('.');
-//            output.setDecimalFormatSymbols(dfs);
         try {
             FileOutputStream fos = new FileOutputStream(savePath);
             BufferedOutputStream bos = new BufferedOutputStream(fos);
@@ -17972,70 +17224,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         }
     }
 
-//static void saveApertures(String apsPath)
-//        {
-//        File outFile = new File(apsPath);
-//        if (outFile == null || outFile.isDirectory())
-//            {
-//            IJ.error("bad aperture save filename");
-//            return;
-//            }
-//        if (outFile.isFile()) outFile.delete();
-//        Properties prefs = new Properties();
-//        Enumeration e = Prefs.ijPrefs.keys();
-//        while (e.hasMoreElements()) {
-//            String key = (String) e.nextElement();
-//            if (key.startsWith(".aperture.radius") || key.startsWith(".aperture.rback1") ||
-//                key.startsWith(".aperture.rback2") || key.startsWith(".aperture.removebackstars") ||
-//                key.startsWith(".aperture.backplane") || key.startsWith(".multiaperture.usevarsizeap") ||
-//                key.startsWith(".multiaperture.apfwhmfactor") || key.startsWith(".multiaperture.xapertures") ||
-//                key.startsWith(".multiaperture.yapertures") || key.startsWith(".multiaperture.isrefstar") ||
-//                key.startsWith(".multiaperture.naperturesmax"))
-//                prefs.put(key, Prefs.ijPrefs.getProperty(key));
-//        }
-//        try
-//            {
-//            FileOutputStream fos = new FileOutputStream(apsPath);
-//            BufferedOutputStream bos = new BufferedOutputStream(fos);
-//            prefs.store(bos, "AstroImageJ Saved Apertures");
-//            bos.close();
-//            }
-//        catch (IOException ioe)
-//            {
-//            IJ.beep();
-//            IJ.showMessage("Error writing apertures to file");
-//            }
-//        }
-
-
-//        static void setSaveStateDialog()
-//            {
-//            GenericDialog gd = new GenericDialog ("File suffix settings", mainFrame.getX()+mainFrame.getWidth()/2-165,
-//                                                                          mainFrame.getY()+mainFrame.getHeight()/2-77);
-//
-//            plotSuffix = Prefs.get("Astronomy_Tool.plotSuffix", plotSuffix);
-//            configSuffix = Prefs.get("Astronomy_Tool.configSuffix", configSuffix);
-//            dataSuffix = Prefs.get("Astronomy_Tool.dataSuffix", dataSuffix);
-//
-//            gd.addMessage ("Enter save file suffix settings.");
-//            gd.addStringField("Plot image suffix:", plotSuffix, 40);
-//            gd.addStringField("Plot config file suffix:", configSuffix, 40);
-//            gd.addStringField("Data table file suffix:", dataSuffix, 40);
-//            gd.addMessage ("Tip: make plot config and data table suffix the same so that the plot config");
-//            gd.addMessage ("will auto-load when a new data table file is opened by drag and drop.");
-//
-//            gd.showDialog();
-//            if (gd.wasCanceled()) return;
-//
-//            plotSuffix = gd.getNextString();
-//            configSuffix = gd.getNextString();
-//            dataSuffix = gd.getNextString();
-//
-//            Prefs.set("Astronomy_Tool.plotSuffix", plotSuffix);
-//            Prefs.set("Astronomy_Tool.configSuffix", configSuffix);
-//            Prefs.set("Astronomy_Tool.dataSuffix", dataSuffix);
-//            }
-
     static void openHelpPanel() {
         String filename = "help/multiplot_help.htm";
         new HelpPanel(filename, "Multi-plot").setVisible(true);
@@ -18246,7 +17434,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         showLSymbolInfo = Prefs.get("plot.showLSymbolInfo", showLSymbolInfo);
         showSigmaForAllCurves = Prefs.get("plot.showSigmaForAllCurves", showSigmaForAllCurves);
         showSigmaForDetrendedCurves = Prefs.get("plot.showSigmaForDetrendedCurves", showSigmaForDetrendedCurves);
-//                useTwoLineLegend=Prefs.get("plot.useTwoLineLegend", useTwoLineLegend);
         useWideDataPanel = Prefs.get("plot2.useWideDataPanel", useWideDataPanel);
         useBoldedDatum = Prefs.get("plot2.useBoldedDatum", useBoldedDatum);
         useUpdateStack = Prefs.get("plot2.useUpdateStack", useUpdateStack);
@@ -18299,7 +17486,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         mStarStep = Prefs.get("plot.mStarStep", mStarStep);
         rStarStep = Prefs.get("plot.rStarStep", rStarStep);
         rhoStarStep = Prefs.get("plot.rhoStarStep", rhoStarStep);
-//                residualShiftStep=Prefs.get("plot.residualShiftStep", residualShiftStep);
 
         for (int i = 0; i < (maxFittedVars); i++) {
             priorCenterStep[i] = Prefs.get("plot.priorCenterStep[" + i + "]", priorCenterStep[i]);
@@ -18589,7 +17775,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         Prefs.set("plot.showSigmaForAllCurves", showSigmaForAllCurves);
         Prefs.set("plot.showSigmaForDetrendedCurves", showSigmaForDetrendedCurves);
         Prefs.set("plot2.useWideDataPanel", useWideDataPanel);
-//                Prefs.set("plot.useTwoLineLegend", useTwoLineLegend);
         Prefs.set("plot2.useBoldedDatum", useBoldedDatum);
         Prefs.set("plot2.useUpdateStack", useUpdateStack);
         Prefs.set("plot.legendLeft", legendLeft);
@@ -18631,7 +17816,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         Prefs.set("plot.mStarStep", mStarStep);
         Prefs.set("plot.rStarStep", rStarStep);
         Prefs.set("plot.rhoStarStep", rhoStarStep);
-//                Prefs.set("plot.residualShiftStep", residualShiftStep);
 
         for (int i = 0; i < (maxFittedVars); i++) {
             Prefs.set("plot.priorCenterStep[" + i + "]", priorCenterStep[i]);
@@ -18722,4 +17906,3 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         }
     }
 }
-

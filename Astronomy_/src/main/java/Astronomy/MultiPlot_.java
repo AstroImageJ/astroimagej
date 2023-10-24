@@ -4103,7 +4103,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 }
             }
 
-            plot.setColor(Color.RED);
+            var col = binDisplay[c].isOn() ? lighter(color[c]) : color[c];
+            plot.setColor(col == null ? Color.RED : col);
 
             plot.setLineWidth(Math.round(dotSize.get()*1.5));
             plot.add("arrow_left", Arrays.copyOf(westX, westP), Arrays.copyOf(westY, westP));

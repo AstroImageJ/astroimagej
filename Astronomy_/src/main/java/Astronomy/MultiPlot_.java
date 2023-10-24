@@ -855,7 +855,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     private static Property<Boolean> drawAijVersion = new Property<>(true, "plot.", "", MultiPlot_.class);
     private static Property<Boolean> useMacroTitle = new Property<>(false, MultiPlot_.class);
     private static Property<Boolean> useMacroSubtitle = new Property<>(false, MultiPlot_.class);
-    private static Property<Boolean> drawOffscreenDisplacementArrows = new Property<>(false, MultiPlot_.class);
+    private static Property<Boolean> drawOffscreenDisplacementArrowsX = new Property<>(false, MultiPlot_.class);
+    private static Property<Boolean> drawOffscreenDisplacementArrowsY = new Property<>(true, MultiPlot_.class);
     private static Property<BiState> drawBinErrBarsBase = new Property<>(BiState.DISABLED, "plot.", "", MultiPlot_.class);
     private static String lastUsedTitle, lastUsedSubtitle;
 
@@ -3971,7 +3972,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         table.setLock(false);
         plotWindow.getImagePlus().setPlot(plot);
         ((PlotWindow) plotWindow).setPlot(plot);
-        if (drawOffscreenDisplacementArrows.get()) {
+        if (drawOffscreenDisplacementArrowsX.get() || drawOffscreenDisplacementArrowsY.get()) {
             drawOffscreenDisplacementArrows();
         }
         updatePlotRunning = false;
@@ -4035,68 +4036,76 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 }
 
                 // Check x
-                if (xi <= plotMinX) {
+                if (drawOffscreenDisplacementArrowsX.get() && xi <= plotMinX) {
                     xi = plotMinX + (plotMaxX - plotMinX)/div;
-                    if (yi >= plotMaxY - (plotMaxY - plotMinY)/100) {
-                        yi = plotMaxY - (plotMaxY - plotMinY)/div;
-                        northWestX[northWestP] = xi;
-                        northWestY[northWestP++] = yi;
-                        continue;
-                    } else if (yi <= plotMinY + (plotMaxY - plotMinY)/100) {
-                        yi = plotMinY + (plotMaxY - plotMinY)/div;
-                        southWestX[southWestP] = xi;
-                        southWestY[southWestP++] = yi;
-                        continue;
+                    if (drawOffscreenDisplacementArrowsY.get()) {
+                        if (yi >= plotMaxY - (plotMaxY - plotMinY)/100) {
+                            yi = plotMaxY - (plotMaxY - plotMinY)/div;
+                            northWestX[northWestP] = xi;
+                            northWestY[northWestP++] = yi;
+                            continue;
+                        } else if (yi <= plotMinY + (plotMaxY - plotMinY)/100) {
+                            yi = plotMinY + (plotMaxY - plotMinY)/div;
+                            southWestX[southWestP] = xi;
+                            southWestY[southWestP++] = yi;
+                            continue;
+                        }
                     }
                     westX[westP] = xi;
                     westY[westP++] = yi;
                 }
-                if (xi >= plotMaxX) {
+                if (drawOffscreenDisplacementArrowsX.get() && xi >= plotMaxX) {
                     xi = plotMaxX - (plotMaxX - plotMinX)/div;
-                    if (yi >= plotMaxY - (plotMaxY - plotMinY)/100) {
-                        yi = plotMaxY - (plotMaxY - plotMinY)/div;
-                        northEastX[northEastP] = xi;
-                        northEastY[northEastP++] = yi;
-                        continue;
-                    } else if (yi <= plotMinY + (plotMaxY - plotMinY)/100) {
-                        yi = plotMinY + (plotMaxY - plotMinY)/div;
-                        southEastX[southEastP] = xi;
-                        southEastY[southEastP++] = yi;
-                        continue;
+                    if (drawOffscreenDisplacementArrowsY.get()) {
+                        if (yi >= plotMaxY - (plotMaxY - plotMinY)/100) {
+                            yi = plotMaxY - (plotMaxY - plotMinY)/div;
+                            northEastX[northEastP] = xi;
+                            northEastY[northEastP++] = yi;
+                            continue;
+                        } else if (yi <= plotMinY + (plotMaxY - plotMinY)/100) {
+                            yi = plotMinY + (plotMaxY - plotMinY)/div;
+                            southEastX[southEastP] = xi;
+                            southEastY[southEastP++] = yi;
+                            continue;
+                        }
                     }
                     eastX[eastP] = xi;
                     eastY[eastP++] = yi;
                 }
 
                 // Check y
-                if (yi <= plotMinY) {
+                if (drawOffscreenDisplacementArrowsY.get() && yi <= plotMinY) {
                     yi = plotMinY + (plotMaxY - plotMinY)/div;
-                    if (xi <= plotMinX + (plotMaxX - plotMinX)/100) {
-                        xi = plotMinX + (plotMaxX - plotMinX)/div;
-                        southEastX[southEastP] = xi;
-                        southEastY[southEastP++] = yi;
-                        continue;
-                    } else if (xi >= plotMaxX - (plotMaxX - plotMinX)/100) {
-                        xi = plotMaxX - (plotMaxX - plotMinX)/div;
-                        southWestX[southWestP] = xi;
-                        southWestY[southWestP++] = yi;
-                        continue;
+                    if (drawOffscreenDisplacementArrowsX.get()) {
+                        if (xi <= plotMinX + (plotMaxX - plotMinX)/100) {
+                            xi = plotMinX + (plotMaxX - plotMinX)/div;
+                            southEastX[southEastP] = xi;
+                            southEastY[southEastP++] = yi;
+                            continue;
+                        } else if (xi >= plotMaxX - (plotMaxX - plotMinX)/100) {
+                            xi = plotMaxX - (plotMaxX - plotMinX)/div;
+                            southWestX[southWestP] = xi;
+                            southWestY[southWestP++] = yi;
+                            continue;
+                        }
                     }
                     southX[southP] = xi;
                     southY[southP++] = yi;
                 }
-                if (yi >= plotMaxY) {
+                if (drawOffscreenDisplacementArrowsY.get() && yi >= plotMaxY) {
                     yi = plotMaxY - (plotMaxY - plotMinY)/div;
-                    if (xi <= plotMinX + (plotMaxX - plotMinX)/100) {
-                        xi = plotMinX + (plotMaxX - plotMinX)/div;
-                        northEastX[northEastP] = xi;
-                        northEastY[northEastP++] = yi;
-                        continue;
-                    } else if (xi >= plotMaxX - (plotMaxX - plotMinX)/100) {
-                        xi = plotMaxX - (plotMaxX - plotMinX)/div;
-                        northWestX[northWestP] = xi;
-                        northWestY[northWestP++] = yi;
-                        continue;
+                    if (drawOffscreenDisplacementArrowsX.get()) {
+                        if (xi <= plotMinX + (plotMaxX - plotMinX)/100) {
+                            xi = plotMinX + (plotMaxX - plotMinX)/div;
+                            northEastX[northEastP] = xi;
+                            northEastY[northEastP++] = yi;
+                            continue;
+                        } else if (xi >= plotMaxX - (plotMaxX - plotMinX)/100) {
+                            xi = plotMaxX - (plotMaxX - plotMinX)/div;
+                            northWestX[northWestP] = xi;
+                            northWestY[northWestP++] = yi;
+                            continue;
+                        }
                     }
                     northX[northP] = xi;
                     northY[northP++] = yi;
@@ -17056,12 +17065,19 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         panel.add(control4, c);
 
         c.gridy++;
-        var control5 = new JCheckBox("Draw offscreen displacement arrows", drawOffscreenDisplacementArrows.get());
+        var control5 = new JCheckBox("Draw offscreen displacement arrows: X", drawOffscreenDisplacementArrowsX.get());
         control5.addChangeListener($ -> {
-            drawOffscreenDisplacementArrows.set(control5.isSelected());
+            drawOffscreenDisplacementArrowsX.set(control5.isSelected());
             updatePlot();
         });
         panel.add(control5, c);
+        c.gridy++;
+        var control6 = new JCheckBox("Draw offscreen displacement arrows: Y", drawOffscreenDisplacementArrowsY.get());
+        control6.addChangeListener($ -> {
+            drawOffscreenDisplacementArrowsY.set(control6.isSelected());
+            updatePlot();
+        });
+        panel.add(control6, c);
 
         panel.setBorder(BorderFactory.createEmptyBorder(20,30,20,30));
 

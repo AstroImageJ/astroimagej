@@ -7617,6 +7617,13 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         });
         xaxismenu.add(xNumbersCB);
 
+        var xDisplacementArrows = new JCheckBoxMenuItem("Draw offscreen displacement arrows: X", drawOffscreenDisplacementArrowsX.get());
+        xDisplacementArrows.addItemListener(e -> {
+            drawOffscreenDisplacementArrowsX.set(e.getStateChange() == ItemEvent.SELECTED);
+            updatePlot(updateNoFits());
+        });
+        xaxismenu.add(xDisplacementArrows);
+
         mainmenubar.add(xaxismenu);
 
 
@@ -7651,6 +7658,13 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             updatePlot(updateNoFits());
         });
         yaxismenu.add(yNumbersCB);
+
+        var yDisplacementArrows = new JCheckBoxMenuItem("Draw offscreen displacement arrows: Y", drawOffscreenDisplacementArrowsY.get());
+        yDisplacementArrows.addItemListener(e -> {
+            drawOffscreenDisplacementArrowsY.set(e.getStateChange() == ItemEvent.SELECTED);
+            updatePlot(updateNoFits());
+        });
+        yaxismenu.add(yDisplacementArrows);
 
         yaxismenu.addSeparator();
 
@@ -17063,21 +17077,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             updatePlot();
         });
         panel.add(control4, c);
-
-        c.gridy++;
-        var control5 = new JCheckBox("Draw offscreen displacement arrows: X", drawOffscreenDisplacementArrowsX.get());
-        control5.addChangeListener($ -> {
-            drawOffscreenDisplacementArrowsX.set(control5.isSelected());
-            updatePlot();
-        });
-        panel.add(control5, c);
-        c.gridy++;
-        var control6 = new JCheckBox("Draw offscreen displacement arrows: Y", drawOffscreenDisplacementArrowsY.get());
-        control6.addChangeListener($ -> {
-            drawOffscreenDisplacementArrowsY.set(control6.isSelected());
-            updatePlot();
-        });
-        panel.add(control6, c);
 
         panel.setBorder(BorderFactory.createEmptyBorder(20,30,20,30));
 

@@ -3973,7 +3973,11 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         plotWindow.getImagePlus().setPlot(plot);
         ((PlotWindow) plotWindow).setPlot(plot);
         if (drawOffscreenDisplacementArrowsX.get() || drawOffscreenDisplacementArrowsY.get()) {
-            drawOffscreenDisplacementArrows();
+            try {
+                drawOffscreenDisplacementArrows();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
         updatePlotRunning = false;
     }
@@ -3987,16 +3991,17 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         var northY = new double[nn[firstCurve]];
         var southX = new double[nn[firstCurve]];
         var southY = new double[nn[firstCurve]];
-        var northEastX = new double[nn[firstCurve]];
-        var northEastY = new double[nn[firstCurve]];
-        var northWestX = new double[nn[firstCurve]];
-        var northWestY = new double[nn[firstCurve]];
-        var southEastX = new double[nn[firstCurve]];
-        var southEastY = new double[nn[firstCurve]];
-        var southWestX = new double[nn[firstCurve]];
-        var southWestY = new double[nn[firstCurve]];
+        var northEastX = new double[1];
+        var northEastY = new double[1];
+        var northWestX = new double[1];
+        var northWestY = new double[1];
+        var southEastX = new double[1];
+        var southEastY = new double[1];
+        var southWestX = new double[1];
+        var southWestY = new double[1];
 
-        for (int c = firstCurve; c < maxCurves; c++) {
+        plot.setFrozen(true);
+        for (int c = maxCurves - 1; c >= firstCurve; c--) {
             if (!plotY[c]) continue;
 
             if (westY.length < nn[c]) {
@@ -4008,14 +4013,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 northY = new double[nn[c]];
                 southX = new double[nn[c]];
                 southY = new double[nn[c]];
-                northEastX = new double[nn[c]];
-                northEastY = new double[nn[c]];
-                northWestX = new double[nn[c]];
-                northWestY = new double[nn[c]];
-                southEastX = new double[nn[c]];
-                southEastY = new double[nn[c]];
-                southWestX = new double[nn[c]];
-                southWestY = new double[nn[c]];
             }
 
             var westP = 0;
@@ -4150,6 +4147,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             plot.add("arrow_sw", Arrays.copyOf(southWestX, southWestP), Arrays.copyOf(southWestY, southWestP));
             plot.setLineWidth(dotSize.get());
         }
+        plot.setFrozen(false);
     }
 
     static void updatePlotPos() {

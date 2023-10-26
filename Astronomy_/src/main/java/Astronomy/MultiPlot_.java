@@ -4040,11 +4040,17 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     xi = plotMinX + (plotMaxX - plotMinX)/div;
                     if (drawOffscreenDisplacementArrowsY.get()) {
                         if (yi >= plotMaxY - (plotMaxY - plotMinY)/100) {
+                            if (northWestP > 0) {
+                                continue;
+                            }
                             yi = plotMaxY - (plotMaxY - plotMinY)/div;
                             northWestX[northWestP] = xi;
                             northWestY[northWestP++] = yi;
                             continue;
                         } else if (yi <= plotMinY + (plotMaxY - plotMinY)/100) {
+                            if (southWestP > 0) {
+                                continue;
+                            }
                             yi = plotMinY + (plotMaxY - plotMinY)/div;
                             southWestX[southWestP] = xi;
                             southWestY[southWestP++] = yi;
@@ -4058,11 +4064,17 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     xi = plotMaxX - (plotMaxX - plotMinX)/div;
                     if (drawOffscreenDisplacementArrowsY.get()) {
                         if (yi >= plotMaxY - (plotMaxY - plotMinY)/100) {
+                            if (northEastP > 0) {
+                                continue;
+                            }
                             yi = plotMaxY - (plotMaxY - plotMinY)/div;
                             northEastX[northEastP] = xi;
                             northEastY[northEastP++] = yi;
                             continue;
                         } else if (yi <= plotMinY + (plotMaxY - plotMinY)/100) {
+                            if (southEastP > 0) {
+                                continue;
+                            }
                             yi = plotMinY + (plotMaxY - plotMinY)/div;
                             southEastX[southEastP] = xi;
                             southEastY[southEastP++] = yi;
@@ -4078,11 +4090,17 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     yi = plotMinY + (plotMaxY - plotMinY)/div;
                     if (drawOffscreenDisplacementArrowsX.get()) {
                         if (xi <= plotMinX + (plotMaxX - plotMinX)/100) {
+                            if (southEastP > 0) {
+                                continue;
+                            }
                             xi = plotMinX + (plotMaxX - plotMinX)/div;
                             southEastX[southEastP] = xi;
                             southEastY[southEastP++] = yi;
                             continue;
                         } else if (xi >= plotMaxX - (plotMaxX - plotMinX)/100) {
+                            if (southWestP > 0) {
+                                continue;
+                            }
                             xi = plotMaxX - (plotMaxX - plotMinX)/div;
                             southWestX[southWestP] = xi;
                             southWestY[southWestP++] = yi;
@@ -4096,11 +4114,17 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     yi = plotMaxY - (plotMaxY - plotMinY)/div;
                     if (drawOffscreenDisplacementArrowsX.get()) {
                         if (xi <= plotMinX + (plotMaxX - plotMinX)/100) {
+                            if (northEastP > 0) {
+                                continue;
+                            }
                             xi = plotMinX + (plotMaxX - plotMinX)/div;
                             northEastX[northEastP] = xi;
                             northEastY[northEastP++] = yi;
                             continue;
                         } else if (xi >= plotMaxX - (plotMaxX - plotMinX)/100) {
+                            if (northWestP > 0) {
+                                continue;
+                            }
                             xi = plotMaxX - (plotMaxX - plotMinX)/div;
                             northWestX[northWestP] = xi;
                             northWestY[northWestP++] = yi;

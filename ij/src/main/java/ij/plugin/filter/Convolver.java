@@ -1,15 +1,26 @@
 package ij.plugin.filter;
-import ij.*;
-import ij.process.*;
+
+import ij.IJ;
+import ij.ImagePlus;
+import ij.Macro;
 import ij.gui.*;
-import ij.io.*;
+import ij.io.OpenDialog;
+import ij.io.SaveDialog;
 import ij.plugin.TextReader;
 import ij.plugin.frame.Recorder;
+import ij.process.ByteProcessor;
+import ij.process.ColorProcessor;
+import ij.process.FloatProcessor;
+import ij.process.ImageProcessor;
 import ij.util.Tools;
+
 import java.awt.*;
-import java.util.*;
-import java.awt.event.*;
-import java.io.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.BufferedOutputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintWriter;
 
 /** This plugin convolves images using user user defined kernels. */
 public class Convolver implements ExtendedPlugInFilter, DialogListener, ActionListener {
@@ -36,6 +47,7 @@ public class Convolver implements ExtendedPlugInFilter, DialogListener, ActionLi
 	private static boolean lastNormalizeFlag = defaultNormalizeFlag;
 	private String kernelText = defaultKernelText;
 	private boolean normalizeFlag = defaultNormalizeFlag;
+	private boolean dialogItemChangedCalled;
 
 	public int setup(String arg, ImagePlus imp) {
  		this.imp = imp;
@@ -78,7 +90,8 @@ public class Convolver implements ExtendedPlugInFilter, DialogListener, ActionLi
 		messageLabel = (MultiLineLabel)gd.getMessage();
 		gd.setInsets(5,20,0);
 		gd.addTextAreas(kernelText, null, 10, 30);
-		gd.addPanel(makeButtonPanel(gd));
+		if (!GraphicsEnvironment.isHeadless())
+			gd.addPanel(makeButtonPanel(gd));
 		gd.addCheckbox("Normalize Kernel", normalizeFlag);
 		gd.addPreviewCheckbox(pfr);
 		gd.addDialogListener(this);
@@ -98,6 +111,7 @@ public class Convolver implements ExtendedPlugInFilter, DialogListener, ActionLi
 		normalizeFlag = gd.getNextBoolean();
 		normalize = normalizeFlag;
 		kernelError = !decodeKernel(kernelText);
+		dialogItemChangedCalled = true;
 		if (!kernelError) {
 			IJ.showStatus("Convolve: "+kw+"x"+kh+" kernel");
 			return true;

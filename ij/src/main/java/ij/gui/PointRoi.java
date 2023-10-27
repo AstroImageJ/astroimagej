@@ -388,7 +388,9 @@ public class PointRoi extends PolygonRoi {
 			}
 			if (rt!=null && WindowManager.getFrame(getCountsTitle())!=null)
 				displayCounts();
-		}
+		} else if (index==0 && nPoints==0)
+			counts[0] = 0;
+			
 	}
 
 	private synchronized void incrementCounter(ImagePlus imp) {
@@ -419,7 +421,7 @@ public class PointRoi extends PolygonRoi {
 		if (rt!=null && WindowManager.getFrame(getCountsTitle())!=null)
 			displayCounts();
 	}
-
+	
 	/** Returns the index of the current counter. */
 	public int getCounter() {
 		return counter;
@@ -844,7 +846,7 @@ public class PointRoi extends PolygonRoi {
 		FloatPolygon p = getFloatPolygon();
 		Point[] points = new Point[p.npoints];
 		for (int i=0; i<p.npoints; i++)
-			points[i] = new Point((int) Math.round(p.xpoints[i] - 0.5f), (int) Math.round(p.ypoints[i] - 0.5f));
+			points[i] = new Point((int) Math.round(p.xpoints[i]), (int) Math.round(p.ypoints[i]));
 		return points;
 	}
 

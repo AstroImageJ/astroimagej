@@ -34,7 +34,7 @@ public class ImageStack {
 	}
 	
 	/** Creates a new, empty image stack with a capacity of 'size'.  All
-	     'size' slices and labels of this image stack are initially null.*/
+	     'size' slices and labels of this image stack are initially null. */
 	public ImageStack(int width, int height, int size) {
 		this.width = width;
 		this.height = height;
@@ -332,6 +332,7 @@ public class ImageStack {
 			ip.setMinAndMax(min, max);
 		if (cTable!=null)
 			ip.setCalibrationTable(cTable);
+		ip.setSliceNumber(n);
 		return ip;
 	}
 	

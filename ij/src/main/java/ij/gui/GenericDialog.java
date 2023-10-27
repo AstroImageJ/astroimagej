@@ -352,8 +352,11 @@ FocusListener, ItemListener, KeyListener, AdjustmentListener, WindowListener {
 	/** Adds a directory text field and "Browse" button, where the
 	 * field width is determined by the length of 'defaultPath', with
 	 * a minimum of 25 columns. Use getNextString to retrieve the
-	 * directory path. Based on the addDirectoryField() method in
+	 * directory path. Call OpenDialog.setDefaultDirectory() to set
+	 * the default directory used when the user clicks on "Browse".
+	 * Based on the addDirectoryField() method in
 	 * Fiji's GenericDialogPlus class.
+	 * @see ij.io.OpenDialog#setDefaultDirectory(String)
 	 */
 	public void addDirectoryField(String label, String defaultPath) {
 		int columns = defaultPath!=null?Math.max(defaultPath.length(),25):25;
@@ -1280,6 +1283,8 @@ FocusListener, ItemListener, KeyListener, AdjustmentListener, WindowListener {
 	}
 
 	private void recordOption(Object component, String value) {
+		if (labels==null)
+			return;
 		String label = (String)labels.get(component);
 		if (value.equals("")) value = "[]";
 		Recorder.recordOption(label, value);
@@ -1590,6 +1595,7 @@ FocusListener, ItemListener, KeyListener, AdjustmentListener, WindowListener {
 			setup();
 			if (centerDialog)
 				GUI.centerOnImageJScreen(this);
+			resetCounters();
 			setVisible(true);  //except for NonBlockingGenericDialog, returns after 'dispose' by OK or Cancel
 		}
 	}
@@ -2039,7 +2045,7 @@ FocusListener, ItemListener, KeyListener, AdjustmentListener, WindowListener {
 	private class BrowseButtonListener implements ActionListener {
 		private String label;
 		private TextField textField;
-		private String mode;	
+		private String mode;
 		
 		public BrowseButtonListener(String label, TextField textField, String mode) {
 			this.label = label;
@@ -2061,8 +2067,11 @@ FocusListener, ItemListener, KeyListener, AdjustmentListener, WindowListener {
 				if (name!=null)
 					path = directory+name;
 			}
-			if (path!=null)
+			if (path!=null) {
+				if (IJ.isWindows())
+					path = path.replaceAll("\\\\", "/"); // replace "\" with "/"
 				this.textField.setText(path);
+			}
 		}
 	
 	}

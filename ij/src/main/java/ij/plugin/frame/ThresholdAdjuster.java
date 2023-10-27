@@ -21,8 +21,9 @@ public class ThresholdAdjuster extends PlugInDialog implements PlugIn, Measureme
 	public static final String LOC_KEY = "threshold.loc";
 	public static final String MODE_KEY = "threshold.mode";
 	public static final String DARK_BACKGROUND = "threshold.dark";
-	public static final String RAW_VALUES = "threshold.raw";
 	public static final String NO_RESET = "threshold.no-reset";
+	public static final String RAW_VALUES = "threshold.raw";
+	public static final String SIXTEEN_BIT = "threshold.16-bit";
 	static final int RED=0, BLACK_AND_WHITE=1, OVER_UNDER=2;
 	static final String[] modes = {"Red","B&W", "Over/Under"};
 	static final double defaultMinThreshold = 0;//85;
@@ -43,7 +44,7 @@ public class ThresholdAdjuster extends PlugInDialog implements PlugIn, Measureme
 	int minValue = -1;  // min slider, 0-255
 	int maxValue = -1;
 	int sliderRange = 256;
-	boolean doAutoAdjust,doReset,doApplyLut,doStateChange,doSet,doBackground; //actions required from user interface
+	boolean doAutoAdjust,doReset,doApplyLut,doStateChange,doSet; //actions required from user interface
 
 	Panel panel;
 	Button autoB, resetB, applyB, setB;
@@ -61,11 +62,11 @@ public class ThresholdAdjuster extends PlugInDialog implements PlugIn, Measureme
 	boolean done;
 	int lutColor;
 	Choice methodChoice, modeChoice;
-	Checkbox darkBackground, stackHistogram, rawValues, noResetCheckbox;
+	Checkbox darkBackgroundCheckbox, stackCheckbox, noResetCheckbox, rawValues, sixteenBitCheckbox;
 	boolean firstActivation = true;
 	boolean setButtonPressed;
 	boolean noReset = true;
-	boolean noResetChanged;
+	boolean sixteenBit = false;
 	boolean enterPressed;
 	boolean windowActivated;
 
@@ -206,17 +207,20 @@ public class ThresholdAdjuster extends PlugInDialog implements PlugIn, Measureme
 
 		// checkboxes
 		panel = new Panel();
-		panel.setLayout(new GridLayout(2, 2));
+		panel.setLayout(new GridLayout(3, 2));
 		boolean db = Prefs.get(DARK_BACKGROUND, Prefs.blackBackground?true:false);
-		darkBackground = new Checkbox("Dark background");
-		darkBackground.setState(db);
-		darkBackground.addItemListener(this);
-		panel.add(darkBackground);
-		stackHistogram = new Checkbox("Stack histogram");
-		stackHistogram.setState(false);
-		stackHistogram.addItemListener(this);
-		panel.add(stackHistogram);
+		darkBackgroundCheckbox = new Checkbox("Dark background");
+		darkBackgroundCheckbox.setState(db);
+		darkBackgroundCheckbox.addItemListener(this);
+		panel.add(darkBackgroundCheckbox);
+		stackCheckbox = new Checkbox("Stack histogram");
+		stackCheckbox.setState(false);
+		stackCheckbox.addItemListener(this);
+		panel.add(stackCheckbox);
 		noReset = Prefs.get(NO_RESET, true);
+		sixteenBit = Prefs.get(SIXTEEN_BIT, false);
+		if (sixteenBit)
+			noReset = true;
 		noResetCheckbox = new Checkbox("Don't reset range");
 		noResetCheckbox.setState(noReset);
 		noResetCheckbox.addItemListener(this);
@@ -224,7 +228,12 @@ public class ThresholdAdjuster extends PlugInDialog implements PlugIn, Measureme
 		rawValues = new Checkbox("Raw values");
 		rawValues.setState(Prefs.get(RAW_VALUES, false));
 		rawValues.addItemListener(this);
-		panel.add(rawValues);
+		panel.add(rawValues);		
+		sixteenBitCheckbox = new Checkbox("16-bit histogram");
+		sixteenBitCheckbox.setState(sixteenBit);
+		sixteenBitCheckbox.addItemListener(this);
+		panel.add(sixteenBitCheckbox);
+
 		c.gridx = 0;
 		c.gridy = y++;
 		c.gridwidth = 2;
@@ -372,6 +381,7 @@ public class ThresholdAdjuster extends PlugInDialog implements PlugIn, Measureme
 
 	public synchronized void itemStateChanged(ItemEvent e) {
 		Object source = e.getSource();
+		boolean conditionalAutoAdjust = false;
 		if (source==methodChoice) {
 			method = methodChoice.getSelectedItem();
 			doAutoAdjust = true;
@@ -385,15 +395,24 @@ public class ThresholdAdjuster extends PlugInDialog implements PlugIn, Measureme
 				else
 					Recorder.recordString("call(\"ij.plugin.frame.ThresholdAdjuster.setMode\", \""+modes[mode]+"\");\n");
 			}
-		} else if (source==darkBackground) {
-			doBackground = true;
-		} else if (source==rawValues) {
-			ThresholdAdjuster.update();
+		} else if (source==darkBackgroundCheckbox) {
+			conditionalAutoAdjust = true;
 		} else if (source==noResetCheckbox) {
 			noReset = noResetCheckbox.getState();
-			noResetChanged = true;
-			doReset = true;
+			conditionalAutoAdjust = true;
+		} else if (source==rawValues) {
+			ThresholdAdjuster.update();
+		} else if (source==sixteenBitCheckbox) {
+			sixteenBit = sixteenBitCheckbox.getState();
+			if (sixteenBit)
+				noReset = true;
+			conditionalAutoAdjust = true;
+		} else if (source==stackCheckbox) {
+			conditionalAutoAdjust = true;
 		} else
+			doAutoAdjust = true;
+		ImagePlus imp = WindowManager.getCurrentImage();
+		if (conditionalAutoAdjust && imp!=null && imp.isThreshold())
 			doAutoAdjust = true;
 		notify();
 	}
@@ -448,7 +467,7 @@ public class ThresholdAdjuster extends PlugInDialog implements PlugIn, Measureme
 				maxThreshold = scaleDown(ip, maxThreshold);
 			} else {
 				if (enableAutoThreshold && !isThreshold)
-					autoSetLevels(ip, stats);
+					autoSetLevels(imp);
 				else
 					minThreshold = ImageProcessor.NO_THRESHOLD;  //may be an invisible threshold after 'apply'
 			}
@@ -473,16 +492,43 @@ public class ThresholdAdjuster extends PlugInDialog implements PlugIn, Measureme
 			if (ip.getMin()!=stats.min || ip.getMax()!=stats.max) {
 				ip.resetMinAndMax();
 				ContrastAdjuster.update();
-			} else
-				ip.resetMinAndMax();
+			}
 		}
 	}
 
 	boolean entireStack(ImagePlus imp) {
-		return stackHistogram!=null && stackHistogram.getState() && imp.getStackSize()>1;
+		return stackCheckbox!=null && stackCheckbox.getState() && imp.getStackSize()>1;
 	}
 
-	void autoSetLevels(ImageProcessor ip, ImageStatistics stats) {
+	void autoSetLevels(ImagePlus imp) {
+		int bitDepth = imp.getBitDepth();
+		boolean darkb = darkBackgroundCheckbox!=null && darkBackgroundCheckbox.getState();
+		boolean stack = entireStack(imp);
+		boolean hist16 = sixteenBit && bitDepth!=32;
+		String methodAndOptions = method+(darkb?" dark":"")+(hist16?" 16-bit":"")+(stack?" stack":"")+(noReset?" no-reset":"");
+		imp.setAutoThreshold(methodAndOptions);
+		ImageProcessor ip = imp.getProcessor();
+		double level1 = ip.getMinThreshold();
+		double level2 = ip.getMaxThreshold();
+		ip.setThreshold(level1, level2, lutColor);
+		imp.updateAndDraw();
+		minThreshold = scaleDown(ip, level1);
+		maxThreshold = scaleDown(ip, level2);
+		//IJ.log("autoSetLevels: "+level1+" "+level2+" "+methodAndOptions);
+		updateScrollBars();
+		if (Recorder.record) {
+			if (noReset && ip.getBitDepth()!=8) {
+				ImageStatistics stats2 = ip.getStats();
+				if (ip.getMin()>stats2.min || ip.getMax()<stats2.max)
+					ContrastAdjuster.recordSetMinAndMax(ip.getMin(),ip.getMax());
+			}
+			if (Recorder.scriptMode())
+				Recorder.recordCall("imp.setAutoThreshold(\""+methodAndOptions+"\");");
+			else
+				Recorder.record("setAutoThreshold", methodAndOptions);
+		}
+
+		/*
 		if (stats==null || stats.histogram==null) {
 			minThreshold = defaultMinThreshold;
 			maxThreshold = defaultMaxThreshold;
@@ -493,26 +539,14 @@ public class ThresholdAdjuster extends PlugInDialog implements PlugIn, Measureme
 			stats.histogram[stats.mode] = plot.originalModeCount;
 		int threshold = thresholder.getThreshold(method, stats.histogram);
 		stats.histogram[stats.mode] = modifiedModeCount;
+		boolean addOne = !sixteenBit;
 		if (thresholdHigh(ip))  // dark background for non-inverting LUT, or bright background for inverting LUT
-			{minThreshold=threshold+1; maxThreshold=255;}
+			{minThreshold=threshold+(addOne?1:0); maxThreshold=255;}
 		else
 			{minThreshold=0; maxThreshold=threshold;}
 		if (minThreshold>255)
 			minThreshold = 255;
-		if (Recorder.record) {
-			boolean stack = stackHistogram!=null && stackHistogram.getState();
-			if (noReset && ip.getBitDepth()!=8) {
-				ImageStatistics stats2 = ip.getStats();
-				if (ip.getMin()>stats2.min || ip.getMax()<stats2.max)
-					ContrastAdjuster.recordSetMinAndMax(ip.getMin(),ip.getMax());
-			}
-			boolean darkb = darkBackground!=null && darkBackground.getState();
-			String options = method+(darkb?" dark":"")+(noReset?" no-reset":"")+(stack?" stack":"");
-			if (Recorder.scriptMode())
-				Recorder.recordCall("IJ.setAutoThreshold(imp, \""+options+"\");");
-			else
-				Recorder.record("setAutoThreshold", options);
-		}
+		*/
 	}
 
 	/** Whether the (auto)-thresholded pixels should be those 
@@ -520,7 +554,7 @@ public class ThresholdAdjuster extends PlugInDialog implements PlugIn, Measureme
 	 * (E.g. dark background and non-inverting LUT)
 	*/
 	boolean thresholdHigh(ImageProcessor ip) {
-		boolean darkb = darkBackground!=null && darkBackground.getState();
+		boolean darkb = darkBackgroundCheckbox!=null && darkBackgroundCheckbox.getState();
 		boolean invertedLut = ip.isInvertedLut();
 		return invertedLut ? !darkb : darkb;
 	}
@@ -637,7 +671,11 @@ public class ThresholdAdjuster extends PlugInDialog implements PlugIn, Measureme
 
 	/** Converts a number to a String, such that it should not take much space (for the minLabel, maxLabel TextFields) */
 	String d2s(double x) {
-		return Math.abs(x)>=1e6 ? IJ.d2s(x,-2) : ResultsTable.d2s(x,2);  //the latter uses exp notation also for small x
+		int digits = 2;
+		if (Math.abs(x)<100) digits=3;
+		if (Math.abs(x)<10) digits=4;
+		if (x<0 && digits==4) digits=3;
+		return Math.abs(x)>=1e6 ? IJ.d2s(x,-2) : ResultsTable.d2s(x,digits);  //the latter uses exp notation also for small x
 	}
 
 	void updateScrollBars() {
@@ -691,17 +729,7 @@ public class ThresholdAdjuster extends PlugInDialog implements PlugIn, Measureme
 	}
 
 	void reset(ImagePlus imp, ImageProcessor ip) {
-		//IJ.log("reset1: "+noReset+" "+noResetChanged+" "+mode);
-		if (noResetChanged) {
-			noResetChanged = false;
-			if ((noReset&&mode!=OVER_UNDER) || ip.getBitDepth()==8)
-				return;
-			if (!noReset) {
-				ImageStatistics stats = ip.getStats();
-				if (ip.getMin()==stats.min && ip.getMax()==stats.max)
-					return; // not contrast enhanced; no need to reset
-			}
-		}
+		//IJ.log("reset1: "+noReset+" "+sixteenBitChanged+" "+mode);
 		ip.resetThreshold();
 		if (!noReset)
 			resetMinAndMax(ip);
@@ -806,33 +834,6 @@ public class ThresholdAdjuster extends PlugInDialog implements PlugIn, Measureme
 		updateScrollBars();
  	}
 
-	/** User has clicked 'Dark background'.
-	 *  Switch only if the current thresholds are consistent with
-	 * the previous 'Dark background' state.
-	*/
-	void switchBackground(ImagePlus imp, ImageProcessor ip) {
-		if (minThreshold < 0) {     //remove NO_THRESHOLD
-			autoThreshold(imp, ip);
-			return;
-		}
-		if (thresholdHigh(ip)) {
-			if (minThreshold == 0) {
-				minThreshold = maxThreshold+1;
-				if (minThreshold > 255) minThreshold = 255;
-				maxThreshold = 255;
-			}
-		} else {
-			if (maxThreshold == 255) {
-				maxThreshold = minThreshold-1;
-				if (maxThreshold < 0) maxThreshold = 0;
-				minThreshold = 0;
-			}
-		}
-		minSlider.setValue((int)minThreshold);
-		maxSlider.setValue((int)maxThreshold);
-		scaleUpAndSet(ip, minThreshold, maxThreshold);
-	}
-
  	void apply(ImagePlus imp) {
  		if (imp.getProcessor().getMinThreshold()==ImageProcessor.NO_THRESHOLD) {
  			IJ.error("Thresholder", "Threshold is not set");
@@ -857,7 +858,7 @@ public class ThresholdAdjuster extends PlugInDialog implements PlugIn, Measureme
 
  	void runThresholdCommand() {
 		Thresholder.setMethod(method);
-		Thresholder.setBackground(darkBackground.getState()?"Dark":"Light");
+		Thresholder.setBackground(darkBackgroundCheckbox.getState()?"Dark":"Light");
 		if (Recorder.record) {
 			Recorder.setCommand("Convert to Mask");
 			(new Thresholder()).run("mask");
@@ -866,13 +867,13 @@ public class ThresholdAdjuster extends PlugInDialog implements PlugIn, Measureme
 			(new Thresholder()).run("mask");
 	}
 
-	static final int RESET=0, AUTO=1, HIST=2, APPLY=3, STATE_CHANGE=4, MIN_THRESHOLD=5, MAX_THRESHOLD=6, SET=7, BACKGROUND=8;
+	static final int RESET=0, AUTO=1, HIST=2, APPLY=3, STATE_CHANGE=4, MIN_THRESHOLD=5, MAX_THRESHOLD=6, SET=7;
 
 	// Separate thread that does the potentially time-consuming processing
 	public void run() {
 		while (!done) {
 			synchronized(this) {
-				if (!doAutoAdjust && !doReset && !doApplyLut && !doStateChange && !doSet && !doBackground && minValue<0 &&  maxValue<0) {
+				if (!doAutoAdjust && !doReset && !doApplyLut && !doStateChange && !doSet && minValue<0 &&  maxValue<0) {
 					try {wait();}
 					catch(InterruptedException e) {}
 				}
@@ -893,7 +894,6 @@ public class ThresholdAdjuster extends PlugInDialog implements PlugIn, Measureme
 		else if (doApplyLut)    { action = APPLY;        doApplyLut = false; }
 		else if (doStateChange) { action = STATE_CHANGE; doStateChange = false; }
 		else if (doSet)         { action = SET;          doSet = false; }
-		else if (doBackground)  { action = BACKGROUND;   doBackground = false; }
 		else if (minValue>=0)   { action = MIN_THRESHOLD; minValue = -1; }
 		else if (maxValue>=0)   { action = MAX_THRESHOLD; maxValue = -1; }
 		else return;
@@ -921,7 +921,6 @@ public class ThresholdAdjuster extends PlugInDialog implements PlugIn, Measureme
 			case SET: doSet(imp, ip); break;
 			case MIN_THRESHOLD: adjustMinThreshold(imp, ip, min); break;
 			case MAX_THRESHOLD: adjustMaxThreshold(imp, ip, max); break;
-			case BACKGROUND: switchBackground(imp, ip); break;
 		}
 		updatePlot(ip);
 		updateLabels(imp, ip);
@@ -937,8 +936,9 @@ public class ThresholdAdjuster extends PlugInDialog implements PlugIn, Measureme
 		done = true;
 		Prefs.saveLocation(LOC_KEY, getLocation());
 		Prefs.set(MODE_KEY, mode);
-		Prefs.set(DARK_BACKGROUND, darkBackground.getState());
+		Prefs.set(DARK_BACKGROUND, darkBackgroundCheckbox.getState());
 		Prefs.set(NO_RESET, noResetCheckbox.getState());
+		Prefs.set(SIXTEEN_BIT, sixteenBitCheckbox.getState());
 		Prefs.set(RAW_VALUES, rawValues.getState());
 		synchronized(this) {
 			notify();
@@ -980,7 +980,7 @@ public class ThresholdAdjuster extends PlugInDialog implements PlugIn, Measureme
 	}
 	
 	public static boolean isDarkBackground() {
-		return instance!=null?instance.darkBackground.getState():false;
+		return instance!=null?instance.darkBackgroundCheckbox.getState():false;
 	}
 
 

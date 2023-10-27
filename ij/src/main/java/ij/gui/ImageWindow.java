@@ -53,7 +53,6 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 	private static Point nextLocation;
 	public static long setMenuBarTime;
 	private int textGap = centerOnScreen?0:TEXT_GAP;
-	private Point initialLoc;
 	private int screenHeight, screenWidth;
 
 
@@ -187,8 +186,8 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 			return;
 		int width = imp.getWidth();
 		int height = imp.getHeight();
-
-		// load prefernces file location
+		
+		// load preferences file location
 		Point loc = Prefs.getLocation(LOC_KEY);
 		Rectangle bounds = null;
 		if (loc!=null) {
@@ -273,10 +272,8 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 			validate();
 		} else
 			pack();
-		if (!updating) {
+		if (!updating)
 			setLocation(x, y);
-			initialLoc = new Point(x,y);
-		}
 	}
 
 	@AstroImageJ(reason = "Widen access", modified = true, unused = true)
@@ -288,19 +285,28 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 		return initialMagnification;
 	}
 
-	/** Override Container getInsets() to make room for some text above the image. */
-	@AstroImageJ(reason = "Remove textgap from plot window as the subtitle ius disabled for it.", modified = true)
 	public Insets getInsets() {
-		Insets insets = super.getInsets();
-		if (imp==null)
-			return insets;
-		double mag = ic.getMagnification();
-		int extraWidth = (int)((MIN_WIDTH - imp.getWidth()*mag)/2.0);
-		if (extraWidth<0) extraWidth = 0;
-		int extraHeight = (int)((MIN_HEIGHT - imp.getHeight()*mag)/2.0);
-		if (extraHeight<0) extraHeight = 0;
-		insets = new Insets(insets.top+(this instanceof PlotWindow ? 0: textGap)+extraHeight, insets.left+extraWidth, insets.bottom+extraHeight, insets.right+extraWidth);
-		return insets;
+		return getInsets(true);
+	}
+
+	/** Override Container getInsets() to make room for some text above the image.
+	 *  With "includeSmallImageMargins", also includes the margins for padding an image
+	 *  that is too small for the window size. */
+    @AstroImageJ(reason = "Remove textgap from plot window as the subtitle ius disabled for it.", modified = true)
+	public Insets getInsets(boolean includeSmallImageMargins) {
+        Insets insets = super.getInsets();
+        if (imp==null)
+            return insets;
+        double mag = ic.getMagnification();
+        int extraWidth = 0, extraHeight = 0;
+        if (includeSmallImageMargins) {
+            extraWidth = (int)((MIN_WIDTH - imp.getWidth()*mag)/2.0);
+            if (extraWidth<0) extraWidth = 0;
+            extraHeight = (int)((MIN_HEIGHT - imp.getHeight()*mag)/2.0);
+            if (extraHeight<0) extraHeight = 0;
+        }
+        insets = new Insets(insets.top+(this instanceof PlotWindow ? 0: textGap)+extraHeight, insets.left+extraWidth, insets.bottom+extraHeight, insets.right+extraWidth);
+        return insets;
 	}
 
     /** Draws the subtitle. */
@@ -479,9 +485,9 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
 		if (ij!=null && ij.quitting())  // this may help avoid thread deadlocks
 			return true;
 		Rectangle bounds = getBounds();
-		if (initialLoc!=null && !bounds.equals(initialLoc) && !IJ.isMacro()
-				&& bounds.y<screenHeight/3 && (bounds.y+bounds.height)<=screenHeight
-				&& (bounds.x+bounds.width)<=screenWidth) {
+		if (!IJ.isMacro()
+		&& bounds.y<screenHeight/3 && (bounds.y+bounds.height)<=screenHeight
+		&& (bounds.x+bounds.width)<=screenWidth) {
 			Prefs.saveLocation(LOC_KEY, new Point(bounds.x,bounds.y));
 			xbase = -1;
 		}
@@ -761,14 +767,12 @@ public class ImageWindow extends Frame implements FocusListener, WindowListener,
     public void setLocationAndSize(int x, int y, int width, int height) {
 		setBounds(x, y, width, height);
 		getCanvas().fitToWindow();
-		initialLoc = null;
 		pack();
 	}
 
 	@Override
     public void setLocation(int x, int y) {
-		super.setLocation(x, y);
-		initialLoc = null;
+    	super.setLocation(x, y);
 	}
 
 	public void setSliderHeight(int height) {

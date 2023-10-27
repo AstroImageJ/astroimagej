@@ -39,6 +39,8 @@ public class OverlayCommands implements PlugIn {
 			show();
 		else if (arg.equals("remove"))
 			remove();
+		else if (arg.equals("toggle"))
+			toggle();
 		else if (arg.equals("from"))
 			fromRoiManager();
 		else if (arg.equals("to"))
@@ -140,7 +142,7 @@ public class OverlayCommands implements PlugIn {
 		String name = roi.getName();
 		boolean newOverlay = name!=null && name.equals("new-overlay");
 		Roi roiClone = (Roi)roi.clone();
-		if (roi.getStrokeColor()==null)
+		if (roi.getStrokeColor()==null && roi.getFillColor()==null)
 			roi.setStrokeColor(Roi.getColor());
 		if (overlay==null || newOverlay)
 			overlay = OverlayLabels.createOverlay();
@@ -290,6 +292,12 @@ public class OverlayCommands implements PlugIn {
 				ic.setShowAllList(null);
 			imp.setOverlay(null);
 		}
+	}
+
+	void toggle() {
+		ImagePlus imp = IJ.getImage();
+		if (imp!=null)
+			imp.toggleOverlay();
 	}
 
 	void flatten() {

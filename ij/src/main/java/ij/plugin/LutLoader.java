@@ -240,6 +240,19 @@ public class LutLoader extends ImagePlus implements PlugIn {
 		}
 		return 256;
 	}
+
+	/*
+	int spectrum(byte[] reds, byte[] greens, byte[] blues) {
+		for (int i=0; i<256; i++) {
+			double wavelength = 380 + i*(700-380)/255.0;
+			Color c = Colors.wavelengthToColor(wavelength);
+			reds[i] = (byte)c.getRed();
+			greens[i] = (byte)c.getGreen();
+			blues[i] = (byte)c.getBlue();
+		}
+		return 256;
+	}
+	*/
 	
 	int rgb332(byte[] reds, byte[] greens, byte[] blues) {
 		Color c;

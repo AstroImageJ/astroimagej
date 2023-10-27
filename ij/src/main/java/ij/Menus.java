@@ -304,6 +304,7 @@ public class Menus {
 		addExample(submenu, "Plot Styles", "Plot_Styles_.ijm");
 		addExample(submenu, "Random Data", "Random_Data_.ijm");
 		addExample(submenu, "Plot Results", "Plot_Results_.ijm");
+		addExample(submenu, "Plot With Spectrum", "Plot_With_Spectrum_.ijm");
 		submenu.addActionListener(listener);
 		menu.add(submenu);
 		
@@ -336,6 +337,7 @@ public class Menus {
 		addExample(submenu, "Curve Fitting", "Curve_Fitting.ijm");
 		addExample(submenu, "Colors of 2021", "Colors_of_2021.ijm");
 		addExample(submenu, "Turtle Graphics", "Turtle_Graphics.ijm");
+		addExample(submenu, "Easter Eggs", "Easter_Eggs.ijm");
 		submenu.addActionListener(listener);
 		menu.add(submenu);
 
@@ -690,7 +692,7 @@ public class Menus {
 			command = command.substring(0, command.length()-3); //remove ".js" or ".py"
 		else
 			command = command.substring(0, command.length()-4); //remove ".txt", ".ijm" or ".bsh"
-		command.trim();
+		command = command.trim();
 		if (pluginsTable.get(command)!=null) // duplicate command?
 			command = command + " Macro";
 		MenuItem item = new MenuItem(command);
@@ -1172,7 +1174,7 @@ public class Menus {
 			command = className.substring(slashIndex+1);
 		}
 		command = command.replace('_',' ');
-		command.trim();
+		//command = command.trim();
 		boolean itemExists = (pluginsTable.get(command)!=null);
 		if(force && itemExists)
 			return;

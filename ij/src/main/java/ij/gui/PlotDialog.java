@@ -1,11 +1,7 @@
 package ij.gui;
-
-import ij.IJ;
-import ij.ImagePlus;
-import ij.Prefs;
-import ij.WindowManager;
+import ij.*;
+import ij.process.*;
 import ij.plugin.frame.Recorder;
-
 import java.awt.*;
 import java.util.Vector;
 

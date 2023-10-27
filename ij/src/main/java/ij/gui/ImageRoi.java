@@ -1,9 +1,13 @@
 package ij.gui;
+
 import ij.ImagePlus;
-import ij.process.*;
 import ij.io.FileSaver;
+import ij.process.ColorProcessor;
+import ij.process.ImageProcessor;
+
 import java.awt.*;
-import java.awt.image.*;
+import java.awt.image.BufferedImage;
+import java.awt.image.DirectColorModel;
 
 /** An ImageRoi is an Roi that overlays an image. 
 * @see ij.ImagePlus#setOverlay(ij.gui.Overlay)
@@ -108,8 +112,8 @@ public class ImageRoi extends Roi {
 	private ImageProcessor makeZeroTransparent(ImageProcessor ip, boolean transparent) {
 		if (transparent) {
 			ip.setColorModel(new DirectColorModel(32,0x00ff0000,0x0000ff00,0x000000ff,0xff000000));
-			for (int x=0; x<width; x++) {
-				for (int y=0; y<height; y++) {
+			for (int x=0; x<ip.getWidth(); x++) {
+				for (int y=0; y<ip.getHeight(); y++) {
 					double v = ip.getPixelValue(x, y);
 					if (v>1)
 						ip.set(x, y, ip.get(x,y)|0xff000000); // set alpha bits
@@ -126,8 +130,6 @@ public class ImageRoi extends Roi {
 		ImagePlus imp = new ImagePlus("", img);
 		roi2.setProcessor(imp.getProcessor());
 		roi2.setOpacity(getOpacity());
-		roi2.zeroTransparent = !zeroTransparent;
-		roi2.setZeroTransparent(zeroTransparent);
 		return roi2;
 	}
 	
@@ -143,6 +145,10 @@ public class ImageRoi extends Roi {
 	public void setProcessor(ImageProcessor ip) {
 		img = ip.createImage();
 		this.ip = ip;
+		if (zeroTransparent) {
+			setZeroTransparent(false);
+			setZeroTransparent(true);
+		}
 		width = ip.getWidth();
 		height = ip.getHeight();
 	}

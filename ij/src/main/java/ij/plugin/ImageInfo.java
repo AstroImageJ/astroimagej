@@ -8,6 +8,7 @@ import ij.measure.Calibration;
 import ij.measure.CurveFitter;
 import ij.plugin.filter.Analyzer;
 import ij.process.ImageProcessor;
+import ij.process.ImageStatistics;
 import ij.process.LUT;
 import ij.text.TextWindow;
 import ij.util.Tools;
@@ -195,8 +196,12 @@ public class ImageInfo implements PlugIn {
 				s += "(" + lut + ")\n";
 				if (imp.getNChannels()>1)
 					s += displayRanges(imp);
-				else
+				else {
 					s += "Display range: "+(int)ip.getMin()+"-"+(int)ip.getMax()+"\n";
+					ip.resetRoi();
+					ImageStatistics stats = ip.getStats();
+					s += "Pixel value range: "+(int)stats.min+"-"+(int)stats.max+"\n";
+				}
 				break;
 	    	case ImagePlus.GRAY16: case ImagePlus.GRAY32:
 	    		if (type==ImagePlus.GRAY16) {
@@ -207,15 +212,33 @@ public class ImageInfo implements PlugIn {
 				if (imp.getNChannels()>1)
 					s += displayRanges(imp);
 				else {
+					String pvrLabel = "Pixel value range: ";
 					s += "Display range: ";
 					double min = ip.getMin();
 					double max = ip.getMax();
-					if (cal.calibrated()) {
+					String dash = "-";
+					if (type==ImagePlus.GRAY32||cal.calibrated())
+						dash = " - ";
+					if (type==ImagePlus.GRAY32)
+						s += d2s(min) + dash + d2s(max) + "\n";
+					else if (cal.calibrated()) {
+						pvrLabel = "Raw pixel value range: ";
 						min = cal.getCValue((int)min);
 						max = cal.getCValue((int)max);
+						s += d2s(min) + dash + d2s(max) + "\n";
+					} else
+						s += (int)min+dash+(int)max+"\n";
+					ip.resetRoi();
+					ImageStatistics stats = ip.getStats();
+					if (ip.isSigned16Bit()) {
+						stats.min -= 32768;
+						stats.max -= 32768;
 					}
-					s += d2s(min) + " - " + d2s(max) + "\n";
-				}
+					if (type==ImagePlus.GRAY32)
+						s += pvrLabel+d2s(stats.min)+dash+d2s(stats.max)+"\n";
+					else
+						s += pvrLabel+(int)stats.min+dash+(int)stats.max+"\n";
+			}
 				break;
 	    	case ImagePlus.COLOR_256:
 	    		s += "Bits per pixel: 8 (color LUT)\n";
@@ -391,7 +414,7 @@ public class ImageInfo implements PlugIn {
 			s += "Macro is running"+(Interpreter.isBatchMode()?" in batch mode":"")+"\n";
 
 	    Roi roi = imp.getRoi();
-	    if (roi == null) {
+	    if (roi==null) {
 			if (cal.calibrated())
 	    		s += " \n";
 	    	s += "No selection\n";
@@ -500,7 +523,10 @@ public class ImageInfo implements PlugIn {
 	}
 
 	private void showInfo(ImagePlus imp, String info, int width, int height) {
-		new TextWindow("Info for "+imp.getTitle(), info, width, height);
+		if (GraphicsEnvironment.isHeadless())
+			IJ.log(info);
+		else
+			new TextWindow("Info for "+imp.getTitle(), info, width, height);
 		//Editor ed = new Editor();
 		//ed.setSize(width, height);
 		//ed.create("Info for "+imp.getTitle(), info);

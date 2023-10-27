@@ -18,7 +18,7 @@ import java.util.Vector;
  * This plugin implements the Image/Colors/Arrange Channels command,
  *	which allows the user to change the order of channels.
  *
- * @author Norbert Vischer <vischer@science.uva.nl> 23-sep-2012
+ * @author Norbert Vischer, 3-sep-2012
  */
 public class ChannelArranger implements PlugIn, TextListener {
 	private ThumbnailsCanvas thumbNails;
@@ -137,6 +137,7 @@ public class ChannelArranger implements PlugIn, TextListener {
 			}
 			img2.setOverlay(overlay);
 		}
+		img2.setProperty("Info", img.getProperty("Info"));
 		img.changes = false;
 		img.close();
 		return img2;

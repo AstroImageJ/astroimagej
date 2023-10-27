@@ -768,12 +768,11 @@ public class Opener {
 		if (img==null)
 			return null;
 		if (IJ.debugMode) IJ.log("type="+img.getType()+", alpha="+img.getColorModel().hasAlpha()+", bands="+img.getSampleModel().getNumBands());
-		int nBands = 1;
-		if (img.getColorModel().hasAlpha()) {
+		boolean custom8Bit = img.getType()==0 && img.getSampleModel().getDataType()==0;
+		if (img.getColorModel().hasAlpha() || custom8Bit) {
 			int width = img.getWidth();
 			int height = img.getHeight();
 			BufferedImage bi = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-			nBands = bi.getSampleModel().getNumBands();
 			Graphics g = bi.getGraphics();
 			g.setColor(Color.white);
 			g.fillRect(0,0,width,height);
@@ -781,7 +780,7 @@ public class Opener {
 			img = bi;
 		}
 		imp = new ImagePlus(f.getName(), img);
-		if (imp.getBitDepth()==16)
+		if (imp.getBitDepth()==16 && imp.getStackSize()>1)
 			imp = new CompositeImage(imp, IJ.COMPOSITE);
 		FileInfo fi = new FileInfo();
 		fi.fileFormat = fi.IMAGEIO;
@@ -1382,6 +1381,10 @@ public class Opener {
 		int b0=buf[0]&255, b1=buf[1]&255, b2=buf[2]&255, b3=buf[3]&255;
 		//IJ.log("getFileType: "+ name+" "+b0+" "+b1+" "+b2+" "+b3);
 		
+		 // ImspectorPro MSR
+		if (name.endsWith(".msr")||name.endsWith(".MSR"))
+			return UNKNOWN; // Open with Bio-formats plugin
+		
 		 // Combined TIFF and DICOM created by GE Senographe scanners
 		if (buf[128]==68 && buf[129]==73 && buf[130]==67 && buf[131]==77
 		&& ((b0==73 && b1==73)||(b0==77 && b1==77)))
@@ -1390,6 +1393,12 @@ public class Opener {
 		 // Big-endian TIFF ("MM")
 		if (name.endsWith(".lsm"))
 				return UNKNOWN; // The LSM	Reader plugin opens these files
+				
+		 // OME TIFF
+		if (bioformats && name.contains(".ome.tif"))
+				return UNKNOWN; // Open with Bio-formats plugin
+				
+		// TIFF
 		if (b0==73 && b1==73 && b2==42 && b3==0 && !(bioformats&&name.endsWith(".flex")))
 			return TIFF;
 

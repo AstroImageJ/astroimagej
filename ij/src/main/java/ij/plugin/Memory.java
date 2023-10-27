@@ -120,7 +120,7 @@ public class Memory implements PlugIn {
 		if (IJ.isWindows() && max2>640 && max2>max)
 			hint = String.format("\nIf AstroImageJ fails to start, delete the \"%s\" file located in the AstroImageJ folder.",
 					majorVersion > 4 ? getFileName() : "AstroImageJ.cfg");
-		IJ.showMessage("Memory", "The new " + max2 +"MB limit will take effect after AstroImageJ is restarted."+hint);		
+		IJ.showMessage("Memory", "The new " + max2 +"MB limit will take effect after AstroImageJ is restarted."+hint);
 	}
 	
 	public long getMemorySetting() {

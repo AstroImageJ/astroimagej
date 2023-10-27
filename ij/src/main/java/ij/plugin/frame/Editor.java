@@ -43,6 +43,7 @@ public class Editor extends PlugInFrame implements ActionListener, ItemListener,
 		"importPackage(java.awt);"+
 		"importPackage(java.awt.image);"+
 		"importPackage(java.awt.geom);"+
+		"importPackage(java.awt.event);"+
 		"importPackage(java.util);"+
 		"importPackage(java.io);"+
 		"function print(s) {IJ.log(s);};";
@@ -140,22 +141,27 @@ public class Editor extends PlugInFrame implements ActionListener, ItemListener,
 		super("Editor");
 		WindowManager.addWindow(this);
 		addMenuBar(options);
-		boolean addRunBar = (options&RUN_BAR)!=0;	
+		boolean addRunBar = (options&RUN_BAR)!=0;
+		ImageJ ij = IJ.getInstance();	
 		if (addRunBar) {
 			Panel panel = new Panel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+			panel.addKeyListener(ij);
 			runButton = new Button("Run");
 			runButton.addActionListener(this);
+			runButton.addKeyListener(ij);
 			panel.setFont(new Font("SansSerif", Font.PLAIN, sizes[fontSizeIndex]));
 			panel.add(runButton);			
 			if ((options&INSTALL_BUTTON)!=0) {
 				installButton = new Button("Install");
 				installButton.addActionListener(this);
+				installButton.addKeyListener(ij);
 				panel.add(installButton);
 			}			
 			language = new Choice();
 			for (int i=0; i<languages.length; i++)
 				language.addItem(languages[i]);
 			language.addItemListener(this);
+			language.addKeyListener(ij);
 			panel.add(language);
 			add("North", panel);
 		}
@@ -163,7 +169,7 @@ public class Editor extends PlugInFrame implements ActionListener, ItemListener,
 		ta.addTextListener(this);
 		ta.addKeyListener(this);
 		if (IJ.isLinux()) ta.setBackground(Color.white);
- 		addKeyListener(IJ.getInstance());  // ImageJ handles keyboard shortcuts
+ 		addKeyListener(ij);  // ImageJ handles keyboard shortcuts
 		ta.addMouseListener(this);  // ImageJ handles keyboard shortcuts
 		add(ta);
 		pack();
@@ -188,7 +194,7 @@ public class Editor extends PlugInFrame implements ActionListener, ItemListener,
 	
 	void addMenuBar(int options) {
 		mb = new MenuBar();
-		if (Menus.getFontSize()!=0) ;
+		if (Menus.getFontSize()!=0)
 			mb.setFont(Menus.getFont());
 		Menu m = new Menu("File");
 		m.add(new MenuItem("New...", new MenuShortcut(KeyEvent.VK_N, true)));
@@ -499,7 +505,7 @@ public class Editor extends PlugInFrame implements ActionListener, ItemListener,
 		else
 			text = ta.getSelectedText();
 		Interpreter.abort();  // abort any currently running macro
-		if (checkForCurlyQuotes && text.contains("\u201D")) {
+		if (checkForCurlyQuotes) {
 			// replace curly quotes with standard quotes
  			text = text.replaceAll("\u201C", "\""); 
 			text = text.replaceAll("\u201D", "\"");
@@ -1086,7 +1092,10 @@ public class Editor extends PlugInFrame implements ActionListener, ItemListener,
 			ta.setCaretPosition(ta.getCaretPosition());
 	}
 	
-	public void keyPressed(KeyEvent e) { } 	
+	public void keyPressed(KeyEvent e) {
+		IJ.setKeyDown(e.getKeyCode());
+	}
+	 	
 	public void mousePressed (MouseEvent e) {}
 	public void mouseExited (MouseEvent e) {}
 	public void mouseEntered (MouseEvent e) {}
@@ -1125,7 +1134,7 @@ public class Editor extends PlugInFrame implements ActionListener, ItemListener,
 				
 	public void keyReleased(KeyEvent e) {
 		int pos = ta.getCaretPosition();
-		showLinePos();
+		//showLinePos();
 		if (insertSpaces && pos>0 && e.getKeyCode()==KeyEvent.VK_TAB) {
 			String spaces = " ";
 			for (int i=1; i<tabInc; i++)

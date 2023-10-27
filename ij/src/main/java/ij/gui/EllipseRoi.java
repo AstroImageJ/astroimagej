@@ -1,11 +1,13 @@
 package ij.gui;
-import java.awt.*;
-import java.awt.image.*;
-import java.awt.event.*;
-import ij.*;
+
+import ij.IJ;
+import ij.ImagePlus;
+import ij.measure.Calibration;
 import ij.plugin.frame.Recorder;
 import ij.process.FloatPolygon;
-import ij.measure.Calibration;
+
+import java.awt.*;
+import java.awt.event.KeyEvent;
 
 /** This class implements the ellipse selection tool. */
 public class EllipseRoi extends PolygonRoi {
@@ -48,6 +50,7 @@ public class EllipseRoi extends PolygonRoi {
 		double x2 = offScreenXD(sx);
 		double y2 = offScreenYD(sy);
 		makeEllipse(x1, y1, x2, y2);
+		showStatus();
 		imp.draw();
 	}
 		
@@ -77,7 +80,6 @@ public class EllipseRoi extends PolygonRoi {
 		}
 		makePolygonRelative();
 		cachedMask = null;
-		showStatus();
 	}
 	
 	public void showStatus() {
@@ -176,6 +178,7 @@ public class EllipseRoi extends PolygonRoi {
 				break;
 		}
 		makeEllipse(x1, y1, x2, y2);
+		showStatus();
 		imp.draw();
 	}
 	

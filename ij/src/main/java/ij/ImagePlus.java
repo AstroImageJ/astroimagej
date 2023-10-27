@@ -651,7 +651,7 @@ public class ImagePlus implements ImageObserver, Measurements, Cloneable {
 				ImageStack biStack = new ImageStack(bi.getWidth(), bi.getHeight());			
 				for (int b=0; b<nBands; b++)
 					biStack.addSlice(convertToImageProcessor(bi, b));
-				setImage(new ImagePlus("", biStack));
+				setImage(new ImagePlus(getTitle(), biStack));
 				return;
 			}			
 			if (bi.getType()==BufferedImage.TYPE_USHORT_GRAY) {
@@ -690,7 +690,7 @@ public class ImagePlus implements ImageObserver, Measurements, Cloneable {
 	}
 	
 	/**
-	 * Extract pixels as an an ImageProcessor from a single band of a BufferedImage.
+	 * Extract pixels as an ImageProcessor from a single band of a BufferedImage.
 	 * @param img
 	 * @param band
 	 * @return
@@ -1121,13 +1121,15 @@ public class ImagePlus implements ImageObserver, Measurements, Cloneable {
 	}
 
 	/* Returns uncalibrated statistics for this image or ROI, including
-		256 bin histogram, pixelCount, mean, mode, min and max. */
+		256 bin histogram, pixelCount, mean, mode, standard deviation,
+		min and max.
+	*/
 	public ImageStatistics getRawStatistics() {
 		if (roi!=null && roi.isArea())
 			ip.setRoi(roi);
 		else
 			ip.resetRoi();
-		return ImageStatistics.getStatistics(ip, AREA+MEAN+MODE+MIN_MAX, null);
+		return ImageStatistics.getStatistics(ip, AREA+MEAN+MODE+STD_DEV+MIN_MAX, null);
 	}
 
 	/** Returns an ImageStatistics object generated using the
@@ -2037,6 +2039,8 @@ public class ImagePlus implements ImageObserver, Measurements, Cloneable {
 				updateAndRepaintWindow();
 			else
 				img = null;
+			if (ip!=null)
+				ip.setSliceNumber(n);
 		}
 	}
 
@@ -2800,8 +2804,10 @@ public class ImagePlus implements ImageObserver, Measurements, Cloneable {
     */
 	public void mouseMoved(int x, int y) {
 		Roi roi2 = getRoi();
-		if (ij!=null && !IJ.statusBarProtected() && (roi2==null || roi2.getState()==Roi.NORMAL))
-			ij.showStatus(getLocationAsString(x,y) + getValueAsString(x,y));
+		if (ij!=null && !IJ.statusBarProtected() && (roi2==null || roi2.getState()==Roi.NORMAL)) {
+			String title = IJ.altKeyDown()?" ("+getTitle()+")":"";
+			ij.showStatus(getLocationAsString(x,y) + getValueAsString(x,y)+title);
+		}
 	}
 
     /** Redisplays the (x,y) coordinates and pixel value (which may
@@ -3178,6 +3184,19 @@ public class ImagePlus implements ImageObserver, Measurements, Cloneable {
 		this.defaultMin = min;
 		this.defaultMax = max;
 	}
+	
+	/** Uses the specified method to set the threshold levels
+	 * of this image. Use AutoThresholder.getMethods()
+	 * to get a list of the available methods. Add " dark"
+	 * to the method name if the image has a dark background.
+	 * Add " 16-bit" to use the full 16-bit histogram
+	 * when calculating the threshold of 16-bit images.
+	 * Add " stack" to use the histogram of the entire
+	 * stack when calculating the threshold.
+	*/
+	public void setAutoThreshold(String method) {
+		IJ.setAutoThreshold(this, method);
+	}
 
 	/** Returns 'true' if this image is thresholded.
 	 * @see ij.process.ImageProcessor#isThreshold
@@ -3420,6 +3439,24 @@ public class ImagePlus implements ImageObserver, Measurements, Cloneable {
 	}
 
 	public boolean getHideOverlay() {
+		return hideOverlay;
+	}
+	
+	public boolean toggleOverlay() {
+		if (getOverlay()!=null)
+			setHideOverlay(!hideOverlay);
+		else {
+			RoiManager rm = RoiManager.getInstance();
+			if (rm!=null) {
+				setHideOverlay(!hideOverlay);
+				if (hideOverlay)
+					rm.runCommand("show none");
+				else if (rm.getCount()>1) {
+					if (!IJ.isMacro()) rm.toFront();
+					rm.runCommand("show all with labels");
+				}
+			}
+		}
 		return hideOverlay;
 	}
 

@@ -202,19 +202,7 @@ public class FolderOpener implements PlugIn, TextListener {
 			list = (String[])fileList.toArray(new String[fileList.size()]);
 
 		String title = directory;
-		if (title.endsWith(File.separator) || title.endsWith("/"))
-			title = title.substring(0, title.length()-1);
-		int index = title.lastIndexOf(File.separatorChar);
-		if (index!=-1)
-			title = title.substring(index + 1);
-		else {
-			index = title.lastIndexOf("/");
-			if (index!=-1)
-				title = title.substring(index + 1);
-		}
-		if (title.endsWith(":"))
-			title = title.substring(0, title.length()-1);
-		
+		title = trimTitle(title);
 		list = trimFileList(list);
 		if (list==null) {
 			virtualIntended = false;
@@ -539,6 +527,23 @@ public class FolderOpener implements PlugIn, TextListener {
 		}
 		virtualIntended = false;
 		FITS_Reader.resetFilter();
+	}
+
+
+	public static String trimTitle(String title) {
+		if (title.endsWith(File.separator) || title.endsWith("/"))
+			title = title.substring(0, title.length()-1);
+		int index = title.lastIndexOf(File.separatorChar);
+		if (index!=-1)
+			title = title.substring(index + 1);
+		else {
+			index = title.lastIndexOf("/");
+			if (index!=-1)
+				title = title.substring(index + 1);
+		}
+		if (title.endsWith(":"))
+			title = title.substring(0, title.length()-1);
+		return title;
 	}
 
 	private void error(String msg) {

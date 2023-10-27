@@ -5,6 +5,7 @@ import ij.ImageJ;
 import ij.WindowManager;
 import ij.gui.GUI;
 import ij.plugin.frame.Editor;
+import ij.util.Tools;
 
 import java.awt.*;
 import java.awt.event.*;
@@ -24,17 +25,11 @@ public class FunctionFinder implements TextListener,  WindowListener, KeyListene
 	public FunctionFinder(Editor editor) {
 
 		this.editor = editor;
-
-		String exists = IJ.runMacro("return File.exists(getDirectory('macros')+'functions.html');");
-		if (exists!=null && exists.equals("0"))	{
-			String installLocalMacroFunctionsFile = "functions = File.openUrlAsString(\""+url+"\");\n"+
-			"f = File.open(getDirectory('macros')+'functions.html');\n"+
-			"print (f, functions);\n"+
-			"File.close(f);";
-			try {IJ.runMacro(installLocalMacroFunctionsFile);
-			} catch (Throwable e) { IJ.error("Problem downloading functions.html"); return;}
+		String f = Tools.openFromIJJarAsString("/functions.html");
+		if (f==null) {
+			IJ.error("\"functions.html\" not found in ij.jar");
+			return;
 		}
-		String f = IJ.runMacro("return File.openAsString(getDirectory('macros')+'functions.html');");
 		f = f.replaceAll("&quot;", "\"");
 		String [] l = f.split("\n");
 		commands= new String [l.length];

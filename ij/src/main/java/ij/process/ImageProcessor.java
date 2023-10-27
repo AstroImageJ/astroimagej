@@ -78,6 +78,8 @@ public abstract class ImageProcessor implements Cloneable {
 	private int sliceNumber;
 	private Overlay overlay;
 	private boolean noReset;
+	private boolean histogram16;
+	private boolean addOne;
 
     ProgressBar progressBar;
 	protected int width, snapshotWidth;
@@ -596,6 +598,8 @@ public abstract class ImageProcessor implements Cloneable {
 			throw new IllegalArgumentException("Null method");
 		boolean darkBackground = method.contains("dark");
 		noReset = method.contains("no-reset");
+		histogram16 = method.contains("16") && getBitDepth()==16;
+		addOne = !method.contains("16");
 		int lut = RED_LUT;
 		if (method.contains("b&w"))
 			lut = BLACK_AND_WHITE_LUT;
@@ -632,7 +636,7 @@ public abstract class ImageProcessor implements Cloneable {
 		double min=0.0, max=0.0;
 		boolean notByteData = !(this instanceof ByteProcessor);
 		ImageProcessor ip2 = this;
-		if (notByteData) {
+		if (notByteData && !histogram16) {
 			ImageProcessor mask = ip2.getMask();
 			Rectangle rect = ip2.getRoi();
 			if (!noReset || lutUpdate==OVER_UNDER_LUT)
@@ -645,21 +649,32 @@ public abstract class ImageProcessor implements Cloneable {
 		}
 		ImageStatistics stats = ip2.getStats();
 		AutoThresholder thresholder = new AutoThresholder();
-		int threshold = thresholder.getThreshold(method, stats.histogram);
+		thresholder.setBilevelSubractOne(addOne);
+		int[] histogram = stats.histogram;
+		if (histogram16 && stats.histogram16!=null)
+			histogram = stats.histogram16;
+		int threshold = thresholder.getThreshold(method, histogram);
 		double lower, upper;
+		double tmax = 255.0;
+		if (histogram.length>256)
+			tmax = 65535.0;
 		if (darkBackground) {
 			if (isInvertedLut())
 				{lower=0.0; upper=threshold;}
 			else
-				{lower=threshold+1; upper=255.0;}
+				{lower=threshold+(addOne?1:0); upper=tmax;}
 		} else {
 			if (isInvertedLut())
-				{lower=threshold+1; upper=255.0;}
+				{lower=threshold+(addOne?1:0); upper=tmax;}
 			else
 				{lower=0.0; upper=threshold;}
 		}
-		if (lower>255) lower = 255;
-		scaleAndSetThreshold(lower, upper, lutUpdate);
+		if (histogram16)
+			setThreshold(lower, upper, lutUpdate);
+		else {
+			if (lower>255) lower = 255;
+			scaleAndSetThreshold(lower, upper, lutUpdate);
+		}
 	}
 
 	/** Automatically sets the lower and upper threshold levels, where 'method'
@@ -1388,7 +1403,11 @@ public abstract class ImageProcessor implements Cloneable {
 
 	private void setupFontMetrics() {
 		if (fontMetrics==null) {
-			fmImage=new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
+			if (ij.IJ.font12==font && ij.IJ.isMacOSX())
+				antialiasedText = true; // non-antialiased text is broken on macOS
+			if ((this instanceof ShortProcessor) || (this instanceof FloatProcessor))
+				antialiasedText = false; // antialiased text not supported on 16 and 32 bit images
+			fmImage = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
 			fmGraphics = (Graphics2D)fmImage.getGraphics();
 			fmGraphics.setFont(font);
 			Java2.setAntialiasedText(fmGraphics, antialiasedText);
@@ -1429,7 +1448,7 @@ public abstract class ImageProcessor implements Cloneable {
 		int h =  fontMetrics.getHeight();
 		if (w<=0 || h<=0) return;
 		Image bi = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
-		Graphics g = bi.getGraphics();
+		Graphics2D g = (Graphics2D)bi.getGraphics();
 		FontMetrics metrics = g.getFontMetrics(font);
 		int fontHeight = metrics.getHeight();
 		int descent = metrics.getDescent();
@@ -1461,12 +1480,15 @@ public abstract class ImageProcessor implements Cloneable {
 		g.setColor(Color.white);
 		g.fillRect(0, 0, w, h);
 		g.setColor(Color.black);
+		//if (ij.IJ.isMacOSX()) drawStringUsingGlyphVector(g, font, s, 0, h-descent); else
 		g.drawString(s, 0, h-descent);
 		g.dispose();
 		ImageProcessor ip = new ColorProcessor(bi);
+		//ij.IJ.log("drawString2: "+antialiasedText+" "+s);
+		//if (!antialiasedText && font.getSize()==8)
+		//new ij.ImagePlus("ip",ip).show();
 		ImageProcessor textMask = ip.convertToByte(false);
 		byte[] mpixels = (byte[])textMask.getPixels();
-		//new ij.ImagePlus("textmask",textMask).show();
 		textMask.invert();
 		if (cxx<width && cy-h<height) {
 			setMask(textMask);
@@ -1476,6 +1498,20 @@ public abstract class ImageProcessor implements Cloneable {
 		resetRoi();
 		cy += h;
 	}
+	
+	// Failed attempt to work around non-antialiased text rendering bug on macOS
+	/*
+	private static void drawStringUsingGlyphVector(Graphics2D g, Font font, String text, int x, int y) {
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
+        g.setFont(font);
+        FontRenderContext frc = g.getFontRenderContext();
+        GlyphVector gv = font.createGlyphVector(frc, text);
+        //Shape shape = gv.getOutline();
+        //g.translate(0, 10);
+		//g.fill(shape);
+        g.drawGlyphVector(gv, x, y);
+	}
+	*/
 
 	/** Draws a string at the specified location using the current fill/draw value.
 	 *  Draws multiple lines if the string contains newline characters.
@@ -1491,7 +1527,7 @@ public abstract class ImageProcessor implements Cloneable {
 
 	/** Draws a string at the specified location with a filled background.
 		A JavaScript example is available at
-			http://imagej.nih.gov/ij/macros/js/DrawTextWithBackground.js
+			http://wsr.imagej.net/macros/js/DrawTextWithBackground.js
 	*/
 	public void drawString(String s, int x, int y, Color background) {
 		Color foreground = drawingColor;
@@ -1535,31 +1571,31 @@ public abstract class ImageProcessor implements Cloneable {
 	public void setFont(Font font) {
 		this.font = font;
 		boldFont = font.isBold();
+		if (font.getSize()>=14 || ij.IJ.isMacOSX())
+			antialiasedText = true;
+		fontMetrics = null;
 		setupFontMetrics();
 		fmGraphics.setFont(font);
-		Java2.setAntialiasedText(fmGraphics, antialiasedText);
 		fontMetrics = fmGraphics.getFontMetrics(font);
 	}
 	
 	/** Sets the size of the font used by drawString(). */
 	public void setFontSize(int size) {
 		setFont(font.deriveFont(font.getStyle(), size));
-		if (size>15)
-			setAntialiasedText(true);
 	}
 
 
-	/** Specifies whether or not text is drawn using antialiasing. Antialiased
-		test requires an 8 bit or RGB image. Antialiasing does not
-		work with 8-bit images that are not using 0-255 display range. */
+	/** Specifies whether or not text is drawn using antialiasing, which
+	 * is enabled by default on macOS or when the font size is 14 or greater.
+	 * Antialiased text requires an 8 bit or RGB image. Antialiasing does not
+	 * work with 8-bit images that are not using 0-255 display range.
+	*/
 	public void setAntialiasedText(boolean antialiasedText) {
-		setupFontMetrics();
 		if (antialiasedText && (((this instanceof ByteProcessor)&&getMin()==0.0&&getMax()==255.0) || (this instanceof ColorProcessor)))
 			this.antialiasedText = true;
 		else
 			this.antialiasedText = false;
-		Java2.setAntialiasedText(fmGraphics, this.antialiasedText);
-		fontMetrics = fmGraphics.getFontMetrics(font);
+		fontMetrics = null;
 	}
 
 	/** Returns the width in pixels of the specified string, including any background
@@ -2858,7 +2894,7 @@ public abstract class ImageProcessor implements Cloneable {
 		ij.plugin.filter.ImageMath.applyMacro(this, macro, false);
 	}
 
-	/* Returns the PlugInFilter slice number. */
+	/** Returns the current stack position (1-n) of this image. */
 	public int getSliceNumber() {
 		if (sliceNumber<1)
 			return 1;
@@ -2866,7 +2902,10 @@ public abstract class ImageProcessor implements Cloneable {
 			return sliceNumber;
 	}
 
-	/** PlugInFilterRunner uses this method to set the slice number. */
+	/** ImagePlus.setStack(n), ImageStack.getProcessor(n),
+	 * VirtualStack.getProcessor(n) and the PlugInFilterRunner 
+	 * set the stack position using this method.
+	*/
 	public void setSliceNumber(int slice) {
 		sliceNumber = slice;
 	}
@@ -2920,18 +2959,18 @@ public abstract class ImageProcessor implements Cloneable {
 		return null;
 	}
 
-	protected IndexColorModel getThresholdColorModel() {
+	/** Returns a color model based on the colors of the input from 0 to 254 (inclusive).
+	 *  Entry 255 is red, for showing the thresholded areas. */
+	protected static IndexColorModel getThresholdColorModel(byte[]reds, byte[] greens, byte[] blues) {
 		byte[] r = new byte[256];
 		byte[] g = new byte[256];
 		byte[] b = new byte[256];
-		for(int i=0; i<255; i++) {
-			r[i]=(byte)i;
-			g[i]=(byte)i;
-			b[i]=(byte)i;
-		}
+		System.arraycopy(reds, 0, r, 0, 255);
+		System.arraycopy(greens, 0, g, 0, 255);
+		System.arraycopy(blues, 0, b, 0, 255);
 		r[255] = (byte)255;
-		g[255] = (byte)0;
-		b[255] = (byte)0;
+		// g[255] = (byte)0; //unchanged
+		// b[255] = (byte)0;
 		return new IndexColorModel(8, 256, r, g, b);
 	}
 	

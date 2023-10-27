@@ -1,16 +1,19 @@
 package ij.plugin;
+
 import ij.*;
+import ij.gui.GenericDialog;
 import ij.macro.Interpreter;
-import ij.process.*; 
-import ij.gui.*;
-import java.awt.*;
-import ij.measure.*;
-import ij.plugin.filter.*;
+import ij.measure.Calibration;
 import ij.plugin.frame.Recorder;
-import java.awt.event.*;
-import java.util.*;
-import java.lang.*;
+import ij.process.ImageProcessor;
+
+import java.awt.*;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.image.ColorModel;
+import java.util.Enumeration;
+import java.util.Properties;
+import java.util.Vector;
 
 /** This plugin, which concatenates two or more images or stacks,
  *	implements the Image/Stacks/Tools/Concatenate command.
@@ -76,14 +79,14 @@ public class Concatenator implements PlugIn, ItemListener{
 	/** Concatenates four images, stacks or hyperstacks. */
 	public static ImagePlus run(ImagePlus img1, ImagePlus img2, ImagePlus img3, ImagePlus img4) {
 		ImagePlus[] images = new ImagePlus[4];
-		images[0]=img1; images[1]=img2;  images[2]=img3; images[2]=img4;
+		images[0]=img1; images[1]=img2;  images[2]=img3; images[3]=img4;
 		return (new Concatenator()).concatenate(images, false);
 	}
 
 	/** Concatenates five images, stacks or hyperstacks. */
 	public static ImagePlus run(ImagePlus img1, ImagePlus img2, ImagePlus img3, ImagePlus img4, ImagePlus img5) {
 		ImagePlus[] images = new ImagePlus[5];
-		images[0]=img1; images[1]=img2;  images[2]=img3; images[2]=img4; images[5]=img5;
+		images[0]=img1; images[1]=img2;  images[2]=img3; images[3]=img4; images[4]=img5;
 		return (new Concatenator()).concatenate(images, false);
 	}
 

@@ -739,17 +739,16 @@ public class MeasurementTable extends ResultsTable {
         if (window.getTable() != this) {
             window.setTable(this);
             INSTANCES.put(shortName, this);
-        } else {
-            updateView(UpdateEvent.DATA_CHANGED);
         }
+
         window.setVisible(true);
     }
 
-    public void updateView(UpdateEvent event) {
+    private void updateView(UpdateEvent event) {
         updateView(event, 0, 0);
     }
 
-    public void updateView(UpdateEvent event, int i1, int i2) {
+    private void updateView(UpdateEvent event, int i1, int i2) {
         // If coming from the event thread, it may be the table -
         // in which case delaying the update can cause the view and the model to desync
         if (SwingUtilities.isEventDispatchThread()) {

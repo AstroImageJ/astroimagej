@@ -301,7 +301,7 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
     }
 
     public void scrollToBottom() {
-        var cellRect = jTable.getCellRect(tableView.getRowCount(), 0, true);
+        var cellRect = jTable.getCellRect(jTable.getRowCount(), 0, true);
         var visibleRect = jTable.getVisibleRect();
         cellRect.x = visibleRect.x;
         jTable.scrollRectToVisible(cellRect);

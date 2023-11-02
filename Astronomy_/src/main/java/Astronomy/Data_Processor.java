@@ -33,6 +33,7 @@ import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Timer;
@@ -5639,7 +5640,18 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
                                                         asw.setUpdatesEnabled(false);
                                                         IJ.wait(10);
                                                     }
-                                                    openImage.setProcessor(s, scienceIp);
+
+                                                    if (SwingUtilities.isEventDispatchThread()) {
+                                                        openImage.setProcessor(s, scienceIp);
+                                                    } else {
+                                                        ImageProcessor finalScienceIp = scienceIp;
+                                                        try {
+                                                            SwingUtilities.invokeAndWait(() -> openImage.setProcessor(s, finalScienceIp));
+                                                        } catch (InterruptedException | InvocationTargetException e) {
+                                                            e.printStackTrace();
+                                                        }
+                                                    }
+
                                                     if (openFrame != null && openFrame instanceof AstroStackWindow asw) {
                                                         asw.setUpdatesEnabled(true);
                                                         asw.setAstroProcessor(true);

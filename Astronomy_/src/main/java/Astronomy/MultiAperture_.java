@@ -335,7 +335,15 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         Locale.setDefault(IJU.locale);
         this.getMeasurementPrefs();
         if (useMacroImage) {
-            openImage = WindowManager.getImage(macroImageName);
+            var timeout = 3000;
+            do {
+                openImage = WindowManager.getImage(macroImageName);
+                timeout -= 100;
+                if (openImage == null) {
+                    IJ.wait(100);
+                }
+            } while (openImage == null && timeout >= 0);
+
             imp = openImage;
         }
         if (imp == null) {

@@ -248,6 +248,8 @@ public class Plot implements Cloneable {
 	PlotMaker plotMaker;                            // for PlotMaker interface, handled by PlotWindow
 	private Color currentColor;						// for next objects added
 	private Color currentColor2;					// 2nd color for next object added (e.g. line for CONNECTED_CIRCLES)
+	@AstroImageJ(reason = "displacement arrow impl.")
+	private PlotObject.DisplacementArrowControl offScreenDisplacementArrowControl = new PlotObject.DisplacementArrowControl(false, false);
 	float currentLineWidth;
 	private int currentJustification = LEFT;
 	private boolean ignoreForce2Grid;               // after explicit setting of range (limits), ignore 'FORCE2GRID' flags
@@ -815,9 +817,9 @@ public class Plot implements Cloneable {
 				xValues[i] = i;
 		}
 		if (objectToReplace>=0)
-			allPlotObjects.set(objectToReplace, new PlotObject(xValues, yValues, yErrorBars, shape, currentLineWidth, currentColor, currentColor2, label));
+			allPlotObjects.set(objectToReplace, new PlotObject(xValues, yValues, yErrorBars, shape, currentLineWidth, currentColor, currentColor2, label, offScreenDisplacementArrowControl));
 		else
-			allPlotObjects.add(new PlotObject(xValues, yValues, yErrorBars, shape, currentLineWidth, currentColor, currentColor2, label));
+			allPlotObjects.add(new PlotObject(xValues, yValues, yErrorBars, shape, currentLineWidth, currentColor, currentColor2, label, offScreenDisplacementArrowControl));
 		objectToReplace = -1;
 		if (plotDrawn) updateImage();
 	}
@@ -1114,6 +1116,12 @@ public class Plot implements Cloneable {
 	 * is Plot.LEFT, Plot.CENTER or Plot.RIGHT. Default is LEFT. */
 	public void setJustification(int justification) {
 		currentJustification = justification;
+	}
+
+	@AstroImageJ(reason = "displacement arrow impl.")
+	public void setOffScreenDisplacementArrowControl(boolean enableX, boolean enableY) {
+		offScreenDisplacementArrowControl.xEnable = enableX;
+		offScreenDisplacementArrowControl.yEnable = enableY;
 	}
 
 	/** Changes the drawing color for the next objects that will be added to the plot.
@@ -3386,6 +3394,58 @@ public class Plot implements Cloneable {
 		int lineWidth = ip.getLineWidth();
 		if (shape == DIAMOND)
 			size = (int)(size*1.21);
+		if (plotObject.offScreenDisplacementArrowControl.xEnable) {
+			if (x<frame.x) {
+				size = (int) (size * 1.5);
+				shape = ARROW_LEFT;
+				if (y<frame.y) {
+					shape = ARROW_NORTH_WEST;
+					y = frame.y;
+				} else if (y>=frame.y+frame.height) {
+					shape = ARROW_SOUTH_WEST;
+					y = frame.y+frame.height-1;
+				}
+				x = frame.x;
+			}
+			if (x>=frame.x+frame.width) {
+				size = (int) (size * 1.5);
+				shape = ARROW_RIGHT;
+				if (y<frame.y) {
+					shape = ARROW_NORTH_EAST;
+					y = frame.y;
+				} else if (y>=frame.y+frame.height) {
+					shape = ARROW_SOUTH_EAST;
+					y = frame.y+frame.height-1;
+				}
+				x = frame.x+frame.width-1;
+			}
+		}
+		if (plotObject.offScreenDisplacementArrowControl.yEnable) {
+			if (y<frame.y) {
+				size = (int) (size * 1.5);
+				shape = ARROW_UP;
+				if (x<frame.x) {
+					shape = ARROW_NORTH_WEST;
+					x=frame.x;
+				} else if (x>=frame.x+frame.width) {
+					shape = ARROW_NORTH_EAST;
+					x=frame.x+frame.width-1;
+				}
+				y = frame.y;
+			}
+			if (y>=frame.y+frame.height) {
+				size = (int) (size * 1.5);
+				shape = ARROW_DOWN;
+				if (x<frame.x) {
+					shape = ARROW_SOUTH_WEST;
+					x = frame.x;
+				} else if (x>=frame.x+frame.width) {
+					shape = ARROW_SOUTH_EAST;
+					x = frame.y+frame.width-1;
+				}
+				y = frame.y+frame.height;
+			}
+		}
 		int xbase = x-sc(size/2);
 		int ybase = y-sc(size/2);
 		int xend = x+sc(size/2);
@@ -3426,56 +3486,44 @@ public class Plot implements Cloneable {
 				ip.drawDot(x, y); //uses current line width
 				break;
 			case ARROW_UP:
-				ip.drawLine(x,ybase-sc(1),xend+sc(1),yend);
-				ip.drawLine(x,ybase-sc(1),xbase-sc(1),yend);
-				ip.drawLine(xend+sc(1),yend,xbase-sc(1),yend);
-				/*ip.draw(new PolygonRoi(
-						new int[]{x, xend+sc(1), x, xbase-sc(1), xend+sc(1), xbase-sc(1)},
-						new int[]{ybase-sc(1), yend, ybase-sc(1), yend, yend, yend}, 5, Roi.POLYGON));*/
+				ip.drawLine(x,y-sc(1),xend+sc(1),yend+sc(size/2));
+				ip.drawLine(x,y-sc(1),xbase-sc(1),yend+sc(size/2));
+				ip.drawLine(xend+sc(1),yend+sc(size/2),xbase-sc(1),yend+sc(size/2));
 				break;
 			case ARROW_DOWN:
-				ip.drawLine(xbase-sc(1), ybase-sc(1), xend+sc(1), ybase-sc(1));
-				ip.drawLine(x,yend,xbase-sc(1), ybase-sc(1));
-				ip.drawLine(x,yend,xend+sc(1), ybase-sc(1));
-				/*ip.draw(new PolygonRoi(
-						new int[]{xbase-sc(1),xend+sc(1),x,xbase-sc(1),x,xend+sc(1),},
-						new int[]{ybase-sc(1),ybase-sc(1),yend,ybase-sc(1),yend,ybase-sc(1)}, 6, Roi.POLYGON));*/
+				ip.drawLine(xbase-sc(1), ybase-sc(size/2), xend+sc(1), ybase-sc(size/2));
+				ip.drawLine(x,y-sc(1),xbase-sc(1), ybase-sc(size/2));
+				ip.drawLine(x,y-sc(1),xend+sc(1), ybase-sc(size/2));
 				break;
 			case ARROW_LEFT:
-				ip.drawLine(x-sc(1),y,xend+sc(1),yend);
-				ip.drawLine(x-sc(1),y,xend+sc(1),ybase-sc(1));
-				ip.drawLine(xend+sc(1),yend,xend+sc(1),ybase-sc(1));
-				/*ip.draw(new PolygonRoi(
-						new int[]{x-sc(1), xend+sc(1), x-sc(1), xend+sc(1), xend+sc(1)},
-						new int[]{y,yend,y,ybase-sc(1),yend,ybase-sc(1)}, 5, Roi.POLYGON));*/
+				ip.drawLine(x+sc(1),y,xend+sc(size/2),yend);
+				ip.drawLine(x+sc(1),y,xend+sc(size/2),ybase-sc(1));
+				ip.drawLine(xend+sc(size/2),yend,xend+sc(size/2),ybase-sc(1));
 				break;
 			case ARROW_RIGHT:
-				ip.drawLine(x+sc(1),y,xbase-sc(1),yend);
-				ip.drawLine(x+sc(1),y,xbase-sc(1),ybase-sc(1));
-				ip.drawLine(xbase-sc(1),yend,xbase-sc(1),ybase-sc(1));
-				/*ip.draw(new PolygonRoi(
-						new int[]{x+sc(1),xbase-sc(1),x+sc(1),xbase-sc(1),xbase-sc(1),xbase-sc(1)},
-						new int[]{y,yend,y,ybase-sc(1),yend,ybase-sc(1)}, 6, Roi.POLYGON));*/
+				ip.drawLine(x+sc(1),y,xbase-sc(size/2),yend);
+				ip.drawLine(x+sc(1),y,xbase-sc(size/2),ybase-sc(1));
+				ip.drawLine(xbase-sc(size/2),yend,xbase-sc(size/2),ybase-sc(1));
 				break;
 			case ARROW_NORTH_EAST:
-				ip.drawLine(xbase-sc(1),ybase+sc(1),xend+sc(1),ybase+sc(1));
-				ip.drawLine(xend+sc(1), yend+sc(1),xend+sc(1),ybase+sc(1));
-				ip.drawLine(xbase-sc(1),ybase+sc(1), xend+sc(1), yend+sc(1));
+				ip.drawLine(x-sc(1),y+sc(1),x-sc(1),yend+sc(size/2));
+				ip.drawLine(xbase-sc(size/2), y+sc(1),x,y+sc(1));
+				ip.drawLine(x,yend+sc(size/2), xbase-sc(size/2), y);
 				break;
 			case ARROW_SOUTH_EAST:
-				ip.drawLine(xbase-sc(1),yend-sc(1),xend+sc(1),yend-sc(1));
-				ip.drawLine(xend+sc(1), yend+sc(1),xend+sc(1),ybase-sc(1));
-				ip.drawLine(xbase-sc(1),yend-sc(1), xend+sc(1),ybase-sc(1));
+				ip.drawLine(x-sc(1),y-sc(1),x-sc(1),ybase-sc(size/2));
+				ip.drawLine(xbase-sc(size/2), y-sc(1),x,y-sc(1));
+				ip.drawLine(x,ybase-sc(size/2), xbase-sc(size/2), y);
 				break;
 			case ARROW_NORTH_WEST:
-				ip.drawLine(xbase-sc(1),ybase+sc(1),xend+sc(1),ybase+sc(1));
-				ip.drawLine(xbase-sc(1), yend,xbase-sc(1),ybase+sc(1));
-				ip.drawLine(xend+sc(1),ybase+sc(1), xbase-sc(1), yend+sc(1));
+				ip.drawLine(x+sc(1),y+sc(1),x+sc(1),yend+sc(size/2));
+				ip.drawLine(xend+sc(size/2), y+sc(1),x,y+sc(1));
+				ip.drawLine(xend+sc(size/2), y+sc(1), x+sc(1),yend+sc(size/2));
 				break;
 			case ARROW_SOUTH_WEST:
-				ip.drawLine(xbase-sc(1),yend-sc(1),xend+sc(1),yend-sc(1));
-				ip.drawLine(xbase-sc(1), yend+sc(1),xbase-sc(1),ybase-sc(1));
-				ip.drawLine(xend+sc(1),yend-sc(1), xbase-sc(1), ybase-sc(1));
+				ip.drawLine(x+sc(1),y-sc(1),x+sc(1),ybase-sc(size/2));
+				ip.drawLine(xend+sc(size/2), y-sc(1),x,y-sc(1));
+				ip.drawLine(xend+sc(size/2), y-sc(1), x+sc(1),ybase-sc(size/2));
 				break;
 			case CUSTOM:
 				if (plotObject.macroCode==null || frame==null)
@@ -3522,6 +3570,7 @@ public class Plot implements Cloneable {
 				break;
 		}
 		ip.setLineWidth(lineWidth);
+		ip.setColor(plotObject.color);
 	}
 
 	/** Fill the area of the symbols for data points (except for shape=DOT)
@@ -4386,6 +4435,7 @@ class PlotObject implements Cloneable, Serializable, IPlotObject {
 	public int justification;
 	/** Macro code for drawing symbols */
 	public String macroCode;
+	public DisplacementArrowControl offScreenDisplacementArrowControl;
 	/** Text objects (labels, legend, axis labels) only: the font; maybe null for default. This is not serialized (transient) */
 	private transient Font font;
 	/** String for representation of the font family (for Serialization); may be null for default. Font style is in flags, font size in fontSize. */
@@ -4400,7 +4450,7 @@ class PlotObject implements Cloneable, Serializable, IPlotObject {
 	}
 
 	/** Constructor for XY_DATA, i.e., a curve or set of points */
-	PlotObject(float[] xValues, float[] yValues, float[] yErrorBars, int shape, float lineWidth, Color color, Color color2, String yLabel) {
+	PlotObject(float[] xValues, float[] yValues, float[] yErrorBars, int shape, float lineWidth, Color color, Color color2, String yLabel, DisplacementArrowControl offScreenDisplacementArrowControl) {
 		this.type = XY_DATA;
 		this.xValues = xValues;
 		this.yValues = yValues;
@@ -4410,6 +4460,7 @@ class PlotObject implements Cloneable, Serializable, IPlotObject {
 		this.color = color;
 		this.color2 = color2;
 		this.label = yLabel;
+		this.offScreenDisplacementArrowControl = offScreenDisplacementArrowControl;
 		if (shape==Plot.CUSTOM)
 			this.macroCode = yLabel;
 	}
@@ -4830,4 +4881,14 @@ class PlotObject implements Cloneable, Serializable, IPlotObject {
 	public void setFontSize(float fontSize) {
 		this.fontSize = fontSize;
 	}
+
+    public static final class DisplacementArrowControl {
+        boolean xEnable;
+        boolean yEnable;
+
+        public DisplacementArrowControl(boolean xEnable, boolean yEnable) {
+            this.xEnable = xEnable;
+            this.yEnable = yEnable;
+        }
+    }
 } // class PlotObject

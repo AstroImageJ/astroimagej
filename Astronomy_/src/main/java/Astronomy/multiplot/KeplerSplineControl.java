@@ -510,9 +510,9 @@ public class KeplerSplineControl {
             }
             case FLATTENED_LIGHT_CURVE -> {
                 if (ks != null) {
-                    var avg = Arrays.stream(y).limit(size).summaryStatistics().getAverage();
+                    //var avg = Arrays.stream(y).limit(size).summaryStatistics().getAverage();
                     for (int xx = 0; xx < size; xx++) {
-                        y[xx] = (y[xx] - ks.first().getEntry(xx)) + avg;
+                        y[xx] = (y[xx] / ks.first().getEntry(xx)); // * avg;
                     }
                 }
             }

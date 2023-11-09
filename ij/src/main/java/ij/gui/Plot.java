@@ -3392,11 +3392,14 @@ public class Plot implements Cloneable {
 		if (ip==null)
 			return;
 		int lineWidth = ip.getLineWidth();
+		int localLineWidth = lineWidth;
 		if (shape == DIAMOND)
 			size = (int)(size*1.21);
 		if (plotObject.offScreenDisplacementArrowControl.xEnable) {
 			if (x<frame.x) {
-				size = (int) Math.ceil(size * 1.5);
+				lineWidth = 2;
+				ip.setLineWidth(2);
+				size = 8;
 				shape = ARROW_LEFT;
 				if (y<frame.y) {
 					shape = ARROW_NORTH_WEST;
@@ -3408,7 +3411,9 @@ public class Plot implements Cloneable {
 				x = frame.x;
 			}
 			if (x>=frame.x+frame.width) {
-				size = (int) Math.ceil(size * 1.5);
+				lineWidth = 2;
+				ip.setLineWidth(2);
+				size = 8;
 				shape = ARROW_RIGHT;
 				if (y<frame.y) {
 					shape = ARROW_NORTH_EAST;
@@ -3422,7 +3427,9 @@ public class Plot implements Cloneable {
 		}
 		if (plotObject.offScreenDisplacementArrowControl.yEnable) {
 			if (y<frame.y) {
-				size = (int) Math.ceil(size * 1.5);
+				lineWidth = 2;
+				ip.setLineWidth(2);
+				size = 8;
 				shape = ARROW_UP;
 				if (x<frame.x) {
 					shape = ARROW_NORTH_WEST;
@@ -3434,7 +3441,9 @@ public class Plot implements Cloneable {
 				y = frame.y;
 			}
 			if (y>=frame.y+frame.height) {
-				size = (int) Math.ceil(size * 1.5);
+				lineWidth = 2;
+				ip.setLineWidth(2);
+				size = 8;
 				shape = ARROW_DOWN;
 				if (x<frame.x) {
 					shape = ARROW_SOUTH_WEST;
@@ -3569,7 +3578,7 @@ public class Plot implements Cloneable {
 				}
 				break;
 		}
-		ip.setLineWidth(lineWidth);
+		ip.setLineWidth(localLineWidth);
 		ip.setColor(plotObject.color);
 	}
 

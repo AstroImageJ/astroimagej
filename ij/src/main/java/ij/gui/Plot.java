@@ -3396,7 +3396,7 @@ public class Plot implements Cloneable {
 			size = (int)(size*1.21);
 		if (plotObject.offScreenDisplacementArrowControl.xEnable) {
 			if (x<frame.x) {
-				size = (int) (size * 1.5);
+				size = (int) Math.ceil(size * 1.5);
 				shape = ARROW_LEFT;
 				if (y<frame.y) {
 					shape = ARROW_NORTH_WEST;
@@ -3408,7 +3408,7 @@ public class Plot implements Cloneable {
 				x = frame.x;
 			}
 			if (x>=frame.x+frame.width) {
-				size = (int) (size * 1.5);
+				size = (int) Math.ceil(size * 1.5);
 				shape = ARROW_RIGHT;
 				if (y<frame.y) {
 					shape = ARROW_NORTH_EAST;
@@ -3422,7 +3422,7 @@ public class Plot implements Cloneable {
 		}
 		if (plotObject.offScreenDisplacementArrowControl.yEnable) {
 			if (y<frame.y) {
-				size = (int) (size * 1.5);
+				size = (int) Math.ceil(size * 1.5);
 				shape = ARROW_UP;
 				if (x<frame.x) {
 					shape = ARROW_NORTH_WEST;
@@ -3434,7 +3434,7 @@ public class Plot implements Cloneable {
 				y = frame.y;
 			}
 			if (y>=frame.y+frame.height) {
-				size = (int) (size * 1.5);
+				size = (int) Math.ceil(size * 1.5);
 				shape = ARROW_DOWN;
 				if (x<frame.x) {
 					shape = ARROW_SOUTH_WEST;

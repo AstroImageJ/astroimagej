@@ -3356,7 +3356,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         plot.setLimits(plotMinX, plotMaxX, plotMinY, plotMaxY);
         double legPosY = legendPosY;
-        for (int curve = 0; curve < maxCurves; curve++) {
+        for (int curve = maxCurves - 1; curve >= 0; curve--) {
             if (plotY[curve]) {
                 if (showResidual[curve] && residual[curve] != null && useTransitFit[curve] && detrendFitIndex[curve] == 9) {
                     if (showModel[curve]) {
@@ -3689,7 +3689,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         if (useBoldedDatum && boldedDatum != -1) {
             double[] xx = new double[1];
             double[] yy = new double[1];
-            for (int curve = 0; curve < maxCurves; curve++) {
+            for (int curve = maxCurves - 1; curve >= 0; curve--) {
                 if (plotY[curve]) {
                     plot.setColor(color[curve]);
                     if (marker[curve] == Plot.DOT) {

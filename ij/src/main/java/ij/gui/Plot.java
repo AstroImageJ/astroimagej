@@ -4599,6 +4599,18 @@ class PlotObject implements Cloneable, Serializable, IPlotObject {
 		}
 	}
 
+	@Override
+	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving", modified = true)
+	public boolean offScreenDisplacementArrowX() {
+		return offScreenDisplacementArrowControl.xEnable;
+	}
+
+	@Override
+	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving", modified = true)
+	public boolean offScreenDisplacementArrowY() {
+		return offScreenDisplacementArrowControl.yEnable;
+	}
+
 	/** Returns the font, or null if none specified */
 	@AstroImageJ(reason = "Implement IPlotObject for Vector Plot saving", modified = true)
 	public Font getFont() {

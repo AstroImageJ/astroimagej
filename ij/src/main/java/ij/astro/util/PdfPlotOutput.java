@@ -953,7 +953,69 @@ public class PdfPlotOutput {
     void drawShape(Graphics2D g, IPlotObject plotObject, double x, double y, int size, int pointIndex) {
         int shape = plotObject.getShape();
         if (shape == DIAMOND) size = (int) (size * 1.21);
-        double xbase = x - plot.sc(size) / 2f;
+        g.setStroke(new BasicStroke(plot.sc(plotObject.getLineWidth())));
+        var localStroke = g.getStroke();
+        if (plotObject.offScreenDisplacementArrowX()) {
+            if (x<plot.frame.x) {
+                lineWidth = 2;
+                g.setStroke(new BasicStroke(plot.sc(2)));
+                size = 8;
+                shape = ARROW_LEFT;
+                if (y<plot.frame.y) {
+                    shape = ARROW_NORTH_WEST;
+                    y = plot.frame.y;
+                } else if (y>=plot.frame.y+plot.frame.height) {
+                    shape = ARROW_SOUTH_WEST;
+                    y = plot.frame.y+plot.frame.height-1;
+                }
+                x = plot.frame.x;
+            }
+            if (x>=plot.frame.x+plot.frame.width) {
+                lineWidth = 2;
+                g.setStroke(new BasicStroke(plot.sc(2)));
+                size = 8;
+                shape = ARROW_RIGHT;
+                if (y<plot.frame.y) {
+                    shape = ARROW_NORTH_EAST;
+                    y = plot.frame.y;
+                } else if (y>=plot.frame.y+plot.frame.height) {
+                    shape = ARROW_SOUTH_EAST;
+                    y = plot.frame.y+plot.frame.height-1;
+                }
+                x = plot.frame.x+plot.frame.width-1;
+            }
+        }
+        if (plotObject.offScreenDisplacementArrowY()) {
+            if (y<plot.frame.y) {
+                lineWidth = 2;
+                g.setStroke(new BasicStroke(plot.sc(2)));
+                size = 8;
+                shape = ARROW_UP;
+                if (x<plot.frame.x) {
+                    shape = ARROW_NORTH_WEST;
+                    x=plot.frame.x;
+                } else if (x>=plot.frame.x+plot.frame.width) {
+                    shape = ARROW_NORTH_EAST;
+                    x=plot.frame.x+plot.frame.width-1;
+                }
+                y = plot.frame.y;
+            }
+            if (y>=plot.frame.y+plot.frame.height) {
+                lineWidth = 2;
+                g.setStroke(new BasicStroke(plot.sc(2)));
+                size = 8;
+                shape = ARROW_DOWN;
+                if (x<plot.frame.x) {
+                    shape = ARROW_SOUTH_WEST;
+                    x = plot.frame.x;
+                } else if (x>=plot.frame.x+plot.frame.width) {
+                    shape = ARROW_SOUTH_EAST;
+                    x = plot.frame.y+plot.frame.width-1;
+                }
+                y = plot.frame.y+plot.frame.height;
+            }
+        }
+        double xbase = x - plot.sc(size) / 2f;//todo pdf has larger shapes, is this the cause?
         double ybase = y - plot.sc(size) / 2f;
         double xend = x + plot.sc(size) / 2f;
         double yend = y + plot.sc(size) / 2f;
@@ -984,44 +1046,44 @@ public class PdfPlotOutput {
                 drawDot(g, x, y);
                 break;
             case ARROW_UP:
-                g.draw(new Line2D.Double(x,ybase-plot.sc(1),xend+plot.sc(1),yend));
-                g.draw(new Line2D.Double(x,ybase-plot.sc(1),xbase-plot.sc(1),yend));
-                g.draw(new Line2D.Double(xend+plot.sc(1),yend,xbase-plot.sc(1),yend));
+                g.draw(new Line2D.Double(x,y-plot.sc(1),xend+plot.sc(1),yend+plot.sc(size/2f)));
+                g.draw(new Line2D.Double(x,y-plot.sc(1),xbase-plot.sc(1),yend+plot.sc(size/2f)));
+                g.draw(new Line2D.Double(xend+plot.sc(1),yend+plot.sc(size/2f),xbase-plot.sc(1),yend+plot.sc(size/2f)));
                 break;
             case ARROW_DOWN:
-                g.draw(new Line2D.Double(xbase-plot.sc(1), ybase-plot.sc(1), xend+plot.sc(1), ybase-plot.sc(1)));
-                g.draw(new Line2D.Double(x,yend,xbase-plot.sc(1), ybase-plot.sc(1)));
-                g.draw(new Line2D.Double(x,yend,xend+plot.sc(1), ybase-plot.sc(1)));
+                g.draw(new Line2D.Double(xbase-plot.sc(1), ybase-plot.sc(size/2f), xend+plot.sc(1), ybase-plot.sc(size/2f)));
+                g.draw(new Line2D.Double(x,y-plot.sc(1),xbase-plot.sc(1), ybase-plot.sc(size/2f)));
+                g.draw(new Line2D.Double(x,y-plot.sc(1),xend+plot.sc(1), ybase-plot.sc(size/2f)));
                 break;
             case ARROW_LEFT:
-                g.draw(new Line2D.Double(x-plot.sc(1),y,xend+plot.sc(1),yend));
-                g.draw(new Line2D.Double(x-plot.sc(1),y,xend+plot.sc(1),ybase-plot.sc(1)));
-                g.draw(new Line2D.Double(xend+plot.sc(1),yend,xend+plot.sc(1),ybase-plot.sc(1)));
+                g.draw(new Line2D.Double(x+plot.sc(1),y,xend+plot.sc(size/2f),yend));
+                g.draw(new Line2D.Double(x+plot.sc(1),y,xend+plot.sc(size/2f),ybase-plot.sc(1)));
+                g.draw(new Line2D.Double(xend+plot.sc(size/2f),yend,xend+plot.sc(size/2f),ybase-plot.sc(1)));
                 break;
             case ARROW_RIGHT:
-                g.draw(new Line2D.Double(x+plot.sc(1),y,xbase-plot.sc(1),yend));
-                g.draw(new Line2D.Double(x+plot.sc(1),y,xbase-plot.sc(1),ybase-plot.sc(1)));
-                g.draw(new Line2D.Double(xbase-plot.sc(1),yend,xbase-plot.sc(1),ybase-plot.sc(1)));
+                g.draw(new Line2D.Double(x+plot.sc(1),y,xbase-plot.sc(size/2f),yend));
+                g.draw(new Line2D.Double(x+plot.sc(1),y,xbase-plot.sc(size/2f),ybase-plot.sc(1)));
+                g.draw(new Line2D.Double(xbase-plot.sc(size/2f),yend,xbase-plot.sc(size/2f),ybase-plot.sc(1)));
                 break;
             case ARROW_NORTH_EAST:
-                g.draw(new Line2D.Double(xbase-plot.sc(1),ybase-plot.sc(1),xend+plot.sc(1),ybase-plot.sc(1)));
-                g.draw(new Line2D.Double(xend+plot.sc(1), yend,xend+plot.sc(1),ybase-plot.sc(1)));
-                g.draw(new Line2D.Double(xbase-plot.sc(1),ybase-plot.sc(1), xend+plot.sc(1), yend));
+                g.draw(new Line2D.Double(x-plot.sc(1),y+plot.sc(1),x-plot.sc(1),yend+plot.sc(size/2f)));
+                g.draw(new Line2D.Double(xbase-plot.sc(size/2f), y+plot.sc(1),x,y+plot.sc(1)));
+                g.draw(new Line2D.Double(x,yend+plot.sc(size/2f), xbase-plot.sc(size/2f), y));
                 break;
             case ARROW_SOUTH_EAST:
-                g.draw(new Line2D.Double(xbase-plot.sc(1),yend+plot.sc(1),xend+plot.sc(1),yend+plot.sc(1)));
-                g.draw(new Line2D.Double(xend+plot.sc(1), yend,xend+plot.sc(1),ybase-plot.sc(1)));
-                g.draw(new Line2D.Double(xbase-plot.sc(1),yend+plot.sc(1), xend+plot.sc(1),ybase-plot.sc(1)));
+                g.draw(new Line2D.Double(x-plot.sc(1),y-plot.sc(1),x-plot.sc(1),ybase-plot.sc(size/2f)));
+                g.draw(new Line2D.Double(xbase-plot.sc(size/2f), y-plot.sc(1),x,y-plot.sc(1)));
+                g.draw(new Line2D.Double(x,ybase-plot.sc(size/2f), xbase-plot.sc(size/2f), y));
                 break;
             case ARROW_NORTH_WEST:
-                g.draw(new Line2D.Double(xbase-plot.sc(1),ybase-plot.sc(1),xend+plot.sc(1),ybase-plot.sc(1)));
-                g.draw(new Line2D.Double(xbase-plot.sc(1), yend,xbase-plot.sc(1),ybase-plot.sc(1)));
-                g.draw(new Line2D.Double(xend+plot.sc(1),ybase-plot.sc(1), xbase-plot.sc(1), yend));
+                g.draw(new Line2D.Double(x+plot.sc(1),y+plot.sc(1),x+plot.sc(1),yend+plot.sc(size/2f)));
+                g.draw(new Line2D.Double(xend+plot.sc(size/2f), y+plot.sc(1),x,y+plot.sc(1)));
+                g.draw(new Line2D.Double(xend+plot.sc(size/2f), y+plot.sc(1), x+plot.sc(1),yend+plot.sc(size/2f)));
                 break;
             case ARROW_SOUTH_WEST:
-                g.draw(new Line2D.Double(xbase-plot.sc(1),yend+plot.sc(1),xend+plot.sc(1),yend+plot.sc(1)));
-                g.draw(new Line2D.Double(xbase-plot.sc(1), yend,xbase-plot.sc(1),ybase-plot.sc(1)));
-                g.draw(new Line2D.Double(xend+plot.sc(1),yend+plot.sc(1), xbase-plot.sc(1), ybase-plot.sc(1)));
+                g.draw(new Line2D.Double(x+plot.sc(1),y-plot.sc(1),x+plot.sc(1),ybase-plot.sc(size/2f)));
+                g.draw(new Line2D.Double(xend+plot.sc(size/2f), y-plot.sc(1),x,y-plot.sc(1)));
+                g.draw(new Line2D.Double(xend+plot.sc(size/2f), y-plot.sc(1), x+plot.sc(1),ybase-plot.sc(size/2f)));
                 break;
             /*case CUSTOM://todo implemnt
                 if (plotObject.macroCode==null || frame==null)
@@ -1071,6 +1133,7 @@ public class PdfPlotOutput {
                 }
                 break;
         }
+        g.setStroke(localStroke);
     }
 
     void drawDot(Graphics2D g, double xcenter, double ycenter) {

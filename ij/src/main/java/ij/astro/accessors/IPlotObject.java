@@ -122,4 +122,8 @@ public interface IPlotObject {
     boolean hasMarker();
 
     void setFont(Font font);
+
+    boolean offScreenDisplacementArrowX();
+
+    boolean offScreenDisplacementArrowY();
 }

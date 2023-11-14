@@ -4903,7 +4903,7 @@ class PlotObject implements Cloneable, Serializable, IPlotObject {
 		this.fontSize = fontSize;
 	}
 
-    public static final class DisplacementArrowControl {
+    public static final class DisplacementArrowControl implements Serializable {
         boolean xEnable;
         boolean yEnable;
 

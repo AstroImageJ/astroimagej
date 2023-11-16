@@ -29,6 +29,9 @@ public class PlotDataBinning {
             x = takeIndices(x, idx);
             y = takeIndices(y, idx);
 
+            if (x.length == 0) {
+                return null;
+            }
 
             var withErr = err != null;
             if (!withErr) {

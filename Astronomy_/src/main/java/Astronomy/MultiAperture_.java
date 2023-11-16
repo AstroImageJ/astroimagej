@@ -309,12 +309,6 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 //	public static double RETRY_RADIUS = 3.0;
 
     static void checkAndLockTable() {
-        if (table == null) return;
-        int cnt = 0;  //timeout after 4 second
-        while (table != null && table.isLocked() && cnt < 200) {
-            IJ.wait(20);
-            cnt++;
-        }
         if (table != null) table.setLock(true);
     }
 

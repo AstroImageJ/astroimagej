@@ -136,7 +136,11 @@ enum Functions {
             }
             return new FunctionReturn(title);
         } else {
-            return FunctionReturn.error("<Found no matching image for '%s'>".formatted(ctx.table.getLabel(0)));
+            var label = "No Label";
+            if (ctx.table.size() > 0) {
+                label = ctx.table.getLabel(0);
+            }
+            return FunctionReturn.error("<Found no matching image for '%s'>".formatted(label));
         }
     }
 

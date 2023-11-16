@@ -3451,11 +3451,13 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 //                                IJ.log("waiting");
 //                                IJ.wait(100);
 //                                }
+                        MultiPlot_.addTableData.accept(slice-firstSlice);
                         MultiPlot_.updatePlot(MultiPlot_.updateAllFits(), slice == initialLastSlice);
 //                        IJ.log("update plot complete");
                     } else {
 //                        IJ.log("setTable");
                         MultiPlot_.setTable(table, true);
+                        MultiPlot_.addTableData.accept(0);
 //                        IJ.log("setTable complete");
                     }
                 } else {
@@ -3465,6 +3467,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                         MultiPlot_.setTable(table, false);
 //                        IJ.log("setTable first time complete");
                     }
+                    MultiPlot_.addTableData.accept(0);
                 }
             }
         } else {

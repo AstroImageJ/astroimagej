@@ -54,6 +54,7 @@ import java.text.DecimalFormat;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
+import java.util.function.IntConsumer;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 
@@ -859,6 +860,88 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     private static Property<Boolean> drawOffscreenDisplacementArrowsY = new Property<>(true, MultiPlot_.class);
     private static Property<BiState> drawBinErrBarsBase = new Property<>(BiState.DISABLED, "plot.", "", MultiPlot_.class);
     private static String lastUsedTitle, lastUsedSubtitle;
+
+    public static IntConsumer addTableData = i -> {
+        if (!autoAstroDataUpdate || !addAstroDataFrameWasShowing) {
+            return;
+        }
+        JDColumn = (String) jdcolumnbox.getSelectedItem();
+        int jdCol = table.getColumnIndex(JDColumn);
+        if (jdCol == MeasurementTable.COLUMN_NOT_FOUND) {
+            IJ.beep();
+            IJ.showMessage("Error: could not find table column '" + JDColumn + "'");
+            return;
+        }
+
+        getAstroPanelValues();
+
+        int airmassCol = MeasurementTable.COLUMN_NOT_FOUND;
+        int altitudeCol = MeasurementTable.COLUMN_NOT_FOUND;
+        int azimuthCol = MeasurementTable.COLUMN_NOT_FOUND;
+        int hourAngleCol = MeasurementTable.COLUMN_NOT_FOUND;
+        int zenithDistanceCol = MeasurementTable.COLUMN_NOT_FOUND;
+        int gjdCol = MeasurementTable.COLUMN_NOT_FOUND;
+        int hjdCol = MeasurementTable.COLUMN_NOT_FOUND;
+        int hjdCorrCol = MeasurementTable.COLUMN_NOT_FOUND;
+        int bjdCol = MeasurementTable.COLUMN_NOT_FOUND;
+        int bjdCorrCol = MeasurementTable.COLUMN_NOT_FOUND;
+        int raNowCol = MeasurementTable.COLUMN_NOT_FOUND;
+        int decNowCol = MeasurementTable.COLUMN_NOT_FOUND;
+        int ra2000Col = MeasurementTable.COLUMN_NOT_FOUND;
+        int dec2000Col = MeasurementTable.COLUMN_NOT_FOUND;
+
+        if (addAirmass) airmassCol = table.getColumnIndex(airmassName);
+        if (addAltitude) altitudeCol = table.getColumnIndex(altitudeName);
+        if (addAzimuth) azimuthCol = table.getColumnIndex(azimuthName);
+        if (addHourAngle) hourAngleCol = table.getColumnIndex(hourAngleName);
+        if (addZenithDistance) zenithDistanceCol = table.getColumnIndex(zenithDistanceName);
+        if (addGJD) gjdCol = table.getColumnIndex(gjdName);
+        if (addHJD) hjdCol = table.getColumnIndex(hjdName);
+        if (addHJDCorr) hjdCorrCol = table.getColumnIndex(hjdCorrName);
+        if (addBJD) bjdCol = table.getColumnIndex(bjdName);
+        if (addBJDCorr) bjdCorrCol = table.getColumnIndex(bjdCorrName);
+        if (addRaNow) raNowCol = table.getColumnIndex(raNowName);
+        if (addDecNow) decNowCol = table.getColumnIndex(decNowName);
+        if (addRA2000) ra2000Col = table.getColumnIndex(ra2000Name);
+        if (addDec2000) dec2000Col = table.getColumnIndex(dec2000Name);
+
+        Prefs.set("plot2.JDColumn", JDColumn);
+
+        saveAstroPanelPrefs();
+        checkAndLockTable();
+        if (updateMPCC(i)) {
+            if (addAirmass) table.setValue(airmassName, i, acc.getAirmass());
+            if (addAltitude) table.setValue(altitudeName, i, acc.getAltitude());
+            if (addAzimuth) table.setValue(azimuthName, i, acc.getAzimuth());
+            if (addHourAngle) table.setValue(hourAngleName, i, acc.getHourAngle());
+            if (addZenithDistance) table.setValue(zenithDistanceName, i, acc.getZenithDistance());
+            if (addGJD) table.setValue(gjdName, i, acc.getJD());
+            if (addHJD) table.setValue(hjdName, i, acc.getHJD());
+            if (addHJDCorr) table.setValue(hjdCorrName, i, acc.getHJDCorrection());
+            if (addBJD) table.setValue(bjdName, i, acc.getBJD());
+            if (addBJDCorr) table.setValue(bjdCorrName, i, acc.getBJDCorrection());
+            if (addRaNow) table.setValue(raNowName, i, acc.getRAEOI());
+            if (addDecNow) table.setValue(decNowName, i, acc.getDecEOI());
+            if (addRA2000) table.setValue(ra2000Name, i, acc.getRAJ2000());
+            if (addDec2000) table.setValue(dec2000Name, i, acc.getDecJ2000());
+        } else {
+            if (addAirmass) table.setValue(airmassName, i, Double.NaN);
+            if (addAltitude) table.setValue(altitudeName, i, Double.NaN);
+            if (addAzimuth) table.setValue(azimuthName, i, Double.NaN);
+            if (addHourAngle) table.setValue(hourAngleName, i, Double.NaN);
+            if (addZenithDistance) table.setValue(zenithDistanceName, i, Double.NaN);
+            if (addGJD) table.setValue(gjdName, i, Double.NaN);
+            if (addHJD) table.setValue(hjdName, i, Double.NaN);
+            if (addHJDCorr) table.setValue(hjdCorrName, i, Double.NaN);
+            if (addBJD) table.setValue(bjdName, i, Double.NaN);
+            if (addBJDCorr) table.setValue(bjdCorrName, i, Double.NaN);
+            if (addRaNow) table.setValue(raNowName, i, Double.NaN);
+            if (addDecNow) table.setValue(decNowName, i, Double.NaN);
+            if (addRA2000) table.setValue(ra2000Name, i, Double.NaN);
+            if (addDec2000) table.setValue(dec2000Name, i, Double.NaN);
+        }
+        table.setLock(false);
+    };
 
     public void run(String inTableNamePlusOptions) {
         boolean useAutoAstroDataUpdate = false;

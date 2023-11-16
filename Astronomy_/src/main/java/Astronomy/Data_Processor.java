@@ -5154,8 +5154,8 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
         saveFileName = "Processed_" + s;
 
         if (saveProcessedData && (saveSuffix.trim().length() != 0 || saveDir.trim().length() != 0)) {
-            if (FitsExtensionUtil.isFitsFile(saveFileName)) {
-                saveFileName = FitsExtensionUtil.makeFitsSave(FitsExtensionUtil.fileNameWithoutExt(saveFileName) + saveSuffix.trim(), FitsExtensionUtil.compressionModes(saveFileName).toArray(FitsExtensionUtil.CompressionMode[]::new));
+            if (FitsExtensionUtil.isFitsFile(s)) {
+                saveFileName = FitsExtensionUtil.makeFitsSave(FitsExtensionUtil.fileNameWithoutExt(s) + saveSuffix.trim(), FitsExtensionUtil.compressionModes(s).toArray(FitsExtensionUtil.CompressionMode[]::new));
             } else {
                 int dotIndex = s.lastIndexOf(".");
                 if (s.endsWith(".gz") || s.endsWith(".fz") || s.endsWith(".zip")) {
@@ -5577,8 +5577,8 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
                                                     saveFileName = "Processed_" + s;
 
                                                     if (saveProcessedData && (saveSuffix.trim().length() != 0 || saveDir.trim().length() != 0)) {
-                                                        if (FitsExtensionUtil.isFitsFile(saveFileName)) {
-                                                            saveFileName = FitsExtensionUtil.makeFitsSave(FitsExtensionUtil.fileNameWithoutExt(saveFileName) + saveSuffix.trim(), FitsExtensionUtil.compressionModes(saveFileName).toArray(FitsExtensionUtil.CompressionMode[]::new));
+                                                        if (FitsExtensionUtil.isFitsFile(s)) {
+                                                            saveFileName = FitsExtensionUtil.makeFitsSave(FitsExtensionUtil.fileNameWithoutExt(s) + saveSuffix.trim(), FitsExtensionUtil.compressionModes(s).toArray(FitsExtensionUtil.CompressionMode[]::new));
                                                         } else {
                                                             int dotIndex = s.lastIndexOf(".");
                                                             if (s.endsWith(".gz") || s.endsWith(".zip")) {

@@ -13,8 +13,8 @@ import ij.plugin.ScreenGrabber;
 import ij.plugin.frame.Recorder;
 
 import javax.swing.*;
-import javax.swing.text.DefaultFormatter;
 import javax.swing.text.DefaultFormatterFactory;
+import javax.swing.text.NumberFormatter;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.ImageProducer;
@@ -654,7 +654,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         var f = modifySpinner(tf, false);
         if (f != null) {
             // Setup formatter
-            JFormattedTextField.AbstractFormatter format = new DefaultFormatter() {
+            JFormattedTextField.AbstractFormatter format = new NumberFormatter() {
                 @Override
                 public Object stringToValue(String string) {
                     if (!f.isEnabled()) return bounds.min();
@@ -676,6 +676,11 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
                         return Integer.toString(d.intValue());
                     }
                     return value.toString();
+                }
+
+                @Override
+                public Class<?> getValueClass() {
+                    return useInt ? Integer.class : Double.class;
                 }
             };
 

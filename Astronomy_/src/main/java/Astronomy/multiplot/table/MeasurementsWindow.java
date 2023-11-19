@@ -833,7 +833,9 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
                 if (table.getColumnName(column).equals("Label") || table.getColumnName(column).equals("slice")) {
                     var isLin = false;
                     var isSat = false;
-                    for (String heading : MeasurementsWindow.this.table.getHeadings()) {
+                    var colCount = MeasurementsWindow.this.table.getLastColumn();
+                    for (int c = 0; c < colCount; c++) {
+                        var heading = MeasurementsWindow.this.table.getColumnHeading(c);
                         Matcher m;
                         String ap;
                         if (heading.startsWith("Peak_") && (m = AP_PATTERN.matcher(heading)).matches() && (ap = m.group("AP")) != null) {

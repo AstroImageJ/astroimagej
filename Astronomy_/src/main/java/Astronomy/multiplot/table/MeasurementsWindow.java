@@ -836,6 +836,9 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
                     var colCount = MeasurementsWindow.this.table.getLastColumn();
                     for (int c = 0; c < colCount; c++) {
                         var heading = MeasurementsWindow.this.table.getColumnHeading(c);
+                        if (heading == null) {
+                            continue;
+                        }
                         Matcher m;
                         String ap;
                         if (heading.startsWith("Peak_") && (m = AP_PATTERN.matcher(heading)).matches() && (ap = m.group("AP")) != null) {

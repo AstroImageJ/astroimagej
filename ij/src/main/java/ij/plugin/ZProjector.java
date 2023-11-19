@@ -6,10 +6,7 @@ import ij.gui.GenericDialog;
 import ij.gui.Overlay;
 import ij.gui.Roi;
 import ij.plugin.frame.Recorder;
-import ij.process.ByteProcessor;
-import ij.process.FloatProcessor;
-import ij.process.ImageProcessor;
-import ij.process.ShortProcessor;
+import ij.process.*;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -679,8 +676,14 @@ public class ZProjector implements PlugIn {
 	}
 
 	// do average projection, ignoring NaNs
+	@AstroImageJ(reason = "Add support for virtual stacks", modified = true)
 	private ImagePlus doAverageFloatProjection(ImagePlus imp) {
 		ImageStack stack = imp.getStack();
+
+		if (stack.isVirtual()) {
+			return doAverageFloatProjectionVirtual(imp);
+		}
+
 		int w = stack.getWidth();
 		int h = stack.getHeight();
 		int d = stack.getSize();
@@ -698,6 +701,36 @@ public class ZProjector implements PlugIn {
 					}
 				}
 				ip.setf(x, y, (float)(sum/count));
+			}
+		}
+		ip.resetMinAndMax();
+		return projection;
+	}
+
+	@AstroImageJ(reason = "Add support for virtual stacks", modified = false)
+	private ImagePlus doAverageFloatProjectionVirtual(ImagePlus imp) {
+		ImageStack stack = imp.getStack();
+		int w = stack.getWidth();
+		int h = stack.getHeight();
+		int d = stack.getSize();
+		ImagePlus projection = IJ.createImage(makeTitle(), "32-bit Black", w, h, 1);
+		ImageProcessor ip = projection.getProcessor();
+		var count = new IntProcessor(w, h);
+
+		for (int z=startSlice-1; z<stopSlice; z+=increment) {
+			var slice = stack.getProcessor(z+1);
+			var lastSlice = z+increment >= stopSlice;
+			for (int x=0; x<w; x++) {
+				for (int y=0; y<h; y++) {
+					var value = slice.getf(x, y);
+					if (!Double.isNaN(value)) {
+						ip.setf(x, y, ip.getf(x,y) + value);
+						count.set(x, y, count.get(x, y)+1);
+					}
+					if (lastSlice) {
+						ip.setf(x, y, ip.getf(x,y)/count.getf(x, y));
+					}
+				}
 			}
 		}
 		ip.resetMinAndMax();

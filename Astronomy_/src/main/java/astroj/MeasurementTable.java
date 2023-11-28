@@ -586,6 +586,10 @@ public class MeasurementTable extends ResultsTable {
 
     public void setLock(boolean lockState) {
         locked = lockState;
+
+        if (!locked) {
+            updateView(UpdateEvent.DATA_CHANGED);
+        }
     }
 
     public boolean isLocked() {
@@ -749,6 +753,7 @@ public class MeasurementTable extends ResultsTable {
     }
 
     private void updateView(UpdateEvent event, int i1, int i2) {
+        if (isLocked()) return;
         // If coming from the event thread, it may be the table -
         // in which case delaying the update can cause the view and the model to desync
         if (SwingUtilities.isEventDispatchThread()) {
@@ -765,6 +770,7 @@ public class MeasurementTable extends ResultsTable {
     }
 
     private void updateViewSynced(UpdateEvent event, int i1, int i2) {
+        if (isLocked()) return;
         // If coming from the event thread, it may be the table -
         // in which case delaying the update can cause the view and the model to desync
         if (SwingUtilities.isEventDispatchThread()) {

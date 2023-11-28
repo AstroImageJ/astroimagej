@@ -653,7 +653,7 @@ public class MeasurementTable extends ResultsTable {
     @Override
     public synchronized void incrementCounter() {
         super.incrementCounter();
-        updateView(UpdateEvent.ROW_INSERTED, getCounter()-1, getCounter()-1);
+        updateViewSynced(UpdateEvent.ROW_INSERTED, getCounter()-1, getCounter()-1);
     }
 
     /**
@@ -672,9 +672,9 @@ public class MeasurementTable extends ResultsTable {
         var newColNeeded = column > getLastColumn();
         super.setValue(column, row, value);
         if (newColNeeded) {
-            updateView(UpdateEvent.COL_ADDED, getLastColumn(), getLastColumn());
+            updateViewSynced(UpdateEvent.COL_ADDED, getLastColumn(), getLastColumn());
         }
-        updateView(UpdateEvent.CELL_UPDATED, row, column);
+        updateViewSynced(UpdateEvent.CELL_UPDATED, row, column);
     }
 
     public void rename(String newName) {
@@ -761,6 +761,26 @@ public class MeasurementTable extends ResultsTable {
                     window.update(event, i1, i2);
                 }
             });
+        }
+    }
+
+    private void updateViewSynced(UpdateEvent event, int i1, int i2) {
+        // If coming from the event thread, it may be the table -
+        // in which case delaying the update can cause the view and the model to desync
+        if (SwingUtilities.isEventDispatchThread()) {
+            if (window != null) {
+                window.update(event, i1, i2);
+            }
+        } else {
+            try {
+                SwingUtilities.invokeAndWait(() -> {
+                    if (window != null) {
+                        window.update(event, i1, i2);
+                    }
+                });
+            } catch (InterruptedException | InvocationTargetException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
@@ -873,7 +893,7 @@ public class MeasurementTable extends ResultsTable {
     public int getFreeColumn(String heading) {
         var i = super.getFreeColumn(heading);
         if (COLUMN_IN_USE != i) {
-            updateView(UpdateEvent.COL_ADDED, i, i);
+            updateViewSynced(UpdateEvent.COL_ADDED, i, i);
         }
         return i;
     }

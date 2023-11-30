@@ -5634,6 +5634,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         }
                     }
                 }
+                table.setLock(false);
                 measurementsWindow.setSelection(excludedHeadSamples + nearestLine * inputAverageOverSize[firstCurve], excludedHeadSamples + (nearestLine + 1) * inputAverageOverSize[firstCurve] - 1);
                 boldedDatum = nearestLine;
                 plotcoordlabel.setText("DATA: x=" + fourPlaces.format(x[firstCurve][nearestLine]) + ", y=" + fourPlaces.format(y[firstCurve][nearestLine]));

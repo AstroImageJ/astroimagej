@@ -455,11 +455,11 @@ public class KeplerSplineControl {
         fitListeners.add(listener);
     }
 
-    public void smoothData(double[] x, double[] y, int size, RealVector mask) {
-        smoothData(x, y, size, mask, true);
+    public void smoothData(double[] x, double[] y, double[] yerr, int size, RealVector mask) {
+        smoothData(x, y, yerr, size, mask, true);
     }
 
-    public void smoothData(double[] x, double[] y, int size, RealVector mask, boolean notify) {
+    public void smoothData(double[] x, double[] y, double[] yerr, int size, RealVector mask, boolean notify) {
         if (notify) {
             fitListeners.forEach(l -> l.accept(FitState.NO_FIT));
         }
@@ -513,6 +513,7 @@ public class KeplerSplineControl {
                     //var avg = Arrays.stream(y).limit(size).summaryStatistics().getAverage();
                     for (int xx = 0; xx < size; xx++) {
                         y[xx] = (y[xx] / ks.first().getEntry(xx)); // * avg;
+                        yerr[xx] = (yerr[xx] / ks.first().getEntry(xx));
                     }
                 }
             }

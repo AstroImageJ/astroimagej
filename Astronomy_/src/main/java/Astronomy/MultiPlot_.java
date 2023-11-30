@@ -856,7 +856,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     private static Property<Boolean> drawAijVersion = new Property<>(true, "plot.", "", MultiPlot_.class);
     private static Property<Boolean> useMacroTitle = new Property<>(false, MultiPlot_.class);
     private static Property<Boolean> useMacroSubtitle = new Property<>(false, MultiPlot_.class);
-    private static Property<Boolean> drawOffscreenDisplacementArrowsX = new Property<>(false, MultiPlot_.class);
+    private static Property<Boolean> drawOffscreenDisplacementArrowsX = new Property<>(true, MultiPlot_.class);
     private static Property<Boolean> drawOffscreenDisplacementArrowsY = new Property<>(true, MultiPlot_.class);
     private static Property<BiState> drawBinErrBarsBase = new Property<>(BiState.DISABLED, "plot.", "", MultiPlot_.class);
     private static String lastUsedTitle, lastUsedSubtitle;

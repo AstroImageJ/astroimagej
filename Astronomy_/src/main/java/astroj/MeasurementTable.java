@@ -38,6 +38,7 @@ public class MeasurementTable extends ResultsTable {
     public static int DEFAULT_DECIMALS = 6;
     protected String shortName = null;
     protected boolean locked = false;
+    protected boolean dataChanged = false;
     protected String filePath = "";
     private final HashSet<Runnable> listeners = new HashSet<>();
     private static final Map<String, MeasurementTable> INSTANCES = new WeakHashMap<>();
@@ -587,7 +588,7 @@ public class MeasurementTable extends ResultsTable {
     public void setLock(boolean lockState) {
         locked = lockState;
 
-        if (!locked) {
+        if (!locked && dataChanged) {
             updateView(UpdateEvent.DATA_CHANGED);
         }
     }
@@ -753,6 +754,7 @@ public class MeasurementTable extends ResultsTable {
     }
 
     private void updateView(UpdateEvent event, int i1, int i2) {
+        dataChanged = true;
         if (isLocked()) return;
         // If coming from the event thread, it may be the table -
         // in which case delaying the update can cause the view and the model to desync
@@ -767,9 +769,11 @@ public class MeasurementTable extends ResultsTable {
                 }
             });
         }
+        dataChanged = false;
     }
 
     private void updateViewSynced(UpdateEvent event, int i1, int i2) {
+        dataChanged = true;
         if (isLocked()) return;
         // If coming from the event thread, it may be the table -
         // in which case delaying the update can cause the view and the model to desync
@@ -788,6 +792,7 @@ public class MeasurementTable extends ResultsTable {
                 throw new RuntimeException(e);
             }
         }
+        dataChanged = false;
     }
 
     /**

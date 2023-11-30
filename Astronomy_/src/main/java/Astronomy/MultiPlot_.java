@@ -1873,9 +1873,13 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 var yMask = MatrixUtils.createRealVector(nn[curve]);
                 double xfold;
                 double halfPeriod = netPeriod / 2.0;
+                var maskTransit = KeplerSplineControl.getInstance(curve).settings.maskTransit.get();
+                var maskTrimmedData = KeplerSplineControl.getInstance(curve).settings.maskTrimmedData.get();
                 for (int xx = 0; xx < nn[curve]; xx++) {
                     if (showXAxisNormal) {
-                        if (x[curve][xx] > dMarker2Value + xOffset && x[curve][xx] < dMarker3Value + xOffset){
+                        if ((maskTransit && x[curve][xx] > dMarker2Value + xOffset && x[curve][xx] < dMarker3Value + xOffset) ||
+                                (maskTrimmedData && useDMarker1 && x[curve][xx] < dMarker1Value + xOffset) ||
+                                (maskTrimmedData && useDMarker4 && x[curve][xx] > dMarker4Value + xOffset)) {
                             yMask.setEntry(xx,0.0);
                         } else {
                             yMask.setEntry(xx,1.0);

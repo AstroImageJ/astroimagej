@@ -135,6 +135,20 @@ public class KeplerSplineControl {
         panel.add(doMask, c);
         c.gridy++;
         c.gridy++;
+
+        var doMaskData = new JCheckBox("Mask trimmed data in spline fit");
+        doMaskData.setToolTipText("");
+        doMaskData.setSelected(settings.maskTrimmedData.get());
+        doMaskData.addActionListener($ -> {
+            settings.maskTrimmedData.set(doMaskData.isSelected());
+            updatePlot();
+        });
+        doMaskData.setToolTipText("<html>Causes the spline fit to ignore the data to the " +
+                "<br>left of the left trim marker and/or the right of the right trim marker, if enabled.</html>");
+        panel.add(doMaskData, c);
+        c.gridy++;
+        c.gridy++;
+
         c.fill = GridBagConstraints.BOTH;
         c.gridwidth = GridBagConstraints.REMAINDER;
         c.weighty = 1;
@@ -532,12 +546,12 @@ public class KeplerSplineControl {
             case FIXED -> (xs, ys, size, mask) ->
                     KeplerSpline.keplerSplineV2(MatrixUtils.createRealVector(Arrays.copyOf(xs,size)),
                     MatrixUtils.createRealVector(Arrays.copyOf(ys, size)), settings.fixedKnotDensity.get(),
-                            settings.maskTransit.ifProp(mask), settings.minGapWidth.get(), settings.dataCleaningTries.get(),
+                            mask, settings.minGapWidth.get(), settings.dataCleaningTries.get(),
                             settings.dataCleaningCoeff.get(), true);
             case AUTO -> (xs, ys, size, mask) ->
                     KeplerSpline.chooseKeplerSplineV2(MatrixUtils.createRealVector(Arrays.copyOf(xs,size)),
                     MatrixUtils.createRealVector(Arrays.copyOf(ys, size)), settings.minKnotDensity.get(),
-                    settings.maxKnotDensity.get(), settings.knotDensitySteps.get(), settings.maskTransit.ifProp(mask),
+                    settings.maxKnotDensity.get(), settings.knotDensitySteps.get(), mask,
                     settings.minGapWidth.get(), settings.dataCleaningTries.get(), settings.dataCleaningCoeff.get(), true);
             case LEGACY_SMOOTHER -> (xs, ys, size, mask) -> {
                 if (size <= 2*settings.smoothLength.get()) {

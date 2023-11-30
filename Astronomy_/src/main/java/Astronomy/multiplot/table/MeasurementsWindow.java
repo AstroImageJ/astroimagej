@@ -307,41 +307,45 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
         jTable.scrollRectToVisible(cellRect);
     }
 
-    public void setSelection(int rowStart, int rowEnd) {
-        // Remove filter so all rows are visible
-        rowSorter.setRowFilter(null);
+    public void setSelection(int rowStart1, int rowEnd1) {
+        SwingUtilities.invokeLater(() -> {
+            var rowEnd = rowEnd1;
+            var rowStart = rowStart1;
+            // Remove filter so all rows are visible
+            rowSorter.setRowFilter(null);
 
-        if (rowStart > rowEnd) {
-            rowEnd = rowStart;
-        }
-        if (rowStart < 0) {
-            rowStart = 0;
-        }
-        if (rowEnd < 0) {
-            rowEnd = 0;
-        }
-        if (rowStart >= jTable.getRowCount()) {
-            rowStart = jTable.getRowCount() - 1;
-        }
-        if (rowEnd >= jTable.getRowCount()) {
-            rowEnd = jTable.getRowCount() - 1;
-        }
-
-        // Accommodate tables sorted such that the interval is no longer continuous
-        jTable.clearSelection();
-        for (int r = rowStart; r <= rowEnd; r++) {
-            var rowToSelect = jTable.convertRowIndexToView(r);
-            if (rowToSelect >= 0) {
-                jTable.addRowSelectionInterval(rowToSelect, rowToSelect);
+            if (rowStart > rowEnd) {
+                rowEnd = rowStart;
             }
-        }
+            if (rowStart < 0) {
+                rowStart = 0;
+            }
+            if (rowEnd < 0) {
+                rowEnd = 0;
+            }
+            if (rowStart >= jTable.getRowCount()) {
+                rowStart = jTable.getRowCount() - 1;
+            }
+            if (rowEnd >= jTable.getRowCount()) {
+                rowEnd = jTable.getRowCount() - 1;
+            }
 
-        // Scroll vertically only
-        var cellRect = jTable.getCellRect(jTable.convertRowIndexToView(rowStart), 0, true);
-        var visibleRect = jTable.getVisibleRect();
-        cellRect.x = visibleRect.x;
-        jTable.scrollRectToVisible(cellRect);
-        jTable.setColumnSelectionInterval(0, jTable.getColumnCount()-1);
+            // Accommodate tables sorted such that the interval is no longer continuous
+            jTable.clearSelection();
+            for (int r = rowStart; r <= rowEnd; r++) {
+                var rowToSelect = jTable.convertRowIndexToView(r);
+                if (rowToSelect >= 0) {
+                    jTable.addRowSelectionInterval(rowToSelect, rowToSelect);
+                }
+            }
+
+            // Scroll vertically only
+            var cellRect = jTable.getCellRect(jTable.convertRowIndexToView(rowStart), 0, true);
+            var visibleRect = jTable.getVisibleRect();
+            cellRect.x = visibleRect.x;
+            jTable.scrollRectToVisible(cellRect);
+            jTable.setColumnSelectionInterval(0, jTable.getColumnCount()-1);
+        });
     }
 
     public int getLineCount() {

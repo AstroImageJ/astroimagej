@@ -14575,9 +14575,21 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     }
 
     public static void loadCompEnsemble() {
+        multiUpdate = true;
         for (int r = 0; r < savedIsRefStar.length; r++) {
             refStarCB[r].setSelected(savedIsRefStar[r]);
         }
+        multiUpdate = false;
+        cycleEnabledStarsLess1PressedConsecutive = false;
+        updatePlotEnabled = false;
+        waitForPlotUpdateToFinish();
+        checkAndLockTable();
+        updateTotals();
+        updateGUI();
+        updatePlotEnabled = true;
+        if (table != null) table.setLock(false);
+        table.show();
+        updatePlot(updateAllFits());
     }
 
 

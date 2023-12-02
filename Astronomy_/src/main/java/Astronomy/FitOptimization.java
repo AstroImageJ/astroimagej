@@ -776,6 +776,7 @@ public class FitOptimization implements AutoCloseable {
         ipsExecutorService = null;
         IJ.showStatus("");
         IJ.showProgress(1);
+        table.setLock(false);
     }
 
     /**
@@ -791,6 +792,7 @@ public class FitOptimization implements AutoCloseable {
      */
     private OutPair divideTasksAndRun(final MinimumState initState,
                                       BiFunction<BigInteger, BigInteger, Optimizer> optimizerBiFunction, boolean multithreaded) {
+        table.setLock(true);
         // Update table data - here we use full data, while on first open of a table MP will use truncated data
         MultiPlot_.updateTotals();
         //MultiPlot_.updateGUI();

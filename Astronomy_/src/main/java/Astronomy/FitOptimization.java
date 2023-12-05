@@ -765,6 +765,7 @@ public class FitOptimization implements AutoCloseable {
     }
 
     private void finishOptimization(JPanel button) {
+        table.setLock(false);
         MultiPlot_.updatePlot();
         CardLayout cl = (CardLayout) button.getLayout();
         cl.first(button);
@@ -776,7 +777,6 @@ public class FitOptimization implements AutoCloseable {
         ipsExecutorService = null;
         IJ.showStatus("");
         IJ.showProgress(1);
-        table.setLock(false);
     }
 
     /**

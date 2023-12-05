@@ -846,12 +846,23 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
                         Matcher m;
                         String ap;
                         if (heading.startsWith("Peak_") && (m = AP_PATTERN.matcher(heading)).matches() && (ap = m.group("AP")) != null) {
-                            var d = MeasurementsWindow.this.table.getValue("Peak_" + ap, table.convertRowIndexToModel(row));
-                            if (d >= saturationWarningLevel) {
-                                isSat = true;
-                                break;
-                            } else if (d >= linearityWarningLevel) {
-                                isLin = true;
+                            var i = MeasurementsWindow.this.table.getColumnIndex("Peak_" + ap);
+                            if (i == ResultsTable.COLUMN_NOT_FOUND) {
+                                if (ap.startsWith("C")) {
+                                    ap = ap.replace("C", "T");
+                                } else {
+                                    ap = ap.replace("T", "C");
+                                }
+                                i = MeasurementsWindow.this.table.getColumnIndex("Peak_" + ap);
+                            }
+                            if (i != ResultsTable.COLUMN_NOT_FOUND) {
+                                var d = MeasurementsWindow.this.table.getValueAsDouble(i, table.convertRowIndexToModel(row));
+                                if (d >= saturationWarningLevel) {
+                                    isSat = true;
+                                    break;
+                                } else if (d >= linearityWarningLevel) {
+                                    isLin = true;
+                                }
                             }
                         }
                     }

@@ -1300,6 +1300,72 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 var d = showWarning("Finding radii...");
                 var warning = new AnnotateRoi(false, false, true, false, imp.getWidth() / 2f, imp.getHeight() / 2f, 2, "Finding radii...", Color.GREEN);
                 warning.setImage(imp);
+
+                // Show aperture on click
+
+                var x = xCenter;
+                var y = yCenter;
+                var raPos = -1000001d;
+                var decPos = -1000001d;
+
+                // Account for old star positions
+                if (apLoading.get().isPrevious() && nAperturesStored > 0) {
+                    x = xPosStored[0];
+                    y = yPosStored[0];
+                    if (raPosStored != null && decPosStored != null) {
+                        raPos = raPosStored[0];
+                        decPos = decPosStored[0];
+                    }
+                    if ((useMA || useAlign) && useWCS) {
+                        if (!hasWCS || (!(raPos < -1000000) && !(decPos < -1000000))) {
+                            if (hasWCS && raPos > -1000000 && decPos > -1000000) {
+                                double[] xy = wcs.wcs2pixels(new double[]{raPos, decPos});
+                                x = xy[0];
+                                y = xy[1];
+                            }
+                        }
+                    }
+                } else {
+                    if (hasWCS) {
+                        double[] radec = wcs.pixels2wcs(new double[]{xCenter, yCenter});
+                        raPos = radec[0];
+                        decPos = radec[1];
+                    }
+                }
+
+                var oc = OverlayCanvas.getOverlayCanvas(asw.getImagePlus());
+                oc.clearRois();
+
+                if (useWCS && asw.goodWCS && raPos > -1000000 && decPos > -1000000) {
+                    double[] xy = asw.getWCS().wcs2pixels(new double[]{raPos, decPos});
+                    x = xy[0];
+                    y = xy[1];
+                }
+
+                var sp = new Seeing_Profile(true);
+
+                var testRs = sp.getRadii(imp, x, y, ApRadius.AUTO_FIXED_STACK_RAD.cutoff, true, true);
+
+                if (!testRs.centroidSuccessful()) {
+                    testRs = new Seeing_Profile.ApRadii(radius, rBack1, rBack2, false);
+                }
+
+                x = sp.X0;
+                y = sp.Y0;
+
+                var ap = new ApertureRoi(x, y, testRs.r(), testRs.r2(), testRs.r3(), Double.NaN, testRs.centroidSuccessful());
+
+                ap.setApColor(Color.BLUE);
+                ap.setShowValues(false);
+                ap.setImage(asw.getImagePlus());
+                oc.add(ap);
+                oc.repaintOverlay();
+                imp.updateAndDraw();
+
+                // Make sure the aperture has time to draw
+                waitForEventQueue();
+
+                // Get radii
                 ocanvas.add(warning);
                 var rs = evaluateStackForRadii();
                 ocanvas.removeRoi(warning);

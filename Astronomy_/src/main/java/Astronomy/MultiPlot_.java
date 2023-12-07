@@ -14407,6 +14407,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     return;
                 }
             }
+            saveCompEnsemble();
             for (int r = 0; r < numAps; r++) {
                 refStarPanel[r] = new JPanel(new SpringLayout());
                 refStarLabel[r].setHorizontalAlignment(JLabel.CENTER);

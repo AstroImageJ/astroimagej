@@ -193,6 +193,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static boolean saveNewResidualColumn;
     static boolean saveNewResidualErrColumn;
     static boolean updatePlotEnabled;
+    static boolean bulkRefStarChange;
     static boolean refStarChanged;
     static boolean detrendParChanged;
     static boolean disableUpdatePlotBox;
@@ -14261,42 +14262,22 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             JButton noneButton = new JButton("None");
             noneButton.setToolTipText("Removes all stars from the reference star set");
             noneButton.addActionListener(e -> {
-                multiUpdate = true;
-                for (int r = 1; r < numAps; r++) {
-                    refStarCB[r].setSelected(false);
-                }
-                multiUpdate = false;
-                cycleEnabledStarsLess1PressedConsecutive = false;
-                updatePlotEnabled = false;
-                waitForPlotUpdateToFinish();
-                checkAndLockTable();
-                updateTotals();
-                updateGUI();
-                updatePlotEnabled = true;
-                if (table != null) table.setLock(false);
-                table.show();
-                updatePlot(updateAllFits());
+                // Bulk update stars
+                var n = new boolean[numAps];
+                Arrays.fill(n, false);
+                setNewStars(n);
             });
             allNonePanel.add(noneButton);
             JButton allButton = new JButton("All");
             allButton.setToolTipText("Adds all stars to the reference star set");
             allButton.addActionListener(e -> {
                 if (numAps < 2) return;
-                multiUpdate = true;
-                for (int r = 1; r < numAps; r++) {
-                    refStarCB[r].setSelected(true);
-                }
-                multiUpdate = false;
-                cycleEnabledStarsLess1PressedConsecutive = false;
-                updatePlotEnabled = false;
-                waitForPlotUpdateToFinish();
-                checkAndLockTable();
-                updateTotals();
-                updateGUI();
-                updatePlotEnabled = true;
-                if (table != null) table.setLock(false);
-                table.show();
-                updatePlot(updateAllFits());
+
+                // Bulk update stars
+                var n = new boolean[numAps];
+                Arrays.fill(n, true);
+                n[0] = false;
+                setNewStars(n);
             });
             allNonePanel.add(allButton);
 
@@ -14316,7 +14297,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             JButton cycleEnabledStarsLess1Button = new JButton("Cycle Enabled Stars Less One");
             cycleEnabledStarsLess1Button.setToolTipText("Removes one star at a time from the current selected set");
             cycleEnabledStarsLess1Button.addActionListener(e -> {
-
                 if (numAps > 2) {
                     int numEnabled = 0;
                     for (int i = 1; i < numAps; i++) {
@@ -14357,21 +14337,16 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     }
 
                     if (foundOne) {
-                        if (cycleEnabledStarsLess1PressedConsecutive) {
-                            refStarCB[startingRefStar].setSelected(true);
-                        }
-                        refStarCB[lastRefStar].setSelected(false);
-                        multiUpdate = false;
                         cycleEnabledStarsLess1PressedConsecutive = true;
-                        updatePlotEnabled = false;
-                        waitForPlotUpdateToFinish();
-                        checkAndLockTable();
-                        updateTotals();
-                        updateGUI();
-                        updatePlotEnabled = true;
-                        if (table != null) table.setLock(false);
-                        table.show();
-                        updatePlot(updateAllFits());
+
+                        // Bulk update stars
+                        var n = Arrays.copyOf(isRefStar, isRefStar.length);
+                        if (cycleEnabledStarsLess1PressedConsecutive) {
+                            n[startingRefStar] = true;
+                        }
+                        n[lastRefStar] = false;
+
+                        setNewStars(n);
                     }
                 }
             });
@@ -14381,23 +14356,18 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             cycleIndividualStarButton.setToolTipText("Cycles through all stars considering each as an individual reference star");
             cycleIndividualStarButton.addActionListener(e -> {
                 if (numAps < 2) return;
-                multiUpdate = true;
+
+                cycleEnabledStarsLess1PressedConsecutive = false;
+
+                // Bulk update stars
+                var n = Arrays.copyOf(isRefStar, isRefStar.length);
                 for (int r = 1; r < numAps; r++) {
-                    refStarCB[r].setSelected(r == lastRefStar);
+                    n[r] = r == lastRefStar;
                 }
+                setNewStars(n);
+
                 lastRefStar = (lastRefStar + 1) % (numAps);
                 if (lastRefStar < 1) lastRefStar = 1;
-                multiUpdate = false;
-                cycleEnabledStarsLess1PressedConsecutive = false;
-                updatePlotEnabled = false;
-                waitForPlotUpdateToFinish();
-                checkAndLockTable();
-                updateTotals();
-                updateGUI();
-                updatePlotEnabled = true;
-                if (table != null) table.setLock(false);
-                table.show();
-                updatePlot(updateAllFits());
             });
             allNonePanel.add(cycleIndividualStarButton);
 
@@ -14575,21 +14545,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     }
 
     public static void loadCompEnsemble() {
-        multiUpdate = true;
-        for (int r = 0; r < savedIsRefStar.length; r++) {
-            refStarCB[r].setSelected(savedIsRefStar[r]);
-        }
-        multiUpdate = false;
+        setNewStars(savedIsRefStar);
         cycleEnabledStarsLess1PressedConsecutive = false;
-        updatePlotEnabled = false;
-        waitForPlotUpdateToFinish();
-        checkAndLockTable();
-        updateTotals();
-        updateGUI();
-        updatePlotEnabled = true;
-        if (table != null) table.setLock(false);
-        table.show();
-        updatePlot(updateAllFits());
     }
 
 
@@ -14607,6 +14564,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
     static void setupRefStarCBListener(final int r) {
         refStarCB[r].addItemListener(e -> {
+            if (bulkRefStarChange) {
+                return;
+            }
             if ((table == null || table.getCounter() < 1) && refStarCB[r].isSelected() != isRefStar[r]) {
                 refStarCB[r].setSelected(isRefStar[r]);
                 absMagTF[r].setEditable(isRefStar[r]);
@@ -14883,6 +14843,43 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 }
             }
         }
+    }
+
+    public static void setNewStars(boolean[] newRefStars) {
+        refStarChanged = !Arrays.equals(isRefStar, newRefStars);
+        updatePlotEnabled = false;
+        checkAndLockTable();
+        waitForPlotUpdateToFinish();
+        bulkRefStarChange = true;
+        for (int r = 0; r < newRefStars.length; r++) {
+            updateTable(newRefStars[r], r);
+            isRefStar[r] = newRefStars[r];
+
+            if (!newRefStars[r]) {
+                refStarLabel[r].setText("T" + (r + 1));
+                refStarLabel[r].setForeground(darkGreen);
+            } else {
+                refStarLabel[r].setText("C" + (r + 1));
+                refStarLabel[r].setForeground(Color.RED);
+            }
+
+            refStarCB[r].setSelected(newRefStars[r]);
+            absMagTF[r].setEditable(newRefStars[r]);
+        }
+        bulkRefStarChange = false;
+
+        for (int curve = 0; curve < maxCurves; curve++) {
+            prevSigma[curve] = sigma[curve];
+        }
+
+        updateTotals();
+        updateGUI();
+        if (table != null) {
+            table.setLock(false);
+            table.show();
+        }
+        updatePlotEnabled = true;
+        updatePlot(updateAllFits());
     }
 
 

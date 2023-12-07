@@ -96,24 +96,8 @@ public class FitOptimization implements AutoCloseable {
         INSTANCES.forEach(FitOptimization::clearHistory);
     }
 
-    private static void setFinalState(String minimizationTarget, boolean[] state, JCheckBox[] selectables) {
-        multiUpdate = true;
-        for (int r = 0; r < state.length; r++) {
-            selectables[r].setSelected(state[r]);
-        }
-        multiUpdate = false;
-        cycleEnabledStarsLess1PressedConsecutive = false;
-        updatePlotEnabled = false;
-        waitForPlotUpdateToFinish();
-        checkAndLockTable();
-        updateTotals();
-        updateGUI();
-        updatePlotEnabled = true;
-        if (table != null) {
-            table.setLock(false);
-            table.show();
-        }
-        updatePlot(updateAllFits());
+    private static void setFinalRefStarState(String minimizationTarget, boolean[] state) {
+        setNewStars(state);
 
         if (showOptLog) AIJLogger.log("Found minimum " + minimizationTarget + " state, reference stars set.");
         IJ.beep();
@@ -623,7 +607,7 @@ public class FitOptimization implements AutoCloseable {
         var finalState = divideTasksAndRun(new MinimumState(initState, Double.MAX_VALUE),
                 (start, end) -> new CompStarFitting(start, end, this, CompStarFitting.Mode.EXHAUSTIVE));
 
-        setFinalState("RMS", finalState.stateArray, MultiPlot_.refStarCB);
+        setFinalRefStarState("RMS", finalState.stateArray);
         compCounter.setBasis(BigInteger.ZERO);
         finishOptimization(compOptiCards);
     }
@@ -657,7 +641,7 @@ public class FitOptimization implements AutoCloseable {
         var finalState = divideTasksAndRun(new MinimumState(initState, Double.MAX_VALUE),
                 ($, end) -> new CompStarFitting(end, this, CompStarFitting.Mode.MODERATE), false);
 
-        setFinalState("RMS", finalState.stateArray, MultiPlot_.refStarCB);
+        setFinalRefStarState("RMS", finalState.stateArray);
         compCounter.setBasis(BigInteger.ZERO);
         finishOptimization(compOptiCards);
     }
@@ -691,7 +675,7 @@ public class FitOptimization implements AutoCloseable {
         var finalState = divideTasksAndRun(new MinimumState(initState, Double.MAX_VALUE),
                 ($, end) -> new CompStarFitting(end, this, CompStarFitting.Mode.QUICK), false);
 
-        setFinalState("RMS", finalState.stateArray, MultiPlot_.refStarCB);
+        setFinalRefStarState("RMS", finalState.stateArray);
         compCounter.setBasis(BigInteger.ZERO);
         finishOptimization(compOptiCards);
     }

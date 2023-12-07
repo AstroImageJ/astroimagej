@@ -1654,7 +1654,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             }
 
             var rs = sp.getRadii(imp, x, y, ApRadius.AUTO_FIXED_STACK_RAD.cutoff, true, true);
-            if (cancelled) return new Output(rs.r(), rs.r2(), rs.r3(), 0);
+            if (cancelled) {
+                imp.unlock();
+                return new Output(rs.r(), rs.r2(), rs.r3(), 0);
+            }
             if (!rs.centroidSuccessful()) {
                 AIJLogger.log("Failed to centroid on slice: " + i + ".");
                 hasErrored++;

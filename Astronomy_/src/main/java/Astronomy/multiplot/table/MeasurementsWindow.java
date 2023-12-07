@@ -380,6 +380,7 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
                 tableView.fireTableStructureChanged();
                 jTable.clearSelection();
                 for (int i = 0; i < jTable.getColumnCount(); i++) {
+                    jTable.getColumnModel().getColumn(jTable.convertColumnIndexToView(i)).setHeaderValue(table.getColumnHeading(i));
                     adjustWidth(i);
                 }
                 if (jTable.getColumnModel() instanceof HiddenColumnModel hcm) {

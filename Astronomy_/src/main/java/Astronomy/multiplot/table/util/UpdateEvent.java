@@ -1,11 +1,18 @@
 package Astronomy.multiplot.table.util;
 
 public enum UpdateEvent {
-    REBUILD,
-    DATA_CHANGED,
-    ROW_DELETED,
-    ROW_INSERTED,
-    ROW_UPDATED,
-    CELL_UPDATED,
-    COL_ADDED,
+    REBUILD(true),
+    DATA_CHANGED(false),
+    ROW_DELETED(false),
+    ROW_INSERTED(false),
+    ROW_UPDATED(false),
+    CELL_UPDATED(true),
+    COL_ADDED(true),
+    ;
+
+    public final boolean structureModification;
+
+    UpdateEvent(boolean structureModification) {
+        this.structureModification = structureModification;
+    }
 }

@@ -1355,7 +1355,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
                 var ap = new ApertureRoi(x, y, testRs.r(), testRs.r2(), testRs.r3(), Double.NaN, testRs.centroidSuccessful());
 
-                ap.setApColor(Color.BLUE);
+                ap.setApColor((!e.isShiftDown() && ngot > 0) || (e.isShiftDown() && ngot == 0) ? Color.RED : Color.GREEN);
                 ap.setShowValues(false);
                 ap.setImage(asw.getImagePlus());
                 oc.add(ap);
@@ -1367,7 +1367,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
                 // Get radii
                 ocanvas.add(warning);
-                var rs = evaluateStackForRadii();
+                var rs = evaluateStackForRadii((!e.isShiftDown() && ngot > 0) || (e.isShiftDown() && ngot == 0));
                 ocanvas.removeRoi(warning);
                 d.dispose();
                 if (!rs.success()) {
@@ -1655,7 +1655,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         }
     }
 
-    private Output evaluateStackForRadii() {
+    private Output evaluateStackForRadii(boolean isComp) {
         List<Seeing_Profile.ApRadii> radii = new ArrayList<>(lastSlice - firstSlice);
         var sp = new Seeing_Profile(true);
         //sp.setRoundRadii(false);
@@ -1733,7 +1733,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             y = sp.Y0;
 
             var ap = new ApertureRoi(x, y, rs.r(), rs.r2(), rs.r3(), Double.NaN, true);
-            ap.setApColor(Color.BLUE);
+            ap.setApColor(isComp ? Color.RED : Color.GREEN);
             ap.setShowValues(false);
             ap.setImage(asw.getImagePlus());
             oc.add(ap);

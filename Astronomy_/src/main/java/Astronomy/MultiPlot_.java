@@ -2010,6 +2010,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 xPlotMinRaw += 1.0;
             }
         }
+        var normAverageSet = new double[maxCurves];
         for (curve = 0; curve < maxCurves; curve++) {
             residual[curve] = null;
             plottedResidual[curve] = null;
@@ -2536,18 +2537,12 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                     planetRadiusLabel[curve].setText(IJU.planetRadiusFromTeff(teff[curve], bestFit[curve][1]));
                                     createDetrendModel = false;
                                     xModel1[curve] = detrendXs[curve];
-                                    int xModel2Len = plotSizeX + 1;
-                                    double xModel2Step = ((useDMarker4 && fitMax[curve] < xPlotMax ? fitMax[curve] : xPlotMax) - (useDMarker1 && fitMin[curve] > xPlotMin ? fitMin[curve] : xPlotMin)) / (xModel2Len - 1);
-                                    xModel2[curve] = new double[xModel2Len];
-                                    xModel2[curve][0] = useDMarker1 && fitMin[curve] > xPlotMin ? fitMin[curve] : xPlotMin;
-                                    for (int i = 1; i < xModel2Len; i++) {
-                                        xModel2[curve][i] = xModel2[curve][i - 1] + xModel2Step;
-                                    }
 
+                                    // Flag for yModel2 gen.
+                                    xModel2[curve] = new double[0];
+                                    yModel2[curve] = new double[0];
 
                                     yModel1[curve] = IJU.transitModel(xModel1[curve], bestFit[curve][0], bestFit[curve][4], bestFit[curve][1], bestFit[curve][2], bestFit[curve][3], orbitalPeriod[curve], forceCircularOrbit[curve] ? 0.0 : eccentricity[curve], forceCircularOrbit[curve] ? 0.0 : omega[curve], bestFit[curve][5], bestFit[curve][6], useLonAscNode[curve], lonAscNode[curve], true);
-
-                                    yModel2[curve] = IJU.transitModel(xModel2[curve], bestFit[curve][0], bestFit[curve][4], bestFit[curve][1], bestFit[curve][2], bestFit[curve][3], orbitalPeriod[curve], forceCircularOrbit[curve] ? 0.0 : eccentricity[curve], forceCircularOrbit[curve] ? 0.0 : omega[curve], bestFit[curve][5], bestFit[curve][6], useLonAscNode[curve], lonAscNode[curve], true);
 
                                     // f0 = param[curve][0]; // baseline flux
                                     // p0 = param[curve][1]; // r_p/r_*
@@ -2990,6 +2985,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                             yModel2[curve][nnn] /= normAverage;
                         }
                     }
+                    normAverageSet[curve] = normAverage;
                 }
 
                 //PERFORM MAGNITUDE CONVERSION IF APPLICABLE
@@ -3443,6 +3439,53 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         }
 
         plot.setLimits(plotMinX, plotMaxX, plotMinY, plotMaxY);
+
+        // Calculate yModel2 for drawing, scaling with plot bounds
+        for (int curve = 0; curve < maxCurves; curve++) {
+            if (xModel2[curve] != null && yModel2[curve] != null && xModel2[curve].length == 0 && yModel2[curve].length == 0) {
+                int xModel2Len = plotSizeX + 1;
+                double xModel2Step = ((useDMarker4 && fitMax[curve] < plotMaxX ? fitMax[curve] : plotMaxX) - (useDMarker1 && fitMin[curve] > plotMinX ? fitMin[curve] : plotMinX)) / (xModel2Len - 1);
+                xModel2[curve] = new double[xModel2Len];
+                xModel2[curve][0] = useDMarker1 && fitMin[curve] > plotMinX ? fitMin[curve] : plotMinX;
+                for (int i = 1; i < xModel2Len; i++) {
+                    xModel2[curve][i] = xModel2[curve][i - 1] + xModel2Step;
+                }
+
+                yModel2[curve] = IJU.transitModel(xModel2[curve], bestFit[curve][0], bestFit[curve][4], bestFit[curve][1], bestFit[curve][2], bestFit[curve][3], orbitalPeriod[curve], forceCircularOrbit[curve] ? 0.0 : eccentricity[curve], forceCircularOrbit[curve] ? 0.0 : omega[curve], bestFit[curve][5], bestFit[curve][6], useLonAscNode[curve], lonAscNode[curve], true);
+
+                if (normIndex[curve] != 0) {
+                    if (yModel2[curve] != null) {
+                        for (int nnn = 0; nnn < yModel2[curve].length; nnn++) {
+                            yModel2[curve][nnn] /= normAverageSet[curve];
+                        }
+                    }
+                }
+
+                if (mmag[curve]) {
+                    if (yModel2[curve] != null) {
+                        for (int nnn = 0; nnn < yModel2[curve].length; nnn++) {
+                            yModel2[curve][nnn] = magSign * 2.5 * Math.log10(yModel2[curve][nnn] / baseline[curve]);
+                        }
+                    }
+                }
+
+                if (showXAxisAsPhase) {
+
+                } else if (showXAxisAsDaysSinceTc) {
+
+                } else if (showXAxisAsHoursSinceTc) {
+
+                } else if (xlabel2[curve].contains("J.D.") || xlabel2[curve].contains("JD")) {
+                    if (xModel2[curve] != null) {
+                        for (int nnn = 0; nnn < xModel2[curve].length; nnn++) {
+                            xModel2[curve][nnn] -= xOffset;
+                        }
+                    }
+                }
+            }
+        }
+
+
         double legPosY = legendPosY;
         for (int curve = maxCurves - 1; curve >= 0; curve--) {
             if (plotY[curve]) {

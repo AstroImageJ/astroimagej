@@ -1355,7 +1355,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
                 var ap = new ApertureRoi(x, y, testRs.r(), testRs.r2(), testRs.r3(), Double.NaN, testRs.centroidSuccessful());
 
-                ap.setApColor((!e.isShiftDown() && ngot > 0) || (e.isShiftDown() && ngot == 0) ? Color.RED : Color.GREEN);
+                ap.setApColor(e != null && ((!e.isShiftDown() && ngot > 0) || (e.isShiftDown() && ngot == 0)) ? Color.RED : Color.GREEN);
                 ap.setShowValues(false);
                 ap.setImage(asw.getImagePlus());
                 oc.add(ap);
@@ -1367,7 +1367,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
                 // Get radii
                 ocanvas.add(warning);
-                var rs = evaluateStackForRadii((!e.isShiftDown() && ngot > 0) || (e.isShiftDown() && ngot == 0));
+                var rs = evaluateStackForRadii(e != null && ((!e.isShiftDown() && ngot > 0) || (e.isShiftDown() && ngot == 0)));
                 ocanvas.removeRoi(warning);
                 d.dispose();
                 if (!rs.success()) {

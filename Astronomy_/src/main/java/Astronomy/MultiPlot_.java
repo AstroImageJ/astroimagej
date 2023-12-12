@@ -3482,6 +3482,14 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         }
                     }
                 }
+
+                for (int nnn = 0; nnn < yModel2[curve].length; nnn++) {
+                    if (normIndex[curve] != 0 && !mmag[curve] && !force[curve]) {
+                        yModel2[curve][nnn] = 1 + totalScaleFactor[curve] * (yModel2[curve][nnn] - 1.0) + subtotalShiftFactor[curve];
+                    } else {
+                        yModel2[curve][nnn] = totalScaleFactor[curve] * yModel2[curve][nnn] + subtotalShiftFactor[curve];
+                    }
+                }
             }
         }
 

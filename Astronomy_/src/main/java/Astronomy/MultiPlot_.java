@@ -3444,9 +3444,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         for (int curve = 0; curve < maxCurves; curve++) {
             if (xModel2[curve] != null && yModel2[curve] != null && xModel2[curve].length == 0 && yModel2[curve].length == 0) {
                 int xModel2Len = plotSizeX + 1;
-                double xModel2Step = ((useDMarker4 && fitMax[curve] < plotMaxX ? fitMax[curve] : plotMaxX) - (useDMarker1 && fitMin[curve] > plotMinX ? fitMin[curve] : plotMinX)) / (xModel2Len - 1);
+                double xModel2Step = ((useDMarker4 && fitMax[curve] < plotMaxX + xOffset ? fitMax[curve] : plotMaxX + xOffset) - (useDMarker1 && fitMin[curve] > plotMinX + xOffset ? fitMin[curve] : plotMinX + xOffset)) / (xModel2Len - 1);
                 xModel2[curve] = new double[xModel2Len];
-                xModel2[curve][0] = useDMarker1 && fitMin[curve] > plotMinX ? fitMin[curve] : plotMinX;
+                xModel2[curve][0] = useDMarker1 && fitMin[curve] > plotMinX + xOffset ? fitMin[curve] : plotMinX + xOffset;
                 for (int i = 1; i < xModel2Len; i++) {
                     xModel2[curve][i] = xModel2[curve][i - 1] + xModel2Step;
                 }

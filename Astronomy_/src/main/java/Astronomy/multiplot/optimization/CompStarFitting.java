@@ -172,6 +172,8 @@ public class CompStarFitting extends Optimizer {
                 stateArray = fitOptimization.setArrayToState(state);
                 results = CurveFitter.getInstance(curve, fitOptimization.getTargetStar()).fitCurveAndGetResults(stateArray);
 
+                fitOptimization.compCounter.dynamicSet(counter);
+
                 if (Double.isNaN(results.rms()) || results.rms() <= 0 || Double.isNaN(results.bic())) continue;
 
                 var newState = new FitOptimization.MinimumState(state, results.rms());

@@ -919,7 +919,11 @@ public class IJ {
 	}
 	
 	/** Emits an audio beep. */
+	@AstroImageJ(reason = "Add option to disable beep", modified = true)
 	public static void beep() {
+		if (Prefs.getBoolean(".aij.disableBeep", false)) {
+			return;
+		}
 		java.awt.Toolkit.getDefaultToolkit().beep();
 	}
 	

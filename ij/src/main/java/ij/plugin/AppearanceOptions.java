@@ -1,6 +1,7 @@
 package ij.plugin;
 
 import ij.*;
+import ij.astro.AstroImageJ;
 import ij.gui.DialogListener;
 import ij.gui.GenericDialog;
 import ij.gui.ImageWindow;
@@ -27,10 +28,13 @@ public class AppearanceOptions implements PlugIn, DialogListener {
  	public void run(String arg) {
  		showDialog();
  	}
-		
+
+	@AstroImageJ(reason = "Add option to disable beep", modified = true)
 	void showDialog() {
+		 var disableBeepInit =  Prefs.getBoolean(".aij.disableBeep", false);
 		String[] ranges = ContrastAdjuster.getSixteenBitRanges();
 		GenericDialog gd = new GenericDialog("Appearance");
+		gd.addCheckbox("Disable beep", disableBeepInit);
 		gd.addCheckbox("Interpolate zoomed images", Prefs.interpolateScaledImages);
 		gd.addCheckbox("Open images at 100%", Prefs.open100Percent);
 		gd.addCheckbox("Black canvas", Prefs.blackCanvas);
@@ -58,6 +62,7 @@ public class AppearanceOptions implements PlugIn, DialogListener {
 		gd.addDialogListener(this);
 		gd.showDialog();
 		if (gd.wasCanceled()) {
+			Prefs.set("aij.disableBeep", disableBeepInit);
 			Prefs.interpolateScaledImages = interpolate;
 			Prefs.open100Percent = open100;
 			Prefs.blackCanvas = black;
@@ -111,9 +116,11 @@ public class AppearanceOptions implements PlugIn, DialogListener {
 		}
 
 	}
-	
+
+	@AstroImageJ(reason = "Add option to disable beep", modified = true)
 	public boolean dialogItemChanged(GenericDialog gd, AWTEvent e) {
 		if (IJ.isMacOSX()) IJ.wait(100);
+		Prefs.set("aij.disableBeep", gd.getNextBoolean());
 		boolean interpolate = gd.getNextBoolean();
 		Prefs.open100Percent = gd.getNextBoolean();
 		boolean blackCanvas = gd.getNextBoolean();

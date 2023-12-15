@@ -47,19 +47,25 @@
 
 package flanagan.analysis;
 
-import java.util.*;
-import java.math.*;
-
-import flanagan.math.*;
-import flanagan.integration.Integration;
-import flanagan.integration.IntegralFunction;
-import flanagan.interpolation.CubicSpline;
-
-import flanagan.plot.PlotGraph;
-import flanagan.complex.*;
 import flanagan.circuits.Phasor;
-import flanagan.roots.*;
-import flanagan.io.*;
+import flanagan.complex.Complex;
+import flanagan.integration.IntegralFunction;
+import flanagan.integration.Integration;
+import flanagan.interpolation.CubicSpline;
+import flanagan.math.ArrayMaths;
+import flanagan.math.Conv;
+import flanagan.math.Fmath;
+import flanagan.math.PsRandom;
+import flanagan.plot.PlotGraph;
+import flanagan.roots.RealRoot;
+import flanagan.roots.RealRootFunction;
+
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Random;
+import java.util.Vector;
 
 
 public class Stat extends ArrayMaths{
@@ -5130,7 +5136,8 @@ public class Stat extends ArrayMaths{
                 int n = aa.length;
                 int nOverTwo = n/2;
                 double med = 0.0D;
-                double[] bb = Fmath.selectionSort(aa);
+                double[] bb = Arrays.copyOf(aa, aa.length);
+                Arrays.parallelSort(bb);
                 if(Fmath.isOdd(n)){
                     med = bb[nOverTwo];
                 }

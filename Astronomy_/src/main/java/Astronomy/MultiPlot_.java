@@ -16175,7 +16175,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         boolean meridianFlipSelected = false;
         for (int i = 0; i < subsetColumn.length; i++) {
-            if (subsetColumn[i].equals("Meridian_Flip")) meridianFlipSelected = true;
+            if (subsetColumn[i].equals("Meridian_Flip") && subsetColumnEnable[i]) meridianFlipSelected = true;
         }
 
         for (int i = 0; i < maxSubsetColumns; i++) {

@@ -16267,7 +16267,12 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 needDelimiter = false;
                 for (int i = 0; i < maxSubsetColumns; i++) {
                     if (subsetColumnEnable[i] && !subsetColumn[i].trim().equals("")) {
-                        line.append(needDelimiter ? delimiter : "").append(subsetColumn[i]);
+                        line.append(needDelimiter ? delimiter : "");
+                        if (i > 2 && (subsetColumn[i].contains("J.D.") || subsetColumn[i].contains("JD"))) {
+                            line.append("F" + subsetColumn[i]);
+                        } else {
+                            line.append(subsetColumn[i]);
+                        }
                         needDelimiter = true;
                     }
                 }

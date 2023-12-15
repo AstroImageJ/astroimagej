@@ -1115,6 +1115,7 @@ public class FitOptimization implements AutoCloseable {
         boolean isSpinner= false;
         private static final String[] spinner = new String[]{"⠋","⠙","⠚","⠓"/*,"⠖","⠛"*/};
         private static Font oldFont;
+        boolean awaitingUpdates = false;
 
         public DynamicCounter(JTextField field) {
             super();
@@ -1124,9 +1125,15 @@ public class FitOptimization implements AutoCloseable {
         public void dynamicSet(BigInteger integer) {
             if (integer == null) return;
             setCounter(integer);
-            SwingUtilities.invokeLater(() ->
-                    textField.setText(isSpinner ? spinner[(int)(integer.longValue() % spinner.length)] :
-                            getTotalCount().toString()));
+            if (awaitingUpdates) {
+                return;
+            }
+            awaitingUpdates = true;
+            SwingUtilities.invokeLater(() -> {
+                textField.setText(isSpinner ? spinner[(int) (integer.longValue() % spinner.length)] :
+                        getTotalCount().toString());
+                awaitingUpdates = false;
+            });
         }
 
         public synchronized BigInteger getSum() {

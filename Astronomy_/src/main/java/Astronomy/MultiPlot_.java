@@ -12975,7 +12975,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         }
         bpSpinner[c].setPreferredSize(bpSize);
         bpSpinner[c].setMaximumSize(bpSize);
-        bpSpinner[c].setToolTipText("\"<html>Impact parameter of the transit model.<br>" + "For circular orbits, b = (a/R*)cos(inclination)<br>" + "Green Border: fit converged<br>" + "Red Border: fit did not converge<br>" + "Gray Border: no fit in this session</html>");
+        bpSpinner[c].setToolTipText("<html>Impact parameter of the transit model.<br>" + "For circular orbits, b = (a/R*)cos(inclination)<br>" + "Green Border: fit converged<br>" + "Red Border: fit did not converge<br>" + "Gray Border: no fit in this session</html>");
         bpSpinner[c].addChangeListener(ev -> {
             if (bpLock[c]) {
                 bp[c] = (Double) bpSpinner[c].getValue();

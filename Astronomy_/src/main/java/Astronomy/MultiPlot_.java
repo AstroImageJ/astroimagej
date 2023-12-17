@@ -2295,6 +2295,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                         if (autoUpdatePriors[curve]) updatePriorCenters(curve);
                                         int nFitted = 0;
                                         for (int p = 0; p < 7; p++) {
+                                            if (useTransitFit[curve] && bpLock[curve] && p==4) {
+                                                isFitted[curve][p] = false;
+                                                continue;
+                                            }
                                             if (useTransitFit[curve] && !lockToCenter[curve][p]) {
                                                 isFitted[curve][p] = true;
                                                 nFitted++;
@@ -2353,6 +2357,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                                 step[curve][fp] = Math.sqrt(getFitStep(curve, 1));
                                                 minimization.addConstraint(fp, -1, 0.0);
                                             } else if (index[curve][fp] == 4) {
+                                                if (bpLock[curve]) continue;
                                                 start[curve][fp] = priorCenter[curve][4] * Math.PI / 180.0;  // inclination
                                                 width[curve][fp] = priorWidth[curve][4] * Math.PI / 180.0;
                                                 step[curve][fp] = getFitStep(curve, 4) * Math.PI / 180.0;
@@ -2401,6 +2406,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                                 } else { bestFit[curve][p] = priorCenter[curve][p]; }
                                             } else if (p >= 7 && p < 7 + maxDetrendVars && detrendIndex[curve][p - 7] != 0 && detrendYDNotConstant[p - 7] && lockToCenter[curve][p]) {
                                                 bestFit[curve][p] = priorCenter[curve][p];
+                                            } else if (p == 4 && bpLock[curve]) {
+                                                bestFit[curve][4] = Math.acos(bp[curve]/bestFit[curve][2]);
                                             } else {
                                                 bestFit[curve][p] = Double.NaN;
                                             }

@@ -1335,6 +1335,10 @@ public class CurveFitter {
 
                             int nFitted = 0;
                             for (int p = 0; p < 7; p++) {
+                                if (useTransitFit[curve] && bpLock[curve] && p==4) {
+                                    isFitted[p] = false;
+                                    continue;
+                                }
                                 if (useTransitFit[curve] && !lockToCenter[curve][p]) {
                                     isFitted[p] = true;
                                     nFitted++;
@@ -1395,6 +1399,7 @@ public class CurveFitter {
                                     step[fp] = Math.sqrt(getFitStep(curve, 1, priorWidth, priorCenter));
                                     minimization.addConstraint(fp, -1, 0.0);
                                 } else if (index[fp] == 4) {
+                                    if (bpLock[curve]) continue;
                                     start[fp] = priorCenter[4] * Math.PI / 180.0;  // inclination
                                     width[fp] = priorWidth[4] * Math.PI / 180.0;
                                     step[fp] = getFitStep(curve, 4, priorWidth, priorCenter) * Math.PI / 180.0;
@@ -1449,6 +1454,8 @@ public class CurveFitter {
                                     }
                                 } else if (p >= 7 && p < 7 + maxDetrendVars && detrendIndex[p - 7] != 0 && detrendYDNotConstant[p - 7] && lockToCenter[curve][p]) {
                                     bestFit[p] = priorCenter[p];
+                                } else if (p == 4 && bpLock[curve]) {
+                                    bestFit[4] = Math.acos(bp/bestFit[2]);
                                 } else {
                                     bestFit[p] = Double.NaN;
                                 }

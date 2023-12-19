@@ -16073,12 +16073,16 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         cfgPath = Path.of(lastDot > 0 ? path.substring(0, lastDot) + ".plotcfg" : path + ".plotcfg");
         File cfgFile = null;
         try {cfgFile = cfgPath.toFile();} catch (Exception ignored) {}
+        var hasNoB = false;
         if (cfgFile != null && cfgFile.isFile()) {
             try {
                 var is = new BufferedInputStream(new FileInputStream(cfgFile));
                 Prefs.ijPrefs.load(is);
                 useMacroSubtitle.set(false);
                 useMacroTitle.set(false);
+                var t = new Properties();
+                t.load(is);
+                hasNoB = !t.containsKey("plot.bpLock[" + 0 + "]");
                 is.close();
             } catch (Exception e) {
                 e.printStackTrace();
@@ -16089,6 +16093,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         }
         setupArrays();
         getPreferences();
+
+        if (hasNoB) {
+            Arrays.fill(bpLock, false);
+        }
     }
 
 

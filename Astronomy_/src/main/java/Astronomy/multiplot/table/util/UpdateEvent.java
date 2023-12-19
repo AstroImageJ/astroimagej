@@ -3,10 +3,10 @@ package Astronomy.multiplot.table.util;
 public enum UpdateEvent {
     REBUILD(true),
     DATA_CHANGED(false),
-    ROW_DELETED(false),
-    ROW_INSERTED(false),
+    ROW_DELETED(true),
+    ROW_INSERTED(true),
     ROW_UPDATED(false),
-    CELL_UPDATED(true),
+    CELL_UPDATED(false),
     COL_ADDED(true),
     ;
 

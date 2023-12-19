@@ -3500,154 +3500,18 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             }
         }
 
-
+        // Draw Legends
         double legPosY = legendPosY;
-        for (int curve = maxCurves - 1; curve >= 0; curve--) {
+        for (int curve = 0; curve < maxCurves; curve++) {
             if (plotY[curve]) {
-                if (showResidual[curve] && residual[curve] != null && useTransitFit[curve] && detrendFitIndex[curve] == 9) {
-                    if (showModel[curve]) {
-                        plot.setLineWidth((showResidualError[curve] && yModel1Err[curve] != null) ? residualLineWidth[curve] + 1 : residualLineWidth[curve]);
-                        plot.setColor(residualModelColor[curve]);
-                        double dLen = 7 * (plotMaxX - plotMinX) / plotSizeX;
-                        double min = Math.max(fitMin[curve] - xOffset, xPlotMin);
-                        double max = Math.min(fitMax[curve] - xOffset, xPlotMax);
-                        double nDashes = ((max - min) / dLen);
-                        double ypos = detrendYAverage[curve] + (force[curve] ? autoResidualShift[curve] * totalScaleFactor[curve] * (yWidthOrig[curve] / autoScaleFactor[curve]) : residualShift[curve]);//*(normIndex[curve] != 0 && !mmag[curve]?1.0:yMultiplierFactor));
-                        for (int dashCount = 0; dashCount < nDashes; dashCount += 2) {
-                            plot.drawLine(min + dLen * dashCount, ypos, min + dLen * (dashCount + 1), ypos);
-                        }
-                    }
-
-                    if (residualSymbol[curve] == ij.gui.Plot.DOT) { plot.setLineWidth(4); } else plot.setLineWidth(1);
-                    int len = residual[curve].length;
-                    plottedResidual[curve] = Arrays.copyOf(residual[curve], len);
-                    for (int nnn = 0; nnn < len; nnn++) {
-                        plottedResidual[curve][nnn] += detrendYAverage[curve] + (force[curve] ? autoResidualShift[curve] * totalScaleFactor[curve] * (yWidthOrig[curve] / autoScaleFactor[curve]) : residualShift[curve]);//*(normIndex[curve] != 0 && !mmag[curve]?1.0:yMultiplierFactor));
-                    }
-                    plot.setColor(residualColor[curve]);
-                    plot.addPoints(Arrays.copyOf(xModel1[curve], xModel1[curve].length), plottedResidual[curve], residualSymbol[curve]);
-                    if (showResidualError[curve] && yModel1Err[curve] != null) { //code to replace plot.addErrorBars
-                        plot.setLineWidth(1);
-                        for (int nnn = 0; nnn < len; nnn++) {
-                            plot.drawLine(xModel1[curve][nnn], plottedResidual[curve][nnn] - yModel1Err[curve][nnn], xModel1[curve][nnn], plottedResidual[curve][nnn] + yModel1Err[curve][nnn]);
-                            plot.drawLine(xModel1[curve][nnn] - (3.0 * (plotMaxX - plotMinX) / plotSizeX), plottedResidual[curve][nnn] + yModel1Err[curve][nnn], xModel1[curve][nnn] + (3.0 * (plotMaxX - plotMinX) / plotSizeX), plottedResidual[curve][nnn] + yModel1Err[curve][nnn]);
-                            plot.drawLine(xModel1[curve][nnn] - (3.0 * (plotMaxX - plotMinX) / plotSizeX), plottedResidual[curve][nnn] - yModel1Err[curve][nnn], xModel1[curve][nnn] + (3.0 * (plotMaxX - plotMinX) / plotSizeX), plottedResidual[curve][nnn] - yModel1Err[curve][nnn]);
-                        }
-                    }
-
-                }
-
-                plot.setColor(binDisplay[curve].isOn() ? lighter(color[curve]) : color[curve]);
-
-                if (binDisplay[curve].isOn() || marker[curve] == ij.gui.Plot.DOT) { plot.setLineWidth(dotSize.get()); } else plot.setLineWidth(1);
-
-                if (binDisplay[curve] != TriState.ALT_ENABLED) {
-                    plot.addPoints(Arrays.copyOf(x[curve], nn[curve]), Arrays.copyOf(y[curve], nn[curve]), binDisplay[curve].isOn() ? Plot.DOT : marker[curve]);
-                }
-
-                plot.setLineWidth(1);
-
-                if (binDisplay[curve].isOn()) plot.setColor(lighter(color[curve]));
-                if (showErrors[curve] && (hasErrors[curve] || hasOpErrors[curve]) && binDisplay[curve] != TriState.ALT_ENABLED) { //code to replace plot.addErrorBars               //since plot.addErrorBars only plots with lines enabled
-                    for (int j = 0; j < nn[curve]; j++) {
-                        plot.drawLine(x[curve][j], y[curve][j] - yerr[curve][j], x[curve][j], y[curve][j] + yerr[curve][j]);
-                        //plot.drawLine(x[curve][j] - (3.0 * (plotMaxX - plotMinX) / plotSizeX), y[curve][j] + yerr[curve][j], x[curve][j] + (3.0 * (plotMaxX - plotMinX) / plotSizeX), y[curve][j] + yerr[curve][j]);
-                        //plot.drawLine(x[curve][j] - (3.0 * (plotMaxX - plotMinX) / plotSizeX), y[curve][j] - yerr[curve][j], x[curve][j] + (3.0 * (plotMaxX - plotMinX) / plotSizeX), y[curve][j] - yerr[curve][j]);
-                    }
-                }
-
-                if (binDisplay[curve].isOn()) {
-                    // Convert to JD
-                    var binWidth = minutes.get(curve).first() / (24D * 60D);
-
-                    if (binWidth == 0) {
-                        binWidth = .001;
-                    }
-
-                    // Bin data
-                    var binnedData = PlotDataBinning.binDataErr(Arrays.copyOf(x[curve], nn[curve]), Arrays.copyOf(y[curve], nn[curve]), Arrays.copyOf(yerr[curve], nn[curve]), binWidth);
-
-                    if (binnedData != null) {
-                        // Update bin width as the minimum was calculated at the same time
-                        minutes.get(curve).second().setValue(binnedData.second() * 24D * 60D);
-
-                        var pts = binnedData.first();
-
-                        plot.setColor(color[curve]);
-                        if (marker[curve] == ij.gui.Plot.DOT) { plot.setLineWidth(binnedDotSize.get()); } else plot.setLineWidth(2);
-                        plot.addPoints(pts.x(), pts.y(), marker[curve]);
-
-                        if (drawBinErrBarsBase.getOrCreateVariant(curve).get().isOn()) {
-                            plot.setLineWidth(1);
-                            for (int j = 0; j < pts.x().length; j++) {
-                                plot.drawLine(pts.x()[j], pts.y()[j] - pts.err()[j], pts.x()[j], pts.y()[j] + pts.err()[j]);
-                                plot.drawLine(pts.x()[j] - (3.0 * (plotMaxX - plotMinX) / plotSizeX), pts.y()[j] + pts.err()[j], pts.x()[j] + (3.0 * (plotMaxX - plotMinX) / plotSizeX), pts.y()[j] + pts.err()[j]);
-                                plot.drawLine(pts.x()[j] - (3.0 * (plotMaxX - plotMinX) / plotSizeX), pts.y()[j] - pts.err()[j], pts.x()[j] + (3.0 * (plotMaxX - plotMinX) / plotSizeX), pts.y()[j] - pts.err()[j]);
-                            }
-                        }
-
-                        // Calculate binned RMS
-                        if (detrendFitIndex[curve] == 9 && useTransitFit[curve]) {
-                            int finalCurve = curve;
-                            // Undo shift so the model works
-                            var xModelBin = Arrays.copyOf(pts.x(), pts.x().length);
-                            for (int nnn = 0; nnn < xModelBin.length; nnn++) {
-                                xModelBin[nnn] += xOffset;
-                            }
-
-                            // Adjust for left/right markers
-                            //todo recalc. fit min/max for this
-                            var xB = xModelBin;
-                            double[] finalXB = xB;
-                            var idx = IntStream.range(0, xB.length).filter(j -> (finalXB[j] > fitMin[finalCurve]) || (finalXB[j] < fitMax[finalCurve])).toArray();
-                            xB = PlotDataBinning.takeIndices(xB, idx);
-                            var yB = PlotDataBinning.takeIndices(pts.y(), idx);
-                            var errB = PlotDataBinning.takeIndices(pts.err(), idx);
-
-                            var modelBin = IJU.transitModel(xModelBin, bestFit[curve][0], bestFit[curve][4], bestFit[curve][1], bestFit[curve][2], bestFit[curve][3], orbitalPeriod[curve], forceCircularOrbit[curve] ? 0.0 : eccentricity[curve], forceCircularOrbit[curve] ? 0.0 : omega[curve], bestFit[curve][5], bestFit[curve][6], useLonAscNode[curve], lonAscNode[curve], true);
-
-                            // I don't know why this is needed, but with this RMS behaves as expected
-                            for (int nnn = 0; nnn < modelBin.length; nnn++) {
-                                modelBin[nnn] /= bestFit[curve][0];
-                                if (normIndex[curve] != 0 && !mmag[curve] && !force[curve]) {
-                                    modelBin[nnn] = 1 + totalScaleFactor[curve] * (modelBin[nnn] - 1.0) + subtotalShiftFactor[curve];
-                                } else {
-                                    modelBin[nnn] = totalScaleFactor[curve] * modelBin[nnn] + subtotalShiftFactor[curve];
-                                }
-                            }
-
-                            outBinRms[curve] = 1000*CurveFitter.calculateRms(curve, modelBin, errB, errB, xModelBin, xModelBin, yB, errB, bestFit[curve], detrendYAverage[curve]);
-                            outBinRms[curve] *= bestFit[curve][0];
-                        } else {
-                            var xModelBin = Arrays.copyOf(pts.x(), pts.x().length);
-                            for (int nnn = 0; nnn < xModelBin.length; nnn++) {
-                                xModelBin[nnn] += xOffset;
-                            }
-                            outBinRms[curve] = 1000*CurveFitter.calculateRms(curve, null, pts.err(), pts.err(), xModelBin, xModelBin, pts.y(), pts.err(), bestFit[curve], detrendYAverage[curve]);
-                        }
-                    }
-                }
-
                 if ((showErrors[curve] && (hasErrors[curve] || hasOpErrors[curve]))) {
                     plot.setLineWidth(2);
                 } else { plot.setLineWidth(1); }
                 plot.setColor(color[curve]);
-                if (xModel1[curve] != null && yModel1[curve] != null && xModel1[curve].length == yModel1[curve].length && detrendFitIndex[curve] != 9) {
-                    plot.addPoints(Arrays.copyOf(xModel1[curve], xModel1[curve].length), Arrays.copyOf(yModel1[curve], yModel1[curve].length), ij.gui.Plot.LINE);
-                }
+
                 if (xModel2[curve] != null && yModel2[curve] != null && xModel2[curve].length == yModel2[curve].length && (detrendFitIndex[curve] != 9 || showModel[curve])) {
                     if (detrendFitIndex[curve] == 9) {
-                        plot.setLineWidth((showErrors[curve] && (hasErrors[curve] || hasOpErrors[curve])) ? modelLineWidth[curve] + 1 : modelLineWidth[curve]);
                         plot.setColor(modelColor[curve]);
-                    }
-                    plot.addPoints(Arrays.copyOf(xModel2[curve], xModel2[curve].length), Arrays.copyOf(yModel2[curve], yModel2[curve].length), ij.gui.Plot.LINE);
-                }
-
-                if (lines[curve] && !(marker[curve] == ij.gui.Plot.LINE)) {
-                    for (int j = 0; j < nn[curve] - 1; j++) {
-                        if (x[curve][j + 1] > x[curve][j]) {
-                            plot.drawLine(x[curve][j], y[curve][j], x[curve][j + 1], y[curve][j + 1]);
-                        }
                     }
                 }
 
@@ -3829,6 +3693,158 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     }
                 }
 
+            }
+        }
+
+        // Draw data, inverse order so that curves will draw over displacement arrows
+        for (int curve = maxCurves - 1; curve >= 0; curve--) {
+            if (plotY[curve]) {
+                if (showResidual[curve] && residual[curve] != null && useTransitFit[curve] && detrendFitIndex[curve] == 9) {
+                    if (showModel[curve]) {
+                        plot.setLineWidth((showResidualError[curve] && yModel1Err[curve] != null) ? residualLineWidth[curve] + 1 : residualLineWidth[curve]);
+                        plot.setColor(residualModelColor[curve]);
+                        double dLen = 7 * (plotMaxX - plotMinX) / plotSizeX;
+                        double min = Math.max(fitMin[curve] - xOffset, xPlotMin);
+                        double max = Math.min(fitMax[curve] - xOffset, xPlotMax);
+                        double nDashes = ((max - min) / dLen);
+                        double ypos = detrendYAverage[curve] + (force[curve] ? autoResidualShift[curve] * totalScaleFactor[curve] * (yWidthOrig[curve] / autoScaleFactor[curve]) : residualShift[curve]);//*(normIndex[curve] != 0 && !mmag[curve]?1.0:yMultiplierFactor));
+                        for (int dashCount = 0; dashCount < nDashes; dashCount += 2) {
+                            plot.drawLine(min + dLen * dashCount, ypos, min + dLen * (dashCount + 1), ypos);
+                        }
+                    }
+
+                    if (residualSymbol[curve] == ij.gui.Plot.DOT) { plot.setLineWidth(4); } else plot.setLineWidth(1);
+                    int len = residual[curve].length;
+                    plottedResidual[curve] = Arrays.copyOf(residual[curve], len);
+                    for (int nnn = 0; nnn < len; nnn++) {
+                        plottedResidual[curve][nnn] += detrendYAverage[curve] + (force[curve] ? autoResidualShift[curve] * totalScaleFactor[curve] * (yWidthOrig[curve] / autoScaleFactor[curve]) : residualShift[curve]);//*(normIndex[curve] != 0 && !mmag[curve]?1.0:yMultiplierFactor));
+                    }
+                    plot.setColor(residualColor[curve]);
+                    plot.addPoints(Arrays.copyOf(xModel1[curve], xModel1[curve].length), plottedResidual[curve], residualSymbol[curve]);
+                    if (showResidualError[curve] && yModel1Err[curve] != null) { //code to replace plot.addErrorBars
+                        plot.setLineWidth(1);
+                        for (int nnn = 0; nnn < len; nnn++) {
+                            plot.drawLine(xModel1[curve][nnn], plottedResidual[curve][nnn] - yModel1Err[curve][nnn], xModel1[curve][nnn], plottedResidual[curve][nnn] + yModel1Err[curve][nnn]);
+                            plot.drawLine(xModel1[curve][nnn] - (3.0 * (plotMaxX - plotMinX) / plotSizeX), plottedResidual[curve][nnn] + yModel1Err[curve][nnn], xModel1[curve][nnn] + (3.0 * (plotMaxX - plotMinX) / plotSizeX), plottedResidual[curve][nnn] + yModel1Err[curve][nnn]);
+                            plot.drawLine(xModel1[curve][nnn] - (3.0 * (plotMaxX - plotMinX) / plotSizeX), plottedResidual[curve][nnn] - yModel1Err[curve][nnn], xModel1[curve][nnn] + (3.0 * (plotMaxX - plotMinX) / plotSizeX), plottedResidual[curve][nnn] - yModel1Err[curve][nnn]);
+                        }
+                    }
+
+                }
+
+                plot.setColor(binDisplay[curve].isOn() ? lighter(color[curve]) : color[curve]);
+
+                if (binDisplay[curve].isOn() || marker[curve] == ij.gui.Plot.DOT) { plot.setLineWidth(dotSize.get()); } else plot.setLineWidth(1);
+
+                if (binDisplay[curve] != TriState.ALT_ENABLED) {
+                    plot.addPoints(Arrays.copyOf(x[curve], nn[curve]), Arrays.copyOf(y[curve], nn[curve]), binDisplay[curve].isOn() ? Plot.DOT : marker[curve]);
+                }
+
+                plot.setLineWidth(1);
+
+                if (binDisplay[curve].isOn()) plot.setColor(lighter(color[curve]));
+                if (showErrors[curve] && (hasErrors[curve] || hasOpErrors[curve]) && binDisplay[curve] != TriState.ALT_ENABLED) { //code to replace plot.addErrorBars               //since plot.addErrorBars only plots with lines enabled
+                    for (int j = 0; j < nn[curve]; j++) {
+                        plot.drawLine(x[curve][j], y[curve][j] - yerr[curve][j], x[curve][j], y[curve][j] + yerr[curve][j]);
+                        //plot.drawLine(x[curve][j] - (3.0 * (plotMaxX - plotMinX) / plotSizeX), y[curve][j] + yerr[curve][j], x[curve][j] + (3.0 * (plotMaxX - plotMinX) / plotSizeX), y[curve][j] + yerr[curve][j]);
+                        //plot.drawLine(x[curve][j] - (3.0 * (plotMaxX - plotMinX) / plotSizeX), y[curve][j] - yerr[curve][j], x[curve][j] + (3.0 * (plotMaxX - plotMinX) / plotSizeX), y[curve][j] - yerr[curve][j]);
+                    }
+                }
+
+                if (binDisplay[curve].isOn()) {
+                    // Convert to JD
+                    var binWidth = minutes.get(curve).first() / (24D * 60D);
+
+                    if (binWidth == 0) {
+                        binWidth = .001;
+                    }
+
+                    // Bin data
+                    var binnedData = PlotDataBinning.binDataErr(Arrays.copyOf(x[curve], nn[curve]), Arrays.copyOf(y[curve], nn[curve]), Arrays.copyOf(yerr[curve], nn[curve]), binWidth);
+
+                    if (binnedData != null) {
+                        // Update bin width as the minimum was calculated at the same time
+                        minutes.get(curve).second().setValue(binnedData.second() * 24D * 60D);
+
+                        var pts = binnedData.first();
+
+                        plot.setColor(color[curve]);
+                        if (marker[curve] == ij.gui.Plot.DOT) { plot.setLineWidth(binnedDotSize.get()); } else plot.setLineWidth(2);
+                        plot.addPoints(pts.x(), pts.y(), marker[curve]);
+
+                        if (drawBinErrBarsBase.getOrCreateVariant(curve).get().isOn()) {
+                            plot.setLineWidth(1);
+                            for (int j = 0; j < pts.x().length; j++) {
+                                plot.drawLine(pts.x()[j], pts.y()[j] - pts.err()[j], pts.x()[j], pts.y()[j] + pts.err()[j]);
+                                plot.drawLine(pts.x()[j] - (3.0 * (plotMaxX - plotMinX) / plotSizeX), pts.y()[j] + pts.err()[j], pts.x()[j] + (3.0 * (plotMaxX - plotMinX) / plotSizeX), pts.y()[j] + pts.err()[j]);
+                                plot.drawLine(pts.x()[j] - (3.0 * (plotMaxX - plotMinX) / plotSizeX), pts.y()[j] - pts.err()[j], pts.x()[j] + (3.0 * (plotMaxX - plotMinX) / plotSizeX), pts.y()[j] - pts.err()[j]);
+                            }
+                        }
+
+                        // Calculate binned RMS
+                        if (detrendFitIndex[curve] == 9 && useTransitFit[curve]) {
+                            int finalCurve = curve;
+                            // Undo shift so the model works
+                            var xModelBin = Arrays.copyOf(pts.x(), pts.x().length);
+                            for (int nnn = 0; nnn < xModelBin.length; nnn++) {
+                                xModelBin[nnn] += xOffset;
+                            }
+
+                            // Adjust for left/right markers
+                            //todo recalc. fit min/max for this
+                            var xB = xModelBin;
+                            double[] finalXB = xB;
+                            var idx = IntStream.range(0, xB.length).filter(j -> (finalXB[j] > fitMin[finalCurve]) || (finalXB[j] < fitMax[finalCurve])).toArray();
+                            xB = PlotDataBinning.takeIndices(xB, idx);
+                            var yB = PlotDataBinning.takeIndices(pts.y(), idx);
+                            var errB = PlotDataBinning.takeIndices(pts.err(), idx);
+
+                            var modelBin = IJU.transitModel(xModelBin, bestFit[curve][0], bestFit[curve][4], bestFit[curve][1], bestFit[curve][2], bestFit[curve][3], orbitalPeriod[curve], forceCircularOrbit[curve] ? 0.0 : eccentricity[curve], forceCircularOrbit[curve] ? 0.0 : omega[curve], bestFit[curve][5], bestFit[curve][6], useLonAscNode[curve], lonAscNode[curve], true);
+
+                            // I don't know why this is needed, but with this RMS behaves as expected
+                            for (int nnn = 0; nnn < modelBin.length; nnn++) {
+                                modelBin[nnn] /= bestFit[curve][0];
+                                if (normIndex[curve] != 0 && !mmag[curve] && !force[curve]) {
+                                    modelBin[nnn] = 1 + totalScaleFactor[curve] * (modelBin[nnn] - 1.0) + subtotalShiftFactor[curve];
+                                } else {
+                                    modelBin[nnn] = totalScaleFactor[curve] * modelBin[nnn] + subtotalShiftFactor[curve];
+                                }
+                            }
+
+                            outBinRms[curve] = 1000*CurveFitter.calculateRms(curve, modelBin, errB, errB, xModelBin, xModelBin, yB, errB, bestFit[curve], detrendYAverage[curve]);
+                            outBinRms[curve] *= bestFit[curve][0];
+                        } else {
+                            var xModelBin = Arrays.copyOf(pts.x(), pts.x().length);
+                            for (int nnn = 0; nnn < xModelBin.length; nnn++) {
+                                xModelBin[nnn] += xOffset;
+                            }
+                            outBinRms[curve] = 1000*CurveFitter.calculateRms(curve, null, pts.err(), pts.err(), xModelBin, xModelBin, pts.y(), pts.err(), bestFit[curve], detrendYAverage[curve]);
+                        }
+                    }
+                }
+
+                if ((showErrors[curve] && (hasErrors[curve] || hasOpErrors[curve]))) {
+                    plot.setLineWidth(2);
+                } else { plot.setLineWidth(1); }
+                plot.setColor(color[curve]);
+                if (xModel1[curve] != null && yModel1[curve] != null && xModel1[curve].length == yModel1[curve].length && detrendFitIndex[curve] != 9) {
+                    plot.addPoints(Arrays.copyOf(xModel1[curve], xModel1[curve].length), Arrays.copyOf(yModel1[curve], yModel1[curve].length), ij.gui.Plot.LINE);
+                }
+                if (xModel2[curve] != null && yModel2[curve] != null && xModel2[curve].length == yModel2[curve].length && (detrendFitIndex[curve] != 9 || showModel[curve])) {
+                    if (detrendFitIndex[curve] == 9) {
+                        plot.setLineWidth((showErrors[curve] && (hasErrors[curve] || hasOpErrors[curve])) ? modelLineWidth[curve] + 1 : modelLineWidth[curve]);
+                        plot.setColor(modelColor[curve]);
+                    }
+                    plot.addPoints(Arrays.copyOf(xModel2[curve], xModel2[curve].length), Arrays.copyOf(yModel2[curve], yModel2[curve].length), ij.gui.Plot.LINE);
+                }
+
+                if (lines[curve] && !(marker[curve] == ij.gui.Plot.LINE)) {
+                    for (int j = 0; j < nn[curve] - 1; j++) {
+                        if (x[curve][j + 1] > x[curve][j]) {
+                            plot.drawLine(x[curve][j], y[curve][j], x[curve][j + 1], y[curve][j + 1]);
+                        }
+                    }
+                }
             }
         }
 

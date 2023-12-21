@@ -1079,8 +1079,7 @@ public class CurveFitter {
         }
 
         if (operatorBase.getOrCreateVariant(curve).get() != MPOperator.NONE) {
-            IJ.error("Operator must be 0");
-            return new OptimizerResults(Double.NaN, Double.NaN);
+            throw new MPOperatorError();
         }
 
         if (!plotY[curve]) return new OptimizerResults(Double.NaN, Double.NaN);
@@ -2057,6 +2056,12 @@ public class CurveFitter {
                 chi2 += ((residual * residual) / (detrendYE[j] * detrendYE[j]));
             }
             return chi2 / (double) dof;
+        }
+    }
+
+    public static class MPOperatorError extends RuntimeException {
+        public MPOperatorError() {
+            super("Operator must be none");
         }
     }
 }

@@ -576,6 +576,10 @@ public class FitOptimization implements AutoCloseable {
             return;
         }
 
+        if (numAps == 0) {
+            IJ.error("Aperture must be present in the table");
+        }
+
         setTargetStar();
 
         BigInteger initState = createBinaryRepresentation(selectable);
@@ -594,6 +598,10 @@ public class FitOptimization implements AutoCloseable {
         } else {
             if (showOptLog) AIJLogger.log("Open ref. star panel.");
             return;
+        }
+
+        if (numAps == 0) {
+            IJ.error("Aperture must be present in the table");
         }
 
         if (!plotY[curve]) {
@@ -630,6 +638,10 @@ public class FitOptimization implements AutoCloseable {
             return;
         }
 
+        if (numAps == 0) {
+            IJ.error("Aperture must be present in the table");
+        }
+
         if (!plotY[curve]) {
             IJ.error("The 'Plot' check box for this data set must be enabled in Multi-Plot Y-data panel for optimization.");
             CardLayout cl = (CardLayout) compOptiCards.getLayout();
@@ -662,6 +674,10 @@ public class FitOptimization implements AutoCloseable {
         } else {
             if (showOptLog) AIJLogger.log("Open ref. star panel.");
             return;
+        }
+
+        if (numAps == 0) {
+            IJ.error("Aperture must be present in the table");
         }
 
         if (!plotY[curve]) {
@@ -824,7 +840,12 @@ public class FitOptimization implements AutoCloseable {
                 if (determinedState.lessThan(minimumState)) minimumState = determinedState;
                 count--;
             } catch (InterruptedException | ExecutionException e) {
-                e.printStackTrace();
+                if (e.getCause() instanceof CurveFitter.MPOperatorError) {
+                    IJ.error("No operator is allowed");
+                } else {
+                    e.printStackTrace();
+                }
+
                 hasErrored = true;
             }
         }

@@ -573,6 +573,7 @@ public class FitOptimization implements AutoCloseable {
             setSelectable(MultiPlot_.isRefStar);
         } else {
             IJ.error("Apertures must be present in the table");
+            finishOptimization(compOptiCards);
             return;
         }
 
@@ -593,6 +594,7 @@ public class FitOptimization implements AutoCloseable {
             setSelectable(MultiPlot_.isRefStar);
         } else {
             IJ.error("Apertures must be present in the table");
+            finishOptimization(compOptiCards);
             return;
         }
 
@@ -627,6 +629,7 @@ public class FitOptimization implements AutoCloseable {
             setSelectable(MultiPlot_.isRefStar);
         } else {
             IJ.error("Apertures must be present in the table");
+            finishOptimization(compOptiCards);
             return;
         }
 
@@ -661,6 +664,7 @@ public class FitOptimization implements AutoCloseable {
             setSelectable(MultiPlot_.isRefStar);
         } else {
             IJ.error("Apertures must be present in the table");
+            finishOptimization(compOptiCards);
             return;
         }
 

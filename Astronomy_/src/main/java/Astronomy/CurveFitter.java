@@ -992,7 +992,10 @@ public class CurveFitter {
             }
         }
 
-        var targetFlux = conditionData(targetStar, localIsRefStar, totCcntAP);
+        var targetFlux = localIsRefStar != null ?
+                conditionData(targetStar, localIsRefStar, totCcntAP) :
+                // Raw input of light curve, no stars
+                new FluxData(Arrays.copyOf(y[curve], nn[curve]), Arrays.copyOf(yerr[curve], nn[curve]), null, null, null);
 
         HashMap<ColumnInfo, double[]> instancedParamData = new HashMap<>();
         if (doInstancedDetrendCalculation) {

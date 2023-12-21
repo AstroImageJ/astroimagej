@@ -572,12 +572,8 @@ public class FitOptimization implements AutoCloseable {
         if (MultiPlot_.isRefStar != null) {
             setSelectable(MultiPlot_.isRefStar);
         } else {
-            if (showOptLog) AIJLogger.log("Open ref. star panel");
+            IJ.error("Apertures must be present in the table");
             return;
-        }
-
-        if (numAps == 0) {
-            IJ.error("Aperture must be present in the table");
         }
 
         setTargetStar();
@@ -596,12 +592,8 @@ public class FitOptimization implements AutoCloseable {
         if (MultiPlot_.isRefStar != null) {
             setSelectable(MultiPlot_.isRefStar);
         } else {
-            if (showOptLog) AIJLogger.log("Open ref. star panel.");
+            IJ.error("Apertures must be present in the table");
             return;
-        }
-
-        if (numAps == 0) {
-            IJ.error("Aperture must be present in the table");
         }
 
         if (!plotY[curve]) {
@@ -634,12 +626,8 @@ public class FitOptimization implements AutoCloseable {
         if (MultiPlot_.isRefStar != null) {
             setSelectable(MultiPlot_.isRefStar);
         } else {
-            if (showOptLog) AIJLogger.log("Open ref. star panel.");
+            IJ.error("Apertures must be present in the table");
             return;
-        }
-
-        if (numAps == 0) {
-            IJ.error("Aperture must be present in the table");
         }
 
         if (!plotY[curve]) {
@@ -672,12 +660,8 @@ public class FitOptimization implements AutoCloseable {
         if (MultiPlot_.isRefStar != null) {
             setSelectable(MultiPlot_.isRefStar);
         } else {
-            if (showOptLog) AIJLogger.log("Open ref. star panel.");
+            IJ.error("Apertures must be present in the table");
             return;
-        }
-
-        if (numAps == 0) {
-            IJ.error("Aperture must be present in the table");
         }
 
         if (!plotY[curve]) {

@@ -31,7 +31,10 @@ public class UIHelper {
         }
         if (IJ.isMacOSX()) {
             // See https://thebadprogrammer.com/swing-uimanager-keys/
-            var fs = new String[]{"TextField.focusInputMap", "FormattedTextField.focusInputMap"};
+            var fs = new String[]{
+                    "TextField.focusInputMap", "FormattedTextField.focusInputMap", "TextArea.focusInputMap",
+                    "TextPane.focusInputMap",
+            };
             for (String f : fs) {
                 InputMap im = (InputMap) UIManager.get(f);
                 im.put(KeyStroke.getKeyStroke(KeyEvent.VK_C, KeyEvent.META_DOWN_MASK), DefaultEditorKit.copyAction);

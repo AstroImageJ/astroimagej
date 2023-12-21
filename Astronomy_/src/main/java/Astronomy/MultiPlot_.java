@@ -14220,20 +14220,34 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     }
 
     static void rebuildRefStarJPanel() {
-        allNonePanel.validate();
-        SpringUtil.makeCompactGrid(allNonePanel, 1, allNonePanel.getComponentCount(), 2, 2, 2, 2);
-        starsPanel.validate();
-        if (numAps / refStarHorzWidth > 0) {
-            SpringUtil.makeCompactGrid(starsPanel, starsPanel.getComponentCount() / refStarHorzWidth, refStarHorzWidth, 4, 10, 4, 10);
-        } else { SpringUtil.makeCompactGrid(starsPanel, 1, starsPanel.getComponentCount(), 4, 10, 4, 10); }
-        spacerPanel.validate();
-        SpringUtil.makeCompactGrid(spacerPanel, spacerPanel.getComponentCount(), 1, 0, 0, 0, 0);
-        starsPlusSpacerPanel.validate();
-        SpringUtil.makeCompactGrid(starsPlusSpacerPanel, 1, starsPlusSpacerPanel.getComponentCount(), 0, 0, 0, 0);
-        refStarBPanel.validate();
-        SpringUtil.makeCompactGrid(refStarBPanel, refStarBPanel.getComponentCount(), 1, 6, 6, 6, 6);
-        refStarMainPanel.validate();
-        SpringUtil.makeCompactGrid(refStarMainPanel, refStarMainPanel.getComponentCount(), 1, 6, 6, 6, 6);
+        if (allNonePanel != null) {
+            allNonePanel.validate();
+            SpringUtil.makeCompactGrid(allNonePanel, 1, allNonePanel.getComponentCount(), 2, 2, 2, 2);
+        }
+        if (starsPanel != null) {
+            starsPanel.validate();
+            if (numAps / refStarHorzWidth > 0) {
+                SpringUtil.makeCompactGrid(starsPanel, starsPanel.getComponentCount() / refStarHorzWidth, refStarHorzWidth, 4, 10, 4, 10);
+            } else {
+                SpringUtil.makeCompactGrid(starsPanel, 1, starsPanel.getComponentCount(), 4, 10, 4, 10);
+            }
+        }
+        if (spacerPanel != null) {
+            spacerPanel.validate();
+            SpringUtil.makeCompactGrid(spacerPanel, spacerPanel.getComponentCount(), 1, 0, 0, 0, 0);
+        }
+        if (starsPlusSpacerPanel != null) {
+            starsPlusSpacerPanel.validate();
+            SpringUtil.makeCompactGrid(starsPlusSpacerPanel, 1, starsPlusSpacerPanel.getComponentCount(), 0, 0, 0, 0);
+        }
+        if (refStarBPanel != null) {
+            refStarBPanel.validate();
+            SpringUtil.makeCompactGrid(refStarBPanel, refStarBPanel.getComponentCount(), 1, 6, 6, 6, 6);
+        }
+        if (refStarMainPanel != null) {
+            refStarMainPanel.validate();
+            SpringUtil.makeCompactGrid(refStarMainPanel, refStarMainPanel.getComponentCount(), 1, 6, 6, 6, 6);
+        }
         refStarFrame.pack();
         refStarFrame.setVisible(true);
     }

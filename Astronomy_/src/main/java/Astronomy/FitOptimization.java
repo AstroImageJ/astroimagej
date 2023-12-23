@@ -488,7 +488,7 @@ public class FitOptimization implements AutoCloseable {
             }
 
             if (cleanMode != CleanMode.POINT_MEDIAN) {
-                if (i+1 >= residual[curve].length) {
+                if (i+1 >= (!useTransitFit[curve] ? res : residual[curve]).length) {
                     break;
                 }
             }

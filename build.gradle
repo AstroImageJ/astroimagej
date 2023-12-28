@@ -581,10 +581,10 @@ task copyBuiltJars(dependsOn: commonFiles, type: Copy) {
 
 tasks.register('makeReleaseFiles') {
     group 'AstroImageJ Development'
-    dependsOn packageAijForWindows_x86_64Bit_Java21
+    //dependsOn packageAijForWindows_x86_64Bit_Java21
 
     var buildDir = project.layout.buildDirectory.get()
-    var output = buildDir.dir('updatesjava'+shippingJava)
+    var output = buildDir.dir('updatesjava'+minJava)
 
     // Clear old files
     output.getAsFileTree().forEach {
@@ -633,10 +633,10 @@ tasks.register('makeReleaseFiles') {
 
         Files.createFile(versionsTxt.toPath())
 
-        versionsTxt << semverVersion
+        versionsTxt << semverVersion << '\n'
 
         'https://www.astro.louisville.edu/software/astroimagej/updates/updatesjava17/versions.txt'.toURL().withInputStream {
-            i -> versionsTxt.withOutputStream{ it << i }
+            i -> versionsTxt.withWriterAppend {it << i}
         }
     }
 }
@@ -646,7 +646,7 @@ tasks.register('makeDailyBuildFiles') {
     dependsOn packageAijForWindows_x86_64Bit_Java21
 
     var buildDir = project.layout.buildDirectory.get()
-    var output = buildDir.dir('updatesjava'+shippingJava)
+    var output = buildDir.dir('updatesjava'+minJava)
 
     // Clear old files
     output.getAsFileTree().forEach {

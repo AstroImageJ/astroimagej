@@ -581,7 +581,7 @@ task copyBuiltJars(dependsOn: commonFiles, type: Copy) {
 
 tasks.register('makeReleaseFiles') {
     group 'AstroImageJ Development'
-    //dependsOn packageAijForWindows_x86_64Bit_Java21
+    dependsOn packageAijForWindows_x86_64Bit_Java21
 
     var buildDir = project.layout.buildDirectory.get()
     var output = buildDir.dir('updatesjava'+minJava)

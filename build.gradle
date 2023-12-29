@@ -1,5 +1,6 @@
 import groovy.json.JsonSlurper
 import io.github.fvarrui.javapackager.gradle.PackageTask
+import io.github.fvarrui.javapackager.model.FileAssociation
 import io.github.fvarrui.javapackager.model.WindowsExeCreationTool
 import org.ajoberstar.grgit.Grgit
 import org.apache.tools.ant.taskdefs.condition.Os
@@ -15,7 +16,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'io.github.fvarrui:javapackager:1.6.7-SNAPSHOT'
+        classpath 'io.github.fvarrui:javapackager:1.7.5'
     }
 
     // Needed for GrGit 5+
@@ -442,6 +443,7 @@ javapackager {
     winConfig.exeCreationTool = WindowsExeCreationTool.why
     winConfig.productVersion = "1.1.1"
     winConfig.productName = "Why Java Launcher"
+    winConfig.setGenerateMsi(false)
 
     // Don't copy deps into a "libs" folder - we bundle them into ij.jar or Astronomy_.jar and the plugins folder
     copyDependencies = false
@@ -456,6 +458,16 @@ javapackager {
     // See https://github.com/fvarrui/JavaPackager#generated-artifacts
     // In future installer/package signing will be added. TODO sign the packages
     generateInstaller  true
+
+    fileAssociations = [
+            new FileAssociation(mimeType: 'application/fits', extension: 'fits', description: 'FITS File'),
+            new FileAssociation(mimeType: 'application/fits', extension: 'fts', description: 'FITS File'),
+            new FileAssociation(mimeType: 'application/fits', extension: 'fits.fz', description: 'FITS File'),
+            new FileAssociation(mimeType: 'application/fits', extension: 'fts.fz', description: 'FITS File'),
+            new FileAssociation(mimeType: 'application/fits', extension: 'fits.gz', description: 'FITS File'),
+            new FileAssociation(mimeType: 'application/fits', extension: 'fts.gz', description: 'FITS File'),
+            new FileAssociation(mimeType: 'text/tbl', extension: 'tbl', description: 'Table'),
+    ]
 }
 
 task packageAij

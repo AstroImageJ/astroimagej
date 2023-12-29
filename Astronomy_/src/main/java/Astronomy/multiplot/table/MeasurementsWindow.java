@@ -379,10 +379,18 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
             case REBUILD -> {
                 tableView.fireTableStructureChanged();
                 jTable.clearSelection();
-                for (int i = 0; i < jTable.getColumnCount(); i++) {
+
+                // Update headings
+                for (int i = 0; i < table.getLastColumn() && i >= 0; i++) {
                     jTable.getColumnModel().getColumn(jTable.convertColumnIndexToView(i)).setHeaderValue(table.getColumnHeading(i));
+                }
+
+                // Update width
+                for (int i = 0; i < jTable.getColumnCount(); i++) {
                     adjustWidth(i);
                 }
+
+                // Refilter
                 if (jTable.getColumnModel() instanceof HiddenColumnModel hcm) {
                     // This is a terrible hack
                     SwingUtilities.invokeLater(hcm::refilter);

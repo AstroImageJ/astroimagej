@@ -211,7 +211,7 @@ public class Set_Aperture implements PlugIn
         gd.addFloatSlider("Inner radius of background annulus", 1, rBack1>100?rBack1:100, rBack1, 3, 1);
         gd.addFloatSlider("Outer radius of background annulus", 1, rBack2>100?rBack2:100, rBack2, 3, 1);
         gd.addCheckbox ("Use variable aperture (Multi-Aperture only)", useVarSizeAp);
-        gd.addSlider("          FWHM factor (set to 0.00 for radial profile mode)", 0.0, 5.1, apFWHMFactor);
+        gd.addFloatSlider("          FWHM factor (set to 0.00 for radial profile mode)", 0.0, 5.1, apFWHMFactor, 3, 0.1);
         gd.addNumericField("Radial profile mode normalized flux cutoff",  autoModeFluxCutOff, 3, 6, "(0 < cuffoff < 1 ; default = 0.010)");
         gd.addCheckboxGroup(1, 5, new String[]{"Centroid apertures","Use Howell centroid method","Fit background to plane","Remove stars from backgnd","Mark removed pixels"},
                                   new boolean[]{reposition,useHowellCentroidMethod,backPlane,removeBackStars,showRemovedPixels});

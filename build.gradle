@@ -623,7 +623,7 @@ tasks.register('makeReleaseFiles') {
     doLast {
         // Copy files, no renames
         copy {
-            from(zipTree("$buildDir/distributions/AstroImageJ-x86_64Bit-windows.zip")) {
+            from("$buildDir/distributions/AstroImageJ") {
                 include '**/ij.jar', '**/StartupMacros.txt', '**/AstroImageJ.exe', '**/Astronomy_.jar', '**/release_notes.html'
                 eachFile { fcd ->
                     fcd.relativePath = new RelativePath(true, fcd.relativePath.segments.drop(fcd.relativePath.segments.length-1))
@@ -636,7 +636,7 @@ tasks.register('makeReleaseFiles') {
 
         // Copy files, with renames
         copy {
-            from(zipTree("$buildDir/distributions/AstroImageJ-x86_64Bit-windows.zip")) {
+            from("$buildDir/distributions/AstroImageJ") {
                 include '**/ij.jar', '**/StartupMacros.txt', '**/AstroImageJ.exe', '**/Astronomy_.jar'
                 eachFile { fcd ->
                     fcd.relativePath = new RelativePath(true, fcd.relativePath.segments.drop(fcd.relativePath.segments.length-1))
@@ -682,7 +682,7 @@ tasks.register('makeDailyBuildFiles') {
     doLast {
         // Copy files, no renames
         copy {
-            from(zipTree("$buildDir/distributions/AstroImageJ-x86_64Bit-windows.zip")) {
+            from("$buildDir/distributions/AstroImageJ") {
                 include '**/ij.jar', '**/StartupMacros.txt', '**/AstroImageJ.exe', '**/Astronomy_.jar'
                 eachFile { fcd ->
                     fcd.relativePath = new RelativePath(true, fcd.relativePath.segments.drop(fcd.relativePath.segments.length-1))

@@ -1888,7 +1888,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     } else {
                         xfold = ((x[curve][xx] - netT0) % netPeriod);
                         if (xfold > halfPeriod) { xfold -= netPeriod; } else if (xfold < -halfPeriod) xfold += netPeriod;
-                        if (Math.abs(xfold) < duration / 48.0) {
+                        if ((maskTransit && xfold > dMarker2Value && xfold < dMarker3Value) ||
+                                (maskTrimmedData && useDMarker1 && xfold < dMarker1Value) ||
+                                (maskTrimmedData && useDMarker4 && xfold > dMarker4Value)) {
                             yMask.setEntry(xx,0.0);
                         } else {
                             yMask.setEntry(xx,1.0);

@@ -39,7 +39,6 @@ public class MeasurementTable extends ResultsTable {
     protected String shortName = null;
     protected boolean locked = false;
     protected boolean dataChanged = false;
-    protected boolean structureChanged = false;
     protected String filePath = "";
     private final HashSet<Runnable> listeners = new HashSet<>();
     private static final Map<String, MeasurementTable> INSTANCES = new WeakHashMap<>();
@@ -589,11 +588,6 @@ public class MeasurementTable extends ResultsTable {
     public void setLock(boolean lockState) {
         locked = lockState;
 
-        if (!locked && structureChanged) {
-            updateView(UpdateEvent.REBUILD);
-            return;
-        }
-
         if (!locked && dataChanged) {
             updateView(UpdateEvent.DATA_CHANGED);
         }
@@ -761,8 +755,7 @@ public class MeasurementTable extends ResultsTable {
 
     private void updateView(UpdateEvent event, int i1, int i2) {
         dataChanged = true;
-        structureChanged = structureChanged || event.structureModification;
-        if (isLocked()) return;
+        if (isLocked() && !event.structureModification) return;
         // If coming from the event thread, it may be the table -
         // in which case delaying the update can cause the view and the model to desync
         if (SwingUtilities.isEventDispatchThread()) {
@@ -781,8 +774,7 @@ public class MeasurementTable extends ResultsTable {
 
     private void updateViewSynced(UpdateEvent event, int i1, int i2) {
         dataChanged = true;
-        structureChanged = structureChanged || event.structureModification;
-        if (isLocked()) return;
+        if (isLocked() && !event.structureModification) return;
         // If coming from the event thread, it may be the table -
         // in which case delaying the update can cause the view and the model to desync
         if (SwingUtilities.isEventDispatchThread()) {

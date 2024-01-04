@@ -3,6 +3,7 @@ package ij.plugin;
 import ij.IJ;
 import ij.Prefs;
 import ij.astro.AstroImageJ;
+import ij.astro.logging.AIJLogger;
 import ij.gui.GenericDialog;
 import ij.util.Tools;
 
@@ -98,7 +99,7 @@ public class Memory implements PlugIn {
 			String s2 = s.substring(index2);
 			if (s2.startsWith("g"))
 				s2 = "m"+s2.substring(1);
-			String s3 = unableToSet ? "-Xmx" + max2 + s2 : s.substring(0, index1) + max2 + s2;
+			String s3 = unableToSet ? "-Xmx" + max2 + "m" : s.substring(0, index1) + max2 + s2;
 			FileOutputStream fos = new FileOutputStream(f);
 			PrintWriter pw = new PrintWriter(fos);
 			pw.print(s3);

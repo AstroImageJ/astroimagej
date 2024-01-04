@@ -494,7 +494,7 @@ javaRuntimeSystems.each {sys, sysInfo ->
         group 'AstroImageJ Development'
 
         //noinspection GroovyAssignabilityCheck
-        version = sysInfo.arch + "_" + sysInfo.hw_bitness + "Bit"
+        version = "v${version}_${sysInfo.arch}_${sysInfo.hw_bitness}Bit"
         // Set the platform
         io.github.fvarrui.javapackager.model.Platform.values().each {
             if (it == io.github.fvarrui.javapackager.model.Platform.auto) return

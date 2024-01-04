@@ -441,6 +441,9 @@ javapackager {
     macConfig.setGeneratePkg(false) // Don't generate pkg as it's installation cannot update memory settings
     macConfig.setAppId("AstroImageJ")
     macConfig.setMacStartup(MacStartup.UNIVERSAL)
+    macConfig.setNotarizeApp(System.getenv("DeveloperId")!=null && project.notarize)
+    macConfig.setKeyChainProfile("AC_PASSWORD")
+    macConfig.setDeveloperId(System.getenv("DeveloperId"))
     winConfig.exeCreationTool = WindowsExeCreationTool.why
     winConfig.productVersion = "1.1.1"
     winConfig.productName = "Why Java Launcher"
@@ -531,9 +534,9 @@ javaRuntimeSystems.each {sys, sysInfo ->
         }
 
         // Installer is made by the signing script
-        if (sysInfo.os == "macos") {
-            generateInstaller = false
-        }
+        //if (sysInfo.os == "macos") {
+        //    generateInstaller = false
+        //}
     }
 
     logger.quiet("Added a distribution task: " + taskName as String)

@@ -1,6 +1,7 @@
 import groovy.json.JsonSlurper
 import io.github.fvarrui.javapackager.gradle.PackageTask
 import io.github.fvarrui.javapackager.model.FileAssociation
+import io.github.fvarrui.javapackager.model.MacStartup
 import io.github.fvarrui.javapackager.model.WindowsExeCreationTool
 import org.ajoberstar.grgit.Grgit
 import org.apache.tools.ant.taskdefs.condition.Os
@@ -439,6 +440,7 @@ javapackager {
     winConfig.setDisableDirPage(false) // Let users set install location
     macConfig.setGeneratePkg(false) // Don't generate pkg as it's installation cannot update memory settings
     macConfig.setAppId("AstroImageJ")
+    macConfig.setMacStartup(MacStartup.UNIVERSAL)
     winConfig.exeCreationTool = WindowsExeCreationTool.why
     winConfig.productVersion = "1.1.1"
     winConfig.productName = "Why Java Launcher"

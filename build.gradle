@@ -509,7 +509,7 @@ javaRuntimeSystems.each {sys, sysInfo ->
         }
 
         //noinspection GroovyAssignabilityCheck
-        version = "v${version}_${platform}_${sysInfo.arch}_${sysInfo.hw_bitness}Bit"
+        version = "v${project.version}-${platform}-${sysInfo.arch}_${sysInfo.hw_bitness}Bit"
 
         // Get Java bin fold location
         File runtimePath

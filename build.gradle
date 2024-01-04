@@ -537,10 +537,10 @@ javaRuntimeSystems.each {sys, sysInfo ->
 
         if (sysInfo.os == "linux") {
             //noinspection GroovyAssignabilityCheck
-            createTarball = true
+            createTarball = project.createZipTarBalls.asBoolean()
         } else {
             //noinspection GroovyAssignabilityCheck
-            createZipball = true
+            createZipball = project.createZipTarBalls.asBoolean()
         }
 
         // Installer is made by the signing script

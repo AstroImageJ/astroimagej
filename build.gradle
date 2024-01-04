@@ -494,7 +494,7 @@ javaRuntimeSystems.each {sys, sysInfo ->
         group 'AstroImageJ Development'
 
         //noinspection GroovyAssignabilityCheck
-        version = "v${version}_${sysInfo.arch}_${sysInfo.hw_bitness}Bit"
+        version = sysInfo.arch + "_" + sysInfo.hw_bitness + "Bit"
         // Set the platform
         io.github.fvarrui.javapackager.model.Platform.values().each {
             if (it == io.github.fvarrui.javapackager.model.Platform.auto) return
@@ -504,6 +504,9 @@ javaRuntimeSystems.each {sys, sysInfo ->
                 platform = it
             }
         }
+
+        //noinspection GroovyAssignabilityCheck
+        version = "v${version}_${platform}_${sysInfo.arch}_${sysInfo.hw_bitness}Bit"
 
         // Get Java bin fold location
         File runtimePath

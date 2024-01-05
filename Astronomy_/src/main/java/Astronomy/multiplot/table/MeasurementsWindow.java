@@ -420,6 +420,7 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
                     adjustWidth(i);
                 }
             }
+            case COL_RENAMED -> tableView.fireTableRowsUpdated(TableModelEvent.HEADER_ROW, TableModelEvent.HEADER_ROW);
         }
     }
 

@@ -8,6 +8,7 @@ public enum UpdateEvent {
     ROW_UPDATED(false),
     CELL_UPDATED(false),
     COL_ADDED(true),
+    COL_RENAMED(true),
     ;
 
     public final boolean structureModification;

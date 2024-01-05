@@ -885,7 +885,7 @@ public class MeasurementTable extends ResultsTable {
     @Deprecated
     public void setHeading(int column, String heading) {
         super.setHeading(column, heading);
-        updateView(UpdateEvent.REBUILD);
+        updateView(UpdateEvent.COL_RENAMED, column, column);
     }
 
     @Override

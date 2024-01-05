@@ -2,6 +2,7 @@ package util;
 
 import Astronomy.AstroImageJ_Updater;
 import Astronomy.MultiPlot_;
+import astroj.IJU;
 import astroj.MeasurementTable;
 import ij.IJ;
 import ij.Prefs;
@@ -36,10 +37,24 @@ public class AIJStartupHandler implements PlugIn {
                     MultiPlot_.loadDataOpenConfig(table, p.toString());
                 }
             }, true, Prefs.defaultResultsExtension());
+    private static final AssociationMapper multiplotPlotCfgHandler =
+            new AssociationMapper(p -> MultiPlot_.loadConfigOfOpenTable(p.toString()), true, ".plotcfg");
+    private static final AssociationMapper radecHandler =
+            new AssociationMapper(p -> IJU.openRaDecApertures(p.toString()), true, ".radec");
+    private static final AssociationMapper aperturesHandler =
+            new AssociationMapper(p -> {
+                var asw = IJU.getBestOpenAstroStackWindow();
+                if (asw != null) {
+                    asw.openApertures(p.toString());
+                }
+            }, true, ".apertures");
 
     @Override
     public void run(String arg) {
         FileAssociationHandler.registerAssociation(multiplotTableHandler);
+        FileAssociationHandler.registerAssociation(radecHandler);
+        FileAssociationHandler.registerAssociation(aperturesHandler);
+        FileAssociationHandler.registerAssociation(multiplotPlotCfgHandler);
         ensureConfigFileExists();
         Executors.newSingleThreadExecutor()
                 .execute(() -> IJ.runPlugIn(AstroImageJ_Updater.class.getCanonicalName(), "check"));

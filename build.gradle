@@ -478,6 +478,9 @@ javapackager {
             new FileAssociation(mimeType: 'application/fits', extension: 'fit.gz', description: 'FITS File'),
             new FileAssociation(mimeType: 'application/fits', extension: 'fts.gz', description: 'FITS File'),
             new FileAssociation(mimeType: 'text/tbl', extension: 'tbl', description: 'Table'),
+            new FileAssociation(mimeType: 'text/radec', extension: 'radec', description: 'AIJ radec file'),
+            new FileAssociation(mimeType: 'text/apertures', extension: 'apertures', description: 'AIJ apertures file'),
+            new FileAssociation(mimeType: 'text/plotcfg', extension: 'plotcfg', description: 'AIJ plot config file'),
     ]
 }
 

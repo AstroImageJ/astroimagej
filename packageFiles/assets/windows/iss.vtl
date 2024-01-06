@@ -69,6 +69,10 @@ Name: "${language.key}"; MessagesFile: "${language.value}"
 #if ($info.winConfig.createDesktopIconTask)
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 #end
+#foreach ($fileAssociation in $info.fileAssociations)
+; ${fileAssociation.extension} extension file association
+Name: association${fileAssociation.extension.replace('.','_')}; Description: "{cm:AssocFileExtension,${info.name},${fileAssociation.description} (.${fileAssociation.extension})}"; GroupDescription: "Register File Associations:"
+#end
 
 [Registry]
 #if ($info.winConfig.registry)
@@ -78,11 +82,11 @@ Root: ${entry.root}; Subkey: "${entry.subkey}"; ValueType: ${entry.valueTypeAsIn
 #end
 #foreach ($fileAssociation in $info.fileAssociations)
 ; ${fileAssociation.extension} extension file association
-Root: HKA; Subkey: "Software\Classes\.${fileAssociation.extension}\OpenWithProgids"; ValueType: string; ValueName: "${info.name}.${fileAssociation.extension}"; ValueData: ""; Flags: uninsdeletevalue
-Root: HKA; Subkey: "Software\Classes\\${info.name}.${fileAssociation.extension}"; ValueType: string; ValueName: ""; ValueData: "${fileAssociation.description}"; Flags: uninsdeletekey
-Root: HKA; Subkey: "Software\Classes\\${info.name}.${fileAssociation.extension}\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\\${info.executable.name},0"; Flags: uninsdeletevalue
-Root: HKA; Subkey: "Software\Classes\\${info.name}.${fileAssociation.extension}\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\\${info.executable.name}"" ""%1"""; Flags: uninsdeletevalue
-Root: HKA; Subkey: "Software\Classes\Applications\\${info.executable.name}\SupportedTypes"; ValueType: string; ValueName: ".${fileAssociation.extension}"; ValueData: ""; Flags: uninsdeletevalue
+Root: HKA; Subkey: "Software\Classes\.${fileAssociation.extension}\OpenWithProgids"; ValueType: string; ValueName: "${info.name}.${fileAssociation.extension}"; ValueData: ""; Flags: uninsdeletevalue; Tasks: association${fileAssociation.extension.replace('.','_')}
+Root: HKA; Subkey: "Software\Classes\\${info.name}.${fileAssociation.extension}"; ValueType: string; ValueName: ""; ValueData: "${fileAssociation.description}"; Flags: uninsdeletekey; Tasks: association${fileAssociation.extension.replace('.','_')}
+Root: HKA; Subkey: "Software\Classes\\${info.name}.${fileAssociation.extension}\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\\${info.executable.name},0"; Flags: uninsdeletevalue; Tasks: association${fileAssociation.extension.replace('.','_')}
+Root: HKA; Subkey: "Software\Classes\\${info.name}.${fileAssociation.extension}\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\\${info.executable.name}"" ""%1"""; Flags: uninsdeletevalue; Tasks: association${fileAssociation.extension.replace('.','_')}
+Root: HKA; Subkey: "Software\Classes\Applications\\${info.executable.name}\SupportedTypes"; ValueType: string; ValueName: ".${fileAssociation.extension}"; ValueData: ""; Flags: uninsdeletevalue; Tasks: association${fileAssociation.extension.replace('.','_')}
 #end
 
 [Files]

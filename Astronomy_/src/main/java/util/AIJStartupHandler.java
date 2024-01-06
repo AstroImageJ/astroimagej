@@ -51,6 +51,9 @@ public class AIJStartupHandler implements PlugIn {
 
     @Override
     public void run(String arg) {
+        if (IJ.isWindows()) {
+            WinMutexHandler.createMutex();
+        }
         FileAssociationHandler.registerAssociation(multiplotTableHandler);
         FileAssociationHandler.registerAssociation(radecHandler);
         FileAssociationHandler.registerAssociation(aperturesHandler);

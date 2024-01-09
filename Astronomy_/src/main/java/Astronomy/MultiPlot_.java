@@ -20,7 +20,6 @@ import ij.astro.gui.nstate.TriState;
 import ij.astro.io.prefs.Property;
 import ij.astro.io.prefs.PropertyKey;
 import ij.astro.types.Pair;
-import ij.astro.util.EmojiIcon;
 import ij.astro.util.PdfPlotOutput;
 import ij.astro.util.UIHelper;
 import ij.gui.*;
@@ -11083,7 +11082,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         usesmoothbox.setHorizontalAlignment(JLabel.CENTER);
         smoothP.add(usesmoothbox);
 
-        var smoothGear = new JButton(new EmojiIcon("⛭", 22));
+        var smoothGear = new JButton(UIHelper.createImageIcon("Astronomy/images/icons/multiplot/gear.png", -1, 22));
         smoothGear.addActionListener(e -> {
             KeplerSplineControl.getInstance(c).displayPanel();
         });

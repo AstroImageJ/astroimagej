@@ -132,6 +132,11 @@ public class UIHelper {
     }
 
     /** Returns an ImageIcon, or null if the path was invalid. */
+    public static ImageIcon createImageIcon(String path,int width, int height) {
+        return new ImageIcon(UIHelper.createImage(path).getScaledInstance(width, height, Image.SCALE_SMOOTH));
+    }
+
+    /** Returns an ImageIcon, or null if the path was invalid. */
     public static ImageIcon createImageIcon(String path, String description) {
         return createImageIcon(IJ.getClassLoader(), path, description);
     }

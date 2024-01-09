@@ -7,7 +7,6 @@ import com.astroimagej.bspline.KeplerSpline;
 import com.astroimagej.bspline.util.Pair;
 import flanagan.analysis.Smooth;
 import ij.astro.gui.GenericSwingDialog;
-import ij.astro.util.EmojiIcon;
 import ij.astro.util.UIHelper;
 import org.hipparchus.linear.MatrixUtils;
 import org.hipparchus.linear.RealVector;
@@ -297,7 +296,7 @@ public class KeplerSplineControl {
         b.add(bkSpaceDisplay);
         b.setToolTipText("Indicates the fitted or fixed spline knot spacing.");
         bkSpaceDisplay.setToolTipText("Indicates the fitted or fixed spline knot spacing.");
-        var copyButton = new JButton(new EmojiIcon("⮭", 19));
+        var copyButton = new JButton(UIHelper.createImageIcon("Astronomy/images/icons/multiplot/copyGroup.png", -1, 18));
         copyButton.setMargin(new Insets(0, 3, 0, 3));
         copyButton.addActionListener($ -> {
             settings.fixedKnotDensity.set(Double.valueOf(bkSpaceDisplay.getText()));

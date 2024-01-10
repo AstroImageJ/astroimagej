@@ -8,20 +8,27 @@ import ij.IJ;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.stream.IntStream;
 
 public class BicFitting extends Optimizer {
     private final int[] initialDetrendIndex;
+    private final int[] indexMap;
     private final String[] detrendlabel;
     private final HashMap<Integer, FitOptimization.MinimumState> stateTracker = new HashMap<>();
+    private final BigInteger endState1;
 
     public BicFitting(BigInteger startState, BigInteger endState, FitOptimization fitOptimization) {
         super(startState, endState, fitOptimization);
         initialDetrendIndex = Arrays.copyOf(MultiPlot_.detrendIndex[curve], MultiPlot_.detrendIndex[curve].length);
         detrendlabel = new String[initialDetrendIndex.length];
-        for (int i = 0; i < MultiPlot_.detrendIndex[curve].length; i++) {
+
+        // hack to minimize number of params searched
+        indexMap = IntStream.range(0, MultiPlot_.fitDetrendComboBox[curve].length).peek(i -> {
             initialDetrendIndex[i] = MultiPlot_.fitDetrendComboBox[curve][i].getSelectedIndex();
             detrendlabel[i] = (String) MultiPlot_.fitDetrendComboBox[curve][i].getSelectedItem();
-        }
+        }).filter(i -> MultiPlot_.fitDetrendComboBox[curve][i].getSelectedIndex() != 0).toArray();
+        endState1 = BigInteger.ONE.shiftLeft(indexMap.length).subtract(BigInteger.ONE);
+        fitOptimization.detrendCounter.setBasis(endState1.subtract(BigInteger.ONE));
     }
 
     @Override
@@ -57,7 +64,7 @@ public class BicFitting extends Optimizer {
         final var epsilon = FitOptimization.EPSILON;
         final var maxParams = (int) fitOptimization.detrendParamCount.getValue();
         BigInteger counter = BigInteger.ZERO;
-        for (BigInteger state = startState; state.compareTo(endState) <= 0; state = state.add(BigInteger.ONE)) {
+        for (BigInteger state = startState; state.compareTo(endState1) <= 0; state = state.add(BigInteger.ONE)) {
             fitOptimization.detrendCounter.dynamicSet(counter);
             counter = counter.add(BigInteger.ONE);
 
@@ -104,9 +111,9 @@ public class BicFitting extends Optimizer {
 
     private int[] newState(BigInteger state) {
         var out = Arrays.copyOf(initialDetrendIndex, initialDetrendIndex.length);
-        for (int i = 0; i < out.length; i++) {
+        for (int i = 0; i < indexMap.length; i++) {
             if (!state.testBit(i)) {
-                out[i] = 0;
+                out[indexMap[i]] = 0;
             }
         }
         return out;

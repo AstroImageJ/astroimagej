@@ -942,6 +942,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         }
         table.setLock(false);
     };
+    private static PlotDataLock plotDataLock;
 
     public void run(String inTableNamePlusOptions) {
         boolean useAutoAstroDataUpdate = false;
@@ -1447,6 +1448,774 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 }
             }
         }
+
+        if (plotDataLock == null || plotDataLock.requiresUpdate()) {
+            plotDataLock = processData(updateFit);
+        }
+
+        //----------------Set up plot options------------------------------------
+        plotOptions = 0;
+        if (xTics) plotOptions += ij.gui.Plot.X_TICKS;
+        if (yTics) plotOptions += ij.gui.Plot.Y_TICKS;
+        if (xGrid) plotOptions += ij.gui.Plot.X_GRID;
+        if (yGrid) plotOptions += ij.gui.Plot.Y_GRID;
+        if (xNumbers) plotOptions += ij.gui.Plot.X_NUMBERS;
+        if (yNumbers) plotOptions += ij.gui.Plot.Y_NUMBERS;
+
+
+        plot = new Plot("Plot of " + tableName, xlab, ylab, plotOptions);
+        plot.setOffScreenDisplacementArrowControl(drawOffscreenDisplacementArrowsX.get(), drawOffscreenDisplacementArrowsY.get());
+        plot.setSize(plotSizeX, plotSizeY);
+        pltMinX = xPlotMin - 5. * dx;
+        pltMaxX = xPlotMax + 5. * dx;
+        pltMinY = yPlotMin - 5. * dy;
+        pltMaxY = yPlotMax + 5. * dy;
+
+        var minX = pltMinX;
+        var maxX = pltMaxX;
+        var minY = pltMinY;
+        var maxY = pltMaxY;
+
+        if (draggableShape.isPlotScaleDirty()) {
+            pltMinX = draggableShape.scale.xMin();
+            pltMaxX = draggableShape.scale.xMax();
+            pltMinY = draggableShape.scale.yMin();
+            pltMaxY = draggableShape.scale.yMax();
+            if (draggableShape.scaleChanged()) {
+                zoomX = 0.0;
+                zoomY = 0.0;
+                totalPanOffsetX = 0.0;
+                totalPanOffsetY = 0.0;
+                newPanOffsetX = 0.0;
+                newPanOffsetY = 0.0;
+            }
+        }
+
+        if (invertYAxis) {
+            double yMaxTemp = pltMaxY;
+            pltMaxY = pltMinY;
+            pltMinY = yMaxTemp;
+        }
+
+        if (plotImageCanvas != null) { //zoom != 0.0 &&
+            Rectangle s = plot.getDrawingFrame();
+            plotMinX = totalPanOffsetX + newPanOffsetX + pltMinX + (pltMaxX - pltMinX) * ((mouseX - 1)/ s.width) * zoomX;
+            plotMaxX = totalPanOffsetX + newPanOffsetX + pltMaxX - (pltMaxX - pltMinX) * ((s.width - mouseX - 15) / (s.width)) * zoomX;
+            plotMinY = totalPanOffsetY + newPanOffsetY + pltMinY + (pltMaxY - pltMinY) * ((s.height - 15 - mouseY) / (s.height)) * zoomY;
+            plotMaxY = totalPanOffsetY + newPanOffsetY + pltMaxY - (pltMaxY - pltMinY) * (mouseY / (s.height)) * zoomY;
+            // Limit zoom out
+            plotMinX = Math.max(minX + totalPanOffsetX + newPanOffsetX, plotMinX);
+            plotMaxX = Math.min(maxX + totalPanOffsetX + newPanOffsetX, plotMaxX);
+            plotMinY = Math.max(minY + totalPanOffsetY + newPanOffsetY, plotMinY);
+            plotMaxY = Math.min(maxY + totalPanOffsetY + newPanOffsetY, plotMaxY);
+        } else {
+            plotMinX = pltMinX;
+            plotMaxX = pltMaxX;
+            plotMinY = pltMinY;
+            plotMaxY = pltMaxY;
+            zoomX = 0.0;
+            zoomY = 0.0;
+            totalPanOffsetX = 0.0;
+            totalPanOffsetY = 0.0;
+            newPanOffsetX = 0.0;
+            newPanOffsetY = 0.0;
+            leftDragReleased = false;
+        }
+
+        plot.setLimits(plotMinX, plotMaxX, plotMinY, plotMaxY);
+
+        // Calculate yModel2 for drawing, scaling with plot bounds
+        for (int curve = 0; curve < maxCurves; curve++) {
+            if (xModel2[curve] != null && yModel2[curve] != null && xModel2[curve].length == 0 && yModel2[curve].length == 0) {
+                int xModel2Len = plotSizeX + 1;
+                double xModel2Step = ((useDMarker4 && fitMax[curve] < plotMaxX + xOffset ? fitMax[curve] : plotMaxX + xOffset) - (useDMarker1 && fitMin[curve] > plotMinX + xOffset ? fitMin[curve] : plotMinX + xOffset)) / (xModel2Len - 1);
+                xModel2[curve] = new double[xModel2Len];
+                xModel2[curve][0] = useDMarker1 && fitMin[curve] > plotMinX + xOffset ? fitMin[curve] : plotMinX + xOffset;
+                for (int i = 1; i < xModel2Len; i++) {
+                    xModel2[curve][i] = xModel2[curve][i - 1] + xModel2Step;
+                }
+
+                yModel2[curve] = IJU.transitModel(xModel2[curve], bestFit[curve][0], bestFit[curve][4], bestFit[curve][1], bestFit[curve][2], bestFit[curve][3], orbitalPeriod[curve], forceCircularOrbit[curve] ? 0.0 : eccentricity[curve], forceCircularOrbit[curve] ? 0.0 : omega[curve], bestFit[curve][5], bestFit[curve][6], useLonAscNode[curve], lonAscNode[curve], true);
+
+                if (normIndex[curve] != 0) {
+                    if (yModel2[curve] != null) {
+                        for (int nnn = 0; nnn < yModel2[curve].length; nnn++) {
+                            yModel2[curve][nnn] /= plotDataLock.normAverageSet()[curve];
+                        }
+                    }
+                }
+
+                if (mmag[curve]) {
+                    if (yModel2[curve] != null) {
+                        for (int nnn = 0; nnn < yModel2[curve].length; nnn++) {
+                            yModel2[curve][nnn] = plotDataLock.magSign() * 2.5 * Math.log10(yModel2[curve][nnn] / baseline[curve]);
+                        }
+                    }
+                }
+
+                if (showXAxisAsPhase) {
+
+                } else if (showXAxisAsDaysSinceTc) {
+
+                } else if (showXAxisAsHoursSinceTc) {
+
+                } else if (xlabel2[curve].contains("J.D.") || xlabel2[curve].contains("JD")) {
+                    if (xModel2[curve] != null) {
+                        for (int nnn = 0; nnn < xModel2[curve].length; nnn++) {
+                            xModel2[curve][nnn] -= xOffset;
+                        }
+                    }
+                }
+
+                for (int nnn = 0; nnn < yModel2[curve].length; nnn++) {
+                    if (normIndex[curve] != 0 && !mmag[curve] && !force[curve]) {
+                        yModel2[curve][nnn] = 1 + totalScaleFactor[curve] * (yModel2[curve][nnn] - 1.0) + subtotalShiftFactor[curve];
+                    } else {
+                        yModel2[curve][nnn] = totalScaleFactor[curve] * yModel2[curve][nnn] + subtotalShiftFactor[curve];
+                    }
+                }
+            }
+        }
+
+        // Draw Legends
+        double legPosY = legendPosY;
+        for (int curve = 0; curve < maxCurves; curve++) {
+            if (plotY[curve]) {
+                if ((showErrors[curve] && (hasErrors[curve] || hasOpErrors[curve]))) {
+                    plot.setLineWidth(2);
+                } else { plot.setLineWidth(1); }
+                plot.setColor(color[curve]);
+
+                if (xModel2[curve] != null && yModel2[curve] != null && xModel2[curve].length == yModel2[curve].length && (detrendFitIndex[curve] != 9 || showModel[curve])) {
+                    if (detrendFitIndex[curve] == 9) {
+                        plot.setColor(modelColor[curve]);
+                    }
+                }
+
+                plot.setLineWidth(1);
+                if (legendLeft) {
+                    plot.setJustification(ij.process.ImageProcessor.LEFT_JUSTIFY);
+                } else if (legendRight) { plot.setJustification(ij.process.ImageProcessor.RIGHT_JUSTIFY); } else {
+                    plot.setJustification(ij.process.ImageProcessor.CENTER_JUSTIFY);
+                }
+
+                // MAKE FULL LEGEND STRING FOR CURVE
+
+                StringBuilder llab;
+
+                if (detrendFitIndex[curve] == 9 && useTransitFit[curve] && showResidual[curve] && showLResidual[curve] && residualShift[curve] > 0.0) {
+                    llab = new StringBuilder(ylabel[curve] + " Residuals");
+                    llab.append(" (RMS=").append(sigma[curve] >= 1.0 ? uptoThreePlaces.format(sigma[curve]) : uptoFivePlaces.format(sigma[curve])).append(") (chi^2/dof=").append(uptoTwoPlaces.format(chi2dof[curve])).append(")");
+                    if (drawLegendSymbol(residualSymbol[curve], residualSymbol[curve] == Plot.DOT ? 4 : 1, residualColor[curve], legPosY, llab.toString())) {
+                        plot.addLabel(legendPosX, legPosY, llab.toString());
+                        legPosY += 18. / plotSizeY;
+                    }
+                }
+
+                llab = new StringBuilder();
+
+                if (useColumnName[curve]) {
+                    if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.CENTROID_DISTANCE) {
+                        llab = new StringBuilder(xyc1label[curve] + " - " + xyc2label[curve] + " centroid distance");
+                        boolean atLeastOne = false;
+                        if (showLdetrendInfo && detrendFitIndex[curve] != 0) {
+                            for (int v = 0; v < maxDetrendVars; v++) {
+                                if (detrendIndex[curve][v] != 0) {
+                                    if (atLeastOne) { llab.append("+").append(detrendlabel[curve][v]); } else {
+                                        llab.append(" (").append(detrendlabel[curve][v]);
+                                    }
+                                    atLeastOne = true;
+                                }
+                            }
+                        }
+                        if (atLeastOne) {
+                            if (detrendFitIndex[curve] == 9 && useTransitFit[curve]) {
+                                llab.append(" detrended with transit fit)");
+                            } else {
+                                llab.append(" detrended)");
+                            }
+                        } else {
+                            if (detrendFitIndex[curve] == 9 && useTransitFit[curve]) {
+                                llab.append(KeplerSplineControl.getInstance(curve).ifTransitSmoothed(" (Spline Smoothed)"))
+                                        .append(" (transit fit)");
+                            } else {
+                                llab.append(KeplerSplineControl.getInstance(curve).ifTransitSmoothed("(Spline Smoothed)"));
+                            }
+                        }
+                        if (showLnormInfo && normIndex[curve] != 0 && !mmag[curve] && !force[curve]) {
+                            llab.append(" (normalized)");
+                        } else {
+                            llab.append(usePixelScale ? " (arcsecs)" : " (pixels)");
+                        }
+                        if ((detrendFitIndex[curve] > 1 && showSigmaForDetrendedCurves) || showSigmaForAllCurves) {
+                            llab.append(" (RMS=").append(sigma[curve] >= 1.0 ? uptoThreePlaces.format(sigma[curve]) : uptoFivePlaces.format(sigma[curve])).append(")");
+                        }
+                        if (mmag[curve] && showLmmagInfo) {
+                            llab.append(" mmag)");
+                        } else {
+                            llab.append(" ppt)");
+                        }
+                    } else {
+                        llab = new StringBuilder(ylabel[curve]);
+                        if (operatorBase.getOrCreateVariant(curve).get() != MPOperator.NONE) {
+                            llab.append(operatorBase.getOrCreateVariant(curve).get().getSymbol()).append(oplabel[curve]);
+                        }
+                        boolean atLeastOne = false;
+                        if (showLdetrendInfo && detrendFitIndex[curve] != 0) {
+                            for (int v = 0; v < maxDetrendVars; v++) {
+                                if (detrendIndex[curve][v] != 0) {
+                                    if (atLeastOne) { llab.append("+").append(detrendlabel[curve][v]); } else {
+                                        llab.append(" (")
+                                                .append(KeplerSplineControl.getInstance(curve).ifTransitSmoothed("Spline+"))
+                                                .append(detrendlabel[curve][v]);
+                                    }
+                                    atLeastOne = true;
+                                }
+                            }
+                        }
+                        if (atLeastOne) {
+                            if (detrendFitIndex[curve] == 9 && useTransitFit[curve]) {
+                                llab.append(" detrended with transit fit)");
+                            } else {
+                                llab.append(" detrended)");
+                            }
+                        } else {
+                            if (detrendFitIndex[curve] == 9 && useTransitFit[curve]) {
+                                llab.append(KeplerSplineControl.getInstance(curve).ifTransitSmoothed(" (Spline Smoothed)"))
+                                        .append(" (transit fit)");
+                            } else {
+                                llab.append(KeplerSplineControl.getInstance(curve).ifTransitSmoothed("(Spline Smoothed)"));
+                            }
+                        }
+                        if (showLnormInfo && normIndex[curve] != 0 && !mmag[curve] && !force[curve]) {
+                            llab.append(" (normalized)");
+                        }
+                        if (((detrendFitIndex[curve] > 1 && showSigmaForDetrendedCurves) || showSigmaForAllCurves)) { //!force[curve] &&
+                            double factor = 1000;
+                            if (mmag[curve] && totalScaleFactor[curve] == 1000) {
+                                sigma[curve] *= 1000;
+                                factor = 1/1000D; // Fix for display of RMS in legend being times 1000
+                            }
+                            llab.append(" (RMS=").append(sigma[curve] >= 1.0 ? uptoThreePlaces.format(sigma[curve] * factor)
+                                    : threeDigitsTwoPlaces.format(sigma[curve] * factor));
+                        }
+                        if (mmag[curve] && showLmmagInfo) {
+                            llab.append(" mmag)");
+                        } else {
+                            llab.append(" ppt)");
+                        }
+                    }
+
+                    // Duplicate conditions of transit model fit legend
+                    if (detrendFitIndex[curve] == 9 && useTransitFit[curve] && showModel[curve] && showLTranParams[curve]) {
+                        llab.append(" (depth=").append(transitDepthLabel[curve].getText());
+                        if (mmag[curve]) {
+                            llab.append(" mmag)");
+                        } else {
+                            llab.append(" ppt)");
+                        }
+
+                    }
+                    if (detrendFitIndex[curve] == 9 && showModel[curve] && showLTranParams[curve]) {
+                        llab.append(" (BIC=").append(Double.isNaN(bic[curve]) ? "NaN" : fiveDigitsOnePlace.format(bic[curve])).append(")");
+                    }
+
+                    if (!force[curve])//&&(showLScaleInfo || showLShiftInfo))
+                    { llab.append(scaleShiftText(force[curve], showLScaleInfo, showLShiftInfo, mmag[curve], showLmmagInfo, totalScaleFactor[curve], totalShiftFactor[curve])); } else if (force[curve])//&&(showLRelScaleInfo || showLRelShiftInfo))
+                    { llab.append(scaleShiftText(force[curve], showLRelScaleInfo, showLRelShiftInfo, mmag[curve], showLmmagInfo, totalScaleFactor[curve], totalShiftFactor[curve])); }
+                    if ((inputAverageOverSize[curve] != 1) && showLAvgInfo) {
+                        llab.append(" (input average=").append(inputAverageOverSize[curve]).append(")");
+                    }
+                    if (showOutBinRms && binDisplay[curve].isOn()) {
+                        llab.append(" (RMS=").append(uptoTwoPlaces.format(outBinRms[curve])).append(" ppt/").append(uptoTwoPlaces.format(minutes.get(curve).first())).append(" min)");
+                    }
+                    if (showLSymbolInfo) llab.append(" (").append(markers[markerIndex[curve]]).append(")");
+                }
+
+                if (useLegend[curve]) {
+                    llab.append(useColumnName[curve] ? " " : "").append(legend[curve]);
+                }
+
+                if (useColumnName[curve] || useLegend[curve]) {
+                    if (drawLegendSymbol(marker[curve], (marker[curve] == Plot.DOT) ? 4 : 1, color[curve], legPosY, llab.toString())) {
+                        plot.addLabel(legendPosX, legPosY, llab.toString());
+                        legPosY += 18. / plotSizeY;
+                    }
+                }
+
+                if (detrendFitIndex[curve] == 9 && useTransitFit[curve] && showModel[curve] && showLTranParams[curve]) {
+                    llab = new StringBuilder(ylabel[curve] + " Transit Model ([P=" + uptoTwoPlaces.format(orbitalPeriod[curve]) + "], " + (lockToCenter[curve][1] ? "[" : "") + "(Rp/R*)^2=");
+                    llab.append(fourPlaces.format(bestFit[curve][1] * bestFit[curve][1])).append(lockToCenter[curve][1] ? "]" : "");
+                    llab.append(", ").append(lockToCenter[curve][2] ? "[" : "").append("a/R*=").append(onePlaces.format(bestFit[curve][2])).append(lockToCenter[curve][2] ? "]" : "");
+                    if (bpLock[curve]) {
+                        llab.append(", ").append("[").append("b=").append(twoPlaces.format(((Number) bpSpinner[curve].getValue()).doubleValue())).append("]");
+                    } else {
+                        llab.append(", ").append(lockToCenter[curve][4] ? "[" : "").append("i=").append(onePlaces.format(bestFit[curve][4] * 180 / Math.PI)).append(lockToCenter[curve][4] ? "]" : "");
+                    }
+                    llab.append(", ").append(lockToCenter[curve][3] ? "[" : "").append("Tc=").append(uptoSixPlaces.format(bestFit[curve][3])).append(lockToCenter[curve][3] ? "]" : "");
+                    llab.append(", ").append(lockToCenter[curve][5] ? "[" : "").append("u1=").append(uptoTwoPlaces.format(bestFit[curve][5])).append(lockToCenter[curve][5] ? "]" : "");
+                    llab.append(", ").append(lockToCenter[curve][6] ? "[" : "").append("u2=").append(uptoTwoPlaces.format(bestFit[curve][6])).append(lockToCenter[curve][6] ? "]" : "").append(")");
+                    if (drawLegendSymbol(Plot.LINE, modelLineWidth[curve] + (showErrors[curve] && (hasErrors[curve] || hasOpErrors[curve]) ? 1 : 0), modelColor[curve], legPosY, llab.toString())) {
+                        plot.addLabel(legendPosX, legPosY, llab.toString());
+                        legPosY += 18. / plotSizeY;
+                    }
+                }
+
+                if (detrendFitIndex[curve] == 9 && useTransitFit[curve] && showResidual[curve] && showLResidual[curve] && residualShift[curve] <= 0.0) {
+                    llab = new StringBuilder(ylabel[curve] + " Residuals");
+                    llab.append(" (RMS=").append(sigma[curve] >= 1.0 ? uptoThreePlaces.format(sigma[curve]) : uptoFivePlaces.format(sigma[curve])).append(") (chi^2/dof=").append(uptoTwoPlaces.format(chi2dof[curve])).append(")");
+                    if (drawLegendSymbol(residualSymbol[curve], residualSymbol[curve] == Plot.DOT ? 4 : 1, residualColor[curve], legPosY, llab.toString())) {
+                        plot.addLabel(legendPosX, legPosY, llab.toString());
+                        legPosY += 18. / plotSizeY;
+                    }
+                }
+
+            }
+        }
+
+        // Draw data, inverse order so that curves will draw over displacement arrows
+        for (int curve = maxCurves - 1; curve >= 0; curve--) {
+            if (plotY[curve]) {
+                if (showResidual[curve] && residual[curve] != null && useTransitFit[curve] && detrendFitIndex[curve] == 9) {
+                    if (showModel[curve]) {
+                        plot.setLineWidth((showResidualError[curve] && yModel1Err[curve] != null) ? residualLineWidth[curve] + 1 : residualLineWidth[curve]);
+                        plot.setColor(residualModelColor[curve]);
+                        double dLen = 7 * (plotMaxX - plotMinX) / plotSizeX;
+                        double min = Math.max(fitMin[curve] - xOffset, xPlotMin);
+                        double max = Math.min(fitMax[curve] - xOffset, xPlotMax);
+                        double nDashes = ((max - min) / dLen);
+                        double ypos = detrendYAverage[curve] + (force[curve] ? autoResidualShift[curve] * totalScaleFactor[curve] * (yWidthOrig[curve] / autoScaleFactor[curve]) : residualShift[curve]);//*(normIndex[curve] != 0 && !mmag[curve]?1.0:yMultiplierFactor));
+                        for (int dashCount = 0; dashCount < nDashes; dashCount += 2) {
+                            plot.drawLine(min + dLen * dashCount, ypos, min + dLen * (dashCount + 1), ypos);
+                        }
+                    }
+
+                    if (residualSymbol[curve] == ij.gui.Plot.DOT) { plot.setLineWidth(4); } else plot.setLineWidth(1);
+                    int len = residual[curve].length;
+                    plottedResidual[curve] = Arrays.copyOf(residual[curve], len);
+                    for (int nnn = 0; nnn < len; nnn++) {
+                        plottedResidual[curve][nnn] += detrendYAverage[curve] + (force[curve] ? autoResidualShift[curve] * totalScaleFactor[curve] * (yWidthOrig[curve] / autoScaleFactor[curve]) : residualShift[curve]);//*(normIndex[curve] != 0 && !mmag[curve]?1.0:yMultiplierFactor));
+                    }
+                    plot.setColor(residualColor[curve]);
+                    plot.addPoints(Arrays.copyOf(xModel1[curve], xModel1[curve].length), plottedResidual[curve], residualSymbol[curve]);
+                    if (showResidualError[curve] && yModel1Err[curve] != null) { //code to replace plot.addErrorBars
+                        plot.setLineWidth(1);
+                        for (int nnn = 0; nnn < len; nnn++) {
+                            plot.drawLine(xModel1[curve][nnn], plottedResidual[curve][nnn] - yModel1Err[curve][nnn], xModel1[curve][nnn], plottedResidual[curve][nnn] + yModel1Err[curve][nnn]);
+                            plot.drawLine(xModel1[curve][nnn] - (3.0 * (plotMaxX - plotMinX) / plotSizeX), plottedResidual[curve][nnn] + yModel1Err[curve][nnn], xModel1[curve][nnn] + (3.0 * (plotMaxX - plotMinX) / plotSizeX), plottedResidual[curve][nnn] + yModel1Err[curve][nnn]);
+                            plot.drawLine(xModel1[curve][nnn] - (3.0 * (plotMaxX - plotMinX) / plotSizeX), plottedResidual[curve][nnn] - yModel1Err[curve][nnn], xModel1[curve][nnn] + (3.0 * (plotMaxX - plotMinX) / plotSizeX), plottedResidual[curve][nnn] - yModel1Err[curve][nnn]);
+                        }
+                    }
+
+                }
+
+                plot.setColor(binDisplay[curve].isOn() ? lighter(color[curve]) : color[curve]);
+
+                if (binDisplay[curve].isOn() || marker[curve] == ij.gui.Plot.DOT) { plot.setLineWidth(dotSize.get()); } else plot.setLineWidth(1);
+
+                if (binDisplay[curve] != TriState.ALT_ENABLED) {
+                    plot.addPoints(Arrays.copyOf(x[curve], nn[curve]), Arrays.copyOf(y[curve], nn[curve]), binDisplay[curve].isOn() ? Plot.DOT : marker[curve]);
+                }
+
+                plot.setLineWidth(1);
+
+                if (binDisplay[curve].isOn()) plot.setColor(lighter(color[curve]));
+                if (showErrors[curve] && (hasErrors[curve] || hasOpErrors[curve]) && binDisplay[curve] != TriState.ALT_ENABLED) { //code to replace plot.addErrorBars               //since plot.addErrorBars only plots with lines enabled
+                    for (int j = 0; j < nn[curve]; j++) {
+                        plot.drawLine(x[curve][j], y[curve][j] - yerr[curve][j], x[curve][j], y[curve][j] + yerr[curve][j]);
+                        //plot.drawLine(x[curve][j] - (3.0 * (plotMaxX - plotMinX) / plotSizeX), y[curve][j] + yerr[curve][j], x[curve][j] + (3.0 * (plotMaxX - plotMinX) / plotSizeX), y[curve][j] + yerr[curve][j]);
+                        //plot.drawLine(x[curve][j] - (3.0 * (plotMaxX - plotMinX) / plotSizeX), y[curve][j] - yerr[curve][j], x[curve][j] + (3.0 * (plotMaxX - plotMinX) / plotSizeX), y[curve][j] - yerr[curve][j]);
+                    }
+                }
+
+                if (binDisplay[curve].isOn()) {
+                    // Convert to JD
+                    var binWidth = minutes.get(curve).first() / (24D * 60D);
+
+                    if (binWidth == 0) {
+                        binWidth = .001;
+                    }
+
+                    // Bin data
+                    var binnedData = PlotDataBinning.binDataErr(Arrays.copyOf(x[curve], nn[curve]), Arrays.copyOf(y[curve], nn[curve]), Arrays.copyOf(yerr[curve], nn[curve]), binWidth);
+
+                    if (binnedData != null) {
+                        // Update bin width as the minimum was calculated at the same time
+                        minutes.get(curve).second().setValue(binnedData.second() * 24D * 60D);
+
+                        var pts = binnedData.first();
+
+                        plot.setColor(color[curve]);
+                        if (marker[curve] == ij.gui.Plot.DOT) { plot.setLineWidth(binnedDotSize.get()); } else plot.setLineWidth(2);
+                        plot.addPoints(pts.x(), pts.y(), marker[curve]);
+
+                        if (drawBinErrBarsBase.getOrCreateVariant(curve).get().isOn()) {
+                            plot.setLineWidth(1);
+                            for (int j = 0; j < pts.x().length; j++) {
+                                plot.drawLine(pts.x()[j], pts.y()[j] - pts.err()[j], pts.x()[j], pts.y()[j] + pts.err()[j]);
+                                plot.drawLine(pts.x()[j] - (3.0 * (plotMaxX - plotMinX) / plotSizeX), pts.y()[j] + pts.err()[j], pts.x()[j] + (3.0 * (plotMaxX - plotMinX) / plotSizeX), pts.y()[j] + pts.err()[j]);
+                                plot.drawLine(pts.x()[j] - (3.0 * (plotMaxX - plotMinX) / plotSizeX), pts.y()[j] - pts.err()[j], pts.x()[j] + (3.0 * (plotMaxX - plotMinX) / plotSizeX), pts.y()[j] - pts.err()[j]);
+                            }
+                        }
+
+                        // Calculate binned RMS
+                        if (detrendFitIndex[curve] == 9 && useTransitFit[curve]) {
+                            int finalCurve = curve;
+                            // Undo shift so the model works
+                            var xModelBin = Arrays.copyOf(pts.x(), pts.x().length);
+                            for (int nnn = 0; nnn < xModelBin.length; nnn++) {
+                                xModelBin[nnn] += xOffset;
+                            }
+
+                            // Adjust for left/right markers
+                            //todo recalc. fit min/max for this
+                            var xB = xModelBin;
+                            double[] finalXB = xB;
+                            var idx = IntStream.range(0, xB.length).filter(j -> (finalXB[j] > fitMin[finalCurve]) || (finalXB[j] < fitMax[finalCurve])).toArray();
+                            xB = PlotDataBinning.takeIndices(xB, idx);
+                            var yB = PlotDataBinning.takeIndices(pts.y(), idx);
+                            var errB = PlotDataBinning.takeIndices(pts.err(), idx);
+
+                            var modelBin = IJU.transitModel(xModelBin, bestFit[curve][0], bestFit[curve][4], bestFit[curve][1], bestFit[curve][2], bestFit[curve][3], orbitalPeriod[curve], forceCircularOrbit[curve] ? 0.0 : eccentricity[curve], forceCircularOrbit[curve] ? 0.0 : omega[curve], bestFit[curve][5], bestFit[curve][6], useLonAscNode[curve], lonAscNode[curve], true);
+
+                            // I don't know why this is needed, but with this RMS behaves as expected
+                            for (int nnn = 0; nnn < modelBin.length; nnn++) {
+                                modelBin[nnn] /= bestFit[curve][0];
+                                if (normIndex[curve] != 0 && !mmag[curve] && !force[curve]) {
+                                    modelBin[nnn] = 1 + totalScaleFactor[curve] * (modelBin[nnn] - 1.0) + subtotalShiftFactor[curve];
+                                } else {
+                                    modelBin[nnn] = totalScaleFactor[curve] * modelBin[nnn] + subtotalShiftFactor[curve];
+                                }
+                            }
+
+                            outBinRms[curve] = 1000*CurveFitter.calculateRms(curve, modelBin, errB, errB, xModelBin, xModelBin, yB, errB, bestFit[curve], detrendYAverage[curve]);
+                            outBinRms[curve] *= bestFit[curve][0];
+                        } else {
+                            var xModelBin = Arrays.copyOf(pts.x(), pts.x().length);
+                            for (int nnn = 0; nnn < xModelBin.length; nnn++) {
+                                xModelBin[nnn] += xOffset;
+                            }
+                            outBinRms[curve] = 1000*CurveFitter.calculateRms(curve, null, pts.err(), pts.err(), xModelBin, xModelBin, pts.y(), pts.err(), bestFit[curve], detrendYAverage[curve]);
+                        }
+                    }
+                }
+
+                if ((showErrors[curve] && (hasErrors[curve] || hasOpErrors[curve]))) {
+                    plot.setLineWidth(2);
+                } else { plot.setLineWidth(1); }
+                plot.setColor(color[curve]);
+                if (xModel1[curve] != null && yModel1[curve] != null && xModel1[curve].length == yModel1[curve].length && detrendFitIndex[curve] != 9) {
+                    plot.addPoints(Arrays.copyOf(xModel1[curve], xModel1[curve].length), Arrays.copyOf(yModel1[curve], yModel1[curve].length), ij.gui.Plot.LINE);
+                }
+                if (xModel2[curve] != null && yModel2[curve] != null && xModel2[curve].length == yModel2[curve].length && (detrendFitIndex[curve] != 9 || showModel[curve])) {
+                    if (detrendFitIndex[curve] == 9) {
+                        plot.setLineWidth((showErrors[curve] && (hasErrors[curve] || hasOpErrors[curve])) ? modelLineWidth[curve] + 1 : modelLineWidth[curve]);
+                        plot.setColor(modelColor[curve]);
+                    }
+                    plot.addPoints(Arrays.copyOf(xModel2[curve], xModel2[curve].length), Arrays.copyOf(yModel2[curve], yModel2[curve].length), ij.gui.Plot.LINE);
+                }
+
+                if (lines[curve] && !(marker[curve] == ij.gui.Plot.LINE)) {
+                    for (int j = 0; j < nn[curve] - 1; j++) {
+                        if (x[curve][j + 1] > x[curve][j]) {
+                            plot.drawLine(x[curve][j], y[curve][j], x[curve][j + 1], y[curve][j + 1]);
+                        }
+                    }
+                }
+            }
+        }
+
+        if (useBoldedDatum && boldedDatum != -1) {
+            double[] xx = new double[1];
+            double[] yy = new double[1];
+            for (int curve = maxCurves - 1; curve >= 0; curve--) {
+                if (plotY[curve]) {
+                    plot.setColor(color[curve]);
+                    if (marker[curve] == Plot.DOT) {
+                        plot.setLineWidth(boldedDotSize.get());
+                    } else {
+                        plot.setLineWidth(dotSize.get());
+                    }
+                    if (curve == firstCurve) {
+                        xx[0] = x[curve][boldedDatum];
+                        yy[0] = y[curve][boldedDatum];
+                    } else {
+                        xx[0] = x[curve][boldedDatum * inputAverageOverSize[firstCurve] / (inputAverageOverSize[curve])];
+                        yy[0] = y[curve][boldedDatum * inputAverageOverSize[firstCurve] / (inputAverageOverSize[curve])];
+                    }
+                    plot.addPoints(xx, yy, marker[curve]);
+                    if (showResidual[curve] && plottedResidual[curve] != null && useTransitFit[curve] && detrendFitIndex[curve] == 9) {
+                        plot.setColor(residualColor[curve]);
+                        if (residualSymbol[curve] == ij.gui.Plot.DOT) { plot.setLineWidth(8); } else {
+                            plot.setLineWidth(2);
+                        }
+                        if (curve == firstCurve) {
+                            int nnn = boldedDatum - nFitTrim[curve];
+                            if (nnn >= 0 && nnn < plottedResidual[curve].length) {
+                                xx[0] = xModel1[curve][boldedDatum - nFitTrim[curve]];
+                                yy[0] = plottedResidual[curve][boldedDatum - nFitTrim[curve]];
+                                plot.addPoints(xx, yy, residualSymbol[curve]);
+                            }
+                        } else {
+                            int nnn = boldedDatum * inputAverageOverSize[firstCurve] / inputAverageOverSize[curve] - nFitTrim[curve];
+                            if (nnn >= 0 && nnn < plottedResidual[curve].length) {
+                                xx[0] = xModel1[curve][nnn];
+                                yy[0] = plottedResidual[curve][nnn];
+                                plot.addPoints(xx, yy, residualSymbol[curve]);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        plot.setLineWidth(1);
+        plot.setJustification(Plot.CENTER);
+
+        if (showDMarkers) {
+            plot.setColor(Color.GRAY);
+            double[] samples1 = new double[10];
+            double[] samples2 = new double[10];
+            double[] samples3 = new double[10];
+            double[] samples4 = new double[10];
+            for (int i = 0; i < 10; i++) {
+                samples1[i] = Double.NaN;
+                samples2[i] = Double.NaN;
+                samples3[i] = Double.NaN;
+                samples4[i] = Double.NaN;
+            }
+
+            double preDmark1Ref = invertYAxis ? yPlotMin : yPlotMax;
+            double preDmark2Ref = preDmark1Ref;
+            double postDMarker3Ref = preDmark1Ref;
+            double postDMarker4Ref = preDmark1Ref;
+            int nBefore2 = 0;
+            int nAfter2 = 0;
+            int nBefore1 = 0;
+            int nAfter1 = 0;
+            int nBefore3 = 0;
+            int nAfter3 = 0;
+            int nBefore4 = 0;
+            int nAfter4 = 0;
+            for (int i = 0; i < nn[firstCurve]; i++) {
+                if (!Double.isNaN(x[firstCurve][i]) && !Double.isNaN(y[firstCurve][i])) {
+                    if (x[firstCurve][i] < dMarker2Value) {
+                        samples2[4] = samples2[3];
+                        samples2[3] = samples2[2];
+                        samples2[2] = samples2[1];
+                        samples2[1] = samples2[0];
+                        samples2[0] = y[firstCurve][i];
+                        nBefore2++;
+                    } else if (nAfter2 < 5) {
+                        samples2[5 + nAfter2] = y[firstCurve][i];
+                        nAfter2++;
+                    }
+
+                    if (useDMarker1 && x[firstCurve][i] < dMarker1Value) {
+                        samples1[4] = samples1[3];
+                        samples1[3] = samples1[2];
+                        samples1[2] = samples1[1];
+                        samples1[1] = samples1[0];
+                        samples1[0] = y[firstCurve][i];
+                        nBefore1++;
+                    } else if (useDMarker1 && nAfter1 < 5) {
+                        samples1[5 + nAfter1] = y[firstCurve][i];
+                        nAfter1++;
+                    }
+
+                    if (x[firstCurve][i] < dMarker3Value) {
+                        samples3[4] = samples3[3];
+                        samples3[3] = samples3[2];
+                        samples3[2] = samples3[1];
+                        samples3[1] = samples3[0];
+                        samples3[0] = y[firstCurve][i];
+                        nBefore3++;
+                    } else if (nAfter3 < 5) {
+                        samples3[5 + nAfter3] = y[firstCurve][i];
+                        nAfter3++;
+                    }
+
+                    if (useDMarker4 && x[firstCurve][i] < dMarker4Value) {
+                        samples4[4] = samples4[3];
+                        samples4[3] = samples4[2];
+                        samples4[2] = samples4[1];
+                        samples4[1] = samples4[0];
+                        samples4[0] = y[firstCurve][i];
+                        nBefore4++;
+                    } else if (useDMarker4 && nAfter4 < 5) {
+                        samples4[5 + nAfter4] = y[firstCurve][i];
+                        nAfter4++;
+                    }
+                }
+            }
+            if (nBefore2 + nAfter2 > 0) {
+                preDmark2Ref = invertYAxis ? minOf(samples2, 10) : maxOf(samples2, 10);
+                preDmark2Ref = invertYAxis ? Math.max(preDmark2Ref, plotMaxY) : Math.min(preDmark2Ref, plotMaxY);
+            }
+            if (nBefore3 + nAfter3 > 0) {
+                postDMarker3Ref = invertYAxis ? minOf(samples3, 10) : maxOf(samples3, 10);
+                postDMarker3Ref = invertYAxis ? Math.max(postDMarker3Ref, plotMaxY) : Math.min(postDMarker3Ref, plotMaxY);
+            }
+            dashLength = 5 * (plotMaxY - plotMinY) / plotSizeY;
+
+            numDashes = -10 + (preDmark2Ref - plotMinY) / dashLength;        //plot dMarker2
+            for (int dashCount = 0; dashCount < numDashes; dashCount += 2) {
+                plot.drawLine(dMarker2Value, preDmark2Ref - dashLength * dashCount, dMarker2Value, preDmark2Ref - dashLength * (dashCount + 1));
+            }
+            plot.setJustification(Plot.CENTER);
+            plot.addLabel((dMarker2Value - plotMinX) / (plotMaxX - plotMinX), 1 - 16.0 / plotSizeY, "Left");
+            plot.addLabel((dMarker2Value - plotMinX) / (plotMaxX - plotMinX), 1 + 4.0 / plotSizeY, threePlaces.format(dMarker2Value));
+
+            numDashes = -10 + (postDMarker3Ref - plotMinY) / dashLength;     //plot dMarker3
+            for (int dashCount = 0; dashCount < numDashes; dashCount += 2) {
+                plot.drawLine(dMarker3Value, postDMarker3Ref - dashLength * dashCount, dMarker3Value, postDMarker3Ref - dashLength * (dashCount + 1));
+            }
+            plot.addLabel((dMarker3Value - plotMinX) / (plotMaxX - plotMinX), 1 - 16.0 / plotSizeY, "Right");
+            plot.addLabel((dMarker3Value - plotMinX) / (plotMaxX - plotMinX), 1 + 4.0 / plotSizeY, threePlaces.format(dMarker3Value));
+
+            if (useDMarker1) { //plot dMarker1
+                if (nBefore1 + nAfter1 > 0) {
+                    preDmark1Ref = invertYAxis ? minOf(samples1, 10) : maxOf(samples1, 10);
+                    preDmark1Ref = invertYAxis ? Math.max(preDmark1Ref, plotMaxY) : Math.min(preDmark1Ref, plotMaxY);
+                }
+                numDashes = -10 + (preDmark1Ref - plotMinY) / dashLength;        //plot dMarker1
+                for (int dashCount = 0; dashCount < numDashes; dashCount += 2) {
+                    plot.drawLine(dMarker1Value, preDmark1Ref - dashLength * dashCount, dMarker1Value, preDmark1Ref - dashLength * (dashCount + 1));
+                }
+                plot.addLabel((dMarker1Value - plotMinX) / (plotMaxX - plotMinX), 1 - 25.0 / plotSizeY, "Left");
+                plot.addLabel((dMarker1Value - plotMinX) / (plotMaxX - plotMinX), 1 - 7.0 / plotSizeY, "Trim");
+                plot.addLabel((dMarker1Value - plotMinX) / (plotMaxX - plotMinX), 1 + 33.0 / plotSizeY, threePlaces.format(dMarker1Value));
+            }
+            if (useDMarker4) { //plot dMarker4
+                if (nBefore4 + nAfter4 > 0) {
+                    postDMarker4Ref = invertYAxis ? minOf(samples4, 10) : maxOf(samples4, 10);
+                    postDMarker4Ref = invertYAxis ? Math.max(postDMarker4Ref, plotMaxY) : Math.min(postDMarker4Ref, plotMaxY);
+                }
+                numDashes = -10 + (postDMarker4Ref - plotMinY) / dashLength;     //plot dMarker4
+                for (int dashCount = 0; dashCount < numDashes; dashCount += 2) {
+                    plot.drawLine(dMarker4Value, postDMarker4Ref - dashLength * dashCount, dMarker4Value, postDMarker4Ref - dashLength * (dashCount + 1));
+                }
+                plot.addLabel((dMarker4Value - plotMinX) / (plotMaxX - plotMinX), 1 - 25.0 / plotSizeY, "Right");
+                plot.addLabel((dMarker4Value - plotMinX) / (plotMaxX - plotMinX), 1 - 7.0 / plotSizeY, "Trim");
+                plot.addLabel((dMarker4Value - plotMinX) / (plotMaxX - plotMinX), 1 + 33.0 / plotSizeY, threePlaces.format(dMarker4Value));
+            }
+        }
+        if (showMFMarkers) drawVMarker(mfMarker1Value, "Meridian", "Flip", new Color(84, 201, 245));
+
+        if (showVMarker1) drawVMarker(vMarker1Value, vMarker1TopText, vMarker1BotText, Color.red);
+
+        if (showVMarker2) drawVMarker(vMarker2Value, vMarker2TopText, vMarker2BotText, Color.red);
+
+        plot.setColor(java.awt.Color.black);
+        plot.setJustification(Plot.CENTER);
+        if (useTitle) {
+            plot.changeFont(new java.awt.Font("Dialog", java.awt.Font.PLAIN, 18));
+            renderTitle();
+        }
+        if (useSubtitle) {
+            plot.changeFont(new java.awt.Font("Dialog", java.awt.Font.PLAIN, 14));
+            renderSubtitle();
+        }
+
+        plotImage = WindowManager.getImage("Plot of " + tableName);
+
+        if (plotImage == null) {
+            plotFrameLocationX = (int) Prefs.get("plot2.plotFrameLocationX", plotFrameLocationX);
+            plotFrameLocationY = (int) Prefs.get("plot2.plotFrameLocationY", plotFrameLocationY);
+            if (!Prefs.isLocationOnScreen(new Point(plotFrameLocationX, plotFrameLocationY))) {
+                plotFrameLocationX = 10;
+                plotFrameLocationY = 10;
+                Prefs.set("plot2.plotFrameLocationX", plotFrameLocationX);
+                Prefs.set("plot2.plotFrameLocationY", plotFrameLocationY);
+            }
+            plotWindow = plot.show();
+            plotWindow.addComponentListener(new ComponentAdapter() {
+                @Override
+                public void componentResized(ComponentEvent e) {
+                    updatePlotEnabled = false;
+                    plotheightspinner.setValue(plot.getSize().height);
+                    plotwidthspinner.setValue(plot.getSize().width);
+                    updatePlotEnabled = true;
+                    updatePlot(updateNoFits());
+                }
+            });
+            ((PlotWindow) plotWindow).getHelpButton().addActionListener(e -> {
+                String filename = "help/plotwindow_help.html";
+                new HelpPanel(filename, "Plot").setVisible(true);
+            });
+            plotWindow.setIconImage(plotIcon.getImage());
+            plotImage = plotWindow.getImagePlus();
+
+            plotImageCanvas = plotImage.getCanvas();
+            plotOverlayCanvas = new OverlayCanvas(plotImage);
+            list.clear();
+
+            MouseMotionListener[] mml = plotImageCanvas.getMouseMotionListeners();
+            if (mml.length > 0) {
+                for (MouseMotionListener mouseMotionListener : mml)
+                    plotImageCanvas.removeMouseMotionListener(mouseMotionListener);
+            }
+
+            MouseWheelListener[] mwl = plotImageCanvas.getMouseWheelListeners();
+            if (mwl.length > 0) {
+                for (MouseWheelListener mouseWheelListener : mwl)
+                    plotImageCanvas.removeMouseWheelListener(mouseWheelListener);
+            }
+
+            MouseWheelListener[] mwl3 = plotWindow.getMouseWheelListeners();
+            if (mwl3.length > 0) {
+                for (MouseWheelListener mouseWheelListener : mwl3)
+                    plotWindow.removeMouseWheelListener(mouseWheelListener);
+            }
+
+            MouseListener[] ml = plotImageCanvas.getMouseListeners();
+            if (ml.length > 0) {
+                for (MouseListener mouseListener : ml) plotImageCanvas.removeMouseListener(mouseListener);
+            }
+
+            plotImageCanvas.addMouseWheelListener(plotMouseWheelListener);
+            plotImageCanvas.addMouseMotionListener(plotMouseMotionListener);
+            plotImageCanvas.addMouseListener(plotMouseListener);
+            plotImageCanvas.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+            zoomX = 0.0;
+            zoomY = 0.0;
+        } else {
+            plotWindow = (PlotWindow) plotImage.getWindow();
+            ImageProcessor ip = plot.getProcessor();
+            plotImage.setProcessor("Plot of " + tableName, ip);
+            plotImageCanvas = plotImage.getCanvas();
+            plotImageCanvas.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+        }
+
+        drawAijVersion.ifProp(() -> {
+            plot.changeFont(new java.awt.Font("Dialog", java.awt.Font.PLAIN, 12));
+            plot.setJustification(Plot.BOTTOM_RIGHT);
+            var wid = plotImage.getImage().getGraphics().getFontMetrics(plot.getCurrentFont()).stringWidth("AIJ " + IJ.getAstroVersion().split("[+]")[0]);
+            var pWid = plot.getSize().getWidth();
+            var h = plot.getSize().getHeight();
+            plot.addLabel((pWid - wid - 10)/pWid, (h + 43)/h, "AIJ " + IJ.getAstroVersion().split("[+]")[0]);
+        });
+
+        updatePlotPos();
+
+        plotbottompanel = (Panel) plotWindow.getComponent(1);
+        plotbottompanel.getComponentCount();
+        plotbottompanel.setSize(600, 30);
+        plotcoordlabel = (Label) plotbottompanel.getComponent(plotbottompanel.getComponentCount() - 1);
+        plotcoordlabel.setSize(400, 20);
+        plotcoordlabel.setBackground(Color.white);
+
+        //Replot to clean up blank areas
+
+        excludedHeadSamples = holdExcludedHeadSamples;
+        excludedTailSamples = holdExcludedTailSamples;
+        table.setLock(false);
+        plotWindow.getImagePlus().setPlot(plot);
+        ((PlotWindow) plotWindow).setPlot(plot);
+        updatePlotRunning = false;
+    }
+
+    private static PlotDataLock processData(boolean[] updateFit) {
         savePreferences();
         updateSaturatedStars();
         for (int curve = 0; curve < maxCurves; curve++) {
@@ -3376,767 +4145,26 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             }
         }
 
+        return new PlotDataLock(magSign, normAverageSet);
+    }
 
-        //----------------Set up plot options------------------------------------
-        plotOptions = 0;
-        if (xTics) plotOptions += ij.gui.Plot.X_TICKS;
-        if (yTics) plotOptions += ij.gui.Plot.Y_TICKS;
-        if (xGrid) plotOptions += ij.gui.Plot.X_GRID;
-        if (yGrid) plotOptions += ij.gui.Plot.Y_GRID;
-        if (xNumbers) plotOptions += ij.gui.Plot.X_NUMBERS;
-        if (yNumbers) plotOptions += ij.gui.Plot.Y_NUMBERS;
-
-
-        plot = new Plot("Plot of " + tableName, xlab, ylab, plotOptions);
-        plot.setOffScreenDisplacementArrowControl(drawOffscreenDisplacementArrowsX.get(), drawOffscreenDisplacementArrowsY.get());
-        plot.setSize(plotSizeX, plotSizeY);
-        pltMinX = xPlotMin - 5. * dx;
-        pltMaxX = xPlotMax + 5. * dx;
-        pltMinY = yPlotMin - 5. * dy;
-        pltMaxY = yPlotMax + 5. * dy;
-
-        var minX = pltMinX;
-        var maxX = pltMaxX;
-        var minY = pltMinY;
-        var maxY = pltMaxY;
-
-        if (draggableShape.isPlotScaleDirty()) {
-            pltMinX = draggableShape.scale.xMin();
-            pltMaxX = draggableShape.scale.xMax();
-            pltMinY = draggableShape.scale.yMin();
-            pltMaxY = draggableShape.scale.yMax();
-            if (draggableShape.scaleChanged()) {
-                zoomX = 0.0;
-                zoomY = 0.0;
-                totalPanOffsetX = 0.0;
-                totalPanOffsetY = 0.0;
-                newPanOffsetX = 0.0;
-                newPanOffsetY = 0.0;
-            }
+    private record PlotDataLock(
+            // Data needed for displaying plot
+            int magSign, double[] normAverageSet,
+            // Data needed to determine if plot should be realculated
+            MeasurementTable table, int rows
+            ) {
+        public PlotDataLock(int magSign, double[] normAverageSet) {
+            this(magSign, normAverageSet, MultiPlot_.table, MultiPlot_.table.size());
         }
 
-        if (invertYAxis) {
-            double yMaxTemp = pltMaxY;
-            pltMaxY = pltMinY;
-            pltMinY = yMaxTemp;
+        public boolean requiresUpdate() {
+            return MultiPlot_.table != table || MultiPlot_.table.size() != rows;
         }
+    }
 
-        if (plotImageCanvas != null) { //zoom != 0.0 &&
-            Rectangle s = plot.getDrawingFrame();
-            plotMinX = totalPanOffsetX + newPanOffsetX + pltMinX + (pltMaxX - pltMinX) * ((mouseX - 1)/ s.width) * zoomX;
-            plotMaxX = totalPanOffsetX + newPanOffsetX + pltMaxX - (pltMaxX - pltMinX) * ((s.width - mouseX - 15) / (s.width)) * zoomX;
-            plotMinY = totalPanOffsetY + newPanOffsetY + pltMinY + (pltMaxY - pltMinY) * ((s.height - 15 - mouseY) / (s.height)) * zoomY;
-            plotMaxY = totalPanOffsetY + newPanOffsetY + pltMaxY - (pltMaxY - pltMinY) * (mouseY / (s.height)) * zoomY;
-            // Limit zoom out
-            plotMinX = Math.max(minX + totalPanOffsetX + newPanOffsetX, plotMinX);
-            plotMaxX = Math.min(maxX + totalPanOffsetX + newPanOffsetX, plotMaxX);
-            plotMinY = Math.max(minY + totalPanOffsetY + newPanOffsetY, plotMinY);
-            plotMaxY = Math.min(maxY + totalPanOffsetY + newPanOffsetY, plotMaxY);
-        } else {
-            plotMinX = pltMinX;
-            plotMaxX = pltMaxX;
-            plotMinY = pltMinY;
-            plotMaxY = pltMaxY;
-            zoomX = 0.0;
-            zoomY = 0.0;
-            totalPanOffsetX = 0.0;
-            totalPanOffsetY = 0.0;
-            newPanOffsetX = 0.0;
-            newPanOffsetY = 0.0;
-            leftDragReleased = false;
-        }
-
-        plot.setLimits(plotMinX, plotMaxX, plotMinY, plotMaxY);
-
-        // Calculate yModel2 for drawing, scaling with plot bounds
-        for (int curve = 0; curve < maxCurves; curve++) {
-            if (xModel2[curve] != null && yModel2[curve] != null && xModel2[curve].length == 0 && yModel2[curve].length == 0) {
-                int xModel2Len = plotSizeX + 1;
-                double xModel2Step = ((useDMarker4 && fitMax[curve] < plotMaxX + xOffset ? fitMax[curve] : plotMaxX + xOffset) - (useDMarker1 && fitMin[curve] > plotMinX + xOffset ? fitMin[curve] : plotMinX + xOffset)) / (xModel2Len - 1);
-                xModel2[curve] = new double[xModel2Len];
-                xModel2[curve][0] = useDMarker1 && fitMin[curve] > plotMinX + xOffset ? fitMin[curve] : plotMinX + xOffset;
-                for (int i = 1; i < xModel2Len; i++) {
-                    xModel2[curve][i] = xModel2[curve][i - 1] + xModel2Step;
-                }
-
-                yModel2[curve] = IJU.transitModel(xModel2[curve], bestFit[curve][0], bestFit[curve][4], bestFit[curve][1], bestFit[curve][2], bestFit[curve][3], orbitalPeriod[curve], forceCircularOrbit[curve] ? 0.0 : eccentricity[curve], forceCircularOrbit[curve] ? 0.0 : omega[curve], bestFit[curve][5], bestFit[curve][6], useLonAscNode[curve], lonAscNode[curve], true);
-
-                if (normIndex[curve] != 0) {
-                    if (yModel2[curve] != null) {
-                        for (int nnn = 0; nnn < yModel2[curve].length; nnn++) {
-                            yModel2[curve][nnn] /= normAverageSet[curve];
-                        }
-                    }
-                }
-
-                if (mmag[curve]) {
-                    if (yModel2[curve] != null) {
-                        for (int nnn = 0; nnn < yModel2[curve].length; nnn++) {
-                            yModel2[curve][nnn] = magSign * 2.5 * Math.log10(yModel2[curve][nnn] / baseline[curve]);
-                        }
-                    }
-                }
-
-                if (showXAxisAsPhase) {
-
-                } else if (showXAxisAsDaysSinceTc) {
-
-                } else if (showXAxisAsHoursSinceTc) {
-
-                } else if (xlabel2[curve].contains("J.D.") || xlabel2[curve].contains("JD")) {
-                    if (xModel2[curve] != null) {
-                        for (int nnn = 0; nnn < xModel2[curve].length; nnn++) {
-                            xModel2[curve][nnn] -= xOffset;
-                        }
-                    }
-                }
-
-                for (int nnn = 0; nnn < yModel2[curve].length; nnn++) {
-                    if (normIndex[curve] != 0 && !mmag[curve] && !force[curve]) {
-                        yModel2[curve][nnn] = 1 + totalScaleFactor[curve] * (yModel2[curve][nnn] - 1.0) + subtotalShiftFactor[curve];
-                    } else {
-                        yModel2[curve][nnn] = totalScaleFactor[curve] * yModel2[curve][nnn] + subtotalShiftFactor[curve];
-                    }
-                }
-            }
-        }
-
-        // Draw Legends
-        double legPosY = legendPosY;
-        for (int curve = 0; curve < maxCurves; curve++) {
-            if (plotY[curve]) {
-                if ((showErrors[curve] && (hasErrors[curve] || hasOpErrors[curve]))) {
-                    plot.setLineWidth(2);
-                } else { plot.setLineWidth(1); }
-                plot.setColor(color[curve]);
-
-                if (xModel2[curve] != null && yModel2[curve] != null && xModel2[curve].length == yModel2[curve].length && (detrendFitIndex[curve] != 9 || showModel[curve])) {
-                    if (detrendFitIndex[curve] == 9) {
-                        plot.setColor(modelColor[curve]);
-                    }
-                }
-
-                plot.setLineWidth(1);
-                if (legendLeft) {
-                    plot.setJustification(ij.process.ImageProcessor.LEFT_JUSTIFY);
-                } else if (legendRight) { plot.setJustification(ij.process.ImageProcessor.RIGHT_JUSTIFY); } else {
-                    plot.setJustification(ij.process.ImageProcessor.CENTER_JUSTIFY);
-                }
-
-                // MAKE FULL LEGEND STRING FOR CURVE
-
-                StringBuilder llab;
-
-                if (detrendFitIndex[curve] == 9 && useTransitFit[curve] && showResidual[curve] && showLResidual[curve] && residualShift[curve] > 0.0) {
-                    llab = new StringBuilder(ylabel[curve] + " Residuals");
-                    llab.append(" (RMS=").append(sigma[curve] >= 1.0 ? uptoThreePlaces.format(sigma[curve]) : uptoFivePlaces.format(sigma[curve])).append(") (chi^2/dof=").append(uptoTwoPlaces.format(chi2dof[curve])).append(")");
-                    if (drawLegendSymbol(residualSymbol[curve], residualSymbol[curve] == Plot.DOT ? 4 : 1, residualColor[curve], legPosY, llab.toString())) {
-                        plot.addLabel(legendPosX, legPosY, llab.toString());
-                        legPosY += 18. / plotSizeY;
-                    }
-                }
-
-                llab = new StringBuilder();
-
-                if (useColumnName[curve]) {
-                    if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.CENTROID_DISTANCE) {
-                        llab = new StringBuilder(xyc1label[curve] + " - " + xyc2label[curve] + " centroid distance");
-                        boolean atLeastOne = false;
-                        if (showLdetrendInfo && detrendFitIndex[curve] != 0) {
-                            for (int v = 0; v < maxDetrendVars; v++) {
-                                if (detrendIndex[curve][v] != 0) {
-                                    if (atLeastOne) { llab.append("+").append(detrendlabel[curve][v]); } else {
-                                        llab.append(" (").append(detrendlabel[curve][v]);
-                                    }
-                                    atLeastOne = true;
-                                }
-                            }
-                        }
-                        if (atLeastOne) {
-                            if (detrendFitIndex[curve] == 9 && useTransitFit[curve]) {
-                                llab.append(" detrended with transit fit)");
-                            } else {
-                                llab.append(" detrended)");
-                            }
-                        } else {
-                            if (detrendFitIndex[curve] == 9 && useTransitFit[curve]) {
-                                llab.append(KeplerSplineControl.getInstance(curve).ifTransitSmoothed(" (Spline Smoothed)"))
-                                        .append(" (transit fit)");
-                            } else {
-                                llab.append(KeplerSplineControl.getInstance(curve).ifTransitSmoothed("(Spline Smoothed)"));
-                            }
-                        }
-                        if (showLnormInfo && normIndex[curve] != 0 && !mmag[curve] && !force[curve]) {
-                            llab.append(" (normalized)");
-                        } else {
-                            llab.append(usePixelScale ? " (arcsecs)" : " (pixels)");
-                        }
-                        if ((detrendFitIndex[curve] > 1 && showSigmaForDetrendedCurves) || showSigmaForAllCurves) {
-                            llab.append(" (RMS=").append(sigma[curve] >= 1.0 ? uptoThreePlaces.format(sigma[curve]) : uptoFivePlaces.format(sigma[curve])).append(")");
-                        }
-                        if (mmag[curve] && showLmmagInfo) {
-                            llab.append(" mmag)");
-                        } else {
-                            llab.append(" ppt)");
-                        }
-                    } else {
-                        llab = new StringBuilder(ylabel[curve]);
-                        if (operatorBase.getOrCreateVariant(curve).get() != MPOperator.NONE) {
-                            llab.append(operatorBase.getOrCreateVariant(curve).get().getSymbol()).append(oplabel[curve]);
-                        }
-                        boolean atLeastOne = false;
-                        if (showLdetrendInfo && detrendFitIndex[curve] != 0) {
-                            for (int v = 0; v < maxDetrendVars; v++) {
-                                if (detrendIndex[curve][v] != 0) {
-                                    if (atLeastOne) { llab.append("+").append(detrendlabel[curve][v]); } else {
-                                        llab.append(" (")
-                                                .append(KeplerSplineControl.getInstance(curve).ifTransitSmoothed("Spline+"))
-                                                .append(detrendlabel[curve][v]);
-                                    }
-                                    atLeastOne = true;
-                                }
-                            }
-                        }
-                        if (atLeastOne) {
-                            if (detrendFitIndex[curve] == 9 && useTransitFit[curve]) {
-                                llab.append(" detrended with transit fit)");
-                            } else {
-                                llab.append(" detrended)");
-                            }
-                        } else {
-                            if (detrendFitIndex[curve] == 9 && useTransitFit[curve]) {
-                                llab.append(KeplerSplineControl.getInstance(curve).ifTransitSmoothed(" (Spline Smoothed)"))
-                                        .append(" (transit fit)");
-                            } else {
-                                llab.append(KeplerSplineControl.getInstance(curve).ifTransitSmoothed("(Spline Smoothed)"));
-                            }
-                        }
-                        if (showLnormInfo && normIndex[curve] != 0 && !mmag[curve] && !force[curve]) {
-                            llab.append(" (normalized)");
-                        }
-                        if (((detrendFitIndex[curve] > 1 && showSigmaForDetrendedCurves) || showSigmaForAllCurves)) { //!force[curve] &&
-                            double factor = 1000;
-                            if (mmag[curve] && totalScaleFactor[curve] == 1000) {
-                                sigma[curve] *= 1000;
-                                factor = 1/1000D; // Fix for display of RMS in legend being times 1000
-                            }
-                            llab.append(" (RMS=").append(sigma[curve] >= 1.0 ? uptoThreePlaces.format(sigma[curve] * factor)
-                                    : threeDigitsTwoPlaces.format(sigma[curve] * factor));
-                        }
-                        if (mmag[curve] && showLmmagInfo) {
-                            llab.append(" mmag)");
-                        } else {
-                            llab.append(" ppt)");
-                        }
-                    }
-
-                    // Duplicate conditions of transit model fit legend
-                    if (detrendFitIndex[curve] == 9 && useTransitFit[curve] && showModel[curve] && showLTranParams[curve]) {
-                        llab.append(" (depth=").append(transitDepthLabel[curve].getText());
-                        if (mmag[curve]) {
-                            llab.append(" mmag)");
-                        } else {
-                            llab.append(" ppt)");
-                        }
-
-                    }
-                    if (detrendFitIndex[curve] == 9 && showModel[curve] && showLTranParams[curve]) {
-                        llab.append(" (BIC=").append(Double.isNaN(bic[curve]) ? "NaN" : fiveDigitsOnePlace.format(bic[curve])).append(")");
-                    }
-
-                    if (!force[curve])//&&(showLScaleInfo || showLShiftInfo))
-                    { llab.append(scaleShiftText(force[curve], showLScaleInfo, showLShiftInfo, mmag[curve], showLmmagInfo, totalScaleFactor[curve], totalShiftFactor[curve])); } else if (force[curve])//&&(showLRelScaleInfo || showLRelShiftInfo))
-                    { llab.append(scaleShiftText(force[curve], showLRelScaleInfo, showLRelShiftInfo, mmag[curve], showLmmagInfo, totalScaleFactor[curve], totalShiftFactor[curve])); }
-                    if ((inputAverageOverSize[curve] != 1) && showLAvgInfo) {
-                        llab.append(" (input average=").append(inputAverageOverSize[curve]).append(")");
-                    }
-                    if (showOutBinRms && binDisplay[curve].isOn()) {
-                        llab.append(" (RMS=").append(uptoTwoPlaces.format(outBinRms[curve])).append(" ppt/").append(uptoTwoPlaces.format(minutes.get(curve).first())).append(" min)");
-                    }
-                    if (showLSymbolInfo) llab.append(" (").append(markers[markerIndex[curve]]).append(")");
-                }
-
-                if (useLegend[curve]) {
-                    llab.append(useColumnName[curve] ? " " : "").append(legend[curve]);
-                }
-
-                if (useColumnName[curve] || useLegend[curve]) {
-                    if (drawLegendSymbol(marker[curve], (marker[curve] == Plot.DOT) ? 4 : 1, color[curve], legPosY, llab.toString())) {
-                        plot.addLabel(legendPosX, legPosY, llab.toString());
-                        legPosY += 18. / plotSizeY;
-                    }
-                }
-
-                if (detrendFitIndex[curve] == 9 && useTransitFit[curve] && showModel[curve] && showLTranParams[curve]) {
-                    llab = new StringBuilder(ylabel[curve] + " Transit Model ([P=" + uptoTwoPlaces.format(orbitalPeriod[curve]) + "], " + (lockToCenter[curve][1] ? "[" : "") + "(Rp/R*)^2=");
-                    llab.append(fourPlaces.format(bestFit[curve][1] * bestFit[curve][1])).append(lockToCenter[curve][1] ? "]" : "");
-                    llab.append(", ").append(lockToCenter[curve][2] ? "[" : "").append("a/R*=").append(onePlaces.format(bestFit[curve][2])).append(lockToCenter[curve][2] ? "]" : "");
-                    if (bpLock[curve]) {
-                        llab.append(", ").append("[").append("b=").append(twoPlaces.format(((Number) bpSpinner[curve].getValue()).doubleValue())).append("]");
-                    } else {
-                        llab.append(", ").append(lockToCenter[curve][4] ? "[" : "").append("i=").append(onePlaces.format(bestFit[curve][4] * 180 / Math.PI)).append(lockToCenter[curve][4] ? "]" : "");
-                    }
-                    llab.append(", ").append(lockToCenter[curve][3] ? "[" : "").append("Tc=").append(uptoSixPlaces.format(bestFit[curve][3])).append(lockToCenter[curve][3] ? "]" : "");
-                    llab.append(", ").append(lockToCenter[curve][5] ? "[" : "").append("u1=").append(uptoTwoPlaces.format(bestFit[curve][5])).append(lockToCenter[curve][5] ? "]" : "");
-                    llab.append(", ").append(lockToCenter[curve][6] ? "[" : "").append("u2=").append(uptoTwoPlaces.format(bestFit[curve][6])).append(lockToCenter[curve][6] ? "]" : "").append(")");
-                    if (drawLegendSymbol(Plot.LINE, modelLineWidth[curve] + (showErrors[curve] && (hasErrors[curve] || hasOpErrors[curve]) ? 1 : 0), modelColor[curve], legPosY, llab.toString())) {
-                        plot.addLabel(legendPosX, legPosY, llab.toString());
-                        legPosY += 18. / plotSizeY;
-                    }
-                }
-
-                if (detrendFitIndex[curve] == 9 && useTransitFit[curve] && showResidual[curve] && showLResidual[curve] && residualShift[curve] <= 0.0) {
-                    llab = new StringBuilder(ylabel[curve] + " Residuals");
-                    llab.append(" (RMS=").append(sigma[curve] >= 1.0 ? uptoThreePlaces.format(sigma[curve]) : uptoFivePlaces.format(sigma[curve])).append(") (chi^2/dof=").append(uptoTwoPlaces.format(chi2dof[curve])).append(")");
-                    if (drawLegendSymbol(residualSymbol[curve], residualSymbol[curve] == Plot.DOT ? 4 : 1, residualColor[curve], legPosY, llab.toString())) {
-                        plot.addLabel(legendPosX, legPosY, llab.toString());
-                        legPosY += 18. / plotSizeY;
-                    }
-                }
-
-            }
-        }
-
-        // Draw data, inverse order so that curves will draw over displacement arrows
-        for (int curve = maxCurves - 1; curve >= 0; curve--) {
-            if (plotY[curve]) {
-                if (showResidual[curve] && residual[curve] != null && useTransitFit[curve] && detrendFitIndex[curve] == 9) {
-                    if (showModel[curve]) {
-                        plot.setLineWidth((showResidualError[curve] && yModel1Err[curve] != null) ? residualLineWidth[curve] + 1 : residualLineWidth[curve]);
-                        plot.setColor(residualModelColor[curve]);
-                        double dLen = 7 * (plotMaxX - plotMinX) / plotSizeX;
-                        double min = Math.max(fitMin[curve] - xOffset, xPlotMin);
-                        double max = Math.min(fitMax[curve] - xOffset, xPlotMax);
-                        double nDashes = ((max - min) / dLen);
-                        double ypos = detrendYAverage[curve] + (force[curve] ? autoResidualShift[curve] * totalScaleFactor[curve] * (yWidthOrig[curve] / autoScaleFactor[curve]) : residualShift[curve]);//*(normIndex[curve] != 0 && !mmag[curve]?1.0:yMultiplierFactor));
-                        for (int dashCount = 0; dashCount < nDashes; dashCount += 2) {
-                            plot.drawLine(min + dLen * dashCount, ypos, min + dLen * (dashCount + 1), ypos);
-                        }
-                    }
-
-                    if (residualSymbol[curve] == ij.gui.Plot.DOT) { plot.setLineWidth(4); } else plot.setLineWidth(1);
-                    int len = residual[curve].length;
-                    plottedResidual[curve] = Arrays.copyOf(residual[curve], len);
-                    for (int nnn = 0; nnn < len; nnn++) {
-                        plottedResidual[curve][nnn] += detrendYAverage[curve] + (force[curve] ? autoResidualShift[curve] * totalScaleFactor[curve] * (yWidthOrig[curve] / autoScaleFactor[curve]) : residualShift[curve]);//*(normIndex[curve] != 0 && !mmag[curve]?1.0:yMultiplierFactor));
-                    }
-                    plot.setColor(residualColor[curve]);
-                    plot.addPoints(Arrays.copyOf(xModel1[curve], xModel1[curve].length), plottedResidual[curve], residualSymbol[curve]);
-                    if (showResidualError[curve] && yModel1Err[curve] != null) { //code to replace plot.addErrorBars
-                        plot.setLineWidth(1);
-                        for (int nnn = 0; nnn < len; nnn++) {
-                            plot.drawLine(xModel1[curve][nnn], plottedResidual[curve][nnn] - yModel1Err[curve][nnn], xModel1[curve][nnn], plottedResidual[curve][nnn] + yModel1Err[curve][nnn]);
-                            plot.drawLine(xModel1[curve][nnn] - (3.0 * (plotMaxX - plotMinX) / plotSizeX), plottedResidual[curve][nnn] + yModel1Err[curve][nnn], xModel1[curve][nnn] + (3.0 * (plotMaxX - plotMinX) / plotSizeX), plottedResidual[curve][nnn] + yModel1Err[curve][nnn]);
-                            plot.drawLine(xModel1[curve][nnn] - (3.0 * (plotMaxX - plotMinX) / plotSizeX), plottedResidual[curve][nnn] - yModel1Err[curve][nnn], xModel1[curve][nnn] + (3.0 * (plotMaxX - plotMinX) / plotSizeX), plottedResidual[curve][nnn] - yModel1Err[curve][nnn]);
-                        }
-                    }
-
-                }
-
-                plot.setColor(binDisplay[curve].isOn() ? lighter(color[curve]) : color[curve]);
-
-                if (binDisplay[curve].isOn() || marker[curve] == ij.gui.Plot.DOT) { plot.setLineWidth(dotSize.get()); } else plot.setLineWidth(1);
-
-                if (binDisplay[curve] != TriState.ALT_ENABLED) {
-                    plot.addPoints(Arrays.copyOf(x[curve], nn[curve]), Arrays.copyOf(y[curve], nn[curve]), binDisplay[curve].isOn() ? Plot.DOT : marker[curve]);
-                }
-
-                plot.setLineWidth(1);
-
-                if (binDisplay[curve].isOn()) plot.setColor(lighter(color[curve]));
-                if (showErrors[curve] && (hasErrors[curve] || hasOpErrors[curve]) && binDisplay[curve] != TriState.ALT_ENABLED) { //code to replace plot.addErrorBars               //since plot.addErrorBars only plots with lines enabled
-                    for (int j = 0; j < nn[curve]; j++) {
-                        plot.drawLine(x[curve][j], y[curve][j] - yerr[curve][j], x[curve][j], y[curve][j] + yerr[curve][j]);
-                        //plot.drawLine(x[curve][j] - (3.0 * (plotMaxX - plotMinX) / plotSizeX), y[curve][j] + yerr[curve][j], x[curve][j] + (3.0 * (plotMaxX - plotMinX) / plotSizeX), y[curve][j] + yerr[curve][j]);
-                        //plot.drawLine(x[curve][j] - (3.0 * (plotMaxX - plotMinX) / plotSizeX), y[curve][j] - yerr[curve][j], x[curve][j] + (3.0 * (plotMaxX - plotMinX) / plotSizeX), y[curve][j] - yerr[curve][j]);
-                    }
-                }
-
-                if (binDisplay[curve].isOn()) {
-                    // Convert to JD
-                    var binWidth = minutes.get(curve).first() / (24D * 60D);
-
-                    if (binWidth == 0) {
-                        binWidth = .001;
-                    }
-
-                    // Bin data
-                    var binnedData = PlotDataBinning.binDataErr(Arrays.copyOf(x[curve], nn[curve]), Arrays.copyOf(y[curve], nn[curve]), Arrays.copyOf(yerr[curve], nn[curve]), binWidth);
-
-                    if (binnedData != null) {
-                        // Update bin width as the minimum was calculated at the same time
-                        minutes.get(curve).second().setValue(binnedData.second() * 24D * 60D);
-
-                        var pts = binnedData.first();
-
-                        plot.setColor(color[curve]);
-                        if (marker[curve] == ij.gui.Plot.DOT) { plot.setLineWidth(binnedDotSize.get()); } else plot.setLineWidth(2);
-                        plot.addPoints(pts.x(), pts.y(), marker[curve]);
-
-                        if (drawBinErrBarsBase.getOrCreateVariant(curve).get().isOn()) {
-                            plot.setLineWidth(1);
-                            for (int j = 0; j < pts.x().length; j++) {
-                                plot.drawLine(pts.x()[j], pts.y()[j] - pts.err()[j], pts.x()[j], pts.y()[j] + pts.err()[j]);
-                                plot.drawLine(pts.x()[j] - (3.0 * (plotMaxX - plotMinX) / plotSizeX), pts.y()[j] + pts.err()[j], pts.x()[j] + (3.0 * (plotMaxX - plotMinX) / plotSizeX), pts.y()[j] + pts.err()[j]);
-                                plot.drawLine(pts.x()[j] - (3.0 * (plotMaxX - plotMinX) / plotSizeX), pts.y()[j] - pts.err()[j], pts.x()[j] + (3.0 * (plotMaxX - plotMinX) / plotSizeX), pts.y()[j] - pts.err()[j]);
-                            }
-                        }
-
-                        // Calculate binned RMS
-                        if (detrendFitIndex[curve] == 9 && useTransitFit[curve]) {
-                            int finalCurve = curve;
-                            // Undo shift so the model works
-                            var xModelBin = Arrays.copyOf(pts.x(), pts.x().length);
-                            for (int nnn = 0; nnn < xModelBin.length; nnn++) {
-                                xModelBin[nnn] += xOffset;
-                            }
-
-                            // Adjust for left/right markers
-                            //todo recalc. fit min/max for this
-                            var xB = xModelBin;
-                            double[] finalXB = xB;
-                            var idx = IntStream.range(0, xB.length).filter(j -> (finalXB[j] > fitMin[finalCurve]) || (finalXB[j] < fitMax[finalCurve])).toArray();
-                            xB = PlotDataBinning.takeIndices(xB, idx);
-                            var yB = PlotDataBinning.takeIndices(pts.y(), idx);
-                            var errB = PlotDataBinning.takeIndices(pts.err(), idx);
-
-                            var modelBin = IJU.transitModel(xModelBin, bestFit[curve][0], bestFit[curve][4], bestFit[curve][1], bestFit[curve][2], bestFit[curve][3], orbitalPeriod[curve], forceCircularOrbit[curve] ? 0.0 : eccentricity[curve], forceCircularOrbit[curve] ? 0.0 : omega[curve], bestFit[curve][5], bestFit[curve][6], useLonAscNode[curve], lonAscNode[curve], true);
-
-                            // I don't know why this is needed, but with this RMS behaves as expected
-                            for (int nnn = 0; nnn < modelBin.length; nnn++) {
-                                modelBin[nnn] /= bestFit[curve][0];
-                                if (normIndex[curve] != 0 && !mmag[curve] && !force[curve]) {
-                                    modelBin[nnn] = 1 + totalScaleFactor[curve] * (modelBin[nnn] - 1.0) + subtotalShiftFactor[curve];
-                                } else {
-                                    modelBin[nnn] = totalScaleFactor[curve] * modelBin[nnn] + subtotalShiftFactor[curve];
-                                }
-                            }
-
-                            outBinRms[curve] = 1000*CurveFitter.calculateRms(curve, modelBin, errB, errB, xModelBin, xModelBin, yB, errB, bestFit[curve], detrendYAverage[curve]);
-                            outBinRms[curve] *= bestFit[curve][0];
-                        } else {
-                            var xModelBin = Arrays.copyOf(pts.x(), pts.x().length);
-                            for (int nnn = 0; nnn < xModelBin.length; nnn++) {
-                                xModelBin[nnn] += xOffset;
-                            }
-                            outBinRms[curve] = 1000*CurveFitter.calculateRms(curve, null, pts.err(), pts.err(), xModelBin, xModelBin, pts.y(), pts.err(), bestFit[curve], detrendYAverage[curve]);
-                        }
-                    }
-                }
-
-                if ((showErrors[curve] && (hasErrors[curve] || hasOpErrors[curve]))) {
-                    plot.setLineWidth(2);
-                } else { plot.setLineWidth(1); }
-                plot.setColor(color[curve]);
-                if (xModel1[curve] != null && yModel1[curve] != null && xModel1[curve].length == yModel1[curve].length && detrendFitIndex[curve] != 9) {
-                    plot.addPoints(Arrays.copyOf(xModel1[curve], xModel1[curve].length), Arrays.copyOf(yModel1[curve], yModel1[curve].length), ij.gui.Plot.LINE);
-                }
-                if (xModel2[curve] != null && yModel2[curve] != null && xModel2[curve].length == yModel2[curve].length && (detrendFitIndex[curve] != 9 || showModel[curve])) {
-                    if (detrendFitIndex[curve] == 9) {
-                        plot.setLineWidth((showErrors[curve] && (hasErrors[curve] || hasOpErrors[curve])) ? modelLineWidth[curve] + 1 : modelLineWidth[curve]);
-                        plot.setColor(modelColor[curve]);
-                    }
-                    plot.addPoints(Arrays.copyOf(xModel2[curve], xModel2[curve].length), Arrays.copyOf(yModel2[curve], yModel2[curve].length), ij.gui.Plot.LINE);
-                }
-
-                if (lines[curve] && !(marker[curve] == ij.gui.Plot.LINE)) {
-                    for (int j = 0; j < nn[curve] - 1; j++) {
-                        if (x[curve][j + 1] > x[curve][j]) {
-                            plot.drawLine(x[curve][j], y[curve][j], x[curve][j + 1], y[curve][j + 1]);
-                        }
-                    }
-                }
-            }
-        }
-
-        if (useBoldedDatum && boldedDatum != -1) {
-            double[] xx = new double[1];
-            double[] yy = new double[1];
-            for (int curve = maxCurves - 1; curve >= 0; curve--) {
-                if (plotY[curve]) {
-                    plot.setColor(color[curve]);
-                    if (marker[curve] == Plot.DOT) {
-                        plot.setLineWidth(boldedDotSize.get());
-                    } else {
-                        plot.setLineWidth(dotSize.get());
-                    }
-                    if (curve == firstCurve) {
-                        xx[0] = x[curve][boldedDatum];
-                        yy[0] = y[curve][boldedDatum];
-                    } else {
-                        xx[0] = x[curve][boldedDatum * inputAverageOverSize[firstCurve] / (inputAverageOverSize[curve])];
-                        yy[0] = y[curve][boldedDatum * inputAverageOverSize[firstCurve] / (inputAverageOverSize[curve])];
-                    }
-                    plot.addPoints(xx, yy, marker[curve]);
-                    if (showResidual[curve] && plottedResidual[curve] != null && useTransitFit[curve] && detrendFitIndex[curve] == 9) {
-                        plot.setColor(residualColor[curve]);
-                        if (residualSymbol[curve] == ij.gui.Plot.DOT) { plot.setLineWidth(8); } else {
-                            plot.setLineWidth(2);
-                        }
-                        if (curve == firstCurve) {
-                            int nnn = boldedDatum - nFitTrim[curve];
-                            if (nnn >= 0 && nnn < plottedResidual[curve].length) {
-                                xx[0] = xModel1[curve][boldedDatum - nFitTrim[curve]];
-                                yy[0] = plottedResidual[curve][boldedDatum - nFitTrim[curve]];
-                                plot.addPoints(xx, yy, residualSymbol[curve]);
-                            }
-                        } else {
-                            int nnn = boldedDatum * inputAverageOverSize[firstCurve] / inputAverageOverSize[curve] - nFitTrim[curve];
-                            if (nnn >= 0 && nnn < plottedResidual[curve].length) {
-                                xx[0] = xModel1[curve][nnn];
-                                yy[0] = plottedResidual[curve][nnn];
-                                plot.addPoints(xx, yy, residualSymbol[curve]);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        plot.setLineWidth(1);
-        plot.setJustification(Plot.CENTER);
-
-        if (showDMarkers) {
-            plot.setColor(Color.GRAY);
-            double[] samples1 = new double[10];
-            double[] samples2 = new double[10];
-            double[] samples3 = new double[10];
-            double[] samples4 = new double[10];
-            for (int i = 0; i < 10; i++) {
-                samples1[i] = Double.NaN;
-                samples2[i] = Double.NaN;
-                samples3[i] = Double.NaN;
-                samples4[i] = Double.NaN;
-            }
-
-            double preDmark1Ref = invertYAxis ? yPlotMin : yPlotMax;
-            double preDmark2Ref = preDmark1Ref;
-            double postDMarker3Ref = preDmark1Ref;
-            double postDMarker4Ref = preDmark1Ref;
-            int nBefore2 = 0;
-            int nAfter2 = 0;
-            int nBefore1 = 0;
-            int nAfter1 = 0;
-            int nBefore3 = 0;
-            int nAfter3 = 0;
-            int nBefore4 = 0;
-            int nAfter4 = 0;
-            for (int i = 0; i < nn[firstCurve]; i++) {
-                if (!Double.isNaN(x[firstCurve][i]) && !Double.isNaN(y[firstCurve][i])) {
-                    if (x[firstCurve][i] < dMarker2Value) {
-                        samples2[4] = samples2[3];
-                        samples2[3] = samples2[2];
-                        samples2[2] = samples2[1];
-                        samples2[1] = samples2[0];
-                        samples2[0] = y[firstCurve][i];
-                        nBefore2++;
-                    } else if (nAfter2 < 5) {
-                        samples2[5 + nAfter2] = y[firstCurve][i];
-                        nAfter2++;
-                    }
-
-                    if (useDMarker1 && x[firstCurve][i] < dMarker1Value) {
-                        samples1[4] = samples1[3];
-                        samples1[3] = samples1[2];
-                        samples1[2] = samples1[1];
-                        samples1[1] = samples1[0];
-                        samples1[0] = y[firstCurve][i];
-                        nBefore1++;
-                    } else if (useDMarker1 && nAfter1 < 5) {
-                        samples1[5 + nAfter1] = y[firstCurve][i];
-                        nAfter1++;
-                    }
-
-                    if (x[firstCurve][i] < dMarker3Value) {
-                        samples3[4] = samples3[3];
-                        samples3[3] = samples3[2];
-                        samples3[2] = samples3[1];
-                        samples3[1] = samples3[0];
-                        samples3[0] = y[firstCurve][i];
-                        nBefore3++;
-                    } else if (nAfter3 < 5) {
-                        samples3[5 + nAfter3] = y[firstCurve][i];
-                        nAfter3++;
-                    }
-
-                    if (useDMarker4 && x[firstCurve][i] < dMarker4Value) {
-                        samples4[4] = samples4[3];
-                        samples4[3] = samples4[2];
-                        samples4[2] = samples4[1];
-                        samples4[1] = samples4[0];
-                        samples4[0] = y[firstCurve][i];
-                        nBefore4++;
-                    } else if (useDMarker4 && nAfter4 < 5) {
-                        samples4[5 + nAfter4] = y[firstCurve][i];
-                        nAfter4++;
-                    }
-                }
-            }
-            if (nBefore2 + nAfter2 > 0) {
-                preDmark2Ref = invertYAxis ? minOf(samples2, 10) : maxOf(samples2, 10);
-                preDmark2Ref = invertYAxis ? Math.max(preDmark2Ref, plotMaxY) : Math.min(preDmark2Ref, plotMaxY);
-            }
-            if (nBefore3 + nAfter3 > 0) {
-                postDMarker3Ref = invertYAxis ? minOf(samples3, 10) : maxOf(samples3, 10);
-                postDMarker3Ref = invertYAxis ? Math.max(postDMarker3Ref, plotMaxY) : Math.min(postDMarker3Ref, plotMaxY);
-            }
-            dashLength = 5 * (plotMaxY - plotMinY) / plotSizeY;
-
-            numDashes = -10 + (preDmark2Ref - plotMinY) / dashLength;        //plot dMarker2
-            for (int dashCount = 0; dashCount < numDashes; dashCount += 2) {
-                plot.drawLine(dMarker2Value, preDmark2Ref - dashLength * dashCount, dMarker2Value, preDmark2Ref - dashLength * (dashCount + 1));
-            }
-            plot.setJustification(Plot.CENTER);
-            plot.addLabel((dMarker2Value - plotMinX) / (plotMaxX - plotMinX), 1 - 16.0 / plotSizeY, "Left");
-            plot.addLabel((dMarker2Value - plotMinX) / (plotMaxX - plotMinX), 1 + 4.0 / plotSizeY, threePlaces.format(dMarker2Value));
-
-            numDashes = -10 + (postDMarker3Ref - plotMinY) / dashLength;     //plot dMarker3
-            for (int dashCount = 0; dashCount < numDashes; dashCount += 2) {
-                plot.drawLine(dMarker3Value, postDMarker3Ref - dashLength * dashCount, dMarker3Value, postDMarker3Ref - dashLength * (dashCount + 1));
-            }
-            plot.addLabel((dMarker3Value - plotMinX) / (plotMaxX - plotMinX), 1 - 16.0 / plotSizeY, "Right");
-            plot.addLabel((dMarker3Value - plotMinX) / (plotMaxX - plotMinX), 1 + 4.0 / plotSizeY, threePlaces.format(dMarker3Value));
-
-            if (useDMarker1) { //plot dMarker1
-                if (nBefore1 + nAfter1 > 0) {
-                    preDmark1Ref = invertYAxis ? minOf(samples1, 10) : maxOf(samples1, 10);
-                    preDmark1Ref = invertYAxis ? Math.max(preDmark1Ref, plotMaxY) : Math.min(preDmark1Ref, plotMaxY);
-                }
-                numDashes = -10 + (preDmark1Ref - plotMinY) / dashLength;        //plot dMarker1
-                for (int dashCount = 0; dashCount < numDashes; dashCount += 2) {
-                    plot.drawLine(dMarker1Value, preDmark1Ref - dashLength * dashCount, dMarker1Value, preDmark1Ref - dashLength * (dashCount + 1));
-                }
-                plot.addLabel((dMarker1Value - plotMinX) / (plotMaxX - plotMinX), 1 - 25.0 / plotSizeY, "Left");
-                plot.addLabel((dMarker1Value - plotMinX) / (plotMaxX - plotMinX), 1 - 7.0 / plotSizeY, "Trim");
-                plot.addLabel((dMarker1Value - plotMinX) / (plotMaxX - plotMinX), 1 + 33.0 / plotSizeY, threePlaces.format(dMarker1Value));
-            }
-            if (useDMarker4) { //plot dMarker4
-                if (nBefore4 + nAfter4 > 0) {
-                    postDMarker4Ref = invertYAxis ? minOf(samples4, 10) : maxOf(samples4, 10);
-                    postDMarker4Ref = invertYAxis ? Math.max(postDMarker4Ref, plotMaxY) : Math.min(postDMarker4Ref, plotMaxY);
-                }
-                numDashes = -10 + (postDMarker4Ref - plotMinY) / dashLength;     //plot dMarker4
-                for (int dashCount = 0; dashCount < numDashes; dashCount += 2) {
-                    plot.drawLine(dMarker4Value, postDMarker4Ref - dashLength * dashCount, dMarker4Value, postDMarker4Ref - dashLength * (dashCount + 1));
-                }
-                plot.addLabel((dMarker4Value - plotMinX) / (plotMaxX - plotMinX), 1 - 25.0 / plotSizeY, "Right");
-                plot.addLabel((dMarker4Value - plotMinX) / (plotMaxX - plotMinX), 1 - 7.0 / plotSizeY, "Trim");
-                plot.addLabel((dMarker4Value - plotMinX) / (plotMaxX - plotMinX), 1 + 33.0 / plotSizeY, threePlaces.format(dMarker4Value));
-            }
-        }
-        if (showMFMarkers) drawVMarker(mfMarker1Value, "Meridian", "Flip", new Color(84, 201, 245));
-
-        if (showVMarker1) drawVMarker(vMarker1Value, vMarker1TopText, vMarker1BotText, Color.red);
-
-        if (showVMarker2) drawVMarker(vMarker2Value, vMarker2TopText, vMarker2BotText, Color.red);
-
-        plot.setColor(java.awt.Color.black);
-        plot.setJustification(Plot.CENTER);
-        if (useTitle) {
-            plot.changeFont(new java.awt.Font("Dialog", java.awt.Font.PLAIN, 18));
-            renderTitle();
-        }
-        if (useSubtitle) {
-            plot.changeFont(new java.awt.Font("Dialog", java.awt.Font.PLAIN, 14));
-            renderSubtitle();
-        }
-
-        plotImage = WindowManager.getImage("Plot of " + tableName);
-
-        if (plotImage == null) {
-            plotFrameLocationX = (int) Prefs.get("plot2.plotFrameLocationX", plotFrameLocationX);
-            plotFrameLocationY = (int) Prefs.get("plot2.plotFrameLocationY", plotFrameLocationY);
-            if (!Prefs.isLocationOnScreen(new Point(plotFrameLocationX, plotFrameLocationY))) {
-                plotFrameLocationX = 10;
-                plotFrameLocationY = 10;
-                Prefs.set("plot2.plotFrameLocationX", plotFrameLocationX);
-                Prefs.set("plot2.plotFrameLocationY", plotFrameLocationY);
-            }
-            plotWindow = plot.show();
-            plotWindow.addComponentListener(new ComponentAdapter() {
-                @Override
-                public void componentResized(ComponentEvent e) {
-                    updatePlotEnabled = false;
-                    plotheightspinner.setValue(plot.getSize().height);
-                    plotwidthspinner.setValue(plot.getSize().width);
-                    updatePlotEnabled = true;
-                    updatePlot(updateNoFits());
-                }
-            });
-            ((PlotWindow) plotWindow).getHelpButton().addActionListener(e -> {
-                String filename = "help/plotwindow_help.html";
-                new HelpPanel(filename, "Plot").setVisible(true);
-            });
-            plotWindow.setIconImage(plotIcon.getImage());
-            plotImage = plotWindow.getImagePlus();
-
-            plotImageCanvas = plotImage.getCanvas();
-            plotOverlayCanvas = new OverlayCanvas(plotImage);
-            list.clear();
-
-            MouseMotionListener[] mml = plotImageCanvas.getMouseMotionListeners();
-            if (mml.length > 0) {
-                for (MouseMotionListener mouseMotionListener : mml)
-                    plotImageCanvas.removeMouseMotionListener(mouseMotionListener);
-            }
-
-            MouseWheelListener[] mwl = plotImageCanvas.getMouseWheelListeners();
-            if (mwl.length > 0) {
-                for (MouseWheelListener mouseWheelListener : mwl)
-                    plotImageCanvas.removeMouseWheelListener(mouseWheelListener);
-            }
-
-            MouseWheelListener[] mwl3 = plotWindow.getMouseWheelListeners();
-            if (mwl3.length > 0) {
-                for (MouseWheelListener mouseWheelListener : mwl3)
-                    plotWindow.removeMouseWheelListener(mouseWheelListener);
-            }
-
-            MouseListener[] ml = plotImageCanvas.getMouseListeners();
-            if (ml.length > 0) {
-                for (MouseListener mouseListener : ml) plotImageCanvas.removeMouseListener(mouseListener);
-            }
-
-            plotImageCanvas.addMouseWheelListener(plotMouseWheelListener);
-            plotImageCanvas.addMouseMotionListener(plotMouseMotionListener);
-            plotImageCanvas.addMouseListener(plotMouseListener);
-            plotImageCanvas.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-            zoomX = 0.0;
-            zoomY = 0.0;
-        } else {
-            plotWindow = (PlotWindow) plotImage.getWindow();
-            ImageProcessor ip = plot.getProcessor();
-            plotImage.setProcessor("Plot of " + tableName, ip);
-            plotImageCanvas = plotImage.getCanvas();
-            plotImageCanvas.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-        }
-
-        drawAijVersion.ifProp(() -> {
-            plot.changeFont(new java.awt.Font("Dialog", java.awt.Font.PLAIN, 12));
-            plot.setJustification(Plot.BOTTOM_RIGHT);
-            var wid = plotImage.getImage().getGraphics().getFontMetrics(plot.getCurrentFont()).stringWidth("AIJ " + IJ.getAstroVersion().split("[+]")[0]);
-            var pWid = plot.getSize().getWidth();
-            var h = plot.getSize().getHeight();
-            plot.addLabel((pWid - wid - 10)/pWid, (h + 43)/h, "AIJ " + IJ.getAstroVersion().split("[+]")[0]);
-        });
-
-        updatePlotPos();
-
-        plotbottompanel = (Panel) plotWindow.getComponent(1);
-        plotbottompanel.getComponentCount();
-        plotbottompanel.setSize(600, 30);
-        plotcoordlabel = (Label) plotbottompanel.getComponent(plotbottompanel.getComponentCount() - 1);
-        plotcoordlabel.setSize(400, 20);
-        plotcoordlabel.setBackground(Color.white);
-
-        //Replot to clean up blank areas
-
-        excludedHeadSamples = holdExcludedHeadSamples;
-        excludedTailSamples = holdExcludedTailSamples;
-        table.setLock(false);
-        plotWindow.getImagePlus().setPlot(plot);
-        ((PlotWindow) plotWindow).setPlot(plot);
-        updatePlotRunning = false;
+    public static void invalidatePlotDataLock() {
+        plotDataLock = null;
     }
 
     static void updatePlotPos() {
@@ -15557,6 +15585,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         if (subFrame != null) subFrame.dispose();
         mainFrame = null;
         subFrame = null;
+        plotDataLock = null;
     }
 
     public static synchronized void openDragAndDropFiles(java.io.File[] files) {

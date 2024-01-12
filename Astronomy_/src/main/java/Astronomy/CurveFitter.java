@@ -1484,7 +1484,7 @@ public class CurveFitter {
                             }
                             double fTol = 1e-10;
                             int nMax = 20000;
-                            minimization.nelderMead(new FitDetrendChi2(detrendY, detrendYE), start, step, fTol, nMax);
+                            minimization.nelderMead(new FitDetrendChi2(detrendY, detrendYE, detrendVars), start, step, fTol, nMax);
                             coeffs = minimization.getParamValues();
 
                             varCount = 0;
@@ -2012,9 +2012,11 @@ public class CurveFitter {
 
     public class FitDetrendOnly implements MinimizationFunction {
         double[] detrendY;
+        double[][] detrendVars;
 
-        public FitDetrendOnly(double[] detrendY) {
+        public FitDetrendOnly(double[] detrendY, double[][] detrendVars) {
             this.detrendY = detrendY;
+            this.detrendVars = detrendVars;
         }
 
         public double function(double[] param) {
@@ -2035,10 +2037,12 @@ public class CurveFitter {
 
     public class FitDetrendChi2 implements MinimizationFunction {
         double[] detrendY, detrendYE;
+        double[][] detrendVars;
 
-        public FitDetrendChi2(double[] detrendY, double[] detrendYE) {
+        public FitDetrendChi2(double[] detrendY, double[] detrendYE, double[][] detrendVars) {
             this.detrendY = detrendY;
             this.detrendYE = detrendYE;
+            this.detrendVars = detrendVars;
         }
 
         public double function(double[] param) {

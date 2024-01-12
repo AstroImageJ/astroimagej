@@ -317,7 +317,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static double[][] yop;
     static double[][] yoperr;
     static double[][][] detrend;
-    static double[][] detrendVars;
+    static double[][][] detrendVars;
     static double[][] detrendXs;
     static double[][] detrendYs;
     static double[][] detrendYEs;
@@ -3044,11 +3044,11 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                     detrendVarsUsed[curve]--;
                                 }
                             }
-                            detrendVars = new double[detrendVarsUsed[curve]][detrendCount];
+                            detrendVars[curve] = new double[detrendVarsUsed[curve]][detrendCount];
                             int varCount = 0;
                             for (int v = 0; v < maxDetrendVars; v++) {
                                 if (detrendIndex[curve][v] != 0 && detrendYDNotConstant[v]) {
-                                    detrendVars[varCount] = Arrays.copyOf(detrendYD[v], detrendCount);
+                                    detrendVars[curve][varCount] = Arrays.copyOf(detrendYD[v], detrendCount);
                                     varCount++;
                                 }
                             }
@@ -3155,7 +3155,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                         }
 
                                         minimization.setNrestartsMax(1);
-                                        minimization.nelderMead(new FitLightCurveChi2(), start[curve], step[curve], tolerance[curve], maxFitSteps[curve]);
+                                        minimization.nelderMead(new FitLightCurveChi2(curve), start[curve], step[curve], tolerance[curve], maxFitSteps[curve]);
                                         coeffs[curve] = minimization.getParamValues();
                                         nTries[curve] = minimization.getNiter() - 1;
                                         converged[curve] = minimization.getConvStatus();
@@ -3261,15 +3261,15 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                         }
                                     } else if (useNelderMeadChi2ForDetrend) {
                                         minimization.removeConstraints();
-                                        start[curve] = new double[detrendVars.length];
-                                        step[curve] = new double[detrendVars.length];
+                                        start[curve] = new double[detrendVars[curve].length];
+                                        step[curve] = new double[detrendVars[curve].length];
                                         for (int i = 0; i < start[curve].length; i++) {
                                             start[curve][i] = 0.0;
                                             step[curve][i] = 1.0;
                                         }
                                         double fTol = 1e-10;
                                         int nMax = 20000;
-                                        minimization.nelderMead(new FitDetrendChi2(), start[curve], step[curve], fTol, nMax);
+                                        minimization.nelderMead(new FitDetrendChi2(curve), start[curve], step[curve], fTol, nMax);
                                         coeffs[curve] = minimization.getParamValues();
 
                                         varCount = 0;
@@ -3290,7 +3290,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                         }
 
                                     } else { //use regression
-                                        Regression regression = new Regression(detrendVars, detrendYs[curve]);
+                                        Regression regression = new Regression(detrendVars[curve], detrendYs[curve]);
                                         regression.linear();
                                         coeffs[curve] = regression.getCoeff();
 
@@ -4279,15 +4279,21 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     }
 
     public static class FitDetrendOnly implements MinimizationFunction {
+        final int curve;
+
+        public FitDetrendOnly(int curve) {
+            this.curve = curve;
+        }
+
         public double function(double[] param) {
             double sd = 0.0;
             double residual;
             int numData = detrendYs[curve].length;
-            int numVars = detrendVars.length;
+            int numVars = detrendVars[curve].length;
             for (int j = 0; j < numData; j++) {
                 residual = detrendYs[curve][j] - param[0];
                 for (int i = 0; i < numVars; i++) {
-                    residual -= detrendVars[i][j] * param[i + 1];
+                    residual -= detrendVars[curve][i][j] * param[i + 1];
                 }
                 sd += residual * residual;
             }
@@ -4303,17 +4309,23 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     }
 
     public static class FitDetrendChi2 implements MinimizationFunction {
+        final int curve;
+
+        public FitDetrendChi2(int curve) {
+            this.curve = curve;
+        }
+
         public double function(double[] param) {
             double chi2 = 0.0;
             double residual;
             int numData = detrendYs[curve].length;
-            int numVars = detrendVars.length;
+            int numVars = detrendVars[curve].length;
             int dof = numData - param.length;
             if (dof < 1) dof = 1;
             for (int j = 0; j < numData; j++) {
                 residual = detrendYs[curve][j];// - param[0];
                 for (int i = 0; i < numVars; i++) {
-                    residual -= detrendVars[i][j] * param[i];
+                    residual -= detrendVars[curve][i][j] * param[i];
                 }
                 chi2 += ((residual * residual) / (detrendYEs[curve][j] * detrendYEs[curve][j]));
             }
@@ -4355,11 +4367,17 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     }
 
     public static class FitLightCurveChi2 implements MinimizationFunction {
+        final int curve;
+
+        public FitLightCurveChi2(int curve) {
+            this.curve = curve;
+        }
+
         public double function(double[] param) {
             int numData = detrendYs[curve].length;
-            int numDetrendVars = detrendVars.length;
+            int numDetrendVars = detrendVars[curve].length;
             int nPars = param.length;
-            double[] dPars = new double[detrendVars.length];
+            double[] dPars = new double[detrendVars[curve].length];
 //            int dof = numData - param.length;// - 7;
             if (dof[curve] < 1) dof[curve] = 1;
 
@@ -4423,7 +4441,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     for (int j = 0; j < numData; j++) {
                         residual = detrendYs[curve][j];// - param[0];
                         for (int i = 0; i < numDetrendVars; i++) {
-                            residual -= detrendVars[i][j] * dPars[i];
+                            residual -= detrendVars[curve][i][j] * dPars[i];
                         }
                         residual -= (lcModel[curve][j] - detrendYAverage[curve]);
                         chi2[curve] += ((residual * residual) / (detrendYEs[curve][j] * detrendYEs[curve][j]));
@@ -4433,7 +4451,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 for (int j = 0; j < numData; j++) {
                     residual = detrendYs[curve][j];// - param[0];
                     for (int i = 0; i < numDetrendVars; i++) {
-                        residual -= detrendVars[i][j] * dPars[i];
+                        residual -= detrendVars[curve][i][j] * dPars[i];
                     }
                     if (numDetrendVars == 0 && param.length == 1) {
                         residual -= param[0];
@@ -6234,6 +6252,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         detrendlabelhold = new String[maxCurves][maxDetrendVars];
         detrendcolumn = new int[maxCurves][maxDetrendVars];
         detrendYDNotConstant = new boolean[maxDetrendVars];
+        detrendVars = new double[maxCurves][][];
         xModel1 = new double[maxCurves][];
         xModel2 = new double[maxCurves][];
         yModel1 = new double[maxCurves][];

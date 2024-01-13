@@ -2515,7 +2515,9 @@ public class IJ {
 
 	/** Displays a stack trace. Use the setExceptionHandler 
 		method() to override with a custom exception handler. */
+	@AstroImageJ(reason = "Log exceptions to console as well", modified = true)
 	public static void handleException(Throwable e) {
+		e.printStackTrace();
 		if (exceptionHandler!=null) {
 			exceptionHandler.handle(e);
 			return;

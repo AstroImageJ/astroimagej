@@ -466,7 +466,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static double[] fitMax;
     static double[] fitLeft;
     static double[] fitRight;
-    static Minimization minimization;
 
     static JFrame[] fitFrame;
     static ImageIcon fitFrameIcon;
@@ -2295,7 +2294,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             detrendVarsUsed[curve] = 0;
         }
 
-        for (int curve = 0; curve < maxCurves; curve++) {
+        IntStream.range(0, maxCurves).parallel().forEach(curve -> {
             if (xlabel[curve].trim().length() == 0 || (xlabel[curve].equalsIgnoreCase("default") && xlabeldefault.trim().length() == 0)) {
                 for (int j = 0; j < nn[curve]; j++)
                     x[curve][j] = j + 1;
@@ -2357,8 +2356,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     }
                 }
             }
-        }
-        for (int curve = 0; curve < maxCurves; curve++) {
+
             if (plotY[curve]) {
                 if (ylabel[curve].trim().length() == 0) {
                     for (int j = 0; j < nn[curve]; j++)
@@ -2668,27 +2666,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
                 KeplerSplineControl.getInstance(curve).smoothData(x[curve], y[curve], yerr[curve], nn[curve], yMask);
             }
-        }
 
-        // PERFORM X-AUTOSCALING TO ONE OR MORE CURVES
-        dx = 0.0;
-
-        xPlotMin = xMin;
-        xPlotMax = xMax;
-
-        xautoscalemin = Double.POSITIVE_INFINITY;
-        xautoscalemax = Double.NEGATIVE_INFINITY;
-
-        var hasXDatasetToScaleAgainst = IntStream.range(0, ASInclude.length)
-                .mapToObj(i -> ASInclude[i]).filter(b -> b).findAny().isPresent();
-
-        firstCurve = -1;
-        for (int curve = 0; curve < maxCurves; curve++) {
             if (plotY[curve]) {
-                if ((firstCurve == -1)) {
-                    firstCurve = curve; //FIND THE FIRST CURVE TO DISPLAY - IT IS USED FOR THE Y-AXIS LABEL
-                    xBase=x[curve][0];
-                }
                 if (!showXAxisNormal) {
                     if (showXAxisAsPhase) {
                         for (int j = 0; j < nn[curve]; j++) {
@@ -2716,7 +2695,28 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 }
                 xMinimum[curve] = minOf(x[curve], nn[curve]); //FIND MIN AND MAX X OF EACH SELECTED DATASET
                 xMaximum[curve] = maxOf(x[curve], nn[curve]);
+            }
+        });
 
+        // PERFORM X-AUTOSCALING TO ONE OR MORE CURVES
+        dx = 0.0;
+
+        xPlotMin = xMin;
+        xPlotMax = xMax;
+
+        xautoscalemin = Double.POSITIVE_INFINITY;
+        xautoscalemax = Double.NEGATIVE_INFINITY;
+
+        firstCurve = -1;
+        var hasXDatasetToScaleAgainst = IntStream.range(0, ASInclude.length)
+                .mapToObj(i -> ASInclude[i]).filter(b -> b).findAny().isPresent();
+
+        for (int curve = 0; curve < maxCurves; curve++) {
+            if (plotY[curve]) {
+                if ((firstCurve == -1)) {
+                    firstCurve = curve; //FIND THE FIRST CURVE TO DISPLAY - IT IS USED FOR THE Y-AXIS LABEL
+                    xBase=x[curve][0];
+                }
 
                 if (ASInclude[curve]) {
                     if (xMinimum[curve] < xautoscalemin) xautoscalemin = xMinimum[curve];
@@ -2781,12 +2781,14 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             }
         }
         var normAverageSet = new double[maxCurves];
-        for (curve = 0; curve < maxCurves; curve++) {
+        boolean[] finalUpdateFit = updateFit;
+        IntStream.range(0, maxCurves).parallel().forEach(curve -> {
             residual[curve] = null;
             plottedResidual[curve] = null;
             yModel1Err[curve] = null;
             detrendYAverage[curve] = 0.0;
             if (plotY[curve]) {
+                var minimization = new Minimization();
                 fitMin[curve] = (useDMarker1 ? dMarker1Value : Double.NEGATIVE_INFINITY) + xOffset;
                 fitMax[curve] = (useDMarker4 ? dMarker4Value : Double.POSITIVE_INFINITY) + xOffset;
                 fitLeft[curve] = dMarker2Value + xOffset;
@@ -3057,7 +3059,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                 detrendXs[curve] = Arrays.copyOf(detrendX, detrendCount);
                                 detrendYs[curve] = Arrays.copyOf(detrendY, detrendCount);
                                 detrendYEs[curve] = Arrays.copyOf(detrendYE, detrendCount);
-                                if (updateFit[curve]) {
+                                if (finalUpdateFit[curve]) {
                                     int fittedDetrendParStart;
                                     if (detrendFitIndex[curve] == 9) {
                                         minimization.removeConstraints();
@@ -3220,8 +3222,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                             tauLabel[curve].setText(Double.isNaN(tau[curve]) ? "NaN" : sixPlaces.format(tau[curve]));
                                             stellarDensityLabel[curve].setText(Double.isNaN(stellarDensity[curve]) ? "NaN" : fourPlaces.format(stellarDensity[curve]));
                                             //if (!MultiAperture_.cancelled) { //todo come up with heuristic to only run the transit model when needed
-                                                double midpointFlux = IJU.transitModel(new double[]{bestFit[curve][3]}, bestFit[curve][0], bestFit[curve][4], bestFit[curve][1], bestFit[curve][2], bestFit[curve][3], orbitalPeriod[curve], forceCircularOrbit[curve] ? 0.0 : eccentricity[curve], forceCircularOrbit[curve] ? 0.0 : omega[curve], bestFit[curve][5], bestFit[curve][6], useLonAscNode[curve], lonAscNode[curve], true)[0];
-                                                transitDepth[curve] = (1-(midpointFlux/bestFit[curve][0]))*1000;
+                                            double midpointFlux = IJU.transitModel(new double[]{bestFit[curve][3]}, bestFit[curve][0], bestFit[curve][4], bestFit[curve][1], bestFit[curve][2], bestFit[curve][3], orbitalPeriod[curve], forceCircularOrbit[curve] ? 0.0 : eccentricity[curve], forceCircularOrbit[curve] ? 0.0 : omega[curve], bestFit[curve][5], bestFit[curve][6], useLonAscNode[curve], lonAscNode[curve], true)[0];
+                                            transitDepth[curve] = (1-(midpointFlux/bestFit[curve][0]))*1000;
                                             //}
                                             transitDepthLabel[curve].setText(Double.isNaN(transitDepth[curve]) ? "NaN" : threeDigitsTwoPlaces.format(transitDepth[curve]));
                                         } else {
@@ -3845,7 +3847,29 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 detrendpanelgroup[curve].setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
             }
             if (refStarChanged || detrendParChanged) setRMSBICBackgroundNewThread(curve);
-        }
+
+            double resMin, resMax;
+            yMn[curve] = (showErrors[curve] && (hasErrors[curve] || hasOpErrors[curve])) ? minOf(x[curve], y[curve], yerr[curve], nn[curve]) : minOf(x[curve], y[curve], nn[curve]); //FIND MIN AND MAX Y OF EACH SELECTED DATASET
+            yMx[curve] = (showErrors[curve] && (hasErrors[curve] || hasOpErrors[curve])) ? maxOf(x[curve], y[curve], yerr[curve], nn[curve]) : maxOf(x[curve], y[curve], nn[curve]);
+            yWidthOrig[curve] = yMx[curve] - yMn[curve];
+            if (showResidual[curve] && residual[curve] != null && useTransitFit[curve] && detrendFitIndex[curve] == 9) {
+                resMin = (showResidualError[curve] && yModel1Err[curve] != null) ? resMinOf(x[curve], residual[curve], yModel1Err[curve], residual[curve].length, detrendYAverage[curve] + (force[curve] ? yWidthOrig[curve] * autoResidualShift[curve] / autoScaleFactor[curve] : residualShift[curve] / (normIndex[curve] != 0 && !mmag[curve] && !force[curve] ? 1.0 : yMultiplierFactor))) : resMinOf(x[curve], residual[curve], residual[curve].length, detrendYAverage[curve] + (force[curve] ? yWidthOrig[curve] * autoResidualShift[curve] / autoScaleFactor[curve] : residualShift[curve] / (normIndex[curve] != 0 && !mmag[curve] && !force[curve] ? 1.0 : yMultiplierFactor)));
+
+                resMax = (showResidualError[curve] && yModel1Err[curve] != null) ? resMaxOf(x[curve], residual[curve], yModel1Err[curve], residual[curve].length, detrendYAverage[curve] + (force[curve] ? yWidthOrig[curve] * autoResidualShift[curve] / autoScaleFactor[curve] : residualShift[curve] / (normIndex[curve] != 0 && !mmag[curve] && !force[curve] ? 1.0 : yMultiplierFactor))) : resMaxOf(x[curve], residual[curve], residual[curve].length, detrendYAverage[curve] + (force[curve] ? yWidthOrig[curve] * autoResidualShift[curve] / autoScaleFactor[curve] : residualShift[curve] / (normIndex[curve] != 0 && !mmag[curve] && !force[curve] ? 1.0 : yMultiplierFactor)));
+                if (resMin < yMn[curve]) yMn[curve] = resMin;
+                if (resMax > yMx[curve]) yMx[curve] = resMax;
+            }
+            if (normIndex[curve] != 0 && !mmag[curve] && !force[curve]) {
+                yMinimum[curve] = 1 + customScaleFactor[curve] * (yMn[curve] - 1.0) + customShiftFactor[curve];
+                yMaximum[curve] = 1 + customScaleFactor[curve] * (yMx[curve] - 1.0) + customShiftFactor[curve];
+            } else if (customScaleFactor[curve] >= 0) {
+                yMinimum[curve] = force[curve] ? yMn[curve] : yMn[curve] * yMultiplierFactor * customScaleFactor[curve] + customShiftFactor[curve]; //FIND MIN AND MAX Y OF EACH SELECTED DATASET
+                yMaximum[curve] = force[curve] ? yMx[curve] : yMx[curve] * yMultiplierFactor * customScaleFactor[curve] + customShiftFactor[curve];
+            } else {
+                yMinimum[curve] = force[curve] ? yMn[curve] : yMx[curve] * yMultiplierFactor * customScaleFactor[curve] + customShiftFactor[curve]; //FIND MIN AND MAX Y OF EACH SELECTED DATASET
+                yMaximum[curve] = force[curve] ? yMx[curve] : yMn[curve] * yMultiplierFactor * customScaleFactor[curve] + customShiftFactor[curve];
+            }
+        });
 
 
         // PERFORM Y-AUTOSCALING TO ONE OR MORE CURVES
@@ -3859,28 +3883,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         yautoscalemax = Double.NEGATIVE_INFINITY;
 
         for (int curve = 0; curve < maxCurves; curve++) {
-            double resMin, resMax;
             if (plotY[curve]) {
-                yMn[curve] = (showErrors[curve] && (hasErrors[curve] || hasOpErrors[curve])) ? minOf(x[curve], y[curve], yerr[curve], nn[curve]) : minOf(x[curve], y[curve], nn[curve]); //FIND MIN AND MAX Y OF EACH SELECTED DATASET
-                yMx[curve] = (showErrors[curve] && (hasErrors[curve] || hasOpErrors[curve])) ? maxOf(x[curve], y[curve], yerr[curve], nn[curve]) : maxOf(x[curve], y[curve], nn[curve]);
-                yWidthOrig[curve] = yMx[curve] - yMn[curve];
-                if (showResidual[curve] && residual[curve] != null && useTransitFit[curve] && detrendFitIndex[curve] == 9) {
-                    resMin = (showResidualError[curve] && yModel1Err[curve] != null) ? resMinOf(x[curve], residual[curve], yModel1Err[curve], residual[curve].length, detrendYAverage[curve] + (force[curve] ? yWidthOrig[curve] * autoResidualShift[curve] / autoScaleFactor[curve] : residualShift[curve] / (normIndex[curve] != 0 && !mmag[curve] && !force[curve] ? 1.0 : yMultiplierFactor))) : resMinOf(x[curve], residual[curve], residual[curve].length, detrendYAverage[curve] + (force[curve] ? yWidthOrig[curve] * autoResidualShift[curve] / autoScaleFactor[curve] : residualShift[curve] / (normIndex[curve] != 0 && !mmag[curve] && !force[curve] ? 1.0 : yMultiplierFactor)));
-
-                    resMax = (showResidualError[curve] && yModel1Err[curve] != null) ? resMaxOf(x[curve], residual[curve], yModel1Err[curve], residual[curve].length, detrendYAverage[curve] + (force[curve] ? yWidthOrig[curve] * autoResidualShift[curve] / autoScaleFactor[curve] : residualShift[curve] / (normIndex[curve] != 0 && !mmag[curve] && !force[curve] ? 1.0 : yMultiplierFactor))) : resMaxOf(x[curve], residual[curve], residual[curve].length, detrendYAverage[curve] + (force[curve] ? yWidthOrig[curve] * autoResidualShift[curve] / autoScaleFactor[curve] : residualShift[curve] / (normIndex[curve] != 0 && !mmag[curve] && !force[curve] ? 1.0 : yMultiplierFactor)));
-                    if (resMin < yMn[curve]) yMn[curve] = resMin;
-                    if (resMax > yMx[curve]) yMx[curve] = resMax;
-                }
-                if (normIndex[curve] != 0 && !mmag[curve] && !force[curve]) {
-                    yMinimum[curve] = 1 + customScaleFactor[curve] * (yMn[curve] - 1.0) + customShiftFactor[curve];
-                    yMaximum[curve] = 1 + customScaleFactor[curve] * (yMx[curve] - 1.0) + customShiftFactor[curve];
-                } else if (customScaleFactor[curve] >= 0) {
-                    yMinimum[curve] = force[curve] ? yMn[curve] : yMn[curve] * yMultiplierFactor * customScaleFactor[curve] + customShiftFactor[curve]; //FIND MIN AND MAX Y OF EACH SELECTED DATASET
-                    yMaximum[curve] = force[curve] ? yMx[curve] : yMx[curve] * yMultiplierFactor * customScaleFactor[curve] + customShiftFactor[curve];
-                } else {
-                    yMinimum[curve] = force[curve] ? yMn[curve] : yMx[curve] * yMultiplierFactor * customScaleFactor[curve] + customShiftFactor[curve]; //FIND MIN AND MAX Y OF EACH SELECTED DATASET
-                    yMaximum[curve] = force[curve] ? yMx[curve] : yMn[curve] * yMultiplierFactor * customScaleFactor[curve] + customShiftFactor[curve];
-                }
                 if (ASInclude[curve] && !force[curve]) {
                     if (yMinimum[curve] < yautoscalemin) yautoscalemin = yMinimum[curve];
                     if (yMaximum[curve] > yautoscalemax) yautoscalemax = yMaximum[curve];
@@ -6415,7 +6418,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         fitFrame = new JFrame[maxCurves];
         fitPanel = new JPanel[maxCurves];
-        minimization = new Minimization();
         fitScrollPane = new JScrollPane[maxCurves];
         fitFrameLocationX = new int[maxCurves];
         fitFrameLocationY = new int[maxCurves];

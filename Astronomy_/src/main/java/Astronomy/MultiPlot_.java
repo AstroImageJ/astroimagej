@@ -4051,85 +4051,83 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         yRange = yPlotMax - yPlotMin;
         yMid = yPlotMin + yRange / 2.;
-        for (int curve = 0; curve < maxCurves; curve++) {
-            if (plotY[curve]) {
-                if (Double.isNaN(customShiftFactor[curve]) || Double.isInfinite(customShiftFactor[curve])) {
-                    customShiftFactor[curve] = 0.0;
-                }
-                if (Double.isNaN(customScaleFactor[curve]) || Double.isInfinite(customScaleFactor[curve])) {
-                    customScaleFactor[curve] = 1.0;
-                }
-                if (Double.isNaN(autoShiftFactor[curve]) || Double.isInfinite(autoShiftFactor[curve])) {
-                    autoShiftFactor[curve] = 0.0;
-                }
-                if (Double.isNaN(autoScaleFactor[curve]) || Double.isInfinite(autoScaleFactor[curve])) {
-                    autoScaleFactor[curve] = 1.0;
-                }
-                yMidpoint[curve] = (yMaximum[curve] + yMinimum[curve]) / 2.;
-                yWidth[curve] = yMaximum[curve] - yMinimum[curve];
-                if (yWidth[curve] == 0) yWidth[curve] = 1.0e-10;
-                if (force[curve]) {
-                    subtotalScaleFactor[curve] = (invertYAxis ? -1 : 1) * autoScaleFactor[curve] * yRange / yWidth[curve];
-                    subtotalShiftFactor[curve] = (yMid + yRange * (invertYAxis ? -1 : 1) * autoShiftFactor[curve] - subtotalScaleFactor[curve] * yMidpoint[curve]);
-                    totalScaleFactor[curve] = subtotalScaleFactor[curve];//*yMultiplierFactor;
-                } else {
-                    subtotalScaleFactor[curve] = customScaleFactor[curve];
-                    subtotalShiftFactor[curve] = customShiftFactor[curve];
-                    totalScaleFactor[curve] = (normIndex[curve] != 0 && !mmag[curve]) ? subtotalScaleFactor[curve] : subtotalScaleFactor[curve] * yMultiplierFactor;
-                }
-                totalShiftFactor[curve] = subtotalShiftFactor[curve];
+        IntStream.range(0, maxCurves).parallel().filter(curve -> plotY[curve]).forEach(curve -> {
+            if (Double.isNaN(customShiftFactor[curve]) || Double.isInfinite(customShiftFactor[curve])) {
+                customShiftFactor[curve] = 0.0;
+            }
+            if (Double.isNaN(customScaleFactor[curve]) || Double.isInfinite(customScaleFactor[curve])) {
+                customScaleFactor[curve] = 1.0;
+            }
+            if (Double.isNaN(autoShiftFactor[curve]) || Double.isInfinite(autoShiftFactor[curve])) {
+                autoShiftFactor[curve] = 0.0;
+            }
+            if (Double.isNaN(autoScaleFactor[curve]) || Double.isInfinite(autoScaleFactor[curve])) {
+                autoScaleFactor[curve] = 1.0;
+            }
+            yMidpoint[curve] = (yMaximum[curve] + yMinimum[curve]) / 2.;
+            yWidth[curve] = yMaximum[curve] - yMinimum[curve];
+            if (yWidth[curve] == 0) yWidth[curve] = 1.0e-10;
+            if (force[curve]) {
+                subtotalScaleFactor[curve] = (invertYAxis ? -1 : 1) * autoScaleFactor[curve] * yRange / yWidth[curve];
+                subtotalShiftFactor[curve] = (yMid + yRange * (invertYAxis ? -1 : 1) * autoShiftFactor[curve] - subtotalScaleFactor[curve] * yMidpoint[curve]);
+                totalScaleFactor[curve] = subtotalScaleFactor[curve];//*yMultiplierFactor;
+            } else {
+                subtotalScaleFactor[curve] = customScaleFactor[curve];
+                subtotalShiftFactor[curve] = customShiftFactor[curve];
+                totalScaleFactor[curve] = (normIndex[curve] != 0 && !mmag[curve]) ? subtotalScaleFactor[curve] : subtotalScaleFactor[curve] * yMultiplierFactor;
+            }
+            totalShiftFactor[curve] = subtotalShiftFactor[curve];
 
-                if (!(normIndex[curve] != 0 || mmag[curve] || force[curve])) {
-                    sigma[curve] = totalScaleFactor[curve] * sigma[curve];
-                }
-                if (mmag[curve] && totalScaleFactor[curve] == 1000) sigma[curve] *= 1000;
+            if (!(normIndex[curve] != 0 || mmag[curve] || force[curve])) {
+                sigma[curve] = totalScaleFactor[curve] * sigma[curve];
+            }
+            if (mmag[curve] && totalScaleFactor[curve] == 1000) sigma[curve] *= 1000;
 
+            if (normIndex[curve] != 0 && !mmag[curve] && !force[curve]) {
+                detrendYAverage[curve] = 1 + totalScaleFactor[curve] * (detrendYAverage[curve] - 1.0) + subtotalShiftFactor[curve];
+            } else {
+                detrendYAverage[curve] = totalScaleFactor[curve] * detrendYAverage[curve] + subtotalShiftFactor[curve];
+            }
+            for (int j = 0; j < nn[curve]; j++) {
+                if (hasErrors[curve] || hasOpErrors[curve]) {
+                    yerr[curve][j] = totalScaleFactor[curve] * yerr[curve][j];
+                }
                 if (normIndex[curve] != 0 && !mmag[curve] && !force[curve]) {
-                    detrendYAverage[curve] = 1 + totalScaleFactor[curve] * (detrendYAverage[curve] - 1.0) + subtotalShiftFactor[curve];
+                    y[curve][j] = 1 + totalScaleFactor[curve] * (y[curve][j] - 1.0) + subtotalShiftFactor[curve];
                 } else {
-                    detrendYAverage[curve] = totalScaleFactor[curve] * detrendYAverage[curve] + subtotalShiftFactor[curve];
+                    y[curve][j] = totalScaleFactor[curve] * y[curve][j] + subtotalShiftFactor[curve];
                 }
-                for (int j = 0; j < nn[curve]; j++) {
-                    if (hasErrors[curve] || hasOpErrors[curve]) {
-                        yerr[curve][j] = totalScaleFactor[curve] * yerr[curve][j];
-                    }
+            }
+
+            if (yModel1[curve] != null) {
+                for (int nnn = 0; nnn < yModel1[curve].length; nnn++) {
                     if (normIndex[curve] != 0 && !mmag[curve] && !force[curve]) {
-                        y[curve][j] = 1 + totalScaleFactor[curve] * (y[curve][j] - 1.0) + subtotalShiftFactor[curve];
+                        yModel1[curve][nnn] = 1 + totalScaleFactor[curve] * (yModel1[curve][nnn] - 1.0) + subtotalShiftFactor[curve];
                     } else {
-                        y[curve][j] = totalScaleFactor[curve] * y[curve][j] + subtotalShiftFactor[curve];
+                        yModel1[curve][nnn] = totalScaleFactor[curve] * yModel1[curve][nnn] + subtotalShiftFactor[curve];
                     }
-                }
-
-                if (yModel1[curve] != null) {
-                    for (int nnn = 0; nnn < yModel1[curve].length; nnn++) {
-                        if (normIndex[curve] != 0 && !mmag[curve] && !force[curve]) {
-                            yModel1[curve][nnn] = 1 + totalScaleFactor[curve] * (yModel1[curve][nnn] - 1.0) + subtotalShiftFactor[curve];
-                        } else {
-                            yModel1[curve][nnn] = totalScaleFactor[curve] * yModel1[curve][nnn] + subtotalShiftFactor[curve];
-                        }
-                        if (residual[curve] != null) {
-                            residual[curve][nnn] = totalScaleFactor[curve] * residual[curve][nnn];
-                        }
-                    }
-                }
-
-                if (yModel1Err[curve] != null) {
-                    for (int nnn = 0; nnn < yModel1Err[curve].length; nnn++) {
-                        yModel1Err[curve][nnn] = totalScaleFactor[curve] * yModel1Err[curve][nnn];
-                    }
-                }
-
-                if (yModel2[curve] != null) {
-                    for (int nnn = 0; nnn < yModel2[curve].length; nnn++) {
-                        if (normIndex[curve] != 0 && !mmag[curve] && !force[curve]) {
-                            yModel2[curve][nnn] = 1 + totalScaleFactor[curve] * (yModel2[curve][nnn] - 1.0) + subtotalShiftFactor[curve];
-                        } else {
-                            yModel2[curve][nnn] = totalScaleFactor[curve] * yModel2[curve][nnn] + subtotalShiftFactor[curve];
-                        }
+                    if (residual[curve] != null) {
+                        residual[curve][nnn] = totalScaleFactor[curve] * residual[curve][nnn];
                     }
                 }
             }
-        }
+
+            if (yModel1Err[curve] != null) {
+                for (int nnn = 0; nnn < yModel1Err[curve].length; nnn++) {
+                    yModel1Err[curve][nnn] = totalScaleFactor[curve] * yModel1Err[curve][nnn];
+                }
+            }
+
+            if (yModel2[curve] != null) {
+                for (int nnn = 0; nnn < yModel2[curve].length; nnn++) {
+                    if (normIndex[curve] != 0 && !mmag[curve] && !force[curve]) {
+                        yModel2[curve][nnn] = 1 + totalScaleFactor[curve] * (yModel2[curve][nnn] - 1.0) + subtotalShiftFactor[curve];
+                    } else {
+                        yModel2[curve][nnn] = totalScaleFactor[curve] * yModel2[curve][nnn] + subtotalShiftFactor[curve];
+                    }
+                }
+            }
+        });
 
         if (yGoodLabel) {
             if (showYScaleInfo || showYShiftInfo || force[firstCurve]) {

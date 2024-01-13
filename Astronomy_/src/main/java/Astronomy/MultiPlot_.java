@@ -3915,57 +3915,68 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         boolean yGoodLabel = false;
 
         // MAKE X-AXIS LABEL
-
-        for (int curve = 0; curve < maxCurves; curve++) {
-            if (plotY[curve]) {
-                if (showXAxisAsPhase) {
-                    xlab = "Orbital Phase (periods) (T0 = " + netT0 + ", P = " + netPeriod + ")";
-                    xGoodLabel = true;
-                } else if (showXAxisAsDaysSinceTc) {
-                    xlab = "Days Since Tc (T0 = " + netT0 + ", P = " + netPeriod + ")";
-                    xGoodLabel = true;
-                } else if (showXAxisAsHoursSinceTc) {
-                    xlab = "Hours Since Tc (T0 = " + netT0 + ", P = " + netPeriod + ")";
-                    xGoodLabel = true;
-                } else if (xlabel2[curve].contains("J.D.") || xlabel2[curve].contains("JD")) {
-                    if (curve == firstCurve) {
-                        xPlotMin -= xOffset;
-                        xPlotMax -= xOffset;
-                        if (useXColumnName) {
-                            if (xlabel2[curve].trim().startsWith("J.D.-2400000")) {
-                                xlab = "Geocentric Julian Date (UTC) - " + xJD;
-                            } else if (xlabel2[curve].trim().startsWith("BJD_TDB")) {
-                                xlab = "Barycentric Julian Date (TDB) - " + xJD + " (mid-exposure)";
-                            } else if (xlabel2[curve].trim().startsWith("BJD_SOBS")) {
-                                xlab = "Barycentric Julian Date (TDB) - " + xJD + " (exposure start)";
-                            } else if (xlabel2[curve].trim().startsWith("BJD")) {
-                                xlab = "Barycentric Julian Date (TDB) - " + xJD;
-                            } else if (xlabel2[curve].trim().startsWith("HJD_UTC")) {
-                                xlab = "Heliocentric Julian Date (UTC) - " + xJD + " (mid-exposure)";
-                            } else if (xlabel2[curve].trim().startsWith("HJD_SOBS")) {
-                                xlab = "Heliocentric Julian Date (UTC) - " + xJD + " (exposure start)";
-                            } else if (xlabel2[curve].trim().startsWith("HJD")) {
-                                xlab = "Heliocentric Julian Date (UTC) - " + xJD;
-                            } else if (xlabel2[curve].trim().startsWith("JD_SOBS")) {
-                                xlab = "Geocentric Julian Date (UTC) - " + xJD + " (exposure start)";
-                            } else if (xlabel2[curve].trim().startsWith("JD_UTC")) {
-                                xlab = "Geocentric Julian Date (UTC) - " + xJD + " (mid-exposure)";
-                            } else if (xlabel2[curve].trim().contains("JD")) { xlab = "Julian Date - " + xJD; } else {
-                                xlab = "Label Error";
-                            }
-                            xGoodLabel = true;
-                        } else if (useXCustomName) {
-                            xlab = xLegend;
-                            xGoodLabel = true;
+        if (plotY[firstCurve]) {
+            if (showXAxisAsPhase) {
+                xlab = "Orbital Phase (periods) (T0 = " + netT0 + ", P = " + netPeriod + ")";
+                xGoodLabel = true;
+            } else if (showXAxisAsDaysSinceTc) {
+                xlab = "Days Since Tc (T0 = " + netT0 + ", P = " + netPeriod + ")";
+                xGoodLabel = true;
+            } else if (showXAxisAsHoursSinceTc) {
+                xlab = "Hours Since Tc (T0 = " + netT0 + ", P = " + netPeriod + ")";
+                xGoodLabel = true;
+            } else {
+                if (xlabel2[curve].contains("J.D.") || xlabel2[curve].contains("JD")) {
+                    xPlotMin -= xOffset;
+                    xPlotMax -= xOffset;
+                    if (useXColumnName) {
+                        if (xlabel2[firstCurve].trim().startsWith("J.D.-2400000")) {
+                            xlab = "Geocentric Julian Date (UTC) - " + xJD;
+                        } else if (xlabel2[firstCurve].trim().startsWith("BJD_TDB")) {
+                            xlab = "Barycentric Julian Date (TDB) - " + xJD + " (mid-exposure)";
+                        } else if (xlabel2[firstCurve].trim().startsWith("BJD_SOBS")) {
+                            xlab = "Barycentric Julian Date (TDB) - " + xJD + " (exposure start)";
+                        } else if (xlabel2[firstCurve].trim().startsWith("BJD")) {
+                            xlab = "Barycentric Julian Date (TDB) - " + xJD;
+                        } else if (xlabel2[firstCurve].trim().startsWith("HJD_UTC")) {
+                            xlab = "Heliocentric Julian Date (UTC) - " + xJD + " (mid-exposure)";
+                        } else if (xlabel2[firstCurve].trim().startsWith("HJD_SOBS")) {
+                            xlab = "Heliocentric Julian Date (UTC) - " + xJD + " (exposure start)";
+                        } else if (xlabel2[firstCurve].trim().startsWith("HJD")) {
+                            xlab = "Heliocentric Julian Date (UTC) - " + xJD;
+                        } else if (xlabel2[firstCurve].trim().startsWith("JD_SOBS")) {
+                            xlab = "Geocentric Julian Date (UTC) - " + xJD + " (exposure start)";
+                        } else if (xlabel2[firstCurve].trim().startsWith("JD_UTC")) {
+                            xlab = "Geocentric Julian Date (UTC) - " + xJD + " (mid-exposure)";
+                        } else if (xlabel2[firstCurve].trim().contains("JD")) { xlab = "Julian Date - " + xJD; } else {
+                            xlab = "Label Error";
                         }
+                        xGoodLabel = true;
+                    } else if (useXCustomName) {
+                        xlab = xLegend;
+                        xGoodLabel = true;
                     }
+                } else if (useXColumnName) {
+                    xlab = xlabel2[curve];
+                    xGoodLabel = true;
+                } else if (useXCustomName) {
+                    xlab = xLegend;
+                    xGoodLabel = true;
+                }
+            }
+        }
+
+        // Adjust curves for JD
+        IntStream.range(0, maxCurves).parallel()
+                .filter(curve -> !showXAxisAsPhase && !showXAxisAsDaysSinceTc && !showXAxisAsHoursSinceTc
+                        && plotY[curve] && (xlabel2[curve].contains("J.D.") || xlabel2[curve].contains("JD")))
+                .forEach(curve -> {
                     for (int j = 0; j < nn[curve]; j++) {
                         x[curve][j] -= xOffset;
                     }
                     if (xModel1[curve] != null) {
                         for (int nnn = 0; nnn < xModel1[curve].length; nnn++) {
                             xModel1[curve][nnn] -= xOffset;
-
                         }
                     }
                     if (xModel2[curve] != null) {
@@ -3973,77 +3984,71 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                             xModel2[curve][nnn] -= xOffset;
                         }
                     }
-                } else if (useXColumnName && curve == firstCurve) {
-                    xlab = xlabel2[curve];
-                    xGoodLabel = true;
-                } else if (useXCustomName && curve == firstCurve) {
-                    xlab = xLegend;
-                    xGoodLabel = true;
-                }
-            }
-        }
+                });
 
         if (xGoodLabel && (xExponent != 0) && showXScaleInfo) xlab += " x 1E" + xExponent;
 
         // MAKE Y-AXIS LABEL
-
-        for (int curve = 0; curve < maxCurves; curve++) {
-            if (plotY[curve]) {
-                if (ylabel[curve].contains("J.D.") || ylabel[curve].contains("JD")) {
-                    if (curve == firstCurve) {
-                        yPlotMin -= yOffset;
-                        yPlotMax -= yOffset;
-                        if (useYColumnName && operatorBase.getOrCreateVariant(curve).get() != MPOperator.CENTROID_DISTANCE) {
-                            if (ylabel[curve].trim().startsWith("J.D.-2400000")) {
-                                ylab = "Geocentric Julian Date (UTC) - " + yJD;
-                            } else if (ylabel[curve].trim().startsWith("BJD_TDB")) {
-                                ylab = "Barycentric Julian Date (TDB) - " + yJD + " (mid-exposure)";
-                            } else if (ylabel[curve].trim().startsWith("BJD_SOBS")) {
-                                ylab = "Barycentric Julian Date (TDB) - " + yJD + " (exposure start)";
-                            } else if (ylabel[curve].trim().startsWith("BJD")) {
-                                ylab = "Barycentric Julian Date (TDB) - " + yJD;
-                            } else if (ylabel[curve].trim().startsWith("HJD_UTC")) {
-                                ylab = "Heliocentric Julian Date (UTC) - " + yJD + " (mid-exposure)";
-                            } else if (ylabel[curve].trim().startsWith("HJD_SOBS")) {
-                                ylab = "Heliocentric Julian Date (UTC) - " + yJD + " (exposure start)";
-                            } else if (ylabel[curve].trim().startsWith("HJD")) {
-                                ylab = "Heliocentric Julian Date (UTC) - " + yJD;
-                            } else if (ylabel[curve].trim().startsWith("JD_UTC")) {
-                                ylab = "Geocentric Julian Date (UTC) - " + yJD + " (mid-exposure)";
-                            } else if (ylabel[curve].trim().startsWith("JD_SOBS")) {
-                                ylab = "Geocentric Julian Date (UTC) - " + yJD + " (exposure start)";
-                            } else if (ylabel[curve].trim().contains("JD")) { ylab = "Julian Date - " + yJD; } else {
-                                ylab = "Label Error";
-                            }
-                            yGoodLabel = true;
-                        } else if (useYCustomName) {
-                            ylab = yLegend;
-                            yGoodLabel = true;
-                        } else if (useYColumnName && operatorBase.getOrCreateVariant(curve).get() == MPOperator.CENTROID_DISTANCE) {
-                            ylab = xyc1label[curve] + " - " + xyc2label[curve] + " centroid distance";
-                            ylab += usePixelScale ? " (arcsecs)" : " (pixels)";
-                            yGoodLabel = true;
-                        }
-                    }
-                    for (int j = 0; j < nn[curve]; j++)
-                        y[curve][j] -= yOffset;
-                } else if (useYColumnName && curve == firstCurve) {
-                    if (operatorBase.getOrCreateVariant(curve).get() != MPOperator.CENTROID_DISTANCE) {
-                        ylab = ylabel[firstCurve];
-                        if (operatorBase.getOrCreateVariant(firstCurve).get() != MPOperator.NONE) {
-                            ylab += operatorBase.getOrCreateVariant(firstCurve).get().getSymbol() + oplabel[firstCurve];
-                        }
-                    } else {
-                        ylab = xyc1label[firstCurve] + " - " + xyc2label[firstCurve] + " centroid distance";
-                        ylab += usePixelScale ? " (arcsecs)" : " (pixels)";
+        if (plotY[firstCurve]) {
+            if (ylabel[firstCurve].contains("J.D.") || ylabel[firstCurve].contains("JD")) {
+                yPlotMin -= yOffset;
+                yPlotMax -= yOffset;
+                if (useYColumnName && operatorBase.getOrCreateVariant(firstCurve).get() != MPOperator.CENTROID_DISTANCE) {
+                    if (ylabel[firstCurve].trim().startsWith("J.D.-2400000")) {
+                        ylab = "Geocentric Julian Date (UTC) - " + yJD;
+                    } else if (ylabel[firstCurve].trim().startsWith("BJD_TDB")) {
+                        ylab = "Barycentric Julian Date (TDB) - " + yJD + " (mid-exposure)";
+                    } else if (ylabel[firstCurve].trim().startsWith("BJD_SOBS")) {
+                        ylab = "Barycentric Julian Date (TDB) - " + yJD + " (exposure start)";
+                    } else if (ylabel[firstCurve].trim().startsWith("BJD")) {
+                        ylab = "Barycentric Julian Date (TDB) - " + yJD;
+                    } else if (ylabel[firstCurve].trim().startsWith("HJD_UTC")) {
+                        ylab = "Heliocentric Julian Date (UTC) - " + yJD + " (mid-exposure)";
+                    } else if (ylabel[firstCurve].trim().startsWith("HJD_SOBS")) {
+                        ylab = "Heliocentric Julian Date (UTC) - " + yJD + " (exposure start)";
+                    } else if (ylabel[firstCurve].trim().startsWith("HJD")) {
+                        ylab = "Heliocentric Julian Date (UTC) - " + yJD;
+                    } else if (ylabel[firstCurve].trim().startsWith("JD_UTC")) {
+                        ylab = "Geocentric Julian Date (UTC) - " + yJD + " (mid-exposure)";
+                    } else if (ylabel[firstCurve].trim().startsWith("JD_SOBS")) {
+                        ylab = "Geocentric Julian Date (UTC) - " + yJD + " (exposure start)";
+                    } else if (ylabel[firstCurve].trim().contains("JD")) { ylab = "Julian Date - " + yJD; } else {
+                        ylab = "Label Error";
                     }
                     yGoodLabel = true;
-                } else if (useYCustomName && curve == firstCurve) {
+                } else if (useYCustomName) {
                     ylab = yLegend;
                     yGoodLabel = true;
+                } else if (useYColumnName && operatorBase.getOrCreateVariant(firstCurve).get() == MPOperator.CENTROID_DISTANCE) {
+                    ylab = xyc1label[firstCurve] + " - " + xyc2label[firstCurve] + " centroid distance";
+                    ylab += usePixelScale ? " (arcsecs)" : " (pixels)";
+                    yGoodLabel = true;
                 }
+            } else if (useYColumnName) {
+                if (operatorBase.getOrCreateVariant(curve).get() != MPOperator.CENTROID_DISTANCE) {
+                    ylab = ylabel[firstCurve];
+                    if (operatorBase.getOrCreateVariant(firstCurve).get() != MPOperator.NONE) {
+                        ylab += operatorBase.getOrCreateVariant(firstCurve).get().getSymbol() + oplabel[firstCurve];
+                    }
+                } else {
+                    ylab = xyc1label[firstCurve] + " - " + xyc2label[firstCurve] + " centroid distance";
+                    ylab += usePixelScale ? " (arcsecs)" : " (pixels)";
+                }
+                yGoodLabel = true;
+            } else if (useYCustomName) {
+                ylab = yLegend;
+                yGoodLabel = true;
             }
         }
+
+        // Adjust curves for JD
+        IntStream.range(0, maxCurves).parallel()
+                .filter(curve -> plotY[curve] && (ylabel[curve].contains("J.D.") || ylabel[curve].contains("JD")))
+                .forEach(curve -> {
+                    for (int j = 0; j < nn[curve]; j++)
+                        y[curve][j] -= yOffset;
+                });
+
         //FINISH Y-LABEL AFTER FINDING SCALING FACTORS BELOW
 
 

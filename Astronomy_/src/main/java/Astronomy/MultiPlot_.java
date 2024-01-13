@@ -1524,57 +1524,58 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         plot.setLimits(plotMinX, plotMaxX, plotMinY, plotMaxY);
 
         // Calculate yModel2 for drawing, scaling with plot bounds
-        for (int curve = 0; curve < maxCurves; curve++) {
-            if (xModel2[curve] != null && yModel2[curve] != null && xModel2[curve].length == 0 && yModel2[curve].length == 0) {
-                int xModel2Len = plotSizeX + 1;
-                double xModel2Step = ((useDMarker4 && fitMax[curve] < plotMaxX + xOffset ? fitMax[curve] : plotMaxX + xOffset) - (useDMarker1 && fitMin[curve] > plotMinX + xOffset ? fitMin[curve] : plotMinX + xOffset)) / (xModel2Len - 1);
-                xModel2[curve] = new double[xModel2Len];
-                xModel2[curve][0] = useDMarker1 && fitMin[curve] > plotMinX + xOffset ? fitMin[curve] : plotMinX + xOffset;
-                for (int i = 1; i < xModel2Len; i++) {
-                    xModel2[curve][i] = xModel2[curve][i - 1] + xModel2Step;
-                }
+        IntStream.range(0, maxCurves).parallel().filter(curve ->
+                        xModel2[curve] != null && yModel2[curve] != null &&
+                        xModel2[curve].length == 0 && yModel2[curve].length == 0)
+                .forEach(curve -> {
+                    int xModel2Len = plotSizeX + 1;
+                    double xModel2Step = ((useDMarker4 && fitMax[curve] < plotMaxX + xOffset ? fitMax[curve] : plotMaxX + xOffset) - (useDMarker1 && fitMin[curve] > plotMinX + xOffset ? fitMin[curve] : plotMinX + xOffset)) / (xModel2Len - 1);
+                    xModel2[curve] = new double[xModel2Len];
+                    xModel2[curve][0] = useDMarker1 && fitMin[curve] > plotMinX + xOffset ? fitMin[curve] : plotMinX + xOffset;
+                    for (int i = 1; i < xModel2Len; i++) {
+                        xModel2[curve][i] = xModel2[curve][i - 1] + xModel2Step;
+                    }
 
-                yModel2[curve] = IJU.transitModel(xModel2[curve], bestFit[curve][0], bestFit[curve][4], bestFit[curve][1], bestFit[curve][2], bestFit[curve][3], orbitalPeriod[curve], forceCircularOrbit[curve] ? 0.0 : eccentricity[curve], forceCircularOrbit[curve] ? 0.0 : omega[curve], bestFit[curve][5], bestFit[curve][6], useLonAscNode[curve], lonAscNode[curve], true);
+                    yModel2[curve] = IJU.transitModel(xModel2[curve], bestFit[curve][0], bestFit[curve][4], bestFit[curve][1], bestFit[curve][2], bestFit[curve][3], orbitalPeriod[curve], forceCircularOrbit[curve] ? 0.0 : eccentricity[curve], forceCircularOrbit[curve] ? 0.0 : omega[curve], bestFit[curve][5], bestFit[curve][6], useLonAscNode[curve], lonAscNode[curve], true);
 
-                if (normIndex[curve] != 0) {
-                    if (yModel2[curve] != null) {
-                        for (int nnn = 0; nnn < yModel2[curve].length; nnn++) {
-                            yModel2[curve][nnn] /= plotDataLock.normAverageSet()[curve];
+                    if (normIndex[curve] != 0) {
+                        if (yModel2[curve] != null) {
+                            for (int nnn = 0; nnn < yModel2[curve].length; nnn++) {
+                                yModel2[curve][nnn] /= plotDataLock.normAverageSet()[curve];
+                            }
                         }
                     }
-                }
 
-                if (mmag[curve]) {
-                    if (yModel2[curve] != null) {
-                        for (int nnn = 0; nnn < yModel2[curve].length; nnn++) {
-                            yModel2[curve][nnn] = plotDataLock.magSign() * 2.5 * Math.log10(yModel2[curve][nnn] / baseline[curve]);
+                    if (mmag[curve]) {
+                        if (yModel2[curve] != null) {
+                            for (int nnn = 0; nnn < yModel2[curve].length; nnn++) {
+                                yModel2[curve][nnn] = plotDataLock.magSign() * 2.5 * Math.log10(yModel2[curve][nnn] / baseline[curve]);
+                            }
                         }
                     }
-                }
 
-                if (showXAxisAsPhase) {
+                    if (showXAxisAsPhase) {
 
-                } else if (showXAxisAsDaysSinceTc) {
+                    } else if (showXAxisAsDaysSinceTc) {
 
-                } else if (showXAxisAsHoursSinceTc) {
+                    } else if (showXAxisAsHoursSinceTc) {
 
-                } else if (xlabel2[curve].contains("J.D.") || xlabel2[curve].contains("JD")) {
-                    if (xModel2[curve] != null) {
-                        for (int nnn = 0; nnn < xModel2[curve].length; nnn++) {
-                            xModel2[curve][nnn] -= xOffset;
+                    } else if (xlabel2[curve].contains("J.D.") || xlabel2[curve].contains("JD")) {
+                        if (xModel2[curve] != null) {
+                            for (int nnn = 0; nnn < xModel2[curve].length; nnn++) {
+                                xModel2[curve][nnn] -= xOffset;
+                            }
                         }
                     }
-                }
 
-                for (int nnn = 0; nnn < yModel2[curve].length; nnn++) {
-                    if (normIndex[curve] != 0 && !mmag[curve] && !force[curve]) {
-                        yModel2[curve][nnn] = 1 + totalScaleFactor[curve] * (yModel2[curve][nnn] - 1.0) + subtotalShiftFactor[curve];
-                    } else {
-                        yModel2[curve][nnn] = totalScaleFactor[curve] * yModel2[curve][nnn] + subtotalShiftFactor[curve];
+                    for (int nnn = 0; nnn < yModel2[curve].length; nnn++) {
+                        if (normIndex[curve] != 0 && !mmag[curve] && !force[curve]) {
+                            yModel2[curve][nnn] = 1 + totalScaleFactor[curve] * (yModel2[curve][nnn] - 1.0) + subtotalShiftFactor[curve];
+                        } else {
+                            yModel2[curve][nnn] = totalScaleFactor[curve] * yModel2[curve][nnn] + subtotalShiftFactor[curve];
+                        }
                     }
-                }
-            }
-        }
+        });
 
         // Draw Legends
         double legPosY = legendPosY;

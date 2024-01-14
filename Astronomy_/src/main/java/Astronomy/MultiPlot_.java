@@ -4177,7 +4177,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     }
 
     static void updatePlotPos() {
-        IJU.setFrameSizeAndLocation(plotWindow, plotFrameLocationX, plotFrameLocationY,
+        IJU.setFrameSizeAndLocation(plot.getImagePlus().getWindow(), plotFrameLocationX, plotFrameLocationY,
                 plotSizeX, plotSizeY, false);
     }
 

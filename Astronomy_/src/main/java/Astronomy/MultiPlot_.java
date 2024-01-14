@@ -942,6 +942,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         table.setLock(false);
     };
     private static PlotDataLock plotDataLock;
+    private static boolean suppressDataUpdate;
 
     public void run(String inTableNamePlusOptions) {
         boolean useAutoAstroDataUpdate = false;
@@ -1448,8 +1449,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             }
         }
 
-        if (plotDataLock == null || plotDataLock.requiresUpdate()) {
+        if (plotDataLock == null || plotDataLock.requiresUpdate() || !suppressDataUpdate) {
             plotDataLock = processData(updateFit);
+            suppressDataUpdate = false;
         }
 
         //----------------Set up plot options------------------------------------
@@ -5616,6 +5618,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     draggableShape.removeSelection(plotImageCanvas);
                     if (SwingUtilities.isLeftMouseButton(e) && e.isAltDown()) {
                         draggableShape.markPlotScaleDirty(plot);
+                        suppressDataUpdate = true;
                         updatePlot(updateNoFits());
                     }
                 }
@@ -5725,6 +5728,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     if (!e.isControlDown() && !e.isAltDown()) {
                         newPanOffsetX = -(plotMaxX - plotMinX) * (screenX - startDragScreenX) / (plot.getDrawingFrame().width);
                         newPanOffsetY = (plotMaxY - plotMinY) * (screenY - startDragScreenY) / plot.getDrawingFrame().height;
+                        suppressDataUpdate = true;
                         updatePlot(updateNoFits());
                         if (e.isShiftDown()) {
                             plotcoordlabel.setText("DATA: x=" + fourPlaces.format(x[firstCurve][boldedDatum]) + ", y=" + fourPlaces.format(y[firstCurve][boldedDatum]));
@@ -5768,7 +5772,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 boldedDatum = nearestLine;
                 plotcoordlabel.setText("DATA: x=" + fourPlaces.format(x[firstCurve][nearestLine]) + ", y=" + fourPlaces.format(y[firstCurve][nearestLine]));
                 IJ.showStatus("data values: x=" + fourPlaces.format(x[firstCurve][nearestLine]) + ", y=" + fourPlaces.format(y[firstCurve][nearestLine]));
-                if (useBoldedDatum) updatePlot(updateNoFits());
+                if (useBoldedDatum) {
+                    suppressDataUpdate = true;
+                    updatePlot(updateNoFits());
+                }
                 updateMPAstroConverter();
                 if (useUpdateStack) updateStack();
             } else {
@@ -5779,7 +5786,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 IJ.showStatus("plot coordinates: x=" + fourPlaces.format(xval) + ", y=" + fourPlaces.format(yval));
                 if (boldedDatum != -1) {
                     boldedDatum = -1;
-                    if (useBoldedDatum) updatePlot(updateNoFits());
+                    if (useBoldedDatum) {
+                        suppressDataUpdate = true;
+                        updatePlot(updateNoFits());
+                    }
                 }
             }
         }
@@ -5909,6 +5919,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         if (magChangeSteps == null) {
             zoomY = 0;
             zoomX = 0;
+            suppressDataUpdate = true;
             updatePlot(updateNoFits());
             return;
         }
@@ -5927,7 +5938,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 zoomY = Math.min(zoomY, 0.99);
             }
 
-
+            suppressDataUpdate = true;
             updatePlot(updateNoFits());
         }
     }

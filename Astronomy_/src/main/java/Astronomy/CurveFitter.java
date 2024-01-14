@@ -1046,7 +1046,7 @@ public class CurveFitter {
         int[] index;
         boolean[] isFitted = Arrays.copyOf(MultiPlot_.isFitted[curve], MultiPlot_.isFitted[curve].length);
         double[] coeffs;
-        var detrendVars = Arrays.copyOf(MultiPlot_.detrendVars, MultiPlot_.detrendVars.length);
+        var detrendVars = Arrays.copyOf(MultiPlot_.detrendVars[curve], MultiPlot_.detrendVars[curve].length);
         var xModel1 = MultiPlot_.xModel1[curve] != null ? Arrays.copyOf(MultiPlot_.xModel1[curve], MultiPlot_.xModel1[curve].length) : null;
         var xModel2 = MultiPlot_.xModel2[curve];
         var yModel1 = MultiPlot_.yModel1[curve] != null ? Arrays.copyOf(MultiPlot_.yModel1[curve], MultiPlot_.yModel1[curve].length) : null;

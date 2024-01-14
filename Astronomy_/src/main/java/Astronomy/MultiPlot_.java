@@ -317,7 +317,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static double[][] yop;
     static double[][] yoperr;
     static double[][][] detrend;
-    static double[][] detrendVars;
+    static double[][][] detrendVars;
     static double[][] detrendXs;
     static double[][] detrendYs;
     static double[][] detrendYEs;
@@ -466,7 +466,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static double[] fitMax;
     static double[] fitLeft;
     static double[] fitRight;
-    static Minimization minimization;
 
     static JFrame[] fitFrame;
     static ImageIcon fitFrameIcon;
@@ -942,6 +941,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         }
         table.setLock(false);
     };
+    private static PlotDataLock plotDataLock;
+    private static boolean suppressDataUpdate;
 
     public void run(String inTableNamePlusOptions) {
         boolean useAutoAstroDataUpdate = false;
@@ -1447,1935 +1448,11 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 }
             }
         }
-        savePreferences();
-        updateSaturatedStars();
-        for (int curve = 0; curve < maxCurves; curve++) {
-            if (inputAverageOverSize[curve] < 1) {
-                inputAverageOverSize[curve] = 1;
-                inputAverageOverSizespinner[curve].setValue(1);
-            }
+
+        if (plotDataLock == null || plotDataLock.requiresUpdate() || !suppressDataUpdate) {
+            plotDataLock = processData(updateFit);
+            suppressDataUpdate = false;
         }
-
-        holdExcludedHeadSamples = excludedHeadSamples;
-        holdExcludedTailSamples = excludedTailSamples;
-        if (excludedHeadSamples + excludedTailSamples >= n) { //Handle case for more samples excluded than in dataset
-            excludedHeadSamples = excludedHeadSamples < n ? excludedHeadSamples : n - 1;
-            excludedTailSamples = n - excludedHeadSamples - 1;
-        }
-        excluded = excludedHeadSamples + excludedTailSamples;
-
-        netT0 = (twoxPeriod && oddNotEven) ? T0 - period : T0;
-        netPeriod = twoxPeriod ? 2 * period : period;
-        if (!showXAxisNormal && periodSync) {
-            for (int c = 0; c < maxCurves; c++) {
-                boolean holdUpdateFit;
-                if (detrendFitIndex[c]==9) {
-                    holdUpdateFit = autoUpdateFit[c];
-                    autoUpdateFit[c] = false;
-                    orbitalPeriodSpinner[c].setValue(netPeriod);
-                    autoUpdateFit[c] = holdUpdateFit;
-                }
-            }
-        }
-
-        int magSign = negateMag ? 1 : -1;
-        for (int i = 0; i < maxCurves; i++) {
-            marker[i] = markerOf(markerIndex[i]);
-            residualSymbol[i] = markerOf(residualSymbolIndex[i]);
-            color[i] = colorOf(colorIndex[i]);
-            modelColor[i] = colorOf(modelColorIndex[i]);
-            residualModelColor[i] = colorOf(residualModelColorIndex[i]);
-            residualColor[i] = colorOf(residualColorIndex[i]);
-            sigma[i] = 0.0;
-        }
-
-        // INITIALIZE BASELINE FOR RELATIVE MMAG CALCULATIONS
-        for (int i = 0; i < maxCurves; i++) {
-            baseline[i] = 0;
-        }
-        // GET DATA
-
-        if (n > x[0].length) {
-            nn = new int[maxCurves];
-            xlabel2 = new String[maxCurves];
-            x = new double[maxCurves][n];
-            y = new double[maxCurves][n];
-            yerr = new double[maxCurves][n];
-            yop = new double[maxCurves][n];
-            yoperr = new double[maxCurves][n];
-            detrend = new double[maxCurves][maxDetrendVars][n];
-            xc1 = new double[maxCurves][n];
-            xc2 = new double[maxCurves][n];
-            yc1 = new double[maxCurves][n];
-            yc2 = new double[maxCurves][n];
-            detrendXs = new double[maxCurves][n];
-            detrendYs = new double[maxCurves][n];
-            detrendYEs = new double[maxCurves][n];
-            updateFit = updateAllFits();
-        }
-
-        xMultiplierFactor = Math.pow(10, xExponent);
-        yMultiplierFactor = Math.pow(10, yExponent);
-
-        int[] detrendVarsUsed = new int[maxCurves];
-
-        for (int curve = 0; curve < maxCurves; curve++) {
-            nn[curve] = (n - excluded) / inputAverageOverSize[curve];
-            nnr[curve] = (n - excluded) % inputAverageOverSize[curve];
-            if (nnr[curve] > 0) nn[curve]++;
-            detrendVarsUsed[curve] = 0;
-        }
-
-        for (int curve = 0; curve < maxCurves; curve++) {
-            if (xlabel[curve].trim().length() == 0 || (xlabel[curve].equalsIgnoreCase("default") && xlabeldefault.trim().length() == 0)) {
-                for (int j = 0; j < nn[curve]; j++)
-                    x[curve][j] = j + 1;
-                xlabel2[curve] = "Sample Number";
-            } else {
-                if (xlabel[curve].equalsIgnoreCase("default")) {
-                    xcolumn[curve] = table.getColumnIndex(xlabeldefault);
-                    if (xcolumn[curve] == ResultsTable.COLUMN_NOT_FOUND) {
-                        xcolumn[curve] = 0;
-                        plotY[curve] = false;
-                        usecurvebox[curve].setSelected(false);
-                        savecolumnbutton[curve].setEnabled(plotY[curve]);
-                    }
-                    xlabel2[curve] = xlabeldefault.trim();
-                } else {
-                    xcolumn[curve] = table.getColumnIndex(xlabel[curve]);
-                    if (xcolumn[curve] == ResultsTable.COLUMN_NOT_FOUND) {
-                        xcolumn[curve] = 0;
-                        plotY[curve] = false;
-                        usecurvebox[curve].setSelected(false);
-                        savecolumnbutton[curve].setEnabled(plotY[curve]);
-                    }
-                    xlabel2[curve] = xlabel[curve].trim();
-                }
-
-                if (plotY[curve]) {
-                    int bucketSize = inputAverageOverSize[curve];
-
-                    for (int j = 0; j < nn[curve]; j++) {
-                        double xin;
-                        int numNaN = 0;
-                        if (nnr[curve] > 0 && j == nn[curve] - 1) {
-                            bucketSize = nnr[curve];
-                        } else {
-                            bucketSize = inputAverageOverSize[curve];
-                        }
-                        x[curve][j] = 0;
-                        for (int k = excludedHeadSamples; k < (bucketSize + excludedHeadSamples); k++) {
-                            xin = table.getValueAsDouble(xcolumn[curve], j * inputAverageOverSize[curve] + k);
-                            if (Double.isNaN(xin)) {
-                                numNaN += 1;
-                                if (numNaN == bucketSize) {
-                                    bucketSize = 1;
-                                    x[curve][j] = Double.NaN;
-                                    numNaN = 0;
-                                    break;
-                                }
-                            } else {
-                                x[curve][j] += xin;
-                            }
-                        }
-                        bucketSize -= numNaN;
-                        x[curve][j] = x[curve][j] * xMultiplierFactor / (double) bucketSize;
-                    }
-                    if (xlabel2[curve].startsWith("J.D.-2400000")) {
-                        for (int j = 0; j < nn[curve]; j++) {
-                            x[curve][j] += 2400000;
-                        }
-                    }
-                }
-            }
-        }
-        for (int curve = 0; curve < maxCurves; curve++) {
-            if (plotY[curve]) {
-                if (ylabel[curve].trim().length() == 0) {
-                    for (int j = 0; j < nn[curve]; j++)
-                        y[curve][j] = j + 1;
-                } else {
-                    ycolumn[curve] = table.getColumnIndex(ylabel[curve]);
-                    if (ycolumn[curve] == ResultsTable.COLUMN_NOT_FOUND) {
-                        ycolumn[curve] = 0;
-                        plotY[curve] = false;
-                        usecurvebox[curve].setSelected(false);
-                        savecolumnbutton[curve].setEnabled(plotY[curve]);
-                    } else if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.CENTROID_DISTANCE) { //calculate distance
-                        xc1column[curve] = table.getColumnIndex(getPositionColumn(ylabel[curve], "X"));
-                        yc1column[curve] = table.getColumnIndex(getPositionColumn(ylabel[curve], "Y"));
-                        xyc1label[curve] = getSourceID(ylabel[curve]);
-                        if (xc1column[curve] == ResultsTable.COLUMN_NOT_FOUND) {
-                            if (getPositionColumn(ylabel[curve], "X").trim().length() != 0) {
-                                IJ.showMessage("Cannot access " + getPositionColumn(ylabel[curve], "X") + " source position data column for distance calculation !");
-                            }
-                            operatorBase.getOrCreateVariant(curve).set(MPOperator.NONE);
-                            plotY[curve] = false;
-                            usecurvebox[curve].setSelected(false);
-                            savecolumnbutton[curve].setEnabled(plotY[curve]);
-                        }
-                        if (yc1column[curve] == ResultsTable.COLUMN_NOT_FOUND) {
-                            if (getPositionColumn(ylabel[curve], "Y").trim().length() != 0) {
-                                IJ.showMessage("Cannot access " + getPositionColumn(ylabel[curve], "Y") + " source position data column for distance calculation !");
-                            }
-                            operatorBase.getOrCreateVariant(curve).set(MPOperator.NONE);
-                            plotY[curve] = false;
-                            usecurvebox[curve].setSelected(false);
-                            savecolumnbutton[curve].setEnabled(plotY[curve]);
-                        }
-                    }
-                    if (detrendFitIndex[curve] != 0) {
-                        for (int v = 0; v < maxDetrendVars; v++) {
-                            if (detrendIndex[curve][v] > 1 || (!detrendVarAllNaNs[curve][v] && detrendIndex[curve][v] != 1)) {
-                                detrendcolumn[curve][v] = table.getColumnIndex(detrendlabel[curve][v]);
-
-                                if (detrendcolumn[curve][v] == ResultsTable.COLUMN_NOT_FOUND) {
-                                    detrendIndex[curve][v] = 0;
-                                    if (detrendVarDisplayed[curve] == v) detrendbox[curve].setSelectedIndex(0);
-                                } else {
-                                    detrendVarsUsed[curve]++;
-                                }
-                            } else if (detrendIndex[curve][v] == 1) { //Meridian Flip Detrend Selected
-                                detrendVarsUsed[curve]++;
-                            }
-                        }
-                    }
-
-                    errcolumn[curve] = ResultsTable.COLUMN_NOT_FOUND;
-                    if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.CUSTOM_ERROR) { //custom error
-                        errcolumn[curve] = table.getColumnIndex(oplabel[curve]);
-                    } else if (ylabel[curve].startsWith("rel_flux_T") || ylabel[curve].startsWith("rel_flux_C")) {
-                        errcolumn[curve] = table.getColumnIndex("rel_flux_err_" + ylabel[curve].substring(9));
-                    } else if (ylabel[curve].startsWith("Source-Sky_")) {
-                        errcolumn[curve] = table.getColumnIndex("Source_Error_" + ylabel[curve].substring(11));
-                    } else if (ylabel[curve].startsWith("tot_C_cnts")) {
-                        errcolumn[curve] = table.getColumnIndex("tot_C_err" + ylabel[curve].substring(10));
-                    } else if (ylabel[curve].startsWith("Source_AMag_")) {
-                        errcolumn[curve] = table.getColumnIndex("Source_AMag_Err_" + ylabel[curve].substring(12));
-                    }
-
-                    hasErrors[curve] = errcolumn[curve] != ResultsTable.COLUMN_NOT_FOUND;
-
-
-                    if (operatorBase.getOrCreateVariant(curve).get() != MPOperator.NONE) {
-                        opcolumn[curve] = table.getColumnIndex(oplabel[curve]);
-                        if (opcolumn[curve] == ResultsTable.COLUMN_NOT_FOUND) {
-                            operatorBase.getOrCreateVariant(curve).set(MPOperator.NONE);
-                        } else if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.CENTROID_DISTANCE) { //calculate distance
-                            xc2column[curve] = table.getColumnIndex(getPositionColumn(oplabel[curve], "X"));
-                            yc2column[curve] = table.getColumnIndex(getPositionColumn(oplabel[curve], "Y"));
-                            xyc2label[curve] = getSourceID(oplabel[curve]);
-                            if (xc2column[curve] == ResultsTable.COLUMN_NOT_FOUND) {
-                                if (getPositionColumn(oplabel[curve], "X").trim().length() != 0) {
-                                    IJ.showMessage("Cannot access " + getPositionColumn(oplabel[curve], "X") + " source position data column for distance calculation !");
-                                }
-                                operatorBase.getOrCreateVariant(curve).set(MPOperator.NONE);
-                            }
-                            if (yc2column[curve] == ResultsTable.COLUMN_NOT_FOUND) {
-                                if (getPositionColumn(oplabel[curve], "Y").trim().length() != 0) {
-                                    IJ.showMessage("Cannot access " + getPositionColumn(oplabel[curve], "Y") + " source position data column for distance calculation !");
-                                }
-                                operatorBase.getOrCreateVariant(curve).set(MPOperator.NONE);
-                            }
-                        }
-                    }
-
-                    if (operatorBase.getOrCreateVariant(curve).get().isNormalOperator()) { // && showErrors[curve] == true)
-                        operrcolumn[curve] = ResultsTable.COLUMN_NOT_FOUND;
-                        if (oplabel[curve].startsWith("rel_flux_T") || oplabel[curve].startsWith("rel_flux_C")) {
-                            operrcolumn[curve] = table.getColumnIndex("rel_flux_err_" + oplabel[curve].substring(9));
-                        } else if (oplabel[curve].startsWith("Source-Sky_")) {
-                            operrcolumn[curve] = table.getColumnIndex("Source_Error_" + oplabel[curve].substring(11));
-                        } else if (oplabel[curve].startsWith("tot_C_cnts")) {
-                            operrcolumn[curve] = table.getColumnIndex("tot_C_err" + oplabel[curve].substring(10));
-                        }
-                        hasOpErrors[curve] = operrcolumn[curve] != ResultsTable.COLUMN_NOT_FOUND;
-                    } else {
-                        hasOpErrors[curve] = false;
-                    }
-
-                    int bucketSize = inputAverageOverSize[curve];
-                    for (int j = 0; j < nn[curve]; j++) {
-                        double yin;
-                        double errin;
-                        double opin = 0;
-                        double operrin;
-                        int numNaN = 0;
-                        y[curve][j] = 0;
-                        yerr[curve][j] = 0;
-                        yop[curve][j] = 0;
-                        for (int v = 0; v < maxDetrendVars; v++) {
-                            detrend[curve][v][j] = 0;
-                        }
-                        xc1[curve][j] = 0;
-                        xc2[curve][j] = 0;
-                        yc1[curve][j] = 0;
-                        yc2[curve][j] = 0;
-                        // AVERAGE DATA IF APPLICABLE
-                        if (nnr[curve] > 0 && j == nn[curve] - 1) { bucketSize = nnr[curve]; } else {
-                            bucketSize = inputAverageOverSize[curve];
-                        }
-                        for (int k = excludedHeadSamples; k < (bucketSize + excludedHeadSamples); k++) {
-                            yin = table.getValueAsDouble(ycolumn[curve], j * inputAverageOverSize[curve] + k);
-                            if (Double.isNaN(yin)) {
-                                numNaN += 1;
-                                if (numNaN == bucketSize) {
-                                    bucketSize = 1;
-                                    y[curve][j] = Double.NaN;
-                                    if (hasErrors[curve]) yerr[curve][j] = Double.NaN;
-                                    if (operatorBase.getOrCreateVariant(curve).get() != MPOperator.NONE) yop[curve][j] = Double.NaN;
-                                    if (detrendFitIndex[curve] != 0) {
-                                        for (int v = 0; v < maxDetrendVars; v++) {
-                                            if (detrendIndex[curve][v] != 0 || detrendVarAllNaNs[curve][v]) {
-                                                detrend[curve][v][j] = Double.NaN;
-                                            }
-                                        }
-                                    }
-
-                                    if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.CENTROID_DISTANCE) { //calculate distance
-                                        xc1[curve][j] = Double.NaN;
-                                        xc2[curve][j] = Double.NaN;
-                                        yc1[curve][j] = Double.NaN;
-                                        yc2[curve][j] = Double.NaN;
-                                    }
-                                    if (hasOpErrors[curve]) yoperr[curve][j] = Double.NaN;
-                                    numNaN = 0;
-                                    break;
-                                }
-                            } else {
-                                if (fromMag[curve]) {
-                                    yin = Math.pow(10, -yin / 2.5);
-                                }
-                                y[curve][j] += yin;
-
-                                if (hasErrors[curve]) {
-                                    errin = table.getValueAsDouble(errcolumn[curve], j * inputAverageOverSize[curve] + k);
-                                    if (fromMag[curve]) {
-                                        errin = yin * (-Math.pow(10, -errin / 2.5) + 1);
-                                    }
-                                    yerr[curve][j] += errin * errin;
-                                }
-                                if (operatorBase.getOrCreateVariant(curve).get() != MPOperator.NONE) {
-                                    opin = table.getValueAsDouble(opcolumn[curve], j * inputAverageOverSize[curve] + k);
-                                    if (fromMag[curve]) {
-                                        opin = Math.pow(10, -opin / 2.5);
-                                    }
-                                    yop[curve][j] += opin;
-                                }
-                                if (detrendFitIndex[curve] != 0) {
-                                    for (int v = 0; v < maxDetrendVars; v++) {
-                                        if (detrendIndex[curve][v] > 1 || detrendVarAllNaNs[curve][v]) {
-                                            detrend[curve][v][j] += table.getValueAsDouble(detrendcolumn[curve][v], j * inputAverageOverSize[curve] + k);
-                                        }
-                                    }
-                                }
-                                if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.CENTROID_DISTANCE) { //calculate distance
-                                    xc1[curve][j] += table.getValueAsDouble(xc1column[curve], j * inputAverageOverSize[curve] + k);
-                                    xc2[curve][j] += table.getValueAsDouble(xc2column[curve], j * inputAverageOverSize[curve] + k);
-                                    yc1[curve][j] += table.getValueAsDouble(yc1column[curve], j * inputAverageOverSize[curve] + k);
-                                    yc2[curve][j] += table.getValueAsDouble(yc2column[curve], j * inputAverageOverSize[curve] + k);
-                                }
-                                if (hasOpErrors[curve]) {
-                                    operrin = table.getValueAsDouble(operrcolumn[curve], j * inputAverageOverSize[curve] + k);
-                                    if (fromMag[curve]) {
-                                        operrin = opin * (-Math.pow(10, -operrin / 2.5) + 1);
-                                    }
-                                    yoperr[curve][j] += operrin * operrin;
-                                }
-                            }
-                        }
-                        bucketSize -= numNaN;
-                        y[curve][j] = y[curve][j] / bucketSize;  //*yMultiplierFactor
-
-                        if (hasErrors[curve]) {
-                            yerr[curve][j] = Math.sqrt(yerr[curve][j]) / bucketSize; //yMultiplierFactor*
-                        } else { yerr[curve][j] = 1.0; }
-                        if (detrendFitIndex[curve] != 0) {
-                            for (int v = 0; v < maxDetrendVars; v++) {
-                                if (detrendIndex[curve][v] != 0 || detrendVarAllNaNs[curve][v]) {
-                                    detrend[curve][v][j] /= bucketSize;
-                                }
-                            }
-                        }
-                        if (operatorBase.getOrCreateVariant(curve).get() != MPOperator.NONE) {
-                            yop[curve][j] = yop[curve][j] / bucketSize; //*yMultiplierFactor
-                            if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.CENTROID_DISTANCE) {
-                                xc1[curve][j] = xc1[curve][j] / bucketSize;  //*yMultiplierFactor
-                                xc2[curve][j] = xc2[curve][j] / bucketSize;  //*yMultiplierFactor
-                                yc1[curve][j] = yc1[curve][j] / bucketSize;  //*yMultiplierFactor
-                                yc2[curve][j] = yc2[curve][j] / bucketSize;  //*yMultiplierFactor
-                            }
-                        }
-                        if (hasOpErrors[curve]) {
-                            yoperr[curve][j] = Math.sqrt(yoperr[curve][j]) / bucketSize;  //yMultiplierFactor*
-                        } else { yoperr[curve][j] = 1.0; }
-
-                        //APPLY OPERATOR/OPERROR FUNCTIONS TO YDATA AND YERROR
-
-                        if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.NONE) { //no operator
-
-                        } else if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.DIVIDE_BY) { //divide by
-                            if (yop[curve][j] == 0) {
-                                yerr[curve][j] = 1.0e+100;
-                                y[curve][j] = 1.0e+100;
-                            } else {
-                                if (hasErrors[curve] || hasOpErrors[curve]) {
-                                    yerr[curve][j] = Math.sqrt(((yerr[curve][j] * yerr[curve][j]) / (yop[curve][j] * yop[curve][j])) + ((y[curve][j] * y[curve][j] * yoperr[curve][j] * yoperr[curve][j]) / (yop[curve][j] * yop[curve][j] * yop[curve][j] * yop[curve][j])));  //yMultiplierFactor*
-                                }
-                                y[curve][j] = y[curve][j] / yop[curve][j];  //*yMultiplierFactor
-                            }
-                        } else if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.MULTIPLY_BY) { //multiply by
-                            if (hasErrors[curve] || hasOpErrors[curve]) {
-                                yerr[curve][j] = Math.sqrt(yop[curve][j] * yop[curve][j] * yerr[curve][j] * yerr[curve][j] + y[curve][j] * y[curve][j] * yoperr[curve][j] * yoperr[curve][j]); // /yMultiplierFactor;
-                            }
-                            y[curve][j] = y[curve][j] * yop[curve][j];  // /yMultiplierFactor;
-                        } else if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.SUBTRACT) { //subtract
-                            if (hasErrors[curve] || hasOpErrors[curve]) {
-                                yerr[curve][j] = Math.sqrt(yerr[curve][j] * yerr[curve][j] + yoperr[curve][j] * yoperr[curve][j]);
-                            }
-                            y[curve][j] = y[curve][j] - yop[curve][j];
-                        } else if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.ADD) { //add
-                            if (hasErrors[curve] || hasOpErrors[curve]) {
-                                yerr[curve][j] = Math.sqrt(yerr[curve][j] * yerr[curve][j] + yoperr[curve][j] * yoperr[curve][j]);
-                            }
-                            y[curve][j] = y[curve][j] + yop[curve][j];
-                        } else if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.CENTROID_DISTANCE) { //distance from x1,y1 to x2,y2
-                            y[curve][j] = (usePixelScale ? pixelScale : 1.0) * Math.sqrt(((xc1[curve][j] - xc2[curve][j]) * (xc1[curve][j] - xc2[curve][j])) + ((yc1[curve][j] - yc2[curve][j]) * (yc1[curve][j] - yc2[curve][j])));
-                        }
-                    }
-
-                    if (plotY[curve]) {
-                        for (int v = 0; v < maxDetrendVars; v++) {
-                            detrendVarAllNaNs[curve][v] = true;
-                        }
-                        for (int j = 0; j < nn[curve]; j++) {
-                            for (int v = 0; v < maxDetrendVars; v++) {
-                                if (!Double.isNaN(detrend[curve][v][j])) detrendVarAllNaNs[curve][v] = false;
-                            }
-                        }
-                        for (int v = 0; v < maxDetrendVars; v++) {
-                            if (detrendVarAllNaNs[curve][v]) {
-                                detrendIndex[curve][v] = 0;
-                            }
-                        }
-
-                    }
-
-                    if (ylabel[curve].trim().startsWith("J.D.-2400000")) {
-                        for (int j = 0; j < nn[curve]; j++) {
-                            y[curve][j] += 2400000;
-                        }
-                    }
-                }
-            }
-
-            if (plotY[curve] && smooth[curve] && nn[curve] > 4) {
-                var yMask = MatrixUtils.createRealVector(nn[curve]);
-                double xfold;
-                double halfPeriod = netPeriod / 2.0;
-                var maskTransit = KeplerSplineControl.getInstance(curve).settings.maskTransit.get();
-                var maskTrimmedData = KeplerSplineControl.getInstance(curve).settings.maskTrimmedData.get();
-                for (int xx = 0; xx < nn[curve]; xx++) {
-                    if (showXAxisNormal) {
-                        if ((maskTransit && x[curve][xx] > dMarker2Value + xOffset && x[curve][xx] < dMarker3Value + xOffset) ||
-                                (maskTrimmedData && useDMarker1 && x[curve][xx] < dMarker1Value + xOffset) ||
-                                (maskTrimmedData && useDMarker4 && x[curve][xx] > dMarker4Value + xOffset)) {
-                            yMask.setEntry(xx,0.0);
-                        } else {
-                            yMask.setEntry(xx,1.0);
-                        }
-                    } else {
-                        xfold = ((x[curve][xx] - netT0) % netPeriod);
-                        if (xfold > halfPeriod) { xfold -= netPeriod; } else if (xfold < -halfPeriod) xfold += netPeriod;
-                        if ((maskTransit && xfold > dMarker2Value && xfold < dMarker3Value) ||
-                                (maskTrimmedData && useDMarker1 && xfold < dMarker1Value) ||
-                                (maskTrimmedData && useDMarker4 && xfold > dMarker4Value)) {
-                            yMask.setEntry(xx,0.0);
-                        } else {
-                            yMask.setEntry(xx,1.0);
-                        }
-                    }
-                }
-
-                KeplerSplineControl.getInstance(curve).smoothData(x[curve], y[curve], yerr[curve], nn[curve], yMask);
-            }
-        }
-
-        // PERFORM X-AUTOSCALING TO ONE OR MORE CURVES
-        dx = 0.0;
-
-        xPlotMin = xMin;
-        xPlotMax = xMax;
-
-        xautoscalemin = Double.POSITIVE_INFINITY;
-        xautoscalemax = Double.NEGATIVE_INFINITY;
-
-        var hasXDatasetToScaleAgainst = IntStream.range(0, ASInclude.length)
-                .mapToObj(i -> ASInclude[i]).filter(b -> b).findAny().isPresent();
-
-        firstCurve = -1;
-        for (int curve = 0; curve < maxCurves; curve++) {
-            if (plotY[curve]) {
-                if ((firstCurve == -1)) {
-                    firstCurve = curve; //FIND THE FIRST CURVE TO DISPLAY - IT IS USED FOR THE Y-AXIS LABEL
-                    xBase=x[curve][0];
-                }
-                if (!showXAxisNormal) {
-                    if (showXAxisAsPhase) {
-                        for (int j = 0; j < nn[curve]; j++) {
-                            x[curve][j] = ((x[curve][j] - netT0) % netPeriod) / netPeriod;
-                            if (x[curve][j] > 0.5) { x[curve][j] -= 1.0; } else if (x[curve][j] < -0.5) x[curve][j] += 1.0;
-                        }
-                    } else if (showXAxisAsDaysSinceTc) {
-                        double halfPeriod = netPeriod / 2.0;
-                        for (int j = 0; j < nn[curve]; j++) {
-                            x[curve][j] = ((x[curve][j] - netT0) % netPeriod);
-                            if (x[curve][j] > halfPeriod) {
-                                x[curve][j] -= netPeriod;
-                            } else if (x[curve][j] < -halfPeriod) x[curve][j] += netPeriod;
-                        }
-                    } else if (showXAxisAsHoursSinceTc) {
-                        double halfPeriod = netPeriod / 2.0;
-                        for (int j = 0; j < nn[curve]; j++) {
-                            x[curve][j] = ((x[curve][j] - netT0) % netPeriod);
-                            if (x[curve][j] > halfPeriod) {
-                                x[curve][j] -= netPeriod;
-                            } else if (x[curve][j] < -halfPeriod) x[curve][j] += netPeriod;
-                            x[curve][j] *= 24;
-                        }
-                    }
-                }
-                xMinimum[curve] = minOf(x[curve], nn[curve]); //FIND MIN AND MAX X OF EACH SELECTED DATASET
-                xMaximum[curve] = maxOf(x[curve], nn[curve]);
-
-
-                if (ASInclude[curve]) {
-                    if (xMinimum[curve] < xautoscalemin) xautoscalemin = xMinimum[curve];
-                    if (xMaximum[curve] > xautoscalemax) xautoscalemax = xMaximum[curve];
-                }
-
-                if (!hasXDatasetToScaleAgainst) {
-                    if (xMinimum[curve] < xautoscalemin) xautoscalemin = xMinimum[curve];
-                    if (xMaximum[curve] > xautoscalemax) xautoscalemax = xMaximum[curve];
-                }
-            }
-        }
-
-        if (firstCurve == -1) {  //IF NO CURVES SELECTED FOR DISPLAY, USE THE FIRST CURVE
-            firstCurve = 0;
-            xBase = x[0][0];
-        }
-
-        if (showVMarker1 || showVMarker2) {
-            double v1 = vMarker1Value;
-            double v2 = vMarker2Value;
-            if ((xlabel2[firstCurve].contains("J.D.") || xlabel2[firstCurve].contains("JD")) && showXAxisNormal) {
-                v1 += (int) xautoscalemin;
-                v2 += (int) xautoscalemin;
-            }
-            if (showVMarker1) {
-                if (v1 < xautoscalemin && (!showVMarker2 || (showVMarker2 && v1 <= v2))) xautoscalemin = v1;
-                if (v1 > xautoscalemax && (!showVMarker2 || (showVMarker2 && v1 >= v2))) xautoscalemax = v1;
-            }
-            if (showVMarker2) {
-                if (v2 < xautoscalemin && (!showVMarker1 || (showVMarker1 && v2 < v1))) xautoscalemin = v2;
-                if (v2 > xautoscalemax && (!showVMarker1 || (showVMarker1 && v2 > v1))) xautoscalemax = v2;
-            }
-        }
-
-        if (Double.isInfinite(xautoscalemin)) {
-            xautoscalemin = Double.isInfinite(xautoscalemax) ? 0.0 : xautoscalemax - 1.0;
-        }
-        if (Double.isInfinite(xautoscalemax)) xautoscalemax = xautoscalemin + 1.0;
-
-
-        if (autoScaleX) {
-            xPlotMin = xautoscalemin;
-            xPlotMax = (xautoscalemin == xautoscalemax) ? xautoscalemin + 0.01 : xautoscalemax;
-        } else if (useFirstX) {
-            firstXmin = xautoscalemin;
-            xPlotMin = xautoscalemin;
-            if (xWidth < 0.0001) xWidth = 0.0001;
-            xPlotMax = xautoscalemin + xWidth;
-        }
-        xPlotMinRaw = xPlotMin;
-        dx = (xPlotMax - xPlotMin) / 99.0;
-        xJD = 0;
-        xOffset = 0.0;
-        if ((xlabel2[firstCurve].contains("J.D.") || xlabel2[firstCurve].contains("JD")) && showXAxisNormal) {
-            if (xExponent != 0) xmultiplierspinner.setValue(0);
-            xJD = (int) xPlotMin;
-            xOffset = xJD;
-            if (showVMarker1 && vMarker1Value < 0.0) {
-                xOffset += 1.0;
-                xPlotMinRaw += 1.0;
-            }
-        }
-        var normAverageSet = new double[maxCurves];
-        for (curve = 0; curve < maxCurves; curve++) {
-            residual[curve] = null;
-            plottedResidual[curve] = null;
-            yModel1Err[curve] = null;
-            detrendYAverage[curve] = 0.0;
-            if (plotY[curve]) {
-                fitMin[curve] = (useDMarker1 ? dMarker1Value : Double.NEGATIVE_INFINITY) + xOffset;
-                fitMax[curve] = (useDMarker4 ? dMarker4Value : Double.POSITIVE_INFINITY) + xOffset;
-                fitLeft[curve] = dMarker2Value + xOffset;
-                fitRight[curve] = dMarker3Value + xOffset;
-                switch (detrendFitIndex[curve]) {
-                    case 2: // left of D2
-                        fitMax[curve] = fitLeft[curve];
-                        break;
-                    case 3: // right of D3
-                        fitMin[curve] = fitRight[curve];
-                        break;
-                    case 4: // outside D2 and D3
-                        break;
-                    case 5: // inside D2 and D3
-                        fitMin[curve] = fitLeft[curve];
-                        fitMax[curve] = fitRight[curve];
-                        break;
-                    case 6: // left of D3
-                        fitMax[curve] = fitRight[curve];
-                        break;
-                    case 7: // right of D2
-                        fitMin[curve] = fitLeft[curve];
-                        break;
-                    case 8: // use all data
-                        break;
-                    case 9: // use all data to fit transit with simultaneaous detrend
-                        break;
-                    default: // use all data
-                        detrendFitIndex[curve] = 0;
-                        break;
-                }
-
-                boolean atLeastOne = false;
-                boolean detrendYNotConstant = false;
-                detrendYDNotConstant = new boolean[maxDetrendVars];
-                detrendYAverage[curve] = 0.0;
-
-                for (int v = 0; v < maxDetrendVars; v++) {
-                    detrendYDNotConstant[v] = detrendFitIndex[curve] == 1;
-                }
-                if (detrendFitIndex[curve] != 0) {
-                    for (int v = 0; v < maxDetrendVars; v++) {
-                        if (detrendIndex[curve][v] != 0) {
-                            atLeastOne = true;
-                            break;
-                        }
-                    }
-                }
-                if (atLeastOne || detrendFitIndex[curve] == 9) {
-                    double[] detrendAverage = new double[maxDetrendVars];
-                    int[] detrendPower = new int[maxDetrendVars];
-                    for (int v = 0; v < maxDetrendVars; v++) {
-                        detrendAverage[v] = 0.0;
-                        detrendPower[v] = 1;
-                        int numNaNs = 0;
-                        for (int j = 0; j < nn[curve]; j++) {
-                            if (Double.isNaN(detrend[curve][v][j])) { numNaNs++; } else {
-                                detrendAverage[v] += detrend[curve][v][j] / (double) nn[curve];
-                            }
-                        }
-                        detrendAverage[v] = ((double) nn[curve] / ((double) nn[curve] - (double) numNaNs)) * detrendAverage[v];
-                        for (int j = 0; j < nn[curve]; j++) {
-                            detrend[curve][v][j] -= detrendAverage[v];
-                        }
-
-                        if (v > 0) {
-                            for (int u = 0; u < v; u++) {
-                                if (detrendIndex[curve][u] == detrendIndex[curve][v]) detrendPower[v]++;
-                            }
-                        }
-                        if (detrendPower[v] > 1) {
-                            detrendAverage[v] = 0.0;
-                            numNaNs = 0;
-                            for (int j = 0; j < nn[curve]; j++) {
-                                if (Double.isNaN(detrend[curve][v][j])) { numNaNs++; } else {
-                                    detrendAverage[v] += detrend[curve][v][j];
-                                }
-                            }
-                            detrendAverage[v] /= (nn[curve] - numNaNs);
-                            for (int j = 0; j < nn[curve]; j++) {
-                                detrend[curve][v][j] -= detrendAverage[v];
-                            }
-                        }
-                    }
-                    for (int v = 0; v < maxDetrendVars; v++) {
-                        if (detrendPower[v] == 2) {
-                            for (int j = 0; j < nn[curve]; j++) {
-                                detrend[curve][v][j] *= detrend[curve][v][j];
-                            }
-                        } else if (detrendPower[v] > 2) {
-                            for (int j = 0; j < nn[curve]; j++) {
-                                detrend[curve][v][j] = Math.pow(detrend[curve][v][j], detrendPower[v]);
-                            }
-                        }
-                    }
-                    double meridianFlip = mfMarker1Value + xOffset;
-                    for (int v = 0; v < maxDetrendVars; v++) {
-                        if (detrendIndex[curve][v] == 1) { //Meridian Flip Detrend Selected
-                            for (int j = 0; j < nn[curve]; j++) {
-                                if (x[curve][j] < meridianFlip) { //meridian flip fitting data = -1.0 to left and 1.0 to right of flip
-                                    detrend[curve][v][j] = -1.0;
-                                } else {
-                                    detrend[curve][v][j] = 1.0;
-                                }
-                            }
-                        }
-                    }
-
-                    yAverage[curve] = 0.0;
-                    yDepthEstimate[curve] = 0.0;
-                    yBaselineAverage[curve] = 0.0;
-                    nFitTrim[curve] = 0;
-                    int avgCount = 0;
-                    int detrendCount = 0;
-                    int baselineCount = 0;
-                    int depthCount = 0;
-
-                    double[] detrendX = new double[nn[curve]];
-                    double[] detrendY = new double[nn[curve]];
-                    double[] detrendYE = new double[nn[curve]];
-                    double[] detrendConstantComparator = new double[Math.max(nn[curve], maxDetrendVars)];
-                    Arrays.fill(detrendConstantComparator, Double.NaN);
-                    if (detrendFitIndex[curve] != 1) {
-                        double[][] detrendYD = new double[maxDetrendVars][nn[curve]];
-                        boolean noNaNs = true;
-                        if (detrendFitIndex[curve] == 4) {
-                            for (int j = 0; j < nn[curve]; j++) {
-                                noNaNs = true;
-                                if (!Double.isNaN(y[curve][j])) {
-                                    for (int v = 0; v < maxDetrendVars; v++) {
-                                        if (detrendIndex[curve][v] != 0 && Double.isNaN(detrend[curve][v][j])) {
-                                            noNaNs = false;
-                                            break;
-                                        }
-                                    }
-                                } else {
-                                    noNaNs = false;
-                                }
-                                if (noNaNs) {
-                                    avgCount++;
-                                    yAverage[curve] += y[curve][j];
-                                    if ((x[curve][j] > fitMin[curve] && x[curve][j] < fitLeft[curve]) || (x[curve][j] > fitRight[curve] && x[curve][j] < fitMax[curve])) {
-                                        detrendX[detrendCount] = x[curve][j];
-                                        detrendY[detrendCount] = y[curve][j];
-                                        detrendYE[detrendCount] = hasErrors[curve] || hasOpErrors[curve] ? yerr[curve][j] : 1;
-                                        detrendYAverage[curve] += y[curve][j];
-                                        if (detrendY[0] != detrendY[detrendCount]) detrendYNotConstant = true;
-                                        for (int v = 0; v < maxDetrendVars; v++) {
-                                            detrendYD[v][detrendCount] = detrend[curve][v][j];
-
-                                            if (Double.isNaN(detrendConstantComparator[v]) && !Double.isNaN(detrendYD[v][detrendCount])) {
-                                                detrendConstantComparator[v] = detrendYD[v][detrendCount];
-                                            }
-                                            if (!Double.isNaN(detrendConstantComparator[v]) && detrendConstantComparator[v] != detrendYD[v][detrendCount]) {
-                                                detrendYDNotConstant[v] = true;
-                                            }
-                                        }
-                                        detrendCount++;
-                                    }
-                                }
-                            }
-                            if (detrendVarsUsed[curve] > 0 && detrendYNotConstant && detrendCount > detrendVarsUsed[curve] + 2) { //need enough data to provide degrees of freedom for successful fit
-                                xModel1[curve] = new double[2];
-                                xModel2[curve] = new double[2];
-                                xModel1[curve][0] = Math.max(fitMin[curve], xPlotMin);
-                                xModel1[curve][1] = fitLeft[curve];
-                                xModel2[curve][0] = fitRight[curve];
-                                xModel2[curve][1] = Math.min(fitMax[curve], xPlotMax);
-                                if (xModel1[curve][0] >= xModel1[curve][1]) xModel1[curve] = null;
-                                if (xModel2[curve][0] >= xModel2[curve][1]) xModel2[curve] = null;
-                            } else {
-                                for (int v = 0; v < maxDetrendVars; v++) {
-                                    if (detrendIndex[curve][v] > 0) {
-                                        detrendFactor[curve][v] = 0.0;
-                                    }
-                                }
-                            }
-                        } else {
-                            for (int j = 0; j < nn[curve]; j++) {
-                                noNaNs = true;
-                                if (!Double.isNaN(y[curve][j])) {
-                                    for (int v = 0; v < maxDetrendVars; v++) {
-                                        if (detrendIndex[curve][v] != 0 && Double.isNaN(detrend[curve][v][j])) {
-                                            noNaNs = false;
-                                            break;
-                                        }
-                                    }
-                                } else {
-                                    noNaNs = false;
-                                }
-                                if (noNaNs) {
-                                    avgCount++;
-                                    yAverage[curve] += y[curve][j];
-                                    if (x[curve][j] > fitMin[curve]) {
-                                        if (x[curve][j] < fitMax[curve]) {
-                                            detrendX[detrendCount] = x[curve][j];
-                                            detrendY[detrendCount] = y[curve][j];
-                                            detrendYE[detrendCount] = hasErrors[curve] || hasOpErrors[curve] ? yerr[curve][j] : 1;
-                                            detrendYAverage[curve] += y[curve][j];
-                                            if (detrendY[0] != detrendY[detrendCount]) detrendYNotConstant = true;
-                                            for (int v = 0; v < maxDetrendVars; v++) {
-                                                detrendYD[v][detrendCount] = detrend[curve][v][j];
-                                                if (Double.isNaN(detrendConstantComparator[v]) && !Double.isNaN(detrendYD[v][detrendCount])) {
-                                                    detrendConstantComparator[v] = detrendYD[v][detrendCount];
-                                                }
-                                                if (!Double.isNaN(detrendConstantComparator[v]) && detrendConstantComparator[v] != detrendYD[v][detrendCount]) {
-                                                    detrendYDNotConstant[v] = true;
-                                                }
-                                            }
-                                            detrendCount++;
-                                        }
-                                    } else {
-                                        nFitTrim[curve]++;
-                                    }
-                                    if (detrendFitIndex[curve] == 9) {
-                                        if (x[curve][j] > fitLeft[curve] + (fitRight[curve] - fitLeft[curve]) / 4.0 && x[curve][j] < fitRight[curve] - (fitRight[curve] - fitLeft[curve]) / 4.0) {
-                                            yDepthEstimate[curve] += y[curve][j];
-                                            depthCount++;
-                                        } else if (x[curve][j] < fitLeft[curve] || x[curve][j] > fitRight[curve]) {
-                                            yBaselineAverage[curve] += y[curve][j];
-                                            baselineCount++;
-                                        }
-                                    }
-                                }
-                            }
-                            if (detrendVarsUsed[curve] > 0 && detrendYNotConstant && detrendCount > detrendVarsUsed[curve] + 2) { //need enough data to provide degrees of freedom for successful fit
-                                xModel1[curve] = new double[2];
-                                xModel1[curve][0] = Math.max(fitMin[curve], xPlotMin);
-                                xModel1[curve][1] = Math.min(fitMax[curve], xPlotMax);
-                                xModel2[curve] = null;
-                            } else {
-                                for (int v = 0; v < maxDetrendVars; v++) {
-                                    if (detrendIndex[curve][v] > 0) {
-                                        detrendFactor[curve][v] = 0.0;
-                                    }
-                                }
-                            }
-                        }
-
-                        if (detrendCount > 0) {
-                            yAverage[curve] /= avgCount; //avgCount is always >= detrendCount, so > 0 here
-                            detrendYAverage[curve] /= detrendCount;
-                            if (baselineCount > 0) { yBaselineAverage[curve] /= baselineCount; } else {
-                                yBaselineAverage[curve] = detrendYAverage[curve] * 1.005;
-                            }
-                            if (depthCount > 0) { yDepthEstimate[curve] /= depthCount; } else {
-                                yDepthEstimate[curve] = detrendYAverage[curve] * 0.995;
-                            }
-
-                            for (int j = 0; j < detrendCount; j++) {
-                                detrendY[j] -= detrendYAverage[curve];//yAverage[curve];
-                            }
-                            for (int v = 0; v < maxDetrendVars; v++) {
-                                if (detrendIndex[curve][v] != 0 && !detrendYDNotConstant[v] && detrendVarsUsed[curve] > 0) {
-                                    detrendVarsUsed[curve]--;
-                                }
-                            }
-                            detrendVars = new double[detrendVarsUsed[curve]][detrendCount];
-                            int varCount = 0;
-                            for (int v = 0; v < maxDetrendVars; v++) {
-                                if (detrendIndex[curve][v] != 0 && detrendYDNotConstant[v]) {
-                                    detrendVars[varCount] = Arrays.copyOf(detrendYD[v], detrendCount);
-                                    varCount++;
-                                }
-                            }
-
-                            if ((detrendVarsUsed[curve] >= 0 || detrendFitIndex[curve] == 9 && useTransitFit[curve]) && detrendYNotConstant && detrendCount > (detrendFitIndex[curve] == 9 && useTransitFit[curve] ? 7 : 0) + detrendVarsUsed[curve] + 2) { //need enough data to provide degrees of freedom for successful fit
-                                detrendXs[curve] = Arrays.copyOf(detrendX, detrendCount);
-                                detrendYs[curve] = Arrays.copyOf(detrendY, detrendCount);
-                                detrendYEs[curve] = Arrays.copyOf(detrendYE, detrendCount);
-                                if (updateFit[curve]) {
-                                    int fittedDetrendParStart;
-                                    if (detrendFitIndex[curve] == 9) {
-                                        minimization.removeConstraints();
-                                        setFittedParametersBorderColorNewThread(curve, grayBorder2);
-                                        if (autoUpdatePriors[curve]) updatePriorCenters(curve);
-                                        int nFitted = 0;
-                                        for (int p = 0; p < 7; p++) {
-                                            if (useTransitFit[curve] && bpLock[curve] && p==4) {
-                                                isFitted[curve][p] = false;
-                                                continue;
-                                            }
-                                            if (useTransitFit[curve] && !lockToCenter[curve][p]) {
-                                                isFitted[curve][p] = true;
-                                                nFitted++;
-                                            } else {
-                                                isFitted[curve][p] = false;
-                                            }
-                                        }
-                                        fittedDetrendParStart = nFitted;
-                                        for (int p = 7; p < maxFittedVars; p++) {
-                                            if (detrendIndex[curve][p - 7] != 0 && detrendYDNotConstant[p - 7] && !lockToCenter[curve][p]) {
-                                                isFitted[curve][p] = true;
-                                                nFitted++;
-                                            } else {
-                                                isFitted[curve][p] = false;
-                                            }
-                                        }
-
-                                        start[curve] = new double[nFitted];
-                                        width[curve] = new double[nFitted];
-                                        step[curve] = new double[nFitted];
-
-                                        index[curve] = new int[nFitted];
-                                        int fp = 0;  //fitted parameter
-                                        for (int p = 0; p < maxFittedVars; p++) {
-                                            if (isFitted[curve][p]) {
-                                                index[curve][fp] = p;
-                                                fp++;
-                                            }
-                                        }
-
-                                        dof[curve] = detrendXs[curve].length - nFitted;
-
-                                        // Fit against yMedian when no transit and no params
-                                        if (nFitted == 0 && !useTransitFit[curve]) {
-                                            start[curve] = new double[1];
-                                            width[curve] = new double[1];
-                                            step[curve] = new double[1];
-
-                                            index[curve] = new int[1];
-                                            start[curve][0] = Stat.median(detrendYs[curve]);
-                                            minimization.addConstraint(0, -1, 0.0);
-                                        }
-
-                                        // 0 = f0 = baseline flux
-                                        // 1 = p0 = r_p/r_*
-                                        // 2 = ar = a/r_*
-                                        // 3 = tc = transit center time
-                                        // 4 = i = inclination
-                                        // 5 = u1 = quadratic limb darkening parameter 1
-                                        // 6 = u2 = quadratic limb darkening parameter 2
-                                        // 7+ = detrend parameters
-                                        for (fp = 0; fp < nFitted; fp++) {
-                                            if (index[curve][fp] == 1) {
-                                                start[curve][fp] = Math.sqrt(priorCenter[curve][1]);
-                                                width[curve][fp] = Math.sqrt(priorWidth[curve][1]);
-                                                step[curve][fp] = Math.sqrt(getFitStep(curve, 1));
-                                                minimization.addConstraint(fp, -1, 0.0);
-                                            } else if (index[curve][fp] == 4) {
-                                                if (bpLock[curve]) continue;
-                                                start[curve][fp] = priorCenter[curve][4] * Math.PI / 180.0;  // inclination
-                                                width[curve][fp] = priorWidth[curve][4] * Math.PI / 180.0;
-                                                step[curve][fp] = getFitStep(curve, 4) * Math.PI / 180.0;
-                                                minimization.addConstraint(fp, 1, 90.0 * Math.PI / 180.0);
-                                                minimization.addConstraint(fp, -1, 50.0 * Math.PI / 180.0);
-                                            } else {
-                                                if (index[curve][fp] == 0) minimization.addConstraint(fp, -1, 0.0);
-                                                if (index[curve][fp] == 2) minimization.addConstraint(fp, -1, 2.0);
-                                                if (index[curve][fp] == 5) {
-                                                    minimization.addConstraint(fp, 1, 1.0);
-                                                    minimization.addConstraint(fp, -1, -1.0);
-                                                }
-                                                if (index[curve][fp] == 6) {
-                                                    minimization.addConstraint(fp, 1, 1.0);
-                                                    minimization.addConstraint(fp, -1, -1.0);
-                                                }
-                                                start[curve][fp] = priorCenter[curve][index[curve][fp]];
-                                                width[curve][fp] = priorWidth[curve][index[curve][fp]];
-                                                step[curve][fp] = getFitStep(curve, index[curve][fp]);
-                                            }
-                                            if (usePriorWidth[curve][index[curve][fp]]) {
-                                                minimization.addConstraint(fp, 1, start[curve][fp] + width[curve][fp]);
-                                                minimization.addConstraint(fp, -1, start[curve][fp] - width[curve][fp]);
-                                            }
-                                        }
-
-                                        minimization.setNrestartsMax(1);
-                                        minimization.nelderMead(new FitLightCurveChi2(), start[curve], step[curve], tolerance[curve], maxFitSteps[curve]);
-                                        coeffs[curve] = minimization.getParamValues();
-                                        nTries[curve] = minimization.getNiter() - 1;
-                                        converged[curve] = minimization.getConvStatus();
-                                        fp = 0;
-                                        for (int p = 0; p < maxFittedVars; p++) {
-                                            if (isFitted[curve][p]) {
-                                                bestFit[curve][p] = coeffs[curve][fp];
-                                                fp++;
-                                            } else if (p < 7 && useTransitFit[curve] && lockToCenter[curve][p]) {
-                                                if (p == 1) {
-                                                    bestFit[curve][p] = Math.sqrt(priorCenter[curve][p]);
-                                                } else if (p == 4) {
-                                                    if (bpLock[curve]) {
-                                                        bestFit[curve][4] = Math.acos(bp[curve]/bestFit[curve][2]);
-                                                    } else {
-                                                        bestFit[curve][p] = priorCenter[curve][p] * Math.PI / 180.0;
-                                                    }
-                                                } else { bestFit[curve][p] = priorCenter[curve][p]; }
-                                            } else if (p >= 7 && p < 7 + maxDetrendVars && detrendIndex[curve][p - 7] != 0 && detrendYDNotConstant[p - 7] && lockToCenter[curve][p]) {
-                                                bestFit[curve][p] = priorCenter[curve][p];
-                                            } else if (p == 4 && bpLock[curve]) {
-                                                bestFit[curve][4] = Math.acos(bp[curve]/bestFit[curve][2]);
-                                            } else {
-                                                bestFit[curve][p] = Double.NaN;
-                                            }
-                                        }
-
-                                        for (int p = 0; p < maxFittedVars; p++) {
-                                            if (p == 1 && !Double.isNaN(bestFit[curve][p])) {
-                                                bestFitLabel[curve][p].setText(ninePlaces.format(bestFit[curve][p] * bestFit[curve][p]));
-                                            } else if (p == 4 && !Double.isNaN(bestFit[curve][p])) {
-                                                bestFitLabel[curve][p].setText(ninePlaces.format(bestFit[curve][p] * 180 / Math.PI));
-                                            } else if (!Double.isNaN(bestFit[curve][p])) {
-                                                bestFitLabel[curve][p].setText(p < 7 ? ninePlaces.format(bestFit[curve][p]) : detrendParameterFormat.format(bestFit[curve][p]));
-                                            } else if (p >= 7 && p < 7 + maxDetrendVars && detrendVarAllNaNs[curve][p - 7]) {
-                                                bestFitLabel[curve][p].setText("all NaNs");
-                                            } else if (p >= 7 && p < 7 + maxDetrendVars && detrendIndex[curve][p - 7] != 0 && !detrendYDNotConstant[p - 7]) {
-                                                bestFitLabel[curve][p].setText("constant var");
-                                            } else {
-                                                bestFitLabel[curve][p].setText("");
-                                            }
-                                        }
-                                        if (useTransitFit[curve]) {
-                                            //Winn 2010 eqautions 14, 15, 16
-                                            if (!bpLock[curve]) bp[curve] = bestFit[curve][2] * Math.cos(bestFit[curve][4]) * (1.0 - (forceCircularOrbit[curve] ? 0.0 : eccentricity[curve] * eccentricity[curve])) / (1.0 + (forceCircularOrbit[curve] ? 0.0 : eccentricity[curve]) * Math.sin(forceCircularOrbit[curve] ? 0.0 : omega[curve]));
-                                            double bp2 = bp[curve] * bp[curve];
-                                            t14[curve] = (orbitalPeriod[curve] / Math.PI * Math.asin(Math.sqrt((1.0 + bestFit[curve][1]) * (1.0 + bestFit[curve][1]) - bp2) / (Math.sin(bestFit[curve][4]) * bestFit[curve][2])) * Math.sqrt(1.0 - (forceCircularOrbit[curve] ? 0.0 : eccentricity[curve] * eccentricity[curve])) / (1.0 + (forceCircularOrbit[curve] ? 0.0 : eccentricity[curve]) * Math.sin(forceCircularOrbit[curve] ? 0.0 : omega[curve])));
-                                            t23[curve] = (orbitalPeriod[curve] / Math.PI * Math.asin(Math.sqrt((1.0 - bestFit[curve][1]) * (1.0 - bestFit[curve][1]) - bp2) / (Math.sin(bestFit[curve][4]) * bestFit[curve][2])) * Math.sqrt(1.0 - (forceCircularOrbit[curve] ? 0.0 : eccentricity[curve] * eccentricity[curve])) / (1.0 + (forceCircularOrbit[curve] ? 0.0 : eccentricity[curve]) * Math.sin(forceCircularOrbit[curve] ? 0.0 : omega[curve])));
-                                            tau[curve] = (t14[curve] - t23[curve]) / 2.0;
-                                            double sin2tTpioP = Math.pow(Math.sin(t14[curve] * Math.PI / orbitalPeriod[curve]), 2);
-                                            stellarDensity[curve] = 0.0189 / (orbitalPeriod[curve] * orbitalPeriod[curve]) * Math.pow(((1.0 + bestFit[curve][1]) * (1.0 + bestFit[curve][1]) - bp2 * (1 - sin2tTpioP)) / sin2tTpioP, 1.5);
-
-                                            if (bpLock[curve]) {
-                                                priorCenterSpinner[curve][4].setValue(bestFit[curve][4]*180.0/Math.PI);
-                                            }
-                                            else {
-                                                bpSpinner[curve].setValue(bp[curve]);
-                                            }
-                                            t14Label[curve].setText(Double.isNaN(t14[curve]) ? "NaN" : sixPlaces.format(t14[curve]));
-                                            t14HoursLabel[curve].setText(Double.isNaN(t14[curve]) ? "NaN" : IJU.decToSex(24 * t14[curve], 0, 24, false));
-                                            t23Label[curve].setText(Double.isNaN(t23[curve]) ? "NaN" : sixPlaces.format(t23[curve]));
-                                            tauLabel[curve].setText(Double.isNaN(tau[curve]) ? "NaN" : sixPlaces.format(tau[curve]));
-                                            stellarDensityLabel[curve].setText(Double.isNaN(stellarDensity[curve]) ? "NaN" : fourPlaces.format(stellarDensity[curve]));
-                                            //if (!MultiAperture_.cancelled) { //todo come up with heuristic to only run the transit model when needed
-                                                double midpointFlux = IJU.transitModel(new double[]{bestFit[curve][3]}, bestFit[curve][0], bestFit[curve][4], bestFit[curve][1], bestFit[curve][2], bestFit[curve][3], orbitalPeriod[curve], forceCircularOrbit[curve] ? 0.0 : eccentricity[curve], forceCircularOrbit[curve] ? 0.0 : omega[curve], bestFit[curve][5], bestFit[curve][6], useLonAscNode[curve], lonAscNode[curve], true)[0];
-                                                transitDepth[curve] = (1-(midpointFlux/bestFit[curve][0]))*1000;
-                                            //}
-                                            transitDepthLabel[curve].setText(Double.isNaN(transitDepth[curve]) ? "NaN" : threeDigitsTwoPlaces.format(transitDepth[curve]));
-                                        } else {
-                                            t14Label[curve].setText("");
-                                            t14HoursLabel[curve].setText("");
-                                            t23Label[curve].setText("");
-                                            tauLabel[curve].setText("");
-                                            stellarDensityLabel[curve].setText("");
-                                            transitDepthLabel[curve].setText("");
-                                        }
-                                        chi2dof[curve] = minimization.getMinimum();
-                                        //chi2 + p * log(n)
-                                        bic[curve] = (chi2dof[curve] * dof[curve]) + nFitted * Math.log(detrendXs[curve].length);
-                                        chi2dofLabel[curve].setText(sixPlaces.format(chi2dof[curve]));
-                                        bicLabel[curve].setText(fourPlaces.format(bic[curve]));
-                                        dofLabel[curve].setText("" + dof[curve]);
-                                        chi2Label[curve].setText(fourPlaces.format(chi2[curve]));
-                                        stepsTakenLabel[curve].setText("" + nTries[curve]);
-
-                                        fp = fittedDetrendParStart;
-                                        for (int p = 7; p < maxFittedVars; p++) {
-                                            if (isFitted[curve][p]) {
-                                                detrendFactor[curve][p - 7] = coeffs[curve][fp++];
-                                            } else if (lockToCenter[curve][p]) {
-                                                detrendFactor[curve][p - 7] = priorCenter[curve][p];
-                                            }
-                                            if (detrendVarDisplayed[curve] == p - 7) {
-                                                detrendfactorspinner[curve].setValue(detrendFactor[curve][p - 7]);
-                                            }
-                                        }
-
-                                        setFittedParametersBorderColor(curve, converged[curve] ? convergedBorder : failedBorder);
-                                        if (converged[curve]) {
-                                            detrendpanelgroup[curve].setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
-                                        } else {
-                                            detrendpanelgroup[curve].setBorder(BorderFactory.createLineBorder(Color.RED));
-                                        }
-                                    } else if (useNelderMeadChi2ForDetrend) {
-                                        minimization.removeConstraints();
-                                        start[curve] = new double[detrendVars.length];
-                                        step[curve] = new double[detrendVars.length];
-                                        for (int i = 0; i < start[curve].length; i++) {
-                                            start[curve][i] = 0.0;
-                                            step[curve][i] = 1.0;
-                                        }
-                                        double fTol = 1e-10;
-                                        int nMax = 20000;
-                                        minimization.nelderMead(new FitDetrendChi2(), start[curve], step[curve], fTol, nMax);
-                                        coeffs[curve] = minimization.getParamValues();
-
-                                        varCount = 0;
-                                        for (int v = 0; v < maxDetrendVars; v++) {
-                                            if (detrendIndex[curve][v] != 0 && detrendYDNotConstant[v]) {
-                                                detrendFactor[curve][v] = coeffs[curve][varCount];
-                                                if (detrendVarDisplayed[curve] == v) {
-                                                    detrendfactorspinner[curve].setValue(coeffs[curve][varCount]);
-                                                }
-                                                varCount++;
-                                            }
-                                        }
-
-                                        if (minimization.getConvStatus()) {
-                                            detrendpanelgroup[curve].setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
-                                        } else {
-                                            detrendpanelgroup[curve].setBorder(BorderFactory.createLineBorder(Color.RED));
-                                        }
-
-                                    } else { //use regression
-                                        Regression regression = new Regression(detrendVars, detrendYs[curve]);
-                                        regression.linear();
-                                        coeffs[curve] = regression.getCoeff();
-
-                                        varCount = 1;
-                                        for (int v = 0; v < maxDetrendVars; v++) {
-                                            if (detrendIndex[curve][v] != 0 && detrendYDNotConstant[v]) {
-                                                detrendFactor[curve][v] = coeffs[curve][varCount];
-                                                if (detrendVarDisplayed[curve] == v) {
-                                                    detrendfactorspinner[curve].setValue(coeffs[curve][varCount]);
-                                                }
-                                                varCount++;
-                                            }
-                                        }
-
-
-                                        detrendpanelgroup[curve].setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
-                                    }
-                                }
-
-                                if (detrendFitIndex[curve] == 9 && useTransitFit[curve]) {
-                                    planetRadiusLabel[curve].setText(IJU.planetRadiusFromTeff(teff[curve], bestFit[curve][1]));
-                                    createDetrendModel = false;
-                                    xModel1[curve] = detrendXs[curve];
-
-                                    // Flag for yModel2 gen.
-                                    xModel2[curve] = new double[0];
-                                    yModel2[curve] = new double[0];
-
-                                    yModel1[curve] = IJU.transitModel(xModel1[curve], bestFit[curve][0], bestFit[curve][4], bestFit[curve][1], bestFit[curve][2], bestFit[curve][3], orbitalPeriod[curve], forceCircularOrbit[curve] ? 0.0 : eccentricity[curve], forceCircularOrbit[curve] ? 0.0 : omega[curve], bestFit[curve][5], bestFit[curve][6], useLonAscNode[curve], lonAscNode[curve], true);
-
-                                    // f0 = param[curve][0]; // baseline flux
-                                    // p0 = param[curve][1]; // r_p/r_*
-                                    // ar = param[curve][2]; // a/r_*
-                                    // tc = param[curve][3]; //transit center time
-                                    // incl = param[curve][4];  //inclination
-                                    // u1 = param[curve][5];
-                                    // u2 = param[curve][6];
-                                } else {
-                                    planetRadiusLabel[curve].setText("");
-                                    createDetrendModel = true;
-                                }
-                            } else {
-                                xModel1[curve] = null;
-                                xModel2[curve] = null;
-                                yModel1[curve] = null;
-                                yModel2[curve] = null;
-                                detrendpanelgroup[curve].setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
-                            }
-
-                        } else {
-                            xModel1[curve] = null;
-                            xModel2[curve] = null;
-                            yModel1[curve] = null;
-                            yModel2[curve] = null;
-                            detrendpanelgroup[curve].setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
-                        }
-                    } else {
-                        for (int j = 0; j < nn[curve]; j++) {
-                            boolean noNaNs = true;
-                            if (!Double.isNaN(y[curve][j])) {
-                                for (int v = 0; v < maxDetrendVars; v++) {
-                                    if (detrendIndex[curve][v] != 0 && Double.isNaN(detrend[curve][v][j])) {
-                                        noNaNs = false;
-                                        break;
-                                    }
-                                }
-                            } else {
-                                noNaNs = false;
-                            }
-                            if (noNaNs) {
-                                yAverage[curve] += y[curve][j];
-                                avgCount++;
-                            }
-                        }
-                        if (avgCount > 0) {
-                            yAverage[curve] /= avgCount;
-                        }
-                        xModel1[curve] = new double[2];
-                        xModel1[curve][0] = Math.max(fitMin[curve], xPlotMin);
-                        xModel1[curve][1] = Math.min(fitMax[curve], xPlotMax);
-                        xModel2[curve] = null;
-                        yModel1[curve] = new double[2];
-                        yModel1[curve][0] = yAverage[curve];
-                        yModel1[curve][1] = yAverage[curve];
-                        yModel2[curve] = null;
-                        detrendpanelgroup[curve].setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
-                    }
-
-                    if (divideNotSubtract) {
-                        double trend;
-                        if (yAverage[curve] != 0.0) {
-                            for (int j = 0; j < nn[curve]; j++) {
-                                trend = yAverage[curve];
-                                for (int v = 0; v < maxDetrendVars; v++) {
-                                    if (detrendIndex[curve][v] != 0 && detrendYDNotConstant[v]) {
-                                        trend += detrendFactor[curve][v] * (detrend[curve][v][j]);//-detrendAverage[v]);
-                                    }
-                                }
-                                trend /= yAverage[curve];
-                                if (trend != 0.0) {
-                                    y[curve][j] /= trend;
-                                    if (hasErrors[curve] || hasOpErrors[curve]) {
-                                        yerr[curve][j] /= trend;
-                                    }
-                                }
-                            }
-                        }
-                    } else {
-                        double trend;
-                        for (int j = 0; j < nn[curve]; j++) {
-                            trend = 0.0;
-                            for (int v = 0; v < maxDetrendVars; v++) {
-                                if (detrendIndex[curve][v] != 0 && detrendYDNotConstant[v]) {
-                                    trend += detrendFactor[curve][v] * (detrend[curve][v][j]);//-detrendAverage[v]);
-                                }
-                            }
-                            if (hasErrors[curve] || hasOpErrors[curve]) {
-                                yerr[curve][j] /= (y[curve][j] / (y[curve][j] - trend));
-                            }
-                            y[curve][j] -= trend;
-                        }
-                    }
-                } else {
-                    if(detrendpanelgroup[curve] != null) detrendpanelgroup[curve].setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
-                }
-
-                if (detrendFitIndex[curve] == 9 && useTransitFit[curve] && yModel1[curve] != null) {
-                    int cnt = 0;
-                    int len = yModel1[curve].length;
-                    residual[curve] = new double[len];
-                    if (hasErrors[curve] || hasOpErrors[curve]) yModel1Err[curve] = new double[len];
-                    for (int j = 0; j < nn[curve]; j++) {
-                        if (cnt < len && !Double.isNaN(x[curve][j]) && !Double.isNaN(y[curve][j]) && x[curve][j] > fitMin[curve] && x[curve][j] < fitMax[curve]) {
-                            residual[curve][cnt] = y[curve][j] - yModel1[curve][cnt];
-                            if (hasErrors[curve] || hasOpErrors[curve]) yModel1Err[curve][cnt] = yerr[curve][j];
-                            cnt++;
-                        }
-                    }
-                }
-
-                if (showSigmaForAllCurves && detrendFitIndex[curve] < 2) { //calculate standard deviation using all data
-                    int cnt = 0;
-                    detrendYAverage[curve] = 0;
-                    double y2Ave = 0;
-                    for (int j = 0; j < nn[curve]; j++) {
-                        if (!Double.isNaN(y[curve][j])) {
-                            cnt++;
-                            y2Ave += y[curve][j] * y[curve][j];
-                            detrendYAverage[curve] += y[curve][j];
-                        }
-                    }
-                    if (cnt > 0) {
-                        y2Ave /= cnt;
-                        detrendYAverage[curve] /= cnt;
-                        sigma[curve] = Math.sqrt(y2Ave - detrendYAverage[curve] * detrendYAverage[curve]);
-                    } else { detrendYAverage[curve] = 1; }
-                } else if ((showSigmaForDetrendedCurves || showSigmaForAllCurves || residual[curve] != null) && detrendFitIndex[curve] > 1) { //calculate standard deviation using fit/detrend region
-                    int cnt = 0;
-                    detrendYAverage[curve] = 0;
-                    double y2Ave = 0;
-                    if (detrendFitIndex[curve] == 4) {
-                        for (int j = 0; j < nn[curve]; j++) {
-                            if (!Double.isNaN(y[curve][j]) && ((x[curve][j] > fitMin[curve] && x[curve][j] < fitLeft[curve]) || (x[curve][j] > fitRight[curve] && x[curve][j] < fitMax[curve]))) {
-                                y2Ave += y[curve][j] * y[curve][j];
-                                detrendYAverage[curve] += y[curve][j];
-                                cnt++;
-                            }
-                        }
-
-                    } else {
-                        sigma[curve] = 0.0;
-                        for (int j = 0; j < nn[curve]; j++) {
-                            if (!Double.isNaN(x[curve][j]) && !Double.isNaN(y[curve][j]) && x[curve][j] > fitMin[curve] && x[curve][j] < fitMax[curve]) {
-                                if (detrendFitIndex[curve] == 9 && useTransitFit[curve] && residual[curve] != null) {
-                                    sigma[curve] += residual[curve][cnt] * residual[curve][cnt];
-                                } else {
-                                    y2Ave += y[curve][j] * y[curve][j];
-                                }
-                                detrendYAverage[curve] += y[curve][j];
-                                cnt++;
-                            }
-                        }
-                    }
-
-                    if (cnt > 0) {
-                        if (detrendFitIndex[curve] == 9 && useTransitFit[curve] && residual[curve] != null) {
-                            sigma[curve] = Math.sqrt(sigma[curve] / cnt);
-                            detrendYAverage[curve] = 0.0;
-                            cnt = 0;
-                            for (int nnn = 0; nnn < xModel1[curve].length; nnn++) {
-                                if (((xModel1[curve][nnn] > fitMin[curve] && xModel1[curve][nnn] < fitLeft[curve]) || (xModel1[curve][nnn] > fitRight[curve] && xModel1[curve][nnn] < fitMax[curve]))) {
-                                    detrendYAverage[curve] += yModel1[curve][nnn];
-                                    cnt++;
-                                }
-                            }
-                            if (cnt > 0) {
-                                detrendYAverage[curve] /= cnt;
-                            } else {
-                                detrendYAverage[curve] = 0.0;
-                                cnt = 0;
-                                for (int nnn = 0; nnn < xModel1[curve].length; nnn++) {
-                                    detrendYAverage[curve] += yModel1[curve][nnn];
-                                    cnt++;
-                                }
-                                if (cnt > 0) {
-                                    detrendYAverage[curve] /= cnt;
-                                } else {
-                                    detrendYAverage[curve] = 1;
-                                }
-                            }
-                        } else {
-                            y2Ave /= cnt;
-                            detrendYAverage[curve] /= cnt;
-                            sigma[curve] = Math.sqrt(y2Ave - detrendYAverage[curve] * detrendYAverage[curve]);
-                        }
-                    } else { detrendYAverage[curve] = 1; }
-                }
-
-                if (createDetrendModel) {
-                    createDetrendModel = false;
-                    double average = 0.0;
-                    double count = 0;
-                    double invVar;
-                    if (useNelderMeadChi2ForDetrend) {
-                        if (detrendFitIndex[curve] == 4) {
-                            for (int j = 0; j < nn[curve]; j++) {
-                                if (!Double.isNaN(y[curve][j]) && !Double.isNaN(x[curve][j]) && ((x[curve][j] > fitMin[curve] && x[curve][j] < fitLeft[curve] || (x[curve][j] > fitRight[curve] && x[curve][j] < fitMax[curve])))) {
-                                    invVar = 1 / (yerr[curve][j] * yerr[curve][j]);
-                                    average += y[curve][j] * invVar;
-                                    count += invVar;
-                                }
-                            }
-                        } else {
-                            for (int j = 0; j < nn[curve]; j++) {
-                                if (!Double.isNaN(y[curve][j]) && !Double.isNaN(x[curve][j]) && x[curve][j] > fitMin[curve] && x[curve][j] < fitMax[curve]) {
-                                    invVar = 1 / (yerr[curve][j] * yerr[curve][j]);
-                                    average += y[curve][j] * invVar;
-                                    count += invVar;
-                                }
-                            }
-                        }
-
-                        if (count == 0) {
-                            average = 0.0;
-                            for (int j = 0; j < nn[curve]; j++) {
-                                if (!Double.isNaN(y[curve][j]) && !Double.isNaN(x[curve][j])) {
-                                    invVar = 1 / (yerr[curve][j] * yerr[curve][j]);
-                                    average += y[curve][j] * invVar;
-                                    count += invVar;
-                                }
-                            }
-                        }
-                    } else {
-                        if (detrendFitIndex[curve] == 4) {
-                            for (int j = 0; j < nn[curve]; j++) {
-                                if (!Double.isNaN(y[curve][j]) && !Double.isNaN(x[curve][j]) && ((x[curve][j] > fitMin[curve] && x[curve][j] < fitLeft[curve]) || (x[curve][j] > fitRight[curve] && x[curve][j] < fitMax[curve]))) {
-                                    average += y[curve][j];
-                                    count += 1.0;
-                                }
-                            }
-                        } else {
-                            for (int j = 0; j < nn[curve]; j++) {
-                                if (!Double.isNaN(y[curve][j]) && !Double.isNaN(x[curve][j]) && x[curve][j] > fitMin[curve] && x[curve][j] < fitMax[curve]) {
-                                    average += y[curve][j];
-                                    count += 1.0;
-                                }
-                            }
-                        }
-
-                        if (count == 0) {
-                            average = 0.0;
-                            for (int j = 0; j < nn[curve]; j++) {
-                                if (!Double.isNaN(y[curve][j]) && !Double.isNaN(x[curve][j])) {
-                                    average += y[curve][j];
-                                    count += 1.0;
-                                }
-                            }
-                        }
-                    }
-
-                    if (count != 0) {
-                        detrendYAverage[curve] = average / count;
-                    }
-
-
-                    if (detrendFitIndex[curve] == 9) {
-                        xModel1[curve] = detrendXs[curve];
-                        xModel2[curve] = new double[2];
-                        xModel2[curve][0] = Math.max(fitMin[curve], xPlotMin);
-                        xModel2[curve][1] = Math.min(fitMax[curve], xPlotMax);
-                        yModel1[curve] = new double[xModel1[curve].length];
-                        for (int i = 0; i < xModel1[curve].length; i++)
-                            yModel1[curve][i] = detrendYAverage[curve];
-                        yModel2[curve] = new double[2];
-                        yModel2[curve][0] = detrendYAverage[curve];
-                        yModel2[curve][1] = detrendYAverage[curve];
-                    } else //if (useNelderMeadChi2ForDetrend)
-                    {
-                        yModel1[curve] = new double[2];
-                        yModel1[curve][0] = detrendYAverage[curve];
-                        yModel1[curve][1] = detrendYAverage[curve];
-                        yModel2[curve] = new double[2];
-                        yModel2[curve][0] = detrendYAverage[curve];
-                        yModel2[curve][1] = detrendYAverage[curve];
-                    }
-                }
-
-
-                if (normIndex[curve] != 0) {
-                    double normMin = (useDMarker1 ? dMarker1Value : Double.NEGATIVE_INFINITY) + xOffset;
-                    double normMax = (useDMarker4 ? dMarker4Value : Double.POSITIVE_INFINITY) + xOffset;
-                    double normLeft = dMarker2Value + xOffset;
-                    double normRight = dMarker3Value + xOffset;
-
-                    double normAverage = 0.0;
-                    double normCount = 0;
-                    double invVar = 0;
-                    switch (normIndex[curve]) {
-                        case 1: // left of D2
-                            normMax = normLeft;
-                            break;
-                        case 2: // right of D3
-                            normMin = normRight;
-                            break;
-                        case 3: // outside D2 and D3
-                            break;
-                        case 4: // inside D2 and D3
-                            normMin = normLeft;
-                            normMax = normRight;
-                            break;
-                        case 5: // left of D3
-                            normMax = normRight;
-                            break;
-                        case 6: // right of D2
-                            normMin = normLeft;
-                            break;
-                        case 7: // use all data
-                            break;
-                        default:
-                            normIndex[curve] = 0;
-                            normMax = normMin;
-                            break;
-                    }
-                    if (detrendFitIndex[curve] == 9 && useTransitFit[curve] && detrendXs[curve] != null && detrendYEs[curve] != null && yModel1[curve] != null) {
-                        int nnn = detrendXs[curve].length;
-                        if (normIndex[curve] == 3) {
-                            for (int j = 0; j < nnn; j++) {
-                                if (!Double.isNaN(yModel1[curve][j]) && !Double.isNaN(detrendXs[curve][j]) && ((detrendXs[curve][j] > normMin && detrendXs[curve][j] < normLeft) || (detrendXs[curve][j] > normRight && detrendXs[curve][j] < normMax))) {
-                                    invVar = 1 / (detrendYEs[curve][j] * detrendYEs[curve][j]);
-                                    normAverage += yModel1[curve][j] * invVar;
-                                    normCount += invVar;
-                                }
-                            }
-                        } else {
-                            for (int j = 0; j < nnn; j++) {
-                                if (!Double.isNaN(yModel1[curve][j]) && !Double.isNaN(detrendXs[curve][j]) && detrendXs[curve][j] > normMin && detrendXs[curve][j] < normMax) {
-                                    invVar = 1 / (detrendYEs[curve][j] * detrendYEs[curve][j]);
-                                    normAverage += yModel1[curve][j] * invVar;
-                                    normCount += invVar;
-                                }
-                            }
-                        }
-
-                        if (normCount == 0) {
-                            normAverage = 0.0;
-                            for (int j = 0; j < yModel1[curve].length; j++) {
-                                if (!Double.isNaN(yModel1[curve][j]) && !Double.isNaN(detrendXs[curve][j])) {
-                                    invVar = 1 / (detrendYEs[curve][j] * detrendYEs[curve][j]);
-                                    normAverage += yModel1[curve][j] * invVar;
-                                    normCount += invVar;
-                                }
-                            }
-                        }
-                    } else if (useNelderMeadChi2ForDetrend) {
-                        if (normIndex[curve] == 3) {
-                            for (int j = 0; j < nn[curve]; j++) {
-                                if (!Double.isNaN(y[curve][j]) && !Double.isNaN(x[curve][j]) && ((x[curve][j] > normMin && x[curve][j] < normLeft) || (x[curve][j] > normRight && x[curve][j] < normMax))) {
-                                    invVar = 1 / (yerr[curve][j] * yerr[curve][j]);
-                                    normAverage += y[curve][j] * invVar;
-                                    normCount += invVar;
-                                }
-                            }
-                        } else {
-                            for (int j = 0; j < nn[curve]; j++) {
-                                if (!Double.isNaN(y[curve][j]) && !Double.isNaN(x[curve][j]) && x[curve][j] > normMin && x[curve][j] < normMax) {
-                                    invVar = 1 / (yerr[curve][j] * yerr[curve][j]);
-                                    normAverage += y[curve][j] * invVar;
-                                    normCount += invVar;
-                                }
-                            }
-                        }
-
-                        if (normCount == 0) {
-                            normAverage = 0.0;
-                            for (int j = 0; j < nn[curve]; j++) {
-                                if (!Double.isNaN(y[curve][j]) && !Double.isNaN(x[curve][j])) {
-                                    invVar = 1 / (yerr[curve][j] * yerr[curve][j]);
-                                    normAverage += y[curve][j] * invVar;
-                                    normCount += invVar;
-                                }
-                            }
-                        }
-                    } else {
-                        if (normIndex[curve] == 3) {
-                            for (int j = 0; j < nn[curve]; j++) {
-                                if (!Double.isNaN(y[curve][j]) && !Double.isNaN(x[curve][j]) && ((x[curve][j] > normMin && x[curve][j] < normLeft) || (x[curve][j] > normRight && x[curve][j] < normMax))) {
-                                    normAverage += y[curve][j];
-                                    normCount += 1.0;
-                                }
-                            }
-                        } else {
-                            for (int j = 0; j < nn[curve]; j++) {
-                                if (!Double.isNaN(y[curve][j]) && !Double.isNaN(x[curve][j]) && x[curve][j] > normMin && x[curve][j] < normMax) {
-                                    normAverage += y[curve][j];
-                                    normCount += 1.0;
-                                }
-                            }
-                        }
-
-                        if (normCount == 0) {
-                            normAverage = 0.0;
-                            for (int j = 0; j < nn[curve]; j++) {
-                                if (!Double.isNaN(y[curve][j]) && !Double.isNaN(x[curve][j])) {
-                                    normAverage += y[curve][j];
-                                    normCount += 1.0;
-                                }
-                            }
-                        }
-                    }
-
-                    if (normAverage == 0.0 || normCount == 0) {
-                        normAverage = 1.0;
-                    } else {
-                        normAverage /= normCount;
-                    }
-
-                    if (detrendFitIndex[curve] == 9 && useTransitFit[curve] && detrendXs[curve] != null && detrendYEs[curve] != null && yModel1[curve] != null) {
-                        normAverage = bestFit[curve][0];
-                    }
-                    for (int j = 0; j < nn[curve]; j++) {
-                        if (hasErrors[curve] || hasOpErrors[curve]) {
-                            yerr[curve][j] /= normAverage;
-                        }
-                        y[curve][j] /= normAverage;
-                    }
-                    detrendYAverage[curve] /= normAverage;
-                    sigma[curve] /= normAverage;
-                    sigmaLabel[curve].setText(sixPlaces.format(sigma[curve] * 1000));
-                    sigmaLabel[curve].setToolTipText("<html>RMS of model residuals (normalized) in parts per thousand (ppt).<br>" + "Green Border: fit converged<br>" + "Red Border: fit did not converge<br>" + "Gray Border: no fit in this session</html>");
-                    sigmaPanel[curve].setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(subBorderColor, 1), "RMS (ppt)", TitledBorder.CENTER, TitledBorder.TOP, p11, Color.darkGray));
-
-                    if (yModel1[curve] != null) {
-                        for (int nnn = 0; nnn < yModel1[curve].length; nnn++) {
-                            yModel1[curve][nnn] /= normAverage;
-                        }
-                    }
-                    if (yModel1Err[curve] != null) {
-                        for (int nnn = 0; nnn < yModel1Err[curve].length; nnn++) {
-                            yModel1Err[curve][nnn] /= normAverage;
-                        }
-                    }
-                    if (residual[curve] != null) {
-                        for (int nnn = 0; nnn < residual[curve].length; nnn++) {
-                            residual[curve][nnn] /= normAverage;
-                        }
-                    }
-                    if (yModel2[curve] != null) {
-                        for (int nnn = 0; nnn < yModel2[curve].length; nnn++) {
-                            yModel2[curve][nnn] /= normAverage;
-                        }
-                    }
-                    normAverageSet[curve] = normAverage;
-                }
-
-                //PERFORM MAGNITUDE CONVERSION IF APPLICABLE
-                if (mmag[curve]) {
-                    if (normIndex[curve] == 0 && mmagrefs > 0) {
-                        int cnt = 0;
-                        int numgood = 0;
-                        while (numgood < mmagrefs && cnt < nn[curve])  //Prepare mmag calulation baseline reference level
-                        {
-                            if (!Double.isNaN(y[curve][cnt]) && !Double.isNaN(x[curve][cnt])) {
-                                baseline[curve] += y[curve][cnt];
-                                numgood++;
-                            }
-                            cnt++;
-                        }
-                        baseline[curve] /= (numgood == 0 ? 1 : numgood);
-                        baseline[curve] = (baseline[curve] == 0 ? 1 : baseline[curve]);
-                    } else {
-                        baseline[curve] = 1.0;
-                    }
-
-                    if (residual[curve] != null) {
-                        int nnn = 0;
-                        int len = residual[curve].length;
-                        for (int j = 0; j < nn[curve]; j++) {
-                            if (nnn < len && !Double.isNaN(x[curve][j]) && !Double.isNaN(y[curve][j]) && x[curve][j] > fitMin[curve] && x[curve][j] < fitMax[curve]) {
-                                residual[curve][nnn] = 2.5 * Math.log10(1.0 + residual[curve][nnn] / y[curve][j]);
-                                if (yModel1Err[curve] != null) {
-                                    yModel1Err[curve][nnn] = 2.5 * Math.log10(1.0 + yModel1Err[curve][nnn] / y[curve][j]);
-                                }
-                                nnn++;
-                            }
-                        }
-                    }
-
-                    int cnt = 0;
-                    for (int j = 0; j < nn[curve]; j++) {
-                        if (hasErrors[curve] || hasOpErrors[curve]) {
-                            yerr[curve][j] = 2.5 * Math.log10(1.0 + yerr[curve][j] / y[curve][j]);  // yMultiplierFactor*
-                        }
-                        y[curve][j] = magSign * 2.5 * Math.log10(y[curve][j] / baseline[curve]);   // yMultiplierFactor*
-                    }
-                    sigma[curve] = 2.5 * Math.log10(1.0 + sigma[curve] / baseline[curve]);
-                    detrendYAverage[curve] = magSign * 2.5 * Math.log10(detrendYAverage[curve] / baseline[curve]);
-                    sigmaLabel[curve].setText(fourPlaces.format(sigma[curve] * 1000.0));
-                    sigmaLabel[curve].setToolTipText("<html>RMS of model residuals (mmag).<br>" + "Green Border: fit converged<br>" + "Red Border: fit did not converge<br>" + "Gray Border: no fit in this session</html>");
-                    sigmaPanel[curve].setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(subBorderColor, 1), "RMS (mmag)", TitledBorder.CENTER, TitledBorder.TOP, p11, Color.darkGray));
-
-
-                    if (yModel1[curve] != null) {
-                        for (int nnn = 0; nnn < yModel1[curve].length; nnn++) {
-                            yModel1[curve][nnn] = magSign * 2.5 * Math.log10(yModel1[curve][nnn] / baseline[curve]);   //  yMultiplierFactor*
-                        }
-                    }
-
-                    if (yModel2[curve] != null) {
-                        for (int nnn = 0; nnn < yModel2[curve].length; nnn++) {
-                            yModel2[curve][nnn] = magSign * 2.5 * Math.log10(yModel2[curve][nnn] / baseline[curve]);   // yMultiplierFactor*
-                        }
-                    }
-
-                    // Convert Depth to mmag
-                    double magDepth = 2.5 * Math.log10(1.0 + transitDepth[curve]/1000);
-                    transitDepthLabel[curve].setText(fourPlaces.format(magDepth * 1000));
-                    transitDepthLabel[curve].setToolTipText("<html>Depth defined as transit model flux deficit at mid-transit (Tc) in mmag.<br>" + "Green Border: fit converged<br>" + "Red Border: fit did not converge<br>" + "Gray Border: no fit in this session</html>");
-                    transitDepthPanel[curve].setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(subBorderColor, 1), "Depth (mmag)", TitledBorder.CENTER, TitledBorder.TOP, p11, Color.darkGray));
-                } else {
-                    transitDepthLabel[curve].setText(Double.isNaN(transitDepth[curve]) ? "NaN" : threeDigitsTwoPlaces.format(transitDepth[curve]));
-                    transitDepthLabel[curve].setToolTipText("<html>Depth defined as transit model flux deficit at mid-transit (Tc) in parts per thousand (ppt).<br>" + "Green Border: fit converged<br>" + "Red Border: fit did not converge<br>" + "Gray Border: no fit in this session</html>");
-                    transitDepthPanel[curve].setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(subBorderColor, 1), "Depth (ppt)", TitledBorder.CENTER, TitledBorder.TOP, p11, Color.darkGray));
-                }
-                if (normIndex[curve] == 0 && !mmag[curve]) {
-                    sigmaLabel[curve].setText(sixPlaces.format(sigma[curve]));
-                    sigmaLabel[curve].setToolTipText("<html>RMS of model residuals (raw).<br>" + "WARNING: This is the standard deviation/RMS of the raw data from the model.<br>" + "WARNING: Consider using either normalized or mmag output data.<br>" + "Green Border: fit converged<br>" + "Red Border: fit did not converge<br>" + "Gray Border: no fit in this session</html>");
-                    sigmaPanel[curve].setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(subBorderColor, 1), "RMS (raw)", TitledBorder.CENTER, TitledBorder.TOP, p11, Color.darkGray));
-                }
-
-
-            } else {
-                detrendpanelgroup[curve].setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
-            }
-            if (refStarChanged || detrendParChanged) setRMSBICBackgroundNewThread(curve);
-        }
-
-
-        // PERFORM Y-AUTOSCALING TO ONE OR MORE CURVES
-
-        dy = 0.0;
-
-        yPlotMin = yMin;
-        yPlotMax = yMax;
-
-        yautoscalemin = Double.POSITIVE_INFINITY;
-        yautoscalemax = Double.NEGATIVE_INFINITY;
-
-        for (int curve = 0; curve < maxCurves; curve++) {
-            double resMin, resMax;
-            if (plotY[curve]) {
-                yMn[curve] = (showErrors[curve] && (hasErrors[curve] || hasOpErrors[curve])) ? minOf(x[curve], y[curve], yerr[curve], nn[curve]) : minOf(x[curve], y[curve], nn[curve]); //FIND MIN AND MAX Y OF EACH SELECTED DATASET
-                yMx[curve] = (showErrors[curve] && (hasErrors[curve] || hasOpErrors[curve])) ? maxOf(x[curve], y[curve], yerr[curve], nn[curve]) : maxOf(x[curve], y[curve], nn[curve]);
-                yWidthOrig[curve] = yMx[curve] - yMn[curve];
-                if (showResidual[curve] && residual[curve] != null && useTransitFit[curve] && detrendFitIndex[curve] == 9) {
-                    resMin = (showResidualError[curve] && yModel1Err[curve] != null) ? resMinOf(x[curve], residual[curve], yModel1Err[curve], residual[curve].length, detrendYAverage[curve] + (force[curve] ? yWidthOrig[curve] * autoResidualShift[curve] / autoScaleFactor[curve] : residualShift[curve] / (normIndex[curve] != 0 && !mmag[curve] && !force[curve] ? 1.0 : yMultiplierFactor))) : resMinOf(x[curve], residual[curve], residual[curve].length, detrendYAverage[curve] + (force[curve] ? yWidthOrig[curve] * autoResidualShift[curve] / autoScaleFactor[curve] : residualShift[curve] / (normIndex[curve] != 0 && !mmag[curve] && !force[curve] ? 1.0 : yMultiplierFactor)));
-
-                    resMax = (showResidualError[curve] && yModel1Err[curve] != null) ? resMaxOf(x[curve], residual[curve], yModel1Err[curve], residual[curve].length, detrendYAverage[curve] + (force[curve] ? yWidthOrig[curve] * autoResidualShift[curve] / autoScaleFactor[curve] : residualShift[curve] / (normIndex[curve] != 0 && !mmag[curve] && !force[curve] ? 1.0 : yMultiplierFactor))) : resMaxOf(x[curve], residual[curve], residual[curve].length, detrendYAverage[curve] + (force[curve] ? yWidthOrig[curve] * autoResidualShift[curve] / autoScaleFactor[curve] : residualShift[curve] / (normIndex[curve] != 0 && !mmag[curve] && !force[curve] ? 1.0 : yMultiplierFactor)));
-                    if (resMin < yMn[curve]) yMn[curve] = resMin;
-                    if (resMax > yMx[curve]) yMx[curve] = resMax;
-                }
-                if (normIndex[curve] != 0 && !mmag[curve] && !force[curve]) {
-                    yMinimum[curve] = 1 + customScaleFactor[curve] * (yMn[curve] - 1.0) + customShiftFactor[curve];
-                    yMaximum[curve] = 1 + customScaleFactor[curve] * (yMx[curve] - 1.0) + customShiftFactor[curve];
-                } else if (customScaleFactor[curve] >= 0) {
-                    yMinimum[curve] = force[curve] ? yMn[curve] : yMn[curve] * yMultiplierFactor * customScaleFactor[curve] + customShiftFactor[curve]; //FIND MIN AND MAX Y OF EACH SELECTED DATASET
-                    yMaximum[curve] = force[curve] ? yMx[curve] : yMx[curve] * yMultiplierFactor * customScaleFactor[curve] + customShiftFactor[curve];
-                } else {
-                    yMinimum[curve] = force[curve] ? yMn[curve] : yMx[curve] * yMultiplierFactor * customScaleFactor[curve] + customShiftFactor[curve]; //FIND MIN AND MAX Y OF EACH SELECTED DATASET
-                    yMaximum[curve] = force[curve] ? yMx[curve] : yMn[curve] * yMultiplierFactor * customScaleFactor[curve] + customShiftFactor[curve];
-                }
-                if (ASInclude[curve] && !force[curve]) {
-                    if (yMinimum[curve] < yautoscalemin) yautoscalemin = yMinimum[curve];
-                    if (yMaximum[curve] > yautoscalemax) yautoscalemax = yMaximum[curve];
-                }
-            }
-        }
-
-        if (Double.isInfinite(yautoscalemin)) {
-            yautoscalemin = Double.isInfinite(yautoscalemax) ? 0.0 : yautoscalemax - 1.0;
-        }
-        if (Double.isInfinite(yautoscalemax)) yautoscalemax = yautoscalemin + 1.0;
-
-        if (autoScaleY) {
-            yPlotMin = yautoscalemin;
-            yPlotMax = (yautoscalemin == yautoscalemax) ? yautoscalemin + 0.01 : yautoscalemax;
-        }
-        dy = (yPlotMax - yPlotMin) / 99.0;
-
-        // IF MJD, SHOW DECIMAL DATE DUE TO float API OF PlotWindow
-        yOffset = 0.0;
-        if (ylabel[firstCurve].contains("J.D.") || ylabel[firstCurve].contains("JD")) {
-            if (yExponent != 0) ymultiplierspinner.setValue(0);
-            yJD = (int) yPlotMin;
-            yOffset = yJD;
-        }
-        xlab = "";
-        ylab = "";
-        boolean xGoodLabel = false;
-        boolean yGoodLabel = false;
-
-        // MAKE X-AXIS LABEL
-
-        for (int curve = 0; curve < maxCurves; curve++) {
-            if (plotY[curve]) {
-                if (showXAxisAsPhase) {
-                    xlab = "Orbital Phase (periods) (T0 = " + netT0 + ", P = " + netPeriod + ")";
-                    xGoodLabel = true;
-                } else if (showXAxisAsDaysSinceTc) {
-                    xlab = "Days Since Tc (T0 = " + netT0 + ", P = " + netPeriod + ")";
-                    xGoodLabel = true;
-                } else if (showXAxisAsHoursSinceTc) {
-                    xlab = "Hours Since Tc (T0 = " + netT0 + ", P = " + netPeriod + ")";
-                    xGoodLabel = true;
-                } else if (xlabel2[curve].contains("J.D.") || xlabel2[curve].contains("JD")) {
-                    if (curve == firstCurve) {
-                        xPlotMin -= xOffset;
-                        xPlotMax -= xOffset;
-                        if (useXColumnName) {
-                            if (xlabel2[curve].trim().startsWith("J.D.-2400000")) {
-                                xlab = "Geocentric Julian Date (UTC) - " + xJD;
-                            } else if (xlabel2[curve].trim().startsWith("BJD_TDB")) {
-                                xlab = "Barycentric Julian Date (TDB) - " + xJD + " (mid-exposure)";
-                            } else if (xlabel2[curve].trim().startsWith("BJD_SOBS")) {
-                                xlab = "Barycentric Julian Date (TDB) - " + xJD + " (exposure start)";
-                            } else if (xlabel2[curve].trim().startsWith("BJD")) {
-                                xlab = "Barycentric Julian Date (TDB) - " + xJD;
-                            } else if (xlabel2[curve].trim().startsWith("HJD_UTC")) {
-                                xlab = "Heliocentric Julian Date (UTC) - " + xJD + " (mid-exposure)";
-                            } else if (xlabel2[curve].trim().startsWith("HJD_SOBS")) {
-                                xlab = "Heliocentric Julian Date (UTC) - " + xJD + " (exposure start)";
-                            } else if (xlabel2[curve].trim().startsWith("HJD")) {
-                                xlab = "Heliocentric Julian Date (UTC) - " + xJD;
-                            } else if (xlabel2[curve].trim().startsWith("JD_SOBS")) {
-                                xlab = "Geocentric Julian Date (UTC) - " + xJD + " (exposure start)";
-                            } else if (xlabel2[curve].trim().startsWith("JD_UTC")) {
-                                xlab = "Geocentric Julian Date (UTC) - " + xJD + " (mid-exposure)";
-                            } else if (xlabel2[curve].trim().contains("JD")) { xlab = "Julian Date - " + xJD; } else {
-                                xlab = "Label Error";
-                            }
-                            xGoodLabel = true;
-                        } else if (useXCustomName) {
-                            xlab = xLegend;
-                            xGoodLabel = true;
-                        }
-                    }
-                    for (int j = 0; j < nn[curve]; j++) {
-                        x[curve][j] -= xOffset;
-                    }
-                    if (xModel1[curve] != null) {
-                        for (int nnn = 0; nnn < xModel1[curve].length; nnn++) {
-                            xModel1[curve][nnn] -= xOffset;
-
-                        }
-                    }
-                    if (xModel2[curve] != null) {
-                        for (int nnn = 0; nnn < xModel2[curve].length; nnn++) {
-                            xModel2[curve][nnn] -= xOffset;
-                        }
-                    }
-                } else if (useXColumnName && curve == firstCurve) {
-                    xlab = xlabel2[curve];
-                    xGoodLabel = true;
-                } else if (useXCustomName && curve == firstCurve) {
-                    xlab = xLegend;
-                    xGoodLabel = true;
-                }
-            }
-        }
-
-        if (xGoodLabel && (xExponent != 0) && showXScaleInfo) xlab += " x 1E" + xExponent;
-
-        // MAKE Y-AXIS LABEL
-
-        for (int curve = 0; curve < maxCurves; curve++) {
-            if (plotY[curve]) {
-                if (ylabel[curve].contains("J.D.") || ylabel[curve].contains("JD")) {
-                    if (curve == firstCurve) {
-                        yPlotMin -= yOffset;
-                        yPlotMax -= yOffset;
-                        if (useYColumnName && operatorBase.getOrCreateVariant(curve).get() != MPOperator.CENTROID_DISTANCE) {
-                            if (ylabel[curve].trim().startsWith("J.D.-2400000")) {
-                                ylab = "Geocentric Julian Date (UTC) - " + yJD;
-                            } else if (ylabel[curve].trim().startsWith("BJD_TDB")) {
-                                ylab = "Barycentric Julian Date (TDB) - " + yJD + " (mid-exposure)";
-                            } else if (ylabel[curve].trim().startsWith("BJD_SOBS")) {
-                                ylab = "Barycentric Julian Date (TDB) - " + yJD + " (exposure start)";
-                            } else if (ylabel[curve].trim().startsWith("BJD")) {
-                                ylab = "Barycentric Julian Date (TDB) - " + yJD;
-                            } else if (ylabel[curve].trim().startsWith("HJD_UTC")) {
-                                ylab = "Heliocentric Julian Date (UTC) - " + yJD + " (mid-exposure)";
-                            } else if (ylabel[curve].trim().startsWith("HJD_SOBS")) {
-                                ylab = "Heliocentric Julian Date (UTC) - " + yJD + " (exposure start)";
-                            } else if (ylabel[curve].trim().startsWith("HJD")) {
-                                ylab = "Heliocentric Julian Date (UTC) - " + yJD;
-                            } else if (ylabel[curve].trim().startsWith("JD_UTC")) {
-                                ylab = "Geocentric Julian Date (UTC) - " + yJD + " (mid-exposure)";
-                            } else if (ylabel[curve].trim().startsWith("JD_SOBS")) {
-                                ylab = "Geocentric Julian Date (UTC) - " + yJD + " (exposure start)";
-                            } else if (ylabel[curve].trim().contains("JD")) { ylab = "Julian Date - " + yJD; } else {
-                                ylab = "Label Error";
-                            }
-                            yGoodLabel = true;
-                        } else if (useYCustomName) {
-                            ylab = yLegend;
-                            yGoodLabel = true;
-                        } else if (useYColumnName && operatorBase.getOrCreateVariant(curve).get() == MPOperator.CENTROID_DISTANCE) {
-                            ylab = xyc1label[curve] + " - " + xyc2label[curve] + " centroid distance";
-                            ylab += usePixelScale ? " (arcsecs)" : " (pixels)";
-                            yGoodLabel = true;
-                        }
-                    }
-                    for (int j = 0; j < nn[curve]; j++)
-                        y[curve][j] -= yOffset;
-                } else if (useYColumnName && curve == firstCurve) {
-                    if (operatorBase.getOrCreateVariant(curve).get() != MPOperator.CENTROID_DISTANCE) {
-                        ylab = ylabel[firstCurve];
-                        if (operatorBase.getOrCreateVariant(firstCurve).get() != MPOperator.NONE) {
-                            ylab += operatorBase.getOrCreateVariant(firstCurve).get().getSymbol() + oplabel[firstCurve];
-                        }
-                    } else {
-                        ylab = xyc1label[firstCurve] + " - " + xyc2label[firstCurve] + " centroid distance";
-                        ylab += usePixelScale ? " (arcsecs)" : " (pixels)";
-                    }
-                    yGoodLabel = true;
-                } else if (useYCustomName && curve == firstCurve) {
-                    ylab = yLegend;
-                    yGoodLabel = true;
-                }
-            }
-        }
-        //FINISH Y-LABEL AFTER FINDING SCALING FACTORS BELOW
-
-
-        //SCALE AND SHIFT SECONDARY CURVES TO FIT ON PLOT
-
-        yRange = yPlotMax - yPlotMin;
-        yMid = yPlotMin + yRange / 2.;
-        for (int curve = 0; curve < maxCurves; curve++) {
-            if (plotY[curve]) {
-                if (Double.isNaN(customShiftFactor[curve]) || Double.isInfinite(customShiftFactor[curve])) {
-                    customShiftFactor[curve] = 0.0;
-                }
-                if (Double.isNaN(customScaleFactor[curve]) || Double.isInfinite(customScaleFactor[curve])) {
-                    customScaleFactor[curve] = 1.0;
-                }
-                if (Double.isNaN(autoShiftFactor[curve]) || Double.isInfinite(autoShiftFactor[curve])) {
-                    autoShiftFactor[curve] = 0.0;
-                }
-                if (Double.isNaN(autoScaleFactor[curve]) || Double.isInfinite(autoScaleFactor[curve])) {
-                    autoScaleFactor[curve] = 1.0;
-                }
-                yMidpoint[curve] = (yMaximum[curve] + yMinimum[curve]) / 2.;
-                yWidth[curve] = yMaximum[curve] - yMinimum[curve];
-                if (yWidth[curve] == 0) yWidth[curve] = 1.0e-10;
-                if (force[curve]) {
-                    subtotalScaleFactor[curve] = (invertYAxis ? -1 : 1) * autoScaleFactor[curve] * yRange / yWidth[curve];
-                    subtotalShiftFactor[curve] = (yMid + yRange * (invertYAxis ? -1 : 1) * autoShiftFactor[curve] - subtotalScaleFactor[curve] * yMidpoint[curve]);
-                    totalScaleFactor[curve] = subtotalScaleFactor[curve];//*yMultiplierFactor;
-                } else {
-                    subtotalScaleFactor[curve] = customScaleFactor[curve];
-                    subtotalShiftFactor[curve] = customShiftFactor[curve];
-                    totalScaleFactor[curve] = (normIndex[curve] != 0 && !mmag[curve]) ? subtotalScaleFactor[curve] : subtotalScaleFactor[curve] * yMultiplierFactor;
-                }
-                totalShiftFactor[curve] = subtotalShiftFactor[curve];
-
-                if (!(normIndex[curve] != 0 || mmag[curve] || force[curve])) {
-                    sigma[curve] = totalScaleFactor[curve] * sigma[curve];
-                }
-                if (mmag[curve] && totalScaleFactor[curve] == 1000) sigma[curve] *= 1000;
-
-                if (normIndex[curve] != 0 && !mmag[curve] && !force[curve]) {
-                    detrendYAverage[curve] = 1 + totalScaleFactor[curve] * (detrendYAverage[curve] - 1.0) + subtotalShiftFactor[curve];
-                } else {
-                    detrendYAverage[curve] = totalScaleFactor[curve] * detrendYAverage[curve] + subtotalShiftFactor[curve];
-                }
-                for (int j = 0; j < nn[curve]; j++) {
-                    if (hasErrors[curve] || hasOpErrors[curve]) {
-                        yerr[curve][j] = totalScaleFactor[curve] * yerr[curve][j];
-                    }
-                    if (normIndex[curve] != 0 && !mmag[curve] && !force[curve]) {
-                        y[curve][j] = 1 + totalScaleFactor[curve] * (y[curve][j] - 1.0) + subtotalShiftFactor[curve];
-                    } else {
-                        y[curve][j] = totalScaleFactor[curve] * y[curve][j] + subtotalShiftFactor[curve];
-                    }
-                }
-
-                if (yModel1[curve] != null) {
-                    for (int nnn = 0; nnn < yModel1[curve].length; nnn++) {
-                        if (normIndex[curve] != 0 && !mmag[curve] && !force[curve]) {
-                            yModel1[curve][nnn] = 1 + totalScaleFactor[curve] * (yModel1[curve][nnn] - 1.0) + subtotalShiftFactor[curve];
-                        } else {
-                            yModel1[curve][nnn] = totalScaleFactor[curve] * yModel1[curve][nnn] + subtotalShiftFactor[curve];
-                        }
-                        if (residual[curve] != null) {
-                            residual[curve][nnn] = totalScaleFactor[curve] * residual[curve][nnn];
-                        }
-                    }
-                }
-
-                if (yModel1Err[curve] != null) {
-                    for (int nnn = 0; nnn < yModel1Err[curve].length; nnn++) {
-                        yModel1Err[curve][nnn] = totalScaleFactor[curve] * yModel1Err[curve][nnn];
-                    }
-                }
-
-                if (yModel2[curve] != null) {
-                    for (int nnn = 0; nnn < yModel2[curve].length; nnn++) {
-                        if (normIndex[curve] != 0 && !mmag[curve] && !force[curve]) {
-                            yModel2[curve][nnn] = 1 + totalScaleFactor[curve] * (yModel2[curve][nnn] - 1.0) + subtotalShiftFactor[curve];
-                        } else {
-                            yModel2[curve][nnn] = totalScaleFactor[curve] * yModel2[curve][nnn] + subtotalShiftFactor[curve];
-                        }
-                    }
-                }
-            }
-        }
-
-        if (yGoodLabel) {
-            if (showYScaleInfo || showYShiftInfo || force[firstCurve]) {
-                ylab += scaleShiftText(force[firstCurve], showYScaleInfo, showYShiftInfo, mmag[firstCurve], showYmmagInfo, totalScaleFactor[firstCurve], totalShiftFactor[firstCurve]);
-            }
-            if (showYNormInfo && normIndex[firstCurve] != 0 && !mmag[firstCurve] && !force[firstCurve]) {
-                ylab += " (normalized)";
-            }
-            if (mmag[firstCurve] && showYmmagInfo) {
-                if (totalScaleFactor[firstCurve] == 1000.0) { ylab += " (mmag)"; } else ylab += " (mag)";
-            }
-
-            if ((inputAverageOverSize[firstCurve] != 1) && showYAvgInfo) ylab += " (averaged data size = " + inputAverageOverSize[firstCurve] + ")";
-            if (showYSymbolInfo) {
-                ylab += " (" + colors[colorIndex[firstCurve]] + " " + markers[markerIndex[firstCurve]] + ")";
-            }
-        }
-
 
         //----------------Set up plot options------------------------------------
         plotOptions = 0;
@@ -3449,57 +1526,58 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         plot.setLimits(plotMinX, plotMaxX, plotMinY, plotMaxY);
 
         // Calculate yModel2 for drawing, scaling with plot bounds
-        for (int curve = 0; curve < maxCurves; curve++) {
-            if (xModel2[curve] != null && yModel2[curve] != null && xModel2[curve].length == 0 && yModel2[curve].length == 0) {
-                int xModel2Len = plotSizeX + 1;
-                double xModel2Step = ((useDMarker4 && fitMax[curve] < plotMaxX + xOffset ? fitMax[curve] : plotMaxX + xOffset) - (useDMarker1 && fitMin[curve] > plotMinX + xOffset ? fitMin[curve] : plotMinX + xOffset)) / (xModel2Len - 1);
-                xModel2[curve] = new double[xModel2Len];
-                xModel2[curve][0] = useDMarker1 && fitMin[curve] > plotMinX + xOffset ? fitMin[curve] : plotMinX + xOffset;
-                for (int i = 1; i < xModel2Len; i++) {
-                    xModel2[curve][i] = xModel2[curve][i - 1] + xModel2Step;
-                }
+        IntStream.range(0, maxCurves).parallel().filter(curve ->
+                        xModel2[curve] != null && yModel2[curve] != null &&
+                        xModel2[curve].length == 0 && yModel2[curve].length == 0)
+                .forEach(curve -> {
+                    int xModel2Len = plotSizeX + 1;
+                    double xModel2Step = ((useDMarker4 && fitMax[curve] < plotMaxX + xOffset ? fitMax[curve] : plotMaxX + xOffset) - (useDMarker1 && fitMin[curve] > plotMinX + xOffset ? fitMin[curve] : plotMinX + xOffset)) / (xModel2Len - 1);
+                    xModel2[curve] = new double[xModel2Len];
+                    xModel2[curve][0] = useDMarker1 && fitMin[curve] > plotMinX + xOffset ? fitMin[curve] : plotMinX + xOffset;
+                    for (int i = 1; i < xModel2Len; i++) {
+                        xModel2[curve][i] = xModel2[curve][i - 1] + xModel2Step;
+                    }
 
-                yModel2[curve] = IJU.transitModel(xModel2[curve], bestFit[curve][0], bestFit[curve][4], bestFit[curve][1], bestFit[curve][2], bestFit[curve][3], orbitalPeriod[curve], forceCircularOrbit[curve] ? 0.0 : eccentricity[curve], forceCircularOrbit[curve] ? 0.0 : omega[curve], bestFit[curve][5], bestFit[curve][6], useLonAscNode[curve], lonAscNode[curve], true);
+                    yModel2[curve] = IJU.transitModel(xModel2[curve], bestFit[curve][0], bestFit[curve][4], bestFit[curve][1], bestFit[curve][2], bestFit[curve][3], orbitalPeriod[curve], forceCircularOrbit[curve] ? 0.0 : eccentricity[curve], forceCircularOrbit[curve] ? 0.0 : omega[curve], bestFit[curve][5], bestFit[curve][6], useLonAscNode[curve], lonAscNode[curve], true);
 
-                if (normIndex[curve] != 0) {
-                    if (yModel2[curve] != null) {
-                        for (int nnn = 0; nnn < yModel2[curve].length; nnn++) {
-                            yModel2[curve][nnn] /= normAverageSet[curve];
+                    if (normIndex[curve] != 0) {
+                        if (yModel2[curve] != null) {
+                            for (int nnn = 0; nnn < yModel2[curve].length; nnn++) {
+                                yModel2[curve][nnn] /= plotDataLock.normAverageSet()[curve];
+                            }
                         }
                     }
-                }
 
-                if (mmag[curve]) {
-                    if (yModel2[curve] != null) {
-                        for (int nnn = 0; nnn < yModel2[curve].length; nnn++) {
-                            yModel2[curve][nnn] = magSign * 2.5 * Math.log10(yModel2[curve][nnn] / baseline[curve]);
+                    if (mmag[curve]) {
+                        if (yModel2[curve] != null) {
+                            for (int nnn = 0; nnn < yModel2[curve].length; nnn++) {
+                                yModel2[curve][nnn] = plotDataLock.magSign() * 2.5 * Math.log10(yModel2[curve][nnn] / baseline[curve]);
+                            }
                         }
                     }
-                }
 
-                if (showXAxisAsPhase) {
+                    if (showXAxisAsPhase) {
 
-                } else if (showXAxisAsDaysSinceTc) {
+                    } else if (showXAxisAsDaysSinceTc) {
 
-                } else if (showXAxisAsHoursSinceTc) {
+                    } else if (showXAxisAsHoursSinceTc) {
 
-                } else if (xlabel2[curve].contains("J.D.") || xlabel2[curve].contains("JD")) {
-                    if (xModel2[curve] != null) {
-                        for (int nnn = 0; nnn < xModel2[curve].length; nnn++) {
-                            xModel2[curve][nnn] -= xOffset;
+                    } else if (xlabel2[curve].contains("J.D.") || xlabel2[curve].contains("JD")) {
+                        if (xModel2[curve] != null) {
+                            for (int nnn = 0; nnn < xModel2[curve].length; nnn++) {
+                                xModel2[curve][nnn] -= xOffset;
+                            }
                         }
                     }
-                }
 
-                for (int nnn = 0; nnn < yModel2[curve].length; nnn++) {
-                    if (normIndex[curve] != 0 && !mmag[curve] && !force[curve]) {
-                        yModel2[curve][nnn] = 1 + totalScaleFactor[curve] * (yModel2[curve][nnn] - 1.0) + subtotalShiftFactor[curve];
-                    } else {
-                        yModel2[curve][nnn] = totalScaleFactor[curve] * yModel2[curve][nnn] + subtotalShiftFactor[curve];
+                    for (int nnn = 0; nnn < yModel2[curve].length; nnn++) {
+                        if (normIndex[curve] != 0 && !mmag[curve] && !force[curve]) {
+                            yModel2[curve][nnn] = 1 + totalScaleFactor[curve] * (yModel2[curve][nnn] - 1.0) + subtotalShiftFactor[curve];
+                        } else {
+                            yModel2[curve][nnn] = totalScaleFactor[curve] * yModel2[curve][nnn] + subtotalShiftFactor[curve];
+                        }
                     }
-                }
-            }
-        }
+        });
 
         // Draw Legends
         double legPosY = legendPosY;
@@ -4139,6 +2217,1965 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         updatePlotRunning = false;
     }
 
+    private static PlotDataLock processData(boolean[] updateFit) {
+        savePreferences();
+        updateSaturatedStars();
+        for (int curve = 0; curve < maxCurves; curve++) {
+            if (inputAverageOverSize[curve] < 1) {
+                inputAverageOverSize[curve] = 1;
+                inputAverageOverSizespinner[curve].setValue(1);
+            }
+        }
+
+        holdExcludedHeadSamples = excludedHeadSamples;
+        holdExcludedTailSamples = excludedTailSamples;
+        if (excludedHeadSamples + excludedTailSamples >= n) { //Handle case for more samples excluded than in dataset
+            excludedHeadSamples = excludedHeadSamples < n ? excludedHeadSamples : n - 1;
+            excludedTailSamples = n - excludedHeadSamples - 1;
+        }
+        excluded = excludedHeadSamples + excludedTailSamples;
+
+        netT0 = (twoxPeriod && oddNotEven) ? T0 - period : T0;
+        netPeriod = twoxPeriod ? 2 * period : period;
+        if (!showXAxisNormal && periodSync) {
+            for (int c = 0; c < maxCurves; c++) {
+                boolean holdUpdateFit;
+                if (detrendFitIndex[c]==9) {
+                    holdUpdateFit = autoUpdateFit[c];
+                    autoUpdateFit[c] = false;
+                    orbitalPeriodSpinner[c].setValue(netPeriod);
+                    autoUpdateFit[c] = holdUpdateFit;
+                }
+            }
+        }
+
+        int magSign = negateMag ? 1 : -1;
+        for (int i = 0; i < maxCurves; i++) {
+            marker[i] = markerOf(markerIndex[i]);
+            residualSymbol[i] = markerOf(residualSymbolIndex[i]);
+            color[i] = colorOf(colorIndex[i]);
+            modelColor[i] = colorOf(modelColorIndex[i]);
+            residualModelColor[i] = colorOf(residualModelColorIndex[i]);
+            residualColor[i] = colorOf(residualColorIndex[i]);
+            sigma[i] = 0.0;
+        }
+
+        // INITIALIZE BASELINE FOR RELATIVE MMAG CALCULATIONS
+        for (int i = 0; i < maxCurves; i++) {
+            baseline[i] = 0;
+        }
+        // GET DATA
+
+        if (n > x[0].length) {
+            nn = new int[maxCurves];
+            xlabel2 = new String[maxCurves];
+            x = new double[maxCurves][n];
+            y = new double[maxCurves][n];
+            yerr = new double[maxCurves][n];
+            yop = new double[maxCurves][n];
+            yoperr = new double[maxCurves][n];
+            detrend = new double[maxCurves][maxDetrendVars][n];
+            xc1 = new double[maxCurves][n];
+            xc2 = new double[maxCurves][n];
+            yc1 = new double[maxCurves][n];
+            yc2 = new double[maxCurves][n];
+            detrendXs = new double[maxCurves][n];
+            detrendYs = new double[maxCurves][n];
+            detrendYEs = new double[maxCurves][n];
+            updateFit = updateAllFits();
+        }
+
+        xMultiplierFactor = Math.pow(10, xExponent);
+        yMultiplierFactor = Math.pow(10, yExponent);
+
+        int[] detrendVarsUsed = new int[maxCurves];
+
+        for (int curve = 0; curve < maxCurves; curve++) {
+            nn[curve] = (n - excluded) / inputAverageOverSize[curve];
+            nnr[curve] = (n - excluded) % inputAverageOverSize[curve];
+            if (nnr[curve] > 0) nn[curve]++;
+            detrendVarsUsed[curve] = 0;
+        }
+
+        IntStream.range(0, maxCurves).parallel().forEach(curve -> {
+            if (xlabel[curve].trim().length() == 0 || (xlabel[curve].equalsIgnoreCase("default") && xlabeldefault.trim().length() == 0)) {
+                for (int j = 0; j < nn[curve]; j++)
+                    x[curve][j] = j + 1;
+                xlabel2[curve] = "Sample Number";
+            } else {
+                if (xlabel[curve].equalsIgnoreCase("default")) {
+                    xcolumn[curve] = table.getColumnIndex(xlabeldefault);
+                    if (xcolumn[curve] == ResultsTable.COLUMN_NOT_FOUND) {
+                        xcolumn[curve] = 0;
+                        plotY[curve] = false;
+                        usecurvebox[curve].setSelected(false);
+                        savecolumnbutton[curve].setEnabled(plotY[curve]);
+                    }
+                    xlabel2[curve] = xlabeldefault.trim();
+                } else {
+                    xcolumn[curve] = table.getColumnIndex(xlabel[curve]);
+                    if (xcolumn[curve] == ResultsTable.COLUMN_NOT_FOUND) {
+                        xcolumn[curve] = 0;
+                        plotY[curve] = false;
+                        usecurvebox[curve].setSelected(false);
+                        savecolumnbutton[curve].setEnabled(plotY[curve]);
+                    }
+                    xlabel2[curve] = xlabel[curve].trim();
+                }
+
+                if (plotY[curve]) {
+                    int bucketSize = inputAverageOverSize[curve];
+
+                    for (int j = 0; j < nn[curve]; j++) {
+                        double xin;
+                        int numNaN = 0;
+                        if (nnr[curve] > 0 && j == nn[curve] - 1) {
+                            bucketSize = nnr[curve];
+                        } else {
+                            bucketSize = inputAverageOverSize[curve];
+                        }
+                        x[curve][j] = 0;
+                        for (int k = excludedHeadSamples; k < (bucketSize + excludedHeadSamples); k++) {
+                            xin = table.getValueAsDouble(xcolumn[curve], j * inputAverageOverSize[curve] + k);
+                            if (Double.isNaN(xin)) {
+                                numNaN += 1;
+                                if (numNaN == bucketSize) {
+                                    bucketSize = 1;
+                                    x[curve][j] = Double.NaN;
+                                    numNaN = 0;
+                                    break;
+                                }
+                            } else {
+                                x[curve][j] += xin;
+                            }
+                        }
+                        bucketSize -= numNaN;
+                        x[curve][j] = x[curve][j] * xMultiplierFactor / (double) bucketSize;
+                    }
+                    if (xlabel2[curve].startsWith("J.D.-2400000")) {
+                        for (int j = 0; j < nn[curve]; j++) {
+                            x[curve][j] += 2400000;
+                        }
+                    }
+                }
+            }
+
+            if (plotY[curve]) {
+                if (ylabel[curve].trim().length() == 0) {
+                    for (int j = 0; j < nn[curve]; j++)
+                        y[curve][j] = j + 1;
+                } else {
+                    ycolumn[curve] = table.getColumnIndex(ylabel[curve]);
+                    if (ycolumn[curve] == ResultsTable.COLUMN_NOT_FOUND) {
+                        ycolumn[curve] = 0;
+                        plotY[curve] = false;
+                        usecurvebox[curve].setSelected(false);
+                        savecolumnbutton[curve].setEnabled(plotY[curve]);
+                    } else if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.CENTROID_DISTANCE) { //calculate distance
+                        xc1column[curve] = table.getColumnIndex(getPositionColumn(ylabel[curve], "X"));
+                        yc1column[curve] = table.getColumnIndex(getPositionColumn(ylabel[curve], "Y"));
+                        xyc1label[curve] = getSourceID(ylabel[curve]);
+                        if (xc1column[curve] == ResultsTable.COLUMN_NOT_FOUND) {
+                            if (getPositionColumn(ylabel[curve], "X").trim().length() != 0) {
+                                IJ.showMessage("Cannot access " + getPositionColumn(ylabel[curve], "X") + " source position data column for distance calculation !");
+                            }
+                            operatorBase.getOrCreateVariant(curve).set(MPOperator.NONE);
+                            plotY[curve] = false;
+                            usecurvebox[curve].setSelected(false);
+                            savecolumnbutton[curve].setEnabled(plotY[curve]);
+                        }
+                        if (yc1column[curve] == ResultsTable.COLUMN_NOT_FOUND) {
+                            if (getPositionColumn(ylabel[curve], "Y").trim().length() != 0) {
+                                IJ.showMessage("Cannot access " + getPositionColumn(ylabel[curve], "Y") + " source position data column for distance calculation !");
+                            }
+                            operatorBase.getOrCreateVariant(curve).set(MPOperator.NONE);
+                            plotY[curve] = false;
+                            usecurvebox[curve].setSelected(false);
+                            savecolumnbutton[curve].setEnabled(plotY[curve]);
+                        }
+                    }
+                    if (detrendFitIndex[curve] != 0) {
+                        for (int v = 0; v < maxDetrendVars; v++) {
+                            if (detrendIndex[curve][v] > 1 || (!detrendVarAllNaNs[curve][v] && detrendIndex[curve][v] != 1)) {
+                                detrendcolumn[curve][v] = table.getColumnIndex(detrendlabel[curve][v]);
+
+                                if (detrendcolumn[curve][v] == ResultsTable.COLUMN_NOT_FOUND) {
+                                    detrendIndex[curve][v] = 0;
+                                    if (detrendVarDisplayed[curve] == v) detrendbox[curve].setSelectedIndex(0);
+                                } else {
+                                    detrendVarsUsed[curve]++;
+                                }
+                            } else if (detrendIndex[curve][v] == 1) { //Meridian Flip Detrend Selected
+                                detrendVarsUsed[curve]++;
+                            }
+                        }
+                    }
+
+                    errcolumn[curve] = ResultsTable.COLUMN_NOT_FOUND;
+                    if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.CUSTOM_ERROR) { //custom error
+                        errcolumn[curve] = table.getColumnIndex(oplabel[curve]);
+                    } else if (ylabel[curve].startsWith("rel_flux_T") || ylabel[curve].startsWith("rel_flux_C")) {
+                        errcolumn[curve] = table.getColumnIndex("rel_flux_err_" + ylabel[curve].substring(9));
+                    } else if (ylabel[curve].startsWith("Source-Sky_")) {
+                        errcolumn[curve] = table.getColumnIndex("Source_Error_" + ylabel[curve].substring(11));
+                    } else if (ylabel[curve].startsWith("tot_C_cnts")) {
+                        errcolumn[curve] = table.getColumnIndex("tot_C_err" + ylabel[curve].substring(10));
+                    } else if (ylabel[curve].startsWith("Source_AMag_")) {
+                        errcolumn[curve] = table.getColumnIndex("Source_AMag_Err_" + ylabel[curve].substring(12));
+                    }
+
+                    hasErrors[curve] = errcolumn[curve] != ResultsTable.COLUMN_NOT_FOUND;
+
+
+                    if (operatorBase.getOrCreateVariant(curve).get() != MPOperator.NONE) {
+                        opcolumn[curve] = table.getColumnIndex(oplabel[curve]);
+                        if (opcolumn[curve] == ResultsTable.COLUMN_NOT_FOUND) {
+                            operatorBase.getOrCreateVariant(curve).set(MPOperator.NONE);
+                        } else if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.CENTROID_DISTANCE) { //calculate distance
+                            xc2column[curve] = table.getColumnIndex(getPositionColumn(oplabel[curve], "X"));
+                            yc2column[curve] = table.getColumnIndex(getPositionColumn(oplabel[curve], "Y"));
+                            xyc2label[curve] = getSourceID(oplabel[curve]);
+                            if (xc2column[curve] == ResultsTable.COLUMN_NOT_FOUND) {
+                                if (getPositionColumn(oplabel[curve], "X").trim().length() != 0) {
+                                    IJ.showMessage("Cannot access " + getPositionColumn(oplabel[curve], "X") + " source position data column for distance calculation !");
+                                }
+                                operatorBase.getOrCreateVariant(curve).set(MPOperator.NONE);
+                            }
+                            if (yc2column[curve] == ResultsTable.COLUMN_NOT_FOUND) {
+                                if (getPositionColumn(oplabel[curve], "Y").trim().length() != 0) {
+                                    IJ.showMessage("Cannot access " + getPositionColumn(oplabel[curve], "Y") + " source position data column for distance calculation !");
+                                }
+                                operatorBase.getOrCreateVariant(curve).set(MPOperator.NONE);
+                            }
+                        }
+                    }
+
+                    if (operatorBase.getOrCreateVariant(curve).get().isNormalOperator()) { // && showErrors[curve] == true)
+                        operrcolumn[curve] = ResultsTable.COLUMN_NOT_FOUND;
+                        if (oplabel[curve].startsWith("rel_flux_T") || oplabel[curve].startsWith("rel_flux_C")) {
+                            operrcolumn[curve] = table.getColumnIndex("rel_flux_err_" + oplabel[curve].substring(9));
+                        } else if (oplabel[curve].startsWith("Source-Sky_")) {
+                            operrcolumn[curve] = table.getColumnIndex("Source_Error_" + oplabel[curve].substring(11));
+                        } else if (oplabel[curve].startsWith("tot_C_cnts")) {
+                            operrcolumn[curve] = table.getColumnIndex("tot_C_err" + oplabel[curve].substring(10));
+                        }
+                        hasOpErrors[curve] = operrcolumn[curve] != ResultsTable.COLUMN_NOT_FOUND;
+                    } else {
+                        hasOpErrors[curve] = false;
+                    }
+
+                    int bucketSize = inputAverageOverSize[curve];
+                    for (int j = 0; j < nn[curve]; j++) {
+                        double yin;
+                        double errin;
+                        double opin = 0;
+                        double operrin;
+                        int numNaN = 0;
+                        y[curve][j] = 0;
+                        yerr[curve][j] = 0;
+                        yop[curve][j] = 0;
+                        for (int v = 0; v < maxDetrendVars; v++) {
+                            detrend[curve][v][j] = 0;
+                        }
+                        xc1[curve][j] = 0;
+                        xc2[curve][j] = 0;
+                        yc1[curve][j] = 0;
+                        yc2[curve][j] = 0;
+                        // AVERAGE DATA IF APPLICABLE
+                        if (nnr[curve] > 0 && j == nn[curve] - 1) { bucketSize = nnr[curve]; } else {
+                            bucketSize = inputAverageOverSize[curve];
+                        }
+                        for (int k = excludedHeadSamples; k < (bucketSize + excludedHeadSamples); k++) {
+                            yin = table.getValueAsDouble(ycolumn[curve], j * inputAverageOverSize[curve] + k);
+                            if (Double.isNaN(yin)) {
+                                numNaN += 1;
+                                if (numNaN == bucketSize) {
+                                    bucketSize = 1;
+                                    y[curve][j] = Double.NaN;
+                                    if (hasErrors[curve]) yerr[curve][j] = Double.NaN;
+                                    if (operatorBase.getOrCreateVariant(curve).get() != MPOperator.NONE) yop[curve][j] = Double.NaN;
+                                    if (detrendFitIndex[curve] != 0) {
+                                        for (int v = 0; v < maxDetrendVars; v++) {
+                                            if (detrendIndex[curve][v] != 0 || detrendVarAllNaNs[curve][v]) {
+                                                detrend[curve][v][j] = Double.NaN;
+                                            }
+                                        }
+                                    }
+
+                                    if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.CENTROID_DISTANCE) { //calculate distance
+                                        xc1[curve][j] = Double.NaN;
+                                        xc2[curve][j] = Double.NaN;
+                                        yc1[curve][j] = Double.NaN;
+                                        yc2[curve][j] = Double.NaN;
+                                    }
+                                    if (hasOpErrors[curve]) yoperr[curve][j] = Double.NaN;
+                                    numNaN = 0;
+                                    break;
+                                }
+                            } else {
+                                if (fromMag[curve]) {
+                                    yin = Math.pow(10, -yin / 2.5);
+                                }
+                                y[curve][j] += yin;
+
+                                if (hasErrors[curve]) {
+                                    errin = table.getValueAsDouble(errcolumn[curve], j * inputAverageOverSize[curve] + k);
+                                    if (fromMag[curve]) {
+                                        errin = yin * (-Math.pow(10, -errin / 2.5) + 1);
+                                    }
+                                    yerr[curve][j] += errin * errin;
+                                }
+                                if (operatorBase.getOrCreateVariant(curve).get() != MPOperator.NONE) {
+                                    opin = table.getValueAsDouble(opcolumn[curve], j * inputAverageOverSize[curve] + k);
+                                    if (fromMag[curve]) {
+                                        opin = Math.pow(10, -opin / 2.5);
+                                    }
+                                    yop[curve][j] += opin;
+                                }
+                                if (detrendFitIndex[curve] != 0) {
+                                    for (int v = 0; v < maxDetrendVars; v++) {
+                                        if (detrendIndex[curve][v] > 1 || detrendVarAllNaNs[curve][v]) {
+                                            detrend[curve][v][j] += table.getValueAsDouble(detrendcolumn[curve][v], j * inputAverageOverSize[curve] + k);
+                                        }
+                                    }
+                                }
+                                if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.CENTROID_DISTANCE) { //calculate distance
+                                    xc1[curve][j] += table.getValueAsDouble(xc1column[curve], j * inputAverageOverSize[curve] + k);
+                                    xc2[curve][j] += table.getValueAsDouble(xc2column[curve], j * inputAverageOverSize[curve] + k);
+                                    yc1[curve][j] += table.getValueAsDouble(yc1column[curve], j * inputAverageOverSize[curve] + k);
+                                    yc2[curve][j] += table.getValueAsDouble(yc2column[curve], j * inputAverageOverSize[curve] + k);
+                                }
+                                if (hasOpErrors[curve]) {
+                                    operrin = table.getValueAsDouble(operrcolumn[curve], j * inputAverageOverSize[curve] + k);
+                                    if (fromMag[curve]) {
+                                        operrin = opin * (-Math.pow(10, -operrin / 2.5) + 1);
+                                    }
+                                    yoperr[curve][j] += operrin * operrin;
+                                }
+                            }
+                        }
+                        bucketSize -= numNaN;
+                        y[curve][j] = y[curve][j] / bucketSize;  //*yMultiplierFactor
+
+                        if (hasErrors[curve]) {
+                            yerr[curve][j] = Math.sqrt(yerr[curve][j]) / bucketSize; //yMultiplierFactor*
+                        } else { yerr[curve][j] = 1.0; }
+                        if (detrendFitIndex[curve] != 0) {
+                            for (int v = 0; v < maxDetrendVars; v++) {
+                                if (detrendIndex[curve][v] != 0 || detrendVarAllNaNs[curve][v]) {
+                                    detrend[curve][v][j] /= bucketSize;
+                                }
+                            }
+                        }
+                        if (operatorBase.getOrCreateVariant(curve).get() != MPOperator.NONE) {
+                            yop[curve][j] = yop[curve][j] / bucketSize; //*yMultiplierFactor
+                            if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.CENTROID_DISTANCE) {
+                                xc1[curve][j] = xc1[curve][j] / bucketSize;  //*yMultiplierFactor
+                                xc2[curve][j] = xc2[curve][j] / bucketSize;  //*yMultiplierFactor
+                                yc1[curve][j] = yc1[curve][j] / bucketSize;  //*yMultiplierFactor
+                                yc2[curve][j] = yc2[curve][j] / bucketSize;  //*yMultiplierFactor
+                            }
+                        }
+                        if (hasOpErrors[curve]) {
+                            yoperr[curve][j] = Math.sqrt(yoperr[curve][j]) / bucketSize;  //yMultiplierFactor*
+                        } else { yoperr[curve][j] = 1.0; }
+
+                        //APPLY OPERATOR/OPERROR FUNCTIONS TO YDATA AND YERROR
+
+                        if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.NONE) { //no operator
+
+                        } else if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.DIVIDE_BY) { //divide by
+                            if (yop[curve][j] == 0) {
+                                yerr[curve][j] = 1.0e+100;
+                                y[curve][j] = 1.0e+100;
+                            } else {
+                                if (hasErrors[curve] || hasOpErrors[curve]) {
+                                    yerr[curve][j] = Math.sqrt(((yerr[curve][j] * yerr[curve][j]) / (yop[curve][j] * yop[curve][j])) + ((y[curve][j] * y[curve][j] * yoperr[curve][j] * yoperr[curve][j]) / (yop[curve][j] * yop[curve][j] * yop[curve][j] * yop[curve][j])));  //yMultiplierFactor*
+                                }
+                                y[curve][j] = y[curve][j] / yop[curve][j];  //*yMultiplierFactor
+                            }
+                        } else if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.MULTIPLY_BY) { //multiply by
+                            if (hasErrors[curve] || hasOpErrors[curve]) {
+                                yerr[curve][j] = Math.sqrt(yop[curve][j] * yop[curve][j] * yerr[curve][j] * yerr[curve][j] + y[curve][j] * y[curve][j] * yoperr[curve][j] * yoperr[curve][j]); // /yMultiplierFactor;
+                            }
+                            y[curve][j] = y[curve][j] * yop[curve][j];  // /yMultiplierFactor;
+                        } else if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.SUBTRACT) { //subtract
+                            if (hasErrors[curve] || hasOpErrors[curve]) {
+                                yerr[curve][j] = Math.sqrt(yerr[curve][j] * yerr[curve][j] + yoperr[curve][j] * yoperr[curve][j]);
+                            }
+                            y[curve][j] = y[curve][j] - yop[curve][j];
+                        } else if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.ADD) { //add
+                            if (hasErrors[curve] || hasOpErrors[curve]) {
+                                yerr[curve][j] = Math.sqrt(yerr[curve][j] * yerr[curve][j] + yoperr[curve][j] * yoperr[curve][j]);
+                            }
+                            y[curve][j] = y[curve][j] + yop[curve][j];
+                        } else if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.CENTROID_DISTANCE) { //distance from x1,y1 to x2,y2
+                            y[curve][j] = (usePixelScale ? pixelScale : 1.0) * Math.sqrt(((xc1[curve][j] - xc2[curve][j]) * (xc1[curve][j] - xc2[curve][j])) + ((yc1[curve][j] - yc2[curve][j]) * (yc1[curve][j] - yc2[curve][j])));
+                        }
+                    }
+
+                    if (plotY[curve]) {
+                        for (int v = 0; v < maxDetrendVars; v++) {
+                            detrendVarAllNaNs[curve][v] = true;
+                        }
+                        for (int j = 0; j < nn[curve]; j++) {
+                            for (int v = 0; v < maxDetrendVars; v++) {
+                                if (!Double.isNaN(detrend[curve][v][j])) detrendVarAllNaNs[curve][v] = false;
+                            }
+                        }
+                        for (int v = 0; v < maxDetrendVars; v++) {
+                            if (detrendVarAllNaNs[curve][v]) {
+                                detrendIndex[curve][v] = 0;
+                            }
+                        }
+
+                    }
+
+                    if (ylabel[curve].trim().startsWith("J.D.-2400000")) {
+                        for (int j = 0; j < nn[curve]; j++) {
+                            y[curve][j] += 2400000;
+                        }
+                    }
+                }
+            }
+
+            if (plotY[curve] && smooth[curve] && nn[curve] > 4) {
+                var yMask = MatrixUtils.createRealVector(nn[curve]);
+                double xfold;
+                double halfPeriod = netPeriod / 2.0;
+                var maskTransit = KeplerSplineControl.getInstance(curve).settings.maskTransit.get();
+                var maskTrimmedData = KeplerSplineControl.getInstance(curve).settings.maskTrimmedData.get();
+                for (int xx = 0; xx < nn[curve]; xx++) {
+                    if (showXAxisNormal) {
+                        if ((maskTransit && x[curve][xx] > dMarker2Value + xOffset && x[curve][xx] < dMarker3Value + xOffset) ||
+                                (maskTrimmedData && useDMarker1 && x[curve][xx] < dMarker1Value + xOffset) ||
+                                (maskTrimmedData && useDMarker4 && x[curve][xx] > dMarker4Value + xOffset)) {
+                            yMask.setEntry(xx,0.0);
+                        } else {
+                            yMask.setEntry(xx,1.0);
+                        }
+                    } else {
+                        xfold = ((x[curve][xx] - netT0) % netPeriod);
+                        if (xfold > halfPeriod) { xfold -= netPeriod; } else if (xfold < -halfPeriod) xfold += netPeriod;
+                        if ((maskTransit && xfold > dMarker2Value && xfold < dMarker3Value) ||
+                                (maskTrimmedData && useDMarker1 && xfold < dMarker1Value) ||
+                                (maskTrimmedData && useDMarker4 && xfold > dMarker4Value)) {
+                            yMask.setEntry(xx,0.0);
+                        } else {
+                            yMask.setEntry(xx,1.0);
+                        }
+                    }
+                }
+
+                KeplerSplineControl.getInstance(curve).smoothData(x[curve], y[curve], yerr[curve], nn[curve], yMask);
+            }
+
+            if (plotY[curve]) {
+                if (!showXAxisNormal) {
+                    if (showXAxisAsPhase) {
+                        for (int j = 0; j < nn[curve]; j++) {
+                            x[curve][j] = ((x[curve][j] - netT0) % netPeriod) / netPeriod;
+                            if (x[curve][j] > 0.5) { x[curve][j] -= 1.0; } else if (x[curve][j] < -0.5) x[curve][j] += 1.0;
+                        }
+                    } else if (showXAxisAsDaysSinceTc) {
+                        double halfPeriod = netPeriod / 2.0;
+                        for (int j = 0; j < nn[curve]; j++) {
+                            x[curve][j] = ((x[curve][j] - netT0) % netPeriod);
+                            if (x[curve][j] > halfPeriod) {
+                                x[curve][j] -= netPeriod;
+                            } else if (x[curve][j] < -halfPeriod) x[curve][j] += netPeriod;
+                        }
+                    } else if (showXAxisAsHoursSinceTc) {
+                        double halfPeriod = netPeriod / 2.0;
+                        for (int j = 0; j < nn[curve]; j++) {
+                            x[curve][j] = ((x[curve][j] - netT0) % netPeriod);
+                            if (x[curve][j] > halfPeriod) {
+                                x[curve][j] -= netPeriod;
+                            } else if (x[curve][j] < -halfPeriod) x[curve][j] += netPeriod;
+                            x[curve][j] *= 24;
+                        }
+                    }
+                }
+                xMinimum[curve] = minOf(x[curve], nn[curve]); //FIND MIN AND MAX X OF EACH SELECTED DATASET
+                xMaximum[curve] = maxOf(x[curve], nn[curve]);
+            }
+        });
+
+        // PERFORM X-AUTOSCALING TO ONE OR MORE CURVES
+        dx = 0.0;
+
+        xPlotMin = xMin;
+        xPlotMax = xMax;
+
+        xautoscalemin = Double.POSITIVE_INFINITY;
+        xautoscalemax = Double.NEGATIVE_INFINITY;
+
+        firstCurve = -1;
+        var hasXDatasetToScaleAgainst = IntStream.range(0, ASInclude.length)
+                .mapToObj(i -> ASInclude[i]).filter(b -> b).findAny().isPresent();
+
+        for (int curve = 0; curve < maxCurves; curve++) {
+            if (plotY[curve]) {
+                if ((firstCurve == -1)) {
+                    firstCurve = curve; //FIND THE FIRST CURVE TO DISPLAY - IT IS USED FOR THE Y-AXIS LABEL
+                    xBase=x[curve][0];
+                }
+
+                if (ASInclude[curve]) {
+                    if (xMinimum[curve] < xautoscalemin) xautoscalemin = xMinimum[curve];
+                    if (xMaximum[curve] > xautoscalemax) xautoscalemax = xMaximum[curve];
+                }
+
+                if (!hasXDatasetToScaleAgainst) {
+                    if (xMinimum[curve] < xautoscalemin) xautoscalemin = xMinimum[curve];
+                    if (xMaximum[curve] > xautoscalemax) xautoscalemax = xMaximum[curve];
+                }
+            }
+        }
+
+        if (firstCurve == -1) {  //IF NO CURVES SELECTED FOR DISPLAY, USE THE FIRST CURVE
+            firstCurve = 0;
+            xBase = x[0][0];
+        }
+
+        if (showVMarker1 || showVMarker2) {
+            double v1 = vMarker1Value;
+            double v2 = vMarker2Value;
+            if ((xlabel2[firstCurve].contains("J.D.") || xlabel2[firstCurve].contains("JD")) && showXAxisNormal) {
+                v1 += (int) xautoscalemin;
+                v2 += (int) xautoscalemin;
+            }
+            if (showVMarker1) {
+                if (v1 < xautoscalemin && (!showVMarker2 || (showVMarker2 && v1 <= v2))) xautoscalemin = v1;
+                if (v1 > xautoscalemax && (!showVMarker2 || (showVMarker2 && v1 >= v2))) xautoscalemax = v1;
+            }
+            if (showVMarker2) {
+                if (v2 < xautoscalemin && (!showVMarker1 || (showVMarker1 && v2 < v1))) xautoscalemin = v2;
+                if (v2 > xautoscalemax && (!showVMarker1 || (showVMarker1 && v2 > v1))) xautoscalemax = v2;
+            }
+        }
+
+        if (Double.isInfinite(xautoscalemin)) {
+            xautoscalemin = Double.isInfinite(xautoscalemax) ? 0.0 : xautoscalemax - 1.0;
+        }
+        if (Double.isInfinite(xautoscalemax)) xautoscalemax = xautoscalemin + 1.0;
+
+
+        if (autoScaleX) {
+            xPlotMin = xautoscalemin;
+            xPlotMax = (xautoscalemin == xautoscalemax) ? xautoscalemin + 0.01 : xautoscalemax;
+        } else if (useFirstX) {
+            firstXmin = xautoscalemin;
+            xPlotMin = xautoscalemin;
+            if (xWidth < 0.0001) xWidth = 0.0001;
+            xPlotMax = xautoscalemin + xWidth;
+        }
+        xPlotMinRaw = xPlotMin;
+        dx = (xPlotMax - xPlotMin) / 99.0;
+        xJD = 0;
+        xOffset = 0.0;
+        if ((xlabel2[firstCurve].contains("J.D.") || xlabel2[firstCurve].contains("JD")) && showXAxisNormal) {
+            if (xExponent != 0) xmultiplierspinner.setValue(0);
+            xJD = (int) xPlotMin;
+            xOffset = xJD;
+            if (showVMarker1 && vMarker1Value < 0.0) {
+                xOffset += 1.0;
+                xPlotMinRaw += 1.0;
+            }
+        }
+        var normAverageSet = new double[maxCurves];
+        boolean[] finalUpdateFit = updateFit;
+        IntStream.range(0, maxCurves).parallel().forEach(curve -> {
+            residual[curve] = null;
+            plottedResidual[curve] = null;
+            yModel1Err[curve] = null;
+            detrendYAverage[curve] = 0.0;
+            if (plotY[curve]) {
+                var minimization = new Minimization();
+                fitMin[curve] = (useDMarker1 ? dMarker1Value : Double.NEGATIVE_INFINITY) + xOffset;
+                fitMax[curve] = (useDMarker4 ? dMarker4Value : Double.POSITIVE_INFINITY) + xOffset;
+                fitLeft[curve] = dMarker2Value + xOffset;
+                fitRight[curve] = dMarker3Value + xOffset;
+                switch (detrendFitIndex[curve]) {
+                    case 2: // left of D2
+                        fitMax[curve] = fitLeft[curve];
+                        break;
+                    case 3: // right of D3
+                        fitMin[curve] = fitRight[curve];
+                        break;
+                    case 4: // outside D2 and D3
+                        break;
+                    case 5: // inside D2 and D3
+                        fitMin[curve] = fitLeft[curve];
+                        fitMax[curve] = fitRight[curve];
+                        break;
+                    case 6: // left of D3
+                        fitMax[curve] = fitRight[curve];
+                        break;
+                    case 7: // right of D2
+                        fitMin[curve] = fitLeft[curve];
+                        break;
+                    case 8: // use all data
+                        break;
+                    case 9: // use all data to fit transit with simultaneaous detrend
+                        break;
+                    default: // use all data
+                        detrendFitIndex[curve] = 0;
+                        break;
+                }
+
+                boolean atLeastOne = false;
+                boolean detrendYNotConstant = false;
+                detrendYDNotConstant = new boolean[maxDetrendVars];
+                detrendYAverage[curve] = 0.0;
+
+                for (int v = 0; v < maxDetrendVars; v++) {
+                    detrendYDNotConstant[v] = detrendFitIndex[curve] == 1;
+                }
+                if (detrendFitIndex[curve] != 0) {
+                    for (int v = 0; v < maxDetrendVars; v++) {
+                        if (detrendIndex[curve][v] != 0) {
+                            atLeastOne = true;
+                            break;
+                        }
+                    }
+                }
+                if (atLeastOne || detrendFitIndex[curve] == 9) {
+                    double[] detrendAverage = new double[maxDetrendVars];
+                    int[] detrendPower = new int[maxDetrendVars];
+                    for (int v = 0; v < maxDetrendVars; v++) {
+                        detrendAverage[v] = 0.0;
+                        detrendPower[v] = 1;
+                        int numNaNs = 0;
+                        for (int j = 0; j < nn[curve]; j++) {
+                            if (Double.isNaN(detrend[curve][v][j])) { numNaNs++; } else {
+                                detrendAverage[v] += detrend[curve][v][j] / (double) nn[curve];
+                            }
+                        }
+                        detrendAverage[v] = ((double) nn[curve] / ((double) nn[curve] - (double) numNaNs)) * detrendAverage[v];
+                        for (int j = 0; j < nn[curve]; j++) {
+                            detrend[curve][v][j] -= detrendAverage[v];
+                        }
+
+                        if (v > 0) {
+                            for (int u = 0; u < v; u++) {
+                                if (detrendIndex[curve][u] == detrendIndex[curve][v]) detrendPower[v]++;
+                            }
+                        }
+                        if (detrendPower[v] > 1) {
+                            detrendAverage[v] = 0.0;
+                            numNaNs = 0;
+                            for (int j = 0; j < nn[curve]; j++) {
+                                if (Double.isNaN(detrend[curve][v][j])) { numNaNs++; } else {
+                                    detrendAverage[v] += detrend[curve][v][j];
+                                }
+                            }
+                            detrendAverage[v] /= (nn[curve] - numNaNs);
+                            for (int j = 0; j < nn[curve]; j++) {
+                                detrend[curve][v][j] -= detrendAverage[v];
+                            }
+                        }
+                    }
+                    for (int v = 0; v < maxDetrendVars; v++) {
+                        if (detrendPower[v] == 2) {
+                            for (int j = 0; j < nn[curve]; j++) {
+                                detrend[curve][v][j] *= detrend[curve][v][j];
+                            }
+                        } else if (detrendPower[v] > 2) {
+                            for (int j = 0; j < nn[curve]; j++) {
+                                detrend[curve][v][j] = Math.pow(detrend[curve][v][j], detrendPower[v]);
+                            }
+                        }
+                    }
+                    double meridianFlip = mfMarker1Value + xOffset;
+                    for (int v = 0; v < maxDetrendVars; v++) {
+                        if (detrendIndex[curve][v] == 1) { //Meridian Flip Detrend Selected
+                            for (int j = 0; j < nn[curve]; j++) {
+                                if (x[curve][j] < meridianFlip) { //meridian flip fitting data = -1.0 to left and 1.0 to right of flip
+                                    detrend[curve][v][j] = -1.0;
+                                } else {
+                                    detrend[curve][v][j] = 1.0;
+                                }
+                            }
+                        }
+                    }
+
+                    yAverage[curve] = 0.0;
+                    yDepthEstimate[curve] = 0.0;
+                    yBaselineAverage[curve] = 0.0;
+                    nFitTrim[curve] = 0;
+                    int avgCount = 0;
+                    int detrendCount = 0;
+                    int baselineCount = 0;
+                    int depthCount = 0;
+
+                    double[] detrendX = new double[nn[curve]];
+                    double[] detrendY = new double[nn[curve]];
+                    double[] detrendYE = new double[nn[curve]];
+                    double[] detrendConstantComparator = new double[Math.max(nn[curve], maxDetrendVars)];
+                    Arrays.fill(detrendConstantComparator, Double.NaN);
+                    if (detrendFitIndex[curve] != 1) {
+                        double[][] detrendYD = new double[maxDetrendVars][nn[curve]];
+                        boolean noNaNs = true;
+                        if (detrendFitIndex[curve] == 4) {
+                            for (int j = 0; j < nn[curve]; j++) {
+                                noNaNs = true;
+                                if (!Double.isNaN(y[curve][j])) {
+                                    for (int v = 0; v < maxDetrendVars; v++) {
+                                        if (detrendIndex[curve][v] != 0 && Double.isNaN(detrend[curve][v][j])) {
+                                            noNaNs = false;
+                                            break;
+                                        }
+                                    }
+                                } else {
+                                    noNaNs = false;
+                                }
+                                if (noNaNs) {
+                                    avgCount++;
+                                    yAverage[curve] += y[curve][j];
+                                    if ((x[curve][j] > fitMin[curve] && x[curve][j] < fitLeft[curve]) || (x[curve][j] > fitRight[curve] && x[curve][j] < fitMax[curve])) {
+                                        detrendX[detrendCount] = x[curve][j];
+                                        detrendY[detrendCount] = y[curve][j];
+                                        detrendYE[detrendCount] = hasErrors[curve] || hasOpErrors[curve] ? yerr[curve][j] : 1;
+                                        detrendYAverage[curve] += y[curve][j];
+                                        if (detrendY[0] != detrendY[detrendCount]) detrendYNotConstant = true;
+                                        for (int v = 0; v < maxDetrendVars; v++) {
+                                            detrendYD[v][detrendCount] = detrend[curve][v][j];
+
+                                            if (Double.isNaN(detrendConstantComparator[v]) && !Double.isNaN(detrendYD[v][detrendCount])) {
+                                                detrendConstantComparator[v] = detrendYD[v][detrendCount];
+                                            }
+                                            if (!Double.isNaN(detrendConstantComparator[v]) && detrendConstantComparator[v] != detrendYD[v][detrendCount]) {
+                                                detrendYDNotConstant[v] = true;
+                                            }
+                                        }
+                                        detrendCount++;
+                                    }
+                                }
+                            }
+                            if (detrendVarsUsed[curve] > 0 && detrendYNotConstant && detrendCount > detrendVarsUsed[curve] + 2) { //need enough data to provide degrees of freedom for successful fit
+                                xModel1[curve] = new double[2];
+                                xModel2[curve] = new double[2];
+                                xModel1[curve][0] = Math.max(fitMin[curve], xPlotMin);
+                                xModel1[curve][1] = fitLeft[curve];
+                                xModel2[curve][0] = fitRight[curve];
+                                xModel2[curve][1] = Math.min(fitMax[curve], xPlotMax);
+                                if (xModel1[curve][0] >= xModel1[curve][1]) xModel1[curve] = null;
+                                if (xModel2[curve][0] >= xModel2[curve][1]) xModel2[curve] = null;
+                            } else {
+                                for (int v = 0; v < maxDetrendVars; v++) {
+                                    if (detrendIndex[curve][v] > 0) {
+                                        detrendFactor[curve][v] = 0.0;
+                                    }
+                                }
+                            }
+                        } else {
+                            for (int j = 0; j < nn[curve]; j++) {
+                                noNaNs = true;
+                                if (!Double.isNaN(y[curve][j])) {
+                                    for (int v = 0; v < maxDetrendVars; v++) {
+                                        if (detrendIndex[curve][v] != 0 && Double.isNaN(detrend[curve][v][j])) {
+                                            noNaNs = false;
+                                            break;
+                                        }
+                                    }
+                                } else {
+                                    noNaNs = false;
+                                }
+                                if (noNaNs) {
+                                    avgCount++;
+                                    yAverage[curve] += y[curve][j];
+                                    if (x[curve][j] > fitMin[curve]) {
+                                        if (x[curve][j] < fitMax[curve]) {
+                                            detrendX[detrendCount] = x[curve][j];
+                                            detrendY[detrendCount] = y[curve][j];
+                                            detrendYE[detrendCount] = hasErrors[curve] || hasOpErrors[curve] ? yerr[curve][j] : 1;
+                                            detrendYAverage[curve] += y[curve][j];
+                                            if (detrendY[0] != detrendY[detrendCount]) detrendYNotConstant = true;
+                                            for (int v = 0; v < maxDetrendVars; v++) {
+                                                detrendYD[v][detrendCount] = detrend[curve][v][j];
+                                                if (Double.isNaN(detrendConstantComparator[v]) && !Double.isNaN(detrendYD[v][detrendCount])) {
+                                                    detrendConstantComparator[v] = detrendYD[v][detrendCount];
+                                                }
+                                                if (!Double.isNaN(detrendConstantComparator[v]) && detrendConstantComparator[v] != detrendYD[v][detrendCount]) {
+                                                    detrendYDNotConstant[v] = true;
+                                                }
+                                            }
+                                            detrendCount++;
+                                        }
+                                    } else {
+                                        nFitTrim[curve]++;
+                                    }
+                                    if (detrendFitIndex[curve] == 9) {
+                                        if (x[curve][j] > fitLeft[curve] + (fitRight[curve] - fitLeft[curve]) / 4.0 && x[curve][j] < fitRight[curve] - (fitRight[curve] - fitLeft[curve]) / 4.0) {
+                                            yDepthEstimate[curve] += y[curve][j];
+                                            depthCount++;
+                                        } else if (x[curve][j] < fitLeft[curve] || x[curve][j] > fitRight[curve]) {
+                                            yBaselineAverage[curve] += y[curve][j];
+                                            baselineCount++;
+                                        }
+                                    }
+                                }
+                            }
+                            if (detrendVarsUsed[curve] > 0 && detrendYNotConstant && detrendCount > detrendVarsUsed[curve] + 2) { //need enough data to provide degrees of freedom for successful fit
+                                xModel1[curve] = new double[2];
+                                xModel1[curve][0] = Math.max(fitMin[curve], xPlotMin);
+                                xModel1[curve][1] = Math.min(fitMax[curve], xPlotMax);
+                                xModel2[curve] = null;
+                            } else {
+                                for (int v = 0; v < maxDetrendVars; v++) {
+                                    if (detrendIndex[curve][v] > 0) {
+                                        detrendFactor[curve][v] = 0.0;
+                                    }
+                                }
+                            }
+                        }
+
+                        if (detrendCount > 0) {
+                            yAverage[curve] /= avgCount; //avgCount is always >= detrendCount, so > 0 here
+                            detrendYAverage[curve] /= detrendCount;
+                            if (baselineCount > 0) { yBaselineAverage[curve] /= baselineCount; } else {
+                                yBaselineAverage[curve] = detrendYAverage[curve] * 1.005;
+                            }
+                            if (depthCount > 0) { yDepthEstimate[curve] /= depthCount; } else {
+                                yDepthEstimate[curve] = detrendYAverage[curve] * 0.995;
+                            }
+
+                            for (int j = 0; j < detrendCount; j++) {
+                                detrendY[j] -= detrendYAverage[curve];//yAverage[curve];
+                            }
+                            for (int v = 0; v < maxDetrendVars; v++) {
+                                if (detrendIndex[curve][v] != 0 && !detrendYDNotConstant[v] && detrendVarsUsed[curve] > 0) {
+                                    detrendVarsUsed[curve]--;
+                                }
+                            }
+                            detrendVars[curve] = new double[detrendVarsUsed[curve]][detrendCount];
+                            int varCount = 0;
+                            for (int v = 0; v < maxDetrendVars; v++) {
+                                if (detrendIndex[curve][v] != 0 && detrendYDNotConstant[v]) {
+                                    detrendVars[curve][varCount] = Arrays.copyOf(detrendYD[v], detrendCount);
+                                    varCount++;
+                                }
+                            }
+
+                            if ((detrendVarsUsed[curve] >= 0 || detrendFitIndex[curve] == 9 && useTransitFit[curve]) && detrendYNotConstant && detrendCount > (detrendFitIndex[curve] == 9 && useTransitFit[curve] ? 7 : 0) + detrendVarsUsed[curve] + 2) { //need enough data to provide degrees of freedom for successful fit
+                                detrendXs[curve] = Arrays.copyOf(detrendX, detrendCount);
+                                detrendYs[curve] = Arrays.copyOf(detrendY, detrendCount);
+                                detrendYEs[curve] = Arrays.copyOf(detrendYE, detrendCount);
+                                if (finalUpdateFit[curve]) {
+                                    int fittedDetrendParStart;
+                                    if (detrendFitIndex[curve] == 9) {
+                                        minimization.removeConstraints();
+                                        setFittedParametersBorderColorNewThread(curve, grayBorder2);
+                                        if (autoUpdatePriors[curve]) updatePriorCenters(curve);
+                                        int nFitted = 0;
+                                        for (int p = 0; p < 7; p++) {
+                                            if (useTransitFit[curve] && bpLock[curve] && p==4) {
+                                                isFitted[curve][p] = false;
+                                                continue;
+                                            }
+                                            if (useTransitFit[curve] && !lockToCenter[curve][p]) {
+                                                isFitted[curve][p] = true;
+                                                nFitted++;
+                                            } else {
+                                                isFitted[curve][p] = false;
+                                            }
+                                        }
+                                        fittedDetrendParStart = nFitted;
+                                        for (int p = 7; p < maxFittedVars; p++) {
+                                            if (detrendIndex[curve][p - 7] != 0 && detrendYDNotConstant[p - 7] && !lockToCenter[curve][p]) {
+                                                isFitted[curve][p] = true;
+                                                nFitted++;
+                                            } else {
+                                                isFitted[curve][p] = false;
+                                            }
+                                        }
+
+                                        start[curve] = new double[nFitted];
+                                        width[curve] = new double[nFitted];
+                                        step[curve] = new double[nFitted];
+
+                                        index[curve] = new int[nFitted];
+                                        int fp = 0;  //fitted parameter
+                                        for (int p = 0; p < maxFittedVars; p++) {
+                                            if (isFitted[curve][p]) {
+                                                index[curve][fp] = p;
+                                                fp++;
+                                            }
+                                        }
+
+                                        dof[curve] = detrendXs[curve].length - nFitted;
+
+                                        // Fit against yMedian when no transit and no params
+                                        if (nFitted == 0 && !useTransitFit[curve]) {
+                                            start[curve] = new double[1];
+                                            width[curve] = new double[1];
+                                            step[curve] = new double[1];
+
+                                            index[curve] = new int[1];
+                                            start[curve][0] = Stat.median(detrendYs[curve]);
+                                            minimization.addConstraint(0, -1, 0.0);
+                                        }
+
+                                        // 0 = f0 = baseline flux
+                                        // 1 = p0 = r_p/r_*
+                                        // 2 = ar = a/r_*
+                                        // 3 = tc = transit center time
+                                        // 4 = i = inclination
+                                        // 5 = u1 = quadratic limb darkening parameter 1
+                                        // 6 = u2 = quadratic limb darkening parameter 2
+                                        // 7+ = detrend parameters
+                                        for (fp = 0; fp < nFitted; fp++) {
+                                            if (index[curve][fp] == 1) {
+                                                start[curve][fp] = Math.sqrt(priorCenter[curve][1]);
+                                                width[curve][fp] = Math.sqrt(priorWidth[curve][1]);
+                                                step[curve][fp] = Math.sqrt(getFitStep(curve, 1));
+                                                minimization.addConstraint(fp, -1, 0.0);
+                                            } else if (index[curve][fp] == 4) {
+                                                if (bpLock[curve]) continue;
+                                                start[curve][fp] = priorCenter[curve][4] * Math.PI / 180.0;  // inclination
+                                                width[curve][fp] = priorWidth[curve][4] * Math.PI / 180.0;
+                                                step[curve][fp] = getFitStep(curve, 4) * Math.PI / 180.0;
+                                                minimization.addConstraint(fp, 1, 90.0 * Math.PI / 180.0);
+                                                minimization.addConstraint(fp, -1, 50.0 * Math.PI / 180.0);
+                                            } else {
+                                                if (index[curve][fp] == 0) minimization.addConstraint(fp, -1, 0.0);
+                                                if (index[curve][fp] == 2) minimization.addConstraint(fp, -1, 2.0);
+                                                if (index[curve][fp] == 5) {
+                                                    minimization.addConstraint(fp, 1, 1.0);
+                                                    minimization.addConstraint(fp, -1, -1.0);
+                                                }
+                                                if (index[curve][fp] == 6) {
+                                                    minimization.addConstraint(fp, 1, 1.0);
+                                                    minimization.addConstraint(fp, -1, -1.0);
+                                                }
+                                                start[curve][fp] = priorCenter[curve][index[curve][fp]];
+                                                width[curve][fp] = priorWidth[curve][index[curve][fp]];
+                                                step[curve][fp] = getFitStep(curve, index[curve][fp]);
+                                            }
+                                            if (usePriorWidth[curve][index[curve][fp]]) {
+                                                minimization.addConstraint(fp, 1, start[curve][fp] + width[curve][fp]);
+                                                minimization.addConstraint(fp, -1, start[curve][fp] - width[curve][fp]);
+                                            }
+                                        }
+
+                                        minimization.setNrestartsMax(1);
+                                        minimization.nelderMead(new FitLightCurveChi2(curve), start[curve], step[curve], tolerance[curve], maxFitSteps[curve]);
+                                        coeffs[curve] = minimization.getParamValues();
+                                        nTries[curve] = minimization.getNiter() - 1;
+                                        converged[curve] = minimization.getConvStatus();
+                                        fp = 0;
+                                        for (int p = 0; p < maxFittedVars; p++) {
+                                            if (isFitted[curve][p]) {
+                                                bestFit[curve][p] = coeffs[curve][fp];
+                                                fp++;
+                                            } else if (p < 7 && useTransitFit[curve] && lockToCenter[curve][p]) {
+                                                if (p == 1) {
+                                                    bestFit[curve][p] = Math.sqrt(priorCenter[curve][p]);
+                                                } else if (p == 4) {
+                                                    if (bpLock[curve]) {
+                                                        bestFit[curve][4] = Math.acos(bp[curve]/bestFit[curve][2]);
+                                                    } else {
+                                                        bestFit[curve][p] = priorCenter[curve][p] * Math.PI / 180.0;
+                                                    }
+                                                } else { bestFit[curve][p] = priorCenter[curve][p]; }
+                                            } else if (p >= 7 && p < 7 + maxDetrendVars && detrendIndex[curve][p - 7] != 0 && detrendYDNotConstant[p - 7] && lockToCenter[curve][p]) {
+                                                bestFit[curve][p] = priorCenter[curve][p];
+                                            } else if (p == 4 && bpLock[curve]) {
+                                                bestFit[curve][4] = Math.acos(bp[curve]/bestFit[curve][2]);
+                                            } else {
+                                                bestFit[curve][p] = Double.NaN;
+                                            }
+                                        }
+
+                                        for (int p = 0; p < maxFittedVars; p++) {
+                                            if (p == 1 && !Double.isNaN(bestFit[curve][p])) {
+                                                bestFitLabel[curve][p].setText(ninePlaces.format(bestFit[curve][p] * bestFit[curve][p]));
+                                            } else if (p == 4 && !Double.isNaN(bestFit[curve][p])) {
+                                                bestFitLabel[curve][p].setText(ninePlaces.format(bestFit[curve][p] * 180 / Math.PI));
+                                            } else if (!Double.isNaN(bestFit[curve][p])) {
+                                                bestFitLabel[curve][p].setText(p < 7 ? ninePlaces.format(bestFit[curve][p]) : detrendParameterFormat.format(bestFit[curve][p]));
+                                            } else if (p >= 7 && p < 7 + maxDetrendVars && detrendVarAllNaNs[curve][p - 7]) {
+                                                bestFitLabel[curve][p].setText("all NaNs");
+                                            } else if (p >= 7 && p < 7 + maxDetrendVars && detrendIndex[curve][p - 7] != 0 && !detrendYDNotConstant[p - 7]) {
+                                                bestFitLabel[curve][p].setText("constant var");
+                                            } else {
+                                                bestFitLabel[curve][p].setText("");
+                                            }
+                                        }
+                                        if (useTransitFit[curve]) {
+                                            //Winn 2010 eqautions 14, 15, 16
+                                            if (!bpLock[curve]) bp[curve] = bestFit[curve][2] * Math.cos(bestFit[curve][4]) * (1.0 - (forceCircularOrbit[curve] ? 0.0 : eccentricity[curve] * eccentricity[curve])) / (1.0 + (forceCircularOrbit[curve] ? 0.0 : eccentricity[curve]) * Math.sin(forceCircularOrbit[curve] ? 0.0 : omega[curve]));
+                                            double bp2 = bp[curve] * bp[curve];
+                                            t14[curve] = (orbitalPeriod[curve] / Math.PI * Math.asin(Math.sqrt((1.0 + bestFit[curve][1]) * (1.0 + bestFit[curve][1]) - bp2) / (Math.sin(bestFit[curve][4]) * bestFit[curve][2])) * Math.sqrt(1.0 - (forceCircularOrbit[curve] ? 0.0 : eccentricity[curve] * eccentricity[curve])) / (1.0 + (forceCircularOrbit[curve] ? 0.0 : eccentricity[curve]) * Math.sin(forceCircularOrbit[curve] ? 0.0 : omega[curve])));
+                                            t23[curve] = (orbitalPeriod[curve] / Math.PI * Math.asin(Math.sqrt((1.0 - bestFit[curve][1]) * (1.0 - bestFit[curve][1]) - bp2) / (Math.sin(bestFit[curve][4]) * bestFit[curve][2])) * Math.sqrt(1.0 - (forceCircularOrbit[curve] ? 0.0 : eccentricity[curve] * eccentricity[curve])) / (1.0 + (forceCircularOrbit[curve] ? 0.0 : eccentricity[curve]) * Math.sin(forceCircularOrbit[curve] ? 0.0 : omega[curve])));
+                                            tau[curve] = (t14[curve] - t23[curve]) / 2.0;
+                                            double sin2tTpioP = Math.pow(Math.sin(t14[curve] * Math.PI / orbitalPeriod[curve]), 2);
+                                            stellarDensity[curve] = 0.0189 / (orbitalPeriod[curve] * orbitalPeriod[curve]) * Math.pow(((1.0 + bestFit[curve][1]) * (1.0 + bestFit[curve][1]) - bp2 * (1 - sin2tTpioP)) / sin2tTpioP, 1.5);
+
+                                            if (bpLock[curve]) {
+                                                priorCenterSpinner[curve][4].setValue(bestFit[curve][4]*180.0/Math.PI);
+                                            }
+                                            else {
+                                                bpSpinner[curve].setValue(bp[curve]);
+                                            }
+                                            t14Label[curve].setText(Double.isNaN(t14[curve]) ? "NaN" : sixPlaces.format(t14[curve]));
+                                            t14HoursLabel[curve].setText(Double.isNaN(t14[curve]) ? "NaN" : IJU.decToSex(24 * t14[curve], 0, 24, false));
+                                            t23Label[curve].setText(Double.isNaN(t23[curve]) ? "NaN" : sixPlaces.format(t23[curve]));
+                                            tauLabel[curve].setText(Double.isNaN(tau[curve]) ? "NaN" : sixPlaces.format(tau[curve]));
+                                            stellarDensityLabel[curve].setText(Double.isNaN(stellarDensity[curve]) ? "NaN" : fourPlaces.format(stellarDensity[curve]));
+                                            //if (!MultiAperture_.cancelled) { //todo come up with heuristic to only run the transit model when needed
+                                            double midpointFlux = IJU.transitModel(new double[]{bestFit[curve][3]}, bestFit[curve][0], bestFit[curve][4], bestFit[curve][1], bestFit[curve][2], bestFit[curve][3], orbitalPeriod[curve], forceCircularOrbit[curve] ? 0.0 : eccentricity[curve], forceCircularOrbit[curve] ? 0.0 : omega[curve], bestFit[curve][5], bestFit[curve][6], useLonAscNode[curve], lonAscNode[curve], true)[0];
+                                            transitDepth[curve] = (1-(midpointFlux/bestFit[curve][0]))*1000;
+                                            //}
+                                            transitDepthLabel[curve].setText(Double.isNaN(transitDepth[curve]) ? "NaN" : threeDigitsTwoPlaces.format(transitDepth[curve]));
+                                        } else {
+                                            t14Label[curve].setText("");
+                                            t14HoursLabel[curve].setText("");
+                                            t23Label[curve].setText("");
+                                            tauLabel[curve].setText("");
+                                            stellarDensityLabel[curve].setText("");
+                                            transitDepthLabel[curve].setText("");
+                                        }
+                                        chi2dof[curve] = minimization.getMinimum();
+                                        //chi2 + p * log(n)
+                                        bic[curve] = (chi2dof[curve] * dof[curve]) + nFitted * Math.log(detrendXs[curve].length);
+                                        chi2dofLabel[curve].setText(sixPlaces.format(chi2dof[curve]));
+                                        bicLabel[curve].setText(fourPlaces.format(bic[curve]));
+                                        dofLabel[curve].setText("" + dof[curve]);
+                                        chi2Label[curve].setText(fourPlaces.format(chi2[curve]));
+                                        stepsTakenLabel[curve].setText("" + nTries[curve]);
+
+                                        fp = fittedDetrendParStart;
+                                        for (int p = 7; p < maxFittedVars; p++) {
+                                            if (isFitted[curve][p]) {
+                                                detrendFactor[curve][p - 7] = coeffs[curve][fp++];
+                                            } else if (lockToCenter[curve][p]) {
+                                                detrendFactor[curve][p - 7] = priorCenter[curve][p];
+                                            }
+                                            if (detrendVarDisplayed[curve] == p - 7) {
+                                                detrendfactorspinner[curve].setValue(detrendFactor[curve][p - 7]);
+                                            }
+                                        }
+
+                                        setFittedParametersBorderColor(curve, converged[curve] ? convergedBorder : failedBorder);
+                                        if (converged[curve]) {
+                                            detrendpanelgroup[curve].setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+                                        } else {
+                                            detrendpanelgroup[curve].setBorder(BorderFactory.createLineBorder(Color.RED));
+                                        }
+                                    } else if (useNelderMeadChi2ForDetrend) {
+                                        minimization.removeConstraints();
+                                        start[curve] = new double[detrendVars[curve].length];
+                                        step[curve] = new double[detrendVars[curve].length];
+                                        for (int i = 0; i < start[curve].length; i++) {
+                                            start[curve][i] = 0.0;
+                                            step[curve][i] = 1.0;
+                                        }
+                                        double fTol = 1e-10;
+                                        int nMax = 20000;
+                                        minimization.nelderMead(new FitDetrendChi2(curve), start[curve], step[curve], fTol, nMax);
+                                        coeffs[curve] = minimization.getParamValues();
+
+                                        varCount = 0;
+                                        for (int v = 0; v < maxDetrendVars; v++) {
+                                            if (detrendIndex[curve][v] != 0 && detrendYDNotConstant[v]) {
+                                                detrendFactor[curve][v] = coeffs[curve][varCount];
+                                                if (detrendVarDisplayed[curve] == v) {
+                                                    detrendfactorspinner[curve].setValue(coeffs[curve][varCount]);
+                                                }
+                                                varCount++;
+                                            }
+                                        }
+
+                                        if (minimization.getConvStatus()) {
+                                            detrendpanelgroup[curve].setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+                                        } else {
+                                            detrendpanelgroup[curve].setBorder(BorderFactory.createLineBorder(Color.RED));
+                                        }
+
+                                    } else { //use regression
+                                        Regression regression = new Regression(detrendVars[curve], detrendYs[curve]);
+                                        regression.linear();
+                                        coeffs[curve] = regression.getCoeff();
+
+                                        varCount = 1;
+                                        for (int v = 0; v < maxDetrendVars; v++) {
+                                            if (detrendIndex[curve][v] != 0 && detrendYDNotConstant[v]) {
+                                                detrendFactor[curve][v] = coeffs[curve][varCount];
+                                                if (detrendVarDisplayed[curve] == v) {
+                                                    detrendfactorspinner[curve].setValue(coeffs[curve][varCount]);
+                                                }
+                                                varCount++;
+                                            }
+                                        }
+
+
+                                        detrendpanelgroup[curve].setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+                                    }
+                                }
+
+                                if (detrendFitIndex[curve] == 9 && useTransitFit[curve]) {
+                                    planetRadiusLabel[curve].setText(IJU.planetRadiusFromTeff(teff[curve], bestFit[curve][1]));
+                                    createDetrendModel = false;
+                                    xModel1[curve] = detrendXs[curve];
+
+                                    // Flag for yModel2 gen.
+                                    xModel2[curve] = new double[0];
+                                    yModel2[curve] = new double[0];
+
+                                    yModel1[curve] = IJU.transitModel(xModel1[curve], bestFit[curve][0], bestFit[curve][4], bestFit[curve][1], bestFit[curve][2], bestFit[curve][3], orbitalPeriod[curve], forceCircularOrbit[curve] ? 0.0 : eccentricity[curve], forceCircularOrbit[curve] ? 0.0 : omega[curve], bestFit[curve][5], bestFit[curve][6], useLonAscNode[curve], lonAscNode[curve], true);
+
+                                    // f0 = param[curve][0]; // baseline flux
+                                    // p0 = param[curve][1]; // r_p/r_*
+                                    // ar = param[curve][2]; // a/r_*
+                                    // tc = param[curve][3]; //transit center time
+                                    // incl = param[curve][4];  //inclination
+                                    // u1 = param[curve][5];
+                                    // u2 = param[curve][6];
+                                } else {
+                                    planetRadiusLabel[curve].setText("");
+                                    createDetrendModel = true;
+                                }
+                            } else {
+                                xModel1[curve] = null;
+                                xModel2[curve] = null;
+                                yModel1[curve] = null;
+                                yModel2[curve] = null;
+                                detrendpanelgroup[curve].setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+                            }
+
+                        } else {
+                            xModel1[curve] = null;
+                            xModel2[curve] = null;
+                            yModel1[curve] = null;
+                            yModel2[curve] = null;
+                            detrendpanelgroup[curve].setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+                        }
+                    } else {
+                        for (int j = 0; j < nn[curve]; j++) {
+                            boolean noNaNs = true;
+                            if (!Double.isNaN(y[curve][j])) {
+                                for (int v = 0; v < maxDetrendVars; v++) {
+                                    if (detrendIndex[curve][v] != 0 && Double.isNaN(detrend[curve][v][j])) {
+                                        noNaNs = false;
+                                        break;
+                                    }
+                                }
+                            } else {
+                                noNaNs = false;
+                            }
+                            if (noNaNs) {
+                                yAverage[curve] += y[curve][j];
+                                avgCount++;
+                            }
+                        }
+                        if (avgCount > 0) {
+                            yAverage[curve] /= avgCount;
+                        }
+                        xModel1[curve] = new double[2];
+                        xModel1[curve][0] = Math.max(fitMin[curve], xPlotMin);
+                        xModel1[curve][1] = Math.min(fitMax[curve], xPlotMax);
+                        xModel2[curve] = null;
+                        yModel1[curve] = new double[2];
+                        yModel1[curve][0] = yAverage[curve];
+                        yModel1[curve][1] = yAverage[curve];
+                        yModel2[curve] = null;
+                        detrendpanelgroup[curve].setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+                    }
+
+                    if (divideNotSubtract) {
+                        double trend;
+                        if (yAverage[curve] != 0.0) {
+                            for (int j = 0; j < nn[curve]; j++) {
+                                trend = yAverage[curve];
+                                for (int v = 0; v < maxDetrendVars; v++) {
+                                    if (detrendIndex[curve][v] != 0 && detrendYDNotConstant[v]) {
+                                        trend += detrendFactor[curve][v] * (detrend[curve][v][j]);//-detrendAverage[v]);
+                                    }
+                                }
+                                trend /= yAverage[curve];
+                                if (trend != 0.0) {
+                                    y[curve][j] /= trend;
+                                    if (hasErrors[curve] || hasOpErrors[curve]) {
+                                        yerr[curve][j] /= trend;
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        double trend;
+                        for (int j = 0; j < nn[curve]; j++) {
+                            trend = 0.0;
+                            for (int v = 0; v < maxDetrendVars; v++) {
+                                if (detrendIndex[curve][v] != 0 && detrendYDNotConstant[v]) {
+                                    trend += detrendFactor[curve][v] * (detrend[curve][v][j]);//-detrendAverage[v]);
+                                }
+                            }
+                            if (hasErrors[curve] || hasOpErrors[curve]) {
+                                yerr[curve][j] /= (y[curve][j] / (y[curve][j] - trend));
+                            }
+                            y[curve][j] -= trend;
+                        }
+                    }
+                } else {
+                    if(detrendpanelgroup[curve] != null) detrendpanelgroup[curve].setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+                }
+
+                if (detrendFitIndex[curve] == 9 && useTransitFit[curve] && yModel1[curve] != null) {
+                    int cnt = 0;
+                    int len = yModel1[curve].length;
+                    residual[curve] = new double[len];
+                    if (hasErrors[curve] || hasOpErrors[curve]) yModel1Err[curve] = new double[len];
+                    for (int j = 0; j < nn[curve]; j++) {
+                        if (cnt < len && !Double.isNaN(x[curve][j]) && !Double.isNaN(y[curve][j]) && x[curve][j] > fitMin[curve] && x[curve][j] < fitMax[curve]) {
+                            residual[curve][cnt] = y[curve][j] - yModel1[curve][cnt];
+                            if (hasErrors[curve] || hasOpErrors[curve]) yModel1Err[curve][cnt] = yerr[curve][j];
+                            cnt++;
+                        }
+                    }
+                }
+
+                if (showSigmaForAllCurves && detrendFitIndex[curve] < 2) { //calculate standard deviation using all data
+                    int cnt = 0;
+                    detrendYAverage[curve] = 0;
+                    double y2Ave = 0;
+                    for (int j = 0; j < nn[curve]; j++) {
+                        if (!Double.isNaN(y[curve][j])) {
+                            cnt++;
+                            y2Ave += y[curve][j] * y[curve][j];
+                            detrendYAverage[curve] += y[curve][j];
+                        }
+                    }
+                    if (cnt > 0) {
+                        y2Ave /= cnt;
+                        detrendYAverage[curve] /= cnt;
+                        sigma[curve] = Math.sqrt(y2Ave - detrendYAverage[curve] * detrendYAverage[curve]);
+                    } else { detrendYAverage[curve] = 1; }
+                } else if ((showSigmaForDetrendedCurves || showSigmaForAllCurves || residual[curve] != null) && detrendFitIndex[curve] > 1) { //calculate standard deviation using fit/detrend region
+                    int cnt = 0;
+                    detrendYAverage[curve] = 0;
+                    double y2Ave = 0;
+                    if (detrendFitIndex[curve] == 4) {
+                        for (int j = 0; j < nn[curve]; j++) {
+                            if (!Double.isNaN(y[curve][j]) && ((x[curve][j] > fitMin[curve] && x[curve][j] < fitLeft[curve]) || (x[curve][j] > fitRight[curve] && x[curve][j] < fitMax[curve]))) {
+                                y2Ave += y[curve][j] * y[curve][j];
+                                detrendYAverage[curve] += y[curve][j];
+                                cnt++;
+                            }
+                        }
+
+                    } else {
+                        sigma[curve] = 0.0;
+                        for (int j = 0; j < nn[curve]; j++) {
+                            if (!Double.isNaN(x[curve][j]) && !Double.isNaN(y[curve][j]) && x[curve][j] > fitMin[curve] && x[curve][j] < fitMax[curve]) {
+                                if (detrendFitIndex[curve] == 9 && useTransitFit[curve] && residual[curve] != null) {
+                                    sigma[curve] += residual[curve][cnt] * residual[curve][cnt];
+                                } else {
+                                    y2Ave += y[curve][j] * y[curve][j];
+                                }
+                                detrendYAverage[curve] += y[curve][j];
+                                cnt++;
+                            }
+                        }
+                    }
+
+                    if (cnt > 0) {
+                        if (detrendFitIndex[curve] == 9 && useTransitFit[curve] && residual[curve] != null) {
+                            sigma[curve] = Math.sqrt(sigma[curve] / cnt);
+                            detrendYAverage[curve] = 0.0;
+                            cnt = 0;
+                            for (int nnn = 0; nnn < xModel1[curve].length; nnn++) {
+                                if (((xModel1[curve][nnn] > fitMin[curve] && xModel1[curve][nnn] < fitLeft[curve]) || (xModel1[curve][nnn] > fitRight[curve] && xModel1[curve][nnn] < fitMax[curve]))) {
+                                    detrendYAverage[curve] += yModel1[curve][nnn];
+                                    cnt++;
+                                }
+                            }
+                            if (cnt > 0) {
+                                detrendYAverage[curve] /= cnt;
+                            } else {
+                                detrendYAverage[curve] = 0.0;
+                                cnt = 0;
+                                for (int nnn = 0; nnn < xModel1[curve].length; nnn++) {
+                                    detrendYAverage[curve] += yModel1[curve][nnn];
+                                    cnt++;
+                                }
+                                if (cnt > 0) {
+                                    detrendYAverage[curve] /= cnt;
+                                } else {
+                                    detrendYAverage[curve] = 1;
+                                }
+                            }
+                        } else {
+                            y2Ave /= cnt;
+                            detrendYAverage[curve] /= cnt;
+                            sigma[curve] = Math.sqrt(y2Ave - detrendYAverage[curve] * detrendYAverage[curve]);
+                        }
+                    } else { detrendYAverage[curve] = 1; }
+                }
+
+                if (createDetrendModel) {
+                    createDetrendModel = false;
+                    double average = 0.0;
+                    double count = 0;
+                    double invVar;
+                    if (useNelderMeadChi2ForDetrend) {
+                        if (detrendFitIndex[curve] == 4) {
+                            for (int j = 0; j < nn[curve]; j++) {
+                                if (!Double.isNaN(y[curve][j]) && !Double.isNaN(x[curve][j]) && ((x[curve][j] > fitMin[curve] && x[curve][j] < fitLeft[curve] || (x[curve][j] > fitRight[curve] && x[curve][j] < fitMax[curve])))) {
+                                    invVar = 1 / (yerr[curve][j] * yerr[curve][j]);
+                                    average += y[curve][j] * invVar;
+                                    count += invVar;
+                                }
+                            }
+                        } else {
+                            for (int j = 0; j < nn[curve]; j++) {
+                                if (!Double.isNaN(y[curve][j]) && !Double.isNaN(x[curve][j]) && x[curve][j] > fitMin[curve] && x[curve][j] < fitMax[curve]) {
+                                    invVar = 1 / (yerr[curve][j] * yerr[curve][j]);
+                                    average += y[curve][j] * invVar;
+                                    count += invVar;
+                                }
+                            }
+                        }
+
+                        if (count == 0) {
+                            average = 0.0;
+                            for (int j = 0; j < nn[curve]; j++) {
+                                if (!Double.isNaN(y[curve][j]) && !Double.isNaN(x[curve][j])) {
+                                    invVar = 1 / (yerr[curve][j] * yerr[curve][j]);
+                                    average += y[curve][j] * invVar;
+                                    count += invVar;
+                                }
+                            }
+                        }
+                    } else {
+                        if (detrendFitIndex[curve] == 4) {
+                            for (int j = 0; j < nn[curve]; j++) {
+                                if (!Double.isNaN(y[curve][j]) && !Double.isNaN(x[curve][j]) && ((x[curve][j] > fitMin[curve] && x[curve][j] < fitLeft[curve]) || (x[curve][j] > fitRight[curve] && x[curve][j] < fitMax[curve]))) {
+                                    average += y[curve][j];
+                                    count += 1.0;
+                                }
+                            }
+                        } else {
+                            for (int j = 0; j < nn[curve]; j++) {
+                                if (!Double.isNaN(y[curve][j]) && !Double.isNaN(x[curve][j]) && x[curve][j] > fitMin[curve] && x[curve][j] < fitMax[curve]) {
+                                    average += y[curve][j];
+                                    count += 1.0;
+                                }
+                            }
+                        }
+
+                        if (count == 0) {
+                            average = 0.0;
+                            for (int j = 0; j < nn[curve]; j++) {
+                                if (!Double.isNaN(y[curve][j]) && !Double.isNaN(x[curve][j])) {
+                                    average += y[curve][j];
+                                    count += 1.0;
+                                }
+                            }
+                        }
+                    }
+
+                    if (count != 0) {
+                        detrendYAverage[curve] = average / count;
+                    }
+
+
+                    if (detrendFitIndex[curve] == 9) {
+                        xModel1[curve] = detrendXs[curve];
+                        xModel2[curve] = new double[2];
+                        xModel2[curve][0] = Math.max(fitMin[curve], xPlotMin);
+                        xModel2[curve][1] = Math.min(fitMax[curve], xPlotMax);
+                        yModel1[curve] = new double[xModel1[curve].length];
+                        for (int i = 0; i < xModel1[curve].length; i++)
+                            yModel1[curve][i] = detrendYAverage[curve];
+                        yModel2[curve] = new double[2];
+                        yModel2[curve][0] = detrendYAverage[curve];
+                        yModel2[curve][1] = detrendYAverage[curve];
+                    } else //if (useNelderMeadChi2ForDetrend)
+                    {
+                        yModel1[curve] = new double[2];
+                        yModel1[curve][0] = detrendYAverage[curve];
+                        yModel1[curve][1] = detrendYAverage[curve];
+                        yModel2[curve] = new double[2];
+                        yModel2[curve][0] = detrendYAverage[curve];
+                        yModel2[curve][1] = detrendYAverage[curve];
+                    }
+                }
+
+
+                if (normIndex[curve] != 0) {
+                    double normMin = (useDMarker1 ? dMarker1Value : Double.NEGATIVE_INFINITY) + xOffset;
+                    double normMax = (useDMarker4 ? dMarker4Value : Double.POSITIVE_INFINITY) + xOffset;
+                    double normLeft = dMarker2Value + xOffset;
+                    double normRight = dMarker3Value + xOffset;
+
+                    double normAverage = 0.0;
+                    double normCount = 0;
+                    double invVar = 0;
+                    switch (normIndex[curve]) {
+                        case 1: // left of D2
+                            normMax = normLeft;
+                            break;
+                        case 2: // right of D3
+                            normMin = normRight;
+                            break;
+                        case 3: // outside D2 and D3
+                            break;
+                        case 4: // inside D2 and D3
+                            normMin = normLeft;
+                            normMax = normRight;
+                            break;
+                        case 5: // left of D3
+                            normMax = normRight;
+                            break;
+                        case 6: // right of D2
+                            normMin = normLeft;
+                            break;
+                        case 7: // use all data
+                            break;
+                        default:
+                            normIndex[curve] = 0;
+                            normMax = normMin;
+                            break;
+                    }
+                    if (detrendFitIndex[curve] == 9 && useTransitFit[curve] && detrendXs[curve] != null && detrendYEs[curve] != null && yModel1[curve] != null) {
+                        int nnn = detrendXs[curve].length;
+                        if (normIndex[curve] == 3) {
+                            for (int j = 0; j < nnn; j++) {
+                                if (!Double.isNaN(yModel1[curve][j]) && !Double.isNaN(detrendXs[curve][j]) && ((detrendXs[curve][j] > normMin && detrendXs[curve][j] < normLeft) || (detrendXs[curve][j] > normRight && detrendXs[curve][j] < normMax))) {
+                                    invVar = 1 / (detrendYEs[curve][j] * detrendYEs[curve][j]);
+                                    normAverage += yModel1[curve][j] * invVar;
+                                    normCount += invVar;
+                                }
+                            }
+                        } else {
+                            for (int j = 0; j < nnn; j++) {
+                                if (!Double.isNaN(yModel1[curve][j]) && !Double.isNaN(detrendXs[curve][j]) && detrendXs[curve][j] > normMin && detrendXs[curve][j] < normMax) {
+                                    invVar = 1 / (detrendYEs[curve][j] * detrendYEs[curve][j]);
+                                    normAverage += yModel1[curve][j] * invVar;
+                                    normCount += invVar;
+                                }
+                            }
+                        }
+
+                        if (normCount == 0) {
+                            normAverage = 0.0;
+                            for (int j = 0; j < yModel1[curve].length; j++) {
+                                if (!Double.isNaN(yModel1[curve][j]) && !Double.isNaN(detrendXs[curve][j])) {
+                                    invVar = 1 / (detrendYEs[curve][j] * detrendYEs[curve][j]);
+                                    normAverage += yModel1[curve][j] * invVar;
+                                    normCount += invVar;
+                                }
+                            }
+                        }
+                    } else if (useNelderMeadChi2ForDetrend) {
+                        if (normIndex[curve] == 3) {
+                            for (int j = 0; j < nn[curve]; j++) {
+                                if (!Double.isNaN(y[curve][j]) && !Double.isNaN(x[curve][j]) && ((x[curve][j] > normMin && x[curve][j] < normLeft) || (x[curve][j] > normRight && x[curve][j] < normMax))) {
+                                    invVar = 1 / (yerr[curve][j] * yerr[curve][j]);
+                                    normAverage += y[curve][j] * invVar;
+                                    normCount += invVar;
+                                }
+                            }
+                        } else {
+                            for (int j = 0; j < nn[curve]; j++) {
+                                if (!Double.isNaN(y[curve][j]) && !Double.isNaN(x[curve][j]) && x[curve][j] > normMin && x[curve][j] < normMax) {
+                                    invVar = 1 / (yerr[curve][j] * yerr[curve][j]);
+                                    normAverage += y[curve][j] * invVar;
+                                    normCount += invVar;
+                                }
+                            }
+                        }
+
+                        if (normCount == 0) {
+                            normAverage = 0.0;
+                            for (int j = 0; j < nn[curve]; j++) {
+                                if (!Double.isNaN(y[curve][j]) && !Double.isNaN(x[curve][j])) {
+                                    invVar = 1 / (yerr[curve][j] * yerr[curve][j]);
+                                    normAverage += y[curve][j] * invVar;
+                                    normCount += invVar;
+                                }
+                            }
+                        }
+                    } else {
+                        if (normIndex[curve] == 3) {
+                            for (int j = 0; j < nn[curve]; j++) {
+                                if (!Double.isNaN(y[curve][j]) && !Double.isNaN(x[curve][j]) && ((x[curve][j] > normMin && x[curve][j] < normLeft) || (x[curve][j] > normRight && x[curve][j] < normMax))) {
+                                    normAverage += y[curve][j];
+                                    normCount += 1.0;
+                                }
+                            }
+                        } else {
+                            for (int j = 0; j < nn[curve]; j++) {
+                                if (!Double.isNaN(y[curve][j]) && !Double.isNaN(x[curve][j]) && x[curve][j] > normMin && x[curve][j] < normMax) {
+                                    normAverage += y[curve][j];
+                                    normCount += 1.0;
+                                }
+                            }
+                        }
+
+                        if (normCount == 0) {
+                            normAverage = 0.0;
+                            for (int j = 0; j < nn[curve]; j++) {
+                                if (!Double.isNaN(y[curve][j]) && !Double.isNaN(x[curve][j])) {
+                                    normAverage += y[curve][j];
+                                    normCount += 1.0;
+                                }
+                            }
+                        }
+                    }
+
+                    if (normAverage == 0.0 || normCount == 0) {
+                        normAverage = 1.0;
+                    } else {
+                        normAverage /= normCount;
+                    }
+
+                    if (detrendFitIndex[curve] == 9 && useTransitFit[curve] && detrendXs[curve] != null && detrendYEs[curve] != null && yModel1[curve] != null) {
+                        normAverage = bestFit[curve][0];
+                    }
+                    for (int j = 0; j < nn[curve]; j++) {
+                        if (hasErrors[curve] || hasOpErrors[curve]) {
+                            yerr[curve][j] /= normAverage;
+                        }
+                        y[curve][j] /= normAverage;
+                    }
+                    detrendYAverage[curve] /= normAverage;
+                    sigma[curve] /= normAverage;
+                    sigmaLabel[curve].setText(sixPlaces.format(sigma[curve] * 1000));
+                    sigmaLabel[curve].setToolTipText("<html>RMS of model residuals (normalized) in parts per thousand (ppt).<br>" + "Green Border: fit converged<br>" + "Red Border: fit did not converge<br>" + "Gray Border: no fit in this session</html>");
+                    sigmaPanel[curve].setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(subBorderColor, 1), "RMS (ppt)", TitledBorder.CENTER, TitledBorder.TOP, p11, Color.darkGray));
+
+                    if (yModel1[curve] != null) {
+                        for (int nnn = 0; nnn < yModel1[curve].length; nnn++) {
+                            yModel1[curve][nnn] /= normAverage;
+                        }
+                    }
+                    if (yModel1Err[curve] != null) {
+                        for (int nnn = 0; nnn < yModel1Err[curve].length; nnn++) {
+                            yModel1Err[curve][nnn] /= normAverage;
+                        }
+                    }
+                    if (residual[curve] != null) {
+                        for (int nnn = 0; nnn < residual[curve].length; nnn++) {
+                            residual[curve][nnn] /= normAverage;
+                        }
+                    }
+                    if (yModel2[curve] != null) {
+                        for (int nnn = 0; nnn < yModel2[curve].length; nnn++) {
+                            yModel2[curve][nnn] /= normAverage;
+                        }
+                    }
+                    normAverageSet[curve] = normAverage;
+                }
+
+                //PERFORM MAGNITUDE CONVERSION IF APPLICABLE
+                if (mmag[curve]) {
+                    if (normIndex[curve] == 0 && mmagrefs > 0) {
+                        int cnt = 0;
+                        int numgood = 0;
+                        while (numgood < mmagrefs && cnt < nn[curve])  //Prepare mmag calulation baseline reference level
+                        {
+                            if (!Double.isNaN(y[curve][cnt]) && !Double.isNaN(x[curve][cnt])) {
+                                baseline[curve] += y[curve][cnt];
+                                numgood++;
+                            }
+                            cnt++;
+                        }
+                        baseline[curve] /= (numgood == 0 ? 1 : numgood);
+                        baseline[curve] = (baseline[curve] == 0 ? 1 : baseline[curve]);
+                    } else {
+                        baseline[curve] = 1.0;
+                    }
+
+                    if (residual[curve] != null) {
+                        int nnn = 0;
+                        int len = residual[curve].length;
+                        for (int j = 0; j < nn[curve]; j++) {
+                            if (nnn < len && !Double.isNaN(x[curve][j]) && !Double.isNaN(y[curve][j]) && x[curve][j] > fitMin[curve] && x[curve][j] < fitMax[curve]) {
+                                residual[curve][nnn] = 2.5 * Math.log10(1.0 + residual[curve][nnn] / y[curve][j]);
+                                if (yModel1Err[curve] != null) {
+                                    yModel1Err[curve][nnn] = 2.5 * Math.log10(1.0 + yModel1Err[curve][nnn] / y[curve][j]);
+                                }
+                                nnn++;
+                            }
+                        }
+                    }
+
+                    int cnt = 0;
+                    for (int j = 0; j < nn[curve]; j++) {
+                        if (hasErrors[curve] || hasOpErrors[curve]) {
+                            yerr[curve][j] = 2.5 * Math.log10(1.0 + yerr[curve][j] / y[curve][j]);  // yMultiplierFactor*
+                        }
+                        y[curve][j] = magSign * 2.5 * Math.log10(y[curve][j] / baseline[curve]);   // yMultiplierFactor*
+                    }
+                    sigma[curve] = 2.5 * Math.log10(1.0 + sigma[curve] / baseline[curve]);
+                    detrendYAverage[curve] = magSign * 2.5 * Math.log10(detrendYAverage[curve] / baseline[curve]);
+                    sigmaLabel[curve].setText(fourPlaces.format(sigma[curve] * 1000.0));
+                    sigmaLabel[curve].setToolTipText("<html>RMS of model residuals (mmag).<br>" + "Green Border: fit converged<br>" + "Red Border: fit did not converge<br>" + "Gray Border: no fit in this session</html>");
+                    sigmaPanel[curve].setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(subBorderColor, 1), "RMS (mmag)", TitledBorder.CENTER, TitledBorder.TOP, p11, Color.darkGray));
+
+
+                    if (yModel1[curve] != null) {
+                        for (int nnn = 0; nnn < yModel1[curve].length; nnn++) {
+                            yModel1[curve][nnn] = magSign * 2.5 * Math.log10(yModel1[curve][nnn] / baseline[curve]);   //  yMultiplierFactor*
+                        }
+                    }
+
+                    if (yModel2[curve] != null) {
+                        for (int nnn = 0; nnn < yModel2[curve].length; nnn++) {
+                            yModel2[curve][nnn] = magSign * 2.5 * Math.log10(yModel2[curve][nnn] / baseline[curve]);   // yMultiplierFactor*
+                        }
+                    }
+
+                    // Convert Depth to mmag
+                    double magDepth = 2.5 * Math.log10(1.0 + transitDepth[curve]/1000);
+                    transitDepthLabel[curve].setText(fourPlaces.format(magDepth * 1000));
+                    transitDepthLabel[curve].setToolTipText("<html>Depth defined as transit model flux deficit at mid-transit (Tc) in mmag.<br>" + "Green Border: fit converged<br>" + "Red Border: fit did not converge<br>" + "Gray Border: no fit in this session</html>");
+                    transitDepthPanel[curve].setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(subBorderColor, 1), "Depth (mmag)", TitledBorder.CENTER, TitledBorder.TOP, p11, Color.darkGray));
+                } else {
+                    transitDepthLabel[curve].setText(Double.isNaN(transitDepth[curve]) ? "NaN" : threeDigitsTwoPlaces.format(transitDepth[curve]));
+                    transitDepthLabel[curve].setToolTipText("<html>Depth defined as transit model flux deficit at mid-transit (Tc) in parts per thousand (ppt).<br>" + "Green Border: fit converged<br>" + "Red Border: fit did not converge<br>" + "Gray Border: no fit in this session</html>");
+                    transitDepthPanel[curve].setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(subBorderColor, 1), "Depth (ppt)", TitledBorder.CENTER, TitledBorder.TOP, p11, Color.darkGray));
+                }
+                if (normIndex[curve] == 0 && !mmag[curve]) {
+                    sigmaLabel[curve].setText(sixPlaces.format(sigma[curve]));
+                    sigmaLabel[curve].setToolTipText("<html>RMS of model residuals (raw).<br>" + "WARNING: This is the standard deviation/RMS of the raw data from the model.<br>" + "WARNING: Consider using either normalized or mmag output data.<br>" + "Green Border: fit converged<br>" + "Red Border: fit did not converge<br>" + "Gray Border: no fit in this session</html>");
+                    sigmaPanel[curve].setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(subBorderColor, 1), "RMS (raw)", TitledBorder.CENTER, TitledBorder.TOP, p11, Color.darkGray));
+                }
+
+
+            } else {
+                detrendpanelgroup[curve].setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+            }
+            if (refStarChanged || detrendParChanged) setRMSBICBackgroundNewThread(curve);
+
+            double resMin, resMax;
+            yMn[curve] = (showErrors[curve] && (hasErrors[curve] || hasOpErrors[curve])) ? minOf(x[curve], y[curve], yerr[curve], nn[curve]) : minOf(x[curve], y[curve], nn[curve]); //FIND MIN AND MAX Y OF EACH SELECTED DATASET
+            yMx[curve] = (showErrors[curve] && (hasErrors[curve] || hasOpErrors[curve])) ? maxOf(x[curve], y[curve], yerr[curve], nn[curve]) : maxOf(x[curve], y[curve], nn[curve]);
+            yWidthOrig[curve] = yMx[curve] - yMn[curve];
+            if (showResidual[curve] && residual[curve] != null && useTransitFit[curve] && detrendFitIndex[curve] == 9) {
+                resMin = (showResidualError[curve] && yModel1Err[curve] != null) ? resMinOf(x[curve], residual[curve], yModel1Err[curve], residual[curve].length, detrendYAverage[curve] + (force[curve] ? yWidthOrig[curve] * autoResidualShift[curve] / autoScaleFactor[curve] : residualShift[curve] / (normIndex[curve] != 0 && !mmag[curve] && !force[curve] ? 1.0 : yMultiplierFactor))) : resMinOf(x[curve], residual[curve], residual[curve].length, detrendYAverage[curve] + (force[curve] ? yWidthOrig[curve] * autoResidualShift[curve] / autoScaleFactor[curve] : residualShift[curve] / (normIndex[curve] != 0 && !mmag[curve] && !force[curve] ? 1.0 : yMultiplierFactor)));
+
+                resMax = (showResidualError[curve] && yModel1Err[curve] != null) ? resMaxOf(x[curve], residual[curve], yModel1Err[curve], residual[curve].length, detrendYAverage[curve] + (force[curve] ? yWidthOrig[curve] * autoResidualShift[curve] / autoScaleFactor[curve] : residualShift[curve] / (normIndex[curve] != 0 && !mmag[curve] && !force[curve] ? 1.0 : yMultiplierFactor))) : resMaxOf(x[curve], residual[curve], residual[curve].length, detrendYAverage[curve] + (force[curve] ? yWidthOrig[curve] * autoResidualShift[curve] / autoScaleFactor[curve] : residualShift[curve] / (normIndex[curve] != 0 && !mmag[curve] && !force[curve] ? 1.0 : yMultiplierFactor)));
+                if (resMin < yMn[curve]) yMn[curve] = resMin;
+                if (resMax > yMx[curve]) yMx[curve] = resMax;
+            }
+            if (normIndex[curve] != 0 && !mmag[curve] && !force[curve]) {
+                yMinimum[curve] = 1 + customScaleFactor[curve] * (yMn[curve] - 1.0) + customShiftFactor[curve];
+                yMaximum[curve] = 1 + customScaleFactor[curve] * (yMx[curve] - 1.0) + customShiftFactor[curve];
+            } else if (customScaleFactor[curve] >= 0) {
+                yMinimum[curve] = force[curve] ? yMn[curve] : yMn[curve] * yMultiplierFactor * customScaleFactor[curve] + customShiftFactor[curve]; //FIND MIN AND MAX Y OF EACH SELECTED DATASET
+                yMaximum[curve] = force[curve] ? yMx[curve] : yMx[curve] * yMultiplierFactor * customScaleFactor[curve] + customShiftFactor[curve];
+            } else {
+                yMinimum[curve] = force[curve] ? yMn[curve] : yMx[curve] * yMultiplierFactor * customScaleFactor[curve] + customShiftFactor[curve]; //FIND MIN AND MAX Y OF EACH SELECTED DATASET
+                yMaximum[curve] = force[curve] ? yMx[curve] : yMn[curve] * yMultiplierFactor * customScaleFactor[curve] + customShiftFactor[curve];
+            }
+        });
+
+
+        // PERFORM Y-AUTOSCALING TO ONE OR MORE CURVES
+
+        dy = 0.0;
+
+        yPlotMin = yMin;
+        yPlotMax = yMax;
+
+        yautoscalemin = Double.POSITIVE_INFINITY;
+        yautoscalemax = Double.NEGATIVE_INFINITY;
+
+        for (int curve = 0; curve < maxCurves; curve++) {
+            if (plotY[curve]) {
+                if (ASInclude[curve] && !force[curve]) {
+                    if (yMinimum[curve] < yautoscalemin) yautoscalemin = yMinimum[curve];
+                    if (yMaximum[curve] > yautoscalemax) yautoscalemax = yMaximum[curve];
+                }
+            }
+        }
+
+        if (Double.isInfinite(yautoscalemin)) {
+            yautoscalemin = Double.isInfinite(yautoscalemax) ? 0.0 : yautoscalemax - 1.0;
+        }
+        if (Double.isInfinite(yautoscalemax)) yautoscalemax = yautoscalemin + 1.0;
+
+        if (autoScaleY) {
+            yPlotMin = yautoscalemin;
+            yPlotMax = (yautoscalemin == yautoscalemax) ? yautoscalemin + 0.01 : yautoscalemax;
+        }
+        dy = (yPlotMax - yPlotMin) / 99.0;
+
+        // IF MJD, SHOW DECIMAL DATE DUE TO float API OF PlotWindow
+        yOffset = 0.0;
+        if (ylabel[firstCurve].contains("J.D.") || ylabel[firstCurve].contains("JD")) {
+            if (yExponent != 0) ymultiplierspinner.setValue(0);
+            yJD = (int) yPlotMin;
+            yOffset = yJD;
+        }
+        xlab = "";
+        ylab = "";
+        boolean xGoodLabel = false;
+        boolean yGoodLabel = false;
+
+        // MAKE X-AXIS LABEL
+        if (plotY[firstCurve]) {
+            if (showXAxisAsPhase) {
+                xlab = "Orbital Phase (periods) (T0 = " + netT0 + ", P = " + netPeriod + ")";
+                xGoodLabel = true;
+            } else if (showXAxisAsDaysSinceTc) {
+                xlab = "Days Since Tc (T0 = " + netT0 + ", P = " + netPeriod + ")";
+                xGoodLabel = true;
+            } else if (showXAxisAsHoursSinceTc) {
+                xlab = "Hours Since Tc (T0 = " + netT0 + ", P = " + netPeriod + ")";
+                xGoodLabel = true;
+            } else {
+                if (xlabel2[curve].contains("J.D.") || xlabel2[curve].contains("JD")) {
+                    xPlotMin -= xOffset;
+                    xPlotMax -= xOffset;
+                    if (useXColumnName) {
+                        if (xlabel2[firstCurve].trim().startsWith("J.D.-2400000")) {
+                            xlab = "Geocentric Julian Date (UTC) - " + xJD;
+                        } else if (xlabel2[firstCurve].trim().startsWith("BJD_TDB")) {
+                            xlab = "Barycentric Julian Date (TDB) - " + xJD + " (mid-exposure)";
+                        } else if (xlabel2[firstCurve].trim().startsWith("BJD_SOBS")) {
+                            xlab = "Barycentric Julian Date (TDB) - " + xJD + " (exposure start)";
+                        } else if (xlabel2[firstCurve].trim().startsWith("BJD")) {
+                            xlab = "Barycentric Julian Date (TDB) - " + xJD;
+                        } else if (xlabel2[firstCurve].trim().startsWith("HJD_UTC")) {
+                            xlab = "Heliocentric Julian Date (UTC) - " + xJD + " (mid-exposure)";
+                        } else if (xlabel2[firstCurve].trim().startsWith("HJD_SOBS")) {
+                            xlab = "Heliocentric Julian Date (UTC) - " + xJD + " (exposure start)";
+                        } else if (xlabel2[firstCurve].trim().startsWith("HJD")) {
+                            xlab = "Heliocentric Julian Date (UTC) - " + xJD;
+                        } else if (xlabel2[firstCurve].trim().startsWith("JD_SOBS")) {
+                            xlab = "Geocentric Julian Date (UTC) - " + xJD + " (exposure start)";
+                        } else if (xlabel2[firstCurve].trim().startsWith("JD_UTC")) {
+                            xlab = "Geocentric Julian Date (UTC) - " + xJD + " (mid-exposure)";
+                        } else if (xlabel2[firstCurve].trim().contains("JD")) { xlab = "Julian Date - " + xJD; } else {
+                            xlab = "Label Error";
+                        }
+                        xGoodLabel = true;
+                    } else if (useXCustomName) {
+                        xlab = xLegend;
+                        xGoodLabel = true;
+                    }
+                } else if (useXColumnName) {
+                    xlab = xlabel2[curve];
+                    xGoodLabel = true;
+                } else if (useXCustomName) {
+                    xlab = xLegend;
+                    xGoodLabel = true;
+                }
+            }
+        }
+
+        // Adjust curves for JD
+        IntStream.range(0, maxCurves).parallel()
+                .filter(curve -> !showXAxisAsPhase && !showXAxisAsDaysSinceTc && !showXAxisAsHoursSinceTc
+                        && plotY[curve] && (xlabel2[curve].contains("J.D.") || xlabel2[curve].contains("JD")))
+                .forEach(curve -> {
+                    for (int j = 0; j < nn[curve]; j++) {
+                        x[curve][j] -= xOffset;
+                    }
+                    if (xModel1[curve] != null) {
+                        for (int nnn = 0; nnn < xModel1[curve].length; nnn++) {
+                            xModel1[curve][nnn] -= xOffset;
+                        }
+                    }
+                    if (xModel2[curve] != null) {
+                        for (int nnn = 0; nnn < xModel2[curve].length; nnn++) {
+                            xModel2[curve][nnn] -= xOffset;
+                        }
+                    }
+                });
+
+        if (xGoodLabel && (xExponent != 0) && showXScaleInfo) xlab += " x 1E" + xExponent;
+
+        // MAKE Y-AXIS LABEL
+        if (plotY[firstCurve]) {
+            if (ylabel[firstCurve].contains("J.D.") || ylabel[firstCurve].contains("JD")) {
+                yPlotMin -= yOffset;
+                yPlotMax -= yOffset;
+                if (useYColumnName && operatorBase.getOrCreateVariant(firstCurve).get() != MPOperator.CENTROID_DISTANCE) {
+                    if (ylabel[firstCurve].trim().startsWith("J.D.-2400000")) {
+                        ylab = "Geocentric Julian Date (UTC) - " + yJD;
+                    } else if (ylabel[firstCurve].trim().startsWith("BJD_TDB")) {
+                        ylab = "Barycentric Julian Date (TDB) - " + yJD + " (mid-exposure)";
+                    } else if (ylabel[firstCurve].trim().startsWith("BJD_SOBS")) {
+                        ylab = "Barycentric Julian Date (TDB) - " + yJD + " (exposure start)";
+                    } else if (ylabel[firstCurve].trim().startsWith("BJD")) {
+                        ylab = "Barycentric Julian Date (TDB) - " + yJD;
+                    } else if (ylabel[firstCurve].trim().startsWith("HJD_UTC")) {
+                        ylab = "Heliocentric Julian Date (UTC) - " + yJD + " (mid-exposure)";
+                    } else if (ylabel[firstCurve].trim().startsWith("HJD_SOBS")) {
+                        ylab = "Heliocentric Julian Date (UTC) - " + yJD + " (exposure start)";
+                    } else if (ylabel[firstCurve].trim().startsWith("HJD")) {
+                        ylab = "Heliocentric Julian Date (UTC) - " + yJD;
+                    } else if (ylabel[firstCurve].trim().startsWith("JD_UTC")) {
+                        ylab = "Geocentric Julian Date (UTC) - " + yJD + " (mid-exposure)";
+                    } else if (ylabel[firstCurve].trim().startsWith("JD_SOBS")) {
+                        ylab = "Geocentric Julian Date (UTC) - " + yJD + " (exposure start)";
+                    } else if (ylabel[firstCurve].trim().contains("JD")) { ylab = "Julian Date - " + yJD; } else {
+                        ylab = "Label Error";
+                    }
+                    yGoodLabel = true;
+                } else if (useYCustomName) {
+                    ylab = yLegend;
+                    yGoodLabel = true;
+                } else if (useYColumnName && operatorBase.getOrCreateVariant(firstCurve).get() == MPOperator.CENTROID_DISTANCE) {
+                    ylab = xyc1label[firstCurve] + " - " + xyc2label[firstCurve] + " centroid distance";
+                    ylab += usePixelScale ? " (arcsecs)" : " (pixels)";
+                    yGoodLabel = true;
+                }
+            } else if (useYColumnName) {
+                if (operatorBase.getOrCreateVariant(curve).get() != MPOperator.CENTROID_DISTANCE) {
+                    ylab = ylabel[firstCurve];
+                    if (operatorBase.getOrCreateVariant(firstCurve).get() != MPOperator.NONE) {
+                        ylab += operatorBase.getOrCreateVariant(firstCurve).get().getSymbol() + oplabel[firstCurve];
+                    }
+                } else {
+                    ylab = xyc1label[firstCurve] + " - " + xyc2label[firstCurve] + " centroid distance";
+                    ylab += usePixelScale ? " (arcsecs)" : " (pixels)";
+                }
+                yGoodLabel = true;
+            } else if (useYCustomName) {
+                ylab = yLegend;
+                yGoodLabel = true;
+            }
+        }
+
+        // Adjust curves for JD
+        IntStream.range(0, maxCurves).parallel()
+                .filter(curve -> plotY[curve] && (ylabel[curve].contains("J.D.") || ylabel[curve].contains("JD")))
+                .forEach(curve -> {
+                    for (int j = 0; j < nn[curve]; j++)
+                        y[curve][j] -= yOffset;
+                });
+
+        //FINISH Y-LABEL AFTER FINDING SCALING FACTORS BELOW
+
+
+        //SCALE AND SHIFT SECONDARY CURVES TO FIT ON PLOT
+
+        yRange = yPlotMax - yPlotMin;
+        yMid = yPlotMin + yRange / 2.;
+        IntStream.range(0, maxCurves).parallel().filter(curve -> plotY[curve]).forEach(curve -> {
+            if (Double.isNaN(customShiftFactor[curve]) || Double.isInfinite(customShiftFactor[curve])) {
+                customShiftFactor[curve] = 0.0;
+            }
+            if (Double.isNaN(customScaleFactor[curve]) || Double.isInfinite(customScaleFactor[curve])) {
+                customScaleFactor[curve] = 1.0;
+            }
+            if (Double.isNaN(autoShiftFactor[curve]) || Double.isInfinite(autoShiftFactor[curve])) {
+                autoShiftFactor[curve] = 0.0;
+            }
+            if (Double.isNaN(autoScaleFactor[curve]) || Double.isInfinite(autoScaleFactor[curve])) {
+                autoScaleFactor[curve] = 1.0;
+            }
+            yMidpoint[curve] = (yMaximum[curve] + yMinimum[curve]) / 2.;
+            yWidth[curve] = yMaximum[curve] - yMinimum[curve];
+            if (yWidth[curve] == 0) yWidth[curve] = 1.0e-10;
+            if (force[curve]) {
+                subtotalScaleFactor[curve] = (invertYAxis ? -1 : 1) * autoScaleFactor[curve] * yRange / yWidth[curve];
+                subtotalShiftFactor[curve] = (yMid + yRange * (invertYAxis ? -1 : 1) * autoShiftFactor[curve] - subtotalScaleFactor[curve] * yMidpoint[curve]);
+                totalScaleFactor[curve] = subtotalScaleFactor[curve];//*yMultiplierFactor;
+            } else {
+                subtotalScaleFactor[curve] = customScaleFactor[curve];
+                subtotalShiftFactor[curve] = customShiftFactor[curve];
+                totalScaleFactor[curve] = (normIndex[curve] != 0 && !mmag[curve]) ? subtotalScaleFactor[curve] : subtotalScaleFactor[curve] * yMultiplierFactor;
+            }
+            totalShiftFactor[curve] = subtotalShiftFactor[curve];
+
+            if (!(normIndex[curve] != 0 || mmag[curve] || force[curve])) {
+                sigma[curve] = totalScaleFactor[curve] * sigma[curve];
+            }
+            if (mmag[curve] && totalScaleFactor[curve] == 1000) sigma[curve] *= 1000;
+
+            if (normIndex[curve] != 0 && !mmag[curve] && !force[curve]) {
+                detrendYAverage[curve] = 1 + totalScaleFactor[curve] * (detrendYAverage[curve] - 1.0) + subtotalShiftFactor[curve];
+            } else {
+                detrendYAverage[curve] = totalScaleFactor[curve] * detrendYAverage[curve] + subtotalShiftFactor[curve];
+            }
+            for (int j = 0; j < nn[curve]; j++) {
+                if (hasErrors[curve] || hasOpErrors[curve]) {
+                    yerr[curve][j] = totalScaleFactor[curve] * yerr[curve][j];
+                }
+                if (normIndex[curve] != 0 && !mmag[curve] && !force[curve]) {
+                    y[curve][j] = 1 + totalScaleFactor[curve] * (y[curve][j] - 1.0) + subtotalShiftFactor[curve];
+                } else {
+                    y[curve][j] = totalScaleFactor[curve] * y[curve][j] + subtotalShiftFactor[curve];
+                }
+            }
+
+            if (yModel1[curve] != null) {
+                for (int nnn = 0; nnn < yModel1[curve].length; nnn++) {
+                    if (normIndex[curve] != 0 && !mmag[curve] && !force[curve]) {
+                        yModel1[curve][nnn] = 1 + totalScaleFactor[curve] * (yModel1[curve][nnn] - 1.0) + subtotalShiftFactor[curve];
+                    } else {
+                        yModel1[curve][nnn] = totalScaleFactor[curve] * yModel1[curve][nnn] + subtotalShiftFactor[curve];
+                    }
+                    if (residual[curve] != null) {
+                        residual[curve][nnn] = totalScaleFactor[curve] * residual[curve][nnn];
+                    }
+                }
+            }
+
+            if (yModel1Err[curve] != null) {
+                for (int nnn = 0; nnn < yModel1Err[curve].length; nnn++) {
+                    yModel1Err[curve][nnn] = totalScaleFactor[curve] * yModel1Err[curve][nnn];
+                }
+            }
+
+            if (yModel2[curve] != null) {
+                for (int nnn = 0; nnn < yModel2[curve].length; nnn++) {
+                    if (normIndex[curve] != 0 && !mmag[curve] && !force[curve]) {
+                        yModel2[curve][nnn] = 1 + totalScaleFactor[curve] * (yModel2[curve][nnn] - 1.0) + subtotalShiftFactor[curve];
+                    } else {
+                        yModel2[curve][nnn] = totalScaleFactor[curve] * yModel2[curve][nnn] + subtotalShiftFactor[curve];
+                    }
+                }
+            }
+        });
+
+        if (yGoodLabel) {
+            if (showYScaleInfo || showYShiftInfo || force[firstCurve]) {
+                ylab += scaleShiftText(force[firstCurve], showYScaleInfo, showYShiftInfo, mmag[firstCurve], showYmmagInfo, totalScaleFactor[firstCurve], totalShiftFactor[firstCurve]);
+            }
+            if (showYNormInfo && normIndex[firstCurve] != 0 && !mmag[firstCurve] && !force[firstCurve]) {
+                ylab += " (normalized)";
+            }
+            if (mmag[firstCurve] && showYmmagInfo) {
+                if (totalScaleFactor[firstCurve] == 1000.0) { ylab += " (mmag)"; } else ylab += " (mag)";
+            }
+
+            if ((inputAverageOverSize[firstCurve] != 1) && showYAvgInfo) ylab += " (averaged data size = " + inputAverageOverSize[firstCurve] + ")";
+            if (showYSymbolInfo) {
+                ylab += " (" + colors[colorIndex[firstCurve]] + " " + markers[markerIndex[firstCurve]] + ")";
+            }
+        }
+
+        return new PlotDataLock(magSign, normAverageSet);
+    }
+
+    private record PlotDataLock(
+            // Data needed for displaying plot
+            int magSign, double[] normAverageSet,
+            // Data needed to determine if plot should be realculated
+            MeasurementTable table, int rows
+            ) {
+        public PlotDataLock(int magSign, double[] normAverageSet) {
+            this(magSign, normAverageSet, MultiPlot_.table, MultiPlot_.table.size());
+        }
+
+        public boolean requiresUpdate() {
+            return MultiPlot_.table != table || MultiPlot_.table.size() != rows;
+        }
+    }
+
+    public static void invalidatePlotDataLock() {
+        plotDataLock = null;
+    }
+
     static void updatePlotPos() {
         IJU.setFrameSizeAndLocation(plot.getImagePlus().getWindow(), plotFrameLocationX, plotFrameLocationY,
                 plotSizeX, plotSizeY, false);
@@ -4251,15 +4288,21 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     }
 
     public static class FitDetrendOnly implements MinimizationFunction {
+        final int curve;
+
+        public FitDetrendOnly(int curve) {
+            this.curve = curve;
+        }
+
         public double function(double[] param) {
             double sd = 0.0;
             double residual;
             int numData = detrendYs[curve].length;
-            int numVars = detrendVars.length;
+            int numVars = detrendVars[curve].length;
             for (int j = 0; j < numData; j++) {
                 residual = detrendYs[curve][j] - param[0];
                 for (int i = 0; i < numVars; i++) {
-                    residual -= detrendVars[i][j] * param[i + 1];
+                    residual -= detrendVars[curve][i][j] * param[i + 1];
                 }
                 sd += residual * residual;
             }
@@ -4275,17 +4318,23 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     }
 
     public static class FitDetrendChi2 implements MinimizationFunction {
+        final int curve;
+
+        public FitDetrendChi2(int curve) {
+            this.curve = curve;
+        }
+
         public double function(double[] param) {
             double chi2 = 0.0;
             double residual;
             int numData = detrendYs[curve].length;
-            int numVars = detrendVars.length;
+            int numVars = detrendVars[curve].length;
             int dof = numData - param.length;
             if (dof < 1) dof = 1;
             for (int j = 0; j < numData; j++) {
                 residual = detrendYs[curve][j];// - param[0];
                 for (int i = 0; i < numVars; i++) {
-                    residual -= detrendVars[i][j] * param[i];
+                    residual -= detrendVars[curve][i][j] * param[i];
                 }
                 chi2 += ((residual * residual) / (detrendYEs[curve][j] * detrendYEs[curve][j]));
             }
@@ -4327,11 +4376,17 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     }
 
     public static class FitLightCurveChi2 implements MinimizationFunction {
+        final int curve;
+
+        public FitLightCurveChi2(int curve) {
+            this.curve = curve;
+        }
+
         public double function(double[] param) {
             int numData = detrendYs[curve].length;
-            int numDetrendVars = detrendVars.length;
+            int numDetrendVars = detrendVars[curve].length;
             int nPars = param.length;
-            double[] dPars = new double[detrendVars.length];
+            double[] dPars = new double[detrendVars[curve].length];
 //            int dof = numData - param.length;// - 7;
             if (dof[curve] < 1) dof[curve] = 1;
 
@@ -4395,7 +4450,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     for (int j = 0; j < numData; j++) {
                         residual = detrendYs[curve][j];// - param[0];
                         for (int i = 0; i < numDetrendVars; i++) {
-                            residual -= detrendVars[i][j] * dPars[i];
+                            residual -= detrendVars[curve][i][j] * dPars[i];
                         }
                         residual -= (lcModel[curve][j] - detrendYAverage[curve]);
                         chi2[curve] += ((residual * residual) / (detrendYEs[curve][j] * detrendYEs[curve][j]));
@@ -4405,7 +4460,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 for (int j = 0; j < numData; j++) {
                     residual = detrendYs[curve][j];// - param[0];
                     for (int i = 0; i < numDetrendVars; i++) {
-                        residual -= detrendVars[i][j] * dPars[i];
+                        residual -= detrendVars[curve][i][j] * dPars[i];
                     }
                     if (numDetrendVars == 0 && param.length == 1) {
                         residual -= param[0];
@@ -5563,6 +5618,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     draggableShape.removeSelection(plotImageCanvas);
                     if (SwingUtilities.isLeftMouseButton(e) && e.isAltDown()) {
                         draggableShape.markPlotScaleDirty(plot);
+                        suppressDataUpdate = true;
                         updatePlot(updateNoFits());
                     }
                 }
@@ -5672,6 +5728,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     if (!e.isControlDown() && !e.isAltDown()) {
                         newPanOffsetX = -(plotMaxX - plotMinX) * (screenX - startDragScreenX) / (plot.getDrawingFrame().width);
                         newPanOffsetY = (plotMaxY - plotMinY) * (screenY - startDragScreenY) / plot.getDrawingFrame().height;
+                        suppressDataUpdate = true;
                         updatePlot(updateNoFits());
                         if (e.isShiftDown()) {
                             plotcoordlabel.setText("DATA: x=" + fourPlaces.format(x[firstCurve][boldedDatum]) + ", y=" + fourPlaces.format(y[firstCurve][boldedDatum]));
@@ -5715,7 +5772,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 boldedDatum = nearestLine;
                 plotcoordlabel.setText("DATA: x=" + fourPlaces.format(x[firstCurve][nearestLine]) + ", y=" + fourPlaces.format(y[firstCurve][nearestLine]));
                 IJ.showStatus("data values: x=" + fourPlaces.format(x[firstCurve][nearestLine]) + ", y=" + fourPlaces.format(y[firstCurve][nearestLine]));
-                if (useBoldedDatum) updatePlot(updateNoFits());
+                if (useBoldedDatum) {
+                    suppressDataUpdate = true;
+                    updatePlot(updateNoFits());
+                }
                 updateMPAstroConverter();
                 if (useUpdateStack) updateStack();
             } else {
@@ -5726,7 +5786,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 IJ.showStatus("plot coordinates: x=" + fourPlaces.format(xval) + ", y=" + fourPlaces.format(yval));
                 if (boldedDatum != -1) {
                     boldedDatum = -1;
-                    if (useBoldedDatum) updatePlot(updateNoFits());
+                    if (useBoldedDatum) {
+                        suppressDataUpdate = true;
+                        updatePlot(updateNoFits());
+                    }
                 }
             }
         }
@@ -5856,6 +5919,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         if (magChangeSteps == null) {
             zoomY = 0;
             zoomX = 0;
+            suppressDataUpdate = true;
             updatePlot(updateNoFits());
             return;
         }
@@ -5874,7 +5938,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 zoomY = Math.min(zoomY, 0.99);
             }
 
-
+            suppressDataUpdate = true;
             updatePlot(updateNoFits());
         }
     }
@@ -6206,6 +6270,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         detrendlabelhold = new String[maxCurves][maxDetrendVars];
         detrendcolumn = new int[maxCurves][maxDetrendVars];
         detrendYDNotConstant = new boolean[maxDetrendVars];
+        detrendVars = new double[maxCurves][][];
         xModel1 = new double[maxCurves][];
         xModel2 = new double[maxCurves][];
         yModel1 = new double[maxCurves][];
@@ -6368,7 +6433,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         fitFrame = new JFrame[maxCurves];
         fitPanel = new JPanel[maxCurves];
-        minimization = new Minimization();
         fitScrollPane = new JScrollPane[maxCurves];
         fitFrameLocationX = new int[maxCurves];
         fitFrameLocationY = new int[maxCurves];
@@ -15557,6 +15621,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         if (subFrame != null) subFrame.dispose();
         mainFrame = null;
         subFrame = null;
+        plotDataLock = null;
     }
 
     public static synchronized void openDragAndDropFiles(java.io.File[] files) {

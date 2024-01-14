@@ -4265,9 +4265,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
     public static boolean[] updateAllFits() {
         boolean[] updateFits = new boolean[maxCurves];
-        for (int curve = 0; curve < maxCurves; curve++) {
-            updateFits[curve] = true;
-        }
+        Arrays.fill(updateFits, true);
         return updateFits;
     }
 
@@ -4277,12 +4275,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
     public static boolean[] updateOneFit(int curve) {
         boolean[] updateFits = new boolean[maxCurves];
-        for (int i = 0; i < maxCurves; i++) {
-            if (i == curve) {
-                updateFits[curve] = true;
-                break;
-            }
-        }
+        updateFits[curve] = true;
         return updateFits;
     }
 

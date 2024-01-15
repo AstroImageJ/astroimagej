@@ -337,7 +337,11 @@ public class FolderOpener implements PlugIn, TextListener {
 						ip2.insert(ip, 0, stackHeight - imp.getHeight());
 						imp2.setProcessor(ip2);
 						// AIJ use
-						imp2.getProperties().putAll(imp.getProperties());
+
+						if (imp.getProperties() != null) {
+							imp2.setProperty("", null);
+							imp2.getProperties().putAll(imp.getProperties());
+						}
 						imp2.setFileInfo(imp.getOriginalFileInfo());
 						imp2.setTitle(imp.getTitle());
 						// AIJ use

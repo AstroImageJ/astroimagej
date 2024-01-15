@@ -416,9 +416,7 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
                     // This is a terrible hack
                     SwingUtilities.invokeLater(hcm::refilter);
                 }
-                for (int i = 0; i < jTable.getColumnCount(); i++) {
-                    adjustWidth(i);
-                }
+                adjustWidth(jTable.convertColumnIndexToView(i1));
             }
             case COL_RENAMED -> tableView.fireTableRowsUpdated(TableModelEvent.HEADER_ROW, TableModelEvent.HEADER_ROW);
         }

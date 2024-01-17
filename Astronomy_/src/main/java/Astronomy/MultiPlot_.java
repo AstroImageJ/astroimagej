@@ -4271,9 +4271,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     }
 
     public static boolean[] updateNoFits() {
-        if (!updatePlotRunning && !awaitingScheduledPlotUpdate && updatePlotEnabled) {
-            suppressDataUpdate = true;
-        }
         return new boolean[maxCurves];
     }
 
@@ -4281,6 +4278,12 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         boolean[] updateFits = new boolean[maxCurves];
         updateFits[curve] = true;
         return updateFits;
+    }
+
+    public static void supressDataProcessing() {
+        if (!updatePlotRunning && !awaitingScheduledPlotUpdate && updatePlotEnabled) {
+            suppressDataUpdate = true;
+        }
     }
 
     public static class FitDetrendOnly implements MinimizationFunction {
@@ -5614,6 +5617,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     draggableShape.removeSelection(plotImageCanvas);
                     if (SwingUtilities.isLeftMouseButton(e) && e.isAltDown()) {
                         draggableShape.markPlotScaleDirty(plot);
+                        supressDataProcessing();
                         updatePlot(updateNoFits());
                     }
                 }
@@ -5723,6 +5727,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     if (!e.isControlDown() && !e.isAltDown()) {
                         newPanOffsetX = -(plotMaxX - plotMinX) * (screenX - startDragScreenX) / (plot.getDrawingFrame().width);
                         newPanOffsetY = (plotMaxY - plotMinY) * (screenY - startDragScreenY) / plot.getDrawingFrame().height;
+                        supressDataProcessing();
                         updatePlot(updateNoFits());
                         if (e.isShiftDown()) {
                             plotcoordlabel.setText("DATA: x=" + fourPlaces.format(x[firstCurve][boldedDatum]) + ", y=" + fourPlaces.format(y[firstCurve][boldedDatum]));
@@ -5767,6 +5772,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 plotcoordlabel.setText("DATA: x=" + fourPlaces.format(x[firstCurve][nearestLine]) + ", y=" + fourPlaces.format(y[firstCurve][nearestLine]));
                 IJ.showStatus("data values: x=" + fourPlaces.format(x[firstCurve][nearestLine]) + ", y=" + fourPlaces.format(y[firstCurve][nearestLine]));
                 if (useBoldedDatum) {
+                    supressDataProcessing();
                     updatePlot(updateNoFits());
                 }
                 updateMPAstroConverter();
@@ -5780,6 +5786,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 if (boldedDatum != -1) {
                     boldedDatum = -1;
                     if (useBoldedDatum) {
+                        supressDataProcessing();
                         updatePlot(updateNoFits());
                     }
                 }

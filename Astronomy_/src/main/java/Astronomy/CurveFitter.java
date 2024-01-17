@@ -37,6 +37,7 @@ public class CurveFitter {
     private int initAvgCount;
     private boolean initAtLeastOne;
     private int initDetrendCount;
+    private int firstCurve;
     private int initBaselineCount;
     private int initDepthCount;
     private int[] initDetrendVarsUsed;

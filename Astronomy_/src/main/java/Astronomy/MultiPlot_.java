@@ -1463,7 +1463,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         }
 
         final var skippedDataUpdate = suppressDataUpdate;
-        if (plotDataLock == null || plotDataLock.requiresUpdate() || !suppressDataUpdate /*|| !Arrays.equals(updateFit, new boolean[updateFit.length])*/) {
+        if (plotDataLock == null || plotDataLock.requiresUpdate() || !suppressDataUpdate || !Arrays.equals(updateFit, new boolean[updateFit.length])) {
             plotDataLock = processData(updateFit);
             suppressDataUpdate = false;
         }

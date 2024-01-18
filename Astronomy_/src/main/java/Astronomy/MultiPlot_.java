@@ -943,6 +943,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     };
     private static PlotDataLock plotDataLock;
     private static boolean suppressDataUpdate;
+    private static boolean[] usesYModel2;
 
     public void run(String inTableNamePlusOptions) {
         boolean useAutoAstroDataUpdate = false;
@@ -1541,7 +1542,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         // Calculate yModel2 for drawing, scaling with plot bounds
         IntStream.range(0, maxCurves).parallel().filter(curve ->
                         xModel2[curve] != null && yModel2[curve] != null &&
-                        ((xModel2[curve].length == 0 && yModel2[curve].length == 0) || skippedDataUpdate))
+                        ((xModel2[curve].length == 0 && yModel2[curve].length == 0) || usesYModel2[curve]))
                 .forEach(curve -> {
                     int xModel2Len = plotSizeX + 1;
                     double xModel2Step = ((useDMarker4 && fitMax[curve] < plotMaxX + xOffset ? fitMax[curve] : plotMaxX + xOffset) - (useDMarker1 && fitMin[curve] > plotMinX + xOffset ? fitMin[curve] : plotMinX + xOffset)) / (xModel2Len - 1);
@@ -2803,6 +2804,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             plottedResidual[curve] = null;
             yModel1Err[curve] = null;
             detrendYAverage[curve] = 0.0;
+            usesYModel2[curve] = false;
             if (plotY[curve]) {
                 var minimization = new Minimization();
                 fitMin[curve] = (useDMarker1 ? dMarker1Value : Double.NEGATIVE_INFINITY) + xOffset;
@@ -3336,6 +3338,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                     // Flag for yModel2 gen.
                                     xModel2[curve] = new double[0];
                                     yModel2[curve] = new double[0];
+                                    usesYModel2[curve] = true;
 
                                     yModel1[curve] = IJU.transitModel(xModel1[curve], bestFit[curve][0], bestFit[curve][4], bestFit[curve][1], bestFit[curve][2], bestFit[curve][3], orbitalPeriod[curve], forceCircularOrbit[curve] ? 0.0 : eccentricity[curve], forceCircularOrbit[curve] ? 0.0 : omega[curve], bestFit[curve][5], bestFit[curve][6], useLonAscNode[curve], lonAscNode[curve], true);
 
@@ -6286,6 +6289,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         yModel1 = new double[maxCurves][];
         yModel1Err = new double[maxCurves][];
         yModel2 = new double[maxCurves][];
+        usesYModel2 = new boolean[maxCurves];
 
         lcModel = new double[maxCurves][];
         residual = new double[maxCurves][];

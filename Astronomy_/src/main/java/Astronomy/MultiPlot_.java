@@ -1363,18 +1363,30 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
     // For macro users
     public static void updatePlot() {
-        updatePlot(updateAllFits(), false);
+        try {
+            updatePlot(updateAllFits(), false);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     // For macro users
     public static void updatePlot(int i) {
-        updatePlot(updateOneFit(i), false);
+        try {
+            updatePlot(updateOneFit(i), false);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
 
     //------------------------UPDATEPLOT()---------------------------------------
     static public void updatePlot(boolean[] updateFit) {
-        updatePlot(updateFit, false);
+        try {
+            updatePlot(updateFit, false);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     static public void updatePlot(boolean[] updateFit, boolean useAutoAstroDataUpdate) {
@@ -1449,7 +1461,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             }
         }
 
-        if (plotDataLock == null || plotDataLock.requiresUpdate() || !suppressDataUpdate) {
+        final var skippedDataUpdate = suppressDataUpdate;
+        if (plotDataLock == null || plotDataLock.requiresUpdate() || !suppressDataUpdate /*|| !Arrays.equals(updateFit, new boolean[updateFit.length])*/) {
             plotDataLock = processData(updateFit);
             suppressDataUpdate = false;
         }
@@ -1528,7 +1541,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         // Calculate yModel2 for drawing, scaling with plot bounds
         IntStream.range(0, maxCurves).parallel().filter(curve ->
                         xModel2[curve] != null && yModel2[curve] != null &&
-                        xModel2[curve].length == 0 && yModel2[curve].length == 0)
+                        ((xModel2[curve].length == 0 && yModel2[curve].length == 0) || skippedDataUpdate))
                 .forEach(curve -> {
                     int xModel2Len = plotSizeX + 1;
                     double xModel2Step = ((useDMarker4 && fitMax[curve] < plotMaxX + xOffset ? fitMax[curve] : plotMaxX + xOffset) - (useDMarker1 && fitMin[curve] > plotMinX + xOffset ? fitMin[curve] : plotMinX + xOffset)) / (xModel2Len - 1);

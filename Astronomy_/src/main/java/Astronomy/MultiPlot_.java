@@ -1465,7 +1465,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         final var skippedDataUpdate = suppressDataUpdate;
         if (plotDataLock == null || plotDataLock.requiresUpdate() || !suppressDataUpdate || !Arrays.equals(updateFit, new boolean[updateFit.length])) {
             plotDataLock = processData(updateFit);
-            suppressDataUpdate = false;//todo lock isn't being applied correctly, spline smoothing seems to leave it in a state, probably a race with double updates
         }
 
         //----------------Set up plot options------------------------------------
@@ -2229,6 +2228,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         table.setLock(false);
         plotWindow.getImagePlus().setPlot(plot);
         ((PlotWindow) plotWindow).setPlot(plot);
+        suppressDataUpdate = false;
         updatePlotRunning = false;
     }
 

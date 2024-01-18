@@ -1465,7 +1465,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         final var skippedDataUpdate = suppressDataUpdate;
         if (plotDataLock == null || plotDataLock.requiresUpdate() || !suppressDataUpdate || !Arrays.equals(updateFit, new boolean[updateFit.length])) {
             plotDataLock = processData(updateFit);
-            suppressDataUpdate = false;
+            suppressDataUpdate = false;//todo lock isn't being applied correctly, spline smoothing seems to leave it in a state, probably a race with double updates
         }
 
         //----------------Set up plot options------------------------------------
@@ -5934,6 +5934,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         if (magChangeSteps == null) {
             zoomY = 0;
             zoomX = 0;
+            supressDataProcessing();
             updatePlot(updateNoFits());
             return;
         }
@@ -5952,6 +5953,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 zoomY = Math.min(zoomY, 0.99);
             }
 
+            supressDataProcessing();
             updatePlot(updateNoFits());
         }
     }

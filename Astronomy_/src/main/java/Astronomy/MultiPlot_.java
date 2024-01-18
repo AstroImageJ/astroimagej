@@ -2152,6 +2152,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     plotheightspinner.setValue(plot.getSize().height);
                     plotwidthspinner.setValue(plot.getSize().width);
                     updatePlotEnabled = true;
+                    supressDataProcessing();
                     updatePlot(updateNoFits());
                 }
             });

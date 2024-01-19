@@ -944,6 +944,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     private static PlotDataLock plotDataLock;
     private static boolean suppressDataUpdate;
     private static boolean[] usesYModel2;
+    private static boolean performingBulkShiftUpdate;
 
     public void run(String inTableNamePlusOptions) {
         boolean useAutoAstroDataUpdate = false;
@@ -11664,13 +11665,18 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         customshiftstepspinner[c].setValue(convertToText(force[c] ? autoShiftStep[c] : customShiftStep[c]));
 
         customshiftstepspinner[c].addChangeListener(ev -> {
+            if (performingBulkShiftUpdate) {
+                return;
+            }
             int start = c;
             int end = c + 1;
             if (modifyCurvesAbove) {
                 start = 0;
+                performingBulkShiftUpdate = true;
             }
             if (modifyCurvesBelow) {
                 end = maxCurves;
+                performingBulkShiftUpdate = true;
             }
             for (int curve = start; curve < end; curve++) {
                 if (force[c]) {
@@ -11689,6 +11695,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 ((JSpinner.DefaultEditor) customshiftspinner[curve].getEditor()).getTextField().addMouseListener(shiftSpinnerMouseListener);
                 customshiftstepspinner[curve].setValue(convertToText(force[curve] ? autoShiftStep[curve] : customShiftStep[curve]));
             }
+            performingBulkShiftUpdate = false;
         });
         JPanel line1 = new JPanel(new SpringLayout());
         customshiftsteplabel[c] = new JLabel("Stepsize: ");

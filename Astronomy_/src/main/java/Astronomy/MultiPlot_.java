@@ -3270,9 +3270,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                             } else if (lockToCenter[curve][p]) {
                                                 detrendFactor[curve][p - 7] = priorCenter[curve][p];
                                             }
-                                            if (detrendVarDisplayed[curve] == p - 7) {
-                                                detrendfactorspinner[curve].setValue(detrendFactor[curve][p - 7]);
-                                            }
                                         }
 
                                         SwingUtilities.invokeLater(() -> {

@@ -14256,7 +14256,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     }
 
     static void setFittedParametersBorderColorNewThread(final int c, final Border border) {
-        SwingUtilities.invokeLater(() -> setFittedParametersBorderColor(c, border));
+        Thread t = new Thread(() -> setFittedParametersBorderColor(c, border));
+        t.start();
+        Thread.yield();
     }
 
     static void setRMSBICBackground(final int c) {
@@ -14278,7 +14280,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     }
 
     static void setRMSBICBackgroundNewThread(final int c) {
-        SwingUtilities.invokeLater(() -> setRMSBICBackground(c));
+        Thread t = new Thread(() -> setRMSBICBackground(c));
+        t.start();
+        Thread.yield();
     }
 
     static double getFitStep(int c, int row) {

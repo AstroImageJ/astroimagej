@@ -2801,6 +2801,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         }
         var normAverageSet = new double[maxCurves];
         boolean[] finalUpdateFit = updateFit;
+        boolean[] atLeastOneArr = new boolean[maxCurves];
+        boolean[] detrendYNotConstantArr = new boolean[maxCurves];
+        boolean[] fitConvergeceArr = new boolean[maxCurves];
         IntStream.range(0, maxCurves).parallel().forEach(curve -> {
             residual[curve] = null;
             plottedResidual[curve] = null;
@@ -2857,6 +2860,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         }
                     }
                 }
+                atLeastOneArr[curve] = atLeastOne;
                 if (atLeastOne || detrendFitIndex[curve] == 9) {
                     double[] detrendAverage = new double[maxDetrendVars];
                     int[] detrendPower = new int[maxDetrendVars];
@@ -2955,7 +2959,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                         detrendY[detrendCount] = y[curve][j];
                                         detrendYE[detrendCount] = hasErrors[curve] || hasOpErrors[curve] ? yerr[curve][j] : 1;
                                         detrendYAverage[curve] += y[curve][j];
-                                        if (detrendY[0] != detrendY[detrendCount]) detrendYNotConstant = true;
+                                        if (detrendY[0] != detrendY[detrendCount]) {
+                                            detrendYNotConstant = true;
+                                            detrendYNotConstantArr[curve] = true;
+                                        }
                                         for (int v = 0; v < maxDetrendVars; v++) {
                                             detrendYD[v][detrendCount] = detrend[curve][v][j];
 
@@ -3008,7 +3015,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                             detrendY[detrendCount] = y[curve][j];
                                             detrendYE[detrendCount] = hasErrors[curve] || hasOpErrors[curve] ? yerr[curve][j] : 1;
                                             detrendYAverage[curve] += y[curve][j];
-                                            if (detrendY[0] != detrendY[detrendCount]) detrendYNotConstant = true;
+                                            if (detrendY[0] != detrendY[detrendCount]) {
+                                                detrendYNotConstant = true;
+                                                detrendYNotConstantArr[curve] = true;
+                                            }
                                             for (int v = 0; v < maxDetrendVars; v++) {
                                                 detrendYD[v][detrendCount] = detrend[curve][v][j];
                                                 if (Double.isNaN(detrendConstantComparator[v]) && !Double.isNaN(detrendYD[v][detrendCount])) {
@@ -3083,7 +3093,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                     int fittedDetrendParStart;
                                     if (detrendFitIndex[curve] == 9) {
                                         minimization.removeConstraints();
-                                        setFittedParametersBorderColorNewThread(curve, grayBorder2);
                                         if (autoUpdatePriors[curve]) updatePriorCenters(curve);
                                         int nFitted = 0;
                                         for (int p = 0; p < 7; p++) {
@@ -3219,45 +3228,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                             transitDepth[curve] = (1-(midpointFlux/bestFit[curve][0]))*1000;
                                         }
 
-                                        SwingUtilities.invokeLater(() -> {
-                                            for (int p = 0; p < maxFittedVars; p++) {
-                                                if (p == 1 && !Double.isNaN(bestFit[curve][p])) {
-                                                    bestFitLabel[curve][p].setText(ninePlaces.format(bestFit[curve][p] * bestFit[curve][p]));
-                                                } else if (p == 4 && !Double.isNaN(bestFit[curve][p])) {
-                                                    bestFitLabel[curve][p].setText(ninePlaces.format(bestFit[curve][p] * 180 / Math.PI));
-                                                } else if (!Double.isNaN(bestFit[curve][p])) {
-                                                    bestFitLabel[curve][p].setText(p < 7 ? ninePlaces.format(bestFit[curve][p]) : detrendParameterFormat.format(bestFit[curve][p]));
-                                                } else if (p >= 7 && p < 7 + maxDetrendVars && detrendVarAllNaNs[curve][p - 7]) {
-                                                    bestFitLabel[curve][p].setText("all NaNs");
-                                                } else if (p >= 7 && p < 7 + maxDetrendVars && detrendIndex[curve][p - 7] != 0 && !detrendYDNotConstant[p - 7]) {
-                                                    bestFitLabel[curve][p].setText("constant var");
-                                                } else {
-                                                    bestFitLabel[curve][p].setText("");
-                                                }
-                                            }
-
-                                            if (useTransitFit[curve]) {
-                                                if (bpLock[curve]) {
-                                                    priorCenterSpinner[curve][4].setValue(bestFit[curve][4]*180.0/Math.PI);
-                                                } else {
-                                                    bpSpinner[curve].setValue(bp[curve]);
-                                                }
-                                                t14Label[curve].setText(Double.isNaN(t14[curve]) ? "NaN" : sixPlaces.format(t14[curve]));
-                                                t14HoursLabel[curve].setText(Double.isNaN(t14[curve]) ? "NaN" : IJU.decToSex(24 * t14[curve], 0, 24, false));
-                                                t23Label[curve].setText(Double.isNaN(t23[curve]) ? "NaN" : sixPlaces.format(t23[curve]));
-                                                tauLabel[curve].setText(Double.isNaN(tau[curve]) ? "NaN" : sixPlaces.format(tau[curve]));
-                                                stellarDensityLabel[curve].setText(Double.isNaN(stellarDensity[curve]) ? "NaN" : fourPlaces.format(stellarDensity[curve]));
-                                                transitDepthLabel[curve].setText(Double.isNaN(transitDepth[curve]) ? "NaN" : threeDigitsTwoPlaces.format(transitDepth[curve]));
-                                            } else {
-                                                t14Label[curve].setText("");
-                                                t14HoursLabel[curve].setText("");
-                                                t23Label[curve].setText("");
-                                                tauLabel[curve].setText("");
-                                                stellarDensityLabel[curve].setText("");
-                                                transitDepthLabel[curve].setText("");
-                                            }
-                                        });
-
                                         chi2dof[curve] = minimization.getMinimum();
                                         //chi2 + p * log(n)
                                         bic[curve] = (chi2dof[curve] * dof[curve]) + nFitted * Math.log(detrendXs[curve].length);
@@ -3271,26 +3241,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                                 detrendFactor[curve][p - 7] = priorCenter[curve][p];
                                             }
                                         }
-
-                                        SwingUtilities.invokeLater(() -> {
-                                            chi2dofLabel[curve].setText(sixPlaces.format(chi2dof[curve]));
-                                            bicLabel[curve].setText(fourPlaces.format(bic[curve]));
-                                            dofLabel[curve].setText("" + dof[curve]);
-                                            chi2Label[curve].setText(fourPlaces.format(chi2[curve]));
-                                            stepsTakenLabel[curve].setText("" + nTries[curve]);
-                                            for (int p = 7; p < maxFittedVars; p++) {
-                                                if (detrendVarDisplayed[curve] == p - 7) {
-                                                    detrendfactorspinner[curve].setValue(detrendFactor[curve][p - 7]);
-                                                }
-                                            }
-
-                                            setFittedParametersBorderColor(curve, converged[curve] ? convergedBorder : failedBorder);
-                                            if (converged[curve]) {
-                                                detrendpanelgroup[curve].setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
-                                            } else {
-                                                detrendpanelgroup[curve].setBorder(BorderFactory.createLineBorder(Color.RED));
-                                            }
-                                        });
                                     } else if (useNelderMeadChi2ForDetrend) {
                                         minimization.removeConstraints();
                                         start[curve] = new double[detrendVars[curve].length];
@@ -3312,24 +3262,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                             }
                                         }
 
-                                        SwingUtilities.invokeLater(() -> {
-                                            var varCnt = 0;
-                                            for (int v = 0; v < maxDetrendVars; v++) {
-                                                if (detrendIndex[curve][v] != 0 && detrendYDNotConstant[v]) {
-                                                    if (detrendVarDisplayed[curve] == v) {
-                                                        detrendfactorspinner[curve].setValue(coeffs[curve][varCnt]);
-                                                    }
-                                                    varCnt++;
-                                                }
-                                            }
-
-                                            if (minimization.getConvStatus()) {
-                                                detrendpanelgroup[curve].setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
-                                            } else {
-                                                detrendpanelgroup[curve].setBorder(BorderFactory.createLineBorder(Color.RED));
-                                            }
-                                        });
-
+                                        fitConvergeceArr[curve] = minimization.getConvStatus();
                                     } else { //use regression
                                         Regression regression = new Regression(detrendVars[curve], detrendYs[curve]);
                                         regression.linear();
@@ -3342,25 +3275,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                                 varCount++;
                                             }
                                         }
-
-                                        SwingUtilities.invokeLater(() -> {
-                                            var varCnt = 1;
-                                            for (int v = 0; v < maxDetrendVars; v++) {
-                                                if (detrendIndex[curve][v] != 0 && detrendYDNotConstant[v]) {
-                                                    if (detrendVarDisplayed[curve] == v) {
-                                                        detrendfactorspinner[curve].setValue(coeffs[curve][varCnt]);
-                                                    }
-                                                    varCnt++;
-                                                }
-                                            }
-
-                                            detrendpanelgroup[curve].setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
-                                        });
                                     }
                                 }
 
                                 if (detrendFitIndex[curve] == 9 && useTransitFit[curve]) {
-                                    SwingUtilities.invokeLater(() -> planetRadiusLabel[curve].setText(IJU.planetRadiusFromTeff(teff[curve], bestFit[curve][1])));
                                     createDetrendModel = false;
                                     xModel1[curve] = detrendXs[curve];
 
@@ -3379,7 +3297,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                     // u1 = param[curve][5];
                                     // u2 = param[curve][6];
                                 } else {
-                                    SwingUtilities.invokeLater(() -> planetRadiusLabel[curve].setText(""));
                                     createDetrendModel = true;
                                 }
                             } else {
@@ -3387,7 +3304,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                 xModel2[curve] = null;
                                 yModel1[curve] = null;
                                 yModel2[curve] = null;
-                                SwingUtilities.invokeLater(() -> detrendpanelgroup[curve].setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY)));
                             }
 
                         } else {
@@ -3395,7 +3311,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                             xModel2[curve] = null;
                             yModel1[curve] = null;
                             yModel2[curve] = null;
-                            SwingUtilities.invokeLater(() -> detrendpanelgroup[curve].setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY)));
                         }
                     } else {
                         for (int j = 0; j < nn[curve]; j++) {
@@ -3426,7 +3341,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         yModel1[curve][0] = yAverage[curve];
                         yModel1[curve][1] = yAverage[curve];
                         yModel2[curve] = null;
-                        SwingUtilities.invokeLater(() -> detrendpanelgroup[curve].setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY)));
                     }
 
                     if (divideNotSubtract) {
@@ -3463,8 +3377,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                             y[curve][j] -= trend;
                         }
                     }
-                } else {
-                    if(detrendpanelgroup[curve] != null) SwingUtilities.invokeLater(() -> detrendpanelgroup[curve].setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY)));
                 }
 
                 if (detrendFitIndex[curve] == 9 && useTransitFit[curve] && yModel1[curve] != null) {
@@ -3788,11 +3700,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     }
                     detrendYAverage[curve] /= normAverage;
                     sigma[curve] /= normAverage;
-                    SwingUtilities.invokeLater(() -> {
-                        sigmaLabel[curve].setText(sixPlaces.format(sigma[curve] * 1000));
-                        sigmaLabel[curve].setToolTipText("<html>RMS of model residuals (normalized) in parts per thousand (ppt).<br>" + "Green Border: fit converged<br>" + "Red Border: fit did not converge<br>" + "Gray Border: no fit in this session</html>");
-                        sigmaPanel[curve].setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(subBorderColor, 1), "RMS (ppt)", TitledBorder.CENTER, TitledBorder.TOP, p11, Color.darkGray));
-                    });
 
                     if (yModel1[curve] != null) {
                         for (int nnn = 0; nnn < yModel1[curve].length; nnn++) {
@@ -3859,11 +3766,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     }
                     sigma[curve] = 2.5 * Math.log10(1.0 + sigma[curve] / baseline[curve]);
                     detrendYAverage[curve] = magSign * 2.5 * Math.log10(detrendYAverage[curve] / baseline[curve]);
-                    SwingUtilities.invokeLater(() -> {
-                        sigmaLabel[curve].setText(fourPlaces.format(sigma[curve] * 1000.0));
-                        sigmaLabel[curve].setToolTipText("<html>RMS of model residuals (mmag).<br>" + "Green Border: fit converged<br>" + "Red Border: fit did not converge<br>" + "Gray Border: no fit in this session</html>");
-                        sigmaPanel[curve].setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(subBorderColor, 1), "RMS (mmag)", TitledBorder.CENTER, TitledBorder.TOP, p11, Color.darkGray));
-                    });
 
 
                     if (yModel1[curve] != null) {
@@ -3877,34 +3779,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                             yModel2[curve][nnn] = magSign * 2.5 * Math.log10(yModel2[curve][nnn] / baseline[curve]);   // yMultiplierFactor*
                         }
                     }
-
-                    // Convert Depth to mmag
-                    double magDepth = 2.5 * Math.log10(1.0 + transitDepth[curve]/1000);
-                    SwingUtilities.invokeLater(() -> {
-                        transitDepthLabel[curve].setText(fourPlaces.format(magDepth * 1000));
-                        transitDepthLabel[curve].setToolTipText("<html>Depth defined as transit model flux deficit at mid-transit (Tc) in mmag.<br>" + "Green Border: fit converged<br>" + "Red Border: fit did not converge<br>" + "Gray Border: no fit in this session</html>");
-                        transitDepthPanel[curve].setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(subBorderColor, 1), "Depth (mmag)", TitledBorder.CENTER, TitledBorder.TOP, p11, Color.darkGray));
-                    });
-                } else {
-                    SwingUtilities.invokeLater(() -> {
-                        transitDepthLabel[curve].setText(Double.isNaN(transitDepth[curve]) ? "NaN" : threeDigitsTwoPlaces.format(transitDepth[curve]));
-                        transitDepthLabel[curve].setToolTipText("<html>Depth defined as transit model flux deficit at mid-transit (Tc) in parts per thousand (ppt).<br>" + "Green Border: fit converged<br>" + "Red Border: fit did not converge<br>" + "Gray Border: no fit in this session</html>");
-                        transitDepthPanel[curve].setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(subBorderColor, 1), "Depth (ppt)", TitledBorder.CENTER, TitledBorder.TOP, p11, Color.darkGray));
-                    });
                 }
-                if (normIndex[curve] == 0 && !mmag[curve]) {
-                    SwingUtilities.invokeLater(() -> {
-                        sigmaLabel[curve].setText(sixPlaces.format(sigma[curve]));
-                        sigmaLabel[curve].setToolTipText("<html>RMS of model residuals (raw).<br>" + "WARNING: This is the standard deviation/RMS of the raw data from the model.<br>" + "WARNING: Consider using either normalized or mmag output data.<br>" + "Green Border: fit converged<br>" + "Red Border: fit did not converge<br>" + "Gray Border: no fit in this session</html>");
-                        sigmaPanel[curve].setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(subBorderColor, 1), "RMS (raw)", TitledBorder.CENTER, TitledBorder.TOP, p11, Color.darkGray));
-                    });
-                }
-
-
-            } else {
-                SwingUtilities.invokeLater(() -> detrendpanelgroup[curve].setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY)));
             }
-            if (refStarChanged || detrendParChanged) setRMSBICBackgroundNewThread(curve);
 
             double resMin, resMax;
             yMn[curve] = (showErrors[curve] && (hasErrors[curve] || hasOpErrors[curve])) ? minOf(x[curve], y[curve], yerr[curve], nn[curve]) : minOf(x[curve], y[curve], nn[curve]); //FIND MIN AND MAX Y OF EACH SELECTED DATASET
@@ -3926,6 +3802,155 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             } else {
                 yMinimum[curve] = force[curve] ? yMn[curve] : yMx[curve] * yMultiplierFactor * customScaleFactor[curve] + customShiftFactor[curve]; //FIND MIN AND MAX Y OF EACH SELECTED DATASET
                 yMaximum[curve] = force[curve] ? yMx[curve] : yMn[curve] * yMultiplierFactor * customScaleFactor[curve] + customShiftFactor[curve];
+            }
+        });
+
+        // Partially update UI with new values
+        SwingUtilities.invokeLater(() -> {
+            for (int curve = 0; curve < maxCurves; curve++) {
+                if (plotY[curve]) {
+                    if (atLeastOneArr[curve] || detrendFitIndex[curve] == 9) {
+                        if (detrendFitIndex[curve] != 1) {
+                            if (detrendXs[curve].length > 0) {
+                                if ((detrendVarsUsed[curve] >= 0 || detrendFitIndex[curve] == 9 && useTransitFit[curve]) && detrendYNotConstantArr[curve] && detrendXs[curve].length > (detrendFitIndex[curve] == 9 && useTransitFit[curve] ? 7 : 0) + detrendVarsUsed[curve] + 2) { //need enough data to provide degrees of freedom for successful fit
+                                    if (finalUpdateFit[curve]) {
+                                        if (detrendFitIndex[curve] == 9) {
+                                            setFittedParametersBorderColor(curve, grayBorder2);
+                                        }
+                                        if (detrendFitIndex[curve] == 9) {
+                                            for (int p = 0; p < maxFittedVars; p++) {
+                                                if (p == 1 && !Double.isNaN(bestFit[curve][p])) {
+                                                    bestFitLabel[curve][p].setText(ninePlaces.format(bestFit[curve][p] * bestFit[curve][p]));
+                                                } else if (p == 4 && !Double.isNaN(bestFit[curve][p])) {
+                                                    bestFitLabel[curve][p].setText(ninePlaces.format(bestFit[curve][p] * 180 / Math.PI));
+                                                } else if (!Double.isNaN(bestFit[curve][p])) {
+                                                    bestFitLabel[curve][p].setText(p < 7 ? ninePlaces.format(bestFit[curve][p]) : detrendParameterFormat.format(bestFit[curve][p]));
+                                                } else if (p >= 7 && p < 7 + maxDetrendVars && detrendVarAllNaNs[curve][p - 7]) {
+                                                    bestFitLabel[curve][p].setText("all NaNs");
+                                                } else if (p >= 7 && p < 7 + maxDetrendVars && detrendIndex[curve][p - 7] != 0 && !detrendYDNotConstant[p - 7]) {
+                                                    bestFitLabel[curve][p].setText("constant var");
+                                                } else {
+                                                    bestFitLabel[curve][p].setText("");
+                                                }
+                                            }
+
+                                            if (useTransitFit[curve]) {
+                                                if (bpLock[curve]) {
+                                                    priorCenterSpinner[curve][4].setValue(bestFit[curve][4]*180.0/Math.PI);
+                                                } else {
+                                                    bpSpinner[curve].setValue(bp[curve]);
+                                                }
+                                                t14Label[curve].setText(Double.isNaN(t14[curve]) ? "NaN" : sixPlaces.format(t14[curve]));
+                                                t14HoursLabel[curve].setText(Double.isNaN(t14[curve]) ? "NaN" : IJU.decToSex(24 * t14[curve], 0, 24, false));
+                                                t23Label[curve].setText(Double.isNaN(t23[curve]) ? "NaN" : sixPlaces.format(t23[curve]));
+                                                tauLabel[curve].setText(Double.isNaN(tau[curve]) ? "NaN" : sixPlaces.format(tau[curve]));
+                                                stellarDensityLabel[curve].setText(Double.isNaN(stellarDensity[curve]) ? "NaN" : fourPlaces.format(stellarDensity[curve]));
+                                                transitDepthLabel[curve].setText(Double.isNaN(transitDepth[curve]) ? "NaN" : threeDigitsTwoPlaces.format(transitDepth[curve]));
+                                            } else {
+                                                t14Label[curve].setText("");
+                                                t14HoursLabel[curve].setText("");
+                                                t23Label[curve].setText("");
+                                                tauLabel[curve].setText("");
+                                                stellarDensityLabel[curve].setText("");
+                                                transitDepthLabel[curve].setText("");
+                                            }
+
+                                            chi2dofLabel[curve].setText(sixPlaces.format(chi2dof[curve]));
+                                            bicLabel[curve].setText(fourPlaces.format(bic[curve]));
+                                            dofLabel[curve].setText("" + dof[curve]);
+                                            chi2Label[curve].setText(fourPlaces.format(chi2[curve]));
+                                            stepsTakenLabel[curve].setText("" + nTries[curve]);
+                                            for (int p = 7; p < maxFittedVars; p++) {
+                                                if (detrendVarDisplayed[curve] == p - 7) {
+                                                    detrendfactorspinner[curve].setValue(detrendFactor[curve][p - 7]);
+                                                }
+                                            }
+
+                                            setFittedParametersBorderColor(curve, converged[curve] ? convergedBorder : failedBorder);
+                                            if (converged[curve]) {
+                                                detrendpanelgroup[curve].setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+                                            } else {
+                                                detrendpanelgroup[curve].setBorder(BorderFactory.createLineBorder(Color.RED));
+                                            }
+                                        } else if (useNelderMeadChi2ForDetrend) {
+                                            var varCnt = 0;
+                                            for (int v = 0; v < maxDetrendVars; v++) {
+                                                if (detrendIndex[curve][v] != 0 && detrendYDNotConstant[v]) {
+                                                    if (detrendVarDisplayed[curve] == v) {
+                                                        detrendfactorspinner[curve].setValue(coeffs[curve][varCnt]);
+                                                    }
+                                                    varCnt++;
+                                                }
+                                            }
+
+                                            if (fitConvergeceArr[curve]) {
+                                                detrendpanelgroup[curve].setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+                                            } else {
+                                                detrendpanelgroup[curve].setBorder(BorderFactory.createLineBorder(Color.RED));
+                                            }
+                                        } else { //use regression
+                                            var varCnt = 1;
+                                            for (int v = 0; v < maxDetrendVars; v++) {
+                                                if (detrendIndex[curve][v] != 0 && detrendYDNotConstant[v]) {
+                                                    if (detrendVarDisplayed[curve] == v) {
+                                                        detrendfactorspinner[curve].setValue(coeffs[curve][varCnt]);
+                                                    }
+                                                    varCnt++;
+                                                }
+                                            }
+
+                                            detrendpanelgroup[curve].setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+                                        }
+                                    }
+
+                                    if (detrendFitIndex[curve] == 9 && useTransitFit[curve]) {
+                                        planetRadiusLabel[curve].setText(IJU.planetRadiusFromTeff(teff[curve], bestFit[curve][1]));
+                                    } else {
+                                        planetRadiusLabel[curve].setText("");
+                                    }
+                                } else {
+                                    detrendpanelgroup[curve].setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+                                }
+                            } else {
+                                detrendpanelgroup[curve].setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+                            }
+                        } else {
+                            detrendpanelgroup[curve].setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+                        }
+                    } else {
+                        if(detrendpanelgroup[curve] != null) detrendpanelgroup[curve].setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+                    }
+
+                    if (normIndex[curve] != 0) {
+                        sigmaLabel[curve].setText(sixPlaces.format(sigma[curve] * 1000));
+                        sigmaLabel[curve].setToolTipText("<html>RMS of model residuals (normalized) in parts per thousand (ppt).<br>" + "Green Border: fit converged<br>" + "Red Border: fit did not converge<br>" + "Gray Border: no fit in this session</html>");
+                        sigmaPanel[curve].setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(subBorderColor, 1), "RMS (ppt)", TitledBorder.CENTER, TitledBorder.TOP, p11, Color.darkGray));
+                    }
+
+                    //PERFORM MAGNITUDE CONVERSION IF APPLICABLE
+                    if (mmag[curve]) {
+                        sigmaLabel[curve].setText(fourPlaces.format(sigma[curve] * 1000.0));
+                        sigmaLabel[curve].setToolTipText("<html>RMS of model residuals (mmag).<br>" + "Green Border: fit converged<br>" + "Red Border: fit did not converge<br>" + "Gray Border: no fit in this session</html>");
+                        sigmaPanel[curve].setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(subBorderColor, 1), "RMS (mmag)", TitledBorder.CENTER, TitledBorder.TOP, p11, Color.darkGray));
+
+                        // Convert Depth to mmag
+                        transitDepthLabel[curve].setText(fourPlaces.format(2.5 * Math.log10(1.0 + transitDepth[curve]/1000) * 1000));
+                        transitDepthLabel[curve].setToolTipText("<html>Depth defined as transit model flux deficit at mid-transit (Tc) in mmag.<br>" + "Green Border: fit converged<br>" + "Red Border: fit did not converge<br>" + "Gray Border: no fit in this session</html>");
+                        transitDepthPanel[curve].setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(subBorderColor, 1), "Depth (mmag)", TitledBorder.CENTER, TitledBorder.TOP, p11, Color.darkGray));
+                    } else {
+                        transitDepthLabel[curve].setText(Double.isNaN(transitDepth[curve]) ? "NaN" : threeDigitsTwoPlaces.format(transitDepth[curve]));
+                        transitDepthLabel[curve].setToolTipText("<html>Depth defined as transit model flux deficit at mid-transit (Tc) in parts per thousand (ppt).<br>" + "Green Border: fit converged<br>" + "Red Border: fit did not converge<br>" + "Gray Border: no fit in this session</html>");
+                        transitDepthPanel[curve].setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(subBorderColor, 1), "Depth (ppt)", TitledBorder.CENTER, TitledBorder.TOP, p11, Color.darkGray));
+                    }
+                    if (normIndex[curve] == 0 && !mmag[curve]) {
+                        sigmaLabel[curve].setText(sixPlaces.format(sigma[curve]));
+                        sigmaLabel[curve].setToolTipText("<html>RMS of model residuals (raw).<br>" + "WARNING: This is the standard deviation/RMS of the raw data from the model.<br>" + "WARNING: Consider using either normalized or mmag output data.<br>" + "Green Border: fit converged<br>" + "Red Border: fit did not converge<br>" + "Gray Border: no fit in this session</html>");
+                        sigmaPanel[curve].setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(subBorderColor, 1), "RMS (raw)", TitledBorder.CENTER, TitledBorder.TOP, p11, Color.darkGray));
+                    }
+                } else {
+                    detrendpanelgroup[curve].setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+                }
+                if (refStarChanged || detrendParChanged) setRMSBICBackground(curve);
             }
         });
 

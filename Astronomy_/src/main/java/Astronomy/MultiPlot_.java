@@ -14271,7 +14271,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 else if (bic[c] < prevBic[c] - 2.0) bicLabel[c].setBackground(new Color(0, 235, 0));  //light green
                 else if (bic[c] < prevBic[c]) bicLabel[c].setBackground(Color.yellow);
             }
-            IJ.wait(200);
             refStarChanged = false;
             detrendParChanged = false;
             sigmaLabel[c].setBackground(defaultBackground);

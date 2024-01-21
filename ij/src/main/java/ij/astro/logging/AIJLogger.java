@@ -117,6 +117,30 @@ public class AIJLogger {
                 StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE).walk(AIJLogger::walk2List));
     }
 
+    /**
+     * Prints the stacktrace of the caller in the console.
+     * Disables auto-closing for the caller.
+     * <p>The first method in the stacktrace is the caller of this method. {@link AIJLogger}'s methods
+     * are filtered out.</p>
+     */
+    public static void logStacktraceC() {
+        var stack = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE)
+                .walk(stackFrameStream -> {
+                    return stackFrameStream.filter(stackFrame -> !stackFrame.getDeclaringClass().equals(AIJLogger.class))
+                            .map(StackWalker.StackFrame::toStackTraceElement)
+                            .toArray(StackTraceElement[]::new);
+                });
+
+        if (stack.length == 0) {
+            System.out.println("Logged, but no stack available!");
+        }
+
+        System.out.println("Stacktrace: " + stack[0]);
+        for (int i = 1; i < stack.length; i++) {
+            System.out.println("\tby " + stack[i]);
+        }
+    }
+
     private static synchronized List<StackWalker.StackFrame> walk2List(Stream<StackWalker.StackFrame> stackFrameStream) {
         return stackFrameStream.filter(stackFrame -> !stackFrame.getDeclaringClass().equals(AIJLogger.class))
                 .collect(Collectors.toList());

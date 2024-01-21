@@ -2324,8 +2324,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     if (xcolumn[curve] == ResultsTable.COLUMN_NOT_FOUND) {
                         xcolumn[curve] = 0;
                         plotY[curve] = false;
-                        usecurvebox[curve].setSelected(false);
-                        savecolumnbutton[curve].setEnabled(plotY[curve]);
+                        SwingUtilities.invokeLater(() -> {
+                            usecurvebox[curve].setSelected(false);
+                            savecolumnbutton[curve].setEnabled(plotY[curve]);
+                        });
                     }
                     xlabel2[curve] = xlabeldefault.trim();
                 } else {
@@ -2333,8 +2335,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     if (xcolumn[curve] == ResultsTable.COLUMN_NOT_FOUND) {
                         xcolumn[curve] = 0;
                         plotY[curve] = false;
-                        usecurvebox[curve].setSelected(false);
-                        savecolumnbutton[curve].setEnabled(plotY[curve]);
+                        SwingUtilities.invokeLater(() -> {
+                            usecurvebox[curve].setSelected(false);
+                            savecolumnbutton[curve].setEnabled(plotY[curve]);
+                        });
                     }
                     xlabel2[curve] = xlabel[curve].trim();
                 }
@@ -2385,8 +2389,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     if (ycolumn[curve] == ResultsTable.COLUMN_NOT_FOUND) {
                         ycolumn[curve] = 0;
                         plotY[curve] = false;
-                        usecurvebox[curve].setSelected(false);
-                        savecolumnbutton[curve].setEnabled(plotY[curve]);
+                        SwingUtilities.invokeLater(() -> {
+                            usecurvebox[curve].setSelected(false);
+                            savecolumnbutton[curve].setEnabled(plotY[curve]);
+                        });
                     } else if (operatorBase.getOrCreateVariant(curve).get() == MPOperator.CENTROID_DISTANCE) { //calculate distance
                         xc1column[curve] = table.getColumnIndex(getPositionColumn(ylabel[curve], "X"));
                         yc1column[curve] = table.getColumnIndex(getPositionColumn(ylabel[curve], "Y"));
@@ -2397,8 +2403,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                             }
                             operatorBase.getOrCreateVariant(curve).set(MPOperator.NONE);
                             plotY[curve] = false;
-                            usecurvebox[curve].setSelected(false);
-                            savecolumnbutton[curve].setEnabled(plotY[curve]);
+                            SwingUtilities.invokeLater(() -> {
+                                usecurvebox[curve].setSelected(false);
+                                savecolumnbutton[curve].setEnabled(plotY[curve]);
+                            });
                         }
                         if (yc1column[curve] == ResultsTable.COLUMN_NOT_FOUND) {
                             if (getPositionColumn(ylabel[curve], "Y").trim().length() != 0) {
@@ -2406,8 +2414,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                             }
                             operatorBase.getOrCreateVariant(curve).set(MPOperator.NONE);
                             plotY[curve] = false;
-                            usecurvebox[curve].setSelected(false);
-                            savecolumnbutton[curve].setEnabled(plotY[curve]);
+                            SwingUtilities.invokeLater(() -> {
+                                usecurvebox[curve].setSelected(false);
+                                savecolumnbutton[curve].setEnabled(plotY[curve]);
+                            });
                         }
                     }
                     if (detrendFitIndex[curve] != 0) {
@@ -2417,7 +2427,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
                                 if (detrendcolumn[curve][v] == ResultsTable.COLUMN_NOT_FOUND) {
                                     detrendIndex[curve][v] = 0;
-                                    if (detrendVarDisplayed[curve] == v) detrendbox[curve].setSelectedIndex(0);
+                                    if (detrendVarDisplayed[curve] == v) {
+                                        SwingUtilities.invokeLater(() -> detrendbox[curve].setSelectedIndex(0));
+                                    }
                                 } else {
                                     detrendVarsUsed[curve]++;
                                 }
@@ -11230,8 +11242,12 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         smoothGear.addActionListener(e -> {
             KeplerSplineControl.getInstance(c).displayPanel();
         });
-        KeplerSplineControl.getInstance(c).addFitListener(s -> smoothGear.setForeground(s.color));
-        KeplerSplineControl.getInstance(c).settings.displayType.addListener((k, d) -> smoothGear.setForeground(Color.BLACK));
+        KeplerSplineControl.getInstance(c).addFitListener(s -> {
+            SwingUtilities.invokeLater(() -> smoothGear.setForeground(s.color));
+        });
+        KeplerSplineControl.getInstance(c).settings.displayType.addListener((k, d) -> {
+            SwingUtilities.invokeLater(() -> smoothGear.setForeground(Color.BLACK));
+        });
         smoothGear.setHorizontalAlignment(JLabel.CENTER);
         smoothGear.setMargin(new Insets(0, 0, 0, 0));
         smoothGear.setToolTipText("Spline smoothing settings. Typically used with continuous space-based data.");

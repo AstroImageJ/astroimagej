@@ -14,6 +14,7 @@ import org.hipparchus.linear.RealVector;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.lang.reflect.InvocationTargetException;
 import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -29,26 +30,16 @@ public class KeplerSplineControl {
     private Window window = null;
     private static final LinkedHashMap<Integer, KeplerSplineControl> INSTANCES = new LinkedHashMap<>();
     private static final ExecutorService RUNNER = Executors.newSingleThreadExecutor();
-    private final JTextField bicDisplay;
-    private final JTextField bkSpaceDisplay;
-    private final JTextField errorDisplay;
+    private JTextField bicDisplay;
+    private JTextField bkSpaceDisplay;
+    private JTextField errorDisplay;
     static DecimalFormat FORMATTER = new DecimalFormat("######0.00", IJU.dfs);
     private final HashSet<FitListener> fitListeners = new HashSet<>();
+    private boolean hasBuiltDisplay;
 
     public KeplerSplineControl(int curve) {
         this.curve = curve;
         settings = new KeplerSplineSettings(curve);
-        bkSpaceDisplay = new JTextField("N/A");
-        bicDisplay = new JTextField("N/A");
-        errorDisplay = new JTextField("N/A");
-        bicDisplay.setEnabled(false);
-        bkSpaceDisplay.setEnabled(false);
-        errorDisplay.setEnabled(false);
-        bkSpaceDisplay.setHorizontalAlignment(JTextField.CENTER);
-        bicDisplay.setHorizontalAlignment(JTextField.CENTER);
-        bkSpaceDisplay.setColumns(8);
-        bicDisplay.setColumns(8);
-        errorDisplay.setColumns(8);
     }
 
     public static KeplerSplineControl getInstance(int curve) {
@@ -90,6 +81,26 @@ public class KeplerSplineControl {
                 s.settings.displayType.clearListeners();
             }
         }));
+    }
+
+    /**
+     * Must run from event thread
+     */
+    private void createUI() {
+        if (!hasBuiltDisplay) {
+            bkSpaceDisplay = new JTextField("N/A");
+            bicDisplay = new JTextField("N/A");
+            errorDisplay = new JTextField("N/A");
+            bicDisplay.setEnabled(false);
+            bkSpaceDisplay.setEnabled(false);
+            errorDisplay.setEnabled(false);
+            bkSpaceDisplay.setHorizontalAlignment(JTextField.CENTER);
+            bicDisplay.setHorizontalAlignment(JTextField.CENTER);
+            bkSpaceDisplay.setColumns(8);
+            bicDisplay.setColumns(8);
+            errorDisplay.setColumns(8);
+            hasBuiltDisplay = true;
+        }
     }
 
     public String ifTransitSmoothed(String s) {
@@ -476,39 +487,49 @@ public class KeplerSplineControl {
         if (notify) {
             fitListeners.forEach(l -> l.accept(FitState.NO_FIT));
         }
-        Pair<RealVector, KeplerSpline.SplineMetadata> ks = null;
+        Pair<RealVector, KeplerSpline.SplineMetadata> ks;
         if (settings.displayType.get() != KeplerSplineSettings.DisplayType.RAW_DATA) {
             if (notify) {
                 fitListeners.forEach(l -> l.accept(FitState.FITTING));
             }
             ks = makeSplineGenerator().fit(x, y, size, mask);
+        } else {
+            ks = null;
         }
 
         if (notify) {
-            if (settings.displayType.get() == KeplerSplineSettings.DisplayType.RAW_DATA || ks == null) {
-                bkSpaceDisplay.setText("N/A");
-                bicDisplay.setText("N/A");
-                errorDisplay.setText("N/A");
-                errorDisplay.setDisabledTextColor(Color.BLACK);
-            } else if (settings.knotDensity.get() == KeplerSplineSettings.KnotDensity.LEGACY_SMOOTHER) {
-                bkSpaceDisplay.setText("N/A");
-                bicDisplay.setText("N/A");
-                errorDisplay.setText("N/A");
-                errorDisplay.setDisabledTextColor(Color.BLACK);
-            } else {
-                var lastSplineFit = ks.second();
-                if (lastSplineFit.bic == null) {
+            var noFit = ks == null;
+            SwingUtilities.invokeLater(() -> {
+                createUI();
+                if (settings.displayType.get() == KeplerSplineSettings.DisplayType.RAW_DATA || noFit) {
                     bkSpaceDisplay.setText("N/A");
                     bicDisplay.setText("N/A");
-                    errorDisplay.setText("Failed");
-                    errorDisplay.setDisabledTextColor(Color.RED);
-                    fitListeners.forEach(l -> l.accept(FitState.FAILED));
-                    return;
+                    errorDisplay.setText("N/A");
+                    errorDisplay.setDisabledTextColor(Color.BLACK);
+                } else if (settings.knotDensity.get() == KeplerSplineSettings.KnotDensity.LEGACY_SMOOTHER) {
+                    bkSpaceDisplay.setText("N/A");
+                    bicDisplay.setText("N/A");
+                    errorDisplay.setText("N/A");
+                    errorDisplay.setDisabledTextColor(Color.BLACK);
                 } else {
-                    errorDisplay.setText("Success");
-                    errorDisplay.setDisabledTextColor(darkGreen);
-                    bkSpaceDisplay.setText(FORMATTER.format(lastSplineFit.bkSpace));
-                    bicDisplay.setText(FORMATTER.format(lastSplineFit.bic));
+                    var lastSplineFit = ks.second();
+                    if (lastSplineFit.bic == null) {
+                        bkSpaceDisplay.setText("N/A");
+                        bicDisplay.setText("N/A");
+                        errorDisplay.setText("Failed");
+                        errorDisplay.setDisabledTextColor(Color.RED);
+                        fitListeners.forEach(l -> l.accept(FitState.FAILED));
+                    } else {
+                        errorDisplay.setText("Success");
+                        errorDisplay.setDisabledTextColor(darkGreen);
+                        bkSpaceDisplay.setText(FORMATTER.format(lastSplineFit.bkSpace));
+                        bicDisplay.setText(FORMATTER.format(lastSplineFit.bic));
+                    }
+                }
+            });
+            if (!noFit) {
+                if (ks.second().bic == null) {
+                    return;
                 }
             }
         }
@@ -678,9 +699,23 @@ public class KeplerSplineControl {
     }
 
     public void updatePlot(boolean updateAll) {
-        bkSpaceDisplay.setText("---");
-        errorDisplay.setDisabledTextColor(Color.BLACK);
-        errorDisplay.setText("Running...");
+        if (SwingUtilities.isEventDispatchThread()) {
+            createUI();
+            bkSpaceDisplay.setText("---");
+            errorDisplay.setDisabledTextColor(Color.BLACK);
+            errorDisplay.setText("Running...");
+        } else {
+            try {
+                SwingUtilities.invokeAndWait(() -> {
+                    createUI();
+                    bkSpaceDisplay.setText("---");
+                    errorDisplay.setDisabledTextColor(Color.BLACK);
+                    errorDisplay.setText("Running...");
+                });
+            } catch (InterruptedException | InvocationTargetException e) {
+                e.printStackTrace();
+            }
+        }
         if (updateAll) {
             RUNNER.submit(() -> MultiPlot_.updatePlot());
         } else {

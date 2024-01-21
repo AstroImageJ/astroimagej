@@ -1724,7 +1724,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
                     // Duplicate conditions of transit model fit legend
                     if (detrendFitIndex[curve] == 9 && useTransitFit[curve] && showModel[curve] && showLTranParams[curve]) {
-                        llab.append(" (depth=").append(transitDepthLabel[curve].getText());
+                        llab.append(" (depth=").append(Double.isNaN(transitDepth[curve]) ? "NaN" : (mmag[curve] ? fourPlaces.format(2.5 * Math.log10(1.0 + transitDepth[curve]/1000) * 1000) : threeDigitsTwoPlaces.format(transitDepth[curve])));
                         if (mmag[curve]) {
                             llab.append(" mmag)");
                         } else {

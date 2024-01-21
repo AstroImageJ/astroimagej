@@ -13,14 +13,21 @@
 //  Comments or questions may be directed to the macro's author:
 //  Dennis Conti, email: dennis@astrodennis.com
 //
-//  REVISION 3.15
-var REVISION = "3.15";
+//  REVISION 3.17
+var REVISION = "3.17";
 //
 //  The following are diagnostic flags
 var STARtoDiagnose = "";
 var FORCEbinning = 0;
 //
 //  Revision Notes:
+//       3.17 For multiple runs, if the files are are in the same directory, instead of storing the best aperture
+//            result plots and table in a new folder called Best-Aperture-Results, store them in this same folder
+//            as the measurement files.
+//            Also, for multiple runs, put the word "merged" before "NEBcheck" for the merged plots folder and
+//            before "NEB-table" for the merged table.
+//       3.16 Change the savePlot function so that for "save only" plots, instead of updading the existing plot
+//            window, show the plot, save it, and close it using the windowTitle of the plot
 //       3.15 Deleted extraneous "TARGET disp" debug messag
 //       3.14 For multi-file runs, include the "best" plot of the target star in the set of best plots
 //       3.13 Updated some user interface wording, and closed last progress bar when finished.
@@ -30,7 +37,7 @@ var FORCEbinning = 0;
 //            Always include NEB analysis informational messages at the end of each run.
 //            Include version number in the title on user dialogue page.
 //	   3.10 Correct the suffix name of the NEBtable file to NEB-table.
-//		  Delete an extra space in the NEBtable summary disposition title.
+//		  Delete an extra space in the NEBtable summary disposition title.sh
 //	   3.09 For detrend plots, compute the "Disposition" on the plot based on the detrend's data vs. using
 //			the disposition from the undetrended data for that star.
 //		  In creating "Best Aperture" NEB table, pull star seperation and PA from the Best Aperture values
@@ -296,6 +303,7 @@ var averageAPERTURE;
 var averageAPERTUREarcseconds;
 //
 //  Define globals used in savePlot function
+var windowTitle;
 var saveOnlyPlots;
 var firstPlot;
 var savePlots;
@@ -1115,22 +1123,20 @@ function plotData (plotTitle, yAxisTitle, iBeginValue, iEndValue, xValuesArray, 
 //
 //*************** FUNCTION:  savePlot
 //
-//  This function uses Plot.update() if save only plots was selected. In this case, the plots will be
-//  made, but will replace each other, and will finally be replaced with a message indicating
-//  where the plots can be found. Use Plot.show if save only plots is false or this is the first
-//  plot in all cases
+//  This function will display the plot and save it to a file.
+//  However, for the  save only option, the plot will be closed using
+//  the windowTitle of the plot.
 //
 function savePlot (starName, plotFilenameSuffix) {
-    if (!saveOnlyPlots || firstPlot) {
-       Plot.show();
-       firstPlot = false;
-       } else {Plot.update();};
+    Plot.show();
 //  If plots are to be saved, create the full output file name of the plot file;
 //  include the first four standard fields in the measurement file name as the prefix
+//  If saveOnly, then close it using the windowTitle
     if (savePlots || saveOnlyPlots) {
        pathOutputFile=subDirectoryPath + BestFileNamePrefix + "_" + starName + "_" + averageAPERTURE + "px" + plotFilenameSuffix;
        save(pathOutputFile);
-        };
+	   if (saveOnlyPlots) {close(windowTitle);};
+       };
 //
 };
 //
@@ -2058,15 +2064,16 @@ fileDir = fileDirArray[nFiles];
 if (nFiles == 0) {previousFileDir = fileDir;};
 //
 //  If this is the second file in a multi-file run, check if it
-//  has the same parent directory as the first file and
-//  if it does, use this parent directory for later storing the
+//  has the same parent directory as the first file.
+//  If it does, set the createNewDir flag to false so that
+//  this parent directory will later be used for storing the
 //  best aperture NEB table and the folder containing the best aperture
-//  plots. Otherwise, later create a folder at the same level as both measurement
-//  table folders
+//  plots. Otherwise, set the flag to False so that a folder
+//  at the same level as both measurement table folders will later
+//  be created.
 if (nFiles == 1) {
-		     if (fileDir == previousFileDir) {BestFilesParentDirectory = fileDir;
-								 } else {BestFilesParentDirectory = File.getParent(fileDir);
-  							              };
+		     if (fileDir == previousFileDir) {createNewDir = false;
+								 } else {createNewDir = true;};
                  };
 fullFileName = fullFileNameArray[nFiles];
 //  Create the progress bar title that includes the file name
@@ -2809,7 +2816,8 @@ if (nebPlotOption) {
 //  Plot the normalized relative flux data; also indicate this by setting flag to true
     flag = true;
     suffix = "";
-    plotData ("Overlay of Required NEB Depth","normalized relative flux",iBegin,iEnd, xValues, yValues, STARrms[k], normalizedFlux, k, suffix, flag );
+	windowTitle = "Overlay of Required NEB Depth";
+    plotData (windowTitle,"normalized relative flux",iBegin,iEnd, xValues, yValues, STARrms[k], normalizedFlux, k, suffix, flag );
 //
 //  Determine the distance to the nearest neighbor of the current star S[k} as follows:
 //  1.  Let mStars = the lesser of the user-defined neighborhood limit value
@@ -3025,9 +3033,6 @@ if (nebPlotOption) {
         };
      };
   };
-  if (saveOnlyPlots) {
-   close();
-   };
 //
 //  END OF OPTION 2 AND 5 PROCESSING
 };
@@ -3180,22 +3185,28 @@ if (dmagRMSOption) {
 //  END OF MULTIPLE FILE LOOP
 };
 //
-//  If there are multiple observation runs and either nebTableOption or saving plots is true, create a new
-//  directory under the current parent directory. This new directory is where a NEB table will be stored that lists
-//  the best aperture results for each star and, if savePlots or saveOnlyPlots is true, where a subdirectory
-//  will be created where the plots associated with the corresponding best aperture runs will be stored
+//  BEGIN LOOP FOR MULTI-FILE RUNS
+//
 if (numberMeasurementFiles > 1) {
 //
-//  Create a new directory under the current parent directory for storing the
-//  summary NEB table and/or the subdirectory for the corresponding NEB plots
+//  If this is a multi-file run and the nebTableOption or either of the saving plots flags are true, then:
+//  a.  If the createNewDir flag is True - namely the files are in separate directories - then
+//      create a new directory under the current parent directory for storing the best aperture
+//      results.
+//  b.  If the createNewDir flag is False - namely the files (or at least the second one) are in the
+//      same directory as the first file - then use the current directory to store the best aperture
+//      resuts.
+//
     if (nebTableOption || savePlots || saveOnlyPlots) {
-      bestDir = BestFilesParentDirectory + fileSeparator + "Best-Aperture-Results" + fileSeparator;
-      File.makeDirectory(bestDir);
+      if (createNewDir) {BestFilesParentDirectory = File.getParent(fileDir);
+						 bestDir = BestFilesParentDirectory + fileSeparator + "Best-Aperture-Results" + fileSeparator;
+                         File.makeDirectory(bestDir);
+	                     }else {bestDir = fileDir;};
       };
 //
     if (nebTableOption){
 //  Create a NEB table with the best aperture results
-      pathOut = bestDir + BestFileNamePrefix + "_NEB-table" + ".txt";
+      pathOut = bestDir + BestFileNamePrefix + "_merged_NEB-table" + ".txt";
 	createNEBTable(true,pathOut);
       };
 //  If user selection, print best aperture completion message to log window
@@ -3220,7 +3231,7 @@ if (numberMeasurementFiles > 1) {
       run("Text Window...", "name=" + progressTitle + " width=80 height=3 monospaced");
       progress(cumProgress);
 //  Create a directory and plots of observations for the best apertures
-      newPlotPath = bestDir + BestFileNamePrefix + "_NEBcheck" + fileSeparator;
+      newPlotPath = bestDir + BestFileNamePrefix + "_merged_NEBcheck" + fileSeparator;
       File.makeDirectory(newPlotPath);
       plotFilenameSuffix = "_NEBdepth-plot.png";
 //  For each star,store in the new directory the plot associated with the its "best" aperture run

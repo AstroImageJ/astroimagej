@@ -5745,9 +5745,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     } else if (!e.isControlDown() && !e.isShiftDown() && !e.isAltDown()) { // left mouse click release (zoom in)
                         zoomControl(e.getX(), e.getY(), -5, !e.isControlDown(), !e.isAltDown());
                     }
-                } else if (e.getButton() == MouseEvent.BUTTON2) { //middle mouse click release
+                } else if (SwingUtilities.isMiddleMouseButton(e)) { //middle mouse click release
                     IJ.log("x=" + fourPlaces.format(xval) + ", y=" + fourPlaces.format(yval));
-                } else if (e.getButton() == MouseEvent.BUTTON3 && e.isShiftDown() && !e.isControlDown() && !e.isAltDown()) { //shift + right mouse click release    //undo delete selected table row
+                } else if (SwingUtilities.isRightMouseButton(e) && e.isShiftDown() && !e.isControlDown() && !e.isAltDown()) { //shift + right mouse click release    //undo delete selected table row
                     FitOptimization.undoOutlierClean();
                     selectedRowEnd = selectedRowStart + inputAverageOverSize[firstCurve] - 1;
                     measurementsWindow.setSelection(selectedRowStart, selectedRowEnd);
@@ -5755,7 +5755,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     plotcoordlabel.setText("DATA: x=" + fourPlaces.format(x[firstCurve][boldedDatum]) + ", y=" + fourPlaces.format(y[firstCurve][boldedDatum]));
                     IJ.showStatus("data values: x=" + fourPlaces.format(x[firstCurve][boldedDatum]) + ", y=" + fourPlaces.format(y[firstCurve][boldedDatum]));
                     updatePlot(updateAllFits());
-                } else if (e.getButton() == MouseEvent.BUTTON3) { //right mouse click release
+                } else if (SwingUtilities.isRightMouseButton(e) && !e.isControlDown() && !e.isShiftDown()) { //right mouse click release
                     totalPanOffsetX = 0.0;
                     totalPanOffsetY = 0.0;
                     newPanOffsetX = 0.0;

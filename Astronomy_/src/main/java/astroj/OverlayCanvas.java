@@ -81,7 +81,8 @@ public class OverlayCanvas extends ImageCanvas {
     }
 
     public boolean removeRoi(Roi roi) {
-        return rois.remove(roi);
+        // Can't use the normal remove as Roi does not check for type information with AIJ rois
+        return rois.removeIf(r -> roi == r);
     }
 
     /**

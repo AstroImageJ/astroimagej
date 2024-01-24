@@ -1567,7 +1567,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     }
                 }
 
-                if (maxima.coordinateMaximas().size() == 0) {
+                if (maxima.coordinateMaximas().isEmpty()) {
                     var g = new GenericSwingDialog("MA Automatic Comp. Star Selection");
                     g.addMessage("Number of maxima found is 0!\nProbable causes are that " +
                             "the Minimum peak threshold is set too high and/or the Maximum peak threshold is set " +
@@ -1606,7 +1606,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 var set = weightAndLimitPeaks(m, t1Source);
                 if (cancelled) return;
 
-                if (set.size() == 0) {
+                if (set.isEmpty()) {
                     var g = new GenericSwingDialog("MA Automatic Comparison Star Selection");
                     g.addMessage("No comparison stars found that meet the brightness thresholds set.\n" +
                             "Check the brightness threshold settings in the Multi-Aperture set-up panel.\n");
@@ -1630,7 +1630,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     }
                 }
 
-                if (set.size() > 0) {
+                if (!set.isEmpty()) {
                     if (enableLog) AIJLogger.log("Placing suggested comp. stars...");
                     for (WeightedCoordinateMaxima coordinateMaxima : set.subList(0, Math.min(maxSuggestedStars - refCount, set.size()))) {
                         if (cancelled) return;

@@ -158,7 +158,7 @@ public class PhotometricDebayer implements ExtendedPlugInFilter {
                     ImagePlus imp2 = new ImagePlus(imp.getStack().getSliceLabel(slice), mim.makeImageProcessor(pallete, color, transform));
                     imp2.setCalibration(imp.getCalibration());
                     imp2.setFileInfo(imp.getFileInfo());
-                    var scienceHeader = FitsJ.getHeader(imp);
+                    var scienceHeader = FitsJ.getHeader(imp, slice);
                     if (scienceHeader != null) {
                         scienceHeader = headerUpdate(scienceHeader, imp2);
                         FitsJ.putHeader(imp2, scienceHeader);

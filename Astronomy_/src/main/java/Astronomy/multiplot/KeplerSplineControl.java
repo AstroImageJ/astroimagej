@@ -528,7 +528,7 @@ public class KeplerSplineControl {
                 }
             });
             if (!noFit) {
-                if (ks.second().bic == null) {
+                if (ks.second() != null && ks.second().bic == null) {
                     return;
                 }
             }

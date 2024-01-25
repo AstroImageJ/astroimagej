@@ -2164,6 +2164,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             plotImage = plotWindow.getImagePlus();
 
             plotImageCanvas = plotImage.getCanvas();
+            ((PlotCanvas) plotImageCanvas).setZoomed(() -> zoomY != 0 || zoomX != 0 || draggableShape.isPlotScaleDirty());
             plotOverlayCanvas = new OverlayCanvas(plotImage);
             list.clear();
 
@@ -2202,6 +2203,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             plotImage.setProcessor("Plot of " + tableName, ip);
             plotImageCanvas = plotImage.getCanvas();
             plotImageCanvas.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+            ((PlotCanvas) plotImageCanvas).setZoomed(() -> zoomY != 0 || zoomX != 0 || draggableShape.isPlotScaleDirty());
         }
 
         drawAijVersion.ifProp(() -> {

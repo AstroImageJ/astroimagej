@@ -1,10 +1,12 @@
 package ij.gui;
 
+import ij.ImagePlus;
+import ij.astro.AstroImageJ;
+import ij.astro.util.UIHelper;
+
 import java.awt.*;
-import ij.process.*;
-import ij.*;
-import ij.util.*;
-import java.awt.event.*;
+import java.awt.event.MouseEvent;
+import java.util.function.BooleanSupplier;
 
 
 /** This subclass of ImageCanvas has special provisions for plots:
@@ -18,12 +20,30 @@ public class PlotCanvas extends ImageCanvas {
 	int xScrolled, yScrolled;	//distance scrolled so far
 	int oldWidth, oldHeight;
 	int rangeArrowIndexWhenPressed = -1;
+	@AstroImageJ(reason = "Support custom zoom indicator for MP")
+	private BooleanSupplier zoomed = () -> false;
+	@AstroImageJ(reason = "Support custom zoom indicator for MP")
+	private static final Image ZOOM_INDICATOR = UIHelper.createImage("Astronomy/images/icons/multiplot/zoom.png");
 
 	/** Creates a new PlotCanvas */
 	public PlotCanvas(ImagePlus imp) {
 		super(imp);
 		oldWidth = imp.getWidth();
 		oldHeight = imp.getHeight();
+	}
+
+	@Override
+	@AstroImageJ(reason = "Support custom zoom indicator for MP")
+	public void paint(Graphics g) {
+		super.paint(g);
+		if (zoomed.getAsBoolean()) {
+			g.drawImage(ZOOM_INDICATOR, 0, 0, null);
+		}
+	}
+
+	@AstroImageJ(reason = "Support custom zoom indicator for MP")
+	public void setZoomed(BooleanSupplier zoomed) {
+		this.zoomed = zoomed;
 	}
 
 	/** Tells the PlotCanvas which plot to use for zooming etc.

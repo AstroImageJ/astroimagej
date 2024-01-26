@@ -2677,7 +2677,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 var maskTrimmedData = KeplerSplineControl.getInstance(curve).settings.maskTrimmedData.get();
                 for (int xx = 0; xx < nn[curve]; xx++) {
                     if (showXAxisNormal) {
-                        if ((maskTransit && x[curve][xx] > dMarker2Value + xOffset && x[curve][xx] < dMarker3Value + xOffset) ||
+                        if ((maskTransit && (x[curve][xx] > dMarker2Value + xOffset && x[curve][xx] < dMarker3Value + xOffset)) ||
                                 (maskTrimmedData && useDMarker1 && x[curve][xx] < dMarker1Value + xOffset) ||
                                 (maskTrimmedData && useDMarker4 && x[curve][xx] > dMarker4Value + xOffset)) {
                             yMask.setEntry(xx,0.0);
@@ -2685,8 +2685,28 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                             yMask.setEntry(xx,1.0);
                         }
                     } else {
-                        xfold = ((x[curve][xx] - netT0) % netPeriod);
-                        if (xfold > halfPeriod) { xfold -= netPeriod; } else if (xfold < -halfPeriod) xfold += netPeriod;
+                        xfold = (x[curve][xx] - netT0) % netPeriod;
+                        if (showXAxisAsPhase) {
+                            xfold = xfold / netPeriod;
+                            if (xfold > 0.5) {
+                                xfold -= 1.0;
+                            } else if (xfold < -0.5) {
+                                xfold += 1.0;
+                            }
+                        } else if (showXAxisAsDaysSinceTc) {
+                            if (xfold > halfPeriod) {
+                                xfold -= netPeriod;
+                            } else if (xfold < -halfPeriod) {
+                                xfold += netPeriod;
+                            }
+                        } else if (showXAxisAsHoursSinceTc) {
+                            if (xfold > halfPeriod) {
+                                xfold -= netPeriod;
+                            } else if (xfold < -halfPeriod) {
+                                xfold += netPeriod;
+                            }
+                            xfold *= 24;
+                        }
                         if ((maskTransit && xfold > dMarker2Value && xfold < dMarker3Value) ||
                                 (maskTrimmedData && useDMarker1 && xfold < dMarker1Value) ||
                                 (maskTrimmedData && useDMarker4 && xfold > dMarker4Value)) {
@@ -2705,7 +2725,11 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     if (showXAxisAsPhase) {
                         for (int j = 0; j < nn[curve]; j++) {
                             x[curve][j] = ((x[curve][j] - netT0) % netPeriod) / netPeriod;
-                            if (x[curve][j] > 0.5) { x[curve][j] -= 1.0; } else if (x[curve][j] < -0.5) x[curve][j] += 1.0;
+                            if (x[curve][j] > 0.5) {
+                                x[curve][j] -= 1.0;
+                            } else if (x[curve][j] < -0.5) {
+                                x[curve][j] += 1.0;
+                            }
                         }
                     } else if (showXAxisAsDaysSinceTc) {
                         double halfPeriod = netPeriod / 2.0;
@@ -2713,7 +2737,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                             x[curve][j] = ((x[curve][j] - netT0) % netPeriod);
                             if (x[curve][j] > halfPeriod) {
                                 x[curve][j] -= netPeriod;
-                            } else if (x[curve][j] < -halfPeriod) x[curve][j] += netPeriod;
+                            } else if (x[curve][j] < -halfPeriod) {
+                                x[curve][j] += netPeriod;
+                            }
                         }
                     } else if (showXAxisAsHoursSinceTc) {
                         double halfPeriod = netPeriod / 2.0;
@@ -2721,7 +2747,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                             x[curve][j] = ((x[curve][j] - netT0) % netPeriod);
                             if (x[curve][j] > halfPeriod) {
                                 x[curve][j] -= netPeriod;
-                            } else if (x[curve][j] < -halfPeriod) x[curve][j] += netPeriod;
+                            } else if (x[curve][j] < -halfPeriod) {
+                                x[curve][j] += netPeriod;
+                            }
                             x[curve][j] *= 24;
                         }
                     }
@@ -14307,7 +14335,13 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     }
 
     static double getFitStep(int c, int row, double[] width, double[] center) {
-        return useCustomFitStep[c][row] ? fitStep[c][row] > 0.0 ? fitStep[c][row] : defaultFitStep[row] : (usePriorWidth[c][row] && width[row] > 0.0 ? (width[row] * 0.9 < center[row] ? width[row] * 0.9 : center[row] > 0.0 ? center[row] : defaultFitStep[row]) : (center[row] < defaultFitStep[row] && center[row] > 0.0 ? center[row] : defaultFitStep[row]));
+        return useCustomFitStep[c][row] ?
+                fitStep[c][row] > 0.0 ? fitStep[c][row] : defaultFitStep[row] :
+                (usePriorWidth[c][row] && width[row] > 0.0 ?
+                         (width[row] * 0.9 < center[row] ?
+                                  width[row] * 0.9 :
+                                  center[row] > 0.0 ? center[row] : defaultFitStep[row]) :
+                         (center[row] < defaultFitStep[row] && center[row] > 0.0 ? center[row] : defaultFitStep[row]));
     }
 
     static void enableTransitComponents(int c) {

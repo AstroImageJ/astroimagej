@@ -1952,7 +1952,7 @@ public class CurveFitter {
                     incl = lockToCenter[curve][4] ? priorCenter[4] * Math.PI / 180.0 : param[fp < nPars ? fp++ : nPars - 1];  //inclination
                     b = Math.cos(incl) * ar;
                     if (b > 1.0 + p0) {  //ensure planet transits or grazes the star
-                        incl = Math.acos((1.0 + p0) / ar);
+                        return Double.POSITIVE_INFINITY;
                     }
                 } else {
                     incl = Math.acos(bp / ar);

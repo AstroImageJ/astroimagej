@@ -21,6 +21,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.IntStream;
 
 import static Astronomy.MultiPlot_.*;
 
@@ -538,16 +539,20 @@ public class KeplerSplineControl {
             case FITTED_SPLINE -> {
                 if (ks != null) {
                     for (int xx = 0; xx < size; xx++) {
-                        y[xx] = ks.first().getEntry(xx);
+                        if (mask.getEntry(xx) > 0) {
+                            y[xx] = ks.first().getEntry(xx);
+                        }
                     }
                 }
             }
             case FLATTENED_LIGHT_CURVE -> {
                 if (ks != null) {
-                    //var avg = Arrays.stream(y).limit(size).summaryStatistics().getAverage();
+                    var avg = IntStream.range(0, size).filter(i -> mask.getEntry(i) > 0).mapToDouble(i->y[i]).summaryStatistics().getAverage();
                     for (int xx = 0; xx < size; xx++) {
-                        y[xx] = (y[xx] / ks.first().getEntry(xx)); // * avg;
-                        yerr[xx] = (yerr[xx] / ks.first().getEntry(xx));
+                        if (mask.getEntry(xx) > 0) {
+                            y[xx] = (y[xx] / ks.first().getEntry(xx)) * avg;
+                            yerr[xx] = (yerr[xx] / ks.first().getEntry(xx)) * avg;
+                        }
                     }
                 }
             }

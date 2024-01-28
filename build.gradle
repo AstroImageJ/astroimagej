@@ -7,6 +7,7 @@ import org.ajoberstar.grgit.Grgit
 import org.apache.tools.ant.taskdefs.condition.Os
 
 import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 
 buildscript {
     repositories {
@@ -501,8 +502,6 @@ javaRuntimeSystems.each {sys, sysInfo ->
     tasks.register(taskName, PackageTask) {
         group 'AstroImageJ Development'
 
-        //noinspection GroovyAssignabilityCheck
-        version = sysInfo.arch + "_" + sysInfo.hw_bitness + "Bit"
         // Set the platform
         io.github.fvarrui.javapackager.model.Platform.values().each {
             if (it == io.github.fvarrui.javapackager.model.Platform.auto) return
@@ -514,7 +513,7 @@ javaRuntimeSystems.each {sys, sysInfo ->
         }
 
         //noinspection GroovyAssignabilityCheck
-        version = "v${project.version}-${platform}-${sysInfo.arch}_${sysInfo.hw_bitness}Bit"
+        version = project.version
 
         // Get Java bin fold location
         File runtimePath
@@ -569,6 +568,39 @@ javaRuntimeSystems.each {sys, sysInfo ->
         //noinspection GroovyAssignabilityCheck
         dependsOn taskName
         outputs.upToDateWhen { false }
+    }
+}
+
+tasks.withType(PackageTask).configureEach {pkgTsk ->
+    // Extract platform info from task name, put it in format for file name
+    if (!pkgTsk.name.matches("packageAijFor(.+)_((?:x86)|(?:arm))_(\\d{2})Bit_Java(\\d{2})")) {
+        throw new GradleException("Package task ${pkgTsk.name} failed to match, could not determine with confidence platform information")
+    }
+    def platformInfo = pkgTsk.name.replaceAll("packageAijFor(.+)_((?:x86)|(?:arm))_(\\d{2})Bit_Java(\\d{2})", '$2_$3Bit')
+
+    doLast {
+        logger.lifecycle 'Renaming outputs for platform information...'
+
+        outputFiles.forEach {
+            if (!it.exists()) {
+                logger.info '\tSkipping file that does not exist: {}', it.name
+                return
+            }
+
+            if (!it.name.matches("AstroImageJ[-_]${project.version}(?:[-_]\\w+)?(\\.\\w+|\\.tar\\.gz)\$")) {
+                logger.warn "\tGiven a file '{}' that cannot be handled", it.name
+            } else {
+                def newName = it.name.replaceAll("AstroImageJ[-_]${project.version}(?:[-_]\\w+)?(\\.\\w+|\\.tar\\.gz)\$", "AstroImageJ_v${project.version}-${platform}-${platformInfo}\$1")
+                def originalPath = it.toPath()
+                def newPath = originalPath.resolveSibling(newName)
+
+                logger.lifecycle "\tRenaming '{}' to '{}'...", it, newName
+
+                if (!Files.move(originalPath, newPath, StandardCopyOption.REPLACE_EXISTING)) {
+                    logger.error "\tFailed to rename '{}' to '{}'", it.name, newName
+                }
+            }
+        }
     }
 }
 

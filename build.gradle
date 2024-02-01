@@ -460,6 +460,9 @@ javapackager {
     copyDependencies = false
 
     linuxConfig.wrapJar = false
+    //todo todo rpm broken as is includes AstroImageJ executable in AIJ folder, which conflicts with the other files in the package
+    // even fixes that generates a broken rpm
+    linuxConfig.generateRpm = false
 
     organizationName  "AstroImageJ"
     vmArgs  [] //['-Xmx3000m', '-Xms256m'] // Launch parameters are set in AstroImageJ.cfg

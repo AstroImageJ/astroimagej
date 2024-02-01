@@ -5733,8 +5733,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         Clipboard systemClipboard = null;
                         try {
                             systemClipboard = plotWindow.getToolkit().getSystemClipboard();
-                            var xTxt = plotcoordlabel.getText().replaceAll("x=(\\d+(?:\\.\\d+)), y=(\\d+(?:\\.\\d+))", "$1");
-                            systemClipboard.setContents(new StringSelection(String.valueOf(Double.parseDouble(xTxt)+xOffset)), null);
+                            systemClipboard.setContents(new StringSelection(plotcoordlabel.getText().replaceAll("x=(\\d+(?:\\.\\d+)), y=(\\d+(?:\\.\\d+))", "$1")), null);
                         } catch (Exception ex) {
                             ex.printStackTrace();
                             IJ.error("Unable to copy to Clipboard.");
@@ -5905,7 +5904,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     plotbottompanel.setSize(600, 30);
                     plotcoordlabel = (Label) plotbottompanel.getComponent(4);
                     plotcoordlabel.setSize(400, 20);
-                    plotcoordlabel.setText("x=" + fourPlaces.format(x) + ", y=" + fourPlaces.format(y) + ", dx=" + fourPlaces.format(dx) + ", dy=" + fourPlaces.format(dy));
+                    plotcoordlabel.setText("x=" + fourPlaces.format(x+xOffset) + ", y=" + fourPlaces.format(y) + ", dx=" + fourPlaces.format(dx) + ", dy=" + fourPlaces.format(dy));
                     IJ.showStatus("plot coordinates: x=" + fourPlaces.format(x) + ", y=" + fourPlaces.format(y) + ", dx=" + fourPlaces.format(dx) + ", dy=" + fourPlaces.format(dy));
                 } else if (e.isControlDown() && SwingUtilities.isRightMouseButton(e)) { // control right-drag (update vertical marker 3 or 4 position)
                     handleControlRightClickDrag(e, imageX, imageY);
@@ -5923,7 +5922,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         } else {
                             double x = plotMinX + (double) (imageX - (Plot.LEFT_MARGIN)) * (plotMaxX - plotMinX) / (double) (plot.getDrawingFrame().width);
                             double y = plotMaxY - (double) (imageY - (Plot.TOP_MARGIN)) * (plotMaxY - plotMinY) / (double) (plot.getDrawingFrame().height);  //was 58
-                            plotcoordlabel.setText("x=" + fourPlaces.format(x) + ", y=" + fourPlaces.format(y));
+                            plotcoordlabel.setText("x=" + fourPlaces.format(x+xOffset) + ", y=" + fourPlaces.format(y));
                             IJ.showStatus("plot coordinates: x=" + fourPlaces.format(x) + ", y=" + fourPlaces.format(y));
                         }
                     } else if (e.isControlDown() && !e.isAltDown()) { // control left-drag (update left detrend position)
@@ -5969,7 +5968,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 if (plotcoordlabel == null) {
                     return;
                 }
-                plotcoordlabel.setText("x=" + fourPlaces.format(xval) + ", y=" + fourPlaces.format(yval));
+                plotcoordlabel.setText("x=" + fourPlaces.format(xval+xOffset) + ", y=" + fourPlaces.format(yval));
                 IJ.showStatus("plot coordinates: x=" + fourPlaces.format(xval) + ", y=" + fourPlaces.format(yval));
                 if (boldedDatum != -1) {
                     boldedDatum = -1;

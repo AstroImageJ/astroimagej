@@ -528,7 +528,7 @@ public class KeplerSplineControl {
                 }
             });
             if (!noFit) {
-                if (ks.second().bic == null) {
+                if (ks.second() != null && ks.second().bic == null) {
                     return;
                 }
             }
@@ -544,9 +544,8 @@ public class KeplerSplineControl {
             }
             case FLATTENED_LIGHT_CURVE -> {
                 if (ks != null) {
-                    //var avg = Arrays.stream(y).limit(size).summaryStatistics().getAverage();
                     for (int xx = 0; xx < size; xx++) {
-                        y[xx] = (y[xx] / ks.first().getEntry(xx)); // * avg;
+                        y[xx] = (y[xx] / ks.first().getEntry(xx));
                         yerr[xx] = (yerr[xx] / ks.first().getEntry(xx));
                     }
                 }

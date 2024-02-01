@@ -13,6 +13,7 @@ import flanagan.analysis.Stat;
 import flanagan.math.Minimization;
 import flanagan.math.MinimizationFunction;
 import ij.*;
+import ij.astro.accessors.TransferablePlot;
 import ij.astro.gui.GenericSwingDialog;
 import ij.astro.gui.nstate.BiState;
 import ij.astro.gui.nstate.NStateButton;
@@ -44,6 +45,8 @@ import javax.swing.event.DocumentListener;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 import java.awt.*;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.StringSelection;
 import java.awt.event.*;
 import java.awt.geom.GeneralPath;
 import java.awt.image.BufferedImage;
@@ -82,6 +85,7 @@ import java.util.stream.IntStream;
  */
 @SuppressWarnings("SpellCheckingInspection")
 public class MultiPlot_ implements PlugIn, KeyListener {
+    public static final HelpPanel HELP_PANEL = new HelpPanel("help/plotwindow_help.html", "Plot");
     static double defaultTcFitStep = 0.04;
     static boolean panelsUpdating;
     static String title;
@@ -2158,8 +2162,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 }
             });
             ((PlotWindow) plotWindow).getHelpButton().addActionListener(e -> {
-                String filename = "help/plotwindow_help.html";
-                new HelpPanel(filename, "Plot").setVisible(true);
+                HELP_PANEL.setVisible(true);
             });
             plotWindow.setIconImage(plotIcon.getImage());
             plotImage = plotWindow.getImagePlus();
@@ -2192,9 +2195,15 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 for (MouseListener mouseListener : ml) plotImageCanvas.removeMouseListener(mouseListener);
             }
 
+            KeyListener[] kl = plotImageCanvas.getKeyListeners();
+            if (kl.length > 0) {
+                for (KeyListener mouseListener : kl) plotImageCanvas.removeKeyListener(mouseListener);
+            }
+
             plotImageCanvas.addMouseWheelListener(plotMouseWheelListener);
             plotImageCanvas.addMouseMotionListener(plotMouseMotionListener);
             plotImageCanvas.addMouseListener(plotMouseListener);
+            plotImageCanvas.addKeyListener(plotKeyListener);
             plotImageCanvas.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
             zoomX = 0.0;
             zoomY = 0.0;
@@ -5698,6 +5707,55 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             panelShiftDown = e.isShiftDown();
             panelAltDown = e.isAltDown();
             panelControlDown = e.isControlDown();
+        }
+    };
+
+    static KeyListener plotKeyListener = new KeyAdapter() {
+        @Override
+        public void keyPressed(KeyEvent e) {
+            if (plot == null || plotWindow == null) {
+                return;
+            }
+
+            if ((e.isControlDown() || e.isMetaDown())) {
+                switch (e.getKeyCode()) {
+                    case KeyEvent.VK_C -> {
+                        Clipboard systemClipboard = null;
+                        try {
+                            systemClipboard = plotWindow.getToolkit().getSystemClipboard();
+                            systemClipboard.setContents(new TransferablePlot(plot), null);
+                        } catch (Exception ex) {
+                            ex.printStackTrace();
+                            IJ.error("Unable to copy to Clipboard.");
+                        }
+                    }
+                    case KeyEvent.VK_X -> {
+                        Clipboard systemClipboard = null;
+                        try {
+                            systemClipboard = plotWindow.getToolkit().getSystemClipboard();
+                            var xTxt = plotcoordlabel.getText().replaceAll("x=(\\d+(?:\\.\\d+)), y=(\\d+(?:\\.\\d+))", "$1");
+                            systemClipboard.setContents(new StringSelection(String.valueOf(Double.parseDouble(xTxt)+xOffset)), null);
+                        } catch (Exception ex) {
+                            ex.printStackTrace();
+                            IJ.error("Unable to copy to Clipboard.");
+                        }
+                    }
+                    case KeyEvent.VK_Y -> {
+                        Clipboard systemClipboard = null;
+                        try {
+                            systemClipboard = plotWindow.getToolkit().getSystemClipboard();
+                            systemClipboard.setContents(new StringSelection(plotcoordlabel.getText()
+                                    .replaceAll("x=(\\d+(?:\\.\\d+)), y=(\\d+(?:\\.\\d+))", "$2")), null);
+                        } catch (Exception ex) {
+                            ex.printStackTrace();
+                            IJ.error("Unable to copy to Clipboard.");
+                        }
+                    }
+                    case KeyEvent.VK_H -> {
+                        HELP_PANEL.setVisible(true);
+                    }
+                }
+            }
         }
     };
 

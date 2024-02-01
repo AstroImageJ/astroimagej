@@ -18,7 +18,7 @@ public class KeplerSplineSettings {
     public final Property<Integer> dataCleaningTries = makePlotProperty(5);
     public final Property<Integer> smoothLength = makePlotProperty(31);
     public final Property<Boolean> maskTransit = makePlotProperty(true);
-    public final Property<Boolean> maskTrimmedData = makePlotProperty(true);
+    public final Property<Boolean> maskTrimmedData = makePlotProperty(false);
     public final Property<Boolean> windowOpened;
     public final Property<Point> windowLocation;
     private final int curve;

@@ -2698,12 +2698,16 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 double halfPeriod = netPeriod / 2.0;
                 var maskTransit = KeplerSplineControl.getInstance(curve).settings.maskTransit.get();
                 var maskTrimmedData = KeplerSplineControl.getInstance(curve).settings.maskTrimmedData.get();
+                var trimmedMask = new boolean[nn[curve]];
                 for (int xx = 0; xx < nn[curve]; xx++) {
+                    var trimmed = false;
                     if (showXAxisNormal) {
+                        trimmed = (maskTrimmedData && useDMarker1 && x[curve][xx] < dMarker1Value + xOffset) ||
+                                           (maskTrimmedData && useDMarker4 && x[curve][xx] > dMarker4Value + xOffset);
                         if ((maskTransit && (x[curve][xx] > dMarker2Value + xOffset && x[curve][xx] < dMarker3Value + xOffset)) ||
-                                (maskTrimmedData && useDMarker1 && x[curve][xx] < dMarker1Value + xOffset) ||
-                                (maskTrimmedData && useDMarker4 && x[curve][xx] > dMarker4Value + xOffset)) {
-                            yMask.setEntry(xx,0.0);
+                                trimmed) {
+                            yMask.setEntry(xx, 0.0);
+                            trimmedMask[xx] = trimmed;
                         } else {
                             yMask.setEntry(xx,1.0);
                         }
@@ -2730,14 +2734,36 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                             }
                             xfold *= 24;
                         }
-                        if ((maskTransit && xfold > dMarker2Value && xfold < dMarker3Value) ||
-                                (maskTrimmedData && useDMarker1 && xfold < dMarker1Value) ||
-                                (maskTrimmedData && useDMarker4 && xfold > dMarker4Value)) {
-                            yMask.setEntry(xx,0.0);
+                        trimmed = (maskTrimmedData && useDMarker1 && xfold < dMarker1Value) ||
+                                (maskTrimmedData && useDMarker4 && xfold > dMarker4Value);
+                        if ((maskTransit && xfold > dMarker2Value && xfold < dMarker3Value) || trimmed) {
+                            yMask.setEntry(xx, 0.0);
+                            trimmedMask[xx] = trimmed;
                         } else {
-                            yMask.setEntry(xx,1.0);
+                            yMask.setEntry(xx, 1.0);
                         }
                     }
+                }
+
+                // todo find way to do this that isn't a second loop
+                if (maskTrimmedData) {
+                    var p = 0;
+                    var xn = new double[nn[curve]];
+                    var yn = new double[nn[curve]];
+                    var mn = new double[nn[curve]];
+                    for (int xx = 0; xx < nn[curve]; xx++) {
+                        if (!trimmedMask[xx]) {
+                            xn[p] = x[curve][xx];
+                            yn[p] = y[curve][xx];
+                            mn[p] = yMask.getEntry(xx);
+                            p++;
+                        }
+                    }
+
+                    nn[curve] = p;
+                    x[curve] = xn;
+                    y[curve] = yn;
+                    yMask = MatrixUtils.createRealVector(Arrays.copyOf(mn, p));
                 }
 
                 KeplerSplineControl.getInstance(curve).smoothData(x[curve], y[curve], yerr[curve], nn[curve], yMask);

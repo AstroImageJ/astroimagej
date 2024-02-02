@@ -10089,6 +10089,13 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             Prefs.set("plot.showXAxisAsPhase", showXAxisAsPhase);
             Prefs.set("plot.showXAxisAsHoursSinceTc", showXAxisAsHoursSinceTc);
             Prefs.set("plot.showXAxisAsDaysSinceTc", showXAxisAsDaysSinceTc);
+            totalPanOffsetX = 0.0;
+            totalPanOffsetY = 0.0;
+            newPanOffsetX = 0.0;
+            newPanOffsetY = 0.0;
+            zoomY = 0;
+            zoomX = 0;
+            draggableShape.unmarkPlotScale();
             updatePlot(updateAllFits());
         });
         dayssincetcButton.addActionListener(ae -> {
@@ -10126,6 +10133,13 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             Prefs.set("plot.showXAxisAsDaysSinceTc", showXAxisAsDaysSinceTc);
             Prefs.set("plot.vMarker1Value", vMarker1Value);
             Prefs.set("plot.vMarker2Value", vMarker2Value);
+            totalPanOffsetX = 0.0;
+            totalPanOffsetY = 0.0;
+            newPanOffsetX = 0.0;
+            newPanOffsetY = 0.0;
+            zoomY = 0;
+            zoomX = 0;
+            draggableShape.unmarkPlotScale();
             updatePlot(updateAllFits());
         });
         hourssincetcButton.addActionListener(ae -> {
@@ -10163,6 +10177,13 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             Prefs.set("plot.showXAxisAsDaysSinceTc", showXAxisAsDaysSinceTc);
             Prefs.set("plot.vMarker1Value", vMarker1Value);
             Prefs.set("plot.vMarker2Value", vMarker2Value);
+            totalPanOffsetX = 0.0;
+            totalPanOffsetY = 0.0;
+            newPanOffsetX = 0.0;
+            newPanOffsetY = 0.0;
+            zoomY = 0;
+            zoomX = 0;
+            draggableShape.unmarkPlotScale();
             updatePlot(updateAllFits());
         });
         orbitalphaseButton.addActionListener(ae -> {
@@ -10200,6 +10221,13 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             Prefs.set("plot.showXAxisAsDaysSinceTc", showXAxisAsDaysSinceTc);
             Prefs.set("plot.vMarker1Value", vMarker1Value);
             Prefs.set("plot.vMarker2Value", vMarker2Value);
+            totalPanOffsetX = 0.0;
+            totalPanOffsetY = 0.0;
+            newPanOffsetX = 0.0;
+            newPanOffsetY = 0.0;
+            zoomY = 0;
+            zoomX = 0;
+            draggableShape.unmarkPlotScale();
             updatePlot(updateAllFits());
         });
 

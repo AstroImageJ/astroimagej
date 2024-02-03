@@ -2750,11 +2750,13 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     var p = 0;
                     var xn = new double[nn[curve]];
                     var yn = new double[nn[curve]];
+                    var yen = new double[nn[curve]];
                     var mn = new double[nn[curve]];
                     for (int xx = 0; xx < nn[curve]; xx++) {
                         if (!trimmedMask[xx]) {
                             xn[p] = x[curve][xx];
                             yn[p] = y[curve][xx];
+                            yen[p] = yerr[curve][xx];
                             mn[p] = yMask.getEntry(xx);
                             p++;
                         }
@@ -2763,6 +2765,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     nn[curve] = p;
                     x[curve] = xn;
                     y[curve] = yn;
+                    yerr[curve] = yen;
                     yMask = MatrixUtils.createRealVector(Arrays.copyOf(mn, p));
                 }
 

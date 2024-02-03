@@ -2691,128 +2691,48 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     }
                 }
             }
+        });
 
-            if (plotY[curve] && smooth[curve] && nn[curve] > 4) {
-                var yMask = MatrixUtils.createRealVector(nn[curve]);
-                double xfold;
-                double halfPeriod = netPeriod / 2.0;
-                var maskTransit = KeplerSplineControl.getInstance(curve).settings.maskTransit.get();
-                var maskTrimmedData = KeplerSplineControl.getInstance(curve).settings.maskTrimmedData.get();
-                var trimmedMask = new boolean[nn[curve]];
-                for (int xx = 0; xx < nn[curve]; xx++) {
-                    var trimmed = false;
-                    if (showXAxisNormal) {
-                        trimmed = (maskTrimmedData && useDMarker1 && x[curve][xx] < dMarker1Value + xOffset) ||
-                                           (maskTrimmedData && useDMarker4 && x[curve][xx] > dMarker4Value + xOffset);
-                        if ((maskTransit && (x[curve][xx] > dMarker2Value + xOffset && x[curve][xx] < dMarker3Value + xOffset)) ||
-                                trimmed) {
-                            yMask.setEntry(xx, 0.0);
-                            trimmedMask[xx] = trimmed;
-                        } else {
-                            yMask.setEntry(xx,1.0);
-                        }
-                    } else {
-                        xfold = (x[curve][xx] - netT0) % netPeriod;
-                        if (showXAxisAsPhase) {
-                            xfold = xfold / netPeriod;
-                            if (xfold > 0.5) {
-                                xfold -= 1.0;
-                            } else if (xfold < -0.5) {
-                                xfold += 1.0;
-                            }
-                        } else if (showXAxisAsDaysSinceTc) {
-                            if (xfold > halfPeriod) {
-                                xfold -= netPeriod;
-                            } else if (xfold < -halfPeriod) {
-                                xfold += netPeriod;
-                            }
-                        } else if (showXAxisAsHoursSinceTc) {
-                            if (xfold > halfPeriod) {
-                                xfold -= netPeriod;
-                            } else if (xfold < -halfPeriod) {
-                                xfold += netPeriod;
-                            }
-                            xfold *= 24;
-                        }
-                        trimmed = (maskTrimmedData && useDMarker1 && xfold < dMarker1Value) ||
-                                (maskTrimmedData && useDMarker4 && xfold > dMarker4Value);
-                        if ((maskTransit && xfold > dMarker2Value && xfold < dMarker3Value) || trimmed) {
-                            yMask.setEntry(xx, 0.0);
-                            trimmedMask[xx] = trimmed;
-                        } else {
-                            yMask.setEntry(xx, 1.0);
-                        }
-                    }
-                }
-
-                // todo find way to do this that isn't a second loop
-                if (maskTrimmedData) {
-                    var p = 0;
-                    var xn = new double[nn[curve]];
-                    var yn = new double[nn[curve]];
-                    var yen = new double[nn[curve]];
-                    var mn = new double[nn[curve]];
-                    for (int xx = 0; xx < nn[curve]; xx++) {
-                        if (!trimmedMask[xx]) {
-                            xn[p] = x[curve][xx];
-                            yn[p] = y[curve][xx];
-                            yen[p] = yerr[curve][xx];
-                            mn[p] = yMask.getEntry(xx);
-                            p++;
-                        }
-                    }
-
-                    nn[curve] = p;
-                    x[curve] = xn;
-                    y[curve] = yn;
-                    yerr[curve] = yen;
-                    yMask = MatrixUtils.createRealVector(Arrays.copyOf(mn, p));
-                }
-
-                KeplerSplineControl.getInstance(curve).smoothData(x[curve], y[curve], yerr[curve], nn[curve], yMask);
-            }
-
-            if(curve==firstCurve) {
-                xFirstRawMin = Arrays.stream(x[curve]).limit(nn[curve]).min().getAsDouble();
-                xFirstRawMax = Arrays.stream(x[curve]).limit(nn[curve]).max().getAsDouble();
-            }
-
+        // Calculate phase folding and min/max x
+        var phaseFoldedX = new double[maxCurves][];
+        IntStream.range(0, maxCurves).parallel().forEach(curve -> {
             if (plotY[curve]) {
                 if (!showXAxisNormal) {
+                    phaseFoldedX[curve] = Arrays.copyOf(x[curve], x[curve].length);
                     if (showXAxisAsPhase) {
                         for (int j = 0; j < nn[curve]; j++) {
-                            x[curve][j] = ((x[curve][j] - netT0) % netPeriod) / netPeriod;
-                            if (x[curve][j] > 0.5) {
-                                x[curve][j] -= 1.0;
-                            } else if (x[curve][j] < -0.5) {
-                                x[curve][j] += 1.0;
+                            phaseFoldedX[curve][j] = ((phaseFoldedX[curve][j] - netT0) % netPeriod) / netPeriod;
+                            if (phaseFoldedX[curve][j] > 0.5) {
+                                phaseFoldedX[curve][j] -= 1.0;
+                            } else if (phaseFoldedX[curve][j] < -0.5) {
+                                phaseFoldedX[curve][j] += 1.0;
                             }
                         }
                     } else if (showXAxisAsDaysSinceTc) {
                         double halfPeriod = netPeriod / 2.0;
                         for (int j = 0; j < nn[curve]; j++) {
-                            x[curve][j] = ((x[curve][j] - netT0) % netPeriod);
-                            if (x[curve][j] > halfPeriod) {
-                                x[curve][j] -= netPeriod;
-                            } else if (x[curve][j] < -halfPeriod) {
-                                x[curve][j] += netPeriod;
+                            phaseFoldedX[curve][j] = ((phaseFoldedX[curve][j] - netT0) % netPeriod);
+                            if (phaseFoldedX[curve][j] > halfPeriod) {
+                                phaseFoldedX[curve][j] -= netPeriod;
+                            } else if (phaseFoldedX[curve][j] < -halfPeriod) {
+                                phaseFoldedX[curve][j] += netPeriod;
                             }
                         }
                     } else if (showXAxisAsHoursSinceTc) {
                         double halfPeriod = netPeriod / 2.0;
                         for (int j = 0; j < nn[curve]; j++) {
-                            x[curve][j] = ((x[curve][j] - netT0) % netPeriod);
-                            if (x[curve][j] > halfPeriod) {
-                                x[curve][j] -= netPeriod;
-                            } else if (x[curve][j] < -halfPeriod) {
-                                x[curve][j] += netPeriod;
+                            phaseFoldedX[curve][j] = ((phaseFoldedX[curve][j] - netT0) % netPeriod);
+                            if (phaseFoldedX[curve][j] > halfPeriod) {
+                                phaseFoldedX[curve][j] -= netPeriod;
+                            } else if (phaseFoldedX[curve][j] < -halfPeriod) {
+                                phaseFoldedX[curve][j] += netPeriod;
                             }
-                            x[curve][j] *= 24;
+                            phaseFoldedX[curve][j] *= 24;
                         }
                     }
                 }
-                xMinimum[curve] = minOf(x[curve], nn[curve]); //FIND MIN AND MAX X OF EACH SELECTED DATASET
-                xMaximum[curve] = maxOf(x[curve], nn[curve]);
+                xMinimum[curve] = minOf(showXAxisNormal ? x[curve] : phaseFoldedX[curve], nn[curve]); //FIND MIN AND MAX X OF EACH SELECTED DATASET
+                xMaximum[curve] = maxOf(showXAxisNormal ? x[curve] : phaseFoldedX[curve], nn[curve]);
             }
         });
 
@@ -2887,6 +2807,107 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 xPlotMinRaw += 1.0;
             }
         }
+
+        // Smooth data and phase fold
+        IntStream.range(0, maxCurves).parallel().forEach(curve -> {
+            if (plotY[curve] && smooth[curve] && nn[curve] > 4) {
+                var yMask = MatrixUtils.createRealVector(nn[curve]);
+                double xfold;
+                double halfPeriod = netPeriod / 2.0;
+                var maskTransit = KeplerSplineControl.getInstance(curve).settings.maskTransit.get();
+                var maskTrimmedData = KeplerSplineControl.getInstance(curve).settings.maskTrimmedData.get();
+                var trimmedMask = new boolean[nn[curve]];
+                for (int xx = 0; xx < nn[curve]; xx++) {
+                    var trimmed = false;
+                    if (showXAxisNormal) {
+                        trimmed = (maskTrimmedData && useDMarker1 && x[curve][xx] < dMarker1Value + xOffset) ||
+                                (maskTrimmedData && useDMarker4 && x[curve][xx] > dMarker4Value + xOffset);
+                        if ((maskTransit && (x[curve][xx] > dMarker2Value + xOffset && x[curve][xx] < dMarker3Value + xOffset)) ||
+                                trimmed) {
+                            yMask.setEntry(xx, 0.0);
+                            trimmedMask[xx] = trimmed;
+                        } else {
+                            yMask.setEntry(xx,1.0);
+                        }
+                    } else {
+                        xfold = (x[curve][xx] - netT0) % netPeriod;
+                        if (showXAxisAsPhase) {
+                            xfold = xfold / netPeriod;
+                            if (xfold > 0.5) {
+                                xfold -= 1.0;
+                            } else if (xfold < -0.5) {
+                                xfold += 1.0;
+                            }
+                        } else if (showXAxisAsDaysSinceTc) {
+                            if (xfold > halfPeriod) {
+                                xfold -= netPeriod;
+                            } else if (xfold < -halfPeriod) {
+                                xfold += netPeriod;
+                            }
+                        } else if (showXAxisAsHoursSinceTc) {
+                            if (xfold > halfPeriod) {
+                                xfold -= netPeriod;
+                            } else if (xfold < -halfPeriod) {
+                                xfold += netPeriod;
+                            }
+                            xfold *= 24;
+                        }
+                        trimmed = (maskTrimmedData && useDMarker1 && xfold < dMarker1Value) ||
+                                (maskTrimmedData && useDMarker4 && xfold > dMarker4Value);
+                        if ((maskTransit && xfold > dMarker2Value && xfold < dMarker3Value) || trimmed) {
+                            yMask.setEntry(xx, 0.0);
+                            trimmedMask[xx] = trimmed;
+                        } else {
+                            yMask.setEntry(xx, 1.0);
+                        }
+                    }
+                }
+
+                // todo find way to do this that isn't a second loop
+                var xrn = new double[nn[curve]];
+                if (maskTrimmedData) {
+                    var p = 0;
+                    var xn = new double[nn[curve]];
+                    var yn = new double[nn[curve]];
+                    var yen = new double[nn[curve]];
+                    var mn = new double[nn[curve]];
+                    for (int xx = 0; xx < nn[curve]; xx++) {
+                        if (!trimmedMask[xx]) {
+                            xn[p] = x[curve][xx];
+                            if (!showXAxisNormal) {
+                                xrn[p] = phaseFoldedX[curve][xx];
+                            }
+                            yn[p] = y[curve][xx];
+                            yen[p] = yerr[curve][xx];
+                            mn[p] = yMask.getEntry(xx);
+                            p++;
+                        }
+                    }
+
+                    nn[curve] = p;
+                    x[curve] = xn;
+                    y[curve] = yn;
+                    yerr[curve] = yen;
+                    phaseFoldedX[curve] = xrn;
+                    yMask = MatrixUtils.createRealVector(Arrays.copyOf(mn, p));
+                }
+
+                KeplerSplineControl.getInstance(curve).smoothData(x[curve], y[curve], yerr[curve], nn[curve], yMask);
+            }
+
+            if(curve==firstCurve) {
+                xFirstRawMin = Arrays.stream(x[curve]).limit(nn[curve])
+                        .filter(d -> !Double.isNaN(d)).min().orElse(Double.NEGATIVE_INFINITY);
+                xFirstRawMax = Arrays.stream(x[curve]).limit(nn[curve])
+                        .filter(d -> !Double.isNaN(d)).max().orElse(Double.POSITIVE_INFINITY);
+            }
+
+            // Set x to be phase folded now that smoothing is done
+            if (plotY[curve] && !showXAxisNormal) {
+                x[curve] = phaseFoldedX[curve];
+            }
+        });
+
         var normAverageSet = new double[maxCurves];
         boolean[] finalUpdateFit = updateFit;
         boolean[] atLeastOneArr = new boolean[maxCurves];

@@ -10100,6 +10100,11 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             zoomY = 0;
             zoomX = 0;
             draggableShape.unmarkPlotScale();
+            for (JSpinner spinner : orbitalPeriodSpinner) {
+                if (spinner != null) {
+                    spinner.setEnabled((!periodSync && !showXAxisNormal) || showXAxisNormal);
+                }
+            }
             autoScaleX = true;
             useFirstX = false;
             autoxButton.setSelected(true);
@@ -10148,6 +10153,11 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             zoomY = 0;
             zoomX = 0;
             draggableShape.unmarkPlotScale();
+            for (JSpinner spinner : orbitalPeriodSpinner) {
+                if (spinner != null) {
+                    spinner.setEnabled((!periodSync && !showXAxisNormal) || showXAxisNormal);
+                }
+            }
             autoScaleX = true;
             useFirstX = false;
             autoxButton.setSelected(true);
@@ -10196,6 +10206,11 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             zoomY = 0;
             zoomX = 0;
             draggableShape.unmarkPlotScale();
+            for (JSpinner spinner : orbitalPeriodSpinner) {
+                if (spinner != null) {
+                    spinner.setEnabled((!periodSync && !showXAxisNormal) || showXAxisNormal);
+                }
+            }
             autoScaleX = true;
             useFirstX = false;
             autoxButton.setSelected(true);
@@ -10244,6 +10259,11 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             zoomY = 0;
             zoomX = 0;
             draggableShape.unmarkPlotScale();
+            for (JSpinner spinner : orbitalPeriodSpinner) {
+                if (spinner != null) {
+                    spinner.setEnabled((!periodSync && !showXAxisNormal) || showXAxisNormal);
+                }
+            }
             autoScaleX = true;
             useFirstX = false;
             autoxButton.setSelected(true);
@@ -10288,6 +10308,11 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 periodSync = false;
             } else if (e.getStateChange() == ItemEvent.SELECTED) periodSync = true;
             Prefs.set("plot.periodSync", periodSync);
+            for (JSpinner spinner : orbitalPeriodSpinner) {
+                if (spinner != null) {
+                    spinner.setEnabled((!periodSync && !showXAxisNormal) || showXAxisNormal);
+                }
+            }
             updatePlot(updateAllFits());
         });
         periodpanel.add(periodSyncCB);
@@ -12865,7 +12890,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             double newValue = (Double) orbitalPeriodSpinner[c].getValue() - e.getWheelRotation() * orbitalPeriodStep;
             orbitalPeriodSpinner[c].setValue(Math.max(newValue, 0.001));
         });
-        orbitalPeriodSpinner[c].setEnabled(true);
+        orbitalPeriodSpinner[c].setEnabled((!periodSync && !showXAxisNormal) || showXAxisNormal);
         orbitalPeriodPanel.add(orbitalPeriodSpinner[c]);
         SpringUtil.makeCompactGrid(orbitalPeriodPanel, 1, orbitalPeriodPanel.getComponentCount(), 2, 0, 0, 0);
         orbitalParmetersPanel.add(orbitalPeriodPanel);

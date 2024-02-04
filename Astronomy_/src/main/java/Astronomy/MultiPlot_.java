@@ -10034,6 +10034,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         phaseradiogroup.add(hourssincetcButton);
         phaseradiogroup.add(orbitalphaseButton);
         unphasedButton.addActionListener(ae -> {
+            if (showXAxisNormal) return;
             int xRawOffset = (int)xFirstRawMin;
             if (!showXAxisNormal && T0spinner != null && xFirstRawMin >= 0 && xFirstRawMax < Double.POSITIVE_INFINITY) {
                 if (showXAxisAsHoursSinceTc){
@@ -10103,6 +10104,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             //autoxButton.setSelected(true);
         });
         dayssincetcButton.addActionListener(ae -> {
+            if (showXAxisAsDaysSinceTc) return;
             showXAxisNormal = false;
             showXAxisAsDaysSinceTc = true;
             showXAxisAsHoursSinceTc = false;
@@ -10148,6 +10150,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             //autoxButton.setSelected(true);
         });
         hourssincetcButton.addActionListener(ae -> {
+            if (showXAxisAsHoursSinceTc) return;
             showXAxisNormal = false;
             showXAxisAsDaysSinceTc = false;
             showXAxisAsHoursSinceTc = true;
@@ -10193,6 +10196,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             //autoxButton.setSelected(true);
         });
         orbitalphaseButton.addActionListener(ae -> {
+            if (showXAxisAsPhase) return;
             showXAxisNormal = false;
             showXAxisAsDaysSinceTc = false;
             showXAxisAsHoursSinceTc = false;

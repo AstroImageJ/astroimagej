@@ -10100,8 +10100,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             zoomY = 0;
             zoomX = 0;
             draggableShape.unmarkPlotScale();
+            autoScaleX = true;
+            useFirstX = false;
+            autoxButton.setSelected(true);
             updatePlot(updateAllFits());
-            //autoxButton.setSelected(true);
         });
         dayssincetcButton.addActionListener(ae -> {
             if (showXAxisAsDaysSinceTc) return;
@@ -10146,8 +10148,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             zoomY = 0;
             zoomX = 0;
             draggableShape.unmarkPlotScale();
+            autoScaleX = true;
+            useFirstX = false;
+            autoxButton.setSelected(true);
             updatePlot(updateAllFits());
-            //autoxButton.setSelected(true);
         });
         hourssincetcButton.addActionListener(ae -> {
             if (showXAxisAsHoursSinceTc) return;
@@ -10192,8 +10196,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             zoomY = 0;
             zoomX = 0;
             draggableShape.unmarkPlotScale();
+            autoScaleX = true;
+            useFirstX = false;
+            autoxButton.setSelected(true);
             updatePlot(updateAllFits());
-            //autoxButton.setSelected(true);
         });
         orbitalphaseButton.addActionListener(ae -> {
             if (showXAxisAsPhase) return;
@@ -10238,8 +10244,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             zoomY = 0;
             zoomX = 0;
             draggableShape.unmarkPlotScale();
+            autoScaleX = true;
+            useFirstX = false;
+            autoxButton.setSelected(true);
             updatePlot(updateAllFits());
-            //autoxButton.setSelected(true);
         });
 
 

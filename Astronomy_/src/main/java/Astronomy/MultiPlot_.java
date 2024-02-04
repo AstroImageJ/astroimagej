@@ -2830,28 +2830,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                             yMask.setEntry(xx,1.0);
                         }
                     } else {
-                        xfold = (x[curve][xx] - netT0) % netPeriod;
-                        if (showXAxisAsPhase) {
-                            xfold = xfold / netPeriod;
-                            if (xfold > 0.5) {
-                                xfold -= 1.0;
-                            } else if (xfold < -0.5) {
-                                xfold += 1.0;
-                            }
-                        } else if (showXAxisAsDaysSinceTc) {
-                            if (xfold > halfPeriod) {
-                                xfold -= netPeriod;
-                            } else if (xfold < -halfPeriod) {
-                                xfold += netPeriod;
-                            }
-                        } else if (showXAxisAsHoursSinceTc) {
-                            if (xfold > halfPeriod) {
-                                xfold -= netPeriod;
-                            } else if (xfold < -halfPeriod) {
-                                xfold += netPeriod;
-                            }
-                            xfold *= 24;
-                        }
+                        xfold = phaseFoldedX[curve][xx];
                         trimmed = (maskTrimmedData && useDMarker1 && xfold < dMarker1Value) ||
                                 (maskTrimmedData && useDMarker4 && xfold > dMarker4Value);
                         if ((maskTransit && xfold > dMarker2Value && xfold < dMarker3Value) || trimmed) {

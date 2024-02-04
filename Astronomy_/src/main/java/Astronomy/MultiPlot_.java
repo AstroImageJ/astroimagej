@@ -2875,10 +2875,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             }
 
             if(curve==firstCurve) {
-                xFirstRawMin = Arrays.stream(x[curve]).limit(nn[curve])
-                        .filter(d -> !Double.isNaN(d)).min().orElse(Double.NEGATIVE_INFINITY);
-                xFirstRawMax = Arrays.stream(x[curve]).limit(nn[curve])
-                        .filter(d -> !Double.isNaN(d)).max().orElse(Double.POSITIVE_INFINITY);
+                var ss = Arrays.stream(x[curve]).limit(nn[curve])
+                        .filter(d -> !Double.isNaN(d)).summaryStatistics();
+                xFirstRawMin = Double.isFinite(ss.getMin()) ? ss.getMin() : Double.NEGATIVE_INFINITY;
+                xFirstRawMax = Double.isFinite(ss.getMax()) ? ss.getMax() : Double.POSITIVE_INFINITY;
             }
 
             // Set x to be phase folded now that smoothing is done
@@ -10100,6 +10100,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             zoomX = 0;
             draggableShape.unmarkPlotScale();
             updatePlot(updateAllFits());
+            //autoxButton.setSelected(true);
         });
         dayssincetcButton.addActionListener(ae -> {
             showXAxisNormal = false;
@@ -10144,6 +10145,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             zoomX = 0;
             draggableShape.unmarkPlotScale();
             updatePlot(updateAllFits());
+            //autoxButton.setSelected(true);
         });
         hourssincetcButton.addActionListener(ae -> {
             showXAxisNormal = false;
@@ -10188,6 +10190,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             zoomX = 0;
             draggableShape.unmarkPlotScale();
             updatePlot(updateAllFits());
+            //autoxButton.setSelected(true);
         });
         orbitalphaseButton.addActionListener(ae -> {
             showXAxisNormal = false;
@@ -10232,6 +10235,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             zoomX = 0;
             draggableShape.unmarkPlotScale();
             updatePlot(updateAllFits());
+            //autoxButton.setSelected(true);
         });
 
 

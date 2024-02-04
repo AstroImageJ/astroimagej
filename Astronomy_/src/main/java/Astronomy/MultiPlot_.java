@@ -2843,13 +2843,13 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 }
 
                 // todo find way to do this that isn't a second loop
-                var xrn = new double[nn[curve]];
                 if (maskTrimmedData) {
                     var p = 0;
                     var xn = new double[nn[curve]];
                     var yn = new double[nn[curve]];
                     var yen = new double[nn[curve]];
                     var mn = new double[nn[curve]];
+                    var xrn = new double[nn[curve]];
                     for (int xx = 0; xx < nn[curve]; xx++) {
                         if (!trimmedMask[xx]) {
                             xn[p] = x[curve][xx];

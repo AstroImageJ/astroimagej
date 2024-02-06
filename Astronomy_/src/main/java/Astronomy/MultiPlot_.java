@@ -851,6 +851,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     private static ArrayList<Pair.GenericPair<Double, JSpinner>> minutes = new ArrayList<>(maxCurves);
     private static boolean showOutBinRms = true;
     private static double[] outBinRms;
+    private static double[][] unphasedX;
     private static boolean saveSeeingProfileStack;
     private static String seeingProfileStackSuffix;
     private static PlotDraggableShape draggableShape = new PlotDraggableShape();
@@ -2692,6 +2693,15 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 }
             }
         });
+
+        if (!showXAxisNormal && (unphasedX == null || unphasedX.length != maxCurves)) {
+            unphasedX = new double[maxCurves][];
+            IntStream.range(0, maxCurves).parallel().forEach(curve -> {
+                unphasedX[curve] = Arrays.copyOf(x[curve], nn[curve]);
+            });
+        } else {
+            unphasedX = null;
+        }
 
         // Calculate phase folding and min/max x
         var phaseFoldedX = new double[maxCurves][];
@@ -10036,6 +10046,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         unphasedButton.addActionListener(ae -> {
             if (showXAxisNormal) return;
             int xRawOffset = (int)xFirstRawMin;
+            skipPlotUpdate = true;
             if (!showXAxisNormal && T0spinner != null && xFirstRawMin >= 0 && xFirstRawMax < Double.POSITIVE_INFINITY) {
                 if (showXAxisAsHoursSinceTc){
                     vMarker2Value /= 24;
@@ -10054,17 +10065,14 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     dMarker1Value = dMarker1Value * period;
                 }
                 if (T0 <= xFirstRawMax && T0 >= xFirstRawMin){
-                    skipPlotUpdate = true;
                     vmarker2spinner.setValue(T0 + vMarker2Value - xRawOffset);
                     vmarker1spinner.setValue(T0 + vMarker1Value - xRawOffset);
                     dmarker4spinner.setValue(T0 + dMarker4Value - xRawOffset);
                     dmarker3spinner.setValue(T0 + dMarker3Value - xRawOffset);
                     dmarker2spinner.setValue(T0 + dMarker2Value - xRawOffset);
                     dmarker1spinner.setValue(T0 + dMarker1Value - xRawOffset);
-                    skipPlotUpdate = false;
                 } else {
                     int epoch = (int) (((xFirstRawMin - T0) / period) + 1);
-                    skipPlotUpdate = true;
                     vmarker2spinner.setValue(T0 + vMarker2Value + period * epoch - xRawOffset);
                     vmarker1spinner.setValue(T0 + vMarker1Value + period * epoch - xRawOffset);
                     dmarker4spinner.setValue(T0 + dMarker4Value + period * epoch - xRawOffset);
@@ -10073,9 +10081,14 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     dmarker1spinner.setValue(T0 + dMarker1Value + period * epoch - xRawOffset);
                     //useDMarker1CB.setSelected(false);
                     //useDMarker4CB.setSelected(false);
-                    skipPlotUpdate = false;
                 }
             }
+
+            if (unphasedX != null) {
+
+            }
+
+            skipPlotUpdate = false;
             showXAxisNormal = true;
             showXAxisAsDaysSinceTc = false;
             showXAxisAsHoursSinceTc = false;
@@ -10130,6 +10143,11 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             if (dmarker2spinner != null && !showXAxisNormal) dmarker2spinner.setValue(period * (dMarker2Fold > 0.5 ? dMarker2Fold - 1.0 : dMarker2Fold));
             if (dmarker3spinner != null && !showXAxisNormal) dmarker3spinner.setValue(period * (dMarker3Fold > 0.5 ? dMarker3Fold - 1.0 : dMarker3Fold));
             if (dmarker4spinner != null && !showXAxisNormal) dmarker4spinner.setValue(period * (dMarker4Fold > 0.5 ? dMarker4Fold - 1.0 : dMarker4Fold));
+
+            if (unphasedX != null) {
+
+            }
+
             skipPlotUpdate = false;
             t0panel.setEnabled(true);
             periodpanel.setEnabled(true);
@@ -10192,6 +10210,11 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             if (dmarker2spinner != null && !showXAxisNormal) dmarker2spinner.setValue(24.0 * period * (dMarker2Fold > 0.5 ? dMarker2Fold - 1.0 : dMarker2Fold));
             if (dmarker3spinner != null && !showXAxisNormal) dmarker3spinner.setValue(24.0 * period * (dMarker3Fold > 0.5 ? dMarker3Fold - 1.0 : dMarker3Fold));
             if (dmarker4spinner != null && !showXAxisNormal) dmarker4spinner.setValue(24.0 * period * (dMarker4Fold > 0.5 ? dMarker4Fold - 1.0 : dMarker4Fold));
+
+            if (unphasedX != null) {
+
+            }
+
             skipPlotUpdate = false;
             Prefs.set("plot.showXAxisNormal", showXAxisNormal);
             Prefs.set("plot.showXAxisAsPhase", showXAxisAsPhase);
@@ -10245,6 +10268,12 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             if (dmarker2spinner != null && !showXAxisNormal) dmarker2spinner.setValue((dMarker2Fold > 0.5 ? dMarker2Fold - 1.0 : dMarker2Fold));
             if (dmarker3spinner != null && !showXAxisNormal) dmarker3spinner.setValue((dMarker3Fold > 0.5 ? dMarker3Fold - 1.0 : dMarker3Fold));
             if (dmarker4spinner != null && !showXAxisNormal) dmarker4spinner.setValue((dMarker4Fold > 0.5 ? dMarker4Fold - 1.0 : dMarker4Fold));
+
+
+            if (unphasedX != null) {
+
+            }
+
             skipPlotUpdate = false;
             Prefs.set("plot.showXAxisNormal", showXAxisNormal);
             Prefs.set("plot.showXAxisAsPhase", showXAxisAsPhase);

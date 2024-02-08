@@ -2771,6 +2771,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             }
         });
 
+        if (!showXAxisNormal) {
+            applyXAutoScale(x);
+        }
+
         var normAverageSet = new double[maxCurves];
         boolean[] finalUpdateFit = updateFit;
         boolean[] atLeastOneArr = new boolean[maxCurves];
@@ -4278,8 +4282,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     private static void applyXAutoScale(double[][] xData) {
         IntStream.range(0, maxCurves).parallel().forEach(curve -> {
             if (plotY[curve]) {
-                xMinimum[curve] = minOf(xData[curve], nn[curve]); //FIND MIN AND MAX X OF EACH SELECTED DATASET
-                xMaximum[curve] = maxOf(xData[curve], nn[curve]);
+                var ss = Arrays.stream(x[curve]).limit(nn[curve])
+                        .filter(d -> !Double.isNaN(d)).summaryStatistics();
+                xMinimum[curve] = ss.getMin(); //FIND MIN AND MAX X OF EACH SELECTED DATASET
+                xMaximum[curve] = ss.getMax();
             }
         });
 
@@ -4293,7 +4299,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         xautoscalemax = Double.NEGATIVE_INFINITY;
 
         var hasXDatasetToScaleAgainst = IntStream.range(0, ASInclude.length)
-                .mapToObj(i -> ASInclude[i]).filter(b -> b).findAny().isPresent();
+                .filter(i -> ASInclude[i]).findAny().isPresent();
 
         for (int curve = 0; curve < maxCurves; curve++) {
             if (plotY[curve]) {

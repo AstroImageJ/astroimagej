@@ -423,6 +423,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
         Prefs.set(MultiAperture_.PREFS_CANCELED, "false");
         cancelled = false;
+        previous = false;
         firstRun = true;
         if (this instanceof Stack_Aligner) {
             autoMode = false;
@@ -525,7 +526,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             ocanvas.removeAstrometryAnnotateRois();
             ocanvas.removeMarkingRois();
         }
-        if (apLoading.get().isPrevious() && (!useWCS || (useWCS && (raPosStored == null || decPosStored == null)))) {
+        if ((apLoading.get().isPrevious() || previous) && (!useWCS || (useWCS && (raPosStored == null || decPosStored == null)))) {
             infoMessage = "Please select first aperture (right click to finalize) ...";
             IJ.showStatus(infoMessage);
         }
@@ -1214,7 +1215,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         if (enterPressed || (!(e == dummyClick) && (!mouseDrag && (modis & InputEvent.BUTTON3_MASK) != 0 && !e.isShiftDown() && !e.isControlDown() && !e.isAltDown()))) {
             enterPressed = false;
             if (!aperturesInitialized) {
-                if ((!apLoading.get().isPrevious() && ngot > 0) || allStoredAperturesPlaced) {
+                if ((!(apLoading.get().isPrevious() || previous) && ngot > 0) || allStoredAperturesPlaced) {
                     nApertures = ngot;
                     simulatedLeftClick = true;
                     aperturesInitialized = true;
@@ -1225,7 +1226,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         //do nothing unless automode or left mouse is clicked with no modifier keys pressed except "shift" or "alt"
         if (autoMode || simulatedLeftClick || (!mouseDrag &&
                 (modis & InputEvent.BUTTON1_MASK) != 0 && (!e.isControlDown() || e.isShiftDown()) && !e.isMetaDown())) {
-            if (!autoMode && apLoading.get().isPrevious() && !firstClick && !allStoredAperturesPlaced)  //ignore clicks while placing stored apertures
+            if (!autoMode && (apLoading.get().isPrevious() || previous) && !firstClick && !allStoredAperturesPlaced)  //ignore clicks while placing stored apertures
             {
                 return;
             }
@@ -1249,7 +1250,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             apertureClicked = false;
             xCenter = e != null ? canvas.offScreenXD(e.getX()) : 0;
             yCenter = e != null ? canvas.offScreenYD(e.getY()) : 0;
-            if (!autoMode && !(apLoading.get().isPrevious() && firstClick) && ngot < nApertures) {
+            if (!autoMode && !((apLoading.get().isPrevious() || previous) && firstClick) && ngot < nApertures) {
                 apertureClicked = ocanvas.findApertureRoi(xCenter, yCenter, 0) != null;
             }
 
@@ -1260,7 +1261,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 var x = xCenter;
                 var y = yCenter;
                 // Acount for old star positions
-                if (apLoading.get().isPrevious() && nAperturesStored > 0) {
+                if ((apLoading.get().isPrevious() || previous) && nAperturesStored > 0) {
                     x = xPosStored[0];
                     y = yPosStored[0];
                     var ra = -1000001d;
@@ -1384,7 +1385,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     return;
                 }
                 updateApMags();
-            } else if (apLoading.get().isPrevious() && firstClick) {
+            } else if ((apLoading.get().isPrevious() || previous) && firstClick) {
                 ngot = nAperturesStored;
                 if (!placeApertures(0, ngot - 1, ENABLECENTROID, CLEARROIS)) return;
                 updateApMags();
@@ -1426,7 +1427,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 }
                 processStack();
                 saveNewApertures();
-                //previous = true;
+                previous = true;
                 //Prefs.set(MultiAperture_.PREFS_PREVIOUS, previous);
                 firstSlice += 1;
                 lastSlice = firstSlice;
@@ -1667,7 +1668,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         var decPos = -1000001d;
 
         // Acount for old star positions
-        if (apLoading.get().isPrevious() && nAperturesStored > 0) {
+        if ((apLoading.get().isPrevious() || previous) && nAperturesStored > 0) {
             x = xPosStored[0];
             y = yPosStored[0];
             if (raPosStored != null && decPosStored != null) {
@@ -1975,7 +1976,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
         var radii = new Seeing_Profile.ApRadii(radius, rBack1, rBack2);
 
-        if (!autoMode && apLoading.get().isPrevious() && firstClick && nAperturesStored > 0) {
+        if (!autoMode && (apLoading.get().isPrevious() || previous) && firstClick && nAperturesStored > 0) {
             dx = xCenter - xPosStored[0];
             dy = yCenter - yPosStored[0];
             int size = Math.min(nAperturesStored, nAperturesMax);
@@ -2078,7 +2079,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             }
 
             //fine tune other aperture positions based on first ap position in auto mode or previous mode when not using WCS
-            if ((autoMode || apLoading.get().isPrevious() && firstClick) && centroidStar[0] && !((useMA || useAlign) && useWCS)) {
+            if ((autoMode || (apLoading.get().isPrevious() || previous) && firstClick) && centroidStar[0] && !((useMA || useAlign) && useWCS)) {
                 if (ap == 0) {
                     boolean holdReposition = Prefs.get("aperture.reposition", reposition);
                     Prefs.set("aperture.reposition", centroidStar[0]);
@@ -2257,7 +2258,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     }
 
     protected double getAbsMag(int ap, double ra, double dec) {
-        if (!getMags || !isRefStar[ap] || (apLoading.get().isPrevious() && !allStoredAperturesPlaced)) {
+        if (!getMags || !isRefStar[ap] || ((apLoading.get().isPrevious() || previous) && !allStoredAperturesPlaced)) {
             return absMag[ap];
         } else {
             openSimbadForAbsMag = Prefs.get("plot2.openSimbadForAbsMag", openSimbadForAbsMag);
@@ -4357,7 +4358,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         JLabel leftClickName = new JLabel("left-click:");
         leftClickName.setHorizontalAlignment(JLabel.RIGHT);
         helpPanel.add(leftClickName);
-        if (apLoading.get().isPrevious()) {
+        if ((apLoading.get().isPrevious() || previous)) {
             leftClickLabel = new JLabel("Add previous stored apertures by clicking on the star corresponding to T1/C1");
         } else {
             leftClickLabel = new JLabel("Add target star aperture T1");
@@ -4367,7 +4368,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         JLabel shiftLeftClickName = new JLabel("<Shift>left-click:");
         shiftLeftClickName.setHorizontalAlignment(JLabel.RIGHT);
         helpPanel.add(shiftLeftClickName);
-        if (apLoading.get().isPrevious()) {
+        if ((apLoading.get().isPrevious() || previous)) {
             shiftLeftClickLabel = new JLabel("");
         } else {
             shiftLeftClickLabel = new JLabel("Add reference star aperture C1");
@@ -4377,7 +4378,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         JLabel shiftControlLeftClickName = new JLabel("<Shift><Ctrl>left-click:");
         shiftControlLeftClickName.setHorizontalAlignment(JLabel.RIGHT);
         helpPanel.add(shiftControlLeftClickName);
-        if (apLoading.get().isPrevious()) {
+        if ((apLoading.get().isPrevious() || previous)) {
             shiftControlLeftClickLabel = new JLabel("");
         } else {
             shiftControlLeftClickLabel = new JLabel("");
@@ -4387,7 +4388,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         JLabel altLeftClickName = new JLabel("<Alt>left-click:");
         altLeftClickName.setHorizontalAlignment(JLabel.RIGHT);
         helpPanel.add(altLeftClickName);
-        if (apLoading.get().isPrevious()) {
+        if ((apLoading.get().isPrevious() || previous)) {
             altLeftClickLabel = new JLabel("");
         } else {
             altLeftClickLabel = new JLabel("Invert sense of centroid setting for new aperture");

@@ -2641,17 +2641,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             }
         });
 
-        if (!showXAxisNormal) {
-            if ((unphasedX == null || unphasedX.length != maxCurves)) {
-                unphasedX = new double[maxCurves][];
-            }
-            IntStream.range(0, maxCurves).parallel().forEach(curve -> {
-                unphasedX[curve] = Arrays.copyOf(x[curve], nn[curve]);
-            });
-        } else {
-            unphasedX = null;
-        }
-
         // Calculate phase folding and min/max x
         var phaseFoldedX = new double[maxCurves][];
         IntStream.range(0, maxCurves).parallel().forEach(curve -> {
@@ -2767,6 +2756,14 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             }
         }
 
+        if (!showXAxisNormal) {
+            if ((unphasedX == null || unphasedX.length != maxCurves)) {
+                unphasedX = new double[maxCurves][];
+            }
+        } else {
+            unphasedX = null;
+        }
+
         // Smooth data and phase fold
         IntStream.range(0, maxCurves).parallel().forEach(curve -> {
             if (plotY[curve] && smooth[curve] && nn[curve] > 4) {
@@ -2831,6 +2828,12 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 }
 
                 KeplerSplineControl.getInstance(curve).smoothData(x[curve], y[curve], yerr[curve], nn[curve], yMask);
+            }
+
+            if (!showXAxisNormal) {
+                unphasedX[curve] = Arrays.copyOf(x[curve], nn[curve]);
+            } else {
+                unphasedX = null;
             }
 
             if(curve==firstCurve) {

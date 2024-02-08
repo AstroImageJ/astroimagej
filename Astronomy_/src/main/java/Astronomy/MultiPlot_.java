@@ -2832,8 +2832,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
             if (!showXAxisNormal) {
                 unphasedX[curve] = Arrays.copyOf(x[curve], nn[curve]);
-            } else {
-                unphasedX = null;
             }
 
             if(curve==firstCurve) {

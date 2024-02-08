@@ -4,7 +4,7 @@ package nom.tam.fits;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 2004 - 2021 nom-tam-fits
+ * Copyright (C) 2004 - 2024 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  *
@@ -48,7 +48,7 @@ public class PaddingException extends FitsException {
      */
     private static final long serialVersionUID = 8716484905278318366L;
 
-    PaddingException(String msg, Exception cause) throws FitsException {
+    PaddingException(String msg, Exception cause) {
         super(msg, cause);
     }
 }

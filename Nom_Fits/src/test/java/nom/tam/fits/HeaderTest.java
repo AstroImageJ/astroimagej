@@ -24,9 +24,11 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import nom.tam.fits.header.Compression;
 import nom.tam.fits.header.GenericKey;
 import nom.tam.fits.header.IFitsHeader;
 import nom.tam.fits.header.Standard;
+import nom.tam.fits.header.extra.NOAOExt;
 import nom.tam.fits.header.hierarch.BlanksDotHierarchKeyFormatter;
 import nom.tam.fits.header.hierarch.Hierarch;
 import nom.tam.util.ArrayDataOutput;
@@ -43,7 +45,7 @@ import nom.tam.util.test.ThrowAnyException;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 2004 - 2021 nom-tam-fits
+ * Copyright (C) 2004 - 2024 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  *
@@ -91,6 +93,7 @@ public class HeaderTest {
     @Before
     public void before() throws Exception {
         FitsFactory.setDefaults();
+        Header.setDefaultKeywordChecking(Header.DEFAULT_KEYWORD_CHECK_POLICY);
 
         float[][] img = new float[300][300];
         Fits f = null;
@@ -702,6 +705,7 @@ public class HeaderTest {
     public void addValueTests() throws Exception {
         FileInputStream in = null;
         Fits fits = null;
+
         try {
             in = new FileInputStream("target/ht1.fits");
             fits = new Fits();
@@ -709,6 +713,7 @@ public class HeaderTest {
 
             BasicHDU<?> hdu = fits.getHDU(0);
             Header hdr = hdu.getHeader();
+            hdr.setKeywordChecking(Header.KeywordCheck.NONE);
 
             hdu.addValue(CTYPE1, true);
             assertEquals(hdr.getBooleanValue(CTYPE1.name()), true);
@@ -803,7 +808,7 @@ public class HeaderTest {
             assertTrue(result.indexOf("NAXIS1  =                  300") >= 0);
             assertTrue(result.indexOf("NAXIS2  =                  300") >= 0);
 
-            assertEquals("NAXIS1  =                  300 / size of the n'th axis", hdr.findKey("NAXIS1").trim());
+            assertEquals("NAXIS1  =                  300 / " + Standard.NAXIS1.comment(), hdr.findKey("NAXIS1").trim());
 
             assertEquals("SIMPLE", hdr.getKey(0));
             assertEquals(7, hdr.size());
@@ -1627,4 +1632,155 @@ public class HeaderTest {
         BasicHDU<?> hdu = f.readHDU();
         assertNull(hdu.getHeader().getRandomAccessInput());
     }
+
+    @Test
+    public void testMergeDistinctCards() throws Exception {
+        Header h = new Header();
+        h.addValue("EXIST", 1, "existing prior value");
+        assertEquals("orig", 1, h.getIntValue("EXIST", -1));
+
+        Header h2 = new Header();
+        h2.addValue("EXIST", 2, "another value for EXIST");
+        h2.insertComment("comment");
+        h2.addValue("TEST", 3, "a test value");
+
+        h.mergeDistinct(h2);
+
+        assertEquals("EXIST", 1, h.getIntValue("EXIST", -1));
+        assertEquals("TEST", 3, h.getIntValue("TEST", -1));
+
+        Cursor<String, HeaderCard> c = h.iterator();
+        while (c.hasNext()) {
+            HeaderCard card = c.next();
+            if (card.isCommentStyleCard()) {
+                assertEquals("comment", card.getComment());
+                return;
+            }
+        }
+
+        throw new IllegalStateException("Missing inherited comment");
+    }
+
+    @Test
+    public void testImageKeywordChecking() throws Exception {
+        Header h = ImageData.from(new int[10][10]).toHDU().getHeader();
+        h.addValue(Standard.BUNIT, "blah");
+        /* no exception */
+    }
+
+    @Test
+    public void testImageKeywordCheckingGroup() throws Exception {
+        Header h = new RandomGroupsData(new Object[][] {{new int[4], new int[2]}}).toHDU().getHeader();
+        h.addValue(Standard.BUNIT, "blah");
+        /* no exception */
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testImageKeywordCheckingException() throws Exception {
+        Header h = new BinaryTable().toHDU().getHeader();
+        h.addValue(Standard.BUNIT, "blah");
+    }
+
+    @Test
+    public void testGroupKeywordChecking() throws Exception {
+        Header h = new RandomGroupsData(new Object[][] {{new int[4], new int[2]}}).toHDU().getHeader();
+        h.addValue(Standard.PTYPEn.n(1), "blah");
+        /* no exception */
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGroupsKeywordCheckingException() throws Exception {
+        Header h = ImageData.from(new int[10][10]).toHDU().getHeader();
+        h.addValue(Standard.PTYPEn.n(1), "blah");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testTableKeywordCheckingException() throws Exception {
+        Header h = ImageData.from(new int[10][10]).toHDU().getHeader();
+        h.addValue(Standard.TFORMn.n(1), "blah");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testAsciiTableKeywordCheckingException() throws Exception {
+        Header h = new BinaryTable().toHDU().getHeader();
+        h.addValue(Standard.TBCOLn.n(1), 10);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testBinbaryTableKeywordCheckingException() throws Exception {
+        Header h = new AsciiTable().toHDU().getHeader();
+        h.addValue(Standard.TDIMn.n(1), "blah");
+    }
+
+    @Test
+    public void testNOAOKeywordChecking() throws Exception {
+        Header h = new AsciiTable().toHDU().getHeader();
+        h.addValue(NOAOExt.AMPMJD, 60000.0);
+        /* No exception */
+    }
+
+    @Test
+    public void testKeywordCheckingNone() throws Exception {
+        Header.setDefaultKeywordChecking(Header.KeywordCheck.NONE);
+        Header h = ImageData.from(new int[10][10]).toHDU().getHeader();
+        h.addValue(Standard.TFORMn.n(1), "blah");
+        /* No exception */
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testKeywordCheckingMandatoryException() throws Exception {
+        Header.setDefaultKeywordChecking(Header.KeywordCheck.STRICT);
+        Header h = new BinaryTable().toHDU().getHeader();
+        h.addValue(Standard.SIMPLE, true);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testKeywordCheckingIntegralException() throws Exception {
+        Header.setDefaultKeywordChecking(Header.KeywordCheck.STRICT);
+        Header h = new BinaryTable().toHDU().getHeader();
+        h.addValue(Compression.ZIMAGE, true);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testKeywordCheckingPrimaryException() throws Exception {
+        Header.setDefaultKeywordChecking(Header.KeywordCheck.DATA_TYPE);
+        Header h = new BinaryTable().toHDU().getHeader();
+        h.addValue(Standard.SIMPLE, true);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testKeywordCheckingExtensionException() throws Exception {
+        Header.setDefaultKeywordChecking(Header.KeywordCheck.DATA_TYPE);
+        Header h = new RandomGroupsData(new Object[][] {{new int[4], new int[2]}}).toHDU().getHeader();
+        h.addValue(Standard.INHERIT, true);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testStrictKeywordCheckingExtension() throws Exception {
+        Header.setDefaultKeywordChecking(Header.KeywordCheck.STRICT);
+        Header h = new BinaryTable().toHDU().getHeader();
+        h.addValue(Standard.XTENSION, Standard.XTENSION_BINTABLE);
+    }
+
+    @Test
+    public void testKeywordCheckingPrimary() throws Exception {
+        Header.setDefaultKeywordChecking(Header.KeywordCheck.DATA_TYPE);
+        Header h = ImageData.from(new int[10][10]).toHDU().getHeader();
+        h.addValue(Standard.SIMPLE, true);
+    }
+
+    @Test
+    public void testKeywordCheckingOptional() throws Exception {
+        Header.setDefaultKeywordChecking(Header.KeywordCheck.STRICT);
+        Header h = ImageData.from(new int[10][10]).toHDU().getHeader();
+        h.addValue(NOAOExt.ADCMJD, 0.0);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testReplaceCommentKeyException() throws Exception {
+        Header h = new Header();
+        h.insertComment("blah");
+        h.replaceKey(Standard.COMMENT, Standard.BLANKS);
+    }
+
 }

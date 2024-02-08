@@ -13,7 +13,7 @@ import nom.tam.fits.header.Standard;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2021 nom-tam-fits
+ * Copyright (C) 1996 - 2024 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  *
@@ -99,9 +99,6 @@ public class ProtectedFitsTest {
         Assert.assertTrue(randomGroupsHDU.isHeader());
         randomGroupsHDU.setPrimaryHDU(true);
         Assert.assertTrue(randomGroupsHDU.getHeader().getBooleanValue(Standard.SIMPLE));
-        randomGroupsHDU.setPrimaryHDU(false);
-        Assert.assertFalse(randomGroupsHDU.getHeader().getBooleanValue(Standard.SIMPLE));
-        Assert.assertEquals(XTENSION_IMAGE, randomGroupsHDU.getHeader().getStringValue(Standard.XTENSION));
 
         randomGroupsHDU = new RandomGroupsHDU(null, RandomGroupsHDU.manufactureData(header));
         ByteArrayOutputStream out = new ByteArrayOutputStream();

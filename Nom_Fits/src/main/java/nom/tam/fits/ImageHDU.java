@@ -7,13 +7,12 @@ import java.util.logging.Logger;
 import nom.tam.fits.header.Standard;
 import nom.tam.image.StandardImageTiler;
 import nom.tam.util.ArrayFuncs;
-import nom.tam.util.type.ElementType;
 
 /*
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 2004 - 2021 nom-tam-fits
+ * Copyright (C) 2004 - 2024 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  *
@@ -67,16 +66,19 @@ public class ImageHDU extends BasicHDU<ImageData> {
     }
 
     /**
-     * @deprecated               (<i>for internal use</i>) Will reduce visibility in the future
+     * @deprecated                          (<i>for internal use</i>) Use {@link ImageData#from(Object)} instead. Will
+     *                                          reduce visibility in the future
      *
-     * @return                   Encapsulate an object as an ImageHDU.
+     * @return                              Encapsulate an object as an ImageHDU.
      *
-     * @param      o             object to encapsulate
+     * @param      o                        object to encapsulate
      *
-     * @throws     FitsException if the operation failed
+     * @throws     FitsException            <i>does not actually throw this exception</i>
+     * @throws     IllegalArgumentException if the data is not a regular primitive numerical array suitable for an
+     *                                          image.
      */
     @Deprecated
-    public static ImageData encapsulate(Object o) throws FitsException {
+    public static ImageData encapsulate(Object o) throws IllegalArgumentException, FitsException {
         return new ImageData(o);
     }
 
@@ -89,14 +91,12 @@ public class ImageHDU extends BasicHDU<ImageData> {
      */
     @Deprecated
     public static boolean isData(Object o) {
-        if (o.getClass().isArray()) {
-            ElementType<?> type = ElementType.forClass(ArrayFuncs.getBaseClass(o));
-            return type != ElementType.BOOLEAN && //
-                    type != ElementType.STRING && //
-                    type != ElementType.UNKNOWN;
-
+        try {
+            ImageData.checkCompatible(o);
+        } catch (Exception e) {
+            return false;
         }
-        return false;
+        return true;
     }
 
     /**

@@ -4,7 +4,7 @@ package nom.tam.fits;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 2004 - 2021 nom-tam-fits
+ * Copyright (C) 2004 - 2024 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  *
@@ -31,9 +31,6 @@ package nom.tam.fits;
  * #L%
  */
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import nom.tam.util.*;
-
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
@@ -47,6 +44,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import nom.tam.util.ArrayDataOutput;
+import nom.tam.util.AsciiFuncs;
+import nom.tam.util.FitsDecoder;
+import nom.tam.util.FitsEncoder;
+import nom.tam.util.FitsIO;
+import nom.tam.util.RandomAccess;
+
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 /**
  * Static utility functions used throughout the FITS classes.

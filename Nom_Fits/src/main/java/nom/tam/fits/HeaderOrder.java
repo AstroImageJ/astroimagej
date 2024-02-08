@@ -19,7 +19,7 @@ import static nom.tam.fits.header.Standard.XTENSION;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 2004 - 2021 nom-tam-fits
+ * Copyright (C) 2004 - 2024 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  *
@@ -61,8 +61,8 @@ public class HeaderOrder implements java.util.Comparator<String>, Serializable {
     /**
      * This array defines the order of ordered keywords, except END (which we handle separately)
      */
-    private static final String[] ORDER = {SIMPLE.key(), XTENSION.key(), BITPIX.key(), NAXIS.key(), EXTEND.key(),
-            PCOUNT.key(), GCOUNT.key(), TFIELDS.key(), BLOCKED.key(), THEAP.key()};
+    private static final String[] ORDER = {SIMPLE.key(), XTENSION.key(), BITPIX.key(), NAXIS.key(), PCOUNT.key(),
+            GCOUNT.key(), EXTEND.key(), TFIELDS.key(), BLOCKED.key(), THEAP.key()};
 
     /**
      * Every keyword is assigned an index. Because NAXIS can have 999 NAXISn variants, we'll space the indices of the

@@ -12,7 +12,7 @@ import static nom.tam.fits.header.Standard.TTYPEn;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 2004 - 2021 nom-tam-fits
+ * Copyright (C) 2004 - 2024 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  *
@@ -661,11 +661,11 @@ public abstract class TableHDU<T extends AbstractTableData> extends BasicHDU<T> 
     }
 
     /**
-     * Set the cursor in the header to point either before the TFORM value or after the column metadat
+     * Set the cursor in the header to point either before the TFORMn value or after the column metadata
      *
      * @param      col   The 0-based index of the column
      * @param      after True if the cursor should be placed after the existing column metadata or false if the cursor
-     *                       is to be placed before the TFORM value. If no corresponding TFORM is found, the cursoe will
+     *                       is to be placed before the TFORM value. If no corresponding TFORM is found, the cursor will
      *                       be placed at the end of current header.
      * 
      * @deprecated       (<i>for internal use</i>) Will have private access in the future.

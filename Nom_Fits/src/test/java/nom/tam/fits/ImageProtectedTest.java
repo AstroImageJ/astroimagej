@@ -17,7 +17,7 @@ import nom.tam.util.test.ThrowAnyException;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2021 nom-tam-fits
+ * Copyright (C) 1996 - 2024 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  *
@@ -48,22 +48,19 @@ import static nom.tam.fits.header.Standard.GCOUNT;
 
 public class ImageProtectedTest {
 
-    @Test(expected = FitsException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testImageDataFail() throws Exception {
         ImageData data = new ImageData("test");
-        data.fillHeader(new Header());
     }
 
-    @Test(expected = FitsException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testImageDataFailWrongDatatype() throws Exception {
         ImageData data = new ImageData(new String[] {"test"});
-        data.fillHeader(new Header());
     }
 
-    @Test(expected = FitsException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void testImageDataFailUnfilledDimention() throws Exception {
         ImageData data = new ImageData(new int[][] {null});
-        data.fillHeader(new Header());
     }
 
     @Test(expected = FitsException.class)

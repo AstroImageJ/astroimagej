@@ -4,7 +4,7 @@ package nom.tam.fits;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 2004 - 2021 nom-tam-fits
+ * Copyright (C) 2004 - 2024 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  *
@@ -32,12 +32,12 @@ package nom.tam.fits;
  */
 
 /**
- * A hard exception for when we cannot deal with some FITS data as expected. In
- * retrospect it would have been better to make this a softer runtime exception,
- * but this goes back to the beginning of this library so it is here to stay.
- * You have no choice but to catch these an deal with them all the time.
+ * When we cannot deal with some FITS data as expected. Originally it was a hard
+ * exception, that you had no choice by to catch. Since 1.19, it has been
+ * demoted to a softer, runtime exception. This is a back compatible change,
+ * which gives more freedom to programmers on dealing with these (or not).
  */
-public class FitsException extends Exception {
+public class FitsException extends IllegalStateException {
 
     /**
      *

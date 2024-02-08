@@ -14,7 +14,6 @@ import nom.tam.fits.BinaryTable;
 import nom.tam.fits.FitsException;
 import nom.tam.fits.FitsFactory;
 import nom.tam.fits.Header;
-import nom.tam.fits.HeaderCard;
 import nom.tam.fits.HeaderCardException;
 import nom.tam.fits.compression.algorithm.api.ICompressOption;
 import nom.tam.fits.compression.algorithm.api.ICompressor;
@@ -22,7 +21,6 @@ import nom.tam.fits.compression.algorithm.api.ICompressorControl;
 import nom.tam.fits.compression.algorithm.rice.RiceCompressOption;
 import nom.tam.fits.compression.provider.CompressorProvider;
 import nom.tam.fits.compression.provider.TileCompressorAlternativProvider;
-import nom.tam.fits.compression.provider.param.api.HeaderAccess;
 import nom.tam.fits.compression.provider.param.api.HeaderCardAccess;
 import nom.tam.fits.header.Compression;
 import nom.tam.fits.header.IFitsHeader;
@@ -41,7 +39,7 @@ import nom.tam.util.type.PrimitiveTypes;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2021 nom-tam-fits
+ * Copyright (C) 1996 - 2024 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  *
@@ -93,6 +91,7 @@ public class TileCompressorProviderTest {
         private static Header emptyHeader() {
             Header header = new Header();
             try {
+                header.card(Standard.XTENSION).value(Standard.XTENSION_BINTABLE);
                 header.card(Standard.NAXIS1).value(1);
             } catch (HeaderCardException e) {
                 throw new RuntimeException();
@@ -263,7 +262,7 @@ public class TileCompressorProviderTest {
                 null, //
                 null, //
                 null, //
-                new HeaderAccess(header)));
+                header));
         // lets see if we can call the no loss function with no errors even if
         // it has no effect.
         operationsOfImage.forceNoLoss(1, 1, 10, 10);
@@ -299,30 +298,6 @@ public class TileCompressorProviderTest {
         };
         tileDecompressor.setCompressed(new byte[10], null);
         tileDecompressor.run();
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void headerAccessExceptionIntTest() throws Exception {
-        HeaderAccess headerAccess = new HeaderAccess(new Header() {
-
-            @Override
-            public void addLine(HeaderCard fcard) {
-                ThrowAnyException.throwHeaderCardException("");
-            }
-        });
-        headerAccess.addValue(ZBITPIX, 32);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void headerAccessExceptionStringTest() throws Exception {
-        HeaderAccess headerAccess = new HeaderAccess(new Header() {
-
-            @Override
-            public void addLine(HeaderCard fcard) {
-                ThrowAnyException.throwHeaderCardException("");
-            }
-        });
-        headerAccess.addValue(ZCMPTYPE, "XXX");
     }
 
     @Test

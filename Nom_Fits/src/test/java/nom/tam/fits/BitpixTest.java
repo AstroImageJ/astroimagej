@@ -4,7 +4,7 @@ package nom.tam.fits;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2021 nom-tam-fits
+ * Copyright (C) 1996 - 2024 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  *
@@ -154,4 +154,18 @@ public class BitpixTest {
         Bitpix.forNumberType(BigDecimal.class);
     }
 
+    @Test
+    public void testForArrayID() throws Exception {
+        assertEquals(Bitpix.BYTE, Bitpix.forArrayID('B'));
+        assertEquals(Bitpix.SHORT, Bitpix.forArrayID('S'));
+        assertEquals(Bitpix.INTEGER, Bitpix.forArrayID('I'));
+        assertEquals(Bitpix.LONG, Bitpix.forArrayID('J'));
+        assertEquals(Bitpix.FLOAT, Bitpix.forArrayID('F'));
+        assertEquals(Bitpix.DOUBLE, Bitpix.forArrayID('D'));
+    }
+
+    @Test(expected = FitsException.class)
+    public void testForInvalidArrayID() throws Exception {
+        Bitpix.forArrayID('?');
+    }
 }

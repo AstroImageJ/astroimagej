@@ -4,7 +4,7 @@ package nom.tam.image.compression.tile.mask;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2021 nom-tam-fits
+ * Copyright (C) 1996 - 2024 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  *
@@ -76,8 +76,10 @@ public class AbstractNullPixelMask {
      *            data
      * @param compressorControl
      *            The class managing the compression
+     * @throws IllegalStateException
+     *             if the compressorControl argument is <code>null</code>
      */
-    protected AbstractNullPixelMask(TileBuffer tileBuffer, int tileIndex, long nullValue, ICompressorControl compressorControl) {
+    protected AbstractNullPixelMask(TileBuffer tileBuffer, int tileIndex, long nullValue, ICompressorControl compressorControl) throws IllegalStateException {
         this.tileBuffer = tileBuffer;
         this.tileIndex = tileIndex;
         this.nullValue = nullValue;

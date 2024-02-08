@@ -4,7 +4,7 @@ package nom.tam.fits.header.extra;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2021 nom-tam-fits
+ * Copyright (C) 1996 - 2024 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  *
@@ -31,7 +31,7 @@ package nom.tam.fits.header.extra;
  * #L%
  */
 
-import nom.tam.fits.header.FitsHeaderImpl;
+import nom.tam.fits.header.FitsKey;
 import nom.tam.fits.header.IFitsHeader;
 
 /**
@@ -193,46 +193,19 @@ public enum SBFitsExt implements IFitsHeader {
      */
     YPIXSZ(VALUE.REAL, "Pixel height in microns");
 
-    @SuppressWarnings("CPD-START")
-    private final IFitsHeader key;
+    private final FitsKey key;
 
     SBFitsExt(String key, VALUE valueType, String comment) {
-        this.key = new FitsHeaderImpl(key, IFitsHeader.SOURCE.SBIG, HDU.IMAGE, valueType, comment);
+        this.key = new FitsKey(key == null ? name() : key, IFitsHeader.SOURCE.SBIG, HDU.IMAGE, valueType, comment);
     }
 
     SBFitsExt(VALUE valueType, String comment) {
-        key = new FitsHeaderImpl(name(), IFitsHeader.SOURCE.SBIG, HDU.IMAGE, valueType, comment);
+        this(null, valueType, comment);
     }
 
     @Override
-    public String comment() {
-        return key.comment();
-    }
-
-    @Override
-    public HDU hdu() {
-        return key.hdu();
-    }
-
-    @Override
-    public String key() {
-        return key.key();
-    }
-
-    @Override
-    public IFitsHeader n(int... number) {
-        return key.n(number);
-    }
-
-    @Override
-    public SOURCE status() {
-        return key.status();
-    }
-
-    @Override
-    @SuppressWarnings("CPD-END")
-    public VALUE valueType() {
-        return key.valueType();
+    public final FitsKey impl() {
+        return key;
     }
 
 }

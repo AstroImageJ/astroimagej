@@ -6,7 +6,7 @@ import java.nio.Buffer;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2022 nom-tam-fits
+ * Copyright (C) 1996 - 2024 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  *
@@ -59,14 +59,10 @@ public final class NullData extends ImageData {
         head.setBitpix(Bitpix.INTEGER);
         head.setNaxes(0);
 
-        try {
-            // Just in case!
-            head.addValue(EXTEND, true);
-            head.addValue(GCOUNT, 1);
-            head.addValue(PCOUNT, 0);
-        } catch (HeaderCardException e) {
-            // we don't really care...
-        }
+        // Just in case!
+        head.addValue(EXTEND, true);
+        head.addValue(GCOUNT, 1);
+        head.addValue(PCOUNT, 0);
     }
 
     @Override

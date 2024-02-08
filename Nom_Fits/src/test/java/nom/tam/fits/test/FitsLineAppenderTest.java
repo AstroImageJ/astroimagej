@@ -4,7 +4,7 @@ package nom.tam.fits.test;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2021 nom-tam-fits
+ * Copyright (C) 1996 - 2024 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  *
@@ -31,6 +31,13 @@ package nom.tam.fits.test;
  * #L%
  */
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
 import nom.tam.fits.FitsFactory;
 import nom.tam.fits.HeaderCard;
 import nom.tam.fits.header.hierarch.BlanksDotHierarchKeyFormatter;
@@ -38,12 +45,6 @@ import nom.tam.fits.header.hierarch.IHierarchKeyFormatter;
 import nom.tam.fits.header.hierarch.StandardIHierarchKeyFormatter;
 import nom.tam.fits.utilities.FitsLineAppender;
 import nom.tam.fits.utilities.FitsSubString;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 public class FitsLineAppenderTest {
 

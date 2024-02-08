@@ -4,7 +4,7 @@ package nom.tam.fits;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2021 nom-tam-fits
+ * Copyright (C) 1996 - 2024 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  *
@@ -31,6 +31,10 @@ package nom.tam.fits;
  * #L%
  */
 
+import nom.tam.fits.header.FitsHeaderImpl;
+import nom.tam.fits.header.IFitsHeader.HDU;
+import nom.tam.fits.header.IFitsHeader.SOURCE;
+import nom.tam.fits.header.IFitsHeader.VALUE;
 import org.junit.Test;
 
 @SuppressWarnings("deprecation")
@@ -41,5 +45,10 @@ public class DeprecatedTest {
         FitsFactory.setAllowHeaderRepairs(false);
         Header h = new Header();
         h.setBitpix(20);
+    }
+
+    @Test
+    public void testFitsHeaderImpl() throws Exception {
+        new FitsHeaderImpl("BLAH", SOURCE.UNKNOWN, HDU.ANY, VALUE.ANY, "blah");
     }
 }

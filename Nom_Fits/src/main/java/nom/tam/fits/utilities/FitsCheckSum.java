@@ -4,7 +4,7 @@ package nom.tam.fits.utilities;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2022 nom-tam-fits
+ * Copyright (C) 1996 - 2024 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  *
@@ -101,7 +101,7 @@ public final class FitsCheckSum {
     private static class Checksum {
         private long h, l;
 
-        Checksum(long prior) throws IllegalArgumentException {
+        Checksum(long prior) {
             h = (prior >>> SHIFT_2_BYTES) & MASK_2_BYTES;
             l = prior & MASK_2_BYTES;
         }

@@ -5,6 +5,7 @@ import nom.tam.fits.header.Standard;
 import nom.tam.util.ArrayDataOutput;
 import nom.tam.util.ArrayFuncs;
 import nom.tam.util.ColumnTable;
+import nom.tam.util.Cursor;
 
 import java.io.PrintStream;
 
@@ -48,6 +49,8 @@ public class BinaryTableHDU extends TableHDU<BinaryTable> {
      * @throws FitsException if the table structure is invalid, and cannot be described in a header (should never really
      *                           happen, but we keep the possibility open to it).
      * 
+     * @see                  BinaryTable#toHDU()
+     * 
      * @since                1.18
      */
     public static BinaryTableHDU wrap(BinaryTable tab) throws FitsException {
@@ -62,7 +65,9 @@ public class BinaryTableHDU extends TableHDU<BinaryTable> {
     }
 
     /**
-     * @deprecated               (<i>for internal use</i>) Will reduce visibility in the future.
+     * @deprecated               (<i>for internal use</i>) Use {@link BinaryTable#fromColumnMajor(Object[])} or
+     *                               {@link BinaryTable#fromRowMajor(Object[][])} instead. Will reduce visibility in the
+     *                               future.
      *
      * @return                   Encapsulate data in a BinaryTable data type
      *
@@ -155,8 +160,10 @@ public class BinaryTableHDU extends TableHDU<BinaryTable> {
     @Override
     public int addColumn(Object data) throws FitsException {
         int n = myData.addColumn(data);
-        myHeader.setNaxis(1, myData.getRowBytes());
-        myData.fillForColumn(myHeader, n - 1);
+        myHeader.addValue(Standard.NAXISn.n(1), myData.getRowBytes());
+        Cursor<String, HeaderCard> c = myHeader.iterator();
+        c.end();
+        myData.fillForColumn(c, n - 1);
         return super.addColumn(data);
     }
 

@@ -86,8 +86,15 @@ public abstract class BasicHDU<DataClass extends Data> implements FitsElement {
      * @param      myData   the corresponding data object
      */
     protected BasicHDU(Header myHeader, DataClass myData) {
-        this.myHeader = myHeader;
+        setHeader(myHeader);
         this.myData = myData;
+    }
+
+    private void setHeader(Header header) {
+        this.myHeader = header;
+        if (header != null) {
+            this.myHeader.assignTo(this);
+        }
     }
 
     /**
@@ -556,8 +563,8 @@ public abstract class BasicHDU<DataClass extends Data> implements FitsElement {
 
     /**
      * Checks the HDU's integrity, using the recorded CHECKSUM and/or DATASUM keywords if present. In addition of
-     * performing the same checks as {@link #verifyDataIntegrity()}, it also checks the overall checksum of the HDU is
-     * possible. When the header has a CHECKSUM keyword stored, the overall checksum of the HDU overall must be
+     * performing the same checks as {@link #verifyDataIntegrity()}, it also checks the overall checksum of the HDU if
+     * possible. When the header has a CHECKSUM keyword stored, the overall checksum of the HDU must be
      * <code>0xffffffff</code>, that is -1 in 32-bit representation.
      * 
      * @return               <code>true</code> if the HDU has a CHECKSUM and/or DATASUM record to check against,
@@ -648,6 +655,11 @@ public abstract class BasicHDU<DataClass extends Data> implements FitsElement {
      * Returns the FITS header component of this HDU
      * 
      * @return the associated header
+     * 
+     * @see    Fits#getPrimaryHeader()
+     * @see    Fits#getCompleteHeader(int)
+     * @see    Fits#getCompleteHeader(String)
+     * @see    Fits#getCompleteHeader(String, int)
      */
     public Header getHeader() {
         return myHeader;
@@ -831,14 +843,16 @@ public abstract class BasicHDU<DataClass extends Data> implements FitsElement {
     /**
      * Print out some information about this HDU.
      *
-     * @param stream the printstream to write the info on
+     * @param  stream        the printstream to write the info on
+     * 
+     * @throws FitsException if the HDU is malformed
      */
-    public abstract void info(PrintStream stream);
+    public abstract void info(PrintStream stream) throws FitsException;
 
     @Override
     @SuppressWarnings({"unchecked", "deprecation"})
     public void read(ArrayDataInput stream) throws FitsException, IOException {
-        myHeader = Header.readHeader(stream);
+        setHeader(Header.readHeader(stream));
         myData = (DataClass) FitsFactory.dataFactory(myHeader);
         myData.read(stream);
     }
@@ -876,7 +890,10 @@ public abstract class BasicHDU<DataClass extends Data> implements FitsElement {
             throw new FitsException("Invalid attempt to make HDU of type:" + this.getClass().getName() + " primary.");
         }
 
+        Header.KeywordCheck mode = myHeader.getKeywordChecking();
+        myHeader.setKeywordChecking(Header.KeywordCheck.DATA_TYPE);
         myHeader.setRequiredKeys(value ? null : getCanonicalXtension());
+        myHeader.setKeywordChecking(mode);
     }
 
     /**
@@ -899,7 +916,7 @@ public abstract class BasicHDU<DataClass extends Data> implements FitsElement {
     @Override
     public void write(ArrayDataOutput stream) throws FitsException {
         if (myHeader == null) {
-            myHeader = new Header();
+            setHeader(new Header());
         }
 
         if (stream instanceof FitsOutput) {

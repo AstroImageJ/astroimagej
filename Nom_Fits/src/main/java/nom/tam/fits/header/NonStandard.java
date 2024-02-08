@@ -4,7 +4,7 @@ package nom.tam.fits.header;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2021 nom-tam-fits
+ * Copyright (C) 1996 - 2024 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  *
@@ -50,6 +50,7 @@ public enum NonStandard implements IFitsHeader {
      */
     @Deprecated
     CONTINUE(SOURCE.HEASARC, HDU.ANY, VALUE.NONE, "denotes the CONTINUE long string keyword convention"),
+
     /**
      * The HIERARCH keyword, when followed by spaces in columns 9 and 10 of the FITS card image, indicates that the ESO
      * HIERARCH keyword convention should be used to interpret the name and value of the keyword. The HIERARCH keyword
@@ -68,49 +69,35 @@ public enum NonStandard implements IFitsHeader {
      * that the slash character be preceeded and followed by a space character. Example: "HIERARCH Filter Wheel = 12 /
      * filter position". In this example the logical name of the keyword is 'Filter Wheel' and the value is 12.
      */
-    HIERARCH(SOURCE.ESO, HDU.ANY, VALUE.NONE, "denotes the HIERARCH keyword convention"),
+    HIERARCH(SOURCE.ESO, HDU.ANY, VALUE.NONE, null),
+
     /**
      * The presence of this keyword with a value = T in an extension key indicates that the keywords contained in the
      * primary key (except the FITS Mandatory keywords, and any COMMENT, HISTORY or 'blank' keywords) are to be
      * inherited, or logically included in that extension key.
+     * 
+     * @deprecated Part of the FITS standard, use {@link Standard#INHERIT} instead.
      */
-    INHERIT(SOURCE.STScI, HDU.EXTENSION, VALUE.LOGICAL, "denotes the INHERIT keyword convention");
+    INHERIT(SOURCE.STScI, HDU.EXTENSION, VALUE.LOGICAL, "inherit header description of primary HDU");
 
-    @SuppressWarnings("CPD-START")
-    private final IFitsHeader key;
+    private final FitsKey key;
+
+    /**
+     * An alternative older value of the XTENSION keword in case of an image.
+     */
+    public static final String XTENSION_IUEIMAGE = "IUEIMAGE";
+
+    /**
+     * an alternative olde value of the XTENSION keword in case of an earlier version of binary table.
+     */
+    public static final String XTENSION_A3DTABLE = "A3DTABLE";
 
     NonStandard(IFitsHeader.SOURCE status, HDU hdu, VALUE valueType, String comment) {
-        key = new FitsHeaderImpl(name(), status, hdu, valueType, comment);
+        key = new FitsKey(name(), status, hdu, valueType, comment);
     }
 
     @Override
-    public String comment() {
-        return key.comment();
-    }
-
-    @Override
-    public HDU hdu() {
-        return key.hdu();
-    }
-
-    @Override
-    public String key() {
-        return key.key();
-    }
-
-    @Override
-    public IFitsHeader n(int... number) {
-        return key.n(number);
-    }
-
-    @Override
-    public SOURCE status() {
-        return key.status();
-    }
-
-    @Override
-    @SuppressWarnings("CPD-END")
-    public VALUE valueType() {
-        return key.valueType();
+    public final FitsKey impl() {
+        return key;
     }
 }

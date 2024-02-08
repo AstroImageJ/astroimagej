@@ -31,7 +31,7 @@ package nom.tam.fits.header.extra;
  * #L%
  */
 
-import nom.tam.fits.header.FitsHeaderImpl;
+import nom.tam.fits.header.FitsKey;
 import nom.tam.fits.header.IFitsHeader;
 
 public enum AIJExt implements IFitsHeader {
@@ -44,7 +44,7 @@ public enum AIJExt implements IFitsHeader {
     private final IFitsHeader key;
 
     AIJExt(SOURCE status) {
-        this.key = new FitsHeaderImpl(name(), status, HDU.IMAGE, VALUE.STRING, "");
+        this.key = new FitsKey(name(), status, HDU.IMAGE, VALUE.STRING, "");
     }
 
     @Override

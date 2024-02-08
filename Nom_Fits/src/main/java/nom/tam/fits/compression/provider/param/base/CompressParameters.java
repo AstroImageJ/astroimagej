@@ -4,7 +4,6 @@ import nom.tam.fits.*;
 import nom.tam.fits.compression.provider.param.api.ICompressColumnParameter;
 import nom.tam.fits.compression.provider.param.api.ICompressHeaderParameter;
 import nom.tam.fits.compression.provider.param.api.ICompressParameters;
-import nom.tam.fits.compression.provider.param.api.IHeaderAccess;
 
 import static nom.tam.fits.header.Standard.TTYPEn;
 
@@ -47,14 +46,15 @@ public abstract class CompressParameters implements ICompressParameters, Cloneab
     }
 
     @Override
-    public void getValuesFromHeader(IHeaderAccess header) {
+    public void getValuesFromHeader(Header header) throws HeaderCardException {
         for (ICompressHeaderParameter compressionParameter : headerParameters()) {
             compressionParameter.getValueFromHeader(header);
         }
     }
 
     @Override
-    public void initializeColumns(IHeaderAccess header, BinaryTable binaryTable, int size) throws FitsException {
+    public void initializeColumns(Header header, BinaryTable binaryTable, int size)
+            throws HeaderCardException, FitsException {
         for (ICompressColumnParameter parameter : columnParameters()) {
             parameter.setColumnData(getNullableColumn(header, binaryTable, parameter.getName()), size);
         }
@@ -75,16 +75,16 @@ public abstract class CompressParameters implements ICompressParameters, Cloneab
     }
 
     @Override
-    public void setValuesInHeader(IHeaderAccess header) throws HeaderCardException {
+    public void setValuesInHeader(Header header) throws HeaderCardException {
         for (ICompressHeaderParameter parameter : headerParameters()) {
             parameter.setValueInHeader(header);
         }
     }
 
-    private Object getNullableColumn(IHeaderAccess header, BinaryTable binaryTable, String columnName)
-            throws FitsException {
+    private Object getNullableColumn(Header header, BinaryTable binaryTable, String columnName)
+            throws HeaderCardException, FitsException {
         for (int i = 1; i <= binaryTable.getNCols(); i++) {
-            HeaderCard card = header.findCard(TTYPEn.n(i));
+            HeaderCard card = header.getCard(TTYPEn.n(i));
             if (card != null) {
                 if (card.getValue().trim().equals(columnName)) {
                     return binaryTable.getColumn(i - 1);

@@ -4,7 +4,7 @@ package nom.tam.fits;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 2004 - 2021 nom-tam-fits
+ * Copyright (C) 2004 - 2024 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  *
@@ -72,7 +72,7 @@ public class FitsHeap implements FitsElement {
      *
      * @throws IllegalArgumentException if the size argument is negative.
      */
-    FitsHeap(int size) {
+    FitsHeap(int size) throws IllegalArgumentException {
         if (size < 0) {
             throw new IllegalArgumentException("Illegal size for FITS heap: " + size);
         }

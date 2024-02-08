@@ -4,7 +4,7 @@ package nom.tam.util;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 2004 - 2021 nom-tam-fits
+ * Copyright (C) 2004 - 2024 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  *
@@ -57,7 +57,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-import nom.tam.fits.header.FitsHeaderImpl;
+import nom.tam.fits.header.FitsKey;
 
 /**
  * An ordered hash map implementation.
@@ -110,7 +110,11 @@ public class HashedList<VALUE extends CursorValue<String>> implements Collection
 
         @Override
         public VALUE end() {
-            current = Math.max(0, HashedList.this.ordered.size() - 1);
+            current = HashedList.this.ordered.size() - 1;
+            if (current < 0) {
+                current = 0;
+                return null;
+            }
             return next();
         }
 
@@ -127,7 +131,7 @@ public class HashedList<VALUE extends CursorValue<String>> implements Collection
         @Override
         public VALUE next() {
             if (current < 0 || current >= HashedList.this.ordered.size()) {
-                throw new NoSuchElementException("Outside list");
+                throw new NoSuchElementException("Outside list: " + current);
             }
             VALUE entry = HashedList.this.ordered.get(current);
             current++;
@@ -181,8 +185,8 @@ public class HashedList<VALUE extends CursorValue<String>> implements Collection
 
     /**
      * Add an element to the list at a specified position. If that element was already in the list, it is first removed
-     * from the list then added again - if it was removed from a position before the position where it was to be added,
-     * that position is decremented by one.
+     * from the list then added again (and if it was removed from a position before the position where it was to be
+     * added, that position is decremented by one).
      *
      * @param pos       The position at which the specified element is to be added. If pos is bigger than the size of
      *                      the list the element is put at the end of the list.
@@ -190,7 +194,7 @@ public class HashedList<VALUE extends CursorValue<String>> implements Collection
      */
     private void add(int pos, VALUE entry) {
         String key = entry.getKey();
-        if (keyed.containsKey(key) && !FitsHeaderImpl.isCommentStyleKey(key)) {
+        if (keyed.containsKey(key) && !FitsKey.isCommentStyleKey(key)) {
             int oldPos = indexOf(entry);
             internalRemove(oldPos, entry);
             if (oldPos < pos) {
@@ -235,7 +239,7 @@ public class HashedList<VALUE extends CursorValue<String>> implements Collection
      * @param entry The element to add to the list.
      */
     public void update(String key, VALUE entry) {
-        if (keyed.containsKey(key) && !FitsHeaderImpl.isCommentStyleKey(key)) {
+        if (keyed.containsKey(key) && !FitsKey.isCommentStyleKey(key)) {
             int index = indexOf(get(key));
             remove(index);
             add(index, entry);

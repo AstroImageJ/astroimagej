@@ -15,15 +15,17 @@ import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
 import ij.process.ShortProcessor;
 import nom.tam.fits.Fits;
+import nom.tam.fits.Header;
 import nom.tam.fits.HeaderCard;
 import nom.tam.fits.ImageHDU;
+import nom.tam.fits.header.extra.AIJExt;
 import nom.tam.image.compression.hdu.CompressedImageHDU;
+import nom.tam.util.Cursor;
 import nom.tam.util.FitsOutputStream;
 
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -226,15 +228,22 @@ public class FITS_Writer implements PlugIn {
 
 				// Duplicate header for new image
 				if (oldHeader != null) {
-					for (String cardString : oldHeader) {
-						if (cardString.startsWith("NAXIS")) continue;
-						var card = HeaderCard.create(cardString);
-						if ((header.containsKey(card.getKey()) || // No overwriting of old header values
-								Arrays.stream(values()).anyMatch(s -> s.status() == SOURCE.MANDATORY && cardsMatch(s.key(), card.getKey()))) && // Use auto-genned HDU header info
-								!card.isCommentStyleCard()) { // Allow duplicate comment-style cards
-							continue;
-						}
-						header.addLine(card);
+					var oh = new Header(oldHeader);
+					header.mergeDistinct(oh);
+
+					// ANNOTATE is an invalid card, but we need to support it so force it to merge
+					// See the following in nom.tam if this breaks:
+					// 	- nom.tam.fits.header.FitsKey.commentStyleKeys
+					//  - nom.tam.fits.HeaderCard.isCommentStyleCard
+					if (oh.containsKey(AIJExt.ANNOTATE)) {
+						header.deleteKey(AIJExt.ANNOTATE); // Remove old value so it isn't duplicated
+						header.deleteKey(END); // Writer adds this back for us
+                        for (Cursor<String, HeaderCard> it = oh.iterator(); it.hasNext(); ) {
+                            HeaderCard card = it.next();
+							if (AIJExt.ANNOTATE.key().equals(card.getKey())) {
+								header.addLine(card);
+							}
+                        }
 					}
 				}
 

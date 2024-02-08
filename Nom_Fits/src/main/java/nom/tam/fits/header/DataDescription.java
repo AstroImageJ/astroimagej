@@ -4,7 +4,7 @@ package nom.tam.fits.header;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2021 nom-tam-fits
+ * Copyright (C) 1996 - 2024 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  *
@@ -51,13 +51,13 @@ public enum DataDescription implements IFitsHeader {
      * CREATOR keyword in that it give the name and version of the overall processing system and not just the name and
      * version of a single program.
      */
-    CONFIGUR(SOURCE.INTEGRAL, HDU.ANY, VALUE.STRING, "software configuration used to process the data"),
+    CONFIGUR(SOURCE.UNKNOWN, HDU.ANY, VALUE.STRING, "software configuration used to process the data"),
     /**
      * The value field shall contain a character string giving the name, and optionally, the version of the program that
      * originally created the current FITS HDU. This keyword is synonymous with the PROGRAM keyword. Example: 'TASKNAME
      * V1.2.3'
      */
-    CREATOR(SOURCE.HEASARC, HDU.ANY, VALUE.STRING, "the name of the software task that created the file"),
+    CREATOR(SOURCE.HEASARC, HDU.ANY, VALUE.STRING, "name of the software task that created the file"),
 
     /**
      * The value field shall contain a character string giving the the host file name used to record the original data.
@@ -92,22 +92,20 @@ public enum DataDescription implements IFitsHeader {
     HDUDOC(SOURCE.HEASARC, HDU.ANY, VALUE.STRING, "reference to document describing the data format"),
 
     /**
-     * This keyword is synonymous to the standard EXTLEVEL keyword except that it may also be used in the primary key.
-     * It is recommended that the HDULEVEL and EXTLEVEL keywords should not both be given in the same HDU key, but if
-     * they are, then the HDULEVEL keyword will have precedence.
+     * This keyword is synonymous to the standard EXTLEVEL. It is recommended that the HDULEVEL and EXTLEVEL keywords
+     * should not both be given in the same HDU key, but if they are, then the HDULEVEL keyword will have precedence.
      */
     HDULEVEL(SOURCE.UNKNOWN, HDU.ANY, VALUE.INTEGER, "hierarchical level of the HDU"),
     /**
-     * This keyword is synonymous to the standard EXTNAME keyword except that it may also be used in the primary key. It
-     * is recommended that the HDUNAME and EXTNAME keywords should not both be given in the same HDU key, but if they
-     * are, then the HDUNAME keyword will have precedence.
+     * This keyword is synonymous to the standard EXTNAME keyword except. It is recommended that the HDUNAME and EXTNAME
+     * keywords should not both be given in the same HDU key, but if they are, then the HDUNAME keyword will have
+     * precedence.
      */
     HDUNAME(SOURCE.UNKNOWN, HDU.ANY, VALUE.STRING, "descriptive name of the HDU"),
 
     /**
-     * This keyword is synonymous to the standard EXTVER keyword except that it may also be used in the primary key. It
-     * is recommended that the HDUVER and EXTVER keywords should not both be given in the same HDU key, but if they are,
-     * then the HDUVER keyword will have precedence.
+     * This keyword is synonymous to the standard EXTVER keyword. It is recommended that the HDUVER and EXTVER keywords
+     * should not both be given in the same HDU key, but if they are, then the HDUVER keyword will have precedence.
      */
     HDUVER(SOURCE.UNKNOWN, HDU.ANY, VALUE.INTEGER, "version number of the HDU"),
     /**
@@ -144,12 +142,16 @@ public enum DataDescription implements IFitsHeader {
      * The value field of this indexed keyword shall contain a floating point number specifying the maximum valid
      * physical value represented in column n of the table, exclusive of any special values. This keyword may only be
      * used in 'TABLE' or 'BINTABLE' extensions and is analogous to the DATAMAX keyword used for FITS images.
+     * 
+     * @deprecated Use {@link Standard#TDMAXn} instead.
      */
     TDMAXn(SOURCE.HEASARC, HDU.TABLE, VALUE.REAL, "maximum value in the column"),
     /**
      * The value field of this indexed keyword shall contain a floating point number specifying the minimum valid
      * physical value represented in column n of the table, exclusive of any special values. This keyword may only be
      * used in 'TABLE' or 'BINTABLE' extensions and is analogous to the DATAMIN keyword used for FITS images.
+     * 
+     * @deprecated Use {@link Standard#TDMINn} instead.
      */
     TDMINn(SOURCE.HEASARC, HDU.TABLE, VALUE.REAL, "minimum value in the column"),
     /**
@@ -163,6 +165,8 @@ public enum DataDescription implements IFitsHeader {
      * that are greater than this legal maximum value but the interpretation of such values is not defined here. The
      * value of this keyword is typically used as the maxinum value when constructing a histogram of the values in the
      * column. This keyword may only be used in 'TABLE' or 'BINTABLE' extensions.
+     * 
+     * @deprecated Use {@link Standard#TLMAXn} instead.
      */
     TLMAXn(SOURCE.HEASARC, HDU.TABLE, VALUE.REAL, "maximum legal value in the column"),
     /**
@@ -171,6 +175,8 @@ public enum DataDescription implements IFitsHeader {
      * that are less than this legal minimum value but the interpretation of such values is not defined here. The value
      * of this keyword is typically used as the mininum value when constructing a histogram of the values in the column.
      * This keyword may only be used in 'TABLE' or 'BINTABLE' extensions.
+     * 
+     * @deprecated Use {@link Standard#TLMINn} instead.
      */
     TLMINn(SOURCE.HEASARC, HDU.TABLE, VALUE.REAL, "minimum legal value in the column"),
     /**
@@ -187,41 +193,14 @@ public enum DataDescription implements IFitsHeader {
      */
     TSORTKEY(SOURCE.HEASARC, HDU.TABLE, VALUE.STRING, "defines the sort order of a table");
 
-    @SuppressWarnings("CPD-START")
-    private final IFitsHeader key;
+    private final FitsKey key;
 
     DataDescription(IFitsHeader.SOURCE status, HDU hdu, VALUE valueType, String comment) {
-        key = new FitsHeaderImpl(name(), status, hdu, valueType, comment);
+        key = new FitsKey(name(), status, hdu, valueType, comment);
     }
 
     @Override
-    public String comment() {
-        return key.comment();
-    }
-
-    @Override
-    public HDU hdu() {
-        return key.hdu();
-    }
-
-    @Override
-    public String key() {
-        return key.key();
-    }
-
-    @Override
-    public IFitsHeader n(int... number) {
-        return key.n(number);
-    }
-
-    @Override
-    public SOURCE status() {
-        return key.status();
-    }
-
-    @Override
-    @SuppressWarnings("CPD-END")
-    public VALUE valueType() {
-        return key.valueType();
+    public final FitsKey impl() {
+        return key;
     }
 }

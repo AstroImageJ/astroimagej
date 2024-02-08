@@ -1,10 +1,12 @@
 package nom.tam.fits.compression.provider.param.quant;
 
+import nom.tam.fits.Header;
+
 /*
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2021 nom-tam-fits
+ * Copyright (C) 1996 - 2024 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  *
@@ -32,8 +34,8 @@ package nom.tam.fits.compression.provider.param.quant;
  */
 
 import nom.tam.fits.HeaderCard;
+import nom.tam.fits.HeaderCardException;
 import nom.tam.fits.compression.algorithm.quant.QuantizeOption;
-import nom.tam.fits.compression.provider.param.api.IHeaderAccess;
 import nom.tam.fits.compression.provider.param.base.CompressHeaderParameter;
 import nom.tam.fits.header.Compression;
 
@@ -47,12 +49,12 @@ final class ZQuantizeParameter extends CompressHeaderParameter<QuantizeOption> {
     }
 
     @Override
-    public void getValueFromHeader(IHeaderAccess header) {
+    public void getValueFromHeader(Header header) throws HeaderCardException {
         if (getOption() == null) {
             return;
         }
 
-        HeaderCard card = header.findCard(getName());
+        HeaderCard card = header.getCard(getName());
         String value = card != null ? card.getValue() : null;
 
         getOption().setDither(false);
@@ -67,7 +69,7 @@ final class ZQuantizeParameter extends CompressHeaderParameter<QuantizeOption> {
     }
 
     @Override
-    public void setValueInHeader(IHeaderAccess header) {
+    public void setValueInHeader(Header header) throws HeaderCardException {
         if (getOption() == null) {
             return;
         }

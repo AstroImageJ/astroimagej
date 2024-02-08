@@ -1,7 +1,7 @@
 package nom.tam.image.compression.tile;
 
 import nom.tam.fits.FitsException;
-import nom.tam.fits.compression.provider.param.api.IHeaderAccess;
+import nom.tam.fits.Header;
 import nom.tam.image.tile.operation.ITileOperationInitialisation;
 import nom.tam.image.tile.operation.TileArea;
 
@@ -9,7 +9,7 @@ import nom.tam.image.tile.operation.TileArea;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2021 nom-tam-fits
+ * Copyright (C) 1996 - 2024 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  *
@@ -48,14 +48,14 @@ final class TileDecompressorInitialisation implements ITileOperationInitialisati
 
     private final Object[] gzipCompressed;
 
-    private final IHeaderAccess header;
+    private final Header header;
 
     private final TiledImageCompressionOperation imageTilesOperation;
 
     private int compressedOffset = 0;
 
     protected TileDecompressorInitialisation(TiledImageCompressionOperation imageTilesOperation, Object[] uncompressed,
-            Object[] compressed, Object[] gzipCompressed, IHeaderAccess header) {
+            Object[] compressed, Object[] gzipCompressed, Header header) {
         this.imageTilesOperation = imageTilesOperation;
         this.uncompressed = uncompressed;
         this.compressed = compressed;

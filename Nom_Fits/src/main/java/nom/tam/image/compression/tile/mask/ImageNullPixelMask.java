@@ -10,7 +10,7 @@ import nom.tam.image.tile.operation.buffer.TileBuffer;
  * #%L
  * nom.tam FITS library
  * %%
- * Copyright (C) 1996 - 2021 nom-tam-fits
+ * Copyright (C) 1996 - 2024 nom-tam-fits
  * %%
  * This is free and unencumbered software released into the public domain.
  *
@@ -65,6 +65,7 @@ public class ImageNullPixelMask {
         return add(new NullPixelMaskRestorer(tileBuffer, tileIndex, nullValue, compressorControl));
     }
 
+    @SuppressWarnings("deprecation")
     public byte[][] getColumn() {
         byte[][] column = new byte[nullPixelMasks.length][];
         for (AbstractNullPixelMask tileMask : nullPixelMasks) {

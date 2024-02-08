@@ -2286,6 +2286,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             firstCurve = 0;
         }
 
+        var phaseFoldedX = new double[maxCurves][];
         IntStream.range(0, maxCurves).parallel().forEach(curve -> {
             if (xlabel[curve].trim().length() == 0 || (xlabel[curve].equalsIgnoreCase("default") && xlabeldefault.trim().length() == 0)) {
                 for (int j = 0; j < nn[curve]; j++)
@@ -2638,13 +2639,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         }
                     }
                 }
-            }
-        });
 
-        // Calculate phase folding and min/max x
-        var phaseFoldedX = new double[maxCurves][];
-        IntStream.range(0, maxCurves).parallel().forEach(curve -> {
-            if (plotY[curve]) {
+                // Phase fold x
                 if (!showXAxisNormal) {
                     phaseFoldedX[curve] = Arrays.copyOf(x[curve], x[curve].length);
                     if (showXAxisAsPhase) {
@@ -2679,82 +2675,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         }
                     }
                 }
-                xMinimum[curve] = minOf(showXAxisNormal ? x[curve] : phaseFoldedX[curve], nn[curve]); //FIND MIN AND MAX X OF EACH SELECTED DATASET
-                xMaximum[curve] = maxOf(showXAxisNormal ? x[curve] : phaseFoldedX[curve], nn[curve]);
             }
         });
 
-        // PERFORM X-AUTOSCALING TO ONE OR MORE CURVES
-        dx = 0.0;
-
-        xPlotMin = xMin;
-        xPlotMax = xMax;
-
-        xautoscalemin = Double.POSITIVE_INFINITY;
-        xautoscalemax = Double.NEGATIVE_INFINITY;
-
-        var hasXDatasetToScaleAgainst = IntStream.range(0, ASInclude.length)
-                .mapToObj(i -> ASInclude[i]).filter(b -> b).findAny().isPresent();
-
-        for (int curve = 0; curve < maxCurves; curve++) {
-            if (plotY[curve]) {
-                if (ASInclude[curve]) {
-                    if (xMinimum[curve] < xautoscalemin) xautoscalemin = xMinimum[curve];
-                    if (xMaximum[curve] > xautoscalemax) xautoscalemax = xMaximum[curve];
-                }
-
-                if (!hasXDatasetToScaleAgainst) {
-                    if (xMinimum[curve] < xautoscalemin) xautoscalemin = xMinimum[curve];
-                    if (xMaximum[curve] > xautoscalemax) xautoscalemax = xMaximum[curve];
-                }
-            }
-        }
-
-        if (showVMarker1 || showVMarker2) {
-            double v1 = vMarker1Value;
-            double v2 = vMarker2Value;
-            if ((xlabel2[firstCurve].contains("J.D.") || xlabel2[firstCurve].contains("JD")) && showXAxisNormal) {
-                v1 += (int) xautoscalemin;
-                v2 += (int) xautoscalemin;
-            }
-            if (showVMarker1) {
-                if (v1 < xautoscalemin && (!showVMarker2 || (showVMarker2 && v1 <= v2))) xautoscalemin = v1;
-                if (v1 > xautoscalemax && (!showVMarker2 || (showVMarker2 && v1 >= v2))) xautoscalemax = v1;
-            }
-            if (showVMarker2) {
-                if (v2 < xautoscalemin && (!showVMarker1 || (showVMarker1 && v2 < v1))) xautoscalemin = v2;
-                if (v2 > xautoscalemax && (!showVMarker1 || (showVMarker1 && v2 > v1))) xautoscalemax = v2;
-            }
-        }
-
-        if (Double.isInfinite(xautoscalemin)) {
-            xautoscalemin = Double.isInfinite(xautoscalemax) ? 0.0 : xautoscalemax - 1.0;
-        }
-        if (Double.isInfinite(xautoscalemax)) xautoscalemax = xautoscalemin + 1.0;
-
-
-        if (autoScaleX) {
-            xPlotMin = xautoscalemin;
-            xPlotMax = (xautoscalemin == xautoscalemax) ? xautoscalemin + 0.01 : xautoscalemax;
-        } else if (useFirstX) {
-            firstXmin = xautoscalemin;
-            xPlotMin = xautoscalemin;
-            if (xWidth < 0.0001) xWidth = 0.0001;
-            xPlotMax = xautoscalemin + xWidth;
-        }
-        xPlotMinRaw = xPlotMin;
-        dx = (xPlotMax - xPlotMin) / 99.0;
-        xJD = 0;
-        xOffset = 0.0;
-        if ((xlabel2[firstCurve].contains("J.D.") || xlabel2[firstCurve].contains("JD")) && showXAxisNormal) {
-            if (xExponent != 0) xmultiplierspinner.setValue(0);
-            xJD = (int) xPlotMin;
-            xOffset = xJD;
-            if (showVMarker1 && vMarker1Value < 0.0) {
-                xOffset += 1.0;
-                xPlotMinRaw += 1.0;
-            }
-        }
+        applyXAutoScale(showXAxisNormal ? x : phaseFoldedX);
 
         if (!showXAxisNormal) {
             if ((unphasedX == null || unphasedX.length != maxCurves)) {
@@ -4349,6 +4273,87 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 });
 
         return new PlotDataLock(magSign, normAverageSet, binnedData);
+    }
+
+    private static void applyXAutoScale(double[][] xData) {
+        IntStream.range(0, maxCurves).parallel().forEach(curve -> {
+            if (plotY[curve]) {
+                xMinimum[curve] = minOf(xData[curve], nn[curve]); //FIND MIN AND MAX X OF EACH SELECTED DATASET
+                xMaximum[curve] = maxOf(xData[curve], nn[curve]);
+            }
+        });
+
+        // PERFORM X-AUTOSCALING TO ONE OR MORE CURVES
+        dx = 0.0;
+
+        xPlotMin = xMin;
+        xPlotMax = xMax;
+
+        xautoscalemin = Double.POSITIVE_INFINITY;
+        xautoscalemax = Double.NEGATIVE_INFINITY;
+
+        var hasXDatasetToScaleAgainst = IntStream.range(0, ASInclude.length)
+                .mapToObj(i -> ASInclude[i]).filter(b -> b).findAny().isPresent();
+
+        for (int curve = 0; curve < maxCurves; curve++) {
+            if (plotY[curve]) {
+                if (ASInclude[curve]) {
+                    if (xMinimum[curve] < xautoscalemin) xautoscalemin = xMinimum[curve];
+                    if (xMaximum[curve] > xautoscalemax) xautoscalemax = xMaximum[curve];
+                }
+
+                if (!hasXDatasetToScaleAgainst) {
+                    if (xMinimum[curve] < xautoscalemin) xautoscalemin = xMinimum[curve];
+                    if (xMaximum[curve] > xautoscalemax) xautoscalemax = xMaximum[curve];
+                }
+            }
+        }
+
+        if (showVMarker1 || showVMarker2) {
+            double v1 = vMarker1Value;
+            double v2 = vMarker2Value;
+            if ((xlabel2[firstCurve].contains("J.D.") || xlabel2[firstCurve].contains("JD")) && showXAxisNormal) {
+                v1 += (int) xautoscalemin;
+                v2 += (int) xautoscalemin;
+            }
+            if (showVMarker1) {
+                if (v1 < xautoscalemin && (!showVMarker2 || (showVMarker2 && v1 <= v2))) xautoscalemin = v1;
+                if (v1 > xautoscalemax && (!showVMarker2 || (showVMarker2 && v1 >= v2))) xautoscalemax = v1;
+            }
+            if (showVMarker2) {
+                if (v2 < xautoscalemin && (!showVMarker1 || (showVMarker1 && v2 < v1))) xautoscalemin = v2;
+                if (v2 > xautoscalemax && (!showVMarker1 || (showVMarker1 && v2 > v1))) xautoscalemax = v2;
+            }
+        }
+
+        if (Double.isInfinite(xautoscalemin)) {
+            xautoscalemin = Double.isInfinite(xautoscalemax) ? 0.0 : xautoscalemax - 1.0;
+        }
+        if (Double.isInfinite(xautoscalemax)) xautoscalemax = xautoscalemin + 1.0;
+
+
+        if (autoScaleX) {
+            xPlotMin = xautoscalemin;
+            xPlotMax = (xautoscalemin == xautoscalemax) ? xautoscalemin + 0.01 : xautoscalemax;
+        } else if (useFirstX) {
+            firstXmin = xautoscalemin;
+            xPlotMin = xautoscalemin;
+            if (xWidth < 0.0001) xWidth = 0.0001;
+            xPlotMax = xautoscalemin + xWidth;
+        }
+        xPlotMinRaw = xPlotMin;
+        dx = (xPlotMax - xPlotMin) / 99.0;
+        xJD = 0;
+        xOffset = 0.0;
+        if ((xlabel2[firstCurve].contains("J.D.") || xlabel2[firstCurve].contains("JD")) && showXAxisNormal) {
+            if (xExponent != 0) xmultiplierspinner.setValue(0);
+            xJD = (int) xPlotMin;
+            xOffset = xJD;
+            if (showVMarker1 && vMarker1Value < 0.0) {
+                xOffset += 1.0;
+                xPlotMinRaw += 1.0;
+            }
+        }
     }
 
     private record PlotDataLock(

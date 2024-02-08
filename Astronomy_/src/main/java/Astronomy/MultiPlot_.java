@@ -4224,8 +4224,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
                     // Bin data
                     var binnedDataC = PlotDataBinning.binDataErr(Arrays.copyOf(x[curve], nn[curve]), Arrays.copyOf(y[curve], nn[curve]), Arrays.copyOf(yerr[curve], nn[curve]), binWidth);
-                    binnedData[curve] = binnedDataC.first();
+
                     if (binnedDataC != null) {
+                        binnedData[curve] = binnedDataC.first();
+
                         // Update bin width as the minimum was calculated at the same time
                         if (binWidth != binnedDataC.second()) {
                             SwingUtilities.invokeLater(() -> minutes.get(curve).second().setValue(binnedDataC.second() * 24D * 60D));

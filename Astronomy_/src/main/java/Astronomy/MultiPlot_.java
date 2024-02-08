@@ -2641,8 +2641,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             }
         });
 
-        if (!showXAxisNormal && (unphasedX == null || unphasedX.length != maxCurves)) {
-            unphasedX = new double[maxCurves][];
+        if (!showXAxisNormal) {
+            if ((unphasedX == null || unphasedX.length != maxCurves)) {
+                unphasedX = new double[maxCurves][];
+            }
             IntStream.range(0, maxCurves).parallel().forEach(curve -> {
                 unphasedX[curve] = Arrays.copyOf(x[curve], nn[curve]);
             });

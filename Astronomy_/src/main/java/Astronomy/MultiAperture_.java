@@ -4009,6 +4009,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                             c.setEnabled(!b);
                         }
                     });
+                    if (b) {
+                        updateImageDisplay.set(true);
+                    }
                 })
                 .setToolTipText("<html>Single step mode allows apertures to be placed in the first image, and then after each image is processed,<br>"+
                         "Multi-Aperture will pause to allow the user to click near the T1 star location in the next image. This mode of operation is useful with<br>"+

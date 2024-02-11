@@ -389,7 +389,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 				if (filter != null && !filter.matchesFilter(hdr)) return;
 				imageProcessor = makeStackFrom3DData(data, tableHDU.getNRows(), makeHeadersTessCut(hdr, tableHDU, hdus));
 			} else {
-				fitsTable2MeasurementsTable(tableHDU);
+				fitsTable2MeasurementsTable(hdus, tableHDU);
 				return;
 			}
 		} else if (isBasic3DImage(hdus)) {
@@ -476,7 +476,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		return true;
 	}
 
-	private void fitsTable2MeasurementsTable(TableHDU<?> tableHDU) throws FitsException {
+	private void fitsTable2MeasurementsTable(BasicHDU<?>[] hdus, TableHDU<?> tableHDU) throws FitsException {
 		ResultsTable mt;
 		try {
 			// Work around access issues
@@ -487,29 +487,77 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			e.printStackTrace();
 			mt = new ResultsTable(tableHDU.getNRows());
 		}
+
 		ResultsTable finalMt = mt;
-		for (int c = 0; c < tableHDU.getNCols(); c++) {
-			//todo check listed column type, skip image columns, or open them as stacks?
-			//todo add other columns, but as NaN?
-			var o = tableHDU.getColumn(c);
-			var cName = tableHDU.getColumnName(c) == null ? "C" + c : tableHDU.getColumnName(c);
-			if (o instanceof byte[] arr) {
-				IntStream.range(0, arr.length).forEachOrdered(i -> finalMt.setValue(cName, i, Byte.toUnsignedInt(arr[i])));
-			} else if (o instanceof short[] arr) {
-				IntStream.range(0, arr.length).forEachOrdered(i -> finalMt.setValue(cName, i, arr[i]));
-			} else if (o instanceof int[] arr) {
-				IntStream.range(0, arr.length).forEachOrdered(i -> finalMt.setValue(cName, i, arr[i]));
-			} else if (o instanceof long[] arr) {
-				IntStream.range(0, arr.length).forEachOrdered(i -> finalMt.setValue(cName, i, arr[i]));
-			} else if (o instanceof float[] arr) {
-				IntStream.range(0, arr.length).forEachOrdered(i -> finalMt.setValue(cName, i, arr[i]));
-			} else if (o instanceof double[] arr) {
-				IntStream.range(0, arr.length).forEachOrdered(i -> finalMt.setValue(cName, i, arr[i]));
-			} else if (o instanceof String[] arr) {
-				IntStream.range(0, arr.length).forEachOrdered(i -> finalMt.setValue(cName, i, arr[i]));
+
+
+		// Handle AIJ Fits Tables
+		//todo drag onto MP windows does not load
+		if (hdus[0].getHeader().getBooleanValue("AIJ_TBL", false)) {
+			for (int c = 0; c < tableHDU.getNCols(); c++) {
+				var o = tableHDU.getColumn(c);
+				var cName = tableHDU.getColumnName(c) == null ? "C" + c : tableHDU.getColumnName(c);
+				setColumn(o, finalMt, cName);
+			}
+
+			// Handle labels
+			// Handled last so that the rows exist
+			var lc = tableHDU.getColumn("Label");
+			if (lc instanceof String[] labels) {
+				//todo bulk set methods
+				IntStream.range(0, labels.length).forEachOrdered(i -> finalMt.setLabel(labels[i], i));
+			}
+
+			// Load plotcfg
+			byte[] plotcfg = null;
+			for (BasicHDU<?> basicHDU : hdus) {
+				if (basicHDU == tableHDU) continue;
+				if (basicHDU instanceof TableHDU<?> t) {
+					var pltcfgCol = t.getColumn("plotcfg");
+					if (pltcfgCol instanceof byte[] bytes) {
+						plotcfg = bytes;
+					}
+				}
+			}
+
+			if (plotcfg != null) {
+                try {
+                    Prefs.ijPrefs.load(new ByteArrayInputStream(plotcfg));
+                } catch (IOException e) {
+                    e.printStackTrace();
+					IJ.error("Failed to read plotcfg");
+                }
+
+			}
+		} else {
+			for (int c = 0; c < tableHDU.getNCols(); c++) {
+				var o = tableHDU.getColumn(c);
+				var cName = tableHDU.getColumnName(c) == null ? "C" + c : tableHDU.getColumnName(c);
+				setColumn(o, finalMt, cName);
 			}
 		}
+
 		mt.show("Measurements in " + fileName);
+	}
+
+	//todo check listed column type, skip image columns, or open them as stacks?
+	//todo add other columns, but as NaN?
+	private static void setColumn(Object colData, ResultsTable finalMt, String cName) {
+		if (colData instanceof byte[] arr) {
+			IntStream.range(0, arr.length).forEachOrdered(i -> finalMt.setValue(cName, i, Byte.toUnsignedInt(arr[i])));
+		} else if (colData instanceof short[] arr) {
+			IntStream.range(0, arr.length).forEachOrdered(i -> finalMt.setValue(cName, i, arr[i]));
+		} else if (colData instanceof int[] arr) {
+			IntStream.range(0, arr.length).forEachOrdered(i -> finalMt.setValue(cName, i, arr[i]));
+		} else if (colData instanceof long[] arr) {
+			IntStream.range(0, arr.length).forEachOrdered(i -> finalMt.setValue(cName, i, arr[i]));
+		} else if (colData instanceof float[] arr) {
+			IntStream.range(0, arr.length).forEachOrdered(i -> finalMt.setValue(cName, i, arr[i]));
+		} else if (colData instanceof double[] arr) {
+			IntStream.range(0, arr.length).forEachOrdered(i -> finalMt.setValue(cName, i, arr[i]));
+		} else if (colData instanceof String[] arr) {
+			IntStream.range(0, arr.length).forEachOrdered(i -> finalMt.setValue(cName, i, arr[i]));
+		}
 	}
 
 	/**

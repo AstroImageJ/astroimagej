@@ -10,20 +10,19 @@ import ij.astro.util.ImageType;
 import ij.astro.util.ProgressTrackingOutputStream;
 import ij.io.SaveDialog;
 import ij.measure.Calibration;
+import ij.measure.ResultsTable;
 import ij.process.ByteProcessor;
 import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
 import ij.process.ShortProcessor;
-import nom.tam.fits.Fits;
-import nom.tam.fits.Header;
-import nom.tam.fits.HeaderCard;
-import nom.tam.fits.ImageHDU;
+import nom.tam.fits.*;
 import nom.tam.fits.header.extra.AIJExt;
 import nom.tam.image.compression.hdu.CompressedImageHDU;
 import nom.tam.util.Cursor;
 import nom.tam.util.FitsOutputStream;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Properties;
@@ -282,6 +281,136 @@ public class FITS_Writer implements PlugIn {
 		}
 
 		IJ.showStatus("");
+	}
+
+	public static void saveMPTable(ResultsTable resultsTable, Properties prefs, String path, String extension) {
+		IJ.showStatus("Saving image...");
+
+		// GET PATH
+		if (path == null || path.trim().isEmpty()) {
+			var nm = resultsTable.getTitle();
+			String title = FitsExtensionUtil.fileNameWithoutExt(nm);
+			SaveDialog sd = new SaveDialog("Write FITS image",title,extension);
+			path = sd.getDirectory()+sd.getFileName();
+		}
+
+		// Fix save dialog screwing with the extensions
+		path = path.replaceFirst("\\.fz\\.fits", ".fz.gz");
+		path = path.replaceFirst("\\.fits\\.fz\\.gz\\.fz\\.gz", ".fits.fz.gz");
+
+		var compressionModes = FitsExtensionUtil.compressionModes(path);
+
+		var totalSize = 0L;
+
+		try {
+			// Setup for incremental writing
+			Path outPath = Path.of(path);
+
+			// Saving canceled
+			if (outPath.getParent() == null) {
+				return;
+			}
+
+			Files.createDirectories(outPath.getParent());
+			if (!outPath.toFile().exists()) Files.createFile(outPath);
+
+			var progressTrackingOutputStream = new ProgressTrackingOutputStream(new FileOutputStream(outPath.toFile()));
+			progressTrackingOutputStream.setTotalSizeInBytes(totalSize);
+
+			FitsOutputStream out;
+			if (compressionModes.contains(GZIP)) {
+				IJ.showStatus("Compressing and writing file...");
+				out = new FitsOutputStream(new GZIPOutputStream(progressTrackingOutputStream));
+			} else {
+				out = new FitsOutputStream(progressTrackingOutputStream);
+			}
+
+			// Write primary header
+			var nullHdu = Fits.makeHDU((Object) null);
+			nullHdu.addValue(EXTEND, true);
+			nullHdu.addValue("AIJ_TBL", true, "AIJ Measurements table and plotcfg");
+			nullHdu.write(out);
+
+			IJ.showStatus("Converting data and writing...");
+
+			// Write table
+			//todo lock table
+			BinaryTable table = new BinaryTable();
+
+			if (resultsTable.hasRowLabels()) {
+				//todo don't loop for this in RT
+				table.addStringColumn(resultsTable.getColumnAsStrings("Label"));
+			}
+
+			//resultsTable.getLabel()
+			for (int col = 0; col <= resultsTable.getLastColumn(); col++) {
+				//todo don't loop for this in RT
+				table.addColumn(resultsTable.getColumnAsDoubles(col));
+			}
+			table.defragment();
+
+			// Make prefs blob
+
+			var hdu = table.toHDU();
+			//var header = hdu.getHeader();
+
+			if (resultsTable.hasRowLabels()) {
+				hdu.setColumnName(0, "Label", null);
+			}
+			var iStart = resultsTable.hasRowLabels() ? 1 : 0;
+			for (int rc = 0; rc <= resultsTable.getLastColumn(); rc++) {
+				// Heading must be in comment as they commonly contain illegal characters
+				//todo store headings seperately, comments may be ommitted or truncated
+				//todo this seems fine to not normalize, fv can handle, test python
+				hdu.setColumnName(rc + iStart, /*normalizeColName(resultsTable.getColumnHeading(rc))*/resultsTable.getColumnHeading(rc), resultsTable.getColumnHeading(rc));
+			}
+
+			/*if (compressionModes.contains(FPACK)) {//todo impl.
+				var compressedHdu = CompressedTableHDU.fromBinaryTableHDU(hdu, *//*4*//*-1, Compression.ZCMPTYPE_GZIP_2);
+				//FitsCompressionUtil.setCompression(compressedHdu, type.isFloatingPoint());
+				compressedHdu.compress();
+				hdu = compressedHdu;
+				//todo handle prefs hdu
+			}*/
+
+			hdu.write(out);
+
+			// Write plotcfg
+
+
+			if (prefs != null) {
+				table = new BinaryTable();
+
+				// Convert plotcfg to String
+				var baos = new ByteArrayOutputStream();
+				prefs.store(new PrintStream(baos, true, StandardCharsets.UTF_8), null);
+
+				// width requires that it can't be one string, trying byte array...
+				table.addColumn(baos.toByteArray());
+				table.defragment();
+
+				hdu = table.toHDU();
+				hdu.setColumnName(0, "plotcfg", "AIJ plotcfg, Java properties format");
+
+				//todo compression
+
+				hdu.write(out);
+			}
+
+			IJ.showStatus("Finishing FITS export...");
+
+			out.close();
+			IJ.showProgress(1);
+		} catch (Exception e) {
+			e.printStackTrace();
+			IJ.error("Failed to write file.");
+		}
+
+		IJ.showStatus("");
+	}
+
+	private static String normalizeColName(String name) {
+		return name.replaceAll(" ", "_").replaceAll("\\.", "").replaceAll("([^\\w\\d_])", "r");
 	}
 
 	private static boolean cardsMatch(String k1, String k2) {

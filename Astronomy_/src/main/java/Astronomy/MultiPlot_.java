@@ -10036,9 +10036,11 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         hourssincetcButton = new JRadioButton("Hours Since Tc");
         hourssincetcButton.setFont(p11);
         hourssincetcButton.setHorizontalAlignment(JLabel.CENTER);
+        hourssincetcButton.setEnabled(false);
         orbitalphaseButton = new JRadioButton("Phase");
         orbitalphaseButton.setFont(p11);
         orbitalphaseButton.setHorizontalAlignment(JLabel.CENTER);
+        orbitalphaseButton.setEnabled(false);
 
         if (showXAxisNormal) {
             unphasedButton.setSelected(true);

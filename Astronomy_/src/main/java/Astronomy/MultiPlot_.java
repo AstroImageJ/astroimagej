@@ -4284,7 +4284,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     private static void applyXAutoScale(double[][] xData) {
         IntStream.range(0, maxCurves).parallel().forEach(curve -> {
             if (plotY[curve]) {
-                var ss = Arrays.stream(x[curve]).limit(nn[curve])
+                var ss = Arrays.stream(xData[curve]).limit(nn[curve])
                         .filter(d -> !Double.isNaN(d)).summaryStatistics();
                 xMinimum[curve] = ss.getMin(); //FIND MIN AND MAX X OF EACH SELECTED DATASET
                 xMaximum[curve] = ss.getMax();

@@ -9521,6 +9521,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         xmultiplierlabel.setToolTipText("Sets the X-axis multiplication factor");
         xmultipliermodel = new SpinnerNumberModel(xExponent, null, null, 1);
         xmultiplierspinner = new JSpinner(xmultipliermodel);
+        xmultiplierspinner.setEnabled(false);
         xmultiplierspinner.setFont(p11);
         xmultiplierspinner.setMaximumSize(new Dimension(35, 25));
         xmultiplierspinner.setToolTipText("Sets the X-axis multiplication factor");

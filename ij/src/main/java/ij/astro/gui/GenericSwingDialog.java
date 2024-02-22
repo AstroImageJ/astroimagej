@@ -1092,7 +1092,6 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         if (rootPane.getComponentCount() > 0) okay.requestFocusInWindow();
         scrollPane.validate();
         setMinimumSize(getLayout().minimumLayoutSize(scrollPane));
-        setMaximumSize(new Dimension(scrollPane.getPreferredSize().width, getMaximumSize().height));
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setContentPane(displayPane);
         displayPane.addComponentListener(new ComponentAdapter() {
@@ -1115,6 +1114,14 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         setVisible(true);
         validate();
         pack();
+    }
+
+    @Override
+    public Dimension getPreferredSize() {
+        Dimension dim=super.getPreferredSize();
+        if (dim.width > getMaximumSize().width) dim.width = getMaximumSize().width;
+        if (dim.height > getMaximumSize().height) dim.height = getMaximumSize().height;
+        return dim;
     }
 
     public void centerDialog(boolean b) {

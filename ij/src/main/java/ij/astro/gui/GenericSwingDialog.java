@@ -1012,8 +1012,15 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         }
         //setupPaneLayout();
         setResizable(true);
-        //todo limit max size to some fraction of screen size?
-        setMaximumSize(Toolkit.getDefaultToolkit().getScreenSize());
+        if (centerDialog) {
+            GUI.centerOnImageJScreen(this);
+        }
+
+        var screen = GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices()[UIHelper.getScreen(this)];
+        var nominalBounds = screen.getDefaultConfiguration().getBounds();
+        var taskbar = Toolkit.getDefaultToolkit().getScreenInsets(screen.getDefaultConfiguration());
+
+        setMaximumSize(new Dimension(nominalBounds.width - (taskbar.left + taskbar.right), nominalBounds.height - (taskbar.bottom + taskbar.top)));
         var displayPane = new JPanel();
         displayPane.setLayout(new GridBagLayout());
         if (no != null) {
@@ -1043,7 +1050,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         if (addHelp) {
             help = new JButton(helpLabel);
             help.addActionListener($ -> {
-                if (hideCancelButton && (helpURL == null || helpURL.equals(""))) {
+                if (hideCancelButton && (helpURL == null || helpURL.isEmpty())) {
                     wasOKed = true;
                 }
                 showHelp();
@@ -1103,9 +1110,6 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
                 revalidate();
             }
         });
-        if (centerDialog) {
-            GUI.centerOnImageJScreen(this);
-        }
         validate();
         pack();
         setVisible(true);

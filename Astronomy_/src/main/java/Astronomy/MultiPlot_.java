@@ -17980,7 +17980,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         usePixelScale = Prefs.get("plot.usePixelScale", usePixelScale);
         pixelScale = Prefs.get("plot.pixelScale", pixelScale);
         mmagrefs = (int) Prefs.get("plot.mmagrefs", mmagrefs);
-        xExponent = (int) Prefs.get("plot.xExponent", xExponent);
+        xExponent = 0;//(int) Prefs.get("plot.xExponent", xExponent);
         yExponent = (int) Prefs.get("plot.yExponent", yExponent);
         showToolTips = Prefs.get("astroIJ.showToolTips", showToolTips);
         ToolTipManager.sharedInstance().setEnabled(showToolTips);

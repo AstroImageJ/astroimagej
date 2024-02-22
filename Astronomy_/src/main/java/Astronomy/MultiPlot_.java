@@ -12939,6 +12939,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         JPanel orbitalPeriodPanel = new JPanel(new SpringLayout());
         orbitalPeriodPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(subBorderColor, 1), "Period (days)", TitledBorder.CENTER, TitledBorder.TOP, p11, Color.darkGray));
 
+        orbitalPeriod[c] = Math.max(orbitalPeriod[c], .001);
         orbitalPeriodSpinner[c] = new JSpinner(new SpinnerNumberModel(orbitalPeriod[c], 0.001, null, orbitalPeriodStep));
         orbitalPeriodSpinner[c].setFont(p11);
         orbitalPeriodSpinner[c].setEditor(new JSpinner.NumberEditor(orbitalPeriodSpinner[c], fitFormat));

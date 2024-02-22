@@ -1551,12 +1551,17 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         ((xModel2[curve].length == 0 && yModel2[curve].length == 0) || usesYModel2[curve]))
                 .forEach(curve -> {
                     int xModel2Len = plotSizeX + 1;
-                    double xModel2Step = ((useDMarker4 && fitMax[curve] < plotMaxX + xOffset ? fitMax[curve] : plotMaxX + xOffset) - (useDMarker1 && fitMin[curve] > plotMinX + xOffset ? fitMin[curve] : plotMinX + xOffset)) / (xModel2Len - 1);
-                    xModel2[curve] = new double[xModel2Len];
-                    xModel2[curve][0] = useDMarker1 && fitMin[curve] > plotMinX + xOffset ? fitMin[curve] : plotMinX + xOffset;
-                    for (int i = 1; i < xModel2Len; i++) {
-                        xModel2[curve][i] = xModel2[curve][i - 1] + xModel2Step;
+                    if (/*curve != 2*/false) {
+                        double xModel2Step = ((useDMarker4 && fitMax[curve] < plotMaxX + xOffset ? fitMax[curve] : plotMaxX + xOffset) - (useDMarker1 && fitMin[curve] > plotMinX + xOffset ? fitMin[curve] : plotMinX + xOffset)) / (xModel2Len - 1);
+                        xModel2[curve] = new double[xModel2Len];
+                        xModel2[curve][0] = useDMarker1 && fitMin[curve] > plotMinX + xOffset ? fitMin[curve] : plotMinX + xOffset;
+                        for (int i = 1; i < xModel2Len; i++) {
+                            xModel2[curve][i] = xModel2[curve][i - 1] + xModel2Step;
+                        }
+                    } else {
+                        xModel2[curve] = generateVariableDensityTimings(curve, xModel2Len);
                     }
+
 
                     yModel2[curve] = IJU.transitModel(xModel2[curve], bestFit[curve][0], bestFit[curve][4], bestFit[curve][1], bestFit[curve][2], bestFit[curve][3], orbitalPeriod[curve], forceCircularOrbit[curve] ? 0.0 : eccentricity[curve], forceCircularOrbit[curve] ? 0.0 : omega[curve], bestFit[curve][5], bestFit[curve][6], useLonAscNode[curve], lonAscNode[curve], true);
 
@@ -15796,6 +15801,79 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             }
         }
 
+    }
+
+    private static double[] generateVariableDensityTimings(int curve, int xAxisPixels) {
+        var transits = new ArrayList<double[]>();
+        //todo these entries need nan/inf checks
+
+        // Find first transit start
+        var tc1 = bestFit[curve][3]; // transit center time
+        var t14C = t14[curve]; // Unit: days
+        var halfDuration = t14C / 2d; // Unit: days
+        var period = orbitalPeriod[curve]; // Unit: days
+        var maxX = Math.min(fitMax[curve], plotMaxX + xOffset);//xPlotMax
+        var minX = Math.max(fitMin[curve], plotMinX + xOffset);
+
+        var primaryT1 = tc1 - halfDuration; // First transit start
+        var offsetTransit = Math.floor(Math.abs(primaryT1 - minX) / period);
+
+        // Offset first t1 for first transit in plot bounds
+        var t1 = (primaryT1) - offsetTransit * period;
+
+        // Generate transits
+        do {
+            transits.add(new double[]{t1, t1 + halfDuration, t1 + t14C});
+            t1 += period;
+        } while (t1 <= maxX);
+
+        //todo parraell then sort at end?
+
+        var timings = transits.stream().mapMultiToDouble((transit, consumer) -> {
+            var duration = transit[2] - transit[0];//todo add check for negative or 0 duration and NaNs/Infs
+            var pixelDuration = (int)xLength2Pxls(transit[2] - transit[0]); // This truncates so slight underestimate
+            //todo do we really need lines with the length of a pixel?
+
+            // Make pixel duration odd to more easily force Tc to center
+            if (pixelDuration % 2 == 0) {
+                pixelDuration++;
+            }
+
+            // Ensure t1, tc, and t4 are included
+            if (pixelDuration < 3) {
+                pixelDuration = 3;
+            }
+
+            // Add start of transit
+            consumer.accept(transit[0]);
+
+            final var center = (int)(pixelDuration / 2);
+            final var delta = duration / pixelDuration;
+            var sample = transit[0] + delta; // We can't just multiply in the loop, we want to force calc. center to be the center
+            for (int i = 1; i < pixelDuration - 1; i++) {
+                // Force center sample to be Tc
+                if (i == center) {
+                    sample = transit[1];
+                }
+                consumer.accept(sample);
+                sample += delta;
+            }
+
+            // Add end of transit
+            consumer.accept(transit[2]);
+        }).filter(d -> d >= minX && d <= maxX); // Filter so that trims are respected
+
+        return DoubleStream.concat(DoubleStream.concat(DoubleStream.of(minX), timings), DoubleStream.of(maxX)).toArray();
+    }
+
+    //todo does not respect xExponent, which seems to always reset to 0 for JD plots, but still applied, is this working?
+    private static double xLength2Pxls(double x) {
+        var min = plotMinX + xOffset;
+        var max = plotMaxX + xOffset;
+
+        var scale = plotSizeX / (max-min);
+
+        return x*scale;
     }
 
     public static void waitForPlotUpdateToFinish() {

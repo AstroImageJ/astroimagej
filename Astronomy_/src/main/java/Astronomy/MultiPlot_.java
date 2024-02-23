@@ -15818,8 +15818,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         var t14C = t14[curve]; // Unit: days
         var halfDuration = t14C / 2d; // Unit: days
         var period = orbitalPeriod[curve]; // Unit: days
-        var maxX = Math.min(fitMax[curve], plotMaxX + xOffset);//xPlotMax
-        var minX = Math.max(fitMin[curve], plotMinX + xOffset);
+        var maxX = Math.min(fitMax[curve], plotMaxX + xOffset + period);//xPlotMax
+        var minX = Math.max(fitMin[curve], plotMinX + xOffset - period);
 
         var primaryT1 = tc1 - halfDuration; // First transit start
         var offsetTransit = Math.floor(Math.abs(primaryT1 - minX) / period);

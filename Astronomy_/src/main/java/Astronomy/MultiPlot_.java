@@ -15806,8 +15806,12 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     }
 
     private static double[] generateVariableDensityTimings(int curve, int xAxisPixels) {
+        // If not converged, transit model is invalid and we can't use any of it's values
+        if (!converged[curve]) {
+            return new double[0];
+        }
+        
         var transits = new ArrayList<double[]>();
-        //todo these entries need nan/inf checks
 
         // Find first transit start
         var tc1 = bestFit[curve][3]; // transit center time
@@ -15829,12 +15833,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             t1 += period;
         } while (t1 <= maxX);
 
-        //todo parraell then sort at end?
-
         var timings = transits.stream().mapMultiToDouble((transit, consumer) -> {
-            var duration = transit[2] - transit[0];//todo add check for negative or 0 duration and NaNs/Infs
+            var duration = transit[2] - transit[0];
             var pixelDuration = (int)xLength2Pxls(transit[2] - transit[0]); // This truncates so slight underestimate
-            //todo do we really need lines with the length of a pixel?
 
             // Make pixel duration odd to more easily force Tc to center
             if (pixelDuration % 2 == 0) {
@@ -15868,7 +15869,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         return DoubleStream.concat(DoubleStream.concat(DoubleStream.of(minX), timings), DoubleStream.of(maxX)).toArray();
     }
 
-    //todo does not respect xExponent, which seems to always reset to 0 for JD plots, but still applied, is this working?
     private static double xLength2Pxls(double x) {
         var min = plotMinX + xOffset;
         var max = plotMaxX + xOffset;

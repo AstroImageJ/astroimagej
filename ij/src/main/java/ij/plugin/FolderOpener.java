@@ -2,6 +2,7 @@ package ij.plugin;
 
 import ij.*;
 import ij.astro.AstroImageJ;
+import ij.astro.logging.AIJLogger;
 import ij.astro.types.Pair;
 import ij.astro.util.ZipOpenerUtil;
 import ij.gui.GenericDialog;
@@ -336,6 +337,10 @@ public class FolderOpener implements PlugIn, TextListener {
 						// AIJ change
 						ip2.insert(ip, 0, stackHeight - imp.getHeight());
 						imp2.setProcessor(ip2);
+						if (stackWidth < imp.getWidth() || stackHeight < imp.getHeight()) {
+							AIJLogger.setLogAutoCloses(true);
+							AIJLogger.log(list[i] + ": wrong size; "+stackWidth+"x"+stackHeight+" expected, "+imp.getWidth()+"x"+imp.getHeight()+" found");
+						}
 						// AIJ use
 
 						if (imp.getProperties() != null) {

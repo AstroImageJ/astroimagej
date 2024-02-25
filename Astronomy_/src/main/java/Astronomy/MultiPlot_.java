@@ -15835,7 +15835,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         var timings = transits.stream().mapMultiToDouble((transit, consumer) -> {
             var duration = transit[2] - transit[0];
-            var pixelDuration = (int)xLength2Pxls(transit[2] - transit[0]); // This truncates so slight underestimate
+            var pixelDuration = (int)(xLength2Pxls(transit[2] - transit[0])/2D); // This truncates so slight underestimate
 
             // Make pixel duration odd to more easily force Tc to center
             if (pixelDuration % 2 == 0) {

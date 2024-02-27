@@ -2953,18 +2953,26 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 var br = stackRadii.stream().mapToDouble(Seeing_Profile.ApRadii::r2).toArray();
                 var br2 = stackRadii.stream().mapToDouble(Seeing_Profile.ApRadii::r3).toArray();
 
-                yield "VAR%s: %s-%s-%s".formatted(ApRadius.AUTO_VAR_RAD_PROF.cutoff, FORMAT.format(Stat.median(sr)),
-                        FORMAT.format(Stat.median(br)), FORMAT.format(Stat.median(br2)));
+                yield "VAR%s: %s-%s-%s".formatted(ApRadius.AUTO_VAR_RAD_PROF.cutoff, FORMAT.format(safeMedian(sr)),
+                        FORMAT.format(safeMedian(br)), FORMAT.format(safeMedian(br2)));
             }
             case AUTO_VAR_FWHM -> {
                 var sr = stackRadii.stream().mapToDouble(Seeing_Profile.ApRadii::r).toArray();
                 var br = stackRadii.stream().mapToDouble(Seeing_Profile.ApRadii::r2).toArray();
                 var br2 = stackRadii.stream().mapToDouble(Seeing_Profile.ApRadii::r3).toArray();
 
-                yield "VAF%s: %s-%s-%s".formatted(ApRadius.AUTO_VAR_FWHM.cutoff, FORMAT.format(Stat.median(sr)),
-                        FORMAT.format(Stat.median(br)), FORMAT.format(Stat.median(br2)));
+                yield "VAF%s: %s-%s-%s".formatted(ApRadius.AUTO_VAR_FWHM.cutoff, FORMAT.format(safeMedian(sr)),
+                        FORMAT.format(safeMedian(br)), FORMAT.format(safeMedian(br2)));
             }
         };
+    }
+
+    private static double safeMedian(double[] a) {
+        if (a.length < 1) {
+            return Double.NaN;
+        }
+
+        return Stat.median(a);
     }
 
     /**

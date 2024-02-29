@@ -342,6 +342,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         }
         if (imp == null) {
             cancel();
+            IJ.error("No image windows open for Multi-aperture processing");
             return DONE;
         }
 

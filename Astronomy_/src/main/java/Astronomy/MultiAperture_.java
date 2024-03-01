@@ -22,9 +22,11 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.lang.reflect.InvocationTargetException;
+import java.net.URL;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.List;
+import java.util.Timer;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.Executors;
@@ -242,8 +244,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     boolean enterPressed = false;
     boolean hasWCS = false;
     boolean runningWCSOnlyAlignment = false;
-    astroj.AstroStackWindow asw = null;
-    astroj.AstroCanvas ac = null;
+    AstroStackWindow asw = null;
+    AstroCanvas ac = null;
     WCS wcs = null;
     ApertureRoi selectedApertureRoi = null;
     int xLocation = 10, yLocation = 10;
@@ -288,10 +290,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     boolean useWCS = false, suggestCompStars = true, tempSuggestCompStars = true;
     boolean useMA = true, useAlign = false;
     TimerTask stackTask = null;
-    java.util.Timer stackTaskTimer = null;
+    Timer stackTaskTimer = null;
     boolean doubleClick = false;
     TimerTask doubleClickTask = null;
-    java.util.Timer doubleClickTaskTimer = null;
+    Timer doubleClickTaskTimer = null;
     static DecimalFormat uptoEightPlaces = new DecimalFormat("#####0.########", IJU.dfs);
     double max = 0;
     private double gaussRadius = 3.5;
@@ -385,6 +387,15 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             }
         }
 
+        if (imp != null && !(imp.getWindow() instanceof AstroStackWindow)) {
+            var o = imp.getWindow();
+            AstroCanvas ac = new AstroCanvas(imp);
+            imp.setWindow(new AstroStackWindow(imp, ac, false, true));
+            if (o != null) {
+                o.close();
+            }
+        }
+
         IJ.register(MultiAperture_.class);
         return super.setup(arg, imp);
     }
@@ -411,6 +422,15 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 if (Frames[i].getTitle().equals("Multi-Aperture Help") || Frames[i].getTitle().equals("Stack Aligner Help")) {
                     Frames[i].dispose();
                 }
+            }
+        }
+
+        if (imp != null && !(imp.getWindow() instanceof AstroStackWindow)) {
+            var o = imp.getWindow();
+            AstroCanvas ac = new AstroCanvas(imp);
+            imp.setWindow(new AstroStackWindow(imp, ac, false, true));
+            if (o != null) {
+                o.close();
             }
         }
 
@@ -458,7 +478,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             }
         }
 
-        if (imp.getWindow() instanceof astroj.AstroStackWindow) {
+        if (imp.getWindow() instanceof AstroStackWindow) {
             asw = (AstroStackWindow) imp.getWindow();
             ac = (AstroCanvas) imp.getCanvas();
             hasWCS = asw.hasWCS();
@@ -485,7 +505,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
         // REGISTER FOR MOUSE CLICKS
 
-        if (imp.getWindow() instanceof astroj.AstroStackWindow) {
+        if (imp.getWindow() instanceof AstroStackWindow) {
             asw.showSlice(firstSlice);
             asw = (AstroStackWindow) imp.getWindow();
             ac = (AstroCanvas) imp.getCanvas();
@@ -1009,7 +1029,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         }
         canvas.removeMouseListener(this);
         canvas.removeKeyListener(this);
-        if (imp.getWindow() instanceof astroj.AstroStackWindow) {
+        if (imp.getWindow() instanceof AstroStackWindow) {
             asw = (AstroStackWindow) imp.getWindow();
             asw.setDisableShiftClick(false);
         }
@@ -1187,7 +1207,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                             doubleClickTaskTimer = null;
                         }
                     };
-                    doubleClickTaskTimer = new java.util.Timer();
+                    doubleClickTaskTimer = new Timer();
                     if ((modis & InputEvent.BUTTON1_MASK) != 0) {
                         doubleClickTaskTimer.schedule(doubleClickTask, 300);
                     } else {
@@ -1335,7 +1355,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     }
                 }
 
-                var oc = OverlayCanvas.getOverlayCanvas(asw.getImagePlus());
+                var oc = OverlayCanvas.getOverlayCanvas(imp);
                 oc.clearRois();
 
                 if (useWCS && asw.goodWCS && raPos > -1000000 && decPos > -1000000) {
@@ -1359,7 +1379,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
                 ap.setApColor(e != null && ((!e.isShiftDown() && ngot > 0) || (e.isShiftDown() && ngot == 0)) ? Color.RED : Color.GREEN);
                 ap.setShowValues(false);
-                ap.setImage(asw.getImagePlus());
+                ap.setImage(imp);
                 oc.add(ap);
                 oc.repaintOverlay();
                 imp.updateAndDraw();
@@ -2164,7 +2184,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     }
 
     private JDialog showWarning(String message, boolean hasProceed) {
-        var gd = new GenericSwingDialog("MultiAperture Stack/Slice processor", asw);
+        var gd = new GenericSwingDialog("MultiAperture Stack/Slice processor", imp.getWindow());
         gd.addMessage(message);
         gd.setModalityType(Dialog.ModalityType.MODELESS);
 
@@ -2214,9 +2234,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             }
         });
 
-        var l = asw.getLocationOnScreen();
+        var l = imp.getWindow().getLocationOnScreen();
         gd.pack();
-        l.translate(asw.getSize().width / 2 - gd.getWidth()/2, asw.getSize().height / 2 - gd.getHeight()/2);
+        l.translate(imp.getWindow().getSize().width / 2 - gd.getWidth()/2, imp.getWindow().getSize().height / 2 - gd.getHeight()/2);
         gd.setLocation(l);
 
         gd.setHideCancelButton(true);
@@ -2785,7 +2805,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     stackTaskTimer = null;
                 }
             };
-            stackTaskTimer = new java.util.Timer();
+            stackTaskTimer = new Timer();
             stackTaskTimer.schedule(stackTask, 0);
         } catch (Exception e) {
             IJ.showMessage("Error starting process stack task : " + e.getMessage());
@@ -2823,7 +2843,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 canvas = ocanvas;
                 ocanvas.clearRois();
             }
-            if (imp.getWindow() instanceof astroj.AstroStackWindow) {
+            if (imp.getWindow() instanceof AstroStackWindow) {
                 asw = (AstroStackWindow) imp.getWindow();
                 ac = (AstroCanvas) imp.getCanvas();
 
@@ -4357,7 +4377,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         helpFrame.setIconImage(MAIcon.getImage());
         helpPanel = new JPanel(new SpringLayout());
         helpScrollPane = new JScrollPane(helpPanel);
-        helpFrame.setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
+        helpFrame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         helpFrame.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
@@ -4476,7 +4496,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
      * Returns an ImageIcon, or null if the path was invalid.
      */
     protected ImageIcon createImageIcon(String path, String description) {
-        java.net.URL imgURL = MultiPlot_.class.getClassLoader().getResource(path);
+        URL imgURL = MultiPlot_.class.getClassLoader().getResource(path);
         if (imgURL != null) {
             return new ImageIcon(imgURL, description);
         } else {

@@ -739,6 +739,49 @@ public class FolderOpener implements PlugIn, TextListener {
 		virtualIntended = openAsVirtualStack;
 		return true;
 	}
+
+	@AstroImageJ(reason = "Add option to skip dialog")
+	// Copies settings from showDialog()
+	public void setOptions() {
+		if (!directorySet)
+			directory = Prefs.get(DIR_KEY, IJ.getDir("downloads")+"stack/");
+		if (directory!=null && !IJ.isMacro()) {
+			File f = new File(directory);
+			String[] names = f.list();
+			// Zip as folder
+			if (names == null || names.length == 0) {
+				names = ZipOpenerUtil.getFilePathsInZip(directory);
+                nFiles = names.length;
+            } // End zip as folder
+		} else
+			directory = Prefs.get(DIR_KEY, IJ.getDir("downloads")+"stack/");
+
+		Prefs.set(DIR_KEY, directory);
+		OpenDialog.setDefaultDirectory(Path.of(directory).getParent().toString());
+		if (legacyRegex!=null)
+			filter = "("+legacyRegex+")";
+		if (this.step<1)
+			this.step = 1;
+		if (this.scale<5.0) this.scale = 5.0;
+		if (this.scale>100.0) this.scale = 100.0;
+		if (!sortFileNames)
+			sortByMetaData = false;
+		openAsVirtualStack = Prefs.get("folderopener.openAsVirtualStack", openAsVirtualStack);
+		Prefs.set("folderopener.openAsVirtualStack", openAsVirtualStack);
+		if (openAsVirtualStack)
+			scale = 100.0;
+		openAsSeparateImages = false;
+		if (openAsSeparateImages)
+			openAsVirtualStack = true;
+		if (!IJ.macroRunning()) {
+			staticSortFileNames = sortFileNames;
+			if (!openAsSeparateImages)
+				staticOpenAsVirtualStack = openAsVirtualStack;
+		}
+		virtualIntended = openAsVirtualStack;
+		saveImage = false;
+		runningOpen = true;
+	}
 	
 	public static String[] getFilteredList(String[] list, String filter, String title) {
 		boolean isRegex = false;

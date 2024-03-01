@@ -34,6 +34,8 @@ import java.util.List;
      
 public class DragAndDrop implements PlugIn, DropTargetListener, Runnable {
 	private Iterator iterator;
+	@AstroImageJ(reason = "Add way to skip dialog")
+	private boolean skipUi;
 	private static boolean convertToRGB;
 	private static boolean virtualStack;
 	private boolean openAsVirtualStack;
@@ -52,6 +54,7 @@ public class DragAndDrop implements PlugIn, DropTargetListener, Runnable {
 		try  {
 			Transferable t = dtde.getTransferable();
 			iterator = null;
+			skipUi = dtde.getDropAction() == DnDConstants.ACTION_COPY;
 			flavors = t.getTransferDataFlavors();
 			if (IJ.debugMode) IJ.log("DragAndDrop.drop: "+flavors.length+" flavors");
 			for (int i=0; i<flavors.length; i++) {
@@ -219,7 +222,7 @@ public class DragAndDrop implements PlugIn, DropTargetListener, Runnable {
 		}
 	}
 
-	@AstroImageJ(reason = "Show warning and abort if folder has no images", modified = true)
+	@AstroImageJ(reason = "Show warning and abort if folder has no images; Add option for skipping dialog", modified = true)
 	private void openDirectory(File f, String path) {
 		if (path==null) return;
 		path = IJ.addSeparator(path);
@@ -251,7 +254,10 @@ public class DragAndDrop implements PlugIn, DropTargetListener, Runnable {
 
 		FolderOpener fo = new FolderOpener();
 		fo.setDirectory(path);
-		fo.run("");
+		if (skipUi) {
+			fo.setOptions();
+		}
+		fo.run(skipUi ? path : "");
 	}
 		
 }

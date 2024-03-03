@@ -2791,6 +2791,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             yModel1Err[curve] = null;
             detrendYAverage[curve] = 0.0;
             usesYModel2[curve] = false;
+            var createDetrendModel = false;
             if (plotY[curve]) {
                 var minimization = new Minimization();
                 fitMin[curve] = (useDMarker1 ? dMarker1Value : Double.NEGATIVE_INFINITY) + xOffset;

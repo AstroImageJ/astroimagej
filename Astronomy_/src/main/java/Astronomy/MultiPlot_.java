@@ -15821,6 +15821,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         var period = orbitalPeriod[curve]; // Unit: days
         var maxX = Math.min(fitMax[curve], plotMaxX + xOffset + period);//xPlotMax
         var minX = Math.max(fitMin[curve], plotMinX + xOffset - period);
+        var usingPlotBoundRight = (plotMaxX + xOffset + period) == maxX;
+        var usingPlotBoundLeft = (plotMinX + xOffset - period) == minX;
 
         var primaryT1 = tc1 - halfDuration; // First transit start
         var offsetTransit = Math.floor(Math.abs(primaryT1 - minX) / period);
@@ -15831,9 +15833,25 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         // Generate transits
         do {
             transits.add(new double[]{t1, t1 + halfDuration, t1 + t14C});
+
+            if (usingPlotBoundRight) {
+                var t4 = t1 + t14C;
+                if (t1 < maxX && maxX < t4) {
+                    maxX = t4;
+                }
+            }
+            if (usingPlotBoundLeft) {
+                var t4 = t1 + t14C;
+                if (t1 < minX && minX < t4) {
+                    minX = t1;
+                }
+            }
+
             t1 += period;
         } while (t1 <= maxX);
 
+        double finalMinX = minX;
+        double finalMaxX = maxX;
         var timings = transits.stream().mapMultiToDouble((transit, consumer) -> {
             var duration = transit[2] - transit[0];
             var pixelDuration = (int)(xLength2Pxls(transit[2] - transit[0])/2D); // This truncates so slight underestimate
@@ -15865,7 +15883,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
             // Add end of transit
             consumer.accept(transit[2]);
-        }).filter(d -> d >= minX && d <= maxX); // Filter so that trims are respected
+        }).filter(d -> d >= finalMinX && d <= finalMaxX); // Filter so that trims are respected
 
         return DoubleStream.concat(DoubleStream.concat(DoubleStream.of(minX), timings), DoubleStream.of(maxX)).toArray();
     }

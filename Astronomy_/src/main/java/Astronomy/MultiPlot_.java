@@ -3167,11 +3167,26 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                             }
                                         }
 
-                                        minimization.setNrestartsMax(1);
-                                        minimization.nelderMead(new FitLightCurveChi2(curve), start[curve], step[curve], tolerance[curve], maxFitSteps[curve]);
-                                        coeffs[curve] = minimization.getParamValues();
-                                        nTries[curve] = minimization.getNiter() - 1;
-                                        converged[curve] = minimization.getConvStatus();
+                                        var needsFit = false;
+                                        for (int i = 0; i < maxFittedVars; i++) {
+                                            if (isFitted[curve][i]) {
+                                                needsFit = true;
+                                                break;
+                                            }
+                                        }
+
+                                        // All params are locked
+                                        if (needsFit) {
+                                            converged[curve] = true;
+                                            nTries[curve] = 0;
+                                        } else {
+                                            minimization.setNrestartsMax(1);
+                                            minimization.nelderMead(new FitLightCurveChi2(curve), start[curve], step[curve], tolerance[curve], maxFitSteps[curve]);
+                                            coeffs[curve] = minimization.getParamValues();
+                                            nTries[curve] = minimization.getNiter() - 1;
+                                            converged[curve] = minimization.getConvStatus();
+                                        }
+
                                         fp = 0;
                                         for (int p = 0; p < maxFittedVars; p++) {
                                             if (isFitted[curve][p]) {

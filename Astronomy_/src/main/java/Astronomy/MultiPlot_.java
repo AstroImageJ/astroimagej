@@ -3176,7 +3176,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                         }
 
                                         // All params are locked
-                                        if (needsFit) {
+                                        if (!needsFit) {
                                             converged[curve] = true;
                                             nTries[curve] = 0;
                                         } else {

@@ -13420,7 +13420,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         rowName = "<html>a / R<sub>*</sub></html>";
         rowNameToolTipText = "<html>Semi-major axis of the planet's orbit in units of stellar radii</html>";
-        createFittedParametersRow(fittedParametersPanel2, c, 2, rowName, rowNameToolTipText, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
+        createFittedParametersRow(fittedParametersPanel2, c, 2, rowName, rowNameToolTipText, 2, Double.POSITIVE_INFINITY);
         nlines++;
 
         rowName = "<html>T<sub>C</sub></html>";

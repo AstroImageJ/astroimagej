@@ -1334,6 +1334,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 if (apLoading.get().isPrevious() && nAperturesStored > 0) {
                     x = xPosStored[0];
                     y = yPosStored[0];
+
+                    x += xCenter - x;
+                    y += yCenter - y;
+
                     if (raPosStored != null && decPosStored != null) {
                         raPos = raPosStored[0];
                         decPos = decPosStored[0];
@@ -1692,6 +1696,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         if ((apLoading.get().isPrevious() || previous) && nAperturesStored > 0) {
             x = xPosStored[0];
             y = yPosStored[0];
+
+            x += xCenter - x;
+            y += yCenter - y;
+
             if (raPosStored != null && decPosStored != null) {
                 raPos = raPosStored[0];
                 decPos = decPosStored[0];

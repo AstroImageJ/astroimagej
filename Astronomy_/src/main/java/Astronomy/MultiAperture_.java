@@ -307,6 +307,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     protected static final Property<Boolean> updateImageDisplay = new Property<>(true, MultiAperture_.class);
     public static final Property<ApLoading> apLoading = new Property<>(ApLoading.ALL_NEW, MultiAperture_.class);
     private static String lastRun = "<Not yet run>";
+    private boolean processingStackForRadii;
 
 //	public static double RETRY_RADIUS = 3.0;
 
@@ -1318,6 +1319,11 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
             // Auto stack radius feature
             if (!autoMode && firstClick && radiusSetting == ApRadius.AUTO_FIXED_STACK_RAD && !t1Placed && !(this instanceof Stack_Aligner)) {
+                // Protect against clicking on stack while finding radii
+                if (processingStackForRadii) {
+                    return;
+                }
+
                 oldRadii = new Seeing_Profile.ApRadii(radius, rBack1, rBack2);
                 var d = showWarning("Finding radii...");
                 var warning = new AnnotateRoi(false, false, true, false, imp.getWidth() / 2f, imp.getHeight() / 2f, 2, "Finding radii...", Color.GREEN);
@@ -1682,6 +1688,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     }
 
     private Output evaluateStackForRadii(boolean isComp) {
+        processingStackForRadii = true;
         List<Seeing_Profile.ApRadii> radii = new ArrayList<>(lastSlice - firstSlice);
         var sp = new Seeing_Profile(true);
         //sp.setRoundRadii(false);
@@ -1846,6 +1853,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         pw.setVisible(true);
 
         IJ.showProgress(1);
+
+        processingStackForRadii = false;
 
         return new Output(rs.r(), rs.r2(), rs.r3(), hasErrored);
     }

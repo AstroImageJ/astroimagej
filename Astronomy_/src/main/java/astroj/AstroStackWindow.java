@@ -4857,6 +4857,14 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             String isAlignStarString = Prefs.get("multiaperture.isalignstar", "");
             String centroidStarString = Prefs.get("multiaperture.centroidstar", "");
             String absMagApertueresString = Prefs.get("multiaperture.absmagapertures", "");
+            Prefs.set("multiaperture.import.xapertures", xapertures);
+            Prefs.set("multiaperture.import.yapertures", yapertures);
+            Prefs.set("multiaperture.import.raapertures", raapertures);
+            Prefs.set("multiaperture.import.decapertures", decapertures);
+            Prefs.set("multiaperture.import.isrefstar", isRefStarString);
+            Prefs.set("multiaperture.import.centroidstar", centroidStarString);
+            Prefs.set("multiaperture.import.isalignstar", isAlignStarString);
+            Prefs.set("multiaperture.import.absmagapertures", absMagApertueresString);
             String[] xaps = xapertures.split(",");
             String[] yaps = yapertures.split(",");
             String[] raaps = raapertures.split(",");

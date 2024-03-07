@@ -2178,7 +2178,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             plot.addLabel((pWid - wid - 10)/pWid, (h + 43)/h, "AIJ " + IJ.getAstroVersion().split("[+]")[0]);
         });
 
-        //updatePlotPos();
+        updatePlotPos();
 
         plotbottompanel = (Panel) plotWindow.getComponent(1);
         plotbottompanel.getComponentCount();

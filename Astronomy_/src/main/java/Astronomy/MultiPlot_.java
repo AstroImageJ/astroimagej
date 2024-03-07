@@ -54,7 +54,9 @@ import java.io.*;
 import java.nio.file.Path;
 import java.text.DecimalFormat;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.stream.DoubleStream;
@@ -951,6 +953,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     private static boolean suppressDataUpdate;
     private static boolean[] usesYModel2;
     private static boolean performingBulkShiftUpdate;
+    private static final ExecutorService MP_THREAD = Executors.newSingleThreadExecutor();
 
     public void run(String inTableNamePlusOptions) {
         boolean useAutoAstroDataUpdate = false;
@@ -5969,6 +5972,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
 
     static MouseMotionListener plotMouseMotionListener = new MouseMotionListener() {
+
+        private Future<?> previousTask;
+
         public void mouseDragged(MouseEvent e) {
             int screenX = e.getX();
             int screenY = e.getY();
@@ -6005,7 +6011,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         newPanOffsetX = -(plotMaxX - plotMinX) * (screenX - startDragScreenX) / (plot.getDrawingFrame().width);
                         newPanOffsetY = (plotMaxY - plotMinY) * (screenY - startDragScreenY) / plot.getDrawingFrame().height;
                         supressDataProcessing();
-                        updatePlot(updateNoFits());
+                        if (previousTask != null) {
+                            previousTask.cancel(false);
+                        }
+                        previousTask = MP_THREAD.submit(() -> updatePlot(updateNoFits()));
                         if (e.isShiftDown()) {
                             plotcoordlabel.setText("DATA: x=" + fourPlaces.format(x[firstCurve][boldedDatum]) + ", y=" + fourPlaces.format(y[firstCurve][boldedDatum]));
                             IJ.showStatus("data values: x=" + fourPlaces.format(x[firstCurve][boldedDatum]) + ", y=" + fourPlaces.format(y[firstCurve][boldedDatum]));

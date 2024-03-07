@@ -12708,7 +12708,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 } else if (p == 1) {
                     priorCenterSpinner[c][p].setModel(new SpinnerNumberModel(priorCenter[c][p], 0.0, null, priorCenterStep[p]));
                 } else if (p == 2) {
-                    priorCenterSpinner[c][p].setModel(new SpinnerNumberModel(priorCenter[c][p], 0.0, null, priorCenterStep[p]));
+                    priorCenterSpinner[c][p].setModel(new SpinnerNumberModel(priorCenter[c][p], 2, null, priorCenterStep[p]));
                 } else if (p == 3) {
                     priorCenterSpinner[c][p].setModel(new SpinnerNumberModel(priorCenter[c][p], 0.0, null, priorCenterStep[p]));
                 } else if (p == 4) {

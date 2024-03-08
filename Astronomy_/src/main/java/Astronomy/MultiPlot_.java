@@ -2120,8 +2120,14 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 @Override
                 public void componentResized(ComponentEvent e) {
                     updatePlotEnabled = false;
-                    plotheightspinner.setValue(plot.getSize().height);
-                    plotwidthspinner.setValue(plot.getSize().width);
+                    var y = plot.getSize().height;
+                    var x = plot.getSize().width;
+                    if (plotSizeX != x) {
+                        plotwidthspinner.setValue(x);
+                    }
+                    if (plotSizeY != y) {
+                        plotheightspinner.setValue(y);
+                    }
                     updatePlotEnabled = true;
                     supressDataProcessing();
                     updatePlot(updateNoFits());

@@ -2126,6 +2126,27 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     supressDataProcessing();
                     updatePlot(updateNoFits());
                 }
+
+                @Override
+                public void componentMoved(ComponentEvent e) {
+                    if (e.getComponent().isVisible()) {
+                        var loc = e.getComponent().getLocationOnScreen();
+                        plotFrameLocationX = loc.x;
+                        plotFrameLocationY = loc.y;
+                        Prefs.set("plot2.plotFrameLocationX", plotFrameLocationX);
+                        Prefs.set("plot2.plotFrameLocationY", plotFrameLocationY);
+                    }
+                }
+            });
+            plotWindow.addWindowListener(new WindowAdapter() {
+                @Override
+                public void windowClosing(WindowEvent e) {
+                    var loc = e.getComponent().getLocationOnScreen();
+                    plotFrameLocationX = loc.x;
+                    plotFrameLocationY = loc.y;
+                    Prefs.set("plot2.plotFrameLocationX", plotFrameLocationX);
+                    Prefs.set("plot2.plotFrameLocationY", plotFrameLocationY);
+                }
             });
             ((PlotWindow) plotWindow).getHelpButton().addActionListener(e -> {
                 HELP_PANEL.setVisible(true);
@@ -2191,8 +2212,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             plot.addLabel((pWid - wid - 10)/pWid, (h + 43)/h, "AIJ " + IJ.getAstroVersion().split("[+]")[0]);
         });
 
-        updatePlotPos();
-
         plotbottompanel = (Panel) plotWindow.getComponent(1);
         plotbottompanel.getComponentCount();
         plotbottompanel.setSize(600, 30);
@@ -2207,6 +2226,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         table.setLock(false);
         plotWindow.getImagePlus().setPlot(plot);
         ((PlotWindow) plotWindow).setPlot(plot);
+        updatePlotPos();
         suppressDataUpdate = false;
         updatePlotRunning = false;
     }
@@ -4419,9 +4439,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     }
 
     static void updatePlotPos() {
-        IJU.setFrameSizeAndLocation(plot.getImagePlus().getWindow(), plotFrameLocationX, plotFrameLocationY,
+        IJU.setFrameSizeAndLocation(plotWindow, plotFrameLocationX, plotFrameLocationY,
                 plotSizeX, plotSizeY, false);
-        plotImage.updateAndRepaintWindow();
     }
 
     static void drawVMarker(double vMarkerValue, String vMarkerTopText, String vMarkerBotText, Color color) {

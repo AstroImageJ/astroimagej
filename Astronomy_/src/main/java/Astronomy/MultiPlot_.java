@@ -6039,11 +6039,13 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     if (!e.isControlDown() && !e.isAltDown()) {
                         newPanOffsetX = -(plotMaxX - plotMinX) * (screenX - startDragScreenX) / (plot.getDrawingFrame().width);
                         newPanOffsetY = (plotMaxY - plotMinY) * (screenY - startDragScreenY) / plot.getDrawingFrame().height;
-                        supressDataProcessing();
                         if (previousTask != null) {
                             previousTask.cancel(false);
                         }
-                        previousTask = MP_THREAD.submit(() -> updatePlot(updateNoFits()));
+                        previousTask = MP_THREAD.submit(() -> {
+                            supressDataProcessing();
+                            updatePlot(updateNoFits());
+                        });
                         if (e.isShiftDown()) {
                             plotcoordlabel.setText("DATA: x=" + fourPlaces.format(x[firstCurve][boldedDatum]) + ", y=" + fourPlaces.format(y[firstCurve][boldedDatum]));
                             IJ.showStatus("data values: x=" + fourPlaces.format(x[firstCurve][boldedDatum]) + ", y=" + fourPlaces.format(y[firstCurve][boldedDatum]));

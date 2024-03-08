@@ -1532,6 +1532,16 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             plotMaxX = Math.min(maxX + totalPanOffsetX + newPanOffsetX, plotMaxX);
             plotMinY = Math.max(minY + totalPanOffsetY + newPanOffsetY, plotMinY);
             plotMaxY = Math.min(maxY + totalPanOffsetY + newPanOffsetY, plotMaxY);
+
+            // This forces zoomout to reset to 0 when clamped
+            if (plotMinX == minX + totalPanOffsetX + newPanOffsetX || plotMaxX == maxX + totalPanOffsetX + newPanOffsetX) {
+                zoomX = 0;
+            }
+
+            if (plotMinY == minY + totalPanOffsetY + newPanOffsetY || plotMaxY == maxY + totalPanOffsetY + newPanOffsetY) {
+                zoomY = 0;
+            }
+
         } else {
             plotMinX = pltMinX;
             plotMaxX = pltMaxX;

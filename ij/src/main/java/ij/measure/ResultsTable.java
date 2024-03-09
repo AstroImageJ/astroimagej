@@ -6,6 +6,7 @@ import ij.ImagePlus;
 import ij.Prefs;
 import ij.WindowManager;
 import ij.astro.AstroImageJ;
+import ij.astro.util.FitsExtensionUtil;
 import ij.gui.Roi;
 import ij.io.OpenDialog;
 import ij.io.SaveDialog;
@@ -13,6 +14,7 @@ import ij.macro.Interpreter;
 import ij.macro.Program;
 import ij.macro.Tokenizer;
 import ij.macro.Variable;
+import ij.plugin.FITS_Writer;
 import ij.plugin.filter.Analyzer;
 import ij.process.*;
 import ij.text.TextPanel;
@@ -32,7 +34,7 @@ import java.util.*;
 /** This is a table for storing measurement results and strings as columns of values. 
 	Call the static ResultsTable.getResultsTable() method to get a reference to the 
 	ResultsTable used by the <i>Analyze/Measure</i> command. 
-	@see ij.plugin.filter.Analyzer#getResultsTable
+	@see Analyzer#getResultsTable
 */
 public class ResultsTable implements Cloneable {
 
@@ -1386,8 +1388,13 @@ public class ResultsTable implements Cloneable {
 		return ok;
 	}
 
-	@AstroImageJ(reason = "Save table with 16 decimal places, not 6", modified = true)
-	public void saveAs(String path) throws IOException {
+    @AstroImageJ(reason = "Overload to allow passing plotcfg param")
+    public void saveAs(String path) throws IOException {
+        saveAs(path, false);
+    }
+
+    @AstroImageJ(reason = "Save table with 16 decimal places, not 6; Fits export", modified = true)
+	public void saveAs(String path, boolean includePlotcfg) throws IOException {
 		boolean emptyTable = size()==0 && lastColumn<0;
 		var oldPrecision = getPrecision();
 		setPrecision(16);
@@ -1397,6 +1404,10 @@ public class ResultsTable implements Cloneable {
 			if (file==null)
 				return;
 			path = sd.getDirectory() + file;
+		}
+		if (FitsExtensionUtil.isFitsFile(path)) {
+			FITS_Writer.saveMPTable(this, includePlotcfg, path, "");
+			return;
 		}
 		boolean csv = path.endsWith(".csv") || path.endsWith(".CSV");
 		delimiter = csv?',':'\t';

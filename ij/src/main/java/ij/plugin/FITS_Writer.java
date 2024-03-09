@@ -3,6 +3,7 @@ package ij.plugin;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.ImageStack;
+import ij.Prefs;
 import ij.astro.AstroImageJ;
 import ij.astro.util.FitsCompressionUtil;
 import ij.astro.util.FitsExtensionUtil;
@@ -16,8 +17,10 @@ import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
 import ij.process.ShortProcessor;
 import nom.tam.fits.*;
+import nom.tam.fits.header.Compression;
 import nom.tam.fits.header.extra.AIJExt;
 import nom.tam.image.compression.hdu.CompressedImageHDU;
+import nom.tam.image.compression.hdu.CompressedTableHDU;
 import nom.tam.util.Cursor;
 import nom.tam.util.FitsOutputStream;
 
@@ -25,6 +28,7 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Enumeration;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -283,7 +287,7 @@ public class FITS_Writer implements PlugIn {
 		IJ.showStatus("");
 	}
 
-	public static void saveMPTable(ResultsTable resultsTable, Properties prefs, String path, String extension) {
+	public static void saveMPTable(ResultsTable resultsTable, boolean includePrefs, String path, String extension) {
 		IJ.showStatus("Saving image...");
 
 		// GET PATH
@@ -334,17 +338,14 @@ public class FITS_Writer implements PlugIn {
 			IJ.showStatus("Converting data and writing...");
 
 			// Write table
-			//todo lock table
 			BinaryTable table = new BinaryTable();
 
 			if (resultsTable.hasRowLabels()) {
-				//todo don't loop for this in RT
 				table.addStringColumn(resultsTable.getColumnAsStrings("Label"));
 			}
 
 			//resultsTable.getLabel()
 			for (int col = 0; col <= resultsTable.getLastColumn(); col++) {
-				//todo don't loop for this in RT
 				table.addColumn(resultsTable.getColumnAsDoubles(col));
 			}
 			table.defragment();
@@ -365,21 +366,25 @@ public class FITS_Writer implements PlugIn {
 				hdu.setColumnName(rc + iStart, /*normalizeColName(resultsTable.getColumnHeading(rc))*/resultsTable.getColumnHeading(rc), resultsTable.getColumnHeading(rc));
 			}
 
-			/*if (compressionModes.contains(FPACK)) {//todo impl.
-				var compressedHdu = CompressedTableHDU.fromBinaryTableHDU(hdu, *//*4*//*-1, Compression.ZCMPTYPE_GZIP_2);
+			if (compressionModes.contains(FPACK)) {
+				var compressedHdu = CompressedTableHDU.fromBinaryTableHDU(hdu, /*4*//*-1*/0/*, Compression.ZCMPTYPE_GZIP_2*/);
 				//FitsCompressionUtil.setCompression(compressedHdu, type.isFloatingPoint());
 				compressedHdu.compress();
 				hdu = compressedHdu;
-				//todo handle prefs hdu
-			}*/
+			}
 
 			hdu.write(out);
 
 			// Write plotcfg
-
-
-			if (prefs != null) {
+			if (includePrefs) {
 				table = new BinaryTable();
+
+				Properties prefs = new Properties();
+				Enumeration e = Prefs.ijPrefs.keys();
+				while (e.hasMoreElements()) {
+					String key = (String) e.nextElement();
+					if (key.indexOf(".plot.") == 0) prefs.put(key, Prefs.ijPrefs.getProperty(key));
+				}
 
 				// Convert plotcfg to String
 				var baos = new ByteArrayOutputStream();
@@ -392,7 +397,12 @@ public class FITS_Writer implements PlugIn {
 				hdu = table.toHDU();
 				hdu.setColumnName(0, "plotcfg", "AIJ plotcfg, Java properties format");
 
-				//todo compression
+				if (compressionModes.contains(FPACK)) {
+					var compressedHdu = CompressedTableHDU.fromBinaryTableHDU(hdu, /*4*/-1, Compression.ZCMPTYPE_GZIP_2);
+					//FitsCompressionUtil.setCompression(compressedHdu, type.isFloatingPoint());
+					//compressedHdu.compress();
+					//hdu = compressedHdu;
+				}
 
 				hdu.write(out);
 			}

@@ -488,6 +488,10 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			mt = new ResultsTable(tableHDU.getNRows());
 		}
 
+        if (tableHDU instanceof CompressedTableHDU compressedTableHDU) {
+            tableHDU = compressedTableHDU.asBinaryTableHDU();
+        }
+
 		ResultsTable finalMt = mt;
 
 
@@ -497,15 +501,21 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			for (int c = 0; c < tableHDU.getNCols(); c++) {
 				var o = tableHDU.getColumn(c);
 				var cName = tableHDU.getColumnName(c) == null ? "C" + c : tableHDU.getColumnName(c);
+				if ("Label".equals(cName)) {
+					continue;
+				}
 				setColumn(o, finalMt, cName);
 			}
 
 			// Handle labels
 			// Handled last so that the rows exist
-			var lc = tableHDU.getColumn("Label");
-			if (lc instanceof String[] labels) {
-				//todo bulk set methods
-				IntStream.range(0, labels.length).forEachOrdered(i -> finalMt.setLabel(labels[i], i));
+			var li = tableHDU.findColumn("Label");
+			if (li >= 0) {
+				var lc = tableHDU.getColumn(li);
+				if (lc instanceof String[] labels) {
+					//todo bulk set methods
+					IntStream.range(0, labels.length).forEachOrdered(i -> finalMt.setLabel(labels[i], i));
+				}
 			}
 
 			// Load plotcfg
@@ -513,8 +523,12 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			for (BasicHDU<?> basicHDU : hdus) {
 				if (basicHDU == tableHDU) continue;
 				if (basicHDU instanceof TableHDU<?> t) {
-					var pltcfgCol = t.getColumn("plotcfg");
-					if (pltcfgCol instanceof byte[] bytes) {
+                    if (t instanceof CompressedTableHDU compressedTableHDU) {
+                        t = compressedTableHDU.asBinaryTableHDU();
+                    }
+					//todo do col. lookup first, then decompress
+					var pltcfgCol = t.findColumn("plotcfg");
+					if (pltcfgCol >= 0 && t.getColumn(pltcfgCol) instanceof byte[] bytes) {
 						plotcfg = bytes;
 					}
 				}

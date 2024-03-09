@@ -28,6 +28,7 @@ import ij.io.OpenDialog;
 import ij.io.SaveDialog;
 import ij.measure.ResultsTable;
 import ij.plugin.GifWriter;
+import ij.plugin.Macro_Runner;
 import ij.plugin.PlugIn;
 import ij.process.ImageProcessor;
 import ij.util.Tools;
@@ -51,8 +52,10 @@ import java.awt.event.*;
 import java.awt.geom.GeneralPath;
 import java.awt.image.BufferedImage;
 import java.io.*;
+import java.net.URL;
 import java.nio.file.Path;
 import java.text.DecimalFormat;
+import java.util.Timer;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -312,7 +315,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
     static String[] xlabel2;
     static int selectedRowStart, selectedRowEnd;
-    static java.io.File[] dragAndDropFiles;
+    static File[] dragAndDropFiles;
     static double[][] x;
     static double[][] xModel1;
     static double[][] xModel2;
@@ -806,7 +809,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static String[] integerspinnerscalelist;
 
     static TimerTask delayedUpdateTask;
-    static java.util.Timer delayedUpdateTimer;
+    static Timer delayedUpdateTimer;
 
     static AstroConverter acc;
 
@@ -865,6 +868,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     private static Property<Boolean> useMacroSubtitle = new Property<>(false, MultiPlot_.class);
     private static Property<Boolean> drawOffscreenDisplacementArrowsX = new Property<>(true, MultiPlot_.class);
     private static Property<Boolean> drawOffscreenDisplacementArrowsY = new Property<>(true, MultiPlot_.class);
+    private static Property<Boolean> includePlotcfgInFits = new Property<>(true, MultiPlot_.class);
+    private static Property<Boolean> saveTableAsFits = new Property<>(false, MultiPlot_.class);
     private static Property<BiState> drawBinErrBarsBase = new Property<>(BiState.DISABLED, "plot.", "", MultiPlot_.class);
     private static String lastUsedTitle, lastUsedSubtitle;
 
@@ -1323,11 +1328,11 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 plot.setLimits(plotMinX, plotMaxX, plotMinY, plotMaxY);
                 plot.setJustification(Plot.CENTER);
                 if (useTitle) {
-                    plot.changeFont(new java.awt.Font("Dialog", java.awt.Font.PLAIN, 18));
+                    plot.changeFont(new Font("Dialog", Font.PLAIN, 18));
                     renderTitle();
                 }
                 if (useSubtitle) {
-                    plot.changeFont(new java.awt.Font("Dialog", java.awt.Font.PLAIN, 14));
+                    plot.changeFont(new Font("Dialog", Font.PLAIN, 14));
                     renderSubtitle();
                 }
                 plot.draw();
@@ -1359,7 +1364,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 }
 
             };
-            delayedUpdateTimer = new java.util.Timer();
+            delayedUpdateTimer = new Timer();
             delayedUpdateTimer.schedule(delayedUpdateTask, 200);
         } catch (Exception e) {
             //IJ.showMessage ("Error starting delayed plot update timer : "+e.getMessage());
@@ -1479,12 +1484,12 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         //----------------Set up plot options------------------------------------
         plotOptions = 0;
-        if (xTics) plotOptions += ij.gui.Plot.X_TICKS;
-        if (yTics) plotOptions += ij.gui.Plot.Y_TICKS;
-        if (xGrid) plotOptions += ij.gui.Plot.X_GRID;
-        if (yGrid) plotOptions += ij.gui.Plot.Y_GRID;
-        if (xNumbers) plotOptions += ij.gui.Plot.X_NUMBERS;
-        if (yNumbers) plotOptions += ij.gui.Plot.Y_NUMBERS;
+        if (xTics) plotOptions += Plot.X_TICKS;
+        if (yTics) plotOptions += Plot.Y_TICKS;
+        if (xGrid) plotOptions += Plot.X_GRID;
+        if (yGrid) plotOptions += Plot.Y_GRID;
+        if (xNumbers) plotOptions += Plot.X_NUMBERS;
+        if (yNumbers) plotOptions += Plot.Y_NUMBERS;
 
 
         plot = new Plot("Plot of " + tableName, xlab, ylab, plotOptions);
@@ -1634,7 +1639,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         }
                     }
 
-                    if (residualSymbol[curve] == ij.gui.Plot.DOT) { plot.setLineWidth(4); } else plot.setLineWidth(1);
+                    if (residualSymbol[curve] == Plot.DOT) { plot.setLineWidth(4); } else plot.setLineWidth(1);
                     int len = residual[curve].length;
                     plottedResidual[curve] = Arrays.copyOf(residual[curve], len);
                     for (int nnn = 0; nnn < len; nnn++) {
@@ -1655,7 +1660,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
                 plot.setColor(binDisplay[curve].isOn() ? lighter(color[curve]) : color[curve]);
 
-                if (binDisplay[curve].isOn() || marker[curve] == ij.gui.Plot.DOT) { plot.setLineWidth(dotSize.get()); } else plot.setLineWidth(1);
+                if (binDisplay[curve].isOn() || marker[curve] == Plot.DOT) { plot.setLineWidth(dotSize.get()); } else plot.setLineWidth(1);
 
                 if (binDisplay[curve] != TriState.ALT_ENABLED) {
                     plot.addPoints(Arrays.copyOf(x[curve], nn[curve]), Arrays.copyOf(y[curve], nn[curve]), binDisplay[curve].isOn() ? Plot.DOT : marker[curve]);
@@ -1677,7 +1682,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         var pts = plotDataLock.binnedData[curve];
 
                         plot.setColor(color[curve]);
-                        if (marker[curve] == ij.gui.Plot.DOT) { plot.setLineWidth(binnedDotSize.get()); } else plot.setLineWidth(2);
+                        if (marker[curve] == Plot.DOT) { plot.setLineWidth(binnedDotSize.get()); } else plot.setLineWidth(2);
                         plot.addPoints(pts.x(), pts.y(), marker[curve]);
 
                         if (drawBinErrBarsBase.getOrCreateVariant(curve).get().isOn()) {
@@ -1696,17 +1701,17 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 } else { plot.setLineWidth(1); }
                 plot.setColor(color[curve]);
                 if (xModel1[curve] != null && yModel1[curve] != null && xModel1[curve].length == yModel1[curve].length && detrendFitIndex[curve] != 9) {
-                    plot.addPoints(Arrays.copyOf(xModel1[curve], xModel1[curve].length), Arrays.copyOf(yModel1[curve], yModel1[curve].length), ij.gui.Plot.LINE);
+                    plot.addPoints(Arrays.copyOf(xModel1[curve], xModel1[curve].length), Arrays.copyOf(yModel1[curve], yModel1[curve].length), Plot.LINE);
                 }
                 if (xModel2[curve] != null && yModel2[curve] != null && xModel2[curve].length == yModel2[curve].length && (detrendFitIndex[curve] != 9 || showModel[curve])) {
                     if (detrendFitIndex[curve] == 9) {
                         plot.setLineWidth((showErrors[curve] && (hasErrors[curve] || hasOpErrors[curve])) ? modelLineWidth[curve] + 1 : modelLineWidth[curve]);
                         plot.setColor(modelColor[curve]);
                     }
-                    plot.addPoints(Arrays.copyOf(xModel2[curve], xModel2[curve].length), Arrays.copyOf(yModel2[curve], yModel2[curve].length), ij.gui.Plot.LINE);
+                    plot.addPoints(Arrays.copyOf(xModel2[curve], xModel2[curve].length), Arrays.copyOf(yModel2[curve], yModel2[curve].length), Plot.LINE);
                 }
 
-                if (lines[curve] && !(marker[curve] == ij.gui.Plot.LINE)) {
+                if (lines[curve] && !(marker[curve] == Plot.LINE)) {
                     for (int j = 0; j < nn[curve] - 1; j++) {
                         if (x[curve][j + 1] > x[curve][j]) {
                             plot.drawLine(x[curve][j], y[curve][j], x[curve][j + 1], y[curve][j + 1]);
@@ -1733,9 +1738,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
                 plot.setLineWidth(1);
                 if (legendLeft) {
-                    plot.setJustification(ij.process.ImageProcessor.LEFT_JUSTIFY);
-                } else if (legendRight) { plot.setJustification(ij.process.ImageProcessor.RIGHT_JUSTIFY); } else {
-                    plot.setJustification(ij.process.ImageProcessor.CENTER_JUSTIFY);
+                    plot.setJustification(ImageProcessor.LEFT_JUSTIFY);
+                } else if (legendRight) { plot.setJustification(ImageProcessor.RIGHT_JUSTIFY); } else {
+                    plot.setJustification(ImageProcessor.CENTER_JUSTIFY);
                 }
 
                 // MAKE FULL LEGEND STRING FOR CURVE
@@ -1933,7 +1938,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     plot.addPoints(xx, yy, marker[curve]);
                     if (showResidual[curve] && plottedResidual[curve] != null && useTransitFit[curve] && detrendFitIndex[curve] == 9) {
                         plot.setColor(residualColor[curve]);
-                        if (residualSymbol[curve] == ij.gui.Plot.DOT) { plot.setLineWidth(8); } else {
+                        if (residualSymbol[curve] == Plot.DOT) { plot.setLineWidth(8); } else {
                             plot.setLineWidth(2);
                         }
                         if (curve == firstCurve) {
@@ -2093,14 +2098,14 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         if (showVMarker2) drawVMarker(vMarker2Value, vMarker2TopText, vMarker2BotText, Color.red);
 
-        plot.setColor(java.awt.Color.black);
+        plot.setColor(Color.black);
         plot.setJustification(Plot.CENTER);
         if (useTitle) {
-            plot.changeFont(new java.awt.Font("Dialog", java.awt.Font.PLAIN, 18));
+            plot.changeFont(new Font("Dialog", Font.PLAIN, 18));
             renderTitle();
         }
         if (useSubtitle) {
-            plot.changeFont(new java.awt.Font("Dialog", java.awt.Font.PLAIN, 14));
+            plot.changeFont(new Font("Dialog", Font.PLAIN, 14));
             renderSubtitle();
         }
 
@@ -2210,7 +2215,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         }
 
         drawAijVersion.ifProp(() -> {
-            plot.changeFont(new java.awt.Font("Dialog", java.awt.Font.PLAIN, 12));
+            plot.changeFont(new Font("Dialog", Font.PLAIN, 12));
             plot.setJustification(Plot.BOTTOM_RIGHT);
             var wid = plotImage.getImage().getGraphics().getFontMetrics(plot.getCurrentFont()).stringWidth("AIJ " + IJ.getAstroVersion().split("[+]")[0]);
             var pWid = plot.getSize().getWidth();
@@ -4507,10 +4512,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         plot.setLineWidth(width);
         if (legendRight) { xShift += w; } else if (!legendLeft) xShift += w / 2f;
         plot.setColor(color);
-        if (marker == ij.gui.Plot.DOT) {
+        if (marker == Plot.DOT) {
             xShift += 2;
             yShift += 2;
-        } else if (marker == ij.gui.Plot.LINE) {
+        } else if (marker == Plot.LINE) {
             xShift += 7;
             yShift += 2;
         } else {
@@ -4522,7 +4527,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         double y = plotMinY + (plotMaxY - plotMinY) * (1 - legPosY + yShift / (s.getHeight()));
         double[] xx = {x};
         double[] yy = {y};
-        if (marker != ij.gui.Plot.LINE) {
+        if (marker != Plot.LINE) {
             plot.addPoints(xx, yy, marker);
         } else {
             plot.drawLine(x, y, x + (plotMaxX - plotMinX) * 6.0 / (s.getWidth()), y);
@@ -4790,7 +4795,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         addAstroDataFrame.setIconImage(plotIcon.getImage());
         JPanel addAstroDataPanel = new JPanel(new SpringLayout());
         JScrollPane addAstroDataScrollPane = new JScrollPane(addAstroDataPanel);
-        addAstroDataFrame.setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
+        addAstroDataFrame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         addAstroDataFrame.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
@@ -7262,16 +7267,16 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         Color cmkr;
         switch (ci) {
             case 0:
-                cmkr = java.awt.Color.black;
+                cmkr = Color.black;
                 break;
             case 1:
-                cmkr = java.awt.Color.darkGray;
+                cmkr = Color.darkGray;
                 break;
             case 2:
-                cmkr = java.awt.Color.gray;
+                cmkr = Color.gray;
                 break;
             case 3:
-                cmkr = java.awt.Color.lightGray;
+                cmkr = Color.lightGray;
                 break;
             case 4:
                 cmkr = new Color(0, 235, 0);
@@ -7283,19 +7288,19 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 cmkr = new Color(84, 201, 245);
                 break;   //light blue
             case 7:
-                cmkr = java.awt.Color.blue;
+                cmkr = Color.blue;
                 break;
             case 8:
-                cmkr = java.awt.Color.magenta;
+                cmkr = Color.magenta;
                 break;
             case 9:
-                cmkr = java.awt.Color.pink;
+                cmkr = Color.pink;
                 break;
             case 10:
-                cmkr = java.awt.Color.red;
+                cmkr = Color.red;
                 break;
             case 11:
-                cmkr = java.awt.Color.orange;
+                cmkr = Color.orange;
                 break;
             case 12:
                 cmkr = new Color(235, 235, 0);
@@ -7313,7 +7318,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 cmkr = new Color(0, 0, 0, 0);
                 break;
             default:
-                cmkr = java.awt.Color.black;
+                cmkr = Color.black;
                 break;
         }
         return cmkr;
@@ -7321,13 +7326,13 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
     static int markerOf(int mi) {
         int mkr = 3;
-        if (mi == 0) { mkr = ij.gui.Plot.BOX; } else if (mi == 1) { mkr = ij.gui.Plot.CIRCLE; } else if (mi == 2) {
-            mkr = ij.gui.Plot.CROSS;
-        } else if (mi == 3) { mkr = ij.gui.Plot.DOT; } else if (mi == 4) {
-            mkr = ij.gui.Plot.LINE;
+        if (mi == 0) { mkr = Plot.BOX; } else if (mi == 1) { mkr = Plot.CIRCLE; } else if (mi == 2) {
+            mkr = Plot.CROSS;
+        } else if (mi == 3) { mkr = Plot.DOT; } else if (mi == 4) {
+            mkr = Plot.LINE;
         } else if (mi == 5) {
-            mkr = ij.gui.Plot.TRIANGLE;
-        } else if (mi == 6) { mkr = ij.gui.Plot.X; } else mkr = ij.gui.Plot.DOT;
+            mkr = Plot.TRIANGLE;
+        } else if (mi == 6) { mkr = Plot.X; } else mkr = Plot.DOT;
         return mkr;
     }
 
@@ -7546,7 +7551,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         }
         plotIcon = createImageIcon("astroj/images/plot.png", "Plot Icon");
         mainFrame.setIconImage(plotIcon.getImage());
-        mainFrame.setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
+        mainFrame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         mainFrame.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
@@ -7639,6 +7644,16 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         savedatamenuitem.addActionListener(e -> saveData());
         filemenu.add(savedatamenuitem);
 
+        var savedatafitsmenuitem = new JMenuItem("Save data to FITs file...");
+        savedatafitsmenuitem.setToolTipText("<html>" + "saves measurement table data to a user selected file" + "</html>");
+        savedatafitsmenuitem.addActionListener(e -> saveData(true, false));
+        filemenu.add(savedatafitsmenuitem);
+
+        var savedataAndCfgfitsmenuitem = new JMenuItem("Save data and plotcfg to FITs file...");
+        savedataAndCfgfitsmenuitem.setToolTipText("<html>" + "saves measurement table data to a user selected file" + "</html>");
+        savedataAndCfgfitsmenuitem.addActionListener(e -> saveData(true, true));
+        filemenu.add(savedataAndCfgfitsmenuitem);
+
         JMenuItem savedatasubsetmenuitem = new JMenuItem("Save data subset to file...");
         savedatasubsetmenuitem.setToolTipText("<html>" + "saves a subset of measurement table data to a user selected file" + "</html>");
         savedatasubsetmenuitem.addActionListener(e -> saveDataSubsetDialog(null));
@@ -7671,7 +7686,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         createNEBReportMenuItem.setToolTipText("<html>" + "Create NEB search reports and plots.<br>");
         createNEBReportMenuItem.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                Executors.newSingleThreadExecutor().submit(() -> ij.plugin.Macro_Runner.runMacroFromJar(getClass().getClassLoader(), "Astronomy/NEBSearchMacro.txt", ""));
+                Executors.newSingleThreadExecutor().submit(() -> Macro_Runner.runMacroFromJar(getClass().getClassLoader(), "Astronomy/NEBSearchMacro.txt", ""));
             }
         });
         filemenu.add(createNEBReportMenuItem);
@@ -7680,7 +7695,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         createAAVSOReportMenuItem.setToolTipText("<html>" + "Create AAVSO formatted data for submission to the AAVSO Exoplanet Database.</html>");
         createAAVSOReportMenuItem.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                ij.plugin.Macro_Runner.runMacroFromJar(getClass().getClassLoader(), "Astronomy/AAVSO_Exoplanet_Format.txt", "");
+                Macro_Runner.runMacroFromJar(getClass().getClassLoader(), "Astronomy/AAVSO_Exoplanet_Format.txt", "");
             }
         });
         filemenu.add(createAAVSOReportMenuItem);
@@ -7689,7 +7704,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         createAAVSOVarStarReportMenuItem.setToolTipText("<html>" + "Create AAVSO formatted data for submission to the AAVSO Variable Star Database.</html>");
         createAAVSOVarStarReportMenuItem.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                ij.plugin.Macro_Runner.runMacroFromJar(getClass().getClassLoader(), "Astronomy/AAVSO_Variable_Star_Report_Macro.txt", "");
+                Macro_Runner.runMacroFromJar(getClass().getClassLoader(), "Astronomy/AAVSO_Variable_Star_Report_Macro.txt", "");
             }
         });
         filemenu.add(createAAVSOVarStarReportMenuItem);
@@ -10972,7 +10987,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             subFrame.remove(subscrollpane);
         }
         subscrollpane = new JScrollPane(mainsubpanel);
-        subFrame.setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
+        subFrame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         subFrame.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
@@ -14810,7 +14825,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         refStarMainPanel = new JPanel(new SpringLayout());
 
         refStarScrollPane = new JScrollPane(refStarMainPanel);
-        refStarFrame.setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
+        refStarFrame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         refStarFrame.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
@@ -15192,7 +15207,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     /** Returns an ImageIcon, or null if the path was invalid. */
     public static ImageIcon createImageIcon(String path, String description) {
         MultiPlot_ m = new MultiPlot_();
-        java.net.URL imgURL = m.getClass().getClassLoader().getResource(path);
+        URL imgURL = m.getClass().getClassLoader().getResource(path);
         if (imgURL != null) {
             return new ImageIcon(imgURL, description);
         } else {
@@ -16200,7 +16215,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         plotDataLock = null;
     }
 
-    public static synchronized void openDragAndDropFiles(java.io.File[] files) {
+    public static synchronized void openDragAndDropFiles(File[] files) {
         int errorCode;
         dragAndDropFiles = files;
         errorCode = 1;
@@ -16773,15 +16788,21 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
 
     static void saveData() {
+        saveData(false, false);
+    }
+
+    static void saveData(boolean saveAsFits, boolean includePlotcfg) {
         if (table == null || table.getLastColumn() == -1) {
             IJ.beep();
             IJ.showMessage("No table to save");
             return;
         }
-        SaveDialog sf = new SaveDialog("Save measurement table data", MeasurementTable.shorterName(table.shortTitle()), Prefs.get("options.ext", ".xls"));
+        SaveDialog sf = new SaveDialog("Save measurement table data",
+                MeasurementTable.shorterName(table.shortTitle()),
+                saveAsFits ? ".fits" : Prefs.get("options.ext", ".xls"));
         if (sf.getDirectory() == null || sf.getFileName() == null) return;
         try {
-            table.saveAs(sf.getDirectory() + sf.getFileName());
+            table.saveAs(sf.getDirectory() + sf.getFileName(), includePlotcfg);
         } catch (IOException ioe) {
             IJ.beep();
             IJ.showMessage("Error writing measurement table file");
@@ -17566,7 +17587,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 IJ.showMessage("No data table to save");
             } else {
                 try {
-                    table.saveAs(filenamesProvided ? dataPath : outBase + dataSuffix + Prefs.get("options.ext", ".xls"));
+                    table.saveAs(filenamesProvided ? dataPath : outBase + dataSuffix + (saveTableAsFits.get() ? ".fits" : Prefs.get("options.ext", ".xls")), includePlotcfgInFits.get());
                 } catch (IOException ioe) {
                     IJ.beep();
                     IJ.showMessage("Error writing measurement table file");
@@ -17642,8 +17663,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         gd.enableYesNoCancel("Save Files Now", "Save Settings Only");
 
         gd.addMessage("Select items to save when using save all:");
-        gd.addCheckboxGroup(1, 10, new String[]{"Image", "Plot", "Seeing Profile", "Seeing Profile Stack", "Plot Config", "Data Table", "Apertures", "Fit Panels", "Fit Text", "Log"}, new boolean[]{saveImage, savePlot, saveSeeingProfile, saveSeeingProfileStack, saveConfig, saveTable, saveApertures, saveFitPanels, saveFitPanelText, saveLog});
-        gd.addCheckboxGroup(1, 2, new String[]{"Data Subset", "Show Data Subset Panel"}, new boolean[]{saveDataSubset, showDataSubsetPanel});
+        gd.addCheckboxGroup(1, 10, new String[]{"Image", "Plot", "Seeing Profile", "Seeing Profile Stack", "Plot Config", "Data Table", "Apertures", "Fit Panels", "Fit Text", "Log"},
+                new boolean[]{saveImage, savePlot, saveSeeingProfile, saveSeeingProfileStack, saveConfig, saveTable, saveApertures, saveFitPanels, saveFitPanelText, saveLog});
+        gd.addCheckboxGroup(1, 4, new String[]{"Data Subset", "Show Data Subset Panel", "Save Plot As FITs", "Include Plot Config in FITs"},
+                new boolean[]{saveDataSubset, showDataSubsetPanel, saveTableAsFits.get(), includePlotcfgInFits.get()});
         gd.addStringField("Science Image display suffix:", imageSuffix, 40);
         gd.addStringField("Plot image display suffix:", plotSuffix, 40);
         gd.addStringField("Seeing Profile suffix:", seeingProfileSuffix, 40);
@@ -17674,6 +17697,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         saveDataSubset = gd.getNextBoolean();
         showDataSubsetPanel = gd.getNextBoolean();
+        saveTableAsFits.set(gd.getNextBoolean());
+        includePlotcfgInFits.set(gd.getNextBoolean());
 
         imageSuffix = gd.getNextString();
         plotSuffix = gd.getNextString();
@@ -17857,7 +17882,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         }
 
         if (saveAll && (savePlot || saveConfig || saveTable)) {
-            saveDataImageConfig(savePlot, saveConfig, saveTable, true, format, outBase + plotSuffix + "." + format, outBase + configSuffix + ".plotcfg", outBase + dataSuffix + Prefs.get("options.ext", ".xls"));
+            saveDataImageConfig(savePlot, saveConfig, saveTable, true, format,
+                    outBase + plotSuffix + "." + format, outBase + configSuffix + ".plotcfg",
+                    outBase + dataSuffix + (saveTableAsFits.get() ? ".fits" : Prefs.get("options.ext", ".xls")));
         }
 
         if (saveSeeingProfile) {

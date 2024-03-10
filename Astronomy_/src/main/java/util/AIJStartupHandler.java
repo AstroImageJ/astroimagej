@@ -8,7 +8,11 @@ import ij.IJ;
 import ij.Prefs;
 import ij.astro.util.FileAssociationHandler;
 import ij.astro.util.FileAssociationHandler.AssociationMapper;
+import ij.astro.util.FitsExtensionUtil;
+import ij.plugin.FITS_Reader;
 import ij.plugin.PlugIn;
+import nom.tam.fits.Fits;
+import nom.tam.util.FitsFile;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -37,6 +41,36 @@ public class AIJStartupHandler implements PlugIn {
                     MultiPlot_.loadDataOpenConfig(table, p.toString());
                 }
             }, true, Prefs.defaultResultsExtension());
+    private static final AssociationMapper multiplotFitsTableHandler =
+            new AssociationMapper(p -> {
+                // todo we don't allow compressed table currently as they have issues
+                if (FitsExtensionUtil.isFitsFile(p.toString(), false)) {
+                    try (var fits = new Fits(new FitsFile(p.toFile()))) {
+                        fits.read(); // Read the headers in
+                        return fits.getPrimaryHeader().getBooleanValue("AIJ_TBL", false);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                return false;
+            },
+            p -> {
+                var table = new MeasurementTable(p.getFileName() + " Measurements");
+                table.setFilePath(p.toString());
+                if (FITS_Reader.handleTable(p, table) != null) {
+                    table.show();
+
+                    if (!MultiPlot_.isRunning()) {
+                        //IJ.runPlugIn("Astronomy.MultiPlot_", "");
+                        // Fixes NPE when opening via file association
+                        new MultiPlot_().run(table.shortTitle());
+                        return;
+                    }
+
+                    MultiPlot_.loadDataOpenConfig(table, p.toString());
+                }
+            }, true);
     private static final AssociationMapper multiplotPlotCfgHandler =
             new AssociationMapper(p -> MultiPlot_.loadConfigOfOpenTable(p.toString()), true, ".plotcfg");
     private static final AssociationMapper radecHandler =
@@ -55,6 +89,7 @@ public class AIJStartupHandler implements PlugIn {
             WinMutexHandler.createMutex();
         }
         FileAssociationHandler.registerAssociation(multiplotTableHandler);
+        FileAssociationHandler.registerAssociation(multiplotFitsTableHandler);
         FileAssociationHandler.registerAssociation(radecHandler);
         FileAssociationHandler.registerAssociation(aperturesHandler);
         FileAssociationHandler.registerAssociation(multiplotPlotCfgHandler);

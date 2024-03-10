@@ -389,7 +389,10 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 				if (filter != null && !filter.matchesFilter(hdr)) return;
 				imageProcessor = makeStackFrom3DData(data, tableHDU.getNRows(), makeHeadersTessCut(hdr, tableHDU, hdus));
 			} else {
-				fitsTable2MeasurementsTable(hdus, tableHDU);
+				var mt = fitsTable2MeasurementsTable(hdus, tableHDU);
+				if (mt != null) {
+					mt.show("Measurements in " + fileName);
+				}
 				return;
 			}
 		} else if (isBasic3DImage(hdus)) {
@@ -476,24 +479,43 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		return true;
 	}
 
-	private void fitsTable2MeasurementsTable(BasicHDU<?>[] hdus, TableHDU<?> tableHDU) throws FitsException {
+	public static ResultsTable handleTable(Path path, ResultsTable table) {
+		try (var fits = new Fits(new FitsFile(path.toFile()))) {
+			var hdus = fits.read();
+			if (hdus.length > 1) {
+				if (hdus[1] instanceof TableHDU<?> tableHDU) {
+					return fitsTable2MeasurementsTable(table, hdus, tableHDU);
+				}
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		return null;
+	}
+
+	private ResultsTable fitsTable2MeasurementsTable(BasicHDU<?>[] hdus, TableHDU<?> tableHDU) {
 		ResultsTable mt;
 		try {
 			// Work around access issues
 			var cl = IJ.getClassLoader().loadClass("astroj.MeasurementTable");
 			mt = (ResultsTable) cl.getConstructor(String.class).newInstance(fileName + " Measurements");
+			var f = cl.getDeclaredField("filePath");
+			f.setAccessible(true);
+			f.set(mt, fileName);
 		} catch (ClassNotFoundException | InvocationTargetException | InstantiationException | IllegalAccessException |
-				 NoSuchMethodException e) {
+				 NoSuchMethodException | NoSuchFieldException e) {
 			e.printStackTrace();
 			mt = new ResultsTable(tableHDU.getNRows());
 		}
 
+		return fitsTable2MeasurementsTable(mt, hdus, tableHDU);
+	}
+
+	private static ResultsTable fitsTable2MeasurementsTable(ResultsTable table, BasicHDU<?>[] hdus, TableHDU<?> tableHDU) throws FitsException {
         if (tableHDU instanceof CompressedTableHDU compressedTableHDU) {
             tableHDU = compressedTableHDU.asBinaryTableHDU();
         }
-
-		ResultsTable finalMt = mt;
-
 
 		// Handle AIJ Fits Tables
 		//todo drag onto MP windows does not load
@@ -504,7 +526,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 				if ("Label".equals(cName)) {
 					continue;
 				}
-				setColumn(o, finalMt, cName);
+				setColumn(o, table, cName);
 			}
 
 			// Handle labels
@@ -514,7 +536,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 				var lc = tableHDU.getColumn(li);
 				if (lc instanceof String[] labels) {
 					//todo bulk set methods
-					IntStream.range(0, labels.length).forEachOrdered(i -> finalMt.setLabel(labels[i], i));
+					IntStream.range(0, labels.length).forEachOrdered(i -> table.setLabel(labels[i], i));
 				}
 			}
 
@@ -547,11 +569,11 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			for (int c = 0; c < tableHDU.getNCols(); c++) {
 				var o = tableHDU.getColumn(c);
 				var cName = tableHDU.getColumnName(c) == null ? "C" + c : tableHDU.getColumnName(c);
-				setColumn(o, finalMt, cName);
+				setColumn(o, table, cName);
 			}
 		}
 
-		mt.show("Measurements in " + fileName);
+		return table;
 	}
 
 	//todo check listed column type, skip image columns, or open them as stacks?

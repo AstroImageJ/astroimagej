@@ -825,6 +825,10 @@ public class MeasurementTable extends ResultsTable {
         return filePath;
     }
 
+    public void setFilePath(String string) {
+        filePath = string;
+    }
+
     /**
      * Retrieves a double array column.
      */

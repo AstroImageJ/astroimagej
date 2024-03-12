@@ -19,7 +19,9 @@ import ij.measure.ResultsTable;
 import ij.process.ImageProcessor;
 import nom.tam.fits.*;
 import nom.tam.image.compression.hdu.CompressedImageHDU;
+import nom.tam.image.compression.hdu.CompressedTableHDU;
 import nom.tam.util.Cursor;
+import nom.tam.util.FitsFile;
 
 import javax.swing.*;
 import java.io.*;

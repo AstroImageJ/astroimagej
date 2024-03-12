@@ -86,9 +86,6 @@ public class BinaryTable extends AbstractTableData implements Cloneable {
         /** The number of primitive elements in the column */
         private int fitsCount;
 
-        /** byte size of entries in FITS */
-        private int fileSize;
-
         /** The dimensions of the column */
         private int[] fitsShape = SINGLETON_SHAPE;
 
@@ -1663,7 +1660,7 @@ public class BinaryTable extends AbstractTableData implements Cloneable {
             throw new IllegalStateException("Cannot add empty columns to table already containing data rows");
         }
         descriptor.offset = rowLen;
-        rowLen += descriptor.fileSize;
+        rowLen += descriptor.rowLen();
         columns.add(descriptor);
         return columns.size();
     }
@@ -1826,8 +1823,7 @@ public class BinaryTable extends AbstractTableData implements Cloneable {
      */
     private int addDirectColumn(Object o, int rows, ColumnDesc c) throws FitsException {
         c.offset = rowLen;
-        c.fileSize = c.rowLen();
-        rowLen += c.fileSize;
+        rowLen += c.rowLen();
 
         // Load any deferred data (we will not be able to do that once we alter the column structure)
         ensureData();
@@ -3036,7 +3032,7 @@ public class BinaryTable extends AbstractTableData implements Cloneable {
         int l = 0;
         for (ColumnDesc d : columns) {
             d.offset = l;
-            l += d.fileSize;
+            l += d.rowLen();
         }
     }
 
@@ -3483,7 +3479,6 @@ public class BinaryTable extends AbstractTableData implements Cloneable {
 
         // Force to use the count in the header, even if it does not match up with the dimension otherwise.
         c.fitsCount = count;
-        c.fileSize = c.rowLen();
 
         return c;
     }
@@ -3498,7 +3493,7 @@ public class BinaryTable extends AbstractTableData implements Cloneable {
         c.offset = offset;
         columns.add(c);
 
-        return c.fileSize;
+        return c.rowLen();
     }
 
     /**
@@ -3506,9 +3501,7 @@ public class BinaryTable extends AbstractTableData implements Cloneable {
      *                 it would make a better private method in there.. `
      */
     protected void addByteVaryingColumn() {
-        ColumnDesc c = ColumnDesc.createForVariableSize(byte.class);
-        columns.add(c);
-        table.addColumn(c.newInstance(nRow), c.getTableBaseCount());
+        addColumn(ColumnDesc.createForVariableSize(byte.class));
     }
 
     /**

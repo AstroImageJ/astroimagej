@@ -782,7 +782,7 @@ public abstract class BasicHDU<DataClass extends Data> implements FitsElement {
 
     @Override
     public long getSize() {
-        int size = 0;
+        long size = 0;
 
         if (myHeader != null) {
             size += myHeader.getSize();

@@ -10215,7 +10215,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         if (showVMarker1 && vMarker1Value < 0.0) {
                             xRawMin += 1.0;
                         }
-                        int epoch = (int) (((xRawMin - T0) / period) + 1);
+                        int epoch = (int)Math.floor(((xRawMin - T0) / period)) + 1;
                         vmarker2spinner.setValue(T0 + vMarker2Value + period * epoch - xRawMin);
                         vmarker1spinner.setValue(T0 + vMarker1Value + period * epoch - xRawMin);
                         dmarker4spinner.setValue(T0 + dMarker4Value + period * epoch - xRawMin);

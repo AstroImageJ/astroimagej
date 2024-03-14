@@ -17683,7 +17683,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         gd.addMessage("Select items to save when using save all:");
         gd.addCheckboxGroup(1, 10, new String[]{"Image", "Plot", "Seeing Profile", "Seeing Profile Stack", "Plot Config", "Data Table", "Apertures", "Fit Panels", "Fit Text", "Log"},
                 new boolean[]{saveImage, savePlot, saveSeeingProfile, saveSeeingProfileStack, saveConfig, saveTable, saveApertures, saveFitPanels, saveFitPanelText, saveLog});
-        gd.addCheckboxGroup(1, 4, new String[]{"Data Subset", "Show Data Subset Panel", "Save Plot As FITs", "Include Plot Config in FITs"},
+        gd.addCheckboxGroup(1, 4, new String[]{"Data Subset", "Show Data Subset Panel", "Save Data As FITs Table", "Include Plot Config in FITs"},
                 new boolean[]{saveDataSubset, showDataSubsetPanel, saveTableAsFits.get(), includePlotcfgInFits.get()});
         gd.addStringField("Science Image display suffix:", imageSuffix, 40);
         gd.addStringField("Plot image display suffix:", plotSuffix, 40);

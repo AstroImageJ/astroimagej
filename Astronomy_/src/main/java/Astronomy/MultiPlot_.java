@@ -2805,10 +2805,14 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 xFirstRawMin = Double.isFinite(ss.getMin()) ? ss.getMin() : Double.NEGATIVE_INFINITY;
                 xFirstRawMax = Double.isFinite(ss.getMax()) ? ss.getMax() : Double.POSITIVE_INFINITY;
             }
+        });
 
-            // Set x to be phase folded now that smoothing is done
-            if (plotY[curve] && !showXAxisNormal) {
-                x[curve] = phaseFoldedX[curve];
+        IntStream.range(0, maxCurves).parallel().forEach(curve -> {
+            if (plotY[curve]) {
+                var ss = Arrays.stream(x[curve]).limit(nn[curve])
+                        .filter(d -> !Double.isNaN(d)).summaryStatistics();
+                xMinimum[curve] = ss.getMin(); //FIND MIN AND MAX X OF EACH SELECTED DATASET
+                xMaximum[curve] = ss.getMax();
             }
         });
 
@@ -2829,6 +2833,11 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     if (xMinimum[curve] < xRawMin) xRawMin = xMinimum[curve];
                     if (xMaximum[curve] > xRawMax) xRawMax = xMaximum[curve];
                 }
+            }
+
+            // Set x to be phase folded now that smoothing is done
+            if (plotY[curve] && !showXAxisNormal) {
+                x[curve] = phaseFoldedX[curve];
             }
         }
 

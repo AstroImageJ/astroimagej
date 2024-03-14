@@ -2732,8 +2732,21 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         applyXAutoScale(showXAxisNormal ? x : phaseFoldedX);
 
+        if (!showXAxisNormal) {
+            if ((unphasedX == null || unphasedX.length != maxCurves)) {
+                unphasedX = new double[maxCurves][];
+            }
+        } else {
+            unphasedX = null;
+        }
+
         // Smooth data and phase fold
         IntStream.range(0, maxCurves).parallel().forEach(curve -> {
+            if (plotY[curve]) {
+                if (!showXAxisNormal) {
+                    unphasedX[curve] = Arrays.copyOf(x[curve], nn[curve]);
+                }
+            }
             if (plotY[curve] && smooth[curve] && nn[curve] > 4) {
                 var yMask = MatrixUtils.createRealVector(nn[curve]);
                 double xfold;
@@ -2798,48 +2811,18 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 KeplerSplineControl.getInstance(curve).smoothData(x[curve], y[curve], yerr[curve], nn[curve], yMask);
             }
 
-
             if(curve==firstCurve) {
                 var ss = Arrays.stream(x[curve]).limit(nn[curve])
                         .filter(d -> !Double.isNaN(d)).summaryStatistics();
                 xFirstRawMin = Double.isFinite(ss.getMin()) ? ss.getMin() : Double.NEGATIVE_INFINITY;
                 xFirstRawMax = Double.isFinite(ss.getMax()) ? ss.getMax() : Double.POSITIVE_INFINITY;
             }
-        });
-
-        IntStream.range(0, maxCurves).parallel().forEach(curve -> {
-            if (plotY[curve]) {
-                var ss = Arrays.stream(x[curve]).limit(nn[curve])
-                        .filter(d -> !Double.isNaN(d)).summaryStatistics();
-                xMinimum[curve] = ss.getMin(); //FIND MIN AND MAX X OF EACH SELECTED DATASET
-                xMaximum[curve] = ss.getMax();
-            }
-        });
-
-        xRawMin = Double.POSITIVE_INFINITY;
-        xRawMax = Double.NEGATIVE_INFINITY;
-
-        var hasXDatasetToScaleAgainst = IntStream.range(0, ASInclude.length)
-                .filter(i -> ASInclude[i]).findAny().isPresent();
-
-        for (int curve = 0; curve < maxCurves; curve++) {
-            if (plotY[curve]) {
-                if (ASInclude[curve]) {
-                    if (xMinimum[curve] < xRawMin) xRawMin = xMinimum[curve];
-                    if (xMaximum[curve] > xRawMax) xRawMax = xMaximum[curve];
-                }
-
-                if (!hasXDatasetToScaleAgainst) {
-                    if (xMinimum[curve] < xRawMin) xRawMin = xMinimum[curve];
-                    if (xMaximum[curve] > xRawMax) xRawMax = xMaximum[curve];
-                }
-            }
 
             // Set x to be phase folded now that smoothing is done
             if (plotY[curve] && !showXAxisNormal) {
                 x[curve] = phaseFoldedX[curve];
             }
-        }
+        });
 
         if (!showXAxisNormal) {
             applyXAutoScale(x);
@@ -4368,6 +4351,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     }
 
     private static void applyXAutoScale(double[][] xData) {
+        applyXAutoScale(xData, showXAxisNormal);
+    }
+
+    private static void applyXAutoScale(double[][] xData, boolean rawXData) {
         IntStream.range(0, maxCurves).parallel().forEach(curve -> {
             if (plotY[curve]) {
                 var ss = Arrays.stream(xData[curve]).limit(nn[curve])
@@ -4406,7 +4393,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         if (showVMarker1 || showVMarker2) {
             double v1 = vMarker1Value;
             double v2 = vMarker2Value;
-            if ((xlabel2[firstCurve].contains("J.D.") || xlabel2[firstCurve].contains("JD")) && showXAxisNormal) {
+            if ((xlabel2[firstCurve].contains("J.D.") || xlabel2[firstCurve].contains("JD")) && rawXData) {
                 v1 += (int) xautoscalemin;
                 v2 += (int) xautoscalemin;
             }
@@ -4439,8 +4426,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         dx = (xPlotMax - xPlotMin) / 99.0;
         xJD = 0;
         xOffset = 0.0;
-        if ((xlabel2[firstCurve].contains("J.D.") || xlabel2[firstCurve].contains("JD")) && showXAxisNormal) {
-            if (xExponent != 0) xmultiplierspinner.setValue(0);
+        if ((xlabel2[firstCurve].contains("J.D.") || xlabel2[firstCurve].contains("JD")) && rawXData) {
+            if (xExponent != 0 && showXAxisNormal) xmultiplierspinner.setValue(0);
             xJD = (int) xPlotMin;
             xOffset = xJD;
             if (showVMarker1 && vMarker1Value < 0.0) {
@@ -6510,8 +6497,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         plotOptions = 0;
         xMin = 0.0;
+        xFirstRawMin = Double.NEGATIVE_INFINITY;
+        xFirstRawMax = Double.POSITIVE_INFINITY;
         xRawMin = Double.NEGATIVE_INFINITY;
-        xRawMax = Double.POSITIVE_INFINITY;
         xMax = 0.0;
         xWidth = 0.3;
         yMin = 0.0;
@@ -10182,6 +10170,13 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         unphasedButton.addActionListener(ae -> {
             if (showXAxisNormal) return;
             skipPlotUpdate = true;
+
+            // Update minimum
+            if (unphasedX != null) {
+                applyXAutoScale(unphasedX, true);
+                xRawMin = xOffset;
+            }
+
             if (T0spinner != null && xFirstRawMin >= 0 && xFirstRawMax < Double.POSITIVE_INFINITY) {
                 if (showXAxisAsHoursSinceTc){
                     vMarker2Value /= 24;
@@ -10200,10 +10195,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     dMarker1Value = dMarker1Value * period;
                 } else { //days since Tc mode
                     if (T0 >= xFirstRawMin && T0 <= xFirstRawMax){  //T0 is within the time range of the dataset
-                        xRawMin =(int)xRawMin;
-                        if (showVMarker1 && vMarker1Value < 0.0) {
-                            xRawMin += 1.0;
-                        }
                         vmarker2spinner.setValue(T0 + vMarker2Value - xRawMin);
                         vmarker1spinner.setValue(T0 + vMarker1Value - xRawMin);
                         dmarker4spinner.setValue(T0 + dMarker4Value - xRawMin);
@@ -10211,10 +10202,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         dmarker2spinner.setValue(T0 + dMarker2Value - xRawMin);
                         dmarker1spinner.setValue(T0 + dMarker1Value - xRawMin);
                     } else {  //T0 is outside the time range of the dataset
-                        xRawMin =(int)xRawMin;
-                        if (showVMarker1 && vMarker1Value < 0.0) {
-                            xRawMin += 1.0;
-                        }
                         int epoch = (int)Math.floor(((xRawMin - T0) / period)) + 1;
                         vmarker2spinner.setValue(T0 + vMarker2Value + period * epoch - xRawMin);
                         vmarker1spinner.setValue(T0 + vMarker1Value + period * epoch - xRawMin);

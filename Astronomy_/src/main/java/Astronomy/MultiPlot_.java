@@ -1569,7 +1569,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         ((xModel2[curve].length == 0 && yModel2[curve].length == 0) || usesYModel2[curve]))
                 .forEach(curve -> {
                     int xModel2Len = plotSizeX + 1;
-                    if (/*curve != 2*/false) {
+                    // Create transit model samples
+                    if (/*curve != 2*/false) { // Select transit model sampling strategy for comparison
                         double xModel2Step = ((useDMarker4 && fitMax[curve] < plotMaxX + xOffset ? fitMax[curve] : plotMaxX + xOffset) - (useDMarker1 && fitMin[curve] > plotMinX + xOffset ? fitMin[curve] : plotMinX + xOffset)) / (xModel2Len - 1);
                         xModel2[curve] = new double[xModel2Len];
                         xModel2[curve][0] = useDMarker1 && fitMin[curve] > plotMinX + xOffset ? fitMin[curve] : plotMinX + xOffset;

@@ -223,6 +223,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static double xMin;
     static double xFirstRawMin;
     static double xFirstRawMax;
+    static double xRawMin;
+    static double xRawMax;
     static double xMax;
     static double xWidth;
     static double yMin;
@@ -2809,6 +2811,26 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 x[curve] = phaseFoldedX[curve];
             }
         });
+
+        xRawMin = Double.POSITIVE_INFINITY;
+        xRawMax = Double.NEGATIVE_INFINITY;
+
+        var hasXDatasetToScaleAgainst = IntStream.range(0, ASInclude.length)
+                .filter(i -> ASInclude[i]).findAny().isPresent();
+
+        for (int curve = 0; curve < maxCurves; curve++) {
+            if (plotY[curve]) {
+                if (ASInclude[curve]) {
+                    if (xMinimum[curve] < xRawMin) xRawMin = xMinimum[curve];
+                    if (xMaximum[curve] > xRawMax) xRawMax = xMaximum[curve];
+                }
+
+                if (!hasXDatasetToScaleAgainst) {
+                    if (xMinimum[curve] < xRawMin) xRawMin = xMinimum[curve];
+                    if (xMaximum[curve] > xRawMax) xRawMax = xMaximum[curve];
+                }
+            }
+        }
 
         if (!showXAxisNormal) {
             applyXAutoScale(x);
@@ -6479,8 +6501,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         plotOptions = 0;
         xMin = 0.0;
-        xFirstRawMin = Double.NEGATIVE_INFINITY;
-        xFirstRawMax = Double.POSITIVE_INFINITY;
+        xRawMin = Double.NEGATIVE_INFINITY;
+        xRawMax = Double.POSITIVE_INFINITY;
         xMax = 0.0;
         xWidth = 0.3;
         yMin = 0.0;
@@ -10169,20 +10191,28 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     dMarker1Value = dMarker1Value * period;
                 } else { //days since Tc mode
                     if (T0 >= xFirstRawMin && T0 <= xFirstRawMax){  //T0 is within the time range of the dataset
-                        vmarker2spinner.setValue(T0 + vMarker2Value - xOffset);
-                        vmarker1spinner.setValue(T0 + vMarker1Value - xOffset);
-                        dmarker4spinner.setValue(T0 + dMarker4Value - xOffset);
-                        dmarker3spinner.setValue(T0 + dMarker3Value - xOffset);
-                        dmarker2spinner.setValue(T0 + dMarker2Value - xOffset);
-                        dmarker1spinner.setValue(T0 + dMarker1Value - xOffset);
+                        xRawMin =(int)xRawMin;
+                        if (showVMarker1 && vMarker1Value < 0.0) {
+                            xRawMin += 1.0;
+                        }
+                        vmarker2spinner.setValue(T0 + vMarker2Value - xRawMin);
+                        vmarker1spinner.setValue(T0 + vMarker1Value - xRawMin);
+                        dmarker4spinner.setValue(T0 + dMarker4Value - xRawMin);
+                        dmarker3spinner.setValue(T0 + dMarker3Value - xRawMin);
+                        dmarker2spinner.setValue(T0 + dMarker2Value - xRawMin);
+                        dmarker1spinner.setValue(T0 + dMarker1Value - xRawMin);
                     } else {  //T0 is outside the time range of the dataset
-                        int epoch = (int) (((xFirstRawMin - T0) / period) + 1);
-                        vmarker2spinner.setValue(T0 + vMarker2Value + period * epoch - xOffset);
-                        vmarker1spinner.setValue(T0 + vMarker1Value + period * epoch - xOffset);
-                        dmarker4spinner.setValue(T0 + dMarker4Value + period * epoch - xOffset);
-                        dmarker3spinner.setValue(T0 + dMarker3Value + period * epoch - xOffset);
-                        dmarker2spinner.setValue(T0 + dMarker2Value + period * epoch - xOffset);
-                        dmarker1spinner.setValue(T0 + dMarker1Value + period * epoch - xOffset);
+                        xRawMin =(int)xRawMin;
+                        if (showVMarker1 && vMarker1Value < 0.0) {
+                            xRawMin += 1.0;
+                        }
+                        int epoch = (int) (((xRawMin - T0) / period) + 1);
+                        vmarker2spinner.setValue(T0 + vMarker2Value + period * epoch - xRawMin);
+                        vmarker1spinner.setValue(T0 + vMarker1Value + period * epoch - xRawMin);
+                        dmarker4spinner.setValue(T0 + dMarker4Value + period * epoch - xRawMin);
+                        dmarker3spinner.setValue(T0 + dMarker3Value + period * epoch - xRawMin);
+                        dmarker2spinner.setValue(T0 + dMarker2Value + period * epoch - xRawMin);
+                        dmarker1spinner.setValue(T0 + dMarker1Value + period * epoch - xRawMin);
                     }
                 }
             }

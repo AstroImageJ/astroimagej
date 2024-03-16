@@ -28,6 +28,7 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
@@ -341,10 +342,13 @@ public class FITS_Writer implements PlugIn {
 			BinaryTable table = new BinaryTable();
 
 			if (resultsTable.hasRowLabels()) {
-				table.addStringColumn(resultsTable.getColumnAsStrings("Label"));
+				// We cannot use strings directly as funpack does not allow compression for them
+				// and cannot handle NOCOMPRESS columns due to being broken
+				//table.addStringColumn(resultsTable.getColumnAsStrings("Label"));
+                table.addColumn(Arrays.stream(resultsTable.getColumnAsStrings("Label"))
+                        .map(s -> s.getBytes(StandardCharsets.UTF_8)).toArray(byte[][]::new));
 			}
 
-			//resultsTable.getLabel()
 			for (int col = 0; col <= resultsTable.getLastColumn(); col++) {
 				table.addColumn(resultsTable.getColumnAsDoubles(col));
 			}
@@ -360,15 +364,12 @@ public class FITS_Writer implements PlugIn {
 			}
 			var iStart = resultsTable.hasRowLabels() ? 1 : 0;
 			for (int rc = 0; rc <= resultsTable.getLastColumn(); rc++) {
-				// Heading must be in comment as they commonly contain illegal characters
-				//todo store headings seperately, comments may be ommitted or truncated
-				//todo this seems fine to not normalize, fv can handle, test python
+				// Heading must be in comment as they commonly contain illegal characters, but this is just a warning so...
 				hdu.setColumnName(rc + iStart, /*normalizeColName(resultsTable.getColumnHeading(rc))*/resultsTable.getColumnHeading(rc), resultsTable.getColumnHeading(rc));
 			}
 
 			if (compressionModes.contains(FPACK)) {
-				var compressedHdu = CompressedTableHDU.fromBinaryTableHDU(hdu, /*4*//*-1*/0/*, Compression.ZCMPTYPE_GZIP_2*/);
-				//FitsCompressionUtil.setCompression(compressedHdu, type.isFloatingPoint());
+				var compressedHdu = CompressedTableHDU.fromBinaryTableHDU(hdu, -1);
 				compressedHdu.compress();
 				hdu = compressedHdu;
 			}
@@ -398,10 +399,10 @@ public class FITS_Writer implements PlugIn {
 				hdu.setColumnName(0, "plotcfg", "AIJ plotcfg, Java properties format");
 
 				if (compressionModes.contains(FPACK)) {
-					var compressedHdu = CompressedTableHDU.fromBinaryTableHDU(hdu, /*4*/-1, Compression.ZCMPTYPE_GZIP_2);
-					//FitsCompressionUtil.setCompression(compressedHdu, type.isFloatingPoint());
-					//compressedHdu.compress();
-					//hdu = compressedHdu;
+					// GZIP_1 must be used due to fpack/funpack issues
+					var compressedHdu = CompressedTableHDU.fromBinaryTableHDU(hdu, -1, Compression.ZCMPTYPE_GZIP_1);
+					compressedHdu.compress();
+					hdu = compressedHdu;
 				}
 
 				hdu.write(out);

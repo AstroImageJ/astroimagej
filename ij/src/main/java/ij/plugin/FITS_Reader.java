@@ -539,6 +539,9 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 				if (lc instanceof String[] labels) {
 					//todo bulk set methods
 					IntStream.range(0, labels.length).forEachOrdered(i -> table.setLabel(labels[i], i));
+				} else if (lc instanceof byte[][] bytes) {
+					IntStream.range(0, bytes.length)
+							.forEachOrdered(i -> table.setLabel(new String(bytes[i], StandardCharsets.UTF_8), i));
 				}
 			}
 

@@ -31,12 +31,17 @@ package nom.tam.fits.test;
  * #L%
  */
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import nom.tam.fits.*;
+import nom.tam.fits.header.Standard;
+import nom.tam.fits.header.hierarch.BlanksDotHierarchKeyFormatter;
+import nom.tam.util.AsciiFuncs;
+import nom.tam.util.ComplexValue;
+import nom.tam.util.Cursor;
+import nom.tam.util.FitsInputStream;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.EOFException;
@@ -44,24 +49,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
-import nom.tam.fits.FitsFactory;
-import nom.tam.fits.Header;
-import nom.tam.fits.HeaderCard;
-import nom.tam.fits.HeaderCardException;
-import nom.tam.fits.LongStringsNotEnabledException;
-import nom.tam.fits.LongValueException;
-import nom.tam.fits.TruncatedFileException;
-import nom.tam.fits.header.Standard;
-import nom.tam.fits.header.hierarch.BlanksDotHierarchKeyFormatter;
-import nom.tam.util.AsciiFuncs;
-import nom.tam.util.ComplexValue;
-import nom.tam.util.Cursor;
-import nom.tam.util.FitsInputStream;
+import static org.junit.Assert.*;
 
 public class HeaderCardTest {
 
@@ -69,11 +57,13 @@ public class HeaderCardTest {
     public void before() {
         FitsFactory.setDefaults();
         HeaderCard.setValueCheckingPolicy(HeaderCard.DEFAULT_VALUE_CHECK_POLICY);
+        Header.setCommentAlignPosition(Header.DEFAULT_COMMENT_ALIGN);
     }
 
     @After
     public void after() {
         FitsFactory.setDefaults();
+        HeaderCard.setValueCheckingPolicy(HeaderCard.DEFAULT_VALUE_CHECK_POLICY);
         Header.setCommentAlignPosition(Header.DEFAULT_COMMENT_ALIGN);
     }
 

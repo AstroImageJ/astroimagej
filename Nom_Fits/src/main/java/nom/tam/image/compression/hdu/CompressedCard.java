@@ -1,5 +1,7 @@
 package nom.tam.image.compression.hdu;
 
+import java.util.Map;
+
 import nom.tam.fits.HeaderCard;
 import nom.tam.fits.HeaderCardException;
 import nom.tam.fits.header.Compression;
@@ -8,12 +10,72 @@ import nom.tam.fits.header.IFitsHeader;
 import nom.tam.fits.header.IFitsHeader.VALUE;
 import nom.tam.util.Cursor;
 
-import java.util.Map;
+/*
+ * #%L
+ * nom.tam FITS library
+ * %%
+ * Copyright (C) 1996 - 2024 nom-tam-fits
+ * %%
+ * This is free and unencumbered software released into the public domain.
+ *
+ * Anyone is free to copy, modify, publish, use, compile, sell, or
+ * distribute this software, either in source code form or as a compiled
+ * binary, for any purpose, commercial or non-commercial, and by any
+ * means.
+ *
+ * In jurisdictions that recognize copyright laws, the author or authors
+ * of this software dedicate any and all copyright interest in the
+ * software to the public domain. We make this dedication for the benefit
+ * of the public at large and to the detriment of our heirs and
+ * successors. We intend this dedication to be an overt act of
+ * relinquishment in perpetuity of all present and future rights to this
+ * software under copyright law.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+ * OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ * ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ * OTHER DEALINGS IN THE SOFTWARE.
+ * #L%
+ */
 
 import static nom.tam.fits.header.Checksum.CHECKSUM;
 import static nom.tam.fits.header.Checksum.DATASUM;
-import static nom.tam.fits.header.Compression.*;
-import static nom.tam.fits.header.Standard.*;
+import static nom.tam.fits.header.Compression.ZBITPIX;
+import static nom.tam.fits.header.Compression.ZBLANK;
+import static nom.tam.fits.header.Compression.ZBLOCKED;
+import static nom.tam.fits.header.Compression.ZCMPTYPE;
+import static nom.tam.fits.header.Compression.ZCTYPn;
+import static nom.tam.fits.header.Compression.ZDATASUM;
+import static nom.tam.fits.header.Compression.ZDITHER0;
+import static nom.tam.fits.header.Compression.ZEXTEND;
+import static nom.tam.fits.header.Compression.ZFORMn;
+import static nom.tam.fits.header.Compression.ZGCOUNT;
+import static nom.tam.fits.header.Compression.ZHECKSUM;
+import static nom.tam.fits.header.Compression.ZIMAGE;
+import static nom.tam.fits.header.Compression.ZNAMEn;
+import static nom.tam.fits.header.Compression.ZNAXIS;
+import static nom.tam.fits.header.Compression.ZNAXISn;
+import static nom.tam.fits.header.Compression.ZPCOUNT;
+import static nom.tam.fits.header.Compression.ZQUANTIZ;
+import static nom.tam.fits.header.Compression.ZSIMPLE;
+import static nom.tam.fits.header.Compression.ZTABLE;
+import static nom.tam.fits.header.Compression.ZTENSION;
+import static nom.tam.fits.header.Compression.ZTHEAP;
+import static nom.tam.fits.header.Compression.ZTILELEN;
+import static nom.tam.fits.header.Compression.ZTILEn;
+import static nom.tam.fits.header.Compression.ZVALn;
+import static nom.tam.fits.header.Standard.BITPIX;
+import static nom.tam.fits.header.Standard.EXTNAME;
+import static nom.tam.fits.header.Standard.GCOUNT;
+import static nom.tam.fits.header.Standard.NAXIS;
+import static nom.tam.fits.header.Standard.NAXISn;
+import static nom.tam.fits.header.Standard.PCOUNT;
+import static nom.tam.fits.header.Standard.TFORMn;
+import static nom.tam.fits.header.Standard.THEAP;
+import static nom.tam.fits.header.Standard.XTENSION;
 
 /**
  * Mapping of header keywords between compressed and uncompressed representation. For example, the keyword NAXIS1 in the
@@ -65,16 +127,7 @@ enum CompressedCard {
     MAP_ZTILELEN(ZTILELEN), MAP_ZCTYPn(ZCTYPn), MAP_ZBLOCKED(ZBLOCKED), MAP_ZCMPTYPE(ZCMPTYPE), //
     MAP_ZDATASUM(ZDATASUM), MAP_ZDITHER0(ZDITHER0), MAP_ZEXTEND(ZEXTEND), MAP_ZGCOUNT(ZGCOUNT), //
     MAP_ZHECKSUM(ZHECKSUM), MAP_ZIMAGE(ZIMAGE), MAP_ZTABLE(ZTABLE), MAP_ZNAMEn(ZNAMEn), //
-    MAP_ZNAXIS(ZNAXIS), MAP_THEAP(THEAP) {
-
-        @Override
-        protected void backupCard(HeaderCard card, Cursor<String, HeaderCard> headerIterator) throws HeaderCardException {
-        }
-
-        @Override
-        protected void restoreCard(HeaderCard card, Cursor<String, HeaderCard> headerIterator) throws HeaderCardException {
-        }
-    },
+    MAP_ZNAXIS(ZNAXIS), MAP_THEAP(THEAP),
 
     MAP_ZNAXISn(ZNAXISn) {
 
@@ -91,8 +144,9 @@ enum CompressedCard {
         }
 
     },
-    MAP_ZPCOUNT(ZPCOUNT), MAP_ZQUANTIZ(ZQUANTIZ), MAP_ZSIMPLE(ZSIMPLE), MAP_ZTENSION(ZTENSION), MAP_ZTILEn(
-            ZTILEn), MAP_ZVALn(ZVALn);
+
+    MAP_ZPCOUNT(ZPCOUNT), MAP_ZTHEAP(ZTHEAP), MAP_ZQUANTIZ(ZQUANTIZ), MAP_ZSIMPLE(ZSIMPLE), MAP_ZTENSION(
+            ZTENSION), MAP_ZTILEn(ZTILEn), MAP_ZVALn(ZVALn);
 
     private final IFitsHeader compressedHeaderKey;
 

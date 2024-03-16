@@ -31,23 +31,24 @@ package nom.tam.fits.test;
  * #L%
  */
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
-import java.math.BigDecimal;
-
-import org.junit.Test;
-
 import nom.tam.fits.HeaderCard;
 import nom.tam.fits.header.IFitsHeader;
 import nom.tam.fits.header.IFitsHeader.VALUE;
 import nom.tam.fits.header.Standard;
 import nom.tam.util.ComplexValue;
+import org.junit.After;
+import org.junit.Test;
+
+import java.math.BigDecimal;
+
+import static org.junit.Assert.*;
 
 public class HeaderCardStaticTest {
+
+    @After
+    public void after() {
+        HeaderCard.setValueCheckingPolicy(HeaderCard.DEFAULT_VALUE_CHECK_POLICY);
+    }
 
     @Test
     public void testCreateCommentCard() throws Exception {
@@ -222,6 +223,7 @@ public class HeaderCardStaticTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testCreateWrongValueTypeFitsCard1() throws Exception {
+        HeaderCard.setValueCheckingPolicy(HeaderCard.DEFAULT_VALUE_CHECK_POLICY);
         HeaderCard hc = HeaderCard.create(new CustomIFitsHeader("TEST", null, VALUE.STRING), 1);
         assertNotNull(hc);
     }

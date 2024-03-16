@@ -261,6 +261,7 @@ public abstract class Data implements FitsElement {
         } catch (IOException e) {
             throw new FitsException("error reading deferred data: " + e, e);
         }
+
     }
 
     /**

@@ -1,16 +1,16 @@
 package nom.tam.fits.compression.algorithm.rice;
 
-import java.nio.Buffer;
-import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
-import java.nio.ShortBuffer;
-import java.util.logging.Logger;
-
 import nom.tam.fits.compression.algorithm.api.ICompressor;
 import nom.tam.fits.compression.algorithm.quant.QuantizeProcessor.DoubleQuantCompressor;
 import nom.tam.fits.compression.algorithm.quant.QuantizeProcessor.FloatQuantCompressor;
 import nom.tam.util.FitsIO;
 import nom.tam.util.type.ElementType;
+
+import java.nio.Buffer;
+import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
+import java.nio.ShortBuffer;
+import java.util.logging.Logger;
 
 /*
  * #%L
@@ -63,8 +63,19 @@ public abstract class RiceCompressor<T extends Buffer> implements ICompressor<T>
 
         private ByteBuffer pixelBuffer;
 
+        /**
+         * Rice compression of byte streams with the default block size of 32.
+         * 
+         * @since  1.19.1
+         * 
+         * @author Attila Kovacs
+         */
+        public ByteRiceCompressor() {
+            this(new RiceCompressOption());
+        }
+
         public ByteRiceCompressor(RiceCompressOption option) {
-            super(option.setDefaultBytePix(ElementType.BYTE.size()));
+            super(option);
         }
 
         @Override
@@ -92,14 +103,16 @@ public abstract class RiceCompressor<T extends Buffer> implements ICompressor<T>
     }
 
     public static class DoubleRiceCompressor extends DoubleQuantCompressor {
-        public DoubleRiceCompressor(RiceQuantizeCompressOption options) {
-            super(options, new IntRiceCompressor(options.getRiceCompressOption()));
+
+        public DoubleRiceCompressor(RiceQuantizeCompressOption options) throws ClassCastException {
+            super(options, new IntRiceCompressor((RiceCompressOption) options.getCompressOption()));
         }
     }
 
     public static class FloatRiceCompressor extends FloatQuantCompressor {
-        public FloatRiceCompressor(RiceQuantizeCompressOption options) {
-            super(options, new IntRiceCompressor(options.getRiceCompressOption()));
+
+        public FloatRiceCompressor(RiceQuantizeCompressOption options) throws ClassCastException {
+            super(options, new IntRiceCompressor((RiceCompressOption) options.getCompressOption()));
         }
     }
 
@@ -107,8 +120,19 @@ public abstract class RiceCompressor<T extends Buffer> implements ICompressor<T>
 
         private IntBuffer pixelBuffer;
 
+        /**
+         * Rice compression of 32-bit integer streams with the default block size of 32.
+         * 
+         * @since  1.19.1
+         * 
+         * @author Attila Kovacs
+         */
+        public IntRiceCompressor() {
+            this(new RiceCompressOption());
+        }
+
         public IntRiceCompressor(RiceCompressOption option) {
-            super(option.setDefaultBytePix(ElementType.INT.size()));
+            super(option);
         }
 
         @Override
@@ -139,8 +163,19 @@ public abstract class RiceCompressor<T extends Buffer> implements ICompressor<T>
 
         private ShortBuffer pixelBuffer;
 
+        /**
+         * Rice compression of 16-bit integer streams with the default block size of 32.
+         * 
+         * @since  1.19.1
+         * 
+         * @author Attila Kovacs
+         */
+        public ShortRiceCompressor() {
+            this(new RiceCompressOption());
+        }
+
         public ShortRiceCompressor(RiceCompressOption option) {
-            super(option.setDefaultBytePix(ElementType.SHORT.size()));
+            super(option);
         }
 
         @Override

@@ -1,11 +1,6 @@
 package nom.tam.fits.header;
 
-import nom.tam.fits.AsciiTable;
-import nom.tam.fits.BinaryTable;
-import nom.tam.fits.ImageData;
-import nom.tam.fits.RandomGroupsData;
-import nom.tam.fits.TableData;
-import nom.tam.fits.UndefinedData;
+import nom.tam.fits.*;
 
 /*
  * #%L
@@ -575,7 +570,7 @@ public enum Standard implements IFitsHeader {
      * for an extension key and must not appear in the primary key. For an extension that is not a standard extension,
      * the type name must not be the same as that of a standard extension.
      */
-    XTENSION(SOURCE.MANDATORY, HDU.EXTENSION, VALUE.STRING, "marks beginning of new HDU",
+    XTENSION(SOURCE.MANDATORY, HDU.EXTENSION, VALUE.STRING, "HDU extension type",
             replaceable("imagedata:xtension", ImageData.class, "image HDU"), //
             replaceable("binarytable:xtension", BinaryTable.class, "binary table HDU"), //
             replaceable("asciitable:xtension", AsciiTable.class, "ASCII table HDU"), //

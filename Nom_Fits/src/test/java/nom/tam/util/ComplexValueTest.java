@@ -31,18 +31,23 @@ package nom.tam.util;
  * #L%
  */
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
+import java.util.Random;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
 import nom.tam.fits.FitsFactory;
 import nom.tam.fits.HeaderCard;
 import nom.tam.fits.HeaderCardException;
 import nom.tam.fits.LongValueException;
 import nom.tam.fits.header.hierarch.Hierarch;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.util.Random;
-
-import static org.junit.Assert.*;
 
 public class ComplexValueTest {
 

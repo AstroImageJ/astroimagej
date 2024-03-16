@@ -31,9 +31,9 @@ package nom.tam.fits.compression.provider.param.base;
  * #L%
  */
 
-import nom.tam.fits.compression.provider.param.api.ICompressColumnParameter;
-
 import java.lang.reflect.Array;
+
+import nom.tam.fits.compression.provider.param.api.ICompressColumnParameter;
 
 /**
  * <p>

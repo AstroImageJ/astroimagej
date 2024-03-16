@@ -388,6 +388,7 @@ public class ColumnTable<T> implements DataTable, Cloneable {
         for (int i = 0; i < row.length; i++) {
             Column<?> c = columns.get(i);
             c.ensureSize(capacity);
+            c.checkEntry(row[i]);
             c.setArrayElement(nrow, row[i]);
         }
         nrow++;
@@ -915,6 +916,7 @@ public class ColumnTable<T> implements DataTable, Cloneable {
 
         for (int i = 0; i < columns.size(); i++) {
             Column<?> c = columns.get(i);
+            c.checkEntry(r[i]);
             c.setArrayElement(row, r[i]);
         }
 

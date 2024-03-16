@@ -204,7 +204,7 @@ public class BinaryTableHDU extends TableHDU<BinaryTable> {
         stream.println("      Data Information:");
         stream.println("          Number of rows=" + myData.getNRows());
         stream.println("          Number of columns=" + myData.getNCols());
-        stream.println("          Heap size is: " + myData.getHeapSize() + " bytes");
+        stream.println("          Heap size is: " + myData.getParameterSize() + " bytes");
 
         Object[] cols = myData.getFlatColumns();
         for (int i = 0; i < cols.length; i++) {
@@ -305,20 +305,7 @@ public class BinaryTableHDU extends TableHDU<BinaryTable> {
     // Need to tell header about the Heap before writing.
     @Override
     public void write(ArrayDataOutput out) throws FitsException {
-
-        int oldSize = myHeader.getIntValue(PCOUNT);
-        if (oldSize != myData.getHeapSize()) {
-            myHeader.addValue(PCOUNT, myData.getHeapSize());
-        }
-
-        if (myHeader.getIntValue(PCOUNT) == 0) {
-            myHeader.deleteKey(THEAP);
-        } else {
-            myHeader.getIntValue(TFIELDS);
-            int offset = myHeader.getIntValue(NAXIS1) * myHeader.getIntValue(NAXIS2) + myData.getHeapOffset();
-            myHeader.addValue(THEAP, offset);
-        }
-
+        myData.fillHeader(myHeader, false);
         super.write(out);
     }
 }

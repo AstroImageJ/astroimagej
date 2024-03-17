@@ -386,6 +386,35 @@ public class ResultsTable implements Cloneable {
 			return data;
 		}
 	}
+
+	/** Returns a copy of the given column as a double array,
+	 or null if the column is empty. */
+	@AstroImageJ(reason = "Remove needless loop", modified = false)
+	public double[] bulkGetColumnAsDoubles(int column) {
+		if ((column<0) || (column>=maxColumns))
+			throw new IllegalArgumentException("Index out of range: "+column);
+		if (columns[column]==null)
+			return null;
+		else {
+			return Arrays.copyOf(columns[column], counter);
+		}
+	}
+
+	/** Returns a copy of the given column as a String array,
+	 or null if the column is not found. */
+	@AstroImageJ(reason = "Remove needless loop", modified = false)
+	public String[] bulkGetColumnAsStrings(String column) {
+		if ("Label".equals(column) && rowLabels!=null) {
+			return Arrays.copyOf(rowLabels, counter);
+		}
+		String[] array = new String[size()];
+		int col = getColumnIndex(column);
+		if (col==COLUMN_NOT_FOUND || columns[col]==null)
+			throw new IllegalArgumentException("\""+column+"\" column not found");
+		for (int i=0; i<size(); i++)
+			array[i] = getStringValue(col, i);
+		return array;
+	}
 	
 	/** Returns the contents of this ResultsTable as a FloatProcessor. */
 	public ImageProcessor getTableAsImage() {

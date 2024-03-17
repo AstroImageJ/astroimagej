@@ -344,13 +344,14 @@ public class FITS_Writer implements PlugIn {
 			if (resultsTable.hasRowLabels()) {
 				// We cannot use strings directly as funpack does not allow compression for them
 				// and cannot handle NOCOMPRESS columns due to being broken
+				//todo only byte[] encode Labels when fpacking?
 				//table.addStringColumn(resultsTable.getColumnAsStrings("Label"));
-                table.addColumn(Arrays.stream(resultsTable.getColumnAsStrings("Label"))
+                table.addColumn(Arrays.stream(resultsTable.bulkGetColumnAsStrings("Label"))
                         .map(s -> s.getBytes(StandardCharsets.UTF_8)).toArray(byte[][]::new));
 			}
 
 			for (int col = 0; col <= resultsTable.getLastColumn(); col++) {
-				table.addColumn(resultsTable.getColumnAsDoubles(col));
+				table.addColumn(resultsTable.bulkGetColumnAsDoubles(col));
 			}
 			table.defragment();
 

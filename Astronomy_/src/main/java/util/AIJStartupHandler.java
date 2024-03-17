@@ -55,7 +55,7 @@ public class AIJStartupHandler implements PlugIn {
                 return false;
             },
             p -> {
-                var table = new MeasurementTable(p.getFileName() + " Measurements");
+                var table = new MeasurementTable(p.getFileName().toString());
                 table.setFilePath(p.toString());
                 if (FITS_Reader.handleTable(p, table) != null) {
                     table.show();

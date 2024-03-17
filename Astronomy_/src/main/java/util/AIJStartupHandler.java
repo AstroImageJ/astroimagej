@@ -43,8 +43,7 @@ public class AIJStartupHandler implements PlugIn {
             }, true, Prefs.defaultResultsExtension());
     private static final AssociationMapper multiplotFitsTableHandler =
             new AssociationMapper(p -> {
-                // todo we don't allow compressed table currently as they have issues
-                if (FitsExtensionUtil.isFitsFile(p.toString(), false)) {
+                if (FitsExtensionUtil.isFitsFile(p.toString())) {
                     try (var fits = new Fits(new FitsFile(p.toFile()))) {
                         fits.read(); // Read the headers in
                         return fits.getPrimaryHeader().getBooleanValue("AIJ_TBL", false);

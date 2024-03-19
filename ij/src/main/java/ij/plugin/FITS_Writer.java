@@ -381,27 +381,47 @@ public class FITS_Writer implements PlugIn {
 			if (includePrefs) {
 				table = new BinaryTable();
 
-				Properties prefs = new Properties();
+				Properties plotcfg = new Properties();
+				Properties apertures = new Properties();
 				Enumeration e = Prefs.ijPrefs.keys();
 				while (e.hasMoreElements()) {
 					String key = (String) e.nextElement();
-					if (key.indexOf(".plot.") == 0) prefs.put(key, Prefs.ijPrefs.getProperty(key));
+					if (key.indexOf(".plot.") == 0) {
+						plotcfg.put(key, Prefs.ijPrefs.getProperty(key));
+					}
+					if (key.startsWith(".aperture.radius") || key.startsWith(".aperture.rback1") ||
+							key.startsWith(".aperture.rback2") || key.startsWith(".aperture.removebackstars") ||
+							key.startsWith(".aperture.backplane") || key.startsWith(".multiaperture.usevarsizeap") ||
+							key.startsWith(".multiaperture.apfwhmfactor") || key.startsWith(".multiaperture.xapertures") ||
+							key.startsWith(".multiaperture.raapertures") || key.startsWith(".multiaperture.decapertures") ||
+							key.startsWith(".multiaperture.yapertures") || key.startsWith(".multiaperture.isrefstar") ||
+							key.startsWith(".multiaperture.isalignstar") || key.startsWith(".multiaperture.centroidstar") ||
+							key.startsWith(".multiaperture.naperturesmax") || key.startsWith(".multiaperture.absmagapertures")) {
+						apertures.put(key, Prefs.ijPrefs.getProperty(key));
+					}
 				}
 
-				// Convert plotcfg to String
+				// Store plotcfg as UTF-8 encoded byte array
 				var baos = new ByteArrayOutputStream();
-				prefs.store(new PrintStream(baos, true, StandardCharsets.UTF_8), null);
-
-				// width requires that it can't be one string, trying byte array...
+				plotcfg.store(new PrintStream(baos, true, StandardCharsets.UTF_8), null);
 				table.addColumn(baos.toByteArray());
+
+
+				// Store apertures as UTF-8 encoded byte array
+				baos = new ByteArrayOutputStream();
+				plotcfg.store(new PrintStream(baos, true, StandardCharsets.UTF_8), null);
+				table.addColumn(baos.toByteArray());
+
 				table.defragment();
 
 				hdu = table.toHDU();
+				hdu.getHeader().insertComment("UTF-8 encoded byte arrays in the format of Java properties");
 				hdu.setColumnName(0, "plotcfg", "AIJ plotcfg, Java properties format");
+				hdu.setColumnName(1, "apertures", "AIJ apertures");
 
 				if (compressionModes.contains(FPACK)) {
 					// GZIP_1 must be used due to fpack/funpack issues
-					var compressedHdu = CompressedTableHDU.fromBinaryTableHDU(hdu, -1, Compression.ZCMPTYPE_GZIP_1);
+					var compressedHdu = CompressedTableHDU.fromBinaryTableHDU(hdu, -1, Compression.ZCMPTYPE_GZIP_1, Compression.ZCMPTYPE_GZIP_1);
 					compressedHdu.compress();
 					hdu = compressedHdu;
 				}

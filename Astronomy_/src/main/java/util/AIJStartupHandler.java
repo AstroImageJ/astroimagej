@@ -14,6 +14,7 @@ import ij.plugin.PlugIn;
 import nom.tam.fits.Fits;
 import nom.tam.util.FitsFile;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -57,8 +58,14 @@ public class AIJStartupHandler implements PlugIn {
             p -> {
                 var table = new MeasurementTable(p.getFileName().toString());
                 table.setFilePath(p.toString());
-                if (FITS_Reader.handleTable(p, table) != null) {
+                var tableRead = FITS_Reader.handleTable(p, table);
+                if (tableRead != null) {
                     table.show();
+
+                    var asw = IJU.getBestOpenAstroStackWindow();
+                    if (asw != null && tableRead.apertures() != null) {
+                        asw.openApertures(new ByteArrayInputStream(tableRead.apertures()));
+                    }
 
                     if (!MultiPlot_.isRunning()) {
                         //IJ.runPlugIn("Astronomy.MultiPlot_", "");

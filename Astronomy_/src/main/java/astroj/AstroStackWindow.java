@@ -4822,9 +4822,18 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
     }
 
     public void openApertures(String apsPath) {
-        try {
+        if (apsPath != null && !apsPath.trim().isEmpty()) {
+            try (var io = new FileInputStream(apsPath)) {
+                openApertures(io);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
 
-            if (apsPath != null && !apsPath.trim().equals("")) {
+    public void openApertures(InputStream stream) {
+        try {
+            if (stream != null) {
                 Prefs.set("multiaperture.xapertures", "");
                 Prefs.set("multiaperture.yapertures", "");
                 Prefs.set("multiaperture.raapertures", "");
@@ -4840,7 +4849,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                 Prefs.set("multiaperture.import.isrefstar", "");
                 Prefs.set("multiaperture.import.isalignstar", "");
                 Prefs.set("multiaperture.import.centroidstar", "");
-                InputStream is = new BufferedInputStream(new FileInputStream(apsPath));
+                InputStream is = new BufferedInputStream(stream);
                 Prefs.ijPrefs.load(is);
                 is.close();
             }
@@ -4876,7 +4885,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             boolean[] isRef;
             boolean[] isAlign;
             boolean[] isCentroid;
-            if ((xaps.length == 1 && (xaps[0].equals("") || xaps[0].equals("FITS"))) && (yaps.length == 1 && (yaps[0].equals("") || yaps[0].equals("FITS")))) {
+            if ((xaps.length == 1 && (xaps[0].isEmpty() || xaps[0].equals("FITS"))) && (yaps.length == 1 && (yaps[0].isEmpty() || yaps[0].equals("FITS")))) {
                 IJ.beep();
                 IJ.showMessage("No apertures stored for display.");
                 return;

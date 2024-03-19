@@ -481,7 +481,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		return true;
 	}
 
-	public static ResultsTable handleTable(Path path, ResultsTable table) {
+	public static TableRead handleTable(Path path, ResultsTable table) {
 		try (var fits = new Fits(new FitsFile(path.toFile()))) {
 			var hdus = fits.read();
 			if (hdus.length > 1) {
@@ -511,10 +511,10 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			mt = new ResultsTable(tableHDU.getNRows());
 		}
 
-		return fitsTable2MeasurementsTable(mt, hdus, tableHDU);
+		return fitsTable2MeasurementsTable(mt, hdus, tableHDU).table;
 	}
 
-	private static ResultsTable fitsTable2MeasurementsTable(ResultsTable table, BasicHDU<?>[] hdus, TableHDU<?> tableHDU) throws FitsException {
+	private static TableRead fitsTable2MeasurementsTable(ResultsTable table, BasicHDU<?>[] hdus, TableHDU<?> tableHDU) throws FitsException {
         if (tableHDU instanceof CompressedTableHDU compressedTableHDU) {
             tableHDU = compressedTableHDU.asBinaryTableHDU();
         }
@@ -547,6 +547,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 
 			// Load plotcfg
 			byte[] plotcfg = null;
+			byte[] apertures = null;
 			for (BasicHDU<?> basicHDU : hdus) {
 				if (basicHDU == tableHDU) continue;
 				if (basicHDU instanceof TableHDU<?> t) {
@@ -558,6 +559,10 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 					if (pltcfgCol >= 0 && t.getColumn(pltcfgCol) instanceof byte[] bytes) {
 						plotcfg = bytes;
 					}
+					var aperturesCol = t.findColumn("apertures");
+					if (aperturesCol >= 0 && t.getColumn(aperturesCol) instanceof byte[] bytes) {
+						apertures = bytes;
+					}
 				}
 			}
 
@@ -568,7 +573,10 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
                     e.printStackTrace();
 					IJ.error("Failed to read plotcfg");
                 }
+			}
 
+			if (apertures != null) {
+				return new TableRead(table, apertures);
 			}
 		} else {
 			for (int c = 0; c < tableHDU.getNCols(); c++) {
@@ -578,7 +586,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			}
 		}
 
-		return table;
+		return new TableRead(table, null);
 	}
 
 	//todo check listed column type, skip image columns, or open them as stacks?
@@ -1059,6 +1067,8 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			return new FitsRead(true);
 		}
 	}
+
+	public record TableRead(ResultsTable table, byte[] apertures) {}
 
 	/**
 	 * Used to pass out the zipFile from the opening so that it may be closed.

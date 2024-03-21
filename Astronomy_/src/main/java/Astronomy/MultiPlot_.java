@@ -10522,14 +10522,16 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 dMarker3Value =  duration / 2.0 / netPeriod;
             }
 
-            if (vmarker1spinner != null && !showXAxisNormal) vmarker1spinner.setValue(vMarker1Value);
-            if (vmarker1spinner != null && !showXAxisNormal) vmarker2spinner.setValue(vMarker2Value);
-            if (dmarker2spinner != null && !showXAxisNormal) dmarker2spinner.setValue(dMarker2Value);
-            if (dmarker3spinner != null && !showXAxisNormal) dmarker3spinner.setValue(dMarker3Value);
             Prefs.set("plot.vMarker1Value", vMarker1Value);
             Prefs.set("plot.vMarker2Value", vMarker2Value);
             Prefs.set("plot.dMarker2Value", dMarker2Value);
             Prefs.set("plot.dMarker3Value", dMarker3Value);
+
+            if (vmarker1spinner != null && !showXAxisNormal) vmarker1spinner.setValue(vMarker1Value);
+            if (vmarker2spinner != null && !showXAxisNormal) vmarker2spinner.setValue(vMarker2Value);
+            if (dmarker2spinner != null && !showXAxisNormal) dmarker2spinner.setValue(dMarker2Value);
+            if (dmarker3spinner != null && !showXAxisNormal) dmarker3spinner.setValue(dMarker3Value);
+
             for (int i = 0; i < maxCurves; i++) {
                 KeplerSplineControl.getInstance(i).settings.fixedKnotDensity.set(4*(duration/24D));
             }

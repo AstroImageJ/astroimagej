@@ -10173,6 +10173,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
             // Update minimum
             if (unphasedX != null) {
+                autoScaleX = true;
+                useFirstX = false;
                 applyXAutoScale(unphasedX, true);
                 xRawMin = xOffset;
             }

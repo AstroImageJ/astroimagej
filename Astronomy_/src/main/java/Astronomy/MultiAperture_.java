@@ -2313,6 +2313,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             if (hasWCS && ra > -1000000 && dec > -1000000) {
                 gd.addCheckbox("Open ref star in SIMBAD", openSimbadForAbsMag);
                 if (openSimbadForAbsMag) IJU.showInSIMBAD(ra, dec, Prefs.get("Astronomy_Tool.simbadSearchRadius", 10));
+            } else {
+                gd.addMessage("Plate solution required for SIMBAD lookup");
             }
             gd.showDialog();
 

@@ -185,6 +185,7 @@ public class DragAndDrop implements PlugIn, DropTargetListener, Runnable {
 	}
 
 	/** Open a file. If it's a directory, ask to open all images as a sequence in a stack or individually. */
+	@AstroImageJ(reason = "Skip Folder Opener dialog in some cases", modified = true)
 	public void openFile(File f) {
 		if (IJ.debugMode) IJ.log("DragAndDrop.openFile: "+f);
 		try {
@@ -207,7 +208,7 @@ public class DragAndDrop implements PlugIn, DropTargetListener, Runnable {
 							new ImagePlus(f.getName(),ip).show();
 					} else {
 						Recorder.recordOpen(path);
-						(new Opener()).openAndAddToRecent(path);
+						(new Opener(skipUi)).openAndAddToRecent(path);
 					}
 					OpenDialog.setLastDirectory(f.getParent()+File.separator);
 					OpenDialog.setLastName(f.getName());

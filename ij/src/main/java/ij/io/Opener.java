@@ -60,6 +60,8 @@ public class Opener {
 	private static boolean bioformats;
 	private String url;
 	private boolean useHandleExtraFileTypes;
+	@AstroImageJ(reason = "Skip ZIP folder dialog")
+	private boolean skipFolderDialog;
 
 	static {
 		Hashtable commands = Menus.getCommands();
@@ -67,6 +69,11 @@ public class Opener {
 	}
 
 	public Opener() {
+	}
+
+	@AstroImageJ(reason = "Skip ZIP folder dialog")
+	public Opener(boolean skipFolderDialog) {
+		this.skipFolderDialog = skipFolderDialog;
 	}
 
 	/**
@@ -1053,7 +1060,7 @@ public class Opener {
 	/** Opens a single TIFF or DICOM contained in a ZIP archive,
 		or a ZIPed collection of ".roi" files created by the ROI manager. */	
 	@AstroImageJ(reason = "add support for more file types; open tables in AIJ measurements table; " +
-			"open zip as folder", modified = true)
+			"open zip as folder; Skip folder dialog", modified = true)
 	public ImagePlus openZip(String path) {
 		ImagePlus imp = null;
 
@@ -1063,7 +1070,10 @@ public class Opener {
 		var hasFits = Arrays.stream(ZipOpenerUtil.getFilesInZip(path)).map(ZipOpenerUtil.InternalZipFile::path).anyMatch(s ->
 				getFileType(s, false) == Opener.FITS || getFileType(s, false) == Opener.PNG);
 		if (hasFits) {
-			if (fo.showDialog()) {
+			if (skipFolderDialog) {
+				fo.setOptions();
+			}
+			if (skipFolderDialog || fo.showDialog()) {
 				return fo.openFolder(path);
 			} else {
 				return null;

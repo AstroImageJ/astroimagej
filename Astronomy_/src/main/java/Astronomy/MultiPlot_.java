@@ -1540,15 +1540,13 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             plotMinY = Math.max(minY + totalPanOffsetY + newPanOffsetY, plotMinY);
             plotMaxY = Math.min(maxY + totalPanOffsetY + newPanOffsetY, plotMaxY);
 
-            // This forces zoomout to reset to 0 when clamped
-            if ((plotMinX == minX + totalPanOffsetX + newPanOffsetX || plotMaxX == maxX + totalPanOffsetX + newPanOffsetX) && !draggableShape.isPlotScaleDirty()) {
+            // Reset the draggable zoom when unzoomed via scroll
+            if (plotMinX == minX + totalPanOffsetX + newPanOffsetX && plotMaxX == maxX + totalPanOffsetX + newPanOffsetX &&
+                    plotMinY == minY + totalPanOffsetY + newPanOffsetY && plotMaxY == maxY + totalPanOffsetY + newPanOffsetY) {
+                draggableShape.unmarkPlotScale();
                 zoomX = 0;
-            }
-
-            if ((plotMinY == minY + totalPanOffsetY + newPanOffsetY || plotMaxY == maxY + totalPanOffsetY + newPanOffsetY) && !draggableShape.isPlotScaleDirty()) {
                 zoomY = 0;
             }
-
         } else {
             plotMinX = pltMinX;
             plotMaxX = pltMaxX;

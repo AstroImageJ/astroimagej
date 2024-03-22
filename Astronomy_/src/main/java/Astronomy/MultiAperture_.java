@@ -34,6 +34,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import static ij.Prefs.KEY_PREFIX;
 import static ij.astro.gui.GenericSwingDialog.ComponentPair.Type.C1;
 
 
@@ -310,6 +311,32 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     private boolean processingStackForRadii;
 
 //	public static double RETRY_RADIUS = 3.0;
+
+    public static Set<String> getApertureKeys() {
+        var o = new HashSet<String>();
+
+        o.add(KEY_PREFIX+AP_PREFS_REMOVEBACKSTARS);
+        o.add(KEY_PREFIX+PREFS_APFWHMFACTOR);
+        o.add(KEY_PREFIX+PREFS_APFWHMFACTORSTACK);
+        o.add(KEY_PREFIX+PREFS_AUTOMODEFLUXCUTOFF);
+        o.add(KEY_PREFIX+PREFS_AUTOMODEFLUXCUTOFFFIXED);
+        o.add(KEY_PREFIX+PREFS_APRADIUS);
+        o.add(KEY_PREFIX+PREFS_XAPERTURES);
+        o.add(KEY_PREFIX+PREFS_YAPERTURES);
+        o.add(KEY_PREFIX+PREFS_RAAPERTURES);
+        o.add(KEY_PREFIX+PREFS_DECAPERTURES);
+        o.add(KEY_PREFIX+PREFS_ISREFSTAR);
+        o.add(KEY_PREFIX+PREFS_ISALIGNSTAR);
+        o.add(KEY_PREFIX+PREFS_CENTROIDSTAR);
+        o.add(KEY_PREFIX+PREFS_NAPERTURESMAX);
+        o.add(KEY_PREFIX+PREFS_ABSMAGAPERTURES);
+        o.add(KEY_PREFIX+apLoading.getPropertyKey());
+        o.add(KEY_PREFIX+PREFS_APRADIUS);
+        o.add(KEY_PREFIX+AP_PREFS_RBACK1);
+        o.add(KEY_PREFIX+AP_PREFS_RBACK2);
+
+        return o;
+    }
 
     static void checkAndLockTable() {
         if (table != null) table.setLock(true);

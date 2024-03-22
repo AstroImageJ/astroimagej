@@ -5,10 +5,7 @@ import ij.ImagePlus;
 import ij.ImageStack;
 import ij.Prefs;
 import ij.astro.AstroImageJ;
-import ij.astro.util.FitsCompressionUtil;
-import ij.astro.util.FitsExtensionUtil;
-import ij.astro.util.ImageType;
-import ij.astro.util.ProgressTrackingOutputStream;
+import ij.astro.util.*;
 import ij.io.SaveDialog;
 import ij.measure.Calibration;
 import ij.measure.ResultsTable;
@@ -31,6 +28,7 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.zip.GZIPOutputStream;
@@ -389,15 +387,14 @@ public class FITS_Writer implements PlugIn {
 					if (key.indexOf(".plot.") == 0) {
 						plotcfg.put(key, Prefs.ijPrefs.getProperty(key));
 					}
-					if (key.startsWith(".aperture.radius") || key.startsWith(".aperture.rback1") ||
-							key.startsWith(".aperture.rback2") || key.startsWith(".aperture.removebackstars") ||
-							key.startsWith(".aperture.backplane") || key.startsWith(".multiaperture.usevarsizeap") ||
-							key.startsWith(".multiaperture.apfwhmfactor") || key.startsWith(".multiaperture.xapertures") ||
-							key.startsWith(".multiaperture.raapertures") || key.startsWith(".multiaperture.decapertures") ||
-							key.startsWith(".multiaperture.yapertures") || key.startsWith(".multiaperture.isrefstar") ||
-							key.startsWith(".multiaperture.isalignstar") || key.startsWith(".multiaperture.centroidstar") ||
-							key.startsWith(".multiaperture.naperturesmax") || key.startsWith(".multiaperture.absmagapertures")) {
-						apertures.put(key, Prefs.ijPrefs.getProperty(key));
+				}
+
+				if (ObjectShare.get("multiapertureKeys") instanceof Set<?> keysGeneric) {
+					var keys = (Set<String>) keysGeneric;
+					for (String key : keys) {
+						if (Prefs.ijPrefs.containsKey(keys)) {
+							apertures.put(key, Prefs.ijPrefs.getProperty(key));
+						}
 					}
 				}
 

@@ -9,6 +9,7 @@ import ij.ImagePlus;
 import ij.Prefs;
 import ij.WindowManager;
 import ij.astro.util.FitsExtensionUtil;
+import ij.astro.util.ObjectShare;
 import ij.gui.ImageWindow;
 import ij.io.FileInfo;
 import ij.io.OpenDialog;
@@ -1317,18 +1318,13 @@ public class IJU {
         }
         if (outFile.isFile()) outFile.delete();
         Properties prefs = new Properties();
-        Enumeration<Object> e = Prefs.ijPrefs.keys();
-        while (e.hasMoreElements()) {
-            String key = (String) e.nextElement();
-            if (key.startsWith(".aperture.radius") || key.startsWith(".aperture.rback1") ||
-                    key.startsWith(".aperture.rback2") || key.startsWith(".aperture.removebackstars") ||
-                    key.startsWith(".aperture.backplane") || key.startsWith(".multiaperture.usevarsizeap") ||
-                    key.startsWith(".multiaperture.apfwhmfactor") || key.startsWith(".multiaperture.xapertures") ||
-                    key.startsWith(".multiaperture.raapertures") || key.startsWith(".multiaperture.decapertures") ||
-                    key.startsWith(".multiaperture.yapertures") || key.startsWith(".multiaperture.isrefstar") ||
-                    key.startsWith(".multiaperture.isalignstar") || key.startsWith(".multiaperture.centroidstar") ||
-                    key.startsWith(".multiaperture.naperturesmax") || key.startsWith(".multiaperture.absmagapertures"))
-                prefs.put(key, Prefs.ijPrefs.getProperty(key));
+        if (ObjectShare.get("multiapertureKeys") instanceof Set<?> keysGeneric) {
+            var keys = (Set<String>) keysGeneric;
+            for (String key : keys) {
+                if (Prefs.ijPrefs.containsKey(key)) {
+                    prefs.put(key, Prefs.ijPrefs.getProperty(key));
+                }
+            }
         }
         if (astroStackWindow != null) {
             var rois = astroStackWindow.ac.getRois();

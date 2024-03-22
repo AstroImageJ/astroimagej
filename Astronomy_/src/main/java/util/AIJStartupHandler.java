@@ -1,6 +1,7 @@
 package util;
 
 import Astronomy.AstroImageJ_Updater;
+import Astronomy.MultiAperture_;
 import Astronomy.MultiPlot_;
 import astroj.IJU;
 import astroj.MeasurementTable;
@@ -9,6 +10,7 @@ import ij.Prefs;
 import ij.astro.util.FileAssociationHandler;
 import ij.astro.util.FileAssociationHandler.AssociationMapper;
 import ij.astro.util.FitsExtensionUtil;
+import ij.astro.util.ObjectShare;
 import ij.plugin.FITS_Reader;
 import ij.plugin.PlugIn;
 import nom.tam.fits.Fits;
@@ -99,6 +101,7 @@ public class AIJStartupHandler implements PlugIn {
         FileAssociationHandler.registerAssociation(radecHandler);
         FileAssociationHandler.registerAssociation(aperturesHandler);
         FileAssociationHandler.registerAssociation(multiplotPlotCfgHandler);
+        ObjectShare.putIfAbsent("multiapertureKeys", MultiAperture_.getApertureKeys());
         ensureConfigFileExists();
         Executors.newSingleThreadExecutor()
                 .execute(() -> IJ.runPlugIn(AstroImageJ_Updater.class.getCanonicalName(), "check"));

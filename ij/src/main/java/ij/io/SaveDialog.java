@@ -1,14 +1,16 @@
 package ij.io;
+
+import ij.*;
 import ij.astro.AstroImageJ;
 import ij.gui.GenericDialog;
-import java.awt.*;
-import java.io.*;
-import javax.swing.*;
-import javax.swing.filechooser.*;
-import ij.*;
+import ij.macro.Interpreter;
 import ij.plugin.frame.Recorder;
 import ij.util.Java2;
-import ij.macro.Interpreter;
+
+import javax.swing.*;
+import java.awt.*;
+import java.io.File;
+import java.io.IOException;
 
 /** This class displays a dialog window from 
 	which the user can save a file. */ 
@@ -76,10 +78,17 @@ public class SaveDialog {
 		}
 		return false;
 	}
-	
+
+	@AstroImageJ(reason = "Handle case of double extension for save dialog", modified = true)
 	public static String setExtension(String name, String extension) {
 		if (name==null || extension==null || extension.length()==0)
 			return name;
+		if (name.endsWith(extension)) {
+			var i = name.lastIndexOf(extension);
+			if (i >= 0) {
+				name = name.substring(0, i);
+			}
+		}
 		int dotIndex = name.lastIndexOf(".");
 		if (dotIndex>=0 && (name.length()-dotIndex)<=5) {
 			if (dotIndex+1<name.length() && Character.isDigit(name.charAt(dotIndex+1)))

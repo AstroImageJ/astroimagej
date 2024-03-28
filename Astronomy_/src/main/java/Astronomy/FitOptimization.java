@@ -145,7 +145,7 @@ public class FitOptimization implements AutoCloseable {
 
         var outlierRemoval = new JPanel(new SpringLayout());
         outlierRemoval.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(MultiPlot_.subBorderColor, 1), "Outlier Removal", TitledBorder.CENTER, TitledBorder.TOP, MultiPlot_.p11, Color.darkGray));
-        var undoButton = new JButton("⟲");
+        var undoButton = new JButton(UIHelper.createImageIcon("astroj/images/icons/undo.png", 14, 14));
         var undoFont = undoButton.getFont();
         undoButton.addActionListener($ -> undoOutlierClean());
         undoButton.setFont(undoButton.getFont().deriveFont(15f));

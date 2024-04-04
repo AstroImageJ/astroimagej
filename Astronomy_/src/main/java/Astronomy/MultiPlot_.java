@@ -16771,12 +16771,12 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         if (cfgFile != null && cfgFile.isFile()) {
             try {
                 var is = new BufferedInputStream(new FileInputStream(cfgFile));
-                Prefs.ijPrefs.load(is);
-                useMacroSubtitle.set(false);
-                useMacroTitle.set(false);
                 var t = new Properties();
                 t.load(is);
-                hasNoB = !t.containsKey("plot.bpLock[" + 0 + "]");
+                Prefs.ijPrefs.putAll(t);
+                useMacroSubtitle.set(false);
+                useMacroTitle.set(false);
+                hasNoB = !t.containsKey(".plot.bpLock[" + 0 + "]");
                 is.close();
             } catch (Exception e) {
                 e.printStackTrace();

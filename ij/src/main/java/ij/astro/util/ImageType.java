@@ -287,6 +287,60 @@ public enum ImageType {
                 return pixelArray;
             }
 
+            // Handle floating point values stored as scaled integers, per Section 4.4.2.5 of FITS Standard 4.0
+            if (rawData instanceof short[][] values) {
+                final var pixelArray = new float[width * height];
+
+                for (int y = 0; y < height; y++) {
+                    // We extract the x-values from the y-array early to avoid extra array accesses in the inner loop
+                    var xValues = values[height - 1 - y];
+                    for (int x = 0; x < width; x++) {
+                        // y and x are inverted because of the implementations of ImageProcessor#getPixelValue
+                        if (USE_FMA) {
+                            pixelArray[(y * width) + x] = (float) Math.fma(bscale, xValues[x], bzero);
+                        } else {
+                            pixelArray[(y * width) + x] = (float) (bzero + bscale * xValues[x]);
+                        }
+                    }
+                }
+
+                return pixelArray;
+            } else if (rawData instanceof byte[][] values) {
+                final var pixelArray = new float[width * height];
+
+                for (int y = 0; y < height; y++) {
+                    // We extract the x-values from the y-array early to avoid extra array accesses in the inner loop
+                    var xValues = values[height - 1 - y];
+                    for (int x = 0; x < width; x++) {
+                        // y and x are inverted because of the implementations of ImageProcessor#getPixelValue
+                        if (USE_FMA) {
+                            pixelArray[(y * width) + x] = (float) Math.fma(bscale, Byte.toUnsignedInt(xValues[x]), bzero);
+                        } else {
+                            pixelArray[(y * width) + x] = (float) (bzero + bscale * Byte.toUnsignedInt(xValues[x]));
+                        }
+                    }
+                }
+
+                return pixelArray;
+            } else if (rawData instanceof int[][] values) {
+                final var pixelArray = new float[width * height];
+
+                for (int y = 0; y < height; y++) {
+                    // We extract the x-values from the y-array early to avoid extra array accesses in the inner loop
+                    var xValues = values[height - 1 - y];
+                    for (int x = 0; x < width; x++) {
+                        // y and x are inverted because of the implementations of ImageProcessor#getPixelValue
+                        if (USE_FMA) {
+                            pixelArray[(y * width) + x] = (float) Math.fma(bscale, xValues[x], bzero);
+                        } else {
+                            pixelArray[(y * width) + x] = (float) (bzero + bscale * xValues[x]);
+                        }
+                    }
+                }
+
+                return pixelArray;
+            }
+
             throw new IllegalStateException("Incorrect raw data given to make an ImageProcessor");
         }
 
@@ -395,9 +449,26 @@ public enum ImageType {
         this.rawDataType = rawDataType;
     }
 
-    public static ImageType getType(Object rawData) {
-        for (ImageType type : values()){
-            if (type.rawDataType.isInstance(rawData)) return type;
+    public static ImageType getType(Object rawData, double bScale, double bZero) {
+        for (ImageType type : values()) {
+            if (type.rawDataType.isInstance(rawData)) {
+                // FITS Standard 4.0, Section 4.4.2.5. Keywords that describe arrays
+                // Some files may represent floating point data as integer data, relying on the scaling to
+                // restore the correct values.
+                // "This linear scaling technique is still commonly used to reduce the size of the data array
+                //  by a factor of two by representing 32-bit floating-point physical values as 16-bit scaled integers."
+                // eg. These values, when applied to integer types are used for storing floating point values UNLESS
+                // BSCALE = 1 and BZERO equals the listed BZERO value from Table 11 of the FITS Standard
+                // (encoded here in ImageType#getBZero).
+                if (!type.isFloatingPoint() && bScale != 1 && bZero != type.getBZero()) {
+                    return ImageType.FLOAT;
+                }
+
+                //todo we probably aren't handling the unsigned non-byte types very well, they need to be promoted
+                // to the next size up or converted to floats if too large
+
+                return type;
+            }
         }
         throw new IllegalStateException("Tried to open image data that was not a numeric: " + rawData.getClass());
     }

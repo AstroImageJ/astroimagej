@@ -977,7 +977,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	 */
 	private ImageProcessor twoDimensionalImageData2Processor(final Object imageData) {
 		ImageProcessor ip;
-		var type = ImageType.getType(imageData);
+		var type = ImageType.getType(imageData, bscale, bzero);
 
 		var imgtmp = type.makeProcessor(wi, he);
 		var pixels = type.processImageData(imageData, wi, he, bzero, bscale);

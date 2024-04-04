@@ -7646,7 +7646,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         filemenu.addSeparator();
 
-        savedatamenuitem = new JMenuItem("Save data to file...");
+        savedatamenuitem = new JMenuItem("Save data to ASCII table file...");
         savedatamenuitem.setToolTipText("<html>" + "saves measurement table data to a user selected file" + "</html>");
         savedatamenuitem.addActionListener(e -> saveData());
         filemenu.add(savedatamenuitem);
@@ -7656,7 +7656,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         savedatafitsmenuitem.addActionListener(e -> saveData(true, false));
         filemenu.add(savedatafitsmenuitem);
 
-        var savedataAndCfgfitsmenuitem = new JMenuItem("Save data and plotcfg to FITs file...");
+        var savedataAndCfgfitsmenuitem = new JMenuItem("Save data, plotcfg, and apertures to FITs file...");
         savedataAndCfgfitsmenuitem.setToolTipText("<html>" + "saves measurement table data to a user selected file" + "</html>");
         savedataAndCfgfitsmenuitem.addActionListener(e -> saveData(true, true));
         filemenu.add(savedataAndCfgfitsmenuitem);

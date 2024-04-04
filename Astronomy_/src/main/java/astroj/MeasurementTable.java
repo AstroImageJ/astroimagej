@@ -15,11 +15,10 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -120,160 +119,13 @@ public class MeasurementTable extends ResultsTable {
      * Returns a MeasurementTable reconstructed from a text file produced by ImageJ from a MeasurementTable/ResultsTable.
      */
     public static MeasurementTable getTableFromFile(String filename) {
-        BufferedReader in = null;
-        MeasurementTable table = null;
+        MeasurementTable table;
 
-        try {
-            in = new BufferedReader(new FileReader(filename));
-            File file = new File(filename);
-
-            // READ HEADER LINE
-
-            String line = in.readLine();
-            if (line == null) {
-                IJ.error("MeasurementTable: cannot read header line!");
-                in.close();
-                return null;
-            }
-
-            // OPEN NEW MeasurementTable
-            String previousLine = null;
-            table = new MeasurementTable(file.getName().equals("") ?
-                    "Measurements" :
-                    file.getName());    // SHOULD USE filename); BUT CAN'T BECAUSE OF PRIVATE WindowManager.getNonImageWindows() METHOD
-
-            table.filePath = filename;
-            String delimiter = "\t";
-            if (filename.endsWith(".csv")) {
-                delimiter = ",";
-            } else if (filename.endsWith(".prn") || filename.endsWith(".spc")) {
-                delimiter = " +";
-            } else if (filename.endsWith(".txt")) {
-                delimiter = "\\s+";  //whitespace delimiter
-            }
-
-            while (line != null && line.startsWith("#")) { //discard leading comments line, except last one which may be column headers
-                previousLine = line;
-                line = in.readLine();
-            }
-
-
-            String[] labels = line.split(delimiter);
-            int n = labels.length;
-            if (n < 2 || (n == 2 && labels[0].trim().equals("") && !labels[1].trim().equals(""))) {
-                delimiter = "\\s+";
-                labels = line.split(delimiter);
-                n = labels.length;
-            }
-            String[] labels1 = labels.clone();
-
-            int row = 0;
-            boolean hasLabels = false;
-            boolean hasImageLabel = false;
-            int shift = 0;
-
-            if (n > 1 && Double.isNaN(Tools.parseDouble(labels[0])) && Double.isNaN(Tools.parseDouble(labels[1]))) {
-                hasLabels = true;    //the last line read has good column headers
-                previousLine = null;  //forget the previous comment line, if it exists
-            } else if (previousLine != null) { //the last line read has no column headers, so try previous comment line, if it exists
-                while (previousLine.startsWith("#")) {
-                    previousLine = previousLine.substring(1);
-                }
-                labels = previousLine.split(delimiter);
-                n = labels.length;
-                if (n > 1 && Double.isNaN(Tools.parseDouble(labels[0])) && Double.isNaN(Tools.parseDouble(labels[1]))) {
-                    hasLabels = true;    //the last line read has good labels
-                }
-            }
-
-            if (!hasLabels && n == 1 && Double.isNaN(Tools.parseDouble(labels1[0]))) {
-                labels = labels1;
-                shift = 2;
-                hasImageLabel = false;
-                hasLabels = true;
-            } else if (hasLabels && n > 0 && (labels[0].equalsIgnoreCase("Label") || labels[0].equalsIgnoreCase("image"))) {
-                shift = 1;
-                hasImageLabel = true;
-            } else if (hasLabels && n > 1 && (labels[1].equalsIgnoreCase("Label") || labels[1].equalsIgnoreCase("image"))) {
-                shift = 0;
-                hasImageLabel = true;
-            } else if (hasLabels && n > 0 && (labels[0].trim().equals("") || labels[0].trim().equals("#"))) {
-                shift = 1;
-            } else if (!hasLabels && n > 1 && Double.isNaN(Tools.parseDouble(labels1[1]))) {
-                labels = labels1;
-                shift = 0;
-                hasImageLabel = true;
-            } else if (!hasLabels && n > 0 && Double.isNaN(Tools.parseDouble(labels1[0]))) {
-                labels = labels1;
-                shift = 1;
-                hasImageLabel = true;
-            } else {
-                shift = 2;
-            }
-
-            String[] header = new String[n + shift];
-            int h = header.length;
-            header[0] = "";
-            header[1] = "Label";
-            if (hasImageLabel && hasLabels) { //input table has standard MeasurementsTable headings and row labels, use headings as they are
-                System.arraycopy(labels, 1 - shift, header, 1, h - 1);
-            } else if (hasImageLabel && !hasLabels) { //input table has no headers, but has row lables, make generic headers and store line of data
-                table.incrementCounter();
-                row++;
-                table.addLabel(shift == 0 ? labels[1] : labels[0]);
-                for (int i = 2; i < h; i++) {
-                    header[i] = "Col_" + (i - 1);
-                    table.addValue(header[i], Double.parseDouble(labels[i - shift]));
-                }
-            } else if (!hasImageLabel && hasLabels) { //input table has generic headers and no row labels, use standard header prefix and add headers
-                System.arraycopy(labels, 2 - shift, header, 2, h - 2);
-            } else { // input table has no headers and no row labels, make generic headers and store line of data
-                table.incrementCounter();
-                row++;
-                table.addLabel(header[1], "Row_1");
-                for (int i = 2; i < h; i++) {
-                    header[i] = "Col_" + (i - 1);
-                    table.addValue(header[i], Double.parseDouble(labels[i - shift]));
-                }
-            }
-
-            double d = 0.0;
-
-            line = previousLine == null ?
-                    in.readLine() :
-                    line;  //get a new line if the last line read was used as column headers
-
-            while (line != null) {
-                if (!line.startsWith("#") && (line.trim().length() > 0)) {
-                    table.incrementCounter();
-                    String[] words = line.split(delimiter);
-                    if (shift == 0) {
-                        table.addLabel(header[1], words[1]);
-                    } else if (shift == 1) {
-                        table.addLabel(header[1], hasImageLabel ? words[0] : "Row_" + (row + 1));
-                    } else if (shift == 2) {
-                        table.addLabel(header[1], "Row_" + (row + 1));
-                    }
-
-                    for (int col = (2 - shift); col < h - shift; col++) {
-                        if (col >= words.length) {
-                            d = Double.NaN;
-                        } else if (words[col] == null) {
-                            d = Double.NaN;
-                        } else if (words[col].trim().equals("") || words[col].trim().equals("-")) {
-                            d = Double.NaN;
-                        } else if (isHMS(words[col])) {
-                            d = hms(words[col]);
-                        } else {
-                            d = Tools.parseDouble(words[col]);
-                        }
-                        table.addValue(header[col + shift], d);
-                    }
-                    row++;
-                }
-                line = in.readLine();
-            }
-            in.close();
+        var path = Path.of(filename);
+        try(var stream = Files.lines(path)) {
+            var tac = new TableAccumulator(path);
+            stream.forEachOrdered(tac::accept);
+            table = tac.table;
         } catch (IOException e) {
             System.err.println("MeasurementTable IO: " + e.getMessage());
             IJ.error("MeasurementTable: " + e.getMessage());
@@ -283,10 +135,7 @@ public class MeasurementTable extends ResultsTable {
             IJ.error("MeasurementTable: " + nfe.getMessage());
             table = null;
         }
-        try {
-            in.close();
-        } catch (Exception exc) {
-        }
+
         return table;
     }
 
@@ -954,6 +803,166 @@ public class MeasurementTable extends ResultsTable {
         super.setLabel(label, row);
         if (!needsUpdate) {
             updateView(UpdateEvent.REBUILD);
+        }
+    }
+
+    private static class TableAccumulator {
+        final MeasurementTable table;
+        private String delimiter;
+        private String maybeHeaderLine;
+        private boolean pastHeader = false;
+        private int row;
+        private boolean hasLabels;
+        private boolean hasImageLabel;
+        private int shift;
+        private String[] header;
+
+        public TableAccumulator(Path path) {
+            table = new MeasurementTable(path.getFileName().toString().isEmpty() ?
+                    "Measurements" :
+                    path.getFileName().toString());
+
+            var fileName = path.toString();
+
+            table.filePath = fileName;
+
+            if (fileName.endsWith(".csv")) {
+                delimiter = ",";
+            } else if (fileName.endsWith(".prn") || fileName.endsWith(".spc")) {
+                delimiter = " +";
+            } else if (fileName.endsWith(".txt")) {
+                delimiter = "\\s+";  //whitespace delimiter
+            } else {
+                delimiter = "\t";
+            }
+        }
+
+        public void accept(String line) {
+            if (line == null) {
+                return;
+            }
+
+            if (!pastHeader && line.startsWith("#")) {
+                maybeHeaderLine = line;
+                return;
+            }
+
+            if (!pastHeader) {
+                String[] labels = line.split(delimiter);
+                int n = labels.length;
+                if (n < 2 || (n == 2 && labels[0].trim().isEmpty() && !labels[1].trim().isEmpty())) {
+                    delimiter = "\\s+";
+                    labels = line.split(delimiter);
+                    n = labels.length;
+                }
+                String[] labels1 = labels.clone();
+
+                hasLabels = false;
+                hasImageLabel = false;
+                shift = 0;
+
+                if (n > 1 && Double.isNaN(Tools.parseDouble(labels[0])) && Double.isNaN(Tools.parseDouble(labels[1]))) {
+                    hasLabels = true;    //the last line read has good column headers
+                    maybeHeaderLine = null;  //forget the previous comment line, if it exists
+                } else if (maybeHeaderLine != null) { //the last line read has no column headers, so try previous comment line, if it exists
+                    while (maybeHeaderLine.startsWith("#")) {
+                        maybeHeaderLine = maybeHeaderLine.substring(1);
+                    }
+                    labels = maybeHeaderLine.split(delimiter);
+                    n = labels.length;
+                    if (n > 1 && Double.isNaN(Tools.parseDouble(labels[0])) && Double.isNaN(Tools.parseDouble(labels[1]))) {
+                        hasLabels = true;    //the last line read has good labels
+                    }
+                }
+
+                if (!hasLabels && n == 1 && Double.isNaN(Tools.parseDouble(labels1[0]))) {
+                    labels = labels1;
+                    shift = 2;
+                    hasImageLabel = false;
+                    hasLabels = true;
+                } else if (hasLabels && n > 0 && (labels[0].equalsIgnoreCase("Label") || labels[0].equalsIgnoreCase("image"))) {
+                    shift = 1;
+                    hasImageLabel = true;
+                } else if (hasLabels && n > 1 && (labels[1].equalsIgnoreCase("Label") || labels[1].equalsIgnoreCase("image"))) {
+                    shift = 0;
+                    hasImageLabel = true;
+                } else if (hasLabels && n > 0 && (labels[0].trim().equals("") || labels[0].trim().equals("#"))) {
+                    shift = 1;
+                } else if (!hasLabels && n > 1 && Double.isNaN(Tools.parseDouble(labels1[1]))) {
+                    labels = labels1;
+                    shift = 0;
+                    hasImageLabel = true;
+                } else if (!hasLabels && n > 0 && Double.isNaN(Tools.parseDouble(labels1[0]))) {
+                    labels = labels1;
+                    shift = 1;
+                    hasImageLabel = true;
+                } else {
+                    shift = 2;
+                }
+
+                header = new String[n + shift];
+                header[0] = "";
+                header[1] = "Label";
+                row = 0;
+                if (hasImageLabel && hasLabels) { //input table has standard MeasurementsTable headings and row labels, use headings as they are
+                    System.arraycopy(labels, 1 - shift, header, 1, header.length - 1);
+                } else if (hasImageLabel && !hasLabels) { //input table has no headers, but has row lables, make generic headers and store line of data
+                    table.incrementCounter();
+                    row++;
+                    table.addLabel(shift == 0 ? labels[1] : labels[0]);
+                    for (int i = 2; i < header.length; i++) {
+                        header[i] = "Col_" + (i - 1);
+                        table.addValue(header[i], Double.parseDouble(labels[i - shift]));
+                    }
+                } else if (!hasImageLabel && hasLabels) { //input table has generic headers and no row labels, use standard header prefix and add headers
+                    System.arraycopy(labels, 2 - shift, header, 2, header.length - 2);
+                } else { // input table has no headers and no row labels, make generic headers and store line of data
+                    table.incrementCounter();
+                    row++;
+                    table.addLabel(header[1], "Row_1");
+                    for (int i = 2; i < header.length; i++) {
+                        header[i] = "Col_" + (i - 1);
+                        table.addValue(header[i], Double.parseDouble(labels[i - shift]));
+                    }
+                }
+
+                pastHeader = true;
+                return;
+            }
+
+            if (maybeHeaderLine != null) {
+                return;
+            }
+
+            double d = 0.0;
+
+            if (!line.startsWith("#") && !line.isBlank()) {
+                table.incrementCounter();
+                String[] words = line.split(delimiter);
+                if (shift == 0) {
+                    table.addLabel(header[1], words[1]);
+                } else if (shift == 1) {
+                    table.addLabel(header[1], hasImageLabel ? words[0] : "Row_" + (row + 1));
+                } else if (shift == 2) {
+                    table.addLabel(header[1], "Row_" + (row + 1));
+                }
+
+                for (int col = (2 - shift); col < header.length - shift; col++) {
+                    if (col >= words.length) {
+                        d = Double.NaN;
+                    } else if (words[col] == null) {
+                        d = Double.NaN;
+                    } else if (words[col].isBlank() || words[col].trim().equals("-")) {
+                        d = Double.NaN;
+                    } else if (isHMS(words[col])) {
+                        d = hms(words[col]);
+                    } else {
+                        d = Tools.parseDouble(words[col]);
+                    }
+                    table.addValue(header[col + shift], d);
+                }
+                row++;
+            }
         }
     }
 }

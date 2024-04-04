@@ -9,6 +9,7 @@ dependencies {
     api 'de.rototor.pdfbox:graphics2d:0.38'
     api 'net.java.dev.jna:jna-platform:5.12.1'
     api fileTree(dir: "${rootDir}/aijLibs", include: '*.jar')
+    implementation 'ch.randelshofer:fastdoubleparser:1.0.0'
 }
 
 def mainClassName = 'ij.ImageJ'

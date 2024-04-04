@@ -1,12 +1,21 @@
 package ij.util;
-import ij.process.*;
-import java.awt.Color;
-import java.util.*;
+
+import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
+import ij.process.FloatProcessor;
+import ij.process.ImageProcessor;
+import ij.process.ImageStatistics;
+
+import java.awt.*;
 import java.io.*;
-import java.util.Comparator;
 import java.nio.channels.FileChannel;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.MessageDigest;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.StringTokenizer;
+import java.util.Vector;
 
 
 /** This class contains static utility methods. */
@@ -156,7 +165,7 @@ import java.security.MessageDigest;
 		if (s==null)
 			return defaultValue;
 		try {
-			defaultValue = Double.parseDouble(s);
+			defaultValue = JavaDoubleParser.parseDouble(s);
 		} catch (NumberFormatException e) {}
 		return defaultValue;
 	}

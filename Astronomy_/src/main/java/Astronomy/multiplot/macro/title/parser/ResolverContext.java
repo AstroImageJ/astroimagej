@@ -114,16 +114,17 @@ public class ResolverContext {
                             }
                         }
                     } else if (s instanceof VirtualStack virtualStack) {
-                        var l = virtualStack.getSliceLabel(i.getCurrentSlice());
-                        if (l != null) {
-                            l = l.split("\n")[0];
-                            for (int row = 0; row < table.size(); row++) {
-                                var label = table.getLabel(row);
-                                if (label.equals(l)) {
-                                    return i;
+                        for (int slice = 1; slice <= virtualStack.size(); slice++) {
+                            var l = virtualStack.getSliceLabel(slice);
+                            if (l != null) {
+                                l = l.split("\n")[0];
+                                for (int row = 0; row < table.size(); row++) {
+                                    var label = table.getLabel(row);
+                                    if (label.equals(l)) {
+                                        return i;
+                                    }
                                 }
                             }
-
                         }
                     }
                 }

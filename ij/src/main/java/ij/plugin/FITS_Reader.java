@@ -522,7 +522,8 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		// Handle AIJ Fits Tables
 		//todo drag onto MP windows does not load
 		if (hdus[0].getHeader().getBooleanValue("AIJ_TBL", false)) {
-			for (int c = 0; c < tableHDU.getNCols(); c++) {
+			var totalCol = tableHDU.getNCols();
+			for (int c = 0; c < totalCol; c++) {
 				var o = tableHDU.getColumn(c);
 				var cName = tableHDU.getColumnName(c) == null ? "C" + c : tableHDU.getColumnName(c);
 				if ("Label".equals(cName)) {
@@ -554,6 +555,18 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
                     if (t instanceof CompressedTableHDU compressedTableHDU) {
                         t = compressedTableHDU.asBinaryTableHDU();
                     }
+					if (t.getHeader().getBooleanValue("AIJ_XTRC", false)) {
+						for (int c = 0; c < t.getNCols(); c++) {
+							var o = t.getColumn(c);
+							var cName = t.getColumnName(c) == null ? "C" + totalCol : t.getColumnName(c);
+							if ("Label".equals(cName)) {
+								continue;
+							}
+							setColumn(o, table, cName);
+							totalCol++;
+						}
+						continue;
+					}
 					//todo do col. lookup first, then decompress
 					var pltcfgCol = t.findColumn("plotcfg");
 					if (pltcfgCol >= 0 && t.getColumn(pltcfgCol) instanceof byte[] bytes) {

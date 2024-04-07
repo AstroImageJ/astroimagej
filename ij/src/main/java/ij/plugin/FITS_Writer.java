@@ -337,43 +337,68 @@ public class FITS_Writer implements PlugIn {
 			IJ.showStatus("Converting data and writing...");
 
 			// Write table
-			BinaryTable table = new BinaryTable();
+			var processedColumns = 0;
 
-			if (resultsTable.hasRowLabels()) {
-				// We cannot use strings directly as funpack does not allow compression for them
-				// and cannot handle NOCOMPRESS columns due to being broken
-				//todo only byte[] encode Labels when fpacking?
-				//table.addStringColumn(resultsTable.getColumnAsStrings("Label"));
-                table.addColumn(Arrays.stream(resultsTable.bulkGetColumnAsStrings("Label"))
-                        .map(s -> s.getBytes(StandardCharsets.UTF_8)).toArray(byte[][]::new));
+			BinaryTable table;
+			BinaryTableHDU hdu;
+
+			// Split into multiple HDUs to deal with column count limit of 999
+			while (processedColumns <= resultsTable.getLastColumn()) {
+				table = new BinaryTable();
+
+				var maxColumns = 998; // Maximum number of TFORMn cards a FITs header may have
+				if (resultsTable.hasRowLabels() && processedColumns == 0) {
+					// We cannot use strings directly as funpack does not allow compression for them
+					// and cannot handle NOCOMPRESS columns due to being broken
+					//todo only byte[] encode Labels when fpacking?
+					//table.addStringColumn(resultsTable.getColumnAsStrings("Label"));
+					table.addColumn(Arrays.stream(resultsTable.bulkGetColumnAsStrings("Label"))
+							.map(s -> s.getBytes(StandardCharsets.UTF_8)).toArray(byte[][]::new));
+					maxColumns--; // Label column takes up space
+				}
+
+				var columns = Math.min(maxColumns, resultsTable.getLastColumn() - processedColumns);
+
+				for (int col = 0; col <= columns; col++) {
+					table.addColumn(resultsTable.bulkGetColumnAsDoubles(col+processedColumns));
+				}
+				table.defragment();
+
+				hdu = table.toHDU();
+
+				if (processedColumns != 0) {
+					var header = hdu.getHeader();
+					header.addValue("AIJ_XTRC", true, "This table has extra columns from the previous HDU");
+				}
+
+				if (resultsTable.hasRowLabels() && processedColumns == 0) {
+					hdu.setColumnName(0, "Label", null);
+				}
+
+				var iStart = resultsTable.hasRowLabels() && processedColumns == 0 ? 1 : 0;
+				for (int rc = 0; rc <= columns; rc++) {
+					// Heading must be in comment as they commonly contain illegal characters, but this is just a warning so...
+					hdu.setColumnName(rc + iStart, resultsTable.getColumnHeading(rc + processedColumns),
+							resultsTable.getColumnHeading(rc + processedColumns));
+				}
+
+				if (!resultsTable.metadata.isEmpty() && processedColumns == 0) {
+					BinaryTableHDU finalHdu = hdu;
+					resultsTable.metadata.forEach((key, val) -> {
+						finalHdu.getHeader().addValue("AIJ_"+key, val, "AIJ MData, 0-indexed");
+					});
+				}
+
+				if (compressionModes.contains(FPACK)) {
+					var compressedHdu = CompressedTableHDU.fromBinaryTableHDU(hdu, -1);
+					compressedHdu.compress();
+					hdu = compressedHdu;
+				}
+
+				hdu.write(out);
+
+				processedColumns += columns+1;
 			}
-
-			for (int col = 0; col <= resultsTable.getLastColumn(); col++) {
-				table.addColumn(resultsTable.bulkGetColumnAsDoubles(col));
-			}
-			table.defragment();
-
-			// Make prefs blob
-
-			var hdu = table.toHDU();
-			//var header = hdu.getHeader();
-
-			if (resultsTable.hasRowLabels()) {
-				hdu.setColumnName(0, "Label", null);
-			}
-			var iStart = resultsTable.hasRowLabels() ? 1 : 0;
-			for (int rc = 0; rc <= resultsTable.getLastColumn(); rc++) {
-				// Heading must be in comment as they commonly contain illegal characters, but this is just a warning so...
-				hdu.setColumnName(rc + iStart, /*normalizeColName(resultsTable.getColumnHeading(rc))*/resultsTable.getColumnHeading(rc), resultsTable.getColumnHeading(rc));
-			}
-
-			if (compressionModes.contains(FPACK)) {
-				var compressedHdu = CompressedTableHDU.fromBinaryTableHDU(hdu, -1);
-				compressedHdu.compress();
-				hdu = compressedHdu;
-			}
-
-			hdu.write(out);
 
 			// Write plotcfg
 			if (includePrefs) {

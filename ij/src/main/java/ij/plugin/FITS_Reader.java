@@ -603,7 +603,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		} else if (colData instanceof float[] arr) {
 			IntStream.range(0, arr.length).forEachOrdered(i -> finalMt.setValue(cName, i, arr[i]));
 		} else if (colData instanceof double[] arr) {
-			IntStream.range(0, arr.length).forEachOrdered(i -> finalMt.setValue(cName, i, arr[i]));
+			finalMt.bulkSetColumnAsDoubles(cName, arr);
 		} else if (colData instanceof String[] arr) {
 			IntStream.range(0, arr.length).forEachOrdered(i -> finalMt.setValue(cName, i, arr[i]));
 		}

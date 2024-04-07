@@ -389,6 +389,64 @@ public class ResultsTable implements Cloneable {
 
 	/** Returns a copy of the given column as a double array,
 	 or null if the column is empty. */
+	@AstroImageJ(reason = "Remove needless loop")
+	public void bulkSetColumnAsDoubles(String colName, double[] data) {
+		if (colName==null)
+			throw new IllegalArgumentException("Column is null");
+		int index = getColumnIndex(colName);
+		if (index==COLUMN_NOT_FOUND)
+			index = getFreeColumn(colName);
+		if (index>=maxColumns)
+			addColumns();
+		if (index<0 || index>=maxColumns)
+			throw new IllegalArgumentException("Column out of range");
+		if (counter==0)
+			incrementCounter();
+		if (columns[index]==null) {
+			columns[index] = new double[maxRows];
+			if (NaNEmptyCells)
+				Arrays.fill(columns[index], Double.NaN);
+			if (headings[index]==null)
+				headings[index] = "C"+(index+1);
+			if (index>lastColumn) lastColumn = index;
+		}
+		if (data.length>=maxRows) {
+			// Expand maxRows, keeping it a power of 2
+			var n = data.length;
+			int newSize;
+			if ((n & (n - 1)) == 0) {
+				newSize = 2 * n;
+			} else {
+				newSize = 0x40000000 >> (Integer.numberOfLeadingZeros(n) - 2);
+			}
+
+			if (rowLabels!=null) {
+				String[] s = new String[newSize];
+				System.arraycopy(rowLabels, 0, s, 0, maxRows);
+				rowLabels = s;
+			}
+			for (int i=0; i<=lastColumn; i++) {
+				if (columns[i]!=null) {
+					double[] tmp = new double[newSize];
+					if (NaNEmptyCells)
+						Arrays.fill(tmp, maxRows, tmp.length, Double.NaN);
+					System.arraycopy(columns[i], 0, tmp, 0, maxRows);
+					columns[i] = tmp;
+				}
+			}
+
+			maxRows = newSize;
+		}
+
+		// Move data
+		System.arraycopy(data, 0, columns[index], 0, data.length);
+		if (data.length > counter) {
+			counter = data.length;
+		}
+	}
+
+	/** Returns a copy of the given column as a double array,
+	 or null if the column is empty. */
 	@AstroImageJ(reason = "Remove needless loop", modified = false)
 	public double[] bulkGetColumnAsDoubles(int column) {
 		if ((column<0) || (column>=maxColumns))

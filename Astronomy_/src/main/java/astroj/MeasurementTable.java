@@ -22,6 +22,7 @@ import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.regex.Pattern;
 
 
 /**
@@ -816,6 +817,7 @@ public class MeasurementTable extends ResultsTable {
         private boolean hasImageLabel;
         private int shift;
         private String[] header;
+        private Pattern metadataExtractor = Pattern.compile("#\\s+AIJ_(?<ID>\\w+) (?<VAL>\\w+)");
 
         public TableAccumulator(Path path) {
             table = new MeasurementTable(path.getFileName().toString().isEmpty() ?
@@ -842,7 +844,17 @@ public class MeasurementTable extends ResultsTable {
                 return;
             }
 
-            if (!pastHeader && line.startsWith("#")) {
+            if (!pastHeader && line.startsWith("#")) {//todo FITS support
+                if (line.startsWith("AIJ_", 1) || line.startsWith("AIJ_", 2)) {
+                    var m = metadataExtractor.matcher(line);
+                    if (m.matches()) {
+                        var id = m.group("ID");
+                        if (id != null) {
+                            table.metadata.put(id, m.group("VAL"));
+                        }
+                    }
+                }
+
                 maybeHeaderLine = line;
                 return;
             }
@@ -958,6 +970,12 @@ public class MeasurementTable extends ResultsTable {
                         d = hms(words[col]);
                     } else {
                         d = Tools.parseDouble(words[col]);
+
+                        try {
+                            if (d != Double.parseDouble(words[col])) {
+                                throw new IllegalArgumentException(words[col]);
+                            }
+                        } catch (Exception e) {}
                     }
                     table.addValue(header[col + shift], d);
                 }

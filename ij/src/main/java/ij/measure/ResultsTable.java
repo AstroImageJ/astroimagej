@@ -91,6 +91,8 @@ public class ResultsTable implements Cloneable {
 	Pair<Integer, SortOrder> lastSort;
 	@AstroImageJ(reason = "Support different sort orders for doubles")
 	SortOrder order = SortOrder.ASCENDING;
+	@AstroImageJ(reason = "Add metadata to table")
+	public Map<String, String> metadata = new Metadata();
 
 
 	/** Constructs an empty ResultsTable with the counter=0, no columns
@@ -1480,7 +1482,7 @@ public class ResultsTable implements Cloneable {
         saveAs(path, false);
     }
 
-    @AstroImageJ(reason = "Save table with 16 decimal places, not 6; Fits export", modified = true)
+    @AstroImageJ(reason = "Save table with 16 decimal places, not 6; Fits export; Save metadata", modified = true)
 	public void saveAs(String path, boolean includePlotcfg) throws IOException {
 		boolean emptyTable = size()==0 && lastColumn<0;
 		var oldPrecision = getPrecision();
@@ -1498,13 +1500,18 @@ public class ResultsTable implements Cloneable {
 		}
 		boolean csv = path.endsWith(".csv") || path.endsWith(".CSV");
 		delimiter = csv?',':'\t';
-		PrintWriter pw = null;
+		PrintWriter pw;
 		FileOutputStream fos = new FileOutputStream(path);
 		BufferedOutputStream bos = new BufferedOutputStream(fos);
 		pw = new PrintWriter(bos);
 		boolean saveShowRowNumbers = showRowNumbers;
 		if (Prefs.dontSaveRowNumbers)	
 			showRowNumbers = false;
+
+		metadata.forEach((id, val) -> {
+			pw.println("# AIJ_%s %s".formatted(id, val));
+		});
+
 		if (saveColumnHeaders && !emptyTable) {
 			String headings = getColumnHeadings();
 			pw.println(headings);
@@ -1536,6 +1543,7 @@ public class ResultsTable implements Cloneable {
 	}
 
 	/** Duplicates this ResultsTable. */
+	@AstroImageJ(reason = "Support metadata cloning", modified = true)
 	public synchronized Object clone() {
 		try { 
 			ResultsTable rt2 = (ResultsTable)super.clone();
@@ -1566,6 +1574,8 @@ public class ResultsTable implements Cloneable {
 					rt2.stringColumns.put(column, list.clone());
 				}
 			}
+			rt2.metadata = new Metadata();
+			rt2.metadata.putAll(metadata);
 			return rt2;
 		}
 		catch (CloneNotSupportedException e) {return null;}
@@ -1827,6 +1837,25 @@ public class ResultsTable implements Cloneable {
 	
 	public void setIsResultsTable(boolean isResultsTable) {
 		this.isResultsTable = isResultsTable;
+	}
+
+	@AstroImageJ(reason = "Enforce metadata key length for FITs headers")
+	private static class Metadata extends HashMap<String, String> {
+		@Override
+		public String put(String key, String value) {
+			if (key != null && key.length() > 4) {
+				throw new IllegalArgumentException("Metadata key cannot exceed 4 characters: " + key);
+			}
+			return super.put(key, value);
+		}
+
+		@Override
+		public String putIfAbsent(String key, String value) {
+			if (key != null && key.length() > 4) {
+				throw new IllegalArgumentException("Metadata key cannot exceed 4 characters: " + key);
+			}
+			return super.putIfAbsent(key, value);
+		}
 	}
 		
 }

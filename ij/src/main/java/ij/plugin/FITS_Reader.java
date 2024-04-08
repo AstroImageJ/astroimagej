@@ -546,6 +546,11 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 				}
 			}
 
+			// Handle metadata
+			for (HeaderCard card : tableHDU.getHeader().findCards("AIJ_\\w{1,4}")) {
+				table.metadata.put(card.getKey().trim().substring(4), card.getValue());
+			}
+
 			// Load plotcfg
 			byte[] plotcfg = null;
 			byte[] apertures = null;

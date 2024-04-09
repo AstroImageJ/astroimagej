@@ -844,7 +844,7 @@ public class MeasurementTable extends ResultsTable {
                 return;
             }
 
-            if (!pastHeader && line.startsWith("#")) {//todo FITS support
+            if (!pastHeader && line.startsWith("#")) {
                 if (line.startsWith("AIJ_", 1) || line.startsWith("AIJ_", 2)) {
                     var m = metadataExtractor.matcher(line);
                     if (m.matches()) {

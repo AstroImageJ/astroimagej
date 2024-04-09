@@ -91,6 +91,9 @@ public class ResultsTable implements Cloneable {
 	Pair<Integer, SortOrder> lastSort;
 	@AstroImageJ(reason = "Support different sort orders for doubles")
 	SortOrder order = SortOrder.ASCENDING;
+	/**
+	 * Keys should be no longer than 4 characters due to FITs file header limitations
+	 */
 	@AstroImageJ(reason = "Add metadata to table")
 	public Map<String, String> metadata = new Metadata();
 

@@ -723,7 +723,7 @@ tasks.register('makeDailyBuildFiles') {
         // Copy files, no renames
         copy {
             from("$buildDir/distributions/AstroImageJ") {
-                include '**/ij.jar', '**/StartupMacros.txt', '**/AstroImageJ.exe', '**/Astronomy_.jar'
+                include '**/ij.jar', '**/StartupMacros.txt', '**/AstroImageJ.exe', '**/Astronomy_.jar', '**/release_notes.html'
                 eachFile { fcd ->
                     fcd.relativePath = new RelativePath(true, fcd.relativePath.segments.drop(fcd.relativePath.segments.length-1))
                 }

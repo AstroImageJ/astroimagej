@@ -529,7 +529,7 @@ public class MeasurementTable extends ResultsTable {
         if (newColNeeded) {
             updateViewSynced(UpdateEvent.COL_ADDED, getLastColumn(), getLastColumn());
         }
-        updateViewSynced(UpdateEvent.CELL_UPDATED, row, column);
+        updateView(UpdateEvent.CELL_UPDATED, row, column);
     }
 
     public void rename(String newName) {
@@ -612,14 +612,15 @@ public class MeasurementTable extends ResultsTable {
             if (window != null) {
                 window.update(event, i1, i2);
             }
+            dataChanged = false;
         } else {
             SwingUtilities.invokeLater(() -> {
                 if (window != null) {
                     window.update(event, i1, i2);
                 }
+                dataChanged = false;
             });
         }
-        dataChanged = false;
     }
 
     private void updateViewSynced(UpdateEvent event, int i1, int i2) {
@@ -631,18 +632,19 @@ public class MeasurementTable extends ResultsTable {
             if (window != null) {
                 window.update(event, i1, i2);
             }
+            dataChanged = false;
         } else {
             try {
                 SwingUtilities.invokeAndWait(() -> {
                     if (window != null) {
                         window.update(event, i1, i2);
                     }
+                    dataChanged = false;
                 });
             } catch (InterruptedException | InvocationTargetException e) {
                 throw new RuntimeException(e);
             }
         }
-        dataChanged = false;
     }
 
     /**

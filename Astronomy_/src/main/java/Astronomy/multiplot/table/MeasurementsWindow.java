@@ -399,7 +399,7 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
             case DATA_CHANGED -> {
                 tableView.fireTableDataChanged();
                 for (int i = 0; i < jTable.getColumnCount(); i++) {
-                    adjustWidth(i);
+                    adjustWidthOnRow(Math.max(tableView.getRowCount()-1, 0), i);
                 }
             }
             case ROW_DELETED -> tableView.fireTableRowsDeleted(i1, i2);

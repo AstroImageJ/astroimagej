@@ -655,12 +655,19 @@ public class Aperture_ implements PlugInFilter {
      * Displays the centroiding & photometry results in the table.
      */
     protected void storeResults() {
+        storeResults("", true);
+    }
+
+    /**
+     * Displays the centroiding & photometry results in the table.
+     */
+    protected void storeResults(String header, boolean newRow) {
 
         if (isInstanceOfStackAlign || !checkResultsTable()) return;
 
         // CREATE ROW FOR NEXT ENTRY
 
-        table.incrementCounter();
+        if (newRow) table.incrementCounter();
 
         if (showFileName)
             table.addLabel(AP_IMAGE, filename);
@@ -708,17 +715,17 @@ public class Aperture_ implements PlugInFilter {
         if (showMeanWidth && calcRadProFWHM)
             table.addValue(AP_FWHM + suffix, fwhm, 6);
         if (showRadii) {
-            table.addValue(AP_RSOURCE, radius, 6);
+            table.addValue(AP_RSOURCE + header, radius, 6);
             if (useVariableAp) {
                 if (fwhmMult > 0) {
-                    table.addValue(AP_FWHMMULT, fwhmMult, 6);
+                    table.addValue(AP_FWHMMULT + header, fwhmMult, 6);
                 } else {
-                    table.addValue(AP_RADIALCUTOFF, radialCutoff, 6);
+                    table.addValue(AP_RADIALCUTOFF + header, radialCutoff, 6);
                 }
-                table.addValue(AP_BRSOURCE, fradius, 6);
+                table.addValue(AP_BRSOURCE + header, fradius, 6);
             }
-            table.addValue(AP_RBACK1, rBack1, 6);
-            table.addValue(AP_RBACK2, rBack2, 6);
+            table.addValue(AP_RBACK1 + header, rBack1, 6);
+            table.addValue(AP_RBACK2 + header, rBack2, 6);
         }
         if (showTimes && !Double.isNaN(mjd)) {
             table.addValue(AP_MJD, mjd, 6);

@@ -309,6 +309,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     public static final Property<ApLoading> apLoading = new Property<>(ApLoading.ALL_NEW, MultiAperture_.class);
     private static String lastRun = "<Not yet run>";
     private boolean processingStackForRadii;
+    protected static final Property<Boolean> multiRadius = new Property<>(false, MultiAperture_.class);
+    protected static final Property<Integer> multiRadiusNSmaller = new Property<>(3, MultiAperture_.class);
+    protected static final Property<Integer> multiRadiusNLarger = new Property<>(3, MultiAperture_.class);
+    protected static final Property<Double> multiRadiusStepSize = new Property<>(1.5d, MultiAperture_.class);
 
 //	public static double RETRY_RADIUS = 3.0;
 
@@ -3463,46 +3467,78 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             Prefs.set("aperture.reposition", centroidStar[ap]);
             setShowAsCentered(centroidStar[ap]);
 
-            if (!measureAperture(hdr)) {
-                if (haltOnError || this instanceof Stack_Aligner) {
-                    Prefs.set("aperture.reposition", holdReposition);
-                    centerROI();
-                    setVariableAperture(false);
-                    IJ.beep();
-                    IJ.showMessage("No signal for centroid in aperture " + apertureName + " of image " +
-                            IJU.getSliceFilename(imp, slice) +
-                            ((this instanceof Stack_Aligner) ? ". Stack Aligner aborted." : ". Multi-Aperture aborted."));
-                    shutDown();
-                    if (table != null) table.setLock(false);
-                    return;
+            var numRadii = 1 + (multiRadius.get() ? multiRadiusNLarger.get() + multiRadiusNSmaller.get() : 0);
+            var dRadius = multiRadiusStepSize.get();
+            var radii = new double[numRadii];
+            var baseRadius = 0;
+
+            if (multiRadius.get()) {
+                var p = 0;
+                for (int i = multiRadiusNSmaller.get(); i > 0; i--) {
+                    radii[p++] = radius - (dRadius * i);
+                }
+                table.metadata.put("MRPB", String.valueOf(p)); // MRPB = MultiRadiusPhotometryBase
+                baseRadius = p;
+                radii[p++] = radius;
+                for (int i = 0; i < multiRadiusNLarger.get(); i++) {
+                    radii[p++] = radius + (dRadius * i);
+                }
+            } else {
+                assert radii.length == 1 : "Expected 1 radius value";
+                table.metadata.remove("MPRB");
+                radii[0] = radius;
+            }
+
+            for (int radiusNum = 0; radiusNum < radii.length; radiusNum++) {
+                radius = radii[radiusNum];
+                // Need to set here as Aperture_ loads it from preferences
+                Prefs.set(AP_PREFS_RADIUS, radius);
+
+                if (!measureAperture(hdr)) {
+                    if (haltOnError || this instanceof Stack_Aligner) {
+                        Prefs.set("aperture.reposition", holdReposition);
+                        centerROI();
+                        setVariableAperture(false);
+                        IJ.beep();
+                        IJ.showMessage("No signal for centroid in aperture " + apertureName + " of image " +
+                                IJU.getSliceFilename(imp, slice) +
+                                ((this instanceof Stack_Aligner) ? ". Stack Aligner aborted." : ". Multi-Aperture aborted."));
+                        shutDown();
+                        if (table != null) table.setLock(false);
+                        return;
+                    } else {
+                        IJ.log("***ERROR: No signal for centroid in aperture " + apertureName + " of image " + IJU.getSliceFilename(imp, slice) + ".");
+                        IJ.log("********: Measurements are referenced to the non-centroided aperture location");
+                    }
+                }
+                Prefs.set("aperture.reposition", holdReposition);
+
+                if (useVarSizeAp) {
+                    xWidth = xWidthFixed[ap];
+                    yWidth = yWidthFixed[ap];
+                    width = widthFixed[ap];
+                    angle = angleFixed[ap];
+                    round = roundFixed[ap];
+                }
+                if (showMeanWidth && calcRadProFWHM && !Double.isNaN(fwhm)) {
+                    fwhmMean += fwhm;
+                    nFWHM++;
+                }
+                processingImage = false;
+
+                // STORE RESULTS
+
+                suffix = (numRadii > 1 ? "_r" + (radiusNum + 1) : "") + (isRefStar[ap] ? "_C" : "_T") + (ap + 1);
+                if (ap == 0) {
+                    storeResults(numRadii > 1 ? "_r" + (radiusNum + 1) : "", radiusNum == 0);
                 } else {
-                    IJ.log("***ERROR: No signal for centroid in aperture " + apertureName + " of image " + IJU.getSliceFilename(imp, slice) + ".");
-                    IJ.log("********: Measurements are referenced to the non-centroided aperture location");
+                    storeAdditionalResults(ap, numRadii > 1, radiusNum);
                 }
             }
-            Prefs.set("aperture.reposition", holdReposition);
 
-            if (useVarSizeAp) {
-                xWidth = xWidthFixed[ap];
-                yWidth = yWidthFixed[ap];
-                width = widthFixed[ap];
-                angle = angleFixed[ap];
-                round = roundFixed[ap];
-            }
-            if (showMeanWidth && calcRadProFWHM && !Double.isNaN(fwhm)) {
-                fwhmMean += fwhm;
-                nFWHM++;
-            }
-            processingImage = false;
-
-            // STORE RESULTS
-
-            suffix = (isRefStar[ap] ? "_C" : "_T") + (ap + 1);
-            if (ap == 0) {
-                storeResults();
-            } else {
-                storeAdditionalResults(ap);
-            }
+            // Reset to original radius
+            radius = radii[baseRadius];
+            Prefs.set(AP_PREFS_RADIUS, radius);
 
             // FOLLOW MOTION FROM FRAME TO FRAME
 
@@ -3823,10 +3859,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     /**
      * Stores results for additional apertures.
      */
-    void storeAdditionalResults(int ap) {
+    void storeAdditionalResults(int ap, boolean useRadiusNum, int radiusNum) {
         if (isInstanceOfStackAlign || ap <= 0) return;
 
-        String header = (isRefStar[ap] ? "_C" : "_T") + (ap + 1);
+        String header = (useRadiusNum ? "_r" + (radiusNum + 1) : "") + (isRefStar[ap] ? "_C" : "_T") + (ap + 1);
         if (showPosition) {
             table.addValue(AP_XCENTER + header, xCenter, 6);
             table.addValue(AP_YCENTER + header, yCenter, 6);
@@ -3909,6 +3945,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
         int i = 0;
 
+        var numRadii = 1 + (multiRadius.get() ? multiRadiusNLarger.get() + multiRadiusNSmaller.get() : 0);
+
         measurementsWindow = MeasurementTable.getMeasurementsWindow(tableName);
 //        IJ.log("setting up headings");
         hasAbsMag = false;
@@ -3937,7 +3975,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         if (showFits && fitsKeywords != null) {
             String[] sarr = fitsKeywords.split(",");
             for (int l = 0; l < sarr.length; l++) {
-                if (!sarr[l].equals("") &&
+                if (!sarr[l].isEmpty() &&
                         table.getColumnIndex(sarr[l]) == ResultsTable.COLUMN_NOT_FOUND) {
                     i = table.getFreeColumn(sarr[l]);
                 }
@@ -3949,28 +3987,31 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             }
         }
         if (showRadii) {
-            if (table.getColumnIndex(AP_RSOURCE) == ResultsTable.COLUMN_NOT_FOUND) {
-                i = table.getFreeColumn(AP_RSOURCE);
-            }
-            if (useVarSizeAp) {
-                if (!useRadialProfile) {
-                    if (table.getColumnIndex(AP_FWHMMULT) == ResultsTable.COLUMN_NOT_FOUND) {
-                        i = table.getFreeColumn(AP_FWHMMULT);
+            for (int radiusNum = 0; radiusNum < numRadii; radiusNum++) {
+                var radius = numRadii > 1 ? "_r" + (radiusNum+1) : "";
+                if (table.getColumnIndex(AP_RSOURCE+radius) == ResultsTable.COLUMN_NOT_FOUND) {
+                    i = table.getFreeColumn(AP_RSOURCE+radius);
+                }
+                if (useVarSizeAp) {
+                    if (!useRadialProfile) {
+                        if (table.getColumnIndex(AP_FWHMMULT) == ResultsTable.COLUMN_NOT_FOUND) {
+                            i = table.getFreeColumn(AP_FWHMMULT);
+                        }
+                    } else {
+                        if (table.getColumnIndex(AP_RADIALCUTOFF) == ResultsTable.COLUMN_NOT_FOUND) {
+                            i = table.getFreeColumn(AP_RADIALCUTOFF);
+                        }
                     }
-                } else {
-                    if (table.getColumnIndex(AP_RADIALCUTOFF) == ResultsTable.COLUMN_NOT_FOUND) {
-                        i = table.getFreeColumn(AP_RADIALCUTOFF);
+                    if (table.getColumnIndex(AP_BRSOURCE) == ResultsTable.COLUMN_NOT_FOUND) {
+                        i = table.getFreeColumn(AP_BRSOURCE);
                     }
                 }
-                if (table.getColumnIndex(AP_BRSOURCE) == ResultsTable.COLUMN_NOT_FOUND) {
-                    i = table.getFreeColumn(AP_BRSOURCE);
+                if (table.getColumnIndex(AP_RBACK1+radius) == ResultsTable.COLUMN_NOT_FOUND) {
+                    i = table.getFreeColumn(AP_RBACK1+radius);
                 }
-            }
-            if (table.getColumnIndex(AP_RBACK1) == ResultsTable.COLUMN_NOT_FOUND) {
-                i = table.getFreeColumn(AP_RBACK1);
-            }
-            if (table.getColumnIndex(AP_RBACK2) == ResultsTable.COLUMN_NOT_FOUND) {
-                i = table.getFreeColumn(AP_RBACK2);
+                if (table.getColumnIndex(AP_RBACK2+radius) == ResultsTable.COLUMN_NOT_FOUND) {
+                    i = table.getFreeColumn(AP_RBACK2+radius);
+                }
             }
         }
 
@@ -4007,91 +4048,94 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             }
         }
 
-        for (int ap = 0; ap < nApertures; ap++) {
-            String header = (isRefStar[ap] ? "_C" : "_T") + (ap + 1);
-            if (showPosition) {
-                if (table.getColumnIndex(AP_XCENTER + header) == MeasurementTable.COLUMN_NOT_FOUND) {
-                    i = table.getFreeColumn(AP_XCENTER + header);
+        for (int radiusNum = 0; radiusNum < numRadii; radiusNum++) {
+            var radius = numRadii > 1 ? "_r" + (radiusNum + 1) : "";
+            for (int ap = 0; ap < nApertures; ap++) {
+                String header = radius + (isRefStar[ap] ? "_C" : "_T") + (ap + 1);
+                if (showPosition) {
+                    if (table.getColumnIndex(AP_XCENTER + header) == MeasurementTable.COLUMN_NOT_FOUND) {
+                        i = table.getFreeColumn(AP_XCENTER + header);
+                    }
+                    if (table.getColumnIndex(AP_YCENTER + header) == MeasurementTable.COLUMN_NOT_FOUND) {
+                        i = table.getFreeColumn(AP_YCENTER + header);
+                    }
                 }
-                if (table.getColumnIndex(AP_YCENTER + header) == MeasurementTable.COLUMN_NOT_FOUND) {
-                    i = table.getFreeColumn(AP_YCENTER + header);
+                if (showPositionFITS) {
+                    if (table.getColumnIndex(AP_XCENTER_FITS + header) == MeasurementTable.COLUMN_NOT_FOUND) {
+                        i = table.getFreeColumn(AP_XCENTER_FITS + header);
+                    }
+                    if (table.getColumnIndex(AP_YCENTER_FITS + header) == MeasurementTable.COLUMN_NOT_FOUND) {
+                        i = table.getFreeColumn(AP_YCENTER_FITS + header);
+                    }
                 }
-            }
-            if (showPositionFITS) {
-                if (table.getColumnIndex(AP_XCENTER_FITS + header) == MeasurementTable.COLUMN_NOT_FOUND) {
-                    i = table.getFreeColumn(AP_XCENTER_FITS + header);
+                if (showRADEC && wcs != null && wcs.hasRaDec() && raDec != null) {
+                    if (table.getColumnIndex(AP_RA + header) == ResultsTable.COLUMN_NOT_FOUND) {
+                        i = table.getFreeColumn(AP_RA + header);
+                    }
+                    if (table.getColumnIndex(AP_DEC + header) == ResultsTable.COLUMN_NOT_FOUND) {
+                        i = table.getFreeColumn(AP_DEC + header);
+                    }
                 }
-                if (table.getColumnIndex(AP_YCENTER_FITS + header) == MeasurementTable.COLUMN_NOT_FOUND) {
-                    i = table.getFreeColumn(AP_YCENTER_FITS + header);
+                if (showPhotometry && table.getColumnIndex(AP_SOURCE + header) == MeasurementTable.COLUMN_NOT_FOUND) {
+                    i = table.getFreeColumn(AP_SOURCE + header);
                 }
-            }
-            if (showRADEC && wcs != null && wcs.hasRaDec() && raDec != null) {
-                if (table.getColumnIndex(AP_RA + header) == ResultsTable.COLUMN_NOT_FOUND) {
-                    i = table.getFreeColumn(AP_RA + header);
+                if (showNAperPixels && table.getColumnIndex(AP_NAPERPIX + suffix) == ResultsTable.COLUMN_NOT_FOUND) {
+                    i = table.getFreeColumn(AP_NAPERPIX + suffix);
                 }
-                if (table.getColumnIndex(AP_DEC + header) == ResultsTable.COLUMN_NOT_FOUND) {
-                    i = table.getFreeColumn(AP_DEC + header);
+                if (showErrors && table.getColumnIndex(AP_SOURCE_ERROR + header) == MeasurementTable.COLUMN_NOT_FOUND) {
+                    i = table.getFreeColumn(AP_SOURCE_ERROR + header);
                 }
-            }
-            if (showPhotometry && table.getColumnIndex(AP_SOURCE + header) == MeasurementTable.COLUMN_NOT_FOUND) {
-                i = table.getFreeColumn(AP_SOURCE + header);
-            }
-            if (showNAperPixels && table.getColumnIndex(AP_NAPERPIX + suffix) == ResultsTable.COLUMN_NOT_FOUND) {
-                i = table.getFreeColumn(AP_NAPERPIX + suffix);
-            }
-            if (showErrors && table.getColumnIndex(AP_SOURCE_ERROR + header) == MeasurementTable.COLUMN_NOT_FOUND) {
-                i = table.getFreeColumn(AP_SOURCE_ERROR + header);
-            }
-            if (hasAbsMag && table.getColumnIndex(AP_SOURCE_AMAG + header) == MeasurementTable.COLUMN_NOT_FOUND) {
-                i = table.getFreeColumn(AP_SOURCE_AMAG + header);
-            }
-            if (hasAbsMag && showErrors && table.getColumnIndex(AP_SOURCE_AMAG_ERR + header) == MeasurementTable.COLUMN_NOT_FOUND) {
-                i = table.getFreeColumn(AP_SOURCE_AMAG_ERR + header);
-            }
-            if (showSNR && table.getColumnIndex(AP_SOURCE_SNR + header) == MeasurementTable.COLUMN_NOT_FOUND) {
-                i = table.getFreeColumn(AP_SOURCE_SNR + header);
-            }
-            if (showPeak && table.getColumnIndex(AP_PEAK + header) == MeasurementTable.COLUMN_NOT_FOUND) {
-                i = table.getFreeColumn(AP_PEAK + header);
-            }
-            if (showMean && table.getColumnIndex(AP_MEAN + header) == MeasurementTable.COLUMN_NOT_FOUND) {
-                i = table.getFreeColumn(AP_MEAN + header);
-            }
-            if (showBack && table.getColumnIndex(AP_BACK + header) == MeasurementTable.COLUMN_NOT_FOUND) {
-                i = table.getFreeColumn(AP_BACK + header);
-            }
-            if (showNBackPixels && table.getColumnIndex(AP_NBACKPIX + suffix) == ResultsTable.COLUMN_NOT_FOUND) {
-                i = table.getFreeColumn(AP_NBACKPIX + suffix);
-            }
-            if (showMeanWidth && calcRadProFWHM && table.getColumnIndex(AP_FWHM) == MeasurementTable.COLUMN_NOT_FOUND) {
-                i = table.getFreeColumn(AP_FWHM + header);
-            }
-            if (showMeanWidth && table.getColumnIndex(AP_MEANWIDTH) == MeasurementTable.COLUMN_NOT_FOUND) {
-                i = table.getFreeColumn(AP_MEANWIDTH + header);
-            }
-            if (showWidths) {
-                if (table.getColumnIndex(AP_XWIDTH + header) == MeasurementTable.COLUMN_NOT_FOUND) {
-                    i = table.getFreeColumn(AP_XWIDTH + header);
+                if (hasAbsMag && table.getColumnIndex(AP_SOURCE_AMAG + header) == MeasurementTable.COLUMN_NOT_FOUND) {
+                    i = table.getFreeColumn(AP_SOURCE_AMAG + header);
                 }
-                if (table.getColumnIndex(AP_YWIDTH + header) == MeasurementTable.COLUMN_NOT_FOUND) {
-                    i = table.getFreeColumn(AP_YWIDTH + header);
+                if (hasAbsMag && showErrors && table.getColumnIndex(AP_SOURCE_AMAG_ERR + header) == MeasurementTable.COLUMN_NOT_FOUND) {
+                    i = table.getFreeColumn(AP_SOURCE_AMAG_ERR + header);
                 }
-            }
-            if (showAngle && table.getColumnIndex(AP_ANGLE + header) == ResultsTable.COLUMN_NOT_FOUND) {
-                i = table.getFreeColumn(AP_ANGLE + header);
-            }
-            if (showRoundness && table.getColumnIndex(AP_ROUNDNESS + header) == ResultsTable.COLUMN_NOT_FOUND) {
-                i = table.getFreeColumn(AP_ROUNDNESS + header);
-            }
-            if (showVariance && table.getColumnIndex(AP_VARIANCE + header) == ResultsTable.COLUMN_NOT_FOUND) {
-                i = table.getFreeColumn(AP_VARIANCE + header);
-            }
-            if (showRaw && isCalibrated) {
-                if (table.getColumnIndex(AP_RAWSOURCE + header) == ResultsTable.COLUMN_NOT_FOUND) {
-                    i = table.getFreeColumn(AP_RAWSOURCE + header);
+                if (showSNR && table.getColumnIndex(AP_SOURCE_SNR + header) == MeasurementTable.COLUMN_NOT_FOUND) {
+                    i = table.getFreeColumn(AP_SOURCE_SNR + header);
                 }
-                if (table.getColumnIndex(AP_RAWBACK + header) == ResultsTable.COLUMN_NOT_FOUND) {
-                    i = table.getFreeColumn(AP_RAWBACK + header);
+                if (showPeak && table.getColumnIndex(AP_PEAK + header) == MeasurementTable.COLUMN_NOT_FOUND) {
+                    i = table.getFreeColumn(AP_PEAK + header);
+                }
+                if (showMean && table.getColumnIndex(AP_MEAN + header) == MeasurementTable.COLUMN_NOT_FOUND) {
+                    i = table.getFreeColumn(AP_MEAN + header);
+                }
+                if (showBack && table.getColumnIndex(AP_BACK + header) == MeasurementTable.COLUMN_NOT_FOUND) {
+                    i = table.getFreeColumn(AP_BACK + header);
+                }
+                if (showNBackPixels && table.getColumnIndex(AP_NBACKPIX + suffix) == ResultsTable.COLUMN_NOT_FOUND) {
+                    i = table.getFreeColumn(AP_NBACKPIX + suffix);
+                }
+                if (showMeanWidth && calcRadProFWHM && table.getColumnIndex(AP_FWHM) == MeasurementTable.COLUMN_NOT_FOUND) {
+                    i = table.getFreeColumn(AP_FWHM + header);
+                }
+                if (showMeanWidth && table.getColumnIndex(AP_MEANWIDTH) == MeasurementTable.COLUMN_NOT_FOUND) {
+                    i = table.getFreeColumn(AP_MEANWIDTH + header);
+                }
+                if (showWidths) {
+                    if (table.getColumnIndex(AP_XWIDTH + header) == MeasurementTable.COLUMN_NOT_FOUND) {
+                        i = table.getFreeColumn(AP_XWIDTH + header);
+                    }
+                    if (table.getColumnIndex(AP_YWIDTH + header) == MeasurementTable.COLUMN_NOT_FOUND) {
+                        i = table.getFreeColumn(AP_YWIDTH + header);
+                    }
+                }
+                if (showAngle && table.getColumnIndex(AP_ANGLE + header) == ResultsTable.COLUMN_NOT_FOUND) {
+                    i = table.getFreeColumn(AP_ANGLE + header);
+                }
+                if (showRoundness && table.getColumnIndex(AP_ROUNDNESS + header) == ResultsTable.COLUMN_NOT_FOUND) {
+                    i = table.getFreeColumn(AP_ROUNDNESS + header);
+                }
+                if (showVariance && table.getColumnIndex(AP_VARIANCE + header) == ResultsTable.COLUMN_NOT_FOUND) {
+                    i = table.getFreeColumn(AP_VARIANCE + header);
+                }
+                if (showRaw && isCalibrated) {
+                    if (table.getColumnIndex(AP_RAWSOURCE + header) == ResultsTable.COLUMN_NOT_FOUND) {
+                        i = table.getFreeColumn(AP_RAWSOURCE + header);
+                    }
+                    if (table.getColumnIndex(AP_RAWBACK + header) == ResultsTable.COLUMN_NOT_FOUND) {
+                        i = table.getFreeColumn(AP_RAWBACK + header);
+                    }
                 }
             }
         }
@@ -4366,6 +4410,21 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         });
         minPeak.c1().setEnabled((!autoPeakValues && suggestCompStars));
         maxPeak.c1().setEnabled((!autoPeakValues && suggestCompStars));
+
+        gd.addDoubleSpaceLineSeparator();
+
+        // Multiradius control
+        gd.addCheckbox("Multiradius Multiaperture", multiRadius.get(), multiRadius::set)
+                .setToolTipText("""
+                        <html>
+                        Run Multiaperture, with each aperture being measured multiple times with differing radii.
+                        </html>
+                        """);
+        gd.addSlider("Num. of Radii Smaller:", 0, 10, multiRadiusNSmaller.get(), d -> multiRadiusNSmaller.set(d.intValue()));
+        gd.addSlider("Num. of Radii Larger:", 0, 10, multiRadiusNLarger.get(), d -> multiRadiusNLarger.set(d.intValue()));
+        gd.addBoundedNumericField("Radius step size",
+                new GenericSwingDialog.Bounds(0, false, Double.MAX_VALUE, false),
+                multiRadiusStepSize.get(), 5, 5, "px", multiRadiusStepSize::set);
 
         gd.addDoubleSpaceLineSeparator();
 

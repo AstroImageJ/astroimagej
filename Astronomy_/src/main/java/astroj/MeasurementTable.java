@@ -515,7 +515,6 @@ public class MeasurementTable extends ResultsTable {
      * Stores a number using a temporary different number of decimal places.
      */
     public void addValue(String column, double value, int places) {
-        setPrecision(16);
         super.addValue(column, value);
         updateView(UpdateEvent.CELL_UPDATED, getCounter()-1, getColumnIndex(column));
         // setPrecision (DEFAULT_DECIMALS);
@@ -527,6 +526,7 @@ public class MeasurementTable extends ResultsTable {
         var newColNeeded = column > getLastColumn();
         super.setValue(column, row, value);
         if (newColNeeded) {
+            setPrecision(16);
             updateViewSynced(UpdateEvent.COL_ADDED, getLastColumn(), getLastColumn());
         }
         updateView(UpdateEvent.CELL_UPDATED, row, column);
@@ -760,6 +760,7 @@ public class MeasurementTable extends ResultsTable {
     public int getFreeColumn(String heading) {
         var i = super.getFreeColumn(heading);
         if (COLUMN_IN_USE != i) {
+            setPrecision(16);
             updateViewSynced(UpdateEvent.COL_ADDED, i, i);
         }
         return i;

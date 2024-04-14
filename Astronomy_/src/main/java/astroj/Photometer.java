@@ -45,6 +45,7 @@ import java.awt.*;
  * *(back*gain+dark+ron*ron+gain*gain*0.083521))/gain;
  */
 public class Photometer {
+    private static final double FUDGE_CONST = 2 * Math.sqrt(2);
     /**
      * Center position of aperture in pixels.
      */
@@ -109,7 +110,6 @@ public class Photometer {
      * Calibration object of client.
      */
     Calibration calib;
-    private static final double FUDGE_CONST = 2*Math.sqrt(2);
 
     /**
      * Initializes Photometer without the client's Calibration.
@@ -214,7 +214,7 @@ public class Photometer {
             r2b1 = rb1 * rb1;
             r2b2 = rb2 * rb2;
         }
-		//if (!Double.isNaN(rb2) && rb2 > radius) r2b2 = rb2*rb2;
+        //if (!Double.isNaN(rb2) && rb2 > radius) r2b2 = rb2*rb2;
 
         double r2ap = radius * radius;
         double r2 = 0.0; //radius to middle of pixel
@@ -322,7 +322,7 @@ public class Photometer {
         }*/
         if (hasBack && (dBackCount > 0.0)) {
             //IJ.log("source="+source+"   sourceCount="+sourceCount+"  sourceMean="+source/(double)sourceCount);
-            //IJ.log("back="+back+"   backCount="+backCount+"  backMean="+back/(double)backCount);  
+            //IJ.log("back="+back+"   backCount="+backCount+"  backMean="+back/(double)backCount);
             back /= dBackCount;    // MEAN BACKGROUND
         }
 
@@ -485,8 +485,9 @@ public class Photometer {
 //        if (ip.getBitDepth()==24) ip.swapPixelArrays();
     }
 
-
-    /** Compute the area of overlap between a circle and a rectangle. */
+    /**
+     * Compute the area of overlap between a circle and a rectangle.
+     */
     double intarea(double xc, double yc, double r, double xin0, double xin1, double yin0, double yin1) {
         // xc,yc = Center of the circle
         // r     = Radius of the circle
@@ -499,14 +500,14 @@ public class Photometer {
 
         //var o = (oneside(x1, y0, y1, r) + oneside(y1, -x1, -x0, r) + oneside(-x0, -y1, -y0, r) + oneside(-y0, x0, x1, r));
 
-        var r2 = r*r;
-        var x02 = x0*x0;
-        var y02 = y0*y0;
-        var x12 = x1*x1;
-        var y12 = y1*y1;
-        var d = Math.min(Math.abs(x1-x0), Math.abs(y1-y0));
-        if (r2 > (x02+y02) && r2 > (x12+y12) &&
-                r2 > (x12+y02) && r2 > (x02+y12)) {
+        var r2 = r * r;
+        var x02 = x0 * x0;
+        var y02 = y0 * y0;
+        var x12 = x1 * x1;
+        var y12 = y1 * y1;
+        var d = Math.min(Math.abs(x1 - x0), Math.abs(y1 - y0));
+        if (r2 > (x02 + y02) && r2 > (x12 + y12) &&
+                r2 > (x12 + y02) && r2 > (x02 + y12)) {
             /*if (o != 1) {
                 System.out.printf("1: %s;%n", o);
             }*/
@@ -524,7 +525,6 @@ public class Photometer {
         //return o;
         return (oneside(x1, y0, y1, r) + oneside(y1, -x1, -x0, r) + oneside(-x0, -y1, -y0, r) + oneside(-y0, x0, x1, r));
     }
-
 
     /**
      * Compute the area of intersection between a triangle and a circle.
@@ -572,8 +572,6 @@ public class Photometer {
         }
     }
 
-
-    double delta = 0;
     /**
      * compute the area within an arc of a circle.  The arc is defined by
      * the two points (x,y0) and (x,y1) in the following manner:  The circle
@@ -582,7 +580,8 @@ public class Photometer {
      * point.  The angle between these two points on the circle measured
      * from y0 to y1 defines the sides of a wedge of the circle.  The area
      * returned is the area of this wedge.  If the area is traversed clockwise
-     * the the area is negative, otherwise it is positive. */
+     * the the area is negative, otherwise it is positive.
+     */
     double arc(double x, double y0, double y1, double r) {
         //x  = X coordinate of the two points
         //y0 = Y coordinate of the first point
@@ -593,12 +592,12 @@ public class Photometer {
         // simplified using arctan angle difference identity
         // https://en.wikipedia.org/wiki/List_of_trigonometric_identities#Tangents_and_cotangents_of_sums:~:text=Arctangent,pm%20%5Carctan%20y%7D
         // Changed 4/10/24 to improve performance by avoiding second call to atan by ~40%
-        return 0.5 * r * r * Math.atan((x*(y1-y0)) / (x*x+y1*y0));
+        return 0.5 * r * r * Math.atan((x * (y1 - y0)) / (x * x + y1 * y0));
     }
 
 
     /**
-     *  compute the area of a triangle defined by the origin and two points,
+     * compute the area of a triangle defined by the origin and two points,
      * (x,y0) and (x,y1).  This is a signed area.  If y1 > y0 then the area
      * will be positive, otherwise it will be negative.
      */
@@ -724,13 +723,13 @@ public class Photometer {
 
     protected void addPixelRoi(ImagePlus imp, double x, double y) {
         PixelRoi roi = new PixelRoi(x, y);
-		//roi.setAppearance (pixelColor);
+        //roi.setAppearance (pixelColor);
         roi.setImage(imp);
         ocanvas.add(roi);
     }
 
     protected void removePixelRois(ImagePlus imp) {
-		//roi.setAppearance (pixelColor);
+        //roi.setAppearance (pixelColor);
         ocanvas.removeApertureRois();
     }
 

@@ -331,11 +331,13 @@ public class Photometer {
         if (hasBack && removeBackStars && (dBackCount > 3.0)) {
             backMean = back;
             back2Mean = back2 / dBackCount;
+
             for (int iteration = 0; iteration < 100; iteration++) {
                 backstdev = Math.sqrt(back2Mean - backMean * backMean);
                 back = 0.0;
                 back2 = 0.0;
                 backCount = 0;
+
                 if (usePlaneLocal) {
                     plane = new FittedPlane((i2 - i1 + 1) * (j2 - j1 + 1));
                 }
@@ -343,16 +345,17 @@ public class Photometer {
                     ocanvas.removePixelRois();
                 }
 
-
+                var backMeanPlus2Stdev = backMean + 2.0 * backstdev;
+                var backMeanMinus2Stdev = backMean - 2.0 * backstdev;
                 for (int j = j1; j <= j2; j++) { // REMOVE STARS FROM BACKGROUND
                     dj = (double) j - ypix + Centroid.PIXELCENTER;        // Center
                     for (int i = i1; i <= i2; i++) {
                         di = (double) i - xpix + Centroid.PIXELCENTER;    // Center
                         r2 = di * di + dj * dj;
-                        d = ip.getPixelValue(i, j);
                         if (r2 >= r2b1 && r2 <= r2b2) {
-                            if (!Float.isNaN(d) && (d <= backMean + 2.0 * backstdev) && (d >= backMean - 2.0 * backstdev)) {
-                                back += d;   // FINAL BACKGROUND
+                            d = ip.getPixelValue(i, j);
+                            if (!Float.isNaN(d) && (d <= backMeanPlus2Stdev) && (d >= backMeanMinus2Stdev)) {
+                                back += d; // FINAL BACKGROUND
                                 back2 += d * d;
                                 backCount++;
                                 //IJ.log("count="+backCount);
@@ -379,6 +382,7 @@ public class Photometer {
                 }
                 prevBackMean = backMean;
             }
+
             dBackCount = (double) backCount;
             if (markRemovedPixels) {
                 AstroCanvas ac = (AstroCanvas) imp.getCanvas();

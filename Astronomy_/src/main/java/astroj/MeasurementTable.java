@@ -19,9 +19,7 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.WeakHashMap;
+import java.util.*;
 import java.util.regex.Pattern;
 
 
@@ -43,6 +41,7 @@ public class MeasurementTable extends ResultsTable {
     private final HashSet<Runnable> listeners = new HashSet<>();
     private static final Map<String, MeasurementTable> INSTANCES = new WeakHashMap<>();
     private MeasurementsWindow window;
+    private final Map<String, Integer> headingsCache = Collections.synchronizedMap(new HashMap<>());
 
     /**
      * Creates an empty default MeasurementTable.
@@ -723,6 +722,7 @@ public class MeasurementTable extends ResultsTable {
         super.reset();
         listeners.forEach(Runnable::run);
         updateView(UpdateEvent.REBUILD);
+        headingsCache.clear();
     }
 
     public synchronized void addListener(Runnable r) {
@@ -757,12 +757,39 @@ public class MeasurementTable extends ResultsTable {
     }
 
     @Override
-    public int getFreeColumn(String heading) {
-        var i = super.getFreeColumn(heading);
-        if (COLUMN_IN_USE != i) {
-            setPrecision(16);
-            updateViewSynced(UpdateEvent.COL_ADDED, i, i);
+    public int getColumnIndex(String heading) {
+        var i = headingsCache.getOrDefault(heading, COLUMN_NOT_FOUND);
+        if (i >= 0) {
+            if (!getColumnHeading(i).equals(heading)) {
+                i = super.getColumnIndex(heading);
+                headingsCache.put(heading, i);
+            }
+        } else {
+            i = super.getColumnIndex(heading);
+            headingsCache.put(heading, i);
         }
+        return i;
+    }
+
+    @Override
+    public int getFreeColumn(String heading) {
+        var i = headingsCache.getOrDefault(heading, COLUMN_NOT_FOUND);
+
+        if (i >= 0) {
+            if (getColumnHeading(i).equals(heading)) {
+                return COLUMN_IN_USE;
+            }
+        }
+
+        if (i == COLUMN_NOT_FOUND) {
+            i = super.getFreeColumn(heading);//todo this can be improved by skipping the looping since we know the heading is new
+            if (COLUMN_IN_USE != i) {
+                setPrecision(16);
+                updateViewSynced(UpdateEvent.COL_ADDED, i, i);
+                headingsCache.put(heading, i);
+            }
+        }
+
         return i;
     }
 
@@ -770,6 +797,7 @@ public class MeasurementTable extends ResultsTable {
     public synchronized MeasurementTable clone() {
         var n = (MeasurementTable) super.clone();
         n.window = null;
+        n.headingsCache.putAll(headingsCache);
         return n;
     }
 

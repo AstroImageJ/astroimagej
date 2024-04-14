@@ -185,6 +185,8 @@ public class Centroid {
                 back = 0.0;
                 back2 = 0.0;
                 backCount = 0;
+                var backMeanPlus2StdDev = backMean + 2.0 * backstdev;
+                var backMeanMinus2StdDev = backMean - 2.0 * backstdev;
 
                 for (int j = j1; j <= j2; j++) { // REMOVE STARS FROM BACKGROUND
                     dj = (double) j - yCenter + Centroid.PIXELCENTER;        // Center
@@ -194,8 +196,7 @@ public class Centroid {
                         if (rad2 >= r12 && rad2 <= r22) {
                             val = ip.getPixelValue(i, j);
                             if (!Float.isNaN(val) &&
-                                    (iteration == 0 ||
-                                             (val <= backMean + 2.0 * backstdev && val >= backMean - 2.0 * backstdev))) {
+                                    (iteration == 0 || (val <= backMeanPlus2StdDev && val >= backMeanMinus2StdDev))) {
                                 back += val;
                                 back2 += val * val;
                                 backCount++;
@@ -226,7 +227,8 @@ public class Centroid {
 
         // FIND THE SKY BACKGROUND
 
-
+        var backMeanPlus2StdDev = backMean + 2.0 * backstdev;
+        var backMeanMinus2StdDev = backMean - 2.0 * backstdev;
         for (int j = j1; j <= j2; j++) {
             dj = (double) j - yCenter + Centroid.PIXELCENTER;
             for (int i = i1; i <= i2; i++) {
@@ -234,7 +236,7 @@ public class Centroid {
                 rad2 = di * di + dj * dj;
                 if (rad2 >= r12 && rad2 <= r22) {
                     val = ip.getPixelValue(i, j);
-                    if (!removeBackStars || (val <= backMean + 2.0 * backstdev && val >= backMean - 2.0 * backstdev)) { // 2011-MAR-24 CORRECTED TO CIRCULAR REGION
+                    if (!removeBackStars || (val <= backMeanPlus2StdDev && val >= backMeanMinus2StdDev)) { // 2011-MAR-24 CORRECTED TO CIRCULAR REGION
                         back += val;
                         backCount++;
                         if (usePlaneLocal) {
@@ -257,7 +259,7 @@ public class Centroid {
             backMean = 0.0;
         }
 
-        srcmax -= back;
+        srcmax -= (float) back;
         return true;
     }
 

@@ -4202,6 +4202,21 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
         gd.addDoubleSpaceLineSeparator();
 
+        // Multiradius control
+        gd.addCheckbox("Multiradius Multiaperture", multiRadius.get(), multiRadius::set)
+                .setToolTipText("""
+                        <html>
+                        Run Multiaperture, with each aperture being measured multiple times with differing radii.
+                        </html>
+                        """);
+        gd.addSlider("Num. of Radii Smaller:", 0, 10, multiRadiusNSmaller.get(), d -> multiRadiusNSmaller.set(d.intValue()));
+        gd.addSlider("Num. of Radii Larger:", 0, 10, multiRadiusNLarger.get(), d -> multiRadiusNLarger.set(d.intValue()));
+        gd.addBoundedNumericField("Radius step size",
+                new GenericSwingDialog.Bounds(0, false, Double.MAX_VALUE, false),
+                multiRadiusStepSize.get(), 0.5, 5, "px", multiRadiusStepSize::set);
+
+        gd.addDoubleSpaceLineSeparator();
+
         var apLoadingButtons = gd.addRadioOptions(ApLoading.class, apLoading::set, true);
         for (ApLoading value : ApLoading.values()) {
             apLoadingButtons.get(value).setEnabled(value.isEnabled());
@@ -4410,21 +4425,6 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         });
         minPeak.c1().setEnabled((!autoPeakValues && suggestCompStars));
         maxPeak.c1().setEnabled((!autoPeakValues && suggestCompStars));
-
-        gd.addDoubleSpaceLineSeparator();
-
-        // Multiradius control
-        gd.addCheckbox("Multiradius Multiaperture", multiRadius.get(), multiRadius::set)
-                .setToolTipText("""
-                        <html>
-                        Run Multiaperture, with each aperture being measured multiple times with differing radii.
-                        </html>
-                        """);
-        gd.addSlider("Num. of Radii Smaller:", 0, 10, multiRadiusNSmaller.get(), d -> multiRadiusNSmaller.set(d.intValue()));
-        gd.addSlider("Num. of Radii Larger:", 0, 10, multiRadiusNLarger.get(), d -> multiRadiusNLarger.set(d.intValue()));
-        gd.addBoundedNumericField("Radius step size",
-                new GenericSwingDialog.Bounds(0, false, Double.MAX_VALUE, false),
-                multiRadiusStepSize.get(), 5, 5, "px", multiRadiusStepSize::set);
 
         gd.addDoubleSpaceLineSeparator();
 

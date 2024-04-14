@@ -2,8 +2,11 @@
 
 package astroj;
 
-import ij.*;
-import ij.process.*;
+import ij.IJ;
+import ij.ImagePlus;
+import ij.Prefs;
+import ij.process.ColorProcessor;
+import ij.process.ImageProcessor;
 
 import java.awt.*;
 
@@ -67,7 +70,7 @@ import java.awt.*;
 
 public class Centroid
 	{
-	public static double PIXELCENTER = 0.5;
+	public static final double PIXELCENTER = 0.5;
 
 	protected double xCenter,yCenter,radius,radius2,rBack1,rBack2,back,backMean;
 	protected double xWidth,yWidth;

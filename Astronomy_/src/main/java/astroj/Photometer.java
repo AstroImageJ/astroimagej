@@ -238,8 +238,9 @@ public class Photometer {
         back2 = 0;
         boolean fitPlaneError = false;
 
+        int totalPixels = (i2 - i1 + 1) * (j2 - j1 + 1);
         if (usePlaneLocal) {
-            plane = new FittedPlane((i2 - i1 + 1) * (j2 - j1 + 1));
+            plane = new FittedPlane(totalPixels);
         }
 
         peak = Float.NEGATIVE_INFINITY;
@@ -332,6 +333,29 @@ public class Photometer {
             backMean = back;
             back2Mean = back2 / dBackCount;
 
+            // Copy pixel data for evaluation
+            var pixels = new float[totalPixels];
+            var js = new double[totalPixels];
+            var is = new double[totalPixels];
+            var pCnt = 0;
+            for (int j = j1; j <= j2; j++) {
+                dj = (double) j - ypix + Centroid.PIXELCENTER;        // Center
+                for (int i = i1; i <= i2; i++) {
+                    di = (double) i - xpix + Centroid.PIXELCENTER;    // Center
+                    r2 = di * di + dj * dj;
+                    if (r2 >= r2b1 && r2 <= r2b2) {
+                        d = ip.getPixelValue(i, j);
+                        if (!Float.isNaN(d)) {
+                            js[pCnt] = dj;
+                            is[pCnt] = di;
+                            pixels[pCnt++] = d;
+                        } else if (markRemovedPixels) {
+                            addPixelRoi(imp, i, j); // Mark NaN pixels
+                        }
+                    }
+                }
+            }
+
             for (int iteration = 0; iteration < 100; iteration++) {
                 backstdev = Math.sqrt(back2Mean - backMean * backMean);
                 back = 0.0;
@@ -339,34 +363,26 @@ public class Photometer {
                 backCount = 0;
 
                 if (usePlaneLocal) {
-                    plane = new FittedPlane((i2 - i1 + 1) * (j2 - j1 + 1));
+                    plane = new FittedPlane(totalPixels);
                 }
                 if (markRemovedPixels) {
                     ocanvas.removePixelRois();
                 }
 
+                // REMOVE STARS FROM BACKGROUND
                 var backMeanPlus2Stdev = backMean + 2.0 * backstdev;
                 var backMeanMinus2Stdev = backMean - 2.0 * backstdev;
-                for (int j = j1; j <= j2; j++) { // REMOVE STARS FROM BACKGROUND
-                    dj = (double) j - ypix + Centroid.PIXELCENTER;        // Center
-                    for (int i = i1; i <= i2; i++) {
-                        di = (double) i - xpix + Centroid.PIXELCENTER;    // Center
-                        r2 = di * di + dj * dj;
-                        if (r2 >= r2b1 && r2 <= r2b2) {
-                            d = ip.getPixelValue(i, j);
-                            if (!Float.isNaN(d) && (d <= backMeanPlus2Stdev) && (d >= backMeanMinus2Stdev)) {
-                                back += d; // FINAL BACKGROUND
-                                back2 += d * d;
-                                backCount++;
-                                //IJ.log("count="+backCount);
-                                if (usePlaneLocal) {
-                                    plane.addPoint(di, dj, d);
-                                }
-                                //if (markRemovedPixels) addPixelRoi(imp,i,j);
-                            } else if (markRemovedPixels) {
-                                addPixelRoi(imp, i, j);
-                            }
+                for (int i = 0; i < pCnt; i++) {
+                    d = pixels[i];
+                    if ((d <= backMeanPlus2Stdev) && (d >= backMeanMinus2Stdev)) {
+                        back += d; // FINAL BACKGROUND
+                        back2 += d * d;
+                        backCount++;
+                        if (usePlaneLocal) {
+                            plane.addPoint(is[i], js[i], d);
                         }
+                    } else if (markRemovedPixels) {
+                        addPixelRoi(imp,is[i], js[i]);
                     }
                 }
 

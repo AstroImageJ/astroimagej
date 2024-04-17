@@ -178,9 +178,35 @@ public class Centroid {
         backMean = 0;
         double prevBackMean = 0;
         float val = 0;
+        float[] pixels = null;
+        double[] js = null;
+        double[] is = null;
+        var pCnt = 0;
 
         if (removeBackStars) {
-            for (int iteration = 0; iteration < 9; iteration++) { //find interative background mean value
+            // Copy pixel data for evaluation
+            int totalPixels = (i2 - i1 + 1) * (j2 - j1 + 1);
+            pixels = new float[totalPixels];
+            js = new double[totalPixels];
+            is = new double[totalPixels];
+
+            for (int j = j1; j <= j2; j++) { // REMOVE STARS FROM BACKGROUND
+                dj = (double) j - yCenter + Centroid.PIXELCENTER;        // Center
+                for (int i = i1; i <= i2; i++) {
+                    di = (double) i - xCenter + Centroid.PIXELCENTER;    // Center
+                    rad2 = di * di + dj * dj;
+                    if (rad2 >= r12 && rad2 <= r22) {
+                        val = ip.getPixelValue(i, j);
+                        if (!Float.isNaN(val)) {
+                            js[pCnt] = dj;
+                            is[pCnt] = di;
+                            pixels[pCnt++] = val;
+                        }
+                    }
+                }
+            }
+
+            for (int iteration = 0; iteration < 9; iteration++) { //find iterative background mean value
                 backstdev = Math.sqrt(back2Mean - backMean * backMean);
                 back = 0.0;
                 back2 = 0.0;
@@ -188,20 +214,13 @@ public class Centroid {
                 var backMeanPlus2StdDev = backMean + 2.0 * backstdev;
                 var backMeanMinus2StdDev = backMean - 2.0 * backstdev;
 
-                for (int j = j1; j <= j2; j++) { // REMOVE STARS FROM BACKGROUND
-                    dj = (double) j - yCenter + Centroid.PIXELCENTER;        // Center
-                    for (int i = i1; i <= i2; i++) {
-                        di = (double) i - xCenter + Centroid.PIXELCENTER;    // Center
-                        rad2 = di * di + dj * dj;
-                        if (rad2 >= r12 && rad2 <= r22) {
-                            val = ip.getPixelValue(i, j);
-                            if (!Float.isNaN(val) &&
-                                    (iteration == 0 || (val <= backMeanPlus2StdDev && val >= backMeanMinus2StdDev))) {
-                                back += val;
-                                back2 += val * val;
-                                backCount++;
-                            }
-                        }
+                // REMOVE STARS FROM BACKGROUND
+                for (int i = 0; i < pCnt; i++) {
+                    val = pixels[i];
+                    if (iteration == 0 || (val <= backMeanPlus2StdDev && val >= backMeanMinus2StdDev)) {
+                        back += val;
+                        back2 += val * val;
+                        backCount++;
                     }
                 }
 
@@ -229,19 +248,33 @@ public class Centroid {
 
         var backMeanPlus2StdDev = backMean + 2.0 * backstdev;
         var backMeanMinus2StdDev = backMean - 2.0 * backstdev;
-        for (int j = j1; j <= j2; j++) {
-            dj = (double) j - yCenter + Centroid.PIXELCENTER;
-            for (int i = i1; i <= i2; i++) {
-                di = (double) i - xCenter + Centroid.PIXELCENTER;
-                rad2 = di * di + dj * dj;
-                if (rad2 >= r12 && rad2 <= r22) {
-                    val = ip.getPixelValue(i, j);
-                    if (!removeBackStars || (val <= backMeanPlus2StdDev && val >= backMeanMinus2StdDev)) { // 2011-MAR-24 CORRECTED TO CIRCULAR REGION
-                        back += val;
-                        backCount++;
-                        if (usePlaneLocal) {
-                            plane.addPoint(di, dj, val);
+        // Check to see if we have the pixel data for the background already, if not check all pixels
+        if (pixels == null) {
+            for (int j = j1; j <= j2; j++) {
+                dj = (double) j - yCenter + Centroid.PIXELCENTER;
+                for (int i = i1; i <= i2; i++) {
+                    di = (double) i - xCenter + Centroid.PIXELCENTER;
+                    rad2 = di * di + dj * dj;
+                    if (rad2 >= r12 && rad2 <= r22) {
+                        val = ip.getPixelValue(i, j);
+                        if (!removeBackStars || (val <= backMeanPlus2StdDev && val >= backMeanMinus2StdDev)) { // 2011-MAR-24 CORRECTED TO CIRCULAR REGION
+                            back += val;
+                            backCount++;
+                            if (usePlaneLocal) {
+                                plane.addPoint(di, dj, val);
+                            }
                         }
+                    }
+                }
+            }
+        } else {
+            for (int i = 0; i < pCnt; i++) {
+                val = pixels[i];
+                if (!removeBackStars || (val <= backMeanPlus2StdDev && val >= backMeanMinus2StdDev)) { // 2011-MAR-24 CORRECTED TO CIRCULAR REGION
+                    back += val;
+                    backCount++;
+                    if (usePlaneLocal) {
+                        plane.addPoint(is[i], js[i], val);
                     }
                 }
             }

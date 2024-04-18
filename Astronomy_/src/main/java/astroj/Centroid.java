@@ -74,7 +74,7 @@ public class Centroid {
     protected double xCenter, yCenter, radius, radius2, rBack1, rBack2, back, backMean;
     protected double xWidth, yWidth;
     protected double angle, ecc;
-    protected float srcmax;
+    protected double srcmax;
     protected double variance;
     //	public boolean forgiving = false;
     protected boolean debug;
@@ -292,7 +292,7 @@ public class Centroid {
             backMean = 0.0;
         }
 
-        srcmax -= (float) back;
+        srcmax -= back;
         return true;
     }
 

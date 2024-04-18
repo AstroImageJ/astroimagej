@@ -417,7 +417,7 @@ public class FITS_Writer implements PlugIn {
 				if (ObjectShare.get("multiapertureKeys") instanceof Set<?> keysGeneric) {
 					var keys = (Set<String>) keysGeneric;
 					for (String key : keys) {
-						if (Prefs.ijPrefs.containsKey(keys)) {
+						if (Prefs.ijPrefs.containsKey(key)) {
 							apertures.put(key, Prefs.ijPrefs.getProperty(key));
 						}
 					}
@@ -426,13 +426,13 @@ public class FITS_Writer implements PlugIn {
 				// Store plotcfg as UTF-8 encoded byte array
 				var baos = new ByteArrayOutputStream();
 				plotcfg.store(new PrintStream(baos, true, StandardCharsets.UTF_8), null);
-				table.addColumn(baos.toByteArray());
+				table.addColumn(new byte[][]{baos.toByteArray()});
 
 
 				// Store apertures as UTF-8 encoded byte array
 				baos = new ByteArrayOutputStream();
 				apertures.store(new PrintStream(baos, true, StandardCharsets.UTF_8), null);
-				table.addColumn(baos.toByteArray());
+				table.addColumn(new byte[][]{baos.toByteArray()});
 
 				table.defragment();
 

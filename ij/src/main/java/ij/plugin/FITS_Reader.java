@@ -576,10 +576,14 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 					var pltcfgCol = t.findColumn("plotcfg");
 					if (pltcfgCol >= 0 && t.getColumn(pltcfgCol) instanceof byte[] bytes) {
 						plotcfg = bytes;
+					} else if (pltcfgCol >= 0 && t.getColumn(pltcfgCol) instanceof byte[][] bytes) {
+						plotcfg = bytes[0];
 					}
 					var aperturesCol = t.findColumn("apertures");
 					if (aperturesCol >= 0 && t.getColumn(aperturesCol) instanceof byte[] bytes) {
 						apertures = bytes;
+					} else if (aperturesCol >= 0 && t.getColumn(aperturesCol) instanceof byte[][] bytes) {
+						apertures = bytes[0];
 					}
 				}
 			}

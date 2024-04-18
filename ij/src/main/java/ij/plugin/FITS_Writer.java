@@ -286,7 +286,7 @@ public class FITS_Writer implements PlugIn {
 		IJ.showStatus("");
 	}
 
-	public static void saveMPTable(ResultsTable resultsTable, boolean includePrefs, String path, String extension) {
+	public static void saveMPTable(ResultsTable resultsTable, boolean includePrefs, boolean includeApertures, String path, String extension) {
 		IJ.showStatus("Saving image...");
 
 		// GET PATH
@@ -401,45 +401,55 @@ public class FITS_Writer implements PlugIn {
 			}
 
 			// Write plotcfg
-			if (includePrefs) {
+			if (includePrefs || includeApertures) {
 				table = new BinaryTable();
 
-				Properties plotcfg = new Properties();
-				Properties apertures = new Properties();
-				Enumeration e = Prefs.ijPrefs.keys();
-				while (e.hasMoreElements()) {
-					String key = (String) e.nextElement();
-					if (key.indexOf(".plot.") == 0) {
-						plotcfg.put(key, Prefs.ijPrefs.getProperty(key));
-					}
-				}
-
-				if (ObjectShare.get("multiapertureKeys") instanceof Set<?> keysGeneric) {
-					var keys = (Set<String>) keysGeneric;
-					for (String key : keys) {
-						if (Prefs.ijPrefs.containsKey(key)) {
-							apertures.put(key, Prefs.ijPrefs.getProperty(key));
+				if (includePrefs) {
+					Properties plotcfg = new Properties();
+					Enumeration e = Prefs.ijPrefs.keys();
+					while (e.hasMoreElements()) {
+						String key = (String) e.nextElement();
+						if (key.indexOf(".plot.") == 0) {
+							plotcfg.put(key, Prefs.ijPrefs.getProperty(key));
 						}
 					}
+
+					// Store plotcfg as UTF-8 encoded byte array
+					var baos = new ByteArrayOutputStream();
+					plotcfg.store(new PrintStream(baos, true, StandardCharsets.UTF_8), null);
+					table.addColumn(new byte[][]{baos.toByteArray()});
 				}
 
-				// Store plotcfg as UTF-8 encoded byte array
-				var baos = new ByteArrayOutputStream();
-				plotcfg.store(new PrintStream(baos, true, StandardCharsets.UTF_8), null);
-				table.addColumn(new byte[][]{baos.toByteArray()});
+				if (includeApertures) {
+					Properties apertures = new Properties();
 
+					if (ObjectShare.get("multiapertureKeys") instanceof Set<?> keysGeneric) {
+						var keys = (Set<String>) keysGeneric;
+						for (String key : keys) {
+							if (Prefs.ijPrefs.containsKey(key)) {
+								apertures.put(key, Prefs.ijPrefs.getProperty(key));
+							}
+						}
+					}
 
-				// Store apertures as UTF-8 encoded byte array
-				baos = new ByteArrayOutputStream();
-				apertures.store(new PrintStream(baos, true, StandardCharsets.UTF_8), null);
-				table.addColumn(new byte[][]{baos.toByteArray()});
+					// Store apertures as UTF-8 encoded byte array
+					var baos = new ByteArrayOutputStream();
+					apertures.store(new PrintStream(baos, true, StandardCharsets.UTF_8), null);
+					table.addColumn(new byte[][]{baos.toByteArray()});
+				}
 
 				table.defragment();
 
 				hdu = table.toHDU();
 				hdu.getHeader().insertComment("UTF-8 encoded byte arrays in the format of Java properties");
-				hdu.setColumnName(0, "plotcfg", "AIJ plotcfg, Java properties format");
-				hdu.setColumnName(1, "apertures", "AIJ apertures");
+				var c = 0;
+				if (includePrefs) {
+					hdu.setColumnName(c++, "plotcfg", "AIJ plotcfg, Java properties format");
+				}
+
+				if (includeApertures) {
+					hdu.setColumnName(c++, "apertures", "AIJ apertures");
+				}
 
 				if (compressionModes.contains(FPACK)) {
 					// GZIP_1 must be used due to fpack/funpack issues

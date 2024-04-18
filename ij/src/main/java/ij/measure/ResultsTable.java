@@ -1482,11 +1482,11 @@ public class ResultsTable implements Cloneable {
 
     @AstroImageJ(reason = "Overload to allow passing plotcfg param")
     public void saveAs(String path) throws IOException {
-        saveAs(path, false);
+        saveAs(path, false, false);
     }
 
     @AstroImageJ(reason = "Save table with 16 decimal places, not 6; Fits export; Save metadata", modified = true)
-	public void saveAs(String path, boolean includePlotcfg) throws IOException {
+	public void saveAs(String path, boolean includePlotcfg, boolean includeApertures) throws IOException {
 		boolean emptyTable = size()==0 && lastColumn<0;
 		var oldPrecision = getPrecision();
 		setPrecision(16);
@@ -1498,7 +1498,7 @@ public class ResultsTable implements Cloneable {
 			path = sd.getDirectory() + file;
 		}
 		if (FitsExtensionUtil.isFitsFile(path)) {
-			FITS_Writer.saveMPTable(this, includePlotcfg, path, "");
+			FITS_Writer.saveMPTable(this, includePlotcfg, includeApertures, path, "");
 			return;
 		}
 		boolean csv = path.endsWith(".csv") || path.endsWith(".CSV");

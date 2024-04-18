@@ -871,6 +871,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     private static Property<Boolean> drawOffscreenDisplacementArrowsX = new Property<>(true, MultiPlot_.class);
     private static Property<Boolean> drawOffscreenDisplacementArrowsY = new Property<>(true, MultiPlot_.class);
     private static Property<Boolean> includePlotcfgInFits = new Property<>(true, MultiPlot_.class);
+    private static Property<Boolean> includeAperturesInFits = new Property<>(true, MultiPlot_.class);
     private static Property<Boolean> saveTableAsFits = new Property<>(false, MultiPlot_.class);
     private static Property<BiState> drawBinErrBarsBase = new Property<>(BiState.DISABLED, "plot.", "", MultiPlot_.class);
     private static String lastUsedTitle, lastUsedSubtitle;
@@ -7653,12 +7654,12 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         var savedatafitsmenuitem = new JMenuItem("Save data to FITs file...");
         savedatafitsmenuitem.setToolTipText("<html>" + "saves measurement table data to a user selected file" + "</html>");
-        savedatafitsmenuitem.addActionListener(e -> saveData(true, false));
+        savedatafitsmenuitem.addActionListener(e -> saveData(true, false, false));
         filemenu.add(savedatafitsmenuitem);
 
         var savedataAndCfgfitsmenuitem = new JMenuItem("Save data, plotcfg, and apertures to FITs file...");
         savedataAndCfgfitsmenuitem.setToolTipText("<html>" + "saves measurement table data to a user selected file" + "</html>");
-        savedataAndCfgfitsmenuitem.addActionListener(e -> saveData(true, true));
+        savedataAndCfgfitsmenuitem.addActionListener(e -> saveData(true, true, true));
         filemenu.add(savedataAndCfgfitsmenuitem);
 
         JMenuItem savedatasubsetmenuitem = new JMenuItem("Save data subset to file...");
@@ -16795,10 +16796,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
 
     static void saveData() {
-        saveData(false, false);
+        saveData(false, false, false);
     }
 
-    static void saveData(boolean saveAsFits, boolean includePlotcfg) {
+    static void saveData(boolean saveAsFits, boolean includePlotcfg, boolean includeApertures) {
         if (table == null || table.getLastColumn() == -1) {
             IJ.beep();
             IJ.showMessage("No table to save");
@@ -16809,7 +16810,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 saveAsFits ? ".fits.fz" : Prefs.get("options.ext", ".xls"));
         if (sf.getDirectory() == null || sf.getFileName() == null) return;
         try {
-            table.saveAs(sf.getDirectory() + sf.getFileName(), includePlotcfg);
+            table.saveAs(sf.getDirectory() + sf.getFileName(), includePlotcfg, includeApertures);
         } catch (IOException ioe) {
             IJ.beep();
             IJ.showMessage("Error writing measurement table file");
@@ -17594,7 +17595,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 IJ.showMessage("No data table to save");
             } else {
                 try {
-                    table.saveAs(filenamesProvided ? dataPath : outBase + dataSuffix + (saveTableAsFits.get() ? ".fits.fz" : Prefs.get("options.ext", ".xls")), includePlotcfgInFits.get());
+                    table.saveAs(filenamesProvided ? dataPath : outBase + dataSuffix +
+                            (saveTableAsFits.get() ? ".fits.fz" : Prefs.get("options.ext", ".xls")),
+                            includePlotcfgInFits.get(), includeAperturesInFits.get());
                 } catch (IOException ioe) {
                     IJ.beep();
                     IJ.showMessage("Error writing measurement table file");
@@ -17672,8 +17675,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         gd.addMessage("Select items to save when using save all:");
         gd.addCheckboxGroup(1, 10, new String[]{"Image", "Plot", "Seeing Profile", "Seeing Profile Stack", "Plot Config", "Data Table", "Apertures", "Fit Panels", "Fit Text", "Log"},
                 new boolean[]{saveImage, savePlot, saveSeeingProfile, saveSeeingProfileStack, saveConfig, saveTable, saveApertures, saveFitPanels, saveFitPanelText, saveLog});
-        gd.addCheckboxGroup(1, 4, new String[]{"Data Subset", "Show Data Subset Panel", "Save Data As FITs Table", "Include Plot Config in FITs"},
-                new boolean[]{saveDataSubset, showDataSubsetPanel, saveTableAsFits.get(), includePlotcfgInFits.get()});
+        gd.addCheckboxGroup(1, 2, new String[]{"Data Subset", "Show Data Subset Panel"},
+                new boolean[]{saveDataSubset, showDataSubsetPanel});
+        gd.addCheckboxGroup(1, 3, new String[]{"Save Data As FITs Table", "Include Plot Config in FITs", "Include Apertures in FITs"},
+                new boolean[]{saveTableAsFits.get(), includePlotcfgInFits.get(), includeAperturesInFits.get()});
         gd.addStringField("Science Image display suffix:", imageSuffix, 40);
         gd.addStringField("Plot image display suffix:", plotSuffix, 40);
         gd.addStringField("Seeing Profile suffix:", seeingProfileSuffix, 40);
@@ -17706,6 +17711,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         showDataSubsetPanel = gd.getNextBoolean();
         saveTableAsFits.set(gd.getNextBoolean());
         includePlotcfgInFits.set(gd.getNextBoolean());
+        includeAperturesInFits.set(gd.getNextBoolean());
 
         imageSuffix = gd.getNextString();
         plotSuffix = gd.getNextString();
@@ -17854,6 +17860,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         String outFileBase = sf.getFileName();
         int location = outFileBase.lastIndexOf('.');
         if (location > (outFileBase.length() - 5) || outFileBase.endsWith(".plotcfg") || outFileBase.endsWith(".apertures")) outFileBase = outFileBase.substring(0, location);
+        if (outFileBase.endsWith(".fits")) {
+            outFileBase = outFileBase.substring(0, outFileBase.lastIndexOf(".fits"));
+        }
         outBase = sf.getDirectory() + outFileBase;
         String outPath = outBase;
         if (outBase.endsWith(imageSuffix)) {

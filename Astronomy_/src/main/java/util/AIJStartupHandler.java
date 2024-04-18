@@ -67,6 +67,28 @@ public class AIJStartupHandler implements PlugIn {
                     var asw = IJU.getBestOpenAstroStackWindow();
                     if (asw != null && tableRead.apertures() != null) {
                         asw.openApertures(new ByteArrayInputStream(tableRead.apertures()));
+                    } else if (tableRead.apertures() != null) {
+                        try {
+                            Prefs.set("multiaperture.xapertures", "");
+                            Prefs.set("multiaperture.yapertures", "");
+                            Prefs.set("multiaperture.raapertures", "");
+                            Prefs.set("multiaperture.decapertures", "");
+                            Prefs.set("multiaperture.isrefstar", "");
+                            Prefs.set("multiaperture.isalignstar", "");
+                            Prefs.set("multiaperture.centroidstar", "");
+                            Prefs.set("multiaperture.absmagapertures", "");
+                            Prefs.set("multiaperture.import.xapertures", "");
+                            Prefs.set("multiaperture.import.yapertures", "");
+                            Prefs.set("multiaperture.import.raapertures", "");
+                            Prefs.set("multiaperture.import.decapertures", "");
+                            Prefs.set("multiaperture.import.isrefstar", "");
+                            Prefs.set("multiaperture.import.isalignstar", "");
+                            Prefs.set("multiaperture.import.centroidstar", "");
+                            Prefs.ijPrefs.load(new ByteArrayInputStream(tableRead.apertures()));
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                            IJ.error("Failed to read apertures");
+                        }
                     }
 
                     if (!MultiPlot_.isRunning()) {
@@ -88,6 +110,28 @@ public class AIJStartupHandler implements PlugIn {
                 var asw = IJU.getBestOpenAstroStackWindow();
                 if (asw != null) {
                     asw.openApertures(p.toString());
+                } else {
+                    try {
+                        Prefs.set("multiaperture.xapertures", "");
+                        Prefs.set("multiaperture.yapertures", "");
+                        Prefs.set("multiaperture.raapertures", "");
+                        Prefs.set("multiaperture.decapertures", "");
+                        Prefs.set("multiaperture.isrefstar", "");
+                        Prefs.set("multiaperture.isalignstar", "");
+                        Prefs.set("multiaperture.centroidstar", "");
+                        Prefs.set("multiaperture.absmagapertures", "");
+                        Prefs.set("multiaperture.import.xapertures", "");
+                        Prefs.set("multiaperture.import.yapertures", "");
+                        Prefs.set("multiaperture.import.raapertures", "");
+                        Prefs.set("multiaperture.import.decapertures", "");
+                        Prefs.set("multiaperture.import.isrefstar", "");
+                        Prefs.set("multiaperture.import.isalignstar", "");
+                        Prefs.set("multiaperture.import.centroidstar", "");
+                        Prefs.ijPrefs.load(Files.newBufferedReader(p));
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                        IJ.error("Failed to read apertures");
+                    }
                 }
             }, true, ".apertures");
 

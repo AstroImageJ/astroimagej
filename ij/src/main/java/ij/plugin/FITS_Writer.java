@@ -431,7 +431,7 @@ public class FITS_Writer implements PlugIn {
 
 				// Store apertures as UTF-8 encoded byte array
 				baos = new ByteArrayOutputStream();
-				plotcfg.store(new PrintStream(baos, true, StandardCharsets.UTF_8), null);
+				apertures.store(new PrintStream(baos, true, StandardCharsets.UTF_8), null);
 				table.addColumn(baos.toByteArray());
 
 				table.defragment();

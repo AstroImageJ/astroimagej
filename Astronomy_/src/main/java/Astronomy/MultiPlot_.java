@@ -17595,8 +17595,22 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 IJ.showMessage("No data table to save");
             } else {
                 try {
-                    table.saveAs(filenamesProvided ? dataPath : outBase + dataSuffix +
-                            (saveTableAsFits.get() ? ".fits.fz" : Prefs.get("options.ext", ".xls")),
+                    table.saveAs(filenamesProvided ? dataPath : outBase + dataSuffix + Prefs.get("options.ext", ".xls"),
+                            includePlotcfgInFits.get(), includeAperturesInFits.get());
+                } catch (IOException ioe) {
+                    IJ.beep();
+                    IJ.showMessage("Error writing measurement table file");
+                }
+            }
+        }
+
+        if (saveTableAsFits.get()) {
+            if (table == null || table.getLastColumn() == -1) {
+                IJ.beep();
+                IJ.showMessage("No data table to save");
+            } else {
+                try {
+                    table.saveAs(filenamesProvided ? dataPath : outBase + dataSuffix + ".fits.fz",
                             includePlotcfgInFits.get(), includeAperturesInFits.get());
                 } catch (IOException ioe) {
                     IJ.beep();
@@ -17897,7 +17911,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             IJU.saveAsPngOrJpg(imageDisplay, saveFile, format);
         }
 
-        if (saveAll && (savePlot || saveConfig || saveTable)) {
+        if (saveAll && (savePlot || saveConfig || saveTable || saveTableAsFits.get())) {
             saveDataImageConfig(savePlot, saveConfig, saveTable, true, format,
                     outBase + plotSuffix + "." + format, outBase + configSuffix + ".plotcfg",
                     outBase + dataSuffix + (saveTableAsFits.get() ? ".fits.fz" : Prefs.get("options.ext", ".xls")));

@@ -17610,9 +17610,13 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 IJ.showMessage("No data table to save");
             } else {
                 try {
+                    if (filenamesProvided && saveData) {
+                        dataPath = dataPath.substring(0, dataPath.lastIndexOf(".")) + ".fits.fz";
+                    }
                     table.saveAs(filenamesProvided ? dataPath : outBase + dataSuffix + ".fits.fz",
                             includePlotcfgInFits.get(), includeAperturesInFits.get());
-                } catch (IOException ioe) {
+                } catch (Exception ioe) {
+                    ioe.printStackTrace();
                     IJ.beep();
                     IJ.showMessage("Error writing measurement table file");
                 }
@@ -17914,7 +17918,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         if (saveAll && (savePlot || saveConfig || saveTable || saveTableAsFits.get())) {
             saveDataImageConfig(savePlot, saveConfig, saveTable, true, format,
                     outBase + plotSuffix + "." + format, outBase + configSuffix + ".plotcfg",
-                    outBase + dataSuffix + (saveTableAsFits.get() ? ".fits.fz" : Prefs.get("options.ext", ".xls")));
+                    outBase + dataSuffix + Prefs.get("options.ext", ".xls"));
         }
 
         if (saveSeeingProfile) {

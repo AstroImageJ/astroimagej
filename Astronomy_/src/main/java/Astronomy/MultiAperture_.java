@@ -4202,17 +4202,32 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         gd.addDoubleSpaceLineSeparator();
 
         // Multiradius control
+        //gd.setRightInset(-190);
         gd.addCheckbox("Multiradius Multiaperture", multiRadius.get(), multiRadius::set)
                 .setToolTipText("""
                         <html>
                         Run Multiaperture, with each aperture being measured multiple times with differing radii.
                         </html>
                         """);
-        gd.addSlider("Num. of Radii Smaller:", 0, 10, multiRadiusNSmaller.get(), d -> multiRadiusNSmaller.set(d.intValue()));
-        gd.addSlider("Num. of Radii Larger:", 0, 10, multiRadiusNLarger.get(), d -> multiRadiusNLarger.set(d.intValue()));
+        gd.setOverridePosition(true);
+        gd.setNewPosition(GridBagConstraints.WEST);
+        gd.addToSameRow();
+        gd.setLeftInset(190);
+        gd.addBoundedNumericField("Num. of Radii Smaller:", new GenericSwingDialog.Bounds(0, 10),
+                multiRadiusNSmaller.get(), 1, 4, null, true, d -> multiRadiusNSmaller.set(d.intValue()));
+        gd.addToSameRow();
+        gd.setLeftInset(-150);
+        gd.setNewPosition(GridBagConstraints.WEST);
+        gd.addBoundedNumericField("Num. of Radii Larger:", new GenericSwingDialog.Bounds(0, 10),
+                multiRadiusNLarger.get(), 1, 4, null, true, d -> multiRadiusNLarger.set(d.intValue()));
+        gd.addToSameRow();
+        gd.setLeftInset(-260);
+        gd.setNewPosition(GridBagConstraints.WEST);
         gd.addBoundedNumericField("Radius step size",
                 new GenericSwingDialog.Bounds(0, false, Double.MAX_VALUE, false),
                 multiRadiusStepSize.get(), 0.5, 5, "px", multiRadiusStepSize::set);
+        gd.resetPositionOverride();
+        gd.setOverridePosition(false);
 
         gd.addDoubleSpaceLineSeparator();
 

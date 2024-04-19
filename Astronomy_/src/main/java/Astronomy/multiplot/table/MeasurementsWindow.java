@@ -75,7 +75,7 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
         var hcm = new HiddenColumnModel();
         hcm.addFilterListener(notification::updateCol);
         jTable = new JTable(tableView, hcm);
-        jTable.setAutoCreateColumnsFromModel(false);
+        jTable.setAutoCreateColumnsFromModel(true);
         rowSorter = new TriSortStateMeasurementsSorter(tableView);
         rowSorter.addRowSorterListener(s -> {
             if (s.getType() == RowSorterEvent.Type.SORTED) {
@@ -409,8 +409,11 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
                 adjustWidthOnRow(i1, i2);
             }
             case COL_ADDED -> {
-                var model = jTable.getColumnModel();
+                // Disable automatic column handling
+                jTable.setAutoCreateColumnsFromModel(false);
 
+                // manually add new column
+                var model = jTable.getColumnModel();
                 var newColumn = new TableColumn(i1);
                 newColumn.setHeaderValue(table.getColumnHeading(i1));
                 model.addColumn(newColumn);

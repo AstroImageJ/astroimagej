@@ -75,7 +75,7 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
         var hcm = new HiddenColumnModel();
         hcm.addFilterListener(notification::updateCol);
         jTable = new JTable(tableView, hcm);
-        jTable.setAutoCreateColumnsFromModel(true);
+        jTable.setAutoCreateColumnsFromModel(false);
         rowSorter = new TriSortStateMeasurementsSorter(tableView);
         rowSorter.addRowSorterListener(s -> {
             if (s.getType() == RowSorterEvent.Type.SORTED) {
@@ -380,10 +380,9 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
                 tableView.fireTableStructureChanged();
                 jTable.clearSelection();
 
-                // Update headings
-                for (int i = 0; i < table.getLastColumn() && i >= 0; i++) {
-                    jTable.getColumnModel().getColumn(jTable.convertColumnIndexToView(i)).setHeaderValue(table.getColumnHeading(i));
-                }
+                // Enabling this causes the model to rebuild
+                jTable.setAutoCreateColumnsFromModel(true);
+                jTable.setAutoCreateColumnsFromModel(false);
 
                 // Update width
                 for (int i = 0; i < jTable.getColumnCount(); i++) {
@@ -410,8 +409,14 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
                 adjustWidthOnRow(i1, i2);
             }
             case COL_ADDED -> {
-                tableView.fireTableChanged(new TableModelEvent(tableView, TableModelEvent.HEADER_ROW,
-                        TableModelEvent.HEADER_ROW, i1, TableModelEvent.INSERT));
+                var model = jTable.getColumnModel();
+
+                var newColumn = new TableColumn(i1);
+                newColumn.setHeaderValue(table.getColumnHeading(i1));
+                model.addColumn(newColumn);
+
+                /*tableView.fireTableChanged(new TableModelEvent(tableView, TableModelEvent.HEADER_ROW,
+                        TableModelEvent.HEADER_ROW, i1, TableModelEvent.INSERT));*/
                 if (jTable.getColumnModel() instanceof HiddenColumnModel hcm) {
                     // This is a terrible hack
                     SwingUtilities.invokeLater(hcm::refilter);

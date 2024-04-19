@@ -526,6 +526,7 @@ public class MeasurementTable extends ResultsTable {
         super.setValue(column, row, value);
         if (newColNeeded) {
             setPrecision(16);
+            headingsCache.put(getColumnHeading(getLastColumn()), getLastColumn());
             updateViewSynced(UpdateEvent.COL_ADDED, getLastColumn(), getLastColumn());
         }
         updateView(UpdateEvent.CELL_UPDATED, row, column);
@@ -760,7 +761,7 @@ public class MeasurementTable extends ResultsTable {
     public int getColumnIndex(String heading) {
         var i = headingsCache.getOrDefault(heading, COLUMN_NOT_FOUND);
         if (i >= 0) {
-            if (!getColumnHeading(i).equals(heading)) {
+            if (!heading.equals(getColumnHeading(i))) {
                 i = super.getColumnIndex(heading);
                 headingsCache.put(heading, i);
             }
@@ -776,7 +777,7 @@ public class MeasurementTable extends ResultsTable {
         var i = headingsCache.getOrDefault(heading, COLUMN_NOT_FOUND);
 
         if (i >= 0) {
-            if (getColumnHeading(i).equals(heading)) {
+            if (heading.equals(getColumnHeading(i))) {
                 return COLUMN_IN_USE;
             }
         }
@@ -785,8 +786,8 @@ public class MeasurementTable extends ResultsTable {
             i = super.getFreeColumn(heading);//todo this can be improved by skipping the looping since we know the heading is new
             if (COLUMN_IN_USE != i) {
                 setPrecision(16);
-                updateViewSynced(UpdateEvent.COL_ADDED, i, i);
                 headingsCache.put(heading, i);
+                updateViewSynced(UpdateEvent.COL_ADDED, i, i);
             }
         }
 

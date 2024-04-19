@@ -799,7 +799,7 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
                     setText(String.valueOf(d.intValue()));
                 }
             }
-            if (!isSelected && showSatWarning.get()) {
+            if (!isSelected && showSatWarning.get() && row >= 0) {
                 if (table.getColumnName(column).startsWith("Peak_")) {
                     if (value instanceof Double d) {
                         if (d >=saturationWarningLevel) {
@@ -811,28 +811,25 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
                         }
                     }
                 } else {
-                    var m = AP_PATTERN.matcher(table.getColumnName(column));
-                    if (m.matches()) {
-                        var ap = m.group("AP");
-                        if (ap != null) {
-                            var i = MeasurementsWindow.this.table.getColumnIndex("Peak_" + ap);
-                            if (i == ResultsTable.COLUMN_NOT_FOUND) {
-                                if (ap.startsWith("C")) {
-                                    ap = ap.replace("C", "T");
-                                } else {
-                                    ap = ap.replace("T", "C");
-                                }
-                                i = MeasurementsWindow.this.table.getColumnIndex("Peak_" + ap);
+                    var ap = getApertureFromHeading(table.getColumnName(column));
+                    if (ap != null) {
+                        var i = MeasurementsWindow.this.table.getColumnIndex("Peak_" + ap);
+                        if (i == ResultsTable.COLUMN_NOT_FOUND) {
+                            if (ap.startsWith("C")) {
+                                ap = ap.replace("C", "T");
+                            } else {
+                                ap = ap.replace("T", "C");
                             }
-                            if (i != ResultsTable.COLUMN_NOT_FOUND) {
-                                var d = MeasurementsWindow.this.table.getValueAsDouble(i, table.convertRowIndexToModel(row));
-                                if (d >=saturationWarningLevel) {
-                                    setBackground(Color.RED);
-                                    setToolTipText("Saturated aperture based on aperture settings and the value in " + "Peak_" + ap);
-                                } else if (d >= linearityWarningLevel) {
-                                    setBackground(Color.YELLOW);
-                                    setToolTipText("Nonlinear aperture based on aperture settings and the value in " + "Peak_" + ap);
-                                }
+                            i = MeasurementsWindow.this.table.getColumnIndex("Peak_" + ap);
+                        }
+                        if (i != ResultsTable.COLUMN_NOT_FOUND) {
+                            var d = MeasurementsWindow.this.table.getValueAsDouble(i, table.convertRowIndexToModel(row));
+                            if (d >=saturationWarningLevel) {
+                                setBackground(Color.RED);
+                                setToolTipText("Saturated aperture based on aperture settings and the value in " + "Peak_" + ap);
+                            } else if (d >= linearityWarningLevel) {
+                                setBackground(Color.YELLOW);
+                                setToolTipText("Nonlinear aperture based on aperture settings and the value in " + "Peak_" + ap);
                             }
                         }
                     }
@@ -847,7 +844,8 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
         final double saturationWarningLevel = Prefs.get(Aperture_.AP_PREFS_SATWARNLEVEL, 55000);
         final double linearityWarningLevel = Prefs.get(Aperture_.AP_PREFS_LINWARNLEVEL, 30000);
         final Border padding = BorderFactory.createEmptyBorder(1, 3, 1, 3);
-        static final Pattern AP_PATTERN = Pattern.compile(".+_(?<AP>[CT][0-9]+)");
+        static final Pattern AP_PATTERN = Pattern.compile(".+_(?<AP>[CT]\\d+)");
+        static final Pattern RADIUS_NUM_PATTERN = Pattern.compile(".+_(?<AP>r\\d+_[CT]\\d+)");
 
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
@@ -857,7 +855,7 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
             setHorizontalAlignment(CENTER);
             setBorder(BorderFactory.createCompoundBorder(getBorder(), padding));
 
-            if (!isSelected && showSatWarning.get()) {
+            if (!isSelected && showSatWarning.get() && row >= 0) {
                 setBackground(table.getBackground());
                 if (table.getColumnName(column).equals("Label") || table.getColumnName(column).equals("slice")) {
                     var isLin = false;
@@ -868,9 +866,8 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
                         if (heading == null) {
                             continue;
                         }
-                        Matcher m;
                         String ap;
-                        if (heading.startsWith("Peak_") && (m = AP_PATTERN.matcher(heading)).matches() && (ap = m.group("AP")) != null) {
+                        if (heading.startsWith("Peak_") && (ap = getApertureFromHeading(heading)) != null) {
                             var i = MeasurementsWindow.this.table.getColumnIndex("Peak_" + ap);
                             if (i == ResultsTable.COLUMN_NOT_FOUND) {
                                 if (ap.startsWith("C")) {
@@ -902,6 +899,24 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
             }
 
             return this;
+        }
+
+        public String getApertureFromHeading(String heading) {
+            Matcher m;
+            String ap;
+
+            // Check if table is for multiradius
+            if (MeasurementsWindow.this.table.metadata.containsKey("MRPB")) {
+                if ((m = RADIUS_NUM_PATTERN.matcher(heading)).matches() && (ap = m.group("AP")) != null) {
+                    return ap;
+                }
+            } else {
+                if ((m = AP_PATTERN.matcher(heading)).matches() && (ap = m.group("AP")) != null) {
+                    return ap;
+                }
+            }
+
+            return null;
         }
     }
 

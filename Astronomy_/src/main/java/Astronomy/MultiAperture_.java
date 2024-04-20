@@ -3444,6 +3444,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         }
 
         valueOverlay = Prefs.get(AP_PREFS_VALUEOVERLAY, valueOverlay);
+        var hdr = FitsJ.getHeader(imp);
         for (int ap = 0; ap < nApertures; ap++) {
             if (!isRefStar[ap]) {
                 setApertureColor(Color.green);
@@ -3462,7 +3463,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             Prefs.set("aperture.reposition", centroidStar[ap]);
             setShowAsCentered(centroidStar[ap]);
 
-            if (!measureAperture()) {
+            if (!measureAperture(hdr)) {
                 if (haltOnError || this instanceof Stack_Aligner) {
                     Prefs.set("aperture.reposition", holdReposition);
                     centerROI();

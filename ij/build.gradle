@@ -10,6 +10,9 @@ dependencies {
     api 'net.java.dev.jna:jna-platform:5.12.1'
     api fileTree(dir: "${rootDir}/aijLibs", include: '*.jar')
     implementation 'ch.randelshofer:fastdoubleparser:1.0.0'
+    api 'org.apache.commons:commons-math3:3.6.1'
+    //todo try math4?
+    // https://github.com/apache/commons-math/tree/master?tab=readme-ov-file#where-can-i-get-the-latest-release
 }
 
 def mainClassName = 'ij.ImageJ'

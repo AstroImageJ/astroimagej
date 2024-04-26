@@ -32,6 +32,12 @@ import ij.plugin.Macro_Runner;
 import ij.plugin.PlugIn;
 import ij.process.ImageProcessor;
 import ij.util.Tools;
+import org.apache.commons.math3.analysis.MultivariateFunction;
+import org.apache.commons.math3.optim.*;
+import org.apache.commons.math3.optim.nonlinear.scalar.GoalType;
+import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunction;
+import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.CMAESOptimizer;
+import org.apache.commons.math3.random.MersenneTwister;
 import org.hipparchus.linear.MatrixUtils;
 import util.ColorUtil;
 import util.PlotDataBinning;
@@ -962,6 +968,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     private static boolean[] usesYModel2;
     private static boolean performingBulkShiftUpdate;
     private static final ExecutorService MP_THREAD = Executors.newSingleThreadExecutor();
+    private static boolean useApacheMath;
 
     public void run(String inTableNamePlusOptions) {
         boolean useAutoAstroDataUpdate = false;
@@ -3149,6 +3156,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                         start[curve] = new double[nFitted];
                                         width[curve] = new double[nFitted];
                                         step[curve] = new double[nFitted];
+                                        var min = new double[nFitted];
+                                        var max = new double[nFitted];
+                                        Arrays.fill(min, Double.NEGATIVE_INFINITY);
+                                        Arrays.fill(max, Double.POSITIVE_INFINITY);
 
                                         index[curve] = new int[nFitted];
                                         int fp = 0;  //fitted parameter
@@ -3169,6 +3180,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
                                             index[curve] = new int[1];
                                             start[curve][0] = Stat.median(detrendYs[curve]);
+                                            min[0] = 0;
                                             minimization.addConstraint(0, -1, 0.0);
                                         }
 
@@ -3186,6 +3198,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                                 width[curve][fp] = Math.sqrt(priorWidth[curve][1]);
                                                 step[curve][fp] = Math.sqrt(getFitStep(curve, 1));
                                                 minimization.addConstraint(fp, -1, 0.0);
+                                                min[fp] = 0;
                                             } else if (index[curve][fp] == 4) {
                                                 if (bpLock[curve]) continue;
                                                 start[curve][fp] = priorCenter[curve][4] * Math.PI / 180.0;  // inclination
@@ -3193,16 +3206,28 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                                 step[curve][fp] = getFitStep(curve, 4) * Math.PI / 180.0;
                                                 minimization.addConstraint(fp, 1, 90.0 * Math.PI / 180.0);
                                                 minimization.addConstraint(fp, -1, 50.0 * Math.PI / 180.0);
+                                                min[fp] = 50.0 * Math.PI / 180.0;
+                                                max[fp] = 90.0 * Math.PI / 180.0;
                                             } else {
-                                                if (index[curve][fp] == 0) minimization.addConstraint(fp, -1, 0.0);
-                                                if (index[curve][fp] == 2) minimization.addConstraint(fp, -1, 2.0);
+                                                if (index[curve][fp] == 0) {
+                                                    minimization.addConstraint(fp, -1, 0.0);
+                                                    min[fp] = 0;
+                                                }
+                                                if (index[curve][fp] == 2) {
+                                                    minimization.addConstraint(fp, -1, 2.0);
+                                                    min[fp] = 2;
+                                                }
                                                 if (index[curve][fp] == 5) {
                                                     minimization.addConstraint(fp, 1, 1.0);
                                                     minimization.addConstraint(fp, -1, -1.0);
+                                                    min[fp] = -1;
+                                                    max[fp] = 1;
                                                 }
                                                 if (index[curve][fp] == 6) {
                                                     minimization.addConstraint(fp, 1, 1.0);
                                                     minimization.addConstraint(fp, -1, -1.0);
+                                                    min[fp] = -1;
+                                                    max[fp] = 1;
                                                 }
                                                 start[curve][fp] = priorCenter[curve][index[curve][fp]];
                                                 width[curve][fp] = priorWidth[curve][index[curve][fp]];
@@ -3211,6 +3236,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                             if (usePriorWidth[curve][index[curve][fp]]) {
                                                 minimization.addConstraint(fp, 1, start[curve][fp] + width[curve][fp]);
                                                 minimization.addConstraint(fp, -1, start[curve][fp] - width[curve][fp]);
+                                                min[fp] = start[curve][fp] - width[curve][fp];
+                                                max[fp] = start[curve][fp] + width[curve][fp];
                                             }
                                         }
 
@@ -3227,11 +3254,31 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                             converged[curve] = true;
                                             nTries[curve] = 0;
                                         } else {
-                                            minimization.setNrestartsMax(1);
-                                            minimization.nelderMead(new FitLightCurveChi2(curve), start[curve], step[curve], tolerance[curve], maxFitSteps[curve]);
-                                            coeffs[curve] = minimization.getParamValues();
-                                            nTries[curve] = minimization.getNiter() - 1;
-                                            converged[curve] = minimization.getConvStatus();
+                                            if (useApacheMath) {
+                                                var opti = new CMAESOptimizer(maxFitSteps[curve], 0,
+                                                        true, 1, 10, //todo diag=0, check=0?
+                                                        new MersenneTwister(1334498400 * 1000),
+                                                        false, new SimpleValueChecker(1e-6, 1e-10, maxFitSteps[curve])); //todo custom convergence?
+                                                //var opti = new BOBYQAOptimizer(2*nFitted + 1 + 3);
+                                                var optimum = opti.optimize(new MaxEval(maxFitSteps[curve]), new MaxIter(maxFitSteps[curve]), GoalType.MINIMIZE,
+                                                        new ObjectiveFunction(new FitLightCurveChi2(curve)),
+                                                        new SimpleBounds(min, max),
+                                                        new InitialGuess(start[curve]),
+                                                        new CMAESOptimizer.Sigma(step[curve]),//todo this right?
+                                                        new CMAESOptimizer.PopulationSize((int) Math.round(4+3*Math.log(nFitted)))//todo this right? matlab has a 10x
+                                                );
+                                                nTries[curve] = opti.getEvaluations();
+                                                coeffs[curve] = optimum.getPoint();
+                                                chi2dof[curve] = optimum.getValue();
+                                                chi2[curve] = chi2dof[curve] * dof[curve];
+                                                converged[curve] = nTries[curve] < maxFitSteps[curve];
+                                            } else {
+                                                minimization.setNrestartsMax(1);
+                                                minimization.nelderMead(new FitLightCurveChi2(curve), start[curve], step[curve], tolerance[curve], maxFitSteps[curve]);
+                                                coeffs[curve] = minimization.getParamValues();
+                                                nTries[curve] = minimization.getNiter() - 1;
+                                                converged[curve] = minimization.getConvStatus();
+                                            }
                                         }
 
                                         fp = 0;
@@ -3272,7 +3319,11 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                             transitDepth[curve] = (1-(midpointFlux/bestFit[curve][0]))*1000;
                                         }
 
-                                        chi2dof[curve] = minimization.getMinimum(); // verified independently using residuals, errors, and degrees of freedom
+                                        if (useApacheMath) {
+
+                                        } else {
+                                            chi2dof[curve] = minimization.getMinimum(); // verified independently using residuals, errors, and degrees of freedom
+                                        }
                                         //chi2 + p * log(n)
                                         bic[curve] = (chi2dof[curve] * dof[curve]) + nFitted * Math.log(detrendXs[curve].length);
 
@@ -4653,7 +4704,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         plot.addLabel(titlePosX, y, title);
     }
 
-    public static class FitLightCurveChi2 implements MinimizationFunction {
+    public static class FitLightCurveChi2 implements MinimizationFunction, MultivariateFunction {
         final int curve;
 
         public FitLightCurveChi2(int curve) {
@@ -4748,7 +4799,116 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             }
             return chi2[curve] / (double) dof[curve];
         }
+
+        @Override
+        public double value(double[] point) {
+            return function(point);
+        }
     }
+
+    /*private static class LCFitter implements MultivariateVectorFunction {
+        final int curve;
+
+        private LCFitter(int curve) {
+            this.curve = curve;
+        }
+
+        @Override
+        public double[] value(double[] point) throws IllegalArgumentException {
+            int numData = detrendYs[curve].length;
+            int numDetrendVars = detrendVars[curve].length;
+            int nPars = point.length;
+            double[] dPars = new double[detrendVars[curve].length];
+            if (dof[curve] < 1) dof[curve] = 1;
+
+            chi2[curve] = 0;
+            double residual;
+            int fp = 0;
+
+            double f0 = priorCenter[curve][0]; // baseline flux
+            double p0 = priorCenter[curve][1]; // r_p/r_*
+            double ar = priorCenter[curve][2]; // a/r_*
+            double tc = priorCenter[curve][3]; //transit center time
+            double incl = priorCenter[curve][4];  //inclination
+            double u1 = priorCenter[curve][5];  //quadratic limb darkening parameter 1
+            double u2 = priorCenter[curve][6];  //quadratic limb darkening parameter 2
+            double e = forceCircularOrbit[curve] ? 0.0 : eccentricity[curve];
+            double ohm = forceCircularOrbit[curve] ? 0.0 : omega[curve];
+            double b = 0.0;
+
+            double[] transit = null;
+
+            if (useTransitFit[curve]) {
+                f0 = lockToCenter[curve][0] ? priorCenter[curve][0] : point[fp < nPars ? fp++ : nPars - 1]; // baseline flux
+                p0 = lockToCenter[curve][1] ? Math.sqrt(priorCenter[curve][1]) : point[fp < nPars ? fp++ : nPars - 1]; // r_p/r_*
+                ar = lockToCenter[curve][2] ? priorCenter[curve][2] : point[fp < nPars ? fp++ : nPars - 1]; // a/r_*
+                tc = lockToCenter[curve][3] ? priorCenter[curve][3] : point[fp < nPars ? fp++ : nPars - 1]; //transit center time
+                if (!bpLock[curve]) {
+                    incl = lockToCenter[curve][4] ? priorCenter[curve][4] * Math.PI / 180.0 : point[fp < nPars ? fp++ : nPars - 1];  //inclination
+                    b = Math.cos(incl) * ar;
+                    if (b > 1.0 + p0) {  //ensure planet transits or grazes the star
+                        //return Double.POSITIVE_INFINITY;//todo constraint on input
+                    }
+                } else {
+                    incl = Math.acos(bp[curve]/ar);
+                }
+                u1 = lockToCenter[curve][5] ? priorCenter[curve][5] : point[fp < nPars ? fp++ : nPars - 1];  //quadratic limb darkening parameter 1
+                u2 = lockToCenter[curve][6] ? priorCenter[curve][6] : point[fp < nPars ? fp++ : nPars - 1];  //quadratic limb darkening parameter 2
+
+                transit = IJU.transitModel(detrendXs[curve], f0, incl, p0, ar, tc, orbitalPeriod[curve], e, ohm, u1, u2, useLonAscNode[curve], lonAscNode[curve], true);
+            } else {
+                transit = new double[detrendXs.length];
+            }
+
+            int dp = 0;
+            for (int p = 7; p < maxFittedVars; p++) {
+                if (isFitted[curve][p]) {
+                    dPars[dp++] = point[fp++];
+                } else if (detrendIndex[curve][p - 7] != 0 && detrendYDNotConstant[p - 7] && lockToCenter[curve][p]) {
+                    dPars[dp++] = priorCenter[curve][p];
+                }
+            }
+
+
+            if (useTransitFit[curve]) {
+                //todo boundry constraints
+                if (!lockToCenter[curve][2] && (ar < (1.0 + p0))) {
+                    chi2[curve] = Double.POSITIVE_INFINITY;  //boundary check that planet does not orbit within star
+                } else if ((!lockToCenter[curve][2] || !lockToCenter[curve][4]) && ((ar * Math.cos(incl) * (1.0 - e * e) / (1.0 + e * Math.sin(ohm * Math.PI / 180.0))) >= 1.0 + p0)) {
+                    if (!lockToCenter[curve][4] && autoUpdatePrior[curve][4]) {
+                        priorCenter[curve][4] = Math.round(10.0 * Math.acos((0.5 + p0) * (1.0 + e * Math.sin(ohm * Math.PI / 180.0)) / (ar * (1.0 - e * e))) * 180.0 / Math.PI) / 10.0;
+                        if (Double.isNaN(priorCenter[curve][4])) priorCenter[curve][4] = 89.9;
+                        priorCenterSpinner[curve][4].setValue(priorCenter[curve][4]);
+                    }
+                    chi2[curve] = Double.POSITIVE_INFINITY; //boundary check that planet passes in front of star
+                } else if ((!lockToCenter[curve][5] || !lockToCenter[curve][6]) && (((u1 + u2) > 1.0) || ((u1 + u2) < 0.0) || (u1 > 1.0) || (u1 < 0.0) || (u2 < -1.0) || (u2 > 1.0))) {
+                    chi2[curve] = Double.POSITIVE_INFINITY;
+                } else {
+                    *//*for (int j = 0; j < numData; j++) { //todo support detrending
+                        residual = detrendYs[curve][j];// - param[0];
+                        for (int i = 0; i < numDetrendVars; i++) {
+                            residual -= detrendVars[curve][i][j] * dPars[i];
+                        }
+                        residual -= (lcModel[curve][j] - detrendYAverage[curve]);
+                        chi2[curve] += ((residual * residual) / (detrendYEs[curve][j] * detrendYEs[curve][j])); //todo this as scale
+                    }*//*
+                }
+            } else {
+                *//*for (int j = 0; j < numData; j++) {
+                    residual = detrendYs[curve][j];// - param[0];
+                    for (int i = 0; i < numDetrendVars; i++) {
+                        residual -= detrendVars[curve][i][j] * dPars[i];
+                    }
+                    if (numDetrendVars == 0 && point.length == 1) {
+                        residual -= point[0];
+                    }
+                    chi2[curve] += ((residual * residual) / (detrendYEs[curve][j] * detrendYEs[curve][j]));
+                }*//*
+            }
+
+            return transit;
+        }
+    }*/
 
     static String getPositionColumn(String label, String XorY) {
         String nums = "";
@@ -7971,6 +8131,13 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         });
         preferencesmenu.add(usedefaultsettingsCB);
 
+        preferencesmenu.addSeparator();
+        var minimizerToggle = new JCheckBoxMenuItem("Use Apache Math", useApacheMath);
+        minimizerToggle.addActionListener($ -> {
+            useApacheMath = minimizerToggle.getState();
+            updatePlot(updateAllFits());
+        });
+        preferencesmenu.add(minimizerToggle);
         mainmenubar.add(preferencesmenu);
 
 

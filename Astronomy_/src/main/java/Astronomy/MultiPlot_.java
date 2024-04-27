@@ -32,13 +32,13 @@ import ij.plugin.Macro_Runner;
 import ij.plugin.PlugIn;
 import ij.process.ImageProcessor;
 import ij.util.Tools;
-import org.apache.commons.math3.analysis.MultivariateFunction;
-import org.apache.commons.math3.optim.*;
-import org.apache.commons.math3.optim.nonlinear.scalar.GoalType;
-import org.apache.commons.math3.optim.nonlinear.scalar.ObjectiveFunction;
-import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.CMAESOptimizer;
-import org.apache.commons.math3.random.MersenneTwister;
+import org.hipparchus.analysis.MultivariateFunction;
 import org.hipparchus.linear.MatrixUtils;
+import org.hipparchus.optim.*;
+import org.hipparchus.optim.nonlinear.scalar.GoalType;
+import org.hipparchus.optim.nonlinear.scalar.ObjectiveFunction;
+import org.hipparchus.optim.nonlinear.scalar.noderiv.CMAESOptimizer;
+import org.hipparchus.random.Well19937c;
 import util.ColorUtil;
 import util.PlotDataBinning;
 
@@ -3160,6 +3160,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                         var max = new double[nFitted];
                                         Arrays.fill(min, Double.NEGATIVE_INFINITY);
                                         Arrays.fill(max, Double.POSITIVE_INFINITY);
+                                        Arrays.fill(step[curve], 1e-4);
 
                                         index[curve] = new int[nFitted];
                                         int fp = 0;  //fitted parameter
@@ -3256,8 +3257,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                         } else {
                                             if (useApacheMath) {
                                                 var opti = new CMAESOptimizer(maxFitSteps[curve], 0,
-                                                        true, 1, 10, //todo diag=0, check=0?
-                                                        new MersenneTwister(1334498400 * 1000),
+                                                        true, 1, 1000, //todo diag=0, check=0?
+                                                        new Well19937c(1334498400 * 1000),
                                                         false, new SimpleValueChecker(1e-6, 1e-10, maxFitSteps[curve])); //todo custom convergence?
                                                 //var opti = new BOBYQAOptimizer(2*nFitted + 1 + 3);
                                                 var optimum = opti.optimize(new MaxEval(maxFitSteps[curve]), new MaxIter(maxFitSteps[curve]), GoalType.MINIMIZE,
@@ -3265,10 +3266,18 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                                         new SimpleBounds(min, max),
                                                         new InitialGuess(start[curve]),
                                                         new CMAESOptimizer.Sigma(step[curve]),//todo this right?
-                                                        new CMAESOptimizer.PopulationSize((int) Math.round(4+3*Math.log(nFitted)))//todo this right? matlab has a 10x
+                                                        new CMAESOptimizer.PopulationSize((int) Math.round(4+3*Math.log(nFitted))/**10*/)//todo this right? matlab has a 10x
                                                 );
+
+                                                /*var adapt = new MultivariateFunctionMappingAdapter(new FitLightCurveChi2(curve), min, max);
+                                                var opti = new SimplexOptimizer(new SimpleValueChecker(1e-6, 1e-10, maxFitSteps[curve]));
+                                                var optimum = opti.optimize(new MaxEval(maxFitSteps[curve]), new MaxIter(maxFitSteps[curve]), GoalType.MINIMIZE,
+                                                        new ObjectiveFunction(adapt),
+                                                        new InitialGuess(adapt.boundedToUnbounded(start[curve])),
+                                                        new NelderMeadSimplex(nFitted)
+                                                );*/
                                                 nTries[curve] = opti.getEvaluations();
-                                                coeffs[curve] = optimum.getPoint();
+                                                coeffs[curve] = optimum.getPoint(); /*adapt.unboundedToBounded(optimum.getPoint());*/
                                                 chi2dof[curve] = optimum.getValue();
                                                 chi2[curve] = chi2dof[curve] * dof[curve];
                                                 converged[curve] = nTries[curve] < maxFitSteps[curve];

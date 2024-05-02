@@ -3234,12 +3234,12 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                                 width[curve][fp] = priorWidth[curve][index[curve][fp]];
                                                 step[curve][fp] = getFitStep(curve, index[curve][fp]);
                                             }
-                                            if (usePriorWidth[curve][index[curve][fp]]) {
-                                                minimization.addConstraint(fp, 1, start[curve][fp] + width[curve][fp]);
-                                                minimization.addConstraint(fp, -1, start[curve][fp] - width[curve][fp]);
-                                                min[fp] = start[curve][fp] - width[curve][fp];
-                                                max[fp] = start[curve][fp] + width[curve][fp];
-                                            }
+//                                            if (usePriorWidth[curve][index[curve][fp]]) {
+//                                                minimization.addConstraint(fp, 1, start[curve][fp] + width[curve][fp]);
+//                                                minimization.addConstraint(fp, -1, start[curve][fp] - width[curve][fp]);
+//                                                min[fp] = start[curve][fp] - width[curve][fp];
+//                                                max[fp] = start[curve][fp] + width[curve][fp];
+//                                            }
                                         }
 
                                         var needsFit = false;
@@ -3265,7 +3265,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                                         new ObjectiveFunction(new FitLightCurveChi2(curve)),
                                                         new SimpleBounds(min, max),
                                                         new InitialGuess(start[curve]),
-                                                        new CMAESOptimizer.Sigma(step[curve]),//todo this right?
+                                                        new CMAESOptimizer.Sigma(width[curve]),//todo this right?
                                                         new CMAESOptimizer.PopulationSize((int) Math.round(4+3*Math.log(nFitted))/**10*/)//todo this right? matlab has a 10x
                                                 );
 
@@ -4785,6 +4785,29 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 } else if ((!lockToCenter[curve][5] || !lockToCenter[curve][6]) && (((u1 + u2) > 1.0) || ((u1 + u2) < 0.0) || (u1 > 1.0) || (u1 < 0.0) || (u2 < -1.0) || (u2 > 1.0))) {
                     chi2[curve] = Double.POSITIVE_INFINITY;
                 } else {
+                    // apply the Gaussian prior
+                    // if it's an angular parameter, make sure we handle the boundary
+                    for (int p = 0; p < param.length-1; p++) {
+                        if (usePriorWidth[curve][index[curve][p]]) {
+                            if (index[curve][p] == 4) {
+                                IJ.log("param[p]="+param[p]+"    priorCenter="+priorCenter[curve][index[curve][p]]+"     priorWidth="+priorWidth[curve][index[curve][p]]);
+                                double chi = Math.atan2(Math.sin(param[p] - Math.toRadians(priorCenter[curve][index[curve][p]])), Math.cos(param[p] - Math.toRadians(priorCenter[curve][index[curve][p]]))) / Math.toRadians(priorWidth[curve][index[curve][p]]);
+                                chi2[curve] += chi * chi;
+                            }
+                            else if (index[curve][p] == 1) {
+                                IJ.log("param[p]^2="+param[p]*param[p]+"    priorCenter="+priorCenter[curve][index[curve][p]]+"     priorWidth="+priorWidth[curve][index[curve][p]]);
+                                double chi = (param[p]*param[p] - priorCenter[curve][index[curve][p]]) / priorWidth[curve][index[curve][p]];
+                                chi2[curve] += chi * chi;
+                            }
+                            else {
+                                IJ.log("param[p]="+param[p]+"    priorCenter="+priorCenter[curve][index[curve][p]]+"     priorWidth="+priorWidth[curve][index[curve][p]]);
+                                double chi = (param[p] - priorCenter[curve][index[curve][p]]) / priorWidth[curve][index[curve][p]];
+                                chi2[curve] += chi * chi;
+                            }
+                        }
+                    }
+
+                    //apply data-model chi2 contribution
                     for (int j = 0; j < numData; j++) {
                         residual = detrendYs[curve][j];// - param[0];
                         for (int i = 0; i < numDetrendVars; i++) {

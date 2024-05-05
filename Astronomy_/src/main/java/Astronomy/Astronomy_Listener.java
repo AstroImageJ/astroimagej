@@ -24,7 +24,7 @@ public class Astronomy_Listener implements PlugIn, ImageListener {
     public static final boolean NEW = false;
     public static final boolean RESIZE = true;
     public static final boolean NORESIZE = false;
-    final static Executor EXECUTOR_SERVICE = Executors.newCachedThreadPool();
+    final static Executor EXECUTOR_SERVICE = Executors.newSingleThreadExecutor();
 
     public void run(String arg) {
         if (IJ.versionLessThan("1.35l")) return;

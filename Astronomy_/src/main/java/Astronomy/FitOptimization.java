@@ -17,10 +17,6 @@ import ij.util.FontUtil;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.InputEvent;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
@@ -36,16 +32,16 @@ public class FitOptimization implements AutoCloseable {
     protected static final String PREFS_NSIGMA = "fitoptimization.nsigma";
     protected static final String PREFS_MAX_DETREND = "fitoptimization.maxdetrend";
     protected static final String PREFS_BIC_THRESHOLD = "fitoptimization.bict";
-    private static Property<Integer> maxThreads = new Property<>(getThreadCount(), FitOptimization.class);
-    private static Property<Long> minChunkSize = new Property<>(512L, FitOptimization.class);
-    private static Property<Boolean> autoMaxThreads = new Property<>(true, FitOptimization.class);
+    private static final Property<Integer> maxThreads = new Property<>(getThreadCount(), FitOptimization.class);
+    private static final Property<Long> minChunkSize = new Property<>(512L, FitOptimization.class);
+    private static final Property<Boolean> autoMaxThreads = new Property<>(true, FitOptimization.class);
     private final static Pattern apGetter = Pattern.compile("rel_flux_[ct]([0-9]+)");
     private static final HashSet<FitOptimization> INSTANCES = new HashSet<>();
     /**
      * The change in the comparator to determine improvement
      */
     public static double EPSILON;
-    public static LinkedList<CleanTracker> undoBuffer = new LinkedList<>();
+    private static LinkedList<CleanTracker> undoBuffer = new LinkedList<>();
     static boolean showOptLog = false;
     private static int maxDetrend = 1;
     private static double bict = 2;
@@ -148,70 +144,43 @@ public class FitOptimization implements AutoCloseable {
         var undoButton = new JButton(UIHelper.createImageIcon("astroj/images/icons/undo.png", 14, 14));
         var undoFont = undoButton.getFont();
         undoButton.addActionListener($ -> undoOutlierClean());
-        undoButton.setFont(undoButton.getFont().deriveFont(15f));
         undoButton.setToolTipText("<html>Undo clean<br>(up to 5 levels)</html>");
         outlierRemoval.add(undoButton);
+
+        var b = Box.createHorizontalBox();
+        var options = Arrays.stream(CleanMode.values()).filter(CleanMode::isMenuDisplayable).toArray(CleanMode[]::new);
+        var cleanModeSelection = new JComboBox<>(options);
+        b.add(cleanModeSelection);
+        b.add(Box.createHorizontalGlue());
         var cleanButton = new JButton("Clean");
-        cleanButton.addMouseListener(new MouseListener() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                if (SwingUtilities.isRightMouseButton(e)) {
-                    cleanOutliers(CleanMode.RMS, FitOptimization.this, FitOptimization.this.curve);
-                    return;
-                }
-
-                if (e.isAltDown()) {
-                    cleanOutliers(CleanMode.POINT_MEDIAN, FitOptimization.this, FitOptimization.this.curve);
-                    return;
-                }
-            }
-
-            @Override
-            public void mousePressed(MouseEvent e) {
-            }
-
-            @Override
-            public void mouseReleased(MouseEvent e) {
-            }
-
-            @Override
-            public void mouseEntered(MouseEvent e) {
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-            }
-        });
-        //noinspection deprecation
-        cleanButton.addActionListener(ae -> cleanOutliers(CleanMode.getMode(ae), FitOptimization.this, FitOptimization.this.curve));
-        cleanButton.setToolTipText("""
-                <html>
-                Left-click to remove all data points that are outliers from the transit model by more than N times the per-point photometric error.<br>
-                Shift-left-click to remove all data points that are outliers from the transit model by more than N times the RMS of the transit model residuals.<br>
-                Alt-left-click to remove all data points that have photometric error greater than N time the median photometric error (e.g. cleans clouded data points).
-                </html>""");
-        outlierRemoval.add(cleanButton);
-        difNumTF.setEditable(false);
-        difNumTF.setMaximumSize(new Dimension(50, 10));
-        difNumTF.setHorizontalAlignment(SwingConstants.RIGHT);
-        difNumTF.setColumns(3);
-        difNumTF.setToolTipText("Total number of data points removed.");
-        outlierRemoval.add(difNumTF);
+        cleanButton.addActionListener($ ->
+                cleanOutliers((CleanMode) cleanModeSelection.getSelectedItem(), FitOptimization.this, FitOptimization.this.curve));
+        b.add(cleanButton);
+        outlierRemoval.add(b);
         var cleanLabel = new JLabel("N × σ:");
         cleanLabel.setHorizontalAlignment(SwingConstants.CENTER);
         cleanLabel.setToolTipText("The number of sigma away from the model to clean.");
         outlierRemoval.add(cleanLabel);
-        var cleanSpin = new JSpinner(new SpinnerNumberModel(nSigmaOutlier, 1d, null, 1d));
+
+        b = Box.createHorizontalBox();
+        var cleanSpin = new JSpinner(new SpinnerNumberModel(nSigmaOutlier, 1d, 100, 1d));
         addMouseListener(cleanSpin);
         cleanSpin.addChangeListener($ -> nSigmaOutlier = ((Number) cleanSpin.getValue()).doubleValue());
         cleanSpin.setToolTipText("The number of sigma away from the model to clean.");
-        outlierRemoval.add(cleanSpin);
-
+        b.add(cleanSpin);
+        b.add(Box.createHorizontalGlue());
         cleanNumTF.setEditable(false);
-        cleanNumTF.setMaximumSize(new Dimension(50, 10));
         cleanNumTF.setHorizontalAlignment(SwingConstants.RIGHT);
+        cleanNumTF.setColumns(3);
         cleanNumTF.setToolTipText("Last operation number of data points removed (-) or restored (+).");
-        outlierRemoval.add(cleanNumTF);
+        b.add(cleanNumTF);
+        b.add(Box.createHorizontalGlue());
+        difNumTF.setEditable(false);
+        difNumTF.setHorizontalAlignment(SwingConstants.RIGHT);
+        difNumTF.setColumns(3);
+        difNumTF.setToolTipText("Total number of data points removed.");
+        b.add(difNumTF);
+        outlierRemoval.add(b);
         SpringUtil.makeCompactGrid(outlierRemoval, 2, outlierRemoval.getComponentCount() / 2, 0, 0, 2, 2);
         fitOptimizationPanel.add(outlierRemoval);
 
@@ -221,9 +190,9 @@ public class FitOptimization implements AutoCloseable {
         var compOptimizationSelection = new JComboBox<ToolTipWrapper>();
         compOptimizationSelection.setEditable(false);
         compOptimizationSelection.setRenderer(new ToolTipRenderer());
-        var compBruteForce = new ToolTipWrapper("Exhaustive Optimize", "Exhaustive search of comparison star combinations for minimize RMS of the fit. Only comparison stars selected at the start of this run are searched.");
-        var compQuickOpti = new ToolTipWrapper("Old Quick Optimize", "Search for ensemble by testing the toggling of individual stars. Completes when the RMS converges. Only comparison stars selected at the start of this run are searched.");
-        var simpleQuickOpti = new ToolTipWrapper("Quick Optimize", "Search for ensemble by testing the toggling of individual stars. Completes when the RMS converges. Only comparison stars selected at the start of this run are searched.");
+        var compBruteForce = new ToolTipWrapper("Exhaustive", "Exhaustive search of comparison star combinations for minimize RMS of the fit. Only comparison stars selected at the start of this run are searched.");
+        var compQuickOpti = new ToolTipWrapper("Old Quick", "Search for ensemble by testing the toggling of individual stars. Completes when the RMS converges. Only comparison stars selected at the start of this run are searched.");
+        var simpleQuickOpti = new ToolTipWrapper("Quick", "Search for ensemble by testing the toggling of individual stars. Completes when the RMS converges. Only comparison stars selected at the start of this run are searched.");
         var compTest = new ToolTipWrapper("Debug", "Debug a single run.");
         compOptimizationSelection.addItem(compBruteForce);
         //compOptimizationSelection.addItem(compQuickOpti);
@@ -293,7 +262,7 @@ public class FitOptimization implements AutoCloseable {
         JPanel detrendOptPanel = new JPanel(new SpringLayout());
         detrendOptPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(MultiPlot_.subBorderColor, 1), "Detrend Parameter Selection", TitledBorder.CENTER, TitledBorder.TOP, MultiPlot_.p11, Color.darkGray));
 
-        var pLabel = new JLabel("   Max Detrend Pars.:   ");
+        var pLabel = new JLabel("Max Pars.:");
         pLabel.setHorizontalAlignment(SwingConstants.CENTER);
         pLabel.setToolTipText("The maximum number of detrend parameters to be enabled.");
         detrendOptPanel.add(pLabel);
@@ -307,7 +276,7 @@ public class FitOptimization implements AutoCloseable {
         var detrendOptimizationSelection = new JComboBox<ToolTipWrapper>();
         detrendOptimizationSelection.setEditable(false);
         detrendOptimizationSelection.setRenderer(new ToolTipRenderer());
-        var detrendBruteForce = new ToolTipWrapper("Exhaustive Optimize", "Exhaustive search of parameter combinations for minimum BIC of the fit. All set parameters are searched.");
+        var detrendBruteForce = new ToolTipWrapper("Exhaustive", "Exhaustive search of parameter combinations for minimum BIC of the fit. All set parameters are searched.");
         var detrendTest = new ToolTipWrapper("Debug", "Debug a single run.");
         detrendOptimizationSelection.addItem(detrendBruteForce);
         if (IJ.isAijDev()) detrendOptimizationSelection.addItem(detrendTest);
@@ -343,7 +312,7 @@ public class FitOptimization implements AutoCloseable {
         detrendOptPanel.add(detrendOptimizationSelection);
         detrendOptPanel.add(detOptiCards);
 
-        var eLabel = new JLabel("Min. BIC Thres.:");
+        var eLabel = new JLabel("BIC Thres.:");
         eLabel.setHorizontalAlignment(SwingConstants.CENTER);
         eLabel.setToolTipText("The required change in BIC between selected states to be considered a better value.");
         detrendOptPanel.add(eLabel);
@@ -521,7 +490,7 @@ public class FitOptimization implements AutoCloseable {
             INSTANCES.forEach(f -> f.cleanNumTF.setText("0"));
         }
 
-        if (showOptLog) AIJLogger.log("" + toRemove.size() + " new outliers removed");
+        if (showOptLog) AIJLogger.log(toRemove.size() + " new outliers removed");
 
         if (holdBinSize > 1 || holdUseDMarker1) {
             inputAverageOverSize[curve] = holdBinSize;
@@ -994,15 +963,31 @@ public class FitOptimization implements AutoCloseable {
     }
 
     enum CleanMode {
-        RMS,
-        POINT_MEDIAN,
-        POINT,
-        PRECISION;
+        RMS("Model RMS"),
+        POINT_MEDIAN("Median Err. Dif."),
+        POINT("Per-Point Sigma"),
+        PRECISION("Precision", false);
 
-        static CleanMode getMode(ActionEvent ae) {
-            if ((ae.getModifiers() & InputEvent.SHIFT_MASK) != 0) return RMS;
-            if ((ae.getModifiers() & InputEvent.ALT_MASK) != 0) return POINT_MEDIAN;
-            return POINT;
+        private final boolean menuDisplayable;
+        private final String name;
+
+        CleanMode(String name, boolean menuDisplayable) {
+            this.name = name;
+            this.menuDisplayable = menuDisplayable;
+        }
+
+        CleanMode(String name) {
+            menuDisplayable = true;
+            this.name = name;
+        }
+
+        public boolean isMenuDisplayable() {
+            return menuDisplayable;
+        }
+
+        @Override
+        public String toString() {
+            return name;
         }
     }
 

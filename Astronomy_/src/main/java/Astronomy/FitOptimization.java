@@ -148,32 +148,34 @@ public class FitOptimization implements AutoCloseable {
         undoButton.setToolTipText("<html>Undo clean<br>(up to 10 levels)</html>");
         outlierRemoval.add(undoButton);
 
-        var b = Box.createHorizontalBox();
         var options = Arrays.stream(CleanMode.values()).filter(CleanMode::isMenuDisplayable).toArray(CleanMode[]::new);
         var cleanModeSelection = new JComboBox<>(options);//todo tooltips for each option
         cleanModeSelection.setSelectedItem(CLEAN_MODE.get());
         cleanModeSelection.addActionListener(e -> {
             CLEAN_MODE.set((CleanMode) cleanModeSelection.getSelectedItem());
         });
-        b.add(cleanModeSelection);
-        b.add(Box.createHorizontalGlue());
+        outlierRemoval.add(cleanModeSelection);
         var cleanButton = new JButton("Clean");
         cleanButton.addActionListener($ ->
                 cleanOutliers((CleanMode) cleanModeSelection.getSelectedItem(), FitOptimization.this, FitOptimization.this.curve));
-        b.add(cleanButton);
-        outlierRemoval.add(b);
+        outlierRemoval.add(cleanButton);
+        outlierRemoval.add(Box.createHorizontalGlue());
+        var b = Box.createHorizontalBox();
+        b = Box.createHorizontalBox();
         var cleanLabel = new JLabel("N × σ:");
         cleanLabel.setHorizontalAlignment(SwingConstants.CENTER);
         cleanLabel.setToolTipText("The number of sigma away from the model to clean.");
-        outlierRemoval.add(cleanLabel);
+        b.add(cleanLabel);
 
-        b = Box.createHorizontalBox();
         var cleanSpin = new JSpinner(new SpinnerNumberModel(nSigmaOutlier, 1d, 100, 1d));
         addMouseListener(cleanSpin);
         cleanSpin.addChangeListener($ -> nSigmaOutlier = ((Number) cleanSpin.getValue()).doubleValue());
         cleanSpin.setToolTipText("The number of sigma away from the model to clean.");
+        b.add(Box.createHorizontalGlue());
         b.add(cleanSpin);
         b.add(Box.createHorizontalGlue());
+        outlierRemoval.add(b);
+        b = Box.createHorizontalBox();
         cleanNumTF.setEditable(false);
         cleanNumTF.setHorizontalAlignment(SwingConstants.RIGHT);
         cleanNumTF.setColumns(3);
@@ -186,7 +188,7 @@ public class FitOptimization implements AutoCloseable {
         difNumTF.setToolTipText("Total number of data points removed.");
         b.add(difNumTF);
         outlierRemoval.add(b);
-        SpringUtil.makeCompactGrid(outlierRemoval, 2, outlierRemoval.getComponentCount() / 2, 0, 0, 2, 2);
+        SpringUtil.makeCompactGrid(outlierRemoval, 2, outlierRemoval.getComponentCount() / 2, 0, 0, 0, 0);
         fitOptimizationPanel.add(outlierRemoval);
 
         JPanel compStarPanel = new JPanel(new SpringLayout());
@@ -272,7 +274,7 @@ public class FitOptimization implements AutoCloseable {
         pLabel.setToolTipText("The maximum number of detrend parameters to be enabled.");
         detrendOptPanel.add(pLabel);
 
-        detrendParamCount = new JSpinner(new SpinnerNumberModel(maxDetrend, 0, 100, 1));//todo we only need at most 3 digits
+        detrendParamCount = new JSpinner(new SpinnerNumberModel(maxDetrend, 0, 99, 1));//todo we only need at most 3 digits
         detrendParamCount.addChangeListener($ -> maxDetrend = ((Number) detrendParamCount.getValue()).intValue());
         addMouseListener(detrendParamCount);
         detrendParamCount.setToolTipText("The maximum number of detrend parameters to be enabled.");
@@ -322,7 +324,7 @@ public class FitOptimization implements AutoCloseable {
         eLabel.setToolTipText("The required change in BIC between selected states to be considered a better value.");
         detrendOptPanel.add(eLabel);
 
-        detrendEpsilon = new JSpinner(new SpinnerNumberModel(bict, 0D, 100, 1));
+        detrendEpsilon = new JSpinner(new SpinnerNumberModel(bict, 0D, 99, 1));
         addMouseListener(detrendEpsilon);
         detrendEpsilon.addChangeListener($ -> bict = ((Number) detrendEpsilon.getValue()).doubleValue());
         detrendEpsilon.setToolTipText("The required change in BIC between selected states to be considered a better value.");
@@ -991,6 +993,7 @@ public class FitOptimization implements AutoCloseable {
         CleanMode(String displayName, boolean menuDisplayable) {
             this.displayName = displayName;
             this.menuDisplayable = menuDisplayable;
+            //todo store tooltip provider here, eg new TP(this, "blah")
         }
 
         CleanMode(String displayName) {
@@ -1090,6 +1093,10 @@ public class FitOptimization implements AutoCloseable {
         public ToolTipWrapper(Object value, String toolTip) {
             this.value = value;
             this.toolTip = toolTip;
+        }
+
+        public Object getValue() {//todo generic?
+            return value;
         }
 
         @Override

@@ -306,6 +306,9 @@ public class Property<T> {
         } else if (type == String.class) {
             return (T) nv;
         } else if (type.isEnum()) {
+            // If the enum overrides #toString, we can't just use String#valueOf
+            nv = Prefs.get(getPropertyKey(), ((Enum<?>) value).name());
+
             if (NState.class.isAssignableFrom(type)) {
                 if (value != null) {
                     return (T) ((NState<?>) value).fromString(nv);

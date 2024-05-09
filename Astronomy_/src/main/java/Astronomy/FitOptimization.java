@@ -149,8 +149,14 @@ public class FitOptimization implements AutoCloseable {
         outlierRemoval.add(undoButton);
 
         var options = Arrays.stream(CleanMode.values()).filter(CleanMode::isMenuDisplayable).toArray(CleanMode[]::new);
-        var cleanModeSelection = new JComboBox<>(options);//todo tooltips for each option
+        var cleanModeSelection = new JComboBox<>(options);
+        cleanModeSelection.setToolTipText("""
+                <html>
+                Controls the method by which data is removed.
+                </html>
+                """);
         cleanModeSelection.setSelectedItem(CLEAN_MODE.get());
+        cleanModeSelection.setRenderer(new ToolTipRenderer());
         cleanModeSelection.addActionListener(e -> {
             CLEAN_MODE.set((CleanMode) cleanModeSelection.getSelectedItem());
         });
@@ -969,34 +975,54 @@ public class FitOptimization implements AutoCloseable {
         }
     }
 
-    enum CleanMode {
+    enum CleanMode implements ToolTipProvider {
         /**
          * Compares residual to model RMS
          */
-        RMS("Model vs RMS"),
+        RMS("Model vs RMS",
+                """
+                        <html>
+                        Remove all data points that are outliers from the transit model by more than
+                        N times the RMS of the transit model residuals.
+                        </html>
+                        """),
         /**
          * Compares residual to yerr
          */
-        POINT("Model vs Err."),
+        POINT("Model vs Err.",
+                """
+                        <html>
+                        Remove all data points that are outliers from the transit model by more than
+                        N times the per-point photometric error.
+                        </html>
+                        """),
         /**
          * Compares yerr to median of yerr
          */
-        POINT_MEDIAN("Large Phot. Err."),
+        POINT_MEDIAN("Large Phot. Err.",
+                """
+                        <html>
+                        Remove all data points that have photometric error greater than N time the
+                        median photometric error (e.g. cleans clouded data points).
+                        </html>
+                        """),
         /**
          * User selected points
          */
-        PRECISION("Precision", false);
+        PRECISION("Precision", false, null);
 
         private final boolean menuDisplayable;
         private final String displayName;
+        private final String tooltip;
 
-        CleanMode(String displayName, boolean menuDisplayable) {
+        CleanMode(String displayName, boolean menuDisplayable, String tooltip) {
             this.displayName = displayName;
             this.menuDisplayable = menuDisplayable;
-            //todo store tooltip provider here, eg new TP(this, "blah")
+            this.tooltip = tooltip;
         }
 
-        CleanMode(String displayName) {
+        CleanMode(String displayName, String tooltip) {
+            this.tooltip = tooltip;
             menuDisplayable = true;
             this.displayName = displayName;
         }
@@ -1008,6 +1034,11 @@ public class FitOptimization implements AutoCloseable {
         @Override
         public String toString() {
             return displayName;
+        }
+
+        @Override
+        public String getToolTip() {
+            return tooltip;
         }
     }
 

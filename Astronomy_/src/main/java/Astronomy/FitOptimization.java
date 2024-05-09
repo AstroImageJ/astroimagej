@@ -69,6 +69,7 @@ public class FitOptimization implements AutoCloseable {
     private JSpinner detrendEpsilon;
     private final JTextField difNumTF = new JTextField("0");
     private static final Property<CompStarFitting.Mode> compStarMode = new Property<>(CompStarFitting.Mode.QUICK, FitOptimization.class);
+    private static final Property<CleanMode> CLEAN_MODE = new Property<>(CleanMode.RMS, FitOptimization.class);
 
     // Init. after numAps is set
     private FitOptimization(int curve, int epsilon) {
@@ -144,12 +145,16 @@ public class FitOptimization implements AutoCloseable {
         var undoButton = new JButton(UIHelper.createImageIcon("astroj/images/icons/undo.png", 14, 14));
         var undoFont = undoButton.getFont();
         undoButton.addActionListener($ -> undoOutlierClean());
-        undoButton.setToolTipText("<html>Undo clean<br>(up to 5 levels)</html>");
+        undoButton.setToolTipText("<html>Undo clean<br>(up to 10 levels)</html>");
         outlierRemoval.add(undoButton);
 
         var b = Box.createHorizontalBox();
         var options = Arrays.stream(CleanMode.values()).filter(CleanMode::isMenuDisplayable).toArray(CleanMode[]::new);
-        var cleanModeSelection = new JComboBox<>(options);
+        var cleanModeSelection = new JComboBox<>(options);//todo tooltips for each option
+        cleanModeSelection.setSelectedItem(CLEAN_MODE.get());
+        cleanModeSelection.addActionListener(e -> {
+            CLEAN_MODE.set((CleanMode) cleanModeSelection.getSelectedItem());
+        });
         b.add(cleanModeSelection);
         b.add(Box.createHorizontalGlue());
         var cleanButton = new JButton("Clean");
@@ -262,12 +267,12 @@ public class FitOptimization implements AutoCloseable {
         JPanel detrendOptPanel = new JPanel(new SpringLayout());
         detrendOptPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(MultiPlot_.subBorderColor, 1), "Detrend Parameter Selection", TitledBorder.CENTER, TitledBorder.TOP, MultiPlot_.p11, Color.darkGray));
 
-        var pLabel = new JLabel("Max Pars.:");
+        var pLabel = new JLabel("Max Pars:");
         pLabel.setHorizontalAlignment(SwingConstants.CENTER);
         pLabel.setToolTipText("The maximum number of detrend parameters to be enabled.");
         detrendOptPanel.add(pLabel);
 
-        detrendParamCount = new JSpinner(new SpinnerNumberModel(maxDetrend, 0, 100, 1));
+        detrendParamCount = new JSpinner(new SpinnerNumberModel(maxDetrend, 0, 100, 1));//todo we only need at most 3 digits
         detrendParamCount.addChangeListener($ -> maxDetrend = ((Number) detrendParamCount.getValue()).intValue());
         addMouseListener(detrendParamCount);
         detrendParamCount.setToolTipText("The maximum number of detrend parameters to be enabled.");
@@ -312,7 +317,7 @@ public class FitOptimization implements AutoCloseable {
         detrendOptPanel.add(detrendOptimizationSelection);
         detrendOptPanel.add(detOptiCards);
 
-        var eLabel = new JLabel("BIC Thres.:");
+        var eLabel = new JLabel("BIC Thres:");
         eLabel.setHorizontalAlignment(SwingConstants.CENTER);
         eLabel.setToolTipText("The required change in BIC between selected states to be considered a better value.");
         detrendOptPanel.add(eLabel);
@@ -963,22 +968,34 @@ public class FitOptimization implements AutoCloseable {
     }
 
     enum CleanMode {
-        RMS("Model RMS"),
-        POINT_MEDIAN("Median Err. Dif."),
-        POINT("Per-Point Sigma"),
+        /**
+         * Compares residual to model RMS
+         */
+        RMS("Model vs RMS"),
+        /**
+         * Compares residual to yerr
+         */
+        POINT("Model vs Err."),
+        /**
+         * Compares yerr to median of yerr
+         */
+        POINT_MEDIAN("Large Phot. Err."),
+        /**
+         * User selected points
+         */
         PRECISION("Precision", false);
 
         private final boolean menuDisplayable;
-        private final String name;
+        private final String displayName;
 
-        CleanMode(String name, boolean menuDisplayable) {
-            this.name = name;
+        CleanMode(String displayName, boolean menuDisplayable) {
+            this.displayName = displayName;
             this.menuDisplayable = menuDisplayable;
         }
 
-        CleanMode(String name) {
+        CleanMode(String displayName) {
             menuDisplayable = true;
-            this.name = name;
+            this.displayName = displayName;
         }
 
         public boolean isMenuDisplayable() {
@@ -987,7 +1004,7 @@ public class FitOptimization implements AutoCloseable {
 
         @Override
         public String toString() {
-            return name;
+            return displayName;
         }
     }
 

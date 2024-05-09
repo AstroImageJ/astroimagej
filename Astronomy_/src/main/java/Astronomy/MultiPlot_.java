@@ -16996,6 +16996,16 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 }
                 pw.println(line);
             }
+
+            if (!showXAxisNormal) {
+                skipPlotUpdate = true;
+
+                // Update minimum
+                if (unphasedX != null) {
+                    applyXAutoScale(unphasedX, true);
+                }
+            }
+
             for (int row = 0; row < rows; row++) {
                 line = new StringBuilder((saveRowNumbers ? "" + (row + 1) + delimiter : "") + (saveRowLabels ? table.getLabel(row) + delimiter : ""));
                 needDelimiter = false;

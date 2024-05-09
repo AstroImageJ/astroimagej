@@ -1319,10 +1319,12 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     }
 
     static public void clearPlot() {
-        checkAndLockTable();
-        table.clearTable();
-        FitOptimization.clearCleanHistory();
-        table.setLock(false);
+        if (table != null) {
+            checkAndLockTable();
+            table.clearTable();
+            FitOptimization.clearCleanHistory();
+            table.setLock(false);
+        }
         if (plot != null) {
             plotImage = WindowManager.getImage("Plot of " + tableName);
             if (plotImage != null) {

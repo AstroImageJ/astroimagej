@@ -36,7 +36,9 @@ import java.net.*;
 import java.text.DecimalFormat;
 import java.util.List;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
@@ -3960,6 +3962,15 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         } else if (b == buttonClearMeasurements) {
             MultiPlot_.clearPlot();
 
+            if (table != null) {
+                table.clearTable();
+            } else {
+                table = MeasurementTable.getTable(tableName);
+                if (table != null) {
+                    table.clearTable();
+                }
+            }
+
             MultiAperture_.clearTable();
 
 //                                Class MP = Class.forName("MultiPlot_");
@@ -5565,6 +5576,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         ac.setAperture(radius, rBack1, rBack2, showSkyOverlay, showPhotometer);
 //            setValueTextField();
         photom.setMarkRemovedPixels(false);
+        System.out.println(1);
         photom.measure(imp, exact, lastImageX, lastImageY, radius, rBack1, rBack2);
         if (showMeanNotPeak) {
             peakLabel.setText("Mean:");
@@ -6387,39 +6399,39 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         ac.paint(ac.getGraphics());
     }
 
+    private Future<?> previousTask;
+    private static final ExecutorService PHOTOMETER_THREAD = Executors.newSingleThreadExecutor();//todo not static?
+
     public void mouseMoved(MouseEvent e) {
-
-        ac.setMousePosition(e.getX(), e.getY());
-        screenX = e.getX();
-        screenY = e.getY();
-        double imageX = ac.offScreenXD(e.getX());
-        double imageY = ac.offScreenYD(e.getY());
-        lastImageX = imageX;
-        lastImageY = imageY;
-        String lab;
-        xy[0] = imageX;
-        xy[1] = imageY;
-        photom.measure(imp, exact, imageX, imageY, radius, rBack1, rBack2);
-        IJ.setInputEvent(e);
-        if (showPhotometer)// != e.isShiftDown())
-        {
-            ac.setMouseInImage(true);
-            ac.paint(ac.getGraphics());
+        if (previousTask != null) {
+            previousTask.cancel(true);
         }
 
-        if (goodWCS) {
-            radec = wcs.pixels2wcs(xy);
-            lab = "   " + hms(radec[0] / 15.0, 3) + ", ";
-            if (radec[1] > 0.0)
-                lab += "+" + hms(radec[1], 2);
-            else
-                lab += hms(radec[1], 2);
-        } else {
-            lab = "";
-        }
-        updateXYValue(imageX, imageY, NOT_DRAGGING, e.isShiftDown(), e.isControlDown());
-        prevImageX = lastImageX;
-        prevImageY = lastImageY;
+        previousTask = PHOTOMETER_THREAD.submit(() -> {
+            ac.setMousePosition(e.getX(), e.getY());
+            screenX = e.getX();
+            screenY = e.getY();
+            double imageX = ac.offScreenXD(e.getX());
+            double imageY = ac.offScreenYD(e.getY());
+            lastImageX = imageX;
+            lastImageY = imageY;
+            xy[0] = imageX;
+            xy[1] = imageY;
+            photom.measure(imp, exact, imageX, imageY, radius, rBack1, rBack2);
+            IJ.setInputEvent(e);
+            if (showPhotometer) {// != e.isShiftDown())
+                ac.setMouseInImage(true);
+                ac.paint(ac.getGraphics());
+            }
+
+            if (goodWCS) {
+                radec = wcs.pixels2wcs(xy);
+            }
+
+            updateXYValue(imageX, imageY, NOT_DRAGGING, e.isShiftDown(), e.isControlDown());
+            prevImageX = lastImageX;
+            prevImageY = lastImageY;
+        });
     }
 
     public void mouseDragged(MouseEvent e) {

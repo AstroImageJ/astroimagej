@@ -168,7 +168,7 @@ public class FitOptimization implements AutoCloseable {
         outlierRemoval.add(Box.createHorizontalGlue());
         var b = Box.createHorizontalBox();
         b = Box.createHorizontalBox();
-        var cleanLabel = new JLabel("N × σ:");
+        var cleanLabel = new JLabel("N:");
         cleanLabel.setHorizontalAlignment(SwingConstants.CENTER);
         cleanLabel.setToolTipText("The number of sigma away from the model to clean.");
         b.add(cleanLabel);
@@ -989,7 +989,7 @@ public class FitOptimization implements AutoCloseable {
         /**
          * Compares residual to yerr
          */
-        POINT("Model vs Err.",
+        POINT("Model vs Phot. Err.",
                 """
                         <html>
                         Remove all data points that are outliers from the transit model by more than
@@ -1002,7 +1002,7 @@ public class FitOptimization implements AutoCloseable {
         POINT_MEDIAN("Large Phot. Err.",
                 """
                         <html>
-                        Remove all data points that have photometric error greater than N time the
+                        Remove all data points that have photometric error greater than N times the
                         median photometric error (e.g. cleans clouded data points).
                         </html>
                         """),

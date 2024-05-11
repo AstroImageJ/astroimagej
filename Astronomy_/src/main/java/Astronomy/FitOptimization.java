@@ -29,7 +29,6 @@ import static Astronomy.MultiPlot_.*;
 
 public class FitOptimization implements AutoCloseable {
     protected static final String PREFS_ENABLELOG = "fitoptimization.enablelog";
-    protected static final String PREFS_NSIGMA = "fitoptimization.nsigma";
     protected static final String PREFS_MAX_DETREND = "fitoptimization.maxdetrend";
     protected static final String PREFS_BIC_THRESHOLD = "fitoptimization.bict";
     private static final Property<Integer> maxThreads = new Property<>(getThreadCount(), FitOptimization.class);
@@ -45,7 +44,6 @@ public class FitOptimization implements AutoCloseable {
     static boolean showOptLog = false;
     private static int maxDetrend = 1;
     private static double bict = 2;
-    private static double nSigmaOutlier = 5;
     private final int curve;
     public DynamicCounter compCounter;
     public DynamicCounter detrendCounter;
@@ -77,7 +75,6 @@ public class FitOptimization implements AutoCloseable {
         EPSILON = epsilon;
         setupThreadedSpace();
         INSTANCES.add(this);
-        nSigmaOutlier = Prefs.get(PREFS_NSIGMA, nSigmaOutlier);
         showOptLog = Prefs.get(PREFS_ENABLELOG, showOptLog);
         bict = Prefs.get(PREFS_BIC_THRESHOLD, bict);
         maxDetrend = (int) Prefs.get(PREFS_MAX_DETREND, maxDetrend);
@@ -111,7 +108,6 @@ public class FitOptimization implements AutoCloseable {
     }
 
     public static void savePrefs() {
-        Prefs.set(PREFS_NSIGMA, nSigmaOutlier);
         Prefs.set(PREFS_ENABLELOG, showOptLog);
         Prefs.set(PREFS_MAX_DETREND, maxDetrend);
         Prefs.set(PREFS_BIC_THRESHOLD, bict);
@@ -157,9 +153,6 @@ public class FitOptimization implements AutoCloseable {
                 """);
         cleanModeSelection.setSelectedItem(CLEAN_MODE.get());
         cleanModeSelection.setRenderer(new ToolTipRenderer());
-        cleanModeSelection.addActionListener(e -> {
-            CLEAN_MODE.set((CleanMode) cleanModeSelection.getSelectedItem());
-        });
         outlierRemoval.add(cleanModeSelection);
         var cleanButton = new JButton("Clean");
         cleanButton.addActionListener($ ->
@@ -173,9 +166,16 @@ public class FitOptimization implements AutoCloseable {
         cleanLabel.setToolTipText("The number of sigma away from the model to clean.");
         b.add(cleanLabel);
 
-        var cleanSpin = new JSpinner(new SpinnerNumberModel(nSigmaOutlier, 1d, 100, 1d));
+        var cleanSpin = new JSpinner(new SpinnerNumberModel(CLEAN_MODE.get().n.get().doubleValue(), 1d, 100, 0.1));
         addMouseListener(cleanSpin);
-        cleanSpin.addChangeListener($ -> nSigmaOutlier = ((Number) cleanSpin.getValue()).doubleValue());
+        cleanSpin.addChangeListener($ -> CLEAN_MODE.get().n.set(((Number) cleanSpin.getValue()).doubleValue()));
+        cleanModeSelection.addActionListener(e -> {
+            var cl = (CleanMode) cleanModeSelection.getSelectedItem();
+            if (cl != null) {
+                CLEAN_MODE.set(cl);
+                cleanSpin.setValue(cl.n.get());
+            }
+        });
         cleanSpin.setToolTipText("The number of sigma away from the model to clean.");
         b.add(Box.createHorizontalGlue());
         b.add(cleanSpin);
@@ -373,7 +373,7 @@ public class FitOptimization implements AutoCloseable {
 
     public static void showThreadingPanel(Frame owner) {
         var gd = new GenericSwingDialog("Optimization Threading Preferences", owner);
-        gd.addCheckbox("Auto max threads", autoMaxThreads.get(), b -> autoMaxThreads.set(b));
+        gd.addCheckbox("Auto max threads", autoMaxThreads.get(), autoMaxThreads::set);
         var x = gd.addBoundedNumericField("Max Threads:", new GenericSwingDialog.Bounds(1, 256),
                 maxThreads.get(), 1, 7, "", true, d -> maxThreads.set(d.intValue()));
         gd.addBoundedNumericField("Minimum Chunk Size:", new GenericSwingDialog.Bounds(1, Integer.MAX_VALUE),
@@ -463,7 +463,7 @@ public class FitOptimization implements AutoCloseable {
                     }
                 }
             };
-            if (Math.abs(comparator) > Math.abs(nSigmaOutlier * sigma)) {
+            if (Math.abs(comparator) > Math.abs(cleanMode.n.get() * sigma)) {
                 hasActionToUndo = true;
                 toRemove.add(excludedHeadSamples + i);
                 //if (showOptLog) AIJLogger.log("Datapoint removed because residual > n * yerr: "+Math.abs(residual[curve][i])+" > "+Math.abs(nSigmaOutlier * yerr[curve][i]));
@@ -979,7 +979,7 @@ public class FitOptimization implements AutoCloseable {
         /**
          * Compares residual to model RMS
          */
-        RMS("Model vs RMS",
+        RMS("Model vs RMS", 3,
                 """
                         <html>
                         Remove all data points that are outliers from the transit model by more than
@@ -989,7 +989,7 @@ public class FitOptimization implements AutoCloseable {
         /**
          * Compares residual to yerr
          */
-        POINT("Model vs Phot. Err.",
+        POINT("Model vs Phot. Err.", 5,
                 """
                         <html>
                         Remove all data points that are outliers from the transit model by more than
@@ -999,7 +999,7 @@ public class FitOptimization implements AutoCloseable {
         /**
          * Compares yerr to median of yerr
          */
-        POINT_MEDIAN("Large Phot. Err.",
+        POINT_MEDIAN("Large Phot. Err.", 1.5,
                 """
                         <html>
                         Remove all data points that have photometric error greater than N times the
@@ -1009,22 +1009,22 @@ public class FitOptimization implements AutoCloseable {
         /**
          * User selected points
          */
-        PRECISION("Precision", false, null);
+        PRECISION("Precision", 0, false, null);
 
         private final boolean menuDisplayable;
         private final String displayName;
         private final String tooltip;
+        public final Property<Double> n;
 
-        CleanMode(String displayName, boolean menuDisplayable, String tooltip) {
+        CleanMode(String displayName, double n, String tooltip) {
+            this(displayName, n, true, tooltip);
+        }
+
+        CleanMode(String displayName, double n, boolean menuDisplayable, String tooltip) {
             this.displayName = displayName;
             this.menuDisplayable = menuDisplayable;
             this.tooltip = tooltip;
-        }
-
-        CleanMode(String displayName, String tooltip) {
-            this.tooltip = tooltip;
-            menuDisplayable = true;
-            this.displayName = displayName;
+            this.n = new Property<>(n, null, name(), this);
         }
 
         public boolean isMenuDisplayable() {

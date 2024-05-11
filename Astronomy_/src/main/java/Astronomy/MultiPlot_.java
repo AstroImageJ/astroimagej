@@ -26,7 +26,9 @@ import ij.astro.util.UIHelper;
 import ij.gui.*;
 import ij.io.OpenDialog;
 import ij.io.SaveDialog;
+import ij.measure.Minimizer;
 import ij.measure.ResultsTable;
+import ij.measure.UserFunction;
 import ij.plugin.GifWriter;
 import ij.plugin.Macro_Runner;
 import ij.plugin.PlugIn;
@@ -962,6 +964,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     private static boolean[] usesYModel2;
     private static boolean performingBulkShiftUpdate;
     private static final ExecutorService MP_THREAD = Executors.newSingleThreadExecutor();
+    private static boolean usImageJFitter;
 
     public void run(String inTableNamePlusOptions) {
         boolean useAutoAstroDataUpdate = false;
@@ -3229,11 +3232,28 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                             converged[curve] = true;
                                             nTries[curve] = 0;
                                         } else {
-                                            minimization.setNrestartsMax(1);
-                                            minimization.nelderMead(new FitLightCurveChi2(curve), start[curve], step[curve], tolerance[curve], maxFitSteps[curve]);
-                                            coeffs[curve] = minimization.getParamValues();
-                                            nTries[curve] = minimization.getNiter() - 1;
-                                            converged[curve] = minimization.getConvStatus();
+                                            if (usImageJFitter) {
+                                                var m = new Minimizer();
+                                                //todo for maxRestarts >=1, sometimes it deadlocks eg when enabling an all nan param
+                                                m.setMaxRestarts(0);
+                                                m.setFunction(new FitLightCurveChi2(curve), nFitted);
+                                                var result = m.minimize(start[curve], step[curve]);//todo confirm values
+                                                System.out.println("Curve: %s; Status: %s".formatted(curve, Minimizer.STATUS_STRING[result]));
+
+                                                nTries[curve] = m.getIterations();
+                                                coeffs[curve] = Arrays.copyOf(m.getParams(), nFitted); // more values can be returned
+                                                chi2dof[curve] = m.getFunctionValue();
+                                                chi2[curve] = chi2dof[curve] * dof[curve];
+                                                converged[curve] = result == Minimizer.SUCCESS;
+                                            } else {
+                                                minimization.setNrestartsMax(1);
+                                                minimization.nelderMead(new FitLightCurveChi2(curve), start[curve], step[curve], tolerance[curve], maxFitSteps[curve]);
+                                                coeffs[curve] = minimization.getParamValues();
+                                                nTries[curve] = minimization.getNiter() - 1;
+                                                converged[curve] = minimization.getConvStatus();
+                                                chi2[curve] = minimization.getMinimum() * dof[curve];
+                                                chi2dof[curve] = minimization.getMinimum();
+                                            }
                                         }
 
                                         fp = 0;
@@ -3274,7 +3294,11 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                             transitDepth[curve] = (1-(midpointFlux/bestFit[curve][0]))*1000;
                                         }
 
-                                        chi2dof[curve] = minimization.getMinimum(); // verified independently using residuals, errors, and degrees of freedom
+                                        if (usImageJFitter) {
+
+                                        } else {
+                                            chi2dof[curve] = minimization.getMinimum(); // verified independently using residuals, errors, and degrees of freedom
+                                        }
                                         //chi2 + p * log(n)
                                         bic[curve] = (chi2dof[curve] * dof[curve]) + nFitted * Math.log(detrendXs[curve].length);
 
@@ -4655,22 +4679,22 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         plot.addLabel(titlePosX, y, title);
     }
 
-    public static class FitLightCurveChi2 implements MinimizationFunction {
+    public static class FitLightCurveChi2 implements MinimizationFunction, UserFunction {
         final int curve;
 
         public FitLightCurveChi2(int curve) {
             this.curve = curve;
         }
 
-        public double function(double[] param) {
+        public double function(double[] params) {
             int numData = detrendYs[curve].length;
             int numDetrendVars = detrendVars[curve].length;
-            int nPars = param.length;
+            int nPars = params.length;
             double[] dPars = new double[detrendVars[curve].length];
 //            int dof = numData - param.length;// - 7;
             if (dof[curve] < 1) dof[curve] = 1;
 
-            chi2[curve] = 0;
+            var chi2 = 0D;
             double residual;
             int fp = 0;
 
@@ -4685,12 +4709,12 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             double ohm = forceCircularOrbit[curve] ? 0.0 : omega[curve];
             double b = 0.0;
             if (useTransitFit[curve]) {
-                f0 = lockToCenter[curve][0] ? priorCenter[curve][0] : param[fp < nPars ? fp++ : nPars - 1]; // baseline flux
-                p0 = lockToCenter[curve][1] ? Math.sqrt(priorCenter[curve][1]) : param[fp < nPars ? fp++ : nPars - 1]; // r_p/r_*
-                ar = lockToCenter[curve][2] ? priorCenter[curve][2] : param[fp < nPars ? fp++ : nPars - 1]; // a/r_*
-                tc = lockToCenter[curve][3] ? priorCenter[curve][3] : param[fp < nPars ? fp++ : nPars - 1]; //transit center time
+                f0 = lockToCenter[curve][0] ? priorCenter[curve][0] : params[fp < nPars ? fp++ : nPars - 1]; // baseline flux
+                p0 = lockToCenter[curve][1] ? Math.sqrt(priorCenter[curve][1]) : params[fp < nPars ? fp++ : nPars - 1]; // r_p/r_*
+                ar = lockToCenter[curve][2] ? priorCenter[curve][2] : params[fp < nPars ? fp++ : nPars - 1]; // a/r_*
+                tc = lockToCenter[curve][3] ? priorCenter[curve][3] : params[fp < nPars ? fp++ : nPars - 1]; //transit center time
                 if (!bpLock[curve]) {
-                    incl = lockToCenter[curve][4] ? priorCenter[curve][4] * Math.PI / 180.0 : param[fp < nPars ? fp++ : nPars - 1];  //inclination
+                    incl = lockToCenter[curve][4] ? priorCenter[curve][4] * Math.PI / 180.0 : params[fp < nPars ? fp++ : nPars - 1];  //inclination
                     b = Math.cos(incl) * ar;
                     if (b > 1.0 + p0) {  //ensure planet transits or grazes the star
                         return Double.POSITIVE_INFINITY;
@@ -4698,8 +4722,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 } else {
                     incl = Math.acos(bp[curve]/ar);
                 }
-                u1 = lockToCenter[curve][5] ? priorCenter[curve][5] : param[fp < nPars ? fp++ : nPars - 1];  //quadratic limb darkening parameter 1
-                u2 = lockToCenter[curve][6] ? priorCenter[curve][6] : param[fp < nPars ? fp++ : nPars - 1];  //quadratic limb darkening parameter 2
+                u1 = lockToCenter[curve][5] ? priorCenter[curve][5] : params[fp < nPars ? fp++ : nPars - 1];  //quadratic limb darkening parameter 1
+                u2 = lockToCenter[curve][6] ? priorCenter[curve][6] : params[fp < nPars ? fp++ : nPars - 1];  //quadratic limb darkening parameter 2
 
                 lcModel[curve] = IJU.transitModel(detrendXs[curve], f0, incl, p0, ar, tc, orbitalPeriod[curve], e, ohm, u1, u2, useLonAscNode[curve], lonAscNode[curve], true);
             }
@@ -4707,7 +4731,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             int dp = 0;
             for (int p = 7; p < maxFittedVars; p++) {
                 if (isFitted[curve][p]) {
-                    dPars[dp++] = param[fp++];
+                    dPars[dp++] = params[fp++];
                 } else if (detrendIndex[curve][p - 7] != 0 && detrendYDNotConstant[p - 7] && lockToCenter[curve][p]) {
                     dPars[dp++] = priorCenter[curve][p];
                 }
@@ -4716,16 +4740,16 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
             if (useTransitFit[curve]) {
                 if (!lockToCenter[curve][2] && (ar < (1.0 + p0))) {
-                    chi2[curve] = Double.POSITIVE_INFINITY;  //boundary check that planet does not orbit within star
+                    chi2 = Double.POSITIVE_INFINITY;  //boundary check that planet does not orbit within star
                 } else if ((!lockToCenter[curve][2] || !lockToCenter[curve][4]) && ((ar * Math.cos(incl) * (1.0 - e * e) / (1.0 + e * Math.sin(ohm * Math.PI / 180.0))) >= 1.0 + p0)) {
                     if (!lockToCenter[curve][4] && autoUpdatePrior[curve][4]) {
                         priorCenter[curve][4] = Math.round(10.0 * Math.acos((0.5 + p0) * (1.0 + e * Math.sin(ohm * Math.PI / 180.0)) / (ar * (1.0 - e * e))) * 180.0 / Math.PI) / 10.0;
                         if (Double.isNaN(priorCenter[curve][4])) priorCenter[curve][4] = 89.9;
                         priorCenterSpinner[curve][4].setValue(priorCenter[curve][4]);
                     }
-                    chi2[curve] = Double.POSITIVE_INFINITY; //boundary check that planet passes in front of star
+                    chi2 = Double.POSITIVE_INFINITY; //boundary check that planet passes in front of star
                 } else if ((!lockToCenter[curve][5] || !lockToCenter[curve][6]) && (((u1 + u2) > 1.0) || ((u1 + u2) < 0.0) || (u1 > 1.0) || (u1 < 0.0) || (u2 < -1.0) || (u2 > 1.0))) {
-                    chi2[curve] = Double.POSITIVE_INFINITY;
+                    chi2 = Double.POSITIVE_INFINITY;
                 } else {
                     for (int j = 0; j < numData; j++) {
                         residual = detrendYs[curve][j];// - param[0];
@@ -4733,7 +4757,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                             residual -= detrendVars[curve][i][j] * dPars[i];
                         }
                         residual -= (lcModel[curve][j] - detrendYAverage[curve]);
-                        chi2[curve] += ((residual * residual) / (detrendYEs[curve][j] * detrendYEs[curve][j]));
+                        chi2 += ((residual * residual) / (detrendYEs[curve][j] * detrendYEs[curve][j]));
                     }
                 }
             } else {
@@ -4742,13 +4766,106 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     for (int i = 0; i < numDetrendVars; i++) {
                         residual -= detrendVars[curve][i][j] * dPars[i];
                     }
-                    if (numDetrendVars == 0 && param.length == 1) {
-                        residual -= param[0];
+                    if (numDetrendVars == 0 && params.length == 1) {
+                        residual -= params[0];
                     }
-                    chi2[curve] += ((residual * residual) / (detrendYEs[curve][j] * detrendYEs[curve][j]));
+                    chi2 += ((residual * residual) / (detrendYEs[curve][j] * detrendYEs[curve][j]));
                 }
             }
-            return chi2[curve] / (double) dof[curve];
+            return chi2 / (double) dof[curve];
+        }
+
+        @Override
+        public double userFunction(double[] params, double $) {
+            int fp = 0;
+            int nPars = params.length;
+
+            double f0 = priorCenter[curve][0]; // baseline flux
+            double p0 = priorCenter[curve][1]; // r_p/r_*
+            double ar = priorCenter[curve][2]; // a/r_*
+            double tc = priorCenter[curve][3]; //transit center time
+            double incl = priorCenter[curve][4];  //inclination
+            double u1 = priorCenter[curve][5];  //quadratic limb darkening parameter 1
+            double u2 = priorCenter[curve][6];  //quadratic limb darkening parameter 2
+            double e = forceCircularOrbit[curve] ? 0.0 : eccentricity[curve];
+            double ohm = forceCircularOrbit[curve] ? 0.0 : omega[curve];
+            double b = 0.0;
+            if (useTransitFit[curve]) {
+                f0 = lockToCenter[curve][0] ? priorCenter[curve][0] : params[fp < nPars ? fp++ : nPars - 1]; // baseline flux
+                p0 = lockToCenter[curve][1] ? Math.sqrt(priorCenter[curve][1]) : params[fp < nPars ? fp++ : nPars - 1]; // r_p/r_*
+                ar = lockToCenter[curve][2] ? priorCenter[curve][2] : params[fp < nPars ? fp++ : nPars - 1]; // a/r_*
+                tc = lockToCenter[curve][3] ? priorCenter[curve][3] : params[fp < nPars ? fp++ : nPars - 1]; //transit center time
+                if (!bpLock[curve]) {
+                    incl = lockToCenter[curve][4] ? priorCenter[curve][4] * Math.PI / 180.0 : params[fp < nPars ? fp++ : nPars - 1];  //inclination
+                    b = Math.cos(incl) * ar;
+                    if (b > 1.0 + p0) {  //ensure planet transits or grazes the star
+                        return Double.NaN;
+                    }
+                } else {
+                    incl = Math.acos(bp[curve]/ar);
+                }
+                u1 = lockToCenter[curve][5] ? priorCenter[curve][5] : params[fp < nPars ? fp++ : nPars - 1];  //quadratic limb darkening parameter 1
+                u2 = lockToCenter[curve][6] ? priorCenter[curve][6] : params[fp < nPars ? fp++ : nPars - 1];  //quadratic limb darkening parameter 2
+            }
+
+            // Fit against yMedian when no transit and no params
+            if (nPars == 0 && !useTransitFit[curve]) {
+                //minimization.addConstraint(0, -1, 0.0);//todo how to handle
+            }
+
+            if (useTransitFit[curve]) {
+                if (p0 < 0) {
+                    return Double.NaN;
+                }
+
+                if (!bpLock[curve] && (incl > Math.toRadians(90) || incl < Math.toRadians(50))) {
+                    return Double.NaN;
+                }
+
+                if (f0 < 0) {
+                    return Double.NaN;
+                }
+
+                if (ar < 2) {
+                    return Double.NaN;
+                }
+
+                if ((u1 > 1 || u1 < -1) || (u2 > 1 || u2 < -1)) {
+                    return Double.NaN;
+                }
+
+                // 0 = f0 = baseline flux
+                // 1 = p0 = r_p/r_*
+                // 2 = ar = a/r_*
+                // 3 = tc = transit center time
+                // 4 = i = inclination
+                // 5 = u1 = quadratic limb darkening parameter 1
+                // 6 = u2 = quadratic limb darkening parameter 2
+                // 7+ = detrend parameters
+                for (fp = 0; fp < nPars; fp++) {
+                    if (usePriorWidth[curve][/*index[curve][fp]*/fp]) {//todo is this right?
+                        if (params[fp] > start[curve][fp] + width[curve][fp] || params[fp] < start[curve][fp] - width[curve][fp]) {
+                            return Double.NaN;
+                        }
+                    }
+                }
+
+
+                if (!lockToCenter[curve][2] && (ar < (1.0 + p0))) {
+                    return Double.NaN;  //boundary check that planet does not orbit within star
+                } else if ((!lockToCenter[curve][2] || !lockToCenter[curve][4]) && ((ar * Math.cos(incl) * (1.0 - e * e) / (1.0 + e * Math.sin(ohm * Math.PI / 180.0))) >= 1.0 + p0)) {
+                    /*if (!lockToCenter[curve][4] && autoUpdatePrior[curve][4]) {
+                        priorCenter[curve][4] = Math.round(10.0 * Math.acos((0.5 + p0) * (1.0 + e * Math.sin(ohm * Math.PI / 180.0)) / (ar * (1.0 - e * e))) * 180.0 / Math.PI) / 10.0;
+                        if (Double.isNaN(priorCenter[curve][4])) priorCenter[curve][4] = 89.9;
+                        priorCenterSpinner[curve][4].setValue(priorCenter[curve][4]);
+                    }*/
+                    return Double.NaN; //boundary check that planet passes in front of star
+                } else if ((!lockToCenter[curve][5] || !lockToCenter[curve][6]) && (((u1 + u2) > 1.0) || ((u1 + u2) < 0.0) || (u1 > 1.0) || (u1 < 0.0) || (u2 < -1.0) || (u2 > 1.0))) {
+                    return Double.NaN;
+                }
+            }
+
+            return function(params);
         }
     }
 
@@ -7973,6 +8090,13 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         });
         preferencesmenu.add(usedefaultsettingsCB);
 
+        preferencesmenu.addSeparator();
+        var minimizerToggle = new JCheckBoxMenuItem("Use IJ Fitter", usImageJFitter);
+        minimizerToggle.addActionListener($ -> {
+            usImageJFitter = minimizerToggle.getState();
+            updatePlot(updateAllFits());
+        });
+        preferencesmenu.add(minimizerToggle);
         mainmenubar.add(preferencesmenu);
 
 

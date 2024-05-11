@@ -266,14 +266,22 @@ public class Property<T> {
                         if (this.equals(declaredField.get(owner))) {
                             var pk = declaredField.getAnnotation(PropertyKey.class);
                             var gs = declaredField.toGenericString().split(" ");
+                            var prefix = keyPrefix.get();
+                            var suffix = keySuffix.get();
+                            if (prefix == null) {
+                                prefix = "";
+                            }
+                            if (suffix == null) {
+                                suffix = "";
+                            }
                             if (pk != null) {
                                 if (pk.ignoreAffixes()) {
                                     propertyKey = pk.value();
                                 } else {
-                                    propertyKey = keyPrefix.get() + pk.value() + keySuffix.get();
+                                    propertyKey = prefix + pk.value() + suffix;
                                 }
                             } else {
-                                propertyKey = keyPrefix.get() + gs[gs.length - 1] + keySuffix.get();
+                                propertyKey = prefix + gs[gs.length - 1] + suffix;
                             }
 
                             hasBuiltKey = true;
@@ -340,6 +348,7 @@ public class Property<T> {
             return;
         } else if (type.isEnum()) {
             Prefs.set(getPropertyKey(), ((Enum<?>) value).name());
+            return;
         }
 
         Prefs.set(getPropertyKey(), value.toString());

@@ -3235,7 +3235,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                             if (usImageJFitter) {
                                                 var m = new Minimizer();
                                                 //todo for maxRestarts >=1, sometimes it deadlocks eg when enabling an all nan param
+                                                //todo seems to be an issue with the tolerence
                                                 m.setMaxRestarts(0);
+                                                m.setMaxIterations(maxFitSteps[curve]);
+                                                m.setMaxError(tolerance[curve]);
                                                 m.setFunction(new FitLightCurveChi2(curve), nFitted);
                                                 var result = m.minimize(start[curve], step[curve]);//todo confirm values
                                                 System.out.println("Curve: %s; Status: %s".formatted(curve, Minimizer.STATUS_STRING[result]));

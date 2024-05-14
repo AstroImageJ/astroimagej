@@ -3324,21 +3324,49 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                         }
                                         double fTol = 1e-10;
                                         int nMax = 20000;
-                                        minimization.nelderMead(new FitDetrendChi2(curve), start[curve], step[curve], fTol, nMax);
-                                        coeffs[curve] = minimization.getParamValues();
 
-                                        varCount = 0;
-                                        for (int v = 0; v < maxDetrendVars; v++) {
-                                            if (detrendIndex[curve][v] != 0 && detrendYDNotConstant[v]) {
-                                                detrendFactor[curve][v] = coeffs[curve][varCount];
-                                                varCount++;
+                                        if (usImageJFitter) {
+                                            var m = new Minimizer();
+                                            m.setMaxRestarts(0);
+                                            m.setMaxIterations(nMax);
+                                            m.setMaxError(fTol);
+                                            m.setFunction(new FitDetrendChi2(curve), start[curve].length);
+                                            var result = m.minimize(start[curve], step[curve]);
+                                            System.out.println("Curve: %s; Status: %s".formatted(curve, Minimizer.STATUS_STRING[result]));
+
+                                            nTries[curve] = m.getIterations();
+                                            coeffs[curve] = Arrays.copyOf(m.getParams(), start[curve].length); // more values can be returned
+                                            chi2dof[curve] = m.getFunctionValue();
+                                            chi2[curve] = chi2dof[curve] * dof[curve];
+                                            converged[curve] = result == Minimizer.SUCCESS;
+
+                                            varCount = 0;
+                                            for (int v = 0; v < maxDetrendVars; v++) {
+                                                if (detrendIndex[curve][v] != 0 && detrendYDNotConstant[v]) {
+                                                    detrendFactor[curve][v] = coeffs[curve][varCount];
+                                                    varCount++;
+                                                }
                                             }
+
+                                            fitConvergeceArr[curve] = result == Minimizer.SUCCESS;
+                                        } else {
+                                            minimization.nelderMead(new FitDetrendChi2(curve), start[curve], step[curve], fTol, nMax);
+                                            coeffs[curve] = minimization.getParamValues();
+
+                                            varCount = 0;
+                                            for (int v = 0; v < maxDetrendVars; v++) {
+                                                if (detrendIndex[curve][v] != 0 && detrendYDNotConstant[v]) {
+                                                    detrendFactor[curve][v] = coeffs[curve][varCount];
+                                                    varCount++;
+                                                }
+                                            }
+
+                                            fitConvergeceArr[curve] = minimization.getConvStatus();
                                         }
 
-                                        fitConvergeceArr[curve] = minimization.getConvStatus();
                                     } else { //use regression
                                         Regression regression = new Regression(detrendVars[curve], detrendYs[curve]);
-                                        regression.linear();
+                                        regression.linear();//todo this
                                         coeffs[curve] = regression.getCoeff();
 
                                         varCount = 1;
@@ -4624,7 +4652,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         }
     }
 
-    public static class FitDetrendChi2 implements MinimizationFunction {
+    public static class FitDetrendChi2 implements MinimizationFunction, UserFunction {
         final int curve;
 
         public FitDetrendChi2(int curve) {
@@ -4646,6 +4674,11 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 chi2 += ((residual * residual) / (detrendYEs[curve][j] * detrendYEs[curve][j]));
             }
             return chi2 / (double) dof;
+        }
+
+        @Override
+        public double userFunction(double[] params, double $) {
+            return function(params);
         }
     }
 

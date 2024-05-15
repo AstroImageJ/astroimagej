@@ -4,13 +4,13 @@ import Astronomy.multiplot.KeplerSplineControl;
 import Astronomy.multiplot.settings.MPOperator;
 import astroj.IJU;
 import flanagan.analysis.Regression;
-import flanagan.analysis.Stat;
 import flanagan.math.Minimization;
 import flanagan.math.MinimizationFunction;
 import ij.IJ;
 import ij.Prefs;
 import ij.astro.logging.AIJLogger;
 import ij.measure.ResultsTable;
+import ij.util.ArrayUtil;
 import org.hipparchus.linear.MatrixUtils;
 
 import java.math.BigDecimal;
@@ -1383,7 +1383,7 @@ public class CurveFitter {
                                 step = new double[1];
 
                                 index = new int[1];
-                                start[0] = Stat.median(detrendYs[curve]);
+                                start[0] = ArrayUtil.median(detrendYs[curve]);
                                 minimization.addConstraint(0, -1, 0.0);
                             }
 

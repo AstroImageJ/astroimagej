@@ -3,9 +3,9 @@ package Astronomy.multiplot.macro.title.parser;
 import Astronomy.MultiAperture_;
 import astroj.FitsJ;
 import astroj.JulianDate;
-import flanagan.analysis.Stat;
 import ij.IJ;
 import ij.Prefs;
+import ij.util.ArrayUtil;
 
 import java.text.DecimalFormat;
 import java.time.*;
@@ -154,19 +154,19 @@ enum Functions {
             switch (ps[1]) {
                 case "AVG" -> {
                     var c = ctx.table.getColumn(ps[0]);
-                    return new FunctionReturn(String.valueOf(Stat.mean(c)));
+                    return new FunctionReturn(String.valueOf(ArrayUtil.mean(c)));
                 }
                 case "MIN" -> {
                     var c = ctx.table.getColumn(ps[0]);
-                    return new FunctionReturn(String.valueOf(new Stat(c).minimum()));
+                    return new FunctionReturn(String.valueOf(ArrayUtil.min(c)));
                 }
                 case "MAX" -> {
                     var c = ctx.table.getColumn(ps[0]);
-                    return new FunctionReturn(String.valueOf(new Stat(c).maximum()));
+                    return new FunctionReturn(String.valueOf(ArrayUtil.max(c)));
                 }
                 case "MED" -> {
                     var c = ctx.table.getColumn(ps[0]);
-                    return new FunctionReturn(String.valueOf(Stat.median(c)));
+                    return new FunctionReturn(String.valueOf(ArrayUtil.median(c)));
                 }
                 default -> {}
             }

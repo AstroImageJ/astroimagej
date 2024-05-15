@@ -9,7 +9,6 @@ import Astronomy.multiplot.settings.MPOperator;
 import Astronomy.multiplot.table.MeasurementsWindow;
 import astroj.*;
 import flanagan.analysis.Regression;
-import flanagan.analysis.Stat;
 import flanagan.math.Minimization;
 import flanagan.math.MinimizationFunction;
 import ij.*;
@@ -33,6 +32,7 @@ import ij.plugin.GifWriter;
 import ij.plugin.Macro_Runner;
 import ij.plugin.PlugIn;
 import ij.process.ImageProcessor;
+import ij.util.ArrayUtil;
 import ij.util.Tools;
 import org.hipparchus.linear.MatrixUtils;
 import util.ColorUtil;
@@ -3173,7 +3173,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                             step[curve] = new double[1];
 
                                             index[curve] = new int[1];
-                                            start[curve][0] = Stat.median(detrendYs[curve]);
+                                            start[curve][0] = ArrayUtil.median(detrendYs[curve]);
                                             minimization.addConstraint(0, -1, 0.0);
                                         }
 

@@ -5,13 +5,13 @@ import Astronomy.multiplot.optimization.CompStarFitting;
 import Astronomy.multiplot.optimization.Optimizer;
 import astroj.MeasurementTable;
 import astroj.SpringUtil;
-import flanagan.analysis.Stat;
 import ij.IJ;
 import ij.Prefs;
 import ij.astro.gui.GenericSwingDialog;
 import ij.astro.io.prefs.Property;
 import ij.astro.logging.AIJLogger;
 import ij.astro.util.UIHelper;
+import ij.util.ArrayUtil;
 import ij.util.FontUtil;
 
 import javax.swing.*;
@@ -433,7 +433,7 @@ public class FitOptimization implements AutoCloseable {
 
         var sigma = switch (cleanMode) {
             case RMS -> MultiPlot_.sigma[curve];
-            case POINT_MEDIAN -> Stat.median(Arrays.copyOf(yerr[curve], nn[curve]));
+            case POINT_MEDIAN -> ArrayUtil.median(Arrays.copyOf(yerr[curve], nn[curve]));
             default -> 0;
         };
 
@@ -441,7 +441,7 @@ public class FitOptimization implements AutoCloseable {
         var res = new double[nn[curve]];
         if (!useTransitFit[curve]) {
             sigma = 0;
-            var med = Stat.median(Arrays.copyOf(y[curve], nn[curve]));
+            var med = ArrayUtil.median(Arrays.copyOf(y[curve], nn[curve]));
             for (int i = 0; i < nn[curve]; i++) {
                 res[i] = y[curve][i] - med;
                 sigma += res[i] * res[i];

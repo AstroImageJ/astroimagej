@@ -5,7 +5,6 @@ import Astronomy.multiplot.settings.KeplerSplineSettings;
 import astroj.IJU;
 import com.astroimagej.bspline.KeplerSpline;
 import com.astroimagej.bspline.util.Pair;
-import flanagan.analysis.Smooth;
 import ij.astro.gui.GenericSwingDialog;
 import ij.astro.util.UIHelper;
 import org.hipparchus.linear.MatrixUtils;
@@ -325,44 +324,7 @@ public class KeplerSplineControl {
         label.setToolTipText("The number of knot spacings between min and max that are considered when finding the best spline fit.");
         controlBox.add(label);
         panel.add(controlBox, c);
-        c.gridx = 0;
-        c.gridy++;
-        radio = new JRadioButton("Legacy spline smoother:");
-        radio.setToolTipText("<html>Uses the original AIJ spline smoothing. Keplerspline is more robust,<br>handles mixed FFI exposure times, multiple sectors, and is now preferred.</html>");
-        densityGroup.add(radio);
-        radio.addActionListener($ -> {
-            settings.knotDensity.set(KeplerSplineSettings.KnotDensity.LEGACY_SMOOTHER);
-            updatePlot();
-        });
-        radio.setSelected(settings.knotDensity.get() == KeplerSplineSettings.KnotDensity.LEGACY_SMOOTHER);
-        panel.add(radio, c);
-        c.gridx = 1;
-        controlBox = Box.createHorizontalBox();
-        var control7 = new JSpinner(new SpinnerNumberModel(settings.smoothLength.get().intValue(), 1, Integer.MAX_VALUE, 1));
-        control7.setToolTipText("<html>This is the smoothing length in units if data samples (not time).<br> Default is 31 for 30 min TESS FFIs, 93 for 10 min FFIs, and 279 for 200 sec FFIs.<br>Multiple sectors with breaks in the data and mixed FFI exposure times are not handled properly by legacy smoother.</html>");
-        control7.addChangeListener($ -> {
-            settings.smoothLength.set(((Number) control7.getValue()).intValue());
-            if (settings.knotDensity.get() == KeplerSplineSettings.KnotDensity.LEGACY_SMOOTHER) {
-                updatePlot();
-            }
-        });
-        modifySpinner(control7);
-        GenericSwingDialog.getTextFieldFromSpinner(control7).ifPresent(f -> f.setColumns(5));
-        controlBox.add(control7);
-        label = new JLabel(" N points");
-        label.setToolTipText("<html>This is the smoothing length in units if data samples (not time).<br> Default is 31 for 30 min TESS FFIs, 93 for 10 min FFIs, and 279 for 200 sec FFIs.<br>Multiple sectors with breaks in the data and mixed FFI exposure times are not handled properly by legacy smoother.</html>");
-        controlBox.add(label);
-        panel.add(controlBox, c);
 
-        c.gridx = 0;
-        c.gridy++;
-        c.fill = GridBagConstraints.BOTH;
-        c.gridwidth = GridBagConstraints.REMAINDER;
-        c.weighty = 1;
-        panel.add(new JSeparator(), c);
-        c.fill = GridBagConstraints.NONE;
-        c.gridwidth = 1;
-        c.weighty = 0;
         c.gridy++;
         c.gridx = 0;
 
@@ -572,60 +534,7 @@ public class KeplerSplineControl {
                     MatrixUtils.createRealVector(Arrays.copyOf(ys, size)), settings.minKnotDensity.get(),
                     settings.maxKnotDensity.get(), settings.knotDensitySteps.get(), mask,
                     settings.minGapWidth.get(), settings.dataCleaningTries.get(), settings.dataCleaningCoeff.get(), true);
-            case LEGACY_SMOOTHER -> (xs, ys, size, mask) -> {
-                if (size <= 2*settings.smoothLength.get()) {
-                    var o = MatrixUtils.createRealVector(size);
-                    o.set(Double.NaN);
-                    return new Pair<>(o, null);
-                }
-                double[] xphase = new double[size];
-                double[] yphase = new double[size];
-                double xfold;
-                int nskipped = 0;
-                double xmax = Double.NEGATIVE_INFINITY;
-                double xmin = Double.POSITIVE_INFINITY;
-                double halfPeriod = netPeriod / 2.0;
-                for (int xx = 0; xx < size; xx++) {
-                    xfold = ((xs[xx] - netT0) % netPeriod);
-                    if (xfold > halfPeriod) { xfold -= netPeriod; } else if (xfold < -halfPeriod) xfold += netPeriod;
-                    if (Math.abs(xfold) < duration / 48.0) {
-                        nskipped++;
-                    } else {
-                        yphase[xx - nskipped] = ys[xx];
-                        xphase[xx - nskipped] = xs[xx] - (int) xs[0];
-                        if (xs[xx] > xmax) xmax = xs[xx];
-                        if (xs[xx] < xmin) xmin = xs[xx];
-                    }
-                }
-
-                var xl = new double[size - nskipped];
-                var yl = new double[size - nskipped];
-                for (int xx = 0; xx < size - nskipped; xx++) {
-                    yl[xx] = yphase[xx];
-                    xl[xx] = xphase[xx];
-                }
-
-                if (size - nskipped > 2 * settings.smoothLength.get()) {
-                    Smooth csm = new Smooth(xl, yl);
-                    csm.savitzkyGolay(settings.smoothLength.get());
-                    csm.setSGpolyDegree(2);
-
-                    double finalXmax = xmax;
-                    double finalXmin = xmin;
-
-                    return new Pair<>(MatrixUtils.createRealVector(Arrays.stream(xs).limit(size).map(x -> {
-                        if (x > finalXmax) {
-                            return csm.interpolateSavitzkyGolay(finalXmax - (int) xs[0]);
-                        } else if (x < finalXmin) {
-                            return csm.interpolateSavitzkyGolay(finalXmin - (int) xs[0]);
-                        } else {
-                            return csm.interpolateSavitzkyGolay(x - (int) xs[0]);
-                        }
-                    }).toArray()), null);
-                }
-
-                return new Pair<>(null, null);
-            };
+            case LEGACY_SMOOTHER -> (xs, ys, size, mask) -> new Pair<>(null, null); // Disable smoother
         };
     }
 

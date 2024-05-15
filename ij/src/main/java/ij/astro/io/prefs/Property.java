@@ -27,6 +27,8 @@ public class Property<T> {
     private final Class<?> ownerClass;
     private volatile T value;
     private final T defaultValue;
+    private PropertyLoadValidator<T> loadValidator;
+    private PropertyChangeValidator<T> changeValidator;
 
     private String propertyKey;
     private boolean hasBuiltKey = false;
@@ -90,6 +92,8 @@ public class Property<T> {
         this.propertyKey = key;
         this.defaultValue = base.defaultValue;
         propertyCache.add(new WeakReference<>(this));
+        this.loadValidator = base.loadValidator;
+        this.changeValidator = base.changeValidator;
     }
 
     public T get() {
@@ -97,21 +101,30 @@ public class Property<T> {
         return value;
     }
 
-    @SuppressWarnings("unchecked")
     public void set(T value) {
+        set(value, true);
+    }
+
+    public void setWithoutNotify(T value) {
+        set(value, false);
+    }
+
+    @SuppressWarnings("unchecked")
+    private void set(T value, boolean doNotify) {
         var valueChanged = !Objects.equals(value, this.value);
+
+        if (valueChanged && changeValidator != null) {
+            value = changeValidator.valueChanged(getPropertyKey(), this.value, value);
+            valueChanged = !Objects.equals(value, this.value);
+        }
+
         updatePrefs(value);
         this.value = value;
-        if (valueChanged) {
+        if (doNotify && valueChanged) {
             for (PropertyChangeListener<T> l : listeners.toArray(PropertyChangeListener[]::new)) {
                 l.valueChanged(getPropertyKey(), value);
             }
         }
-    }
-
-    public void setWithoutNotify(T value) {
-        updatePrefs(value);
-        this.value = value;
     }
 
     public String getPropertyKey() {
@@ -209,6 +222,14 @@ public class Property<T> {
         listeners.clear();
     }
 
+    public void setLoadValidator(PropertyLoadValidator<T> loadValidator) {
+        this.loadValidator = loadValidator;
+    }
+
+    public void setChangeValidator(PropertyChangeValidator<T> changeValidator) {
+        this.changeValidator = changeValidator;
+    }
+
     public Property<T> getOrCreateVariant(Object suffix) {
         return getOrCreateVariant(String.valueOf(suffix));
     }
@@ -239,6 +260,9 @@ public class Property<T> {
         if (!hasLoaded) {
             try {
                 value = handleLoad();
+                if (loadValidator != null) {
+                    setWithoutNotify(loadValidator.valueLoaded(value));
+                }
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -362,6 +386,16 @@ public class Property<T> {
     @FunctionalInterface
     public interface PropertyChangeListener<T> {
         void valueChanged(String key, T newValue);
+    }
+
+    @FunctionalInterface
+    public interface PropertyLoadValidator<T> {
+        T valueLoaded(T loadedValue);
+    }
+
+    @FunctionalInterface
+    public interface PropertyChangeValidator<T> {
+        T valueChanged(String key, T oldValue, T newValue);
     }
 
     @Override

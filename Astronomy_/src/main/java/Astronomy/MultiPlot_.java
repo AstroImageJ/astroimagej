@@ -3213,10 +3213,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                                 width[curve][fp] = priorWidth[curve][index[curve][fp]];
                                                 step[curve][fp] = getFitStep(curve, index[curve][fp]);
                                             }
-                                            if (usePriorWidth[curve][index[curve][fp]]) {
+                                            /*if (usePriorWidth[curve][index[curve][fp]]) {
                                                 minimization.addConstraint(fp, 1, start[curve][fp] + width[curve][fp]);
                                                 minimization.addConstraint(fp, -1, start[curve][fp] - width[curve][fp]);
-                                            }
+                                            }*/
                                         }
 
                                         var needsFit = false;

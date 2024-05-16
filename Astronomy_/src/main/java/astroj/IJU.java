@@ -3,7 +3,6 @@
 package astroj;
 
 import Astronomy.MultiAperture_;
-import flanagan.interpolation.LinearInterpolation;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.Prefs;
@@ -17,6 +16,7 @@ import ij.io.SaveDialog;
 import ij.process.ImageProcessor;
 import ij.util.Tools;
 import util.BrowserOpener;
+import util.LinearInterpolator;
 
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
@@ -81,15 +81,15 @@ public class IJU {
     public static double[] rhoStar = {0.05, 0.06, 0.10, 0.14, 0.20, 0.28, 0.56, 0.71, 0.89, 1.00, 1.12, 1.77, 2.50, 3.15, 8.88, 14.08, 22.32};
     public static double[] rStarJ = {82.62, 71.93, 46.66, 37.91, 29.16, 23.33, 16.52, 14.58, 12.64, 10.69, 8.94, 8.26, 7.00, 5.83, 4.86, 2.62, 1.46};
 
-    public static LinearInterpolation getRstarJFromTeff = new LinearInterpolation(tStar, rStarJ);
-    public static LinearInterpolation getJminusKFromTeff = new LinearInterpolation(tStar, JminusK);
-    public static LinearInterpolation getTeffFromJminusK = new LinearInterpolation(JminusK, tStar);
-    public static LinearInterpolation getTeffFromMStar = new LinearInterpolation(mStar, tStar);
-    public static LinearInterpolation getMStarFromTeff = new LinearInterpolation(tStar, mStar);
-    public static LinearInterpolation getTeffFromRStar = new LinearInterpolation(rStar, tStar);
-    public static LinearInterpolation getRStarFromTeff = new LinearInterpolation(tStar, rStar);
-    public static LinearInterpolation getTeffFromRhoStar = new LinearInterpolation(rhoStar, tStar);
-    public static LinearInterpolation getRhoStarFromTeff = new LinearInterpolation(tStar, rhoStar);
+    public static LinearInterpolator getRstarJFromTeff = new LinearInterpolator(tStar, rStarJ);
+    public static LinearInterpolator getJminusKFromTeff = new LinearInterpolator(tStar, JminusK);
+    public static LinearInterpolator getTeffFromJminusK = new LinearInterpolator(JminusK, tStar);
+    public static LinearInterpolator getTeffFromMStar = new LinearInterpolator(mStar, tStar);
+    public static LinearInterpolator getMStarFromTeff = new LinearInterpolator(tStar, mStar);
+    public static LinearInterpolator getTeffFromRStar = new LinearInterpolator(rStar, tStar);
+    public static LinearInterpolator getRStarFromTeff = new LinearInterpolator(tStar, rStar);
+    public static LinearInterpolator getTeffFromRhoStar = new LinearInterpolator(rhoStar, tStar);
+    public static LinearInterpolator getRhoStarFromTeff = new LinearInterpolator(tStar, rhoStar);
 
     public static String[] colors = new String[]
             {

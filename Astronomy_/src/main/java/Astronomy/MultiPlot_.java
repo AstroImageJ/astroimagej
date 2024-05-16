@@ -4787,6 +4787,24 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 } else if ((!lockToCenter[curve][5] || !lockToCenter[curve][6]) && (((u1 + u2) > 1.0) || ((u1 + u2) < 0.0) || (u1 > 1.0) || (u1 < 0.0) || (u2 < -1.0) || (u2 > 1.0))) {
                     chi2 = Double.POSITIVE_INFINITY;
                 } else {
+                    // apply the Gaussian prior
+                    // if it's an angular parameter, make sure we handle the boundary
+                    for (int p = 0; p < params.length-1; p++) {
+                        if (usePriorWidth[curve][index[curve][p]]) {
+                            if (index[curve][p] == 4) {
+                                double chi = Math.atan2(Math.sin(params[p] - Math.toRadians(priorCenter[curve][index[curve][p]])), Math.cos(params[p] - Math.toRadians(priorCenter[curve][index[curve][p]]))) / Math.toRadians(priorWidth[curve][index[curve][p]]);
+                                chi2 += chi * chi;
+                            } else if (index[curve][p] == 1) {
+                                double chi = (params[p]*params[p] - priorCenter[curve][index[curve][p]]) / priorWidth[curve][index[curve][p]];
+                                chi2 += chi * chi;
+                            } else {
+                                double chi = (params[p] - priorCenter[curve][index[curve][p]]) / priorWidth[curve][index[curve][p]];
+                                chi2 += chi * chi;
+                            }
+                        }
+                    }
+
+                    //apply data-model chi2 contribution
                     for (int j = 0; j < numData; j++) {
                         residual = detrendYs[curve][j];// - param[0];
                         for (int i = 0; i < numDetrendVars; i++) {
@@ -4868,22 +4886,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
                 if ((u1 > 1 || u1 < -1) || (u2 > 1 || u2 < -1)) {
                     return Double.NaN;
-                }
-
-                // 0 = f0 = baseline flux
-                // 1 = p0 = r_p/r_*
-                // 2 = ar = a/r_*
-                // 3 = tc = transit center time
-                // 4 = i = inclination
-                // 5 = u1 = quadratic limb darkening parameter 1
-                // 6 = u2 = quadratic limb darkening parameter 2
-                // 7+ = detrend parameters
-                for (fp = 0; fp < nPars; fp++) {
-                    if (usePriorWidth[curve][/*index[curve][fp]*/fp]) {//todo is this right?
-                        if (params[fp] > start[curve][fp] + width[curve][fp] || params[fp] < start[curve][fp] - width[curve][fp]) {
-                            return Double.NaN;
-                        }
-                    }
                 }
 
 

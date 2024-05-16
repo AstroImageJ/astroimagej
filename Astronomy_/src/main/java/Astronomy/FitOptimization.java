@@ -168,6 +168,7 @@ public class FitOptimization implements AutoCloseable {
         outlierRemoval.add(Box.createHorizontalGlue());
         var b = Box.createHorizontalBox();
         b = Box.createHorizontalBox();
+        b.add(b.add(Box.createHorizontalGlue()));
         var cleanLabel = new JLabel("N:");
         cleanLabel.setHorizontalAlignment(SwingConstants.CENTER);
         cleanLabel.setToolTipText("The number of sigma away from the model to clean.");
@@ -177,7 +178,7 @@ public class FitOptimization implements AutoCloseable {
         addMouseListener(cleanSpin);
         cleanSpin.addChangeListener($ -> nSigmaOutlier = ((Number) cleanSpin.getValue()).doubleValue());
         cleanSpin.setToolTipText("The number of sigma away from the model to clean.");
-        b.add(Box.createHorizontalGlue());
+        b.add(Box.createHorizontalStrut(5));
         b.add(cleanSpin);
         b.add(Box.createHorizontalGlue());
         outlierRemoval.add(b);

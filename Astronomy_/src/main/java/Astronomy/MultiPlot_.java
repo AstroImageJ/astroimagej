@@ -3234,17 +3234,17 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                         } else {
                                             if (usImageJFitter) {
                                                 var m = new Minimizer();
-                                                //todo for maxRestarts >=1, sometimes it deadlocks eg when enabling an all nan param
-                                                //todo seems to be an issue with the tolerence
+                                                // For maxRestarts >=1, sometimes it deadlocks eg when enabling an all nan param
+                                                // seems to be an issue with the tolerence
+                                                //todo add button to abort?
                                                 m.setMaxRestarts(0);
                                                 m.setMaxIterations(maxFitSteps[curve]);
                                                 m.setMaxError(tolerance[curve]);
-                                                m.setFunction(new FitLightCurveChi2(curve), nFitted);
-                                                var result = m.minimize(start[curve], step[curve]);//todo confirm values
-                                                System.out.println("Curve: %s; Status: %s".formatted(curve, Minimizer.STATUS_STRING[result]));
+                                                m.setFunction(new FitLightCurveChi2(curve, nFitted == 0 && !useTransitFit[curve]), start[curve].length);
+                                                var result = m.minimize(start[curve], step[curve]);
 
                                                 nTries[curve] = m.getIterations();
-                                                coeffs[curve] = Arrays.copyOf(m.getParams(), nFitted); // more values can be returned
+                                                coeffs[curve] = Arrays.copyOf(m.getParams(), start[curve].length); // more values can be returned
                                                 chi2dof[curve] = m.getFunctionValue();
                                                 chi2[curve] = chi2dof[curve] * dof[curve];
                                                 converged[curve] = result == Minimizer.SUCCESS;
@@ -4717,9 +4717,16 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
     public static class FitLightCurveChi2 implements MinimizationFunction, UserFunction {
         final int curve;
+        final boolean fittingAgainstMedian;
 
         public FitLightCurveChi2(int curve) {
             this.curve = curve;
+            fittingAgainstMedian = false;
+        }
+
+        public FitLightCurveChi2(int curve, boolean fittingAgainstMedian) {
+            this.curve = curve;
+            this.fittingAgainstMedian = fittingAgainstMedian;
         }
 
         public double function(double[] params) {
@@ -4863,8 +4870,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             }
 
             // Fit against yMedian when no transit and no params
-            if (nPars == 0 && !useTransitFit[curve]) {
-                //minimization.addConstraint(0, -1, 0.0);//todo how to handle
+            if (nPars == 1 && !useTransitFit[curve] && fittingAgainstMedian) {
+                if (params[0] < 0) {
+                    return Double.NaN;
+                }
             }
 
             if (useTransitFit[curve]) {

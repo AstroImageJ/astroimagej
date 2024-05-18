@@ -216,7 +216,7 @@ public class CurveFitter {
         if (nnr[curve] > 0) nn[curve]++;
         detrendVarsUsed[curve] = 0;
 
-        if (xlabel[curve].trim().length() == 0 || (xlabel[curve].equalsIgnoreCase("default") && xlabeldefault.trim().length() == 0)) {
+        if (xlabel[curve].trim().isEmpty() || (xlabel[curve].equalsIgnoreCase("default") && xlabeldefault.trim().isEmpty())) {
             for (int j = 0; j < nn[curve]; j++)
                 x[curve][j] = j + 1;
             xlabel2[curve] = "Sample Number";
@@ -275,7 +275,7 @@ public class CurveFitter {
         }
 
         if (plotY[curve]) {
-            if (ylabel[curve].trim().length() == 0) {
+            if (ylabel[curve].trim().isEmpty()) {
                 for (int j = 0; j < nn[curve]; j++)
                     y[curve][j] = j + 1;
             } else {
@@ -1022,7 +1022,7 @@ public class CurveFitter {
         return new CurveData(targetFlux.flux, targetFlux.err, instancedParamData);
     }
 
-    private synchronized OptimizerResults updateCurve(boolean[] isRefStar, int[] detrendIndex) {
+    private OptimizerResults updateCurve(boolean[] isRefStar, int[] detrendIndex) {
         var minimization = minimizationThreadLocal.get();
         var avgCount = initAvgCount;
         var atLeastOne = initAtLeastOne;

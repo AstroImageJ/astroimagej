@@ -5576,7 +5576,6 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         ac.setAperture(radius, rBack1, rBack2, showSkyOverlay, showPhotometer);
 //            setValueTextField();
         photom.setMarkRemovedPixels(false);
-        System.out.println(1);
         photom.measure(imp, exact, lastImageX, lastImageY, radius, rBack1, rBack2);
         if (showMeanNotPeak) {
             peakLabel.setText("Mean:");

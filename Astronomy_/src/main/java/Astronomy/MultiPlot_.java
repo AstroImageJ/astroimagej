@@ -7,6 +7,8 @@ import Astronomy.multiplot.macro.title.PlotNameResolver;
 import Astronomy.multiplot.settings.KeplerSplineSettings;
 import Astronomy.multiplot.settings.MPOperator;
 import Astronomy.multiplot.table.MeasurementsWindow;
+import Jama.Matrix;
+import Jama.QRDecomposition;
 import astroj.*;
 import flanagan.analysis.Regression;
 import flanagan.math.Minimization;
@@ -3212,6 +3214,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                                 start[curve][fp] = priorCenter[curve][index[curve][fp]];
                                                 width[curve][fp] = priorWidth[curve][index[curve][fp]];
                                                 step[curve][fp] = getFitStep(curve, index[curve][fp]);
+                                                if (usImageJFitter && (index[curve][fp] == 3 || index[curve][fp] == 3)) {
+                                                    step[curve][fp] *= 3;
+                                                }
                                             }
                                             /*if (usePriorWidth[curve][index[curve][fp]]) {
                                                 minimization.addConstraint(fp, 1, start[curve][fp] + width[curve][fp]);
@@ -3365,15 +3370,38 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                         }
 
                                     } else { //use regression
-                                        Regression regression = new Regression(detrendVars[curve], detrendYs[curve]);
-                                        regression.linear();//todo this
-                                        coeffs[curve] = regression.getCoeff();
+                                        if (usImageJFitter) {
+                                            var xMat = new Matrix(detrendVars[curve]).transpose();//todo has problems with nan params
+                                            var yMat = new Matrix(detrendYs[curve], detrendYs[curve].length);
+                                            var beta = new QRDecomposition(xMat).solve(yMat);
 
-                                        varCount = 1;
-                                        for (int v = 0; v < maxDetrendVars; v++) {
-                                            if (detrendIndex[curve][v] != 0 && detrendYDNotConstant[v]) {
-                                                detrendFactor[curve][v] = coeffs[curve][varCount];
-                                                varCount++;
+                                            beta.print(10, 9);
+                                            coeffs[curve] = new double[maxDetrendVars];
+                                            for (int i = 0; i < beta.getRowDimension(); i++) {
+                                                coeffs[curve][i+1] = beta.get(i, 0);
+                                            }
+
+                                            System.out.println(Arrays.toString(coeffs[curve]));
+
+                                            varCount = 1;
+                                            for (int v = 0; v < maxDetrendVars; v++) {
+                                                if (detrendIndex[curve][v] != 0 && detrendYDNotConstant[v]) {
+                                                    detrendFactor[curve][v] = coeffs[curve][varCount];
+                                                    varCount++;
+                                                }
+                                            }
+                                        } else {
+                                            Regression regression = new Regression(detrendVars[curve], detrendYs[curve]);
+                                            regression.linear();
+                                            coeffs[curve] = regression.getCoeff();
+
+                                            System.out.println(Arrays.toString(coeffs[curve]));
+                                            varCount = 1;
+                                            for (int v = 0; v < maxDetrendVars; v++) {
+                                                if (detrendIndex[curve][v] != 0 && detrendYDNotConstant[v]) {
+                                                    detrendFactor[curve][v] = coeffs[curve][varCount];
+                                                    varCount++;
+                                                }
                                             }
                                         }
                                     }

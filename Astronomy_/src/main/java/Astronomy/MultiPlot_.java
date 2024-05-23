@@ -6195,7 +6195,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             int imageY = plotImageCanvas.offScreenY(e.getY());
             if (Math.sqrt((screenX - startDragScreenX) * (screenX - startDragScreenX) +  //check mouse click/drag threshold
                     (screenY - startDragScreenY) * (screenY - startDragScreenY)) >= 4.0) {
-                if (SwingUtilities.isLeftMouseButton(e) && e.isAltDown()) {
+                if (SwingUtilities.isLeftMouseButton(e) && e.isAltDown() && !e.isControlDown()) {
                     draggableShape.setEnd(plotImageCanvas, e);
                     draggableShape.drawRectangle(plotImageCanvas);
                 }

@@ -1513,18 +1513,18 @@ public class CurveFitter {
                         if (detrendFitIndex[curve] == 9 && useTransitFit[curve]) {
                             createDetrendModel = false;
                             xModel1 = detrendX;
-                            int xModel2Len = plotSizeX + 1;
+                            /*int xModel2Len = plotSizeX + 1;
                             double xModel2Step = ((useDMarker4 && fitMax[curve] < xPlotMax ? fitMax[curve] : xPlotMax) - (useDMarker1 && fitMin[curve] > xPlotMin ? fitMin[curve] : xPlotMin)) / (xModel2Len - 1);
                             xModel2 = new double[xModel2Len];
                             xModel2[0] = useDMarker1 && fitMin[curve] > xPlotMin ? fitMin[curve] : xPlotMin;
                             for (int i = 1; i < xModel2Len; i++) {
                                 xModel2[i] = xModel2[i - 1] + xModel2Step;
-                            }
+                            }*/
 
 
                             yModel1 = IJU.transitModel(xModel1, bestFit[0], bestFit[4], bestFit[1], bestFit[2], bestFit[3], orbitalPeriod[curve], forceCircularOrbit[curve] ? 0.0 : eccentricity[curve], forceCircularOrbit[curve] ? 0.0 : omega[curve], bestFit[5], bestFit[6], useLonAscNode[curve], lonAscNode[curve], true);
 
-                            yModel2 = IJU.transitModel(xModel2, bestFit[0], bestFit[4], bestFit[1], bestFit[2], bestFit[3], orbitalPeriod[curve], forceCircularOrbit[curve] ? 0.0 : eccentricity[curve], forceCircularOrbit[curve] ? 0.0 : omega[curve], bestFit[5], bestFit[6], useLonAscNode[curve], lonAscNode[curve], true);
+                            //yModel2 = IJU.transitModel(xModel2, bestFit[0], bestFit[4], bestFit[1], bestFit[2], bestFit[3], orbitalPeriod[curve], forceCircularOrbit[curve] ? 0.0 : eccentricity[curve], forceCircularOrbit[curve] ? 0.0 : omega[curve], bestFit[5], bestFit[6], useLonAscNode[curve], lonAscNode[curve], true);
 
                             // f0 = param[curve][0]; // baseline flux
                             // p0 = param[curve][1]; // r_p/r_*

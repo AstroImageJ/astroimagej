@@ -1516,8 +1516,10 @@ public class IJU {
         double tol = 1.0e-14;
         double kap1, kap0, kapArg1, kapArg0, lambdaeArg, z2, x1, x2, x3, q, n;
 
+        var bz0 = bzArray[0];
+        var bz1 = bzArray[1];
         for (int i = 0; i < nz; i++) {
-            if (fitPrimary && bzArray[1][i] <= 0.0 || !fitPrimary && bzArray[1][i] > 0) {
+            if (fitPrimary && bz1[i] <= 0.0 || !fitPrimary && bz1[i] > 0) {
                 // Only consider the part of the orbit where a primary or secondary could occur, depending on which is being modeled.
                 //(When z > 0, the planet is closer to the observer than the star.)
                 // Otherwise, the overall model returned will include identical transits at both the primary and secondary times of transit,
@@ -1526,11 +1528,11 @@ public class IJU {
                 // of transit and eclipse shape parameters and combined separately from this function.
                 continue;
             }
-            if (abs(p - bzArray[0][i]) < tol) bzArray[0][i] = p;
-            else if (abs((p - 1.0) - bzArray[0][i]) < tol) bzArray[0][i] = p - 1.0;
-            else if (abs((1.0 - p) - bzArray[0][i]) < tol) bzArray[0][i] = 1.0 - p;
-            else if (bzArray[0][i] < tol) bzArray[0][i] = 0.0;
-            z = bzArray[0][i];
+            if (abs(p - bz0[i]) < tol) bz0[i] = p;
+            else if (abs((p - 1.0) - bz0[i]) < tol) bz0[i] = p - 1.0;
+            else if (abs((1.0 - p) - bz0[i]) < tol) bz0[i] = 1.0 - p;
+            else if (bz0[i] < tol) bz0[i] = 0.0;
+            z = bz0[i];
             z2 = z * z;
             x1 = (p - z) * (p - z);
             x2 = (p + z) * (p + z);
@@ -1555,13 +1557,26 @@ public class IJU {
             // Case 2, 7, 8 - ingress/egress (uniform disk only)
             if (z >= abs(1.0 - p) && (z < 1.0 + p)) {
                 kapArg1 = (1.0 - p2 + z2) / 2.0 / z;
-                if (kapArg1 < -1.0) kapArg1 = -1.0;
-                if (kapArg1 > 1.0) kapArg1 = 1.0;
+                if (kapArg1 < -1.0) {
+                    kapArg1 = -1.0;
+                    kap1 = PI;
+                } else if (kapArg1 > 1.0) {
+                    kapArg1 = 1.0;
+                    kap1 = 1;
+                } else {
+                    kap1 = acos(kapArg1);
+                }
                 kapArg0 = (p2 + z2 - 1.0) / 2.0 / p / z;
-                if (kapArg0 < -1.0) kapArg0 = -1.0;
-                if (kapArg0 > 1.0) kapArg0 = 1.0;
-                kap1 = acos(kapArg1);
-                kap0 = acos(kapArg0);
+                if (kapArg0 < -1.0) {
+                    kapArg0 = -1.0;
+                    kap0 = PI;
+                } else if (kapArg0 > 1.0) {
+                    kapArg0 = 1.0;
+                    kap0 = 0;
+                } else {
+                    kap0 = acos(kapArg0);
+                }
+
                 lambdaeArg = 1.0 + z2 - p2;
                 lambdaeArg *= lambdaeArg;
                 lambdaeArg = 4.0 * z2 - lambdaeArg;
@@ -1643,7 +1658,7 @@ public class IJU {
 //        var priEnd = tc + P * getTcPhase(e, omega, TransitLocation.L5);
         for (int i = 0; i < nz; i++) {
 
-            if (fitPrimary && bzArray[1][i] <= 0.0 || !fitPrimary && bzArray[1][i] > 0) {
+            if (fitPrimary && bz1[i] <= 0.0 || !fitPrimary && bz1[i] > 0) {
                 // Only consider the part of the orbit where a primary or secondary could occur, depending on which is being modeled.
                 //(When z > 0, the planet is closer to the observer than the star.)
                 // Otherwise, the overall model returned will include identical transits at both the primary and secondary times of transit,
@@ -1657,7 +1672,7 @@ public class IJU {
             // avoid Lutz-Kelker bias (negative values of p0 allowed)
             if (p0 > 0) {
                 // limb darkened flux
-                muo1[i] = (1.0 - ((1.0 - u1 - 2.0 * u2) * lambdae[i] + (u1 + 2.0 * u2) * (lambdad[i] + 2.0 / 3.0 * (p > bzArray[0][i] ? 1 : 0)) + u2 * etad[i]) / (1.0 - u1 / 3.0 - u2 / 6.0)) * f0;
+                muo1[i] = (1.0 - ((1.0 - u1 - 2.0 * u2) * lambdae[i] + (u1 + 2.0 * u2) * (lambdad[i] + 2.0 / 3.0 * (p > bz0[i] ? 1 : 0)) + u2 * etad[i]) / (1.0 - u1 / 3.0 - u2 / 6.0)) * f0;
 //                IJ.log("yModel["+i+"]="+muo1[i]);
                 // uniform disk
 //                mu0[i]=1.0-lambdae[i];
@@ -1669,7 +1684,7 @@ public class IJU {
 //                                [lambdae/2d0 - etad]])
             } else {
                 // limb darkened flux
-                muo1[i] = (1.0 + ((1.0 - u1 - 2.0 * u2) * lambdae[i] + (u1 + 2.0 * u2) * (lambdad[i] + 2.0 / 3.0 * (p > bzArray[0][i] ? 1 : 0)) + u2 * etad[i]) / (1.0 - u1 / 3.0 - u2 / 6.0)) * f0;
+                muo1[i] = (1.0 + ((1.0 - u1 - 2.0 * u2) * lambdae[i] + (u1 + 2.0 * u2) * (lambdad[i] + 2.0 / 3.0 * (p > bz0[i] ? 1 : 0)) + u2 * etad[i]) / (1.0 - u1 / 3.0 - u2 / 6.0)) * f0;
 //                IJ.log("yModel["+i+"]="+muo1[i]);
                 // uniform disk
 //                mu0[i]=1.0+lambdae[i];
@@ -1752,8 +1767,18 @@ public class IJU {
         double meananom;
         double x, y, r, z, tmp, xold, yold, eccanom;
 
+        var cosLonAscNode = useLonAscNode ? Math.cos(lonAscNode) : 0;
+        var sinLonAscNode = useLonAscNode ? Math.sin(lonAscNode) : 0;
+
+        var b0 = b[0];
+        var b1 = b[1];
+        var tau = 2D * PI;
+        var cosInclination = Math.cos(inclination);
+        var sinInclination = Math.sin(inclination);
+        var oneMinusE2 = 1.0 - e * e;
+
         for (int i = 0; i < len; i++) {
-            meananom = (2.0 * PI * (1.0 + (bjd[i] - tp) / P)) % (2.0 * PI);
+            meananom = (tau * (1.0 + (bjd[i] - tp) / P)) % (tau);
 
             //if eccentricity is given, integrate the orbit
             if (e != 0.0) {
@@ -1765,24 +1790,25 @@ public class IJU {
 
             // calculate the corresponding (x,y) coordinates of planet
             r = ar * (1.0 - e * e) / (1.0 + e * cos(trueanom));
+                r = ar * oneMinusE2 / (1.0 + e * cos(trueanom));
 
             //as seen from observer
             x = -r * cos(trueanom + omega);
             tmp = r * sin(trueanom + omega);
-            y = -tmp * cos(inclination);
-            z =  tmp*sin(inclination);
+            y = -tmp * cosInclination;
+            z =  tmp * sinInclination;
 
             //Rotate by the Longitude of Ascending Node
 //            // For transits, it is not constrained, so we assume Omega=PI)
             if (useLonAscNode) {
                 xold = x;
                 yold = y;
-                x = -xold * cos(lonAscNode) + yold * sin(lonAscNode);
-                y = -xold * sin(lonAscNode) - yold * cos(lonAscNode);
+                x = -xold * cosLonAscNode + yold * sinLonAscNode;
+                y = -xold * sinLonAscNode - yold * cosLonAscNode;
             }
 
-            b[0][i] = sqrt(x * x + y * y);
-            b[1][i] = z;
+            b0[i] = sqrt(x * x + y * y);
+            b1[i] = z;
         }
 
         return b;

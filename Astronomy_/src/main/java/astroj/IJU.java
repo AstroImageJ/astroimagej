@@ -45,53 +45,51 @@ import static java.lang.Math.*;
  * Various static utilities
  */
 public class IJU {
-    public static Locale locale = Locale.US;
-    public static DecimalFormatSymbols dfs = new DecimalFormatSymbols(locale);
-    public static DecimalFormat uptoEightPlaces = new DecimalFormat("#####0.########", IJU.dfs);
-    public static DecimalFormat twoPlaces = new DecimalFormat("######0.00", IJU.dfs);
-    public static String separator = System.getProperty("file.separator");
-    public static double ek = 0;  //The elliptic integral of the first kind
-    public static double kk = 0;  // The elliptic integral of the second kind
+    public static final Locale locale = Locale.US;
+    public static final DecimalFormatSymbols dfs = new DecimalFormatSymbols(locale);
+    public static final DecimalFormat uptoEightPlaces = new DecimalFormat("#####0.########", IJU.dfs);
+    public static final DecimalFormat twoPlaces = new DecimalFormat("######0.00", IJU.dfs);
+    public static final String separator = System.getProperty("file.separator");
 
-    public static double a1 = 0.44325141463;
-    public static double a2 = 0.06260601220;
-    public static double a3 = 0.04757383546;
-    public static double a4 = 0.01736506451;
-    public static double b1 = 0.24998368310;
-    public static double b2 = 0.09200180037;
-    public static double b3 = 0.04069697526;
-    public static double b4 = 0.00526449639;
+    public static final double a1 = 0.44325141463;
+    public static final double a2 = 0.06260601220;
+    public static final double a3 = 0.04757383546;
+    public static final double a4 = 0.01736506451;
+    public static final double b1 = 0.24998368310;
+    public static final double b2 = 0.09200180037;
+    public static final double b3 = 0.04069697526;
+    public static final double b4 = 0.00526449639;
 
-    public static double aa0 = 1.38629436112;
-    public static double aa1 = 0.09666344259;
-    public static double aa2 = 0.03590092383;
-    public static double aa3 = 0.03742563713;
-    public static double aa4 = 0.01451196212;
-    public static double bb0 = 0.5;
-    public static double bb1 = 0.12498593597;
-    public static double bb2 = 0.06880248576;
-    public static double bb3 = 0.03328355346;
-    public static double bb4 = 0.00441787012;
+    public static final double aa0 = 1.38629436112;
+    public static final double aa1 = 0.09666344259;
+    public static final double aa2 = 0.03590092383;
+    public static final double aa3 = 0.03742563713;
+    public static final double aa4 = 0.01451196212;
+    public static final double bb0 = 0.5;
+    public static final double bb1 = 0.12498593597;
+    public static final double bb2 = 0.06880248576;
+    public static final double bb3 = 0.03328355346;
+    public static final double bb4 = 0.00441787012;
 
-    public static String[] spType = {"O8V", "B0V", "B3V", "B5V", "B8V", "A0V", "A5V", "F0V", "F5V", "G0V", "G5V", "K0V", "K5V", "M0V", "M2V", "M5V", "M8V"};
-    public static double[] tStar = {37000, 31500, 19000, 15400, 11800, 9480, 8160, 7020, 6530, 5930, 5680, 5240, 4340, 3800, 3530, 3120, 2600};
-    public static double[] JminusK = {-0.19, -0.16, -0.10, -0.07, -0.03, 0.00, 0.08, 0.16, 0.27, 0.36, 0.41, 0.53, 0.72, 0.84, 0.86, 0.95, 1.14};
-    public static double[] rStar = {8.50, 7.40, 4.80, 3.90, 3.00, 2.40, 1.70, 1.50, 1.30, 1.10, 0.92, 0.85, 0.72, 0.60, 0.50, 0.27, 0.15};
-    public static double[] mStar = {23.00, 17.50, 7.60, 5.90, 3.80, 2.90, 2.00, 1.60, 1.40, 1.05, 0.92, 0.79, 0.67, 0.51, 0.40, 0.21, 0.06};
-    public static double[] rhoStar = {0.05, 0.06, 0.10, 0.14, 0.20, 0.28, 0.56, 0.71, 0.89, 1.00, 1.12, 1.77, 2.50, 3.15, 8.88, 14.08, 22.32};
-    public static double[] rStarJ = {82.62, 71.93, 46.66, 37.91, 29.16, 23.33, 16.52, 14.58, 12.64, 10.69, 8.94, 8.26, 7.00, 5.83, 4.86, 2.62, 1.46};
+    public static final String[] spType = {"O8V", "B0V", "B3V", "B5V", "B8V", "A0V", "A5V", "F0V", "F5V", "G0V", "G5V", "K0V", "K5V", "M0V", "M2V", "M5V", "M8V"};
+    public static final double[] tStar = {37000, 31500, 19000, 15400, 11800, 9480, 8160, 7020, 6530, 5930, 5680, 5240, 4340, 3800, 3530, 3120, 2600};
+    public static final double[] JminusK = {-0.19, -0.16, -0.10, -0.07, -0.03, 0.00, 0.08, 0.16, 0.27, 0.36, 0.41, 0.53, 0.72, 0.84, 0.86, 0.95, 1.14};
+    public static final double[] rStar = {8.50, 7.40, 4.80, 3.90, 3.00, 2.40, 1.70, 1.50, 1.30, 1.10, 0.92, 0.85, 0.72, 0.60, 0.50, 0.27, 0.15};
+    public static final double[] mStar = {23.00, 17.50, 7.60, 5.90, 3.80, 2.90, 2.00, 1.60, 1.40, 1.05, 0.92, 0.79, 0.67, 0.51, 0.40, 0.21, 0.06};
+    public static final double[] rhoStar = {0.05, 0.06, 0.10, 0.14, 0.20, 0.28, 0.56, 0.71, 0.89, 1.00, 1.12, 1.77, 2.50, 3.15, 8.88, 14.08, 22.32};
+    public static final double[] rStarJ = {82.62, 71.93, 46.66, 37.91, 29.16, 23.33, 16.52, 14.58, 12.64, 10.69, 8.94, 8.26, 7.00, 5.83, 4.86, 2.62, 1.46};
 
-    public static LinearInterpolator getRstarJFromTeff = new LinearInterpolator(tStar, rStarJ);
-    public static LinearInterpolator getJminusKFromTeff = new LinearInterpolator(tStar, JminusK);
-    public static LinearInterpolator getTeffFromJminusK = new LinearInterpolator(JminusK, tStar);
-    public static LinearInterpolator getTeffFromMStar = new LinearInterpolator(mStar, tStar);
-    public static LinearInterpolator getMStarFromTeff = new LinearInterpolator(tStar, mStar);
-    public static LinearInterpolator getTeffFromRStar = new LinearInterpolator(rStar, tStar);
-    public static LinearInterpolator getRStarFromTeff = new LinearInterpolator(tStar, rStar);
-    public static LinearInterpolator getTeffFromRhoStar = new LinearInterpolator(rhoStar, tStar);
-    public static LinearInterpolator getRhoStarFromTeff = new LinearInterpolator(tStar, rhoStar);
+    public static final LinearInterpolator getRstarJFromTeff = new LinearInterpolator(tStar, rStarJ);
+    public static final LinearInterpolator getJminusKFromTeff = new LinearInterpolator(tStar, JminusK);
+    public static final LinearInterpolator getTeffFromJminusK = new LinearInterpolator(JminusK, tStar);
+    public static final LinearInterpolator getTeffFromMStar = new LinearInterpolator(mStar, tStar);
+    public static final LinearInterpolator getMStarFromTeff = new LinearInterpolator(tStar, mStar);
+    public static final LinearInterpolator getTeffFromRStar = new LinearInterpolator(rStar, tStar);
+    public static final LinearInterpolator getRStarFromTeff = new LinearInterpolator(tStar, rStar);
+    public static final LinearInterpolator getTeffFromRhoStar = new LinearInterpolator(rhoStar, tStar);
+    public static final LinearInterpolator getRhoStarFromTeff = new LinearInterpolator(tStar, rhoStar);
 
-    public static String[] colors = new String[]
+    public static final String[] colors = new String[]
             {
                     "black",
                     "dark gray",
@@ -1591,14 +1589,18 @@ public class IJU {
                 if (p < 0.5) {
                     // Case 5
                     q = 2.0 * p; //corrected typo in paper (2k -> 2p)
-                    ellke(q);
+                    var ell = ellke(q);
+                    var ek = ell[0];  //The elliptic integral of the first kind
+                    var kk = ell[1];  // The elliptic integral of the second kind
                     lambdad[i] = 1.0 / 3.0 + 2.0 / 9.0 / PI * (4.0 * (2.0 * p2 - 1.0) * ek + (1.0 - 4.0 * p2) * kk);
                     etad[i] = 3.0 * p2 * p2 / 2.0;
                     lambdae[i] = p2;// uniform disk
                 } else if (p > 0.5) {
                     // Case 7
                     q = 0.5 / p; //corrected typo in paper (1/2k -> 1/2p)
-                    ellke(q);
+                    var ell = ellke(q);
+                    var ek = ell[0];  //The elliptic integral of the first kind
+                    var kk = ell[1];  // The elliptic integral of the second kind
                     lambdad[i] = 1.0 / 3.0 + 16.0 * p / 9.0 / PI * (2.0 * p2 - 1.0) * ek - (32.0 * p2 * p2 - 20.0 * p2 + 3.0) / 9.0 / PI / p * kk;
                     // etad = eta_1 already
                 } else {
@@ -1612,7 +1614,9 @@ public class IJU {
             // Case 2, Case 8 - ingress/egress (with limb darkening)
             if ((z > 0.5 + abs(p - 0.5) && z < 1.0 + p) || (p > 0.5 && z > abs(1.0 - p) && z < p)) {
                 q = sqrt((1.0 - x1) / (x2 - x1));
-                ellke(q);
+                var ell = ellke(q);
+                var ek = ell[0];  //The elliptic integral of the first kind
+                var kk = ell[1];  // The elliptic integral of the second kind
                 n = 1.0 / x1 - 1.0;
 
                 // lambda_1:
@@ -1642,7 +1646,9 @@ public class IJU {
                 } else {
                     q = sqrt((x2 - x1) / (1.0 - x1));
                     n = x2 / x1 - 1.0;
-                    ellke(q);
+                    var ell = ellke(q);
+                    var ek = ell[0];  //The elliptic integral of the first kind
+                    var kk = ell[1];  // The elliptic integral of the second kind
 
                     // Case 3, Case 9 - anywhere in between
                     // lambda_2
@@ -1960,7 +1966,7 @@ public class IJU {
     }
 
 
-    public static void ellke(double k) {
+    public static double[] ellke(double k) {
         // NAME:
         //   ELLKE
         //
@@ -1992,11 +1998,13 @@ public class IJU {
 
         double ee1 = 1.0 + m1 * (a1 + m1 * (a2 + m1 * (a3 + m1 * a4)));
         double ee2 = m1 * (b1 + m1 * (b2 + m1 * (b3 + m1 * b4))) * (-logm1);
-        ek = ee1 + ee2;
+        var ek = ee1 + ee2;
 
         double ek1 = aa0 + m1 * (aa1 + m1 * (aa2 + m1 * (aa3 + m1 * aa4)));
         double ek2 = (bb0 + m1 * (bb1 + m1 * (bb2 + m1 * (bb3 + m1 * bb4)))) * logm1;
-        kk = ek1 - ek2;
+        var kk = ek1 - ek2;
+
+        return new double[]{ek, kk};
     }
 
     /**

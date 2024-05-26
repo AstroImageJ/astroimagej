@@ -1560,7 +1560,7 @@ public class IJU {
                     kap1 = PI;
                 } else if (kapArg1 > 1.0) {
                     kapArg1 = 1.0;
-                    kap1 = 1;
+                    kap1 = 0;
                 } else {
                     kap1 = acos(kapArg1);
                 }

@@ -189,7 +189,7 @@ public class ArrayUtil {
 		if (n % 2 != 0) {
 			return arr[half];
 		} else {
-			return (arr[half-1] + arr[half+1])/2D;
+			return (arr[half-1] + arr[half])/2D;
 		}
 	}
 

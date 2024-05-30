@@ -1446,7 +1446,7 @@ public class CurveFitter {
                                 m.setMaxRestarts(0);
                                 m.setMaxIterations(maxFitSteps[curve]);
                                 m.setMaxError(tolerance[curve]);
-                                m.setFunction(new FitLightCurveChi2(detrendY, dof, bp, detrendX, detrendYE, isFitted, detrendYAverage, priorCenter, detrendIndex, maxFittedVars, detrendVars, nFitted == 0 && !useTransitFit[curve]), start.length);
+                                m.setFunction(new FitLightCurveChi2(detrendY, dof, bp, detrendX, detrendYE, isFitted, detrendYAverage, priorCenter, detrendIndex, maxFittedVars, detrendVars, index, nFitted == 0 && !useTransitFit[curve]), start.length);
                                 var result = m.minimize(start, step);
 
                                 nTries = m.getIterations();
@@ -1455,7 +1455,7 @@ public class CurveFitter {
                                 converged = result == Minimizer.SUCCESS;
                             } else {
                                 minimization.setNrestartsMax(1);
-                                minimization.nelderMead(new FitLightCurveChi2(detrendY, dof, bp, detrendX, detrendYE, isFitted, detrendYAverage, priorCenter, detrendIndex, maxFittedVars, detrendVars, false),
+                                minimization.nelderMead(new FitLightCurveChi2(detrendY, dof, bp, detrendX, detrendYE, isFitted, detrendYAverage, priorCenter, detrendIndex, maxFittedVars, detrendVars, index, false),
                                         start, step, tolerance[curve], maxFitSteps[curve]);
                                 coeffs = minimization.getParamValues();
                                 nTries = minimization.getNiter() - 1;
@@ -1977,13 +1977,14 @@ public class CurveFitter {
         int[] detrendIndex;
         int maxFittedVars;
         double[][] detrendVars;
+        final int[] index;
         final boolean fittingAgainstMedian;
 
-        public FitLightCurveChi2(double[] detrendY, double dof, double bp, double[] detrendX, double[] detrendYE, boolean[] isFitted, double detrendYAverage, double[] priorCenter, int[] detrendIndex, int maxFittedVars, double[][] detrendVars) {
-            this(detrendY, dof, bp, detrendX, detrendYE, isFitted, detrendYAverage, priorCenter, detrendIndex, maxFittedVars, detrendVars, false);
+        public FitLightCurveChi2(double[] detrendY, double dof, double bp, double[] detrendX, double[] detrendYE, boolean[] isFitted, double detrendYAverage, double[] priorCenter, int[] detrendIndex, int maxFittedVars, double[][] detrendVars, int[] index) {
+            this(detrendY, dof, bp, detrendX, detrendYE, isFitted, detrendYAverage, priorCenter, detrendIndex, maxFittedVars, detrendVars, index, false);
         }
 
-        public FitLightCurveChi2(double[] detrendY, double dof, double bp, double[] detrendX, double[] detrendYE, boolean[] isFitted, double detrendYAverage, double[] priorCenter, int[] detrendIndex, int maxFittedVars, double[][] detrendVars, boolean fittingAgainstMedian) {
+        public FitLightCurveChi2(double[] detrendY, double dof, double bp, double[] detrendX, double[] detrendYE, boolean[] isFitted, double detrendYAverage, double[] priorCenter, int[] detrendIndex, int maxFittedVars, double[][] detrendVars, int[] index, boolean fittingAgainstMedian) {
             this.detrendY = detrendY;
             this.dof = dof;
             this.bp = bp;
@@ -1995,6 +1996,7 @@ public class CurveFitter {
             this.detrendIndex = detrendIndex;
             this.maxFittedVars = maxFittedVars;
             this.detrendVars = detrendVars;
+            this.index = index;
             this.fittingAgainstMedian = fittingAgainstMedian;
         }
 
@@ -2053,11 +2055,11 @@ public class CurveFitter {
                 if (!lockToCenter[curve][2] && (ar < (1.0 + p0))) {
                     chi2 = Double.POSITIVE_INFINITY;  //boundary check that planet does not orbit within star
                 } else if ((!lockToCenter[curve][2] || !lockToCenter[curve][4]) && ((ar * Math.cos(incl) * (1.0 - e * e) / (1.0 + e * Math.sin(ohm * Math.PI / 180.0))) >= 1.0 + p0)) {
-                    if (!lockToCenter[curve][4] && autoUpdatePrior[curve][4]) {
+                    /*if (!lockToCenter[curve][4] && autoUpdatePrior[curve][4]) {
                         priorCenter[4] = Math.round(10.0 * Math.acos((0.5 + p0) * (1.0 + e * Math.sin(ohm * Math.PI / 180.0)) / (ar * (1.0 - e * e))) * 180.0 / Math.PI) / 10.0;
                         if (Double.isNaN(priorCenter[4])) priorCenter[4] = 89.9;
                         //priorCenterSpinner[curve][4].setValue(priorCenter[4]);
-                    }
+                    }*/
                     chi2 = Double.POSITIVE_INFINITY; //boundary check that planet passes in front of star
                 } else if ((!lockToCenter[curve][5] || !lockToCenter[curve][6]) && (((u1 + u2) > 1.0) || ((u1 + u2) < 0.0) || (u1 > 1.0) || (u1 < 0.0) || (u2 < -1.0) || (u2 > 1.0))) {
                     chi2 = Double.POSITIVE_INFINITY;
@@ -2065,15 +2067,15 @@ public class CurveFitter {
                     // apply the Gaussian prior
                     // if it's an angular parameter, make sure we handle the boundary
                     for (int p = 0; p < params.length-1; p++) {
-                        if (usePriorWidth[curve][index[curve][p]]) {
-                            if (index[curve][p] == 4) {
-                                double chi = Math.atan2(Math.sin(params[p] - Math.toRadians(priorCenter[index[curve][p]])), Math.cos(params[p] - Math.toRadians(priorCenter[index[curve][p]]))) / Math.toRadians(priorWidth[curve][index[curve][p]]);
+                        if (usePriorWidth[curve][index[p]]) {
+                            if (index[p] == 4) {
+                                double chi = Math.atan2(Math.sin(params[p] - Math.toRadians(priorCenter[index[p]])), Math.cos(params[p] - Math.toRadians(priorCenter[index[p]]))) / Math.toRadians(priorWidth[curve][index[p]]);
                                 chi2 += chi * chi;
-                            } else if (index[curve][p] == 1) {
-                                double chi = (params[p]*params[p] - priorCenter[index[curve][p]]) / priorWidth[curve][index[curve][p]];
+                            } else if (index[p] == 1) {
+                                double chi = (params[p]*params[p] - priorCenter[index[p]]) / priorWidth[curve][index[p]];
                                 chi2 += chi * chi;
                             } else {
-                                double chi = (params[p] - priorCenter[index[curve][p]]) / priorWidth[curve][index[curve][p]];
+                                double chi = (params[p] - priorCenter[index[p]]) / priorWidth[curve][index[p]];
                                 chi2 += chi * chi;
                             }
                         }

@@ -966,7 +966,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     private static boolean[] usesYModel2;
     private static boolean performingBulkShiftUpdate;
     private static final ExecutorService MP_THREAD = Executors.newSingleThreadExecutor();
-    private static boolean usImageJFitter;
+    static boolean usImageJFitter = true;
 
     public void run(String inTableNamePlusOptions) {
         boolean useAutoAstroDataUpdate = false;

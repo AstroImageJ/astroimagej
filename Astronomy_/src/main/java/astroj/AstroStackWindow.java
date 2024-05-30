@@ -5564,7 +5564,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             layoutContainer(this);
         });
         ac.updateZoomBoxParameters();
-        updatePanelValues(updateImage);//todo this lags the cursor aperture, especially during multiaperture
+        SwingUtilities.invokeLater(() -> updatePanelValues(updateImage));
         setImageEdges();
         radius = Prefs.get("aperture.radius", radius);
         rBack1 = Prefs.get("aperture.rback1", rBack1);
@@ -5602,7 +5602,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
     }
 
     public void updatePanelValues(boolean updateImage) {
-        if (updatesEnabled) {
+        if (updatesEnabled && !closed && imp != null) {
             //ImageProcessor ip = imp.getProcessor();
             getBiSliderStatistics();
 
@@ -5666,7 +5666,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             imp.setDisplayRange(cal.getRawValue(blackValue), cal.getRawValue(whiteValue));
             //minMaxChanged = true;
             if (updateImage) {
-                synchronized (imp) {
+                synchronized (this) {
                     imp.updateAndDraw(!hasNotified);
                 }
                 hasNotified = true; // Fixes flash

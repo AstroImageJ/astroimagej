@@ -2462,7 +2462,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                     if (detrendVarDisplayed[curve] == v) {
                                         SwingUtilities.invokeLater(() -> detrendbox[curve].setSelectedIndex(0));
                                     }
-                                } else {
+                                } else if (!detrendVarAllNaNs[curve][v]) {
                                     detrendVarsUsed[curve]++;
                                 }
                             } else if (detrendIndex[curve][v] == 1) { //Meridian Flip Detrend Selected
@@ -2882,7 +2882,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
                 boolean atLeastOne = false;
                 boolean detrendYNotConstant = false;
-                detrendYDNotConstant = new boolean[maxDetrendVars];
+                var detrendYDNotConstant = new boolean[maxDetrendVars];
                 detrendYAverage[curve] = 0.0;
 
                 for (int v = 0; v < maxDetrendVars; v++) {
@@ -3371,14 +3371,17 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
                                     } else { //use regression
                                         if (usImageJFitter) {
-                                            var xMat = new Matrix(detrendVars[curve]).transpose();//todo has problems with nan params
-                                            var yMat = new Matrix(detrendYs[curve], detrendYs[curve].length);
-                                            var beta = new QRDecomposition(xMat).solve(yMat);
-
-                                            beta.print(10, 9);
                                             coeffs[curve] = new double[maxDetrendVars];
-                                            for (int i = 0; i < beta.getRowDimension(); i++) {
-                                                coeffs[curve][i+1] = beta.get(i, 0);
+                                            if (detrendVars[curve].length > 0) {
+                                                var xMat = new Matrix(detrendVars[curve]).transpose();
+                                                var yMat = new Matrix(detrendYs[curve], detrendYs[curve].length);
+                                                var beta = new QRDecomposition(xMat).solve(yMat);
+
+                                                beta.print(10, 9);
+                                                coeffs[curve] = new double[maxDetrendVars];
+                                                for (int i = 0; i < beta.getRowDimension(); i++) {
+                                                    coeffs[curve][i+1] = beta.get(i, 0);
+                                                }
                                             }
 
                                             System.out.println(Arrays.toString(coeffs[curve]));
@@ -3395,7 +3398,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                             regression.linear();
                                             coeffs[curve] = regression.getCoeff();
 
-                                            System.out.println(Arrays.toString(coeffs[curve]));
+                                            //System.out.println(Arrays.toString(coeffs[curve]));
                                             varCount = 1;
                                             for (int v = 0; v < maxDetrendVars; v++) {
                                                 if (detrendIndex[curve][v] != 0 && detrendYDNotConstant[v]) {

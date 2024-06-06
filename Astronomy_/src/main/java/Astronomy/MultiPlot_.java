@@ -4782,6 +4782,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             double e = forceCircularOrbit[curve] ? 0.0 : eccentricity[curve];
             double ohm = forceCircularOrbit[curve] ? 0.0 : omega[curve];
             double b = 0.0;
+            double[] lcModel = null;
             if (useTransitFit[curve]) {
                 f0 = lockToCenter[curve][0] ? priorCenter[curve][0] : params[fp < nPars ? fp++ : nPars - 1]; // baseline flux
                 p0 = lockToCenter[curve][1] ? Math.sqrt(priorCenter[curve][1]) : params[fp < nPars ? fp++ : nPars - 1]; // r_p/r_*
@@ -4799,7 +4800,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 u1 = lockToCenter[curve][5] ? priorCenter[curve][5] : params[fp < nPars ? fp++ : nPars - 1];  //quadratic limb darkening parameter 1
                 u2 = lockToCenter[curve][6] ? priorCenter[curve][6] : params[fp < nPars ? fp++ : nPars - 1];  //quadratic limb darkening parameter 2
 
-                lcModel[curve] = IJU.transitModel(detrendXs[curve], f0, incl, p0, ar, tc, orbitalPeriod[curve], e, ohm, u1, u2, useLonAscNode[curve], lonAscNode[curve], true);
+                lcModel = IJU.transitModel(detrendXs[curve], f0, incl, p0, ar, tc, orbitalPeriod[curve], e, ohm, u1, u2, useLonAscNode[curve], lonAscNode[curve], true);
             }
 
             int dp = 0;
@@ -4848,7 +4849,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         for (int i = 0; i < numDetrendVars; i++) {
                             residual -= detrendVars[curve][i][j] * dPars[i];
                         }
-                        residual -= (lcModel[curve][j] - detrendYAverage[curve]);
+                        residual -= (lcModel[j] - detrendYAverage[curve]);
                         chi2 += ((residual * residual) / (detrendYEs[curve][j] * detrendYEs[curve][j]));
                     }
                 }

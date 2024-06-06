@@ -4,6 +4,7 @@ import Astronomy.MultiPlot_;
 import Astronomy.multiplot.macro.title.parser.*;
 import astroj.HelpPanel;
 import astroj.MeasurementTable;
+import ij.Prefs;
 import ij.astro.io.prefs.Property;
 import ij.astro.types.Pair;
 import ij.astro.util.UIHelper;
@@ -17,6 +18,24 @@ public class PlotNameResolver {
     private static final HelpPanel helpPanel = new HelpPanel("help/plotMacroHelp.html", "Programmable Plot Titles");
     private static Pair.GenericPair<String, Boolean> lastTitleState;
     private static Pair.GenericPair<String, Boolean> lastSubtitleState;
+
+    static {
+        TITLE_MACRO.setLoadValidator(loadedValue -> {
+            if (loadedValue != null && loadedValue.isEmpty()) {
+                return Prefs.get(".Astronomy.MultiPlot_.TITLE_MACRO", "");
+            }
+
+            return loadedValue;
+        });
+
+        SUBTITLE_MACRO.setLoadValidator(loadedValue -> {
+            if (loadedValue != null && loadedValue.isEmpty()) {
+                return Prefs.get(".Astronomy.MultiPlot_.SUBTITLE_MACRO", "");
+            }
+
+            return loadedValue;
+        });
+    }
 
     private PlotNameResolver() {
     }

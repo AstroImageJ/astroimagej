@@ -22,7 +22,7 @@ public class PlotNameResolver {
     static {
         TITLE_MACRO.setLoadValidator(loadedValue -> {
             if (loadedValue != null && loadedValue.isEmpty()) {
-                return Prefs.get(".Astronomy.MultiPlot_.TITLE_MACRO", "");
+                return Prefs.get("Astronomy.multiplot.macro.title.PlotNameResolver.TITLE_MACRO", "");
             }
 
             return loadedValue;
@@ -30,7 +30,7 @@ public class PlotNameResolver {
 
         SUBTITLE_MACRO.setLoadValidator(loadedValue -> {
             if (loadedValue != null && loadedValue.isEmpty()) {
-                return Prefs.get(".Astronomy.MultiPlot_.SUBTITLE_MACRO", "");
+                return Prefs.get("Astronomy.multiplot.macro.title.PlotNameResolver.SUBTITLE_MACRO", "");
             }
 
             return loadedValue;

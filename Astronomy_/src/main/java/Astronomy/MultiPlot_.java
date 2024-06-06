@@ -6864,6 +6864,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         rStarSpinner = new JSpinner[maxCurves];
         rhoStarSpinner = new JSpinner[maxCurves];
         tolerance = new double[maxCurves];
+        Arrays.fill(tolerance, 1e-10);
         toleranceSpinner = new JSpinner[maxCurves];
         residualShiftSpinner = new JSpinner[maxCurves];
         extractPriorsButton = new JButton[maxCurves];
@@ -14464,6 +14465,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         JPanel minimizationTolerancePanel = new JPanel(new SpringLayout());
         minimizationTolerancePanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(subBorderColor, 1), "Fit Tolerance", TitledBorder.CENTER, TitledBorder.TOP, p11, Color.darkGray));
 
+        if (tolerance[c] <= 0) {
+            tolerance[c] = 1e-10;
+        }
         toleranceSpinner[c] = new JSpinner(new SpinnerNumberModel(tolerance[c], Double.MIN_NORMAL, Double.MAX_VALUE, tolerance[c] * 0.0010));
         toleranceSpinner[c].setFont(p11);
         toleranceSpinner[c].setEditor(new JSpinner.NumberEditor(toleranceSpinner[c], "0.0E0"));

@@ -3236,6 +3236,15 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                         if (!needsFit) {
                                             converged[curve] = true;
                                             nTries[curve] = 0;
+
+                                            if (!useTransitFit[curve]) {
+                                                var yAvg = ArrayUtil.average(detrendYs[curve]);
+                                                chi2[curve] = IntStream.range(0, detrendCount).mapToDouble(i -> {
+                                                    var s = (detrendYs[curve][i] - yAvg) / detrendYEs[curve][i];
+                                                    return s*s;
+                                                }).sum();
+                                                chi2dof[curve] = chi2[curve] / dof[curve];
+                                            }
                                         } else {
                                             if (usImageJFitter) {
                                                 var m = new Minimizer();

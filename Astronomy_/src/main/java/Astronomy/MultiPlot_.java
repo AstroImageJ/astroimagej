@@ -870,8 +870,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     private static Property<Integer> binnedDotSize = new Property<>(8, "plot.", "", MultiPlot_.class);
     private static Property<Integer> boldedDotSize = new Property<>(12, "plot.", "", MultiPlot_.class);
     private static Property<Boolean> drawAijVersion = new Property<>(true, "plot.", "", MultiPlot_.class);
-    private static Property<Boolean> useMacroTitle = new Property<>(false, MultiPlot_.class);
-    private static Property<Boolean> useMacroSubtitle = new Property<>(false, MultiPlot_.class);
+    public static Property<Boolean> useMacroTitle = new Property<>(false, MultiPlot_.class);
+    public static Property<Boolean> useMacroSubtitle = new Property<>(false, MultiPlot_.class);
     private static Property<Boolean> drawOffscreenDisplacementArrowsX = new Property<>(true, MultiPlot_.class);
     private static Property<Boolean> drawOffscreenDisplacementArrowsY = new Property<>(true, MultiPlot_.class);
     private static Property<Boolean> includePlotcfgInFits = new Property<>(true, MultiPlot_.class);

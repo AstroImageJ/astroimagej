@@ -22,6 +22,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.Executors;
 
+import static Astronomy.MultiPlot_.useMacroSubtitle;
+import static Astronomy.MultiPlot_.useMacroTitle;
+
 /**
  * Handle tasks on AIJ startup that need to reference code outside of the IJ package.
  * <p>
@@ -62,6 +65,8 @@ public class AIJStartupHandler implements PlugIn {
                 table.setFilePath(p.toString());
                 var tableRead = FITS_Reader.handleTable(p, table);
                 if (tableRead != null) {
+                    useMacroSubtitle.set(false);
+                    useMacroTitle.set(false);
                     table.show();
 
                     var asw = IJU.getBestOpenAstroStackWindow();

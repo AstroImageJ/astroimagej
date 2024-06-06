@@ -12,8 +12,8 @@ import java.util.List;
 import java.util.Set;
 
 public class PlotNameResolver {
-    public static final Property<String> TITLE_MACRO = new Property<>("", PlotNameResolver.class);
-    public static final Property<String> SUBTITLE_MACRO = new Property<>("", PlotNameResolver.class);
+    public static final Property<String> TITLE_MACRO = new Property<>("", "plot.", "", PlotNameResolver.class);
+    public static final Property<String> SUBTITLE_MACRO = new Property<>("", "plot.", "", PlotNameResolver.class);
     private static final HelpPanel helpPanel = new HelpPanel("help/plotMacroHelp.html", "Programmable Plot Titles");
     private static Pair.GenericPair<String, Boolean> lastTitleState;
     private static Pair.GenericPair<String, Boolean> lastSubtitleState;

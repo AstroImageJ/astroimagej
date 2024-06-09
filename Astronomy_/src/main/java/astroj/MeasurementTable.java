@@ -1002,12 +1002,6 @@ public class MeasurementTable extends ResultsTable {
                         d = hms(words[col]);
                     } else {
                         d = Tools.parseDouble(words[col]);
-
-                        try {
-                            if (d != Double.parseDouble(words[col])) {
-                                throw new IllegalArgumentException(words[col]);
-                            }
-                        } catch (Exception e) {}
                     }
                     table.addValue(header[col + shift], d);
                 }

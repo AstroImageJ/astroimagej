@@ -3672,12 +3672,13 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
 
         // UPDATE TABLE
+        measurementsWindow = MeasurementTable.getMeasurementsWindow(tableName);
+        if (measurementsWindow != null) {
+            measurementsWindow.scrollToBottom();
+        }
+
         if (table != null && !isInstanceOfStackAlign && (updatePlot || Data_Processor.active)) {
             table.show();
-            measurementsWindow = MeasurementTable.getMeasurementsWindow(tableName);
-            if (measurementsWindow != null) {
-                measurementsWindow.scrollToBottom();
-            }
 
             table.setLock(false);
 

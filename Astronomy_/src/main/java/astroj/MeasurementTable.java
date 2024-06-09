@@ -930,7 +930,7 @@ public class MeasurementTable extends ResultsTable {
                 } else if (hasLabels && n > 1 && (labels[1].equalsIgnoreCase("Label") || labels[1].equalsIgnoreCase("image"))) {
                     shift = 0;
                     hasImageLabel = true;
-                } else if (hasLabels && n > 0 && (labels[0].trim().equals("") || labels[0].trim().equals("#"))) {
+                } else if (hasLabels && n > 0 && (labels[0].trim().isEmpty() || labels[0].trim().equals("#"))) {
                     shift = 1;
                 } else if (!hasLabels && n > 1 && Double.isNaN(Tools.parseDouble(labels1[1]))) {
                     labels = labels1;
@@ -971,11 +971,11 @@ public class MeasurementTable extends ResultsTable {
                 }
 
                 pastHeader = true;
-                return;
-            }
-
-            if (maybeHeaderLine != null) {
-                return;
+                // If headers are from current line, it does not contain data, so we are done.
+                // If headers are from previous line, then we have data in this line and need to process it
+                if (maybeHeaderLine == null) {
+                    return;
+                }
             }
 
             double d = 0.0;

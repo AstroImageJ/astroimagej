@@ -16998,8 +16998,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             }
 
         }
-        setupArrays();
-        getPreferences();
+        if (mainFrame != null) {
+            setupArrays();
+            getPreferences();
+        }
 
         if (hasNoB) {
             Arrays.fill(bpLock, false);

@@ -4378,7 +4378,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         var binnedData = new PlotDataBinning.DoubleArrayTriple[maxCurves];
         // Bin data for display
         IntStream.range(0, maxCurves).parallel()
-                .filter(curve -> binDisplay[curve].isOn())
+                .filter(curve -> binDisplay[curve].isOn() && plotY[curve])
                 .forEach(curve -> {
                     // Convert to JD
                     var binWidth = minutes.get(curve).first() / (24D * 60D);

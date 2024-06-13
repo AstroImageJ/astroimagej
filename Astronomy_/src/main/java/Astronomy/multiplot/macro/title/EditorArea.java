@@ -67,14 +67,62 @@ public class EditorArea extends JPopupMenu {
         addPopupMenuListener(new PopupMenuListener() {
             public void popupMenuCanceled(PopupMenuEvent popupMenuEvent) {
                 EditorArea.this.setVisible(false);
+                if (updateSetting != null) {
+                    if (input != null) {
+                        updateSetting.accept(input.getText());
+                    }
+                }
+                if (isProgram.get()) {
+                    try {
+                        var p = PlotNameResolver.resolve(MultiPlot_.getTable(), input.getText());
+                        render.setText(p.state().first());
+                        highlight(input, p.highlightInfos());
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+                // This repaint forces the box to correctly render the bottom face
+                input.repaint();
             }
 
             public void popupMenuWillBecomeInvisible(PopupMenuEvent popupMenuEvent) {
                 EditorArea.this.setVisible(true);
+                if (updateSetting != null) {
+                    if (input != null) {
+                        updateSetting.accept(input.getText());
+                    }
+                }
+                if (isProgram.get()) {
+                    try {
+                        var p = PlotNameResolver.resolve(MultiPlot_.getTable(), input.getText());
+                        render.setText(p.state().first());
+                        highlight(input, p.highlightInfos());
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+                // This repaint forces the box to correctly render the bottom face
+                input.repaint();
             }
 
             public void popupMenuWillBecomeVisible(PopupMenuEvent popupMenuEvent) {
                 EditorArea.this.setVisible(false);
+                if (updateSetting != null) {
+                    if (input != null) {
+                        updateSetting.accept(input.getText());
+                    }
+                }
+                if (isProgram.get()) {
+                    try {
+                        var p = PlotNameResolver.resolve(MultiPlot_.getTable(), input.getText());
+                        render.setText(p.state().first());
+                        highlight(input, p.highlightInfos());
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+                // This repaint forces the box to correctly render the bottom face
+                input.repaint();
             }
         });
         build();

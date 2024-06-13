@@ -1,5 +1,6 @@
 package Astronomy.multiplot.macro.title.parser;
 
+import astroj.AstroStackWindow;
 import astroj.FitsJ;
 import astroj.MeasurementTable;
 import ij.ImagePlus;
@@ -130,7 +131,20 @@ public class ResolverContext {
                 }
             }
         }
-
+        var id = WindowManager.getCurrentImage();
+        if (id!= null && (id.getWindow() instanceof AstroStackWindow)) {
+            return id;
+        }else{
+            ids = WindowManager.getIDList();
+            if (ids != null) {
+                for (int idd : ids) {
+                    id = WindowManager.getImage(idd);
+                    if ((id.getWindow() instanceof AstroStackWindow)) {
+                        return id;
+                    }
+                }
+            }
+        }
         return null;
     }
 }

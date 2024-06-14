@@ -163,7 +163,6 @@ public class FITS_Writer implements PlugIn {
 		}
 
 		// Fix save dialog screwing with the extensions
-		path = path.replaceFirst("\\.fz\\.fits", ".fz.gz");
 		path = path.replaceFirst("\\.fits\\.fz\\.gz\\.fz\\.gz", ".fits.fz.gz");
 
 		var compressionModes = FitsExtensionUtil.compressionModes(path);

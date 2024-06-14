@@ -11,6 +11,7 @@ import ij.astro.gui.GenericSwingDialog;
 import ij.astro.io.prefs.Property;
 import ij.astro.logging.AIJLogger;
 import ij.astro.util.UIHelper;
+import ij.measure.ResultsTable;
 import ij.util.ArrayUtil;
 import ij.util.FontUtil;
 
@@ -560,6 +561,16 @@ public class FitOptimization implements AutoCloseable {
             return;
         }
 
+        for (int ap = 0; ap < numAps; ap++) {
+            if (table.getColumnIndex("Source_Error_" + (isRefStar[ap] ? "C" : "T") + (ap + 1))
+                    == ResultsTable.COLUMN_NOT_FOUND) {
+                IJ.error("Missing Source_Error columns for 1 or more stores.\nEnable in Aperture settings and rerun photometry.");
+                CardLayout cl = (CardLayout) compOptiCards.getLayout();
+                cl.next(compOptiCards);
+                return;
+            }
+        }
+
         setTargetStar();
 
         BigInteger initState = createBinaryRepresentation(selectable);
@@ -586,6 +597,16 @@ public class FitOptimization implements AutoCloseable {
             CardLayout cl = (CardLayout) compOptiCards.getLayout();
             cl.next(compOptiCards);
             return;
+        }
+
+        for (int ap = 0; ap < numAps; ap++) {
+            if (table.getColumnIndex("Source_Error_" + (isRefStar[ap] ? "C" : "T") + (ap + 1))
+                    == ResultsTable.COLUMN_NOT_FOUND) {
+                IJ.error("Missing Source_Error columns for 1 or more stores.\nEnable in Aperture settings and rerun photometry.");
+                CardLayout cl = (CardLayout) compOptiCards.getLayout();
+                cl.next(compOptiCards);
+                return;
+            }
         }
 
         setTargetStar();
@@ -623,6 +644,16 @@ public class FitOptimization implements AutoCloseable {
             return;
         }
 
+        for (int ap = 0; ap < numAps; ap++) {
+            if (table.getColumnIndex("Source_Error_" + (isRefStar[ap] ? "C" : "T") + (ap + 1))
+                    == ResultsTable.COLUMN_NOT_FOUND) {
+                IJ.error("Missing Source_Error columns for 1 or more stores.\nEnable in Aperture settings and rerun photometry.");
+                CardLayout cl = (CardLayout) compOptiCards.getLayout();
+                cl.next(compOptiCards);
+                return;
+            }
+        }
+
         setTargetStar();
 
         BigInteger initState = createBinaryRepresentation(selectable); //numAps has number of apertures
@@ -658,6 +689,16 @@ public class FitOptimization implements AutoCloseable {
             return;
         }
 
+        for (int ap = 0; ap < numAps; ap++) {
+            if (table.getColumnIndex("Source_Error_" + (isRefStar[ap] ? "C" : "T") + (ap + 1))
+                    == ResultsTable.COLUMN_NOT_FOUND) {
+                IJ.error("Missing Source_Error columns for 1 or more stores.\nEnable in Aperture settings and rerun photometry.");
+                CardLayout cl = (CardLayout) compOptiCards.getLayout();
+                cl.next(compOptiCards);
+                return;
+            }
+        }
+
         setTargetStar();
 
         BigInteger initState = createBinaryRepresentation(selectable); //numAps has number of apertures
@@ -676,6 +717,16 @@ public class FitOptimization implements AutoCloseable {
     private void testParamMin() {
         selectable = null;
         selectable2PrimaryIndex = null;
+
+        for (int ap = 0; ap < numAps; ap++) {
+            if (table.getColumnIndex("Source_Error_" + (isRefStar[ap] ? "C" : "T") + (ap + 1))
+                    == ResultsTable.COLUMN_NOT_FOUND) {
+                IJ.error("Missing Source_Error columns for 1 or more stores.\nEnable in Aperture settings and rerun photometry.");
+                CardLayout cl = (CardLayout) detOptiCards.getLayout();
+                cl.next(detOptiCards);
+                return;
+            }
+        }
 
         setSelectable((int) Arrays.stream(MultiPlot_.detrendIndex[curve]).filter(i -> i != 0).count());
 
@@ -707,6 +758,16 @@ public class FitOptimization implements AutoCloseable {
             CardLayout cl = (CardLayout) detOptiCards.getLayout();
             cl.next(detOptiCards);
             return;
+        }
+
+        for (int ap = 0; ap < numAps; ap++) {
+            if (table.getColumnIndex("Source_Error_" + (isRefStar[ap] ? "C" : "T") + (ap + 1))
+                    == ResultsTable.COLUMN_NOT_FOUND) {
+                IJ.error("Missing Source_Error columns for 1 or more stores.\nEnable in Aperture settings and rerun photometry.");
+                CardLayout cl = (CardLayout) detOptiCards.getLayout();
+                cl.next(detOptiCards);
+                return;
+            }
         }
 
         if (MultiPlot_.refStarFrame == null) MultiPlot_.showRefStarJPanel();

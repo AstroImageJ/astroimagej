@@ -14,7 +14,6 @@ import ij.astro.util.ObjectShare;
 import ij.plugin.FITS_Reader;
 import ij.plugin.PlugIn;
 import nom.tam.fits.Fits;
-import nom.tam.util.FitsFile;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -50,7 +49,7 @@ public class AIJStartupHandler implements PlugIn {
     private static final AssociationMapper multiplotFitsTableHandler =
             new AssociationMapper(p -> {
                 if (FitsExtensionUtil.isFitsFile(p.toString())) {
-                    try (var fits = new Fits(new FitsFile(p.toFile()))) {
+                    try (var fits = new Fits(Files.newInputStream(p))) {
                         fits.read(); // Read the headers in
                         return fits.getPrimaryHeader().getBooleanValue("AIJ_TBL", false);
                     } catch (IOException e) {

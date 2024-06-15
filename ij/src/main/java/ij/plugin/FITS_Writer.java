@@ -25,6 +25,7 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.Properties;
@@ -145,7 +146,7 @@ public class FITS_Writer implements PlugIn {
 		IJ.showStatus("Saving image...");
 
 		// GET PATH
-		if (path == null || path.trim().length() == 0) {
+		if (path == null || path.trim().isEmpty()) {
 			var nm = imp.getTitle();
 			if (specificSlice != -1) {
 				String filename = imp.getStack().getSliceLabel(specificSlice);
@@ -283,6 +284,34 @@ public class FITS_Writer implements PlugIn {
 		}
 
 		IJ.showStatus("");
+	}
+
+	public static void saveFolder(ImagePlus imp, String path, String extension) {
+		// GET PATH
+		if (path == null || path.trim().isEmpty()) {
+			var nm = imp.getTitle();
+
+			String title = FitsExtensionUtil.fileNameWithoutExt(nm);
+			SaveDialog sd = new SaveDialog("Write FITS image",title,extension);
+			path = sd.getDirectory()+sd.getFileName();
+		}
+
+		var p = Path.of(path);
+		var dir = Files.isDirectory(p) ? p : p.getParent();
+		var name = Files.isDirectory(p) ? "fits" : FitsExtensionUtil.fileNameWithoutExt(p.getFileName().toString());
+		var options = FitsExtensionUtil.compressionModes(path);
+
+		var size = imp.getStackSize();
+		int numberOfDigits = Integer.toString(size+1).length();
+
+		var format = new DecimalFormat("0".repeat(numberOfDigits));
+
+		IJ.showProgress(0, size);
+		for (int i = 1; i <= size; i++) {
+			var pi = dir.resolve(FitsExtensionUtil.makeFitsSave("%s_%s".formatted(name, format.format(i)), options.toArray(FitsExtensionUtil.CompressionMode[]::new)));
+			saveImage(imp, pi.toString(), i);
+			IJ.showProgress(i, size);
+		}
 	}
 
 	public static void saveMPTable(ResultsTable resultsTable, boolean includePrefs, boolean includeApertures, String path, String extension) {

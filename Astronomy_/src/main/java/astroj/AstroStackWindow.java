@@ -391,7 +391,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
     JPanel canvasPanel;
     JTextField lengthLabel, peakLabel, infoTextField;
 
-    Menu fileMenu, preferencesMenu, scaleMenu, saveFitsMenuItem, saveFitsStackMenuItem, viewMenu, annotateMenu, measureMenu, editMenu, processMenu, colorMenu, analyzeMenu, wcsMenu;
+    Menu fileMenu, preferencesMenu, scaleMenu, saveFitsMenuItem, saveFitsStack3DMenuItem, saveFitsStackMenuItem, viewMenu, annotateMenu, measureMenu, editMenu, processMenu, colorMenu, analyzeMenu, wcsMenu;
 
     MenuItem exitMenuItem, flipDataXMenuItem, flipDataYMenuItem, rotateDataCWMenuItem, rotateDataCCWMenuItem, simbadSearchRadiusMenuItem;
     MenuItem openMenuItem, openInNewWindowMenuItem, openSeqMenuItem, openSeqInNewWindowMenuItem;
@@ -1037,15 +1037,56 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         saveFitsMenuItem.add(sliceSaveFzGz);
         fitsMenu.add(saveFitsMenuItem);
 
-        // Stack Saving
-        saveFitsStackMenuItem = new Menu("Save image/stack as 3D FITS...");
+        // Stack 3D Saving
+        saveFitsStack3DMenuItem = new Menu("Save image/stack as 3D FITS...");
+        saveFitsStack3DMenuItem.addActionListener(this);
+
+        var stackSave3DNC = new MenuItem("No compression");
+        stackSave3DNC.addActionListener($ ->
+                FITS_Writer.savingThread.submit(() -> {
+                    var l = imp.lockSilently();
+                    FITS_Writer.saveImage(imp, null);
+                    if (l) imp.unlock();
+                }));
+        saveFitsStack3DMenuItem.add(stackSave3DNC);
+
+        var stackSave3DFz = new MenuItem("FPACK");
+        stackSave3DFz.addActionListener($ ->
+                FITS_Writer.savingThread.submit(() -> {
+                    var l = imp.lockSilently();
+                    FITS_Writer.saveImage(imp, null,".fits.fz");
+                    if (l) imp.unlock();
+                }));
+        saveFitsStack3DMenuItem.add(stackSave3DFz);
+
+        var stackSave3DGz = new MenuItem("GZip");
+        stackSave3DGz.addActionListener($ ->
+                FITS_Writer.savingThread.submit(() -> {
+                    var l = imp.lockSilently();
+                    FITS_Writer.saveImage(imp, null, ".fits.gz");
+                    if (l) imp.unlock();
+                }));
+        saveFitsStack3DMenuItem.add(stackSave3DGz);
+
+        var stackSave3DFzGz = new MenuItem("FPACK and GZip");
+        stackSave3DFzGz.addActionListener($ ->
+                FITS_Writer.savingThread.submit(() -> {
+                    var l = imp.lockSilently();
+                    FITS_Writer.saveImage(imp, null, ".fits.fz.gz");
+                    if (l) imp.unlock();
+                }));
+        saveFitsStack3DMenuItem.add(stackSave3DFzGz);
+        fitsMenu.add(saveFitsStack3DMenuItem);
+
+        saveFitsStackMenuItem = new Menu("Save image/stack as folder...");
         saveFitsStackMenuItem.addActionListener(this);
 
+        // Stack Folder Saving
         var stackSaveNC = new MenuItem("No compression");
         stackSaveNC.addActionListener($ ->
                 FITS_Writer.savingThread.submit(() -> {
                     var l = imp.lockSilently();
-                    FITS_Writer.saveImage(imp, null);
+                    FITS_Writer.saveFolder(imp, null, ".fits");
                     if (l) imp.unlock();
                 }));
         saveFitsStackMenuItem.add(stackSaveNC);
@@ -1054,7 +1095,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         stackSaveFz.addActionListener($ ->
                 FITS_Writer.savingThread.submit(() -> {
                     var l = imp.lockSilently();
-                    FITS_Writer.saveImage(imp, null,".fits.fz");
+                    FITS_Writer.saveFolder(imp, null,".fits.fz");
                     if (l) imp.unlock();
                 }));
         saveFitsStackMenuItem.add(stackSaveFz);
@@ -1063,7 +1104,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         stackSaveGz.addActionListener($ ->
                 FITS_Writer.savingThread.submit(() -> {
                     var l = imp.lockSilently();
-                    FITS_Writer.saveImage(imp, null, ".fits.gz");
+                    FITS_Writer.saveFolder(imp, null, ".fits.gz");
                     if (l) imp.unlock();
                 }));
         saveFitsStackMenuItem.add(stackSaveGz);
@@ -1072,7 +1113,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         stackSaveFzGz.addActionListener($ ->
                 FITS_Writer.savingThread.submit(() -> {
                     var l = imp.lockSilently();
-                    FITS_Writer.saveImage(imp, null, ".fits.fz.gz");
+                    FITS_Writer.saveFolder(imp, null, ".fits.fz.gz");
                     if (l) imp.unlock();
                 }));
         saveFitsStackMenuItem.add(stackSaveFzGz);
@@ -3472,7 +3513,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                 FITS_Writer.saveImage(imp, null, imp.getCurrentSlice());
                 if (l) imp.unlock();
             });
-        } else if (b == saveFitsStackMenuItem) {
+        } else if (b == saveFitsStack3DMenuItem) {
             FITS_Writer.savingThread.submit(() -> {
                 var l = imp.lockSilently();
                 FITS_Writer.saveImage(imp, null);

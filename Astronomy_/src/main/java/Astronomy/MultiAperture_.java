@@ -1,7 +1,6 @@
 package Astronomy;// MultiAperture_.java
 
 import astroj.*;
-import flanagan.analysis.Stat;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.Prefs;
@@ -16,6 +15,7 @@ import ij.gui.Toolbar;
 import ij.measure.ResultsTable;
 import ij.plugin.frame.Recorder;
 import ij.process.ImageProcessor;
+import ij.util.ArrayUtil;
 import ij.util.Tools;
 
 import javax.swing.*;
@@ -1939,7 +1939,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         }
 
         sp.plot.setXYLabels("Slice", "Radius [px]");
-        sp.plot.setLimits(0, lastSlice - firstSlice, 0, Math.max(new Stat(br2).maximum(), rBack2) + 5);
+        sp.plot.setLimits(0, lastSlice - firstSlice, 0, Math.max(ArrayUtil.max(br2), rBack2) + 5);
         sp.plot.setColor(Color.RED);
         sp.plot.setLineWidth(4);
         sp.plot.add("dot", sr);
@@ -1992,7 +1992,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             return 0;
         }
 
-        double med = Stat.median(a);
+        double med = ArrayUtil.median(a);
         var distanceAboveMed = Arrays.stream(a).filter(d -> d> med).map(d -> d - med).toArray();
 
         if (distanceAboveMed.length == 1) {
@@ -2001,7 +2001,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             return med;
         }
 
-        return med + Stat.median(distanceAboveMed);
+        return med + ArrayUtil.median(distanceAboveMed);
     }
 
     private TreeSet<StarFinder.CoordinateMaxima> removeCloseStars(TreeSet<StarFinder.CoordinateMaxima> initialSet, double t1Source, double maxP) {
@@ -3045,12 +3045,12 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             var br = stackRadii.stream().mapToDouble(Seeing_Profile.ApRadii::r2).toArray();
             var br2 = stackRadii.stream().mapToDouble(Seeing_Profile.ApRadii::r3).toArray();
 
-            var mr = Stat.median(sr);
-            var mbr = Stat.median(br);
-            var mbr2 = Stat.median(br2);
+            var mr = ArrayUtil.median(sr);
+            var mbr = ArrayUtil.median(br);
+            var mbr2 = ArrayUtil.median(br2);
 
             sp.plot.setXYLabels("Slice", "Radius [px]");
-            sp.plot.setLimits(0, lastSlice - firstSlice, 0, Math.max(new Stat(br2).maximum(), rBack2) + 5);
+            sp.plot.setLimits(0, lastSlice - firstSlice, 0, Math.max(ArrayUtil.max(br2), rBack2) + 5);
             sp.plot.setColor(Color.RED);
             sp.plot.setLineWidth(4);
             sp.plot.add("dot", sr);
@@ -3138,7 +3138,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             return Double.NaN;
         }
 
-        return Stat.median(a);
+        return ArrayUtil.median(a);
     }
 
     /**
@@ -3672,12 +3672,13 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
 
         // UPDATE TABLE
+        measurementsWindow = MeasurementTable.getMeasurementsWindow(tableName);
+        if (measurementsWindow != null) {
+            measurementsWindow.scrollToBottom();
+        }
+
         if (table != null && !isInstanceOfStackAlign && (updatePlot || Data_Processor.active)) {
             table.show();
-            measurementsWindow = MeasurementTable.getMeasurementsWindow(tableName);
-            if (measurementsWindow != null) {
-                measurementsWindow.scrollToBottom();
-            }
 
             table.setLock(false);
 

@@ -1002,7 +1002,7 @@ public class FolderOpener implements PlugIn, TextListener {
 		long sizeInBytes = 0;
 		var stackCountPerImage = 1;
 		for (String sf : list) {
-			Opener opener = new Opener();
+			Opener opener = new Opener(true);
 			opener.setSilentMode(true);
 			IJ.redirectErrorMessages(true);
 			ImagePlus imp = opener.openImage(directory, sf);

@@ -749,7 +749,12 @@ public class ImageJ extends Frame implements ActionListener,
 	@AstroImageJ(reason = "Run AIJ startup; Load on EventQueue", modified = true)
 	public static void main(String args[]) {
 		if (!IJ.isMacOSX()) {
-			main0(args);
+			try {
+				main0(args);
+			} catch (Exception e) {
+				e.printStackTrace();
+				throw new RuntimeException(e);
+			}
 			return;
 		}
 		try {

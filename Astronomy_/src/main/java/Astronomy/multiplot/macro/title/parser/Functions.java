@@ -3,9 +3,9 @@ package Astronomy.multiplot.macro.title.parser;
 import Astronomy.MultiAperture_;
 import astroj.FitsJ;
 import astroj.JulianDate;
-import flanagan.analysis.Stat;
 import ij.IJ;
 import ij.Prefs;
+import ij.util.ArrayUtil;
 
 import java.text.DecimalFormat;
 import java.time.*;
@@ -103,20 +103,23 @@ enum Functions {
                 }
             }
         }
-        var h = ctx.getHeader(slice);
-        if (h != null) {
-            int c;
-            if (h.cards() != null && (c = FitsJ.findCardWithKey(card, h)) > -1) {
-                var val = processor.apply(h.cards()[c]).trim();
-                // Trim ' from val
-                if (val.startsWith("'") && val.endsWith("'")) {
-                    val = val.substring(1, val.length() - 1).trim();
+        if (ctx.getImp() != null) {
+            var h = ctx.getHeader(slice);
+            if (h != null) {
+                int c;
+                if (h.cards() != null && (c = FitsJ.findCardWithKey(card, h)) > -1) {
+                    var val = processor.apply(h.cards()[c]).trim();
+                    // Trim ' from val
+                    if (val.startsWith("'") && val.endsWith("'")) {
+                        val = val.substring(1, val.length() - 1).trim();
+                    }
+                    return new FunctionReturn(val);
                 }
-                return new FunctionReturn(val);
+                return FunctionReturn.error("<Failed to find card with key '%s'>".formatted(card));
             }
-            return FunctionReturn.error("<Failed to find card with key '%s'>".formatted(card));
+            return FunctionReturn.error("<Found no matching header for slice '%s'>".formatted(sliceS));
         }
-        return FunctionReturn.error("<Found no matching header for slice '%s'>".formatted(sliceS));
+        return FunctionReturn.error("<Found no matching image with filename matching a label in the table>");
     }
 
     private static FunctionReturn preference(ResolverContext ctx, String... ps) {
@@ -154,19 +157,19 @@ enum Functions {
             switch (ps[1]) {
                 case "AVG" -> {
                     var c = ctx.table.getColumn(ps[0]);
-                    return new FunctionReturn(String.valueOf(Stat.mean(c)));
+                    return new FunctionReturn(String.valueOf(ArrayUtil.mean(c)));
                 }
                 case "MIN" -> {
                     var c = ctx.table.getColumn(ps[0]);
-                    return new FunctionReturn(String.valueOf(new Stat(c).minimum()));
+                    return new FunctionReturn(String.valueOf(ArrayUtil.min(c)));
                 }
                 case "MAX" -> {
                     var c = ctx.table.getColumn(ps[0]);
-                    return new FunctionReturn(String.valueOf(new Stat(c).maximum()));
+                    return new FunctionReturn(String.valueOf(ArrayUtil.max(c)));
                 }
                 case "MED" -> {
                     var c = ctx.table.getColumn(ps[0]);
-                    return new FunctionReturn(String.valueOf(Stat.median(c)));
+                    return new FunctionReturn(String.valueOf(ArrayUtil.median(c)));
                 }
                 default -> {}
             }

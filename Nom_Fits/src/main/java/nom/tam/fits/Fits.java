@@ -140,7 +140,7 @@ import static nom.tam.fits.header.Standard.EXTVER;
  * 
  * @see     FitsFactory
  *
- * @version 1.18
+ * @version 1.20
  */
 @SuppressWarnings("deprecation")
 public class Fits implements Closeable {
@@ -710,7 +710,7 @@ public class Fits implements Closeable {
      * @return               The primary header of this FITS file/object.
      * 
      * @throws FitsException If the Fits is empty (does not contain a primary HDU)
-     * @throws IOException
+     * @throws IOException   if there was a problem accessing the FITS from the input
      * 
      * @see                  #getCompleteHeader(int)
      * @see                  BasicHDU#getHeader()
@@ -1445,7 +1445,6 @@ public class Fits implements Closeable {
      *
      * @throws FitsException if the initialization failed
      */
-    @SuppressWarnings("resource")
     protected void streamInit(InputStream inputStream) throws FitsException {
         dataStr = new FitsInputStream(CompressionManager.decompress(inputStream));
     }

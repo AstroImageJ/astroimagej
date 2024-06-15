@@ -1,7 +1,7 @@
 package util;
 
-import flanagan.math.ArrayMaths;
 import ij.astro.types.Pair;
+import ij.util.ArrayUtil;
 
 import java.util.Arrays;
 import java.util.Comparator;
@@ -41,16 +41,16 @@ public class PlotDataBinning {
             }
 
 
-            var t = new ArrayMaths(x);
-            var xMin = t.minimum();
-            var xMax = t.maximum();
+            var t = Arrays.stream(x).summaryStatistics();
+            var xMin = t.getMin();
+            var xMax = t.getMax();
 
             double[] finalX1 = x;
             var l = IntStream.range(1, x.length).parallel().mapToDouble(i -> finalX1[i] - finalX1[i-1]).toArray();
             if (l.length == 0) {
                 return null;
             }
-            var minBinWidth = new ArrayMaths(l).minimum();
+            var minBinWidth = ArrayUtil.min(l);
             if (minBinWidth > binWidth) binWidth = minBinWidth;
 
             var span = xMax - xMin;

@@ -34,13 +34,14 @@ public class CompStarFitting extends Optimizer {
         var minimumState = new FitOptimization.MinimumState();
         BigInteger counter = BigInteger.ZERO;
         fitOptimization.compCounter.setSpinner(false);
+        CurveFitter curveFitter = CurveFitter.getInstance(curve, fitOptimization.getTargetStar());
         for (BigInteger state = startState; state.compareTo(endState) <= 0; state = state.add(BigInteger.ONE)) {
             if (state.equals(BigInteger.ZERO)) continue;
             if (Thread.interrupted()) break;
             fitOptimization.compCounter.dynamicSet(counter);
 
             var x = fitOptimization.setArrayToState(state);
-            var r = CurveFitter.getInstance(curve, fitOptimization.getTargetStar()).fitCurveAndGetResults(x);
+            var r = curveFitter.fitCurveAndGetResults(x);
 
             if (Double.isNaN(r.rms()) || r.rms() <= 0 || Double.isNaN(r.bic())) continue;
 
@@ -69,6 +70,7 @@ public class CompStarFitting extends Optimizer {
         fitOptimization.compCounter.setBasis(fitOptimization.compCounter.getBasis().multiply(BigInteger.valueOf(iterRemaining * 2L)));
 
         var convergence = 0;
+        CurveFitter curveFitter = CurveFitter.getInstance(curve, fitOptimization.getTargetStar());
         while (convergence < 2) {
             if (Thread.interrupted()) break;
 
@@ -82,7 +84,7 @@ public class CompStarFitting extends Optimizer {
 
                 // Evaluate state for the current set of stars
                 var stateArray = fitOptimization.setArrayToState(state);
-                var results = CurveFitter.getInstance(curve, fitOptimization.getTargetStar()).fitCurveAndGetResults(stateArray);
+                var results = curveFitter.fitCurveAndGetResults(stateArray);
 
                 if (Double.isNaN(results.rms()) || results.rms() <= 0 || Double.isNaN(results.bic())) continue;
 
@@ -94,7 +96,7 @@ public class CompStarFitting extends Optimizer {
                     if (convergence > 0 ? startState.testBit(i) : state.testBit(i)) {
                         state = state.flipBit(i);
                         stateArray = fitOptimization.setArrayToState(state);
-                        results = CurveFitter.getInstance(curve, fitOptimization.getTargetStar()).fitCurveAndGetResults(stateArray);
+                        results = curveFitter.fitCurveAndGetResults(stateArray);
 
                         if (Double.isNaN(results.rms()) || results.rms() <= 0 || Double.isNaN(results.bic())) continue;
 
@@ -131,7 +133,7 @@ public class CompStarFitting extends Optimizer {
 
         // Reevaluate results for final state to ensure RMS is up to date
         var stateArray = fitOptimization.setArrayToState(state);
-        var results = CurveFitter.getInstance(curve, fitOptimization.getTargetStar()).fitCurveAndGetResults(stateArray);
+        var results = curveFitter.fitCurveAndGetResults(stateArray);
 
         if (Double.isNaN(results.rms()) || results.rms() <= 0 || Double.isNaN(results.bic())) {
             return minimumState;
@@ -154,12 +156,13 @@ public class CompStarFitting extends Optimizer {
         fitOptimization.compCounter.setBasis(BigInteger.valueOf(compStarCount*compStarCount));
 
         var oldState = state;
+        CurveFitter curveFitter = CurveFitter.getInstance(curve, fitOptimization.getTargetStar());
         for (int $ = 0; $ < compStarCount; $++) {
             if (Thread.interrupted()) break;
 
             // Evaluate state for the current set of stars
             var stateArray = fitOptimization.setArrayToState(state);
-            var results = CurveFitter.getInstance(curve, fitOptimization.getTargetStar()).fitCurveAndGetResults(stateArray);
+            var results = curveFitter.fitCurveAndGetResults(stateArray);
 
             if (Double.isNaN(results.rms()) || results.rms() <= 0 || Double.isNaN(results.bic())) continue;
 
@@ -170,7 +173,7 @@ public class CompStarFitting extends Optimizer {
             for (int i = 0; i < compStarCount; i++) {
                 state = state.flipBit(i);
                 stateArray = fitOptimization.setArrayToState(state);
-                results = CurveFitter.getInstance(curve, fitOptimization.getTargetStar()).fitCurveAndGetResults(stateArray);
+                results = curveFitter.fitCurveAndGetResults(stateArray);
 
                 fitOptimization.compCounter.dynamicSet(counter);
 
@@ -195,7 +198,7 @@ public class CompStarFitting extends Optimizer {
 
         // Reevaluate results for final state to ensure RMS is up to date
         var stateArray = fitOptimization.setArrayToState(state);
-        var results = CurveFitter.getInstance(curve, fitOptimization.getTargetStar()).fitCurveAndGetResults(stateArray);
+        var results = curveFitter.fitCurveAndGetResults(stateArray);
 
         if (Double.isNaN(results.rms()) || results.rms() <= 0 || Double.isNaN(results.bic())) {
             return minimumState;

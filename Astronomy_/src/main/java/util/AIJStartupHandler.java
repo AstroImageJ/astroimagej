@@ -14,13 +14,15 @@ import ij.astro.util.ObjectShare;
 import ij.plugin.FITS_Reader;
 import ij.plugin.PlugIn;
 import nom.tam.fits.Fits;
-import nom.tam.util.FitsFile;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.Executors;
+
+import static Astronomy.MultiPlot_.useMacroSubtitle;
+import static Astronomy.MultiPlot_.useMacroTitle;
 
 /**
  * Handle tasks on AIJ startup that need to reference code outside of the IJ package.
@@ -47,7 +49,7 @@ public class AIJStartupHandler implements PlugIn {
     private static final AssociationMapper multiplotFitsTableHandler =
             new AssociationMapper(p -> {
                 if (FitsExtensionUtil.isFitsFile(p.toString())) {
-                    try (var fits = new Fits(new FitsFile(p.toFile()))) {
+                    try (var fits = new Fits(Files.newInputStream(p))) {
                         fits.read(); // Read the headers in
                         return fits.getPrimaryHeader().getBooleanValue("AIJ_TBL", false);
                     } catch (IOException e) {
@@ -62,6 +64,8 @@ public class AIJStartupHandler implements PlugIn {
                 table.setFilePath(p.toString());
                 var tableRead = FITS_Reader.handleTable(p, table);
                 if (tableRead != null) {
+                    useMacroSubtitle.set(false);
+                    useMacroTitle.set(false);
                     table.show();
 
                     var asw = IJU.getBestOpenAstroStackWindow();

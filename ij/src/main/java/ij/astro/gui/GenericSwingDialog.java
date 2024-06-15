@@ -1012,9 +1012,6 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         }
         //setupPaneLayout();
         setResizable(true);
-        if (centerDialog) {
-            GUI.centerOnImageJScreen(this);
-        }
 
         var screen = GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices()[UIHelper.getScreen(this)];
         var nominalBounds = screen.getDefaultConfiguration().getBounds();
@@ -1111,9 +1108,12 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         });
         validate();
         pack();
+
+        if (centerDialog) {
+            GUI.centerOnImageJScreen(this);
+        }
+
         setVisible(true);
-        validate();
-        pack();
     }
 
     @Override

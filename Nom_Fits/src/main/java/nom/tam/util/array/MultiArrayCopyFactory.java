@@ -35,6 +35,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 /**
  * @deprecated               (<i>for internal use</i>) use {@link MultiArrayCopier} instead. Make copies of
  *                               multi-dimensional arrays.
@@ -43,7 +45,11 @@ import java.util.Map;
  * @param      <Destination> The generic type of array to which we want to copy elements.
  */
 @Deprecated
+@SuppressFBWarnings(value = "SING_SINGLETON_HAS_NONPRIVATE_CONSTRUCTOR", justification = "warning persists despite private constructor")
 public class MultiArrayCopyFactory<Source, Destination> {
+
+    private MultiArrayCopyFactory() {
+    }
 
     private static final class ByteToChar extends MultiArrayCopyFactory<byte[], char[]> {
 
@@ -170,7 +176,7 @@ public class MultiArrayCopyFactory<Source, Destination> {
         @Override
         public void arraycopy(double[] src, int srcPos, byte[] dest, int destPos, int length) {
             for (int index = 0; index < length; index++) {
-                dest[index + destPos] = (byte) src[index + srcPos];
+                dest[index + destPos] = (byte) Math.round(src[index + srcPos]);
             }
         }
     }
@@ -180,7 +186,7 @@ public class MultiArrayCopyFactory<Source, Destination> {
         @Override
         public void arraycopy(double[] src, int srcPos, char[] dest, int destPos, int length) {
             for (int index = 0; index < length; index++) {
-                dest[index + destPos] = (char) src[index + srcPos];
+                dest[index + destPos] = (char) Math.round(src[index + srcPos]);
             }
         }
     }
@@ -200,7 +206,7 @@ public class MultiArrayCopyFactory<Source, Destination> {
         @Override
         public void arraycopy(double[] src, int srcPos, int[] dest, int destPos, int length) {
             for (int index = 0; index < length; index++) {
-                dest[index + destPos] = (int) src[index + srcPos];
+                dest[index + destPos] = (int) Math.round(src[index + srcPos]);
             }
         }
     }
@@ -210,7 +216,7 @@ public class MultiArrayCopyFactory<Source, Destination> {
         @Override
         public void arraycopy(double[] src, int srcPos, long[] dest, int destPos, int length) {
             for (int index = 0; index < length; index++) {
-                dest[index + destPos] = (long) src[index + srcPos];
+                dest[index + destPos] = Math.round(src[index + srcPos]);
             }
         }
     }
@@ -220,7 +226,7 @@ public class MultiArrayCopyFactory<Source, Destination> {
         @Override
         public void arraycopy(double[] src, int srcPos, short[] dest, int destPos, int length) {
             for (int index = 0; index < length; index++) {
-                dest[index + destPos] = (short) src[index + srcPos];
+                dest[index + destPos] = (short) Math.round(src[index + srcPos]);
             }
         }
     }
@@ -230,7 +236,7 @@ public class MultiArrayCopyFactory<Source, Destination> {
         @Override
         public void arraycopy(float[] src, int srcPos, byte[] dest, int destPos, int length) {
             for (int index = 0; index < length; index++) {
-                dest[index + destPos] = (byte) src[index + srcPos];
+                dest[index + destPos] = (byte) Math.round(src[index + srcPos]);
             }
         }
     }
@@ -240,7 +246,7 @@ public class MultiArrayCopyFactory<Source, Destination> {
         @Override
         public void arraycopy(float[] src, int srcPos, char[] dest, int destPos, int length) {
             for (int index = 0; index < length; index++) {
-                dest[index + destPos] = (char) src[index + srcPos];
+                dest[index + destPos] = (char) Math.round(src[index + srcPos]);
             }
         }
     }
@@ -260,7 +266,7 @@ public class MultiArrayCopyFactory<Source, Destination> {
         @Override
         public void arraycopy(float[] src, int srcPos, int[] dest, int destPos, int length) {
             for (int index = 0; index < length; index++) {
-                dest[index + destPos] = (int) src[index + srcPos];
+                dest[index + destPos] = Math.round(src[index + srcPos]);
             }
         }
     }
@@ -270,7 +276,7 @@ public class MultiArrayCopyFactory<Source, Destination> {
         @Override
         public void arraycopy(float[] src, int srcPos, long[] dest, int destPos, int length) {
             for (int index = 0; index < length; index++) {
-                dest[index + destPos] = (long) src[index + srcPos];
+                dest[index + destPos] = Math.round(src[index + srcPos]);
             }
         }
     }
@@ -280,7 +286,7 @@ public class MultiArrayCopyFactory<Source, Destination> {
         @Override
         public void arraycopy(float[] src, int srcPos, short[] dest, int destPos, int length) {
             for (int index = 0; index < length; index++) {
-                dest[index + destPos] = (short) src[index + srcPos];
+                dest[index + destPos] = (short) Math.round(src[index + srcPos]);
             }
         }
     }
@@ -554,10 +560,14 @@ public class MultiArrayCopyFactory<Source, Destination> {
     }
 
     /**
-     * @deprecated for internal use only. This ought to be private.
+     * @deprecated                for internal use only. This ought to be private.
+     * 
+     * @param      primitiveType  the primitive class of the elements in the source array
+     * @param      primitiveType2 the primitive class of the elements in the destination array
+     * 
+     * @return                    A suitable copier instance.
      */
-    @SuppressWarnings("javadoc")
-    public static MultiArrayCopyFactory<?, ?> select(Class<?> primitiveType, Class<?> primitiveType2) {
+    public static synchronized MultiArrayCopyFactory<?, ?> select(Class<?> primitiveType, Class<?> primitiveType2) {
         Map<Class<?>, MultiArrayCopyFactory<?, ?>> from = MultiArrayCopyFactory.FACTORIES.get(primitiveType);
         if (from != null) {
             MultiArrayCopyFactory<?, ?> to = from.get(primitiveType2);
@@ -570,8 +580,13 @@ public class MultiArrayCopyFactory<Source, Destination> {
 
     /**
      * See {@link System#arraycopy(Object, int, Object, int, int)}.
+     * 
+     * @param src     the source array
+     * @param srcPos  starting position in the source array
+     * @param dest    the destination array
+     * @param destPos starting position in the destonation array
+     * @param length  the number of elements to copy
      */
-    @SuppressWarnings("javadoc")
     public void arraycopy(Source src, int srcPos, Destination dest, int destPos, int length) {
         System.arraycopy(src, srcPos, dest, destPos, length);
     }

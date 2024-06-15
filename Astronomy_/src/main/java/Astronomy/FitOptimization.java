@@ -5,13 +5,14 @@ import Astronomy.multiplot.optimization.CompStarFitting;
 import Astronomy.multiplot.optimization.Optimizer;
 import astroj.MeasurementTable;
 import astroj.SpringUtil;
-import flanagan.analysis.Stat;
 import ij.IJ;
 import ij.Prefs;
 import ij.astro.gui.GenericSwingDialog;
 import ij.astro.io.prefs.Property;
 import ij.astro.logging.AIJLogger;
 import ij.astro.util.UIHelper;
+import ij.measure.ResultsTable;
+import ij.util.ArrayUtil;
 import ij.util.FontUtil;
 
 import javax.swing.*;
@@ -161,6 +162,7 @@ public class FitOptimization implements AutoCloseable {
         outlierRemoval.add(Box.createHorizontalGlue());
         var b = Box.createHorizontalBox();
         b = Box.createHorizontalBox();
+        b.add(b.add(Box.createHorizontalGlue()));
         var cleanLabel = new JLabel("N:");
         cleanLabel.setHorizontalAlignment(SwingConstants.CENTER);
         cleanLabel.setToolTipText("The number of sigma away from the model to clean.");
@@ -177,7 +179,7 @@ public class FitOptimization implements AutoCloseable {
             }
         });
         cleanSpin.setToolTipText("The number of sigma away from the model to clean.");
-        b.add(Box.createHorizontalGlue());
+        b.add(Box.createHorizontalStrut(5));
         b.add(cleanSpin);
         b.add(Box.createHorizontalGlue());
         outlierRemoval.add(b);
@@ -433,7 +435,7 @@ public class FitOptimization implements AutoCloseable {
 
         var sigma = switch (cleanMode) {
             case RMS -> MultiPlot_.sigma[curve];
-            case POINT_MEDIAN -> Stat.median(Arrays.copyOf(yerr[curve], nn[curve]));
+            case POINT_MEDIAN -> ArrayUtil.median(Arrays.copyOf(yerr[curve], nn[curve]));
             default -> 0;
         };
 
@@ -441,7 +443,7 @@ public class FitOptimization implements AutoCloseable {
         var res = new double[nn[curve]];
         if (!useTransitFit[curve]) {
             sigma = 0;
-            var med = Stat.median(Arrays.copyOf(y[curve], nn[curve]));
+            var med = ArrayUtil.median(Arrays.copyOf(y[curve], nn[curve]));
             for (int i = 0; i < nn[curve]; i++) {
                 res[i] = y[curve][i] - med;
                 sigma += res[i] * res[i];
@@ -559,6 +561,16 @@ public class FitOptimization implements AutoCloseable {
             return;
         }
 
+        for (int ap = 0; ap < numAps; ap++) {
+            if (table.getColumnIndex("Source_Error_" + (isRefStar[ap] ? "C" : "T") + (ap + 1))
+                    == ResultsTable.COLUMN_NOT_FOUND) {
+                IJ.error("Missing Source_Error columns for 1 or more stores.\nEnable in Aperture settings and rerun photometry.");
+                CardLayout cl = (CardLayout) compOptiCards.getLayout();
+                cl.next(compOptiCards);
+                return;
+            }
+        }
+
         setTargetStar();
 
         BigInteger initState = createBinaryRepresentation(selectable);
@@ -585,6 +597,16 @@ public class FitOptimization implements AutoCloseable {
             CardLayout cl = (CardLayout) compOptiCards.getLayout();
             cl.next(compOptiCards);
             return;
+        }
+
+        for (int ap = 0; ap < numAps; ap++) {
+            if (table.getColumnIndex("Source_Error_" + (isRefStar[ap] ? "C" : "T") + (ap + 1))
+                    == ResultsTable.COLUMN_NOT_FOUND) {
+                IJ.error("Missing Source_Error columns for 1 or more stores.\nEnable in Aperture settings and rerun photometry.");
+                CardLayout cl = (CardLayout) compOptiCards.getLayout();
+                cl.next(compOptiCards);
+                return;
+            }
         }
 
         setTargetStar();
@@ -622,6 +644,16 @@ public class FitOptimization implements AutoCloseable {
             return;
         }
 
+        for (int ap = 0; ap < numAps; ap++) {
+            if (table.getColumnIndex("Source_Error_" + (isRefStar[ap] ? "C" : "T") + (ap + 1))
+                    == ResultsTable.COLUMN_NOT_FOUND) {
+                IJ.error("Missing Source_Error columns for 1 or more stores.\nEnable in Aperture settings and rerun photometry.");
+                CardLayout cl = (CardLayout) compOptiCards.getLayout();
+                cl.next(compOptiCards);
+                return;
+            }
+        }
+
         setTargetStar();
 
         BigInteger initState = createBinaryRepresentation(selectable); //numAps has number of apertures
@@ -657,6 +689,16 @@ public class FitOptimization implements AutoCloseable {
             return;
         }
 
+        for (int ap = 0; ap < numAps; ap++) {
+            if (table.getColumnIndex("Source_Error_" + (isRefStar[ap] ? "C" : "T") + (ap + 1))
+                    == ResultsTable.COLUMN_NOT_FOUND) {
+                IJ.error("Missing Source_Error columns for 1 or more stores.\nEnable in Aperture settings and rerun photometry.");
+                CardLayout cl = (CardLayout) compOptiCards.getLayout();
+                cl.next(compOptiCards);
+                return;
+            }
+        }
+
         setTargetStar();
 
         BigInteger initState = createBinaryRepresentation(selectable); //numAps has number of apertures
@@ -675,6 +717,16 @@ public class FitOptimization implements AutoCloseable {
     private void testParamMin() {
         selectable = null;
         selectable2PrimaryIndex = null;
+
+        for (int ap = 0; ap < numAps; ap++) {
+            if (table.getColumnIndex("Source_Error_" + (isRefStar[ap] ? "C" : "T") + (ap + 1))
+                    == ResultsTable.COLUMN_NOT_FOUND) {
+                IJ.error("Missing Source_Error columns for 1 or more stores.\nEnable in Aperture settings and rerun photometry.");
+                CardLayout cl = (CardLayout) detOptiCards.getLayout();
+                cl.next(detOptiCards);
+                return;
+            }
+        }
 
         setSelectable((int) Arrays.stream(MultiPlot_.detrendIndex[curve]).filter(i -> i != 0).count());
 
@@ -706,6 +758,16 @@ public class FitOptimization implements AutoCloseable {
             CardLayout cl = (CardLayout) detOptiCards.getLayout();
             cl.next(detOptiCards);
             return;
+        }
+
+        for (int ap = 0; ap < numAps; ap++) {
+            if (table.getColumnIndex("Source_Error_" + (isRefStar[ap] ? "C" : "T") + (ap + 1))
+                    == ResultsTable.COLUMN_NOT_FOUND) {
+                IJ.error("Missing Source_Error columns for 1 or more stores.\nEnable in Aperture settings and rerun photometry.");
+                CardLayout cl = (CardLayout) detOptiCards.getLayout();
+                cl.next(detOptiCards);
+                return;
+            }
         }
 
         if (MultiPlot_.refStarFrame == null) MultiPlot_.showRefStarJPanel();

@@ -163,7 +163,7 @@ public class BinaryTableHDU extends TableHDU<BinaryTable> {
         myHeader.addValue(Standard.NAXISn.n(1), myData.getRowBytes());
         Cursor<String, HeaderCard> c = myHeader.iterator();
         c.end();
-        myData.fillForColumn(c, n - 1);
+        myData.fillForColumn(myHeader, c, n - 1);
         return super.addColumn(data);
     }
 
@@ -244,6 +244,13 @@ public class BinaryTableHDU extends TableHDU<BinaryTable> {
      */
     public BinaryTable.ColumnDesc getColumnDescriptor(int col) {
         return myData.getDescriptor(col);
+    }
+
+    @Override
+    public void setColumnName(int index, String name, String comment)
+            throws IndexOutOfBoundsException, HeaderCardException {
+        super.setColumnName(index, name, comment);
+        getColumnDescriptor(index).name(name);
     }
 
     /**

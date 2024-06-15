@@ -1,4 +1,6 @@
 package ij.util;
+import ij.astro.AstroImageJ;
+
 import java.util.Arrays;
 
 public class ArrayUtil {
@@ -160,5 +162,54 @@ public class ArrayUtil {
 			str = str + ", " + values[i];
 		}
 		return str + "}";
+	}
+
+	@AstroImageJ(reason = "Avoid instance creation")
+	public static double median(double[] arr) {
+		return unsortedMedian(arr);
+	}
+
+	@AstroImageJ(reason = "Avoid instance creation")
+	public static double unsortedMedian(double[] arr) {
+		var a2 = Arrays.copyOf(arr, arr.length);
+		Arrays.parallelSort(a2);
+		return sortedMedian(a2);
+	}
+
+	@AstroImageJ(reason = "Avoid instance creation")
+	public static double sortedMedian(double[] arr) {
+		var n = arr.length;
+
+		if (n == 0) {
+			return Double.NaN;
+		}
+
+		var half = n/2;
+
+		if (n % 2 != 0) {
+			return arr[half];
+		} else {
+			return (arr[half-1] + arr[half])/2D;
+		}
+	}
+
+	@AstroImageJ(reason = "Avoid instance creation")
+	public static double mean(double[] arr) {
+		return average(arr);
+	}
+
+	@AstroImageJ(reason = "Avoid instance creation")
+	public static double average(double[] arr) {
+		return Arrays.stream(arr).average().orElse(Double.NaN);
+	}
+
+	@AstroImageJ(reason = "Avoid instance creation")
+	public static double min(double[] arr) {
+		return Arrays.stream(arr).filter(d -> !Double.isNaN(d)).min().orElse(Double.NaN);
+	}
+
+	@AstroImageJ(reason = "Avoid instance creation")
+	public static double max(double[] arr) {
+		return Arrays.stream(arr).filter(d -> !Double.isNaN(d)).max().orElse(Double.NaN);
 	}
 }

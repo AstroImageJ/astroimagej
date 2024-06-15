@@ -753,7 +753,8 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	private boolean isLco(BasicHDU<?>[] hdus) {
 		if (hdus.length == 1) return false;
 		var x = hdus[1].getHeader().getStringValue("ORIGIN");
-		return "LCOGT".equals(x == null ? null : x.trim());
+		var d = hdus[1].getHeader().getStringValue(EXTNAME);
+		return "LCOGT".equals(x == null ? null : x.trim()) && "SCI".equals(d == null ? null : d.trim());
 	}
 
 	/**

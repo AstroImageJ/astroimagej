@@ -16,7 +16,6 @@ public class KeplerSplineSettings {
     public final Property<Double> minGapWidth = makePlotProperty(0.2);
     public final Property<Double> dataCleaningCoeff = makePlotProperty(3D);
     public final Property<Integer> dataCleaningTries = makePlotProperty(5);
-    public final Property<Integer> smoothLength = makePlotProperty(31);
     public final Property<Boolean> maskTransit = makePlotProperty(true);
     public final Property<Boolean> maskTrimmedData = makePlotProperty(false);
     public final Property<Boolean> windowOpened;
@@ -27,6 +26,12 @@ public class KeplerSplineSettings {
         this.curve = curve;
         windowLocation = new Property<>(new Point(), "", String.valueOf(curve), this);
         windowOpened = new Property<>(false, "", String.valueOf(curve), this);
+        knotDensity.setLoadValidator(loadedValue -> {
+            if (loadedValue == KnotDensity.LEGACY_SMOOTHER) {
+                return KnotDensity.FIXED;
+            }
+            return loadedValue;
+        });
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -61,6 +66,7 @@ public class KeplerSplineSettings {
     public enum KnotDensity {
         AUTO,
         FIXED,
+        // Removed legacy smoother, this value remains to aid in value migration
         LEGACY_SMOOTHER,
     }
 

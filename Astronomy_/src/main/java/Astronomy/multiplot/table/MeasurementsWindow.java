@@ -301,10 +301,19 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
     }
 
     public void scrollToBottom() {
-        var cellRect = jTable.getCellRect(jTable.getRowCount(), 0, true);
-        var visibleRect = jTable.getVisibleRect();
-        cellRect.x = visibleRect.x;
-        jTable.scrollRectToVisible(cellRect);
+        if (SwingUtilities.isEventDispatchThread()) {
+            var cellRect = jTable.getCellRect(jTable.getRowCount(), 0, true);
+            var visibleRect = jTable.getVisibleRect();
+            cellRect.x = visibleRect.x;
+            jTable.scrollRectToVisible(cellRect);
+        } else {
+            SwingUtilities.invokeLater(() -> {
+                var cellRect = jTable.getCellRect(jTable.getRowCount(), 0, true);
+                var visibleRect = jTable.getVisibleRect();
+                cellRect.x = visibleRect.x;
+                jTable.scrollRectToVisible(cellRect);
+            });
+        }
     }
 
     public void setSelection(int rowStart1, int rowEnd1) {

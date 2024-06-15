@@ -31,23 +31,19 @@ package nom.tam.util;
  * #L%
  */
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
-import java.util.Random;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
 import nom.tam.fits.FitsFactory;
 import nom.tam.fits.HeaderCard;
 import nom.tam.fits.HeaderCardException;
 import nom.tam.fits.LongValueException;
 import nom.tam.fits.header.hierarch.Hierarch;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.Random;
+
+import static org.junit.Assert.*;
 
 public class ComplexValueTest {
 
@@ -153,10 +149,13 @@ public class ComplexValueTest {
 
     @Test
     public void testComplexFromString() throws Exception {
-        // Missing brackets
         ComplexValue z = new ComplexValue("(5566.2,-1123.1)");
-        assertEquals(5566.2, z.re(), 1 - 10);
-        assertEquals(-1123.1, z.im(), 1 - 10);
+        assertEquals(5566.2, z.re(), 1e-10);
+        assertEquals(-1123.1, z.im(), 1e-10);
+
+        ComplexValue.Float zf = new ComplexValue.Float("(5566.2,-1123.1)");
+        assertEquals(5566.2, zf.re(), 1e-6);
+        assertEquals(-1123.1, zf.im(), 1e-6);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -383,6 +382,12 @@ public class ComplexValueTest {
             thrown = true;
         }
         assertTrue(thrown);
+    }
+
+    @Test
+    public void testToArray() throws Exception {
+        Assert.assertArrayEquals(new double[] {1.0, 2.0}, (double[]) new ComplexValue(1.0, 2.0).toArray(), 1e-12);
+        Assert.assertArrayEquals(new float[] {1.0F, 2.0F}, (float[]) new ComplexValue.Float(1.0F, 2.0F).toArray(), 1e-6F);
     }
 
 }

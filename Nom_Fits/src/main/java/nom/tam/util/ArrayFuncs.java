@@ -143,45 +143,51 @@ public final class ArrayFuncs {
 
     /**
      * Converts a numerical array to a specified element type. This method supports conversions only among the primitive
-     * numeric types.
-     *
-     * @return         a new array with the requested element type.
+     * numeric types, and {@link ComplexValue} types (as of version 1.20). When converting primitive arrays to complex
+     * values, the trailing dimension must be 2, corresponding to the real and imaginary components of the complex
+     * values stored.
      * 
-     * @param  array   a numerical array or one or more dimensions
+     * @param  array   a numerical array of one or more dimensions
      * @param  newType the desired output type. This should be one of the class descriptors for primitive numeric data,
-     *                     e.g., <code>double.class</code>.
+     *                     e.g., <code>double.class</code>, or else a {@link ComplexValue} type (also supported as of
+     *                     1.20).
+     * 
+     * @return         a new array with the requested element type, which may also be composed of {@link ComplexValue}
+     *                     types as of version 1.20.
      * 
      * @see            #convertArray(Object, Class, boolean)
      */
     public static Object convertArray(Object array, Class<?> newType) {
-        /*
-         * We break this up into two steps so that users can reuse an array many times and only allocate a new array
-         * when needed.
-         */
-        /* First create the full new array. */
-        Object mimic = mimicArray(array, newType);
-        /* Now copy the info into the new array */
-        copyInto(array, mimic);
-        return mimic;
+        if (newType.equals(getBaseClass(array))) {
+
+            Object copy = Array.newInstance(newType, getDimensions(array));
+            copyArray(array, copy);
+            return copy;
+        }
+        return convertArray(array, newType, null);
     }
 
     /**
      * Converts a numerical array to a specified element type, returning the original if type conversion is not needed.
-     * This method supports conversions only among the primitive numeric types.
+     * This method supports conversions only among the primitive numeric types originally. Support for
+     * {@link ComplexValue} types was added as of version 1.20. When converting primitive arrays to complex values, the
+     * trailing dimension must be 2, corresponding to the real and imaginary components of the complex values stored.
      *
+     * @param  array   a numerical array of one or more dimensions
+     * @param  newType the desired output type. This should be one of the class descriptors for primitive numeric data,
+     *                     e.g., <code>double.class</code> r else a {@link ComplexValue} type (also supported as of
+     *                     1.20).
+     * @param  reuse   If the original (rather than a copy) should be returned when possible for the same type.
+     * 
      * @return         a new array with the requested element type, or possibly the original array if it readily matches
      *                     the type and <code>reuse</code> is enabled.
-     *
-     * @param  array   a numerical array or one or more dimensions
-     * @param  newType the desired output type. This should be one of the class descriptors for primitive numeric data,
-     *                     e.g., <code>double.class</code>.
-     * @param  reuse   If set, and the requested type is the same as the original, then the original is returned.
      * 
      * @see            #convertArray(Object, Class)
+     * @see            #convertArray(Object, Class, Quantizer)
      */
     public static Object convertArray(Object array, Class<?> newType, boolean reuse) {
-        if (getBaseClass(array) == newType && reuse) {
-            return array;
+        if (reuse) {
+            return convertArray(array, newType, null);
         }
         return convertArray(array, newType);
     }
@@ -189,13 +195,13 @@ public final class ArrayFuncs {
     /**
      * Copy one array into another. This function copies the contents of one array into a previously allocated array.
      * The arrays must agree in type and size.
-     * 
-     * @deprecated                          No longer used within the library itself.
      *
      * @param      original                 The array to be copied.
      * @param      copy                     The array to be copied into. This array must already be fully allocated.
      *
      * @throws     IllegalArgumentException if the two arrays do not match in type or size.
+     * 
+     * @deprecated                          (<i>for internal use</i>)
      */
     @Deprecated
     public static void copyArray(Object original, Object copy) throws IllegalArgumentException {
@@ -558,7 +564,7 @@ public final class ArrayFuncs {
         if (o instanceof Object[]) {
             long count = 0;
             for (Object e : (Object[]) o) {
-                count += nLElements(e);
+                count += countElements(e);
             }
             return count;
         }
@@ -730,6 +736,7 @@ public final class ArrayFuncs {
      * 
      * @throws IllegalArgumentException if the argument is not suitable for conversion to complex values.
      * 
+     * @see                             #decimalsToComplex(Object, Object)
      * @see                             #complexToDecimals(Object, Class)
      * 
      * @since                           1.18
@@ -737,11 +744,11 @@ public final class ArrayFuncs {
     public static Object decimalsToComplex(Object array) throws IllegalArgumentException {
         if (array instanceof float[]) {
             float[] f = (float[]) array;
+            if (f.length == 2) {
+                return new ComplexValue.Float(f[0], f[1]);
+            }
             if (f.length % 2 == 1) {
                 throw new IllegalArgumentException("Odd number floats for complex conversion: " + f.length);
-            }
-            if (f.length == 2) {
-                return new ComplexValue(f[0], f[1]);
             }
             ComplexValue[] z = new ComplexValue[f.length >>> 1];
             for (int i = 0; i < f.length; i += 2) {
@@ -752,11 +759,11 @@ public final class ArrayFuncs {
 
         if (array instanceof double[]) {
             double[] d = (double[]) array;
-            if (d.length % 2 == 1) {
-                throw new IllegalArgumentException("Odd number floats for complex conversion: " + d.length);
-            }
             if (d.length == 2) {
                 return new ComplexValue(d[0], d[1]);
+            }
+            if (d.length % 2 == 1) {
+                throw new IllegalArgumentException("Odd number floats for complex conversion: " + d.length);
             }
             ComplexValue[] z = new ComplexValue[d.length >>> 1];
             for (int i = 0; i < d.length; i += 2) {
@@ -781,6 +788,397 @@ public final class ArrayFuncs {
         }
 
         throw new IllegalArgumentException("Cannot convert to complex values: " + array.getClass().getName());
+    }
+
+    /**
+     * Converts separate but matched real valued arrays, containing the real an imaginary parts respectively, to
+     * {@link ComplexValue} or arrays thereof. The size and shape of the matching input arrays is otherwise maintained,
+     * apart from coalescing pairs of real values into <code>ComplexValue</code> objects.
+     * 
+     * @param  re                       an array of <code>float</code> or <code>double</code> elements containing the
+     *                                      real parts of the complex values.
+     * @param  im                       a matching array of the same type and shape as the real parts which contains the
+     *                                      imaginary parts of the complex values.
+     * 
+     * @return                          one of more complex values
+     * 
+     * @throws IllegalArgumentException if the argument is not suitable for conversion to complex values.
+     * 
+     * @see                             #decimalsToComplex(Object)
+     * 
+     * @since                           1.20
+     */
+    public static Object decimalsToComplex(Object re, Object im) {
+        if (!re.getClass().equals(im.getClass())) {
+            throw new IllegalArgumentException(
+                    "Mismatched components: " + re.getClass().getName() + " vs " + re.getClass().getName());
+        }
+
+        if (re instanceof float[]) {
+            float[] fre = (float[]) re;
+            float[] fim = (float[]) im;
+            ComplexValue.Float[] z = new ComplexValue.Float[fre.length];
+            for (int i = fre.length; --i >= 0;) {
+                z[i] = new ComplexValue.Float(fre[i], fim[i]);
+            }
+            return z;
+        }
+        if (re instanceof double[]) {
+            double[] dre = (double[]) re;
+            double[] dim = (double[]) im;
+            ComplexValue[] z = new ComplexValue[dre.length];
+            for (int i = dre.length; --i >= 0;) {
+                z[i] = new ComplexValue(dre[i], dim[i]);
+            }
+            return z;
+        }
+        if (re instanceof Object[]) {
+            Object[] ore = (Object[]) re;
+            Object[] oim = (Object[]) im;
+            Object[] z = null;
+            for (int i = ore.length; --i >= 0;) {
+                Object e = decimalsToComplex(ore[i], oim[i]);
+                if (z == null) {
+                    z = (Object[]) Array.newInstance(e.getClass(), ore.length);
+                }
+                z[i] = e;
+            }
+            return z;
+        }
+        throw new IllegalArgumentException("Cannot convert components to complex: " + re.getClass().getName());
+    }
+
+    private static void decimalToInteger(Object from, Object to, Quantizer q) {
+        if (from instanceof Object[]) {
+            Object[] a = (Object[]) from;
+            Object[] b = (Object[]) to;
+            for (int i = 0; i < a.length; i++) {
+                decimalToInteger(a[i], b[i], q);
+            }
+        } else {
+            for (int i = Array.getLength(from); --i >= 0;) {
+                long l = q.toLong(from instanceof double[] ? ((double[]) from)[i] : ((float[]) from)[i]);
+
+                if (to instanceof byte[]) {
+                    ((byte[]) to)[i] = (byte) l;
+                } else if (to instanceof short[]) {
+                    ((short[]) to)[i] = (short) l;
+                } else if (to instanceof int[]) {
+                    ((int[]) to)[i] = (int) l;
+                } else {
+                    ((long[]) to)[i] = l;
+                }
+            }
+        }
+    }
+
+    private static void integerToDecimal(Object from, Object to, Quantizer q) {
+        if (from instanceof Object[]) {
+            Object[] a = (Object[]) from;
+            Object[] b = (Object[]) to;
+            for (int i = 0; i < a.length; i++) {
+                integerToDecimal(a[i], b[i], q);
+            }
+        } else {
+            for (int i = Array.getLength(from); --i >= 0;) {
+                double d = q.toDouble(Array.getLong(from, i));
+
+                if (to instanceof float[]) {
+                    ((float[]) to)[i] = (float) d;
+                } else {
+                    ((double[]) to)[i] = d;
+                }
+            }
+        }
+    }
+
+    /**
+     * Converts a numerical array to a specified element type, returning the original if type conversion is not needed.
+     * If the conversion is from decimal to integer type, or vice-versa, an optional quantization may be supplied to to
+     * perform the integer-decimal conversion of the elements. This method supports conversions only among the primitive
+     * numeric types and also {@link ComplexValue} type.
+     *
+     * @param  array                    a numerical array of one or more dimensions
+     * @param  newType                  the desired output type. This should be one of the class descriptors for
+     *                                      primitive numeric data, e.g., <code>double.class</code>, or else a
+     *                                      {@link ComplexValue} or {@link ComplexValue.Float}.
+     * @param  quant                    optional qunatizer for integer-decimal conversion, or <code>null</code> to use
+     *                                      simply rounding.
+     * 
+     * @return                          a new array with the requested element type, or possibly the original array if
+     *                                      it readily matches the type and <code>reuse</code> is enabled.
+     * 
+     * @throws IllegalArgumentException if the input is not an array, or its elements are not a supported type or if the
+     *                                      new type is not supported.
+     * 
+     * @see                             #convertArray(Object, Class)
+     * @see                             #convertArray(Object, Class, Quantizer)
+     * 
+     * @since                           1.20
+     */
+    public static Object convertArray(Object array, Class<?> newType, Quantizer quant) throws IllegalArgumentException {
+
+        if (!array.getClass().isArray()) {
+            throw new IllegalArgumentException("Not an array: " + array.getClass().getName());
+        }
+
+        Class<?> fromType = getBaseClass(array);
+
+        if (newType.isAssignableFrom(fromType)) {
+            return array;
+        }
+
+        boolean toComplex = ComplexValue.class.isAssignableFrom(newType);
+        if (toComplex) {
+            newType = (ComplexValue.Float.class.isAssignableFrom(newType) ? float.class : double.class);
+        }
+
+        if (!newType.isPrimitive() || newType == boolean.class || newType == char.class) {
+            throw new IllegalArgumentException("Not a supported numerical type: " + newType.getName());
+        }
+
+        boolean toInteger = (newType != float.class && newType != double.class);
+
+        if (ComplexValue.class.isAssignableFrom(fromType)) {
+            fromType = (ComplexValue.Float.class.isAssignableFrom(fromType) ? float.class : double.class);
+            array = complexToDecimals(array, fromType);
+        }
+
+        boolean fromInteger = (fromType != float.class && fromType != double.class);
+
+        Object t = Array.newInstance(newType, getDimensions(array));
+
+        if (quant != null) {
+            if (fromInteger && !toInteger) {
+                integerToDecimal(array, t, quant);
+            } else if (!fromInteger && toInteger) {
+                decimalToInteger(array, t, quant);
+            } else {
+                MultiArrayCopier.copyInto(array, t);
+            }
+        } else {
+            MultiArrayCopier.copyInto(array, t);
+        }
+
+        if (toComplex) {
+            t = decimalsToComplex(t);
+        }
+
+        return t;
+    }
+
+    /**
+     * Obtains a sparse sampling of from an array of one or more dimensions.
+     * 
+     * @param  orig                      the original array
+     * @param  step                      the sampling step size along all dimensions for a subsampled slice. A negative
+     *                                       value indicates that the sampling should proceed in the reverse direction
+     *                                       along every axis.
+     * 
+     * @return                           the requested sampling from the original. The returned array may share data
+     *                                       with the original, and so modifications to either may affect the other. The
+     *                                       orginal object is returned if it is not an array.
+     * 
+     * @throws IndexOutOfBoundsException if any of the indices for the requested slice are out of bounds for the
+     *                                       original. That is if the original does not fully contain the requested
+     *                                       slice. Or, if the from and size arguments have differing lengths.
+     * 
+     * @since                            1.20
+     * 
+     * @author                           Attila Kovacs
+     * 
+     * @see                              #sample(Object, int[])
+     * @see                              #sample(Object, int[], int[], int[])
+     */
+    public static Object sample(Object orig, int step) throws IndexOutOfBoundsException {
+        int[] n = getDimensions(orig);
+        Arrays.fill(n, step);
+        return sample(orig, n);
+    }
+
+    /**
+     * Obtains a sparse sampling of from an array of one or more dimensions.
+     * 
+     * @param  orig                      the original array
+     * @param  step                      the sampling step size along each dimension for a subsampled slice. Negative
+     *                                       values indicate that the sampling should proceed in the reverse direction
+     *                                       along the given axis.
+     * 
+     * @return                           the requested sampling from the original. The returned array may share data
+     *                                       with the original, and so modifications to either may affect the other. The
+     *                                       orginal object is returned if it is not an array.
+     * 
+     * @throws IndexOutOfBoundsException if any of the indices for the requested slice are out of bounds for the
+     *                                       original. That is if the original does not fully contain the requested
+     *                                       slice. Or, if the from and size arguments have differing lengths.
+     * 
+     * @since                            1.20
+     * 
+     * @author                           Attila Kovacs
+     * 
+     * @see                              #sample(Object, int)
+     * @see                              #sample(Object, int[], int[], int[])
+     */
+    public static Object sample(Object orig, int[] step) throws IndexOutOfBoundsException {
+        return sample(orig, null, null, step);
+    }
+
+    /**
+     * Obtains a slice (subarray) from an array of one or more dimensions.
+     * 
+     * @param  orig                      the original array
+     * @param  from                      the starting indices for the slice in the original array. It should have at
+     *                                       most as many elements as there are array dimensions, but it can also have
+     *                                       fewer.
+     * 
+     * @return                           the requested slice from the original. The returned array may share data with
+     *                                       the original, and so modifications to either may affect the other. The
+     *                                       orginal object is returned if it is not an array.
+     * 
+     * @throws IndexOutOfBoundsException if any of the indices for the requested slice are out of bounds for the
+     *                                       original. That is if the original does not fully contain the requested
+     *                                       slice. Or, if the from and size arguments have differing lengths.
+     * 
+     * @since                            1.20
+     * 
+     * @author                           Attila Kovacs
+     * 
+     * @see                              #slice(Object, int[], int[])
+     * @see                              #sample(Object, int[], int[], int[])
+     */
+    public static Object slice(Object orig, int[] from) throws IndexOutOfBoundsException {
+        return slice(orig, from, null);
+    }
+
+    /**
+     * Obtains a slice (subarray) from an array of one or more dimensions.
+     * 
+     * @param  orig                      the original array
+     * @param  from                      the starting indices for the slice in the original array. It should have at
+     *                                       most as many elements as there are array dimensions, but it can also have
+     *                                       fewer.
+     * @param  size                      the size of the slice. Negative values can indicate moving backwards in the
+     *                                       original array (but forward in the slice -- resulting in a flipped axis). A
+     *                                       <code>null</code> size argument can be used to sample the full original.
+     *                                       The slice will end at index <code>from[k] + size[k]</code> in dimension
+     *                                       <code>k</code> in the original (not including the ending index). It should
+     *                                       have the same number of elements as the <code>from</code> argument.
+     * 
+     * @return                           the requested slice from the original. The returned array may share data with
+     *                                       the original, and so modifications to either may affect the other. The
+     *                                       orginal object is returned if it is not an array.
+     * 
+     * @throws IndexOutOfBoundsException if any of the indices for the requested slice are out of bounds for the
+     *                                       original. That is if the original does not fully contain the requested
+     *                                       slice. Or, if the from and size arguments have differing lengths.
+     * 
+     * @since                            1.20
+     * 
+     * @author                           Attila Kovacs
+     * 
+     * @see                              #slice(Object, int[])
+     * @see                              #sample(Object, int[], int[], int[])
+     */
+    public static Object slice(Object orig, int[] from, int[] size) throws IndexOutOfBoundsException {
+        int[] step = null;
+
+        if (size != null) {
+            step = new int[size.length];
+            for (int i = 0; i < size.length; i++) {
+                step[i] = size[i] < 0 ? -1 : 1;
+            }
+        }
+
+        return sample(orig, from, size, step, 0);
+    }
+
+    /**
+     * Obtains a sparse sampling from an array of one or more dimensions.
+     * 
+     * @param  orig                      the original array
+     * @param  from                      the starting indices in the original array at which to start sampling. It
+     *                                       should have at most as many elements as there are array dimensions, but it
+     *                                       can also have fewer. A <code>null</code> argument can be used to sample
+     *                                       from the start or end of the array (depending on the direction).
+     * @param  size                      the size of the sampled area in the original along each dimension. The
+     *                                       signature of the values is irrelevant as the direction of sampling is
+     *                                       determined by the step argument. Zero entries can be used to indicate that
+     *                                       the full array should be sampled along the given dimension, while a
+     *                                       <code>null</code> argument will sample the full array in all dimensions.
+     * @param  step                      the sampling step size along each dimension for a subsampled slice. Negative
+     *                                       values indicate sampling the original in the reverse direction along the
+     *                                       given dimension. 0 values are are automatically bumped to 1 (full
+     *                                       sampling), and a <code>null</code> argument is understood to mean full
+     *                                       sampling along all dimensions.
+     * 
+     * @return                           the requested sampling from the original. The returned array may share data
+     *                                       with the original, and so modifications to either may affect the other. The
+     *                                       orginal object is returned if it is not an array.
+     * 
+     * @throws IndexOutOfBoundsException if any of the indices for the requested slice are out of bounds for the
+     *                                       original. That is if the original does not fully contain the requested
+     *                                       slice. Or, if the from and size arguments have differing lengths.
+     * 
+     * @since                            1.20
+     * 
+     * @author                           Attila Kovacs
+     * 
+     * @see                              #sample(Object, int)
+     * @see                              #sample(Object, int[])
+     * @see                              #slice(Object, int[], int[])
+     */
+    public static Object sample(Object orig, int[] from, int[] size, int[] step) throws IndexOutOfBoundsException {
+        return sample(orig, from, size, step, 0);
+    }
+
+    private static Object sample(Object orig, int[] from, int[] size, int[] step, int idx)
+            throws IndexOutOfBoundsException {
+
+        // If leaf, return it as is...
+        if (!orig.getClass().isArray() || (from != null && idx == from.length)) {
+            return orig;
+        }
+
+        int l = Array.getLength(orig);
+        int ndim = from == null ? getDimensions(orig).length : from.length;
+
+        // Check if reverse sampling
+        boolean isReversed = (step != null && step[idx] < 0);
+
+        int ifrom = from == null ? (isReversed ? l - 1 : 0) : from[idx];
+
+        int isize = size == null ? 0 : Math.abs(size[idx]);
+        if (isize == 0) {
+            isize = l - ifrom;
+        }
+
+        int ito = ifrom + (isReversed ? -isize : isize);
+        if (ifrom < 0 || ito < -1 || ifrom >= l || ito > l) {
+            throw new IndexOutOfBoundsException("Sampled bounds are out of range for original array");
+        }
+
+        int istep = step == null ? 1 : step[idx];
+        if (istep == 0) {
+            istep = 1;
+        }
+
+        int astep = Math.abs(istep);
+        int n = Math.abs((isize + astep - 1) / astep);
+
+        Object slice = Array.newInstance(orig.getClass().getComponentType(), n);
+
+        if (!isReversed && ndim == 1 && istep == 1) {
+            // Special case for fast in-order slicing along last dim...
+            System.arraycopy(orig, ifrom, slice, 0, isize);
+        } else {
+            // Generic sampling with the parameters...
+            for (int i = 0; i < n; i++) {
+                Object efrom = Array.get(orig, ifrom + i * istep);
+                Array.set(slice, i, sample(efrom, from, size, step, idx + 1));
+            }
+        }
+
+        return slice;
     }
 
 }

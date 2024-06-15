@@ -65,8 +65,11 @@ public class CompressedTableData extends BinaryTable {
     /**
      * (<i>for internal use</i>) This should only be called by {@link CompressedTableHDU}, and should have reduced
      * visibility accordingly.
+     * 
+     * @param  header        the compressed header
+     * 
+     * @throws FitsException if the table cannot be compressed.
      */
-    @SuppressWarnings("javadoc")
     public void compress(Header header) throws FitsException {
         discardVLAs();
 
@@ -113,9 +116,11 @@ public class CompressedTableData extends BinaryTable {
     }
 
     /**
-     * @deprecated (<i>for internal use</i>) This should only be called by {@link CompressedTableHDU}, and its
-     *                 visibility will be reduced accordingly in the future, not to mention that it should take a
-     *                 BinaryTable as its argument.
+     * @deprecated      (<i>for internal use</i>) This should only be called by {@link CompressedTableHDU}, and its
+     *                      visibility will be reduced accordingly in the future, not to mention that it should take a
+     *                      BinaryTable as its argument.
+     * 
+     * @param      data The original (uncompressed) table data.
      */
     @SuppressWarnings("javadoc")
     public void prepareUncompressedData(ColumnTable<?> data) throws FitsException {

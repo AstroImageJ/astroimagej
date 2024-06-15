@@ -33,7 +33,6 @@ package nom.tam.fits;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import nom.tam.fits.header.Bitpix;
-import nom.tam.fits.header.Compression;
 import nom.tam.fits.header.NonStandard;
 import nom.tam.fits.header.Standard;
 import nom.tam.util.*;
@@ -41,6 +40,8 @@ import nom.tam.util.type.ElementType;
 
 import java.io.IOException;
 import java.lang.reflect.Array;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.text.DecimalFormat;
 import java.text.ParsePosition;
 import java.util.ArrayList;
@@ -123,6 +124,13 @@ public class BinaryTable extends AbstractTableData implements Cloneable {
         private boolean isBits;
 
         /**
+         * User defined column name
+         */
+        private String name;
+
+        private Quantizer quant;
+
+        /**
          * Creates a new column descriptor with default settings and 32-bit integer heap pointers.
          */
         protected ColumnDesc() {
@@ -197,6 +205,79 @@ public class BinaryTable extends AbstractTableData implements Cloneable {
         public ColumnDesc(Class<?> base, int... dim) throws FitsException {
             this(base);
             setBoxedShape(dim);
+        }
+
+        /**
+         * Sets a user-specified name for this column. The specified name will be used as the TTYPEn value for this
+         * column.
+         * 
+         * @param  value                    The new name for this column.
+         * 
+         * @return                          itself, to support builder patterns.
+         * 
+         * @throws IllegalArgumentException If the name contains characters outside of the ASCII range of 0x20 - 0x7F
+         *                                      allowed by FITS.
+         * 
+         * @see                             #name()
+         * @see                             #getDescriptor(String)
+         * @see                             #indexOf(String)
+         * @see                             #addColumn(ColumnDesc)
+         * 
+         * @since                           1.20
+         * 
+         * @author                          Attila Kovacs
+         */
+        public ColumnDesc name(String value) throws IllegalArgumentException {
+            HeaderCard.validateChars(value);
+            this.name = value;
+            return this;
+        }
+
+        /**
+         * Returns the name of this column, as it was stored or would be stored by a TTYPEn value in the FITS header.
+         * 
+         * @return the name of this column
+         * 
+         * @see    #name(String)
+         * 
+         * @since  1.20
+         * 
+         * @author Attila Kovacs
+         */
+        public String name() {
+            return this.name;
+        }
+
+        /**
+         * Returns the conversion between decimal and integer data representations for the column data.
+         * 
+         * @return the quantizer that converts between floating-point and integer data representations, which may be
+         *             <code>null</code>.
+         * 
+         * @see    #setQuantizer(Quantizer)
+         * 
+         * @since  1.20
+         */
+        public Quantizer getQuantizer() {
+            return quant;
+        }
+
+        /**
+         * Sets the conversion between decimal and integer data representations for the column data. If the table is
+         * read from a FITS input, the column's quantizer is automatically set if the Table HDU's header defines any of
+         * the TSCALn, TZEROn, or TNULLn keywords for the column. Users can override that by specifying another quatizer
+         * to use for the column, or dicard qunatizing by calling this method with a <code>null</code>argument.
+         * 
+         * @param q the quantizer that converts between floating-point and integer data representations, or
+         *              <code>null</code> to not use any quantization, and instead rely on the generic rounding for
+         *              decimal-integer conversions for this column.
+         * 
+         * @see     #getQuantizer()
+         * 
+         * @since   1.20
+         */
+        public void setQuantizer(Quantizer q) {
+            this.quant = q;
         }
 
         /**
@@ -608,6 +689,19 @@ public class BinaryTable extends AbstractTableData implements Cloneable {
          */
         public final boolean isComplex() {
             return isComplex;
+        }
+
+        /**
+         * Checks if this column contains numerical values, such as any primitive number type (e.g.
+         * <code>nt.class</code> or <code>double.class</code>) or else a {@link ComplexValue} type. type.
+         * 
+         * @return <code>true</code> if this column contains numerical data, including complex-valued data. String,
+         *             bits, and FITS logicals are not numerical (but all other column types are).
+         * 
+         * @since  1.20
+         */
+        public final boolean isNumeric() {
+            return !isLogical() && !isBits() && !isString();
         }
 
         /**
@@ -1576,10 +1670,16 @@ public class BinaryTable extends AbstractTableData implements Cloneable {
     }
 
     /**
+     * <p>
      * Adds a column of complex values stored as the specified decimal type of components in the FITS. While you can
      * also use {@link #addColumn(Object)} to add complex values, that method will always add them as 64-bit
      * double-precision values. So, this method is provided to allow users more control over how they want their complex
      * data be stored.
+     * </p>
+     * <p>
+     * The new column will be named as "Column <i>n</i>" (where <i>n</i> is the 1-based index of the column) by default,
+     * which can be changed by {@link ColumnDesc#name(String)} after.
+     * </p>
      * 
      * @param  o             A {@link ComplexValue} or an array (possibly multi-dimensional) thereof.
      * @param  decimalType   <code>float.class</code> or <code>double.class</code> (all other values default to
@@ -1605,10 +1705,16 @@ public class BinaryTable extends AbstractTableData implements Cloneable {
     }
 
     /**
+     * <p>
      * Adds a column of string values (one per row), optimized for storage size. Unlike {@link #addColumn(Object)},
      * which always store strings in fixed format, this method will automatically use variable-length columns for
      * storing the strings if their lengths vary sufficiently to make that form of storage more efficient, or if the
      * array contains nulls (which may be defined later).
+     * </p>
+     * <p>
+     * The new column will be named as "Column <i>n</i>" (where <i>n</i> is the 1-based index of the column) by default,
+     * which can be changed by {@link ColumnDesc#name(String)} after.
+     * </p>
      * 
      * @param  o             A 1D string array, with 1 string element per table row. The array may contain
      *                           <code>null</code> entries, in which case variable-length columns will be used, since
@@ -1644,8 +1750,14 @@ public class BinaryTable extends AbstractTableData implements Cloneable {
     }
 
     /**
+     * <p>
      * Adds a column of bits. This uses much less space than if adding boolean values as logicals (the default behaviot
      * of {@link #addColumn(Object)}, since logicals take up 1 byte per element, whereas bits are really single bits.
+     * </p>
+     * <p>
+     * The new column will be named as "Column <i>n</i>" (where <i>n</i> is the 1-based index of the column) by default,
+     * which can be changed by {@link ColumnDesc#name(String)} after.
+     * </p>
      * 
      * @param  o                        An any-dimensional array of <code>boolean</code> values.
      * 
@@ -1666,8 +1778,16 @@ public class BinaryTable extends AbstractTableData implements Cloneable {
     }
 
     /**
+     * <p>
      * Adds a new empty column to the table to the specification. This is useful when the user may want ot have more
-     * control on how columns are configured before calling {@link #addRow(Object[])} to start populating.
+     * control on how columns are configured before calling {@link #addRow(Object[])} to start populating. The new
+     * column will be named as "Column <i>n</i>" (where <i>n</i> is the 1-based index of the column) by default, unless
+     * already named otherwise.
+     * </p>
+     * <p>
+     * The new column will be named as "Column <i>n</i>" (where <i>n</i> is the 1-based index of the column) by default,
+     * which can be changed by {@link ColumnDesc#name(String)} after.
+     * </p>
      * 
      * @param  descriptor            the column descriptor
      * 
@@ -1677,6 +1797,7 @@ public class BinaryTable extends AbstractTableData implements Cloneable {
      *                                   comlumns.
      * 
      * @see                          #addRow(Object[])
+     * @see                          ColumnDesc#name(String)
      */
     public int addColumn(ColumnDesc descriptor) throws IllegalStateException {
         if (nRow != 0) {
@@ -1684,6 +1805,10 @@ public class BinaryTable extends AbstractTableData implements Cloneable {
         }
         descriptor.offset = rowLen;
         rowLen += descriptor.rowLen();
+        if (descriptor.name() == null) {
+            // Set default column name;
+            descriptor.name(TableHDU.getDefaultColumnName(columns.size()));
+        }
         columns.add(descriptor);
         return columns.size();
     }
@@ -1721,6 +1846,10 @@ public class BinaryTable extends AbstractTableData implements Cloneable {
      * as fixed sized (sized for the longest string element contained).
      * </p>
      * <p>
+     * The new column will be named as "Column <i>n</i>" (where <i>n</i> is the 1-based index of the column) by default,
+     * which can be changed by {@link ColumnDesc#name(String)} after.
+     * </p>
+     * <p>
      * If you want other complex-valued representations use {@link #addComplexColumn(Object, Class)} instead, and if you
      * want to pack <code>boolean</code>-based data more efficiently (using up to 8 times less space), use
      * {@link #addBitsColumn(Object)} instead, or else convert the column to bits afterwards using
@@ -1736,6 +1865,7 @@ public class BinaryTable extends AbstractTableData implements Cloneable {
      * @see #addBitsColumn(Object)
      * @see #convertToBits(int)
      * @see #addStringColumn(String[])
+     * @see ColumnDesc#name(String)
      */
     @Override
     public int addColumn(Object o) throws FitsException {
@@ -1807,10 +1937,16 @@ public class BinaryTable extends AbstractTableData implements Cloneable {
     }
 
     /**
+     * <p>
      * Adds a new variable-length data column, populating it with the specified data object. Unlike
      * {@link #addColumn(Object)} which will use fixed-size data storage provided the data allows it, this method forces
      * the use of variable-sized storage regardless of the data layout -- for example to accommodate addiing rows /
      * elements of different sized at a later time.
+     * </p>
+     * <p>
+     * The new column will be named as "Column <i>n</i>" (where <i>n</i> is the 1-based index of the column) by default,
+     * which can be changed by {@link ColumnDesc#name(String)} after.
+     * </p>
      * 
      * @param  o             An array containing one entry per row. Multi-dimensional entries will be flattened to 1D
      *                           for storage on the heap.
@@ -1850,6 +1986,10 @@ public class BinaryTable extends AbstractTableData implements Cloneable {
 
         // Load any deferred data (we will not be able to do that once we alter the column structure)
         ensureData();
+
+        // Set the default column name
+        c.name(TableHDU.getDefaultColumnName(columns.size()));
+
         table.addColumn(o, c.getTableBaseCount());
         columns.add(c);
 
@@ -2136,6 +2276,29 @@ public class BinaryTable extends AbstractTableData implements Cloneable {
         return data;
     }
 
+    /**
+     * Returns the Java index of the first column by the specified name.
+     * 
+     * @param  name the name of the column (case sensitive).
+     * 
+     * @return      The column index, or else -1 if this table does not contain a column by the specified name.
+     * 
+     * @see         #getDescriptor(String)
+     * @see         ColumnDesc#name(String)
+     * 
+     * @since       1.20
+     * 
+     * @author      Attila Kovacs
+     */
+    public int indexOf(String name) {
+        for (int col = 0; col < columns.size(); col++) {
+            if (name.equals(getDescriptor(col).name())) {
+                return col;
+            }
+        }
+        return -1;
+    }
+
     @Override
     protected ColumnTable<?> getCurrentData() {
         return table;
@@ -2399,8 +2562,8 @@ public class BinaryTable extends AbstractTableData implements Cloneable {
     }
 
     /**
-     * Consider using the more Java-friendly {@link #get(int, int)} or one of the scalar access methods with implicit
-     * type comversion support.
+     * Returns a table element as a Java array. Consider using the more Java-friendly {@link #get(int, int)} or one of
+     * the scalar access methods with implicit type conversion support.
      * 
      * @see #get(int, int)
      * @see #getLogical(int, int)
@@ -2451,6 +2614,69 @@ public class BinaryTable extends AbstractTableData implements Cloneable {
     }
 
     /**
+     * Returns a table element as an array of the FITS storage type. Similar to the original
+     * {@link #getElement(int, int)}, except that FITS logicals are returned as arrays of <code>Boolean</code> (rather
+     * than <code>boolean</code>), bits are returned as arrays of <code>boolean</code>, and complex values are returned
+     * as arrays of {@link ComplexValue} rather than arrays of <code>double[2]</code> or <code>float[2]</code>.
+     * Singleton (scalar) table elements are not boxed to an enclosing Java type (unlike {@link #get(int, int)}), an
+     * instead returned as arrays of just one element. For example, a single logical as a <code>Boolean[1]</code>, a
+     * single float as a <code>float[1]</code> or a single double-precision complex value as
+     * <code>ComplexValue[1]</code>.
+     * 
+     * @param  row zero-based row index
+     * @param  col zero-based column index
+     * 
+     * @return     The table entry as an array of the stored Java type, without applying any type or quantization
+     *                 conversions.
+     * 
+     * @see        #getArrayElementAs(int, int, Class)
+     * @see        #get(int, int)
+     * 
+     * @since      1.20
+     */
+    public Object getArrayElement(int row, int col) {
+        return getElement(row, col, true);
+    }
+
+    /**
+     * <p>
+     * Returns a numerical table element as an array of a specific underlying other numerical type. Similar
+     * {@link #getArrayElement(int, int)} except that table entries are converted to the specified array type before
+     * returning. If an integer-decimal conversion is involved, it will be performed through the column's quantizer (if
+     * any) or else via a simple rounding as necessary.
+     * </p>
+     * <p>
+     * For example, if you have an <code>short</code>-type column, and you want is an array of <code>double</code>
+     * values that are represented by the 16-bit integers, then the conversion will use the column's quantizer scaling
+     * and offset before returning the result either as an array of doubles, and the designated <code>short</code>
+     * blanking values will be converted to NaNs.
+     * </p>
+     * 
+     * @param  row                      zero-based row index
+     * @param  col                      zero-based column index
+     * @param  asType                   The desired underlying type, a primitive class or a {@link ComplexValue} type
+     *                                      for appropriate numerical arrays (with a trailing Java dimension of 2 for
+     *                                      the real/imaginary pairs).
+     * 
+     * @return                          An array of the desired type (e.g. <code>double[][]</code> if
+     *                                      <code>asType</code> is <code>double.class</code> and the column contains 2D
+     *                                      arrays of some numerical type).
+     * 
+     * @throws IllegalArgumentException if the numerical conversion is not possible for the given column type or if the
+     *                                      type argument is not a supported numerical primitive or {@link ComplexValue}
+     *                                      type.
+     * 
+     * @see                             #getArrayElement(int, int)
+     * 
+     * @since                           1.20
+     */
+    public Object getArrayElementAs(int row, int col, Class<?> asType) throws IllegalArgumentException {
+        ColumnDesc c = getDescriptor(col);
+        Object e = getElement(row, col, true);
+        return asType.isAssignableFrom(c.getFitsBase()) ? e : ArrayFuncs.convertArray(e, asType, c.getQuantizer());
+    }
+
+    /**
      * <p>
      * Returns a table element using the usual Java boxing for primitive scalar (singleton) entries, or packaging
      * complex values as {@link ComplexValue}, or as appropriate primitive or object arrays. FITS string columns return
@@ -2474,7 +2700,9 @@ public class BinaryTable extends AbstractTableData implements Cloneable {
      * </p>
      * <p>
      * Columns containing multidimensional arrays, will return the expected multidimensional array of the above
-     * mentioned types.
+     * mentioned types for the FITS storage type. You can then convert numerical arrays to other types as required for
+     * your application via {@link ArrayFuncs#convertArray(Object, Class, Quantizer)}, including any appropriate
+     * quantization for the colummn (see {@link ColumnDesc#getQuantizer()}).
      * </p>
      * 
      * @param  row           the zero-based row index
@@ -2489,6 +2717,7 @@ public class BinaryTable extends AbstractTableData implements Cloneable {
      * @see                  #getNumber(int, int)
      * @see                  #getLogical(int, int)
      * @see                  #getString(int, int)
+     * @see                  #getArrayElementAs(int, int, Class)
      * @see                  #set(int, int, Object)
      * 
      * @since                1.18
@@ -2537,8 +2766,16 @@ public class BinaryTable extends AbstractTableData implements Cloneable {
     }
 
     /**
+     * <p>
      * Returns the decimal value, if possible, of a scalar table entry. See {@link #getNumber(int, int)} for more
      * information on the conversion process.
+     * </p>
+     * <p>
+     * Since version 1.20, if the column has a quantizer and stores integer elements, the conversion to double-precision
+     * will account for the quantization of the column, if any, and will return NaN if the stored integer is the
+     * designated blanking value (if any). To bypass quantization, you can use {@link #getNumber(int, int)} instead
+     * followed by {@link Number#doubleValue()} to to get the stored integer values as a double.
+     * </p>
      * 
      * @param  row                the zero-based row index
      * @param  col                the zero-based column index
@@ -2551,18 +2788,35 @@ public class BinaryTable extends AbstractTableData implements Cloneable {
      * @see                       #getNumber(int, int)
      * @see                       #getLong(int, int)
      * @see                       #get(int, int)
+     * @see                       ColumnDesc#getQuantizer()
      * 
      * @since                     1.18
      */
     public final double getDouble(int row, int col) throws FitsException, ClassCastException {
         Number n = getNumber(row, col);
+
+        if (!(n instanceof Float || n instanceof Double)) {
+            Quantizer q = getDescriptor(col).getQuantizer();
+            if (q != null) {
+                return q.toDouble(n.longValue());
+            }
+        }
+
         return n == null ? Double.NaN : n.doubleValue();
     }
 
     /**
+     * <p>
      * Returns a 64-bit integer value, if possible, of a scalar table entry. Boolean columns will return 1 if
      * <code>true</code> or 0 if <code>false</code>, or throw a {@link NullPointerException} if undefined. See
-     * {@link #getNumber(int, int)} for more information on the conversion process.
+     * {@link #getNumber(int, int)} for more information on the conversion process of the stored data element.
+     * </p>
+     * <p>
+     * Additionally, since version 1.20, if the column has a quantizer and stores floating-point elements, the
+     * conversion to integer will include the quantization, and NaN values will be converted to the designated integer
+     * blanking values. To bypass quantization, you can use {@link #getNumber(int, int)} instead followed by
+     * {@link Number#longValue()} to to get the stored floating point values rounded directly to a long.
+     * </p>
      * 
      * @param  row                   the zero-based row index
      * @param  col                   the zero-based column index
@@ -2572,7 +2826,8 @@ public class BinaryTable extends AbstractTableData implements Cloneable {
      * @throws FitsException         if the element could not be obtained
      * @throws ClassCastException    if the specified column in not a numerical scalar type.
      * @throws IllegalStateException if the column contains a undefined (blanking value), such as a {@link Double#NaN}
-     *                                   or a {@link Boolean} <code>null</code> value.
+     *                                   when no quantizer is set for the column, or a {@link Boolean} <code>null</code>
+     *                                   value.
      * 
      * @see                          #getNumber(int, int)
      * @see                          #getDouble(int, int)
@@ -2582,8 +2837,16 @@ public class BinaryTable extends AbstractTableData implements Cloneable {
      */
     public final long getLong(int row, int col) throws FitsException, ClassCastException, IllegalStateException {
         Number n = getNumber(row, col);
+
+        if (n instanceof Float || n instanceof Double) {
+            Quantizer q = getDescriptor(col).getQuantizer();
+            if (q != null) {
+                return q.toLong(n.doubleValue());
+            }
+        }
+
         if (Double.isNaN(n.doubleValue())) {
-            throw new IllegalStateException("Cannot convert NaN to long");
+            throw new IllegalStateException("Cannot convert NaN to long without Quantizer");
         }
         return n.longValue();
     }
@@ -2837,8 +3100,14 @@ public class BinaryTable extends AbstractTableData implements Cloneable {
      * or {@link String}.</li>
      * </ul>
      * <p>
-     * For array-type columns the argument needs to match the column type exactly. For scalar (single element) columns,
-     * automatic type conversions may apply, to make setting scalar columns more flexible:
+     * For array-type columns the argument needs to match the column type exactly. However, you may call
+     * {@link ArrayFuncs#convertArray(Object, Class, Quantizer)} prior to setting values to convert arrays to the
+     * desired numerical types, including the quantization that is appropriate for the column (see
+     * {@link ColumnDesc#getQuantizer()}).
+     * </p>
+     * <p>
+     * For scalar (single element) columns, automatic type conversions may apply, to make setting scalar columns more
+     * flexible:
      * </p>
      * <ul>
      * <li>Any numerical column can take any {@link Number} value. The conversion is as if an explicit Java cast were
@@ -2888,6 +3157,10 @@ public class BinaryTable extends AbstractTableData implements Cloneable {
                 setLogical(row, col, null);
             }
         } else if (o.getClass().isArray()) {
+            Class<?> eType = ArrayFuncs.getBaseClass(o);
+            if (!c.getFitsBase().isAssignableFrom(eType) && c.isNumeric()) {
+                o = ArrayFuncs.convertArray(o, c.getFitsBase(), c.getQuantizer());
+            }
             setElement(row, col, o);
         } else if (o instanceof String) {
             setString(row, col, (String) o);
@@ -2941,6 +3214,21 @@ public class BinaryTable extends AbstractTableData implements Cloneable {
         }
 
         Class<?> base = c.getLegacyBase();
+
+        // quantize / unquantize as necessary...
+        Quantizer q = c.getQuantizer();
+
+        if (q != null) {
+            boolean decimalBase = (base == float.class || base == double.class);
+            boolean decimalValue = (value instanceof Float || value instanceof Double || value instanceof BigInteger
+                    || value instanceof BigDecimal);
+
+            if (decimalValue && !decimalBase) {
+                value = q.toLong(value.doubleValue());
+            } else if (!decimalValue && decimalBase) {
+                value = q.toDouble(value.longValue());
+            }
+        }
 
         Object wrapped = null;
 
@@ -3548,6 +3836,10 @@ public class BinaryTable extends AbstractTableData implements Cloneable {
 
         ColumnDesc c = new ColumnDesc();
 
+        if (header.containsKey(Standard.TTYPEn.n(col + 1))) {
+            c.name(header.getStringValue(Standard.TTYPEn.n(col + 1)));
+        }
+
         if (type == POINTER_INT || type == POINTER_LONG) {
             // Variable length column...
             c.setVariableSize(type == POINTER_LONG);
@@ -3590,6 +3882,11 @@ public class BinaryTable extends AbstractTableData implements Cloneable {
 
         // Force to use the count in the header, even if it does not match up with the dimension otherwise.
         c.fitsCount = count;
+
+        c.quant = Quantizer.fromTableHeader(header, col);
+        if (c.quant.isDefault()) {
+            c.quant = null;
+        }
 
         return c;
     }
@@ -3758,8 +4055,8 @@ public class BinaryTable extends AbstractTableData implements Cloneable {
 
         if (updateColumns) {
             for (int i = 0; i < columns.size(); i++) {
-                c.setKey(Compression.ZFORMn.n(i + 1).key());
-                fillForColumn(c, i);
+                c.setKey(Standard.TFORMn.n(i + 1).key());
+                fillForColumn(h, c, i);
             }
         }
 
@@ -3771,17 +4068,27 @@ public class BinaryTable extends AbstractTableData implements Cloneable {
      *
      * @throws FitsException if the operation failed
      */
-    void fillForColumn(Cursor<String, HeaderCard> hc, int col) throws FitsException {
+    void fillForColumn(Header header, Cursor<String, HeaderCard> hc, int col) throws FitsException {
         ColumnDesc c = columns.get(col);
 
         try {
             Standard.context(BinaryTable.class);
+
+            if (c.name() != null) {
+                hc.add(HeaderCard.create(Standard.TTYPEn.n(col + 1), c.name()));
+            }
+
             hc.add(HeaderCard.create(Standard.TFORMn.n(col + 1), c.getTFORM()));
 
             String tdim = c.getTDIM();
             if (tdim != null) {
                 hc.add(HeaderCard.create(Standard.TDIMn.n(col + 1), tdim));
             }
+
+            if (c.quant != null) {
+                c.quant.editTableHeader(header, col);
+            }
+
         } finally {
             Standard.context(null);
         }
@@ -3790,12 +4097,36 @@ public class BinaryTable extends AbstractTableData implements Cloneable {
     /**
      * Returns the column descriptor of a given column in this table
      * 
-     * @param  column the zero-based column index
+     * @param  column                         the zero-based column index
      * 
-     * @return        the column's descriptor
+     * @return                                the column's descriptor
+     * 
+     * @throws ArrayIndexOutOfBoundsException if this table does not contain a column with that index.
+     * 
+     * @see                                   #getDescriptor(String)
      */
-    public ColumnDesc getDescriptor(int column) {
+    public ColumnDesc getDescriptor(int column) throws ArrayIndexOutOfBoundsException {
         return columns.get(column);
+    }
+
+    /**
+     * Returns the (first) column descriptor whose name matches the specified value.
+     * 
+     * @param  name The column name (case sensitive).
+     * 
+     * @return      The descriptor of the first column by that name, or <code>null</code> if the table contains no
+     *                  column by that name.
+     * 
+     * @see         #getDescriptor(int)
+     * @see         #indexOf(String)
+     * 
+     * @since       1.20
+     * 
+     * @author      Attila Kovacs
+     */
+    public ColumnDesc getDescriptor(String name) {
+        int col = indexOf(name);
+        return col < 0 ? null : getDescriptor(col);
     }
 
     /**

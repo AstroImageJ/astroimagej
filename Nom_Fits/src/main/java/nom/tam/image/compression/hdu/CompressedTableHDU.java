@@ -171,11 +171,11 @@ public class CompressedTableHDU extends BinaryTableHDU {
             CompressedCard.restore(card, headerIterator);
         }
 
-        CompressedTableHDU compressedImageHDU = new CompressedTableHDU(header, compressedData);
+        CompressedTableHDU compressedHDU = new CompressedTableHDU(header, compressedData);
         compressedData.prepareUncompressedData(binaryTableHDU.getData());
         compressedData.fillHeader(header);
 
-        return compressedImageHDU;
+        return compressedHDU;
     }
 
     /**

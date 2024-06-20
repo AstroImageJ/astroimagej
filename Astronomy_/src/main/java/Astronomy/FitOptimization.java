@@ -564,7 +564,7 @@ public class FitOptimization implements AutoCloseable {
         for (int ap = 0; ap < numAps; ap++) {
             if (table.getColumnIndex("Source_Error_" + (isRefStar[ap] ? "C" : "T") + (ap + 1))
                     == ResultsTable.COLUMN_NOT_FOUND) {
-                IJ.error("Missing Source_Error columns for 1 or more stores.\nEnable in Aperture settings and rerun photometry.");
+                IJ.error("Missing Source_Error columns for 1 or more apertures.\nEnable in Aperture settings and rerun photometry.");
                 CardLayout cl = (CardLayout) compOptiCards.getLayout();
                 cl.next(compOptiCards);
                 return;
@@ -602,7 +602,7 @@ public class FitOptimization implements AutoCloseable {
         for (int ap = 0; ap < numAps; ap++) {
             if (table.getColumnIndex("Source_Error_" + (isRefStar[ap] ? "C" : "T") + (ap + 1))
                     == ResultsTable.COLUMN_NOT_FOUND) {
-                IJ.error("Missing Source_Error columns for 1 or more stores.\nEnable in Aperture settings and rerun photometry.");
+                IJ.error("Missing Source_Error columns for 1 or more apertures.\nEnable in Aperture settings and rerun photometry.");
                 CardLayout cl = (CardLayout) compOptiCards.getLayout();
                 cl.next(compOptiCards);
                 return;
@@ -647,7 +647,7 @@ public class FitOptimization implements AutoCloseable {
         for (int ap = 0; ap < numAps; ap++) {
             if (table.getColumnIndex("Source_Error_" + (isRefStar[ap] ? "C" : "T") + (ap + 1))
                     == ResultsTable.COLUMN_NOT_FOUND) {
-                IJ.error("Missing Source_Error columns for 1 or more stores.\nEnable in Aperture settings and rerun photometry.");
+                IJ.error("Missing Source_Error columns for 1 or more apertures.\nEnable in Aperture settings and rerun photometry.");
                 CardLayout cl = (CardLayout) compOptiCards.getLayout();
                 cl.next(compOptiCards);
                 return;
@@ -692,7 +692,7 @@ public class FitOptimization implements AutoCloseable {
         for (int ap = 0; ap < numAps; ap++) {
             if (table.getColumnIndex("Source_Error_" + (isRefStar[ap] ? "C" : "T") + (ap + 1))
                     == ResultsTable.COLUMN_NOT_FOUND) {
-                IJ.error("Missing Source_Error columns for 1 or more stores.\nEnable in Aperture settings and rerun photometry.");
+                IJ.error("Missing Source_Error columns for 1 or more apertures.\nEnable in Aperture settings and rerun photometry.");
                 CardLayout cl = (CardLayout) compOptiCards.getLayout();
                 cl.next(compOptiCards);
                 return;
@@ -721,7 +721,7 @@ public class FitOptimization implements AutoCloseable {
         for (int ap = 0; ap < numAps; ap++) {
             if (table.getColumnIndex("Source_Error_" + (isRefStar[ap] ? "C" : "T") + (ap + 1))
                     == ResultsTable.COLUMN_NOT_FOUND) {
-                IJ.error("Missing Source_Error columns for 1 or more stores.\nEnable in Aperture settings and rerun photometry.");
+                IJ.error("Missing Source_Error columns for 1 or more apertures.\nEnable in Aperture settings and rerun photometry.");
                 CardLayout cl = (CardLayout) detOptiCards.getLayout();
                 cl.next(detOptiCards);
                 return;
@@ -763,7 +763,7 @@ public class FitOptimization implements AutoCloseable {
         for (int ap = 0; ap < numAps; ap++) {
             if (table.getColumnIndex("Source_Error_" + (isRefStar[ap] ? "C" : "T") + (ap + 1))
                     == ResultsTable.COLUMN_NOT_FOUND) {
-                IJ.error("Missing Source_Error columns for 1 or more stores.\nEnable in Aperture settings and rerun photometry.");
+                IJ.error("Missing Source_Error columns for 1 or more apertures.\nEnable in Aperture settings and rerun photometry.");
                 CardLayout cl = (CardLayout) detOptiCards.getLayout();
                 cl.next(detOptiCards);
                 return;

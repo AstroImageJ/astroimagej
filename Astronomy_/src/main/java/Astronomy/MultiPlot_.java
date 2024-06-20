@@ -968,6 +968,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     private static final ExecutorService MP_THREAD = Executors.newSingleThreadExecutor();
     static boolean usImageJFitter = true;
 
+    static {
+        initializeVariables();
+    }
+
     public void run(String inTableNamePlusOptions) {
         boolean useAutoAstroDataUpdate = false;
         String inTableName = "";
@@ -1028,7 +1032,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 subFrame = null;
                 refStarFrame = null;
             }
-            initializeVariables();
+
             setupArrays();
             useDefaultSettings = Prefs.get("plot2.useDefaultSettings", useDefaultSettings);
             if (useDefaultSettings) {
@@ -16998,10 +17002,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             }
 
         }
-        if (mainFrame != null) {
-            setupArrays();
-            getPreferences();
-        }
+
+        setupArrays();
+        getPreferences();
 
         if (hasNoB) {
             Arrays.fill(bpLock, false);

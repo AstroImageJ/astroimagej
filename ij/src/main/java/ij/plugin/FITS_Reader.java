@@ -5,6 +5,8 @@ import ij.ImagePlus;
 import ij.ImageStack;
 import ij.Prefs;
 import ij.astro.AstroImageJ;
+import ij.astro.gui.GenericSwingDialog;
+import ij.astro.io.prefs.Property;
 import ij.astro.logging.AIJLogger;
 import ij.astro.logging.Translation;
 import ij.astro.types.Pair;
@@ -81,6 +83,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	private interface TableWrapper { double valueAt(int x, int y); }
 
 	private static HeaderCardFilter filter = null;
+	private static final MPTableLoadSettings MP_TABLE_LOAD_SETTINGS = new MPTableLoadSettings();
 
 	/**
 	 * Main processing method for the FITS_Reader object
@@ -522,33 +525,51 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		// Handle AIJ Fits Tables
 		//todo drag onto MP windows does not load
 		if (hdus[0].getHeader().getBooleanValue("AIJ_TBL", false)) {
-			var totalCol = tableHDU.getNCols();
-			for (int c = 0; c < totalCol; c++) {
-				var o = tableHDU.getColumn(c);
-				var cName = tableHDU.getColumnName(c) == null ? "C" + c : tableHDU.getColumnName(c);
-				if ("Label".equals(cName)) {
-					continue;
-				}
-				setColumn(o, table, cName);
+
+			// Dialog to control what to open
+			var d = new GenericSwingDialog("FITs MP Table Reading");
+			d.addMessage("Data to load (if available):");
+			d.addCheckbox("Table", MP_TABLE_LOAD_SETTINGS.loadData.get(), MP_TABLE_LOAD_SETTINGS.loadData::set).setEnabled(false);
+			d.addCheckbox("Plot Config", MP_TABLE_LOAD_SETTINGS.loadPlotcfg.get(), MP_TABLE_LOAD_SETTINGS.loadPlotcfg::set);
+			d.addCheckbox("Apertures", MP_TABLE_LOAD_SETTINGS.loadApertures.get(), MP_TABLE_LOAD_SETTINGS.loadApertures::set);
+			d.centerDialog(true);
+
+			d.showDialog();
+
+			if (d.wasCanceled()) {
+				return null;
 			}
 
-			// Handle labels
-			// Handled last so that the rows exist
-			var li = tableHDU.findColumn("Label");
-			if (li >= 0) {
-				var lc = tableHDU.getColumn(li);
-				if (lc instanceof String[] labels) {
-					//todo bulk set methods
-					IntStream.range(0, labels.length).forEachOrdered(i -> table.setLabel(labels[i], i));
-				} else if (lc instanceof byte[][] bytes) {
-					IntStream.range(0, bytes.length)
-							.forEachOrdered(i -> table.setLabel(new String(bytes[i], StandardCharsets.UTF_8), i));
+			int totalCol = 0;
+			if (MP_TABLE_LOAD_SETTINGS.loadData.get()) {
+				totalCol = tableHDU.getNCols();
+				for (int c = 0; c < totalCol; c++) {
+					var o = tableHDU.getColumn(c);
+					var cName = tableHDU.getColumnName(c) == null ? "C" + c : tableHDU.getColumnName(c);
+					if ("Label".equals(cName)) {
+						continue;
+					}
+					setColumn(o, table, cName);
 				}
-			}
 
-			// Handle metadata
-			for (HeaderCard card : tableHDU.getHeader().findCards("AIJ_\\w{1,4}")) {
-				table.metadata.put(card.getKey().trim().substring(4), card.getValue());
+				// Handle labels
+				// Handled last so that the rows exist
+				var li = tableHDU.findColumn("Label");
+				if (li >= 0) {
+					var lc = tableHDU.getColumn(li);
+					if (lc instanceof String[] labels) {
+						//todo bulk set methods
+						IntStream.range(0, labels.length).forEachOrdered(i -> table.setLabel(labels[i], i));
+					} else if (lc instanceof byte[][] bytes) {
+						IntStream.range(0, bytes.length)
+								.forEachOrdered(i -> table.setLabel(new String(bytes[i], StandardCharsets.UTF_8), i));
+					}
+				}
+
+				// Handle metadata
+				for (HeaderCard card : tableHDU.getHeader().findCards("AIJ_\\w{1,4}")) {
+					table.metadata.put(card.getKey().trim().substring(4), card.getValue());
+				}
 			}
 
 			// Load plotcfg
@@ -560,7 +581,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
                     if (t instanceof CompressedTableHDU compressedTableHDU) {
                         t = compressedTableHDU.asBinaryTableHDU();
                     }
-					if (t.getHeader().getBooleanValue("AIJ_XTRC", false)) {
+					if (MP_TABLE_LOAD_SETTINGS.loadData.get() && t.getHeader().getBooleanValue("AIJ_XTRC", false)) {
 						for (int c = 0; c < t.getNCols(); c++) {
 							var o = t.getColumn(c);
 							var cName = t.getColumnName(c) == null ? "C" + totalCol : t.getColumnName(c);
@@ -573,17 +594,21 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 						continue;
 					}
 					//todo do col. lookup first, then decompress
-					var pltcfgCol = t.findColumn("plotcfg");
-					if (pltcfgCol >= 0 && t.getColumn(pltcfgCol) instanceof byte[] bytes) {
-						plotcfg = bytes;
-					} else if (pltcfgCol >= 0 && t.getColumn(pltcfgCol) instanceof byte[][] bytes) {
-						plotcfg = bytes[0];
+					if (MP_TABLE_LOAD_SETTINGS.loadPlotcfg.get()) {
+						var pltcfgCol = t.findColumn("plotcfg");
+						if (pltcfgCol >= 0 && t.getColumn(pltcfgCol) instanceof byte[] bytes) {
+							plotcfg = bytes;
+						} else if (pltcfgCol >= 0 && t.getColumn(pltcfgCol) instanceof byte[][] bytes) {
+							plotcfg = bytes[0];
+						}
 					}
-					var aperturesCol = t.findColumn("apertures");
-					if (aperturesCol >= 0 && t.getColumn(aperturesCol) instanceof byte[] bytes) {
-						apertures = bytes;
-					} else if (aperturesCol >= 0 && t.getColumn(aperturesCol) instanceof byte[][] bytes) {
-						apertures = bytes[0];
+					if (MP_TABLE_LOAD_SETTINGS.loadApertures.get()) {
+						var aperturesCol = t.findColumn("apertures");
+						if (aperturesCol >= 0 && t.getColumn(aperturesCol) instanceof byte[] bytes) {
+							apertures = bytes;
+						} else if (aperturesCol >= 0 && t.getColumn(aperturesCol) instanceof byte[][] bytes) {
+							apertures = bytes[0];
+						}
 					}
 				}
 			}
@@ -1202,6 +1227,12 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 
 	public static void flipImages(boolean flip) {
 		flipImages = flip;
+	}
+
+	private static class MPTableLoadSettings {
+		Property<Boolean> loadData = new Property<>(true, this);
+		Property<Boolean> loadApertures = new Property<>(true, this);
+		Property<Boolean> loadPlotcfg = new Property<>(true, this);
 	}
 
 }

@@ -8,6 +8,7 @@ import Astronomy.multiplot.table.util.UpdateEvent;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.WindowManager;
+import ij.astro.logging.AIJLogger;
 import ij.measure.ResultsTable;
 import ij.util.Tools;
 
@@ -179,7 +180,15 @@ public class MeasurementTable extends ResultsTable {
         var panel = getMeasurementsWindow(inputPanelName);
 
         if (panel != null) {
-            return panel.getTable();
+            if (destName.equals(sourceName)) {
+                // table is already open
+                return panel.getTable();
+            } else {
+                // opening same file, but as a different table
+                var t = panel.getTable().clone();
+                t.setShortName(destName);
+                return t;
+            }
         }
 
         // THIS CODE DOESN'T USUALLY RUN, IT JUST RETURNS THE NEW TABLE
@@ -741,6 +750,7 @@ public class MeasurementTable extends ResultsTable {
     @Override
     @Deprecated
     public void setHeading(int column, String heading) {
+        AIJLogger.multiLog(column, heading);
         super.setHeading(column, heading);
         updateView(UpdateEvent.COL_RENAMED, column, column);
     }

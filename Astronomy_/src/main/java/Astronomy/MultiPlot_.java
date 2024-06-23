@@ -16701,15 +16701,15 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         }
         errorCode = 1;
         try {
-            MeasurementTable newTable;
+            MeasurementTable secondaryTable;
             selectAnotherTableCanceled = false;
             if (fromFile) {
-                newTable = MeasurementTable.getTableFromFile(filePath);
+                secondaryTable = MeasurementTable.getTableFromFile(filePath);
             } else {
-                newTable = selectAnotherTable(tableName);
+                secondaryTable = selectAnotherTable(tableName);
             }
             errorCode = 2;
-            if (newTable == null) {
+            if (secondaryTable == null) {
                 if (!selectAnotherTableCanceled) {
                     IJ.beep();
                     if (fromFile) { IJ.showMessage("Unable to open measurement table " + filePath); } else {
@@ -16718,26 +16718,26 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 }
             } else {
                 errorCode = 3;
-                newTable.show();
+                secondaryTable.show();
 
                 combinedTableName = MeasurementTable.shorterName(tableName);
                 if (combinedTableName.endsWith(Prefs.get("options.ext", ".xls"))) {
                     int position = combinedTableName.lastIndexOf(Prefs.get("options.ext", ".xls"));
                     if (position >= 0) combinedTableName = combinedTableName.substring(0, position);
                 }
-                combinedTableName += "_" + MeasurementTable.shorterName(newTable.shortTitle());
+                combinedTableName += "_" + MeasurementTable.shorterName(secondaryTable.shortTitle());
 
                 if (!appendTableDialog()) return;
                 MeasurementTable combinedTable = MeasurementTable.getTable(combinedTableName, tableName);
                 String[] oldColumns = table.getColumnHeadings().split("\t");
-                String[] newColumns = newTable.getColumnHeadings().split("\t");
+                String[] newColumns = secondaryTable.getColumnHeadings().split("\t");
                 int oldRows = combinedTable.getCounter();
-                int newRows = newTable.getCounter();
+                int newRows = secondaryTable.getCounter();
 
                 errorCode = 4;
                 for (int r = 0; r < oldRows; r++) {
                     if (keepFileNamesOnAppend) {
-                        combinedTable.setLabel(combinedTable.getLabel(r) + (appendDestinationSuffix.equals("") ? " " : "(" + appendDestinationSuffix + ")") + (r < newRows ? " " + newTable.getLabel(r) + "(" + appendSourceSuffix + ")" : ""), r);
+                        combinedTable.setLabel(combinedTable.getLabel(r) + (appendDestinationSuffix.equals("") ? " " : "(" + appendDestinationSuffix + ")") + (r < newRows ? " " + secondaryTable.getLabel(r) + "(" + appendSourceSuffix + ")" : ""), r);
                     } else {
                         combinedTable.setLabel("merged", r);
                     }
@@ -16747,7 +16747,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     for (int r = oldRows; r < newRows; r++) {
                         combinedTable.incrementCounter();
                         if (keepFileNamesOnAppend) {
-                            combinedTable.addLabel(newTable.getLabel(r) + "(" + appendSourceSuffix + ")");
+                            combinedTable.addLabel(secondaryTable.getLabel(r) + "(" + appendSourceSuffix + ")");
                         } else { combinedTable.addLabel("merged"); }
                         for (int i = 0; i < oldColumns.length; i++) {
                             combinedTable.setValue(i, r, Double.NaN);
@@ -16791,7 +16791,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     for (int i = 2; i < newColumns.length; i++) {
                         for (int j = 0; j < combinedRows; j++) {
                             if (j < newRows) {
-                                combinedTable.setValue(newColumns[i] + appendSourceSuffix, j, newTable.getValue(newColumns[i], j));
+                                combinedTable.setValue(newColumns[i] + appendSourceSuffix, j, secondaryTable.getValue(newColumns[i], j));
                             } else { combinedTable.setValue(newColumns[i] + appendSourceSuffix, j, Double.NaN); }
                         }
                     }

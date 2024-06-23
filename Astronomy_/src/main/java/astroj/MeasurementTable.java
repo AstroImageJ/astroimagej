@@ -8,7 +8,6 @@ import Astronomy.multiplot.table.util.UpdateEvent;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.WindowManager;
-import ij.astro.logging.AIJLogger;
 import ij.measure.ResultsTable;
 import ij.util.Tools;
 
@@ -750,7 +749,6 @@ public class MeasurementTable extends ResultsTable {
     @Override
     @Deprecated
     public void setHeading(int column, String heading) {
-        AIJLogger.multiLog(column, heading);
         super.setHeading(column, heading);
         updateView(UpdateEvent.COL_RENAMED, column, column);
     }

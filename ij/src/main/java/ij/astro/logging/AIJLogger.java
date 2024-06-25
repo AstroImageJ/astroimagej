@@ -95,7 +95,6 @@ public class AIJLogger {
                     caller1 -> new LogWindow(callerTitle + " Log", "",400, 250).getTextPanel());
             var panel = aijLogPanels.get(caller);
             panel.updateDisplay();
-            panel.setFont(new Font("SansSerif", Font.PLAIN, 16));
             panel.appendLine(msg);
             aijLogPanelsTimer.computeIfPresent(caller,
                     (caller_, closingConditions) -> new ClosingConditions(closingConditions.autoClose));

@@ -39,6 +39,8 @@ public class LogWindow extends TextWindow {
             setSize(width, height);
             if (!IJ.debugMode) GUI.centerOnImageJScreen(this);
         }
+
+        getTextPanel().setFont(new Font("SansSerif", Font.PLAIN, 16));
     }
 
     @Override

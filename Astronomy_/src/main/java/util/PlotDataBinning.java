@@ -25,7 +25,11 @@ public class PlotDataBinning {
             }
 
             double[] finalX = x;
-            var idx = IntStream.range(0, x.length).filter(i -> Double.isFinite(finalX[i])).toArray();
+            double[] finalY = y;
+            double[] finalErr = err;
+            var idx = IntStream.range(0, x.length)
+                    .filter(i -> Double.isFinite(finalX[i]) && Double.isFinite(finalY[i]) &&
+                            (finalErr == null || Double.isFinite(finalErr[i]))).toArray();
             x = takeIndices(x, idx);
             y = takeIndices(y, idx);
 

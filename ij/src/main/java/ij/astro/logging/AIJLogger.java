@@ -6,8 +6,7 @@ import ij.Prefs;
 import ij.WindowManager;
 import ij.text.TextPanel;
 
-import java.awt.*;
-import java.util.List;
+import javax.swing.*;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -90,15 +89,18 @@ public class AIJLogger {
         var callerTitle = caller.split(separator)[0];
 
         if (useNewWindow) {
-            aijLogPanels.values().removeAll(Collections.singleton(null));
-            aijLogPanels.computeIfAbsent(caller,
-                    caller1 -> new LogWindow(callerTitle + " Log", "",400, 250).getTextPanel());
-            var panel = aijLogPanels.get(caller);
-            panel.updateDisplay();
-            panel.appendLine(msg);
-            aijLogPanelsTimer.computeIfPresent(caller,
-                    (caller_, closingConditions) -> new ClosingConditions(closingConditions.autoClose));
-            aijLogPanelsTimer.putIfAbsent(caller, new ClosingConditions());
+            String finalMsg = msg;
+            SwingUtilities.invokeLater(() -> {
+                aijLogPanels.values().removeAll(Collections.singleton(null));
+                aijLogPanels.computeIfAbsent(caller,
+                        caller1 -> new LogWindow(callerTitle + " Log", "",400, 250).getTextPanel());
+                var panel = aijLogPanels.get(caller);
+                panel.updateDisplay();
+                panel.appendLine(finalMsg);
+                aijLogPanelsTimer.computeIfPresent(caller,
+                        (caller_, closingConditions) -> new ClosingConditions(closingConditions.autoClose));
+                aijLogPanelsTimer.putIfAbsent(caller, new ClosingConditions());
+            });
         } else {
             IJ.log(padTitle(callerTitle + ": ") + msg);
         }

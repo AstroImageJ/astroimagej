@@ -16729,7 +16729,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
                 if (!appendTableDialog()) return;
                 MeasurementTable combinedTable = MeasurementTable.getTable(combinedTableName, tableName);
-                String[] oldColumns = table.getColumnHeadings().split("\t");
                 String[] newColumns = secondaryTable.getColumnHeadings().split("\t");
                 int oldRows = combinedTable.getCounter();
                 int newRows = secondaryTable.getCounter();
@@ -16749,14 +16748,14 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         if (keepFileNamesOnAppend) {
                             combinedTable.addLabel(secondaryTable.getLabel(r) + "(" + appendSourceSuffix + ")");
                         } else { combinedTable.addLabel("merged"); }
-                        for (int i = 0; i < oldColumns.length; i++) {
+                        for (int i = 0; i <= table.getLastColumn(); i++) {
                             combinedTable.setValue(i, r, Double.NaN);
                         }
                     }
                 }
                 errorCode = 6;
-                if (!appendDestinationSuffix.equals("") && (oldColumns.length > 1)) {
-                    for (int col = 0; col < oldColumns.length - 2; col++) {
+                if (!appendDestinationSuffix.equals("") && (table.getLastColumn() >= 0)) {
+                    for (int col = 0; col <= table.getLastColumn(); col++) {
                         combinedTable.setHeading(col, combinedTable.getColumnHeading(col) + appendDestinationSuffix);
                     }
 

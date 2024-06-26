@@ -877,6 +877,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     private static Property<Boolean> includePlotcfgInFits = new Property<>(true, MultiPlot_.class);
     private static Property<Boolean> includeAperturesInFits = new Property<>(true, MultiPlot_.class);
     private static Property<Boolean> saveTableAsFits = new Property<>(false, MultiPlot_.class);
+    private static Property<Boolean> savePlotAsPdf = new Property<>(false, MultiPlot_.class);
     private static Property<BiState> drawBinErrBarsBase = new Property<>(BiState.DISABLED, "plot.", "", MultiPlot_.class);
     private static String lastUsedTitle, lastUsedSubtitle;
 
@@ -17791,7 +17792,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         }
     }
 
-    static public void saveDataImageConfig(boolean savePlot, boolean saveConfig, boolean saveData, boolean filenamesProvided, String imageFormat, String plotPath, String configPath, String dataPath) {
+    static public void saveDataImageConfig(boolean savePlot, boolean savePlotAsPdf, boolean saveConfig, boolean saveData, boolean filenamesProvided, String imageFormat, String plotPath, String configPath, String dataPath) {
         savePreferences();
         SaveDialog sf;
         String outPath = "";
@@ -17847,6 +17848,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     IJ.showMessage("Error writing measurement table file");
                 }
             }
+        }
+
+        if (savePlotAsPdf && plot != null) {
+            PdfPlotOutput.savePlot(plot, filenamesProvided ? plotPath.replaceFirst("\\."+imageFormat+"$", ".pdf") : outBase + plotSuffix + ".pdf");
         }
 
         if (savePlot) {
@@ -17917,8 +17922,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         gd.enableYesNoCancel("Save Files Now", "Save Settings Only");
 
         gd.addMessage("Select items to save when using save all:");
-        gd.addCheckboxGroup(1, 10, new String[]{"Image", "Plot", "Seeing Profile", "Seeing Profile Stack", "Plot Config", "Data Table", "Apertures", "Fit Panels", "Fit Text", "Log"},
-                new boolean[]{saveImage, savePlot, saveSeeingProfile, saveSeeingProfileStack, saveConfig, saveTable, saveApertures, saveFitPanels, saveFitPanelText, saveLog});
+        gd.addCheckboxGroup(2, 6, new String[]{"Stack as Image", "Plot as Image", "Plot as PDF", "Seeing Profile", "Seeing Profile Stack", "Plot Config", "Data Table", "Apertures", "Fit Panels", "Fit Text", "Log"},
+                new boolean[]{saveImage, savePlot, savePlotAsPdf.get(), saveSeeingProfile, saveSeeingProfileStack, saveConfig, saveTable, saveApertures, saveFitPanels, saveFitPanelText, saveLog});
         gd.addCheckboxGroup(1, 2, new String[]{"Data Subset", "Show Data Subset Panel"},
                 new boolean[]{saveDataSubset, showDataSubsetPanel});
         gd.addCheckboxGroup(1, 3, new String[]{"Save Data As FITs Table", "Include Plot Config in FITs", "Include Apertures in FITs"},
@@ -17942,6 +17947,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         if (gd.wasCanceled()) return;
         saveImage = gd.getNextBoolean();
         savePlot = gd.getNextBoolean();
+        savePlotAsPdf.set(gd.getNextBoolean());
         saveSeeingProfile = gd.getNextBoolean();
         saveSeeingProfileStack = gd.getNextBoolean();
         saveConfig = gd.getNextBoolean();
@@ -18141,8 +18147,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             IJU.saveAsPngOrJpg(imageDisplay, saveFile, format);
         }
 
-        if (saveAll && (savePlot || saveConfig || saveTable || saveTableAsFits.get())) {
-            saveDataImageConfig(savePlot, saveConfig, saveTable, true, format,
+        if (saveAll && (savePlot || saveConfig || saveTable || saveTableAsFits.get() || savePlotAsPdf.get())) {
+            saveDataImageConfig(savePlot, savePlotAsPdf.get(), saveConfig, saveTable, true, format,
                     outBase + plotSuffix + "." + format, outBase + configSuffix + ".plotcfg",
                     outBase + dataSuffix + Prefs.get("options.ext", ".xls"));
         }

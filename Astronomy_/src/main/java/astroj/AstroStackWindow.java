@@ -4842,7 +4842,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         }
 
         if (saveAll && (savePlot || saveConfig || saveTable)) {
-            MultiPlot_.saveDataImageConfig(savePlot, saveConfig, saveTable, true, format, outBase + plotSuffix + "." + format, outBase + configSuffix + ".plotcfg",
+            MultiPlot_.saveDataImageConfig(savePlot, false, saveConfig, saveTable, true, format, outBase + plotSuffix + "." + format, outBase + configSuffix + ".plotcfg",
                     outBase + dataSuffix + Prefs.get("options.ext", ".xls"));
         }
         if (saveAll && saveApertures) {

@@ -4828,6 +4828,11 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 u2 = lockToCenter[curve][6] ? priorCenter[curve][6] : params[fp < nPars ? fp++ : nPars - 1];  //quadratic limb darkening parameter 2
 
                 lcModel = IJU.transitModel(detrendXs[curve], f0, incl, p0, ar, tc, orbitalPeriod[curve], e, ohm, u1, u2, useLonAscNode[curve], lonAscNode[curve], true);
+                var midpointFlux = IJU.transitModel(new double[]{tc}, f0, incl, p0, ar, tc, orbitalPeriod[curve], e, ohm, u1, u2, useLonAscNode[curve], lonAscNode[curve], true)[0];
+                var depth = (1-(midpointFlux/f0))*1000;
+                if (depth <= 0) {
+                    return Double.NaN;
+                }
             }
 
             int dp = 0;

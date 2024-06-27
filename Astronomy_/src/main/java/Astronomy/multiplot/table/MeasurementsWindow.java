@@ -563,9 +563,9 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
                 var idx = jTable.getSelectedRows();
                 // Needs to be sorted as we are removing rows in descending order
                 idx = Arrays.stream(idx).map(jTable::convertRowIndexToModel).sorted().toArray();
-                for (int i1 = idx.length - 1; i1 >= 0; i1--) {
-                    table.deleteRow(idx[i1]);
-                }
+                table.setLock(true);
+                table.deleteRows(idx);
+                table.setLock(false);
                 if (idx.length > 0) {
                     table.updateRelatedPlot();
                 }

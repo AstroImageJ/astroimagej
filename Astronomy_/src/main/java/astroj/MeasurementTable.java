@@ -759,6 +759,20 @@ public class MeasurementTable extends ResultsTable {
         updateView(UpdateEvent.ROW_DELETED, rowIndex, rowIndex);
     }
 
+
+    /**
+     * Bulk delete rows, rebuilding the table window at the end.
+     *
+     * @param rows the sorted array of row indices to be deleted,
+     */
+    //todo make this better with bulk actions
+    public synchronized void deleteRows(int[] rows) {
+        for (int i = rows.length - 1; i >= 0; i--) {
+            super.deleteRow(rows[i]);
+        }
+        updateView(UpdateEvent.REBUILD);
+    }
+
     public synchronized void updateRelatedPlot() {
         if (MultiPlot_.isRunning() && MultiPlot_.getTable() == this) {
             MultiPlot_.updatePlot();

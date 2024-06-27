@@ -569,6 +569,8 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
                 if (idx.length > 0) {
                     table.updateRelatedPlot();
                 }
+            } else {
+                IJ.error("Table Row Deletion", "Please select any row(s) to be deleted. All columns must be selected.");
             }
         });
         m.add(i);

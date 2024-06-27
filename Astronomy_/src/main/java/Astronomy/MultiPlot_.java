@@ -462,6 +462,19 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static JPanel[] sigmaPanel, transitDepthPanel;
     static Border[] sigmaBorder;
 
+    /**
+     * Fitted transit parameters, indexed as:
+     * <ul>
+     *   <li>0 = f0 = baseline flux</li>
+     *   <li>1 = p0 = r_p/r_*</li>
+     *   <li>2 = ar = a/r_*</li>
+     *   <li>3 = tc = transit center time</li>
+     *   <li>4 = i = inclination</li>
+     *   <li>5 = u1 = quadratic limb darkening parameter 1</li>
+     *   <li>6 = u2 = quadratic limb darkening parameter 2</li>
+     *   <li>7+ = detrend parameters</li>
+     * </ul>
+     */
     static double[][] bestFit;
     static JTextField[][] bestFitLabel;
 

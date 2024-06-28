@@ -519,10 +519,6 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 	}
 
 	private static TableRead fitsTable2MeasurementsTable(ResultsTable table, BasicHDU<?>[] hdus, TableHDU<?> tableHDU) throws FitsException {
-        if (tableHDU instanceof CompressedTableHDU compressedTableHDU) {
-            tableHDU = compressedTableHDU.asBinaryTableHDU();
-        }
-
 		var loadTable = true;
 
 		// Handle AIJ Fits Tables
@@ -545,6 +541,10 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 
 			int totalCol = 0;
 			if (MP_TABLE_LOAD_SETTINGS.loadData.get()) {
+				if (tableHDU instanceof CompressedTableHDU compressedTableHDU) {
+					tableHDU = compressedTableHDU.asBinaryTableHDU();
+				}
+
 				totalCol = tableHDU.getNCols();
 				for (int c = 0; c < totalCol; c++) {
 					var o = tableHDU.getColumn(c);
@@ -583,10 +583,10 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			for (BasicHDU<?> basicHDU : hdus) {
 				if (basicHDU == tableHDU) continue;
 				if (basicHDU instanceof TableHDU<?> t) {
-                    if (t instanceof CompressedTableHDU compressedTableHDU) {
-                        t = compressedTableHDU.asBinaryTableHDU();
-                    }
 					if (MP_TABLE_LOAD_SETTINGS.loadData.get() && t.getHeader().getBooleanValue("AIJ_XTRC", false)) {
+						if (t instanceof CompressedTableHDU compressedTableHDU) {
+							t = compressedTableHDU.asBinaryTableHDU();
+						}
 						for (int c = 0; c < t.getNCols(); c++) {
 							var o = t.getColumn(c);
 							var cName = t.getColumnName(c) == null ? "C" + totalCol : t.getColumnName(c);
@@ -598,22 +598,32 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 						}
 						continue;
 					}
-					//todo do col. lookup first, then decompress
+
 					if (MP_TABLE_LOAD_SETTINGS.loadPlotcfg.get()) {
 						var pltcfgCol = t.findColumn("plotcfg");
-						if (pltcfgCol >= 0 && t.getColumn(pltcfgCol) instanceof byte[] bytes) {
-							plotcfg = bytes;
-						} else if (pltcfgCol >= 0 && t.getColumn(pltcfgCol) instanceof byte[][] bytes) {
-							plotcfg = bytes[0];
-						}
+                        if (pltcfgCol >= 0) {
+							if (t instanceof CompressedTableHDU compressedTableHDU) {
+								t = compressedTableHDU.asBinaryTableHDU();
+							}
+                            if (t.getColumn(pltcfgCol) instanceof byte[] bytes) {
+                                plotcfg = bytes;
+                            } else if (t.getColumn(pltcfgCol) instanceof byte[][] bytes) {
+                                plotcfg = bytes[0];
+                            }
+                        }
 					}
 					if (MP_TABLE_LOAD_SETTINGS.loadApertures.get()) {
 						var aperturesCol = t.findColumn("apertures");
-						if (aperturesCol >= 0 && t.getColumn(aperturesCol) instanceof byte[] bytes) {
-							apertures = bytes;
-						} else if (aperturesCol >= 0 && t.getColumn(aperturesCol) instanceof byte[][] bytes) {
-							apertures = bytes[0];
-						}
+                        if (aperturesCol >= 0) {
+							if (t instanceof CompressedTableHDU compressedTableHDU) {
+								t = compressedTableHDU.asBinaryTableHDU();
+							}
+                            if (t.getColumn(aperturesCol) instanceof byte[] bytes) {
+                                apertures = bytes;
+                            } else if (t.getColumn(aperturesCol) instanceof byte[][] bytes) {
+                                apertures = bytes[0];
+                            }
+                        }
 					}
 				}
 			}
@@ -631,6 +641,10 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 				return new TableRead(loadTable, apertures);
 			}
 		} else {
+			if (tableHDU instanceof CompressedTableHDU compressedTableHDU) {
+				tableHDU = compressedTableHDU.asBinaryTableHDU();
+			}
+
 			for (int c = 0; c < tableHDU.getNCols(); c++) {
 				var o = tableHDU.getColumn(c);
 				var cName = tableHDU.getColumnName(c) == null ? "C" + c : tableHDU.getColumnName(c);
@@ -1121,7 +1135,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		}
 	}
 
-	public record TableRead(ResultsTable table, byte[] apertures) {}
+	public record TableRead(boolean loadTable, byte[] apertures) {}
 
 	/**
 	 * Used to pass out the zipFile from the opening so that it may be closed.

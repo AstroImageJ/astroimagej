@@ -26,10 +26,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.DecimalFormat;
-import java.util.Arrays;
-import java.util.Enumeration;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.zip.GZIPOutputStream;
@@ -320,8 +317,8 @@ public class FITS_Writer implements PlugIn {
 		// GET PATH
 		if (path == null || path.trim().isEmpty()) {
 			var nm = resultsTable.getTitle();
-			String title = FitsExtensionUtil.fileNameWithoutExt(nm);
-			SaveDialog sd = new SaveDialog("Write FITS image",title,extension);
+			String title = nm == null ? "Table" : FitsExtensionUtil.fileNameWithoutExt(nm);
+			SaveDialog sd = new SaveDialog("Write FITS image", Objects.requireNonNullElse(title, resultsTable.getTitle()),extension);
 			path = sd.getDirectory()+sd.getFileName();
 		}
 

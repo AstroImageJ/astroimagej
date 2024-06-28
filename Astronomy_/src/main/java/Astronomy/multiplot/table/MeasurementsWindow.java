@@ -17,6 +17,7 @@ import ij.gui.PlotContentsDialog;
 import ij.measure.ResultsTable;
 import ij.measure.ResultsTableMacros;
 import ij.plugin.Distribution;
+import ij.plugin.FITS_Writer;
 import ij.plugin.filter.Analyzer;
 import ij.util.Java2;
 
@@ -523,6 +524,9 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
         Menu m = new Menu("File");
         var i = new MenuItem("Save As...", new MenuShortcut(KeyEvent.VK_S));
         i.addActionListener($ -> table.save(null));
+        m.add(i);
+        i = new MenuItem("Save As Fits...", new MenuShortcut(KeyEvent.VK_S, true));
+        i.addActionListener($ -> FITS_Writer.saveMPTable(table, false, false, null, ".fits.fz"));
         m.add(i);
         i = new MenuItem("Rename...");
         i.addActionListener($ -> {

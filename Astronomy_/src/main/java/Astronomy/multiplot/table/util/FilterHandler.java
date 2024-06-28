@@ -72,7 +72,11 @@ public class FilterHandler extends JDialog {
         p.add(l, c);
         var rowInput = new JTextField(30);
         rowInput.addActionListener($ -> {
-            window.getRowSorter().setRowFilter(buildRowFilterFromInput(rowInput.getText()));
+            try {
+                window.getRowSorter().setRowFilter(buildRowFilterFromInput(rowInput.getText()));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         });
         p.add(rowInput, c);
         c.gridy = 1;
@@ -229,7 +233,7 @@ public class FilterHandler extends JDialog {
             String filterValue = matcher.group("FILTER");
             String andValue = matcher.group("AND");
 
-            var f = makeFilter(columnValue.trim(), filterValue.trim());
+            var f = makeFilter(columnValue, filterValue);
             if (anding || andValue != null) {
                 andSet.add(f.first());
                 if (andValue == null) {
@@ -285,8 +289,11 @@ public class FilterHandler extends JDialog {
             throw new IllegalArgumentException("Filter must be present");
         }
 
+        filter = filter.trim();
+
         var cols = new int[0];
         if (col != null) {
+            col = col.trim();
             try {
                 cols = new int[]{Integer.parseInt(col)};
             } catch (NumberFormatException e) {
@@ -348,12 +355,17 @@ public class FilterHandler extends JDialog {
                     default -> throw new IllegalStateException("Comparison only allows equals and not equals");
                 };
 
-                return new Pair.GenericPair<>(f,
-                        debug.formatted("Values", switch (type) {
-                            case EQUAL -> "is";
-                            case NOT_EQUAL -> "is not";
-                            default -> "Comparison only allows equals and not equals";
-                        }, d, col, cols[0]));
+                var msg = cols.length == 0 ? debug.formatted("Values", switch (type) {
+                    case EQUAL -> "is";
+                    case NOT_EQUAL -> "is not";
+                    default -> "Comparison only allows equals and not equals";
+                }, d) : debug.formatted("Values", switch (type) {
+                    case EQUAL -> "is";
+                    case NOT_EQUAL -> "is not";
+                    default -> "Comparison only allows equals and not equals";
+                }, d, col, cols[0]);
+
+                return new Pair.GenericPair<>(f, msg);
             }
 
             d = Double.parseDouble(target);
@@ -361,13 +373,19 @@ public class FilterHandler extends JDialog {
             throw new IllegalStateException("Unexpected value in double: " + filter.substring(1));
         }
 
-        return new Pair.GenericPair<>(RowFilter.numberFilter(type, d, cols),
-                debug.formatted("Values", switch (type) {
-                    case BEFORE -> "less than";
-                    case AFTER -> "greater than";
-                    case EQUAL -> "equal to";
-                    case NOT_EQUAL -> "not equal to";
-                }, d, col, cols[0]));
+        var msg = cols.length == 0 ? debug.formatted("Values", switch (type) {
+            case BEFORE -> "less than";
+            case AFTER -> "greater than";
+            case EQUAL -> "equal to";
+            case NOT_EQUAL -> "not equal to";
+        }, d) : debug.formatted("Values", switch (type) {
+            case BEFORE -> "less than";
+            case AFTER -> "greater than";
+            case EQUAL -> "equal to";
+            case NOT_EQUAL -> "not equal to";
+        }, d, col, cols[0]);
+
+        return new Pair.GenericPair<>(RowFilter.numberFilter(type, d, cols), msg);
     }
 
     private static class NumberNaNFilter<M, I> extends RowFilter<M, I> {

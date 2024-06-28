@@ -9,6 +9,7 @@ import ij.measure.ResultsTable;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.regex.Pattern;
 
@@ -35,7 +36,7 @@ public class FilterHandler extends JDialog {
                     "(?=[\"'])(?:\"[^\"\\\\]*(?:\\\\[\\s\\S][^\"\\\\]*)*\"|'[^'\\\\]*(?:\\\\[\\s\\S][^'\\\\]*)*')))?\\s*" + // Column name, in escapable quotes, allows any character
                     // Match the filter
                     "(?<FILTER>(?:\\*[\\w\\d]+|" + // Regex filter
-                    "[<>=!]\\s*[0-9.]+))\\s*" + // Numerical filter
+                    "[<>=!]\\s*(?:[0-9.]+|Inf|NaN|Fin)))\\s*" + // Numerical filter
                     "(?<AND>&)?)"); // And this with the next filter
     final MeasurementsWindow window;
     private boolean regex = true;
@@ -162,6 +163,11 @@ public class FilterHandler extends JDialog {
                 
                     Values are filtered by the following: > (greater than), < (less than),
                 = (equals), and ! (not equals). Regex is also supported by supplying the expression, starting with an *.
+                
+                    It is additionally possible to filter values based on the following conditions:
+                        - is or is not finite (=Fin or !Fin)
+                        - is or is not infinite (=Inf or !Inf)
+                        - is or is not NaN (=NaN or !NaN)
                 
                     Eg.
                 [<10                                     ]
@@ -325,7 +331,32 @@ public class FilterHandler extends JDialog {
         var d = 0D;
 
         try {
-            d = Double.parseDouble(filter.substring(1).trim());
+            var target = filter.substring(1).trim();
+
+            // Handle NaN filtering
+            RowFilter<? super MeasurementsWindow.MeasurementsTableView, ? super Integer> f = switch (target) {
+                case "Inf" -> new NumberNaNFilter<>(NaNFilter.INFINITE, cols);
+                case "Fin" -> new NumberNaNFilter<>(NaNFilter.FINITE, cols);
+                case "NaN" -> new NumberNaNFilter<>(NaNFilter.NaN, cols);
+                default -> null;
+            };
+
+            if (f != null) {
+                f = switch (type) {
+                    case EQUAL -> f;
+                    case NOT_EQUAL -> RowFilter.notFilter(f);
+                    default -> throw new IllegalStateException("Comparison only allows equals and not equals");
+                };
+
+                return new Pair.GenericPair<>(f,
+                        debug.formatted("Values", switch (type) {
+                            case EQUAL -> "is";
+                            case NOT_EQUAL -> "is not";
+                            default -> "Comparison only allows equals and not equals";
+                        }, d, col, cols[0]));
+            }
+
+            d = Double.parseDouble(target);
         } catch (NumberFormatException e) {
             throw new IllegalStateException("Unexpected value in double: " + filter.substring(1));
         }
@@ -337,5 +368,94 @@ public class FilterHandler extends JDialog {
                     case EQUAL -> "equal to";
                     case NOT_EQUAL -> "not equal to";
                 }, d, col, cols[0]));
+    }
+
+    private static class NumberNaNFilter<M, I> extends RowFilter<M, I> {
+        private final NaNFilter filter;
+        private final int[] columns;
+
+        private NumberNaNFilter(NaNFilter filter, int[] columns) {
+            this.filter = filter;
+            this.columns = columns;
+
+            if (Arrays.stream(columns).anyMatch(i -> i < 0)) {
+                throw new IllegalArgumentException("Index must be >= 0");
+            }
+        }
+
+        @Override
+        public boolean include(Entry<? extends M, ? extends I> entry) {
+            int count = entry.getValueCount();
+            if (columns.length > 0) {
+                for (int i = columns.length - 1; i >= 0; i--) {
+                    int index = columns[i];
+                    if (index < count) {
+                        if (include(entry, index)) {
+                            return true;
+                        }
+                    }
+                }
+            } else {
+                while (--count >= 0) {
+                    if (include(entry, count)) {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        private boolean include(Entry<? extends M, ? extends I> entry, int index) {
+            Object value = entry.getValue(index);
+
+            if (value instanceof Double v) {
+                return switch (filter) {
+                    case FINITE -> Double.isFinite(v);
+                    case INFINITE -> v.isInfinite();
+                    case NaN -> v.isNaN();
+                };
+            } else if (value instanceof Integer) {
+                return switch (filter) {
+                    case FINITE -> true;
+                    case INFINITE, NaN -> false;
+                };
+            } else if (value instanceof Long) {
+                return switch (filter) {
+                    case FINITE -> true;
+                    case INFINITE, NaN -> false;
+                };
+            } else if (value instanceof Float v) {
+                return switch (filter) {
+                    case FINITE -> Float.isFinite(v);
+                    case INFINITE -> v.isInfinite();
+                    case NaN -> v.isNaN();
+                };
+            } else if (value instanceof Short) {
+                return switch (filter) {
+                    case FINITE -> true;
+                    case INFINITE, NaN -> false;
+                };
+            } else if (value instanceof Byte) {
+                return switch (filter) {
+                    case FINITE -> true;
+                    case INFINITE, NaN -> false;
+                };
+            } else if (value instanceof Number v) {
+                return switch (filter) {
+                    case FINITE -> Double.isFinite(v.doubleValue());
+                    case INFINITE -> Double.isInfinite(v.doubleValue());
+                    case NaN -> Double.isNaN(v.doubleValue());
+                };
+            }
+
+            return false;
+        }
+    }
+
+    public enum NaNFilter {
+        FINITE,
+        INFINITE,
+        NaN,
     }
 }

@@ -514,13 +514,16 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			mt = new ResultsTable(tableHDU.getNRows());
 		}
 
-		return fitsTable2MeasurementsTable(mt, hdus, tableHDU).table;
+		var tableRead = fitsTable2MeasurementsTable(mt, hdus, tableHDU);
+		return mt;
 	}
 
 	private static TableRead fitsTable2MeasurementsTable(ResultsTable table, BasicHDU<?>[] hdus, TableHDU<?> tableHDU) throws FitsException {
         if (tableHDU instanceof CompressedTableHDU compressedTableHDU) {
             tableHDU = compressedTableHDU.asBinaryTableHDU();
         }
+
+		var loadTable = true;
 
 		// Handle AIJ Fits Tables
 		//todo drag onto MP windows does not load
@@ -529,7 +532,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			// Dialog to control what to open
 			var d = new GenericSwingDialog("FITs MP Table Reading");
 			d.addMessage("Data to load (if available):");
-			d.addCheckbox("Table", MP_TABLE_LOAD_SETTINGS.loadData.get(), MP_TABLE_LOAD_SETTINGS.loadData::set).setEnabled(false);
+			d.addCheckbox("Table", MP_TABLE_LOAD_SETTINGS.loadData.get(), MP_TABLE_LOAD_SETTINGS.loadData::set);
 			d.addCheckbox("Plot Config", MP_TABLE_LOAD_SETTINGS.loadPlotcfg.get(), MP_TABLE_LOAD_SETTINGS.loadPlotcfg::set);
 			d.addCheckbox("Apertures", MP_TABLE_LOAD_SETTINGS.loadApertures.get(), MP_TABLE_LOAD_SETTINGS.loadApertures::set);
 			d.centerDialog(true);
@@ -570,6 +573,8 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 				for (HeaderCard card : tableHDU.getHeader().findCards("AIJ_\\w{1,4}")) {
 					table.metadata.put(card.getKey().trim().substring(4), card.getValue());
 				}
+			} else {
+				loadTable = false;
 			}
 
 			// Load plotcfg
@@ -623,7 +628,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			}
 
 			if (apertures != null) {
-				return new TableRead(table, apertures);
+				return new TableRead(loadTable, apertures);
 			}
 		} else {
 			for (int c = 0; c < tableHDU.getNCols(); c++) {
@@ -633,7 +638,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			}
 		}
 
-		return new TableRead(table, null);
+		return new TableRead(loadTable, null);
 	}
 
 	//todo check listed column type, skip image columns, or open them as stacks?

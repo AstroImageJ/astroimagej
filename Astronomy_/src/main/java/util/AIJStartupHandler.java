@@ -64,9 +64,11 @@ public class AIJStartupHandler implements PlugIn {
                 table.setFilePath(p.toString());
                 var tableRead = FITS_Reader.handleTable(p, table);
                 if (tableRead != null) {
-                    useMacroSubtitle.set(false);
-                    useMacroTitle.set(false);
-                    table.show();
+                    if (tableRead.loadTable()) {
+                        useMacroSubtitle.set(false);
+                        useMacroTitle.set(false);
+                        table.show();
+                    }
 
                     var asw = IJU.getBestOpenAstroStackWindow();
                     if (asw != null && tableRead.apertures() != null) {
@@ -95,14 +97,16 @@ public class AIJStartupHandler implements PlugIn {
                         }
                     }
 
-                    if (!MultiPlot_.isRunning()) {
-                        //IJ.runPlugIn("Astronomy.MultiPlot_", "");
-                        // Fixes NPE when opening via file association
-                        new MultiPlot_().run(table.shortTitle());
-                        return;
-                    }
+                    if (tableRead.loadTable()) {
+                        if (!MultiPlot_.isRunning()) {
+                            //IJ.runPlugIn("Astronomy.MultiPlot_", "");
+                            // Fixes NPE when opening via file association
+                            new MultiPlot_().run(table.shortTitle());
+                            return;
+                        }
 
-                    MultiPlot_.loadDataOpenConfig(table, p.toString());
+                        MultiPlot_.loadDataOpenConfig(table, p.toString());
+                    }
                 }
             }, true);
     private static final AssociationMapper multiplotPlotCfgHandler =

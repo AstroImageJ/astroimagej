@@ -1071,23 +1071,28 @@ public class ResultsTable implements Cloneable {
 	}
 
 	/** Deletes the specified row. */
+	@AstroImageJ(reason = "Use array copies and list removal directly to improve performance", modified = true)
 	public synchronized void deleteRow(int rowIndex) {
 		if (counter==0 || rowIndex<0 || rowIndex>counter-1)
 			return;
 		if (rowLabels!=null) {
-			rowLabels[rowIndex] = null;
-			for (int i=rowIndex; i<counter-1; i++)
-				rowLabels[i] = rowLabels[i+1];
+			if (counter - 1 - rowIndex >= 0) {
+				System.arraycopy(rowLabels, rowIndex + 1, rowLabels, rowIndex, counter - 1 - rowIndex);
+			}
+			rowLabels[counter - 1] = null; // Clear the last element
 		}
+
+		// Shift columns and handle stringColumns
 		for (int col=0; col<=lastColumn; col++) {
 			if (columns[col]!=null) {
-				for (int i=rowIndex; i<counter-1; i++)
-					columns[col][i] = columns[col][i+1];
+				if (counter - 1 - rowIndex >= 0) {
+					System.arraycopy(columns[col], rowIndex + 1, columns[col], rowIndex, counter - 1 - rowIndex);
+				}
+				columns[col][counter - 1] = NaNEmptyCells ? Double.NaN : 0; // Clear the last element
+
 				ArrayList stringColumn = stringColumns!=null?(ArrayList)stringColumns.get(Integer.valueOf(col)):null;
 				if (stringColumn!=null && stringColumn.size()==counter) {
-					for (int i=rowIndex; i<counter-1; i++)
-						stringColumn.set(i,stringColumn.get(i+1));
-					stringColumn.remove(counter-1);
+					stringColumn.remove(rowIndex);
 				}
 			}
 		}

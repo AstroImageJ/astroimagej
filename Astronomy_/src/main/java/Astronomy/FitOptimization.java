@@ -8,6 +8,9 @@ import astroj.SpringUtil;
 import ij.IJ;
 import ij.Prefs;
 import ij.astro.gui.GenericSwingDialog;
+import ij.astro.gui.ToolTipProvider;
+import ij.astro.gui.ToolTipRenderer;
+import ij.astro.gui.ToolTipWrapper;
 import ij.astro.io.prefs.Property;
 import ij.astro.logging.AIJLogger;
 import ij.astro.util.UIHelper;
@@ -1106,10 +1109,6 @@ public class FitOptimization implements AutoCloseable {
 
     record CleanTracker(CleanMode mode, MeasurementTable table, TreeSet<Integer> removedRows) {}
 
-    public interface ToolTipProvider {
-        String getToolTip();
-    }
-
     private record OutPair(boolean[] stateArray, Object outState) {
     }
 
@@ -1176,46 +1175,6 @@ public class FitOptimization implements AutoCloseable {
             count = count.add(BigDecimal.ONE);
             currentAverage = protoAverage.divide(count, 2, RoundingMode.HALF_UP);
             return currentAverage;
-        }
-    }
-
-    public static class ToolTipWrapper implements ToolTipProvider {
-        final Object value;
-        final String toolTip;
-
-        public ToolTipWrapper(Object value, String toolTip) {
-            this.value = value;
-            this.toolTip = toolTip;
-        }
-
-        public Object getValue() {//todo generic?
-            return value;
-        }
-
-        @Override
-        public String getToolTip() {
-            return toolTip;
-        }
-
-        @Override
-        public String toString() {
-            return value.toString();
-        }
-    }
-
-    public static class ToolTipRenderer extends DefaultListCellRenderer {
-
-        @Override
-        public Component getListCellRendererComponent(JList list, Object value,
-                                                      int index, boolean isSelected, boolean cellHasFocus) {
-            JComponent component = (JComponent) super.getListCellRendererComponent(list, value, index, isSelected,
-                    cellHasFocus);
-            String tip = null;
-            if (value instanceof ToolTipProvider ttp) {
-                tip = ttp.getToolTip();
-            }
-            list.setToolTipText(tip);
-            return component;
         }
     }
 

@@ -1,14 +1,18 @@
 package ij.astro.gui.nstate;
 
+import ij.astro.util.UIHelper;
+
 import javax.swing.*;
 import java.util.function.Function;
 
 public interface NState<STATE extends Enum<STATE> & NState<STATE>> {
-    Icon icon();
-
     boolean isOn();
 
     int ordinal();
+
+    default Icon icon() {
+        return UIHelper.createImageIcon("Astronomy/images/icons/question_mark.png", 20 ,20);
+    }
 
     default STATE next() {
         var o = ordinal() + 1;

@@ -575,9 +575,11 @@ javaRuntimeSystems.each {sys, sysInfo ->
 }
 
 tasks.withType(PackageTask).configureEach {pkgTsk ->
+    if (pkgTsk.name == 'package')
+        return
     // Extract platform info from task name, put it in format for file name
     if (!pkgTsk.name.matches("packageAijFor(.+)_((?:x86)|(?:arm))_(\\d{2})Bit_Java(\\d{2})")) {
-        throw new GradleException("Package task ${pkgTsk.name} failed to match, could not determine with confidence platform information")
+        throw new GradleException("Package task '${pkgTsk.name}' failed to match, could not determine with confidence platform information")
     }
     def platformInfo = pkgTsk.name.replaceAll("packageAijFor(.+)_((?:x86)|(?:arm))_(\\d{2})Bit_Java(\\d{2})", '$2_$3Bit')
 

@@ -12,13 +12,16 @@ import java.nio.file.StandardCopyOption
 buildscript {
     repositories {
         //mavenLocal()
+        /*maven {
+            url "https://oss.sonatype.org/content/repositories/snapshots"
+        }*/
         maven {
             url 'gradlePlugins'
         }
         mavenCentral()
     }
     dependencies {
-        classpath 'io.github.fvarrui:javapackager:1.7.5'
+        classpath 'io.github.fvarrui:javapackager:1.7.6'
     }
 
     // Needed for GrGit 5+

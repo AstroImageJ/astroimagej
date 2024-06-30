@@ -781,6 +781,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
     @SuppressWarnings("unchecked")
     public <T extends Enum<T> & NState<T>> JComboBox<T> addNStateDropdown(T defaultState, Consumer<T> consumer) {
         var b = new JComboBox<>(defaultState.values0());
+        b.setRenderer(new ToolTipRenderer());
         b.setSelectedItem(defaultState);
         b.addActionListener($ -> consumer.accept((T) b.getSelectedItem()));
         if (addToSameRow) {

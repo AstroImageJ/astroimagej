@@ -169,6 +169,23 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
                     }
                 }
 
+                if (SwingUtilities.isRightMouseButton(e) && e.isShiftDown()) {
+                    var i = jTable.getTableHeader().columnAtPoint(e.getPoint());
+                    if (i < 0) {
+                        return;
+                    }
+
+                    var c = jTable.getColumnModel().getColumn(i);
+                    if (((String) c.getIdentifier()).equals("Label")) {
+                        IJ.error("Cannot perform operations on Labels");
+                        return;
+                    }
+
+                    OperationsHandler.dialog(MeasurementsWindow.this, (String) c.getIdentifier());
+
+                    return;
+                }
+
                 if (SwingUtilities.isRightMouseButton(e) && !e.isAltDown()) {
                     var i = jTable.getTableHeader().columnAtPoint(e.getPoint());
                     if (i < 0) {

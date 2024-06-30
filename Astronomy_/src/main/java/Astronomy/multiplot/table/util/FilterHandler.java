@@ -356,14 +356,14 @@ public class FilterHandler extends JDialog {
                 };
 
                 var msg = cols.length == 0 ? debug.formatted("Values", switch (type) {
-                    case EQUAL -> "is";
-                    case NOT_EQUAL -> "is not";
+                    case EQUAL -> "are";
+                    case NOT_EQUAL -> "are not";
                     default -> "Comparison only allows equals and not equals";
-                }, d) : debug.formatted("Values", switch (type) {
-                    case EQUAL -> "is";
-                    case NOT_EQUAL -> "is not";
+                }, target) : debug.formatted("Values", switch (type) {
+                    case EQUAL -> "are";
+                    case NOT_EQUAL -> "are not";
                     default -> "Comparison only allows equals and not equals";
-                }, d, col, cols[0]);
+                }, target, col, cols[0]);
 
                 return new Pair.GenericPair<>(f, msg);
             }

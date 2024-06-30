@@ -29,6 +29,8 @@ import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.*;
+import java.util.function.DoubleBinaryOperator;
+import java.util.function.DoubleUnaryOperator;
 
 
 /** This is a table for storing measurement results and strings as columns of values. 
@@ -734,6 +736,35 @@ public class ResultsTable implements Cloneable {
 		int col = getColumnIndex(column);
 		for (int i=1; i<values.length; i++)
 			setValue(col, i, values[i]);
+	}
+
+	@AstroImageJ(reason = "Ability to modify column values")
+	public void updateValues(String column, DoubleUnaryOperator operator) {
+		int columnIndex = getColumnIndex(column);
+		if (columnIndex != COLUMN_NOT_FOUND) {
+			var col = columns[columnIndex];
+			for (int row=0; row<size(); row++) {
+				col[row] = operator.applyAsDouble(col[row]);
+			}
+		}
+	}
+
+	/**
+	 * @param destColumn the column to have new values
+	 * @param srcColumn the column to pull values from
+	 * @param operator (dest, src) -> newDest
+	 */
+	@AstroImageJ(reason = "Ability to modify column values")
+	public void updateValues(String destColumn, String srcColumn, DoubleBinaryOperator operator) {
+		int destColumnIndex = getColumnIndex(destColumn);
+		int srcColumnIndex = getColumnIndex(srcColumn);
+		if (destColumnIndex != COLUMN_NOT_FOUND && srcColumnIndex != COLUMN_NOT_FOUND) {
+			var destCol = columns[destColumnIndex];
+			var srcCol = columns[srcColumnIndex];
+			for (int row=0; row<size(); row++) {
+				destCol[row] = operator.applyAsDouble(destCol[row], srcCol[row]);
+			}
+		}
 	}
 
 	/** Returns a tab or comma delimited string containing the column headings. */

@@ -20,6 +20,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.function.DoubleBinaryOperator;
+import java.util.function.DoubleUnaryOperator;
 import java.util.regex.Pattern;
 
 
@@ -538,6 +540,18 @@ public class MeasurementTable extends ResultsTable {
             updateViewSynced(UpdateEvent.COL_ADDED, getLastColumn(), getLastColumn());
         }
         updateView(UpdateEvent.CELL_UPDATED, row, column);
+    }
+
+    @Override
+    public void updateValues(String column, DoubleUnaryOperator operator) {
+        super.updateValues(column, operator);
+        updateView(UpdateEvent.DATA_CHANGED);
+    }
+
+    @Override
+    public void updateValues(String destColumn, String srcColumn, DoubleBinaryOperator operator) {
+        super.updateValues(destColumn, srcColumn, operator);
+        updateView(UpdateEvent.DATA_CHANGED);
     }
 
     public void rename(String newName) {

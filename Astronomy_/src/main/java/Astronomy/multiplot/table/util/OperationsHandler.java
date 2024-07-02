@@ -13,6 +13,7 @@ import java.util.function.Function;
 public class OperationsHandler {
     private static final Property<Operator> OPERATOR = new Property<>(Operator.ADD, OperationsHandler.class);
     private static final Property<Double> OPERAND = new Property<>(0D, OperationsHandler.class);
+    private static final Property<Boolean> FLIP_INPUTS = new Property<>(false, OperationsHandler.class);
 
     public static void dialog(MeasurementsWindow owner, String column) {
         var d = new GenericSwingDialog("Column Operations for " + column, owner);
@@ -22,15 +23,26 @@ public class OperationsHandler {
         d.addNStateDropdown(OPERATOR.get(), OPERATOR::set);
         d.addToSameRow();
         d.addUnboundedNumericField("Operand (b):", OPERAND.get(), 1, 10, null, OPERAND::set);
+        d.addToSameRow();
+        d.addCheckbox("Flip inputs", FLIP_INPUTS.get(), FLIP_INPUTS::set).setToolTipText("Flip Inputs (cv, b) -> (b, cv)");
         d.setOverridePosition(false);
-        d.addDoubleSpaceLineSeparator();
 
         d.centerDialog(true);
         d.setIconImage(UIHelper.createImage("Astronomy/images/icons/table/calculator.png"));
         d.showDialog();
 
         if (d.wasOKed()) {
-            owner.getTable().updateValues(column, cv -> OPERATOR.get().operator.applyAsDouble(cv, OPERAND.get()));
+            DoubleBinaryOperator baseOp = OPERATOR.get().operator;
+            DoubleBinaryOperator operator;
+            if (FLIP_INPUTS.get()) {
+                operator = (cv, b) -> baseOp.applyAsDouble(b, cv);
+            } else {
+                operator = baseOp;
+            }
+
+            var b = OPERAND.get();
+
+            owner.getTable().updateValues(column, cv -> operator.applyAsDouble(cv, b));
         }
     }
 

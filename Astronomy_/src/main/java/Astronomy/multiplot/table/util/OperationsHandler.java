@@ -50,18 +50,18 @@ public class OperationsHandler {
         ADD("cv + b", Double::sum),
         MULTIPLY("cv * b", (cv, b) -> cv * b),
         DIVIDE("cv / b", (cv, b) -> cv / b),
-        EXPONENTIATE("<html>cv<sup>b</sup></html>", Math::pow),//todo fast path for sqr/cube? sqr seems covered
+        EXPONENTIATE("<html>cv<sup>b</sup></html>", Math::pow),
         /**
          * Logarithm
          */
-        ANTIEXPONENTIATE("<html>log<sub>b</sub>(cv)</html>", (cv, b) -> {
+        ANTIEXPONENTIATE("<html>log<sub>b</sub>(cv)<br>Set b = 0 for natural log</html>", (cv, b) -> {
             if (b == 0) {
                 return Math.log(cv);
-            } else if (b == 1 || b == 10) {//todo document cases
+            } else if (b == 10) {
                 return Math.log10(cv);
             }
             return Math.log(cv) / Math.log(b);
-        }),//todo fast path for e/10 (base 1, and 0 are undef)
+        }),
         ROOT("<html><sup>b</sup>&radic cv</html>", (cv, b) -> {
             if (b == 2) {
                 return Math.sqrt(cv);

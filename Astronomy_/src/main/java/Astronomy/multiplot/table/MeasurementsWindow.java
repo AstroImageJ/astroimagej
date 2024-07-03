@@ -37,6 +37,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
+import static ij.measure.ResultsTable.COLUMN_NOT_FOUND;
+
 public class MeasurementsWindow extends JFrame implements ITableWindow {
     private final JTable jTable;
     private final JTable rowHeadings;
@@ -135,7 +137,7 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
         jTable.getTableHeader().setToolTipText("""
                 <html>
                 Left-click to toggle sort view based on column.<br>
-                Right-click to sort table based on column and update plot.<br>
+                Right-click to open column menu.<br>
                 Middle-click or Right-click+alt/opt to select entire column.
                 </html>
                 """);
@@ -169,37 +171,79 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
                     }
                 }
 
-                if (SwingUtilities.isRightMouseButton(e) && e.isShiftDown()) {
+                if (SwingUtilities.isRightMouseButton(e)) {
                     var i = jTable.getTableHeader().columnAtPoint(e.getPoint());
                     if (i < 0) {
                         return;
                     }
 
                     var c = jTable.getColumnModel().getColumn(i);
-                    if (((String) c.getIdentifier()).equals("Label")) {
-                        IJ.error("Cannot perform operations on Labels");
-                        return;
-                    }
 
-                    OperationsHandler.dialog(MeasurementsWindow.this, (String) c.getIdentifier());
+                    var popup = new JPopupMenu("Column Options");
 
+                    var item = new JMenuItem("Sort table based on column values");
+                    item.setToolTipText("Run again to flip order");
+                    item.addActionListener($ -> {
+                        if (((String) c.getIdentifier()).equals("Label")) {
+                            IJ.error("Cannot sort on Label column");
+                            return;
+                        }
+                        table.sort(((String) c.getIdentifier()));
+                        jTable.getRowSorter().setSortKeys(null);
+                        table.updateRelatedPlot();
+                    });
+                    popup.add(item);
+
+                    item = new JMenuItem("Remove all rows containing non-finite values in this column");
+                    item.setToolTipText("See Filter for more filtering options");
+                    item.addActionListener($ -> {
+                        if (((String) c.getIdentifier()).equals("Label")) {
+                            IJ.error("Cannot filter on Label column");
+                            return;
+                        }
+
+                        table.setLock(true);
+
+                        var cName = (String) c.getIdentifier();
+                        var cIdx = table.getColumnIndex(cName);
+
+                        if (cIdx == COLUMN_NOT_FOUND) {
+                            IJ.error("Could not find column with name " + cName);
+                            return;
+                        }
+
+                        // Needs to be sorted as we are removing rows in descending order
+                        var idx = IntStream.range(0, table.size())
+                                .filter(row -> !Double.isFinite(table.getValueAsDouble(cIdx, row)))
+                                .sorted().toArray();
+                        table.deleteRows(idx);
+                        table.setLock(false);
+                        if (idx.length > 0) {
+                            table.updateRelatedPlot();
+                        }
+                    });
+                    popup.add(item);
+
+                    item = new JMenuItem("Apply mathematical operation to this column");
+                    item.addActionListener($ -> {
+                        if (((String) c.getIdentifier()).equals("Label")) {
+                            IJ.error("Cannot perform operations on Labels");
+                            return;
+                        }
+
+                        OperationsHandler.dialog(MeasurementsWindow.this, (String) c.getIdentifier());
+                    });
+                    popup.add(item);
+
+                    item = new JMenuItem("Select Column");
+                    item.addActionListener($ -> {
+                        jTable.setColumnSelectionInterval(i, i);
+                        jTable.setRowSelectionInterval(0, jTable.getRowCount()-1);
+                    });
+                    popup.add(item);
+
+                    popup.show(e.getComponent(), e.getX(), e.getY());
                     return;
-                }
-
-                if (SwingUtilities.isRightMouseButton(e) && !e.isAltDown()) {
-                    var i = jTable.getTableHeader().columnAtPoint(e.getPoint());
-                    if (i < 0) {
-                        return;
-                    }
-
-                    var c = jTable.getColumnModel().getColumn(i);
-                    if (((String) c.getIdentifier()).equals("Label")) {
-                        IJ.error("Cannot sort on Label column");
-                        return;
-                    }
-                    table.sort(((String) c.getIdentifier()));
-                    jTable.getRowSorter().setSortKeys(null);
-                    table.updateRelatedPlot();
                 }
 
                 if (SwingUtilities.isMiddleMouseButton(e) || (SwingUtilities.isRightMouseButton(e) && e.isAltDown())) {

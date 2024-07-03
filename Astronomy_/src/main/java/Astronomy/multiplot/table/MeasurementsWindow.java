@@ -14,7 +14,6 @@ import ij.astro.logging.AIJLogger;
 import ij.astro.util.UIHelper;
 import ij.gui.GenericDialog;
 import ij.gui.PlotContentsDialog;
-import ij.measure.ResultsTable;
 import ij.measure.ResultsTableMacros;
 import ij.plugin.Distribution;
 import ij.plugin.FITS_Writer;
@@ -883,7 +882,7 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
                         var ap = m.group("AP");
                         if (ap != null) {
                             var i = MeasurementsWindow.this.table.getColumnIndex("Peak_" + ap);
-                            if (i == ResultsTable.COLUMN_NOT_FOUND) {
+                            if (i == COLUMN_NOT_FOUND) {
                                 if (ap.startsWith("C")) {
                                     ap = ap.replace("C", "T");
                                 } else {
@@ -891,7 +890,7 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
                                 }
                                 i = MeasurementsWindow.this.table.getColumnIndex("Peak_" + ap);
                             }
-                            if (i != ResultsTable.COLUMN_NOT_FOUND) {
+                            if (i != COLUMN_NOT_FOUND) {
                                 var d = MeasurementsWindow.this.table.getValueAsDouble(i, table.convertRowIndexToModel(row));
                                 if (d >=saturationWarningLevel) {
                                     setBackground(Color.RED);
@@ -939,7 +938,7 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
                         String ap;
                         if (heading.startsWith("Peak_") && (m = AP_PATTERN.matcher(heading)).matches() && (ap = m.group("AP")) != null) {
                             var i = MeasurementsWindow.this.table.getColumnIndex("Peak_" + ap);
-                            if (i == ResultsTable.COLUMN_NOT_FOUND) {
+                            if (i == COLUMN_NOT_FOUND) {
                                 if (ap.startsWith("C")) {
                                     ap = ap.replace("C", "T");
                                 } else {
@@ -947,7 +946,7 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
                                 }
                                 i = MeasurementsWindow.this.table.getColumnIndex("Peak_" + ap);
                             }
-                            if (i != ResultsTable.COLUMN_NOT_FOUND) {
+                            if (i != COLUMN_NOT_FOUND) {
                                 var d = MeasurementsWindow.this.table.getValueAsDouble(i, table.convertRowIndexToModel(row));
                                 if (d >= saturationWarningLevel) {
                                     isSat = true;

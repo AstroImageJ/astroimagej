@@ -543,6 +543,12 @@ public class MeasurementTable extends ResultsTable {
     }
 
     @Override
+    public void generateValues(String destColumn, String srcColumn, DoubleUnaryOperator operator) {
+        super.generateValues(destColumn, srcColumn, operator);
+        updateView(UpdateEvent.REBUILD);
+    }
+
+    @Override
     public void updateValues(String column, DoubleUnaryOperator operator) {
         super.updateValues(column, operator);
         updateView(UpdateEvent.DATA_CHANGED);

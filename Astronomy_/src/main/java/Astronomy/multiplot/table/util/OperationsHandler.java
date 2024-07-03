@@ -7,6 +7,7 @@ import ij.astro.gui.nstate.NState;
 import ij.astro.io.prefs.Property;
 import ij.astro.util.UIHelper;
 
+import javax.swing.*;
 import java.util.function.DoubleBinaryOperator;
 import java.util.function.Function;
 
@@ -14,6 +15,9 @@ public class OperationsHandler {
     private static final Property<Operator> OPERATOR = new Property<>(Operator.ADD, OperationsHandler.class);
     private static final Property<Double> OPERAND = new Property<>(0D, OperationsHandler.class);
     private static final Property<Boolean> FLIP_INPUTS = new Property<>(false, OperationsHandler.class);
+    private static final Property<Boolean> RESULTS_IN_NEW_COLUMN = new Property<>(false, OperationsHandler.class);
+    private static final Property<COLUMN_TYPE> COLUMN_TYPE_PROPERTY = new Property<>(COLUMN_TYPE.POSTFIX, OperationsHandler.class);
+    private static final Property<String> COLUMN_NAME = new Property<>("_m", OperationsHandler.class);
 
     public static void dialog(MeasurementsWindow owner, String column) {
         var d = new GenericSwingDialog("Column Operations for " + column, owner);
@@ -26,6 +30,26 @@ public class OperationsHandler {
         d.addToSameRow();
         d.addCheckbox("Flip inputs", FLIP_INPUTS.get(), FLIP_INPUTS::set).setToolTipText("Flip Inputs (cv, b) -> (b, cv)");
         d.setOverridePosition(false);
+
+        d.addLineSeparator();
+
+        d.addCheckbox("Put results in new column", RESULTS_IN_NEW_COLUMN.get(), RESULTS_IN_NEW_COLUMN::set);
+        d.addToSameRow();
+        var typeBox = d.addNStateDropdown(COLUMN_TYPE_PROPERTY.get(), COLUMN_TYPE_PROPERTY::set);
+        var textField = new JTextField(COLUMN_NAME.get(), 10);
+        textField.addActionListener(l -> COLUMN_NAME.set(l.getActionCommand()));
+        d.addToSameRow();
+        d.addGenericComponent(textField);
+
+        RESULTS_IN_NEW_COLUMN.addListener(($, putResultsInNewCol) -> {
+            typeBox.setEnabled(putResultsInNewCol);
+            textField.setEnabled(putResultsInNewCol);
+        });
+
+        if (!RESULTS_IN_NEW_COLUMN.get()) {
+            typeBox.setEnabled(false);
+            textField.setEnabled(false);
+        }
 
         d.centerDialog(true);
         d.setIconImage(UIHelper.createImage("Astronomy/images/icons/table/calculator.png"));
@@ -42,7 +66,20 @@ public class OperationsHandler {
 
             var b = OPERAND.get();
 
-            owner.getTable().updateValues(column, cv -> operator.applyAsDouble(cv, b));
+            if (RESULTS_IN_NEW_COLUMN.get()) {
+                // Make sure colName is updated
+                COLUMN_NAME.set(textField.getText());
+
+                String newCol = switch (COLUMN_TYPE_PROPERTY.get()) {
+                    case POSTFIX -> column + COLUMN_NAME.get();
+                    case PREFIX -> COLUMN_NAME.get() + column;
+                    case REPLACE -> COLUMN_NAME.get();
+                };
+
+                owner.getTable().generateValues(newCol, column, cv -> operator.applyAsDouble(cv, b));
+            } else {
+                owner.getTable().updateValues(column, cv -> operator.applyAsDouble(cv, b));
+            }
         }
     }
 
@@ -102,6 +139,23 @@ public class OperationsHandler {
         @Override
         public String getToolTip() {
             return description;
+        }
+    }
+
+    public enum COLUMN_TYPE implements NState<COLUMN_TYPE> {
+        POSTFIX,
+        PREFIX,
+        REPLACE,
+        ;
+
+        @Override
+        public boolean isOn() {
+            return false;
+        }
+
+        @Override
+        public COLUMN_TYPE[] values0() {
+            return COLUMN_TYPE.values();
         }
     }
 }

@@ -8,6 +8,8 @@ import ij.astro.io.prefs.Property;
 import ij.astro.util.UIHelper;
 
 import javax.swing.*;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.function.DoubleBinaryOperator;
 import java.util.function.Function;
 
@@ -87,7 +89,13 @@ public class OperationsHandler {
         ADD("cv + b", Double::sum),
         MULTIPLY("cv * b", (cv, b) -> cv * b),
         DIVIDE("cv / b", (cv, b) -> cv / b),
-        EXPONENTIATE("<html>cv<sup>b</sup></html>", Math::pow),
+        EXPONENTIATE("<html>cv<sup>b</sup><br>If b=0, calculates e<sup>cv</sup> instead</html>", (cv, b) -> {
+            if (b == 0) {
+                return Math.exp(cv);
+            } else {
+                return Math.pow(cv, b);
+            }
+        }),
         /**
          * Logarithm
          */
@@ -123,9 +131,19 @@ public class OperationsHandler {
         MAX("max(cv, b)", Math::max),
         ABS("|cv|", (cv, b) -> Math.abs(cv)),
         QUADRATURE_SUM("<html>&radic (cv<sup>2</sup> + b<sup>2</sup>)</html>", Math::hypot),
+        ROUND("<html>round(cv, b)<br>Use b=0 to round to nearest integer, " +
+                "otherwise cv is rounded to b decimal places</html>", (cv, b) -> {
+            if (b == 0) {
+                return Math.rint(cv);
+            } else {
+                return BigDecimal.valueOf(cv).setScale((int) b, RoundingMode.HALF_EVEN).doubleValue();
+            }
+        }),
         CEIL("ceil(cv)", (cv, b) -> Math.ceil(cv)),
         FLOOR("floor(cv)", (cv, b) -> Math.floor(cv)),
         MODULO("cv % b", (cv, b) -> cv % b),
+        ADD_RANDOM("<html>cv + b * random<br>random is drawn from [0,b), " +
+                "which is approximately uniformly distributed</html>", (cv, b) -> b*Math.random() + cv),
         IDENTITY("cv -> cv", (cv, b) -> cv),
         ;
 

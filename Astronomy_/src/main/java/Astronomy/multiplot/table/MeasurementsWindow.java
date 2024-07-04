@@ -242,6 +242,14 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
                     });
                     popup.add(item);
 
+                    item = new JMenuItem("Delete column");
+                    item.addActionListener($ -> {
+                        table.setLock(true);
+                        table.deleteColumn((String) c.getIdentifier());
+                        table.setLock(false);
+                    });
+                    popup.add(item);
+
                     popup.show(e.getComponent(), e.getX(), e.getY());
                     return;
                 }

@@ -779,6 +779,12 @@ public class MeasurementTable extends ResultsTable {
         updateView(UpdateEvent.ROW_DELETED, rowIndex, rowIndex);
     }
 
+    @Override
+    public void deleteColumn(String column) {
+        super.deleteColumn(column);
+        updateView(UpdateEvent.REBUILD);
+    }
+
 
     /**
      * Bulk delete rows, rebuilding the table window at the end.

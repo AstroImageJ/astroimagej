@@ -1159,13 +1159,35 @@ public class ResultsTable implements Cloneable {
 	}
 	
 	/** Deletes the specified column. */
+	@AstroImageJ(reason = "Delete columns in sane way", modified = true)
 	public void deleteColumn(String column) {
+		if (rowLabels != null && "Label".equals(column) && rowLabelHeading.equals(column)) {
+			rowLabels = null;
+			return;
+		}
+
 		int col = getColumnIndex(column);
 		if (col==COLUMN_NOT_FOUND)
 			throw new IllegalArgumentException("\""+column+"\" column not found");
-		columns[col] = null;
-		headings[col] = "-";
-		columnDeleted = true;
+
+		// Shift table
+		System.arraycopy(columns, col+1, columns, col, columns.length - col - 1);
+		System.arraycopy(headings, col+1, headings, col, headings.length - col - 1);
+		System.arraycopy(decimalPlaces, col+1, decimalPlaces, col, decimalPlaces.length - col - 1);
+		System.arraycopy(keep, col+1, keep, col, keep.length - col - 1);
+
+		if (stringColumns!=null) {
+			stringColumns.remove(col);
+		}
+
+		// Reset last column
+		columns[columns.length - 1] = null;
+		headings[headings.length - 1] = null;
+		decimalPlaces[decimalPlaces.length - 1] = AUTO_FORMAT;
+		keep[keep.length - 1] = false;
+
+		// Update counter
+		lastColumn--;
 	}
 
 	/** Changes the name of a column. */

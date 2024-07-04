@@ -643,6 +643,10 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
         i.addActionListener($ -> jTable.selectAll());
         m.add(i);
         m.addSeparator();
+        i = new MenuItem("Clear All");
+        i.addActionListener($ -> table.clearTable());
+        m.add(i);
+        m.addSeparator();
         i = new MenuItem("Find...", new MenuShortcut(KeyEvent.VK_F));
         i.addActionListener($ -> {
             if (findWindow == null) {
@@ -700,9 +704,6 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
         mb.add(m);
 
         m = new Menu("Results");
-        i = new MenuItem("Clear All");
-        i.addActionListener($ -> table.clearTable());
-        m.add(i);
         i = new MenuItem("Summarize");
         i.addActionListener($ -> {
             Analyzer analyzer = new Analyzer(null, table);

@@ -208,6 +208,7 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
 
                         if (cIdx == COLUMN_NOT_FOUND) {
                             IJ.error("Could not find column with name " + cName);
+                            table.setLock(false);
                             return;
                         }
 

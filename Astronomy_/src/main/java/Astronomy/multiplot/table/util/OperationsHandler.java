@@ -107,6 +107,26 @@ public class OperationsHandler {
             }
             return Math.pow(cv, 1D / b);
         }),
+        TO_DEGREES("cv (radians) -> degrees", (cv, b) -> Math.toDegrees(cv)),
+        TO_RADIANS("cv° -> radians", (cv, b) -> Math.toRadians(cv)),
+        SIN("sin(cv)", (cv, b) -> Math.sin(cv)),
+        COS("cos(cv)", (cv, b) -> Math.cos(cv)),
+        TAN("tan(cv)", (cv, b) -> Math.tan(cv)),
+        ARCSIN("arcsin(cv)", (cv, b) -> Math.asin(cv)),
+        ARCCOS("arccos(cv)", (cv, b) -> Math.acos(cv)),
+        ARCTAN("arctan(cv)", (cv, b) -> Math.atan(cv)),
+        ARCTAN2("arctan2(cv, b)", Math::atan2),
+        HYPERBOLIC_SIN("sinh(cv)", (cv, b) -> Math.sinh(cv)),
+        HYPERBOLIC_COS("cosh(cv)", (cv, b) -> Math.cosh(cv)),
+        HYPERBOLIC_TAN("tanh(cv)", (cv, b) -> Math.tanh(cv)),
+        MIN("min(cv, b)", Math::min),
+        MAX("max(cv, b)", Math::max),
+        ABS("|cv|", (cv, b) -> Math.abs(cv)),
+        QUADRATURE_SUM("<html>&radic (cv<sup>2</sup> + b<sup>2</sup>)</html>", Math::hypot),
+        CEIL("ceil(cv)", (cv, b) -> Math.ceil(cv)),
+        FLOOR("floor(cv)", (cv, b) -> Math.floor(cv)),
+        MODULO("cv % b", (cv, b) -> cv % b),
+        IDENTITY("cv -> cv", (cv, b) -> cv),
         ;
 
         final String description;

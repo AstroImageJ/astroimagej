@@ -220,6 +220,7 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
                         table.setLock(false);
                         if (idx.length > 0) {
                             table.updateRelatedPlot();
+                            IJ.showMessage("Row trimming", "Removed %s rows.".formatted(idx.length));
                         }
                     });
                     popup.add(item);

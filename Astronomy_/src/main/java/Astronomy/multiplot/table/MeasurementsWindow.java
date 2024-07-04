@@ -497,7 +497,7 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
 
                 // manually add new column
                 var model = jTable.getColumnModel();
-                var newColumn = new TableColumn(i1);
+                var newColumn = new TableColumn(i1+tableView.offsetForLabel());
                 newColumn.setHeaderValue(table.getColumnHeading(i1));
                 model.addColumn(newColumn);
 

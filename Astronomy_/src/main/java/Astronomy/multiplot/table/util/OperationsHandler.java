@@ -73,7 +73,7 @@ public class OperationsHandler {
                 String newCol = switch (COLUMN_TYPE_PROPERTY.get()) {
                     case POSTFIX -> column + COLUMN_NAME.get();
                     case PREFIX -> COLUMN_NAME.get() + column;
-                    case REPLACE -> COLUMN_NAME.get();
+                    case NEW_NAME -> COLUMN_NAME.get();
                 };
 
                 owner.getTable().generateValues(newCol, column, cv -> operator.applyAsDouble(cv, b));
@@ -145,7 +145,7 @@ public class OperationsHandler {
     public enum COLUMN_TYPE implements NState<COLUMN_TYPE> {
         POSTFIX,
         PREFIX,
-        REPLACE,
+        NEW_NAME,
         ;
 
         @Override

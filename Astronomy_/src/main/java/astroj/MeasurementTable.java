@@ -545,12 +545,12 @@ public class MeasurementTable extends ResultsTable {
     @Override
     public void updateValues(String destColumn, String srcColumn, DoubleUnaryOperator operator) {
         super.updateValues(destColumn, srcColumn, operator);
-        updateViewSynced(UpdateEvent.DATA_CHANGED, 0, 0);
+        updateView(UpdateEvent.DATA_CHANGED);
     }
 
     @Override
-    public void updateValues(String destColumn, String srcColumn, DoubleBinaryOperator operator) {
-        super.updateValues(destColumn, srcColumn, operator);
+    public void updateValues(String destColumn, String srcColumn1, String srcColumn2, DoubleBinaryOperator operator) {
+        super.updateValues(destColumn, srcColumn1, srcColumn2, operator);
         updateView(UpdateEvent.DATA_CHANGED);
     }
 

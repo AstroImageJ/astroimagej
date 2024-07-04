@@ -770,14 +770,38 @@ public class ResultsTable implements Cloneable {
 	 */
 	@AstroImageJ(reason = "Ability to modify column values")
 	public void updateValues(String destColumn, String srcColumn, DoubleBinaryOperator operator) {
+		updateValues(destColumn, destColumn, srcColumn, operator);
+	}
+
+	/**
+	 * @param destColumn the column to have new values
+	 * @param srcColumn1 the column to pull values from
+	 * @param srcColumn2 the column to pull values from
+	 * @param operator (src1, src2) -> dest
+	 */
+	@AstroImageJ(reason = "Ability to modify column values")
+	public void updateValues(String destColumn, String srcColumn1, String srcColumn2, DoubleBinaryOperator operator) {
 		int destColumnIndex = getColumnIndex(destColumn);
-		int srcColumnIndex = getColumnIndex(srcColumn);
-		if (destColumnIndex != COLUMN_NOT_FOUND && srcColumnIndex != COLUMN_NOT_FOUND) {
-			var destCol = columns[destColumnIndex];
-			var srcCol = columns[srcColumnIndex];
-			for (int row=0; row<size(); row++) {
-				destCol[row] = operator.applyAsDouble(destCol[row], srcCol[row]);
-			}
+		int srcColumn1Index = getColumnIndex(srcColumn1);
+		int srcColumn2Index = getColumnIndex(srcColumn2);
+
+		if (destColumnIndex == COLUMN_NOT_FOUND) {
+			throw new IllegalArgumentException("Could not find column '%s'".formatted(destColumn));
+		}
+
+		if (srcColumn1Index == COLUMN_NOT_FOUND) {
+			throw new IllegalArgumentException("Could not find column '%s'".formatted(srcColumn1));
+		}
+
+		if (srcColumn2Index == COLUMN_NOT_FOUND) {
+			throw new IllegalArgumentException("Could not find column '%s'".formatted(srcColumn2));
+		}
+
+		var destCol = columns[destColumnIndex];
+		var srcCol1 = columns[srcColumn1Index];
+		var srcCol2 = columns[srcColumn2Index];
+		for (int row=0; row<size(); row++) {
+			destCol[row] = operator.applyAsDouble(srcCol1[row], srcCol2[row]);
 		}
 	}
 

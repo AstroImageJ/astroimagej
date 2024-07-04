@@ -18,6 +18,9 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
+ * {@link Enum} values are stored and loaded based on the value of {@link Enum#name()},
+ * which should NOT change.
+ *
  * @see PropertyKey for more control over the property key.
  *
  * @param <T> the type of the property.
@@ -164,6 +167,9 @@ public class Property<T> {
         return Prefs.ijPrefs.containsKey(Prefs.KEY_PREFIX+getPropertyKey());
     }
 
+    /**
+     * @param listener (key, newValue) -> {}
+     */
     public void addListener(PropertyChangeListener<T> listener) {
         listeners.add(listener);
     }
@@ -222,10 +228,16 @@ public class Property<T> {
         listeners.clear();
     }
 
+    /**
+     * @param loadValidator (loadedValue) -> value; value may equal loadedValue.
+     */
     public void setLoadValidator(PropertyLoadValidator<T> loadValidator) {
         this.loadValidator = loadValidator;
     }
 
+    /**
+     * @param changeValidator (key, oldValue, newValue) -> value; value may equal newValue or oldValue.
+     */
     public void setChangeValidator(PropertyChangeValidator<T> changeValidator) {
         this.changeValidator = changeValidator;
     }
@@ -392,16 +404,25 @@ public class Property<T> {
         return c;
     }
 
+    /**
+     * Takes (key, newValue) for processing.
+     */
     @FunctionalInterface
     public interface PropertyChangeListener<T> {
         void valueChanged(String key, T newValue);
     }
 
+    /**
+     * Takes the loadedValue and returns a (possibly different) value.
+     */
     @FunctionalInterface
     public interface PropertyLoadValidator<T> {
         T valueLoaded(T loadedValue);
     }
 
+    /**
+     * Takes (key, oldValue, newValue) and returns a (possibly different) new value.
+     */
     @FunctionalInterface
     public interface PropertyChangeValidator<T> {
         T valueChanged(String key, T oldValue, T newValue);

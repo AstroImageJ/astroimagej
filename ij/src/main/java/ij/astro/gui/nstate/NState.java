@@ -5,6 +5,12 @@ import ij.astro.util.UIHelper;
 import javax.swing.*;
 import java.util.function.Function;
 
+/**
+ * An {@link Enum} representing variable state of fixed size.
+ * <p>
+ * For use in {@link ij.astro.io.prefs.Property}, values are stored and loaded based on
+ * the value of {@link Enum#name()}, which should NOT change. Use {@link Enum#toString()} instead.
+ */
 public interface NState<STATE extends Enum<STATE> & NState<STATE>> {
     boolean isOn();
 

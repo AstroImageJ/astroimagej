@@ -738,34 +738,28 @@ public class ResultsTable implements Cloneable {
 			setValue(col, i, values[i]);
 	}
 
-	@AstroImageJ(reason = "Ability to generate new columns from an existing column")
-	public void generateValues(String destColumn, String srcColumn, DoubleUnaryOperator operator) {
-		int srcColIdx = getColumnIndex(srcColumn);
-		int destColIdx = getFreeColumn(destColumn);
-
-		if (destColIdx == COLUMN_IN_USE) {
-			throw new IllegalArgumentException("Column '%s' already exists!".formatted(destColumn));
-		}
-
-		if (srcColIdx != COLUMN_NOT_FOUND) {
-			var srcCol = columns[srcColIdx];
-			var destCol = columns[destColIdx];
-			for (int row=0; row<size(); row++) {
-				destCol[row] = operator.applyAsDouble(srcCol[row]);
-			}
-		} else {
-			throw new IllegalArgumentException("Column '%s' does not exist!".formatted(srcColumn));
-		}
+	@AstroImageJ(reason = "Ability to modify column values")
+	public void updateValues(String column, DoubleUnaryOperator operator) {
+		updateValues(column, column, operator);
 	}
 
 	@AstroImageJ(reason = "Ability to modify column values")
-	public void updateValues(String column, DoubleUnaryOperator operator) {
-		int columnIndex = getColumnIndex(column);
-		if (columnIndex != COLUMN_NOT_FOUND) {
-			var col = columns[columnIndex];
-			for (int row=0; row<size(); row++) {
-				col[row] = operator.applyAsDouble(col[row]);
-			}
+	public void updateValues(String destColumn, String srcColumn, DoubleUnaryOperator operator) {
+		int srcColIdx = getColumnIndex(srcColumn);
+		int destColIdx = getColumnIndex(destColumn);
+
+		if (srcColIdx == COLUMN_NOT_FOUND) {
+			throw new IllegalArgumentException("Could not find column '%s'".formatted(srcColumn));
+		}
+
+		if (destColIdx == COLUMN_NOT_FOUND) {
+			throw new IllegalArgumentException("Could not find column '%s'".formatted(srcColumn));
+		}
+
+		var srcCol = columns[srcColIdx];
+		var destCol = columns[destColIdx];
+		for (int row=0; row<size(); row++) {
+			destCol[row] = operator.applyAsDouble(srcCol[row]);
 		}
 	}
 

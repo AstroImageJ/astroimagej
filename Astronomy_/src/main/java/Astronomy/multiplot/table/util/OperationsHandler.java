@@ -1,11 +1,13 @@
 package Astronomy.multiplot.table.util;
 
 import Astronomy.multiplot.table.MeasurementsWindow;
+import ij.IJ;
 import ij.astro.gui.GenericSwingDialog;
 import ij.astro.gui.ToolTipProvider;
 import ij.astro.gui.nstate.NState;
 import ij.astro.io.prefs.Property;
 import ij.astro.util.UIHelper;
+import ij.measure.ResultsTable;
 
 import javax.swing.*;
 import java.math.BigDecimal;
@@ -78,7 +80,16 @@ public class OperationsHandler {
                     case NEW_NAME -> COLUMN_NAME.get();
                 };
 
-                owner.getTable().generateValues(newCol, column, cv -> operator.applyAsDouble(cv, b));
+                var newIdx = owner.getTable().getFreeColumn(newCol);
+
+                if (newIdx == ResultsTable.COLUMN_IN_USE) {
+                    if (!IJ.showMessageWithCancel("Column Operator",
+                            "Column '%s' already exists, replace it?".formatted(newCol))) {
+                        return;
+                    }
+                }
+
+                owner.getTable().updateValues(newCol, column, cv -> operator.applyAsDouble(cv, b));
             } else {
                 owner.getTable().updateValues(column, cv -> operator.applyAsDouble(cv, b));
             }

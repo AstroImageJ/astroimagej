@@ -543,15 +543,9 @@ public class MeasurementTable extends ResultsTable {
     }
 
     @Override
-    public void generateValues(String destColumn, String srcColumn, DoubleUnaryOperator operator) {
-        super.generateValues(destColumn, srcColumn, operator);
-        updateView(UpdateEvent.REBUILD);
-    }
-
-    @Override
-    public void updateValues(String column, DoubleUnaryOperator operator) {
-        super.updateValues(column, operator);
-        updateView(UpdateEvent.DATA_CHANGED);
+    public void updateValues(String destColumn, String srcColumn, DoubleUnaryOperator operator) {
+        super.updateValues(destColumn, srcColumn, operator);
+        updateViewSynced(UpdateEvent.DATA_CHANGED, 0, 0);
     }
 
     @Override

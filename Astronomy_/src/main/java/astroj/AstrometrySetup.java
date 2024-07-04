@@ -1216,7 +1216,7 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
 		raTF.setHorizontalAlignment(JTextField.LEFT);
         if (!useCCRaDec)
             {
-            raTF.setToolTipText("<html>"+"Enter the Right Ascension of the center of the search area and press <ENTER>."+"<br>"+
+            raTF.setToolTipText("<html>"+"Enter the Right Ascension of the center of the search area and press &lt;Enter&gt;."+"<br>"+
                                 "Both sexegesimal (HH:MM:SS.ss) or decimal (HH.HHHH) hour formats are supported."+"<br>"+
                                 "Both RA and Dec may be pasted into this field together. Dec will be parsed<br>"+
                                 "and placed in the 'Dec' text box.</html>");
@@ -1244,7 +1244,7 @@ public class AstrometrySetup implements ActionListener, ItemListener, ChangeList
 		decTF.setHorizontalAlignment(JTextField.LEFT);
         if (!useCCRaDec)
             {        
-            decTF.setToolTipText("<html>"+"Enter the Declination of the center of the search area and press <ENTER>."+"<br>"+
+            decTF.setToolTipText("<html>"+"Enter the Declination of the center of the search area and press &lt;Enter&gt;."+"<br>"+
                                 "Both sexegesimal (DD:MM:SS.ss) or decimal (DD.DDDD) degree formats are supported."+"<br>"+
                                 "Both RA and Dec may be pasted into this field together. RA will be parsed<br>"+
                                 "and placed in the 'RA' text box.</html>");

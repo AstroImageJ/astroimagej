@@ -1935,9 +1935,9 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         RALabel.setMaximumSize(labelDim);
         RALabel.setMinimumSize(labelDimMin);
         RALabel.setToolTipText("<html>Shows Right Ascension (RA) at mouse pointer for images with WCS headers.<br>"+
-                "Type or paste RA and Dec values and press <Enter> to draw an ROI at the corresponding location in the image.<br>"+
-                "Hold <Shift> when pressing <Enter> to also create a centroided T1 aperture for Multi-Aperture.<br>"+
-                "Hold <Control> when pressing <Enter> to also create an uncentroided T1 aperture for Multi-Aperture.<br></html>");
+                "Type or paste RA and Dec values and press &lt;Enter&gt; to draw an ROI at the corresponding location in the image.<br>"+
+                "Hold &lt;Shift&gt; when pressing &lt;Enter&gt; to also create a centroided T1 aperture for Multi-Aperture.<br>"+
+                "Hold &lt;Control&gt; when pressing &lt;Enter&gt; to also create an uncentroided T1 aperture for Multi-Aperture.<br></html>");
         RALabel.setLabelFor(RATextField);
         topPanelBC.add(RALabel);
 
@@ -1948,9 +1948,9 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         RATextField.setMaximumSize(valueDim);
         RATextField.setMinimumSize(valueDimMin);
         RATextField.setToolTipText("<html>Shows Right Ascension (RA) at mouse pointer for images with WCS headers.<br>"+
-                "Type or paste RA and Dec values and press <Enter> to draw an ROI at the corresponding location in the image.<br>"+
-                "Hold <Shift> when pressing <Enter> to also create a centroided T1 aperture for Multi-Aperture.<br>"+
-                "Hold <Control> when pressing <Enter> to also create an uncentroided T1 aperture for Multi-Aperture.<br></html>");
+                "Type or paste RA and Dec values and press &lt;Enter&gt; to draw an ROI at the corresponding location in the image.<br>"+
+                "Hold &lt;Shift&gt; when pressing &lt;Enter&gt; to also create a centroided T1 aperture for Multi-Aperture.<br>"+
+                "Hold &lt;Control&gt; when pressing &lt;Enter&gt; to also create an uncentroided T1 aperture for Multi-Aperture.<br></html>");
         RATextField.setEditable(goodWCS);
         RATextField.addActionListener(this);
         RATextField.addKeyListener(new KeyAdapter() {
@@ -1970,9 +1970,9 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         DecLabel.setMaximumSize(labelDim);
         DecLabel.setMinimumSize(labelDimMin);
         DecLabel.setToolTipText("<html>Shows Declination (Dec) at mouse pointer for images with WCS headers.<br>"+
-                "Type or paste RA and Dec values and press <Enter> to draw an ROI at the corresponding location in the image.<br>"+
-                "Hold <Shift> when pressing <Enter> to also create a centroided T1 aperture for Multi-Aperture.<br>"+
-                "Hold <Control> when pressing <Enter> to also create an uncentroided T1 aperture for Multi-Aperture.<br></html>");
+                "Type or paste RA and Dec values and press &lt;Enter&gt; to draw an ROI at the corresponding location in the image.<br>"+
+                "Hold &lt;Shift&gt; when pressing &lt;Enter&gt; to also create a centroided T1 aperture for Multi-Aperture.<br>"+
+                "Hold &lt;Control&gt; when pressing &lt;Enter&gt; to also create an uncentroided T1 aperture for Multi-Aperture.<br></html>");
         DecLabel.setLabelFor(DecTextField);
         topPanelBC.add(DecLabel);
 
@@ -1983,9 +1983,9 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         DecTextField.setMaximumSize(valueDim);
         DecTextField.setMinimumSize(valueDimMin);
         DecTextField.setToolTipText("<html>Shows Declination (Dec) at mouse pointer for images with WCS headers.<br>"+
-                "Type or paste RA and Dec values and press <Enter> to draw an ROI at the corresponding location in the image.<br>"+
-                "Hold <Shift> when pressing <Enter> to also create a centroided T1 aperture for Multi-Aperture.<br>"+
-                "Hold <Control> when pressing <Enter> to also create an uncentroided T1 aperture for Multi-Aperture.<br></html>");
+                "Type or paste RA and Dec values and press &lt;Enter&gt; to draw an ROI at the corresponding location in the image.<br>"+
+                "Hold &lt;Shift&gt; when pressing &lt;Enter&gt; to also create a centroided T1 aperture for Multi-Aperture.<br>"+
+                "Hold &lt;Control&gt; when pressing &lt;Enter&gt; to also create an uncentroided T1 aperture for Multi-Aperture.<br></html>");
         DecTextField.setEditable(goodWCS);
         DecTextField.addActionListener(this);
         topPanelBC.add(DecTextField);

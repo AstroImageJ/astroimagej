@@ -70,6 +70,8 @@ public class OperationsHandler {
 
             var b = OPERAND.get();
 
+            var destCol = column;
+
             if (RESULTS_IN_NEW_COLUMN.get()) {
                 // Make sure colName is updated
                 COLUMN_NAME.set(textField.getText());
@@ -89,10 +91,10 @@ public class OperationsHandler {
                     }
                 }
 
-                owner.getTable().updateValues(newCol, column, cv -> operator.applyAsDouble(cv, b));
-            } else {
-                owner.getTable().updateValues(column, cv -> operator.applyAsDouble(cv, b));
+                destCol = newCol;
             }
+
+            owner.getTable().updateValues(destCol, column, cv -> operator.applyAsDouble(cv, b));
         }
     }
 

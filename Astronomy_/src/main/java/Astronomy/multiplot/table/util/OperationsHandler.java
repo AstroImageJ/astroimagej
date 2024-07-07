@@ -25,7 +25,7 @@ public class OperationsHandler {
     private static final Property<Double> OPERAND = new Property<>(0D, OperationsHandler.class);
     private static final Property<Boolean> FLIP_INPUTS = new Property<>(false, OperationsHandler.class);
     private static final Property<Boolean> RESULTS_IN_NEW_COLUMN = new Property<>(false, OperationsHandler.class);
-    private static final Property<COLUMN_TYPE> COLUMN_TYPE_PROPERTY = new Property<>(COLUMN_TYPE.POSTFIX, OperationsHandler.class);
+    private static final Property<ColumnType> COLUMN_TYPE = new Property<>(ColumnType.POSTFIX, OperationsHandler.class);
     private static final Property<String> COLUMN_NAME = new Property<>("_m", OperationsHandler.class);
     private static final Property<String> VALUE_SOURCE = new Property<>(VALUE_SOURCE_CONST_B, OperationsHandler.class);
 
@@ -65,7 +65,7 @@ public class OperationsHandler {
 
         d.addCheckbox("Put results in new column", RESULTS_IN_NEW_COLUMN.get(), RESULTS_IN_NEW_COLUMN::set);
         d.addToSameRow();
-        var typeBox = d.addNStateDropdown(COLUMN_TYPE_PROPERTY.get(), COLUMN_TYPE_PROPERTY::set);
+        var typeBox = d.addNStateDropdown(COLUMN_TYPE.get(), COLUMN_TYPE::set);
         var textField = new JTextField(COLUMN_NAME.get(), 10);
         textField.addActionListener(l -> COLUMN_NAME.set(l.getActionCommand()));
         d.addToSameRow();
@@ -100,7 +100,7 @@ public class OperationsHandler {
                 // Make sure colName is updated
                 COLUMN_NAME.set(textField.getText());
 
-                String newCol = switch (COLUMN_TYPE_PROPERTY.get()) {
+                String newCol = switch (COLUMN_TYPE.get()) {
                     case POSTFIX -> column + COLUMN_NAME.get();
                     case PREFIX -> COLUMN_NAME.get() + column;
                     case NEW_NAME -> COLUMN_NAME.get();
@@ -233,7 +233,7 @@ public class OperationsHandler {
         }
     }
 
-    public enum COLUMN_TYPE implements NState<COLUMN_TYPE> {
+    public enum ColumnType implements NState<ColumnType> {
         POSTFIX,
         PREFIX,
         NEW_NAME,
@@ -245,8 +245,8 @@ public class OperationsHandler {
         }
 
         @Override
-        public COLUMN_TYPE[] values0() {
-            return COLUMN_TYPE.values();
+        public ColumnType[] values0() {
+            return ColumnType.values();
         }
     }
 }

@@ -12,16 +12,22 @@ import ij.measure.ResultsTable;
 import javax.swing.*;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.function.DoubleBinaryOperator;
 import java.util.function.Function;
 
 public class OperationsHandler {
+    private static final String VALUE_SOURCE_CONST_B = "Constant: b (from input box)";
+    private static final String VALUE_SOURCE_CONST_E = "Constant: e";
+    private static final String VALUE_SOURCE_CONST_PI = "Constant: Pi";
     private static final Property<Operator> OPERATOR = new Property<>(Operator.ADD, OperationsHandler.class);
     private static final Property<Double> OPERAND = new Property<>(0D, OperationsHandler.class);
     private static final Property<Boolean> FLIP_INPUTS = new Property<>(false, OperationsHandler.class);
     private static final Property<Boolean> RESULTS_IN_NEW_COLUMN = new Property<>(false, OperationsHandler.class);
     private static final Property<COLUMN_TYPE> COLUMN_TYPE_PROPERTY = new Property<>(COLUMN_TYPE.POSTFIX, OperationsHandler.class);
     private static final Property<String> COLUMN_NAME = new Property<>("_m", OperationsHandler.class);
+    private static final Property<String> VALUE_SOURCE = new Property<>(VALUE_SOURCE_CONST_B, OperationsHandler.class);
 
     public static void dialog(MeasurementsWindow owner, String column) {
         var d = new GenericSwingDialog("Column Operations for " + column, owner);
@@ -31,6 +37,26 @@ public class OperationsHandler {
         d.addNStateDropdown(OPERATOR.get(), OPERATOR::set);
         d.addToSameRow();
         d.addUnboundedNumericField("Operand (b):", OPERAND.get(), 1, 10, null, OPERAND::set);
+
+        var options = new ArrayList<String>(owner.getTable().getLastColumn());
+        options.add(VALUE_SOURCE_CONST_B);
+        options.add(VALUE_SOURCE_CONST_E);
+        options.add(VALUE_SOURCE_CONST_PI);
+        options.addAll(Arrays.asList(owner.getTable().getHeadings()));
+
+        // Check if column exists
+        var previousSource = VALUE_SOURCE.get();
+        var isConst = VALUE_SOURCE_CONST_B.equals(previousSource) ||
+                VALUE_SOURCE_CONST_E.equals(previousSource) || VALUE_SOURCE_CONST_PI.equals(previousSource);
+
+        // Reset to const_b if column does not exist
+        if (!isConst && !owner.getTable().columnExists(VALUE_SOURCE.get())) {
+            VALUE_SOURCE.set(VALUE_SOURCE_CONST_B);
+        }
+
+        d.addToSameRow();
+        var c = d.addChoice("b value source", options.toArray(String[]::new), VALUE_SOURCE.get(), VALUE_SOURCE::set);
+        c.c2().setToolTipText("Select value source to use as the 'b' value with the operator.");
         d.addToSameRow();
         d.addCheckbox("Flip inputs", FLIP_INPUTS.get(), FLIP_INPUTS::set).setToolTipText("Flip Inputs (cv, b) -> (b, cv)");
         d.setOverridePosition(false);
@@ -68,8 +94,6 @@ public class OperationsHandler {
                 operator = baseOp;
             }
 
-            var b = OPERAND.get();
-
             var destCol = column;
 
             if (RESULTS_IN_NEW_COLUMN.get()) {
@@ -94,7 +118,20 @@ public class OperationsHandler {
                 destCol = newCol;
             }
 
-            owner.getTable().updateValues(destCol, column, cv -> operator.applyAsDouble(cv, b));
+            switch (VALUE_SOURCE.get()) {
+                case VALUE_SOURCE_CONST_B -> {
+                    var b = OPERAND.get();
+                    owner.getTable().updateValues(destCol, column, cv -> operator.applyAsDouble(cv, b));
+                }
+                case VALUE_SOURCE_CONST_E ->
+                        owner.getTable().updateValues(destCol, column, cv -> operator.applyAsDouble(cv, Math.E));
+                case VALUE_SOURCE_CONST_PI ->
+                        owner.getTable().updateValues(destCol, column, cv -> operator.applyAsDouble(cv, Math.PI));
+                // Column source
+                default -> {
+                    owner.getTable().updateValues(destCol, column, VALUE_SOURCE.get(), operator);
+                }
+            }
         }
     }
 
@@ -102,9 +139,9 @@ public class OperationsHandler {
         ADD("cv + b", Double::sum),
         MULTIPLY("cv * b", (cv, b) -> cv * b),
         DIVIDE("cv / b", (cv, b) -> cv / b),
-        EXPONENTIATE("<html>cv<sup>b</sup><br>If b=0, calculates e<sup>cv</sup> instead</html>", (cv, b) -> {
-            if (b == 0) {
-                return Math.exp(cv);
+        EXPONENTIATE("<html>cv<sup>b</sup></html>", (cv, b) -> {
+            if (cv == Math.E) {
+                return Math.exp(b);
             } else {
                 return Math.pow(cv, b);
             }

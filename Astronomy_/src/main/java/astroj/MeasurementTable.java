@@ -645,28 +645,11 @@ public class MeasurementTable extends ResultsTable {
         }
     }
 
-    private void updateViewSynced(UpdateEvent event, int i1, int i2) {
-        dataChanged = true;
-        if (window == null || (isLocked() && !event.structureModification)) return;
-        // If coming from the event thread, it may be the table -
-        // in which case delaying the update can cause the view and the model to desync
-        if (SwingUtilities.isEventDispatchThread()) {
-            if (window != null) {
-                window.update(event, i1, i2);
-            }
-            dataChanged = false;
-        } else {
-            try {
-                SwingUtilities.invokeAndWait(() -> {
-                    if (window != null) {
-                        window.update(event, i1, i2);
-                    }
-                    dataChanged = false;
-                });
-            } catch (InterruptedException | InvocationTargetException e) {
-                throw new RuntimeException(e);
-            }
-        }
+    /**
+     * Synchronized update to ensure model changing events such as column addition are properly forwarded to the view.
+     */
+    private synchronized void updateViewSynced(UpdateEvent event, int i1, int i2) {
+        updateView(event, i1, i2);//todo more testing
     }
 
     /**

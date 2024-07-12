@@ -3280,6 +3280,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                                 chi2dof[curve] = m.getFunctionValue();
                                                 chi2[curve] = chi2dof[curve] * dof[curve];
                                                 converged[curve] = result == Minimizer.SUCCESS;
+                                                System.out.println("Curve: %s; Status: %s".formatted(curve, Minimizer.STATUS_STRING[result]));
                                             } else {
                                                 minimization.setNrestartsMax(1);
                                                 minimization.nelderMead(new FitLightCurveChi2(curve), start[curve], step[curve], tolerance[curve], maxFitSteps[curve]);
@@ -11822,6 +11823,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         uselinesbox[c].setHorizontalAlignment(JLabel.CENTER);
         mainsubpanelgroup.add(uselinesbox[c]);
 
+        if (inputAverageOverSize[c] < 1) {
+            inputAverageOverSize[c] = 1;
+        }
         inputAverageOverSizespinnermodel[c] = new SpinnerNumberModel(inputAverageOverSize[c], 1, null, 1);
         inputAverageOverSizespinner[c] = new JSpinner(inputAverageOverSizespinnermodel[c]);
         inputAverageOverSizespinner[c].setFont(p11);

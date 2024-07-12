@@ -86,7 +86,7 @@ public class OperationsHandler {
         d.showDialog();
 
         if (d.wasOKed()) {
-            DoubleBinaryOperator baseOp = OPERATOR.get().operator;
+            DoubleBinaryOperator baseOp = OPERATOR.get().getOperator();
             DoubleBinaryOperator operator;
             if (FLIP_INPUTS.get()) {
                 operator = (cv, b) -> baseOp.applyAsDouble(b, cv);
@@ -167,12 +167,12 @@ public class OperationsHandler {
         }),
         TO_DEGREES("cv (radians) -> degrees", (cv, b) -> Math.toDegrees(cv)),
         TO_RADIANS("cv° -> radians", (cv, b) -> Math.toRadians(cv)),
-        SIN("sin(cv)", (cv, b) -> Math.sin(cv)),
-        COS("cos(cv)", (cv, b) -> Math.cos(cv)),
-        TAN("tan(cv)", (cv, b) -> Math.tan(cv)),
-        ARCSIN("arcsin(cv)", (cv, b) -> Math.asin(cv)),
-        ARCCOS("arccos(cv)", (cv, b) -> Math.acos(cv)),
-        ARCTAN("arctan(cv)", (cv, b) -> Math.atan(cv)),
+        SIN("sin(cv [rad])", (cv, b) -> Math.sin(cv)),
+        COS("cos(cv [rad])", (cv, b) -> Math.cos(cv)),
+        TAN("tan(cv [rad])", (cv, b) -> Math.tan(cv)),
+        ARCSIN("arcsin(cv) -> y [rad]", (cv, b) -> Math.asin(cv)),
+        ARCCOS("arccos(cv) -> y [rad]", (cv, b) -> Math.acos(cv)),
+        ARCTAN("arctan(cv) -> y [rad]", (cv, b) -> Math.atan(cv)),
         ARCTAN2("arctan2(cv, b)", Math::atan2),
         SINH("sinh(cv)", (cv, b) -> Math.sinh(cv)),
         COSH("cosh(cv)", (cv, b) -> Math.cosh(cv)),
@@ -198,13 +198,14 @@ public class OperationsHandler {
         ADD_RANDOM("<html>cv + b * random<br>random is drawn from [0,b), " +
                 "which is approximately uniformly distributed</html>", (cv, b) -> b*Math.random() + cv),
         IDENTITY("cv -> cv", (cv, b) -> cv),
+        INCREMENT("cv + b * row, where row starts at 0", new IncrementOperator()),
         ;
 
         final String description;
         /**
          * (columnValue, b) -> newColumnValue
          */
-        final DoubleBinaryOperator operator;
+        private final DoubleBinaryOperator operator;
 
         Operator(String description, DoubleBinaryOperator operator) {
             this.description = description;
@@ -226,6 +227,13 @@ public class OperationsHandler {
             return o -> o.description;
         }
 
+        public DoubleBinaryOperator getOperator() {
+            if (operator instanceof MutableStateOperator mutableStateOperator) {
+                mutableStateOperator.resetMutableState();
+            }
+
+            return operator;
+        }
 
         @Override
         public String getToolTip() {
@@ -248,5 +256,23 @@ public class OperationsHandler {
         public ColumnType[] values0() {
             return ColumnType.values();
         }
+    }
+
+    static class IncrementOperator implements MutableStateOperator {
+        private int m = 0;
+
+        @Override
+        public double applyAsDouble(double cv, double b) {
+            return cv + b * m++;
+        }
+
+        @Override
+        public void resetMutableState() {
+            m = 0;
+        }
+    }
+
+    interface MutableStateOperator extends DoubleBinaryOperator {
+        void resetMutableState();
     }
 }

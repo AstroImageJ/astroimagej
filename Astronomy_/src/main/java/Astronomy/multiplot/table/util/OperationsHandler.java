@@ -8,6 +8,7 @@ import ij.astro.gui.nstate.NState;
 import ij.astro.io.prefs.Property;
 import ij.astro.util.UIHelper;
 import ij.measure.ResultsTable;
+import org.hipparchus.special.Gamma;
 
 import javax.swing.*;
 import java.math.BigDecimal;
@@ -193,6 +194,7 @@ public class OperationsHandler {
         ARSINH("arsinh(cv)", (cv, b) -> Math.log(cv + Math.sqrt(cv*cv + 1))),
         ARCOSH("arcosh(cv)", (cv, b) -> Math.log(cv + Math.sqrt(cv*cv - 1))),
         ARTANH("artanh(cv)", (cv, b) -> 0.5 * Math.log((1+cv)/(1-cv))),
+        FACTORIAL("Uses the Gamma function. Gamma(cv+1)", (cv, b) -> Gamma.gamma(cv+1)),
         MIN("min(cv, b)", Math::min),
         MAX("max(cv, b)", Math::max),
         ABS("|cv|", (cv, b) -> Math.abs(cv)),

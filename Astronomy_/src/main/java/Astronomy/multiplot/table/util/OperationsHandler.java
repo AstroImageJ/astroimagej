@@ -13,7 +13,7 @@ import javax.swing.*;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.function.DoubleBinaryOperator;
 import java.util.function.Function;
 
@@ -36,13 +36,22 @@ public class OperationsHandler {
         d.addMessage("Column Value (cv)");
         d.addNStateDropdown(OPERATOR.get(), OPERATOR::set);
         d.addToSameRow();
-        d.addUnboundedNumericField("Operand (b):", OPERAND.get(), 1, 10, null, OPERAND::set);
+        var bInput = d.addUnboundedNumericField("Operand (b):", OPERAND.get(), 1, 10, null, OPERAND::set);
 
         var options = new ArrayList<String>(owner.getTable().getLastColumn());
         options.add(VALUE_SOURCE_CONST_B);
         options.add(VALUE_SOURCE_CONST_E);
         options.add(VALUE_SOURCE_CONST_PI);
-        options.addAll(Arrays.asList(owner.getTable().getHeadings()));
+
+        var headings = new ArrayList<String>();
+        Collections.addAll(headings, owner.getTable().getHeadings());
+
+        // Remove labels column
+        if (owner.getTable().hasRowLabels()) {
+            headings.remove(0);
+        }
+
+        options.addAll(headings);
 
         // Check if column exists
         var previousSource = VALUE_SOURCE.get();
@@ -53,6 +62,10 @@ public class OperationsHandler {
         if (!isConst && !owner.getTable().columnExists(VALUE_SOURCE.get())) {
             VALUE_SOURCE.set(VALUE_SOURCE_CONST_B);
         }
+
+        // Disable input when not constant
+        bInput.c1().setEnabled(VALUE_SOURCE_CONST_B.equals(previousSource));
+        VALUE_SOURCE.addListener((key, s) -> bInput.c1().setEnabled(VALUE_SOURCE_CONST_B.equals(s)));
 
         d.addToSameRow();
         var c = d.addChoice("b value source", options.toArray(String[]::new), VALUE_SOURCE.get(), VALUE_SOURCE::set);

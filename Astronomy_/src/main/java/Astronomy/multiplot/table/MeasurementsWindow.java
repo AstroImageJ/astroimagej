@@ -734,6 +734,9 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
         i = new MenuItem("Plot...");
         i.addActionListener($ -> new PlotContentsDialog(getTitle(), table).showDialog(getParent() instanceof Frame ? (Frame)getParent() : null));
         m.add(i);
+        i = new MenuItem("Fit Curve...");
+        i.addActionListener($ -> CurveFitterHandler.fitCurve(MeasurementsWindow.this));
+        m.add(i);
         i = new MenuItem("Options...");
         i.addActionListener($ -> IJ.doCommand("Input/Output..."));
         m.add(i);

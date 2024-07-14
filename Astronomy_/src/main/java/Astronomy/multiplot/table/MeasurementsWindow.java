@@ -8,6 +8,7 @@ import ij.Menus;
 import ij.Prefs;
 import ij.WindowManager;
 import ij.astro.accessors.ITableWindow;
+import ij.astro.gui.GenericSwingDialog;
 import ij.astro.io.prefs.Property;
 import ij.astro.io.prefs.PropertyKey;
 import ij.astro.logging.AIJLogger;
@@ -36,6 +37,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
+import static ij.measure.ResultsTable.COLUMN_IN_USE;
 import static ij.measure.ResultsTable.COLUMN_NOT_FOUND;
 
 public class MeasurementsWindow extends JFrame implements ITableWindow {
@@ -250,6 +252,28 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
                             table.setLock(true);
                             table.deleteColumn((String) c.getIdentifier());
                             table.setLock(false);
+                        }
+                    });
+                    popup.add(item);
+
+                    item = new JMenuItem("Add column");
+                    item.addActionListener($ -> {
+                        var d = new GenericSwingDialog("Add Column", MeasurementsWindow.this);
+                        var t = new JTextField(10);
+                        d.addGenericComponent(t);
+
+                        d.addMessage("The column will be added to the end of this table, " +
+                                "but appear visually to the right of this column");
+
+                        d.centerDialog(true);
+                        d.enableYesNoCancel();
+                        d.showDialog();
+
+                        if (d.wasOKed()) {
+                            var column = getTable().getFreeColumn(t.getText().trim());
+                            if (column == COLUMN_IN_USE) {
+                                IJ.error("Column already exists");
+                            }
                         }
                     });
                     popup.add(item);

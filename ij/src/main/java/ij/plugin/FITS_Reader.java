@@ -525,12 +525,35 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		//todo drag onto MP windows does not load
 		if (hdus[0].getHeader().getBooleanValue("AIJ_TBL", false)) {
 
+			// Check for what the table has
+			var hasPlotCfg = false;
+			var hasApertures = false;
+			for (BasicHDU<?> hdu : hdus) {
+				if (hdu instanceof TableHDU<?> t) {
+					if (!hasPlotCfg) {
+						hasPlotCfg = t.findColumn("plotcfg") >= 0;
+					}
+
+					if (!hasApertures) {
+						hasApertures = t.findColumn("apertures") >= 0;
+					}
+
+					if (hasPlotCfg && hasApertures) {
+						break;
+					}
+				}
+			}
+
 			// Dialog to control what to open
 			var d = new GenericSwingDialog("FITs MP Table Reading");
 			d.addMessage("Data to load (if available):");
 			d.addCheckbox("Table", MP_TABLE_LOAD_SETTINGS.loadData.get(), MP_TABLE_LOAD_SETTINGS.loadData::set);
-			d.addCheckbox("Plot Config", MP_TABLE_LOAD_SETTINGS.loadPlotcfg.get(), MP_TABLE_LOAD_SETTINGS.loadPlotcfg::set);
-			d.addCheckbox("Apertures", MP_TABLE_LOAD_SETTINGS.loadApertures.get(), MP_TABLE_LOAD_SETTINGS.loadApertures::set);
+			d.addCheckbox("Plot Config", MP_TABLE_LOAD_SETTINGS.loadPlotcfg.get(),
+					MP_TABLE_LOAD_SETTINGS.loadPlotcfg::set)
+					.setEnabled(hasPlotCfg);
+			d.addCheckbox("Apertures", MP_TABLE_LOAD_SETTINGS.loadApertures.get(),
+					MP_TABLE_LOAD_SETTINGS.loadApertures::set)
+					.setEnabled(hasApertures);
 			d.centerDialog(true);
 
 			d.showDialog();

@@ -3232,9 +3232,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                                 start[curve][fp] = priorCenter[curve][index[curve][fp]];
                                                 width[curve][fp] = priorWidth[curve][index[curve][fp]];
                                                 step[curve][fp] = getFitStep(curve, index[curve][fp]);
-                                                if (usImageJFitter && (index[curve][fp] == 3 || index[curve][fp] == 3)) {
-                                                    step[curve][fp] *= 3;
-                                                }
+//                                                if (usImageJFitter && (index[curve][fp] == 3 || index[curve][fp] == 3)) {
+//                                                    step[curve][fp] *= 3;
+//                                                }
                                             }
                                             /*if (usePriorWidth[curve][index[curve][fp]]) {
                                                 minimization.addConstraint(fp, 1, start[curve][fp] + width[curve][fp]);
@@ -3518,9 +3518,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                 trend /= yAverage[curve];
                                 if (trend != 0.0) {
                                     y[curve][j] /= trend;
-                                    if (hasErrors[curve] || hasOpErrors[curve]) {
-                                        yerr[curve][j] /= trend;
-                                    }
+//                                    if (hasErrors[curve] || hasOpErrors[curve]) {
+//                                        yerr[curve][j] /= trend;
+//                                    }
                                 }
                             }
                         }
@@ -3533,9 +3533,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                     trend += detrendFactor[curve][v] * (detrend[curve][v][j]);//-detrendAverage[v]);
                                 }
                             }
-                            if (hasErrors[curve] || hasOpErrors[curve]) {
-                                yerr[curve][j] /= (y[curve][j] / (y[curve][j] - trend));
-                            }
+//                            if (hasErrors[curve] || hasOpErrors[curve]) {
+//                                yerr[curve][j] /= (y[curve][j] / (y[curve][j] - trend));
+//                            }
                             y[curve][j] -= trend;
                         }
                     }
@@ -4832,6 +4832,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     }
                 } else {
                     incl = Math.acos(bp[curve]/ar);
+                    b = bp[curve];
                 }
                 u1 = lockToCenter[curve][5] ? priorCenter[curve][5] : params[fp < nPars ? fp++ : nPars - 1];  //quadratic limb darkening parameter 1
                 u2 = lockToCenter[curve][6] ? priorCenter[curve][6] : params[fp < nPars ? fp++ : nPars - 1];  //quadratic limb darkening parameter 2
@@ -4855,6 +4856,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
 
             if (useTransitFit[curve]) {
+                var halfdur = (orbitalPeriod[curve] / Math.PI * Math.asin(Math.sqrt((1.0 + p0) * (1.0 + p0) - b*b) / (Math.sin(incl) * ar)) * Math.sqrt(1.0 - (forceCircularOrbit[curve] ? 0.0 : eccentricity[curve] * eccentricity[curve])) / (1.0 + (forceCircularOrbit[curve] ? 0.0 : eccentricity[curve]) * Math.sin(forceCircularOrbit[curve] ? 0.0 : omega[curve])))/2.0;
+                if (!lockToCenter[curve][3] && ((tc - halfdur > max - 0.007 || tc + halfdur < min + 0.007))) {
+                    return Double.NaN;
+                }
                 if (!lockToCenter[curve][2] && (ar < (1.0 + p0))) {
                     chi2 = Double.POSITIVE_INFINITY;  //boundary check that planet does not orbit within star
                 } else if ((!lockToCenter[curve][2] || !lockToCenter[curve][4]) && ((ar * Math.cos(incl) * (1.0 - e * e) / (1.0 + e * Math.sin(ohm * Math.PI / 180.0))) >= 1.0 + p0)) {
@@ -4962,7 +4967,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     return Double.NaN;
                 }
 
-                if (ar < 2) {
+                if (ar < 1.0) {
                     return Double.NaN;
                 }
 
@@ -7183,7 +7188,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         defaultFitStep[1] = 0.1;
         defaultFitStep[2] = 1.0;
         defaultFitStep[3] = defaultTcFitStep;
-        defaultFitStep[4] = 1.0;
+        defaultFitStep[4] = 30.0;
         defaultFitStep[5] = 0.1;
         defaultFitStep[6] = 0.1;
         if (defaultFitStep.length > 7) {

@@ -3265,6 +3265,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                             }
                                         } else {
                                             if (usImageJFitter) {
+                                                var sortedX = Arrays.stream(x[curve]).limit(nn[curve]).filter(d -> !Double.isNaN(d)).sorted().toArray();
+
                                                 var m = new Minimizer();
                                                 // For maxRestarts >=1, sometimes it deadlocks eg when enabling an all nan param
                                                 // seems to be an issue with the tolerence
@@ -3272,7 +3274,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                                 m.setMaxRestarts(0);
                                                 m.setMaxIterations(maxFitSteps[curve]);
                                                 m.setMaxError(tolerance[curve]);
-                                                m.setFunction(new FitLightCurveChi2(curve, nFitted == 0 && !useTransitFit[curve]), start[curve].length);
+                                                m.setFunction(new FitLightCurveChi2(curve, sortedX[0], sortedX[sortedX.length-1], nFitted == 0 && !useTransitFit[curve]), start[curve].length);
                                                 var result = m.minimize(start[curve], step[curve]);
 
                                                 nTries[curve] = m.getIterations();
@@ -4776,15 +4778,21 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
     public static class FitLightCurveChi2 implements MinimizationFunction, UserFunction {
         final int curve;
+        private final double min;
+        private final double max;
         final boolean fittingAgainstMedian;
 
         public FitLightCurveChi2(int curve) {
             this.curve = curve;
             fittingAgainstMedian = false;
+            min = Double.NaN;
+            max = Double.NaN;
         }
 
-        public FitLightCurveChi2(int curve, boolean fittingAgainstMedian) {
+        public FitLightCurveChi2(int curve, double min, double max, boolean fittingAgainstMedian) {
             this.curve = curve;
+            this.min = min;
+            this.max = max;
             this.fittingAgainstMedian = fittingAgainstMedian;
         }
 

@@ -102,7 +102,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
 
     private static Frame guessParentFrame() {
         return WindowManager.getCurrentImage() != null ?
-                WindowManager.getCurrentImage().getWindow() : IJ.getInstance() != null ? IJ.getInstance() : null;
+                WindowManager.getCurrentImage().getWindow() : null;
     }
 
     /**

@@ -54,6 +54,7 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
     private static final Property<Boolean> antialiased = new Property<>(false, MeasurementsWindow.class);
     private static final Property<Boolean> showSatWarning = new Property<>(true, MeasurementsWindow.class);
     private static final Property<Float> fontSize = new Property<>(14f, MeasurementsWindow.class);
+    private static final Property<Double> newColDefaultValue = new Property<>(0d, MeasurementsWindow.class);
     private FilterHandler filterWindow;
     private FindHandler findWindow;
     private final Notification notification = new Notification();
@@ -260,20 +261,28 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
                     item.addActionListener($ -> {
                         var d = new GenericSwingDialog("Add Column", MeasurementsWindow.this);
                         var t = new JTextField(10);
+                        d.setOverridePosition(true);
                         d.addGenericComponent(t);
+                        d.addToSameRow();
+                        d.addUnboundedNumericField("Initial Value", newColDefaultValue.get(), 1, 7, null, newColDefaultValue::set);
 
-                        d.addMessage("The column will be added to the end of this table, " +
-                                "but appear visually to the right of this column");
+                        d.setOverridePosition(false);
+                        d.addMessage("The column will be added to the end of this table");
 
                         d.centerDialog(true);
                         d.enableYesNoCancel();
                         d.showDialog();
 
                         if (d.wasOKed()) {
-                            var column = getTable().getFreeColumn(t.getText().trim());
+                            String heading = t.getText().trim();
+                            var column = getTable().getFreeColumn(heading);
                             if (column == COLUMN_IN_USE) {
                                 IJ.error("Column already exists");
                             }
+
+                            var col = getTable().bulkGetColumnAsDoubles(column);
+                            Arrays.fill(col, newColDefaultValue.get());
+                            getTable().bulkSetColumnAsDoubles(heading, col);
                         }
                     });
                     popup.add(item);

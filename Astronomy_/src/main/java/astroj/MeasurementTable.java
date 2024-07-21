@@ -747,6 +747,8 @@ public class MeasurementTable extends ResultsTable {
     @Deprecated
     public void setHeading(int column, String heading) {
         super.setHeading(column, heading);
+        headingsCache.remove(getColumnHeading(column));
+        headingsCache.put(heading, column);
         updateView(UpdateEvent.COL_RENAMED, column, column);
     }
 
@@ -759,6 +761,7 @@ public class MeasurementTable extends ResultsTable {
     @Override
     public void deleteColumn(String column) {
         super.deleteColumn(column);
+        headingsCache.remove(column);
         updateView(UpdateEvent.REBUILD);
     }
 
@@ -804,6 +807,11 @@ public class MeasurementTable extends ResultsTable {
         if (i >= 0) {
             if (heading.equals(getColumnHeading(i))) {
                 return COLUMN_IN_USE;
+            } else {
+                // Heading existed in cache, but does not exist in the real table.
+                // Remove it and check the table again
+                headingsCache.remove(heading);
+                i = COLUMN_NOT_FOUND;
             }
         }
 

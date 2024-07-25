@@ -410,7 +410,7 @@ public class Astrometry { //implements KeyListener
                 BufferedReader in = null;
                 boolean still_processing = true;
                 int n_failed_attempts = 0;
-                int maxWaitTime = useAlternateAstrometryServer ? 600 : 120;
+                int maxWaitTime = useAlternateAstrometryServer ? 120 : 900;
 
                 String inputLine = null;
                 while (still_processing && n_failed_attempts < maxWaitTime) {

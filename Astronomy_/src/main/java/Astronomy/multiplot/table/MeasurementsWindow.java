@@ -1104,7 +1104,7 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
 
         @Override
         public boolean isCellEditable(int rowIndex, int columnIndex) {
-            return !isRowNumCol(columnIndex);
+            return !isRowNumCol(columnIndex) || isLabelCol(columnIndex);
         }
 
         @Override

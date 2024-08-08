@@ -1856,18 +1856,17 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
         var hasErrored = 0;
         var oc = OverlayCanvas.getOverlayCanvas(asw.getImagePlus());
-        updateImageDisplay.ifProp(() -> {}, () -> {
+        if (!updateImageDisplay.get()) {
             if (imp.getCanvas() instanceof AstroCanvas a) {
                 a.setPerformDraw(false);
             }
-        });
+        }
         for (int i = firstSlice; i <= lastSlice; i++) {
-            int finalI = i;
-            updateImageDisplay.ifProp(() -> {
-                asw.showSlice(finalI);
-            }, () -> {
-                imp.setSliceWithoutUpdate(finalI);
-            });
+            if (updateImageDisplay.get()) {
+                asw.showSlice(i);
+            } else {
+                imp.setSliceWithoutUpdate(i);
+            }
 
             if (useWCS) {
                 asw.updateWCS();
@@ -2980,7 +2979,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             slice = i;
             imp.setSliceWithoutUpdate(i); //fixes scroll sync issue
             // Fixes scrollbar not updating on mac
-            updateImageDisplay.ifProp(this::waitForEventQueue);
+            if (updateImageDisplay.get()) {
+                waitForEventQueue();
+            }
             if (starOverlay || skyOverlay || valueOverlay || nameOverlay) {
                 ocanvas = OverlayCanvas.getOverlayCanvas(imp);
                 canvas = ocanvas;
@@ -3545,7 +3546,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         }
 
         // Increase chance of aperture actually rendering on mac
-        updateImageDisplay.ifProp(() -> {
+        if (updateImageDisplay.get()) {
             if (IJ.isMacOSX()) {
                 ocanvas.update(ocanvas.getGraphics());
                 canvas.update(canvas.getGraphics());
@@ -3558,7 +3559,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
             canvas.repaintOverlay();
             canvas.repaint();
-        });
+        }
 
         if (!isInstanceOfStackAlign && showMeanWidth && calcRadProFWHM) {
             if (nFWHM > 0) {

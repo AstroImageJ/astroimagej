@@ -148,10 +148,12 @@ public class Property<T> {
         return falsy;
     }
 
+    @Deprecated
     public void ifProp(Runnable truthy) {
         ifProp(truthy, () -> {});
     }
 
+    @Deprecated
     public void ifProp(Runnable truthy, Runnable falsy) {
         if (type == Boolean.TYPE || type == Boolean.class) {
             if (((Boolean) get())) {

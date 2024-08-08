@@ -2241,14 +2241,14 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             ((PlotCanvas) plotImageCanvas).setZoomed(() -> zoomY != 0 || zoomX != 0 || draggableShape.isPlotScaleDirty());
         }
 
-        drawAijVersion.ifProp(() -> {
+        if (drawAijVersion.get()) {
             plot.changeFont(new Font("Dialog", Font.PLAIN, 12));
             plot.setJustification(Plot.BOTTOM_RIGHT);
             var wid = plotImage.getImage().getGraphics().getFontMetrics(plot.getCurrentFont()).stringWidth("AIJ " + IJ.getAstroVersion().split("[+]")[0]);
             var pWid = plot.getSize().getWidth();
             var h = plot.getSize().getHeight();
             plot.addLabel((pWid - wid - 10)/pWid, (h + 43)/h, "AIJ " + IJ.getAstroVersion().split("[+]")[0]);
-        });
+        }
 
         plotbottompanel = (Panel) plotWindow.getComponent(1);
         plotbottompanel.getComponentCount();

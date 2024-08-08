@@ -1864,9 +1864,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         for (int i = firstSlice; i <= lastSlice; i++) {
             int finalI = i;
             updateImageDisplay.ifProp(() -> {
-                imp.unlock();
                 asw.showSlice(finalI);
-                imp.lockSilently();
             }, () -> {
                 imp.setSliceWithoutUpdate(finalI);
             });

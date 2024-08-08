@@ -216,6 +216,35 @@ public class ResultsTable implements Cloneable {
 		return counter;
 	}
 
+	@AstroImageJ(reason = "Add ability to insert rows")
+	public synchronized void insertRow(int insertedIndex) {
+		if (insertedIndex < 0) {
+			throw new IllegalArgumentException("Cannot insert row before 0!");
+		}
+
+		// Should not happen as it will create a discontinuous table
+		if (insertedIndex > counter) {
+			throw new IllegalArgumentException("Cannot insert row after the counter!");
+		}
+
+		incrementCounter();
+
+		if (rowLabels!=null) {
+			System.arraycopy(rowLabels, insertedIndex, rowLabels, insertedIndex+1, maxRows-insertedIndex-1);
+			rowLabels[insertedIndex] = null;
+		}
+		for (int i=0; i<=lastColumn; i++) {
+			if (columns[i]!=null) {
+				System.arraycopy(columns[i], insertedIndex, columns[i], insertedIndex+1, maxRows-insertedIndex-1);
+				if (NaNEmptyCells) {
+					columns[i][insertedIndex] = Double.NaN;
+				} else {
+					columns[i][insertedIndex] = 0;
+				}
+			}
+		}
+	}
+
 	/** Adds a numeric value to the specified column, on the last
 	 * table row. Use addRow() to add another row to
 	 * the table.

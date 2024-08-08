@@ -520,6 +520,12 @@ public class MeasurementTable extends ResultsTable {
         updateViewSynced(UpdateEvent.ROW_INSERTED, getCounter()-1, getCounter()-1);
     }
 
+    @Override
+    public synchronized void insertRow(int insertedIndex) {
+        super.insertRow(insertedIndex);
+        updateViewSynced(UpdateEvent.ROW_UPDATED, insertedIndex, insertedIndex);
+    }
+
     /**
      * Stores a number using a temporary different number of decimal places.
      */

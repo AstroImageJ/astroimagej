@@ -136,6 +136,34 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
             }
         });
 
+        rowHeadings.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                // Right-click menu
+                if (SwingUtilities.isRightMouseButton(e)) {
+                    var rowIndex = rowHeadings.rowAtPoint(e.getPoint());
+                    if (rowIndex < 0 || rowIndex > table.getCounter()) {
+                        return;
+                    }
+
+                    var popup = new JPopupMenu();
+                    var pItem = new JMenuItem("Insert Row Above");
+                    pItem.addActionListener($ -> {
+                        table.insertRow(rowIndex);
+                    });
+                    popup.add(pItem);
+
+                    pItem = new JMenuItem("Insert Row Below");
+                    pItem.addActionListener($ -> {
+                        table.insertRow(rowIndex+1);
+                    });
+                    popup.add(pItem);
+
+                    popup.show(rowHeadings, e.getX(), e.getY());
+                }
+            }
+        });
+
         jTable.getTableHeader().setToolTipText("""
                 <html>
                 Left-click to toggle sort view based on column.<br>

@@ -3367,7 +3367,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                             m.setMaxError(fTol);
                                             m.setFunction(new FitDetrendChi2(curve), start[curve].length);
                                             var result = m.minimize(start[curve], step[curve]);
-                                            System.out.println("Curve: %s; Status: %s".formatted(curve, Minimizer.STATUS_STRING[result]));
+                                            //System.out.println("Curve: %s; Status: %s".formatted(curve, Minimizer.STATUS_STRING[result]));
 
                                             nTries[curve] = m.getIterations();
                                             coeffs[curve] = Arrays.copyOf(m.getParams(), start[curve].length); // more values can be returned
@@ -3407,14 +3407,14 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                                 var yMat = new Matrix(detrendYs[curve], detrendYs[curve].length);
                                                 var beta = new QRDecomposition(xMat).solve(yMat);
 
-                                                beta.print(10, 9);
+                                                //beta.print(10, 9);
                                                 coeffs[curve] = new double[maxDetrendVars];
                                                 for (int i = 0; i < beta.getRowDimension(); i++) {
                                                     coeffs[curve][i+1] = beta.get(i, 0);
                                                 }
                                             }
 
-                                            System.out.println(Arrays.toString(coeffs[curve]));
+                                            //System.out.println(Arrays.toString(coeffs[curve]));
 
                                             varCount = 1;
                                             for (int v = 0; v < maxDetrendVars; v++) {

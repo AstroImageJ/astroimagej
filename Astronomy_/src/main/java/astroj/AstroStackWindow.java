@@ -6461,14 +6461,20 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             IJ.setInputEvent(e);
             if (showPhotometer) {// != e.isShiftDown())
                 ac.setMouseInImage(true);
-                ac.paint(ac.getGraphics());
             }
 
             if (goodWCS) {
                 radec = wcs.pixels2wcs(xy);
             }
 
-            updateXYValue(imageX, imageY, NOT_DRAGGING, e.isShiftDown(), e.isControlDown());
+            SwingUtilities.invokeLater(() -> {
+                if (showPhotometer) {
+                    ac.paint(ac.getGraphics());
+                }
+
+                updateXYValue(imageX, imageY, NOT_DRAGGING, e.isShiftDown(), e.isControlDown());
+            });
+
             prevImageX = lastImageX;
             prevImageY = lastImageY;
         });

@@ -4,10 +4,12 @@ import ij.IJ;
 import ij.IJEventListener;
 import ij.Prefs;
 import ij.WindowManager;
+import ij.astro.io.prefs.Property;
 import ij.text.TextPanel;
 
 import javax.swing.*;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -28,6 +30,8 @@ public class AIJLogger {
     public static final String USE_NEW_LOG_WINDOW_KEY = ".aij.useNewLogWindow";
     public static final String CERTAIN_LOGS_AUTO_CLOSE = ".aij.cLogsAutoClose";
     private static final String separator = "&#&";
+    public static final Property<Boolean> MIRROR_LOGS_TO_FILE = new Property<>(true, AIJLogger.class);
+    private static final ExecutorService LOGGING_THREAD = Executors.newSingleThreadExecutor();
 
     static {
         final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
@@ -90,6 +94,9 @@ public class AIJLogger {
 
         if (useNewWindow) {
             String finalMsg = msg;
+            if (MIRROR_LOGS_TO_FILE.get()) {
+                LOGGING_THREAD.submit(() -> System.out.println(padTitle(callerTitle + ": ") + finalMsg));
+            }
             SwingUtilities.invokeLater(() -> {
                 aijLogPanels.values().removeAll(Collections.singleton(null));
                 aijLogPanels.computeIfAbsent(caller,
@@ -102,7 +109,11 @@ public class AIJLogger {
                 aijLogPanelsTimer.putIfAbsent(caller, new ClosingConditions());
             });
         } else {
-            IJ.log(padTitle(callerTitle + ": ") + msg);
+            var s = padTitle(callerTitle + ": ") + msg;
+            if (MIRROR_LOGS_TO_FILE.get()) {
+                LOGGING_THREAD.submit(() -> System.out.println(s));
+            }
+            IJ.log(s);
         }
     }
 

@@ -21,6 +21,7 @@ import ij.astro.gui.nstate.NStateButton;
 import ij.astro.gui.nstate.TriState;
 import ij.astro.io.prefs.Property;
 import ij.astro.io.prefs.PropertyKey;
+import ij.astro.logging.AIJLogger;
 import ij.astro.types.Pair;
 import ij.astro.util.PdfPlotOutput;
 import ij.astro.util.UIHelper;
@@ -8191,6 +8192,14 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             updatePlot(updateNoFits());
         });
         preferencesmenu.add(changepixelscalemenuitem);
+
+        preferencesmenu.addSeparator();
+
+        var mirrorLogs = new JCheckBoxMenuItem("Mirror log window to aij.log", AIJLogger.MIRROR_LOGS_TO_FILE.get());
+        mirrorLogs.addItemListener(l -> {
+            AIJLogger.MIRROR_LOGS_TO_FILE.set(l.getStateChange() == ItemEvent.SELECTED);
+        });
+        preferencesmenu.add(mirrorLogs);
 
         preferencesmenu.addSeparator();
 

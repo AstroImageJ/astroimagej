@@ -67,6 +67,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 
@@ -15161,13 +15163,41 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         checkAndLockTable();
 
         numAps = 0;
-        while (true) {
-            if (table.getColumnIndex("Source-Sky_C" + (numAps + 1)) != MeasurementTable.COLUMN_NOT_FOUND || table.getColumnIndex("Source-Sky_T" + (numAps + 1)) != MeasurementTable.COLUMN_NOT_FOUND) {
-                numAps++;
-            } else {
-                break;
+
+        var sourceSkyPattern = Pattern.compile("Source-Sky_[CT]([0-9]+)");
+
+        // Find all aps based on Source-Sky columns
+        var discoveredAps = IntStream.range(0, table.getLastColumn())
+                .mapToObj(table::getColumnHeading)
+                .map(sourceSkyPattern::matcher)
+                .filter(Matcher::matches)
+                .map(m -> m.group(1))
+                .filter(Objects::nonNull)
+                .mapToInt(Integer::parseInt)
+                .sorted()
+                .toArray();
+
+        var foundApCount = discoveredAps.length;
+
+        var missingAps = new ArrayList<Integer>();
+        for (int i = 1; i < foundApCount; i++) {
+            var previous = discoveredAps[i-1];
+            var current = discoveredAps[i];
+
+            for (int missing = previous + 1; missing < current; missing++) {
+                missingAps.add(missing);
             }
         }
+
+        if (!missingAps.isEmpty() && foundApCount > 0) {
+            numAps = missingAps.get(0) - 1;
+            IJ.error("Aperture Loading", "Missing %s apertures!\nExpected: %s\nFound: %s\nUsing: %s"
+                    .formatted(missingAps.size(), discoveredAps[foundApCount-1], foundApCount, numAps));
+        } else {
+            numAps = foundApCount;
+        }
+
+
         if (lastRefStar >= numAps) lastRefStar = numAps - 1;
         if (lastRefStar < 0) lastRefStar = 0;
         if (numAps > 0) {

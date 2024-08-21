@@ -737,6 +737,11 @@ public class MeasurementTable extends ResultsTable {
         headingsCache.clear();
     }
 
+    @Override
+    public void updateResults() {
+        updateView(UpdateEvent.REBUILD);
+    }
+
     public synchronized void addListener(Runnable r) {
         listeners.add(r);
     }
@@ -876,6 +881,31 @@ public class MeasurementTable extends ResultsTable {
         if (!needsUpdate) {
             updateView(UpdateEvent.REBUILD);
         }
+    }
+
+    @Override
+    public void renameColumn(String oldName, String newName) {
+        super.renameColumn(oldName, newName);
+        var i = getColumnIndex(newName);
+        updateView(UpdateEvent.COL_RENAMED, i, i);
+    }
+
+
+    @Override
+    public void renameColumn(int column, String newName) {
+        super.renameColumn(column, newName);
+        updateView(UpdateEvent.COL_RENAMED, column, column);
+    }
+
+    public void renameColumnWithoutUpdate(int column, String newName) {
+        super.renameColumn(column, newName);
+    }
+
+    public void renameColumns(String[] headings) {
+        for (int i = hasRowLabels() ? 1 : 0; i < headings.length; i++) {
+            super.renameColumn(i, headings[i]);
+        }
+        updateView(UpdateEvent.COL_RENAMED);
     }
 
     private static class TableAccumulator {

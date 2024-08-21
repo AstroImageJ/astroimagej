@@ -1248,6 +1248,19 @@ public class ResultsTable implements Cloneable {
 		headings[oldCol] = newName;
 	}
 
+	/** Changes the name of a column. */
+	@AstroImageJ(reason = "Rename column based on index")
+	public void renameColumn(int column, String newName) {
+		if ((column<0) || (column>=maxColumns))
+			throw new IllegalArgumentException("Index out of range: "+column);
+		int newCol = getColumnIndex(newName);
+		if (newCol == column)
+			return;
+		if (columnExists(newCol))
+			throw new IllegalArgumentException("\""+newName+"\" column exists");
+		headings[column] = newName;
+	}
+
 	public synchronized void reset() {
 		counter = 0;
 		maxRows = 100;

@@ -65,6 +65,7 @@ import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.regex.Matcher;
@@ -15190,9 +15191,39 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         }
 
         if (!missingAps.isEmpty() && foundApCount > 0) {
-            numAps = missingAps.get(0) - 1;
-            IJ.error("Aperture Loading", "Missing %s apertures!\nExpected: %s\nFound: %s\nUsing: %s"
-                    .formatted(missingAps.size(), discoveredAps[foundApCount-1], foundApCount, numAps));
+            var gd = new GenericSwingDialog("Aperture Loading", mainFrame);
+            gd.addMessage("Missing %s apertures!\nExpected: %s\nFound: %s\nUsing: %s"
+                    .formatted(missingAps.size(), discoveredAps[foundApCount-1], foundApCount, missingAps.get(0) - 1));
+            var correctAps = new AtomicBoolean(true);
+            gd.addCheckbox("Correct column headings to use all apertures?", true, correctAps::set);
+            gd.centerDialog(true);
+            IJ.beep();
+            gd.showDialog();
+
+            if (correctAps.get()) {
+                Collections.reverse(missingAps);
+                Pattern apPattern = Pattern.compile(".+_[CT]([0-9]+)");
+                table.setLock(true);
+                for (Integer missingAp : missingAps) {
+                    for (int i = 0; i < table.getLastColumn(); i++) {
+                        Matcher m;
+                        int ap;
+                        String h;
+                        if ((h = table.getColumnHeading(i)) != null &&
+                                (m = apPattern.matcher(h)).matches() && m.group(1) != null &&
+                                (ap = Integer.parseInt(m.group(1))) > missingAp) {
+                            var apNew = ap - 1;
+                            table.renameColumnWithoutUpdate(i, h.substring(0, m.start(1)) + apNew);
+                        }
+                    }
+                }
+                table.setLock(false);
+                table.updateResults();
+
+                numAps = foundApCount;
+            } else {
+                numAps = missingAps.get(0) - 1;
+            }
         } else {
             numAps = foundApCount;
         }

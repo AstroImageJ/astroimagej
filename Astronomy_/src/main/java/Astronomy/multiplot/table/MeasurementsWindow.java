@@ -570,7 +570,10 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
                 }
                 adjustWidth(jTable.convertColumnIndexToView(i1));
             }
-            case COL_RENAMED -> tableView.fireTableRowsUpdated(TableModelEvent.HEADER_ROW, TableModelEvent.HEADER_ROW);
+            case COL_RENAMED -> {
+                tableView.fireTableRowsUpdated(TableModelEvent.HEADER_ROW, TableModelEvent.HEADER_ROW);
+                jTable.doLayout();
+            }
         }
     }
 

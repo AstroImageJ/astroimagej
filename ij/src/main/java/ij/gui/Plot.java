@@ -3395,7 +3395,7 @@ public class Plot implements Cloneable {
 		int localLineWidth = lineWidth;
 		if (shape == DIAMOND)
 			size = (int)(size*1.21);
-		if (plotObject.offScreenDisplacementArrowControl.xEnable) {
+		if (plotObject.offScreenDisplacementArrowControl.xEnable || pointIndex < 0) {
 			if (x<frame.x) {
 				lineWidth = 2;
 				ip.setLineWidth(2);
@@ -3425,7 +3425,7 @@ public class Plot implements Cloneable {
 				x = frame.x+frame.width-1;
 			}
 		}
-		if (plotObject.offScreenDisplacementArrowControl.yEnable) {
+		if (plotObject.offScreenDisplacementArrowControl.yEnable || pointIndex < 0) {
 			if (y<frame.y) {
 				lineWidth = 2;
 				ip.setLineWidth(2);

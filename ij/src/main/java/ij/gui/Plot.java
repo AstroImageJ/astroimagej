@@ -817,9 +817,9 @@ public class Plot implements Cloneable {
 				xValues[i] = i;
 		}
 		if (objectToReplace>=0)
-			allPlotObjects.set(objectToReplace, new PlotObject(xValues, yValues, yErrorBars, shape, currentLineWidth, currentColor, currentColor2, label, offScreenDisplacementArrowControl));
+			allPlotObjects.set(objectToReplace, new PlotObject(xValues, yValues, yErrorBars, shape, currentLineWidth, currentColor, currentColor2, label, offScreenDisplacementArrowControl.duplicate()));
 		else
-			allPlotObjects.add(new PlotObject(xValues, yValues, yErrorBars, shape, currentLineWidth, currentColor, currentColor2, label, offScreenDisplacementArrowControl));
+			allPlotObjects.add(new PlotObject(xValues, yValues, yErrorBars, shape, currentLineWidth, currentColor, currentColor2, label, offScreenDisplacementArrowControl.duplicate()));
 		objectToReplace = -1;
 		if (plotDrawn) updateImage();
 	}
@@ -4911,5 +4911,8 @@ class PlotObject implements Cloneable, Serializable, IPlotObject {
             this.xEnable = xEnable;
             this.yEnable = yEnable;
         }
+		public DisplacementArrowControl duplicate(){
+			return new DisplacementArrowControl(xEnable, yEnable);
+		}
     }
 } // class PlotObject

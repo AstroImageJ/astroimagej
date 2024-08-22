@@ -4656,11 +4656,13 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         double y = plotMinY + (plotMaxY - plotMinY) * (1 - legPosY + yShift / (s.getHeight()));
         double[] xx = {x};
         double[] yy = {y};
+        plot.setOffScreenDisplacementArrowControl(false, false);
         if (marker != Plot.LINE) {
             plot.addPoints(xx, yy, marker);
         } else {
             plot.drawLine(x, y, x + (plotMaxX - plotMinX) * 6.0 / (s.getWidth()), y);
         }
+        plot.setOffScreenDisplacementArrowControl(drawOffscreenDisplacementArrowsX.get(),drawOffscreenDisplacementArrowsY.get());
         plot.setLineWidth(1);
         return true;
     }

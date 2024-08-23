@@ -4722,9 +4722,6 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 "so they should be set to reasonable aperture radii guesses for your images (e.g. 10-20-30).<br>" +
                 "To make the auto aperture radii generally larger, use a smaller cutoff threshold value and vice versa.</html>"),
         /**
-         * Auto variable radius based on radial profile.
-         */
-        /**
          * Auto variable aperture based on the entire stack.
          */
         AUTO_FIXED_STACK_RAD("Auto Fixed Apertures from multi-image T1 radial profiles", 0.01, "<html>Use automatically sized fixed aperture photometry based on all images.<br>" +
@@ -4734,6 +4731,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 "The user selected fixed aperture radii above are used to perform the radial profile measurements,<br>" +
                 "so they should be set to reasonable aperture radii guesses for your images (e.g. 10-20-30).<br>" +
                 "To make the auto aperture radii generally larger, use a smaller cutoff threshold value and vice versa.</html>"),
+        /**
+         * Auto variable radius based on radial profile.
+         */
         AUTO_VAR_RAD_PROF("Auto Variable Apertures from each image T1 radial profile", 0.01, "<html>Use automatically sized variable aperture photometry.<br>" +
                 "The aperture and background radii are extracted using a radial profile measurement from the T1 aperture in each image.<br>" +
                 "All apertures within a single image will be the same size, but aperture sizes may vary from image to image if the PSF size changes.<br>" +

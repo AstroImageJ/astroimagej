@@ -404,7 +404,7 @@ public class Aperture_ implements PlugInFilter {
      * Performs exact measurement of object position and integrated brightness.
      */
     protected boolean measureAperture() {
-        return measureAperture(FitsJ.getHeader(imp));//todo this is ~4s improvement in test case, test it still gets correct values
+        return measureAperture(FitsJ.getHeader(imp));
     }
 
     /**

@@ -8,6 +8,28 @@ public class ColorUtil {
         return new Color(c.getRed(), c.getGreen(), c.getBlue(), color.getAlpha());
     }
 
+    public static Color midpointColor(Color primary, Color secondary, Color tertiary) {
+        var pBrightness = calculatePerceivedBrightness(primary);
+        var sBrightness = calculatePerceivedBrightness(secondary);
+        var tBrightness = calculatePerceivedBrightness(tertiary);
+
+        var secondaryBrighter = sBrightness > tBrightness;
+
+        if (secondaryBrighter) {
+            if (pBrightness >= sBrightness / 2) {
+                return mixColorsWithContrast(primary, tertiary);
+            } else {
+                return mixColorsWithContrast(primary, secondary);
+            }
+        } else {
+            if (pBrightness >= tBrightness / 2) {
+                return mixColorsWithContrast(primary, secondary);
+            } else {
+                return mixColorsWithContrast(primary, tertiary);
+            }
+        }
+    }
+
     public static Color mixColorsWithContrast(Color color1, Color color2) {
         double brightness1 = calculatePerceivedBrightness(color1);
         double brightness2 = calculatePerceivedBrightness(color2);
@@ -37,7 +59,7 @@ public class ColorUtil {
 
         for (int i = 0; i < colors.length; i++) {
             if (colors[i] <= 0.04045) {
-                colors[i] /= 12.92;
+                colors[i] /= 12.92f;
             } else {
                 colors[i] = (float) Math.pow(((colors[i] + 0.055)/1.055), 2.4);
             }

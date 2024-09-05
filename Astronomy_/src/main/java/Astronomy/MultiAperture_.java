@@ -9,9 +9,7 @@ import ij.astro.gui.GenericSwingDialog;
 import ij.astro.gui.RadioEnum;
 import ij.astro.io.prefs.Property;
 import ij.astro.logging.AIJLogger;
-import ij.gui.GenericDialog;
-import ij.gui.PlotWindow;
-import ij.gui.Toolbar;
+import ij.gui.*;
 import ij.measure.ResultsTable;
 import ij.plugin.frame.Recorder;
 import ij.process.ImageProcessor;
@@ -2761,7 +2759,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             startDragX = ac.offScreenXD(startDragScreenX);
             startDragY = ac.offScreenYD(startDragScreenY);
             selectedApertureRoi = ocanvas.findApertureRoi(startDragX, startDragY, 0);
-            asw.setMovingAperture(selectedApertureRoi != null && !aperturesInitialized);
+            asw.setMovingAperture((selectedApertureRoi != null && !aperturesInitialized) ||
+                    (radiusSetting == ApRadius.CUSTOM_PIXEL_APERTURE_PHOTOMETRY && e.isShiftDown()));
         }
     }
 
@@ -3129,6 +3128,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 yield "VAF%s: %s-%s-%s".formatted(ApRadius.AUTO_VAR_FWHM.cutoff, FORMAT.format(safeMedian(sr)),
                         FORMAT.format(safeMedian(br)), FORMAT.format(safeMedian(br2)));
             }
+            case CUSTOM_PIXEL_APERTURE_PHOTOMETRY -> "CA";
         };
     }
 
@@ -4153,6 +4153,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         gd.addFloatSlider("FWHM factor:", 0.1, 5.0, true, ApRadius.AUTO_VAR_FWHM.cutoff, 3, 0.1, d -> ApRadius.AUTO_VAR_FWHM.cutoff = d);
         gd.resetPositionOverride();
         gd.setOverridePosition(false);
+        gd.addGenericComponent(apRadiiButtons.get(ApRadius.CUSTOM_PIXEL_APERTURE_PHOTOMETRY));
         apRadiiButtons.get(radiusSetting).setSelected(true);
 
         gd.addDoubleSpaceLineSeparator();
@@ -4751,6 +4752,16 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 "to at least the FWHM (in pixels) that you expect in the worst image in the stack.<br>"+
                 "The user selected background radii are used directly, so should be set larger than the largest expected aperture radius.<br>" +
                 "To make the auto aperture radii generally larger, set the FWHM factor multiplier to a larger value and vice versa.</html>"),
+        CUSTOM_PIXEL_APERTURE_PHOTOMETRY("Fixed arbitrary aperture (for space-based photometry)", 0.01,
+                """
+                <html>
+                A single arbitrarily shaped aperture is supported for analysis of space-based data which have precise
+                pointing.<br>
+                This mode is generally not useful for ground-based data because the aperture is defined as fixed pixel
+                values in x/y space, therefore small pointing errors are not accounted for from image-to-image.<br>
+                The user defines individual pixels that should be included in the source and background counts.
+                </html>
+                """),
         ;
         private static final ButtonGroup group = new ButtonGroup();
         private final String buttonText, tooltip;

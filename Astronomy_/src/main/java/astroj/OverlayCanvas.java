@@ -150,11 +150,25 @@ public class OverlayCanvas extends ImageCanvas {
 
     /**
      * Returns a particular roi from the overlay list if it encloses the pixel position (x,y).
+     *
+     * @param x
+     * @param y
+     * @param radiusSlack
      */
     public ApertureRoi findApertureRoi(double x, double y, double radiusSlack) {
+        return findApertureRoi(x, y, radiusSlack, false);
+    }
+
+    /**
+     * Returns a particular roi from the overlay list if it encloses the pixel position (x,y).
+     */
+    public ApertureRoi findApertureRoi(double x, double y, double radiusSlack, boolean allowArbitraryAperture) {
         for (int i = 0; i < rois.size(); i++) {
             Roi roi = rois.get(i);
             if (roi instanceof ApertureRoi apertureRoi) {
+                if (!allowArbitraryAperture && apertureRoi instanceof CustomPixelApertureRoi) {
+                    continue;
+                }
 				double xPos = apertureRoi.getXpos();
                 double yPos = apertureRoi.getYpos();
                 double radius = apertureRoi.getRadius() + radiusSlack;
@@ -209,11 +223,11 @@ public class OverlayCanvas extends ImageCanvas {
      * Removes all aperture rois from the overlay list.
      */
     public void removeApertureRois() {
-        rois.removeIf(roi -> roi instanceof astroj.ApertureRoi);
+        rois.removeIf(roi -> roi instanceof ApertureRoi);
     }
 
     public void removePhantomApertureRois() {
-        rois.removeIf(roi -> roi instanceof astroj.ApertureRoi && ((astroj.ApertureRoi) roi).isPhantom());
+        rois.removeIf(roi -> roi instanceof ApertureRoi && ((ApertureRoi) roi).isPhantom());
     }
 
     /**
@@ -221,12 +235,12 @@ public class OverlayCanvas extends ImageCanvas {
      */
     public void moveApertureRois(double dx, double dy) {
         rois.forEach(roi -> {
-            if (roi instanceof astroj.ApertureRoi) ((ApertureRoi) roi).move(dx, dy);
+            if (roi instanceof ApertureRoi) ((ApertureRoi) roi).move(dx, dy);
         });
     }
 
     public void removePixelRois() {
-        rois.removeIf(roi -> roi instanceof astroj.PixelRoi);
+        rois.removeIf(roi -> roi instanceof PixelRoi);
     }
 
     /**

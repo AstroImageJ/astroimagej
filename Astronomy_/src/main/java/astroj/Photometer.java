@@ -133,6 +133,270 @@ public class Photometer {
         rBack2 = Double.NaN;
     }
 
+    public void measure(ImagePlus imp, CustomPixelApertureRoi apertureRoi, boolean exactPixels) {
+        var ip = imp.getProcessor();
+        exact = exactPixels;
+        xCenter = apertureRoi.xPos;
+        yCenter = apertureRoi.yPos;
+        radius = apertureRoi.getRadius();
+        rBack1 = Double.NaN;
+        rBack2 = Double.NaN;
+        ocanvas = OverlayCanvas.getOverlayCanvas(imp);
+        hasBack = apertureRoi.hasBackground();
+        boolean usePlaneLocal = usePlane && hasBack;
+
+        debug = Prefs.get("astroj.debug", false);
+
+        if (ip.getBitDepth() == 24) {
+            Frame openFrame = imp.getWindow();
+            if (openFrame instanceof AstroStackWindow asw) {
+                ColorProcessor cp = asw.getcp();
+                if (cp != null) {
+                    ip = cp;
+                }
+            }
+        }
+
+        float d;
+
+        // INTEGRATE STAR WITHIN APERTURE OF RADIUS radius, SKY OUTSIDE
+
+        source = 0.0;
+        btot = 0.0;
+        back = 0.0;
+        backi = 0.0;
+        backo = 0.0;
+        mean = 0.0;
+        prevBackMean = 0;
+        dSourceCount = 0.0;
+        dBackCount = 0.0;
+        sourceCount = 0;
+        backCount = 0;
+        back2 = 0;
+        boolean fitPlaneError = false;
+
+        int totalPixels = apertureRoi.pixelCount();
+        if (usePlaneLocal) {
+            plane = new FittedPlane(totalPixels);
+        }
+
+        peak = Float.NEGATIVE_INFINITY;
+        if (exact) {
+            //todo allow partial pixels
+            //todo need overlap calculation
+            //todo allow centroiding at later date
+            for (CustomPixelApertureRoi.Pixel pixel : apertureRoi.iterable()) {
+                d = ip.getPixelValue(pixel.x(), pixel.y());
+                if (!Float.isNaN(d)) {
+                    if (!pixel.isBackground()) {
+                        source += d;
+                        dSourceCount++;
+                    }
+                    if (d > peak) {
+                        peak = d;
+                    }
+                    if (hasBack) {
+                        if (!removeBackStars && !usePlaneLocal) {
+                            back += d;
+                            dBackCount++;
+                        } else if (pixel.isBackground()) { // BACKGROUND
+                            back += d;
+                            back2 += d * d;
+                            backCount++;
+                            if (usePlaneLocal) {
+                                plane.addPoint(pixel.x(), pixel.y(), d);
+                            }
+                        }
+                    }
+                }
+            }
+            if (removeBackStars || usePlaneLocal) {
+                dBackCount = backCount;
+            }
+        } else {
+            for (CustomPixelApertureRoi.Pixel pixel : apertureRoi.iterable()) {
+                d = ip.getPixelValue(pixel.x(), pixel.y());
+                if (!Float.isNaN(d)) {
+                    if (!pixel.isBackground()) { // SOURCE APERTURE
+                        source += d;
+                        sourceCount++;
+                        if (d > peak) {
+                            peak = d;
+                        }
+                    }
+                    if (hasBack && pixel.isBackground()) { // BACKGROUND
+                        back += d;
+                        back2 += d * d;
+                        backCount++;
+                        if (usePlaneLocal) {
+                            plane.addPoint(pixel.x(), pixel.y(), d);
+                        }
+                    }
+                }
+            }
+
+            dSourceCount = sourceCount;
+            dBackCount = backCount;
+        }
+
+        if (hasBack && (dBackCount > 0.0)) {
+            back /= dBackCount;    // MEAN BACKGROUND
+        }
+
+        if (hasBack && removeBackStars && (dBackCount > 3.0)) {
+            backMean = back;
+            back2Mean = back2 / dBackCount;
+
+            // Copy pixel data for evaluation
+            var pixels = new float[totalPixels];
+            var js = new double[totalPixels];
+            var is = new double[totalPixels];
+            var pCnt = 0;
+
+            for (CustomPixelApertureRoi.Pixel pixel : apertureRoi.iterable()) {
+                if (pixel.isBackground()) {
+                    d = ip.getPixelValue(pixel.x(), pixel.y());
+                    if (!Float.isNaN(d)) {
+                        js[pCnt] = pixel.x();
+                        is[pCnt] = pixel.y();
+                        pixels[pCnt++] = d;
+                    } else if (markRemovedPixels) {
+                        addPixelRoi(imp, pixel.x(), pixel.y()); // Mark NaN pixels
+                    }
+                }
+            }
+
+            for (int iteration = 0; iteration < 100; iteration++) {
+                backstdev = Math.sqrt(back2Mean - backMean * backMean);
+                back = 0.0;
+                back2 = 0.0;
+                backCount = 0;
+
+                if (usePlaneLocal) {
+                    plane = new FittedPlane(totalPixels);
+                }
+                if (markRemovedPixels) {
+                    ocanvas.removePixelRois();
+                }
+
+                // REMOVE STARS FROM BACKGROUND
+                var backMeanPlus2Stdev = backMean + 2.0 * backstdev;
+                var backMeanMinus2Stdev = backMean - 2.0 * backstdev;
+                for (int i = 0; i < pCnt; i++) {
+                    d = pixels[i];
+                    if ((d <= backMeanPlus2Stdev) && (d >= backMeanMinus2Stdev)) {
+                        back += d; // FINAL BACKGROUND
+                        back2 += d * d;
+                        backCount++;
+                        if (usePlaneLocal) {
+                            plane.addPoint(is[i], js[i], d);
+                        }
+                    } else if (markRemovedPixels) {
+                        addPixelRoi(imp,is[i], js[i]);
+                    }
+                }
+
+                if (backCount > 0) {
+                    back /= backCount;    // MEAN BACKGROUND
+                    backMean = back;
+                    back2Mean = back2 / backCount;
+                }
+
+                if (Math.abs(prevBackMean - backMean) < 0.0001) { //was 0.1 which did not work for for low background levels
+                    break;
+                }
+                prevBackMean = backMean;
+            }
+
+            dBackCount = (double) backCount;
+            if (markRemovedPixels) {
+                AstroCanvas ac = (AstroCanvas) imp.getCanvas();
+                ac.paint(ac.getGraphics());
+            }
+        }
+
+        if (usePlaneLocal && !plane.fitPlane()) {
+            //IJ.log("Photometer ERROR : cannot fit plane to background, using average background instead.");
+            fitPlaneError = true;
+        }
+
+        btot = back * dSourceCount;
+
+        if (usePlaneLocal && !fitPlaneError) {
+            source = 0.0;
+            back = 0.0;
+            double b = 0.0;
+            int srcCount = 0;
+            dSourceCount = 0.0;
+            if (exact) {
+                for (CustomPixelApertureRoi.Pixel pixel : apertureRoi.iterable()) {
+                    d = ip.getPixelValue(pixel.x(), pixel.y());
+                    if (!Float.isNaN(d)) {
+                        dSourceCount += 1;
+                        b = plane.valueAt(pixel.x(), pixel.y());
+                        back += b;
+                        source += (d - b);
+                    }
+                }
+
+                if (dSourceCount > 0) {
+                    back /= dSourceCount;
+                }
+            } else {
+                for (CustomPixelApertureRoi.Pixel pixel : apertureRoi.iterable()) {
+                    if (!pixel.isBackground()) {
+                        d = ip.getPixelValue(pixel.x(), pixel.y());
+                        if (!Float.isNaN(d)) {
+                            srcCount++;
+                            b = plane.valueAt(pixel.x(), pixel.y());
+                            back += b;
+                            source += (d - b);
+                        }
+                    }
+                }
+
+                dSourceCount = srcCount;
+                if (srcCount > 0) {
+                    back /= dSourceCount;
+                }
+            }
+        } else {
+            source -= btot;
+        }
+
+        if (dSourceCount > 0.0) {
+            mean = source / dSourceCount;
+        }
+
+        double src = 0.0;
+        double bck = 0.0;
+        double sCnt = 0.0;
+        double srcCnt = 0.0;
+        double bckCnt = 0.0;
+
+        // ERROR FROM GAIN (e-/count), RON (e-), DARK CURRENT (e-) AND POISSON STATISTICS
+        // SEE MERLINE, W. & HOWELL, S.B., 1995, EXP. ASTRON., 6, 163
+        src = (source < 0.0 || dSourceCount <= 0.0) ? 0.0 : source;
+        bck = (back < 0.0 || dBackCount <= 0) ? 0.0 : back;
+        sCnt = Math.max(dSourceCount, 0.0);
+        srcCnt = (dSourceCount <= 0.0 || dBackCount <= 0) ? 0.0 : dSourceCount;
+        bckCnt = (dBackCount <= 0) ? 1.0 : dBackCount;
+
+        serror = Math.sqrt((src * gain) + sCnt * (1.0 + srcCnt / bckCnt) * (bck * gain + dark + ron * ron + gain * gain * 0.083521)) / gain;
+        fwhm = IJU.radialDistributionFWHM(ip, apertureRoi.xPos, apertureRoi.yPos, apertureRoi.r1, back);
+
+        // CALIBRATE INTENSITIES IF POSSIBLE
+
+        rawSource = source;
+        rawBack = 0.0;
+        if (calib != null && calib.calibrated()) {
+            rawSource = calib.getRawValue(source);
+            if (dBackCount > 0) {
+                rawBack = calib.getRawValue(back);
+            }
+        }
+    }
+
     /**
      * Performs aperture photometry on the current image using given center and aperture radii.
      *

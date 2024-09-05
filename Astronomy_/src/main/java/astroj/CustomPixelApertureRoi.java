@@ -29,6 +29,7 @@ public class CustomPixelApertureRoi extends ApertureRoi {
         super(Double.NaN, Double.NaN, Double.NaN, Double.NaN, Double.NaN, integratedCnts, false);
         showAperture = true;
         showSky = true;
+        showName = true;
     }
 
     public void addPixel(int x, int y, boolean isBackground) {
@@ -211,9 +212,8 @@ public class CustomPixelApertureRoi extends ApertureRoi {
         // Draw apparent circular aperture
         g.drawOval(x1, y1, w1, h1);*/
 
-        g.setColor(getApColor());//todo midpoint color
+        g.setColor(ColorUtil.midpointColor(getApColor(), Color.BLACK, Color.WHITE));
 
-        showName = true;//todo leave enabled, also center in and show in background
         if (showName && showValues && nameText != null && !nameText.isEmpty() && value != null && !value.isEmpty()) {
             g.drawString(nameText + "=" + value, xl, yl);
         } else if(showName && nameText != null && !nameText.isEmpty()) {

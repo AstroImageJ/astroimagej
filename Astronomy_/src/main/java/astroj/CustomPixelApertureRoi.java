@@ -1,6 +1,7 @@
 package astroj;
 
 import ij.IJ;
+import ij.Prefs;
 import ij.astro.types.Pair;
 import util.ColorUtil;
 
@@ -11,11 +12,13 @@ import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import static Astronomy.Aperture_.*;
 public class CustomPixelApertureRoi extends ApertureRoi {
     private final List<Pixel> pixels = new ArrayList<>(20);
     private final List<Segment> segments = new ArrayList<>(80);
     private static final Color SOURCE_PIXEL_COLOR = new Color(0, 137, 12);
     private static final Color BACKGROUND_PIXEL_COLOR = new Color(0, 114, 234);
+    private final Photometer photometer;
     private boolean useOffsetPixelCenter = false;
     private SegmentLock segmentLock = null;
     private boolean comparisonStar = false;
@@ -30,6 +33,7 @@ public class CustomPixelApertureRoi extends ApertureRoi {
         showAperture = true;
         showSky = true;
         showName = true;
+        photometer = createPhotometer();
     }
 
     public void addPixel(int x, int y, boolean isBackground) {
@@ -37,6 +41,7 @@ public class CustomPixelApertureRoi extends ApertureRoi {
         pixels.add(new Pixel(x, y, isBackground));
         updateCenter();
         updateSegments();
+        updatePhotometry();
     }
 
     public void removePixel(int x, int y) {
@@ -48,6 +53,7 @@ public class CustomPixelApertureRoi extends ApertureRoi {
         if (updateCenter) {
             updateCenter();
             updateSegments();
+            updatePhotometry();
         }
     }
 
@@ -244,6 +250,16 @@ public class CustomPixelApertureRoi extends ApertureRoi {
         return focusedAperture ? color : ColorUtil.mixColorsWithContrast(color, Color.BLACK);
     }
 
+    private void updatePhotometry() {
+        if (true) {
+            if (photometer != null && imp != null) {
+                photometer.calib = imp.getCalibration();
+                photometer.measure(imp, this, false);
+                setIntCnts(photometer.sourceBrightness());
+            }
+        }
+    }
+
     private void updateSegments() {
         segments.clear();
         for (Pixel pixel : pixels) {
@@ -299,6 +315,20 @@ public class CustomPixelApertureRoi extends ApertureRoi {
 
     public void setFocusedAperture(boolean focusedAperture) {
         this.focusedAperture = focusedAperture;
+    }
+
+    private Photometer createPhotometer() {
+        var ccdGain = Prefs.get(AP_PREFS_CCDGAIN, 1);
+        var ccdNoise = Prefs.get(AP_PREFS_CCDNOISE, 0);
+        var ccdDark = Prefs.get(AP_PREFS_CCDDARK, 0);
+
+        var localPhotom = new Photometer();
+        localPhotom.setCCD(ccdGain, ccdNoise, ccdDark);
+        localPhotom.setRemoveBackStars(false);
+        localPhotom.setMarkRemovedPixels(false);
+        localPhotom.setUsePlane(false);
+
+        return localPhotom;
     }
 
     private record Segment(int x0, int y0, int x1, int y1, boolean isBackground, SegmentSide segmentSide) {}

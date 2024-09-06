@@ -1394,12 +1394,13 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 for (int i = x0; i <= x1; i++) {
                     for (int j = y0; j <= y1; j++) {
                         if (SwingUtilities.isLeftMouseButton(e)) {
-                            customPixelApertureHandler.addPixel(i, j, e.isAltDown());
+                            customPixelApertureHandler.addPixel(i, j, e.isAltDown(), false);
                         } else {
-                            customPixelApertureHandler.removePixel(i, j);
+                            customPixelApertureHandler.removePixel(i, j, false);
                         }
                     }
                 }
+                customPixelApertureHandler.currentAperture().update();
             } else { // Point Paint
                 if (SwingUtilities.isLeftMouseButton(e)) {
                     customPixelApertureHandler.addPixel(x, y, e.isAltDown());

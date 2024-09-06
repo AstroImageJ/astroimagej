@@ -59,11 +59,19 @@ public class CustomPixelApertureHandler {
     }
 
     public void addPixel(int x, int y, boolean isBackground) {
-        currentAperture().addPixel(x, y, invertBackground != isBackground);
+        addPixel(x, y, isBackground, true);
+    }
+
+    public void addPixel(int x, int y, boolean isBackground, boolean updateCenter) {
+        currentAperture().addPixel(x, y, invertBackground != isBackground, updateCenter);
     }
 
     public void removePixel(int x, int y) {
-        currentAperture().removePixel(x, y);
+        removePixel(x, y, true);
+    }
+
+    public void removePixel(int x, int y, boolean updateCenter) {
+        currentAperture().removePixel(x, y, updateCenter);
     }
 
     public void showControls() {

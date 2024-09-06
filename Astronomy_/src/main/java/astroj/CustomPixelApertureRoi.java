@@ -37,11 +37,17 @@ public class CustomPixelApertureRoi extends ApertureRoi {
     }
 
     public void addPixel(int x, int y, boolean isBackground) {
+        addPixel(x, y, isBackground, true);
+    }
+
+    public void addPixel(int x, int y, boolean isBackground, boolean updateCenter) {
         removePixel(x, y, false);
         pixels.add(new Pixel(x, y, isBackground));
-        updateCenter();
-        updateSegments();
-        updatePhotometry();
+        if (updateCenter) {
+            updateCenter();
+            updateSegments();
+            updatePhotometry();
+        }
     }
 
     public void addPixel(Pixel pixel) {
@@ -56,13 +62,19 @@ public class CustomPixelApertureRoi extends ApertureRoi {
         removePixel(x, y, true);
     }
 
-    protected void removePixel(int x, int y, boolean updateCenter) {
+    public void removePixel(int x, int y, boolean updateCenter) {
         pixels.removeIf(pixel -> pixel.coordinatesMatch(x, y));
         if (updateCenter) {
             updateCenter();
             updateSegments();
             updatePhotometry();
         }
+    }
+
+    public void update() {
+        updateCenter();
+        updateSegments();
+        updatePhotometry();
     }
 
     @Override

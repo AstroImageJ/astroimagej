@@ -1327,8 +1327,11 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 return;
             }
         }
+
         selectedApertureRoi = null;
-        asw.setMovingAperture(false);
+        if (!(radiusSetting == ApRadius.CUSTOM_PIXEL_APERTURE_PHOTOMETRY && mouseDrag && !aperturesInitialized)) {
+            asw.setMovingAperture(false);
+        }
 
         if (!enterPressed && !autoMode) {
             mouseDrag = (Math.abs(screenX - startDragScreenX) + Math.abs(screenY - startDragScreenY) >= 4.0);
@@ -2828,7 +2831,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             startDragY = ac.offScreenYD(startDragScreenY);
             selectedApertureRoi = ocanvas.findApertureRoi(startDragX, startDragY, 0);
             asw.setMovingAperture((selectedApertureRoi != null && !aperturesInitialized) ||
-                    (radiusSetting == ApRadius.CUSTOM_PIXEL_APERTURE_PHOTOMETRY && e.isShiftDown()));
+                    (radiusSetting == ApRadius.CUSTOM_PIXEL_APERTURE_PHOTOMETRY && e.isShiftDown() && !aperturesInitialized));
         }
     }
 

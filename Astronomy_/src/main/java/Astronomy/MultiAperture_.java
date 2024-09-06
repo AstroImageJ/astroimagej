@@ -2815,6 +2815,13 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         ac.setMousePosition(currentScreenX, currentScreenY);
         currentX = ac.offScreenXD(currentScreenX);
         currentY = ac.offScreenYD(currentScreenY);
+
+        if (radiusSetting == ApRadius.CUSTOM_PIXEL_APERTURE_PHOTOMETRY &&
+                Math.abs(currentScreenX - startDragScreenX) + Math.abs(currentScreenY - startDragScreenY) >= 2.0 &&
+                e.isShiftDown() && !aperturesInitialized) {
+            asw.setMovingAperture(true);
+        }
+
         if (aperturesInitialized || selectedApertureRoi == null) return;
         boolean dragging = Math.abs(currentScreenX - startDragScreenX) + Math.abs(currentScreenY - startDragScreenY) >= 2.0;
         if (dragging && (e.getModifiers() & MouseEvent.BUTTON1_MASK) != 0 && !e.isShiftDown() && !e.isControlDown()) {

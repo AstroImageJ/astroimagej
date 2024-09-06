@@ -1,5 +1,6 @@
 package Astronomy;// MultiAperture_.java
 
+import Astronomy.multiaperture.CustomPixelApertureHandler;
 import astroj.*;
 import ij.IJ;
 import ij.ImagePlus;
@@ -9,7 +10,10 @@ import ij.astro.gui.GenericSwingDialog;
 import ij.astro.gui.RadioEnum;
 import ij.astro.io.prefs.Property;
 import ij.astro.logging.AIJLogger;
-import ij.gui.*;
+import ij.gui.GenericDialog;
+import ij.gui.PlotWindow;
+import ij.gui.Roi;
+import ij.gui.Toolbar;
 import ij.measure.ResultsTable;
 import ij.plugin.frame.Recorder;
 import ij.process.ImageProcessor;
@@ -307,6 +311,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     public static final Property<ApLoading> apLoading = new Property<>(ApLoading.ALL_NEW, MultiAperture_.class);
     private static String lastRun = "<Not yet run>";
     private boolean processingStackForRadii;
+    private final CustomPixelApertureHandler customPixelApertureHandler = new CustomPixelApertureHandler();
 
 //	public static double RETRY_RADIUS = 3.0;
 
@@ -686,6 +691,11 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             oldRadii = new Seeing_Profile.ApRadii(radius, rBack1, rBack2);
         }
 
+        if (radiusSetting == ApRadius.CUSTOM_PIXEL_APERTURE_PHOTOMETRY) {
+            customPixelApertureHandler.setImp(imp);
+            customPixelApertureHandler.showControls();
+        }
+
         if (runningWCSOnlyAlignment) {
             startProcessStack();
         } else if (autoMode) {
@@ -725,6 +735,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         Prefs.set(MultiAperture_.PREFS_USEMACROIMAGE, "false");
         Prefs.set(MultiAperture_.PREFS_CANCELED, "true");
         Prefs.set("multiaperture.lastrun", lastRun);
+        customPixelApertureHandler.closeControl();
     }
 
     /**
@@ -1169,7 +1180,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             a.setPerformDraw(true);
         }
         storeLastRun();
-        SwingUtilities.invokeLater(() -> imp.setSlice(imp.getCurrentSlice()));
+        SwingUtilities.invokeLater(() -> {
+            imp.setSlice(imp.getCurrentSlice());
+            customPixelApertureHandler.closeControl();
+        });
         noMoreInput();
         closeHelpPanel();
         Prefs.set("multiaperture.lastrun", lastRun);
@@ -1356,6 +1370,60 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 //            screenY = e.getY();
 //            modis = e.getModifiers();
 //            }
+
+        if (radiusSetting == ApRadius.CUSTOM_PIXEL_APERTURE_PHOTOMETRY) {
+            if (e == dummyClick || e == null || (mouseDrag && !e.isShiftDown())) {
+                return;
+            }
+
+            var x = canvas.offScreenX(e.getX());
+            var y = canvas.offScreenY(e.getY());
+
+            customPixelApertureHandler.setImp(imp);
+            customPixelApertureHandler.currentAperture().setImage(imp);
+
+            // Drag Paint
+            if (mouseDrag && e.isShiftDown()) {
+                var x0 = Math.min((int)startDragX, x);
+                var x1 = Math.max((int)startDragX, x);
+                var y0 = Math.min((int)startDragY, y);
+                var y1 = Math.max((int)startDragY, y);
+                for (int i = x0; i <= x1; i++) {
+                    for (int j = y0; j <= y1; j++) {
+                        if (SwingUtilities.isLeftMouseButton(e)) {
+                            customPixelApertureHandler.addPixel(i, j, e.isAltDown());
+                        } else {
+                            customPixelApertureHandler.removePixel(i, j);
+                        }
+                    }
+                }
+            } else { // Point Paint
+                if (SwingUtilities.isLeftMouseButton(e)) {
+                    customPixelApertureHandler.addPixel(x, y, e.isAltDown());
+                } else {
+                    customPixelApertureHandler.removePixel(x, y);
+                }
+            }
+
+            ocanvas.add(customPixelApertureHandler.currentAperture());
+            canvas.repaint();
+
+            customPixelApertureHandler.setPlayCallback(() -> {
+                nApertures = customPixelApertureHandler.apCount();
+                aperturesInitialized = true;
+                checkResultsTable();
+                if (stackSize > 1 && doStack) {
+                    IJ.showStatus("Processing stack...");
+                    processingStack = true;
+                    startProcessStack();
+                } else {
+                    IJ.showStatus("Processing image...");
+                    processImage();
+                }
+            });
+
+            return;
+        }
 
         //Right mouse click or <Enter> finalizes aperture selection
         if (enterPressed || (!(e == dummyClick) && (!mouseDrag && (modis & InputEvent.BUTTON3_MASK) != 0 && !e.isShiftDown() && !e.isControlDown() && !e.isAltDown()))) {

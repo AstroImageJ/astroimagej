@@ -642,7 +642,7 @@ public class Aperture_ implements PlugInFilter {
         if (ocanvas != null && clearOverlay)
             ocanvas.clearRois();
         if (starOverlay || skyOverlay || valueOverlay || nameOverlay) {
-            addApertureRoi();
+            addApertureRoi(apertureRoi);
             canvas.repaint();
         }
     }

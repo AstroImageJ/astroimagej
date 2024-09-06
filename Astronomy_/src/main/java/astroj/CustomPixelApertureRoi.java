@@ -44,6 +44,14 @@ public class CustomPixelApertureRoi extends ApertureRoi {
         updatePhotometry();
     }
 
+    public void addPixel(Pixel pixel) {
+        //removePixel(x, y, false);
+        pixels.add(pixel);
+        updateCenter();
+        updateSegments();
+        updatePhotometry();
+    }
+
     public void removePixel(int x, int y) {
         removePixel(x, y, true);
     }
@@ -73,6 +81,14 @@ public class CustomPixelApertureRoi extends ApertureRoi {
 
     public boolean hasBackground() {
         return pixels.stream().anyMatch(Pixel::isBackground);
+    }
+
+    public boolean hasSource() {
+        return pixels.stream().anyMatch(Predicate.not(Pixel::isBackground));
+    }
+
+    public boolean hasPixels() {
+        return !pixels.isEmpty();
     }
 
     public int pixelCount() {
@@ -329,6 +345,16 @@ public class CustomPixelApertureRoi extends ApertureRoi {
         localPhotom.setUsePlane(false);
 
         return localPhotom;
+    }
+
+    @Override
+    public double getBack1() {
+        return Double.NaN;
+    }
+
+    @Override
+    public double getBack2() {
+        return Double.NaN;
     }
 
     private record Segment(int x0, int y0, int x1, int y1, boolean isBackground, SegmentSide segmentSide) {}

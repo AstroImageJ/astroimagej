@@ -6245,7 +6245,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                 xy[1] = imageY;
                 radec = wcs.pixels2wcs(xy);
             }
-            if (!movingAperture) {
+            if (!apMoving) {
                 OverlayCanvas overlayCanvas = OverlayCanvas.getOverlayCanvas(imp);
                 measRoi.setShow(false);
                 overlayCanvas.removeLiveMeasurementRoi();

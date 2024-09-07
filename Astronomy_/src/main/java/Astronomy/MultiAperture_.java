@@ -1375,56 +1375,66 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 //            }
 
         if (radiusSetting == ApRadius.CUSTOM_PIXEL_APERTURE_PHOTOMETRY) {
-            if (e == dummyClick || e == null || (mouseDrag && !e.isShiftDown())) {
-                return;
-            }
+            Runnable runMA = () -> {
+                if (customPixelApertureHandler.validateApertures()) {
+                    customPixelApertureHandler.hideControls();
+                    nApertures = customPixelApertureHandler.apCount();
+                    aperturesInitialized = true;
+                    checkResultsTable();
+                    if (stackSize > 1 && doStack) {
+                        IJ.showStatus("Processing stack...");
+                        processingStack = true;
+                        startProcessStack();
+                    } else {
+                        IJ.showStatus("Processing image...");
+                        processImage();
+                    }
+                }
+            };
 
-            var x = canvas.offScreenX(e.getX());
-            var y = canvas.offScreenY(e.getY());
-
+            customPixelApertureHandler.setPlayCallback(runMA);
             customPixelApertureHandler.setImp(imp);
             customPixelApertureHandler.currentAperture().setImage(imp);
 
-            // Drag Paint
-            if (mouseDrag && e.isShiftDown()) {
-                var x0 = Math.min((int)startDragX, x);
-                var x1 = Math.max((int)startDragX, x);
-                var y0 = Math.min((int)startDragY, y);
-                var y1 = Math.max((int)startDragY, y);
-                for (int i = x0; i <= x1; i++) {
-                    for (int j = y0; j <= y1; j++) {
-                        if (SwingUtilities.isLeftMouseButton(e)) {
-                            customPixelApertureHandler.addPixel(i, j, e.isAltDown(), false);
-                        } else {
-                            customPixelApertureHandler.removePixel(i, j, false);
+            if (e != dummyClick && e != null && (!mouseDrag || e.isShiftDown())) {
+                var x = canvas.offScreenX(e.getX());
+                var y = canvas.offScreenY(e.getY());
+
+                // Drag Paint
+                if (mouseDrag && e.isShiftDown()) {
+                    var x0 = Math.min((int) startDragX, x);
+                    var x1 = Math.max((int) startDragX, x);
+                    var y0 = Math.min((int) startDragY, y);
+                    var y1 = Math.max((int) startDragY, y);
+                    for (int i = x0; i <= x1; i++) {
+                        for (int j = y0; j <= y1; j++) {
+                            if (SwingUtilities.isLeftMouseButton(e)) {
+                                customPixelApertureHandler.addPixel(i, j, e.isAltDown(), false);
+                            } else {
+                                customPixelApertureHandler.removePixel(i, j, false);
+                            }
                         }
                     }
+                    customPixelApertureHandler.currentAperture().update();
+                } else { // Point Paint
+                    if (SwingUtilities.isLeftMouseButton(e)) {
+                        customPixelApertureHandler.addPixel(x, y, e.isAltDown());
+                    } else {
+                        customPixelApertureHandler.removePixel(x, y);
+                    }
                 }
-                customPixelApertureHandler.currentAperture().update();
-            } else { // Point Paint
-                if (SwingUtilities.isLeftMouseButton(e)) {
-                    customPixelApertureHandler.addPixel(x, y, e.isAltDown());
-                } else {
-                    customPixelApertureHandler.removePixel(x, y);
-                }
+
+                ngot = customPixelApertureHandler.apCount();
+
+                ocanvas.add(customPixelApertureHandler.currentAperture());
+                canvas.repaint();
             }
 
-            ocanvas.add(customPixelApertureHandler.currentAperture());
-            canvas.repaint();
-
-            customPixelApertureHandler.setPlayCallback(() -> {
-                nApertures = customPixelApertureHandler.apCount();
-                aperturesInitialized = true;
-                checkResultsTable();
-                if (stackSize > 1 && doStack) {
-                    IJ.showStatus("Processing stack...");
-                    processingStack = true;
-                    startProcessStack();
-                } else {
-                    IJ.showStatus("Processing image...");
-                    processImage();
-                }
-            });
+            //Right mouse click or <Enter> finalizes aperture selection
+            if (enterPressed) {
+                enterPressed = false;
+                runMA.run();
+            }
 
             return;
         }

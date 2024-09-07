@@ -84,6 +84,12 @@ public class CustomPixelApertureHandler {
         }
     }
 
+    public void hideControls() {
+        if (controlPanel != null) {
+            controlPanel.setVisible(false);
+        }
+    }
+
     public void setPlayCallback(Runnable callback) {
         playCallback = callback;
     }
@@ -140,7 +146,6 @@ public class CustomPixelApertureHandler {
             editor.getTextField().setColumns(5);
         }
 
-        helpPanel.setRows(6);
         helpPanel.setWrapStyleWord(true);
         helpPanel.setEditable(false);
 
@@ -153,6 +158,7 @@ public class CustomPixelApertureHandler {
                 <Shift-alt-left-click-drag> to add a region of $sType pixels to $ap.
                 <Right-click> to remove pixel from $ap.
                 <Shift-right-click-drag> to remove a region of pixels from $ap.
+                <Enter> to run photometry.\
                 """
                 .replace("$ap", currentAperture().getName())
                 .replace("$pType", invertBackground ? "background" : "source")
@@ -213,12 +219,7 @@ public class CustomPixelApertureHandler {
             updateHelp.run();
         });
 
-        beginButton.addActionListener($ -> {
-            if (validateApertures()) {
-                frame.setVisible(false);
-                playCallback.run();
-            }
-        });
+        beginButton.addActionListener($ -> playCallback.run());
 
         copyBackground.addItemListener(l -> {
             this.copyBackground = l.getStateChange() == ItemEvent.SELECTED;

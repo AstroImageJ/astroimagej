@@ -1419,6 +1419,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                             }
                         }
                     }
+                    ocanvas.removeRoi("selectionRoi");
                     customPixelApertureHandler.currentAperture().update();
                 } else { // Point Paint
                     if (SwingUtilities.isLeftMouseButton(e)) {
@@ -2834,6 +2835,24 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         if (radiusSetting == ApRadius.CUSTOM_PIXEL_APERTURE_PHOTOMETRY &&
                 Math.abs(currentScreenX - startDragScreenX) + Math.abs(currentScreenY - startDragScreenY) >= 2.0 &&
                 e.isShiftDown() && !aperturesInitialized) {
+            ocanvas.removeRoi("selectionRoi");
+
+            var x0 = ac.getNetFlipX() ? Math.max(startDragX, currentX) : Math.min(startDragX, currentX);
+            var y0 = ac.getNetFlipY() ? Math.max(currentY, startDragY) : Math.min(currentY, startDragY);
+            var xw = Math.abs(currentX - startDragX);
+            var xh = Math.abs(currentY - startDragY);
+
+            /*x0 = Math.round(x0);
+            y0 = Math.round(y0);
+            xw = Math.round(xw);
+            xh = Math.round(xh);*/
+
+            var roi = new AstroRoi(x0, y0, xw, xh);
+            roi.setStrokeColor(Color.RED);
+            roi.setName("selectionRoi");
+            roi.setImage(imp);
+            ocanvas.add(roi);
+            ocanvas.repaint();
             asw.setMovingAperture(true);
         }
 

@@ -10,6 +10,7 @@ import ij.gui.StackWindow;
 
 import java.awt.*;
 import java.util.Enumeration;
+import java.util.Objects;
 import java.util.Vector;
 
 /**
@@ -83,6 +84,10 @@ public class OverlayCanvas extends ImageCanvas {
     public boolean removeRoi(Roi roi) {
         // Can't use the normal remove as Roi does not check for type information with AIJ rois
         return rois.removeIf(r -> roi == r);
+    }
+
+    public boolean removeRoi(String roi) {
+        return rois.removeIf(r -> Objects.equals(r.getName(), roi));
     }
 
     /**

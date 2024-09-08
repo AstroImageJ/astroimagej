@@ -5747,7 +5747,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
 
     }
 
-    synchronized void writeNumericPanelField(double value, JTextField textField) {
+    void writeNumericPanelField(double value, JTextField textField) {
         if (Double.isNaN(value)) {
             textField.setText("NaN");
         } else {

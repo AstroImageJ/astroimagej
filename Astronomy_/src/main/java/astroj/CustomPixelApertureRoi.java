@@ -6,15 +6,15 @@ import ij.astro.types.Pair;
 import util.ColorUtil;
 
 import java.awt.*;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static Astronomy.Aperture_.*;
 public class CustomPixelApertureRoi extends ApertureRoi {
-    private final List<Pixel> pixels = new ArrayList<>(20);
+    // HashSet relies on overridden hashcode in Pixel to only care about coordinates for #contains
+    private final Set<Pixel> pixels = new HashSet<>(20);
     private final List<Segment> segments = new ArrayList<>(80);
     private static final Color SOURCE_PIXEL_COLOR = new Color(0, 137, 12);
     private static final Color BACKGROUND_PIXEL_COLOR = new Color(0, 114, 234);
@@ -84,7 +84,7 @@ public class CustomPixelApertureRoi extends ApertureRoi {
 
     @Override
     public boolean contains(int xs, int ys) {
-        return pixels.stream().anyMatch(pixel -> pixel.coordinatesMatch(xs, ys));
+        return pixels.contains(new Pixel(xs, ys));
     }
 
     public boolean contains(int xs, int ys, boolean isBackground) {
@@ -390,6 +390,10 @@ public class CustomPixelApertureRoi extends ApertureRoi {
      * @param isBackground {@code true} if this is a background pixel, {@code false} is this is a source pixel.
      */
     public record Pixel(int x, int y, boolean isBackground) {
+        public Pixel(int x, int y) {
+            this(x, y, false);
+        }
+
         public Pixel withBackground(boolean isBackground) {
             return new Pixel(x, y, isBackground);
         }
@@ -400,6 +404,15 @@ public class CustomPixelApertureRoi extends ApertureRoi {
 
         public boolean coordinatesMatch(int x, int y) {
             return this.x == x && this.y == y;
+        }
+
+        // See point2D for hashcode
+        // Used by by the hashset storing pixels
+        @Override
+        public int hashCode() {
+            int result = x;
+            result = 31 * result + y;
+            return result;
         }
     }
 

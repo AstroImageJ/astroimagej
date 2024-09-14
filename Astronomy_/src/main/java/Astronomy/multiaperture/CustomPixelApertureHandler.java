@@ -10,7 +10,9 @@ import ij.astro.util.UIHelper;
 import javax.swing.*;
 import java.awt.event.ItemEvent;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.PriorityQueue;
 
 import static Astronomy.Aperture_.*;
 
@@ -38,6 +40,7 @@ public class CustomPixelApertureHandler {
     private static final Icon BACKGROUND_ICON = UIHelper.createImageIcon("Astronomy/images/icons/multiaperture/redCircle.png", 19, 19);
     private static final Icon COPY_ICON = UIHelper.createImageIcon("Astronomy/images/icons/multiaperture/copy.png", 19, 19);
     private static final Icon COPY_FULL_ICON = UIHelper.createImageIcon("Astronomy/images/icons/multiaperture/copyFull.png", 19, 19);
+    private static final Icon AUTO_SKY_ICON = UIHelper.createImageIcon("Astronomy/images/icons/multiaperture/autoSky.png", 19, 19);
 
     public CustomPixelApertureHandler() {
         this.customPixelApertureRois.add(createNewAperture(false));
@@ -141,6 +144,7 @@ public class CustomPixelApertureHandler {
         var helpPanel = new JTextArea();
         var copyBackground = new JToggleButton(COPY_ICON, this.copyBackground);
         copyBackground.setSelectedIcon(COPY_FULL_ICON);
+        var backgroundFinder = new JButton(AUTO_SKY_ICON);
 
         if (apSelector.getEditor() instanceof JSpinner.DefaultEditor editor) {
             editor.getTextField().setColumns(5);
@@ -225,6 +229,14 @@ public class CustomPixelApertureHandler {
             this.copyBackground = l.getStateChange() == ItemEvent.SELECTED;
         });
 
+        backgroundFinder.addActionListener($ -> {
+            try {
+                this.findBackground();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+
         frame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 
         deleteAp.setToolTipText("Delete current aperture");
@@ -234,6 +246,7 @@ public class CustomPixelApertureHandler {
         invertBackgroundControl.setToolTipText("Invert default pixel type to place");
         copyBackground.setToolTipText("Toggles if creating a new aperture should copy the current aperture's background");
         beginButton.setToolTipText("Run photometry");
+        backgroundFinder.setToolTipText("Automatic background pixel selection based on current image for the active aperture");
 
         var selector = Box.createHorizontalBox();
         selector.add(apLabel);
@@ -245,6 +258,7 @@ public class CustomPixelApertureHandler {
         b.add(compButton);
         b.add(invertBackgroundControl);
         b.add(copyBackground);
+        b.add(backgroundFinder);
         b.add(beginButton);
 
         p.add(b);
@@ -276,6 +290,97 @@ public class CustomPixelApertureHandler {
         if (ap != null && imp != null && OverlayCanvas.hasOverlayCanvas(imp)) {
             OverlayCanvas.getOverlayCanvas(imp).removeRoi(ap);
         }
+    }
+
+    private void findBackground() {
+        if (imp == null) {
+            return;
+        }
+
+        final var nDarkest = 20000;
+
+        var ip = imp.getProcessor();
+        // These pull from the histogram sliders of ASW
+        var max = ip.getMax();
+        var min = ip.getMin();
+
+        final var binCount = 256;
+        final var intensityFrequency = new int[binCount];
+
+        // Get max/min pixel from image
+        /*var max = Float.MIN_VALUE;
+        var min = Float.MAX_VALUE;
+        for (int x = 0; x < ip.getWidth(); x++) {
+            for (int y = 0; y < ip.getHeight(); y++) {
+                var p = ip.getPixelValue(x, y);
+                if (p > max) {
+                    max = p;
+                }
+                if (p < min) {
+                    min = p;
+                }
+            }
+        }*/
+
+        for (int x = 0; x < ip.getWidth(); x++) {
+            for (int y = 0; y < ip.getHeight(); y++) {
+                var p = ip.getPixelValue(x, y);
+                if (p < min) {
+                    continue;
+                }
+                if (p > max) {
+                    continue;
+                }
+                int binIndex = (int) ((p - min) / (max - min) * (binCount - 1));
+                intensityFrequency[binIndex]++;
+            }
+        }
+
+        // Find the bin with the highest frequency
+        int modeBin = 0;
+        int maxFrequency = 0;
+        for (int i = 0; i < intensityFrequency.length; i++) {
+            if (intensityFrequency[i] > maxFrequency) {
+                maxFrequency = intensityFrequency[i];
+                modeBin = i;
+            }
+        }
+
+        // Calculate the approximate mode pixel value (center of the bin)
+        var binWidth = (max - min) / (float)binCount;
+        var mode = min + (modeBin * binWidth) + (binWidth / 2f);
+
+        record Pi(int x, int y, float val) {}
+
+        final var darkestPixels = new PriorityQueue<Pi>(nDarkest, Comparator.comparingDouble(Pi::val));
+
+        for (int x = 0; x < ip.getWidth(); x++) {
+            for (int y = 0; y < ip.getHeight(); y++) {
+                var p = ip.getPixelValue(x, y);
+
+                if (p <= mode && p > min) {
+                    if (darkestPixels.size() < nDarkest) {
+                        darkestPixels.add(new Pi(x, y, p));
+                    } else if (p < darkestPixels.peek().val) {
+                        darkestPixels.poll(); // Remove the brightest of the dark pixels
+                        darkestPixels.add(new Pi(x, y, p));
+                    }
+                }
+            }
+        }
+
+        for (Pi pi : darkestPixels) {
+            currentAperture().addPixel(pi.x, pi.y, true, false);
+        }
+
+        // Ensure aperture is added to image
+        if (OverlayCanvas.hasOverlayCanvas(imp)) {
+            currentAperture().setImage(imp);
+            OverlayCanvas.getOverlayCanvas(imp).add(currentAperture());
+        }
+
+        currentAperture().update();
+        (OverlayCanvas.hasOverlayCanvas(imp) ? OverlayCanvas.getOverlayCanvas(imp) : imp.getCanvas()).repaint();
     }
 
     private void updateDisplay() {

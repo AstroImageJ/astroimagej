@@ -37,6 +37,7 @@ public class Property<T> {
     private boolean hasBuiltKey = false;
     private boolean hasLoaded = false;
     private final Function<String, T> deserializer;
+    private final Function<T, String> serializer;
     private final Supplier<String> keySuffix;
     private final Supplier<String> keyPrefix;
     private final Class<T> type;
@@ -45,33 +46,34 @@ public class Property<T> {
     private static final HashSet<WeakReference<Property<?>>> propertyCache = new HashSet<>();
 
     public Property(T defaultValue, Object owner) {
-        this(defaultValue, "", "", $ -> null, owner);
+        this(defaultValue, "", "", null, $ -> null, owner);
     }
 
-    public Property(T defaultValue, Function<String, T> deserializer, Object owner) {
-        this(defaultValue, "", "", deserializer, owner);
+    public Property(T defaultValue, Function<T, String> serializer, Function<String, T> deserializer, Object owner) {
+        this(defaultValue, "", "", serializer, deserializer, owner);
     }
 
     public Property(T defaultValue, String keyPrefix, String keySuffix, Object owner) {
-        this(defaultValue, keyPrefix, keySuffix, $ -> null, owner);
+        this(defaultValue, keyPrefix, keySuffix, null, $ -> null, owner);
     }
 
     public Property(T defaultValue, Supplier<String> keyPrefix, Supplier<String> keySuffix, Object owner) {
-        this(defaultValue, keyPrefix, keySuffix, $ -> null, owner);
+        this(defaultValue, keyPrefix, keySuffix, null, $ -> null, owner);
     }
 
-    public Property(T defaultValue, String keyPrefix, String keySuffix, Function<String, T> deserializer, Object owner) {
-        this(defaultValue, () -> keyPrefix, () -> keySuffix, deserializer, owner);
+    public Property(T defaultValue, String keyPrefix, String keySuffix, Function<T, String> serializer, Function<String, T> deserializer, Object owner) {
+        this(defaultValue, () -> keyPrefix, () -> keySuffix, serializer, deserializer, owner);
     }
 
     @SuppressWarnings({"unchecked"})
     public Property(T defaultValue, Supplier<String> keyPrefix, Supplier<String> keySuffix,
-                    Function<String, T> deserializer, Object owner) {
+            Function<T, String> serializer, Function<String, T> deserializer, Object owner) {
         this.deserializer = deserializer;
         this.keySuffix = keySuffix;
         this.keyPrefix = keyPrefix;
         this.type = (Class<T>) getType(defaultValue);
         value = defaultValue;
+        this.serializer = serializer;
         if (owner instanceof Class<?> clazz) {
             this.ownerClass = clazz;
             this.owner = null;
@@ -85,6 +87,7 @@ public class Property<T> {
 
     private Property(String key, Property<T> base) {
         this.deserializer = base.deserializer;
+        this.serializer = base.serializer;
         this.keySuffix = base.keySuffix;
         this.keyPrefix = base.keyPrefix;
         this.type = base.type;
@@ -338,7 +341,7 @@ public class Property<T> {
     @SuppressWarnings({"unchecked", "rawtypes"})
     private T handleLoad() {
         //todo add safeties for failed to parse, Optional?
-        var nv = Prefs.get(getPropertyKey(), String.valueOf(value));
+        var nv = Prefs.get(getPropertyKey(), serializer != null ? serializer.apply(value) : String.valueOf(value));
         if (type == Double.TYPE || type == Double.class) {
             return (T) Double.valueOf(nv);
         } else if (type == Integer.TYPE || type == Integer.class) {
@@ -389,7 +392,7 @@ public class Property<T> {
             return;
         }
 
-        Prefs.set(getPropertyKey(), value.toString());
+        Prefs.set(getPropertyKey(), serializer != null ? serializer.apply(value) : value.toString());
     }
 
     private static Class<?> getType(Object o) {

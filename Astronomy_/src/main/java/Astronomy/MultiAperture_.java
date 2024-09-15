@@ -1400,6 +1400,13 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             customPixelApertureHandler.setImp(imp);
             customPixelApertureHandler.currentAperture().setImage(imp);
 
+            if ((apLoading.get().isPrevious() || previous) && firstClick) {
+                customPixelApertureHandler.loadAperturesFromPrefs();//todo respect only loading first
+                ngot = customPixelApertureHandler.apCount();
+                firstClick = false;
+                enterPressed = false;
+            }
+
             if (e != dummyClick && e != null && (!mouseDrag || e.isShiftDown())) {
                 var x = canvas.offScreenX(e.getX());
                 var y = canvas.offScreenY(e.getY());

@@ -158,7 +158,7 @@ public class CustomPixelApertureRoi extends ApertureRoi {
             showMag = ac.getShowAbsMag() && aMag<99.0;
             showIntCntWithMag = ac.getShowIntCntWithAbsMag();
 
-            if (!segmentLock.test(ac)) {
+            if (segmentLock == null || !segmentLock.test(ac)) {
                 updateSegments();
             }
         }

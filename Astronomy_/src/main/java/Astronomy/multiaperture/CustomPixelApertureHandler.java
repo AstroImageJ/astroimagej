@@ -5,14 +5,14 @@ import astroj.OverlayCanvas;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.Prefs;
+import ij.astro.io.prefs.Property;
 import ij.astro.util.UIHelper;
 
 import javax.swing.*;
 import java.awt.event.ItemEvent;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.PriorityQueue;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.IntConsumer;
 
 import static Astronomy.Aperture_.*;
 
@@ -30,6 +30,11 @@ public class CustomPixelApertureHandler {
     private final boolean valueOverlay = Prefs.get(AP_PREFS_VALUEOVERLAY, true);
     private final boolean tempOverlay = Prefs.get(AP_PREFS_TEMPOVERLAY, true);
     private final boolean clearOverlay = Prefs.get(AP_PREFS_CLEAROVERLAY, false);
+    private IntConsumer updateCount = i -> {};
+    private static final Property<List<CustomPixelApertureRoi>> APS =
+            new Property<>(new ArrayList<>(),
+                    CustomPixelApertureHandler::serializeApertures, CustomPixelApertureHandler::deserializeApertures,
+                    CustomPixelApertureHandler.class);
     private static final Icon ADD_ICON = UIHelper.createImageIcon("Astronomy/images/icons/multiaperture/add.png", 19, 19);
     private static final Icon REMOVE_ICON = UIHelper.createImageIcon("Astronomy/images/icons/multiaperture/remove.png", 19, 19);
     private static final Icon PLAY_ICON = UIHelper.createImageIcon("Astronomy/images/icons/multiaperture/play.png", 19, 19);
@@ -123,7 +128,29 @@ public class CustomPixelApertureHandler {
             return IJ.showMessageWithCancel("Custom Aperture Handler", message.toString());
         }
 
+        APS.set(customPixelApertureRois);
+
         return true;
+    }
+
+    /**
+     * Load apertures from preferences, clears existing apertures.
+     */
+    public void loadAperturesFromPrefs() {
+        customPixelApertureRois.clear();
+        customPixelApertureRois.addAll(APS.get());
+
+        if (imp != null) {
+            for (CustomPixelApertureRoi roi : customPixelApertureRois) {
+                roi.setImage(imp);
+                if (OverlayCanvas.hasOverlayCanvas(imp)) {
+                    OverlayCanvas.getOverlayCanvas(imp).add(roi);
+                }
+            }
+        }
+
+        customPixelApertureRois.get(0).setFocusedAperture(true);
+        updateCount.accept(customPixelApertureRois.size());
     }
 
     private JFrame createControlPanel() {
@@ -247,6 +274,8 @@ public class CustomPixelApertureHandler {
         copyBackground.setToolTipText("Toggles if creating a new aperture should copy the current aperture's background");
         beginButton.setToolTipText("Run photometry");
         backgroundFinder.setToolTipText("Automatic background pixel selection based on current image for the active aperture");
+
+        updateCount = selectorModel::setMaximum;
 
         var selector = Box.createHorizontalBox();
         selector.add(apLabel);
@@ -395,6 +424,7 @@ public class CustomPixelApertureHandler {
         setFocusedAperture();
 
         if (imp != null) {
+            currentAperture().setImage(imp);
             (OverlayCanvas.hasOverlayCanvas(imp) ? OverlayCanvas.getOverlayCanvas(imp) : imp.getCanvas()).repaint();
         }
     }
@@ -431,6 +461,94 @@ public class CustomPixelApertureHandler {
     }
 
     public void setImp(ImagePlus imp) {
+        if (this.imp != imp && imp != null) {
+            for (CustomPixelApertureRoi roi : customPixelApertureRois) {
+                roi.setImage(imp);
+                if (OverlayCanvas.hasOverlayCanvas(imp)) {
+                    OverlayCanvas.getOverlayCanvas(imp).add(roi);
+                }
+            }
+        }
         this.imp = imp;
+    }
+
+    //todo could technically have more efficient structure just for prefs
+    private static List<CustomPixelApertureRoi> deserializeApertures(String setting) {
+        var decoder = Base64.getDecoder();
+        setting = new String(decoder.decode(setting));
+
+        var apertures = new ArrayList<CustomPixelApertureRoi>();
+        if (setting.startsWith("handlerApertures")) {
+            var ap = new AtomicReference<CustomPixelApertureRoi>();
+            setting.lines().skip(1).forEachOrdered(line -> {
+                if (line.startsWith("ap customPixel")) {
+                    var old = ap.getAndSet(new CustomPixelApertureRoi());
+                    if (old != null) {
+                        apertures.add(old);
+                    }
+                    return;
+                }
+
+                if (line.startsWith("\t")) {
+                    line = line.substring(1);
+                }
+
+                if (ap.get() == null) {
+                    return;
+                }
+
+                if (line.startsWith("px")) {
+                    var xSep = line.indexOf("\t");
+                    if (xSep < 0) {
+                        throw new IllegalStateException("Missing xSep! " + line);
+                    }
+
+                    var ySep = line.indexOf("\t", xSep+1);
+                    if (ySep < 0) {
+                        throw new IllegalStateException("Missing ySep! " + line);
+                    }
+
+                    var tSep = line.indexOf("\t", ySep+1);
+                    if (tSep < 0) {
+                        throw new IllegalStateException("Missing tSep! " + line);
+                    }
+
+                    var x = Integer.parseInt(line.substring(xSep+1, ySep));
+                    var y = Integer.parseInt(line.substring(ySep+1, tSep));
+                    ap.get().addPixel(x, y, "background".equals(line.substring(tSep+1)));
+                }
+
+                if (line.startsWith("isComp")) {
+                    var tSep = line.indexOf("\t");
+                    ap.get().setComparisonStar(Boolean.parseBoolean(line.substring(tSep)));
+                }
+            });
+
+            if (ap.get() != null) {
+                apertures.add(ap.get());
+            }
+        }
+
+        return apertures;
+    }
+
+    private static String serializeApertures(List<CustomPixelApertureRoi> apertures) {
+        var encoder = Base64.getEncoder();
+
+        var setting = new StringBuilder("handlerApertures");
+
+        for (CustomPixelApertureRoi aperture : apertures) {
+            setting.append("\nap customPixel");
+            setting.append('\n');
+            setting.append('\t').append("isComp").append('\t').append(aperture.isComparisonStar());
+
+            for (CustomPixelApertureRoi.Pixel pixel : aperture.iterable()) {
+                setting.append('\n').append('\t');
+                setting.append("px\t").append(pixel.x()).append('\t').append(pixel.y()).append('\t')
+                        .append(pixel.isBackground() ? "background" : "source");
+            }
+        }
+
+        return encoder.encodeToString(setting.toString().getBytes());
     }
 }

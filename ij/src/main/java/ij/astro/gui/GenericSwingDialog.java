@@ -62,7 +62,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
     private boolean optionsRecorded;     // have dialogListeners been called to record options?
     private boolean recorderOn;          // whether recording is allowed (after the dialog is closed)
     private String section;
-    private final Map<String, SwappableSection<?>> swappableSections = new HashMap<>();
+    private final Map<String, SwappableSectionHolder<?>> swappableSections = new HashMap<>();
 
     public GenericSwingDialog(String title) {
         this(title, guessParentFrame());
@@ -193,7 +193,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
             throw new IllegalArgumentException("GSD already contains section by name: " + sectionName);
         }
 
-        var swappableSection = new SwappableSection<T>(currentState);
+        var swappableSection = new SwappableSectionHolder<>(new SwappableSection<T>(currentState));
 
         //todo which one, pack will resize window, revalidate won't which can cause scrollbars to appear
         addNStateDropdown(currentState, consumer.andThen(swappableSection::setCurrentState).andThen($ -> pack()));
@@ -207,6 +207,20 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         swappableSections.put(sectionName, swappableSection);
 
         return swappableSection::setCurrentState;
+    }
+
+    public void addNewSwappableSectionPanel(String sectionName) {
+        if (!swappableSections.containsKey(Objects.requireNonNull(sectionName))) {
+            throw new IllegalArgumentException("Cannot add new panel to nonexistent section: " + sectionName);
+        }
+
+        var section = swappableSections.get(sectionName);
+
+        var c = getConstraints();
+        c.gridx = 0;
+        c.gridy++;
+
+        addLocal(section.addNewPanel().getSectionPanel(), c);
     }
 
     /**
@@ -1604,6 +1618,50 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
     @Override
     public void windowDeactivated(WindowEvent e) {
 
+    }
+
+    private static class SwappableSectionHolder<T extends Enum<T> & NState<T>> {
+        List<SwappableSection<T>> swappableSections;
+        int linkedSection;
+
+        public SwappableSectionHolder(SwappableSection<T> section) {
+            this.swappableSections = new ArrayList<>();
+            swappableSections.add(section);
+        }
+
+        public SwappableSection<T> addNewPanel() {
+            swappableSections.add(new SwappableSection<>(swappableSections.getFirst().defaultState));
+            linkedSection = swappableSections.size() - 1;
+            return swappableSections.get(linkedSection);
+        }
+
+        public void setLinkedSection(int linkedSection) {
+            this.linkedSection = linkedSection;
+        }
+
+        public JPanel getSectionPanel() {
+            return swappableSections.get(linkedSection).getSectionPanel();
+        }
+
+        public void setCurrentState(T currentState) {
+            for (SwappableSection<T> swappableSection : swappableSections) {
+                swappableSection.setCurrentState(currentState);
+            }
+        }
+
+        public JPanel currentPanel() {
+            return swappableSections.get(linkedSection).currentPanel();
+        }
+
+        public GridBagConstraints currentConstrains() {
+            return swappableSections.get(linkedSection).currentConstrains();
+        }
+
+        public void showDefault() {
+            for (SwappableSection<T> swappableSection : swappableSections) {
+                swappableSection.showDefault();
+            }
+        }
     }
 
     private static class SwappableSection<T extends Enum<T> & NState<T>> {

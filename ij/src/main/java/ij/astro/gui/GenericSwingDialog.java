@@ -26,6 +26,7 @@ import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.List;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -43,7 +44,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
     private final JPanel basePanel = new JPanel(new GridBagLayout());
     private final String macroOptions;
     private final boolean macro;
-    private int x = 0;
+    private AtomicInteger x = new AtomicInteger();
     private JButton no, help;
     private boolean wasOKed = false, wasCanceled = false;
     private boolean hideCancelButton = false;
@@ -265,8 +266,17 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         return c;
     }
 
+    private AtomicInteger getXPos() {
+        if (activeSection != null) {
+            return swappableSections.get(activeSection).currentXPos();
+        }
+
+        return x;
+    }
+
     public JCheckBox addCheckbox(String label, boolean initValue, Consumer<Boolean> consumer) {
         var c = getConstraints();
+        var x = getXPos();
         var b = Box.createHorizontalBox();
         final var box = new JCheckBox(label.replaceAll("_", " "));
         box.setSelected(initValue);
@@ -284,9 +294,9 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         c.gridwidth = 1;
         b.add(box);
         useCustomPosition();
-        if (overridePosition) c.gridx = x;
+        if (overridePosition) c.gridx = x.get();
         addLocal(b, c);
-        x++;
+        x.getAndIncrement();
         c.insets.left = 0;
 
         if (Recorder.record || macro)
@@ -337,6 +347,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
 
     public ComponentPair addCheckboxGroup(int rows, int columns, String[] labels, boolean[] defaultValues, String[] headings, List<Consumer<Boolean>> consumers) {
         var c = getConstraints();
+        var x = getXPos();
         Panel panel = new Panel();
         int nRows = headings != null ? rows + 1 : rows;
         panel.setLayout(new GridLayout(nRows, columns, 6, 0));
@@ -402,15 +413,16 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         c.anchor = GridBagConstraints.WEST;
         c.insets = new Insets(0, 20, 0, 0);
         //addToSameRow = false;
-        if (overridePosition) c.gridx = x;
+        if (overridePosition) c.gridx = x.get();
         addLocal(panel, c);
-        x++;
+        x.getAndIncrement();
 
         return new ComponentPair(panel, null, boxes);
     }
 
     public ComponentPair addChoice(String label, String[] items, String defaultItem, Consumer<String> consumer) {
         var c = getConstraints();
+        var x = getXPos();
         Box b = Box.createHorizontalBox();
         Label fieldLabel = makeLabel(label.replaceAll("_", " "));
         if (addToSameRow) {
@@ -438,10 +450,10 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         c.gridx = GridBagConstraints.RELATIVE;
         c.anchor = GridBagConstraints.WEST;
         useCustomPosition();
-        if (overridePosition) c.gridx = x;
+        if (overridePosition) c.gridx = x.get();
         b.add(thisChoice);
         addLocal(b, c);
-        x++;
+        x.getAndIncrement();
 
         if (Recorder.record || macro)
             saveLabel(thisChoice, label, s -> {
@@ -466,6 +478,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
 
     public Component addMessage(String text, Font font, Color color) {
         var c = getConstraints();
+        var x = getXPos();
         Component theLabel = text.indexOf('\n') >= 0 ? new MultiLineLabel(text) : new Label(text);
 
         if (addToSameRow) {
@@ -486,10 +499,10 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
             theLabel.setFont(font);
         }
         if (color != null) theLabel.setForeground(color);
-        if (overridePosition) c.gridx = x;
+        if (overridePosition) c.gridx = x.get();
         useCustomPosition();
         if (!text.equals("")) addLocal(theLabel, c);
-        x++;
+        x.getAndIncrement();
         c.fill = GridBagConstraints.NONE;
 
         return theLabel;
@@ -570,6 +583,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
 
     private JPanel addSlider(String label, final double minValue, final double maxValue, boolean clipMaxValue, double defaultValue, final double scale, final int digits, Consumer<Double> consumer) {
         var c = getConstraints();
+        var x = getXPos();
         Box b = Box.createHorizontalBox();
         int columns = 4 + digits + (IJ.isMacOSX() ? 0 : -2);
         if (columns < 4) columns = 4;
@@ -657,10 +671,10 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
 
         c.anchor = GridBagConstraints.EAST;
         b.add(panel);
-        if (overridePosition) c.gridx = x;
+        if (overridePosition) c.gridx = x.get();
         useCustomPosition();
         addLocal(b, c);
-        x++;
+        x.getAndIncrement();
 
         if (Recorder.record || macro)
             saveLabel(spinner, label, s3 -> {
@@ -699,6 +713,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
 
     public ComponentPair addBoundedNumericField(String label, Bounds bounds, double defaultValue, double stepSize, int columns, String units, final boolean useInt, Consumer<Double> consumer) {
         var c = getConstraints();
+        var x = getXPos();
         Box b = Box.createHorizontalBox();
         Label fieldLabel = makeLabel(label.replaceAll("_", " "));
         if (addToSameRow) {
@@ -811,10 +826,10 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
 
         b.add(Box.createHorizontalGlue());
 
-        if (overridePosition) c.gridx = x;
+        if (overridePosition) c.gridx = x.get();
         useCustomPosition();
         addLocal(b, c);
-        x++;
+        x.getAndIncrement();
 
         if (Recorder.record || macro)
             saveLabel(tf, label, s -> {
@@ -831,6 +846,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
 
     public Component addGenericComponent(Component b) {
         var c = getConstraints();
+        var x = getXPos();
         if (addToSameRow) {
             c.gridx = GridBagConstraints.RELATIVE;
             c.insets.left = 10;
@@ -840,15 +856,16 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
             c.anchor = GridBagConstraints.WEST;
             c.insets = new Insets(DialogBoxType.CHECKBOX.isPresent() ? 0 : 15, 20, 0, 0);
         }
-        if (overridePosition) c.gridx = x;
+        if (overridePosition) c.gridx = x.get();
         useCustomPosition();
         addLocal(b, c);
-        x++;
+        x.getAndIncrement();
         return b;
     }
 
     public <T extends Enum<T> & NState<T>> NStateButton<T> addNStateButton(T defaultState, boolean swapButtons, Consumer<T> consumer) {
         var c = getConstraints();
+        var x = getXPos();
         var b = new NStateButton<T>(defaultState, swapButtons);
         b.addActionListener($ -> consumer.accept(b.getState()));
         if (addToSameRow) {
@@ -863,9 +880,9 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         c.anchor = GridBagConstraints.WEST;
         c.gridwidth = 1;
         useCustomPosition();
-        if (overridePosition) c.gridx = x;
+        if (overridePosition) c.gridx = x.get();
         addLocal(b, c);
-        x++;
+        x.getAndIncrement();
         c.insets.left = 0;
 
         if (Recorder.record || macro) {
@@ -886,6 +903,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
     @SuppressWarnings("unchecked")
     public <T extends Enum<T> & NState<T>> JComboBox<T> addNStateDropdown(T defaultState, Consumer<T> consumer) {
         var c = getConstraints();
+        var x = getXPos();
         var b = new JComboBox<>(defaultState.values0());
         b.setRenderer(new ToolTipRenderer());
         b.setSelectedItem(defaultState);
@@ -902,9 +920,9 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         c.anchor = GridBagConstraints.WEST;
         c.gridwidth = 1;
         useCustomPosition();
-        if (overridePosition) c.gridx = x;
+        if (overridePosition) c.gridx = x.get();
         addLocal(b, c);
-        x++;
+        x.getAndIncrement();
         c.insets.left = 0;
 
         if (Recorder.record || macro) {
@@ -924,6 +942,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
 
     public <T extends Enum<T> & RadioEnum> Map<T, JRadioButton> addRadioOptions(Class<T> tClass, Consumer<T> consumer, boolean addToGui) {
         var c = getConstraints();
+        var x = getXPos();
         var group = new ButtonGroup();
         var buttons = new HashMap<T, JRadioButton>();
 
@@ -953,10 +972,10 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
                     c.anchor = GridBagConstraints.WEST;
                     c.insets = new Insets(DialogBoxType.CHECKBOX.isPresent() ? 0 : 15, 20, 0, 0);
                 }
-                if (overridePosition) c.gridx = x;
+                if (overridePosition) c.gridx = x.get();
                 useCustomPosition();
                 addLocal(button, c);
-                x++;
+                x.getAndIncrement();
             }
         }
 
@@ -994,7 +1013,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
     }
 
     public void resetPositionOverride() {
-        x = 0;
+        getXPos().set(0);
     }
 
     public void setNewPosition(int anchor) {
@@ -1672,6 +1691,10 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
             return swappableSections.get(linkedSection).currentConstrains();
         }
 
+        public AtomicInteger currentXPos() {
+            return swappableSections.get(linkedSection).currentXPos();
+        }
+
         public void showDefault() {
             for (SwappableSection<T> swappableSection : swappableSections) {
                 swappableSection.showDefault();
@@ -1694,7 +1717,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
             sectionPanel = new JPanel(cardLayout);
             for (T state : states) {
                 JPanel card = new JPanel(new GridBagLayout());
-                panelMap.put(state, new Panel(card, new GridBagConstraints()));
+                panelMap.put(state, new Panel(card, new GridBagConstraints(), new AtomicInteger()));
                 sectionPanel.add(card, state.name());
             }
         }
@@ -1716,11 +1739,15 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
             return panelMap.get(currentState).constraints();
         }
 
+        public AtomicInteger currentXPos() {
+            return panelMap.get(currentState).xPos();
+        }
+
         public void showDefault() {
             setCurrentState(defaultState);
         }
 
-        private record Panel(JPanel panel, GridBagConstraints constraints) {}
+        private record Panel(JPanel panel, GridBagConstraints constraints, AtomicInteger xPos) {}
 
         // Return size of current card rather than maximum of all cards
         private static class ResizingCardLayout extends CardLayout {

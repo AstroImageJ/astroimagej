@@ -27,6 +27,7 @@ import java.text.ParseException;
 import java.util.List;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /**
@@ -61,8 +62,8 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
     private LinkedHashMap<Object, Triple<String, Consumer<String>, Runnable>> labels;
     private boolean optionsRecorded;     // have dialogListeners been called to record options?
     private boolean recorderOn;          // whether recording is allowed (after the dialog is closed)
-    private String section;
-    private final Map<String, SwappableSectionHolder<?>> swappableSections = new HashMap<>();
+    private Class<?> activeSection;
+    private final Map<Class<?>, SwappableSectionHolder<?>> swappableSections = new HashMap<>();
 
     public GenericSwingDialog(String title) {
         this(title, guessParentFrame());
@@ -174,23 +175,23 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
 
     /**
      * Creates a swappable section for the dialog and adds a dropdown to control it.
-     *
-     * @param sectionName  the name of the section that owns the cards
      */
-    public <T extends Enum<T> & NState<T>> Consumer<T> addSwappableSection(String sectionName, Property<T> property) {
-        return addSwappableSection(sectionName, property.get(), property::set);
+    public <T extends Enum<T> & NState<T>> void addSwappableSection(Property<T> property,
+                                                                           BiConsumer<GenericSwingDialog, T> sectionBuilder) {
+        addSwappableSection(property.get(), property::set, sectionBuilder);
     }
 
     /**
      * Creates a swappable section for the dialog and adds a dropdown to control it.
      *
-     * @param sectionName the name of the section that owns the cards
-     * @param currentState the default card to show
-     * @return a control for which card the following components will go in
+     * @param currentState the default card to show.
+     * @param sectionBuilder a consumer used to populate the components of the swappable panel. Use a switch for ease of use.
      */
-    public <T extends Enum<T> & NState<T>> Consumer<T> addSwappableSection(String sectionName, T currentState, Consumer<T> consumer) {
-        if (swappableSections.containsKey(sectionName)) {
-            throw new IllegalArgumentException("GSD already contains section by name: " + sectionName);
+    public <T extends Enum<T> & NState<T>> void addSwappableSection(T currentState, Consumer<T> consumer,
+                                                                           BiConsumer<GenericSwingDialog, T> sectionBuilder) {
+        Class<T> stateClass = currentState.getDeclaringClass();
+        if (swappableSections.containsKey(currentState.getDeclaringClass())) {
+            throw new IllegalArgumentException("GSD already contains section for type: " + stateClass);
         }
 
         var swappableSection = new SwappableSectionHolder<>(new SwappableSection<T>(currentState));
@@ -204,47 +205,61 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
 
         addLocal(swappableSection.getSectionPanel(), c);
 
-        swappableSections.put(sectionName, swappableSection);
+        swappableSections.put(stateClass, swappableSection);
 
-        return swappableSection::setCurrentState;
+        activeSection = stateClass;
+        for (T enumConstant : stateClass.getEnumConstants()) {
+            swappableSection.setCurrentState(enumConstant);
+            //the design is to use switch expressions in the builder
+            sectionBuilder.accept(this, enumConstant);
+        }
+        activeSection = null;
     }
 
-    public void addNewSwappableSectionPanel(String sectionName) {
-        if (!swappableSections.containsKey(Objects.requireNonNull(sectionName))) {
-            throw new IllegalArgumentException("Cannot add new panel to nonexistent section: " + sectionName);
+    public <T extends Enum<T> & NState<T>> void addNewSwappableSectionPanel(Class<T> sectionType,
+                                                                            BiConsumer<GenericSwingDialog, T> sectionBuilder) {
+        if (!swappableSections.containsKey(Objects.requireNonNull(sectionType))) {
+            throw new IllegalArgumentException("Cannot add new panel to nonexistent section: " + sectionType);
         }
 
-        var section = swappableSections.get(sectionName);
+        SwappableSectionHolder<T> swappableSection = (SwappableSectionHolder<T>) swappableSections.get(sectionType);
 
         var c = getConstraints();
         c.gridx = 0;
         c.gridy++;
 
-        addLocal(section.addNewPanel().getSectionPanel(), c);
+        addLocal(swappableSection.addNewPanel().getSectionPanel(), c);
+
+        activeSection = sectionType;
+        for (T enumConstant : sectionType.getEnumConstants()) {
+            swappableSection.setCurrentState(enumConstant);
+            sectionBuilder.accept(this, enumConstant);
+        }
+        activeSection = null;
     }
 
     /**
-     * @param sectionName the section subsequent components will be added to
+     * @param activeSection the section subsequent components will be added to
      */
-    public void setSection(String sectionName) {
-        if (sectionName == null || swappableSections.containsKey(sectionName)) {
-            section = sectionName;
+    public void setActiveSection(Class<?> activeSection) {
+        if (activeSection == null || swappableSections.containsKey(activeSection)) {
+            this.activeSection = activeSection;
         } else {
-            throw new IllegalArgumentException("GSD does not contain section by name: " + sectionName);
+            throw new IllegalArgumentException("GSD does not contain section for type: " + activeSection);
         }
     }
 
     private JPanel getPanel() {
-        if (section != null) {
-            return swappableSections.get(section).currentPanel();
+        if (activeSection != null) {
+            return swappableSections.get(activeSection).currentPanel();
         }
 
         return basePanel;
     }
 
     private GridBagConstraints getConstraints() {
-        if (section != null) {
-            return swappableSections.get(section).currentConstrains();
+        if (activeSection != null) {
+            return swappableSections.get(activeSection).currentConstrains();
         }
 
         return c;

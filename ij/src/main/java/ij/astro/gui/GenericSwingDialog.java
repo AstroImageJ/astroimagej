@@ -310,11 +310,11 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         c.fill = GridBagConstraints.HORIZONTAL;
         c.weightx = 1;
         if (!addToSameRow) {
-            this.c.gridy++;
+            getConstraints().gridy++;
         } else {
             addToSameRow = false;
         }
-        c.gridy = this.c.gridy;
+        c.gridy = getConstraints().gridy;
         c.gridx = 0;
         c.gridwidth = GridBagConstraints.REMAINDER;
         addLocal(sep, c);
@@ -1630,7 +1630,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         }
 
         public SwappableSection<T> addNewPanel() {
-            swappableSections.add(new SwappableSection<>(swappableSections.getFirst().defaultState));
+            swappableSections.add(new SwappableSection<>(swappableSections.get(0).defaultState));
             linkedSection = swappableSections.size() - 1;
             return swappableSections.get(linkedSection);
         }

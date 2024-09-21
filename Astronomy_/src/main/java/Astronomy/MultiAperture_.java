@@ -8,11 +8,12 @@ import ij.Prefs;
 import ij.WindowManager;
 import ij.astro.gui.GenericSwingDialog;
 import ij.astro.gui.RadioEnum;
+import ij.astro.gui.ToolTipProvider;
+import ij.astro.gui.nstate.NState;
 import ij.astro.io.prefs.Property;
 import ij.astro.logging.AIJLogger;
 import ij.gui.GenericDialog;
 import ij.gui.PlotWindow;
-import ij.gui.Roi;
 import ij.gui.Toolbar;
 import ij.measure.ResultsTable;
 import ij.plugin.frame.Recorder;
@@ -309,6 +310,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     private final HashSet<Component> singleStepListeners = new HashSet<>();
     protected static final Property<Boolean> updateImageDisplay = new Property<>(true, MultiAperture_.class);
     public static final Property<ApLoading> apLoading = new Property<>(ApLoading.ALL_NEW, MultiAperture_.class);
+    protected static final Property<ApertureShape> apertureShape = new Property<>(ApertureShape.CIRCULAR, MultiAperture_.class);
     private static String lastRun = "<Not yet run>";
     private boolean processingStackForRadii;
     private final CustomPixelApertureHandler customPixelApertureHandler = new CustomPixelApertureHandler();
@@ -334,6 +336,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         o.add(KEY_PREFIX+PREFS_NAPERTURESMAX);
         o.add(KEY_PREFIX+PREFS_ABSMAGAPERTURES);
         o.add(KEY_PREFIX+apLoading.getPropertyKey());
+        o.add(KEY_PREFIX+apertureShape.getPropertyKey());
         o.add(KEY_PREFIX+PREFS_APRADIUS);
         o.add(KEY_PREFIX+Aperture_.AP_PREFS_RADIUS);
         o.add(KEY_PREFIX+AP_PREFS_RBACK1);
@@ -691,7 +694,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             oldRadii = new Seeing_Profile.ApRadii(radius, rBack1, rBack2);
         }
 
-        if (radiusSetting == ApRadius.CUSTOM_PIXEL_APERTURE_PHOTOMETRY) {
+        if (apertureShape.get() == ApertureShape.CUSTOM_PIXEL) {
             customPixelApertureHandler.setImp(imp);
             customPixelApertureHandler.showControls();
         }
@@ -1329,7 +1332,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         }
 
         selectedApertureRoi = null;
-        if (!(radiusSetting == ApRadius.CUSTOM_PIXEL_APERTURE_PHOTOMETRY && mouseDrag && !aperturesInitialized)) {
+        if (!(apertureShape.get() == ApertureShape.CUSTOM_PIXEL && mouseDrag && !aperturesInitialized)) {
             asw.setMovingAperture(false);
         }
 
@@ -1375,6 +1378,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 //            }
 
         if (radiusSetting == ApRadius.CUSTOM_PIXEL_APERTURE_PHOTOMETRY) {
+        if (apertureShape.get() == ApertureShape.CUSTOM_PIXEL) {
             Runnable runMA = () -> {
                 if (customPixelApertureHandler.validateApertures()) {
                     customPixelApertureHandler.hideControls();
@@ -2839,7 +2843,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         currentX = ac.offScreenXD(currentScreenX);
         currentY = ac.offScreenYD(currentScreenY);
 
-        if (radiusSetting == ApRadius.CUSTOM_PIXEL_APERTURE_PHOTOMETRY &&
+        if (apertureShape.get() == ApertureShape.CUSTOM_PIXEL &&
                 Math.abs(currentScreenX - startDragScreenX) + Math.abs(currentScreenY - startDragScreenY) >= 2.0 &&
                 e.isShiftDown() && !aperturesInitialized) {
             ocanvas.removeRoi("selectionRoi");
@@ -2879,7 +2883,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             startDragY = ac.offScreenYD(startDragScreenY);
             selectedApertureRoi = ocanvas.findApertureRoi(startDragX, startDragY, 0);
             asw.setMovingAperture((selectedApertureRoi != null && !aperturesInitialized) ||
-                    (radiusSetting == ApRadius.CUSTOM_PIXEL_APERTURE_PHOTOMETRY && e.isShiftDown() && !aperturesInitialized));
+                    (apertureShape.get() == ApertureShape.CUSTOM_PIXEL && e.isShiftDown() && !aperturesInitialized));
         }
     }
 
@@ -3218,36 +3222,38 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     }
 
     private void storeLastRun() {
-        lastRun = switch (radiusSetting) {
-            case FIXED -> {
-                yield "FA: %s-%s-%s".formatted(FORMAT.format(radius), FORMAT.format(rBack1),
-                        FORMAT.format(rBack2));
-            }
-            case AUTO_FIXED -> {
-                yield "FAF%s: %s-%s-%s".formatted(ApRadius.AUTO_FIXED.cutoff, FORMAT.format(radius),
-                        FORMAT.format(rBack1), FORMAT.format(rBack2));
-            }
-            case AUTO_FIXED_STACK_RAD -> {
-                yield "FAM%s: %s-%s-%s".formatted(ApRadius.AUTO_FIXED_STACK_RAD.cutoff, FORMAT.format(radius),
-                        FORMAT.format(rBack1), FORMAT.format(rBack2));
-            }
-            case AUTO_VAR_RAD_PROF -> {
-                var sr = stackRadii.stream().mapToDouble(Seeing_Profile.ApRadii::r).toArray();
-                var br = stackRadii.stream().mapToDouble(Seeing_Profile.ApRadii::r2).toArray();
-                var br2 = stackRadii.stream().mapToDouble(Seeing_Profile.ApRadii::r3).toArray();
+        lastRun = switch (apertureShape.get()) {
+            case CIRCULAR -> switch (radiusSetting) {
+                case FIXED -> {
+                    yield "FA: %s-%s-%s".formatted(FORMAT.format(radius), FORMAT.format(rBack1),
+                            FORMAT.format(rBack2));
+                }
+                case AUTO_FIXED -> {
+                    yield "FAF%s: %s-%s-%s".formatted(ApRadius.AUTO_FIXED.cutoff, FORMAT.format(radius),
+                            FORMAT.format(rBack1), FORMAT.format(rBack2));
+                }
+                case AUTO_FIXED_STACK_RAD -> {
+                    yield "FAM%s: %s-%s-%s".formatted(ApRadius.AUTO_FIXED_STACK_RAD.cutoff, FORMAT.format(radius),
+                            FORMAT.format(rBack1), FORMAT.format(rBack2));
+                }
+                case AUTO_VAR_RAD_PROF -> {
+                    var sr = stackRadii.stream().mapToDouble(Seeing_Profile.ApRadii::r).toArray();
+                    var br = stackRadii.stream().mapToDouble(Seeing_Profile.ApRadii::r2).toArray();
+                    var br2 = stackRadii.stream().mapToDouble(Seeing_Profile.ApRadii::r3).toArray();
 
-                yield "VAR%s: %s-%s-%s".formatted(ApRadius.AUTO_VAR_RAD_PROF.cutoff, FORMAT.format(safeMedian(sr)),
-                        FORMAT.format(safeMedian(br)), FORMAT.format(safeMedian(br2)));
-            }
-            case AUTO_VAR_FWHM -> {
-                var sr = stackRadii.stream().mapToDouble(Seeing_Profile.ApRadii::r).toArray();
-                var br = stackRadii.stream().mapToDouble(Seeing_Profile.ApRadii::r2).toArray();
-                var br2 = stackRadii.stream().mapToDouble(Seeing_Profile.ApRadii::r3).toArray();
+                    yield "VAR%s: %s-%s-%s".formatted(ApRadius.AUTO_VAR_RAD_PROF.cutoff, FORMAT.format(safeMedian(sr)),
+                            FORMAT.format(safeMedian(br)), FORMAT.format(safeMedian(br2)));
+                }
+                case AUTO_VAR_FWHM -> {
+                    var sr = stackRadii.stream().mapToDouble(Seeing_Profile.ApRadii::r).toArray();
+                    var br = stackRadii.stream().mapToDouble(Seeing_Profile.ApRadii::r2).toArray();
+                    var br2 = stackRadii.stream().mapToDouble(Seeing_Profile.ApRadii::r3).toArray();
 
-                yield "VAF%s: %s-%s-%s".formatted(ApRadius.AUTO_VAR_FWHM.cutoff, FORMAT.format(safeMedian(sr)),
-                        FORMAT.format(safeMedian(br)), FORMAT.format(safeMedian(br2)));
-            }
-            case CUSTOM_PIXEL_APERTURE_PHOTOMETRY -> "CA";
+                    yield "VAF%s: %s-%s-%s".formatted(ApRadius.AUTO_VAR_FWHM.cutoff, FORMAT.format(safeMedian(sr)),
+                            FORMAT.format(safeMedian(br)), FORMAT.format(safeMedian(br2)));
+                }
+            };
+            case CUSTOM_PIXEL -> "CA";
         };
     }
 
@@ -3332,7 +3338,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         yFWHM = 0.0;
 
         // Variable size aperture and reposition
-        if (useVarSizeAp && radiusSetting != ApRadius.CUSTOM_PIXEL_APERTURE_PHOTOMETRY) {
+        if (useVarSizeAp && apertureShape.get() == ApertureShape.CIRCULAR) {
             setVariableAperture(false);
             for (int ap = 0; ap < nApertures; ap++) {
                 // GET POSITION ESTIMATE
@@ -3505,7 +3511,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         nFWHM = 0;
         fwhmMean = 0.0;
         // Save new aperture position
-        if (radiusSetting != ApRadius.CUSTOM_PIXEL_APERTURE_PHOTOMETRY) {
+        if (apertureShape.get() == ApertureShape.CIRCULAR) {
             for (int ap = 0; ap < nApertures; ap++) {
                 if (!isRefStar[ap]) {
                     setApertureColor(Color.green);
@@ -3580,7 +3586,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             Prefs.set("aperture.reposition", centroidStar[ap]);
             setShowAsCentered(centroidStar[ap]);
 
-            if (radiusSetting == ApRadius.CUSTOM_PIXEL_APERTURE_PHOTOMETRY) {
+            if (apertureShape.get() == ApertureShape.CUSTOM_PIXEL) {
                 if (!measureAperture(hdr, customPixelApertureHandler.getAperture(ap))) {
                     if (haltOnError || this instanceof Stack_Aligner) {
                         Prefs.set("aperture.reposition", holdReposition);
@@ -3641,7 +3647,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 storeAdditionalResults(ap);
             }
 
-            if (radiusSetting != ApRadius.CUSTOM_PIXEL_APERTURE_PHOTOMETRY) {
+            if (apertureShape.get() == ApertureShape.CIRCULAR) {
                 // FOLLOW MOTION FROM FRAME TO FRAME
 
                 dx += xCenter - xPos[ap];
@@ -4296,6 +4302,61 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         gd.setOverridePosition(false);
         gd.addGenericComponent(apRadiiButtons.get(ApRadius.CUSTOM_PIXEL_APERTURE_PHOTOMETRY));
         apRadiiButtons.get(radiusSetting).setSelected(true);
+            gd.buildRow((g, box) -> {
+                sliders[0] = gd.addSlider("First slice", 1, stackSize, firstSlice, d -> firstSlice = d.intValue());
+                box.add(Box.createHorizontalStrut(300));
+            });
+
+            gd.buildRow((g, box) -> {
+                sliders[1] = gd.addSlider("Last slice", 1, stackSize, lastSlice, d -> lastSlice = d.intValue());
+                box.add(Box.createHorizontalStrut(300));
+            });
+        }//todo update aperture count, todo fully implement previous ap loading
+        gd.addSwappableSection(apertureShape, (g, shape) -> {
+            switch (shape) {
+                case CIRCULAR -> {
+                    sliders[2] = g.addFloatSlider("Fixed/Base radius of photometric aperture", 0.01, radius > 100 ? radius : 100, false, radius, 3, 1.0, d -> radius = d);
+                    sliders[3] = g.addFloatSlider("Fixed/Base radius of inner background annulus", 0.01, rBack1 > 100 ? rBack1 : 100, false, rBack1, 3, 1.0, d -> rBack1 = d);
+                    sliders[4] = g.addFloatSlider("Fixed/Base radius of outer background annulus", 0.01, rBack2 > 100 ? rBack2 : 100, false, rBack2, 3, 1.0, d -> rBack2 = d);
+                    g.addLineSeparator();
+                    var apRadiiButtons = g.addRadioOptions(ApRadius.class, r -> MultiAperture_.radiusSetting = r, false);
+                    g.addGenericComponent(apRadiiButtons.get(ApRadius.FIXED));
+                    g.setOverridePosition(true);
+                    g.addGenericComponent(apRadiiButtons.get(ApRadius.AUTO_FIXED));
+                    g.addToSameRow();
+                    g.setLeftInset(-100);
+                    g.setNewPosition(GridBagConstraints.WEST);
+                    g.addBoundedNumericField("Normalized flux cutoff threshold:", new GenericSwingDialog.Bounds(0, false, 1, false), ApRadius.AUTO_FIXED.cutoff, .01, 6, "(0 < cutoff < 1 ; default = 0.010)", d -> ApRadius.AUTO_FIXED.cutoff = d);
+                    g.resetPositionOverride();
+                    g.setLeftInset(20);
+                    g.addGenericComponent(apRadiiButtons.get(ApRadius.AUTO_FIXED_STACK_RAD));
+                    g.addToSameRow();
+                    g.setLeftInset(-100);
+                    g.setNewPosition(GridBagConstraints.WEST);
+                    g.addBoundedNumericField("Normalized flux cutoff threshold:", new GenericSwingDialog.Bounds(0, false, 1, false), ApRadius.AUTO_FIXED_STACK_RAD.cutoff, .01, 6, "(0 < cutoff < 1 ; default = 0.010)", d -> ApRadius.AUTO_FIXED_STACK_RAD.cutoff = d);
+                    g.resetPositionOverride();
+                    g.addGenericComponent(apRadiiButtons.get(ApRadius.AUTO_VAR_RAD_PROF));
+                    g.addToSameRow();
+                    g.setLeftInset(-100);
+                    g.setNewPosition(GridBagConstraints.WEST);
+                    g.addBoundedNumericField("Normalized flux cutoff threshold:", new GenericSwingDialog.Bounds(0, false, 1, false), ApRadius.AUTO_VAR_RAD_PROF.cutoff, .01, 6, "(0 < cutoff < 1 ; default = 0.010)", d -> ApRadius.AUTO_VAR_RAD_PROF.cutoff = d);
+                    g.setOverridePosition(false);
+                    g.resetPositionOverride();
+                    g.addGenericComponent(apRadiiButtons.get(ApRadius.AUTO_VAR_FWHM));
+                    g.addToSameRow();
+                    g.setOverridePosition(true);
+                    g.setNewPosition(GridBagConstraints.EAST);
+                    g.setRightInset(-170);
+                    g.addFloatSlider("FWHM factor:", 0.1, 5.0, true, ApRadius.AUTO_VAR_FWHM.cutoff, 3, 0.1, d -> ApRadius.AUTO_VAR_FWHM.cutoff = d);
+                    g.resetPositionOverride();
+                    g.setOverridePosition(false);
+                    apRadiiButtons.get(radiusSetting).setSelected(true);
+                }
+                case CUSTOM_PIXEL -> {
+
+                }
+            }
+        });
 
         gd.addDoubleSpaceLineSeparator();
 
@@ -4312,39 +4373,47 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         }
         gd.addLineSeparator();
 
-        gd.addCheckbox("Use RA/Dec to locate aperture positions", useWCS, b -> useWCS = b)
-                .setToolTipText("<html>If enabled, apertures will first be placed according to their RA and DEC location.<br>"+
-                        "If centroid is also enabled for an aperture, the centroid operation will start from the RA and Dec position.<br>"+
-                        "If 'Halt on WCS error' below is disabled, mixed mode RA-Dec and X-Y placement is possible.<br>" +
-                        "Mixed-mode is useful if plate solving is slow. In this mode, only the first image and any subsequent image<br>"+
-                        "with a large shift on the detector, such as a meridian flip, need to be plate solved.</html>");
-        gd.addCheckbox("Use single step mode (1-click to set first aperture location in each image)", singleStep, b -> {
-                    singleStep = b;
-                    singleStepListeners.forEach(c -> {
-                        if ("with".equals(c.getName())) {
-                            c.setEnabled(b);
-                        } else {
-                            c.setEnabled(!b);
-                        }
+        gd.addNewSwappableSectionPanel(ApertureShape.class, (d, shape) -> {
+            switch (shape) {
+                case CIRCULAR -> {
+                    gd.addCheckbox("Use RA/Dec to locate aperture positions", useWCS, b -> useWCS = b)
+                            .setToolTipText("<html>If enabled, apertures will first be placed according to their RA and DEC location.<br>"+
+                                    "If centroid is also enabled for an aperture, the centroid operation will start from the RA and Dec position.<br>"+
+                                    "If 'Halt on WCS error' below is disabled, mixed mode RA-Dec and X-Y placement is possible.<br>" +
+                                    "Mixed-mode is useful if plate solving is slow. In this mode, only the first image and any subsequent image<br>"+
+                                    "with a large shift on the detector, such as a meridian flip, need to be plate solved.</html>");
+                    gd.addCheckbox("Use single step mode (1-click to set first aperture location in each image)", singleStep, b -> {
+                                singleStep = b;
+                                singleStepListeners.forEach(c -> {
+                                    if ("with".equals(c.getName())) {
+                                        c.setEnabled(b);
+                                    } else {
+                                        c.setEnabled(!b);
+                                    }
+                                });
+                                if (b) {
+                                    updateImageDisplay.set(true);
+                                }
+                            })
+                            .setToolTipText("<html>Single step mode allows apertures to be placed in the first image, and then after each image is processed,<br>"+
+                                    "Multi-Aperture will pause to allow the user to click near the T1 star location in the next image. This mode of operation is useful with<br>"+
+                                    "image sequences that are not plate solved and that have image shifts too large for centroid to track.</html>");
+                    var c1 = gd.addCheckbox("Allow aperture changes between slices in single step mode (right click to advance image)", allowSingleStepApChanges, b -> {
+                        allowSingleStepApChanges = b;
                     });
-                    if (b) {
-                        updateImageDisplay.set(true);
-                    }
-                })
-                .setToolTipText("<html>Single step mode allows apertures to be placed in the first image, and then after each image is processed,<br>"+
-                        "Multi-Aperture will pause to allow the user to click near the T1 star location in the next image. This mode of operation is useful with<br>"+
-                        "image sequences that are not plate solved and that have image shifts too large for centroid to track.</html>");
-        var c1 = gd.addCheckbox("Allow aperture changes between slices in single step mode (right click to advance image)", allowSingleStepApChanges, b -> {
-                    allowSingleStepApChanges = b;
-                });
-        c1.setName("with");
-        c1.setToolTipText("<html>This mode works the same as Single Step mode, except that Multi-Aperture does not automatically advance<br>"+
-                        "to the next image when the T1 location is selected. Instead, the user has the choice to tweak the aperture locations<br>" +
-                        "using drag and drop. After the new locations are optionally set, press Enter or right-click to advance to the next image.<br>" +
-                        "This mode can be helpful for image sequences with moving objects, or apertures that jump to incorrect stars.</html>");
-        singleStepListeners.add(c1);
-        c1.setEnabled(singleStep);
-        gd.addDoubleSpaceLineSeparator();
+                    c1.setName("with");
+                    c1.setToolTipText("<html>This mode works the same as Single Step mode, except that Multi-Aperture does not automatically advance<br>"+
+                            "to the next image when the T1 location is selected. Instead, the user has the choice to tweak the aperture locations<br>" +
+                            "using drag and drop. After the new locations are optionally set, press Enter or right-click to advance to the next image.<br>" +
+                            "This mode can be helpful for image sequences with moving objects, or apertures that jump to incorrect stars.</html>");
+                    singleStepListeners.add(c1);
+                    c1.setEnabled(singleStep);
+                    gd.addDoubleSpaceLineSeparator();
+                }
+                case CUSTOM_PIXEL -> {
+                }
+            }
+        });
 
         // Make all sliders the same size
         var sliderWidth = Math.max(GenericSwingDialog.getSliderWidth(sliders[2]), Integer.toString(stackSize).length());
@@ -4355,7 +4424,17 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         // HERE ARE THE THINGS WHICH AREN'T ABSOLUTELY NECESSARY
         addFancyDialog(gd);
 
-        gd.addMessage("CLICK 'PLACE APERTURES' AND SELECT APERTURE LOCATIONS WITH LEFT CLICKS.\nTHEN RIGHT CLICK or <ENTER> TO BEGIN PROCESSING.\n(to abort aperture selection or processing, press <ESC>)");
+        gd.addNewSwappableSectionPanel(ApertureShape.class, (d, shape) -> {
+            switch (shape) {
+                case CIRCULAR -> {
+                    d.addMessage("CLICK 'PLACE APERTURES' AND SELECT APERTURE LOCATIONS WITH LEFT CLICKS.\nTHEN RIGHT CLICK or <ENTER> TO BEGIN PROCESSING.\n(to abort aperture selection or processing, press <ESC>)");
+                }
+                case CUSTOM_PIXEL -> {
+                    d.addMessage("FOLLOW INSTRUCTIONS ON NEXT PANEL TO PROCEED");
+                }
+            }
+        });
+
         if (!(this instanceof Stack_Aligner)) gd.enableYesNoCancel("Place Apertures", "Aperture Settings");
         return gd;
     }
@@ -4387,160 +4466,204 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         listb.add(b -> suggestCompStars = b);
         listb.add(b -> enableLog = b);
         listb.add(b -> debugAp = b);
-        var s = gd.addCheckboxGroup(1, 3, new String[]{"Auto comparison stars", "Enable log", "Show peaks"}, new boolean[]{suggestCompStars, enableLog, debugAp}, listb);
-        var boxes = s.subComponents();
-        ((JComponent) boxes.get(0)).setToolTipText("If enabled, uses the following settings to generate a set of comparison stars based on the star in the specified Base Aperture below.");
-        ((JComponent) boxes.get(1)).setToolTipText("Enable log output for comparison star selection.");
-        ((JComponent) boxes.get(2)).setToolTipText("Draw dummy apertures to indicate image peaks that comp. star selection is considering.");
 
-        final var gauss = gd.addBoundedNumericField("Smoothing Filter Radius", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), gaussRadius, 1, 10, "pixels", d -> gaussRadius = d);
-        final var autoPeaks = gd.addCheckbox("Auto Thresholds", autoPeakValues, b -> autoPeakValues = b);
-        gd.addToSameRow();
-        gd.setOverridePosition(true);
-        final var maxPeak = gd.addBoundedNumericField("Max. Peak Value", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), maxPeakValue, 1, columns, null, d -> maxPeakValue = d);
-        gd.addToSameRow();
-        final var minPeak = gd.addBoundedNumericField("Min. Peak Value", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), minPeakValue, 1, columns, null, d -> minPeakValue = d);
-        gd.resetPositionOverride();
-        gd.setNewPosition(GridBagConstraints.WEST);
-        gd.setLeftInset(20);
-        final var starSelection = gd.addBoundedNumericField("Base Aperture", new GenericSwingDialog.Bounds(1, Double.MAX_VALUE), referenceStar, 1, 7, null, true, d -> referenceStar = d.intValue());
-        gd.addToSameRow();
-        gd.resetPositionOverride();
-        if (upperBrightness < 101.0) upperBrightness = 150.0;
-        if (lowerBrightness > 99.0 || lowerBrightness < 0.0) lowerBrightness = 50.0;
-        final var maxDBrightness = gd.addBoundedNumericField("Max. Comp. Brightness %", new GenericSwingDialog.Bounds(101, Double.MAX_VALUE), upperBrightness, 1, columns, null, d -> upperBrightness = d);
-        gd.addToSameRow();
-        final var minDBrightness = gd.addBoundedNumericField("Min. Comp. Brightness %", new GenericSwingDialog.Bounds(0, 99), lowerBrightness, 1, columns, null, d -> lowerBrightness = d);
-        gd.setOverridePosition(false);
+        gd.addNewSwappableSectionPanel(ApertureShape.class, (g, shape) -> {
+            switch (shape) {
+                case CIRCULAR -> {
+                    var suggestionComponents = new LinkedHashSet<Component>();
 
-        final var brightnessVsDistance = gd.addBoundedNumericField("Weight of brightness vs. distance %", new GenericSwingDialog.Bounds(0, 100), brightness2DistanceWeight, 1, columns, null, d -> brightness2DistanceWeight = d);
-        gd.addToSameRow();
-        final var maxStars = gd.addBoundedNumericField("Max. Comp. Stars", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), maxSuggestedStars, 1, columns, null, true, d -> maxSuggestedStars = d.intValue());
-        autoPeaks.setToolTipText("When enabled, set peak thresholds based on image statistics.\nMax = 0.9 * Max Pixel Value, Min = Mean Pixel Value + 1σ.");
+                    var s = gd.addCheckboxGroup(1, 3, new String[]{"Auto comparison stars", "Enable log", "Show peaks"}, new boolean[]{suggestCompStars, enableLog, debugAp}, listb);
+                    var boxes = s.subComponents();
+                    ((JComponent) boxes.get(0)).setToolTipText("If enabled, uses the following settings to generate a set of comparison stars based on the star in the specified Base Aperture below.");
+                    ((JComponent) boxes.get(1)).setToolTipText("Enable log output for comparison star selection.");
+                    ((JComponent) boxes.get(2)).setToolTipText("Draw dummy apertures to indicate image peaks that comp. star selection is considering.");
 
-        final var liveStats = asw.getLiveStatistics();
-        var minP = liveStats.mean + (1 * liveStats.stdDev);
-        var maxP = liveStats.max * 0.9;
-        //if (enableLog) AIJLogger.log("Image mean = "+liveStats.mean);
-        //if (enableLog) AIJLogger.log("Image stdDev = "+liveStats.stdDev);
-        //if (enableLog) AIJLogger.log("Image max = "+liveStats.max);
-        DecimalFormat fourPlaces = new DecimalFormat("###,##0.00", IJU.dfs);
-        DecimalFormat scientificFourPlaces = new DecimalFormat("0.####E00", IJU.dfs);
-        if (autoPeakValues) {
-            GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText(minP < 1000000.0 ? fourPlaces.format(minP) : scientificFourPlaces.format(minP)));
-            GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText(maxP < 1000000.0 ? fourPlaces.format(maxP) : scientificFourPlaces.format(maxP)));
-        } else {
-            GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText(minPeakValue < 1000000.0 ? fourPlaces.format(minPeakValue) : scientificFourPlaces.format(minPeakValue)));
-            GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText(maxPeakValue < 1000000.0 ? fourPlaces.format(maxPeakValue) : scientificFourPlaces.format(maxPeakValue)));
-        }
+                    g.buildRow((g1, box) -> {
+                        final var gauss = gd.addBoundedNumericField("Smoothing Filter Radius", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), gaussRadius, 1, 10, "pixels", d -> gaussRadius = d);
+                        box.add(Box.createHorizontalStrut(300));
+                        gauss.asSwingComponent(C1).setToolTipText("Radius of gaussian smoothing to use when finding initial peaks.\n Set to 1 to disable.");
+                        suggestionComponents.add(gauss.c2());
+                        suggestionComponents.add(gauss.c1());
+                    });
 
+                    g.buildRow((g1, box) -> {
+                        var autoPeaks = gd.addCheckbox("Auto Thresholds", autoPeakValues, b -> autoPeakValues = b);
+                        var maxPeak = gd.addBoundedNumericField("Max. Peak Value", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), maxPeakValue, 1, columns, null, d -> maxPeakValue = d);
+                        var minPeak = gd.addBoundedNumericField("Min. Peak Value", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), minPeakValue, 1, columns, null, d -> minPeakValue = d);
 
-        starSelection.asSwingComponent(C1).setToolTipText("The aperture to base comparison star selection on.");
-        gauss.asSwingComponent(C1).setToolTipText("Radius of gaussian smoothing to use when finding initial peaks.\n Set to 1 to disable.");
-        maxPeak.asSwingComponent(C1).setToolTipText("Maximum peak value to consider");
-        minPeak.asSwingComponent(C1).setToolTipText("Minimum peak value to consider");
-        maxStars.asSwingComponent(C1).setToolTipText("Maximum number of comparison stars to select. Includes already selected comp. stars in its count");
-        maxDBrightness.asSwingComponent(C1).setToolTipText("Upper brightness limit of comp stars relative to the base aperture brightness");
-        minDBrightness.asSwingComponent(C1).setToolTipText("Lower brightness limit of comp stars relative to the base aperture brightness");
-        brightnessVsDistance.asSwingComponent(C1).setToolTipText("""
+                        box.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY));
+
+                        autoPeaks.setToolTipText("When enabled, set peak thresholds based on image statistics.\nMax = 0.9 * Max Pixel Value, Min = Mean Pixel Value + 1σ.");
+                        maxPeak.asSwingComponent(C1).setToolTipText("Maximum peak value to consider");
+                        minPeak.asSwingComponent(C1).setToolTipText("Minimum peak value to consider");
+
+                        final var liveStats = asw.getLiveStatistics();
+                        var minP = liveStats.mean + (1 * liveStats.stdDev);
+                        var maxP = liveStats.max * 0.9;
+                        DecimalFormat fourPlaces = new DecimalFormat("###,##0.00", IJU.dfs);
+                        DecimalFormat scientificFourPlaces = new DecimalFormat("0.####E00", IJU.dfs);
+                        if (autoPeakValues) {
+                            GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText(minP < 1000000.0 ? fourPlaces.format(minP) : scientificFourPlaces.format(minP)));
+                            GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText(maxP < 1000000.0 ? fourPlaces.format(maxP) : scientificFourPlaces.format(maxP)));
+                        } else {
+                            GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText(minPeakValue < 1000000.0 ? fourPlaces.format(minPeakValue) : scientificFourPlaces.format(minPeakValue)));
+                            GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText(maxPeakValue < 1000000.0 ? fourPlaces.format(maxPeakValue) : scientificFourPlaces.format(maxPeakValue)));
+                        }
+
+                        JSpinner maxPeakSpin = (JSpinner) maxPeak.c1();
+                        JSpinner minPeakSpin = (JSpinner) minPeak.c1();
+                        maxPeakSpin.getModel().addChangeListener($ -> {
+                            if (maxPeakSpin.getValue() instanceof Double d) {
+                                if (d.compareTo(minPeakValue) <= 0) maxPeakSpin.setValue(GenericSwingDialog.nextUp(minPeakValue));
+                            }
+                        });
+                        minPeakSpin.getModel().addChangeListener($ -> {
+                            if (minPeakSpin.getValue() instanceof Double d) {
+                                if (d.compareTo(maxPeakValue) >= 0) minPeakSpin.setValue(GenericSwingDialog.nextDown(maxPeakValue));
+                            }
+                        });
+
+                        autoPeaks.addActionListener($ -> {
+                            var minP1 = liveStats.mean + (1 * liveStats.stdDev);
+                            var maxP1 = liveStats.max * 0.9;
+                            minPeak.c1().setEnabled(autoPeakValues && suggestCompStars);
+                            maxPeak.c1().setEnabled(autoPeakValues && suggestCompStars);
+                            if (!autoPeakValues) {
+                                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText(minP < 1000000.0 ? fourPlaces.format(minP1) : scientificFourPlaces.format(minP1)));
+                                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText(maxP < 1000000.0 ? fourPlaces.format(maxP1) : scientificFourPlaces.format(maxP1)));
+                            } else {
+                                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText(minPeakValue < 1000000.0 ? fourPlaces.format(minPeakValue) : scientificFourPlaces.format(minPeakValue)));
+                                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText(maxPeakValue < 1000000.0 ? fourPlaces.format(maxPeakValue) : scientificFourPlaces.format(maxPeakValue)));
+                            }
+                        });
+
+                        minPeak.c1().setEnabled((!autoPeakValues && suggestCompStars));
+                        maxPeak.c1().setEnabled((!autoPeakValues && suggestCompStars));
+
+                        suggestionComponents.add(autoPeaks);
+                        suggestionComponents.add(minPeak.c2());
+                        suggestionComponents.add(maxPeak.c2());
+
+                        ((JCheckBox) s.subComponents().getFirst()).addActionListener($ -> {
+                            toggleComponents(suggestionComponents, !suggestCompStars);
+                            var minP1 = liveStats.mean + (1 * liveStats.stdDev);
+                            var maxP1 = liveStats.max * 0.9;
+                            minPeak.c1().setEnabled(!autoPeakValues && !suggestCompStars);
+                            maxPeak.c1().setEnabled(!autoPeakValues && !suggestCompStars);
+                            if (autoPeakValues) {
+                                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText(minP < 1000000.0 ? fourPlaces.format(minP1) : scientificFourPlaces.format(minP1)));
+                                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText(maxP < 1000000.0 ? fourPlaces.format(maxP1) : scientificFourPlaces.format(maxP1)));
+                            } else {
+                                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText(minPeakValue < 1000000.0 ? fourPlaces.format(minPeakValue) : scientificFourPlaces.format(minPeakValue)));
+                                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText(maxPeakValue < 1000000.0 ? fourPlaces.format(maxPeakValue) : scientificFourPlaces.format(maxPeakValue)));
+                            }
+                        });
+                    });
+
+                    g.buildRow((g1, box) -> {
+                        var starSelection = gd.addBoundedNumericField("Base Aperture", new GenericSwingDialog.Bounds(1, Double.MAX_VALUE), referenceStar, 1, 7, null, true, d -> referenceStar = d.intValue());
+                        if (upperBrightness < 101.0) upperBrightness = 150.0;
+                        if (lowerBrightness > 99.0 || lowerBrightness < 0.0) lowerBrightness = 50.0;
+                        var maxDBrightness = gd.addBoundedNumericField("Max. Comp. Brightness %", new GenericSwingDialog.Bounds(101, Double.MAX_VALUE), upperBrightness, 1, columns, null, d -> upperBrightness = d);
+                        var minDBrightness = gd.addBoundedNumericField("Min. Comp. Brightness %", new GenericSwingDialog.Bounds(0, 99), lowerBrightness, 1, columns, null, d -> lowerBrightness = d);
+
+                        suggestionComponents.add(starSelection.c2());
+                        suggestionComponents.add(maxDBrightness.c2());
+                        suggestionComponents.add(minDBrightness.c2());
+
+                        starSelection.asSwingComponent(C1).setToolTipText("The aperture to base comparison star selection on.");
+                        maxDBrightness.asSwingComponent(C1).setToolTipText("Upper brightness limit of comp stars relative to the base aperture brightness");
+                        minDBrightness.asSwingComponent(C1).setToolTipText("Lower brightness limit of comp stars relative to the base aperture brightness");
+                    });
+
+                    g.buildRow((g1, box) -> {
+                        var brightnessVsDistance = gd.addBoundedNumericField("Weight of brightness vs. distance %", new GenericSwingDialog.Bounds(0, 100), brightness2DistanceWeight, 1, columns, null, d -> brightness2DistanceWeight = d);
+                        var maxStars = gd.addBoundedNumericField("Max. Comp. Stars", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), maxSuggestedStars, 1, columns, null, true, d -> maxSuggestedStars = d.intValue());
+
+                        suggestionComponents.add(brightnessVsDistance.c2());
+                        suggestionComponents.add(maxStars.c2());
+
+                        brightnessVsDistance.asSwingComponent(C1).setToolTipText("""
                 <html>Weight of brightness vs distance, used to sort stars.<br>
                 Based on normalized Source-Sky brightness and distance relative to the specified base aperture.<br>
                 A value of 100 makes the weighting based entirely on the normalized brightness.<br>
                 A value of 0 makes the weighting entirely based on proximity to the specified base aperture.<br>
                 If more stars were found than the maximum requested, the stars with the highest weights are used.</html>""");
 
-        JSpinner maxPeakSpin = (JSpinner) maxPeak.c1();
-        JSpinner minPeakSpin = (JSpinner) minPeak.c1();
-        maxPeakSpin.getModel().addChangeListener($ -> {
-            if (maxPeakSpin.getValue() instanceof Double d) {
-                if (d.compareTo(minPeakValue) <= 0) maxPeakSpin.setValue(GenericSwingDialog.nextUp(minPeakValue));
+                        maxStars.asSwingComponent(C1).setToolTipText("Maximum number of comparison stars to select. Includes already selected comp. stars in its count");
+                    });
+
+                    suggestionComponents.addAll(s.subComponents().subList(1, s.subComponents().size()));
+
+                    toggleComponents(suggestionComponents, suggestCompStars);
+
+                    gd.addDoubleSpaceLineSeparator();
+                }
+                case CUSTOM_PIXEL -> {
+                }
             }
         });
-        minPeakSpin.getModel().addChangeListener($ -> {
-            if (minPeakSpin.getValue() instanceof Double d) {
-                if (d.compareTo(maxPeakValue) >= 0) minPeakSpin.setValue(GenericSwingDialog.nextDown(maxPeakValue));
-            }
-        });
-
-        var suggestionComponents = new LinkedHashSet<Component>();
-        suggestionComponents.add(gauss.c2());
-        suggestionComponents.add(gauss.c1());
-        suggestionComponents.add(autoPeaks);
-        suggestionComponents.add(minPeak.c2());
-        suggestionComponents.add(maxPeak.c2());
-        suggestionComponents.add(starSelection.c2());
-        suggestionComponents.add(maxDBrightness.c2());
-        suggestionComponents.add(minDBrightness.c2());
-        suggestionComponents.add(brightnessVsDistance.c2());
-        suggestionComponents.add(maxStars.c2());
-        suggestionComponents.addAll(s.subComponents().subList(1, s.subComponents().size()));
-
-        toggleComponents(suggestionComponents, suggestCompStars);
-        ((JCheckBox) s.subComponents().getFirst()).addActionListener($ -> {
-            toggleComponents(suggestionComponents, !suggestCompStars);
-            var minP1 = liveStats.mean + (1 * liveStats.stdDev);
-            var maxP1 = liveStats.max * 0.9;
-            minPeak.c1().setEnabled(!autoPeakValues && !suggestCompStars);
-            maxPeak.c1().setEnabled(!autoPeakValues && !suggestCompStars);
-            if (autoPeakValues) {
-                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText(minP < 1000000.0 ? fourPlaces.format(minP1) : scientificFourPlaces.format(minP1)));
-                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText(maxP < 1000000.0 ? fourPlaces.format(maxP1) : scientificFourPlaces.format(maxP1)));
-            } else {
-                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText(minPeakValue < 1000000.0 ? fourPlaces.format(minPeakValue) : scientificFourPlaces.format(minPeakValue)));
-                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText(maxPeakValue < 1000000.0 ? fourPlaces.format(maxPeakValue) : scientificFourPlaces.format(maxPeakValue)));
-            }
-        });
-
-
-        autoPeaks.addActionListener($ -> {
-            var minP1 = liveStats.mean + (1 * liveStats.stdDev);
-            var maxP1 = liveStats.max * 0.9;
-            minPeak.c1().setEnabled(autoPeakValues && suggestCompStars);
-            maxPeak.c1().setEnabled(autoPeakValues && suggestCompStars);
-            if (!autoPeakValues) {
-                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText(minP < 1000000.0 ? fourPlaces.format(minP1) : scientificFourPlaces.format(minP1)));
-                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText(maxP < 1000000.0 ? fourPlaces.format(maxP1) : scientificFourPlaces.format(maxP1)));
-            } else {
-                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) minPeak.c1()).ifPresent(tf -> tf.setText(minPeakValue < 1000000.0 ? fourPlaces.format(minPeakValue) : scientificFourPlaces.format(minPeakValue)));
-                GenericSwingDialog.getTextFieldFromSpinner((JSpinner) maxPeak.c1()).ifPresent(tf -> tf.setText(maxPeakValue < 1000000.0 ? fourPlaces.format(maxPeakValue) : scientificFourPlaces.format(maxPeakValue)));
-            }
-        });
-        minPeak.c1().setEnabled((!autoPeakValues && suggestCompStars));
-        maxPeak.c1().setEnabled((!autoPeakValues && suggestCompStars));
-
-        gd.addDoubleSpaceLineSeparator();
 
         // GET NON-REQUIRED DIALOGUE FIELDS:
-        var penultimateBoxes = gd.addCheckboxGroup(2, 2, new String[]{"Centroid apertures (initial setting)", "Halt processing on WCS or centroid error",
-                        "Remove stars from background", "Assume background is a plane"},
-//                                                "Compute relative flux", "Compute relative flux error",
-//                                                "Compute relative flux signal-to-noise", "Compute total comparison star counts"},
-                new boolean[]{reposition, haltOnError, removeBackStars, backIsPlane}, list1);//,showRatio, showRatioError,showRatioSNR,showCompTot});
+        gd.addNewSwappableSectionPanel(ApertureShape.class, (d, shape) -> {
+            switch (shape) {
+                case CIRCULAR -> {
+                    var penultimateBoxes = d.addCheckboxGroup(2, 2, new String[]{"Centroid apertures (initial setting)", "Halt processing on WCS or centroid error",
+                                    "Remove stars from background", "Assume background is a plane"},
+                            new boolean[]{reposition, haltOnError, removeBackStars, backIsPlane}, list1);
 
-        penultimateBoxes.subComponents().get(0).setToolTipText("<html>Enable to set the initial state of the 'Centroid' icon when aperture placement starts.<br>" +
-                "NOTE: The centroid setting of 'Previous apertures' will not be affected by this setting.<br>" +
-                "The centroid setting of 'Previous apertures' can be changed by an alt-left-click inside the aperture.</html>");
-        penultimateBoxes.subComponents().get(1).setToolTipText("Enable to halt Multi-aperture if centroid fails, or if 'Use RA-Dec' is selected, but an image is not plate solved.");
-        penultimateBoxes.subComponents().get(2).setToolTipText("<html>Enable to use an interative 2-sigma outlier removal technique to ignore pixels in the background region<br>"+
-                "that are statistically brighter or darker than other pixels. This mode is generally recommended and<br>"+
-                "effectively causes Multi-aperture to ignore pixels containing stars within the background region.</html>");
-        penultimateBoxes.subComponents().get(3).setToolTipText("Enable to fit a plane to the background pixels to attempt to account for large background gradients in the images.");
+                    penultimateBoxes.subComponents().get(0).setToolTipText("<html>Enable to set the initial state of the 'Centroid' icon when aperture placement starts.<br>" +
+                            "NOTE: The centroid setting of 'Previous apertures' will not be affected by this setting.<br>" +
+                            "The centroid setting of 'Previous apertures' can be changed by an alt-left-click inside the aperture.</html>");
+                    penultimateBoxes.subComponents().get(1).setToolTipText("Enable to halt Multi-aperture if centroid fails, or if 'Use RA-Dec' is selected, but an image is not plate solved.");
+                    penultimateBoxes.subComponents().get(2).setToolTipText("<html>Enable to use an interative 2-sigma outlier removal technique to ignore pixels in the background region<br>"+
+                            "that are statistically brighter or darker than other pixels. This mode is generally recommended and<br>"+
+                            "effectively causes Multi-aperture to ignore pixels containing stars within the background region.</html>");
+                    penultimateBoxes.subComponents().get(3).setToolTipText("Enable to fit a plane to the background pixels to attempt to account for large background gradients in the images.");
+                }
+                case CUSTOM_PIXEL -> {
+                    var penultimateBoxes = d.addCheckboxGroup(1, 2, new String[]{"Remove stars from background", "Assume background is a plane"},
+                            new boolean[]{removeBackStars, backIsPlane}, list1.subList(2, 4));
+                    penultimateBoxes.subComponents().get(0).setToolTipText("<html>Enable to use an interative 2-sigma outlier removal technique to ignore pixels in the background region<br>"+
+                            "that are statistically brighter or darker than other pixels. This mode is generally recommended and<br>"+
+                            "effectively causes Multi-aperture to ignore pixels containing stars within the background region.</html>");
+                    penultimateBoxes.subComponents().get(1).setToolTipText("Enable to fit a plane to the background pixels to attempt to account for large background gradients in the images.");
+                }
+            }
+        });
 
         gd.addDoubleSpaceLineSeparator();
-        gd.addCheckbox("Prompt to enter ref star apparent magnitude (required if target star apparent mag is desired)", getMags, b -> getMags = b)
-                .setToolTipText("Apparent magntiudes are not needed for standard differential photometry.");
 
-        final var list2 = new ArrayList<Consumer<Boolean>>();
-        list2.add(b -> updatePlot = b);
-        list2.add(b -> showHelp = b);
-        list2.add(updateImageDisplay::set);
-        var bottomChecks = gd.addCheckboxGroup(2, 2, new String[]{"Update plot while running", "Show help panel during aperture selection", "Update image display while running"},
-                new boolean[]{updatePlot, showHelp, updateImageDisplay.get()}, list2);
-        bottomChecks.subComponents().get(0).setToolTipText("<html>Multi-aperture will run faster with this option disabled,<br>" +
-                "but the plot displays will only update once when the Multi-Aperture run has finished.</html>");
-        bottomChecks.subComponents().get(1).setToolTipText("This extra panel is useful to new users that need additional keyboard/mouse help when placing apertures.");
-        singleStepListeners.add(bottomChecks.subComponents().get(2));
-        bottomChecks.subComponents().get(2).setEnabled(!singleStep);
+        gd.addNewSwappableSectionPanel(ApertureShape.class, (d, shape) -> {
+            switch (shape) {
+                case CIRCULAR -> {
+                    d.addCheckbox("Prompt to enter ref star apparent magnitude (required if target star apparent mag is desired)", getMags, b -> getMags = b)
+                            .setToolTipText("Apparent magntiudes are not needed for standard differential photometry.");
+                    final var list2 = new ArrayList<Consumer<Boolean>>();
+                    list2.add(b -> updatePlot = b);
+                    list2.add(b -> showHelp = b);
+                    list2.add(updateImageDisplay::set);
+                    var bottomChecks = d.addCheckboxGroup(2, 2, new String[]{"Update plot while running", "Show help panel during aperture selection", "Update image display while running"},
+                            new boolean[]{updatePlot, showHelp, updateImageDisplay.get()}, list2);
+                    bottomChecks.subComponents().get(0).setToolTipText("<html>Multi-aperture will run faster with this option disabled,<br>" +
+                            "but the plot displays will only update once when the Multi-Aperture run has finished.</html>");
+                    bottomChecks.subComponents().get(1).setToolTipText("This extra panel is useful to new users that need additional keyboard/mouse help when placing apertures.");
+                    singleStepListeners.add(bottomChecks.subComponents().get(2));
+                    bottomChecks.subComponents().get(2).setEnabled(!singleStep);
+                }
+                case CUSTOM_PIXEL -> {
+                    final var list2 = new ArrayList<Consumer<Boolean>>();
+                    list2.add(b -> updatePlot = b);
+                    list2.add(updateImageDisplay::set);
+                    var bottomChecks = d.addCheckboxGroup(1, 2, new String[]{"Update plot while running", "Update image display while running"},
+                            new boolean[]{updatePlot, updateImageDisplay.get()}, list2);
+                    bottomChecks.subComponents().get(0).setToolTipText("<html>Multi-aperture will run faster with this option disabled,<br>" +
+                            "but the plot displays will only update once when the Multi-Aperture run has finished.</html>");
+                    singleStepListeners.add(bottomChecks.subComponents().get(1));
+                    bottomChecks.subComponents().get(1).setEnabled(!singleStep);
+                }
+            }
+        });
     }
 
     private void toggleComponents(Component[] components, int offset, boolean toggle) {
@@ -4849,6 +4972,45 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         }
     }
 
+    public enum ApertureShape implements NState<ApertureShape>, ToolTipProvider {
+        CIRCULAR("""
+                <html>
+                Test
+                </html>
+                """),
+        CUSTOM_PIXEL("""
+                <html>
+                A single arbitrarily shaped aperture is supported for analysis of space-based data which have precise
+                pointing.<br>
+                This mode is generally not useful for ground-based data because the aperture is defined as fixed pixel
+                values in x/y space, therefore small pointing errors are not accounted for from image-to-image.<br>
+                The user defines individual pixels that should be included in the source and background counts.
+                </html>
+                """),
+        ;
+
+        private String tooltip;
+
+        ApertureShape(String tooltip) {
+            this.tooltip = tooltip;
+        }
+
+        @Override
+        public boolean isOn() {
+            return false;
+        }
+
+        @Override
+        public ApertureShape[] values0() {
+            return ApertureShape.values();
+        }
+
+        @Override
+        public String getToolTip() {
+            return tooltip;
+        }
+    }
+
     enum ApRadius implements RadioEnum {
         /**
          * Fixed based on user setting.
@@ -4893,16 +5055,6 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 "to at least the FWHM (in pixels) that you expect in the worst image in the stack.<br>"+
                 "The user selected background radii are used directly, so should be set larger than the largest expected aperture radius.<br>" +
                 "To make the auto aperture radii generally larger, set the FWHM factor multiplier to a larger value and vice versa.</html>"),
-        CUSTOM_PIXEL_APERTURE_PHOTOMETRY("Fixed arbitrary aperture (for space-based photometry)", 0.01,
-                """
-                <html>
-                A single arbitrarily shaped aperture is supported for analysis of space-based data which have precise
-                pointing.<br>
-                This mode is generally not useful for ground-based data because the aperture is defined as fixed pixel
-                values in x/y space, therefore small pointing errors are not accounted for from image-to-image.<br>
-                The user defines individual pixels that should be included in the source and background counts.
-                </html>
-                """),
         ;
         private static final ButtonGroup group = new ButtonGroup();
         private final String buttonText, tooltip;

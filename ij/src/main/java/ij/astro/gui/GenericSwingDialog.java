@@ -65,6 +65,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
     private boolean recorderOn;          // whether recording is allowed (after the dialog is closed)
     private Class<?> activeSection;
     private final Map<Class<?>, SwappableSectionHolder<?>> swappableSections = new HashMap<>();
+    private Box rowBuilding;
 
     public GenericSwingDialog(String title) {
         this(title, guessParentFrame());
@@ -174,6 +175,20 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         this.hideCancelButton = hideCancelButton;
     }
 
+    public void buildRow(BiConsumer<GenericSwingDialog, Box> rowBuilder) {
+        var box = Box.createHorizontalBox();
+
+        var c = getConstraints();
+        c.gridx = 0;
+        c.gridy++;
+
+        rowBuilding = box;
+        rowBuilder.accept(this, box);
+        rowBuilding = null;
+
+        addLocal(box, c);
+    }
+
     /**
      * Creates a swappable section for the dialog and adds a dropdown to control it.
      */
@@ -210,6 +225,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
 
         activeSection = stateClass;
         for (T enumConstant : stateClass.getEnumConstants()) {
+            resetPositionOverride();
             swappableSection.setCurrentState(enumConstant);
             //the design is to use switch expressions in the builder
             sectionBuilder.accept(this, enumConstant);
@@ -250,7 +266,11 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         }
     }
 
-    private JPanel getPanel() {
+    private JComponent getPanel() {
+        if (rowBuilding != null) {
+            return rowBuilding;
+        }
+
         if (activeSection != null) {
             return swappableSections.get(activeSection).currentPanel();
         }

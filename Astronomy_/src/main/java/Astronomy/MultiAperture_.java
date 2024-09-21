@@ -4262,55 +4262,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         var sliders = new JPanel[5];
         if (stackSize > 1) {
             firstSlice = (firstSlice == stackSize || (alwaysstartatfirstSlice && !(this instanceof Stack_Aligner))) ? 1 : firstSlice;
-            sliders[0] = gd.addSlider("           First slice ", 1, stackSize, firstSlice, d -> firstSlice = d.intValue());
-            sliders[1] = gd.addSlider("           Last slice ", 1, stackSize, lastSlice, d -> lastSlice = d.intValue());
-        }
-        sliders[2] = gd.addFloatSlider("Fixed/Base radius of photometric aperture", 0.01, radius > 100 ? radius : 100, false, radius, 3, 1.0, d -> radius = d);
-        sliders[3] = gd.addFloatSlider("Fixed/Base radius of inner background annulus", 0.01, rBack1 > 100 ? rBack1 : 100, false, rBack1, 3, 1.0, d -> rBack1 = d);
-        sliders[4] = gd.addFloatSlider("Fixed/Base radius of outer background annulus", 0.01, rBack2 > 100 ? rBack2 : 100, false, rBack2, 3, 1.0, d -> rBack2 = d);
-        gd.addLineSeparator();
-        var apRadiiButtons = gd.addRadioOptions(ApRadius.class, r -> MultiAperture_.radiusSetting = r, false);
-        gd.addGenericComponent(apRadiiButtons.get(ApRadius.FIXED));
-        gd.setOverridePosition(true);
-        gd.addGenericComponent(apRadiiButtons.get(ApRadius.AUTO_FIXED));
-        gd.addToSameRow();
-        gd.setLeftInset(-190);
-        gd.setNewPosition(GridBagConstraints.WEST);
-        gd.addBoundedNumericField("Normalized flux cutoff threshold:", new GenericSwingDialog.Bounds(0, false, 1, false), ApRadius.AUTO_FIXED.cutoff, .01, 6, "(0 < cutoff < 1 ; default = 0.010)", d -> ApRadius.AUTO_FIXED.cutoff = d);
-        gd.resetPositionOverride();
-        gd.setLeftInset(20);
-        gd.addGenericComponent(apRadiiButtons.get(ApRadius.AUTO_FIXED_STACK_RAD));
-        gd.addToSameRow();
-        gd.setLeftInset(-190);
-        gd.setNewPosition(GridBagConstraints.WEST);
-        gd.addBoundedNumericField("Normalized flux cutoff threshold:", new GenericSwingDialog.Bounds(0, false, 1, false), ApRadius.AUTO_FIXED_STACK_RAD.cutoff, .01, 6, "(0 < cutoff < 1 ; default = 0.010)", d -> ApRadius.AUTO_FIXED_STACK_RAD.cutoff = d);
-        gd.resetPositionOverride();
-        gd.addGenericComponent(apRadiiButtons.get(ApRadius.AUTO_VAR_RAD_PROF));
-        gd.addToSameRow();
-        gd.setLeftInset(-190);
-        gd.setNewPosition(GridBagConstraints.WEST);
-        gd.addBoundedNumericField("Normalized flux cutoff threshold:", new GenericSwingDialog.Bounds(0, false, 1, false), ApRadius.AUTO_VAR_RAD_PROF.cutoff, .01, 6, "(0 < cutoff < 1 ; default = 0.010)", d -> ApRadius.AUTO_VAR_RAD_PROF.cutoff = d);
-        gd.setOverridePosition(false);
-        gd.resetPositionOverride();
-        gd.addGenericComponent(apRadiiButtons.get(ApRadius.AUTO_VAR_FWHM));
-        gd.addToSameRow();
-        gd.setOverridePosition(true);
-        gd.setNewPosition(GridBagConstraints.EAST);
-        gd.setRightInset(-80);
-        gd.addFloatSlider("FWHM factor:", 0.1, 5.0, true, ApRadius.AUTO_VAR_FWHM.cutoff, 3, 0.1, d -> ApRadius.AUTO_VAR_FWHM.cutoff = d);
-        gd.resetPositionOverride();
-        gd.setOverridePosition(false);
-        gd.addGenericComponent(apRadiiButtons.get(ApRadius.CUSTOM_PIXEL_APERTURE_PHOTOMETRY));
-        apRadiiButtons.get(radiusSetting).setSelected(true);
-            gd.buildRow((g, box) -> {
-                sliders[0] = gd.addSlider("First slice", 1, stackSize, firstSlice, d -> firstSlice = d.intValue());
-                box.add(Box.createHorizontalStrut(300));
-            });
-
-            gd.buildRow((g, box) -> {
-                sliders[1] = gd.addSlider("Last slice", 1, stackSize, lastSlice, d -> lastSlice = d.intValue());
-                box.add(Box.createHorizontalStrut(300));
-            });
+            gd.setNewPosition(GridBagConstraints.CENTER);
+            sliders[0] = gd.addSlider("First slice", 1, stackSize, firstSlice, d -> firstSlice = d.intValue());
+            gd.setNewPosition(GridBagConstraints.CENTER);
+            sliders[1] = gd.addSlider("Last slice", 1, stackSize, lastSlice, d -> lastSlice = d.intValue());
         }//todo update aperture count, todo fully implement previous ap loading
         gd.addSwappableSection(apertureShape, (g, shape) -> {
             switch (shape) {

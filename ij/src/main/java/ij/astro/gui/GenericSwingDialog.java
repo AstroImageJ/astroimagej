@@ -65,7 +65,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
     private boolean recorderOn;          // whether recording is allowed (after the dialog is closed)
     private Class<?> activeSection;
     private final Map<Class<?>, SwappableSectionHolder<?>> swappableSections = new HashMap<>();
-    private Box rowBuilding;
+    private final Deque<Box> rowBuilding = new ArrayDeque<>();
 
     public GenericSwingDialog(String title) {
         this(title, guessParentFrame());
@@ -182,9 +182,9 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         c.gridx = 0;
         c.gridy++;
 
-        rowBuilding = box;
+        rowBuilding.push(box);
         rowBuilder.accept(this, box);
-        rowBuilding = null;
+        rowBuilding.pop();
 
         addLocal(box, c);
     }
@@ -267,8 +267,8 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
     }
 
     private JComponent getPanel() {
-        if (rowBuilding != null) {
-            return rowBuilding;
+        if (!rowBuilding.isEmpty()) {
+            return rowBuilding.peekLast();
         }
 
         if (activeSection != null) {

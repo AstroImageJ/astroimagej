@@ -136,9 +136,13 @@ public class CustomPixelApertureHandler {
     /**
      * Load apertures from preferences, clears existing apertures.
      */
-    public void loadAperturesFromPrefs() {
+    public void loadAperturesFromPrefs(boolean loadOnlyOne) {
         customPixelApertureRois.clear();
-        customPixelApertureRois.addAll(APS.get());
+        if (loadOnlyOne && !APS.get().isEmpty()) {
+            customPixelApertureRois.add(APS.get().get(0));
+        } else {
+            customPixelApertureRois.addAll(APS.get());
+        }
 
         if (imp != null) {
             for (CustomPixelApertureRoi roi : customPixelApertureRois) {

@@ -4268,7 +4268,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             gd.setNewPosition(GridBagConstraints.CENTER);
             sliders[1] = gd.addSlider("Last slice", 1, stackSize, lastSlice, d -> lastSlice = d.intValue());
         }
-        gd.addSwappableSection(apertureShape, (g, shape) -> {
+        gd.addSwappableSection("Aperture Shape:", apertureShape, (g, shape) -> {
             switch (shape) {
                 case CIRCULAR -> {
                     sliders[2] = g.addFloatSlider("Fixed/Base radius of photometric aperture", 0.01, radius > 100 ? radius : 100, false, radius, 3, 1.0, d -> radius = d);

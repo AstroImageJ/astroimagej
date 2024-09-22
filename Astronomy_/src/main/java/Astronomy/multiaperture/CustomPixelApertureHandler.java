@@ -31,7 +31,7 @@ public class CustomPixelApertureHandler {
     private final boolean tempOverlay = Prefs.get(AP_PREFS_TEMPOVERLAY, true);
     private final boolean clearOverlay = Prefs.get(AP_PREFS_CLEAROVERLAY, false);
     private IntConsumer updateCount = i -> {};
-    private static final Property<List<CustomPixelApertureRoi>> APS =
+    public static final Property<List<CustomPixelApertureRoi>> APS =
             new Property<>(new ArrayList<>(),
                     CustomPixelApertureHandler::serializeApertures, CustomPixelApertureHandler::deserializeApertures,
                     CustomPixelApertureHandler.class);

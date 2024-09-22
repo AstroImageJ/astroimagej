@@ -476,6 +476,10 @@ public class CustomPixelApertureHandler {
         this.imp = imp;
     }
 
+    public static int savedApertureCount() {
+        return APS.get().size();
+    }
+
     //todo could technically have more efficient structure just for prefs
     private static List<CustomPixelApertureRoi> deserializeApertures(String setting) {
         var decoder = Base64.getDecoder();

@@ -4463,8 +4463,6 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                         var maxPeak = gd.addBoundedNumericField("Max. Peak Value", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), maxPeakValue, 1, columns, null, d -> maxPeakValue = d);
                         var minPeak = gd.addBoundedNumericField("Min. Peak Value", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), minPeakValue, 1, columns, null, d -> minPeakValue = d);
 
-                        box.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY));
-
                         autoPeaks.setToolTipText("When enabled, set peak thresholds based on image statistics.\nMax = 0.9 * Max Pixel Value, Min = Mean Pixel Value + 1σ.");
                         maxPeak.asSwingComponent(C1).setToolTipText("Maximum peak value to consider");
                         minPeak.asSwingComponent(C1).setToolTipText("Minimum peak value to consider");

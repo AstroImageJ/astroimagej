@@ -220,6 +220,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         c.gridy++;
         c.gridwidth = GridBagConstraints.REMAINDER;
         c.fill = GridBagConstraints.HORIZONTAL;
+        c.insets.left = 0;
 
         addLocal(swappableSection.getSectionPanel(), c);
 
@@ -251,6 +252,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         c.gridy++;
         c.gridwidth = GridBagConstraints.REMAINDER;
         c.fill = GridBagConstraints.HORIZONTAL;
+        c.insets.left = 0;
 
         addLocal(swappableSection.addNewPanel().getSectionPanel(), c);
 

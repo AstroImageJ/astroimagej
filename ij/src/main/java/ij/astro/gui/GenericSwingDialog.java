@@ -218,8 +218,13 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         var c = getConstraints();
         c.gridx = 0;
         c.gridy++;
+        c.gridwidth = GridBagConstraints.REMAINDER;
+        c.fill = GridBagConstraints.HORIZONTAL;
 
         addLocal(swappableSection.getSectionPanel(), c);
+
+        c.fill = GridBagConstraints.NONE;
+        c.gridwidth = 1;
 
         swappableSections.put(stateClass, swappableSection);
 
@@ -244,8 +249,13 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         var c = getConstraints();
         c.gridx = 0;
         c.gridy++;
+        c.gridwidth = GridBagConstraints.REMAINDER;
+        c.fill = GridBagConstraints.HORIZONTAL;
 
         addLocal(swappableSection.addNewPanel().getSectionPanel(), c);
+
+        c.fill = GridBagConstraints.NONE;
+        c.gridwidth = 1;
 
         activeSection = sectionType;
         for (T enumConstant : sectionType.getEnumConstants()) {

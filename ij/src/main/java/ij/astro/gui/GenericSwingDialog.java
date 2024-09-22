@@ -192,19 +192,20 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
     /**
      * Creates a swappable section for the dialog and adds a dropdown to control it.
      */
-    public <T extends Enum<T> & NState<T>> void addSwappableSection(Property<T> property,
+    public <T extends Enum<T> & NState<T>> void addSwappableSection(String optionText, Property<T> property,
                                                                            BiConsumer<GenericSwingDialog, T> sectionBuilder) {
-        addSwappableSection(property.get(), property::set, sectionBuilder);
+        addSwappableSection(optionText, property.get(), property::set, sectionBuilder);
     }
 
     /**
      * Creates a swappable section for the dialog and adds a dropdown to control it.
      *
-     * @param currentState the default card to show.
+     * @param optionText
+     * @param currentState   the default card to show.
      * @param sectionBuilder a consumer used to populate the components of the swappable panel. Use a switch for ease of use.
      */
-    public <T extends Enum<T> & NState<T>> void addSwappableSection(T currentState, Consumer<T> consumer,
-                                                                           BiConsumer<GenericSwingDialog, T> sectionBuilder) {
+    public <T extends Enum<T> & NState<T>> void addSwappableSection(String optionText, T currentState, Consumer<T> consumer,
+                                                                    BiConsumer<GenericSwingDialog, T> sectionBuilder) {
         Class<T> stateClass = currentState.getDeclaringClass();
         if (swappableSections.containsKey(currentState.getDeclaringClass())) {
             throw new IllegalArgumentException("GSD already contains section for type: " + stateClass);
@@ -212,8 +213,17 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
 
         var swappableSection = new SwappableSectionHolder<>(new SwappableSection<T>(currentState));
 
-        //todo which one, pack will resize window, revalidate won't which can cause scrollbars to appear
-        addNStateDropdown(currentState, consumer.andThen(swappableSection::setCurrentState).andThen($ -> pack()));
+        if (optionText != null) {
+            buildRow((g, box) -> {
+                box.add(Box.createHorizontalStrut(20));
+                addMessage(optionText);
+                box.add(Box.createHorizontalGlue());
+                addNStateDropdown(currentState, consumer.andThen(swappableSection::setCurrentState).andThen($ -> pack()));
+            });
+        } else {
+            //todo which one, pack will resize window, revalidate won't which can cause scrollbars to appear
+            addNStateDropdown(currentState, consumer.andThen(swappableSection::setCurrentState).andThen($ -> pack()));
+        }
 
         var c = getConstraints();
         c.gridx = 0;

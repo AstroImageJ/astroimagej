@@ -221,6 +221,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         c.gridwidth = GridBagConstraints.REMAINDER;
         c.fill = GridBagConstraints.HORIZONTAL;
         c.insets.left = 0;
+        c.anchor = GridBagConstraints.WEST;
 
         addLocal(swappableSection.getSectionPanel(), c);
 
@@ -253,6 +254,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         c.gridwidth = GridBagConstraints.REMAINDER;
         c.fill = GridBagConstraints.HORIZONTAL;
         c.insets.left = 0;
+        c.anchor = GridBagConstraints.WEST;
 
         addLocal(swappableSection.addNewPanel().getSectionPanel(), c);
 
@@ -380,7 +382,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
     public ComponentPair addCheckboxGroup(int rows, int columns, String[] labels, boolean[] defaultValues, String[] headings, List<Consumer<Boolean>> consumers) {
         var c = getConstraints();
         var x = getXPos();
-        Panel panel = new Panel();
+        var panel = new JPanel();
         int nRows = headings != null ? rows + 1 : rows;
         panel.setLayout(new GridLayout(nRows, columns, 6, 0));
         if (headings != null) {
@@ -446,6 +448,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         c.insets = new Insets(0, 20, 0, 0);
         //addToSameRow = false;
         if (overridePosition) c.gridx = x.get();
+        //c.weightx = 1;
         addLocal(panel, c);
         x.getAndIncrement();
 
@@ -1749,9 +1752,13 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
             sectionPanel = new JPanel(cardLayout);
             for (T state : states) {
                 JPanel card = new JPanel(new GridBagLayout());
-                panelMap.put(state, new Panel(card, new GridBagConstraints(), new AtomicInteger()));
+                //card.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.MAGENTA), "Card"));
+                var c = new GridBagConstraints();
+                c.weightx = 1;
+                panelMap.put(state, new Panel(card, c, new AtomicInteger()));
                 sectionPanel.add(card, state.name());
             }
+            //getSectionPanel().setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.RED), "Section"));
         }
 
         public JPanel getSectionPanel() {

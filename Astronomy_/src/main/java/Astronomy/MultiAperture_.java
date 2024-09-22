@@ -439,6 +439,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         o.add(KEY_PREFIX+PREFS_XLOCATION);
         o.add(KEY_PREFIX+PREFS_YLOCATION);
         o.add(KEY_PREFIX+PREFS_PREVNUMMONITORS);
+        o.add(KEY_PREFIX+CustomPixelApertureHandler.APS.getPropertyKey());
 
         return o;
     }

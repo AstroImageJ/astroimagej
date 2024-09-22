@@ -1405,7 +1405,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             customPixelApertureHandler.currentAperture().setImage(imp);
 
             if ((apLoading.get().isPrevious() || previous) && firstClick) {
-                customPixelApertureHandler.loadAperturesFromPrefs();//todo respect only loading first
+                customPixelApertureHandler.loadAperturesFromPrefs(apLoading.get() == ApLoading.FIRST_PREVIOUS);
                 ngot = customPixelApertureHandler.apCount();
                 firstClick = false;
                 enterPressed = false;
@@ -4266,7 +4266,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             sliders[0] = gd.addSlider("First slice", 1, stackSize, firstSlice, d -> firstSlice = d.intValue());
             gd.setNewPosition(GridBagConstraints.CENTER);
             sliders[1] = gd.addSlider("Last slice", 1, stackSize, lastSlice, d -> lastSlice = d.intValue());
-        }//todo update aperture count, todo fully implement previous ap loading
+        }
         gd.addSwappableSection(apertureShape, (g, shape) -> {
             switch (shape) {
                 case CIRCULAR -> {
@@ -4326,6 +4326,22 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 apLoading.set(ApLoading.ALL_NEW);
             }
         }
+
+        // Swap button text for next shape
+        apertureShape.addListener((key, val) -> {
+            for (ApLoading value : ApLoading.values()) {
+                apLoadingButtons.get(value).setEnabled(value.isEnabled());
+                if (value.isSelected()) {
+                    apLoadingButtons.get(value).setSelected(true);
+                }
+                if (!apLoadingButtons.get(value).isEnabled() && apLoadingButtons.get(value).isSelected()) {
+                    apLoadingButtons.get(value).setSelected(true);
+                    apLoading.set(ApLoading.ALL_NEW);
+                }
+                apLoadingButtons.get(value).setText(value.optionText());
+            }
+        });
+
         gd.addLineSeparator();
 
         gd.addNewSwappableSectionPanel(ApertureShape.class, (d, shape) -> {
@@ -4887,9 +4903,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
     public enum ApLoading implements RadioEnum {
         ALL_NEW(() -> "Place all new apertures", null, () -> true),
-        FIRST_PREVIOUS(() -> "Place first previously used aperture", null, () -> nAperturesStored > 0),
-        ALL_PREVIOUS(() -> "Place %s previously used apertures".formatted(MultiAperture_.nAperturesStored), null, () -> nAperturesStored > 0),
-        IMPORTED(() -> "Place %s imported apertures".formatted(nImportedApStored), null, () -> nImportedApStored > 0),
+        FIRST_PREVIOUS(() -> "Place first previously used aperture", null, () -> storedCount() > 0),
+        ALL_PREVIOUS(() -> "Place %s previously used apertures".formatted(storedCount()), null, () -> storedCount() > 0),
+        IMPORTED(() -> "Place %s imported apertures".formatted(importedCount()), null, () -> importedCount() > 0),
         ;
         private final String tooltip;
         private final Supplier<String> buttonText;
@@ -4925,6 +4941,20 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         public boolean isPrevious() {
             return this != ALL_NEW;
         }
+
+        private static int storedCount() {
+            return switch (apertureShape.get()) {
+                case CIRCULAR -> nAperturesStored;
+                case CUSTOM_PIXEL -> CustomPixelApertureHandler.savedApertureCount();
+            };
+        }
+
+        private static int importedCount() {
+            return switch (apertureShape.get()) {
+                case CIRCULAR -> nImportedApStored;
+                case CUSTOM_PIXEL -> 0;
+            };
+        }
     }
 
     public enum ApertureShape implements NState<ApertureShape>, ToolTipProvider {
@@ -4944,7 +4974,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 """),
         ;
 
-        private String tooltip;
+        private final String tooltip;
 
         ApertureShape(String tooltip) {
             this.tooltip = tooltip;

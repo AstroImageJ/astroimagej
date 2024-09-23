@@ -1378,7 +1378,6 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 //            modis = e.getModifiers();
 //            }
 
-        if (radiusSetting == ApRadius.CUSTOM_PIXEL_APERTURE_PHOTOMETRY) {
         if (apertureShape.get() == ApertureShape.CUSTOM_PIXEL) {
             Runnable runMA = () -> {
                 if (customPixelApertureHandler.validateApertures()) {

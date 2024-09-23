@@ -4960,7 +4960,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 <html>
                 Test
                 </html>
-                """),
+                """, "Circular"),
         CUSTOM_PIXEL("""
                 <html>
                 A single arbitrarily shaped aperture is supported for analysis of space-based data which have precise
@@ -4969,13 +4969,15 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 values in x/y space, therefore small pointing errors are not accounted for from image-to-image.<br>
                 The user defines individual pixels that should be included in the source and background counts.
                 </html>
-                """),
+                """, "Custom Pixel-aligned Aperture"),
         ;
 
         private final String tooltip;
+        private final String optionText;
 
-        ApertureShape(String tooltip) {
+        ApertureShape(String tooltip, String optionText) {
             this.tooltip = tooltip;
+            this.optionText = optionText;
         }
 
         @Override
@@ -4991,6 +4993,11 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         @Override
         public String getToolTip() {
             return tooltip;
+        }
+
+        @Override
+        public String toString() {
+            return optionText;
         }
     }
 

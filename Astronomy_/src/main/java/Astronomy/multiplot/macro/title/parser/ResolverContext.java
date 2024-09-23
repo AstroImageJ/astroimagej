@@ -108,20 +108,19 @@ public class ResolverContext {
                                 break;
                             }
                             for (int row = 0; row < table.size(); row++) {
-                                var label = table.getLabel(row);
-                                if (label.equals(sliceLabel.split("\n")[0])) {
+                                var rowLabel = table.getLabel(row);
+                                if (rowLabel != null && sliceLabel.startsWith(rowLabel + "\n")) {
                                     return i;
                                 }
                             }
                         }
                     } else if (s instanceof VirtualStack virtualStack) {
                         for (int slice = 1; slice <= virtualStack.size(); slice++) {
-                            var l = virtualStack.getSliceLabel(slice);
-                            if (l != null) {
-                                l = l.split("\n")[0];
+                            var sliceLabel = virtualStack.getSliceLabel(slice);
+                            if (sliceLabel != null) {
                                 for (int row = 0; row < table.size(); row++) {
-                                    var label = table.getLabel(row);
-                                    if (label.equals(l)) {
+                                    var rowLabel = table.getLabel(row);
+                                    if (rowLabel != null && sliceLabel.startsWith(rowLabel + "\n")) {
                                         return i;
                                     }
                                 }

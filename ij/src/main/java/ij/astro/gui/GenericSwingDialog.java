@@ -175,7 +175,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         this.hideCancelButton = hideCancelButton;
     }
 
-    public void buildRow(BiConsumer<GenericSwingDialog, Box> rowBuilder) {
+    public Box buildRow(BiConsumer<GenericSwingDialog, Box> rowBuilder) {
         var box = Box.createHorizontalBox();
 
         var c = getConstraints();
@@ -187,14 +187,16 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         rowBuilding.pop();
 
         addLocal(box, c);
+
+        return box;
     }
 
     /**
      * Creates a swappable section for the dialog and adds a dropdown to control it.
      */
-    public <T extends Enum<T> & NState<T>> void addSwappableSection(String optionText, Property<T> property,
+    public <T extends Enum<T> & NState<T>> JComponent addSwappableSection(String optionText, Property<T> property,
                                                                            BiConsumer<GenericSwingDialog, T> sectionBuilder) {
-        addSwappableSection(optionText, property.get(), property::set, sectionBuilder);
+        return addSwappableSection(optionText, property.get(), property::set, sectionBuilder);
     }
 
     /**
@@ -204,7 +206,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
      * @param currentState   the default card to show.
      * @param sectionBuilder a consumer used to populate the components of the swappable panel. Use a switch for ease of use.
      */
-    public <T extends Enum<T> & NState<T>> void addSwappableSection(String optionText, T currentState, Consumer<T> consumer,
+    public <T extends Enum<T> & NState<T>> JComponent addSwappableSection(String optionText, T currentState, Consumer<T> consumer,
                                                                     BiConsumer<GenericSwingDialog, T> sectionBuilder) {
         Class<T> stateClass = currentState.getDeclaringClass();
         if (swappableSections.containsKey(currentState.getDeclaringClass())) {
@@ -213,16 +215,17 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
 
         var swappableSection = new SwappableSectionHolder<>(new SwappableSection<T>(currentState));
 
+        final JComponent[] selection = new JComponent[1];
         if (optionText != null) {
             buildRow((g, box) -> {
                 box.add(Box.createHorizontalStrut(20));
                 addMessage(optionText);
                 box.add(Box.createHorizontalGlue());
-                addNStateDropdown(currentState, consumer.andThen(swappableSection::setCurrentState).andThen($ -> pack()));
+                selection[0] = addNStateDropdown(currentState, consumer.andThen(swappableSection::setCurrentState).andThen($ -> pack()));
             });
         } else {
             //todo which one, pack will resize window, revalidate won't which can cause scrollbars to appear
-            addNStateDropdown(currentState, consumer.andThen(swappableSection::setCurrentState).andThen($ -> pack()));
+            selection[0] = addNStateDropdown(currentState, consumer.andThen(swappableSection::setCurrentState).andThen($ -> pack()));
         }
 
         var c = getConstraints();
@@ -248,6 +251,8 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
             sectionBuilder.accept(this, enumConstant);
         }
         activeSection = null;
+
+        return selection[0];
     }
 
     public <T extends Enum<T> & NState<T>> void addNewSwappableSectionPanel(Class<T> sectionType,

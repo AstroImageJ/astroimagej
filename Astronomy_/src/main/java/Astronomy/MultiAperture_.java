@@ -4312,7 +4312,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
                 }
             }
-        });
+        }).setToolTipText("Select aperture type");
 
         gd.addDoubleSpaceLineSeparator();
 

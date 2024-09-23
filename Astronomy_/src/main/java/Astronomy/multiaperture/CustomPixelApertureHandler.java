@@ -125,7 +125,14 @@ public class CustomPixelApertureHandler {
 
         if (invalidCount > 0) {
             message.insert(0, "%s aperture(s) are incomplete!\n".formatted(invalidCount));
-            return IJ.showMessageWithCancel("Custom Aperture Handler", message.toString());
+
+            var proceed = IJ.showMessageWithCancel("Custom Aperture Handler", message.toString());
+
+            if (proceed) {
+                APS.set(customPixelApertureRois);
+            }
+
+            return proceed;
         }
 
         APS.set(customPixelApertureRois);

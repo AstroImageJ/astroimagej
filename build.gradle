@@ -92,13 +92,17 @@ allprojects {
     }
 }
 
-// Get version metadata
-final commitHash = '+' + versioning.info.build
-final branchName = '+' + versioning.info.branch
-final dirtySuffix = !versioning.info.dirty ? '' : '+local'
+// Declare the version dynamically using the versioning plugin
+def fullVersionProvider = providers.provider {
+    def commitHash = '+' + versioning.info.build
+    def branchName = '+' + versioning.info.branch
+    def dirtySuffix = !versioning.info.dirty ? '' : '+local'
+
+    "${rootProject.version}${branchName}${commitHash}${dirtySuffix}"
+}
 
 subprojects {
-    version = project.version + branchName + commitHash + dirtySuffix
+    version = fullVersionProvider.get()
 }
 
 dependencies {

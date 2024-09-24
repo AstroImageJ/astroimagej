@@ -15,10 +15,13 @@ dependencies {
 def mainClassName = 'ij.ImageJ'
 
 processResources {
-    inputs.property "version", project.version
+    // Use a provider to work around the pact that we reference project and the version is dynamic
+    // Have to do it this way with go-between variable to force it to get the updated value
+    def v = project.version
+    inputs.property("version", v)
 
     filesMatching("aij_version.txt") {
-        expand "version": project.version
+        expand "version": v
     }
 }
 

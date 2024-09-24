@@ -286,16 +286,14 @@ tasks.register('downloadJavaRuntimes', Download) {
     def runtimeData = javaRuntimeSystemsProperty.get()
     //println "Using the following runtime data: $runtimeData"
 
-    //noinspection GroovyAssignabilityCheck
-    runtimeData.each { sys, sysInfo ->
-        // Perform the download
-        //noinspection GroovyAssignabilityCheck
-        src sysInfo.url
-        //noinspection GroovyAssignabilityCheck
-        overwrite false
-        //noinspection GroovyAssignabilityCheck
-        dest 'jres'
+    // Download jres concurrently
+    src runtimeData.collect { sys, sysInfo ->
+        sysInfo.url
     }
+
+    overwrite false
+    onlyIfModified true
+    dest 'jres'
 
     // Collect current runtime files and extensions
     //noinspection GroovyAssignabilityCheck

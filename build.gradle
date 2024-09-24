@@ -146,8 +146,9 @@ test.onlyIf { project.hasProperty('runTest') }
 
 tasks.register('preTest') {
     def testDataPath = "${projectDir}/repos/aijtestdata"
+    def testData = file(testDataPath)
     doLast {
-        def targetRepo = file(testDataPath)
+        def targetRepo = testData
         if (!targetRepo.exists()) {
             def gitRepo = Grgit.clone(dir: testDataPath, uri: 'https://github.com/AstroImageJ/AijTestData')
         } else {
@@ -572,6 +573,9 @@ javaRuntimeSystemsProperty.get().each {sys, sysInfo ->
     //noinspection GroovyAssignabilityCheck
     tasks.register(taskName, PackageTask) {
         group 'AstroImageJ Development'
+
+        //todo fix incompatibility
+        notCompatibleWithConfigurationCache 'Package task issue'
 
         // Set the platform
         io.github.fvarrui.javapackager.model.Platform.values().each {

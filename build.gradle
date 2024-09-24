@@ -137,11 +137,11 @@ test {
 tasks.test.dependsOn("preTest")
 test.onlyIf { project.hasProperty('runTest') }
 
-task preTest {
+tasks.register('preTest') {
     def testDataPath = "${projectDir}/repos/aijtestdata"
     doLast {
         def targetRepo = file(testDataPath)
-        if(!targetRepo.exists()) {
+        if (!targetRepo.exists()) {
             def gitRepo = Grgit.clone(dir: testDataPath, uri: 'https://github.com/AstroImageJ/AijTestData')
         } else {
             def gitRepo = Grgit.open(dir: testDataPath)
@@ -177,7 +177,7 @@ boolean canConnectToAzul = true
 /**
  * Download the specified Java runtimes based on javaRuntimeSystems.
  */
-task downloadJavaRuntimes(type: Download) {
+tasks.register('downloadJavaRuntimes', Download) {
     mkdir(file("${projectDir}/jres"))
 
     onlyIf {
@@ -204,7 +204,7 @@ task downloadJavaRuntimes(type: Download) {
     }
 
     //noinspection GroovyAssignabilityCheck
-    javaRuntimeSystems.each {sys, sysInfo ->
+    javaRuntimeSystems.each { sys, sysInfo ->
         // Other parameters of note:
         // &support_term=lts/mts/sts &release_status=ga/ea/both &bundle_type=${sysInfo.type}
         String url = "https://api.azul.com/zulu/download/community/v1.0/bundles/latest/?" +
@@ -240,12 +240,13 @@ task downloadJavaRuntimes(type: Download) {
 
     // Collect current runtime files and extensions
     //noinspection GroovyAssignabilityCheck
-    def currentFiles = javaRuntimeSystems.collectEntries {[it.value.name, it.value.ext]}
+    def currentFiles = javaRuntimeSystems.collectEntries { [it.value.name, it.value.ext] }
 
     // Remove old unpacked runtimes
     file("${projectDir}/jres").traverse(type: groovy.io.FileType.DIRECTORIES, maxDepth: 0) {
-        if (!currentFiles.collect {name, ext ->
-            (name as String).replace("." + ext as String, "")}.contains(it.name)) {
+        if (!currentFiles.collect { name, ext ->
+            (name as String).replace("." + ext as String, "")
+        }.contains(it.name)) {
             it.deleteDir()
         }
     }
@@ -264,8 +265,8 @@ task downloadJavaRuntimes(type: Download) {
  * This is run to "reset" the JDK to allow packaging to complete.
  * Runs only on MacOs
  */
-task deleteDecompressedJres() {
-    outputs.upToDateWhen {false}
+tasks.register('deleteDecompressedJres') {
+    outputs.upToDateWhen { false }
     onlyIf {
         Os.isFamily(Os.FAMILY_MAC)
     }
@@ -283,10 +284,11 @@ task deleteDecompressedJres() {
  * If a file fails the check, delete it and rerun to attempt downloading again.
  * Could also check the sha256_hash.
  */
-task verifyDownloadedJres(type: Verify, dependsOn: downloadJavaRuntimes) {
-    mustRunAfter downloadJavaRuntimes
+tasks.register('verifyDownloadedJres', Verify) {
+    dependsOn 'downloadJavaRuntimes'
+    mustRunAfter 'downloadJavaRuntimes'
     //noinspection GroovyAssignabilityCheck
-    javaRuntimeSystems.each {sys, sysInfo ->
+    javaRuntimeSystems.each { sys, sysInfo ->
         //noinspection GroovyAssignabilityCheck
         src file("${projectDir}/jres/${sysInfo.name}")
         //noinspection GroovyAssignabilityCheck
@@ -299,11 +301,12 @@ task verifyDownloadedJres(type: Verify, dependsOn: downloadJavaRuntimes) {
 /**
  * Decompress the Java runtimes into folders.
  */
-task unZipJresTask(type: Copy, dependsOn: verifyDownloadedJres) {
+tasks.register('unZipJresTask', Copy) {
+    dependsOn 'verifyDownloadedJres'
     group 'AstroImageJ Development'
-    mustRunAfter verifyDownloadedJres, deleteDecompressedJres
+    mustRunAfter 'verifyDownloadedJres', 'deleteDecompressedJres'
     //noinspection GroovyAssignabilityCheck
-    javaRuntimeSystems.each {sys, sysInfo ->
+    javaRuntimeSystems.each { sys, sysInfo ->
         if (sysInfo.ext == "tar.gz") {
             from(tarTree(resources.gzip(file("${projectDir}/jres/${sysInfo.name}")))) {
                 into ''
@@ -322,7 +325,7 @@ task unZipJresTask(type: Copy, dependsOn: verifyDownloadedJres) {
 // Define what files belong to all distributions and their location
 def commonDist = project.copySpec {
     // Copy astronomy_.jar to correct place in distribution
-    from(file("${project(':Astronomy_').buildDir}/libs/Astronomy_.jar")) {
+    from(file("${project(':Astronomy_').layout.buildDirectory.get()}/libs/Astronomy_.jar")) {
         rename { String name -> return 'Astronomy_.jar' }
         into 'plugins'
     }
@@ -336,7 +339,7 @@ def commonDist = project.copySpec {
     }
 
     // Copy ij.jar to correct place in distribution
-    from(file("${project(':ij').buildDir}/libs/ij.jar")) {
+    from(file("${project(':ij').layout.buildDirectory.get()}/libs/ij.jar")) {
         into ''
     }
 }
@@ -344,10 +347,10 @@ def commonDist = project.copySpec {
 // Create commonFiles directory for use in runAij and distribution generation
 project.sync {
     with commonDist
-    into "${buildDir}/commonFiles"
-    if (Os.isFamily(Os.FAMILY_MAC) && file("${buildDir}/commonFiles/AstroImageJ.cfg").exists()) {
+    into "${project.layout.buildDirectory.get()}/commonFiles"
+    if (Os.isFamily(Os.FAMILY_MAC) && file("${project.layout.buildDirectory.get()}/commonFiles/AstroImageJ.cfg").exists()) {
         project.exec {
-            commandLine('chmod',  'a=rw', "${buildDir}/commonFiles/AstroImageJ.cfg")
+            commandLine('chmod',  'a=rw', "${project.layout.buildDirectory.get()}/commonFiles/AstroImageJ.cfg")
         }
     }
 }
@@ -357,36 +360,38 @@ project.sync {
  *
  * This is run when building a distribution to refresh the files in case of a change.
  */
-task commonFiles(type: Sync) {
-    outputs.upToDateWhen {false}
+tasks.register('commonFiles', Sync) {
+    outputs.upToDateWhen { false }
     dependsOn ':ij:shadowJar', ':Astronomy_:build'
     mustRunAfter ':ij:shadowJar', ':Astronomy_:build'
     with commonDist
-    into "${buildDir}/commonFiles"
+    into "${project.layout.buildDirectory.get()}/commonFiles"
     doLast {
-        if (Os.isFamily(Os.FAMILY_MAC) && file("${buildDir}/commonFiles/AstroImageJ.cfg").exists()) {
+        if (Os.isFamily(Os.FAMILY_MAC) && file("${project.layout.buildDirectory.get()}/commonFiles/AstroImageJ.cfg").exists()) {
             project.exec {
-                commandLine('chmod',  'a=rw', "${buildDir}/commonFiles/AstroImageJ.cfg")
+                commandLine('chmod', 'a=rw', "${project.layout.buildDirectory.get()}/commonFiles/AstroImageJ.cfg")
             }
         }
     }
 }
 
 // Generate AIJ-Run directory and set it up for usage
-task sync(dependsOn: commonFiles, type: Sync) {
+tasks.register('sync', Sync) {
+    dependsOn 'commonFiles'
     with commonDist
     //noinspection GroovyAssignabilityCheck
     with {
         from(file("${projectDir}/devLaunchOptions.txt")) {
             duplicatesStrategy = DuplicatesStrategy.INCLUDE
-            rename {String name -> return "AstroImageJ.cfg"}
+            rename { String name -> return "AstroImageJ.cfg" }
         }
     }
     destinationDir(file("${projectDir}/AIJ-Run"))
 }
 
 // Generates a working install directory of AIJ and launches it - make sure to not add it to git!
-task aijRun(dependsOn: sync, type: JavaExec) {
+tasks.register('aijRun', JavaExec) {
+    dependsOn 'sync'
     group 'AstroImageJ Development'
 
     workingDir(file("${projectDir}/AIJ-Run/"))
@@ -434,9 +439,9 @@ javapackager {
     mainClass 'ij.ImageJ'
     bundleJre true
     customizedJre false
-    outputDirectory file("${buildDir}/distributions")
-    additionalResources file("${buildDir}/commonFiles/").listFiles().toList() as List<File>
-    runnableJar  file("${buildDir}/commonFiles/ij.jar")
+    outputDirectory file("${project.layout.buildDirectory.get()}/distributions")
+    additionalResources file("${project.layout.buildDirectory.get()}/commonFiles/").listFiles().toList() as List<File>
+    runnableJar  file("${project.layout.buildDirectory.get()}/commonFiles/ij.jar")
     assetsDir  file("${projectDir}/packageFiles/assets")
     name  'AstroImageJ'
     winConfig.setWrapJar(false) // Don't merge the ij.jar into the exe file
@@ -493,7 +498,7 @@ javapackager {
     ]
 }
 
-task packageAij
+tasks.register('packageAij')
 
 //noinspection GroovyAssignabilityCheck
 javaRuntimeSystems.each {sys, sysInfo ->
@@ -502,7 +507,7 @@ javaRuntimeSystems.each {sys, sysInfo ->
         return
     }
     String taskName = "packageAijFor" + (sysInfo.os as String).capitalize() + "_" + sysInfo.arch +
-            "_" + sysInfo.hw_bitness + "Bit_" + "Java" + sysInfo.version
+            "_" + sysInfo.hw_bitness + "Bit_" + "Java" + /*sysInfo.version*/shippingJava
 
     //noinspection GroovyAssignabilityCheck
     tasks.register(taskName, PackageTask) {
@@ -563,9 +568,9 @@ javaRuntimeSystems.each {sys, sysInfo ->
 
     tasks.named(taskName) {
         //noinspection GroovyAssignabilityCheck
-        dependsOn unZipJresTask, commonFiles
+        dependsOn 'unZipJresTask', 'commonFiles'
         //noinspection GroovyAssignabilityCheck
-        mustRunAfter commonFiles, deleteDecompressedJres, unZipJresTask
+        mustRunAfter 'commonFiles', 'deleteDecompressedJres', 'unZipJresTask'
     }
 
     // Make the meta task run the smaller ones
@@ -613,7 +618,8 @@ tasks.withType(PackageTask).configureEach {pkgTsk ->
 }
 
 // Task to copy built jars into a certain folder, for use with testing
-task copyBuiltJars(dependsOn: commonFiles, type: Copy) {
+tasks.register('copyBuiltJars', Copy) {
+    dependsOn 'commonFiles'
     group 'AstroImageJ Development'
 
     onlyIf {
@@ -629,7 +635,7 @@ task copyBuiltJars(dependsOn: commonFiles, type: Copy) {
     def destination = outputDestination()
 
     // Copy astronomy_.jar to correct place in distribution
-    from(file("${project(':Astronomy_').buildDir}/libs/astronomy_.jar")) {
+    from(file("${project(':Astronomy_').layout.buildDirectory.get()}/libs/astronomy_.jar")) {
         rename { String name -> return 'Astronomy_.jar' }
         into 'plugins'
     }
@@ -640,7 +646,7 @@ task copyBuiltJars(dependsOn: commonFiles, type: Copy) {
     }
 
     // Copy ij.jar to correct place in distribution
-    from(file("${project(':ij').buildDir}/libs/ij.jar")) {
+    from(file("${project(':ij').layout.buildDirectory.get()}/libs/ij.jar")) {
         into ''
     }
     into destination
@@ -759,6 +765,6 @@ File outputDestination() {
 // Make Idea's hammer icon run copyBuiltJars
 idea.project.settings {
     taskTriggers {
-        afterBuild tasks.getByName('copyBuiltJars')
+        afterBuild tasks.named('copyBuiltJars')
     }
 }

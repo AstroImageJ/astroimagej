@@ -154,7 +154,7 @@ tasks.register('preTest') {
     doLast {
         def targetRepo = testData
         if (!targetRepo.exists()) {
-            def gitRepo = Grgit.clone(dir: testDataPath, uri: 'https://github.com/AstroImageJ/AijTestData')
+            Grgit.clone(dir: testDataPath, uri: 'https://github.com/AstroImageJ/AijTestData')
         } else {
             def gitRepo = Grgit.open(dir: testDataPath)
             gitRepo.fetch()
@@ -222,8 +222,9 @@ javaRuntimeSystemsProperty.convention(providers.provider {
                 "&ext=${sysInfo.ext}&jdk_version=${shippingJava}"
         def meta
         try {
-            meta = new JsonSlurper().parse(new URL(url)) // Pull the data from Azul
+            meta = new JsonSlurper().parse(new URI(url).toURL()) // Pull the data from Azul
         } catch (Exception ignored) {
+            //noinspection GroovyAssignabilityCheck
             logger.warn("A runtime (sys = {}, {}, {}, {}) failed to return from Azul!",
                     sysInfo.os, sysInfo.arch, sysInfo.ext, sysInfo.type)
             return
@@ -377,6 +378,7 @@ tasks.register('unZipJresTask', Copy) {
         it.outputs.dir(it.project.layout.projectDirectory.dir("jres/${(sysInfo.name as String).replace("." +sysInfo.ext as String, "")}"))
 
         if (sysInfo.ext == "tar.gz") {
+            //noinspection GroovyAssignabilityCheck
             from(tarTree(resources.gzip(file("${projectDir}/jres/${sysInfo.name}")))) {
                 into ''
             }
@@ -385,6 +387,7 @@ tasks.register('unZipJresTask', Copy) {
                 into ''
             }
         } else {
+            //noinspection GroovyAssignabilityCheck
             logger.error("Did not know how to handle " + sysInfo.ext + " for " + sys as String)
         }
     }
@@ -579,6 +582,7 @@ javaRuntimeSystemsProperty.get().each {sys, sysInfo ->
         group 'AstroImageJ Development'
 
         //todo fix incompatibility
+        //noinspection GroovyAssignabilityCheck
         notCompatibleWithConfigurationCache 'Package task issue'
 
         // Set the platform
@@ -600,6 +604,7 @@ javaRuntimeSystemsProperty.get().each {sys, sysInfo ->
         if (java.exists()) {
             java.traverse(type: groovy.io.FileType.FILES, nameFilter: 'release') {runtimePath = it.parentFile}
         } else { // One of the runtimes does not exist, pull it
+            //noinspection GroovyAssignabilityCheck
             logger.error("A JRE was missing, run unZipJresTask first! " + sys +
                     " will fallback to the default runtime path" as String)
             runtimePath = new File(java, sysInfo.os == "macos" ?
@@ -632,8 +637,10 @@ javaRuntimeSystemsProperty.get().each {sys, sysInfo ->
         }
     }
 
+    //noinspection GroovyAssignabilityCheck
     logger.quiet("Added a distribution task: " + taskName as String)
 
+    //noinspection GroovyAssignabilityCheck
     tasks.named(taskName) {
         //noinspection GroovyAssignabilityCheck
         dependsOn 'unZipJresTask', 'commonFiles'
@@ -642,10 +649,12 @@ javaRuntimeSystemsProperty.get().each {sys, sysInfo ->
     }
 
     // Make the meta task run the smaller ones
+    //noinspection GroovyAssignabilityCheck
     tasks.named("packageAij") {
         group 'AstroImageJ Development'
         //noinspection GroovyAssignabilityCheck
         dependsOn taskName
+        //noinspection GroovyAssignabilityCheck
         outputs.upToDateWhen { false }
     }
 }
@@ -654,9 +663,11 @@ tasks.withType(PackageTask).configureEach {pkgTsk ->
     if (pkgTsk.name == 'package')
         return
     // Extract platform info from task name, put it in format for file name
+    //noinspection RegExpUnnecessaryNonCapturingGroup
     if (!pkgTsk.name.matches("packageAijFor(.+)_((?:x86)|(?:arm))_(\\d{2})Bit_Java(\\d{2})")) {
         throw new GradleException("Package task '${pkgTsk.name}' failed to match, could not determine with confidence platform information")
     }
+    //noinspection RegExpUnnecessaryNonCapturingGroup
     def platformInfo = pkgTsk.name.replaceAll("packageAijFor(.+)_((?:x86)|(?:arm))_(\\d{2})Bit_Java(\\d{2})", '$2_$3Bit')
 
     doLast {
@@ -749,7 +760,7 @@ tasks.register('makeReleaseFiles') {
         copy {
             from("$buildDir/distributions/AstroImageJ") {
                 include '**/ij.jar', '**/StartupMacros.txt', '**/AstroImageJ.exe', '**/Astronomy_.jar', '**/release_notes.html'
-                eachFile { fcd ->
+                eachFile { FileCopyDetails fcd ->
                     fcd.relativePath = new RelativePath(true, fcd.relativePath.segments.drop(fcd.relativePath.segments.length-1))
                 }
                 includeEmptyDirs = false
@@ -762,7 +773,7 @@ tasks.register('makeReleaseFiles') {
         copy {
             from("$buildDir/distributions/AstroImageJ") {
                 include '**/ij.jar', '**/StartupMacros.txt', '**/AstroImageJ.exe', '**/Astronomy_.jar'
-                eachFile { fcd ->
+                eachFile { FileCopyDetails fcd ->
                     fcd.relativePath = new RelativePath(true, fcd.relativePath.segments.drop(fcd.relativePath.segments.length-1))
                 }
                 includeEmptyDirs = false
@@ -808,7 +819,7 @@ tasks.register('makeDailyBuildFiles') {
         copy {
             from("$buildDir/distributions/AstroImageJ") {
                 include '**/ij.jar', '**/StartupMacros.txt', '**/AstroImageJ.exe', '**/Astronomy_.jar', '**/release_notes.html'
-                eachFile { fcd ->
+                eachFile { FileCopyDetails fcd ->
                     fcd.relativePath = new RelativePath(true, fcd.relativePath.segments.drop(fcd.relativePath.segments.length-1))
                 }
                 includeEmptyDirs = false

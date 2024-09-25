@@ -143,7 +143,10 @@ test {
 }
 
 tasks.test.dependsOn("preTest")
-test.onlyIf { project.hasProperty('runTest') }
+def testPredicate = providers.provider {
+    project.hasProperty('runTest')
+}
+test.onlyIf { testPredicate.get() }
 
 tasks.register('preTest') {
     def testDataPath = "${projectDir}/repos/aijtestdata"
@@ -687,14 +690,19 @@ tasks.register('copyBuiltJars', Copy) {
     dependsOn 'commonFiles'
     group 'AstroImageJ Development'
 
-    onlyIf {
-        def properDirectory = file("${projectDir}/jarLocation.txt").exists() &&
+    // Workaround for config cache by using provider outside of onlyIf
+    def predicate = providers.provider {
+        def properDirectory = layout.projectDirectory.file('jarLocation.txt').asFile.exists() &&
                 outputDestination().toPath().resolve('ij.jar').toFile().exists()
         if (!properDirectory) {
             logger.error '[copyBuiltJars] Was not given the correct path! ' +
                     'Must be the absolute path to the folder containing ij.jar!' as String
         }
         properDirectory
+    }
+
+    onlyIf {
+        predicate.get()
     }
 
     def destination = outputDestination()

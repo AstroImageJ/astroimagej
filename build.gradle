@@ -40,11 +40,12 @@ plugins {
     // Plugin to download files
     id "de.undercouch.download" version "5.6.0"
 
-    id "org.jetbrains.gradle.plugin.idea-ext" version "1.0.+"
+    id "org.jetbrains.gradle.plugin.idea-ext" version "1.1.+"
 
     id 'net.nemerosa.versioning' version '3.1.0'
 
     // Used to download test data
+    //todo needs a replacement https://github.com/ajoberstar/grgit?tab=readme-ov-file#project-status
     id 'org.ajoberstar.grgit' version '5.+' apply false
 }
 

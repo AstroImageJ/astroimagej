@@ -9,6 +9,7 @@ import org.apache.tools.ant.taskdefs.condition.Os
 
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
+import java.security.MessageDigest
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
@@ -187,9 +188,27 @@ Map javaRuntimeSystems =
 
 def javaRuntimeSystemsProperty = project.objects.mapProperty(String, Map)
 
+def javaRuntimeHashProvider = providers.provider {
+    def inputMapAsString = javaRuntimeSystems.collect { k, v ->
+        "${k}:${v.ext}-${v.arch}-${v.os}-${v.hw_bitness}"
+    }.join(",")
+    MessageDigest md = MessageDigest.getInstance("MD5")
+    byte[] digest = md.digest(inputMapAsString.bytes)
+    return digest.encodeHex().toString()
+}
+
+def javaRuntimeFileNameProvider = providers.provider {
+    // Hash input map to ensure the json gets invalidated when map changes
+    return "javaRuntimeSystems-${shippingJava}-${javaRuntimeHashProvider.get()}.json"
+}
+
+def javaRuntimeCacheFileProvider = providers.provider {
+    layout.projectDirectory.file("jres/${javaRuntimeFileNameProvider.get()}").asFile
+}
+
 // Wrap the logic in a lazy property that caches the result
 javaRuntimeSystemsProperty.convention(providers.provider {
-    def jsonFile = layout.projectDirectory.file("jres/javaRuntimeSystems-${shippingJava}.json").asFile
+    def jsonFile = javaRuntimeCacheFileProvider.get()
 
     // If the JSON file exists, load the cached data
     /*if (jsonFile.exists()) {
@@ -249,7 +268,7 @@ tasks.register('fetchJavaRuntimeSystems', {
     group = 'runtime'
     description = 'Fetches Java runtime systems data or loads from cache'
 
-    outputs.file(layout.projectDirectory.file("jres/javaRuntimeSystems-${shippingJava}.json"))
+    outputs.file(javaRuntimeCacheFileProvider.get())
 
     /*doLast {
         println "Java Runtime Systems data: ${javaRuntimeSystemsProperty.get()}"
@@ -261,7 +280,7 @@ tasks.named('fetchJavaRuntimeSystems').configure {
     inputs.property("javaVersion", shippingJava) // Track changes to Java version
 
     outputs.upToDateWhen {
-        def jsonFile = layout.projectDirectory.file("jres/javaRuntimeSystems-${shippingJava}.json").asFile
+        def jsonFile = javaRuntimeCacheFileProvider.get()
 
         if (jsonFile.exists()) {
             def lastModified = jsonFile.lastModified()
@@ -320,7 +339,7 @@ tasks.register('downloadJavaRuntimes', Download) {
 
     // Remove old packed runtimes
     file("${projectDir}/jres").traverse(type: groovy.io.FileType.FILES, maxDepth: 0) {
-        if (!currentFiles.containsKey(it.name) && it.name != "javaRuntimeSystems-${shippingJava}.json") {
+        if (!currentFiles.containsKey(it.name) && it.name != javaRuntimeFileNameProvider.get()) {
             it.delete()
         }
     }

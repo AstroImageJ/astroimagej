@@ -4958,7 +4958,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     public enum ApertureShape implements NState<ApertureShape>, ToolTipProvider {
         CIRCULAR("""
                 <html>
-                Test
+                Standard circular aperture with sky background annulus
                 </html>
                 """, "Circular"),
         CUSTOM_PIXEL("""
@@ -4969,7 +4969,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 values in x/y space, therefore small pointing errors are not accounted for from image-to-image.<br>
                 The user defines individual pixels that should be included in the source and background counts.
                 </html>
-                """, "Custom Pixel-aligned Aperture"),
+                """, "Freeform Pixel-aligned Aperture"),
         ;
 
         private final String tooltip;

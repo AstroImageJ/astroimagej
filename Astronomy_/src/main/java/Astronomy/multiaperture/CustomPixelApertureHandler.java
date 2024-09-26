@@ -9,7 +9,9 @@ import ij.astro.io.prefs.Property;
 import ij.astro.util.UIHelper;
 
 import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ItemEvent;
+import java.util.List;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.IntConsumer;
@@ -184,6 +186,14 @@ public class CustomPixelApertureHandler {
         copyBackground.setSelectedIcon(COPY_FULL_ICON);
         var backgroundFinder = new JButton(AUTO_SKY_ICON);
 
+        configureButton(deleteAp);
+        configureButton(compButton);
+        configureButton(addAp);
+        configureButton(beginButton);
+        configureButton(invertBackgroundControl);
+        configureButton(copyBackground);
+        configureButton(backgroundFinder);
+
         if (apSelector.getEditor() instanceof JSpinner.DefaultEditor editor) {
             editor.getTextField().setColumns(5);
         }
@@ -283,8 +293,8 @@ public class CustomPixelApertureHandler {
         deleteAp.setToolTipText("Delete current aperture");
         apSelector.setToolTipText("Select active aperture");
         addAp.setToolTipText("Insert/Add new aperture and set active");
-        compButton.setToolTipText("Toggles if this aperture is a comparison star");
-        invertBackgroundControl.setToolTipText("Invert default pixel type to place");
+        compButton.setToolTipText("Toggles between target (green) and comparison (red) star aperture");
+        invertBackgroundControl.setToolTipText("Toggle between source and background pixel placement");
         copyBackground.setToolTipText("Toggles if creating a new aperture should copy the current aperture's background");
         beginButton.setToolTipText("Run photometry");
         backgroundFinder.setToolTipText("Automatic background pixel selection based on current image for the active aperture");
@@ -300,9 +310,10 @@ public class CustomPixelApertureHandler {
         b.add(addAp);
         b.add(compButton);
         b.add(invertBackgroundControl);
-        b.add(copyBackground);
         b.add(backgroundFinder);
+        b.add(copyBackground);
         b.add(beginButton);
+        b.add(Box.createHorizontalGlue());
 
         p.add(b);
         p.add(helpPanel);
@@ -327,6 +338,15 @@ public class CustomPixelApertureHandler {
             controlPanel.dispose();
             controlPanel = null;
         }
+    }
+
+    private void configureButton(AbstractButton button) {
+        var insets = new Insets(2, 2, 2, 2);
+        button.setMargin(insets);
+        button.setBorderPainted(false);
+        button.setContentAreaFilled(false);
+        button.setFocusPainted(false);
+        button.setOpaque(false);
     }
 
     private void removeAperture(CustomPixelApertureRoi ap) {

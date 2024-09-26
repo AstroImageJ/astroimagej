@@ -512,13 +512,9 @@ public class CustomPixelApertureHandler {
         return APS.get().size();
     }
 
-    //todo could technically have more efficient structure just for prefs
     private static List<CustomPixelApertureRoi> deserializeApertures(String setting) {
         var decoder = Base64.getDecoder();
         setting = new String(decoder.decode(setting));
-
-        System.out.println("Loading");
-        System.out.println(setting);
 
         var apertures = new ArrayList<CustomPixelApertureRoi>();
         if (setting.startsWith("handlerApertures")) {
@@ -563,7 +559,7 @@ public class CustomPixelApertureHandler {
 
                 if (line.startsWith("isComp")) {
                     var tSep = line.indexOf("\t");
-                    ap.get().setComparisonStar(Boolean.parseBoolean(line.substring(tSep)));
+                    ap.get().setComparisonStar(Boolean.parseBoolean(line.substring(tSep+1)));
                 }
             });
 
@@ -592,8 +588,6 @@ public class CustomPixelApertureHandler {
             }
         }
 
-        System.out.println("Saving");
-        System.out.println(setting);
         return encoder.encodeToString(setting.toString().getBytes());
     }
 }

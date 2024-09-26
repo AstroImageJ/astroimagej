@@ -160,6 +160,7 @@ public class CustomPixelApertureHandler {
                     OverlayCanvas.getOverlayCanvas(imp).add(roi);
                 }
             }
+            (OverlayCanvas.hasOverlayCanvas(imp) ? OverlayCanvas.getOverlayCanvas(imp) : imp.getCanvas()).repaint();
         }
 
         customPixelApertureRois.get(0).setFocusedAperture(true);
@@ -515,6 +516,9 @@ public class CustomPixelApertureHandler {
         var decoder = Base64.getDecoder();
         setting = new String(decoder.decode(setting));
 
+        System.out.println("Loading");
+        System.out.println(setting);
+
         var apertures = new ArrayList<CustomPixelApertureRoi>();
         if (setting.startsWith("handlerApertures")) {
             var ap = new AtomicReference<CustomPixelApertureRoi>();
@@ -587,6 +591,8 @@ public class CustomPixelApertureHandler {
             }
         }
 
+        System.out.println("Saving");
+        System.out.println(setting);
         return encoder.encodeToString(setting.toString().getBytes());
     }
 }

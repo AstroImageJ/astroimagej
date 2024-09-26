@@ -270,6 +270,9 @@ public class CustomPixelApertureHandler {
         backgroundFinder.addActionListener($ -> {
             try {
                 this.findBackground();
+                if (selectedAperture == 1) {
+                    copyBackground.setSelected(true);
+                }
             } catch (Exception e) {
                 e.printStackTrace();
             }

@@ -354,7 +354,7 @@ public class OverlayCanvas extends ImageCanvas {
 
     public void drawOverlayCanvas(Graphics g) {
         Roi focusedAperture = null;
-        for (Roi roi : rois) {
+        for (Roi roi : rois.toArray(Roi[]::new)) {
             if (roi instanceof CustomPixelApertureRoi ab && ab.isFocusedAperture()) {
                 focusedAperture = roi;
                 continue;

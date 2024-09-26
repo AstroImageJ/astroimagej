@@ -35,9 +35,8 @@ public class AstroImageJ_Updater implements PlugIn {
 	public static String URL = URL6;
     
     static String[] versionPieces = IJ.getAstroVersion().split("\\.");
-    static int majorVersion = Integer.parseInt(versionPieces[0]);
-    
-    static {
+
+	static {
         final TrustManager[] trustAllCertificates = new TrustManager[] {
             new X509TrustManager() {
                 @Override
@@ -363,14 +362,24 @@ public class AstroImageJ_Updater implements PlugIn {
 	}
 
 	static String[] getAvailableVersions() {
-		if (majorVersion==4) {
-			URL = URL8;
-		}
-		if (majorVersion>4) {
-			URL = URL17;
-		}
+        if (versionPieces.length == 0) {
+            return null;
+        }
 
-		return openUrlAsList(URL+"/versions.txt");
+		String versionPiece = versionPieces[0];
+        try {
+            if (Integer.parseInt(versionPiece) ==4) {
+                URL = URL8;
+            }
+            if (Integer.parseInt(versionPiece) >4) {
+                URL = URL17;
+            }
+        } catch (NumberFormatException e) {
+			e.printStackTrace();
+            return null;
+        }
+
+        return openUrlAsList(URL+"/versions.txt");
 	}
 
 	static boolean hasUpdateAvailable() {

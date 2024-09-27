@@ -1400,13 +1400,6 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             customPixelApertureHandler.setImp(imp);
             customPixelApertureHandler.currentAperture().setImage(imp);
 
-            if ((apLoading.get().isPrevious() || previous) && firstClick) {
-                customPixelApertureHandler.loadAperturesFromPrefs(apLoading.get() == ApLoading.FIRST_PREVIOUS);
-                ngot = customPixelApertureHandler.apCount();
-                firstClick = false;
-                enterPressed = false;
-            }
-
             if (e != dummyClick && e != null && (!mouseDrag || e.isShiftDown())) {
                 var x = canvas.offScreenX(e.getX());
                 var y = canvas.offScreenY(e.getY());
@@ -1907,6 +1900,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
     private void runCustomAperture() {
         if (customPixelApertureHandler.validateApertures()) {
+            noMoreInput();
             customPixelApertureHandler.hideControls();
             nApertures = customPixelApertureHandler.apCount();
             for (int ap = 0; ap < nApertures; ap++) {
@@ -3164,7 +3158,11 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             }
             ip = imp.getStack().getProcessor(slice);
 
-            processImage();
+            try {
+                processImage();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             if (cancelled || IJ.escapePressed()) {
                 IJ.beep();
                 Prefs.set(MultiAperture_.PREFS_CANCELED, "true");

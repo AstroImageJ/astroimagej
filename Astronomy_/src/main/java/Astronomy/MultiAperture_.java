@@ -3587,6 +3587,16 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             boolean holdReposition = Prefs.get("aperture.reposition", reposition);
 
             if (apertureShape.get() == ApertureShape.CUSTOM_PIXEL) {
+                if (!isRefStar[ap]) {
+                    setApertureColor(Color.green);
+                    setApertureName("T" + (ap + 1));
+                    setAbsMag(targetAbsMag[ap]);
+                } else {
+                    setApertureColor(Color.red);
+                    setApertureName("C" + (ap + 1));
+                    setAbsMag(absMag[ap]);
+                }
+
                 if (!measureAperture(hdr, customPixelApertureHandler.getAperture(ap))) {
                     if (haltOnError || this instanceof Stack_Aligner) {
                         Prefs.set("aperture.reposition", holdReposition);

@@ -155,6 +155,8 @@ public class CustomPixelApertureHandler {
             customPixelApertureRois.addAll(APS.get());
         }
 
+        updateDisplay(true);
+
         if (imp != null) {
             for (CustomPixelApertureRoi roi : customPixelApertureRois) {
                 roi.setImage(imp);
@@ -167,7 +169,6 @@ public class CustomPixelApertureHandler {
 
         customPixelApertureRois.get(0).setFocusedAperture(true);
         updateCount.accept(customPixelApertureRois.size());
-        updateDisplay(true);
     }
 
     private JFrame createControlPanel() {

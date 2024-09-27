@@ -50,6 +50,7 @@ public class CustomPixelApertureHandler {
     private static final Icon AUTO_SKY_ICON = UIHelper.createImageIcon("Astronomy/images/icons/multiaperture/autoSky.png", 19, 19);
 
     public CustomPixelApertureHandler() {
+        UIHelper.setLookAndFeel();
         this.customPixelApertureRois.add(createNewAperture(false));
         updateApertureNames();
         customPixelApertureRois.get(0).setFocusedAperture(true);

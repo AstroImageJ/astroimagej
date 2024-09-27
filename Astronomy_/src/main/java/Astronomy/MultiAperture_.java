@@ -313,7 +313,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     protected static final Property<ApertureShape> apertureShape = new Property<>(ApertureShape.CIRCULAR, MultiAperture_.class);
     private static String lastRun = "<Not yet run>";
     private boolean processingStackForRadii;
-    private final CustomPixelApertureHandler customPixelApertureHandler = new CustomPixelApertureHandler();
+    private static final CustomPixelApertureHandler customPixelApertureHandler = new CustomPixelApertureHandler();
 
 //	public static double RETRY_RADIUS = 3.0;
 
@@ -543,6 +543,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             Recorder.setCommand(getClass().getName());
         }
 
+        customPixelApertureHandler.hideControls();
+
         Prefs.set(MultiAperture_.PREFS_FINISHED, "false");
 
 //        if (table==null)
@@ -696,7 +698,13 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         }
 
         if (apertureShape.get() == ApertureShape.CUSTOM_PIXEL) {
+            if (apLoading.get().isPrevious()) {
+                customPixelApertureHandler.loadAperturesFromPrefs(apLoading.get() == ApLoading.FIRST_PREVIOUS);
+                ngot = customPixelApertureHandler.apCount();
+            }
+
             customPixelApertureHandler.setImp(imp);
+            customPixelApertureHandler.setPlayCallback(this::runCustomAperture);
             customPixelApertureHandler.showControls();
         }
 
@@ -829,219 +837,228 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         isAlignStar = new boolean[nAperturesMax];
         centroidStar = new boolean[nAperturesMax];
         absMag = new double[nAperturesMax];
-        if (apLoading.get().isPrevious()) {
-            // Load imported aps
-            if (apLoading.get() == ApLoading.IMPORTED) {
-                xOldApertures = Prefs.get("multiaperture.import.xapertures", "");
-                yOldApertures = Prefs.get("multiaperture.import.yapertures", "");
-                raOldApertures = Prefs.get("multiaperture.import.raapertures", "");
-                decOldApertures = Prefs.get("multiaperture.import.decapertures", "");
-                absMagOldApertures = Prefs.get("multiaperture.import.absmagapertures", "");
-                isOldRefStar = Prefs.get("multiaperture.import.isrefstar", "");
-                isOldAlignStar = Prefs.get("multiaperture.import.isalignstar", "");
-                oldCentroidStar = Prefs.get("multiaperture.import.centroidstar", "");
-            }
 
-            String[] aps = xOldApertures.split(",");
-            xPosStored = extract(true, aps);
-            nAperturesStored = xPosStored == null ? 0 : xPosStored.length;
-            if (nAperturesStored == 0) {
-                IJ.error("There are no stored apertures");
-                return false;
-            }
+        switch (apertureShape.get()) {
+            case CIRCULAR -> {
+                if (apLoading.get().isPrevious()) {
+                    // Load imported aps
+                    if (apLoading.get() == ApLoading.IMPORTED) {
+                        xOldApertures = Prefs.get("multiaperture.import.xapertures", "");
+                        yOldApertures = Prefs.get("multiaperture.import.yapertures", "");
+                        raOldApertures = Prefs.get("multiaperture.import.raapertures", "");
+                        decOldApertures = Prefs.get("multiaperture.import.decapertures", "");
+                        absMagOldApertures = Prefs.get("multiaperture.import.absmagapertures", "");
+                        isOldRefStar = Prefs.get("multiaperture.import.isrefstar", "");
+                        isOldAlignStar = Prefs.get("multiaperture.import.isalignstar", "");
+                        oldCentroidStar = Prefs.get("multiaperture.import.centroidstar", "");
+                    }
 
-            aps = yOldApertures.split(",");
-            yPosStored = extract(false, aps);
-            if (yPosStored == null || yPosStored.length == 0) {
-                IJ.error("There are no stored aperture y-positions");
-                return false;
-            }
-            if (yPosStored.length != nAperturesStored) {
-                IJ.error("The number of stored x and y aperture positions are not equal: " + nAperturesStored + "!=" + yPosStored.length);
-                return false;
-            }
+                    String[] aps = xOldApertures.split(",");
+                    xPosStored = extract(true, aps);
+                    nAperturesStored = xPosStored == null ? 0 : xPosStored.length;
+                    if (nAperturesStored == 0) {
+                        IJ.error("There are no stored apertures");
+                        return false;
+                    }
 
-            aps = raOldApertures.split(",");
-            raPosStored = extractDoubles(aps);
-            if (raPosStored == null || raPosStored.length != nAperturesStored) {
-                raOldApertures = "";
-                raPosStored = null;
-            }
-            aps = decOldApertures.split(",");
-            decPosStored = extractDoubles(aps);
-            if (decPosStored == null || decPosStored.length != nAperturesStored) {
-                decOldApertures = "";
-                decPosStored = null;
-            }
-            aps = absMagOldApertures.split(",");
-            absMagStored = extractAbsMagDoubles(aps);
-            if (absMagStored == null || absMagStored.length != nAperturesStored) {
-                absMagOldApertures = "";
-                absMagStored = new double[nAperturesStored];
-                for (int ap = 0; ap < nAperturesStored; ap++) {
-                    absMagStored[ap] = 99.999;
+                    aps = yOldApertures.split(",");
+                    yPosStored = extract(false, aps);
+                    if (yPosStored == null || yPosStored.length == 0) {
+                        IJ.error("There are no stored aperture y-positions");
+                        return false;
+                    }
+                    if (yPosStored.length != nAperturesStored) {
+                        IJ.error("The number of stored x and y aperture positions are not equal: " + nAperturesStored + "!=" + yPosStored.length);
+                        return false;
+                    }
+
+                    aps = raOldApertures.split(",");
+                    raPosStored = extractDoubles(aps);
+                    if (raPosStored == null || raPosStored.length != nAperturesStored) {
+                        raOldApertures = "";
+                        raPosStored = null;
+                    }
+                    aps = decOldApertures.split(",");
+                    decPosStored = extractDoubles(aps);
+                    if (decPosStored == null || decPosStored.length != nAperturesStored) {
+                        decOldApertures = "";
+                        decPosStored = null;
+                    }
+                    aps = absMagOldApertures.split(",");
+                    absMagStored = extractAbsMagDoubles(aps);
+                    if (absMagStored == null || absMagStored.length != nAperturesStored) {
+                        absMagOldApertures = "";
+                        absMagStored = new double[nAperturesStored];
+                        for (int ap = 0; ap < nAperturesStored; ap++) {
+                            absMagStored[ap] = 99.999;
+                        }
+                    }
+
+                    aps = isOldRefStar.split(",");
+                    isRefStarStored = extractBoolean(aps);
+                    if (isRefStarStored == null || isRefStarStored.length != nAperturesStored) {
+                        isRefStarStored = new boolean[nAperturesStored];
+                        for (int ap = 0; ap < nAperturesStored; ap++) {
+                            isRefStarStored[ap] = ap != 0;
+                        }
+                    }
+
+                    aps = isOldAlignStar.split(",");
+                    isAlignStarStored = extractBoolean(aps);
+                    if (isAlignStarStored == null || isAlignStarStored.length != nAperturesStored) {
+                        isAlignStarStored = new boolean[nAperturesStored];
+                        for (int ap = 0; ap < nAperturesStored; ap++) {
+                            isAlignStarStored[ap] = true;
+                        }
+                    }
+
+                    aps = oldCentroidStar.split(",");
+                    centroidStarStored = extractBoolean(aps);
+                    if (centroidStarStored == null || centroidStarStored.length != nAperturesStored) {
+                        centroidStarStored = new boolean[nAperturesStored];
+                        for (int ap = 0; ap < nAperturesStored; ap++) {
+                            centroidStarStored[ap] = reposition;
+                        }
+                    }
+
+                    int size = Math.min(nAperturesStored, nAperturesMax);
+                    for (int ap = 0; ap < size; ap++) {
+                        isRefStar[ap] = isRefStarStored[ap];
+                        isAlignStar[ap] = isAlignStarStored[ap];
+                        centroidStar[ap] = centroidStarStored[ap];
+                    }
+                    if (apLoading.get() == ApLoading.FIRST_PREVIOUS) {
+                        nAperturesStored = 1;
+                        centroidStarStored = Arrays.copyOfRange(centroidStarStored, 0, 1);
+                        isAlignStarStored = Arrays.copyOfRange(isAlignStarStored, 0, 1);
+                        isRefStarStored = Arrays.copyOfRange(isRefStarStored, 0, 1);
+                        absMagStored = Arrays.copyOfRange(absMagStored, 0, 1);
+                        if (decPosStored != null) {
+                            decPosStored = Arrays.copyOfRange(decPosStored, 0, 1);
+                        }
+                        if (raPosStored != null) {
+                            raPosStored = Arrays.copyOfRange(raPosStored, 0, 1);
+                        }
+                        yPosStored = Arrays.copyOfRange(yPosStored, 0, 1);
+                        xPosStored = Arrays.copyOfRange(xPosStored, 0, 1);
+                    }
+                }
+                if (autoMode) {
+                    String[] aps = xOldApertures.split(",");
+                    xPos = extract(true, aps);
+                    if (xPos == null || xPos.length == 0) {
+                        IJ.error("There are no stored x-positions for apertures.");
+                        return false;
+                    }
+                    nApertures = xPos.length;
+
+
+                    aps = yOldApertures.split(",");
+                    yPos = extract(false, aps);
+                    if (yPos == null || yPos.length == 0 || yPos.length != nApertures) {
+                        if (yPos == null || yPos.length == 0) {
+                            IJ.error("The are no stored y-positions for apertures.");
+                        } else {
+                            IJ.error("The number of stored aperture y-positions is not consistent with the number of stored x-positions: " + nApertures + "!=" + yPos.length);
+                        }
+                        return false;
+                    }
+
+                    aps = raOldApertures.split(",");
+                    raPos = extractDoubles(aps);
+                    if (((useMA || useAlign) && useWCS) && (raPos == null || raPos.length != nApertures)) {
+                        if (raPos == null) {
+                            IJ.error("Locate apertures by RA/Dec requested, but no stored RA-positions found.");
+                        } else {
+                            IJ.error("The number of stored aperture RA-positions is not consistent with the number of stored x-positions: " + nApertures + "!=" + raPos.length);
+                        }
+                        return false;
+                    }
+                    if (raPos == null || raPos.length != nApertures) {
+                        raPos = new double[nApertures];
+                        for (int ap = 0; ap < nApertures; ap++) {
+                            raPos[ap] = -1000001;
+                        }
+                    }
+
+                    aps = decOldApertures.split(",");
+                    decPos = extractDoubles(aps);
+                    if (((useMA || useAlign) && useWCS) && (decPos == null || decPos.length != nApertures)) {
+                        if (decPos == null) {
+                            IJ.error("Locate apertures by RA/Dec requested, but no stored Dec-positions found.");
+                        } else {
+                            IJ.error("The number of stored aperture Dec-positions is not consistent with the number of stored x-positions: " + nApertures + "!=" + decPos.length);
+                        }
+                        return false;
+                    }
+                    if (decPos == null || decPos.length != nApertures) {
+                        decPos = new double[nApertures];
+                        for (int ap = 0; ap < nApertures; ap++) {
+                            decPos[ap] = -1000001;
+                        }
+                    }
+
+                    aps = absMagOldApertures.split(",");
+                    absMag = extractAbsMagDoubles(aps);
+                    if (absMag == null || absMag.length != nApertures) {
+                        absMag = new double[nApertures];
+                        for (int ap = 0; ap < nApertures; ap++) {
+                            absMag[ap] = 99.999;
+                        }
+                    }
+
+                    aps = isOldRefStar.split(",");
+                    isRefStar = extractBoolean(aps);
+                    if (isRefStar == null || isRefStar.length != nApertures) {
+                        isRefStar = new boolean[nApertures];
+                        for (int ap = 0; ap < nApertures; ap++) {
+                            isRefStar[ap] = ap != 0;
+                        }
+                    }
+
+                    aps = isOldAlignStar.split(",");
+                    isAlignStar = extractBoolean(aps);
+                    if (isAlignStar == null || isAlignStar.length != nApertures) {
+                        isAlignStar = new boolean[nApertures];
+                        for (int ap = 0; ap < nApertures; ap++) {
+                            isAlignStar[ap] = true;
+                        }
+                    }
+
+
+                    aps = oldCentroidStar.split(",");
+                    centroidStar = extractBoolean(aps);
+                    if (centroidStar == null || centroidStar.length != nApertures) {
+                        centroidStar = new boolean[nApertures];
+                        for (int ap = 0; ap < nApertures; ap++) {
+                            centroidStar[ap] = reposition;
+                        }
+                    }
+
+                    aperturesInitialized = true;
+
+                } else {
+                    xPos = new double[nApertures];
+                    yPos = new double[nApertures];
+                    absMag = new double[nApertures];
+                    for (int ap = 0; ap < nApertures; ap++) {
+                        absMag[ap] = 99.999;
+                    }
+                    raPos = new double[nApertures];
+                    decPos = new double[nApertures];
+                }
+
+                if (xPos == null || yPos == null || absMag == null || raPos == null || decPos == null || isRefStar == null || isAlignStar == null || centroidStar == null) {
+                    IJ.error("Null aperture arrays???");
+                    IJ.beep();
+                    return false;
                 }
             }
+            case CUSTOM_PIXEL -> {
 
-            aps = isOldRefStar.split(",");
-            isRefStarStored = extractBoolean(aps);
-            if (isRefStarStored == null || isRefStarStored.length != nAperturesStored) {
-                isRefStarStored = new boolean[nAperturesStored];
-                for (int ap = 0; ap < nAperturesStored; ap++) {
-                    isRefStarStored[ap] = ap != 0;
-                }
-            }
-
-            aps = isOldAlignStar.split(",");
-            isAlignStarStored = extractBoolean(aps);
-            if (isAlignStarStored == null || isAlignStarStored.length != nAperturesStored) {
-                isAlignStarStored = new boolean[nAperturesStored];
-                for (int ap = 0; ap < nAperturesStored; ap++) {
-                    isAlignStarStored[ap] = true;
-                }
-            }
-
-            aps = oldCentroidStar.split(",");
-            centroidStarStored = extractBoolean(aps);
-            if (centroidStarStored == null || centroidStarStored.length != nAperturesStored) {
-                centroidStarStored = new boolean[nAperturesStored];
-                for (int ap = 0; ap < nAperturesStored; ap++) {
-                    centroidStarStored[ap] = reposition;
-                }
-            }
-
-            int size = Math.min(nAperturesStored, nAperturesMax);
-            for (int ap = 0; ap < size; ap++) {
-                isRefStar[ap] = isRefStarStored[ap];
-                isAlignStar[ap] = isAlignStarStored[ap];
-                centroidStar[ap] = centroidStarStored[ap];
-            }
-            if (apLoading.get() == ApLoading.FIRST_PREVIOUS) {
-                nAperturesStored = 1;
-                centroidStarStored = Arrays.copyOfRange(centroidStarStored, 0, 1);
-                isAlignStarStored = Arrays.copyOfRange(isAlignStarStored, 0, 1);
-                isRefStarStored = Arrays.copyOfRange(isRefStarStored, 0, 1);
-                absMagStored = Arrays.copyOfRange(absMagStored, 0, 1);
-                if (decPosStored != null) {
-                    decPosStored = Arrays.copyOfRange(decPosStored, 0, 1);
-                }
-                if (raPosStored != null) {
-                    raPosStored = Arrays.copyOfRange(raPosStored, 0, 1);
-                }
-                yPosStored = Arrays.copyOfRange(yPosStored, 0, 1);
-                xPosStored = Arrays.copyOfRange(xPosStored, 0, 1);
             }
         }
-        if (autoMode) {
-            String[] aps = xOldApertures.split(",");
-            xPos = extract(true, aps);
-            if (xPos == null || xPos.length == 0) {
-                IJ.error("There are no stored x-positions for apertures.");
-                return false;
-            }
-            nApertures = xPos.length;
 
-
-            aps = yOldApertures.split(",");
-            yPos = extract(false, aps);
-            if (yPos == null || yPos.length == 0 || yPos.length != nApertures) {
-                if (yPos == null || yPos.length == 0) {
-                    IJ.error("The are no stored y-positions for apertures.");
-                } else {
-                    IJ.error("The number of stored aperture y-positions is not consistent with the number of stored x-positions: " + nApertures + "!=" + yPos.length);
-                }
-                return false;
-            }
-
-            aps = raOldApertures.split(",");
-            raPos = extractDoubles(aps);
-            if (((useMA || useAlign) && useWCS) && (raPos == null || raPos.length != nApertures)) {
-                if (raPos == null) {
-                    IJ.error("Locate apertures by RA/Dec requested, but no stored RA-positions found.");
-                } else {
-                    IJ.error("The number of stored aperture RA-positions is not consistent with the number of stored x-positions: " + nApertures + "!=" + raPos.length);
-                }
-                return false;
-            }
-            if (raPos == null || raPos.length != nApertures) {
-                raPos = new double[nApertures];
-                for (int ap = 0; ap < nApertures; ap++) {
-                    raPos[ap] = -1000001;
-                }
-            }
-
-            aps = decOldApertures.split(",");
-            decPos = extractDoubles(aps);
-            if (((useMA || useAlign) && useWCS) && (decPos == null || decPos.length != nApertures)) {
-                if (decPos == null) {
-                    IJ.error("Locate apertures by RA/Dec requested, but no stored Dec-positions found.");
-                } else {
-                    IJ.error("The number of stored aperture Dec-positions is not consistent with the number of stored x-positions: " + nApertures + "!=" + decPos.length);
-                }
-                return false;
-            }
-            if (decPos == null || decPos.length != nApertures) {
-                decPos = new double[nApertures];
-                for (int ap = 0; ap < nApertures; ap++) {
-                    decPos[ap] = -1000001;
-                }
-            }
-
-            aps = absMagOldApertures.split(",");
-            absMag = extractAbsMagDoubles(aps);
-            if (absMag == null || absMag.length != nApertures) {
-                absMag = new double[nApertures];
-                for (int ap = 0; ap < nApertures; ap++) {
-                    absMag[ap] = 99.999;
-                }
-            }
-
-            aps = isOldRefStar.split(",");
-            isRefStar = extractBoolean(aps);
-            if (isRefStar == null || isRefStar.length != nApertures) {
-                isRefStar = new boolean[nApertures];
-                for (int ap = 0; ap < nApertures; ap++) {
-                    isRefStar[ap] = ap != 0;
-                }
-            }
-
-            aps = isOldAlignStar.split(",");
-            isAlignStar = extractBoolean(aps);
-            if (isAlignStar == null || isAlignStar.length != nApertures) {
-                isAlignStar = new boolean[nApertures];
-                for (int ap = 0; ap < nApertures; ap++) {
-                    isAlignStar[ap] = true;
-                }
-            }
-
-
-            aps = oldCentroidStar.split(",");
-            centroidStar = extractBoolean(aps);
-            if (centroidStar == null || centroidStar.length != nApertures) {
-                centroidStar = new boolean[nApertures];
-                for (int ap = 0; ap < nApertures; ap++) {
-                    centroidStar[ap] = reposition;
-                }
-            }
-
-            aperturesInitialized = true;
-
-        } else {
-            xPos = new double[nApertures];
-            yPos = new double[nApertures];
-            absMag = new double[nApertures];
-            for (int ap = 0; ap < nApertures; ap++) {
-                absMag[ap] = 99.999;
-            }
-            raPos = new double[nApertures];
-            decPos = new double[nApertures];
-        }
-
-        if (xPos == null || yPos == null || absMag == null || raPos == null || decPos == null || isRefStar == null || isAlignStar == null || centroidStar == null) {
-            IJ.error("Null aperture arrays???");
-            IJ.beep();
-            return false;
-        }
         imp.setSlice(firstSlice);
         ip = imp.getProcessor();
         imp.killRoi();
@@ -1379,28 +1396,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 //            }
 
         if (apertureShape.get() == ApertureShape.CUSTOM_PIXEL) {
-            Runnable runMA = () -> {
-                if (customPixelApertureHandler.validateApertures()) {
-                    customPixelApertureHandler.hideControls();
-                    nApertures = customPixelApertureHandler.apCount();
-                    for (int ap = 0; ap < nApertures; ap++) {
-                        isRefStar[ap] = customPixelApertureHandler.getAperture(ap).isComparisonStar();
-                        centroidStar[ap] = false;
-                    }
-                    aperturesInitialized = true;
-                    checkResultsTable();
-                    if (stackSize > 1 && doStack) {
-                        IJ.showStatus("Processing stack...");
-                        processingStack = true;
-                        startProcessStack();
-                    } else {
-                        IJ.showStatus("Processing image...");
-                        processImage();
-                    }
-                }
-            };
-
-            customPixelApertureHandler.setPlayCallback(runMA);
+            customPixelApertureHandler.setPlayCallback(this::runCustomAperture);
             customPixelApertureHandler.setImp(imp);
             customPixelApertureHandler.currentAperture().setImage(imp);
 
@@ -1449,7 +1445,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             //Right mouse click or <Enter> finalizes aperture selection
             if (enterPressed) {
                 enterPressed = false;
-                runMA.run();
+                runCustomAperture();
             }
 
             return;
@@ -1906,6 +1902,27 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             }
 
             suggestionRunning = false;
+        }
+    }
+
+    private void runCustomAperture() {
+        if (customPixelApertureHandler.validateApertures()) {
+            customPixelApertureHandler.hideControls();
+            nApertures = customPixelApertureHandler.apCount();
+            for (int ap = 0; ap < nApertures; ap++) {
+                isRefStar[ap] = customPixelApertureHandler.getAperture(ap).isComparisonStar();
+                centroidStar[ap] = false;
+            }
+            aperturesInitialized = true;
+            checkResultsTable();
+            if (stackSize > 1 && doStack) {
+                IJ.showStatus("Processing stack...");
+                processingStack = true;
+                startProcessStack();
+            } else {
+                IJ.showStatus("Processing image...");
+                processImage();
+            }
         }
     }
 
@@ -3569,22 +3586,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         valueOverlay = Prefs.get(AP_PREFS_VALUEOVERLAY, valueOverlay);
         var hdr = FitsJ.getHeader(imp);
         for (int ap = 0; ap < nApertures; ap++) {
-            if (!isRefStar[ap]) {
-                setApertureColor(Color.green);
-                setApertureName("T" + (ap + 1));
-                setAbsMag(targetAbsMag[ap]);
-            } else {
-                setApertureColor(Color.red);
-                setApertureName("C" + (ap + 1));
-                setAbsMag(absMag[ap]);
-            }
-
-            xCenter = xPos[ap];
-            yCenter = yPos[ap];
-
             boolean holdReposition = Prefs.get("aperture.reposition", reposition);
-            Prefs.set("aperture.reposition", centroidStar[ap]);
-            setShowAsCentered(centroidStar[ap]);
 
             if (apertureShape.get() == ApertureShape.CUSTOM_PIXEL) {
                 if (!measureAperture(hdr, customPixelApertureHandler.getAperture(ap))) {
@@ -3605,6 +3607,22 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     }
                 }
             } else {
+                if (!isRefStar[ap]) {
+                    setApertureColor(Color.green);
+                    setApertureName("T" + (ap + 1));
+                    setAbsMag(targetAbsMag[ap]);
+                } else {
+                    setApertureColor(Color.red);
+                    setApertureName("C" + (ap + 1));
+                    setAbsMag(absMag[ap]);
+                }
+
+                xCenter = xPos[ap];
+                yCenter = yPos[ap];
+
+                Prefs.set("aperture.reposition", centroidStar[ap]);
+                setShowAsCentered(centroidStar[ap]);
+
                 if (!measureAperture(hdr)) {
                     if (haltOnError || this instanceof Stack_Aligner) {
                         Prefs.set("aperture.reposition", holdReposition);

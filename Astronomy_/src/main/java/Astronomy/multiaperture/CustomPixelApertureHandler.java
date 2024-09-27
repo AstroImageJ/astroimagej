@@ -92,6 +92,7 @@ public class CustomPixelApertureHandler {
             }
         } else {
             controlPanel = createControlPanel();
+            controlPanel.setVisible(true);
         }
     }
 

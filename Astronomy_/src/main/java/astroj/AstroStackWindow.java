@@ -2,6 +2,8 @@ package astroj;
 
 import Astronomy.MultiAperture_;
 import Astronomy.MultiPlot_;
+import Astronomy.multiaperture.CustomPixelApertureHandler;
+import Astronomy.multiaperture.io.AperturesFile;
 import Astronomy.postprocess.PhotometricDebayer;
 import bislider.com.visutools.nav.bislider.*;
 import ij.*;
@@ -33,6 +35,8 @@ import java.awt.image.ColorModel;
 import java.awt.image.PixelGrabber;
 import java.io.*;
 import java.net.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.DecimalFormat;
 import java.util.List;
 import java.util.*;
@@ -4875,6 +4879,24 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
 
     public void openApertures(String apsPath) {
         if (apsPath != null && !apsPath.trim().isEmpty()) {
+            try {
+                var s = Files.readString(Path.of(apsPath));
+                var d = AperturesFile.read(s);
+                if (d != null) {
+                    CustomPixelApertureHandler.APS.set(d.apertureRois());
+                    Prefs.ijPrefs.putAll(d.prefs());
+                    ac.removeApertureRois();
+                    for (int i = 0; i < CustomPixelApertureHandler.APS.get().size(); i++) {
+                        var ap = CustomPixelApertureHandler.APS.get().get(i);
+                        ap.setName((ap.isComparisonStar() ? "C" : "T") + (i+1));
+                        ap.setImage(imp);
+                        ac.add(ap);
+                    }
+                    return;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             try (var io = new FileInputStream(apsPath)) {
                 openApertures(io);
             } catch (IOException e) {
@@ -4885,6 +4907,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
 
     public void openApertures(InputStream stream) {
         try {
+            var isCustomAp = false;
             if (stream != null) {
                 Prefs.set("multiaperture.xapertures", "");
                 Prefs.set("multiaperture.yapertures", "");
@@ -4902,10 +4925,25 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                 Prefs.set("multiaperture.import.isalignstar", "");
                 Prefs.set("multiaperture.import.centroidstar", "");
                 InputStream is = new BufferedInputStream(stream);
-                Prefs.ijPrefs.load(is);
+                var p = new Properties();
+                p.load(is);
+                isCustomAp = p.containsKey(Prefs.KEY_PREFIX+CustomPixelApertureHandler.APS.getPropertyKey());
+                Prefs.ijPrefs.putAll(p);
+                Property.resetLoadStatus();
                 is.close();
             }
             ac.removeApertureRois();
+
+            if (isCustomAp) {
+                for (int i = 0; i < CustomPixelApertureHandler.APS.get().size(); i++) {
+                    var ap = CustomPixelApertureHandler.APS.get().get(i);
+                    ap.setName((ap.isComparisonStar() ? "C" : "T") + (i+1));
+                    ap.setImage(imp);
+                    ac.add(ap);
+                }
+                return;
+            }
+
             radius = Prefs.get("aperture.radius", radius);
             rBack1 = Prefs.get("aperture.rback1", rBack1);
             rBack2 = Prefs.get("aperture.rback2", rBack2);

@@ -3,10 +3,14 @@ package util;
 import Astronomy.AstroImageJ_Updater;
 import Astronomy.MultiAperture_;
 import Astronomy.MultiPlot_;
+import Astronomy.multiaperture.CustomPixelApertureHandler;
+import Astronomy.multiaperture.io.AperturesFile;
+import astroj.AstroCanvas;
 import astroj.IJU;
 import astroj.MeasurementTable;
 import ij.IJ;
 import ij.Prefs;
+import ij.astro.io.prefs.Property;
 import ij.astro.util.FileAssociationHandler;
 import ij.astro.util.FileAssociationHandler.AssociationMapper;
 import ij.astro.util.FitsExtensionUtil;
@@ -72,25 +76,40 @@ public class AIJStartupHandler implements PlugIn {
 
                     var asw = IJU.getBestOpenAstroStackWindow();
                     if (asw != null && tableRead.apertures() != null) {
-                        asw.openApertures(new ByteArrayInputStream(tableRead.apertures()));
+                        var d = AperturesFile.read(new String(tableRead.apertures()));
+                        if (d != null) {
+                            CustomPixelApertureHandler.APS.set(d.apertureRois());
+                            Prefs.ijPrefs.putAll(d.prefs());
+                            Property.resetLoadStatus();
+                        } else {
+                            asw.openApertures(new ByteArrayInputStream(tableRead.apertures()));
+                        }
                     } else if (tableRead.apertures() != null) {
                         try {
-                            Prefs.set("multiaperture.xapertures", "");
-                            Prefs.set("multiaperture.yapertures", "");
-                            Prefs.set("multiaperture.raapertures", "");
-                            Prefs.set("multiaperture.decapertures", "");
-                            Prefs.set("multiaperture.isrefstar", "");
-                            Prefs.set("multiaperture.isalignstar", "");
-                            Prefs.set("multiaperture.centroidstar", "");
-                            Prefs.set("multiaperture.absmagapertures", "");
-                            Prefs.set("multiaperture.import.xapertures", "");
-                            Prefs.set("multiaperture.import.yapertures", "");
-                            Prefs.set("multiaperture.import.raapertures", "");
-                            Prefs.set("multiaperture.import.decapertures", "");
-                            Prefs.set("multiaperture.import.isrefstar", "");
-                            Prefs.set("multiaperture.import.isalignstar", "");
-                            Prefs.set("multiaperture.import.centroidstar", "");
-                            Prefs.ijPrefs.load(new ByteArrayInputStream(tableRead.apertures()));
+                            var d = AperturesFile.read(new String(tableRead.apertures()));
+                            if (d != null) {
+                                CustomPixelApertureHandler.APS.set(d.apertureRois());
+                                Prefs.ijPrefs.putAll(d.prefs());
+                                Property.resetLoadStatus();
+                            } else {
+                                Prefs.set("multiaperture.xapertures", "");
+                                Prefs.set("multiaperture.yapertures", "");
+                                Prefs.set("multiaperture.raapertures", "");
+                                Prefs.set("multiaperture.decapertures", "");
+                                Prefs.set("multiaperture.isrefstar", "");
+                                Prefs.set("multiaperture.isalignstar", "");
+                                Prefs.set("multiaperture.centroidstar", "");
+                                Prefs.set("multiaperture.absmagapertures", "");
+                                Prefs.set("multiaperture.import.xapertures", "");
+                                Prefs.set("multiaperture.import.yapertures", "");
+                                Prefs.set("multiaperture.import.raapertures", "");
+                                Prefs.set("multiaperture.import.decapertures", "");
+                                Prefs.set("multiaperture.import.isrefstar", "");
+                                Prefs.set("multiaperture.import.isalignstar", "");
+                                Prefs.set("multiaperture.import.centroidstar", "");
+                                Prefs.ijPrefs.load(new ByteArrayInputStream(tableRead.apertures()));
+                                Property.resetLoadStatus();
+                            }
                         } catch (IOException e) {
                             e.printStackTrace();
                             IJ.error("Failed to read apertures");
@@ -117,26 +136,58 @@ public class AIJStartupHandler implements PlugIn {
             new AssociationMapper(p -> {
                 var asw = IJU.getBestOpenAstroStackWindow();
                 if (asw != null) {
-                    asw.openApertures(p.toString());
+                    try {
+                        var s = Files.readString(p);
+                        var d = AperturesFile.read(s);
+                        if (d != null) {
+                            CustomPixelApertureHandler.APS.set(d.apertureRois());
+                            Prefs.ijPrefs.putAll(d.prefs());
+                            Property.resetLoadStatus();
+                            if (asw.getCanvas() instanceof AstroCanvas ac) {
+                                ac.removeApertureRois();
+                            }
+                            for (int i = 0; i < CustomPixelApertureHandler.APS.get().size(); i++) {
+                                var ap = CustomPixelApertureHandler.APS.get().get(i);
+                                ap.setName((ap.isComparisonStar() ? "C" : "T") + (i+1));
+                                ap.setImage(asw.getImagePlus());
+                                if (asw.getCanvas() instanceof AstroCanvas ac) {
+                                    ac.add(ap);
+                                }
+                            }
+                        } else {
+                            asw.openApertures(p.toString());
+                        }
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 } else {
                     try {
-                        Prefs.set("multiaperture.xapertures", "");
-                        Prefs.set("multiaperture.yapertures", "");
-                        Prefs.set("multiaperture.raapertures", "");
-                        Prefs.set("multiaperture.decapertures", "");
-                        Prefs.set("multiaperture.isrefstar", "");
-                        Prefs.set("multiaperture.isalignstar", "");
-                        Prefs.set("multiaperture.centroidstar", "");
-                        Prefs.set("multiaperture.absmagapertures", "");
-                        Prefs.set("multiaperture.import.xapertures", "");
-                        Prefs.set("multiaperture.import.yapertures", "");
-                        Prefs.set("multiaperture.import.raapertures", "");
-                        Prefs.set("multiaperture.import.decapertures", "");
-                        Prefs.set("multiaperture.import.isrefstar", "");
-                        Prefs.set("multiaperture.import.isalignstar", "");
-                        Prefs.set("multiaperture.import.centroidstar", "");
-                        Prefs.ijPrefs.load(Files.newBufferedReader(p));
-                    } catch (IOException e) {
+                        var s = Files.readString(p);
+                        var d = AperturesFile.read(s);
+                        if (d != null) {
+                            CustomPixelApertureHandler.APS.set(d.apertureRois());
+                            Prefs.ijPrefs.putAll(d.prefs());
+                            Property.resetLoadStatus();
+                        } else {
+                            Prefs.set("multiaperture.xapertures", "");
+                            Prefs.set("multiaperture.yapertures", "");
+                            Prefs.set("multiaperture.raapertures", "");
+                            Prefs.set("multiaperture.decapertures", "");
+                            Prefs.set("multiaperture.isrefstar", "");
+                            Prefs.set("multiaperture.isalignstar", "");
+                            Prefs.set("multiaperture.centroidstar", "");
+                            Prefs.set("multiaperture.absmagapertures", "");
+                            Prefs.set("multiaperture.import.xapertures", "");
+                            Prefs.set("multiaperture.import.yapertures", "");
+                            Prefs.set("multiaperture.import.raapertures", "");
+                            Prefs.set("multiaperture.import.decapertures", "");
+                            Prefs.set("multiaperture.import.isrefstar", "");
+                            Prefs.set("multiaperture.import.isalignstar", "");
+                            Prefs.set("multiaperture.import.centroidstar", "");
+                            Prefs.ijPrefs.load(Files.newBufferedReader(p));
+                            Property.resetLoadStatus();
+                        }
+                    } catch (Exception e) {
                         e.printStackTrace();
                         IJ.error("Failed to read apertures");
                     }
@@ -154,6 +205,8 @@ public class AIJStartupHandler implements PlugIn {
         FileAssociationHandler.registerAssociation(aperturesHandler);
         FileAssociationHandler.registerAssociation(multiplotPlotCfgHandler);
         ObjectShare.putIfAbsent("multiapertureKeys", MultiAperture_.getApertureKeys());
+        ObjectShare.putIfAbsent("multiapertureCircularKeys", MultiAperture_.getCircularApertureKeys());
+        ObjectShare.putIfAbsent("customApertureKey", CustomPixelApertureHandler.APS.getPropertyKey());
         ensureConfigFileExists();
         Executors.newSingleThreadExecutor()
                 .execute(() -> IJ.runPlugIn(AstroImageJ_Updater.class.getCanonicalName(), "check"));

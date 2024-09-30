@@ -457,6 +457,22 @@ public class FITS_Writer implements PlugIn {
 						}
 					}
 
+					// Add custom aperture pref
+					if ("CA".equals(Prefs.get("multiaperture.lastrun", ""))) {
+						if (ObjectShare.get("customApertureKey") instanceof String key) {
+							if (Prefs.ijPrefs.containsKey(Prefs.KEY_PREFIX+key)) {
+								apertures.put(Prefs.KEY_PREFIX+key, Prefs.ijPrefs.getProperty(Prefs.KEY_PREFIX+key));
+							}
+						}
+
+						if (ObjectShare.get("multiapertureCircularKeys") instanceof Set<?> keysGeneric) {
+							var keys = (Set<String>) keysGeneric;
+							for (String key : keys) {
+                                apertures.remove(key);
+							}
+						}
+					}
+
 					// Store apertures as UTF-8 encoded byte array
 					var baos = new ByteArrayOutputStream();
 					apertures.store(new PrintStream(baos, true, StandardCharsets.UTF_8), null);

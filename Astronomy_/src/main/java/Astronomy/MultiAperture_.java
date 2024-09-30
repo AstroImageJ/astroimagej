@@ -439,7 +439,35 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         o.add(KEY_PREFIX+PREFS_XLOCATION);
         o.add(KEY_PREFIX+PREFS_YLOCATION);
         o.add(KEY_PREFIX+PREFS_PREVNUMMONITORS);
-        o.add(KEY_PREFIX+CustomPixelApertureHandler.APS.getPropertyKey());
+
+        return o;
+    }
+
+    public static Set<String> getCircularApertureKeys() {
+        var o = new HashSet<String>();
+
+        o.add(KEY_PREFIX+PREFS_APRADIUS);
+        o.add(KEY_PREFIX+PREFS_XAPERTURES);
+        o.add(KEY_PREFIX+PREFS_YAPERTURES);
+        o.add(KEY_PREFIX+PREFS_RAAPERTURES);
+        o.add(KEY_PREFIX+PREFS_DECAPERTURES);
+        o.add(KEY_PREFIX+PREFS_ISREFSTAR);
+        o.add(KEY_PREFIX+PREFS_ISALIGNSTAR);
+        o.add(KEY_PREFIX+PREFS_CENTROIDSTAR);
+        o.add(KEY_PREFIX+PREFS_ABSMAGAPERTURES);
+        o.add(KEY_PREFIX+Aperture_.AP_PREFS_RADIUS);
+        o.add(KEY_PREFIX+AP_PREFS_RBACK1);
+        o.add(KEY_PREFIX+AP_PREFS_RBACK2);
+        o.add(KEY_PREFIX+PREFS_XAPERTURES);
+        o.add(KEY_PREFIX+PREFS_YAPERTURES);
+        o.add(KEY_PREFIX+PREFS_RAAPERTURES);
+        o.add(KEY_PREFIX+PREFS_DECAPERTURES);
+        o.add(KEY_PREFIX+PREFS_ABSMAGAPERTURES);
+        o.add(KEY_PREFIX+PREFS_ISREFSTAR);
+        o.add(KEY_PREFIX+PREFS_ISALIGNSTAR);
+        o.add(KEY_PREFIX+PREFS_GETMAGS);
+        o.add(KEY_PREFIX+PREFS_XLOCATION);
+        o.add(KEY_PREFIX+PREFS_YLOCATION);
 
         return o;
     }

@@ -221,11 +221,19 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
                 box.add(Box.createHorizontalStrut(20));
                 addMessage(optionText);
                 box.add(Box.createHorizontalGlue());
-                selection[0] = addNStateDropdown(currentState, consumer.andThen(swappableSection::setCurrentState).andThen($ -> pack()));
+                selection[0] = addNStateDropdown(currentState, consumer.andThen(swappableSection::setCurrentState).andThen($ -> {
+                    pack();
+                    revalidate();
+                    repaint();
+                }));
             });
         } else {
             //todo which one, pack will resize window, revalidate won't which can cause scrollbars to appear
-            selection[0] = addNStateDropdown(currentState, consumer.andThen(swappableSection::setCurrentState).andThen($ -> pack()));
+            selection[0] = addNStateDropdown(currentState, consumer.andThen(swappableSection::setCurrentState).andThen($ -> {
+                pack();
+                revalidate();
+                repaint();
+            }));
         }
 
         var c = getConstraints();

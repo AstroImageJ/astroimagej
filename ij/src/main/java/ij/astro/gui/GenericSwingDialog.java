@@ -178,15 +178,23 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
     public Box buildRow(BiConsumer<GenericSwingDialog, Box> rowBuilder) {
         var box = Box.createHorizontalBox();
 
-        var c = getConstraints();
-        c.gridx = 0;
-        c.gridy++;
-
         rowBuilding.push(box);
         rowBuilder.accept(this, box);
         rowBuilding.pop();
 
+        var c = getConstraints();
+        c.gridx = 0;
+        c.gridy++;
+        c.anchor = GridBagConstraints.WEST;
+        c.gridwidth = GridBagConstraints.REMAINDER;
+        //c.fill = GridBagConstraints.HORIZONTAL;
+        c.insets.left = 20;
+
         addLocal(box, c);
+
+        c.fill = GridBagConstraints.NONE;
+        c.gridwidth = 1;
+        c.anchor = GridBagConstraints.CENTER;
 
         return box;
     }
@@ -218,7 +226,6 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         final JComponent[] selection = new JComponent[1];
         if (optionText != null) {
             buildRow((g, box) -> {
-                box.add(Box.createHorizontalStrut(20));
                 addMessage(optionText);
                 box.add(Box.createHorizontalGlue());
                 selection[0] = addNStateDropdown(currentState, consumer.andThen(swappableSection::setCurrentState).andThen($ -> {

@@ -1,9 +1,13 @@
 package ij.plugin;
+
 import ij.*;
-import ij.process.*;
-import ij.gui.*;
+import ij.gui.GenericDialog;
+import ij.process.ColorProcessor;
+import ij.process.ImageProcessor;
+import ij.process.LUT;
+
 import java.awt.*;
-import java.awt.image.*;
+import java.awt.image.IndexColorModel;
 
 /** This plugin implements the Image/Color/Merge Channels command. */
 public class RGBStackMerge implements PlugIn {
@@ -110,7 +114,7 @@ public class RGBStackMerge implements PlugIn {
 			}
 		}
 		if (width==0) {
-			error("There must be at least one source image or stack.");
+			error("Requires at least one source image or stack.");
 			return;
 		}
 		

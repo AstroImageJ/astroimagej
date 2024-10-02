@@ -1,22 +1,20 @@
 package ij.gui;
+
+import ij.*;
+import ij.macro.Program;
+import ij.plugin.MacroInstaller;
+import ij.plugin.frame.ColorPicker;
+import ij.plugin.frame.Editor;
+import ij.plugin.frame.Recorder;
+import ij.plugin.tool.MacroToolRunner;
+import ij.plugin.tool.PlugInTool;
+
+import javax.imageio.ImageIO;
 import java.awt.*;
-import java.awt.event.KeyEvent;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
-import javax.imageio.ImageIO;
 import java.io.File;
-import java.util.Timer;
-import java.util.Hashtable;
-import java.util.TimerTask;
-import java.util.Arrays;
-import java.util.Locale;
-import ij.*;
-import ij.plugin.frame.*;
-import ij.plugin.MacroInstaller;
-import ij.plugin.RectToolOptions;
-import ij.plugin.tool.PlugInTool;
-import ij.plugin.tool.MacroToolRunner;
-import ij.macro.Program;
+import java.util.*;
 
 /** The ImageJ toolbar. */
 public class Toolbar extends Canvas implements MouseListener, MouseMotionListener, ItemListener, ActionListener {
@@ -949,6 +947,9 @@ public class Toolbar extends Canvas implements MouseListener, MouseMotionListene
 		}
 		ColorPicker.update();
 		if (!IJ.isMacro()) setRoiColor(c);
+		ImagePlus imp = WindowManager.getCurrentImage();
+		if (imp!=null)
+			imp.getProcessor().fillColorSet(false);
 	}
 
 	public static Color getBackgroundColor() {
@@ -1412,13 +1413,14 @@ public class Toolbar extends Canvas implements MouseListener, MouseMotionListene
 	void drawTool(int tool, boolean drawDown) {
 		down[tool] = drawDown;
 		Graphics g = this.getGraphics();
+		if (g==null) return;
 		if (!drawDown) {
 			Graphics2D g2d = (Graphics2D)g;
 			g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 		}
 		drawButton(g, tool);
-		if (null==g) return;
-		g.dispose();
+		if (null!=g)
+			g.dispose();
 	}
 
 	boolean isLine(int tool) {
@@ -1734,7 +1736,7 @@ public class Toolbar extends Canvas implements MouseListener, MouseMotionListene
 
 	/** Adds a tool to the toolbar. The 'toolTip' string is displayed in the status bar
 		 when the mouse is over the tool icon. The 'toolTip' string may include icon 
-		(http://imagej.nih.gov/ij/developer/macro/macros.html#tools).
+		(http://imagej.net/ij/developer/macro/macros.html#tools).
 		Returns the tool ID, or -1 if all tool slots are in use. */
 	public int addTool(String toolTip) {
 		int index = toolTip.indexOf('-');

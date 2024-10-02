@@ -1,13 +1,21 @@
 package ij.plugin;
+
 import ij.*;
-import ij.gui.*;
-import ij.process.*;
-import ij.measure.*;
+import ij.gui.GenericDialog;
+import ij.gui.Overlay;
+import ij.gui.Roi;
+import ij.gui.ShapeRoi;
+import ij.measure.Calibration;
+import ij.process.ImageProcessor;
+import ij.process.StackProcessor;
 import ij.util.Tools;
-import ij.plugin.frame.Recorder;
+
 import java.awt.*;
-import java.awt.event.*;
-import java.util.*;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.awt.event.TextEvent;
+import java.awt.event.TextListener;
+import java.util.Vector;
 
 /** This plugin implements the Edit/Crop and Image/Adjust/Size commands. */
 public class Resizer implements PlugIn, TextListener, ItemListener  {
@@ -127,6 +135,10 @@ public class Resizer implements PlugIn, TextListener, ItemListener  {
 			interpolationMethod = gd.getNextChoiceIndex();
 			if (constrain && newWidth==0)
 				sizeToHeight = true;
+			String options = Macro.getOptions();
+			if (options != null && options.contains("constrain")
+					&& options.contains("height=") && !options.contains("width="))
+				sizeToHeight = true;
 			if (newWidth<=0.0 && !constrain)  newWidth = 50;
 			if (newHeight<=0.0) newHeight = 50;
 		}
@@ -138,7 +150,10 @@ public class Resizer implements PlugIn, TextListener, ItemListener  {
 				newHeight = (int)Math.round(newWidth*(origHeight/origWidth));
 		}
 		ip.setInterpolationMethod(interpolationMethod);
-		Undo.setup(crop?Undo.TRANSFORM:Undo.TYPE_CONVERSION, imp);
+		if (stackSize==1)
+			Undo.setup(crop?Undo.TRANSFORM:Undo.TYPE_CONVERSION, imp);
+		if (imp.getOverlay() != null)
+			Undo.saveOverlay(imp);
 			    	
 		if (roi!=null || newWidth!=origWidth || newHeight!=origHeight) {
 			try {

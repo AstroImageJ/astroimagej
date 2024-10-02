@@ -1,12 +1,10 @@
 package ij.plugin;
+
 import ij.*;
 import ij.gui.*;
-import ij.process.*;
-import ij.plugin.filter.Analyzer;
-import ij.measure.Measurements;
+
 import java.awt.*;
-import java.awt.event.*;
-import java.util.*;
+import java.util.Vector;
 
 
 /** This plugin implements the Edit/Options/Point Tool command. */
@@ -62,10 +60,7 @@ public class PointToolOptions implements PlugIn, DialogListener {
 		String cname = Colors.getColorName(cc, "None");
 		String type = PointRoi.types[PointRoi.getDefaultType()];
 		String size = PointRoi.sizes[PointRoi.getDefaultSize()];
-		if (multipointTool)
-			gd = GUI.newNonBlockingDialog("Point Tool");
-		else
-			gd = new GenericDialog("Point Tool");
+		gd = GUI.newNonBlockingDialog("Point Tool");
 		gd.setInsets(5,0,2);
 		gd.addChoice("Type:", PointRoi.types, type);
 		gd.addChoice("Color:", Colors.getColors(), sname);

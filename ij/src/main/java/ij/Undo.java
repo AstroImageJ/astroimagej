@@ -1,11 +1,12 @@
 /**Implements the Edit/Undo command.*/
 
 package ij;
-import ij.process.*;
-import ij.gui.*;
+
+import ij.gui.Overlay;
+import ij.gui.Roi;
 import ij.measure.Calibration;
-import java.awt.*;
-import java.awt.image.*;
+import ij.process.ImageProcessor;
+import ij.process.LUT;
 
 /** This class consists of static methods and
 	fields that implement ImageJ's Undo command. */
@@ -24,6 +25,8 @@ public class Undo {
 	public static final int OVERLAY_ADDITION = 7;
 	public static final int ROI = 8;
 	public static final int MACRO = 9;
+	/** Undo of overlay modification */
+	public static final int OVERLAY = 10;
 	
 	private static int whatToUndo = NOTHING;
 	private static int imageID;
@@ -34,6 +37,7 @@ public class Undo {
 	private static double displayRangeMin, displayRangeMax;
 	private static LUT lutCopy;
 	private static Overlay overlayCopy;
+	private static int overlayImageID;
 	
 	public static void setup(int what, ImagePlus imp) {
 		if (imp==null) {
@@ -81,18 +85,23 @@ public class Undo {
 				roiCopy.setImage(null);
 			} else
 				whatToUndo = NOTHING;
+		} else if (what==OVERLAY) {
+			saveOverlay(imp);
 		} else {
 			ipCopy = null;
-			ImageProcessor ip = imp.getProcessor();
+			//ImageProcessor ip = imp.getProcessor();
 			//lutCopy = (LUT)ip.getLut().clone();
 		}
 	}
-	
+
+	/** This function should be called from PlugInFilters that modify the overlay prior to the operation.
+	 *  For the type 'FILTER', undo of overlays requires that the modified image also has an overlay. */
 	public static void saveOverlay(ImagePlus imp) {
 		Overlay overlay = imp!=null?imp.getOverlay():null;
-		if (overlay!=null)
+		if (overlay!=null) {
 			overlayCopy = overlay.duplicate();
-		else
+			overlayImageID = imp.getID();
+		} else
 			overlayCopy = null;
 	}
 		
@@ -114,7 +123,7 @@ public class Undo {
 		ImagePlus imp = WindowManager.getCurrentImage();
 		if (IJ.debugMode) IJ.log("Undo.undo: "+ whatToUndo+" "+imp+"  "+impCopy);
 		if (imp==null || imageID!=imp.getID()) {
-			if (imp!=null && !IJ.macroRunning()) { // does image still have an undo buffer?
+			if (imp!=null && !IJ.macroRunning()) { // does foreground image still have an undo buffer?
 				ImageProcessor ip2 = imp.getProcessor();
 				ip2.swapPixelArrays();
 				imp.updateAndDraw();
@@ -124,7 +133,7 @@ public class Undo {
 		}
 		switch (whatToUndo) {
 			case FILTER:
-				undoOverlay(imp);
+				undoOverlay(imp, true);
 				ImageProcessor ip = imp.getProcessor();
 				if (ip!=null) {
 					if (!IJ.macroRunning()) {
@@ -148,8 +157,8 @@ public class Undo {
 						return;
 					} else
 						imp.setProcessor(null, ipCopy);
-					if (whatToUndo==COMPOUND_FILTER_DONE)
-						undoOverlay(imp);
+					if (whatToUndo==COMPOUND_FILTER_DONE || whatToUndo==TYPE_CONVERSION)
+						undoOverlay(imp, true);
 				}
 				break;
 			case TRANSFORM:
@@ -184,18 +193,22 @@ public class Undo {
 					IJ.beep();
 					return;
 				}
-	    		return; //don't reset
+	    		return; //don't reset; successive undo removes further rois
+			case OVERLAY:
+				undoOverlay(imp, false);
+				imp.draw();
+				break;
     	}
     	reset();
 	}
-	
-	private static void undoOverlay(ImagePlus imp) {
-		if (overlayCopy!=null) {
+
+	/** Reverts the overlay to the saved version. */
+	private static void undoOverlay(ImagePlus imp, boolean onlyModifyOvly) {
+		if (overlayCopy!=null && imp.getID()==overlayImageID) {
 			Overlay overlay = imp.getOverlay();
-			if (overlay!=null) {
-				imp.setOverlay(overlayCopy);
-				overlayCopy = overlay.duplicate();
-			}
+			imp.setOverlay(overlayCopy);
+			if (overlay != null)
+				overlayCopy = overlay.duplicate();	//swap
 		}
 	}
 

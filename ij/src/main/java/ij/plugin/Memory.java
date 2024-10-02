@@ -3,7 +3,6 @@ package ij.plugin;
 import ij.IJ;
 import ij.Prefs;
 import ij.astro.AstroImageJ;
-import ij.astro.logging.AIJLogger;
 import ij.gui.GenericDialog;
 import ij.util.Tools;
 
@@ -36,8 +35,8 @@ public class Memory implements PlugIn {
 		if (max==0) max = (int)(maxMemory()/1048576L);
 		String title = "Memory "+(IJ.is64Bit()?"(64-bit)":"(32-bit)");
 		GenericDialog gd = new GenericDialog(title);
-		gd.addNumericField("Maximum memory:", max, 0, 5, "MB");
-		gd.addNumericField("Parallel threads for stacks:", Prefs.getThreads(), 0, 5, "");
+		gd.addNumericField("Maximum memory:", max, 0, 6, "MB");
+		gd.addNumericField("Parallel threads:", Prefs.getThreads(), 0, 6, "");
 		gd.setInsets(12, 0, 0);
 		gd.addCheckbox("Keep multiple undo buffers", Prefs.keepUndoBuffers);
 		gd.setInsets(12, 0, 0);

@@ -1,14 +1,18 @@
 package ij.gui;
 
+import ij.IJ;
+import ij.ImagePlus;
+import ij.measure.Calibration;
+import ij.plugin.Straightener;
+import ij.process.FloatPolygon;
+import ij.process.FloatProcessor;
+import ij.process.ImageProcessor;
+import ij.util.Tools;
+
 import java.awt.*;
 import java.util.ArrayList;
-import ij.*;
-import ij.process.*;
-import ij.util.*;
-import ij.measure.*;
-import ij.plugin.Straightener;
 
-/** Creates a density profile plot of a rectangular selection or line selection. */
+/** Creates a density profile plot of a line or rectangular selection. */
 public class ProfilePlot {
 
 	static final int MIN_WIDTH = 350;
@@ -30,12 +34,22 @@ public class ProfilePlot {
 	public ProfilePlot() {
 	}
 
+	/** Based on the current line or rectangular selection,
+	 * creates a profile plot that can be retrieved using
+	 * the getPlot() method.
+	*/
 	public ProfilePlot(ImagePlus imp) {
 		this(imp, false);
 	}
 
-	public ProfilePlot(ImagePlus imp, boolean averageHorizontally) {
+	/** Based on the current rectangular selection,
+	 * creates profile plot, which is a vertical if
+	 * verticalPlot is 'true'. Use the getPlot() method
+	 * to retrieve the plot.
+	*/
+	public ProfilePlot(ImagePlus imp, boolean verticalPlot) {
 		this.imp = imp;
+		boolean averageHorizontally = verticalPlot;
 		Roi roi = imp.getRoi();
 		if (roi==null) {
 			IJ.error("Profile Plot", "Selection required.");
@@ -104,6 +118,7 @@ public class ProfilePlot {
 			plot.show();
 	}
 
+	/** Returns the profile plot as a Plot object. */
 	public Plot getPlot() {
 		if (profile==null)
 			return null;
@@ -282,22 +297,6 @@ public class ProfilePlot {
 			values2[i] = ((Double)values.get(i)).doubleValue();
 		return values2;
 	}
-
-	/*
-	double[] getIrregularProfile(Roi roi, ImageProcessor ip, Calibration cal) {
-		boolean interpolate = PlotWindow.interpolate;
-		FloatPolygon p = roi.getFloatPolygon();
-		float[][] xyPoints = ((PolygonRoi)roi).getEquidistantPoints(p.xpoints, p.ypoints, p.npoints, 1.0, imp);
-		float[] xPoints = xyPoints[0];
-		float[] yPoints = xyPoints[1];
-		double[] values = new double[xPoints.length];
-		for (int i=0; i<xPoints.length; i++)
-			values[i] = interpolate ?
-				ip.getInterpolatedValue(xPoints[i], yPoints[i]) :
-				ip.getPixelValue((int)Math.round(xPoints[i]), (int)Math.round(yPoints[i]));
-		return values;
-	}
-	*/
 
 	double[] getWideLineProfile(ImagePlus imp, int lineWidth) {
 		Roi roi = imp.getRoi();

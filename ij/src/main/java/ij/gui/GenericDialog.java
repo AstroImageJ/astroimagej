@@ -360,7 +360,7 @@ FocusListener, ItemListener, KeyListener, AdjustmentListener, WindowListener {
 	 */
 	public void addDirectoryField(String label, String defaultPath) {
 		int columns = defaultPath!=null?Math.max(defaultPath.length(),25):25;
-		if (columns>50) columns=50;
+		if (columns>60) columns=60;
 		addDirectoryField(label, defaultPath, columns);
 	}
 
@@ -393,6 +393,7 @@ FocusListener, ItemListener, KeyListener, AdjustmentListener, WindowListener {
 	 */
 	 public void addFileField(String label, String defaultPath) {
 		int columns = defaultPath!=null?Math.max(defaultPath.length(),25):25;
+		if (columns>60) columns=60;
 		addFileField(label, defaultPath, columns);
 	 }
 
@@ -659,7 +660,7 @@ FocusListener, ItemListener, KeyListener, AdjustmentListener, WindowListener {
 	* @param labels			the labels
 	* @param defaultValues	the initial states
 	* @param headings	the column headings
-	* Example: http://imagej.nih.gov/ij/plugins/multi-column-dialog/index.html
+	* Example: http://imagej.net/ij/plugins/multi-column-dialog/index.html
 	*/
 	public void addCheckboxGroup(int rows, int columns, String[] labels, boolean[] defaultValues, String[] headings) {
 		Panel panel = new Panel();
@@ -715,7 +716,7 @@ FocusListener, ItemListener, KeyListener, AdjustmentListener, WindowListener {
 		c.gridx = 0; c.gridy++;
 		c.gridwidth = GridBagConstraints.REMAINDER;
 		c.anchor = GridBagConstraints.WEST;
-		c.insets = getInsets(0, 20, 0, 0);
+		c.insets = getInsets(10, 0, 0, 0);
 		addToSameRow = false;
 		add(panel, c);
 	}
@@ -1245,6 +1246,8 @@ FocusListener, ItemListener, KeyListener, AdjustmentListener, WindowListener {
 		if (theText.equals(originalText)) {
 			value = defaultValue;
 			if (smartRecording) skipRecording=true;
+		} else if (theText.startsWith("0x")) {
+			value = parseHex(theText.substring(2));
 		} else {
 			Double d = getValue(theText);
 			if (d!=null)
@@ -1272,6 +1275,14 @@ FocusListener, ItemListener, KeyListener, AdjustmentListener, WindowListener {
 		}
 		nfIndex++;
 		return value;
+	}
+
+	int parseHex(String hexString) {
+		int n = 0;;
+		try {
+			n = Integer.parseInt(hexString, 16);
+		} catch (NumberFormatException e) {}
+		return n;
 	}
 
 	private String trim(String value) {
@@ -1537,6 +1548,7 @@ FocusListener, ItemListener, KeyListener, AdjustmentListener, WindowListener {
 	/** Displays this dialog box. */
 	public void showDialog() {
 		showDialogCalled = true;
+		addToSameRow = false;
 		if (macro) {
 			dispose();
 			recorderOn = Recorder.record && Recorder.recordInMacros;
@@ -1935,7 +1947,7 @@ FocusListener, ItemListener, KeyListener, AdjustmentListener, WindowListener {
 	/** Adds a "Help" button that opens the specified URL in the default browser.
 		With v1.46b or later, displays an HTML formatted message if
 		'url' starts with "<html>". There is an example at
-		http://imagej.nih.gov/ij/macros/js/DialogWithHelp.js
+		http://imagej.net/ij/macros/js/DialogWithHelp.js
 		If url is an empty String, pressing the "Help" button does nothing except
 	calling the DialogListeners (if any). See also: setHelpLabel.
 	*/
@@ -2037,7 +2049,11 @@ FocusListener, ItemListener, KeyListener, AdjustmentListener, WindowListener {
 		@Override
 		public void drop(DropTargetDropEvent event) {
 			try {
-				text.setText(getString(event));
+				String path = getString(event);
+				path = Recorder.fixPath(path);
+				if (!path.endsWith("/")&& (new File(path)).isDirectory())
+					path = path + "/";
+				text.setText(path);
 			} catch (Exception e) { e.printStackTrace(); }
 		}
 	}
@@ -2056,6 +2072,12 @@ FocusListener, ItemListener, KeyListener, AdjustmentListener, WindowListener {
 		@AstroImageJ(reason = "Allow for OD to be relative", modified = true)
 		public void actionPerformed(ActionEvent e) {
 			String path = null;
+			String dialogTitle = label;
+			if (dialogTitle == null || dialogTitle.length() == 0)
+				dialogTitle = mode.equals("dir") ? "a Folder" : "a File";
+			else if (dialogTitle.endsWith(":"))	//remove trailing colon
+				dialogTitle = dialogTitle.substring(0, dialogTitle.length() - 1);
+			dialogTitle = "Select " + dialogTitle;
 			if (mode.equals("dir")) {
 				DirectoryChooser dc = new DirectoryChooser("dir", GenericDialog.this);
 				path = dc.getDirectory();
@@ -2068,12 +2090,11 @@ FocusListener, ItemListener, KeyListener, AdjustmentListener, WindowListener {
 					path = directory+name;
 			}
 			if (path!=null) {
-				if (IJ.isWindows())
-					path = path.replaceAll("\\\\", "/"); // replace "\" with "/"
+				//if (IJ.isWindows())
+				//	path = path.replaceAll("\\\\", "/"); // replace "\" with "/"
 				this.textField.setText(path);
 			}
 		}
-	
 	}
 
 	private class TrimmedTextField extends TextField {

@@ -80,6 +80,7 @@ public abstract class ImageProcessor implements Cloneable {
 	private boolean noReset;
 	private boolean histogram16;
 	private boolean addOne;
+	private boolean fillColorSet;
 
     ProgressBar progressBar;
 	protected int width, snapshotWidth;
@@ -116,7 +117,6 @@ public abstract class ImageProcessor implements Cloneable {
 	protected boolean minMaxSet;
 	protected static double seed = Double.NaN;
 	protected static Random rnd;
-	protected boolean fillValueSet;
 
 	protected void showProgress(double percentDone) {
 		if (progressBar!=null)
@@ -443,9 +443,9 @@ public abstract class ImageProcessor implements Cloneable {
 	/** Returns the default fill/draw value. */
 	public abstract double getForegroundValue();
 
-	/** Returns 'true' if the fill/draw value has been set. */
+	/** Returns 'true' if the fill/draw value has been set in a macro. */
 	public boolean fillValueSet() {
-		return fillValueSet;
+		return fillColorSet;
 	}
 
 	/** Sets the background fill value used by the rotate() and scale() methods. */
@@ -2974,4 +2974,9 @@ public abstract class ImageProcessor implements Cloneable {
 		return new IndexColorModel(8, 256, r, g, b);
 	}
 	
+	/** For internal use */
+	public void fillColorSet(boolean set) {
+		fillColorSet = set;
+	}
+
 }

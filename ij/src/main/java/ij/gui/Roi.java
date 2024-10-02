@@ -1,21 +1,26 @@
 package ij.gui;
+
 import ij.*;
 import ij.astro.AstroImageJ;
-import ij.process.*;
-import ij.measure.*;
-import ij.plugin.*;
+import ij.macro.Interpreter;
+import ij.measure.Calibration;
+import ij.plugin.LutLoader;
+import ij.plugin.RectToolOptions;
+import ij.plugin.filter.ThresholdToSelection;
 import ij.plugin.frame.Recorder;
 import ij.plugin.frame.RoiManager;
-import ij.plugin.filter.Analyzer;
-import ij.plugin.filter.ThresholdToSelection;
-import ij.macro.Interpreter;
-import ij.io.RoiDecoder;
+import ij.process.*;
+
 import java.awt.*;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Rectangle2D;
+import java.awt.geom.RoundRectangle2D;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.util.*;
-import java.io.*;
-import java.awt.image.*;
-import java.awt.event.*;
-import java.awt.geom.*;
 
 /**
  * A rectangular region of interest and superclass for the other ROI classes.
@@ -115,7 +120,7 @@ public class Roi extends Object implements Cloneable, java.io.Serializable, Iter
 	private String name;
 	private int position;
 	private int channel, slice, frame;
-	private boolean hyperstackPosition;
+	protected boolean hyperstackPosition;
 	private Overlay prototypeOverlay;
 	private boolean subPixel;
 	private boolean activeOverlayRoi;
@@ -126,6 +131,7 @@ public class Roi extends Object implements Cloneable, java.io.Serializable, Iter
 	private boolean listenersNotified;
 	private boolean antiAlias = true;
 	private int group;
+	private boolean usingDefaultStroke;
 	private static int defaultHandleSize;
 	private int handleSize = -1;
 	private boolean scaleStrokeWidth; // Scale stroke width when zooming images?
@@ -168,8 +174,10 @@ public class Roi extends Object implements Cloneable, java.io.Serializable, Iter
 			g.dispose();
 		}
 		double defaultWidth = defaultStrokeWidth();
-		if (defaultWidth>0)
-			setStrokeWidth(defaultWidth);
+		if (defaultWidth>0) {
+			stroke = new BasicStroke((float)defaultWidth);
+			usingDefaultStroke = true;
+		}
 		fillColor = defaultFillColor;
 		this.group = defaultGroup; //initialize with current group and associated color
 		if (defaultGroup>0)
@@ -220,8 +228,12 @@ public class Roi extends Object implements Cloneable, java.io.Serializable, Iter
 				setStrokeColor(scolor);
 		}
 		double defaultWidth = defaultStrokeWidth();
-		if (defaultWidth>0)
-			setStrokeWidth(defaultWidth);
+		//if (defaultWidth>0) setStrokeWidth(defaultWidth);
+		if (defaultWidth>0) {
+			stroke = new BasicStroke((float)defaultWidth);
+			usingDefaultStroke = true;
+		}
+
 		fillColor = defaultFillColor;
 		this.group = defaultGroup;
 		if (defaultGroup>0)
@@ -834,7 +846,8 @@ public class Roi extends Object implements Cloneable, java.io.Serializable, Iter
 		try {
 			Roi r = (Roi)super.clone();
 			r.setImage(null);
-			r.setStroke(getStroke());
+			if (!usingDefaultStroke)
+				r.setStroke(getStroke());
 			Color strokeColor2 = getStrokeColor();
 			r.setFillColor(getFillColor());
 			r.setStrokeColor(strokeColor2);
@@ -1976,7 +1989,7 @@ public class Roi extends Object implements Cloneable, java.io.Serializable, Iter
 	 */
 	public void setFillColor(Color color) {
 		fillColor = color;
-		if (fillColor!=null && isArea())
+		if (fillColor!=null && (isArea()&&!(this instanceof TextRoi)))
 			strokeColor=null;
 	}
 
@@ -2063,8 +2076,12 @@ public class Roi extends Object implements Cloneable, java.io.Serializable, Iter
 	public void setStrokeWidth(float strokeWidth) {
 		if (strokeWidth<0f)
 			strokeWidth = 0f;
-		if (strokeWidth>0f)
+		if (strokeWidth==0f && usingDefaultStroke)
+			return;
+		if (strokeWidth>0f) {
 			scaleStrokeWidth = true;
+			usingDefaultStroke = false;
+		}
 		boolean notify = listeners.size()>0 && isLine() && getStrokeWidth()!=strokeWidth;
 		if (strokeWidth==0f)
 			this.stroke = null;
@@ -2093,17 +2110,22 @@ public class Roi extends Object implements Cloneable, java.io.Serializable, Iter
 
 	/** Returns the line width. */
 	public float getStrokeWidth() {
-		return stroke!=null?stroke.getLineWidth():0f;
+		return (stroke!=null&&!usingDefaultStroke)?stroke.getLineWidth():0f;
 	}
 
 	/** Sets the Stroke used to draw this ROI. */
 	public void setStroke(BasicStroke stroke) {
 		this.stroke = stroke;
+		if (stroke!=null)
+			usingDefaultStroke = false;
 	}
 
 	/** Returns the Stroke used to draw this ROI, or null if no Stroke is used. */
 	public BasicStroke getStroke() {
-		return stroke;
+		if (usingDefaultStroke)
+			return null;
+		else
+			return stroke;
 	}
 
 	/** Returns 'true' if the stroke width is scaled as images are zoomed. */
@@ -2112,7 +2134,7 @@ public class Roi extends Object implements Cloneable, java.io.Serializable, Iter
 	}
 
 	protected BasicStroke getScaledStroke() {
-		if (ic==null || !scaleStrokeWidth)
+		if (ic==null || usingDefaultStroke || !scaleStrokeWidth)
 			return stroke;
 		double mag = ic.getMagnification();
 		if (mag!=1.0) {
@@ -2171,6 +2193,7 @@ public class Roi extends Object implements Cloneable, java.io.Serializable, Iter
 	/** Sets the stack position (image number) of this ROI. In an overlay, this
 	* ROI is only displayed when the stack is at the specified position.
 	* Set to zero to have the ROI displayed on all images in the stack.
+	* Clears the hyperStackPosition, if there was one.
 	* @see ij.gui.Overlay
 	*/
 	public void setPosition(int n) {
@@ -2180,8 +2203,10 @@ public class Roi extends Object implements Cloneable, java.io.Serializable, Iter
 		hyperstackPosition = false;
 	}
 
-	/** Returns the stack position (image number) of this ROI, or
-	*  zero if the ROI is not associated with a particular stack image.
+	/** Returns the stack position (image number) for displaying this ROI,
+	*   in an overlay (or the RoiManager's 'Show All'. Returns zero if the
+	*   ROI is not associated with a particular stack image.
+	*   PointRois can also return PointRoi.POINTWISE_POSITION.
 	* @see ij.gui.Overlay
 	*/
 	public int getPosition() {
@@ -2229,14 +2254,14 @@ public class Roi extends Object implements Cloneable, java.io.Serializable, Iter
 	}
 
 	/** Returns the slice position of this ROI, or zero
-	*  if this ROI is not associated with a particular slice.
+	*   if this ROI is not associated with a particular slice.
 	*/
 	public final int getZPosition() {
-		return slice==0&&!hyperstackPosition?position:slice;
+		return slice==0&&!hyperstackPosition ? position : slice;
 	}
 
 	/** Returns the frame position of this ROI, or zero
-	*  if this ROI is not associated with a particular frame.
+	*   if this ROI is not associated with a particular frame.
 	*/
 	public final int getTPosition() {
 		return frame;
@@ -2937,6 +2962,10 @@ public class Roi extends Object implements Cloneable, java.io.Serializable, Iter
 			if (isLine()) {
 				Roi roi2 = Roi.convertLineToArea(Roi.this);
 				mask = roi2.getMask();
+				if (mask==null && roi2.getType()==RECTANGLE) {
+					mask = new ByteProcessor(roi2.width, roi2.height);
+					mask.invert();
+				}
 				xbase = roi2.x;
 				ybase = roi2.y;
 			} else {

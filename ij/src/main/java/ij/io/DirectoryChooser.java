@@ -38,10 +38,12 @@ import java.io.File;
 			if (macroOptions!=null)
 				directory = Macro.getValue(macroOptions, title, null);
 			if (directory==null) {
+				IJ.showStatus(title);
  				if (EventQueue.isDispatchThread())
  					getDirectoryUsingJFileChooserOnThisThread(title);
  				else
  					getDirectoryUsingJFileChooser(title);
+ 				IJ.showStatus("");
  			}
  		}
  	}

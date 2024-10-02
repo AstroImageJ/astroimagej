@@ -1,17 +1,21 @@
 package ij.plugin.frame;
+
+import ij.*;
+import ij.gui.*;
+import ij.measure.Calibration;
+import ij.measure.Measurements;
+import ij.measure.ResultsTable;
+import ij.plugin.ChannelSplitter;
+import ij.plugin.PlugIn;
+import ij.plugin.Thresholder;
+import ij.plugin.filter.Analyzer;
+import ij.process.*;
+import ij.util.Tools;
+
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.image.*;
-import ij.*;
-import ij.plugin.*;
-import ij.process.*;
-import ij.gui.*;
-import ij.measure.*;
-import ij.util.Tools;
-import ij.plugin.frame.Recorder;
-import ij.plugin.filter.*;
-import ij.plugin.ChannelSplitter;
-import ij.plugin.Thresholder;
+import java.awt.image.ColorModel;
+import java.awt.image.IndexColorModel;
 
 /** Adjusts the lower and upper threshold levels of the active image. This
 	class is multi-threaded to provide a more responsive user interface. */
@@ -991,15 +995,20 @@ public class ThresholdAdjuster extends PlugInDialog implements PlugIn, Measureme
 
 	/** Sets the thresholding method ("Default", "Huang", etc). */
 	public static void setMethod(String thresholdingMethod) {
+		if (thresholdingMethod==null)
+			return;
 		boolean valid = false;
 		for (int i=0; i<methodNames.length; i++) {
-			if (methodNames[i].equals(thresholdingMethod)) {
+			if (thresholdingMethod.startsWith(thresholdingMethod)) {
 				valid = true;
 				break;
 			}
 		}
 		if (valid) {
 			method = thresholdingMethod;
+			int index = method.indexOf(" ");
+			if (index>0)
+				method = method.substring(0,index);
 			if (instance!=null)
 				instance.methodChoice.select(method);
 		}

@@ -1,16 +1,19 @@
 package ij.plugin;
+
 import ij.*;
 import ij.gui.*;
-import ij.process.*;
-import ij.measure.*;
-import ij.plugin.frame.*;
 import ij.macro.Interpreter;
-import ij.plugin.filter.*;
-import ij.util.Tools;
+import ij.measure.Calibration;
+import ij.measure.Measurements;
+import ij.plugin.filter.EDM;
+import ij.plugin.frame.LineWidthAdjuster;
+import ij.plugin.frame.Recorder;
+import ij.plugin.frame.RoiManager;
+import ij.process.*;
+
 import java.awt.*;
 import java.awt.event.KeyEvent;
-import java.util.Vector;
-import java.awt.geom.*;
+import java.awt.geom.Rectangle2D;
 
 
 /** This plugin implements the commands in the Edit/Selection submenu. */
@@ -68,7 +71,7 @@ public class Selection implements PlugIn, Measurements {
 		else if (arg.equals("toline"))
 			areaToLine(imp); 
 		else if (arg.equals("properties"))
-			{setProperties("Properties ", imp.getRoi()); imp.draw();}
+			{setProperties("Properties ", imp); imp.draw();}
 		else if (arg.equals("band"))
 			makeBand(imp);
 		else if (arg.equals("tobox"))
@@ -800,8 +803,12 @@ public class Selection implements PlugIn, Measurements {
 		rm.allowRecording(false);
 		IJ.setKeyUp(IJ.ALL_KEYS);
 	}
-	
-	boolean setProperties(String title, Roi roi) {
+
+	/** Implements the Edit>Selection>Properties command.
+	 *  With the alt key down and a multipoint selection, shows the point counts instead. */
+	boolean setProperties(String title, ImagePlus imp) {
+		if (imp == null) return false;	//should never happen (called only from 'run', where imp!=null)
+		Roi roi = imp.getRoi();
 		if ((roi instanceof PointRoi) && Toolbar.getMultiPointMode() && IJ.altKeyDown()) {
 			((PointRoi)roi).displayCounts();
 			return true;
@@ -820,7 +827,7 @@ public class Selection implements PlugIn, Measurements {
 		Color color = roi.getStrokeColor();
 		Color fillColor = roi.getFillColor();
 		int width = (int)roi.getStrokeWidth();
-		RoiProperties rp = new RoiProperties(title, roi);
+		RoiProperties rp = new RoiProperties(title, imp, roi);
 		boolean ok = rp.showDialog();
 		if (Recorder.record) {
 			boolean groupChanged = false;

@@ -1,12 +1,19 @@
 package ij.gui;
-import ij.*;
-import ij.process.*;
-import ij.util.*;
+
+import ij.IJ;
+import ij.ImageJ;
+import ij.ImagePlus;
+import ij.WindowManager;
 import ij.macro.Interpreter;
-import ij.plugin.frame.Recorder;
 import ij.plugin.Colors;
-import java.awt.geom.*;
+import ij.plugin.frame.Recorder;
+import ij.process.ImageProcessor;
+import ij.util.Java2;
+import ij.util.Tools;
+
 import java.awt.*;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 
 
@@ -117,7 +124,7 @@ public class TextRoi extends Roi {
 		super(x, y, 1, 1);
 		if (font==null) font = new Font(name, style, size);
 		this.font = font;
-		IJ.error("TextRoi", "API has changed. See updated example at\nhttp://imagej.nih.gov/ij/macros/js/TextOverlay.js");
+		IJ.error("TextRoi", "API has changed. See updated example at\nhttp://imagej.net/ij/macros/js/TextOverlay.js");
 	}
 
 	public TextRoi(int x, int y, ImagePlus imp) {

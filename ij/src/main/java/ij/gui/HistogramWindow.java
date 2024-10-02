@@ -5,6 +5,7 @@ import ij.measure.Calibration;
 import ij.measure.Measurements;
 import ij.measure.ResultsTable;
 import ij.plugin.filter.Analyzer;
+import ij.plugin.frame.Recorder;
 import ij.process.*;
 
 import java.awt.*;
@@ -461,6 +462,12 @@ public class HistogramWindow extends ImageWindow implements Measurements, Action
 		row5 = row4 + (int)(15*SCALE);
 		long count = stats.longPixelCount>0?stats.longPixelCount:stats.pixelCount;
 		String modeCount = " (" + stats.maxCount + ")";
+		if (histogram!=null) {// Add '*' if multi-modal histogram
+			int mcount = 0;;
+			for (int i=0; i<histogram.length; i++)
+				if (histogram[i]==stats.maxCount) mcount++;
+			if (mcount>1) modeCount=modeCount+"*";
+		}
 		if (modeCount.length()>12) modeCount = "";
 		
 		ip.drawString("N: " + count, col1, row1);
@@ -525,11 +532,11 @@ public class HistogramWindow extends ImageWindow implements Measurements, Action
 		return rt;
 	}
 
-	protected void showList() {
+	public void showList() {
 		ResultsTable rt = getResultsTable();
 		rt.show(getTitle());
 	}
-	
+
 	protected void copyToClipboard() {
 		Clipboard systemClipboard = null;
 		try {systemClipboard = getToolkit().getSystemClipboard();}
@@ -571,9 +578,11 @@ public class HistogramWindow extends ImageWindow implements Measurements, Action
 			toggleLiveMode();
 		else if (b==rgb)
 			changeChannel();
-		else if (b==list)
+		else if (b==list) {
 			showList();
-		else if (b==copy)
+			if (!Recorder.scriptMode())
+				Recorder.record("Table.showHistogramTable");
+		} else if (b==copy)
 			copyToClipboard();
 		else if (b==log) {
 			logScale = !logScale;

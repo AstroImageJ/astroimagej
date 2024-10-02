@@ -1,8 +1,14 @@
 package ij.io;
-import java.io.*;
-import ij.*;
-import ij.process.*;
-import ij.measure.*;
+
+import ij.IJ;
+import ij.measure.Calibration;
+import ij.process.ByteProcessor;
+import ij.process.ImageProcessor;
+import ij.process.ShortProcessor;
+
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.PrintWriter;
 
 /** Saves an image described by an ImageProcessor object as a tab-delimited text file. */
 public class TextEncoder {
@@ -10,6 +16,7 @@ public class TextEncoder {
 	private ImageProcessor ip;
 	private Calibration cal;
 	private int precision;
+	private String delimiter = "\t";
 
 	/** Constructs a TextEncoder from an ImageProcessor and optional Calibration. */
 	public TextEncoder (ImageProcessor ip, Calibration cal, int precision) {
@@ -41,7 +48,7 @@ public class TextEncoder {
 				else
 					pw.print(IJ.d2s(value, precision));
 				if (x!=(width-1))
-					pw.print("\t");
+					pw.print(delimiter);
 			}
 			pw.println();
 			if (y%inc==0) IJ.showProgress((double)y/height);
@@ -49,6 +56,10 @@ public class TextEncoder {
 		pw.close();
 		IJ.showProgress(1.0);
 		//IJ.showStatus("");
+	}
+	
+	public void setDelimiter(String delimiter) {
+		this.delimiter = delimiter;
 	}
 	
 }

@@ -1,13 +1,12 @@
 package ij.plugin.filter;
-import java.awt.*;
-import ij.*;
-import ij.process.*;
-import ij.gui.*;
-import ij.text.*;
+
+import ij.IJ;
+import ij.ImagePlus;
+import ij.process.ImageProcessor;
 /** Implements the Plugins/Utilities/Run Benchmark command when
 	the current image is 512x512 and RGB. Results and additional
 	benchmarks are available at<br> 
-	"http://imagej.nih.gov/ij/plugins/benchmarks.html". */
+	"http://imagej.net/ij/plugins/benchmarks.html". */
 public class Benchmark implements PlugInFilter{
 
 	String arg;

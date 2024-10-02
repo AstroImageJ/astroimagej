@@ -1,14 +1,21 @@
 package ij.plugin;
-import ij.*;
-import ij.process.*;
-import ij.gui.*;
+
+import ij.CompositeImage;
+import ij.IJ;
+import ij.ImagePlus;
+import ij.WindowManager;
+import ij.gui.ColorChooser;
+import ij.gui.GenericDialog;
+import ij.measure.Calibration;
+import ij.measure.SplineFitter;
 import ij.plugin.frame.Recorder;
+import ij.process.ColorProcessor;
+import ij.process.ImageProcessor;
+import ij.process.LUT;
+
 import java.awt.*;
-import java.awt.image.*;
-import ij.util.*;
-import ij.measure.*;
-import java.util.Vector;
 import java.awt.event.*;
+import java.awt.image.IndexColorModel;
 
 public class LUT_Editor implements PlugIn, ActionListener{
     private ImagePlus imp;
@@ -37,8 +44,7 @@ public class LUT_Editor implements PlugIn, ActionListener{
     		IJ.showMessage("LUT Editor", "LUT must have 256 entries");
     		return;
     	}
-		boolean recording = Recorder.record;
-		Recorder.record = false;
+		Recorder.suspendRecording();
         int red=0, green=0, blue=0;
         GenericDialog gd = new GenericDialog("LUT Editor");
         Panel buttonPanel = new Panel(new GridLayout(4, 1, 0, 5));
@@ -59,7 +65,7 @@ public class LUT_Editor implements PlugIn, ActionListener{
         panel.add(buttonPanel);
         gd.addPanel(panel, GridBagConstraints.CENTER, new Insets(10, 0, 0, 0));
         gd.showDialog();
-		Recorder.record = recording;
+		Recorder.resumeRecording();
         if (gd.wasCanceled()){
             colorPanel.cancelLUT();
             return;

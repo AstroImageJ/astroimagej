@@ -1,12 +1,18 @@
 package ij.measure;
-import ij.*;
-import ij.gui.*;
-import ij.macro.*;
-import ij.util.Tools;
+
+import ij.IJ;
+import ij.Macro;
+import ij.gui.GenericDialog;
+import ij.gui.Plot;
+import ij.gui.PlotWindow;
+import ij.macro.Interpreter;
+import ij.macro.Program;
+import ij.macro.Tokenizer;
 import ij.util.IJMath;
-import java.util.Arrays;
+import ij.util.Tools;
+
+import java.awt.*;
 import java.util.Hashtable;
-import java.awt.Color;
 
 /** Curve fitting class based on the Simplex method in the Minimizer class
  *
@@ -90,7 +96,7 @@ public class CurveFitter implements UserFunction{
 	"y = a*exp(bx)", "y = a*x^b",								//EXP_REGRESSION, POWER_REGRESSION
 	"y = a+bx+cx^2+dx^3+ex^4+fx^5", "y = a+bx+cx^2+dx^3+ex^4+fx^5+gx^6",
 	"y = a+bx+cx^2+dx^3+ex^4+fx^5+gx^6+hx^7", "y = a+bx+cx^2+dx^3+ex^4+fx^5+gx^6+hx^7+ix^8",
-	"y = a*exp(-(x-b)*(x-b)/(2*c*c)))",						//GAUSSIAN_NOOFFSET
+	"y = a*exp(-(x-b)*(x-b)/(2*c*c))",						//GAUSSIAN_NOOFFSET
 	"y = a*(1-exp(-b*x))",										//EXP_RECOVERY_NOOFFSET
 	"y = a*(1-exp(-b*x))^c",									//CHAPMAN
 	"y = a+b*erf((x-c)/d)"										//ERF; note that the c parameter is sqrt2 times the Gaussian

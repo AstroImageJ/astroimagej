@@ -49,7 +49,7 @@ public class IJ {
 	public static final int COMPOSITE=1, COLOR=2, GRAYSCALE=3;
 	
 	/** @deprecated */
-	public static final String URL = "http://imagej.nih.gov/ij";
+	public static final String URL = "http://imagej.net/ij";
 	
 	/** ImageJ website */
 	public static final String URL2 = "http://imagej.net/ij";
@@ -534,7 +534,7 @@ public class IJ {
 	* @deprecated
 	* replaced by IJ.log(), ResultsTable.setResult() and TextWindow.append().
 	* There are examples at
-	*   http://imagej.nih.gov/ij/plugins/sine-cosine.html
+	*   http://imagej.net/ij/plugins/sine-cosine.html
 	*/
 	public static void write(String s) {
 		if (textPanel==null && ij!=null)
@@ -801,7 +801,7 @@ public class IJ {
 	/** Displays a message in a dialog box with the specified title.
 		Displays HTML formatted text if 'msg' starts with "<html>".
 		There are examples at
-		"http://imagej.nih.gov/ij/macros/HtmlDialogDemo.txt".
+		"http://imagej.net/ij/macros/HtmlDialogDemo.txt".
 		Writes to the Java console if ImageJ is not present. */
 	public static void showMessage(String title, String msg) {
 		if (ij!=null) {
@@ -814,6 +814,7 @@ public class IJ {
 				if (isMacro() && md.escapePressed())
 					throw new RuntimeException(Macro.MACRO_CANCELED);
 			}
+			IJ.wait(25); // fix GenericDialog non-editable text field
 		} else
 			System.out.println(msg);
 	}
@@ -1511,6 +1512,7 @@ public class IJ {
 			}
 		} else
 			ip.setAutoThreshold(ImageProcessor.ISODATA2, ImageProcessor.RED_LUT);
+		ThresholdAdjuster.setMethod(method);
 		imp.updateAndDraw();
 	}
 	
@@ -2019,7 +2021,9 @@ public class IJ {
 
 	/** Opens the nth image of the specified tiff stack. */
 	public static ImagePlus openImage(String path, int n) {
-		return (new Opener()).openImage(path, n);
+		Opener opener = new Opener();
+		opener.doNotUseBioFormats();
+		return opener.openImage(path, n);
 	}
 
 	/** Opens the specified tiff file as a virtual stack. */
@@ -2125,7 +2129,10 @@ public class IJ {
 			GifWriter.save(imp, path);
 			return;
 		} else if (format.indexOf("text image")!=-1) {
-			path = updateExtension(path, ".txt");
+			String extension = ".txt";
+			if (path!=null && (path.endsWith(".csv")||path.endsWith(".CSV")))
+				extension = ".csv";
+			path = updateExtension(path, extension);
 			format = "Text Image...";
 		} else if (format.indexOf("text")!=-1 || format.indexOf("txt")!=-1) {
 			if (path!=null && !path.endsWith(".xls") && !path.endsWith(".csv") && !path.endsWith(".tsv"))

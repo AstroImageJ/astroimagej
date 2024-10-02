@@ -517,7 +517,6 @@ public class Editor extends PlugInFrame implements ActionListener, ItemListener,
 				text2 = text2.replaceAll("\u201D", "\"");
 				ta.setText(text2);
 			}
-			changes = true;
 			checkForCurlyQuotes = false;
 		}
 		currentMacroEditor = this;
@@ -623,7 +622,7 @@ public class Editor extends PlugInFrame implements ActionListener, ItemListener,
 			plugin = "bsh";
 			url = "/plugins/bsh/BeanShell.jar";
 		} else {
-			// download Jython from http://imagej.nih.gov/ij/plugins/jython/
+			// download Jython from http://imagej.net/ij/plugins/jython/
 			plugin = "Jython";
 			url = "/plugins/jython/Jython.jar";
 		}
@@ -1093,7 +1092,7 @@ public class Editor extends PlugInFrame implements ActionListener, ItemListener,
 	}
 	
 	public void keyPressed(KeyEvent e) {
-		IJ.setKeyDown(e.getKeyCode());
+		//IJ.setKeyDown(e.getKeyCode());
 	}
 	 	
 	public void mousePressed (MouseEvent e) {}

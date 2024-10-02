@@ -351,8 +351,8 @@ public class ParticleAnalyzer implements PlugInFilter, Measurements {
 		}
 		gd.addStringField("Circularity:", IJ.d2s(minCircularity)+"-"+IJ.d2s(maxCircularity), 12);
 		gd.addChoice("Show:", showStrings2, showStrings[showChoice]);
-		String[] labels = new String[8];
-		boolean[] states = new boolean[8];
+		String[] labels = new String[10];
+		boolean[] states = new boolean[10];
 		labels[0]="Display results"; states[0] = (options&SHOW_RESULTS)!=0;
 		labels[1]="Exclude on edges"; states[1]=(options&EXCLUDE_EDGE_PARTICLES)!=0;
 		labels[2]="Clear results"; states[2]=(options&CLEAR_WORKSHEET)!=0;
@@ -361,7 +361,8 @@ public class ParticleAnalyzer implements PlugInFilter, Measurements {
 		labels[5]="Overlay"; states[5]=(options&OVERLAY)!=0;
 		labels[6]="Add to Manager"; states[6]=(options&ADD_TO_MANAGER)!=0;
 		labels[7]="Composite ROIs"; states[7]=(options&COMPOSITE_ROIS)!=0;
-		gd.addCheckboxGroup(4, 2, labels, states);
+		labels[8]="Record starts"; states[8]=(options&RECORD_STARTS)!=0;
+		gd.addCheckboxGroup(5, 2, labels, states);
 		gd.addHelp(IJ.URL2+"/docs/menus/analyze.html#ap");
 		gd.showDialog();
 		if (gd.wasCanceled())
@@ -424,6 +425,8 @@ public class ParticleAnalyzer implements PlugInFilter, Measurements {
 			options |= ADD_TO_MANAGER; else options &= ~ADD_TO_MANAGER;
 		if (gd.getNextBoolean())
 			options |= COMPOSITE_ROIS; else options &= ~COMPOSITE_ROIS;
+		if (gd.getNextBoolean())
+			options |= RECORD_STARTS; else options &= ~RECORD_STARTS;
 		staticOptions = options;
 		options |= SHOW_PROGRESS;
 		if ((options&DISPLAY_SUMMARY)!=0)
@@ -917,7 +920,7 @@ public class ParticleAnalyzer implements PlugInFilter, Measurements {
 		if (compositeRois && floodFill && mask!=null) {
 			mask.setThreshold(255, 255, ImageProcessor.NO_LUT_UPDATE);
 			Roi roi2 = new ThresholdToSelection().convert(mask);
-			if (roi2!=null && (roi2 instanceof ShapeRoi)) {
+			if (roi2!=null) {
 				roi2.setLocation(roi.getXBase(), roi.getYBase());
 				roi = roi2;
 			}
@@ -1158,11 +1161,16 @@ public class ParticleAnalyzer implements PlugInFilter, Measurements {
 			Analyzer.lastParticle = Analyzer.getCounter()-1;
 		} else
 			Analyzer.firstParticle = Analyzer.lastParticle = 0;
-		if (showResults && rt.size()==0 && !(IJ.isMacro()||calledByPlugin) && (!processStack||slice==imp.getStackSize())) {
+		if (showResults && rt.size()==0 && !(calledByPlugin) && (!processStack||slice==imp.getStackSize())) {
 			int digits = (int)level1==level1&&(int)level2==level2?0:2;
 			String range = IJ.d2s(level1,digits)+"-"+IJ.d2s(level2,digits);
 			String assummed = noThreshold?"assumed":"";
-			IJ.showMessage("Particle Analyzer", "No particles were detected. The "+assummed+"\nthreshold ("+range+") may not be correct.");
+			assummed += assummed.length()>0&&!IJ.isMacro()?"\n":"";
+			String msg = "No particles detected. The "+assummed+"threshold ("+range+") may not be correct.";
+			if (IJ.isMacro()) {
+				if (assummed.length()>0) IJ.log(msg);
+			} else 
+				IJ.showMessage("Particle Analyzer", msg);
 		}
 	}
 	
@@ -1194,7 +1202,7 @@ public class ParticleAnalyzer implements PlugInFilter, Measurements {
 	
 	/** Sets the RoiManager to be used by the next ParticleAnalyzer 
 		instance. There is a JavaScript example at
-		http://imagej.nih.gov/ij/macros/js/HiddenRoiManager.js
+		http://imagej.net/ij/macros/js/HiddenRoiManager.js
 	*/
 	public static void setRoiManager(RoiManager manager) {
 		staticRoiManager = manager;

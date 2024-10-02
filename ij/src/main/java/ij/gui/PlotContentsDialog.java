@@ -1,18 +1,19 @@
 package ij.gui;
-import ij.*;
-import ij.process.*;
+
+import ij.IJ;
+import ij.ImagePlus;
+import ij.WindowManager;
 import ij.measure.CurveFitter;
 import ij.measure.Minimizer;
-import ij.text.TextWindow;
 import ij.measure.ResultsTable;
 import ij.plugin.Colors;
 import ij.plugin.frame.Recorder;
+import ij.text.TextWindow;
 import ij.util.Tools;
+
 import java.awt.*;
-import java.awt.event.*;
-import java.util.Arrays;
-import java.util.Vector;
 import java.util.ArrayList;
+import java.util.Vector;
 
 /** This class implements the Plot Window's Data>"Add from Plot", "Add form Table", "Add Fit" and
  *  "More>Contents Style" dialogs
@@ -207,10 +208,9 @@ public class PlotContentsDialog implements DialogListener {
 			addFitCurve();
 		plot.updateImage();
 		if (creatingPlot) {
-			boolean recording = Recorder.record;
-			Recorder.record = false; // don't record creating the image as image selection
+			Recorder.suspendRecording(); // don't record creating the image as image selection
 			plot.show();
-			if (recording) Recorder.record = true;
+			Recorder.resumeRecording();
 		}
 
 		gd.showDialog();

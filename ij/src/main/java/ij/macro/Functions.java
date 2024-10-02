@@ -640,17 +640,17 @@ public class Functions implements MacroConstants, Measurements {
 			}
 		}
 		boolean newArray = interp.token==ARRAY_FUNCTION && pgm.table[interp.tokenAddress].type==NEW_ARRAY;
-		boolean arrayFunction = interp.token==ARRAY_FUNCTION && pgm.table[interp.tokenAddress].type==ARRAY_FUNC;
+		boolean arrayFunction = interp.token==ARRAY_FUNCTION;
 		if (!(interp.token==WORD||newArray||arrayFunction))
 			interp.error("Array expected");
 		Variable[] a = null;
 		if (newArray)
 			a = getArrayFunction(NEW_ARRAY);
 		else if (arrayFunction)
-			a = getArrayFunction(ARRAY_FUNC);
+			a = getArrayFunction(pgm.table[interp.tokenAddress].type);
 		else {
 			Variable v = interp.lookupVariable();
-			a= v.getArray();
+			a = v.getArray();
 			int size = v.getArraySize();
 			if (a!=null && a.length!=size) {
 				Variable[] a2 = new Variable[size];
@@ -787,6 +787,7 @@ public class Functions implements MacroConstants, Measurements {
 				if (overlayPath!=null)
 					addDrawingToOverlay(imp);
 				getProcessor().setColor(globalColor);
+				getProcessor().fillColorSet(true);				
 			}
 			interp.getRightParen();
 			return;
@@ -802,8 +803,10 @@ public class Functions implements MacroConstants, Measurements {
 		if (red>255) red=255; if (green>255) green=255; if (blue>255) blue=255;
 		globalColor = new Color(red, green, blue);
 		globalValue = Double.NaN;
-		if (WindowManager.getCurrentImage()!=null)
+		if (WindowManager.getCurrentImage()!=null) {
 			getProcessor().setColor(globalColor);
+			getProcessor().fillColorSet(true);				
+		}				
 	}
 
 	void setColor(double value) {
@@ -828,6 +831,7 @@ public class Functions implements MacroConstants, Measurements {
 		}
 		globalValue = value;
 		globalColor = null;
+		ip.fillColorSet(true);				
 	}
 
 	void makeLine() {
@@ -2309,14 +2313,14 @@ public class Functions implements MacroConstants, Measurements {
 			return addPlotText(currentPlot);
 		} else if (name.equals("enableLive")) {
 			return enableLivePlot(currentPlot);
+		} else if (name.equals("update")) {
+			return updatePlot(currentPlot);
 		}
 		// the following commands need a plot under construction
 		if (plot==null)
 			interp.error("No plot defined");
 		if (name.equals("show")) {
 			return showPlot();
-		} else if (name.equals("update")) {
-			return updatePlot();
 		} else if (name.equals("drawLine")) {
 			return drawPlotLine(false);
 		} else if (name.equals("drawNormalizedLine")) {
@@ -2461,13 +2465,13 @@ public class Functions implements MacroConstants, Measurements {
 			if (plotWindow!=null)
 				plotID = plotWindow.getImagePlus().getID();
 		}
-		plot = null;
+		plot = null;		//not a plot under construction any more
 		interp.getParens();
 		return Double.NaN;
 	}
 
-	double updatePlot() {
-		if (plot!=null) {
+	double updatePlot(Plot thePlot) {
+		if (thePlot == plot) {
 			ImagePlus plotImage = WindowManager.getImage(plotID);
 			ImageWindow win = plotImage!=null?plotImage.getWindow():null;
 			if (win!=null)
@@ -2477,8 +2481,9 @@ public class Functions implements MacroConstants, Measurements {
 				if (plotWindow!=null)
 					plotID = plotWindow.getImagePlus().getID();
 			}
-		}
-		plot = null;
+		} else
+			thePlot.updateImage();
+		plot = null;		//not a plot under construction any more
 		interp.getParens();
 		return Double.NaN;
 	}
@@ -3217,9 +3222,9 @@ public class Functions implements MacroConstants, Measurements {
 				String styles = getLastString().toLowerCase();
 				if (styles.contains("bold")) style += Font.BOLD;
 				if (styles.contains("italic")) style += Font.ITALIC;
-				if (styles.contains("non-")||styles.contains("no-")) antialiasedText=false;
 				if (styles.contains("nonscal")) nonScalableText=true;
 				if (styles.contains("anti")) antialiasedText=true;
+				if (styles.contains("non-")||styles.contains("no-")) antialiasedText=false;
 			} else
 				interp.getRightParen();
 		}
@@ -4083,9 +4088,16 @@ public class Functions implements MacroConstants, Measurements {
 				interp.getRightParen();
 				gd.addStringField(label, defaultStr, columns);
 			} else if (name.equals("addDirectory")) {
+				int columns = 0;
 				String label = getFirstString();
-				String defaultDir = getLastString();
-				gd.addDirectoryField(label, defaultDir);
+				String defaultDir = getNextString();
+				if (interp.nextToken()==',')
+					columns = (int)getNextArg();
+				interp.getRightParen();
+				if (columns==0)
+					gd.addDirectoryField(label, defaultDir);
+				else
+					gd.addDirectoryField(label, defaultDir, columns);
 			} else if (name.equals("addImageChoice")) {
 				String label = getFirstString();
 				String defaultImage = null;
@@ -4097,9 +4109,16 @@ public class Functions implements MacroConstants, Measurements {
 					interp.error("No images");
 				gd.addImageChoice(label, defaultImage);
 			} else if (name.equals("addFile")) {
+				int columns = 0;
 				String label = getFirstString();
-				String defaultPath = getLastString();
-				gd.addFileField(label, defaultPath);
+				String defaultPath = getNextString();
+				if (interp.nextToken()==',')
+					columns = (int)getNextArg();
+				interp.getRightParen();
+				if (columns==0)
+					gd.addFileField(label, defaultPath);
+				else
+					gd.addFileField(label, defaultPath, columns);
 			} else if (name.equals("addNumber")) {
 				int columns = 6;
 				String units = null;
@@ -4171,6 +4190,8 @@ public class Functions implements MacroConstants, Measurements {
 			} else if (name.equals("addToSameRow")) {
 				interp.getParens();
 				gd.addToSameRow();
+			} else if (name.equals("enableYesNoCancel")) {
+				gd.enableYesNoCancel(getFirstString(), getLastString());
 			} else if (name.equals("setLocation")) {
 				gd.setLocation((int)getFirstArg(), (int)getLastArg());
 			} else if (name.equals("getLocation")) {
@@ -4207,6 +4228,14 @@ public class Functions implements MacroConstants, Measurements {
 			} else if (name.equals("getRadioButton")) {
 				interp.getParens();
 				return gd.getNextRadioButton();
+			} else if (name.equals("getYesNoCancel")) {
+				interp.getParens();
+				String result = "no";
+				if (gd.wasCanceled())
+					result = "cancel";
+				else if (gd.wasOKed())
+					result = "yes";
+				return result;
 			} else
 				interp.error("Unrecognized Dialog function "+name);
 		} catch (IndexOutOfBoundsException e) {
@@ -4299,11 +4328,9 @@ public class Functions implements MacroConstants, Measurements {
 			type = imp.getStackSize()>1?"label":"info";
 		}
 		String metadata = null;
-		if (type.contains("info")) {
+		if (type.contains("info"))
 			metadata = (String)imp.getProperty("Info");
-			if (metadata==null && imp.getStackSize()>1)
-				metadata = imp.getStack().getSliceLabel(imp.getCurrentSlice());
-		} else
+		else
 			metadata = imp.getStack().getSliceLabel(imp.getCurrentSlice());
 		if (metadata==null)
 			metadata = "";
@@ -4830,10 +4857,14 @@ public class Functions implements MacroConstants, Measurements {
 			TextWindow.setMonospaced(state);
 		else if (arg1.startsWith("fullrange"))
 			Prefs.fullRange16bitInversions = state;
+		else if (arg1.startsWith("opengrayscale"))
+			Prefs.openGrayscaleJpegsAsRGB = state;
 		else if (arg1.startsWith("calibrate")) {
 			Prefs.calibrateConversions = state;
 			ImageConverter.setDoScaling(true);
-		} else
+		} else if (arg1.startsWith("mousewheel"))
+			Prefs.mouseWheelStackScrolling = state;
+		else
 			interp.error("Invalid option");
 	}
 
@@ -5352,6 +5383,10 @@ public class Functions implements MacroConstants, Measurements {
 		} else if (name.equals("stopOrthoViews")) {
 			interp.getParens();
 			Orthogonal_Views.stop();
+			return Double.NaN;
+		} else if (name.equals("startOrthoViews")) {
+			interp.getParens();
+			Orthogonal_Views.start();
 			return Double.NaN;
 		} else if (name.equals("getOrthoViewsID")) {
 			interp.getParens();
@@ -7182,7 +7217,7 @@ public class Functions implements MacroConstants, Measurements {
 
 	void addRoi(ImagePlus imp, Roi roi){
 		Overlay overlay = imp.getOverlay();
-		if (overlay==null || overlay.size()==0) {
+		if (overlay==null) {
 			if (offscreenOverlay==null)
 				offscreenOverlay = new Overlay();
 			overlay = offscreenOverlay;
@@ -7305,11 +7340,28 @@ public class Functions implements MacroConstants, Measurements {
 			return setSelection();
 		else if (name.equals("setLocAndSize") || name.equals("setLocationAndSize"))
 			return setTableLocAndSize();
+		else if (name.equals("showHistogramTable") || name.equals("list"))
+			return tableList();
 		else
 			interp.error("Unrecognized function name");
 		return null;
 	}
-
+	
+	private Variable tableList() {
+		ImagePlus img = WindowManager.getCurrentImage();
+		boolean isHistogram = false;
+		if (img!=null) {
+			ImageWindow win = img.getWindow();
+			if (win!=null && win instanceof HistogramWindow) {
+				((HistogramWindow)win).showList();
+				isHistogram = true;
+			}
+		}
+		if (!isHistogram)
+			interp.error("No histogram window");
+		return null;
+	}
+	
 	private Variable setTableLocAndSize() {
 		double x = getFirstArg();
 		double y = getNextArg();
@@ -8192,6 +8244,9 @@ public class Functions implements MacroConstants, Measurements {
 			return null;
 		} else if (name.equals("translate")) {
 			rm.translate(getFirstArg(),getLastArg());
+			return null;
+		} else if (name.equals("delete")) {
+			rm.delete((int)getArg());
 			return null;
 		} else
 			interp.error("Unrecognized RoiManager function");

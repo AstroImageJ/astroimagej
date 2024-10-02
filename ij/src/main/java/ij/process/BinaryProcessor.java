@@ -1,5 +1,4 @@
 package ij.process;
-import java.awt.*;
 
 /** This class processes binary images. */
 public class BinaryProcessor extends ByteProcessor {
@@ -99,7 +98,7 @@ public class BinaryProcessor extends ByteProcessor {
 		pass and from the left and top edges on the second pass. A
 		graphical representation of the 256 neighborhoods indexed by
 		the table is available at
-		"http://imagej.nih.gov/ij/images/skeletonize-table.gif".
+		"http://imagej.net/ij/images/skeletonize-table.gif".
 	*/
 	public void skeletonize(int foreground) {
 		if (!(foreground==255||foreground==0))

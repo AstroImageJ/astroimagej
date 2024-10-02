@@ -1,9 +1,11 @@
 package ij.plugin.tool;
+
 import ij.ImagePlus;
-import ij.plugin.PlugIn;
-import ij.macro.Program;
 import ij.gui.Toolbar;
-import java.awt.event.*;
+import ij.macro.Program;
+import ij.plugin.PlugIn;
+
+import java.awt.event.MouseEvent;
 
 public abstract class PlugInTool implements PlugIn {
 
@@ -33,7 +35,7 @@ public abstract class PlugInTool implements PlugIn {
 	}
 	
 	/** Return the string encoding of the tool icon. See
-		http://rsb.info.nih.gov/ij/developer/macro/macros.html#icons
+		http://rsb.info.net/ij/developer/macro/macros.html#icons
 		The default icon is the first letter of the tool name.
 	*/
 	public String getToolIcon() {

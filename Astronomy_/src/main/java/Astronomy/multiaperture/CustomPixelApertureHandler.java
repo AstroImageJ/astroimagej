@@ -37,6 +37,10 @@ public class CustomPixelApertureHandler {
             new Property<>(new ArrayList<>(),
                     CustomPixelApertureHandler::serializeApertures, CustomPixelApertureHandler::deserializeApertures,
                     CustomPixelApertureHandler.class);
+    public static final Property<List<CustomPixelApertureRoi>> IMPORTED_APS =
+            new Property<>(new ArrayList<>(),
+                    CustomPixelApertureHandler::serializeApertures, CustomPixelApertureHandler::deserializeApertures,
+                    CustomPixelApertureHandler.class);
     private static final Icon ADD_ICON = UIHelper.createImageIcon("Astronomy/images/icons/multiaperture/add.png", 19, 19);
     private static final Icon REMOVE_ICON = UIHelper.createImageIcon("Astronomy/images/icons/multiaperture/remove.png", 19, 19);
     private static final Icon PLAY_ICON = UIHelper.createImageIcon("Astronomy/images/icons/multiaperture/play.png", 19, 19);
@@ -513,6 +517,10 @@ public class CustomPixelApertureHandler {
 
     public static int savedApertureCount() {
         return APS.get().size();
+    }
+
+    public static int savedImportedApertureCount() {
+        return IMPORTED_APS.get().size();
     }
 
     private static List<CustomPixelApertureRoi> deserializeApertures(String setting) {

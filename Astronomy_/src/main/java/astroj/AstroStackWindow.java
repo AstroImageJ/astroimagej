@@ -4884,6 +4884,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                 var d = AperturesFile.read(s);
                 if (d != null) {
                     CustomPixelApertureHandler.APS.set(d.apertureRois());
+                    CustomPixelApertureHandler.IMPORTED_APS.set(d.apertureRois());
                     Prefs.ijPrefs.putAll(d.prefs());
                     ac.removeApertureRois();
                     for (int i = 0; i < CustomPixelApertureHandler.APS.get().size(); i++) {
@@ -4924,10 +4925,15 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                 Prefs.set("multiaperture.import.isrefstar", "");
                 Prefs.set("multiaperture.import.isalignstar", "");
                 Prefs.set("multiaperture.import.centroidstar", "");
+                CustomPixelApertureHandler.IMPORTED_APS.set(new ArrayList<>());
                 InputStream is = new BufferedInputStream(stream);
                 var p = new Properties();
                 p.load(is);
                 isCustomAp = p.containsKey(Prefs.KEY_PREFIX+CustomPixelApertureHandler.APS.getPropertyKey());
+                if (isCustomAp) {
+                    p.put(Prefs.KEY_PREFIX+CustomPixelApertureHandler.IMPORTED_APS.getPropertyKey(),
+                            p.get(Prefs.KEY_PREFIX+CustomPixelApertureHandler.APS.getPropertyKey()));
+                }
                 Prefs.ijPrefs.putAll(p);
                 Property.resetLoadStatus();
                 is.close();

@@ -5013,7 +5013,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         private static int importedCount() {
             return switch (apertureShape.get()) {
                 case CIRCULAR -> nImportedApStored;
-                case CUSTOM_PIXEL -> 0;
+                case CUSTOM_PIXEL -> CustomPixelApertureHandler.savedImportedApertureCount();
             };
         }
     }

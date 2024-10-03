@@ -3,6 +3,8 @@
 package astroj;
 
 import Astronomy.MultiAperture_;
+import Astronomy.multiaperture.CustomPixelApertureHandler;
+import Astronomy.multiaperture.io.AperturesFile;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.Prefs;
@@ -31,6 +33,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.SimpleDateFormat;
@@ -635,6 +638,11 @@ public class IJU {
     }
 
     public static void saveRaDecApertures() {
+        if ("CA".equals(Prefs.get("multiaperture.lastrun", ""))) {
+            IJ.error("RADEC Export", "RADEC export not supported for custom apertures");
+            return;
+        }
+
         int nAps = 0;
 
         String raapertureString = Prefs.get("multiaperture.raapertures", "");
@@ -1324,28 +1332,50 @@ public class IJU {
                 }
             }
         }
-        if (astroStackWindow != null) {
-            var rois = astroStackWindow.ac.getRois();
-            if (rois != null) {
-                Arrays.stream(rois)
-                        .filter(r -> r instanceof ApertureRoi)
-                        .findAny()
-                        .ifPresent(r -> {
-                            var roi = (ApertureRoi) r;
-                            prefs.put(".aperture.radius", Double.toString(roi.r1));
-                            prefs.put(".aperture.rback1", Double.toString(roi.r2));
-                            prefs.put(".aperture.rback2", Double.toString(roi.r3));
-                        });
+
+        // Custom Apertures
+        if ("CA".equals(Prefs.get("multiaperture.lastrun", ""))) {
+            // Remove circular setting
+            if (ObjectShare.get("multiapertureCircularKeys") instanceof Set<?> keysGeneric) {
+                var keys = (Set<String>) keysGeneric;
+                for (String key : keys) {
+                    prefs.remove(key);
+                }
             }
-        }
-        try {
-            FileOutputStream fos = new FileOutputStream(apsPath);
-            BufferedOutputStream bos = new BufferedOutputStream(fos);
-            prefs.store(bos, "AstroImageJ Saved Apertures");
-            bos.close();
-        } catch (IOException ioe) {
-            IJ.beep();
-            IJ.showMessage("Error writing apertures to file");
+
+            var data = new AperturesFile.Data(CustomPixelApertureHandler.APS.get(), prefs);
+            try {
+                Files.writeString(outFile.toPath(), data.toString());
+            } catch (IOException e) {
+                e.printStackTrace();
+                IJ.beep();
+                IJ.showMessage("Error writing apertures to file");
+            }
+        } else {
+            if (astroStackWindow != null) {
+                var rois = astroStackWindow.ac.getRois();
+                if (rois != null) {
+                    Arrays.stream(rois)
+                            .filter(r -> r instanceof ApertureRoi)
+                            .findAny()
+                            .ifPresent(r -> {
+                                var roi = (ApertureRoi) r;
+                                prefs.put(".aperture.radius", Double.toString(roi.r1));
+                                prefs.put(".aperture.rback1", Double.toString(roi.r2));
+                                prefs.put(".aperture.rback2", Double.toString(roi.r3));
+                            });
+                }
+            }
+
+            try {
+                FileOutputStream fos = new FileOutputStream(apsPath);
+                BufferedOutputStream bos = new BufferedOutputStream(fos);
+                prefs.store(bos, "AstroImageJ Saved Apertures");
+                bos.close();
+            } catch (IOException ioe) {
+                IJ.beep();
+                IJ.showMessage("Error writing apertures to file");
+            }
         }
     }
 

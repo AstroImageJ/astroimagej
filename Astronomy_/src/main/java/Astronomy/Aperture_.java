@@ -404,15 +404,24 @@ public class Aperture_ implements PlugInFilter {
      * Performs exact measurement of object position and integrated brightness.
      */
     protected boolean measureAperture() {
-        return measureAperture(FitsJ.getHeader(imp));//todo this is ~4s improvement in test case, test it still gets correct values
+        return measureAperture(FitsJ.getHeader(imp));
+    }
+
+    /**
+     * Performs exact measurement of object position and integrated brightness.
+     *
+     * @param hdr
+     */
+    protected boolean measureAperture(FitsJ.Header hdr) {
+        return measureAperture(hdr, null);
     }
 
     /**
      * Performs exact measurement of object position and integrated brightness.
      */
-    protected boolean measureAperture(FitsJ.Header hdr) {
+    protected boolean measureAperture(FitsJ.Header hdr, CustomPixelApertureRoi apertureRoi) {
         boolean returnVal = true;
-        if (!adjustAperture(false)) {
+        if (apertureRoi == null && !adjustAperture(false)) {
             if (this instanceof MultiAperture_ && !(this instanceof Stack_Aligner) && !(Prefs.get(MultiAperture_.PREFS_HALTONERROR, true))) {
                 returnVal = false;
             } else {
@@ -420,7 +429,7 @@ public class Aperture_ implements PlugInFilter {
             }
         }
 
-        measurePhotometry(hdr);
+        measurePhotometry(hdr, apertureRoi);
 
         // GET MJD
         mjd = 0.0;
@@ -458,7 +467,7 @@ public class Aperture_ implements PlugInFilter {
 
         // SHOW RESULTS IN OVERLAY
 
-        drawAperture();
+        drawAperture(apertureRoi);
         // SHOW RESULTS IN ImageJ TOOLBAR
 
         showApertureStatus();
@@ -474,7 +483,15 @@ public class Aperture_ implements PlugInFilter {
     }
 
     protected void measurePhotometry(FitsJ.Header hdr) {
-        photom = measurePhotometry(imp, hdr, xCenter, yCenter, radius, rBack1, rBack2);
+        measurePhotometry(hdr, null);
+    }
+
+    protected void measurePhotometry(FitsJ.Header hdr, CustomPixelApertureRoi apertureRoi) {
+        if (apertureRoi != null) {
+            photom = measurePhotometry(imp, hdr, apertureRoi);
+        } else {
+            photom = measurePhotometry(imp, hdr, xCenter, yCenter, radius, rBack1, rBack2);
+        }
 
         back = photom.backgroundBrightness();
         source = photom.sourceBrightness();
@@ -518,6 +535,40 @@ public class Aperture_ implements PlugInFilter {
         localPhotom.setUsePlane(backIsPlane);
 
         localPhotom.measure(imp, exact, x, y, r, r2, r3);
+
+        return localPhotom;
+    }
+
+    protected Photometer measurePhotometry(ImagePlus imp, FitsJ.Header hdr, CustomPixelApertureRoi apertureRoi) {
+        double darkPerPix = ccdDark;
+        if (hdr != null) {
+            isFITS = true;
+            if (imp.getWindow() instanceof AstroStackWindow asw) {
+                wcs = asw.getWCS();
+            } else {
+                wcs = new WCS(hdr);
+            }
+
+            double exptime = FitsJ.getExposureTime(hdr);
+            if (Double.isNaN(exptime)) exptime = 1.0;
+            darkPerPix *= exptime;
+            if (!darkKeyword.trim().equals("")) {
+                try {
+                    darkPerPix = FitsJ.findDoubleValue(darkKeyword, hdr);
+                } catch (NumberFormatException e) {
+                    darkPerPix = ccdDark * exptime;
+                }
+            }
+        }
+
+        // DO APERTURE PHOTOMETRY
+        var localPhotom = new Photometer(imp.getCalibration());
+        localPhotom.setCCD(ccdGain, ccdNoise, darkPerPix);
+        localPhotom.setRemoveBackStars(removeBackStars);
+        localPhotom.setMarkRemovedPixels(showRemovedPixels);
+        localPhotom.setUsePlane(backIsPlane);
+
+        localPhotom.measure(imp, apertureRoi, exact);
 
         return localPhotom;
     }
@@ -581,10 +632,17 @@ public class Aperture_ implements PlugInFilter {
      * Shows results in the image overlay channel.
      */
     protected void drawAperture() {
+        drawAperture(null);
+    }
+
+    /**
+     * Shows results in the image overlay channel.
+     */
+    protected void drawAperture(ApertureRoi apertureRoi) {
         if (ocanvas != null && clearOverlay)
             ocanvas.clearRois();
         if (starOverlay || skyOverlay || valueOverlay || nameOverlay) {
-            addApertureRoi();
+            addApertureRoi(apertureRoi);
             canvas.repaint();
         }
     }
@@ -607,12 +665,26 @@ public class Aperture_ implements PlugInFilter {
      * Adds an ApertureRoi to the overlay
      */
     protected void addApertureRoi() {
+        addApertureRoi(null);
+    }
+
+    /**
+     * Adds an ApertureRoi to the overlay
+     */
+    protected void addApertureRoi(ApertureRoi apertureRoi) {
         if (starOverlay || skyOverlay || valueOverlay || nameOverlay) {
-            ApertureRoi roi = new ApertureRoi(xCenter, yCenter, radius, rBack1, rBack2, source, showAsCentered);
-            roi.setAppearance(starOverlay, showAsCentered, skyOverlay, nameOverlay, valueOverlay, apertureColor, apertureName, source);
-            roi.setAMag(apMag);
-            roi.setImage(imp);
-            ocanvas.add(roi);
+            if (apertureRoi == null) {
+                ApertureRoi roi = new ApertureRoi(xCenter, yCenter, radius, rBack1, rBack2, source, showAsCentered);
+                roi.setAppearance(starOverlay, showAsCentered, skyOverlay, nameOverlay, valueOverlay, apertureColor, apertureName, source);
+                roi.setAMag(apMag);
+                roi.setImage(imp);
+                ocanvas.add(roi);
+            } else {
+                apertureRoi.setAppearance(starOverlay, showAsCentered, skyOverlay, nameOverlay, valueOverlay, apertureColor, apertureName, source);
+                apertureRoi.setAMag(apMag);
+                apertureRoi.setImage(imp);
+                ocanvas.add(apertureRoi);
+            }
         }
     }
 

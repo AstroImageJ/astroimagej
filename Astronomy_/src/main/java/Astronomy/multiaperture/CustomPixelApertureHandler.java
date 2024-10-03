@@ -41,6 +41,7 @@ public class CustomPixelApertureHandler {
             new Property<>(new ArrayList<>(),
                     CustomPixelApertureHandler::serializeApertures, CustomPixelApertureHandler::deserializeApertures,
                     CustomPixelApertureHandler.class);
+    private static final Property<Point> WINDOW_LOCATION = new Property<>(new Point(), CustomPixelApertureHandler.class);
     private static final int WIDTH = 25;
     private static final int HEIGHT = 25;
     private static final Icon ADD_ICON = UIHelper.createImageIcon("Astronomy/images/icons/multiaperture/add.png", WIDTH, HEIGHT);
@@ -331,10 +332,14 @@ public class CustomPixelApertureHandler {
         frame.add(p);
         frame.pack();
 
-        if (imp != null && imp.getWindow() != null) {
-            UIHelper.setCenteredOnWindow(frame, imp.getWindow());
-        } else {
-            UIHelper.setCenteredOnScreen(frame, IJ.getInstance());
+        WINDOW_LOCATION.locationSavingWindow(frame, imp == null ? null : imp.getWindow());
+
+        if (WINDOW_LOCATION.get().distanceSq(0,0) == 0) {
+            if (imp != null && imp.getWindow() != null) {
+                UIHelper.setCenteredOnWindow(frame, imp.getWindow());
+            } else {
+                UIHelper.setCenteredOnScreen(frame, IJ.getInstance());
+            }
         }
 
         frame.setResizable(false);

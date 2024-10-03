@@ -1272,7 +1272,8 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         c.gridwidth = addToSameRowCalled ? GridBagConstraints.REMAINDER : 2;
         c.insets = new Insets(15, 0, 0, 0);
         displayPane.add(scrollPane);
-        displayPane.add(buttons, c);//todo buttons not in scrollpane
+        displayPane.add(buttons, c);
+        displayPane.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         Font font = new Font("Dialog", Font.PLAIN,12);
         if (!fontSizeSet && font != null && Prefs.getGuiScale() != 1.0) {
@@ -1597,11 +1598,6 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         boolean shift = (flags & InputEvent.SHIFT_MASK) != 0;
         if (keyCode == KeyEvent.VK_G && shift && (control || meta))
             new ScreenGrabber().run("");
-    }
-
-    public Insets getInsets() {
-        Insets i = super.getInsets();
-        return new Insets(i.top + 10, i.left + 10, i.bottom + 10, i.right + 10);
     }
 
     /**

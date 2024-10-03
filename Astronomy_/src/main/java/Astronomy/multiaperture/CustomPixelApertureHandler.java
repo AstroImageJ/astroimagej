@@ -11,6 +11,8 @@ import ij.astro.util.UIHelper;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ItemEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.util.List;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
@@ -23,6 +25,7 @@ public class CustomPixelApertureHandler {
     private int selectedAperture = 1;
     private JFrame controlPanel;
     private Runnable playCallback;
+    private Runnable shutdownCallback;
     private ImagePlus imp;
     private boolean invertBackground = false;
     private boolean copyBackground = false;
@@ -104,13 +107,15 @@ public class CustomPixelApertureHandler {
     }
 
     public void hideControls() {
-        if (controlPanel != null) {
-            controlPanel.setVisible(false);
-        }
+        closeControl();
     }
 
     public void setPlayCallback(Runnable callback) {
         playCallback = callback;
+    }
+
+    public void setExitCallback(Runnable callback) {
+        shutdownCallback = callback;
     }
 
     public boolean validateApertures() {
@@ -181,6 +186,7 @@ public class CustomPixelApertureHandler {
 
     private JFrame createControlPanel() {
         var frame = new JFrame("Aperture Control Panel");
+        frame.setIconImage(UIHelper.createImage("astronomy_icon.png"));
         var p = Box.createVerticalBox();
         var b = Box.createHorizontalBox();
 
@@ -302,6 +308,15 @@ public class CustomPixelApertureHandler {
         });
 
         frame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+
+        frame.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                if (shutdownCallback != null) {
+                    shutdownCallback.run();
+                }
+            }
+        });
 
         deleteAp.setToolTipText("Delete current aperture");
         apSelector.setToolTipText("Select active aperture");

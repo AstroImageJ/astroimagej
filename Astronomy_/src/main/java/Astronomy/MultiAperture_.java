@@ -313,9 +313,13 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     protected static final Property<ApertureShape> apertureShape = new Property<>(ApertureShape.CIRCULAR, MultiAperture_.class);
     private static String lastRun = "<Not yet run>";
     private boolean processingStackForRadii;
-    private static final CustomPixelApertureHandler customPixelApertureHandler = new CustomPixelApertureHandler();
+    private final CustomPixelApertureHandler customPixelApertureHandler = new CustomPixelApertureHandler();
 
-//	public static double RETRY_RADIUS = 3.0;
+    public MultiAperture_() {
+        customPixelApertureHandler.setExitCallback(this::cancel);
+    }
+
+    //	public static double RETRY_RADIUS = 3.0;
 
     public static Set<String> getApertureKeys() {
         var o = new HashSet<String>();

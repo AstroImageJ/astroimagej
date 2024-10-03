@@ -284,7 +284,7 @@ public class Photometer {
                 var backMeanMinus2Stdev = backMean - 2.0 * backstdev;
                 for (int i = 0; i < pCnt; i++) {
                     d = pixels[i];
-                    if ((d <= backMeanPlus2Stdev) && (d >= backMeanMinus2Stdev)) {
+                    if ((d <= backMeanPlus2Stdev) /*&& (d >= backMeanMinus2Stdev)*/) {
                         back += d; // FINAL BACKGROUND
                         back2 += d * d;
                         backCount++;

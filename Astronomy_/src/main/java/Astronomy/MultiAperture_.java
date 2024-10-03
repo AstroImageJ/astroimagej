@@ -727,7 +727,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
         if (apertureShape.get() == ApertureShape.CUSTOM_PIXEL) {
             if (apLoading.get().isPrevious()) {
-                customPixelApertureHandler.loadAperturesFromPrefs(apLoading.get() == ApLoading.FIRST_PREVIOUS);
+                customPixelApertureHandler.loadAperturesFromPrefs(apLoading.get() == ApLoading.FIRST_PREVIOUS, apLoading.get() == ApLoading.IMPORTED);
                 ngot = customPixelApertureHandler.apCount();
             }
 

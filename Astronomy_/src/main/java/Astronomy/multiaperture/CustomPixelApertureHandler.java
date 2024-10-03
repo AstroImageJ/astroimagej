@@ -154,12 +154,13 @@ public class CustomPixelApertureHandler {
     /**
      * Load apertures from preferences, clears existing apertures.
      */
-    public void loadAperturesFromPrefs(boolean loadOnlyOne) {
+    public void loadAperturesFromPrefs(boolean loadOnlyOne, boolean useImport) {
         customPixelApertureRois.clear();
+        var setting = useImport ? IMPORTED_APS : APS;
         if (loadOnlyOne && !APS.get().isEmpty()) {
-            customPixelApertureRois.add(APS.get().get(0));
+            customPixelApertureRois.add(setting.get().get(0));
         } else {
-            customPixelApertureRois.addAll(APS.get());
+            customPixelApertureRois.addAll(setting.get());
         }
 
         updateDisplay(true);

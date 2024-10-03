@@ -734,6 +734,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             customPixelApertureHandler.setImp(imp);
             customPixelApertureHandler.setPlayCallback(this::runCustomAperture);
             customPixelApertureHandler.showControls();
+            if (ac != null) {
+                ac.setCustomPixelMode(true);
+            }
         }
 
         if (runningWCSOnlyAlignment) {
@@ -776,6 +779,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         Prefs.set(MultiAperture_.PREFS_CANCELED, "true");
         Prefs.set("multiaperture.lastrun", lastRun);
         customPixelApertureHandler.closeControl();
+        if (ac != null) {
+            ac.setCustomPixelMode(false);
+        }
     }
 
     /**
@@ -1235,6 +1241,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         });
         noMoreInput();
         closeHelpPanel();
+        if (ac != null) {
+            ac.setCustomPixelMode(false);
+        }
         Prefs.set("multiaperture.lastrun", lastRun);
         super.shutDown();
         if (asw != null && asw.autoDisplayAnnotationsFromHeader) asw.displayAnnotationsFromHeader(true, true, false);

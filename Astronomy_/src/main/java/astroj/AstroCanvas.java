@@ -87,6 +87,7 @@ public class AstroCanvas extends OverlayCanvas {
     private final Color dirIndicatorColor = new Color(238, 0, 28);
     private final Color dirIndicatorColorWCS = new Color(255, 190, 0);//(255,129,35);
     private boolean performDraw = true;
+    private boolean customPixelMode;
 
     public AstroCanvas(ImagePlus imp) {
         super(imp);
@@ -624,7 +625,7 @@ public class AstroCanvas extends OverlayCanvas {
 
             transEnabled = true;
 
-            if (showPhotometerCursor && mouseInImage && astronomyMode) updatePhotometerOverlay(offScreenGraphics);
+            if (showPhotometerCursor && mouseInImage && astronomyMode && !customPixelMode) updatePhotometerOverlay(offScreenGraphics);
             OverlayCanvas oc = getOverlayCanvas(imp);
             if (oc.numberOfRois() > 0) drawOverlayCanvas(offScreenGraphics);
             transEnabled = false;
@@ -1082,5 +1083,9 @@ public class AstroCanvas extends OverlayCanvas {
 
     public void setPerformDraw(boolean performDraw) {
         this.performDraw = performDraw;
+    }
+
+    public void setCustomPixelMode(boolean customPixelMode) {
+        this.customPixelMode = customPixelMode;
     }
 } // AstroCanvas class

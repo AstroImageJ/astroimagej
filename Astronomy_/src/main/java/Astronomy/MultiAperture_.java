@@ -4338,15 +4338,15 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             switch (shape) {
                 case CIRCULAR -> {
                     g.buildRow((g1, b) -> {
-                        b.add(Box.createHorizontalStrut(230));
+                        b.add(Box.createHorizontalStrut(135));
                         sliders[2] = g.addFloatSlider("Fixed/Base radius of photometric aperture", 0.01, radius > 100 ? radius : 100, false, radius, 3, 1.0, d -> radius = d);
                     });
                     g.buildRow((g1, b) -> {
-                        b.add(Box.createHorizontalStrut(200));
+                        b.add(Box.createHorizontalStrut(105));
                         sliders[3] = g.addFloatSlider("Fixed/Base radius of inner background annulus", 0.01, rBack1 > 100 ? rBack1 : 100, false, rBack1, 3, 1.0, d -> rBack1 = d);
                     });
                     g.buildRow((g1, b) -> {
-                        b.add(Box.createHorizontalStrut(200));
+                        b.add(Box.createHorizontalStrut(105));
                         sliders[4] = g.addFloatSlider("Fixed/Base radius of outer background annulus", 0.01, rBack2 > 100 ? rBack2 : 100, false, rBack2, 3, 1.0, d -> rBack2 = d);
                     });
                     g.addLineSeparator();
@@ -4527,15 +4527,17 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
                     g.buildRow((g1, box) -> {
                         final var gauss = gd.addBoundedNumericField("Smoothing Filter Radius", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), gaussRadius, 1, 10, "pixels", d -> gaussRadius = d);
-                        box.add(Box.createHorizontalStrut(300));
+                        //box.add(Box.createHorizontalStrut(300));
                         gauss.asSwingComponent(C1).setToolTipText("Radius of gaussian smoothing to use when finding initial peaks.\n Set to 1 to disable.");
                         suggestionComponents.add(gauss.c2());
                         suggestionComponents.add(gauss.c1());
                     });
 
                     g.buildRow((g1, box) -> {
+                        box.add(Box.createHorizontalStrut(122));
                         var autoPeaks = gd.addCheckbox("Auto Thresholds", autoPeakValues, b -> autoPeakValues = b);
                         var maxPeak = gd.addBoundedNumericField("Max. Peak Value", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), maxPeakValue, 1, columns, null, d -> maxPeakValue = d);
+                        box.add(Box.createHorizontalStrut(52));
                         var minPeak = gd.addBoundedNumericField("Min. Peak Value", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), minPeakValue, 1, columns, null, d -> minPeakValue = d);
 
                         autoPeaks.setToolTipText("When enabled, set peak thresholds based on image statistics.\nMax = 0.9 * Max Pixel Value, Min = Mean Pixel Value + 1σ.");
@@ -4622,13 +4624,26 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     });
 
                     g.buildRow((g1, box) -> {
-                        var brightnessVsDistance = gd.addBoundedNumericField("Weight of brightness vs. distance %", new GenericSwingDialog.Bounds(0, 100), brightness2DistanceWeight, 1, columns, null, d -> brightness2DistanceWeight = d);
+                        var distanceRatioBox = Box.createHorizontalBox();
+                        var ratioSlider = new JSlider(0, 100, (int) brightness2DistanceWeight);
+
+                        ratioSlider.addChangeListener($ -> brightness2DistanceWeight = ratioSlider.getValue());
+
+                        distanceRatioBox.add(new JLabel("Weight of Distance "));
+                        distanceRatioBox.add(ratioSlider);
+                        distanceRatioBox.add(new JLabel(" vs Brightness"));
+                        //distanceRatioBox.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+
+                        box.add(Box.createHorizontalStrut(32));
+                        g1.addGenericComponent(distanceRatioBox);
+
+                        box.add(Box.createHorizontalStrut(170));
                         var maxStars = gd.addBoundedNumericField("Max. Comp. Stars", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), maxSuggestedStars, 1, columns, null, true, d -> maxSuggestedStars = d.intValue());
 
-                        suggestionComponents.add(brightnessVsDistance.c2());
+                        suggestionComponents.add(ratioSlider);
                         suggestionComponents.add(maxStars.c2());
 
-                        brightnessVsDistance.asSwingComponent(C1).setToolTipText("""
+                        ratioSlider.setToolTipText("""
                 <html>Weight of brightness vs distance, used to sort stars.<br>
                 Based on normalized Source-Sky brightness and distance relative to the specified base aperture.<br>
                 A value of 100 makes the weighting based entirely on the normalized brightness.<br>

@@ -157,7 +157,7 @@ public class CustomPixelApertureHandler {
     public void loadAperturesFromPrefs(boolean loadOnlyOne, boolean useImport) {
         customPixelApertureRois.clear();
         var setting = useImport ? IMPORTED_APS : APS;
-        if (loadOnlyOne && !APS.get().isEmpty()) {
+        if (loadOnlyOne && !setting.get().isEmpty()) {
             customPixelApertureRois.add(setting.get().get(0));
         } else {
             customPixelApertureRois.addAll(setting.get());

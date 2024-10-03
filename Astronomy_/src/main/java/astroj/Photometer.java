@@ -249,16 +249,16 @@ public class Photometer {
 
             // Copy pixel data for evaluation
             var pixels = new float[totalPixels];
-            var js = new double[totalPixels];
-            var is = new double[totalPixels];
+            var js = new int[totalPixels];
+            var is = new int[totalPixels];
             var pCnt = 0;
 
             for (CustomPixelApertureRoi.Pixel pixel : apertureRoi.iterable()) {
                 if (pixel.isBackground()) {
                     d = ip.getPixelValue(pixel.x(), pixel.y());
                     if (!Float.isNaN(d)) {
-                        js[pCnt] = pixel.x();
-                        is[pCnt] = pixel.y();
+                        is[pCnt] = pixel.x();
+                        js[pCnt] = pixel.y();
                         pixels[pCnt++] = d;
                     } else if (markRemovedPixels) {
                         addPixelRoi(imp, pixel.x(), pixel.y()); // Mark NaN pixels
@@ -599,8 +599,8 @@ public class Photometer {
 
             // Copy pixel data for evaluation
             var pixels = new float[totalPixels];
-            var js = new double[totalPixels];
-            var is = new double[totalPixels];
+            var js = new int[totalPixels];
+            var is = new int[totalPixels];
             var pCnt = 0;
             for (int j = j1; j <= j2; j++) {
                 dj = (double) j - ypix + Centroid.PIXELCENTER;        // Center
@@ -610,8 +610,8 @@ public class Photometer {
                     if (r2 >= r2b1 && r2 <= r2b2) {
                         d = ip.getPixelValue(i, j);
                         if (!Float.isNaN(d)) {
-                            js[pCnt] = dj;
-                            is[pCnt] = di;
+                            js[pCnt] = j;
+                            is[pCnt] = i;
                             pixels[pCnt++] = d;
                         } else if (markRemovedPixels) {
                             addPixelRoi(imp, i, j); // Mark NaN pixels

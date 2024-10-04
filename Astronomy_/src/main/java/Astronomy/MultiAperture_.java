@@ -316,7 +316,12 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     private final CustomPixelApertureHandler customPixelApertureHandler = new CustomPixelApertureHandler();
 
     public MultiAperture_() {
-        customPixelApertureHandler.setExitCallback(this::cancel);
+        customPixelApertureHandler.setExitCallback(() -> {
+            cancel();
+            IJ.beep();
+            Prefs.set(MultiAperture_.PREFS_CANCELED, "true");
+            shutDown();
+        });
     }
 
     //	public static double RETRY_RADIUS = 3.0;

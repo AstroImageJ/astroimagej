@@ -6454,7 +6454,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
 
         // Fixes image not updating when slice changes with animate feature
         //todo fix slow draw
-        ac.paintDoubleBuffered(ac.getGraphics());
+        ac.paint(ac.getGraphics(), true);
 
         drawSubtitle();
 

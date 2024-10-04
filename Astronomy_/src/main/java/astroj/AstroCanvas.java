@@ -3,6 +3,7 @@ package astroj;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.Prefs;
+import ij.astro.logging.AIJLogger;
 import ij.gui.Arrow;
 import ij.gui.ImageWindow;
 import ij.gui.Roi;
@@ -483,115 +484,56 @@ public class AstroCanvas extends OverlayCanvas {
             invCanvTrans = ((Graphics2D) g).getTransform();
             canvTrans = ((Graphics2D) g).getTransform();
             Roi roi = imp.getRoi();
-            //		if (roi!=null || getShowAllROIs() || getOverlay()!=null) {
-            if (roi != null) roi.updatePaste();
-            if (true)//!IJ.isMacOSX())
-            {
-                if (imageWidth != 0 && imageHeight != 0) {
-                    paintDoubleBuffered(g);
-                }
-            } else {
-                //		}
-                try {
-                    if (imageUpdated) {
-                        imageUpdated = false;
-                        imp.updateImage();
-                    }
-                    int clipWidth = srcRect.width + 1; //+1 to allow for partial pixel at edge
-                    int clipHeight = srcRect.height + 1; //+1 to allow for partial pixel at edge
-                    int offScrnWidth = (int) (clipWidth * magnification);
-                    int offScrnHeight = (int) (clipHeight * magnification);
-                    setInterpolation(g, Prefs.interpolateScaledImages);
-                    Image img = imp.getImage();
-                    if (isTransformed)
-                        flipAndRotateCanvas(g);
-                    if (!netRotate) {
-                        if (img != null) {
-                            //                    IJ.log("update: srcRect.x="+srcRect.x+"  srcRect.y="+srcRect.y);
-                            g.drawImage(img,
-                                    srcRect.x < 0 ? (int) (-srcRect.x * magnification) : 0,
-                                    srcRect.y < 0 ? (int) (-srcRect.y * magnification) : 0,
-                                    srcRect.x + srcRect.width < imp.getWidth() ? offScrnWidth : (int) ((imp.getWidth() - srcRect.x) * magnification), //(int)(srcRect.width*magnification)-(int)((srcRect.x+srcRect.width-imp.getWidth())*magnification),
-                                    srcRect.y + srcRect.height < imp.getHeight() ? offScrnHeight : (int) ((imp.getHeight() - srcRect.y) * magnification),//(int)(srcRect.height*magnification)-(int)((srcRect.y+srcRect.height-imp.getHeight())*magnification),
-                                    srcRect.x < 0 ? 0 : srcRect.x,
-                                    srcRect.y < 0 ? 0 : srcRect.y,
-                                    srcRect.x + srcRect.width < imp.getWidth() ? srcRect.x + clipWidth : imp.getWidth(),
-                                    srcRect.y + srcRect.height < imp.getHeight() ? srcRect.y + clipHeight : imp.getHeight(),
-                                    null);
-                        }
-                    } else {
-                        if (img != null) //needs updating when netRotate is implemented
-                            g.drawImage(img, 0, 0, (int) (srcRect.height * magnification), (int) (srcRect.width * magnification),
-                                    (int) (srcRect.x + srcRect.width / 2.0 - srcRect.height / 2.0),
-                                    (int) (srcRect.y + srcRect.height / 2.0 - srcRect.width / 2.0),
-                                    (int) (srcRect.x + srcRect.width / 2.0 + srcRect.height / 2.0),
-                                    (int) (srcRect.y + srcRect.height / 2.0 + srcRect.width / 2.0), null);
-                    }
+            if (roi != null)
+                roi.updatePaste();
 
-                    transEnabled = false;
-                    int xx1 = screenX(0) > 0 ? screenX(0) : 0;    //top left screen x-location
-                    int yy1 = screenY(0) > 0 ? screenY(0) : 0;    //top left screen y-location
-                    int xx2 = screenX(imp.getWidth()) < offScrnWidth ? screenX(imp.getWidth()) : offScrnWidth;    //bottom right image x-pixel plus 1
-                    int yy2 = screenY(imp.getHeight()) < offScrnHeight ? screenY(imp.getHeight()) : offScrnHeight;    //bottom right image y-pixel plus 1
-
-                    g.setColor(Color.WHITE);
-                    if (xx1 > 0)
-                        g.fillRect(0, 0, xx1, offScrnHeight);
-                    if (yy1 > 0)
-                        g.fillRect(xx1, 0, offScrnWidth - xx1, yy1);
-                    if (xx2 < offScrnWidth)
-                        g.fillRect(xx2, yy1, offScrnWidth - xx2, offScrnHeight - yy1);
-                    if (yy2 < offScrnHeight)
-                        g.fillRect(xx1, yy2, xx2 - xx1, offScrnHeight - yy2);
-                    transEnabled = true;
-
-                    if (showPhotometerCursor && mouseInImage && astronomyMode) updatePhotometerOverlay(g);
-                    OverlayCanvas oc = getOverlayCanvas(imp);
-                    if (oc.numberOfRois() > 0) drawOverlayCanvas(g);
-                    transEnabled = false;
-                    //if (overlay!=null) ((ImageCanvas)this).drawOverlay(overlay, g);
-                    if (showAllOverlay != null) this.drawOverlay(showAllOverlay, g);
-                    if (roi != null) drawRoi(roi, g);
-                    transEnabled = true;
-                    drawZoomIndicator(g);
-                    if (IJ.debugMode) showFrameRate(g);
-                } catch (OutOfMemoryError e) {
-                    IJ.outOfMemory("Paint");
-                }
+            if (imageWidth == 0 && imageHeight == 0) {
+                return;
             }
+
+            paint(g, true); //!IJ.isMacOSX())
         }
     }
 
     // Use double buffer to reduce flicker when drawing complex ROIs.
     // Author: Erik Meijering
-    synchronized void paintDoubleBuffered(Graphics g) {
+    synchronized void paint(Graphics g, boolean doubleBuffered) {
         int clipWidth = srcRect.width + 1; //+1 to allow for partial pixel at edge
         int clipHeight = srcRect.height + 1; //+1 to allow for partial pixel at edge
         int offScrnWidth = (int) (clipWidth * magnification);
         int offScrnHeight = (int) (clipHeight * magnification);
-        if (offScreenImage == null || offScreenWidth != getWidth() || offScreenHeight != getHeight()) {
-            offScreenImage = createImage(getWidth(), getHeight());
-            offScreenWidth = getWidth();
-            offScreenHeight = getHeight();
+
+        Graphics drawingGraphics;
+
+        if (doubleBuffered) {
+            if (offScreenImage == null || offScreenWidth != getWidth() || offScreenHeight != getHeight()) {
+                offScreenImage = createImage(getWidth(), getHeight());
+                offScreenWidth = getWidth();
+                offScreenHeight = getHeight();
+            }
+
+            drawingGraphics = offScreenImage.getGraphics();
+        } else {
+            drawingGraphics = g;
         }
+
         Roi roi = imp.getRoi();
         try {
             if (imageUpdated) {
                 imageUpdated = false;
                 imp.updateImage();
             }
-            Graphics offScreenGraphics = offScreenImage.getGraphics();
-            setInterpolation(offScreenGraphics, Prefs.interpolateScaledImages);
+
+            setInterpolation(drawingGraphics, Prefs.interpolateScaledImages);
             Image img = imp.getImage();
-            flipAndRotateCanvas(offScreenGraphics);
+            flipAndRotateCanvas(drawingGraphics);
             if (!netRotate) {
                 if (img != null) {
-//                    IJ.log("update: srcRect.x="+srcRect.x+"  srcRect.y="+srcRect.y);
-                    offScreenGraphics.drawImage(img,
+                    drawingGraphics.drawImage(img,
                             srcRect.x < 0 ? (int) (-srcRect.x * magnification) : 0,
                             srcRect.y < 0 ? (int) (-srcRect.y * magnification) : 0,
-                            srcRect.x + srcRect.width < imp.getWidth() ? offScrnWidth : (int) ((imp.getWidth() - srcRect.x) * magnification), //(int)(srcRect.width*magnification)-(int)((srcRect.x+srcRect.width-imp.getWidth())*magnification),
-                            srcRect.y + srcRect.height < imp.getHeight() ? offScrnHeight : (int) ((imp.getHeight() - srcRect.y) * magnification),//(int)(srcRect.height*magnification)-(int)((srcRect.y+srcRect.height-imp.getHeight())*magnification),
+                            srcRect.x + srcRect.width < imp.getWidth() ? offScrnWidth : (int) ((imp.getWidth() - srcRect.x) * magnification),
+                            srcRect.y + srcRect.height < imp.getHeight() ? offScrnHeight : (int) ((imp.getHeight() - srcRect.y) * magnification),
                             srcRect.x < 0 ? 0 : srcRect.x,
                             srcRect.y < 0 ? 0 : srcRect.y,
                             srcRect.x + srcRect.width < imp.getWidth() ? srcRect.x + clipWidth : imp.getWidth(),
@@ -600,7 +542,7 @@ public class AstroCanvas extends OverlayCanvas {
                 }
             } else {
                 if (img != null)  //needs major updating when netRotate is implemented
-                    offScreenGraphics.drawImage(img, 0, 0, (int) (srcRect.height * magnification), (int) (srcRect.width * magnification),
+                    drawingGraphics.drawImage(img, 0, 0, (int) (srcRect.height * magnification), (int) (srcRect.width * magnification),
                             (int) (srcRect.x + srcRect.width / 2.0 - srcRect.height / 2.0),
                             (int) (srcRect.y + srcRect.height / 2.0 - srcRect.width / 2.0),
                             (int) (srcRect.x + srcRect.width / 2.0 + srcRect.height / 2.0),
@@ -613,33 +555,35 @@ public class AstroCanvas extends OverlayCanvas {
             int xx2 = screenX(imp.getWidth()) < offScrnWidth ? screenX(imp.getWidth()) : offScrnWidth;    //bottom right image x-pixel plus 1
             int yy2 = screenY(imp.getHeight()) < offScrnHeight ? screenY(imp.getHeight()) : offScrnHeight;    //bottom right image y-pixel plus 1
 
-            offScreenGraphics.setColor(Color.WHITE);
+            drawingGraphics.setColor(Color.WHITE);
             if (xx1 > 0)
-                offScreenGraphics.fillRect(0, 0, xx1, offScrnHeight);
+                drawingGraphics.fillRect(0, 0, xx1, offScrnHeight);
             if (yy1 > 0)
-                offScreenGraphics.fillRect(xx1, 0, offScrnWidth - xx1, yy1);
+                drawingGraphics.fillRect(xx1, 0, offScrnWidth - xx1, yy1);
             if (xx2 < offScrnWidth)
-                offScreenGraphics.fillRect(xx2, yy1, offScrnWidth - xx2, offScrnHeight - yy1);
+                drawingGraphics.fillRect(xx2, yy1, offScrnWidth - xx2, offScrnHeight - yy1);
             if (yy2 < offScrnHeight)
-                offScreenGraphics.fillRect(xx1, yy2, xx2 - xx1, offScrnHeight - yy2);
+                drawingGraphics.fillRect(xx1, yy2, xx2 - xx1, offScrnHeight - yy2);
 
             transEnabled = true;
 
-            if (showPhotometerCursor && mouseInImage && astronomyMode && !customPixelMode) updatePhotometerOverlay(offScreenGraphics);
+            if (showPhotometerCursor && mouseInImage && astronomyMode && !customPixelMode) updatePhotometerOverlay(drawingGraphics);
             OverlayCanvas oc = getOverlayCanvas(imp);
-            if (oc.numberOfRois() > 0) drawOverlayCanvas(offScreenGraphics);
+            if (oc.numberOfRois() > 0) drawOverlayCanvas(drawingGraphics);
             transEnabled = false;
 
             //if (overlay!=null) ((ImageCanvas)this).drawOverlay(overlay, offScreenGraphics);
 
-            if (showAllOverlay != null) this.drawOverlay(showAllOverlay, offScreenGraphics);
-            if (roi != null) drawRoi(roi, offScreenGraphics);
+            if (showAllOverlay != null) this.drawOverlay(showAllOverlay, drawingGraphics);
+            if (roi != null) drawRoi(roi, drawingGraphics);
             transEnabled = true;
-            drawZoomIndicator(offScreenGraphics);
-            if (IJ.debugMode) showFrameRate(offScreenGraphics);
+            drawZoomIndicator(drawingGraphics);
+            if (IJ.debugMode) showFrameRate(drawingGraphics);
 
-            g.drawImage(offScreenImage, 0, 0, null);
-
+            // Copy offscreen image on screen
+            if (doubleBuffered) {
+                g.drawImage(offScreenImage, 0, 0, null);
+            }
         } catch (OutOfMemoryError e) {
             IJ.outOfMemory("Paint");
         }

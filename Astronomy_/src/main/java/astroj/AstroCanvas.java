@@ -495,6 +495,11 @@ public class AstroCanvas extends OverlayCanvas {
         }
     }
 
+    @Override
+    public boolean isDoubleBuffered() {
+        return true;
+    }
+
     // Use double buffer to reduce flicker when drawing complex ROIs.
     // Author: Erik Meijering
     synchronized void paint(Graphics g, boolean doubleBuffered) {

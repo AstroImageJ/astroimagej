@@ -66,6 +66,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
     private Class<?> activeSection;
     private final Map<Class<?>, SwappableSectionHolder<?>> swappableSections = new HashMap<>();
     private final Deque<Box> rowBuilding = new ArrayDeque<>();
+    private int gridwith;
 
     public GenericSwingDialog(String title) {
         this(title, guessParentFrame());
@@ -1086,6 +1087,11 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         this.anchor = anchor;
     }
 
+    public void setWidth(int gridwith) {
+        customAnchor = true;
+        this.gridwith = gridwith;
+    }
+
     public void setLeftInset(int inset) {
         this.leftInset = inset;
     }
@@ -1103,6 +1109,8 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
             c.insets.right = rightInset;
             leftInset = 0;
             rightInset = 0;
+            c.gridwidth = gridwith;
+            gridwith = 1;
         }
     }
 

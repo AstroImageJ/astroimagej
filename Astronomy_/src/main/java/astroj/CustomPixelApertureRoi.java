@@ -1,5 +1,6 @@
 package astroj;
 
+import Astronomy.multiaperture.CustomPixelApertureHandler;
 import ij.IJ;
 import ij.Prefs;
 import ij.astro.types.Pair;
@@ -237,14 +238,16 @@ public class CustomPixelApertureRoi extends ApertureRoi {
         int yl = sy + (int)Math.round(h/3.0);
 
         // Show center point
-        /*g.setColor(Color.MAGENTA);
-        int w1do4 = (int)Math.round(w1d/2.0);
-        int h1do4 = (int)Math.round(h1d/2.0);
-        g.drawLine(sx-w1do4, sy, sx+w1do4, sy);
-        g.drawLine(sx, sy-h1do4, sx, sy+h1do4);
+        if (CustomPixelApertureHandler.SHOW_ESTIMATED_CIRCULAR_APERTURE.get()) {
+            g.setColor(Color.MAGENTA);
+            int w1do4 = (int)Math.round(w1d/2.0);
+            int h1do4 = (int)Math.round(h1d/2.0);
+            g.drawLine(sx-w1do4, sy, sx+w1do4, sy);
+            g.drawLine(sx, sy-h1do4, sx, sy+h1do4);
 
-        // Draw apparent circular aperture
-        g.drawOval(x1, y1, w1, h1);*/
+            // Draw apparent circular aperture
+            g.drawOval(x1, y1, w1, h1);
+        }
 
         g.setColor(ColorUtil.midpointColor(getApColor(), Color.BLACK, Color.WHITE));
 

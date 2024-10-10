@@ -45,6 +45,7 @@ public class CustomPixelApertureHandler {
                     CustomPixelApertureHandler::serializeApertures, CustomPixelApertureHandler::deserializeApertures,
                     CustomPixelApertureHandler.class);
     private static final Property<Point> WINDOW_LOCATION = new Property<>(new Point(), CustomPixelApertureHandler.class);
+    public static final Property<Boolean> SHOW_ESTIMATED_CIRCULAR_APERTURE = new Property<>(false, CustomPixelApertureHandler.class);
     private static final int WIDTH = 25;
     private static final int HEIGHT = 25;
     private static final Icon ADD_ICON = UIHelper.createImageIcon("Astronomy/images/icons/multiaperture/add.png", WIDTH, HEIGHT);
@@ -188,7 +189,8 @@ public class CustomPixelApertureHandler {
         var frame = new JFrame("Aperture Control Panel");
         frame.setIconImage(UIHelper.createImage("astronomy_icon.png"));
         var p = Box.createVerticalBox();
-        var b = Box.createHorizontalBox();
+        var firstRow = Box.createHorizontalBox();
+        var secondRow = Box.createHorizontalBox();
 
         var compButton = new JToggleButton(SOURCE_ICON, customPixelApertureRois.get(selectedAperture-1).isComparisonStar());
         compButton.setSelectedIcon(BACKGROUND_ICON);
@@ -204,6 +206,7 @@ public class CustomPixelApertureHandler {
         var copyBackground = new JToggleButton(COPY_ICON, this.copyBackground);
         copyBackground.setSelectedIcon(COPY_FULL_ICON);
         var backgroundFinder = new JButton(AUTO_SKY_ICON);
+        var showEstimatedCircularAperture = new JCheckBox("Show estimated circular aperture", SHOW_ESTIMATED_CIRCULAR_APERTURE.get());
 
         configureButton(deleteAp);
         configureButton(compButton);
@@ -307,6 +310,11 @@ public class CustomPixelApertureHandler {
             }
         });
 
+        showEstimatedCircularAperture.addActionListener($ -> {
+            SHOW_ESTIMATED_CIRCULAR_APERTURE.set(showEstimatedCircularAperture.isSelected());
+            updateDisplay(false);
+        });
+
         frame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 
         frame.addWindowListener(new WindowAdapter() {
@@ -333,17 +341,20 @@ public class CustomPixelApertureHandler {
         selector.add(apLabel);
         selector.add(apSelector);
 
-        b.add(deleteAp);
-        b.add(selector);
-        b.add(addAp);
-        b.add(compButton);
-        b.add(invertBackgroundControl);
-        b.add(backgroundFinder);
-        b.add(copyBackground);
-        b.add(beginButton);
-        b.add(Box.createHorizontalGlue());
+        firstRow.add(deleteAp);
+        firstRow.add(selector);
+        firstRow.add(addAp);
+        firstRow.add(compButton);
+        firstRow.add(invertBackgroundControl);
+        firstRow.add(backgroundFinder);
+        firstRow.add(copyBackground);
+        firstRow.add(beginButton);
+        firstRow.add(Box.createHorizontalGlue());
 
-        p.add(b);
+        secondRow.add(showEstimatedCircularAperture);
+
+        p.add(firstRow);
+        p.add(secondRow);
         p.add(helpPanel);
         frame.add(p);
         frame.pack();

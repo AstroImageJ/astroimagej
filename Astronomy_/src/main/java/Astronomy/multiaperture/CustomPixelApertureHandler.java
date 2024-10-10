@@ -47,6 +47,7 @@ public class CustomPixelApertureHandler {
                     CustomPixelApertureHandler.class);
     private static final Property<Point> WINDOW_LOCATION = new Property<>(new Point(), CustomPixelApertureHandler.class);
     public static final Property<Boolean> SHOW_ESTIMATED_CIRCULAR_APERTURE = new Property<>(false, CustomPixelApertureHandler.class);
+    private static final Property<Boolean> ALWAYS_ON_TOP = new Property<>(true, CustomPixelApertureHandler.class);
     private static final int WIDTH = 25;
     private static final int HEIGHT = 25;
     private static final Icon ADD_ICON = UIHelper.createImageIcon("Astronomy/images/icons/multiaperture/add.png", WIDTH, HEIGHT);
@@ -208,6 +209,7 @@ public class CustomPixelApertureHandler {
         copyBackground.setSelectedIcon(COPY_FULL_ICON);
         var backgroundFinder = new JButton(AUTO_SKY_ICON);
         var showEstimatedCircularAperture = new JCheckBox("Show estimated circular aperture", SHOW_ESTIMATED_CIRCULAR_APERTURE.get());
+        var alwaysOnTop = new JCheckBox("Show panel always on top", ALWAYS_ON_TOP.get());
 
         configureButton(deleteAp);
         configureButton(compButton);
@@ -316,6 +318,11 @@ public class CustomPixelApertureHandler {
             updateDisplay(false);
         });
 
+        alwaysOnTop.addActionListener($ -> {
+            ALWAYS_ON_TOP.set(alwaysOnTop.isSelected());
+            frame.setAlwaysOnTop(ALWAYS_ON_TOP.get());
+        });
+
         frame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 
         frame.addWindowListener(new WindowAdapter() {
@@ -371,7 +378,7 @@ public class CustomPixelApertureHandler {
         }
 
         frame.setResizable(false);
-        frame.setAlwaysOnTop(true);
+        frame.setAlwaysOnTop(ALWAYS_ON_TOP.get());
 
         return frame;
     }

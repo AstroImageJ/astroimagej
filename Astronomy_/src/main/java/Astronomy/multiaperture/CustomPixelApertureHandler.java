@@ -360,6 +360,7 @@ public class CustomPixelApertureHandler {
         firstRow.add(Box.createHorizontalGlue());
 
         secondRow.add(showEstimatedCircularAperture);
+        secondRow.add(alwaysOnTop);
 
         p.add(firstRow);
         p.add(secondRow);

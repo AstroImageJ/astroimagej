@@ -14,6 +14,7 @@ import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.font.FontRenderContext;
 import java.awt.geom.AffineTransform;
+import java.awt.image.BufferStrategy;
 import java.awt.image.MemoryImageSource;
 import java.text.DecimalFormat;
 import java.util.Locale;
@@ -480,13 +481,8 @@ public class AstroCanvas extends OverlayCanvas {
         if (!performDraw) {
             return;
         }
-        if (g != null) {
-            invCanvTrans = ((Graphics2D) g).getTransform();
-            canvTrans = ((Graphics2D) g).getTransform();
-            Roi roi = imp.getRoi();
-            if (roi != null)
-                roi.updatePaste();
 
+        if (g != null) {
             if (imageWidth == 0 && imageHeight == 0) {
                 return;
             }
@@ -500,98 +496,132 @@ public class AstroCanvas extends OverlayCanvas {
         return true;
     }
 
+    @Override
+    public void addNotify() {
+        super.addNotify();
+        // Ensure the buffer is created and the component is drawn on window creation
+        createBufferStrategy(2);
+        repaint();
+    }
+
     // Use double buffer to reduce flicker when drawing complex ROIs.
     // Author: Erik Meijering
     synchronized void paint(Graphics g, boolean doubleBuffered) {
+        try {
+            invCanvTrans = ((Graphics2D) g).getTransform();
+            canvTrans = ((Graphics2D) g).getTransform();
+
+            Roi roi = imp.getRoi();
+            if (roi != null) {
+                roi.updatePaste();
+            }
+
+            if (doubleBuffered) {
+                BufferStrategy bufferStrategy = getBufferStrategy();
+
+                if (bufferStrategy == null) {
+                    createBufferStrategy(2);
+                    bufferStrategy = getBufferStrategy();
+                }
+
+                do {
+                    // The following loop ensures that the contents of the drawing buffer
+                    // are consistent in case the underlying surface was recreated
+                    do {
+                        // Get a new graphics context every time through the loop
+                        // to make sure the strategy is validated
+                        Graphics graphics = bufferStrategy.getDrawGraphics();
+
+                        // Render to graphics
+                        paintCanvas(graphics);
+
+                        graphics.dispose();
+
+                        // Repeat the rendering if the drawing buffer contents were restored
+                    } while (bufferStrategy.contentsRestored());
+
+                    // Display the buffer
+                    bufferStrategy.show();
+
+                    // Repeat the rendering if the drawing buffer was lost
+                } while (bufferStrategy.contentsLost());
+            } else {
+                paintCanvas(g);
+            }
+        } catch (OutOfMemoryError e) {
+            IJ.outOfMemory("Paint");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void paintCanvas(Graphics drawingGraphics) {
         int clipWidth = srcRect.width + 1; //+1 to allow for partial pixel at edge
         int clipHeight = srcRect.height + 1; //+1 to allow for partial pixel at edge
         int offScrnWidth = (int) (clipWidth * magnification);
         int offScrnHeight = (int) (clipHeight * magnification);
-
-        Graphics drawingGraphics;
-
-        if (doubleBuffered) {
-            if (offScreenImage == null || offScreenWidth != getWidth() || offScreenHeight != getHeight()) {
-                offScreenImage = createImage(getWidth(), getHeight());
-                offScreenWidth = getWidth();
-                offScreenHeight = getHeight();
-            }
-
-            drawingGraphics = offScreenImage.getGraphics();
-        } else {
-            drawingGraphics = g;
-        }
-
         Roi roi = imp.getRoi();
-        try {
-            if (imageUpdated) {
-                imageUpdated = false;
-                imp.updateImage();
-            }
 
-            setInterpolation(drawingGraphics, Prefs.interpolateScaledImages);
-            Image img = imp.getImage();
-            flipAndRotateCanvas(drawingGraphics);
-            if (!netRotate) {
-                if (img != null) {
-                    drawingGraphics.drawImage(img,
-                            srcRect.x < 0 ? (int) (-srcRect.x * magnification) : 0,
-                            srcRect.y < 0 ? (int) (-srcRect.y * magnification) : 0,
-                            srcRect.x + srcRect.width < imp.getWidth() ? offScrnWidth : (int) ((imp.getWidth() - srcRect.x) * magnification),
-                            srcRect.y + srcRect.height < imp.getHeight() ? offScrnHeight : (int) ((imp.getHeight() - srcRect.y) * magnification),
-                            srcRect.x < 0 ? 0 : srcRect.x,
-                            srcRect.y < 0 ? 0 : srcRect.y,
-                            srcRect.x + srcRect.width < imp.getWidth() ? srcRect.x + clipWidth : imp.getWidth(),
-                            srcRect.y + srcRect.height < imp.getHeight() ? srcRect.y + clipHeight : imp.getHeight(),
-                            null);
-                }
-            } else {
-                if (img != null)  //needs major updating when netRotate is implemented
-                    drawingGraphics.drawImage(img, 0, 0, (int) (srcRect.height * magnification), (int) (srcRect.width * magnification),
-                            (int) (srcRect.x + srcRect.width / 2.0 - srcRect.height / 2.0),
-                            (int) (srcRect.y + srcRect.height / 2.0 - srcRect.width / 2.0),
-                            (int) (srcRect.x + srcRect.width / 2.0 + srcRect.height / 2.0),
-                            (int) (srcRect.y + srcRect.height / 2.0 + srcRect.width / 2.0), null);
-            }
-
-            transEnabled = false;
-            int xx1 = screenX(0) > 0 ? screenX(0) : 0;    //top left screen x-location
-            int yy1 = screenY(0) > 0 ? screenY(0) : 0;    //top left screen y-location
-            int xx2 = screenX(imp.getWidth()) < offScrnWidth ? screenX(imp.getWidth()) : offScrnWidth;    //bottom right image x-pixel plus 1
-            int yy2 = screenY(imp.getHeight()) < offScrnHeight ? screenY(imp.getHeight()) : offScrnHeight;    //bottom right image y-pixel plus 1
-
-            drawingGraphics.setColor(Color.WHITE);
-            if (xx1 > 0)
-                drawingGraphics.fillRect(0, 0, xx1, offScrnHeight);
-            if (yy1 > 0)
-                drawingGraphics.fillRect(xx1, 0, offScrnWidth - xx1, yy1);
-            if (xx2 < offScrnWidth)
-                drawingGraphics.fillRect(xx2, yy1, offScrnWidth - xx2, offScrnHeight - yy1);
-            if (yy2 < offScrnHeight)
-                drawingGraphics.fillRect(xx1, yy2, xx2 - xx1, offScrnHeight - yy2);
-
-            transEnabled = true;
-
-            if (showPhotometerCursor && mouseInImage && astronomyMode && !customPixelMode) updatePhotometerOverlay(drawingGraphics);
-            OverlayCanvas oc = getOverlayCanvas(imp);
-            if (oc.numberOfRois() > 0) drawOverlayCanvas(drawingGraphics);
-            transEnabled = false;
-
-            //if (overlay!=null) ((ImageCanvas)this).drawOverlay(overlay, offScreenGraphics);
-
-            if (showAllOverlay != null) this.drawOverlay(showAllOverlay, drawingGraphics);
-            if (roi != null) drawRoi(roi, drawingGraphics);
-            transEnabled = true;
-            drawZoomIndicator(drawingGraphics);
-            if (IJ.debugMode) showFrameRate(drawingGraphics);
-
-            // Copy offscreen image on screen
-            if (doubleBuffered) {
-                g.drawImage(offScreenImage, 0, 0, null);
-            }
-        } catch (OutOfMemoryError e) {
-            IJ.outOfMemory("Paint");
+        if (imageUpdated) {
+            imageUpdated = false;
+            imp.updateImage();
         }
+
+        setInterpolation(drawingGraphics, Prefs.interpolateScaledImages);
+        Image img = imp.getImage();
+        flipAndRotateCanvas(drawingGraphics);
+        if (!netRotate) {
+            if (img != null) {
+                drawingGraphics.drawImage(img,
+                        srcRect.x < 0 ? (int) (-srcRect.x * magnification) : 0,
+                        srcRect.y < 0 ? (int) (-srcRect.y * magnification) : 0,
+                        srcRect.x + srcRect.width < imp.getWidth() ? offScrnWidth : (int) ((imp.getWidth() - srcRect.x) * magnification),
+                        srcRect.y + srcRect.height < imp.getHeight() ? offScrnHeight : (int) ((imp.getHeight() - srcRect.y) * magnification),
+                        srcRect.x < 0 ? 0 : srcRect.x,
+                        srcRect.y < 0 ? 0 : srcRect.y,
+                        srcRect.x + srcRect.width < imp.getWidth() ? srcRect.x + clipWidth : imp.getWidth(),
+                        srcRect.y + srcRect.height < imp.getHeight() ? srcRect.y + clipHeight : imp.getHeight(),
+                        null);
+            }
+        } else {
+            if (img != null)  //needs major updating when netRotate is implemented
+                drawingGraphics.drawImage(img, 0, 0, (int) (srcRect.height * magnification), (int) (srcRect.width * magnification),
+                        (int) (srcRect.x + srcRect.width / 2.0 - srcRect.height / 2.0),
+                        (int) (srcRect.y + srcRect.height / 2.0 - srcRect.width / 2.0),
+                        (int) (srcRect.x + srcRect.width / 2.0 + srcRect.height / 2.0),
+                        (int) (srcRect.y + srcRect.height / 2.0 + srcRect.width / 2.0), null);
+        }
+
+        transEnabled = false;
+        int xx1 = screenX(0) > 0 ? screenX(0) : 0;    //top left screen x-location
+        int yy1 = screenY(0) > 0 ? screenY(0) : 0;    //top left screen y-location
+        int xx2 = screenX(imp.getWidth()) < offScrnWidth ? screenX(imp.getWidth()) : offScrnWidth;    //bottom right image x-pixel plus 1
+        int yy2 = screenY(imp.getHeight()) < offScrnHeight ? screenY(imp.getHeight()) : offScrnHeight;    //bottom right image y-pixel plus 1
+
+        drawingGraphics.setColor(Color.WHITE);
+        if (xx1 > 0)
+            drawingGraphics.fillRect(0, 0, xx1, offScrnHeight);
+        if (yy1 > 0)
+            drawingGraphics.fillRect(xx1, 0, offScrnWidth - xx1, yy1);
+        if (xx2 < offScrnWidth)
+            drawingGraphics.fillRect(xx2, yy1, offScrnWidth - xx2, offScrnHeight - yy1);
+        if (yy2 < offScrnHeight)
+            drawingGraphics.fillRect(xx1, yy2, xx2 - xx1, offScrnHeight - yy2);
+
+        transEnabled = true;
+
+        if (showPhotometerCursor && mouseInImage && astronomyMode && !customPixelMode) updatePhotometerOverlay(drawingGraphics);
+        OverlayCanvas oc = getOverlayCanvas(imp);
+        if (oc.numberOfRois() > 0) drawOverlayCanvas(drawingGraphics);
+        transEnabled = false;
+
+        //if (overlay!=null) ((ImageCanvas)this).drawOverlay(overlay, offScreenGraphics);
+
+        if (showAllOverlay != null) this.drawOverlay(showAllOverlay, drawingGraphics);
+        if (roi != null) drawRoi(roi, drawingGraphics);
+        transEnabled = true;
+        drawZoomIndicator(drawingGraphics);
+        if (IJ.debugMode) showFrameRate(drawingGraphics);
     }
 
     public Image graphicsToImage(Graphics g) {   //used by AstroStackWindow to save image display

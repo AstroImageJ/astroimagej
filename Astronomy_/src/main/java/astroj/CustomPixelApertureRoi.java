@@ -146,6 +146,10 @@ public class CustomPixelApertureRoi extends ApertureRoi {
 
     @Override
     public void draw(Graphics g) {
+        if (!hasPixels()) {
+            return;
+        }
+
         useOffsetPixelCenter = false;
 
         boolean aij = false;

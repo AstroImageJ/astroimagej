@@ -82,7 +82,7 @@ import static ij.astro.gui.GenericSwingDialog.ComponentPair.Type.C1;
  * @changes added dialog() to make it easier to sub-class (e.g. Stack_Aligner)
  */
 @SuppressWarnings("SpellCheckingInspection")
-public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMotionListener, KeyListener {
+public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMotionListener, KeyListener, WindowListener {
     private static final DecimalFormat FORMAT = new DecimalFormat("###0.#");
     protected static final String PREFS_MAXPEAKVALUE = "multiaperture.maxpeakvalue";
     protected static final String PREFS_MINPEAKVALUE = "multiaperture.minpeakvalue";
@@ -761,6 +761,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 processSingleClick(dummyClick);
             }
         }
+
+        asw.addWindowListener(this);
     }
 
     private void resetRadii() {
@@ -1336,6 +1338,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         if (MultiPlot_.isRunning()) {
             MultiPlot_.saveCompEnsemble();
         }
+        asw.removeWindowListener(this);
     }
 
     /**
@@ -4985,6 +4988,45 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             helpFrame.dispose();
             helpFrame = null;
         }
+    }
+
+    @Override
+    public void windowOpened(WindowEvent e) {
+
+    }
+
+    @Override
+    public void windowClosing(WindowEvent e) {
+        cancel();
+        Prefs.set(MultiAperture_.PREFS_CANCELED, "true");
+        shutDown();
+    }
+
+    @Override
+    public void windowClosed(WindowEvent e) {
+        cancel();
+        Prefs.set(MultiAperture_.PREFS_CANCELED, "true");
+        shutDown();
+    }
+
+    @Override
+    public void windowIconified(WindowEvent e) {
+
+    }
+
+    @Override
+    public void windowDeiconified(WindowEvent e) {
+
+    }
+
+    @Override
+    public void windowActivated(WindowEvent e) {
+
+    }
+
+    @Override
+    public void windowDeactivated(WindowEvent e) {
+
     }
 
     public enum ApLoading implements RadioEnum {

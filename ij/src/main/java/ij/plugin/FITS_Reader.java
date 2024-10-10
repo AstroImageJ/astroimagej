@@ -999,6 +999,10 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		ImageStack stack = new ImageStack();
 
 		var pm = makeMonitor(hdus.length);
+
+		var noExtensionNames =
+				Arrays.stream(hdus).allMatch(basicHDU -> Objects.isNull(basicHDU.getHeader().getStringValue(EXTNAME)));
+
 		BasicHDU<?> hdu;
 		for (int i = 0; i < hdus.length; i++) {
 			// Handle compressed HDUs
@@ -1015,6 +1019,9 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			var hdr = hdu.getHeader();
 
 			if (filter != null && !filter.matchesFilter(hdr)) continue;
+			if (!noExtensionNames && !Objects.equals("SCI", hdr.getStringValue(EXTNAME))) {
+				continue;
+			}
 
 			var header = "";
 			final var baos = new ByteArrayOutputStream();
@@ -1027,7 +1034,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 
 			ip = twoDimensionalImageData2Processor(hdu.getKernel());
 			stack.addSlice(fileBase + "_" + (hdus.length<10000 ? fourDigits.format(i+1) : (i+1))
-					+ (fileType.length() > 0 ? "." + fileType : "") + "\n" + header, ip);
+					+ (!fileType.isEmpty() ? "." + fileType : "") + "\n" + header, ip);
 			pm.setProgress(i);
 		}
 

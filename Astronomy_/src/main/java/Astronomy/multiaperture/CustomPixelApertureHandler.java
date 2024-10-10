@@ -7,6 +7,7 @@ import ij.ImagePlus;
 import ij.Prefs;
 import ij.astro.io.prefs.Property;
 import ij.astro.util.UIHelper;
+import ij.gui.ImageCanvas;
 
 import javax.swing.*;
 import java.awt.*;
@@ -486,7 +487,12 @@ public class CustomPixelApertureHandler {
         }
 
         currentAperture().update();
-        (OverlayCanvas.hasOverlayCanvas(imp) ? OverlayCanvas.getOverlayCanvas(imp) : imp.getCanvas()).repaint();
+        ImageCanvas canvas = OverlayCanvas.hasOverlayCanvas(imp) ?
+                OverlayCanvas.getOverlayCanvas(imp) :
+                imp.getCanvas();
+        if (canvas != null) {
+            canvas.repaint();
+        }
     }
 
     private void updateDisplay() {
@@ -502,7 +508,12 @@ public class CustomPixelApertureHandler {
 
         if (imp != null) {
             currentAperture().setImage(imp);
-            (OverlayCanvas.hasOverlayCanvas(imp) ? OverlayCanvas.getOverlayCanvas(imp) : imp.getCanvas()).repaint();
+            ImageCanvas canvas = OverlayCanvas.hasOverlayCanvas(imp) ?
+                    OverlayCanvas.getOverlayCanvas(imp) :
+                    imp.getCanvas();
+            if (canvas != null) {
+                canvas.repaint();
+            }
         }
     }
 

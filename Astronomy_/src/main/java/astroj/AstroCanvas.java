@@ -506,7 +506,7 @@ public class AstroCanvas extends OverlayCanvas {
 
     // Use double buffer to reduce flicker when drawing complex ROIs.
     // Author: Erik Meijering
-    synchronized void paint(Graphics g, boolean doubleBuffered) {
+    public synchronized void paint(Graphics g, boolean doubleBuffered) {
         try {
             invCanvTrans = ((Graphics2D) g).getTransform();
             canvTrans = ((Graphics2D) g).getTransform();

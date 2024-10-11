@@ -18188,7 +18188,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 ac = (AstroCanvas) ic;
                 imageDisplay = new BufferedImage(ac.getSize().width, ac.getSize().height, BufferedImage.TYPE_INT_RGB);
                 Graphics gg = imageDisplay.createGraphics();
-                ac.paint(gg);
+                ac.paint(gg, false);
                 gg.dispose();
                 imageFound = true;
             } else if (WindowManager.getWindowCount() > 0) {
@@ -18203,7 +18203,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         ac = (AstroCanvas) ic;
                         imageDisplay = new BufferedImage(ac.getSize().width, ac.getSize().height, BufferedImage.TYPE_INT_RGB);
                         Graphics gg = imageDisplay.createGraphics();
-                        ac.paint(gg);
+                        ac.paint(gg, false);
                         gg.dispose();
                         imageFound = true;
                         break;

@@ -5751,9 +5751,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             imp.setDisplayRange(cal.getRawValue(blackValue), cal.getRawValue(whiteValue));
             //minMaxChanged = true;
             if (updateImage) {
-                synchronized (this) {
-                    imp.updateAndDraw(!hasNotified);
-                }
+                imp.updateAndDraw(!hasNotified);
                 hasNotified = true; // Fixes flash
             }
             if (imp.getWindow() != null) {

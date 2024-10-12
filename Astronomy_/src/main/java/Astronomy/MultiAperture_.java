@@ -4345,18 +4345,15 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         gd.addSwappableSection("Aperture Shape:", apertureShape, (g, shape) -> {
             switch (shape) {
                 case CIRCULAR -> {
-                    g.buildRow((g1, b) -> {
-                        b.add(Box.createHorizontalStrut(135));
-                        sliders[2] = g.addFloatSlider("Fixed/Base radius of photometric aperture", 0.01, radius > 100 ? radius : 100, false, radius, 3, 1.0, d -> radius = d);
-                    });
-                    g.buildRow((g1, b) -> {
-                        b.add(Box.createHorizontalStrut(105));
-                        sliders[3] = g.addFloatSlider("Fixed/Base radius of inner background annulus", 0.01, rBack1 > 100 ? rBack1 : 100, false, rBack1, 3, 1.0, d -> rBack1 = d);
-                    });
-                    g.buildRow((g1, b) -> {
-                        b.add(Box.createHorizontalStrut(105));
-                        sliders[4] = g.addFloatSlider("Fixed/Base radius of outer background annulus", 0.01, rBack2 > 100 ? rBack2 : 100, false, rBack2, 3, 1.0, d -> rBack2 = d);
-                    });
+                    g.setNewPosition(GridBagConstraints.EAST);
+                    g.setRightInset(-165);
+                    sliders[2] = g.addFloatSlider("Fixed/Base radius of photometric aperture", 0.01, radius > 100 ? radius : 100, false, radius, 3, 1.0, d -> radius = d);
+                    g.setNewPosition(GridBagConstraints.EAST);
+                    g.setRightInset(-165);
+                    sliders[3] = g.addFloatSlider("Fixed/Base radius of inner background annulus", 0.01, rBack1 > 100 ? rBack1 : 100, false, rBack1, 3, 1.0, d -> rBack1 = d);
+                    g.setNewPosition(GridBagConstraints.EAST);
+                    g.setRightInset(-165);
+                    sliders[4] = g.addFloatSlider("Fixed/Base radius of outer background annulus", 0.01, rBack2 > 100 ? rBack2 : 100, false, rBack2, 3, 1.0, d -> rBack2 = d);
                     g.addLineSeparator();
                     var apRadiiButtons = g.addRadioOptions(ApRadius.class, r -> MultiAperture_.radiusSetting = r, false);
                     g.addGenericComponent(apRadiiButtons.get(ApRadius.FIXED));
@@ -4385,7 +4382,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     g.addToSameRow();
                     g.setOverridePosition(true);
                     g.setNewPosition(GridBagConstraints.EAST);
-                    g.setRightInset(-170);
+                    g.setRightInset(-230);
                     g.addFloatSlider("FWHM factor:", 0.1, 5.0, true, ApRadius.AUTO_VAR_FWHM.cutoff, 3, 0.1, d -> ApRadius.AUTO_VAR_FWHM.cutoff = d);
                     g.resetPositionOverride();
                     g.setOverridePosition(false);

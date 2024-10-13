@@ -163,6 +163,15 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         return Optional.empty();
     }
 
+    public static Optional<JSpinner> getSpinnerFromSlider(JPanel sliderPanel) {
+        for (Component component : sliderPanel.getComponents()) {
+            if (component instanceof JSpinner spinner) {
+                return Optional.of(spinner);
+            }
+        }
+        return Optional.empty();
+    }
+
     public static Optional<JTextField> getTextFieldFromSpinner(JSpinner spinner) {
         for (Component component : spinner.getComponents()) {
             if (component instanceof JSpinner.DefaultEditor editor) {
@@ -200,6 +209,35 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         return box;
     }
 
+    public Box buildColumn(BiConsumer<GenericSwingDialog, Box> columnBuilder) {
+        var box = Box.createVerticalBox();
+
+        rowBuilding.push(box);
+        columnBuilder.accept(this, box);
+        rowBuilding.pop();
+
+        var c = getConstraints();
+        c.gridx = 0;
+        c.gridy++;
+        //c.anchor = GridBagConstraints.WEST;
+        c.anchor = GridBagConstraints.CENTER;
+        //c.gridwidth = 2;
+        c.weightx = 1;
+        //c.gridwidth = GridBagConstraints.REMAINDER;
+        //c.fill = GridBagConstraints.HORIZONTAL;
+        c.insets.left = 20;
+
+        useCustomPosition();
+        addLocal(box, c);
+
+        c.fill = GridBagConstraints.NONE;
+        c.gridwidth = 1;
+        c.anchor = GridBagConstraints.CENTER;
+        c.weightx = 0;
+
+        return box;
+    }
+
     /**
      * Creates a swappable section for the dialog and adds a dropdown to control it.
      */
@@ -228,7 +266,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         if (optionText != null) {
             buildRow((g, box) -> {
                 addMessage(optionText);
-                box.add(Box.createHorizontalGlue());
+                //box.add(Box.createHorizontalGlue());
                 selection[0] = addNStateDropdown(currentState, consumer.andThen(swappableSection::setCurrentState).andThen($ -> {
                     pack();
                     revalidate();
@@ -251,11 +289,15 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         c.fill = GridBagConstraints.HORIZONTAL;
         c.insets.left = 0;
         c.anchor = GridBagConstraints.WEST;
+        c.weightx = 1;
+
+        swappableSection.getSectionPanel().setBorder(BorderFactory.createLineBorder(Color.RED));
 
         addLocal(swappableSection.getSectionPanel(), c);
 
         c.fill = GridBagConstraints.NONE;
         c.gridwidth = 1;
+        c.weightx = 0;
 
         swappableSections.put(stateClass, swappableSection);
 
@@ -916,6 +958,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         if (addToSameRow) {
             c.gridx = GridBagConstraints.RELATIVE;
             c.insets.left = 10;
+            addToSameRow = false;
         } else {
             c.gridx = 0;
             c.gridy++;

@@ -22,6 +22,7 @@ import ij.util.ArrayUtil;
 import ij.util.Tools;
 
 import javax.swing.*;
+import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.awt.event.*;
 import java.lang.reflect.InvocationTargetException;
@@ -1507,7 +1508,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
         //do nothing unless automode or left mouse is clicked with no modifier keys pressed except "shift" or "alt"
         if (autoMode || simulatedLeftClick || (!mouseDrag &&
-                (modis & InputEvent.BUTTON1_MASK) != 0 && (!e.isControlDown() || e.isShiftDown()) && !e.isMetaDown())) {
+                                                       (modis & InputEvent.BUTTON1_MASK) != 0 && (!e.isControlDown() || e.isShiftDown()) && !e.isMetaDown())) {
             if (!autoMode && (apLoading.get().isPrevious() || previous) && !firstClick && !allStoredAperturesPlaced)  //ignore clicks while placing stored apertures
             {
                 return;
@@ -3533,14 +3534,14 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 double vRadSky = 0, vRadBack1 = 0, vRadBack2 = 0;
                 nRD = 0;
                 //for (int ap = 0; ap < nApertures; ap++) {
-                    var rs = sp.getRadii(imp, xPos[0], yPos[0], ApRadius.AUTO_VAR_RAD_PROF.cutoff, true, false);
-                    if (rs.isValid()) {
-                        vRadSky += rs.r();
-                        vRadBack1 += rs.r2();
-                        vRadBack2 += rs.r3();
-                        nRD++;
-                        stackRadii.add(rs);
-                    }
+                var rs = sp.getRadii(imp, xPos[0], yPos[0], ApRadius.AUTO_VAR_RAD_PROF.cutoff, true, false);
+                if (rs.isValid()) {
+                    vRadSky += rs.r();
+                    vRadBack1 += rs.r2();
+                    vRadBack2 += rs.r3();
+                    nRD++;
+                    stackRadii.add(rs);
+                }
                 //}
 
                 if (nRD == 0) {
@@ -4334,25 +4335,17 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         GenericSwingDialog gd = new GenericSwingDialog("Multi-Aperture Measurements", xLocation, yLocation);
         gd.setSaveAndUseStepSize(true);
 
-        var sliders = new JPanel[5];
-        if (stackSize > 1) {
-            firstSlice = (firstSlice == stackSize || (alwaysstartatfirstSlice && !(this instanceof Stack_Aligner))) ? 1 : firstSlice;
-            gd.setNewPosition(GridBagConstraints.CENTER);
-            sliders[0] = gd.addSlider("First slice", 1, stackSize, firstSlice, d -> firstSlice = d.intValue());
-            gd.setNewPosition(GridBagConstraints.CENTER);
-            sliders[1] = gd.addSlider("Last slice", 1, stackSize, lastSlice, d -> lastSlice = d.intValue());
-        }
+        var sliders = new JPanel[7];
         gd.addSwappableSection("Aperture Shape:", apertureShape, (g, shape) -> {
             switch (shape) {
                 case CIRCULAR -> {
-                    g.setNewPosition(GridBagConstraints.EAST);
-                    g.setRightInset(-165);
+                    if (stackSize > 1) {
+                        firstSlice = (firstSlice == stackSize || (alwaysstartatfirstSlice && !(this instanceof Stack_Aligner))) ? 1 : firstSlice;
+                        sliders[0] = g.addSlider("First slice", 1, stackSize, firstSlice, d -> firstSlice = d.intValue());
+                        sliders[1] = g.addSlider("Last slice", 1, stackSize, lastSlice, d -> lastSlice = d.intValue());
+                    }
                     sliders[2] = g.addFloatSlider("Fixed/Base radius of photometric aperture", 0.01, radius > 100 ? radius : 100, false, radius, 3, 1.0, d -> radius = d);
-                    g.setNewPosition(GridBagConstraints.EAST);
-                    g.setRightInset(-165);
                     sliders[3] = g.addFloatSlider("Fixed/Base radius of inner background annulus", 0.01, rBack1 > 100 ? rBack1 : 100, false, rBack1, 3, 1.0, d -> rBack1 = d);
-                    g.setNewPosition(GridBagConstraints.EAST);
-                    g.setRightInset(-165);
                     sliders[4] = g.addFloatSlider("Fixed/Base radius of outer background annulus", 0.01, rBack2 > 100 ? rBack2 : 100, false, rBack2, 3, 1.0, d -> rBack2 = d);
                     g.addLineSeparator();
                     var apRadiiButtons = g.addRadioOptions(ApRadius.class, r -> MultiAperture_.radiusSetting = r, false);
@@ -4389,10 +4382,44 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     apRadiiButtons.get(radiusSetting).setSelected(true);
                 }
                 case CUSTOM_PIXEL -> {
-
+                    if (stackSize > 1) {
+                        firstSlice = (firstSlice == stackSize || (alwaysstartatfirstSlice && !(this instanceof Stack_Aligner))) ? 1 : firstSlice;
+                        g.setNewPosition(GridBagConstraints.CENTER);
+                        sliders[5] = g.addSlider("First slice", 1, stackSize, firstSlice, d -> firstSlice = d.intValue());
+                        g.setNewPosition(GridBagConstraints.CENTER);
+                        sliders[6] = g.addSlider("Last slice", 1, stackSize, lastSlice, d -> lastSlice = d.intValue());
+                    }
                 }
             }
         }).setToolTipText("Select aperture type");
+
+        // Sync slice sliders
+        var fs1 = GenericSwingDialog.getSpinnerFromSlider(sliders[0]).get();
+        var fs2 = GenericSwingDialog.getSpinnerFromSlider(sliders[5]).get();
+        var ls1 = GenericSwingDialog.getSpinnerFromSlider(sliders[1]).get();
+        var ls2 = GenericSwingDialog.getSpinnerFromSlider(sliders[6]).get();
+        ChangeListener fcl = e -> {
+            var source = (JSpinner) e.getSource();
+            var value = source.getValue();
+            if (source == fs1) {
+                fs2.setValue(value);
+            } else {
+                fs1.setValue(value);
+            }
+        };
+        ChangeListener lcl = e -> {
+            var source = (JSpinner) e.getSource();
+            var value = source.getValue();
+            if (source == ls1) {
+                ls2.setValue(value);
+            } else {
+                ls1.setValue(value);
+            }
+        };
+        fs1.addChangeListener(fcl);
+        fs2.addChangeListener(fcl);
+        ls1.addChangeListener(lcl);
+        ls2.addChangeListener(lcl);
 
         gd.addDoubleSpaceLineSeparator();
 

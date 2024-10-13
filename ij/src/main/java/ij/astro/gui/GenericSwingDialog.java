@@ -291,7 +291,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         c.anchor = GridBagConstraints.WEST;
         c.weightx = 1;
 
-        swappableSection.getSectionPanel().setBorder(BorderFactory.createLineBorder(Color.RED));
+        //swappableSection.getSectionPanel().setBorder(BorderFactory.createLineBorder(Color.RED));
 
         addLocal(swappableSection.getSectionPanel(), c);
 

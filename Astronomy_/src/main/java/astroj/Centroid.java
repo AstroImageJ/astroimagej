@@ -128,6 +128,7 @@ public class Centroid {
         removeBackStars = removeStars;
         xCenter = xx;
         yCenter = yy;
+        if (rr < 3) rr = 3;
         radius = rr;
         radius2 = radius * radius;
         rBack1 = r1;

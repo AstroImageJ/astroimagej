@@ -3141,6 +3141,12 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
      * Perform photometry on each image of selected sub-stack.
      */
     synchronized protected void processStack() {
+        // Correct slice bounds in case a slice was deleted
+        if (lastSlice > imp.getStackSize()) {
+            lastSlice = imp.getStackSize();
+            stackSize = lastSlice;
+        }
+
         verbose = false;
 //		vx = 0.0;
 //		vy = 0.0;

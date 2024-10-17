@@ -2,7 +2,7 @@ package astroj;
 
 import Astronomy.MultiAperture_;
 import Astronomy.MultiPlot_;
-import Astronomy.multiaperture.CustomPixelApertureHandler;
+import Astronomy.multiaperture.FreeformPixelApertureHandler;
 import Astronomy.multiaperture.io.AperturesFile;
 import Astronomy.postprocess.PhotometricDebayer;
 import bislider.com.visutools.nav.bislider.*;
@@ -4883,12 +4883,12 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                 var s = Files.readString(Path.of(apsPath));
                 var d = AperturesFile.read(s);
                 if (d != null) {
-                    CustomPixelApertureHandler.APS.set(d.apertureRois());
-                    CustomPixelApertureHandler.IMPORTED_APS.set(d.apertureRois());
+                    FreeformPixelApertureHandler.APS.set(d.apertureRois());
+                    FreeformPixelApertureHandler.IMPORTED_APS.set(d.apertureRois());
                     Prefs.ijPrefs.putAll(d.prefs());
                     ac.removeApertureRois();
-                    for (int i = 0; i < CustomPixelApertureHandler.APS.get().size(); i++) {
-                        var ap = CustomPixelApertureHandler.APS.get().get(i);
+                    for (int i = 0; i < FreeformPixelApertureHandler.APS.get().size(); i++) {
+                        var ap = FreeformPixelApertureHandler.APS.get().get(i);
                         ap.setName((ap.isComparisonStar() ? "C" : "T") + (i+1));
                         ap.setImage(imp);
                         ac.add(ap);
@@ -4925,14 +4925,14 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                 Prefs.set("multiaperture.import.isrefstar", "");
                 Prefs.set("multiaperture.import.isalignstar", "");
                 Prefs.set("multiaperture.import.centroidstar", "");
-                CustomPixelApertureHandler.IMPORTED_APS.set(new ArrayList<>());
+                FreeformPixelApertureHandler.IMPORTED_APS.set(new ArrayList<>());
                 InputStream is = new BufferedInputStream(stream);
                 var p = new Properties();
                 p.load(is);
-                isCustomAp = p.containsKey(Prefs.KEY_PREFIX+CustomPixelApertureHandler.APS.getPropertyKey());
+                isCustomAp = p.containsKey(Prefs.KEY_PREFIX+ FreeformPixelApertureHandler.APS.getPropertyKey());
                 if (isCustomAp) {
-                    p.put(Prefs.KEY_PREFIX+CustomPixelApertureHandler.IMPORTED_APS.getPropertyKey(),
-                            p.get(Prefs.KEY_PREFIX+CustomPixelApertureHandler.APS.getPropertyKey()));
+                    p.put(Prefs.KEY_PREFIX+ FreeformPixelApertureHandler.IMPORTED_APS.getPropertyKey(),
+                            p.get(Prefs.KEY_PREFIX+ FreeformPixelApertureHandler.APS.getPropertyKey()));
                 }
                 Prefs.ijPrefs.putAll(p);
                 Property.resetLoadStatus();
@@ -4941,8 +4941,8 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             ac.removeApertureRois();
 
             if (isCustomAp) {
-                for (int i = 0; i < CustomPixelApertureHandler.APS.get().size(); i++) {
-                    var ap = CustomPixelApertureHandler.APS.get().get(i);
+                for (int i = 0; i < FreeformPixelApertureHandler.APS.get().size(); i++) {
+                    var ap = FreeformPixelApertureHandler.APS.get().get(i);
                     ap.setName((ap.isComparisonStar() ? "C" : "T") + (i+1));
                     ap.setImage(imp);
                     ac.add(ap);

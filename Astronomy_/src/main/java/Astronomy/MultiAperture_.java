@@ -1,6 +1,6 @@
 package Astronomy;// MultiAperture_.java
 
-import Astronomy.multiaperture.CustomPixelApertureHandler;
+import Astronomy.multiaperture.FreeformPixelApertureHandler;
 import astroj.*;
 import ij.IJ;
 import ij.ImagePlus;
@@ -314,10 +314,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     protected static final Property<ApertureShape> apertureShape = new Property<>(ApertureShape.CIRCULAR, MultiAperture_.class);
     private static String lastRun = "<Not yet run>";
     private boolean processingStackForRadii;
-    private final CustomPixelApertureHandler customPixelApertureHandler = new CustomPixelApertureHandler();
+    private final FreeformPixelApertureHandler freeformPixelApertureHandler = new FreeformPixelApertureHandler();
 
     public MultiAperture_() {
-        customPixelApertureHandler.setExitCallback(() -> {
+        freeformPixelApertureHandler.setExitCallback(() -> {
             cancel();
             IJ.beep();
             Prefs.set(MultiAperture_.PREFS_CANCELED, "true");
@@ -581,7 +581,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             Recorder.setCommand(getClass().getName());
         }
 
-        customPixelApertureHandler.hideControls();
+        freeformPixelApertureHandler.hideControls();
 
         Prefs.set(MultiAperture_.PREFS_FINISHED, "false");
 
@@ -735,15 +735,15 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             oldRadii = new Seeing_Profile.ApRadii(radius, rBack1, rBack2);
         }
 
-        if (apertureShape.get() == ApertureShape.CUSTOM_PIXEL) {
+        if (apertureShape.get() == ApertureShape.FREEFORM) {
             if (apLoading.get().isPrevious()) {
-                customPixelApertureHandler.loadAperturesFromPrefs(apLoading.get() == ApLoading.FIRST_PREVIOUS, apLoading.get() == ApLoading.IMPORTED);
-                ngot = customPixelApertureHandler.apCount();
+                freeformPixelApertureHandler.loadAperturesFromPrefs(apLoading.get() == ApLoading.FIRST_PREVIOUS, apLoading.get() == ApLoading.IMPORTED);
+                ngot = freeformPixelApertureHandler.apCount();
             }
 
-            customPixelApertureHandler.setImp(imp);
-            customPixelApertureHandler.setPlayCallback(this::runCustomAperture);
-            customPixelApertureHandler.showControls();
+            freeformPixelApertureHandler.setImp(imp);
+            freeformPixelApertureHandler.setPlayCallback(this::runCustomAperture);
+            freeformPixelApertureHandler.showControls();
             if (ac != null) {
                 ac.setCustomPixelMode(true);
             }
@@ -790,7 +790,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         Prefs.set(MultiAperture_.PREFS_USEMACROIMAGE, "false");
         Prefs.set(MultiAperture_.PREFS_CANCELED, "true");
         Prefs.set("multiaperture.lastrun", lastRun);
-        customPixelApertureHandler.closeControl();
+        freeformPixelApertureHandler.closeControl();
         if (ac != null) {
             ac.setCustomPixelMode(false);
         }
@@ -1100,7 +1100,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     return false;
                 }
             }
-            case CUSTOM_PIXEL -> {
+            case FREEFORM -> {
 
             }
         }
@@ -1249,7 +1249,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         storeLastRun();
         SwingUtilities.invokeLater(() -> {
             imp.setSlice(imp.getCurrentSlice());
-            customPixelApertureHandler.closeControl();
+            freeformPixelApertureHandler.closeControl();
         });
         noMoreInput();
         closeHelpPanel();
@@ -1400,7 +1400,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         }
 
         selectedApertureRoi = null;
-        if (!(apertureShape.get() == ApertureShape.CUSTOM_PIXEL && mouseDrag && !aperturesInitialized)) {
+        if (!(apertureShape.get() == ApertureShape.FREEFORM && mouseDrag && !aperturesInitialized)) {
             asw.setMovingAperture(false);
         }
 
@@ -1445,10 +1445,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 //            modis = e.getModifiers();
 //            }
 
-        if (apertureShape.get() == ApertureShape.CUSTOM_PIXEL) {
-            customPixelApertureHandler.setPlayCallback(this::runCustomAperture);
-            customPixelApertureHandler.setImp(imp);
-            customPixelApertureHandler.currentAperture().setImage(imp);
+        if (apertureShape.get() == ApertureShape.FREEFORM) {
+            freeformPixelApertureHandler.setPlayCallback(this::runCustomAperture);
+            freeformPixelApertureHandler.setImp(imp);
+            freeformPixelApertureHandler.currentAperture().setImage(imp);
 
             if (e != dummyClick && e != null && (!mouseDrag || e.isShiftDown())) {
                 var x = canvas.offScreenX(e.getX());
@@ -1463,25 +1463,25 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     for (int i = x0; i <= x1; i++) {
                         for (int j = y0; j <= y1; j++) {
                             if (SwingUtilities.isLeftMouseButton(e)) {
-                                customPixelApertureHandler.addPixel(i, j, e.isAltDown(), false);
+                                freeformPixelApertureHandler.addPixel(i, j, e.isAltDown(), false);
                             } else {
-                                customPixelApertureHandler.removePixel(i, j, false);
+                                freeformPixelApertureHandler.removePixel(i, j, false);
                             }
                         }
                     }
                     ocanvas.removeRoi("selectionRoi");
-                    customPixelApertureHandler.currentAperture().update();
+                    freeformPixelApertureHandler.currentAperture().update();
                 } else { // Point Paint
                     if (SwingUtilities.isLeftMouseButton(e)) {
-                        customPixelApertureHandler.addPixel(x, y, e.isAltDown());
+                        freeformPixelApertureHandler.addPixel(x, y, e.isAltDown());
                     } else {
-                        customPixelApertureHandler.removePixel(x, y);
+                        freeformPixelApertureHandler.removePixel(x, y);
                     }
                 }
 
-                ngot = customPixelApertureHandler.apCount();
+                ngot = freeformPixelApertureHandler.apCount();
 
-                ocanvas.add(customPixelApertureHandler.currentAperture());
+                ocanvas.add(freeformPixelApertureHandler.currentAperture());
                 canvas.repaint();
             }
 
@@ -1949,12 +1949,12 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     }
 
     private void runCustomAperture() {
-        if (customPixelApertureHandler.validateApertures()) {
+        if (freeformPixelApertureHandler.validateApertures()) {
             noMoreInput();
-            customPixelApertureHandler.hideControls();
-            nApertures = customPixelApertureHandler.apCount();
+            freeformPixelApertureHandler.hideControls();
+            nApertures = freeformPixelApertureHandler.apCount();
             for (int ap = 0; ap < nApertures; ap++) {
-                isRefStar[ap] = customPixelApertureHandler.getAperture(ap).isComparisonStar();
+                isRefStar[ap] = freeformPixelApertureHandler.getAperture(ap).isComparisonStar();
                 centroidStar[ap] = false;
             }
             aperturesInitialized = true;
@@ -2904,7 +2904,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         currentX = ac.offScreenXD(currentScreenX);
         currentY = ac.offScreenYD(currentScreenY);
 
-        if (apertureShape.get() == ApertureShape.CUSTOM_PIXEL &&
+        if (apertureShape.get() == ApertureShape.FREEFORM &&
                 Math.abs(currentScreenX - startDragScreenX) + Math.abs(currentScreenY - startDragScreenY) >= 2.0 &&
                 e.isShiftDown() && !aperturesInitialized) {
             ocanvas.removeRoi("selectionRoi");
@@ -2944,7 +2944,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             startDragY = ac.offScreenYD(startDragScreenY);
             selectedApertureRoi = ocanvas.findApertureRoi(startDragX, startDragY, 0);
             asw.setMovingAperture((selectedApertureRoi != null && !aperturesInitialized) ||
-                    (apertureShape.get() == ApertureShape.CUSTOM_PIXEL && e.isShiftDown() && !aperturesInitialized));
+                    (apertureShape.get() == ApertureShape.FREEFORM && e.isShiftDown() && !aperturesInitialized));
         }
     }
 
@@ -3329,7 +3329,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                             FORMAT.format(safeMedian(br)), FORMAT.format(safeMedian(br2)));
                 }
             };
-            case CUSTOM_PIXEL -> "CA";
+            case FREEFORM -> "CA";
         };
     }
 
@@ -3647,7 +3647,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         for (int ap = 0; ap < nApertures; ap++) {
             boolean holdReposition = Prefs.get("aperture.reposition", reposition);
 
-            if (apertureShape.get() == ApertureShape.CUSTOM_PIXEL) {
+            if (apertureShape.get() == ApertureShape.FREEFORM) {
                 if (!isRefStar[ap]) {
                     setApertureColor(Color.green);
                     setApertureName("T" + (ap + 1));
@@ -3658,7 +3658,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     setAbsMag(absMag[ap]);
                 }
 
-                if (!measureAperture(hdr, customPixelApertureHandler.getAperture(ap))) {
+                if (!measureAperture(hdr, freeformPixelApertureHandler.getAperture(ap))) {
                     if (haltOnError || this instanceof Stack_Aligner) {
                         Prefs.set("aperture.reposition", holdReposition);
                         centerROI();
@@ -4401,7 +4401,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     g.setOverridePosition(false);
                     apRadiiButtons.get(radiusSetting).setSelected(true);
                 }
-                case CUSTOM_PIXEL -> {
+                case FREEFORM -> {
                     if (stackSize > 1) {
                         firstSlice = (firstSlice == stackSize || (alwaysstartatfirstSlice && !(this instanceof Stack_Aligner))) ? 1 : firstSlice;
                         g.setNewPosition(GridBagConstraints.CENTER);
@@ -4511,7 +4511,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     c1.setEnabled(singleStep);
                     gd.addDoubleSpaceLineSeparator();
                 }
-                case CUSTOM_PIXEL -> {
+                case FREEFORM -> {
                 }
             }
         });
@@ -4530,7 +4530,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 case CIRCULAR -> {
                     d.addMessage("CLICK 'PLACE APERTURES' AND SELECT APERTURE LOCATIONS WITH LEFT CLICKS.\nTHEN RIGHT CLICK or <ENTER> TO BEGIN PROCESSING.\n(to abort aperture selection or processing, press <ESC>)");
                 }
-                case CUSTOM_PIXEL -> {
+                case FREEFORM -> {
                     d.addMessage("FOLLOW INSTRUCTIONS ON NEXT PANEL TO PROCEED");
                 }
             }
@@ -4737,7 +4737,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
                     gd.addDoubleSpaceLineSeparator();
                 }
-                case CUSTOM_PIXEL -> {
+                case FREEFORM -> {
                 }
             }
         });
@@ -4759,7 +4759,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                             "effectively causes Multi-aperture to ignore pixels containing stars within the background region.</html>");
                     penultimateBoxes.subComponents().get(3).setToolTipText("Enable to fit a plane to the background pixels to attempt to account for large background gradients in the images.");
                 }
-                case CUSTOM_PIXEL -> {
+                case FREEFORM -> {
                     var penultimateBoxes = d.addCheckboxGroup(1, 2, new String[]{"Remove stars from background", "Assume background is a plane"},
                             new boolean[]{removeBackStars, backIsPlane}, list1.subList(2, 4));
                     penultimateBoxes.subComponents().get(0).setToolTipText("<html>Enable to use an interative 2-sigma outlier removal technique to ignore pixels in the background region<br>"+
@@ -4789,7 +4789,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     singleStepListeners.add(bottomChecks.subComponents().get(2));
                     bottomChecks.subComponents().get(2).setEnabled(!singleStep);
                 }
-                case CUSTOM_PIXEL -> {
+                case FREEFORM -> {
                     final var list2 = new ArrayList<Consumer<Boolean>>();
                     list2.add(b -> updatePlot = b);
                     list2.add(updateImageDisplay::set);
@@ -5151,14 +5151,14 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         private static int storedCount() {
             return switch (apertureShape.get()) {
                 case CIRCULAR -> nAperturesStored;
-                case CUSTOM_PIXEL -> CustomPixelApertureHandler.savedApertureCount();
+                case FREEFORM -> FreeformPixelApertureHandler.savedApertureCount();
             };
         }
 
         private static int importedCount() {
             return switch (apertureShape.get()) {
                 case CIRCULAR -> nImportedApStored;
-                case CUSTOM_PIXEL -> CustomPixelApertureHandler.savedImportedApertureCount();
+                case FREEFORM -> FreeformPixelApertureHandler.savedImportedApertureCount();
             };
         }
     }
@@ -5169,7 +5169,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 Standard circular aperture with sky background annulus
                 </html>
                 """, "Circular"),
-        CUSTOM_PIXEL("""
+        FREEFORM("""
                 <html>
                 A single arbitrarily shaped aperture is supported for analysis of space-based data which have precise
                 pointing.<br>

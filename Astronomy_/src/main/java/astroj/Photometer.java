@@ -133,7 +133,7 @@ public class Photometer {
         rBack2 = Double.NaN;
     }
 
-    public void measure(ImagePlus imp, CustomPixelApertureRoi apertureRoi, boolean exactPixels) {
+    public void measure(ImagePlus imp, FreeformPixelApertureRoi apertureRoi, boolean exactPixels) {
         var ip = imp.getProcessor();
         exact = exactPixels;
         xCenter = apertureRoi.xPos;
@@ -185,7 +185,7 @@ public class Photometer {
             //todo allow partial pixels
             //todo need overlap calculation
             //todo allow centroiding at later date
-            for (CustomPixelApertureRoi.Pixel pixel : apertureRoi.iterable()) {
+            for (FreeformPixelApertureRoi.Pixel pixel : apertureRoi.iterable()) {
                 d = ip.getPixelValue(pixel.x(), pixel.y());
                 if (!Float.isNaN(d)) {
                     if (!pixel.isBackground()) {
@@ -214,7 +214,7 @@ public class Photometer {
                 dBackCount = backCount;
             }
         } else {
-            for (CustomPixelApertureRoi.Pixel pixel : apertureRoi.iterable()) {
+            for (FreeformPixelApertureRoi.Pixel pixel : apertureRoi.iterable()) {
                 d = ip.getPixelValue(pixel.x(), pixel.y());
                 if (!Float.isNaN(d)) {
                     if (!pixel.isBackground()) { // SOURCE APERTURE
@@ -253,7 +253,7 @@ public class Photometer {
             var is = new int[totalPixels];
             var pCnt = 0;
 
-            for (CustomPixelApertureRoi.Pixel pixel : apertureRoi.iterable()) {
+            for (FreeformPixelApertureRoi.Pixel pixel : apertureRoi.iterable()) {
                 if (pixel.isBackground()) {
                     d = ip.getPixelValue(pixel.x(), pixel.y());
                     if (!Float.isNaN(d)) {
@@ -329,7 +329,7 @@ public class Photometer {
             int srcCount = 0;
             dSourceCount = 0.0;
             if (exact) {
-                for (CustomPixelApertureRoi.Pixel pixel : apertureRoi.iterable()) {
+                for (FreeformPixelApertureRoi.Pixel pixel : apertureRoi.iterable()) {
                     d = ip.getPixelValue(pixel.x(), pixel.y());
                     if (!Float.isNaN(d)) {
                         dSourceCount += 1;
@@ -343,7 +343,7 @@ public class Photometer {
                     back /= dSourceCount;
                 }
             } else {
-                for (CustomPixelApertureRoi.Pixel pixel : apertureRoi.iterable()) {
+                for (FreeformPixelApertureRoi.Pixel pixel : apertureRoi.iterable()) {
                     if (!pixel.isBackground()) {
                         d = ip.getPixelValue(pixel.x(), pixel.y());
                         if (!Float.isNaN(d)) {

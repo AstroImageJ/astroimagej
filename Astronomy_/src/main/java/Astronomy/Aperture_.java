@@ -419,7 +419,7 @@ public class Aperture_ implements PlugInFilter {
     /**
      * Performs exact measurement of object position and integrated brightness.
      */
-    protected boolean measureAperture(FitsJ.Header hdr, CustomPixelApertureRoi apertureRoi) {
+    protected boolean measureAperture(FitsJ.Header hdr, FreeformPixelApertureRoi apertureRoi) {
         boolean returnVal = true;
         if (apertureRoi == null && !adjustAperture(false)) {
             if (this instanceof MultiAperture_ && !(this instanceof Stack_Aligner) && !(Prefs.get(MultiAperture_.PREFS_HALTONERROR, true))) {
@@ -486,7 +486,7 @@ public class Aperture_ implements PlugInFilter {
         measurePhotometry(hdr, null);
     }
 
-    protected void measurePhotometry(FitsJ.Header hdr, CustomPixelApertureRoi apertureRoi) {
+    protected void measurePhotometry(FitsJ.Header hdr, FreeformPixelApertureRoi apertureRoi) {
         if (apertureRoi != null) {
             photom = measurePhotometry(imp, hdr, apertureRoi);
         } else {
@@ -539,7 +539,7 @@ public class Aperture_ implements PlugInFilter {
         return localPhotom;
     }
 
-    protected Photometer measurePhotometry(ImagePlus imp, FitsJ.Header hdr, CustomPixelApertureRoi apertureRoi) {
+    protected Photometer measurePhotometry(ImagePlus imp, FitsJ.Header hdr, FreeformPixelApertureRoi apertureRoi) {
         double darkPerPix = ccdDark;
         if (hdr != null) {
             isFITS = true;

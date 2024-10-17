@@ -1,6 +1,6 @@
 package Astronomy.multiaperture;
 
-import astroj.CustomPixelApertureRoi;
+import astroj.FreeformPixelApertureRoi;
 import astroj.OverlayCanvas;
 import ij.IJ;
 import ij.ImagePlus;
@@ -21,8 +21,8 @@ import java.util.function.IntConsumer;
 
 import static Astronomy.Aperture_.*;
 
-public class CustomPixelApertureHandler {
-    private final List<CustomPixelApertureRoi> customPixelApertureRois = new ArrayList<>();
+public class FreeformPixelApertureHandler {
+    private final List<FreeformPixelApertureRoi> freeformPixelApertureRois = new ArrayList<>();
     private int selectedAperture = 1;
     private JFrame controlPanel;
     private Runnable playCallback;
@@ -37,17 +37,17 @@ public class CustomPixelApertureHandler {
     private final boolean tempOverlay = Prefs.get(AP_PREFS_TEMPOVERLAY, true);
     private final boolean clearOverlay = Prefs.get(AP_PREFS_CLEAROVERLAY, false);
     private IntConsumer updateCount = i -> {};
-    public static final Property<List<CustomPixelApertureRoi>> APS =
+    public static final Property<List<FreeformPixelApertureRoi>> APS =
             new Property<>(new ArrayList<>(),
-                    CustomPixelApertureHandler::serializeApertures, CustomPixelApertureHandler::deserializeApertures,
-                    CustomPixelApertureHandler.class);
-    public static final Property<List<CustomPixelApertureRoi>> IMPORTED_APS =
+                    FreeformPixelApertureHandler::serializeApertures, FreeformPixelApertureHandler::deserializeApertures,
+                    FreeformPixelApertureHandler.class);
+    public static final Property<List<FreeformPixelApertureRoi>> IMPORTED_APS =
             new Property<>(new ArrayList<>(),
-                    CustomPixelApertureHandler::serializeApertures, CustomPixelApertureHandler::deserializeApertures,
-                    CustomPixelApertureHandler.class);
-    private static final Property<Point> WINDOW_LOCATION = new Property<>(new Point(), CustomPixelApertureHandler.class);
-    public static final Property<Boolean> SHOW_ESTIMATED_CIRCULAR_APERTURE = new Property<>(false, CustomPixelApertureHandler.class);
-    private static final Property<Boolean> ALWAYS_ON_TOP = new Property<>(true, CustomPixelApertureHandler.class);
+                    FreeformPixelApertureHandler::serializeApertures, FreeformPixelApertureHandler::deserializeApertures,
+                    FreeformPixelApertureHandler.class);
+    private static final Property<Point> WINDOW_LOCATION = new Property<>(new Point(), FreeformPixelApertureHandler.class);
+    public static final Property<Boolean> SHOW_ESTIMATED_CIRCULAR_APERTURE = new Property<>(false, FreeformPixelApertureHandler.class);
+    private static final Property<Boolean> ALWAYS_ON_TOP = new Property<>(true, FreeformPixelApertureHandler.class);
     private static final int WIDTH = 25;
     private static final int HEIGHT = 25;
     private static final Icon ADD_ICON = UIHelper.createImageIcon("Astronomy/images/icons/multiaperture/add.png", WIDTH, HEIGHT);
@@ -62,24 +62,24 @@ public class CustomPixelApertureHandler {
     private static final Icon COPY_FULL_ICON = UIHelper.createImageIcon("Astronomy/images/icons/multiaperture/copyFull.png", WIDTH, HEIGHT);
     private static final Icon AUTO_SKY_ICON = UIHelper.createImageIcon("Astronomy/images/icons/multiaperture/autoSky.png", WIDTH, HEIGHT);
 
-    public CustomPixelApertureHandler() {
+    public FreeformPixelApertureHandler() {
         UIHelper.setLookAndFeel();
-        this.customPixelApertureRois.add(createNewAperture(false));
+        this.freeformPixelApertureRois.add(createNewAperture(false));
         updateApertureNames();
-        customPixelApertureRois.get(0).setFocusedAperture(true);
+        freeformPixelApertureRois.get(0).setFocusedAperture(true);
         controlPanel = createControlPanel();
     }
 
-    public CustomPixelApertureRoi currentAperture() {
-        return customPixelApertureRois.get(selectedAperture - 1);
+    public FreeformPixelApertureRoi currentAperture() {
+        return freeformPixelApertureRois.get(selectedAperture - 1);
     }
 
     public int apCount() {
-        return customPixelApertureRois.size();
+        return freeformPixelApertureRois.size();
     }
 
-    public CustomPixelApertureRoi getAperture(int index) {
-        return customPixelApertureRois.get(index);
+    public FreeformPixelApertureRoi getAperture(int index) {
+        return freeformPixelApertureRois.get(index);
     }
 
     public void addPixel(int x, int y, boolean isBackground) {
@@ -125,7 +125,7 @@ public class CustomPixelApertureHandler {
         var invalidCount = 0;
         var message = new StringBuilder();
 
-        for (CustomPixelApertureRoi roi : customPixelApertureRois) {
+        for (FreeformPixelApertureRoi roi : freeformPixelApertureRois) {
             if (roi.hasPixels()) {
                 if (!roi.hasSource()) {
                     invalidCount++;
@@ -148,13 +148,13 @@ public class CustomPixelApertureHandler {
             var proceed = IJ.showMessageWithCancel("Custom Aperture Handler", message.toString());
 
             if (proceed) {
-                APS.set(customPixelApertureRois);
+                APS.set(freeformPixelApertureRois);
             }
 
             return proceed;
         }
 
-        APS.set(customPixelApertureRois);
+        APS.set(freeformPixelApertureRois);
 
         return true;
     }
@@ -163,18 +163,18 @@ public class CustomPixelApertureHandler {
      * Load apertures from preferences, clears existing apertures.
      */
     public void loadAperturesFromPrefs(boolean loadOnlyOne, boolean useImport) {
-        customPixelApertureRois.clear();
+        freeformPixelApertureRois.clear();
         var setting = useImport ? IMPORTED_APS : APS;
         if (loadOnlyOne && !setting.get().isEmpty()) {
-            customPixelApertureRois.add(setting.get().get(0));
+            freeformPixelApertureRois.add(setting.get().get(0));
         } else {
-            customPixelApertureRois.addAll(setting.get());
+            freeformPixelApertureRois.addAll(setting.get());
         }
 
         updateDisplay(true);
 
         if (imp != null) {
-            for (CustomPixelApertureRoi roi : customPixelApertureRois) {
+            for (FreeformPixelApertureRoi roi : freeformPixelApertureRois) {
                 roi.setImage(imp);
                 if (OverlayCanvas.hasOverlayCanvas(imp)) {
                     OverlayCanvas.getOverlayCanvas(imp).add(roi);
@@ -183,8 +183,8 @@ public class CustomPixelApertureHandler {
             (OverlayCanvas.hasOverlayCanvas(imp) ? OverlayCanvas.getOverlayCanvas(imp) : imp.getCanvas()).repaint();
         }
 
-        customPixelApertureRois.get(0).setFocusedAperture(true);
-        updateCount.accept(customPixelApertureRois.size());
+        freeformPixelApertureRois.get(0).setFocusedAperture(true);
+        updateCount.accept(freeformPixelApertureRois.size());
     }
 
     private JFrame createControlPanel() {
@@ -194,10 +194,10 @@ public class CustomPixelApertureHandler {
         var firstRow = Box.createHorizontalBox();
         var secondRow = Box.createHorizontalBox();
 
-        var compButton = new JToggleButton(SOURCE_ICON, customPixelApertureRois.get(selectedAperture-1).isComparisonStar());
+        var compButton = new JToggleButton(SOURCE_ICON, freeformPixelApertureRois.get(selectedAperture-1).isComparisonStar());
         compButton.setSelectedIcon(BACKGROUND_ICON);
         var deleteAp = new JButton(REMOVE_ICON);
-        var selectorModel = new SpinnerNumberModel(selectedAperture, 1, Math.max(customPixelApertureRois.size(), 1), 1);
+        var selectorModel = new SpinnerNumberModel(selectedAperture, 1, Math.max(freeformPixelApertureRois.size(), 1), 1);
         var apLabel = new JLabel("AP:");
         var apSelector = new JSpinner(selectorModel);
         var addAp = new JButton(ADD_ICON);
@@ -251,14 +251,14 @@ public class CustomPixelApertureHandler {
         });
 
         compButton.addItemListener(l -> {
-            customPixelApertureRois.get(selectedAperture-1).setComparisonStar(l.getStateChange() == ItemEvent.SELECTED);
+            freeformPixelApertureRois.get(selectedAperture-1).setComparisonStar(l.getStateChange() == ItemEvent.SELECTED);
             updateDisplay();
             updateHelp.run();
         });
 
         apSelector.addChangeListener($ -> {
             selectedAperture = ((Number) apSelector.getValue()).intValue();
-            compButton.setSelected(customPixelApertureRois.get(selectedAperture-1).isComparisonStar());
+            compButton.setSelected(freeformPixelApertureRois.get(selectedAperture-1).isComparisonStar());
             setFocusedAperture();
             updateDisplay(false);
             updateHelp.run();
@@ -266,31 +266,31 @@ public class CustomPixelApertureHandler {
 
         deleteAp.addActionListener($ -> {
             if (apCount() == 1) {
-                removeAperture(customPixelApertureRois.remove(0));
-                customPixelApertureRois.add(createNewAperture(compButton.isSelected()));
+                removeAperture(freeformPixelApertureRois.remove(0));
+                freeformPixelApertureRois.add(createNewAperture(compButton.isSelected()));
                 selectorModel.setMaximum(1);
                 updateDisplay();
                 return;
             }
 
-            removeAperture(customPixelApertureRois.remove(selectedAperture-1));
+            removeAperture(freeformPixelApertureRois.remove(selectedAperture-1));
 
-            if (selectedAperture > customPixelApertureRois.size()) {
-                selectedAperture = customPixelApertureRois.size();
+            if (selectedAperture > freeformPixelApertureRois.size()) {
+                selectedAperture = freeformPixelApertureRois.size();
                 selectorModel.setValue(selectedAperture);
             }
 
-            selectorModel.setMaximum(customPixelApertureRois.size());
+            selectorModel.setMaximum(freeformPixelApertureRois.size());
 
             // Update state
-            compButton.setSelected(customPixelApertureRois.get(selectedAperture-1).isComparisonStar());
+            compButton.setSelected(freeformPixelApertureRois.get(selectedAperture-1).isComparisonStar());
             updateDisplay();
             updateHelp.run();
         });
 
         addAp.addActionListener($ -> {
-            customPixelApertureRois.add(selectedAperture, createNewAperture(compButton.isSelected()));
-            selectorModel.setMaximum(customPixelApertureRois.size());
+            freeformPixelApertureRois.add(selectedAperture, createNewAperture(compButton.isSelected()));
+            selectorModel.setMaximum(freeformPixelApertureRois.size());
             selectorModel.setValue(++selectedAperture);
             updateDisplay();
             updateHelp.run();
@@ -401,7 +401,7 @@ public class CustomPixelApertureHandler {
         button.setOpaque(false);
     }
 
-    private void removeAperture(CustomPixelApertureRoi ap) {
+    private void removeAperture(FreeformPixelApertureRoi ap) {
         if (ap != null && imp != null && OverlayCanvas.hasOverlayCanvas(imp)) {
             OverlayCanvas.getOverlayCanvas(imp).removeRoi(ap);
         }
@@ -526,20 +526,20 @@ public class CustomPixelApertureHandler {
     }
 
     private void setFocusedAperture() {
-        for (int i = 0; i < customPixelApertureRois.size(); i++) {
-            customPixelApertureRois.get(i).setFocusedAperture(i == selectedAperture - 1);
+        for (int i = 0; i < freeformPixelApertureRois.size(); i++) {
+            freeformPixelApertureRois.get(i).setFocusedAperture(i == selectedAperture - 1);
         }
     }
 
-    private CustomPixelApertureRoi createNewAperture(boolean comparisonStar) {
-        var ap = new CustomPixelApertureRoi();
+    private FreeformPixelApertureRoi createNewAperture(boolean comparisonStar) {
+        var ap = new FreeformPixelApertureRoi();
         ap.setComparisonStar(comparisonStar);
         ap.setImage(imp);
         ap.setAppearance(starOverlay, false, skyOverlay, nameOverlay, valueOverlay, null,
                 (ap.isComparisonStar() ? "C" : "T") + (selectedAperture), Double.NaN);
 
         if (copyBackground) {
-            for (CustomPixelApertureRoi.Pixel pixel : currentAperture().iterable()) {
+            for (FreeformPixelApertureRoi.Pixel pixel : currentAperture().iterable()) {
                 if (pixel.isBackground()) {
                     ap.addPixel(pixel);
                 }
@@ -550,15 +550,15 @@ public class CustomPixelApertureHandler {
     }
 
     private void updateApertureNames() {
-        for (int i = 0; i < customPixelApertureRois.size(); i++) {
-            var ap = customPixelApertureRois.get(i);
+        for (int i = 0; i < freeformPixelApertureRois.size(); i++) {
+            var ap = freeformPixelApertureRois.get(i);
             ap.setName((ap.isComparisonStar() ? "C" : "T") + (i+1));
         }
     }
 
     public void setImp(ImagePlus imp) {
         if (this.imp != imp && imp != null) {
-            for (CustomPixelApertureRoi roi : customPixelApertureRois) {
+            for (FreeformPixelApertureRoi roi : freeformPixelApertureRois) {
                 roi.setImage(imp);
                 if (OverlayCanvas.hasOverlayCanvas(imp)) {
                     OverlayCanvas.getOverlayCanvas(imp).add(roi);
@@ -576,16 +576,16 @@ public class CustomPixelApertureHandler {
         return IMPORTED_APS.get().size();
     }
 
-    private static List<CustomPixelApertureRoi> deserializeApertures(String setting) {
+    private static List<FreeformPixelApertureRoi> deserializeApertures(String setting) {
         var decoder = Base64.getDecoder();
         setting = new String(decoder.decode(setting));
 
-        var apertures = new ArrayList<CustomPixelApertureRoi>();
+        var apertures = new ArrayList<FreeformPixelApertureRoi>();
         if (setting.startsWith("handlerApertures")) {
-            var ap = new AtomicReference<CustomPixelApertureRoi>();
+            var ap = new AtomicReference<FreeformPixelApertureRoi>();
             setting.lines().skip(1).forEachOrdered(line -> {
                 if (line.startsWith("ap customPixel")) {
-                    var old = ap.getAndSet(new CustomPixelApertureRoi());
+                    var old = ap.getAndSet(new FreeformPixelApertureRoi());
                     if (old != null) {
                         apertures.add(old);
                     }
@@ -635,17 +635,17 @@ public class CustomPixelApertureHandler {
         return apertures;
     }
 
-    private static String serializeApertures(List<CustomPixelApertureRoi> apertures) {
+    private static String serializeApertures(List<FreeformPixelApertureRoi> apertures) {
         var encoder = Base64.getEncoder();
 
         var setting = new StringBuilder("handlerApertures");
 
-        for (CustomPixelApertureRoi aperture : apertures) {
+        for (FreeformPixelApertureRoi aperture : apertures) {
             setting.append("\nap customPixel");
             setting.append('\n');
             setting.append('\t').append("isComp").append('\t').append(aperture.isComparisonStar());
 
-            for (CustomPixelApertureRoi.Pixel pixel : aperture.iterable()) {
+            for (FreeformPixelApertureRoi.Pixel pixel : aperture.iterable()) {
                 setting.append('\n').append('\t');
                 setting.append("px\t").append(pixel.x()).append('\t').append(pixel.y()).append('\t')
                         .append(pixel.isBackground() ? "background" : "source");

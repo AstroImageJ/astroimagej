@@ -1,6 +1,6 @@
 package astroj;
 
-import Astronomy.multiaperture.CustomPixelApertureHandler;
+import Astronomy.multiaperture.FreeformPixelApertureHandler;
 import ij.IJ;
 import ij.Prefs;
 import ij.astro.types.Pair;
@@ -13,7 +13,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static Astronomy.Aperture_.*;
-public class CustomPixelApertureRoi extends ApertureRoi {
+public class FreeformPixelApertureRoi extends ApertureRoi {
     // HashSet relies on overridden hashcode in Pixel to only care about coordinates for #contains
     private final Set<Pixel> pixels = new HashSet<>(20);
     private final List<Segment> segments = new ArrayList<>(80);
@@ -25,11 +25,11 @@ public class CustomPixelApertureRoi extends ApertureRoi {
     private boolean comparisonStar = false;
     private boolean focusedAperture = false;
 
-    public CustomPixelApertureRoi() {
+    public FreeformPixelApertureRoi() {
         this(Double.NaN);
     }
 
-    private CustomPixelApertureRoi(double integratedCnts) {
+    private FreeformPixelApertureRoi(double integratedCnts) {
         super(Double.NaN, Double.NaN, Double.NaN, Double.NaN, Double.NaN, integratedCnts, false);
         showAperture = true;
         showSky = true;
@@ -242,7 +242,7 @@ public class CustomPixelApertureRoi extends ApertureRoi {
         int yl = sy + (int)Math.round(h/3.0);
 
         // Show center point
-        if (CustomPixelApertureHandler.SHOW_ESTIMATED_CIRCULAR_APERTURE.get()) {
+        if (FreeformPixelApertureHandler.SHOW_ESTIMATED_CIRCULAR_APERTURE.get()) {
             g.setColor(Color.MAGENTA);
             int w1do4 = (int)Math.round(w1d/2.0);
             int h1do4 = (int)Math.round(h1d/2.0);

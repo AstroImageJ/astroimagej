@@ -3,7 +3,7 @@ package util;
 import Astronomy.AstroImageJ_Updater;
 import Astronomy.MultiAperture_;
 import Astronomy.MultiPlot_;
-import Astronomy.multiaperture.CustomPixelApertureHandler;
+import Astronomy.multiaperture.FreeformPixelApertureHandler;
 import Astronomy.multiaperture.io.AperturesFile;
 import astroj.AstroCanvas;
 import astroj.IJU;
@@ -79,8 +79,8 @@ public class AIJStartupHandler implements PlugIn {
                     if (asw != null && tableRead.apertures() != null) {
                         var d = AperturesFile.read(new String(tableRead.apertures()));
                         if (d != null) {
-                            CustomPixelApertureHandler.APS.set(d.apertureRois());
-                            CustomPixelApertureHandler.IMPORTED_APS.set(d.apertureRois());
+                            FreeformPixelApertureHandler.APS.set(d.apertureRois());
+                            FreeformPixelApertureHandler.IMPORTED_APS.set(d.apertureRois());
                             Prefs.ijPrefs.putAll(d.prefs());
                             Property.resetLoadStatus();
                         } else {
@@ -90,8 +90,8 @@ public class AIJStartupHandler implements PlugIn {
                         try {
                             var d = AperturesFile.read(new String(tableRead.apertures()));
                             if (d != null) {
-                                CustomPixelApertureHandler.APS.set(d.apertureRois());
-                                CustomPixelApertureHandler.IMPORTED_APS.set(d.apertureRois());
+                                FreeformPixelApertureHandler.APS.set(d.apertureRois());
+                                FreeformPixelApertureHandler.IMPORTED_APS.set(d.apertureRois());
                                 Prefs.ijPrefs.putAll(d.prefs());
                                 Property.resetLoadStatus();
                             } else {
@@ -143,15 +143,15 @@ public class AIJStartupHandler implements PlugIn {
                         var s = Files.readString(p);
                         var d = AperturesFile.read(s);
                         if (d != null) {
-                            CustomPixelApertureHandler.APS.set(d.apertureRois());
-                            CustomPixelApertureHandler.IMPORTED_APS.set(d.apertureRois());
+                            FreeformPixelApertureHandler.APS.set(d.apertureRois());
+                            FreeformPixelApertureHandler.IMPORTED_APS.set(d.apertureRois());
                             Prefs.ijPrefs.putAll(d.prefs());
                             Property.resetLoadStatus();
                             if (asw.getCanvas() instanceof AstroCanvas ac) {
                                 ac.removeApertureRois();
                             }
-                            for (int i = 0; i < CustomPixelApertureHandler.APS.get().size(); i++) {
-                                var ap = CustomPixelApertureHandler.APS.get().get(i);
+                            for (int i = 0; i < FreeformPixelApertureHandler.APS.get().size(); i++) {
+                                var ap = FreeformPixelApertureHandler.APS.get().get(i);
                                 ap.setName((ap.isComparisonStar() ? "C" : "T") + (i+1));
                                 ap.setImage(asw.getImagePlus());
                                 if (asw.getCanvas() instanceof AstroCanvas ac) {
@@ -169,8 +169,8 @@ public class AIJStartupHandler implements PlugIn {
                         var s = Files.readString(p);
                         var d = AperturesFile.read(s);
                         if (d != null) {
-                            CustomPixelApertureHandler.APS.set(d.apertureRois());
-                            CustomPixelApertureHandler.IMPORTED_APS.set(d.apertureRois());
+                            FreeformPixelApertureHandler.APS.set(d.apertureRois());
+                            FreeformPixelApertureHandler.IMPORTED_APS.set(d.apertureRois());
                             Prefs.ijPrefs.putAll(d.prefs());
                             Property.resetLoadStatus();
                         } else {
@@ -189,7 +189,7 @@ public class AIJStartupHandler implements PlugIn {
                             Prefs.set("multiaperture.import.isrefstar", "");
                             Prefs.set("multiaperture.import.isalignstar", "");
                             Prefs.set("multiaperture.import.centroidstar", "");
-                            CustomPixelApertureHandler.IMPORTED_APS.set(new ArrayList<>());
+                            FreeformPixelApertureHandler.IMPORTED_APS.set(new ArrayList<>());
                             Prefs.ijPrefs.load(Files.newBufferedReader(p));
                             Property.resetLoadStatus();
                         }
@@ -212,7 +212,7 @@ public class AIJStartupHandler implements PlugIn {
         FileAssociationHandler.registerAssociation(multiplotPlotCfgHandler);
         ObjectShare.putIfAbsent("multiapertureKeys", MultiAperture_.getApertureKeys());
         ObjectShare.putIfAbsent("multiapertureCircularKeys", MultiAperture_.getCircularApertureKeys());
-        ObjectShare.putIfAbsent("customApertureKey", CustomPixelApertureHandler.APS.getPropertyKey());
+        ObjectShare.putIfAbsent("customApertureKey", FreeformPixelApertureHandler.APS.getPropertyKey());
         ensureConfigFileExists();
         Executors.newSingleThreadExecutor()
                 .execute(() -> IJ.runPlugIn(AstroImageJ_Updater.class.getCanonicalName(), "check"));

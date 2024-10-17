@@ -171,7 +171,7 @@ public class OverlayCanvas extends ImageCanvas {
         for (int i = 0; i < rois.size(); i++) {
             Roi roi = rois.get(i);
             if (roi instanceof ApertureRoi apertureRoi) {
-                if (!allowArbitraryAperture && apertureRoi instanceof CustomPixelApertureRoi) {
+                if (!allowArbitraryAperture && apertureRoi instanceof FreeformPixelApertureRoi) {
                     continue;
                 }
 				double xPos = apertureRoi.getXpos();
@@ -355,7 +355,7 @@ public class OverlayCanvas extends ImageCanvas {
     public void drawOverlayCanvas(Graphics g) {
         Roi focusedAperture = null;
         for (Roi roi : rois.toArray(Roi[]::new)) {
-            if (roi instanceof CustomPixelApertureRoi ab && ab.isFocusedAperture()) {
+            if (roi instanceof FreeformPixelApertureRoi ab && ab.isFocusedAperture()) {
                 focusedAperture = roi;
                 continue;
             }

@@ -1,7 +1,7 @@
 package Astronomy.multiaperture.io;
 
 import Astronomy.MultiAperture_;
-import astroj.CustomPixelApertureRoi;
+import astroj.FreeformPixelApertureRoi;
 import ij.Prefs;
 
 import java.io.IOException;
@@ -25,14 +25,14 @@ public class AperturesFile {
     }
 
     public static Data read(String contents) {
-        var apertures = new ArrayList<CustomPixelApertureRoi>();
+        var apertures = new ArrayList<FreeformPixelApertureRoi>();
         var prefs = new Properties();
         if (contents.startsWith("AIJ APERTURES FILE")) {
-            var ap = new AtomicReference<CustomPixelApertureRoi>();
+            var ap = new AtomicReference<FreeformPixelApertureRoi>();
             AtomicBoolean inPrefsSection = new AtomicBoolean(false);
             contents.lines().skip(1).forEachOrdered(line -> {
                 if (line.startsWith("ap\tcustom_pixel")) {
-                    var old = ap.getAndSet(new CustomPixelApertureRoi());
+                    var old = ap.getAndSet(new FreeformPixelApertureRoi());
                     if (old != null) {
                         apertures.add(old);
                     }
@@ -98,7 +98,7 @@ public class AperturesFile {
         return new Data(apertures, prefs);
     }
 
-    public record Data(List<CustomPixelApertureRoi> apertureRois, Properties prefs) {
+    public record Data(List<FreeformPixelApertureRoi> apertureRois, Properties prefs) {
         @Override
         public String toString() {
             var setting = new StringBuilder("AIJ APERTURES FILE");
@@ -106,12 +106,12 @@ public class AperturesFile {
             setting.append('\n').append('\t').append("majorVersion").append('\t').append(2);
             setting.append('\n').append('\t').append("minorVersion").append('\t').append(0);
 
-            for (CustomPixelApertureRoi aperture : apertureRois()) {
+            for (FreeformPixelApertureRoi aperture : apertureRois()) {
                 setting.append("\nap\tcustom_pixel");
                 setting.append('\n');
                 setting.append('\t').append("isComp").append('\t').append(aperture.isComparisonStar());
 
-                for (CustomPixelApertureRoi.Pixel pixel : aperture.iterable()) {
+                for (FreeformPixelApertureRoi.Pixel pixel : aperture.iterable()) {
                     setting.append('\n').append('\t');
                     setting.append("px\t").append(pixel.x()).append('\t').append(pixel.y()).append('\t')
                             .append(pixel.isBackground() ? "background" : "source");

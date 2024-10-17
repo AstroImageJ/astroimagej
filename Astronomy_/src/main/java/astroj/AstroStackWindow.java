@@ -5600,7 +5600,11 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         if (autoSaveWCStoPrefs) updatePrefsFromWCS(false);
         ac.setShowPixelScale(showScaleX, showScaleY, pixelScaleX, pixelScaleY);
         saveWCStoPrefsMenuItem.setEnabled(wcs != null && (wcs.hasPA || wcs.hasScale));
-        if (autoNupEleft) setBestOrientation();
+        if (autoNupEleft) {
+            setBestOrientation();
+        } else {
+            ac.paint(ac.getGraphics());
+        }
     }
 
     public void setAstroProcessor(boolean requestUpdateAnnotationsFromHeader) {

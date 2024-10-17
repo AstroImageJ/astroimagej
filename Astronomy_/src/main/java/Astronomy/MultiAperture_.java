@@ -4563,8 +4563,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     ((JComponent) boxes.get(1)).setToolTipText("Enable log output for comparison star selection.");
                     ((JComponent) boxes.get(2)).setToolTipText("Draw dummy apertures to indicate image peaks that comp. star selection is considering.");
 
-                    //g.setLeftInset(100);
-                    //g.setNewPosition(GridBagConstraints.EAST);
+                    //g.setRightInset(-100);
+                    g.setNewPosition(GridBagConstraints.CENTER);
+                    g.setWidth(2);
                     final var gauss = gd.addBoundedNumericField("Smoothing Filter Radius", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), gaussRadius, 1, 10, "pixels", d -> gaussRadius = d);
                     gauss.asSwingComponent(C1).setToolTipText("Radius of gaussian smoothing to use when finding initial peaks.\n Set to 1 to disable.");
                     suggestionComponents.add(gauss.c2());
@@ -4642,6 +4643,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                         }
                     });
 
+                    g.setLeftInset(20);
+                    g.setNewPosition(GridBagConstraints.EAST);
                     var starSelection = gd.addBoundedNumericField("Base Aperture", new GenericSwingDialog.Bounds(1, Double.MAX_VALUE), referenceStar, 1, 7, null, true, d -> referenceStar = d.intValue());
                     if (upperBrightness < 101.0) upperBrightness = 150.0;
                     if (lowerBrightness > 99.0 || lowerBrightness < 0.0) lowerBrightness = 50.0;
@@ -4694,6 +4697,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
                     g.setWidth(2);
                     //g.setLeftInset(20);
+                    g.setNewPosition(GridBagConstraints.CENTER);
                     gd.addGenericComponent(distanceRatioBox);
                     g.addToSameRow();
                     var maxStars = gd.addBoundedNumericField("Max. Comp. Stars", new GenericSwingDialog.Bounds(0, Double.MAX_VALUE), maxSuggestedStars, 1, columns, null, true, d -> maxSuggestedStars = d.intValue());

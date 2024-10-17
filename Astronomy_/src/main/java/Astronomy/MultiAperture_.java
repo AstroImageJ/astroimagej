@@ -4389,13 +4389,11 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     //g.setRightInset(20);
                     g.setNewPosition(GridBagConstraints.EAST);
                     g.addBoundedNumericField("Normalized flux cutoff threshold:", new GenericSwingDialog.Bounds(0, false, 1, false), ApRadius.AUTO_VAR_RAD_PROF.cutoff, .01, 6, "(0 < cutoff < 1 ; default = 0.010)", d -> ApRadius.AUTO_VAR_RAD_PROF.cutoff = d);
-                    g.setOverridePosition(false);
                     g.resetPositionOverride();
                     g.addGenericComponent(apRadiiButtons.get(ApRadius.AUTO_VAR_FWHM));
                     g.addToSameRow();
-                    g.setOverridePosition(true);
                     g.setNewPosition(GridBagConstraints.EAST);
-                    //g.setRightInset(30);
+                    g.setRightInset(30);
                     g.addFloatSlider("FWHM factor:", 0.1, 5.0, true, ApRadius.AUTO_VAR_FWHM.cutoff, 3, 0.1, d -> ApRadius.AUTO_VAR_FWHM.cutoff = d);
                     g.resetPositionOverride();
                     g.setOverridePosition(false);

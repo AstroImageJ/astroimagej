@@ -3003,9 +3003,14 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             lastSlice = firstSlice;
         }
         if (!autoMode) {
-            GenericSwingDialog gd = dialog();
+            GenericSwingDialog gd = null;
+            try {
+                gd = dialog();
 
-            gd.showDialog();
+                gd.showDialog();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
             xLocation = gd.getX();
             yLocation = gd.getY();
             Prefs.set(MultiAperture_.PREFS_XLOCATION, xLocation);
@@ -4399,33 +4404,35 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             }
         }).setToolTipText("Select aperture type");
 
-        // Sync slice sliders
-        var fs1 = GenericSwingDialog.getSpinnerFromSlider(sliders[0]).get();
-        var fs2 = GenericSwingDialog.getSpinnerFromSlider(sliders[5]).get();
-        var ls1 = GenericSwingDialog.getSpinnerFromSlider(sliders[1]).get();
-        var ls2 = GenericSwingDialog.getSpinnerFromSlider(sliders[6]).get();
-        ChangeListener fcl = e -> {
-            var source = (JSpinner) e.getSource();
-            var value = source.getValue();
-            if (source == fs1) {
-                fs2.setValue(value);
-            } else {
-                fs1.setValue(value);
-            }
-        };
-        ChangeListener lcl = e -> {
-            var source = (JSpinner) e.getSource();
-            var value = source.getValue();
-            if (source == ls1) {
-                ls2.setValue(value);
-            } else {
-                ls1.setValue(value);
-            }
-        };
-        fs1.addChangeListener(fcl);
-        fs2.addChangeListener(fcl);
-        ls1.addChangeListener(lcl);
-        ls2.addChangeListener(lcl);
+        if (stackSize > 1) {
+            // Sync slice sliders
+            var fs1 = GenericSwingDialog.getSpinnerFromSlider(sliders[0]).get();
+            var fs2 = GenericSwingDialog.getSpinnerFromSlider(sliders[5]).get();
+            var ls1 = GenericSwingDialog.getSpinnerFromSlider(sliders[1]).get();
+            var ls2 = GenericSwingDialog.getSpinnerFromSlider(sliders[6]).get();
+            ChangeListener fcl = e -> {
+                var source = (JSpinner) e.getSource();
+                var value = source.getValue();
+                if (source == fs1) {
+                    fs2.setValue(value);
+                } else {
+                    fs1.setValue(value);
+                }
+            };
+            ChangeListener lcl = e -> {
+                var source = (JSpinner) e.getSource();
+                var value = source.getValue();
+                if (source == ls1) {
+                    ls2.setValue(value);
+                } else {
+                    ls1.setValue(value);
+                }
+            };
+            fs1.addChangeListener(fcl);
+            fs2.addChangeListener(fcl);
+            ls1.addChangeListener(lcl);
+            ls2.addChangeListener(lcl);
+        }
 
         gd.addDoubleSpaceLineSeparator();
 

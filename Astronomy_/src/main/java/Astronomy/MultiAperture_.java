@@ -4660,11 +4660,35 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
                     var distanceRatioBox = Box.createHorizontalBox();
                     var ratioSlider = new JSlider(0, 100, (int) brightness2DistanceWeight);
+                    var ratioBox = new JSpinner(new SpinnerNumberModel((int)brightness2DistanceWeight, 0, 100, 1));
+                    GenericSwingDialog.modifySpinner(ratioBox, true);
 
-                    ratioSlider.addChangeListener($ -> brightness2DistanceWeight = ratioSlider.getValue());
+                    ratioSlider.addMouseWheelListener(e -> {
+                        var delta = e.getPreciseWheelRotation() * ((SpinnerNumberModel) ratioBox.getModel()).getStepSize().doubleValue();
+
+                        var newValue = ratioSlider.getValue() -
+                                delta * ((SpinnerNumberModel) ratioBox.getModel()).getStepSize().doubleValue();
+
+                        if (newValue < ((Number) ((SpinnerNumberModel) ratioBox.getModel()).getMinimum()).doubleValue()) {
+                            newValue = ((Number) ((SpinnerNumberModel) ratioBox.getModel()).getMinimum()).doubleValue();
+                        } else if (newValue > ((Number) ((SpinnerNumberModel) ratioBox.getModel()).getMaximum()).doubleValue()) {
+                            newValue = ((Number) ((SpinnerNumberModel) ratioBox.getModel()).getMaximum()).doubleValue();
+                        }
+
+                        ratioBox.setValue(newValue);
+                    });
+                    ratioSlider.addChangeListener($ -> {
+                        brightness2DistanceWeight = ratioSlider.getValue();
+                        ratioBox.setValue(brightness2DistanceWeight);
+                    });
+                    ratioBox.addChangeListener($ -> {
+                        brightness2DistanceWeight = ((Number) ratioBox.getValue()).intValue();
+                        ratioSlider.setValue((int) brightness2DistanceWeight);
+                    });
 
                     distanceRatioBox.add(new JLabel("Weight of Distance "));
                     distanceRatioBox.add(ratioSlider);
+                    distanceRatioBox.add(ratioBox);
                     distanceRatioBox.add(new JLabel(" vs Brightness"));
                     //distanceRatioBox.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
 
@@ -4676,6 +4700,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
                     suggestionComponents.add(ratioSlider);
                     suggestionComponents.add(maxStars.c2());
+                    suggestionComponents.add(ratioBox);
 
                     ratioSlider.setToolTipText("""
                 <html>Weight of brightness vs distance, used to sort stars.<br>

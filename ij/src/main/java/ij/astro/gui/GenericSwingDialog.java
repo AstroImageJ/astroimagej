@@ -1163,7 +1163,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
     }
 
 
-    private void updateStepSize(JSpinner spinner) {
+    private static void updateStepSize(JSpinner spinner) {
         final var model = spinner.getModel();
         if (model instanceof SpinnerNumberModel numberModel) {
             AtomicReference<Number> stepSize = new AtomicReference<>(numberModel.getStepSize());
@@ -1386,7 +1386,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         centerDialog = false;
     }
 
-    private JFormattedTextField modifySpinner(JSpinner spinner, boolean removeButtons) {
+    public static JFormattedTextField modifySpinner(JSpinner spinner, boolean removeButtons) {
         for (Component component : spinner.getComponents()) {
             if (removeButtons && component instanceof AbstractButton) {
                 spinner.remove(component);
@@ -1396,12 +1396,12 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
                 editor.addMouseWheelListener(e -> {
                     if (spinner.getModel() instanceof SpinnerNumberModel spin) {
                         var delta = e.getPreciseWheelRotation() * spin.getStepSize().doubleValue();
-                        var newValue = -delta + (Double) spinner.getValue();
+                        var newValue = -delta + ((Number) spinner.getValue()).doubleValue();
 
-                        if (newValue < (Double) spin.getMinimum()) {
-                            newValue = (Double) spin.getMinimum();
-                        } else if (newValue > (Double) spin.getMaximum()) {
-                            newValue = (Double) spin.getMaximum();
+                        if (newValue < ((Number) spin.getMinimum()).doubleValue()) {
+                            newValue = ((Number) spin.getMinimum()).doubleValue();
+                        } else if (newValue > ((Number) spin.getMaximum()).doubleValue()) {
+                            newValue = ((Number) spin.getMaximum()).doubleValue();
                         }
 
                         spinner.setValue(newValue);
@@ -1952,7 +1952,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         }
     }
 
-    private class NumericFieldStepSizeEditor implements MouseListener {
+    private static class NumericFieldStepSizeEditor implements MouseListener {
         private final JSpinner spinner;
 
         public NumericFieldStepSizeEditor(JSpinner spinner) {

@@ -65,7 +65,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
     private boolean recorderOn;          // whether recording is allowed (after the dialog is closed)
     private Class<?> activeSection;
     private final Map<Class<?>, SwappableSectionHolder<?>> swappableSections = new HashMap<>();
-    private final Deque<Box> rowBuilding = new ArrayDeque<>();
+    private final Deque<StackComponent> rowBuilding = new ArrayDeque<>();
     private int gridwith;
 
     public GenericSwingDialog(String title) {
@@ -188,7 +188,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
     public Box buildRow(BiConsumer<GenericSwingDialog, Box> rowBuilder) {
         var box = Box.createHorizontalBox();
 
-        rowBuilding.push(box);
+        rowBuilding.push(new StackComponent(box));
         rowBuilder.accept(this, box);
         rowBuilding.pop();
 
@@ -209,10 +209,10 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         return box;
     }
 
-    public Box buildColumn(BiConsumer<GenericSwingDialog, Box> columnBuilder) {
-        var box = Box.createVerticalBox();
+    public JPanel buildColumn(BiConsumer<GenericSwingDialog, JPanel> columnBuilder) {
+        var box = new JPanel(new GridBagLayout());
 
-        rowBuilding.push(box);
+        rowBuilding.push(new StackComponent(box, new GridBagConstraints()));
         columnBuilder.accept(this, box);
         rowBuilding.pop();
 
@@ -355,7 +355,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
 
     private JComponent getPanel() {
         if (!rowBuilding.isEmpty()) {
-            return rowBuilding.peekLast();
+            return rowBuilding.peekLast().component();
         }
 
         if (activeSection != null) {
@@ -366,6 +366,13 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
     }
 
     private GridBagConstraints getConstraints() {
+        if (!rowBuilding.isEmpty()) {
+            var cc = rowBuilding.peekLast().constraints();
+            if (cc != null) {
+                return rowBuilding.peekLast().constraints();
+            }
+        }
+
         if (activeSection != null) {
             return swappableSections.get(activeSection).currentConstrains();
         }
@@ -1984,5 +1991,11 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
     }
 
     public record Triple<T1, T2, T3>(T1 a, T2 b, T3 c) {
+    }
+
+    private record StackComponent(JComponent component, GridBagConstraints constraints) {
+        public StackComponent(Box box) {
+            this(box, null);
+        }
     }
 }

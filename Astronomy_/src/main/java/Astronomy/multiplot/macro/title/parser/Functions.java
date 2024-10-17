@@ -410,7 +410,7 @@ enum Functions {
                 case "atan2" -> Math.atan2(b, a);
                 case "min" -> Math.min(a, b);
                 case "max" -> Math.max(a, b);
-                case "qsum" -> Math.hypot(a, b);
+                case "qsum", "hypot" -> Math.hypot(a, b);
                 case "scalb" -> {
                     if (b != (int)b) {
                         throw new IllegalStateException();

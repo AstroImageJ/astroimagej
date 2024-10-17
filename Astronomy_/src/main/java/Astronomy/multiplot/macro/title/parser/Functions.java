@@ -6,6 +6,7 @@ import astroj.JulianDate;
 import ij.IJ;
 import ij.Prefs;
 import ij.util.ArrayUtil;
+import org.hipparchus.special.Gamma;
 
 import java.text.DecimalFormat;
 import java.time.*;
@@ -33,6 +34,8 @@ enum Functions {
     FORMAT(Functions::format, new String[]{"format expression", "in"}, "format", "fmt", "f"),
     DATETIME_FORMAT(Functions::datetimeFormat,
             new String[]{"inFormat", "inLocale", "outFormat", "outLocale", "datetime"}, "datetimeformat", "dtf"),
+    BINARY_OPERATOR(Functions::binaryMathOperator, new String[]{"operator", "a", "b"}, "math2", "m2", "m"),
+    UNARY_OPERATOR(Functions::unaryMathOperator, new String[]{"operator", "a"}, "math1", "m1"),
     ;
 
     final String[] parameters;
@@ -368,6 +371,105 @@ enum Functions {
             return new FunctionReturn(outFormat.format(inFormat.parseBest(ps[4], ZonedDateTime::from, LocalDateTime::from, LocalDate::from, LocalTime::from)));
         } catch (Exception e) {
             return FunctionReturn.error("<Failed to parse or format datetime (%s)>".formatted(ps[4]));
+        }
+    }
+
+    private static FunctionReturn binaryMathOperator(ResolverContext ctx, String... ps) {
+        double a, b;
+
+        try {
+            a = Double.parseDouble(ps[1]);
+        } catch (NumberFormatException e) {
+            return FunctionReturn.error("<Failed to parse a to double (%s)>".formatted(ps[1]));
+        }
+
+        try {
+            b = Double.parseDouble(ps[2]);
+        } catch (NumberFormatException e) {
+            return FunctionReturn.error("<Failed to parse b to double (%s)>".formatted(ps[2]));
+        }
+
+        // Perform op
+        try {
+            double result = switch (ps[0]) {
+                case "mod", "%" -> a % b;
+                case "add", "+" -> a + b;
+                case "sub", "-" -> a - b;
+                case "div", "/" -> a / b;
+                case "mul", "*" -> a * b;
+                case "exp", "^" -> Math.pow(a, b);
+                case "log" -> Math.log(a) / Math.log(b);
+                case "root" -> {
+                    if (b == 2) {
+                        yield Math.sqrt(a);
+                    } else if (b == 3) {
+                        yield Math.cbrt(a);
+                    }
+                    yield Math.pow(a, 1D / b);
+                }
+                case "atan2" -> Math.atan2(b, a);
+                case "min" -> Math.min(a, b);
+                case "max" -> Math.max(a, b);
+                case "qsum" -> Math.hypot(a, b);
+                case "scalb" -> {
+                    if (b != (int)b) {
+                        throw new IllegalStateException();
+                    }
+                    yield Math.scalb(a, (int)b);
+                }
+                default -> throw new NumberFormatException();
+            };
+
+            return new FunctionReturn(Double.toString(result));
+        } catch (NumberFormatException e) {
+            return FunctionReturn.error("<Could not run unknown function %s>".formatted(ps[0]));
+        } catch (IllegalStateException e) {
+            return FunctionReturn.error("<Could not run scalb as b (%s) was not an integer!>".formatted(b));
+        }
+    }
+
+    private static FunctionReturn unaryMathOperator(ResolverContext ctx, String... ps) {
+        double a;
+
+        try {
+            a = Double.parseDouble(ps[1]);
+        } catch (NumberFormatException e) {
+            return FunctionReturn.error("<Failed to parse a to double (%s)>".formatted(ps[1]));
+        }
+
+        // Perform op
+        try {
+            double result = switch (ps[0]) {
+                case "exp" -> Math.exp(a);
+                case "log" -> Math.log10(a);
+                case "ln" -> Math.log(a);
+                case "deg" -> Math.toDegrees(a);
+                case "rad" -> Math.toRadians(a);
+                case "round" -> Math.rint(a);
+                case "truncate", "trunc" -> (int)a;
+                case "sin" -> Math.sin(a);
+                case "cos" -> Math.cos(a);
+                case "tan" -> Math.tan(a);
+                case "asin" -> Math.asin(a);
+                case "acos" -> Math.acos(a);
+                case "atan" -> Math.atan(a);
+                case "sinh" -> Math.sinh(a);
+                case "cosh" -> Math.cosh(a);
+                case "tanh" -> Math.tanh(a);
+                case "asinh" -> Math.log(a + Math.sqrt(a*a + 1));
+                case "acosh" -> Math.log(a + Math.sqrt(a*a - 1));
+                case "atanh" -> 0.5 * Math.log((1+a)/(1-a));
+                case "fact", "!" -> Gamma.gamma(a+1);
+                case "abs" -> Math.abs(a);
+                case "ceil" -> Math.ceil(a);
+                case "floor" -> Math.floor(a);
+                case "signum" -> Math.signum(a);
+                default -> throw new NumberFormatException();
+            };
+
+            return new FunctionReturn(Double.toString(result));
+        } catch (NumberFormatException e) {
+            return FunctionReturn.error("<Could not run unknown function %s>".formatted(ps[0]));
         }
     }
 

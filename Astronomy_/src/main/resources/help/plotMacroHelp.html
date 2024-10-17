@@ -419,6 +419,201 @@ The programmable titling capability allows the user to programmatically retrieve
     </tbody>
 </table>
 
+<h2>Performing Mathematical Operations</h2>
+<p>The extracted strings can be further processed with math.
+    Binary operators take a function and 2 parameters, such as for addition.
+    Unary operators take a function and 1 parameter, such as for sin().
+<table style="text-align: center;" border="1">
+    <thead>
+    <tr>
+        <th>Name</th>
+        <th>Function name</th>
+        <th>Description</th>
+        <th>Parameters</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <td>Binary Operator</td>
+        <td>math2, m2, m</td>
+        <td>Math functions with 2 parameters</td>
+        <td><table border="1">
+            <thead>
+            <tr>
+                <th>Function(s)</th>
+                <th>Operation</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>add, +</td>
+                <td>a + b</td>
+            </tr>
+            <tr>
+                <td>sub, -</td>
+                <td>a - b</td>
+            </tr>
+            <tr>
+                <td>div, /</td>
+                <td>a / b</td>
+            </tr>
+            <tr>
+                <td>mul, *</td>
+                <td>a * b</td>
+            </tr>
+            <tr>
+                <td>mod, %</td>
+                <td>a % b</td>
+            </tr>
+            <tr>
+                <td>exp, ^</td>
+                <td>a<sup>b</sup></td>
+            </tr>
+            <tr>
+                <td>log</td>
+                <td>log<sub>b</sub>a</td>
+            </tr>
+            <tr>
+                <td>root</td>
+                <td><sup>b</sup>&radic;a</td>
+            </tr>
+            <tr>
+                <td>atan2</td>
+                <td>atan(b, a)</td>
+            </tr>
+            <tr>
+                <td>min</td>
+                <td>min(a, b)</td>
+            </tr>
+            <tr>
+                <td>max</td>
+                <td>max(a,b)</td>
+            </tr>
+            <tr>
+                <td>qsum</td>
+                <td>&radic;<span style="text-decoration:overline;">&nbsp;a<sup>2</sup> + b<sup>2</sup>&nbsp;</span></td>
+            </tr>
+            <tr>
+                <td>scalb</td>
+                <td>a * 2<sup>b</sup></td>
+            </tr>
+            </tbody>
+        </table></td>
+    </tr>
+    <tr>
+        <td>Unary Operator</td>
+        <td>math1, m1</td>
+        <td>Math functions using only 1 parameter.</td>
+        <td><table border="1">
+            <thead>
+            <tr>
+                <th>Function(s)</th>
+                <th>Operation</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>exp</td>
+                <td>e<sup>a</sup></td>
+            </tr>
+            <tr>
+                <td>log</td>
+                <td>log<sub>10</sub>(a)</td>
+            </tr>
+            <tr>
+                <td>ln</td>
+                <td>ln(a)</td>
+            </tr>
+            <tr>
+                <td>deg</td>
+                <td>Convert radians to degrees</td>
+            </tr>
+            <tr>
+                <td>rad</td>
+                <td>Convert degrees to radians</td>
+            </tr>
+            <tr>
+                <td>round</td>
+                <td>round(a)</td>
+            </tr>
+            <tr>
+                <td>truncate, trunc</td>
+                <td>truncate(a)</td>
+            </tr>
+            <tr>
+                <td>fact, !</td>
+                <td>a!</td>
+            </tr>
+            <tr>
+                <td>abs</td>
+                <td>|a|</td>
+            </tr>
+            <tr>
+                <td>ceil</td>
+                <td>ceil(a)</td>
+            </tr>
+            <tr>
+                <td>floor</td>
+                <td>floor(a)</td>
+            </tr>
+            <tr>
+                <td>signum</td>
+                <td>1 if a > 0, 0 if a is 0, or -1 if a < 0</td>
+            </tr>
+            <tr>
+                <td>sin</td>
+                <td>sin(a)</td>
+            </tr>
+            <tr>
+                <td>cos</td>
+                <td>cos(a)</td>
+            </tr>
+            <tr>
+                <td>tan</td>
+                <td>tan(a)</td>
+            </tr>
+            <tr>
+                <td>asin</td>
+                <td>asin(a)</td>
+            </tr>
+            <tr>
+                <td>acos</td>
+                <td>acos(a)</td>
+            </tr>
+            <tr>
+                <td>atan</td>
+                <td>atan(a)</td>
+            </tr>
+            <tr>
+                <td>sinh</td>
+                <td>sinh(a)</td>
+            </tr>
+            <tr>
+                <td>cosh</td>
+                <td>cosh(a)</td>
+            </tr>
+            <tr>
+                <td>tanh</td>
+                <td>tanh(a)</td>
+            </tr>
+            <tr>
+                <td>asinh</td>
+                <td>asinh(a)</td>
+            </tr>
+            <tr>
+                <td>acosh</td>
+                <td>acosh(a)</td>
+            </tr>
+            <tr>
+                <td>atanh</td>
+                <td>atanh(a)</td>
+            </tr>
+            </tbody>
+        </table></td>
+    </tr>
+    </tbody>
+</table>
+
 <h2>Formatting Numeric Values</h2>
 
 <p>Extracted numeric values can be formatted by prefixing any of the above, including a split or regex of any source, by prefixing them with:

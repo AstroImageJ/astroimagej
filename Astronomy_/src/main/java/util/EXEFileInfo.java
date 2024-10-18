@@ -32,28 +32,34 @@ public class EXEFileInfo {
 
     public static int[] getVersionInfo(String path) {
         if (!IJ.isWindows()) return new int[]{999, 999, 999};
-        IntByReference dwDummy = new IntByReference();
-        dwDummy.setValue(0);
+        try {
+            IntByReference dwDummy = new IntByReference();
+            dwDummy.setValue(0);
 
-        int versionlength = com.sun.jna.platform.win32.Version.INSTANCE.GetFileVersionInfoSize(path, dwDummy);
+            int versionlength = com.sun.jna.platform.win32.Version.INSTANCE.GetFileVersionInfoSize(path, dwDummy);
 
-        if (versionlength == 0) return new int[]{999, 999, 999};
+            if (versionlength == 0) return new int[]{999, 999, 999};
 
-        byte[] bufferarray = new byte[versionlength];
-        Pointer lpData = new Memory(bufferarray.length);
-        PointerByReference lplpBuffer = new PointerByReference();
-        IntByReference puLen = new IntByReference();
-        // These must exist
-        boolean fileInfoResult = com.sun.jna.platform.win32.Version.INSTANCE.GetFileVersionInfo(path, 0, versionlength, lpData);
-        boolean verQueryVal = com.sun.jna.platform.win32.Version.INSTANCE.VerQueryValue(lpData, "\\", lplpBuffer, puLen);
+            byte[] bufferarray = new byte[versionlength];
+            Pointer lpData = new Memory(bufferarray.length);
+            PointerByReference lplpBuffer = new PointerByReference();
+            IntByReference puLen = new IntByReference();
+            // These must exist
+            boolean fileInfoResult = com.sun.jna.platform.win32.Version.INSTANCE.GetFileVersionInfo(path, 0, versionlength, lpData);
+            boolean verQueryVal = com.sun.jna.platform.win32.Version.INSTANCE.VerQueryValue(lpData, "\\", lplpBuffer, puLen);
 
-        VS_FIXEDFILEINFO lplpBufStructure = new VS_FIXEDFILEINFO(lplpBuffer.getValue());
-        lplpBufStructure.read();
+            VS_FIXEDFILEINFO lplpBufStructure = new VS_FIXEDFILEINFO(lplpBuffer.getValue());
+            lplpBufStructure.read();
 
-        int v1 = (lplpBufStructure.dwProductVersionMS).intValue() >> 16;
-        int v2 = (lplpBufStructure.dwProductVersionMS).intValue() & 0xffff;
-        int v3 = (lplpBufStructure.dwProductVersionLS).intValue() >> 16;
-        int v4 = (lplpBufStructure.dwProductVersionLS).intValue() & 0xffff;
-        return new int[] { v1, v2, v3};
+            int v1 = (lplpBufStructure.dwProductVersionMS).intValue() >> 16;
+            int v2 = (lplpBufStructure.dwProductVersionMS).intValue() & 0xffff;
+            int v3 = (lplpBufStructure.dwProductVersionLS).intValue() >> 16;
+            int v4 = (lplpBufStructure.dwProductVersionLS).intValue() & 0xffff;
+            return new int[] { v1, v2, v3};
+        } catch (UnsatisfiedLinkError e) {
+            e.printStackTrace();
+        }
+
+        return new int[]{999, 999, 999};
     }
 }

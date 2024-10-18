@@ -1,5 +1,6 @@
 package Astronomy.multiaperture;
 
+import astroj.Centroid;
 import astroj.FreeformPixelApertureRoi;
 import astroj.OverlayCanvas;
 import ij.IJ;
@@ -36,6 +37,8 @@ public class FreeformPixelApertureHandler {
     private final boolean valueOverlay = Prefs.get(AP_PREFS_VALUEOVERLAY, true);
     private final boolean tempOverlay = Prefs.get(AP_PREFS_TEMPOVERLAY, true);
     private final boolean clearOverlay = Prefs.get(AP_PREFS_CLEAROVERLAY, false);
+    private final boolean usePlane = Prefs.get(AP_PREFS_BACKPLANE, false);
+    private final boolean removeStars = Prefs.get(AP_PREFS_REMOVEBACKSTARS, false);
     private IntConsumer updateCount = i -> {};
     public static final Property<List<FreeformPixelApertureRoi>> APS =
             new Property<>(new ArrayList<>(),
@@ -90,6 +93,14 @@ public class FreeformPixelApertureHandler {
             if (t1.hasSource()) {
                 t1.copyPixels(currentAperture(), false);
                 currentAperture().moveTo(x, y);
+
+                if (CENTROID_ON_COPY.get()) {
+                    var c = new Centroid();
+                    if (c.measure(imp, currentAperture(), true, usePlane, removeStars)) {
+                        currentAperture().moveTo((int) c.x(), (int) c.y());
+                    }
+                }
+
                 return;
             }
         }

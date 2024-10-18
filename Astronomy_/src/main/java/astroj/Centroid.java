@@ -118,6 +118,12 @@ public class Centroid {
         yCenter = yy;
     }
 
+    public boolean measure(ImagePlus imp, FreeformPixelApertureRoi aperture, boolean findCentroid,
+                           boolean useBackgroundPlane, boolean removeStars) {//todo need back radii
+        return measure(imp, aperture.getXpos(), aperture.getYpos(), aperture.getRadius(), aperture.getRadius(),
+                aperture.getRadius(), findCentroid, useBackgroundPlane, removeStars);
+    }
+
     /**
      * Finds the centroid of an object at a given position and radius.
      */

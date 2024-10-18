@@ -232,8 +232,8 @@ public class FreeformPixelApertureHandler {
         var backgroundFinder = new JButton(AUTO_SKY_ICON);
         var showEstimatedCircularAperture = new JCheckBox("Show estimated circular aperture", SHOW_ESTIMATED_CIRCULAR_APERTURE.get());
         var alwaysOnTop = new JCheckBox("Show panel always on top", ALWAYS_ON_TOP.get());
-        var copyShape = new JCheckBox("Copy T1 shape");
-        var centroidShape = new JCheckBox("Centroid on copying of aperture shape");
+        var copyShape = new JCheckBox("Copy T1 shape", COPY_T1.get());
+        var centroidShape = new JCheckBox("Centroid on copying of aperture shape", CENTROID_ON_COPY.get());
 
         configureButton(deleteAp);
         configureButton(compButton);

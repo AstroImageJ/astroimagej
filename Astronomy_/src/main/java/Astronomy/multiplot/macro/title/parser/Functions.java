@@ -375,19 +375,18 @@ enum Functions {
     }
 
     private static FunctionReturn binaryMathOperator(ResolverContext ctx, String... ps) {
-        double a, b;
-
-        try {
-            a = Double.parseDouble(ps[1]);
-        } catch (NumberFormatException e) {
+        var maybeA = numberResolver(ps[1]);
+        if (maybeA.isEmpty()) {
             return FunctionReturn.error("<Failed to parse a to double (%s)>".formatted(ps[1]));
         }
 
-        try {
-            b = Double.parseDouble(ps[2]);
-        } catch (NumberFormatException e) {
+        var maybeB = numberResolver(ps[2]);
+        if (maybeB.isEmpty()) {
             return FunctionReturn.error("<Failed to parse b to double (%s)>".formatted(ps[2]));
         }
+
+        var a = maybeA.getAsDouble();
+        var b = maybeB.getAsDouble();
 
         // Perform op
         try {
@@ -429,13 +428,12 @@ enum Functions {
     }
 
     private static FunctionReturn unaryMathOperator(ResolverContext ctx, String... ps) {
-        double a;
-
-        try {
-            a = Double.parseDouble(ps[1]);
-        } catch (NumberFormatException e) {
+        var maybeA = numberResolver(ps[1]);
+        if (maybeA.isEmpty()) {
             return FunctionReturn.error("<Failed to parse a to double (%s)>".formatted(ps[1]));
         }
+
+        var a = maybeA.getAsDouble();
 
         // Perform op
         try {
@@ -489,6 +487,21 @@ enum Functions {
             case "APVARFLUXCUT" -> "multiaperture.automodefluxcutoff";
             case "LASTMA" -> "multiaperture.lastrun";
             default -> key;
+        };
+    }
+
+    private static OptionalDouble numberResolver(String s) {
+        return switch (s) {
+            case "pi", "PI" -> OptionalDouble.of(Math.PI);
+            case "e" -> OptionalDouble.of(Math.E);
+            case "tau", "TAU" -> OptionalDouble.of(2*Math.PI);
+            default -> {
+                try {
+                    yield OptionalDouble.of(Double.parseDouble(s));
+                } catch (NumberFormatException e) {
+                    yield OptionalDouble.empty();
+                }
+            }
         };
     }
 

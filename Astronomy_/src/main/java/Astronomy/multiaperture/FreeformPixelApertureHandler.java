@@ -48,6 +48,8 @@ public class FreeformPixelApertureHandler {
     private static final Property<Point> WINDOW_LOCATION = new Property<>(new Point(), FreeformPixelApertureHandler.class);
     public static final Property<Boolean> SHOW_ESTIMATED_CIRCULAR_APERTURE = new Property<>(false, FreeformPixelApertureHandler.class);
     private static final Property<Boolean> ALWAYS_ON_TOP = new Property<>(true, FreeformPixelApertureHandler.class);
+    private static final Property<Boolean> CENTROID_ON_COPY = new Property<>(false, FreeformPixelApertureHandler.class);
+    private static final Property<Boolean> COPY_T1 = new Property<>(false, FreeformPixelApertureHandler.class);
     private static final int WIDTH = 25;
     private static final int HEIGHT = 25;
     private static final Icon ADD_ICON = UIHelper.createImageIcon("Astronomy/images/icons/multiaperture/add.png", WIDTH, HEIGHT);
@@ -83,6 +85,15 @@ public class FreeformPixelApertureHandler {
     }
 
     public void addPixel(int x, int y, boolean isBackground) {
+        if (COPY_T1.get() && !currentAperture().hasSource() && selectedAperture > 1) {
+            var t1 = freeformPixelApertureRois.get(0);
+            if (t1.hasSource()) {
+                t1.copyPixels(currentAperture(), false);
+                currentAperture().moveTo(x, y);
+                return;
+            }
+        }
+
         addPixel(x, y, isBackground, true);
     }
 
@@ -210,6 +221,8 @@ public class FreeformPixelApertureHandler {
         var backgroundFinder = new JButton(AUTO_SKY_ICON);
         var showEstimatedCircularAperture = new JCheckBox("Show estimated circular aperture", SHOW_ESTIMATED_CIRCULAR_APERTURE.get());
         var alwaysOnTop = new JCheckBox("Show panel always on top", ALWAYS_ON_TOP.get());
+        var copyShape = new JCheckBox("Copy T1 shape");
+        var centroidShape = new JCheckBox("Centroid on copying of aperture shape");
 
         configureButton(deleteAp);
         configureButton(compButton);
@@ -323,6 +336,14 @@ public class FreeformPixelApertureHandler {
             frame.setAlwaysOnTop(ALWAYS_ON_TOP.get());
         });
 
+        copyShape.addActionListener($ -> {
+            COPY_T1.set(copyShape.isSelected());
+        });
+
+        centroidShape.addActionListener($ -> {
+            CENTROID_ON_COPY.set(centroidShape.isSelected());
+        });
+
         frame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 
         frame.addWindowListener(new WindowAdapter() {
@@ -342,6 +363,8 @@ public class FreeformPixelApertureHandler {
         copyBackground.setToolTipText("Toggles if creating a new aperture should copy the current aperture's background");
         beginButton.setToolTipText("Run photometry");
         backgroundFinder.setToolTipText("Automatic background pixel selection based on current image for the active aperture");
+        copyShape.setToolTipText("Copy T1 source pixels when creating a new aperture");
+        centroidShape.setToolTipText("Centroid copied source pixels from T1");
 
         updateCount = selectorModel::setMaximum;
 
@@ -361,6 +384,8 @@ public class FreeformPixelApertureHandler {
 
         secondRow.add(showEstimatedCircularAperture);
         secondRow.add(alwaysOnTop);
+        secondRow.add(copyShape);
+        secondRow.add(centroidShape);
 
         p.add(firstRow);
         p.add(secondRow);

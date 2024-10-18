@@ -380,6 +380,25 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
         this.focusedAperture = focusedAperture;
     }
 
+    /**
+     * Copies this ap's pixels to the specified aperture.
+     * <p>
+     * Does not update display.
+     * <p>
+     * Clears existing pixels.
+     */
+    public void copyPixels(FreeformPixelApertureRoi f, boolean copyBackground) {
+        var s = pixels.stream();
+
+        if (!copyBackground) {
+            s = s.filter(Predicate.not(Pixel::isBackground));
+        }
+
+        f.pixels.clear();
+        f.pixels.addAll(s.collect(Collectors.toSet()));
+        f.updateCenter();
+    }
+
     private Photometer createPhotometer() {
         var ccdGain = Prefs.get(AP_PREFS_CCDGAIN, 1);
         var ccdNoise = Prefs.get(AP_PREFS_CCDNOISE, 0);

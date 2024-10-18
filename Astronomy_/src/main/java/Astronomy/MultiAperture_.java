@@ -1355,48 +1355,53 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             mouseDrag = (Math.abs(screenX - startDragScreenX) + Math.abs(screenY - startDragScreenY) >= 2.0);
         }
         if (mouseDrag && !aperturesInitialized && selectedApertureRoi != null) {
-            int ap = selectedApertureRoi.getApNumber();
-            if (ap >= 0 && ap < ngot) {
-                if (e.isAltDown()) {
-                    centroidStar[ap] = !centroidStar[ap];
-                    selectedApertureRoi.setIsCentroid(centroidStar[ap]);
-                }
-                boolean holdReposition = Prefs.get("aperture.reposition", reposition);
-                Prefs.set("aperture.reposition", centroidStar[ap]);
-                xCenter = xPos[ap];
-                yCenter = yPos[ap];
-                if (!adjustAperture(true, centroidStar[ap])) {
-                    if (haltOnError || this instanceof Stack_Aligner) {
-                        selectedApertureRoi = null;
-                        asw.setMovingAperture(false);
-                        Prefs.set("aperture.reposition", holdReposition);
-                        centerROI();
-                        setVariableAperture(false);
-                        IJ.beep();
-                        IJ.showMessage("No signal for centroid in aperture " + (ap + 1) + " of image " +
-                                IJU.getSliceFilename(imp, slice) +
-                                ((this instanceof Stack_Aligner) ? ". Stack Aligner aborted." : ". Multi-Aperture aborted."));
-                        shutDown();
-                        return;
+            if (apertureShape.get() == ApertureShape.CIRCULAR) {
+                int ap = selectedApertureRoi.getApNumber();
+                if (ap >= 0 && ap < ngot) {
+                    if (e.isAltDown()) {
+                        centroidStar[ap] = !centroidStar[ap];
+                        selectedApertureRoi.setIsCentroid(centroidStar[ap]);
                     }
+                    boolean holdReposition = Prefs.get("aperture.reposition", reposition);
+                    Prefs.set("aperture.reposition", centroidStar[ap]);
+                    xCenter = xPos[ap];
+                    yCenter = yPos[ap];
+                    if (!adjustAperture(true, centroidStar[ap])) {
+                        if (haltOnError || this instanceof Stack_Aligner) {
+                            selectedApertureRoi = null;
+                            asw.setMovingAperture(false);
+                            Prefs.set("aperture.reposition", holdReposition);
+                            centerROI();
+                            setVariableAperture(false);
+                            IJ.beep();
+                            IJ.showMessage("No signal for centroid in aperture " + (ap + 1) + " of image " +
+                                    IJU.getSliceFilename(imp, slice) +
+                                    ((this instanceof Stack_Aligner) ? ". Stack Aligner aborted." : ". Multi-Aperture aborted."));
+                            shutDown();
+                            return;
+                        }
+                    }
+                    Prefs.set("aperture.reposition", holdReposition);
+                    xPos[ap] = xCenter;
+                    yPos[ap] = yCenter;
+                    selectedApertureRoi.setLocation(xPos[ap], yPos[ap]);
+                    if (hasWCS) {
+                        double[] radec = wcs.pixels2wcs(new double[]{xPos[ap], yPos[ap]});
+                        raPos[ap] = radec[0];
+                        decPos[ap] = radec[1];
+                    }
+                    absMag[ap] = getAbsMag(ap, raPos[ap], decPos[ap]);
+                    selectedApertureRoi.setIntCnts(source);
+                    updateApMags();
                 }
-                Prefs.set("aperture.reposition", holdReposition);
-                xPos[ap] = xCenter;
-                yPos[ap] = yCenter;
-                selectedApertureRoi.setLocation(xPos[ap], yPos[ap]);
-                if (hasWCS) {
-                    double[] radec = wcs.pixels2wcs(new double[]{xPos[ap], yPos[ap]});
-                    raPos[ap] = radec[0];
-                    decPos[ap] = radec[1];
-                }
-                absMag[ap] = getAbsMag(ap, raPos[ap], decPos[ap]);
-                selectedApertureRoi.setIntCnts(source);
-                updateApMags();
-                ac.repaint();
-                selectedApertureRoi = null;
-                asw.setMovingAperture(false);
-                return;
+            } else {
+
             }
+
+            ac.repaint();
+            selectedApertureRoi = null;
+            asw.setMovingAperture(false);
+            return;
         }
 
         selectedApertureRoi = null;
@@ -2931,7 +2936,11 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         if (aperturesInitialized || selectedApertureRoi == null) return;
         boolean dragging = Math.abs(currentScreenX - startDragScreenX) + Math.abs(currentScreenY - startDragScreenY) >= 2.0;
         if (dragging && (e.getModifiers() & MouseEvent.BUTTON1_MASK) != 0 && !e.isShiftDown() && !e.isControlDown()) {
-            moveAperture(currentX, currentY);
+            if (apertureShape.get() == ApertureShape.FREEFORM) {
+                ((FreeformPixelApertureRoi) selectedApertureRoi).moveTo((int) currentX, (int) currentY);
+            } else {
+                moveAperture(currentX, currentY);
+            }
         }
     }
 
@@ -2942,7 +2951,15 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             ac.setMousePosition(startDragScreenX, startDragScreenY);
             startDragX = ac.offScreenXD(startDragScreenX);
             startDragY = ac.offScreenYD(startDragScreenY);
-            selectedApertureRoi = ocanvas.findApertureRoi(startDragX, startDragY, 0);
+            if (apertureShape.get() == ApertureShape.FREEFORM) {
+                if (freeformPixelApertureHandler.currentAperture().contains((int) startDragX, (int) startDragY)) {
+                    selectedApertureRoi = freeformPixelApertureHandler.currentAperture();
+                } else {
+                    selectedApertureRoi = null;
+                }
+            } else {
+                selectedApertureRoi = ocanvas.findApertureRoi(startDragX, startDragY, 0);
+            }
             asw.setMovingAperture((selectedApertureRoi != null && !aperturesInitialized) ||
                     (apertureShape.get() == ApertureShape.FREEFORM && e.isShiftDown() && !aperturesInitialized));
         }

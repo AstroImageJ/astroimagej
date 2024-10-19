@@ -96,8 +96,17 @@ public class FreeformPixelApertureHandler {
 
                 if (CENTROID_ON_COPY.get()) {
                     var c = new Centroid();
+
+                    // Centroid T1 to get offset
+                    var dx = 0d;
+                    var dy = 0d;
+                    if (c.measure(imp, t1, true, usePlane, removeStars)) {
+                        dx = t1.getXpos() - c.x();
+                        dy = t1.getYpos() - c.y();
+                    }
+
                     if (c.measure(imp, currentAperture(), true, usePlane, removeStars)) {
-                        currentAperture().moveTo((int) c.x(), (int) c.y());
+                        currentAperture().moveTo((int) (c.x() + dx), (int) (c.y() + dy));
                     }
                 }
 

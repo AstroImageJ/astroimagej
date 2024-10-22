@@ -17,6 +17,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.List;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.IntConsumer;
 
@@ -163,7 +164,7 @@ public class FreeformPixelApertureHandler {
                     message.append("%s has no source\n".formatted(roi.getName()));
                 }
 
-                if (!roi.hasBackground()) {
+                if (!roi.hasBackground() && !roi.hasAnnulus()) {
                     invalidCount++;
                     message.append("%s has no background\n".formatted(roi.getName()));
                 }
@@ -268,6 +269,7 @@ public class FreeformPixelApertureHandler {
                 <Shift-alt-left-click-drag> to add a region of $sType pixels to $ap.
                 <Right-click> to remove pixel from $ap.
                 <Shift-right-click-drag> to remove a region of pixels from $ap.
+                <Left-click-drag> inside of $ap source to move the source of $ap.
                 <Enter> to run photometry.\
                 """
                 .replace("$ap", currentAperture().getName())
@@ -628,12 +630,16 @@ public class FreeformPixelApertureHandler {
         var apertures = new ArrayList<FreeformPixelApertureRoi>();
         if (setting.startsWith("handlerApertures")) {
             var ap = new AtomicReference<FreeformPixelApertureRoi>();
+            var hasRBack1 = new AtomicBoolean();
+            var hasRBack2 = new AtomicBoolean();
             setting.lines().skip(1).forEachOrdered(line -> {
                 if (line.startsWith("ap customPixel")) {
                     var old = ap.getAndSet(new FreeformPixelApertureRoi());
                     if (old != null) {
                         apertures.add(old);
                     }
+                    hasRBack1.set(false);
+                    hasRBack2.set(false);
                     return;
                 }
 
@@ -670,6 +676,34 @@ public class FreeformPixelApertureHandler {
                     var tSep = line.indexOf("\t");
                     ap.get().setComparisonStar(Boolean.parseBoolean(line.substring(tSep+1)));
                 }
+
+                if (line.startsWith("rBack1")) {
+                    var r1Sep = line.indexOf("\t");
+                    if (r1Sep < 0) {
+                        throw new IllegalStateException("Missing r1Sep! " + line);
+                    }
+
+                    var r1 = Double.parseDouble(line.substring(r1Sep+1));
+
+                    hasRBack1.set(true);
+                    ap.get().setBack1(r1);
+                }
+
+                if (line.startsWith("rBack2")) {
+                    var r2Sep = line.indexOf("\t");
+                    if (r2Sep < 0) {
+                        throw new IllegalStateException("Missing r2Sep! " + line);
+                    }
+
+                    var r2 = Double.parseDouble(line.substring(r2Sep+1));
+
+                    hasRBack2.set(true);
+                    ap.get().setBack2(r2);
+                }
+
+                if (hasRBack1.get() && hasRBack2.get()) {
+                    ap.get().setHasAnnulus(true);
+                }
             });
 
             if (ap.get() != null) {
@@ -694,6 +728,13 @@ public class FreeformPixelApertureHandler {
                 setting.append('\n').append('\t');
                 setting.append("px\t").append(pixel.x()).append('\t').append(pixel.y()).append('\t')
                         .append(pixel.isBackground() ? "background" : "source");
+            }
+
+            if (aperture.hasAnnulus()) {
+                setting.append('\n').append('\t');
+                setting.append("rBack1").append('\t').append(aperture.getBack1());
+                setting.append('\n').append('\t');
+                setting.append("rBack2").append('\t').append(aperture.getBack2());
             }
         }
 

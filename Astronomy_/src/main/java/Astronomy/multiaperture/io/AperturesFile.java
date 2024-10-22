@@ -30,12 +30,16 @@ public class AperturesFile {
         if (contents.startsWith("AIJ APERTURES FILE")) {
             var ap = new AtomicReference<FreeformPixelApertureRoi>();
             AtomicBoolean inPrefsSection = new AtomicBoolean(false);
+            var hasRBack1 = new AtomicBoolean();
+            var hasRBack2 = new AtomicBoolean();
             contents.lines().skip(1).forEachOrdered(line -> {
                 if (line.startsWith("ap\tcustom_pixel")) {
                     var old = ap.getAndSet(new FreeformPixelApertureRoi());
                     if (old != null) {
                         apertures.add(old);
                     }
+                    hasRBack1.set(false);
+                    hasRBack2.set(false);
                     return;
                 }
 
@@ -78,6 +82,34 @@ public class AperturesFile {
                         var tSep = line.indexOf("\t");
                         ap.get().setComparisonStar(Boolean.parseBoolean(line.substring(tSep+1)));
                     }
+
+                    if (line.startsWith("rBack1")) {
+                        var r1Sep = line.indexOf("\t");
+                        if (r1Sep < 0) {
+                            throw new IllegalStateException("Missing r1Sep! " + line);
+                        }
+
+                        var r1 = Double.parseDouble(line.substring(r1Sep+1));
+
+                        hasRBack1.set(true);
+                        ap.get().setBack1(r1);
+                    }
+
+                    if (line.startsWith("rBack2")) {
+                        var r2Sep = line.indexOf("\t");
+                        if (r2Sep < 0) {
+                            throw new IllegalStateException("Missing r2Sep! " + line);
+                        }
+
+                        var r2 = Double.parseDouble(line.substring(r2Sep+1));
+
+                        hasRBack2.set(true);
+                        ap.get().setBack2(r2);
+                    }
+
+                    if (hasRBack1.get() && hasRBack2.get()) {
+                        ap.get().setHasAnnulus(true);
+                    }
                 } else {
                     var s = line.split("\t", 2);
                     if (s.length == 2) {
@@ -115,6 +147,13 @@ public class AperturesFile {
                     setting.append('\n').append('\t');
                     setting.append("px\t").append(pixel.x()).append('\t').append(pixel.y()).append('\t')
                             .append(pixel.isBackground() ? "background" : "source");
+                }
+
+                if (aperture.hasAnnulus()) {
+                    setting.append('\n').append('\t');
+                    setting.append("rBack1").append('\t').append(aperture.getBack1());
+                    setting.append('\n').append('\t');
+                    setting.append("rBack2").append('\t').append(aperture.getBack2());
                 }
             }
 

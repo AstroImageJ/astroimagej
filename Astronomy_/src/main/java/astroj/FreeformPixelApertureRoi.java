@@ -24,6 +24,7 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
     private SegmentLock segmentLock = null;
     private boolean comparisonStar = false;
     private boolean focusedAperture = false;
+    private boolean hasAnnulus;
 
     public FreeformPixelApertureRoi() {
         this(Double.NaN);
@@ -281,6 +282,26 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
             g.drawOval(x1, y1, w1, h1);
         }
 
+        // Show background anulus
+        if (hasAnnulus) { //todo respect showSky?
+            g.setColor(transform(BACKGROUND_PIXEL_COLOR));
+
+            useOffsetPixelCenter = true;
+            int x2 = netFlipX ? screenXD(xPos+r2) : screenXD(xPos-r2);
+            int w2 = netFlipX ? screenXD(xPos-r2)-x2 : screenXD(xPos+r2)-x2;
+            int y2 = netFlipY ? screenYD(yPos+r2) : screenYD(yPos-r2);
+            int h2 = netFlipY ? screenYD(yPos-r2)-y2 : screenYD(yPos+r2)-y2;
+
+            int x3 = netFlipX ? screenXD(xPos+r3) : screenXD(xPos-r3);
+            int w3 = netFlipX ? screenXD(xPos-r3)-x3 : screenXD(xPos+r3)-x3;
+            int y3 = netFlipY ? screenYD(yPos+r3) : screenYD(yPos-r3);
+            int h3 = netFlipY ? screenYD(yPos-r3)-y3 : screenYD(yPos+r3)-y3;
+            useOffsetPixelCenter = false;
+
+            g.drawOval(x2, y2, w2, h2);
+            g.drawOval(x3, y3, w3, h3);
+        }
+
         g.setColor(ColorUtil.midpointColor(getApColor(), Color.BLACK, Color.WHITE));
 
         if (showName && showValues && nameText != null && !nameText.isEmpty() && value != null && !value.isEmpty()) {
@@ -380,6 +401,14 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
         this.focusedAperture = focusedAperture;
     }
 
+    public boolean hasAnnulus() {
+        return hasAnnulus;
+    }
+
+    public void setHasAnnulus(boolean hasAnnulus) {
+        this.hasAnnulus = hasAnnulus;
+    }
+
     /**
      * Copies this ap's pixels to the specified aperture.
      * <p>
@@ -415,12 +444,12 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
 
     @Override
     public double getBack1() {
-        return Double.NaN;
+        return hasAnnulus ? r2 : Double.NaN;
     }
 
     @Override
     public double getBack2() {
-        return Double.NaN;
+        return hasAnnulus ? r3 : Double.NaN;
     }
 
     private record Segment(int x0, int y0, int x1, int y1, boolean isBackground, SegmentSide segmentSide) {}

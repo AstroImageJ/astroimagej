@@ -624,6 +624,13 @@ public class AstroCanvas extends OverlayCanvas {
         if (IJ.debugMode) showFrameRate(drawingGraphics);
     }
 
+    @Override
+    protected void showFrameRate(Graphics g) {
+        ((Graphics2D) g).setTransform(invCanvTrans);
+        super.showFrameRate(g);
+        ((Graphics2D) g).setTransform(canvTrans);
+    }
+
     public Image graphicsToImage(Graphics g) {   //used by AstroStackWindow to save image display
         int swidth = srcRect.width + 1;
         int sheight = srcRect.height + 1;

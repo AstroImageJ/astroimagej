@@ -19,6 +19,7 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
     private final List<Segment> segments = new ArrayList<>(80);
     private static final Color SOURCE_PIXEL_COLOR = new Color(0, 137, 12);
     private static final Color BACKGROUND_PIXEL_COLOR = new Color(0, 114, 234);
+    private static final Color CENTROID_RADIUS_COLOR = new Color(25, 205, 180);
     private final Photometer photometer;
     private boolean useOffsetPixelCenter = false;
     private SegmentLock segmentLock = null;
@@ -283,8 +284,8 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
             g.drawOval(x1, y1, w1, h1);
         }
 
-        // Show background anulus
-        if (hasAnnulus) { //todo respect showSky?
+        // Show background annulus
+        if (hasAnnulus) {
             g.setColor(transform(BACKGROUND_PIXEL_COLOR));
 
             useOffsetPixelCenter = true;
@@ -301,6 +302,19 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
 
             g.drawOval(x2, y2, w2, h2);
             g.drawOval(x3, y3, w3, h3);
+        }
+
+        if (FreeformPixelApertureHandler.SHOW_CENTROID_RADIUS.get()) {
+            g.setColor(transform(CENTROID_RADIUS_COLOR));
+
+            useOffsetPixelCenter = true;
+            int x2 = netFlipX ? screenXD(xPos+getCentroidRadius()) : screenXD(xPos-getCentroidRadius());
+            int w2 = netFlipX ? screenXD(xPos-getCentroidRadius())-x2 : screenXD(xPos+getCentroidRadius())-x2;
+            int y2 = netFlipY ? screenYD(yPos+getCentroidRadius()) : screenYD(yPos-getCentroidRadius());
+            int h2 = netFlipY ? screenYD(yPos-getCentroidRadius())-y2 : screenYD(yPos+getCentroidRadius())-y2;
+            useOffsetPixelCenter = false;
+
+            g.drawOval(x2, y2, w2, h2);
         }
 
         g.setColor(ColorUtil.midpointColor(getApColor(), Color.BLACK, Color.WHITE));

@@ -55,6 +55,7 @@ public class FreeformPixelApertureHandler {
                     FreeformPixelApertureHandler.class);
     private static final Property<Point> WINDOW_LOCATION = new Property<>(new Point(), FreeformPixelApertureHandler.class);
     public static final Property<Boolean> SHOW_ESTIMATED_CIRCULAR_APERTURE = new Property<>(false, FreeformPixelApertureHandler.class);
+    public static final Property<Boolean> SHOW_CENTROID_RADIUS = new Property<>(false, FreeformPixelApertureHandler.class);
     private static final Property<Boolean> ALWAYS_ON_TOP = new Property<>(true, FreeformPixelApertureHandler.class);
     private static final Property<Boolean> CENTROID_ON_COPY = new Property<>(false, FreeformPixelApertureHandler.class);
     private static final Property<Boolean> COPY_T1 = new Property<>(false, FreeformPixelApertureHandler.class);
@@ -255,6 +256,7 @@ public class FreeformPixelApertureHandler {
         copyBackground.setSelectedIcon(COPY_FULL_ICON);
         var backgroundFinder = new JButton(AUTO_SKY_ICON);
         var showEstimatedCircularAperture = new JCheckBox("Show estimated circular aperture", SHOW_ESTIMATED_CIRCULAR_APERTURE.get());
+        var showCentroidRadius = new JCheckBox("Show estimated circular aperture", SHOW_CENTROID_RADIUS.get());
         var alwaysOnTop = new JCheckBox("Show panel always on top", ALWAYS_ON_TOP.get());
         var copyShape = new JCheckBox("Copy T1 shape", COPY_T1.get());
         var centroidShape = new JCheckBox("Centroid on copying of aperture shape", CENTROID_ON_COPY.get());
@@ -414,6 +416,11 @@ public class FreeformPixelApertureHandler {
             updateDisplay(false);
         });
 
+        showCentroidRadius.addActionListener($ -> {
+            SHOW_CENTROID_RADIUS.set(showCentroidRadius.isSelected());
+            updateDisplay(false);
+        });
+
         alwaysOnTop.addActionListener($ -> {
             ALWAYS_ON_TOP.set(alwaysOnTop.isSelected());
             frame.setAlwaysOnTop(ALWAYS_ON_TOP.get());
@@ -482,6 +489,7 @@ public class FreeformPixelApertureHandler {
         secondRow.add(copyShape);
         secondRow.add(centroidShape);
 
+        thirdRow.add(showCentroidRadius);
         thirdRow.add(useAnnulus);
         thirdRow.add(copyR1AsCentroidRadius);
 

@@ -157,6 +157,58 @@ public class Photometer {
             }
         }
 
+        final var useBackgroundAnnulus = apertureRoi.hasAnnulus() &&
+                !Double.isNaN(apertureRoi.getBack1()) && !Double.isNaN(apertureRoi.getBack2()) &&
+                apertureRoi.getBack1() < apertureRoi.getBack2();
+
+        double r2b1 = 0;
+        double r2b2 = 0;
+        double xpix = 0;
+        double ypix = 0;
+        double r = 0;
+        int i1 = 0;
+        int i2 = 0;
+        int j1 = 0;
+        int j2 = 0;
+
+        if (useBackgroundAnnulus) {
+            r2b1 = apertureRoi.getBack1() * apertureRoi.getBack1();
+            r2b2 = apertureRoi.getBack2() * apertureRoi.getBack2();
+
+            xpix = apertureRoi.getXpos();
+            ypix = apertureRoi.getYpos();
+
+            r = apertureRoi.getBack2() + 2;
+
+            i1 = (int) (xpix - r);
+            if (i1 < 0) {
+                i1 = 0;
+            } else if (i1 >= ip.getWidth()) {
+                i1 = ip.getWidth() - 1;
+            }
+
+            i2 = (int) (xpix + r) + 1;
+            if (i2 < 0) {
+                i2 = 0;
+            } else if (i2 >= ip.getWidth()) {
+                i2 = ip.getWidth() - 1;
+            }
+
+            j1 = (int) (ypix - r);
+            if (j1 < 0) {
+                j1 = 0;
+            } else if (j1 >= ip.getHeight()) {
+                j1 = ip.getHeight() - 1;
+            }
+
+            j2 = (int) (ypix + r) + 1;
+            if (j2 < 0) {
+                j2 = 0;
+            } else if (j2 >= ip.getHeight()) {
+                j2 = ip.getHeight() - 1;
+            }
+        }
+
         float d;
 
         // INTEGRATE STAR WITHIN APERTURE OF RADIUS radius, SKY OUTSIDE
@@ -175,7 +227,7 @@ public class Photometer {
         back2 = 0;
         boolean fitPlaneError = false;
 
-        int totalPixels = apertureRoi.pixelCount();
+        int totalPixels = apertureRoi.pixelCount() + (useBackgroundAnnulus ? (i2 - i1 + 1) * (j2 - j1 + 1) : 0);
         if (usePlaneLocal) {
             plane = new FittedPlane(totalPixels);
         }
@@ -210,6 +262,48 @@ public class Photometer {
                     }
                 }
             }
+
+            // Integrate over background annulus
+            if (useBackgroundAnnulus) {
+                for (int j = j1; j <= j2; j++) {
+                    var dj = (double) j + Centroid.PIXELCENTER - ypix;        // pixel center
+                    for (int i = i1; i <= i2; i++) {
+                        var di = (double) i + Centroid.PIXELCENTER - xpix;    // pixel center
+                        var r2 = di * di + dj * dj;                         // radius to pixel center
+                        d = ip.getPixelValue(i, j);
+                        if (!Float.isNaN(d)) {
+                            /*var fraction = intarea(xpix, ypix, radius, i, i + 1, j, j + 1);
+                            source += fraction * d;
+                            dSourceCount += fraction;
+                            if (fraction > 0.01 && d > peak) {
+                                peak = d;
+                            }*/
+                            if (hasBack) {
+                                // Pixel was added to background and overlaps annulus
+                                if (apertureRoi.contains(i, j, true)) {
+                                    continue;
+                                }
+                                if (!removeBackStars && !usePlaneLocal) {
+                                    var fraction = intarea(xpix, ypix, rBack1, i, i + 1, j, j + 1);
+                                    back -= fraction * d;
+                                    dBackCount -= fraction;
+                                    fraction = intarea(xpix, ypix, rBack2, i, i + 1, j, j + 1);
+                                    back += fraction * d;
+                                    dBackCount += fraction;
+                                } else if (r2 >= r2b1 && r2 <= r2b2) { // BACKGROUND
+                                    back += d;
+                                    back2 += d * d;
+                                    backCount++;
+                                    if (usePlaneLocal) {
+                                        plane.addPoint(di, dj, d);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             if (removeBackStars || usePlaneLocal) {
                 dBackCount = backCount;
             }
@@ -230,6 +324,39 @@ public class Photometer {
                         backCount++;
                         if (usePlaneLocal) {
                             plane.addPoint(pixel.x(), pixel.y(), d);
+                        }
+                    }
+                }
+            }
+
+            // Integrate over background annulus
+            if (useBackgroundAnnulus) {
+                for (int j = j1; j <= j2; j++) {
+                    var dj = (double) j + Centroid.PIXELCENTER - ypix;        // Center;
+                    for (int i = i1; i <= i2; i++) {
+                        var di = (double) i + Centroid.PIXELCENTER - xpix;    // Center;
+                        var r2 = di * di + dj * dj;
+                        d = ip.getPixelValue(i, j);
+                        if (!Float.isNaN(d)) {
+                            /*if (r2 < r2ap) { // SOURCE APERTURE
+                                source += d;
+                                sourceCount++;
+                                if (d > peak) {
+                                    peak = d;
+                                }
+                            }*/
+                            if (hasBack && r2 >= r2b1 && r2 <= r2b2) { // BACKGROUND
+                                // Pixel was added to background and overlaps annulus
+                                if (apertureRoi.contains(i, j, true)) {
+                                    continue;
+                                }
+                                back += d;
+                                back2 += d * d;
+                                backCount++;
+                                if (usePlaneLocal) {
+                                    plane.addPoint(di, dj, d);
+                                }
+                            }
                         }
                     }
                 }
@@ -262,6 +389,30 @@ public class Photometer {
                         pixels[pCnt++] = d;
                     } else if (markRemovedPixels) {
                         addPixelRoi(imp, pixel.x(), pixel.y()); // Mark NaN pixels
+                    }
+                }
+            }
+
+            if (useBackgroundAnnulus) {
+                for (int j = j1; j <= j2; j++) {
+                    var dj = (double) j - ypix + Centroid.PIXELCENTER;        // Center
+                    for (int i = i1; i <= i2; i++) {
+                        var di = (double) i - xpix + Centroid.PIXELCENTER;    // Center
+                        var r2 = di * di + dj * dj;
+                        if (r2 >= r2b1 && r2 <= r2b2) {
+                            d = ip.getPixelValue(i, j);
+                            // Pixel was added to background and overlaps annulus
+                            if (apertureRoi.contains(i, j, true)) {
+                                continue;
+                            }
+                            if (!Float.isNaN(d)) {
+                                js[pCnt] = j;
+                                is[pCnt] = i;
+                                pixels[pCnt++] = d;
+                            } else if (markRemovedPixels) {
+                                addPixelRoi(imp, i, j); // Mark NaN pixels
+                            }
+                        }
                     }
                 }
             }
@@ -339,6 +490,23 @@ public class Photometer {
                     }
                 }
 
+                if (useBackgroundAnnulus) {
+                    for (int j = j1; j <= j2; j++) {
+                        var dj = (double) j + Centroid.PIXELCENTER - ypix;        // Center;
+                        for (int i = i1; i <= i2; i++) {
+                            var di = (double) i + Centroid.PIXELCENTER - xpix;    // Center;
+                            d = ip.getPixelValue(i, j);
+                            if (!Float.isNaN(d)) {
+                                var fraction = intarea(xpix, ypix, radius, i, i + 1, j, j + 1);
+                                dSourceCount += fraction;
+                                b = plane.valueAt(di, dj);
+                                back += b * fraction;
+                                source += (d - b) * fraction;
+                            }
+                        }
+                    }
+                }
+
                 if (dSourceCount > 0) {
                     back /= dSourceCount;
                 }
@@ -353,6 +521,25 @@ public class Photometer {
                             source += (d - b);
                         }
                     }
+                }
+
+                if (useBackgroundAnnulus) {
+                    for (int j = j1; j <= j2; j++) {
+                    var dj = (double) j + Centroid.PIXELCENTER - ypix;        // Center;
+                    for (int i = i1; i <= i2; i++) {
+                        var di = (double) i + Centroid.PIXELCENTER - xpix;    // Center;
+                        var r2 = di * di + dj * dj;
+                        if (r2 < radius * radius) { // SOURCE APERTURE
+                            d = ip.getPixelValue(i, j);
+                            if (!Float.isNaN(d)) {
+                                srcCount++;
+                                b = plane.valueAt(di, dj);
+                                back += b;
+                                source += (d - b);
+                            }
+                        }
+                    }
+                }
                 }
 
                 dSourceCount = srcCount;

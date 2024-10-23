@@ -378,7 +378,7 @@ public class FreeformPixelApertureHandler {
             selectorModel.setMaximum(freeformPixelApertureRois.size());
             selectorModel.setValue(++selectedAperture);
             useAnnulus.setSelected(currentAperture().hasAnnulus());
-            centroidRadius.setter().accept(currentAperture().getCentroidRadius());
+            currentAperture().setCentroidRadius(centroidRadius.getter.getAsDouble());
             back1Radius.setter().accept(currentAperture().getBack1());
             back2Radius.setter().accept(currentAperture().getBack2());
             toggleComponents(back1Radius.box(), useAnnulus.isSelected());

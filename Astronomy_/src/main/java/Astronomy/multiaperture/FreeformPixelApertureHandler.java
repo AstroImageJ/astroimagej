@@ -266,12 +266,12 @@ public class FreeformPixelApertureHandler {
                     currentAperture().update();
                 });
         var back1Radius = createNumericSlider("Inner radius", 0.5, 100, 1,
-                currentAperture().getRadius(), rad2 -> {
+                currentAperture().getBack1(), rad2 -> {
                     currentAperture().setBack1(rad2);
                     currentAperture().update();
                 });
         var back2Radius = createNumericSlider("Outer radius", 0.5, 100, 1,
-                currentAperture().getRadius(), rad3 -> {
+                currentAperture().getBack2(), rad3 -> {
                     currentAperture().setBack2(rad3);
                     currentAperture().update();
                 });
@@ -483,8 +483,8 @@ public class FreeformPixelApertureHandler {
         secondRow.add(centroidShape);
 
         thirdRow.add(useAnnulus);
+        thirdRow.add(copyR1AsCentroidRadius);
 
-        forthRow.add(copyR1AsCentroidRadius);
         forthRow.add(centroidRadius.box());
 
         fifthRow.add(back1Radius.box());

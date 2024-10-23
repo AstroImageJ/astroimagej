@@ -25,6 +25,7 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
     private boolean comparisonStar = false;
     private boolean focusedAperture = false;
     private boolean hasAnnulus;
+    private double centroidRadius = Double.NaN;
 
     public FreeformPixelApertureRoi() {
         this(Double.NaN);
@@ -442,6 +443,10 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
         return localPhotom;
     }
 
+    public void setCentroidRadius(double centroidRadius) {
+        this.centroidRadius = centroidRadius;
+    }
+
     @Override
     public double getBack1() {
         return hasAnnulus ? r2 : Double.NaN;
@@ -450,6 +455,10 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
     @Override
     public double getBack2() {
         return hasAnnulus ? r3 : Double.NaN;
+    }
+
+    public double getCentroidRadius() {
+        return Double.isNaN(centroidRadius) ? r1 : centroidRadius;
     }
 
     private record Segment(int x0, int y0, int x1, int y1, boolean isBackground, SegmentSide segmentSide) {}

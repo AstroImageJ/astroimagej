@@ -259,6 +259,12 @@ public class FreeformPixelApertureHandler {
         var copyShape = new JCheckBox("Copy T1 shape", COPY_T1.get());
         var centroidShape = new JCheckBox("Centroid on copying of aperture shape", CENTROID_ON_COPY.get());
         var useAnnulus = new JCheckBox("Use annulus", currentAperture().hasAnnulus());
+        var copyR1AsCentroidRadius = new JButton("Copy radius for centroid");
+        var centroidRadius = createNumericSlider("Centroid radius", 0.5, 100, 1,
+                currentAperture().getRadius(), radC -> {
+                    currentAperture().setCentroidRadius(radC);
+                    currentAperture().update();
+                });
         var back1Radius = createNumericSlider("Inner radius", 0.5, 100, 1,
                 currentAperture().getRadius(), rad2 -> {
                     currentAperture().setBack1(rad2);
@@ -320,6 +326,7 @@ public class FreeformPixelApertureHandler {
             selectedAperture = ((Number) apSelector.getValue()).intValue();
             compButton.setSelected(freeformPixelApertureRois.get(selectedAperture-1).isComparisonStar());
             useAnnulus.setSelected(currentAperture().hasAnnulus());
+            centroidRadius.setter().accept(currentAperture().getCentroidRadius());
             back1Radius.setter().accept(currentAperture().getBack1());
             back2Radius.setter().accept(currentAperture().getBack2());
             toggleComponents(back1Radius.box(), useAnnulus.isSelected());
@@ -335,6 +342,7 @@ public class FreeformPixelApertureHandler {
                 freeformPixelApertureRois.add(createNewAperture(compButton.isSelected()));
                 useAnnulus.setSelected(false);
                 selectorModel.setMaximum(1);
+                useAnnulus.setSelected(currentAperture().hasAnnulus());
                 toggleComponents(back1Radius.box(), useAnnulus.isSelected());
                 toggleComponents(back2Radius.box(), useAnnulus.isSelected());
                 updateDisplay();
@@ -351,8 +359,10 @@ public class FreeformPixelApertureHandler {
             selectorModel.setMaximum(freeformPixelApertureRois.size());
 
             // Update state
-            compButton.setSelected(freeformPixelApertureRois.get(selectedAperture-1).isComparisonStar());
             useAnnulus.setSelected(currentAperture().hasAnnulus());
+            compButton.setSelected(currentAperture().isComparisonStar());
+            useAnnulus.setSelected(currentAperture().hasAnnulus());
+            centroidRadius.setter().accept(currentAperture().getCentroidRadius());
             back1Radius.setter().accept(currentAperture().getBack1());
             back2Radius.setter().accept(currentAperture().getBack2());
             toggleComponents(back1Radius.box(), useAnnulus.isSelected());
@@ -366,12 +376,20 @@ public class FreeformPixelApertureHandler {
             selectorModel.setMaximum(freeformPixelApertureRois.size());
             selectorModel.setValue(++selectedAperture);
             useAnnulus.setSelected(currentAperture().hasAnnulus());
+            centroidRadius.setter().accept(currentAperture().getCentroidRadius());
             back1Radius.setter().accept(currentAperture().getBack1());
             back2Radius.setter().accept(currentAperture().getBack2());
             toggleComponents(back1Radius.box(), useAnnulus.isSelected());
             toggleComponents(back2Radius.box(), useAnnulus.isSelected());
             updateDisplay();
             updateHelp.run();
+        });
+
+        copyR1AsCentroidRadius.addActionListener($ -> {
+            var d = currentAperture().getRadius();
+            if (d >= 0.5) {
+                centroidRadius.setter().accept(d);
+            }
         });
 
         beginButton.addActionListener($ -> playCallback.run());
@@ -466,6 +484,8 @@ public class FreeformPixelApertureHandler {
 
         thirdRow.add(useAnnulus);
 
+        forthRow.add(copyR1AsCentroidRadius);
+        forthRow.add(centroidRadius.box());
 
         fifthRow.add(back1Radius.box());
 

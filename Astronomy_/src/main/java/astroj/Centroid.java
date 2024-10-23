@@ -119,9 +119,12 @@ public class Centroid {
     }
 
     public boolean measure(ImagePlus imp, FreeformPixelApertureRoi aperture, boolean findCentroid,
-                           boolean useBackgroundPlane, boolean removeStars) {//todo need back radii
-        return measure(imp, aperture.getXpos(), aperture.getYpos(), aperture.getRadius(), aperture.getRadius(),
-                aperture.getRadius(), findCentroid, useBackgroundPlane, removeStars);
+                           boolean useBackgroundPlane, boolean removeStars) {
+        return measure(imp, aperture.getXpos(), aperture.getYpos(),
+                aperture.getCentroidRadius(),
+                aperture.hasAnnulus() ? aperture.getBack1() : aperture.getRadius(),
+                aperture.hasAnnulus() ? aperture.getBack2() : aperture.getRadius(),
+                findCentroid, useBackgroundPlane, removeStars);
     }
 
     /**

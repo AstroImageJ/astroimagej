@@ -6,8 +6,10 @@ import astroj.OverlayCanvas;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.Prefs;
+import ij.astro.gui.GenericSwingDialog;
 import ij.astro.io.prefs.Property;
 import ij.astro.util.UIHelper;
+import ij.gui.GUI;
 import ij.gui.ImageCanvas;
 
 import javax.swing.*;
@@ -19,6 +21,8 @@ import java.util.List;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.DoubleConsumer;
+import java.util.function.DoubleSupplier;
 import java.util.function.IntConsumer;
 
 import static Astronomy.Aperture_.*;
@@ -168,6 +172,11 @@ public class FreeformPixelApertureHandler {
                     invalidCount++;
                     message.append("%s has no background\n".formatted(roi.getName()));
                 }
+
+                if (roi.hasAnnulus() && roi.getBack1() >= roi.getBack2()) {
+                    invalidCount++;
+                    message.append("%s's annulus' radii are inverted\n");
+                }
             } else {
                 invalidCount++;
                 message.append("%s has no pixels\n".formatted(roi.getName()));
@@ -225,6 +234,11 @@ public class FreeformPixelApertureHandler {
         var p = Box.createVerticalBox();
         var firstRow = Box.createHorizontalBox();
         var secondRow = Box.createHorizontalBox();
+        var thirdRow = Box.createHorizontalBox();
+        var forthRow = Box.createHorizontalBox();
+        var fifthRow = Box.createHorizontalBox();
+        var sixthRow = Box.createHorizontalBox();
+        var seventhRow = Box.createHorizontalBox();
 
         var compButton = new JToggleButton(SOURCE_ICON, freeformPixelApertureRois.get(selectedAperture-1).isComparisonStar());
         compButton.setSelectedIcon(BACKGROUND_ICON);
@@ -244,6 +258,17 @@ public class FreeformPixelApertureHandler {
         var alwaysOnTop = new JCheckBox("Show panel always on top", ALWAYS_ON_TOP.get());
         var copyShape = new JCheckBox("Copy T1 shape", COPY_T1.get());
         var centroidShape = new JCheckBox("Centroid on copying of aperture shape", CENTROID_ON_COPY.get());
+        var useAnnulus = new JCheckBox("Use annulus", currentAperture().hasAnnulus());
+        var back1Radius = createNumericSlider("Inner radius", 0.5, 100, 1,
+                currentAperture().getRadius(), rad2 -> {
+                    currentAperture().setBack1(rad2);
+                    currentAperture().update();
+                });
+        var back2Radius = createNumericSlider("Outer radius", 0.5, 100, 1,
+                currentAperture().getRadius(), rad3 -> {
+                    currentAperture().setBack2(rad3);
+                    currentAperture().update();
+                });
 
         configureButton(deleteAp);
         configureButton(compButton);
@@ -294,6 +319,11 @@ public class FreeformPixelApertureHandler {
         apSelector.addChangeListener($ -> {
             selectedAperture = ((Number) apSelector.getValue()).intValue();
             compButton.setSelected(freeformPixelApertureRois.get(selectedAperture-1).isComparisonStar());
+            useAnnulus.setSelected(currentAperture().hasAnnulus());
+            back1Radius.setter().accept(currentAperture().getBack1());
+            back2Radius.setter().accept(currentAperture().getBack2());
+            toggleComponents(back1Radius.box(), useAnnulus.isSelected());
+            toggleComponents(back2Radius.box(), useAnnulus.isSelected());
             setFocusedAperture();
             updateDisplay(false);
             updateHelp.run();
@@ -303,7 +333,10 @@ public class FreeformPixelApertureHandler {
             if (apCount() == 1) {
                 removeAperture(freeformPixelApertureRois.remove(0));
                 freeformPixelApertureRois.add(createNewAperture(compButton.isSelected()));
+                useAnnulus.setSelected(false);
                 selectorModel.setMaximum(1);
+                toggleComponents(back1Radius.box(), useAnnulus.isSelected());
+                toggleComponents(back2Radius.box(), useAnnulus.isSelected());
                 updateDisplay();
                 return;
             }
@@ -319,6 +352,11 @@ public class FreeformPixelApertureHandler {
 
             // Update state
             compButton.setSelected(freeformPixelApertureRois.get(selectedAperture-1).isComparisonStar());
+            useAnnulus.setSelected(currentAperture().hasAnnulus());
+            back1Radius.setter().accept(currentAperture().getBack1());
+            back2Radius.setter().accept(currentAperture().getBack2());
+            toggleComponents(back1Radius.box(), useAnnulus.isSelected());
+            toggleComponents(back2Radius.box(), useAnnulus.isSelected());
             updateDisplay();
             updateHelp.run();
         });
@@ -327,6 +365,11 @@ public class FreeformPixelApertureHandler {
             freeformPixelApertureRois.add(selectedAperture, createNewAperture(compButton.isSelected()));
             selectorModel.setMaximum(freeformPixelApertureRois.size());
             selectorModel.setValue(++selectedAperture);
+            useAnnulus.setSelected(currentAperture().hasAnnulus());
+            back1Radius.setter().accept(currentAperture().getBack1());
+            back2Radius.setter().accept(currentAperture().getBack2());
+            toggleComponents(back1Radius.box(), useAnnulus.isSelected());
+            toggleComponents(back2Radius.box(), useAnnulus.isSelected());
             updateDisplay();
             updateHelp.run();
         });
@@ -365,6 +408,18 @@ public class FreeformPixelApertureHandler {
         centroidShape.addActionListener($ -> {
             CENTROID_ON_COPY.set(centroidShape.isSelected());
         });
+
+        useAnnulus.addActionListener($ -> {
+            currentAperture().setHasAnnulus(useAnnulus.isSelected());
+            currentAperture().setBack1(back1Radius.getter().getAsDouble());
+            currentAperture().setBack2(back2Radius.getter().getAsDouble());
+            toggleComponents(back1Radius.box(), useAnnulus.isSelected());
+            toggleComponents(back2Radius.box(), useAnnulus.isSelected());
+            updateDisplay();
+        });
+
+        toggleComponents(back1Radius.box(), useAnnulus.isSelected());
+        toggleComponents(back2Radius.box(), useAnnulus.isSelected());
 
         frame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 
@@ -409,8 +464,21 @@ public class FreeformPixelApertureHandler {
         secondRow.add(copyShape);
         secondRow.add(centroidShape);
 
+        thirdRow.add(useAnnulus);
+
+
+        fifthRow.add(back1Radius.box());
+
+        sixthRow.add(back2Radius.box());
+
         p.add(firstRow);
         p.add(secondRow);
+        p.add(secondRow);
+        p.add(thirdRow);
+        p.add(forthRow);
+        p.add(fifthRow);
+        p.add(sixthRow);
+        p.add(seventhRow);
         p.add(helpPanel);
         frame.add(p);
         frame.pack();
@@ -578,6 +646,75 @@ public class FreeformPixelApertureHandler {
         }
     }
 
+    private NumericSlider createNumericSlider(String label, double min, double max, double step, double current, DoubleConsumer pref) {
+        var b = Box.createHorizontalBox();
+
+        if (Double.isNaN(current)) {
+            current = 0;
+        }
+
+        current = Math.min(max, Math.max(current, min));
+
+        var scale = step <= 1 ? 1D / step : 1D;
+
+        var l = new JLabel(label);
+        var slider = new Scrollbar(Scrollbar.HORIZONTAL, (int) (current * scale), 1, (int) (min * scale), (int) (max * scale));
+        var spinner = new JSpinner(new SpinnerNumberModel(current, min, max, step));
+        var tf = GenericSwingDialog.modifySpinner(spinner, true);
+        GUI.fixScrollbar(slider);
+        slider.setUnitIncrement(1);
+        if (tf != null) {
+            tf.setColumns(5);
+        }
+
+        slider.addMouseWheelListener(e -> {
+            var delta = e.getPreciseWheelRotation() * ((SpinnerNumberModel) spinner.getModel()).getStepSize().doubleValue();
+
+            var newValue = (Double) spinner.getValue() -
+                    delta * ((SpinnerNumberModel) spinner.getModel()).getStepSize().doubleValue();
+
+            if (newValue < ((Number) ((SpinnerNumberModel) spinner.getModel()).getMinimum()).doubleValue()) {
+                newValue = ((Number) ((SpinnerNumberModel) spinner.getModel()).getMinimum()).doubleValue();
+            } else if (newValue > ((Number) ((SpinnerNumberModel) spinner.getModel()).getMaximum()).doubleValue()) {
+                newValue = ((Number) ((SpinnerNumberModel) spinner.getModel()).getMaximum()).doubleValue();
+            }
+
+            spinner.setValue(newValue);
+        });
+
+        slider.addAdjustmentListener($ -> {
+            var d = slider.getValue() / scale;
+            pref.accept(d);
+            spinner.setValue(d);
+        });
+
+        spinner.addChangeListener($ -> {
+            var i = (int) (((Number) spinner.getValue()).doubleValue() * scale);
+            pref.accept(((Number) spinner.getValue()).doubleValue());
+            slider.setValue(i);
+            updateDisplay();
+        });
+
+        b.add(l);
+        b.add(slider);
+        b.add(spinner);
+
+        return new NumericSlider(b, d -> {
+            if (d >= min && d <= max) {
+                spinner.setValue(d);
+            }
+        }, () -> ((Number) spinner.getValue()).doubleValue());
+    }
+
+    private static void toggleComponents(Component component, boolean enabled) {
+        component.setEnabled(enabled);
+        if (component instanceof Container) {
+            for (Component child : ((Container) component).getComponents()) {
+                toggleComponents(child, enabled);
+            }
+        }
+    }
+
     private FreeformPixelApertureRoi createNewAperture(boolean comparisonStar) {
         var ap = new FreeformPixelApertureRoi();
         ap.setComparisonStar(comparisonStar);
@@ -740,4 +877,7 @@ public class FreeformPixelApertureHandler {
 
         return encoder.encodeToString(setting.toString().getBytes());
     }
+
+    private record NumericSlider(Box box, DoubleConsumer setter, DoubleSupplier getter) {}
+
 }

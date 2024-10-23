@@ -75,6 +75,14 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
         }
     }
 
+    public void moveTo(double x1, double y1) {
+        moveTo(x1, y1, false);
+    }
+
+    public void moveTo(double x1, double y1, boolean moveBackground) {
+        move((int) (x1-xPos), (int) (y1-yPos), moveBackground);
+    }
+
     public void moveTo(int x1, int y1) {
         moveTo(x1, y1, false);
     }

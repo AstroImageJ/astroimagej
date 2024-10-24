@@ -2162,6 +2162,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         plotImage = WindowManager.getImage("Plot of " + tableName);
 
         if (plotImage == null) {
+            // Freeze plot as we draw it again later
+            plot.setFrozen(true);
             plotFrameLocationX = (int) Prefs.get("plot2.plotFrameLocationX", plotFrameLocationX);
             plotFrameLocationY = (int) Prefs.get("plot2.plotFrameLocationY", plotFrameLocationY);
             if (!Prefs.isLocationOnScreen(new Point(plotFrameLocationX, plotFrameLocationY))) {
@@ -2255,6 +2257,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             plotImageCanvas.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
             zoomX = 0.0;
             zoomY = 0.0;
+            plot.setFrozen(false);
         } else {
             plotWindow = (PlotWindow) plotImage.getWindow();
             ImageProcessor ip = plot.getProcessor();
@@ -2272,6 +2275,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             var h = plot.getSize().getHeight();
             plot.addLabel((pWid - wid - 10)/pWid, (h + 43)/h, "AIJ " + IJ.getAstroVersion().split("[+]")[0]);
         }
+
+        plot.update();
 
         plotbottompanel = (Panel) plotWindow.getComponent(1);
         plotbottompanel.getComponentCount();

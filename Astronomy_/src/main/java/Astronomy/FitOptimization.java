@@ -40,6 +40,7 @@ public class FitOptimization implements AutoCloseable {
     private static final Property<Boolean> autoMaxThreads = new Property<>(true, FitOptimization.class);
     private final static Pattern apGetter = Pattern.compile("rel_flux_[ct]([0-9]+)");
     private static final HashSet<FitOptimization> INSTANCES = new HashSet<>();
+    public static final ImageIcon UNDO_ICON = UIHelper.createImageIcon("astroj/images/icons/undo.png", 14, 14);
     /**
      * The change in the comparator to determine improvement
      */
@@ -142,7 +143,7 @@ public class FitOptimization implements AutoCloseable {
 
         var outlierRemoval = new JPanel(new SpringLayout());
         outlierRemoval.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(MultiPlot_.subBorderColor, 1), "Outlier Removal", TitledBorder.CENTER, TitledBorder.TOP, MultiPlot_.p11, Color.darkGray));
-        var undoButton = new JButton(UIHelper.createImageIcon("astroj/images/icons/undo.png", 14, 14));
+        var undoButton = new JButton(UNDO_ICON);
         var undoFont = undoButton.getFont();
         undoButton.addActionListener($ -> undoOutlierClean());
         undoButton.setToolTipText("<html>Undo clean<br>(up to 10 levels)</html>");

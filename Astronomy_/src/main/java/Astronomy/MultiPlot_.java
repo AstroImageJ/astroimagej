@@ -100,7 +100,11 @@ import java.util.stream.IntStream;
 @SuppressWarnings("SpellCheckingInspection")
 public class MultiPlot_ implements PlugIn, KeyListener {
     public static final HelpPanel HELP_PANEL = new HelpPanel("help/plotwindow_help.html", "Plot");
-    static double defaultTcFitStep = 0.04;
+    public static final ImageIcon NONE_LEGEND_ICON = createImageIcon("astroj/images/nonelegend.png", "Disable legend for this data set");
+    public static final ImageIcon COLUMN_LEGEND_ICON = createImageIcon("astroj/images/columnlegend.png", "Use the column name as the legend for this data set");
+    public static final ImageIcon CUSTOM_LEGEND_ICON = createImageIcon("astroj/images/customlegend.png", "Use a custom legend for this data set");
+    static final double defaultTcFitStep = 0.04;
+    public static final ImageIcon GEAR_ICON = UIHelper.createImageIcon("Astronomy/images/icons/multiplot/gear.png", -1, 22);
     static boolean panelsUpdating;
     static String title;
     static double titlePosX;
@@ -426,7 +430,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static JMenuItem[] saveFitPanelPngMenuItem, saveFitPanelJpgMenuItem, saveFitTextMenuItem;
 
     public static boolean[][] autoUpdatePrior;
-    static ImageIcon copyAndLockIcon = createImageIcon("astroj/images/customlegend.png", "Lock to the current fitted value.");
+    static final ImageIcon copyAndLockIcon = createImageIcon("astroj/images/customlegend.png", "Lock to the current fitted value.");
     static JButton[][] copyAndLockButton;
     public static double[] sigma, prevSigma, prevBic, tolerance, residualShift, autoResidualShift;
     static double[] defaultFitStep;
@@ -525,15 +529,15 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static double xPlotMinRaw;
     static Color defaultBackground;
     static Color defaultOKForeground;
-    public static Color darkGreen = new Color(0, 155, 0);
-    static Color darkYellow = new Color(255, 190, 0);
+    public static final Color darkGreen = new Color(0, 155, 0);
+    static final Color darkYellow = new Color(255, 190, 0);
     static Border defaultSpinnerBorder;
-    static Border grayBorder2 = new CompoundBorder(BorderFactory.createLineBorder(Color.GRAY, 2), new EmptyBorder(2, 2, 2, 2));
-    static Border grayBorder = new CompoundBorder(BorderFactory.createLineBorder(Color.GRAY, 1), new EmptyBorder(2, 2, 2, 2));    //top,left,bottom,right
-    static Border greenBorder = new CompoundBorder(BorderFactory.createLineBorder(Color.GREEN, 1), new EmptyBorder(1, 1, 1, 1));
-    static Border lockBorder = new CompoundBorder(BorderFactory.createLineBorder(Color.ORANGE, 2), new EmptyBorder(2, 2, 2, 2));
-    static Border convergedBorder = new CompoundBorder(BorderFactory.createLineBorder(new Color(0, 200, 0), 2), new EmptyBorder(2, 2, 2, 2));
-    static Border failedBorder = new CompoundBorder(BorderFactory.createLineBorder(Color.RED, 2), new EmptyBorder(2, 2, 2, 2));
+    static final Border grayBorder2 = new CompoundBorder(BorderFactory.createLineBorder(Color.GRAY, 2), new EmptyBorder(2, 2, 2, 2));
+    static final Border grayBorder = new CompoundBorder(BorderFactory.createLineBorder(Color.GRAY, 1), new EmptyBorder(2, 2, 2, 2));    //top,left,bottom,right
+    static final Border greenBorder = new CompoundBorder(BorderFactory.createLineBorder(Color.GREEN, 1), new EmptyBorder(1, 1, 1, 1));
+    static final Border lockBorder = new CompoundBorder(BorderFactory.createLineBorder(Color.ORANGE, 2), new EmptyBorder(2, 2, 2, 2));
+    static final Border convergedBorder = new CompoundBorder(BorderFactory.createLineBorder(new Color(0, 200, 0), 2), new EmptyBorder(2, 2, 2, 2));
+    static final Border failedBorder = new CompoundBorder(BorderFactory.createLineBorder(Color.RED, 2), new EmptyBorder(2, 2, 2, 2));
 
 //----------------------------------------------------
 
@@ -677,7 +681,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static int[] residualModelColorIndex;
     static int[] residualColorIndex;
     @PropertyKey(value = "plot.operatorIndex", ignoreAffixes = true)
-    static Property<MPOperator> operatorBase = new Property<>(MPOperator.NONE, MultiPlot_.class);
+    static final  Property<MPOperator> operatorBase = new Property<>(MPOperator.NONE, MultiPlot_.class);
     static String[] cblabels;
     static boolean[] moreOptions;
     static double[] autoScaleFactor;
@@ -851,7 +855,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
     static AstroConverter acc;
 
-    static String fontName = Font.DIALOG;
+    static final String fontName = Font.DIALOG;
     static Font p8 = new Font(fontName, Font.PLAIN, 8);
     static Font p9 = new Font(fontName, Font.PLAIN, 9);
     static Font p10 = new Font(fontName, Font.PLAIN, 10);
@@ -861,34 +865,34 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static Font b12 = new Font(fontName, Font.BOLD, 12);
     static Font b14 = new Font(fontName, Font.BOLD, 14);
 
-    static Color mainBorderColor = new Color(118, 142, 229);
-    static Color subBorderColor = Color.LIGHT_GRAY;
+    static final Color mainBorderColor = new Color(118, 142, 229);
+    static final Color subBorderColor = Color.LIGHT_GRAY;
     static Color defaultCBColor = Color.LIGHT_GRAY;
 
     static TitledBorder dataSectionBorder;
-    static String fitFormat = "#####0.0########";
-    static String oneDotThreeFormat = "#####0.000";
-    static DecimalFormat uptoNinePlaces = new DecimalFormat("########0.#########", IJU.dfs);
-    static DecimalFormat uptoEightPlaces = new DecimalFormat("#####0.########", IJU.dfs);
-    static DecimalFormat uptoSixPlaces = new DecimalFormat("#####0.######", IJU.dfs);
-    static DecimalFormat uptoFivePlaces = new DecimalFormat("#####0.#####", IJU.dfs);
-    static DecimalFormat uptoThreePlaces = new DecimalFormat("#####0.###", IJU.dfs);
-    static DecimalFormat onetoThreePlaces = new DecimalFormat("#####0.0##", IJU.dfs);
-    static DecimalFormat uptoTwoPlaces = new DecimalFormat("#####0.##", IJU.dfs);
-    static DecimalFormat onePlaces = new DecimalFormat("#####0.0", IJU.dfs);
-    static DecimalFormat twoDigits = new DecimalFormat("00", IJU.dfs);
-    static DecimalFormat fourDigits = new DecimalFormat("0000", IJU.dfs);
-    static DecimalFormat twoDigitsOnePlace = new DecimalFormat("00.0", IJU.dfs);
-    static DecimalFormat twoDigitsTwoPlaces = new DecimalFormat("00.00", IJU.dfs);
-    static DecimalFormat twoDigitsFivePlaces = new DecimalFormat("00.00000", IJU.dfs);
-    static DecimalFormat threeDigitsTwoPlaces = new DecimalFormat("##0.00", IJU.dfs);
-    static DecimalFormat fiveDigitsOnePlace = new DecimalFormat("####0.0", IJU.dfs);
-    static DecimalFormat ninePlaces = new DecimalFormat("######0.000000000", IJU.dfs);
-    static DecimalFormat twoPlaces = new DecimalFormat("######0.00", IJU.dfs);
-    static DecimalFormat fourPlaces = new DecimalFormat("0.0000", IJU.dfs);
-    static DecimalFormat threePlaces = new DecimalFormat("######0.000", IJU.dfs);
-    static DecimalFormat sixPlaces = new DecimalFormat("######0.000000", IJU.dfs);
-    static DecimalFormat detrendParameterFormat = new DecimalFormat("######0.000000000000", IJU.dfs);
+    static final String fitFormat = "#####0.0########";
+    static final String oneDotThreeFormat = "#####0.000";
+    static final DecimalFormat uptoNinePlaces = new DecimalFormat("########0.#########", IJU.dfs);
+    static final DecimalFormat uptoEightPlaces = new DecimalFormat("#####0.########", IJU.dfs);
+    static final DecimalFormat uptoSixPlaces = new DecimalFormat("#####0.######", IJU.dfs);
+    static final DecimalFormat uptoFivePlaces = new DecimalFormat("#####0.#####", IJU.dfs);
+    static final DecimalFormat uptoThreePlaces = new DecimalFormat("#####0.###", IJU.dfs);
+    static final DecimalFormat onetoThreePlaces = new DecimalFormat("#####0.0##", IJU.dfs);
+    static final DecimalFormat uptoTwoPlaces = new DecimalFormat("#####0.##", IJU.dfs);
+    static final DecimalFormat onePlaces = new DecimalFormat("#####0.0", IJU.dfs);
+    static final DecimalFormat twoDigits = new DecimalFormat("00", IJU.dfs);
+    static final DecimalFormat fourDigits = new DecimalFormat("0000", IJU.dfs);
+    static final DecimalFormat twoDigitsOnePlace = new DecimalFormat("00.0", IJU.dfs);
+    static final DecimalFormat twoDigitsTwoPlaces = new DecimalFormat("00.00", IJU.dfs);
+    static final DecimalFormat twoDigitsFivePlaces = new DecimalFormat("00.00000", IJU.dfs);
+    static final DecimalFormat threeDigitsTwoPlaces = new DecimalFormat("##0.00", IJU.dfs);
+    static final DecimalFormat fiveDigitsOnePlace = new DecimalFormat("####0.0", IJU.dfs);
+    static final DecimalFormat ninePlaces = new DecimalFormat("######0.000000000", IJU.dfs);
+    static final DecimalFormat twoPlaces = new DecimalFormat("######0.00", IJU.dfs);
+    static final DecimalFormat fourPlaces = new DecimalFormat("0.0000", IJU.dfs);
+    static final DecimalFormat threePlaces = new DecimalFormat("######0.000", IJU.dfs);
+    static final DecimalFormat sixPlaces = new DecimalFormat("######0.000000", IJU.dfs);
+    static final DecimalFormat detrendParameterFormat = new DecimalFormat("######0.000000000000", IJU.dfs);
     private static TriState[] binDisplay = new TriState[maxCurves];
     private static JPanel[] displayBinningPanel = new JPanel[maxCurves];
     private static ArrayList<Pair.GenericPair<Double, JSpinner>> minutes = new ArrayList<>(maxCurves);
@@ -897,20 +901,20 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     private static double[][] unphasedX;
     private static boolean saveSeeingProfileStack;
     private static String seeingProfileStackSuffix;
-    private static PlotDraggableShape draggableShape = new PlotDraggableShape();
-    private static Property<Integer> dotSize = new Property<>(4, "plot.", "", MultiPlot_.class);
-    private static Property<Integer> binnedDotSize = new Property<>(8, "plot.", "", MultiPlot_.class);
-    private static Property<Integer> boldedDotSize = new Property<>(12, "plot.", "", MultiPlot_.class);
-    private static Property<Boolean> drawAijVersion = new Property<>(true, "plot.", "", MultiPlot_.class);
-    public static Property<Boolean> useMacroTitle = new Property<>(false, MultiPlot_.class);
-    public static Property<Boolean> useMacroSubtitle = new Property<>(false, MultiPlot_.class);
-    private static Property<Boolean> drawOffscreenDisplacementArrowsX = new Property<>(true, MultiPlot_.class);
-    private static Property<Boolean> drawOffscreenDisplacementArrowsY = new Property<>(true, MultiPlot_.class);
-    private static Property<Boolean> includePlotcfgInFits = new Property<>(true, MultiPlot_.class);
-    private static Property<Boolean> includeAperturesInFits = new Property<>(true, MultiPlot_.class);
-    private static Property<Boolean> saveTableAsFits = new Property<>(false, MultiPlot_.class);
-    private static Property<Boolean> savePlotAsPdf = new Property<>(false, MultiPlot_.class);
-    private static Property<BiState> drawBinErrBarsBase = new Property<>(BiState.DISABLED, "plot.", "", MultiPlot_.class);
+    private static final PlotDraggableShape draggableShape = new PlotDraggableShape();
+    private static final Property<Integer> dotSize = new Property<>(4, "plot.", "", MultiPlot_.class);
+    private static final Property<Integer> binnedDotSize = new Property<>(8, "plot.", "", MultiPlot_.class);
+    private static final Property<Integer> boldedDotSize = new Property<>(12, "plot.", "", MultiPlot_.class);
+    private static final Property<Boolean> drawAijVersion = new Property<>(true, "plot.", "", MultiPlot_.class);
+    public static final Property<Boolean> useMacroTitle = new Property<>(false, MultiPlot_.class);
+    public static final Property<Boolean> useMacroSubtitle = new Property<>(false, MultiPlot_.class);
+    private static final Property<Boolean> drawOffscreenDisplacementArrowsX = new Property<>(true, MultiPlot_.class);
+    private static final Property<Boolean> drawOffscreenDisplacementArrowsY = new Property<>(true, MultiPlot_.class);
+    private static final Property<Boolean> includePlotcfgInFits = new Property<>(true, MultiPlot_.class);
+    private static final Property<Boolean> includeAperturesInFits = new Property<>(true, MultiPlot_.class);
+    private static final Property<Boolean> saveTableAsFits = new Property<>(false, MultiPlot_.class);
+    private static final Property<Boolean> savePlotAsPdf = new Property<>(false, MultiPlot_.class);
+    private static final Property<BiState> drawBinErrBarsBase = new Property<>(BiState.DISABLED, "plot.", "", MultiPlot_.class);
     private static String lastUsedTitle, lastUsedSubtitle;
 
     public static IntConsumer addTableData = i -> {
@@ -5842,7 +5846,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         list.addElement(roi);
     }
 
-    static MouseListener shiftSpinnerMouseListener = new MouseListener() {
+    static final MouseListener shiftSpinnerMouseListener = new MouseListener() {
         public void mouseClicked(MouseEvent e) {
         }
 
@@ -5896,7 +5900,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         }
     };
 
-    static MouseMotionListener panelMouseMotionListener = new MouseMotionListener() {
+    static final MouseMotionListener panelMouseMotionListener = new MouseMotionListener() {
         public void mouseDragged(MouseEvent e) {
             panelShiftDown = e.isShiftDown();
             panelAltDown = e.isAltDown();
@@ -5910,7 +5914,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         }
     };
 
-    static KeyListener plotKeyListener = new KeyAdapter() {
+    static final KeyListener plotKeyListener = new KeyAdapter() {
         @Override
         public void keyPressed(KeyEvent e) {
             if (plot == null || plotWindow == null) {
@@ -5958,7 +5962,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         }
     };
 
-    static MouseListener plotMouseListener = new MouseListener() {
+    static final MouseListener plotMouseListener = new MouseListener() {
         public void mouseClicked(MouseEvent e) {
 
             // mouse clicked code is in mouseReleased() to allow drag/click thresholding
@@ -6078,7 +6082,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     };
 
 
-    static MouseMotionListener plotMouseMotionListener = new MouseMotionListener() {
+    static final MouseMotionListener plotMouseMotionListener = new MouseMotionListener() {
 
         private Future<?> previousTask;
 
@@ -6301,7 +6305,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     }
 
 
-    static MouseWheelListener plotMouseWheelListener = e -> {
+    static final MouseWheelListener plotMouseWheelListener = e -> {
         int screenX = e.getX();
         int screenY = e.getY();
         int magChangeSteps = e.getWheelRotation();
@@ -11711,7 +11715,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         usesmoothbox.setHorizontalAlignment(JLabel.CENTER);
         smoothP.add(usesmoothbox);
 
-        var smoothGear = new JButton(UIHelper.createImageIcon("Astronomy/images/icons/multiplot/gear.png", -1, 22));
+        var smoothGear = new JButton(GEAR_ICON);
         smoothGear.addActionListener(e -> {
             KeplerSplineControl.getInstance(c).displayPanel();
         });
@@ -12327,10 +12331,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         morelegendradiopanelgroup[c].add(Box.createHorizontalStrut(1));
         morelegendradiopanelgroup[c].setBorder(BorderFactory.createLineBorder(Color.lightGray));
-        ImageIcon noneLegendIcon = createImageIcon("astroj/images/nonelegend.png", "Disable legend for this data set");
-        ImageIcon columnLegendIcon = createImageIcon("astroj/images/columnlegend.png", "Use the column name as the legend for this data set");
-        ImageIcon customLegendIcon = createImageIcon("astroj/images/customlegend.png", "Use a custom legend for this data set");
-        legendnoneButton[c] = new JRadioButton(noneLegendIcon);
+        legendnoneButton[c] = new JRadioButton(NONE_LEGEND_ICON);
         legendnoneButton[c].setMaximumSize(new Dimension(25, 20));
         if (!useLegend[c] && !useColumnName[c]) {
             legendnoneButton[c].setSelected(true);
@@ -12341,7 +12342,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         }
         morelegendradiopanelgroup[c].add(legendnoneButton[c]);
         morelegendradiopanelgroup[c].add(Box.createHorizontalStrut(1));
-        legendcolumnNameButton[c] = new JRadioButton(columnLegendIcon);
+        legendcolumnNameButton[c] = new JRadioButton(COLUMN_LEGEND_ICON);
         legendcolumnNameButton[c].setMaximumSize(new Dimension(25, 20));
         if (useColumnName[c]) {
             legendcolumnNameButton[c].setSelected(true);
@@ -12352,7 +12353,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         }
         morelegendradiopanelgroup[c].add(legendcolumnNameButton[c]);
         morelegendradiopanelgroup[c].add(Box.createHorizontalStrut(1));
-        legendcustomNameButton[c] = new JRadioButton(customLegendIcon);
+        legendcustomNameButton[c] = new JRadioButton(CUSTOM_LEGEND_ICON);
         legendcustomNameButton[c].setMaximumSize(new Dimension(25, 20));
         if (useLegend[c]) {
             legendcustomNameButton[c].setSelected(true);

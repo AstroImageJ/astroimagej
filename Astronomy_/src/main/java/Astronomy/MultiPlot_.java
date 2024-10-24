@@ -906,6 +906,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     private static final Property<Integer> binnedDotSize = new Property<>(8, "plot.", "", MultiPlot_.class);
     private static final Property<Integer> boldedDotSize = new Property<>(12, "plot.", "", MultiPlot_.class);
     private static final Property<Boolean> drawAijVersion = new Property<>(true, "plot.", "", MultiPlot_.class);
+    public static final Property<Boolean> showCleanedCount = new Property<>(true, MultiPlot_.class);
     public static final Property<Boolean> useMacroTitle = new Property<>(false, MultiPlot_.class);
     public static final Property<Boolean> useMacroSubtitle = new Property<>(false, MultiPlot_.class);
     private static final Property<Boolean> drawOffscreenDisplacementArrowsX = new Property<>(true, MultiPlot_.class);
@@ -2270,10 +2271,22 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         if (drawAijVersion.get()) {
             plot.changeFont(new Font("Dialog", Font.PLAIN, 12));
             plot.setJustification(Plot.BOTTOM_RIGHT);
-            var wid = plotImage.getImage().getGraphics().getFontMetrics(plot.getCurrentFont()).stringWidth("AIJ " + IJ.getAstroVersion().split("[+]")[0]);
+            var version = "AIJ " + IJ.getAstroVersion().split("[+]")[0];
+            var wid = plotImage.getImage().getGraphics().getFontMetrics(plot.getCurrentFont()).stringWidth(version);
             var pWid = plot.getSize().getWidth();
             var h = plot.getSize().getHeight();
-            plot.addLabel((pWid - wid - 10)/pWid, (h + 43)/h, "AIJ " + IJ.getAstroVersion().split("[+]")[0]);
+            plot.addLabel((pWid - wid - 10)/pWid, (h + 43)/h, version);
+        }
+
+        if (showCleanedCount.get()) {
+            plot.changeFont(new Font("Dialog", Font.PLAIN, 12));
+            plot.setJustification(Plot.BOTTOM_RIGHT);
+            var removedCount = FitOptimization.cleanedCount() + "/" + FitOptimization.oldestCleanedTableCount() + " Removed";
+            var metrics = plotImage.getImage().getGraphics().getFontMetrics(plot.getCurrentFont());
+            var wid = metrics.stringWidth(removedCount);
+            var pWid = plot.getSize().getWidth();
+            var h = plot.getSize().getHeight();
+            plot.addLabel(10/pWid, (h + 43)/h, removedCount);
         }
 
         plot.update();
@@ -17977,6 +17990,15 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             updatePlot();
         });
         panel.add(control4, c);
+
+        c.gridy++;
+
+        var control5 = new JCheckBox("Show number of removed points", showCleanedCount.get());
+        control5.addChangeListener($ -> {
+            showCleanedCount.set(control5.isSelected());
+            updatePlot();
+        });
+        panel.add(control5, c);
 
         panel.setBorder(BorderFactory.createEmptyBorder(20,30,20,30));
 

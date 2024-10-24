@@ -95,6 +95,20 @@ public class FitOptimization implements AutoCloseable {
         INSTANCES.forEach(FitOptimization::clearHistory);
     }
 
+    public static int cleanedCount() {
+        if (table == null) {
+            return 0;
+        }
+        return oldestCleanedTableCount() - table.size();
+    }
+
+    public static int oldestCleanedTableCount() {
+        if (table == null) {
+            return 0;
+        }
+        return undoBuffer.isEmpty() ? table.size() : undoBuffer.getLast().table.size();
+    }
+
     private static void setFinalRefStarState(String minimizationTarget, boolean[] state) {
         setNewStars(state);
 

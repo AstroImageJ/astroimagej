@@ -436,6 +436,7 @@ def commonDist = project.copySpec {
 }
 
 // Create commonFiles directory for use in runAij and distribution generation
+// This is needed as we create the file paths for the package tasks at config time
 project.sync {
     with commonDist
     into "${project.layout.buildDirectory.get()}/commonFiles"
@@ -464,6 +465,10 @@ tasks.register('commonFiles', Sync) {
             }
         }
     }
+}
+
+clean {
+    delete("${projectDir}/AIJ-Run")
 }
 
 // Generate AIJ-Run directory and set it up for usage

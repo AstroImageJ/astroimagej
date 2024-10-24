@@ -122,8 +122,8 @@ public class Centroid {
                            boolean useBackgroundPlane, boolean removeStars) {
         return measure(imp, aperture.getXpos(), aperture.getYpos(),
                 aperture.getCentroidRadius(),
-                aperture.hasAnnulus() ? aperture.getBack1() : aperture.getRadius(),
-                aperture.hasAnnulus() ? aperture.getBack2() : aperture.getRadius(),
+                aperture.hasAnnulus() ? aperture.getBack1() : aperture.getCentroidRadius() * 1.2,
+                aperture.hasAnnulus() ? aperture.getBack2() : aperture.getCentroidRadius() * 2.0,
                 findCentroid, useBackgroundPlane, removeStars);
     }
 

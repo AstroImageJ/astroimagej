@@ -1816,141 +1816,162 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             }
 
             if (!autoMode && suggestCompStars && tempSuggestCompStars && ngot >= referenceStar && refCount < maxSuggestedStars && !(this instanceof Stack_Aligner)) {
-                suggestionRunning = true;
-                var d = showWarning("Searching for comparison stars...");
-                var warning = new AnnotateRoi(false, false, true, false, imp.getWidth() / 2f, imp.getHeight() / 2f, 2, "Searching for comparison stars...", Color.GREEN);
-                warning.setImage(imp);
-                ocanvas.add(warning);
-
-                xCenter = xPos[referenceStar - 1];
-                yCenter = yPos[referenceStar - 1];
-
-                // Make sure photometry is current
-                measurePhotometry();
-
-                final var t1Source = photom.sourceBrightness();
-
-                final var liveStats = asw.getLiveStatistics();
-                var minP = autoPeakValues ? liveStats.mean + (1 * liveStats.stdDev) : minPeakValue;
-                var maxP = autoPeakValues ? liveStats.max * 0.9 : maxPeakValue;
-
-                var maxima = StarFinder.findLocalMaxima(imp, minP, Double.MAX_VALUE, (int) Math.ceil(2 * radius), gaussRadius);
-
-                if (maxima.coordinateMaximas().size() > 25000) {
-                    var g = new GenericSwingDialog("MA Automatic Comp. Star Selection");
-                    g.addMessage("Maxima count has exceeded " + NumberFormat.getInstance().format(25000) + "; this can take a while to process, " +
-                            "do you wish to continue?\nMaxima count: " + NumberFormat.getInstance().format(maxima.coordinateMaximas().size()) +
-                            "\nChanging the peak value bounds will effect this number.\n" + "Probable causes are that " +
-                            "the Minimum peak threshold is set too low and/or the Maximum peak threshold is set " +
-                            "too high. Ensure that the Minimum value set is above the highest sky background region " +
-                            "and that the Maximum is below the saturation level.\n");
-                    g.enableYesNoCancel("Continue Auto", "Continue Manual");
-                    g.centerDialog(true);
-                    g.getOkay().setToolTipText("Continue to automatically extract comp stars");
-                    g.getNo().setToolTipText("Cancel the automatic comp star extraction, " +
-                            "but continue with manual aperture placement");
-                    g.getCancel().setToolTipText("Cancel both automatic and manual aperture placement");
-                    IJ.beep();
-                    g.showDialog();
-                    if (g.wasCanceled()) {
-                        cancelled = true;
-                        ocanvas.removeRoi(warning);
-                        d.dispose();
-                        shutDown();
-                    } else if (!g.wasOKed()) {
-                        tempSuggestCompStars = false;
-                        ocanvas.removeRoi(warning);
-                        d.dispose();
-                        return;
-                    }
+                if (automaticCompStarSelection(refCount)) {
+                    return;
                 }
-
-                if (maxima.coordinateMaximas().isEmpty()) {
-                    var g = new GenericSwingDialog("MA Automatic Comp. Star Selection");
-                    g.addMessage("Number of maxima found is 0!\nProbable causes are that " +
-                            "the Minimum peak threshold is set too high and/or the Maximum peak threshold is set " +
-                            "too low. Ensure that the Minimum value set is above the highest sky background region " +
-                            "and that the Maximum is below the saturation level.\n");
-                    g.enableYesNoCancel("Continue Manual", "");
-                    g.centerDialog(true);
-                    g.disableNo();
-                    g.getOkay().setToolTipText("Continue to manually place comparison star apertures.");
-                    g.getCancel().setToolTipText("Cancel both automatic and manual aperture placement.");
-                    IJ.beep();
-                    g.showDialog();
-                    if (g.wasCanceled()) {
-                        ocanvas.removeRoi(warning);
-                        d.dispose();
-                        cancelled = true;
-                        shutDown();
-                    } else if (!g.wasOKed()) {
-                        tempSuggestCompStars = false;
-                        ocanvas.removeRoi(warning);
-                        d.dispose();
-                        return;
-                    }
-                }
-
-                if (cancelled) return;
-
-                if (enableLog)
-                    AIJLogger.log("Number of maxima: " + NumberFormat.getInstance().format(maxima.coordinateMaximas().size()));
-                if (enableLog) AIJLogger.log("Filtering...");
-                var m = removeCloseStars(maxima.coordinateMaximas(), t1Source, maxP);
-                if (cancelled) return;
-                if (enableLog)
-                    AIJLogger.log("Number of maxima that met distance and brightness thresholds: " + NumberFormat.getInstance().format(m.size()));
-                if (enableLog) AIJLogger.log("Weighing peaks...");
-                var set = weightAndLimitPeaks(m, t1Source);
-                if (cancelled) return;
-
-                if (set.isEmpty()) {
-                    var g = new GenericSwingDialog("MA Automatic Comparison Star Selection");
-                    g.addMessage("No comparison stars found that meet the brightness thresholds set.\n" +
-                            "Check the brightness threshold settings in the Multi-Aperture set-up panel.\n");
-                    g.enableYesNoCancel("Continue Manual", "");
-                    g.centerDialog(true);
-                    g.disableNo();
-                    g.getOkay().setToolTipText("Continue to manually place comp. stars");
-                    g.getCancel().setToolTipText("Cancel Multi-Aperture");
-                    IJ.beep();
-                    g.showDialog();
-                    if (g.wasCanceled()) {
-                        ocanvas.removeRoi(warning);
-                        d.dispose();
-                        cancelled = true;
-                        shutDown();
-                    } else if (!g.wasOKed()) {
-                        tempSuggestCompStars = false;
-                        ocanvas.removeRoi(warning);
-                        d.dispose();
-                        return;
-                    }
-                }
-
-                if (!set.isEmpty()) {
-                    if (enableLog) AIJLogger.log("Placing suggested comp. stars...");
-                    for (WeightedCoordinateMaxima coordinateMaxima : set.subList(0, Math.min(maxSuggestedStars - refCount, set.size()))) {
-                        if (cancelled) return;
-                        if (enableLog) AIJLogger.log(ngot + 1);
-                        if (enableLog)
-                            AIJLogger.log(coordinateMaxima);//todo apertures placing in wrong coordinates for tica image, fine for others, due to wcs
-                        xCenter = coordinateMaxima.cm.x();
-                        yCenter = coordinateMaxima.cm.y();
-
-                        addAperture(true, false);
-                    }
-                    if (enableLog) AIJLogger.log("Finished placing comp. stars!");
-                }
-
-                ocanvas.removeRoi(warning);
-                d.dispose();
-
-                tempSuggestCompStars = false; // Disable suggestion for all other stars
             }
 
             suggestionRunning = false;
         }
+    }
+
+    private boolean automaticCompStarSelection(int currentRefStarCount) {
+        suggestionRunning = true;
+        var d = showWarning("Searching for comparison stars...");
+        var warning = new AnnotateRoi(false, false, true, false, imp.getWidth() / 2f, imp.getHeight() / 2f, 2, "Searching for comparison stars...", Color.GREEN);
+        warning.setImage(imp);
+        ocanvas.add(warning);
+
+        xCenter = xPos[referenceStar - 1];
+        yCenter = yPos[referenceStar - 1];
+
+        // Make sure photometry is current
+        measurePhotometry();
+
+        final var t1Source = photom.sourceBrightness();
+
+        final var liveStats = asw.getLiveStatistics();
+        var minP = autoPeakValues ? liveStats.mean + (1 * liveStats.stdDev) : minPeakValue;
+        var maxP = autoPeakValues ? liveStats.max * 0.9 : maxPeakValue;
+
+        var maxima = StarFinder.findLocalMaxima(imp, minP, Double.MAX_VALUE, (int) Math.ceil(2 * radius), gaussRadius);
+
+        if (maxima.coordinateMaximas().size() > 25000) {
+            var g = new GenericSwingDialog("MA Automatic Comp. Star Selection");
+            g.addMessage("Maxima count has exceeded " + NumberFormat.getInstance().format(25000) + "; this can take a while to process, " +
+                    "do you wish to continue?\nMaxima count: " + NumberFormat.getInstance().format(maxima.coordinateMaximas().size()) +
+                    "\nChanging the peak value bounds will effect this number.\n" + "Probable causes are that " +
+                    "the Minimum peak threshold is set too low and/or the Maximum peak threshold is set " +
+                    "too high. Ensure that the Minimum value set is above the highest sky background region " +
+                    "and that the Maximum is below the saturation level.\n");
+            g.enableYesNoCancel("Continue Auto", "Continue Manual");
+            g.centerDialog(true);
+            g.getOkay().setToolTipText("Continue to automatically extract comp stars");
+            g.getNo().setToolTipText("Cancel the automatic comp star extraction, " +
+                    "but continue with manual aperture placement");
+            g.getCancel().setToolTipText("Cancel both automatic and manual aperture placement");
+            IJ.beep();
+            g.showDialog();
+            if (g.wasCanceled()) {
+                cancelled = true;
+                ocanvas.removeRoi(warning);
+                d.dispose();
+                shutDown();
+            } else if (!g.wasOKed()) {
+                tempSuggestCompStars = false;
+                ocanvas.removeRoi(warning);
+                d.dispose();
+                return true;
+            }
+        }
+
+        if (maxima.coordinateMaximas().isEmpty()) {
+            var g = new GenericSwingDialog("MA Automatic Comp. Star Selection");
+            g.addMessage("Number of maxima found is 0!\nProbable causes are that " +
+                    "the Minimum peak threshold is set too high and/or the Maximum peak threshold is set " +
+                    "too low. Ensure that the Minimum value set is above the highest sky background region " +
+                    "and that the Maximum is below the saturation level.\n");
+            g.enableYesNoCancel("Continue Manual", "");
+            g.centerDialog(true);
+            g.disableNo();
+            g.getOkay().setToolTipText("Continue to manually place comparison star apertures.");
+            g.getCancel().setToolTipText("Cancel both automatic and manual aperture placement.");
+            IJ.beep();
+            g.showDialog();
+            if (g.wasCanceled()) {
+                ocanvas.removeRoi(warning);
+                d.dispose();
+                cancelled = true;
+                shutDown();
+            } else if (!g.wasOKed()) {
+                tempSuggestCompStars = false;
+                ocanvas.removeRoi(warning);
+                d.dispose();
+                return true;
+            }
+        }
+
+        if (cancelled)
+            return true;
+
+        if (enableLog) {
+            AIJLogger.log("Number of maxima: " + NumberFormat.getInstance().format(maxima.coordinateMaximas().size()));
+            AIJLogger.log("Filtering...");
+        }
+
+        var m = removeCloseStars(maxima.coordinateMaximas(), t1Source, maxP);
+
+        if (cancelled)
+            return true;
+
+        if (enableLog) {
+            AIJLogger.log("Number of maxima that met distance and brightness thresholds: " +
+                    NumberFormat.getInstance().format(m.size()));
+            AIJLogger.log("Weighing peaks...");
+        }
+
+        var set = weightAndLimitPeaks(m, t1Source);
+
+        if (cancelled)
+            return true;
+
+        if (set.isEmpty()) {
+            var g = new GenericSwingDialog("MA Automatic Comparison Star Selection");
+            g.addMessage("No comparison stars found that meet the brightness thresholds set.\n" +
+                    "Check the brightness threshold settings in the Multi-Aperture set-up panel.\n");
+            g.enableYesNoCancel("Continue Manual", "");
+            g.centerDialog(true);
+            g.disableNo();
+            g.getOkay().setToolTipText("Continue to manually place comp. stars");
+            g.getCancel().setToolTipText("Cancel Multi-Aperture");
+            IJ.beep();
+            g.showDialog();
+            if (g.wasCanceled()) {
+                ocanvas.removeRoi(warning);
+                d.dispose();
+                cancelled = true;
+                shutDown();
+            } else if (!g.wasOKed()) {
+                tempSuggestCompStars = false;
+                ocanvas.removeRoi(warning);
+                d.dispose();
+                return true;
+            }
+        }
+
+        if (!set.isEmpty()) {
+            if (enableLog) AIJLogger.log("Placing suggested comp. stars...");
+            for (WeightedCoordinateMaxima coordinateMaxima :
+                    set.subList(0, Math.min(maxSuggestedStars - currentRefStarCount, set.size()))) {
+                if (cancelled)
+                    return true;
+                if (enableLog) {
+                    AIJLogger.log(ngot + 1);
+                    AIJLogger.log(coordinateMaxima);
+                }
+                xCenter = coordinateMaxima.cm.x();
+                yCenter = coordinateMaxima.cm.y();
+
+                addAperture(true, false);
+            }
+            if (enableLog) AIJLogger.log("Finished placing comp. stars!");
+        }
+
+        ocanvas.removeRoi(warning);
+        d.dispose();
+
+        tempSuggestCompStars = false; // Disable suggestion for all other stars
+        return false;
     }
 
     private void runCustomAperture() {

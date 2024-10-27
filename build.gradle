@@ -55,44 +55,9 @@ apply plugin: 'io.github.fvarrui.javapackager.plugin'
 // See https://guides.gradle.org/creating-multi-project-builds/
 
 // Java version to compile and package with
-def shippingJava = Integer.parseInt(project.javaShippingVersion as String)
+def shippingJava = Integer.parseInt(properties['javaShippingVersion'] as String)
 // Minimum Java version binaries should be compatible with
-def targetJava = Integer.parseInt(project.minJava as String)
-
-allprojects {
-    repositories {
-        mavenCentral()
-    }
-    group 'com.astroimagej'
-
-    tasks.withType(JavaCompile).configureEach {
-        // Set language level and binary level to targetJava (binary only when building with a JDK 9+)
-        // Ensures newer language features aren't used
-        options.release.set(targetJava)
-
-        // AIJ is large, so this caches compiling results and only recompiles changed files
-        options.incremental = true
-
-        // Allow unicode
-        options.encoding('UTF-8')
-
-        options.fork = true
-
-        options.compilerArgs << '-Xlint:-dep-ann'
-
-        javaCompiler = javaToolchains.compilerFor {
-            languageVersion = JavaLanguageVersion.of(shippingJava)
-        }
-    }
-
-    java {
-        toolchain {
-            // Gradle will download the JDK for compiling/running if one isn't found
-            // This should prevent anyone from using an outdated JDK
-            languageVersion.set(JavaLanguageVersion.of(shippingJava))
-        }
-    }
-}
+def targetJava = Integer.parseInt(properties['javaShippingVersion'] as String)
 
 // Declare the version dynamically using the versioning plugin
 def fullVersionProvider = providers.provider {

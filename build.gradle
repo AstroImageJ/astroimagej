@@ -444,9 +444,9 @@ project.sync {
  * This is run when building a distribution to refresh the files in case of a change.
  */
 tasks.register('commonFiles', Sync) {
-    outputs.upToDateWhen { false }
-    dependsOn ':ij:shadowJar', ':Astronomy_:build'
-    mustRunAfter ':ij:shadowJar', ':Astronomy_:build'
+    //outputs.upToDateWhen { false }
+    //dependsOn ':ij:shadowJar', ':Astronomy_:build'
+    //mustRunAfter ':ij:shadowJar', ':Astronomy_:build'
     with commonDist
     into "${project.layout.buildDirectory.get()}/commonFiles"
     doLast {
@@ -464,7 +464,10 @@ clean {
 
 // Generate AIJ-Run directory and set it up for usage
 tasks.register('sync', Sync) {
-    dependsOn 'commonFiles'
+    //dependsOn 'commonFiles'
+    // Add launch option as input so Sync can properly keep track of everything and be incremental
+    inputs.file(file("${projectDir}/devLaunchOptions.txt"))
+
     with commonDist
     //noinspection GroovyAssignabilityCheck
     with {
@@ -495,17 +498,17 @@ tasks.register('aijRun', JavaExec) {
 }
 
 List<String> readConfigFile() {
+    def devCfg = providers.fileContents(project.layout.projectDirectory.file('devLaunchOptions.txt'))
+
     List<String> args = new ArrayList<>()
-    File cfg = file("${projectDir}/AIJ-Run/AstroImageJ.cfg") as File
-    if (!cfg.exists()) return args
+    if (!devCfg.getAsText().isPresent()) {
+        logger.lifecycle("Launching using default options")
+        return args
+    }
 
-    File devCfg = file("${projectDir}/devLaunchOptions.txt") as File
+    logger.lifecycle("Launching using options from devLaunchOptions")
 
-    File readCfg = devCfg.exists() ? devCfg : cfg
-
-    logger.lifecycle("Launching using options from: " + (devCfg.exists() ? "dev. config" : "default config") as String)
-
-    readCfg.readLines().each {
+    devCfg.getAsText().get().eachLine {
         if (it.startsWith("#") /*Comments*/) {
             return
         }

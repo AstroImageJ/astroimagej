@@ -42,11 +42,19 @@ jar {
 }
 
 shadowJar {
-    outputs.upToDateWhen {false}
+    //outputs.upToDateWhen {false}
     archiveFileName = 'ij.jar'
 
-    // Don't ship non-windows binaries
-    exclude "**/*.jnilib"
-    exclude "**/*.so"
-    exclude "**/*.a"
+    // Exclude patterns
+    def excludePatterns = [
+            "**/*.jnilib",
+            "**/*.so",
+            "**/*.a"
+    ]
+
+    // Set excludes to the task inputs
+    inputs.property("excludes", excludePatterns)
+
+    // Exclude non-Windows binaries
+    exclude excludePatterns
 }

@@ -12,6 +12,7 @@ import ij.astro.gui.ToolTipProvider;
 import ij.astro.gui.nstate.NState;
 import ij.astro.io.prefs.Property;
 import ij.astro.logging.AIJLogger;
+import ij.astro.types.Pair;
 import ij.gui.GenericDialog;
 import ij.gui.PlotWindow;
 import ij.gui.Toolbar;
@@ -1455,6 +1456,16 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             freeformPixelApertureHandler.setImp(imp);
             freeformPixelApertureHandler.currentAperture().setImage(imp);
 
+            var refCount = 0;
+            if (!autoMode && suggestCompStars && tempSuggestCompStars && ngot >= referenceStar
+                    && (refCount = freeformPixelApertureHandler.apCompCount()) < maxSuggestedStars
+                    && !(this instanceof Stack_Aligner)) {
+                if (automaticCompStarSelection(refCount)) {
+                    return;
+                }
+                return;
+            }
+
             if (e != dummyClick && e != null && (!mouseDrag || e.isShiftDown())) {
                 var x = canvas.offScreenX(e.getX());
                 var y = canvas.offScreenY(e.getY());
@@ -1825,6 +1836,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         }
     }
 
+    /**
+     * @return {@code true} if cancelled.
+     */
     private boolean automaticCompStarSelection(int currentRefStarCount) {
         suggestionRunning = true;
         var d = showWarning("Searching for comparison stars...");
@@ -1832,13 +1846,34 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         warning.setImage(imp);
         ocanvas.add(warning);
 
-        xCenter = xPos[referenceStar - 1];
-        yCenter = yPos[referenceStar - 1];
+        var radius = switch (apertureShape.get()) {
+            case FREEFORM -> freeformPixelApertureHandler.getAperture(referenceStar-1).getRadius();
+            case CIRCULAR -> this.radius;
+        };
 
-        // Make sure photometry is current
-        measurePhotometry();
+        final double t1Source = switch (apertureShape.get()) {
+            case CIRCULAR -> {
+                xCenter = xPos[referenceStar - 1];
+                yCenter = yPos[referenceStar - 1];
 
-        final var t1Source = photom.sourceBrightness();
+                // Make sure photometry is current
+                measurePhotometry();
+
+                yield  photom.sourceBrightness();
+            }
+            case FREEFORM -> {
+                measurePhotometry(FitsJ.getHeader(imp), freeformPixelApertureHandler.getAperture(referenceStar-1));
+                yield  photom.sourceBrightness();
+            }
+        };
+
+        final Pair.DoublePair t1coord = switch (apertureShape.get()) {
+            case FREEFORM -> {
+                var ap = freeformPixelApertureHandler.getAperture(referenceStar-1);
+                yield new Pair.DoublePair(ap.getXpos(), ap.getYpos());
+            }
+            case CIRCULAR -> new Pair.DoublePair(xPos[referenceStar-1], yPos[referenceStar-1]);
+        };
 
         final var liveStats = asw.getLiveStatistics();
         var minP = autoPeakValues ? liveStats.mean + (1 * liveStats.stdDev) : minPeakValue;
@@ -1909,7 +1944,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             AIJLogger.log("Filtering...");
         }
 
-        var m = removeCloseStars(maxima.coordinateMaximas(), t1Source, maxP);
+        var m = removeCloseStars(maxima.coordinateMaximas(), t1Source, maxP, radius);
 
         if (cancelled)
             return true;
@@ -1920,7 +1955,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             AIJLogger.log("Weighing peaks...");
         }
 
-        var set = weightAndLimitPeaks(m, t1Source);
+        var set = weightAndLimitPeaks(m, t1Source, t1coord);
 
         if (cancelled)
             return true;
@@ -1959,10 +1994,26 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     AIJLogger.log(ngot + 1);
                     AIJLogger.log(coordinateMaxima);
                 }
-                xCenter = coordinateMaxima.cm.x();
-                yCenter = coordinateMaxima.cm.y();
 
-                addAperture(true, false);
+                switch (apertureShape.get()) {
+                    case CIRCULAR -> {
+                        xCenter = coordinateMaxima.cm.x();
+                        yCenter = coordinateMaxima.cm.y();
+
+                        addAperture(true, false);
+                    }
+                    case FREEFORM -> {
+                        var t1 = freeformPixelApertureHandler.getAperture(referenceStar-1);
+                        var ap = new FreeformPixelApertureRoi();
+                        ap.setComparisonStar(true);
+                        t1.copyPixels(ap, false);
+
+                        ap.moveTo(coordinateMaxima.cm.x(), coordinateMaxima.cm.y(), false);
+
+                        freeformPixelApertureHandler.addAperture(ap);
+                        ngot++;
+                    }
+                }
             }
             if (enableLog) AIJLogger.log("Finished placing comp. stars!");
         }
@@ -2184,7 +2235,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         return med + ArrayUtil.median(distanceAboveMed);
     }
 
-    private TreeSet<StarFinder.CoordinateMaxima> removeCloseStars(TreeSet<StarFinder.CoordinateMaxima> initialSet, double t1Source, double maxP) {
+    private TreeSet<StarFinder.CoordinateMaxima> removeCloseStars(TreeSet<StarFinder.CoordinateMaxima> initialSet, double t1Source, double maxP, double radius) {
         final var radius2 = 4 * radius * radius;
         final var high = t1Source * (upperBrightness / 100d);
         final var low = t1Source * (lowerBrightness / 100d);
@@ -2226,18 +2277,50 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         TreeSet<StarFinder.CoordinateMaxima> n;
         getMeasurementPrefs();
 
-        n = initialSet.parallelStream().map(m -> {
-            // Centroid for all stars
-            var center = adjustAperture(imp, m.x(), m.y(), radius, rBack1, rBack2, true).center();
+        n = initialSet.parallelStream().map(m -> switch (apertureShape.get()) {
+            case CIRCULAR -> {
+                // Centroid for all stars
+                var center = adjustAperture(imp, m.x(), m.y(), radius, rBack1, rBack2, true).center();
 
-            for (int i = 0; i < xPos.length; i++) {
-                if (squaredDistanceTo(xPos[i], yPos[i], center.x(), center.y()) <= (radius2)) return null;
+                for (int i = 0; i < xPos.length; i++) {
+                    if (squaredDistanceTo(xPos[i], yPos[i], center.x(), center.y()) <= (radius2)) yield null;
+                }
+
+                var photom = measurePhotometry(imp, center.x(), center.y(), radius, rBack1, rBack2);
+
+                var s = photom.sourceBrightness();
+                yield new StarFinder.CoordinateMaxima(s, center.x(), center.y());
             }
+            case FREEFORM -> {
+                var t1 = freeformPixelApertureHandler.getAperture(referenceStar-1);
+                var ap = new FreeformPixelApertureRoi();
+                t1.copyPixels(ap, true);
 
-            var photom = measurePhotometry(imp, center.x(), center.y(), radius, rBack1, rBack2);
+                ap.moveTo(m.x(), m.y());
 
-            var s = photom.sourceBrightness();
-            return new StarFinder.CoordinateMaxima(s, center.x(), center.y());
+                var c = new Centroid();
+
+                // Centroid T1 to get offset
+                var dx = 0d;
+                var dy = 0d;
+                if (c.measure(imp, t1, true, backIsPlane, removeBackStars)) {
+                    dx = t1.getXpos() - c.x();
+                    dy = t1.getYpos() - c.y();
+                }
+
+                if (c.measure(imp, ap, true, backIsPlane, removeBackStars)) {
+                    ap.moveTo((int) (c.x() + dx), (int) (c.y() + dy));
+                }
+
+                var photom = measurePhotometry(imp, FitsJ.getHeader(imp), ap);
+
+                for (int i = 0; i < freeformPixelApertureHandler.apCount(); i++) {
+                    var a = freeformPixelApertureHandler.getAperture(i);
+                    if (squaredDistanceTo(a.getXpos(), a.getYpos(), ap.getXpos(), ap.getYpos()) <= (radius2)) yield null;
+                }
+
+                yield new StarFinder.CoordinateMaxima(photom.sourceBrightness(), ap.getXpos(), ap.getYpos());
+            }
         }).filter(Objects::nonNull).collect(Collectors.toCollection(TreeSet::new));
 
         // Remove elements where the apertures would be identical
@@ -2268,13 +2351,13 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         return (TreeSet<StarFinder.CoordinateMaxima>) initialSet.descendingSet();
     }
 
-    private List<WeightedCoordinateMaxima> weightAndLimitPeaks(TreeSet<StarFinder.CoordinateMaxima> initialSet, final double t1Source) {
+    private List<WeightedCoordinateMaxima> weightAndLimitPeaks(TreeSet<StarFinder.CoordinateMaxima> initialSet, final double t1Source, Pair.DoublePair t1Coord) {
         final Comparator<WeightedCoordinateMaxima> x = Comparator.comparingDouble(d -> d.weight);
-        final var out = initialSet.parallelStream().map(o -> calculateDistanceBrightnessFactor(t1Source, o)).sorted(x.reversed());
+        final var out = initialSet.parallelStream().map(o -> calculateDistanceBrightnessFactor(t1Source, t1Coord, o)).sorted(x.reversed());
         return out.limit(maxSuggestedStars).collect(Collectors.toList());
     }
 
-    private WeightedCoordinateMaxima calculateDistanceBrightnessFactor(double t1Source, StarFinder.CoordinateMaxima coordinateMaxima) {
+    private WeightedCoordinateMaxima calculateDistanceBrightnessFactor(double t1Source, Pair.DoublePair t1Coord, StarFinder.CoordinateMaxima coordinateMaxima) {
         final double imageWidth2 = imp.getWidth() * imp.getWidth();
         final double imageHeight2 = imp.getHeight() * imp.getHeight();
         final double imageDiagonalLength = Math.sqrt(imageHeight2 + imageWidth2);
@@ -2286,7 +2369,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         } else {
             normBrightness = 1.0 - (b - t1Source) / (t1Source * ((upperBrightness / 100.0) - 1.0));
         }
-        final double normDistance = 1 - (distanceTo(xPos[referenceStar - 1], yPos[referenceStar - 1], coordinateMaxima.x(), coordinateMaxima.y()) / imageDiagonalLength);
+        final double normDistance = 1 - (distanceTo(t1Coord.first(), t1Coord.second(), coordinateMaxima.x(), coordinateMaxima.y()) / imageDiagonalLength);
         return new WeightedCoordinateMaxima(coordinateMaxima, (brightness2DistanceWeight / 100d) * normBrightness + (1 - brightness2DistanceWeight / 100d) * normDistance);
     }
 

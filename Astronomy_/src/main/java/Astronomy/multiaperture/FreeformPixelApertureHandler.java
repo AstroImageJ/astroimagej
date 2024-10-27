@@ -1,5 +1,6 @@
 package Astronomy.multiaperture;
 
+import astroj.ApertureRoi;
 import astroj.Centroid;
 import astroj.FreeformPixelApertureRoi;
 import astroj.OverlayCanvas;
@@ -89,8 +90,35 @@ public class FreeformPixelApertureHandler {
         return freeformPixelApertureRois.size();
     }
 
+    public int apCompCount() {
+        return (int) freeformPixelApertureRois.stream().filter(ApertureRoi::getIsRefStar).count();
+    }
+
     public FreeformPixelApertureRoi getAperture(int index) {
         return freeformPixelApertureRois.get(index);
+    }
+
+    public void addAperture(FreeformPixelApertureRoi ap) {
+        freeformPixelApertureRois.add(ap);
+        updateCount.accept(freeformPixelApertureRois.size());
+
+        ap.setImage(imp);
+
+        ap.setName((ap.isComparisonStar() ? "C" : "T") + (freeformPixelApertureRois.size()));
+
+        if (OverlayCanvas.hasOverlayCanvas(imp)) {
+            OverlayCanvas.getOverlayCanvas(imp).add(ap);
+        }
+
+        if (imp != null) {
+            currentAperture().setImage(imp);
+            ImageCanvas canvas = OverlayCanvas.hasOverlayCanvas(imp) ?
+                    OverlayCanvas.getOverlayCanvas(imp) :
+                    imp.getCanvas();
+            if (canvas != null) {
+                canvas.repaint();
+            }
+        }
     }
 
     public void addPixel(int x, int y, boolean isBackground) {

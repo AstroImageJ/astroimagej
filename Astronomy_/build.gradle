@@ -6,6 +6,10 @@ dependencies {
 	implementation project(':ij')
 }
 
+artifacts {
+    shippingJar(jar)
+}
+
 jar {
     archiveFileName = 'Astronomy_.jar'
 }

@@ -72,12 +72,28 @@ subprojects {
     version = fullVersionProvider.get()
 }
 
+configurations {
+    shippingIJ {
+        canBeConsumed = false
+        canBeResolved = true
+    }
+
+    shippingAstro {
+        canBeConsumed = false
+        canBeResolved = true
+    }
+}
+
 dependencies {
     // This dependency is used by the application.
     //implementation 'com.google.guava:guava:29.0-jre'
     implementation project(':Nom_Fits')
     implementation project(':ij')
     implementation project(':Astronomy_')
+
+    // Jars to be packaged and shipped
+    shippingIJ project(path: ':ij', configuration: 'shippingJar')
+    shippingAstro project(path: ':Astronomy_', configuration: 'shippingJar')
 
     // Use JUnit test framework
     testImplementation(platform('org.junit:junit-bom:5.11.0'))
@@ -380,8 +396,18 @@ tasks.register('unZipJresTask', Copy) {
 
 // Define what files belong to all distributions and their location
 def commonDist = project.copySpec {
+    // Check that shippingAstro has only one file (Astronomy_.jar)
+    if (configurations.shippingAstro.files.size() != 1) {
+        throw new GradleException("shippingAstro configuration must contain exactly one file")
+    }
+
+    // Check that shippingIJ has only one file (ij.jar)
+    if (configurations.shippingIJ.files.size() != 1) {
+        throw new GradleException("shippingIJ configuration must contain exactly one file")
+    }
+
     // Copy astronomy_.jar to correct place in distribution
-    from(file("${project(':Astronomy_').layout.buildDirectory.get()}/libs/Astronomy_.jar")) {
+    from(configurations.shippingAstro) {
         rename { String name -> return 'Astronomy_.jar' }
         into 'plugins'
     }
@@ -395,7 +421,7 @@ def commonDist = project.copySpec {
     }
 
     // Copy ij.jar to correct place in distribution
-    from(file("${project(':ij').layout.buildDirectory.get()}/libs/ij.jar")) {
+    from(configurations.shippingIJ) {
         into ''
     }
 }
@@ -687,8 +713,17 @@ tasks.withType(PackageTask).configureEach {pkgTsk ->
 
 // Task to copy built jars into a certain folder, for use with testing
 tasks.register('copyBuiltJars', Copy) {
-    dependsOn 'commonFiles'
     group 'AstroImageJ Development'
+
+    // Check that shippingAstro has only one file (Astronomy_.jar)
+    if (configurations.shippingAstro.files.size() != 1) {
+        throw new GradleException("shippingAstro configuration must contain exactly one file")
+    }
+
+    // Check that shippingIJ has only one file (ij.jar)
+    if (configurations.shippingIJ.files.size() != 1) {
+        throw new GradleException("shippingIJ configuration must contain exactly one file")
+    }
 
     // Workaround for config cache by using provider outside of onlyIf
     def predicate = providers.provider {
@@ -708,7 +743,7 @@ tasks.register('copyBuiltJars', Copy) {
     def destination = outputDestination()
 
     // Copy astronomy_.jar to correct place in distribution
-    from(file("${project(':Astronomy_').layout.buildDirectory.get()}/libs/astronomy_.jar")) {
+    from(configurations.shippingAstro) {
         rename { String name -> return 'Astronomy_.jar' }
         into 'plugins'
     }
@@ -719,7 +754,7 @@ tasks.register('copyBuiltJars', Copy) {
     }
 
     // Copy ij.jar to correct place in distribution
-    from(file("${project(':ij').layout.buildDirectory.get()}/libs/ij.jar")) {
+    from(configurations.shippingIJ) {
         into ''
     }
     into destination

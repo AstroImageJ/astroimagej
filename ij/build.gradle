@@ -12,6 +12,10 @@ dependencies {
     implementation 'ch.randelshofer:fastdoubleparser:1.0.0'
 }
 
+artifacts {
+    shippingJar(shadowJar)
+}
+
 def mainClassName = 'ij.ImageJ'
 
 processResources {
@@ -26,14 +30,14 @@ processResources {
 }
 
 jar {
-    FileTree m = fileTree("${rootProject.projectDir}/src/main/resources/plugins/")
-    Collection n = m.include("**/*.jar").grep()
+    //FileTree m = fileTree("${rootProject.projectDir}/src/main/resources/plugins/")
+    //Collection n = m.include("**/*.jar").grep()
 
     archiveFileName = 'ij-standalone.jar'
 
     manifest {
         attributes("Main-Class": mainClassName,
-                   "Class-Path": "plugins/ ${n.collect {'plugins/' + ((File)it).getName()}.join(' ')}")
+                    )//"Class-Path": "plugins/ ${n.collect {'plugins/' + ((File)it).getName()}.join(' ')}")
     }
 }
 

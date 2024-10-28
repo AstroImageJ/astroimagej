@@ -43,8 +43,6 @@ plugins {
 
     id "org.jetbrains.gradle.plugin.idea-ext" version "1.1.+"
 
-    id 'net.nemerosa.versioning' version '3.1.0'
-
     // Used to download test data
     //todo needs a replacement https://github.com/ajoberstar/grgit?tab=readme-ov-file#project-status
     id 'org.ajoberstar.grgit' version '5.+' apply false
@@ -58,19 +56,6 @@ apply plugin: 'io.github.fvarrui.javapackager.plugin'
 def shippingJava = Integer.parseInt(properties['javaShippingVersion'] as String)
 // Minimum Java version binaries should be compatible with
 def targetJava = Integer.parseInt(properties['javaShippingVersion'] as String)
-
-// Declare the version dynamically using the versioning plugin
-def fullVersionProvider = providers.provider {
-    def commitHash = '+' + versioning.info.build
-    def branchName = '+' + versioning.info.branch
-    def dirtySuffix = !versioning.info.dirty ? '' : '+local'
-
-    "${rootProject.version}${branchName}${commitHash}${dirtySuffix}"
-}
-
-subprojects {
-    version = fullVersionProvider.get()
-}
 
 configurations {
     shippingIJ {

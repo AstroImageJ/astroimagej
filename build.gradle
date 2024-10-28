@@ -470,16 +470,12 @@ clean {
 // Generate AIJ-Run directory and set it up for usage
 tasks.register('sync', Sync) {
     //dependsOn 'commonFiles'
-    // Add launch option as input so Sync can properly keep track of everything and be incremental
-    inputs.file(file("${projectDir}/devLaunchOptions.txt"))
 
     with commonDist
     //noinspection GroovyAssignabilityCheck
-    with {
-        from(file("${projectDir}/devLaunchOptions.txt")) {
-            duplicatesStrategy = DuplicatesStrategy.INCLUDE
-            rename { String name -> return "AstroImageJ.cfg" }
-        }
+    from(file("${projectDir}/devLaunchOptions.txt")) {
+        duplicatesStrategy = DuplicatesStrategy.INCLUDE
+        rename { String name -> return "AstroImageJ.cfg" }
     }
     destinationDir(file("${projectDir}/AIJ-Run"))
 }

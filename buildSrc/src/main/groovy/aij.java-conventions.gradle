@@ -8,10 +8,12 @@ repositories {
 
 group 'com.astroimagej'
 
+// Work around potential project isolation issues by using the provider to get values from gradle.properties in
+// the root directory, as opposed to `Integer.parseInt(properties['javaShippingVersion'] as String)`
 // Java version to compile and package with
-def shippingJava = Integer.parseInt(properties['javaShippingVersion'] as String)
+def shippingJava = providers.gradleProperty('javaShippingVersion').map { Integer.parseInt(it) }.get()
 // Minimum Java version binaries should be compatible with
-def targetJava = Integer.parseInt(properties['minJava'] as String)
+def targetJava = providers.gradleProperty('minJava').map { Integer.parseInt(it) }.get()
 
 // Use to share built artifacts with the root project so it can package them
 // https://docs.gradle.org/current/userguide/cross_project_publications.html#sec:simple-sharing-artifacts-between-projects

@@ -414,6 +414,23 @@ def commonDist = project.copySpec {
 
     from("${projectDir}/packageFiles/common") {
         into ''
+        filesMatching('AstroImageJ.cfg') {
+            // Set file permissions to ensure it is writable
+            it.permissions {
+                user {
+                    read = true
+                    write = true
+                }
+                group {
+                    read = true
+                    write = true
+                }
+                other {
+                    read = true
+                    write = true
+                }
+            }
+        }
     }
 
     into('plugins') {
@@ -430,12 +447,7 @@ def commonDist = project.copySpec {
 // This is needed as we create the file paths for the package tasks at config time
 project.sync {
     with commonDist
-    into "${project.layout.buildDirectory.get()}/commonFiles"
-    if (Os.isFamily(Os.FAMILY_MAC) && file("${project.layout.buildDirectory.get()}/commonFiles/AstroImageJ.cfg").exists()) {
-        project.exec {
-            commandLine('chmod',  'a=rw', "${project.layout.buildDirectory.get()}/commonFiles/AstroImageJ.cfg")
-        }
-    }
+    into project.layout.buildDirectory.dir('commonFiles')
 }
 
 /**
@@ -448,14 +460,7 @@ tasks.register('commonFiles', Sync) {
     //dependsOn ':ij:shadowJar', ':Astronomy_:build'
     //mustRunAfter ':ij:shadowJar', ':Astronomy_:build'
     with commonDist
-    into "${project.layout.buildDirectory.get()}/commonFiles"
-    doLast {
-        if (Os.isFamily(Os.FAMILY_MAC) && file("${project.layout.buildDirectory.get()}/commonFiles/AstroImageJ.cfg").exists()) {
-            project.exec {
-                commandLine('chmod', 'a=rw', "${project.layout.buildDirectory.get()}/commonFiles/AstroImageJ.cfg")
-            }
-        }
-    }
+    into project.layout.buildDirectory.dir('commonFiles')
 }
 
 clean {

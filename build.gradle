@@ -589,6 +589,11 @@ javapackager {
     ]
 }
 
+// Use toolchain for packaging
+def packagingJdk = javaToolchains.launcherFor {
+    languageVersion = JavaLanguageVersion.of(shippingJava)
+}
+
 tasks.register('packageAij')
 
 //noinspection GroovyAssignabilityCheck
@@ -613,6 +618,8 @@ javaRuntimeSystemsProperty.get().each {sys, sysInfo ->
                 platform = it
             }
         }
+
+        it.packagingJdk = packagingJdk.map { it.metadata.installationPath }.get().asFile
 
         //noinspection GroovyAssignabilityCheck
         version = project.version

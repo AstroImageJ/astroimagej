@@ -472,11 +472,18 @@ tasks.register('sync', Sync) {
     //dependsOn 'commonFiles'
 
     with commonDist
+
+    // Don't consider aij.log when copying common files, AIJ already resets it on launch
+    // Doing so allows the UP-TO-DATE check to pass
+    exclude('aij.log')
+
+    // Copy launch options to cfg file so editing can be tested
     //noinspection GroovyAssignabilityCheck
     from(file("${projectDir}/devLaunchOptions.txt")) {
         duplicatesStrategy = DuplicatesStrategy.INCLUDE
         rename { String name -> return "AstroImageJ.cfg" }
     }
+
     destinationDir(file("${projectDir}/AIJ-Run"))
 }
 

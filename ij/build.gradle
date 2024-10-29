@@ -7,7 +7,7 @@ dependencies {
     api project(':Nom_Fits')
     implementation 'org.openjdk.nashorn:nashorn-core:15.4'
     api 'de.rototor.pdfbox:graphics2d:3.0.2'
-    api 'net.java.dev.jna:jna-platform:5.14.0'
+    api 'net.java.dev.jna:jna-platform:5.15.0'
     api fileTree(dir: "${rootDir}/aijLibs", include: '*.jar')
     implementation 'ch.randelshofer:fastdoubleparser:1.0.0'
 }

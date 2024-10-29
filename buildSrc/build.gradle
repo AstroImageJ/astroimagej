@@ -8,5 +8,5 @@ repositories {
 }
 
 dependencies {
-    gradleApi()
+
 }

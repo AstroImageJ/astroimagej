@@ -396,8 +396,19 @@ tasks.register('unZipJresTask', Copy) {
 
 // Define what files belong to all distributions and their location
 def commonDist = project.copySpec {
+    // Cannot use configurations.shippingAstro.singleFile as it does not trigger the subproject build correctly
+    // Check that shippingAstro has only one file (Astronomy_.jar)
+    if (configurations.shippingAstro.files.size() != 1) {
+        throw new GradleException("shippingAstro configuration must contain exactly one file")
+    }
+
+    // Check that shippingIJ has only one file (ij.jar)
+    if (configurations.shippingIJ.files.size() != 1) {
+        throw new GradleException("shippingIJ configuration must contain exactly one file")
+    }
+
     // Copy astronomy_.jar to correct place in distribution
-    from(configurations.shippingAstro.singleFile) {
+    from(configurations.shippingAstro) {
         rename { String name -> return 'Astronomy_.jar' }
         into 'plugins'
     }
@@ -428,7 +439,7 @@ def commonDist = project.copySpec {
     }
 
     // Copy ij.jar to correct place in distribution
-    from(configurations.shippingIJ.singleFile) {
+    from(configurations.shippingIJ) {
         into ''
     }
 }
@@ -723,6 +734,16 @@ tasks.withType(PackageTask).configureEach {pkgTsk ->
 tasks.register('copyBuiltJars', Copy) {
     group 'AstroImageJ Development'
 
+    // Check that shippingAstro has only one file (Astronomy_.jar)
+    if (configurations.shippingAstro.files.size() != 1) {
+        throw new GradleException("shippingAstro configuration must contain exactly one file")
+    }
+
+    // Check that shippingIJ has only one file (ij.jar)
+    if (configurations.shippingIJ.files.size() != 1) {
+        throw new GradleException("shippingIJ configuration must contain exactly one file")
+    }
+
     // Workaround for config cache by using provider outside of onlyIf
     def predicate = providers.provider {
         def properDirectory = layout.projectDirectory.file('jarLocation.txt').asFile.exists() &&
@@ -741,7 +762,7 @@ tasks.register('copyBuiltJars', Copy) {
     def destination = outputDestination()
 
     // Copy astronomy_.jar to correct place in distribution
-    from(configurations.shippingAstro.singleFile) {
+    from(configurations.shippingAstro) {
         rename { String name -> return 'Astronomy_.jar' }
         into 'plugins'
     }
@@ -752,7 +773,7 @@ tasks.register('copyBuiltJars', Copy) {
     }
 
     // Copy ij.jar to correct place in distribution
-    from(configurations.shippingIJ.singleFile) {
+    from(configurations.shippingIJ) {
         into ''
     }
     into destination

@@ -234,9 +234,6 @@ public class Photometer {
 
         peak = Float.NEGATIVE_INFINITY;
         if (exact) {
-            //todo allow partial pixels
-            //todo need overlap calculation
-            //todo allow centroiding at later date
             for (FreeformPixelApertureRoi.Pixel pixel : apertureRoi.iterable()) {
                 d = ip.getPixelValue(pixel.x(), pixel.y());
                 if (!Float.isNaN(d)) {

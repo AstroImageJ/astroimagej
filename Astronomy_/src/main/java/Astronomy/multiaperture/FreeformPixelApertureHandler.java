@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BooleanSupplier;
 import java.util.function.DoubleConsumer;
 import java.util.function.DoubleSupplier;
 import java.util.function.IntConsumer;
@@ -34,6 +35,7 @@ public class FreeformPixelApertureHandler {
     private JFrame controlPanel;
     private Runnable playCallback;
     private Runnable shutdownCallback;
+    private BooleanSupplier addApertureCallback;
     private ImagePlus imp;
     private boolean invertBackground = false;
     private boolean copyBackground = false;
@@ -187,6 +189,10 @@ public class FreeformPixelApertureHandler {
 
     public void setExitCallback(Runnable callback) {
         shutdownCallback = callback;
+    }
+
+    public void setAddApertureCallback(BooleanSupplier callback) {
+        addApertureCallback = callback;
     }
 
     public boolean validateApertures() {
@@ -405,15 +411,17 @@ public class FreeformPixelApertureHandler {
         });
 
         addAp.addActionListener($ -> {
-            freeformPixelApertureRois.add(selectedAperture, createNewAperture(compButton.isSelected()));
-            selectorModel.setMaximum(freeformPixelApertureRois.size());
-            selectorModel.setValue(++selectedAperture);
-            useAnnulus.setSelected(currentAperture().hasAnnulus());
-            currentAperture().setCentroidRadius(centroidRadius.getter.getAsDouble());
-            back1Radius.setter().accept(currentAperture().getBack1());
-            back2Radius.setter().accept(currentAperture().getBack2());
-            toggleComponents(back1Radius.box(), useAnnulus.isSelected());
-            toggleComponents(back2Radius.box(), useAnnulus.isSelected());
+            if (addApertureCallback != null && !addApertureCallback.getAsBoolean()) {
+                freeformPixelApertureRois.add(selectedAperture, createNewAperture(compButton.isSelected()));
+                selectorModel.setMaximum(freeformPixelApertureRois.size());
+                selectorModel.setValue(++selectedAperture);
+                useAnnulus.setSelected(currentAperture().hasAnnulus());
+                currentAperture().setCentroidRadius(centroidRadius.getter.getAsDouble());
+                back1Radius.setter().accept(currentAperture().getBack1());
+                back2Radius.setter().accept(currentAperture().getBack2());
+                toggleComponents(back1Radius.box(), useAnnulus.isSelected());
+                toggleComponents(back2Radius.box(), useAnnulus.isSelected());
+            }
             updateDisplay();
             updateHelp.run();
         });

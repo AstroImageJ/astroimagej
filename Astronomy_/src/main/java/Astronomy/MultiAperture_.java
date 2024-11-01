@@ -324,6 +324,20 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             Prefs.set(MultiAperture_.PREFS_CANCELED, "true");
             shutDown();
         });
+        freeformPixelApertureHandler.setAddApertureCallback(() -> {
+            var refCount = 0;
+            if (!autoMode && suggestCompStars && tempSuggestCompStars && ngot >= referenceStar
+                    && (refCount = freeformPixelApertureHandler.apCompCount()) < maxSuggestedStars
+                    && !(this instanceof Stack_Aligner)) {
+
+                if (automaticCompStarSelection(refCount)) {
+                    return true;
+                }
+                suggestionRunning = false;
+            }
+
+            return false;
+        });
     }
 
     //	public static double RETRY_RADIUS = 3.0;
@@ -1456,16 +1470,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             freeformPixelApertureHandler.setImp(imp);
             freeformPixelApertureHandler.currentAperture().setImage(imp);
 
-            var refCount = 0;
-            if (!autoMode && suggestCompStars && tempSuggestCompStars && ngot >= referenceStar
-                    && (refCount = freeformPixelApertureHandler.apCompCount()) < maxSuggestedStars
-                    && !(this instanceof Stack_Aligner)) {
-                if (automaticCompStarSelection(refCount)) {
-                    return;
-                }
-                return;
-            }
-
+            //todo centroid on photometry, needs new button, per aperture
+            //  needs to maintain offset of aperture, offset per aperture
             if (e != dummyClick && e != null && (!mouseDrag || e.isShiftDown())) {
                 var x = canvas.offScreenX(e.getX());
                 var y = canvas.offScreenY(e.getY());

@@ -229,7 +229,8 @@ public class IJ {
 		redirectErrorMessages = false;
 		return thePlugIn;
 	}
-        
+
+	@AstroImageJ(reason = "Print stacktrace on exception during plugin load", modified = true)
 	static Object runUserPlugIn(String commandName, String className, String arg, boolean createNewLoader) {
 		if (IJ.debugMode)
 			IJ.log("runUserPlugIn: "+className+", arg="+argument(arg));
@@ -263,6 +264,7 @@ public class IJ {
 		}
 		catch (InstantiationException e) {error("Unable to load plugin (ins)");}
 		catch (IllegalAccessException e) {error("Unable to load plugin, possibly \nbecause it is not public.");}
+		catch (Exception e) {e.printStackTrace();}
 		if (thePlugIn!=null && !"HandleExtraFileTypes".equals(className))
  			redirectErrorMessages = false;
 		suppressPluginNotFoundError = false;

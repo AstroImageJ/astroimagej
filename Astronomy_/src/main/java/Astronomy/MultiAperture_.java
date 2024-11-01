@@ -2006,15 +2006,15 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                         var t1 = freeformPixelApertureHandler.getAperture(referenceStar-1);
                         var ap = new FreeformPixelApertureRoi();
                         ap.setComparisonStar(true);
-                        t1.copyPixels(ap, false);
                         if (t1.hasAnnulus()) {
                             ap.setHasAnnulus(true);
                             ap.setBack1(t1.getBack1());
                             ap.setBack2(t1.getBack2());
                         }
                         ap.setCentroidRadius(t1.getCentroidRadius());
+                        t1.copyPixels(ap, true);
 
-                        ap.moveTo(coordinateMaxima.cm.x(), coordinateMaxima.cm.y(), false);
+                        ap.moveTo(coordinateMaxima.cm.x(), coordinateMaxima.cm.y(), true);
 
                         freeformPixelApertureHandler.addAperture(ap);
                         ngot++;

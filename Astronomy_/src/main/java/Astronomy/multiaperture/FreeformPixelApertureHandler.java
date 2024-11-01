@@ -83,6 +83,9 @@ public class FreeformPixelApertureHandler {
     }
 
     public FreeformPixelApertureRoi currentAperture() {
+        if (selectedAperture - 1 >= freeformPixelApertureRois.size()) {
+            return null;
+        }
         return freeformPixelApertureRois.get(selectedAperture - 1);
     }
 
@@ -777,6 +780,14 @@ public class FreeformPixelApertureHandler {
         ap.setImage(imp);
         ap.setAppearance(starOverlay, false, skyOverlay, nameOverlay, valueOverlay, null,
                 (ap.isComparisonStar() ? "C" : "T") + (selectedAperture), Double.NaN);
+
+        // Copy annulus settings
+        if (currentAperture() != null) {
+            ap.setHasAnnulus(currentAperture().hasAnnulus());
+            ap.setCentroidRadius(currentAperture().getCentroidRadius());
+            ap.setBack1(currentAperture().getBack1());
+            ap.setBack2(currentAperture().getBack2());
+        }
 
         if (copyBackground) {
             for (FreeformPixelApertureRoi.Pixel pixel : currentAperture().iterable()) {

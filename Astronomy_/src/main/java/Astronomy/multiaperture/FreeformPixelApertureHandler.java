@@ -293,14 +293,14 @@ public class FreeformPixelApertureHandler {
         copyBackground.setSelectedIcon(COPY_FULL_ICON);
         var backgroundFinder = new JButton(AUTO_SKY_ICON);
         var showEstimatedCircularAperture = new JCheckBox("Show estimated circular aperture", SHOW_ESTIMATED_CIRCULAR_APERTURE.get());
-        var showCentroidRadius = new JCheckBox("Show estimated circular aperture", SHOW_CENTROID_RADIUS.get());
+        var showCentroidRadius = new JCheckBox("Show centroid radius", SHOW_CENTROID_RADIUS.get());
         var alwaysOnTop = new JCheckBox("Show panel always on top", ALWAYS_ON_TOP.get());
         var copyShape = new JCheckBox("Copy T1 shape", COPY_T1.get());
-        var centroidShape = new JCheckBox("Centroid on copying of aperture shape", CENTROID_ON_COPY.get());
+        var centroidShape = new JCheckBox("Centroid copied aperture", CENTROID_ON_COPY.get());
         var useAnnulus = new JCheckBox("Use annulus", currentAperture().hasAnnulus());
         var copyR1AsCentroidRadius = new JButton("Copy radius for centroid");
         var centroidRadius = createNumericSlider("Centroid radius", 0.5, 100, 1,
-                currentAperture().getRadius(), radC -> {
+                currentAperture().getCentroidRadius(), radC -> {
                     currentAperture().setCentroidRadius(radC);
                     currentAperture().update();
                 });

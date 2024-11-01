@@ -826,7 +826,7 @@ public class FreeformPixelApertureHandler {
             var hasRBack1 = new AtomicBoolean();
             var hasRBack2 = new AtomicBoolean();
             setting.lines().skip(1).forEachOrdered(line -> {
-                if (line.startsWith("ap customPixel")) {
+                if (line.startsWith("ap\tcustomPixel")) {
                     var old = ap.getAndSet(new FreeformPixelApertureRoi());
                     if (old != null) {
                         apertures.add(old);
@@ -913,7 +913,7 @@ public class FreeformPixelApertureHandler {
         var setting = new StringBuilder("handlerApertures");
 
         for (FreeformPixelApertureRoi aperture : apertures) {
-            setting.append("\nap customPixel");
+            setting.append("\nap\tcustomPixel");
             setting.append('\n');
             setting.append('\t').append("isComp").append('\t').append(aperture.isComparisonStar());
 

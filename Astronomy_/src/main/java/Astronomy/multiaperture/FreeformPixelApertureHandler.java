@@ -299,17 +299,17 @@ public class FreeformPixelApertureHandler {
         var centroidShape = new JCheckBox("Centroid copied aperture", CENTROID_ON_COPY.get());
         var useAnnulus = new JCheckBox("Use annulus", currentAperture().hasAnnulus());
         var copyR1AsCentroidRadius = new JButton("Copy radius for centroid");
-        var centroidRadius = createNumericSlider("Centroid radius", 0.5, 100, 1,
+        var centroidRadius = createNumericSlider("Centroid radius", 0.5, 100, 1, 15,
                 currentAperture().getCentroidRadius(), radC -> {
                     currentAperture().setCentroidRadius(radC);
                     currentAperture().update();
                 });
-        var back1Radius = createNumericSlider("Inner radius", 0.5, 100, 1,
+        var back1Radius = createNumericSlider("Inner radius", 0.5, 100, 1, 30,
                 currentAperture().getBack1(), rad2 -> {
                     currentAperture().setBack1(rad2);
                     currentAperture().update();
                 });
-        var back2Radius = createNumericSlider("Outer radius", 0.5, 100, 1,
+        var back2Radius = createNumericSlider("Outer radius", 0.5, 100, 1, 45,
                 currentAperture().getBack2(), rad3 -> {
                     currentAperture().setBack2(rad3);
                     currentAperture().update();
@@ -501,7 +501,7 @@ public class FreeformPixelApertureHandler {
         addAp.setToolTipText("Insert/Add new aperture and set active");
         compButton.setToolTipText("Toggles between target (green) and comparison (red) star aperture");
         invertBackgroundControl.setToolTipText("Toggle between source and background pixel placement");
-        copyBackground.setToolTipText("Toggles if creating a new aperture should copy the current aperture's background");
+        copyBackground.setToolTipText("Toggles if creating a new aperture should use the current aperture's background");
         beginButton.setToolTipText("Run photometry");
         backgroundFinder.setToolTipText("Automatic background pixel selection based on current image for the active aperture");
         copyShape.setToolTipText("Copy T1 source pixels when creating a new aperture");
@@ -713,11 +713,11 @@ public class FreeformPixelApertureHandler {
         }
     }
 
-    private NumericSlider createNumericSlider(String label, double min, double max, double step, double current, DoubleConsumer pref) {
+    private NumericSlider createNumericSlider(String label, double min, double max, double step, double current, double defVal, DoubleConsumer pref) {
         var b = Box.createHorizontalBox();
 
         if (Double.isNaN(current)) {
-            current = 0;
+            current = defVal;
         }
 
         current = Math.min(max, Math.max(current, min));
@@ -764,6 +764,7 @@ public class FreeformPixelApertureHandler {
 
         b.add(l);
         b.add(slider);
+        b.add(Box.createHorizontalStrut(5));
         b.add(spinner);
 
         return new NumericSlider(b, d -> {

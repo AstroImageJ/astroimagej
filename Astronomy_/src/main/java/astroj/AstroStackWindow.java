@@ -4836,7 +4836,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             File saveFile = new File(imagePath);
             BufferedImage imageDisplay = new BufferedImage(ac.getSize().width, ac.getSize().height, BufferedImage.TYPE_INT_RGB);
             Graphics gg = imageDisplay.createGraphics();
-            ac.paint(gg);
+            ac.paint(gg, false);
             gg.dispose();
             if ("pdf".equals(format)) {
                 new PdfRasterWriter().writeImage(imageDisplay, saveFile.getAbsolutePath());

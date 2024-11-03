@@ -62,6 +62,8 @@ public class FreeformPixelApertureHandler {
     private static final Property<Boolean> ALWAYS_ON_TOP = new Property<>(true, FreeformPixelApertureHandler.class);
     private static final Property<Boolean> CENTROID_ON_COPY = new Property<>(false, FreeformPixelApertureHandler.class);
     private static final Property<Boolean> COPY_T1 = new Property<>(false, FreeformPixelApertureHandler.class);
+    private static final Property<Boolean> COPY_T1_BACKGROUND = new Property<>(false, FreeformPixelApertureHandler.class);
+    private static final Property<Boolean> CENTROID_BACKGROUND = new Property<>(false, FreeformPixelApertureHandler.class);
     private static final int WIDTH = 25;
     private static final int HEIGHT = 25;
     private static final Icon ADD_ICON = UIHelper.createImageIcon("Astronomy/images/icons/multiaperture/add.png", WIDTH, HEIGHT);
@@ -130,7 +132,7 @@ public class FreeformPixelApertureHandler {
         if (COPY_T1.get() && !currentAperture().hasSource() && selectedAperture > 1) {
             var t1 = freeformPixelApertureRois.get(0);
             if (t1.hasSource()) {
-                t1.copyPixels(currentAperture(), false);
+                t1.copyPixels(currentAperture(), COPY_T1_BACKGROUND.get());
                 currentAperture().moveTo(x, y);
 
                 if (CENTROID_ON_COPY.get()) {
@@ -145,7 +147,7 @@ public class FreeformPixelApertureHandler {
                     }
 
                     if (c.measure(imp, currentAperture(), true, usePlane, removeStars)) {
-                        currentAperture().moveTo((int) (c.x() + dx), (int) (c.y() + dy));
+                        currentAperture().moveTo((int) (c.x() + dx), (int) (c.y() + dy), CENTROID_BACKGROUND.get());
                     }
                 }
 
@@ -297,6 +299,8 @@ public class FreeformPixelApertureHandler {
         var alwaysOnTop = new JCheckBox("Show panel always on top", ALWAYS_ON_TOP.get());
         var copyShape = new JCheckBox("Copy T1 shape", COPY_T1.get());
         var centroidShape = new JCheckBox("Centroid copied aperture", CENTROID_ON_COPY.get());
+        var centroidBackground = new JCheckBox("Move background with centroid", CENTROID_BACKGROUND.get());
+        var copyT1Background = new JCheckBox("Copy background shape", COPY_T1_BACKGROUND.get());
         var useAnnulus = new JCheckBox("Use annulus", currentAperture().hasAnnulus());
         var copyR1AsCentroidRadius = new JButton("Copy radius for centroid");
         var centroidRadius = createNumericSlider("Centroid radius", 0.5, 100, 1, 15,
@@ -473,6 +477,14 @@ public class FreeformPixelApertureHandler {
             CENTROID_ON_COPY.set(centroidShape.isSelected());
         });
 
+        copyT1Background.addActionListener($ -> {
+            COPY_T1_BACKGROUND.set(copyT1Background.isSelected());
+        });
+
+        centroidBackground.addActionListener($ -> {
+            CENTROID_BACKGROUND.set(centroidBackground.isSelected());
+        });
+
         useAnnulus.addActionListener($ -> {
             currentAperture().setHasAnnulus(useAnnulus.isSelected());
             currentAperture().setBack1(back1Radius.getter().getAsDouble());
@@ -523,20 +535,25 @@ public class FreeformPixelApertureHandler {
         firstRow.add(beginButton);
         firstRow.add(Box.createHorizontalGlue());
 
+        secondRow.setBorder(BorderFactory.createTitledBorder("Show..."));
         secondRow.add(showEstimatedCircularAperture);
         secondRow.add(alwaysOnTop);
-        secondRow.add(copyShape);
-        secondRow.add(centroidShape);
+        secondRow.add(showCentroidRadius);
 
-        thirdRow.add(showCentroidRadius);
-        thirdRow.add(useAnnulus);
-        thirdRow.add(copyR1AsCentroidRadius);
+        thirdRow.setBorder(BorderFactory.createTitledBorder("When creating new aperture..."));
+        thirdRow.add(copyShape);
+        thirdRow.add(copyT1Background);
+        thirdRow.add(centroidShape);
+        thirdRow.add(centroidBackground);
 
-        forthRow.add(centroidRadius.box());
+        forthRow.add(useAnnulus);
+        forthRow.add(copyR1AsCentroidRadius);
 
-        fifthRow.add(back1Radius.box());
+        fifthRow.add(centroidRadius.box());
 
-        sixthRow.add(back2Radius.box());
+        sixthRow.add(back1Radius.box());
+
+        seventhRow.add(back2Radius.box());
 
         p.add(firstRow);
         p.add(secondRow);

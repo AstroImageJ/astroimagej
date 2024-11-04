@@ -909,6 +909,7 @@ public class FreeformPixelApertureHandler {
                     var old = ap.getAndSet(new FreeformPixelApertureRoi());
                     if (old != null) {
                         apertures.add(old);
+                        old.update();
                     }
                     hasRBack1.set(false);
                     hasRBack2.set(false);
@@ -941,7 +942,7 @@ public class FreeformPixelApertureHandler {
 
                     var x = Integer.parseInt(line.substring(xSep+1, ySep));
                     var y = Integer.parseInt(line.substring(ySep+1, tSep));
-                    ap.get().addPixel(x, y, "background".equals(line.substring(tSep+1)));
+                    ap.get().addPixel(x, y, "background".equals(line.substring(tSep+1)), false);
                 }
 
                 if (line.startsWith("isComp")) {

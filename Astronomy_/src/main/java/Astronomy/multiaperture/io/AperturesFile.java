@@ -83,6 +83,11 @@ public class AperturesFile {
                         ap.get().setComparisonStar(Boolean.parseBoolean(line.substring(tSep+1)));
                     }
 
+                    if (line.startsWith("centroid")) {
+                        var tSep = line.indexOf("\t");
+                        ap.get().setIsCentroid(Boolean.parseBoolean(line.substring(tSep+1)));
+                    }
+
                     if (line.startsWith("rBack1")) {
                         var r1Sep = line.indexOf("\t");
                         if (r1Sep < 0) {
@@ -142,6 +147,11 @@ public class AperturesFile {
                 setting.append("\nap\tcustom_pixel");
                 setting.append('\n');
                 setting.append('\t').append("isComp").append('\t').append(aperture.isComparisonStar());
+
+                if (aperture.getIsCentroid()) {
+                    setting.append('\n').append('\t');
+                    setting.append("centroid").append('\t').append(aperture.getIsCentroid());
+                }
 
                 for (FreeformPixelApertureRoi.Pixel pixel : aperture.iterable()) {
                     setting.append('\n').append('\t');

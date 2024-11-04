@@ -77,6 +77,8 @@ public class FreeformPixelApertureHandler {
     private static final Icon COPY_ICON = UIHelper.createImageIcon("Astronomy/images/icons/multiaperture/copy.png", WIDTH, HEIGHT);
     private static final Icon COPY_FULL_ICON = UIHelper.createImageIcon("Astronomy/images/icons/multiaperture/copyFull.png", WIDTH, HEIGHT);
     private static final Icon AUTO_SKY_ICON = UIHelper.createImageIcon("Astronomy/images/icons/multiaperture/autoSky.png", WIDTH, HEIGHT);
+    private static final Icon CENTROID_ICON = UIHelper.createImageIcon("images/centroid.png", WIDTH, HEIGHT);
+    private static final Icon CENTROID_SELECTED_ICON = UIHelper.createImageIcon("images/centroidselected.png", WIDTH, HEIGHT);
 
     public FreeformPixelApertureHandler() {
         UIHelper.setLookAndFeel();
@@ -294,6 +296,8 @@ public class FreeformPixelApertureHandler {
         var copyBackground = new JToggleButton(COPY_ICON, this.copyBackground);
         copyBackground.setSelectedIcon(COPY_FULL_ICON);
         var backgroundFinder = new JButton(AUTO_SKY_ICON);
+        var centroidPhotometry = new JToggleButton(CENTROID_ICON);
+        centroidPhotometry.setSelectedIcon(CENTROID_SELECTED_ICON);
         var showEstimatedCircularAperture = new JCheckBox("Show estimated circular aperture", SHOW_ESTIMATED_CIRCULAR_APERTURE.get());
         var showCentroidRadius = new JCheckBox("Show centroid radius", SHOW_CENTROID_RADIUS.get());
         var alwaysOnTop = new JCheckBox("Show panel always on top", ALWAYS_ON_TOP.get());
@@ -326,6 +330,7 @@ public class FreeformPixelApertureHandler {
         configureButton(invertBackgroundControl);
         configureButton(copyBackground);
         configureButton(backgroundFinder);
+        configureButton(centroidPhotometry);
 
         if (apSelector.getEditor() instanceof JSpinner.DefaultEditor editor) {
             editor.getTextField().setColumns(5);
@@ -372,6 +377,7 @@ public class FreeformPixelApertureHandler {
             centroidRadius.setter().accept(currentAperture().getCentroidRadius());
             back1Radius.setter().accept(currentAperture().getBack1());
             back2Radius.setter().accept(currentAperture().getBack2());
+            centroidPhotometry.setSelected(currentAperture().getIsCentroid());
             toggleComponents(back1Radius.box(), useAnnulus.isSelected());
             toggleComponents(back2Radius.box(), useAnnulus.isSelected());
             setFocusedAperture();
@@ -386,6 +392,7 @@ public class FreeformPixelApertureHandler {
                 useAnnulus.setSelected(false);
                 selectorModel.setMaximum(1);
                 useAnnulus.setSelected(currentAperture().hasAnnulus());
+                centroidPhotometry.setSelected(false);
                 toggleComponents(back1Radius.box(), useAnnulus.isSelected());
                 toggleComponents(back2Radius.box(), useAnnulus.isSelected());
                 updateDisplay();
@@ -408,6 +415,7 @@ public class FreeformPixelApertureHandler {
             centroidRadius.setter().accept(currentAperture().getCentroidRadius());
             back1Radius.setter().accept(currentAperture().getBack1());
             back2Radius.setter().accept(currentAperture().getBack2());
+            centroidPhotometry.setSelected(currentAperture().getIsCentroid());
             toggleComponents(back1Radius.box(), useAnnulus.isSelected());
             toggleComponents(back2Radius.box(), useAnnulus.isSelected());
             updateDisplay();
@@ -423,6 +431,7 @@ public class FreeformPixelApertureHandler {
                 currentAperture().setCentroidRadius(centroidRadius.getter.getAsDouble());
                 back1Radius.setter().accept(currentAperture().getBack1());
                 back2Radius.setter().accept(currentAperture().getBack2());
+                centroidPhotometry.setSelected(false);
                 toggleComponents(back1Radius.box(), useAnnulus.isSelected());
                 toggleComponents(back2Radius.box(), useAnnulus.isSelected());
             }
@@ -485,6 +494,12 @@ public class FreeformPixelApertureHandler {
             CENTROID_BACKGROUND.set(centroidBackground.isSelected());
         });
 
+        centroidPhotometry.addActionListener($ -> {
+            currentAperture().setIsCentroid(centroidPhotometry.isSelected());
+            currentAperture().update();
+            updateDisplay();
+        });
+
         useAnnulus.addActionListener($ -> {
             currentAperture().setHasAnnulus(useAnnulus.isSelected());
             currentAperture().setBack1(back1Radius.getter().getAsDouble());
@@ -529,6 +544,7 @@ public class FreeformPixelApertureHandler {
         firstRow.add(selector);
         firstRow.add(addAp);
         firstRow.add(compButton);
+        firstRow.add(centroidPhotometry);
         firstRow.add(invertBackgroundControl);
         firstRow.add(backgroundFinder);
         firstRow.add(copyBackground);
@@ -907,6 +923,11 @@ public class FreeformPixelApertureHandler {
                     ap.get().setComparisonStar(Boolean.parseBoolean(line.substring(tSep+1)));
                 }
 
+                if (line.startsWith("centroid")) {
+                    var tSep = line.indexOf("\t");
+                    ap.get().setIsCentroid(Boolean.parseBoolean(line.substring(tSep+1)));
+                }
+
                 if (line.startsWith("rBack1")) {
                     var r1Sep = line.indexOf("\t");
                     if (r1Sep < 0) {
@@ -953,6 +974,11 @@ public class FreeformPixelApertureHandler {
             setting.append("\nap\tcustomPixel");
             setting.append('\n');
             setting.append('\t').append("isComp").append('\t').append(aperture.isComparisonStar());
+
+            if (aperture.getIsCentroid()) {
+                setting.append('\n').append('\t');
+                setting.append("centroid").append('\t').append(aperture.getIsCentroid());
+            }
 
             for (FreeformPixelApertureRoi.Pixel pixel : aperture.iterable()) {
                 setting.append('\n').append('\t');

@@ -20,13 +20,18 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
     private static final Color SOURCE_PIXEL_COLOR = new Color(0, 137, 12);
     private static final Color BACKGROUND_PIXEL_COLOR = new Color(0, 114, 234);
     private static final Color CENTROID_RADIUS_COLOR = new Color(25, 205, 180);
+    private final boolean usePlane = Prefs.get(AP_PREFS_BACKPLANE, false);
+    private final boolean removeStars = Prefs.get(AP_PREFS_REMOVEBACKSTARS, false);
     private final Photometer photometer;
+    private final Centroid centroider = new Centroid();
     private boolean useOffsetPixelCenter = false;
     private SegmentLock segmentLock = null;
     private boolean comparisonStar = false;
     private boolean focusedAperture = false;
     private boolean hasAnnulus;
     private double centroidRadius = Double.NaN;
+    private double photometricX = Double.NaN;
+    private double photometricY = Double.NaN;
 
     public FreeformPixelApertureRoi() {
         this(Double.NaN);
@@ -162,6 +167,8 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
             xPos = Double.NaN;
             yPos = Double.NaN;
             r1 = Double.NaN;
+            photometricX = Double.NaN;
+            photometricY = Double.NaN;
             return;
         }
 
@@ -170,6 +177,19 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
                         Collectors.averagingDouble(Pixel::y), Pair.DoublePair::new));
         xPos = centroid.first();
         yPos = centroid.second();
+
+        if (imp != null && isCentroid) {
+            if (centroider.measure(imp, this, true, usePlane, removeStars)) {
+                photometricX = centroider.x();
+                photometricY = centroider.y();
+            } else {
+                photometricX = Double.NaN;
+                photometricY = Double.NaN;
+            }
+        } else {
+            photometricX = Double.NaN;
+            photometricY = Double.NaN;
+        }
 
         if (pixels.size() > 1) {
             var radius = pixels.stream().filter(Predicate.not(Pixel::isBackground))
@@ -282,14 +302,40 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
 
         // Show center point
         if (FreeformPixelApertureHandler.SHOW_ESTIMATED_CIRCULAR_APERTURE.get()) {
-            g.setColor(Color.MAGENTA);
-            int w1do4 = (int)Math.round(w1d/2.0);
-            int h1do4 = (int)Math.round(h1d/2.0);
-            g.drawLine(sx-w1do4, sy, sx+w1do4, sy);
-            g.drawLine(sx, sy-h1do4, sx, sy+h1do4);
+            g.setColor(transform(Color.MAGENTA));
 
             // Draw apparent circular aperture
             g.drawOval(x1, y1, w1, h1);
+        }
+
+        if (isCentroid) {
+            g.setColor(transform(Color.MAGENTA));
+
+            // Draw Geometric Centroid Mark
+            int w1do4 = (int)Math.round(w1d/8.0);
+            int h1do4 = (int)Math.round(h1d/8.0);
+            g.drawLine(sx-w1do4, sy, sx+w1do4, sy);
+            g.drawLine(sx, sy-h1do4, sx, sy+h1do4);
+
+            // Draw Photometric Centroid Mark
+            useOffsetPixelCenter = true;
+            int psx = screenXD(photometricX);
+            int psy = screenYD(photometricY);
+            double px1d = netFlipX ? screenXD(photometricX+r1) : screenXD(photometricX-r1);
+            int px1 = (int)Math.round(x1d);
+            double pw1d = netFlipX ? screenXD(photometricX-r1)-px1 : screenXD(photometricX+r1)-px1;
+            int pw1 = (int)Math.round(w1d);
+            double py1d = netFlipY ? screenYD(photometricY+r1) : screenYD(photometricY-r1);
+            int py1 = (int)Math.round(y1d);
+            double ph1d = netFlipY ? screenYD(photometricY-r1)-py1 : screenYD(photometricY+r1)-py1;
+            int ph1 = (int)Math.round(h1d);
+            useOffsetPixelCenter = false;
+
+            g.setColor(transform(Color.MAGENTA));
+            int pw1do4 = (int)Math.round(w1d/8.0);
+            int ph1do4 = (int)Math.round(h1d/8.0);
+            g.drawLine(psx-pw1do4, psy-ph1do4, psx+pw1do4, psy+ph1do4);
+            g.drawLine(psx+pw1do4, psy-ph1do4, psx-pw1do4, psy+ph1do4);
         }
 
         // Show background annulus

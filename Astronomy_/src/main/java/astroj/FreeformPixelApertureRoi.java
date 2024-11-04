@@ -403,6 +403,7 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
 
         g.setColor(ColorUtil.midpointColor(getApColor(), Color.BLACK, Color.WHITE));
 
+        xl = x1 + w1 + descent;
         if (showName && showValues && nameText != null && !nameText.isEmpty() && value != null && !value.isEmpty()) {
             g.drawString(nameText + "=" + value, xl, yl);
         } else if(showName && nameText != null && !nameText.isEmpty()) {

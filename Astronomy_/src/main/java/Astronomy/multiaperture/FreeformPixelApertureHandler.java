@@ -24,10 +24,7 @@ import java.util.List;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BooleanSupplier;
-import java.util.function.DoubleConsumer;
-import java.util.function.DoubleSupplier;
-import java.util.function.IntConsumer;
+import java.util.function.*;
 
 import static Astronomy.Aperture_.*;
 import static java.awt.Component.LEFT_ALIGNMENT;
@@ -51,6 +48,7 @@ public class FreeformPixelApertureHandler {
     private final boolean usePlane = Prefs.get(AP_PREFS_BACKPLANE, false);
     private final boolean removeStars = Prefs.get(AP_PREFS_REMOVEBACKSTARS, false);
     private IntConsumer updateCount = i -> {};
+    private Consumer<Boolean> updateCentroid = b -> {};
     public static final Property<List<FreeformPixelApertureRoi>> APS =
             new Property<>(new ArrayList<>(),
                     FreeformPixelApertureHandler::serializeApertures, FreeformPixelApertureHandler::deserializeApertures,
@@ -272,6 +270,7 @@ public class FreeformPixelApertureHandler {
 
         freeformPixelApertureRois.get(0).setFocusedAperture(true);
         updateCount.accept(freeformPixelApertureRois.size());
+        updateCentroid.accept(freeformPixelApertureRois.get(0).getIsCentroid());
     }
 
     private JFrame createControlPanel() {
@@ -552,6 +551,7 @@ public class FreeformPixelApertureHandler {
                 """);
 
         updateCount = selectorModel::setMaximum;
+        updateCentroid = centroidPhotometry::setSelected;
 
         var selector = Box.createHorizontalBox();
         selector.add(apLabel);

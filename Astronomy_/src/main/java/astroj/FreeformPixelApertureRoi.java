@@ -32,6 +32,7 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
     private double centroidRadius = Double.NaN;
     private double photometricX = Double.NaN;
     private double photometricY = Double.NaN;
+    private Pair.DoublePair centroidOffset = new Pair.DoublePair(0, 0);
 
     public FreeformPixelApertureRoi() {
         this(Double.NaN);
@@ -78,6 +79,14 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
             updateSegments();
             updatePhotometry();
         }
+    }
+
+    public void offsetMoveTo(double x1, double y1) {
+        offsetMoveTo(x1, y1, false);
+    }
+
+    public void offsetMoveTo(double x1, double y1, boolean moveBackground) {
+        move((int) (x1-xPos + centroidOffset.first()), (int) (y1-yPos + centroidOffset.second()), moveBackground);
     }
 
     public void moveTo(double x1, double y1) {
@@ -170,6 +179,12 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
 
     public Iterable<Pixel> iterable() {
         return pixels;
+    }
+
+    public void createOffset() {
+        if (isCentroid) {
+            centroidOffset = new Pair.DoublePair(xPos - photometricX, yPos - photometricY);
+        }
     }
 
     private void updateCenter() {

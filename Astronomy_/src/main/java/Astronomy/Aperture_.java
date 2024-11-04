@@ -621,9 +621,51 @@ public class Aperture_ implements PlugInFilter {
         return x.centroidFound;
     }
 
+    protected boolean adjustAperture(boolean updatePhotometry, FreeformPixelApertureRoi roi) {
+        ip = imp.getProcessor();
+        if (stackSize > 1) {
+            ImageStack stack = imp.getImageStack();
+            filename = IJU.getSliceFilename(imp);
+        }
+
+        // GET MEASURMENT PARAMETERS AGAIN IN CASE THEY HAVE CHANGED
+
+        getMeasurementPrefs();
+        showAsCentered = roi.getIsCentroid();
+        reposition = roi.getIsCentroid();
+
+        // GET CENTROID OBJECT FOR MEASURING
+
+
+        var x = adjustAperture(imp, roi);
+        center = x.center;
+        if (roi.getIsCentroid()) {
+            roi.offsetMoveTo(center.x(), center.y(), false);
+        }
+        xWidth = center.width();
+        yWidth = center.height();
+        width = 0.5 * (xWidth + yWidth);
+        angle = center.orientation();
+        if (angle < 0.0) angle += 360.0;
+        round = center.roundness();
+        variance = center.variance();
+        back = center.background();
+        if (updatePhotometry) measurePhotometry();
+
+        count++;
+        return x.centroidFound;
+    }
+
     protected AdjustedAperture adjustAperture(ImagePlus imp, double x, double y, double r, double r2, double r3, boolean centroid) {
         var center = new Centroid();
         boolean returnVal = center.measure(imp, x, y, r, r2, r3, centroid, backIsPlane, removeBackStars);
+
+        return new AdjustedAperture(returnVal, center);
+    }
+
+    protected AdjustedAperture adjustAperture(ImagePlus imp, FreeformPixelApertureRoi roi) {
+        var center = new Centroid();
+        boolean returnVal = center.measure(imp, roi, roi.getIsCentroid(), backIsPlane, removeBackStars);
 
         return new AdjustedAperture(returnVal, center);
     }
@@ -680,7 +722,7 @@ public class Aperture_ implements PlugInFilter {
                 roi.setImage(imp);
                 ocanvas.add(roi);
             } else {
-                apertureRoi.setAppearance(starOverlay, showAsCentered, skyOverlay, nameOverlay, valueOverlay, apertureColor, apertureName, source);
+                apertureRoi.setAppearance(starOverlay, apertureRoi.getIsCentroid(), skyOverlay, nameOverlay, valueOverlay, apertureColor, apertureName, source);
                 apertureRoi.setAMag(apMag);
                 apertureRoi.setImage(imp);
                 ocanvas.add(apertureRoi);
@@ -1037,7 +1079,7 @@ public class Aperture_ implements PlugInFilter {
         clearOverlay = Prefs.get(AP_PREFS_CLEAROVERLAY, clearOverlay);
     }
 
-    record AdjustedAperture(boolean centroidFound, Centroid center) {
+    protected record AdjustedAperture(boolean centroidFound, Centroid center) {
     }
 }
 

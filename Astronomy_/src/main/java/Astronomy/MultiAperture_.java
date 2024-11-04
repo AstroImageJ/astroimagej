@@ -1470,8 +1470,6 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             freeformPixelApertureHandler.setImp(imp);
             freeformPixelApertureHandler.currentAperture().setImage(imp);
 
-            //todo centroid on photometry, needs new button, per aperture
-            //  needs to maintain offset of aperture, offset per aperture
             if (e != dummyClick && e != null && (!mouseDrag || e.isShiftDown())) {
                 var x = canvas.offScreenX(e.getX());
                 var y = canvas.offScreenY(e.getY());
@@ -2045,6 +2043,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             for (int ap = 0; ap < nApertures; ap++) {
                 isRefStar[ap] = freeformPixelApertureHandler.getAperture(ap).isComparisonStar();
                 centroidStar[ap] = false;
+                freeformPixelApertureHandler.getAperture(ap).createOffset();
             }
             aperturesInitialized = true;
             checkResultsTable();
@@ -3790,6 +3789,27 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     setApertureName("C" + (ap + 1));
                     setAbsMag(absMag[ap]);
                 }
+
+                // MEASURE NEW POSITION
+                Prefs.set("aperture.reposition", centroidStar[ap]);
+                centroidFailed = false;
+                if (!adjustAperture(false, freeformPixelApertureHandler.getAperture(ap))) {
+                    if (haltOnError || this instanceof Stack_Aligner) {
+                        Prefs.set("aperture.reposition", holdReposition);
+                        centerROI();
+                        setVariableAperture(false);
+                        IJ.beep();
+                        IJ.showMessage("No signal for centroid in aperture " + apertureName + " of image " +
+                                IJU.getSliceFilename(imp, slice) +
+                                ((this instanceof Stack_Aligner) ? ". Stack Aligner aborted." : ". Multi-Aperture aborted."));
+                        shutDown();
+                        if (table != null) table.setLock(false);
+                        return;
+                    } else {
+                        centroidFailed = true;
+                    }
+                }
+                Prefs.set("aperture.reposition", holdReposition);
 
                 if (!measureAperture(hdr, freeformPixelApertureHandler.getAperture(ap))) {
                     if (haltOnError || this instanceof Stack_Aligner) {

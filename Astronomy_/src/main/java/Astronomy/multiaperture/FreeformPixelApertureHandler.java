@@ -30,6 +30,7 @@ import java.util.function.DoubleSupplier;
 import java.util.function.IntConsumer;
 
 import static Astronomy.Aperture_.*;
+import static java.awt.Component.LEFT_ALIGNMENT;
 
 public class FreeformPixelApertureHandler {
     private final List<FreeformPixelApertureRoi> freeformPixelApertureRois = new ArrayList<>();
@@ -597,6 +598,14 @@ public class FreeformPixelApertureHandler {
         p.add(sixthRow);
         p.add(seventhRow);
         p.add(helpPanel);
+
+        // Left alignment of rows
+        for (Component c : p.getComponents()) {
+            if (c instanceof JComponent c1) {
+                c1.setAlignmentX(LEFT_ALIGNMENT);
+            }
+        }
+
         frame.add(p);
         frame.pack();
 

@@ -9,12 +9,14 @@ import ij.ImagePlus;
 import ij.Prefs;
 import ij.astro.gui.GenericSwingDialog;
 import ij.astro.io.prefs.Property;
+import ij.astro.util.SwingConstantUtil;
 import ij.astro.util.UIHelper;
 import ij.gui.GUI;
 import ij.gui.ImageCanvas;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.awt.event.ItemEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -79,6 +81,7 @@ public class FreeformPixelApertureHandler {
     private static final Icon AUTO_SKY_ICON = UIHelper.createImageIcon("Astronomy/images/icons/multiaperture/autoSky.png", WIDTH, HEIGHT);
     private static final Icon CENTROID_ICON = UIHelper.createImageIcon("images/centroid.png", WIDTH, HEIGHT);
     private static final Icon CENTROID_SELECTED_ICON = UIHelper.createImageIcon("images/centroidselected.png", WIDTH, HEIGHT);
+    private static final Icon CENTROID_AP_ICON = UIHelper.createImageIcon("images/centroidAp.png", WIDTH, HEIGHT);
 
     public FreeformPixelApertureHandler() {
         UIHelper.setLookAndFeel();
@@ -307,6 +310,7 @@ public class FreeformPixelApertureHandler {
         var copyT1Background = new JCheckBox("Copy background shape", COPY_T1_BACKGROUND.get());
         var useAnnulus = new JCheckBox("Use annulus", currentAperture().hasAnnulus());
         var copyR1AsCentroidRadius = new JButton("Copy radius for centroid");
+        var centroidAperture = new JButton(CENTROID_AP_ICON);
         var centroidRadius = createNumericSlider("Centroid radius", 0.5, 100, 1, 15,
                 currentAperture().getCentroidRadius(), radC -> {
                     currentAperture().setCentroidRadius(radC);
@@ -331,6 +335,7 @@ public class FreeformPixelApertureHandler {
         configureButton(copyBackground);
         configureButton(backgroundFinder);
         configureButton(centroidPhotometry);
+        configureButton(centroidAperture);
 
         if (apSelector.getEditor() instanceof JSpinner.DefaultEditor editor) {
             editor.getTextField().setColumns(5);
@@ -509,6 +514,11 @@ public class FreeformPixelApertureHandler {
             updateDisplay();
         });
 
+        centroidAperture.addActionListener(l -> {
+            currentAperture().centroidAperture(SwingConstantUtil.hasModifier(l.getModifiers(), ActionEvent.SHIFT_MASK));
+            updateDisplay();
+        });
+
         toggleComponents(back1Radius.box(), useAnnulus.isSelected());
         toggleComponents(back2Radius.box(), useAnnulus.isSelected());
 
@@ -533,6 +543,12 @@ public class FreeformPixelApertureHandler {
         backgroundFinder.setToolTipText("Automatic background pixel selection based on current image for the active aperture");
         copyShape.setToolTipText("Copy T1 source pixels when creating a new aperture");
         centroidShape.setToolTipText("Centroid copied source pixels from T1");
+        centroidAperture.setToolTipText("""
+                <html>
+                Move aperture to be centered on photometric centroid.<br>
+                Hold shift to move also background.
+                </html>
+                """);
 
         updateCount = selectorModel::setMaximum;
 
@@ -547,6 +563,7 @@ public class FreeformPixelApertureHandler {
         firstRow.add(centroidPhotometry);
         firstRow.add(invertBackgroundControl);
         firstRow.add(backgroundFinder);
+        firstRow.add(centroidAperture);
         firstRow.add(copyBackground);
         firstRow.add(beginButton);
         firstRow.add(Box.createHorizontalGlue());

@@ -158,6 +158,16 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
         }
     }
 
+    public void centroidAperture(boolean withBackground) {
+        updatePhotometricCenter(true);
+
+        if (Double.isNaN(photometricX) || Double.isNaN(photometricY)) {
+            return;
+        }
+
+        moveTo(photometricX, photometricY, withBackground);
+    }
+
     public Iterable<Pixel> iterable() {
         return pixels;
     }
@@ -178,18 +188,7 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
         xPos = centroid.first();
         yPos = centroid.second();
 
-        if (imp != null && isCentroid) {
-            if (centroider.measure(imp, this, true, usePlane, removeStars)) {
-                photometricX = centroider.x();
-                photometricY = centroider.y();
-            } else {
-                photometricX = Double.NaN;
-                photometricY = Double.NaN;
-            }
-        } else {
-            photometricX = Double.NaN;
-            photometricY = Double.NaN;
-        }
+        updatePhotometricCenter(isCentroid);
 
         if (pixels.size() > 1) {
             var radius = pixels.stream().filter(Predicate.not(Pixel::isBackground))
@@ -200,6 +199,22 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
             r1 = Math.sqrt(radius);
         } else {
             r1 = Centroid.PIXELCENTER;
+        }
+    }
+
+    private void updatePhotometricCenter(boolean performCentroid) {
+        if (imp == null || !performCentroid) {
+            photometricX = Double.NaN;
+            photometricY = Double.NaN;
+            return;
+        }
+
+        if (centroider.measure(imp, this, true, usePlane, removeStars)) {
+            photometricX = centroider.x();
+            photometricY = centroider.y();
+        } else {
+            photometricX = Double.NaN;
+            photometricY = Double.NaN;
         }
     }
 

@@ -640,7 +640,7 @@ public class Aperture_ implements PlugInFilter {
         var x = adjustAperture(imp, roi);
         center = x.center;
         if (roi.getIsCentroid()) {
-            roi.offsetMoveTo(center.x(), center.y(), false);
+            roi.offsetMoveTo(center.x(), center.y(), true);
         }
         xWidth = center.width();
         yWidth = center.height();

@@ -551,6 +551,14 @@ public class FreeformPixelApertureHandler {
                 Hold shift to move also background.
                 </html>
                 """);
+        centroidAperture.setToolTipText("""
+                <html>
+                Toggles if during photometry if the aperture should be centroided.<br>
+                Centroiding maintains the offset between the geometric center and photometric center of the aperture \
+                from the first image.
+                </html>
+                """);
+        copyR1AsCentroidRadius.setToolTipText("Copy the estimated circular radius to be used as the centroid radius");
 
         updateCount = selectorModel::setMaximum;
         updateCentroid = centroidPhotometry::setSelected;

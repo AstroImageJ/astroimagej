@@ -87,7 +87,6 @@ public class FreeformPixelApertureHandler {
         this.freeformPixelApertureRois.add(createNewAperture(false));
         updateApertureNames();
         freeformPixelApertureRois.get(0).setFocusedAperture(true);
-        controlPanel = createControlPanel();
     }
 
     public FreeformPixelApertureRoi currentAperture() {
@@ -301,7 +300,7 @@ public class FreeformPixelApertureHandler {
         var copyBackground = new JToggleButton(COPY_ICON, this.copyBackground);
         copyBackground.setSelectedIcon(COPY_FULL_ICON);
         var backgroundFinder = new JButton(AUTO_SKY_ICON);
-        var centroidPhotometry = new JToggleButton(CENTROID_ICON);
+        var centroidPhotometry = new JToggleButton(CENTROID_ICON, currentAperture().getIsCentroid());
         centroidPhotometry.setSelectedIcon(CENTROID_SELECTED_ICON);
         var showEstimatedCircularAperture = new JCheckBox("Show estimated circular aperture", SHOW_ESTIMATED_CIRCULAR_APERTURE.get());
         var showCentroidRadius = new JCheckBox("Show centroid radius", SHOW_CENTROID_RADIUS.get());

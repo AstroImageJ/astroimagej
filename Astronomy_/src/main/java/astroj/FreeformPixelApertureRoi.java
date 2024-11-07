@@ -203,8 +203,6 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
         xPos = centroid.first();
         yPos = centroid.second();
 
-        updatePhotometricCenter(isCentroid);
-
         if (pixels.size() > 1) {
             var radius = pixels.stream().filter(Predicate.not(Pixel::isBackground))
                     .mapToDouble(p -> (p.x - xPos + Centroid.PIXELCENTER) * (p.x - xPos + Centroid.PIXELCENTER) +
@@ -215,6 +213,8 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
         } else {
             r1 = Centroid.PIXELCENTER;
         }
+
+        updatePhotometricCenter(isCentroid);
     }
 
     private void updatePhotometricCenter(boolean performCentroid) {

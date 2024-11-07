@@ -348,7 +348,6 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
             g.drawLine(sx, sy-h1do4, sx, sy+h1do4);
 
             // Draw Photometric Centroid Mark
-            useOffsetPixelCenter = true;
             int psx = screenXD(photometricX);
             int psy = screenYD(photometricY);
             double px1d = netFlipX ? screenXD(photometricX+r1) : screenXD(photometricX-r1);

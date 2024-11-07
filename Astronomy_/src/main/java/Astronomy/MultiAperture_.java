@@ -2018,6 +2018,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                         ap.setCentroidRadius(t1.getCentroidRadius());
                         t1.copyPixels(ap, true);
 
+                        ap.setIsCentroid(t1.getIsCentroid());
+
                         ap.moveTo(coordinateMaxima.cm.x(), coordinateMaxima.cm.y(), true);
 
                         freeformPixelApertureHandler.addAperture(ap);

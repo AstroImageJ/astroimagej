@@ -751,12 +751,13 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         }
 
         if (apertureShape.get() == ApertureShape.FREEFORM) {
+            freeformPixelApertureHandler.setImp(imp);
+
             if (apLoading.get().isPrevious()) {
                 freeformPixelApertureHandler.loadAperturesFromPrefs(apLoading.get() == ApLoading.FIRST_PREVIOUS, apLoading.get() == ApLoading.IMPORTED);
                 ngot = freeformPixelApertureHandler.apCount();
             }
 
-            freeformPixelApertureHandler.setImp(imp);
             freeformPixelApertureHandler.setPlayCallback(this::runCustomAperture);
             freeformPixelApertureHandler.showControls();
             if (ac != null) {

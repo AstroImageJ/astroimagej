@@ -309,7 +309,7 @@ public class FreeformPixelApertureHandler {
         var centroidBackground = new JCheckBox("Move background with centroid", CENTROID_BACKGROUND.get());
         var copyT1Background = new JCheckBox("Copy background shape", COPY_T1_BACKGROUND.get());
         var useAnnulus = new JCheckBox("Use annulus", currentAperture().hasAnnulus());
-        var copyR1AsCentroidRadius = new JButton("Copy radius for centroid");
+        var copyR1AsCentroidRadius = new JButton("Copy estimated radius for centroid");
         var centroidAperture = new JButton(CENTROID_AP_ICON);
         var centroidRadius = createNumericSlider("Centroid radius", 0.5, 100, 1, 15,
                 currentAperture().getCentroidRadius(), radC -> {

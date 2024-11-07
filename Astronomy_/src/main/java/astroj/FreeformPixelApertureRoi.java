@@ -2,6 +2,7 @@ package astroj;
 
 import Astronomy.multiaperture.FreeformPixelApertureHandler;
 import ij.IJ;
+import ij.ImagePlus;
 import ij.Prefs;
 import ij.astro.types.Pair;
 import util.ColorUtil;
@@ -557,6 +558,15 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
 
     public double getCentroidRadius() {
         return Double.isNaN(centroidRadius) ? r1 : centroidRadius;
+    }
+
+    @Override
+    public void setImage(ImagePlus imp) {
+        if (imp != null && this.imp != imp) {
+            super.setImage(imp);
+            updatePhotometricCenter(isCentroid);
+            updatePhotometry();
+        }
     }
 
     private record Segment(int x0, int y0, int x1, int y1, boolean isBackground, SegmentSide segmentSide) {}

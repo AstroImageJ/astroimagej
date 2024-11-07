@@ -330,7 +330,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     && (refCount = freeformPixelApertureHandler.apCompCount()) < maxSuggestedStars
                     && !(this instanceof Stack_Aligner)) {
 
-                if (automaticCompStarSelection(refCount)) {
+                if (!automaticCompStarSelection(refCount)) {
+                    suggestionRunning = false;
                     return true;
                 }
                 suggestionRunning = false;
@@ -1831,7 +1832,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             }
 
             if (!autoMode && suggestCompStars && tempSuggestCompStars && ngot >= referenceStar && refCount < maxSuggestedStars && !(this instanceof Stack_Aligner)) {
-                if (automaticCompStarSelection(refCount)) {
+                if (!automaticCompStarSelection(refCount)) {
+                    suggestionRunning = false;
                     return;
                 }
             }

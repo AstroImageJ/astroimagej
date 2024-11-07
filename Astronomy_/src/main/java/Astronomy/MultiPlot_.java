@@ -2162,6 +2162,24 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         plotImage = WindowManager.getImage("Plot of " + tableName);
 
+        if (drawAijVersion.get()) {
+            plot.setFont(plot.getDefaultFont());
+            plot.setJustification(Plot.RIGHT);
+            var version = "AIJ " + IJ.getAstroVersion().split("[+]")[0];
+            var pWid = plot.getSize().getWidth();
+            var h = plot.getSize().getHeight();
+            plot.addLabel(1, (h + 43)/h, version);
+        }
+
+        if (showCleanedCount.get()) {
+            plot.setFont(plot.getDefaultFont());
+            plot.setJustification(Plot.LEFT);
+            var removedCount = FitOptimization.cleanedCount() + "/" + FitOptimization.oldestCleanedTableCount() + " Removed";
+            var pWid = plot.getSize().getWidth();
+            var h = plot.getSize().getHeight();
+            plot.addLabel(10/pWid, (h + 43)/h, removedCount);
+        }
+
         if (plotImage == null) {
             // Freeze plot as we draw it again later
             plot.setFrozen(true);
@@ -2268,28 +2286,17 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             ((PlotCanvas) plotImageCanvas).setZoomed(() -> zoomY != 0 || zoomX != 0 || draggableShape.isPlotScaleDirty());
         }
 
-        if (drawAijVersion.get()) {
-            plot.changeFont(new Font("Dialog", Font.PLAIN, 12));
-            plot.setJustification(Plot.BOTTOM_RIGHT);
-            var version = "AIJ " + IJ.getAstroVersion().split("[+]")[0];
-            var wid = plotImage.getImage().getGraphics().getFontMetrics(plot.getCurrentFont()).stringWidth(version);
-            var pWid = plot.getSize().getWidth();
-            var h = plot.getSize().getHeight();
-            plot.addLabel((pWid - wid - 10)/pWid, (h + 43)/h, version);
+        try {
+            if (SwingUtilities.isEventDispatchThread()) {
+                plot.update();
+            } else {
+                SwingUtilities.invokeAndWait(() -> {
+                    plot.update();
+                });
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-
-        if (showCleanedCount.get()) {
-            plot.changeFont(new Font("Dialog", Font.PLAIN, 12));
-            plot.setJustification(Plot.BOTTOM_RIGHT);
-            var removedCount = FitOptimization.cleanedCount() + "/" + FitOptimization.oldestCleanedTableCount() + " Removed";
-            var metrics = plotImage.getImage().getGraphics().getFontMetrics(plot.getCurrentFont());
-            var wid = metrics.stringWidth(removedCount);
-            var pWid = plot.getSize().getWidth();
-            var h = plot.getSize().getHeight();
-            plot.addLabel(10/pWid, (h + 43)/h, removedCount);
-        }
-
-        plot.update();
 
         plotbottompanel = (Panel) plotWindow.getComponent(1);
         plotbottompanel.getComponentCount();

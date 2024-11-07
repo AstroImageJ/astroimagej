@@ -437,9 +437,9 @@ public class FreeformPixelApertureHandler {
                 selectorModel.setValue(++selectedAperture);
                 useAnnulus.setSelected(currentAperture().hasAnnulus());
                 currentAperture().setCentroidRadius(centroidRadius.getter.getAsDouble());
+                centroidPhotometry.setSelected(currentAperture().getIsCentroid());
                 back1Radius.setter().accept(currentAperture().getBack1());
                 back2Radius.setter().accept(currentAperture().getBack2());
-                centroidPhotometry.setSelected(false);
                 toggleComponents(back1Radius.box(), useAnnulus.isSelected());
                 toggleComponents(back2Radius.box(), useAnnulus.isSelected());
             }
@@ -858,6 +858,7 @@ public class FreeformPixelApertureHandler {
             ap.setCentroidRadius(currentAperture().getCentroidRadius());
             ap.setBack1(currentAperture().getBack1());
             ap.setBack2(currentAperture().getBack2());
+            ap.setIsCentroid(currentAperture().getIsCentroid());
         }
 
         if (copyBackground) {

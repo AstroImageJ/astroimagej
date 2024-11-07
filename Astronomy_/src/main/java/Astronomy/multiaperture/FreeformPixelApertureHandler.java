@@ -117,6 +117,8 @@ public class FreeformPixelApertureHandler {
 
         ap.setName((ap.isComparisonStar() ? "C" : "T") + (freeformPixelApertureRois.size()));
 
+        ap.update();
+
         if (OverlayCanvas.hasOverlayCanvas(imp)) {
             OverlayCanvas.getOverlayCanvas(imp).add(ap);
         }

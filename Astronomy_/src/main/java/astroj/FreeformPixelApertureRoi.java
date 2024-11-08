@@ -91,6 +91,9 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
     }
 
     public void offsetMoveTo(double x1, double y1, boolean moveBackground) {
+        if (!pixels.isEmpty() && Double.isNaN(r1) && Double.isNaN(xPos) && Double.isNaN(yPos)) {
+            updateCenter();
+        }
         move((int) (x1-xPos + centroidOffset.first()), (int) (y1-yPos + centroidOffset.second()), moveBackground);
     }
 
@@ -99,6 +102,9 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
     }
 
     public void moveTo(double x1, double y1, boolean moveBackground) {
+        if (!pixels.isEmpty() && Double.isNaN(r1) && Double.isNaN(xPos) && Double.isNaN(yPos)) {
+            updateCenter();
+        }
         move((int) (x1-xPos), (int) (y1-yPos), moveBackground);
     }
 
@@ -107,6 +113,9 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
     }
 
     public void moveTo(int x1, int y1, boolean moveBackground) {
+        if (!pixels.isEmpty() && Double.isNaN(r1) && Double.isNaN(xPos) && Double.isNaN(yPos)) {
+            updateCenter();
+        }
         move((int) (x1-xPos), (int) (y1-yPos), moveBackground);
     }
 

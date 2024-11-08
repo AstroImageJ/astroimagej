@@ -755,6 +755,14 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             if (apLoading.get().isPrevious()) {
                 freeformPixelApertureHandler.loadAperturesFromPrefs(apLoading.get() == ApLoading.FIRST_PREVIOUS, apLoading.get() == ApLoading.IMPORTED);
                 ngot = freeformPixelApertureHandler.apCount();
+
+                for (int i = 0; i < freeformPixelApertureHandler.apCount(); i++) {
+                    var roi = freeformPixelApertureHandler.getAperture(i);
+                    if (useWCS && roi.hasRadec() && wcs != null) {
+                        var np = wcs.wcs2pixels(new double[]{roi.getRightAscension(), roi.getDeclination()});
+                        roi.moveTo(np[0], np[1]);
+                    }
+                }
             }
 
             freeformPixelApertureHandler.setImp(imp);
@@ -3794,6 +3802,30 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     setAbsMag(absMag[ap]);
                 }
 
+                if ((useMA || useAlign) && useWCS) {
+                    if (hasWCS && freeformPixelApertureHandler.getAperture(ap).hasRadec()) {
+                        var roi = freeformPixelApertureHandler.getAperture(ap);
+                        double[] xy = wcs.wcs2pixels(new double[]{roi.getRightAscension(), roi.getDeclination()});
+                        freeformPixelApertureHandler.getAperture(ap).moveTo(xy[0], xy[1]);
+                    } else if (freeformPixelApertureHandler.getAperture(ap).hasRadec()) {
+                        IJ.beep();
+                        IJ.showMessage("Error", "WCS mode requested but no valid WCS coordinates stored. ABORTING.");
+                        Prefs.set(MultiAperture_.PREFS_CANCELED, "true");
+                        cancelled = true;
+                        shutDown();
+                        if (table != null) table.setLock(false);
+                        return;
+                    } else if (haltOnError) {
+                        IJ.beep();
+                        IJ.showMessage("Error", "WCS mode requested but no valid WCS FITS Headers. ABORTING.");
+                        Prefs.set(MultiAperture_.PREFS_CANCELED, "true");
+                        cancelled = true;
+                        shutDown();
+                        if (table != null) table.setLock(false);
+                        return;
+                    }
+                }
+
                 // MEASURE NEW POSITION
                 Prefs.set("aperture.reposition", centroidStar[ap]);
                 centroidFailed = false;
@@ -4667,6 +4699,13 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     gd.addDoubleSpaceLineSeparator();
                 }
                 case FREEFORM -> {
+                    gd.addCheckbox("Use RA/Dec to locate aperture positions", useWCS, b -> useWCS = b)
+                            .setToolTipText("<html>If enabled, apertures will first be placed according to their RA and DEC location.<br>"+
+                                    "If centroid is also enabled for an aperture, the centroid operation will start from the RA and Dec position.<br>"+
+                                    "If 'Halt on WCS error' below is disabled, mixed mode RA-Dec and X-Y placement is possible.<br>" +
+                                    "Mixed-mode is useful if plate solving is slow. In this mode, only the first image and any subsequent image<br>"+
+                                    "with a large shift on the detector, such as a meridian flip, need to be plate solved.</html>");
+                    gd.addDoubleSpaceLineSeparator();
                 }
             }
         });
@@ -4907,12 +4946,13 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     penultimateBoxes.subComponents().get(3).setToolTipText("Enable to fit a plane to the background pixels to attempt to account for large background gradients in the images.");
                 }
                 case FREEFORM -> {
-                    var penultimateBoxes = d.addCheckboxGroup(1, 2, new String[]{"Remove stars from background", "Assume background is a plane"},
-                            new boolean[]{removeBackStars, backIsPlane}, list1.subList(2, 4));
-                    penultimateBoxes.subComponents().get(0).setToolTipText("<html>Enable to use an interative 2-sigma outlier removal technique to ignore pixels in the background region<br>"+
+                    var penultimateBoxes = d.addCheckboxGroup(1, 3, new String[]{"Halt processing on WCS or centroid error", "Remove stars from background", "Assume background is a plane"},
+                            new boolean[]{haltOnError, removeBackStars, backIsPlane}, list1.subList(1, 4));
+                    penultimateBoxes.subComponents().get(0).setToolTipText("Enable to halt Multi-aperture if centroid fails, or if 'Use RA-Dec' is selected, but an image is not plate solved.");
+                    penultimateBoxes.subComponents().get(1).setToolTipText("<html>Enable to use an interative 2-sigma outlier removal technique to ignore pixels in the background region<br>"+
                             "that are statistically brighter or darker than other pixels. This mode is generally recommended and<br>"+
                             "effectively causes Multi-aperture to ignore pixels containing stars within the background region.</html>");
-                    penultimateBoxes.subComponents().get(1).setToolTipText("Enable to fit a plane to the background pixels to attempt to account for large background gradients in the images.");
+                    penultimateBoxes.subComponents().get(2).setToolTipText("Enable to fit a plane to the background pixels to attempt to account for large background gradients in the images.");
                 }
             }
         });

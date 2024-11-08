@@ -238,6 +238,9 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
     public void draw(Graphics g) {
         if (!hasPixels()) {
             return;
+        } else if (Double.isNaN(r1) && Double.isNaN(xPos) && Double.isNaN(yPos)) {
+            // Update the aperture for rendering if there are pixels but we have invalid position
+            update();
         }
 
         useOffsetPixelCenter = false;

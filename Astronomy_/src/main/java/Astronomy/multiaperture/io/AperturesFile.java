@@ -116,6 +116,22 @@ public class AperturesFile {
                     if (hasRBack1.get() && hasRBack2.get()) {
                         ap.get().setHasAnnulus(true);
                     }
+
+                    if (line.startsWith("radec")) {
+                        var raSep = line.indexOf("\t");
+                        if (raSep < 0) {
+                            throw new IllegalStateException("Missing raSep! " + line);
+                        }
+
+                        var decSep = line.indexOf("\t", raSep+1);
+                        if (decSep < 0) {
+                            throw new IllegalStateException("Missing decSep! " + line);
+                        }
+
+                        var ra = Double.parseDouble(line.substring(raSep+1, decSep));
+                        var dec = Double.parseDouble(line.substring(decSep+1));
+                        ap.get().setRadec(ra, dec);
+                    }
                 } else {
                     var s = line.split("\t", 2);
                     if (s.length == 2) {
@@ -152,6 +168,12 @@ public class AperturesFile {
                 if (aperture.getIsCentroid()) {
                     setting.append('\n').append('\t');
                     setting.append("centroid").append('\t').append(aperture.getIsCentroid());
+                }
+
+                if (aperture.hasRadec()) {
+                    setting.append('\n').append('\t');
+                    setting.append("radec").append('\t').append(aperture.getRightAscension())
+                            .append('\t').append(aperture.getDeclination());
                 }
 
                 for (FreeformPixelApertureRoi.Pixel pixel : aperture.iterable()) {

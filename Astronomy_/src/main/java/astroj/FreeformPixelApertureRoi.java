@@ -34,6 +34,10 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
     private double photometricX = Double.NaN;
     private double photometricY = Double.NaN;
     private Pair.DoublePair centroidOffset = new Pair.DoublePair(0, 0);
+    /**
+     * RA/DEC position of the geometric center (xPos, yPos) of this aperture
+     */
+    private Pair.DoublePair radec;
 
     public FreeformPixelApertureRoi() {
         this(Double.NaN);
@@ -184,6 +188,10 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
 
     public void createOffset() {
         if (isCentroid) {
+            if (!pixels.isEmpty() && Double.isNaN(r1) && Double.isNaN(xPos) && Double.isNaN(yPos)) {
+                // Update the aperture for rendering if there are pixels but we have invalid position
+                update();
+            }
             centroidOffset = new Pair.DoublePair(xPos - photometricX, yPos - photometricY);
         }
     }
@@ -570,6 +578,26 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
             updatePhotometricCenter(isCentroid);
             updatePhotometry();
         }
+    }
+
+    public void setRadec(double ra, double dec) {
+        setRadec(new Pair.DoublePair(ra, dec));
+    }
+
+    public void setRadec(Pair.DoublePair radec) {
+        this.radec = radec;
+    }
+
+    public boolean hasRadec() {
+        return radec != null && !Double.isNaN(radec.first()) && !Double.isNaN(radec.second());
+    }
+
+    public double getRightAscension() {
+        return radec == null ? Double.NaN : radec.first();
+    }
+
+    public double getDeclination() {
+        return radec == null ? Double.NaN : radec.second();
     }
 
     private record Segment(int x0, int y0, int x1, int y1, boolean isBackground, SegmentSide segmentSide) {}

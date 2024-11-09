@@ -81,6 +81,7 @@ public class FreeformPixelApertureHandler {
     private static final Icon CENTROID_ICON = UIHelper.createImageIcon("images/centroid.png", WIDTH, HEIGHT);
     private static final Icon CENTROID_SELECTED_ICON = UIHelper.createImageIcon("images/centroidselected.png", WIDTH, HEIGHT);
     private static final Icon CENTROID_AP_ICON = UIHelper.createImageIcon("images/centroidAp.png", WIDTH, HEIGHT);
+    private static final Image ASTRO_ICON = UIHelper.createImage("astronomy_icon.png");
 
     public FreeformPixelApertureHandler() {
         UIHelper.setLookAndFeel();
@@ -293,7 +294,7 @@ public class FreeformPixelApertureHandler {
 
     private JFrame createControlPanel() {
         var frame = new JFrame("Aperture Control Panel");
-        frame.setIconImage(UIHelper.createImage("astronomy_icon.png"));
+        frame.setIconImage(ASTRO_ICON);
         var p = Box.createVerticalBox();
         var firstRow = Box.createHorizontalBox();
         var secondRow = Box.createHorizontalBox();
@@ -820,7 +821,7 @@ public class FreeformPixelApertureHandler {
         }
     }
 
-    private NumericSlider createNumericSlider(String label, double min, double max, double step, double current, double defVal, DoubleConsumer pref) {
+    private NumericSlider createNumericSlider(String label, double min, double max, double step, double defVal, double current, DoubleConsumer pref) {
         if (Double.isNaN(current)) {
             current = defVal;
         }

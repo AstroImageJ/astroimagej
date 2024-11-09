@@ -240,6 +240,8 @@ public class FreeformPixelApertureHandler {
             if (hasWCS && CAPTURE_RADEC.get()) {
                 var radec = wcs.pixels2wcs(new double[]{roi.getXpos(), roi.getYpos()});
                 roi.setRadec(radec[0], radec[1]);
+            } else if (!CAPTURE_RADEC.get()) {
+                roi.setRadec(null);
             }
         }
 

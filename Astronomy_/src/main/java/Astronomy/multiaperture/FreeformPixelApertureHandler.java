@@ -405,8 +405,8 @@ public class FreeformPixelApertureHandler {
             back1Radius.setter().accept(currentAperture().getBack1());
             back2Radius.setter().accept(currentAperture().getBack2());
             centroidPhotometry.setSelected(currentAperture().getIsCentroid());
-            toggleComponents(back1Radius.box(), useAnnulus.isSelected());
-            toggleComponents(back2Radius.box(), useAnnulus.isSelected());
+            toggleComponents(back1Radius.cs(), useAnnulus.isSelected());
+            toggleComponents(back2Radius.cs(), useAnnulus.isSelected());
             setFocusedAperture();
             updateDisplay(false);
             updateHelp.run();
@@ -420,8 +420,8 @@ public class FreeformPixelApertureHandler {
                 selectorModel.setMaximum(1);
                 useAnnulus.setSelected(currentAperture().hasAnnulus());
                 centroidPhotometry.setSelected(false);
-                toggleComponents(back1Radius.box(), useAnnulus.isSelected());
-                toggleComponents(back2Radius.box(), useAnnulus.isSelected());
+                toggleComponents(back1Radius.cs(), useAnnulus.isSelected());
+                toggleComponents(back2Radius.cs(), useAnnulus.isSelected());
                 updateDisplay();
                 return;
             }
@@ -443,8 +443,8 @@ public class FreeformPixelApertureHandler {
             back1Radius.setter().accept(currentAperture().getBack1());
             back2Radius.setter().accept(currentAperture().getBack2());
             centroidPhotometry.setSelected(currentAperture().getIsCentroid());
-            toggleComponents(back1Radius.box(), useAnnulus.isSelected());
-            toggleComponents(back2Radius.box(), useAnnulus.isSelected());
+            toggleComponents(back1Radius.cs(), useAnnulus.isSelected());
+            toggleComponents(back2Radius.cs(), useAnnulus.isSelected());
             updateDisplay();
             updateHelp.run();
         });
@@ -459,8 +459,8 @@ public class FreeformPixelApertureHandler {
                 centroidPhotometry.setSelected(currentAperture().getIsCentroid());
                 back1Radius.setter().accept(currentAperture().getBack1());
                 back2Radius.setter().accept(currentAperture().getBack2());
-                toggleComponents(back1Radius.box(), useAnnulus.isSelected());
-                toggleComponents(back2Radius.box(), useAnnulus.isSelected());
+                toggleComponents(back1Radius.cs(), useAnnulus.isSelected());
+                toggleComponents(back2Radius.cs(), useAnnulus.isSelected());
             }
             updateDisplay();
             updateHelp.run();
@@ -531,8 +531,8 @@ public class FreeformPixelApertureHandler {
             currentAperture().setHasAnnulus(useAnnulus.isSelected());
             currentAperture().setBack1(back1Radius.getter().getAsDouble());
             currentAperture().setBack2(back2Radius.getter().getAsDouble());
-            toggleComponents(back1Radius.box(), useAnnulus.isSelected());
-            toggleComponents(back2Radius.box(), useAnnulus.isSelected());
+            toggleComponents(back1Radius.cs(), useAnnulus.isSelected());
+            toggleComponents(back2Radius.cs(), useAnnulus.isSelected());
             updateDisplay();
         });
 
@@ -545,8 +545,8 @@ public class FreeformPixelApertureHandler {
             CAPTURE_RADEC.set(captureRadec.isSelected());
         });
 
-        toggleComponents(back1Radius.box(), useAnnulus.isSelected());
-        toggleComponents(back2Radius.box(), useAnnulus.isSelected());
+        toggleComponents(back1Radius.cs(), useAnnulus.isSelected());
+        toggleComponents(back2Radius.cs(), useAnnulus.isSelected());
 
         frame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 
@@ -619,11 +619,23 @@ public class FreeformPixelApertureHandler {
         forthRow.add(useAnnulus);
         forthRow.add(copyR1AsCentroidRadius);
 
-        fifthRow.add(centroidRadius.box());
+        var sliderControls = new JPanel(new SpringLayout());
 
-        sixthRow.add(back1Radius.box());
+        for (Component c : centroidRadius.cs()) {
+            sliderControls.add(c);
+        }
 
-        seventhRow.add(back2Radius.box());
+        for (Component c : back1Radius.cs()) {
+            sliderControls.add(c);
+        }
+
+        for (Component c : back2Radius.cs()) {
+            sliderControls.add(c);
+        }
+
+        SpringUtil.makeCompactGrid(sliderControls, 3, 3, 2, 2, 2, 2);
+
+        fifthRow.add(sliderControls);
 
         p.add(firstRow);
         p.add(secondRow);
@@ -809,8 +821,6 @@ public class FreeformPixelApertureHandler {
     }
 
     private NumericSlider createNumericSlider(String label, double min, double max, double step, double current, double defVal, DoubleConsumer pref) {
-        var b = Box.createHorizontalBox();
-
         if (Double.isNaN(current)) {
             current = defVal;
         }
@@ -857,12 +867,7 @@ public class FreeformPixelApertureHandler {
             updateDisplay();
         });
 
-        b.add(l);
-        b.add(slider);
-        b.add(Box.createHorizontalStrut(5));
-        b.add(spinner);
-
-        return new NumericSlider(b, d -> {
+        return new NumericSlider(new Component[]{l, slider, spinner}, d -> {
             if (d >= min && d <= max) {
                 spinner.setValue(d);
             }
@@ -875,6 +880,12 @@ public class FreeformPixelApertureHandler {
             for (Component child : ((Container) component).getComponents()) {
                 toggleComponents(child, enabled);
             }
+        }
+    }
+
+    private static void toggleComponents(Component[] cs, boolean enabled) {
+        for (Component c : cs) {
+            toggleComponents(c, enabled);
         }
     }
 
@@ -1083,6 +1094,6 @@ public class FreeformPixelApertureHandler {
         return encoder.encodeToString(setting.toString().getBytes());
     }
 
-    private record NumericSlider(Box box, DoubleConsumer setter, DoubleSupplier getter) {}
+    private record NumericSlider(Component[] cs, DoubleConsumer setter, DoubleSupplier getter) {}
 
 }

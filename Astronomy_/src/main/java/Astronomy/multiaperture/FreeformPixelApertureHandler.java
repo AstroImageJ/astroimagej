@@ -151,7 +151,7 @@ public class FreeformPixelApertureHandler {
                         dy = t1.getYpos() - c.y();
                     }
 
-                    if (dx <= 0.5 && dy <= 0.5) {
+                    if (Math.abs(dx) <= 0.5 && Math.abs(dy) <= 0.5) {
                         dx = 0;
                         dy = 0;
                     }

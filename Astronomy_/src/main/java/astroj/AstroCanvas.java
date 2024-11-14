@@ -3,7 +3,6 @@ package astroj;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.Prefs;
-import ij.astro.logging.AIJLogger;
 import ij.gui.Arrow;
 import ij.gui.ImageWindow;
 import ij.gui.Roi;
@@ -477,7 +476,7 @@ public class AstroCanvas extends OverlayCanvas {
     }
 
     @Override
-    public synchronized void paint(Graphics g) {
+    public void paint(Graphics g) {
         if (!performDraw) {
             return;
         }
@@ -506,7 +505,7 @@ public class AstroCanvas extends OverlayCanvas {
 
     // Use double buffer to reduce flicker when drawing complex ROIs.
     // Author: Erik Meijering
-    public synchronized void paint(Graphics g, boolean doubleBuffered) {
+    public void paint(Graphics g, boolean doubleBuffered) {
         try {
             invCanvTrans = ((Graphics2D) g).getTransform();
             canvTrans = ((Graphics2D) g).getTransform();

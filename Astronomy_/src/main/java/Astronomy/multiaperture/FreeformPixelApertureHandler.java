@@ -152,7 +152,7 @@ public class FreeformPixelApertureHandler {
                     }
 
                     if (c.measure(imp, currentAperture(), true, usePlane, removeStars)) {
-                        currentAperture().moveTo((int) (c.x() + dx), (int) (c.y() + dy), CENTROID_BACKGROUND.get());
+                        currentAperture().moveTo(c.x() + dx, c.y() + dy, CENTROID_BACKGROUND.get());
                     }
                 }
 

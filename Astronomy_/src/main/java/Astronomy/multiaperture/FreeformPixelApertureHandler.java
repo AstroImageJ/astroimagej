@@ -151,6 +151,11 @@ public class FreeformPixelApertureHandler {
                         dy = t1.getYpos() - c.y();
                     }
 
+                    if (dx <= 0.5 && dy <= 0.5) {
+                        dx = 0;
+                        dy = 0;
+                    }
+
                     if (c.measure(imp, currentAperture(), true, usePlane, removeStars)) {
                         currentAperture().moveTo(c.x() + dx, c.y() + dy, CENTROID_BACKGROUND.get());
                     }

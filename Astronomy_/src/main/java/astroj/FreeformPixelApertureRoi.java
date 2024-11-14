@@ -201,7 +201,16 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
                 // Update the aperture for rendering if there are pixels but we have invalid position
                 update();
             }
-            centroidOffset = new Pair.DoublePair(xPos - photometricX, yPos - photometricY);
+
+            var dx = xPos - photometricX;
+            var dy = yPos - photometricY;
+
+            if (dx <= 0.5 && dy <= 0.5) {
+                dx = 0;
+                dy = 0;
+            }
+
+            centroidOffset = new Pair.DoublePair(dx, dy);
         }
     }
 

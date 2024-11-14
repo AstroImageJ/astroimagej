@@ -333,7 +333,7 @@ public class FreeformPixelApertureHandler {
         var copyR1AsCentroidRadius = new JButton("Copy estimated radius for centroid");
         var centroidAperture = new JButton(CENTROID_AP_ICON);
         var centroidRadius = createNumericSlider("Centroid radius", 0.5, 100, 1, 15,
-                currentAperture().getCentroidRadius(), radC -> {
+                currentAperture().hasCentroidRadius() ? currentAperture().getCentroidRadius() : 15, radC -> {
                     currentAperture().setCentroidRadius(radC);
                     currentAperture().update();
                 });

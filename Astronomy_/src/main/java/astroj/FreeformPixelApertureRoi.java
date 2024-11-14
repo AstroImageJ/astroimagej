@@ -580,6 +580,10 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
         return Double.isNaN(centroidRadius) ? r1 : centroidRadius;
     }
 
+    public boolean hasCentroidRadius() {
+        return !Double.isNaN(centroidRadius);
+    }
+
     @Override
     public void setImage(ImagePlus imp) {
         if (imp != null && this.imp != imp) {

@@ -570,9 +570,9 @@ public class FreeformPixelApertureHandler {
                 Hold shift to move also background.
                 </html>
                 """);
-        centroidAperture.setToolTipText("""
+        centroidPhotometry.setToolTipText("""
                 <html>
-                Toggles if during photometry if the aperture should be centroided.<br>
+                Toggles if during photometry the aperture should be centroided.<br>
                 Centroiding maintains the offset between the geometric center and photometric center of the aperture \
                 from the first image.
                 </html>

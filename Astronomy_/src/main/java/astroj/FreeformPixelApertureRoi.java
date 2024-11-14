@@ -334,9 +334,10 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
             g2.setStroke(oldStroke);
         }
 
-        useOffsetPixelCenter = true;
         int sx = screenXD(xPos);
         int sy = screenYD(yPos);
+
+        useOffsetPixelCenter = true;
         double x1d = netFlipX ? screenXD(xPos+r1) : screenXD(xPos-r1);
         int x1 = (int)Math.round(x1d);
         double w1d = netFlipX ? screenXD(xPos-r1)-x1 : screenXD(xPos+r1)-x1;

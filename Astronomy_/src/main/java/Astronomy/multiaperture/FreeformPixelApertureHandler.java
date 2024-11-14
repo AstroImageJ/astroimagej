@@ -62,7 +62,6 @@ public class FreeformPixelApertureHandler {
     private static final Property<Boolean> COPY_T1 = new Property<>(false, FreeformPixelApertureHandler.class);
     private static final Property<Boolean> COPY_T1_BACKGROUND = new Property<>(false, FreeformPixelApertureHandler.class);
     private static final Property<Boolean> CENTROID_BACKGROUND = new Property<>(false, FreeformPixelApertureHandler.class);
-    private static final Property<Boolean> CAPTURE_RADEC = new Property<>(true, FreeformPixelApertureHandler.class);
     private static final int WIDTH = 25;
     private static final int HEIGHT = 25;
     private static final Icon ADD_ICON = UIHelper.createImageIcon("Astronomy/images/icons/multiaperture/add.png", WIDTH, HEIGHT);
@@ -238,7 +237,7 @@ public class FreeformPixelApertureHandler {
                 message.append("%s has no pixels\n".formatted(roi.getName()));
             }
 
-            if (hasWCS && CAPTURE_RADEC.get()) {
+            if (hasWCS) {
                 var radec = wcs.pixels2wcs(new double[]{roi.getXpos(), roi.getYpos()});
                 roi.setRadec(radec[0], radec[1]);
             } else {
@@ -323,8 +322,8 @@ public class FreeformPixelApertureHandler {
         centroidPhotometry.setSelectedIcon(CENTROID_SELECTED_ICON);
         var showEstimatedCircularAperture = new JCheckBox("Show estimated circular aperture", SHOW_ESTIMATED_CIRCULAR_APERTURE.get());
         var showCentroidRadius = new JCheckBox("Show centroid radius", SHOW_CENTROID_RADIUS.get());
-        var captureRadec = new JToggleButton(LOC_EMPTY_ICON, CAPTURE_RADEC.get());
-        captureRadec.setSelectedIcon(LOC_FILL_ICON);
+        /*var captureRadec = new JToggleButton(LOC_EMPTY_ICON, CAPTURE_RADEC.get());
+        captureRadec.setSelectedIcon(LOC_FILL_ICON);*/
         var alwaysOnTop = new JCheckBox("Show panel always on top", ALWAYS_ON_TOP.get());
         var copyShape = new JCheckBox("Copy T1 shape", COPY_T1.get());
         var centroidShape = new JCheckBox("Centroid copied aperture", CENTROID_ON_COPY.get());
@@ -358,7 +357,6 @@ public class FreeformPixelApertureHandler {
         configureButton(backgroundFinder);
         configureButton(centroidPhotometry);
         configureButton(centroidAperture);
-        configureButton(captureRadec);
 
         if (apSelector.getEditor() instanceof JSpinner.DefaultEditor editor) {
             editor.getTextField().setColumns(5);
@@ -542,10 +540,6 @@ public class FreeformPixelApertureHandler {
             updateDisplay();
         });
 
-        captureRadec.addActionListener($ -> {
-            CAPTURE_RADEC.set(captureRadec.isSelected());
-        });
-
         toggleComponents(back1Radius.cs(), useAnnulus.isSelected());
         toggleComponents(back2Radius.cs(), useAnnulus.isSelected());
 
@@ -584,7 +578,6 @@ public class FreeformPixelApertureHandler {
                 </html>
                 """);
         copyR1AsCentroidRadius.setToolTipText("Copy the estimated circular radius to be used as the centroid radius");
-        captureRadec.setToolTipText("If WCS is available, store RA/DEC positions of apertures");
 
         updateCount = selectorModel::setMaximum;
         updateCentroid = centroidPhotometry::setSelected;
@@ -600,7 +593,6 @@ public class FreeformPixelApertureHandler {
         firstRow.add(centroidPhotometry);
         firstRow.add(invertBackgroundControl);
         firstRow.add(backgroundFinder);
-        firstRow.add(captureRadec);
         firstRow.add(centroidAperture);
         firstRow.add(copyBackground);
         firstRow.add(beginButton);

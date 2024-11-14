@@ -363,27 +363,18 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
             // Draw Geometric Centroid Mark
             int w1do4 = (int)Math.round(w1d/8.0);
             int h1do4 = (int)Math.round(h1d/8.0);
-            g.drawLine(sx-w1do4, sy, sx+w1do4, sy);
-            g.drawLine(sx, sy-h1do4, sx, sy+h1do4);
+            g.drawLine(sx-w1do4, sy-h1do4, sx+w1do4, sy+h1do4);
+            g.drawLine(sx+w1do4, sy-h1do4, sx-w1do4, sy+h1do4);
 
             // Draw Photometric Centroid Mark
             int psx = screenXD(photometricX);
             int psy = screenYD(photometricY);
-            double px1d = netFlipX ? screenXD(photometricX+r1) : screenXD(photometricX-r1);
-            int px1 = (int)Math.round(x1d);
-            double pw1d = netFlipX ? screenXD(photometricX-r1)-px1 : screenXD(photometricX+r1)-px1;
-            int pw1 = (int)Math.round(w1d);
-            double py1d = netFlipY ? screenYD(photometricY+r1) : screenYD(photometricY-r1);
-            int py1 = (int)Math.round(y1d);
-            double ph1d = netFlipY ? screenYD(photometricY-r1)-py1 : screenYD(photometricY+r1)-py1;
-            int ph1 = (int)Math.round(h1d);
-            useOffsetPixelCenter = false;
 
             g.setColor(transform(Color.MAGENTA));
             int pw1do4 = (int)Math.round(w1d/8.0);
             int ph1do4 = (int)Math.round(h1d/8.0);
-            g.drawLine(psx-pw1do4, psy-ph1do4, psx+pw1do4, psy+ph1do4);
-            g.drawLine(psx+pw1do4, psy-ph1do4, psx-pw1do4, psy+ph1do4);
+            g.drawLine(psx-pw1do4, psy, psx+pw1do4, psy);
+            g.drawLine(psx, psy-ph1do4, psx, psy+ph1do4);
         }
 
         // Show background annulus

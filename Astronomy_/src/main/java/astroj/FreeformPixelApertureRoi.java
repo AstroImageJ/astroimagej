@@ -337,7 +337,6 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
         int sx = screenXD(xPos);
         int sy = screenYD(yPos);
 
-        useOffsetPixelCenter = true;
         double x1d = netFlipX ? screenXD(xPos+r1) : screenXD(xPos-r1);
         int x1 = (int)Math.round(x1d);
         double w1d = netFlipX ? screenXD(xPos-r1)-x1 : screenXD(xPos+r1)-x1;
@@ -346,8 +345,6 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
         int y1 = (int)Math.round(y1d);
         double h1d = netFlipY ? screenYD(yPos-r1)-y1 : screenYD(yPos+r1)-y1;
         int h1 = (int)Math.round(h1d);
-
-        useOffsetPixelCenter = false;
 
         int xl = sx - (int)Math.round(w/2D);
         int yl = sy + (int)Math.round(h/3.0);
@@ -393,7 +390,6 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
         if (hasAnnulus) {
             g.setColor(transform(BACKGROUND_PIXEL_COLOR));
 
-            useOffsetPixelCenter = true;
             int x2 = netFlipX ? screenXD(xPos+r2) : screenXD(xPos-r2);
             int w2 = netFlipX ? screenXD(xPos-r2)-x2 : screenXD(xPos+r2)-x2;
             int y2 = netFlipY ? screenYD(yPos+r2) : screenYD(yPos-r2);
@@ -403,7 +399,6 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
             int w3 = netFlipX ? screenXD(xPos-r3)-x3 : screenXD(xPos+r3)-x3;
             int y3 = netFlipY ? screenYD(yPos+r3) : screenYD(yPos-r3);
             int h3 = netFlipY ? screenYD(yPos-r3)-y3 : screenYD(yPos+r3)-y3;
-            useOffsetPixelCenter = false;
 
             g.drawOval(x2, y2, w2, h2);
             g.drawOval(x3, y3, w3, h3);
@@ -412,12 +407,10 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
         if (FreeformPixelApertureHandler.SHOW_CENTROID_RADIUS.get()) {
             g.setColor(transform(CENTROID_RADIUS_COLOR));
 
-            useOffsetPixelCenter = true;
             int x2 = netFlipX ? screenXD(xPos+getCentroidRadius()) : screenXD(xPos-getCentroidRadius());
             int w2 = netFlipX ? screenXD(xPos-getCentroidRadius())-x2 : screenXD(xPos+getCentroidRadius())-x2;
             int y2 = netFlipY ? screenYD(yPos+getCentroidRadius()) : screenYD(yPos-getCentroidRadius());
             int h2 = netFlipY ? screenYD(yPos-getCentroidRadius())-y2 : screenYD(yPos+getCentroidRadius())-y2;
-            useOffsetPixelCenter = false;
 
             g.drawOval(x2, y2, w2, h2);
         }

@@ -218,8 +218,8 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
         var centroid = pixels.stream().filter(Predicate.not(Pixel::isBackground))
                 .collect(Collectors.teeing(Collectors.averagingDouble(Pixel::x),
                         Collectors.averagingDouble(Pixel::y), Pair.DoublePair::new));
-        xPos = centroid.first();
-        yPos = centroid.second();
+        xPos = centroid.first() + Centroid.PIXELCENTER;
+        yPos = centroid.second() + Centroid.PIXELCENTER;
 
         if (pixels.size() > 1) {
             var radius = pixels.stream().filter(Predicate.not(Pixel::isBackground))

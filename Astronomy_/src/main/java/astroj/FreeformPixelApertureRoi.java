@@ -94,7 +94,7 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
         if (!pixels.isEmpty() && Double.isNaN(r1) && Double.isNaN(xPos) && Double.isNaN(yPos)) {
             updateCenter();
         }
-        move((int) Math.round(x1-xPos + centroidOffset.first()), (int) Math.round(y1-yPos + centroidOffset.second()), moveBackground);
+        move((int) Math.round(x1-xPos + centroidOffset.first()), (int) Math.round(y1-yPos + centroidOffset.second()), moveBackground, false);
     }
 
     public void moveTo(double x1, double y1) {
@@ -124,6 +124,10 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
     }
 
     public void move(int dx, int dy, boolean moveBackground) {
+        move(dx, dy, moveBackground, true);
+    }
+
+    public void move(int dx, int dy, boolean moveBackground, boolean updatePhotometry) {
         var stream = pixels.stream();
 
         var translatedPixels = stream.map(pixel -> {
@@ -136,7 +140,15 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
         pixels.clear();
         pixels.addAll(translatedPixels);
 
-        update();
+        updateCenter();
+
+        if (updatePhotometry) {
+            updatePhotometry();
+        }
+
+        var translatedSegments = segments.parallelStream().map(s -> s.move(dx, dy)).collect(Collectors.toSet());
+        segments.clear();
+        segments.addAll(translatedSegments);
     }
 
     public void update() {
@@ -607,7 +619,11 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
         return radec == null ? Double.NaN : radec.second();
     }
 
-    private record Segment(int x0, int y0, int x1, int y1, boolean isBackground, SegmentSide segmentSide) {}
+    private record Segment(int x0, int y0, int x1, int y1, boolean isBackground, SegmentSide segmentSide) {
+        public Segment move(int dx, int dy) {
+            return new Segment(x0 + dx, y0 + dy, x1 + dx, y1 + dy, isBackground, segmentSide);
+        }
+    }
 
     private enum SegmentSide {
         TOP,

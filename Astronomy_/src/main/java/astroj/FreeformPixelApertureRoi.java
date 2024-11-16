@@ -503,7 +503,29 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
             }
         }
 
-        //todo loop through segments, if segments have a matching coord and are of same type we can combine them
+        // Combine adjacent segments
+        if (!segments.isEmpty()) {
+            for (int i = 0; i < segments.size(); i++) {
+                Segment current = segments.get(i);
+
+                for (int j = 0; j < segments.size(); j++) {
+                    Segment next = segments.get(j);
+
+                    if (current == next) {
+                        continue;
+                    }
+
+                    if (current.canMergeWith(next)) {
+                        current = current.merge(next);
+                        segments.set(i, current);
+                        if (j != i) {
+                            segments.remove(j);
+                        }
+                        j--;
+                    }
+                }
+            }
+        }
 
         segmentLock = new SegmentLock(netFlipX, netFlipY);
     }
@@ -624,6 +646,29 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
     private record Segment(int x0, int y0, int x1, int y1, boolean isBackground, SegmentSide segmentSide) {
         public Segment move(int dx, int dy) {
             return new Segment(x0 + dx, y0 + dy, x1 + dx, y1 + dy, isBackground, segmentSide);
+        }
+
+        public boolean canMergeWith(Segment next) {
+            if (segmentSide != next.segmentSide) {
+                return false;
+            }
+
+            if (isBackground != next.isBackground) {
+                return false;
+            }
+
+            return (x0 == next.x1 && y0 == next.y1) || (next.x0 == x1 && next.y0 == y1);
+        }
+
+        public Segment merge(Segment next) {
+            return new Segment(
+                    Math.min(x0, next.x0),
+                    Math.min(y0, next.y0),
+                    Math.max(x1, next.x1),
+                    Math.max(y1, next.y1),
+                    isBackground,
+                    segmentSide
+            );
         }
     }
 

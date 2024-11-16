@@ -17,7 +17,7 @@ import static Astronomy.Aperture_.*;
 public class FreeformPixelApertureRoi extends ApertureRoi {
     // HashSet relies on overridden hashcode in Pixel to only care about coordinates for #contains
     private final Set<Pixel> pixels = new HashSet<>(20);
-    private final List<Segment> segments = new ArrayList<>(80);
+    private final List<Segment> segments = Collections.synchronizedList(new ArrayList<>(80));
     private static final Color SOURCE_PIXEL_COLOR = new Color(0, 137, 12);
     private static final Color BACKGROUND_PIXEL_COLOR = new Color(0, 114, 234);
     private static final Color CENTROID_RADIUS_COLOR = new Color(25, 205, 180);
@@ -327,29 +327,31 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
             var xShift = netFlipX ? 1 : -1;
             var yShift = netFlipY ? 1 : -1;
 
-            for (Segment segment : segments) {
-                g.setColor(getSegmentColor(segment));
+            synchronized (segments) {
+                for (Segment segment : segments) {
+                    g.setColor(getSegmentColor(segment));
 
-                // Offset segments to avoid overlap of bordering regions
-                // We cannot use a larger bias as it does not scale correctly with zooming
-                var x0 = switch (segment.segmentSide()) {
-                    case LEFT, BOTTOM, TOP -> screenX(segment.x0()) - xShift;
-                    case RIGHT -> screenX(segment.x0()) + xShift;
-                };
-                var y0 = switch (segment.segmentSide()) {
-                    case BOTTOM -> screenY(segment.y0()) + yShift;
-                    case TOP, LEFT, RIGHT -> screenY(segment.y0()) - yShift;
-                };
-                var x1 = switch (segment.segmentSide()) {
-                    case LEFT -> screenX(segment.x1()) - xShift;
-                    case RIGHT, BOTTOM, TOP -> screenX(segment.x1()) + xShift;
-                };
-                var y1 = switch (segment.segmentSide()) {
-                    case BOTTOM, LEFT, RIGHT -> screenY(segment.y1()) + yShift;
-                    case TOP -> screenY(segment.y1()) - yShift;
-                };
+                    // Offset segments to avoid overlap of bordering regions
+                    // We cannot use a larger bias as it does not scale correctly with zooming
+                    var x0 = switch (segment.segmentSide()) {
+                        case LEFT, BOTTOM, TOP -> screenX(segment.x0()) - xShift;
+                        case RIGHT -> screenX(segment.x0()) + xShift;
+                    };
+                    var y0 = switch (segment.segmentSide()) {
+                        case BOTTOM -> screenY(segment.y0()) + yShift;
+                        case TOP, LEFT, RIGHT -> screenY(segment.y0()) - yShift;
+                    };
+                    var x1 = switch (segment.segmentSide()) {
+                        case LEFT -> screenX(segment.x1()) - xShift;
+                        case RIGHT, BOTTOM, TOP -> screenX(segment.x1()) + xShift;
+                    };
+                    var y1 = switch (segment.segmentSide()) {
+                        case BOTTOM, LEFT, RIGHT -> screenY(segment.y1()) + yShift;
+                        case TOP -> screenY(segment.y1()) - yShift;
+                    };
 
-                g.drawLine(x0, y0, x1, y1);
+                    g.drawLine(x0, y0, x1, y1);
+                }
             }
 
             g2.setStroke(oldStroke);

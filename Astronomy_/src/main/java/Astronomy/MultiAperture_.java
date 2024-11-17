@@ -3079,7 +3079,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             startDragX = ac.offScreenXD(startDragScreenX);
             startDragY = ac.offScreenYD(startDragScreenY);
             if (apertureShape.get() == ApertureShape.FREEFORM) {
-                if (freeformPixelApertureHandler.currentAperture().contains((int) startDragX, (int) startDragY)) {
+                if (freeformPixelApertureHandler.currentAperture().contains((int) startDragX, (int) startDragY) && !e.isShiftDown()) {
                     selectedApertureRoi = freeformPixelApertureHandler.currentAperture();
                 } else {
                     selectedApertureRoi = null;

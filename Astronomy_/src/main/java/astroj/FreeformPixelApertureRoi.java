@@ -473,55 +473,57 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
     }
 
     private void updateSegments() {
-        segments.clear();
-        for (Pixel pixel : pixels) {
-            int xi = pixel.x();
-            int yi = pixel.y();
-            var xDelta = 1;
-            var yDelta = !netFlipY ? -1 : 1;
-            var xOffset = 1;
-            var yOffset = !netFlipY ? 0 : 1;
+        synchronized (segments) {
+            segments.clear();
+            for (Pixel pixel : pixels) {
+                int xi = pixel.x();
+                int yi = pixel.y();
+                var xDelta = 1;
+                var yDelta = !netFlipY ? -1 : 1;
+                var xOffset = 1;
+                var yOffset = !netFlipY ? 0 : 1;
 
-            // Pixel above
-            if (!contains(xi, yi + yDelta, pixel.isBackground())) {
-                segments.add(new Segment(xi, yi + yOffset, xi + xDelta, yi + yOffset, pixel.isBackground(), SegmentSide.TOP));
+                // Pixel above
+                if (!contains(xi, yi + yDelta, pixel.isBackground())) {
+                    segments.add(new Segment(xi, yi + yOffset, xi + xDelta, yi + yOffset, pixel.isBackground(), SegmentSide.TOP));
+                }
+
+                // Pixel below
+                if (!contains(xi, yi - yDelta, pixel.isBackground())) {
+                    segments.add(new Segment(xi, yi + yOffset - yDelta, xi + xDelta, yi + yOffset - yDelta, pixel.isBackground(), SegmentSide.BOTTOM));
+                }
+
+                // Pixel left
+                if (!contains(xi - xDelta, yi, pixel.isBackground())) {
+                    segments.add(new Segment(xi, yi, xi, yi + 1, pixel.isBackground(), SegmentSide.LEFT));
+                }
+
+                // Pixel right
+                if (!contains(xi + xDelta, yi, pixel.isBackground())) {
+                    segments.add(new Segment(xi + xDelta, yi, xi + xDelta, yi + 1, pixel.isBackground(), SegmentSide.RIGHT));
+                }
             }
 
-            // Pixel below
-            if (!contains(xi, yi - yDelta, pixel.isBackground())) {
-                segments.add(new Segment(xi, yi + yOffset - yDelta, xi + xDelta, yi + yOffset - yDelta, pixel.isBackground(), SegmentSide.BOTTOM));
-            }
+            // Combine adjacent segments
+            if (!segments.isEmpty()) {
+                for (int i = 0; i < segments.size(); i++) {
+                    Segment current = segments.get(i);
 
-            // Pixel left
-            if (!contains(xi - xDelta, yi, pixel.isBackground())) {
-                segments.add(new Segment(xi, yi, xi, yi + 1, pixel.isBackground(), SegmentSide.LEFT));
-            }
+                    for (int j = 0; j < segments.size(); j++) {
+                        Segment next = segments.get(j);
 
-            // Pixel right
-            if (!contains(xi + xDelta, yi, pixel.isBackground())) {
-                segments.add(new Segment(xi + xDelta, yi, xi + xDelta, yi + 1, pixel.isBackground(), SegmentSide.RIGHT));
-            }
-        }
-
-        // Combine adjacent segments
-        if (!segments.isEmpty()) {
-            for (int i = 0; i < segments.size(); i++) {
-                Segment current = segments.get(i);
-
-                for (int j = 0; j < segments.size(); j++) {
-                    Segment next = segments.get(j);
-
-                    if (current == next) {
-                        continue;
-                    }
-
-                    if (current.canMergeWith(next)) {
-                        current = current.merge(next);
-                        segments.set(i, current);
-                        if (j != i) {
-                            segments.remove(j);
+                        if (current == next) {
+                            continue;
                         }
-                        j--;
+
+                        if (current.canMergeWith(next)) {
+                            current = current.merge(next);
+                            segments.set(i, current);
+                            if (j != i) {
+                                segments.remove(j);
+                            }
+                            j--;
+                        }
                     }
                 }
             }

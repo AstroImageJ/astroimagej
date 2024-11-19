@@ -609,7 +609,7 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
     }
 
     public double getCentroidRadius() {
-        return Double.isNaN(centroidRadius) ? r1 : centroidRadius;
+        return Double.isNaN(centroidRadius) ? 15 : centroidRadius;
     }
 
     public boolean hasCentroidRadius() {

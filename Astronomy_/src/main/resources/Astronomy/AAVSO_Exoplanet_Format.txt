@@ -8,10 +8,12 @@
 //  file that conforms to the input requirements specified in the above referenced user guide.  AIJ's log
 //  window will show the progress of the macro, as well as any error messages
 //
-//  REVISION 7.6
-var REVISION = "7.6";
+//  REVISION 7.7
+var REVISION = "7.7";
 //
 //  Release Notes:
+//  7.7 Add AIRMASS as a detrend parameter if it is not one of the user's and append a note to that
+//      affect on the NOTES line
 //  7.6 Add CR after Header that precedes first data row; add macro rev number to #SOFTWARE metadata
 //  7.5 Force use of rnFlux
 //  7.4 Add a check if MF_flag was set before calculating MF_entry
@@ -435,12 +437,16 @@ checkStringLength("Detrend Parameters",DETREND_PARAMETERS,lenDetrendParameterLis
 //
 //  Separate out user-specified labels for detrend parameters.
 //
-detrendLabel=newArray("","","","");
+detrendLabel=newArray("","","","","");
+airmass_flag = false;
 MF_flag = false;
+airmassExists = false;
+nDetrends = 0;
 if (DETREND_PARAMETERS != "") {
     success=true;
 //  Loop as long as there are more detrend parameters, up to 4
     for (i=0; i<4 && success; i++) {
+		nDetrends = nDetrends + 1;
 //  result is returned in globalValue
         success=findValue(DETREND_PARAMETERS,i+1,COMMA);
         detrendLabel[i]=globalValue;
@@ -457,10 +463,17 @@ if (DETREND_PARAMETERS != "") {
                } else {success1=false;};
             j=j+1;
        };
+//  Set airmass_flag to true if AIRMASS or AIRMASSxxx is a detrend parameter
+    if (indexOf(detrendLabel[i],"AIRMASS") != -1) {airmass_flag = true;};
 //  Set MF_flag if Meridian_Flip was a detrend parameter
     if (detrendLabel[i] == "Meridian_Flip") {MF_flag=true;};
     };
 };
+//  If there was no user-defined AIRMASS as a detrend parameter, add it as an extra
+//  detrendLabel
+if (!airmass_flag) {detrendLabel[nDetrends] = "AIRMASS";
+                    nDetrends = nDetrends +1;
+					};
 //
 //  Get meridian flip time if Meridian_Flip was a detrend parameter
 MF_TIME=Dialog.getString();
@@ -506,6 +519,13 @@ NOTES=Dialog.getString();
 call("ij.Prefs.set","AAVSOReport.NOTES",NOTES);
 debugPrint("#NOTES=" + NOTES,1);
 checkStringLength("Notes",NOTES,lenNotes);
+//  If there was no user-defined AIRMASS as a detrend parameter,
+//  prefix any NOTES with the fact that AIRMASS was added
+if (!airmass_flag) {
+//   if NOTES is not empty, prefix it with a comma
+	                if (NOTES != "") {NOTES = " " + NOTES;};
+	                NOTES = "[AIRMASS added to user-defined detrend parameters to satisfy Exoplanet Watch scraping of data]" + NOTES;
+					};
 //
 //  Get the user-specified delimiter (tab or comma) used in the
 //  input measurement table and set inputFileDelim
@@ -606,7 +626,7 @@ File.append("#FILTER=" + FILTER + CR,pathOutputFile);
 //   Re-create detrend parameter string
 success=true;
 detrendString = "";
-for (i=0; i<4 && success; i++) {
+for (i=0; i<nDetrends && success; i++) {
     if (detrendLabel[i] !="") {
 //  Put a comma in only if not the first parameter
         if (i==0) {
@@ -641,7 +661,7 @@ for (k=1; k<nRows+1; k++) {
      date_time=d2s(globalValue,6);
 //
 //   If Meridan_Flip was a detrend parameter, calculate the appropriate table entry
-//   - i.e., a -1.0 or +1.0
+//   - i.e., a -1.0 before the flip or +1.0 after the flip
      if (MF_flag) {
 //   Get observation day time (e.g., if day-time is 2457313.052634, then obsDayTime would
 //   equal 3.052634 and initialDay would equal 3
@@ -674,10 +694,10 @@ for (k=1; k<nRows+1; k++) {
      success=getData(DiffErrorLabel,header,rowString,inputFileDelimiter,firstMeasTableColFlag);
      diff_error = d2s(globalValue,6);
 
-     detrendValue = newArray("","","","");
-     delimValue = newArray("","","","");
+     detrendValue = newArray("","","","","");
+     delimValue = newArray("","","","","");
      success=true;
-     for (i=0; i<4&&success; i++) {
+     for (i=0; i<nDetrends&&success; i++) {
          if (detrendLabel[i]!="") {
 //   Treat Meridan Flips separately - namely, use the above calculated value of mfEntry.
              if (detrendLabel[i] == "Meridian_Flip") {
@@ -694,7 +714,7 @@ for (k=1; k<nRows+1; k++) {
 //
 //  Print to the log window and output file the appropriate data rows, where each item is separated by DELIM and the row ends with a CR
 //
-    rowData=date_time + DELIM + diff + DELIM + diff_error + delimValue[0] + detrendValue[0] + delimValue[1] +  detrendValue[1] + delimValue[2] +  detrendValue[2] + delimValue[3] + detrendValue[3];
+    rowData=date_time + DELIM + diff + DELIM + diff_error + delimValue[0] + detrendValue[0] + delimValue[1] +  detrendValue[1] + delimValue[2] +  detrendValue[2] + delimValue[3] + detrendValue[3] + delimValue[4] + detrendValue[4];
     debugPrint(rowData,1);
     File.append(rowData + CR,pathOutputFile);
 };

@@ -49,6 +49,7 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
         showSky = true;
         showName = true;
         photometer = createPhotometer();
+        mag = 99.999;
     }
 
     public void addPixel(int x, int y, boolean isBackground) {
@@ -168,7 +169,18 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
     }
 
     public boolean contains(int xs, int ys, boolean isBackground) {
-        return pixels.stream().anyMatch(pixel -> pixel.coordinatesMatch(xs, ys) && pixel.isBackground() == isBackground);
+        // contains is fast as it uses the hashcode and can lookup the pixel quickly,
+        // but ignores isBackground
+        if (pixels.contains(new Pixel(xs, ys))) {
+            // Find pixel to check background
+            for (Pixel pixel : pixels) {
+                if (pixel.coordinatesMatch(xs, ys)) {
+                    return pixel.isBackground() == isBackground;
+                }
+            }
+        }
+
+        return false;
     }
 
     public boolean hasBackground() {

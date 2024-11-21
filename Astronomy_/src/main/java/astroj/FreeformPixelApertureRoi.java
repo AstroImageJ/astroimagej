@@ -172,7 +172,7 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
     }
 
     public boolean hasBackground() {
-        return pixels.stream().anyMatch(Pixel::isBackground);
+        return pixels.stream().anyMatch(Pixel::isBackground) || (hasAnnulus && getBack1() < getBack2());
     }
 
     public boolean hasSource() {

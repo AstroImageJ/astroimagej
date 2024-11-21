@@ -49,7 +49,7 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
         showSky = true;
         showName = true;
         photometer = createPhotometer();
-        mag = 99.999;
+        //mag = 99.999;
     }
 
     public void addPixel(int x, int y, boolean isBackground) {

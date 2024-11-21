@@ -16410,7 +16410,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 errorCode = 7;
                 getPreferences();
                 errorCode = 8;
-                setTable(table, true);
+                setTable(table, true, false, false);
                 errorCode = 9;
                 if (plotWindow != null && table != null) plotWindow.setVisible(true);
                 errorCode = 10;

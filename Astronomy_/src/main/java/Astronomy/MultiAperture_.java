@@ -4247,6 +4247,57 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         return foundR1;
     }
 
+    @Override
+    protected void storeResults() {
+        super.storeResults();
+        if (isInstanceOfStackAlign || !checkResultsTable()) return;
+
+        String header = (isRefStar[0] ? "_C" : "_T") + (1);
+        if (showPosition) {
+            switch (apertureShape.get()) {
+                case CIRCULAR -> {
+                    table.addValue(AP_XCENTER + header, xCenter, 6);
+                    table.addValue(AP_YCENTER + header, yCenter, 6);
+                }
+                case FREEFORM -> {
+                    var roi = freeformPixelApertureHandler.getAperture(0);
+                    table.addValue(AP_XCENTER + header, roi.getXpos(), 6);
+                    table.addValue(AP_YCENTER + header, roi.getYpos(), 6);
+                }
+            }
+        }
+        if (showPositionFITS) {
+            switch (apertureShape.get()) {
+                case CIRCULAR -> {
+                    table.addValue(AP_XCENTER_FITS + header, xCenter + Centroid.PIXELCENTER, 6);
+                    table.addValue(AP_YCENTER_FITS + header, (double) imp.getHeight() - yCenter + Centroid.PIXELCENTER, 6);
+                }
+                case FREEFORM -> {
+                    var roi = freeformPixelApertureHandler.getAperture(0);
+                    table.addValue(AP_XCENTER_FITS + header, roi.getXpos() + Centroid.PIXELCENTER, 6);
+                    table.addValue(AP_YCENTER_FITS + header, (double) imp.getHeight() - roi.getYpos() + Centroid.PIXELCENTER, 6);
+                }
+            }
+        }
+        if (showRADEC && wcs != null && wcs.hasRaDec()) {
+            switch (apertureShape.get()) {
+                case CIRCULAR -> {
+                    if (raDec != null) {
+                        table.addValue(AP_RA + header, raDec[0] / 15.0, 6);
+                        table.addValue(AP_DEC + header, raDec[1], 6);
+                    }
+                }
+                case FREEFORM -> {
+                    var roi = freeformPixelApertureHandler.getAperture(0);
+                    if (roi.hasRadec()) {
+                        table.addValue(AP_RA + header, roi.getRightAscension() / 15.0, 6);
+                        table.addValue(AP_DEC + header, roi.getDeclination(), 6);
+                    }
+                }
+            }
+        }
+    }
+
     /**
      * Stores results for additional apertures.
      */
@@ -4255,16 +4306,47 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
         String header = (isRefStar[ap] ? "_C" : "_T") + (ap + 1);
         if (showPosition) {
-            table.addValue(AP_XCENTER + header, xCenter, 6);
-            table.addValue(AP_YCENTER + header, yCenter, 6);
+            switch (apertureShape.get()) {
+                case CIRCULAR -> {
+                    table.addValue(AP_XCENTER + header, xCenter, 6);
+                    table.addValue(AP_YCENTER + header, yCenter, 6);
+                }
+                case FREEFORM -> {
+                    var roi = freeformPixelApertureHandler.getAperture(ap);
+                    table.addValue(AP_XCENTER + header, roi.getXpos(), 6);
+                    table.addValue(AP_YCENTER + header, roi.getYpos(), 6);
+                }
+            }
         }
         if (showPositionFITS) {
-            table.addValue(AP_XCENTER_FITS + header, xCenter + Centroid.PIXELCENTER, 6);
-            table.addValue(AP_YCENTER_FITS + header, (double) imp.getHeight() - yCenter + Centroid.PIXELCENTER, 6);
+            switch (apertureShape.get()) {
+                case CIRCULAR -> {
+                    table.addValue(AP_XCENTER_FITS + header, xCenter + Centroid.PIXELCENTER, 6);
+                    table.addValue(AP_YCENTER_FITS + header, (double) imp.getHeight() - yCenter + Centroid.PIXELCENTER, 6);
+                }
+                case FREEFORM -> {
+                    var roi = freeformPixelApertureHandler.getAperture(ap);
+                    table.addValue(AP_XCENTER_FITS + header, roi.getXpos() + Centroid.PIXELCENTER, 6);
+                    table.addValue(AP_YCENTER_FITS + header, (double) imp.getHeight() - roi.getYpos() + Centroid.PIXELCENTER, 6);
+                }
+            }
         }
-        if (showRADEC && wcs != null && wcs.hasRaDec() && raDec != null) {
-            table.addValue(AP_RA + header, raDec[0] / 15.0, 6);
-            table.addValue(AP_DEC + header, raDec[1], 6);
+        if (showRADEC && wcs != null && wcs.hasRaDec()) {
+            switch (apertureShape.get()) {
+                case CIRCULAR -> {
+                    if (raDec != null) {
+                        table.addValue(AP_RA + header, raDec[0] / 15.0, 6);
+                        table.addValue(AP_DEC + header, raDec[1], 6);
+                    }
+                }
+                case FREEFORM -> {
+                    var roi = freeformPixelApertureHandler.getAperture(ap);
+                    if (roi.hasRadec()) {
+                        table.addValue(AP_RA + header, roi.getRightAscension() / 15.0, 6);
+                        table.addValue(AP_DEC + header, roi.getDeclination(), 6);
+                    }
+                }
+            }
         }
         if (showPhotometry) table.addValue(AP_SOURCE + header, photom.sourceBrightness(), 6);
         if (showNAperPixels) table.addValue(AP_NAPERPIX + suffix, photom.numberOfSourceAperturePixels(), 6);

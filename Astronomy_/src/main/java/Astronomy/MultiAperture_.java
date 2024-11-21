@@ -2331,8 +2331,13 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     dy = t1.getYpos() - c.y();
                 }
 
+                if (Math.abs(dx) <= 0.5 && Math.abs(dy) <= 0.5) {
+                    dx = 0;
+                    dy = 0;
+                }
+
                 if (c.measure(imp, ap, true, backIsPlane, removeBackStars)) {
-                    ap.moveTo((int) (c.x() + dx), (int) (c.y() + dy));
+                    ap.moveTo(c.x() + dx, c.y() + dy);
                 }
 
                 var photom = measurePhotometry(imp, FitsJ.getHeader(imp), ap);

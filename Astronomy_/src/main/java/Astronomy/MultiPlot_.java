@@ -1142,6 +1142,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     }
 
     static public void setTable(MeasurementTable inTable, boolean forceUpdate, boolean useAutoAstroDataUpdate) {
+        setTable(inTable, forceUpdate, useAutoAstroDataUpdate, true);
+    }
+
+    static public void setTable(MeasurementTable inTable, boolean forceUpdate, boolean useAutoAstroDataUpdate, boolean loadConfig) {
         if (table != null) {
             table.removeListeners();
         }
@@ -1164,7 +1168,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 updateColumnLists();
                 Prefs.set("plot2.tableName", tableName);
                 if (table != null) {
-                    loadConfigOfOpenTable(table.getFilePath());
+                    if (loadConfig) {
+                        loadConfigOfOpenTable(table.getFilePath());
+                    }
                     table.show();
                     forceUpdate = true;
                 }
@@ -16856,7 +16862,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             is.close();
             setupArrays();
             getPreferences();
-            setTable(table, true);
+            setTable(table, true, false, false);
             if (plotWindow != null && table != null) plotWindow.setVisible(true);
         } catch (Exception e) {
             IJ.beep();

@@ -45,6 +45,7 @@ public class FreeformPixelApertureHandler {
     private final boolean usePlane = Prefs.get(AP_PREFS_BACKPLANE, false);
     private final boolean removeStars = Prefs.get(AP_PREFS_REMOVEBACKSTARS, false);
     private IntConsumer updateCount = i -> {};
+    private DoubleConsumer updateCentroidRadius = d -> {};
     private Consumer<Boolean> updateCentroid = b -> {};
     public static final Property<List<FreeformPixelApertureRoi>> APS =
             new Property<>(new ArrayList<>(),
@@ -293,6 +294,7 @@ public class FreeformPixelApertureHandler {
 
         freeformPixelApertureRois.get(0).setFocusedAperture(true);
         updateCount.accept(freeformPixelApertureRois.size());
+        updateCentroidRadius.accept(freeformPixelApertureRois.get(0).getCentroidRadius());
         updateCentroid.accept(freeformPixelApertureRois.get(0).getIsCentroid());
     }
 
@@ -586,6 +588,7 @@ public class FreeformPixelApertureHandler {
 
         updateCount = selectorModel::setMaximum;
         updateCentroid = centroidPhotometry::setSelected;
+        updateCentroidRadius = centroidRadius.setter;
 
         var selector = Box.createHorizontalBox();
         selector.add(apLabel);

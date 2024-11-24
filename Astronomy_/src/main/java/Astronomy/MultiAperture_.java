@@ -1835,8 +1835,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             }
 
             var refCount = 0;
-            for (boolean b : isRefStar) {
-                if (b) refCount++;
+            for (int i = 0; i < ngot; i++) {
+                if (isRefStar[i]) refCount++;
             }
 
             if (!autoMode && suggestCompStars && tempSuggestCompStars && ngot >= referenceStar && refCount < maxSuggestedStars && !(this instanceof Stack_Aligner)) {

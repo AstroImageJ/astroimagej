@@ -1861,7 +1861,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         ocanvas.add(warning);
 
         var radius = switch (apertureShape.get()) {
-            case FREEFORM -> freeformPixelApertureHandler.getAperture(referenceStar-1).getRadius();
+            case FREEFORM -> freeformPixelApertureHandler.getAperture(referenceStar-1).getCentroidRadius();
             case CIRCULAR -> this.radius;
         };
 
@@ -2318,6 +2318,15 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 var t1 = freeformPixelApertureHandler.getAperture(referenceStar-1);
                 var ap = new FreeformPixelApertureRoi();
                 t1.copyPixels(ap, true);
+
+                if (t1.hasAnnulus()) {
+                    ap.setHasAnnulus(true);
+                    ap.setBack1(t1.getBack1());
+                    ap.setBack2(t1.getBack2());
+                }
+                ap.setCentroidRadius(t1.getCentroidRadius());
+
+                ap.setIsCentroid(t1.getIsCentroid());
 
                 ap.moveTo(m.x(), m.y());
 

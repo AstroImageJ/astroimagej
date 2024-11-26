@@ -2056,6 +2056,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 isRefStar[ap] = freeformPixelApertureHandler.getAperture(ap).isComparisonStar();
                 centroidStar[ap] = false;
                 freeformPixelApertureHandler.getAperture(ap).createOffset();
+                absMag[ap] = 99.999;
             }
             aperturesInitialized = true;
             checkResultsTable();

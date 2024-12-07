@@ -139,8 +139,8 @@ public class Photometer {
         xCenter = apertureRoi.xPos;
         yCenter = apertureRoi.yPos;
         radius = apertureRoi.getRadius();
-        rBack1 = Double.NaN;
-        rBack2 = Double.NaN;
+        rBack1 = apertureRoi.getBack1();
+        rBack2 = apertureRoi.getBack2();
         ocanvas = OverlayCanvas.getOverlayCanvas(imp);
         hasBack = apertureRoi.hasBackground();
         boolean usePlaneLocal = usePlane && hasBack;

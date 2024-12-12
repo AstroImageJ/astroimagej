@@ -928,6 +928,7 @@ public class FreeformPixelApertureHandler {
         if (this.imp != imp && imp != null) {
             for (FreeformPixelApertureRoi roi : freeformPixelApertureRois) {
                 roi.setImage(imp);
+                roi.update();
                 if (OverlayCanvas.hasOverlayCanvas(imp)) {
                     OverlayCanvas.getOverlayCanvas(imp).add(roi);
                 }

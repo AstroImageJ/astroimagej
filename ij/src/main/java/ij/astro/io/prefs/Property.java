@@ -102,6 +102,10 @@ public class Property<T> {
         this.changeValidator = base.changeValidator;
     }
 
+    public void reread() {
+        hasLoaded = false;
+    }
+
     public T get() {
         loadProperty();
         return value;

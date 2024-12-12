@@ -164,6 +164,51 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
     }
 
     @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder("{");
+        sb.append("\"xPos\":")
+                .append(xPos);
+
+        sb.append(",\"yPos\":")
+                .append(yPos);
+
+        sb.append(",\"radec\":")
+                .append(radec);
+
+        sb.append(",\"centroidOffset\":")
+                .append(centroidOffset);
+
+        sb.append(",\"centroidRadius\":")
+                .append(centroidRadius);
+
+        sb.append(",\"photometricX\":")
+                .append(photometricX);
+
+        sb.append(",\"photometricY\":")
+                .append(photometricY);
+
+        sb.append(",\"comparisonStar\":")
+                .append(comparisonStar);
+
+        sb.append(",\"hasAnnulus\":")
+                .append(hasAnnulus);
+
+        /*sb.append(",\"pixels\":");
+        if ((pixels) != null && !(pixels).isEmpty()) {
+            sb.append("[");
+            for (Object collectionValue : pixels) {
+                sb.append("\"").append(Objects.toString(collectionValue, "")).append("\",");
+            }
+            sb.replace(sb.length() - 1, sb.length(), "]");
+        } else {
+            sb.append("[]");
+        }*/
+
+        sb.append('}');
+        return sb.toString();
+    }
+
+    @Override
     public boolean contains(int xs, int ys) {
         return pixels.contains(new Pixel(xs, ys));
     }

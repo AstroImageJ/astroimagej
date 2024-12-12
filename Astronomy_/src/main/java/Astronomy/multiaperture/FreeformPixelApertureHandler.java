@@ -274,6 +274,10 @@ public class FreeformPixelApertureHandler {
     public void loadAperturesFromPrefs(boolean loadOnlyOne, boolean useImport) {
         freeformPixelApertureRois.clear();
         var setting = useImport ? IMPORTED_APS : APS;
+
+        // Force the apertures to be read again to ensure they match the preferences
+        setting.reread();
+
         if (loadOnlyOne && !setting.get().isEmpty()) {
             freeformPixelApertureRois.add(setting.get().get(0));
         } else {

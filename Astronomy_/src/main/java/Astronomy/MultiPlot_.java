@@ -4114,15 +4114,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                                 detrendpanelgroup[curve].setBorder(BorderFactory.createLineBorder(Color.RED));
                                             }
                                         } else if (useNelderMeadChi2ForDetrend) {
-                                            var varCnt = 0;
-                                            for (int v = 0; v < maxDetrendVars; v++) {
-                                                if (detrendIndex[curve][v] != 0 && detrendYDNotConstant[v]) {
-                                                    if (detrendVarDisplayed[curve] == v) {
-                                                        detrendfactorspinner[curve].setValue(coeffs[curve][varCnt]);
-                                                    }
-                                                    varCnt++;
-                                                }
-                                            }
+                                            detrendfactorspinner[curve].setValue(detrendFactor[curve][detrendVarDisplayed[curve]]);
 
                                             if (fitConvergeceArr[curve]) {
                                                 detrendpanelgroup[curve].setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
@@ -4130,15 +4122,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                                 detrendpanelgroup[curve].setBorder(BorderFactory.createLineBorder(Color.RED));
                                             }
                                         } else { //use regression
-                                            var varCnt = 1;
-                                            for (int v = 0; v < maxDetrendVars; v++) {
-                                                if (detrendIndex[curve][v] != 0 && detrendYDNotConstant[v]) {
-                                                    if (detrendVarDisplayed[curve] == v) {
-                                                        detrendfactorspinner[curve].setValue(coeffs[curve][varCnt]);
-                                                    }
-                                                    varCnt++;
-                                                }
-                                            }
+                                            detrendfactorspinner[curve].setValue(detrendFactor[curve][detrendVarDisplayed[curve]]);
 
                                             detrendpanelgroup[curve].setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
                                         }

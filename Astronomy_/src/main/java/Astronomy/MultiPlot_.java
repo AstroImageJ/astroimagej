@@ -4794,7 +4794,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             double residual;
             int numData = detrendYs[curve].length;
             int numVars = detrendVars[curve].length;
-            int dof = numData - param.length;
+            int dof = numData - numVars;
             if (dof < 1) dof = 1;
             for (int j = 0; j < numData; j++) {
                 residual = detrendYs[curve][j];// - param[0];

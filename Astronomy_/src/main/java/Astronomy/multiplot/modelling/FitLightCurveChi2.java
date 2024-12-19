@@ -113,7 +113,7 @@ public class FitLightCurveChi2 implements MinimizationFunction, UserFunction {
             var midpointFlux = IJU.transitModel(new double[]{
                     tc}, f0, incl, p0, ar, tc, orbitalPeriod[curve], e, ohm, u1, u2, useLonAscNode[curve], lonAscNode[curve], true)[0];
             var depth = (1 - (midpointFlux / f0)) * 1000;
-            if (depth <= 0) {
+            if (depth < 0) {
                 return Double.NaN;
             }
         }

@@ -724,6 +724,8 @@ tasks.withType(PackageTask).configureEach {pkgTsk ->
 
                 if (!Files.move(originalPath, newPath, StandardCopyOption.REPLACE_EXISTING)) {
                     logger.error "\tFailed to rename '{}' to '{}'", it.name, newName
+                } else {
+                    logger.lifecycle "\t\t" + newPath.toUri()
                 }
             }
         }

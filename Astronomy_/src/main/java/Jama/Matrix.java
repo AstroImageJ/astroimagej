@@ -2,13 +2,13 @@ package Jama;
 
 import Jama.util.Maths;
 
-import java.text.NumberFormat;
+import java.io.BufferedReader;
+import java.io.PrintWriter;
+import java.io.StreamTokenizer;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
+import java.text.NumberFormat;
 import java.util.Locale;
-import java.io.PrintWriter;
-import java.io.BufferedReader;
-import java.io.StreamTokenizer;
 
 /**
    Jama = Java Matrix class.
@@ -346,8 +346,8 @@ public class Matrix implements Cloneable, java.io.Serializable {
 
    /** Get a submatrix.
    @param r    Array of row indices.
-   @param i0   Initial column index
-   @param i1   Final column index
+   @param j0   Initial column index
+   @param j1   Final column index
    @return     A(r(:),j0:j1)
    @exception  ArrayIndexOutOfBoundsException Submatrix indices
    */
@@ -995,21 +995,21 @@ public class Matrix implements Cloneable, java.io.Serializable {
       tokenizer.wordChars(0,255);
       tokenizer.whitespaceChars(0, ' ');
       tokenizer.eolIsSignificant(true);
-      java.util.Vector v = new java.util.Vector();
+      java.util.Vector<Double> vD = new java.util.Vector<Double>();
 
       // Ignore initial empty lines
       while (tokenizer.nextToken() == StreamTokenizer.TT_EOL);
       if (tokenizer.ttype == StreamTokenizer.TT_EOF)
 	throw new java.io.IOException("Unexpected EOF on matrix read.");
       do {
-         v.addElement(Double.valueOf(tokenizer.sval)); // Read & store 1st row.
+         vD.addElement(Double.valueOf(tokenizer.sval)); // Read & store 1st row.
       } while (tokenizer.nextToken() == StreamTokenizer.TT_WORD);
 
-      int n = v.size();  // Now we've got the number of columns!
+      int n = vD.size();  // Now we've got the number of columns!
       double row[] = new double[n];
       for (int j=0; j<n; j++)  // extract the elements of the 1st row.
-         row[j]= (Double) v.elementAt(j);
-      v.removeAllElements();
+         row[j]=vD.elementAt(j).doubleValue();
+      java.util.Vector<double[]> v = new java.util.Vector<double[]>();
       v.addElement(row);  // Start storing rows instead of columns.
       while (tokenizer.nextToken() == StreamTokenizer.TT_WORD) {
          // While non-empty lines
@@ -1018,7 +1018,7 @@ public class Matrix implements Cloneable, java.io.Serializable {
          do {
             if (j >= n) throw new java.io.IOException
                ("Row " + v.size() + " is too long.");
-            row[j++] = (double) v.elementAt(j);
+            row[j++] = Double.valueOf(tokenizer.sval).doubleValue();
          } while (tokenizer.nextToken() == StreamTokenizer.TT_WORD);
          if (j < n) throw new java.io.IOException
             ("Row " + v.size() + " is too short.");
@@ -1042,4 +1042,5 @@ public class Matrix implements Cloneable, java.io.Serializable {
       }
    }
 
+  private static final long serialVersionUID = 1;
 }

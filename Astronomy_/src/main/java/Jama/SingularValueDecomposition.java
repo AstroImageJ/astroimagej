@@ -2,7 +2,7 @@ package Jama;
 
 import Jama.util.Maths;
 
-/** Singular Value Decomposition.
+   /** Singular Value Decomposition.
    <P>
    For an m-by-n matrix A with m >= n, the singular value decomposition is
    an m-by-n orthogonal matrix U, an n-by-n diagonal matrix S, and
@@ -44,8 +44,8 @@ public class SingularValueDecomposition implements java.io.Serializable {
  * ------------------------ */
 
    /** Construct the singular value decomposition
-   @param A    Rectangular matrix
-   @return     Structure to access U, S and V.
+       Structure to access U, S and V.
+   @param Arg    Rectangular matrix
    */
 
    public SingularValueDecomposition (Matrix Arg) {
@@ -545,4 +545,5 @@ public class SingularValueDecomposition implements java.io.Serializable {
       }
       return r;
    }
+  private static final long serialVersionUID = 1;
 }

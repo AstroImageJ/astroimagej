@@ -36,7 +36,7 @@ import static Astronomy.MultiPlot_.useMacroTitle;
  */
 public class AIJStartupHandler implements PlugIn {
     private static final AssociationMapper multiplotTableHandler =
-            new AssociationMapper(p -> {
+            new AssociationMapper((p, skipDialog) -> {
                 MeasurementTable table = MeasurementTable.getTableFromFile(p.toString());
                 if (table != null) {
                     table.show();
@@ -64,10 +64,10 @@ public class AIJStartupHandler implements PlugIn {
 
                 return false;
             },
-            p -> {
+            (p, skipDialog) -> {
                 var table = new MeasurementTable(p.getFileName().toString());
                 table.setFilePath(p.toString());
-                var tableRead = FITS_Reader.handleTable(p, table);
+                var tableRead = FITS_Reader.handleTable(p, table, skipDialog);
                 if (tableRead != null) {
                     if (tableRead.loadTable()) {
                         useMacroSubtitle.set(false);
@@ -132,11 +132,11 @@ public class AIJStartupHandler implements PlugIn {
                 }
             }, true);
     private static final AssociationMapper multiplotPlotCfgHandler =
-            new AssociationMapper(p -> MultiPlot_.loadConfigOfOpenTable(p.toString()), true, ".plotcfg");
+            new AssociationMapper((p, skipDialog) -> MultiPlot_.loadConfigOfOpenTable(p.toString()), true, ".plotcfg");
     private static final AssociationMapper radecHandler =
-            new AssociationMapper(p -> IJU.openRaDecApertures(p.toString()), true, ".radec");
+            new AssociationMapper((p, skipDialog) -> IJU.openRaDecApertures(p.toString()), true, ".radec");
     private static final AssociationMapper aperturesHandler =
-            new AssociationMapper(p -> {
+            new AssociationMapper((p, skipDialog) -> {
                 var asw = IJU.getBestOpenAstroStackWindow();
                 if (asw != null) {
                     try {

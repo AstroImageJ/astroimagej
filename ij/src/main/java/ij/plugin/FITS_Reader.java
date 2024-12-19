@@ -394,7 +394,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 				if (filter != null && !filter.matchesFilter(hdr)) return;
 				imageProcessor = makeStackFrom3DData(data, tableHDU.getNRows(), makeHeadersTessCut(hdr, tableHDU, hdus));
 			} else {
-				var mt = fitsTable2MeasurementsTable(hdus, tableHDU);
+				var mt = fitsTable2MeasurementsTable(hdus, tableHDU, false);
 				if (mt != null) {
 					mt.show("Measurements in " + fileName);
 				}
@@ -484,12 +484,12 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		return true;
 	}
 
-	public static TableRead handleTable(Path path, ResultsTable table) {
+	public static TableRead handleTable(Path path, ResultsTable table, boolean skipDialog) {
 		try (var fits = new Fits(new FitsFile(path.toFile()))) {
 			var hdus = fits.read();
 			if (hdus.length > 1) {
 				if (hdus[1] instanceof TableHDU<?> tableHDU) {
-					return fitsTable2MeasurementsTable(table, hdus, tableHDU);
+					return fitsTable2MeasurementsTable(table, hdus, tableHDU, skipDialog);
 				}
 			}
 		} catch (IOException e) {
@@ -499,7 +499,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		return null;
 	}
 
-	private ResultsTable fitsTable2MeasurementsTable(BasicHDU<?>[] hdus, TableHDU<?> tableHDU) {
+	private ResultsTable fitsTable2MeasurementsTable(BasicHDU<?>[] hdus, TableHDU<?> tableHDU, boolean skipDialog) {
 		ResultsTable mt;
 		try {
 			// Work around access issues
@@ -514,11 +514,11 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			mt = new ResultsTable(tableHDU.getNRows());
 		}
 
-		var tableRead = fitsTable2MeasurementsTable(mt, hdus, tableHDU);
+		var tableRead = fitsTable2MeasurementsTable(mt, hdus, tableHDU, skipDialog);
 		return mt;
 	}
 
-	private static TableRead fitsTable2MeasurementsTable(ResultsTable table, BasicHDU<?>[] hdus, TableHDU<?> tableHDU) throws FitsException {
+	private static TableRead fitsTable2MeasurementsTable(ResultsTable table, BasicHDU<?>[] hdus, TableHDU<?> tableHDU, boolean skipDialog) throws FitsException {
 		var loadTable = true;
 
 		// Handle AIJ Fits Tables
@@ -544,26 +544,29 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 				}
 			}
 
-			// Dialog to control what to open
-			var d = new GenericSwingDialog("FITs MP Table Reading");
-			d.addMessage("Data to load (if available):");
-			d.addCheckbox("Table", MP_TABLE_LOAD_SETTINGS.loadData.get(), MP_TABLE_LOAD_SETTINGS.loadData::set);
-			d.addCheckbox("Plot Config", MP_TABLE_LOAD_SETTINGS.loadPlotcfg.get(),
-					MP_TABLE_LOAD_SETTINGS.loadPlotcfg::set)
-					.setEnabled(hasPlotCfg);
-			d.addCheckbox("Apertures", MP_TABLE_LOAD_SETTINGS.loadApertures.get(),
-					MP_TABLE_LOAD_SETTINGS.loadApertures::set)
-					.setEnabled(hasApertures);
-			d.centerDialog(true);
+			System.out.println(skipDialog);
+            if (!skipDialog) {
+				// Dialog to control what to open
+				var d = new GenericSwingDialog("FITs MP Table Reading");
+				d.addMessage("Data to load (if available):");
+				d.addCheckbox("Table", MP_TABLE_LOAD_SETTINGS.loadData.get(), MP_TABLE_LOAD_SETTINGS.loadData::set);
+				d.addCheckbox("Plot Config", MP_TABLE_LOAD_SETTINGS.loadPlotcfg.get(),
+								MP_TABLE_LOAD_SETTINGS.loadPlotcfg::set)
+						.setEnabled(hasPlotCfg);
+				d.addCheckbox("Apertures", MP_TABLE_LOAD_SETTINGS.loadApertures.get(),
+								MP_TABLE_LOAD_SETTINGS.loadApertures::set)
+						.setEnabled(hasApertures);
+				d.centerDialog(true);
 
-			d.showDialog();
+				d.showDialog();
 
-			if (d.wasCanceled()) {
-				return null;
-			}
+				if (d.wasCanceled()) {
+					return null;
+				}
+            }
 
 			int totalCol = 0;
-			if (MP_TABLE_LOAD_SETTINGS.loadData.get()) {
+			if (skipDialog || MP_TABLE_LOAD_SETTINGS.loadData.get()) {
 				if (tableHDU instanceof CompressedTableHDU compressedTableHDU) {
 					tableHDU = compressedTableHDU.asBinaryTableHDU();
 				}
@@ -606,7 +609,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			for (BasicHDU<?> basicHDU : hdus) {
 				if (basicHDU == tableHDU) continue;
 				if (basicHDU instanceof TableHDU<?> t) {
-					if (MP_TABLE_LOAD_SETTINGS.loadData.get() && t.getHeader().getBooleanValue("AIJ_XTRC", false)) {
+					if (skipDialog || MP_TABLE_LOAD_SETTINGS.loadData.get() && t.getHeader().getBooleanValue("AIJ_XTRC", false)) {
 						if (t instanceof CompressedTableHDU compressedTableHDU) {
 							t = compressedTableHDU.asBinaryTableHDU();
 						}
@@ -622,7 +625,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 						continue;
 					}
 
-					if (MP_TABLE_LOAD_SETTINGS.loadPlotcfg.get()) {
+					if (skipDialog || MP_TABLE_LOAD_SETTINGS.loadPlotcfg.get()) {
 						var pltcfgCol = t.findColumn("plotcfg");
                         if (pltcfgCol >= 0) {
 							if (t instanceof CompressedTableHDU compressedTableHDU) {
@@ -635,7 +638,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
                             }
                         }
 					}
-					if (MP_TABLE_LOAD_SETTINGS.loadApertures.get()) {
+					if (skipDialog || MP_TABLE_LOAD_SETTINGS.loadApertures.get()) {
 						var aperturesCol = t.findColumn("apertures");
                         if (aperturesCol >= 0) {
 							if (t instanceof CompressedTableHDU compressedTableHDU) {

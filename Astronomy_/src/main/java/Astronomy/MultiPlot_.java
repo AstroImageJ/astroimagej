@@ -714,6 +714,21 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     static boolean[] mmag;
     static boolean[] fromMag;
     static int[] normIndex;
+    /**
+     * Detrend Mode
+     * <ul>
+     * <li>0 - Off</li>
+     * <li>1 - User</li>
+     * <li>2 - Preingress Only</li>
+     * <li>3 - Preingress and In-transit</li>
+     * <li>4 - Postegress</li>
+     * <li>5 - Out of transit Only</li>
+     * <li>6 - Pre ingress and in transit</li>
+     * <li>7 - In transit and postingress</li>
+     * <li>8 - All data</li>
+     * <li>9 - Transit Model</li>
+     * </ul>
+     */
     static int[] detrendFitIndex;
     public static int[][] detrendIndex;
 

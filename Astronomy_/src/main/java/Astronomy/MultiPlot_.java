@@ -9,7 +9,6 @@ import Astronomy.multiplot.settings.KeplerSplineSettings;
 import Astronomy.multiplot.settings.MPOperator;
 import Astronomy.multiplot.table.MeasurementsWindow;
 import Jama.Matrix;
-import Jama.QRDecomposition;
 import astroj.*;
 import flanagan.analysis.Regression;
 import flanagan.math.Minimization;
@@ -39,6 +38,7 @@ import ij.process.ImageProcessor;
 import ij.util.ArrayUtil;
 import ij.util.Tools;
 import org.hipparchus.linear.MatrixUtils;
+import org.hipparchus.stat.regression.OLSMultipleLinearRegression;
 import util.ColorUtil;
 import util.PlotDataBinning;
 
@@ -3470,14 +3470,11 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                                         if (usImageJFitter) {
                                             coeffs[curve] = new double[maxDetrendVars];
                                             if (detrendVars[curve].length > 0) {
-                                                var xMat = new Matrix(detrendVars[curve]).transpose();
-                                                var yMat = new Matrix(detrendYs[curve], detrendYs[curve].length);
-                                                var beta = new QRDecomposition(xMat).solve(yMat);
-
-                                                //beta.print(10, 9);
-                                                coeffs[curve] = new double[maxDetrendVars];
-                                                for (int i = 0; i < beta.getRowDimension(); i++) {
-                                                    coeffs[curve][i+1] = beta.get(i, 0);
+                                                var reg = new OLSMultipleLinearRegression();
+                                                reg.newSampleData(detrendYs[curve], new Matrix(detrendVars[curve]).transpose().getArray());
+                                                var beta = reg.estimateRegressionParameters();
+                                                for (int i = 0; i < beta.length; i++) {
+                                                    coeffs[curve][i] = beta[i];
                                                 }
                                             }
 

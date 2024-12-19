@@ -10,6 +10,7 @@ dependencies {
     api 'net.java.dev.jna:jna-platform:5.15.0'
     api fileTree(dir: "${rootDir}/aijLibs", include: '*.jar')
     implementation 'ch.randelshofer:fastdoubleparser:1.0.0'
+    api 'org.hipparchus:hipparchus-stat:3.1'
 }
 
 artifacts {

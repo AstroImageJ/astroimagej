@@ -41,8 +41,8 @@ public class LUDecomposition implements java.io.Serializable {
  * ------------------------ */
 
    /** LU Decomposition
-   @param  A   Rectangular matrix
-   @return     Structure to access L, U and piv.
+       Structure to access L, U and piv.
+   @param  A Rectangular matrix
    */
 
    public LUDecomposition (Matrix A) {
@@ -308,4 +308,5 @@ public class LUDecomposition implements java.io.Serializable {
       }
       return Xmat;
    }
+  private static final long serialVersionUID = 1;
 }

@@ -1,5 +1,6 @@
 package Jama;
-import Jama.util.*;
+
+import Jama.util.Maths;
 
 /** QR Decomposition.
 <P>
@@ -41,8 +42,8 @@ public class QRDecomposition implements java.io.Serializable {
  * ------------------------ */
 
    /** QR Decomposition, computed by Householder reflections.
+       Structure to access R and the Householder vectors and compute Q.
    @param A    Rectangular matrix
-   @return     Structure to access R and the Householder vectors and compute Q.
    */
 
    public QRDecomposition (Matrix A) {
@@ -215,4 +216,5 @@ public class QRDecomposition implements java.io.Serializable {
       }
       return (new Matrix(X,n,nx).getMatrix(0,n-1,0,nx-1));
    }
+  private static final long serialVersionUID = 1;
 }

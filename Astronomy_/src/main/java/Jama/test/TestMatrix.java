@@ -1,5 +1,7 @@
 package Jama.test;
+
 import Jama.*;
+
 import java.io.*;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
@@ -48,6 +50,8 @@ public class TestMatrix {
       double[][] square = {{166.,188.,210.},{188.,214.,240.},{210.,240.,270.}};
       double[][] sqSolution = {{13.},{15.}};
       double[][] condmat = {{1.,3.},{7.,9.}};
+      double[][] badeigs = {{0,0,0,0,0}, {0,0,0,0,1},{0,0,0,1,0},
+			    {1,1,0,0,1},{1,0,1,0,1}};
       int rows=3,cols=4;
       int invalidld=5;/* should trigger bad shape for construction with val */
       int raggedr=0; /* (raggedr,raggedc) should be out of bounds in ragged array */
@@ -853,6 +857,17 @@ public class TestMatrix {
       } catch ( java.lang.RuntimeException e ) {
          errorCount = try_failure(errorCount,"EigenvalueDecomposition (nonsymmetric)...","incorrect nonsymmetric Eigenvalue decomposition calculation");
       }
+
+      try {
+	  print("\nTesting Eigenvalue; If this hangs, we've failed\n");
+	  Matrix bA = new Matrix(badeigs);
+	  EigenvalueDecomposition bEig = bA.eig();
+	  try_success("EigenvalueDecomposition (hang)...","");
+      } catch ( java.lang.RuntimeException e ) {
+         errorCount = try_failure(errorCount,"EigenvalueDecomposition (hang)...",
+				  "incorrect termination");
+      }
+
 
       print("\nTestMatrix completed.\n");
       print("Total errors reported: " + Integer.toString(errorCount) + "\n");

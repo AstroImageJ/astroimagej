@@ -2991,12 +2991,21 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         detrendAverage[v] = 0.0;
                         detrendPower[v] = 1;
                         int numNaNs = 0;
+                        var c = 0;
                         for (int j = 0; j < nn[curve]; j++) {
-                            if (Double.isNaN(detrend[curve][v][j])) { numNaNs++; } else {
-                                detrendAverage[v] += detrend[curve][v][j] / (double) nn[curve];
+                            if ((detrendFitIndex[curve] == 4 &&
+                                         (x[curve][j] > fitMin[curve] && x[curve][j] < fitLeft[curve]) ||
+                                         (x[curve][j] > fitRight[curve] && x[curve][j] < fitMax[curve])
+                            ) || (detrendFitIndex[curve] != 4 && x[curve][j] > fitMin[curve] && x[curve][j] < fitMax[curve])) {
+                                if (Double.isNaN(detrend[curve][v][j])) {
+                                    numNaNs++;
+                                } else {
+                                    detrendAverage[v] += detrend[curve][v][j];
+                                    c++;
+                                }
                             }
                         }
-                        detrendAverage[v] = ((double) nn[curve] / ((double) nn[curve] - (double) numNaNs)) * detrendAverage[v];
+                        detrendAverage[v] /= c;
                         for (int j = 0; j < nn[curve]; j++) {
                             detrend[curve][v][j] -= detrendAverage[v];
                         }
@@ -3009,12 +3018,19 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         if (detrendPower[v] > 1) {
                             detrendAverage[v] = 0.0;
                             numNaNs = 0;
+                            c = 0;
                             for (int j = 0; j < nn[curve]; j++) {
-                                if (Double.isNaN(detrend[curve][v][j])) { numNaNs++; } else {
-                                    detrendAverage[v] += detrend[curve][v][j];
+                                if ((detrendFitIndex[curve] == 4 &&
+                                             (x[curve][j] > fitMin[curve] && x[curve][j] < fitLeft[curve]) ||
+                                             (x[curve][j] > fitRight[curve] && x[curve][j] < fitMax[curve])
+                                ) || (detrendFitIndex[curve] != 4 && x[curve][j] > fitMin[curve] && x[curve][j] < fitMax[curve])) {
+                                    if (Double.isNaN(detrend[curve][v][j])) { numNaNs++; } else {
+                                        detrendAverage[v] += detrend[curve][v][j];
+                                        c++;
+                                    }
                                 }
                             }
-                            detrendAverage[v] /= (nn[curve] - numNaNs);
+                            detrendAverage[v] /= c;
                             for (int j = 0; j < nn[curve]; j++) {
                                 detrend[curve][v][j] -= detrendAverage[v];
                             }

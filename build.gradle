@@ -554,7 +554,7 @@ javapackager {
     macConfig.setNotarizeApp(System.getenv("DeveloperId")!=null && (project.codeSignAndNotarize.toBoolean()))
     macConfig.setKeyChainProfile("AC_PASSWORD")
     macConfig.setDeveloperId(System.getenv("DeveloperId"))
-    macConfig.setCustomLauncher(file("${projectDir}/packageFiles/assets/mac/universalJavaApplicationStub"))
+    macConfig.setCustomLauncher(file("${projectDir}/packageFiles/assets/mac/nativeJavaApplicationStub"))
     winConfig.exeCreationTool = WindowsExeCreationTool.why
     winConfig.productVersion = "1.1.1"
     winConfig.productName = "Why Java Launcher"

@@ -370,6 +370,11 @@ public class ApertureRoi extends Roi {
         }
     }
 
+    @Override
+    public Aperture.ApertureShape getApertureShape() {
+        return Aperture.ApertureShape.CIRCULAR;
+    }
+
     /**
      * Calculates the CORRECT screen x-position of a given decimal pixel position.
      */

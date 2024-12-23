@@ -118,13 +118,28 @@ public class Centroid {
         yCenter = yy;
     }
 
-    public boolean measure(ImagePlus imp, FreeformPixelApertureRoi aperture, boolean findCentroid,
+    public boolean measure(ImagePlus imp, Aperture aperture, boolean findCentroid,
                            boolean useBackgroundPlane, boolean removeStars) {
-        return measure(imp, aperture.getXpos(), aperture.getYpos(),
-                aperture.getCentroidRadius(),
-                aperture.hasAnnulus() ? aperture.getBack1() : aperture.getCentroidRadius() * 1.2,
-                aperture.hasAnnulus() ? aperture.getBack2() : aperture.getCentroidRadius() * 2.0,
-                findCentroid, useBackgroundPlane, removeStars);
+        return switch (aperture.getApertureShape()) {
+            case CIRCULAR -> {
+                if (aperture instanceof ApertureRoi apertureRoi) {
+                    yield measure(imp, apertureRoi.getXpos(), apertureRoi.getYpos(),
+                            apertureRoi.getRadius(), apertureRoi.getBack1(), apertureRoi.getBack2(),
+                            findCentroid, useBackgroundPlane, removeStars);
+                }
+                throw new IllegalStateException();
+            }
+            case FREEFORM_PIXEL -> {
+                if (aperture instanceof FreeformPixelApertureRoi apertureRoi) {
+                    yield measure(imp, apertureRoi.getXpos(), apertureRoi.getYpos(),
+                            apertureRoi.getCentroidRadius(),
+                            apertureRoi.hasAnnulus() ? apertureRoi.getBack1() : apertureRoi.getCentroidRadius() * 1.2,
+                            apertureRoi.hasAnnulus() ? apertureRoi.getBack2() : apertureRoi.getCentroidRadius() * 2.0,
+                            findCentroid, useBackgroundPlane, removeStars);
+                }
+                throw new IllegalStateException();
+            }
+        };
     }
 
     /**

@@ -9,6 +9,9 @@ import ij.process.ColorProcessor;
 import ij.process.ImageProcessor;
 
 import java.awt.*;
+import java.awt.geom.Area;
+import java.awt.geom.FlatteningPathIterator;
+import java.awt.geom.PathIterator;
 
 /**
  * Simple aperture photometer using a circular aperture and a background annulus with
@@ -1074,6 +1077,150 @@ public class Photometer {
         // y0 = Y coordinate of the first point
         // y1 = Y coordinate of the second point
         return (0.5 * x * (y1 - y0));
+    }
+
+    private Rectangle clampBounds(ImagePlus imp, Rectangle bounds) {
+        return bounds.intersection(new Rectangle(0, 0, imp.getWidth(), imp.getHeight()));
+    }
+
+    /**
+     * Calculates the precise area of a {@link Area} object.
+     *
+     * @param area The Area object to calculate the area for.
+     * @return The calculated area.
+     */
+    //todo care about winding rule on the iterator?
+    private static double integrateArea(Area area, boolean flatten) {
+        var pathIterator = flatten ? new FlatteningPathIterator(area.getPathIterator(null), 0.01, 10) : area.getPathIterator(null);
+        var coords = new double[6];
+
+        double startX = 0, startY = 0; // Starting point of a subpath
+        double lastX = 0, lastY = 0;  // Last point in the current segment
+
+        double totalArea = 0.0;
+
+        var linSeg = 0;
+        while (!pathIterator.isDone()) {
+            int segmentType = pathIterator.currentSegment(coords);
+
+            switch (segmentType) {
+                case PathIterator.SEG_MOVETO -> {
+                    // Start a new subpath
+                    startX = coords[0];
+                    startY = coords[1];
+                    lastX = startX;
+                    lastY = startY;
+                }
+                case PathIterator.SEG_LINETO -> {
+                    // Add the area of a triangle formed by the line and origin
+                    double x = coords[0];
+                    double y = coords[1];
+                    totalArea += triangleArea(lastX, lastY, x, y);
+                    lastX = x;
+                    lastY = y;
+                    linSeg++;
+                }
+                case PathIterator.SEG_QUADTO -> {
+                    // Quadratic Bézier curve
+                    double ctrlX = coords[0], ctrlY = coords[1];
+                    double x = coords[2], y = coords[3];
+                    totalArea += integrateQuadraticBezier(lastX, lastY, ctrlX, ctrlY, x, y);
+                    lastX = x;
+                    lastY = y;
+                }
+                case PathIterator.SEG_CUBICTO -> {
+                    // Cubic Bézier curve
+                    double ctrl1X = coords[0], ctrl1Y = coords[1];
+                    double ctrl2X = coords[2], ctrl2Y = coords[3];
+                    double x = coords[4], y = coords[5];
+                    totalArea += integrateCubicBezier(lastX, lastY, ctrl1X, ctrl1Y, ctrl2X, ctrl2Y, x, y);
+                    lastX = x;
+                    lastY = y;
+                }
+                case PathIterator.SEG_CLOSE -> {
+                    // Close the path by adding the area of the closing segment
+                    totalArea += triangleArea(lastX, lastY, startX, startY);
+                    lastX = startX;
+                    lastY = startY;
+                    linSeg++;
+                }
+            }
+
+            pathIterator.next();
+        }
+
+        return Math.abs(totalArea);
+    }
+
+    /**
+     * Computes the signed area of a triangle given its vertices.
+     */
+    private static double triangleArea(double x1, double y1, double x2, double y2) {
+        return 0.5 * (x1 * y2 - y1 * x2);
+    }
+
+    /**
+     * Numerically integrates the area under a quadratic Bézier curve.
+     */
+    private static double integrateQuadraticBezier(double x0, double y0, double ctrlX, double ctrlY, double x1, double y1) {
+        int steps = 100;
+        double area = 0.0;
+        for (int i = 0; i < steps; i++) {
+            var t1 = (double) i / steps;
+            var t2 = (double) (i + 1) / steps;
+
+            var p1 = quadraticBezier(x0, y0, ctrlX, ctrlY, x1, y1, t1);
+            var p2 = quadraticBezier(x0, y0, ctrlX, ctrlY, x1, y1, t2);
+
+            area += (p1[0] * p2[1] - p1[1] * p2[0]) * 0.5;
+        }
+        return area;
+    }
+
+    /**
+     * Computes a point on a quadratic Bézier curve at parameter t.
+     */
+    private static double[] quadraticBezier(double x0, double y0, double ctrlX, double ctrlY, double x1, double y1, double t) {
+        var u = 1 - t;
+        var x = u * u * x0 + 2 * u * t * ctrlX + t * t * x1;
+        var y = u * u * y0 + 2 * u * t * ctrlY + t * t * y1;
+        return new double[]{x, y};
+    }
+
+    /**
+     * Numerically integrates the area under a cubic Bézier curve.
+     */
+    private static double integrateCubicBezier(double x0, double y0, double ctrl1X, double ctrl1Y,
+                                               double ctrl2X, double ctrl2Y, double x1, double y1) {
+        int steps = 100;
+        double area = 0.0;
+        for (int i = 0; i < steps; i++) {
+            var t1 = (double) i / steps;
+            var t2 = (double) (i + 1) / steps;
+
+            var p1 = cubicBezier(x0, y0, ctrl1X, ctrl1Y, ctrl2X, ctrl2Y, x1, y1, t1);
+            var p2 = cubicBezier(x0, y0, ctrl1X, ctrl1Y, ctrl2X, ctrl2Y, x1, y1, t2);
+
+            area += (p1[0] * p2[1] - p1[1] * p2[0]) * 0.5;
+        }
+        return area;
+    }
+
+    /**
+     * Computes a point on a cubic Bézier curve at parameter t.
+     */
+    private static double[] cubicBezier(double x0, double y0, double ctrl1X, double ctrl1Y,
+                                        double ctrl2X, double ctrl2Y, double x1, double y1, double t) {
+        var u = 1 - t;
+        var x = u * u * u * x0
+                + 3 * u * u * t * ctrl1X
+                + 3 * u * t * t * ctrl2X
+                + t * t * t * x1;
+        var y = u * u * u * y0
+                + 3 * u * u * t * ctrl1Y
+                + 3 * u * t * t * ctrl2Y
+                + t * t * t * y1;
+        return new double[]{x, y};
     }
 
 

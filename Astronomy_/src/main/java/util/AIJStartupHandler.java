@@ -4,10 +4,8 @@ import Astronomy.AstroImageJ_Updater;
 import Astronomy.MultiAperture_;
 import Astronomy.MultiPlot_;
 import Astronomy.multiaperture.FreeformPixelApertureHandler;
-import Astronomy.multiaperture.io.AperturesFile;
-import astroj.AstroCanvas;
-import astroj.IJU;
-import astroj.MeasurementTable;
+import Astronomy.multiaperture.io.AperturesFileCodec;
+import astroj.*;
 import ij.IJ;
 import ij.Prefs;
 import ij.astro.io.prefs.Property;
@@ -77,10 +75,11 @@ public class AIJStartupHandler implements PlugIn {
 
                     var asw = IJU.getBestOpenAstroStackWindow();
                     if (asw != null && tableRead.apertures() != null) {
-                        var d = AperturesFile.read(new String(tableRead.apertures()));
+                        var d = AperturesFileCodec.readContents(new String(tableRead.apertures()));
                         if (d != null) {
-                            FreeformPixelApertureHandler.APS.set(d.apertureRois());
-                            FreeformPixelApertureHandler.IMPORTED_APS.set(d.apertureRois());
+                            var pixelAps = d.getAperturesOfType(FreeformPixelApertureRoi.class, Aperture.ApertureShape.FREEFORM_PIXEL);
+                            FreeformPixelApertureHandler.APS.set(pixelAps);
+                            FreeformPixelApertureHandler.IMPORTED_APS.set(pixelAps);
                             Prefs.ijPrefs.putAll(d.prefs());
                             Property.resetLoadStatus();
                         } else {
@@ -88,10 +87,11 @@ public class AIJStartupHandler implements PlugIn {
                         }
                     } else if (tableRead.apertures() != null) {
                         try {
-                            var d = AperturesFile.read(new String(tableRead.apertures()));
+                            var d = AperturesFileCodec.readContents(new String(tableRead.apertures()));
                             if (d != null) {
-                                FreeformPixelApertureHandler.APS.set(d.apertureRois());
-                                FreeformPixelApertureHandler.IMPORTED_APS.set(d.apertureRois());
+                                var pixelAps = d.getAperturesOfType(FreeformPixelApertureRoi.class, Aperture.ApertureShape.FREEFORM_PIXEL);
+                                FreeformPixelApertureHandler.APS.set(pixelAps);
+                                FreeformPixelApertureHandler.IMPORTED_APS.set(pixelAps);
                                 Prefs.ijPrefs.putAll(d.prefs());
                                 Property.resetLoadStatus();
                             } else {
@@ -141,10 +141,11 @@ public class AIJStartupHandler implements PlugIn {
                 if (asw != null) {
                     try {
                         var s = Files.readString(p);
-                        var d = AperturesFile.read(s);
+                        var d = AperturesFileCodec.readContents(s);
                         if (d != null) {
-                            FreeformPixelApertureHandler.APS.set(d.apertureRois());
-                            FreeformPixelApertureHandler.IMPORTED_APS.set(d.apertureRois());
+                            var pixelAps = d.getAperturesOfType(FreeformPixelApertureRoi.class, Aperture.ApertureShape.FREEFORM_PIXEL);
+                            FreeformPixelApertureHandler.APS.set(pixelAps);
+                            FreeformPixelApertureHandler.IMPORTED_APS.set(pixelAps);
                             Prefs.ijPrefs.putAll(d.prefs());
                             Property.resetLoadStatus();
                             if (asw.getCanvas() instanceof AstroCanvas ac) {
@@ -167,10 +168,11 @@ public class AIJStartupHandler implements PlugIn {
                 } else {
                     try {
                         var s = Files.readString(p);
-                        var d = AperturesFile.read(s);
+                        var d = AperturesFileCodec.readContents(s);
                         if (d != null) {
-                            FreeformPixelApertureHandler.APS.set(d.apertureRois());
-                            FreeformPixelApertureHandler.IMPORTED_APS.set(d.apertureRois());
+                            var pixelAps = d.getAperturesOfType(FreeformPixelApertureRoi.class, Aperture.ApertureShape.FREEFORM_PIXEL);
+                            FreeformPixelApertureHandler.APS.set(pixelAps);
+                            FreeformPixelApertureHandler.IMPORTED_APS.set(pixelAps);
                             Prefs.ijPrefs.putAll(d.prefs());
                             Property.resetLoadStatus();
                         } else {

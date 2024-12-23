@@ -3,7 +3,7 @@ package astroj;
 import Astronomy.MultiAperture_;
 import Astronomy.MultiPlot_;
 import Astronomy.multiaperture.FreeformPixelApertureHandler;
-import Astronomy.multiaperture.io.AperturesFile;
+import Astronomy.multiaperture.io.AperturesFileCodec;
 import Astronomy.postprocess.PhotometricDebayer;
 import bislider.com.visutools.nav.bislider.*;
 import ij.*;
@@ -4881,10 +4881,11 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         if (apsPath != null && !apsPath.trim().isEmpty()) {
             try {
                 var s = Files.readString(Path.of(apsPath));
-                var d = AperturesFile.read(s);
+                var d = AperturesFileCodec.readContents(s);
                 if (d != null) {
-                    FreeformPixelApertureHandler.APS.set(d.apertureRois());
-                    FreeformPixelApertureHandler.IMPORTED_APS.set(d.apertureRois());
+                    var pixelAps = d.getAperturesOfType(FreeformPixelApertureRoi.class, Aperture.ApertureShape.FREEFORM_PIXEL);
+                    FreeformPixelApertureHandler.APS.set(pixelAps);
+                    FreeformPixelApertureHandler.IMPORTED_APS.set(pixelAps);
                     Prefs.ijPrefs.putAll(d.prefs());
                     ac.removeApertureRois();
                     for (int i = 0; i < FreeformPixelApertureHandler.APS.get().size(); i++) {

@@ -4,7 +4,8 @@ package astroj;
 
 import Astronomy.MultiAperture_;
 import Astronomy.multiaperture.FreeformPixelApertureHandler;
-import Astronomy.multiaperture.io.AperturesFile;
+import Astronomy.multiaperture.io.ApFile;
+import Astronomy.multiaperture.io.AperturesFileCodec;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.Prefs;
@@ -1343,9 +1344,9 @@ public class IJU {
                 }
             }
 
-            var data = new AperturesFile.Data(FreeformPixelApertureHandler.APS.get(), prefs);
             try {
-                Files.writeString(outFile.toPath(), data.toString());
+                var apFile = new ApFile(FreeformPixelApertureHandler.APS.get(), prefs);
+                Files.writeString(outFile.toPath(), AperturesFileCodec.write(apFile));
             } catch (IOException e) {
                 e.printStackTrace();
                 IJ.beep();

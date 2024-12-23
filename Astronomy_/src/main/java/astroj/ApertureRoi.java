@@ -13,7 +13,7 @@ import java.text.DecimalFormat;
  * The ROI keeps track both of it's double position and a boolean flag which determines whether
  * the backround aperture should be displayed or not.
  */
-public class ApertureRoi extends Roi {
+public non-sealed class ApertureRoi extends Roi implements Aperture {
     protected double intCnts = Double.NaN;
     protected String intCntsText = "";
     protected String intCntsWithMagText = "";

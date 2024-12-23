@@ -544,7 +544,6 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 				}
 			}
 
-			System.out.println(skipDialog);
             if (!skipDialog) {
 				// Dialog to control what to open
 				var d = new GenericSwingDialog("FITs MP Table Reading");

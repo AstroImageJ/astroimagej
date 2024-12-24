@@ -274,126 +274,6 @@ tasks.named('fetchJavaRuntimeSystems').configure {
     }
 }
 
-/**
- * Download the specified Java runtimes based on javaRuntimeSystems.
- */
-tasks.register('downloadJavaRuntimes', Download) {
-    dependsOn 'fetchJavaRuntimeSystems'
-    mkdir(file("${projectDir}/jres"))
-
-    /*onlyIf { //upToDate checks seems to automatically track this
-        def needDownload = true
-        javaRuntimeSystemsProperty.get().each { sys, sysInfo ->
-            def jreZip = getProject().layout.projectDirectory.dir("jres/$sysInfo.name")
-            if (needDownload) {
-                needDownload = !jreZip.asFile.exists()
-            }
-        }
-
-        return needDownload
-    }*/
-
-    def runtimeData = javaRuntimeSystemsProperty.get()
-    //println "Using the following runtime data: $runtimeData"
-
-    // Download jres concurrently
-    src runtimeData.collect { sys, sysInfo ->
-        sysInfo.url
-    }
-
-    overwrite false
-    onlyIfModified true
-    dest 'jres'
-
-    // Collect current runtime files and extensions
-    //noinspection GroovyAssignabilityCheck
-    def currentFiles = runtimeData.collectEntries { [it.value.name, it.value.ext] }
-
-    // Remove old unpacked runtimes
-    file("${projectDir}/jres").traverse(type: groovy.io.FileType.DIRECTORIES, maxDepth: 0) {
-        if (!currentFiles.collect { name, ext ->
-            (name as String).replace("." + ext as String, "")
-        }.contains(it.name)) {
-            it.deleteDir()
-        }
-    }
-
-    // Remove old packed runtimes
-    file("${projectDir}/jres").traverse(type: groovy.io.FileType.FILES, maxDepth: 0) {
-        if (!currentFiles.containsKey(it.name) && it.name != javaRuntimeFileNameProvider.get()) {
-            it.delete()
-        }
-    }
-}
-
-/**
- * On MacOs, for some reason after a jdk is used once for packaging it becomes invalid.
- * This is run to "reset" the JDK to allow packaging to complete.
- * Runs only on MacOs
- */
-tasks.register('deleteDecompressedJres') {
-    outputs.upToDateWhen { false }
-    onlyIf {
-        Os.isFamily(Os.FAMILY_MAC)
-    }
-    if (Os.isFamily(Os.FAMILY_MAC)) {
-        logger.info('Removing decompressed runtimes.')
-        // Remove old unpacked runtimes
-        file("${projectDir}/jres").traverse(type: groovy.io.FileType.DIRECTORIES, maxDepth: 0) {
-            it.deleteDir()
-        }
-    }
-}
-
-/**
- * Verify the downloaded Java runtimes are correct.
- * If a file fails the check, delete it and rerun to attempt downloading again.
- * Could also check the sha256_hash.
- */
-tasks.register('verifyDownloadedJres', Verify) {
-    dependsOn 'downloadJavaRuntimes'
-    mustRunAfter 'downloadJavaRuntimes'
-    //noinspection GroovyAssignabilityCheck
-    javaRuntimeSystemsProperty.get().each { sys, sysInfo ->
-        //noinspection GroovyAssignabilityCheck
-        src file("${projectDir}/jres/${sysInfo.name}")
-        //noinspection GroovyAssignabilityCheck
-        algorithm 'MD5'
-        //noinspection GroovyAssignabilityCheck
-        checksum sysInfo.md5
-    }
-}
-
-/**
- * Decompress the Java runtimes into folders.
- */
-tasks.register('unZipJresTask', Copy) {
-    dependsOn 'verifyDownloadedJres'
-    group 'AstroImageJ Development'
-    mustRunAfter 'verifyDownloadedJres', 'deleteDecompressedJres'
-
-    //noinspection GroovyAssignabilityCheck
-    javaRuntimeSystemsProperty.get().each { sys, sysInfo ->
-        it.inputs.file(file("${projectDir}/jres/${sysInfo.name}"))
-        it.outputs.dir(it.project.layout.projectDirectory.dir("jres/${(sysInfo.name as String).replace("." +sysInfo.ext as String, "")}"))
-
-        if (sysInfo.ext == "tar.gz") {
-            //noinspection GroovyAssignabilityCheck
-            from(tarTree(resources.gzip(file("${projectDir}/jres/${sysInfo.name}")))) {
-                into ''
-            }
-        } else if (sysInfo.ext == "zip") {
-            from(zipTree(file("${projectDir}/jres/${sysInfo.name}"))) {
-                into ''
-            }
-        } else {
-            //noinspection GroovyAssignabilityCheck
-            logger.error("Did not know how to handle " + sysInfo.ext + " for " + sys as String)
-        }
-    }
-    into 'jres'
-}
-
 // Define what files belong to all distributions and their location
 def commonDist = project.copySpec {
     // Cannot use configurations.shippingAstro.singleFile as it does not trigger the subproject build correctly
@@ -606,11 +486,127 @@ tasks.register('packageAij')
 
 //noinspection GroovyAssignabilityCheck
 javaRuntimeSystemsProperty.get().each {sys, sysInfo ->
-    String taskName = "packageAijFor" + (sysInfo.os as String).capitalize() + "_" + sysInfo.arch +
-            "_" + sysInfo.hw_bitness + "Bit_" + "Java" + sysInfo.version
+    String sysId = (sysInfo.os as String).capitalize() + "_" + sysInfo.arch +
+            "_" + sysInfo.hw_bitness + "Bit"
+    String packageTaskName = "packageAijFor" + sysId + "_" + "Java" + sysInfo.version
+    String downloadTaskName = "downloadJavaRuntimeFor" + sysId
+    String verifyTaskName = "verifyJavaRuntimeFor" + sysId
+    String unzipTaskName = "unzipJavaRuntimeFor" + sysId
+    String deleteTaskName = "deleteJavaRuntimeFor" + sysId
+    String cleanTaskName = "cleanJavaRuntimeFor" + sysId
+
+    /**
+     * Download the specified Java runtimes based on javaRuntimeSystems.
+     */
+    tasks.register(downloadTaskName, Download) {
+        dependsOn 'fetchJavaRuntimeSystems'
+        finalizedBy cleanTaskName, verifyTaskName
+        mkdir(file("${projectDir}/jres"))
+
+        /*onlyIf { //upToDate checks seems to automatically track this
+            def needDownload = true
+            javaRuntimeSystemsProperty.get().each { sys, sysInfo ->
+                def jreZip = getProject().layout.projectDirectory.dir("jres/$sysInfo.name")
+                if (needDownload) {
+                    needDownload = !jreZip.asFile.exists()
+                }
+            }
+
+            return needDownload
+        }*/
+
+        // Download jres concurrently
+        src sysInfo.url
+
+        overwrite false
+        onlyIfModified true
+        dest layout.projectDirectory.dir('jres').dir(sysId).file("$sysId-${sysInfo.name}.${sysInfo.ext}")
+    }
+
+    tasks.register(cleanTaskName, Delete) {
+        def d = layout.projectDirectory.dir('jres').dir(sysId)
+
+        def filesToDelete = d.getAsFileTree().matching {
+            include("$sysId*")
+            exclude("$sysId-${sysInfo.name}.${sysInfo.ext}")
+        }
+
+        delete filesToDelete
+    }
+
+    /**
+     * On MacOs, for some reason after a jdk is used once for packaging it becomes invalid.
+     * This is run to "reset" the JDK to allow packaging to complete.
+     * Runs only on MacOs
+     */
+    tasks.register(deleteTaskName) {
+        outputs.upToDateWhen { false }
+        onlyIf {
+            Os.isFamily(Os.FAMILY_MAC)
+        }
+        if (Os.isFamily(Os.FAMILY_MAC)) {
+            def folderName = (sysInfo.name as String).replace("." + sysInfo.ext as String, "")
+            logger.info("Removing decompressed runtime ${folderName}.")
+            // Remove old unpacked runtimes
+            def fol = file("${projectDir}/jres/$sysId/$folderName")
+            if (fol.isDirectory()) {
+                fol.deleteDir()
+            } else {
+                logger.error("Failed to remove decompressed runtime ${fol}.")
+            }
+        }
+    }
+
+    /**
+     * Verify the downloaded Java runtimes are correct.
+     * If a file fails the check, delete it and rerun to attempt downloading again.
+     * Could also check the sha256_hash.
+     */
+    tasks.register(verifyTaskName, Verify) {
+        dependsOn downloadTaskName
+        it.inputs.file(it.project.layout.projectDirectory.dir("jres").dir(sysId).file("$sysId-${sysInfo.name}.${sysInfo.ext}"))
+        outputs.upToDateWhen { false }
+
+        //noinspection GroovyAssignabilityCheck
+        src it.project.layout.projectDirectory.dir("jres").dir(sysId).file("$sysId-${sysInfo.name}.${sysInfo.ext}")
+        //noinspection GroovyAssignabilityCheck
+        algorithm 'MD5'
+        //noinspection GroovyAssignabilityCheck
+        checksum sysInfo.md5
+    }
+
+    /**
+     * Decompress the Java runtimes into folders.
+     */
+    tasks.register(unzipTaskName, Sync) {//todo make these happen in parallel
+        dependsOn verifyTaskName, deleteTaskName
+        group 'AstroImageJ Development'
+
+        def archive = it.project.layout.projectDirectory.dir("jres").dir(sysId).file("$sysId-${sysInfo.name}.${sysInfo.ext}")
+
+        //noinspection GroovyAssignabilityCheck
+        it.inputs.file(archive)
+        it.outputs.dir(it.project.layout.projectDirectory.dir("jres/$sysId/unpacked"))
+
+        if (sysInfo.ext == "tar.gz") {
+            //noinspection GroovyAssignabilityCheck
+            from(tarTree(resources.gzip(archive))) {
+                into ''
+            }
+        } else if (sysInfo.ext == "zip") {
+            from(zipTree(archive)) {
+                into ''
+            }
+        } else {
+            //noinspection GroovyAssignabilityCheck
+            logger.error("Did not know how to handle " + sysInfo.ext + " for " + sys as String)
+        }
+
+        into "jres/$sysId/unpacked"
+    }
 
     //noinspection GroovyAssignabilityCheck
-    tasks.register(taskName, PackageTask) {
+    tasks.register(packageTaskName, PackageTask) {
         group 'AstroImageJ Development'
 
         //todo fix incompatibility
@@ -634,7 +630,7 @@ javaRuntimeSystemsProperty.get().each {sys, sysInfo ->
 
         // Get Java bin fold location
         File runtimePath
-        File java = file("${projectDir}/jres/${(sysInfo.name as String).replace("." +sysInfo.ext as String, "")}")
+        File java = file("${projectDir}/jres/$sysId/unpacked/${(sysInfo.name as String).replace("." +sysInfo.ext as String, "")}")
         if (java.exists()) {
             java.traverse(type: groovy.io.FileType.FILES, nameFilter: 'release') {runtimePath = it.parentFile}
         } else { // One of the runtimes does not exist, pull it
@@ -672,14 +668,14 @@ javaRuntimeSystemsProperty.get().each {sys, sysInfo ->
     }
 
     //noinspection GroovyAssignabilityCheck
-    logger.quiet("Added a distribution task: " + taskName as String)
+    logger.quiet("Added a distribution task: " + packageTaskName as String)
 
     //noinspection GroovyAssignabilityCheck
-    tasks.named(taskName) {
+    tasks.named(packageTaskName) {
         //noinspection GroovyAssignabilityCheck
-        dependsOn 'unZipJresTask', 'commonFiles'
+        dependsOn unzipTaskName, 'commonFiles'
         //noinspection GroovyAssignabilityCheck
-        mustRunAfter 'commonFiles', 'deleteDecompressedJres', 'unZipJresTask'
+        mustRunAfter 'commonFiles', deleteTaskName
     }
 
     // Make the meta task run the smaller ones
@@ -687,7 +683,7 @@ javaRuntimeSystemsProperty.get().each {sys, sysInfo ->
     tasks.named("packageAij") {
         group 'AstroImageJ Development'
         //noinspection GroovyAssignabilityCheck
-        dependsOn taskName
+        dependsOn packageTaskName
         //noinspection GroovyAssignabilityCheck
         outputs.upToDateWhen { false }
     }

@@ -111,7 +111,6 @@ public class Opener {
 	public void open(String path) {
 		boolean isURL = path.contains("://") || path.contains("file:/");
 
-		System.out.println(skipFolderDialog);
 		if (FileAssociationHandler.handleFile(path, skipFolderDialog)) return;
 
 		if (isURL && isText(path)) {

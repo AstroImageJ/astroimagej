@@ -500,9 +500,7 @@ public enum ImageType {
         var j = Math.fma(2, 3, 1);
         var tf = System.nanoTime() - t2;
         var isFmaFaster = tf <= tn;
-        System.out.println("Is FMA faster?: " + isFmaFaster);
-        System.out.println("FMA time: " + tf);
-        System.out.println("Normal time " + tn);
+
         return isFmaFaster;
     }
 

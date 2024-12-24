@@ -9,13 +9,17 @@ import ij.Prefs;
 import java.util.List;
 import java.util.Properties;
 
-public record ApFile(Header header, List<? extends Aperture> apertures, Properties prefs) {
+public record ApFile(Header header, List<? extends Aperture> apertures, Properties prefs, boolean legacy) {
     public ApFile(List<? extends Aperture> apertures) {
         this(apertures, getMaPrefs());
     }
 
     public ApFile(List<? extends Aperture> apertures, Properties prefs) {
-        this(new Header(ApertureFileTransformer.maxSupportedMajor, ApertureFileTransformer.maxSupportedMinor), apertures, prefs);
+        this(new Header(ApertureFileTransformer.maxSupportedMajor, ApertureFileTransformer.maxSupportedMinor), apertures, prefs, false);
+    }
+
+    public ApFile(Header header, List<? extends Aperture> apertures, Properties prefs) {
+        this(header, apertures, prefs, false);
     }
 
     public <T extends Aperture> List<T> getAperturesOfType(Class<T> clazz, Aperture.ApertureShape apertureShape) {

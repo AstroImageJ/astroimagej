@@ -119,9 +119,14 @@ public class ApertureTransformer implements Transformer<Aperture> {
             case FREEFORM_PIXEL -> {
                 var ap = (FreeformPixelApertureRoi) aperture;
 
-                s.addSubsection(Section.createSection("isComp", Boolean.toString(ap.isComparisonStar())));
+                if (ap.isComparisonStar()) {
+                    //noinspection ConstantValue
+                    s.addSubsection(Section.createSection("isComp", Boolean.toString(ap.isComparisonStar())));
+                }
 
-                s.addSubsection(Section.createSection("centroid", Boolean.toString(ap.getIsCentroid())));
+                if (ap.getIsCentroid()) {
+                    s.addSubsection(Section.createSection("centroid", Boolean.toString(ap.getIsCentroid())));
+                }
 
                 if (ap.hasAnnulus()) {
                     s.addSubsection(Section.createSection("rBack1", Double.toString(ap.getBack1())));

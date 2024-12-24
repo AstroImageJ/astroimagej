@@ -19,26 +19,31 @@ public class ApertureFileTransformer implements Transformer<ApFile> {
     public ApFile load(Section section) {
         var view = section.createMapView();
 
-        var header = Transformers.read(Header.class, getUniqueSection(view, Header.HEADER));
+        if (view.contains(Header.HEADER)) {
+            var header = Transformers.read(Header.class, getUniqueSection(view, Header.HEADER));
 
-        if (header.getMajorVersion() > maxSupportedMajor) {
-            //todo throw and show error message
+            if (header.getMajorVersion() > maxSupportedMajor) {
+                //todo throw and show error message
+            }
+
+            if (header.getMinorVersion() > maxSupportedMinor) {
+                //todo log warning, proceed reading, give option to stop reading now?
+            }
+
+            var apertures = new ArrayList<Aperture>();
+            for (Section ap : view.get("ap")) {
+                apertures.add(Transformers.read(Aperture.class, ap));
+            }
+
+            var maSettingsSec = getUniqueSection(view, "multiapertureSettings", false);
+
+            Properties prefs = maSettingsSec != null ? Transformers.read(Properties.class, maSettingsSec) : new Properties();
+
+            return new ApFile(header, apertures, prefs);
+        } else { // Legacy Apertures File
+            var prefs = Transformers.read(Properties.class, section);
+            return new ApFile(new Header(), List.of(), prefs, true);
         }
-
-        if (header.getMinorVersion() > maxSupportedMinor) {
-            //todo log warning, proceed reading, give option to stop reading now?
-        }
-
-        var apertures = new ArrayList<Aperture>();
-        for (Section ap : view.get("ap")) {
-            apertures.add(Transformers.read(Aperture.class, ap));
-        }
-
-        var maSettingsSec = getUniqueSection(view, "multiapertureSettings", false);
-
-        Properties prefs = maSettingsSec != null ? Transformers.read(Properties.class, maSettingsSec) : new Properties();
-
-        return new ApFile(header, apertures, prefs);
     }
 
     @Override

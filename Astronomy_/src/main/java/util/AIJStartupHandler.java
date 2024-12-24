@@ -76,7 +76,7 @@ public class AIJStartupHandler implements PlugIn {
                     var asw = IJU.getBestOpenAstroStackWindow();
                     if (asw != null && tableRead.apertures() != null) {
                         var d = AperturesFileCodec.readContents(new String(tableRead.apertures()));
-                        if (d != null) {
+                        if (d != null && !d.legacy()) {
                             var pixelAps = d.getAperturesOfType(FreeformPixelApertureRoi.class, Aperture.ApertureShape.FREEFORM_PIXEL);
                             FreeformPixelApertureHandler.APS.set(pixelAps);
                             FreeformPixelApertureHandler.IMPORTED_APS.set(pixelAps);
@@ -88,7 +88,7 @@ public class AIJStartupHandler implements PlugIn {
                     } else if (tableRead.apertures() != null) {
                         try {
                             var d = AperturesFileCodec.readContents(new String(tableRead.apertures()));
-                            if (d != null) {
+                            if (d != null && !d.legacy()) {
                                 var pixelAps = d.getAperturesOfType(FreeformPixelApertureRoi.class, Aperture.ApertureShape.FREEFORM_PIXEL);
                                 FreeformPixelApertureHandler.APS.set(pixelAps);
                                 FreeformPixelApertureHandler.IMPORTED_APS.set(pixelAps);
@@ -142,7 +142,7 @@ public class AIJStartupHandler implements PlugIn {
                     try {
                         var s = Files.readString(p);
                         var d = AperturesFileCodec.readContents(s);
-                        if (d != null) {
+                        if (d != null && !d.legacy()) {
                             var pixelAps = d.getAperturesOfType(FreeformPixelApertureRoi.class, Aperture.ApertureShape.FREEFORM_PIXEL);
                             FreeformPixelApertureHandler.APS.set(pixelAps);
                             FreeformPixelApertureHandler.IMPORTED_APS.set(pixelAps);
@@ -169,7 +169,7 @@ public class AIJStartupHandler implements PlugIn {
                     try {
                         var s = Files.readString(p);
                         var d = AperturesFileCodec.readContents(s);
-                        if (d != null) {
+                        if (d != null && !d.legacy()) {
                             var pixelAps = d.getAperturesOfType(FreeformPixelApertureRoi.class, Aperture.ApertureShape.FREEFORM_PIXEL);
                             FreeformPixelApertureHandler.APS.set(pixelAps);
                             FreeformPixelApertureHandler.IMPORTED_APS.set(pixelAps);

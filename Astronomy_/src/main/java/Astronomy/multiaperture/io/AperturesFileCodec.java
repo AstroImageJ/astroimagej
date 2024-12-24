@@ -9,7 +9,7 @@ import java.util.Stack;
 public class AperturesFileCodec {
     public static ApFile readContents(String contents) {
         try {
-            return Transformers.read(ApFile.class, readContents0(contents));
+            return Transformers.read(ApFile.class, readToSection(contents));
         } catch (Exception e) {
             e.printStackTrace();
             return null;
@@ -26,10 +26,10 @@ public class AperturesFileCodec {
     }
 
     public static String write(ApFile apFile) {
-        return writeSection(Transformers.write(ApFile.class, apFile));
+        return write(Transformers.write(ApFile.class, apFile));
     }
 
-    private static Section readContents0(String contents) {
+    public static Section readToSection(String contents) {
         Stack<Section> stack = new Stack<>();
         var root = new Section("root", true);
         stack.push(root);
@@ -100,15 +100,15 @@ public class AperturesFileCodec {
         }
     }
 
-    private static String writeSection(Section section) {
+    public static String write(Section section) {
         var writer = new SectionWriter();
 
-        writeSection(writer, section);
+        write(writer, section);
 
         return writer.getContent();
     }
 
-    private static void writeSection(SectionWriter writer, Section section) {
+    private static void write(SectionWriter writer, Section section) {
         var sectionHeader = new StringBuilder(section.name);
         for (String parameter : section.getParameters()) {
             sectionHeader.append('\t').append(parameter);
@@ -116,14 +116,14 @@ public class AperturesFileCodec {
 
         if (section.isRoot()) {
             for (Section subSection : section.getSubSections()) {
-                writeSection(writer, subSection);
+                write(writer, subSection);
             }
         } else {
             writer.writeLine(sectionHeader.toString());
 
             for (Section subSection : section.getSubSections()) {
                 writer.enterSection();
-                writeSection(writer, subSection);
+                write(writer, subSection);
                 writer.endSection();
             }
         }

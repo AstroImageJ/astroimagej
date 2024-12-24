@@ -35,30 +35,7 @@ public class AperturesFileCodec {
         stack.push(root);
 
         contents.lines().forEachOrdered(line -> {
-            if (line == null || line.trim().isEmpty()) {
-                return;
-            }
-
-            int indentation = countLeadingTabs(line);
-            String content = line.trim();
-
-            while (stack.size() > indentation + 1) {
-                stack.pop();
-            }
-
-            Section parent = stack.peek();
-
-            if (content.contains("\t")) {
-                var cs = content.split("\t");
-                var newSection = new Section(cs[0]);
-                newSection.setParameters(Arrays.asList(Arrays.copyOfRange(cs, 1, cs.length)));
-                parent.addSubsection(newSection);
-                stack.push(newSection);
-            } else {
-                var newSection = new Section(content);
-                parent.addSubsection(newSection);
-                stack.push(newSection);
-            }
+            readLine(stack, line);
         });
 
         return root;
@@ -72,31 +49,42 @@ public class AperturesFileCodec {
 
             String line;
             while ((line = reader.readLine()) != null) {
-                if (line.trim().isEmpty()) continue; // Skip blank lines
-
-                int indentation = countLeadingTabs(line);
-                String content = line.trim();
-
-                while (stack.size() > indentation + 1) {
-                    stack.pop();
-                }
-
-                Section parent = stack.peek();
-
-                if (content.contains("\t")) {
-                    var cs = content.split("\t");
-                    var newSection = new Section(cs[0]);
-                    newSection.setParameters(Arrays.asList(Arrays.copyOfRange(cs, 1, cs.length)));
-                    parent.addSubsection(newSection);
-                    stack.push(newSection);
-                } else {
-                    var newSection = new Section(content);
-                    parent.addSubsection(newSection);
-                    stack.push(newSection);
-                }
+                readLine(stack, line);
             }
 
             return root;
+        }
+    }
+
+    private static void readLine(Stack<Section> stack, String line) {
+        if (line == null || line.trim().isEmpty()) {
+            return;
+        }
+
+        // Skip Commented Lines
+        if (line.startsWith("#")) {
+            return;
+        }
+
+        int indentation = countLeadingTabs(line);
+        String content = line.trim();
+
+        while (stack.size() > indentation + 1) {
+            stack.pop();
+        }
+
+        Section parent = stack.peek();
+
+        if (content.contains("\t")) {
+            var cs = content.split("\t");
+            var newSection = new Section(cs[0]);
+            newSection.setParameters(Arrays.asList(Arrays.copyOfRange(cs, 1, cs.length)));
+            parent.addSubsection(newSection);
+            stack.push(newSection);
+        } else {
+            var newSection = new Section(content);
+            parent.addSubsection(newSection);
+            stack.push(newSection);
         }
     }
 

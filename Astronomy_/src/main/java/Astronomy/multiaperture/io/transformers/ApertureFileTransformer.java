@@ -5,6 +5,7 @@ import Astronomy.multiaperture.io.Section;
 import Astronomy.multiaperture.io.Transformer;
 import Astronomy.multiaperture.io.Transformers;
 import astroj.Aperture;
+import ij.astro.logging.AIJLogger;
 import ij.astro.types.MultiMap;
 
 import java.util.ArrayList;
@@ -22,12 +23,12 @@ public class ApertureFileTransformer implements Transformer<ApFile> {
         if (view.contains(Header.HEADER)) {
             var header = Transformers.read(Header.class, getUniqueSection(view, Header.HEADER));
 
-            if (header.getMajorVersion() > maxSupportedMajor) {
-                //todo throw and show error message
-            }
-
-            if (header.getMinorVersion() > maxSupportedMinor) {
-                //todo log warning, proceed reading, give option to stop reading now?
+            if (header.getMajorVersion() > maxSupportedMajor || header.getMinorVersion() > maxSupportedMinor) {
+                AIJLogger.log("""
+                        This apertures file contains a newer format (%s) than what is currently supported (%s).
+                        Attempting to read anyway...
+                        """.formatted(header.getMajorVersion() + "." + header.getMinorVersion(),
+                        maxSupportedMajor + "." + maxSupportedMinor));
             }
 
             var apertures = new ArrayList<Aperture>();

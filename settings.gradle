@@ -1,9 +1,0 @@
-plugins {
-    id("org.gradle.toolchains.foojay-resolver-convention") version "0.8.0"
-}
-
-rootProject.name = 'AstroImageJ'
-include 'ij'
-include 'Astronomy_'
-include 'Nom_Fits'
-

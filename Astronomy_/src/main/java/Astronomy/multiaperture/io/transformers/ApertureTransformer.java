@@ -28,11 +28,15 @@ public class ApertureTransformer implements Transformer<Aperture> {
             case FREEFORM_PIXEL -> {
                 var ap = new FreeformPixelApertureRoi();
 
-                var compSec = getUniqueSection(view, "isComp");
-                ap.setComparisonStar(readBool("isComp", compSec.getParameter(0, "isComp")));
+                var compSec = getUniqueSection(view, "isComp", false);
+                if (compSec != null) {
+                    ap.setComparisonStar(readBool("isComp", compSec.getParameter(0, "isComp")));
+                }
 
-                var centroidSec = getUniqueSection(view, "centroid");
-                ap.centroidAperture(readBool("centroid", centroidSec.getParameter(0, "centroid")));
+                var centroidSec = getUniqueSection(view, "centroid", false);
+                if (centroidSec != null) {
+                    ap.centroidAperture(readBool("centroid", centroidSec.getParameter(0, "centroid")));
+                }
 
                 var back1Sec = getUniqueSection(view, "rBack1", false);
                 var back2Sec = getUniqueSection(view, "rBack2", false);
@@ -151,8 +155,8 @@ public class ApertureTransformer implements Transformer<Aperture> {
     private ApertureShape getShape(String shape) {
         return switch (shape) {
             case "circular" -> ApertureShape.CIRCULAR;
-            case "custom_shaped" -> ApertureShape.FREEFORM_SHAPE;
-            case "custom_pixel" -> ApertureShape.FREEFORM_PIXEL;
+            case "custom_shaped", "customShaped" -> ApertureShape.FREEFORM_SHAPE;
+            case "custom_pixel", "customPixel" -> ApertureShape.FREEFORM_PIXEL;
             default -> throw new IllegalStateException("Cannot handle unknown shape " + shape);
         };
     }

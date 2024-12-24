@@ -1,5 +1,8 @@
 package Astronomy.multiaperture;
 
+import Astronomy.multiaperture.io.AperturesFileCodec;
+import Astronomy.multiaperture.io.Section;
+import Astronomy.multiaperture.io.Transformers;
 import astroj.*;
 import ij.IJ;
 import ij.ImagePlus;
@@ -19,8 +22,6 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.List;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.*;
 
 import static Astronomy.Aperture_.*;
@@ -955,107 +956,12 @@ public class FreeformPixelApertureHandler {
 
         var apertures = new ArrayList<FreeformPixelApertureRoi>();
         if (setting.startsWith("handlerApertures")) {
-            var ap = new AtomicReference<FreeformPixelApertureRoi>();
-            var hasRBack1 = new AtomicBoolean();
-            var hasRBack2 = new AtomicBoolean();
-            setting.lines().skip(1).forEachOrdered(line -> {
-                if (line.startsWith("ap\tcustomPixel")) {
-                    var old = ap.getAndSet(new FreeformPixelApertureRoi());
-                    if (old != null) {
-                        apertures.add(old);
-                        old.update();
-                    }
-                    hasRBack1.set(false);
-                    hasRBack2.set(false);
-                    return;
+            var s = AperturesFileCodec.readToSection(setting);
+            for (Section apSec : s.createMapView().get("ap")) {
+                var ap = Transformers.read(Aperture.class, apSec);
+                if (ap instanceof FreeformPixelApertureRoi freeformPixelApertureRoi) {
+                    apertures.add(freeformPixelApertureRoi);
                 }
-
-                if (line.startsWith("\t")) {
-                    line = line.substring(1);
-                }
-
-                if (ap.get() == null) {
-                    return;
-                }
-
-                if (line.startsWith("px")) {
-                    var xSep = line.indexOf("\t");
-                    if (xSep < 0) {
-                        throw new IllegalStateException("Missing xSep! " + line);
-                    }
-
-                    var ySep = line.indexOf("\t", xSep+1);
-                    if (ySep < 0) {
-                        throw new IllegalStateException("Missing ySep! " + line);
-                    }
-
-                    var tSep = line.indexOf("\t", ySep+1);
-                    if (tSep < 0) {
-                        throw new IllegalStateException("Missing tSep! " + line);
-                    }
-
-                    var x = Integer.parseInt(line.substring(xSep+1, ySep));
-                    var y = Integer.parseInt(line.substring(ySep+1, tSep));
-                    ap.get().addPixel(x, y, "background".equals(line.substring(tSep+1)), false);
-                }
-
-                if (line.startsWith("isComp")) {
-                    var tSep = line.indexOf("\t");
-                    ap.get().setComparisonStar(Boolean.parseBoolean(line.substring(tSep+1)));
-                }
-
-                if (line.startsWith("centroid")) {
-                    var tSep = line.indexOf("\t");
-                    ap.get().setIsCentroid(Boolean.parseBoolean(line.substring(tSep+1)));
-                }
-
-                if (line.startsWith("rBack1")) {
-                    var r1Sep = line.indexOf("\t");
-                    if (r1Sep < 0) {
-                        throw new IllegalStateException("Missing r1Sep! " + line);
-                    }
-
-                    var r1 = Double.parseDouble(line.substring(r1Sep+1));
-
-                    hasRBack1.set(true);
-                    ap.get().setBack1(r1);
-                }
-
-                if (line.startsWith("rBack2")) {
-                    var r2Sep = line.indexOf("\t");
-                    if (r2Sep < 0) {
-                        throw new IllegalStateException("Missing r2Sep! " + line);
-                    }
-
-                    var r2 = Double.parseDouble(line.substring(r2Sep+1));
-
-                    hasRBack2.set(true);
-                    ap.get().setBack2(r2);
-                }
-
-                if (hasRBack1.get() && hasRBack2.get()) {
-                    ap.get().setHasAnnulus(true);
-                }
-
-                if (line.startsWith("radec")) {
-                    var raSep = line.indexOf("\t");
-                    if (raSep < 0) {
-                        throw new IllegalStateException("Missing raSep! " + line);
-                    }
-
-                    var decSep = line.indexOf("\t", raSep+1);
-                    if (decSep < 0) {
-                        throw new IllegalStateException("Missing decSep! " + line);
-                    }
-
-                    var ra = Double.parseDouble(line.substring(raSep+1, decSep));
-                    var dec = Double.parseDouble(line.substring(decSep+1));
-                    ap.get().setRadec(ra, dec);
-                }
-            });
-
-            if (ap.get() != null) {
-                apertures.add(ap.get());
             }
         }
 
@@ -1065,39 +971,14 @@ public class FreeformPixelApertureHandler {
     private static String serializeApertures(List<FreeformPixelApertureRoi> apertures) {
         var encoder = Base64.getEncoder();
 
-        var setting = new StringBuilder("handlerApertures");
+        var s = new Section("root", true);
 
+        s.addSubsection(new Section("handlerApertures"));
         for (FreeformPixelApertureRoi aperture : apertures) {
-            setting.append("\nap\tcustomPixel");
-            setting.append('\n');
-            setting.append('\t').append("isComp").append('\t').append(aperture.isComparisonStar());
-
-            if (aperture.getIsCentroid()) {
-                setting.append('\n').append('\t');
-                setting.append("centroid").append('\t').append(aperture.getIsCentroid());
-            }
-
-            if (aperture.hasRadec()) {
-                setting.append('\n').append('\t');
-                setting.append("radec").append('\t').append(aperture.getRightAscension())
-                        .append('\t').append(aperture.getDeclination());
-            }
-
-            for (FreeformPixelApertureRoi.Pixel pixel : aperture.iterable()) {
-                setting.append('\n').append('\t');
-                setting.append("px\t").append(pixel.x()).append('\t').append(pixel.y()).append('\t')
-                        .append(pixel.isBackground() ? "background" : "source");
-            }
-
-            if (aperture.hasAnnulus()) {
-                setting.append('\n').append('\t');
-                setting.append("rBack1").append('\t').append(aperture.getBack1());
-                setting.append('\n').append('\t');
-                setting.append("rBack2").append('\t').append(aperture.getBack2());
-            }
+            s.addSubsection(Transformers.write(Aperture.class, aperture));
         }
 
-        return encoder.encodeToString(setting.toString().getBytes());
+        return encoder.encodeToString(AperturesFileCodec.write(s).getBytes());
     }
 
     private record NumericSlider(Component[] cs, DoubleConsumer setter, DoubleSupplier getter) {}

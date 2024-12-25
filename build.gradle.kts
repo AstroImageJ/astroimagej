@@ -197,7 +197,12 @@ javaRuntimeSystemsProperty.convention(providers.provider {
         if (daysSinceLastModified <= 30) {
             println("Loading cached Java Runtime Systems data from JSON for Java version $shippingJava (last modified $daysSinceLastModified days ago)")
             @Suppress("UNCHECKED_CAST")
-            return@provider JsonSlurper().parse(jsonFile) as Map<String, Map<String, Any>>
+            val cacheData = JsonSlurper().parse(jsonFile) as Map<String, Map<String, Any>>
+            if (cacheData.values.all { it["version"] != null }) {
+                return@provider cacheData
+            } else {
+                println("Cached data for Java version $shippingJava seems to be missing some data, fetching...")
+            }
         } else {
             println("Cached data for Java version $shippingJava is older than 30 days, refetching...")
         }

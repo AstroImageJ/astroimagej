@@ -211,26 +211,39 @@ javaRuntimeSystemsProperty.convention(providers.provider {
     // Otherwise, simulate a network query to populate the data
     println("Fetching Java Runtime Systems data from network")
     javaRuntimeSystems.forEach { (sys, sysInfo) ->
-            val url = "https://api.azul.com/zulu/download/community/v1.0/bundles/latest/?" +
-                    "os=${sysInfo["os"]}&arch=${sysInfo["arch"]}&hw_bitness=${sysInfo["hw_bitness"]}" +
-                    "&ext=${sysInfo["ext"]}&jdk_version=$shippingJava"
+        val url = "https://api.azul.com/metadata/v1/zulu/packages?availability_types=ca&latest=true&" +
+                "crac_supported=false&crs_supported=false&" +
+                "os=${sysInfo["os"]}&arch=${sysInfo["arch"]}&hw_bitness=${sysInfo["hw_bitness"]}" +
+                "&archive_type=${sysInfo["ext"]}&java_version=$shippingJava"
 
+        // Find latest JDK
         @Suppress("UNCHECKED_CAST")
         val meta = try {
             JsonSlurper().parse(URL(url))
         } catch (ignored: Exception) {
+            println(ignored)
             logger.warn("A runtime (sys = {}, {}, {}, {}) failed to return from Azul!",
                     sysInfo["os"], sysInfo["arch"], sysInfo["ext"], sysInfo["type"])
+            return@forEach
+        } as List<Map<String, Any>>
+
+        // Find info of latest JDK
+        @Suppress("UNCHECKED_CAST")
+        val jdkMeta = try {
+            JsonSlurper().parse(URL("https://api.azul.com/metadata/v1/zulu/packages/${meta[0]["package_uuid"]}"))
+        } catch (ignored: Exception) {
+            logger.warn("A runtime (sys = {}, {}, {}, {}) failed to return from Azul!",
+                sysInfo["os"], sysInfo["arch"], sysInfo["ext"], sysInfo["type"])
             return@forEach
         } as Map<String, Any>
 
         // Update the maps with the metadata
-        sysInfo["version"] = meta["java_version"].toString()
-        sysInfo["ext"] = meta["ext"] as String
-        sysInfo["name"] = meta["name"] as String
-        sysInfo["md5"] = meta["md5_hash"] as String
-        sysInfo["type"] = meta["bundle_type"] as String
-        sysInfo["url"] = meta["url"] as String
+        sysInfo["version"] = (jdkMeta["java_version"] as List<String>)[0]
+        sysInfo["ext"] = jdkMeta["archive_type"] as String
+        sysInfo["name"] = jdkMeta["name"] as String
+        sysInfo["md5"] = jdkMeta["md5_hash"] as String
+        sysInfo["type"] = jdkMeta["java_package_type"] as String
+        sysInfo["url"] = jdkMeta["download_url"] as String
     }
 
     // Save the fetched data to the JSON file

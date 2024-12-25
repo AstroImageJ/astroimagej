@@ -12,12 +12,13 @@ import org.apache.tools.ant.taskdefs.condition.Os
 import org.jetbrains.gradle.ext.ProjectSettings
 import org.jetbrains.gradle.ext.TaskTriggersConfig
 import java.io.IOException
-import java.net.URL
+import java.net.URI
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 import java.security.MessageDigest
 import java.time.Instant
 import java.time.temporal.ChronoUnit
+import java.util.*
 
 buildscript {
     repositories {
@@ -140,8 +141,7 @@ tasks.register("preTest") {
     val testDataPath = "${projectDir}/repos/aijtestdata"
     val testData = file(testDataPath)
     doLast {
-        val targetRepo = testData
-        if (!targetRepo.exists()) {
+        if (!testData.exists()) {
             Grgit.clone(mapOf("dir" to testDataPath, "uri" to "https://github.com/AstroImageJ/AijTestData"))
         } else {
             val gitRepo = Grgit.open(mapOf("dir" to testDataPath))
@@ -211,6 +211,7 @@ javaRuntimeSystemsProperty.convention(providers.provider {
 
     // Otherwise, simulate a network query to populate the data
     logger.lifecycle("Fetching Java Runtime Systems data from network")
+    @Suppress("UNUSED_DESTRUCTURED_PARAMETER_ENTRY")
     javaRuntimeSystems.forEach { (sys, sysInfo) ->
         val url = "https://api.azul.com/metadata/v1/zulu/packages?availability_types=ca&latest=true&" +
                 "crac_supported=false&crs_supported=false&" +
@@ -220,7 +221,7 @@ javaRuntimeSystemsProperty.convention(providers.provider {
         // Find latest JDK
         @Suppress("UNCHECKED_CAST")
         val meta = try {
-            JsonSlurper().parse(URL(url))
+            JsonSlurper().parse(URI(url).toURL())
         } catch (e: Exception) {
             logger.error(e.toString())
             logger.warn("A runtime (sys = {}, {}, {}, {}) failed to return from Azul!",
@@ -231,7 +232,7 @@ javaRuntimeSystemsProperty.convention(providers.provider {
         // Find info of latest JDK
         @Suppress("UNCHECKED_CAST")
         val jdkMeta = try {
-            JsonSlurper().parse(URL("https://api.azul.com/metadata/v1/zulu/packages/${meta[0]["package_uuid"]}"))
+            JsonSlurper().parse(URI("https://api.azul.com/metadata/v1/zulu/packages/${meta[0]["package_uuid"]}").toURL())
         } catch (ignored: Exception) {
             logger.warn("A runtime (sys = {}, {}, {}, {}) failed to return from Azul!",
                 sysInfo["os"], sysInfo["arch"], sysInfo["ext"], sysInfo["type"])
@@ -239,6 +240,7 @@ javaRuntimeSystemsProperty.convention(providers.provider {
         } as Map<String, Any>
 
         // Update the maps with the metadata
+        @Suppress("UNCHECKED_CAST")
         sysInfo["version"] = (jdkMeta["java_version"] as List<String>)[0]
         sysInfo["ext"] = jdkMeta["archive_type"] as String
         sysInfo["name"] = jdkMeta["name"] as String
@@ -396,31 +398,32 @@ configure<PackagePluginExtension> {
     name("AstroImageJ")
 
     winConfig.apply {
-        setWrapJar(false) // Don't merge the ij.jar into the exe file
+        isWrapJar = false // Don't merge the ij.jar into the exe file
         productVersion = "1.1.1"
         productName = "Why Java Launcher"
-        setGenerateMsi(false)
-        setDisableDirPage(false)
-        setDisableFinishedPage(false)
-        setDisableRunAfterInstall(false)
-        setExeCreationTool(WindowsExeCreationTool.why)
+        isGenerateMsi = false
+        isDisableDirPage = false
+        isDisableFinishedPage = false
+        isDisableRunAfterInstall = false
+        exeCreationTool = WindowsExeCreationTool.why
     }
 
     macConfig.apply {
-        setRelocateJar(false) // Don't place ij.jar in Java/ folder
-        setGeneratePkg(false)
-        setAppId("AstroImageJ")
-        setMacStartup(MacStartup.UNIVERSAL)
-        setCodesignApp(project.hasProperty("codeSignAndNotarize") && project.property("codeSignAndNotarize").toString().toBoolean())
-        setNotarizeApp(System.getenv("DeveloperId") != null && project.property("codeSignAndNotarize").toString().toBoolean())
-        setKeyChainProfile("AC_PASSWORD")
-        setDeveloperId(System.getenv("DeveloperId"))
-        setCustomLauncher(file("${projectDir}/packageFiles/assets/mac/nativeJavaApplicationStub"))
+        isRelocateJar = false // Don't place ij.jar in Java/ folder
+        isGeneratePkg = false
+        appId = "AstroImageJ"
+        macStartup = MacStartup.UNIVERSAL
+        isCodesignApp =
+            project.hasProperty("codeSignAndNotarize") && project.property("codeSignAndNotarize").toString().toBoolean()
+        isNotarizeApp = System.getenv("DeveloperId") != null && project.property("codeSignAndNotarize").toString().toBoolean()
+        keyChainProfile = "AC_PASSWORD"
+        developerId = System.getenv("DeveloperId")
+        customLauncher = file("${projectDir}/packageFiles/assets/mac/nativeJavaApplicationStub")
     }
 
     linuxConfig.apply {
-        setWrapJar(false)
-        setGenerateRpm(false)
+        isWrapJar = false
+        isGenerateRpm = false
     }
 
     organizationName("AstroImageJ")
@@ -447,9 +450,9 @@ configure<PackagePluginExtension> {
 
 fun association(mt: String, ext: String, desc: String): FileAssociation {
     val a = FileAssociation()
-    a.setMimeType(mt)
-    a.setExtension(ext)
-    a.setDescription(desc)
+    a.mimeType = mt
+    a.extension = ext
+    a.description = desc
 
     return a
 }
@@ -462,7 +465,15 @@ val packagingJdkToolchain = javaToolchains.launcherFor {
 tasks.register("packageAij")
 
 javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
-    val sysId = "${(sysInfo["os"] as String).capitalize()}_${sysInfo["arch"]}_${sysInfo["hw_bitness"]}Bit"
+    val sysId = "${
+        (sysInfo["os"] as String).replaceFirstChar { 
+            if (it.isLowerCase()) {
+                it.titlecase(Locale.US)
+            } else {
+                it.toString()
+            }
+        }
+    }_${sysInfo["arch"]}_${sysInfo["hw_bitness"]}Bit"
     val packageTaskName = "packageAijFor${sysId}_Java${sysInfo["version"]}"
     val downloadTaskName = "downloadJavaRuntimeFor${sysId}"
     val verifyTaskName = "verifyJavaRuntimeFor${sysId}"
@@ -547,7 +558,7 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
             }
         }
 
-        setPackagingJdk(packagingJdkToolchain.map { it.metadata.installationPath }.get().asFile)
+        packagingJdk = packagingJdkToolchain.map { it.metadata.installationPath }.get().asFile
 
         version = project.version.toString()
 
@@ -573,13 +584,13 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
         }
 
         if (sysInfo["os"] == "linux") {
-            setCreateTarball(project.property("createTarBalls").toString().toBoolean())
+            isCreateTarball = project.property("createTarBalls").toString().toBoolean()
         } else {
-            setCreateZipball(project.property("createZip").toString().toBoolean())
+            isCreateZipball = project.property("createZip").toString().toBoolean()
         }
 
         if (sysInfo["os"] == "macos") {
-            setGenerateInstaller(project.property("createDMG").toString().toBoolean())
+            isGenerateInstaller = project.property("createDMG").toString().toBoolean()
         }
     }
 
@@ -693,7 +704,7 @@ tasks.register("makeReleaseFiles") {
     val output = buildDir.dir("updatesjava$targetJava")
 
     // Clear old files
-    output.getAsFileTree().forEach {
+    output.asFileTree.forEach {
         delete(it)
     }
 
@@ -733,9 +744,10 @@ tasks.register("makeReleaseFiles") {
 
         versionsTxt.appendText("$semverVersion\n")
 
-        URL("https://www.astro.louisville.edu/software/astroimagej/updates/updatesjava17/versions.txt").openStream().use { inputStream ->
-            versionsTxt.appendText(inputStream.bufferedReader().use { it.readText() })
-        }
+        URI("https://www.astro.louisville.edu/software/astroimagej/updates/updatesjava17/versions.txt")
+            .toURL().openStream().use { inputStream ->
+                versionsTxt.appendText(inputStream.bufferedReader().use { it.readText() })
+            }
     }
 }
 
@@ -747,7 +759,7 @@ tasks.register("makeDailyBuildFiles") {
     val output = buildDir.dir("updatesjava$targetJava")
 
     // Clear old files
-    output.getAsFileTree().forEach {
+    output.asFileTree.forEach {
         delete(it)
     }
 

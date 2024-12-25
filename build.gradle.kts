@@ -591,7 +591,10 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
         // Get Java bin fold location
         val java = file("${projectDir}/jres/$sysId/unpacked/${(sysInfo["name"] as String).replace("." + sysInfo["ext"], "")}")
         val runtimePath: File? = if (java.exists()) {
-            java.walkTopDown().filter { it.name == "release" }.firstOrNull()?.parentFile
+            java.walkTopDown().filter { it.name == "release" }.firstOrNull {
+                val binFolder = it.resolveSibling("bin")
+                it.isFile && binFolder.isDirectory && binFolder.exists()
+            }?.parentFile
         } else {
             logger.error("A JRE was missing, run unZipJresTask first! $sys will fallback to the default runtime path")
             File(java, if (sysInfo["os"] == "macos") "zulu-${shippingJava}.${sysInfo["type"]}/Contents/Home" else "")

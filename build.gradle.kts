@@ -302,10 +302,7 @@ val commonDist = project.copySpec {
     from(layout.projectDirectory.dir("packageFiles/common")) {
         into("")
         filesMatching("AstroImageJ.cfg") {
-            println(name)
-            println("test")
-            println(file.exists())
-            filePermissions {
+            permissions {
                 user {
                     read = true
                     write = true

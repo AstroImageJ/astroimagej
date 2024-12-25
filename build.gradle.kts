@@ -6,6 +6,7 @@ import io.github.fvarrui.javapackager.gradle.PackagePluginExtension
 import io.github.fvarrui.javapackager.gradle.PackageTask
 import io.github.fvarrui.javapackager.model.FileAssociation
 import io.github.fvarrui.javapackager.model.MacStartup
+import io.github.fvarrui.javapackager.model.WindowsExeCreationTool
 import org.ajoberstar.grgit.Grgit
 import org.apache.tools.ant.taskdefs.condition.Os
 import org.jetbrains.gradle.ext.ProjectSettings
@@ -195,21 +196,21 @@ javaRuntimeSystemsProperty.convention(providers.provider {
         val daysSinceLastModified = ChronoUnit.DAYS.between(Instant.ofEpochMilli(lastModified), Instant.ofEpochMilli(now))
 
         if (daysSinceLastModified <= 30) {
-            println("Loading cached Java Runtime Systems data from JSON for Java version $shippingJava (last modified $daysSinceLastModified days ago)")
+            logger.lifecycle("Loading cached Java Runtime Systems data from JSON for Java version $shippingJava (last modified $daysSinceLastModified days ago)")
             @Suppress("UNCHECKED_CAST")
             val cacheData = JsonSlurper().parse(jsonFile) as Map<String, Map<String, Any>>
             if (cacheData.values.all { it["version"] != null }) {
                 return@provider cacheData
             } else {
-                println("Cached data for Java version $shippingJava seems to be missing some data, fetching...")
+                logger.lifecycle("Cached data for Java version $shippingJava seems to be missing some data, fetching...")
             }
         } else {
-            println("Cached data for Java version $shippingJava is older than 30 days, refetching...")
+            logger.lifecycle("Cached data for Java version $shippingJava is older than 30 days, refetching...")
         }
     }
 
     // Otherwise, simulate a network query to populate the data
-    println("Fetching Java Runtime Systems data from network")
+    logger.lifecycle("Fetching Java Runtime Systems data from network")
     javaRuntimeSystems.forEach { (sys, sysInfo) ->
         val url = "https://api.azul.com/metadata/v1/zulu/packages?availability_types=ca&latest=true&" +
                 "crac_supported=false&crs_supported=false&" +
@@ -220,8 +221,8 @@ javaRuntimeSystemsProperty.convention(providers.provider {
         @Suppress("UNCHECKED_CAST")
         val meta = try {
             JsonSlurper().parse(URL(url))
-        } catch (ignored: Exception) {
-            println(ignored)
+        } catch (e: Exception) {
+            logger.error(e.toString())
             logger.warn("A runtime (sys = {}, {}, {}, {}) failed to return from Azul!",
                     sysInfo["os"], sysInfo["arch"], sysInfo["ext"], sysInfo["type"])
             return@forEach
@@ -251,35 +252,6 @@ javaRuntimeSystemsProperty.convention(providers.provider {
     jsonFile.writeText(JsonOutput.prettyPrint(JsonOutput.toJson(javaRuntimeSystems)))
     javaRuntimeSystems
 })
-
-tasks.register("fetchJavaRuntimeSystems") {
-    group = "runtime"
-    description = "Fetches Java runtime systems data or loads from cache"
-
-    outputs.file(javaRuntimeCacheFileProvider.get())
-
-    /*doLast {
-        println("Java Runtime Systems data: ${javaRuntimeSystemsProperty.get()}")
-    }*/
-}
-
-tasks.named("fetchJavaRuntimeSystems").configure {
-    inputs.property("javaRuntimeSystemsMap", javaRuntimeSystems)
-    inputs.property("javaVersion", shippingJava) // Track changes to Java version
-
-    outputs.upToDateWhen {
-        val jsonFile = javaRuntimeCacheFileProvider.get().asFile
-
-        if (jsonFile.exists()) {
-            val lastModified = jsonFile.lastModified()
-            val now = Instant.now().toEpochMilli()
-            val daysSinceLastModified = ChronoUnit.DAYS.between(Instant.ofEpochMilli(lastModified), Instant.ofEpochMilli(now))
-            daysSinceLastModified <= 30 && jsonFile.readText() == JsonOutput.prettyPrint(JsonOutput.toJson(javaRuntimeSystems))
-        } else {
-            false
-        }
-    }
-}
 
 // Define what files belong to all distributions and their location
 val commonDist = project.copySpec {
@@ -346,10 +318,12 @@ tasks.register<Sync>("commonFiles") {
     into(layout.buildDirectory.dir("commonFiles"))
 }
 
-tasks.named("clean") {
-    doLast {
-        delete("${projectDir}/AIJ-Run")
-    }
+tasks.register<Delete>("cleanRun") {
+    delete("${projectDir}/AIJ-Run")
+}
+
+tasks.named("clean").configure {
+    finalizedBy("cleanRun")
 }
 
 // Generate AIJ-Run directory and set it up for usage
@@ -429,6 +403,7 @@ configure<PackagePluginExtension> {
         setDisableDirPage(false)
         setDisableFinishedPage(false)
         setDisableRunAfterInstall(false)
+        setExeCreationTool(WindowsExeCreationTool.why)
     }
 
     macConfig.apply {
@@ -473,7 +448,7 @@ configure<PackagePluginExtension> {
 fun association(mt: String, ext: String, desc: String): FileAssociation {
     val a = FileAssociation()
     a.setMimeType(mt)
-    a.setMimeType(ext)
+    a.setExtension(ext)
     a.setDescription(desc)
 
     return a
@@ -495,8 +470,7 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
     val deleteTaskName = "deleteJavaRuntimeFor${sysId}"
     val cleanTaskName = "cleanJavaRuntimeFor${sysId}"
 
-    tasks.register(downloadTaskName, Download::class) {
-        dependsOn("fetchJavaRuntimeSystems")
+    tasks.register<Download>(downloadTaskName) {
         finalizedBy(cleanTaskName, verifyTaskName)
         mkdir(file("${projectDir}/jres"))
 
@@ -506,7 +480,7 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
         dest(layout.projectDirectory.dir("jres").dir(sysId).file("$sysId-${sysInfo["name"]}.${sysInfo["ext"]}"))
     }
 
-    tasks.register(cleanTaskName, Delete::class) {
+    tasks.register<Delete>(cleanTaskName) {
         val directory = layout.projectDirectory.dir("jres").dir(sysId)
 
         delete(directory.asFileTree.matching {
@@ -515,26 +489,18 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
         })
     }
 
-    tasks.register(deleteTaskName) {
-        outputs.upToDateWhen { false }
+    tasks.register<Delete>(deleteTaskName) {
         onlyIf {
             Os.isFamily(Os.FAMILY_MAC)
         }
-        doLast {
-            if (Os.isFamily(Os.FAMILY_MAC)) {
-                val folderName = (sysInfo["name"] as String).replace(".${sysInfo["ext"]}", "")
-                logger.info("Removing decompressed runtime $folderName.")
-                val folder = file("${projectDir}/jres/$sysId/$folderName")
-                if (folder.isDirectory) {
-                    folder.deleteRecursively()
-                } else {
-                    logger.error("Failed to remove decompressed runtime $folder.")
-                }
-            }
-        }
+
+        val folderName = (sysInfo["name"] as String).replace(".${sysInfo["ext"]}", "")
+        val folder = file("${projectDir}/jres/$sysId/$folderName")
+
+        delete(folder)
     }
 
-    tasks.register(verifyTaskName, Verify::class) {
+    tasks.register<Verify>(verifyTaskName) {
         dependsOn(downloadTaskName)
         inputs.file(layout.projectDirectory.dir("jres").dir(sysId).file("$sysId-${sysInfo["name"]}.${sysInfo["ext"]}"))
         outputs.upToDateWhen { false }
@@ -544,7 +510,7 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
         checksum(sysInfo["md5"] as String)
     }
 
-    tasks.register(unzipTaskName, Sync::class) {
+    tasks.register<Sync>(unzipTaskName) {
         dependsOn(verifyTaskName, deleteTaskName)
         group = "AstroImageJ Development"
 
@@ -645,7 +611,7 @@ tasks.withType<PackageTask>().configureEach {
 
         outputFiles.forEach { outputFile ->
             if (!outputFile.exists()) {
-                logger.info("\tSkipping file that does not exist: {}", outputFile.name)
+                logger.lifecycle("\tSkipping file that does not exist: {}", outputFile.name)
                 return@forEach
             }
 

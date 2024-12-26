@@ -51,8 +51,6 @@ plugins {
 
     id("org.jetbrains.gradle.plugin.idea-ext") version "1.1.+"
 
-    id("net.nemerosa.versioning") version "3.1.0"
-
     // Used to download test data
     // todo needs a replacement https://github.com/ajoberstar/grgit?tab=readme-ov-file#project-status
     id("org.ajoberstar.grgit") version "5.+" apply false
@@ -67,13 +65,13 @@ val shippingJava = (properties["javaShippingVersion"] as String).toInt()
 // Minimum Java version binaries should be compatible with
 val targetJava = (properties["javaShippingVersion"] as String).toInt()
 
-// Declare the version dynamically using the versioning plugin
-val fullVersionProvider = providers.provider {
-    val commitHash = "+" + versioning.info.build
-    val branchName = "+" + versioning.info.branch
-    val dirtySuffix = if (versioning.info.dirty) "+local" else ""
+val gitVersionProvider = providers.of(com.astroimagej.git.GitVersionInfo::class.java) {
+    parameters.workDir.set(project.rootProject.projectDir)
+}
 
-    "${rootProject.version}$branchName$commitHash$dirtySuffix"
+// Declare the version dynamically using the versioning plugin
+val fullVersionProvider = gitVersionProvider.map { gitInfo ->
+    "${rootProject.version}+${gitInfo}"
 }
 
 subprojects {

@@ -486,7 +486,7 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
         src(sysInfo["url"])
         overwrite(false)
         onlyIfModified(true)
-        dest(layout.projectDirectory.dir("jres").dir(sysId).file("$sysId-${sysInfo["name"]}.${sysInfo["ext"]}"))
+        dest(layout.projectDirectory.dir("jres").dir(sysId).file("$sysId-${sysInfo["name"]}"))
     }
 
     tasks.register<Delete>(cleanTaskName) {
@@ -494,7 +494,7 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
 
         delete(directory.asFileTree.matching {
             include("$sysId*")
-            exclude("$sysId-${sysInfo["name"]}.${sysInfo["ext"]}")
+            exclude("$sysId-${sysInfo["name"]}")
         })
     }
 
@@ -511,10 +511,10 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
 
     tasks.register<Verify>(verifyTaskName) {
         dependsOn(downloadTaskName)
-        inputs.file(layout.projectDirectory.dir("jres").dir(sysId).file("$sysId-${sysInfo["name"]}.${sysInfo["ext"]}"))
+        inputs.file(layout.projectDirectory.dir("jres").dir(sysId).file("$sysId-${sysInfo["name"]}"))
         outputs.upToDateWhen { false }
 
-        src(layout.projectDirectory.dir("jres").dir(sysId).file("$sysId-${sysInfo["name"]}.${sysInfo["ext"]}"))
+        src(layout.projectDirectory.dir("jres").dir(sysId).file("$sysId-${sysInfo["name"]}"))
         algorithm("MD5")
         checksum(sysInfo["md5"] as String)
     }
@@ -523,7 +523,7 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
         dependsOn(verifyTaskName, deleteTaskName)
         group = "AstroImageJ Development"
 
-        val archive = layout.projectDirectory.dir("jres").dir(sysId).file("$sysId-${sysInfo["name"]}.${sysInfo["ext"]}")
+        val archive = layout.projectDirectory.dir("jres").dir(sysId).file("$sysId-${sysInfo["name"]}")
 
         inputs.file(archive)
         outputs.dir(layout.projectDirectory.dir("jres/$sysId/unpacked"))

@@ -426,7 +426,7 @@ configure<PackagePluginExtension> {
 
     organizationName("AstroImageJ")
     vmArgs(emptyList())
-    setVersion("dev-x86") // Dummy version to keep it from saying "unspecified"
+    version("dev-x86") // Dummy version to keep it from saying "unspecified"
     generateInstaller(true)
 
     fileAssociations(listOf(

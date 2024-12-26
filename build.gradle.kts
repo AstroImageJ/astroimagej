@@ -632,6 +632,7 @@ tasks.withType<PackageTask>().configureEach {
                 val newPath = outputFile.toPath().resolveSibling(newName)
 
                 logger.lifecycle("\tRenaming '{}' to '{}'...", outputFile, newName)
+                logger.lifecycle("\t\t" + newPath.toUri())
 
                 try {
                     Files.move(outputFile.toPath(), newPath, StandardCopyOption.REPLACE_EXISTING)

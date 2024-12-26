@@ -6,6 +6,7 @@ rootProject.name = "AstroImageJ"
 include("ij")
 include("Astronomy_")
 include("Nom_Fits")
+enableFeaturePreview("STABLE_CONFIGURATION_CACHE")
 
 toolchainManagement {
     jvm {

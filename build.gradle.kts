@@ -504,7 +504,7 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
         }
 
         val folderName = (sysInfo["name"] as String).replace(".${sysInfo["ext"]}", "")
-        val folder = file("${projectDir}/jres/$sysId/$folderName")
+        val folder = file("${projectDir}/jres/$sysId/unpacked/$folderName")
 
         delete(folder)
     }

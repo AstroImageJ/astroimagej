@@ -589,7 +589,6 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
     tasks.named("packageAij") {
         group = "AstroImageJ Development"
         dependsOn(packageTaskName)
-        outputs.upToDateWhen { false }
     }
 }
 

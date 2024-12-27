@@ -7,7 +7,6 @@ import io.github.fvarrui.javapackager.gradle.PackageTask
 import io.github.fvarrui.javapackager.model.FileAssociation
 import io.github.fvarrui.javapackager.model.MacStartup
 import io.github.fvarrui.javapackager.model.WindowsExeCreationTool
-import org.ajoberstar.grgit.Grgit
 import org.apache.tools.ant.taskdefs.condition.Os
 import org.jetbrains.gradle.ext.ProjectSettings
 import org.jetbrains.gradle.ext.TaskTriggersConfig
@@ -52,8 +51,7 @@ plugins {
     id("org.jetbrains.gradle.plugin.idea-ext") version "1.1.+"
 
     // Used to download test data
-    // todo needs a replacement https://github.com/ajoberstar/grgit?tab=readme-ov-file#project-status
-    id("org.ajoberstar.grgit") version "5.+" apply false
+    id("aij.test-conventions")
 }
 
 apply(plugin = "io.github.fvarrui.javapackager.plugin")
@@ -120,20 +118,6 @@ tasks.test {
         project.hasProperty("runTest")
     }
     onlyIf { testPredicate.get() }
-}
-
-tasks.register("preTest") {
-    val testDataPath = "${projectDir}/repos/aijtestdata"
-    val testData = file(testDataPath)
-    doLast {
-        if (!testData.exists()) {
-            Grgit.clone(mapOf("dir" to testDataPath, "uri" to "https://github.com/AstroImageJ/AijTestData"))
-        } else {
-            val gitRepo = Grgit.open(mapOf("dir" to testDataPath))
-            gitRepo.fetch()
-            gitRepo.pull()
-        }
-    }
 }
 
 /**

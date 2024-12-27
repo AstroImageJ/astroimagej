@@ -15,6 +15,17 @@ val shippingJava = providers.gradleProperty("javaShippingVersion").map { it.toIn
 // Minimum Java version binaries should be compatible with
 val targetJava = providers.gradleProperty("minJava").map { it.toInt() }.get()
 
+val gitVersionProvider = providers.of(com.astroimagej.git.GitVersionInfo::class.java) {
+    parameters.workDir.set(project.rootProject.projectDir)
+}
+
+// Declare the version dynamically using the versioning plugin
+val fullVersionProvider = gitVersionProvider.map { gitInfo ->
+    "${rootProject.version}+${gitInfo}"
+}
+
+version = fullVersionProvider.get()
+
 // Use to share built artifacts with the root project so it can package them
 // https://docs.gradle.org/current/userguide/cross_project_publications.html#sec:simple-sharing-artifacts-between-projects
 val shippingJar by configurations.creating {

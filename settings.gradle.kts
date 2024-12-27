@@ -3,6 +3,7 @@ plugins {
 }
 
 rootProject.name = "AstroImageJ"
+includeBuild("aij-conventions")
 include("ij")
 include("Astronomy_")
 include("Nom_Fits")

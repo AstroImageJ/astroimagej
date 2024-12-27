@@ -65,19 +65,6 @@ val shippingJava = (properties["javaShippingVersion"] as String).toInt()
 // Minimum Java version binaries should be compatible with
 val targetJava = (properties["javaShippingVersion"] as String).toInt()
 
-val gitVersionProvider = providers.of(com.astroimagej.git.GitVersionInfo::class.java) {
-    parameters.workDir.set(project.rootProject.projectDir)
-}
-
-// Declare the version dynamically using the versioning plugin
-val fullVersionProvider = gitVersionProvider.map { gitInfo ->
-    "${rootProject.version}+${gitInfo}"
-}
-
-subprojects {
-    version = fullVersionProvider.get()
-}
-
 configurations {
     create("shippingIJ") {
         isCanBeConsumed = false

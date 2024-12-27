@@ -19,9 +19,14 @@ val gitVersionProvider = providers.of(com.astroimagej.git.GitVersionInfo::class.
     parameters.workDir.set(project.rootProject.projectDir)
 }
 
-// Declare the version dynamically using the versioning plugin
-val fullVersionProvider = gitVersionProvider.map { gitInfo ->
-    "${rootProject.version}+${gitInfo}"
+// Declare the version dynamically
+// Work around potential project isolation issues by using the provider to get values from gradle.properties in
+// the root directory
+//
+// gitVersionProvider.map { gitInfo -> "${version}+${gitInfo}" } also seems to work,
+// but mildly concerned with it getting the right version, so this mess is used
+val fullVersionProvider = gitVersionProvider.zip(providers.gradleProperty("version")) { gitInfo, ver ->
+    "${ver}+${gitInfo}"
 }
 
 version = fullVersionProvider.get()

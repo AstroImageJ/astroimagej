@@ -532,6 +532,7 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
         group = "AstroImageJ Development"
 
         //todo fix incompatibility
+        // This prevents unzip tasks from running in parallel
         notCompatibleWithConfigurationCache("Package task issue")
 
         // Set the platform

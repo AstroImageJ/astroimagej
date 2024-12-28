@@ -21,7 +21,7 @@ public class SectionWriter {
     }
 
     public void enterSection() {
-        builder.append(currentIndent);
+        //builder.append(currentIndent);
         indentStack.push(currentIndent + "\t");
         currentIndent = indentStack.peek();
     }

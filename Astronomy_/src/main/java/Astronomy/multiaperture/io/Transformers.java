@@ -30,7 +30,11 @@ public class Transformers {
             throw new IllegalStateException("Could not find transformer for " + clazz.getName());
         }
 
-        return (T) transformer.load(section);
+        try {
+            return (T) transformer.load(section);
+        } catch (Exception e) {
+            throw new RuntimeException("Error reading section: " + section, e);
+        }
     }
 
     public static <T> Section write(Class<T> clazz, T obj) {

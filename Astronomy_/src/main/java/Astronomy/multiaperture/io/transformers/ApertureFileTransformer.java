@@ -57,7 +57,9 @@ public class ApertureFileTransformer implements Transformer<ApFile> {
             s.addSubsection(Transformers.write(Aperture.class, aperture));
         }
 
-        s.addSubsection(Transformers.write(Properties.class, apFile.prefs()));
+        if (apFile.prefs() != null) {
+            s.addSubsection(Transformers.write(Properties.class, apFile.prefs()));
+        }
 
         return s;
     }

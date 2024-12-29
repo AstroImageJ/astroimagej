@@ -11,7 +11,7 @@ public class AffineTransformTransformer implements Transformer<AffineTransform> 
         var t = section.getParameter(0, "transformType");
 
         return switch (t) {
-            case "rotation" -> {
+            case "rotate" -> {
                 var theta = readDouble("angle", section.getParameter(1, "angle"));
                 var unit = section.getParameter(2, "unit");
                 var thetaRadians = switch (unit) {
@@ -29,7 +29,7 @@ public class AffineTransformTransformer implements Transformer<AffineTransform> 
 
                 yield AffineTransform.getScaleInstance(scaleX, scaleY);
             }
-            case "translation" -> {
+            case "translate" -> {
                 var dx = readDouble("dx", section.getParameter(1, "dx"));
                 var dy = readDouble("dy", section.getParameter(2, "dy"));
 
@@ -66,7 +66,7 @@ public class AffineTransformTransformer implements Transformer<AffineTransform> 
         return switch (type) {
             case "rotation" -> {
                 var theta = Math.atan2(transform.getShearY(), transform.getScaleX());
-                yield Section.createSection("transform", "rotation", Double.toString(Math.toDegrees(theta)), "d");
+                yield Section.createSection("transform", "rotate", Double.toString(Math.toDegrees(theta)), "d");
             }
             case "identity" -> {
                 yield Section.createSection("transform", "identity");
@@ -76,7 +76,7 @@ public class AffineTransformTransformer implements Transformer<AffineTransform> 
                         Double.toString(transform.getScaleX()), Double.toString(transform.getScaleY()));
             }
             case "translation" -> {
-                yield Section.createSection("transform", "translation",
+                yield Section.createSection("transform", "translate",
                         Double.toString(transform.getTranslateX()), Double.toString(transform.getTranslateY()));
             }
             case "matrix" -> {

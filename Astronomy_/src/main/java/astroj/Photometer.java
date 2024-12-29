@@ -136,6 +136,383 @@ public class Photometer {
         rBack2 = Double.NaN;
     }
 
+    public void measure(ImagePlus imp, ShapedApertureRoi apertureRoi, boolean exactPixels) {
+        var ip = imp.getProcessor();
+        exact = exactPixels;
+        xCenter = apertureRoi.xPos;
+        yCenter = apertureRoi.yPos;
+        radius = apertureRoi.getRadius();
+        rBack1 = apertureRoi.getBack1();
+        rBack2 = apertureRoi.getBack2();
+        ocanvas = OverlayCanvas.getOverlayCanvas(imp);
+        hasBack = apertureRoi.hasBackground();
+        boolean usePlaneLocal = usePlane && hasBack;
+
+        debug = Prefs.get("astroj.debug", false);
+
+        if (ip.getBitDepth() == 24) {
+            Frame openFrame = imp.getWindow();
+            if (openFrame instanceof AstroStackWindow asw) {
+                ColorProcessor cp = asw.getcp();
+                if (cp != null) {
+                    ip = cp;
+                }
+            }
+        }
+
+        float d;
+
+        // INTEGRATE STAR WITHIN APERTURE OF RADIUS radius, SKY OUTSIDE
+
+        source = 0.0;
+        btot = 0.0;
+        back = 0.0;
+        backi = 0.0;
+        backo = 0.0;
+        mean = 0.0;
+        prevBackMean = 0;
+        dSourceCount = 0.0;
+        dBackCount = 0.0;
+        sourceCount = 0;
+        backCount = 0;
+        back2 = 0;
+        boolean fitPlaneError = false;
+
+        var apertureArea = apertureRoi.getApertureArea();
+        var backgroundArea = apertureRoi.getBackgroundArea();
+
+        var sourceBounds = clampBounds(imp, apertureArea.getBounds());
+        var backgroundBounds = clampBounds(imp, backgroundArea.getBounds());
+        int totalPixels = sourceBounds.height * sourceBounds.width + (backgroundBounds.height * backgroundBounds.width);
+        if (usePlaneLocal) {
+            plane = new FittedPlane(totalPixels);
+        }
+
+        peak = Float.NEGATIVE_INFINITY;
+        if (exact) {
+            var bounds = clampBounds(imp, apertureArea.getBounds()); // Integer bounds to ensure we get all pixels
+
+            var fraction = 0D;
+            for (int i = bounds.x; i < bounds.x + bounds.width; i++) {
+                for (int j = bounds.y; j < bounds.y + bounds.height; j++) {
+                    d = ip.getPixelValue(i, j);
+                    if (!Float.isNaN(d)) {
+                        if (apertureArea.contains(i, j, 1, 1)) {
+                            fraction = 1;
+                        } else if (apertureArea.intersects(i, j, 1, 1)) {
+                            var pixel = new Area(new Rectangle(i, j, 1, 1));
+                            pixel.intersect(apertureArea);
+
+                            // Move overlapped shape to have corner on origin
+                            //pixel.transform(AffineTransform.getTranslateInstance(-i, -j));
+
+                            fraction = integrateArea(pixel, false);
+                        }
+
+                        source += fraction * d;
+                        dSourceCount += fraction;
+
+                        if (fraction > 0.01 && d > peak) {
+                            peak = d;
+                        }
+                    }
+                }
+            }
+
+            if (hasBack) {
+                bounds = clampBounds(imp, backgroundArea.getBounds()); // Integer bounds to ensure we get all pixels
+
+                for (int i = bounds.x; i < bounds.x + bounds.width; i++) {
+                    for (int j = bounds.y; j < bounds.y + bounds.height; j++) {
+                        d = ip.getPixelValue(i, j);
+                        if (!Float.isNaN(d)) {
+                            if (backgroundArea.contains(i, j, 1, 1)) {
+                                fraction = 1;
+                            } else if (backgroundArea.intersects(i, j, 1, 1)) {
+                                var pixel = new Area(new Rectangle(i, j, 1, 1));
+                                pixel.intersect(backgroundArea);
+
+                                // Move overlapped shape to have corner on origin
+                                //pixel.transform(AffineTransform.getTranslateInstance(-i, -j));
+
+                                fraction = integrateArea(pixel, false);
+                            }
+
+                            if (!removeBackStars && !usePlaneLocal) {
+                                back += fraction * d;
+                                dBackCount += fraction;
+                            } else if (fraction > 0) { // BACKGROUND
+                                back += d;
+                                //addPixelRoi(imp,i,j);
+                                back2 += d * d;
+                                backCount++;
+                                if (usePlaneLocal) {
+                                    plane.addPoint(i, j, d);
+                                }
+                                // if (debug) IJ.log("i,j="+i+","+j+", back+="+d);
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (removeBackStars || usePlaneLocal) {
+                dBackCount = backCount;
+            }
+        } else {
+            var bounds = clampBounds(imp, apertureArea.getBounds()); // Integer bounds to ensure we get all pixels
+
+            for (int i = bounds.x; i < bounds.x + bounds.width; i++) {
+                for (int j = bounds.y; j < bounds.y + bounds.height; j++) {
+                    d = ip.getPixelValue(i, j);
+                    if (!Float.isNaN(d)) {
+                        if (apertureArea.contains(i + 0.5, j + 0.5)) {
+                            source += d;
+                            sourceCount++;
+                            if (d > peak) {
+                                peak = d;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (hasBack) {
+                bounds = clampBounds(imp, backgroundArea.getBounds()); // Integer bounds to ensure we get all pixels
+
+                for (int i = bounds.x; i < bounds.x + bounds.width; i++) {
+                    for (int j = bounds.y; j < bounds.y + bounds.height; j++) {
+                        d = ip.getPixelValue(i, j);
+                        if (!Float.isNaN(d)) {
+                            if (backgroundArea.contains(i + 0.5, j + 0.5)) {
+                                back += d;
+                                back2 += d * d;
+                                backCount++;
+                                if (usePlaneLocal) {
+                                    plane.addPoint(i, j, d);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            dSourceCount = sourceCount;
+            dBackCount = backCount;
+        }
+
+        if (hasBack && (dBackCount > 0.0)) {
+            back /= dBackCount;    // MEAN BACKGROUND
+        }
+
+        if (hasBack && removeBackStars && (dBackCount > 3.0)) {
+            backMean = back;
+            back2Mean = back2 / dBackCount;
+
+            // Copy pixel data for evaluation
+            var pixels = new float[totalPixels];
+            var js = new int[totalPixels];
+            var is = new int[totalPixels];
+            var pCnt = 0;
+
+            var bounds = clampBounds(imp, backgroundArea.getBounds()); // Integer bounds to ensure we get all pixels
+
+            for (int i = bounds.x; i < bounds.x + bounds.width; i++) {
+                for (int j = bounds.y; j < bounds.y + bounds.height; j++) {
+                    d = ip.getPixelValue(i, j);
+                    if (backgroundArea.contains(i + 0.5, j + 0.5)) {
+                        if (!Float.isNaN(d)) {
+                            js[pCnt] = j;
+                            is[pCnt] = i;
+                            pixels[pCnt++] = d;
+                        } else if (markRemovedPixels) {
+                            addPixelRoi(imp, i, j); // Mark NaN pixels
+                        }
+                    }
+                }
+            }
+
+            for (int iteration = 0; iteration < 100; iteration++) {
+                backstdev = Math.sqrt(back2Mean - backMean * backMean);
+                back = 0.0;
+                back2 = 0.0;
+                backCount = 0;
+
+                if (usePlaneLocal) {
+                    plane = new FittedPlane(totalPixels);
+                }
+                if (markRemovedPixels) {
+                    ocanvas.removePixelRois();
+                }
+
+                // REMOVE STARS FROM BACKGROUND
+                var backMeanPlus2Stdev = backMean + 2.0 * backstdev;
+                var backMeanMinus2Stdev = backMean - 2.0 * backstdev;
+                for (int i = 0; i < pCnt; i++) {
+                    d = pixels[i];
+                    if ((d <= backMeanPlus2Stdev) /*&& (d >= backMeanMinus2Stdev)*/) {
+                        back += d; // FINAL BACKGROUND
+                        back2 += d * d;
+                        backCount++;
+                        if (usePlaneLocal) {
+                            plane.addPoint(is[i], js[i], d);
+                        }
+                    } else if (markRemovedPixels) {
+                        addPixelRoi(imp,is[i], js[i]);
+                    }
+                }
+
+                if (backCount > 0) {
+                    back /= backCount;    // MEAN BACKGROUND
+                    backMean = back;
+                    back2Mean = back2 / backCount;
+                }
+
+                if (Math.abs(prevBackMean - backMean) < 0.0001) { //was 0.1 which did not work for for low background levels
+                    break;
+                }
+                prevBackMean = backMean;
+            }
+
+            dBackCount = (double) backCount;
+            if (markRemovedPixels) {
+                AstroCanvas ac = (AstroCanvas) imp.getCanvas();
+                ac.paint(ac.getGraphics());
+            }
+        }
+
+        if (usePlaneLocal && !plane.fitPlane()) {
+            //IJ.log("Photometer ERROR : cannot fit plane to background, using average background instead.");
+            fitPlaneError = true;
+        }
+
+        btot = back * dSourceCount;
+
+        if (usePlaneLocal && !fitPlaneError) {
+            source = 0.0;
+            back = 0.0;
+            double b = 0.0;
+            int srcCount = 0;
+            dSourceCount = 0.0;
+            if (exact) {
+                var bounds = clampBounds(imp, apertureArea.getBounds()); // Integer bounds to ensure we get all pixels
+
+                var fraction = 0D;
+                for (int i = bounds.x; i < bounds.x + bounds.width; i++) {
+                    for (int j = bounds.y; j < bounds.y + bounds.height; j++) {
+                        d = ip.getPixelValue(i, j);
+                        if (!Float.isNaN(d)) {
+                            if (apertureArea.contains(i, j, 1, 1)) {
+                                fraction = 1;
+                            } else if (apertureArea.intersects(i, j, 1, 1)) {
+                                var pixel = new Area(new Rectangle(i, j, 1, 1));
+                                pixel.intersect(apertureArea);
+
+                                // Move overlapped shape to have corner on origin
+                                //pixel.transform(AffineTransform.getTranslateInstance(-i, -j));
+
+                                fraction = integrateArea(pixel, false);
+                            }
+
+                            //addPixelRoi(imp,i,j);
+                            dSourceCount += fraction;
+                            b = plane.valueAt(i, j);
+                            back += b * fraction;
+                            source += (d - b) * fraction;
+                        }
+                    }
+                }
+
+                if (hasBack) {
+                    bounds = clampBounds(imp, backgroundArea.getBounds()); // Integer bounds to ensure we get all pixels
+
+                    for (int i = bounds.x; i < bounds.x + bounds.width; i++) {
+                        for (int j = bounds.y; j < bounds.y + bounds.height; j++) {
+                            d = ip.getPixelValue(i, j);
+                            if (!Float.isNaN(d)) {
+                                if (backgroundArea.contains(i, j, 1, 1)) {
+                                    fraction = 1;
+                                } else if (backgroundArea.intersects(i, j, 1, 1)) {
+                                    var pixel = new Area(new Rectangle(i, j, 1, 1));
+                                    pixel.intersect(backgroundArea);
+
+                                    // Move overlapped shape to have corner on origin
+                                    //pixel.transform(AffineTransform.getTranslateInstance(-i, -j));
+
+                                    fraction = integrateArea(pixel, false);
+                                }
+
+                                dSourceCount += fraction;
+                                b = plane.valueAt(i, j);
+                                back += b * fraction;
+                                source += (d - b) * fraction;
+                            }
+                        }
+                    }
+                }
+
+                if (dSourceCount > 0) {
+                    back /= dSourceCount;
+                }
+            } else {
+                var bounds = clampBounds(imp, apertureArea.getBounds()); // Integer bounds to ensure we get all pixels
+
+                for (int i = bounds.x; i < bounds.x + bounds.width; i++) {
+                    for (int j = bounds.y; j < bounds.y + bounds.height; j++) {
+                        d = ip.getPixelValue(i, j);
+                        if (!Float.isNaN(d)) {
+                            if (apertureArea.contains(i + 0.5, j + 0.5)) {
+                                srcCount++;
+                                b = plane.valueAt(i, j);
+                                back += b;
+                                source += (d - b);
+                            }
+                        }
+                    }
+                }
+
+                dSourceCount = srcCount;
+                if (srcCount > 0) {
+                    back /= dSourceCount;
+                }
+            }
+        } else {
+            source -= btot;
+        }
+
+        if (dSourceCount > 0.0) {
+            mean = source / dSourceCount;
+        }
+
+        double src = 0.0;
+        double bck = 0.0;
+        double sCnt = 0.0;
+        double srcCnt = 0.0;
+        double bckCnt = 0.0;
+
+        // ERROR FROM GAIN (e-/count), RON (e-), DARK CURRENT (e-) AND POISSON STATISTICS
+        // SEE MERLINE, W. & HOWELL, S.B., 1995, EXP. ASTRON., 6, 163
+        src = (source < 0.0 || dSourceCount <= 0.0) ? 0.0 : source;
+        bck = (back < 0.0 || dBackCount <= 0) ? 0.0 : back;
+        sCnt = Math.max(dSourceCount, 0.0);
+        srcCnt = (dSourceCount <= 0.0 || dBackCount <= 0) ? 0.0 : dSourceCount;
+        bckCnt = (dBackCount <= 0) ? 1.0 : dBackCount;
+
+        serror = Math.sqrt((src * gain) + sCnt * (1.0 + srcCnt / bckCnt) * (bck * gain + dark + ron * ron + gain * gain * 0.083521)) / gain;
+        fwhm = IJU.radialDistributionFWHM(ip, apertureRoi.xPos, apertureRoi.yPos, apertureRoi.r1, back);
+
+        // CALIBRATE INTENSITIES IF POSSIBLE
+
+        rawSource = source;
+        rawBack = 0.0;
+        if (calib != null && calib.calibrated()) {
+            rawSource = calib.getRawValue(source);
+            if (dBackCount > 0) {
+                rawBack = calib.getRawValue(back);
+            }
+        }
+    }
+
     public void measure(ImagePlus imp, FreeformPixelApertureRoi apertureRoi, boolean exactPixels) {
         var ip = imp.getProcessor();
         exact = exactPixels;

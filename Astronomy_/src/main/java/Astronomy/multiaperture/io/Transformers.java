@@ -1,8 +1,10 @@
 package Astronomy.multiaperture.io;
 
+import Astronomy.multiaperture.CompositeShape;
 import Astronomy.multiaperture.io.transformers.*;
 import astroj.Aperture;
 
+import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.util.HashMap;
 import java.util.Map;
@@ -16,6 +18,8 @@ public class Transformers {
         registerTransformer(Properties.class, new PrefsTransformer("multiapertureSettings"));
         registerTransformer(Aperture.class, new ApertureTransformer());
         registerTransformer(AffineTransform.class, new AffineTransformTransformer());
+        registerTransformer(Shape.class, new ShapeTransformer());
+        registerTransformer(CompositeShape.class, new CompositeShapeTransformer());
         registerTransformer(ApFile.class, new ApertureFileTransformer());
     }
 

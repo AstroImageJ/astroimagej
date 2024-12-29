@@ -98,7 +98,57 @@ public class Section {
 
     @Override
     public String toString() {
-        return "Section{name='" + name + "', parameters=" + parameters + ", subSections=" + subSections + '}';
+        final StringBuilder sb = new StringBuilder("{");
+        sb.append("\"name\":\"")
+                .append(Objects.toString(name, "")).append('\"');
+
+        sb.append(",\"parameters\":");
+        if ((parameters) != null && !(parameters).isEmpty()) {
+            sb.append("[");
+            final int listSize = (parameters).size();
+            for (int i = 0; i < listSize; i++) {
+                final Object listValue = (parameters).get(i);
+                if (listValue instanceof CharSequence) {
+                    sb.append("\"").append(Objects.toString(listValue, "")).append("\"");
+                } else {
+                    sb.append(Objects.toString(listValue, ""));
+                }
+                if (i < listSize - 1) {
+                    sb.append(",");
+                } else {
+                    sb.append("]");
+                }
+            }
+        } else {
+            sb.append("[]");
+        }
+
+        sb.append(",\"subSections\":");
+        if ((subSections) != null && !(subSections).isEmpty()) {
+            sb.append("[");
+            final int listSize = (subSections).size();
+            for (int i = 0; i < listSize; i++) {
+                final Object listValue = (subSections).get(i);
+                if (listValue instanceof CharSequence) {
+                    sb.append("\"").append(Objects.toString(listValue, "")).append("\"");
+                } else {
+                    sb.append(Objects.toString(listValue, ""));
+                }
+                if (i < listSize - 1) {
+                    sb.append(",");
+                } else {
+                    sb.append("]");
+                }
+            }
+        } else {
+            sb.append("[]");
+        }
+
+        sb.append(",\"isRoot\":")
+                .append(isRoot);
+
+        sb.append('}');
+        return sb.toString();
     }
 
     public boolean isRoot() {

@@ -139,6 +139,14 @@ public class Centroid {
                 }
                 throw new IllegalStateException();
             }
+            case FREEFORM_SHAPE -> {
+                if (aperture instanceof ShapedApertureRoi apertureRoi) {
+                    yield measure(imp, apertureRoi.getCenter()[0], apertureRoi.getCenter()[1],
+                            apertureRoi.getRadius(), apertureRoi.getBack1(), apertureRoi.getBack2(),
+                            findCentroid, useBackgroundPlane, removeStars);
+                }
+                throw new IllegalStateException();
+            }
         };
     }
 

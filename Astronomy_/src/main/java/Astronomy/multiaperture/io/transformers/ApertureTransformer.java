@@ -1,5 +1,6 @@
 package Astronomy.multiaperture.io.transformers;
 
+import Astronomy.multiaperture.TransformedShape;
 import Astronomy.multiaperture.io.Section;
 import Astronomy.multiaperture.io.Transformer;
 import Astronomy.multiaperture.io.Transformers;
@@ -23,7 +24,58 @@ public class ApertureTransformer implements Transformer<Aperture> {
         return switch (s) {
             case CIRCULAR -> throw new IllegalStateException("Not Yet Implemented");
             case FREEFORM_SHAPE -> {
-                throw new IllegalStateException("Not Yet Implemented");
+                var ap = new ShapedApertureRoi();
+
+                var compSec = getUniqueSection(view, "isComp", false);
+                if (compSec != null) {
+                    ap.setComparisonStar(readBool("isComp", compSec.getParameter(0, "isComp")));
+                }
+
+                var centroidSec = getUniqueSection(view, "centroid", false);
+                if (centroidSec != null) {
+                    ap.setCentroided(readBool("centroid", centroidSec.getParameter(0, "centroid")));
+                }
+
+                var radecSec = getUniqueSection(view, "radec", false);
+                if (radecSec != null) {
+                    ap.setRadec(readDouble("ra", radecSec.getParameter(0, "ra")),
+                            readDouble("dec", radecSec.getParameter(1, "dec")));
+                }
+
+                var transforms = view.get("transform");
+                if (!transforms.isEmpty()) {
+                    var t = Transformers.read(AffineTransform.class, transforms.get(0));
+                    for (int i = 1; i < transforms.size(); i++) {
+                        t.concatenate(Transformers.read(AffineTransform.class, transforms.get(i)));
+                    }
+
+                    ap.setTransform(t);
+                }
+
+                var apShapeSec = getUniqueSection(view, "apertureShape");
+
+                if (apShapeSec.getSubSections().size() != 1) {
+                    throw new IllegalStateException("apertureShape section must contain one subsection");
+                }
+
+                ap.setApertureShape(Transformers.read(Shape.class, apShapeSec.getSubSections().get(0)));
+
+                var backgroundShapeSec = getUniqueSection(view, "backgroundShape", false);
+                if (backgroundShapeSec != null) {
+                    var center = true;
+
+                    if (backgroundShapeSec.hasParameters()) {
+                        center = readBool("", backgroundShapeSec.getParameter(0, "centeredOnAperture"));
+                    }
+
+                    if (backgroundShapeSec.getSubSections().size() != 1) {
+                        throw new IllegalStateException("backgroundShape section must contain one subsection");
+                    }
+
+                    ap.setBackgroundShape(Transformers.read(Shape.class, backgroundShapeSec.getSubSections().get(0)), center);
+                }
+
+                yield ap;
             }
             case FREEFORM_PIXEL -> {
                 var ap = new FreeformPixelApertureRoi();
@@ -83,15 +135,14 @@ public class ApertureTransformer implements Transformer<Aperture> {
             case FREEFORM_SHAPE -> {
                 var ap = (ShapedApertureRoi) aperture;
 
-                //todo impl
-                /*s.addSubsection(Section.createSection("isComp", Boolean.toString(ap.isComparisonStar())));
+                s.addSubsection(Section.createSection("isComp", Boolean.toString(ap.isComparisonStar())));
 
                 s.addSubsection(Section.createSection("centroid", Boolean.toString(ap.getIsCentroid())));
 
                 if (ap.hasRadec()) {
                     s.addSubsection(Section.createSection("radec",
                             Double.toString(ap.getRightAscension()), Double.toString(ap.getDeclination())));
-                }*/
+                }
 
                 if (!ap.getTransform().isIdentity()) {
                     s.addSubsection(Transformers.write(AffineTransform.class, ap.getTransform()));
@@ -104,17 +155,22 @@ public class ApertureTransformer implements Transformer<Aperture> {
                 s.addSubsection(apShape);
 
                 if (ap.hasBackground()) {
-                    var backgroundShape = new Section("backgroundShape");
+                    var backgroundShape = Section.createSection("backgroundShape", Boolean.toString(ap.isCenterBackground()));
 
-                    backgroundShape.addSubsection(Section.createSection("centeredOnAperture", Boolean.toString(false)));//todo
+                    var bShape = ap.getBackgroundShape();
 
-                    backgroundShape.addSubsection(Transformers.write(Shape.class, ap.getBackgroundShape()));
+                    if (ap.isCenterBackground() && bShape instanceof TransformedShape transformedShape) {
+                        // If just translation, the centering will override it anyways
+                        // so we can decompose this into just a simple shape
+                        if (transformedShape.getTransform().getType() == AffineTransform.TYPE_TRANSLATION) {
+                            bShape = transformedShape.getOriginalShape();
+                        }
+                    }
+
+                    backgroundShape.addSubsection(Transformers.write(Shape.class, bShape));
 
                     s.addSubsection(backgroundShape);
                 }
-
-
-                throw new IllegalStateException("Not Yet Implemented");
             }
             case FREEFORM_PIXEL -> {
                 var ap = (FreeformPixelApertureRoi) aperture;

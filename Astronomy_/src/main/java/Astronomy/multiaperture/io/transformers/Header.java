@@ -9,7 +9,7 @@ public class Header implements Transformer<Header> {
     private int minorVersion;
 
     public Header() {
-        this(2, 0);
+        this(2, 1);
     }
 
     public Header(int majorVersion, int minorVersion) {

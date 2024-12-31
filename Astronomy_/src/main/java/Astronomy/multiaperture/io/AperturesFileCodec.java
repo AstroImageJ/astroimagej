@@ -1,9 +1,16 @@
 package Astronomy.multiaperture.io;
 
+import Astronomy.multiaperture.io.transformers.Header;
+import astroj.ShapedApertureRoi;
+
+import java.awt.*;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Ellipse2D;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Stack;
 
 public class AperturesFileCodec {

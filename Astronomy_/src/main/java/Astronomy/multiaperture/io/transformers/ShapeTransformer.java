@@ -13,6 +13,18 @@ import java.util.List;
 
 public class ShapeTransformer implements Transformer<Shape, Void> {
     public static final List<String> SHAPE_SECTION_NAMES = List.of("ellipse", "rectangle", "composite", "roundedRectangle", "path");
+    private static final Section.Parameter<Double> X_PARAMETER = new Section.Parameter<>("x", 0, Double.class);
+    private static final Section.Parameter<Double> Y_PARAMETER = new Section.Parameter<>("y", 1, Double.class);
+    private static final Section.Parameter<Double> QUAD_CTRL_X_PARAMETER = new Section.Parameter<>("ctrlX", 0, Double.class);
+    private static final Section.Parameter<Double> QUAD_CTRL_Y_PARAMETER = new Section.Parameter<>("ctrlY", 1, Double.class);
+    private static final Section.Parameter<Double> QUAD_END_X_PARAMETER = new Section.Parameter<>("endX", 2, Double.class);
+    private static final Section.Parameter<Double> QUAD_END_Y_PARAMETER = new Section.Parameter<>("endY", 3, Double.class);
+    private static final Section.Parameter<Double> CUBIC_CTRL1_X_PARAMETER = new Section.Parameter<>("ctrl1X", 0, Double.class);
+    private static final Section.Parameter<Double> CUBIC_CTRL1_Y_PARAMETER = new Section.Parameter<>("ctrl1Y", 1, Double.class);
+    private static final Section.Parameter<Double> CUBIC_CTRL2_X_PARAMETER = new Section.Parameter<>("ctrl2X", 2, Double.class);
+    private static final Section.Parameter<Double> CUBIC_CTRL2_Y_PARAMETER = new Section.Parameter<>("ctrl2Y", 3, Double.class);
+    private static final Section.Parameter<Double> CUBIC_END_X_PARAMETER = new Section.Parameter<>("endX", 4, Double.class);
+    private static final Section.Parameter<Double> CUBIC_END_Y_PARAMETER = new Section.Parameter<>("endY", 5, Double.class);
 
     @Override
     public Shape load(Void params, Section section) {
@@ -22,10 +34,10 @@ public class ShapeTransformer implements Transformer<Shape, Void> {
                 var centerSec = getUniqueSection(view, "center");
                 var radiiSec = getUniqueSection(view, "radii");
 
-                var centerX = readDouble("centerX", centerSec.getParameter(0, "x"));
-                var centerY = readDouble("centerY", centerSec.getParameter(1, "y"));
-                var radiusX = readDouble("radiusX", radiiSec.getParameter(0, "x"));
-                var radiusY = readDouble("radiusY", radiiSec.getParameter(1, "y"));
+                var centerX = centerSec.getParameter(X_PARAMETER);
+                var centerY = centerSec.getParameter(Y_PARAMETER);
+                var radiusX = radiiSec.getParameter(X_PARAMETER);
+                var radiusY = radiiSec.getParameter(Y_PARAMETER);
 
                 yield new Ellipse2D.Double(centerX - radiusX, centerY - radiusY, 2 * radiusX, 2 * radiusY);
             }
@@ -33,10 +45,10 @@ public class ShapeTransformer implements Transformer<Shape, Void> {
                 var centerSec = getUniqueSection(view, "center");
                 var radiiSec = getUniqueSection(view, "radii");
 
-                var centerX = readDouble("centerX", centerSec.getParameter(0, "x"));
-                var centerY = readDouble("centerY", centerSec.getParameter(1, "y"));
-                var radiusX = readDouble("radiusX", radiiSec.getParameter(0, "x"));
-                var radiusY = readDouble("radiusY", radiiSec.getParameter(1, "y"));
+                var centerX = centerSec.getParameter(X_PARAMETER);
+                var centerY = centerSec.getParameter(Y_PARAMETER);
+                var radiusX = radiiSec.getParameter(X_PARAMETER);
+                var radiusY = radiiSec.getParameter(Y_PARAMETER);
 
                 yield new Rectangle2D.Double(centerX - radiusX, centerY - radiusY, 2 * radiusX, 2 * radiusY);
             }
@@ -48,12 +60,12 @@ public class ShapeTransformer implements Transformer<Shape, Void> {
                 var radiiSec = getUniqueSection(view, "radii");
                 var cornerRadiiSec = getUniqueSection(view, "cornerRadii");
 
-                var centerX = readDouble("centerX", centerSec.getParameter(0, "x"));
-                var centerY = readDouble("centerY", centerSec.getParameter(1, "y"));
-                var radiusX = readDouble("radiusX", radiiSec.getParameter(0, "x"));
-                var radiusY = readDouble("radiusY", radiiSec.getParameter(1, "y"));
-                var cornerRadiusX = readDouble("cornerRadiusX", cornerRadiiSec.getParameter(0, "x"));
-                var cornerRadiusY = readDouble("cornerRadiusY", cornerRadiiSec.getParameter(1, "y"));
+                var centerX = centerSec.getParameter(X_PARAMETER);
+                var centerY = centerSec.getParameter(Y_PARAMETER);
+                var radiusX = radiiSec.getParameter(X_PARAMETER);
+                var radiusY = radiiSec.getParameter(Y_PARAMETER);
+                var cornerRadiusX = cornerRadiiSec.getParameter(X_PARAMETER);
+                var cornerRadiusY = cornerRadiiSec.getParameter(Y_PARAMETER);
 
                 yield new RoundRectangle2D.Double(centerX - radiusX, centerY - radiusY,
                         2 * radiusX, 2 * radiusY, 2 * cornerRadiusX, 2 * cornerRadiusY);
@@ -64,32 +76,32 @@ public class ShapeTransformer implements Transformer<Shape, Void> {
                 for (Section subSection : section.getSubSections()) {
                     switch (subSection.name()) {
                         case "moveTo" -> {
-                            var startX = readDouble("startX", subSection.getParameter(0, "x"));
-                            var startY = readDouble("startY", subSection.getParameter(1, "y"));
+                            var startX = subSection.getParameter(X_PARAMETER);
+                            var startY = subSection.getParameter(Y_PARAMETER);
 
                             p.moveTo(startX, startY);
                         }
                         case "lineTo" -> {
-                            var endX = readDouble("endX", subSection.getParameter(0, "x"));
-                            var endY = readDouble("endY", subSection.getParameter(1, "y"));
+                            var endX = subSection.getParameter(X_PARAMETER);
+                            var endY = subSection.getParameter(Y_PARAMETER);
 
                             p.lineTo(endX, endY);
                         }
                         case "quadTo" -> {
-                            var ctrlX = readDouble("ctrlX", subSection.getParameter(0, "x"));
-                            var ctrlY = readDouble("ctrlY", subSection.getParameter(1, "y"));
-                            var endX = readDouble("endX", subSection.getParameter(0, "x"));
-                            var endY = readDouble("endY", subSection.getParameter(1, "y"));
+                            var ctrlX = subSection.getParameter(QUAD_CTRL_X_PARAMETER);
+                            var ctrlY = subSection.getParameter(QUAD_CTRL_Y_PARAMETER);
+                            var endX = subSection.getParameter(QUAD_END_X_PARAMETER);
+                            var endY = subSection.getParameter(QUAD_END_Y_PARAMETER);
 
                             p.quadTo(ctrlX, ctrlY, endX, endY);
                         }
                         case "cubicTo" -> {
-                            var ctrl1X = readDouble("ctrl1X", subSection.getParameter(0, "x"));
-                            var ctrl1Y = readDouble("ctrl1Y", subSection.getParameter(1, "y"));
-                            var ctrl2X = readDouble("ctrl2X", subSection.getParameter(2, "x"));
-                            var ctrl2Y = readDouble("ctrl2Y", subSection.getParameter(3, "y"));
-                            var endX = readDouble("endX", subSection.getParameter(4, "x"));
-                            var endY = readDouble("endY", subSection.getParameter(5, "y"));
+                            var ctrl1X = subSection.getParameter(CUBIC_CTRL1_X_PARAMETER);
+                            var ctrl1Y = subSection.getParameter(CUBIC_CTRL1_Y_PARAMETER);
+                            var ctrl2X = subSection.getParameter(CUBIC_CTRL2_X_PARAMETER);
+                            var ctrl2Y = subSection.getParameter(CUBIC_CTRL2_Y_PARAMETER);
+                            var endX = subSection.getParameter(CUBIC_END_X_PARAMETER);
+                            var endY = subSection.getParameter(CUBIC_END_Y_PARAMETER);
 
                             p.curveTo(ctrl1X, ctrl1Y, ctrl2X, ctrl2Y, endX, endY);
                         }
@@ -102,7 +114,7 @@ public class ShapeTransformer implements Transformer<Shape, Void> {
 
                 yield p;
             }
-            default -> throw new IllegalStateException();
+            default -> throw new IllegalStateException("Unknown shape of type: " + section.name());
         };
 
         var transformerSecs = view.get("transform");
@@ -127,25 +139,25 @@ public class ShapeTransformer implements Transformer<Shape, Void> {
             s = new Section("ellipse");
 
             s.addSubsection(Section.createSection("center",
-                    Double.toString(e.getCenterX()), Double.toString(e.getCenterY())));
+                    X_PARAMETER, e.getCenterX(), Y_PARAMETER, e.getCenterY()));
             s.addSubsection(Section.createSection("radii",
-                    Double.toString(e.getWidth()/2.0), Double.toString(e.getHeight()/2.0)));
+                    X_PARAMETER, e.getWidth()/2.0, Y_PARAMETER, e.getHeight()/2.0));
         } else if (shape instanceof Rectangle2D r) {
             s = new Section("rectangle");
 
             s.addSubsection(Section.createSection("center",
-                    Double.toString(r.getCenterX()), Double.toString(r.getCenterY())));
+                    X_PARAMETER, r.getCenterX(), Y_PARAMETER, r.getCenterY()));
             s.addSubsection(Section.createSection("radii",
-                    Double.toString(r.getWidth()/2.0), Double.toString(r.getHeight()/2.0)));
+                    X_PARAMETER, r.getWidth()/2.0, Y_PARAMETER, r.getHeight()/2.0));
         } else if (shape instanceof RoundRectangle2D r) {
             s = new Section("roundedRectangle");
 
             s.addSubsection(Section.createSection("center",
-                    Double.toString(r.getCenterX()), Double.toString(r.getCenterY())));
+                    X_PARAMETER, r.getCenterX(), Y_PARAMETER, r.getCenterY()));
             s.addSubsection(Section.createSection("radii",
-                    Double.toString(r.getWidth()/2.0), Double.toString(r.getHeight()/2.0)));
+                    X_PARAMETER, r.getWidth()/2.0, Y_PARAMETER, r.getHeight()/2.0));
             s.addSubsection(Section.createSection("cornerRadii",
-                    Double.toString(r.getArcWidth()/2.0), Double.toString(r.getArcHeight()/2.0)));
+                    X_PARAMETER, r.getArcWidth()/2.0, Y_PARAMETER, r.getArcHeight()/2.0));
         } else if (shape instanceof CompositeShape t) {
             s = Transformers.write(CompositeShape.class, t);
         } else if (shape instanceof TransformedShape t) {
@@ -170,8 +182,7 @@ public class ShapeTransformer implements Transformer<Shape, Void> {
                         startX = coords[0];
                         startY = coords[1];
 
-                        s.addSubsection(Section.createSection("moveTo",
-                                Double.toString(startX), Double.toString(startY)));
+                        s.addSubsection(Section.createSection("moveTo", X_PARAMETER, startX, Y_PARAMETER, startY));
 
                         lastX = startX;
                         lastY = startY;
@@ -181,8 +192,7 @@ public class ShapeTransformer implements Transformer<Shape, Void> {
                         double x = coords[0];
                         double y = coords[1];
 
-                        s.addSubsection(Section.createSection("lineTo",
-                                Double.toString(x), Double.toString(y)));
+                        s.addSubsection(Section.createSection("lineTo", X_PARAMETER, startX, Y_PARAMETER, startY));
 
                         lastX = x;
                         lastY = y;
@@ -193,8 +203,8 @@ public class ShapeTransformer implements Transformer<Shape, Void> {
                         double x = coords[2], y = coords[3];
 
                         s.addSubsection(Section.createSection("quadTo",
-                                Double.toString(ctrlX), Double.toString(ctrlY),
-                                Double.toString(x), Double.toString(y)));
+                                QUAD_CTRL_X_PARAMETER, ctrlX, QUAD_CTRL_X_PARAMETER, ctrlY,
+                                QUAD_END_X_PARAMETER, x, QUAD_END_Y_PARAMETER, y));
 
                         lastX = x;
                         lastY = y;
@@ -206,9 +216,9 @@ public class ShapeTransformer implements Transformer<Shape, Void> {
                         double x = coords[4], y = coords[5];
 
                         s.addSubsection(Section.createSection("cubicTo",
-                                Double.toString(ctrl1X), Double.toString(ctrl1Y),
-                                Double.toString(ctrl2X), Double.toString(ctrl2Y),
-                                Double.toString(x), Double.toString(y)));
+                                CUBIC_CTRL1_X_PARAMETER, ctrl1X, CUBIC_CTRL1_Y_PARAMETER, ctrl1Y,
+                                CUBIC_CTRL2_X_PARAMETER, ctrl2X, CUBIC_CTRL2_Y_PARAMETER, ctrl2Y,
+                                CUBIC_END_X_PARAMETER, x, CUBIC_END_Y_PARAMETER, y));
 
                         lastX = x;
                         lastY = y;

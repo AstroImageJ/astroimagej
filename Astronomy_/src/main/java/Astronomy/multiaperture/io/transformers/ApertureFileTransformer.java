@@ -38,7 +38,8 @@ public class ApertureFileTransformer implements Transformer<ApFile, Void> {
 
             var maSettingsSec = getUniqueSection(view, "multiapertureSettings", false);
 
-            Properties prefs = maSettingsSec != null ? Transformers.read(Properties.class, maSettingsSec) : new Properties();
+            Properties prefs = maSettingsSec != null ? Transformers.read(Properties.class, maSettingsSec,
+                    "multiapertureSettings") : new Properties();
 
             return new ApFile(header, apertures, prefs);
         } else { // Legacy Apertures File
@@ -58,7 +59,7 @@ public class ApertureFileTransformer implements Transformer<ApFile, Void> {
         }
 
         if (apFile.prefs() != null) {
-            s.addSubsection(Transformers.write(Properties.class, apFile.prefs()));
+            s.addSubsection(Transformers.write(Properties.class, apFile.prefs(), "multiapertureSettings"));
         }
 
         return s;

@@ -14,12 +14,27 @@ import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.util.List;
 
-public class ApertureTransformer implements Transformer<Aperture> {
 public class ApertureTransformer implements Transformer<Aperture, Void> {
+    private static final Section.Parameter<ApertureShape> SHAPE_PARAMETER =
+            new Section.Parameter<>("aperture shape", 0, ApertureShape.class, ApertureTransformer::deserializeShape, ApertureTransformer::serializeShape);
+    private static final Section.Parameter<Boolean> COMP_PARAMETER = new Section.Parameter<>("isComp", 0, Boolean.TYPE);
+    private static final Section.Parameter<Boolean> CENTROID_PARAMETER = new Section.Parameter<>("isCentroided", 0, Boolean.TYPE);
+    private static final Section.Parameter<Boolean> CENTER_PARAMETER = new Section.Parameter<>("centeredOnAperture", 0, Boolean.TYPE);
+    private static final Section.Parameter<Double> RA_PARAMETER = new Section.Parameter<>("right ascension", 0, Double.TYPE);
+    private static final Section.Parameter<Double> DEC_PARAMETER = new Section.Parameter<>("declination", 1, Double.TYPE);
+    private static final Section.Parameter<Integer> INT_X_PARAMETER = new Section.Parameter<>("x", 0, Integer.TYPE);
+    private static final Section.Parameter<Integer> INT_Y_PARAMETER = new Section.Parameter<>("y", 1, Integer.TYPE);
+    private static final Section.Parameter<Boolean> BACKGROUND_PARAMETER = new Section.Parameter<>("isBackground", 2, Boolean.TYPE,
+            (p, s) -> switch (s) {
+                case "background" -> true;
+                case "source" -> false;
+                default -> throw new IllegalStateException("Unknown px type: " + s);
+            }, (p, b) -> b ? "background" : "source");
+    private static final Section.Parameter<Double> RADIUS_PARAMETER = new Section.Parameter<>("radius", 0, Double.TYPE);
+
     @Override
-    public Aperture load(Section section) {
-        var s = getShape(section.getParameter(0, "apertureShape"));
     public Aperture load(Void params, Section section) {
+        var s = section.getParameter(SHAPE_PARAMETER);
 
         var view = section.createMapView();
 
@@ -30,18 +45,17 @@ public class ApertureTransformer implements Transformer<Aperture, Void> {
 
                 var compSec = getUniqueSection(view, "isComp", false);
                 if (compSec != null) {
-                    ap.setComparisonStar(readBool("isComp", compSec.getParameter(0, "isComp")));
+                    ap.setComparisonStar(compSec.getParameter(COMP_PARAMETER));
                 }
 
                 var centroidSec = getUniqueSection(view, "centroid", false);
                 if (centroidSec != null) {
-                    ap.setCentroided(readBool("centroid", centroidSec.getParameter(0, "centroid")));
+                    ap.setCentroided(centroidSec.getParameter(CENTROID_PARAMETER));
                 }
 
                 var radecSec = getUniqueSection(view, "radec", false);
                 if (radecSec != null) {
-                    ap.setRadec(readDouble("ra", radecSec.getParameter(0, "ra")),
-                            readDouble("dec", radecSec.getParameter(1, "dec")));
+                    ap.setRadec(radecSec.getParameter(RA_PARAMETER), radecSec.getParameter(DEC_PARAMETER));
                 }
 
                 var transforms = view.get("transform");
@@ -67,7 +81,7 @@ public class ApertureTransformer implements Transformer<Aperture, Void> {
                     var center = true;
 
                     if (backgroundShapeSec.hasParameters()) {
-                        center = readBool("", backgroundShapeSec.getParameter(0, "centeredOnAperture"));
+                        center = backgroundShapeSec.getParameter(CENTER_PARAMETER);
                     }
 
                     if (backgroundShapeSec.getSubSections().size() != 1) {
@@ -84,40 +98,32 @@ public class ApertureTransformer implements Transformer<Aperture, Void> {
 
                 var compSec = getUniqueSection(view, "isComp", false);
                 if (compSec != null) {
-                    ap.setComparisonStar(readBool("isComp", compSec.getParameter(0, "isComp")));
+                    ap.setComparisonStar(compSec.getParameter(COMP_PARAMETER));
                 }
 
                 var centroidSec = getUniqueSection(view, "centroid", false);
                 if (centroidSec != null) {
-                    ap.centroidAperture(readBool("centroid", centroidSec.getParameter(0, "centroid")));
+                    ap.centroidAperture(centroidSec.getParameter(CENTROID_PARAMETER));
                 }
 
                 var back1Sec = getUniqueSection(view, "rBack1", false);
                 var back2Sec = getUniqueSection(view, "rBack2", false);
                 if (back1Sec != null && back2Sec != null) {
-                    ap.setBack1(readDouble("rBack1", back1Sec.getParameter(0, "rBack1")));
-                    ap.setBack2(readDouble("rBack2", back2Sec.getParameter(0, "rBack2")));
+                    ap.setBack1(back1Sec.getParameter(RADIUS_PARAMETER));
+                    ap.setBack2(back2Sec.getParameter(RADIUS_PARAMETER));
                     ap.setHasAnnulus(true);
                 }
 
                 var radecSec = getUniqueSection(view, "radec", false);
                 if (radecSec != null) {
-                    ap.setRadec(readDouble("ra", radecSec.getParameter(0, "ra")),
-                            readDouble("dec", radecSec.getParameter(1, "dec")));
+                    ap.setRadec(radecSec.getParameter(RA_PARAMETER), radecSec.getParameter(DEC_PARAMETER));
                 }
 
                 var pSecs = view.get("px");
                 for (Section pSec : pSecs) {
-                    var ts = pSec.getParameter(2, "isBackground");
-                    var pType = switch (ts) {
-                        case "background" -> true;
-                        case "source" -> false;
-                        default -> throw new IllegalStateException("Unknown px type: " + ts);
-                    };
-
-                    ap.addPixel(readInt("px", pSec.getParameter(0, "x")),
-                            readInt("px", pSec.getParameter(1, "y")),
-                            pType, false);
+                    ap.addPixel(pSec.getParameter(INT_X_PARAMETER),
+                            pSec.getParameter(INT_Y_PARAMETER),
+                            pSec.getParameter(BACKGROUND_PARAMETER), false);
                 }
 
                 ap.update();
@@ -127,9 +133,8 @@ public class ApertureTransformer implements Transformer<Aperture, Void> {
     }
 
     @Override
-    public Section write(Aperture aperture) {
-        var s = Section.createSection("ap", getTypeName(aperture));
     public Section write(Void params, Aperture aperture) {
+        var s = Section.createSection("ap", SHAPE_PARAMETER, aperture.getApertureShape());
 
         switch (aperture.getApertureShape()) {
             case CIRCULAR -> {
@@ -138,13 +143,13 @@ public class ApertureTransformer implements Transformer<Aperture, Void> {
             case FREEFORM_SHAPE -> {
                 var ap = (ShapedApertureRoi) aperture;
 
-                s.addSubsection(Section.createSection("isComp", Boolean.toString(ap.isComparisonStar())));
+                s.addSubsection(Section.createSection("isComp", COMP_PARAMETER, ap.isComparisonStar()));
 
-                s.addSubsection(Section.createSection("centroid", Boolean.toString(ap.getIsCentroid())));
+                s.addSubsection(Section.createSection("centroid", CENTROID_PARAMETER, ap.getIsCentroid()));
 
                 if (ap.hasRadec()) {
                     s.addSubsection(Section.createSection("radec",
-                            Double.toString(ap.getRightAscension()), Double.toString(ap.getDeclination())));
+                            RA_PARAMETER, ap.getRightAscension(), DEC_PARAMETER, ap.getDeclination()));
                 }
 
                 if (!ap.getTransform().isIdentity()) {
@@ -180,27 +185,27 @@ public class ApertureTransformer implements Transformer<Aperture, Void> {
 
                 if (ap.isComparisonStar()) {
                     //noinspection ConstantValue
-                    s.addSubsection(Section.createSection("isComp", Boolean.toString(ap.isComparisonStar())));
+                    s.addSubsection(Section.createSection("isComp", COMP_PARAMETER, ap.isComparisonStar()));
                 }
 
                 if (ap.getIsCentroid()) {
-                    s.addSubsection(Section.createSection("centroid", Boolean.toString(ap.getIsCentroid())));
+                    s.addSubsection(Section.createSection("centroid", CENTROID_PARAMETER, ap.getIsCentroid()));
                 }
 
                 if (ap.hasAnnulus()) {
-                    s.addSubsection(Section.createSection("rBack1", Double.toString(ap.getBack1())));
-                    s.addSubsection(Section.createSection("rBack2", Double.toString(ap.getBack2())));
+                    s.addSubsection(Section.createSection("rBack1", RADIUS_PARAMETER, ap.getBack1()));
+                    s.addSubsection(Section.createSection("rBack2", RA_PARAMETER, ap.getBack2()));
                 }
 
                 if (ap.hasRadec()) {
                     s.addSubsection(Section.createSection("radec",
-                            Double.toString(ap.getRightAscension()), Double.toString(ap.getDeclination())));
+                            RA_PARAMETER, ap.getRightAscension(), DEC_PARAMETER, ap.getDeclination()));
                 }
 
                 for (FreeformPixelApertureRoi.Pixel pixel : ap.iterable()) {
                     s.addSubsection(Section.createSection("px",
-                            Integer.toString(pixel.x()), Integer.toString(pixel.y()),
-                            (pixel.isBackground() ? "background" : "source")));
+                            INT_X_PARAMETER, pixel.x(), INT_Y_PARAMETER, pixel.y(),
+                            BACKGROUND_PARAMETER, pixel.isBackground()));
                 }
             }
         }
@@ -208,15 +213,15 @@ public class ApertureTransformer implements Transformer<Aperture, Void> {
         return s;
     }
 
-    private String getTypeName(Aperture aperture) {
-        return switch (aperture.getApertureShape()) {
+    private static String serializeShape(Section.Parameter<ApertureShape> parameter, ApertureShape apertureShape) {
+        return switch (apertureShape) {
             case CIRCULAR -> "circular";
             case FREEFORM_SHAPE -> "custom_shaped";
             case FREEFORM_PIXEL -> "custom_pixel";
         };
     }
 
-    private ApertureShape getShape(String shape) {
+    private static ApertureShape deserializeShape(Section.Parameter<ApertureShape> parameter, String shape) {
         return switch (shape) {
             case "circular" -> ApertureShape.CIRCULAR;
             case "custom_shaped", "customShaped" -> ApertureShape.FREEFORM_SHAPE;

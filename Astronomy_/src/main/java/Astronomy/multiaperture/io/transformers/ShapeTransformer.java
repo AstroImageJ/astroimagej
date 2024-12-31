@@ -163,7 +163,9 @@ public class ShapeTransformer implements Transformer<Shape, Void> {
         } else if (shape instanceof TransformedShape t) {
             s = Transformers.write(Shape.class, t.getOriginalShape());
             // Insert transform section at the top
-            s.getSubSections().add(0, Transformers.write(AffineTransform.class, t.getTransform()));
+            if (!t.getTransform().isIdentity()) {
+                s.getSubSections().add(0, Transformers.write(AffineTransform.class, t.getTransform()));
+            }
         } else {
             s = new Section("path");
 

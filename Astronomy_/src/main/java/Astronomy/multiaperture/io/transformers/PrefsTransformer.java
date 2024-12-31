@@ -3,17 +3,15 @@ package Astronomy.multiaperture.io.transformers;
 import Astronomy.multiaperture.io.Section;
 import Astronomy.multiaperture.io.Transformer;
 
+import java.util.Objects;
 import java.util.Properties;
 
-public class PrefsTransformer implements Transformer<Properties> {
-    private final String name;
-
-    public PrefsTransformer(String name) {
-        this.name = name;
-    }
+public class PrefsTransformer implements Transformer<Properties, String> {
 
     @Override
-    public Properties load(Section section) {
+    public Properties load(String sectionName, Section section) {
+        Objects.requireNonNull(sectionName, "Preferences transformer requires section name");
+
         var view = section.createMapView();
 
         var prefs = new Properties();
@@ -31,8 +29,10 @@ public class PrefsTransformer implements Transformer<Properties> {
     }
 
     @Override
-    public Section write(Properties prefs) {
-        var s = new Section(name);
+    public Section write(String sectionName, Properties prefs) {
+        Objects.requireNonNull(sectionName, "Preferences transformer requires section name");
+
+        var s = new Section(sectionName);
 
         prefs.forEach((k, v) -> {
             if (k instanceof String ks) {

@@ -6,9 +6,11 @@ import Astronomy.multiaperture.io.Transformer;
 import java.awt.geom.AffineTransform;
 
 public class AffineTransformTransformer implements Transformer<AffineTransform> {
+public class AffineTransformTransformer implements Transformer<AffineTransform, Void> {
     @Override
     public AffineTransform load(Section section) {
         var t = section.getParameter(0, "transformType");
+    public AffineTransform load(Void params, Section section) {
 
         return switch (t) {
             case "rotate" -> {
@@ -59,7 +61,7 @@ public class AffineTransformTransformer implements Transformer<AffineTransform> 
     }
 
     @Override
-    public Section write(AffineTransform transform) {
+    public Section write(Void params, AffineTransform transform) {
         var type = type(transform);
 
         // Decomposing is difficult, so just handle the simple transforms

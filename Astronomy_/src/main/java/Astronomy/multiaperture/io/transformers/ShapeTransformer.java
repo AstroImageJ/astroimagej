@@ -11,15 +11,11 @@ import java.awt.*;
 import java.awt.geom.*;
 import java.util.List;
 
-public class ShapeTransformer implements Transformer<Shape> {
+public class ShapeTransformer implements Transformer<Shape, Void> {
     public static final List<String> SHAPE_SECTION_NAMES = List.of("ellipse", "rectangle", "composite", "roundedRectangle", "path");
 
     @Override
-    public Shape load(Section section) {
-        if (!SHAPE_SECTION_NAMES.contains(section.name())) {
-            throw new IllegalStateException("Unknown shape of type: " + section.name());
-        }
-
+    public Shape load(Void params, Section section) {
         var view = section.createMapView();
         var shape = switch (section.name()) {
             case "ellipse" -> {
@@ -124,7 +120,7 @@ public class ShapeTransformer implements Transformer<Shape> {
     }
 
     @Override
-    public Section write(Shape shape) {
+    public Section write(Void params, Shape shape) {
         Section s;
 
         if (shape instanceof Ellipse2D e) {

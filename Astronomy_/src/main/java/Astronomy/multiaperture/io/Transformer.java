@@ -1,9 +1,9 @@
 package Astronomy.multiaperture.io;
 
-public interface Transformer<T> {
-    T load(Section section);
+public interface Transformer<T, PARAM> {
+    T load(PARAM parameter, Section section);
 
-    Section write(T obj);
+    Section write(PARAM parameter, T obj);
 
     default boolean hasRequiredSections(Section section, String... requiredSections) {
         for (String requiredSection : requiredSections) {

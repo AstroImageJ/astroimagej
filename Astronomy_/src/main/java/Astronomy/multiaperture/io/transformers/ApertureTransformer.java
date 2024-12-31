@@ -15,9 +15,11 @@ import java.awt.geom.AffineTransform;
 import java.util.List;
 
 public class ApertureTransformer implements Transformer<Aperture> {
+public class ApertureTransformer implements Transformer<Aperture, Void> {
     @Override
     public Aperture load(Section section) {
         var s = getShape(section.getParameter(0, "apertureShape"));
+    public Aperture load(Void params, Section section) {
 
         var view = section.createMapView();
 
@@ -127,6 +129,7 @@ public class ApertureTransformer implements Transformer<Aperture> {
     @Override
     public Section write(Aperture aperture) {
         var s = Section.createSection("ap", getTypeName(aperture));
+    public Section write(Void params, Aperture aperture) {
 
         switch (aperture.getApertureShape()) {
             case CIRCULAR -> {

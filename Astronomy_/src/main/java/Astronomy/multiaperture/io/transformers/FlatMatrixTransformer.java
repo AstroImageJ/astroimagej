@@ -36,9 +36,9 @@ public class FlatMatrixTransformer implements Transformer<double[], FlatMatrixTr
 
             for (int i = 1; i < dim.width; i++) {
                 try {
-                    matrix[j * dim.width + i] = Double.parseDouble(row.getParameter(i-1, "m%s%s".formatted(i-1, j)));
+                    matrix[j * dim.width + i] = Double.parseDouble(row.getParameter(i-1, "m%s%s".formatted(i, j)));
                 } catch (NumberFormatException e) {
-                    throw new IllegalStateException("Failed to read matrix value m%s%s".formatted(i-1, j), e);
+                    throw new IllegalStateException("Failed to read matrix value m%s%s".formatted(i, j), e);
                 }
             }
         }

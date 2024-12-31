@@ -11,23 +11,28 @@ import java.util.Map;
 import java.util.Properties;
 
 public class Transformers {
-    private static final Map<Class<?>, Transformer<?>> transformerMap = new HashMap<>();
+    private static final Map<Class<?>, Transformer<?, ?>> transformerMap = new HashMap<>();
 
     static {
         registerTransformer(Header.class, new Header());
-        registerTransformer(Properties.class, new PrefsTransformer("multiapertureSettings"));
+        registerTransformer(Properties.class, new PrefsTransformer());
         registerTransformer(Aperture.class, new ApertureTransformer());
         registerTransformer(AffineTransform.class, new AffineTransformTransformer());
         registerTransformer(Shape.class, new ShapeTransformer());
         registerTransformer(CompositeShape.class, new CompositeShapeTransformer());
         registerTransformer(ApFile.class, new ApertureFileTransformer());
+        registerTransformer(double[].class, new FlatMatrixTransformer());
     }
 
-    public static <T> void registerTransformer(Class<T> clazz, Transformer<T> transformer) {
+    public static <T, P> void registerTransformer(Class<T> clazz, Transformer<T, P> transformer) {
         transformerMap.put(clazz, transformer);
     }
 
     public static <T> T read(Class<T> clazz, Section section) {
+        return read(clazz, section, (Void) null);
+    }
+
+    public static <T, P> T read(Class<T> clazz, Section section, P parameters) {
         var transformer = transformerMap.get(clazz);
 
         if (transformer == null) {
@@ -35,19 +40,23 @@ public class Transformers {
         }
 
         try {
-            return (T) transformer.load(section);
+            return ((Transformer<T, P>) transformer).load(parameters, section);
         } catch (Exception e) {
             throw new RuntimeException("Error reading section: " + section, e);
         }
     }
 
     public static <T> Section write(Class<T> clazz, T obj) {
-        var transformer = (Transformer<T>) transformerMap.get(clazz);
+        return write(clazz, obj, (Void) null);
+    }
+
+    public static <T, P> Section write(Class<T> clazz, T obj, P parameters) {
+        var transformer = (Transformer<T, P>) transformerMap.get(clazz);
 
         if (transformer == null) {
             throw new IllegalStateException("Could not find transformer for " + clazz.getName());
         }
 
-        return transformer.write(obj);
+        return transformer.write(parameters, obj);
     }
 }

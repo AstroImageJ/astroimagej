@@ -3,7 +3,7 @@ package Astronomy.multiaperture.io.transformers;
 import Astronomy.multiaperture.io.Section;
 import Astronomy.multiaperture.io.Transformer;
 
-public class Header implements Transformer<Header> {
+public class Header implements Transformer<Header, Void> {
     public static final String HEADER = "AIJ APERTURES FILE";
     private int majorVersion;
     private int minorVersion;
@@ -18,7 +18,7 @@ public class Header implements Transformer<Header> {
     }
 
     @Override
-    public Header load(Section section) {
+    public Header load(Void params, Section section) {
         var view = section.createMapView();
 
         if (!view.contains("majorVersion")) {
@@ -50,11 +50,11 @@ public class Header implements Transformer<Header> {
     }
 
     public Section write() {
-        return write(this);
+        return write(null, this);
     }
 
     @Override
-    public Section write(Header obj) {
+    public Section write(Void params, Header obj) {
         var headerSection = new Section(HEADER);
 
         headerSection.addSubsection(Section.createSection("majorVersion", Integer.toString(obj.majorVersion)));

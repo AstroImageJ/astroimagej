@@ -12,12 +12,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
-public class ApertureFileTransformer implements Transformer<ApFile> {
+public class ApertureFileTransformer implements Transformer<ApFile, Void> {
     public static final int maxSupportedMajor = 2;
     public static final int maxSupportedMinor = 1;
 
     @Override
-    public ApFile load(Section section) {
+    public ApFile load(Void params, Section section) {
         var view = section.createMapView();
 
         if (view.contains(Header.HEADER)) {
@@ -48,7 +48,7 @@ public class ApertureFileTransformer implements Transformer<ApFile> {
     }
 
     @Override
-    public Section write(ApFile apFile) {
+    public Section write(Void params, ApFile apFile) {
         var s = new Section("root", true);
 
         s.addSubsection(Transformers.write(Header.class, apFile.header()));

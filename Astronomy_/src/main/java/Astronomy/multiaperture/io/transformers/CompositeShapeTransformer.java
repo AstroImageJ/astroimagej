@@ -11,8 +11,9 @@ import java.awt.geom.AffineTransform;
 import java.util.List;
 
 public class CompositeShapeTransformer implements Transformer<CompositeShape> {
+public class CompositeShapeTransformer implements Transformer<CompositeShape, Void> {
     @Override
-    public CompositeShape load(Section section) {
+    public CompositeShape load(Void params, Section section) {
         var view = section.createMapView();
 
         var cs = section.getParameter(0, "combiner");
@@ -82,7 +83,7 @@ public class CompositeShapeTransformer implements Transformer<CompositeShape> {
     }
 
     @Override
-    public Section write(CompositeShape shape) {
+    public Section write(Void params, CompositeShape shape) {
         var tracker = shape.getTracker();
 
         Section s;

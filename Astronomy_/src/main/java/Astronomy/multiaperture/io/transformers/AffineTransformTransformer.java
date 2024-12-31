@@ -2,6 +2,7 @@ package Astronomy.multiaperture.io.transformers;
 
 import Astronomy.multiaperture.io.Section;
 import Astronomy.multiaperture.io.Transformer;
+import Astronomy.multiaperture.io.Transformers;
 
 import java.awt.geom.AffineTransform;
 
@@ -53,6 +54,7 @@ public class AffineTransformTransformer implements Transformer<AffineTransform, 
                 m[3] = readDouble("m11", secondRow.name());
                 m[4] = readDouble("m02", secondRow.getParameter(0, "translateX"));
                 m[5] = readDouble("m12", secondRow.getParameter(1, "translateY"));
+                var m = Transformers.read(double[].class, section, new FlatMatrixTransformer.Dimensions(3, 2));
 
                 yield new AffineTransform(m);
             }
@@ -85,8 +87,8 @@ public class AffineTransformTransformer implements Transformer<AffineTransform, 
                 var s = Section.createSection("transform", "matrix");
                 var m = new double[6];
                 transform.getMatrix(m);
-                s.addSubsection(Section.createSection(Double.toString(m[0]), Double.toString(m[1]), Double.toString(m[2])));
-                s.addSubsection(Section.createSection(Double.toString(m[3]), Double.toString(m[4]), Double.toString(m[5])));
+
+                s.addSubsection(Transformers.write(double[].class, m, new FlatMatrixTransformer.Dimensions(3, 2)));
                 yield s;
             }
             default -> {

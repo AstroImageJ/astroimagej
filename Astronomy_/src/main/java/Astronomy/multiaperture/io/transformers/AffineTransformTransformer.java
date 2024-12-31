@@ -14,6 +14,14 @@ public class AffineTransformTransformer implements Transformer<AffineTransform, 
     private static final Section.Parameter<Double> Y_PARAMETER = new Section.Parameter<>("y", 2, Double.class);
     private static final Section.Parameter<Double> THETA_PARAMETER = new Section.Parameter<>("theta", 1, Double.class);
     private static final Section.Parameter<String> THETA_UNIT_PARAMETER = new Section.Parameter<>("angle unit", 2, String.class);
+    public static final FlatMatrixTransformer.Dimensions TRANSFORM_MATRIX_DIMENSIONS =
+            new FlatMatrixTransformer.Dimensions(3, 2, (row, col) -> {
+                // AffineTransform's flat matrix is in row-major order with overlapped columns, so transform it into some useful
+                final var width = 3;
+                final var height = 2;
+                //System.out.println("m%s%s - %s".formatted(row, col, row * (width - 1) + col));
+                return row * (width - 1) + col;
+            });
 
     @Override
     public AffineTransform load(Void params, Section section) {
@@ -45,7 +53,7 @@ public class AffineTransformTransformer implements Transformer<AffineTransform, 
                 yield AffineTransform.getTranslateInstance(dx, dy);
             }
             case GENERAL -> {
-                var m = Transformers.read(double[].class, section, new FlatMatrixTransformer.Dimensions(3, 2));
+                var m = Transformers.read(double[].class, section, TRANSFORM_MATRIX_DIMENSIONS);
 
                 yield new AffineTransform(m);
             }
@@ -81,7 +89,7 @@ public class AffineTransformTransformer implements Transformer<AffineTransform, 
                 var m = new double[6];
                 transform.getMatrix(m);
 
-                s.addSubsection(Transformers.write(double[].class, m, new FlatMatrixTransformer.Dimensions(3, 2)));
+                s.addSubsection(Transformers.write(double[].class, m, TRANSFORM_MATRIX_DIMENSIONS));
                 yield s;
             }
         };

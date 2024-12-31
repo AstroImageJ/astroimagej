@@ -4,6 +4,7 @@ import Astronomy.multiaperture.io.Section;
 import Astronomy.multiaperture.io.Transformer;
 
 import java.util.Objects;
+import java.util.function.IntBinaryOperator;
 
 public class FlatMatrixTransformer implements Transformer<double[], FlatMatrixTransformer.Dimensions> {
 
@@ -25,20 +26,20 @@ public class FlatMatrixTransformer implements Transformer<double[], FlatMatrixTr
 
         var matrix = new double[dim.size()];
 
-        for (int j = 0; j < dim.height; j++) {
-            var row = section.getSubSections().get(j);
+        for (int row = 0; row < dim.height; row++) {
+            var rowSec = section.getSubSections().get(row);
 
             try {
-                matrix[j * dim.width] = Double.parseDouble(row.name());
+                matrix[dim.toIndex(row, 0)] = Double.parseDouble(rowSec.name());
             } catch (NumberFormatException e) {
-                throw new IllegalStateException("Failed to read matrix value m%s%s".formatted(0, j), e);
+                throw new IllegalStateException("Failed to read matrix value m%s%s".formatted(row, 0), e);
             }
 
-            for (int i = 1; i < dim.width; i++) {
+            for (int col = 1; col < dim.width; col++) {
                 try {
-                    matrix[j * dim.width + i] = Double.parseDouble(row.getParameter(i-1, "m%s%s".formatted(i, j)));
+                    matrix[dim.toIndex(row, col)] = Double.parseDouble(rowSec.getParameter(col-1, "m%s%s".formatted(row, col)));
                 } catch (NumberFormatException e) {
-                    throw new IllegalStateException("Failed to read matrix value m%s%s".formatted(i, j), e);
+                    throw new IllegalStateException("Failed to read matrix value m%s%s".formatted(col, row), e);
                 }
             }
         }
@@ -55,20 +56,32 @@ public class FlatMatrixTransformer implements Transformer<double[], FlatMatrixTr
         }
 
         var s = new Section("matrixRoot", true);
-        for (int j = 0; j < dim.height; j++) {
-            var row = Section.createSection(Double.toString(flatMatrix[j * dim.width]));
-            for (int i = 1; i < dim.width; i++) {
-                row.addParameter(Double.toString(flatMatrix[j * dim.width + i]));
+        for (int row = 0; row < dim.height; row++) {
+            var rowSec = Section.createSection(Double.toString(flatMatrix[dim.toIndex(row, 0)]));
+            for (int col = 1; col < dim.width; col++) {
+                rowSec.addParameter(Double.toString(flatMatrix[dim.toIndex(row, col)]));
             }
-            s.addSubsection(row);
+            s.addSubsection(rowSec);
         }
 
         return s;
     }
 
-    public record Dimensions(int width, int height) {
+    public record Dimensions(int width, int height, IntBinaryOperator toIndex) {
         public int size() {
             return width * height;
+        }
+
+        public Dimensions(int width, int height) {
+            this(width, height, null);
+        }
+
+        public int toIndex(int row, int col) {
+            if (toIndex == null) {
+                return row * width + col;
+            }
+
+            return toIndex.applyAsInt(col, row);
         }
     }
 }

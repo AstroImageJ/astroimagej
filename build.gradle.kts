@@ -330,6 +330,8 @@ tasks.register<JavaExec>("aijRun") {
         languageVersion.set(JavaLanguageVersion.of(shippingJava))
     })
 
+    enableAssertions = true
+
     classpath = files(file("${projectDir}/AIJ-Run/ij.jar"))
     mainClass.set("ij.ImageJ")
 }

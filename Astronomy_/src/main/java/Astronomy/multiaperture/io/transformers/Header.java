@@ -7,6 +7,7 @@ public class Header implements Transformer<Header, Void> {
     public static final String HEADER = "AIJ APERTURES FILE";
     private int majorVersion;
     private int minorVersion;
+    private static final Section.Parameter<Integer> VERSION_PARAMETER = new Section.Parameter<>("version", 0, Integer.TYPE);
 
     public Header() {
         this(2, 1);
@@ -40,11 +41,8 @@ public class Header implements Transformer<Header, Void> {
             throw new IllegalStateException("Header has %s minorVersions!".formatted(minorVersionSection.size()));
         }
 
-        var majorVerStr = majorVersionSection.get(0).getParameter(0, "version");
-        var minorVerStr = minorVersionSection.get(0).getParameter(0, "version");
-
-        var majorVersion = readInt("majorVersion", majorVerStr);
-        var minorVersion = readInt("minorVersion", minorVerStr);
+        var majorVersion = majorVersionSection.get(0).getParameter(VERSION_PARAMETER);
+        var minorVersion = minorVersionSection.get(0).getParameter(VERSION_PARAMETER);
 
         return new Header(majorVersion, minorVersion);
     }
@@ -57,8 +55,8 @@ public class Header implements Transformer<Header, Void> {
     public Section write(Void params, Header obj) {
         var headerSection = new Section(HEADER);
 
-        headerSection.addSubsection(Section.createSection("majorVersion", Integer.toString(obj.majorVersion)));
-        headerSection.addSubsection(Section.createSection("minorVersion", Integer.toString(obj.minorVersion)));
+        headerSection.addSubsection(Section.createSection("majorVersion", VERSION_PARAMETER, obj.majorVersion));
+        headerSection.addSubsection(Section.createSection("minorVersion", VERSION_PARAMETER, obj.minorVersion));
 
         return headerSection;
     }

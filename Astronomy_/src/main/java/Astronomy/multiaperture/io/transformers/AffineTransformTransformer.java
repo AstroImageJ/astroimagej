@@ -6,17 +6,23 @@ import Astronomy.multiaperture.io.Transformers;
 
 import java.awt.geom.AffineTransform;
 
-public class AffineTransformTransformer implements Transformer<AffineTransform> {
 public class AffineTransformTransformer implements Transformer<AffineTransform, Void> {
+    private static final Section.Parameter<TransformationType> TYPE_PARAMETER =
+            new Section.Parameter<>("transformType", 0, TransformationType.class,
+                    AffineTransformTransformer::typeFromString, AffineTransformTransformer::typeToString);
+    private static final Section.Parameter<Double> X_PARAMETER = new Section.Parameter<>("x", 1, Double.class);
+    private static final Section.Parameter<Double> Y_PARAMETER = new Section.Parameter<>("y", 2, Double.class);
+    private static final Section.Parameter<Double> THETA_PARAMETER = new Section.Parameter<>("theta", 1, Double.class);
+    private static final Section.Parameter<String> THETA_UNIT_PARAMETER = new Section.Parameter<>("angle unit", 2, String.class);
+
     @Override
-    public AffineTransform load(Section section) {
-        var t = section.getParameter(0, "transformType");
     public AffineTransform load(Void params, Section section) {
+        var t = section.getParameter(TYPE_PARAMETER);
 
         return switch (t) {
-            case "rotate" -> {
-                var theta = readDouble("angle", section.getParameter(1, "angle"));
-                var unit = section.getParameter(2, "unit");
+            case ROTATE -> {
+                var theta = section.getParameter(THETA_PARAMETER);
+                var unit = section.getParameter(THETA_UNIT_PARAMETER);//todo type safe?
                 var thetaRadians = switch (unit) {
                     case "degrees", "d" -> Math.toRadians(theta);
                     case "radians", "rad", "r" -> theta;
@@ -25,35 +31,20 @@ public class AffineTransformTransformer implements Transformer<AffineTransform, 
 
                 yield AffineTransform.getRotateInstance(thetaRadians);
             }
-            case "identity" -> new AffineTransform();
-            case "scale" -> {
-                var scaleX = readDouble("scaleX", section.getParameter(1, "scaleX"));
-                var scaleY = readDouble("scaleY", section.getParameter(2, "scaleY"));
+            case IDENTITY -> new AffineTransform();
+            case SCALE -> {
+                var scaleX = section.getParameter(X_PARAMETER);
+                var scaleY = section.getParameter(Y_PARAMETER);
 
                 yield AffineTransform.getScaleInstance(scaleX, scaleY);
             }
-            case "translate" -> {
-                var dx = readDouble("dx", section.getParameter(1, "dx"));
-                var dy = readDouble("dy", section.getParameter(2, "dy"));
+            case TRANSLATE -> {
+                var dx = section.getParameter(X_PARAMETER);
+                var dy = section.getParameter(Y_PARAMETER);
 
                 yield AffineTransform.getTranslateInstance(dx, dy);
             }
-            case "matrix" -> {
-                if (section.getSubSections().size() != 2) {
-                    throw new IllegalStateException("Transform matrix must have 2 subsections (rows)");
-                }
-
-                var firstRow = section.getSubSections().get(0);
-                var secondRow = section.getSubSections().get(1);
-
-                var m = new double[6];
-
-                m[0] = readDouble("m00", firstRow.name());
-                m[1] = readDouble("m10", firstRow.getParameter(0, "shearY"));
-                m[2] = readDouble("m01", firstRow.getParameter(1, "shearX"));
-                m[3] = readDouble("m11", secondRow.name());
-                m[4] = readDouble("m02", secondRow.getParameter(0, "translateX"));
-                m[5] = readDouble("m12", secondRow.getParameter(1, "translateY"));
+            case GENERAL -> {
                 var m = Transformers.read(double[].class, section, new FlatMatrixTransformer.Dimensions(3, 2));
 
                 yield new AffineTransform(m);
@@ -68,48 +59,47 @@ public class AffineTransformTransformer implements Transformer<AffineTransform, 
 
         // Decomposing is difficult, so just handle the simple transforms
         return switch (type) {
-            case "rotation" -> {
+            case ROTATE -> {
                 var theta = Math.atan2(transform.getShearY(), transform.getScaleX());
-                yield Section.createSection("transform", "rotate", Double.toString(Math.toDegrees(theta)), "d");
+                yield Section.createSection("transform",
+                        TYPE_PARAMETER, type, THETA_PARAMETER, Math.toDegrees(theta),
+                        THETA_UNIT_PARAMETER, "d");
             }
-            case "identity" -> {
-                yield Section.createSection("transform", "identity");
+            case IDENTITY -> {
+                yield Section.createSection("transform", TYPE_PARAMETER, type);
             }
-            case "scale" -> {
-                yield Section.createSection("transform", "scale",
-                        Double.toString(transform.getScaleX()), Double.toString(transform.getScaleY()));
+            case SCALE -> {
+                yield Section.createSection("transform", TYPE_PARAMETER, type,
+                        X_PARAMETER, transform.getScaleX(), Y_PARAMETER, transform.getScaleY());
             }
-            case "translation" -> {
-                yield Section.createSection("transform", "translate",
-                        Double.toString(transform.getTranslateX()), Double.toString(transform.getTranslateY()));
+            case TRANSLATE -> {
+                yield Section.createSection("transform", TYPE_PARAMETER, type,
+                        X_PARAMETER, transform.getTranslateX(), Y_PARAMETER, transform.getTranslateY());
             }
-            case "matrix" -> {
-                var s = Section.createSection("transform", "matrix");
+            case GENERAL -> {
+                var s = Section.createSection("transform", TYPE_PARAMETER, type);
                 var m = new double[6];
                 transform.getMatrix(m);
 
                 s.addSubsection(Transformers.write(double[].class, m, new FlatMatrixTransformer.Dimensions(3, 2)));
                 yield s;
             }
-            default -> {
-                throw new IllegalStateException("Unknown transform type: " + type);
-            }
         };
     }
 
-    private String type(AffineTransform affineTransform) {
+    private TransformationType type(AffineTransform affineTransform) {
         if (affineTransform.isIdentity() ||
                 isOnlyType(affineTransform, AffineTransform.TYPE_IDENTITY)) {
-            return "identity";
+            return TransformationType.IDENTITY;
         }
 
         if (isOnlyType(affineTransform, AffineTransform.TYPE_UNIFORM_SCALE) ||
                 isOnlyType(affineTransform, AffineTransform.TYPE_GENERAL_SCALE)) {
-            return "scale";
+            return TransformationType.SCALE;
         }
 
         if (isOnlyType(affineTransform, AffineTransform.TYPE_TRANSLATION)) {
-            return "translation";
+            return TransformationType.TRANSLATE;
         }
 
         /*if (isOnlyType(affineTransform, AffineTransform.TYPE_FLIP)) {
@@ -126,14 +116,14 @@ public class AffineTransformTransformer implements Transformer<AffineTransform, 
 
         if (isOnlyType(affineTransform, AffineTransform.TYPE_GENERAL_ROTATION) ||
                 isOnlyType(affineTransform, AffineTransform.TYPE_QUADRANT_ROTATION)) {
-            return "rotation";
+            return TransformationType.ROTATE;
         }
 
         if (isOnlyType(affineTransform, AffineTransform.TYPE_GENERAL_TRANSFORM)) {
-            return "matrix";
+            return TransformationType.GENERAL;
         }
 
-        return "matrix";
+        return TransformationType.GENERAL;
     }
 
     private static boolean isOnlyType(AffineTransform transform, int type) {
@@ -149,4 +139,36 @@ public class AffineTransformTransformer implements Transformer<AffineTransform, 
 
         return (transform.getType() & mask) == mask;
     }
+
+    private static TransformationType typeFromString(Section.Parameter<TransformationType> parameter, String s) {
+        return switch (s) {
+            case "rotate" -> TransformationType.ROTATE;
+            case "identity" -> TransformationType.IDENTITY;
+            case "scale" -> TransformationType.SCALE;
+            case "translate" -> TransformationType.TRANSLATE;
+            case "matrix" -> TransformationType.GENERAL;
+            default -> throw new IllegalStateException("Unknown transformation of type '%s' for parameter '%s'"
+                    .formatted(s, parameter.name()));
+        };
+    }
+
+    private static String typeToString(Section.Parameter<TransformationType> parameter, TransformationType transformationType) {
+        return switch (transformationType) {
+            case IDENTITY -> "identity";
+            case SCALE -> "scale";
+            case ROTATE -> "rotate";
+            case TRANSLATE -> "translate";
+            case GENERAL -> "matrix";
+        };
+    }
+
+    private enum TransformationType {
+        IDENTITY,
+        SCALE,
+        ROTATE,
+        TRANSLATE,
+        GENERAL,
+        //FLIP,
+    }
+
 }

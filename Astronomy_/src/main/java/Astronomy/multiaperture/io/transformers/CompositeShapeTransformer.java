@@ -1,7 +1,9 @@
 package Astronomy.multiaperture.io.transformers;
 
 import Astronomy.multiaperture.CompositeShape;
+import Astronomy.multiaperture.CompositeShape.ShapeCombination;
 import Astronomy.multiaperture.io.Section;
+import Astronomy.multiaperture.io.Section.Parameter;
 import Astronomy.multiaperture.io.Transformer;
 import Astronomy.multiaperture.io.Transformers;
 import ij.astro.types.MultiMap;
@@ -10,20 +12,17 @@ import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.util.List;
 
-public class CompositeShapeTransformer implements Transformer<CompositeShape> {
+import static Astronomy.multiaperture.CompositeShape.ShapeCombination.*;
+
 public class CompositeShapeTransformer implements Transformer<CompositeShape, Void> {
+    private static final Parameter<ShapeCombination> COMBINATION_PARAMETER =
+            new Parameter<>("shapeCombination", 0, ShapeCombination.class, CompositeShapeTransformer::combinationFromString, CompositeShapeTransformer::combination);
+
     @Override
     public CompositeShape load(Void params, Section section) {
         var view = section.createMapView();
 
-        var cs = section.getParameter(0, "combiner");
-        var combination = switch (cs) {
-            case "add" -> CompositeShape.ShapeCombination.ADD;
-            case "subtract" -> CompositeShape.ShapeCombination.SUBTRACT;
-            case "exclusiveOr" -> CompositeShape.ShapeCombination.EXCLUSIVE_OR;
-            case "intersect" -> CompositeShape.ShapeCombination.INTERSECT;
-            default -> throw new IllegalStateException("Unknown shape combination: " +cs);
-        };
+        var combination = section.getParameter(COMBINATION_PARAMETER);
 
         var pSec = getUniqueSection(view, "primary");
         var sSec = getUniqueSection(view, "secondary");
@@ -90,7 +89,7 @@ public class CompositeShapeTransformer implements Transformer<CompositeShape, Vo
         if (tracker.primaryOnly()) {
             s = Transformers.write(Shape.class, shape.getResult());
         } else {
-            s = Section.createSection("composite", combination(tracker.combination()));
+            s = Section.createSection("composite", COMBINATION_PARAMETER, tracker.combination());
 
             var pri = new Section("primary");
             var sec = new Section("secondary");
@@ -112,12 +111,23 @@ public class CompositeShapeTransformer implements Transformer<CompositeShape, Vo
         return s;
     }
 
-    private String combination(CompositeShape.ShapeCombination shapeCombination) {
+    private static String combination(Parameter<ShapeCombination> parameter, ShapeCombination shapeCombination) {
         return switch (shapeCombination) {
             case SUBTRACT -> "subtract";
             case ADD -> "add";
             case EXCLUSIVE_OR -> "exclusiveOr";
             case INTERSECT -> "intersect";
+        };
+    }
+
+    private static ShapeCombination combinationFromString(Parameter<ShapeCombination> parameter, String s) {
+        return switch (s) {
+            case "subtract" -> SUBTRACT;
+            case "add" -> ADD;
+            case "exclusiveOr" -> EXCLUSIVE_OR;
+            case "intersect" -> INTERSECT;
+            default -> throw new IllegalStateException("Unknown shape combination '%s' for parameter '%s'"
+                    .formatted(s, parameter.name()));
         };
     }
 

@@ -24,7 +24,7 @@ public interface Transformer<T, PARAM> {
         return true;
     }
 
-    default int readInt(String name, String s) {
+    /*default int readInt(String name, String s) {
         try {
             return Integer.parseInt(s);
         } catch (NumberFormatException e) {
@@ -46,5 +46,5 @@ public interface Transformer<T, PARAM> {
         } catch (NumberFormatException e) {
             throw new IllegalStateException("Could not convert parameter %s to boolean, received %s".formatted(name, s), e);
         }
-    }
+    }*/
 }

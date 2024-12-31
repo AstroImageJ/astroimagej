@@ -19,9 +19,11 @@ public class CompositeShape implements Shape {
 
     public CompositeShape(ShapeCombination combination, Shape primary, Shape secondary,
                           AffineTransform transformPrimary, AffineTransform transformSecondary) {
-        tracker = new Tracker(false, combination, primary, secondary, transformPrimary, transformSecondary);
-        var primaryArea = new Area(transformPrimary.createTransformedShape(primary));
-        var secondaryArea = new Area(transformSecondary.createTransformedShape(secondary));
+        var transformedPrimary = new TransformedShape(primary, transformPrimary);
+        var transformedSecondary = new TransformedShape(secondary, transformSecondary);
+        tracker = new Tracker(false, combination, transformedPrimary, transformedSecondary);
+        var primaryArea = new Area(transformedPrimary);
+        var secondaryArea = new Area(transformedSecondary);
         result = combination.transform(primaryArea, secondaryArea);
     }
 
@@ -98,15 +100,10 @@ public class CompositeShape implements Shape {
         return result.getPathIterator(at, flatness);
     }
 
-    public record Tracker(boolean primaryOnly, ShapeCombination combination, Shape primary, Shape secondary,
-                           AffineTransform transformPrimary, AffineTransform transformSecondary) {
+    public record Tracker(boolean primaryOnly, ShapeCombination combination, Shape primary, Shape secondary) {
 
         private Tracker(ShapeCombination combination, Shape primary, Shape secondary) {
             this(false, combination, primary, secondary);
-        }
-
-        private Tracker(boolean primaryOnly, ShapeCombination combination, Shape primary, Shape secondary) {
-            this(primaryOnly, combination, primary, secondary, new AffineTransform(), new AffineTransform());
         }
     }
 

@@ -9,7 +9,6 @@ import Astronomy.multiaperture.io.Transformers;
 import ij.astro.types.MultiMap;
 
 import java.awt.*;
-import java.awt.geom.AffineTransform;
 import java.util.List;
 
 import static Astronomy.multiaperture.CompositeShape.ShapeCombination.*;
@@ -27,58 +26,18 @@ public class CompositeShapeTransformer implements Transformer<CompositeShape, Vo
         var pSec = getUniqueSection(view, "primary");
         var sSec = getUniqueSection(view, "secondary");
 
-        var pSecView = pSec.createMapView();
-        var sSecView = sSec.createMapView();
-
-        Shape pShape = null;
-        Shape sShape = null;
-        for (String shapeSectionName : ShapeTransformer.SHAPE_SECTION_NAMES) {
-            var pShapeSec = getUniqueSection(pSecView, shapeSectionName, false);
-            var sShapeSec = getUniqueSection(sSecView, shapeSectionName, false);
-
-            if (pShapeSec != null) {
-                if (pShape != null) {
-                    throw new IllegalStateException("Primary section of composite cannot have multiple shapes!");
-                }
-                pShape = Transformers.read(Shape.class, pShapeSec);
-            }
-
-            if (sShapeSec != null) {
-                if (sShape != null) {
-                    throw new IllegalStateException("Secondary section of composite cannot have multiple shapes!");
-                }
-                sShape = Transformers.read(Shape.class, sShapeSec);
-            }
+        if (pSec.getSubSections().size() != 1) {
+            throw new IllegalStateException("primary section must contain one subsection, found " + pSec.getSubSections().size());
         }
 
-        if (pShape == null || sShape == null) {
-            throw new IllegalStateException("composite missing primary or secondary shape");
+        if (sSec.getSubSections().size() != 1) {
+            throw new IllegalStateException("secondary section must contain one subsection, found " + sSec.getSubSections().size());
         }
 
-        AffineTransform pTransform = new AffineTransform();
-        AffineTransform sTransform = new AffineTransform();
+        Shape pShape = Transformers.read(Shape.class, pSec.getSubSections().get(0));
+        Shape sShape = Transformers.read(Shape.class, sSec.getSubSections().get(0));
 
-        var pTSecs = pSecView.get("transform");
-        if (!pTSecs.isEmpty()) {
-            var t = Transformers.read(AffineTransform.class, pTSecs.get(0));
-            for (int i = 1; i < pTSecs.size(); i++) {
-                t.concatenate(Transformers.read(AffineTransform.class, pTSecs.get(i)));
-            }
-
-            pTransform = t;
-        }
-
-        var sTSecs = sSecView.get("transform");
-        if (!sTSecs.isEmpty()) {
-            var t = Transformers.read(AffineTransform.class, sTSecs.get(0));
-            for (int i = 1; i < sTSecs.size(); i++) {
-                t.concatenate(Transformers.read(AffineTransform.class, sTSecs.get(i)));
-            }
-
-            sTransform = t;
-        }
-
-        return new CompositeShape(combination, pShape, sShape, pTransform, sTransform);
+        return new CompositeShape(combination, pShape, sShape);
     }
 
     @Override
@@ -95,14 +54,8 @@ public class CompositeShapeTransformer implements Transformer<CompositeShape, Vo
             var sec = new Section("secondary");
 
             pri.addSubsection(Transformers.write(Shape.class, tracker.primary()));
-            if (!tracker.transformPrimary().isIdentity()) {
-                pri.addSubsection(Transformers.write(AffineTransform.class, tracker.transformPrimary()));
-            }
 
             sec.addSubsection(Transformers.write(Shape.class, tracker.secondary()));
-            if (!tracker.transformSecondary().isIdentity()) {
-                sec.addSubsection(Transformers.write(AffineTransform.class, tracker.transformSecondary()));
-            }
 
             s.addSubsection(pri);
             s.addSubsection(sec);

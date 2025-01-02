@@ -226,7 +226,7 @@ public class AIJLogger {
                 if (!closingConditions.autoClose) return;
                 if (System.currentTimeMillis() - closingConditions.lastModified > 5000) {
                     var lWin = ((LogWindow)WindowManager.getWindow(caller + " Log"));
-                    if (lWin != null) lWin.close();
+                    if (lWin != null) SwingUtilities.invokeLater(lWin::close);
                 }
             });
             // Remove outdated entries that don't need timing information

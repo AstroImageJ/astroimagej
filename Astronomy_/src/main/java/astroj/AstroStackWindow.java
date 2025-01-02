@@ -5197,7 +5197,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
 
     @Override
     // Add extraInfo to subtitle
-    public synchronized String createSubtitle() {
+    public String createSubtitle() {
         return super.createSubtitle() + extraInfo;
     }
 
@@ -5533,7 +5533,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         imp.setRoi(roi);
     }
 
-    protected synchronized void getBiSliderStatistics() {
+    protected void getBiSliderStatistics() {
         if (closed) {
             return;
         }
@@ -5557,7 +5557,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
      * Updates the image pixel scale calibration sliders and display if auto update is enabled.
      * (Histogram sliders at bottom of stack window).
      */
-    public synchronized void updateCalibration() {
+    public void updateCalibration() {
         getStatistics();
 
         if (imp.getType() == ImagePlus.COLOR_256 || imp.getType() == ImagePlus.COLOR_RGB || imp.getType() == ImagePlus.GRAY8) {
@@ -5589,7 +5589,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         }
     }
 
-    public synchronized void updateWCS() {
+    public void updateWCS() {
         wcs = new WCS(imp);
         goodWCS = wcs.hasWCS();
         RATextField.setEditable(goodWCS);

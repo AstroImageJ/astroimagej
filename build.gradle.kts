@@ -384,6 +384,7 @@ configure<PackagePluginExtension> {
         macStartup = MacStartup.UNIVERSAL
         isCodesignApp =
             project.hasProperty("codeSignAndNotarize") && project.property("codeSignAndNotarize").toString().toBoolean()
+        // To set a DeveloperID in the environment, see comments in the gradle.properties file.
         isNotarizeApp = System.getenv("DeveloperId") != null && project.property("codeSignAndNotarize").toString().toBoolean()
         keyChainProfile = "AC_PASSWORD"
         developerId = System.getenv("DeveloperId")
@@ -394,6 +395,9 @@ configure<PackagePluginExtension> {
         isWrapJar = false
         isGenerateRpm = false
     }
+
+    // Don't copy deps into a "libs" folder - we bundle them into ij.jar or Astronomy_.jar and the plugins folder
+    copyDependencies(false)
 
     organizationName("AstroImageJ")
     vmArgs(emptyList())

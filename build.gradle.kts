@@ -599,11 +599,11 @@ tasks.withType<PackageTask>().configureEach {
                 return@forEach
             }
 
-            val fileNameRegex = Regex("AstroImageJ[-_]${project.version}(?:[-_]\\w+)?(\\.\\w+|\\.tar\\.gz)\$")
+            val fileNameRegex = Regex("AstroImageJ[-_]${version}(?:[-_]\\w+)?(\\.\\w+|\\.tar\\.gz)\$")
             if (!outputFile.name.matches(fileNameRegex)) {
                 logger.warn("\tGiven a file '${outputFile.name}' that cannot be handled")
             } else {
-                val newName = outputFile.name.replace(fileNameRegex, "AstroImageJ_v${project.version}-${platform}-${platformInfo}\$1")
+                val newName = outputFile.name.replace(fileNameRegex, "AstroImageJ_v${version}-${platform}-${platformInfo}\$1")
                 val newPath = outputFile.toPath().resolveSibling(newName)
 
                 logger.lifecycle("\tRenaming '{}' to '{}'...", outputFile, newName)

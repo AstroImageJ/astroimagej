@@ -19,7 +19,7 @@ public class ApertureTransformer implements Transformer<Aperture, Void> {
             new Section.Parameter<>("aperture shape", 0, ApertureShape.class, ApertureTransformer::deserializeShape, ApertureTransformer::serializeShape);
     private static final Section.Parameter<Boolean> COMP_PARAMETER = new Section.Parameter<>("isComp", 0, Boolean.TYPE);
     private static final Section.Parameter<Boolean> CENTROID_PARAMETER = new Section.Parameter<>("isCentroided", 0, Boolean.TYPE);
-    private static final Section.Parameter<Boolean> CENTER_PARAMETER = new Section.Parameter<>("centeredOnAperture", 0, Boolean.TYPE);
+    private static final Section.Parameter<Boolean> CENTER_PARAMETER = new Section.Parameter<>("centeredOnAperture", 0, Boolean.TYPE, ApertureTransformer::deserializeCenterParam, ApertureTransformer::serializeCenterParam);
     private static final Section.Parameter<Double> RA_PARAMETER = new Section.Parameter<>("right ascension", 0, Double.TYPE);
     private static final Section.Parameter<Double> DEC_PARAMETER = new Section.Parameter<>("declination", 1, Double.TYPE);
     private static final Section.Parameter<Integer> INT_X_PARAMETER = new Section.Parameter<>("x", 0, Integer.TYPE);
@@ -78,7 +78,7 @@ public class ApertureTransformer implements Transformer<Aperture, Void> {
 
                 var backgroundShapeSec = getUniqueSection(view, "backgroundShape", false);
                 if (backgroundShapeSec != null) {
-                    var center = true;
+                    var center = false;
 
                     if (backgroundShapeSec.hasParameters()) {
                         center = backgroundShapeSec.getParameter(CENTER_PARAMETER);
@@ -163,7 +163,7 @@ public class ApertureTransformer implements Transformer<Aperture, Void> {
                 s.addSubsection(apShape);
 
                 if (ap.hasBackground()) {
-                    var backgroundShape = Section.createSection("backgroundShape", Boolean.toString(ap.isCenterBackground()));
+                    var backgroundShape = Section.createSection("backgroundShape", CENTER_PARAMETER, ap.isCenterBackground());
 
                     var bShape = ap.getBackgroundShape();
 
@@ -228,6 +228,14 @@ public class ApertureTransformer implements Transformer<Aperture, Void> {
             case "custom_pixel", "customPixel" -> ApertureShape.FREEFORM_PIXEL;
             default -> throw new IllegalStateException("Cannot handle unknown shape " + shape);
         };
+    }
+
+    private static String serializeCenterParam(Section.Parameter<Boolean> parameter, Boolean centered) {
+        return centered ? "centeredOnAperture" : "";
+    }
+
+    private static boolean deserializeCenterParam(Section.Parameter<Boolean> parameter, String val) {
+        return "centeredOnAperture".equals(val) || Boolean.parseBoolean(val);
     }
 
     private Section getUniqueSection(MultiMap<String, Section> view, String name) {

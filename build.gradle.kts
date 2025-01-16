@@ -8,8 +8,6 @@ import io.github.fvarrui.javapackager.model.FileAssociation
 import io.github.fvarrui.javapackager.model.MacStartup
 import io.github.fvarrui.javapackager.model.WindowsExeCreationTool
 import org.apache.tools.ant.taskdefs.condition.Os
-import org.jetbrains.gradle.ext.ProjectSettings
-import org.jetbrains.gradle.ext.TaskTriggersConfig
 import java.io.IOException
 import java.net.URI
 import java.nio.file.Files
@@ -47,8 +45,6 @@ plugins {
 
     // Plugin to download files
     id("de.undercouch.download") version "5.6.0"
-
-    id("org.jetbrains.gradle.plugin.idea-ext") version "1.1.+"
 
     // Used to download test data
     id("aij.test-conventions")
@@ -627,6 +623,9 @@ tasks.register<Copy>("copyBuiltJars") {
         throw GradleException("shippingAstro configuration must contain exactly one file")
     }
 
+    // cause copybuiltjars to always run, even if no compile changes
+    doNotTrackState("Always copy built jars to destination")
+
     // Check that shippingIJ has only one file (ij.jar)
     if (configurations.getByName("shippingIJ").files.size != 1) {
         throw GradleException("shippingIJ configuration must contain exactly one file")
@@ -769,14 +768,6 @@ fun outputDestination(): File {
 }
 
 // Make Idea's hammer icon run copyBuiltJars
-idea {
-    project {
-        this as ExtensionAware // These casts should be unneeded, but eh https://github.com/JetBrains/gradle-idea-ext-plugin/issues/76
-        configure<ProjectSettings> {
-            this as ExtensionAware
-            configure<TaskTriggersConfig> {
-                afterBuild(tasks.named("copyBuiltJars"))
-            }
-        }
-    }
+tasks.named("classes").configure {
+    finalizedBy("copyBuiltJars")
 }

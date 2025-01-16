@@ -26,7 +26,7 @@ val testPredicate = providers.provider {
     project.hasProperty("runTests")
 }
 tasks.test {
-    onlyIf { testPredicate.get() }
+    setEnabled(testPredicate.get())
     useJUnitPlatform()
 }
 

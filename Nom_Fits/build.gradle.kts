@@ -23,10 +23,11 @@ dependencies {
 }
 
 val testPredicate = providers.provider {
-    project.hasProperty("runTests")
+    providers.systemProperty("runTests").isPresent
 }
+
 tasks.test {
-    setEnabled(testPredicate.get())
+    isEnabled = testPredicate.get()
     useJUnitPlatform()
 }
 

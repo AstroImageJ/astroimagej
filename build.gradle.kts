@@ -669,47 +669,38 @@ tasks.register<Copy>("copyBuiltJars") {
     }
 }
 
-tasks.register("makeReleaseFiles") {
+tasks.register<Sync>("makeReleaseFiles") {
     group = "AstroImageJ Development"
     dependsOn("packageAijForWindows_x86_64Bit_Java$shippingJava")
 
     val buildDir = layout.buildDirectory.get()
     val output = buildDir.dir("updatesjava$targetJava")
 
-    // Clear old files
-    output.asFileTree.forEach {
-        delete(it)
-    }
-
     val fullVersion = project.version as String
     val semverVersion = fullVersion.substring(0, fullVersion.lastIndexOf('.'))
 
+    // Copy files, no renames
+    from("$buildDir/distributions/AstroImageJ") {
+        include("**/ij.jar", "**/StartupMacros.txt", "**/AstroImageJ.exe", "**/Astronomy_.jar", "**/release_notes.html")
+        eachFile {
+            relativePath = RelativePath(true, *relativePath.segments.drop(relativePath.segments.size - 1).toTypedArray())
+        }
+        includeEmptyDirs = false
+    }
+
+    // Copy files, with renames
+    from("$buildDir/distributions/AstroImageJ") {
+        include("**/ij.jar", "**/StartupMacros.txt", "**/AstroImageJ.exe", "**/Astronomy_.jar")
+        eachFile {
+            relativePath = RelativePath(true, *relativePath.segments.drop(relativePath.segments.size - 1).toTypedArray())
+        }
+        includeEmptyDirs = false
+
+        rename("(.+)\\.(.+)", "$1$semverVersion.$2")
+    }
+
+    into(output)
     doLast {
-        // Copy files, no renames
-        copy {
-            from("$buildDir/distributions/AstroImageJ") {
-                include("**/ij.jar", "**/StartupMacros.txt", "**/AstroImageJ.exe", "**/Astronomy_.jar", "**/release_notes.html")
-                eachFile {
-                    relativePath = RelativePath(true, *relativePath.segments.drop(relativePath.segments.size - 1).toTypedArray())
-                }
-                includeEmptyDirs = false
-            }
-            into(output)
-        }
-
-        // Copy files, with renames
-        copy {
-            from("$buildDir/distributions/AstroImageJ") {
-                include("**/ij.jar", "**/StartupMacros.txt", "**/AstroImageJ.exe", "**/Astronomy_.jar")
-                eachFile {
-                    relativePath = RelativePath(true, *relativePath.segments.drop(relativePath.segments.size - 1).toTypedArray())
-                }
-                includeEmptyDirs = false
-            }
-            into(output)
-            rename("(.+)\\.(.+)", "$1$semverVersion.$2")
-        }
-
         // Update versions.txt
         val versionsTxt = output.file("versions.txt").asFile
 
@@ -724,31 +715,19 @@ tasks.register("makeReleaseFiles") {
     }
 }
 
-tasks.register("makeDailyBuildFiles") {
+tasks.register<Sync>("makeDailyBuildFiles") {
     group = "AstroImageJ Development"
     dependsOn("packageAijForWindows_x86_64Bit_Java$shippingJava")
 
-    val buildDir = layout.buildDirectory.get()
-    val output = buildDir.dir("updatesjava$targetJava")
-
-    // Clear old files
-    output.asFileTree.forEach {
-        delete(it)
-    }
-
-    doLast {
-        // Copy files, no renames
-        copy {
-            from("$buildDir/distributions/AstroImageJ") {
-                include("**/ij.jar", "**/StartupMacros.txt", "**/AstroImageJ.exe", "**/Astronomy_.jar", "**/release_notes.html")
-                eachFile {
-                    relativePath = RelativePath(true, *relativePath.segments.drop(relativePath.segments.size - 1).toTypedArray())
-                }
-                includeEmptyDirs = false
-            }
-            into(output)
+    from(layout.buildDirectory.dir("distributions/AstroImageJ")) {
+        include("**/ij.jar", "**/StartupMacros.txt", "**/AstroImageJ.exe", "**/Astronomy_.jar", "**/release_notes.html")
+        eachFile {
+            relativePath = RelativePath(true, *relativePath.segments.drop(relativePath.segments.size - 1).toTypedArray())
         }
+        includeEmptyDirs = false
     }
+
+    into(layout.buildDirectory.dir("updatesjava$targetJava"))
 }
 
 fun outputDestination(): File {

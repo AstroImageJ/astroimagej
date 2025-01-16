@@ -57,7 +57,7 @@ apply(plugin = "io.github.fvarrui.javapackager.plugin")
 // Java version to compile and package with
 val shippingJava = (properties["javaShippingVersion"] as String).toInt()
 // Minimum Java version binaries should be compatible with
-val targetJava = (properties["javaShippingVersion"] as String).toInt()
+val targetJava = (properties["minJava"] as String).toInt()
 
 configurations {
     create("shippingIJ") {

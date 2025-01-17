@@ -612,8 +612,6 @@ tasks.withType<PackageTask>().configureEach {
                 }
             }
         }
-
-        delete(layout.buildDirectory.dir("distributions/AstroImageJ"))
     }
 }
 

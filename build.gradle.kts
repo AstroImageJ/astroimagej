@@ -8,8 +8,6 @@ import io.github.fvarrui.javapackager.model.FileAssociation
 import io.github.fvarrui.javapackager.model.MacStartup
 import io.github.fvarrui.javapackager.model.WindowsExeCreationTool
 import org.apache.tools.ant.taskdefs.condition.Os
-import org.jetbrains.gradle.ext.ProjectSettings
-import org.jetbrains.gradle.ext.TaskTriggersConfig
 import java.io.IOException
 import java.net.URI
 import java.nio.file.Files
@@ -48,8 +46,6 @@ plugins {
     // Plugin to download files
     id("de.undercouch.download") version "5.6.0"
 
-    id("org.jetbrains.gradle.plugin.idea-ext") version "1.1.+"
-
     // Used to download test data
     id("aij.test-conventions")
 }
@@ -61,7 +57,7 @@ apply(plugin = "io.github.fvarrui.javapackager.plugin")
 // Java version to compile and package with
 val shippingJava = (properties["javaShippingVersion"] as String).toInt()
 // Minimum Java version binaries should be compatible with
-val targetJava = (properties["javaShippingVersion"] as String).toInt()
+val targetJava = (properties["minJava"] as String).toInt()
 
 configurations {
     create("shippingIJ") {
@@ -76,12 +72,6 @@ configurations {
 }
 
 dependencies {
-    // This dependency is used by the application.
-    // implementation("com.google.guava:guava:29.0-jre")
-    implementation(project(":Nom_Fits"))
-    implementation(project(":ij"))
-    implementation(project(":Astronomy_"))
-
     // Jars to be packaged and shipped
     add("shippingIJ", project(mapOf("path" to ":ij", "configuration" to "shippingJar")))
     add("shippingAstro", project(mapOf("path" to ":Astronomy_", "configuration" to "shippingJar")))
@@ -305,13 +295,13 @@ tasks.register<Sync>("sync") {
 
     // Don't consider aij.log when copying common files, AIJ already resets it on launch
     // Doing so allows the UP-TO-DATE check to pass
-    //exclude("aij.log")
+    exclude("aij.log")
 
     // Copy launch options to cfg file so editing can be tested
-    /*from(file("${projectDir}/devLaunchOptions.txt")) {
+    from(file("${projectDir}/devLaunchOptions.txt")) {
         duplicatesStrategy = DuplicatesStrategy.INCLUDE
         rename { "AstroImageJ.cfg" }
-    }*/
+    }
 
     destinationDir = file("${projectDir}/AIJ-Run")
 }
@@ -386,6 +376,7 @@ configure<PackagePluginExtension> {
         macStartup = MacStartup.UNIVERSAL
         isCodesignApp =
             project.hasProperty("codeSignAndNotarize") && project.property("codeSignAndNotarize").toString().toBoolean()
+        // To set a DeveloperID in the environment, see comments in the gradle.properties file.
         isNotarizeApp = System.getenv("DeveloperId") != null && project.property("codeSignAndNotarize").toString().toBoolean()
         keyChainProfile = "AC_PASSWORD"
         developerId = System.getenv("DeveloperId")
@@ -396,6 +387,9 @@ configure<PackagePluginExtension> {
         isWrapJar = false
         isGenerateRpm = false
     }
+
+    // Don't copy deps into a "libs" folder - we bundle them into ij.jar or Astronomy_.jar and the plugins folder
+    copyDependencies(false)
 
     organizationName("AstroImageJ")
     vmArgs(emptyList())
@@ -597,11 +591,11 @@ tasks.withType<PackageTask>().configureEach {
                 return@forEach
             }
 
-            val fileNameRegex = Regex("AstroImageJ[-_]${project.version}(?:[-_]\\w+)?(\\.\\w+|\\.tar\\.gz)\$")
+            val fileNameRegex = Regex("AstroImageJ[-_]${version}(?:[-_]\\w+)?(\\.\\w+|\\.tar\\.gz)\$")
             if (!outputFile.name.matches(fileNameRegex)) {
                 logger.warn("\tGiven a file '${outputFile.name}' that cannot be handled")
             } else {
-                val newName = outputFile.name.replace(fileNameRegex, "AstroImageJ_v${project.version}-${platform}-${platformInfo}\$1")
+                val newName = outputFile.name.replace(fileNameRegex, "AstroImageJ_v${version}-${platform}-${platformInfo}\$1")
                 val newPath = outputFile.toPath().resolveSibling(newName)
 
                 logger.lifecycle("\tRenaming '{}' to '{}'...", outputFile, newName)
@@ -624,6 +618,9 @@ tasks.register<Copy>("copyBuiltJars") {
     if (configurations.getByName("shippingAstro").files.size != 1) {
         throw GradleException("shippingAstro configuration must contain exactly one file")
     }
+
+    // cause copybuiltjars to always run, even if no compile changes
+    doNotTrackState("Always copy built jars to destination")
 
     // Check that shippingIJ has only one file (ij.jar)
     if (configurations.getByName("shippingIJ").files.size != 1) {
@@ -668,47 +665,38 @@ tasks.register<Copy>("copyBuiltJars") {
     }
 }
 
-tasks.register("makeReleaseFiles") {
+tasks.register<Sync>("makeReleaseFiles") {
     group = "AstroImageJ Development"
     dependsOn("packageAijForWindows_x86_64Bit_Java$shippingJava")
 
     val buildDir = layout.buildDirectory.get()
     val output = buildDir.dir("updatesjava$targetJava")
 
-    // Clear old files
-    output.asFileTree.forEach {
-        delete(it)
-    }
-
     val fullVersion = project.version as String
     val semverVersion = fullVersion.substring(0, fullVersion.lastIndexOf('.'))
 
+    // Copy files, no renames
+    from("$buildDir/distributions/AstroImageJ") {
+        include("**/ij.jar", "**/StartupMacros.txt", "**/AstroImageJ.exe", "**/Astronomy_.jar", "**/release_notes.html")
+        eachFile {
+            relativePath = RelativePath(true, *relativePath.segments.drop(relativePath.segments.size - 1).toTypedArray())
+        }
+        includeEmptyDirs = false
+    }
+
+    // Copy files, with renames
+    from("$buildDir/distributions/AstroImageJ") {
+        include("**/ij.jar", "**/StartupMacros.txt", "**/AstroImageJ.exe", "**/Astronomy_.jar")
+        eachFile {
+            relativePath = RelativePath(true, *relativePath.segments.drop(relativePath.segments.size - 1).toTypedArray())
+        }
+        includeEmptyDirs = false
+
+        rename("(.+)\\.(.+)", "$1$semverVersion.$2")
+    }
+
+    into(output)
     doLast {
-        // Copy files, no renames
-        copy {
-            from("$buildDir/distributions/AstroImageJ") {
-                include("**/ij.jar", "**/StartupMacros.txt", "**/AstroImageJ.exe", "**/Astronomy_.jar", "**/release_notes.html")
-                eachFile {
-                    relativePath = RelativePath(true, *relativePath.segments.drop(relativePath.segments.size - 1).toTypedArray())
-                }
-                includeEmptyDirs = false
-            }
-            into(output)
-        }
-
-        // Copy files, with renames
-        copy {
-            from("$buildDir/distributions/AstroImageJ") {
-                include("**/ij.jar", "**/StartupMacros.txt", "**/AstroImageJ.exe", "**/Astronomy_.jar")
-                eachFile {
-                    relativePath = RelativePath(true, *relativePath.segments.drop(relativePath.segments.size - 1).toTypedArray())
-                }
-                includeEmptyDirs = false
-            }
-            into(output)
-            rename("(.+)\\.(.+)", "$1$semverVersion.$2")
-        }
-
         // Update versions.txt
         val versionsTxt = output.file("versions.txt").asFile
 
@@ -723,31 +711,19 @@ tasks.register("makeReleaseFiles") {
     }
 }
 
-tasks.register("makeDailyBuildFiles") {
+tasks.register<Sync>("makeDailyBuildFiles") {
     group = "AstroImageJ Development"
     dependsOn("packageAijForWindows_x86_64Bit_Java$shippingJava")
 
-    val buildDir = layout.buildDirectory.get()
-    val output = buildDir.dir("updatesjava$targetJava")
-
-    // Clear old files
-    output.asFileTree.forEach {
-        delete(it)
-    }
-
-    doLast {
-        // Copy files, no renames
-        copy {
-            from("$buildDir/distributions/AstroImageJ") {
-                include("**/ij.jar", "**/StartupMacros.txt", "**/AstroImageJ.exe", "**/Astronomy_.jar", "**/release_notes.html")
-                eachFile {
-                    relativePath = RelativePath(true, *relativePath.segments.drop(relativePath.segments.size - 1).toTypedArray())
-                }
-                includeEmptyDirs = false
-            }
-            into(output)
+    from(layout.buildDirectory.dir("distributions/AstroImageJ")) {
+        include("**/ij.jar", "**/StartupMacros.txt", "**/AstroImageJ.exe", "**/Astronomy_.jar", "**/release_notes.html")
+        eachFile {
+            relativePath = RelativePath(true, *relativePath.segments.drop(relativePath.segments.size - 1).toTypedArray())
         }
+        includeEmptyDirs = false
     }
+
+    into(layout.buildDirectory.dir("updatesjava$targetJava"))
 }
 
 fun outputDestination(): File {
@@ -767,14 +743,6 @@ fun outputDestination(): File {
 }
 
 // Make Idea's hammer icon run copyBuiltJars
-idea {
-    project {
-        this as ExtensionAware // These casts should be unneeded, but eh https://github.com/JetBrains/gradle-idea-ext-plugin/issues/76
-        configure<ProjectSettings> {
-            this as ExtensionAware
-            configure<TaskTriggersConfig> {
-                afterBuild(tasks.named("copyBuiltJars"))
-            }
-        }
-    }
+tasks.named("classes").configure {
+    finalizedBy("copyBuiltJars")
 }

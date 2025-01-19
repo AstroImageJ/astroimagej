@@ -1,5 +1,6 @@
 package astroj;
 
+import Astronomy.multiaperture.CenterReferencingTransform;
 import Astronomy.multiaperture.CompositeShape;
 import Astronomy.multiaperture.TransformedShape;
 import ij.astro.types.Pair;
@@ -17,7 +18,7 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
     private Area backgroundArea;
     private Point2D center = new Point2D.Double(Double.NaN, Double.NaN);
     private Rectangle2D innerBackgroundBounds = null;
-    private AffineTransform transform = new AffineTransform();
+    private CenterReferencingTransform transform = new CenterReferencingTransform();
     private boolean centroided;
     private boolean isCompStar;
     private boolean centerBackground;
@@ -40,6 +41,7 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
     public ShapedApertureRoi(Shape apertureShape) {
         this(Double.NaN, Double.NaN, Double.NaN, Double.NaN, Double.NaN, Double.NaN, false);
         this.apertureShape = apertureShape;
+        transform.bind(apertureShape);
         calculateCenter();
     }
 
@@ -303,7 +305,13 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
     }
 
     public void setTransform(AffineTransform transform) {
-        this.transform = transform;
+        if (transform instanceof CenterReferencingTransform centerReferencingTransform) {
+            centerReferencingTransform.bind(apertureShape);
+            this.transform = centerReferencingTransform;
+        } else {
+            this.transform = new CenterReferencingTransform(transform, apertureShape);
+        }
+
         updateTransformedCenter();
     }
 
@@ -316,6 +324,7 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
     public void setApertureShape(Shape apertureShape) {
         this.apertureShape = apertureShape;
         apertureArea = null;
+        transform.bind(apertureShape);
         calculateCenter();
     }
 

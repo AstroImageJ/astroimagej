@@ -1,5 +1,6 @@
 package Astronomy.multiaperture.io.transformers;
 
+import Astronomy.multiaperture.CenterReferencingTransform;
 import Astronomy.multiaperture.io.Section;
 import Astronomy.multiaperture.io.Transformer;
 import Astronomy.multiaperture.io.Transformers;
@@ -63,6 +64,8 @@ public class AffineTransformTransformer implements Transformer<AffineTransform, 
 
     @Override
     public Section write(Void params, AffineTransform transform) {
+        transform = decompose(transform);
+
         var type = type(transform);
 
         // Decomposing is difficult, so just handle the simple transforms
@@ -93,6 +96,14 @@ public class AffineTransformTransformer implements Transformer<AffineTransform, 
                 yield s;
             }
         };
+    }
+
+    private AffineTransform decompose(AffineTransform transform) {
+        if (transform instanceof CenterReferencingTransform centerReferencingTransform) {
+            return decompose(centerReferencingTransform.original());
+        }
+
+        return transform;
     }
 
     private TransformationType type(AffineTransform affineTransform) {

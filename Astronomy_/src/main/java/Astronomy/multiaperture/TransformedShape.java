@@ -11,8 +11,9 @@ public class TransformedShape implements Shape {
     private final Tracker tracker;
 
     public TransformedShape(Shape shape, AffineTransform transform) {
-        this.result = transform.createTransformedShape(shape);
-        this.tracker = new Tracker(shape, transform);
+        var centerReferencingTransform = new CenterReferencingTransform(transform, shape);
+        this.result = centerReferencingTransform.createTransformedShape(shape);
+        this.tracker = new Tracker(shape, centerReferencingTransform);
     }
 
     public AffineTransform getTransform() {

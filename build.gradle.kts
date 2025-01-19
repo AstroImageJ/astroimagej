@@ -72,12 +72,6 @@ configurations {
 }
 
 dependencies {
-    // This dependency is used by the application.
-    // implementation("com.google.guava:guava:29.0-jre")
-    implementation(project(":Nom_Fits"))
-    implementation(project(":ij"))
-    implementation(project(":Astronomy_"))
-
     // Jars to be packaged and shipped
     add("shippingIJ", project(mapOf("path" to ":ij", "configuration" to "shippingJar")))
     add("shippingAstro", project(mapOf("path" to ":Astronomy_", "configuration" to "shippingJar")))
@@ -301,13 +295,13 @@ tasks.register<Sync>("sync") {
 
     // Don't consider aij.log when copying common files, AIJ already resets it on launch
     // Doing so allows the UP-TO-DATE check to pass
-    //exclude("aij.log")
+    exclude("aij.log")
 
     // Copy launch options to cfg file so editing can be tested
-    /*from(file("${projectDir}/devLaunchOptions.txt")) {
+    from(file("${projectDir}/devLaunchOptions.txt")) {
         duplicatesStrategy = DuplicatesStrategy.INCLUDE
         rename { "AstroImageJ.cfg" }
-    }*/
+    }
 
     destinationDir = file("${projectDir}/AIJ-Run")
 }

@@ -16717,7 +16717,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 }
                 errorCode = 6;
                 if (!appendDestinationSuffix.equals("") && (table.getLastColumn() >= 0)) {
-                    for (int col = 0; col <= table.getLastColumn(); col++) {
+                    for (int col = 0; col <= combinedTable.getLastColumn(); col++) {
                         combinedTable.setHeading(col, combinedTable.getColumnHeading(col) + appendDestinationSuffix);
                     }
 
@@ -16747,9 +16747,12 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 errorCode = 8;
                 int combinedRows = combinedTable.getCounter();
                 errorCode = 9;
-                if (uniqueHeadings && newColumns.length > 2 && newRows > 0) {
+
+                var offset = (table.hasRowLabels() ? 1 : 0) + (table.showRowNumbers() ? 1 : 0);
+
+                if (uniqueHeadings && newColumns.length > offset && newRows > 0) {
                     errorCode = 10;
-                    for (int i = 2; i < newColumns.length; i++) {
+                    for (int i = offset; i < newColumns.length; i++) {
                         for (int j = 0; j < combinedRows; j++) {
                             if (j < newRows) {
                                 combinedTable.setValue(newColumns[i] + appendSourceSuffix, j, secondaryTable.getValue(newColumns[i], j));
@@ -16769,7 +16772,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     errorCode = 16;
                     IJ.beep();
                     IJ.showMessage("Heading names are not unique");
-                } else if (newColumns.length < 3) {
+                } else if (newColumns.length < offset+1) {
                     errorCode = 17;
                     IJ.beep();
                     IJ.showMessage("No new columns to append");

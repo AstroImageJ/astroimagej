@@ -869,7 +869,7 @@ public class ImageJ extends Frame implements ActionListener,
 	
 	/** Quit using a separate thread, hopefully avoiding thread deadlocks. */
 	@AstroImageJ(reason = "Add event calls for closing when DP, AstroConvert, multiplot, or astro stack windows are " +
-			"open", modified = true)
+			"open; Wait for event queue to finish", modified = true)
 	public void run() {
 		quitting = true;
 		boolean changes = false;
@@ -918,8 +918,12 @@ public class ImageJ extends Frame implements ActionListener,
 						dp[i].getClass().getName().contains("AstroStackWindow")) {
 					WindowEvent wev = new WindowEvent(dp[i], WindowEvent.WINDOW_CLOSING);
 					Toolkit.getDefaultToolkit().getSystemEventQueue().postEvent(wev);
-					IJ.wait(100);
-				}
+                    try {
+                        SwingUtilities.invokeAndWait(() -> {});
+                    } catch (InterruptedException | InvocationTargetException e) {
+                        e.printStackTrace();
+                    }
+                }
 			}
 			Prefs.savePreferences();
 		}

@@ -72,6 +72,11 @@ configurations {
 }
 
 dependencies {
+    // These are needed to run the tests
+    implementation(project(":Nom_Fits"))
+    implementation(project(":ij"))
+    implementation(project(":Astronomy_"))
+
     // Jars to be packaged and shipped
     add("shippingIJ", project(mapOf("path" to ":ij", "configuration" to "shippingJar")))
     add("shippingAstro", project(mapOf("path" to ":Astronomy_", "configuration" to "shippingJar")))

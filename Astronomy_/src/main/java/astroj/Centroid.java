@@ -593,12 +593,16 @@ public class Centroid {
 
             angle = 0.5 * 180.0 * Math.atan2(2.0 * mxy, xWidth - yWidth) / Math.PI;
 
+            // Ensure positive-definite moments
+            xWidth = Math.abs(xWidth);
+            yWidth = Math.abs(yWidth);
+
             // Compute eigenvalues (lambda1 = major axis squared, lambda2 = minor axis squared)
             double lambda1 = (xWidth + yWidth) / 2.0 + Math.sqrt(Math.pow((xWidth - yWidth) / 2.0, 2) + mxy * mxy);
             double lambda2 = (xWidth + yWidth) / 2.0 - Math.sqrt(Math.pow((xWidth - yWidth) / 2.0, 2) + mxy * mxy);
 
             // Compute roundness using axis ratio
-            roundness = Math.sqrt(lambda2 / lambda1);
+            roundness = Math.sqrt(lambda1 >= lambda2 ? lambda2 / lambda1 : lambda1 / lambda2);
 
             xWidth = Math.sqrt(xWidth < 0 ? -xWidth : xWidth);
             yWidth = Math.sqrt(yWidth < 0 ? -yWidth : yWidth);

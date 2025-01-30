@@ -73,7 +73,7 @@ public class Centroid {
 
     protected double xCenter, yCenter, radius, radius2, rBack1, rBack2, back, backMean;
     protected double xWidth, yWidth;
-    protected double angle, ecc;
+    protected double angle, roundness;
     protected double srcmax;
     protected double variance;
     //	public boolean forgiving = false;
@@ -385,7 +385,7 @@ public class Centroid {
         xWidth = 0.0;
         yWidth = 0.0;
         angle = 0.0;
-        ecc = 0.0;
+        roundness = 0.0;
         variance = 0.0;
         useHowellCentroidMethod = Prefs.get("aperture.useHowellCentroidMethod", useHowellCentroidMethod);
 
@@ -439,7 +439,7 @@ public class Centroid {
                     xWidth = 0.0;
                     yWidth = 0.0;
                     angle = 0.0;
-                    ecc = 0.0;
+                    roundness = 0.0;
                     variance = 0.0;
                     return false;
                 }
@@ -515,7 +515,7 @@ public class Centroid {
                     xWidth = 0.0;
                     yWidth = 0.0;
                     angle = 0.0;
-                    ecc = 0.0;
+                    roundness = 0.0;
                     variance = 0.0;
                     return false;
                 }
@@ -530,7 +530,7 @@ public class Centroid {
                 xWidth = 0.0;
                 yWidth = 0.0;
                 angle = 0.0;
-                ecc = 0.0;
+                roundness = 0.0;
                 variance = 0.0;
                 return false;  //error reporting should be in parent method
             }
@@ -551,7 +551,7 @@ public class Centroid {
                     xWidth = 0.0;
                     yWidth = 0.0;
                     angle = 0.0;
-                    ecc = 0.0;
+                    roundness = 0.0;
                     variance = 0.0;
                     return false;
                 }
@@ -592,7 +592,13 @@ public class Centroid {
             mxy /= wgt;    // m11
 
             angle = 0.5 * 180.0 * Math.atan2(2.0 * mxy, xWidth - yWidth) / Math.PI;
-            ecc = ((xWidth - yWidth) * (xWidth - yWidth) + 4.0 * mxy * mxy) / ((xWidth + yWidth) * (xWidth + yWidth));
+
+            // Compute eigenvalues (lambda1 = major axis squared, lambda2 = minor axis squared)
+            double lambda1 = (xWidth + yWidth) / 2.0 + Math.sqrt(Math.pow((xWidth - yWidth) / 2.0, 2) + mxy * mxy);
+            double lambda2 = (xWidth + yWidth) / 2.0 - Math.sqrt(Math.pow((xWidth - yWidth) / 2.0, 2) + mxy * mxy);
+
+            // Compute roundness using axis ratio
+            roundness = Math.sqrt(lambda2 / lambda1);
 
             xWidth = Math.sqrt(xWidth < 0 ? -xWidth : xWidth);
             yWidth = Math.sqrt(yWidth < 0 ? -yWidth : yWidth);
@@ -609,7 +615,7 @@ public class Centroid {
             xWidth = 0.0;
             yWidth = 0.0;
             angle = 0.0;
-            ecc = 0.0;
+            roundness = 0.0;
             variance = 0.0;
         }
 
@@ -679,7 +685,7 @@ public class Centroid {
     }
 
     public double roundness() {
-        return 1.0 - ecc;
+        return roundness;
     }
 
     public double variance() {

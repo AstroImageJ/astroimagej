@@ -303,7 +303,7 @@ public class FitsJ {
      * @param cards    The FITS header as an array of Strings.
      */
     public static Header setCard(String key, String property, String comment, Header hdr) {
-        return set(key, "'" + property + "'", comment, hdr);
+        return set(key, "'" + property.replaceAll("(?<!^)(?<!')'(?!')(?!$)", "''") + "'", comment, hdr);
     }
 
     /**
@@ -1068,6 +1068,12 @@ public class FitsJ {
         q1 = card.indexOf("'");
         if (q1 >= 0) {
             q2 = card.indexOf("'", q1 + 1);
+
+			// Double single quotes represent a single quote
+            while (q2 > 0 && q2+1 < card.length() && card.charAt(q2+1) == '\'') {
+				q2 = card.indexOf("'", q2 + 1);
+            }
+
 			if (q2 < 0) {
 				q1 = -1;
 			}

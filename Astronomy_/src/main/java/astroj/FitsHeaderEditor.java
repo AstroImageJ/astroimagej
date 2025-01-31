@@ -793,7 +793,7 @@ public class FitsHeaderEditor implements ListSelectionListener, ActionListener, 
             } else if (keyword.equals("HISTORY")) {
                 type = "H";
             } else if ((value.startsWith("'") && value.endsWith("'")) || (value.startsWith("\"") && value.endsWith("\""))) {
-                value = "'" + value.substring(1, value.length() - 1) + "'";
+                value = "'" + value.substring(1, value.length() - 1).replaceAll("(?<!^)(?<!')'(?!')(?!$)", "''") + "'";
                 type = "S";
             } else if (value.equalsIgnoreCase("T") || value.equalsIgnoreCase("F")) {
                 value = value.toUpperCase();
@@ -806,7 +806,7 @@ public class FitsHeaderEditor implements ListSelectionListener, ActionListener, 
             } else {
                 if (value.startsWith("'") || value.startsWith("\"")) value = value.substring(1);
                 if (value.endsWith("'") || value.endsWith("\"")) value = value.substring(0, value.length() - 1);
-                value = "'" + value + "'";
+                value = "'" + value.replaceAll("(?<!^)(?<!')'(?!')(?!$)", "''") + "'";
                 type = "S";
             }
         }

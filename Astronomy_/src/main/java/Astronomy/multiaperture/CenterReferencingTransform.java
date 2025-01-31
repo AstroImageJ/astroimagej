@@ -32,12 +32,20 @@ public class CenterReferencingTransform extends AffineTransform {
     }
 
     public void bind(Shape shape) {
+        // If the shape is unchanged, do nothing.
         if (shape != null && tracker != null && shape.equals(tracker.boundShape)) {
             return;
         }
 
+        // Reset to the original transformation before rebinding.
+        if (tracker != null) {
+            this.setTransform(tracker.original);
+        }
+
+        // Rebind to the new shape.
         bindToCenter(this, shape);
     }
+
 
     private void bindToCenter(AffineTransform transform, Shape shape) {
         if (transform instanceof CenterReferencingTransform centerReferencingTransform && centerReferencingTransform.tracker != null) {

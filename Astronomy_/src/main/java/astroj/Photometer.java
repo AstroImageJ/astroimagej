@@ -1454,8 +1454,15 @@ public class Photometer {
     }
 
     private Rectangle clampBounds(ImagePlus imp, Rectangle bounds) {
-        return bounds.intersection(new Rectangle(0, 0, imp.getWidth(), imp.getHeight()));
+        Rectangle intersection = bounds.intersection(new Rectangle(0, 0, imp.getWidth(), imp.getHeight()));
+        // If there's no intersection, make sure to return an empty rectangle.
+        if (intersection.width < 0 || intersection.height < 0) {
+            intersection.width = 0;
+            intersection.height = 0;
+        }
+        return intersection;
     }
+
 
     /**
      * Calculates the precise area of a {@link Area} object.

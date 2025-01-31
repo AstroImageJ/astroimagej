@@ -204,6 +204,7 @@ public non-sealed class ApertureRoi extends Roi implements Aperture {
         showSky = sky;
     }
 
+    @Override
     public boolean getIsCentroid() {
         return isCentroid;
     }

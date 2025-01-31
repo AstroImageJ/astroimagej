@@ -4,6 +4,8 @@ public sealed interface Aperture permits ApertureRoi, FreeformPixelApertureRoi, 
 
     ApertureShape getApertureShape();
 
+    boolean getIsCentroid();
+
     public enum ApertureShape {
         CIRCULAR,
         FREEFORM_SHAPE,

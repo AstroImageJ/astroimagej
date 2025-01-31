@@ -50,7 +50,7 @@ public class ApertureTransformer implements Transformer<Aperture, Void> {
 
                 var centroidSec = getUniqueSection(view, "centroid", false);
                 if (centroidSec != null) {
-                    ap.setCentroided(centroidSec.getParameter(CENTROID_PARAMETER));
+                    ap.setIsCentroid(centroidSec.getParameter(CENTROID_PARAMETER));
                 }
 
                 var radecSec = getUniqueSection(view, "radec", false);

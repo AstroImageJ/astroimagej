@@ -98,7 +98,7 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
             drawShape(g2, backgroundShape, toScreenSpaceTransformed);
 
             // Draw Geometric Centroid
-            if (centroided) {
+            if (isCentroid) {
                 g2.setColor(Color.RED);
 
                 var bounds = Objects.requireNonNull(getApertureArea()).getBounds2D();
@@ -494,14 +494,6 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
     @Override
     public ApertureShape getApertureShape() {
         return ApertureShape.FREEFORM_SHAPE;
-    }
-
-    public boolean isCentroided() {
-        return centroided;
-    }
-
-    public void setCentroided(boolean centroided) {
-        this.centroided = centroided;
     }
 
     public boolean isCenterBackground() {

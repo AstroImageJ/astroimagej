@@ -10,6 +10,7 @@ import ij.process.ImageProcessor;
 
 import java.awt.*;
 import java.awt.geom.Area;
+import java.awt.geom.Ellipse2D;
 import java.awt.geom.FlatteningPathIterator;
 import java.awt.geom.PathIterator;
 
@@ -136,6 +137,26 @@ public class Photometer {
         rBack2 = Double.NaN;
     }
 
+    public void measure(ImagePlus imp, Aperture aperture, boolean exactPixels) {
+        switch (aperture.getApertureShape()) {
+            case CIRCULAR -> {
+                if (aperture instanceof ApertureRoi apertureRoi) {
+                    measure(imp, exactPixels, apertureRoi.xPos, apertureRoi.yPos, apertureRoi.r1, apertureRoi.r2, apertureRoi.r3);
+                }
+            }
+            case FREEFORM_SHAPE -> {
+                if (aperture instanceof ShapedApertureRoi apertureRoi) {
+                    measure(imp, apertureRoi, exactPixels);
+                }
+            }
+            case FREEFORM_PIXEL -> {
+                if (aperture instanceof FreeformPixelApertureRoi apertureRoi) {
+                    measure(imp, apertureRoi, exactPixels);
+                }
+            }
+        }
+    }
+
     public void measure(ImagePlus imp, ShapedApertureRoi apertureRoi, boolean exactPixels) {
         var ip = imp.getProcessor();
         exact = exactPixels;
@@ -181,8 +202,12 @@ public class Photometer {
         var apertureArea = apertureRoi.getApertureArea();
         var backgroundArea = apertureRoi.getBackgroundArea();
 
+        if (apertureArea == null) {
+            return;
+        }
+
         var sourceBounds = clampBounds(imp, apertureArea.getBounds());
-        var backgroundBounds = clampBounds(imp, backgroundArea.getBounds());
+        var backgroundBounds = hasBack ? clampBounds(imp, backgroundArea.getBounds()) : new Rectangle();
         int totalPixels = sourceBounds.height * sourceBounds.width + (backgroundBounds.height * backgroundBounds.width);
         if (usePlaneLocal) {
             plane = new FittedPlane(totalPixels);
@@ -206,7 +231,7 @@ public class Photometer {
                             // Move overlapped shape to have corner on origin
                             //pixel.transform(AffineTransform.getTranslateInstance(-i, -j));
 
-                            fraction = integrateArea(pixel, false);
+                            fraction = integrateArea(pixel, false);//todo this is wrong in some cases
                         }
 
                         source += fraction * d;
@@ -350,7 +375,7 @@ public class Photometer {
                 var backMeanMinus2Stdev = backMean - 2.0 * backstdev;
                 for (int i = 0; i < pCnt; i++) {
                     d = pixels[i];
-                    if ((d <= backMeanPlus2Stdev) /*&& (d >= backMeanMinus2Stdev)*/) {
+                    if ((d <= backMeanPlus2Stdev) && (d >= backMeanMinus2Stdev)) {
                         back += d; // FINAL BACKGROUND
                         back2 += d * d;
                         backCount++;
@@ -419,34 +444,6 @@ public class Photometer {
                             b = plane.valueAt(i, j);
                             back += b * fraction;
                             source += (d - b) * fraction;
-                        }
-                    }
-                }
-
-                if (hasBack) {
-                    bounds = clampBounds(imp, backgroundArea.getBounds()); // Integer bounds to ensure we get all pixels
-
-                    for (int i = bounds.x; i < bounds.x + bounds.width; i++) {
-                        for (int j = bounds.y; j < bounds.y + bounds.height; j++) {
-                            d = ip.getPixelValue(i, j);
-                            if (!Float.isNaN(d)) {
-                                if (backgroundArea.contains(i, j, 1, 1)) {
-                                    fraction = 1;
-                                } else if (backgroundArea.intersects(i, j, 1, 1)) {
-                                    var pixel = new Area(new Rectangle(i, j, 1, 1));
-                                    pixel.intersect(backgroundArea);
-
-                                    // Move overlapped shape to have corner on origin
-                                    //pixel.transform(AffineTransform.getTranslateInstance(-i, -j));
-
-                                    fraction = integrateArea(pixel, false);
-                                }
-
-                                dSourceCount += fraction;
-                                b = plane.valueAt(i, j);
-                                back += b * fraction;
-                                source += (d - b) * fraction;
-                            }
                         }
                     }
                 }

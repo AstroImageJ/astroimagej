@@ -19,7 +19,6 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
     private Point2D center = new Point2D.Double(Double.NaN, Double.NaN);
     private Rectangle2D innerBackgroundBounds = null;
     private CenterReferencingTransform transform = new CenterReferencingTransform();
-    private boolean centroided;
     private boolean isCompStar;
     private boolean centerBackground;
     private static final Stroke STROKE = new BasicStroke(3);
@@ -502,5 +501,58 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
 
     public void setCenterBackground(boolean centerBackground) {
         this.centerBackground = centerBackground;
+    }
+
+    public void moveTo(double x, double y, boolean moveBackground) {
+        var t = AffineTransform.getTranslateInstance(x - xPos, y - yPos);
+
+        apertureShape = typePreservingTransform(apertureShape, t);
+        apertureArea = null;
+        transform.bind(apertureShape);
+        center = t.transform(center, null);
+        xPos = center.getX();
+        yPos = center.getY();
+
+        if (moveBackground) {
+            backgroundShape = typePreservingTransform(backgroundShape, t);
+            backgroundArea = null;
+            innerBackgroundBounds = null;
+        } else if (centerBackground) {
+            if (backgroundShape instanceof TransformedShape transformedShape) {
+                var c = calculateCenter(backgroundShape);
+                var shift = AffineTransform.getTranslateInstance(center.getX() - c.getX(), center.getY() - c.getY());
+                backgroundShape = new TransformedShape(transformedShape.getOriginalShape(), shift);
+                backgroundArea = null;
+                innerBackgroundBounds = null;
+            }
+        }
+    }
+
+    /**
+     * Should only be called with translations
+     */
+    private Shape typePreservingTransform(Shape shape, AffineTransform transform) {
+        assert transform.getType() == AffineTransform.TYPE_TRANSLATION : "Type preserving transform is only for translations";
+        if (shape instanceof Ellipse2D ellipse2D) {
+            var points = new double[]{ellipse2D.getX(), ellipse2D.getY(), ellipse2D.getMaxX(), ellipse2D.getMaxY()};
+            transform.transform(points, 0, points, 0, points.length / 2);
+            return new Ellipse2D.Double(points[0], points[1], points[2]-points[0], points[3]-points[1]);
+        } else if (shape instanceof Rectangle2D rectangle2D) {
+            var points = new double[]{rectangle2D.getX(), rectangle2D.getY(), rectangle2D.getMaxX(), rectangle2D.getMaxY()};
+            transform.transform(points, 0, points, 0, points.length / 2);
+            return new Rectangle2D.Double(points[0], points[1], points[2]-points[0], points[3]-points[1]);
+        } else if (shape instanceof RoundRectangle2D roundRectangle2D) {
+            var points = new double[]{roundRectangle2D.getX(), roundRectangle2D.getY(), roundRectangle2D.getMaxX(), roundRectangle2D.getMaxY()};
+            transform.transform(points, 0, points, 0, points.length / 2);
+            return new RoundRectangle2D.Double(points[0], points[1], points[2]-points[0], points[3]-points[1], roundRectangle2D.getArcWidth(), roundRectangle2D.getArcHeight());
+        } else if (shape instanceof CompositeShape compositeShape) {
+            return new CompositeShape(compositeShape.getTracker().combination(),
+                    typePreservingTransform(compositeShape.getTracker().primary(), transform),
+                    typePreservingTransform(compositeShape.getTracker().secondary(), transform));
+        } else if (shape instanceof TransformedShape transformedShape) {
+            return new TransformedShape(typePreservingTransform(transformedShape.getOriginalShape(), transform), transformedShape.getTransform());
+        } else { // Already lost type information, so we can proceed with just a transform
+            return transform.createTransformedShape(shape);
+        }
     }
 }

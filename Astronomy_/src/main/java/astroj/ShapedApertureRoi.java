@@ -532,7 +532,12 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
      * Should only be called with translations
      */
     private Shape typePreservingTransform(Shape shape, AffineTransform transform) {
+        if (transform.isIdentity()) {
+            return shape;
+        }
+
         assert transform.getType() == AffineTransform.TYPE_TRANSLATION : "Type preserving transform is only for translations";
+
         if (shape instanceof Ellipse2D ellipse2D) {
             var points = new double[]{ellipse2D.getX(), ellipse2D.getY(), ellipse2D.getMaxX(), ellipse2D.getMaxY()};
             transform.transform(points, 0, points, 0, points.length / 2);

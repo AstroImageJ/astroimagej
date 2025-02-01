@@ -108,6 +108,9 @@ public class ShapeTransformer implements Transformer<Shape, Void> {
                         case "close" -> {
                             p.closePath();
                         }
+                        case "transform" -> {
+                            // NO-OP
+                        }
                         default -> throw new IllegalStateException("Unknown path element: " + subSection.name());
                     }
                 }

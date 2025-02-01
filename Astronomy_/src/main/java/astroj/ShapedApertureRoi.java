@@ -558,7 +558,7 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
 
         apertureShape = typePreservingTransform(apertureShape, t);
         apertureArea = null;
-        transform.bind(apertureShape);
+        transform.bind(apertureShape, t);
         center = t.transform(center, null);
         xPos = center.getX();
         yPos = center.getY();

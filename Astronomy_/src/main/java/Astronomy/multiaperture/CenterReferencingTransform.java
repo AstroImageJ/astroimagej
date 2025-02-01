@@ -46,6 +46,35 @@ public class CenterReferencingTransform extends AffineTransform {
         bindToCenter(this, shape);
     }
 
+    /**
+     * For rebinding this transform to a shape that is identical except that it's center has shifted
+     */
+    public void bind(Shape shape, AffineTransform transform) {
+        // If the shape is unchanged, do nothing.
+        if (shape != null && tracker != null && shape.equals(tracker.boundShape)) {
+            return;
+        }
+
+        if (transform.isIdentity()) {
+            return;
+        }
+
+        assert transform.getType() == AffineTransform.TYPE_TRANSLATION : "Type preserving transform is only for translations";
+
+        // Reset to the original transformation before rebinding.
+        if (tracker != null) {
+            this.setTransform(tracker.original);
+
+            // Rebind to the new shape.
+            var c = tracker.center;
+            transform.transform(c, c);
+            this.concatenateResult(AffineTransform.getTranslateInstance(-c.getX(), -c.getY()));
+            this.preConcatenateResult(AffineTransform.getTranslateInstance(c.getX(), c.getY()));
+        } else {
+            bindToCenter(this, shape);
+        }
+    }
+
 
     private void bindToCenter(AffineTransform transform, Shape shape) {
         if (transform instanceof CenterReferencingTransform centerReferencingTransform && centerReferencingTransform.tracker != null) {
@@ -55,7 +84,7 @@ public class CenterReferencingTransform extends AffineTransform {
         }
 
         if (shape != null) {
-            var c = calculateCenter(shape);
+            var c = tracker.center;
             if (transform instanceof CenterReferencingTransform centerReferencingTransform) {
                 centerReferencingTransform.concatenateResult(AffineTransform.getTranslateInstance(-c.getX(), -c.getY()));
                 centerReferencingTransform.preConcatenateResult(AffineTransform.getTranslateInstance(c.getX(), c.getY()));
@@ -98,7 +127,7 @@ public class CenterReferencingTransform extends AffineTransform {
         super.preConcatenate(Tx);
     }
 
-    private Point2D calculateCenter(Shape shape) {
+    private static Point2D calculateCenter(Shape shape) {
         if (shape == null) {
             return new Point2D.Double(Double.NaN, Double.NaN);
         }
@@ -164,5 +193,9 @@ public class CenterReferencingTransform extends AffineTransform {
         return new Point2D.Double(centerX/centerCnt, centerY/centerCnt);
     }
 
-    private record Tracker(AffineTransform original, Shape boundShape) {}
+    private record Tracker(AffineTransform original, Shape boundShape, Point2D center) {
+        public Tracker(AffineTransform original, Shape boundShape) {
+            this(original, boundShape, calculateCenter(boundShape));
+        }
+    }
 }

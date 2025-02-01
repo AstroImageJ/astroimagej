@@ -375,12 +375,8 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
     }
 
     public void setBackgroundShape(ShapeCombination combination, Shape a, Shape b, boolean centered) {
-        var primary = new Area(a);
-        var secondary = new Area(b);
-
-        //setBackgroundShape(combination.transform(primary, secondary), centered);
-        setBackgroundShape(new CompositeShape(combination, primary, secondary), centered);
-        innerBackgroundBounds = secondary.getBounds2D();
+        setBackgroundShape(new CompositeShape(combination, a, b), centered);
+        innerBackgroundBounds = new Area(b).getBounds2D();
     }
 
     /**
@@ -551,7 +547,7 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
             innerBackgroundBounds = null;
         } else if (centerBackground) {
             if (backgroundShape instanceof TransformedShape transformedShape) {
-                var c = calculateCenter(backgroundShape);
+                var c = calculateCenter(transformedShape.getOriginalShape());
                 var shift = AffineTransform.getTranslateInstance(center.getX() - c.getX(), center.getY() - c.getY());
                 backgroundShape = new TransformedShape(transformedShape.getOriginalShape(), shift);
                 backgroundArea = null;

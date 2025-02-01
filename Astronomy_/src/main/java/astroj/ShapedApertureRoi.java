@@ -105,7 +105,7 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
             if (isCentroid) {
                 g2.setColor(Color.RED);
 
-                var bounds = Objects.requireNonNull(getApertureArea()).getBounds2D();
+                var bounds = Objects.requireNonNull(apertureShape).getBounds2D();
                 var delta = Math.min(bounds.getWidth(), bounds.getHeight())/4D;
                 delta = delta <= 0 ? 2 : delta;
                 g2.draw(toScreenSpace.createTransformedShape(new Line2D.Double(xPos, yPos - delta, xPos, yPos + delta)));
@@ -146,6 +146,23 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
                     g2.draw(toScreenSpace.createTransformedShape(new Ellipse2D.Double(xPos - r, yPos - r, 2*r, 2*r)));
                 }
             }
+        }
+
+        String value = showMag ?
+                aMagText + (showIntCntWithMag && !intCntsBlank ? ", " + intCntsWithMagText : "") :
+                intCntsText;
+        g.setColor(isCompStar ? Color.RED : Color.GREEN);
+        g.setFont(font);
+
+        var b = (backgroundShape != null ?
+                         toScreenSpaceTransformed.createTransformedShape(backgroundShape) :
+                         toScreenSpaceTransformed.createTransformedShape(apertureShape)).getBounds();
+        if (showName && showValues && nameText != null && !nameText.isEmpty() && value != null && !value.isEmpty()) {
+            g.drawString(nameText + "=" + value, (int) b.getMaxX(), (int) (b.getMinY() + b.getHeight()/2));
+        } else if (showName && nameText != null && !nameText.isEmpty()) {
+            g.drawString(nameText, (int) b.getMaxX(), (int) (b.getMinY() + b.getHeight()/2));
+        } else if (showValues && value != null && !value.isEmpty()) {
+            g.drawString(value, (int) b.getMaxX(), (int) (b.getMinY() + b.getHeight()/2));
         }
 
         if (aij) {

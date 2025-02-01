@@ -3,12 +3,15 @@ package astroj;
 import Astronomy.multiaperture.CenterReferencingTransform;
 import Astronomy.multiaperture.CompositeShape;
 import Astronomy.multiaperture.TransformedShape;
+import ij.Prefs;
 import ij.astro.types.Pair;
 
 import java.awt.*;
 import java.awt.geom.*;
 import java.util.Objects;
 
+import static Astronomy.Aperture_.AP_PREFS_BACKPLANE;
+import static Astronomy.Aperture_.AP_PREFS_REMOVEBACKSTARS;
 import static Astronomy.multiaperture.CompositeShape.ShapeCombination;
 
 public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
@@ -26,6 +29,8 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
     private static final Color CENTROID_COLOR = new Color(25, 205, 180);
     private static final boolean FILL_SHAPE = true;
     private static final boolean SHOW_FLATTENED = false;
+    private final boolean usePlane = Prefs.get(AP_PREFS_BACKPLANE, false);
+    private final boolean removeStars = Prefs.get(AP_PREFS_REMOVEBACKSTARS, false);
 
     /**
      * RA/DEC position of the geometric center (xPos, yPos) of this aperture
@@ -296,6 +301,33 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
         }
 
         return new Point2D.Double(centerX/centerCnt, centerY/centerCnt);
+    }
+
+    public void automaticTransform(boolean adjustShape, boolean adjustRotation) {
+        automaticTransform(new Centroid(), false, isCentroid, adjustShape, adjustRotation);
+    }
+
+    public void automaticTransform(Centroid c, boolean cenroidFound, boolean reposition, boolean adjustShape, boolean adjustRotation) {
+        if (!cenroidFound && imp != null) {
+            cenroidFound = c.measure(imp, xPos, yPos, getRadius(), getBack1(), getBack2(), true, usePlane, removeStars);
+        }
+
+        if (cenroidFound) {
+            if (adjustShape && apertureShape instanceof Ellipse2D ellipse2D) {
+                var r = Math.max(ellipse2D.getWidth(), ellipse2D.getHeight())/2D;
+                var b = c.roundness()*r;
+                b = Math.abs(b);
+
+                var x = reposition ? c.x() : xPos;
+                var y = reposition ? c.y() : yPos;
+                setApertureShape(new Ellipse2D.Double(x - r, y - b, 2 * r, 2 * b));
+                setBackgroundShape(backgroundShape, centerBackground);
+            }
+
+            if (adjustRotation) {
+                setTransform(AffineTransform.getRotateInstance(Math.toRadians(c.orientation())));
+            }
+        }
     }
 
     public void transform(AffineTransform cx) {

@@ -16,6 +16,9 @@ import ij.process.ImageProcessor;
 import java.awt.*;
 import java.util.Locale;
 
+import static Astronomy.MultiAperture_.SHAPED_AP_ANGLE_LOCKED;
+import static Astronomy.MultiAperture_.SHAPED_AP_ECCENTRICITY_LOCKED;
+
 /**
  * Simple circular aperture tool using a circular background annulus.
  * Results are entered in a MeasurementTable as well as in a dialogue
@@ -419,7 +422,7 @@ public class Aperture_ implements PlugInFilter {
     /**
      * Performs exact measurement of object position and integrated brightness.
      */
-    protected boolean measureAperture(FitsJ.Header hdr, FreeformPixelApertureRoi apertureRoi) {
+    protected boolean measureAperture(FitsJ.Header hdr, ApertureRoi apertureRoi) {
         boolean returnVal = true;
         if (apertureRoi == null && !adjustAperture(false)) {
             if (this instanceof MultiAperture_ && !(this instanceof Stack_Aligner) && !(Prefs.get(MultiAperture_.PREFS_HALTONERROR, true))) {
@@ -486,7 +489,7 @@ public class Aperture_ implements PlugInFilter {
         measurePhotometry(hdr, null);
     }
 
-    protected void measurePhotometry(FitsJ.Header hdr, FreeformPixelApertureRoi apertureRoi) {
+    protected void measurePhotometry(FitsJ.Header hdr, Aperture apertureRoi) {
         if (apertureRoi != null) {
             photom = measurePhotometry(imp, hdr, apertureRoi);
         } else {
@@ -539,7 +542,7 @@ public class Aperture_ implements PlugInFilter {
         return localPhotom;
     }
 
-    protected Photometer measurePhotometry(ImagePlus imp, FitsJ.Header hdr, FreeformPixelApertureRoi apertureRoi) {
+    protected Photometer measurePhotometry(ImagePlus imp, FitsJ.Header hdr, Aperture apertureRoi) {
         double darkPerPix = ccdDark;
         if (hdr != null) {
             isFITS = true;
@@ -656,6 +659,42 @@ public class Aperture_ implements PlugInFilter {
         return x.centroidFound;
     }
 
+    protected boolean adjustAperture(boolean updatePhotometry, ShapedApertureRoi roi) {
+        ip = imp.getProcessor();
+        if (stackSize > 1) {
+            ImageStack stack = imp.getImageStack();
+            filename = IJU.getSliceFilename(imp);
+        }
+
+        // GET MEASURMENT PARAMETERS AGAIN IN CASE THEY HAVE CHANGED
+
+        getMeasurementPrefs();
+        showAsCentered = roi.getIsCentroid();
+        reposition = roi.getIsCentroid();
+
+        // GET CENTROID OBJECT FOR MEASURING
+
+
+        var x = adjustAperture(imp, roi);
+        center = x.center;
+        if (roi.getIsCentroid()) {
+            roi.moveTo(center.x(), center.y(), true);
+        }
+        roi.automaticTransform(center, x.centroidFound, false/*already moved*/, !SHAPED_AP_ECCENTRICITY_LOCKED.get(), !SHAPED_AP_ANGLE_LOCKED.get());
+        xWidth = center.width();
+        yWidth = center.height();
+        width = 0.5 * (xWidth + yWidth);
+        angle = center.orientation();
+        if (angle < 0.0) angle += 360.0;
+        round = center.roundness();
+        variance = center.variance();
+        back = center.background();
+        if (updatePhotometry) measurePhotometry();
+
+        count++;
+        return x.centroidFound;
+    }
+
     protected AdjustedAperture adjustAperture(ImagePlus imp, double x, double y, double r, double r2, double r3, boolean centroid) {
         var center = new Centroid();
         boolean returnVal = center.measure(imp, x, y, r, r2, r3, centroid, backIsPlane, removeBackStars);
@@ -663,7 +702,7 @@ public class Aperture_ implements PlugInFilter {
         return new AdjustedAperture(returnVal, center);
     }
 
-    protected AdjustedAperture adjustAperture(ImagePlus imp, FreeformPixelApertureRoi roi) {
+    protected AdjustedAperture adjustAperture(ImagePlus imp, Aperture roi) {
         var center = new Centroid();
         boolean returnVal = center.measure(imp, roi, roi.getIsCentroid(), backIsPlane, removeBackStars);
 

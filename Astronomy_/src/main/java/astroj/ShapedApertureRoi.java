@@ -492,6 +492,11 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
         return isCompStar;
     }
 
+    @Override
+    public boolean getIsComparisonStar() {
+        return isComparisonStar();
+    }
+
     public void setComparisonStar(boolean comparisonStar) {
         this.isCompStar = comparisonStar;
     }

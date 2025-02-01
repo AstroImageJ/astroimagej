@@ -209,6 +209,11 @@ public non-sealed class ApertureRoi extends Roi implements Aperture {
         return isCentroid;
     }
 
+    @Override
+    public boolean getIsComparisonStar() {
+        return false;
+    }
+
     public void setIsCentroid(boolean isCentered) {
         isCentroid = isCentered;
     }

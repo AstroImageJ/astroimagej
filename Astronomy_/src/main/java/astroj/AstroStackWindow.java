@@ -4884,15 +4884,33 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                 var d = AperturesFileCodec.readContents(s);
                 if (d != null) {
                     var pixelAps = d.getAperturesOfType(FreeformPixelApertureRoi.class, Aperture.ApertureShape.FREEFORM_PIXEL);
-                    FreeformPixelApertureHandler.APS.set(pixelAps);
-                    FreeformPixelApertureHandler.IMPORTED_APS.set(pixelAps);
+
                     Prefs.ijPrefs.putAll(d.prefs());
                     ac.removeApertureRois();
-                    for (int i = 0; i < FreeformPixelApertureHandler.APS.get().size(); i++) {
-                        var ap = FreeformPixelApertureHandler.APS.get().get(i);
-                        ap.setName((ap.isComparisonStar() ? "C" : "T") + (i+1));
-                        ap.setImage(imp);
-                        ac.add(ap);
+
+                    if (!pixelAps.isEmpty()) {
+                        FreeformPixelApertureHandler.APS.set(pixelAps);
+                        FreeformPixelApertureHandler.IMPORTED_APS.set(pixelAps);
+
+                        for (int i = 0; i < FreeformPixelApertureHandler.APS.get().size(); i++) {
+                            var ap = FreeformPixelApertureHandler.APS.get().get(i);
+                            ap.setName((ap.isComparisonStar() ? "C" : "T") + (i+1));
+                            ap.setImage(imp);
+                            ac.add(ap);
+                        }
+                    }
+
+
+                    var shapedAps = d.getAperturesOfType(ShapedApertureRoi.class, Aperture.ApertureShape.FREEFORM_SHAPE);
+                    if (!shapedAps.isEmpty()) {
+                        MultiAperture_.SHAPED_APS.set(shapedAps);
+                        MultiAperture_.SHAPED_IMPORTED_APS.set(shapedAps);
+                        for (int i = 0; i < shapedAps.size(); i++) {
+                            var ap = shapedAps.get(i);
+                            ap.setName((ap.isComparisonStar() ? "C" : "T") + (i+1));
+                            ap.setImage(imp);
+                            ac.add(ap);
+                        }
                     }
                     return;
                 }

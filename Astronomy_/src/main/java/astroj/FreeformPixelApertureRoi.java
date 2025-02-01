@@ -703,6 +703,11 @@ public final class FreeformPixelApertureRoi extends ApertureRoi implements Apert
     }
 
     @Override
+    public boolean getIsComparisonStar() {
+        return comparisonStar;
+    }
+
+    @Override
     public ApertureShape getApertureShape() {
         return ApertureShape.FREEFORM_PIXEL;
     }

@@ -1702,18 +1702,6 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
                 ngot = shapedApertureRois.size();
 
-                // Handle auto comp stars
-                var refCount = 0;
-                if (!autoMode && suggestCompStars && tempSuggestCompStars && ngot >= referenceStar
-                        && (refCount = shapedApertureRois.size()) < maxSuggestedStars
-                        && !(this instanceof Stack_Aligner)) {
-
-                    if (!automaticCompStarSelection(refCount)) {
-                        suggestionRunning = false;
-                    }
-                    suggestionRunning = false;
-                }
-
                 canvas.repaint();
             } else if (apertureClicked && selectedAp instanceof ShapedApertureRoi shapedApertureRoi) {
                 if (!e.isShiftDown() && !e.isControlDown() && !e.isAltDown()) {
@@ -1748,6 +1736,20 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             }
 
             apertureClicked = false;
+
+            // Handle auto comp stars
+            var refCount = 0;
+            if (!autoMode && suggestCompStars && tempSuggestCompStars && ngot >= referenceStar
+                    && (refCount = shapedApertureRois.size()) < maxSuggestedStars
+                    && !(this instanceof Stack_Aligner)) {
+
+                if (!automaticCompStarSelection(refCount)) {
+                    suggestionRunning = false;
+                }
+                suggestionRunning = false;
+            }
+
+            canvas.repaint();
 
             //Right mouse click or <Enter> finalizes aperture selection
             if (enterPressed) {

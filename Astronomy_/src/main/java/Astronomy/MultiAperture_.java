@@ -4407,7 +4407,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
         // Increase chance of aperture actually rendering on mac
         if (updateImageDisplay.get()) {
-            if (IJ.isMacOSX()) {
+            if (/*IJ.isMacOSX()*/true) {
                 ocanvas.update(ocanvas.getGraphics());
                 canvas.update(canvas.getGraphics());
                 //ocanvas.repaint();//renders extra apertures?!

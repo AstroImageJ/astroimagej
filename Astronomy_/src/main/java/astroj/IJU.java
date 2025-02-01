@@ -1352,6 +1352,23 @@ public class IJU {
                 IJ.beep();
                 IJ.showMessage("Error writing apertures to file");
             }
+        } else if ("EL".equals(Prefs.get("multiaperture.lastrun", ""))) {
+            // Remove circular setting
+            if (ObjectShare.get("multiapertureCircularKeys") instanceof Set<?> keysGeneric) {
+                var keys = (Set<String>) keysGeneric;
+                for (String key : keys) {
+                    prefs.remove(key);
+                }
+            }
+
+            try {
+                var apFile = new ApFile(MultiAperture_.SHAPED_APS.get(), prefs);
+                Files.writeString(outFile.toPath(), AperturesFileCodec.write(apFile));
+            } catch (IOException e) {
+                e.printStackTrace();
+                IJ.beep();
+                IJ.showMessage("Error writing apertures to file");
+            }
         } else {
             if (astroStackWindow != null) {
                 var rois = astroStackWindow.ac.getRois();

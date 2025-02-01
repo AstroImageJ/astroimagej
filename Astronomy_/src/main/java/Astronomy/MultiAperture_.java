@@ -3080,6 +3080,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         if (dragging && (e.getModifiers() & MouseEvent.BUTTON1_MASK) != 0 && !e.isShiftDown() && !e.isControlDown()) {
             if (apertureShape.get() == ApertureShape.FREEFORM) {
                 ((FreeformPixelApertureRoi) selectedApertureRoi).moveTo((int) currentX, (int) currentY);
+            } else if (apertureShape.get() == ApertureShape.ELLIPTICAL) {
+                ((ShapedApertureRoi) selectedApertureRoi).moveTo(currentX, currentY, true);
             } else {
                 moveAperture(currentX, currentY);
             }

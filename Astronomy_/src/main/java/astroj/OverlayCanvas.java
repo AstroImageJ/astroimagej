@@ -170,6 +170,13 @@ public class OverlayCanvas extends ImageCanvas {
     public ApertureRoi findApertureRoi(double x, double y, double radiusSlack, boolean allowArbitraryAperture) {
         for (int i = 0; i < rois.size(); i++) {
             Roi roi = rois.get(i);
+            if (roi instanceof ShapedApertureRoi shapedApertureRoi && shapedApertureRoi.getApertureArea() != null) {
+                if (shapedApertureRoi.getApertureArea().contains(x, y)) {
+                    return shapedApertureRoi;
+                } else {
+                    continue;
+                }
+            }
             if (roi instanceof ApertureRoi apertureRoi) {
                 if (!allowArbitraryAperture && apertureRoi instanceof FreeformPixelApertureRoi) {
                     continue;

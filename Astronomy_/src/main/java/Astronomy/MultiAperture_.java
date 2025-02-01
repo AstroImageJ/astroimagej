@@ -1,6 +1,9 @@
 package Astronomy;// MultiAperture_.java
 
 import Astronomy.multiaperture.FreeformPixelApertureHandler;
+import Astronomy.multiaperture.io.AperturesFileCodec;
+import Astronomy.multiaperture.io.Section;
+import Astronomy.multiaperture.io.Transformers;
 import astroj.*;
 import ij.IJ;
 import ij.ImagePlus;
@@ -26,6 +29,8 @@ import javax.swing.*;
 import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Ellipse2D;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.text.DecimalFormat;
@@ -316,6 +321,15 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     private static String lastRun = "<Not yet run>";
     private boolean processingStackForRadii;
     private final FreeformPixelApertureHandler freeformPixelApertureHandler = new FreeformPixelApertureHandler();
+    public static final Property<List<ShapedApertureRoi>> SHAPED_APS =
+            new Property<>(new ArrayList<>(),
+                    MultiAperture_::serializeApertures, MultiAperture_::deserializeApertures,
+                    MultiAperture_.class);
+    public static final Property<List<ShapedApertureRoi>> SHAPED_IMPORTED_APS =
+            new Property<>(new ArrayList<>(),
+                    MultiAperture_::serializeApertures, MultiAperture_::deserializeApertures,
+                    MultiAperture_.class);
+    private List<ShapedApertureRoi> shapedApertureRois = new ArrayList<>();
     public static final Property<Boolean> SHAPED_AP_ECCENTRICITY_LOCKED = new Property<>(false, MultiAperture_.class);
     public static final Property<Double> SHAPED_AP_ECCENTRICITY = new Property<>(0D, MultiAperture_.class);
     public static final Property<Boolean> SHAPED_AP_ANGLE_LOCKED = new Property<>(false, MultiAperture_.class);
@@ -784,7 +798,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         } else {
             imp.getWindow().requestFocus();
             imp.getCanvas().requestFocusInWindow();
-            if (apLoading.get().isPrevious() && useWCS && hasWCS && raPosStored != null && decPosStored != null) {
+            if (apLoading.get().isPrevious() && useWCS && hasWCS &&
+                    ((raPosStored != null && decPosStored != null) || apertureShape.get() == ApertureShape.ELLIPTICAL)) {
                 enterPressed = true;
                 simulatedLeftClick = true;
                 processSingleClick(dummyClick);
@@ -1527,6 +1542,250 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             return;
         }
 
+        if (apertureShape.get() == ApertureShape.ELLIPTICAL) {
+            apertureClicked = false;
+            xCenter = e != null ? canvas.offScreenXD(e.getX()) : 0;
+            yCenter = e != null ? canvas.offScreenYD(e.getY()) : 0;
+            ApertureRoi selectedAp = null;
+            if (!autoMode && !((apLoading.get().isPrevious() || previous) && firstClick) && ngot < nApertures) {
+                apertureClicked = (selectedAp = ocanvas.findApertureRoi(xCenter, yCenter, 0)) != null;
+            }
+
+            if (autoMode) {
+                shapedApertureRois.clear();
+                var setting = apLoading.get() == ApLoading.IMPORTED ? SHAPED_IMPORTED_APS : SHAPED_APS;
+                setting.reread();
+
+                if (apLoading.get() == ApLoading.FIRST_PREVIOUS && !setting.get().isEmpty()) {
+                    shapedApertureRois.add(setting.get().get(0));
+                } else {
+                    shapedApertureRois.addAll(setting.get());
+                }
+
+                if (shapedApertureRois.isEmpty()) {
+                    shutDown();
+                    return;
+                }
+
+                for (int i = 1; i < shapedApertureRois.size(); i++) {
+                    var ap = shapedApertureRois.get(i-1);
+                    ap.setName((ap.isComparisonStar() ? "C" : "T") + i);
+
+                    if (useWCS && ap.hasRadec() && wcs != null) {
+                        var np = wcs.wcs2pixels(new double[]{ap.getRightAscension(), ap.getDeclination()});
+                        ap.moveTo(np[0], np[1], true);
+                    }
+
+                    ap.setImage(imp);
+                    ocanvas.add(ap);
+                }
+
+                ocanvas.repaint();
+                enterPressed = true;
+            } else if ((apLoading.get().isPrevious() || previous) && firstClick) {
+                shapedApertureRois.clear();
+
+                var d = showWarning("Loading apertures...");
+                var warning = new AnnotateRoi(false, false, true, false, imp.getWidth() / 2f, imp.getHeight() / 2f, 2, "Loading apertures...", Color.GREEN);
+                warning.setImage(imp);
+
+                var setting = apLoading.get() == ApLoading.IMPORTED ? SHAPED_IMPORTED_APS : SHAPED_APS;
+                setting.reread();
+
+                if (apLoading.get() == ApLoading.FIRST_PREVIOUS && !setting.get().isEmpty()) {
+                    shapedApertureRois.add(setting.get().get(0));
+                } else {
+                    shapedApertureRois.addAll(setting.get());
+                }
+
+                for (int i = 1; i < shapedApertureRois.size(); i++) {
+                    var ap = shapedApertureRois.get(i-1);
+                    ap.setName((ap.isComparisonStar() ? "C" : "T") + i);
+
+                    if (useWCS && ap.hasRadec() && wcs != null) {
+                        var np = wcs.wcs2pixels(new double[]{ap.getRightAscension(), ap.getDeclination()});
+                        ap.moveTo(np[0], np[1], true);
+                    }
+
+                    ap.setImage(imp);
+                    ocanvas.add(ap);
+                }
+
+                ocanvas.repaint();
+                canvas.repaint();
+
+                ngot = shapedApertureRois.size();
+
+                firstClick = false;
+                allStoredAperturesPlaced = true;
+                if (singleStep && !allowSingleStepApChanges && firstSlice > initialFirstSlice) {
+                    nApertures = ngot;
+                }
+
+                d.dispose();
+                ocanvas.removeRoi(warning);
+                enterPressed = false;
+            }
+
+            if (!autoMode && !apertureClicked && (e != dummyClick && e != null && (!mouseDrag || e.isShiftDown()))) {
+                var x = canvas.offScreenX(e.getX());
+                var y = canvas.offScreenY(e.getY());
+
+                ShapedApertureRoi ap = null;
+                // Drag Paint
+                if (mouseDrag && e.isShiftDown()) {
+                    var x0 = Math.min((int) startDragX, x);
+                    var x1 = Math.max((int) startDragX, x);
+                    var y0 = Math.min((int) startDragY, y);
+                    var y1 = Math.max((int) startDragY, y);
+
+                    if (SwingUtilities.isLeftMouseButton(e)) {
+                        ap = new ShapedApertureRoi(new Ellipse2D.Double(x0, y0, x1-x0, y1-y0));
+
+                        ap.setIsCentroid(e.isAltDown() != Prefs.get("aperture.reposition", reposition));
+                    }
+
+                    ocanvas.removeRoi("selectionRoi");
+                } else { // Point Paint
+                    if (SwingUtilities.isLeftMouseButton(e)) {
+                        var c = new Centroid();
+
+                        var centroid = e.isAltDown() != Prefs.get("aperture.reposition", reposition);
+
+                        if (c.measure(imp, x, y, radius, rBack1, rBack2, centroid, backIsPlane, removeBackStars)) {
+                            var roundness = c.roundness();
+
+                            if (SHAPED_AP_ECCENTRICITY_LOCKED.get()) {
+                                roundness = Math.sqrt(1 - SHAPED_AP_ECCENTRICITY.get());
+                            }
+
+                            var b = roundness*radius;
+                            b = Math.abs(b);
+
+                            ap = new ShapedApertureRoi(new Ellipse2D.Double(c.x() - radius, c.y() - b, 2 * radius, 2 * b));
+
+                            ap.setTransform(AffineTransform.getRotateInstance(Math.toRadians(c.orientation())));
+                        } else if (centroid) {
+                            IJ.error("Failed to find centroid");
+                            return;
+                        } else {
+                            var roundness = 1D;
+
+                            if (SHAPED_AP_ECCENTRICITY_LOCKED.get()) {
+                                roundness = Math.sqrt(1 - SHAPED_AP_ECCENTRICITY.get());
+                            }
+
+                            var b = roundness*radius;
+                            b = Math.abs(b);
+
+                            ap = new ShapedApertureRoi(new Ellipse2D.Double(c.x() - radius, c.y() - b, 2 * radius, 2 * b));
+                        }
+
+                        ap.setBackgroundAnnulus(rBack1, rBack1, rBack2, rBack2);
+
+                        ap.setIsCentroid(centroid);
+                    }
+                }
+
+                if (ap != null) {
+                    if (SHAPED_AP_ANGLE_LOCKED.get()) {
+                        ap.setTransform(AffineTransform.getRotateInstance(Math.toRadians(SHAPED_AP_ANGLE.get())));
+                    }
+
+                    ap.setImage(imp);
+                    ocanvas.add(ap);
+                    shapedApertureRois.add(ap);
+
+                    var comp = !e.isControlDown() && ((!e.isShiftDown() && ngot > 0) || (e.isShiftDown() && ngot == 0));
+                    ap.setName((comp ? "C" : "T") + shapedApertureRois.size());
+                }
+
+                ngot = shapedApertureRois.size();
+
+                // Handle auto comp stars
+                var refCount = 0;
+                if (!autoMode && suggestCompStars && tempSuggestCompStars && ngot >= referenceStar
+                        && (refCount = shapedApertureRois.size()) < maxSuggestedStars
+                        && !(this instanceof Stack_Aligner)) {
+
+                    if (!automaticCompStarSelection(refCount)) {
+                        suggestionRunning = false;
+                    }
+                    suggestionRunning = false;
+                }
+
+                canvas.repaint();
+            } else if (apertureClicked && selectedAp instanceof ShapedApertureRoi shapedApertureRoi) {
+                if (!e.isShiftDown() && !e.isControlDown() && !e.isAltDown()) {
+                    ocanvas.removeRoi(shapedApertureRoi);
+                    shapedApertureRois.remove(shapedApertureRoi);
+
+                    for (int i = 1; i < shapedApertureRois.size(); i++) {
+                        var ap = shapedApertureRois.get(i-1);
+                        ap.setName((ap.isComparisonStar() ? "C" : "T") + i);
+                    }
+
+                    canvas.repaint();
+
+                    apertureClicked = false;
+                    return;
+                } else if (e.isShiftDown() && !e.isControlDown()) {
+                    shapedApertureRoi.setComparisonStar(!shapedApertureRoi.isComparisonStar());
+                    canvas.repaint();
+                } else if (e.isShiftDown() && e.isControlDown()) {
+                    renameApertureToT1(e.isAltDown());
+                    shapedApertureRois.remove(shapedApertureRoi);
+                    shapedApertureRois.add(0, shapedApertureRoi);
+                    for (int i = 1; i < shapedApertureRois.size(); i++) {
+                        var ap = shapedApertureRois.get(i-1);
+                        ap.setName((ap.isComparisonStar() ? "C" : "T") + i);
+                    }
+                    canvas.repaint();
+                } else if (e.isAltDown()) {
+                    shapedApertureRoi.setIsCentroid(!shapedApertureRoi.getIsCentroid());
+                    canvas.repaint();
+                }
+            }
+
+            apertureClicked = false;
+
+            //Right mouse click or <Enter> finalizes aperture selection
+            if (enterPressed) {
+                enterPressed = false;
+
+                for (ShapedApertureRoi roi : shapedApertureRois) {
+                    if (hasWCS) {
+                        var radec = wcs.pixels2wcs(new double[]{roi.getXpos(), roi.getYpos()});
+                        roi.setRadec(radec[0], radec[1]);
+                    } else {
+                        roi.setRadec(null);
+                    }
+                }
+
+                SHAPED_APS.set(shapedApertureRois);
+
+                noMoreInput();
+                nApertures = shapedApertureRois.size();
+                for (int ap = 0; ap < nApertures; ap++) {
+                    isRefStar[ap] = shapedApertureRois.get(ap).isComparisonStar();
+                    centroidStar[ap] = false;
+                    absMag[ap] = 99.999;
+                }
+                aperturesInitialized = true;
+                checkResultsTable();
+                if (stackSize > 1 && doStack) {
+                    IJ.showStatus("Processing stack...");
+                    processingStack = true;
+                    startProcessStack();
+                } else {
+                    IJ.showStatus("Processing image...");
+                    processImage();
+                }
+            }
+
+            return;
+        }
+
         //Right mouse click or <Enter> finalizes aperture selection
         if (enterPressed || (!(e == dummyClick) && (!mouseDrag && (modis & InputEvent.BUTTON3_MASK) != 0 && !e.isShiftDown() && !e.isControlDown() && !e.isAltDown()))) {
             enterPressed = false;
@@ -1867,6 +2126,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         var radius = switch (apertureShape.get()) {
             case FREEFORM -> freeformPixelApertureHandler.getAperture(referenceStar-1).getCentroidRadius();
             case CIRCULAR -> this.radius;
+            case ELLIPTICAL -> shapedApertureRois.get(referenceStar-1).getRadius();
         };
 
         final double t1Source = switch (apertureShape.get()) {
@@ -1883,6 +2143,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 measurePhotometry(FitsJ.getHeader(imp), freeformPixelApertureHandler.getAperture(referenceStar-1));
                 yield  photom.sourceBrightness();
             }
+            case ELLIPTICAL -> {
+                measurePhotometry(FitsJ.getHeader(imp), shapedApertureRois.get(referenceStar-1));
+                yield  photom.sourceBrightness();
+            }
         };
 
         final Pair.DoublePair t1coord = switch (apertureShape.get()) {
@@ -1891,6 +2155,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 yield new Pair.DoublePair(ap.getXpos(), ap.getYpos());
             }
             case CIRCULAR -> new Pair.DoublePair(xPos[referenceStar-1], yPos[referenceStar-1]);
+            case ELLIPTICAL -> {
+                var ap = shapedApertureRois.get(referenceStar-1);
+                yield new Pair.DoublePair(ap.getXpos(), ap.getYpos());
+            }
         };
 
         final var liveStats = asw.getLiveStatistics();
@@ -2038,6 +2306,33 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
                         freeformPixelApertureHandler.addAperture(ap);
                         ngot++;
+                    }
+                    case ELLIPTICAL -> {
+                        try {
+                            var t1 = shapedApertureRois.get(referenceStar-1);
+                            var ap = new ShapedApertureRoi();
+                            ap.setComparisonStar(true);
+
+                            ap.setApertureShape(t1.getShape());
+                            ap.setBackgroundShape(t1.getBackgroundShape(), t1.isCenterBackground());
+
+                            ap.setIsCentroid(t1.getIsCentroid());
+
+                            ap.moveTo(coordinateMaxima.cm.x(), coordinateMaxima.cm.y(), true);
+
+                            ap.setImage(imp);
+
+                            ap.automaticTransform(!SHAPED_AP_ECCENTRICITY_LOCKED.get(), !SHAPED_AP_ANGLE_LOCKED.get());
+
+                            ap.setName("C" + (ngot+1));
+
+                            ocanvas.add(ap);
+
+                            shapedApertureRois.add(ap);
+                            ngot++;
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
                     }
                 }
             }
@@ -2359,6 +2654,46 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 for (int i = 0; i < freeformPixelApertureHandler.apCount(); i++) {
                     var a = freeformPixelApertureHandler.getAperture(i);
                     if (squaredDistanceTo(a.getXpos(), a.getYpos(), ap.getXpos(), ap.getYpos()) <= (radius2)) yield null;
+                }
+
+                yield new StarFinder.CoordinateMaxima(photom.sourceBrightness(), ap.getXpos(), ap.getYpos());
+            }
+            case ELLIPTICAL -> {
+                var t1 = shapedApertureRois.get(referenceStar-1);
+                var ap = new ShapedApertureRoi();
+
+                ap.setApertureShape(t1.getShape());
+                ap.setBackgroundShape(t1.getBackgroundShape(), t1.isCenterBackground());
+
+                ap.setIsCentroid(t1.getIsCentroid());
+
+                ap.moveTo(m.x(), m.y(), true);
+
+                var c = new Centroid();
+
+                // Centroid T1 to get offset
+                var dx = 0d;
+                var dy = 0d;
+                if (c.measure(imp, t1, true, backIsPlane, removeBackStars)) {
+                    dx = t1.getXpos() - c.x();
+                    dy = t1.getYpos() - c.y();
+                }
+
+                if (Math.abs(dx) <= 0.5 && Math.abs(dy) <= 0.5) {
+                    dx = 0;
+                    dy = 0;
+                }
+
+                if (c.measure(imp, ap, true, backIsPlane, removeBackStars)) {
+                    ap.moveTo(c.x() + dx, c.y() + dy, true);
+                    ap.automaticTransform(c, true, false, !SHAPED_AP_ECCENTRICITY_LOCKED.get(), !SHAPED_AP_ANGLE_LOCKED.get());
+                }
+
+                var photom = measurePhotometry(imp, FitsJ.getHeader(imp), ap);
+
+                for (ShapedApertureRoi a : shapedApertureRois) {
+                    if (squaredDistanceTo(a.getXpos(), a.getYpos(), ap.getXpos(), ap.getYpos()) <= (radius2))
+                        yield null;
                 }
 
                 yield new StarFinder.CoordinateMaxima(photom.sourceBrightness(), ap.getXpos(), ap.getYpos());
@@ -3055,7 +3390,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         currentX = ac.offScreenXD(currentScreenX);
         currentY = ac.offScreenYD(currentScreenY);
 
-        if (apertureShape.get() == ApertureShape.FREEFORM &&
+        if ((apertureShape.get() == ApertureShape.FREEFORM || apertureShape.get() == ApertureShape.ELLIPTICAL) &&
                 Math.abs(currentScreenX - startDragScreenX) + Math.abs(currentScreenY - startDragScreenY) >= 2.0 &&
                 e.isShiftDown() && !aperturesInitialized) {
             ocanvas.removeRoi("selectionRoi");
@@ -3495,6 +3830,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 }
             };
             case FREEFORM -> "CA";
+            case ELLIPTICAL -> "EL";
         };
     }
 
@@ -3812,114 +4148,192 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         for (int ap = 0; ap < nApertures; ap++) {
             boolean holdReposition = Prefs.get("aperture.reposition", reposition);
 
-            if (apertureShape.get() == ApertureShape.FREEFORM) {
-                if (!isRefStar[ap]) {
-                    setApertureColor(Color.green);
-                    setApertureName("T" + (ap + 1));
-                    setAbsMag(targetAbsMag[ap]);
-                } else {
-                    setApertureColor(Color.red);
-                    setApertureName("C" + (ap + 1));
-                    setAbsMag(absMag[ap]);
-                }
+            switch (apertureShape.get()) {
+                case CIRCULAR -> {
+                    if (!isRefStar[ap]) {
+                        setApertureColor(Color.green);
+                        setApertureName("T" + (ap + 1));
+                        setAbsMag(targetAbsMag[ap]);
+                    } else {
+                        setApertureColor(Color.red);
+                        setApertureName("C" + (ap + 1));
+                        setAbsMag(absMag[ap]);
+                    }
 
-                if ((useMA || useAlign) && useWCS) {
-                    if (hasWCS && freeformPixelApertureHandler.getAperture(ap).hasRadec()) {
-                        var roi = freeformPixelApertureHandler.getAperture(ap);
-                        double[] xy = wcs.wcs2pixels(new double[]{roi.getRightAscension(), roi.getDeclination()});
-                        freeformPixelApertureHandler.getAperture(ap).moveTo(xy[0], xy[1]);
-                    } else if (freeformPixelApertureHandler.getAperture(ap).hasRadec()) {
-                        IJ.beep();
-                        IJ.showMessage("Error", "WCS mode requested but no valid WCS coordinates stored. ABORTING.");
-                        Prefs.set(MultiAperture_.PREFS_CANCELED, "true");
-                        cancelled = true;
-                        shutDown();
-                        if (table != null) table.setLock(false);
-                        return;
-                    } else if (haltOnError) {
-                        IJ.beep();
-                        IJ.showMessage("Error", "WCS mode requested but no valid WCS FITS Headers. ABORTING.");
-                        Prefs.set(MultiAperture_.PREFS_CANCELED, "true");
-                        cancelled = true;
-                        shutDown();
-                        if (table != null) table.setLock(false);
-                        return;
+                    xCenter = xPos[ap];
+                    yCenter = yPos[ap];
+
+                    Prefs.set("aperture.reposition", centroidStar[ap]);
+                    setShowAsCentered(centroidStar[ap]);
+
+                    if (!measureAperture(hdr)) {
+                        if (haltOnError || this instanceof Stack_Aligner) {
+                            Prefs.set("aperture.reposition", holdReposition);
+                            centerROI();
+                            setVariableAperture(false);
+                            IJ.beep();
+                            IJ.showMessage("No signal for centroid in aperture " + apertureName + " of image " +
+                                    IJU.getSliceFilename(imp, slice) +
+                                    ((this instanceof Stack_Aligner) ? ". Stack Aligner aborted." : ". Multi-Aperture aborted."));
+                            shutDown();
+                            if (table != null) table.setLock(false);
+                            return;
+                        } else {
+                            IJ.log("***ERROR: No signal for centroid in aperture " + apertureName + " of image " + IJU.getSliceFilename(imp, slice) + ".");
+                            IJ.log("********: Measurements are referenced to the non-centroided aperture location");
+                        }
                     }
                 }
-
-                // MEASURE NEW POSITION
-                Prefs.set("aperture.reposition", centroidStar[ap]);
-                centroidFailed = false;
-                if (!adjustAperture(false, freeformPixelApertureHandler.getAperture(ap))) {
-                    if (haltOnError || this instanceof Stack_Aligner) {
-                        Prefs.set("aperture.reposition", holdReposition);
-                        centerROI();
-                        setVariableAperture(false);
-                        IJ.beep();
-                        IJ.showMessage("No signal for centroid in aperture " + apertureName + " of image " +
-                                IJU.getSliceFilename(imp, slice) +
-                                ((this instanceof Stack_Aligner) ? ". Stack Aligner aborted." : ". Multi-Aperture aborted."));
-                        shutDown();
-                        if (table != null) table.setLock(false);
-                        return;
+                case ELLIPTICAL -> {
+                    if (!isRefStar[ap]) {
+                        setApertureColor(Color.green);
+                        setApertureName("T" + (ap + 1));
+                        setAbsMag(targetAbsMag[ap]);
                     } else {
-                        centroidFailed = true;
+                        setApertureColor(Color.red);
+                        setApertureName("C" + (ap + 1));
+                        setAbsMag(absMag[ap]);
+                    }
+
+                    if ((useMA || useAlign) && useWCS) {
+                        if (hasWCS && shapedApertureRois.get(ap).hasRadec()) {
+                            var roi = shapedApertureRois.get(ap);
+                            double[] xy = wcs.wcs2pixels(new double[]{roi.getRightAscension(), roi.getDeclination()});
+                            shapedApertureRois.get(ap).moveTo(xy[0], xy[1], true);
+                        } else if (shapedApertureRois.get(ap).hasRadec()) {
+                            IJ.beep();
+                            IJ.showMessage("Error", "WCS mode requested but no valid WCS coordinates stored. ABORTING.");
+                            Prefs.set(MultiAperture_.PREFS_CANCELED, "true");
+                            cancelled = true;
+                            shutDown();
+                            if (table != null) table.setLock(false);
+                            return;
+                        } else if (haltOnError) {
+                            IJ.beep();
+                            IJ.showMessage("Error", "WCS mode requested but no valid WCS FITS Headers. ABORTING.");
+                            Prefs.set(MultiAperture_.PREFS_CANCELED, "true");
+                            cancelled = true;
+                            shutDown();
+                            if (table != null) table.setLock(false);
+                            return;
+                        }
+                    }
+
+                    // MEASURE NEW POSITION
+                    Prefs.set("aperture.reposition", centroidStar[ap]);
+                    centroidFailed = false;
+                    if (!adjustAperture(false, shapedApertureRois.get(ap))) {
+                        if (haltOnError || this instanceof Stack_Aligner) {
+                            Prefs.set("aperture.reposition", holdReposition);
+                            centerROI();
+                            setVariableAperture(false);
+                            IJ.beep();
+                            IJ.showMessage("No signal for centroid in aperture " + apertureName + " of image " +
+                                    IJU.getSliceFilename(imp, slice) +
+                                    ((this instanceof Stack_Aligner) ? ". Stack Aligner aborted." : ". Multi-Aperture aborted."));
+                            shutDown();
+                            if (table != null) table.setLock(false);
+                            return;
+                        } else {
+                            centroidFailed = true;
+                        }
+                    }
+                    Prefs.set("aperture.reposition", holdReposition);
+
+                    if (!measureAperture(hdr, shapedApertureRois.get(ap))) {
+                        if (haltOnError || this instanceof Stack_Aligner) {
+                            Prefs.set("aperture.reposition", holdReposition);
+                            centerROI();
+                            setVariableAperture(false);
+                            IJ.beep();
+                            IJ.showMessage("No signal for centroid in aperture " + apertureName + " of image " +
+                                    IJU.getSliceFilename(imp, slice) +
+                                    ((this instanceof Stack_Aligner) ? ". Stack Aligner aborted." : ". Multi-Aperture aborted."));
+                            shutDown();
+                            if (table != null) table.setLock(false);
+                            return;
+                        } else {
+                            IJ.log("***ERROR: No signal for centroid in aperture " + apertureName + " of image " + IJU.getSliceFilename(imp, slice) + ".");
+                            IJ.log("********: Measurements are referenced to the non-centroided aperture location");
+                        }
                     }
                 }
-                Prefs.set("aperture.reposition", holdReposition);
-
-                if (!measureAperture(hdr, freeformPixelApertureHandler.getAperture(ap))) {
-                    if (haltOnError || this instanceof Stack_Aligner) {
-                        Prefs.set("aperture.reposition", holdReposition);
-                        centerROI();
-                        setVariableAperture(false);
-                        IJ.beep();
-                        IJ.showMessage("No signal for centroid in aperture " + apertureName + " of image " +
-                                IJU.getSliceFilename(imp, slice) +
-                                ((this instanceof Stack_Aligner) ? ". Stack Aligner aborted." : ". Multi-Aperture aborted."));
-                        shutDown();
-                        if (table != null) table.setLock(false);
-                        return;
+                case FREEFORM -> {
+                    if (!isRefStar[ap]) {
+                        setApertureColor(Color.green);
+                        setApertureName("T" + (ap + 1));
+                        setAbsMag(targetAbsMag[ap]);
                     } else {
-                        IJ.log("***ERROR: No signal for centroid in aperture " + apertureName + " of image " + IJU.getSliceFilename(imp, slice) + ".");
-                        IJ.log("********: Measurements are referenced to the non-centroided aperture location");
+                        setApertureColor(Color.red);
+                        setApertureName("C" + (ap + 1));
+                        setAbsMag(absMag[ap]);
                     }
-                }
-            } else {
-                if (!isRefStar[ap]) {
-                    setApertureColor(Color.green);
-                    setApertureName("T" + (ap + 1));
-                    setAbsMag(targetAbsMag[ap]);
-                } else {
-                    setApertureColor(Color.red);
-                    setApertureName("C" + (ap + 1));
-                    setAbsMag(absMag[ap]);
-                }
 
-                xCenter = xPos[ap];
-                yCenter = yPos[ap];
+                    if ((useMA || useAlign) && useWCS) {
+                        if (hasWCS && freeformPixelApertureHandler.getAperture(ap).hasRadec()) {
+                            var roi = freeformPixelApertureHandler.getAperture(ap);
+                            double[] xy = wcs.wcs2pixels(new double[]{roi.getRightAscension(), roi.getDeclination()});
+                            freeformPixelApertureHandler.getAperture(ap).moveTo(xy[0], xy[1]);
+                        } else if (freeformPixelApertureHandler.getAperture(ap).hasRadec()) {
+                            IJ.beep();
+                            IJ.showMessage("Error", "WCS mode requested but no valid WCS coordinates stored. ABORTING.");
+                            Prefs.set(MultiAperture_.PREFS_CANCELED, "true");
+                            cancelled = true;
+                            shutDown();
+                            if (table != null) table.setLock(false);
+                            return;
+                        } else if (haltOnError) {
+                            IJ.beep();
+                            IJ.showMessage("Error", "WCS mode requested but no valid WCS FITS Headers. ABORTING.");
+                            Prefs.set(MultiAperture_.PREFS_CANCELED, "true");
+                            cancelled = true;
+                            shutDown();
+                            if (table != null) table.setLock(false);
+                            return;
+                        }
+                    }
 
-                Prefs.set("aperture.reposition", centroidStar[ap]);
-                setShowAsCentered(centroidStar[ap]);
+                    // MEASURE NEW POSITION
+                    Prefs.set("aperture.reposition", centroidStar[ap]);
+                    centroidFailed = false;
+                    if (!adjustAperture(false, freeformPixelApertureHandler.getAperture(ap))) {
+                        if (haltOnError || this instanceof Stack_Aligner) {
+                            Prefs.set("aperture.reposition", holdReposition);
+                            centerROI();
+                            setVariableAperture(false);
+                            IJ.beep();
+                            IJ.showMessage("No signal for centroid in aperture " + apertureName + " of image " +
+                                    IJU.getSliceFilename(imp, slice) +
+                                    ((this instanceof Stack_Aligner) ? ". Stack Aligner aborted." : ". Multi-Aperture aborted."));
+                            shutDown();
+                            if (table != null) table.setLock(false);
+                            return;
+                        } else {
+                            centroidFailed = true;
+                        }
+                    }
+                    Prefs.set("aperture.reposition", holdReposition);
 
-                if (!measureAperture(hdr)) {
-                    if (haltOnError || this instanceof Stack_Aligner) {
-                        Prefs.set("aperture.reposition", holdReposition);
-                        centerROI();
-                        setVariableAperture(false);
-                        IJ.beep();
-                        IJ.showMessage("No signal for centroid in aperture " + apertureName + " of image " +
-                                IJU.getSliceFilename(imp, slice) +
-                                ((this instanceof Stack_Aligner) ? ". Stack Aligner aborted." : ". Multi-Aperture aborted."));
-                        shutDown();
-                        if (table != null) table.setLock(false);
-                        return;
-                    } else {
-                        IJ.log("***ERROR: No signal for centroid in aperture " + apertureName + " of image " + IJU.getSliceFilename(imp, slice) + ".");
-                        IJ.log("********: Measurements are referenced to the non-centroided aperture location");
+                    if (!measureAperture(hdr, freeformPixelApertureHandler.getAperture(ap))) {
+                        if (haltOnError || this instanceof Stack_Aligner) {
+                            Prefs.set("aperture.reposition", holdReposition);
+                            centerROI();
+                            setVariableAperture(false);
+                            IJ.beep();
+                            IJ.showMessage("No signal for centroid in aperture " + apertureName + " of image " +
+                                    IJU.getSliceFilename(imp, slice) +
+                                    ((this instanceof Stack_Aligner) ? ". Stack Aligner aborted." : ". Multi-Aperture aborted."));
+                            shutDown();
+                            if (table != null) table.setLock(false);
+                            return;
+                        } else {
+                            IJ.log("***ERROR: No signal for centroid in aperture " + apertureName + " of image " + IJU.getSliceFilename(imp, slice) + ".");
+                            IJ.log("********: Measurements are referenced to the non-centroided aperture location");
+                        }
                     }
                 }
             }
+
             Prefs.set("aperture.reposition", holdReposition);
 
             if (useVarSizeAp) {
@@ -4638,7 +5052,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         GenericSwingDialog gd = new GenericSwingDialog("Multi-Aperture Measurements", xLocation, yLocation);
         gd.setSaveAndUseStepSize(true);
 
-        var sliders = new JPanel[7];
+        var sliders = new JPanel[12];
         gd.addSwappableSection("Aperture Shape:", apertureShape, (g, shape) -> {
             switch (shape) {
                 case CIRCULAR -> {
@@ -4700,6 +5114,35 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                         sliders[6] = g.addSlider("Last slice", 1, stackSize, lastSlice, d -> lastSlice = d.intValue());
                     }
                 }
+                case ELLIPTICAL -> {
+                    if (stackSize > 1) {
+                        firstSlice = (firstSlice == stackSize || (alwaysstartatfirstSlice && !(this instanceof Stack_Aligner))) ? 1 : firstSlice;
+                        sliders[7] = g.addSlider("First slice", 1, stackSize, firstSlice, d -> firstSlice = d.intValue());
+                        sliders[8] = g.addSlider("Last slice", 1, stackSize, lastSlice, d -> lastSlice = d.intValue());
+                    }
+
+                    sliders[9] = g.addFloatSlider("Semi-major axis radius of photometric aperture", 0.01, radius > 100 ? radius : 100, false, radius, 3, 1.0, d -> radius = d);
+                    sliders[10] = g.addFloatSlider("Fixed radius of inner background annulus", 0.01, rBack1 > 100 ? rBack1 : 100, false, rBack1, 3, 1.0, d -> rBack1 = d);
+                    sliders[11] = g.addFloatSlider("Fixed radius of outer background annulus", 0.01, rBack2 > 100 ? rBack2 : 100, false, rBack2, 3, 1.0, d -> rBack2 = d);
+
+                    g.addLineSeparator();
+
+                    g.addCheckbox("Lock eccentricity", SHAPED_AP_ECCENTRICITY_LOCKED.get(), SHAPED_AP_ECCENTRICITY_LOCKED::set);
+                    g.addToSameRow();
+                    var ePanel = g.addFloatSlider("Eccentricity", 0, 1, SHAPED_AP_ECCENTRICITY.get(), 3, 0.01, SHAPED_AP_ECCENTRICITY::set);
+                    g.addCheckbox("Lock angle", SHAPED_AP_ANGLE_LOCKED.get(), SHAPED_AP_ANGLE_LOCKED::set);
+                    g.addToSameRow();
+                    var aPanel = g.addFloatSlider("Angle", 0, 360, SHAPED_AP_ANGLE.get(), 3, 1, SHAPED_AP_ANGLE::set);
+
+                    setEnabled(ePanel, SHAPED_AP_ECCENTRICITY_LOCKED.get());
+                    setEnabled(aPanel, SHAPED_AP_ANGLE_LOCKED.get());
+                    SHAPED_AP_ANGLE_LOCKED.addListener((k, b) -> {
+                        setEnabled(aPanel, b);
+                    });
+                    SHAPED_AP_ECCENTRICITY_LOCKED.addListener((k, b) -> {
+                        setEnabled(ePanel, b);
+                    });
+                }
             }
         });
 
@@ -4707,15 +5150,22 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             // Sync slice sliders
             var fs1 = GenericSwingDialog.getSpinnerFromSlider(sliders[0]).get();
             var fs2 = GenericSwingDialog.getSpinnerFromSlider(sliders[5]).get();
+            var fs3 = GenericSwingDialog.getSpinnerFromSlider(sliders[7]).get();
             var ls1 = GenericSwingDialog.getSpinnerFromSlider(sliders[1]).get();
             var ls2 = GenericSwingDialog.getSpinnerFromSlider(sliders[6]).get();
+            var ls3 = GenericSwingDialog.getSpinnerFromSlider(sliders[8]).get();
             ChangeListener fcl = e -> {
                 var source = (JSpinner) e.getSource();
                 var value = source.getValue();
                 if (source == fs1) {
                     fs2.setValue(value);
-                } else {
+                    fs3.setValue(value);
+                } else if (source == fs2){
                     fs1.setValue(value);
+                    fs3.setValue(value);
+                } else if (source == fs3){
+                    fs1.setValue(value);
+                    fs2.setValue(value);
                 }
             };
             ChangeListener lcl = e -> {
@@ -4723,14 +5173,21 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 var value = source.getValue();
                 if (source == ls1) {
                     ls2.setValue(value);
-                } else {
+                    ls3.setValue(value);
+                } else if (source == ls2){
                     ls1.setValue(value);
+                    ls3.setValue(value);
+                } else if (source == ls3){
+                    ls1.setValue(value);
+                    ls2.setValue(value);
                 }
             };
             fs1.addChangeListener(fcl);
             fs2.addChangeListener(fcl);
+            fs3.addChangeListener(fcl);
             ls1.addChangeListener(lcl);
             ls2.addChangeListener(lcl);
+            ls3.addChangeListener(lcl);
         }
 
         gd.addDoubleSpaceLineSeparator();
@@ -4801,7 +5258,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     c1.setEnabled(singleStep);
                     gd.addDoubleSpaceLineSeparator();
                 }
-                case FREEFORM -> {
+                case FREEFORM, ELLIPTICAL -> {
                     gd.addCheckbox("Use RA/Dec to locate aperture positions", useWCS, b -> useWCS = b)
                             .setToolTipText("<html>If enabled, apertures will first be placed according to their RA and DEC location.<br>"+
                                     "If centroid is also enabled for an aperture, the centroid operation will start from the RA and Dec position.<br>"+
@@ -4824,7 +5281,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
         gd.addNewSwappableSectionPanel(ApertureShape.class, (d, shape) -> {
             switch (shape) {
-                case CIRCULAR -> {
+                case CIRCULAR, ELLIPTICAL -> {
                     d.addMessage("CLICK 'PLACE APERTURES' AND SELECT APERTURE LOCATIONS WITH LEFT CLICKS.\nTHEN RIGHT CLICK or <ENTER> TO BEGIN PROCESSING.\n(to abort aperture selection or processing, press <ESC>)");
                 }
                 case FREEFORM -> {
@@ -5034,7 +5491,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         // GET NON-REQUIRED DIALOGUE FIELDS:
         gd.addNewSwappableSectionPanel(ApertureShape.class, (d, shape) -> {
             switch (shape) {
-                case CIRCULAR -> {
+                case CIRCULAR, ELLIPTICAL -> {
                     var penultimateBoxes = d.addCheckboxGroup(2, 2, new String[]{"Centroid apertures (initial setting)", "Halt processing on WCS or centroid error",
                                     "Remove stars from background", "Assume background is a plane"},
                             new boolean[]{reposition, haltOnError, removeBackStars, backIsPlane}, list1);
@@ -5079,7 +5536,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     singleStepListeners.add(bottomChecks.subComponents().get(2));
                     bottomChecks.subComponents().get(2).setEnabled(!singleStep);
                 }
-                case FREEFORM -> {
+                case FREEFORM, ELLIPTICAL -> {
                     final var list2 = new ArrayList<Consumer<Boolean>>();
                     list2.add(b -> updatePlot = b);
                     list2.add(updateImageDisplay::set);
@@ -5397,6 +5854,37 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
     }
 
+    private static List<ShapedApertureRoi> deserializeApertures(String setting) {
+        var decoder = Base64.getDecoder();
+        setting = new String(decoder.decode(setting));
+
+        var apertures = new ArrayList<ShapedApertureRoi>();
+        if (setting.startsWith("handlerApertures")) {
+            var s = AperturesFileCodec.readToSection(setting);
+            for (Section apSec : s.createMapView().get("ap")) {
+                var ap = Transformers.read(Aperture.class, apSec);
+                if (ap instanceof ShapedApertureRoi shapedApertureRoi) {
+                    apertures.add(shapedApertureRoi);
+                }
+            }
+        }
+
+        return apertures;
+    }
+
+    private static String serializeApertures(List<ShapedApertureRoi> apertures) {
+        var encoder = Base64.getEncoder();
+
+        var s = new Section("root", true);
+
+        s.addSubsection(new Section("handlerApertures"));
+        for (ShapedApertureRoi aperture : apertures) {
+            s.addSubsection(Transformers.write(Aperture.class, aperture));
+        }
+
+        return encoder.encodeToString(AperturesFileCodec.write(s).getBytes());
+    }
+
     public enum ApLoading implements RadioEnum {
         ALL_NEW(() -> "Place all new apertures", null, () -> true),
         FIRST_PREVIOUS(() -> "Place first previously used aperture", null, () -> storedCount() > 0),
@@ -5442,6 +5930,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             return switch (apertureShape.get()) {
                 case CIRCULAR -> nAperturesStored;
                 case FREEFORM -> FreeformPixelApertureHandler.savedApertureCount();
+                case ELLIPTICAL -> SHAPED_APS.get().size();
             };
         }
 
@@ -5449,6 +5938,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             return switch (apertureShape.get()) {
                 case CIRCULAR -> nImportedApStored;
                 case FREEFORM -> FreeformPixelApertureHandler.savedImportedApertureCount();
+                case ELLIPTICAL -> SHAPED_IMPORTED_APS.get().size();
             };
         }
     }
@@ -5459,6 +5949,11 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 Standard circular aperture with sky background annulus
                 </html>
                 """, "Circular"),
+        ELLIPTICAL("""
+                <html>
+                Elliptical apertures based on centroided results
+                </html>
+                """, "Elliptical"),
         FREEFORM("""
                 <html>
                 A single arbitrarily shaped aperture is supported for analysis of space-based data which have precise

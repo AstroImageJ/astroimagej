@@ -10,7 +10,6 @@ import ij.process.ImageProcessor;
 
 import java.awt.*;
 import java.awt.geom.Area;
-import java.awt.geom.Ellipse2D;
 import java.awt.geom.FlatteningPathIterator;
 import java.awt.geom.PathIterator;
 
@@ -231,7 +230,7 @@ public class Photometer {
                             // Move overlapped shape to have corner on origin
                             //pixel.transform(AffineTransform.getTranslateInstance(-i, -j));
 
-                            fraction = integrateArea(pixel, false);//todo this is wrong in some cases
+                            fraction = integrateArea(pixel, false);
                         }
 
                         source += fraction * d;

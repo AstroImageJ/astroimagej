@@ -245,6 +245,7 @@ public class Photometer {
             }
 
             if (hasBack) {
+                assert backgroundArea != null;
                 bounds = clampBounds(imp, backgroundArea.getBounds()); // Integer bounds to ensure we get all pixels
 
                 for (int i = bounds.x; i < bounds.x + bounds.width; i++) {
@@ -303,6 +304,7 @@ public class Photometer {
             }
 
             if (hasBack) {
+                assert backgroundArea != null;
                 bounds = clampBounds(imp, backgroundArea.getBounds()); // Integer bounds to ensure we get all pixels
 
                 for (int i = bounds.x; i < bounds.x + bounds.width; i++) {

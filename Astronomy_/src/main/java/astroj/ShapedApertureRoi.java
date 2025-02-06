@@ -99,7 +99,9 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
             // Draw aperture
             drawShape(g2, apertureShape, toScreenSpaceTransformed);
             g2.setColor(BACKGROUND_COLOR);
-            drawShape(g2, backgroundShape, toScreenSpaceTransformed);
+            if (showSky) {
+                drawShape(g2, backgroundShape, toScreenSpaceTransformed);
+            }
 
             // Draw Geometric Centroid
             if (isCentroid) {
@@ -122,7 +124,7 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
                     g2.draw(toScreenSpace.createTransformedShape(apertureBound));
                 }
 
-                if (getBackgroundArea() != null) {
+                if (showSky && getBackgroundArea() != null) {
                     var backgroundBound = getBackgroundArea().getBounds().intersection(new Rectangle(0, 0, imp.getWidth(), imp.getHeight()));
                     g2.draw(toScreenSpace.createTransformedShape(backgroundBound));
                 }
@@ -136,12 +138,12 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
                     g2.draw(toScreenSpace.createTransformedShape(new Ellipse2D.Double(xPos - r, yPos - r, 2*r, 2*r)));
                 }
 
-                if (Double.isFinite(getBack1())) {
+                if (showSky && Double.isFinite(getBack1())) {
                     var r = getBack1();
                     g2.draw(toScreenSpace.createTransformedShape(new Ellipse2D.Double(xPos - r, yPos - r, 2*r, 2*r)));
                 }
 
-                if (Double.isFinite(getBack2())) {
+                if (showSky && Double.isFinite(getBack2())) {
                     var r = getBack2();
                     g2.draw(toScreenSpace.createTransformedShape(new Ellipse2D.Double(xPos - r, yPos - r, 2*r, 2*r)));
                 }

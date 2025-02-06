@@ -4,6 +4,7 @@ import ij.Prefs;
 import ij.gui.GenericDialog;
 import ij.plugin.FolderOpener;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.zip.ZipEntry;
@@ -32,22 +33,61 @@ public class ZipOpenerUtil {
     }
 
     public static InternalZipFile[] getFilesInZip(String path) {
-        InternalZipFile[] x = null;
         try {
-            x = getFilesInZipImpl(path);
-        } catch (IOException ignored) {}
-        if (x == null) return new InternalZipFile[0];
-        return x;
+            InternalZipFile[] files = getFilesInZipImpl(path);
+            return files != null ? files : new InternalZipFile[0];
+        } catch (IOException e) {
+            e.printStackTrace();
+            return new InternalZipFile[0];
+        }
     }
 
+    /**
+     * Opens a zip file and returns a list of its entries.
+     * <p>
+     * If the provided path represents a ZIP entry (e.g. "archive.zip/entry/folder"),
+     * then only entries whose names start with the internal path are returned.
+     * </p>
+     *
+     * @param path full path to a zip file or to an entry within a zip file
+     * @return an array of InternalZipFile entries, or null if the path does not
+     *         contain ".zip"
+     */
+    // The subfolder limitation is important for when we scan the zip a second time in #getFilePathsInZip
     private static InternalZipFile[] getFilesInZipImpl(String path) throws IOException {
-        if (!path.contains(".zip")) return null;
-        var s = path.split("\\.zip");
-        var zip = new ZipFile(s[0] + ".zip");
-        var entryPathStream = zip.stream().map(InternalZipFile::buildFromEntry).filter(s1 -> !s1.path.contains("__MACOSX"));
-        var out = entryPathStream.toArray(InternalZipFile[]::new);
-        zip.close();
-        return out;
+        String lowerCasePath = path.toLowerCase();
+        int zipIndex = lowerCasePath.indexOf(".zip");
+        if (zipIndex < 0) return null;
+
+        String zipFilePath = path.substring(0, zipIndex + 4);
+
+        // Verify that the zip file exists
+        File zipFileOnDisk = new File(zipFilePath);
+        if (!zipFileOnDisk.exists() || !zipFileOnDisk.isFile()) {
+            return null;
+        }
+
+        // Check if there is an internal path (i.e. a slash immediately after ".zip")
+        String internalPath;
+        if (path.length() > zipIndex + 4) {
+            char nextChar = path.charAt(zipIndex + 4);
+            if (nextChar == '/' || nextChar == '\\') {
+                internalPath = path.substring(zipIndex + 5);
+            } else {
+                internalPath = "";
+            }
+        } else {
+            internalPath = "";
+        }
+
+        try (ZipFile zip = new ZipFile(zipFilePath)) {
+            return zip.stream()
+                    .map(InternalZipFile::buildFromEntry)
+                    .filter(entry -> !entry.path.contains("__MACOSX"))
+                    // If an internal path was specified, only include entries that start with it.
+                    .filter(entry -> internalPath.isEmpty() || entry.path.startsWith(internalPath))
+                    .toArray(InternalZipFile[]::new);
+        }
     }
 
     public record InternalZipFile(String path, long uncompressedSizeInBytes) {

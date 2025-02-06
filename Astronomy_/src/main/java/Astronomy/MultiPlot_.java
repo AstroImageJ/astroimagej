@@ -15635,6 +15635,12 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     aRoi.setApColor(Color.RED);
                     aRoi.setAMag(absMag[r]);
                 }
+                if (aRoi instanceof ShapedApertureRoi shapedApertureRoi) {
+                    shapedApertureRoi.setComparisonStar(selected);
+                }
+                if (aRoi instanceof FreeformPixelApertureRoi freeformPixelApertureRoi) {
+                    freeformPixelApertureRoi.setComparisonStar(selected);
+                }
                 if (repaint) ocanvas.repaint();
                 return true;
             }

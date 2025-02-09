@@ -121,7 +121,7 @@ public class Photometer {
     Calibration calib;
     private static final ForkJoinPool POOL =
             new ForkJoinPool(Runtime.getRuntime().availableProcessors(),
-                    new PhotometerWorkerThreadFactory(), null, false);
+                    new PhotometerWorkerThreadFactory(), null, true);
 
     /**
      * Initializes Photometer without the client's Calibration.

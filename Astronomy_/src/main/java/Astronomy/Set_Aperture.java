@@ -1,5 +1,6 @@
 package Astronomy;// Set_Aperture.java
 
+import astroj.Photometer;
 import ij.IJ;
 import ij.Prefs;
 import ij.gui.GenericDialog;
@@ -216,6 +217,7 @@ public class Set_Aperture implements PlugIn
         gd.addCheckboxGroup(1, 5, new String[]{"Centroid apertures","Use Howell centroid method","Fit background to plane","Remove stars from backgnd","Mark removed pixels"},
                                   new boolean[]{reposition,useHowellCentroidMethod,backPlane,removeBackStars,showRemovedPixels});
         gd.addCheckbox ("Use exact partial pixel accounting in source apertures (if deselected, only pixels having centers inside the aperture radius are counted)", exact);
+        gd.addCheckbox("Use multiple threads for photometry", Photometer.USE_PARALLEL_PIXEL_PROCESS.get());
         gd.addCheckbox ("Prompt to enter ref star absolute mag (required if target star absolute mag is desired)", getMags);
         gd.addCheckbox ("List the following FITS keyword decimal values in measurements table:", showFits);
 		gd.addStringField ("Keywords (comma separated):",fitsKeywords,80);
@@ -272,6 +274,7 @@ public class Set_Aperture implements PlugIn
         removeBackStars = gd.getNextBoolean();
         showRemovedPixels = gd.getNextBoolean();
         exact = gd.getNextBoolean();
+        Photometer.USE_PARALLEL_PIXEL_PROCESS.set(gd.getNextBoolean());
         getMags = gd.getNextBoolean();
         if (oldGetMags != getMags)
             apertureChanged = true;        

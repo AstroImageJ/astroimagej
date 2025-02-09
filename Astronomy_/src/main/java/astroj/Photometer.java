@@ -8,6 +8,7 @@ import ij.Prefs;
 import ij.measure.Calibration;
 import ij.process.ColorProcessor;
 import ij.process.ImageProcessor;
+import util.AdaptiveSimpson;
 
 import java.awt.*;
 import java.awt.geom.*;
@@ -1550,6 +1551,8 @@ public class Photometer {
 
         double totalArea = 0.0;
 
+        var tol = 1e-6;
+
         var linSeg = 0;
         while (!pathIterator.isDone()) {
             int segmentType = pathIterator.currentSegment(coords);
@@ -1575,7 +1578,7 @@ public class Photometer {
                     // Quadratic Bézier curve
                     double ctrlX = coords[0], ctrlY = coords[1];
                     double x = coords[2], y = coords[3];
-                    totalArea += integrateQuadraticBezier(lastX, lastY, ctrlX, ctrlY, x, y);
+                    totalArea += AdaptiveSimpson.integrateQuadraticBezierAdaptive(lastX, lastY, ctrlX, ctrlY, x, y, tol);
                     lastX = x;
                     lastY = y;
                 }
@@ -1584,7 +1587,7 @@ public class Photometer {
                     double ctrl1X = coords[0], ctrl1Y = coords[1];
                     double ctrl2X = coords[2], ctrl2Y = coords[3];
                     double x = coords[4], y = coords[5];
-                    totalArea += integrateCubicBezier(lastX, lastY, ctrl1X, ctrl1Y, ctrl2X, ctrl2Y, x, y);
+                    totalArea += AdaptiveSimpson.integrateCubicBezierAdaptive(lastX, lastY, ctrl1X, ctrl1Y, ctrl2X, ctrl2Y, x, y, tol);
                     lastX = x;
                     lastY = y;
                 }
@@ -1608,70 +1611,6 @@ public class Photometer {
      */
     private static double triangleArea(double x1, double y1, double x2, double y2) {
         return 0.5 * (x1 * y2 - y1 * x2);
-    }
-
-    /**
-     * Numerically integrates the area under a quadratic Bézier curve.
-     */
-    private static double integrateQuadraticBezier(double x0, double y0, double ctrlX, double ctrlY, double x1, double y1) {
-        int steps = 100;
-        double area = 0.0;
-        for (int i = 0; i < steps; i++) {
-            var t1 = (double) i / steps;
-            var t2 = (double) (i + 1) / steps;
-
-            var p1 = quadraticBezier(x0, y0, ctrlX, ctrlY, x1, y1, t1);
-            var p2 = quadraticBezier(x0, y0, ctrlX, ctrlY, x1, y1, t2);
-
-            area += (p1[0] * p2[1] - p1[1] * p2[0]) * 0.5;
-        }
-        return area;
-    }
-
-    /**
-     * Computes a point on a quadratic Bézier curve at parameter t.
-     */
-    private static double[] quadraticBezier(double x0, double y0, double ctrlX, double ctrlY, double x1, double y1, double t) {
-        var u = 1 - t;
-        var x = u * u * x0 + 2 * u * t * ctrlX + t * t * x1;
-        var y = u * u * y0 + 2 * u * t * ctrlY + t * t * y1;
-        return new double[]{x, y};
-    }
-
-    /**
-     * Numerically integrates the area under a cubic Bézier curve.
-     */
-    private static double integrateCubicBezier(double x0, double y0, double ctrl1X, double ctrl1Y,
-                                               double ctrl2X, double ctrl2Y, double x1, double y1) {
-        int steps = 100;
-        double area = 0.0;
-        for (int i = 0; i < steps; i++) {
-            var t1 = (double) i / steps;
-            var t2 = (double) (i + 1) / steps;
-
-            var p1 = cubicBezier(x0, y0, ctrl1X, ctrl1Y, ctrl2X, ctrl2Y, x1, y1, t1);
-            var p2 = cubicBezier(x0, y0, ctrl1X, ctrl1Y, ctrl2X, ctrl2Y, x1, y1, t2);
-
-            area += (p1[0] * p2[1] - p1[1] * p2[0]) * 0.5;
-        }
-        return area;
-    }
-
-    /**
-     * Computes a point on a cubic Bézier curve at parameter t.
-     */
-    private static double[] cubicBezier(double x0, double y0, double ctrl1X, double ctrl1Y,
-                                        double ctrl2X, double ctrl2Y, double x1, double y1, double t) {
-        var u = 1 - t;
-        var x = u * u * u * x0
-                + 3 * u * u * t * ctrl1X
-                + 3 * u * t * t * ctrl2X
-                + t * t * t * x1;
-        var y = u * u * u * y0
-                + 3 * u * u * t * ctrl1Y
-                + 3 * u * t * t * ctrl2Y
-                + t * t * t * y1;
-        return new double[]{x, y};
     }
 
 

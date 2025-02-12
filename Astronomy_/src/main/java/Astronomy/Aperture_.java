@@ -679,8 +679,8 @@ public class Aperture_ implements PlugInFilter {
         center = x.center;
         if (roi.getIsCentroid()) {
             roi.moveTo(center.x(), center.y(), true);
-        }
-        roi.automaticTransform(center, x.centroidFound, false/*already moved*/, !SHAPED_AP_ECCENTRICITY_LOCKED.get(), !SHAPED_AP_ANGLE_LOCKED.get());
+        }//todo if both locked, don't run
+        roi.automaticTransform(center, x.centroidFound, !SHAPED_AP_ECCENTRICITY_LOCKED.get(), !SHAPED_AP_ANGLE_LOCKED.get());
         xWidth = center.width();
         yWidth = center.height();
         width = 0.5 * (xWidth + yWidth);

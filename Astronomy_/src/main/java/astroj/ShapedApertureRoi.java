@@ -323,29 +323,36 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
     }
 
     public void automaticTransform(boolean adjustShape, boolean adjustRotation) {
-        automaticTransform(new Centroid(), false, isCentroid, adjustShape, adjustRotation);
+        automaticTransform(new Centroid(), false, adjustShape, adjustRotation);
     }
 
-    public void automaticTransform(Centroid c, boolean cenroidFound, boolean reposition, boolean adjustShape, boolean adjustRotation) {
-        if (!cenroidFound && imp != null) {
-            cenroidFound = c.measure(imp, xPos, yPos, getRadius(), getBack1(), getBack2(), true, usePlane, removeStars);
+    public void automaticTransform(Centroid c, boolean centroidFound, boolean adjustShape, boolean adjustRotation) {
+        if (!centroidFound && imp != null) {
+            centroidFound = c.measure(imp, xPos, yPos, getRadius(), getBack1(), getBack2(), true, usePlane, removeStars);
         }
 
-        if (cenroidFound) {
-            if (adjustShape && apertureShape instanceof Ellipse2D ellipse2D) {
-                var r = Math.max(ellipse2D.getWidth(), ellipse2D.getHeight())/2D;
-                var b = c.roundness()*r;
-                b = Math.abs(b);
+        if (centroidFound) {
+            transform(adjustShape, c.roundness(), adjustRotation, c.orientation());
+        }
+    }
 
-                var x = reposition ? c.x() : xPos;
-                var y = reposition ? c.y() : yPos;
-                setApertureShape(new Ellipse2D.Double(x - r, y - b, 2 * r, 2 * b));
-                setBackgroundShape(backgroundShape, centerBackground);
-            }
+    /**
+     * Transformation for elliptical-based apertures
+     */
+    public void transform(boolean adjustShape, double roundness, boolean adjustRotation, double angle) {
+        if (adjustShape && apertureShape instanceof Ellipse2D ellipse2D) {
+            var r = Math.max(ellipse2D.getWidth(), ellipse2D.getHeight())/2D;
+            var b = roundness*r;
+            b = Math.abs(b);
 
-            if (adjustRotation) {
-                setTransform(AffineTransform.getRotateInstance(Math.toRadians(c.orientation())));
-            }
+            var x = xPos;
+            var y = yPos;
+            setApertureShape(new Ellipse2D.Double(x - r, y - b, 2 * r, 2 * b));
+            setBackgroundShape(backgroundShape, centerBackground);
+        }
+
+        if (adjustRotation) {
+            setTransform(AffineTransform.getRotateInstance(Math.toRadians(angle)));
         }
     }
 
@@ -488,6 +495,11 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
 
     public boolean hasBackground() {
         return backgroundShape != null && !getBackgroundArea().isEmpty();
+    }
+
+    @Override
+    public boolean getIsRefStar() {
+        return isComparisonStar();
     }
 
     public boolean isComparisonStar() {

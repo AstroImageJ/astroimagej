@@ -48,6 +48,7 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
         this.apertureShape = apertureShape;
         transform.bind(apertureShape);
         calculateCenter();
+        showSky = Prefs.get("aperture.skyoverlay", showSky);
     }
 
     private ShapedApertureRoi(double x, double y, double rad1, double rad2, double rad3, double integratedCnts, boolean isCentered) {

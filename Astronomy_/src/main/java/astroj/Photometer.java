@@ -315,7 +315,7 @@ public class Photometer {
                         if (!Float.isNaN(d)) {
                             if (apertureArea.contains(i, j, 1, 1)) {
                                 fraction = 1;
-                            } else if (apertureArea.intersects(i, j, 1, 1)) {
+                            } else {
                                 var pixel = new Area(new Rectangle(i, j, 1, 1));
                                 pixel.intersect(apertureArea);
 
@@ -345,7 +345,7 @@ public class Photometer {
                             if (!Float.isNaN(d)) {
                                 if (backgroundArea.contains(i, j, 1, 1)) {
                                     fraction = 1;
-                                } else if (backgroundArea.intersects(i, j, 1, 1)) {
+                                } else {
                                     var pixel = new Area(new Rectangle(i, j, 1, 1));
                                     pixel.intersect(backgroundArea);
 
@@ -602,7 +602,7 @@ public class Photometer {
                             if (!Float.isNaN(d)) {
                                 if (apertureArea.contains(i, j, 1, 1)) {
                                     fraction = 1;
-                                } else if (apertureArea.intersects(i, j, 1, 1)) {
+                                } else {
                                     var pixel = new Area(new Rectangle(i, j, 1, 1));
                                     pixel.intersect(apertureArea);
 

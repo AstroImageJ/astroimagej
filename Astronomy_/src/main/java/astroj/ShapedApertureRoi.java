@@ -24,6 +24,7 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
     private CenterReferencingTransform transform = new CenterReferencingTransform();
     private boolean isCompStar;
     private boolean centerBackground;
+    private double ellipticalBaseRadius = Double.NaN;
     private static final Stroke STROKE = new BasicStroke(3);
     private static final Color BACKGROUND_COLOR = new Color(0, 114, 234);
     private static final Color CENTROID_COLOR = new Color(25, 205, 180);
@@ -340,14 +341,15 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
      * Transformation for elliptical-based apertures
      */
     public void transform(boolean adjustShape, double roundness, boolean adjustRotation, double angle) {
-        if (adjustShape && apertureShape instanceof Ellipse2D ellipse2D) {
-            var r = Math.max(ellipse2D.getWidth(), ellipse2D.getHeight())/2D;
-            var b = roundness*r;
-            b = Math.abs(b);
+        if (adjustShape && Double.isFinite(ellipticalBaseRadius) && apertureShape instanceof Ellipse2D ellipse2D) {
+            var r = ellipticalBaseRadius;
+            var sqRoundness = Math.sqrt(roundness);
+            var a = Math.abs(r / sqRoundness);
+            var b = Math.abs(r * sqRoundness);
 
             var x = xPos;
             var y = yPos;
-            setApertureShape(new Ellipse2D.Double(x - r, y - b, 2 * r, 2 * b));
+            setApertureShape(new Ellipse2D.Double(x - a, y - b, 2 * a, 2 * b));
             setBackgroundShape(backgroundShape, centerBackground);
         }
 
@@ -623,5 +625,13 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
         } else { // Already lost type information, so we can proceed with just a transform
             return transform.createTransformedShape(shape);
         }
+    }
+
+    public double getEllipticalBaseRadius() {
+        return ellipticalBaseRadius;
+    }
+
+    public void setEllipticalBaseRadius(double ellipticalBaseRadius) {
+        this.ellipticalBaseRadius = ellipticalBaseRadius;
     }
 }

@@ -58,6 +58,11 @@ public class ApertureTransformer implements Transformer<Aperture, Void> {
                     ap.setRadec(radecSec.getParameter(RA_PARAMETER), radecSec.getParameter(DEC_PARAMETER));
                 }
 
+                var baseRadius = getUniqueSection(view, "baseRadius", false);
+                if (baseRadius != null) {
+                    ap.setEllipticalBaseRadius(baseRadius.getParameter(RADIUS_PARAMETER));
+                }
+
                 var transforms = view.get("transform");
                 if (!transforms.isEmpty()) {
                     var t = Transformers.read(AffineTransform.class, transforms.get(0));
@@ -150,6 +155,10 @@ public class ApertureTransformer implements Transformer<Aperture, Void> {
                 if (ap.hasRadec()) {
                     s.addSubsection(Section.createSection("radec",
                             RA_PARAMETER, ap.getRightAscension(), DEC_PARAMETER, ap.getDeclination()));
+                }
+
+                if (Double.isFinite(ap.getEllipticalBaseRadius())) {
+                    s.addSubsection(Section.createSection("baseRadius", RADIUS_PARAMETER, ap.getEllipticalBaseRadius()));
                 }
 
                 if (!ap.getTransform().isIdentity()) {

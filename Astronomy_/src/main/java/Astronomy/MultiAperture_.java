@@ -1647,6 +1647,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     if (SwingUtilities.isLeftMouseButton(e)) {
                         ap = new ShapedApertureRoi(new Ellipse2D.Double(x0, y0, x1-x0, y1-y0));
 
+                        // harmonic mean
+                        ap.setEllipticalBaseRadius(((x1-x0)*(y1-y0))/(2*(x1-x0)*(y1-y0)));
+
                         ap.setIsCentroid(e.isAltDown() != Prefs.get("aperture.reposition", reposition));
                     }
 
@@ -1664,12 +1667,15 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                                 roundness = Math.sqrt(1 - SHAPED_AP_ECCENTRICITY.get());
                             }
 
-                            var b = roundness*radius;
-                            b = Math.abs(b);
+                            var r = radius;
+                            var sqRoundness = Math.sqrt(roundness);
+                            var a = Math.abs(r / sqRoundness);
+                            var b = Math.abs(r * sqRoundness);
 
-                            ap = new ShapedApertureRoi(new Ellipse2D.Double(c.x() - radius, c.y() - b, 2 * radius, 2 * b));
+                            ap = new ShapedApertureRoi(new Ellipse2D.Double(c.x() - a, c.y() - b, 2 * a, 2 * b));
 
                             ap.setTransform(AffineTransform.getRotateInstance(Math.toRadians(c.orientation())));
+                            ap.setEllipticalBaseRadius(radius);
                         } else if (centroid) {
                             IJ.error("Failed to find centroid");
                             return;
@@ -1680,10 +1686,13 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                                 roundness = Math.sqrt(1 - SHAPED_AP_ECCENTRICITY.get());
                             }
 
-                            var b = roundness*radius;
-                            b = Math.abs(b);
+                            var r = radius;
+                            var sqRoundness = Math.sqrt(roundness);
+                            var a = Math.abs(r / sqRoundness);
+                            var b = Math.abs(r * sqRoundness);
 
-                            ap = new ShapedApertureRoi(new Ellipse2D.Double(c.x() - radius, c.y() - b, 2 * radius, 2 * b));
+                            ap = new ShapedApertureRoi(new Ellipse2D.Double(c.x() - a, c.y() - b, 2 * a, 2 * b));
+                            ap.setEllipticalBaseRadius(radius);
                         }
 
                         ap.setBackgroundAnnulus(rBack1, rBack1, rBack2, rBack2);
@@ -2322,6 +2331,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
                             ap.setApertureShape(t1.getShape());
                             ap.setBackgroundShape(t1.getBackgroundShape(), t1.isCenterBackground());
+
+                            ap.setEllipticalBaseRadius(t1.getEllipticalBaseRadius());
 
                             ap.setIsCentroid(t1.getIsCentroid());
 

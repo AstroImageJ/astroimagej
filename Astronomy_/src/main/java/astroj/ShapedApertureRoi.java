@@ -10,8 +10,7 @@ import java.awt.*;
 import java.awt.geom.*;
 import java.util.Objects;
 
-import static Astronomy.Aperture_.AP_PREFS_BACKPLANE;
-import static Astronomy.Aperture_.AP_PREFS_REMOVEBACKSTARS;
+import static Astronomy.Aperture_.*;
 import static Astronomy.multiaperture.CompositeShape.ShapeCombination;
 
 public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
@@ -182,7 +181,7 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
         if (FILL_SHAPE) {
             // Draw fill
             var comp = g2.getComposite();
-            g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
+            g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.25f));
             g2.fill(transform.createTransformedShape(shape));
             g2.setComposite(comp);
 

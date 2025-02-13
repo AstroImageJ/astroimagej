@@ -333,6 +333,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     public static final Property<Boolean> SHAPED_AP_ECCENTRICITY_LOCKED = new Property<>(false, MultiAperture_.class);
     public static final Property<Double> SHAPED_AP_ECCENTRICITY = new Property<>(0D, MultiAperture_.class);
     public static final Property<Boolean> SHAPED_AP_ANGLE_LOCKED = new Property<>(false, MultiAperture_.class);
+    public static final Property<Boolean> SHAPED_INDEPDENT_VARIATION = new Property<>(false, MultiAperture_.class);
     public static final Property<Double> SHAPED_AP_ANGLE= new Property<>(0D, MultiAperture_.class);
 
     public MultiAperture_() {
@@ -2340,7 +2341,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
                             ap.setImage(imp);
 
-                            ap.automaticTransform(!SHAPED_AP_ECCENTRICITY_LOCKED.get(), !SHAPED_AP_ANGLE_LOCKED.get());
+                            if (SHAPED_INDEPDENT_VARIATION.get()) {
+                                ap.automaticTransform(!SHAPED_AP_ECCENTRICITY_LOCKED.get(), !SHAPED_AP_ANGLE_LOCKED.get());
+                            }
 
                             ap.setName("C" + (ngot+1));
 
@@ -4160,6 +4163,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             }
         }
 
+        Centroid t1Centroid = null;
+
         // Photometry
         valueOverlay = Prefs.get(AP_PREFS_VALUEOVERLAY, valueOverlay);
         var hdr = FitsJ.getHeader(imp);
@@ -4240,7 +4245,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     // MEASURE NEW POSITION
                     Prefs.set("aperture.reposition", centroidStar[ap]);
                     centroidFailed = false;
-                    if (!adjustAperture(false, shapedApertureRois.get(ap))) {
+                    if (!adjustAperture(false, shapedApertureRois.get(ap), t1Centroid, ap == 0)) {
                         if (haltOnError || this instanceof Stack_Aligner) {
                             Prefs.set("aperture.reposition", holdReposition);
                             centerROI();
@@ -4255,6 +4260,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                         } else {
                             centroidFailed = true;
                         }
+                    } else if (ap == 0) {
+                        t1Centroid = center;
                     }
                     Prefs.set("aperture.reposition", holdReposition);
 
@@ -5158,6 +5165,12 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     g.addCheckbox("Lock angle", SHAPED_AP_ANGLE_LOCKED.get(), SHAPED_AP_ANGLE_LOCKED::set);
                     g.addToSameRow();
                     var aPanel = g.addFloatSlider("Angle", 0, 360, SHAPED_AP_ANGLE.get(), 3, 1, SHAPED_AP_ANGLE::set);
+                    var indep = g.addCheckbox("Apertures can independently vary in eccentricity and angle", SHAPED_INDEPDENT_VARIATION.get(), SHAPED_INDEPDENT_VARIATION::set);
+                    indep.setToolTipText("""
+                            When enabled, each aperture in the image may vary it's angle and eccentricity based on the \
+                            centroiding result at each aperture location.
+                            If disabled, all apertures will use the angle and eccentricity measured for T1.
+                            """);
 
                     setEnabled(ePanel, SHAPED_AP_ECCENTRICITY_LOCKED.get());
                     setEnabled(aPanel, SHAPED_AP_ANGLE_LOCKED.get());

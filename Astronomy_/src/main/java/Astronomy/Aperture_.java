@@ -16,8 +16,7 @@ import ij.process.ImageProcessor;
 import java.awt.*;
 import java.util.Locale;
 
-import static Astronomy.MultiAperture_.SHAPED_AP_ANGLE_LOCKED;
-import static Astronomy.MultiAperture_.SHAPED_AP_ECCENTRICITY_LOCKED;
+import static Astronomy.MultiAperture_.*;
 
 /**
  * Simple circular aperture tool using a circular background annulus.
@@ -425,7 +424,7 @@ public class Aperture_ implements PlugInFilter {
     protected boolean measureAperture(FitsJ.Header hdr, ApertureRoi apertureRoi) {
         boolean returnVal = true;
         if (apertureRoi == null && !adjustAperture(false)) {
-            if (this instanceof MultiAperture_ && !(this instanceof Stack_Aligner) && !(Prefs.get(MultiAperture_.PREFS_HALTONERROR, true))) {
+            if (this instanceof MultiAperture_ && !(this instanceof Stack_Aligner) && !(Prefs.get(PREFS_HALTONERROR, true))) {
                 returnVal = false;
             } else {
                 return false;
@@ -660,6 +659,14 @@ public class Aperture_ implements PlugInFilter {
     }
 
     protected boolean adjustAperture(boolean updatePhotometry, ShapedApertureRoi roi) {
+        return adjustAperture(updatePhotometry, roi, null);
+    }
+
+    protected boolean adjustAperture(boolean updatePhotometry, ShapedApertureRoi roi, Centroid ref) {
+        return adjustAperture(updatePhotometry, roi, ref, false);
+    }
+
+    protected boolean adjustAperture(boolean updatePhotometry, ShapedApertureRoi roi, Centroid ref, boolean forceTransform) {
         ip = imp.getProcessor();
         if (stackSize > 1) {
             ImageStack stack = imp.getImageStack();
@@ -679,8 +686,14 @@ public class Aperture_ implements PlugInFilter {
         center = x.center;
         if (roi.getIsCentroid()) {
             roi.moveTo(center.x(), center.y(), true);
-        }//todo if both locked, don't run
-        roi.automaticTransform(center, x.centroidFound, !SHAPED_AP_ECCENTRICITY_LOCKED.get(), !SHAPED_AP_ANGLE_LOCKED.get());
+        }
+
+        if (ref != null && !SHAPED_INDEPDENT_VARIATION.get()) {
+            roi.automaticTransform(ref, true, !SHAPED_AP_ECCENTRICITY_LOCKED.get(), !SHAPED_AP_ANGLE_LOCKED.get());
+        } else if (SHAPED_INDEPDENT_VARIATION.get() || forceTransform) {
+            roi.automaticTransform(center, x.centroidFound, !SHAPED_AP_ECCENTRICITY_LOCKED.get(), !SHAPED_AP_ANGLE_LOCKED.get());
+        }
+
         xWidth = center.width();
         yWidth = center.height();
         width = 0.5 * (xWidth + yWidth);

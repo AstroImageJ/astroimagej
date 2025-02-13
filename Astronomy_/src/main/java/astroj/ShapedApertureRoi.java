@@ -158,7 +158,7 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
         g.setColor(isCompStar ? Color.RED : Color.GREEN);
         g.setFont(font);
 
-        var b = (backgroundShape != null ?
+        var b = (backgroundShape != null && showSky ?
                          toScreenSpaceTransformed.createTransformedShape(backgroundShape) :
                          toScreenSpaceTransformed.createTransformedShape(apertureShape)).getBounds();
         if (showName && showValues && nameText != null && !nameText.isEmpty() && value != null && !value.isEmpty()) {

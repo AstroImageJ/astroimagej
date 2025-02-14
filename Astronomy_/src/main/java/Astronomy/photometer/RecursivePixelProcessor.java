@@ -19,7 +19,7 @@ public class RecursivePixelProcessor extends RecursiveTask<List<RecursivePixelPr
     private final ImageProcessor ip;
     private final Accumulator accumulator;
 
-    private static final int THRESHOLD = 1_000;
+    private static final int THRESHOLD = 100;
 
     public RecursivePixelProcessor(Region region, ImageProcessor ip, Accumulator accumulator) {
         this.bounds = clampBounds(ip, region.getBounds());

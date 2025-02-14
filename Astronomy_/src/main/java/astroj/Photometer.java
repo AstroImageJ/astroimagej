@@ -1536,7 +1536,7 @@ public class Photometer {
                         var b = plane.valueAt(i + Centroid.PIXELCENTER - xpix, j + Centroid.PIXELCENTER - ypix);
                         sourceAdder.add((d - b) * fraction);
 
-                        backAdder.add(fraction * b);
+                        backAdder.add(b * fraction);
 
                         return false;
                     });

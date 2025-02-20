@@ -229,8 +229,8 @@ public class Photometer {
         peak = Float.NEGATIVE_INFINITY;
         if (exact) {
             if (USE_PARALLEL_PIXEL_PROCESS.get()) {
-                var sourceAdder = new DoubleAdder();
-                var dSourceCountAdder = new DoubleAdder();
+                var sourceAdder = sourceRegion.createPixelStorage(ip);
+                var dSourceCountAdder = sourceRegion.createPixelStorage(ip);
                 var peakAccumulator = new DoubleAccumulator(Math::max, peak);
 
                 var task = new RecursivePixelProcessor(sourceRegion, ip, (i, j, d) -> {
@@ -244,8 +244,8 @@ public class Photometer {
                         fraction = integrateArea(pixel, false);
                     }
 
-                    sourceAdder.add(fraction * d);
-                    dSourceCountAdder.add(fraction);
+                    sourceAdder.setVal(i, j, fraction * d);
+                    dSourceCountAdder.setVal(i, j, fraction);
 
                     if (fraction > 0.01) {
                         peakAccumulator.accumulate(d);
@@ -263,8 +263,8 @@ public class Photometer {
                 if (hasBack) {
                     assert backgroundArea != null;
 
-                    var backAdder = new DoubleAdder();
-                    var dBackCountAdder = new DoubleAdder();
+                    var backAdder = backgroundRegion.createPixelStorage(ip);
+                    var dBackCountAdder = backgroundRegion.createPixelStorage(ip);
                     var backCountAdder = new LongAdder();
 
                     task = new RecursivePixelProcessor(backgroundRegion, ip, (i, j, d) -> {
@@ -279,11 +279,11 @@ public class Photometer {
                         }
 
                         if (!removeBackStars && !usePlaneLocal) {
-                            backAdder.add(fraction * d);
-                            dBackCountAdder.add(fraction * d);
+                            backAdder.setVal(i, j, fraction * d);
+                            dBackCountAdder.setVal(i, j, fraction * d);
                         } else if (fraction > 0) { // BACKGROUND
                             backCount++;
-                            backAdder.add(fraction * d);
+                            backAdder.setVal(i, j, fraction * d);
                             backCountAdder.increment();
 
                             return usePlaneLocal;
@@ -377,13 +377,13 @@ public class Photometer {
             }
         } else {
             if (USE_PARALLEL_PIXEL_PROCESS.get()) {
-                var sourceAdder = new DoubleAdder();
+                var sourceAdder = sourceRegion.createPixelStorage(ip);
                 var sourceCountAdder = new LongAdder();
                 var peakAccumulator = new DoubleAccumulator(Math::max, peak);
 
                 var task = new RecursivePixelProcessor(sourceRegion, ip, (i, j, d) -> {
                     if (apertureArea.contains(i + 0.5, j + 0.5)) {
-                        sourceAdder.add(d);
+                        sourceAdder.setVal(i, j, d);
                         sourceCountAdder.increment();
 
                         peakAccumulator.accumulate(peak);
@@ -401,12 +401,12 @@ public class Photometer {
                 if (hasBack) {
                     assert backgroundArea != null;
 
-                    var backAdder = new DoubleAdder();
+                    var backAdder = backgroundRegion.createPixelStorage(ip);
                     var backCountAdder = new LongAdder();
 
                     task = new RecursivePixelProcessor(backgroundRegion, ip, (i, j, d) -> {
                         if (backgroundArea.contains(i + 0.5, j + 0.5)) {
-                            backAdder.add(d);
+                            backAdder.setVal(i, j, d);
                             backCountAdder.increment();
                             return usePlaneLocal;
                         }
@@ -563,9 +563,9 @@ public class Photometer {
             dSourceCount = 0.0;
             if (exact) {
                 if (USE_PARALLEL_PIXEL_PROCESS.get()) {
-                    var sourceAdder = new DoubleAdder();
-                    var backAdder = new DoubleAdder();
-                    var dSourceCountAdder = new DoubleAdder();
+                    var sourceAdder = sourceRegion.createPixelStorage(ip);
+                    var backAdder = sourceRegion.createPixelStorage(ip);
+                    var dSourceCountAdder = sourceRegion.createPixelStorage(ip);
 
                     var task = new RecursivePixelProcessor(sourceRegion, ip, (i, j, d) -> {
                         var fraction = 0D;
@@ -580,9 +580,9 @@ public class Photometer {
 
                         var b = plane.valueAt(i, j);
 
-                        sourceAdder.add((d - b) * fraction);
-                        backAdder.add(b * fraction);
-                        dSourceCountAdder.add(fraction);
+                        sourceAdder.setVal(i, j, (d - b) * fraction);
+                        backAdder.setVal(i, j, b * fraction);
+                        dSourceCountAdder.setVal(i, j, fraction);
 
                         return false;
                     });
@@ -626,16 +626,16 @@ public class Photometer {
                 }
             } else {
                 if (USE_PARALLEL_PIXEL_PROCESS.get()) {
-                    var sourceAdder = new DoubleAdder();
-                    var backAdder = new DoubleAdder();
+                    var sourceAdder = sourceRegion.createPixelStorage(ip);
+                    var backAdder = sourceRegion.createPixelStorage(ip);
                     var sourceCountAdder = new LongAdder();
 
                     var task = new RecursivePixelProcessor(sourceRegion, ip, (i, j, d) -> {
                         if (apertureArea.contains(i + 0.5, j + 0.5)) {
                             var b = plane.valueAt(i, j);
 
-                            sourceAdder.add((d - b));
-                            backAdder.add(b);
+                            sourceAdder.setVal(i, j, (d - b));
+                            backAdder.setVal(i, j, b);
                             sourceCountAdder.increment();
                         }
 
@@ -1262,17 +1262,17 @@ public class Photometer {
         peak = Float.NEGATIVE_INFINITY;
         if (exact) {
             if (USE_PARALLEL_PIXEL_PROCESS.get()) {
-                var sourceAdder = new DoubleAdder();
-                var dSourceCountAdder = new DoubleAdder();
+                var sourceAdder = region.createPixelStorage(ip);
+                var dSourceCountAdder = region.createPixelStorage(ip);
                 var peakAccumulator = new DoubleAccumulator(Math::max, peak);
-                var backAdder = new DoubleAdder();
-                var dBackCountAdder = new DoubleAdder();
+                var backAdder = region.createPixelStorage(ip);
+                var dBackCountAdder = region.createPixelStorage(ip);
                 var backCountAdder = new LongAdder();
 
                 var task = new RecursivePixelProcessor(region, ip, (i, j, d) -> {
                     var fraction = intarea(xpix, ypix, radius, i, i + 1, j, j + 1);
-                    sourceAdder.add(fraction * d);
-                    dSourceCountAdder.add(fraction);
+                    sourceAdder.setVal(i, j, fraction * d);
+                    dSourceCountAdder.setVal(i, j, fraction);
 
                     if (fraction > 0.01) {
                         peakAccumulator.accumulate(d);
@@ -1282,13 +1282,13 @@ public class Photometer {
                         var r2 = (j + Centroid.PIXELCENTER - ypix) * (i + Centroid.PIXELCENTER - xpix);
                         if (!removeBackStars && !usePlaneLocal) {
                             fraction = intarea(xpix, ypix, rBack1, i, i + 1, j, j + 1);
-                            backAdder.add(-(fraction * d));
-                            dBackCountAdder.add(-fraction);
+                            backAdder.setVal(i, j, -(fraction * d));
+                            dBackCountAdder.setVal(i, j, -fraction);
                             fraction = intarea(xpix, ypix, rBack2, i, i + 1, j, j + 1);
-                            backAdder.add(fraction * d);
-                            dBackCountAdder.add(fraction);
+                            backAdder.setVal(i, j, fraction * d);
+                            dBackCountAdder.setVal(i, j, fraction);
                         } else if (r2 >= r2b1 && r2 <= r2b2) { // BACKGROUND
-                            backAdder.add(d);
+                            backAdder.setVal(i, j, d);
                             backCountAdder.increment();
 
                             return usePlaneLocal;
@@ -1354,22 +1354,22 @@ public class Photometer {
             }
         } else {
             if (USE_PARALLEL_PIXEL_PROCESS.get()) {
-                var sourceAdder = new DoubleAdder();
+                var sourceAdder = region.createPixelStorage(ip);
                 var peakAccumulator = new DoubleAccumulator(Math::max, peak);
-                var backAdder = new DoubleAdder();
+                var backAdder = region.createPixelStorage(ip);
                 var backCountAdder = new LongAdder();
                 var sourceCountAdder = new LongAdder();
 
                 var task = new RecursivePixelProcessor(region, ip, (i, j, d) -> {
                     var r2 = (j + Centroid.PIXELCENTER - ypix) * (i + Centroid.PIXELCENTER - xpix);
                     if (r2 < r2ap) { // SOURCE APERTURE
-                        sourceAdder.add(d);
+                        sourceAdder.setVal(i, j, d);
                         sourceCountAdder.increment();
                         peakAccumulator.accumulate(d);
                     }
 
                     if (hasBack && r2 >= r2b1 && r2 <= r2b2) { // BACKGROUND
-                        backAdder.add(d);
+                        backAdder.setVal(i, j, d);
                         backCountAdder.increment();
 
                         return usePlaneLocal;
@@ -1525,18 +1525,18 @@ public class Photometer {
             dSourceCount = 0.0;
             if (exact) {
                 if (USE_PARALLEL_PIXEL_PROCESS.get()) {
-                    var sourceAdder = new DoubleAdder();
-                    var dSourceCountAdder = new DoubleAdder();
-                    var backAdder = new DoubleAdder();
+                    var sourceAdder = region.createPixelStorage(ip);;
+                    var dSourceCountAdder = region.createPixelStorage(ip);;
+                    var backAdder = region.createPixelStorage(ip);;
 
                     var task = new RecursivePixelProcessor(region, ip, (i, j, d) -> {
                         var fraction = intarea(xpix, ypix, radius, i, i + 1, j, j + 1);
-                        dSourceCountAdder.add(fraction);
+                        dSourceCountAdder.setVal(i, j, fraction);
 
                         var b = plane.valueAt(i + Centroid.PIXELCENTER - xpix, j + Centroid.PIXELCENTER - ypix);
-                        sourceAdder.add((d - b) * fraction);
+                        sourceAdder.setVal(i, j, (d - b) * fraction);
 
-                        backAdder.add(b * fraction);
+                        backAdder.setVal(i, j, b * fraction);
 
                         return false;
                     });
@@ -1568,21 +1568,21 @@ public class Photometer {
                 }
             } else {
                 if (USE_PARALLEL_PIXEL_PROCESS.get()) {
-                    var sourceAdder = new DoubleAdder();
-                    var dSourceCountAdder = new DoubleAdder();
-                    var backAdder = new DoubleAdder();
+                    var sourceAdder = region.createPixelStorage(ip);
+                    var dSourceCountAdder = region.createPixelStorage(ip);
+                    var backAdder = region.createPixelStorage(ip);
 
                     var task = new RecursivePixelProcessor(region, ip, (i, j, d) -> {
                         var r2 = ((double) i + Centroid.PIXELCENTER - xpix) * ((double) i + Centroid.PIXELCENTER - xpix) +
                                 ((double) j + Centroid.PIXELCENTER - ypix) * ((double) j + Centroid.PIXELCENTER - ypix);
 
                         if (r2 < r2ap) { // SOURCE APERTURE
-                            dSourceCountAdder.add(1);
+                            dSourceCountAdder.setVal(i, j, 1);
 
                             var b = plane.valueAt(i + Centroid.PIXELCENTER - xpix, j + Centroid.PIXELCENTER - ypix);
-                            sourceAdder.add((d - b));
+                            sourceAdder.setVal(i, j, (d - b));
 
-                            backAdder.add(b);
+                            backAdder.setVal(i, j, b);
                         }
 
                         return false;

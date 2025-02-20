@@ -6,6 +6,7 @@ import ij.process.ImageProcessor;
 import java.awt.*;
 import java.awt.geom.Area;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.RecursiveTask;
 
@@ -157,5 +158,24 @@ public class RecursivePixelProcessor extends RecursiveTask<List<RecursivePixelPr
          * @return the pixel bounds that contain this region
          */
         Rectangle getBounds();
+
+        default PixelStorage createPixelStorage(ImageProcessor ip) {
+            return new PixelStorage(clampBounds(ip, getBounds()));
+        }
+    }
+
+    public record PixelStorage(double[] pixelArray, Rectangle bounds) {
+        public PixelStorage(Rectangle bounds) {
+            this(new double[bounds.height * bounds.width], bounds);
+        }
+
+        public void setVal(int x, int y, double v) {
+            assert pixelArray[(y - bounds.y) * bounds.width + (x - bounds.x)] == 0 : "Attempting to write to already used index";
+            pixelArray[(y - bounds.y) * bounds.width + (x - bounds.x)] = v;
+        }
+
+        public double sum() {
+            return Arrays.stream(pixelArray).sequential().sum();
+        }
     }
 }

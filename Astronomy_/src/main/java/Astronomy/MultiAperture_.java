@@ -333,7 +333,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     public static final Property<Boolean> SHAPED_AP_ECCENTRICITY_LOCKED = new Property<>(false, MultiAperture_.class);
     public static final Property<Double> SHAPED_AP_ECCENTRICITY = new Property<>(0D, MultiAperture_.class);
     public static final Property<Boolean> SHAPED_AP_ANGLE_LOCKED = new Property<>(false, MultiAperture_.class);
-    public static final Property<Boolean> SHAPED_INDEPDENT_VARIATION = new Property<>(false, MultiAperture_.class);
+    public static final Property<Boolean> SHAPED_VARIATION_LOCKED = new Property<>(true, MultiAperture_.class);
     public static final Property<Double> SHAPED_AP_ANGLE= new Property<>(0D, MultiAperture_.class);
 
     public MultiAperture_() {
@@ -2341,7 +2341,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
                             ap.setImage(imp);
 
-                            if (SHAPED_INDEPDENT_VARIATION.get()) {
+                            if (!SHAPED_VARIATION_LOCKED.get()) {
                                 ap.automaticTransform(!SHAPED_AP_ECCENTRICITY_LOCKED.get(), !SHAPED_AP_ANGLE_LOCKED.get());
                             }
 
@@ -5165,7 +5165,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     g.addCheckbox("Lock angle", SHAPED_AP_ANGLE_LOCKED.get(), SHAPED_AP_ANGLE_LOCKED::set);
                     g.addToSameRow();
                     var aPanel = g.addFloatSlider("Angle", 0, 360, SHAPED_AP_ANGLE.get(), 3, 1, SHAPED_AP_ANGLE::set);
-                    var indep = g.addCheckbox("Apertures can independently vary in eccentricity and angle", SHAPED_INDEPDENT_VARIATION.get(), SHAPED_INDEPDENT_VARIATION::set);
+                    var indep = g.addCheckbox("Lock all apertures' ecc. and angle to T1's", SHAPED_VARIATION_LOCKED.get(), SHAPED_VARIATION_LOCKED::set);
                     indep.setToolTipText("""
                             When enabled, each aperture in the image may vary it's angle and eccentricity based on the \
                             centroiding result at each aperture location.

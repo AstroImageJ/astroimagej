@@ -19,7 +19,6 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinWorkerThread;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.DoubleAccumulator;
-import java.util.concurrent.atomic.DoubleAdder;
 import java.util.concurrent.atomic.LongAdder;
 
 /**
@@ -217,6 +216,7 @@ public class Photometer {
         }
 
         var sourceBounds = clampBounds(imp, apertureArea.getBounds());
+        assert hasBack == (backgroundArea != null);
         var backgroundBounds = hasBack ? clampBounds(imp, backgroundArea.getBounds()) : new Rectangle();
         int totalPixels = sourceBounds.height * sourceBounds.width + (backgroundBounds.height * backgroundBounds.width);
         if (usePlaneLocal) {
@@ -235,12 +235,17 @@ public class Photometer {
 
                 var task = new RecursivePixelProcessor(sourceRegion, ip, (i, j, d) -> {
                     var fraction = 0D;
-                    if (apertureArea.contains(i, j, 1, 1)) {
+                    var area = apertureRoi.getApertureArea();
+                    assert area != null;
+                    // Contains is not thread safe, even if pixel is local,
+                    // so must be synchronized or use a new object
+                    if (area.contains(i, j, 1, 1)) {
                         fraction = 1;
                     } else {
                         var pixel = new Area(new Rectangle(i, j, 1, 1));
-                        pixel.intersect(apertureArea);
-
+                        // Intersection is not thread safe, even if pixel is local,
+                        // so must be synchronized or use a new object
+                        pixel.intersect(area);
                         fraction = integrateArea(pixel, false);
                     }
 
@@ -269,12 +274,17 @@ public class Photometer {
 
                     task = new RecursivePixelProcessor(backgroundRegion, ip, (i, j, d) -> {
                         var fraction = 0D;
-                        if (backgroundArea.contains(i, j, 1, 1)) {
+                        var area = apertureRoi.getBackgroundArea();
+                        assert area != null;
+                        // Contains is not thread safe, even if pixel is local,
+                        // so must be synchronized or use a new object
+                        if (area.contains(i, j, 1, 1)) {
                             fraction = 1;
                         } else {
                             var pixel = new Area(new Rectangle(i, j, 1, 1));
-                            pixel.intersect(backgroundArea);
-
+                            // Intersection is not thread safe, even if pixel is local,
+                            // so must be synchronized or use a new object
+                            pixel.intersect(area);
                             fraction = integrateArea(pixel, false);
                         }
 
@@ -382,7 +392,11 @@ public class Photometer {
                 var peakAccumulator = new DoubleAccumulator(Math::max, peak);
 
                 var task = new RecursivePixelProcessor(sourceRegion, ip, (i, j, d) -> {
-                    if (apertureArea.contains(i + 0.5, j + 0.5)) {
+                    var area = apertureRoi.getApertureArea();
+                    assert area != null;
+                    // Contains is not thread safe, even if pixel is local,
+                    // so must be synchronized or use a new object
+                    if (area.contains(i + 0.5, j + 0.5)) {
                         sourceAdder.setVal(i, j, d);
                         sourceCountAdder.increment();
 
@@ -405,7 +419,11 @@ public class Photometer {
                     var backCountAdder = new LongAdder();
 
                     task = new RecursivePixelProcessor(backgroundRegion, ip, (i, j, d) -> {
-                        if (backgroundArea.contains(i + 0.5, j + 0.5)) {
+                        var area = apertureRoi.getBackgroundArea();
+                        assert area != null;
+                        // Contains is not thread safe, even if pixel is local,
+                        // so must be synchronized or use a new object
+                        if (area.contains(i + 0.5, j + 0.5)) {
                             backAdder.setVal(i, j, d);
                             backCountAdder.increment();
                             return usePlaneLocal;
@@ -569,12 +587,17 @@ public class Photometer {
 
                     var task = new RecursivePixelProcessor(sourceRegion, ip, (i, j, d) -> {
                         var fraction = 0D;
-                        if (apertureArea.contains(i, j, 1, 1)) {
+                        var area = apertureRoi.getApertureArea();
+                        assert area != null;
+                        // Contains is not thread safe, even if pixel is local,
+                        // so must be synchronized or use a new object
+                        if (area.contains(i, j, 1, 1)) {
                             fraction = 1;
                         } else {
                             var pixel = new Area(new Rectangle(i, j, 1, 1));
-                            pixel.intersect(apertureArea);
-
+                            // Intersection is not thread safe, even if pixel is local,
+                            // so must be synchronized or use a new object
+                            pixel.intersect(area);
                             fraction = integrateArea(pixel, false);
                         }
 
@@ -631,7 +654,11 @@ public class Photometer {
                     var sourceCountAdder = new LongAdder();
 
                     var task = new RecursivePixelProcessor(sourceRegion, ip, (i, j, d) -> {
-                        if (apertureArea.contains(i + 0.5, j + 0.5)) {
+                        var area = apertureRoi.getApertureArea();
+                        assert area != null;
+                        // Contains is not thread safe, even if pixel is local,
+                        // so must be synchronized or use a new object
+                        if (area.contains(i + 0.5, j + 0.5)) {
                             var b = plane.valueAt(i, j);
 
                             sourceAdder.setVal(i, j, (d - b));

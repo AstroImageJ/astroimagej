@@ -480,6 +480,7 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
             apertureArea = new Area(apertureShape);
         }
 
+        // It is important to return a new instance each time for the Photometer in multithread mode
         return apertureArea.createTransformedArea(transform);
     }
 
@@ -492,6 +493,7 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
             backgroundArea = new Area(backgroundShape);
         }
 
+        // It is important to return a new instance each time for the Photometer in multithread mode
         return backgroundArea.createTransformedArea(transform);
     }
 

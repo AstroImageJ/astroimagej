@@ -228,6 +228,7 @@ public class Photometer {
 
         var localApertureArea = ThreadLocal.withInitial(apertureRoi::getApertureArea);
         var localBackgroundArea = ThreadLocal.withInitial(apertureRoi::getApertureArea);
+        var localBackgroundArea = ThreadLocal.withInitial(apertureRoi::getBackgroundArea);
 
         peak = Float.NEGATIVE_INFINITY;
         if (exact) {

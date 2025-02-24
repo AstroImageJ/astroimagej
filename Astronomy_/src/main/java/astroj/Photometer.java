@@ -226,6 +226,9 @@ public class Photometer {
         var sourceRegion = new RecursivePixelProcessor.AreaRegion(apertureArea);
         var backgroundRegion = new RecursivePixelProcessor.AreaRegion(backgroundArea);
 
+        var localApertureArea = ThreadLocal.withInitial(apertureRoi::getApertureArea);
+        var localBackgroundArea = ThreadLocal.withInitial(apertureRoi::getApertureArea);
+
         peak = Float.NEGATIVE_INFINITY;
         if (exact) {
             if (USE_PARALLEL_PIXEL_PROCESS.get()) {
@@ -233,9 +236,10 @@ public class Photometer {
                 var dSourceCountAdder = sourceRegion.createPixelStorage(ip);
                 var peakAccumulator = new DoubleAccumulator(Math::max, peak);
 
+
                 var task = new RecursivePixelProcessor(sourceRegion, ip, (i, j, d) -> {
                     var fraction = 0D;
-                    var area = apertureRoi.getApertureArea();
+                    var area = localApertureArea.get();
                     assert area != null;
                     // Contains is not thread safe, even if pixel is local,
                     // so must be synchronized or use a new object
@@ -274,7 +278,7 @@ public class Photometer {
 
                     task = new RecursivePixelProcessor(backgroundRegion, ip, (i, j, d) -> {
                         var fraction = 0D;
-                        var area = apertureRoi.getBackgroundArea();
+                        var area = localBackgroundArea.get();
                         assert area != null;
                         // Contains is not thread safe, even if pixel is local,
                         // so must be synchronized or use a new object
@@ -392,7 +396,7 @@ public class Photometer {
                 var peakAccumulator = new DoubleAccumulator(Math::max, peak);
 
                 var task = new RecursivePixelProcessor(sourceRegion, ip, (i, j, d) -> {
-                    var area = apertureRoi.getApertureArea();
+                    var area = localApertureArea.get();
                     assert area != null;
                     // Contains is not thread safe, even if pixel is local,
                     // so must be synchronized or use a new object
@@ -419,7 +423,7 @@ public class Photometer {
                     var backCountAdder = new LongAdder();
 
                     task = new RecursivePixelProcessor(backgroundRegion, ip, (i, j, d) -> {
-                        var area = apertureRoi.getBackgroundArea();
+                        var area = localBackgroundArea.get();
                         assert area != null;
                         // Contains is not thread safe, even if pixel is local,
                         // so must be synchronized or use a new object
@@ -587,7 +591,7 @@ public class Photometer {
 
                     var task = new RecursivePixelProcessor(sourceRegion, ip, (i, j, d) -> {
                         var fraction = 0D;
-                        var area = apertureRoi.getApertureArea();
+                        var area = localApertureArea.get();
                         assert area != null;
                         // Contains is not thread safe, even if pixel is local,
                         // so must be synchronized or use a new object
@@ -654,7 +658,7 @@ public class Photometer {
                     var sourceCountAdder = new LongAdder();
 
                     var task = new RecursivePixelProcessor(sourceRegion, ip, (i, j, d) -> {
-                        var area = apertureRoi.getApertureArea();
+                        var area = localApertureArea.get();
                         assert area != null;
                         // Contains is not thread safe, even if pixel is local,
                         // so must be synchronized or use a new object

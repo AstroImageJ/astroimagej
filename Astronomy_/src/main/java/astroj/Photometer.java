@@ -229,6 +229,21 @@ public class Photometer {
         var localApertureArea = ThreadLocal.withInitial(apertureRoi::getApertureArea);
         var localBackgroundArea = ThreadLocal.withInitial(apertureRoi::getBackgroundArea);
 
+        var localNegApArea = ThreadLocal.withInitial(() -> {
+            var a = new Area(sourceRegion.getBounds());
+            a.subtract(apertureArea);
+            return a;
+        });
+        var localNegBackArea = ThreadLocal.withInitial(() -> {
+            if (!hasBack) {
+                return new Area();
+            }
+
+            var a = new Area(backgroundRegion.getBounds());
+            a.subtract(backgroundArea);
+            return a;
+        });
+
         peak = Float.NEGATIVE_INFINITY;
         if (exact) {
             if (USE_PARALLEL_PIXEL_PROCESS.get()) {
@@ -245,7 +260,7 @@ public class Photometer {
                     // so must be synchronized or use a new object
                     if (area.contains(i, j, 1, 1)) {
                         fraction = 1;
-                    } else {
+                    } else if (!localNegApArea.get().contains(i, j, 1, 1)) {
                         var pixel = new Area(new Rectangle(i, j, 1, 1));
                         // Intersection is not thread safe, even if pixel is local,
                         // so must be synchronized or use a new object
@@ -284,7 +299,7 @@ public class Photometer {
                         // so must be synchronized or use a new object
                         if (area.contains(i, j, 1, 1)) {
                             fraction = 1;
-                        } else {
+                        } else if (!localNegBackArea.get().contains(i, j, 1, 1)) {
                             var pixel = new Area(new Rectangle(i, j, 1, 1));
                             // Intersection is not thread safe, even if pixel is local,
                             // so must be synchronized or use a new object
@@ -322,14 +337,14 @@ public class Photometer {
             } else {
                 var bounds = clampBounds(imp, apertureArea.getBounds()); // Integer bounds to ensure we get all pixels
 
-                var fraction = 0D;
                 for (int i = bounds.x; i < bounds.x + bounds.width; i++) {
                     for (int j = bounds.y; j < bounds.y + bounds.height; j++) {
                         var d = ip.getPixelValue(i, j);
                         if (!Float.isNaN(d)) {
+                            var fraction = 0D;
                             if (apertureArea.contains(i, j, 1, 1)) {
                                 fraction = 1;
-                            } else {
+                            } else if (!localNegApArea.get().contains(i, j, 1, 1)) {
                                 var pixel = new Area(new Rectangle(i, j, 1, 1));
                                 pixel.intersect(apertureArea);
 
@@ -357,9 +372,10 @@ public class Photometer {
                         for (int j = bounds.y; j < bounds.y + bounds.height; j++) {
                             var d = ip.getPixelValue(i, j);
                             if (!Float.isNaN(d)) {
+                                var fraction = 0D;
                                 if (backgroundArea.contains(i, j, 1, 1)) {
                                     fraction = 1;
-                                } else {
+                                } else if (!localNegBackArea.get().contains(i, j, 1, 1)) {
                                     var pixel = new Area(new Rectangle(i, j, 1, 1));
                                     pixel.intersect(backgroundArea);
 
@@ -597,7 +613,7 @@ public class Photometer {
                         // so must be synchronized or use a new object
                         if (area.contains(i, j, 1, 1)) {
                             fraction = 1;
-                        } else {
+                        } else if (!localNegApArea.get().contains(i, j, 1, 1)) {
                             var pixel = new Area(new Rectangle(i, j, 1, 1));
                             // Intersection is not thread safe, even if pixel is local,
                             // so must be synchronized or use a new object
@@ -622,14 +638,14 @@ public class Photometer {
                 } else {
                     var bounds = clampBounds(imp, apertureArea.getBounds()); // Integer bounds to ensure we get all pixels
 
-                    var fraction = 0D;
                     for (int i = bounds.x; i < bounds.x + bounds.width; i++) {
                         for (int j = bounds.y; j < bounds.y + bounds.height; j++) {
                             var d = ip.getPixelValue(i, j);
                             if (!Float.isNaN(d)) {
+                                var fraction = 0D;
                                 if (apertureArea.contains(i, j, 1, 1)) {
                                     fraction = 1;
-                                } else {
+                                } else if (!localNegApArea.get().contains(i, j, 1, 1)) {
                                     var pixel = new Area(new Rectangle(i, j, 1, 1));
                                     pixel.intersect(apertureArea);
 

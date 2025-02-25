@@ -688,7 +688,6 @@ public class Aperture_ implements PlugInFilter {
             roi.moveTo(center.x(), center.y(), true);
         }
 
-        if (ref != null && !SHAPED_INDEPDENT_VARIATION.get()) {
         if (ref != null && SHAPED_VARIATION_LOCKED.get()) {
             roi.automaticTransform(ref, true, !SHAPED_AP_ECCENTRICITY_LOCKED.get(), !SHAPED_AP_ANGLE_LOCKED.get());
         } else if (!SHAPED_VARIATION_LOCKED.get() || forceTransform) {

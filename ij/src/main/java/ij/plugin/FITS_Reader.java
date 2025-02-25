@@ -1040,6 +1040,10 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			pm.setProgress(i);
 		}
 
+        if (stack.size() == 0) {
+            return null;
+        }
+
 		setStack(fileName, stack);
 
 		return ip;

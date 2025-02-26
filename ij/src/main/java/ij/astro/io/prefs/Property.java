@@ -44,6 +44,7 @@ public class Property<T> {
     final Set<PropertyChangeListener<T>> listeners = Collections.synchronizedSet(new HashSet<>());
     private final Map<String, Property<T>> variants = new HashMap<>();
     private static final HashSet<WeakReference<Property<?>>> propertyCache = new HashSet<>();
+    private static final boolean FORCE_SERIALIZATION = false;
 
     public Property(T defaultValue, Object owner) {
         this(defaultValue, "", "", null, $ -> null, owner);
@@ -345,7 +346,27 @@ public class Property<T> {
     @SuppressWarnings({"unchecked", "rawtypes"})
     private T handleLoad() {
         //todo add safeties for failed to parse, Optional?
-        var nv = Prefs.get(getPropertyKey(), serializer != null ? serializer.apply(value) : String.valueOf(value));
+        String nv;
+        if (FORCE_SERIALIZATION) {
+            // This has the side-effect of not writing the default value to to Prefs
+            // This mode should only be used for testing purposed
+
+            if (!Prefs.containsKey(getPropertyKey())) {
+                return value;
+            }
+
+            // Default value for when key is missing, which should not occur
+            var defaultValue = "MehNoValueFailureStateDoNotUse54894751878984878as827414231";
+
+            nv = Prefs.get(getPropertyKey(), defaultValue);
+
+            if (defaultValue.equals(nv)) {
+                return value;
+            }
+        } else {
+            nv = Prefs.get(getPropertyKey(), serializer != null ? serializer.apply(value) : String.valueOf(value));
+        }
+
         if (type == Double.TYPE || type == Double.class) {
             return (T) Double.valueOf(nv);
         } else if (type == Integer.TYPE || type == Integer.class) {

@@ -164,7 +164,11 @@ public class ShapeTransformer implements Transformer<Shape, Void> {
         } else if (shape instanceof CompositeShape t) {
             s = Transformers.write(CompositeShape.class, t);
         } else if (shape instanceof TransformedShape t) {
-            s = Transformers.write(Shape.class, t.getOriginalShape());
+            var o = t.getOriginalShape();
+            while (o instanceof TransformedShape transformedShape && transformedShape.getTransform().isIdentity()) {
+                o = transformedShape.getOriginalShape();
+            }
+            s = Transformers.write(Shape.class, o);
             // Insert transform section at the top
             if (!t.getTransform().isIdentity()) {
                 s.getSubSections().add(0, Transformers.write(AffineTransform.class, t.getTransform()));

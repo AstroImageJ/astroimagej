@@ -1002,6 +1002,7 @@ public class ImageJ extends Frame implements ActionListener,
       handleException(thread.getName(), thrown);
     }
 
+	@AstroImageJ(reason = "Duplicate stacktrace to log file", modified = true)
     protected void handleException(String tname, Throwable e) {
     	if (Macro.MACRO_CANCELED.equals(e.getMessage()))
 			return;
@@ -1014,6 +1015,8 @@ public class ImageJ extends Frame implements ActionListener,
 				s = IJ.getInstance().getInfo()+"\n"+s;
 			IJ.log(s);
 		}
+
+		e.printStackTrace();
     }
 
   } // inner class ExceptionHandler

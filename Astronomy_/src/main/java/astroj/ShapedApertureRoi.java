@@ -10,7 +10,8 @@ import java.awt.*;
 import java.awt.geom.*;
 import java.util.Objects;
 
-import static Astronomy.Aperture_.*;
+import static Astronomy.Aperture_.AP_PREFS_BACKPLANE;
+import static Astronomy.Aperture_.AP_PREFS_REMOVEBACKSTARS;
 import static Astronomy.multiaperture.CompositeShape.ShapeCombination;
 
 public final class ShapedApertureRoi extends ApertureRoi implements Aperture {

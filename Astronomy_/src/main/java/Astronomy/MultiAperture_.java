@@ -351,6 +351,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
                 var showRemovedPixelsOld = Prefs.get(AP_PREFS_SHOWREMOVEDPIXELS, showRemovedPixels);
                 showRemovedPixels = false;
+                Prefs.set(AP_PREFS_SHOWREMOVEDPIXELS, false);
                 if (!automaticCompStarSelection(refCount)) {
                     suggestionRunning = false;
                     Prefs.set(AP_PREFS_SHOWREMOVEDPIXELS, showRemovedPixelsOld);
@@ -1762,6 +1763,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     && (refCount = shapedApertureRois.size()) < maxSuggestedStars
                     && !(this instanceof Stack_Aligner)) {
                 var showRemovedPixelsOld = Prefs.get(AP_PREFS_SHOWREMOVEDPIXELS, showRemovedPixels);
+                Prefs.set(AP_PREFS_SHOWREMOVEDPIXELS, false);
                 showRemovedPixels = false;
                 if (!automaticCompStarSelection(refCount)) {
                     suggestionRunning = false;
@@ -2128,6 +2130,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             if (!autoMode && suggestCompStars && tempSuggestCompStars && ngot >= referenceStar && refCount < maxSuggestedStars && !(this instanceof Stack_Aligner)) {
                 var showRemovedPixelsOld = Prefs.get(AP_PREFS_SHOWREMOVEDPIXELS, showRemovedPixels);
                 showRemovedPixels = false;
+                Prefs.set(AP_PREFS_SHOWREMOVEDPIXELS, false);
                 if (!automaticCompStarSelection(refCount)) {
                     suggestionRunning = false;
                     Prefs.set(AP_PREFS_SHOWREMOVEDPIXELS, showRemovedPixelsOld);

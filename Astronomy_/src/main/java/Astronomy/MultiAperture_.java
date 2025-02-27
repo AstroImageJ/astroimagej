@@ -3712,6 +3712,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             Prefs.set(AP_PREFS_SHOWREMOVEDPIXELS, false);
         }
         for (int i = firstSlice; i <= lastSlice; i++) {
+            if (i == lastSlice) {
+                Prefs.set(AP_PREFS_SHOWREMOVEDPIXELS, showRemovedPixelsOld);
+            }
             slice = i;
             imp.setSliceWithoutUpdate(i); //fixes scroll sync issue
             // Fixes scrollbar not updating on mac

@@ -3698,12 +3698,18 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         long timeStart = System.currentTimeMillis();
 //        IJ.log("firstSlice="+firstSlice+"   lastSlice="+lastSlice);
         JDialog win = null;
+
+        var showRemovedPixelsOld = Prefs.get(AP_PREFS_SHOWREMOVEDPIXELS, showRemovedPixels);
+
         if (!updateImageDisplay.get()) {
             if (imp.getCanvas() instanceof AstroCanvas a) {
                 a.setPerformDraw(false);
             }
 
             win = showWarning("Processing stack without image update, please wait.");
+
+            showRemovedPixels = false;
+            Prefs.set(AP_PREFS_SHOWREMOVEDPIXELS, false);
         }
         for (int i = firstSlice; i <= lastSlice; i++) {
             slice = i;
@@ -3764,9 +3770,11 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 IJ.beep();
                 Prefs.set(MultiAperture_.PREFS_CANCELED, "true");
                 shutDown();
+                Prefs.set(AP_PREFS_SHOWREMOVEDPIXELS, showRemovedPixelsOld);
                 return;
             }
         }
+        Prefs.set(AP_PREFS_SHOWREMOVEDPIXELS, showRemovedPixelsOld);
 
         // Reset drawing state
         if (imp.getCanvas() instanceof AstroCanvas a) {

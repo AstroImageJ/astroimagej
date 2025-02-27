@@ -4,6 +4,7 @@ import Astronomy.multiaperture.CenterReferencingTransform;
 import Astronomy.multiaperture.CompositeShape;
 import Astronomy.multiaperture.TransformedShape;
 import ij.Prefs;
+import ij.astro.logging.AIJLogger;
 
 import java.awt.*;
 import java.awt.geom.*;
@@ -75,7 +76,34 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
             }
             case FREEFORM_SHAPE -> (ShapedApertureRoi) roi;
             case FREEFORM_PIXEL -> {
-                throw new IllegalArgumentException("Cannot convert pixel to shaped");//todo
+                var ap = new ShapedApertureRoi();
+                var source = new Area();
+                var background = new Area();
+                if (roi instanceof FreeformPixelApertureRoi pixelApertureRoi) {
+                    var pixelBackground = false;
+                    for (FreeformPixelApertureRoi.Pixel pixel : pixelApertureRoi.iterable()) {
+                        if (pixel.isBackground()) {
+                            pixelBackground = true;
+                            background.add(new Area(new Rectangle(pixel.x(), pixel.y(), 1, 1)));
+                        } else {
+                            source.add(new Area(new Rectangle(pixel.x(), pixel.y(), 1, 1)));
+                        }
+                    }
+
+                    if (pixelApertureRoi.hasAnnulus()) {
+                        if (!pixelBackground) {
+                            ap.setBackgroundAnnulus(pixelApertureRoi.getBack1(), pixelApertureRoi.getBack2());
+                        } else {
+                            AIJLogger.log("Cannot convert a Pixel aperture to Shaped due to mixed background modes");
+                        }
+                    } else {
+                        ap.setApertureShape(source);
+                        ap.setBackgroundShape(background, false);
+                    }
+
+                }
+
+                yield ap;
             }
         };
     }

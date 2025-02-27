@@ -4108,6 +4108,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         // This is needed when running from DP for some reason, other rois are not removed
         OverlayCanvas.getOverlayCanvas(imp).removeApertureRois();
 
+        boolean holdReposition = Prefs.get("aperture.reposition", reposition);
+
         nFWHM = 0;
         fwhmMean = 0.0;
         // Save new aperture position
@@ -4157,7 +4159,6 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 }
 
                 // MEASURE NEW POSITION AND RECENTER IF CENTROID ENABLED
-                boolean holdReposition = Prefs.get("aperture.reposition", reposition);
                 Prefs.set("aperture.reposition", centroidStar[ap]);
                 setShowAsCentered(centroidStar[ap]);
 
@@ -4171,8 +4172,6 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         valueOverlay = Prefs.get(AP_PREFS_VALUEOVERLAY, valueOverlay);
         var hdr = FitsJ.getHeader(imp);
         for (int ap = 0; ap < nApertures; ap++) {
-            boolean holdReposition = Prefs.get("aperture.reposition", reposition);
-
             switch (apertureShape.get()) {
                 case CIRCULAR -> {
                     if (!isRefStar[ap]) {

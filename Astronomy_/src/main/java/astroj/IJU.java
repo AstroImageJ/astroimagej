@@ -572,6 +572,10 @@ public class IJU {
         boolean nameOverlay = true;
         boolean valueOverlay = true;
 
+        if (ac != null) {
+            ac.removeApertureRois();
+        }
+
         var shaped = new ArrayList<ShapedApertureRoi>();
         for (int i = 0; i < nAps; i++) {
             ApertureRoi roi = new ApertureRoi(xpos.get(i), ypos.get(i), radius, rBack1, rBack2, Double.NaN, isCentroids.get(i));
@@ -591,7 +595,6 @@ public class IJU {
         MultiAperture_.SHAPED_IMPORTED_APS.set(shaped);
 
         if (ac != null) {
-            ac.removeApertureRois();
             ac.paint(ac.getGraphics());
         }
     }

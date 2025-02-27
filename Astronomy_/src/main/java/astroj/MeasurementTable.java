@@ -448,7 +448,7 @@ public class MeasurementTable extends ResultsTable {
         locked = lockState;
 
         if (!locked && dataChanged) {
-            updateView(UpdateEvent.DATA_CHANGED);
+            updateView(UpdateEvent.REBUILD);
         }
     }
 

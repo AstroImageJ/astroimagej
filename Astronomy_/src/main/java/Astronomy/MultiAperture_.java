@@ -2343,6 +2343,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
                             if (!SHAPED_VARIATION_LOCKED.get()) {
                                 ap.automaticTransform(!SHAPED_AP_ECCENTRICITY_LOCKED.get(), !SHAPED_AP_ANGLE_LOCKED.get());
+                            } else {
+                                ap.setTransform(t1.getTransform());
                             }
 
                             ap.setName("C" + (ngot+1));

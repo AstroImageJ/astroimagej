@@ -69,6 +69,7 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
                 ap.setName(roi.getName());
                 ap.setRadec(roi.radec);
                 ap.setComparisonStar(roi.getIsComparisonStar());
+                ap.setPhantom(roi.isPhantom());
 
                 yield ap;
             }

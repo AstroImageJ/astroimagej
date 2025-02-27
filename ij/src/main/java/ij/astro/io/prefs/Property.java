@@ -107,6 +107,13 @@ public class Property<T> {
         hasLoaded = false;
     }
 
+    public void forceWrite() {
+        updatePrefs(value);
+        for (@SuppressWarnings("unchecked") PropertyChangeListener<T> l : listeners.toArray(PropertyChangeListener[]::new)) {
+            l.valueChanged(getPropertyKey(), value);
+        }
+    }
+
     public T get() {
         loadProperty();
         return value;

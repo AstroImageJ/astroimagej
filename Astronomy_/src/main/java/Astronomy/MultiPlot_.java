@@ -15637,6 +15637,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 }
                 if (aRoi instanceof ShapedApertureRoi shapedApertureRoi) {
                     shapedApertureRoi.setComparisonStar(selected);
+                    if (MultiAperture_.SHAPED_APS.get().size() > r) {
+                        MultiAperture_.SHAPED_APS.get().get(r).setComparisonStar(selected);
+                        MultiAperture_.SHAPED_APS.forceWrite();
+                    }
                 }
                 if (aRoi instanceof FreeformPixelApertureRoi freeformPixelApertureRoi) {
                     freeformPixelApertureRoi.setComparisonStar(selected);

@@ -193,6 +193,15 @@ public class CenterReferencingTransform extends AffineTransform {
         return new Point2D.Double(centerX/centerCnt, centerY/centerCnt);
     }
 
+    @Override
+    public Object clone() {
+        if (tracker != null) {
+            return new CenterReferencingTransform((AffineTransform) tracker.original.clone(), null);
+        }
+
+        return super.clone();
+    }
+
     private record Tracker(AffineTransform original, Shape boundShape, Point2D center) {
         public Tracker(AffineTransform original, Shape boundShape) {
             this(original, boundShape, calculateCenter(boundShape));

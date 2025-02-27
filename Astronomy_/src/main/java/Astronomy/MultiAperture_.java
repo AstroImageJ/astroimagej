@@ -2333,7 +2333,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                             ap.setApertureShape(t1.getShape());
                             ap.setBackgroundShape(t1.getBackgroundShape(), t1.isCenterBackground());
 
-                            ap.setTransform(t1.getTransform());
+                            ap.setTransform((AffineTransform) t1.getTransform().clone());
 
                             ap.setEllipticalBaseRadius(t1.getEllipticalBaseRadius());
 

@@ -349,10 +349,14 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     && (refCount = freeformPixelApertureHandler.apCompCount()) < maxSuggestedStars
                     && !(this instanceof Stack_Aligner)) {
 
+                var showRemovedPixelsOld = Prefs.get(AP_PREFS_SHOWREMOVEDPIXELS, showRemovedPixels);
+                showRemovedPixels = false;
                 if (!automaticCompStarSelection(refCount)) {
                     suggestionRunning = false;
+                    Prefs.set(AP_PREFS_SHOWREMOVEDPIXELS, showRemovedPixelsOld);
                     return true;
                 }
+                Prefs.set(AP_PREFS_SHOWREMOVEDPIXELS, showRemovedPixelsOld);
                 suggestionRunning = false;
             }
 
@@ -1757,11 +1761,13 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             if (!autoMode && suggestCompStars && tempSuggestCompStars && ngot >= referenceStar
                     && (refCount = shapedApertureRois.size()) < maxSuggestedStars
                     && !(this instanceof Stack_Aligner)) {
-
+                var showRemovedPixelsOld = Prefs.get(AP_PREFS_SHOWREMOVEDPIXELS, showRemovedPixels);
+                showRemovedPixels = false;
                 if (!automaticCompStarSelection(refCount)) {
                     suggestionRunning = false;
                 }
                 suggestionRunning = false;
+                Prefs.set(AP_PREFS_SHOWREMOVEDPIXELS, showRemovedPixelsOld);
             }
 
             canvas.repaint();
@@ -2120,10 +2126,14 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             }
 
             if (!autoMode && suggestCompStars && tempSuggestCompStars && ngot >= referenceStar && refCount < maxSuggestedStars && !(this instanceof Stack_Aligner)) {
+                var showRemovedPixelsOld = Prefs.get(AP_PREFS_SHOWREMOVEDPIXELS, showRemovedPixels);
+                showRemovedPixels = false;
                 if (!automaticCompStarSelection(refCount)) {
                     suggestionRunning = false;
+                    Prefs.set(AP_PREFS_SHOWREMOVEDPIXELS, showRemovedPixelsOld);
                     return;
                 }
+                Prefs.set(AP_PREFS_SHOWREMOVEDPIXELS, showRemovedPixelsOld);
             }
 
             suggestionRunning = false;

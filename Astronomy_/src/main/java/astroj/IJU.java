@@ -565,22 +565,33 @@ public class IJU {
         MultiAperture_.apLoading.set(MultiAperture_.ApLoading.IMPORTED);
         Prefs.set("multiaperture.usewcs", true);
 
-        if (ac != null) {
-            ac.removeApertureRois();
-            double radius = Prefs.get("aperture.radius", 20);
-            double rBack1 = Prefs.get("aperture.rback1", 30);
-            double rBack2 = Prefs.get("aperture.rback2", 40);
-            boolean showSkyOverlay = Prefs.get("aperture.skyoverlay", false);
-            boolean nameOverlay = true;
-            boolean valueOverlay = true;
+        double radius = Prefs.get("aperture.radius", 20);
+        double rBack1 = Prefs.get("aperture.rback1", 30);
+        double rBack2 = Prefs.get("aperture.rback2", 40);
+        boolean showSkyOverlay = Prefs.get("aperture.skyoverlay", false);
+        boolean nameOverlay = true;
+        boolean valueOverlay = true;
 
-            for (int i = 0; i < nAps; i++) {
-                ApertureRoi roi = new ApertureRoi(xpos.get(i), ypos.get(i), radius, rBack1, rBack2, Double.NaN, isCentroids.get(i));
-                roi.setAppearance(true, isCentroids.get(i), showSkyOverlay, nameOverlay, valueOverlay, isRefs.get(i) ? Color.PINK : new Color(196, 222, 155), (isRefs.get(i) ? "C" : "T") + (i + 1), Double.NaN);
-                roi.setAMag(absMags.get(i));
-                roi.setImage(imp);
+        var shaped = new ArrayList<ShapedApertureRoi>();
+        for (int i = 0; i < nAps; i++) {
+            ApertureRoi roi = new ApertureRoi(xpos.get(i), ypos.get(i), radius, rBack1, rBack2, Double.NaN, isCentroids.get(i));
+            roi.setAppearance(true, isCentroids.get(i), showSkyOverlay, nameOverlay, valueOverlay, isRefs.get(i) ? Color.PINK : new Color(196, 222, 155), (isRefs.get(i) ? "C" : "T") + (i + 1), Double.NaN);
+            roi.setAMag(absMags.get(i));
+            roi.setRadec(ras.get(i), decs.get(i));
+            roi.setIsCentroid(isCentroids.get(i));
+            roi.setImage(imp);
+
+            shaped.add(ShapedApertureRoi.fromApertureRoi(roi));
+
+            if (ac != null) {
                 ac.add(roi);
             }
+        }
+
+        MultiAperture_.SHAPED_IMPORTED_APS.set(shaped);
+
+        if (ac != null) {
+            ac.removeApertureRois();
             ac.paint(ac.getGraphics());
         }
     }

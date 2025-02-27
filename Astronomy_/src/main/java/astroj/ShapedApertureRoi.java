@@ -4,7 +4,6 @@ import Astronomy.multiaperture.CenterReferencingTransform;
 import Astronomy.multiaperture.CompositeShape;
 import Astronomy.multiaperture.TransformedShape;
 import ij.Prefs;
-import ij.astro.types.Pair;
 
 import java.awt.*;
 import java.awt.geom.*;
@@ -33,11 +32,6 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
     private final boolean usePlane = Prefs.get(AP_PREFS_BACKPLANE, false);
     private final boolean removeStars = Prefs.get(AP_PREFS_REMOVEBACKSTARS, false);
 
-    /**
-     * RA/DEC position of the geometric center (xPos, yPos) of this aperture
-     */
-    private Pair.DoublePair radec;
-
     public ShapedApertureRoi() {
         this(null);
         calculateCenter();
@@ -56,6 +50,33 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
         showAperture = true;
         showSky = true;
         showName = true;
+    }
+
+    public static ShapedApertureRoi fromApertureRoi(ApertureRoi roi) {
+        return switch (roi.getApertureShape()) {
+            case CIRCULAR -> {
+                var ap = new ShapedApertureRoi();
+                var r = roi.getRadius();
+
+                ap.setEllipticalBaseRadius(r);
+                ap.setApertureShape(new Ellipse2D.Double(roi.xPos - r, roi.yPos - r, 2*r, 2*r));
+
+                if (roi.getBack1() < roi.getBack2()) {
+                    ap.setBackgroundAnnulus(roi.getBack1(), roi.getBack2());
+                }
+
+                ap.setIsCentroid(roi.getIsCentroid());
+                ap.setName(roi.getName());
+                ap.setRadec(roi.radec);
+                ap.setComparisonStar(roi.getIsComparisonStar());
+
+                yield ap;
+            }
+            case FREEFORM_SHAPE -> (ShapedApertureRoi) roi;
+            case FREEFORM_PIXEL -> {
+                throw new IllegalArgumentException("Cannot convert pixel to shaped");//todo
+            }
+        };
     }
 
     @Override
@@ -518,26 +539,6 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
 
     public void setComparisonStar(boolean comparisonStar) {
         this.isCompStar = comparisonStar;
-    }
-
-    public void setRadec(double ra, double dec) {
-        setRadec(new Pair.DoublePair(ra, dec));
-    }
-
-    public void setRadec(Pair.DoublePair radec) {
-        this.radec = radec;
-    }
-
-    public boolean hasRadec() {
-        return radec != null && !Double.isNaN(radec.first()) && !Double.isNaN(radec.second());
-    }
-
-    public double getRightAscension() {
-        return radec == null ? Double.NaN : radec.first();
-    }
-
-    public double getDeclination() {
-        return radec == null ? Double.NaN : radec.second();
     }
 
     @Override

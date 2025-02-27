@@ -34,10 +34,6 @@ public final class FreeformPixelApertureRoi extends ApertureRoi implements Apert
     private double photometricX = Double.NaN;
     private double photometricY = Double.NaN;
     private Pair.DoublePair centroidOffset = new Pair.DoublePair(0, 0);
-    /**
-     * RA/DEC position of the geometric center (xPos, yPos) of this aperture
-     */
-    private Pair.DoublePair radec;
 
     public FreeformPixelApertureRoi() {
         this(Double.NaN);
@@ -680,26 +676,6 @@ public final class FreeformPixelApertureRoi extends ApertureRoi implements Apert
             updatePhotometricCenter(isCentroid);
             updatePhotometry();
         }
-    }
-
-    public void setRadec(double ra, double dec) {
-        setRadec(new Pair.DoublePair(ra, dec));
-    }
-
-    public void setRadec(Pair.DoublePair radec) {
-        this.radec = radec;
-    }
-
-    public boolean hasRadec() {
-        return radec != null && !Double.isNaN(radec.first()) && !Double.isNaN(radec.second());
-    }
-
-    public double getRightAscension() {
-        return radec == null ? Double.NaN : radec.first();
-    }
-
-    public double getDeclination() {
-        return radec == null ? Double.NaN : radec.second();
     }
 
     @Override

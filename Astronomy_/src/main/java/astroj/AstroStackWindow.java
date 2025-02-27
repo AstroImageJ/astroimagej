@@ -3889,11 +3889,13 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                     roi.setAMag(99.999);
                     roi.setImage(imp);
                     roi.setPhantom(true);
+                    roi.setRadec(coords[0], coords[1]);
                     ac.removePhantomApertureRois();
                     ac.add(roi);
                     ac.paint(ac.getGraphics());
                     MultiAperture_.addApertureAsOld(coords[0], coords[1], pixel[0], pixel[1], (e.getModifiers() & MouseEvent.SHIFT_MASK) != 0);
                     MultiAperture_.apLoading.set(MultiAperture_.ApLoading.IMPORTED);
+                    MultiAperture_.SHAPED_IMPORTED_APS.set(Collections.singletonList(ShapedApertureRoi.fromApertureRoi(roi)));
                 } else {
                     addAnnotateRoi(imp, true, false, true, false, pixel[0], pixel[1], radius, label, colorWCS, false);
                 }

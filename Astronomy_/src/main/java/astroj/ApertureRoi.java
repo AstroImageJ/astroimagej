@@ -3,6 +3,7 @@
 package astroj;
 
 import ij.IJ;
+import ij.astro.types.Pair;
 import ij.gui.Roi;
 
 import java.awt.*;
@@ -36,6 +37,10 @@ public non-sealed class ApertureRoi extends Roi implements Aperture {
     AstroCanvas ac = null;
     boolean netFlipX = false, netFlipY = false, netRotate = false, showMag = true, showIntCntWithMag = true;
     boolean isPhantom = false;
+    /**
+     * RA/DEC position of the geometric center (xPos, yPos) of this aperture
+     */
+    protected Pair.DoublePair radec;
 
     public ApertureRoi(double x, double y, double rad1, double rad2, double rad3, double integratedCnts, boolean isCentered) {
         super((int) x, (int) y, 1, 1);
@@ -374,6 +379,26 @@ public non-sealed class ApertureRoi extends Roi implements Aperture {
         if (aij) {
             ((Graphics2D) g).setTransform(ac.canvTrans);
         }
+    }
+
+    public void setRadec(double ra, double dec) {
+        setRadec(new Pair.DoublePair(ra, dec));
+    }
+
+    public void setRadec(Pair.DoublePair radec) {
+        this.radec = radec;
+    }
+
+    public boolean hasRadec() {
+        return radec != null && !Double.isNaN(radec.first()) && !Double.isNaN(radec.second());
+    }
+
+    public double getRightAscension() {
+        return radec == null ? Double.NaN : radec.first();
+    }
+
+    public double getDeclination() {
+        return radec == null ? Double.NaN : radec.second();
     }
 
     @Override

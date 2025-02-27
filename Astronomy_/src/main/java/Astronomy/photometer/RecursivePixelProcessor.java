@@ -6,7 +6,6 @@ import ij.process.ImageProcessor;
 import java.awt.*;
 import java.awt.geom.Area;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.RecursiveTask;
 
@@ -175,7 +174,37 @@ public class RecursivePixelProcessor extends RecursiveTask<List<RecursivePixelPr
         }
 
         public double sum() {
-            return Arrays.stream(pixelArray).sequential().sum();
+            // KahanBabushkaKleinSum
+            // https://en.wikipedia.org/wiki/Kahan_summation_algorithm
+            var sum = 0d;
+            var cs = 0d;
+            var ccs = 0d;
+
+            for (double v : pixelArray) {
+                double c, cc;
+
+                var t = sum + v;
+
+                if (Math.abs(sum) >= Math.abs(v)) {
+                    c = (sum - t) + v;
+                } else {
+                    c = (v - t) + sum;
+                }
+
+                sum = t;
+                t = cs + c;
+
+                if (Math.abs(cs) >= Math.abs(c)) {
+                    cc = (cs - t) + c;
+                } else {
+                    cc = (c - t) + cs;
+                }
+
+                cs = t;
+                ccs = ccs + cc;
+            }
+
+            return sum + (cs + ccs);
         }
     }
 }

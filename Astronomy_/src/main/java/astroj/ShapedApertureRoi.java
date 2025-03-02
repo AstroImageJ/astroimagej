@@ -438,19 +438,19 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
         calculateCenter();
     }
 
-    public void setBackgroundAnnulus(double r1, double r2) {
-        setBackgroundAnnulus(r1, r1, r2, r2);
+    public void setBackgroundAnnulus(double rInner, double rOuter) {
+        setBackgroundAnnulus(rInner, rInner, rOuter, rOuter);
     }
 
-    public void setBackgroundAnnulus(double r1x, double r1y, double r2x, double r2y) {
-        setBackgroundAnnulus(r1x, r1y, new AffineTransform(), r2x, r2y, new AffineTransform());
+    public void setBackgroundAnnulus(double rix, double riy, double rox, double roy) {
+        setBackgroundAnnulus(rix, riy, new AffineTransform(), rox, roy, new AffineTransform());
     }
 
-    public void setBackgroundAnnulus(double r1x, double r1y, AffineTransform transformPrimary,
-                                     double r2x, double r2y, AffineTransform transformSecondary) {
+    public void setBackgroundAnnulus(double rix, double riy, AffineTransform transformOuter,
+                                     double rox, double roy, AffineTransform transformInner) {
         setBackgroundShape(new CompositeShape(ShapeCombination.SUBTRACT,
-                new Ellipse2D.Double(-r2x, -r2y, 2*r2x, 2*r2y),
-                new Ellipse2D.Double(-r1x, -r1y, 2*r1x, 2*r1y), transformPrimary, transformSecondary), true);
+                new Ellipse2D.Double(-rox, -roy, 2*rox, 2*roy),
+                new Ellipse2D.Double(-rix, -riy, 2*rix, 2*riy), transformOuter, transformInner), true);
     }
 
     public void setBackgroundShape(ShapeCombination combination, Shape a, Shape b, boolean centered) {
@@ -600,6 +600,53 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
 
     public void setCenterBackground(boolean centerBackground) {
         this.centerBackground = centerBackground;
+    }
+
+    public void adjustRadii(double r, double r2, double r3, double roundness) {
+        if (isElliptical()) {
+            if (r != ellipticalBaseRadius) {
+                roundness = Double.isFinite(roundness) ? roundness : 1;
+
+                var sqRoundness = Math.sqrt(roundness);
+                var a = Math.abs(r / sqRoundness);
+                var b = Math.abs(r * sqRoundness);
+
+                setApertureShape(new Ellipse2D.Double(xPos - a, yPos - b, 2 * a, 2 * b));
+            }
+
+            if (hasAnnulus()) {
+                setBackgroundAnnulus(r2, r3);
+            } else {
+                setBackgroundShape(backgroundShape, centerBackground);
+            }
+        }
+    }
+
+    public boolean hasAnnulus() {
+        if (centerBackground && backgroundShape != null) {
+            if (getInnerShape(backgroundShape) instanceof CompositeShape compositeShape) {
+                var tracker = compositeShape.getTracker();
+
+                if (tracker.combination() == ShapeCombination.SUBTRACT) {
+                    return getInnerShape(tracker.primary()) instanceof Ellipse2D &&
+                            getInnerShape(tracker.secondary()) instanceof Ellipse2D;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    public boolean isElliptical() {
+        return getInnerShape(apertureShape) instanceof Ellipse2D && Double.isFinite(ellipticalBaseRadius);
+    }
+
+    private Shape getInnerShape(Shape shape) {
+        if (shape instanceof TransformedShape transformedShape) {
+            return getInnerShape(transformedShape.getOriginalShape());
+        }
+
+        return shape;
     }
 
     public void moveTo(double x, double y, boolean moveBackground) {

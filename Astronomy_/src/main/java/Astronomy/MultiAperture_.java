@@ -1574,14 +1574,40 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     return;
                 }
 
-                for (int i = 1; i < shapedApertureRois.size(); i++) {
-                    var ap = shapedApertureRois.get(i-1);
-                    ap.setName((ap.isComparisonStar() ? "C" : "T") + i);
+                var c = new Centroid();
+                var angle = 0D;
+                var roundness = 0D;
+                for (int i = 0; i < shapedApertureRois.size(); i++) {
+                    var ap = shapedApertureRois.get(i);
+                    ap.setName((ap.isComparisonStar() ? "C" : "T") + (i+1));
 
                     if (useWCS && ap.hasRadec() && wcs != null) {
                         var np = wcs.wcs2pixels(new double[]{ap.getRightAscension(), ap.getDeclination()});
                         ap.moveTo(np[0], np[1], true);
                     }
+
+                    if (SHAPED_AP_ECCENTRICITY_LOCKED.get()) {
+                        roundness = Math.sqrt(1 - SHAPED_AP_ECCENTRICITY.get());
+                    } else if (!SHAPED_VARIATION_LOCKED.get() || i == 0) {
+                        if (c.measure(imp, ap.getXpos(), ap.getYpos(), radius, rBack1, rBack2, ap.getIsCentroid(), backIsPlane, removeBackStars)) {
+                            roundness = c.roundness();
+                        }
+                    }
+
+                    if (SHAPED_AP_ANGLE_LOCKED.get()) {
+                        angle = SHAPED_AP_ANGLE.get();
+                    } else if (!SHAPED_VARIATION_LOCKED.get() || i == 0) {
+                        if (SHAPED_AP_ECCENTRICITY_LOCKED.get() || (!SHAPED_VARIATION_LOCKED.get() || i == 0)) {
+                            angle = c.orientation();
+                        } else {
+                            if (c.measure(imp, ap.getXpos(), ap.getYpos(), radius, rBack1, rBack2, ap.getIsCentroid(), backIsPlane, removeBackStars)) {
+                                angle = c.orientation();
+                            }
+                        }
+                    }
+
+                    ap.adjustRadii(radius, rBack1, rBack2, roundness);
+                    ap.setTransform(AffineTransform.getRotateInstance(Math.toRadians(angle)));
 
                     ap.setImage(imp);
                     ocanvas.add(ap);
@@ -1605,6 +1631,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     shapedApertureRois.addAll(setting.get());
                 }
 
+                var c = new Centroid();
+                var angle = 0D;
+                var roundness = 0D;
                 for (int i = 0; i < shapedApertureRois.size(); i++) {
                     var ap = shapedApertureRois.get(i);
                     ap.setName((ap.isComparisonStar() ? "C" : "T") + (i+1));
@@ -1613,6 +1642,30 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                         var np = wcs.wcs2pixels(new double[]{ap.getRightAscension(), ap.getDeclination()});
                         ap.moveTo(np[0], np[1], true);
                     }
+
+                    if (SHAPED_AP_ECCENTRICITY_LOCKED.get()) {
+                        roundness = Math.sqrt(1 - SHAPED_AP_ECCENTRICITY.get());
+                    } else if (!SHAPED_VARIATION_LOCKED.get() || i == 0) {
+                        if (c.measure(imp, ap.getXpos(), ap.getYpos(), radius, rBack1, rBack2, ap.getIsCentroid(), backIsPlane, removeBackStars)) {
+                            roundness = c.roundness();
+                        }
+                    }
+
+                    if (SHAPED_AP_ANGLE_LOCKED.get()) {
+                        angle = SHAPED_AP_ANGLE.get();
+                    } else if (!SHAPED_VARIATION_LOCKED.get() || i == 0) {
+                        // Reuse measure centroid
+                        if (SHAPED_AP_ECCENTRICITY_LOCKED.get() || (!SHAPED_VARIATION_LOCKED.get() || i == 0)) {
+                            angle = c.orientation();
+                        } else {
+                            if (c.measure(imp, ap.getXpos(), ap.getYpos(), radius, rBack1, rBack2, ap.getIsCentroid(), backIsPlane, removeBackStars)) {
+                                angle = c.orientation();
+                            }
+                        }
+                    }
+
+                    ap.adjustRadii(radius, rBack1, rBack2, roundness);
+                    ap.setTransform(AffineTransform.getRotateInstance(Math.toRadians(angle)));
 
                     ap.setImage(imp);
                     ocanvas.add(ap);

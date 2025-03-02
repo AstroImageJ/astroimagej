@@ -654,6 +654,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         if (starOverlay || skyOverlay || valueOverlay || nameOverlay) {
             ocanvas = OverlayCanvas.getOverlayCanvas(imp);
             canvas = ocanvas;
+            ocanvas.removePixelRois();
         }
 
         Prefs.set(MultiAperture_.PREFS_CANCELED, "false");

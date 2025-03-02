@@ -108,6 +108,7 @@ public class Photometer {
     protected double dark = 0.0;
     protected boolean removeBackStars = true;
     protected boolean markRemovedPixels = false;
+    protected boolean isMultiAperture;
     protected boolean exact = true;
     protected boolean hasBack = true;
     /**
@@ -137,6 +138,17 @@ public class Photometer {
     }
 
     /**
+     * Initializes Photometer without the client's Calibration.
+     */
+    public Photometer(boolean isMultiAperture) {
+        calib = null;
+        radius = Double.NaN;
+        rBack1 = Double.NaN;
+        rBack2 = Double.NaN;
+        this.isMultiAperture = isMultiAperture;
+    }
+
+    /**
      * Initializes Photometer with the client ImagePlus's Calibration object.
      *
      * @param cal client's Calibration object
@@ -146,6 +158,19 @@ public class Photometer {
         radius = Double.NaN;
         rBack1 = Double.NaN;
         rBack2 = Double.NaN;
+    }
+
+    /**
+     * Initializes Photometer with the client ImagePlus's Calibration object.
+     *
+     * @param cal client's Calibration object
+     */
+    public Photometer(Calibration cal, boolean isMultiAperture) {
+        calib = cal;
+        radius = Double.NaN;
+        rBack1 = Double.NaN;
+        rBack2 = Double.NaN;
+        this.isMultiAperture = isMultiAperture;
     }
 
     public void measure(ImagePlus imp, Aperture aperture, boolean exactPixels) {
@@ -548,7 +573,7 @@ public class Photometer {
                 if (usePlaneLocal) {
                     plane = new FittedPlane(totalPixels);
                 }
-                if (markRemovedPixels) {
+                if (markRemovedPixels && !isMultiAperture) {
                     ocanvas.removePixelRois();
                 }
 
@@ -1043,7 +1068,7 @@ public class Photometer {
                 if (usePlaneLocal) {
                     plane = new FittedPlane(totalPixels);
                 }
-                if (markRemovedPixels) {
+                if (markRemovedPixels && !isMultiAperture) {
                     ocanvas.removePixelRois();
                 }
 
@@ -1518,7 +1543,7 @@ public class Photometer {
                 if (usePlaneLocal) {
                     plane = new FittedPlane(totalPixels);
                 }
-                if (markRemovedPixels) {
+                if (markRemovedPixels && !isMultiAperture) {
                     ocanvas.removePixelRois();
                 }
 

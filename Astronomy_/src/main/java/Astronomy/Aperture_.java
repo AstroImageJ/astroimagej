@@ -530,7 +530,7 @@ public class Aperture_ implements PlugInFilter {
         }
 
         // DO APERTURE PHOTOMETRY
-        var localPhotom = new Photometer(imp.getCalibration());
+        var localPhotom = new Photometer(imp.getCalibration(), this instanceof MultiAperture_ && !isInstanceOfStackAlign);
         localPhotom.setCCD(ccdGain, ccdNoise, darkPerPix);
         localPhotom.setRemoveBackStars(removeBackStars);
         localPhotom.setMarkRemovedPixels(showRemovedPixels);
@@ -564,7 +564,7 @@ public class Aperture_ implements PlugInFilter {
         }
 
         // DO APERTURE PHOTOMETRY
-        var localPhotom = new Photometer(imp.getCalibration());
+        var localPhotom = new Photometer(imp.getCalibration(), this instanceof MultiAperture_ && !isInstanceOfStackAlign);
         localPhotom.setCCD(ccdGain, ccdNoise, darkPerPix);
         localPhotom.setRemoveBackStars(removeBackStars);
         localPhotom.setMarkRemovedPixels(showRemovedPixels);

@@ -35,9 +35,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.util.*;
 import java.util.List;
 import java.util.Timer;
-import java.util.*;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
@@ -3924,6 +3924,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         widthFixed = new double[nApertures];
         angleFixed = new double[nApertures];
         roundFixed = new double[nApertures];
+
+        ocanvas.removePixelRois();
 
         if (!isInstanceOfStackAlign) {
             for (int r = 0; r < nApertures; r++)  //check for target star <--> ref star changes in table (i.e. changes from multi-plot)

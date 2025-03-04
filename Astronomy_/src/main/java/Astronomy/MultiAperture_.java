@@ -4299,6 +4299,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                         setAbsMag(absMag[ap]);
                     }
 
+                    var x0 = shapedApertureRois.get(ap).getXpos();
+                    var y0 = shapedApertureRois.get(ap).getYpos();
                     if ((useMA || useAlign) && useWCS) {
                         if (hasWCS && shapedApertureRois.get(ap).hasRadec()) {
                             var roi = shapedApertureRois.get(ap);
@@ -4345,6 +4347,17 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                         t1Centroid = center;
                     }
                     Prefs.set("aperture.reposition", holdReposition);
+
+                    if (ap == 0) {
+                        dx = shapedApertureRois.get(ap).getXpos() - x0;
+                        dy = shapedApertureRois.get(ap).getYpos() - y0;
+                    }
+
+                    if (!((useMA || useAlign) && useWCS) && !shapedApertureRois.get(ap).getIsCentroid()) {
+                        if (dx != 0 || dy != 0) {
+                            shapedApertureRois.get(ap).move(dx, dy);
+                        }
+                    }
 
                     if (!measureAperture(hdr, shapedApertureRois.get(ap))) {
                         if (haltOnError || this instanceof Stack_Aligner) {

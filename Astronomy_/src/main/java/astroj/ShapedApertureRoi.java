@@ -649,6 +649,11 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
         return shape;
     }
 
+    @Override
+    public void move(double dx, double dy) {
+        moveTo(xPos + dx, yPos + dy, true);
+    }
+
     public void moveTo(double x, double y, boolean moveBackground) {
         var t = AffineTransform.getTranslateInstance(x - xPos, y - yPos);
 

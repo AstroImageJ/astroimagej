@@ -1689,7 +1689,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
             // Check for right-click start
             if (!enterPressed) {
-                enterPressed = e != null && SwingUtilities.isRightMouseButton(e) && !mouseDrag && !e.isShiftDown() && !e.isControlDown() && !e.isAltDown();
+                enterPressed = e != null && SwingUtilities.isRightMouseButton(e) && !apertureClicked && !mouseDrag && !e.isShiftDown() && !e.isControlDown() && !e.isAltDown();
             }
 
             if (!autoMode && !apertureClicked && (e != dummyClick && e != null && (!mouseDrag || e.isShiftDown()))) {

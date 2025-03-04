@@ -1708,7 +1708,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                         ap = new ShapedApertureRoi(new Ellipse2D.Double(x0, y0, x1-x0, y1-y0));
 
                         // harmonic mean
-                        ap.setEllipticalBaseRadius(((x1-x0)*(y1-y0))/(2*(x1-x0)*(y1-y0)));
+                        ap.setEllipticalBaseRadius((double) ((x1 - x0) * (y1 - y0)) / (2*(x1-x0)*(y1-y0)));
 
                         ap.setIsCentroid(e.isAltDown() != Prefs.get("aperture.reposition", reposition));
                     }
@@ -1771,6 +1771,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     shapedApertureRois.add(ap);
 
                     var comp = !e.isControlDown() && ((!e.isShiftDown() && ngot > 0) || (e.isShiftDown() && ngot == 0));
+                    ap.setComparisonStar(comp);
                     ap.setName((comp ? "C" : "T") + shapedApertureRois.size());
                 }
 

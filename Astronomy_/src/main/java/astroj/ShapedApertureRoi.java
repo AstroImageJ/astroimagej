@@ -206,7 +206,11 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
             if (DRAW_POINTING) {
                 g2.setColor(Color.ORANGE);
                 var length = apertureShape.getBounds2D().getWidth()/2D;
-                drawShape(g2, new ArrowShape(xPos, yPos, length, length * 0.333333), toScreenSpaceTransformed);
+                var width = length * 0.333333;
+                drawShape(g2, new ArrowShape(xPos, yPos, length, width), toScreenSpaceTransformed);
+                var theta = Math.toDegrees(Math.atan2(transform.getShearY(), transform.getScaleX()));
+                width *= 2;
+                drawShape(g2, new Arc2D.Double(xPos-width/2, yPos-width/2, width, width, 0, -theta, Arc2D.PIE), toScreenSpace);
             }
         }
 

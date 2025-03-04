@@ -21,18 +21,18 @@ public class ArrowShape implements Shape {
      */
     public ArrowShape(double x, double y, double arrowLength, double headSize) {
         // Build the arrow shape relative to origin.
-        // The shaft extends from (0, 0) upward to (-arrowLength, 0).
-        // The arrow head is a triangle with its tip at (-arrowLength, 0) and base centered at (-arrowLength + headSize, 0).
+        // The shaft extends from (0, 0) rightward to (arrowLength, 0).
+        // The arrow head is a triangle with its tip at (arrowLength, 0) and base centered at (arrowLength + headSize, 0).
         arrow = new Path2D.Double();
 
         // Draw the shaft.
         arrow.moveTo(0, 0);
-        arrow.lineTo(-arrowLength, 0);
+        arrow.lineTo(arrowLength, 0);
 
         // Draw the arrow head
-        arrow.moveTo(-arrowLength, 0);
-        arrow.lineTo(-arrowLength + headSize, -headSize / 2);
-        arrow.lineTo(-arrowLength + headSize, headSize / 2);
+        arrow.moveTo(arrowLength, 0);
+        arrow.lineTo(arrowLength - headSize, -headSize / 2);
+        arrow.lineTo(arrowLength - headSize, headSize / 2);
         arrow.closePath();
 
         AffineTransform transform = AffineTransform.getTranslateInstance(x, y);

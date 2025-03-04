@@ -5,6 +5,7 @@ import Astronomy.multiaperture.CompositeShape;
 import Astronomy.multiaperture.TransformedShape;
 import ij.Prefs;
 import ij.astro.logging.AIJLogger;
+import util.ArrowShape;
 
 import java.awt.*;
 import java.awt.geom.*;
@@ -29,6 +30,7 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
     private static final Color BACKGROUND_COLOR = new Color(0, 114, 234);
     private static final Color CENTROID_COLOR = new Color(25, 205, 180);
     private static final boolean FILL_SHAPE = true;
+    private static final boolean DRAW_POINTING = true;
     private static final boolean SHOW_FLATTENED = false;
     private final boolean usePlane = Prefs.get(AP_PREFS_BACKPLANE, false);
     private final boolean removeStars = Prefs.get(AP_PREFS_REMOVEBACKSTARS, false);
@@ -199,6 +201,12 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
                     var r = getBack2();
                     g2.draw(toScreenSpace.createTransformedShape(new Ellipse2D.Double(xPos - r, yPos - r, 2*r, 2*r)));
                 }
+            }
+
+            if (DRAW_POINTING) {
+                g2.setColor(Color.ORANGE);
+                var length = apertureShape.getBounds2D().getWidth()/2D;
+                drawShape(g2, new ArrowShape(xPos, yPos, length, length * 0.333333), toScreenSpaceTransformed);
             }
         }
 

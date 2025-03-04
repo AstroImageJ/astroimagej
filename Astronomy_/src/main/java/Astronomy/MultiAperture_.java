@@ -2384,7 +2384,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                         ap.setCentroidRadius(t1.getCentroidRadius());
                         t1.copyPixels(ap, true);
 
-                        ap.setIsCentroid(t1.getIsCentroid());
+                        ap.setIsCentroid(Prefs.get("aperture.reposition", reposition));
 
                         ap.moveTo(coordinateMaxima.cm.x(), coordinateMaxima.cm.y(), true);
 
@@ -2404,7 +2404,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
                             ap.setEllipticalBaseRadius(t1.getEllipticalBaseRadius());
 
-                            ap.setIsCentroid(t1.getIsCentroid());
+                            ap.setIsCentroid(Prefs.get("aperture.reposition", reposition));
 
                             ap.moveTo(coordinateMaxima.cm.x(), coordinateMaxima.cm.y(), true);
 

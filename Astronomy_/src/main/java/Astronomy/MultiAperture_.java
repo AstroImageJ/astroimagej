@@ -1773,6 +1773,16 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     var comp = !e.isControlDown() && ((!e.isShiftDown() && ngot > 0) || (e.isShiftDown() && ngot == 0));
                     ap.setComparisonStar(comp);
                     ap.setName((comp ? "C" : "T") + shapedApertureRois.size());
+
+                    if (e.isShiftDown() && e.isControlDown()) {
+                        ap.setName("T1");
+                        shapedApertureRois.remove(ap);
+                        shapedApertureRois.add(0, ap);
+                        for (int i = 1; i < shapedApertureRois.size(); i++) {
+                            var roi = shapedApertureRois.get(i-1);
+                            roi.setName((roi.isComparisonStar() ? "C" : "T") + i);
+                        }
+                    }
                 }
 
                 ngot = shapedApertureRois.size();
@@ -1796,7 +1806,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     shapedApertureRoi.setComparisonStar(!shapedApertureRoi.isComparisonStar());
                     canvas.repaint();
                 } else if (e.isShiftDown() && e.isControlDown()) {
-                    renameApertureToT1(e.isAltDown());
+                    shapedApertureRoi.setName("T1");
+                    if (e.isAltDown()) {
+                        shapedApertureRoi.setIsCentroid(!shapedApertureRoi.getIsCentroid());
+                    }
                     shapedApertureRois.remove(shapedApertureRoi);
                     shapedApertureRois.add(0, shapedApertureRoi);
                     for (int i = 1; i < shapedApertureRois.size(); i++) {

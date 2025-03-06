@@ -154,7 +154,7 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
             drawShape(g2, apertureShape, toScreenSpaceTransformed);
             g2.setColor(BACKGROUND_COLOR);
             if (showSky) {
-                drawShape(g2, backgroundShape, toScreenSpaceTransformed);
+                drawShape(g2, backgroundShape, toScreenSpaceTransformed, isCompStar ? Color.RED : Color.GREEN);
             }
 
             // Draw Geometric Centroid
@@ -237,6 +237,10 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
     }
 
     private void drawShape(Graphics2D g2, Shape shape, AffineTransform transform) {
+        drawShape(g2, shape, transform, null);
+    }
+
+    private void drawShape(Graphics2D g2, Shape shape, AffineTransform transform, Color secondary) {
         if (shape == null) {
             return;
         }
@@ -248,8 +252,16 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
             g2.fill(transform.createTransformedShape(shape));
             g2.setComposite(comp);
 
+            var primary = g2.getColor();
+
+            if (secondary != null) {
+                g2.setColor(secondary);
+            }
+
             // Draw border as well
             g2.draw(transform.createTransformedShape(shape));
+
+            g2.setColor(primary);
         } else {
             g2.draw(transform.createTransformedShape(shape));
         }

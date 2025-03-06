@@ -5295,7 +5295,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                         sliders[8] = g.addSlider("Last slice", 1, stackSize, lastSlice, d -> lastSlice = d.intValue());
                     }
 
-                    sliders[9] = g.addFloatSlider("Semi-major axis radius of photometric aperture", 0.01, radius > 100 ? radius : 100, false, radius, 3, 1.0, d -> radius = d);
+                    sliders[9] = g.addFloatSlider("Base radius of photometric aperture", 0.01, radius > 100 ? radius : 100, false, radius, 3, 1.0, d -> radius = d);
                     sliders[10] = g.addFloatSlider("Fixed radius of inner background annulus", 0.01, rBack1 > 100 ? rBack1 : 100, false, rBack1, 3, 1.0, d -> rBack1 = d);
                     sliders[11] = g.addFloatSlider("Fixed radius of outer background annulus", 0.01, rBack2 > 100 ? rBack2 : 100, false, rBack2, 3, 1.0, d -> rBack2 = d);
 

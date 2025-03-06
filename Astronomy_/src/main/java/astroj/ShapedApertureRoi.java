@@ -13,6 +13,7 @@ import java.util.Objects;
 
 import static Astronomy.Aperture_.AP_PREFS_BACKPLANE;
 import static Astronomy.Aperture_.AP_PREFS_REMOVEBACKSTARS;
+import static Astronomy.MultiAperture_.SHAPED_AP_AREA_LOCKED;
 import static Astronomy.multiaperture.CompositeShape.ShapeCombination;
 
 public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
@@ -620,7 +621,7 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
     }
 
     public static Ellipse2D createEllipse(double x, double y, double r, double roundness) {
-        if (true) {
+        if (SHAPED_AP_AREA_LOCKED.get()) {
             var sqRoundness = Math.sqrt(roundness);
             var a = Math.abs(r / sqRoundness);
             var b = Math.abs(r * sqRoundness);

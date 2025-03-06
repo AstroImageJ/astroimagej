@@ -330,6 +330,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     MultiAperture_::serializeApertures, MultiAperture_::deserializeApertures,
                     MultiAperture_.class);
     private List<ShapedApertureRoi> shapedApertureRois = new ArrayList<>();
+    public static final Property<Boolean> SHAPED_AP_AREA_LOCKED = new Property<>(true, MultiAperture_.class);
     public static final Property<Boolean> SHAPED_AP_ECCENTRICITY_LOCKED = new Property<>(false, MultiAperture_.class);
     public static final Property<Double> SHAPED_AP_ECCENTRICITY = new Property<>(0D, MultiAperture_.class);
     public static final Property<Boolean> SHAPED_AP_ANGLE_LOCKED = new Property<>(false, MultiAperture_.class);
@@ -5269,6 +5270,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                             centroiding result at each aperture location.
                             If disabled, all apertures will use the angle and eccentricity measured for T1.
                             """);
+                    g.addCheckbox("Keep aperture area constant", SHAPED_AP_AREA_LOCKED.get(), SHAPED_AP_AREA_LOCKED::set);
 
                     setEnabled(ePanel, SHAPED_AP_ECCENTRICITY_LOCKED.get());
                     setEnabled(aPanel, SHAPED_AP_ANGLE_LOCKED.get());

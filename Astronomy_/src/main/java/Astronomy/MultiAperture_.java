@@ -1445,8 +1445,22 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     selectedApertureRoi.setIntCnts(source);
                     updateApMags();
                 }
-            } else {
-
+            } else if (apertureShape.get() == ApertureShape.ELLIPTICAL && selectedApertureRoi != null) {
+                if (selectedApertureRoi instanceof ShapedApertureRoi shapedApertureRoi) {
+                    if (shapedApertureRoi.getIsCentroid()) {
+                        var c = new Centroid();
+                        if (c.measure(imp, shapedApertureRoi, true, removeBackStars, backIsPlane)) {
+                            shapedApertureRoi.moveTo(c.x(), c.y(), true);
+                        } else if (haltOnError) {
+                            IJ.beep();
+                            IJ.showMessage("No signal for centroid in aperture " + (shapedApertureRoi.getName()) + " of image " +
+                                    IJU.getSliceFilename(imp, slice) +
+                                    ((this instanceof Stack_Aligner) ? ". Stack Aligner aborted." : ". Multi-Aperture aborted."));
+                            shutDown();
+                            return;
+                        }
+                    }
+                }
             }
 
             ac.repaint();
@@ -1587,22 +1601,37 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                         ap.moveTo(np[0], np[1], true);
                     }
 
+                    var centroided = false;
                     if (SHAPED_AP_ECCENTRICITY_LOCKED.get()) {
                         roundness = Math.sqrt(1 - SHAPED_AP_ECCENTRICITY.get());
                     } else if (!SHAPED_VARIATION_LOCKED.get() || i == 0) {
                         if (c.measure(imp, ap.getXpos(), ap.getYpos(), radius, rBack1, rBack2, ap.getIsCentroid(), backIsPlane, removeBackStars)) {
                             roundness = c.roundness();
+                            centroided = true;
                         }
                     }
 
                     if (SHAPED_AP_ANGLE_LOCKED.get()) {
                         angle = SHAPED_AP_ANGLE.get();
                     } else if (!SHAPED_VARIATION_LOCKED.get() || i == 0) {
+                        // Reuse measure centroid
                         if (SHAPED_AP_ECCENTRICITY_LOCKED.get() || (!SHAPED_VARIATION_LOCKED.get() || i == 0)) {
                             angle = c.orientation();
                         } else {
                             if (c.measure(imp, ap.getXpos(), ap.getYpos(), radius, rBack1, rBack2, ap.getIsCentroid(), backIsPlane, removeBackStars)) {
                                 angle = c.orientation();
+                                centroided = true;
+                            }
+                        }
+                    }
+
+                    if (ap.getIsCentroid()) {
+                        if (centroided) {
+                            ap.moveTo(c.x(), c.y(), true);
+                        } else {
+                            var c1 = new Centroid();
+                            if (c1.measure(imp, ap.getXpos(), ap.getYpos(), radius, rBack1, rBack2, ap.getIsCentroid(), backIsPlane, removeBackStars)) {
+                                ap.moveTo(c1.x(), c1.y(), true);
                             }
                         }
                     }
@@ -1644,11 +1673,13 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                         ap.moveTo(np[0], np[1], true);
                     }
 
+                    var centroided = false;
                     if (SHAPED_AP_ECCENTRICITY_LOCKED.get()) {
                         roundness = Math.sqrt(1 - SHAPED_AP_ECCENTRICITY.get());
                     } else if (!SHAPED_VARIATION_LOCKED.get() || i == 0) {
                         if (c.measure(imp, ap.getXpos(), ap.getYpos(), radius, rBack1, rBack2, ap.getIsCentroid(), backIsPlane, removeBackStars)) {
                             roundness = c.roundness();
+                            centroided = true;
                         }
                     }
 
@@ -1661,6 +1692,18 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                         } else {
                             if (c.measure(imp, ap.getXpos(), ap.getYpos(), radius, rBack1, rBack2, ap.getIsCentroid(), backIsPlane, removeBackStars)) {
                                 angle = c.orientation();
+                                centroided = true;
+                            }
+                        }
+                    }
+
+                    if (ap.getIsCentroid()) {
+                        if (centroided) {
+                            ap.moveTo(c.x(), c.y(), true);
+                        } else {
+                            var c1 = new Centroid();
+                            if (c1.measure(imp, ap.getXpos(), ap.getYpos(), radius, rBack1, rBack2, ap.getIsCentroid(), backIsPlane, removeBackStars)) {
+                                ap.moveTo(c1.x(), c1.y(), true);
                             }
                         }
                     }

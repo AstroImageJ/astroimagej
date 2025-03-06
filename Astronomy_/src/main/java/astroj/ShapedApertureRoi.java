@@ -417,14 +417,7 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
      */
     public void transform(boolean adjustShape, double roundness, boolean adjustRotation, double angle) {
         if (adjustShape && Double.isFinite(ellipticalBaseRadius) && apertureShape instanceof Ellipse2D ellipse2D) {
-            var r = ellipticalBaseRadius;
-            var sqRoundness = Math.sqrt(roundness);
-            var a = Math.abs(r / sqRoundness);
-            var b = Math.abs(r * sqRoundness);
-
-            var x = xPos;
-            var y = yPos;
-            setApertureShape(new Ellipse2D.Double(x - a, y - b, 2 * a, 2 * b));
+            setApertureShape(createEllipse(xPos, yPos, ellipticalBaseRadius, roundness));
             setBackgroundShape(backgroundShape, centerBackground);
         }
 
@@ -626,16 +619,27 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
         this.centerBackground = centerBackground;
     }
 
+    public static Ellipse2D createEllipse(double x, double y, double r, double roundness) {
+        if (true) {
+            var sqRoundness = Math.sqrt(roundness);
+            var a = Math.abs(r / sqRoundness);
+            var b = Math.abs(r * sqRoundness);
+
+            return new Ellipse2D.Double(x - a, y - b, 2 * a, 2 * b);
+        } else {
+            var a = r / (roundness * roundness);
+            var b = r;
+
+            return new Ellipse2D.Double(x - a, y - b, 2 * a, 2 * b);
+        }
+    }
+
     public void adjustRadii(double r, double r2, double r3, double roundness) {
         if (isElliptical()) {
             if (r != ellipticalBaseRadius) {
                 roundness = Double.isFinite(roundness) ? roundness : 1;
 
-                var sqRoundness = Math.sqrt(roundness);
-                var a = Math.abs(r / sqRoundness);
-                var b = Math.abs(r * sqRoundness);
-
-                setApertureShape(new Ellipse2D.Double(xPos - a, yPos - b, 2 * a, 2 * b));
+                setApertureShape(createEllipse(xPos, yPos, r, roundness));
             }
 
             if (hasAnnulus()) {

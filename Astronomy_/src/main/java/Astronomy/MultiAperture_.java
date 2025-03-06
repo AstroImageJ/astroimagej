@@ -1727,12 +1727,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                                 roundness = Math.sqrt(1 - SHAPED_AP_ECCENTRICITY.get());
                             }
 
-                            var r = radius;
-                            var sqRoundness = Math.sqrt(roundness);
-                            var a = Math.abs(r / sqRoundness);
-                            var b = Math.abs(r * sqRoundness);
-
-                            ap = new ShapedApertureRoi(new Ellipse2D.Double(c.x() - a, c.y() - b, 2 * a, 2 * b));
+                            ap = new ShapedApertureRoi(ShapedApertureRoi.createEllipse(c.x(), c.y(), radius, roundness));
 
                             ap.setTransform(AffineTransform.getRotateInstance(Math.toRadians(c.orientation())));
                             ap.setEllipticalBaseRadius(radius);
@@ -1746,12 +1741,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                                 roundness = Math.sqrt(1 - SHAPED_AP_ECCENTRICITY.get());
                             }
 
-                            var r = radius;
-                            var sqRoundness = Math.sqrt(roundness);
-                            var a = Math.abs(r / sqRoundness);
-                            var b = Math.abs(r * sqRoundness);
-
-                            ap = new ShapedApertureRoi(new Ellipse2D.Double(c.x() - a, c.y() - b, 2 * a, 2 * b));
+                            ap = new ShapedApertureRoi(ShapedApertureRoi.createEllipse(c.x(), c.y(), radius, roundness));
                             ap.setEllipticalBaseRadius(radius);
                         }
 

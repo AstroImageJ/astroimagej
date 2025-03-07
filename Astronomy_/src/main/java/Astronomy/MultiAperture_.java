@@ -4572,24 +4572,29 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
         // Increase chance of aperture actually rendering on mac
         if (updateImageDisplay.get()) {
-            try {
-                SwingUtilities.invokeAndWait(()-> {
-                    if (/*IJ.isMacOSX()*/true) {
-                        ocanvas.update(ocanvas.getGraphics());
-                        canvas.update(canvas.getGraphics());
-                        //ocanvas.repaint();//renders extra apertures?!
-                    } else {
-                        // This is broken on mac.
-                        // Causes apertures to render in wrong location, if they render at all
-                        ocanvas.drawOverlayCanvas(ocanvas.getGraphics());
-                    }
+            Runnable update = () -> {
+                if (/*IJ.isMacOSX()*/true) {
+                    ocanvas.update(ocanvas.getGraphics());
+                    canvas.update(canvas.getGraphics());
+                    //ocanvas.repaint();//renders extra apertures?!
+                } else {
+                    // This is broken on mac.
+                    // Causes apertures to render in wrong location, if they render at all
+                    ocanvas.drawOverlayCanvas(ocanvas.getGraphics());
+                }
 
-                    canvas.repaintOverlay();
-                    canvas.repaint();
-                });
-            } catch (InterruptedException | InvocationTargetException e) {
-                System.err.println("Failed to update image display");
-                e.printStackTrace();
+                canvas.repaintOverlay();
+                canvas.repaint();
+            };
+            if (!SwingUtilities.isEventDispatchThread()) {
+                try {
+                    SwingUtilities.invokeAndWait(update);
+                } catch (InterruptedException | InvocationTargetException e) {
+                    System.err.println("Failed to update image display");
+                    e.printStackTrace();
+                }
+            } else {
+                update.run();
             }
         }
 

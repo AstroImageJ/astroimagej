@@ -641,6 +641,8 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
                 roundness = Double.isFinite(roundness) ? roundness : 1;
 
                 setApertureShape(createEllipse(xPos, yPos, r, roundness));
+
+                setEllipticalBaseRadius(r);
             }
 
             if (hasAnnulus()) {

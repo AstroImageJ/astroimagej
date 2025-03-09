@@ -1,8 +1,11 @@
 package ij.astro.util;
 
+import ij.io.Opener;
+
 import java.nio.file.Path;
 import java.util.EnumSet;
 import java.util.LinkedList;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 
@@ -18,8 +21,8 @@ public final class FileAssociationHandler {
      * @param path The path to check and handle.
      * @return if the open operation should continue.
      */
-    public static boolean handleFile(String path, boolean skipDialog) {
-        return handleFile(Path.of(path), skipDialog);
+    public static boolean handleFile(String path, Set<Opener.OpenOption> openOptions) {
+        return handleFile(Path.of(path), openOptions);
     }
 
     /**
@@ -27,10 +30,10 @@ public final class FileAssociationHandler {
      * @param path The path to check and handle.
      * @return if the open operation should continue.
      */
-    public static boolean handleFile(Path path, boolean skipDialog) {
+    public static boolean handleFile(Path path, Set<Opener.OpenOption> openOptions) {
         synchronized (AssociationMapper.class) {
             for (AssociationMapper handler : handlers) {
-                var m = handler.open(path, skipDialog);
+                var m = handler.open(path, openOptions);
                 if (match.contains(m)) return m == MapperCase.MATCHES_AND_DONE;
             }
         }
@@ -58,8 +61,8 @@ public final class FileAssociationHandler {
     /**
      * Handles the checking and consumption of files.
      */
-    public record AssociationMapper(Predicate<Path> associationPredicate, BiConsumer<Path, Boolean> opener, boolean matchComplete) {
-        public AssociationMapper(BiConsumer<Path, Boolean> opener, boolean matchComplete, final String... fileExtensions) {
+    public record AssociationMapper(Predicate<Path> associationPredicate, BiConsumer<Path, Set<Opener.OpenOption>> opener, boolean matchComplete) {
+        public AssociationMapper(BiConsumer<Path, Set<Opener.OpenOption>> opener, boolean matchComplete, final String... fileExtensions) {
             this(p -> {
                 var ps = p.toString();
                 for (String fileExtension : fileExtensions) {
@@ -69,11 +72,11 @@ public final class FileAssociationHandler {
             }, opener, matchComplete);
         }
 
-        public AssociationMapper(BiConsumer<Path, Boolean> opener, final String... fileExtensions) {
+        public AssociationMapper(BiConsumer<Path, Set<Opener.OpenOption>> opener, final String... fileExtensions) {
             this(opener, false, fileExtensions);
         }
 
-        public AssociationMapper(Predicate<Path> associationPredicate, BiConsumer<Path, Boolean> opener) {
+        public AssociationMapper(Predicate<Path> associationPredicate, BiConsumer<Path, Set<Opener.OpenOption>> opener) {
             this(associationPredicate, opener, false);
         }
 
@@ -81,9 +84,9 @@ public final class FileAssociationHandler {
          * @param path the path to check.
          * @return if the path matches the predicate and the opener was run.
          */
-        public MapperCase open(Path path, boolean skipDialog) {
+        MapperCase open(Path path, Set<Opener.OpenOption> openOptions) {
             if (associationPredicate.test(path)) {
-                opener.accept(path, skipDialog);
+                opener.accept(path, openOptions);
                 return matchComplete ? MapperCase.MATCHES_AND_DONE : MapperCase.MATCHES;
             }
             return MapperCase.DOES_NOT_MATCH;

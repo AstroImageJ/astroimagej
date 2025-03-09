@@ -34,7 +34,7 @@ import static Astronomy.MultiPlot_.useMacroTitle;
  */
 public class AIJStartupHandler implements PlugIn {
     private static final AssociationMapper multiplotTableHandler =
-            new AssociationMapper((p, skipDialog) -> {
+            new AssociationMapper((p, openOptions) -> {
                 MeasurementTable table = MeasurementTable.getTableFromFile(p.toString());
                 if (table != null) {
                     table.show();
@@ -62,10 +62,10 @@ public class AIJStartupHandler implements PlugIn {
 
                 return false;
             },
-            (p, skipDialog) -> {
+            (p, openOptions) -> {
                 var table = new MeasurementTable(p.getFileName().toString());
                 table.setFilePath(p.toString());
-                var tableRead = FITS_Reader.handleTable(p, table, skipDialog);
+                var tableRead = FITS_Reader.handleTable(p, table, openOptions);
                 if (tableRead != null) {
                     if (tableRead.loadTable()) {
                         useMacroSubtitle.set(false);
@@ -140,11 +140,11 @@ public class AIJStartupHandler implements PlugIn {
                 }
             }, true);
     private static final AssociationMapper multiplotPlotCfgHandler =
-            new AssociationMapper((p, skipDialog) -> MultiPlot_.loadConfigOfOpenTable(p.toString()), true, ".plotcfg");
+            new AssociationMapper((p, openOptions) -> MultiPlot_.loadConfigOfOpenTable(p.toString()), true, ".plotcfg");
     private static final AssociationMapper radecHandler =
-            new AssociationMapper((p, skipDialog) -> IJU.openRaDecApertures(p.toString()), true, ".radec");
+            new AssociationMapper((p, openOptions) -> IJU.openRaDecApertures(p.toString()), true, ".radec");
     private static final AssociationMapper aperturesHandler =
-            new AssociationMapper((p, skipDialog) -> {
+            new AssociationMapper((p, openOptions) -> {
                 var asw = IJU.getBestOpenAstroStackWindow();
                 if (asw != null) {
                     try {

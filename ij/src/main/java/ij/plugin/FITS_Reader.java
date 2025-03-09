@@ -16,6 +16,7 @@ import ij.astro.util.SkyAlgorithmsTimeUtil;
 import ij.io.FileInfo;
 import ij.io.FileOpener;
 import ij.io.OpenDialog;
+import ij.io.Opener;
 import ij.measure.Calibration;
 import ij.measure.ResultsTable;
 import ij.process.ImageProcessor;
@@ -394,7 +395,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 				if (filter != null && !filter.matchesFilter(hdr)) return;
 				imageProcessor = makeStackFrom3DData(data, tableHDU.getNRows(), makeHeadersTessCut(hdr, tableHDU, hdus));
 			} else {
-				var mt = fitsTable2MeasurementsTable(hdus, tableHDU, false);
+				var mt = fitsTable2MeasurementsTable(hdus, tableHDU, Set.of());
 				if (mt != null) {
 					mt.show("Measurements in " + fileName);
 				}
@@ -484,12 +485,12 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		return true;
 	}
 
-	public static TableRead handleTable(Path path, ResultsTable table, boolean skipDialog) {
+	public static TableRead handleTable(Path path, ResultsTable table, Set<Opener.OpenOption> openOptions) {
 		try (var fits = new Fits(new FitsFile(path.toFile()))) {
 			var hdus = fits.read();
 			if (hdus.length > 1) {
 				if (hdus[1] instanceof TableHDU<?> tableHDU) {
-					return fitsTable2MeasurementsTable(table, hdus, tableHDU, skipDialog);
+					return fitsTable2MeasurementsTable(table, hdus, tableHDU, openOptions);
 				}
 			}
 		} catch (IOException e) {
@@ -499,7 +500,8 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 		return null;
 	}
 
-	private ResultsTable fitsTable2MeasurementsTable(BasicHDU<?>[] hdus, TableHDU<?> tableHDU, boolean skipDialog) {
+	private ResultsTable fitsTable2MeasurementsTable(BasicHDU<?>[] hdus, TableHDU<?> tableHDU,
+													 Set<Opener.OpenOption> openOptions) {
 		ResultsTable mt;
 		try {
 			// Work around access issues
@@ -514,12 +516,14 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 			mt = new ResultsTable(tableHDU.getNRows());
 		}
 
-		var tableRead = fitsTable2MeasurementsTable(mt, hdus, tableHDU, skipDialog);
+		var tableRead = fitsTable2MeasurementsTable(mt, hdus, tableHDU, openOptions);
 		return mt;
 	}
 
-	private static TableRead fitsTable2MeasurementsTable(ResultsTable table, BasicHDU<?>[] hdus, TableHDU<?> tableHDU, boolean skipDialog) throws FitsException {
+	private static TableRead fitsTable2MeasurementsTable(ResultsTable table, BasicHDU<?>[] hdus, TableHDU<?> tableHDU,
+														 Set<Opener.OpenOption> openOptions) throws FitsException {
 		var loadTable = true;
+		var skipDialog = openOptions.contains(Opener.OpenOption.SKIP_UI);
 
 		// Handle AIJ Fits Tables
 		//todo drag onto MP windows does not load

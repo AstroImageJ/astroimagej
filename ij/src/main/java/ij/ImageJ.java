@@ -3,6 +3,7 @@ package ij;
 import ij.astro.AstroImageJ;
 import ij.astro.logging.ConsoleLogging;
 import ij.gui.*;
+import ij.io.Opener;
 import ij.macro.Interpreter;
 import ij.plugin.GelAnalyzer;
 import ij.plugin.JavaProperties;
@@ -837,7 +838,7 @@ public class ImageJ extends Frame implements ActionListener,
 				macros++;
 			} else if (arg.length()>0 && arg.indexOf("ij.ImageJ")==-1) {
 				File file = new File(arg);
-				IJ.open(file.getAbsolutePath());
+				IJ.open(file.getAbsolutePath(), Opener.OpenOption.SKIP_UI);
 			}
 		}
 		if (IJ.debugMode && IJ.getInstance()==null && !GraphicsEnvironment.isHeadless())

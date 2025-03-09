@@ -783,6 +783,10 @@ public class FolderOpener implements PlugIn, TextListener {
 		saveImage = false;
 		runningOpen = true;
 	}
+
+	public void setLimit(int i) {
+		this.nFiles = i;
+	}
 	
 	public static String[] getFilteredList(String[] list, String filter, String title) {
 		boolean isRegex = false;
@@ -1003,7 +1007,7 @@ public class FolderOpener implements PlugIn, TextListener {
 		long sizeInBytes = 0;
 		var stackCountPerImage = 1;
 		for (String sf : list) {
-			Opener opener = new Opener(true);
+			Opener opener = new Opener(Opener.OpenOption.SKIP_UI);
 			opener.setSilentMode(true);
 			IJ.redirectErrorMessages(true);
 			ImagePlus imp = opener.openImage(directory, sf);

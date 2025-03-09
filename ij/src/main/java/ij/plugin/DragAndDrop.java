@@ -5,6 +5,7 @@ import ij.ImageJ;
 import ij.ImagePlus;
 import ij.Macro;
 import ij.astro.AstroImageJ;
+import ij.astro.util.SwingConstantUtil;
 import ij.gui.Toolbar;
 import ij.io.OpenDialog;
 import ij.io.Opener;
@@ -21,8 +22,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.*;
 import java.util.List;
 
 /** This class opens images, roi's, luts and text files dragged and dropped on  the "ImageJ" window.
@@ -35,7 +35,7 @@ import java.util.List;
 public class DragAndDrop implements PlugIn, DropTargetListener, Runnable {
 	private Iterator iterator;
 	@AstroImageJ(reason = "Add way to skip dialog")
-	private boolean skipUi;
+	private Set<Opener.OpenOption> openOptions = EnumSet.noneOf(Opener.OpenOption.class);
 	private static boolean convertToRGB;
 	private static boolean virtualStack;
 	private boolean openAsVirtualStack;
@@ -47,14 +47,16 @@ public class DragAndDrop implements PlugIn, DropTargetListener, Runnable {
 		new DropTarget(Toolbar.getInstance(), this);
 		new DropTarget(ij.getStatusBar(), this);
 	}  
-	    
+
+	@AstroImageJ(reason = "Custom Drop Action", modified = true)
 	public void drop(DropTargetDropEvent dtde)  {
+		openOptions.clear();
 		dtde.acceptDrop(DnDConstants.ACTION_COPY);
 		DataFlavor[] flavors = null;
 		try  {
 			Transferable t = dtde.getTransferable();
 			iterator = null;
-			skipUi = dtde.getDropAction() == DnDConstants.ACTION_COPY;
+            openOptions = createOptions(dtde);
 			flavors = t.getTransferDataFlavors();
 			if (IJ.debugMode) IJ.log("DragAndDrop.drop: "+flavors.length+" flavors");
 			for (int i=0; i<flavors.length; i++) {
@@ -135,30 +137,32 @@ public class DragAndDrop implements PlugIn, DropTargetListener, Runnable {
 		return s;
 	}
 
+	@AstroImageJ(reason = "Custom status", modified = true)
 	public void dragEnter(DropTargetDragEvent e)  {
-		IJ.showStatus("<<Drag and Drop>>");
+		IJ.showStatus(buildStatus(e, false));
 		if (IJ.debugMode) IJ.log("DragEnter: "+e.getLocation());
 		e.acceptDrag(DnDConstants.ACTION_COPY);
 		openAsVirtualStack = false;
 	}
 
+	@AstroImageJ(reason = "Custom status", modified = true)
 	public void dragOver(DropTargetDragEvent e) {
 		if (IJ.debugMode) IJ.log("DragOver: "+e.getLocation());
 		Point loc = e.getLocation();
 		int buttonSize = Toolbar.getButtonSize();
 		int width = IJ.getInstance().getSize().width;
 		openAsVirtualStack = width-loc.x<=(buttonSize+buttonSize/3);
-		if (openAsVirtualStack)
-			IJ.showStatus("<<Open as virtual stack or text image>>");
-		else
-			IJ.showStatus("<<Drag and Drop>>");
+		IJ.showStatus(buildStatus(e, true));
 	}
 	
 	public void dragExit(DropTargetEvent e) {
 		IJ.showStatus("");
 	}
-	
-	public void dropActionChanged(DropTargetDragEvent e) {}
+
+	@AstroImageJ(reason = "Custom status", modified = true)
+	public void dropActionChanged(DropTargetDragEvent e) {
+		IJ.showStatus(buildStatus(e, false));
+	}
 	
 	public void run() {
 		Iterator iterator = this.iterator;
@@ -208,7 +212,7 @@ public class DragAndDrop implements PlugIn, DropTargetListener, Runnable {
 							new ImagePlus(f.getName(),ip).show();
 					} else {
 						Recorder.recordOpen(path);
-						(new Opener(skipUi)).openAndAddToRecent(path);
+						(new Opener(openOptions)).openAndAddToRecent(path);
 					}
 					OpenDialog.setLastDirectory(f.getParent()+File.separator);
 					OpenDialog.setLastName(f.getName());
@@ -255,10 +259,60 @@ public class DragAndDrop implements PlugIn, DropTargetListener, Runnable {
 
 		FolderOpener fo = new FolderOpener();
 		fo.setDirectory(path);
-		if (skipUi) {
+		if (openOptions.contains(Opener.OpenOption.SKIP_UI)) {
 			fo.setOptions();
 		}
-		fo.run(skipUi ? path : "");
+		if (openOptions.contains(Opener.OpenOption.SINGLE_FILE)) {
+			fo.setLimit(1);
+		}
+		fo.run(openOptions.contains(Opener.OpenOption.SKIP_UI) ? path : "");
+	}
+
+	@AstroImageJ(reason = "Custom open behavior")
+	private Set<Opener.OpenOption> createOptions(DropTargetEvent event) {
+		int action;
+        if (event instanceof DropTargetDragEvent dragEvent) {
+			action = dragEvent.getDropAction();
+        } else if (event instanceof DropTargetDropEvent dropEvent) {
+			action = dropEvent.getDropAction();
+		} else {
+			throw new IllegalArgumentException("Unknown event: " + event);
+		}
+
+		var openOptions = EnumSet.noneOf(Opener.OpenOption.class);
+		if (SwingConstantUtil.hasModifier(action, DnDConstants.ACTION_COPY)) {
+			openOptions.add(Opener.OpenOption.SKIP_UI);
+		} else if (SwingConstantUtil.hasModifier(action, DnDConstants.ACTION_LINK)) {
+			openOptions.add(Opener.OpenOption.SKIP_UI);
+			openOptions.add(Opener.OpenOption.SINGLE_FILE);
+		}
+
+		return openOptions;
+	}
+
+	@AstroImageJ(reason = "Custom open behavior")
+	private String buildStatus(DropTargetEvent event, boolean isOver) {
+		//Drag and Drop
+		var sb = new StringBuilder("<<");
+
+		var options = createOptions(event);
+
+        if (isOver && openAsVirtualStack) {
+            sb.append("Open as virtual stack or text image");
+        } else {
+			sb.append("Drag and Drop");
+		}
+
+        if (options.contains(Opener.OpenOption.SKIP_UI)) {
+            sb.append(" w/ Skipped Dialog");
+        }
+
+		if (options.contains(Opener.OpenOption.SINGLE_FILE)) {
+			sb.append("  & Single File Only");
+		}
+
+		sb.append(">>");
+		return sb.toString();
 	}
 		
 }

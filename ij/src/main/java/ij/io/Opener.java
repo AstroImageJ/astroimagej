@@ -32,9 +32,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.Hashtable;
-import java.util.Locale;
+import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
@@ -62,7 +60,7 @@ public class Opener {
 	private boolean useHandleExtraFileTypes;
 	private boolean doNotUseBioFormats;
 	@AstroImageJ(reason = "Skip ZIP folder dialog")
-	private boolean skipFolderDialog;
+	private EnumSet<OpenOption> openOptions = EnumSet.noneOf(OpenOption.class);
 
 	static {
 		Hashtable commands = Menus.getCommands();
@@ -73,8 +71,17 @@ public class Opener {
 	}
 
 	@AstroImageJ(reason = "Skip ZIP folder dialog")
-	public Opener(boolean skipFolderDialog) {
-		this.skipFolderDialog = skipFolderDialog;
+	public Opener(OpenOption... openOptions) {
+        if (openOptions != null) {
+			this.openOptions.addAll(Arrays.asList(openOptions));
+        }
+	}
+
+	@AstroImageJ(reason = "Skip ZIP folder dialog")
+	public Opener(Set<OpenOption> openOptions) {
+        if (openOptions != null) {
+			this.openOptions.addAll(openOptions);
+        }
 	}
 
 	/**
@@ -111,7 +118,7 @@ public class Opener {
 	public void open(String path) {
 		boolean isURL = path.contains("://") || path.contains("file:/");
 
-		if (FileAssociationHandler.handleFile(path, skipFolderDialog)) return;
+		if (FileAssociationHandler.handleFile(path, openOptions)) return;
 
 		if (isURL && isText(path)) {
 			openTextURL(path);
@@ -1088,10 +1095,13 @@ ImagePlus openJpegOrGifUsingURL(String title, URL url) {
 		var hasFits = Arrays.stream(ZipOpenerUtil.getFilesInZip(path)).map(ZipOpenerUtil.InternalZipFile::path).anyMatch(s ->
 				getFileType(s, false) == Opener.FITS || getFileType(s, false) == Opener.PNG);
 		if (hasFits) {
-			if (skipFolderDialog) {
+			if (openOptions.contains(OpenOption.SKIP_UI)) {
 				fo.setOptions();
 			}
-			if (skipFolderDialog || fo.showDialog()) {
+			if (openOptions.contains(OpenOption.SINGLE_FILE)) {
+				fo.setLimit(1);
+			}
+			if (openOptions.contains(OpenOption.SKIP_UI) || fo.showDialog()) {
 				return fo.openFolder(path);
 			} else {
 				return null;
@@ -1571,6 +1581,12 @@ ImagePlus openJpegOrGifUsingURL(String title, URL url) {
 
 	public void doNotUseBioFormats() {
 		doNotUseBioFormats = true;
+	}
+
+	public enum OpenOption {
+		SKIP_UI,
+		SINGLE_FILE,
+		FORCE_ALL,
 	}
 
 }

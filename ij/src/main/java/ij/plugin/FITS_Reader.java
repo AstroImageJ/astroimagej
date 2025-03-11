@@ -625,7 +625,6 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 							setColumn(o, table, cName);
 							totalCol++;
 						}
-						continue;
 					}
 
 					if (skipDialog || MP_TABLE_LOAD_SETTINGS.loadPlotcfg.get()) {

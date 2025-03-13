@@ -224,13 +224,16 @@ public class AIJLogger {
         synchronized (AIJLogger.class) {
             aijLogPanelsTimer.forEach((caller, closingConditions) -> {
                 var lWin = ((LogWindow)WindowManager.getWindow(caller + " Log"));
+                if (lWin == null) {
+                    return;
+                }
                 if (!closingConditions.autoClose) {
                     lWin.setAlwaysOnTop(false);
                     return;
                 }
                 lWin.setAlwaysOnTop(true);
                 if (System.currentTimeMillis() - closingConditions.lastModified > 5000) {
-                    if (lWin != null) SwingUtilities.invokeLater(lWin::close);
+                    SwingUtilities.invokeLater(lWin::close);
                 }
             });
             // Remove outdated entries that don't need timing information

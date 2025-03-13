@@ -1729,6 +1729,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 d.dispose();
                 ocanvas.removeRoi(warning);
                 enterPressed = false;
+
+                return;
             }
 
             // Check for right-click start

@@ -1354,11 +1354,11 @@ public class Photometer {
                         var r2 = (j + Centroid.PIXELCENTER - ypix) * (i + Centroid.PIXELCENTER - xpix);
                         if (!removeBackStars && !usePlaneLocal) {
                             fraction = intarea(xpix, ypix, rBack1, i, i + 1, j, j + 1);
-                            backAdder.setVal(i, j, -(fraction * d));
-                            dBackCountAdder.setVal(i, j, -fraction);
+                            var b = -(fraction * d);
+                            var bc = -fraction;
                             fraction = intarea(xpix, ypix, rBack2, i, i + 1, j, j + 1);
-                            backAdder.setVal(i, j, fraction * d);
-                            dBackCountAdder.setVal(i, j, fraction);
+                            backAdder.setVal(i, j, (fraction * d) + b);
+                            dBackCountAdder.setVal(i, j, fraction + bc);
                         } else if (r2 >= r2b1 && r2 <= r2b2) { // BACKGROUND
                             backAdder.setVal(i, j, d);
                             backCountAdder.increment();

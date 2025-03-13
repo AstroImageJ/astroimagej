@@ -334,7 +334,7 @@ public class Photometer {
 
                         if (!removeBackStars && !usePlaneLocal) {
                             backAdder.setVal(i, j, fraction * d);
-                            dBackCountAdder.setVal(i, j, fraction * d);
+                            dBackCountAdder.setVal(i, j, fraction);
                         } else if (fraction > 0) { // BACKGROUND
                             backCount++;
                             backAdder.setVal(i, j, fraction * d);

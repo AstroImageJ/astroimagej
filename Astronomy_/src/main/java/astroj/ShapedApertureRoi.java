@@ -694,7 +694,6 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
         apertureShape = moveShape(apertureShape, x - xPos, y - yPos);
         apertureArea = null;
         transform.bind(apertureShape);
-        calculateCenter();
 
         if (moveBackground) {
             backgroundShape = moveShape(backgroundShape, x - xPos, y - yPos);
@@ -709,6 +708,8 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
                 innerBackgroundBounds = null;
             }
         }
+
+        calculateCenter();
     }
 
     private Shape moveShape(Shape shape, double dx, double dy) {

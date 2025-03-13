@@ -1594,6 +1594,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 var roundness = 0D;
                 for (int i = 0; i < shapedApertureRois.size(); i++) {
                     var ap = shapedApertureRois.get(i);
+                    ap.calculateCenter();
                     ap.setName((ap.isComparisonStar() ? "C" : "T") + (i+1));
 
                     if (useWCS && ap.hasRadec() && wcs != null) {
@@ -1667,6 +1668,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 for (int i = 0; i < shapedApertureRois.size(); i++) {
                     var ap = shapedApertureRois.get(i);
                     ap.setName((ap.isComparisonStar() ? "C" : "T") + (i+1));
+                    ap.calculateCenter();
 
                     if (useWCS && ap.hasRadec() && wcs != null) {
                         var np = wcs.wcs2pixels(new double[]{ap.getRightAscension(), ap.getDeclination()});

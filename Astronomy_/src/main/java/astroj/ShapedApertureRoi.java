@@ -722,7 +722,8 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
         }
 
         if (shape instanceof TransformedShape transformedShape) {
-            return new TransformedShape(moveShape(transformedShape.getOriginalShape(), dx, dy), transformedShape.getTransform());
+            return new TransformedShape(moveShape(transformedShape.getOriginalShape(), dx, dy),
+                    transformedShape.getTransform());
         }
 
         if (shape instanceof CompositeShape compositeShape) {
@@ -731,20 +732,22 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
                     moveShape(compositeShape.getTracker().secondary(), dx, dy));
         }
 
-        if (shape instanceof Rectangle2D.Double e) {
-            return new Rectangle2D.Double(e.x + dx, e.y + dy, e.width, e.height);
+        if (shape instanceof Rectangle2D.Double r) {
+            return new Rectangle2D.Double(r.x + dx, r.y + dy, r.width, r.height);
         }
 
-        if (shape instanceof Rectangle2D.Float e) {
-            return new Rectangle2D.Double(e.x + dx, e.y + dy, e.width, e.height);
+        if (shape instanceof Rectangle2D.Float r) {
+            return new Rectangle2D.Float((float)(r.x + dx), (float)(r.y + dy), r.width, r.height);
         }
 
-        if (shape instanceof RoundRectangle2D.Double e) {
-            return new RoundRectangle2D.Double(e.x + dx, e.y + dy, e.width, e.height, e.getArcWidth(), e.getArcHeight());
+        if (shape instanceof RoundRectangle2D.Double rr) {
+            return new RoundRectangle2D.Double(rr.x + dx, rr.y + dy, rr.width, rr.height,
+                    rr.getArcWidth(), rr.getArcHeight());
         }
 
-        if (shape instanceof RoundRectangle2D.Float e) {
-            return new RoundRectangle2D.Double(e.x + dx, e.y + dy, e.width, e.height, e.getArcWidth(), e.getArcHeight());
+        if (shape instanceof RoundRectangle2D.Float rr) {
+            return new RoundRectangle2D.Float((float)(rr.x + dx), (float)(rr.y + dy), rr.width, rr.height,
+                    rr.arcwidth, rr.archeight);
         }
 
         var t = AffineTransform.getTranslateInstance(dx, dy);

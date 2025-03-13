@@ -730,7 +730,21 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
                     moveShape(compositeShape.getTracker().secondary(), dx, dy));
         }
 
-        //todo other shapes
+        if (shape instanceof Rectangle2D.Double e) {
+            return new Rectangle2D.Double(e.x + dx, e.y + dy, e.width, e.height);
+        }
+
+        if (shape instanceof Rectangle2D.Float e) {
+            return new Rectangle2D.Double(e.x + dx, e.y + dy, e.width, e.height);
+        }
+
+        if (shape instanceof RoundRectangle2D.Double e) {
+            return new RoundRectangle2D.Double(e.x + dx, e.y + dy, e.width, e.height, e.getArcWidth(), e.getArcHeight());
+        }
+
+        if (shape instanceof RoundRectangle2D.Float e) {
+            return new RoundRectangle2D.Double(e.x + dx, e.y + dy, e.width, e.height, e.getArcWidth(), e.getArcHeight());
+        }
 
         var t = AffineTransform.getTranslateInstance(dx, dy);
         return t.createTransformedShape(shape);

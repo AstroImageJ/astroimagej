@@ -524,6 +524,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 														 Set<Opener.OpenOption> openOptions) throws FitsException {
 		var loadTable = true;
 		var skipDialog = openOptions.contains(Opener.OpenOption.SKIP_UI);
+		var onlyTable = openOptions.contains(Opener.OpenOption.SINGLE_FILE);
 
 		// Handle AIJ Fits Tables
 		//todo drag onto MP windows does not load
@@ -627,7 +628,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 						}
 					}
 
-					if (skipDialog || MP_TABLE_LOAD_SETTINGS.loadPlotcfg.get()) {
+					if ((skipDialog || MP_TABLE_LOAD_SETTINGS.loadPlotcfg.get()) && !onlyTable) {
 						var pltcfgCol = t.findColumn("plotcfg");
                         if (pltcfgCol >= 0) {
 							if (t instanceof CompressedTableHDU compressedTableHDU) {
@@ -640,7 +641,7 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
                             }
                         }
 					}
-					if (skipDialog || MP_TABLE_LOAD_SETTINGS.loadApertures.get()) {
+					if ((skipDialog || MP_TABLE_LOAD_SETTINGS.loadApertures.get()) && !onlyTable) {
 						var aperturesCol = t.findColumn("apertures");
                         if (aperturesCol >= 0) {
 							if (t instanceof CompressedTableHDU compressedTableHDU) {
@@ -656,13 +657,30 @@ public class FITS_Reader extends ImagePlus implements PlugIn {
 				}
 			}
 
-			if (plotcfg != null) {
+			if (plotcfg != null && !onlyTable) {
                 try {
                     Prefs.ijPrefs.load(new ByteArrayInputStream(plotcfg));
                 } catch (IOException e) {
                     e.printStackTrace();
 					IJ.error("Failed to read plotcfg");
                 }
+			}
+
+			if (skipDialog) {
+				AIJLogger.setLogAutoCloses(true);
+
+				AIJLogger.log("Loaded table");
+				if (!onlyTable) {
+					if (hasApertures) {
+						AIJLogger.log("Loaded apertures");
+					}
+
+					if (hasPlotCfg) {
+						AIJLogger.log("Loaded plot config");
+					}
+				}
+
+				AIJLogger.log("To select components to load, Drag & Drop or use File > Open...");
 			}
 
 			if (apertures != null) {

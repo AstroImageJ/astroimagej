@@ -223,9 +223,13 @@ public class AIJLogger {
     private static void checkAndExecuteTimers() {
         synchronized (AIJLogger.class) {
             aijLogPanelsTimer.forEach((caller, closingConditions) -> {
-                if (!closingConditions.autoClose) return;
+                var lWin = ((LogWindow)WindowManager.getWindow(caller + " Log"));
+                if (!closingConditions.autoClose) {
+                    lWin.setAlwaysOnTop(false);
+                    return;
+                }
+                lWin.setAlwaysOnTop(true);
                 if (System.currentTimeMillis() - closingConditions.lastModified > 5000) {
-                    var lWin = ((LogWindow)WindowManager.getWindow(caller + " Log"));
                     if (lWin != null) SwingUtilities.invokeLater(lWin::close);
                 }
             });

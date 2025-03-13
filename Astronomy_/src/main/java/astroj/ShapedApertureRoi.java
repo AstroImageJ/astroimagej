@@ -328,7 +328,7 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
         }
     }
 
-    private void calculateCenter() {
+    public void calculateCenter() {
         center = calculateCenter(apertureShape);
         updateTransformedCenter();
     }
@@ -691,17 +691,13 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
     }
 
     public void moveTo(double x, double y, boolean moveBackground) {
-        var t = AffineTransform.getTranslateInstance(x - xPos, y - yPos);
-
-        apertureShape = typePreservingTransform(apertureShape, t);
+        apertureShape = moveShape(apertureShape, x - xPos, y - yPos);
         apertureArea = null;
-        transform.bind(apertureShape, t);
-        center = t.transform(center, null);
-        xPos = center.getX();
-        yPos = center.getY();
+        transform.bind(apertureShape);
+        calculateCenter();
 
         if (moveBackground) {
-            backgroundShape = typePreservingTransform(backgroundShape, t);
+            backgroundShape = moveShape(backgroundShape, x - xPos, y - yPos);
             backgroundArea = null;
             innerBackgroundBounds = null;
         } else if (centerBackground) {
@@ -713,6 +709,31 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
                 innerBackgroundBounds = null;
             }
         }
+    }
+
+    private Shape moveShape(Shape shape, double dx, double dy) {
+        if (shape instanceof Ellipse2D.Double e) {
+            return new Ellipse2D.Double(e.x + dx, e.y + dy, e.width, e.height);
+        }
+
+        if (shape instanceof Ellipse2D.Float e) {
+            return new Ellipse2D.Float((float) (e.x + dx), (float) (e.y + dy), e.width, e.height);
+        }
+
+        if (shape instanceof TransformedShape transformedShape) {
+            return new TransformedShape(moveShape(transformedShape.getOriginalShape(), dx, dy), transformedShape.getTransform());
+        }
+
+        if (shape instanceof CompositeShape compositeShape) {
+            return new CompositeShape(compositeShape.getTracker().combination(),
+                    moveShape(compositeShape.getTracker().primary(), dx, dy),
+                    moveShape(compositeShape.getTracker().secondary(), dx, dy));
+        }
+
+        //todo other shapes
+
+        var t = AffineTransform.getTranslateInstance(dx, dy);
+        return t.createTransformedShape(shape);
     }
 
     /**

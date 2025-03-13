@@ -43,7 +43,7 @@ public class ApertureFileTransformer implements Transformer<ApFile, Void> {
 
             return new ApFile(header, apertures, prefs);
         } else { // Legacy Apertures File
-            var prefs = Transformers.read(Properties.class, section);
+            var prefs = Transformers.read(Properties.class, section, "");
             return new ApFile(new Header(), List.of(), prefs, true);
         }
     }

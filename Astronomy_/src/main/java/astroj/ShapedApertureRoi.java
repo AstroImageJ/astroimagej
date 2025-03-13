@@ -681,6 +681,11 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
     }
 
     @Override
+    public double getAngle() {
+        return Math.toDegrees(Math.atan2(transform.getShearY(), transform.getScaleX()));
+    }
+
+    @Override
     public void move(double dx, double dy) {
         moveTo(xPos + dx, yPos + dy, true);
     }
@@ -722,15 +727,15 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
 
         if (shape instanceof Ellipse2D ellipse2D) {
             var points = new double[]{ellipse2D.getX(), ellipse2D.getY(), ellipse2D.getMaxX(), ellipse2D.getMaxY()};
-            transform.transform(points, 0, points, 0, /*points.length / 2*/1);
+            transform.transform(points, 0, points, 0, points.length / 2);
             return new Ellipse2D.Double(points[0], points[1], points[2]-points[0], points[3]-points[1]);
         } else if (shape instanceof Rectangle2D rectangle2D) {
             var points = new double[]{rectangle2D.getX(), rectangle2D.getY(), rectangle2D.getMaxX(), rectangle2D.getMaxY()};
-            transform.transform(points, 0, points, 0, /*points.length / 2*/1);
+            transform.transform(points, 0, points, 0, points.length / 2);
             return new Rectangle2D.Double(points[0], points[1], points[2]-points[0], points[3]-points[1]);
         } else if (shape instanceof RoundRectangle2D roundRectangle2D) {
             var points = new double[]{roundRectangle2D.getX(), roundRectangle2D.getY(), roundRectangle2D.getMaxX(), roundRectangle2D.getMaxY()};
-            transform.transform(points, 0, points, 0, /*points.length / 2*/1);
+            transform.transform(points, 0, points, 0, points.length / 2);
             return new RoundRectangle2D.Double(points[0], points[1], points[2]-points[0], points[3]-points[1], roundRectangle2D.getArcWidth(), roundRectangle2D.getArcHeight());
         } else if (shape instanceof CompositeShape compositeShape) {
             return new CompositeShape(compositeShape.getTracker().combination(),

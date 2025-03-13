@@ -241,7 +241,7 @@ public class Photometer {
         }
 
         var sourceBounds = clampBounds(imp, apertureArea.getBounds());
-        assert hasBack == (backgroundArea != null);
+        assert hasBack == (backgroundArea != null && !backgroundArea.isEmpty());
         var backgroundBounds = hasBack ? clampBounds(imp, backgroundArea.getBounds()) : new Rectangle();
         int totalPixels = sourceBounds.height * sourceBounds.width + (backgroundBounds.height * backgroundBounds.width);
         if (usePlaneLocal) {

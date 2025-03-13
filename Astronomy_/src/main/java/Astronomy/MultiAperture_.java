@@ -1825,7 +1825,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
                 canvas.repaint();
             } else if (apertureClicked && selectedAp instanceof ShapedApertureRoi shapedApertureRoi) {
-                if (!e.isShiftDown() && !e.isControlDown() && !e.isAltDown()) {
+                if (e != null && !e.isShiftDown() && !e.isControlDown() && !e.isAltDown() && SwingUtilities.isLeftMouseButton(e)) {
                     ocanvas.removeRoi(shapedApertureRoi);
                     shapedApertureRois.remove(shapedApertureRoi);
 
@@ -1838,10 +1838,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
                     apertureClicked = false;
                     return;
-                } else if (e.isShiftDown() && !e.isControlDown()) {
+                } else if (e != null && e.isShiftDown() && !e.isControlDown()) {
                     shapedApertureRoi.setComparisonStar(!shapedApertureRoi.isComparisonStar());
                     canvas.repaint();
-                } else if (e.isShiftDown() && e.isControlDown()) {
+                } else if (e != null && e.isShiftDown() && e.isControlDown()) {
                     shapedApertureRoi.setName("T1");
                     if (e.isAltDown()) {
                         shapedApertureRoi.setIsCentroid(!shapedApertureRoi.getIsCentroid());
@@ -1853,7 +1853,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                         ap.setName((ap.isComparisonStar() ? "C" : "T") + i);
                     }
                     canvas.repaint();
-                } else if (e.isAltDown()) {
+                } else if (e != null && e.isAltDown()) {
                     shapedApertureRoi.setIsCentroid(!shapedApertureRoi.getIsCentroid());
                     canvas.repaint();
                 }

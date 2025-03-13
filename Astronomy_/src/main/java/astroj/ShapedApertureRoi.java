@@ -628,7 +628,7 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
 
             return new Ellipse2D.Double(x - a, y - b, 2 * a, 2 * b);
         } else {
-            var a = r / (roundness * roundness);
+            var a = r / (roundness);
             var b = r;
 
             return new Ellipse2D.Double(x - a, y - b, 2 * a, 2 * b);

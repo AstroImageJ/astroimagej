@@ -794,4 +794,16 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
     public void setEllipticalBaseRadius(double ellipticalBaseRadius) {
         this.ellipticalBaseRadius = ellipticalBaseRadius;
     }
+
+    public double estimateRoundness() {
+        if (isElliptical()) {
+            var bounds = apertureShape.getBounds2D();
+            var a = Math.max(bounds.getWidth(), bounds.getHeight()) / 2;
+            var b = Math.min(bounds.getWidth(), bounds.getHeight()) / 2;
+
+            return Math.sqrt(b / a);
+        }
+
+        return Double.NaN;
+    }
 }

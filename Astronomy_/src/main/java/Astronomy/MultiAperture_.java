@@ -2018,6 +2018,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     absMag[ap] = 99.999;
                 }
                 aperturesInitialized = true;
+
+                convertEllipticalApertures2Circular();
+
                 checkResultsTable();
                 if (stackSize > 1 && doStack) {
                     IJ.showStatus("Processing stack...");
@@ -2257,6 +2260,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 }
                 processStack();
                 saveNewApertures();
+                convertCircularApertures2Elliptical();
                 previous = true;
                 //Prefs.set(MultiAperture_.PREFS_PREVIOUS, previous);
                 firstSlice += 1;
@@ -2319,6 +2323,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 xOld = xPos.clone();
                 yOld = yPos.clone();
                 saveNewApertures();
+                convertCircularApertures2Elliptical();
                 if (!checkResultsTable()) {
                     IJ.showMessage("Multi-Aperture failed to create Measurements table");
                     IJ.beep();
@@ -3574,6 +3579,60 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             selectedApertureRoi.setLocation(x, y);
             ac.repaint();
         }
+    }
+
+    private void convertCircularApertures2Elliptical() {
+        var shaped = new ArrayList<ShapedApertureRoi>();
+        for (int i = 0; i < nApertures; i++) {
+            ApertureRoi roi = new ApertureRoi(xPos[i], yPos[i], radius, rBack1, rBack2, Double.NaN, centroidStar[i]);
+            roi.setAppearance(true, centroidStar[i], skyOverlay, nameOverlay, valueOverlay, isRefStar[i] ? Color.PINK : new Color(196, 222, 155), (isRefStar[i] ? "C" : "T") + (i + 1), Double.NaN);
+            roi.setAMag(absMag[i]);
+            if (raPos != null && decPos != null) {
+                roi.setRadec(raPos[i], decPos[i]);
+            }
+            roi.setIsCentroid(centroidStar[i]);
+            roi.setImage(imp);
+
+            var ap = ShapedApertureRoi.fromApertureRoi(roi);
+            ap.setComparisonStar(isRefStar[i]);
+            shaped.add(ap);
+        }
+
+        shapedApertureRois.clear();
+        shapedApertureRois.addAll(shaped);
+        SHAPED_APS.set(shaped);
+    }
+
+    private void convertEllipticalApertures2Circular() {
+        xPos = new double[nApertures];
+        yPos = new double[nApertures];
+        absMag = new double[nApertures];
+        isRefStar = new boolean[nApertures];
+        isAlignStar = new boolean[nApertures];
+        centroidStar = new boolean[nApertures];
+        if (useWCS) {
+            raPos = new double[nApertures];
+            decPos = new double[nApertures];
+        } else {
+            raPosStored = null;
+            decPosStored = null;
+        }
+
+        for (int i = 0; i < shapedApertureRois.size(); i++) {
+            var ap = shapedApertureRois.get(i);
+            xPos[i] = ap.getXpos();
+            yPos[i] = ap.getYpos();
+            absMag[i] = 99.999;
+            if (useWCS && ap.hasRadec()) {
+                raPos[i] = ap.getRightAscension();
+                decPos[i] = ap.getDeclination();
+            }
+            isRefStar[i] = ap.getIsRefStar();
+            isAlignStar[i] = false;
+            centroidStar[i] = ap.getIsCentroid();
+        }
+
+        saveNewApertures();
     }
 
     /**

@@ -653,7 +653,7 @@ public class IJU {
     }
 
     public static void saveRaDecApertures() {
-        if ("CA".equals(Prefs.get("multiaperture.lastrun", ""))) {
+        if (Prefs.get("multiaperture.lastrun", "").startsWith("P-")) {
             IJ.error("RADEC Export", "RADEC export not supported for custom apertures");
             return;
         }
@@ -665,7 +665,7 @@ public class IJU {
         String isRefStarString = Prefs.get("multiaperture.isrefstar", "");
         String centroidStarString = Prefs.get("multiaperture.centroidstar", "");
         String absMagString = Prefs.get("multiaperture.absmagapertures", "");
-        if (raapertureString.trim().equals("") || decapertureString.trim().equals("")) {
+        if (raapertureString.trim().isEmpty() || decapertureString.trim().isEmpty()) {
             IJ.beep();
             IJ.showMessage("No valid RA/Dec coordinates to save. Aborting.");
             return;

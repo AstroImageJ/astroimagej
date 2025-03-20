@@ -1791,11 +1791,6 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 // Don't focus on the seeing profile, allowing smoother access to continue MA
                 asw.requestFocus();
                 canvas.requestFocus();
-
-                if ((apLoading.get().isPrevious() || previous) && firstClick) {
-                    firstClick = false;
-                    return;
-                }
             }
 
             // Auto stack radius feature
@@ -1863,18 +1858,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     ocanvas.repaint();
                     canvas.repaint();
                 }
-
-                if ((apLoading.get().isPrevious() || previous) && firstClick) {
-                    firstClick = false;
-                    return;
-                }
             }
 
-            if (firstClick) {
-                firstClick = false;
-            }
-
-            if (!autoMode && !apertureClicked && (e != dummyClick && e != null && (!mouseDrag || e.isShiftDown()))) {
+            if (!autoMode && !apertureClicked && (e != dummyClick && e != null && (!mouseDrag || e.isShiftDown())) &&
+                    !(apLoading.get().isPrevious() || previous) && !firstClick) {
                 var x = canvas.offScreenX(e.getX());
                 var y = canvas.offScreenY(e.getY());
 
@@ -1994,6 +1981,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     shapedApertureRoi.setIsCentroid(!shapedApertureRoi.getIsCentroid());
                     canvas.repaint();
                 }
+            }
+
+            if (firstClick) {
+                firstClick = false;
             }
 
             apertureClicked = false;
@@ -3673,8 +3664,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 xpos.append((float) xPos[i]);
                 ypos.append((float) yPos[i]);
                 amag.append((float) absMag[i]);
-                if (hasWCS) ra.append(uptoEightPlaces.format(raPos[i]));
-                if (hasWCS) dec.append(uptoEightPlaces.format(decPos[i]));
+                if (hasWCS && raPos != null) {
+                    ra.append(uptoEightPlaces.format(raPos[i]));
+                    dec.append(uptoEightPlaces.format(decPos[i]));
+                }
                 isref.append(isRefStar[i]);
                 isalign.append(isAlignStar[i]);
                 centroid.append(centroidStar[i]);
@@ -3682,8 +3675,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 xpos.append(",").append((float) xPos[i]);
                 ypos.append(",").append((float) yPos[i]);
                 amag.append(",").append((float) absMag[i]);
-                if (hasWCS) ra.append(",").append(uptoEightPlaces.format(raPos[i]));
-                if (hasWCS) dec.append(",").append(uptoEightPlaces.format(decPos[i]));
+                if (hasWCS && raPos != null) {
+                    ra.append(",").append(uptoEightPlaces.format(raPos[i]));
+                    dec.append(",").append(uptoEightPlaces.format(decPos[i]));
+                }
                 isref.append(",").append(isRefStar[i]);
                 isalign.append(",").append(isAlignStar[i]);
                 centroid.append(",").append(centroidStar[i]);
@@ -3709,7 +3704,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 xPosStored[i] = xPos[i];
                 yPosStored[i] = yPos[i];
                 absMagStored[i] = absMag[i];
-                if (useWCS) {
+                if (useWCS && raPos != null) {
                     raPosStored[i] = raPos[i];
                     decPosStored[i] = decPos[i];
                 }

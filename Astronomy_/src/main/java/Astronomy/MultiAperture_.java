@@ -1793,6 +1793,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 canvas.requestFocus();
 
                 if ((apLoading.get().isPrevious() || previous) && firstClick) {
+                    firstClick = false;
                     return;
                 }
             }
@@ -1864,6 +1865,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 }
 
                 if ((apLoading.get().isPrevious() || previous) && firstClick) {
+                    firstClick = false;
                     return;
                 }
             }

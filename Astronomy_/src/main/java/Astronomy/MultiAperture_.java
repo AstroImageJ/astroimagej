@@ -4095,6 +4095,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 Prefs.set(MultiAperture_.PREFS_CANCELED, "true");
                 shutDown();
                 Prefs.set(AP_PREFS_SHOWREMOVEDPIXELS, showRemovedPixelsOld);
+                if (win != null) {
+                    win.setVisible(false);
+                    win.dispose();
+                }
                 return;
             }
         }

@@ -332,6 +332,7 @@ tasks.register<JavaExec>("aijRun") {
 }
 
 fun readConfigFile(): List<String> {
+    val productionCfg = providers.fileContents(project.layout.projectDirectory.file("packageFiles/common/AstroImageJ.cfg"))
     val devCfg = providers.fileContents(project.layout.projectDirectory.file("devLaunchOptions.txt"))
     val args = mutableListOf<String>()
 
@@ -347,6 +348,11 @@ fun readConfigFile(): List<String> {
         line.split(" ").forEach { arg -> args.add(arg) }
     }
     args.add("-Daij.dev") // Always show full version metadata when running via dev
+
+    productionCfg.asText.get().lineSequence().forEach { line ->
+        if (line.startsWith("#")) return@forEach
+        line.split(" ").forEach { arg -> args.add(arg) }
+    }
 
     logger.lifecycle("Launching with the following arguments: $args")
     return args

@@ -653,84 +653,108 @@ public class IJU {
     }
 
     public static void saveRaDecApertures() {
-        if (Prefs.get("multiaperture.lastrun", "").startsWith("P-")) {
-            IJ.error("RADEC Export", "RADEC export not supported for custom apertures");
-            return;
-        }
-
         int nAps = 0;
-
-        String raapertureString = Prefs.get("multiaperture.raapertures", "");
-        String decapertureString = Prefs.get("multiaperture.decapertures", "");
-        String isRefStarString = Prefs.get("multiaperture.isrefstar", "");
-        String centroidStarString = Prefs.get("multiaperture.centroidstar", "");
-        String absMagString = Prefs.get("multiaperture.absmagapertures", "");
-        if (raapertureString.trim().isEmpty() || decapertureString.trim().isEmpty()) {
-            IJ.beep();
-            IJ.showMessage("No valid RA/Dec coordinates to save. Aborting.");
-            return;
-        }
-        String[] raaps = raapertureString.split(",");
-        String[] decaps = decapertureString.split(",");
-        String[] isRefStar = isRefStarString.split(",");
-        String[] centroidStar = centroidStarString.split(",");
-        String[] absMags = absMagString.split(",");
         double[] ra;
         double[] dec;
         boolean[] isRef;
         boolean[] isCentroid;
         double[] absMag;
-        if (raaps.length == 0 || decaps.length == 0) {
-            IJ.beep();
-            IJ.showMessage("No RA/Dec coordinates to save. Aborting.");
-            return;
-        }
-        if (raaps.length != decaps.length) {
-            IJ.beep();
-            IJ.showMessage("Error: The number of stored RA and Dec coordinates is different. Aborting.");
-            return;
-        }
 
-        ra = extractDoubles(raaps);
-        if (ra == null) {
-            IJ.beep();
-            IJ.showMessage("RA coordinate parse error. Aborting.");
+        if (Prefs.get("multiaperture.lastrun", "").startsWith("P-")) {
+            IJ.error("RADEC Export", "RADEC export not supported for custom apertures");
             return;
-        }
-        dec = extractDoubles(decaps);
-        if (dec == null) {
-            IJ.beep();
-            IJ.showMessage("Dec coordinate parse error. Aborting.");
-            return;
-        }
+        } else if (Prefs.get("multiaperture.lastrun", "").startsWith("E-")) {
+            var aps = MultiAperture_.SHAPED_APS.get();
 
-        nAps = ra.length;
+            nAps = aps.size();
 
-        if (nAps != isRefStar.length) {
+            ra = new double[nAps];
+            dec = new double[nAps];
             isRef = new boolean[nAps];
-            for (int ap = 0; ap < nAps; ap++) {
-                isRef[ap] = ap != 0;
-            }
-        } else {
-            isRef = extractBoolean(isRefStar);
-        }
-
-        if (nAps != centroidStar.length) {
             isCentroid = new boolean[nAps];
-            for (int ap = 0; ap < nAps; ap++) {
-                isCentroid[ap] = true;
-            }
-        } else {
-            isCentroid = extractBoolean(centroidStar);
-        }
-
-        if (nAps != absMags.length) {
             absMag = new double[nAps];
-            for (int ap = 0; ap < nAps; ap++) {
-                absMag[ap] = 99.999;
+            for (int i = 0; i < aps.size(); i++) {
+                var ap = aps.get(i);
+                if (!ap.hasRadec()) {
+                    IJ.beep();
+                    IJ.showMessage("No RA/Dec coordinates to save. Aborting.");
+                    return;
+                }
+                ra[i] = ap.getRightAscension();
+                dec[i] = ap.getDeclination();
+                isRef[i] = ap.getIsRefStar();
+                isCentroid[i] = ap.getIsCentroid();
+                absMag[i] = ap.getAMag();
             }
+
         } else {
-            absMag = extractAbsMagDoubles(absMags);
+            String raapertureString = Prefs.get("multiaperture.raapertures", "");
+            String decapertureString = Prefs.get("multiaperture.decapertures", "");
+            String isRefStarString = Prefs.get("multiaperture.isrefstar", "");
+            String centroidStarString = Prefs.get("multiaperture.centroidstar", "");
+            String absMagString = Prefs.get("multiaperture.absmagapertures", "");
+            if (raapertureString.trim().isEmpty() || decapertureString.trim().isEmpty()) {
+                IJ.beep();
+                IJ.showMessage("No valid RA/Dec coordinates to save. Aborting.");
+                return;
+            }
+            String[] raaps = raapertureString.split(",");
+            String[] decaps = decapertureString.split(",");
+            String[] isRefStar = isRefStarString.split(",");
+            String[] centroidStar = centroidStarString.split(",");
+            String[] absMags = absMagString.split(",");
+            if (raaps.length == 0 || decaps.length == 0) {
+                IJ.beep();
+                IJ.showMessage("No RA/Dec coordinates to save. Aborting.");
+                return;
+            }
+            if (raaps.length != decaps.length) {
+                IJ.beep();
+                IJ.showMessage("Error: The number of stored RA and Dec coordinates is different. Aborting.");
+                return;
+            }
+
+            ra = extractDoubles(raaps);
+            if (ra == null) {
+                IJ.beep();
+                IJ.showMessage("RA coordinate parse error. Aborting.");
+                return;
+            }
+            dec = extractDoubles(decaps);
+            if (dec == null) {
+                IJ.beep();
+                IJ.showMessage("Dec coordinate parse error. Aborting.");
+                return;
+            }
+
+            nAps = ra.length;
+
+            if (nAps != isRefStar.length) {
+                isRef = new boolean[nAps];
+                for (int ap = 0; ap < nAps; ap++) {
+                    isRef[ap] = ap != 0;
+                }
+            } else {
+                isRef = extractBoolean(isRefStar);
+            }
+
+            if (nAps != centroidStar.length) {
+                isCentroid = new boolean[nAps];
+                for (int ap = 0; ap < nAps; ap++) {
+                    isCentroid[ap] = true;
+                }
+            } else {
+                isCentroid = extractBoolean(centroidStar);
+            }
+
+            if (nAps != absMags.length) {
+                absMag = new double[nAps];
+                for (int ap = 0; ap < nAps; ap++) {
+                    absMag[ap] = 99.999;
+                }
+            } else {
+                absMag = extractAbsMagDoubles(absMags);
+            }
         }
 
         ImagePlus imp = WindowManager.getCurrentImage();

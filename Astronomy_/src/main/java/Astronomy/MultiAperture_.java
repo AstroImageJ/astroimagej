@@ -1791,6 +1791,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 // Don't focus on the seeing profile, allowing smoother access to continue MA
                 asw.requestFocus();
                 canvas.requestFocus();
+
+                if ((apLoading.get().isPrevious() || previous) && firstClick) {
+                    return;
+                }
             }
 
             // Auto stack radius feature
@@ -1858,10 +1862,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     ocanvas.repaint();
                     canvas.repaint();
                 }
-            }
 
-            if ((apLoading.get().isPrevious() || previous) && firstClick) {
-                return;
+                if ((apLoading.get().isPrevious() || previous) && firstClick) {
+                    return;
+                }
             }
 
             if (firstClick) {

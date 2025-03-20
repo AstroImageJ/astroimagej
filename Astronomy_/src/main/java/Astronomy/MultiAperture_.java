@@ -1860,6 +1860,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 }
             }
 
+            if ((apLoading.get().isPrevious() || previous) && firstClick) {
+                return;
+            }
+
             if (firstClick) {
                 firstClick = false;
             }

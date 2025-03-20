@@ -220,7 +220,7 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
         String value = showMag ?
                 aMagText + (showIntCntWithMag && !intCntsBlank ? ", " + intCntsWithMagText : "") :
                 intCntsText;
-        g.setColor(isCompStar ? Color.RED : Color.GREEN);
+        g.setColor(isPhantom() ? (isCompStar ? PHANTOM_COMPARISON : PHANTOM_TARGET) : (isCompStar ? Color.RED : Color.GREEN));
         g.setFont(font);
 
         var b = (backgroundShape != null && showSky ?

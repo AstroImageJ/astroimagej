@@ -61,8 +61,8 @@ import java.io.*;
 import java.net.URL;
 import java.nio.file.Path;
 import java.text.DecimalFormat;
-import java.util.Timer;
 import java.util.*;
+import java.util.Timer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -15863,6 +15863,14 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             }
         }
         Prefs.set(MultiAperture_.PREFS_ISREFSTAR, isRefString.toString());
+
+
+        if (MultiAperture_.SHAPED_APS.get().size() == numAps) {
+            for (int r = 0; r < MultiAperture_.SHAPED_APS.get().size(); r++) {
+                MultiAperture_.SHAPED_APS.get().get(r).setComparisonStar(isRefStar[r]);
+                MultiAperture_.SHAPED_APS.forceWrite();
+            }
+        }
     }
 
     static void updateGUI() {

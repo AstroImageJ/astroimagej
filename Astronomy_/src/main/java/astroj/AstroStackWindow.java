@@ -5078,6 +5078,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             Photometer phot = new Photometer(imp.getCalibration());
             phot.setRemoveBackStars(removeBackStars);
             phot.setMarkRemovedPixels(false);
+            var shaped = new ArrayList<ShapedApertureRoi>();
             for (int i = 0; i < xaps.length; i++) {
                 phot.measure(imp, exact, xap[i], yap[i], radius, rBack1, rBack2);
                 ApertureRoi roi = new ApertureRoi(xap[i], yap[i], radius, rBack1, rBack2, phot.source, isCentroid[i]);
@@ -5085,9 +5086,11 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                 roi.setAMag(absMagStored[i]);
                 roi.setImage(imp);
                 roi.setPhantom(true);
+                shaped.add(ShapedApertureRoi.fromApertureRoi(roi));
                 ac.add(roi);
                 ac.paint(ac.getGraphics());
             }
+            MultiAperture_.SHAPED_IMPORTED_APS.set(shaped);
         } catch (Exception e) {
             IJ.beep();
             IJ.showMessage("Error reading apertures file");

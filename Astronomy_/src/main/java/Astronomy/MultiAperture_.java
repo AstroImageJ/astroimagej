@@ -1785,6 +1785,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                         roi.adjustRadii(radius, rBack1, rBack2, roundness);
                     }
                 }
+
+                ocanvas.repaint();
+                canvas.repaint();
+
                 // Don't focus on the seeing profile, allowing smoother access to continue MA
                 asw.requestFocus();
                 canvas.requestFocus();
@@ -1831,7 +1835,6 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     var roundness = Double.NaN;
                     for (int i = 0; i < shapedApertureRois.size(); i++) {
                         var roi = shapedApertureRois.get(i);
-                        roi.setEllipticalBaseRadius(radius);
 
                         if (i == 0 && SHAPED_VARIATION_LOCKED.get()) {
                             roundness = roi.estimateRoundness();
@@ -1847,6 +1850,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
                         roi.adjustRadii(radius, rBack1, rBack2, roundness);
                     }
+
+                    ocanvas.repaint();
+                    canvas.repaint();
                 }
             }
 

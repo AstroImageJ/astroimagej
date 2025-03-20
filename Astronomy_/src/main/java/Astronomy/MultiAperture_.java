@@ -1768,7 +1768,6 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     var roundness = Double.NaN;
                     for (int i = 0; i < shapedApertureRois.size(); i++) {
                         var roi = shapedApertureRois.get(i);
-                        roi.setEllipticalBaseRadius(radius);
 
                         if (i == 0 && SHAPED_VARIATION_LOCKED.get()) {
                             roundness = roi.estimateRoundness();
@@ -1831,6 +1830,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 d.dispose();
                 if (!rs.success()) {
                     showWarning("Failed to retrieve radii for %1$d/%2$d images.\nDo you wish to continue?".formatted(rs.count, lastSlice - firstSlice), true);
+                    for (int i = 0; i < shapedApertureRois.size(); i++) {
+                        var roi = shapedApertureRois.get(i);
+                        ocanvas.add(roi);
+                    }
                 } else {
                     var roundness = Double.NaN;
                     for (int i = 0; i < shapedApertureRois.size(); i++) {
@@ -1849,6 +1852,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                         }
 
                         roi.adjustRadii(radius, rBack1, rBack2, roundness);
+                        ocanvas.add(roi);
                     }
 
                     ocanvas.repaint();

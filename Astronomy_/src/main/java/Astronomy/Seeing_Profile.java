@@ -61,9 +61,9 @@ public class Seeing_Profile implements PlugInFilter
 	boolean subtract = false;
     boolean roundRadii = true;
 
-	static public double SEEING_RADIUS1 = 1.7;	// IN UNITS OF fwhm
-	static public double SEEING_RADIUS2 = 1.9;
-	static public double SEEING_RADIUS3 = 2.55; // EQUAL NUMBERS OF PIXELS
+	static final public double SEEING_RADIUS1 = 1.7;	// IN UNITS OF fwhm
+	static final public double SEEING_RADIUS2 = 3.4;
+	static final public double SEEING_RADIUS3 = 6.8; // EQUAL NUMBERS OF PIXELS
 
 	DecimalFormat  df;
 
@@ -192,8 +192,8 @@ public class Seeing_Profile implements PlugInFilter
             sp.X0 = x;
             sp.Y0 = y;
             sp.mR = Prefs.get ("aperture.radius", sp.mR);
-            sp.mR1 = Prefs.get ("aperture.rback1", sp.mR*1.2);
-            sp.mR2 = Prefs.get ("aperture.rback2", sp.mR*2.0);
+            sp.mR1 = Prefs.get ("aperture.rback1", sp.mR*2);
+            sp.mR2 = Prefs.get ("aperture.rback2", sp.mR*4);
             sp.recenter = centroid;
             sp.center = new Centroid();
             var b = sp.center.measure(imp, sp.X0, sp.Y0, sp.mR, sp.mR1, sp.mR2, sp.recenter, Prefs.get("aperture.backplane", false), Prefs.get("aperture.removebackstars", true));
@@ -317,8 +317,8 @@ public class Seeing_Profile implements PlugInFilter
                     if (means[bin] < autoModeFluxCutOff) 
                         {
                         r1 = radii[bin];
-                        r2 = r1*1.75;
-                        r3 = r2*1.5;
+                        r2 = r1*2;
+                        r3 = r2*2;
                         foundR1 = true;
                         break;
                         }

@@ -30,6 +30,8 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
     private static final Stroke STROKE = new BasicStroke(3);
     private static final Color BACKGROUND_COLOR = new Color(0, 114, 234);
     private static final Color CENTROID_COLOR = new Color(25, 205, 180);
+    private static final Color PHANTOM_TARGET = new Color(196, 222, 155);
+    private static final Color PHANTOM_COMPARISON = Color.PINK;
     private static final boolean FILL_SHAPE = true;
     private static final boolean DRAW_POINTING = true;
     private static final boolean SHOW_FLATTENED = false;
@@ -149,13 +151,13 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
 
         if (g instanceof Graphics2D g2) {
             //g2.setStroke(STROKE);
-            g2.setColor(isCompStar ? Color.RED : Color.GREEN);
+            g2.setColor(isPhantom() ? (isCompStar ? PHANTOM_TARGET : PHANTOM_COMPARISON) : (isCompStar ? Color.RED : Color.GREEN));
 
             // Draw aperture
             drawShape(g2, apertureShape, toScreenSpaceTransformed);
             g2.setColor(BACKGROUND_COLOR);
             if (showSky) {
-                drawShape(g2, backgroundShape, toScreenSpaceTransformed, isCompStar ? Color.RED : Color.GREEN);
+                drawShape(g2, backgroundShape, toScreenSpaceTransformed, isPhantom() ? (isCompStar ? PHANTOM_TARGET : PHANTOM_COMPARISON) : (isCompStar ? Color.RED : Color.GREEN));
             }
 
             // Draw Geometric Centroid

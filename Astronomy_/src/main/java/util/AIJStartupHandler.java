@@ -172,6 +172,7 @@ public class AIJStartupHandler implements PlugIn {
                             var aps = pixelAps.isEmpty() ? shapedAps : pixelAps;
                             for (int i = 0; i < aps.size(); i++) {
                                 var ap = aps.get(i);
+                                ap.setPhantom(true);
                                 ap.setName((ap.getIsComparisonStar() ? "C" : "T") + (i+1));
                                 ap.setImage(asw.getImagePlus());
                                 if (asw.getCanvas() instanceof AstroCanvas ac) {

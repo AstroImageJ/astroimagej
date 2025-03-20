@@ -38,8 +38,8 @@ import java.net.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.DecimalFormat;
-import java.util.List;
 import java.util.*;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -4910,6 +4910,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                         for (int i = 0; i < shapedAps.size(); i++) {
                             var ap = shapedAps.get(i);
                             ap.setName((ap.isComparisonStar() ? "C" : "T") + (i+1));
+                            ap.setPhantom(true);
                             ap.setImage(imp);
                             ac.add(ap);
                         }

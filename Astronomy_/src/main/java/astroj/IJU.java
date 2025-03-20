@@ -38,8 +38,8 @@ import java.nio.file.Files;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.SimpleDateFormat;
-import java.util.List;
 import java.util.*;
+import java.util.List;
 import java.util.function.Function;
 import java.util.zip.GZIPOutputStream;
 
@@ -1349,7 +1349,7 @@ public class IJU {
         }
 
         // Custom Apertures
-        if ("CA".equals(Prefs.get("multiaperture.lastrun", ""))) {
+        if (Prefs.get("multiaperture.lastrun", "").startsWith("P-")) {
             // Remove circular setting
             if (ObjectShare.get("multiapertureCircularKeys") instanceof Set<?> keysGeneric) {
                 var keys = (Set<String>) keysGeneric;
@@ -1366,7 +1366,7 @@ public class IJU {
                 IJ.beep();
                 IJ.showMessage("Error writing apertures to file");
             }
-        } else if ("EL".equals(Prefs.get("multiaperture.lastrun", ""))) {
+        } else if (Prefs.get("multiaperture.lastrun", "").startsWith("E-")) {
             // Remove circular setting
             if (ObjectShare.get("multiapertureCircularKeys") instanceof Set<?> keysGeneric) {
                 var keys = (Set<String>) keysGeneric;

@@ -151,13 +151,13 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
 
         if (g instanceof Graphics2D g2) {
             //g2.setStroke(STROKE);
-            g2.setColor(isPhantom() ? (isCompStar ? PHANTOM_TARGET : PHANTOM_COMPARISON) : (isCompStar ? Color.RED : Color.GREEN));
+            g2.setColor(isPhantom() ? (isCompStar ? PHANTOM_COMPARISON : PHANTOM_TARGET) : (isCompStar ? Color.RED : Color.GREEN));
 
             // Draw aperture
             drawShape(g2, apertureShape, toScreenSpaceTransformed);
             g2.setColor(BACKGROUND_COLOR);
             if (showSky) {
-                drawShape(g2, backgroundShape, toScreenSpaceTransformed, isPhantom() ? (isCompStar ? PHANTOM_TARGET : PHANTOM_COMPARISON) : (isCompStar ? Color.RED : Color.GREEN));
+                drawShape(g2, backgroundShape, toScreenSpaceTransformed, isPhantom() ? (isCompStar ? PHANTOM_COMPARISON : PHANTOM_TARGET) : (isCompStar ? Color.RED : Color.GREEN));
             }
 
             // Draw Geometric Centroid

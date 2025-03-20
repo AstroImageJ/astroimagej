@@ -5242,6 +5242,11 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     table.addValue(AP_XCENTER + header, roi.getXpos(), 6);
                     table.addValue(AP_YCENTER + header, roi.getYpos(), 6);
                 }
+                case ELLIPTICAL -> {
+                    var roi = shapedApertureRois.get(0);
+                    table.addValue(AP_XCENTER + header, roi.getXpos(), 6);
+                    table.addValue(AP_YCENTER + header, roi.getYpos(), 6);
+                }
             }
         }
         if (showPositionFITS) {
@@ -5252,6 +5257,11 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 }
                 case FREEFORM -> {
                     var roi = freeformPixelApertureHandler.getAperture(0);
+                    table.addValue(AP_XCENTER_FITS + header, roi.getXpos() + Centroid.PIXELCENTER, 6);
+                    table.addValue(AP_YCENTER_FITS + header, (double) imp.getHeight() - roi.getYpos() + Centroid.PIXELCENTER, 6);
+                }
+                case ELLIPTICAL -> {
+                    var roi = shapedApertureRois.get(0);
                     table.addValue(AP_XCENTER_FITS + header, roi.getXpos() + Centroid.PIXELCENTER, 6);
                     table.addValue(AP_YCENTER_FITS + header, (double) imp.getHeight() - roi.getYpos() + Centroid.PIXELCENTER, 6);
                 }
@@ -5267,6 +5277,13 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 }
                 case FREEFORM -> {
                     var roi = freeformPixelApertureHandler.getAperture(0);
+                    if (roi.hasRadec()) {
+                        table.addValue(AP_RA + header, roi.getRightAscension() / 15.0, 6);
+                        table.addValue(AP_DEC + header, roi.getDeclination(), 6);
+                    }
+                }
+                case ELLIPTICAL -> {
+                    var roi = shapedApertureRois.get(0);
                     if (roi.hasRadec()) {
                         table.addValue(AP_RA + header, roi.getRightAscension() / 15.0, 6);
                         table.addValue(AP_DEC + header, roi.getDeclination(), 6);
@@ -5294,6 +5311,11 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     table.addValue(AP_XCENTER + header, roi.getXpos(), 6);
                     table.addValue(AP_YCENTER + header, roi.getYpos(), 6);
                 }
+                case ELLIPTICAL -> {
+                    var roi = shapedApertureRois.get(ap);
+                    table.addValue(AP_XCENTER + header, roi.getXpos(), 6);
+                    table.addValue(AP_YCENTER + header, roi.getYpos(), 6);
+                }
             }
         }
         if (showPositionFITS) {
@@ -5304,6 +5326,11 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 }
                 case FREEFORM -> {
                     var roi = freeformPixelApertureHandler.getAperture(ap);
+                    table.addValue(AP_XCENTER_FITS + header, roi.getXpos() + Centroid.PIXELCENTER, 6);
+                    table.addValue(AP_YCENTER_FITS + header, (double) imp.getHeight() - roi.getYpos() + Centroid.PIXELCENTER, 6);
+                }
+                case ELLIPTICAL -> {
+                    var roi = shapedApertureRois.get(ap);
                     table.addValue(AP_XCENTER_FITS + header, roi.getXpos() + Centroid.PIXELCENTER, 6);
                     table.addValue(AP_YCENTER_FITS + header, (double) imp.getHeight() - roi.getYpos() + Centroid.PIXELCENTER, 6);
                 }
@@ -5319,6 +5346,13 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 }
                 case FREEFORM -> {
                     var roi = freeformPixelApertureHandler.getAperture(ap);
+                    if (roi.hasRadec()) {
+                        table.addValue(AP_RA + header, roi.getRightAscension() / 15.0, 6);
+                        table.addValue(AP_DEC + header, roi.getDeclination(), 6);
+                    }
+                }
+                case ELLIPTICAL -> {
+                    var roi = shapedApertureRois.get(ap);
                     if (roi.hasRadec()) {
                         table.addValue(AP_RA + header, roi.getRightAscension() / 15.0, 6);
                         table.addValue(AP_DEC + header, roi.getDeclination(), 6);

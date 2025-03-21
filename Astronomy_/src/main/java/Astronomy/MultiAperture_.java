@@ -6374,6 +6374,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
         showHelpPanel();
 
+        // Don't focus on the seeing profile, allowing smoother access to continue MA
+        asw.requestFocus();
+        canvas.requestFocus();
+
         return true;
     }
 

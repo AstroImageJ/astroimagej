@@ -1592,10 +1592,21 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 var c = new Centroid();
                 var angle = 0D;
                 var roundness = 0D;
+                var dx = 0d;
+                var dy = 0d;
                 for (int i = 0; i < shapedApertureRois.size(); i++) {
                     var ap = shapedApertureRois.get(i);
                     ap.calculateCenter();
                     ap.setName((ap.isComparisonStar() ? "C" : "T") + (i+1));
+
+                    if (previous && singleStep) {
+                        if (i == 0) {
+                            dx = xCenter - ap.getXpos();
+                            dy = yCenter - ap.getYpos();
+                        }
+
+                        ap.move(dx, dy);
+                    }
 
                     if (useWCS && ap.hasRadec() && wcs != null) {
                         var np = wcs.wcs2pixels(new double[]{ap.getRightAscension(), ap.getDeclination()});
@@ -1670,10 +1681,21 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 var c = new Centroid();
                 var angle = 0D;
                 var roundness = 0D;
+                var dx = 0d;
+                var dy = 0d;
                 for (int i = 0; i < shapedApertureRois.size(); i++) {
                     var ap = shapedApertureRois.get(i);
                     ap.setName((ap.isComparisonStar() ? "C" : "T") + (i+1));
                     ap.calculateCenter();
+
+                    if (previous && singleStep) {
+                        if (i == 0) {
+                            dx = xCenter - ap.getXpos();
+                            dy = yCenter - ap.getYpos();
+                        }
+
+                        ap.move(dx, dy);
+                    }
 
                     if (useWCS && ap.hasRadec() && wcs != null) {
                         var np = wcs.wcs2pixels(new double[]{ap.getRightAscension(), ap.getDeclination()});
@@ -2021,7 +2043,6 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
                 SHAPED_APS.set(shapedApertureRois);
 
-                noMoreInput();
                 nApertures = shapedApertureRois.size();
                 for (int ap = 0; ap < nApertures; ap++) {
                     isRefStar[ap] = shapedApertureRois.get(ap).isComparisonStar();
@@ -2033,13 +2054,56 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 convertEllipticalApertures2Circular();
 
                 checkResultsTable();
-                if (stackSize > 1 && doStack) {
-                    IJ.showStatus("Processing stack...");
-                    processingStack = true;
-                    startProcessStack();
-                } else {
-                    IJ.showStatus("Processing image...");
-                    processImage();
+                if (!singleStep) {
+                    noMoreInput();
+
+                    if (stackSize > 1 && doStack) {
+                        IJ.showStatus("Processing stack...");
+                        processingStack = true;
+                        startProcessStack();
+                    } else {
+                        IJ.showStatus("Processing image...");
+                        processImage();
+                    }
+                }
+            }
+
+            if (singleStep && ngot >= nApertures) {
+                //PROCESS ONE SLICE AT A TIME WHILE IN SINGLE STEP MODE
+                if (!checkResultsTable()) {
+                    IJ.showMessage("Multi-Aperture failed to create Measurements table");
+                    IJ.beep();
+                    shutDown();
+                }
+                processStack();
+                previous = true;
+                firstSlice += 1;
+                lastSlice = firstSlice;
+                if (firstSlice > stackSize) {
+                    IJ.beep();
+                    shutDown();
+                    return;
+                }
+                imp.setSlice(firstSlice);
+                imp.updateImage();
+                if (starOverlay || skyOverlay || valueOverlay || nameOverlay) {
+                    ocanvas.clearRois();
+                }
+                ip = imp.getProcessor();
+                firstClick = true;
+                allStoredAperturesPlaced = false;
+                nApertures = nAperturesMax;
+                if (allowSingleStepApChanges) aperturesInitialized = false;
+                IJ.showStatus("Identify star 1 to place all apertures (Esc to exit).");
+                if (helpFrame != null) {
+                    leftClickLabel.setText("Identify star 1 to place all apertures");
+                    shiftLeftClickLabel.setText("");
+                    shiftControlLeftClickLabel.setText("");
+                    altLeftClickLabel.setText("");
+                    rightClickLabel.setText("");//"Cancel Stack Aligner" : "Cancel Multi-Aperture");
+                    enterLabel.setText("");//"Cancel Stack Aligner" : "Cancel Multi-Aperture");
+                    leftClickDragLabel.setText("Pan image up/down/left/right");
+                    altLeftClickDragLabel.setText("Measure arclength");
                 }
             }
 
@@ -5845,7 +5909,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
         gd.addNewSwappableSectionPanel(ApertureShape.class, (d, shape) -> {
             switch (shape) {
-                case CIRCULAR -> {
+                case CIRCULAR, ELLIPTICAL -> {
                     gd.addCheckbox("Use RA/Dec to locate aperture positions", useWCS, b -> useWCS = b)
                             .setToolTipText("<html>If enabled, apertures will first be placed according to their RA and DEC location.<br>"+
                                     "If centroid is also enabled for an aperture, the centroid operation will start from the RA and Dec position.<br>"+
@@ -5880,7 +5944,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     c1.setEnabled(singleStep);
                     gd.addDoubleSpaceLineSeparator();
                 }
-                case FREEFORM, ELLIPTICAL -> {
+                case FREEFORM -> {
                     gd.addCheckbox("Use RA/Dec to locate aperture positions", useWCS, b -> useWCS = b)
                             .setToolTipText("<html>If enabled, apertures will first be placed according to their RA and DEC location.<br>"+
                                     "If centroid is also enabled for an aperture, the centroid operation will start from the RA and Dec position.<br>"+
@@ -6143,7 +6207,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
         gd.addNewSwappableSectionPanel(ApertureShape.class, (d, shape) -> {
             switch (shape) {
-                case CIRCULAR -> {
+                case CIRCULAR, ELLIPTICAL -> {
                     d.addCheckbox("Prompt to enter ref star apparent magnitude (required if target star apparent mag is desired)", getMags, b -> getMags = b)
                             .setToolTipText("Apparent magntiudes are not needed for standard differential photometry.");
                     final var list2 = new ArrayList<Consumer<Boolean>>();
@@ -6158,7 +6222,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     singleStepListeners.add(bottomChecks.subComponents().get(2));
                     bottomChecks.subComponents().get(2).setEnabled(!singleStep);
                 }
-                case FREEFORM, ELLIPTICAL -> {
+                case FREEFORM -> {
                     final var list2 = new ArrayList<Consumer<Boolean>>();
                     list2.add(b -> updatePlot = b);
                     list2.add(updateImageDisplay::set);

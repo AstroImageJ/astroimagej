@@ -1883,7 +1883,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             }
 
             if (!autoMode && !apertureClicked && (e != dummyClick && e != null && (!mouseDrag || e.isShiftDown())) &&
-                    !(apLoading.get().isPrevious() || previous) && !firstClick) {
+                    ((!(apLoading.get().isPrevious() || previous) && !firstClick) || (ngot < nApertures))) {
                 var x = canvas.offScreenX(e.getX());
                 var y = canvas.offScreenY(e.getY());
 
@@ -2104,6 +2104,30 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     enterLabel.setText("");//"Cancel Stack Aligner" : "Cancel Multi-Aperture");
                     leftClickDragLabel.setText("Pan image up/down/left/right");
                     altLeftClickDragLabel.setText("Measure arclength");
+                }
+            } else if (ngot < nApertures) { // GOT ALL APERTURES?
+                infoMessage = "Click to select aperture #" + (ngot + 1) + " (<ESC> to abort).";
+                IJ.showStatus(infoMessage);
+                if (helpFrame != null) {
+                    if (ngot > 0) {
+                        leftClickLabel.setText("Add reference star aperture C" + (ngot + 1) + ", or delete aperture");
+                        shiftLeftClickLabel.setText("Add target star aperture T" + (ngot + 1) + ", or change T/C designation");
+                        shiftControlLeftClickLabel.setText("Add target star aperture T1, or rename aperture to T1");
+                        altLeftClickLabel.setText("Toggle centroid setting of existing aperture or new aperture");
+                        rightClickLabel.setText("Finalize aperture selection" + (singleStep ? (this instanceof Stack_Aligner ? ", align image, and move to next image" : ", perform photometry, and move to next image") : " and start processing"));
+                        enterLabel.setText("Finalize aperture selection" + (singleStep ? (this instanceof Stack_Aligner ? ", align image, and move to next image" : ", perform photometry, and move to next image") : " and start processing"));
+                        leftClickDragLabel.setText("Move aperture, or pan image up/down/left/right");
+                        altLeftClickDragLabel.setText("Move aperture & toggle centroid, or measure arclength");
+                    } else {
+                        leftClickLabel.setText("Add target star aperture T" + (ngot + 1));
+                        shiftLeftClickLabel.setText("Add reference star aperture C" + (ngot + 1));
+                        shiftControlLeftClickLabel.setText("");
+                        altLeftClickLabel.setText("Invert sense of centroid setting for new aperture");
+                        rightClickLabel.setText("");
+                        enterLabel.setText("");
+                        leftClickDragLabel.setText("Pan image up/down/left/right");
+                        altLeftClickDragLabel.setText("Measure arclength");
+                    }
                 }
             }
 

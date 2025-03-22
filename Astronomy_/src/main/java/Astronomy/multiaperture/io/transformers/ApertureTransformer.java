@@ -20,6 +20,7 @@ public class ApertureTransformer implements Transformer<Aperture, Void> {
     private static final Section.Parameter<Boolean> COMP_PARAMETER = new Section.Parameter<>("isComp", 0, Boolean.TYPE);
     private static final Section.Parameter<Boolean> CENTROID_PARAMETER = new Section.Parameter<>("isCentroided", 0, Boolean.TYPE);
     private static final Section.Parameter<Boolean> CENTER_PARAMETER = new Section.Parameter<>("centeredOnAperture", 0, Boolean.TYPE, ApertureTransformer::deserializeCenterParam, ApertureTransformer::serializeCenterParam);
+    private static final Section.Parameter<Double> MAG_PARAMETER = new Section.Parameter<>("absolute magnitude", 0, Double.TYPE);
     private static final Section.Parameter<Double> RA_PARAMETER = new Section.Parameter<>("right ascension", 0, Double.TYPE);
     private static final Section.Parameter<Double> DEC_PARAMETER = new Section.Parameter<>("declination", 1, Double.TYPE);
     private static final Section.Parameter<Integer> INT_X_PARAMETER = new Section.Parameter<>("x", 0, Integer.TYPE);
@@ -61,6 +62,11 @@ public class ApertureTransformer implements Transformer<Aperture, Void> {
                 var baseRadius = getUniqueSection(view, "baseRadius", false);
                 if (baseRadius != null) {
                     ap.setEllipticalBaseRadius(baseRadius.getParameter(RADIUS_PARAMETER));
+                }
+
+                var absMag = getUniqueSection(view, "absMag", false);
+                if (absMag != null) {
+                    ap.setAMag(absMag.getParameter(MAG_PARAMETER));
                 }
 
                 var transforms = view.get("transform");
@@ -159,6 +165,10 @@ public class ApertureTransformer implements Transformer<Aperture, Void> {
 
                 if (Double.isFinite(ap.getEllipticalBaseRadius())) {
                     s.addSubsection(Section.createSection("baseRadius", RADIUS_PARAMETER, ap.getEllipticalBaseRadius()));
+                }
+
+                if (Double.isFinite(ap.getAMag()) && (ap.getAMag() != 99.99 || ap.getAMag() != 99.999)) {
+                    s.addSubsection(Section.createSection("absMag", MAG_PARAMETER, ap.getAMag()));
                 }
 
                 if (!ap.getTransform().isIdentity()) {

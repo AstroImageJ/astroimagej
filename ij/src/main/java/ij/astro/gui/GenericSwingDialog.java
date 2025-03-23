@@ -69,6 +69,7 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
     private final Map<Class<?>, SwappableSectionHolder<?>> swappableSections = new HashMap<>();
     private final Deque<StackComponent> rowBuilding = new ArrayDeque<>();
     private int gridwith;
+    private int fill;
 
     public GenericSwingDialog(String title) {
         this(title, guessParentFrame());
@@ -1152,6 +1153,11 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
         this.gridwith = gridwith;
     }
 
+    public void setFill(int fill) {
+        customAnchor = true;
+        this.fill = fill;
+    }
+
     public void setLeftInset(int inset) {
         this.leftInset = inset;
     }
@@ -1167,10 +1173,12 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
             c.anchor = this.anchor;
             c.insets.left = leftInset;
             c.insets.right = rightInset;
+            c.fill = fill;
             leftInset = 0;
             rightInset = 0;
             c.gridwidth = gridwith;
             gridwith = 1;
+            fill = GridBagConstraints.NONE;
         }
     }
 

@@ -21,11 +21,13 @@ import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.ImageProducer;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.URL;
 import java.text.NumberFormat;
 import java.text.ParseException;
-import java.util.List;
 import java.util.*;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
@@ -875,6 +877,14 @@ public class GenericSwingDialog extends JDialog implements ActionListener, TextL
                 tf.setValue(v);
                 return;
             }
+
+            if (!useInt && !(v.compareTo(bounds.boxedMin()) == 0 || v.compareTo(bounds.boxedMax()) == 0)) {
+                var bv = BigDecimal.valueOf(v);
+                bv = bv.setScale(10, RoundingMode.HALF_EVEN);
+                tf.setValue(bv.doubleValue());
+                return;
+            }
+
             consumer.accept(useInt ? Math.rint(v) : v);
         });
 

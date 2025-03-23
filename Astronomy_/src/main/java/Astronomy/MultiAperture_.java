@@ -4103,7 +4103,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 //        IJ.log("firstSlice="+firstSlice+"   lastSlice="+lastSlice);
         JDialog win = null;
 
-        var showRemovedPixelsOld = Prefs.get(AP_PREFS_SHOWREMOVEDPIXELS, showRemovedPixels);
+        Prefs.set("oldAperture.showRemovedPixels", Prefs.get(AP_PREFS_SHOWREMOVEDPIXELS, showRemovedPixels));
 
         if (!updateImageDisplay.get()) {
             if (imp.getCanvas() instanceof AstroCanvas a) {
@@ -4117,7 +4117,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         }
         for (int i = firstSlice; i <= lastSlice; i++) {
             if (i == lastSlice) {
-                Prefs.set(AP_PREFS_SHOWREMOVEDPIXELS, showRemovedPixelsOld);
+                Prefs.set(AP_PREFS_SHOWREMOVEDPIXELS, Prefs.get("oldAperture.showRemovedPixels", Prefs.get(AP_PREFS_SHOWREMOVEDPIXELS, showRemovedPixels)));
             }
             slice = i;
             imp.setSliceWithoutUpdate(i); //fixes scroll sync issue
@@ -4177,7 +4177,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 IJ.beep();
                 Prefs.set(MultiAperture_.PREFS_CANCELED, "true");
                 shutDown();
-                Prefs.set(AP_PREFS_SHOWREMOVEDPIXELS, showRemovedPixelsOld);
+                Prefs.set(AP_PREFS_SHOWREMOVEDPIXELS, Prefs.get("oldAperture.showRemovedPixels", Prefs.get(AP_PREFS_SHOWREMOVEDPIXELS, showRemovedPixels)));
                 if (win != null) {
                     win.setVisible(false);
                     win.dispose();
@@ -4185,7 +4185,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 return;
             }
         }
-        Prefs.set(AP_PREFS_SHOWREMOVEDPIXELS, showRemovedPixelsOld);
+        Prefs.set(AP_PREFS_SHOWREMOVEDPIXELS, Prefs.get("oldAperture.showRemovedPixels", Prefs.get(AP_PREFS_SHOWREMOVEDPIXELS, showRemovedPixels)));
 
         // Reset drawing state
         if (imp.getCanvas() instanceof AstroCanvas a) {

@@ -2919,6 +2919,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             } else if (source == showRemovedPixelsCB) {
                 showRemovedPixels = true;
                 Prefs.set("aperture.showremovedpixels", showRemovedPixels);
+                Prefs.set("oldAperture.showRemovedPixels", showRemovedPixels);
             } else if (source == rightClickAnnotateCB) {
                 rightClickAnnotate = true;
                 Prefs.set("Astronomy_Tool.rightClickAnnotate", rightClickAnnotate);
@@ -3170,6 +3171,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                 oc.removePixelRois();
                 ac.paint(ac.getGraphics());
                 Prefs.set("aperture.showremovedpixels", showRemovedPixels);
+                Prefs.set("oldAperture.showRemovedPixels", showRemovedPixels);
             } else if (source == rightClickAnnotateCB) {
                 rightClickAnnotate = false;
                 Prefs.set("Astronomy_Tool.rightClickAnnotate", rightClickAnnotate);

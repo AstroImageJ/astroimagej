@@ -2012,9 +2012,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             apertureClicked = false;
 
             // Handle auto comp stars
-            var refCount = 0;
+            var refCount = (int) shapedApertureRois.stream().filter(ShapedApertureRoi::getIsComparisonStar).count();
             if (!autoMode && suggestCompStars && tempSuggestCompStars && ngot >= referenceStar
-                    && (refCount = shapedApertureRois.size()) < maxSuggestedStars
+                    && refCount < maxSuggestedStars
                     && !(this instanceof Stack_Aligner)) {
                 var showRemovedPixelsOld = Prefs.get(AP_PREFS_SHOWREMOVEDPIXELS, showRemovedPixels);
                 Prefs.set(AP_PREFS_SHOWREMOVEDPIXELS, false);

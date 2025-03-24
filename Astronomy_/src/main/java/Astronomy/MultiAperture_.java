@@ -1884,6 +1884,12 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
             if (!autoMode && !apertureClicked && (e != dummyClick && e != null && (!mouseDrag || e.isShiftDown())) &&
                     ((!(apLoading.get().isPrevious() || previous) && !firstClick) || (ngot < nApertures))) {
+                // Ignore clicks while placing stored apertures
+                if ((apLoading.get().isPrevious() || previous) && firstClick && allStoredAperturesPlaced) {
+                    firstClick = false;
+                    return;
+                }
+
                 var x = canvas.offScreenX(e.getX());
                 var y = canvas.offScreenY(e.getY());
 

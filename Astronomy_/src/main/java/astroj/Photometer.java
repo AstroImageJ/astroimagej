@@ -118,6 +118,7 @@ public class Photometer {
     protected FittedPlane plane = null;
     protected boolean usePlane = false;
     protected OverlayCanvas ocanvas;
+    protected BulkPixelRoi bulkPixelRoi;
     /**
      * Calibration object of client.
      */
@@ -2056,15 +2057,12 @@ public class Photometer {
 
 
     protected void addPixelRoi(ImagePlus imp, double x, double y) {
-        PixelRoi roi = new PixelRoi(x, y);
-        //roi.setAppearance (pixelColor);
-        roi.setImage(imp);
-        ocanvas.add(roi);
-    }
+        if (bulkPixelRoi == null) {
+            bulkPixelRoi = new BulkPixelRoi(imp);
+            ocanvas.add(bulkPixelRoi);
+        }
 
-    protected void removePixelRois(ImagePlus imp) {
-        //roi.setAppearance (pixelColor);
-        ocanvas.removeApertureRois();
+        bulkPixelRoi.addPixel(x, y);
     }
 
     private static class PhotometerWorkerThreadFactory implements ForkJoinPool.ForkJoinWorkerThreadFactory {

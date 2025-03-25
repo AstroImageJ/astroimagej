@@ -67,15 +67,19 @@ public class OverlayCanvas extends ImageCanvas {
      * Number of rois attached to overlay.
      */
     public void add(Roi roi) {
-        // Don't add duplicate rois - roi's equal's method (used by Vector#contains) does not check if rois
-        // are of different types
-        var index = rois.indexOf(roi);
-        if (index >= 0 && rois.get(index).getClass().isAssignableFrom(roi.getClass())) {
-            var newRoiName = roi.getName();
-            var oldRoiName = rois.get(index).getName();
+        // There can be a lot of PixelRois, which makes checking for duplicates time intensive
+        // It would be better to handle this properly with a Set
+        if (!(roi instanceof PixelRoi)) {
+            // Don't add duplicate rois - roi's equal's method (used by Vector#contains) does not check if rois
+            // are of different types
+            var index = rois.indexOf(roi);
+            if (index >= 0 && rois.get(index).getClass().isAssignableFrom(roi.getClass())) {
+                var newRoiName = roi.getName();
+                var oldRoiName = rois.get(index).getName();
 
-            var neitherNull = newRoiName != null && oldRoiName != null;
-            if ((neitherNull && newRoiName.equals(oldRoiName))) return;
+                var neitherNull = newRoiName != null && oldRoiName != null;
+                if ((neitherNull && newRoiName.equals(oldRoiName))) return;
+            }
         }
 
         rois.addElement(roi);
@@ -170,6 +174,13 @@ public class OverlayCanvas extends ImageCanvas {
     public ApertureRoi findApertureRoi(double x, double y, double radiusSlack, boolean allowArbitraryAperture) {
         for (int i = 0; i < rois.size(); i++) {
             Roi roi = rois.get(i);
+            if (roi instanceof ShapedApertureRoi shapedApertureRoi && shapedApertureRoi.getApertureArea() != null) {
+                if (shapedApertureRoi.getApertureArea().contains(x, y)) {
+                    return shapedApertureRoi;
+                } else {
+                    continue;
+                }
+            }
             if (roi instanceof ApertureRoi apertureRoi) {
                 if (!allowArbitraryAperture && apertureRoi instanceof FreeformPixelApertureRoi) {
                     continue;

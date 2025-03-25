@@ -3,6 +3,7 @@ package Astronomy.multiplot.macro.title.parser;
 import Astronomy.MultiAperture_;
 import astroj.FitsJ;
 import astroj.JulianDate;
+import astroj.MeasurementTable;
 import ij.IJ;
 import ij.Prefs;
 import ij.util.ArrayUtil;
@@ -151,8 +152,14 @@ enum Functions {
     }
 
     private static FunctionReturn table(ResolverContext ctx, String... ps) {
-        if (!ctx.table.columnExists(ps[0]) && !"Label".equals(ps[0])) {
-            return FunctionReturn.error("<Invalid col. name for input: '%s'>".formatted(ps[0]));
+        if (!ctx.table.columnExists(ps[0])) {
+            if ("Name".equals(ps[0])) {
+                return new FunctionReturn(MeasurementTable.longerName(ctx.table.shortTitle()));
+            }
+
+            if (!"Label".equals(ps[0])) {
+                return FunctionReturn.error("<Invalid col. name for input: '%s'>".formatted(ps[0]));
+            }
         }
 
         // Special processors

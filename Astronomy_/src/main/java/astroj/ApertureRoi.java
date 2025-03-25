@@ -3,6 +3,7 @@
 package astroj;
 
 import ij.IJ;
+import ij.astro.types.Pair;
 import ij.gui.Roi;
 
 import java.awt.*;
@@ -13,7 +14,7 @@ import java.text.DecimalFormat;
  * The ROI keeps track both of it's double position and a boolean flag which determines whether
  * the backround aperture should be displayed or not.
  */
-public class ApertureRoi extends Roi {
+public non-sealed class ApertureRoi extends Roi implements Aperture {
     protected double intCnts = Double.NaN;
     protected String intCntsText = "";
     protected String intCntsWithMagText = "";
@@ -36,6 +37,10 @@ public class ApertureRoi extends Roi {
     AstroCanvas ac = null;
     boolean netFlipX = false, netFlipY = false, netRotate = false, showMag = true, showIntCntWithMag = true;
     boolean isPhantom = false;
+    /**
+     * RA/DEC position of the geometric center (xPos, yPos) of this aperture
+     */
+    protected Pair.DoublePair radec;
 
     public ApertureRoi(double x, double y, double rad1, double rad2, double rad3, double integratedCnts, boolean isCentered) {
         super((int) x, (int) y, 1, 1);
@@ -204,8 +209,14 @@ public class ApertureRoi extends Roi {
         showSky = sky;
     }
 
+    @Override
     public boolean getIsCentroid() {
         return isCentroid;
+    }
+
+    @Override
+    public boolean getIsComparisonStar() {
+        return false;
     }
 
     public void setIsCentroid(boolean isCentered) {
@@ -368,6 +379,31 @@ public class ApertureRoi extends Roi {
         if (aij) {
             ((Graphics2D) g).setTransform(ac.canvTrans);
         }
+    }
+
+    public void setRadec(double ra, double dec) {
+        setRadec(new Pair.DoublePair(ra, dec));
+    }
+
+    public void setRadec(Pair.DoublePair radec) {
+        this.radec = radec;
+    }
+
+    public boolean hasRadec() {
+        return radec != null && !Double.isNaN(radec.first()) && !Double.isNaN(radec.second());
+    }
+
+    public double getRightAscension() {
+        return radec == null ? Double.NaN : radec.first();
+    }
+
+    public double getDeclination() {
+        return radec == null ? Double.NaN : radec.second();
+    }
+
+    @Override
+    public Aperture.ApertureShape getApertureShape() {
+        return Aperture.ApertureShape.CIRCULAR;
     }
 
     /**

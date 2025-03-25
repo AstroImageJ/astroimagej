@@ -4,7 +4,6 @@ import Astronomy.multiplot.KeplerSplineControl;
 import Astronomy.multiplot.modelling.FitLightCurveChi2;
 import Astronomy.multiplot.settings.MPOperator;
 import Jama.Matrix;
-import Jama.QRDecomposition;
 import astroj.IJU;
 import flanagan.analysis.Regression;
 import flanagan.math.Minimization;
@@ -17,6 +16,7 @@ import ij.measure.ResultsTable;
 import ij.measure.UserFunction;
 import ij.util.ArrayUtil;
 import org.hipparchus.linear.MatrixUtils;
+import org.hipparchus.stat.regression.OLSMultipleLinearRegression;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.function.Function;
 import java.util.regex.Pattern;
+import java.util.stream.IntStream;
 
 import static Astronomy.MultiPlot_.*;
 
@@ -297,7 +298,7 @@ public class CurveFitter {
 
                             if (detrendcolumn[curve][v] == ResultsTable.COLUMN_NOT_FOUND) {
                                 detrendIndex[v] = 0;
-                            } else {
+                            } else if (!detrendVarAllNaNs[curve][v]) {
                                 detrendVarsUsed[curve]++;
                             }
                         } else if (detrendIndex[v] == 1)  //Meridian Flip Detrend Selected
@@ -643,14 +644,21 @@ public class CurveFitter {
                     detrendAverage[v] = 0.0;
                     detrendPower[v] = 1;
                     int numNaNs = 0;
+                    var c = 0;
                     for (int j = 0; j < nn[curve]; j++) {
-                        if (Double.isNaN(detrend[curve][v][j])) {
-                            numNaNs++;
-                        } else {
-                            detrendAverage[v] += detrend[curve][v][j] / (double) nn[curve];
+                        if ((detrendFitIndex[curve] == 4 &&
+                                (x[curve][j] > fitMin[curve] && x[curve][j] < fitLeft[curve]) ||
+                                (x[curve][j] > fitRight[curve] && x[curve][j] < fitMax[curve])
+                        ) || (detrendFitIndex[curve] != 4 && x[curve][j] > fitMin[curve] && x[curve][j] < fitMax[curve])) {
+                            if (Double.isNaN(detrend[curve][v][j])) {
+                                numNaNs++;
+                            } else {
+                                detrendAverage[v] += detrend[curve][v][j];
+                                c++;
+                            }
                         }
                     }
-                    detrendAverage[v] = ((double) nn[curve] / ((double) nn[curve] - (double) numNaNs)) * detrendAverage[v];
+                    detrendAverage[v] /= c;
                     for (int j = 0; j < nn[curve]; j++) {
                         detrend[curve][v][j] -= detrendAverage[v];
                     }
@@ -663,14 +671,19 @@ public class CurveFitter {
                     if (detrendPower[v] > 1) {
                         detrendAverage[v] = 0.0;
                         numNaNs = 0;
+                        c = 0;
                         for (int j = 0; j < nn[curve]; j++) {
-                            if (Double.isNaN(detrend[curve][v][j])) {
-                                numNaNs++;
-                            } else {
-                                detrendAverage[v] += detrend[curve][v][j];
+                            if ((detrendFitIndex[curve] == 4 &&
+                                    (x[curve][j] > fitMin[curve] && x[curve][j] < fitLeft[curve]) ||
+                                    (x[curve][j] > fitRight[curve] && x[curve][j] < fitMax[curve])
+                            ) || (detrendFitIndex[curve] != 4 && x[curve][j] > fitMin[curve] && x[curve][j] < fitMax[curve])) {
+                                if (Double.isNaN(detrend[curve][v][j])) { numNaNs++; } else {
+                                    detrendAverage[v] += detrend[curve][v][j];
+                                    c++;
+                                }
                             }
                         }
-                        detrendAverage[v] /= (nn[curve] - numNaNs);
+                        detrendAverage[v] /= c;
                         for (int j = 0; j < nn[curve]; j++) {
                             detrend[curve][v][j] -= detrendAverage[v];
                         }
@@ -1051,7 +1064,7 @@ public class CurveFitter {
         var dof = MultiPlot_.dof[curve];
         int[] index;
         boolean[] isFitted = Arrays.copyOf(MultiPlot_.isFitted[curve], MultiPlot_.isFitted[curve].length);
-        double[] coeffs;
+        double[] coeffs = new double[0];
         var detrendVars = Arrays.copyOf(MultiPlot_.detrendVars[curve], MultiPlot_.detrendVars[curve].length);
         var xModel1 = MultiPlot_.xModel1[curve] != null ? Arrays.copyOf(MultiPlot_.xModel1[curve], MultiPlot_.xModel1[curve].length) : null;
         var xModel2 = MultiPlot_.xModel2[curve];
@@ -1428,9 +1441,6 @@ public class CurveFitter {
                                     start[fp] = priorCenter[index[fp]];
                                     width[fp] = priorWidth[index[fp]];
                                     step[fp] = getFitStep(curve, index[fp], priorWidth, priorCenter);
-                                    if (usImageJFitter && (index[fp] == 3 || index[fp] == 3)) {
-                                        step[fp] *= 3;
-                                    }
                                 }
                                 /*if (usePriorWidth[curve][index[fp]]) {
                                     width[fp] = MultiPlot_.priorWidth[curve][index[fp]];
@@ -1440,36 +1450,59 @@ public class CurveFitter {
                                 }*/
                             }
 
-                            if (usImageJFitter) {
-                                var sortedX = Arrays.stream(x[curve]).limit(nn[curve]).filter(d -> !Double.isNaN(d)).sorted().toArray();
+                            var needsFit = false;
+                            for (int i = 0; i < maxFittedVars; i++) {
+                                if (isFitted[i]) {
+                                    needsFit = true;
+                                    break;
+                                }
+                            }
 
-                                var m = new Minimizer();
-                                // For maxRestarts >=1, sometimes it deadlocks eg when enabling an all nan param
-                                // seems to be an issue with the tolerence
-                                m.setMaxRestarts(0);
-                                m.setMaxIterations(maxFitSteps[curve]);
-                                m.setMaxError(tolerance[curve]);
-                                m.setFunction(new FitLightCurveChi2(curve, sortedX[0], sortedX[sortedX.length-1],
-                                        nFitted == 0 && !useTransitFit[curve], detrendY, dof, bp,
-                                        detrendX, detrendYE, isFitted, detrendYAverage, priorCenter, detrendIndex,
-                                        maxFittedVars, detrendVars, index),
-                                        start.length);
-                                var result = m.minimize(start, step);
+                            // All params are locked
+                            if (!needsFit) {
+                                converged = true;
+                                nTries = 0;
 
-                                nTries = m.getIterations();
-                                coeffs = Arrays.copyOf(m.getParams(), start.length); // more values can be returned
-                                chi2dof = m.getFunctionValue();
-                                converged = result == Minimizer.SUCCESS;
+                                if (!useTransitFit[curve]) {
+                                    var yAvg = ArrayUtil.average(detrendYs[curve]);
+                                    chi2[curve] = IntStream.range(0, detrendCount).mapToDouble(i -> {
+                                        var s = (detrendYs[curve][i] - yAvg) / detrendYEs[curve][i];
+                                        return s*s;
+                                    }).sum();
+                                    chi2dof = chi2[curve] / dof;
+                                }
                             } else {
-                                var sortedX = Arrays.stream(x[curve]).limit(nn[curve]).filter(d -> !Double.isNaN(d)).sorted().toArray();
-                                minimization.setNrestartsMax(1);
-                                minimization.nelderMead(new FitLightCurveChi2(curve, sortedX[0], sortedX[sortedX.length-1],
-                                                false, detrendY, dof, bp, detrendX, detrendYE, isFitted,
-                                                detrendYAverage, priorCenter, detrendIndex, maxFittedVars, detrendVars, index),
-                                        start, step, tolerance[curve], maxFitSteps[curve]);
-                                coeffs = minimization.getParamValues();
-                                nTries = minimization.getNiter() - 1;
-                                converged = minimization.getConvStatus();
+                                if (usImageJFitter) {
+                                    var sortedX = Arrays.stream(x[curve]).limit(nn[curve]).filter(d -> !Double.isNaN(d)).sorted().toArray();
+
+                                    var m = new Minimizer();
+                                    // For maxRestarts >=1, sometimes it deadlocks eg when enabling an all nan param
+                                    // seems to be an issue with the tolerence
+                                    m.setMaxRestarts(0);
+                                    m.setMaxIterations(maxFitSteps[curve]);
+                                    m.setMaxError(tolerance[curve]);
+                                    m.setFunction(new FitLightCurveChi2(curve, sortedX[0], sortedX[sortedX.length - 1],
+                                                    nFitted == 0 && !useTransitFit[curve], detrendY, dof, bp,
+                                                    detrendX, detrendYE, isFitted, detrendYAverage, priorCenter, detrendIndex,
+                                                    maxFittedVars, detrendVars, index),
+                                            start.length);
+                                    var result = m.minimize(start, step);
+
+                                    nTries = m.getIterations();
+                                    coeffs = Arrays.copyOf(m.getParams(), start.length); // more values can be returned
+                                    chi2dof = m.getFunctionValue();
+                                    converged = result == Minimizer.SUCCESS;
+                                } else {
+                                    var sortedX = Arrays.stream(x[curve]).limit(nn[curve]).filter(d -> !Double.isNaN(d)).sorted().toArray();
+                                    minimization.setNrestartsMax(1);
+                                    minimization.nelderMead(new FitLightCurveChi2(curve, sortedX[0], sortedX[sortedX.length - 1],
+                                                    false, detrendY, dof, bp, detrendX, detrendYE, isFitted,
+                                                    detrendYAverage, priorCenter, detrendIndex, maxFittedVars, detrendVars, index),
+                                            start, step, tolerance[curve], maxFitSteps[curve]);
+                                    coeffs = minimization.getParamValues();
+                                    nTries = minimization.getNiter() - 1;
+                                    converged = minimization.getConvStatus();
+                                }
                             }
 
                             fp = 0;
@@ -1558,13 +1591,13 @@ public class CurveFitter {
                             }
                         } else {  //use regression
                             if (usImageJFitter) {
-                                var xMat = new Matrix(detrendVars).transpose();//todo has problems with nan params
-                                var yMat = new Matrix(detrendYs[curve], detrendYs[curve].length);
-                                var beta = new QRDecomposition(xMat).solve(yMat);
+                                var reg = new OLSMultipleLinearRegression();
+                                reg.newSampleData(detrendYs[curve], new Matrix(detrendVars).transpose().getArray());
+                                var beta = reg.estimateRegressionParameters();
 
                                 coeffs = new double[maxDetrendVars];
-                                for (int i = 0; i < beta.getRowDimension(); i++) {
-                                    coeffs[i+1] = beta.get(i, 0);
+                                for (int i = 0; i < beta.length; i++) {
+                                    coeffs[i] = beta[i];
                                 }
 
                                 varCount = 1;
@@ -1673,9 +1706,9 @@ public class CurveFitter {
                         trend /= yAverage;
                         if (trend != 0.0) {
                             y[j] /= trend;
-                            if (hasErrors[curve] || hasOpErrors[curve]) {
+                            /*if (hasErrors[curve] || hasOpErrors[curve]) {
                                 yerr[j] /= trend;
-                            }
+                            }*/
                         }
                     }
                 }
@@ -1688,9 +1721,9 @@ public class CurveFitter {
                             trend += detrendFactor[v] * (detrend[v][j]);//-detrendAverage[v]);
                         }
                     }
-                    if (hasErrors[curve] || hasOpErrors[curve]) {
+                    /*if (hasErrors[curve] || hasOpErrors[curve]) {
                         yerr[j] /= (y[j] / (y[j] - trend));
-                    }
+                    }*/
                     y[j] -= trend;
                 }
             }
@@ -2016,7 +2049,7 @@ public class CurveFitter {
             double residual;
             int numData = detrendY.length;
             int numVars = detrendVars.length;
-            int dof = numData - param.length;
+            int dof = numData - numVars;
             if (dof < 1) dof = 1;
             for (int j = 0; j < numData; j++) {
                 residual = detrendY[j];// - param[0];

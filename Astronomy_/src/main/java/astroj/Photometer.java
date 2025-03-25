@@ -2,13 +2,24 @@
 
 package astroj;
 
+import Astronomy.photometer.RecursivePixelProcessor;
 import ij.ImagePlus;
 import ij.Prefs;
+import ij.astro.io.prefs.Property;
 import ij.measure.Calibration;
 import ij.process.ColorProcessor;
 import ij.process.ImageProcessor;
+import util.AdaptiveSimpson;
 
 import java.awt.*;
+import java.awt.geom.Area;
+import java.awt.geom.FlatteningPathIterator;
+import java.awt.geom.PathIterator;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ForkJoinWorkerThread;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.DoubleAccumulator;
+import java.util.concurrent.atomic.LongAdder;
 
 /**
  * Simple aperture photometer using a circular aperture and a background annulus with
@@ -97,6 +108,7 @@ public class Photometer {
     protected double dark = 0.0;
     protected boolean removeBackStars = true;
     protected boolean markRemovedPixels = false;
+    protected boolean isMultiAperture;
     protected boolean exact = true;
     protected boolean hasBack = true;
     /**
@@ -106,10 +118,15 @@ public class Photometer {
     protected FittedPlane plane = null;
     protected boolean usePlane = false;
     protected OverlayCanvas ocanvas;
+    protected BulkPixelRoi bulkPixelRoi;
     /**
      * Calibration object of client.
      */
     Calibration calib;
+    private static final ForkJoinPool POOL =
+            new ForkJoinPool(Runtime.getRuntime().availableProcessors(),
+                    new PhotometerWorkerThreadFactory(), null, true);
+    public static final Property<Boolean> USE_PARALLEL_PIXEL_PROCESS = new Property<>(true, Photometer.class);
 
     /**
      * Initializes Photometer without the client's Calibration.
@@ -122,6 +139,17 @@ public class Photometer {
     }
 
     /**
+     * Initializes Photometer without the client's Calibration.
+     */
+    public Photometer(boolean isMultiAperture) {
+        calib = null;
+        radius = Double.NaN;
+        rBack1 = Double.NaN;
+        rBack2 = Double.NaN;
+        this.isMultiAperture = isMultiAperture;
+    }
+
+    /**
      * Initializes Photometer with the client ImagePlus's Calibration object.
      *
      * @param cal client's Calibration object
@@ -131,6 +159,624 @@ public class Photometer {
         radius = Double.NaN;
         rBack1 = Double.NaN;
         rBack2 = Double.NaN;
+    }
+
+    /**
+     * Initializes Photometer with the client ImagePlus's Calibration object.
+     *
+     * @param cal client's Calibration object
+     */
+    public Photometer(Calibration cal, boolean isMultiAperture) {
+        calib = cal;
+        radius = Double.NaN;
+        rBack1 = Double.NaN;
+        rBack2 = Double.NaN;
+        this.isMultiAperture = isMultiAperture;
+    }
+
+    public void measure(ImagePlus imp, Aperture aperture, boolean exactPixels) {
+        switch (aperture.getApertureShape()) {
+            case CIRCULAR -> {
+                if (aperture instanceof ApertureRoi apertureRoi) {
+                    measure(imp, exactPixels, apertureRoi.xPos, apertureRoi.yPos, apertureRoi.r1, apertureRoi.r2, apertureRoi.r3);
+                }
+            }
+            case FREEFORM_SHAPE -> {
+                if (aperture instanceof ShapedApertureRoi apertureRoi) {
+                    measure(imp, apertureRoi, exactPixels);
+                }
+            }
+            case FREEFORM_PIXEL -> {
+                if (aperture instanceof FreeformPixelApertureRoi apertureRoi) {
+                    measure(imp, apertureRoi, exactPixels);
+                }
+            }
+        }
+    }
+
+    public void measure(ImagePlus imp, ShapedApertureRoi apertureRoi, boolean exactPixels) {
+        var ip = imp.getProcessor();
+        exact = exactPixels;
+        xCenter = apertureRoi.xPos;
+        yCenter = apertureRoi.yPos;
+        radius = apertureRoi.getRadius();
+        rBack1 = apertureRoi.getBack1();
+        rBack2 = apertureRoi.getBack2();
+        ocanvas = OverlayCanvas.getOverlayCanvas(imp);
+        hasBack = apertureRoi.hasBackground();
+        boolean usePlaneLocal = usePlane && hasBack;
+
+        debug = Prefs.get("astroj.debug", false);
+
+        if (ip.getBitDepth() == 24) {
+            Frame openFrame = imp.getWindow();
+            if (openFrame instanceof AstroStackWindow asw) {
+                ColorProcessor cp = asw.getcp();
+                if (cp != null) {
+                    ip = cp;
+                }
+            }
+        }
+
+        // INTEGRATE STAR WITHIN APERTURE OF RADIUS radius, SKY OUTSIDE
+
+        source = 0.0;
+        btot = 0.0;
+        back = 0.0;
+        backi = 0.0;
+        backo = 0.0;
+        mean = 0.0;
+        prevBackMean = 0;
+        dSourceCount = 0.0;
+        dBackCount = 0.0;
+        sourceCount = 0;
+        backCount = 0;
+        back2 = 0;
+        boolean fitPlaneError = false;
+
+        var apertureArea = apertureRoi.getApertureArea();
+        var backgroundArea = apertureRoi.getBackgroundArea();
+
+        if (apertureArea == null) {
+            return;
+        }
+
+        var sourceBounds = clampBounds(imp, apertureArea.getBounds());
+        assert hasBack == (backgroundArea != null && !backgroundArea.isEmpty());
+        var backgroundBounds = hasBack ? clampBounds(imp, backgroundArea.getBounds()) : new Rectangle();
+        int totalPixels = sourceBounds.height * sourceBounds.width + (backgroundBounds.height * backgroundBounds.width);
+        if (usePlaneLocal) {
+            plane = new FittedPlane(totalPixels);
+        }
+
+        var sourceRegion = new RecursivePixelProcessor.AreaRegion(apertureArea);
+        var backgroundRegion = new RecursivePixelProcessor.AreaRegion(backgroundArea);
+
+        var localApertureArea = ThreadLocal.withInitial(apertureRoi::getApertureArea);
+        var localBackgroundArea = ThreadLocal.withInitial(apertureRoi::getBackgroundArea);
+
+        var localNegApArea = ThreadLocal.withInitial(() -> {
+            var a = new Area(sourceRegion.getBounds());
+            a.subtract(apertureArea);
+            return a;
+        });
+        var localNegBackArea = ThreadLocal.withInitial(() -> {
+            if (!hasBack) {
+                return new Area();
+            }
+
+            var a = new Area(backgroundRegion.getBounds());
+            a.subtract(backgroundArea);
+            return a;
+        });
+
+        peak = Float.NEGATIVE_INFINITY;
+        if (exact) {
+            if (USE_PARALLEL_PIXEL_PROCESS.get()) {
+                var sourceAdder = sourceRegion.createPixelStorage(ip);
+                var dSourceCountAdder = sourceRegion.createPixelStorage(ip);
+                var peakAccumulator = new DoubleAccumulator(Math::max, peak);
+
+
+                var task = new RecursivePixelProcessor(sourceRegion, ip, (i, j, d) -> {
+                    var fraction = 0D;
+                    var area = localApertureArea.get();
+                    assert area != null;
+                    // Contains is not thread safe, even if pixel is local,
+                    // so must be synchronized or use a new object
+                    if (area.contains(i, j, 1, 1)) {
+                        fraction = 1;
+                    } else if (!localNegApArea.get().contains(i, j, 1, 1)) {
+                        var pixel = new Area(new Rectangle(i, j, 1, 1));
+                        // Intersection is not thread safe, even if pixel is local,
+                        // so must be synchronized or use a new object
+                        pixel.intersect(area);
+                        fraction = integrateArea(pixel, false);
+                    }
+
+                    sourceAdder.setVal(i, j, fraction * d);
+                    dSourceCountAdder.setVal(i, j, fraction);
+
+                    if (fraction > 0.01) {
+                        peakAccumulator.accumulate(d);
+                    }
+
+                    return false;
+                });
+
+                POOL.invoke(task);
+
+                source = sourceAdder.sum();
+                dSourceCount = dSourceCountAdder.sum();
+                peak = (float) peakAccumulator.get();
+
+                if (hasBack) {
+                    assert backgroundArea != null;
+
+                    var backAdder = backgroundRegion.createPixelStorage(ip);
+                    var dBackCountAdder = backgroundRegion.createPixelStorage(ip);
+                    var backCountAdder = new LongAdder();
+
+                    task = new RecursivePixelProcessor(backgroundRegion, ip, (i, j, d) -> {
+                        var fraction = 0D;
+                        var area = localBackgroundArea.get();
+                        assert area != null;
+                        // Contains is not thread safe, even if pixel is local,
+                        // so must be synchronized or use a new object
+                        if (area.contains(i, j, 1, 1)) {
+                            fraction = 1;
+                        } else if (!localNegBackArea.get().contains(i, j, 1, 1)) {
+                            var pixel = new Area(new Rectangle(i, j, 1, 1));
+                            // Intersection is not thread safe, even if pixel is local,
+                            // so must be synchronized or use a new object
+                            pixel.intersect(area);
+                            fraction = integrateArea(pixel, false);
+                        }
+
+                        if (!removeBackStars && !usePlaneLocal) {
+                            backAdder.setVal(i, j, fraction * d);
+                            dBackCountAdder.setVal(i, j, fraction);
+                        } else if (fraction > 0) { // BACKGROUND
+                            backCount++;
+                            backAdder.setVal(i, j, fraction * d);
+                            backCountAdder.increment();
+
+                            return usePlaneLocal;
+                        }
+
+                        return false;
+                    });
+
+                    var allPlanePoints = POOL.invoke(task);
+
+                    if (usePlaneLocal) {
+                        for (RecursivePixelProcessor.Point3D p : allPlanePoints) {
+                            plane.addPoint(p.x(), p.y(), p.z());
+                        }
+                    }
+
+                    back = backAdder.sum();
+                    back2 = back * back;
+                    dBackCount = dBackCountAdder.sum();
+                    backCount = backCountAdder.sum();
+                }
+            } else {
+                var bounds = clampBounds(imp, apertureArea.getBounds()); // Integer bounds to ensure we get all pixels
+
+                for (int i = bounds.x; i < bounds.x + bounds.width; i++) {
+                    for (int j = bounds.y; j < bounds.y + bounds.height; j++) {
+                        var d = ip.getPixelValue(i, j);
+                        if (!Float.isNaN(d)) {
+                            var fraction = 0D;
+                            if (apertureArea.contains(i, j, 1, 1)) {
+                                fraction = 1;
+                            } else if (!localNegApArea.get().contains(i, j, 1, 1)) {
+                                var pixel = new Area(new Rectangle(i, j, 1, 1));
+                                pixel.intersect(apertureArea);
+
+                                // Move overlapped shape to have corner on origin
+                                //pixel.transform(AffineTransform.getTranslateInstance(-i, -j));
+
+                                fraction = integrateArea(pixel, false);
+                            }
+
+                            source += fraction * d;
+                            dSourceCount += fraction;
+
+                            if (fraction > 0.01 && d > peak) {
+                                peak = d;
+                            }
+                        }
+                    }
+                }
+
+                if (hasBack) {
+                    assert backgroundArea != null;
+                    bounds = clampBounds(imp, backgroundArea.getBounds()); // Integer bounds to ensure we get all pixels
+
+                    for (int i = bounds.x; i < bounds.x + bounds.width; i++) {
+                        for (int j = bounds.y; j < bounds.y + bounds.height; j++) {
+                            var d = ip.getPixelValue(i, j);
+                            if (!Float.isNaN(d)) {
+                                var fraction = 0D;
+                                if (backgroundArea.contains(i, j, 1, 1)) {
+                                    fraction = 1;
+                                } else if (!localNegBackArea.get().contains(i, j, 1, 1)) {
+                                    var pixel = new Area(new Rectangle(i, j, 1, 1));
+                                    pixel.intersect(backgroundArea);
+
+                                    // Move overlapped shape to have corner on origin
+                                    //pixel.transform(AffineTransform.getTranslateInstance(-i, -j));
+
+                                    fraction = integrateArea(pixel, false);
+                                }
+
+                                if (!removeBackStars && !usePlaneLocal) {
+                                    back += fraction * d;
+                                    dBackCount += fraction;
+                                } else if (fraction > 0) { // BACKGROUND
+                                    back += d;
+                                    back2 += d * d;
+                                    backCount++;
+                                    if (usePlaneLocal) {
+                                        plane.addPoint(i, j, d);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (removeBackStars || usePlaneLocal) {
+                dBackCount = backCount;
+            }
+        } else {
+            if (USE_PARALLEL_PIXEL_PROCESS.get()) {
+                var sourceAdder = sourceRegion.createPixelStorage(ip);
+                var sourceCountAdder = new LongAdder();
+                var peakAccumulator = new DoubleAccumulator(Math::max, peak);
+
+                var task = new RecursivePixelProcessor(sourceRegion, ip, (i, j, d) -> {
+                    var area = localApertureArea.get();
+                    assert area != null;
+                    // Contains is not thread safe, even if pixel is local,
+                    // so must be synchronized or use a new object
+                    if (area.contains(i + 0.5, j + 0.5)) {
+                        sourceAdder.setVal(i, j, d);
+                        sourceCountAdder.increment();
+
+                        peakAccumulator.accumulate(peak);
+                    }
+
+                    return false;
+                });
+
+                POOL.invoke(task);
+
+                source = sourceAdder.sum();
+                sourceCount = sourceCountAdder.sum();
+                peak = (float) peakAccumulator.get();
+
+                if (hasBack) {
+                    assert backgroundArea != null;
+
+                    var backAdder = backgroundRegion.createPixelStorage(ip);
+                    var backCountAdder = new LongAdder();
+
+                    task = new RecursivePixelProcessor(backgroundRegion, ip, (i, j, d) -> {
+                        var area = localBackgroundArea.get();
+                        assert area != null;
+                        // Contains is not thread safe, even if pixel is local,
+                        // so must be synchronized or use a new object
+                        if (area.contains(i + 0.5, j + 0.5)) {
+                            backAdder.setVal(i, j, d);
+                            backCountAdder.increment();
+                            return usePlaneLocal;
+                        }
+
+                        return false;
+                    });
+
+                    var allPlanePoints = POOL.invoke(task);
+
+                    if (usePlaneLocal) {
+                        for (RecursivePixelProcessor.Point3D p : allPlanePoints) {
+                            plane.addPoint(p.x(), p.y(), p.z());
+                        }
+                    }
+
+                    back = backAdder.sum();
+                    back2 = back * back;
+                    backCount = backCountAdder.sum();
+                }
+            } else {
+                var bounds = clampBounds(imp, apertureArea.getBounds()); // Integer bounds to ensure we get all pixels
+
+                for (int i = bounds.x; i < bounds.x + bounds.width; i++) {
+                    for (int j = bounds.y; j < bounds.y + bounds.height; j++) {
+                        var d = ip.getPixelValue(i, j);
+                        if (!Float.isNaN(d)) {
+                            if (apertureArea.contains(i + 0.5, j + 0.5)) {
+                                source += d;
+                                sourceCount++;
+                                if (d > peak) {
+                                    peak = d;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (hasBack) {
+                    assert backgroundArea != null;
+                    bounds = clampBounds(imp, backgroundArea.getBounds()); // Integer bounds to ensure we get all pixels
+
+                    for (int i = bounds.x; i < bounds.x + bounds.width; i++) {
+                        for (int j = bounds.y; j < bounds.y + bounds.height; j++) {
+                            var d = ip.getPixelValue(i, j);
+                            if (!Float.isNaN(d)) {
+                                if (backgroundArea.contains(i + 0.5, j + 0.5)) {
+                                    back += d;
+                                    back2 += d * d;
+                                    backCount++;
+                                    if (usePlaneLocal) {
+                                        plane.addPoint(i, j, d);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            dSourceCount = sourceCount;
+            dBackCount = backCount;
+        }
+
+        if (hasBack && (dBackCount > 0.0)) {
+            back /= dBackCount;    // MEAN BACKGROUND
+        }
+
+        if (hasBack && removeBackStars && (dBackCount > 3.0)) {
+            backMean = back;
+            back2Mean = back2 / dBackCount;
+
+            // Copy pixel data for evaluation
+            var pixels = new float[totalPixels];
+            var js = new int[totalPixels];
+            var is = new int[totalPixels];
+            var pCnt = 0;
+
+            // Integer bounds to ensure we get all pixels
+
+            for (int i = backgroundBounds.x; i < backgroundBounds.x + backgroundBounds.width; i++) {
+                for (int j = backgroundBounds.y; j < backgroundBounds.y + backgroundBounds.height; j++) {
+                    var d = ip.getPixelValue(i, j);
+                    if (backgroundArea.contains(i + 0.5, j + 0.5)) {
+                        if (!Float.isNaN(d)) {
+                            js[pCnt] = j;
+                            is[pCnt] = i;
+                            pixels[pCnt++] = d;
+                        } else if (markRemovedPixels) {
+                            addPixelRoi(imp, i, j); // Mark NaN pixels
+                        }
+                    }
+                }
+            }
+
+            for (int iteration = 0; iteration < 100; iteration++) {
+                backstdev = Math.sqrt(back2Mean - backMean * backMean);
+                back = 0.0;
+                back2 = 0.0;
+                backCount = 0;
+
+                if (usePlaneLocal) {
+                    plane = new FittedPlane(totalPixels);
+                }
+                if (markRemovedPixels && !isMultiAperture) {
+                    ocanvas.removePixelRois();
+                }
+
+                // REMOVE STARS FROM BACKGROUND
+                var backMeanPlus2Stdev = backMean + 2.0 * backstdev;
+                var backMeanMinus2Stdev = backMean - 2.0 * backstdev;
+                for (int i = 0; i < pCnt; i++) {
+                    var d = pixels[i];
+                    if ((d <= backMeanPlus2Stdev) && (d >= backMeanMinus2Stdev)) {
+                        back += d; // FINAL BACKGROUND
+                        back2 += d * d;
+                        backCount++;
+                        if (usePlaneLocal) {
+                            plane.addPoint(is[i], js[i], d);
+                        }
+                    } else if (markRemovedPixels) {
+                        addPixelRoi(imp,is[i], js[i]);
+                    }
+                }
+
+                if (backCount > 0) {
+                    back /= backCount;    // MEAN BACKGROUND
+                    backMean = back;
+                    back2Mean = back2 / backCount;
+                }
+
+                if (Math.abs(prevBackMean - backMean) < 0.0001) { //was 0.1 which did not work for for low background levels
+                    break;
+                }
+                prevBackMean = backMean;
+            }
+
+            dBackCount = (double) backCount;
+            if (markRemovedPixels) {
+                AstroCanvas ac = (AstroCanvas) imp.getCanvas();
+                ac.paint(ac.getGraphics());
+            }
+        }
+
+        if (usePlaneLocal && !plane.fitPlane()) {
+            //IJ.log("Photometer ERROR : cannot fit plane to background, using average background instead.");
+            fitPlaneError = true;
+        }
+
+        btot = back * dSourceCount;
+
+        if (usePlaneLocal && !fitPlaneError) {
+            source = 0.0;
+            back = 0.0;
+            dSourceCount = 0.0;
+            if (exact) {
+                if (USE_PARALLEL_PIXEL_PROCESS.get()) {
+                    var sourceAdder = sourceRegion.createPixelStorage(ip);
+                    var backAdder = sourceRegion.createPixelStorage(ip);
+                    var dSourceCountAdder = sourceRegion.createPixelStorage(ip);
+
+                    var task = new RecursivePixelProcessor(sourceRegion, ip, (i, j, d) -> {
+                        var fraction = 0D;
+                        var area = localApertureArea.get();
+                        assert area != null;
+                        // Contains is not thread safe, even if pixel is local,
+                        // so must be synchronized or use a new object
+                        if (area.contains(i, j, 1, 1)) {
+                            fraction = 1;
+                        } else if (!localNegApArea.get().contains(i, j, 1, 1)) {
+                            var pixel = new Area(new Rectangle(i, j, 1, 1));
+                            // Intersection is not thread safe, even if pixel is local,
+                            // so must be synchronized or use a new object
+                            pixel.intersect(area);
+                            fraction = integrateArea(pixel, false);
+                        }
+
+                        var b = plane.valueAt(i, j);
+
+                        sourceAdder.setVal(i, j, (d - b) * fraction);
+                        backAdder.setVal(i, j, b * fraction);
+                        dSourceCountAdder.setVal(i, j, fraction);
+
+                        return false;
+                    });
+
+                    POOL.invoke(task);
+
+                    source = sourceAdder.sum();
+                    back = backAdder.sum();
+                    dSourceCount = dSourceCountAdder.sum();
+                } else {
+                    var bounds = clampBounds(imp, apertureArea.getBounds()); // Integer bounds to ensure we get all pixels
+
+                    for (int i = bounds.x; i < bounds.x + bounds.width; i++) {
+                        for (int j = bounds.y; j < bounds.y + bounds.height; j++) {
+                            var d = ip.getPixelValue(i, j);
+                            if (!Float.isNaN(d)) {
+                                var fraction = 0D;
+                                if (apertureArea.contains(i, j, 1, 1)) {
+                                    fraction = 1;
+                                } else if (!localNegApArea.get().contains(i, j, 1, 1)) {
+                                    var pixel = new Area(new Rectangle(i, j, 1, 1));
+                                    pixel.intersect(apertureArea);
+
+                                    // Move overlapped shape to have corner on origin
+                                    //pixel.transform(AffineTransform.getTranslateInstance(-i, -j));
+
+                                    fraction = integrateArea(pixel, false);
+                                }
+
+                                dSourceCount += fraction;
+                                var b = plane.valueAt(i, j);
+                                back += b * fraction;
+                                source += (d - b) * fraction;
+                            }
+                        }
+                    }
+                }
+
+                if (dSourceCount > 0) {
+                    back /= dSourceCount;
+                }
+            } else {
+                if (USE_PARALLEL_PIXEL_PROCESS.get()) {
+                    var sourceAdder = sourceRegion.createPixelStorage(ip);
+                    var backAdder = sourceRegion.createPixelStorage(ip);
+                    var sourceCountAdder = new LongAdder();
+
+                    var task = new RecursivePixelProcessor(sourceRegion, ip, (i, j, d) -> {
+                        var area = localApertureArea.get();
+                        assert area != null;
+                        // Contains is not thread safe, even if pixel is local,
+                        // so must be synchronized or use a new object
+                        if (area.contains(i + 0.5, j + 0.5)) {
+                            var b = plane.valueAt(i, j);
+
+                            sourceAdder.setVal(i, j, (d - b));
+                            backAdder.setVal(i, j, b);
+                            sourceCountAdder.increment();
+                        }
+
+                        return false;
+                    });
+
+                    POOL.invoke(task);
+
+                    source = sourceAdder.sum();
+                    back = backAdder.sum();
+                    dSourceCount = sourceCountAdder.sum();
+                } else {
+                    var bounds = clampBounds(imp, apertureArea.getBounds()); // Integer bounds to ensure we get all pixels
+
+                    for (int i = bounds.x; i < bounds.x + bounds.width; i++) {
+                        for (int j = bounds.y; j < bounds.y + bounds.height; j++) {
+                            var d = ip.getPixelValue(i, j);
+                            if (!Float.isNaN(d)) {
+                                if (apertureArea.contains(i + 0.5, j + 0.5)) {
+                                    dSourceCount++;
+                                    var b = plane.valueAt(i, j);
+                                    back += b;
+                                    source += (d - b);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (dSourceCount > 0) {
+                    back /= dSourceCount;
+                }
+            }
+        } else {
+            source -= btot;
+        }
+
+        if (dSourceCount > 0.0) {
+            mean = source / dSourceCount;
+        }
+
+        double src = 0.0;
+        double bck = 0.0;
+        double sCnt = 0.0;
+        double srcCnt = 0.0;
+        double bckCnt = 0.0;
+
+        // ERROR FROM GAIN (e-/count), RON (e-), DARK CURRENT (e-) AND POISSON STATISTICS
+        // SEE MERLINE, W. & HOWELL, S.B., 1995, EXP. ASTRON., 6, 163
+        src = (source < 0.0 || dSourceCount <= 0.0) ? 0.0 : source;
+        bck = (back < 0.0 || dBackCount <= 0) ? 0.0 : back;
+        sCnt = Math.max(dSourceCount, 0.0);
+        srcCnt = (dSourceCount <= 0.0 || dBackCount <= 0) ? 0.0 : dSourceCount;
+        bckCnt = (dBackCount <= 0) ? 1.0 : dBackCount;
+
+        serror = Math.sqrt((src * gain) + sCnt * (1.0 + srcCnt / bckCnt) * (bck * gain + dark + ron * ron + gain * gain * 0.083521)) / gain;
+        fwhm = IJU.radialDistributionFWHM(ip, apertureRoi.xPos, apertureRoi.yPos, apertureRoi.r1, back);
+
+        // CALIBRATE INTENSITIES IF POSSIBLE
+
+        rawSource = source;
+        rawBack = 0.0;
+        if (calib != null && calib.calibrated()) {
+            rawSource = calib.getRawValue(source);
+            if (dBackCount > 0) {
+                rawBack = calib.getRawValue(back);
+            }
+        }
     }
 
     public void measure(ImagePlus imp, FreeformPixelApertureRoi apertureRoi, boolean exactPixels) {
@@ -423,7 +1069,7 @@ public class Photometer {
                 if (usePlaneLocal) {
                     plane = new FittedPlane(totalPixels);
                 }
-                if (markRemovedPixels) {
+                if (markRemovedPixels && !isMultiAperture) {
                     ocanvas.removePixelRois();
                 }
 
@@ -656,18 +1302,11 @@ public class Photometer {
             j2 = ip.getHeight() - 1;
         }
 
-        double r2b1 = 0.0;
-        double r2b2 = 0.0;
-        if (!Double.isNaN(rb1) && !Double.isNaN(rb2) && rb1 < rb2) {
-            r2b1 = rb1 * rb1;
-            r2b2 = rb2 * rb2;
-        }
+        double r2b1 = hasBack ? rb1 * rb1 : 0.0;
+        double r2b2 = hasBack ? rb2 * rb2 : 0.0;
         //if (!Double.isNaN(rb2) && rb2 > radius) r2b2 = rb2*rb2;
 
         double r2ap = radius * radius;
-        double r2 = 0.0; //radius to middle of pixel
-        double fraction = 1.0; //fraction of pixel inside aperture
-        float d;
         double di, dj;
 
         // INTEGRATE STAR WITHIN APERTURE OF RADIUS radius, SKY OUTSIDE
@@ -691,76 +1330,168 @@ public class Photometer {
             plane = new FittedPlane(totalPixels);
         }
 
+        var region = new RecursivePixelProcessor.CircularRegion(x, y, rad, rb1, rb2);
+
         peak = Float.NEGATIVE_INFINITY;
         if (exact) {
-            for (int j = j1; j <= j2; j++) {
-                dj = (double) j + Centroid.PIXELCENTER - ypix;        // pixel center
-                for (int i = i1; i <= i2; i++) {
-                    di = (double) i + Centroid.PIXELCENTER - xpix;    // pixel center
-                    r2 = di * di + dj * dj;                         // radius to pixel center
-                    d = ip.getPixelValue(i, j);
-                    if (!Float.isNaN(d)) {
-                        fraction = intarea(xpix, ypix, radius, i, i + 1, j, j + 1);
-                        source += fraction * d;
-                        //addPixelRoi(imp,i,j);
-                        dSourceCount += fraction;
-                        if (fraction > 0.01 && d > peak) {
-                            peak = d;
+            if (USE_PARALLEL_PIXEL_PROCESS.get()) {
+                var sourceAdder = region.createPixelStorage(ip);
+                var dSourceCountAdder = region.createPixelStorage(ip);
+                var peakAccumulator = new DoubleAccumulator(Math::max, peak);
+                var backAdder = region.createPixelStorage(ip);
+                var dBackCountAdder = region.createPixelStorage(ip);
+                var backCountAdder = new LongAdder();
+
+                var task = new RecursivePixelProcessor(region, ip, (i, j, d) -> {
+                    var fraction = intarea(xpix, ypix, radius, i, i + 1, j, j + 1);
+                    sourceAdder.setVal(i, j, fraction * d);
+                    dSourceCountAdder.setVal(i, j, fraction);
+
+                    if (fraction > 0.01) {
+                        peakAccumulator.accumulate(d);
+                    }
+
+                    if (hasBack) {
+                        var r2 = (j + Centroid.PIXELCENTER - ypix) * (i + Centroid.PIXELCENTER - xpix);
+                        if (!removeBackStars && !usePlaneLocal) {
+                            fraction = intarea(xpix, ypix, rBack1, i, i + 1, j, j + 1);
+                            var b = -(fraction * d);
+                            var bc = -fraction;
+                            fraction = intarea(xpix, ypix, rBack2, i, i + 1, j, j + 1);
+                            backAdder.setVal(i, j, (fraction * d) + b);
+                            dBackCountAdder.setVal(i, j, fraction + bc);
+                        } else if (r2 >= r2b1 && r2 <= r2b2) { // BACKGROUND
+                            backAdder.setVal(i, j, d);
+                            backCountAdder.increment();
+
+                            return usePlaneLocal;
                         }
-                        if (hasBack) {
-                            if (!removeBackStars && !usePlaneLocal) {
-                                fraction = intarea(xpix, ypix, rBack1, i, i + 1, j, j + 1);
-                                back -= fraction * d;
-                                dBackCount -= fraction;
-                                fraction = intarea(xpix, ypix, rBack2, i, i + 1, j, j + 1);
-                                back += fraction * d;
-                                dBackCount += fraction;
-                            } else if (r2 >= r2b1 && r2 <= r2b2) { // BACKGROUND
+                    }
+
+                    return false;
+                });
+
+                var allPlanePoints = POOL.invoke(task);
+
+                if (usePlaneLocal) {
+                    for (RecursivePixelProcessor.Point3D p : allPlanePoints) {
+                        plane.addPoint(p.x(), p.y(), p.z());
+                    }
+                }
+
+                source = sourceAdder.sum();
+                dSourceCount = dSourceCountAdder.sum();
+                peak = (float) peakAccumulator.get();
+                back = backAdder.sum();
+                back2 = back * back;
+                dBackCount = dBackCountAdder.sum();
+                backCount = backCountAdder.sum();
+            } else {
+                for (int j = j1; j <= j2; j++) {
+                    dj = (double) j + Centroid.PIXELCENTER - ypix;        // pixel center
+                    for (int i = i1; i <= i2; i++) {
+                        di = (double) i + Centroid.PIXELCENTER - xpix;    // pixel center
+                        var r2 = di * di + dj * dj;                         // radius to pixel center
+                        var d = ip.getPixelValue(i, j);
+                        if (!Float.isNaN(d)) {
+                            var fraction = intarea(xpix, ypix, radius, i, i + 1, j, j + 1);
+                            source += fraction * d;
+                            dSourceCount += fraction;
+                            if (fraction > 0.01 && d > peak) {
+                                peak = d;
+                            }
+                            if (hasBack) {
+                                if (!removeBackStars && !usePlaneLocal) {
+                                    fraction = intarea(xpix, ypix, rBack1, i, i + 1, j, j + 1);
+                                    back -= fraction * d;
+                                    dBackCount -= fraction;
+                                    fraction = intarea(xpix, ypix, rBack2, i, i + 1, j, j + 1);
+                                    back += fraction * d;
+                                    dBackCount += fraction;
+                                } else if (r2 >= r2b1 && r2 <= r2b2) { // BACKGROUND
+                                    back += d;
+                                    back2 += d * d;
+                                    backCount++;
+                                    if (usePlaneLocal) {
+                                        plane.addPoint(di, dj, d);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (removeBackStars || usePlaneLocal) {
+                dBackCount = backCount;
+            }
+        } else {
+            if (USE_PARALLEL_PIXEL_PROCESS.get()) {
+                var sourceAdder = region.createPixelStorage(ip);
+                var peakAccumulator = new DoubleAccumulator(Math::max, peak);
+                var backAdder = region.createPixelStorage(ip);
+                var backCountAdder = new LongAdder();
+                var sourceCountAdder = new LongAdder();
+
+                var task = new RecursivePixelProcessor(region, ip, (i, j, d) -> {
+                    var r2 = (j + Centroid.PIXELCENTER - ypix) * (i + Centroid.PIXELCENTER - xpix);
+                    if (r2 < r2ap) { // SOURCE APERTURE
+                        sourceAdder.setVal(i, j, d);
+                        sourceCountAdder.increment();
+                        peakAccumulator.accumulate(d);
+                    }
+
+                    if (hasBack && r2 >= r2b1 && r2 <= r2b2) { // BACKGROUND
+                        backAdder.setVal(i, j, d);
+                        backCountAdder.increment();
+
+                        return usePlaneLocal;
+                    }
+
+                    return false;
+                });
+
+                var allPlanePoints = POOL.invoke(task);
+
+                if (usePlaneLocal) {
+                    for (RecursivePixelProcessor.Point3D p : allPlanePoints) {
+                        plane.addPoint(p.x(), p.y(), p.z());
+                    }
+                }
+
+                source = sourceAdder.sum();
+                peak = (float) peakAccumulator.get();
+                back = backAdder.sum();
+                back2 = back * back;
+                backCount = backCountAdder.sum();
+            } else {
+                for (int j = j1; j <= j2; j++) {
+                    dj = (double) j + Centroid.PIXELCENTER - ypix;        // Center;
+                    for (int i = i1; i <= i2; i++) {
+                        di = (double) i + Centroid.PIXELCENTER - xpix;    // Center;
+                        var r2 = di * di + dj * dj;
+                        var d = ip.getPixelValue(i, j);
+                        if (!Float.isNaN(d)) {
+                            if (r2 < r2ap) { // SOURCE APERTURE
+                                source += d;
+                                sourceCount++;
+                                if (d > peak) {
+                                    peak = d;
+                                }
+                            }
+                            if (hasBack && r2 >= r2b1 && r2 <= r2b2) { // BACKGROUND
                                 back += d;
-                                //addPixelRoi(imp,i,j);
                                 back2 += d * d;
                                 backCount++;
                                 if (usePlaneLocal) {
                                     plane.addPoint(di, dj, d);
                                 }
-                                // if (debug) IJ.log("i,j="+i+","+j+", back+="+d);
                             }
                         }
                     }
                 }
             }
-            if (removeBackStars || usePlaneLocal) {
-                dBackCount = backCount;
-            }
-        } else {
-            for (int j = j1; j <= j2; j++) {
-                dj = (double) j + Centroid.PIXELCENTER - ypix;        // Center;
-                for (int i = i1; i <= i2; i++) {
-                    di = (double) i + Centroid.PIXELCENTER - xpix;    // Center;
-                    r2 = di * di + dj * dj;
-                    d = ip.getPixelValue(i, j);
-                    if (!Float.isNaN(d)) {
-                        if (r2 < r2ap) { // SOURCE APERTURE
-                            source += d;
-                            //addPixelRoi(imp,i,j);
-                            sourceCount++;
-                            if (d > peak) {
-                                peak = d;
-                            }
-                        }
-                        if (hasBack && r2 >= r2b1 && r2 <= r2b2) { // BACKGROUND
-                            back += d;
-                            //addPixelRoi(imp,i,j);
-                            back2 += d * d;
-                            backCount++;
-                            if (usePlaneLocal) {
-                                plane.addPoint(di, dj, d);
-                            }
-                            // if (debug) IJ.log("i,j="+i+","+j+", back+="+d);
-                        }
-                    }
-                }
-            }
+
             dSourceCount = sourceCount;
             dBackCount = backCount;
         }
@@ -790,9 +1521,9 @@ public class Photometer {
                 dj = (double) j - ypix + Centroid.PIXELCENTER;        // Center
                 for (int i = i1; i <= i2; i++) {
                     di = (double) i - xpix + Centroid.PIXELCENTER;    // Center
-                    r2 = di * di + dj * dj;
+                    var r2 = di * di + dj * dj;
                     if (r2 >= r2b1 && r2 <= r2b2) {
-                        d = ip.getPixelValue(i, j);
+                        var d = ip.getPixelValue(i, j);
                         if (!Float.isNaN(d)) {
                             js[pCnt] = j;
                             is[pCnt] = i;
@@ -813,7 +1544,7 @@ public class Photometer {
                 if (usePlaneLocal) {
                     plane = new FittedPlane(totalPixels);
                 }
-                if (markRemovedPixels) {
+                if (markRemovedPixels && !isMultiAperture) {
                     ocanvas.removePixelRois();
                 }
 
@@ -821,7 +1552,7 @@ public class Photometer {
                 var backMeanPlus2Stdev = backMean + 2.0 * backstdev;
                 var backMeanMinus2Stdev = backMean - 2.0 * backstdev;
                 for (int i = 0; i < pCnt; i++) {
-                    d = pixels[i];
+                    var d = pixels[i];
                     if ((d <= backMeanPlus2Stdev) && (d >= backMeanMinus2Stdev)) {
                         back += d; // FINAL BACKGROUND
                         back2 += d * d;
@@ -864,54 +1595,97 @@ public class Photometer {
         if (usePlaneLocal && !fitPlaneError) {
             source = 0.0;
             back = 0.0;
-            double b = 0.0;
-            int srcCount = 0;
             dSourceCount = 0.0;
             if (exact) {
-                for (int j = j1; j <= j2; j++) {
-                    dj = (double) j + Centroid.PIXELCENTER - ypix;        // Center;
-                    for (int i = i1; i <= i2; i++) {
-                        di = (double) i + Centroid.PIXELCENTER - xpix;    // Center;
-                        d = ip.getPixelValue(i, j);
-                        if (!Float.isNaN(d)) {
-                            fraction = intarea(xpix, ypix, radius, i, i + 1, j, j + 1);
-                            //addPixelRoi(imp,i,j);
-                            dSourceCount += fraction;
-                            b = plane.valueAt(di, dj);
-                            back += b * fraction;
-                            source += (d - b) * fraction;
-                        }
+                if (USE_PARALLEL_PIXEL_PROCESS.get()) {
+                    var sourceAdder = region.createPixelStorage(ip);;
+                    var dSourceCountAdder = region.createPixelStorage(ip);;
+                    var backAdder = region.createPixelStorage(ip);;
 
-                        //                        else if (r2 > r2b1 && r2 < r2b2)  // debug code - replaces background with fitted plane
-                        //                            {
-                        //                            d = ip.getPixelValue(i,j);
-                        //                            b = plane.valueAt(di, dj);
-                        //                            ip.set(i, j, (int)(b));//(d - (b-btot/sourceCount)));
-                        //                            }
-                    }
-                }
-                if (dSourceCount > 0) {
-                    back /= dSourceCount;
-                }
-            } else {
-                for (int j = j1; j <= j2; j++) {
-                    dj = (double) j + Centroid.PIXELCENTER - ypix;        // Center;
-                    for (int i = i1; i <= i2; i++) {
-                        di = (double) i + Centroid.PIXELCENTER - xpix;    // Center;
-                        r2 = di * di + dj * dj;
-                        if (r2 < r2ap) { // SOURCE APERTURE
-                            d = ip.getPixelValue(i, j);
+                    var task = new RecursivePixelProcessor(region, ip, (i, j, d) -> {
+                        var fraction = intarea(xpix, ypix, radius, i, i + 1, j, j + 1);
+                        dSourceCountAdder.setVal(i, j, fraction);
+
+                        var b = plane.valueAt(i + Centroid.PIXELCENTER - xpix, j + Centroid.PIXELCENTER - ypix);
+                        sourceAdder.setVal(i, j, (d - b) * fraction);
+
+                        backAdder.setVal(i, j, b * fraction);
+
+                        return false;
+                    });
+
+                    POOL.invoke(task);
+
+                    source = sourceAdder.sum();
+                    dSourceCount = dSourceCountAdder.sum();
+                    back = backAdder.sum();
+                } else {
+                    for (int j = j1; j <= j2; j++) {
+                        dj = (double) j + Centroid.PIXELCENTER - ypix;        // Center;
+                        for (int i = i1; i <= i2; i++) {
+                            di = (double) i + Centroid.PIXELCENTER - xpix;    // Center;
+                            var d = ip.getPixelValue(i, j);
                             if (!Float.isNaN(d)) {
-                                srcCount++;
-                                b = plane.valueAt(di, dj);
-                                back += b;
-                                source += (d - b);
+                                var fraction = intarea(xpix, ypix, radius, i, i + 1, j, j + 1);
+                                dSourceCount += fraction;
+                                var b = plane.valueAt(di, dj);
+                                back += b * fraction;
+                                source += (d - b) * fraction;
                             }
                         }
                     }
                 }
-                dSourceCount = srcCount;
-                if (srcCount > 0) {
+
+                if (dSourceCount > 0) {
+                    back /= dSourceCount;
+                }
+            } else {
+                if (USE_PARALLEL_PIXEL_PROCESS.get()) {
+                    var sourceAdder = region.createPixelStorage(ip);
+                    var dSourceCountAdder = region.createPixelStorage(ip);
+                    var backAdder = region.createPixelStorage(ip);
+
+                    var task = new RecursivePixelProcessor(region, ip, (i, j, d) -> {
+                        var r2 = ((double) i + Centroid.PIXELCENTER - xpix) * ((double) i + Centroid.PIXELCENTER - xpix) +
+                                ((double) j + Centroid.PIXELCENTER - ypix) * ((double) j + Centroid.PIXELCENTER - ypix);
+
+                        if (r2 < r2ap) { // SOURCE APERTURE
+                            dSourceCountAdder.setVal(i, j, 1);
+
+                            var b = plane.valueAt(i + Centroid.PIXELCENTER - xpix, j + Centroid.PIXELCENTER - ypix);
+                            sourceAdder.setVal(i, j, (d - b));
+
+                            backAdder.setVal(i, j, b);
+                        }
+
+                        return false;
+                    });
+
+                    POOL.invoke(task);
+
+                    source = sourceAdder.sum();
+                    dSourceCount = dSourceCountAdder.sum();
+                    back = backAdder.sum();
+                } else {
+                    for (int j = j1; j <= j2; j++) {
+                        dj = (double) j + Centroid.PIXELCENTER - ypix;        // Center;
+                        for (int i = i1; i <= i2; i++) {
+                            di = (double) i + Centroid.PIXELCENTER - xpix;    // Center;
+                            var r2 = di * di + dj * dj;
+                            if (r2 < r2ap) { // SOURCE APERTURE
+                                var d = ip.getPixelValue(i, j);
+                                if (!Float.isNaN(d)) {
+                                    dSourceCount++;
+                                    var b = plane.valueAt(di, dj);
+                                    back += b;
+                                    source += (d - b);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (dSourceCount > 0) {
                     back /= dSourceCount;
                 }
             }
@@ -1076,6 +1850,99 @@ public class Photometer {
         return (0.5 * x * (y1 - y0));
     }
 
+    private Rectangle clampBounds(ImagePlus imp, Rectangle bounds) {
+        Rectangle intersection = bounds.intersection(new Rectangle(0, 0, imp.getWidth(), imp.getHeight()));
+        // If there's no intersection, make sure to return an empty rectangle.
+        if (intersection.width < 0 || intersection.height < 0) {
+            intersection.width = 0;
+            intersection.height = 0;
+        }
+        return intersection;
+    }
+
+
+    /**
+     * Calculates the precise area of a {@link Area} object.
+     *
+     * @param area The Area object to calculate the area for.
+     * @return The calculated area.
+     */
+    //todo care about winding rule on the iterator?
+    private static double integrateArea(Area area, boolean flatten) {
+        if (area.isEmpty()) {
+            return 0;
+        }
+
+        var pathIterator = flatten ? new FlatteningPathIterator(area.getPathIterator(null), 0.01, 10) : area.getPathIterator(null);
+        var coords = new double[6];
+
+        double startX = 0, startY = 0; // Starting point of a subpath
+        double lastX = 0, lastY = 0;  // Last point in the current segment
+
+        double totalArea = 0.0;
+
+        var tol = 1e-6;
+
+        var linSeg = 0;
+        while (!pathIterator.isDone()) {
+            int segmentType = pathIterator.currentSegment(coords);
+
+            switch (segmentType) {
+                case PathIterator.SEG_MOVETO -> {
+                    // Start a new subpath
+                    startX = coords[0];
+                    startY = coords[1];
+                    lastX = startX;
+                    lastY = startY;
+                }
+                case PathIterator.SEG_LINETO -> {
+                    // Add the area of a triangle formed by the line and origin
+                    double x = coords[0];
+                    double y = coords[1];
+                    totalArea += triangleArea(lastX, lastY, x, y);
+                    lastX = x;
+                    lastY = y;
+                    linSeg++;
+                }
+                case PathIterator.SEG_QUADTO -> {
+                    // Quadratic Bézier curve
+                    double ctrlX = coords[0], ctrlY = coords[1];
+                    double x = coords[2], y = coords[3];
+                    totalArea += AdaptiveSimpson.integrateQuadraticBezierAdaptive(lastX, lastY, ctrlX, ctrlY, x, y, tol);
+                    lastX = x;
+                    lastY = y;
+                }
+                case PathIterator.SEG_CUBICTO -> {
+                    // Cubic Bézier curve
+                    double ctrl1X = coords[0], ctrl1Y = coords[1];
+                    double ctrl2X = coords[2], ctrl2Y = coords[3];
+                    double x = coords[4], y = coords[5];
+                    totalArea += AdaptiveSimpson.integrateCubicBezierAdaptive(lastX, lastY, ctrl1X, ctrl1Y, ctrl2X, ctrl2Y, x, y, tol);
+                    lastX = x;
+                    lastY = y;
+                }
+                case PathIterator.SEG_CLOSE -> {
+                    // Close the path by adding the area of the closing segment
+                    totalArea += triangleArea(lastX, lastY, startX, startY);
+                    lastX = startX;
+                    lastY = startY;
+                    linSeg++;
+                }
+            }
+
+            pathIterator.next();
+        }
+
+        return Math.abs(totalArea);
+    }
+
+    /**
+     * Computes the signed area of a triangle given its vertices.
+     */
+    private static double triangleArea(double x1, double y1, double x2, double y2) {
+        return 0.5 * (x1 * y2 - y1 * x2);
+    }
+
 
     /**
      * Performs aperture photometry on the current image given a pre-calculated center and standard radii.
@@ -1190,15 +2057,23 @@ public class Photometer {
 
 
     protected void addPixelRoi(ImagePlus imp, double x, double y) {
-        PixelRoi roi = new PixelRoi(x, y);
-        //roi.setAppearance (pixelColor);
-        roi.setImage(imp);
-        ocanvas.add(roi);
+        if (bulkPixelRoi == null) {
+            bulkPixelRoi = new BulkPixelRoi(imp);
+            ocanvas.add(bulkPixelRoi);
+        }
+
+        bulkPixelRoi.addPixel(x, y);
     }
 
-    protected void removePixelRois(ImagePlus imp) {
-        //roi.setAppearance (pixelColor);
-        ocanvas.removeApertureRois();
+    private static class PhotometerWorkerThreadFactory implements ForkJoinPool.ForkJoinWorkerThreadFactory {
+        private final AtomicInteger threadNumber = new AtomicInteger(1);
+
+        @Override
+        public ForkJoinWorkerThread newThread(ForkJoinPool pool) {
+            var worker = ForkJoinPool.defaultForkJoinWorkerThreadFactory.newThread(pool);
+            worker.setName("Photometer-" + threadNumber.getAndIncrement());
+            return worker;
+        }
     }
 
 }

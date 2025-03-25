@@ -14,7 +14,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static Astronomy.Aperture_.*;
-public class FreeformPixelApertureRoi extends ApertureRoi {
+public final class FreeformPixelApertureRoi extends ApertureRoi implements Aperture {
     // HashSet relies on overridden hashcode in Pixel to only care about coordinates for #contains
     private final Set<Pixel> pixels = new HashSet<>(20);
     private final List<Segment> segments = Collections.synchronizedList(new ArrayList<>(80));
@@ -34,10 +34,6 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
     private double photometricX = Double.NaN;
     private double photometricY = Double.NaN;
     private Pair.DoublePair centroidOffset = new Pair.DoublePair(0, 0);
-    /**
-     * RA/DEC position of the geometric center (xPos, yPos) of this aperture
-     */
-    private Pair.DoublePair radec;
 
     public FreeformPixelApertureRoi() {
         this(Double.NaN);
@@ -682,24 +678,14 @@ public class FreeformPixelApertureRoi extends ApertureRoi {
         }
     }
 
-    public void setRadec(double ra, double dec) {
-        setRadec(new Pair.DoublePair(ra, dec));
+    @Override
+    public boolean getIsComparisonStar() {
+        return comparisonStar;
     }
 
-    public void setRadec(Pair.DoublePair radec) {
-        this.radec = radec;
-    }
-
-    public boolean hasRadec() {
-        return radec != null && !Double.isNaN(radec.first()) && !Double.isNaN(radec.second());
-    }
-
-    public double getRightAscension() {
-        return radec == null ? Double.NaN : radec.first();
-    }
-
-    public double getDeclination() {
-        return radec == null ? Double.NaN : radec.second();
+    @Override
+    public ApertureShape getApertureShape() {
+        return ApertureShape.FREEFORM_PIXEL;
     }
 
     private record Segment(int x0, int y0, int x1, int y1, boolean isBackground, SegmentSide segmentSide) {

@@ -3,7 +3,7 @@ package astroj;
 import Astronomy.MultiAperture_;
 import Astronomy.MultiPlot_;
 import Astronomy.multiaperture.FreeformPixelApertureHandler;
-import Astronomy.multiaperture.io.AperturesFile;
+import Astronomy.multiaperture.io.AperturesFileCodec;
 import Astronomy.postprocess.PhotometricDebayer;
 import bislider.com.visutools.nav.bislider.*;
 import ij.*;
@@ -38,8 +38,8 @@ import java.net.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.DecimalFormat;
-import java.util.List;
 import java.util.*;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -2919,6 +2919,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             } else if (source == showRemovedPixelsCB) {
                 showRemovedPixels = true;
                 Prefs.set("aperture.showremovedpixels", showRemovedPixels);
+                Prefs.set("oldAperture.showRemovedPixels", showRemovedPixels);
             } else if (source == rightClickAnnotateCB) {
                 rightClickAnnotate = true;
                 Prefs.set("Astronomy_Tool.rightClickAnnotate", rightClickAnnotate);
@@ -3170,6 +3171,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                 oc.removePixelRois();
                 ac.paint(ac.getGraphics());
                 Prefs.set("aperture.showremovedpixels", showRemovedPixels);
+                Prefs.set("oldAperture.showRemovedPixels", showRemovedPixels);
             } else if (source == rightClickAnnotateCB) {
                 rightClickAnnotate = false;
                 Prefs.set("Astronomy_Tool.rightClickAnnotate", rightClickAnnotate);
@@ -3889,11 +3891,13 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                     roi.setAMag(99.999);
                     roi.setImage(imp);
                     roi.setPhantom(true);
+                    roi.setRadec(coords[0], coords[1]);
                     ac.removePhantomApertureRois();
                     ac.add(roi);
                     ac.paint(ac.getGraphics());
                     MultiAperture_.addApertureAsOld(coords[0], coords[1], pixel[0], pixel[1], (e.getModifiers() & MouseEvent.SHIFT_MASK) != 0);
                     MultiAperture_.apLoading.set(MultiAperture_.ApLoading.IMPORTED);
+                    MultiAperture_.SHAPED_IMPORTED_APS.set(Collections.singletonList(ShapedApertureRoi.fromApertureRoi(roi)));
                 } else {
                     addAnnotateRoi(imp, true, false, true, false, pixel[0], pixel[1], radius, label, colorWCS, false);
                 }
@@ -4881,17 +4885,37 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         if (apsPath != null && !apsPath.trim().isEmpty()) {
             try {
                 var s = Files.readString(Path.of(apsPath));
-                var d = AperturesFile.read(s);
+                var d = AperturesFileCodec.readContents(s);
                 if (d != null) {
-                    FreeformPixelApertureHandler.APS.set(d.apertureRois());
-                    FreeformPixelApertureHandler.IMPORTED_APS.set(d.apertureRois());
+                    var pixelAps = d.getAperturesOfType(FreeformPixelApertureRoi.class, Aperture.ApertureShape.FREEFORM_PIXEL);
+
                     Prefs.ijPrefs.putAll(d.prefs());
                     ac.removeApertureRois();
-                    for (int i = 0; i < FreeformPixelApertureHandler.APS.get().size(); i++) {
-                        var ap = FreeformPixelApertureHandler.APS.get().get(i);
-                        ap.setName((ap.isComparisonStar() ? "C" : "T") + (i+1));
-                        ap.setImage(imp);
-                        ac.add(ap);
+
+                    if (!pixelAps.isEmpty()) {
+                        FreeformPixelApertureHandler.APS.set(pixelAps);
+                        FreeformPixelApertureHandler.IMPORTED_APS.set(pixelAps);
+
+                        for (int i = 0; i < FreeformPixelApertureHandler.APS.get().size(); i++) {
+                            var ap = FreeformPixelApertureHandler.APS.get().get(i);
+                            ap.setName((ap.isComparisonStar() ? "C" : "T") + (i+1));
+                            ap.setImage(imp);
+                            ac.add(ap);
+                        }
+                    }
+
+
+                    var shapedAps = d.getAperturesOfType(ShapedApertureRoi.class, Aperture.ApertureShape.FREEFORM_SHAPE);
+                    if (!shapedAps.isEmpty()) {
+                        MultiAperture_.SHAPED_APS.set(shapedAps);
+                        MultiAperture_.SHAPED_IMPORTED_APS.set(shapedAps);
+                        for (int i = 0; i < shapedAps.size(); i++) {
+                            var ap = shapedAps.get(i);
+                            ap.setName((ap.isComparisonStar() ? "C" : "T") + (i+1));
+                            ap.setPhantom(true);
+                            ap.setImage(imp);
+                            ac.add(ap);
+                        }
                     }
                     return;
                 }
@@ -5056,6 +5080,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             Photometer phot = new Photometer(imp.getCalibration());
             phot.setRemoveBackStars(removeBackStars);
             phot.setMarkRemovedPixels(false);
+            var shaped = new ArrayList<ShapedApertureRoi>();
             for (int i = 0; i < xaps.length; i++) {
                 phot.measure(imp, exact, xap[i], yap[i], radius, rBack1, rBack2);
                 ApertureRoi roi = new ApertureRoi(xap[i], yap[i], radius, rBack1, rBack2, phot.source, isCentroid[i]);
@@ -5063,9 +5088,11 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                 roi.setAMag(absMagStored[i]);
                 roi.setImage(imp);
                 roi.setPhantom(true);
+                shaped.add(ShapedApertureRoi.fromApertureRoi(roi));
                 ac.add(roi);
                 ac.paint(ac.getGraphics());
             }
+            MultiAperture_.SHAPED_IMPORTED_APS.set(shaped);
         } catch (Exception e) {
             IJ.beep();
             IJ.showMessage("Error reading apertures file");

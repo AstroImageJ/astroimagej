@@ -33,7 +33,7 @@ public class OtherInstance {
 		public void sendArgument(String cmd) {
 			if (IJ.debugMode) IJ.log("SocketServer.sendArgument: \""+ cmd+"\"");
 			if (cmd.startsWith("open "))
-				(new Opener()).openAndAddToRecent(cmd.substring(5));
+				(new Opener(Opener.OpenOption.SKIP_UI)).openAndAddToRecent(cmd.substring(5));
 			else if (cmd.startsWith("macro ")) {
 				String name = cmd.substring(6);
 				String name2 = name;

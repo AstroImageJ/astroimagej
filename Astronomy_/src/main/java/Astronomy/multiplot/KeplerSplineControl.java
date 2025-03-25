@@ -58,6 +58,7 @@ public class KeplerSplineControl {
                 }
                 return;
             }
+            createUI();
             var p = makePanel();
             p.pack();
             p.setVisible(true);

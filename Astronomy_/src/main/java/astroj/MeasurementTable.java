@@ -448,7 +448,7 @@ public class MeasurementTable extends ResultsTable {
         locked = lockState;
 
         if (!locked && dataChanged) {
-            updateView(UpdateEvent.DATA_CHANGED);
+            updateView(UpdateEvent.REBUILD);
         }
     }
 
@@ -887,14 +887,14 @@ public class MeasurementTable extends ResultsTable {
     public void renameColumn(String oldName, String newName) {
         super.renameColumn(oldName, newName);
         var i = getColumnIndex(newName);
-        updateView(UpdateEvent.COL_RENAMED, i, i);
+        updateView(UpdateEvent.REBUILD, i, i);
     }
 
 
     @Override
     public void renameColumn(int column, String newName) {
         super.renameColumn(column, newName);
-        updateView(UpdateEvent.COL_RENAMED, column, column);
+        updateView(UpdateEvent.REBUILD, column, column);
     }
 
     public void renameColumnWithoutUpdate(int column, String newName) {
@@ -905,7 +905,7 @@ public class MeasurementTable extends ResultsTable {
         for (int i = hasRowLabels() ? 1 : 0; i < headings.length; i++) {
             super.renameColumn(i, headings[i]);
         }
-        updateView(UpdateEvent.COL_RENAMED);
+        updateView(UpdateEvent.REBUILD);
     }
 
     private static class TableAccumulator {

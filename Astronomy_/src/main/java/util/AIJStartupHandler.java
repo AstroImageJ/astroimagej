@@ -4,10 +4,8 @@ import Astronomy.AstroImageJ_Updater;
 import Astronomy.MultiAperture_;
 import Astronomy.MultiPlot_;
 import Astronomy.multiaperture.FreeformPixelApertureHandler;
-import Astronomy.multiaperture.io.AperturesFile;
-import astroj.AstroCanvas;
-import astroj.IJU;
-import astroj.MeasurementTable;
+import Astronomy.multiaperture.io.AperturesFileCodec;
+import astroj.*;
 import ij.IJ;
 import ij.Prefs;
 import ij.astro.io.prefs.Property;
@@ -36,7 +34,7 @@ import static Astronomy.MultiPlot_.useMacroTitle;
  */
 public class AIJStartupHandler implements PlugIn {
     private static final AssociationMapper multiplotTableHandler =
-            new AssociationMapper((p, skipDialog) -> {
+            new AssociationMapper((p, openOptions) -> {
                 MeasurementTable table = MeasurementTable.getTableFromFile(p.toString());
                 if (table != null) {
                     table.show();
@@ -64,10 +62,10 @@ public class AIJStartupHandler implements PlugIn {
 
                 return false;
             },
-            (p, skipDialog) -> {
+            (p, openOptions) -> {
                 var table = new MeasurementTable(p.getFileName().toString());
                 table.setFilePath(p.toString());
-                var tableRead = FITS_Reader.handleTable(p, table, skipDialog);
+                var tableRead = FITS_Reader.handleTable(p, table, openOptions);
                 if (tableRead != null) {
                     if (tableRead.loadTable()) {
                         useMacroSubtitle.set(false);
@@ -77,10 +75,11 @@ public class AIJStartupHandler implements PlugIn {
 
                     var asw = IJU.getBestOpenAstroStackWindow();
                     if (asw != null && tableRead.apertures() != null) {
-                        var d = AperturesFile.read(new String(tableRead.apertures()));
-                        if (d != null) {
-                            FreeformPixelApertureHandler.APS.set(d.apertureRois());
-                            FreeformPixelApertureHandler.IMPORTED_APS.set(d.apertureRois());
+                        var d = AperturesFileCodec.readContents(new String(tableRead.apertures()));
+                        if (d != null && !d.legacy()) {
+                            var pixelAps = d.getAperturesOfType(FreeformPixelApertureRoi.class, Aperture.ApertureShape.FREEFORM_PIXEL);
+                            FreeformPixelApertureHandler.APS.set(pixelAps);
+                            FreeformPixelApertureHandler.IMPORTED_APS.set(pixelAps);
                             Prefs.ijPrefs.putAll(d.prefs());
                             Property.resetLoadStatus();
                         } else {
@@ -88,10 +87,19 @@ public class AIJStartupHandler implements PlugIn {
                         }
                     } else if (tableRead.apertures() != null) {
                         try {
-                            var d = AperturesFile.read(new String(tableRead.apertures()));
-                            if (d != null) {
-                                FreeformPixelApertureHandler.APS.set(d.apertureRois());
-                                FreeformPixelApertureHandler.IMPORTED_APS.set(d.apertureRois());
+                            var d = AperturesFileCodec.readContents(new String(tableRead.apertures()));
+                            if (d != null && !d.legacy()) {
+                                var pixelAps = d.getAperturesOfType(FreeformPixelApertureRoi.class, Aperture.ApertureShape.FREEFORM_PIXEL);
+                                if (!pixelAps.isEmpty()) {
+                                    FreeformPixelApertureHandler.APS.set(pixelAps);
+                                    FreeformPixelApertureHandler.IMPORTED_APS.set(pixelAps);
+                                }
+
+                                var shapedAps = d.getAperturesOfType(ShapedApertureRoi.class, Aperture.ApertureShape.FREEFORM_SHAPE);
+                                if (!shapedAps.isEmpty()) {
+                                    MultiAperture_.SHAPED_APS.set(shapedAps);
+                                    MultiAperture_.SHAPED_IMPORTED_APS.set(shapedAps);
+                                }
                                 Prefs.ijPrefs.putAll(d.prefs());
                                 Property.resetLoadStatus();
                             } else {
@@ -132,27 +140,40 @@ public class AIJStartupHandler implements PlugIn {
                 }
             }, true);
     private static final AssociationMapper multiplotPlotCfgHandler =
-            new AssociationMapper((p, skipDialog) -> MultiPlot_.loadConfigOfOpenTable(p.toString()), true, ".plotcfg");
+            new AssociationMapper((p, openOptions) -> MultiPlot_.loadConfigOfOpenTable(p.toString()), true, ".plotcfg");
     private static final AssociationMapper radecHandler =
-            new AssociationMapper((p, skipDialog) -> IJU.openRaDecApertures(p.toString()), true, ".radec");
+            new AssociationMapper((p, openOptions) -> IJU.openRaDecApertures(p.toString()), true, ".radec");
     private static final AssociationMapper aperturesHandler =
-            new AssociationMapper((p, skipDialog) -> {
+            new AssociationMapper((p, openOptions) -> {
                 var asw = IJU.getBestOpenAstroStackWindow();
                 if (asw != null) {
                     try {
                         var s = Files.readString(p);
-                        var d = AperturesFile.read(s);
-                        if (d != null) {
-                            FreeformPixelApertureHandler.APS.set(d.apertureRois());
-                            FreeformPixelApertureHandler.IMPORTED_APS.set(d.apertureRois());
+                        var d = AperturesFileCodec.readContents(s);
+                        if (d != null && !d.legacy()) {
+                            var pixelAps = d.getAperturesOfType(FreeformPixelApertureRoi.class, Aperture.ApertureShape.FREEFORM_PIXEL);
+                            if (!pixelAps.isEmpty()) {
+                                FreeformPixelApertureHandler.APS.set(pixelAps);
+                                FreeformPixelApertureHandler.IMPORTED_APS.set(pixelAps);
+                            }
+
+                            var shapedAps = d.getAperturesOfType(ShapedApertureRoi.class, Aperture.ApertureShape.FREEFORM_SHAPE);
+                            if (!shapedAps.isEmpty()) {
+                                MultiAperture_.SHAPED_APS.set(shapedAps);
+                                MultiAperture_.SHAPED_IMPORTED_APS.set(shapedAps);
+                            }
+
                             Prefs.ijPrefs.putAll(d.prefs());
                             Property.resetLoadStatus();
                             if (asw.getCanvas() instanceof AstroCanvas ac) {
                                 ac.removeApertureRois();
                             }
-                            for (int i = 0; i < FreeformPixelApertureHandler.APS.get().size(); i++) {
-                                var ap = FreeformPixelApertureHandler.APS.get().get(i);
-                                ap.setName((ap.isComparisonStar() ? "C" : "T") + (i+1));
+
+                            var aps = pixelAps.isEmpty() ? shapedAps : pixelAps;
+                            for (int i = 0; i < aps.size(); i++) {
+                                var ap = aps.get(i);
+                                ap.setPhantom(true);
+                                ap.setName((ap.getIsComparisonStar() ? "C" : "T") + (i+1));
                                 ap.setImage(asw.getImagePlus());
                                 if (asw.getCanvas() instanceof AstroCanvas ac) {
                                     ac.add(ap);
@@ -167,10 +188,20 @@ public class AIJStartupHandler implements PlugIn {
                 } else {
                     try {
                         var s = Files.readString(p);
-                        var d = AperturesFile.read(s);
-                        if (d != null) {
-                            FreeformPixelApertureHandler.APS.set(d.apertureRois());
-                            FreeformPixelApertureHandler.IMPORTED_APS.set(d.apertureRois());
+                        var d = AperturesFileCodec.readContents(s);
+                        if (d != null && !d.legacy()) {
+                            var pixelAps = d.getAperturesOfType(FreeformPixelApertureRoi.class, Aperture.ApertureShape.FREEFORM_PIXEL);
+                            if (!pixelAps.isEmpty()) {
+                                FreeformPixelApertureHandler.APS.set(pixelAps);
+                                FreeformPixelApertureHandler.IMPORTED_APS.set(pixelAps);
+                            }
+
+                            var shapedAps = d.getAperturesOfType(ShapedApertureRoi.class, Aperture.ApertureShape.FREEFORM_SHAPE);
+                            if (!shapedAps.isEmpty()) {
+                                MultiAperture_.SHAPED_APS.set(shapedAps);
+                                MultiAperture_.SHAPED_IMPORTED_APS.set(shapedAps);
+                            }
+
                             Prefs.ijPrefs.putAll(d.prefs());
                             Property.resetLoadStatus();
                         } else {

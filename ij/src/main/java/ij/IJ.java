@@ -66,7 +66,7 @@ public class IJ {
     public static final char degreeSymbol = '\u00B0';
 
 	private static ImageJ ij;
-	private static java.applet.Applet applet;
+	private static Applet applet;
 	private static ProgressBar progressBar;
 	private static TextPanel textPanel;
 	private static String osname, osarch;
@@ -444,7 +444,7 @@ public class IJ {
 	}
 
 	/**Returns the Applet that created this ImageJ or null if running as an application.*/
-	public static java.applet.Applet getApplet() {
+	public static Applet getApplet() {
 		return applet;
 	}
 	
@@ -927,7 +927,7 @@ public class IJ {
 		if (Prefs.getBoolean(".aij.disableBeep", false)) {
 			return;
 		}
-		java.awt.Toolkit.getDefaultToolkit().beep();
+		Toolkit.getDefaultToolkit().beep();
 	}
 	
 	/**	Returns a string something like "64K of 256MB (25%)"
@@ -1977,16 +1977,29 @@ public class IJ {
 		open(null);
 	}
 
-	/** Opens and displays a tiff, dicom, fits, pgm, jpeg, bmp, gif, lut, 
+    /**
+     * Opens and displays a tiff, dicom, fits, pgm, jpeg, bmp, gif, lut,
+     * roi, or text file. Displays an error message if the specified file
+     * is not in one of the supported formats, or if it is not found.
+     * With 1.41k or later, opens images specified by a URL.
+     *
+     * @param path
+     */
+    @AstroImageJ(reason = "Forward OpenOptions", modified = true)
+    public static void open(String path) {
+        open(path, (Opener.OpenOption[]) null);
+    }
+
+    /** Opens and displays a tiff, dicom, fits, pgm, jpeg, bmp, gif, lut,
 		roi, or text file. Displays an error message if the specified file
 		is not in one of the supported formats, or if it is not found.
 		With 1.41k or later, opens images specified by a URL.
 		*/
 	@AstroImageJ(reason = "Update default path when AIJ launches from file association", modified = true)
-	public static void open(String path) {
+	public static void open(String path, Opener.OpenOption... openOptions) {
 		if (ij==null && Menus.getCommands()==null)
 			init();
-		Opener o = new Opener();
+		Opener o = new Opener(openOptions);
 		macroRunning = true;
 		if (path==null || path.equals(""))		
 			o.open();
@@ -2012,7 +2025,7 @@ public class IJ {
 	 * Note that 'path' can also be a URL. Some reader plugins, including
 	 * the Bio-Formats plugin, display the image and return null.
 	 * Use IJ.open() to display a file open dialog box.
-	 * @see ij.io.Opener#openUsingBioFormats(String)
+	 * @see Opener#openUsingBioFormats(String)
 	*/
 	public static ImagePlus openImage(String path) {
 		macroRunning = true;
@@ -2487,7 +2500,7 @@ public class IJ {
 	
 	/** Returns, as an array of strings, a list of the LUTs in the 
 	 * Image/Lookup Tables menu.
-	 * @see ij.plugin.LutLoader#getLut
+	 * @see LutLoader#getLut
 	 * See also: Help>Examples>JavaScript/Show all LUTs
 	 * and Image/Color/Display LUTs
 	*/

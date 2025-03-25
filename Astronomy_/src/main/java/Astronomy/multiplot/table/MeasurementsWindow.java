@@ -315,6 +315,28 @@ public class MeasurementsWindow extends JFrame implements ITableWindow {
                     });
                     popup.add(item);
 
+                    item = new JMenuItem("Rename column");
+                    item.addActionListener($ -> {
+                        var d = new GenericSwingDialog("Rename Column", MeasurementsWindow.this);
+                        var t = new JTextField((String) c.getIdentifier(), 10);
+                        d.addGenericComponent(t);
+
+                        d.centerDialog(true);
+                        d.enableYesNoCancel();
+                        d.showDialog();
+
+                        if (d.wasOKed()) {
+                            String heading = t.getText().trim();
+                            var column = getTable().getColumnIndex(heading);
+                            if (column != COLUMN_NOT_FOUND) {
+                                IJ.error("Column already exists");
+                            }
+
+                            getTable().renameColumn((String) c.getIdentifier(), heading);
+                        }
+                    });
+                    popup.add(item);
+
                     popup.show(e.getComponent(), e.getX(), e.getY());
                     return;
                 }

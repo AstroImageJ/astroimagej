@@ -4,7 +4,8 @@ package astroj;
 
 import Astronomy.MultiAperture_;
 import Astronomy.multiaperture.FreeformPixelApertureHandler;
-import Astronomy.multiaperture.io.AperturesFile;
+import Astronomy.multiaperture.io.ApFile;
+import Astronomy.multiaperture.io.AperturesFileCodec;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.Prefs;
@@ -37,8 +38,8 @@ import java.nio.file.Files;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.SimpleDateFormat;
-import java.util.List;
 import java.util.*;
+import java.util.List;
 import java.util.function.Function;
 import java.util.zip.GZIPOutputStream;
 
@@ -564,22 +565,36 @@ public class IJU {
         MultiAperture_.apLoading.set(MultiAperture_.ApLoading.IMPORTED);
         Prefs.set("multiaperture.usewcs", true);
 
+        double radius = Prefs.get("aperture.radius", 20);
+        double rBack1 = Prefs.get("aperture.rback1", 30);
+        double rBack2 = Prefs.get("aperture.rback2", 40);
+        boolean showSkyOverlay = Prefs.get("aperture.skyoverlay", false);
+        boolean nameOverlay = true;
+        boolean valueOverlay = true;
+
         if (ac != null) {
             ac.removeApertureRois();
-            double radius = Prefs.get("aperture.radius", 20);
-            double rBack1 = Prefs.get("aperture.rback1", 30);
-            double rBack2 = Prefs.get("aperture.rback2", 40);
-            boolean showSkyOverlay = Prefs.get("aperture.skyoverlay", false);
-            boolean nameOverlay = true;
-            boolean valueOverlay = true;
+        }
 
-            for (int i = 0; i < nAps; i++) {
-                ApertureRoi roi = new ApertureRoi(xpos.get(i), ypos.get(i), radius, rBack1, rBack2, Double.NaN, isCentroids.get(i));
-                roi.setAppearance(true, isCentroids.get(i), showSkyOverlay, nameOverlay, valueOverlay, isRefs.get(i) ? Color.PINK : new Color(196, 222, 155), (isRefs.get(i) ? "C" : "T") + (i + 1), Double.NaN);
-                roi.setAMag(absMags.get(i));
-                roi.setImage(imp);
+        var shaped = new ArrayList<ShapedApertureRoi>();
+        for (int i = 0; i < nAps; i++) {
+            ApertureRoi roi = new ApertureRoi(xpos.get(i), ypos.get(i), radius, rBack1, rBack2, Double.NaN, isCentroids.get(i));
+            roi.setAppearance(true, isCentroids.get(i), showSkyOverlay, nameOverlay, valueOverlay, isRefs.get(i) ? Color.PINK : new Color(196, 222, 155), (isRefs.get(i) ? "C" : "T") + (i + 1), Double.NaN);
+            roi.setAMag(absMags.get(i));
+            roi.setRadec(ras.get(i), decs.get(i));
+            roi.setIsCentroid(isCentroids.get(i));
+            roi.setImage(imp);
+
+            shaped.add(ShapedApertureRoi.fromApertureRoi(roi));
+
+            if (ac != null) {
                 ac.add(roi);
             }
+        }
+
+        MultiAperture_.SHAPED_IMPORTED_APS.set(shaped);
+
+        if (ac != null) {
             ac.paint(ac.getGraphics());
         }
     }
@@ -638,84 +653,108 @@ public class IJU {
     }
 
     public static void saveRaDecApertures() {
-        if ("CA".equals(Prefs.get("multiaperture.lastrun", ""))) {
-            IJ.error("RADEC Export", "RADEC export not supported for custom apertures");
-            return;
-        }
-
         int nAps = 0;
-
-        String raapertureString = Prefs.get("multiaperture.raapertures", "");
-        String decapertureString = Prefs.get("multiaperture.decapertures", "");
-        String isRefStarString = Prefs.get("multiaperture.isrefstar", "");
-        String centroidStarString = Prefs.get("multiaperture.centroidstar", "");
-        String absMagString = Prefs.get("multiaperture.absmagapertures", "");
-        if (raapertureString.trim().equals("") || decapertureString.trim().equals("")) {
-            IJ.beep();
-            IJ.showMessage("No valid RA/Dec coordinates to save. Aborting.");
-            return;
-        }
-        String[] raaps = raapertureString.split(",");
-        String[] decaps = decapertureString.split(",");
-        String[] isRefStar = isRefStarString.split(",");
-        String[] centroidStar = centroidStarString.split(",");
-        String[] absMags = absMagString.split(",");
         double[] ra;
         double[] dec;
         boolean[] isRef;
         boolean[] isCentroid;
         double[] absMag;
-        if (raaps.length == 0 || decaps.length == 0) {
-            IJ.beep();
-            IJ.showMessage("No RA/Dec coordinates to save. Aborting.");
-            return;
-        }
-        if (raaps.length != decaps.length) {
-            IJ.beep();
-            IJ.showMessage("Error: The number of stored RA and Dec coordinates is different. Aborting.");
-            return;
-        }
 
-        ra = extractDoubles(raaps);
-        if (ra == null) {
-            IJ.beep();
-            IJ.showMessage("RA coordinate parse error. Aborting.");
+        if (Prefs.get("multiaperture.lastrun", "").startsWith("P-")) {
+            IJ.error("RADEC Export", "RADEC export not supported for custom apertures");
             return;
-        }
-        dec = extractDoubles(decaps);
-        if (dec == null) {
-            IJ.beep();
-            IJ.showMessage("Dec coordinate parse error. Aborting.");
-            return;
-        }
+        } else if (Prefs.get("multiaperture.lastrun", "").startsWith("E-")) {
+            var aps = MultiAperture_.SHAPED_APS.get();
 
-        nAps = ra.length;
+            nAps = aps.size();
 
-        if (nAps != isRefStar.length) {
+            ra = new double[nAps];
+            dec = new double[nAps];
             isRef = new boolean[nAps];
-            for (int ap = 0; ap < nAps; ap++) {
-                isRef[ap] = ap != 0;
-            }
-        } else {
-            isRef = extractBoolean(isRefStar);
-        }
-
-        if (nAps != centroidStar.length) {
             isCentroid = new boolean[nAps];
-            for (int ap = 0; ap < nAps; ap++) {
-                isCentroid[ap] = true;
-            }
-        } else {
-            isCentroid = extractBoolean(centroidStar);
-        }
-
-        if (nAps != absMags.length) {
             absMag = new double[nAps];
-            for (int ap = 0; ap < nAps; ap++) {
-                absMag[ap] = 99.999;
+            for (int i = 0; i < aps.size(); i++) {
+                var ap = aps.get(i);
+                if (!ap.hasRadec()) {
+                    IJ.beep();
+                    IJ.showMessage("No RA/Dec coordinates to save. Aborting.");
+                    return;
+                }
+                ra[i] = ap.getRightAscension();
+                dec[i] = ap.getDeclination();
+                isRef[i] = ap.getIsRefStar();
+                isCentroid[i] = ap.getIsCentroid();
+                absMag[i] = ap.getAMag();
             }
+
         } else {
-            absMag = extractAbsMagDoubles(absMags);
+            String raapertureString = Prefs.get("multiaperture.raapertures", "");
+            String decapertureString = Prefs.get("multiaperture.decapertures", "");
+            String isRefStarString = Prefs.get("multiaperture.isrefstar", "");
+            String centroidStarString = Prefs.get("multiaperture.centroidstar", "");
+            String absMagString = Prefs.get("multiaperture.absmagapertures", "");
+            if (raapertureString.trim().isEmpty() || decapertureString.trim().isEmpty()) {
+                IJ.beep();
+                IJ.showMessage("No valid RA/Dec coordinates to save. Aborting.");
+                return;
+            }
+            String[] raaps = raapertureString.split(",");
+            String[] decaps = decapertureString.split(",");
+            String[] isRefStar = isRefStarString.split(",");
+            String[] centroidStar = centroidStarString.split(",");
+            String[] absMags = absMagString.split(",");
+            if (raaps.length == 0 || decaps.length == 0) {
+                IJ.beep();
+                IJ.showMessage("No RA/Dec coordinates to save. Aborting.");
+                return;
+            }
+            if (raaps.length != decaps.length) {
+                IJ.beep();
+                IJ.showMessage("Error: The number of stored RA and Dec coordinates is different. Aborting.");
+                return;
+            }
+
+            ra = extractDoubles(raaps);
+            if (ra == null) {
+                IJ.beep();
+                IJ.showMessage("RA coordinate parse error. Aborting.");
+                return;
+            }
+            dec = extractDoubles(decaps);
+            if (dec == null) {
+                IJ.beep();
+                IJ.showMessage("Dec coordinate parse error. Aborting.");
+                return;
+            }
+
+            nAps = ra.length;
+
+            if (nAps != isRefStar.length) {
+                isRef = new boolean[nAps];
+                for (int ap = 0; ap < nAps; ap++) {
+                    isRef[ap] = ap != 0;
+                }
+            } else {
+                isRef = extractBoolean(isRefStar);
+            }
+
+            if (nAps != centroidStar.length) {
+                isCentroid = new boolean[nAps];
+                for (int ap = 0; ap < nAps; ap++) {
+                    isCentroid[ap] = true;
+                }
+            } else {
+                isCentroid = extractBoolean(centroidStar);
+            }
+
+            if (nAps != absMags.length) {
+                absMag = new double[nAps];
+                for (int ap = 0; ap < nAps; ap++) {
+                    absMag[ap] = 99.999;
+                }
+            } else {
+                absMag = extractAbsMagDoubles(absMags);
+            }
         }
 
         ImagePlus imp = WindowManager.getCurrentImage();
@@ -1334,7 +1373,7 @@ public class IJU {
         }
 
         // Custom Apertures
-        if ("CA".equals(Prefs.get("multiaperture.lastrun", ""))) {
+        if (Prefs.get("multiaperture.lastrun", "").startsWith("P-")) {
             // Remove circular setting
             if (ObjectShare.get("multiapertureCircularKeys") instanceof Set<?> keysGeneric) {
                 var keys = (Set<String>) keysGeneric;
@@ -1343,9 +1382,26 @@ public class IJU {
                 }
             }
 
-            var data = new AperturesFile.Data(FreeformPixelApertureHandler.APS.get(), prefs);
             try {
-                Files.writeString(outFile.toPath(), data.toString());
+                var apFile = new ApFile(FreeformPixelApertureHandler.APS.get(), prefs);
+                Files.writeString(outFile.toPath(), AperturesFileCodec.write(apFile));
+            } catch (IOException e) {
+                e.printStackTrace();
+                IJ.beep();
+                IJ.showMessage("Error writing apertures to file");
+            }
+        } else if (Prefs.get("multiaperture.lastrun", "").startsWith("E-")) {
+            // Remove circular setting
+            if (ObjectShare.get("multiapertureCircularKeys") instanceof Set<?> keysGeneric) {
+                var keys = (Set<String>) keysGeneric;
+                for (String key : keys) {
+                    prefs.remove(key);
+                }
+            }
+
+            try {
+                var apFile = new ApFile(MultiAperture_.SHAPED_APS.get(), prefs);
+                Files.writeString(outFile.toPath(), AperturesFileCodec.write(apFile));
             } catch (IOException e) {
                 e.printStackTrace();
                 IJ.beep();

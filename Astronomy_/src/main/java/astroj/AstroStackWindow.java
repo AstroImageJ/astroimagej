@@ -1957,6 +1957,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                 "Hold &lt;Control&gt; when pressing &lt;Enter&gt; to also create an uncentroided T1 aperture for Multi-Aperture.<br></html>");
         RATextField.setEditable(goodWCS);
         RATextField.addActionListener(this);
+        RATextField.addFocusListener(this);
         RATextField.addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
@@ -1992,6 +1993,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                 "Hold &lt;Control&gt; when pressing &lt;Enter&gt; to also create an uncentroided T1 aperture for Multi-Aperture.<br></html>");
         DecTextField.setEditable(goodWCS);
         DecTextField.addActionListener(this);
+        DecTextField.addFocusListener(this);
         topPanelBC.add(DecTextField);
 
 //                JLabel arcLengthLabel = new JLabel("Arclen:");
@@ -2428,6 +2430,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         blackTextfield.setBorder(BorderFactory.createLineBorder(Color.RED));
         blackTextfield.setEditable(true);
         blackTextfield.addActionListener(this);
+        blackTextfield.addFocusListener(this);
         writeNumericPanelField(blackValue, blackTextfield);
 //                minTextField.getDocument().addDocumentListener(new thisDocumentListener());
         bottomPanelB.add(blackTextfield);
@@ -2791,9 +2794,11 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             minValueTextField.setBorder(BorderFactory.createLineBorder(Color.RED));
             minValueTextField.setEditable(true);
             minValueTextField.addActionListener(this);
+            minValueTextField.addFocusListener(this);
             maxValueTextField.setBorder(BorderFactory.createLineBorder(Color.RED));
             maxValueTextField.setEditable(true);
             maxValueTextField.addActionListener(this);
+            maxValueTextField.addFocusListener(this);
         }
     }
 

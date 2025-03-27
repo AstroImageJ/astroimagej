@@ -3438,11 +3438,18 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
 
     @Override
     public void focusLost(FocusEvent e) {
-        actionPerformed(new ActionEvent(e.getSource(), e.getID(), e.paramString()));
+        if (e.getCause() == FocusEvent.Cause.MOUSE_EVENT) {
+            actionPerformed(new ActionEvent(e.getSource(), e.getID(), e.paramString()));
+        }
     }
 
     public void actionPerformed(ActionEvent e) {
         Object b = e.getSource();
+
+        if (imp == null) {
+            return;
+        }
+
         currentSlice = imp.getCurrentSlice();
 
 //------FILE menu--------------------------------------------------------------------------------------

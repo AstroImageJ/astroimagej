@@ -15483,6 +15483,20 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             updatePlot(updateAllFits());
         });
 
+        absMagTF[a].addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusLost(FocusEvent e) {
+                updatePlotEnabled = false;
+                waitForPlotUpdateToFinish();
+                checkAndLockTable();
+                updateAbsMags(a);
+                table.show();
+                updatePlotEnabled = true;
+                if (table != null) table.setLock(false);
+                updatePlot(updateAllFits());
+            }
+        });
+
         absMagTF[a].addMouseListener(new MouseListener() {
             public void mouseClicked(MouseEvent e) {}
 

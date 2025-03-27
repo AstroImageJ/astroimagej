@@ -15273,7 +15273,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 starsPanel.add(refStarPanel[r]);
             }
             defaultCBColor = refStarCB[0].getBackground();
-
+            if(numAbsMagRefAps > 0) updateAbsMags(-1);
             if (numAps / refStarHorzWidth > 0) {
                 int fill = refStarHorzWidth - numAps % refStarHorzWidth;
                 if (fill != 0 && fill != refStarHorzWidth) {
@@ -15614,7 +15614,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     continue;
                 }
                 if (!isRefStar[ap]) {
-                    absMagTF[ap].setText(onetoThreePlaces.format(-2.5 * Math.log10((totSrcCnts[ap] / numRows) / totAbsRefCnts)));
+                    absMagTF[ap].setText(onetoThreePlaces.format(totAbsMag - 2.5 * Math.log10((totSrcCnts[ap] / numRows) / totAbsRefCnts)));
                 }
             }
         }

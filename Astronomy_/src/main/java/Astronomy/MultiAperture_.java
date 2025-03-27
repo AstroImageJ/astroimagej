@@ -1656,6 +1656,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                         yCenter = ap.getYpos();
                     }
 
+                    ap.setAMag(getAbsMag(i, ap.getRightAscension(), ap.getDeclination()));
+
                     ap.setImage(imp);
                     ocanvas.add(ap);
                 }
@@ -1744,6 +1746,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                         xCenter = ap.getXpos();
                         yCenter = ap.getYpos();
                     }
+
+                    ap.setAMag(getAbsMag(i, ap.getRightAscension(), ap.getDeclination()));
 
                     ap.setImage(imp);
                     ocanvas.add(ap);
@@ -1969,6 +1973,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                             var roi = shapedApertureRois.get(i-1);
                             roi.setName((roi.isComparisonStar() ? "C" : "T") + i);
                         }
+                    } else {
+                        ap.setAMag(getAbsMag(shapedApertureRois.size() - 1, ap.getRightAscension(), ap.getDeclination()));
                     }
                 }
 
@@ -2052,8 +2058,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 nApertures = shapedApertureRois.size();
                 for (int ap = 0; ap < nApertures; ap++) {
                     isRefStar[ap] = shapedApertureRois.get(ap).isComparisonStar();
-                    centroidStar[ap] = false;
-                    absMag[ap] = 99.999;
+                    centroidStar[ap] = shapedApertureRois.get(ap).getIsCentroid();
+                    absMag[ap] = shapedApertureRois.get(ap).getAMag();
                 }
                 aperturesInitialized = true;
 
@@ -2696,6 +2702,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                             ocanvas.add(ap);
 
                             shapedApertureRois.add(ap);
+
+                            ap.setAMag(getAbsMag(shapedApertureRois.size()-1, ap.getRightAscension(), ap.getDeclination()));
+
                             ngot++;
                         } catch (Exception e) {
                             e.printStackTrace();
@@ -3450,9 +3459,23 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     }
 
     protected double getAbsMag(int ap, double ra, double dec) {
-        if (!getMags || !isRefStar[ap] || ((apLoading.get().isPrevious() || previous) && !allStoredAperturesPlaced)) {
-            return absMag[ap];
+        var isRef = switch (apertureShape.get()) {
+            case ELLIPTICAL -> shapedApertureRois.get(ap).isComparisonStar();
+            case CIRCULAR -> isRefStar[ap];
+            default -> throw new IllegalStateException("");
+        };
+        if (!getMags || !isRef || ((apLoading.get().isPrevious() || previous) && !allStoredAperturesPlaced)) {
+            return switch (apertureShape.get()) {
+                case ELLIPTICAL -> shapedApertureRois.get(ap).getAMag();
+                case CIRCULAR -> absMag[ap];
+                default -> throw new IllegalStateException("");
+            };
         } else {
+            var mag = switch (apertureShape.get()) {
+                case ELLIPTICAL -> shapedApertureRois.get(ap).getAMag();
+                case CIRCULAR -> absMag[ap];
+                default -> throw new IllegalStateException("");
+            };
             openSimbadForAbsMag = Prefs.get("plot2.openSimbadForAbsMag", openSimbadForAbsMag);
             xAbsMagLocation = (int) Prefs.get("plot2.absMagFrameLocationX", xAbsMagLocation);
             yAbsMagLocation = (int) Prefs.get("plot2.absMagFrameLocationY", yAbsMagLocation);
@@ -3463,8 +3486,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             }
 
             GenericDialog gd = new GenericDialog("Magnitude Entry", xAbsMagLocation, yAbsMagLocation);
-            gd.addStringField("Enter " + (isRefStar[ap] ? "C" : "T") + (ap + 1) + " Magnitude", "" + (absMag[ap] > 99.0 ? "" : uptoEightPlaces.format(absMag[ap])), 20);
-            if (hasWCS && ra > -1000000 && dec > -1000000) {
+            gd.addStringField("Enter " + (isRef ? "C" : "T") + (ap + 1) + " Magnitude", "" + (mag > 99.0 ? "" : uptoEightPlaces.format(mag)), 20);
+            if (hasWCS && ra > -1000000 && dec > -1000000 && Double.isFinite(ra) && Double.isFinite(dec)) {
                 gd.addCheckbox("Open ref star in SIMBAD", openSimbadForAbsMag);
                 if (openSimbadForAbsMag) IJU.showInSIMBAD(ra, dec, Prefs.get("Astronomy_Tool.simbadSearchRadius", 10));
             } else {
@@ -3476,10 +3499,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             yAbsMagLocation = gd.getY();
             Prefs.set("plot2.absMagFrameLocationX", xAbsMagLocation);
             Prefs.set("plot2.absMagFrameLocationY", yAbsMagLocation);
-            if (hasWCS && ra > -1000000 && dec > -1000000) openSimbadForAbsMag = gd.getNextBoolean();
+            if (hasWCS && ra > -1000000 && dec > -1000000 && Double.isFinite(ra) && Double.isFinite(dec)) openSimbadForAbsMag = gd.getNextBoolean();
             Prefs.set("plot2.openSimbadForAbsMag", openSimbadForAbsMag);
             if (gd.wasCanceled()) {
-                return absMag[ap];
+                return mag;
             }
             return Tools.parseDouble(gd.getNextString(), 99.999);
         }
@@ -3727,7 +3750,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             var ap = shapedApertureRois.get(i);
             xPos[i] = ap.getXpos();
             yPos[i] = ap.getYpos();
-            absMag[i] = 99.999;
+            absMag[i] = ap.getAMag();
             if (useWCS && ap.hasRadec()) {
                 raPos[i] = ap.getRightAscension();
                 decPos[i] = ap.getDeclination();

@@ -15569,16 +15569,18 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 }
             }
             double totAbsRefVar;
-            double totAbsRefCnts;
+            double totAbsRefCnts = 0;
             double[] src = new double[numAps];
             double sourceErr, srcAbsErr, mag, absRatio;
             double[] srcVar = new double[numAps];
+            double[] totSrcCnts = new double[numAps];
             for (int row = 0; row < numRows; row++) {
                 totAbsRefVar = 0.0;
                 totAbsRefCnts = 0.0;
                 for (int ap = 0; ap < numAps; ap++) {
                     if (!isRefStar[ap] || (isRefStar[ap] && absMag[ap] < 99.0)) {
                         src[ap] = table.getValueAsDouble(srcCol[ap], row);
+                        totSrcCnts[ap] += src[ap];
                         if (hasErr) {
                             sourceErr = table.getValueAsDouble(srcVarCol[ap], row);
                             srcVar[ap] = sourceErr * sourceErr;
@@ -15603,6 +15605,16 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                             table.setValue("Source_AMag_Err_C" + (ap + 1), row, 2.5 * Math.log10(1.0 + Math.sqrt(srcVar[ap]) / src[ap]));
                         }
                     }
+                }
+            }
+
+            for (int ap = 0; ap < numAps; ap++) {
+                if (totAbsRefCnts == 0) {
+                    absMagTF[ap].setText("99.999");
+                    continue;
+                }
+                if (!isRefStar[ap]) {
+                    absMagTF[ap].setText(onetoThreePlaces.format(-2.5 * Math.log10((totSrcCnts[ap] / numRows) / totAbsRefCnts)));
                 }
             }
         }

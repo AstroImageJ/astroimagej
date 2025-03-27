@@ -2476,6 +2476,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         whiteTextfield.setBorder(BorderFactory.createLineBorder(Color.RED));
         whiteTextfield.setEditable(true);
         whiteTextfield.addActionListener(this);
+        whiteTextfield.addFocusListener(this);
         writeNumericPanelField(whiteValue, whiteTextfield);
 //                maxTextField.getDocument().addDocumentListener(new thisDocumentListener());
         bottomPanelB.add(whiteTextfield);
@@ -3430,6 +3431,10 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
         return autoNupEleft && (fileName.endsWith(".png") || fileName.endsWith(".jpg"));
     }
 
+    @Override
+    public void focusLost(FocusEvent e) {
+        actionPerformed(new ActionEvent(e.getSource(), e.getID(), e.paramString()));
+    }
 
     public void actionPerformed(ActionEvent e) {
         Object b = e.getSource();

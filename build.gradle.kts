@@ -450,7 +450,7 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
             }
         }
     }_${sysInfo["arch"]}_${sysInfo["hw_bitness"]}Bit"
-    val packageTaskName = "packageAijFor${sysId}_Java${sysInfo["version"]}"
+    val packageTaskName = "packageAijFor${sysId}"
     val downloadTaskName = "downloadJavaRuntimeFor${sysId}"
     val verifyTaskName = "verifyJavaRuntimeFor${sysId}"
     val unzipTaskName = "unzipJavaRuntimeFor${sysId}"
@@ -587,7 +587,7 @@ javaRuntimeSystemsProperty.get().forEach { (sys, sysInfo) ->
 tasks.withType<PackageTask>().configureEach {
     if (name == "package") return@configureEach
 
-    val platformInfoRegex = Regex("packageAijFor(.+)_((?:x86)|(?:arm))_(\\d{2})Bit_Java(\\d{2})")
+    val platformInfoRegex = Regex("packageAijFor(.+)_((?:x86)|(?:arm))_(\\d{2})Bit")
     if (!name.matches(platformInfoRegex)) {
         throw GradleException("Package task '${name}' failed to match, could not determine platform information")
     }
@@ -678,7 +678,7 @@ tasks.register<Copy>("copyBuiltJars") {
 
 tasks.register<Sync>("makeReleaseFiles") {
     group = "AstroImageJ Development"
-    dependsOn("packageAijForWindows_x86_64Bit_Java$shippingJava")
+    dependsOn("packageAijForWindows_x86_64Bit")
 
     val buildDir = layout.buildDirectory.get()
     val output = buildDir.dir("updatesjava$targetJava")
@@ -724,7 +724,7 @@ tasks.register<Sync>("makeReleaseFiles") {
 
 tasks.register<Sync>("makeDailyBuildFiles") {
     group = "AstroImageJ Development"
-    dependsOn("packageAijForWindows_x86_64Bit_Java$shippingJava")
+    dependsOn("packageAijForWindows_x86_64Bit")
 
     from(layout.buildDirectory.dir("distributions/AstroImageJ")) {
         include("**/ij.jar", "**/StartupMacros.txt", "**/AstroImageJ.exe", "**/Astronomy_.jar", "**/release_notes.html")

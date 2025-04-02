@@ -1895,99 +1895,98 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 // Ignore clicks while placing stored apertures
                 if ((apLoading.get().isPrevious() || previous) && firstClick && allStoredAperturesPlaced) {
                     firstClick = false;
-                    return;
-                }
+                } else {
+                    var x = canvas.offScreenX(e.getX());
+                    var y = canvas.offScreenY(e.getY());
 
-                var x = canvas.offScreenX(e.getX());
-                var y = canvas.offScreenY(e.getY());
+                    ShapedApertureRoi ap = null;
+                    // Drag Paint
+                    if (mouseDrag && e.isShiftDown()) {
+                        var x0 = Math.min((int) startDragX, x);
+                        var x1 = Math.max((int) startDragX, x);
+                        var y0 = Math.min((int) startDragY, y);
+                        var y1 = Math.max((int) startDragY, y);
 
-                ShapedApertureRoi ap = null;
-                // Drag Paint
-                if (mouseDrag && e.isShiftDown()) {
-                    var x0 = Math.min((int) startDragX, x);
-                    var x1 = Math.max((int) startDragX, x);
-                    var y0 = Math.min((int) startDragY, y);
-                    var y1 = Math.max((int) startDragY, y);
+                        if (SwingUtilities.isLeftMouseButton(e)) {
+                            ap = new ShapedApertureRoi(new Ellipse2D.Double(x0, y0, x1-x0, y1-y0));
 
-                    if (SwingUtilities.isLeftMouseButton(e)) {
-                        ap = new ShapedApertureRoi(new Ellipse2D.Double(x0, y0, x1-x0, y1-y0));
+                            // harmonic mean
+                            ap.setEllipticalBaseRadius((double) ((x1 - x0) * (y1 - y0)) / (2*(x1-x0)*(y1-y0)));
 
-                        // harmonic mean
-                        ap.setEllipticalBaseRadius((double) ((x1 - x0) * (y1 - y0)) / (2*(x1-x0)*(y1-y0)));
+                            ap.setIsCentroid(e.isAltDown() != Prefs.get("aperture.reposition", reposition));
+                        }
 
-                        ap.setIsCentroid(e.isAltDown() != Prefs.get("aperture.reposition", reposition));
-                    }
+                        ocanvas.removeRoi("selectionRoi");
+                    } else { // Point Paint
+                        if (SwingUtilities.isLeftMouseButton(e)) {
+                            var c = new Centroid();
 
-                    ocanvas.removeRoi("selectionRoi");
-                } else { // Point Paint
-                    if (SwingUtilities.isLeftMouseButton(e)) {
-                        var c = new Centroid();
+                            var centroid = e.isAltDown() != Prefs.get("aperture.reposition", reposition);
 
-                        var centroid = e.isAltDown() != Prefs.get("aperture.reposition", reposition);
+                            if (c.measure(imp, x, y, radius, rBack1, rBack2, centroid, backIsPlane, removeBackStars)) {
+                                var roundness = c.roundness();
 
-                        if (c.measure(imp, x, y, radius, rBack1, rBack2, centroid, backIsPlane, removeBackStars)) {
-                            var roundness = c.roundness();
+                                if (SHAPED_AP_ECCENTRICITY_LOCKED.get()) {
+                                    roundness = Math.sqrt(1 - SHAPED_AP_ECCENTRICITY.get());
+                                }
 
-                            if (SHAPED_AP_ECCENTRICITY_LOCKED.get()) {
-                                roundness = Math.sqrt(1 - SHAPED_AP_ECCENTRICITY.get());
+                                ap = new ShapedApertureRoi(ShapedApertureRoi.createEllipse(c.x(), c.y(), radius, roundness));
+
+                                ap.setTransform(AffineTransform.getRotateInstance(Math.toRadians(c.orientation())));
+                                ap.setEllipticalBaseRadius(radius);
+                            } else if (centroid) {
+                                IJ.error("Failed to find centroid");
+                                return;
+                            } else {
+                                var roundness = 1D;
+
+                                if (SHAPED_AP_ECCENTRICITY_LOCKED.get()) {
+                                    roundness = Math.sqrt(1 - SHAPED_AP_ECCENTRICITY.get());
+                                }
+
+                                ap = new ShapedApertureRoi(ShapedApertureRoi.createEllipse(c.x(), c.y(), radius, roundness));
+                                ap.setEllipticalBaseRadius(radius);
                             }
 
-                            ap = new ShapedApertureRoi(ShapedApertureRoi.createEllipse(c.x(), c.y(), radius, roundness));
+                            ap.setBackgroundAnnulus(rBack1, rBack1, rBack2, rBack2);
 
-                            ap.setTransform(AffineTransform.getRotateInstance(Math.toRadians(c.orientation())));
-                            ap.setEllipticalBaseRadius(radius);
-                        } else if (centroid) {
-                            IJ.error("Failed to find centroid");
-                            return;
+                            ap.setIsCentroid(centroid);
+                        }
+                    }
+
+                    if (ap != null) {
+                        if (SHAPED_AP_ANGLE_LOCKED.get()) {
+                            ap.setTransform(AffineTransform.getRotateInstance(Math.toRadians(SHAPED_AP_ANGLE.get())));
+                        }
+
+                        ap.setImage(imp);
+                        ocanvas.add(ap);
+                        shapedApertureRois.add(ap);
+
+                        var comp = !e.isControlDown() && ((!e.isShiftDown() && ngot > 0) || (e.isShiftDown() && ngot == 0));
+                        ap.setComparisonStar(comp);
+                        ap.setName((comp ? "C" : "T") + shapedApertureRois.size());
+
+                        if (e.isShiftDown() && e.isControlDown()) {
+                            ap.setName("T1");
+                            shapedApertureRois.remove(ap);
+                            shapedApertureRois.add(0, ap);
+                            for (int i = 1; i < shapedApertureRois.size(); i++) {
+                                var roi = shapedApertureRois.get(i-1);
+                                roi.setName((roi.isComparisonStar() ? "C" : "T") + i);
+                            }
                         } else {
-                            var roundness = 1D;
-
-                            if (SHAPED_AP_ECCENTRICITY_LOCKED.get()) {
-                                roundness = Math.sqrt(1 - SHAPED_AP_ECCENTRICITY.get());
-                            }
-
-                            ap = new ShapedApertureRoi(ShapedApertureRoi.createEllipse(c.x(), c.y(), radius, roundness));
-                            ap.setEllipticalBaseRadius(radius);
+                            ap.setAMag(getAbsMag(shapedApertureRois.size() - 1, ap.getRightAscension(), ap.getDeclination()));
                         }
 
-                        ap.setBackgroundAnnulus(rBack1, rBack1, rBack2, rBack2);
-
-                        ap.setIsCentroid(centroid);
+                        apAdded = true;
                     }
+
+                    firstClick = false;
+                    ngot = shapedApertureRois.size();
+
+                    canvas.repaint();
                 }
-
-                if (ap != null) {
-                    if (SHAPED_AP_ANGLE_LOCKED.get()) {
-                        ap.setTransform(AffineTransform.getRotateInstance(Math.toRadians(SHAPED_AP_ANGLE.get())));
-                    }
-
-                    ap.setImage(imp);
-                    ocanvas.add(ap);
-                    shapedApertureRois.add(ap);
-
-                    var comp = !e.isControlDown() && ((!e.isShiftDown() && ngot > 0) || (e.isShiftDown() && ngot == 0));
-                    ap.setComparisonStar(comp);
-                    ap.setName((comp ? "C" : "T") + shapedApertureRois.size());
-
-                    if (e.isShiftDown() && e.isControlDown()) {
-                        ap.setName("T1");
-                        shapedApertureRois.remove(ap);
-                        shapedApertureRois.add(0, ap);
-                        for (int i = 1; i < shapedApertureRois.size(); i++) {
-                            var roi = shapedApertureRois.get(i-1);
-                            roi.setName((roi.isComparisonStar() ? "C" : "T") + i);
-                        }
-                    } else {
-                        ap.setAMag(getAbsMag(shapedApertureRois.size() - 1, ap.getRightAscension(), ap.getDeclination()));
-                    }
-
-                    apAdded = true;
-                }
-
-                firstClick = false;
-                ngot = shapedApertureRois.size();
-
-                canvas.repaint();
             } else if (apertureClicked && selectedAp instanceof ShapedApertureRoi shapedApertureRoi && selectedAp != movingTarget) {
                 if (e != null && !e.isShiftDown() && !e.isControlDown() && !e.isAltDown() && SwingUtilities.isLeftMouseButton(e)) {
                     ocanvas.removeRoi(shapedApertureRoi);

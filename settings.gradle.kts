@@ -9,13 +9,13 @@ include("Astronomy_")
 include("Nom_Fits")
 enableFeaturePreview("STABLE_CONFIGURATION_CACHE")
 
-toolchainManagement {
+/*toolchainManagement {
     jvm {
         // todo automatic repos are deprecated, uncomment this in future
-        /*javaRepositories {
+        javaRepositories {
             repository("foojay") {
                 resolverClass.set(org.gradle.toolchains.foojay.FoojayToolchainResolver::class.java)
             }
-        }*/
+        }
     }
-}
+}*/

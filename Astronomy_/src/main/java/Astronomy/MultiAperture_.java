@@ -2055,7 +2055,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 if (enterPressed && t1Path == null) {
                     enterPressed = false;
 
-                    var r = JOptionPane.showConfirmDialog(asw, "Please select final position of T1", "Moving Target MA", JOptionPane.YES_NO_OPTION);
+                    var r = JOptionPane.showConfirmDialog(asw, "Please select final position of T1", "Moving Target MA", JOptionPane.OK_CANCEL_OPTION);
                     if (r != JOptionPane.YES_OPTION) {
                         return;
                     }
@@ -2094,7 +2094,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 if (enterPressed) {
                     enterPressed = false;
 
-                    var r = JOptionPane.showConfirmDialog(asw, "Finished placing final position of T1?", "Moving Target MA", JOptionPane.YES_NO_CANCEL_OPTION);
+                    var r = JOptionPane.showConfirmDialog(asw, "Finished placing final position of T1?", "Moving Target MA", JOptionPane.OK_CANCEL_OPTION);
                     if (r != JOptionPane.YES_OPTION) {
                         return;
                     }
@@ -2253,7 +2253,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                         return;
                     }
 
-                    var r = JOptionPane.showConfirmDialog(asw, "Please select final position of T1", "Moving Target MA", JOptionPane.YES_NO_OPTION);
+                    var r = JOptionPane.showConfirmDialog(asw, "Please select final position of T1", "Moving Target MA", JOptionPane.OK_CANCEL_OPTION);
                     if (r != JOptionPane.YES_OPTION) {
                         return;
                     }
@@ -2270,7 +2270,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     return;
                 }
 
-                var r = JOptionPane.showConfirmDialog(asw, "Finished placing final position of T1?", "Moving Target MA", JOptionPane.YES_NO_CANCEL_OPTION);
+                var r = JOptionPane.showConfirmDialog(asw, "Finished placing final position of T1?", "Moving Target MA", JOptionPane.OK_CANCEL_OPTION);
                 if (r != JOptionPane.YES_OPTION) {
                     return;
                 }

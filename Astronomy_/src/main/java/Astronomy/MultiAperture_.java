@@ -2062,6 +2062,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
                     var roi = shapedApertureRois.get(0);
 
+                    asw.updateWCS();
+                    wcs = asw.getWCS();
                     var radec = wcs.pixels2wcs(new double[]{roi.getXpos(), roi.getYpos()});
                     t1Path = new WCSPath(radec[0], radec[1]);
 
@@ -2104,10 +2106,14 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                         return;
                     }
 
+                    asw.updateWCS();
+                    wcs = asw.getWCS();
                     var radec = wcs.pixels2wcs(new double[]{movingTarget.getXpos(), movingTarget.getYpos()});
 
                     var tf = WCSPath.getTime(imp);
                     imp.setSlice(firstSlice);
+                    asw.updateWCS();
+                    wcs = asw.getWCS();
                     var ts = WCSPath.getTime(imp);
 
                     t1Path = t1Path.withTiming(ts, tf).withTarget(radec[0], radec[1]);
@@ -7149,6 +7155,18 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             }
 
             return new double[]{Math.toDegrees(raRad), Math.toDegrees(decRad)};
+        }
+
+        @Override
+        public String toString() {
+            return "WCSPath{" +
+                    "ra0=" + IJU.decToSexRA(ra0) +
+                    ", dec0=" + IJU.decToSexDec(dec0) +
+                    ", ra1=" + IJU.decToSexRA(ra1) +
+                    ", dec1=" + IJU.decToSexDec(dec1) +
+                    ", start=" + start +
+                    ", end=" + end +
+                    '}';
         }
     }
 

@@ -320,7 +320,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     protected static final Property<ApertureShape> apertureShape = new Property<>(ApertureShape.CIRCULAR, MultiAperture_.class);
     private static String lastRun = "<Not yet run>";
     private boolean processingStackForRadii;
-    private WCSPath t1Path = null;
+    private Path t1Path = null;
     private ApertureRoi movingTarget;
     private final FreeformPixelApertureHandler freeformPixelApertureHandler = new FreeformPixelApertureHandler();
     public static final Property<List<ShapedApertureRoi>> SHAPED_APS =
@@ -339,6 +339,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     public static final Property<Boolean> SHAPED_VARIATION_LOCKED = new Property<>(true, MultiAperture_.class);
     public static final Property<Double> SHAPED_AP_ANGLE= new Property<>(0D, MultiAperture_.class);
     public static final Property<Boolean> MOVING_T1 = new Property<>(false, MultiAperture_.class);
+    private static final boolean USE_FMA = testForFma();
 
     public MultiAperture_() {
         freeformPixelApertureHandler.setExitCallback(() -> {
@@ -2046,12 +2047,6 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             canvas.repaint();
 
             if (MOVING_T1.get() && (t1Path == null || !t1Path.isReady()) && !shapedApertureRois.isEmpty()) {
-                if (!hasWCS) {
-                    IJ.showMessage("Moving target requires WCS coordinates");
-                    IJ.beep();
-                    shutDown();
-                }
-
                 if (enterPressed && t1Path == null) {
                     enterPressed = false;
 
@@ -2064,8 +2059,11 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
                     asw.updateWCS();
                     wcs = asw.getWCS();
-                    var radec = wcs.pixels2wcs(new double[]{roi.getXpos(), roi.getYpos()});
-                    t1Path = new WCSPath(radec[0], radec[1]);
+                    hasWCS = asw.hasWCS();
+                    var radec = hasWCS ?
+                            wcs.pixels2wcs(new double[]{roi.getXpos(), roi.getYpos()}) :
+                            new double[]{Double.NaN, Double.NaN};
+                    t1Path = new Path(radec[0], radec[1], roi.getXpos(), roi.getYpos());
 
                     ocanvas.clearRois();
                     imp.setSlice(lastSlice);
@@ -2108,15 +2106,19 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
                     asw.updateWCS();
                     wcs = asw.getWCS();
-                    var radec = wcs.pixels2wcs(new double[]{movingTarget.getXpos(), movingTarget.getYpos()});
+                    hasWCS = asw.hasWCS();
+                    var radec = hasWCS ?
+                            wcs.pixels2wcs(new double[]{movingTarget.getXpos(), movingTarget.getYpos()}) :
+                            new double[]{Double.NaN, Double.NaN};
 
-                    var tf = WCSPath.getTime(imp);
+                    var tf = Path.getTime(imp);
                     imp.setSlice(firstSlice);
                     asw.updateWCS();
                     wcs = asw.getWCS();
-                    var ts = WCSPath.getTime(imp);
+                    hasWCS = asw.hasWCS();
+                    var ts = Path.getTime(imp);
 
-                    t1Path = t1Path.withTiming(ts, tf).withTarget(radec[0], radec[1]);
+                    t1Path = t1Path.withTiming(ts, tf).withTarget(radec[0], radec[1], movingTarget.getXpos(), movingTarget.getYpos());
 
                     for (ShapedApertureRoi ap : shapedApertureRois) {
                         ocanvas.add(ap);
@@ -2242,14 +2244,6 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             enterPressed = (!(e == dummyClick) && (!mouseDrag && (modis & InputEvent.BUTTON3_MASK) != 0 && !e.isShiftDown() && !e.isControlDown() && !e.isAltDown()));
         }
 
-        if (MOVING_T1.get()) {
-            if (!hasWCS) {
-                IJ.showMessage("Moving target requires WCS coordinates");
-                IJ.beep();
-                shutDown();
-            }
-        }
-
         if (enterPressed) {
             enterPressed = false;
 
@@ -2266,8 +2260,10 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                         return;
                     }
 
-                    var radec = wcs.pixels2wcs(new double[]{roi.getXpos(), roi.getYpos()});
-                    t1Path = new WCSPath(radec[0], radec[1]);
+                    var radec = hasWCS ?
+                            wcs.pixels2wcs(new double[]{roi.getXpos(), roi.getYpos()}) :
+                            new double[]{Double.NaN, Double.NaN};
+                    t1Path = new Path(radec[0], radec[1], roi.getXpos(), roi.getYpos());
 
                     ocanvas.clearRois();
                     imp.setSlice(lastSlice);
@@ -2288,13 +2284,15 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     return;
                 }
 
-                var radec = wcs.pixels2wcs(new double[]{movingTarget.getXpos(), movingTarget.getYpos()});
+                var radec = hasWCS ?
+                        wcs.pixels2wcs(new double[]{movingTarget.getXpos(), movingTarget.getYpos()}) :
+                        new double[]{Double.NaN, Double.NaN};
 
-                var tf = WCSPath.getTime(imp);
+                var tf = Path.getTime(imp);
                 imp.setSlice(firstSlice);
-                var ts = WCSPath.getTime(imp);
+                var ts = Path.getTime(imp);
 
-                t1Path = t1Path.withTiming(ts, tf).withTarget(radec[0], radec[1]);
+                t1Path = t1Path.withTiming(ts, tf).withTarget(radec[0], radec[1], movingTarget.getXpos(), movingTarget.getYpos());
 
                 ocanvas.removeRoi(movingTarget);
 
@@ -4599,24 +4597,13 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                             setAbsMag(absMag[ap]);
                         }
 
-                        if (ap == 0 && MOVING_T1.get() && t1Path.isReady() && hasWCS) {
-                            var l = t1Path.slerp(imp);
-                            double[] xy = wcs.wcs2pixels(new double[]{l.first(), l.second()});
-                            xPos[ap] = xy[0];
-                            yPos[ap] = xy[1];
-                            xCenter = xy[0];
-                            yCenter = xy[1];
-                        }
-
                         if ((useMA || useAlign) && useWCS) {
                             if (hasWCS && raPos[ap] > -1000000 && decPos[ap] > -1000000) {
-                                if (!(ap == 0 && MOVING_T1.get() && t1Path.isReady())) {
-                                    double[] xy = wcs.wcs2pixels(new double[]{raPos[ap], decPos[ap]});
-                                    xPos[ap] = xy[0];
-                                    yPos[ap] = xy[1];
-                                    xCenter = xy[0];
-                                    yCenter = xy[1];
-                                }
+                                double[] xy = wcs.wcs2pixels(new double[]{raPos[ap], decPos[ap]});
+                                xPos[ap] = xy[0];
+                                yPos[ap] = xy[1];
+                                xCenter = xy[0];
+                                yCenter = xy[1];
                             }
 //                    else if (!hasWCS && autoMode)
 //                        {
@@ -4647,6 +4634,17 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                         } else {
                             xCenter = xPos[ap];
                             yCenter = yPos[ap];
+                        }
+
+                        if (ap == 0 && MOVING_T1.get() && t1Path.isReady()) {
+                            var l = t1Path.lerp(imp, hasWCS);
+                            double[] xy = hasWCS && t1Path.wcsCapable() ?
+                                    wcs.wcs2pixels(new double[]{l.first(), l.second()}) :
+                                    new double[]{l.first(), l.second()};
+                            xPos[ap] = xy[0];
+                            yPos[ap] = xy[1];
+                            xCenter = xy[0];
+                            yCenter = xy[1];
                         }
 
                         // MEASURE NEW POSITION
@@ -4777,19 +4775,11 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                             setAbsMag(absMag[ap]);
                         }
 
-                        if (ap == 0 && MOVING_T1.get() && t1Path.isReady() && hasWCS) {
-                            var l = t1Path.slerp(imp);
-                            double[] xy = wcs.wcs2pixels(new double[]{l.first(), l.second()});
-                            shapedApertureRois.get(ap).moveTo(xy[0], xy[1], true);
-                        }
-
                         if ((useMA || useAlign) && useWCS) {
                             if (hasWCS && shapedApertureRois.get(ap).hasRadec()) {
-                                if (!(ap == 0 && MOVING_T1.get() && t1Path.isReady())) {
-                                    var roi = shapedApertureRois.get(ap);
-                                    double[] xy = wcs.wcs2pixels(new double[]{roi.getRightAscension(), roi.getDeclination()});
-                                    shapedApertureRois.get(ap).moveTo(xy[0], xy[1], true);
-                                }
+                                var roi = shapedApertureRois.get(ap);
+                                double[] xy = wcs.wcs2pixels(new double[]{roi.getRightAscension(), roi.getDeclination()});
+                                shapedApertureRois.get(ap).moveTo(xy[0], xy[1], true);
                             } else if (shapedApertureRois.get(ap).hasRadec()) {
                                 IJ.beep();
                                 IJ.showMessage("Error", "WCS mode requested but no valid WCS coordinates stored. ABORTING.");
@@ -4807,6 +4797,14 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                                 if (table != null) table.setLock(false);
                                 return;
                             }
+                        }
+
+                        if (ap == 0 && MOVING_T1.get() && t1Path.isReady()) {
+                            var l = t1Path.lerp(imp, hasWCS);
+                            double[] xy = hasWCS && t1Path.wcsCapable() ?
+                                    wcs.wcs2pixels(new double[]{l.first(), l.second()}) :
+                                    new double[]{l.first(), l.second()};
+                            shapedApertureRois.get(ap).moveTo(xy[0], xy[1], true);
                         }
 
                         shapedApertureRois.get(ap).setEllipticalBaseRadius(vradius);
@@ -4934,24 +4932,13 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     setAbsMag(absMag[ap]);
                 }
 
-                if (ap == 0 && MOVING_T1.get() && t1Path.isReady() && hasWCS) {
-                    var l = t1Path.slerp(imp);
-                    double[] xy = wcs.wcs2pixels(new double[]{l.first(), l.second()});
-                    xPos[ap] = xy[0];
-                    yPos[ap] = xy[1];
-                    xCenter = xy[0];
-                    yCenter = xy[1];
-                }
-
                 if ((useMA || useAlign) && useWCS) {
                     if (hasWCS && raPos[ap] > -1000000 && decPos[ap] > -1000000) {
-                        if (!(ap == 0 && MOVING_T1.get() && t1Path.isReady())) {
-                            double[] xy = wcs.wcs2pixels(new double[]{raPos[ap], decPos[ap]});
-                            xPos[ap] = xy[0];
-                            yPos[ap] = xy[1];
-                            xCenter = xy[0];
-                            yCenter = xy[1];
-                        }
+                        double[] xy = wcs.wcs2pixels(new double[]{raPos[ap], decPos[ap]});
+                        xPos[ap] = xy[0];
+                        yPos[ap] = xy[1];
+                        xCenter = xy[0];
+                        yCenter = xy[1];
                     } else if (raPos[ap] <= -1000000 && decPos[ap] <= -1000000) {
                         IJ.beep();
                         IJ.showMessage("Error", "WCS mode requested but no valid WCS coordinates stored. ABORTING.");
@@ -4976,6 +4963,17 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 } else {
                     xCenter = xPos[ap];
                     yCenter = yPos[ap];
+                }
+
+                if (ap == 0 && MOVING_T1.get() && t1Path.isReady()) {
+                    var l = t1Path.lerp(imp, hasWCS);
+                    double[] xy = hasWCS && t1Path.wcsCapable() ?
+                            wcs.wcs2pixels(new double[]{l.first(), l.second()}) :
+                            new double[]{l.first(), l.second()};
+                    xPos[ap] = xy[0];
+                    yPos[ap] = xy[1];
+                    xCenter = xy[0];
+                    yCenter = xy[1];
                 }
 
                 // MEASURE NEW POSITION AND RECENTER IF CENTROID ENABLED
@@ -5039,31 +5037,13 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                         setAbsMag(absMag[ap]);
                     }
 
-                    if (ap == 0 && MOVING_T1.get() && t1Path.isReady()) {
-                        if (!hasWCS) {
-                            IJ.beep();
-                            IJ.showMessage("Error", "WCS required for moving aperture, but no valid WCS coordinates stored. ABORTING.");
-                            Prefs.set(MultiAperture_.PREFS_CANCELED, "true");
-                            cancelled = true;
-                            shutDown();
-                            if (table != null) table.setLock(false);
-                            return;
-                        }
-
-                        var l = t1Path.slerp(imp);
-                        double[] xy = wcs.wcs2pixels(new double[]{l.first(), l.second()});
-                        shapedApertureRois.get(ap).moveTo(xy[0], xy[1], true);
-                    }
-
                     var x0 = shapedApertureRois.get(ap).getXpos();
                     var y0 = shapedApertureRois.get(ap).getYpos();
                     if ((useMA || useAlign) && useWCS) {
                         if (hasWCS && shapedApertureRois.get(ap).hasRadec()) {
-                            if (!(ap == 0 && MOVING_T1.get() && t1Path.isReady())) {
-                                var roi = shapedApertureRois.get(ap);
-                                double[] xy = wcs.wcs2pixels(new double[]{roi.getRightAscension(), roi.getDeclination()});
-                                shapedApertureRois.get(ap).moveTo(xy[0], xy[1], true);
-                            }
+                            var roi = shapedApertureRois.get(ap);
+                            double[] xy = wcs.wcs2pixels(new double[]{roi.getRightAscension(), roi.getDeclination()});
+                            shapedApertureRois.get(ap).moveTo(xy[0], xy[1], true);
                         } else if (shapedApertureRois.get(ap).hasRadec()) {
                             IJ.beep();
                             IJ.showMessage("Error", "WCS mode requested but no valid WCS coordinates stored. ABORTING.");
@@ -5081,6 +5061,14 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                             if (table != null) table.setLock(false);
                             return;
                         }
+                    }
+
+                    if (ap == 0 && MOVING_T1.get() && t1Path.isReady()) {
+                        var l = t1Path.lerp(imp, hasWCS);
+                        double[] xy = hasWCS && t1Path.wcsCapable() ?
+                                wcs.wcs2pixels(new double[]{l.first(), l.second()}) :
+                                new double[]{l.first(), l.second()};
+                        shapedApertureRois.get(ap).moveTo(xy[0], xy[1], true);
                     }
 
                     // MEASURE NEW POSITION
@@ -6189,10 +6177,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         gd.addNewSwappableSectionPanel(ApertureShape.class, (d, shape) -> {
             switch (shape) {
                 case CIRCULAR, ELLIPTICAL -> {
-                    var wcsDep = new HashSet<Component>();
                     gd.addCheckbox("Use RA/Dec to locate aperture positions", useWCS, b -> {
                                 useWCS = b;
-                                toggleComponents(wcsDep, useWCS);
                             })
                             .setToolTipText("<html>If enabled, apertures will first be placed according to their RA and DEC location.<br>"+
                                     "If centroid is also enabled for an aperture, the centroid operation will start from the RA and Dec position.<br>"+
@@ -6200,8 +6186,13 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                                     "Mixed-mode is useful if plate solving is slow. In this mode, only the first image and any subsequent image<br>"+
                                     "with a large shift on the detector, such as a meridian flip, need to be plate solved.</html>");
                     var movingCB = d.addCheckbox("T1 is moving object", MOVING_T1.get(), MOVING_T1::set);
-                    wcsDep.add(movingCB);
-                    toggleComponents(wcsDep, useWCS);
+                    movingCB.setToolTipText("""
+                            <html>
+                            User will be prompted to identify T1 in the first and last image<br>
+                            Useful for asteroid or other moving object photometry<br>
+                            Best combined with place by ra/dec and platesolved images
+                            </html>
+                            """);
                     gd.addCheckbox("Use single step mode (1-click to set first aperture location in each image)", singleStep, b -> {
                                 singleStep = b;
                                 singleStepListeners.forEach(c -> {
@@ -6861,6 +6852,21 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         return encoder.encodeToString(AperturesFileCodec.write(s).getBytes());
     }
 
+    private static boolean testForFma() {
+        var t = System.nanoTime();
+        var i = (float)2*3+1;
+        var tn = System.nanoTime() - t;
+        // Run it a few times for the jit
+        for (int j = 0; j < 10; j++) {
+            i = Math.fma(2, 3, 1);
+        }
+        var t2 = System.nanoTime();
+        var j = Math.fma(2, 3, 1);
+        var tf = System.nanoTime() - t2;
+
+        return tf <= tn;
+    }
+
     public enum ApLoading implements RadioEnum {
         ALL_NEW(() -> "Place all new apertures", null, () -> true),
         FIRST_PREVIOUS(() -> "Place first previously used aperture", null, () -> storedCount() > 0),
@@ -7050,29 +7056,29 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         }
     }
 
-    record WCSPath(double ra0, double dec0, double ra1, double dec1, double start, double end) {
-        WCSPath(double ra0, double dec0) {
-            this(ra0, dec0, Double.NaN, Double.NaN);
-        }
-
-        WCSPath(double ra0, double dec0, double ra1, double dec1) {
-            this(ra0, dec0, ra1, dec1, Double.NaN, Double.NaN);
+    record Path(double ra0, double dec0, double x0, double y0, double ra1, double dec1, double x1, double y1, double start, double end) {
+        Path(double ra0, double dec0, double x0, double y0) {
+            this(ra0, dec0, x0, y0, Double.NaN, Double.NaN, Double.NaN, Double.NaN, Double.NaN, Double.NaN);
         }
 
         boolean hasTarget() {
-            return Double.isFinite(ra1) && Double.isFinite(dec1);
+            return (Double.isFinite(ra1) && Double.isFinite(dec1)) || (Double.isFinite(x1) && Double.isFinite(y1));
         }
 
         boolean isReady() {
             return Double.isFinite(start) && Double.isFinite(end) && hasTarget();
         }
 
-        WCSPath withTarget(double ra1, double dec1) {
-            return new WCSPath(ra0, dec0, ra1, dec1, start, end);
+        boolean wcsCapable() {
+            return (Double.isFinite(ra1) && Double.isFinite(dec1)) && (Double.isFinite(ra0) && Double.isFinite(dec0));
         }
 
-        WCSPath withTiming(double start, double end) {
-            return new WCSPath(ra0, dec0, ra1, dec1, start, end);
+        Path withTarget(double ra1, double dec1, double x1, double y1) {
+            return new Path(ra0, dec0, x0, y0, ra1, dec1, x1, y1, start, end);
+        }
+
+        Path withTiming(double start, double end) {
+            return new Path(ra0, dec0, x0, y0, ra1, dec1, x1, y1, start, end);
         }
 
         static double getTime(ImagePlus imp) {
@@ -7096,7 +7102,34 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             return t;
         }
 
-        Pair.DoublePair slerp(ImagePlus imp) {
+        Pair.DoublePair lerp(ImagePlus imp, boolean hasWCS) {
+            if (!isReady()) {
+                return hasWCS ? new Pair.DoublePair(ra0, ra1) : new Pair.DoublePair(x0, y0);
+            }
+
+            var t = getTime(imp);
+
+            var f = (t - start) / (end - start);
+
+            return hasWCS && wcsCapable() ? slerp(f) : lerp(f);
+        }
+
+        private Pair.DoublePair lerp(double t) {
+            double x;
+            double y;
+
+            if (USE_FMA) {
+                x = Math.fma(x1 - x0, t, x0);
+                y = Math.fma(y1 - y0, t, y0);
+            } else {
+                x = (1 - t) * x0 + t * x1;
+                y = (1 - t) * y0 + t * y1;
+            }
+
+            return new Pair.DoublePair(x, y);
+        }
+
+        public Pair.DoublePair slerp(ImagePlus imp) {
             if (!isReady()) {
                 return new Pair.DoublePair(ra0, ra1);
             }
@@ -7108,7 +7141,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             return slerp(f);
         }
 
-        Pair.DoublePair slerp(double t) {
+        private Pair.DoublePair slerp(double t) {
             double[] v1 = raDecToCartesian(ra0, dec0);
             double[] v2 = raDecToCartesian(ra1, dec1);
 

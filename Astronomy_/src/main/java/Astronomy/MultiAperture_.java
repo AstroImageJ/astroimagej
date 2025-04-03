@@ -6199,7 +6199,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                                     "If 'Halt on WCS error' below is disabled, mixed mode RA-Dec and X-Y placement is possible.<br>" +
                                     "Mixed-mode is useful if plate solving is slow. In this mode, only the first image and any subsequent image<br>"+
                                     "with a large shift on the detector, such as a meridian flip, need to be plate solved.</html>");
-                    var movingCB = d.addCheckbox("Moving T1", MOVING_T1.get(), MOVING_T1::set);
+                    var movingCB = d.addCheckbox("T1 is moving object", MOVING_T1.get(), MOVING_T1::set);
                     wcsDep.add(movingCB);
                     toggleComponents(wcsDep, useWCS);
                     gd.addCheckbox("Use single step mode (1-click to set first aperture location in each image)", singleStep, b -> {

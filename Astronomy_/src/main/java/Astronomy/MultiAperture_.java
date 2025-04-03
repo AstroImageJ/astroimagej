@@ -2247,7 +2247,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         if (enterPressed) {
             enterPressed = false;
 
-            if (MOVING_T1.get() && (t1Path == null || !t1Path.isReady())) {
+            if (MOVING_T1.get() && (t1Path == null || !t1Path.isReady()) && !(apLoading.get().isPrevious() || previous) && firstClick) {
                 if (t1Path == null) {
                     var roi = ocanvas.findApertureRoiByNumber(0);
 

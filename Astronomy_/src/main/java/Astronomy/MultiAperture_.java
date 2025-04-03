@@ -4270,7 +4270,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     stackTaskTimer = null;
                 }
             };
-            stackTaskTimer = new Timer();
+            stackTaskTimer = new Timer("Multi-Aperture Stack Processor");
             stackTaskTimer.schedule(stackTask, 0);
         } catch (Exception e) {
             IJ.showMessage("Error starting process stack task : " + e.getMessage());

@@ -2116,6 +2116,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                         ocanvas.add(ap);
                     }
 
+                    ocanvas.removeRoi(movingTarget);
+
                     canvas.repaint();
 
                     return;

@@ -765,7 +765,7 @@ public class Photometer {
         bckCnt = (dBackCount <= 0) ? 1.0 : dBackCount;
 
         serror = Math.sqrt((src * gain) + sCnt * (1.0 + srcCnt / bckCnt) * (bck * gain + dark + ron * ron + gain * gain * 0.083521)) / gain;
-        fwhm = IJU.radialDistributionFWHM(ip, apertureRoi.xPos, apertureRoi.yPos, apertureRoi.r1, back);
+        fwhm = IJU.radialDistributionFWHM(ip, apertureRoi.getXpos(), apertureRoi.getYpos(), radius, back);
 
         // CALIBRATE INTENSITIES IF POSSIBLE
 

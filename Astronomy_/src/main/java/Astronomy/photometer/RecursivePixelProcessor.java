@@ -18,10 +18,16 @@ public class RecursivePixelProcessor extends RecursiveTask<List<RecursivePixelPr
     private final Region region;
     private final ImageProcessor ip;
     private final Accumulator accumulator;
+    private final boolean filterNaN;
 
     private static final int THRESHOLD = 100;
 
     public RecursivePixelProcessor(Region region, ImageProcessor ip, Accumulator accumulator) {
+        this(region, ip, true, accumulator);
+    }
+
+    public RecursivePixelProcessor(Region region, ImageProcessor ip, boolean filterNaN, Accumulator accumulator) {
+        this.filterNaN = filterNaN;
         this.bounds = clampBounds(ip, region.getBounds());
         this.startX = bounds.x;
         this.startY = bounds.y;
@@ -33,11 +39,12 @@ public class RecursivePixelProcessor extends RecursiveTask<List<RecursivePixelPr
     }
 
     private RecursivePixelProcessor(int startX, int startY, int width, int height,
-                                   Region region, ImageProcessor ip, Accumulator accumulator) {
+                                    Region region, ImageProcessor ip, boolean filterNaN, Accumulator accumulator) {
         this.startX = startX;
         this.startY = startY;
         this.width = width;
         this.height = height;
+        this.filterNaN = filterNaN;
         this.bounds = clampBounds(ip, region.getBounds());
         this.region = region;
         this.ip = ip;
@@ -53,7 +60,7 @@ public class RecursivePixelProcessor extends RecursiveTask<List<RecursivePixelPr
             for (int i = startX; i < startX + width; i++) {
                 for (int j = startY; j < startY + height; j++) {
                     var d = ip.getPixelValue(i, j);
-                    if (!Float.isNaN(d)) {
+                    if (!filterNaN || !Float.isNaN(d)) {
                         if (accumulator.accumulate(i, j, d)) {
                             if (region instanceof CircularRegion circularRegion) {
                                 localPlanePoints.add(new Point3D(i + Centroid.PIXELCENTER - circularRegion.centerX,
@@ -74,10 +81,10 @@ public class RecursivePixelProcessor extends RecursiveTask<List<RecursivePixelPr
                 int midWidth = width / 2;
                 RecursivePixelProcessor leftTask = new RecursivePixelProcessor(
                         startX, startY, midWidth, height,
-                        region, ip, accumulator);
+                        region, ip, filterNaN, accumulator);
                 RecursivePixelProcessor rightTask = new RecursivePixelProcessor(
                         startX + midWidth, startY, width - midWidth, height,
-                        region, ip, accumulator);
+                        region, ip, filterNaN, accumulator);
                 leftTask.fork();
                 result.addAll(rightTask.compute());
                 result.addAll(leftTask.join());
@@ -85,10 +92,10 @@ public class RecursivePixelProcessor extends RecursiveTask<List<RecursivePixelPr
                 int midHeight = height / 2;
                 RecursivePixelProcessor topTask = new RecursivePixelProcessor(
                         startX, startY, width, midHeight,
-                        region, ip, accumulator);
+                        region, ip, filterNaN, accumulator);
                 RecursivePixelProcessor bottomTask = new RecursivePixelProcessor(
                         startX, startY + midHeight, width, height - midHeight,
-                        region, ip, accumulator);
+                        region, ip, filterNaN, accumulator);
                 topTask.fork();
                 result.addAll(bottomTask.compute());
                 result.addAll(topTask.join());

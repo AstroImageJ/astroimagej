@@ -550,16 +550,49 @@ public class Photometer {
 
             // Integer bounds to ensure we get all pixels
 
-            for (int i = backgroundBounds.x; i < backgroundBounds.x + backgroundBounds.width; i++) {
-                for (int j = backgroundBounds.y; j < backgroundBounds.y + backgroundBounds.height; j++) {
-                    var d = ip.getPixelValue(i, j);
-                    if (backgroundArea.contains(i + 0.5, j + 0.5)) {
-                        if (!Float.isNaN(d)) {
-                            js[pCnt] = j;
-                            is[pCnt] = i;
-                            pixels[pCnt++] = d;
-                        } else if (markRemovedPixels) {
-                            addPixelRoi(imp, i, j); // Mark NaN pixels
+            if (USE_PARALLEL_PIXEL_PROCESS.get()) {
+                var indexer = new AtomicInteger();
+
+                var task = new RecursivePixelProcessor(backgroundRegion, ip, false, (i, j, d) -> {
+                    var area = localBackgroundArea.get();
+                    assert area != null;
+                    // Contains is not thread safe, even if pixel is local,
+                    // so must be synchronized or use a new object
+                    if (area.contains(i + 0.5, j + 0.5)) {
+                        if (!Double.isNaN(d)) {
+                            var idx = indexer.getAndIncrement();
+                            js[idx] = j;
+                            is[idx] = i;
+                            pixels[idx] = (float) d;
+                        } else {
+                            return markRemovedPixels; // Mark NaN pixels
+                        }
+                    }
+
+                    return false;
+                });
+
+                var allPlanePoints = POOL.invoke(task);
+
+                if (markRemovedPixels) {
+                    for (RecursivePixelProcessor.Point3D p : allPlanePoints) {
+                        addPixelRoi(imp, p.x(), p.y());
+                    }
+                }
+
+                pCnt = indexer.get();
+            } else {
+                for (int i = backgroundBounds.x; i < backgroundBounds.x + backgroundBounds.width; i++) {
+                    for (int j = backgroundBounds.y; j < backgroundBounds.y + backgroundBounds.height; j++) {
+                        var d = ip.getPixelValue(i, j);
+                        if (backgroundArea.contains(i + 0.5, j + 0.5)) {
+                            if (!Float.isNaN(d)) {
+                                js[pCnt] = j;
+                                is[pCnt] = i;
+                                pixels[pCnt++] = d;
+                            } else if (markRemovedPixels) {
+                                addPixelRoi(imp, i, j); // Mark NaN pixels
+                            }
                         }
                     }
                 }
@@ -1517,19 +1550,52 @@ public class Photometer {
             var js = new int[totalPixels];
             var is = new int[totalPixels];
             var pCnt = 0;
-            for (int j = j1; j <= j2; j++) {
-                dj = (double) j - ypix + Centroid.PIXELCENTER;        // Center
-                for (int i = i1; i <= i2; i++) {
-                    di = (double) i - xpix + Centroid.PIXELCENTER;    // Center
-                    var r2 = di * di + dj * dj;
+
+            if (USE_PARALLEL_PIXEL_PROCESS.get()) {
+                var indexer = new AtomicInteger();
+
+                var task = new RecursivePixelProcessor(region, ip, false, (i, j, d) -> {
+                    var r2 = (j + Centroid.PIXELCENTER - ypix) * (i + Centroid.PIXELCENTER - xpix);
+                    // Contains is not thread safe, even if pixel is local,
+                    // so must be synchronized or use a new object
                     if (r2 >= r2b1 && r2 <= r2b2) {
-                        var d = ip.getPixelValue(i, j);
-                        if (!Float.isNaN(d)) {
-                            js[pCnt] = j;
-                            is[pCnt] = i;
-                            pixels[pCnt++] = d;
-                        } else if (markRemovedPixels) {
-                            addPixelRoi(imp, i, j); // Mark NaN pixels
+                        if (!Double.isNaN(d)) {
+                            var idx = indexer.getAndIncrement();
+                            js[idx] = j;
+                            is[idx] = i;
+                            pixels[idx] = (float) d;
+                        } else {
+                            return markRemovedPixels; // Mark NaN pixels
+                        }
+                    }
+
+                    return false;
+                });
+
+                var allPlanePoints = POOL.invoke(task);
+
+                if (markRemovedPixels) {
+                    for (RecursivePixelProcessor.Point3D p : allPlanePoints) {
+                        addPixelRoi(imp, p.x(), p.y());
+                    }
+                }
+
+                pCnt = indexer.get();
+            } else {
+                for (int j = j1; j <= j2; j++) {
+                    dj = (double) j - ypix + Centroid.PIXELCENTER;        // Center
+                    for (int i = i1; i <= i2; i++) {
+                        di = (double) i - xpix + Centroid.PIXELCENTER;    // Center
+                        var r2 = di * di + dj * dj;
+                        if (r2 >= r2b1 && r2 <= r2b2) {
+                            var d = ip.getPixelValue(i, j);
+                            if (!Float.isNaN(d)) {
+                                js[pCnt] = j;
+                                is[pCnt] = i;
+                                pixels[pCnt++] = d;
+                            } else if (markRemovedPixels) {
+                                addPixelRoi(imp, i, j); // Mark NaN pixels
+                            }
                         }
                     }
                 }

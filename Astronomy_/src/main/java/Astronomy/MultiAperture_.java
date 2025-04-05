@@ -336,7 +336,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
     public static final Property<Boolean> SHAPED_AP_ECCENTRICITY_LOCKED = new Property<>(false, MultiAperture_.class);
     public static final Property<Double> SHAPED_AP_ECCENTRICITY = new Property<>(0D, MultiAperture_.class);
     public static final Property<Boolean> SHAPED_AP_ANGLE_LOCKED = new Property<>(false, MultiAperture_.class);
-    public static final Property<Boolean> SHAPED_VARIATION_LOCKED = new Property<>(true, MultiAperture_.class);
+    public static final Property<Boolean> SHAPED_VARIATION_LOCKED = new Property<>(false, MultiAperture_.class);
     public static final Property<Double> SHAPED_AP_ANGLE= new Property<>(0D, MultiAperture_.class);
     public static final Property<Boolean> MOVING_T1 = new Property<>(false, MultiAperture_.class);
     private static final boolean USE_FMA = testForFma();

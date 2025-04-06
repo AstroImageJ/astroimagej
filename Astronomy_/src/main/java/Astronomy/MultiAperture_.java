@@ -3055,7 +3055,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
         // Clear and redraw aperture at initial location
         oc.clearRois();
-        measureAperture();
+        if (apertureShape.get() == ApertureShape.CIRCULAR) {
+            measureAperture();
+        }
 
         if (enableLog) {
             AIJLogger.multiLog("radii: ", rs);

@@ -2004,6 +2004,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                     return;
                 } else if (e != null && e.isShiftDown() && !e.isControlDown()) {
                     shapedApertureRoi.setComparisonStar(!shapedApertureRoi.isComparisonStar());
+                    var i = shapedApertureRois.indexOf(shapedApertureRoi) + 1;
+                    shapedApertureRoi.setName((shapedApertureRoi.isComparisonStar() ? "C" : "T") + i);
                     canvas.repaint();
                 } else if (e != null && e.isShiftDown() && e.isControlDown()) {
                     shapedApertureRoi.setName("T1");
@@ -7113,6 +7115,17 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
             var f = (t - start) / (end - start);
 
+            /*System.out.println(imp.getCurrentSlice());
+            System.out.println(hasWCS && wcsCapable());
+            System.out.println(slerp(f));
+            System.out.println(lerp(f));
+            var w = new WCS(imp);
+            if (w.hasWCS()) {
+                var s = slerp(f);
+                System.out.println(Arrays.toString(w.wcs2pixels(new double[]{s.first(), s.second()})));
+            } else {
+                System.out.println("N/A");
+            }*/
             return hasWCS && wcsCapable() ? slerp(f) : lerp(f);
         }
 

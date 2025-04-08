@@ -2518,7 +2518,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                         return;
                     }
                 }
-            } else if (apertureClicked && movingTarget != selectedApertureRoi) {
+            } else if (apertureClicked && (movingTarget == null || movingTarget != selectedApertureRoi)) {
                 if (!e.isShiftDown() && !e.isControlDown() && !e.isAltDown()) {
                     if (!removeAperture()) {
                         apertureClicked = false;

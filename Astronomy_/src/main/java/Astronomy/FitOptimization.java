@@ -552,6 +552,10 @@ public class FitOptimization implements AutoCloseable {
             var t = undoBuffer.pop();
             table = t.table;
             INSTANCES.forEach(f -> f.cleanNumTF.setText("+" + (table.size() - rs)));
+
+            // Ensure comp. stars stay the same
+            setNewStars(isRefStar);
+
             MultiPlot_.updatePlot(MultiPlot_.updateAllFits());
             table.show();
             measurementsWindow = MeasurementTable.getMeasurementsWindow(MeasurementTable.longerName(tableName));

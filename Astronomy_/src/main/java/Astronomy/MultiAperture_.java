@@ -1464,6 +1464,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                             return;
                         }
                     }
+                    measurePhotometry(FitsJ.getHeader(imp), selectedApertureRoi);
+                    selectedApertureRoi.setIntCnts(source);
                 }
             }
 
@@ -1569,6 +1571,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
         }
 
         if (apertureShape.get() == ApertureShape.ELLIPTICAL) {
+            var hdr = FitsJ.getHeader(imp);
+
             apertureClicked = false;
             xCenter = e != null ? canvas.offScreenXD(e.getX()) : 0;
             yCenter = e != null ? canvas.offScreenYD(e.getY()) : 0;
@@ -1659,6 +1663,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                         xCenter = ap.getXpos();
                         yCenter = ap.getYpos();
                     }
+
+                    measureAperture(hdr, ap);
 
                     ap.setAMag(getAbsMag(i, ap.getRightAscension(), ap.getDeclination()));
 
@@ -1753,6 +1759,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
                     ap.setAMag(getAbsMag(i, ap.getRightAscension(), ap.getDeclination()));
 
+                    measureAperture(hdr, ap);
+
                     ap.setImage(imp);
                     ocanvas.add(ap);
                 }
@@ -1812,6 +1820,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                         }
 
                         roi.adjustRadii(radius, rBack1, rBack2, roundness);
+                        measureAperture(hdr, roi);
                     }
                 }
 
@@ -1882,6 +1891,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                         }
 
                         roi.adjustRadii(radius, rBack1, rBack2, roundness);
+                        measureAperture(hdr, roi);
                         ocanvas.add(roi);
                     }
 
@@ -1959,6 +1969,8 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                         if (SHAPED_AP_ANGLE_LOCKED.get()) {
                             ap.setTransform(AffineTransform.getRotateInstance(Math.toRadians(SHAPED_AP_ANGLE.get())));
                         }
+
+                        measureAperture(hdr, ap);
 
                         ap.setImage(imp);
                         ocanvas.add(ap);
@@ -2044,6 +2056,11 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 }
                 suggestionRunning = false;
                 Prefs.set(AP_PREFS_SHOWREMOVEDPIXELS, showRemovedPixelsOld);
+
+                showRemovedPixels = showRemovedPixelsOld;
+                for (ShapedApertureRoi ap : shapedApertureRois) {
+                    measureAperture(hdr, ap);
+                }
             }
 
             canvas.repaint();

@@ -1385,7 +1385,9 @@ public class Photometer {
                     }
 
                     if (hasBack) {
-                        var r2 = (j + Centroid.PIXELCENTER - ypix) * (i + Centroid.PIXELCENTER - xpix);
+                        var dy = j + Centroid.PIXELCENTER - ypix;
+                        var dx = i + Centroid.PIXELCENTER - xpix;
+                        var r2 = dx * dx + dy * dy;
                         if (!removeBackStars && !usePlaneLocal) {
                             fraction = intarea(xpix, ypix, rBack1, i, i + 1, j, j + 1);
                             var b = -(fraction * d);
@@ -1467,7 +1469,9 @@ public class Photometer {
                 var sourceCountAdder = new LongAdder();
 
                 var task = new RecursivePixelProcessor(region, ip, (i, j, d) -> {
-                    var r2 = (j + Centroid.PIXELCENTER - ypix) * (i + Centroid.PIXELCENTER - xpix);
+                    var dy = j + Centroid.PIXELCENTER - ypix;
+                    var dx = i + Centroid.PIXELCENTER - xpix;
+                    var r2 = dx * dx + dy * dy;
                     if (r2 < r2ap) { // SOURCE APERTURE
                         sourceAdder.setVal(i, j, d);
                         sourceCountAdder.increment();
@@ -1555,9 +1559,9 @@ public class Photometer {
                 var indexer = new AtomicInteger();
 
                 var task = new RecursivePixelProcessor(region, ip, false, (i, j, d) -> {
-                    var r2 = (j + Centroid.PIXELCENTER - ypix) * (i + Centroid.PIXELCENTER - xpix);
-                    // Contains is not thread safe, even if pixel is local,
-                    // so must be synchronized or use a new object
+                    var dy = j + Centroid.PIXELCENTER - ypix;
+                    var dx = i + Centroid.PIXELCENTER - xpix;
+                    var r2 = dx * dx + dy * dy;
                     if (r2 >= r2b1 && r2 <= r2b2) {
                         if (!Double.isNaN(d)) {
                             var idx = indexer.getAndIncrement();

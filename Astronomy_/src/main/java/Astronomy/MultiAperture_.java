@@ -1464,6 +1464,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                             return;
                         }
                     }
+                    setApertureName(selectedApertureRoi.getName());
                     measurePhotometry(FitsJ.getHeader(imp), selectedApertureRoi);
                     selectedApertureRoi.setIntCnts(source);
                 }
@@ -1664,6 +1665,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                         yCenter = ap.getYpos();
                     }
 
+                    setApertureName(ap.getName());
                     measureAperture(hdr, ap);
 
                     ap.setAMag(getAbsMag(i, ap.getRightAscension(), ap.getDeclination()));
@@ -1759,6 +1761,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
                     ap.setAMag(getAbsMag(i, ap.getRightAscension(), ap.getDeclination()));
 
+                    setApertureName(ap.getName());
                     measureAperture(hdr, ap);
 
                     ap.setImage(imp);
@@ -1820,6 +1823,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                         }
 
                         roi.adjustRadii(radius, rBack1, rBack2, roundness);
+                        setApertureName(roi.getName());
                         measureAperture(hdr, roi);
                     }
                 }
@@ -1891,6 +1895,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                         }
 
                         roi.adjustRadii(radius, rBack1, rBack2, roundness);
+                        setApertureName(roi.getName());
                         measureAperture(hdr, roi);
                         ocanvas.add(roi);
                     }
@@ -1970,6 +1975,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                             ap.setTransform(AffineTransform.getRotateInstance(Math.toRadians(SHAPED_AP_ANGLE.get())));
                         }
 
+                        setApertureName(ap.getName());
                         measureAperture(hdr, ap);
 
                         ap.setImage(imp);
@@ -2059,6 +2065,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
 
                 showRemovedPixels = showRemovedPixelsOld;
                 for (ShapedApertureRoi ap : shapedApertureRois) {
+                    setApertureName(ap.getName());
                     measureAperture(hdr, ap);
                 }
             }

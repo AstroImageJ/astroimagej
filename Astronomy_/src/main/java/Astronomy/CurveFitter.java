@@ -1210,7 +1210,7 @@ public class CurveFitter {
                     for (int j = 0; j < nn[curve]; j++) {
                         //avgCount++;
                         //if (noNaNs) {
-                        detrendYAverage += y[j];
+                        detrendYAverage += detrendY[j];
                         if (detrendFitIndex[curve] == 9) {
                             if (x[curve][j] > fitLeft[curve] + (fitRight[curve] - fitLeft[curve]) / 4.0 && x[curve][j] < fitRight[curve] - (fitRight[curve] - fitLeft[curve]) / 4.0) {
                                 yDepthEstimate += y[j];
@@ -1464,12 +1464,14 @@ public class CurveFitter {
                                 nTries = 0;
 
                                 if (!useTransitFit[curve]) {
-                                    var yAvg = ArrayUtil.average(detrendYs[curve]);
-                                    chi2[curve] = IntStream.range(0, detrendCount).mapToDouble(i -> {
-                                        var s = (detrendYs[curve][i] - yAvg) / detrendYEs[curve][i];
+                                    var yAvg = ArrayUtil.average(detrendY);
+                                    double[] finalDetrendY = detrendY;
+                                    double[] finalDetrendYE = detrendYE;
+                                    var chi2 = IntStream.range(0, detrendCount).mapToDouble(i -> {
+                                        var s = (finalDetrendY[i] - yAvg) / finalDetrendYE[i];
                                         return s*s;
                                     }).sum();
-                                    chi2dof = chi2[curve] / dof;
+                                    chi2dof = chi2 / dof;
                                 }
                             } else {
                                 if (usImageJFitter) {

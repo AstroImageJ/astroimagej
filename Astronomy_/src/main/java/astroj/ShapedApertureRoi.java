@@ -37,6 +37,7 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
     private static final boolean SHOW_FLATTENED = false;
     private final boolean usePlane = Prefs.get(AP_PREFS_BACKPLANE, false);
     private final boolean removeStars = Prefs.get(AP_PREFS_REMOVEBACKSTARS, false);
+    private static boolean hasLoggedInversion = false;
 
     public ShapedApertureRoi() {
         this(null);
@@ -119,6 +120,19 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
             return;
         }
 
+        var defaultTransform = ((Graphics2D)g).getDeviceConfiguration().getDefaultTransform();
+        var invertedDefaultTransform = new AffineTransform();
+
+        try {
+            invertedDefaultTransform = defaultTransform.createInverse();
+        } catch (NoninvertibleTransformException e) {
+            if (!hasLoggedInversion) {
+                hasLoggedInversion = true;
+                System.err.println("Failed to invert " + defaultTransform);
+                e.printStackTrace();
+            }
+        }
+
         boolean aij = false;
         var aijTransform = new AffineTransform();
         if (ic instanceof AstroCanvas) {
@@ -144,10 +158,12 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
         toScreenSpaceTransformed.concatenate(scaleTransform);
         toScreenSpaceTransformed.concatenate(translateTransform);
         toScreenSpaceTransformed.concatenate(transform);
+        toScreenSpaceTransformed.preConcatenate(invertedDefaultTransform);
 
         var toScreenSpace = new AffineTransform(aijTransform);
         toScreenSpace.concatenate(scaleTransform);
         toScreenSpace.concatenate(translateTransform);
+        toScreenSpace.preConcatenate(invertedDefaultTransform);
 
         if (g instanceof Graphics2D g2) {
             //g2.setStroke(STROKE);

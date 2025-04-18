@@ -2927,6 +2927,10 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         boolean[] detrendYNotConstantArr = new boolean[maxCurves];
         boolean[] fitConvergeceArr = new boolean[maxCurves];
         IntStream.range(0, maxCurves).parallel().forEach(curve -> {
+            xModel1[curve] = null;
+            yModel1[curve] = null;
+            xModel2[curve] = null;
+            yModel2[curve] = null;
             residual[curve] = null;
             plottedResidual[curve] = null;
             yModel1Err[curve] = null;

@@ -120,7 +120,9 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
             return;
         }
 
-        var defaultTransform = ((Graphics2D)g).getDeviceConfiguration().getDefaultTransform();
+        Graphics2D g2 = (Graphics2D) g;
+
+        var defaultTransform = g2.getDeviceConfiguration().getDefaultTransform();
         var invertedDefaultTransform = new AffineTransform();
 
         try {
@@ -138,7 +140,7 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
         if (ic instanceof AstroCanvas) {
             aij =  true;
             ac =(AstroCanvas)ic;
-            ((Graphics2D)g).setTransform(ac.invCanvTrans);
+            g2.setTransform(ac.invCanvTrans);
             aijTransform = ac.canvTrans;
             netFlipX = ac.getNetFlipX();
             netFlipY = ac.getNetFlipY();
@@ -165,78 +167,78 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
         toScreenSpace.concatenate(translateTransform);
         toScreenSpace.preConcatenate(invertedDefaultTransform);
 
-        if (g instanceof Graphics2D g2) {
-            //g2.setStroke(STROKE);
-            g2.setColor(isPhantom() ? (isCompStar ? PHANTOM_COMPARISON : PHANTOM_TARGET) : (isCompStar ? Color.RED : Color.GREEN));
+        var apertureColor = isPhantom() ? (isCompStar ? PHANTOM_COMPARISON : PHANTOM_TARGET) : (isCompStar ? Color.RED : Color.GREEN);
 
-            // Draw aperture
-            drawShape(g2, apertureShape, toScreenSpaceTransformed);
-            g2.setColor(BACKGROUND_COLOR);
-            if (showSky) {
-                drawShape(g2, backgroundShape, toScreenSpaceTransformed, isPhantom() ? (isCompStar ? PHANTOM_COMPARISON : PHANTOM_TARGET) : (isCompStar ? Color.RED : Color.GREEN));
+        //g2.setStroke(STROKE);
+        g2.setColor(apertureColor);
+
+        // Draw aperture
+        drawShape(g2, apertureShape, toScreenSpaceTransformed);
+        g2.setColor(BACKGROUND_COLOR);
+        if (showSky) {
+            drawShape(g2, backgroundShape, toScreenSpaceTransformed, apertureColor);
+        }
+
+        // Draw Geometric Centroid
+        if (isCentroid) {
+            g2.setColor(Color.RED);
+
+            var bounds = Objects.requireNonNull(apertureShape).getBounds2D();
+            var delta = Math.min(bounds.getWidth(), bounds.getHeight())/4D;
+            delta = delta <= 0 ? 2 : delta;
+            g2.draw(toScreenSpace.createTransformedShape(new Line2D.Double(xPos, yPos - delta, xPos, yPos + delta)));
+            g2.draw(toScreenSpace.createTransformedShape(new Line2D.Double(xPos - delta, yPos, xPos + delta, yPos)));
+        }
+
+        //todo draw photometric centroid, support offset - can be delayed
+
+        // Debug draw of aperture bounding box for photometry consideration
+        if (false) {
+            g2.setColor(Color.CYAN);
+            if (getApertureArea() != null) {
+                var apertureBound = getApertureArea().getBounds().intersection(new Rectangle(0, 0, imp.getWidth(), imp.getHeight()));
+                g2.draw(toScreenSpace.createTransformedShape(apertureBound));
             }
 
-            // Draw Geometric Centroid
-            if (isCentroid) {
-                g2.setColor(Color.RED);
+            if (showSky && getBackgroundArea() != null) {
+                var backgroundBound = getBackgroundArea().getBounds().intersection(new Rectangle(0, 0, imp.getWidth(), imp.getHeight()));
+                g2.draw(toScreenSpace.createTransformedShape(backgroundBound));
+            }
+        }
 
-                var bounds = Objects.requireNonNull(apertureShape).getBounds2D();
-                var delta = Math.min(bounds.getWidth(), bounds.getHeight())/4D;
-                delta = delta <= 0 ? 2 : delta;
-                g2.draw(toScreenSpace.createTransformedShape(new Line2D.Double(xPos, yPos - delta, xPos, yPos + delta)));
-                g2.draw(toScreenSpace.createTransformedShape(new Line2D.Double(xPos - delta, yPos, xPos + delta, yPos)));
+        // Debug draw of centroid radii
+        if (false) {
+            g2.setColor(CENTROID_COLOR);
+            if (Double.isFinite(getRadius())) {
+                var r = getRadius();
+                g2.draw(toScreenSpace.createTransformedShape(new Ellipse2D.Double(xPos - r, yPos - r, 2*r, 2*r)));
             }
 
-            //todo draw photometric centroid, support offset - can be delayed
-
-            // Debug draw of aperture bounding box for photometry consideration
-            if (false) {
-                g2.setColor(Color.CYAN);
-                if (getApertureArea() != null) {
-                    var apertureBound = getApertureArea().getBounds().intersection(new Rectangle(0, 0, imp.getWidth(), imp.getHeight()));
-                    g2.draw(toScreenSpace.createTransformedShape(apertureBound));
-                }
-
-                if (showSky && getBackgroundArea() != null) {
-                    var backgroundBound = getBackgroundArea().getBounds().intersection(new Rectangle(0, 0, imp.getWidth(), imp.getHeight()));
-                    g2.draw(toScreenSpace.createTransformedShape(backgroundBound));
-                }
+            if (showSky && Double.isFinite(getBack1())) {
+                var r = getBack1();
+                g2.draw(toScreenSpace.createTransformedShape(new Ellipse2D.Double(xPos - r, yPos - r, 2*r, 2*r)));
             }
 
-            // Debug draw of centroid radii
-            if (false) {
-                g2.setColor(CENTROID_COLOR);
-                if (Double.isFinite(getRadius())) {
-                    var r = getRadius();
-                    g2.draw(toScreenSpace.createTransformedShape(new Ellipse2D.Double(xPos - r, yPos - r, 2*r, 2*r)));
-                }
-
-                if (showSky && Double.isFinite(getBack1())) {
-                    var r = getBack1();
-                    g2.draw(toScreenSpace.createTransformedShape(new Ellipse2D.Double(xPos - r, yPos - r, 2*r, 2*r)));
-                }
-
-                if (showSky && Double.isFinite(getBack2())) {
-                    var r = getBack2();
-                    g2.draw(toScreenSpace.createTransformedShape(new Ellipse2D.Double(xPos - r, yPos - r, 2*r, 2*r)));
-                }
+            if (showSky && Double.isFinite(getBack2())) {
+                var r = getBack2();
+                g2.draw(toScreenSpace.createTransformedShape(new Ellipse2D.Double(xPos - r, yPos - r, 2*r, 2*r)));
             }
+        }
 
-            if (DRAW_POINTING) {
-                g2.setColor(Color.ORANGE);
-                var length = apertureShape.getBounds2D().getWidth()/2D;
-                var width = length * 0.333333;
-                drawShape(g2, new ArrowShape(xPos, yPos, length, width), toScreenSpaceTransformed);
-                var theta = Math.toDegrees(Math.atan2(transform.getShearY(), transform.getScaleX()));
-                width *= 2;
-                drawShape(g2, new Arc2D.Double(xPos-width/2, yPos-width/2, width, width, 0, -theta, Arc2D.PIE), toScreenSpace);
-            }
+        if (DRAW_POINTING) {
+            g2.setColor(Color.ORANGE);
+            var length = apertureShape.getBounds2D().getWidth()/2D;
+            var width = length * 0.333333;
+            drawShape(g2, new ArrowShape(xPos, yPos, length, width), toScreenSpaceTransformed);
+            var theta = Math.toDegrees(Math.atan2(transform.getShearY(), transform.getScaleX()));
+            width *= 2;
+            drawShape(g2, new Arc2D.Double(xPos-width/2, yPos-width/2, width, width, 0, -theta, Arc2D.PIE), toScreenSpace);
         }
 
         String value = showMag ?
                 aMagText + (showIntCntWithMag && !intCntsBlank ? ", " + intCntsWithMagText : "") :
                 intCntsText;
-        g.setColor(isPhantom() ? (isCompStar ? PHANTOM_COMPARISON : PHANTOM_TARGET) : (isCompStar ? Color.RED : Color.GREEN));
+        g.setColor(apertureColor);
         g.setFont(font);
 
         var b = (backgroundShape != null && showSky ?
@@ -251,7 +253,7 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
         }
 
         if (aij) {
-            ((Graphics2D) g).setTransform(ac.canvTrans);
+            g2.setTransform(ac.canvTrans);
         }
     }
 

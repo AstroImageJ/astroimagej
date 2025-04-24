@@ -3037,6 +3037,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
             var rs = sp.getRadii(imp, x, y, ApRadius.AUTO_FIXED_STACK_RAD.cutoff, true, true);
             if (cancelled) {
                 imp.unlock();
+                IJ.showProgress(1);
                 return new Output(rs.r(), rs.r2(), rs.r3(), 0);
             }
             if (!rs.centroidSuccessful()) {

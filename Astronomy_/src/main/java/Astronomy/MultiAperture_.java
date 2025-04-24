@@ -2682,6 +2682,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
      * @return {@code true} if cancelled.
      */
     private boolean automaticCompStarSelection(int currentRefStarCount) {
+        if (cancelled) {
+            return false;
+        }
         suggestionRunning = true;
         var d = showWarning("Searching for comparison stars...");
         var warning = new AnnotateRoi(false, false, true, false, imp.getWidth() / 2f, imp.getHeight() / 2f, 2, "Searching for comparison stars...", Color.GREEN);

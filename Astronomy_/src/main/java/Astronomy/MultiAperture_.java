@@ -1871,6 +1871,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 var rs = evaluateStackForRadii(e != null && ((!e.isShiftDown() && ngot > 0) || (e.isShiftDown() && ngot == 0)));
                 ocanvas.removeRoi(warning);
                 d.dispose();
+                if (cancelled) {
+                    return;
+                }
                 if (!rs.success()) {
                     showWarning("Failed to retrieve radii for %1$d/%2$d images.\nDo you wish to continue?".formatted(rs.count, lastSlice - firstSlice), true);
                     for (int i = 0; i < shapedApertureRois.size(); i++) {
@@ -2495,6 +2498,9 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 var rs = evaluateStackForRadii(e != null && ((!e.isShiftDown() && ngot > 0) || (e.isShiftDown() && ngot == 0)));
                 ocanvas.removeRoi(warning);
                 d.dispose();
+                if (cancelled) {
+                    return;
+                }
                 if (!rs.success()) {
                     showWarning("Failed to retrieve radii for %1$d/%2$d images.\nDo you wish to continue?".formatted(rs.count, lastSlice - firstSlice), true);
                 }

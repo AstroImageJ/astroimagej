@@ -826,4 +826,20 @@ public final class ShapedApertureRoi extends ApertureRoi implements Aperture {
 
         return Double.NaN;
     }
+
+    @Override
+    public String toString() {
+        return "ShapedApertureRoi{" +
+                "apertureShape=" + apertureShape +
+                ", backgroundShape=" + backgroundShape +
+                ", transform=" + transform +
+                ", isCompStar=" + isCompStar +
+                ", centerBackground=" + centerBackground +
+                ", ellipticalBaseRadius=" + ellipticalBaseRadius +
+                ", intCnts=" + intCnts +
+                ", aMag=" + aMag +
+                ", isPhantom=" + isPhantom +
+                ", radec=" + radec +
+                '}';
+    }
 }

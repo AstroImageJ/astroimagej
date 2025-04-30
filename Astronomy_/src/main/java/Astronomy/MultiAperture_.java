@@ -2069,6 +2069,7 @@ public class MultiAperture_ extends Aperture_ implements MouseListener, MouseMot
                 showRemovedPixels = showRemovedPixelsOld;
                 for (ShapedApertureRoi ap : shapedApertureRois) {
                     setApertureName(ap.getName());
+                    setAbsMag(ap.getAMag());
                     measureAperture(hdr, ap);
                 }
             }

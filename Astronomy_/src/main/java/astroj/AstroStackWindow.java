@@ -786,7 +786,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                     astrometry.astrometrySetup.astrometrySetupFrame != null)
                 astrometry.astrometrySetup.astrometrySetupFrame.dispose();
             if (astrometry != null) astrometry.setAstrometryCanceled();
-            astrometryThread.stop();
+            astrometryThread.interrupt();
             astrometryThread = null;
         }
         if (imp != null) imp.changes = false;
@@ -4189,7 +4189,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
                 count++;
                 IJ.wait(1000);
             } else {
-                astrometryThread.stop();
+                astrometryThread.interrupt();
                 astrometryThread = null;
                 break;
             }

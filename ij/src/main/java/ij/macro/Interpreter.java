@@ -1,6 +1,7 @@
 package ij.macro;
 
 import ij.*;
+import ij.astro.AstroImageJ;
 import ij.gui.GenericDialog;
 import ij.gui.ImageWindow;
 import ij.measure.ResultsTable;
@@ -2164,7 +2165,8 @@ public class Interpreter implements MacroConstants {
 		for (int i=0; i<10; i++)
 			done = true;
 	}
-		
+
+	@AstroImageJ(reason = "Don't use deprecated Thread#stop", modified = true)
 	private void abortAllMacroThreads() {
 		try {
 			ThreadGroup group = Thread.currentThread().getThreadGroup(); 
@@ -2174,7 +2176,7 @@ public class Interpreter implements MacroConstants {
 			for (int i = 0; i < activeCount; i++) { 
 				String name = threads[i].getName(); 
 				if (name!=null && name.endsWith("Macro$"))
-					threads[i].stop(); 
+					threads[i].interrupt();
 			}
 		} catch (Throwable e) {
 		}

@@ -36,8 +36,8 @@ import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
-import java.util.Timer;
 import java.util.*;
+import java.util.Timer;
 
 
 /**
@@ -3510,7 +3510,7 @@ public class Data_Processor implements PlugIn, ActionListener, ChangeListener, /
                             astrometrySetup = new AstrometrySetup();
                             astrometrySetup.start(1, 1, 1, "SAVE AND EXIT", acc, true);
                             astrometrySetup = null;
-                            astrometrySetupThread.stop();
+                            astrometrySetupThread.interrupt();
                             astrometrySetupThread = null;
                         }
                     };

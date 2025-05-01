@@ -17076,13 +17076,21 @@ public class MultiPlot_ implements PlugIn, KeyListener {
 
         gd.addMessage("Select datasets in the order (left to right) desired in the output file.\nNo column will be output for blank selections.");
         gd.addSlider("Number of data selection boxes (next time):", 1, 20, maxSubsetColumns < 21 && maxSubsetColumns > 0 ? maxSubsetColumns : 5, d -> maxSubsetColumns = d.intValue());
-        String[] saveColumns = new String[columns.length + 1];
-        saveColumns[0] = "";
-        String meridian_flip = "Meridian_Flip";
-        if (saveColumns.length > 1) saveColumns[1] = meridian_flip;
-        if (saveColumns.length > 2) {
-            System.arraycopy(columns, 1, saveColumns, 2, columns.length - 1);
+
+        var cols = new ArrayList<String>();
+        cols.add("");
+        cols.add("Meridian_Flip");
+        for (String column : columns) {
+            if (column == null)
+                continue;
+            cols.add(column);
+            if (column.contains("JD") || column.contains("J.D.")) {
+                cols.add("F"+column);
+            }
         }
+
+        var saveColumns = cols.toArray(String[]::new);
+
         gd.addMessage("             Column                          Enabled");
         gd.setOverridePosition(true);
         gd.resetPositionOverride();
@@ -17213,11 +17221,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 for (int i = 0; i < maxSubsetColumns; i++) {
                     if (subsetColumnEnable[i] && !subsetColumn[i].trim().equals("")) {
                         line.append(needDelimiter ? delimiter : "");
-                        if (i > 2 && (subsetColumn[i].contains("J.D.") || subsetColumn[i].contains("JD"))) {
-                            line.append("F" + subsetColumn[i]);
-                        } else {
-                            line.append(subsetColumn[i]);
-                        }
+                        line.append(subsetColumn[i]);
                         needDelimiter = true;
                     }
                 }
@@ -17247,12 +17251,14 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                             } else {
                                 value = -1.0;
                             }
-                        } else {
-                            value = table.getValue(subsetColumn[i], row);
+                        } else if (subsetColumn[i].startsWith("F") && !table.columnExists(subsetColumn[i]) && table.columnExists(subsetColumn[i].substring(1))) {
+                            value = table.getValue(subsetColumn[i].substring(1), row);
                             if (i > 2 && (subsetColumn[i].contains("J.D.") || subsetColumn[i].contains("JD"))) {
                                 if (subsetColumn[i].startsWith("J.D.-2400000")) value += 2400000;
                                 value -= xOffset;
                             }
+                        } else {
+                            value = table.getValue(subsetColumn[i], row);
                         }
                         outText = Double.isNaN(value) ? "" : output.format(value);
                         line.append(needDelimiter ? delimiter : "").append(outText);

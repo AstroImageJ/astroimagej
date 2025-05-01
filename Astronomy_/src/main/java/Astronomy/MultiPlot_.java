@@ -17178,7 +17178,11 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         int numColumns = 0;
         for (int i = 0; i < maxSubsetColumns; i++) {
             if (subsetColumnEnable[i] && !subsetColumn[i].trim().equals("")) {
-                if (!subsetColumn[i].equals(meridian_flip) && table.getColumnIndex(subsetColumn[i]) == ResultsTable.COLUMN_NOT_FOUND) {
+                if (!subsetColumn[i].equals(meridian_flip) &&
+                        !(!subsetColumn[i].startsWith("F") &&
+                                !table.columnExists(subsetColumn[i]) &&
+                                table.columnExists(subsetColumn[i].substring(1))
+                        ) && table.getColumnIndex(subsetColumn[i]) == ResultsTable.COLUMN_NOT_FOUND) {
                     IJ.beep();
                     if (IJ.showMessageWithCancel("Save Data Subset Error", "Error: Table column " + subsetColumn[i] + " not found.\nPress OK to correct setting or Cancel to abort save subset.")) {
                         saveDataSubsetDialog(savePath);

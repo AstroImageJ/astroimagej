@@ -17081,7 +17081,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         cols.add("");
         cols.add("Meridian_Flip");
         for (String column : columns) {
-            if (column == null)
+            if (column == null || column.isEmpty() || column.isBlank())
                 continue;
             cols.add(column);
             if (column.contains("JD") || column.contains("J.D.")) {

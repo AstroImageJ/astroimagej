@@ -2,6 +2,7 @@ package Astronomy;
 
 import Astronomy.multiplot.KeplerSplineControl;
 import Astronomy.multiplot.PlotDraggableShape;
+import Astronomy.multiplot.gui.ConstantColSubset;
 import Astronomy.multiplot.macro.title.EditorArea;
 import Astronomy.multiplot.macro.title.PlotNameResolver;
 import Astronomy.multiplot.modelling.FitLightCurveChi2;
@@ -17047,7 +17048,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
     }
 
 
-    static void saveDataSubsetDialog(String savePath) {
+    public static void saveDataSubsetDialog(String savePath) {
         class Holder {
             public static boolean saveColumnHeadings = true;
             public static boolean saveHeadersAsComment = true;
@@ -17080,6 +17081,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         var cols = new ArrayList<String>();
         cols.add("");
         cols.add("Meridian_Flip");
+        cols.addAll(ConstantColSubset.constantCols().stream().map(ConstantColSubset.ConstantCol::name).toList());
         for (String column : columns) {
             if (column == null || column.isEmpty() || column.isBlank())
                 continue;
@@ -17112,6 +17114,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             gd.resetPositionOverride();
         }
         gd.setOverridePosition(false);
+        gd.enableYesNoCancel("Okay", "Constant Col");
 
         String[] optionLabels = {"Save column headings", "Comment headings with '#'", "Save row numbers", "Save row labels"};
         boolean[] optionSettings = {Holder.saveColumnHeadings, Holder.saveHeadersAsComment, Holder.saveRowNumbers, Holder.saveRowLabels};
@@ -17121,6 +17124,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         cs.add(b -> Holder.saveRowNumbers = b);
         cs.add(b -> Holder.saveRowLabels = b);
         gd.addCheckboxGroup(2, 2, optionLabels, optionSettings, cs);
+
+        String finalSavePath = savePath;
+        gd.getNo().addActionListener($ -> ConstantColSubset.dialog(finalSavePath));
 
         gd.showDialog();
         Prefs.set("plot2.maxSubsetColumns", maxSubsetColumns);
@@ -17182,7 +17188,9 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         !(subsetColumn[i].startsWith("F") &&
                                 !table.columnExists(subsetColumn[i]) &&
                                 table.columnExists(subsetColumn[i].substring(1))
-                        ) && table.getColumnIndex(subsetColumn[i]) == ResultsTable.COLUMN_NOT_FOUND) {
+                        ) &&
+                        !(ConstantColSubset.constantCol(subsetColumn[i])) &&
+                        table.getColumnIndex(subsetColumn[i]) == ResultsTable.COLUMN_NOT_FOUND) {
                     IJ.beep();
                     if (IJ.showMessageWithCancel("Save Data Subset Error", "Error: Table column " + subsetColumn[i] + " not found.\nPress OK to correct setting or Cancel to abort save subset.")) {
                         saveDataSubsetDialog(savePath);
@@ -17246,7 +17254,15 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 needDelimiter = false;
                 int xlen = x[firstCurve].length;
                 for (int i = 0; i < maxSubsetColumns; i++) {
-                    if (subsetColumnEnable[i] && !subsetColumn[i].trim().equals("")) {
+                    if (ConstantColSubset.constantCol(subsetColumn[i])) {
+                        for (ConstantColSubset.ConstantCol col : ConstantColSubset.constantCols()) {
+                            if (subsetColumn[i].equals(col.name())) {
+                                outText = col.val();
+                                line.append(needDelimiter ? delimiter : "").append(outText);
+                                needDelimiter = true;
+                            }
+                        }
+                    } else if (subsetColumnEnable[i] && !subsetColumn[i].trim().equals("")) {
                         if (subsetColumn[i].equals(meridian_flip)) {
                             if (row - excludedHeadSamples >= 0) {
                                 if (row - excludedHeadSamples < xlen) {

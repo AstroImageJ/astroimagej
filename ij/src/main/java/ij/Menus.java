@@ -1002,7 +1002,8 @@ public class Menus {
 		}
 		return plugins2;
 	}
-	
+
+	@AstroImageJ(reason = "Remove deprecated for removal setting of SecurityManager", modified = true)
 	void setupPluginsAndMacrosPaths() {
 		ImageJPath = pluginsPath = macrosPath = null;
 		String currentDir = Prefs.getHomeDir(); // "user.dir"
@@ -1019,8 +1020,8 @@ public class Menus {
 				if (!(new File(ijDir+File.separator+"plugins")).isDirectory())
 					ijDir = ijDir + File.separator + "ImageJ";
 				// needed to run plugins when ImageJ launched using Java WebStart
-				if (applet==null)
-					System.setSecurityManager(null);
+				/*if (applet==null)
+					System.setSecurityManager(null);*/
 				jnlp = true;
 			}
 			pluginsPath = ijDir+File.separator+"plugins"+File.separator;

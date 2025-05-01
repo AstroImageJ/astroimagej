@@ -6808,7 +6808,7 @@ public class AstroStackWindow extends StackWindow implements LayoutManager, Acti
             var stack = imp.getStack();
 
 
-            if ((shiftKeyDown && controlKeyDown) || plotStackPixelValues.get()) {
+            if (((shiftKeyDown && controlKeyDown) || plotStackPixelValues.get()) && !stack.isVirtual()) {
                 if (stackPixelPlot == null) {
                     stackPixelPlot = new Plot("Pixel Values", "Slice", "Value");
                 }

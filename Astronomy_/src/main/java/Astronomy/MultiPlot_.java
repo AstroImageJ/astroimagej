@@ -17179,7 +17179,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         for (int i = 0; i < maxSubsetColumns; i++) {
             if (subsetColumnEnable[i] && !subsetColumn[i].trim().equals("")) {
                 if (!subsetColumn[i].equals(meridian_flip) &&
-                        !(!subsetColumn[i].startsWith("F") &&
+                        !(subsetColumn[i].startsWith("F") &&
                                 !table.columnExists(subsetColumn[i]) &&
                                 table.columnExists(subsetColumn[i].substring(1))
                         ) && table.getColumnIndex(subsetColumn[i]) == ResultsTable.COLUMN_NOT_FOUND) {
@@ -17258,7 +17258,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         } else if (subsetColumn[i].startsWith("F") && !table.columnExists(subsetColumn[i]) && table.columnExists(subsetColumn[i].substring(1))) {
                             value = table.getValue(subsetColumn[i].substring(1), row);
                             if (i > 2 && (subsetColumn[i].contains("J.D.") || subsetColumn[i].contains("JD"))) {
-                                if (subsetColumn[i].startsWith("J.D.-2400000")) value += 2400000;
+                                if (subsetColumn[i].startsWith("FJ.D.-2400000")) value += 2400000;
                                 value -= xOffset;
                             }
                         } else {

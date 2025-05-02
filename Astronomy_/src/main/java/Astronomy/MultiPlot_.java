@@ -17185,6 +17185,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         boolean saveRowLabels = Prefs.get("plot2.saveRowLabels", true);
         String meridian_flip = "Meridian_Flip";
 
+        var mins = new double[maxSubsetColumns];
         int numColumns = 0;
         for (int i = 0; i < maxSubsetColumns; i++) {
             if (subsetColumnEnable[i] && !subsetColumn[i].trim().equals("")) {
@@ -17202,6 +17203,14 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                     return;
                 } else {
                     numColumns++;
+
+                    if (subsetColumn[i].startsWith("F") &&
+                            !table.columnExists(subsetColumn[i]) &&
+                            table.columnExists(subsetColumn[i].substring(1))) {
+                        mins[i] = Arrays.stream(table.bulkGetColumnAsDoubles(table.getColumnIndex(subsetColumn[i].substring(1))))
+                                .min().orElse(0);
+                        mins[i] = (int)mins[i];
+                    }
                 }
             }
         }
@@ -17244,15 +17253,6 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 pw.println(line);
             }
 
-            if (!showXAxisNormal) {
-                skipPlotUpdate = true;
-
-                // Update minimum
-                if (unphasedX != null) {
-                    applyXAutoScale(unphasedX, true);
-                }
-            }
-
             for (int row = 0; row < rows; row++) {
                 line = new StringBuilder((saveRowNumbers ? "" + (row + 1) + delimiter : "") + (saveRowLabels ? table.getLabel(row) + delimiter : ""));
                 needDelimiter = false;
@@ -17278,8 +17278,8 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                         } else if (subsetColumn[i].startsWith("F") && !table.columnExists(subsetColumn[i]) && table.columnExists(subsetColumn[i].substring(1))) {
                             value = table.getValue(subsetColumn[i].substring(1), row);
                             if ((subsetColumn[i].contains("J.D.") || subsetColumn[i].contains("JD"))) {
-                                if (subsetColumn[i].startsWith("FJ.D.-2400000")) value += 2400000;
-                                value -= xOffset;
+                                //if (subsetColumn[i].startsWith("FJ.D.-2400000")) value += 2400000;
+                                value -= mins[i];
                             }
                         } else {
                             value = table.getValue(subsetColumn[i], row);

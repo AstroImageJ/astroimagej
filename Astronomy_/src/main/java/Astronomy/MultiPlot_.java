@@ -17076,7 +17076,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         }
 
         gd.addMessage("Select datasets in the order (left to right) desired in the output file.\nNo column will be output for blank selections.");
-        gd.addSlider("Number of data selection boxes (next time):", 1, 20, maxSubsetColumns < 21 && maxSubsetColumns > 0 ? maxSubsetColumns : 5, d -> maxSubsetColumns = d.intValue());
+        gd.addSlider("Number of data selection boxes (next time):", 1, 50, maxSubsetColumns < 51 && maxSubsetColumns > 0 ? maxSubsetColumns : 5, d -> maxSubsetColumns = d.intValue());
 
         var cols = new ArrayList<String>();
         cols.add("");
@@ -17114,7 +17114,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
             gd.resetPositionOverride();
         }
         gd.setOverridePosition(false);
-        gd.enableYesNoCancel("Okay", "Constant Col");
+        gd.enableYesNoCancel("Save", "Constant Col");
 
         String[] optionLabels = {"Save column headings", "Comment headings with '#'", "Save row numbers", "Save row labels"};
         boolean[] optionSettings = {Holder.saveColumnHeadings, Holder.saveHeadersAsComment, Holder.saveRowNumbers, Holder.saveRowLabels};
@@ -17126,11 +17126,15 @@ public class MultiPlot_ implements PlugIn, KeyListener {
         gd.addCheckboxGroup(2, 2, optionLabels, optionSettings, cs);
 
         String finalSavePath = savePath;
-        gd.getNo().addActionListener($ -> ConstantColSubset.dialog(finalSavePath));
+        var wasNo = new AtomicBoolean(false);
+        gd.getNo().addActionListener($ -> {
+            ConstantColSubset.dialog(finalSavePath);
+            wasNo.set(true);
+        });
 
         gd.showDialog();
         Prefs.set("plot2.maxSubsetColumns", maxSubsetColumns);
-        if (gd.wasCanceled()) return;
+        if (gd.wasCanceled() || wasNo.get()) return;
 
         boolean meridianFlipSelected = false;
         for (int i = 0; i < subsetColumn.length; i++) {
@@ -17254,7 +17258,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                 needDelimiter = false;
                 int xlen = x[firstCurve].length;
                 for (int i = 0; i < maxSubsetColumns; i++) {
-                    if (ConstantColSubset.constantCol(subsetColumn[i])) {
+                    if (subsetColumnEnable[i] && ConstantColSubset.constantCol(subsetColumn[i])) {
                         for (ConstantColSubset.ConstantCol col : ConstantColSubset.constantCols()) {
                             if (subsetColumn[i].equals(col.name())) {
                                 outText = col.val();
@@ -17273,7 +17277,7 @@ public class MultiPlot_ implements PlugIn, KeyListener {
                             }
                         } else if (subsetColumn[i].startsWith("F") && !table.columnExists(subsetColumn[i]) && table.columnExists(subsetColumn[i].substring(1))) {
                             value = table.getValue(subsetColumn[i].substring(1), row);
-                            if (i > 2 && (subsetColumn[i].contains("J.D.") || subsetColumn[i].contains("JD"))) {
+                            if ((subsetColumn[i].contains("J.D.") || subsetColumn[i].contains("JD"))) {
                                 if (subsetColumn[i].startsWith("FJ.D.-2400000")) value += 2400000;
                                 value -= xOffset;
                             }

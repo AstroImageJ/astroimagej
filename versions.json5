@@ -1,0 +1,51 @@
+{//first meta file
+  metaVersion: [
+    1,
+    0
+  ],
+  releaseCandidates: [
+    {
+      version: "5.6.0-beta.4",
+      //the same as version's version obj, normally hidden in file chooser
+    },
+    //...
+  ],
+  releases: [
+    {
+      version: "5.0.0",
+      url: "aij./com/specific/version.json",
+      minJava: 21,
+      maxJava: 24,
+    }
+  ],
+}
+
+//specific version file
+{
+  version: "5.5.0",//todo support x.y.z.n, implicit n=0
+  files: [
+    {
+      fileName: "ij.jar",
+      url: "github.com/blah",
+      destination: "libs",//location to put downloaded file todo verify location on download is with AIJ app
+      hash: "safhuiaqyq",//maybe, for verifying download success
+      signing: "sdugfy98",//maybe later
+      os: "windows"//todo maybe, possibly an array or if unspecified do it for all
+    }
+  ],
+  launchArgs: [
+    {
+      os: "all",//todo if not specified, apply to all
+      args: [
+        "--enable-native-access=ALL-UNNAMED"
+      ]
+    },
+    {
+      os: "mac",
+      args: [
+        "--some-mac-arg"
+      ]
+    }
+  ],
+  message: "..."//message to show on update
+}

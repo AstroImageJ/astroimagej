@@ -1,0 +1,98 @@
+package Astronomy.updater;
+
+import Astronomy.AstroImageJUpdaterV6;
+import astroj.json.simple.JSONArray;
+import astroj.json.simple.JSONObject;
+import astroj.json.simple.parser.JSONParser;
+import astroj.json.simple.parser.ParseException;
+
+import java.io.IOException;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
+public record MetaVersion(MetadataVersion version, List<VersionEntry> versions) {
+    public MetaVersion {
+        Objects.requireNonNull(version);
+        Objects.requireNonNull(versions);
+    }
+
+    public static MetaVersion readJson(URI uri) {
+        try (var reader = AstroImageJUpdaterV6.readerForUri(uri)) {
+            var o = new JSONParser().parse(reader);
+
+            if (o instanceof JSONObject object) {
+                if (object.get("metaVersion") instanceof JSONObject meta) {
+                    //todo check for wrong meta version
+                    if (object.get("versions") instanceof JSONArray array) {
+                        var versions = new ArrayList<VersionEntry>();
+                        for (Object o1 : array) {
+                            if (o1 instanceof JSONObject v) {
+                                versions.add(VersionEntry.fromJson(v));
+                            }
+                        }
+
+                        return new MetaVersion(MetadataVersion.fromJson(meta), versions);
+                    }
+                }
+            }
+        } catch (IOException | ParseException | InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    public record MetadataVersion(int major, int minor) {
+        public static MetadataVersion fromJson(JSONObject object) {
+            var major = 0;
+            var minor = 0;
+            if (object.get("major") instanceof Number i) {
+                major = i.intValue();
+            }
+
+            if (object.get("minor") instanceof Number i) {
+                minor = i.intValue();
+            }
+            return new MetadataVersion(major, minor);
+        }
+    }
+
+    public record VersionEntry(SemanticVersion version, String url, ReleaseType releaseType,
+                               int maxJava, int minJava) {
+        public VersionEntry {
+            Objects.requireNonNull(version);
+            Objects.requireNonNull(releaseType);
+            Objects.requireNonNull(url);
+        }
+
+        public static VersionEntry fromJson(JSONObject object) {
+            var type = ReleaseType.valueOf((String) object.get("type"));
+            var minJava = Integer.MIN_VALUE;
+            var maxJava = Integer.MAX_VALUE;
+
+            if (object.get("minJava") instanceof Number i) {
+                minJava = i.intValue();
+            }
+
+            if (object.get("maxJava") instanceof Number i) {
+                maxJava = i.intValue();
+            }
+
+            var url = object.get("url");
+
+            return new VersionEntry(new SemanticVersion((String) object.get("version")), (String) url, type, maxJava, minJava);
+        }
+
+        @Override
+        public String toString() {
+            return version.toString();
+        }
+    }
+
+    public enum ReleaseType {
+        RELEASE,
+        PRERELEASE
+    }
+}
